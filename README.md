@@ -1,5 +1,9 @@
 # SOTA Engineering Skills
 
+<p align="center">
+  <img src="assets/social-preview.png" alt="SOTA Engineering Skills — 30 Claude Code skills to build and audit software at state-of-the-art practices" width="100%">
+</p>
+
 A library of Claude Code skills encoding state-of-the-art (2026) practices for
 building **and** auditing applications and services. 30 skills, 216 files,
 ~46k lines — every file under 500 lines so skills load incrementally without
