@@ -1,0 +1,17 @@
+# gitleaks configuration for SOTA-skills.
+#
+# This is a documentation repo: the security skills intentionally contain
+# secret-shaped *examples*, masked tokens, and detection regexes. gitleaks'
+# built-in `generic-api-key` rule is entropy-based and false-positives on those
+# (and on ordinary prose), which is exactly the alert-fatigue trap our own
+# detection-engineering skill warns against.
+#
+# We therefore extend the full default ruleset but disable only that one noisy
+# rule. Every high-precision, provider-specific rule (AWS, GitHub, Stripe, GCP,
+# Slack, private keys, ...) stays active, so a real credential pasted into an
+# example is still caught.
+title = "SOTA-skills"
+
+[extend]
+useDefault = true
+disabledRules = ["generic-api-key"]

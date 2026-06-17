@@ -213,6 +213,14 @@ Naming one (or the `sota` router) just makes the routing explicit. From there:
 - Borderline severities state the deciding assumption; unconfirmed findings
   are marked "needs verification", never asserted.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). The short version: keep skills generic,
+verify fast-moving claims against primary sources, keep every file ≤ 500 lines,
+and end each rules file with an audit checklist. These are enforced by
+`scripts/check-invariants.sh` (pre-commit + CI) plus gitleaks. Security issues
+and conduct: [SECURITY.md](SECURITY.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
 ## License
 
 © 2026 Martin Holovsky. Licensed under [CC BY 4.0](LICENSE) — Creative Commons

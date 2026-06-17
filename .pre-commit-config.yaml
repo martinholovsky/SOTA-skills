@@ -1,0 +1,21 @@
+# Pre-commit hooks for SOTA-skills.
+#
+# Setup:  pipx install pre-commit   (or: brew install pre-commit)
+#         pre-commit install
+#
+# Hooks mirror the CI checks so violations are caught before they are pushed.
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
+    hooks:
+      - id: gitleaks
+        # Uses .gitleaks.toml in the repo root automatically.
+
+  - repo: local
+    hooks:
+      - id: sota-invariants
+        name: SOTA-skills invariants (<=500 lines, audit checklists, no internal refs)
+        entry: scripts/check-invariants.sh
+        language: script
+        pass_filenames: false
+        always_run: true
