@@ -103,7 +103,7 @@ information, not omission).
 | `rules/04-async.md` | any `async def` in sight: TaskGroup vs gather, blocking-the-loop, fire-and-forget, timeouts/cancellation, async generators, anyio, sync-ORM-in-async bugs |
 | `rules/05-security.md` | auditing for vulnerabilities; handling untrusted input; subprocess/SQL/paths/archives/secrets; pickle/eval/yaml; SSRF/XML; dependency auditing and supply chain |
 | `rules/06-performance.md` | anything slow: profiling tool choice, hot-loop suspects, numpy/polars vectorization, functools caching caveats, threads vs processes vs asyncio, lazy imports/startup |
-| `rules/07-frameworks-testing.md` | FastAPI (DI, boundary models, sync-in-async), Django (N+1, select_related, migrations), pytest (fixtures, parametrize, independence, hypothesis) |
+| `rules/07-frameworks-testing.md` | FastAPI (DI, boundary models, sync-in-async), Django (N+1, select_related, migrations), pytest (fixtures, parametrize, independence, hypothesis). **Test *strategy* — suite shape, TDD, doubles, test data, flake policy — lives in `sota-testing`; load it for any build that writes logic. This file owns Python runner mechanics only.** |
 
 ## Top-10 non-negotiables
 

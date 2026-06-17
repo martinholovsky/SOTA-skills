@@ -80,7 +80,7 @@ severity, the three highest-leverage fixes, and which checklists were run.
 | `rules/04-http-services.md` | Building or auditing HTTP servers/clients: all five server timeouts, client timeouts and body hygiene, connection reuse, graceful shutdown, middleware, `slog` structured logging, request-scoped values |
 | `rules/05-security.md` | Any input crossing a trust boundary: SQL parameterization, `os/exec` safety, path traversal and `os.Root`, integer overflow (G115), TLS config, `unsafe`/cgo policy, govulncheck, supply chain and go.sum |
 | `rules/06-performance.md` | Latency/memory work: pprof workflow, `testing.B` + `b.Loop`, allocation reduction, `strings.Builder`, `sync.Pool` criteria, escape analysis, GOGC/GOMEMLIMIT, PGO |
-| `rules/07-tooling-ci.md` | Setting up or auditing CI and tests: golangci-lint curated config, staticcheck/gofumpt/vet, table tests, `t.Parallel` correctness, testcontainers, golden files, fuzzing, go.mod hygiene and `tool` directives |
+| `rules/07-tooling-ci.md` | Setting up or auditing CI and tests: golangci-lint curated config, staticcheck/gofumpt/vet, table tests, `t.Parallel` correctness, testcontainers, golden files, fuzzing, go.mod hygiene and `tool` directives. **Test *strategy* — suite shape, TDD, doubles, test data, flake policy — lives in `sota-testing`; load it for any build that writes logic. This file owns Go runner mechanics only.** |
 
 ## Top-10 non-negotiables
 

@@ -109,7 +109,7 @@ fixes with outsized value).
 | [rules/04-async-tokio.md](rules/04-async-tokio.md) | Anything async: tokio, spawn vs spawn_blocking, Send/Sync bound errors, `select!` and cancellation safety, JoinSet/TaskTracker, channel selection, locks across await, async traits, graceful shutdown |
 | [rules/05-security-supply-chain.md](rules/05-security-supply-chain.md) | Network-facing or deployed code; adding dependencies; cargo audit/deny/vet; integer overflow on untrusted input; panic-DoS; zeroize/constant-time for secrets; serde hardening (untagged enums, size limits); service-edge defaults |
 | [rules/06-performance.md](rules/06-performance.md) | Performance work or claims: profiling (samply/perf/flamegraph, criterion/divan), allocation reduction (Cow/SmallVec/buffer reuse), accidental clones, iterator fusion, release profile (LTO, codegen-units, panic=abort), PGO |
-| [rules/07-tooling-ci.md](rules/07-tooling-ci.md) | Setting up or auditing repo scaffolding: clippy policy and pedantic triage, rustfmt, nextest, MSRV declaration+testing, additive feature flags, docs.rs discipline, edition 2024 migration, CI baseline |
+| [rules/07-tooling-ci.md](rules/07-tooling-ci.md) | Setting up or auditing repo scaffolding: clippy policy and pedantic triage, rustfmt, nextest, MSRV declaration+testing, additive feature flags, docs.rs discipline, edition 2024 migration, CI baseline. **Test *strategy* — suite shape, TDD, doubles, test data, flake policy — lives in `sota-testing`; load it for any build that writes logic. This file owns Rust runner mechanics only.** |
 
 ## Top-10 non-negotiables
 

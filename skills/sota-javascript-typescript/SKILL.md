@@ -52,7 +52,7 @@ Order the report CRITICAL→LOW, deduplicate repeated patterns into one finding 
 | [rules/04-node-backend.md](rules/04-node-backend.md) | building/auditing Node services: runtime choice, dropping deps for built-ins, env config, HTTP hardening (timeouts/body limits), graceful shutdown, process error policy, pino |
 | [rules/05-security.md](rules/05-security.md) | any security-relevant code or audit: XSS sinks, CSP, prototype pollution, npm supply chain, ReDoS, token storage/JWT, postMessage, child_process injection, SSRF |
 | [rules/06-performance.md](rules/06-performance.md) | bundle size, React re-renders/keys/RSC, virtualization, debounce/throttle, memory leaks, Node event-loop blocking, profiling before optimizing |
-| [rules/07-testing-and-tooling.md](rules/07-testing-and-tooling.md) | writing tests or setting up tooling: vitest, testing-library behavior testing, MSW, Playwright, ESLint flat + typescript-eslint strict, knip, publint/attw, CI gates |
+| [rules/07-testing-and-tooling.md](rules/07-testing-and-tooling.md) | writing tests or setting up tooling: vitest, testing-library behavior testing, MSW, Playwright, ESLint flat + typescript-eslint strict, knip, publint/attw, CI gates. **Test *strategy* — suite shape, TDD, doubles, test data, flake policy — lives in `sota-testing`; load it for any build that writes logic. This file owns JS/TS runner mechanics only.** |
 
 For a full audit, read 01→07 in order; security-focused audits prioritize 05, 01, 03, 04.
 
