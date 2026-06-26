@@ -20,7 +20,7 @@ practices for building **and** auditing software, and that verify their own
 claims. 30 skills, 216 files, ~46k lines — every file under 500 lines, so the
 right rules load exactly when your task needs them, never bloating the context
 window. Fast-moving claims (versions, specs, regulations) are web-verified
-against primary sources; last refresh: 2026-06-14.
+against primary sources.
 
 Two cross-cutting pieces live outside the domain skills:
 
@@ -352,9 +352,9 @@ Naming one (or the `sota` router) just makes the routing explicit. From there:
 - **Stack skills freely**: language + domain ("sota-rust + sota-api-design
   for this axum service"). The router does this automatically when you just
   describe the task.
-- **Re-verify anything version-sensitive**: the library's pinned facts are
-  as-of the last refresh date above; the freshness-first principle tells the
-  model to web-check before pinning versions — hold it to that.
+- **Re-verify anything version-sensitive**: the library's pinned facts can age
+  between edits; the freshness-first principle tells the model to web-check
+  before pinning versions — hold it to that.
 
 ## Conventions
 
