@@ -156,7 +156,17 @@ don't auto-update — re-run the installer to refresh them.)
 Skill descriptions are matched per prompt, so routing is opt-in and depends on
 how you phrase the request. To make the skills apply to **every** session
 regardless of wording, pin the routing instruction where Claude Code always
-sees it. Three layers, strongest last:
+sees it.
+
+**The quick path:** `./scripts/install.sh` offers to set this up for you after
+linking the skills — it's interactive and **dotfiles-aware**: it detects an
+existing or symlinked `~/.claude/CLAUDE.md` / `settings.json`, **asks before
+touching anything** (recommended answer pre-filled), backs up first, writes
+*through* a symlink so dotfiles stay in charge, and uses managed markers so
+re-runs never duplicate. Use `--routing` to force it, `--no-routing` to skip,
+`--yes` for non-interactive. Or wire the three layers by hand:
+
+Three layers, strongest last:
 
 **1. A stack profile.** Copy the template, fill in your stack, and symlink it
 into `~/.claude/` so the router finds it in every project (not just this repo):
