@@ -1,0 +1,11 @@
+{
+  "name": "sota-skills",
+  "owner": { "name": "Martin Holovsky" },
+  "plugins": [
+    {
+      "name": "sota-skills",
+      "source": "./",
+      "description": "State-of-the-art engineering skills for building and auditing software across 30 domains and languages, with a master router and BUILD/AUDIT modes."
+    }
+  ]
+}

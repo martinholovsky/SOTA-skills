@@ -1,0 +1,11 @@
+{
+  "name": "sota-skills",
+  "displayName": "SOTA Engineering Skills",
+  "version": "1.1.0",
+  "description": "State-of-the-art engineering skills (2026) for building and auditing software across 30 domains and languages — security, architecture, APIs, databases, cloud, Kubernetes, observability, testing, LLM engineering, and more — with a master router and BUILD/AUDIT modes.",
+  "author": { "name": "Martin Holovsky" },
+  "homepage": "https://github.com/martinholovsky/SOTA-skills",
+  "repository": "https://github.com/martinholovsky/SOTA-skills",
+  "license": "CC-BY-4.0",
+  "keywords": ["sota", "engineering", "security", "audit", "architecture", "best-practices", "code-review", "skills"]
+}
