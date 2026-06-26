@@ -232,6 +232,13 @@ yourself in place. The hooks call your project's own toolchain, so install the
 per-language tools it lists on exit (and `pre-commit install` if the script
 couldn't).
 
+Add `--docs-gate` to also install a pre-commit hook that **blocks a commit which
+changes code but updates no docs** (README/CHANGELOG/`docs/`/`*.md`) — so docs
+stay current without you having to ask. It writes a small helper to
+`.sota/docs-gate.sh`; it's heuristic (a docstring-only edit inside a code file
+will trip it) and bypassable with `SKIP=sota-docs-gate git commit`, which is why
+it's opt-in.
+
 ### Other AI agents (Codex, Copilot, Gemini, …)
 
 The skill *content* is plain Markdown — any model reads it. To route a non-Claude
