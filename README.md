@@ -226,6 +226,25 @@ yourself in place. The hooks call your project's own toolchain, so install the
 per-language tools it lists on exit (and `pre-commit install` if the script
 couldn't).
 
+### Other AI agents (Codex, Copilot, Gemini, …)
+
+The skill *content* is plain Markdown — any model reads it. To route a non-Claude
+agent through the library, generate an `AGENTS.md` (the cross-tool open standard
+read by Codex, Cursor, Copilot, Gemini CLI, Windsurf, Zed, and more):
+
+```sh
+cd /path/to/your/project
+/path/to/SOTA-skills/scripts/gen-agents-md.sh        # add --dry-run to preview
+```
+
+It writes a thin `AGENTS.md` that carries the operating principles and points the
+agent at the installed `skills/` tree — the index is built from each skill's
+frontmatter, so it stays in sync, and the agent reads the relevant `rules/*.md`
+on demand (no rule text is duplicated). Idempotent via a managed block, like the
+others; `--skills-dir` and `--output` override the defaults. Claude Code keeps
+using the richer native Skills install above — this is purely for the other
+tools.
+
 ## How it works
 
 Claude Code matches your prompt against each skill's frontmatter description

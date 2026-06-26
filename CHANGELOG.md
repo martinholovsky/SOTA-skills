@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Given-When-Then, the three-amigos value, the outside-in double loop with TDD,
   scenario-explosion and UI-script anti-patterns, and tracing scenarios to spec
   acceptance criteria.
+- **`scripts/gen-agents-md.sh`** — generate an `AGENTS.md` entry point so
+  non-Claude agents (Codex, Cursor, Copilot, Gemini CLI, Windsurf, Zed, …) route
+  through the skills. Thin pointer built from each skill's frontmatter; reads
+  rules on demand, no duplication; idempotent managed block.
 
 ## [1.1.0] - 2026-06-26
 
