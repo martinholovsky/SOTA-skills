@@ -99,23 +99,43 @@ Every skill works in two modes:
 ## Installation
 
 Skills are discovered from `.claude/skills/` (per project) or
-`~/.claude/skills/` (personal, all projects).
+`~/.claude/skills/` (personal, all projects). Clone the repo, then run the
+installer — it symlinks every skill (and your profile, if you have one):
 
-**Personal (all projects):**
+```sh
+git clone https://github.com/martinholovsky/SOTA-skills && cd SOTA-skills
+./scripts/install.sh                 # personal: ~/.claude/skills (all projects)
+./scripts/install.sh --project DIR   # one project: DIR/.claude/skills
+./scripts/install.sh --copy          # copy instead of symlink (pin a snapshot)
+```
+
+Prefer no script? The personal install is just:
 
 ```sh
 mkdir -p ~/.claude/skills
 for d in skills/*/; do ln -sfn "$(pwd)/$d" ~/.claude/skills/"$(basename "$d")"; done
 ```
 
-**Per project:**
+### Updating
+
+Because install is symlink-based, **existing skills update the moment you pull**
+— the symlinks already point at the live files, no re-install needed:
 
 ```sh
-mkdir -p /path/to/project/.claude/skills
-for d in skills/*/; do ln -sfn "$(pwd)/$d" /path/to/project/.claude/skills/"$(basename "$d")"; done
+git -C /path/to/SOTA-skills pull
 ```
 
-(Copy instead of symlink if you want the project pinned to a snapshot.)
+To also pick up **newly added** skills (a pull alone won't link a brand-new
+skill directory) and prune links to removed ones, re-run the installer — or do
+both at once:
+
+```sh
+./scripts/install.sh --update        # git pull --ff-only, then re-link
+```
+
+It's idempotent: re-running only links what's new and prunes what's gone, and
+never touches symlinks it didn't create. (Snapshot installs done with `--copy`
+don't auto-update — re-run the installer to refresh them.)
 
 ### Always-on routing (recommended)
 
