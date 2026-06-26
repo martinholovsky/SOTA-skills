@@ -10,7 +10,9 @@ description: >-
   auditing collaboration workflow. Trigger keywords: documentation, docs,
   README, API docs, docstring, changelog, release notes, migration guide,
   code review, pull request, PR description, commit messages, conventional
-  commits, branching, semver, onboarding, runbook, AGENTS.md, llms.txt.
+  commits, branching, semver, onboarding, runbook, AGENTS.md, llms.txt,
+  spec-driven development, SDD, Spec Kit, Kiro, specification, acceptance
+  criteria, steering files.
 ---
 
 # SOTA Docs & Engineering Workflow
@@ -118,6 +120,7 @@ evidence (a doc you executed, a PR you read) — no findings from vibes.
 | `rules/02-api-reference-changelogs.md` | API/library reference docs: generation from source (OpenAPI/docstrings/rustdoc/godoc), docstring content (why/contract/failures), runnable examples and doctests, error documentation, versioned docs, Keep a Changelog discipline, migration guides. |
 | `rules/03-code-review-pr-workflow.md` | PR and review process: PR sizing and slicing, description discipline (what/why/how-tested), review SLAs and WIP limits, reviewer/author conduct, blocking vs non-blocking comments, draft and stacked PRs, automation boundaries, reviewing AI-generated code. |
 | `rules/04-commits-branches-releases.md` | Git history and shipping: atomic/bisectable commits, message discipline, Conventional Commits and when they pay, trunk-based vs gitflow honesty, SemVer semantics, breaking-change pipeline, tag immutability, release notes vs changelog, release automation. |
+| `rules/05-spec-driven-development.md` | Driving non-trivial/agent-built work from a living spec: the intent→plan→tasks→implement→verify loop, separating what from how, testable acceptance criteria, `[NEEDS CLARIFICATION]` markers, specs-in-repo and spec-drift control, steering/constitution vs per-feature specs, linking ADRs/OpenAPI instead of copying, and when SDD is overhead. Pairs with `sota-testing` rules/08 (executable acceptance). |
 
 ## Top-10 non-negotiables
 

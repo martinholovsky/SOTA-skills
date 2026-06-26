@@ -5,6 +5,19 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`sota-docs-workflow` rules/05 — spec-driven development**: the
+  intent→plan→tasks→implement→verify loop, separating what from how, testable
+  acceptance criteria, `[NEEDS CLARIFICATION]` markers, specs-in-repo and
+  spec-drift control, steering vs per-feature specs, and when SDD is overhead.
+- **`sota-testing` rules/08 — BDD / specification by example**: declarative
+  Given-When-Then, the three-amigos value, the outside-in double loop with TDD,
+  scenario-explosion and UI-script anti-patterns, and tracing scenarios to spec
+  acceptance criteria.
+
 ## [1.1.0] - 2026-06-26
 
 ### Added
