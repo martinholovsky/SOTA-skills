@@ -173,12 +173,18 @@ every project. Add a routing mandate so the skills apply without trigger words:
 ```md
 # Global engineering directive
 
+Always, on every answer: (1) **validate before you assert** — verify any claim
+about code, system state, config, versions, or facts against a primary source
+(read the file / run the command / fetch official docs) before answering or
+proposing, and label anything unverified as such; (2) **keep docs current** —
+when you change code/behavior/config, update the affected docs (README,
+CHANGELOG, comments, runbooks, AGENTS.md) in the same change, unprompted.
+
 For any task that builds, designs, refactors, debugs, reviews, or audits code —
 in any language or repo — consult the `sota` router skill first, load the
 matching `sota-*` skills, and apply their rules before acting. This holds even
 when I never say "SOTA" or "audit". Treat `~/.claude/profiles/<you>.md` as the
-BUILD default and AUDIT baseline. Validate claims against primary sources and
-stop-and-ask on security-relevant choices.
+BUILD default and AUDIT baseline, and stop-and-ask on security-relevant choices.
 ```
 
 **3. (Optional) A per-prompt reminder.** In long sessions a directive read many
