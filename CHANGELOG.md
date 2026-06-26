@@ -14,6 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   invocations), plus model / context % / dir / branch; falls back to the count
   of installed skills before any are used. Requires `jq`.
 
+### Changed
+
+- **`scripts/install.sh` now offers always-on routing setup** (global CLAUDE.md
+  directive + `UserPromptSubmit` hook) after linking — interactive and
+  dotfiles-aware: detects existing/symlinked `~/.claude/CLAUDE.md` and
+  `settings.json`, asks before changing anything (recommended pre-filled), backs
+  up, writes through symlinks so dotfiles stay authoritative, and is idempotent
+  via managed markers. Flags: `--routing`, `--no-routing`, `--yes`.
+
 ## [1.2.0] - 2026-06-27
 
 ### Added
