@@ -17,7 +17,7 @@
 Your assistant is brilliant — it just doesn't know your standards. SOTA-skills
 teaches it: a library of Claude Code skills that encode state-of-the-art (2026)
 practices for building **and** auditing software, and that verify their own
-claims. 30 skills, 216 files, ~46k lines — every file under 500 lines, so the
+claims. 30 skills, 218 files, ~47k lines — every file under 500 lines, so the
 right rules load exactly when your task needs them, never bloating the context
 window. Fast-moving claims (versions, specs, regulations) are web-verified
 against primary sources.
