@@ -98,9 +98,18 @@ Every skill works in two modes:
 
 ## Installation
 
-Skills are discovered from `.claude/skills/` (per project) or
-`~/.claude/skills/` (personal, all projects). Clone the repo, then run the
-installer — it symlinks every skill (and your profile, if you have one):
+**Easiest — as a Claude Code plugin** (installs all skills, updates via
+`/plugin`):
+
+```text
+/plugin marketplace add martinholovsky/SOTA-skills
+/plugin install sota-skills@sota-skills
+```
+
+**Or clone + link** (best if you want a local checkout to read, hack on, or pin).
+Skills are discovered from `.claude/skills/` (per project) or `~/.claude/skills/`
+(personal, all projects). Clone the repo, then run the installer — it symlinks
+every skill (and your profile, if you have one):
 
 ```sh
 git clone https://github.com/martinholovsky/SOTA-skills && cd SOTA-skills
@@ -118,7 +127,12 @@ for d in skills/*/; do ln -sfn "$(pwd)/$d" ~/.claude/skills/"$(basename "$d")"; 
 
 ### Updating
 
-Because install is symlink-based, **existing skills update the moment you pull**
+**Plugin install:** updates ship when the version bumps — `/plugin update
+sota-skills@sota-skills` (or `/plugin marketplace update sota-skills`). Git-hosted
+marketplaces also check at session start.
+
+**Clone install:** because linking is symlink-based, **existing skills update the
+moment you pull**
 — the symlinks already point at the live files, no re-install needed:
 
 ```sh
