@@ -87,10 +87,22 @@ emit_block() {
 $BEGIN_MARK
 ## SOTA Engineering Skills
 
-A state-of-the-art engineering skills library is available at
-\`$SKILLS_DIR\`. For any task that builds, designs, refactors, debugs, reviews,
-or audits code — in any language — apply it before acting, regardless of how the
-request is phrased:
+A state-of-the-art engineering skills library is available at \`$SKILLS_DIR\`.
+
+**Always — every answer, not just code tasks:**
+
+- **Validate before you assert.** Never state a claim about code, system state,
+  configuration, installed versions, APIs, or external facts from memory. Verify
+  it first against a primary source — read the file/code in full, run the command
+  and read its output, or fetch the official docs at use time. Label anything
+  unverified as such; never present it as fact. Applies to answers, proposals,
+  and plans.
+- **Keep docs current in the same change.** When you change code, behavior,
+  config, or interfaces, update the affected docs (README, CHANGELOG, comments,
+  runbooks, this AGENTS.md) in the same change, unprompted.
+
+**For any task that builds, designs, refactors, debugs, reviews, or audits code**
+— in any language — apply the library before acting, regardless of phrasing:
 
 1. **Route**: read \`$SKILLS_DIR/sota/SKILL.md\` to map the task to the relevant
    domain and language skills.
@@ -98,11 +110,9 @@ request is phrased:
    \`rules/*.md\` files matching the code in front of you. Never load everything.
 3. **Modes**: BUILD applies the rules while writing; AUDIT reports findings as
    \`file:line | rule | severity | effort | fix\`.
-4. **Operating principles**: validate every claim against a primary source (code
-   read in full, official docs at use time, or reproduced behavior — never
-   training data); re-verify version/CVE facts before pinning; stop and ask on
-   security-relevant decisions (authn/z, crypto, secrets, trust boundaries,
-   network exposure).
+4. **Stop and ask** on security-relevant decisions (authn/z, crypto, secrets,
+   trust boundaries, network exposure) rather than silently picking; never trust
+   training data for version/CVE/spec facts.
 5. **Stack profile**: if one exists (e.g. \`~/.claude/profiles/*.md\`), treat its
    choices as the BUILD default and the AUDIT baseline.
 

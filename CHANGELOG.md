@@ -22,6 +22,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   through the skills. Thin pointer built from each skill's frontmatter; reads
   rules on demand, no duplication; idempotent managed block.
 
+### Changed
+
+- The always-on directive (generated `AGENTS.md` and the README `CLAUDE.md`
+  example) now leads with two standing rules that apply to **every answer**:
+  *validate every claim against a primary source before asserting*, and *keep
+  docs current in the same change*.
+
 ## [1.1.0] - 2026-06-26
 
 ### Added
