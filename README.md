@@ -117,6 +117,55 @@ for d in skills/*/; do ln -sfn "$(pwd)/$d" /path/to/project/.claude/skills/"$(ba
 
 (Copy instead of symlink if you want the project pinned to a snapshot.)
 
+### Always-on routing (recommended)
+
+Skill descriptions are matched per prompt, so routing is opt-in and depends on
+how you phrase the request. To make the skills apply to **every** session
+regardless of wording, pin the routing instruction where Claude Code always
+sees it. Three layers, strongest last:
+
+**1. A stack profile.** Copy the template, fill in your stack, and symlink it
+into `~/.claude/` so the router finds it in every project (not just this repo):
+
+```sh
+cp profiles/example.md.template profiles/<you>.md   # edit it — profiles/*.md is git-ignored
+mkdir -p ~/.claude/profiles
+ln -sfn "$(pwd)/profiles/<you>.md" ~/.claude/profiles/<you>.md
+```
+
+**2. A global directive.** `~/.claude/CLAUDE.md` is loaded into every session,
+every project. Add a routing mandate so the skills apply without trigger words:
+
+```md
+# Global engineering directive
+
+For any task that builds, designs, refactors, debugs, reviews, or audits code —
+in any language or repo — consult the `sota` router skill first, load the
+matching `sota-*` skills, and apply their rules before acting. This holds even
+when I never say "SOTA" or "audit". Treat `~/.claude/profiles/<you>.md` as the
+BUILD default and AUDIT baseline. Validate claims against primary sources and
+stop-and-ask on security-relevant choices.
+```
+
+**3. (Optional) A per-prompt reminder.** In long sessions a directive read many
+turns ago can fade from context. A `UserPromptSubmit` hook in
+`~/.claude/settings.json` re-injects it on every prompt:
+
+```json
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      { "hooks": [ { "type": "command",
+        "command": "echo 'Route code tasks through the sota router and apply the matching sota-* skills; the profile is the stack baseline.'" } ] }
+    ]
+  }
+}
+```
+
+No mechanism *forces* a model to run a skill — all three layers feed it
+instructions it then chooses to follow. Together they make routing reliable
+instead of phrasing-dependent.
+
 ## How it works
 
 Claude Code matches your prompt against each skill's frontmatter description
