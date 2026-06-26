@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   non-Claude agents (Codex, Cursor, Copilot, Gemini CLI, Windsurf, Zed, …) route
   through the skills. Thin pointer built from each skill's frontmatter; reads
   rules on demand, no duplication; idempotent managed block.
+- **`scripts/init-gates.sh --docs-gate`** — opt-in pre-commit hook (helper at
+  `.sota/docs-gate.sh`) that blocks a commit changing code without updating any
+  docs (README/CHANGELOG/`docs/`/`*.md`). Heuristic and bypassable
+  (`SKIP=sota-docs-gate`).
 
 ### Changed
 
