@@ -258,6 +258,24 @@ others; `--skills-dir` and `--output` override the defaults. Claude Code keeps
 using the richer native Skills install above — this is purely for the other
 tools.
 
+### Status line (optional)
+
+`scripts/statusline.sh` is a Claude Code status line that shows **which skills
+you've actually used this session** — not just how many are installed:
+
+```text
+Opus 4.8 │ ctx 63% │ my-service ⎇ main │ skills▸ code-security, testing (2)
+```
+
+Claude Code's status-line input doesn't expose loaded skills, but it passes the
+transcript path; the script reads back the `Skill` invocations recorded there,
+falling back to a count of installed skills before any are used. Wire it up in
+`settings.json` (requires `jq`):
+
+```json
+"statusLine": { "type": "command", "command": "/path/to/SOTA-skills/scripts/statusline.sh" }
+```
+
 ## How it works
 
 Claude Code matches your prompt against each skill's frontmatter description

@@ -5,6 +5,15 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`scripts/statusline.sh`** — a Claude Code status line showing which skills
+  you've actually used this session (read from the transcript's `Skill`
+  invocations), plus model / context % / dir / branch; falls back to the count
+  of installed skills before any are used. Requires `jq`.
+
 ## [1.2.0] - 2026-06-27
 
 ### Added
