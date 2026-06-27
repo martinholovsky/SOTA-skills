@@ -5,6 +5,19 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Plugin first-run notice** (`hooks/hooks.json` + `scripts/plugin-notice.sh`)
+  — a one-time `SessionStart` notice for plugin installs that points users at the
+  opt-in extras a sandboxed plugin can't auto-configure (always-on routing, status
+  line, pre-commit gates, AGENTS.md). Shows once (marker-guarded); clone users get
+  the same from `install.sh`.
+- **README "Optional extras (for plugin users)"** — documents how plugin users
+  turn on the routing hook, status line, and generators (which ship with the
+  plugin) to match the clone experience.
+
 ## [1.3.0] - 2026-06-27
 
 ### Added

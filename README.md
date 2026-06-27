@@ -106,6 +106,11 @@ Every skill works in two modes:
 /plugin install sota-skills@sota-skills
 ```
 
+The plugin installs the skills; a few extras (routing reminder, status line,
+pre-commit gates, AGENTS.md) aren't auto-enabled — see
+[Optional extras for plugin users](#optional-extras-for-plugin-users). On first
+run the plugin shows a one-time notice pointing there.
+
 **Or clone + link** (best if you want a local checkout to read, hack on, or pin).
 Skills are discovered from `.claude/skills/` (per project) or `~/.claude/skills/`
 (personal, all projects). Clone the repo, then run the installer — it symlinks
@@ -285,6 +290,26 @@ falling back to a count of installed skills before any are used. Wire it up in
 ```json
 "statusLine": { "type": "command", "command": "/path/to/SOTA-skills/scripts/statusline.sh" }
 ```
+
+### Optional extras (for plugin users)
+
+The plugin installs the skills; it deliberately does **not** touch your global
+config or status line — plugins are sandboxed by design, so the imperative setup
+the clone installer does can't be automated. To match the clone experience, opt
+in to any of these (the scripts ship *with* the plugin, under its cache dir):
+
+- **Always-on routing** — add the `UserPromptSubmit` hook from
+  [Always-on routing](#always-on-routing-recommended) so the skills apply without
+  trigger words.
+- **Status line** — point `settings.json` `statusLine` at the bundled
+  `scripts/statusline.sh` (see [Status line](#status-line-optional)).
+- **Pre-commit gates** / **AGENTS.md** — run the bundled `scripts/init-gates.sh`
+  or `scripts/gen-agents-md.sh` against a project (see
+  [Enforcing the gates](#enforcing-the-gates) and
+  [Other AI agents](#other-ai-agents-codex-copilot-gemini-)).
+
+The quickest path: just ask Claude to **"set up the SOTA optional extras"** — the
+first-run notice prompts for exactly this, and Claude will walk you through them.
 
 ## How it works
 
