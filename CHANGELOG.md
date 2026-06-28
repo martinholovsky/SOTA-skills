@@ -27,6 +27,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   silently corrupt or panic (`rules/01 §6`, `LANG-CMP-INV`). Added matching
   audit-checklist greps (clippy lint names verified against clippy 0.1.91);
   SKILL.md index updated.
+- **`sota-kubernetes/rules/01`** — added two items from the OWASP Kubernetes
+  Security cheat sheet that the skill didn't call out: API Priority & Fairness
+  (stable since v1.29, on by default; don't disable it, give high-value
+  controllers a dedicated `PriorityLevelConfiguration`, alert on flowcontrol
+  rejects) and a Kubernetes Dashboard hardening caveat (don't expose it; never
+  bind it to `cluster-admin`). Both with audit-checklist entries. The rest of
+  the cheat sheet was already met or exceeded by the existing rules.
 
 ## [1.4.0] - 2026-06-27
 

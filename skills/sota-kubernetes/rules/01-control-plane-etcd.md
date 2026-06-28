@@ -38,6 +38,17 @@ These are kube-apiserver flags (or managed-cluster equivalents). Each is a CIS c
 | `--tls-min-version` | `VersionTLS12`+ ; strong cipher suites | Defense in depth on the API. |
 | `--profiling` | `false` in prod | `/debug/pprof` leaks data and is a DoS vector. |
 | `--request-timeout`, `--max-requests-inflight` | tuned | API server DoS resistance. |
+| `--enable-priority-and-fairness` | `true` (the default) | API Priority & Fairness — never set `false`. |
+
+**API Priority & Fairness (APF)** is stable since v1.29 and **on by default**; it
+supersedes the raw `--max-requests-inflight` limits by splitting that total
+concurrency across priority levels via `FlowSchema` + `PriorityLevelConfiguration`,
+with fair queuing so one runaway controller can't starve `leader-election` or
+node heartbeats. Audit: confirm it isn't disabled (`--enable-priority-and-fairness=false`
+is a finding), give a dedicated `PriorityLevelConfiguration` to high-value
+controllers, and alert on `apiserver_flowcontrol_rejected_requests_total`. A
+catch-all FlowSchema that lumps everything into one level re-creates the global-limit
+DoS APF exists to prevent.
 
 **Authentication**: prefer **OIDC** for human users (RBAC-design and SSO are
 `sota-identity-access` territory — wire it there). Never distribute the cluster-admin
@@ -196,6 +207,8 @@ machine:
 ## Audit checklist
 
 - [ ] API server: `--anonymous-auth=false`, `--authorization-mode` includes RBAC and not `AlwaysAllow`, `NodeRestriction` enabled, profiling off, audit configured? (`grep -E 'anonymous-auth|authorization-mode|NodeRestriction|profiling' /etc/kubernetes/manifests/kube-apiserver.yaml`; managed → check provider posture)
+- [ ] API Priority & Fairness left enabled (no `--enable-priority-and-fairness=false`), high-value controllers on a dedicated `PriorityLevelConfiguration`, `apiserver_flowcontrol_rejected_requests_total` alerted?
+- [ ] Kubernetes Dashboard: not deployed unless required; if deployed, NOT exposed publicly (no LoadBalancer/Ingress to it), reached only via `kubectl proxy`/authenticating proxy, and its ServiceAccount is least-privilege (never `cluster-admin`) — a privileged, exposed Dashboard is a one-click takeover (historic Tesla cryptojacking). Talos/DN does not ship it; keep it that way.
 - [ ] Kubelet: anonymous-auth off, authz `Webhook`, `read-only-port=0`? (`curl -sk https://NODE:10250/pods` should 401; `curl http://NODE:10255/pods` should refuse)
 - [ ] etcd encrypted at rest with KMS v2, `identity` not first, all existing Secrets rewritten? (`kubectl get secret -A -o json | head` against an etcd dump; check `EncryptionConfiguration`)
 - [ ] etcd reachable only from control plane, client/peer TLS cert-auth on? (`etcdctl` from a worker should fail)
