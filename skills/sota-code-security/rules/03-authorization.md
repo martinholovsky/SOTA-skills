@@ -86,7 +86,12 @@ if doc is None: abort(404)                # don't leak existence with 403 vs 404
   (`X-Admin: true`).
 - State-machine authorization: actions valid only in certain states (approve own
   expense report, re-trigger completed payment) need state checks server-side —
-  workflow bypass is an authz bug.
+  workflow bypass is an authz bug. Enforce the full doctrine (OWASP Business Logic):
+  validate the current state on every step and reject out-of-order transitions;
+  **mark one-time operations consumed** so a captured request can't be replayed
+  (payment capture, coupon redemption, password-reset token); expire abandoned
+  partial-workflow state; and **never store the workflow position in a client-readable/
+  writable field** — keep it server-side keyed to the session/resource.
 
 ## 4. Model choice: RBAC / ABAC / ReBAC
 

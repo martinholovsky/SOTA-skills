@@ -200,7 +200,11 @@ if sniff_mime(blob) not in ALLOWED_MIME: raise Reject  # bytes, not declared
   sota-network-security.
 - **Detection on the ingest path.** Anomalies — sudden volume spikes, ratio-bomb
   rejects, schema-violation bursts, AV hits — are signals; emit them as events for
-  sota-detection-engineering, don't just drop them.
+  sota-detection-engineering, don't just drop them. Flag **serialized-payload
+  signatures** on inputs that should be plain data — base64 Python pickle prefixes
+  (`gASV`, `gAJ`, `gAR`), Java serialization magic (`rO0`/`0xACED`), PHP
+  `O:<n>:` object markers: their presence in a feed/field is a deserialization-RCE
+  probe, not legitimate content.
 - **No lateral trust.** Data validated for one purpose isn't validated for
   another; re-validate at each new boundary it crosses (a value safe for storage
   may be unsafe for a shell, a query, or a prompt — see §6).

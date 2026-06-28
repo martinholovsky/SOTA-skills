@@ -126,6 +126,12 @@ user.apply(UpdateProfile(**request.json))
   `User.update(req.body)`, GraphQL input types mirroring DB models.
 - Separate create/update/admin schemas — "writable at signup" ≠ "writable
   forever" (e.g. `email` writable at create, verified-flow-only later).
+- **Re-derive security-sensitive values server-side; never accept them from the
+  client** (OWASP Business Logic). Prices, subtotals, taxes, totals, balances,
+  discounts, quotas, role/tier — take only identifiers + quantities and recompute
+  from your own store/price book. `{"price": 0}` and `{"items": 5, "total": 0}` are
+  the canonical e-commerce logic exploits; the same applies to credit/quota balances
+  in any multi-tenant or metered system.
 - Same bug, query side: client-controlled `fields`/`include`/`expand`/`sort`
   params must resolve through allowlists, or they become column-level IDORs
   and join-amplification DoS.
