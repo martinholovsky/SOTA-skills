@@ -35,6 +35,13 @@ Decision rules:
 
 ### 2.1 Auth before (or immediately after) upgrade
 
+- **`wss://` only in production** — never `ws://`. A plaintext socket leaks
+  tokens/session data and is trivially MITM'd; treat `ws://` carrying credentials
+  as a High finding (mirrors the mTLS-internal baseline).
+- **Disable `permessage-deflate` compression** when the stream can carry secrets
+  alongside attacker-influenced data — compression-ratio side channels are the
+  CRIME/BREACH class applied to WebSockets. Leave it off unless you've reasoned
+  about what shares the frame.
 - The upgrade request is a GET: **no custom `Authorization` header from browser
   `WebSocket()`**. Your options, in order of preference:
   1. **Cookie auth** (same-origin apps): session cookie rides the upgrade; **must**

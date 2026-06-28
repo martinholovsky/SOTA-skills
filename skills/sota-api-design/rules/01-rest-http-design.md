@@ -40,6 +40,11 @@ workflow, contract testing.
   create-or-replace for free — often better than `POST` + idempotency key.
 - Don't tunnel everything through POST "because firewalls". If a gateway blocks
   PATCH, use `POST` + `X-HTTP-Method-Override` only as a documented escape hatch.
+- **Per-route method allowlist** (OWASP REST): each route permits an explicit set
+  of methods and returns `405` for the rest — don't let the framework expose
+  `PUT`/`DELETE`/`TRACE` on a read-only route by default. Re-check authorization
+  **per method**, not just per path (a user allowed to `GET` an order is not
+  thereby allowed to `DELETE` it).
 
 ## 3. Status codes — the ones that matter
 
@@ -55,7 +60,12 @@ workflow, contract testing.
   permanently (deprecated endpoint after sunset).
 - `412` precondition failed (ETag mismatch); `428` precondition required (you demand
   `If-Match` and it's missing).
-- `429` rate limited + `Retry-After`; `413` body too large; `415` wrong content type.
+- `429` rate limited + `Retry-After`; `413` body too large; `415` wrong content type
+  (request); `406` when you can't satisfy the client's `Accept` (response negotiation).
+- **Content negotiation hygiene** (OWASP REST): validate `Content-Type` on writes,
+  honour `Accept` for the response and `406` when unsupported — but **never reflect
+  the client's `Accept` value into the response `Content-Type`** (a path to XSS /
+  content sniffing). Serve JSON as `application/json`, never `application/javascript`.
 - `500` your bug; `502/503/504` upstream/overload/timeout. **Never** return `200`
   with `{"error": ...}` in the body — it breaks retries, monitoring, caching, and
   every generic client.

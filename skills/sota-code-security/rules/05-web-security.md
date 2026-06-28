@@ -128,6 +128,13 @@ request: X-CSRF-Token header must equal the cookie value, verified server-side
   `frame-ancestors`.
 - For OAuth consent screens, payment confirmations, and account-change pages,
   framing protection is mandatory, not optional.
+- **Double-clickjacking** (2024-class) bypasses `frame-ancestors`/XFO entirely —
+  it uses a timed window swap during a double-click rather than a persistent
+  frame, so framing headers never fire. Defend sensitive one-click actions
+  (OAuth "Authorize", account/payment/permission changes) with an
+  interaction-gated confirmation step (re-auth, an explicit second action, or a
+  short delay before the control is live), not framing headers alone. Disabling
+  unintended same-window opener access (`SameSite` cookies, `noopener`) helps.
 
 ## 6. Security headers (baseline set)
 

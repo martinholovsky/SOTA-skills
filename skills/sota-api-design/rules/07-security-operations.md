@@ -208,7 +208,7 @@ Cross-tenant data leakage is the worst API bug class. Defense in depth:
 | API3 Object Property Level Auth | rules/01 §1 (explicit DTOs — no mass assignment/ORM dumps), §1 authz |
 | API4 Unrestricted Resource Consumption | §2–4 — rate limits, quotas, size limits, timeout budgets; rules/03 §4 |
 | API5 Broken Function Level Auth | §1 — deny-by-default policy, admin surface separation |
-| API6 Unrestricted Access to Sensitive Business Flows | §2 cost-weighted limits + flow-specific throttles |
+| API6 Unrestricted Access to Sensitive Business Flows | §2 cost-weighted limits + flow-specific throttles; **enforce multi-step flow order server-side** — model the flow as a state machine, validate the current state on every step, reject out-of-order/replayed steps (don't trust client sequencing). Business-logic depth: sota-code-security |
 | API7 SSRF | rules/06 §8 — webhook/user-URL egress controls |
 | API8 Security Misconfiguration | §5 CORS, §8 gateway/TLS; rules/03 §4 introspection |
 | API9 Improper Inventory Management | rules/02 §5 — versioned, measured, sunset surfaces; spec-as-truth (rules/01 §10) |
