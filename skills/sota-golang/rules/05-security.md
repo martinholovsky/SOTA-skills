@@ -23,6 +23,12 @@ misconfiguration are entirely yours.
   (`%.100q`) — log injection and PII leak.
 - Don't reflect internal errors to clients (`rules/01 §7`): stack traces,
   SQL text, and file paths in responses are recon gifts — MEDIUM.
+- Output encoding is contextual and separate from input validation: render
+  HTML through `html/template` (it auto-escapes per context), never
+  `text/template` or `fmt.Fprintf` into a page — that's stored/reflected XSS.
+  The `template.HTML`/`JS`/`URL`/`CSS`/`HTMLAttr` cast types switch escaping
+  off; each is a sink that must be independently sanitized. Full
+  XSS/CSP/output-encoding rules live in sota-code-security `05`.
 
 ## 2. SQL — parameterized always
 
@@ -166,7 +172,44 @@ n := int32(req.Length)
 - Durations: `time.Duration(n) * time.Second` where `n` is attacker-supplied
   can overflow int64 — bound first.
 
-## 6. TLS configuration
+## 6. Cryptographic practices: CSPRNG & TLS
+
+### Randomness — `crypto/rand`, never `math/rand`
+
+Security-bearing randomness — tokens, session IDs, password-reset codes, API
+keys, salts, nonces, IVs — MUST come from `crypto/rand`. `math/rand` *and*
+`math/rand/v2` are PRNGs whose "outputs might be easily predictable regardless
+of how it's seeded" (package docs); using either for anything an attacker must
+not guess is HIGH (CRITICAL when it gates auth — a guessable reset token is
+account takeover).
+
+```go
+// BAD — predictable; applies to math/rand and math/rand/v2 alike
+token := strconv.FormatInt(mrand.Int63(), 36)
+
+// GOOD — Go 1.24+: ready-made secret string (RFC 4648 base32, ≥128 bits)
+token := rand.Text()                  // crypto/rand.Text
+
+// GOOD — raw bytes; Read never errors and always fills b entirely
+b := make([]byte, 32)
+rand.Read(b)                          // crypto/rand.Read
+```
+
+- `crypto/rand.Read`/`Text` cannot hand back a short or weak read — on a
+  failing source they crash the program rather than degrade. Don't wrap them in
+  `if err != nil` logic that silently falls back to `math/rand`.
+- Watch the import line, not just the call: `math/rand.Read` is **deprecated**
+  precisely because an unqualified `rand.Read` under `import "math/rand"`
+  reads like the crypto one but isn't. Grep imports, then call sites.
+- `math/rand/v2` is the right tool — and the better PRNG API — for *non-secret*
+  work: jitter, load distribution, sampling, test fixtures. The dividing line
+  is "does predictability help an attacker", not "which package is newer".
+- Keys, signing, AEAD: use `crypto/*` (`ed25519`, `crypto/ecdsa`,
+  `crypto/aes` + `cipher.NewGCM`) drawing from `crypto/rand.Reader`; never
+  hand-roll. Password hashing is `golang.org/x/crypto/bcrypt`/`argon2` —
+  algorithm choice and parameters are owned by sota-code-security `04`.
+
+### TLS configuration
 
 Go's `crypto/tls` defaults are good (1.22+ defaults to strong suites; 1.24+
 enables post-quantum X25519MLKEM768 key exchange, and 1.26 also enables
@@ -268,6 +311,14 @@ gosec -include=G115,G118,G201,G202,G204,G304,G401,G402 ./...
 # gosec 2.24+ adds G113 (request smuggling via conflicting headers),
 # G118 (ctx-propagation goroutine leaks), G408 (SSH PublicKeyCallback bypass)
 
+# CSPRNG misuse — HIGH (security-bearing randomness from a PRNG)
+grep -rn 'math/rand' --include='*.go' .                 # any import: verify each call site is non-secret
+grep -rnE '\brand\.(Int|Intn|Int31|Int63|Uint|Float|Perm|Shuffle|N)\b' --include='*.go' . # PRNG calls — crypto context?
+
+# Output encoding / XSS — HIGH
+grep -rn 'text/template' --include='*.go' . | grep -iv _test   # HTML rendered via text/template?
+grep -rnE 'template\.(HTML|JS|URL|CSS|HTMLAttr)\(' --include='*.go' . # escaping bypass — verify sanitized
+
 # unsafe / cgo
 grep -rn 'unsafe.Pointer\|go:linkname' --include='*.go' .
 grep -rln 'import "C"' --include='*.go' .
@@ -284,7 +335,8 @@ go mod tidy && git diff --exit-code go.mod go.sum
 grep -rnE '(api[_-]?key|secret|password|token)\s*[:=]\s*"[A-Za-z0-9+/_-]{16,}"' --include='*.go' .
 ```
 
-Severity guide: string-built SQL / `sh -c` with input / InsecureSkipVerify
-CRITICAL; traversal-reachable file ops, disabled sumdb, unchecked narrowing on
-attacker-controlled sizes HIGH; raw error echo to clients, silent `replace`
-MEDIUM.
+Severity guide: string-built SQL / `sh -c` with input / InsecureSkipVerify /
+`math/rand` for an auth-gating token CRITICAL; traversal-reachable file ops,
+disabled sumdb, unchecked narrowing on attacker-controlled sizes, `math/rand`
+for other secrets, HTML via `text/template` MEDIUM-to-HIGH; raw error echo to
+clients, silent `replace` MEDIUM.
