@@ -5,6 +5,19 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **`sota-golang/rules/05-security.md`** — closed two OWASP Go-SCP gaps that are
+  Go-language-specific: a CSPRNG section (`crypto/rand`/`rand.Text` vs the
+  predictable `math/rand`/`math/rand/v2`, plus the deprecated-`math/rand.Read`
+  import footgun) folded into the cryptography section, and an output-encoding
+  note (`html/template` contextual auto-escaping vs `text/template`, and the
+  `template.HTML`/`JS`/`URL` escape-hatch sinks) cross-referencing
+  sota-code-security `05`. Added matching audit greps and severity guidance.
+  SKILL.md index and description updated to match.
+
 ## [1.4.0] - 2026-06-27
 
 ### Added

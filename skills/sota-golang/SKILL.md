@@ -1,6 +1,6 @@
 ---
 name: sota-golang
-description: State-of-the-art Go engineering rules (2026 baseline, Go 1.24+) that Claude applies when writing new Go code or auditing existing Go code. Covers error handling, interface/package design, goroutine and channel correctness, net/http hardening, security (SQL, exec, path traversal, TLS, supply chain), performance (pprof, allocations, GC, PGO), and tooling/CI. Trigger keywords - Go, golang, goroutine, channel, go.mod, errgroup, context.Context, pprof, govulncheck, net/http, slog. Use for BOTH building Go services/libraries/CLIs and reviewing or auditing Go codebases.
+description: State-of-the-art Go engineering rules (2026 baseline, Go 1.24+) that Claude applies when writing new Go code or auditing existing Go code. Covers error handling, interface/package design, goroutine and channel correctness, net/http hardening, security (SQL, exec, path traversal, CSPRNG, TLS, supply chain), performance (pprof, allocations, GC, PGO), and tooling/CI. Trigger keywords - Go, golang, goroutine, channel, go.mod, errgroup, context.Context, pprof, govulncheck, net/http, slog. Use for BOTH building Go services/libraries/CLIs and reviewing or auditing Go codebases.
 ---
 
 # SOTA Go (2026)
@@ -78,7 +78,7 @@ severity, the three highest-leverage fixes, and which checklists were run.
 | `rules/02-design.md` | Designing packages or APIs: interface placement and size, package layout and `internal/`, naming, zero values, generics restraint, embedding, functional options, `context.Context` discipline |
 | `rules/03-concurrency.md` | Anything with `go`, `chan`, `sync`, or `select`: goroutine lifecycle ownership, leak catalog, errgroup fan-out, channels-vs-mutex decision, race patterns, worker pools, semaphores, `time.After` traps |
 | `rules/04-http-services.md` | Building or auditing HTTP servers/clients: all five server timeouts, client timeouts and body hygiene, connection reuse, graceful shutdown, middleware, `slog` structured logging, request-scoped values |
-| `rules/05-security.md` | Any input crossing a trust boundary: SQL parameterization, `os/exec` safety, path traversal and `os.Root`, integer overflow (G115), TLS config, `unsafe`/cgo policy, govulncheck, supply chain and go.sum |
+| `rules/05-security.md` | Any input crossing a trust boundary: SQL parameterization, `os/exec` safety, path traversal and `os.Root`, integer overflow (G115), output encoding (`html/template`), CSPRNG (`crypto/rand` vs `math/rand`), TLS config, `unsafe`/cgo policy, govulncheck, supply chain and go.sum |
 | `rules/06-performance.md` | Latency/memory work: pprof workflow, `testing.B` + `b.Loop`, allocation reduction, `strings.Builder`, `sync.Pool` criteria, escape analysis, GOGC/GOMEMLIMIT, PGO |
 | `rules/07-tooling-ci.md` | Setting up or auditing CI and tests: golangci-lint curated config, staticcheck/gofumpt/vet, table tests, `t.Parallel` correctness, testcontainers, golden files, fuzzing, go.mod hygiene and `tool` directives. **Test *strategy* — suite shape, TDD, doubles, test data, flake policy — lives in `sota-testing`; load it for any build that writes logic. This file owns Go runner mechanics only.** |
 
