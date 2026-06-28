@@ -120,6 +120,12 @@ request: X-CSRF-Token header must equal the cookie value, verified server-side
   credentialed API. Cache poisoning: include `Vary: Origin`.
 - CORS preflights don't protect WebSockets — validate `Origin` on the WS
   handshake yourself (cross-site WebSocket hijacking).
+- **XSSI (cross-site script inclusion, CWE-829):** a foreign page can `<script
+  src>`-include a GET endpoint that returns sensitive data as JS/JSONP/array
+  literal and read it. Serve data as `application/json` (never executable JS),
+  require auth + anti-CSRF on data endpoints, don't expose JSONP, and where the
+  legacy risk exists prefix JSON with an unparseable guard (`)]}',\n`). `nosniff`
+  (§6) backs this up.
 
 ## 5. Clickjacking & framing (CWE-1021)
 
