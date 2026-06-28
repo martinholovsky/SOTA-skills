@@ -46,6 +46,12 @@ Non-negotiables:
 - **Short token/lease TTLs** (≤1h default, renewable) so a stolen token expires; audit devices
   enabled and shipped off-box; auto-unseal via cloud KMS, recovery keys Shamir-split among ≥3
   officers and never stored together.
+- **Treat the vault itself as a tier-0 asset** (same bar as the IdP, identity-access rules/02):
+  run it **HA** (Raft ≥3 nodes / clustered) so one node loss isn't an outage; take **encrypted
+  Raft/storage snapshots on a schedule, ship them off-box, and DR-restore-drill** them — an
+  unrecoverable secrets store is a total outage *and* the place every dynamic credential dies;
+  define a **break-glass** path (sealed root token / extra recovery-key quorum, stored offline)
+  for when auth backends or the network are down, and **log + alert on every use** of it.
 
 ```hcl
 # BAD — god policy bound to a token pasted into CI variables

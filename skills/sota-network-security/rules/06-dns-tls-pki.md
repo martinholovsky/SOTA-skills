@@ -51,6 +51,13 @@ sensible max-age (and `includeSubDomains` once you're sure) so browsers refuse p
 short-lived certs (R1) reduce reliance on revocation anyway — a 47-day cert that's compromised
 expires fast. Prefer ECDSA (P-256) certs for performance; RSA-2048+ acceptable.
 
+**R3.1 — Enable hybrid post-quantum key exchange where the stack supports it.** Offer the
+`X25519MLKEM768` hybrid group on TLS 1.3 (already default-on in modern stacks, e.g. Go 1.24+;
+configurable in current OpenSSL/BoringSSL and major CDNs). It defends *confidentiality* against
+harvest-now-decrypt-later — relevant for EU/long-lived-sensitive traffic — at negligible cost,
+and being hybrid it's no weaker than X25519 if the PQ part is ever broken. (Signatures/PKI stay
+classical for now.) See sota-code-security rules/04 §1.
+
 ## 3. DNS security
 
 **R4 — Registrar & issuance hygiene.** (Setup is cloud-infra rules/03; the *security* controls:)
@@ -98,6 +105,10 @@ sota-detection-engineering — feed it your resolver logs.
   recurring bug: a service can't validate internal certs because the root isn't distributed →
   someone "fixes" it with `InsecureSkipVerify`/`--insecure` (R11). Distribute the root, never skip
   verification.
+- **Control what gets *into* the trust store** (OWASP Key Management): adding a root to a
+  workload's trust bundle is a privileged, audited change — a rogue/extra CA is silent MITM for
+  everything that workload talks to. Ship trust bundles as immutable, version-controlled artifacts
+  (baked into the image / GitOps-managed), not mutated at runtime; alert on drift in the bundle.
 - **Protect the CA key** (sota-secrets-management): the private CA's signing key is a crown jewel —
   HSM/KMS-backed or tightly access-controlled; its compromise mints trusted certs for everything.
 - **Separate intermediates** per purpose/environment so one can be rotated/revoked without

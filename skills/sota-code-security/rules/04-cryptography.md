@@ -99,6 +99,12 @@ token = secrets.token_urlsafe(32)                                  # 256-bit URL
 - Envelope encryption for data at rest: KMS master key wraps per-object data
   keys; plaintext data keys held only in memory, zeroized where the language
   allows.
+- **Design for key *loss*, not just compromise** (OWASP Key Management): a root key
+  with no recovery path means every ciphertext it protects is gone (the SOPS+age root
+  is exactly this risk — back it up to hardware/escrow). **Back up / escrow
+  data-encryption keys** so encrypted data stays recoverable; **never escrow signing or
+  authentication keys** — a second copy destroys non-repudiation. Store key backups
+  under the same KMS/HSM control as the originals, with their own access audit.
 - Key material in memory: avoid copies (immutable strings in GC languages spread
   copies — prefer byte arrays you can zero); never in logs, exceptions, or
   serialized debug output.

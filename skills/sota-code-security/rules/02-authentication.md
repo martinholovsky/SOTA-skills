@@ -55,6 +55,10 @@ if ph.check_needs_rehash(hash): store(ph.hash(attempt))
   **server-side**, not just clear the cookie.
 - On password change or "log out everywhere": revoke all of the user's sessions.
   Maintain a session registry to make this possible.
+- **Renewal timeout**: regenerate the session ID periodically mid-session (e.g. every
+  few hours) even without a privilege change, capping the window a stolen ID is useful.
+- On logout/sensitive responses, send `Clear-Site-Data: "cookies", "storage"` and
+  `Cache-Control: no-store` so the session artifact isn't left in the browser/proxy cache.
 - Bind nothing secret into URLs: session tokens in query strings leak via logs,
   referrers, and browser history (CWE-598).
 - "Remember me" done right: a separate long-lived token, never an extended

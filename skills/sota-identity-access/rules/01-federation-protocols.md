@@ -84,6 +84,13 @@ claims = verify(token,
 assert claims.get("azp", claims["aud"]) == "web-app"
 ```
 
+- **Mix-up defense when the RP/broker talks to more than one AS** (Kanidm *plus* any
+  upstream/social IdP): validate the `iss` **authorization-response** parameter
+  (RFC 9207), not just the ID-token `iss`. Without it, an attacker who can make the
+  user start a login at an honest AS can swap in a malicious AS's authorization
+  response and have the code/token redeemed at the wrong endpoint. Single-AS
+  deployments are unaffected, but wire it in before adding a second IdP.
+
 - **Discovery & JWKS**: configure from `/.well-known/openid-configuration` (OpenID
   Connect Discovery 1.0), cache the `jwks_uri` keys, and honor key rotation by `kid`
   (re-fetch on unknown `kid`; do not pin a single key forever). Cache JWKS with a sane
