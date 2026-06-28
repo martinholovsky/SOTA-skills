@@ -7,7 +7,7 @@ description: >-
   (endpoints, schemas, protos, realtime channels, webhook senders/receivers)
   AND when auditing/reviewing existing APIs for correctness, evolvability,
   security, and operational robustness. Trigger keywords: API, REST, GraphQL,
-  gRPC, endpoint, websocket, SSE, realtime, webhook, versioning, OpenAPI,
+  gRPC, endpoint, websocket, SSE, realtime, WebRTC, webhook, versioning, OpenAPI,
   pagination, idempotency, rate limit, problem+json, protobuf, deprecation.
 ---
 
@@ -107,7 +107,7 @@ without evidence in code or spec.
 | `rules/02-versioning-evolution.md` | Changing an existing API, adding/removing fields, choosing URL vs header versioning, planning deprecation (Sunset/Deprecation headers), enum/schema evolution, tolerant readers, CI breaking-change gates. |
 | `rules/03-graphql.md` | Any GraphQL work: schema/nullability/connections design, N+1 and dataloaders, depth/cost/alias limits, persisted-query allowlists, error channels (userErrors vs errors), resolver authz, when GraphQL is the wrong choice. |
 | `rules/04-grpc-protocols.md` | gRPC/protobuf work or protocol selection: field-number/reserved evolution rules, deadlines and cancellation propagation, streaming patterns, rich error details, gRPC-Web/Connect, L7 load balancing, REST vs GraphQL vs gRPC decision table. |
-| `rules/05-realtime-websockets-sse.md` | WebSocket/SSE/realtime features: transport choice (WS vs SSE vs WebTransport), upgrade auth & CSWSH, heartbeats, reconnect backoff + resume tokens, ordering/delivery guarantees, backpressure, close codes, SSE replay, pub/sub fanout scaling, presence. |
+| `rules/05-realtime-websockets-sse.md` | WebSocket/SSE/realtime features: transport choice (WS vs SSE vs WebTransport), upgrade auth & CSWSH, heartbeats, reconnect backoff + resume tokens, ordering/delivery guarantees, backpressure, close codes, SSE replay, pub/sub fanout scaling, presence; WebRTC server hardening (TURN relay abuse, DTLS-SRTP, signaling) when self-hosted. |
 | `rules/06-webhooks.md` | Sending or receiving webhooks: HMAC signing + timestamp + rotation, replay protection, retry/backoff design, ordering caveats, idempotent consumers, outbox dispatch, reconciliation APIs, SSRF defenses for user-supplied URLs. |
 | `rules/07-security-operations.md` | Cross-cutting security/ops on any API: authn scheme selection (keys/OAuth2/mTLS), rate limiting + 429/Retry-After, quotas, request size limits, timeout budgets, CORS, audit logging, multi-tenant isolation, cross-tenant testing. |
 

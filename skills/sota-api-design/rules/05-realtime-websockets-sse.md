@@ -240,9 +240,37 @@ which transport is active.
   the publisher side (max N msgs/sec, latest-wins), shard the channel across
   backplane partitions, and never fan out faster than your slowest tier absorbs.
 
+## 6. WebRTC (when you self-host the infrastructure)
+
+WebRTC is the path for peer-to-peer audio/video/data channels. **Scope first:** if
+you only consume a CPaaS SDK/API (Twilio, LiveKit Cloud, Daily…), the provider owns
+most of this — these rules apply when you **run your own TURN, media, or signaling
+servers**. Media itself is encrypted by mandate (DTLS-SRTP); the risks are in the
+*servers* around it. (ASVS v5.0 V17; RFC 8826/8827 security architecture.)
+
+- **TURN server — relay abuse is SSRF over UDP/TCP.** A TURN relay forwards packets
+  on behalf of a client; an open one lets an attacker reach your internal network
+  and reserved ranges. **Allowlist relay peers to non-special addresses only** —
+  deny loopback/RFC1918/link-local/broadcast/CGNAT, IPv4 **and** IPv6 (same blocklist
+  as SSRF, sota-code-security rules/01 §5). Bound per-user port/allocation counts so
+  one client can't exhaust the relay (resource exhaustion).
+- **Media servers (SFU/MCU/recording) — only if you host them.** Pure browser-to-
+  browser P2P is out of scope here. Use **approved DTLS-SRTP cipher suites + protection
+  profiles**, manage the DTLS cert key under your key-management policy (rules/04),
+  and **verify SRTP authentication** so an attacker can't inject RTP (media insertion
+  or DoS). The server must **survive malformed and flooded SRTP** (input validation,
+  bounded buffers, drop excess packets) and must not be vulnerable to the **DTLS
+  `ClientHello` race-condition DoS** (Enable Security, 2020). Bind the DTLS cert to the
+  **SDP fingerprint** and terminate the stream on mismatch (authenticity).
+- **Signaling server.** Signaling carries no media but sets up the session — **rate-limit
+  it** and **handle malformed messages gracefully** (integer-overflow/buffer-safe parsing)
+  so a flood or a bad frame can't deny session setup. Authenticate and authorize
+  signaling like any other API channel (the WS/§2 rules apply if signaling rides WS).
+
 ## Audit checklist
 
 - [ ] Transport choice justified; server-push-only features use SSE, not a WS with one direction unused.
+- [ ] WebRTC (self-hosted only): TURN relay allowlists non-special IPs (v4+v6) and caps per-user allocations; media server uses approved DTLS-SRTP + SRTP auth, survives malformed/flooded SRTP, not ClientHello-race vulnerable, checks DTLS cert vs SDP fingerprint; signaling rate-limited + malformed-input-safe. (CPaaS-only consumers: provider-owned — N/A.)
 - [ ] WS auth: Origin checked server-side (CSWSH), or one-time short-lived tickets, or first-message auth with timeout; no long-lived tokens in query strings; nothing smuggled via `Sec-WebSocket-Protocol`.
 - [ ] Per-channel/per-action authorization after connect, not handshake-only; token expiry mid-connection handled (close code or refresh frame).
 - [ ] Server pings with pong timeout; intervals < LB idle timeout; half-open detection on client.
