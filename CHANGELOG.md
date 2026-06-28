@@ -53,6 +53,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   business-flow state-machine enforcement on API6 in `rules/07`; and
   **double-clickjacking** (bypasses `frame-ancestors`/XFO → needs interaction
   confirmation) in `sota-code-security/rules/05 §5`.
+- **`sota-devsecops`** — closed gaps from the OWASP GitHub Actions / CI-CD /
+  Software Supply Chain / Vulnerable Dependency Management cheat sheets:
+  impostor-commit verification (a SHA pin can point at a fork-network commit —
+  zizmor `impostor-commit`) and CodeQL `actions` workflow analysis in `rules/01`;
+  ban `secrets: inherit` + `::add-mask::` for derived secrets + disable build
+  caching in release/publish workflows in `rules/01`; a no-upstream-patch
+  mitigation playbook and **slopsquatting** (AI-hallucinated packages) in
+  `rules/03`. External facts (zizmor rule, CodeQL `actions` GA Apr 2025) verified.
 
 ## [1.4.0] - 2026-06-27
 

@@ -96,6 +96,13 @@ did not.
 ```
 
 - Pin transitively-trusted actions too (composite actions you own should pin their deps).
+- **A SHA pin is necessary but not sufficient — verify the SHA is a real commit in
+  the action's own repo.** GitHub stores a repo and its forks as one commit
+  "network", so a commit that exists only in an attacker's fork can be referenced by
+  the upstream `owner/repo@sha` slug (an "impostor commit"; the `github/dmca@565ece4`
+  case is the classic example). Run zizmor's `impostor-commit` audit (an online check
+  — needs a GitHub API token) in CI, and review external PRs that add/bump a pinned
+  SHA by confirming the commit on the claimant repo.
 - Keep pins fresh with Renovate (`helpers:pinGitHubActionDigests` preset) or Dependabot —
   a stale pin is a vuln-management problem, an unpinned action is a supply chain hole.
 - `actions/*` (GitHub first-party) at a tag is tolerable (Low) but pin anyway for
@@ -196,7 +203,9 @@ name!), `github.event.pull_request.head.ref`, commit messages
 - Cache poisoning: `actions/cache` is scoped, but a cache written by a default-branch
   workflow is trusted by all branches. Never cache across trust boundaries (e.g., don't
   restore caches written by PR workflows into release builds; scope keys by ref where the
-  content influences build output).
+  content influences build output). **For release/publish/signing workflows, disable
+  build caching outright** — a single poisoned cache entry restored into a job that signs
+  or publishes taints the released artifact; the speedup isn't worth the supply-chain risk.
 
 ## 1.7 Protected branches, environments, signed commits
 
@@ -241,14 +250,22 @@ name!), `github.event.pull_request.head.ref`, commit messages
   *current* secrets — relevant after rotating a compromised workflow; revoke environments
   or disable old runs rather than assuming history is inert.
 - Lint the workflow estate continuously: `zizmor` (injection, pwn-requests, unpinned,
-  excessive permissions) and `actionlint` as a required check on `.github/workflows/**`
-  changes — the linters encode most of §§1.1–1.5 and catch regressions humans rubber-stamp.
+  excessive permissions, `impostor-commit`) and `actionlint` as a required check on
+  `.github/workflows/**` changes — the linters encode most of §§1.1–1.5 and catch
+  regressions humans rubber-stamp. Add **CodeQL's `actions` language** (GA April 2025;
+  auto-enabled in code-scanning *default setup* when workflow files are present, or add
+  `actions` to the language matrix in advanced setup) — it does taint/data-flow analysis
+  on workflows that the YAML linters can't.
 
 ## 1.10 Secrets hygiene in CI
 
 - Secrets are masked in logs by value-match only: derived values (base64 of a secret, a
-  URL embedding it) print in cleartext. Never log request bodies/headers in CI; set
-  `ACTIONS_STEP_DEBUG` consciously.
+  URL embedding it) print in cleartext. Register any value you compute from a secret with
+  `echo "::add-mask::$VALUE"` before it can be printed. Never log request bodies/headers
+  in CI; set `ACTIONS_STEP_DEBUG` consciously.
+- **Never `secrets: inherit` when calling a reusable workflow** — it hands the called
+  workflow *every* secret in scope. Pass each secret explicitly with `secrets:`
+  (least privilege), and pin the reusable workflow by SHA (§1.8).
 - Scope: org secret < repo secret < environment secret. Push every prod credential down to
   an environment with required reviewers.
 - No secrets in `if:` conditions or step outputs (outputs are visible to later steps of
