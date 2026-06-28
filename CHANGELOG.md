@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`sota-api-design/rules/05` — WebRTC security** (`## 6`): the one technical
+  area an OpenCRE/ASVS-v5.0 coverage check found missing. Self-hosted TURN
+  (relay-abuse = SSRF over UDP; allowlist non-special IPv4+IPv6, cap allocations),
+  media servers (DTLS-SRTP cipher/key policy, SRTP auth vs RTP injection,
+  malformed/flood resilience, DTLS `ClientHello` race DoS, DTLS-cert↔SDP-fingerprint
+  binding), and signaling (rate-limit + malformed-input-safe). Scoped to
+  self-hosted infra — CPaaS-SDK consumers are provider-owned. Grounded in OWASP
+  ASVS v5.0 V17 + RFC 8826/8827. SKILL.md index/triggers updated.
+
 ### Changed
 
 - **`sota-golang/rules/05-security.md`** — closed two OWASP Go-SCP gaps that are
