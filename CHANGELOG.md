@@ -71,6 +71,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`sota-code-security/rules/04`); session renewal timeout + `Clear-Site-Data`/
   `no-store` on logout (`rules/02`); hybrid PQ KEX `X25519MLKEM768` and
   trust-store-injection control (`sota-network-security/rules/06`).
+- **Server-side attack coverage** — closed gaps from the OWASP Business Logic,
+  SSRF, Injection, and Deserialization cheat sheets. The injection/IDOR/mass-
+  assignment/upload/DoS families were already strong; added the under-covered
+  **business-logic** doctrine: semantic/cross-field validation + treat
+  hidden/disabled/echoed fields as adversarial (`sota-code-security/rules/01`),
+  server-side re-derivation of prices/totals/quotas (`rules/07`), and full
+  workflow state-machine integrity — consume one-time ops, expire partial state,
+  no client-side workflow position (`rules/03`). Plus SSRF blocklist broadened to
+  all multicast + CGNAT 100.64/10 (`rules/01`), serialized-payload (pickle/Java/
+  PHP) signature detection at ingest (`rules/09`), and Redis `EVAL`/Qdrant-filter
+  injection guidance (`sota-databases/rules/06`).
 
 ## [1.4.0] - 2026-06-27
 

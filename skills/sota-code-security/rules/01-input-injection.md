@@ -23,6 +23,14 @@ without a structural boundary. Fix the boundary; never "sanitize" your way out.
 - Validate server-side. Client-side validation is UX, not security.
 - Length-limit every string input. Unbounded input is a DoS primitive even when
   syntactically valid.
+- **Validate semantics, not just syntax** (OWASP Business Logic): enforce cross-field
+  and business invariants the type system can't (`checkout` after `checkin`,
+  `quantity ≥ 1`, end-date after start-date, currency matches account). A
+  well-formed-but-nonsensical request is still an attack.
+- **Anything the client can set is adversary-controlled** — hidden form fields,
+  disabled inputs, pre-filled values, and data you returned last response included.
+  Re-validate and re-authorize them server-side; never trust them because "the UI
+  doesn't allow changing it".
 
 ```python
 # BAD: denylist, validates pre-decoding
@@ -135,8 +143,9 @@ transport := &http.Transport{
         if err != nil { return nil, err }
         for _, ip := range ips {
             if ip.IP.IsLoopback() || ip.IP.IsPrivate() || ip.IP.IsLinkLocalUnicast() ||
-               ip.IP.IsLinkLocalMulticast() || ip.IP.IsUnspecified() {
-                return nil, errors.New("blocked address")
+               ip.IP.IsMulticast() || ip.IP.IsUnspecified() || isCGNAT(ip.IP) {
+                return nil, errors.New("blocked address") // IsMulticast covers 224/4 + ff00::/8;
+                // isCGNAT blocks 100.64.0.0/10 (carrier-grade NAT, reaches internal hosts)
             }
         }
         return dialer.DialContext(ctx, network, net.JoinHostPort(ips[0].IP.String(), port))

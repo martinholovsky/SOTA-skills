@@ -137,6 +137,14 @@ for app-side review. Database-layer obligations:
   RLS caps which rows; `statement_timeout` caps exfil-by-batch.
 - LIKE inputs: escape `%`/`_` even when parameterized (DoS/filter-bypass, not
   injection, but same review).
+- NoSQL/operator injection isn't only a SQL problem — parameterize for every
+  engine DN runs. **Redis/Valkey:** never build `EVAL`/`EVALSHA` Lua bodies or
+  `KEYS`/command names from untrusted input; pass user data only as `ARGV`/key
+  args (the client builds the command as an arg vector, so values stay inert).
+  **Qdrant:** assemble filters from a typed allowlist of fields/operators, never
+  by templating user JSON into the filter — a client-controlled `must`/`should`
+  is a cross-tenant read if it can overwrite the server's tenant filter
+  (server-enforced tenant filter is non-negotiable, rules/07).
 
 ## PII handling
 
