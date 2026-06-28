@@ -154,6 +154,13 @@ body, _ := io.ReadAll(r.Body)       body, err := io.ReadAll(io.LimitReader(r.Bod
   signal and a mass-assignment vector (rules/07) — reject, don't ignore.
 - **Allowlist** values, formats, ranges, enums. **Canonicalize then validate**
   (rules/01 §1) — normalize unicode/encoding once before checking.
+- **Strip/flag invisible and deceptive Unicode** on text bound for an LLM context
+  or a UI (RAG-corpus and feed text especially): zero-width characters
+  (U+200B–200D, U+FEFF), bidirectional overrides (U+202A–202E, U+2066–2069 —
+  *Trojan-Source*, CVE-2021-42574), and tag characters (U+E0000–E007F) hide
+  injected instructions a reviewer can't see. Normalize (NFKC), drop the
+  format/control categories you don't expect, and flag homoglyph-heavy strings.
+  This is the ingest-side complement to the prompt-injection boundary (rules/08).
 - **Determine type from bytes, not declaration.** Sniff the real MIME from magic
   bytes and reject when it disagrees with the declared/extension type. Beware
   **polyglot files** (valid GIF *and* valid HTML/JS — "GIFAR"): a file that is two

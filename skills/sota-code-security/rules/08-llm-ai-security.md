@@ -184,6 +184,12 @@ results = vstore.search(
 - Membership/extraction: embeddings are not anonymization — vectors can be
   inverted approximately; protect vector stores like the source documents
   (encryption, access control, no public endpoints).
+- **Self-hosted vector DBs ship auth-OFF by default** (Qdrant, among others):
+  set an API key / JWT, enable TLS, and bind to an internal-only network — an
+  exposed keyless vector endpoint is full corpus read/write (poisoning + theft).
+  Restrict *write* access to the ingestion pipeline identity only, and hash each
+  ingested document (e.g. SHA-256) so tampered/poisoned chunks are detectable
+  and excludable at retrieval.
 - Cache keyed on prompts must be principal-scoped (semantic caches returning
   user A's answer — containing A's data — to user B).
 

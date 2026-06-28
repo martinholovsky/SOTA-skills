@@ -191,7 +191,16 @@ deprecation policy). Engineering consequences:
   most public MCP servers ship vague descriptions and unbounded outputs;
   wrap or fix them before production.
 - Credentials for MCP servers belong in a secrets/vault layer, never in
-  prompts or agent-visible config (sota-secrets-management).
+  prompts or agent-visible config (sota-secrets-management). Request the
+  **narrowest scope per server** (`mail.readonly`, not `mail.full`) and prefer
+  short-lived tokens over long-lived PATs.
+- **When you *operate* an MCP server (DN self-hosts them), harden the server,
+  not just the client** (OWASP MCP Security): bind local HTTP/SSE transports to
+  `127.0.0.1`, not `0.0.0.0`; **validate the `Origin`/`Host` header on every
+  request** to block DNS-rebinding from a browser tab; use non-guessable session
+  IDs bound to user context (`<user_id>:<session_id>`), never a bare sequence;
+  put remote servers behind TLS with verified server identity and auth. An
+  unauthenticated MCP server on `0.0.0.0` is an open tool-execution endpoint.
 
 ## 7. Multi-agent: patterns and their real costs
 

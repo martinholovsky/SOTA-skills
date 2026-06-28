@@ -34,6 +34,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rejects) and a Kubernetes Dashboard hardening caveat (don't expose it; never
   bind it to `cluster-admin`). Both with audit-checklist entries. The rest of
   the cheat sheet was already met or exceeded by the existing rules.
+- **AI/LLM skills** — closed gaps found by diffing against the new OWASP
+  AI/LLM cheat sheets (MCP Security, RAG Security, AI Agent Security, Secure AI
+  Model Ops): MCP **server-operator** hardening — bind localhost, validate
+  `Origin`/`Host` (DNS-rebinding), context-bound session IDs, narrow scopes
+  (`sota-llm-engineering/rules/04`); self-hosted vector DBs ship auth-OFF
+  (Qdrant) — require API key/TLS/internal network, restrict writes, hash chunks
+  (`sota-code-security/rules/08 §4`); RAG corpus integrity — content-hash +
+  verify, don't leak raw similarity scores (`sota-llm-engineering/rules/03 §7`);
+  strip invisible/bidi/Trojan-Source Unicode at ingest
+  (`sota-code-security/rules/09 §4`).
 
 ## [1.4.0] - 2026-06-27
 

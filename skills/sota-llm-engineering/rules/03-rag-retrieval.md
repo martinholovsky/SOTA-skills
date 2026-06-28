@@ -157,6 +157,14 @@ tell you which stage failed (rules/01 §6).
   Track and alert on index lag (source `updated_at` vs index `indexed_at`);
   surface document dates to the model so it can prefer current sources and
   caveat stale ones.
+- **Corpus integrity (OWASP RAG Security):** the vector store is attacker-
+  reachable if anyone can write to it. Restrict writes to the ingestion
+  identity, store a content hash (SHA-256) per chunk and verify it before
+  serving (exclude + alert on mismatch — poisoning/tamper detection), and
+  **don't return raw similarity/distance scores to end users or sub-agents** —
+  they let an attacker probe and reconstruct corpus contents. Rate-limit
+  retrieval per identity. Vector-DB auth/network hardening is in
+  sota-code-security rules/08 §4.
 
 ## 8. Agentic retrieval vs one-shot
 
