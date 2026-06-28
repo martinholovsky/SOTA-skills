@@ -115,6 +115,13 @@ bad input, missing files, network failure, or anything an attacker controls.
 - **FFI**: unwinding across `extern "C"` is UB. Wrap Rust callbacks invoked
   from C in `std::panic::catch_unwind` (or use `extern "C-unwind"` only when
   both sides genuinely support it).
+- **`Drop` impls must not panic.** `drop()` itself runs during unwinding from
+  another panic; a panic there is a *double panic* that — per the std `Drop`
+  docs — "will likely abort the program." So a panicking destructor turns one
+  recoverable failure into process death (DoS). Destructors clean up and return
+  normally; if a Drop genuinely must signal misuse, gate it on
+  `std::thread::panicking()` first. This applies to RAII guards, buffer
+  flushers, and `Zeroize`-on-drop types alike. (ANSSI `LANG-DROP-NO-PANIC`)
 - Poisoned mutexes (`std::sync::Mutex`): a panic while holding the lock poisons
   it. Decide policy once: propagate (`lock().expect("not poisoned: …")`) or
   recover (`unwrap_or_else(PoisonError::into_inner)`) — document which.
@@ -231,6 +238,9 @@ fn main() -> ExitCode {
       undebuggable errors.
 - [ ] FFI: `extern "C"` functions whose bodies can panic without
       `catch_unwind` → UB, Critical.
+- [ ] `Drop` impls that can panic: `rg -A15 'impl Drop' -t rust` then scan for
+      `unwrap`/`expect`/`panic!`/indexing/`?` inside `fn drop` — double-panic
+      aborts the process (DoS), High. `LANG-DROP-NO-PANIC`.
 - [ ] Retry loops: `rg 'retry|backoff' -t rust -i` — retries without
       classification (retrying 4xx), without jitter/cap, or around
       non-idempotent operations.

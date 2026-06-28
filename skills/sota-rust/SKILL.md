@@ -103,8 +103,8 @@ fixes with outsized value).
 
 | File | Read this when... |
 |---|---|
-| [rules/01-ownership-and-api-design.md](rules/01-ownership-and-api-design.md) | Designing structs/traits/modules/workspaces; fighting the borrow checker; deciding clone vs borrow vs Rc/Arc; newtype, typestate, builder patterns; sealed traits, coherence; exhaustive matching; iterator-chain idioms |
-| [rules/02-errors-and-panics.md](rules/02-errors-and-panics.md) | Choosing thiserror vs anyhow/eyre; designing error enums; unwrap/expect policy and invariant messages; context discipline; panic policy for servers and FFI; Option/Result combinator flow |
+| [rules/01-ownership-and-api-design.md](rules/01-ownership-and-api-design.md) | Designing structs/traits/modules/workspaces; fighting the borrow checker; deciding clone vs borrow vs Rc/Arc; newtype, typestate, builder patterns; sealed traits, coherence; comparison-trait (`Eq`/`Ord`) invariants; exhaustive matching; iterator-chain idioms |
+| [rules/02-errors-and-panics.md](rules/02-errors-and-panics.md) | Choosing thiserror vs anyhow/eyre; designing error enums; unwrap/expect policy and invariant messages; context discipline; panic policy for servers, FFI, and `Drop` (no panic in destructors); Option/Result combinator flow |
 | [rules/03-unsafe-discipline.md](rules/03-unsafe-discipline.md) | Writing or reviewing ANY `unsafe`; SAFETY comment standards; UB catalog (aliasing, uninit, transmute, FFI lifetimes); Miri/sanitizers/loom in CI; cargo-geiger; soundness review protocol |
 | [rules/04-async-tokio.md](rules/04-async-tokio.md) | Anything async: tokio, spawn vs spawn_blocking, Send/Sync bound errors, `select!` and cancellation safety, JoinSet/TaskTracker, channel selection, locks across await, async traits, graceful shutdown |
 | [rules/05-security-supply-chain.md](rules/05-security-supply-chain.md) | Network-facing or deployed code; adding dependencies; cargo audit/deny/vet; integer overflow on untrusted input; panic-DoS; zeroize/constant-time for secrets; serde hardening (untagged enums, size limits); service-edge defaults |
