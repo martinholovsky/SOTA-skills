@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`sota-testing/rules/09-security-testing.md` — security testing as a test
+  type**: the gap surfaced by adopting the OWASP Developer Guide + Web Security
+  Testing Guide (WSTG). The library covered the *vulnerabilities* and *scanners*
+  but had no consolidated methodology for a test author. New file uses WSTG as the
+  verification map and defines the security-regression set (IDOR/BOLA, BFLA,
+  authn/session, injection, mass-assignment, rate-limit, SSRF, tenant isolation),
+  business-logic/abuse-case tests from threat models, where SAST/DAST/fuzz fit and
+  their ceiling, and a ~90% security-critical coverage floor. SKILL.md index,
+  non-negotiables, and triggers updated. Also added an **XSSI** (cross-site script
+  inclusion) note to `sota-code-security/rules/05` — the one WSTG client-side item
+  with no prior coverage.
 - **`sota-api-design/rules/05` — WebRTC security** (`## 6`): the one technical
   area an OpenCRE/ASVS-v5.0 coverage check found missing. Self-hosted TURN
   (relay-abuse = SSRF over UDP; allowlist non-special IPv4+IPv6, cap allocations),

@@ -1,6 +1,6 @@
 ---
 name: sota-testing
-description: State-of-the-art software testing strategy and practice (2026 baseline) that Claude applies when designing test strategy, writing unit/integration/e2e tests, or auditing existing test suites. Covers suite shape (pyramid vs trophy vs honeycomb), test design quality (behavior-first, AAA, determinism, smells), test doubles discipline (mocks vs fakes vs stubs), test data (builders over fixtures), real-dependency integration testing (Testcontainers-style), contract testing (Pact/consumer-driven, schema-based), e2e/UI strategy (selectors, auto-waiting, flake economics), property-based testing, fuzzing, mutation testing, approval testing, and suite health/CI (flaky-test policy, coverage philosophy, sharding, triage). Trigger keywords - testing, test strategy, unit test, integration test, e2e, end-to-end, coverage, flaky tests, TDD, contract testing, property-based, mocking, fixtures, snapshot test, mutation testing, fuzzing, test pyramid, BDD, Gherkin, given-when-then, acceptance criteria, specification by example. Use for BOTH building test suites/strategies and reviewing or auditing them.
+description: State-of-the-art software testing strategy and practice (2026 baseline) that Claude applies when designing test strategy, writing unit/integration/e2e tests, or auditing existing test suites. Covers suite shape (pyramid vs trophy vs honeycomb), test design quality (behavior-first, AAA, determinism, smells), test doubles discipline (mocks vs fakes vs stubs), test data (builders over fixtures), real-dependency integration testing (Testcontainers-style), contract testing (Pact/consumer-driven, schema-based), e2e/UI strategy (selectors, auto-waiting, flake economics), property-based testing, fuzzing, mutation testing, approval testing, and suite health/CI (flaky-test policy, coverage philosophy, sharding, triage). Trigger keywords - testing, test strategy, unit test, integration test, e2e, end-to-end, coverage, flaky tests, TDD, contract testing, property-based, mocking, fixtures, snapshot test, mutation testing, fuzzing, test pyramid, BDD, Gherkin, given-when-then, acceptance criteria, specification by example, security testing, WSTG, IDOR test, authz test, abuse case, DAST. Use for BOTH building test suites/strategies and reviewing or auditing them.
 ---
 
 # SOTA Testing (2026)
@@ -92,6 +92,7 @@ End every audit with: findings table, top-3 risks, and a prioritized fix list
 | `rules/06-property-fuzzing-mutation.md` | going beyond examples: property-based testing (what properties to encode), fuzzing parsers, mutation testing ROI, approval testing for legacy code, chaos pointer |
 | `rules/07-suite-health-and-ci.md` | flaky-test policy and quarantine, coverage philosophy (ratchets not targets), speed budgets, parallelization correctness, CI sharding, failure triage |
 | `rules/08-bdd-spec-by-example.md` | BDD / specification by example: Given-When-Then done declaratively, the three-amigos value (and when there's no cross-role audience), outside-in double loop with TDD, scenario-explosion and UI-script anti-patterns, Gherkin tooling, and tracing scenarios to spec acceptance criteria (`sota-docs-workflow` rules/05) |
+| `rules/09-security-testing.md` | security testing as a test type: WSTG as the verification map, the security-regression set (IDOR/BOLA, BFLA, authn/session, injection, mass-assignment, rate-limit, SSRF, tenant isolation), business-logic/abuse-case tests from threat models, where SAST/DAST/fuzz fit and their ceiling, security-critical coverage floor. Pairs with `sota-code-security`, `sota-threat-modeling`, `sota-devsecops` rules/05 |
 
 ## Top-10 non-negotiables
 
@@ -120,3 +121,8 @@ End every audit with: findings table, top-3 risks, and a prioritized fix list
 10. **Coverage is a gap-finder, not a target.** Ratchet it (never decrease),
     read the uncovered lines, and never write a test whose only purpose is to
     move the number.
+
+Security-critical paths (authn/authz, crypto, input parsing, money/quota,
+tenancy, untrusted data) additionally require **negative security tests** at a
+higher coverage bar — see `rules/09`. A green functional suite proves nothing
+about IDOR, injection, or broken authz.
