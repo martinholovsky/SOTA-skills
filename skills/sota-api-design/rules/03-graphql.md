@@ -92,7 +92,11 @@ friends ... }}}}`). Layered defenses, all of them:
 6. **Disable introspection and GraphiQL in production** for non-public schemas;
    disable field suggestions ("Did you mean `creditCard`?") which leak schema.
 7. **Reject batched arrays of operations** or cap batch size — batching multiplies
-   everything above and bypasses per-request rate limits.
+   everything above and bypasses per-request rate limits. Beyond cost-DoS this is a
+   **rate-limit-bypass brute-force vector**: aliases/batches let one HTTP request
+   carry hundreds of `login`/OTP/token/password-reset attempts past per-request
+   throttles. Disable aliasing/batching on auth operations and rate-limit those
+   fields **per object/account**, not just per request.
 
 ## 5. Persisted queries
 

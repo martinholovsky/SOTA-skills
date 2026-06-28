@@ -44,6 +44,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   verify, don't leak raw similarity scores (`sota-llm-engineering/rules/03 §7`);
   strip invisible/bidi/Trojan-Source Unicode at ingest
   (`sota-code-security/rules/09 §4`).
+- **API & web skills** — closed gaps from the OWASP REST/GraphQL/WebSocket/
+  Clickjacking cheat sheets: per-route method allowlist + `405` + per-method
+  authz and content-negotiation hygiene (`406`, never reflect `Accept` into
+  `Content-Type`) in `sota-api-design/rules/01`; `wss://`-only + disable
+  `permessage-deflate` (CRIME/BREACH) in `rules/05`; GraphQL alias/batch as an
+  auth **brute-force** (not just cost-DoS) vector in `rules/03`; server-side
+  business-flow state-machine enforcement on API6 in `rules/07`; and
+  **double-clickjacking** (bypasses `frame-ancestors`/XFO → needs interaction
+  confirmation) in `sota-code-security/rules/05 §5`.
 
 ## [1.4.0] - 2026-06-27
 
