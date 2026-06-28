@@ -122,6 +122,14 @@ struct DbConfig { url: String, password: SecretString }
   Zeroize is best-effort (moves/reallocations copy bytes — avoid resizing
   buffers holding secrets; `Box::pin` long-lived keys), but it shrinks the
   window and kills the "secret in a core dump / Debug log" class.
+- **Don't rely *only* on `Drop` for security erasure.** `Drop` is skipped
+  entirely by `mem::forget`, `Box::leak`, reference cycles (`Rc`/`Arc`), a
+  panic mid-drop, and `panic = "abort"` / process exit — so Drop-based
+  zeroization is a window-shrinker, not a guarantee. Don't structure a security
+  argument ("the key is erased after use") on the destructor running; minimize
+  the secret's lifetime, avoid leaking/forgetting secret-bearing values, and
+  keep Drop impls panic-free (rules/02 §5) so the erasure path isn't skipped by
+  an abort. (ANSSI `LANG-DROP-SEC`; soundness corollary in rules/03.)
 - **No `Debug`/`Display`/`Serialize` leaking secrets**: manual `Debug` impls
   redacting sensitive fields; never `#[derive(Debug)]` on a struct holding a
   raw key. Audit `tracing` events for token/password fields.

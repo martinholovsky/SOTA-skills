@@ -183,6 +183,16 @@ impl Backend for Postgres { ... }
   redacting impl for secrets — rules/05), `Default` where a zero-config value
   exists, `Display` + `std::error::Error` on errors, `From` for infallible
   conversions, `TryFrom` for fallible ones. Never impl `Into` directly.
+- **`Eq`/`Ord`/`PartialEq`/`PartialOrd`: `#[derive]` them; hand-write only with
+  care.** The std library *assumes* their invariants — `PartialEq` symmetry and
+  transitivity, `Eq` reflexivity, `Ord` a total order consistent with `Eq`, and
+  `PartialOrd`/`Ord` agreement. A manual impl that breaks them is not a compile
+  error but silently corrupts `sort`, `binary_search`, `BinaryHeap`,
+  `BTreeMap`/`Set`, and dedup — wrong results, lost entries, or a panic
+  (`sort_unstable` may panic on a non-total `Ord`). If you must hand-roll,
+  define the minimal method (`Ord::cmp`, then `PartialOrd` via `Some(self.cmp)`)
+  so the others stay consistent, and never derive `Ord` on a type whose `f32`/
+  `f64` field makes the order partial. (ANSSI `LANG-CMP-INV`/`-DERIVE`)
 
 ## 7. Exhaustive matching & `#[non_exhaustive]`
 
@@ -288,6 +298,11 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 - [ ] Raw primitive IDs in public signatures: `rg 'fn .*\b(id|user|key)\w*: (u32|u64|i64|String)'`.
 - [ ] Public trait intended to be closed but unsealed — can a downstream crate
       impl it? If yes and that's unintended, seal it.
+- [ ] Hand-written comparison impls: `rg 'impl (PartialEq|Eq|PartialOrd|Ord)' -t rust`
+      — verify invariants (total order, consistency with `Eq`, symmetry); a
+      broken `Ord` corrupts `sort`/`BinaryHeap`/`BTreeMap` or panics. Prefer
+      `#[derive]`. `LANG-CMP-INV`. `clippy::derive_ord_xor_partial_ord`,
+      `clippy::non_canonical_partial_ord_impl`.
 - [ ] Multi-crate repo without `[workspace.dependencies]` → version drift;
       `cargo tree -d` to find duplicate dependency versions.
 - [ ] Clippy gates for this file's concerns: `clippy::needless_pass_by_value`,

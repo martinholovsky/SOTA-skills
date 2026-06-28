@@ -5,6 +5,21 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **`sota-rust`** — closed three gaps found by diffing the skill against the
+  ANSSI *Secure Rust Guidelines* (the nearest equivalent to OWASP Go-SCP):
+  no panicking in `Drop` impls (double-panic aborts the process — `rules/02 §5`,
+  `LANG-DROP-NO-PANIC`, verified against the std `Drop` docs); don't rely *only*
+  on `Drop` for secret erasure since `mem::forget`/`Box::leak`/cycles/
+  `panic=abort` skip it (`rules/05 §5`, `LANG-DROP-SEC`); and uphold the
+  `Eq`/`Ord` comparison-trait invariants or `sort`/`BinaryHeap`/`BTreeMap`
+  silently corrupt or panic (`rules/01 §6`, `LANG-CMP-INV`). Added matching
+  audit-checklist greps (clippy lint names verified against clippy 0.1.91);
+  SKILL.md index updated.
+
 ## [1.4.0] - 2026-06-27
 
 ### Added
