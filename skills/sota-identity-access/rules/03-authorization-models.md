@@ -82,6 +82,11 @@ role := "viewer"  # <-- default low role for ANY authenticated user regardless o
   High finding depending on the blast radius.
 - **Just-in-time elevation** rather than standing privilege (rules/05): a user requests a
   permission for a bounded window instead of holding it permanently.
+- **Log authorization decisions** (OWASP Authorization): the decision point emits a
+  structured event — `who`, `action`, `resource`, `decision`, `policy/rule id` — for at
+  least every *deny* and every privileged *allow*. Denies are a primary detection signal
+  (enumeration, broken-object-level-auth probing); without them an authz bypass is
+  invisible. Feed them to sota-detection-engineering; never log the token/credential.
 
 ## 5. Policy-as-code engines
 

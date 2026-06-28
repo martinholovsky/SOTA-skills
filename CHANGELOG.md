@@ -61,6 +61,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   caching in release/publish workflows in `rules/01`; a no-upstream-patch
   mitigation playbook and **slopsquatting** (AI-hallucinated packages) in
   `rules/03`. External facts (zizmor rule, CodeQL `actions` GA Apr 2025) verified.
+- **Identity, secrets & crypto skills** — closed gaps from the OWASP
+  Authentication/Authorization/OAuth2/Session/Secrets/Key-Management/TLS cheat
+  sheets: OAuth **mix-up** defense via the RFC 9207 `iss` authorization-response
+  parameter for multi-AS brokers (`sota-identity-access/rules/01`); log
+  authorization decisions/denials (`rules/03`); treat the vault as tier-0 — HA,
+  off-box snapshot + DR-restore drill, break-glass (`sota-secrets-management/rules/02`);
+  design for key **loss** — escrow/back up data keys, never signing keys
+  (`sota-code-security/rules/04`); session renewal timeout + `Clear-Site-Data`/
+  `no-store` on logout (`rules/02`); hybrid PQ KEX `X25519MLKEM768` and
+  trust-store-injection control (`sota-network-security/rules/06`).
 
 ## [1.4.0] - 2026-06-27
 
