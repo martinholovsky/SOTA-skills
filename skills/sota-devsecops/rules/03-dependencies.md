@@ -107,6 +107,11 @@ Review *new* dependencies (human + automated) for:
   default via `onlyBuiltDependencies`.
 - **Name proximity** to a popular package (`lodahs`, `python-dateutil` vs `dateutil`),
   starjacking (README/links pointing at an unrelated popular repo).
+- **Slopsquatting** (OWASP "Secure Coding with AI"): AI coding assistants routinely
+  invent plausible-but-nonexistent package names, and attackers pre-register them.
+  **Verify every AI-suggested dependency actually exists with real history** (downloads,
+  age, repo) before adding it — never `pip install`/`npm i` a name straight from a model.
+  An approved-package allowlist plus the §3.7 cooldown blunts both this and typosquats.
 - **Freshness/maintainer churn**: version published < 5–7 days ago (see cooldown, §3.7),
   brand-new maintainer on an old package, ownership transfer right before a release —
   the xz-utils pattern.
@@ -189,6 +194,12 @@ ignore:
 - BAD patterns to flag: global `--severity-threshold critical` only (blind to exploited
   Highs); scanner runs with `continue-on-error: true`; one giant ignore list dated two
   years ago; scanning only on PR (never re-scanning deployed images).
+- **No upstream patch available** (reachable vuln, no fixed version): triage doesn't stop
+  at "no fix" (OWASP Vulnerable Dependency Management). In order of preference — guard the
+  vulnerable call path with input validation/feature-flag kill-switch; virtual-patch at
+  the edge (WAF/admission, sota-detection-engineering); fork-and-patch with an upstream PR
+  and a regression test reproducing the vuln (§3.8); or replace the dependency. Record the
+  chosen mitigation as VEX and set a re-check date — never just ignore-with-expiry.
 
 ## 3.7 Renovate / Dependabot strategy
 
