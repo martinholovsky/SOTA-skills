@@ -3,13 +3,13 @@
 <p align="center">
   <a href="https://github.com/martinholovsky/SOTA-skills/releases"><img src="https://img.shields.io/github/v/release/martinholovsky/SOTA-skills?color=2fa45f&label=release" alt="Latest release"></a>
   <a href="https://github.com/martinholovsky/SOTA-skills/actions/workflows/ci.yml"><img src="https://github.com/martinholovsky/SOTA-skills/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
-  <img src="https://img.shields.io/badge/skills-31-2fa45f" alt="31 skills">
+  <img src="https://img.shields.io/badge/skills-32-2fa45f" alt="32 skills">
   <img src="https://img.shields.io/badge/modes-BUILD%20%2B%20AUDIT-2fa45f" alt="BUILD + AUDIT">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-CC%20BY%204.0-blue" alt="License: CC BY 4.0"></a>
 </p>
 
 <p align="center">
-  <img src="assets/social-preview.png" alt="SOTA Engineering Skills — 31 Claude Code skills to build and audit software at state-of-the-art practices" width="100%">
+  <img src="assets/social-preview.png" alt="SOTA Engineering Skills — 32 Claude Code skills to build and audit software at state-of-the-art practices" width="100%">
 </p>
 
 **Make your AI coding assistant build and audit like your most senior engineer.**
@@ -17,7 +17,7 @@
 Your assistant is brilliant — it just doesn't know your standards. SOTA-skills
 teaches it: a library of Claude Code skills that encode state-of-the-art (2026)
 practices for building **and** auditing software, and that verify their own
-claims. 31 skills, 251 files, ~50k lines — every file under 500 lines, so the
+claims. 32 skills, 258 files, ~50k lines — every file under 500 lines, so the
 right rules load exactly when your task needs them, never bloating the context
 window. Fast-moving claims (versions, specs, regulations) are web-verified
 against primary sources.
@@ -93,6 +93,8 @@ Every skill works in two modes:
 | `sota-docs-workflow` | Documentation architecture, API docs & changelogs, code review/PR workflow, commits & releases |
 | `sota-rust` | Ownership/API design, errors & panics, unsafe discipline, tokio, supply chain, performance, CI |
 | `sota-golang` | Errors, package design, goroutine safety, net/http hardening, security, pprof, CI |
+| `sota-c-cpp` | RAII/idioms, memory safety & sanitizers, undefined behavior, security (CERT/MISRA, hardening flags), concurrency, CMake/clang-tidy/fuzzing CI, performance |
+| `sota-jvm` | Java/Kotlin idioms, null/immutability API design, concurrency (virtual threads, JMM, coroutines), security (deserialization/JNDI/XXE/crypto), GC/JFR/GraalVM, Maven/Gradle supply chain & CI |
 | `sota-python` | uv/ruff/typing, idioms, asyncio, security, performance, FastAPI/Django/pytest |
 | `sota-javascript-typescript` | Strict TS, idioms, async, Node hardening, security, bundle/React performance, testing |
 

@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`sota-jvm` — Java & Kotlin (JVM) engineering skill** (32nd skill):
+  SKILL.md + 6 rules — `01-idioms` (records/sealed/pattern-matching, Kotlin
+  null-safety/scope functions, interop, error handling), `02-design-api`
+  (nullability discipline, immutability, `equals`/`hashCode`, resources/
+  try-with-resources/`use`, JPMS), `03-concurrency` (virtual threads + pinning,
+  the JMM, `java.util.concurrent`, Kotlin coroutines/structured concurrency;
+  structured concurrency noted as *preview* in Java 25), `04-security` (native
+  deserialization/gadget chains + `ObjectInputFilter`, XXE, JNDI/Log4Shell-class,
+  SQL/command/EL injection, JCA crypto, TLS), `05-performance` (G1/Generational
+  ZGC, JFR/async-profiler, allocation, GraalVM native image), `06-build-tooling-ci`
+  (Maven/Gradle, dependency-check/OSV-Scanner supply chain, Error Prone/NullAway,
+  SpotBugs/Find-Sec-Bugs, detekt/ktlint, JaCoCo). Baselines verified against
+  primary sources: Java 25 LTS, virtual threads final since JEP 444 (Java 21),
+  structured concurrency still preview (JEP 505/525), Kotlin 2.x; SEI CERT
+  Oracle Java + OWASP. Router, README counts (32 skills), and rules index
+  updated.
 - **`sota-c-cpp` — C & C++ engineering skill** (31st skill): SKILL.md +
   7 rules — `01-idioms` (RAII, rule of zero/five, ownership, value semantics,
   `std::expected` error handling), `02-memory-safety` (bounds, UAF/dangling,
