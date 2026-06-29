@@ -5,10 +5,30 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.6.0] - 2026-06-29
+
+Adds four language/domain skills found missing in a coverage gap-analysis,
+closing the conspicuous holes against 2026 usage data (TIOBE/Stack Overflow):
+the most-used languages without coverage (C/C++, JVM, .NET) plus classical
+ML/MLOps as a discipline distinct from LLM-application engineering. The library
+goes from 30 to 34 skills.
 
 ### Added
 
+- **`sota-dotnet` — C# / .NET engineering skill** (34th skill): SKILL.md +
+  6 rules — `01-idioms` (records, nullable reference types, pattern matching,
+  spans, C# 14 `field`/extension members), `02-design-api` (nullability
+  contract, disposal/`IDisposable`+`using`, `IHttpClientFactory`, DI lifetimes/
+  options), `03-async-concurrency` (async-all-the-way, never-block,
+  `ConfigureAwait(false)`, cancellation, channels, `async void`),
+  `04-security` (EF Core/Dapper parameterization, `BinaryFormatter` removed in
+  .NET 9 + JSON `TypeNameHandling`, ASP.NET Core authn/authz/antiforgery/CORS,
+  `RandomNumberGenerator`/AES-GCM/Data Protection), `05-performance` (GC, Span/
+  ArrayPool, BenchmarkDotNet, Native AOT), `06-build-tooling-ci` (TFM/SDK
+  pinning, nullable + analyzers as errors, NuGet lockfiles + source mapping +
+  CVE scan). Baselines verified: .NET 10 LTS (Nov 2025–2028), C# 14,
+  BinaryFormatter removed in .NET 9; OWASP .NET cheat sheet + Roslyn security
+  CA rules. Router, README counts (34 skills), and rules index updated.
 - **`sota-ml-engineering` — ML engineering / MLOps skill** (33rd skill):
   classical/predictive ML systems, explicitly distinct from `sota-llm-engineering`
   (LLM apps) and `sota-data-engineering` (pipelines). SKILL.md + 7 rules —
@@ -280,6 +300,7 @@ First public release.
 - **Governance**: contributor guide, security policy, and code of conduct;
   `main` protected with required status checks.
 
+[1.6.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.6.0
 [1.5.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.5.0
 [1.4.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.4.0
 [1.3.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.3.0
