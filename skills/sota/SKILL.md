@@ -1,12 +1,12 @@
 ---
 name: sota
 description: >-
-  Master router for the SOTA engineering skills library. Use this skill whenever the user asks to build, design, implement, refactor, harden, optimize, review, or audit an application, service, or codebase and the request spans more than one domain — or when you are unsure which specific sota-* skill applies. It maps the task (build mode or audit mode) to the right domain skills (architecture, code security, threat modeling, secrets, sandboxing, performance, async/concurrency, APIs/websockets, devsecops, databases, frontend, observability, testing, LLM engineering, cloud infrastructure, kubernetes, identity & access, network security, detection engineering, data engineering, privacy/compliance, mobile, CLI UX, shell scripting, docs/workflow) and language skills (Rust, Go, C/C++, Java/Kotlin, Python, JavaScript/TypeScript), and defines how to run a full multi-domain audit. Trigger keywords: SOTA, best practices, audit my code, security review, full review, hardening, production readiness, code quality.
+  Master router for the SOTA engineering skills library. Use this skill whenever the user asks to build, design, implement, refactor, harden, optimize, review, or audit an application, service, or codebase and the request spans more than one domain — or when you are unsure which specific sota-* skill applies. It maps the task (build mode or audit mode) to the right domain skills (architecture, code security, threat modeling, secrets, sandboxing, performance, async/concurrency, APIs/websockets, devsecops, databases, frontend, observability, testing, LLM engineering, ML engineering, cloud, kubernetes, identity & access, network security, detection engineering, data engineering, privacy/compliance, mobile, CLI UX, shell scripting, docs/workflow) and language skills (Rust, Go, C/C++, Java/Kotlin, Python, JavaScript/TypeScript), and defines how to run a full multi-domain audit. Trigger keywords: SOTA, best practices, audit my code, security review, full review, hardening, production readiness, code quality.
 ---
 
 # SOTA Engineering Skills — Master Router
 
-A library of 31 domain skills, each with a `SKILL.md` entry point and a `rules/`
+A library of 32 domain skills, each with a `SKILL.md` entry point and a `rules/`
 folder of focused rule files (every file < 500 lines). Each skill works in two
 modes:
 
@@ -66,6 +66,7 @@ rules files that match the code in front of you. Never load all skills at once.
 | `sota-observability` | Logging, metrics, tracing (OpenTelemetry), SLOs/error budgets, alerting, health checks, dashboards, debugging production, "can we answer why is this slow?" |
 | `sota-testing` | Test strategy (pyramid/trophy), unit vs integration boundaries, test design/smells, mocks/fakes/test data, contract testing, e2e, property-based/fuzzing/mutation testing, flaky tests, coverage policy |
 | `sota-llm-engineering` | Building LLM features — evals, prompt/context engineering, structured output, RAG, agents/tool design, MCP, model selection/routing, latency/cost engineering, LLM observability |
+| `sota-ml-engineering` | Production ML/MLOps (classical/predictive, *not* LLM apps) — training→serving→monitoring lifecycle, feature stores & registries, data leakage & train/serve skew, evaluation (ML Test Score, slices), deployment (canary/shadow/rollback), drift monitoring (PSI/KS) & retraining, ML security/governance (poisoning, MITRE ATLAS, NIST AI RMF) |
 | `sota-cloud-infrastructure` | Cloud accounts/landing zones, cloud IAM, VPC/subnet/DNS/CDN setup, compute selection (serverless vs containers vs K8s), object storage, FinOps/cost, RTO/RPO and disaster recovery |
 | `sota-kubernetes` | Kubernetes platform security & ops — RBAC & escalation paths, admission control (PSA/Kyverno/Gatekeeper/VAP, Audit→Enforce), GitOps controllers (Argo CD/Flux, AppProject scoping), operators/CRDs/webhooks, control plane & etcd encryption, Helm supply chain, multi-tenancy, cluster lifecycle, K8s audit logging; self-hosted (Talos/k3s) and managed |
 | `sota-identity-access` | Identity infrastructure & access management — OIDC/OAuth2.1/SAML/SCIM protocols, running an IdP (Kanidm/Keycloak/etc.), RBAC/ABAC/ReBAC authorization design, group→role mapping, joiner-mover-leaver lifecycle, deprovisioning, privileged access & break-glass, SPIFFE/workload identity, phishing-resistant MFA/passkeys, federation risk |
@@ -235,6 +236,9 @@ For a **full project audit**, work in passes:
 - **sota-llm-engineering/rules**: 01 evals, 02 prompt & context engineering,
   03 RAG & retrieval, 04 agents & tools, 05 production engineering,
   06 data & lifecycle
+- **sota-ml-engineering/rules**: 01 ML systems architecture, 02 data & features
+  (leakage/skew), 03 training & experimentation, 04 evaluation & validation,
+  05 deployment & serving, 06 monitoring & drift, 07 security & governance
 - **sota-cloud-infrastructure/rules**: 01 org/accounts/governance, 02 IAM
   design, 03 networking, 04 compute selection, 05 data & storage,
   06 cost/FinOps, 07 resilience & DR

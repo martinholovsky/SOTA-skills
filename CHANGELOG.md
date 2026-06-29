@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`sota-ml-engineering` — ML engineering / MLOps skill** (33rd skill):
+  classical/predictive ML systems, explicitly distinct from `sota-llm-engineering`
+  (LLM apps) and `sota-data-engineering` (pipelines). SKILL.md + 7 rules —
+  `01-ml-systems-architecture` (model-is-small-part, train/serve paths, feature
+  store, model registry, the Hidden-Technical-Debt anti-patterns),
+  `02-data-and-features` (data/label leakage, train/serve skew, splits,
+  versioning, PII), `03-training-experimentation` (tracking, reproducibility/
+  seeds, config-as-code, HPO), `04-evaluation-validation` (objective-aligned
+  metrics, baselines, sliced/fairness eval, ML Test Score, promotion gates),
+  `05-deployment-serving` (batch/online/streaming, registry-gated promotion,
+  shadow/canary, rollback), `06-monitoring-drift` (data/concept drift via PSI/KS,
+  performance decay, label lag, retraining triggers), `07-security-governance`
+  (poisoning/extraction/inversion, unsafe-pickle supply chain, model cards,
+  MITRE ATLAS, NIST AI RMF, EU AI Act). Grounded in Google's Rules of ML, the
+  ML Test Score rubric, and Hidden Technical Debt in ML Systems. Router, README
+  counts (33 skills), and rules index updated.
 - **`sota-jvm` — Java & Kotlin (JVM) engineering skill** (32nd skill):
   SKILL.md + 6 rules — `01-idioms` (records/sealed/pattern-matching, Kotlin
   null-safety/scope functions, interop, error handling), `02-design-api`

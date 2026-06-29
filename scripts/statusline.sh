@@ -3,7 +3,8 @@
 # statusline.sh — a Claude Code status line that shows which skills you've
 # actually used this session (not just how many are installed).
 #
-#   model │ ctx NN% │ <dir> ⎇ <branch> │ skills▸ code-security, testing (2)
+#   model │ ctx NN% │ <dir> ⎇ <branch>
+#   skills▸ code-security, testing (2)
 #
 # How it works: Claude Code's status-line JSON doesn't expose loaded skills, but
 # it does pass `transcript_path`. Each skill invocation is recorded there as a
@@ -71,5 +72,7 @@ out="$model"
 [ -n "$ctx" ]    && out="${out}${sep}ctx ${ctx}%"
 [ -n "$cwd" ]    && out="${out}${sep}$(basename "$cwd")"
 [ -n "$branch" ] && out="${out} ⎇ ${branch}"
-[ -n "$skills" ] && out="${out}${sep}${skills}"
 printf '%s\n' "$out"
+# skills on their own row so the list gets the full terminal width
+# (Claude Code renders each output line as a separate status row)
+[ -n "$skills" ] && printf '%s\n' "$skills"
