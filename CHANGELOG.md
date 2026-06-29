@@ -5,6 +5,25 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`sota-c-cpp` — C & C++ engineering skill** (31st skill): SKILL.md +
+  7 rules — `01-idioms` (RAII, rule of zero/five, ownership, value semantics,
+  `std::expected` error handling), `02-memory-safety` (bounds, UAF/dangling,
+  iterator invalidation, ASan/UBSan/MSan, hardened stdlib assertions),
+  `03-undefined-behavior` (integer overflow, strict aliasing, the optimizer,
+  UBSan), `04-security` (SEI CERT C/C++, MISRA, banned APIs, format-string/
+  injection/TOCTOU, CSPRNG, the OpenSSF compiler-hardening flag set),
+  `05-concurrency` (C++ memory model, data races, atomics/memory order, RAII
+  locks, `std::jthread`, TSan), `06-build-tooling-ci` (CMake, clang-tidy/
+  clang-format, cppcheck/analyzer, sanitizer + fuzzing CI, vcpkg/Conan supply
+  chain), `07-performance` (profiling, allocation, cache locality, LTO/PGO).
+  Every external claim verified against primary sources (C++ Core Guidelines,
+  SEI CERT, MISRA C:2023/C++:2023, OpenSSF Compiler Hardening Guide). Router,
+  README counts (31 skills), and rules index updated.
+
 ## [1.5.0] - 2026-06-29
 
 ### Fixed

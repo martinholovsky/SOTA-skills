@@ -1,12 +1,12 @@
 ---
 name: sota
 description: >-
-  Master router for the SOTA engineering skills library. Use this skill whenever the user asks to build, design, implement, refactor, harden, optimize, review, or audit an application, service, or codebase and the request spans more than one domain — or when you are unsure which specific sota-* skill applies. It maps the task (build mode or audit mode) to the right domain skills (architecture, code security, threat modeling, secrets, sandboxing, performance, async/concurrency, APIs/websockets, devsecops, databases, frontend/UI/UX/motion, observability, testing, LLM engineering, cloud infrastructure, kubernetes, identity & access, network security, detection engineering, data engineering, privacy/compliance, mobile, CLI UX, shell scripting, docs/workflow) and language skills (Rust, Go, Python, JavaScript/TypeScript), and defines how to run a full multi-domain audit. Trigger keywords: SOTA, best practices, audit my code, security review, full review, hardening, production readiness, code quality.
+  Master router for the SOTA engineering skills library. Use this skill whenever the user asks to build, design, implement, refactor, harden, optimize, review, or audit an application, service, or codebase and the request spans more than one domain — or when you are unsure which specific sota-* skill applies. It maps the task (build mode or audit mode) to the right domain skills (architecture, code security, threat modeling, secrets, sandboxing, performance, async/concurrency, APIs/websockets, devsecops, databases, frontend/UI/UX/motion, observability, testing, LLM engineering, cloud infrastructure, kubernetes, identity & access, network security, detection engineering, data engineering, privacy/compliance, mobile, CLI UX, shell scripting, docs/workflow) and language skills (Rust, Go, C/C++, Python, JavaScript/TypeScript), and defines how to run a full multi-domain audit. Trigger keywords: SOTA, best practices, audit my code, security review, full review, hardening, production readiness, code quality.
 ---
 
 # SOTA Engineering Skills — Master Router
 
-A library of 29 domain skills, each with a `SKILL.md` entry point and a `rules/`
+A library of 30 domain skills, each with a `SKILL.md` entry point and a `rules/`
 folder of focused rule files (every file < 500 lines). Each skill works in two
 modes:
 
@@ -79,6 +79,7 @@ rules files that match the code in front of you. Never load all skills at once.
 | `sota-docs-workflow` | Documentation (Diátaxis, READMEs, runbooks, API docs, changelogs, AGENTS.md), code review/PR workflow, commit/branch/release discipline |
 | `sota-rust` | Any Rust code — ownership/API design, error handling, unsafe discipline, tokio/async, supply chain (cargo audit/deny/vet), performance, clippy/CI |
 | `sota-golang` | Any Go code — errors, package/interface design, goroutines/channels/leaks, net/http hardening, security (os/exec, os.Root, govulncheck), pprof/performance, golangci-lint/CI |
+| `sota-c-cpp` | Any C/C++ code — RAII/idioms, memory safety (UAF/overflow/sanitizers), undefined behavior, security (CERT/MISRA, banned APIs, OpenSSF hardening flags), concurrency/atomics, CMake/clang-tidy/fuzzing CI, performance |
 | `sota-python` | Any Python code — uv/ruff/typing setup, idioms/pitfalls, asyncio, security (pickle/subprocess/SQL), performance, FastAPI/Django/pytest |
 | `sota-javascript-typescript` | Any JS/TS code — strict tsconfig/type design, idioms, promises/AbortController, Node backend hardening, XSS/supply-chain security, bundle/React performance, vitest/ESLint |
 
@@ -270,6 +271,9 @@ For a **full project audit**, work in passes:
   06 performance, 07 tooling & CI
 - **sota-golang/rules**: 01 errors, 02 design, 03 concurrency,
   04 HTTP services, 05 security, 06 performance, 07 tooling & CI
+- **sota-c-cpp/rules**: 01 idioms (RAII/ownership), 02 memory safety,
+  03 undefined behavior, 04 security (CERT/MISRA/hardening), 05 concurrency,
+  06 build/tooling & CI, 07 performance
 - **sota-python/rules**: 01 tooling & project setup, 02 typing & correctness,
   03 idioms & pitfalls, 04 async, 05 security, 06 performance,
   07 frameworks & testing
