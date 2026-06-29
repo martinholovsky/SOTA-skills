@@ -6,7 +6,7 @@ description: >-
 
 # SOTA Engineering Skills — Master Router
 
-A library of 29 domain skills, each with a `SKILL.md` entry point and a `rules/`
+A library of 31 domain skills, each with a `SKILL.md` entry point and a `rules/`
 folder of focused rule files (every file < 500 lines). Each skill works in two
 modes:
 
