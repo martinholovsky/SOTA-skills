@@ -1,6 +1,21 @@
 ---
 name: sota-testing
-description: State-of-the-art software testing strategy and practice (2026 baseline) that Claude applies when designing test strategy, writing unit/integration/e2e tests, or auditing existing test suites. Covers suite shape (pyramid vs trophy vs honeycomb), test design quality (behavior-first, AAA, determinism, smells), test doubles discipline (mocks vs fakes vs stubs), test data (builders over fixtures), real-dependency integration testing (Testcontainers-style), contract testing (Pact/consumer-driven, schema-based), e2e/UI strategy (selectors, auto-waiting, flake economics), property-based testing, fuzzing, mutation testing, approval testing, and suite health/CI (flaky-test policy, coverage philosophy, sharding, triage). Trigger keywords - testing, test strategy, unit test, integration test, e2e, end-to-end, coverage, flaky tests, TDD, contract testing, property-based, mocking, fixtures, snapshot test, mutation testing, fuzzing, test pyramid, BDD, Gherkin, given-when-then, acceptance criteria, specification by example, security testing, WSTG, IDOR test, authz test, abuse case, DAST. Use for BOTH building test suites/strategies and reviewing or auditing them.
+description: >-
+  State-of-the-art software testing strategy and practice (2026) for designing
+  test strategy, writing unit/integration/e2e tests, or auditing test suites.
+  Covers suite shape (pyramid/trophy/honeycomb), test design quality
+  (behavior-first, AAA, determinism, smells), test doubles
+  (mocks/fakes/stubs), test data (builders over fixtures), real-dependency
+  integration (Testcontainers-style), contract testing (Pact/consumer-driven),
+  e2e/UI strategy (selectors, auto-waiting, flake economics), property-based
+  testing, fuzzing, mutation testing, approval testing, and suite health/CI
+  (flaky-test policy, coverage philosophy, sharding). Trigger keywords -
+  testing, test strategy, unit test, integration test, e2e, end-to-end,
+  coverage, flaky tests, TDD, contract testing, property-based, mocking,
+  fixtures, snapshot test, mutation testing, fuzzing, BDD, Gherkin,
+  given-when-then, acceptance criteria, security testing, WSTG, IDOR test,
+  authz test, abuse case, DAST. Use for BOTH building and auditing test
+  suites.
 ---
 
 # SOTA Testing (2026)

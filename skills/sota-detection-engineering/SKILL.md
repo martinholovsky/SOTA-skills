@@ -3,21 +3,17 @@ name: sota-detection-engineering
 description: >-
   State-of-the-art detection engineering, SOC, threat hunting, and incident
   response (2026). Use when BUILDING detective controls or SOC capability —
-  writing Sigma/YARA/Falco/Tetragon/Suricata rules, detection-as-code pipelines,
-  mapping coverage to MITRE ATT&CK, SIEM/data-lake detections, alert triage and
-  SOAR, threat hunts, threat-intel/TIP, deception (honeypots/canaries), IR
-  playbooks, or validating detections via adversary emulation (Atomic Red Team /
-  Caldera / Stratus) — AND when AUDITING detection & IR posture (can we detect
-  this? does this alert fire? is the runbook real? what's our ATT&CK coverage?).
-  This skill owns DETECTIVE controls, SOC workflow, hunting, and IR; it turns
-  ops telemetry into security detections (sota-observability owns the telemetry
-  pipeline) and catches in production the threats sota-threat-modeling enumerates
-  at design time. Trigger keywords: detection engineering, detection-as-code,
-  Sigma, YARA, YARA-X, Falco, Tetragon, Suricata, SIEM, KQL, SPL, EQL, ATT&CK,
-  ATT&CK Navigator, Pyramid of Pain, threat hunting, threat intel, TIP, STIX,
-  TAXII, IOC, IOA, TTP, SOC, alert fatigue, tuning, SOAR, runbook, incident
-  response, IR playbook, NIST 800-61, PICERL, forensics, chain of custody,
-  post-incident review, tabletop, purple team, adversary emulation, honeypot,
+  Sigma/YARA/Falco/Tetragon/Suricata rules, detection-as-code, MITRE ATT&CK
+  coverage, SIEM detections, alert triage and SOAR, threat hunts,
+  threat-intel, deception, IR playbooks, or adversary emulation — AND when
+  AUDITING detection & IR posture (can we detect this? does this alert fire?).
+  Owns DETECTIVE controls, SOC workflow, hunting, and IR (sota-observability
+  owns the telemetry pipeline). Trigger keywords: detection engineering,
+  detection-as-code, Sigma, YARA, YARA-X, Falco, Tetragon, Suricata, SIEM,
+  KQL, SPL, EQL, ATT&CK, Pyramid of Pain, threat hunting, threat intel, TIP,
+  STIX, TAXII, IOC, IOA, TTP, SOC, alert fatigue, tuning, SOAR, runbook,
+  incident response, IR playbook, NIST 800-61, PICERL, forensics, chain of
+  custody, post-incident review, purple team, adversary emulation, honeypot,
   honeytoken, canary, OCSF, detection coverage, MTTD, false positive.
 ---
 

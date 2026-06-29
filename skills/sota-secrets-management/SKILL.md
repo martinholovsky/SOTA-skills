@@ -1,19 +1,20 @@
 ---
 name: sota-secrets-management
-description: >
-  State-of-the-art secrets management for building and auditing software. Claude should use
-  this skill whenever a task involves creating, storing, injecting, rotating, or scanning for
-  credentials — or reviewing code/infrastructure for secret leaks and misuse. Trigger keywords:
-  secret, secrets management, credential, API key, token, password, passphrase, private key,
-  signing key, JWT secret, TLS key, SSH key, database password, connection string, .env,
-  dotenv, environment variable, Vault, OpenBao, AWS Secrets Manager, GCP Secret Manager,
-  Azure Key Vault, KMS, envelope encryption, SOPS, age, sealed-secrets, external-secrets,
-  workload identity, OIDC federation, SPIFFE, SPIRE, IAM role, GitHub Actions OIDC,
-  short-lived credential, rotation, revocation, key expiry, gitleaks, trufflehog,
-  secret scanning, leaked key, hardcoded secret, committed secret, git history purge,
-  honeytoken, pre-commit hook, secret injection, least privilege token, kid rotation.
-  Use in BUILD mode when implementing secrets handling; use in AUDIT mode when sweeping a
-  repository for leaked, hardcoded, or mishandled secrets.
+description: >-
+  State-of-the-art secrets management for building and auditing software. Use
+  whenever a task involves creating, storing, injecting, rotating, or scanning
+  for credentials — or reviewing code/infrastructure for secret leaks and
+  misuse. BUILD mode: implementing secrets handling; AUDIT mode: sweeping a
+  repo for leaked, hardcoded, or mishandled secrets. Trigger keywords: secret,
+  secrets management, credential, API key, token, password, private key,
+  signing key, JWT secret, TLS key, SSH key, database password, connection
+  string, .env, dotenv, environment variable, Vault, OpenBao, AWS Secrets
+  Manager, GCP Secret Manager, Azure Key Vault, KMS, envelope encryption,
+  SOPS, age, sealed-secrets, external-secrets, workload identity, OIDC
+  federation, SPIFFE, SPIRE, IAM role, GitHub Actions OIDC, short-lived
+  credential, rotation, revocation, key expiry, gitleaks, trufflehog, secret
+  scanning, leaked key, hardcoded secret, committed secret, git history purge,
+  honeytoken, pre-commit hook, kid rotation.
 ---
 
 # SOTA Secrets Management

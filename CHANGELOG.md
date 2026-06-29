@@ -5,10 +5,29 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.5.0] - 2026-06-29
+
+### Fixed
+
+- **Skill descriptions over the 1024-character Agent Skills cap** (issue #4):
+  eight `SKILL.md` descriptions exceeded the spec limit — `sota-identity-access`
+  (1632), `sota-detection-engineering` (1369), `sota-architecture` (1317),
+  `sota-kubernetes` (1189), `sota-network-security` (1184), `sota-testing`
+  (1165), `sota-code-security` (1109), `sota-secrets-management` (1105) — so
+  loaders (Claude Code, Codex, …) silently skipped them. All condensed to ≤ 1024
+  (now 955–1016) by trimming prose while preserving the trigger-keyword routing
+  signal. Verified against the
+  [Agent Skills spec](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview).
 
 ### Added
 
+- **`check-invariants.sh` invariant 4 — `SKILL.md` description ≤ 1024 chars**:
+  a new gate (pre-commit + CI) that counts Unicode characters of every skill
+  description (parsing folded `>-` and plain scalars) and fails the build over
+  the cap, so the regression behind issue #4 can't recur. Uses `python3` for
+  correct character counting; skipped with a warning if `python3` is absent
+  locally (CI always enforces it). Documented in `CLAUDE.md` and
+  `CONTRIBUTING.md`.
 - **`sota-testing/rules/09-security-testing.md` — security testing as a test
   type**: the gap surfaced by adopting the OWASP Developer Guide + Web Security
   Testing Guide (WSTG). The library covered the *vulnerabilities* and *scanners*
@@ -210,6 +229,7 @@ First public release.
 - **Governance**: contributor guide, security policy, and code of conduct;
   `main` protected with required status checks.
 
+[1.5.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.5.0
 [1.4.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.4.0
 [1.3.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.3.0
 [1.2.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.2.0

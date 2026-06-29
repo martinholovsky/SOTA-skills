@@ -1,7 +1,20 @@
 ---
 name: sota-code-security
 description: >-
-  State-of-the-art secure coding and security auditing rules (2026 baseline). Claude should use this skill whenever it is BUILDING or modifying code that crosses a trust boundary — implementing endpoints, handlers, auth/login/signup flows, sessions, JWT/OAuth, file uploads, payments, multi-tenant features, crypto/secrets handling, parsers, CLI/exec wrappers, LLM agents or tool-calling — AND whenever it is AUDITING or reviewing code for security: requests mentioning security review, audit, pentest-prep, vulnerability hunt, threat model, hardening, OWASP, CWE, injection, XSS, CSRF, SSRF, IDOR, deserialization, prompt injection, secrets leak, or "is this code safe". Trigger keywords: secure, security, vulnerability, exploit, harden, audit, authn, authz, authentication, authorization, crypto, TLS, sanitize, validate, injection, SQLi, XSS, CSRF, SSRF, IDOR, JWT, OAuth, PKCE, passkey, argon2, CSP, CORS, upload, rate limit, prompt injection, tool-call security, data ingestion, feed, parser, file upload, archive, zip bomb, decompression bomb, webhook, scraping, RAG corpus, deserialization, polyglot.
+  State-of-the-art secure coding and security auditing rules (2026 baseline).
+  Use whenever BUILDING or modifying code that crosses a trust boundary —
+  endpoints, handlers, auth/login/signup, sessions, JWT/OAuth, file uploads,
+  payments, multi-tenant features, crypto/secrets handling, parsers, CLI/exec
+  wrappers, LLM agents or tool-calling — AND whenever AUDITING code for
+  security (security review, pentest-prep, vulnerability hunt, threat model,
+  hardening, OWASP, CWE, injection, XSS, CSRF, SSRF, IDOR, deserialization,
+  prompt injection, secrets leak, "is this code safe"). Trigger keywords:
+  secure, security, vulnerability, exploit, harden, audit, authn, authz,
+  authentication, authorization, crypto, TLS, sanitize, validate, injection,
+  SQLi, XSS, CSRF, SSRF, IDOR, JWT, OAuth, PKCE, passkey, argon2, CSP, CORS,
+  upload, rate limit, prompt injection, tool-call security, data ingestion,
+  feed, parser, file upload, archive, zip bomb, decompression bomb, webhook,
+  scraping, RAG corpus, deserialization, polyglot.
 ---
 
 # SOTA Code Security

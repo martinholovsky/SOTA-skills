@@ -45,7 +45,10 @@ scripts/check-invariants.sh   # the invariants below, enforced
 
 - YAML frontmatter with exactly two fields: `name` and `description`. If the
   description contains a colon, use a block scalar (`>` or `|`) so the YAML stays
-  valid.
+  valid. Per the [Agent Skills spec][skills-spec], `name` is ≤ 64 chars
+  (lowercase, digits, hyphens) and `description` is **≤ 1024 characters** — a
+  loader skips any skill whose description exceeds the cap, so keep it tight
+  (trim prose before trigger keywords). Enforced by invariant 4 below.
 - A `description` that says *when* to use the skill (BUILD and AUDIT triggers)
   and a list of trigger keywords — Claude Code matches prompts against this.
 - Body: a short "when to use", a **BUILD** workflow and an **AUDIT** workflow, a
@@ -76,9 +79,14 @@ are marked "needs verification", never asserted.
 
 1. any tracked `*.md` over **500 lines**;
 2. any `skills/*/rules/*.md` missing an **`## Audit checklist`** heading;
-3. any **internal/private reference** leaking into tracked files.
+3. any **internal/private reference** leaking into tracked files;
+4. any `skills/*/SKILL.md` `description` over **1024 characters** (the Agent
+   Skills cap; check 4 needs `python3`, and is skipped with a warning if it is
+   absent locally — CI always enforces it).
 
 Secrets are scanned separately by **gitleaks** (config in `.gitleaks.toml`).
+
+[skills-spec]: https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview
 
 ## Local setup
 
