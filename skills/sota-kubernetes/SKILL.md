@@ -1,7 +1,21 @@
 ---
 name: sota-kubernetes
 description: >-
-  State-of-the-art Kubernetes platform security and operations (2026) for cloud-managed (EKS/GKE/AKS) and self-hosted clusters (kubeadm, k3s/k0s, Talos Linux on ARM). Use when building, operating, hardening, or auditing the cluster PLATFORM layer: control plane and etcd, API server and kubelet hardening, RBAC and ServiceAccounts, admission control and policy-as-code (Pod Security Admission, Kyverno, Gatekeeper/OPA, ValidatingAdmissionPolicy), GitOps controllers (Argo CD, Flux), operators/CRDs/admission webhooks, Helm/Kustomize supply chain at admission, multi-tenancy, cluster lifecycle/upgrades/CVE response, and Kubernetes audit logging. Trigger keywords: Kubernetes, k8s, cluster, control plane, etcd, kube-apiserver, kubelet, RBAC, ClusterRole, ServiceAccount, admission controller, Pod Security Admission, PSA, Kyverno, Gatekeeper, OPA, ValidatingAdmissionPolicy, Argo CD, Flux, GitOps, operator, CRD, admission webhook, Helm, Kustomize, multi-tenancy, vCluster, Talos, k3s, k0s, kubeadm, EKS, GKE, AKS, CIS benchmark, kube-bench, audit log, version skew. NOT for pod-level securityContext/seccomp internals (sota-sandboxing) or NetworkPolicy/CNI depth (sota-network-security).
+  State-of-the-art Kubernetes platform security and operations (2026) for
+  cloud-managed (EKS/GKE/AKS) and self-hosted clusters (kubeadm, k3s/k0s,
+  Talos). Use when building, operating, hardening, or auditing the cluster
+  PLATFORM layer: control plane and etcd, API server/kubelet, RBAC, admission
+  control and policy-as-code, GitOps controllers, operators/CRDs/admission
+  webhooks, Helm/Kustomize supply chain, multi-tenancy, cluster
+  lifecycle/upgrades/CVE response, and audit logging. Trigger keywords:
+  Kubernetes, k8s, cluster, control plane, etcd, kube-apiserver, kubelet,
+  RBAC, ClusterRole, ServiceAccount, admission controller, Pod Security
+  Admission, PSA, Kyverno, Gatekeeper, OPA, ValidatingAdmissionPolicy, Argo
+  CD, Flux, GitOps, operator, CRD, admission webhook, Helm, Kustomize,
+  multi-tenancy, vCluster, Talos, k3s, k0s, kubeadm, EKS, GKE, AKS, CIS
+  benchmark, kube-bench, audit log, version skew. NOT pod-level
+  securityContext/seccomp (sota-sandboxing) or NetworkPolicy/CNI depth
+  (sota-network-security).
 ---
 
 # SOTA Kubernetes Platform Security & Operations

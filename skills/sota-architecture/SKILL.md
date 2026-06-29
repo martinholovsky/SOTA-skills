@@ -1,7 +1,21 @@
 ---
 name: sota-architecture
 description: >-
-  State-of-the-art software and system architecture rules (2026) for both building and auditing. Use this skill whenever the task involves designing, building, refactoring, or extending system architecture (choosing monolith vs microservices vs serverless, defining service/module boundaries, domain modeling, DDD, hexagonal/clean architecture, event-driven design, CQRS, sagas, message queues, caching, sharding, multi-tenancy, resilience, scalability, 12-factor/cloud-native setup, feature flags, ADRs) — AND whenever the task is to audit, review, or assess existing architecture or code for architectural quality (architecture review, design review, code review of service boundaries, finding anti-patterns like distributed monolith or shared database, reliability/resilience review, scalability assessment). Trigger keywords: architecture, system design, microservices, monolith, serverless, bounded context, DDD, aggregate, hexagonal, clean architecture, event-driven, Kafka, NATS, JetStream, message bus, message broker, messaging, pub/sub, stream, consumer, queue, saga, outbox, idempotency, CQRS, resilience, circuit breaker, retry, timeout, backpressure, caching, sharding, partitioning, multi-tenant, 12-factor, cloud-native, feature flag, ADR, scalability, anti-pattern, design review, architecture audit.
+  State-of-the-art software and system architecture rules (2026) for both
+  building and auditing. Use when designing, building, refactoring, or
+  extending system architecture — boundaries, DDD, hexagonal/clean
+  architecture, event-driven design, CQRS, sagas, messaging, caching,
+  sharding, multi-tenancy, resilience, scalability, 12-factor/cloud-native —
+  AND when auditing existing architecture for quality (design review,
+  anti-patterns like distributed monolith or shared database,
+  reliability/scalability assessment). Trigger keywords: architecture, system
+  design, microservices, monolith, serverless, bounded context, DDD,
+  aggregate, hexagonal, clean architecture, event-driven, Kafka, NATS,
+  JetStream, messaging, pub/sub, stream, consumer, queue, saga, outbox,
+  idempotency, CQRS, resilience, circuit breaker, retry, timeout,
+  backpressure, caching, sharding, partitioning, multi-tenant, 12-factor,
+  cloud-native, feature flag, ADR, scalability, anti-pattern, design review,
+  architecture audit.
 ---
 
 # SOTA Architecture (2026)

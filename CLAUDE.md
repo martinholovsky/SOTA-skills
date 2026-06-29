@@ -23,7 +23,10 @@ changes are edits to Markdown held to a few hard invariants. See
 
 1. any tracked `*.md` over **500 lines**;
 2. any `skills/*/rules/*.md` missing an **`## Audit checklist`** heading;
-3. an **internal-name denylist** — the library must stay generic.
+3. an **internal-name denylist** — the library must stay generic;
+4. any `skills/*/SKILL.md` **`description` over 1024 characters** — the Agent
+   Skills spec cap; loaders silently skip a skill whose description exceeds it.
+   (Needs `python3`; skipped with a warning if absent locally, enforced in CI.)
 
 Secrets are scanned by **gitleaks** (`.gitleaks.toml`, which disables only the
 noisy entropy-based `generic-api-key` rule so the security skills' intentional

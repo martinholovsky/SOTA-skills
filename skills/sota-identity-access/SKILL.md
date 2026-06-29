@@ -1,7 +1,20 @@
 ---
 name: sota-identity-access
 description: >-
-  State-of-the-art identity and access management engineering (2026 baseline) for both BUILDING/configuring identity infrastructure AND AUDITING it. Use this skill whenever the task involves federation protocols (OIDC, OAuth 2.x, SAML, SCIM), running or configuring an Identity Provider (Kanidm, Keycloak, Authentik, Zitadel, Entra, Okta), designing authorization MODELS (RBAC/ABAC/ReBAC, OPA/Cedar/OpenFGA/SpiceDB), the joiner-mover-leaver lifecycle and provisioning/deprovisioning, privileged and break-glass access, machine/workload identity, MFA/passwordless/passkeys at the IdP, or assurance levels — AND whenever auditing an estate for orphaned/dormant accounts, over-privileged roles, weak/missing MFA, wildcard redirect URIs, long-lived tokens, missing key rotation, SAML signature misconfig, absent access reviews, or break-glass misuse. This skill owns identity INFRASTRUCTURE and access-management DESIGN; it does not re-teach app-level login ceremony, session cookie flags, or JWT signature-validation mechanics (sota-code-security owns those). Trigger keywords: IAM, IdP, identity provider, OIDC, OpenID Connect, OAuth, OAuth 2.1, PKCE, DPoP, PAR, RAR, JAR, FAPI, SAML, XML signature wrapping, SCIM, provisioning, deprovisioning, joiner mover leaver, RBAC, ABAC, ReBAC, Zanzibar, OpenFGA, SpiceDB, OPA, Cedar, Kanidm, Keycloak, Authentik, Zitadel, Entra, Okta, SSO, single logout, MFA, passkey, FIDO2, WebAuthn, step-up, conditional access, CAEP, shared signals, PAM, privileged access, break-glass, just-in-time, SPIFFE, workload identity, access review, recertification, orphaned account, NIST 800-63, IAL, AAL, FAL.
+  State-of-the-art identity and access management engineering (2026) for
+  BUILDING/configuring identity infrastructure AND AUDITING it — federation,
+  IdPs, authorization models, the joiner-mover-leaver lifecycle,
+  privileged/break-glass access, workload identity, MFA/passkeys, and
+  assurance levels; audits cover orphaned accounts, over-privileged roles,
+  weak MFA, long-lived tokens, and SAML misconfig. Owns identity
+  INFRASTRUCTURE and access-management DESIGN, not app-level login/session/JWT
+  mechanics (sota-code-security owns those). Trigger keywords: IAM, IdP, OIDC,
+  OAuth 2.1, PKCE, DPoP, PAR, RAR, JAR, FAPI, SAML, XML signature wrapping,
+  SCIM, provisioning, deprovisioning, RBAC, ABAC, ReBAC, Zanzibar, OpenFGA,
+  SpiceDB, OPA, Cedar, Kanidm, Keycloak, Authentik, Zitadel, Entra, Okta, SSO,
+  single logout, MFA, passkey, FIDO2, WebAuthn, step-up, conditional access,
+  CAEP, PAM, break-glass, just-in-time, SPIFFE, access review, NIST 800-63,
+  IAL, AAL, FAL.
 ---
 
 # SOTA Identity & Access
