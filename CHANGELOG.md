@@ -346,6 +346,7 @@ First public release.
 - **Governance**: contributor guide, security policy, and code of conduct;
   `main` protected with required status checks.
 
+[1.7.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.7.0
 [1.6.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.6.0
 [1.5.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.5.0
 [1.4.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.4.0
