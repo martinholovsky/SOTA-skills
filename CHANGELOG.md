@@ -5,6 +5,52 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-07-01
+
+Adds a security & compliance engineering skill — the cybersecurity-regulation
+counterpart to `sota-privacy-compliance` (which stays data/privacy-centric). It
+covers the control frameworks and product-security regulations that drive
+architecture, code, and CI gates rather than the organizational policy binder,
+with an explicit engineering-vs-organizational scope boundary. The library goes
+from 34 to 35 skills.
+
+### Added
+
+- **`sota-security-compliance` — security & compliance engineering skill** (35th
+  skill): SKILL.md + 5 rules — `01-control-frameworks-as-code` (NIST CSF 2.0 as
+  the organizing spine; control → mechanism → evidence crosswalk; policy-as-code
+  gates; baselines/tailoring/OSCAL), `02-nist-800-53-171-cmmc-fedramp` (SP
+  800-53 Rev 5 families & baselines, SP 800-171 Rev 3 CUI boundary +
+  FIPS-validated crypto, CMMC 2.0 levels & phase-in, FedRAMP + FedRAMP 20x),
+  `03-ssdf-secure-sdlc` (SP 800-218 PO/PS/PW/RV practices as CI gates, federal
+  secure-software self-attestation, SP 800-218A for AI/model development),
+  `04-eu-cyber-resilience-act` (Regulation (EU) 2024/2847 — SBOM, coordinated
+  vulnerability disclosure, signed update channel, secure-by-default, the 24h/72h
+  ENISA reporting clocks, phased timeline), `05-iec-62443-ot-ics` (OT/ICS zones &
+  conduits, Security Levels SL-T/C/A, the 7 Foundational Requirements, 62443-4-1
+  vs SSDF, 62443 as a CRA conformity route). Cross-links to
+  `sota-privacy-compliance`, `sota-devsecops`, `sota-identity-access`,
+  `sota-network-security`, and `sota-detection-engineering` rather than
+  duplicating them. Statuses verified July 2026 against NIST CSRC, EUR-Lex, the
+  Federal Register, and ISA/IEC (CSF 2.0 Feb 2024; 800-53 Rev 5; 800-171 Rev 3
+  May 2024; SSDF v1.1 / 800-218A; CMMC 32 CFR eff. Dec 2024 + 48 CFR eff. Nov
+  2025; CRA reporting from 11 Sep 2026, main obligations from 11 Dec 2027).
+
+### Changed
+
+- Router (`sota/SKILL.md`) catalog table, rules index, and description updated to
+  include `sota-security-compliance`.
+- README skill count (34 → 35), file/line counts (279 files, ~53k lines), and
+  skills table updated.
+- `scripts/install.sh` always-on routing is now **update-aware**: re-running (or
+  `--update`) refreshes the managed `~/.claude/CLAUDE.md` directive and the
+  `settings.json` reminder hook in place when their wording changes upstream —
+  prompting first, backing up, editing only the content between the managed
+  markers, writing through a symlink so dotfiles keep their link, and leaving a
+  hook with custom wording untouched. Previously the block was write-once
+  (detected by marker presence and skipped), so wording changes never propagated.
+  README "Always-on routing" and "Updating" sections document the new behavior.
+
 ## [1.6.0] - 2026-06-29
 
 Adds four language/domain skills found missing in a coverage gap-analysis,
@@ -300,6 +346,7 @@ First public release.
 - **Governance**: contributor guide, security policy, and code of conduct;
   `main` protected with required status checks.
 
+[1.7.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.7.0
 [1.6.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.6.0
 [1.5.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.5.0
 [1.4.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.4.0
