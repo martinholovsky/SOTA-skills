@@ -22,10 +22,16 @@ changes are edits to Markdown held to a few hard invariants. See
 `scripts/check-invariants.sh` fails the build on:
 
 1. any tracked `*.md` over **500 lines**;
-2. any `skills/*/rules/*.md` missing an **`## Audit checklist`** heading;
-3. an **internal-name denylist** — the library must stay generic;
+2. any `skills/*/rules/*.md` whose **last `## ` heading isn't
+   `## Audit checklist`** (the checklist must end the file);
+3. an **internal-name denylist** — the library must stay generic. The private
+   patterns are deliberately untracked (git-ignored `.denylist.local` locally,
+   `SOTA_DENYLIST` secret in CI); without them only the generic
+   reader-assumption phrases are checked, e.g. on external fork PRs;
 4. any `skills/*/SKILL.md` **`description` over 1024 characters** — the Agent
-   Skills spec cap; loaders silently skip a skill whose description exceeds it.
+   Skills spec cap; loaders silently skip a skill whose description exceeds it
+   — or an unquoted inline description containing `: ` (invalid YAML; strict
+   loaders reject the skill — use `description: >-`).
    (Needs `python3`; skipped with a warning if absent locally, enforced in CI.)
 
 Secrets are scanned by **gitleaks** (`.gitleaks.toml`, which disables only the

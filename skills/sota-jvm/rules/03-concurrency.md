@@ -43,9 +43,10 @@ coroutines. References:
   call pins the carrier thread (improved in 24+, but still prefer
   `ReentrantLock` around blocking sections). Avoid heavy `ThreadLocal` use.
 - CPU-bound work still wants a bounded platform-thread pool sized to cores.
-- **Structured concurrency** (`StructuredTaskScope`) and **scoped values** are
-  *preview* in Java 25 (JEP 505 / 506-class), finalization expected ~JDK 27 —
-  use behind a preview flag and note it's not yet stable; don't recommend it as
+- **Scoped values** (`ScopedValue`) are **final in Java 25** (JEP 506) — safe
+  to recommend as GA. **Structured concurrency** (`StructuredTaskScope`) is
+  still *preview* (JEP 505 in 25; previews continue in later JDKs) — use
+  behind a preview flag, note it's not yet stable, and don't recommend it as
   GA.
 
 ## 4. Kotlin coroutines

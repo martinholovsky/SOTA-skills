@@ -57,7 +57,8 @@ scripts/check-invariants.sh   # the invariants below, enforced
 
 **`rules/NN-topic.md`**
 
-- 150–340 lines of concrete, current guidance with short examples.
+- Roughly 80–350 lines of concrete, current guidance with short examples
+  (a target, not a floor — compact rules files are fine; the hard cap is 500).
 - Ends with an **`## Audit checklist`** — yes/no questions, ideally with
   grep/lint patterns, so the rule can be used to hunt violations.
 
@@ -78,11 +79,16 @@ are marked "needs verification", never asserted.
 `scripts/check-invariants.sh` runs in pre-commit and CI and fails the build on:
 
 1. any tracked `*.md` over **500 lines**;
-2. any `skills/*/rules/*.md` missing an **`## Audit checklist`** heading;
-3. any **internal/private reference** leaking into tracked files;
+2. any `skills/*/rules/*.md` that doesn't **end** with an
+   **`## Audit checklist`** (it must be the file's last `## ` heading);
+3. any **internal/private reference** leaking into tracked files (the private
+   pattern list is intentionally not in the repo; PRs from forks run the
+   generic checks and the maintainer's CI runs the full list);
 4. any `skills/*/SKILL.md` `description` over **1024 characters** (the Agent
-   Skills cap; check 4 needs `python3`, and is skipped with a warning if it is
-   absent locally — CI always enforces it).
+   Skills cap) or written as an unquoted inline scalar containing `: ` —
+   invalid YAML that makes loaders skip the skill; use `description: >-`.
+   (Check 4 needs `python3`, and is skipped with a warning if it is absent
+   locally — CI always enforces it.)
 
 Secrets are scanned separately by **gitleaks** (config in `.gitleaks.toml`);
 CI scans the full git history, the pre-commit hook scans each commit.

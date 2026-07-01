@@ -7,22 +7,92 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Fixes every confirmed finding of the 2026-07-01 adversarial audit
+(`docs/AUDIT-2026-07-01.md`) except the accepted-risk history disclosure
+(finding S1 — names remain in pre-July-2026 git history by decision).
+
+### Fixed
+
+- **`sota-security-compliance` frontmatter was invalid strict YAML** (HIGH):
+  the inline description contained `Trigger keywords: …`, which strict loaders
+  reject — the skill could be silently skipped. Now a `>-` block scalar
+  (994 chars); invariant 4 additionally rejects unquoted inline descriptions
+  containing `: ` so the class can't recur.
+- **`init-gates.sh` could silently skip whole language gates** (HIGH): the
+  `has()` file-list probe piped `printf` into `grep -q`, which under
+  `pipefail` can die by SIGPIPE on large repos and read as "language not
+  detected". Now a herestring; reproduced before/after with a 200k-file list.
+- **`init-gates.sh` silent no-ops**: a `repos: []`-style config produced
+  "wrote .pre-commit-config.yaml" with no gates inserted (now dies with
+  instructions); altered/re-indented `sota-gates` markers made every re-run a
+  silent unchanged rewrite (now detected exact-line and refused); running in a
+  non-git dir crashed on `pre-commit install` after writing the config (now a
+  warning); Bun ≥ 1.2 text lockfile `bun.lock` now selects `bun audit`.
+- **`install.sh` `--copy` → default-install switch corrupted the target**:
+  `ln -sfn` can't replace a real directory, so the stale snapshot stayed (with
+  a self-named symlink nested inside) while the script reported success. Now
+  detected and replaced after a prompt. Altered routing markers in
+  `~/.claude/CLAUDE.md` are refused instead of looping "out of date" forever.
+- **`gen-agents-md.sh`**: orphaned/altered managed-block markers now refuse to
+  touch the file (previously a lone BEGIN marker set up content loss on the
+  next run); marker splice is exact-line so a *quoted* marker can't misfire;
+  skill count uses `find -L` (symlinked layouts reported "0 skills indexed").
+- **`check-invariants.sh` hardening**: check 1 counts a missing final newline
+  and skips deleted-but-tracked files instead of aborting; check 2 requires
+  the audit checklist to be the file's LAST `## ` heading ("ends with", as
+  documented); check 3 is case-insensitive, also scans file/directory names,
+  and surfaces scan errors instead of failing open.
+- **sota-jvm mislabeled JDK 25 scoped values as preview**: JEP 506 is final in
+  Java 25 (structured concurrency remains preview, JEP 505). SKILL.md body and
+  rules/03 corrected against openjdk.org.
+- **sota-golang baseline raised to Go 1.25+**: 1.24 left security support with
+  1.26's release (go.dev/doc/devel/release); feature notes unchanged.
+- **Count/format drift**: README hero counts restored to the skills-markdown
+  basis (255 files, ~52k lines — "279 files" counted every tracked file);
+  README/CONTRIBUTING rules-file line-range claims now match reality (~80–350);
+  the v1.5.0 pre-fix description lengths corrected to invariant 4's own
+  measurements; plugin/marketplace descriptions say 34 domains + router
+  (35 skills); router cross-cutting rules renumbered sequentially (were
+  1-9, 13-16, 10-12); audit-methodology short finding format regains the
+  `effort` field and 11 skill finding templates gained an `Effort:` line;
+  five bare `rules/08` references in sota-llm-engineering now name
+  sota-code-security; a garbled cross-reference in sota-code-security
+  rules/09 reworded.
+- **Secret-scanning guidance reconciled** (was duplicated with drift):
+  sota-devsecops rules/05 §5.2 owns pipeline gate layering,
+  sota-secrets-management rules/04 owns tool config + leak response — now
+  cross-referenced both ways, and gitleaks commands use the current
+  `gitleaks git` CLI (the official pre-commit hook's own invocation).
+- Stale docs: `CLAUDE.md` pointed at the changelog with "(current: v1.0.0)"
+  seven releases later — the pointer is now version-less; gitleaks scan scope
+  documented accurately in `CLAUDE.md`, `CONTRIBUTING.md`, and `README.md`.
+
 ### Changed
 
 - **CI secret scan now covers the full git history**: the gitleaks job checks
   out with `fetch-depth: 0` and runs `gitleaks git` (every commit) instead of
   `gitleaks detect --no-git` (working tree only). Validated locally first:
   44 commits scanned, no leaks.
+- **CI hardening**: `actions/checkout` re-pinned to v7.0.0 (SHA-pinned;
+  was v4.2.2, three majors old), `persist-credentials: false` on every
+  checkout, and a new `shellcheck` job gates `scripts/*.sh`. The
+  sota-devsecops SHA-pinning example no longer hard-codes an aging SHA.
+- **Internal-name denylist externalized**: the private patterns moved out of
+  the tracked script into a git-ignored `.denylist.local` (pre-commit) and the
+  `SOTA_DENYLIST` repository secret (CI). The tracked script keeps only the
+  generic reader-assumption phrases; fork PRs run those and the maintainer's
+  CI runs the full list. Pre-2026-07 history still contains the old inline
+  list — reviewed and accepted (audit finding S1).
 - **`scripts/install.sh` checks contributor pre-commit hygiene**: when run from
   a git checkout it detects a missing pre-commit hook and offers to install it
   (or prints an install tip when the `pre-commit` tool itself is absent).
   Non-fatal for end users; CI enforces the same checks regardless.
 
-### Fixed
+### Added
 
-- Stale docs: `CLAUDE.md` pointed at the changelog with "(current: v1.0.0)"
-  seven releases later — the pointer is now version-less; gitleaks scan scope
-  documented accurately in `CLAUDE.md`, `CONTRIBUTING.md`, and `README.md`.
+- `docs/AUDIT-2026-07-01.md` — full adversarial audit report (decision ledger,
+  findings, reproduction status), and `docs/ROADMAP.md` — audit-derived
+  priorities.
 
 ## [1.7.0] - 2026-07-01
 
@@ -147,9 +217,11 @@ goes from 30 to 34 skills.
 
 - **Skill descriptions over the 1024-character Agent Skills cap** (issue #4):
   eight `SKILL.md` descriptions exceeded the spec limit — `sota-identity-access`
-  (1632), `sota-detection-engineering` (1369), `sota-architecture` (1317),
-  `sota-kubernetes` (1189), `sota-network-security` (1184), `sota-testing`
-  (1165), `sota-code-security` (1109), `sota-secrets-management` (1105) — so
+  (1629), `sota-detection-engineering` (1366), `sota-architecture` (1314),
+  `sota-kubernetes` (1186), `sota-network-security` (1181), `sota-testing`
+  (1165), `sota-code-security` (1106), `sota-secrets-management` (1103)
+  as measured by invariant 4's own counter (corrected 2026-07-01; the
+  originally published figures were 2–3 higher from a different parser) — so
   loaders (Claude Code, Codex, …) silently skipped them. All condensed to ≤ 1024
   (now 955–1016) by trimming prose while preserving the trigger-keyword routing
   signal. Verified against the

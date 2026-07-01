@@ -87,6 +87,7 @@ Confidence accompanies severity: **confirmed** (you traced the data flow) vs **s
   Issue: what is wrong, in one or two sentences, with the data-flow if security-relevant
   Evidence: the offending line(s), quoted
   Fix: concrete change — code snippet or exact rule reference (rules/05 §2)
+  Effort: trivial | small | medium | large
 ```
 
 Group findings by severity, CRITICAL first. End with: counts per severity, the mechanical

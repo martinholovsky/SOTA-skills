@@ -149,19 +149,27 @@ fi
 
 if [ ! -f "$OUTPUT" ]; then
   cp "$block_file" "$OUTPUT"
-elif grep -qF "$BEGIN_MARK" "$OUTPUT" && grep -qF "$END_MARK" "$OUTPUT"; then
+elif grep -qxF "$BEGIN_MARK" "$OUTPUT" && grep -qxF "$END_MARK" "$OUTPUT"; then
+  # Exact-whole-line detection (-x) matching the awk $0== below: a line that
+  # merely QUOTES a marker (docs, code fence) must not trigger a splice.
   cp "$OUTPUT" "$OUTPUT.bak"
   awk -v b="$BEGIN_MARK" -v e="$END_MARK" -v f="$block_file" '
-    index($0, b) { while ((getline line < f) > 0) print line; close(f); skip=1; next }
-    index($0, e) { skip=0; next }
+    $0 == b { while ((getline line < f) > 0) print line; close(f); skip=1; next }
+    $0 == e { skip=0; next }
     skip!=1 { print }
   ' "$OUTPUT.bak" > "$OUTPUT"
+elif grep -qF "$BEGIN_MARK" "$OUTPUT" || grep -qF "$END_MARK" "$OUTPUT"; then
+  # A lone/altered marker: appending would duplicate the block, and the NEXT
+  # run's splice would then eat user content between orphan and copy — refuse.
+  die "$OUTPUT has a sota-skills marker that is unpaired or altered — restore the exact marker lines (or delete the block), then re-run"
 else
   cp "$OUTPUT" "$OUTPUT.bak"
   { printf '\n'; cat "$block_file"; } >> "$OUTPUT"
 fi
 
-count="$(find "$SKILLS_DIR" -maxdepth 1 -mindepth 1 -type d | wc -l | tr -d ' ')"
+# -L: the default layout symlinks skill dirs (install.sh), which plain -type d
+# would not count — a successful run used to report "0 skills indexed".
+count="$(find -L "$SKILLS_DIR" -maxdepth 1 -mindepth 1 -type d | wc -l | tr -d ' ')"
 log "wrote $OUTPUT — $count skills indexed, pointing at $SKILLS_DIR"
 log "AGENTS.md is read by Codex, Cursor, Copilot, Gemini CLI, Windsurf, Zed, and more."
 [ -f "$OUTPUT.bak" ] && log "previous version saved to $OUTPUT.bak"

@@ -17,7 +17,7 @@
 Your assistant is brilliant — it just doesn't know your standards. SOTA-skills
 teaches it: a library of Claude Code skills that encode state-of-the-art (2026)
 practices for building **and** auditing software, and that verify their own
-claims. 35 skills, 279 files, ~53k lines — every file under 500 lines, so the
+claims. 35 skills, 255 skill files, ~52k lines — every file under 500 lines, so the
 right rules load exactly when your task needs them, never bloating the context
 window. Fast-moving claims (versions, specs, regulations) are web-verified
 against primary sources.
@@ -47,7 +47,7 @@ skills/
     SKILL.md                     # when to use, BUILD/AUDIT workflows,
                                  # severity conventions, rules index, top-10
     rules/
-      01-<topic>.md              # 150–320 lines each, ends with an
+      01-<topic>.md              # ~80–350 lines each, ends with an
       02-<topic>.md              # executable Audit checklist
       ...
 profiles/

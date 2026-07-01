@@ -133,6 +133,14 @@ setup_claude_md() {
       warn "~/.claude/CLAUDE.md has the start marker but no end marker — leaving it untouched; fix by hand or delete the block and re-run"
       return
     fi
+    if [ -z "$(extract_block "$f")" ]; then
+      # Markers found by substring, but extract_block (exact whole-line match)
+      # sees nothing: they were re-indented/altered. A refresh would be a
+      # silent no-op loop — refuse instead.
+      # shellcheck disable=SC2088  # ~ is display text in the message, not a path
+      warn "~/.claude/CLAUDE.md has sota routing markers that are altered (indented?) — leaving it untouched; restore the exact marker lines or delete the block and re-run"
+      return
+    fi
     if [ "$(extract_block "$f")" = "$(emit_routing_block)" ]; then
       log "routing directive in ~/.claude/CLAUDE.md — up to date"; return
     fi
@@ -286,6 +294,17 @@ for src in "$SKILLS_SRC"/*/; do
     rm -rf "$dest"
     cp -R "${src%/}" "$dest"
   else
+    if [ -e "$dest" ] && [ ! -L "$dest" ]; then
+      # ln -sfn cannot replace a real directory — it would nest the link
+      # INSIDE it and leave the stale copy in place while we report success
+      # (the --copy → default-install switch). Ask, then replace for real.
+      if ask_yn "$name at $dest is a real directory (previous --copy install?) — replace it with a symlink?" y; then
+        rm -rf "$dest"
+      else
+        warn "kept $dest as-is — it is a snapshot and will NOT update; re-run with --copy to refresh it"
+        continue
+      fi
+    fi
     ln -sfn "${src%/}" "$dest"
   fi
   linked=$((linked + 1))

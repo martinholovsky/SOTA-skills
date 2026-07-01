@@ -115,6 +115,7 @@ Report every finding as:
   Evidence: the offending line, with the secret value REDACTED (show prefix + length only)
   Why: one sentence of impact
   Fix: concrete remediation (rotate first, then remove; target pattern to adopt)
+  Effort: trivial | small | medium | large
 ```
 
 Order findings Critical → Low. End the audit with: counts per severity, whether git history is

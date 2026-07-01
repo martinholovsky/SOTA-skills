@@ -68,7 +68,7 @@ are tool-design failures, not model failures.
   auditing, and parallelizing impossible — promote an action to a dedicated
   tool when you need to gate it (§6), validate it, render it, or mark it
   parallel-safe. Server-side scoping (tenant from session, not from model
-  args) is the security half — rules/08.
+  args) is the security half — sota-code-security rules/08.
 - **Strict schemas:** enums, formats, `additionalProperties: false`, examples
   in descriptions; use provider strict/validated tool modes where available.
   Validate arguments in code anyway — schema conformance ≠ semantic validity.
@@ -140,7 +140,7 @@ the harness pauses, a human (or policy engine) approves:
   for an hour" is not a gate. Batch *similar* low-risk actions for one
   review where volume demands it.
 - Authorization (can this principal do this at all) is enforced in code
-  regardless of approval UX — rules/08; the prompt is never the boundary.
+  regardless of approval UX — sota-code-security rules/08; the prompt is never the boundary.
 
 ## 5. Context management across turns
 
@@ -159,7 +159,7 @@ window, costs grow quadratically with history, and quality drops.
   product surface: schema/format guidance in the prompt, size limits,
   expiry/decay, user-visible and erasable where it holds user data
   (rules/06 §5), and protected from poisoning via untrusted content
-  (rules/08). Current frontier models measurably improve with an explicit
+  (sota-code-security rules/08). Current frontier models measurably improve with an explicit
   memory file + instructions on when to consult/update it — but only if you
   tell them when.
 - **Don't resend what you can reference:** large artifacts go to files/object
@@ -182,7 +182,7 @@ deprecation policy). Engineering consequences:
   use maintained official SDKs that absorb revision churn.
 - **Treat third-party MCP servers as untrusted dependencies:** version-pin,
   review tool descriptions before exposing them to your model (description
-  text is prompt input — injection surface, rules/08), and apply your own
+  text is prompt input — injection surface, sota-code-security rules/08), and apply your own
   allowlist/gating layer over their tools rather than mounting everything.
 - **Your own tools don't have to be MCP.** In-process tool definitions are
   simpler, faster, and easier to test; MCP earns its overhead when you need
@@ -249,7 +249,7 @@ budget bounds the sum of its children).
       complete.
 - [ ] Consequential actions behind per-action human/policy gates that
       suspend durably and feed deny-reasons back; authorization additionally
-      code-enforced (rules/08).
+      code-enforced (sota-code-security rules/08).
 - [ ] Context management present for long sessions: pruning/compaction with
       eval coverage, memory with limits/expiry/erasability, artifacts by
       reference not by paste.

@@ -70,6 +70,7 @@ this file routes you to the right one.
    Evidence: <what you observed>
    Impact: <what fails and when>
    Fix: <specific, smallest correct remediation>
+   Effort: trivial | small | medium | large
    ```
 
 5. **Severity conventions:**
