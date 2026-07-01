@@ -23,6 +23,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          # Full history so gitleaks scans every commit, not just the checkout.
+          fetch-depth: 0
       - name: Install gitleaks (pinned + checksum-verified)
         run: |
           set -euo pipefail
@@ -35,5 +38,5 @@ jobs:
           tar -xzf "$TARBALL" gitleaks
           sudo install -m 0755 gitleaks /usr/local/bin/gitleaks
           gitleaks version
-      - name: Scan
-        run: gitleaks detect --no-git --config .gitleaks.toml --redact --verbose
+      - name: Scan (full git history)
+        run: gitleaks git --config .gitleaks.toml --redact --verbose .

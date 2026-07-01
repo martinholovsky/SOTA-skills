@@ -84,7 +84,8 @@ are marked "needs verification", never asserted.
    Skills cap; check 4 needs `python3`, and is skipped with a warning if it is
    absent locally — CI always enforces it).
 
-Secrets are scanned separately by **gitleaks** (config in `.gitleaks.toml`).
+Secrets are scanned separately by **gitleaks** (config in `.gitleaks.toml`);
+CI scans the full git history, the pre-commit hook scans each commit.
 
 [skills-spec]: https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview
 
@@ -94,6 +95,9 @@ Secrets are scanned separately by **gitleaks** (config in `.gitleaks.toml`).
 pipx install pre-commit     # or: brew install pre-commit
 pre-commit install          # run the same checks on every commit
 ```
+
+(`scripts/install.sh` also checks for the hook when run from a checkout and
+offers to install it, or prints this tip if the `pre-commit` tool is missing.)
 
 Run the invariant checks any time:
 

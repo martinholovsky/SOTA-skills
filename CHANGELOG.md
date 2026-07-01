@@ -5,6 +5,25 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **CI secret scan now covers the full git history**: the gitleaks job checks
+  out with `fetch-depth: 0` and runs `gitleaks git` (every commit) instead of
+  `gitleaks detect --no-git` (working tree only). Validated locally first:
+  44 commits scanned, no leaks.
+- **`scripts/install.sh` checks contributor pre-commit hygiene**: when run from
+  a git checkout it detects a missing pre-commit hook and offers to install it
+  (or prints an install tip when the `pre-commit` tool itself is absent).
+  Non-fatal for end users; CI enforces the same checks regardless.
+
+### Fixed
+
+- Stale docs: `CLAUDE.md` pointed at the changelog with "(current: v1.0.0)"
+  seven releases later — the pointer is now version-less; gitleaks scan scope
+  documented accurately in `CLAUDE.md`, `CONTRIBUTING.md`, and `README.md`.
+
 ## [1.7.0] - 2026-07-01
 
 Adds a security & compliance engineering skill — the cybersecurity-regulation

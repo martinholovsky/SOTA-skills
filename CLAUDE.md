@@ -30,7 +30,9 @@ changes are edits to Markdown held to a few hard invariants. See
 
 Secrets are scanned by **gitleaks** (`.gitleaks.toml`, which disables only the
 noisy entropy-based `generic-api-key` rule so the security skills' intentional
-secret-shaped examples don't false-positive).
+secret-shaped examples don't false-positive). CI scans the **full git history**
+(`gitleaks git` on a `fetch-depth: 0` checkout), not just the working tree; the
+pre-commit hook scans each commit locally.
 
 ## Conventions that matter
 
@@ -53,4 +55,5 @@ secret-shaped examples don't false-positive).
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) — full contribution guide and PR checklist
 - [SECURITY.md](SECURITY.md) — reporting bad guidance or a leaked secret
-- [CHANGELOG.md](CHANGELOG.md) — release history (current: v1.0.0)
+- [CHANGELOG.md](CHANGELOG.md) — release history (top entry = current version;
+  also mirrored in `VERSION`)

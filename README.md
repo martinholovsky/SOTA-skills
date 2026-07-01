@@ -441,7 +441,8 @@ Naming one (or the `sota` router) just makes the routing explicit. From there:
 See [CONTRIBUTING.md](CONTRIBUTING.md). The short version: keep skills generic,
 verify fast-moving claims against primary sources, keep every file ≤ 500 lines,
 and end each rules file with an audit checklist. These are enforced by
-`scripts/check-invariants.sh` (pre-commit + CI) plus gitleaks. Security issues
+`scripts/check-invariants.sh` (pre-commit + CI) plus gitleaks (full-history
+scan in CI; per-commit via the pre-commit hook). Security issues
 and conduct: [SECURITY.md](SECURITY.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ## License
