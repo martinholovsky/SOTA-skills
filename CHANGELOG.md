@@ -5,7 +5,7 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.7.1] - 2026-07-01
 
 Fixes every confirmed finding of the 2026-07-01 adversarial audit
 (`docs/AUDIT-2026-07-01.md`) except the accepted-risk history disclosure
@@ -437,6 +437,7 @@ First public release.
 - **Governance**: contributor guide, security policy, and code of conduct;
   `main` protected with required status checks.
 
+[1.7.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.7.1
 [1.7.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.7.0
 [1.6.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.6.0
 [1.5.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.5.0
