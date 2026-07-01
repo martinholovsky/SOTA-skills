@@ -77,6 +77,7 @@ manually. Check the dependency tree against known-CVE databases.
   Evidence: the offending line(s), verbatim
   Impact: one sentence — what executes/leaks/deadlocks, under what input
   Fix: concrete replacement code or action
+  Effort: trivial | small | medium | large
 ```
 
 Group findings by severity, CRITICAL first. End with: counts per severity, the

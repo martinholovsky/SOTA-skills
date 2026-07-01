@@ -92,6 +92,7 @@ build-time) and **blast radius** (process death > request failure > slow).
   What:  the defect, in one or two sentences
   Why:   concrete consequence (exploit path, failure mode, cost)
   Fix:   specific change — code sketch or named pattern from rules/NN
+  Effort: trivial | small | medium | large
   Refs:  rules/NN §M; clippy lint or RUSTSEC id if applicable
 ```
 

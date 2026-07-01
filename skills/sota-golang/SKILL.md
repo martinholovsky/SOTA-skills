@@ -1,15 +1,17 @@
 ---
 name: sota-golang
-description: State-of-the-art Go engineering rules (2026 baseline, Go 1.24+) that Claude applies when writing new Go code or auditing existing Go code. Covers error handling, interface/package design, goroutine and channel correctness, net/http hardening, security (SQL, exec, path traversal, CSPRNG, TLS, supply chain), performance (pprof, allocations, GC, PGO), and tooling/CI. Trigger keywords - Go, golang, goroutine, channel, go.mod, errgroup, context.Context, pprof, govulncheck, net/http, slog. Use for BOTH building Go services/libraries/CLIs and reviewing or auditing Go codebases.
+description: State-of-the-art Go engineering rules (2026 baseline, Go 1.25+) that Claude applies when writing new Go code or auditing existing Go code. Covers error handling, interface/package design, goroutine and channel correctness, net/http hardening, security (SQL, exec, path traversal, CSPRNG, TLS, supply chain), performance (pprof, allocations, GC, PGO), and tooling/CI. Trigger keywords - Go, golang, goroutine, channel, go.mod, errgroup, context.Context, pprof, govulncheck, net/http, slog. Use for BOTH building Go services/libraries/CLIs and reviewing or auditing Go codebases.
 ---
 
 # SOTA Go (2026)
 
 Expert-level rules for producing and auditing production Go. Baseline language
-version: Go 1.24+ (loop-var scoping from 1.22, `b.Loop`/`os.Root`/tool
-directives from 1.24, `testing/synctest` and container-aware GOMAXPROCS from
-1.25, `errors.AsType` and the default-on Green Tea GC from 1.26 — released
-2026-02 — noted where relevant). Every rule states the *why*; every rules file
+version: Go 1.25+, the oldest release still in security support (Go fixes the
+last two majors; 1.24 left support with 1.26's release, 2026-02). Feature
+notes: loop-var scoping from 1.22, `b.Loop`/`os.Root`/tool directives from
+1.24, `testing/synctest` and container-aware GOMAXPROCS from 1.25,
+`errors.AsType` and the default-on Green Tea GC from 1.26 — noted where
+relevant. Every rule states the *why*; every rules file
 ends with an audit checklist of grep/vet/lint patterns.
 
 ## Purpose
@@ -65,6 +67,7 @@ reporting (greps are recall-oriented, expect false positives).
   Evidence: the offending line(s), verbatim
   Impact: one sentence — what goes wrong, under what conditions
   Fix: concrete replacement code or action
+  Effort: trivial | small | medium | large
 ```
 
 Group findings by severity, CRITICAL first. End the audit with: counts per

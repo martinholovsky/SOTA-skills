@@ -89,6 +89,7 @@ category. Confirm claims against the code and pipeline config, not the diagram.
   Evidence: code/config/metric, verbatim
   Impact: one sentence — what predicts wrong / fails / leaks, under what condition
   Fix: concrete change or control
+  Effort: trivial | small | medium | large
 ```
 
 Group by severity, CRITICAL first. End with: counts per severity, an ML Test

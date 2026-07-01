@@ -16,6 +16,10 @@
 # refresh the managed block in place — only the content between the markers, and
 # only a hook it recognizes as its own; hand edits outside the block are kept.
 #
+# Contributor hygiene: when run from a git checkout it also checks that the
+# repo's pre-commit hook (gitleaks + invariants) is installed — offering to
+# install it if the pre-commit tool is available, or printing a tip if not.
+#
 # Usage:
 #   scripts/install.sh                 # link skills into ~/.claude/skills (all projects)
 #   scripts/install.sh --project DIR   # link into DIR/.claude/skills (one project)
@@ -129,6 +133,14 @@ setup_claude_md() {
       warn "~/.claude/CLAUDE.md has the start marker but no end marker — leaving it untouched; fix by hand or delete the block and re-run"
       return
     fi
+    if [ -z "$(extract_block "$f")" ]; then
+      # Markers found by substring, but extract_block (exact whole-line match)
+      # sees nothing: they were re-indented/altered. A refresh would be a
+      # silent no-op loop — refuse instead.
+      # shellcheck disable=SC2088  # ~ is display text in the message, not a path
+      warn "~/.claude/CLAUDE.md has sota routing markers that are altered (indented?) — leaving it untouched; restore the exact marker lines or delete the block and re-run"
+      return
+    fi
     if [ "$(extract_block "$f")" = "$(emit_routing_block)" ]; then
       log "routing directive in ~/.claude/CLAUDE.md — up to date"; return
     fi
@@ -203,6 +215,31 @@ setup_hook() {
   rm -f "$tmp"
 }
 
+# --- contributor hygiene: the repo's own pre-commit hook ---------------------
+# Non-fatal in every branch: end users who never commit to this checkout just
+# get a one-line tip at most; CI enforces the same checks regardless.
+maybe_setup_precommit() {
+  [ -f "$REPO/.pre-commit-config.yaml" ] || return 0
+  git -C "$REPO" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 0
+  local hook
+  hook="$(git -C "$REPO" rev-parse --git-path hooks/pre-commit 2>/dev/null || true)"
+  case "$hook" in /*) ;; *) hook="$REPO/$hook" ;; esac
+  if [ -n "$hook" ] && [ -f "$hook" ] && grep -q 'pre-commit' "$hook" 2>/dev/null; then
+    log "pre-commit hook in this checkout — already installed"
+    return 0
+  fi
+  if ! command -v pre-commit >/dev/null 2>&1; then
+    log "contributor tip: 'pipx install pre-commit' (or 'brew install pre-commit'), then 'pre-commit install' — runs the gitleaks + invariants gate on each commit (CI enforces it regardless)"
+    return 0
+  fi
+  ask_yn "Install the repo's pre-commit hook (gitleaks + invariants on every commit)?" y || return 0
+  if (cd "$REPO" && pre-commit install >/dev/null); then
+    log "pre-commit hook installed in this checkout"
+  else
+    warn "pre-commit install failed — run 'pre-commit install' in $REPO manually"
+  fi
+}
+
 maybe_setup_routing() {
   # personal install only; never for --project or --copy snapshots
   [ "$TARGET" = "$HOME/.claude/skills" ] && [ "$USE_COPY" -eq 0 ] || return 0
@@ -257,6 +294,17 @@ for src in "$SKILLS_SRC"/*/; do
     rm -rf "$dest"
     cp -R "${src%/}" "$dest"
   else
+    if [ -e "$dest" ] && [ ! -L "$dest" ]; then
+      # ln -sfn cannot replace a real directory — it would nest the link
+      # INSIDE it and leave the stale copy in place while we report success
+      # (the --copy → default-install switch). Ask, then replace for real.
+      if ask_yn "$name at $dest is a real directory (previous --copy install?) — replace it with a symlink?" y; then
+        rm -rf "$dest"
+      else
+        warn "kept $dest as-is — it is a snapshot and will NOT update; re-run with --copy to refresh it"
+        continue
+      fi
+    fi
     ln -sfn "${src%/}" "$dest"
   fi
   linked=$((linked + 1))
@@ -289,6 +337,7 @@ if [ "$TARGET" = "$HOME/.claude/skills" ] && [ "$USE_COPY" -eq 0 ]; then
 fi
 
 maybe_setup_routing
+maybe_setup_precommit
 
 cat <<NEXT
 

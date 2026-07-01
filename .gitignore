@@ -4,6 +4,11 @@
 profiles/*
 !profiles/example.md.template
 
+# Private internal-name denylist (check-invariants.sh check 3) — a tracked
+# copy would disclose the names it exists to suppress. CI uses the
+# SOTA_DENYLIST repository secret instead.
+.denylist.local
+
 # OS / editor cruft
 .DS_Store
 *.swp

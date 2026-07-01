@@ -85,7 +85,10 @@ list_files() {
 }
 FILES="$(list_files)"
 
-has() { printf '%s\n' "$FILES" | grep -qE "$1"; }
+# Herestring, not printf|grep: with `grep -q` exiting at the first match, a
+# pipe can kill printf with SIGPIPE on large file lists and — under pipefail —
+# silently turn a match into "language not detected" (gates never written).
+has() { grep -qE "$1" <<<"$FILES"; }
 
 # --- language detection ------------------------------------------------------
 USE_PY=0; USE_GO=0; USE_RUST=0; USE_JS=0; USE_TS=0; USE_SH=0
@@ -110,7 +113,7 @@ fi
 JS_AUDIT="npm audit --audit-level=high --omit=dev"
 has '(^|/)pnpm-lock\.yaml$' && JS_AUDIT="pnpm audit --audit-level high --prod"
 has '(^|/)yarn\.lock$'      && JS_AUDIT="yarn npm audit --severity high"
-has '(^|/)bun\.lockb$'      && JS_AUDIT="bun audit"
+has '(^|/)bun\.lockb?$'     && JS_AUDIT="bun audit"   # bun.lock (>=1.2 text) or legacy bun.lockb
 
 # --- block generation --------------------------------------------------------
 emit_block() {
@@ -345,19 +348,31 @@ assemble() {
       cat "$block"
       printf '%s\n' "$END_MARK"
     } >"$tmp"
-  elif grep -qF "$BEGIN_MARK" "$CONFIG" && grep -qF "$END_MARK" "$CONFIG"; then
+  elif grep -qxF "$BEGIN_MARK" "$CONFIG" && grep -qxF "$END_MARK" "$CONFIG"; then
     # Replace the existing managed block in place (markers kept, body swapped).
+    # Detection above is exact-whole-line (-x), matching the awk $0== below —
+    # a substring hit with altered markers must not fall through to a silent
+    # no-op rewrite.
     awk -v b="$BEGIN_MARK" -v e="$END_MARK" -v f="$block" '
       $0==b {print; while ((getline line < f) > 0) print line; close(f); skip=1; next}
       $0==e {print; skip=0; next}
       skip!=1 {print}
     ' "$CONFIG" >"$tmp"
+  elif grep -qF "$BEGIN_MARK" "$CONFIG" || grep -qF "$END_MARK" "$CONFIG"; then
+    # Markers present but re-indented/altered, or one of the pair is missing:
+    # any automatic edit here risks a silent no-op or eating user content.
+    die "$CONFIG has sota-gates marker(s) that are altered or unpaired — restore the exact marker lines (or delete the block), then re-run"
   elif grep -qE '^repos:' "$CONFIG"; then
     # Existing config without our markers: insert a fresh marked block after repos:.
     awk -v b="$BEGIN_MARK" -v e="$END_MARK" -v f="$block" '
       /^repos:[[:space:]]*$/ && !done {print; print b; while ((getline line < f) > 0) print line; close(f); print e; done=1; next}
       {print}
     ' "$CONFIG" >"$tmp"
+    # The insert needs `repos:` alone on its line; `repos: []` etc. matches the
+    # branch guard but not the awk pattern — verify the block landed, never
+    # write an unchanged file back while claiming success.
+    grep -qF "$BEGIN_MARK" "$tmp" \
+      || die "$CONFIG has 'repos:' but not on its own bare line (e.g. 'repos: []') — change it to a bare 'repos:' list or merge by hand"
     grep -qE '^default_install_hook_types:' "$CONFIG" \
       || warn "add 'default_install_hook_types: [pre-commit, pre-push]' to $CONFIG so both stages install"
   else
@@ -405,7 +420,10 @@ fi
 log "wrote $CONFIG (previous saved to $CONFIG.bak if it existed)"
 
 if [ "$DO_INSTALL" -eq 1 ]; then
-  if command -v pre-commit >/dev/null 2>&1; then
+  if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    # pre-commit install needs a git repo; the config was still written.
+    warn "not a git repository — after 'git init', run: pre-commit install --hook-type pre-commit --hook-type pre-push"
+  elif command -v pre-commit >/dev/null 2>&1; then
     pre-commit install --hook-type pre-commit --hook-type pre-push >/dev/null
     log "installed git hooks (pre-commit + pre-push)"
   else

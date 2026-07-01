@@ -22,15 +22,23 @@ changes are edits to Markdown held to a few hard invariants. See
 `scripts/check-invariants.sh` fails the build on:
 
 1. any tracked `*.md` over **500 lines**;
-2. any `skills/*/rules/*.md` missing an **`## Audit checklist`** heading;
-3. an **internal-name denylist** — the library must stay generic;
+2. any `skills/*/rules/*.md` whose **last `## ` heading isn't
+   `## Audit checklist`** (the checklist must end the file);
+3. an **internal-name denylist** — the library must stay generic. The private
+   patterns are deliberately untracked (git-ignored `.denylist.local` locally,
+   `SOTA_DENYLIST` secret in CI); without them only the generic
+   reader-assumption phrases are checked, e.g. on external fork PRs;
 4. any `skills/*/SKILL.md` **`description` over 1024 characters** — the Agent
-   Skills spec cap; loaders silently skip a skill whose description exceeds it.
+   Skills spec cap; loaders silently skip a skill whose description exceeds it
+   — or an unquoted inline description containing `: ` (invalid YAML; strict
+   loaders reject the skill — use `description: >-`).
    (Needs `python3`; skipped with a warning if absent locally, enforced in CI.)
 
 Secrets are scanned by **gitleaks** (`.gitleaks.toml`, which disables only the
 noisy entropy-based `generic-api-key` rule so the security skills' intentional
-secret-shaped examples don't false-positive).
+secret-shaped examples don't false-positive). CI scans the **full git history**
+(`gitleaks git` on a `fetch-depth: 0` checkout), not just the working tree; the
+pre-commit hook scans each commit locally.
 
 ## Conventions that matter
 
@@ -53,4 +61,5 @@ secret-shaped examples don't false-positive).
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) — full contribution guide and PR checklist
 - [SECURITY.md](SECURITY.md) — reporting bad guidance or a leaked secret
-- [CHANGELOG.md](CHANGELOG.md) — release history (current: v1.0.0)
+- [CHANGELOG.md](CHANGELOG.md) — release history (top entry = current version;
+  also mirrored in `VERSION`)

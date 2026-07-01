@@ -1,6 +1,20 @@
 ---
 name: sota-security-compliance
-description: State-of-the-art security & compliance engineering (2026) for the cybersecurity control frameworks and product-security regulations that drive architecture, code, and CI gates — not the organizational policy binder. Use when work must satisfy or be audited against NIST CSF 2.0, SP 800-53, SP 800-171 / CMMC, the Secure Software Development Framework (SSDF, SP 800-218), FedRAMP, the EU Cyber Resilience Act (CRA), or ISA/IEC 62443 (OT/ICS/embedded). Covers control-framework-as-code crosswalks (control → engineering mechanism → evidence), CUI boundaries, FIPS-validated crypto, SBOM + coordinated vulnerability disclosure + security-update obligations, secure-SDLC gates, and OT zones/conduits & security levels. Complements sota-privacy-compliance (personal data, GDPR, SOC 2, ISO 27001). Trigger keywords: compliance, NIST, CSF, 800-53, 800-171, CMMC, CUI, SSDF, FedRAMP, CRA, Cyber Resilience Act, SBOM, VEX, CVD, IEC 62443, OT security, ICS, security levels, zones and conduits, FIPS 140.
+description: >-
+  State-of-the-art security & compliance engineering (2026) for the
+  cybersecurity control frameworks and product-security regulations that drive
+  architecture, code, and CI gates — not the organizational policy binder. Use
+  when work must satisfy or be audited against NIST CSF 2.0, SP 800-53, SP
+  800-171 / CMMC, the Secure Software Development Framework (SSDF, SP 800-218),
+  FedRAMP, the EU Cyber Resilience Act (CRA), or ISA/IEC 62443
+  (OT/ICS/embedded). Covers control-framework-as-code crosswalks (control →
+  engineering mechanism → evidence), CUI boundaries, FIPS-validated crypto,
+  SBOM + coordinated vulnerability disclosure + security-update obligations,
+  secure-SDLC gates, and OT zones/conduits & security levels. Complements
+  sota-privacy-compliance (personal data, GDPR, SOC 2, ISO 27001). Trigger
+  keywords: compliance, NIST, CSF, 800-53, 800-171, CMMC, CUI, SSDF, FedRAMP,
+  CRA, Cyber Resilience Act, SBOM, VEX, CVD, IEC 62443, OT security, ICS,
+  security levels, zones and conduits, FIPS 140.
 ---
 
 # SOTA Security & Compliance Engineering

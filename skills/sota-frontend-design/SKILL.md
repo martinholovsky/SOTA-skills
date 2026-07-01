@@ -87,6 +87,7 @@ A small diff never downgrades severity; a locked-out user never rates "Minor".
   Rule: <rules/NN §section> (+ WCAG SC number if a11y)
   Impact: <who is affected and how>
   Fix: <concrete change, ideally token/pattern-level>
+  Effort: trivial | small | medium | large
 ```
 
 End every audit with: counts per severity, the top 3 highest-leverage fixes, and which checklists

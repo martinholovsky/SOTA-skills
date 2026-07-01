@@ -83,6 +83,7 @@ undefined` and run the test suite — a sanitizer abort is ground truth.
   Evidence: the offending line(s), verbatim
   Impact: one sentence — what corrupts/leaks/races, under what input
   Fix: concrete replacement code or action
+  Effort: trivial | small | medium | large
 ```
 
 Group findings by severity, CRITICAL first. End with: counts per severity, the

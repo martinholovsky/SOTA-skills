@@ -70,7 +70,9 @@ Layered — each layer catches what the previous missed:
 **A committed secret is a rotation event, not a deletion event.** `git filter-repo` after
 the fact cleans the repo, not the forks/clones/caches. Process: revoke/rotate first, then
 clean history, then verify the old credential is dead. Any finding response that ends at
-"removed the file" is incomplete (keep it High until rotation is confirmed).
+"removed the file" is incomplete (keep it High until rotation is confirmed). The full
+leak-response runbook and scanner configuration live in sota-secrets-management rules/04;
+this section owns the pipeline gate layering.
 
 Tuning: enable entropy + provider-pattern rules; maintain an allowlist for test fixtures
 with fake-but-realistic secrets (and mark them clearly, e.g. `TEST_ONLY_` prefixes) so the

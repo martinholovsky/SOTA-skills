@@ -2,7 +2,9 @@
 
 Scope: secret scanning (gitleaks, trufflehog), pre-commit hooks, CI gates, git history hygiene,
 the post-leak runbook (rotate-first), and honeytokens. Read this when setting up scanning, when
-running an AUDIT sweep, or the moment a leak is discovered.
+running an AUDIT sweep, or the moment a leak is discovered. Pipeline-gate *layering* and
+org-wide push protection are owned by sota-devsecops rules/05 §5.2; this file owns tool
+configuration and leak **response** (rotation, history cleanup).
 
 ## 1. Scanning layers
 
@@ -10,7 +12,7 @@ Defense in depth — each layer catches what the previous missed:
 
 | Layer | Tool/mechanism | Blocks? |
 |---|---|---|
-| Editor/local | gitleaks `protect` via pre-commit hook | Yes — before commit exists |
+| Editor/local | gitleaks pre-commit hook (`gitleaks git --pre-commit --staged`) | Yes — before commit exists |
 | Push | server-side pre-receive hook / GitHub push protection | Yes — before history is shared |
 | CI | gitleaks/trufflehog job on every PR + full-history scan scheduled weekly | Yes — fail the build |
 | Platform | GitHub Advanced Security / GitLab secret detection, partner-program auto-revocation | Detect + sometimes auto-revoke |
@@ -27,7 +29,7 @@ repos:
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.x
     hooks:
-      - id: gitleaks            # runs `gitleaks protect --staged`
+      - id: gitleaks   # runs `gitleaks git --pre-commit --redact --staged --verbose`
 ```
 
 ```toml
@@ -42,9 +44,10 @@ regex = '''myapp_(sk|pat)_[A-Za-z0-9_\-]{32,}'''
 paths = ['''testdata/fake_keys\.json''']     # narrow, path-based; never allowlist by rule id
 ```
 
-CI: `gitleaks detect --source . --redact --exit-code 1` on PRs (diff-aware via
-`--log-opts="origin/main.."` for speed), plus a scheduled full scan with no log-opts so the
-whole history is rechecked as rules improve.
+CI (gitleaks ≥ 8.19 subcommands): `gitleaks git --redact .` on PRs — diff-aware via
+`--log-opts="origin/main.."` for speed — plus a scheduled full-history scan without log-opts
+(needs a `fetch-depth: 0` checkout) so old commits are rechecked as rules improve. The legacy
+`detect`/`protect` spellings still run but are deprecated aliases.
 
 ### trufflehog
 

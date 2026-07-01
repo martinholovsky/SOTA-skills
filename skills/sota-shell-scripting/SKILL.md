@@ -74,6 +74,7 @@ Finding format:
   Evidence: the offending line(s), verbatim
   Impact: what input/condition triggers it and what breaks
   Fix: concrete replacement code
+  Effort: trivial | small | medium | large
 ```
 
 ## Rules index

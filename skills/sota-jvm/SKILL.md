@@ -23,8 +23,9 @@ Expert-level rules for producing and auditing production JVM code. The JVM is
 memory-safe (no buffer overflows/UAF), so the risk shifts to **deserialization
 and injection RCE, concurrency correctness, and dependency supply chain**.
 Baseline: **Java 25 LTS** (records, sealed types, pattern matching, virtual
-threads finalized in 21 via JEP 444; structured concurrency and scoped values
-are still *preview* in 25 — don't present them as final), **Kotlin 2.x**.
+threads finalized in 21 via JEP 444; scoped values finalized in 25 via JEP 506;
+structured concurrency is still *preview* — JEP 505 in 25 — don't present it
+as final), **Kotlin 2.x**.
 Per-language idioms differ; shared concerns (the JMM, the JCA, the build/
 supply-chain story) are unified here. Every rule states the *why*; every rules
 file ends with an audit checklist of grep/analyzer patterns.
@@ -83,6 +84,7 @@ manually. Check the dependency tree against known-CVE databases.
   Evidence: the offending line(s), verbatim
   Impact: one sentence — what executes/leaks/races, under what input
   Fix: concrete replacement code or action
+  Effort: trivial | small | medium | large
 ```
 
 Group findings by severity, CRITICAL first. End with: counts per severity, the

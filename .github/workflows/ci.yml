@@ -13,16 +13,40 @@ jobs:
     name: Repository invariants
     runs-on: ubuntu-latest
     steps:
-      # actions/checkout v4.2.2, pinned by commit SHA (sota-devsecops).
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      # actions/checkout v7.0.0, pinned by commit SHA (sota-devsecops).
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          # The build steps run repo scripts and never push.
+          persist-credentials: false
       - name: Check invariants
+        # SOTA_DENYLIST (repository secret) carries the private internal-name
+        # patterns for check 3; fork PRs don't receive it and fall back to the
+        # generic checks — the authoritative scan runs on maintainer branches
+        # and on push to main.
+        env:
+          SOTA_DENYLIST: ${{ secrets.SOTA_DENYLIST }}
         run: ./scripts/check-invariants.sh
+
+  shellcheck:
+    name: Shell lint (shellcheck)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          persist-credentials: false
+      - name: shellcheck scripts/
+        # shellcheck is preinstalled on ubuntu-latest runners.
+        run: shellcheck -S warning scripts/*.sh
 
   secrets:
     name: Secret scan (gitleaks)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          # Full history so gitleaks scans every commit, not just the checkout.
+          fetch-depth: 0
+          persist-credentials: false
       - name: Install gitleaks (pinned + checksum-verified)
         run: |
           set -euo pipefail
@@ -35,5 +59,5 @@ jobs:
           tar -xzf "$TARBALL" gitleaks
           sudo install -m 0755 gitleaks /usr/local/bin/gitleaks
           gitleaks version
-      - name: Scan
-        run: gitleaks detect --no-git --config .gitleaks.toml --redact --verbose
+      - name: Scan (full git history)
+        run: gitleaks git --config .gitleaks.toml --redact --verbose .

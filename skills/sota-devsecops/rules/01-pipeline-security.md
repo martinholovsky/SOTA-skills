@@ -88,8 +88,9 @@ Tag-pinned consumers ran the malware on their next scheduled job; SHA-pinned con
 did not.
 
 ```yaml
-# GOOD
-- uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+# GOOD — resolve the CURRENT release's commit SHA and pin that, tag in comment
+# (gh api repos/actions/checkout/git/ref/tags/<tag> --jq .object.sha)
+- uses: actions/checkout@<full-40-char-commit-sha>  # vN.N.N
 # BAD
 - uses: someorg/some-action@v3        # mutable tag
 - uses: someorg/some-action@main      # tracking a branch — worse

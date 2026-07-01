@@ -138,7 +138,8 @@ The cheapest attack on an ingester is volume and amplification. Bound everything
   it does not crash the pipeline, retry-loop forever, or get silently dropped.
 - **Idempotent re-ingest.** Key records by a stable source id so replays and
   retries don't duplicate or corrupt state (cross-ref sota-data-engineering data
-  contracts; idempotency in rules/01-adjacent webhook handling and sota-api-design).
+  contracts; webhook ingress hardening is rules/01, idempotent webhook delivery
+  is sota-api-design rules/06 §4).
 
 ```go
 // BAD                              // GOOD

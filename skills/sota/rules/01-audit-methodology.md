@@ -179,9 +179,11 @@ not ready to ship:
 8. **Effort estimate** — trivial / small / medium / large. Severity says
    what hurts; effort enables the roadmap in §6.
 
-The library's short finding format (`file:line | rule | severity | fix`) is
-the working format during passes; expand each surviving finding into the
-full evidence block for the report.
+The library's short finding format (`file:line | rule | severity | effort | fix`)
+is the working format during passes; expand each surviving finding into the
+full evidence block for the report. Skill-local block formats are fine during
+a single-domain pass, but they must carry the effort field — §6's roadmap is
+sequenced by risk-reduction-per-effort and can't be built without it.
 
 ## 6. Report structure
 

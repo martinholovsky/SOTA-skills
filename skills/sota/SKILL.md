@@ -119,27 +119,27 @@ rules files that match the code in front of you. Never load all skills at once.
    `sota-kubernetes`; pod/container/workload isolation mechanics →
    `sota-sandboxing`; CI/CD and supply chain → `sota-devsecops`. A K8s cluster
    audit loads `sota-kubernetes` + `sota-network-security` + `sota-sandboxing`.
-13. **Identity is its own layer.** App-level login/session/JWT-validation code →
+10. **Identity is its own layer.** App-level login/session/JWT-validation code →
    `sota-code-security` rules/02-03; identity *infrastructure* (IdP, OIDC/SAML
    config, RBAC/role-mapping design, provisioning, break-glass, SPIFFE) →
    `sota-identity-access`; the credentials themselves → `sota-secrets-management`.
-14. **Network: setup vs security.** Cloud VPC/DNS/CDN provisioning →
+11. **Network: setup vs security.** Cloud VPC/DNS/CDN provisioning →
    `sota-cloud-infrastructure` rules/03; segmentation, zero-trust, NetworkPolicy
    depth, service mesh/mTLS, egress/DNS/PKI posture → `sota-network-security`.
-15. **Prevention vs detection.** Building the control → the relevant domain
+12. **Prevention vs detection.** Building the control → the relevant domain
    skill; verifying you'd *catch* the attack at runtime (logs, rules, hunting,
    IR) → `sota-detection-engineering`. Ops telemetry plumbing stays in
    `sota-observability`; design-time threat enumeration in `sota-threat-modeling`.
-16. **Ingesting untrusted/attacker-authored data** (feeds, scraping, uploads,
+13. **Ingesting untrusted/attacker-authored data** (feeds, scraping, uploads,
    webhooks, RAG corpora, hostile parsers) → `sota-code-security` rules/09,
    with `sota-sandboxing` rules/04 for parser isolation.
-10. **Data: OLTP vs analytics.** App databases → `sota-databases`; pipelines,
+14. **Data: OLTP vs analytics.** App databases → `sota-databases`; pipelines,
     streaming, warehouse/lakehouse → `sota-data-engineering`; anything touching
     personal data → add `sota-privacy-compliance`.
-11. **Any handling of user/personal data** (new fields, exports, logs,
+15. **Any handling of user/personal data** (new fields, exports, logs,
     analytics, ML training) → check `sota-privacy-compliance` minimization and
     retention rules, even when the task isn't "about" privacy.
-12. **Shell scripts hide everywhere** — CI run blocks, Dockerfile RUN lines,
+16. **Shell scripts hide everywhere** — CI run blocks, Dockerfile RUN lines,
     Makefiles, entrypoints. Audit them with `sota-shell-scripting` even when
     the repo's "language" is something else.
 
@@ -179,8 +179,10 @@ For a **full project audit**, work in passes:
    applicable. For an infrastructure/cluster audit the heavy hitters are
    `sota-kubernetes`, `sota-network-security`, `sota-identity-access`,
    `sota-sandboxing`, and `sota-detection-engineering`.
-4. **Findings.** Emit every finding in the canonical format
-   (`file:line | rule | severity | effort | fix`), deduplicate across domains,
+4. **Findings.** Emit every finding in the canonical cross-domain format
+   (`file:line | rule | severity | effort | fix`) — skill-local block formats
+   are fine within a domain pass but must carry an effort field so the
+   roll-up can be sequenced — deduplicate across domains,
    and roll up into the report structure from `rules/01-audit-methodology.md`:
    executive summary → scope & methodology → findings by severity →
    remediation roadmap sequenced by risk-reduction-per-effort → positive
