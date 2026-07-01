@@ -3,13 +3,13 @@
 <p align="center">
   <a href="https://github.com/martinholovsky/SOTA-skills/releases"><img src="https://img.shields.io/github/v/release/martinholovsky/SOTA-skills?color=2fa45f&label=release" alt="Latest release"></a>
   <a href="https://github.com/martinholovsky/SOTA-skills/actions/workflows/ci.yml"><img src="https://github.com/martinholovsky/SOTA-skills/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
-  <img src="https://img.shields.io/badge/skills-34-2fa45f" alt="34 skills">
+  <img src="https://img.shields.io/badge/skills-35-2fa45f" alt="35 skills">
   <img src="https://img.shields.io/badge/modes-BUILD%20%2B%20AUDIT-2fa45f" alt="BUILD + AUDIT">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-CC%20BY%204.0-blue" alt="License: CC BY 4.0"></a>
 </p>
 
 <p align="center">
-  <img src="assets/social-preview.png" alt="SOTA Engineering Skills — 34 Claude Code skills to build and audit software at state-of-the-art practices" width="100%">
+  <img src="assets/social-preview.png" alt="SOTA Engineering Skills — 35 Claude Code skills to build and audit software at state-of-the-art practices" width="100%">
 </p>
 
 **Make your AI coding assistant build and audit like your most senior engineer.**
@@ -17,7 +17,7 @@
 Your assistant is brilliant — it just doesn't know your standards. SOTA-skills
 teaches it: a library of Claude Code skills that encode state-of-the-art (2026)
 practices for building **and** auditing software, and that verify their own
-claims. 34 skills, 273 files, ~52k lines — every file under 500 lines, so the
+claims. 35 skills, 279 files, ~53k lines — every file under 500 lines, so the
 right rules load exactly when your task needs them, never bloating the context
 window. Fast-moving claims (versions, specs, regulations) are web-verified
 against primary sources.
@@ -88,6 +88,7 @@ Every skill works in two modes:
 | `sota-detection-engineering` | Detection-as-code (Sigma/YARA/Falco), SIEM & telemetry coverage, alert tuning/SOAR, threat hunting & intel, deception, incident response |
 | `sota-data-engineering` | Pipelines & orchestration, streaming/CDC, lakehouse & Parquet, data quality/contracts, governance |
 | `sota-privacy-compliance` | Data inventory, privacy by design, consent & user rights, GDPR/CCPA/HIPAA/PCI/AI Act, SOC 2/ISO 27001, breach readiness |
+| `sota-security-compliance` | Control-frameworks-as-code: NIST CSF 2.0, 800-53, 800-171/CMMC, SSDF, FedRAMP, EU Cyber Resilience Act (SBOM/CVD/updates), ISA/IEC 62443 (OT zones & security levels) |
 | `sota-mobile` | Platform/stack choice, offline-first & push, mobile security, performance budgets, store releases |
 | `sota-cli-ux` | Command/flag design, output & exit-code contracts, lifecycle behavior, distribution |
 | `sota-shell-scripting` | Bash safety baseline, robustness, script security, CI/entrypoint/Makefile scripts |
@@ -158,7 +159,11 @@ both at once:
 
 It's idempotent: re-running only links what's new and prunes what's gone, and
 never touches symlinks it didn't create. (Snapshot installs done with `--copy`
-don't auto-update — re-run the installer to refresh them.)
+don't auto-update — re-run the installer to refresh them.) If you enabled
+always-on routing, a re-run also **refreshes the managed routing directive and
+reminder hook in place** when their wording changes upstream — prompting first,
+backing up, and touching only the managed block; a hook you customized (different
+wording) is left untouched.
 
 ### Always-on routing (recommended)
 
@@ -172,8 +177,10 @@ linking the skills — it's interactive and **dotfiles-aware**: it detects an
 existing or symlinked `~/.claude/CLAUDE.md` / `settings.json`, **asks before
 touching anything** (recommended answer pre-filled), backs up first, writes
 *through* a symlink so dotfiles stay in charge, and uses managed markers so
-re-runs never duplicate. Use `--routing` to force it, `--no-routing` to skip,
-`--yes` for non-interactive. Or wire the three layers by hand:
+re-runs never duplicate — and **refresh the managed block in place** (prompting
+first, backing up, touching only what's between the markers) when a newer release
+changes the directive or hook wording. Use `--routing` to force it,
+`--no-routing` to skip, `--yes` for non-interactive. Or wire the three layers by hand:
 
 Three layers, strongest last:
 
@@ -224,6 +231,88 @@ turns ago can fade from context. A `UserPromptSubmit` hook in
 No mechanism *forces* a model to run a skill — all three layers feed it
 instructions it then chooses to follow. Together they make routing reliable
 instead of phrasing-dependent.
+
+## Using it
+
+With always-on routing set up (above), you **don't name anything** — describe the
+task in plain language and the right skills load automatically (see
+[How it works](#how-it-works)). Naming a skill or rule is optional: reach for it
+only to *force* a specific skill, *scope* to one rule file, or *stack* an exact
+combo.
+
+**Building** — plain prompts; routing picks the skills:
+
+> Design a multi-tenant invoicing service. Postgres, FastAPI.
+
+> Add a websocket endpoint for live notifications.
+
+> Build the settings page — dark mode, WCAG 2.2 AA.
+
+> Add a RAG search feature over our docs, and write the evals first.
+
+> Scaffold the GitHub Actions pipeline for this repo: SHA-pinned actions, OIDC,
+> SBOM + signing.
+
+> We handle CUI on this service — what does that require of the architecture and
+> data stores?
+
+**Auditing** — say the mode ("audit", "review", "harden"):
+
+> Run a full audit of this repo. Static analysis only, current commit, report
+> with a prioritized roadmap.
+
+> Audit this PR before I merge it.
+
+> Sweep the repo and git history for secrets — rotate-first recommendations.
+
+> Threat-model this service from the code: DFD, trust boundaries, STRIDE.
+
+> Audit our Kubernetes manifests and Dockerfiles. Severity + effort on every
+> finding.
+
+> Why is checkout slow? Profile first — no guessing.
+
+> Review our agent's MCP setup for tool poisoning, rug pulls, and shadowing.
+
+**Naming a skill or rule (optional — to force or scope):**
+
+> Add a websocket endpoint per `sota-api-design` rules/05 (auth-at-upgrade,
+> backpressure).
+
+> Is this migration zero-downtime safe? Check `sota-databases` rules/02
+> (expand/contract, lock-aware DDL).
+
+> Review test-suite health against `sota-testing` rules/07 (flaky policy,
+> coverage ratchets, speed budgets).
+
+> Audit this PR against `sota-code-security` + `sota-golang` before merge.
+
+**Maintaining the library:**
+
+> Refresh the library against current versions/advisories — re-verify fast-moving
+> claims and update the rules files (cite sources).
+
+> Create profiles/<name>.md for my stack: <stores, auth, platform, policies>.
+
+> Add a new skill for <domain>, same structure: SKILL.md + rules/ under 500 lines
+> each, claims web-verified.
+
+**Tips:**
+
+- **Say the mode if ambiguous** — "audit/review/harden" vs "build/add/design";
+  skills key off those verbs.
+- **Scope audits explicitly** — which commit/branch, static-only or may-run-tools,
+  time budget ("crown jewels only"). The methodology file asks otherwise.
+- **Ask for the report format** — default audit output is executive summary →
+  findings by severity → roadmap by risk-reduction-per-effort → positive notes.
+- **Stack skills freely** — "sota-rust + sota-api-design for this axum service";
+  routing does this for you when you just describe the task.
+- **Re-verify version-sensitive facts** — pinned facts age between edits; hold the
+  model to web-checking before pinning versions.
+
+## Optional setup & integrations
+
+Beyond the skills themselves — all opt-in, none required to use the library.
 
 ### Enforcing the gates
 
@@ -332,86 +421,6 @@ Naming one (or the `sota` router) just makes the routing explicit. From there:
    per-domain passes → report with a prioritized roadmap).
 4. If `profiles/<you>.md` exists, its stack choices are BUILD defaults and the
    AUDIT baseline (deviations get flagged).
-
-## Prompt examples
-
-**Building:**
-
-> Design a multi-tenant invoicing service — follow sota. Postgres, FastAPI.
-
-> Add a websocket endpoint for live notifications, following SOTA practices.
-> (→ api-design rules/05 + async backpressure + auth-at-upgrade rules)
-
-> Build the settings page with sota-frontend-design — needs dark mode and
-> WCAG 2.2 AA.
-
-> Add a RAG search feature over our docs — use sota-llm-engineering, and
-> write the evals first.
-
-> Scaffold the GitHub Actions pipeline for this repo per sota-devsecops:
-> SHA-pinned actions, OIDC, SBOM + signing.
-
-**Auditing:**
-
-> Run a full SOTA audit of this repo. Static analysis only, audit the current
-> commit, report per the audit methodology.
-
-> Audit this PR against sota-code-security and sota-golang before I merge it.
-
-> Sweep the repo and git history for secrets per sota-secrets-management.
-> Rotate-first recommendations for anything you find.
-
-> Threat-model this service from the code: DFD, trust boundaries, STRIDE —
-> sota-threat-modeling rules/06.
-
-> Audit our Kubernetes manifests and Dockerfiles with sota-sandboxing and
-> sota-devsecops. Severity + effort on every finding.
-
-> Why is checkout slow? Profile-first per sota-performance — no guessing.
-
-> Review our agent's MCP setup against the named attack taxonomy in
-> sota-code-security rules/08 (tool poisoning, rug pulls, shadowing).
-
-**Scoped & cross-cutting:**
-
-> Is this migration zero-downtime safe? Check against sota-databases
-> rules/02 (expand/contract, lock-aware DDL).
-
-> Review test suite health: flaky policy, coverage ratchets, speed budgets
-> (sota-testing rules/07).
-
-> We're adding a "delete my account" feature — what does
-> sota-privacy-compliance require for deletion propagation and retention?
-
-> Check this bash deploy script with sota-shell-scripting before it goes
-> into CI.
-
-**Maintaining the library:**
-
-> Refresh the library against current versions/advisories — re-verify the
-> fast-moving claims and update the rules files (cite sources).
-
-> Create profiles/<name>.md for my stack: <stores, auth, platform, policies>.
-
-> Add a new skill for <domain>, same structure: SKILL.md + rules/ under
-> 500 lines each, claims web-verified.
-
-## Usage tips
-
-- **Say the mode if ambiguous** — "audit", "review", "harden" vs "build",
-  "add", "design". The skills key off those verbs.
-- **Scope audits explicitly**: which commit/branch, static-only or
-  may-run-tools, time budget ("crown jewels only"). The methodology file
-  stops and asks otherwise.
-- **Ask for the report format you want** — by default a full audit produces
-  executive summary → findings by severity → roadmap by
-  risk-reduction-per-effort → positive observations.
-- **Stack skills freely**: language + domain ("sota-rust + sota-api-design
-  for this axum service"). The router does this automatically when you just
-  describe the task.
-- **Re-verify anything version-sensitive**: the library's pinned facts can age
-  between edits; the freshness-first principle tells the model to web-check
-  before pinning versions — hold it to that.
 
 ## Conventions
 

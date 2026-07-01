@@ -1,7 +1,7 @@
 ---
 name: sota
 description: >-
-  Master router for the SOTA engineering skills library. Use this skill whenever the user asks to build, design, implement, refactor, harden, optimize, review, or audit an application, service, or codebase and the request spans more than one domain — or when you are unsure which specific sota-* skill applies. It maps the task (build mode or audit mode) to the right domain skills (architecture, code security, threat modeling, secrets, sandboxing, performance, async/concurrency, APIs/websockets, devsecops, databases, frontend, observability, testing, LLM engineering, ML engineering, cloud, kubernetes, identity & access, network security, detection engineering, data engineering, privacy/compliance, mobile, CLI UX, shell scripting, docs/workflow) and language skills (Rust, Go, C/C++, Java/Kotlin, Python, JS/TS, .NET/C#), and defines how to run a full multi-domain audit. Trigger keywords: SOTA, best practices, audit my code, security review, full review, hardening, production readiness, code quality.
+  Master router for the SOTA engineering skills library. Use this skill whenever the user asks to build, design, implement, refactor, harden, optimize, review, or audit an application, service, or codebase and the request spans more than one domain — or when you are unsure which specific sota-* skill applies. It maps the task (build mode or audit mode) to the right domain skills (architecture, code security, threat modeling, secrets, sandboxing, performance, async/concurrency, APIs/websockets, devsecops, databases, frontend, observability, testing, LLM engineering, ML engineering, cloud, kubernetes, identity & access, network security, detection engineering, data engineering, privacy/compliance, security/compliance, mobile, CLI UX, shell scripting, docs/workflow) and language skills (Rust, Go, C/C++, Java/Kotlin, Python, JS/TS, .NET/C#), and defines how to run a full multi-domain audit. Trigger keywords: SOTA, best practices, audit my code, security review, compliance, hardening, prod readiness, code quality.
 ---
 
 # SOTA Engineering Skills — Master Router
@@ -74,6 +74,7 @@ rules files that match the code in front of you. Never load all skills at once.
 | `sota-detection-engineering` | Detective controls, SOC & IR — detection-as-code, Sigma/YARA/Suricata/Falco/Tetragon rules, ATT&CK coverage, SIEM & telemetry coverage, alert tuning/SOAR, threat hunting & intel (STIX/TAXII), deception/honeytokens, incident response (NIST 800-61), detection validation (Atomic Red Team/Caldera) |
 | `sota-data-engineering` | Data pipelines, ELT/orchestration, dbt, Kafka/streaming, CDC, schema registry, lakehouse (Iceberg/Delta/Parquet), data quality/contracts, warehouse modeling |
 | `sota-privacy-compliance` | PII inventory/classification, privacy by design, consent, DSAR/deletion architecture, retention, GDPR/CCPA/HIPAA/PCI/AI Act engineering obligations, SOC 2/ISO 27001 audit readiness, breach response |
+| `sota-security-compliance` | Cybersecurity control frameworks & product-security regulations as engineering — NIST CSF 2.0, SP 800-53, 800-171/CMMC, SSDF (800-218), FedRAMP, EU Cyber Resilience Act (SBOM/CVD/signed updates), ISA/IEC 62443 (OT zones & conduits, Security Levels); control-framework-as-code crosswalks, CUI boundaries, FIPS-validated crypto |
 | `sota-mobile` | iOS/Android/cross-platform apps — stack choice, offline-first/sync, push, mobile security (Keychain/Keystore, attestation), performance budgets, store requirements, staged rollouts |
 | `sota-cli-ux` | CLI/developer-tool design — flags/subcommands, config precedence, stdout/stderr and --json contracts, exit codes, TTY detection, signals, completions, distribution |
 | `sota-shell-scripting` | Bash/sh scripts, CI run blocks, entrypoints, Makefiles — safety baseline (quoting, set -euo pipefail, traps), injection, secrets in scripts, shellcheck/shfmt |
@@ -262,6 +263,9 @@ For a **full project audit**, work in passes:
 - **sota-privacy-compliance/rules**: 01 data inventory & classification,
   02 privacy by design, 03 consent & user rights, 04 regulatory landscape,
   05 audit-ready engineering, 06 incident & breach readiness
+- **sota-security-compliance/rules**: 01 control-frameworks-as-code (CSF 2.0
+  spine), 02 NIST 800-53/800-171/CMMC/FedRAMP, 03 SSDF secure SDLC, 04 EU Cyber
+  Resilience Act, 05 ISA/IEC 62443 (OT/ICS)
 - **sota-mobile/rules**: 01 platform & stack, 02 architecture & state,
   03 offline/background/push, 04 security, 05 performance,
   06 release & operations

@@ -11,7 +11,10 @@
 # (a global CLAUDE.md directive + a prompt hook) so the skills apply without
 # trigger words. It is dotfiles-aware: it detects existing/symlinked config and
 # ASKS before touching anything, backing up first and using managed markers so
-# re-runs are idempotent and your own content is preserved.
+# re-runs are idempotent and your own content is preserved. When the directive or
+# hook wording changes in a newer release, re-running (e.g. --update) offers to
+# refresh the managed block in place — only the content between the markers, and
+# only a hook it recognizes as its own; hand edits outside the block are kept.
 #
 # Usage:
 #   scripts/install.sh                 # link skills into ~/.claude/skills (all projects)
@@ -47,7 +50,9 @@ usage() { sed -n '2,/^set -euo/p' "$0" | sed 's/^# \{0,1\}//; /^set -euo/d'; exi
 
 # --- interactive / routing helpers -------------------------------------------
 readonly RT_BEGIN="<!-- >>> sota-skills routing (managed by install.sh) >>> -->"
+readonly RT_END="<!-- <<< sota-skills routing <<< -->"
 # kept on one line; contains "sota" so re-runs detect it and never duplicate
+readonly HOOK_SIG="sota standing rules:"   # stable marker identifying our own hook
 readonly HOOK_CMD="echo 'sota standing rules: (1) validate every claim about code/system/config/versions/facts against a primary source before answering or proposing, and label anything unverified; (2) keep docs current in the same change. For code tasks, route through the sota skill and apply the matching sota-* skills; treat ~/.claude/profiles as the baseline.'"
 
 ask_yn() {  # $1 prompt, $2 default(y|n); honors --yes and non-interactive
@@ -87,6 +92,31 @@ and AUDIT baseline; stop and ask on security-relevant decisions.
 MD
 }
 
+# Print the managed routing block (markers inclusive) currently in a file.
+extract_block() {  # $1 file
+  awk -v b="$RT_BEGIN" -v e="$RT_END" '
+    $0 == b { inblk = 1 }
+    inblk   { print; if ($0 == e) exit }
+  ' "$1"
+}
+
+# Replace the managed block in place with the current one, preserving everything
+# outside the markers. Writes through the path (cat, not mv) so a symlinked
+# target keeps its link.
+refresh_block() {  # $1 file
+  local f="$1" blk tmp
+  blk="$(mktemp)"; tmp="$(mktemp)"
+  emit_routing_block >"$blk"
+  awk -v b="$RT_BEGIN" -v e="$RT_END" -v blk="$blk" '
+    $0 == b { while ((getline l < blk) > 0) print l; close(blk); inblk = 1; next }
+    inblk && $0 == e { inblk = 0; next }
+    inblk { next }
+    { print }
+  ' "$f" >"$tmp"
+  cat "$tmp" >"$f"
+  rm -f "$blk" "$tmp"
+}
+
 setup_claude_md() {
   # shellcheck disable=SC2088  # ~ here is display text shown to the user, not a path
   local f="$HOME/.claude/CLAUDE.md" tgt="" where="~/.claude/CLAUDE.md"
@@ -94,7 +124,20 @@ setup_claude_md() {
   [ -n "$tgt" ] && where="$where (symlink → $tgt; likely managed by your dotfiles — commit it there)"
 
   if [ -f "$f" ] && grep -qF "$RT_BEGIN" "$f" 2>/dev/null; then
-    log "routing directive already in ~/.claude/CLAUDE.md — up to date"; return
+    if ! grep -qF "$RT_END" "$f" 2>/dev/null; then
+      # shellcheck disable=SC2088  # ~ is display text in the message, not a path
+      warn "~/.claude/CLAUDE.md has the start marker but no end marker — leaving it untouched; fix by hand or delete the block and re-run"
+      return
+    fi
+    if [ "$(extract_block "$f")" = "$(emit_routing_block)" ]; then
+      log "routing directive in ~/.claude/CLAUDE.md — up to date"; return
+    fi
+    if ask_yn "The managed SOTA routing directive in $where is out of date — refresh it in place?" y; then
+      backup "$f"; refresh_block "$f"; log "refreshed routing directive in ~/.claude/CLAUDE.md"
+    else
+      log "left existing directive unchanged"
+    fi
+    return
   fi
   if [ -L "$f" ] && [ ! -e "$f" ]; then           # dangling symlink
     # shellcheck disable=SC2088  # ~ is display text in the prompt, not a path
@@ -119,8 +162,28 @@ setup_hook() {
   if ! command -v jq >/dev/null 2>&1; then
     warn "jq not found — skipping hook setup (add the UserPromptSubmit hook manually, or install jq and re-run)"; return
   fi
-  if [ -f "$s" ] && jq -e '[.hooks.UserPromptSubmit[]?.hooks[]?.command // ""] | any(test("sota";"i"))' "$s" >/dev/null 2>&1; then
-    log "a sota UserPromptSubmit reminder hook already exists — up to date"; return
+  if [ -f "$s" ]; then
+    # A hook we manage (identified by a stable signature) already present?
+    if jq -e --arg sig "$HOOK_SIG" '[.hooks.UserPromptSubmit[]?.hooks[]?.command // ""] | any(contains($sig))' "$s" >/dev/null 2>&1; then
+      if jq -e --arg c "$HOOK_CMD" '[.hooks.UserPromptSubmit[]?.hooks[]?.command // ""] | any(. == $c)' "$s" >/dev/null 2>&1; then
+        log "sota UserPromptSubmit hook already current — up to date"; return
+      fi
+      ask_yn "The sota UserPromptSubmit reminder hook is out of date — refresh its wording?" y \
+        || { log "left existing hook unchanged"; return; }
+      tmp="$(mktemp)"; backup "$s"
+      if jq --arg c "$HOOK_CMD" --arg sig "$HOOK_SIG" \
+          '.hooks.UserPromptSubmit |= map(.hooks |= map(if ((.command // "") | contains($sig)) then .command = $c else . end))' \
+          "$s" >"$tmp" 2>/dev/null; then
+        cat "$tmp" >"$s"; log "refreshed sota UserPromptSubmit hook to latest wording"
+      else
+        warn "could not parse $s as JSON — left unchanged"
+      fi
+      rm -f "$tmp"; return
+    fi
+    # An unrecognized sota-mentioning hook — could be user-authored; do not touch.
+    if jq -e '[.hooks.UserPromptSubmit[]?.hooks[]?.command // ""] | any(test("sota";"i"))' "$s" >/dev/null 2>&1; then
+      log "a sota UserPromptSubmit hook already exists (custom wording) — left unchanged"; return
+    fi
   fi
   ask_yn "Add a UserPromptSubmit hook that re-injects the standing rules each prompt?" y || return
   tmp="$(mktemp)"
