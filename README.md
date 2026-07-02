@@ -101,6 +101,28 @@ Every skill works in two modes:
 | `sota-javascript-typescript` | Strict TS, idioms, async, Node hardening, security, bundle/React performance, testing |
 | `sota-dotnet` | C#/.NET idioms (records, NRT, patterns, spans), disposal/DI design, async (ConfigureAwait/cancellation), security (EF/Dapper, deserialization, ASP.NET Core auth, crypto), GC/Span/AOT, NuGet supply chain & analyzers/CI |
 
+## Standards & practices baked in
+
+Findings name the control they violate — not just "this looks wrong":
+
+- **Security** — OWASP Top 10 (2025), ASVS, API & LLM Top 10; findings cite CWE IDs
+- **Languages** — SEI CERT (C, C++, Java), MISRA C/C++, ANSSI Rust guide
+- **Supply chain** — SLSA, Sigstore, in-toto, SBOM (CycloneDX/SPDX), NIST SSDF
+- **Cloud & identity** — CIS Benchmarks, NIST 800-207 zero trust, NIST 800-63-4,
+  OAuth 2.1, FAPI 2.0, passkeys, SPIFFE
+- **Privacy & compliance** — GDPR, CCPA/CPRA, HIPAA, PCI DSS 4.x, SOC 2,
+  ISO 27001, EU AI Act, NIS2, DORA
+- **Government & regulated** — NIST CSF 2.0, 800-53, 800-171/CMMC, FedRAMP,
+  EU Cyber Resilience Act, IEC 62443
+- **Threats, detection & AI/ML** — STRIDE, LINDDUN, MITRE ATT&CK & ATLAS,
+  NIST 800-61, NIST AI RMF
+- **Frontend, mobile & testing** — WCAG 2.2 AA, Core Web Vitals, OWASP MASVS & WSTG
+
+Named standards are the floor. Most of the library is the practice layer no
+regulation writes down: cancellation & backpressure, retries with jitter,
+circuit breakers, outbox/saga, zero-downtime migrations, measure-first
+performance, API evolvability, per-language idioms, SLOs, test-suite health.
+
 ## Installation
 
 **Easiest — as a Claude Code plugin** (installs all skills, updates via
