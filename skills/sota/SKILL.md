@@ -1,12 +1,12 @@
 ---
 name: sota
 description: >-
-  Master router for the SOTA engineering skills library. Use this skill whenever the user asks to build, design, implement, refactor, harden, optimize, review, or audit an application, service, or codebase and the request spans more than one domain — or when you are unsure which specific sota-* skill applies. It maps the task (build mode or audit mode) to the right domain skills (architecture, code security, threat modeling, secrets, sandboxing, performance, async/concurrency, APIs/websockets, devsecops, databases, frontend, observability, testing, LLM engineering, ML engineering, cloud, kubernetes, identity & access, network security, detection engineering, data engineering, privacy/compliance, security/compliance, mobile, CLI UX, shell scripting, docs/workflow) and language skills (Rust, Go, C/C++, Java/Kotlin, Python, JS/TS, .NET/C#), and defines how to run a full multi-domain audit. Trigger keywords: SOTA, best practices, audit my code, security review, compliance, hardening, prod readiness, code quality.
+  Master router for the SOTA engineering skills library. Use this skill whenever the user asks to build, design, implement, refactor, harden, optimize, review, or audit an application, service, or codebase and the request spans more than one domain — or when you are unsure which specific sota-* skill applies. It maps the task (build mode or audit mode) to the right domain skills (architecture, code security, threat modeling, secrets, sandboxing, performance, async/concurrency, APIs/websockets, devsecops, databases, frontend, observability, testing, LLM engineering, ML engineering, cloud, kubernetes, identity & access, network security, detection engineering, data engineering, privacy/compliance, security/compliance, mobile, CLI UX, UX writing, copywriting, shell scripting, docs/workflow) and language skills (Rust, Go, C/C++, Java/Kotlin, Python, JS/TS, .NET/C#). Trigger keywords: SOTA, best practices, audit my code, security review, compliance, hardening, prod readiness, code quality.
 ---
 
 # SOTA Engineering Skills — Master Router
 
-A library of 34 domain skills, each with a `SKILL.md` entry point and a `rules/`
+A library of 36 domain skills, each with a `SKILL.md` entry point and a `rules/`
 folder of focused rule files (every file < 500 lines). Each skill works in two
 modes:
 
@@ -79,6 +79,8 @@ rules files that match the code in front of you. Never load all skills at once.
 | `sota-cli-ux` | CLI/developer-tool design — flags/subcommands, config precedence, stdout/stderr and --json contracts, exit codes, TTY detection, signals, completions, distribution |
 | `sota-shell-scripting` | Bash/sh scripts, CI run blocks, entrypoints, Makefiles — safety baseline (quoting, set -euo pipefail, traps), injection, secrets in scripts, shellcheck/shfmt |
 | `sota-docs-workflow` | Documentation (Diátaxis, READMEs, runbooks, API docs, changelogs, AGENTS.md), code review/PR workflow, commit/branch/release discipline |
+| `sota-ux-writing` | Any user-facing interface text — microcopy, button/label wording, error messages, empty states, onboarding copy, notifications, tone of voice, terminology, alt text, i18n-ready strings |
+| `sota-copywriting` | Outward-facing content — landing pages, headlines/CTAs, value propositions, SEO content, testimonials/social proof, claim substantiation, email marketing, app-store listings |
 | `sota-rust` | Any Rust code — ownership/API design, error handling, unsafe discipline, tokio/async, supply chain (cargo audit/deny/vet), performance, clippy/CI |
 | `sota-golang` | Any Go code — errors, package/interface design, goroutines/channels/leaks, net/http hardening, security (os/exec, os.Root, govulncheck), pprof/performance, golangci-lint/CI |
 | `sota-c-cpp` | Any C/C++ code — RAII/idioms, memory safety (UAF/overflow/sanitizers), undefined behavior, security (CERT/MISRA, banned APIs, OpenSSF hardening flags), concurrency/atomics, CMake/clang-tidy/fuzzing CI, performance |
@@ -139,7 +141,11 @@ rules files that match the code in front of you. Never load all skills at once.
 15. **Any handling of user/personal data** (new fields, exports, logs,
     analytics, ML training) → check `sota-privacy-compliance` minimization and
     retention rules, even when the task isn't "about" privacy.
-16. **Shell scripts hide everywhere** — CI run blocks, Dockerfile RUN lines,
+16. **User-facing words split three ways.** In-product UI text (labels,
+    errors, empty states) → `sota-ux-writing`; marketing/site/email content →
+    `sota-copywriting`; technical docs → `sota-docs-workflow`. The component
+    patterns the text lives in stay `sota-frontend-design`.
+17. **Shell scripts hide everywhere** — CI run blocks, Dockerfile RUN lines,
     Makefiles, entrypoints. Audit them with `sota-shell-scripting` even when
     the repo's "language" is something else.
 
@@ -278,6 +284,10 @@ For a **full project audit**, work in passes:
 - **sota-docs-workflow/rules**: 01 documentation architecture, 02 API
   reference & changelogs, 03 code review & PR workflow, 04 commits/branches/
   releases
+- **sota-ux-writing/rules**: 01 voice/tone & plain language, 02 microcopy &
+  components, 03 errors & feedback, 04 accessibility & localization
+- **sota-copywriting/rules**: 01 positioning & value proposition,
+  02 headlines/landing pages/CTAs, 03 SEO content, 04 claims/legal/trust
 - **sota-rust/rules**: 01 ownership & API design, 02 errors & panics,
   03 unsafe discipline, 04 async/tokio, 05 security & supply chain,
   06 performance, 07 tooling & CI

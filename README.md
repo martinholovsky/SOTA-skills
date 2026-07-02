@@ -3,63 +3,62 @@
 <p align="center">
   <a href="https://github.com/martinholovsky/SOTA-skills/releases"><img src="https://img.shields.io/github/v/release/martinholovsky/SOTA-skills?color=2fa45f&label=release" alt="Latest release"></a>
   <a href="https://github.com/martinholovsky/SOTA-skills/actions/workflows/ci.yml"><img src="https://github.com/martinholovsky/SOTA-skills/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
-  <img src="https://img.shields.io/badge/skills-35-2fa45f" alt="35 skills">
+  <img src="https://img.shields.io/badge/skills-37-2fa45f" alt="37 skills">
   <img src="https://img.shields.io/badge/modes-BUILD%20%2B%20AUDIT-2fa45f" alt="BUILD + AUDIT">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-CC%20BY%204.0-blue" alt="License: CC BY 4.0"></a>
 </p>
 
 <p align="center">
-  <img src="assets/social-preview.png" alt="SOTA Engineering Skills — 35 Claude Code skills to build and audit software at state-of-the-art practices" width="100%">
+  <img src="assets/social-preview.png" alt="SOTA Engineering Skills — 37 Claude Code skills to build and audit software at state-of-the-art practices" width="100%">
 </p>
 
 **Make your AI coding assistant build and audit like your most senior engineer.**
 
 Your assistant is brilliant — it just doesn't know your standards. SOTA-skills
-teaches it: a library of Claude Code skills that encode state-of-the-art (2026)
-practices for building **and** auditing software, and that verify their own
-claims. 35 skills, 255 skill files, ~52k lines — every file under 500 lines, so the
-right rules load exactly when your task needs them, never bloating the context
-window. Fast-moving claims (versions, specs, regulations) are web-verified
-against primary sources.
+teaches it: 37 Claude Code skills (265 files, ~53k lines) encoding
+state-of-the-art 2026 practices for building **and** auditing software, with
+fast-moving claims web-verified against primary sources. Every file stays
+under 500 lines, so the right rules load exactly when your task needs them —
+never bloating the context window.
 
-Two cross-cutting pieces live outside the domain skills:
+Two commands to install:
 
-- `skills/sota/rules/01-audit-methodology.md` — how to run an audit: scoping &
-  rules of engagement, a verified static-analysis tool matrix with triage
-  discipline, the evidence standard (every finding carries severity, effort,
-  standard mapping, and a concrete fix), and the report template (executive
-  summary → findings → remediation roadmap by risk-reduction-per-effort →
-  positive observations).
-- `profiles/` — per-user stack profiles (preferred stores, auth, license
-  policy, project triggers). The router treats a profile as the default in
-  BUILD mode and the expected baseline in AUDIT mode, keeping the library
-  itself generic and shareable.
-
-## Structure
-
-```
-skills/
-  sota/                          # master router — start here
-    SKILL.md                     # routing, operating principles, workflows
-    rules/
-      01-audit-methodology.md    # how to audit: tooling, evidence, reporting
-  sota-<domain>/
-    SKILL.md                     # when to use, BUILD/AUDIT workflows,
-                                 # severity conventions, rules index, top-10
-    rules/
-      01-<topic>.md              # ~80–350 lines each, ends with an
-      02-<topic>.md              # executable Audit checklist
-      ...
-profiles/
-  <user>.md                      # personal stack defaults consulted by router
+```text
+/plugin marketplace add martinholovsky/SOTA-skills
+/plugin install sota-skills@sota-skills
 ```
 
-Every skill works in two modes:
+Then describe the task in plain language — routing loads the right skills:
 
-- **BUILD** — apply the rules while designing/writing code.
-- **AUDIT** — review existing code; findings are emitted as
-  `file:line | rule violated | severity (Critical/High/Medium/Low/Info) |
-  effort (trivial/small/medium/large) | fix`.
+> Design a multi-tenant invoicing service. Postgres, FastAPI.
+
+> Run a full audit of this repo — every finding with severity, effort, and a
+> fix, ending in a prioritized roadmap.
+
+More install options under [Installation](#installation); more prompts under
+[Using it](#using-it).
+
+## Standards & practices baked in
+
+Findings name the control they violate — not just "this looks wrong":
+
+- **Security** — OWASP Top 10 (2025), ASVS, API & LLM Top 10; findings cite CWE IDs
+- **Languages** — SEI CERT (C, C++, Java), MISRA C/C++, ANSSI Rust guide
+- **Supply chain** — SLSA, Sigstore, in-toto, SBOM (CycloneDX/SPDX), NIST SSDF
+- **Cloud & identity** — CIS Benchmarks, NIST 800-207 zero trust, NIST 800-63-4,
+  OAuth 2.1, FAPI 2.0, passkeys, SPIFFE
+- **Privacy & compliance** — GDPR, CCPA/CPRA, HIPAA, PCI DSS 4.x, SOC 2,
+  ISO 27001, EU AI Act, NIS2, DORA
+- **Government & regulated** — NIST CSF 2.0, 800-53, 800-171/CMMC, FedRAMP,
+  EU Cyber Resilience Act, IEC 62443
+- **Threats, detection & AI/ML** — STRIDE, LINDDUN, MITRE ATT&CK & ATLAS,
+  NIST 800-61, NIST AI RMF
+- **Frontend, mobile & testing** — WCAG 2.2 AA, Core Web Vitals, OWASP MASVS & WSTG
+
+Named standards are the floor. Most of the library is the practice layer no
+regulation writes down: cancellation & backpressure, retries with jitter,
+circuit breakers, outbox/saga, zero-downtime migrations, measure-first
+performance, API evolvability, per-language idioms, SLOs, test-suite health.
 
 ## Skills
 
@@ -93,6 +92,8 @@ Every skill works in two modes:
 | `sota-cli-ux` | Command/flag design, output & exit-code contracts, lifecycle behavior, distribution |
 | `sota-shell-scripting` | Bash safety baseline, robustness, script security, CI/entrypoint/Makefile scripts |
 | `sota-docs-workflow` | Documentation architecture, API docs & changelogs, code review/PR workflow, commits & releases |
+| `sota-ux-writing` | Voice/tone & plain language (ISO 24495-1), microcopy, error & feedback messages, accessible/localizable interface text |
+| `sota-copywriting` | Positioning & value props, headlines/landing pages/CTAs, SEO content (E-E-A-T, spam policies), claims & legal trust (FTC, email law) |
 | `sota-rust` | Ownership/API design, errors & panics, unsafe discipline, tokio, supply chain, performance, CI |
 | `sota-golang` | Errors, package design, goroutine safety, net/http hardening, security, pprof, CI |
 | `sota-c-cpp` | RAII/idioms, memory safety & sanitizers, undefined behavior, security (CERT/MISRA, hardening flags), concurrency, CMake/clang-tidy/fuzzing CI, performance |
@@ -305,14 +306,21 @@ combo.
   time budget ("crown jewels only"). The methodology file asks otherwise.
 - **Ask for the report format** — default audit output is executive summary →
   findings by severity → roadmap by risk-reduction-per-effort → positive notes.
-- **Stack skills freely** — "sota-rust + sota-api-design for this axum service";
-  routing does this for you when you just describe the task.
 - **Re-verify version-sensitive facts** — pinned facts age between edits; hold the
   model to web-checking before pinning versions.
 
 ## Optional setup & integrations
 
 Beyond the skills themselves — all opt-in, none required to use the library.
+
+### Badge
+
+Built or audited a project with the library? Ship the attribution
+[![Built with SOTA Skills](https://img.shields.io/badge/Built%20with-SOTA%20Skills-2fa45f)](https://github.com/martinholovsky/SOTA-skills):
+
+```md
+[![Built with SOTA Skills](https://img.shields.io/badge/Built%20with-SOTA%20Skills-2fa45f)](https://github.com/martinholovsky/SOTA-skills)
+```
 
 ### Enforcing the gates
 
@@ -403,6 +411,40 @@ in to any of these (the scripts ship *with* the plugin, under its cache dir):
 
 The quickest path: just ask Claude to **"set up the SOTA optional extras"** — the
 first-run notice prompts for exactly this, and Claude will walk you through them.
+
+## Structure
+
+```
+skills/
+  sota/                          # master router — start here
+    SKILL.md                     # routing, operating principles, workflows
+    rules/
+      01-audit-methodology.md    # how to audit: tooling, evidence, reporting
+  sota-<domain>/
+    SKILL.md                     # when to use, BUILD/AUDIT workflows,
+                                 # severity conventions, rules index, top-10
+    rules/
+      01-<topic>.md              # ~80–350 lines each, ends with an
+      02-<topic>.md              # executable Audit checklist
+      ...
+profiles/
+  <user>.md                      # personal stack defaults consulted by router
+```
+
+Every skill works in two modes:
+
+- **BUILD** — apply the rules while designing/writing code.
+- **AUDIT** — review existing code; findings are emitted as
+  `file:line | rule violated | severity (Critical/High/Medium/Low/Info) |
+  effort (trivial/small/medium/large) | fix`.
+
+Two cross-cutting pieces live outside the domain skills:
+
+- `skills/sota/rules/01-audit-methodology.md` — how to run an audit: scoping,
+  a verified static-analysis tool matrix, the evidence standard, and the report
+  template (executive summary → findings → roadmap by risk-reduction-per-effort).
+- `profiles/` — per-user stack profiles: the default in BUILD mode, the
+  expected baseline in AUDIT mode — keeping the library generic and shareable.
 
 ## How it works
 
