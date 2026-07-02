@@ -3,19 +3,19 @@
 <p align="center">
   <a href="https://github.com/martinholovsky/SOTA-skills/releases"><img src="https://img.shields.io/github/v/release/martinholovsky/SOTA-skills?color=2fa45f&label=release" alt="Latest release"></a>
   <a href="https://github.com/martinholovsky/SOTA-skills/actions/workflows/ci.yml"><img src="https://github.com/martinholovsky/SOTA-skills/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
-  <img src="https://img.shields.io/badge/skills-35-2fa45f" alt="35 skills">
+  <img src="https://img.shields.io/badge/skills-37-2fa45f" alt="37 skills">
   <img src="https://img.shields.io/badge/modes-BUILD%20%2B%20AUDIT-2fa45f" alt="BUILD + AUDIT">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-CC%20BY%204.0-blue" alt="License: CC BY 4.0"></a>
 </p>
 
 <p align="center">
-  <img src="assets/social-preview.png" alt="SOTA Engineering Skills — 35 Claude Code skills to build and audit software at state-of-the-art practices" width="100%">
+  <img src="assets/social-preview.png" alt="SOTA Engineering Skills — 37 Claude Code skills to build and audit software at state-of-the-art practices" width="100%">
 </p>
 
 **Make your AI coding assistant build and audit like your most senior engineer.**
 
 Your assistant is brilliant — it just doesn't know your standards. SOTA-skills
-teaches it: 35 Claude Code skills (255 files, ~52k lines) encoding
+teaches it: 37 Claude Code skills (265 files, ~53k lines) encoding
 state-of-the-art 2026 practices for building **and** auditing software, with
 fast-moving claims web-verified against primary sources. Every file stays
 under 500 lines, so the right rules load exactly when your task needs them —
@@ -92,6 +92,8 @@ performance, API evolvability, per-language idioms, SLOs, test-suite health.
 | `sota-cli-ux` | Command/flag design, output & exit-code contracts, lifecycle behavior, distribution |
 | `sota-shell-scripting` | Bash safety baseline, robustness, script security, CI/entrypoint/Makefile scripts |
 | `sota-docs-workflow` | Documentation architecture, API docs & changelogs, code review/PR workflow, commits & releases |
+| `sota-ux-writing` | Voice/tone & plain language (ISO 24495-1), microcopy, error & feedback messages, accessible/localizable interface text |
+| `sota-copywriting` | Positioning & value props, headlines/landing pages/CTAs, SEO content (E-E-A-T, spam policies), claims & legal trust (FTC, email law) |
 | `sota-rust` | Ownership/API design, errors & panics, unsafe discipline, tokio, supply chain, performance, CI |
 | `sota-golang` | Errors, package design, goroutine safety, net/http hardening, security, pprof, CI |
 | `sota-c-cpp` | RAII/idioms, memory safety & sanitizers, undefined behavior, security (CERT/MISRA, hardening flags), concurrency, CMake/clang-tidy/fuzzing CI, performance |
