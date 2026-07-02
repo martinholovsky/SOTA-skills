@@ -5,6 +5,13 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- Added **`RELEASING.md`** — the release procedure in-repo (roadmap item 4):
+  version- and count-bearing surfaces, PNG re-render, pre-tag checklist.
+- Fixed **social-preview image saying "30 skills"** (stale through three
+  releases): regenerated at 37; tagline now count-free by design (PR #41).
+
 ## [1.8.0] - 2026-07-02
 
 Two new user-facing-words skills (37 skills total) plus a README overhaul for
