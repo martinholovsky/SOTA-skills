@@ -28,7 +28,10 @@ Ordered; revisit after each release.
    VERSION + plugin.json + CHANGELOG + tag + GitHub release, plus the
    version-bearing strings in README/CLAUDE.md. Eight releases shipped in the
    first 14 days from a procedure that lives outside the repo; the v1.0.0
-   pointer rot in CLAUDE.md was the predictable result.
+   pointer rot in CLAUDE.md was the predictable result. *(Landed 2026-07-02:
+   [RELEASING.md](../RELEASING.md), incl. the count-bearing surfaces — the
+   v1.8.0 release found the social-preview image still saying "30 skills",
+   the same rot class again.)*
 5. **Structured feedback intake.** `.github/ISSUE_TEMPLATE` with a
    bad-guidance report (file:line + primary source, mirroring SECURITY.md's
    format) and a skill-request template; enable Discussions. A no-telemetry

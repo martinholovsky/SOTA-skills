@@ -60,6 +60,9 @@ pre-commit hook scans each commit locally.
 ## Pointers
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) — full contribution guide and PR checklist
+- [RELEASING.md](RELEASING.md) — how to cut a release, including every
+  version- and count-bearing surface (README, router, manifests, social
+  preview)
 - [SECURITY.md](SECURITY.md) — reporting bad guidance or a leaked secret
 - [CHANGELOG.md](CHANGELOG.md) — release history (top entry = current version;
   also mirrored in `VERSION`)
