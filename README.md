@@ -15,51 +15,50 @@
 **Make your AI coding assistant build and audit like your most senior engineer.**
 
 Your assistant is brilliant — it just doesn't know your standards. SOTA-skills
-teaches it: a library of Claude Code skills that encode state-of-the-art (2026)
-practices for building **and** auditing software, and that verify their own
-claims. 35 skills, 255 skill files, ~52k lines — every file under 500 lines, so the
-right rules load exactly when your task needs them, never bloating the context
-window. Fast-moving claims (versions, specs, regulations) are web-verified
-against primary sources.
+teaches it: 35 Claude Code skills (255 files, ~52k lines) encoding
+state-of-the-art 2026 practices for building **and** auditing software, with
+fast-moving claims web-verified against primary sources. Every file stays
+under 500 lines, so the right rules load exactly when your task needs them —
+never bloating the context window.
 
-Two cross-cutting pieces live outside the domain skills:
+Two commands to install:
 
-- `skills/sota/rules/01-audit-methodology.md` — how to run an audit: scoping &
-  rules of engagement, a verified static-analysis tool matrix with triage
-  discipline, the evidence standard (every finding carries severity, effort,
-  standard mapping, and a concrete fix), and the report template (executive
-  summary → findings → remediation roadmap by risk-reduction-per-effort →
-  positive observations).
-- `profiles/` — per-user stack profiles (preferred stores, auth, license
-  policy, project triggers). The router treats a profile as the default in
-  BUILD mode and the expected baseline in AUDIT mode, keeping the library
-  itself generic and shareable.
-
-## Structure
-
-```
-skills/
-  sota/                          # master router — start here
-    SKILL.md                     # routing, operating principles, workflows
-    rules/
-      01-audit-methodology.md    # how to audit: tooling, evidence, reporting
-  sota-<domain>/
-    SKILL.md                     # when to use, BUILD/AUDIT workflows,
-                                 # severity conventions, rules index, top-10
-    rules/
-      01-<topic>.md              # ~80–350 lines each, ends with an
-      02-<topic>.md              # executable Audit checklist
-      ...
-profiles/
-  <user>.md                      # personal stack defaults consulted by router
+```text
+/plugin marketplace add martinholovsky/SOTA-skills
+/plugin install sota-skills@sota-skills
 ```
 
-Every skill works in two modes:
+Then describe the task in plain language — routing loads the right skills:
 
-- **BUILD** — apply the rules while designing/writing code.
-- **AUDIT** — review existing code; findings are emitted as
-  `file:line | rule violated | severity (Critical/High/Medium/Low/Info) |
-  effort (trivial/small/medium/large) | fix`.
+> Design a multi-tenant invoicing service. Postgres, FastAPI.
+
+> Run a full audit of this repo — every finding with severity, effort, and a
+> fix, ending in a prioritized roadmap.
+
+More install options under [Installation](#installation); more prompts under
+[Using it](#using-it).
+
+## Standards & practices baked in
+
+Findings name the control they violate — not just "this looks wrong":
+
+- **Security** — OWASP Top 10 (2025), ASVS, API & LLM Top 10; findings cite CWE IDs
+- **Languages** — SEI CERT (C, C++, Java), MISRA C/C++, ANSSI Rust guide
+- **Supply chain** — SLSA, Sigstore, in-toto, SBOM (CycloneDX/SPDX), NIST SSDF
+- **Cloud & identity** — CIS Benchmarks, NIST 800-207 zero trust, NIST 800-63-4,
+  OAuth 2.1, FAPI 2.0, passkeys, SPIFFE
+- **Privacy & compliance** — GDPR, CCPA/CPRA, HIPAA, PCI DSS 4.x, SOC 2,
+  ISO 27001, EU AI Act, NIS2, DORA
+- **Government & regulated** — NIST CSF 2.0, 800-53, 800-171/CMMC, FedRAMP,
+  EU Cyber Resilience Act, IEC 62443
+- **Threats, detection & AI/ML** — STRIDE, LINDDUN, MITRE ATT&CK & ATLAS,
+  NIST 800-61, NIST AI RMF
+- **Frontend, mobile & testing** — WCAG 2.2 AA, Core Web Vitals, OWASP MASVS & WSTG
+
+Named standards are the floor. Most of the library is the practice layer no
+regulation writes down: cancellation & backpressure, retries with jitter,
+circuit breakers, outbox/saga, zero-downtime migrations, measure-first
+performance, API evolvability, per-language idioms, SLOs, test-suite health.
 
 ## Skills
 
@@ -100,28 +99,6 @@ Every skill works in two modes:
 | `sota-python` | uv/ruff/typing, idioms, asyncio, security, performance, FastAPI/Django/pytest |
 | `sota-javascript-typescript` | Strict TS, idioms, async, Node hardening, security, bundle/React performance, testing |
 | `sota-dotnet` | C#/.NET idioms (records, NRT, patterns, spans), disposal/DI design, async (ConfigureAwait/cancellation), security (EF/Dapper, deserialization, ASP.NET Core auth, crypto), GC/Span/AOT, NuGet supply chain & analyzers/CI |
-
-## Standards & practices baked in
-
-Findings name the control they violate — not just "this looks wrong":
-
-- **Security** — OWASP Top 10 (2025), ASVS, API & LLM Top 10; findings cite CWE IDs
-- **Languages** — SEI CERT (C, C++, Java), MISRA C/C++, ANSSI Rust guide
-- **Supply chain** — SLSA, Sigstore, in-toto, SBOM (CycloneDX/SPDX), NIST SSDF
-- **Cloud & identity** — CIS Benchmarks, NIST 800-207 zero trust, NIST 800-63-4,
-  OAuth 2.1, FAPI 2.0, passkeys, SPIFFE
-- **Privacy & compliance** — GDPR, CCPA/CPRA, HIPAA, PCI DSS 4.x, SOC 2,
-  ISO 27001, EU AI Act, NIS2, DORA
-- **Government & regulated** — NIST CSF 2.0, 800-53, 800-171/CMMC, FedRAMP,
-  EU Cyber Resilience Act, IEC 62443
-- **Threats, detection & AI/ML** — STRIDE, LINDDUN, MITRE ATT&CK & ATLAS,
-  NIST 800-61, NIST AI RMF
-- **Frontend, mobile & testing** — WCAG 2.2 AA, Core Web Vitals, OWASP MASVS & WSTG
-
-Named standards are the floor. Most of the library is the practice layer no
-regulation writes down: cancellation & backpressure, retries with jitter,
-circuit breakers, outbox/saga, zero-downtime migrations, measure-first
-performance, API evolvability, per-language idioms, SLOs, test-suite health.
 
 ## Installation
 
@@ -425,6 +402,40 @@ in to any of these (the scripts ship *with* the plugin, under its cache dir):
 
 The quickest path: just ask Claude to **"set up the SOTA optional extras"** — the
 first-run notice prompts for exactly this, and Claude will walk you through them.
+
+## Structure
+
+```
+skills/
+  sota/                          # master router — start here
+    SKILL.md                     # routing, operating principles, workflows
+    rules/
+      01-audit-methodology.md    # how to audit: tooling, evidence, reporting
+  sota-<domain>/
+    SKILL.md                     # when to use, BUILD/AUDIT workflows,
+                                 # severity conventions, rules index, top-10
+    rules/
+      01-<topic>.md              # ~80–350 lines each, ends with an
+      02-<topic>.md              # executable Audit checklist
+      ...
+profiles/
+  <user>.md                      # personal stack defaults consulted by router
+```
+
+Every skill works in two modes:
+
+- **BUILD** — apply the rules while designing/writing code.
+- **AUDIT** — review existing code; findings are emitted as
+  `file:line | rule violated | severity (Critical/High/Medium/Low/Info) |
+  effort (trivial/small/medium/large) | fix`.
+
+Two cross-cutting pieces live outside the domain skills:
+
+- `skills/sota/rules/01-audit-methodology.md` — how to run an audit: scoping,
+  a verified static-analysis tool matrix, the evidence standard, and the report
+  template (executive summary → findings → roadmap by risk-reduction-per-effort).
+- `profiles/` — per-user stack profiles: the default in BUILD mode, the
+  expected baseline in AUDIT mode — keeping the library generic and shareable.
 
 ## How it works
 
