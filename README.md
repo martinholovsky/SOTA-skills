@@ -306,14 +306,21 @@ combo.
   time budget ("crown jewels only"). The methodology file asks otherwise.
 - **Ask for the report format** — default audit output is executive summary →
   findings by severity → roadmap by risk-reduction-per-effort → positive notes.
-- **Stack skills freely** — "sota-rust + sota-api-design for this axum service";
-  routing does this for you when you just describe the task.
 - **Re-verify version-sensitive facts** — pinned facts age between edits; hold the
   model to web-checking before pinning versions.
 
 ## Optional setup & integrations
 
 Beyond the skills themselves — all opt-in, none required to use the library.
+
+### Badge
+
+Built or audited a project with the library? Ship the attribution
+[![Built with SOTA Skills](https://img.shields.io/badge/Built%20with-SOTA%20Skills-2fa45f)](https://github.com/martinholovsky/SOTA-skills):
+
+```md
+[![Built with SOTA Skills](https://img.shields.io/badge/Built%20with-SOTA%20Skills-2fa45f)](https://github.com/martinholovsky/SOTA-skills)
+```
 
 ### Enforcing the gates
 

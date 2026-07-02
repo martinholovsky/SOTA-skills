@@ -31,6 +31,10 @@ first-screen impact.
 - **README "Standards & practices baked in" section** — named standards by
   area (each verified as actually cited in the rules files) plus the practice
   layer no regulation writes down.
+- **"Built with SOTA Skills" attribution badge** — copy-paste shields.io
+  snippet in README → Optional setup ("Built with", deliberately not
+  "certified by" — unverifiable certification is what `sota-copywriting`
+  rules/04 §6 flags).
 
 ### Changed
 
