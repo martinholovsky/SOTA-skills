@@ -368,11 +368,12 @@ cd /path/to/your/project
 
 It writes a thin `AGENTS.md` that carries the operating principles and points the
 agent at the installed `skills/` tree — the index is built from each skill's
-frontmatter, so it stays in sync, and the agent reads the relevant `rules/*.md`
-on demand (no rule text is duplicated). Idempotent via a managed block, like the
-others; `--skills-dir` and `--output` override the defaults. Claude Code keeps
-using the richer native Skills install above — this is purely for the other
-tools.
+frontmatter so it stays in sync, and the agent reads the relevant `rules/*.md` on
+demand (no rule text is duplicated). Idempotent via a managed block, like the
+others; `--skills-dir`/`--output` override the defaults. Claude Code keeps using
+the native Skills install above. This repo's own contributor guidance follows
+the same standard: [`AGENTS.md`](AGENTS.md) is canonical, and `CLAUDE.md` /
+`GEMINI.md` are symlinks to it.
 
 ### Status line (optional)
 
