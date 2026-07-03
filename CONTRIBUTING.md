@@ -37,6 +37,8 @@ skills/
 profiles/
   example.md.template         # copy to profiles/<you>.md (git-ignored)
 scripts/check-invariants.sh   # the invariants below, enforced
+AGENTS.md                     # guidance for AI assistants working on the repo
+                              # (CLAUDE.md and GEMINI.md are symlinks to it)
 ```
 
 ## Anatomy of a skill

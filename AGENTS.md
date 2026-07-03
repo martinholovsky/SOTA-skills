@@ -70,4 +70,5 @@ pre-commit hook scans each commit locally.
   preview)
 - [SECURITY.md](SECURITY.md) — reporting bad guidance or a leaked secret
 - [CHANGELOG.md](CHANGELOG.md) — release history (top entry = current version;
-  also mirrored in `VERSION`)
+  also mirrored in `VERSION`); releases 1.4.0 and earlier are archived in
+  [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md)

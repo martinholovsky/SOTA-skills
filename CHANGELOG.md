@@ -5,11 +5,19 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.9.0] - 2026-07-03
+
+Cross-tool support: the library now works with Gemini CLI, Codex, and any
+other agent that reads `AGENTS.md` — not just Claude Code.
 
 - Cross-tool contributor guidance: root `CLAUDE.md` renamed to **`AGENTS.md`**
   (the open standard Codex/Cursor/Copilot read natively); `CLAUDE.md` and
   `GEMINI.md` are now symlinks to it, so Claude Code and Gemini CLI load it too.
+- README hero now states the supported tools (native on Claude Code; Gemini
+  CLI, Codex, and other `AGENTS.md` agents via `scripts/gen-agents-md.sh`).
+- CHANGELOG: releases 1.4.0 and earlier moved to `docs/CHANGELOG-archive.md`
+  (the file had reached the 500-line invariant cap); the archive step is now
+  part of the release procedure in `RELEASING.md`.
 - Added **`RELEASING.md`** — the release procedure in-repo (roadmap item 4):
   version- and count-bearing surfaces, PNG re-render, pre-tag checklist.
 - Fixed **social-preview image saying "30 skills"** (stale through three
@@ -379,118 +387,14 @@ goes from 30 to 34 skills.
   PHP) signature detection at ingest (`rules/09`), and Redis `EVAL`/Qdrant-filter
   injection guidance (`sota-databases/rules/06`).
 
-## [1.4.0] - 2026-06-27
+---
 
-### Added
+Releases **1.4.0 and earlier** are archived in
+[docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md).
 
-- **Plugin first-run notice** (`hooks/hooks.json` + `scripts/plugin-notice.sh`)
-  — a one-time `SessionStart` notice for plugin installs that points users at the
-  opt-in extras a sandboxed plugin can't auto-configure (always-on routing, status
-  line, pre-commit gates, AGENTS.md). Shows once (marker-guarded); clone users get
-  the same from `install.sh`.
-- **README "Optional extras (for plugin users)"** — documents how plugin users
-  turn on the routing hook, status line, and generators (which ship with the
-  plugin) to match the clone experience.
-
-## [1.3.0] - 2026-06-27
-
-### Added
-
-- **`scripts/statusline.sh`** — a Claude Code status line showing which skills
-  you've actually used this session (read from the transcript's `Skill`
-  invocations), plus model / context % / dir / branch; falls back to the count
-  of installed skills before any are used. Requires `jq`.
-
-### Changed
-
-- **`scripts/install.sh` now offers always-on routing setup** (global CLAUDE.md
-  directive + `UserPromptSubmit` hook) after linking — interactive and
-  dotfiles-aware: detects existing/symlinked `~/.claude/CLAUDE.md` and
-  `settings.json`, asks before changing anything (recommended pre-filled), backs
-  up, writes through symlinks so dotfiles stay authoritative, and is idempotent
-  via managed markers. Flags: `--routing`, `--no-routing`, `--yes`.
-
-## [1.2.0] - 2026-06-27
-
-### Added
-
-- **`sota-docs-workflow` rules/05 — spec-driven development**: the
-  intent→plan→tasks→implement→verify loop, separating what from how, testable
-  acceptance criteria, `[NEEDS CLARIFICATION]` markers, specs-in-repo and
-  spec-drift control, steering vs per-feature specs, and when SDD is overhead.
-- **`sota-testing` rules/08 — BDD / specification by example**: declarative
-  Given-When-Then, the three-amigos value, the outside-in double loop with TDD,
-  scenario-explosion and UI-script anti-patterns, and tracing scenarios to spec
-  acceptance criteria.
-- **`scripts/gen-agents-md.sh`** — generate an `AGENTS.md` entry point so
-  non-Claude agents (Codex, Cursor, Copilot, Gemini CLI, Windsurf, Zed, …) route
-  through the skills. Thin pointer built from each skill's frontmatter; reads
-  rules on demand, no duplication; idempotent managed block.
-- **`scripts/init-gates.sh --docs-gate`** — opt-in pre-commit hook (helper at
-  `.sota/docs-gate.sh`) that blocks a commit changing code without updating any
-  docs (README/CHANGELOG/`docs/`/`*.md`). Heuristic and bypassable
-  (`SKIP=sota-docs-gate`).
-
-### Changed
-
-- The always-on directive (generated `AGENTS.md` and the README `CLAUDE.md`
-  example) now leads with two standing rules that apply to **every answer**:
-  *validate every claim against a primary source before asserting*, and *keep
-  docs current in the same change*.
-
-## [1.1.0] - 2026-06-26
-
-### Added
-
-- **Claude Code plugin + marketplace** (`.claude-plugin/`): install with
-  `/plugin marketplace add martinholovsky/SOTA-skills` then
-  `/plugin install sota-skills@sota-skills`, and update with `/plugin update`.
-- **`scripts/install.sh`** — installer that doubles as the updater: re-run after
-  `git pull` to link newly-added skills and prune removed ones (idempotent);
-  `--update`, `--project DIR`, `--copy`. Also links the local profile.
-- **`scripts/init-gates.sh`** — detects a repo's languages and generates a
-  SOTA-aligned `.pre-commit-config.yaml`: ruff/mypy/pytest/pip-audit,
-  gofumpt/golangci-lint/govulncheck, clippy/cargo-audit, eslint/tsc/audit,
-  shellcheck/shfmt, plus gitleaks. Fast checks on commit, heavy on push;
-  idempotent via a managed marker block.
-- **README**: "Always-on routing", "Enforcing the gates", and "Updating"
-  sections documenting how to keep the skills applied and current.
-
-## [1.0.0] - 2026-06-17
-
-First public release.
-
-### Added
-
-- **30 skills** spanning architecture; security (code security, threat
-  modeling, secrets management, sandboxing); API design; async/concurrency;
-  performance; databases; observability; testing; LLM engineering; frontend
-  design; cloud infrastructure; Kubernetes; identity & access; network security;
-  detection engineering; data engineering; privacy/compliance; mobile; CLI UX;
-  shell scripting; docs/workflow; and the Rust, Go, Python, and
-  JavaScript/TypeScript language skills.
-- **`sota` master router** with task-to-skill routing and operating principles,
-  including a mandatory claim-validation principle.
-- **BUILD and AUDIT modes** for every skill. Findings carry severity + effort +
-  standard mapping + fix; every rules file ends with an executable audit
-  checklist; every file stays under 500 lines for incremental loading.
-- **Audit methodology**: scoping/rules of engagement, a verified static-analysis
-  tool matrix, an evidence standard, and a report template.
-- **Per-user `profiles/`** mechanism with `example.md.template`; real profiles
-  are git-ignored so the library stays generic.
-- **Repository invariants** enforced in pre-commit and CI: ≤500-line files,
-  audit-checklist presence in every rules file, and an internal-reference
-  denylist, plus gitleaks secret scanning.
-- **Governance**: contributor guide, security policy, and code of conduct;
-  `main` protected with required status checks.
-
+[1.9.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.9.0
 [1.8.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.8.0
 [1.7.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.7.1
 [1.7.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.7.0
 [1.6.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.6.0
 [1.5.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.5.0
-[1.4.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.4.0
-[1.3.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.3.0
-[1.2.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.2.0
-[1.1.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.1.0
-[1.0.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.0.0

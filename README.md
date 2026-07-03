@@ -15,11 +15,11 @@
 **Make your AI coding assistant build and audit like your most senior engineer.**
 
 Your assistant is brilliant — it just doesn't know your standards. SOTA-skills
-teaches it: 37 Claude Code skills (265 files, ~53k lines) encoding
-state-of-the-art 2026 practices for building **and** auditing software, with
-fast-moving claims web-verified against primary sources. Every file stays
-under 500 lines, so the right rules load exactly when your task needs them —
-never bloating the context window.
+teaches it: 37 skills (265 files, ~53k lines) encoding state-of-the-art 2026
+practices for building **and** auditing software, fast-moving claims
+web-verified against primary sources. Native on Claude Code; works with Gemini
+CLI, Codex, and any other agent that reads `AGENTS.md`. Every file stays under
+500 lines, so the right rules load exactly when your task needs them.
 
 Two commands to install:
 
@@ -371,9 +371,8 @@ agent at the installed `skills/` tree — the index is built from each skill's
 frontmatter so it stays in sync, and the agent reads the relevant `rules/*.md` on
 demand (no rule text is duplicated). Idempotent via a managed block, like the
 others; `--skills-dir`/`--output` override the defaults. Claude Code keeps using
-the native Skills install above. This repo's own contributor guidance follows
-the same standard: [`AGENTS.md`](AGENTS.md) is canonical, and `CLAUDE.md` /
-`GEMINI.md` are symlinks to it.
+the native Skills install above. This repo itself follows the standard:
+[`AGENTS.md`](AGENTS.md) is canonical; `CLAUDE.md`/`GEMINI.md` are symlinks.
 
 ### Status line (optional)
 
