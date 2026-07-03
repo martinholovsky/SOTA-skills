@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Cross-tool contributor guidance: root `CLAUDE.md` renamed to **`AGENTS.md`**
+  (the open standard Codex/Cursor/Copilot read natively); `CLAUDE.md` and
+  `GEMINI.md` are now symlinks to it, so Claude Code and Gemini CLI load it too.
 - Added **`RELEASING.md`** — the release procedure in-repo (roadmap item 4):
   version- and count-bearing surfaces, PNG re-render, pre-tag checklist.
 - Fixed **social-preview image saying "30 skills"** (stale through three

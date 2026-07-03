@@ -3,7 +3,7 @@
 How to cut a SOTA-skills release. Adding a skill is a **minor** bump (the
 library only ever adds); fixes to existing content are a **patch**. Everything
 lands through a PR — `main` is protected for everyone, including admins (see
-[CLAUDE.md](CLAUDE.md)).
+[AGENTS.md](AGENTS.md)).
 
 ## 1. Version-bearing files (every release)
 
