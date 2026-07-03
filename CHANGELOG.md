@@ -15,6 +15,9 @@ other agent that reads `AGENTS.md` — not just Claude Code.
   `GEMINI.md` are now symlinks to it, so Claude Code and Gemini CLI load it too.
 - README hero now states the supported tools (native on Claude Code; Gemini
   CLI, Codex, and other `AGENTS.md` agents via `scripts/gen-agents-md.sh`).
+- CHANGELOG: releases 1.4.0 and earlier moved to `docs/CHANGELOG-archive.md`
+  (the file had reached the 500-line invariant cap); the archive step is now
+  part of the release procedure in `RELEASING.md`.
 - Added **`RELEASING.md`** — the release procedure in-repo (roadmap item 4):
   version- and count-bearing surfaces, PNG re-render, pre-tag checklist.
 - Fixed **social-preview image saying "30 skills"** (stale through three
