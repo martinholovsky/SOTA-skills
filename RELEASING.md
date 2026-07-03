@@ -11,7 +11,7 @@ lands through a PR — `main` is protected for everyone, including admins (see
 |---|---|
 | `VERSION` | the new semver, single line |
 | `.claude-plugin/plugin.json` | `"version"`; also the skill/domain counts in `"description"` if they changed |
-| `CHANGELOG.md` | new `## [X.Y.Z] - YYYY-MM-DD` section at the top **and** a `[X.Y.Z]: …/releases/tag/vX.Y.Z` link ref at the bottom (top entry = current version — no `[Unreleased]` left behind) |
+| `CHANGELOG.md` | new `## [X.Y.Z] - YYYY-MM-DD` section at the top **and** a `[X.Y.Z]: …/releases/tag/vX.Y.Z` link ref at the bottom (top entry = current version — no `[Unreleased]` left behind); when the file nears the 500-line cap, move the oldest release sections **and their link refs** to `docs/CHANGELOG-archive.md` |
 
 ## 2. Count-bearing surfaces (when the skill count changes)
 
@@ -25,8 +25,8 @@ find skills -name '*.md' -exec cat {} + | wc -l  # ~L lines
 
 Then update every surface that carries a count:
 
-- **README**: badge `skills-N`, hero sentence "N Claude Code skills (M files,
-  ~Lk lines)", social-preview `alt` text, and a table row per new skill.
+- **README**: badge `skills-N`, hero sentence "N skills (M files, ~Lk lines)",
+  social-preview `alt` text, and a table row per new skill.
 - **Router** (`skills/sota/SKILL.md`): body "A library of N domain skills"
   (N = total − 1), a routing-table row + library-map entry per new skill, and
   the domain list in the frontmatter description — which must stay

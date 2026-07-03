@@ -1,7 +1,7 @@
 {
   "name": "sota-skills",
   "displayName": "SOTA Engineering Skills",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "State-of-the-art engineering skills (2026) for building and auditing software across 36 domains and languages — security, architecture, APIs, databases, cloud, Kubernetes, observability, testing, LLM engineering, UX writing, copywriting, and more — with a master router and BUILD/AUDIT modes (37 skills).",
   "author": { "name": "Martin Holovsky" },
   "homepage": "https://github.com/martinholovsky/SOTA-skills",
