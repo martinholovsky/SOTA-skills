@@ -1,3 +1,4 @@
+<!-- last-verified: 2026-06 -->
 # 03 — Kubernetes Network Policy Depth
 
 Scope: Kubernetes `NetworkPolicy`, `CiliumNetworkPolicy` (CNP/CCNP), the namespaced default-deny

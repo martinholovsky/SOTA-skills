@@ -1,3 +1,4 @@
+<!-- last-verified: 2026-06 -->
 # 05 — Audit-Ready Engineering (SOC 2 / ISO 27001)
 
 The goal: evidence as a byproduct of normal engineering, not a quarterly scramble.

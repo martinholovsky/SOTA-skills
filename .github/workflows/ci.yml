@@ -18,6 +18,10 @@ jobs:
         with:
           # The build steps run repo scripts and never push.
           persist-credentials: false
+          # Invariant 5 compares VERSION against the newest v* tag; a shallow
+          # tagless checkout would silently skip that comparison.
+          fetch-depth: 0
+          fetch-tags: true
       - name: Check invariants
         # SOTA_DENYLIST (repository secret) carries the private internal-name
         # patterns for check 3; fork PRs don't receive it and fall back to the

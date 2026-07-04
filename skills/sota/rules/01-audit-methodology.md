@@ -1,3 +1,4 @@
+<!-- last-verified: 2026-06 -->
 # Audit Methodology — Process, Tooling, Severity, Evidence & Reporting
 
 Scope: this file governs **how** an audit is run and reported — scoping,

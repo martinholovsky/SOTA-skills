@@ -1,3 +1,4 @@
+<!-- last-verified: 2026-07 -->
 # 02 — NIST 800-53 / 800-171 / CMMC / FedRAMP
 
 The US federal control stack. These four are one lineage: **SP 800-53** is the

@@ -5,6 +5,27 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+Roadmap items 2, 3, 5, and 6 executed (see `docs/ROADMAP.md` annotations):
+
+- **Invariants 5 & 6** in `check-invariants.sh`: version lockstep (`VERSION`
+  == `plugin.json` == CHANGELOG top; newest tag never ahead) and count-surface
+  drift (README badge/hero/alt, router body, plugin/marketplace descriptions,
+  social-preview pill vs a recount of the tree). CI invariants job now checks
+  out full history so the tag comparison runs.
+- **Freshness ledger**: rules files carry a line-1
+  `<!-- last-verified: YYYY-MM -->` marker (18 files stamped from their
+  existing in-text dates — never retroactively); `scripts/check-freshness.sh`
+  + a monthly `freshness.yml` workflow report stale markers and the unstamped
+  backlog.
+- **Feedback intake**: bad-guidance and skill-request issue forms (primary
+  source required; security-sensitive reports routed to private advisories)
+  and GitHub Discussions enabled.
+- **README "Coverage & non-goals"**: PHP, Ruby, Swift-as-a-language, and
+  Active Directory/Kerberos depth declared out of scope for now and queued as
+  approved follow-up builds.
+
 ## [1.9.0] - 2026-07-03
 
 Cross-tool support: the library now works with Gemini CLI, Codex, and any

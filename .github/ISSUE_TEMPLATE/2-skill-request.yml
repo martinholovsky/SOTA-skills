@@ -1,0 +1,38 @@
+name: Skill request
+description: Propose a new skill (or a major gap to close in an existing one).
+title: "[skill-request] "
+labels: ["skill-request"]
+body:
+  - type: input
+    id: domain
+    attributes:
+      label: Domain or language
+      placeholder: e.g. sota-php, Active Directory / Kerberos content, Swift language rules
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it's needed
+      description: >-
+        What tasks would it serve? What goes wrong today when the assistant
+        works in this domain without it?
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Authoritative sources to build from
+      description: >-
+        The primary sources a correct skill would cite — official docs,
+        standards (OWASP/NIST/ISO/CIS), vendor security guides. Every claim
+        in a skill must be verifiable against sources like these.
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmations
+      options:
+        - label: I checked the README skills table and the existing skill doesn't cover this (or I explained the gap above).
+          required: true

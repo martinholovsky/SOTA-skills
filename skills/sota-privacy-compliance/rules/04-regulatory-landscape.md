@@ -1,3 +1,4 @@
+<!-- last-verified: 2026-06 -->
 # 04 — Regulatory Landscape: Engineering Obligations
 
 What each major regime actually demands from the codebase and infrastructure.
