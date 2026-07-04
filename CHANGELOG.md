@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+The four coverage builds approved under roadmap item 6 (39 skills total):
+
+- **`sota-php`** — PHP 8.3+ floor / 8.5 current (verified php.net), strict
+  idioms, OWASP-grade security (PDO, escaping, uploads/LFI, unserialize/Phar,
+  sessions), Composer supply chain (`composer audit`), PHPStan/Psalm,
+  OPcache/FPM/JIT. SKILL.md + 6 rules files.
+- **`sota-ruby`** — Ruby 4.0 current / 3.4 maintained (verified
+  ruby-lang.org), idioms & typing (RBS/Sorbet), security (SQLi, ERB escaping,
+  Marshal/`YAML.load` semantics since Psych 4, ReDoS + `Regexp.timeout`),
+  Bundler supply chain (bundler-audit, lockfile checksums since Bundler 2.6),
+  GVL/Ractors/YJIT (ZJIT flagged experimental). SKILL.md + 5 rules files.
+- **Swift as a language** — `sota-mobile` rules/07: Swift 6.3 strict
+  concurrency (verified swift.org), actors/Sendable, structured concurrency,
+  ARC/retain cycles, unsafe interop, SPM registry security, Swift Testing.
+- **Active Directory/Kerberos/ADCS** — `sota-identity-access` rules/07
+  (Enterprise Access Model, delegation, Kerberoasting/gMSA/dMSA, ESC classes,
+  KB5014754 enforcement, Windows LAPS) + `sota-detection-engineering`
+  rules/07 (event-ID telemetry baseline, Sigma-style detections with ATT&CK
+  IDs, AD deception), cross-linked. README "Coverage & non-goals" now lists
+  only true non-goals; router/manifests/counts updated to 39 skills.
+
 Roadmap items 2, 3, 5, and 6 executed (see `docs/ROADMAP.md` annotations):
 
 - **Invariants 5 & 6** in `check-invariants.sh`: version lockstep (`VERSION`
