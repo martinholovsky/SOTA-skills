@@ -5,7 +5,11 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.10.0] - 2026-07-04
+
+Coverage complete + auditable promises: two new language skills (39 total),
+Swift-language and AD/Kerberos depth, and every remaining roadmap item
+executed — invariant lint gate, freshness ledger, structured feedback intake.
 
 The four coverage builds approved under roadmap item 6 (39 skills total):
 
@@ -434,6 +438,7 @@ goes from 30 to 34 skills.
 Releases **1.4.0 and earlier** are archived in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md).
 
+[1.10.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.10.0
 [1.9.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.9.0
 [1.8.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.8.0
 [1.7.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.7.1
