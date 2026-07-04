@@ -1,12 +1,12 @@
 ---
 name: sota
 description: >-
-  Master router for the SOTA engineering skills library. Use this skill whenever the user asks to build, design, implement, refactor, harden, optimize, review, or audit an application, service, or codebase and the request spans more than one domain — or when you are unsure which specific sota-* skill applies. It maps the task (build mode or audit mode) to the right domain skills (architecture, code security, threat modeling, secrets, sandboxing, performance, async/concurrency, APIs/websockets, devsecops, databases, frontend, observability, testing, LLM engineering, ML engineering, cloud, kubernetes, identity & access, network security, detection engineering, data engineering, privacy/compliance, security/compliance, mobile, CLI UX, UX writing, copywriting, shell scripting, docs/workflow) and language skills (Rust, Go, C/C++, Java/Kotlin, Python, JS/TS, .NET/C#). Trigger keywords: SOTA, best practices, audit my code, security review, compliance, hardening, prod readiness, code quality.
+  Master router for the SOTA engineering skills library. Use this skill whenever the user asks to build, design, implement, refactor, harden, optimize, review, or audit an application, service, or codebase and the request spans more than one domain — or when you are unsure which specific sota-* skill applies. It maps the task (build mode or audit mode) to the right domain skills (architecture, code security, threat modeling, secrets, sandboxing, performance, async/concurrency, APIs/websockets, devsecops, databases, frontend, observability, testing, LLM engineering, ML engineering, cloud, kubernetes, identity & access, network security, detection engineering, data engineering, privacy/compliance, security/compliance, mobile, CLI UX, UX writing, copywriting, shell scripting, docs/workflow) and language skills (Rust, Go, C/C++, Java/Kotlin, Python, JS/TS, .NET/C#, PHP, Ruby). Trigger keywords: SOTA, best practices, audit my code, security review, compliance, hardening, prod readiness, code quality.
 ---
 
 # SOTA Engineering Skills — Master Router
 
-A library of 36 domain skills, each with a `SKILL.md` entry point and a `rules/`
+A library of 38 domain skills, each with a `SKILL.md` entry point and a `rules/`
 folder of focused rule files (every file < 500 lines). Each skill works in two
 modes:
 
@@ -88,6 +88,8 @@ rules files that match the code in front of you. Never load all skills at once.
 | `sota-python` | Any Python code — uv/ruff/typing setup, idioms/pitfalls, asyncio, security (pickle/subprocess/SQL), performance, FastAPI/Django/pytest |
 | `sota-javascript-typescript` | Any JS/TS code — strict tsconfig/type design, idioms, promises/AbortController, Node backend hardening, XSS/supply-chain security, bundle/React performance, vitest/ESLint |
 | `sota-dotnet` | Any C#/.NET code — modern idioms (records, nullable reference types, pattern matching, spans), API/disposal/DI design, async/await & concurrency (ConfigureAwait, cancellation, channels), security (EF/Dapper SQL, deserialization, ASP.NET Core auth, crypto), GC/Span/AOT performance, NuGet supply chain & analyzers/CI |
+| `sota-php` | Any PHP code — strict_types/modern idioms (enums, readonly, match), security (PDO/SQLi, XSS escaping, uploads/LFI, unserialize/Phar, sessions, password_hash/sodium), framework-neutral web hardening, Composer supply chain, PHPStan/Psalm, OPcache/FPM/JIT performance |
+| `sota-ruby` | Any Ruby code — idioms (frozen strings, pattern matching, RBS/Sorbet), security (AR/SQLi, ERB escaping, strong params, Marshal/YAML.load, command injection, ReDoS), Bundler supply chain (bundler-audit, lockfile checksums), RuboCop/Brakeman, GVL/Ractors/YJIT performance |
 
 ## Cross-cutting routing rules
 
@@ -257,14 +259,15 @@ For a **full project audit**, work in passes:
   05 operators/CRDs/webhooks, 06 workloads & tenancy, 07 supply chain & audit
 - **sota-identity-access/rules**: 01 federation protocols, 02 IdP operations,
   03 authorization models, 04 lifecycle & provisioning, 05 privileged &
-  workload identity, 06 MFA/federation/assurance
+  workload identity, 06 MFA/federation/assurance, 07 Active Directory &
+  Kerberos/ADCS hardening
 - **sota-network-security/rules**: 01 zero-trust architecture,
   02 segmentation & blast radius, 03 K8s network policy, 04 service mesh &
   mTLS, 05 edge/ingress/egress, 06 DNS/TLS/PKI
 - **sota-detection-engineering/rules**: 01 detection-engineering discipline,
   02 telemetry & SIEM data layer, 03 rule languages & engines, 04 alerting/
   triage/SOC/SOAR, 05 hunting/intel/deception, 06 incident response &
-  validation
+  validation, 07 AD attack detection (Kerberoasting/DCSync/ADCS)
 - **sota-data-engineering/rules**: 01 architecture & modeling, 02 pipelines &
   orchestration, 03 streaming & CDC, 04 data quality & contracts, 05 storage &
   performance, 06 operations & governance
@@ -276,7 +279,7 @@ For a **full project audit**, work in passes:
   Resilience Act, 05 ISA/IEC 62443 (OT/ICS)
 - **sota-mobile/rules**: 01 platform & stack, 02 architecture & state,
   03 offline/background/push, 04 security, 05 performance,
-  06 release & operations
+  06 release & operations, 07 Swift language (Swift 6 concurrency, ARC, SPM)
 - **sota-cli-ux/rules**: 01 commands/flags/config, 02 output & interaction,
   03 behavior & lifecycle, 04 distribution & docs
 - **sota-shell-scripting/rules**: 01 safety baseline, 02 robustness &
@@ -309,6 +312,11 @@ For a **full project audit**, work in passes:
 - **sota-dotnet/rules**: 01 idioms (records/NRT/patterns), 02 API/disposal/DI
   design, 03 async & concurrency, 04 security (SQL/deserialization/ASP.NET
   Core/crypto), 05 performance (GC/Span/AOT), 06 build/tooling & CI
+- **sota-php/rules**: 01 language baseline & idioms, 02 injection (SQL/XSS),
+  03 files/deserialization/SSRF, 04 sessions/auth/web hardening, 05 Composer &
+  tooling, 06 performance & runtime
+- **sota-ruby/rules**: 01 language & idioms, 02 security, 03 web hardening,
+  04 supply chain & tooling, 05 concurrency & performance
 
 ## Context budget discipline
 

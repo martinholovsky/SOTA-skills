@@ -54,11 +54,12 @@ Ordered; revisit after each release.
    skills whose real-world audits are AD-heavy. Ship `sota-php`, `sota-ruby`,
    a Swift-language rules file, and AD content — or add a README "coverage &
    non-goals" section stating what is deliberately excluded. The mission
-   statement overclaims until one of the two happens. *(Decided 2026-07-04 —
-   both: the README "Coverage & non-goals" section is live, and `sota-php`,
-   `sota-ruby`, Swift-language rules, and AD/Kerberos content are approved
-   and queued as follow-up builds, each to be web-verified against primary
-   sources like the v1.6.0 language skills.)*
+   statement overclaims until one of the two happens. *(Closed 2026-07-04:
+   all four builds shipped — `sota-php`, `sota-ruby`, `sota-mobile` rules/07
+   (Swift language), and AD/Kerberos/ADCS as `sota-identity-access` rules/07
+   + `sota-detection-engineering` rules/07 — each claim web-verified against
+   primary sources; the README "Coverage & non-goals" section now lists only
+   true non-goals (Scala/Elixir, standalone C, platform-engineering depth).)*
 
 ## Maintenance mode (de-prioritized by audit evidence)
 

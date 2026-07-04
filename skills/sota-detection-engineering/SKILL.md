@@ -13,8 +13,9 @@ description: >-
   KQL, SPL, EQL, ATT&CK, Pyramid of Pain, threat hunting, threat intel, TIP,
   STIX, TAXII, IOC, IOA, TTP, SOC, alert fatigue, tuning, SOAR, runbook,
   incident response, IR playbook, NIST 800-61, PICERL, forensics, chain of
-  custody, post-incident review, purple team, adversary emulation, honeypot,
-  honeytoken, canary, OCSF, detection coverage, MTTD, false positive.
+  custody, purple team, honeypot, honeytoken, canary, OCSF, MTTD, false
+  positive, Active Directory, Kerberoasting, DCSync, golden ticket, ADCS,
+  RBCD.
 ---
 
 # SOTA Detection Engineering, SOC & Incident Response
@@ -126,6 +127,7 @@ and the shortest path to closing the worst gap.
 | `rules/04-alerting-triage-soc-soar.md` | Fighting alert fatigue, tuning/suppression with expiry, severity assignment, enrichment, dedup/correlation, runbooks, SOAR + auto-containment guardrails, case management, FP lifecycle, SOC metrics |
 | `rules/05-hunting-intel-deception.md` | Hypothesis-driven hunting + the hunt loop, IOC vs IOA/TTP hunting, threat-intel lifecycle + TIP, STIX 2.1/TAXII 2.1, diamond model/kill chain, deception (honeypots/honeytokens/canaries) |
 | `rules/06-incident-response-validation.md` | Running IR (NIST SP 800-61r3 / CSF 2.0, PICERL), playbooks, severity classification, containment/eradication/recovery, forensic readiness + chain of custody, blameless PIR, tabletops; validating detections via Atomic Red Team/Caldera/Stratus, purple teaming, regression testing |
+| `rules/07-ad-attack-detection.md` | Detecting on-prem Active Directory attacks: DC audit-policy telemetry and the events that matter (4768/4769/4770, 4662, 4624/4625, 5136, 8004, 4886/4887), Kerberoasting (RC4 TGS spikes), AS-REP roasting, DCSync (replication GUIDs on 4662), golden/silver tickets, DCShadow, ADCS abuse (ESC1), NTLM relay, password spraying, RBCD writes (5136); ATT&CK mapping (T1558.x, T1003.006, T1207, T1649) + AD deception (honeytoken SPNs, canary objects). Hardening lives in sota-identity-access rules/07 |
 
 ## Top 10 non-negotiables
 

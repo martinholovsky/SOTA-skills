@@ -1,7 +1,7 @@
 ---
 name: sota-mobile
 description: >-
-  State-of-the-art mobile engineering for building and auditing iOS and Android applications. Use when the task involves mobile apps in any form — native (Swift, SwiftUI, Kotlin, Jetpack Compose), cross-platform (React Native, Flutter, Kotlin Multiplatform), app store submission and review (App Store, Google Play, privacy manifests, data safety), push notifications (APNs, FCM), offline-first architecture and sync, mobile security (Keychain, Keystore, certificate pinning, app attestation, OWASP MASVS), mobile performance (startup, jank, battery, app size), or mobile release operations (phased rollouts, feature flags, forced updates, crash reporting, OTA updates). Trigger keywords: mobile, iOS, Android, Swift, SwiftUI, Kotlin, Jetpack Compose, React Native, Flutter, app store, push notifications, offline-first.
+  State-of-the-art mobile engineering for building and auditing iOS and Android applications. Use when the task involves mobile apps in any form — native (Swift, SwiftUI, Kotlin, Jetpack Compose), cross-platform (React Native, Flutter, Kotlin Multiplatform), Swift as a language — Swift 6 strict concurrency, actors, Sendable, ARC, SwiftPM, Swift Testing — in any target including server-side Swift (e.g. Vapor), app store submission and review (App Store, Google Play, privacy manifests, data safety), push notifications (APNs, FCM), offline-first architecture and sync, mobile security (Keychain, Keystore, certificate pinning, app attestation, OWASP MASVS), mobile performance (startup, jank, battery, app size), or mobile release operations (phased rollouts, feature flags, forced updates, crash reporting, OTA updates). Trigger keywords: mobile, iOS, Android, Swift, SwiftUI, Kotlin, Jetpack Compose, React Native, Flutter, app store, push notifications, offline-first, server-side Swift, Vapor, SwiftPM.
 ---
 
 # SOTA Mobile Engineering
@@ -59,6 +59,7 @@ Order the report by severity, then by blast radius. An audit that returns only s
 | [rules/04-security.md](rules/04-security.md) | Keychain/Keystore, certificate pinning tradeoffs, biometrics gating keys, App Attest/Play Integrity, token handling, deep link validation, root/jailbreak detection honesty, WebView hardening, obfuscation reality, OWASP MASVS |
 | [rules/05-performance.md](rules/05-performance.md) | Startup budgets, main-thread discipline, jank/frame budgets, list virtualization, image loading, memory pressure, battery, app size, ANR avoidance, MetricKit/Android vitals |
 | [rules/06-release-and-operations.md](rules/06-release-and-operations.md) | Store submission requirements, phased rollouts, feature flags/kill switches, forced updates, crash reporting, OTA updates policy, API versioning for old clients, testing strategy |
+| [rules/07-swift-language.md](rules/07-swift-language.md) | Swift as a language (any target, incl. server-side Swift): Swift 6 strict concurrency (actors, Sendable, isolation), value semantics/COW, protocol-oriented design, optionals/typed throws, ARC and retain cycles, unsafe pointer/C interop, SwiftPM supply chain (Package.resolved, registry signing, binary checksums), Swift Testing vs XCTest |
 
 ## Top 10 non-negotiables
 

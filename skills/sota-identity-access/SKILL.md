@@ -9,12 +9,13 @@ description: >-
   weak MFA, long-lived tokens, and SAML misconfig. Owns identity
   INFRASTRUCTURE and access-management DESIGN, not app-level login/session/JWT
   mechanics (sota-code-security owns those). Trigger keywords: IAM, IdP, OIDC,
-  OAuth 2.1, PKCE, DPoP, PAR, RAR, JAR, FAPI, SAML, XML signature wrapping,
+  OAuth 2.1, PKCE, DPoP, PAR, RAR, JAR, FAPI, SAML,
   SCIM, provisioning, deprovisioning, RBAC, ABAC, ReBAC, Zanzibar, OpenFGA,
   SpiceDB, OPA, Cedar, Kanidm, Keycloak, Authentik, Zitadel, Entra, Okta, SSO,
   single logout, MFA, passkey, FIDO2, WebAuthn, step-up, conditional access,
   CAEP, PAM, break-glass, just-in-time, SPIFFE, access review, NIST 800-63,
-  IAL, AAL, FAL.
+  IAL, AAL, FAL, Active Directory, Kerberos, Kerberoasting, ADCS, RBCD,
+  gMSA, dMSA, LAPS, krbtgt.
 ---
 
 # SOTA Identity & Access
@@ -129,6 +130,7 @@ fixes (almost always: deprovisioning automation, MFA hardening, least-privilege 
 | [rules/04-lifecycle-provisioning.md](rules/04-lifecycle-provisioning.md) | Designing or auditing joiner-mover-leaver, SCIM-driven provisioning/deprovisioning, the orphaned-account problem, access reviews/recertification, just-in-time provisioning, dormant-account detection |
 | [rules/05-privileged-workload.md](rules/05-privileged-workload.md) | Admin-account separation, break-glass design (logged/time-bound/alerted, the Kanidm `recover-account` pattern), JIT/just-enough elevation, session recording, vaulting; machine/workload identity (SPIFFE/SPIRE, workload identity federation, mTLS identity, short-lived over static) |
 | [rules/06-mfa-federation-assurance.md](rules/06-mfa-federation-assurance.md) | Phishing-resistant MFA (FIDO2/passkeys/WebAuthn at the IdP), step-up/adaptive/conditional access, CAEP/SSF continuous evaluation, push-bombing/MFA-fatigue defenses, B2B/B2C/social-login and account-linking risks, identity proofing and NIST 800-63-4 IAL/AAL/FAL |
+| [rules/07-active-directory.md](rules/07-active-directory.md) | Hardening on-prem Active Directory / Kerberos / ADCS: Enterprise Access Model & tiering (ESAE/red-forest retired), delegation risks (unconstrained/constrained/RBCD), Kerberoasting/AS-REP + gMSA/dMSA & AES-only service accounts, SPN hygiene, machine-account quota, NTLM relay (SMB/LDAP signing + channel binding), ADCS ESC classes + template/enrollment-agent hardening + strong cert mapping (KB5014754), LAPS/Protected Users/Credential Guard/auth silos, krbtgt rotation, hybrid Entra sync boundary (PHS/PTA). Detection lives in sota-detection-engineering rules/07 |
 
 ## Top-10 non-negotiables
 
