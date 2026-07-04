@@ -15,7 +15,8 @@ lands through a PR — `main` is protected for everyone, including admins (see
 
 ## 2. Count-bearing surfaces (when the skill count changes)
 
-Recount from the tree — never adjust numbers by memory:
+Recount from the tree — never adjust numbers by memory (invariant 6 fails CI
+on drift among these surfaces, and invariant 5 on version drift):
 
 ```sh
 ls -d skills/*/ | wc -l                          # N skills (incl. router)

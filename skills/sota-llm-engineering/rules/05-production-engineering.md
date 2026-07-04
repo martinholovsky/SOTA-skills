@@ -1,3 +1,4 @@
+<!-- last-verified: 2026-06 -->
 # Rules 05 — Production Engineering
 
 The model is a remote dependency with variable latency, hard rate limits,

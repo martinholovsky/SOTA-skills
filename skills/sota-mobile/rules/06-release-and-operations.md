@@ -1,3 +1,4 @@
+<!-- last-verified: 2026-06 -->
 # 06 — Release & Operations
 
 The defining constraint of mobile: **you cannot roll back a shipped binary.** Store review takes hours to days, users update on their own schedule, and a meaningful cohort runs every version you ever shipped — for years. All mobile release engineering is the discipline of designing around that single fact. The toolkit: kill switches instead of rollbacks, staged exposure instead of big bangs, forced updates as the last resort, and a server that never assumes clients are current.

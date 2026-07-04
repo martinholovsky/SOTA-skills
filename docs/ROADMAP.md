@@ -13,8 +13,9 @@ Ordered; revisit after each release.
 2. **Library lint gate** (extends `check-invariants.sh`): YAML-parse all
    SKILL.md frontmatters, VERSION == plugin.json == latest tag lockstep,
    README count-basis check, shellcheck over `scripts/`. Blocks the whole
-   defect class the audit found. *(Partially landed: YAML-validity check and
-   shellcheck CI job in #37; version-lockstep and count checks still open.)*
+   defect class the audit found. *(Landed: YAML-validity check and shellcheck
+   CI job in #37; version-lockstep (check 5) and count-surface (check 6)
+   invariants on 2026-07-04.)*
 
 ## Next — keep the core promise true
 
@@ -23,7 +24,11 @@ Ordered; revisit after each release.
    promises "fast-moving claims are web-verified against primary sources";
    today only ~21 of 220 rules files carry any verification date, so the
    promise is unauditable — and every "2026 baseline" assertion goes silently
-   stale in 2027.
+   stale in 2027. *(Mechanism landed 2026-07-04: line-1 markers — the 18 files
+   with dated in-text verification stamped from those dates —
+   `scripts/check-freshness.sh`, and a monthly `freshness.yml` report.
+   Remaining: the ~210-file verification backfill; files are stamped only
+   when actually re-verified, never retroactively.)*
 4. **Release procedure in-repo** (`RELEASING.md` or a CONTRIBUTING section):
    VERSION + plugin.json + CHANGELOG + tag + GitHub release, plus the
    version-bearing strings in README/CLAUDE.md. Eight releases shipped in the
@@ -36,6 +41,9 @@ Ordered; revisit after each release.
    bad-guidance report (file:line + primary source, mirroring SECURITY.md's
    format) and a skill-request template; enable Discussions. A no-telemetry
    project's only adoption signal is structured issues — currently absent.
+   *(Landed 2026-07-04: both issue forms — the bad-guidance form requires a
+   primary source and redirects security-sensitive reports to the private
+   advisory flow — plus a contact-link config; Discussions enabled.)*
 
 ## Later — coverage decisions (decide, don't drift)
 
@@ -46,7 +54,11 @@ Ordered; revisit after each release.
    skills whose real-world audits are AD-heavy. Ship `sota-php`, `sota-ruby`,
    a Swift-language rules file, and AD content — or add a README "coverage &
    non-goals" section stating what is deliberately excluded. The mission
-   statement overclaims until one of the two happens.
+   statement overclaims until one of the two happens. *(Decided 2026-07-04 —
+   both: the README "Coverage & non-goals" section is live, and `sota-php`,
+   `sota-ruby`, Swift-language rules, and AD/Kerberos content are approved
+   and queued as follow-up builds, each to be web-verified against primary
+   sources like the v1.6.0 language skills.)*
 
 ## Maintenance mode (de-prioritized by audit evidence)
 

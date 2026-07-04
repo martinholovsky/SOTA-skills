@@ -1,3 +1,4 @@
+<!-- last-verified: 2026-06 -->
 # 01 — Zero-Trust Architecture
 
 Scope: the model that frames every other rule — never trust, always verify; policy decision/

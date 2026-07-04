@@ -102,6 +102,12 @@ performance, API evolvability, per-language idioms, SLOs, test-suite health.
 | `sota-javascript-typescript` | Strict TS, idioms, async, Node hardening, security, bundle/React performance, testing |
 | `sota-dotnet` | C#/.NET idioms (records, NRT, patterns, spans), disposal/DI design, async (ConfigureAwait/cancellation), security (EF/Dapper, deserialization, ASP.NET Core auth, crypto), GC/Span/AOT, NuGet supply chain & analyzers/CI |
 
+### Coverage & non-goals
+
+Deliberately **not covered yet**: **PHP**, **Ruby**, **Swift as a language
+skill** (`sota-mobile` covers platform Swift), and **Active Directory/Kerberos**
+depth. All four are queued — file a *skill request* issue to raise priority.
+
 ## Installation
 
 **Easiest — as a Claude Code plugin** (installs all skills, updates via
@@ -142,29 +148,26 @@ for d in skills/*/; do ln -sfn "$(pwd)/$d" ~/.claude/skills/"$(basename "$d")"; 
 sota-skills@sota-skills` (or `/plugin marketplace update sota-skills`). Git-hosted
 marketplaces also check at session start.
 
-**Clone install:** because linking is symlink-based, **existing skills update the
-moment you pull**
-— the symlinks already point at the live files, no re-install needed:
+**Clone install:** because linking is symlink-based, **existing skills update
+the moment you pull** — the symlinks already point at the live files:
 
 ```sh
 git -C /path/to/SOTA-skills pull
 ```
 
 To also pick up **newly added** skills (a pull alone won't link a brand-new
-skill directory) and prune links to removed ones, re-run the installer — or do
-both at once:
+skill directory) and prune links to removed ones — pull and re-link at once:
 
 ```sh
 ./scripts/install.sh --update        # git pull --ff-only, then re-link
 ```
 
 It's idempotent: re-running only links what's new and prunes what's gone, and
-never touches symlinks it didn't create. (Snapshot installs done with `--copy`
-don't auto-update — re-run the installer to refresh them.) If you enabled
-always-on routing, a re-run also **refreshes the managed routing directive and
-reminder hook in place** when their wording changes upstream — prompting first,
-backing up, and touching only the managed block; a hook you customized (different
-wording) is left untouched.
+never touches symlinks it didn't create (`--copy` snapshots don't auto-update —
+re-run to refresh). With always-on routing enabled, a re-run also **refreshes
+the managed routing directive and reminder hook in place** when their wording
+changes upstream — prompting first, backing up, touching only the managed
+block; a hook you customized is left untouched.
 
 ### Always-on routing (recommended)
 
@@ -174,14 +177,13 @@ regardless of wording, pin the routing instruction where Claude Code always
 sees it.
 
 **The quick path:** `./scripts/install.sh` offers to set this up for you after
-linking the skills — it's interactive and **dotfiles-aware**: it detects an
-existing or symlinked `~/.claude/CLAUDE.md` / `settings.json`, **asks before
-touching anything** (recommended answer pre-filled), backs up first, writes
-*through* a symlink so dotfiles stay in charge, and uses managed markers so
-re-runs never duplicate — and **refresh the managed block in place** (prompting
-first, backing up, touching only what's between the markers) when a newer release
-changes the directive or hook wording. Use `--routing` to force it,
-`--no-routing` to skip, `--yes` for non-interactive. Or wire the three layers by hand:
+linking the skills — interactive and **dotfiles-aware**: it detects an existing
+or symlinked `~/.claude/CLAUDE.md` / `settings.json`, **asks before touching
+anything** (recommended answer pre-filled), backs up first, writes *through* a
+symlink so dotfiles stay in charge, and uses managed markers so re-runs refresh
+the managed block in place and never duplicate it. Use `--routing` to force,
+`--no-routing` to skip, `--yes` for non-interactive. Or wire the three layers
+by hand:
 
 Three layers, strongest last:
 
@@ -214,9 +216,9 @@ when I never say "SOTA" or "audit". Treat `~/.claude/profiles/<you>.md` as the
 BUILD default and AUDIT baseline, and stop-and-ask on security-relevant choices.
 ```
 
-**3. (Optional) A per-prompt reminder.** In long sessions a directive read many
-turns ago can fade from context. A `UserPromptSubmit` hook in
-`~/.claude/settings.json` re-injects it on every prompt:
+**3. (Optional) A per-prompt reminder.** A directive read many turns ago can
+fade from a long context; a `UserPromptSubmit` hook in `~/.claude/settings.json`
+re-injects it on every prompt:
 
 ```json
 {
@@ -229,17 +231,15 @@ turns ago can fade from context. A `UserPromptSubmit` hook in
 }
 ```
 
-No mechanism *forces* a model to run a skill — all three layers feed it
-instructions it then chooses to follow. Together they make routing reliable
-instead of phrasing-dependent.
+No mechanism *forces* a model to run a skill — the three layers feed it
+instructions it chooses to follow, making routing reliable, not phrasing-dependent.
 
 ## Using it
 
-With always-on routing set up (above), you **don't name anything** — describe the
-task in plain language and the right skills load automatically (see
-[How it works](#how-it-works)). Naming a skill or rule is optional: reach for it
-only to *force* a specific skill, *scope* to one rule file, or *stack* an exact
-combo.
+With always-on routing set up (above), you **don't name anything** — describe
+the task in plain language and the right skills load automatically (see
+[How it works](#how-it-works)). Name a skill or rule only to *force* a specific
+skill, *scope* to one rule file, or *stack* an exact combo.
 
 **Building** — plain prompts; routing picks the skills:
 
@@ -290,8 +290,8 @@ combo.
 
 **Maintaining the library:**
 
-> Refresh the library against current versions/advisories — re-verify fast-moving
-> claims and update the rules files (cite sources).
+> Refresh the library — re-verify fast-moving claims against current primary
+> sources and update the rules files' `last-verified` markers.
 
 > Create profiles/<name>.md for my stack: <stores, auth, platform, policies>.
 

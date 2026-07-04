@@ -38,6 +38,17 @@ symlinks to it — edit only this file, never the symlinks.
    — or an unquoted inline description containing `: ` (invalid YAML; strict
    loaders reject the skill — use `description: >-`).
    (Needs `python3`; skipped with a warning if absent locally, enforced in CI.)
+5. **version drift** — `VERSION`, `plugin.json` `"version"`, and the CHANGELOG
+   top entry must agree, and the newest `v*` tag must never be ahead of
+   `VERSION` (it may lag during an open release PR);
+6. **count drift** — the README badge/hero/social-alt, the router body's
+   "N domain skills", the plugin + marketplace descriptions, and the
+   social-preview pill must all match a recount of the `skills/` tree.
+
+Separately, `scripts/check-freshness.sh` (run monthly by
+`.github/workflows/freshness.yml`, report-only) tracks each rules file's
+line-1 `<!-- last-verified: YYYY-MM -->` marker — update it whenever you
+re-verify a file's fast-moving claims against primary sources.
 
 Secrets are scanned by **gitleaks** (`.gitleaks.toml`, which disables only the
 noisy entropy-based `generic-api-key` rule so the security skills' intentional

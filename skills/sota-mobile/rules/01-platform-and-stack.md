@@ -1,3 +1,4 @@
+<!-- last-verified: 2026-06 -->
 # 01 — Platform & Stack Choice
 
 Stack choice is a one-way door: migrating a shipped app between stacks is a rewrite, and a half-migrated hybrid is worse than either endpoint. Decide deliberately, record the rationale, and revisit only on major product inflection points.

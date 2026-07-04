@@ -1,3 +1,4 @@
+<!-- last-verified: 2026-06 -->
 # 04 — Service Mesh & mTLS / Internal Encryption
 
 Scope: the plaintext-internal-traffic problem and how mesh/mTLS solves it structurally; choosing and

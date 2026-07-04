@@ -1,0 +1,27 @@
+# Monthly freshness report (roadmap item 3): lists rules files whose
+# last-verified marker is past the re-verify window, plus the unstamped
+# backlog. A red run means claims need re-verification — see
+# scripts/check-freshness.sh for the marker convention.
+name: Freshness
+
+on:
+  schedule:
+    - cron: '0 6 1 * *'   # 06:00 UTC on the 1st of every month
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freshness:
+    name: Rules-file freshness
+    runs-on: ubuntu-latest
+    steps:
+      # actions/checkout v7.0.0, pinned by commit SHA (sota-devsecops).
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          persist-credentials: false
+      - name: Freshness report
+        run: |
+          set -o pipefail
+          ./scripts/check-freshness.sh --list-unstamped | tee -a "$GITHUB_STEP_SUMMARY"

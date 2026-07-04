@@ -63,6 +63,11 @@ AGENTS.md                     # guidance for AI assistants working on the repo
   (a target, not a floor — compact rules files are fine; the hard cap is 500).
 - Ends with an **`## Audit checklist`** — yes/no questions, ideally with
   grep/lint patterns, so the rule can be used to hunt violations.
+- When you verify (or re-verify) a file's fast-moving claims against primary
+  sources, record it as the file's **first line**:
+  `<!-- last-verified: YYYY-MM -->`. A monthly CI job
+  (`scripts/check-freshness.sh`) reports files whose marker is past the
+  re-verify window and the unstamped backlog.
 
 **Findings format** (AUDIT mode, used throughout):
 
@@ -91,6 +96,12 @@ are marked "needs verification", never asserted.
    invalid YAML that makes loaders skip the skill; use `description: >-`.
    (Check 4 needs `python3`, and is skipped with a warning if it is absent
    locally — CI always enforces it.)
+5. **version drift**: `VERSION`, `plugin.json`, and the CHANGELOG top entry
+   must agree; the newest `v*` tag must never be ahead of `VERSION`;
+6. **count drift**: every count-bearing surface (README badge/hero/alt, router
+   body, plugin/marketplace descriptions, social-preview pill) must match a
+   recount of the `skills/` tree — adding or removing a skills file means
+   updating those surfaces in the same PR.
 
 Secrets are scanned separately by **gitleaks** (config in `.gitleaks.toml`);
 CI scans the full git history, the pre-commit hook scans each commit.

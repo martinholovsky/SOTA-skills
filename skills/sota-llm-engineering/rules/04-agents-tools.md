@@ -1,3 +1,4 @@
+<!-- last-verified: 2026-06 -->
 # Rules 04 — Agents & Tool Use
 
 An agent is a loop where the model decides what happens next. That autonomy is

@@ -1,3 +1,4 @@
+<!-- last-verified: 2026-06 -->
 # 06 — DNS, TLS & PKI
 
 Scope: DNS security (DNSSEC, DNS firewall / RPZ, DoH/DoT, split-horizon, registrar/CAA hygiene,

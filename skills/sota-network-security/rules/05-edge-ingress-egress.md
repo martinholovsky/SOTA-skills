@@ -1,3 +1,4 @@
+<!-- last-verified: 2026-06 -->
 # 05 — Edge, Ingress & Egress
 
 Scope: WAF (OWASP CRS, Coraza/ModSecurity), ingress/API-gateway hardening, DDoS posture, TLS

@@ -1,0 +1,54 @@
+name: Bad guidance report
+description: >-
+  A skill states something wrong, outdated, or misleading (NOT
+  security-sensitive — those go to a private advisory, see SECURITY.md).
+title: "[bad-guidance] "
+labels: ["bad-guidance"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Thanks — verified corrections are exactly how this library stays
+        trustworthy. **If the bad guidance is security-sensitive** (insecure
+        pattern, wrong mitigation, understated severity) or you found a real
+        credential, **do not file it here**: use the
+        [private advisory form](https://github.com/martinholovsky/SOTA-skills/security/advisories/new)
+        per [SECURITY.md](../blob/main/SECURITY.md).
+  - type: input
+    id: location
+    attributes:
+      label: File and line
+      description: Repo-relative path plus line number(s).
+      placeholder: skills/sota-databases/rules/03-queries-indexes.md:142
+    validations:
+      required: true
+  - type: textarea
+    id: claim
+    attributes:
+      label: What the guidance currently says
+      description: Quote the claim as written.
+    validations:
+      required: true
+  - type: textarea
+    id: why-wrong
+    attributes:
+      label: Why it is wrong — with a primary source
+      description: >-
+        Cite the spec, vendor doc, release note, CVE/CWE, or regulation that
+        contradicts it (link + relevant quote). The fix will be verified the
+        same way the library asks every claim to be verified; reports without
+        a primary source may be closed as unverifiable.
+    validations:
+      required: true
+  - type: textarea
+    id: suggested-fix
+    attributes:
+      label: Suggested correction (optional)
+      description: What the guidance should say instead.
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmations
+      options:
+        - label: This is not security-sensitive (otherwise I will use the private advisory form).
+          required: true
