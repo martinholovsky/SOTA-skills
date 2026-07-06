@@ -61,6 +61,15 @@ Ordered; revisit after each release.
    primary sources; the README "Coverage & non-goals" section now lists only
    true non-goals (Scala/Elixir, standalone C, platform-engineering depth).)*
 
+## Coverage additions (post-audit, demand-driven)
+
+- **`sota-web-frameworks`** *(shipped 2026-07-06)* — React 19/Next.js + Vue 3/Nuxt 4
+  and the SSR/hydration/server-components concerns those stacks share. Previously
+  only incidental coverage existed (a React section in `sota-javascript-typescript`
+  rules/06; XSS-sink names in rules/05). Closes the frontend-framework gap that sat
+  between the language skill (`sota-javascript-typescript`) and the design skill
+  (`sota-frontend-design`) without overlapping either. 40 skills total.
+
 ## Maintenance mode (de-prioritized by audit evidence)
 
 - **Optional-extras scripts** (`statusline.sh`, `init-gates.sh`,
