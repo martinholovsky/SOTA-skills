@@ -5,6 +5,31 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`sota-web-frameworks`** — React 19 + Next.js and Vue 3 + Nuxt 4 engineering,
+  plus the cross-cutting concerns of server rendering (40 skills total). SKILL.md
+  + 7 rules files: 01 baseline (support/EOL matrix, render-mode selection, React
+  Compiler), 02 React 19 (hooks, Suspense, the Actions model, `dangerouslySetInnerHTML`),
+  03 Next.js (App Router, Server Actions as public endpoints, the caching model —
+  `use cache`/Cache Components/PPR/ISR — `proxy.ts`, the Data Access Layer), 04 Vue 3
+  (Composition API, reactivity pitfalls, `defineModel`, `v-html`), 05 Nuxt 4
+  (`useFetch`/`useAsyncData`, `useState`, `runtimeConfig`, Nitro server routes,
+  `routeRules`), 06 SSR & hydration (mismatches, state-serialization XSS,
+  cross-request state pollution, cache safety, CSP with streaming SSR), and 07
+  framework security (server/client secret boundary, authorization placement,
+  SSRF surfaces, consolidated CVE reference). Every version and CVE claim
+  web-verified against primary sources (react.dev, nextjs.org, vuejs.org, nuxt.com,
+  GitHub Security Advisories) and stamped `last-verified: 2026-07`. Notable
+  security coverage: the 2025-12 React Server Components RCE (CVE-2025-55182
+  "React2Shell" / CVE-2025-66478), the middleware auth bypass (CVE-2025-29927),
+  Next cache-poisoning and SSRF CVEs, and the Nuxt/Nitro/h3/IPX/devalue advisory
+  waves. Router routing table + library map + cross-cutting rule 6 updated;
+  count surfaces updated to 40 skills / 289 files / ~57k lines (README
+  badge/hero/alt/table, plugin.json, marketplace.json, social-preview pill + PNG).
+
 ## [1.10.0] - 2026-07-04
 
 Coverage complete + auditable promises: two new language skills (39 total),

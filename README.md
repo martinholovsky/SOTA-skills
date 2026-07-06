@@ -3,23 +3,22 @@
 <p align="center">
   <a href="https://github.com/martinholovsky/SOTA-skills/releases"><img src="https://img.shields.io/github/v/release/martinholovsky/SOTA-skills?color=2fa45f&label=release" alt="Latest release"></a>
   <a href="https://github.com/martinholovsky/SOTA-skills/actions/workflows/ci.yml"><img src="https://github.com/martinholovsky/SOTA-skills/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
-  <img src="https://img.shields.io/badge/skills-39-2fa45f" alt="39 skills">
+  <img src="https://img.shields.io/badge/skills-40-2fa45f" alt="40 skills">
   <img src="https://img.shields.io/badge/modes-BUILD%20%2B%20AUDIT-2fa45f" alt="BUILD + AUDIT">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-CC%20BY%204.0-blue" alt="License: CC BY 4.0"></a>
 </p>
 
 <p align="center">
-  <img src="assets/social-preview.png" alt="SOTA Engineering Skills — 39 Claude Code skills to build and audit software at state-of-the-art practices" width="100%">
+  <img src="assets/social-preview.png" alt="SOTA Engineering Skills — 40 Claude Code skills to build and audit software at state-of-the-art practices" width="100%">
 </p>
 
 **Make your AI coding assistant build and audit like your most senior engineer.**
 
-Your assistant is brilliant — it just doesn't know your standards. SOTA-skills
-teaches it: 39 skills (281 files, ~56k lines) encoding state-of-the-art 2026
-practices for building **and** auditing software, fast-moving claims
-web-verified against primary sources. Native on Claude Code; works with Gemini
-CLI, Codex, and any other agent that reads `AGENTS.md`. Every file stays under
-500 lines, so the right rules load exactly when your task needs them.
+Your assistant is brilliant — it just doesn't know your standards. SOTA-skills teaches
+it: 40 skills (289 files, ~57k lines) encoding state-of-the-art 2026 practices for
+building **and** auditing software, fast-moving claims web-verified against primary
+sources. Native on Claude Code; works with Gemini CLI, Codex, and any agent that reads
+`AGENTS.md`. Every file stays under 500 lines, so the right rules load when needed.
 
 Two commands to install:
 
@@ -75,6 +74,7 @@ performance, API evolvability, per-language idioms, SLOs, test-suite health.
 | `sota-devsecops` | Pipeline hardening, SLSA/Sigstore provenance, dependencies/SBOM, container builds, IaC, admission control |
 | `sota-databases` | Modeling & engine choice, zero-downtime migrations, indexes, transactions, reliability, security, pgvector/Qdrant, SurrealDB |
 | `sota-frontend-design` | Typography/color, layout, design systems, UX patterns, WCAG 2.2 accessibility, motion design, visual craft |
+| `sota-web-frameworks` | React 19/Next.js + Vue 3/Nuxt 4: Server Components & Server Actions, RSC/client boundary, caching (`use cache`/PPR/ISR), hydration correctness, SSR state serialization, Nitro routes, framework CVEs |
 | `sota-observability` | Structured logging, metrics, OpenTelemetry tracing, SLOs & alerting, operational readiness |
 | `sota-testing` | Test strategy & design, doubles/test data, contract testing, e2e, property/fuzzing/mutation, suite health |
 | `sota-llm-engineering` | Evals, prompt/context engineering, RAG, agents & tools, LLM production engineering, data lifecycle |

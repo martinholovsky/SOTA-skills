@@ -1,12 +1,12 @@
 ---
 name: sota
 description: >-
-  Master router for the SOTA engineering skills library. Use this skill whenever the user asks to build, design, implement, refactor, harden, optimize, review, or audit an application, service, or codebase and the request spans more than one domain — or when you are unsure which specific sota-* skill applies. It maps the task (build mode or audit mode) to the right domain skills (architecture, code security, threat modeling, secrets, sandboxing, performance, async/concurrency, APIs/websockets, devsecops, databases, frontend, observability, testing, LLM engineering, ML engineering, cloud, kubernetes, identity & access, network security, detection engineering, data engineering, privacy/compliance, security/compliance, mobile, CLI UX, UX writing, copywriting, shell scripting, docs/workflow) and language skills (Rust, Go, C/C++, Java/Kotlin, Python, JS/TS, .NET/C#, PHP, Ruby). Trigger keywords: SOTA, best practices, audit my code, security review, compliance, hardening, prod readiness, code quality.
+  Master router for the SOTA engineering skills library. Use this skill whenever the user asks to build, design, implement, refactor, harden, optimize, review, or audit an application, service, or codebase and the request spans more than one domain — or when you are unsure which specific sota-* skill applies. It maps the task (build mode or audit mode) to the right domain skills (architecture, code security, threat modeling, secrets, sandboxing, performance, async/concurrency, APIs/websockets, devsecops, databases, frontend, web frameworks, observability, testing, LLM engineering, ML engineering, cloud, kubernetes, identity & access, network security, detection engineering, data engineering, privacy/compliance, security/compliance, mobile, CLI UX, UX writing, copywriting, shell scripting, docs/workflow) and language skills (Rust, Go, C/C++, Java/Kotlin, Python, JS/TS, .NET/C#, PHP, Ruby). Trigger keywords: SOTA, best practices, audit my code, security review, compliance, hardening, prod readiness, code quality.
 ---
 
 # SOTA Engineering Skills — Master Router
 
-A library of 38 domain skills, each with a `SKILL.md` entry point and a `rules/`
+A library of 39 domain skills, each with a `SKILL.md` entry point and a `rules/`
 folder of focused rule files (every file < 500 lines). Each skill works in two
 modes:
 
@@ -63,6 +63,7 @@ rules files that match the code in front of you. Never load all skills at once.
 | `sota-devsecops` | CI/CD pipelines, GitHub Actions hardening, supply chain (SLSA, Sigstore, SBOM, dependency confusion), container builds, SAST/secret-scanning gates, Terraform/GitOps, admission control |
 | `sota-databases` | Schema design, Postgres/NoSQL choice, migrations (zero-downtime), indexes/EXPLAIN, transactions/isolation, connection pooling, replication/backups, Redis, RLS/DB security, pgvector |
 | `sota-frontend-design` | UI/UX, visual design, typography/color/layout, design systems and tokens, components, forms, accessibility (WCAG 2.2), motion/animation design, modern CSS, responsive design |
+| `sota-web-frameworks` | React/Next.js and Vue/Nuxt engineering — Server Components & Server Actions, the RSC/client trust boundary, Next caching (`use cache`/PPR/ISR), Nitro server routes, hydration correctness, SSR state serialization, and framework-specific security & CVEs |
 | `sota-observability` | Logging, metrics, tracing (OpenTelemetry), SLOs/error budgets, alerting, health checks, dashboards, debugging production, "can we answer why is this slow?" |
 | `sota-testing` | Test strategy (pyramid/trophy), unit vs integration boundaries, test design/smells, mocks/fakes/test data, contract testing, e2e, property-based/fuzzing/mutation testing, flaky tests, coverage policy |
 | `sota-llm-engineering` | Building LLM features — evals, prompt/context engineering, structured output, RAG, agents/tool design, MCP, model selection/routing, latency/cost engineering, LLM observability |
@@ -108,8 +109,10 @@ rules files that match the code in front of you. Never load all skills at once.
    tool authorization) + `sota-sandboxing` rules/05 (executing model output) +
    `sota-databases` rules/07 (vectors/RAG).
 6. **Frontend work** → `sota-frontend-design` for design/UX/a11y/motion;
-   `sota-javascript-typescript` for the code; `sota-performance` rules/06 for
-   Web Vitals.
+   `sota-web-frameworks` for React/Next or Vue/Nuxt engineering (RSC/client
+   boundary, Server Actions, caching, hydration, SSR security);
+   `sota-javascript-typescript` for the language/TS; `sota-performance` rules/06
+   for Web Vitals. A React/Next or Vue/Nuxt security review pulls all four.
 7. **Tests accompany everything.** Any BUILD task that writes logic also loads
    `sota-testing` (strategy + design rules); any AUDIT includes a suite-health
    pass. Language-specific runner mechanics stay in the language skills.
@@ -240,6 +243,11 @@ For a **full project audit**, work in passes:
 - **sota-frontend-design/rules**: 01 typography & color, 02 layout/spacing/
   responsive, 03 design systems & components, 04 UX patterns,
   05 accessibility, 06 motion design, 07 visual craft & distinctiveness
+- **sota-web-frameworks/rules**: 01 baseline (versions/support, render modes),
+  02 React 19 (hooks, Actions, React Compiler), 03 Next.js (App Router, Server
+  Actions, caching, CVEs), 04 Vue 3 (Composition API, reactivity, XSS),
+  05 Nuxt 4 (data fetching, server routes, CVEs), 06 SSR & hydration
+  (mismatches, serialization, caching, CSP), 07 framework security & CVEs
 - **sota-observability/rules**: 01 structured logging, 02 metrics, 03 tracing,
   04 SLOs & alerting, 05 operational readiness, 06 audit playbook
 - **sota-testing/rules**: 01 strategy & shape, 02 test design & quality,
