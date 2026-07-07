@@ -153,6 +153,16 @@ rules files that match the code in front of you. Never load all skills at once.
 17. **Shell scripts hide everywhere** — CI run blocks, Dockerfile RUN lines,
     Makefiles, entrypoints. Audit them with `sota-shell-scripting` even when
     the repo's "language" is something else.
+18. **Cryptography fans out — there is no single crypto skill (by design).**
+    Algorithm choice, AEAD/nonce discipline, CSPRNG, in-code key handling, TLS
+    client config, constant-time comparison, crypto agility, and post-quantum
+    migration → `sota-code-security` rules/04. The key *material* — storage
+    backends (KMS/HSM, Vault, SOPS+age), lifecycle, rotation, per-credential-type
+    handling → `sota-secrets-management`. Transport/PKI — TLS server config, cert
+    lifecycle/ACME, private CA, mTLS → `sota-network-security` rules/06.
+    FIPS-140-3-validated-module requirements → `sota-security-compliance`
+    rules/02. Language-specific APIs (JCA, `crypto/*`, .NET) stay in the language
+    skill. The stance throughout is **use a vetted library, don't roll your own**.
 
 ## BUILD mode — workflow
 

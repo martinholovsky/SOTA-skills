@@ -5,6 +5,19 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Router (`skills/sota/SKILL.md`): added cross-cutting routing rule 18,
+  **"Cryptography fans out"** — a single lookup that maps a crypto task to its
+  distributed owners (algorithm/AEAD/key-handling/TLS-client/PQC →
+  `sota-code-security` rules/04; key material/storage/rotation →
+  `sota-secrets-management`; TLS server/PKI/cert lifecycle →
+  `sota-network-security` rules/06; FIPS-validated-module →
+  `sota-security-compliance` rules/02). Documents the deliberate no-single-crypto-skill
+  design; no content moved.
+
 ## [1.11.0] - 2026-07-06
 
 ### Added
