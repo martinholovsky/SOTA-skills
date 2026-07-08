@@ -15,7 +15,7 @@
 **Make your AI coding assistant build and audit like your most senior engineer.**
 
 Your assistant is brilliant — it just doesn't know your standards. SOTA-skills teaches
-it: 40 skills (289 files, ~57k lines) encoding state-of-the-art 2026 practices for
+it: 40 skills (289 files, ~58k lines) encoding state-of-the-art 2026 practices for
 building **and** auditing software, fast-moving claims web-verified against primary
 sources. Native on Claude Code; works with Gemini CLI, Codex, and any agent that reads
 `AGENTS.md`. Every file stays under 500 lines, so the right rules load when needed.
@@ -291,7 +291,7 @@ skill, *scope* to one rule file, or *stack* an exact combo.
 **Maintaining the library:**
 
 > Refresh the library — re-verify fast-moving claims against current primary
-> sources and update the rules files' `last-verified` markers.
+> sources, apply fixes, and update the root `LAST-VERIFIED` stamp.
 
 > Create profiles/<name>.md for my stack: <stores, auth, platform, policies>.
 

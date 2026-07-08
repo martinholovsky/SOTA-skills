@@ -1,5 +1,3 @@
-<!-- last-verified: 2026-07 -->
-
 # 05 — Nuxt 4: data fetching, state, server routes, CVEs
 
 Baseline: Nuxt 4.4.x on Nitro 2.x / h3 1.x. Vue fundamentals are in `rules/04`;

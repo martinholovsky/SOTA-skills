@@ -68,6 +68,17 @@ policies live in git, are GitOps-deployed (`rules/04`), and have **CI-tested den
 (kyverno CLI `kyverno test`, gatekeeper-library tests, VAP unit tests) so an "improvement"
 can't silently stop blocking.
 
+**Policy objects are an escalation primitive — never delegate their creation to tenants.**
+Policies execute inside the engine's privileged pod: CVE-2026-4789 (CVSS 9.8, disclosed
+2026-03) let any author of a Kyverno `NamespacedValidatingPolicy` use the CEL
+`http.Get()`/`http.Post()` library to make arbitrary HTTP requests *from the Kyverno
+admission-controller pod* — reaching cloud metadata (169.254.169.254) and internal
+services, bypassing RBAC; it was one of a 2026 wave of Kyverno SSRF/apiCall advisories.
+So: treat create/update on (namespaced) policy CRDs like `bind`/`escalate` (`rules/02`
+§2.5); put an egress NetworkPolicy on policy-engine pods (block the metadata endpoint and
+all unneeded egress); and confirm the running line includes the CVE-2026-4789 fix (merged
+2026-04; patched releases per the project's security advisories).
+
 ```yaml
 # Kyverno — require resource limits AND block :latest (PSA cannot do either)
 apiVersion: kyverno.io/v1
@@ -168,6 +179,7 @@ discipline these become permanent holes:
 - [ ] No workloads parked in privileged/exempt namespaces (kube-system, operator ns) to dodge PSA?
 - [ ] A policy engine covers what PSA can't (registry allowlist, no `:latest`, required limits, non-default SA, host-path/host-namespace bans)?
 - [ ] Engine choice sane (VAP for simple validation; Kyverno/Gatekeeper for the rest; not three overlapping)? Version current/supported?
+- [ ] Policy CRD writes (incl. Kyverno namespaced policies) never delegated to tenants; policy-engine pods behind an egress NetworkPolicy (metadata endpoint blocked); running line includes the CVE-2026-4789 fix?
 - [ ] All security policies in `Enforce`, not parked in `Audit`/`dryrun` indefinitely? (`grep -rE 'Audit|dryrun' policies/`) Each Audit-mode policy has a flip-date + owner?
 - [ ] Image verification ENFORCED for controlled registries: exact signer issuer+subject, provenance required, tag→digest mutation, full image inventory covered before enforce? (not Audit-only)
 - [ ] Policies in git, GitOps-deployed, with CI-tested deny cases (`kyverno test` / gatekeeper tests / VAP units)?

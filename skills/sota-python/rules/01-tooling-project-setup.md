@@ -53,7 +53,7 @@ requires-python = ">=3.12"
 dependencies = ["httpx>=0.27", "pydantic>=2.7"]
 
 [dependency-groups]                 # PEP 735 — not extras; dev-only groups
-dev = ["pytest>=8", "ruff", "mypy"]
+dev = ["pytest>=9", "ruff", "mypy"]
 
 [build-system]
 requires = ["hatchling"]

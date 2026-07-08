@@ -37,9 +37,17 @@ lives in `sota-testing`.
 - **Package Source Mapping** (`nuget.config`) so each package only resolves from
   its intended feed — defeats **dependency confusion** (an internal name
   resolving from nuget.org). Restrict feeds to trusted sources over HTTPS.
-- Verify **signed packages**; scan for vulnerable dependencies
-  (`dotnet list package --vulnerable --include-transitive`, Dependabot, or a
-  scanner) and gate CI on it. Generate an **SBOM** for releases. See
+- **NuGetAudit** checks every restore against advisory data automatically
+  (since NuGet 6.8/.NET 8 SDK; `NuGetAuditMode` defaults to `all` — transitive
+  included — on net10.0+ projects). Gate CI by making the audit warnings errors:
+  `<WarningsAsErrors>$(WarningsAsErrors);NU1903;NU1904</WarningsAsErrors>`
+  (high/critical; add NU1901/NU1902 to be stricter). Configure `auditSources`
+  in `nuget.config` if your feed lacks vulnerability data; suppress an accepted
+  advisory explicitly with a `NuGetAuditSuppress` item (last resort); remediate
+  with `dotnet package update --vulnerable`. Keep
+  `dotnet list package --vulnerable --include-transitive` as the ad-hoc query;
+  Dependabot/external scanners complement, not replace.
+- Verify **signed packages**; generate an **SBOM** for releases. See
   `sota-devsecops`.
 
 ## 4. CI gates
@@ -47,7 +55,7 @@ lives in `sota-testing`.
 - A PR build runs: `dotnet build` with warnings-as-errors (nullable + analyzers),
   `dotnet test` (xUnit/NUnit/MSTest) with coverage (coverlet) and a threshold,
   `dotnet format --verify-no-changes`, `--locked-mode` restore, and the
-  vulnerable-package scan. Fail on any.
+  NuGetAudit gate (NU190x as errors). Fail on any.
 - **Testcontainers for .NET** for real-dependency integration tests (DB/broker) —
   wire them here; *strategy* is `sota-testing`. Run with fixed culture/timezone
   for determinism (`InvariantGlobalization` where applicable).
@@ -68,8 +76,9 @@ grep -rniE 'TreatWarningsAsErrors|<Nullable>|EnableNETAnalyzers|AnalysisLevel' *
 # NuGet locking + source mapping + CVE scan?
 ls packages.lock.json 2>/dev/null && grep -rn 'RestorePackagesWithLockFile' **/*.csproj Directory.Build.props 2>/dev/null \
   || echo "no NuGet lockfile — supply-chain risk"
-grep -rniE 'packageSourceMapping|locked-mode|--vulnerable|dependabot' nuget.config .github/ *.yml 2>/dev/null \
-  || echo "no source mapping / locked restore / CVE scan"
+grep -rniE 'packageSourceMapping|locked-mode|NuGetAudit|NU190[0-9]|auditSources|dependabot' \
+  nuget.config Directory.Build.props **/*.csproj .github/ *.yml 2>/dev/null \
+  || echo "no source mapping / locked restore / NuGetAudit CI gate"
 
 # Formatting + deterministic build in CI?
 grep -rniE 'dotnet format|verify-no-changes|Deterministic|ContinuousIntegrationBuild' .github/ *.yml **/*.csproj 2>/dev/null | head

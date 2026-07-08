@@ -1,5 +1,3 @@
-<!-- last-verified: 2026-07 -->
-
 # 01 — Baseline: versions, support windows, render modes
 
 Fast-moving facts. Every version and EOL date below was primary-sourced 2026-07;

@@ -1,5 +1,3 @@
-<!-- last-verified: 2026-07 -->
-
 # 02 — React 19: components, hooks, Actions, memoization
 
 Scope: React itself (any renderer). Next-specific RSC/Server-Action mechanics are in

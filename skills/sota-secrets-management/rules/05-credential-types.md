@@ -227,6 +227,10 @@ Package-manager rc files are `.env`-class: `.npmrc`/`.yarnrc.yml` with `_authTok
 with passwords, `pip.conf` with index creds, `.netrc`. Keep tokens out of the committed rc —
 use env interpolation (`//registry.npmjs.org/:_authToken=${NPM_TOKEN}`) so the file is safe to
 commit and the token rides the secret layer; a literal token in any rc file in VCS is High.
+Registry publish tokens are no longer ordinary long-lived secrets: after the Shai-Hulud worm,
+npm permanently revoked all classic tokens (Dec 2025, creation disabled) and caps granular
+write tokens at 90 days — publish from CI via trusted publishing (per-job OIDC, no stored
+token; rules/01 §4) and treat any residual registry token as a ≤90d rotating secret.
 
 ## Audit checklist
 
@@ -250,4 +254,4 @@ commit and the token rides the secret layer; a literal token in any rc file in V
 - [ ] `.env*` untracked (HEAD and history) with `0600`; `.env.example` fake-valued; dotenv
       dev-only and non-overriding; `.dockerignore` excludes `.env*`; no prod values in local
       env files; rc files (`.npmrc`, `.pypirc`, `.netrc`) use env interpolation, never literal
-      tokens.
+      tokens; registry publishing uses trusted publishing (OIDC), not stored long-lived tokens.

@@ -1,4 +1,3 @@
-<!-- last-verified: 2026-06 -->
 # 04 — Service Mesh & mTLS / Internal Encryption
 
 Scope: the plaintext-internal-traffic problem and how mesh/mTLS solves it structurally; choosing and
@@ -11,11 +10,13 @@ trust domain; this skill consumes those identities for network authorization. ru
 policy; this file owns the L7/identity/encryption layer that complements it. sota-secrets-management
 owns TLS private-key handling.
 
-Verified (2026-06-14): **Istio ambient mode (ztunnel + waypoints)** reached **GA in Istio 1.24 (Nov
+Verified (2026-07): **Istio ambient mode (ztunnel + waypoints)** reached **GA in Istio 1.24 (Nov
 2024)** — sidecar and ambient are both production data planes today. **Linkerd** (CNCF Graduated)
 added **SPIFFE identities and mesh expansion in 2.15** (Feb 2024). **SPIFFE/SPIRE** are CNCF
-Graduated, production-ready. **Cilium** (1.19 line) provides a sidecar-less service mesh + mTLS using
-its eBPF datapath. Pin exact versions against the projects' docs before committing.
+Graduated, production-ready. **Cilium** mTLS is now the **ztunnel integration** (per-node proxy
+adopted from Istio ambient) — **Beta in 1.19, TCP-only** (UDP/other protocols aren't redirected),
+enrolled per-namespace; the older out-of-band Mutual Authentication beta is disabled by default in
+1.19. Pin exact versions against the projects' docs before committing.
 
 ---
 
@@ -92,9 +93,9 @@ Linkerd uses `Server` + `AuthorizationPolicy`/`MeshTLSAuthentication`; Cilium us
 
 | Situation | Choice |
 |---|---|
-| 1–3 services, simple topology | **Plain TLS** between them (or Cilium transparent mTLS) — a full mesh is overkill |
+| 1–3 services, simple topology | **Plain TLS** between them (or Cilium WireGuard node-to-node encryption) — a full mesh is overkill |
 | Many services, need mTLS + L7 authz + telemetry, want it transparent | A mesh |
-| Already on Cilium, want mTLS without sidecars/extra control plane | **Cilium service mesh / mTLS** (reuse the eBPF datapath — fewest moving parts for the user's stack) |
+| Already on Cilium, want mTLS without a full mesh | **Cilium ztunnel mTLS** — per-node proxy, **Beta in 1.19, TCP-only, per-namespace enrollment**; pin-and-evaluate, and prefer Istio ambient or Linkerd where production mTLS is required today. Cilium **WireGuard** gives stable node-to-node encryption (no per-workload identity) |
 | Want the lightest dedicated mesh, Kubernetes-only | **Linkerd** (simple, fast, Graduated, SPIFFE in 2.15) |
 | Need the richest L7/traffic-management, multi-cluster, VM mesh | **Istio** — prefer **ambient mode** (ztunnel + waypoints, GA since 1.24) to avoid per-pod sidecar cost; sidecar mode still valid |
 
@@ -122,8 +123,8 @@ allow-all NetworkPolicy still has a flat L3 underneath.
 - **Cert rotation = the mesh's job** — short-lived SVIDs auto-rotate; if you're manually managing
   mesh certs, something is wrong. Internal root/intermediate (your step-ca) feeds the mesh CA;
   rotate per rules/06.
-- **Don't double-encrypt blindly** — if Cilium already does transparent mTLS at L4 and you add a
-  full mesh on top, justify it; usually pick one transport-security layer.
+- **Don't double-encrypt blindly** — if Cilium already encrypts transparently at L4 (WireGuard or
+  ztunnel) and you add a full mesh on top, justify it; usually pick one transport-security layer.
 
 ## Audit checklist
 

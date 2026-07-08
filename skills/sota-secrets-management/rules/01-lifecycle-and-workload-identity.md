@@ -125,6 +125,7 @@ the static secret entirely**:
 | App on GCP → GCP service | Attached service account (metadata server), Workload Identity on GKE |
 | App on Azure → Azure service | Managed Identity (system- or user-assigned) |
 | CI job → cloud account | CI OIDC federation (GitHub Actions, GitLab, CircleCI, Buildkite → AWS/GCP/Azure) |
+| CI job → package registry | Trusted publishing: per-job CI OIDC exchanged for a short-lived publish grant (npm, PyPI, RubyGems, crates.io) — no stored publish token |
 | Cross-cloud (GCP app → AWS) | Workload identity federation: exchange GCP-issued OIDC token for AWS STS creds |
 | Pod → Vault/OpenBao | Kubernetes auth (projected SA token) or JWT/OIDC auth |
 | Service → service (mTLS) | SPIFFE/SPIRE-issued X.509 SVIDs, auto-rotated |
@@ -146,12 +147,14 @@ API socket, never from disk-managed certs.
 
 **Never store cloud keys in CI secret variables when the provider supports OIDC.** GitHub
 Actions, GitLab CI, CircleCI, Bitbucket, and Buildkite all issue per-job OIDC tokens; AWS, GCP,
-and Azure all accept them.
+and Azure all accept them. The same applies to package publishing: npm, PyPI, RubyGems, and
+crates.io accept per-job CI OIDC ("trusted publishing") — a stored long-lived publish token in
+CI where the registry supports trusted publishing is a Medium finding (see rules/05 §8).
 
 ```yaml
 # BAD — long-lived key stored in repo/org secrets; any workflow (or exfiltrating
 # dependency in any workflow) can use it forever
-- uses: aws-actions/configure-aws-credentials@v4
+- uses: aws-actions/configure-aws-credentials@v6
   with:
     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -161,7 +164,7 @@ permissions:
   id-token: write
   contents: read
 steps:
-  - uses: aws-actions/configure-aws-credentials@v4
+  - uses: aws-actions/configure-aws-credentials@v6  # v6+: needs node24-capable runners
     with:
       role-to-assume: arn:aws:iam::123456789012:role/deploy-myapp
       aws-region: eu-central-1
@@ -270,6 +273,8 @@ Operational rules for dynamic/leased credentials:
       federation are available (in-cloud workloads, CI jobs, cross-cloud calls).
 - [ ] CI→cloud auth uses OIDC with `aud` + pinned `sub` trust conditions; one least-privilege
       role per repo/purpose; prod roles gated by reviewed environments.
+- [ ] Package publishing from CI uses trusted publishing (registry OIDC) where the registry
+      supports it; no long-lived publish tokens stored in CI.
 - [ ] Database access uses dynamic creds or IAM DB auth where the engine supports it; leased
       credentials renew at ~2/3 TTL and recover from revocation; revocation drills performed.
 - [ ] Third-party CI actions/orbs pinned by SHA in secret-bearing jobs; CI secrets scoped to

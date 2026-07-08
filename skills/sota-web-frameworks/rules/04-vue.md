@@ -1,5 +1,3 @@
-<!-- last-verified: 2026-07 -->
-
 # 04 — Vue 3: Composition API, reactivity, XSS
 
 Baseline: Vue 3.5.x. Nuxt-specific concerns (data fetching, `useState`, server routes)

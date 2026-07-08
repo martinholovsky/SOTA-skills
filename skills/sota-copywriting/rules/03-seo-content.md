@@ -106,7 +106,29 @@ name these; violating them risks the page *and* the domain:
   requires it; a published AI-usage policy is becoming a standard trust
   surface for content sites.
 
-## 6. Content lifecycle
+## 6. Generative AI search surfaces (AI Overviews / AI Mode)
+
+Google's own guidance ("Guide to Optimizing for Generative AI Features",
+developers.google.com/search) is blunt: AI Overviews and AI Mode are rooted in
+the core Search ranking and quality systems, so **"GEO"/"AEO" is still SEO** —
+§1–§5 of this file *are* the optimization strategy.
+
+- **Debunk the folklore before someone bills you for it**: Google does not
+  read `llms.txt` or other AI text files ("neither harm nor help"); there is
+  no need to chunk content into AI-sized pieces, rewrite "for AI", or add
+  special schema.org markup for AI visibility. Vendors selling these as
+  Google-AI tactics are selling keyword density with a new name (§3).
+- **The controls are the existing ones**: `nosnippet`, `data-nosnippet`,
+  `max-snippet`, and `noindex` govern what AI features may show;
+  Google-Extended governs training/grounding in Google's other systems. A
+  dedicated Search Console opt-out toggle + generative-AI performance report
+  began rolling out in June 2026 (UK first, global to follow) — check it
+  before inventing a blocking scheme.
+- Appearing in an AI answer is a snippet-economics question, not a new
+  discipline: the first-screen-answer rule (§1) and primary-source E-E-A-T
+  signals (§2) are what get cited.
+
+## 7. Content lifecycle
 
 - **Content is inventory with a freshness cost**: schedule re-verification
   for anything with versioned facts (pricing, benchmarks, "as of 2026"
@@ -143,5 +165,9 @@ name these; violating them risks the page *and* the domain:
 - [ ] AI-assisted content: human domain review recorded, all numbers/
       citations verified, no fabricated experience framing; AI-usage policy
       published if applicable
+- [ ] No GEO/AEO folklore in the strategy: no llms.txt-for-Google, chunking,
+      AI-rewriting, or special-schema tactics sold as AI-visibility work;
+      AI-surface appearance managed via the standard preview controls /
+      Search Console setting
 - [ ] Re-verification schedule exists for time-sensitive facts; overlap
       merged; prune list maintained; every moved URL has a 301

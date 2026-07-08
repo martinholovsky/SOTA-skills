@@ -1,5 +1,3 @@
-<!-- last-verified: 2026-07 -->
-
 # 07 — Active Directory, Kerberos & ADCS Hardening
 
 Scope: hardening and secure design of on-premises **Active Directory Domain

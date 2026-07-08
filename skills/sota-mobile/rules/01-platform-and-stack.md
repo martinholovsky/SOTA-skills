@@ -1,4 +1,3 @@
-<!-- last-verified: 2026-06 -->
 # 01 — Platform & Stack Choice
 
 Stack choice is a one-way door: migrating a shipped app between stacks is a rewrite, and a half-migrated hybrid is worse than either endpoint. Decide deliberately, record the rationale, and revisit only on major product inflection points.
@@ -15,7 +14,7 @@ Stack choice is a one-way door: migrating a shipped app between stacks is a rewr
 | Swift | Swift 6.3.x (Xcode 26.5). Swift 6 strict concurrency is the norm for new code. |
 | Kotlin | Kotlin 2.x with K2 compiler; coroutines/Flow standard. |
 | SwiftUI / Compose | Default UI toolkits for new native code on both platforms. UIKit/Views are for interop, framework gaps, and legacy — not greenfield screens without a stated reason. |
-| React Native | 0.85 (Apr 2026) — first release with the Bridge **removed** from the codebase entirely (no fallback, no interop, no shim). New Architecture (JSI + Fabric + TurboModules) became non-disableable in 0.82 (Oct 2025); the Bridge interop layer stayed functional through 0.84 and was deleted in 0.85. Hermes is the default engine on both platforms. |
+| React Native | 0.86 (Jun 2026) — fixes the Android 15+ edge-to-edge issues (insets, `KeyboardAvoidingView`) that the mandatory API-36 edge-to-edge (1.4) exposes; repo moved to the `react` GitHub org under the React Foundation. 0.85 (Apr 2026) **removed** the Bridge from the codebase entirely (no fallback, no interop, no shim). New Architecture (JSI + Fabric + TurboModules) became non-disableable in 0.82 (Oct 2025); the Bridge interop layer stayed functional through 0.84. Hermes is the default engine on both platforms. |
 | Flutter | 3.44 current stable; ~4 stable releases/year; Material/Cupertino libraries being split into separately-versioned packages. |
 | Kotlin Multiplatform | KMP stable since 2023 for shared logic. Compose Multiplatform for iOS **stable since 1.8.0 (May 2025)** — production-ready (Netflix, Cash App scale), but iOS fidelity still trails SwiftUI for platform-idiomatic feel; budget per-platform polish. |
 | OWASP MASVS | v2.1 current (adds MASVS-PRIVACY); verification levels replaced by MAS profiles + MASWE weakness enumeration. |

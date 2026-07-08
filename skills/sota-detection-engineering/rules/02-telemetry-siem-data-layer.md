@@ -45,7 +45,8 @@ Collection isn't enough; the data must be detection-grade:
 - **Completeness** — are all instances of the source shipping? One unmonitored
   subnet, region, or cluster is the one the adversary uses. Track expected vs.
   actual senders and alert on a source going silent (a dead sensor is an
-  outage you must page on — adversaries kill logging, T1562).
+  outage you must page on — adversaries kill logging: T1685 Disable or Modify
+  Tools, formerly T1562, under ATT&CK v19's Defense Impairment tactic TA0112).
 - **Timeliness** — ingestion lag directly inflates MTTD. A log that lands an hour
   late detects an hour late.
 - **Fidelity** — does the event carry the fields the detection needs? Command
@@ -140,9 +141,9 @@ with someone disabling sources — re-opening blind spots. Discipline:
       for every technique in the chain?
 - [ ] Are cloud data events (e.g. CloudTrail S3/Lambda object-level) and K8s
       audit logging explicitly *enabled*, not left at insecure defaults?
-- [ ] Is there alerting when a log source goes silent (dead sensor / T1562
-      logging tamper)? Hunt: per source, compare current ingest rate to a
-      7-day baseline and flag drops >50%.
+- [ ] Is there alerting when a log source goes silent (dead sensor / T1685
+      logging tamper, formerly T1562)? Hunt: per source, compare current ingest
+      rate to a 7-day baseline and flag drops >50%.
 - [ ] Do events carry the fields detections need (full command lines, user,
       process ancestry), or are they truncated/empty?
 - [ ] Are detections written against a normalized schema (OCSF/ECS), or against

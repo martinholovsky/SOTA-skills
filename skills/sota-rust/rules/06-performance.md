@@ -165,8 +165,10 @@ strip = "symbols"       # smaller binaries (keep debug=true in a separate profil
 Slow builds are a perf problem too — they tax every iteration.
 
 - `cargo check`/rust-analyzer for the inner loop, not `cargo build`.
-- Linker: `lld` (or `mold` on Linux) via `-C link-arg=-fuse-ld=lld` — often
-  halves incremental link time on big binaries.
+- Linker: `rust-lld` is already the default on `x86_64-unknown-linux-gnu`
+  since Rust 1.90 (opt-out: `-C linker-features=-lld`); `mold` is the further
+  Linux upgrade, and manual `-C link-arg=-fuse-ld=lld` pays only on targets
+  where lld isn't the default yet.
 - Split heavy generics: generic shells delegating to non-generic inner fns
   (`fn run(p: impl AsRef<Path>) { fn inner(p: &Path) {...} inner(p.as_ref()) }`)
   cut monomorphization bloat (binary size AND compile time).

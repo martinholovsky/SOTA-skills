@@ -202,13 +202,20 @@ machine:
 - **CVE response runbook**: subscribe to the `kubernetes-announce` list / CVE feed; for a
   control-plane RCE or auth-bypass, patch on the emergency track, not the quarterly one.
   Track CVEs for *every* control too: Argo CD (`rules/04`), Kyverno/Gatekeeper (`rules/03`),
-  operators (`rules/05`), and the distro (Talos/k3s/k0s).
+  operators (`rules/05`), **ingress controllers and CSI drivers** (the official feed's 2026
+  wave hit both — ingress-nginx config-injection/auth-bypass/DoS CVE-2026-24512/-24513/
+  -24514/-1580/-3288/-4342; CSI SMB/NFS subDir path traversal CVE-2026-3864/-3865), and
+  the distro (Talos/k3s/k0s).
+- **ingress-nginx is EOL** (retired by SIG Network/SRC; maintenance ended March 2026, repo
+  read-only, no fixes even for the 2026 CVE wave above). A deployed ingress-nginx is a
+  standing High finding: migrate to Gateway API or an actively maintained ingress
+  controller (ingress/edge config depth is `sota-network-security`).
 
 ## Audit checklist
 
 - [ ] API server: `--anonymous-auth=false`, `--authorization-mode` includes RBAC and not `AlwaysAllow`, `NodeRestriction` enabled, profiling off, audit configured? (`grep -E 'anonymous-auth|authorization-mode|NodeRestriction|profiling' /etc/kubernetes/manifests/kube-apiserver.yaml`; managed → check provider posture)
 - [ ] API Priority & Fairness left enabled (no `--enable-priority-and-fairness=false`), high-value controllers on a dedicated `PriorityLevelConfiguration`, `apiserver_flowcontrol_rejected_requests_total` alerted?
-- [ ] Kubernetes Dashboard: not deployed unless required; if deployed, NOT exposed publicly (no LoadBalancer/Ingress to it), reached only via `kubectl proxy`/authenticating proxy, and its ServiceAccount is least-privilege (never `cluster-admin`) — a privileged, exposed Dashboard is a one-click takeover (historic Tesla cryptojacking). Talos/DN does not ship it; keep it that way.
+- [ ] Kubernetes Dashboard: not deployed unless required; if deployed, NOT exposed publicly (no LoadBalancer/Ingress to it), reached only via `kubectl proxy`/authenticating proxy, and its ServiceAccount is least-privilege (never `cluster-admin`) — a privileged, exposed Dashboard is a one-click takeover (historic Tesla cryptojacking). Talos does not ship it; keep it that way.
 - [ ] Kubelet: anonymous-auth off, authz `Webhook`, `read-only-port=0`? (`curl -sk https://NODE:10250/pods` should 401; `curl http://NODE:10255/pods` should refuse)
 - [ ] etcd encrypted at rest with KMS v2, `identity` not first, all existing Secrets rewritten? (`kubectl get secret -A -o json | head` against an etcd dump; check `EncryptionConfiguration`)
 - [ ] etcd reachable only from control plane, client/peer TLS cert-auth on? (`etcdctl` from a worker should fail)
@@ -217,4 +224,5 @@ machine:
 - [ ] Control-plane nodes tainted to run no workloads?
 - [ ] Nodes: minimal/hardened OS, kube-bench passing, no routine SSH? Talos: SecureBoot + TPM/LUKS2 disk encryption, machineconfig/talosconfig stored as secrets and scoped? k3s/k0s: `--secrets-encryption` on, unused add-ons disabled?
 - [ ] Running a SUPPORTED minor (not EOL)? Skew within policy (control plane ≥ nodes, ≤3 minors)? (`kubectl version`, `kubectl get nodes -o wide`)
-- [ ] CVE-response runbook exists and covers control plane + every add-on/controller + distro?
+- [ ] CVE-response runbook exists and covers control plane + every add-on/controller + ingress/CSI + distro?
+- [ ] No EOL ingress-nginx still deployed (retired March 2026, unpatched 2026 CVE wave — High; migration to Gateway API or a maintained controller done or dated)?

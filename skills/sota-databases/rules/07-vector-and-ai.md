@@ -54,6 +54,11 @@ SELECT id FROM chunks ORDER BY embedding <=> $1 LIMIT 10;
   storage/RAM, negligible recall loss for most models) and consider
   `SET hnsw.ef_search` per route rather than globally. Vacuum matters —
   dead embedding tuples bloat fast under re-embedding churn (file 05).
+- **Patch floor:** run pgvector ≥ 0.8.2 — CVE-2026-3172 (buffer overflow in
+  parallel HNSW index builds; memory disclosure from other relations, or a
+  server crash) — and prefer ≥ 0.8.4 for the June 2026 HNSW
+  vacuum-corruption and distance-calculation fixes. Parallel builds
+  (`max_parallel_maintenance_workers`) on an older version hit the CVE path.
 
 ### Rule: Quantize before you shard: halfvec → binary-quantized + rescore.
 The capacity ladder inside pgvector, each step ~2–10× headroom:
@@ -219,6 +224,8 @@ reconstruct PII).
 - [ ] HNSW (or justified IVFFlat) present — no exact-scan vector queries on
       large tables; operator matches opclass; query shape is index-eligible
       (EXPLAIN-verified); ef_search tuned against measured recall@k.
+- [ ] pgvector at or above the CVE-2026-3172 fix (0.8.2; prefer 0.8.4+ for
+      HNSW vacuum fixes).
 - [ ] Filtered vector queries tested for recall under real filter selectivity;
       iterative scan / partial index / partition mitigation where needed;
       tenant isolation applies to vector queries (RLS or per-tenant index).

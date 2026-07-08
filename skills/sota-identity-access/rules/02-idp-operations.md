@@ -147,6 +147,13 @@ refresh_token_lifetime  = "never"
 - Do not blindly trust upstream group/role claims — re-map them through your own
   authorization model (rules/03); an upstream that can assert arbitrary groups must not be
   able to grant your privileged roles.
+- **Disabled must mean disabled — test it.** After disabling an upstream IdP, broker
+  link, or client, verify its authentication path actually fails closed. Keycloak
+  CVE-2026-3047 (CVSS 8.8) and CVE-2026-2603 (both fixed in 26.5.5, March 2026) let a
+  *disabled* SAML client or upstream SAML IdP still complete IdP-initiated broker
+  logins — a retired or compromised upstream an admin thought was off kept
+  authenticating users into the realm. Patch, and restrict or disable IdP-initiated
+  broker endpoints you do not use.
 
 ## Audit checklist
 
@@ -165,3 +172,4 @@ refresh_token_lifetime  = "never"
 - [ ] Is back-channel (or reliable) Single Logout configured so sign-out / disable ends sessions across all RPs?
 - [ ] Do third-party clients show informative, revocable consent, with high-scope apps admin-gated?
 - [ ] For brokered/upstream IdPs: is the issuer pinned, tokens fully validated, identities linked on a verified immutable id, and upstream group claims re-mapped (not trusted) into the local model?
+- [ ] When an upstream IdP, broker link, or client is disabled, is it tested that its login path fails closed (Keycloak CVE-2026-3047 / CVE-2026-2603 class), with unused IdP-initiated broker endpoints restricted?

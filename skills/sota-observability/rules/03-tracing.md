@@ -68,7 +68,14 @@ large loops (span the batch, count the items), logging itself.
   no payloads, no PII (same redaction policy as logs — rules/01 §4).
 - **Events** = point-in-time happenings inside the span: `retry_scheduled`,
   `lock_acquired`, and especially **exception events**
-  (`span.record_exception(e)`).
+  (`span.record_exception(e)`). Note OTel deprecated the Span Event API
+  (`AddEvent`/`RecordException`) in 2026: the end-state is events and
+  exceptions emitted as span-correlated **logs** via the Logs API.
+  `record_exception` stays the acceptable default during the transition;
+  migrate instrumentation via `OTEL_SEMCONV_EXCEPTION_SIGNAL_OPT_IN=logs`
+  (or `logs/dup` to emit both), and SDK-level routing can surface log-based
+  events as span events for backends that need them. Exceptions-as-logs
+  matches rules/01 §1 (`exception.stacktrace` as a structured field).
 - **Status**: set `ERROR` only for genuine failures of that unit of work.
   A 404 on a lookup endpoint is not span-error; an unhandled exception is.
   Marking expected outcomes as errors poisons tail sampling and spanmetrics.
@@ -241,7 +248,8 @@ services — and into every outbound header.
 - [ ] Every outbound network call (HTTP, DB, cache, queue) produces a span;
       retries visible; span names are low-cardinality templates.
 - [ ] Span status ERROR only on real failures; exceptions recorded as span
-      events; no payloads/PII in attributes.
+      events or span-correlated logs (Span Event API deprecated 2026); no
+      payloads/PII in attributes.
 - [ ] Trace continuity verified end-to-end across HTTP → queue → worker →
       cron paths (one trace or linked traces per user action).
 - [ ] Sampling is deliberate: documented policy; errors and slow traces are

@@ -1,4 +1,3 @@
-<!-- last-verified: 2026-07 -->
 # 07 — Swift as a Language
 
 Rules 01–06 cover the mobile *platform*; this file covers **Swift the language** — idioms, concurrency, memory, unsafe interop, packaging, testing. It applies to any Swift target: an iOS app, a server-side service (e.g. Vapor or Hummingbird on SwiftNIO), a CLI, or embedded firmware. Audit Swift code against this file even when the deliverable is not a mobile app.

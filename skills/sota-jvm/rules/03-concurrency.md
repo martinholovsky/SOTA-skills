@@ -38,10 +38,13 @@ coroutines. References:
 - Virtual threads make thread-per-request with blocking I/O scale — millions of
   cheap threads scheduled by the JVM. Use them for I/O-bound concurrency:
   `Executors.newVirtualThreadPerTaskExecutor()`.
-- **Don't pool virtual threads** (they're cheap; pooling defeats the point) and
-  **don't pin the carrier**: a `synchronized` block/method around a *blocking*
-  call pins the carrier thread (improved in 24+, but still prefer
-  `ReentrantLock` around blocking sections). Avoid heavy `ThreadLocal` use.
+- **Don't pool virtual threads** (they're cheap; pooling defeats the point).
+- **Pinning is version-conditional**: on JDK 21–23 a `synchronized` block/
+  method around a *blocking* call pins the carrier thread — HIGH under load;
+  use `ReentrantLock`. Since JDK 24 (JEP 491) monitors no longer pin except
+  native frames (JNI/FFM callbacks) and class initializers — keep the
+  `ReentrantLock` advice only for code that must support 21 LTS. Avoid heavy
+  `ThreadLocal` use.
 - CPU-bound work still wants a bounded platform-thread pool sized to cores.
 - **Scoped values** (`ScopedValue`) are **final in Java 25** (JEP 506) — safe
   to recommend as GA. **Structured concurrency** (`StructuredTaskScope`) is
@@ -78,9 +81,9 @@ grep -rnE '\bstatic (?!final)[A-Za-z<>\[\]]+ [a-z]' --include='*.java' .   # mut
 grep -rnE 'volatile ' --include='*.java' . | grep -E '\+\+|--|\+='          # compound op on volatile = race
 grep -rn 'HashMap\|ArrayList' --include='*.java' . | grep -i 'static\|shared'  # non-concurrent shared coll
 
-# Virtual-thread pitfalls — HIGH under load
+# Virtual-thread pitfalls
 grep -rn 'newVirtualThreadPerTaskExecutor\|Thread.ofVirtual' --include='*.java' .
-grep -rnE 'synchronized' --include='*.java' . | grep -i 'block\|io\|http\|jdbc'  # pinning risk → ReentrantLock
+grep -rnE 'synchronized' --include='*.java' . | grep -i 'block\|io\|http\|jdbc'  # pinning: HIGH on JDK 21–23; non-issue on 24+ (JEP 491) except native/class-init frames
 grep -rn 'preview' --include='*.java' .   # structured concurrency is preview in 25
 
 # CompletableFuture without executor/exception handling — MEDIUM

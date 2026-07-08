@@ -1,5 +1,3 @@
-<!-- last-verified: 2026-07 -->
-
 # 06 — Performance & runtime: OPcache, FPM, JIT, profiling
 
 PHP performance is mostly *runtime configuration and I/O shape*, not

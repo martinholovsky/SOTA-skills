@@ -192,7 +192,7 @@ percentage.
 module github.com/org/app
 
 go 1.25.0          // language version (1.26's `go mod init` writes the previous minor by design)
-toolchain go1.26.4 // exact toolchain: reproducible builds across dev/CI (latest patch, 2026-06)
+toolchain go1.26.5 // exact toolchain: reproducible builds across dev/CI (pin the current patch — verify at go.dev/doc/devel/release)
 
 require ( ... )
 

@@ -86,6 +86,11 @@ services:
 Docker or podman rootless) so container-root maps to an unprivileged host UID;
 keep `"no-new-privileges": true` and a default seccomp/AppArmor profile in
 `daemon.json`; live-restore on; never expose the Docker API on TCP without mTLS.
+The November 2025 runc escape trio (CVE-2025-31133 masked-path symlink race,
+CVE-2025-52565 `/dev/console` bind-mount race, CVE-2025-52881 procfs write
+redirect; fixed in runc 1.2.8/1.3.3/1.4.0-rc.3) is the concrete proof: user
+namespaces block the most serious aspects of all three — userns is the layer
+that holds when the runtime itself fails. Verify runc ≥ 1.2.8/1.3.3.
 
 **R1.5 — Supply chain is part of sandbox posture:** pin base images by digest, scan
 (grype/trivy) in CI with a severity gate, sign and verify (cosign + policy
@@ -151,6 +156,7 @@ metadata:
 ```yaml
 spec:
   automountServiceAccountToken: false      # default-on token is a top finding
+  hostUsers: false                         # user namespaces — GA in v1.36
   runtimeClassName: gvisor                 # for untrusted workloads
   securityContext:
     runAsNonRoot: true
@@ -173,6 +179,11 @@ spec:
   volumes:
   - { name: tmp, emptyDir: { sizeLimit: 64Mi, medium: Memory } }
 ```
+`hostUsers: false` (user namespaces, GA in Kubernetes v1.36) maps container-root
+to an unprivileged host UID and namespaces its capabilities — it blocks the R1.4
+runc escape class. Needs kernel ≥ 6.3 with idmap-mount support on the pod's
+filesystems, runc ≥ 1.2 / crun ≥ 1.9, containerd 2.0+ / CRI-O; require it for
+untrusted workloads wherever nodes support it.
 
 **R3.3 — Service account & API surface:** `automountServiceAccountToken: false`
 unless the pod calls the API; per-workload service accounts with minimal RBAC (no
@@ -249,7 +260,8 @@ is good for security but plan checkpointing/image capture for incident response
       size-capped tmpfs, seccomp RuntimeDefault-or-stricter (never unconfined),
       memory/CPU/pids limits.
 - [ ] Untrusted/multi-tenant workloads run under gVisor or Kata/Firecracker
-      (RuntimeClass), on tainted dedicated node pools.
+      (RuntimeClass), on tainted dedicated node pools; `hostUsers: false` set
+      where nodes support user namespaces (GA in v1.36).
 - [ ] PSA `restricted` enforced (+ audit/warn) on all non-system namespaces;
       exceptions enumerated with owners.
 - [ ] `automountServiceAccountToken: false` by default; RBAC reviewed for
@@ -262,4 +274,5 @@ is good for security but plan checkpointing/image capture for incident response
 - [ ] Runtime detection deployed on all nodes with the R4.1 minimum rule set,
       routed to on-call, and canary-tested within the last quarter.
 - [ ] Rootless/userns-remapped engine on hosts where dev containers run; Docker
-      API never on unauthenticated TCP.
+      API never on unauthenticated TCP; runc ≥ 1.2.8/1.3.3 (November 2025
+      escape trio, R1.4).

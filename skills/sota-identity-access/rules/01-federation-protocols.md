@@ -187,9 +187,10 @@ OIDC. When you run or consume SAML, the failure modes are signature-handling bug
   shared secret in a header), authorize per-tenant, validate filters to avoid injection,
   rate-limit, and treat `active=false` / DELETE as the deprovisioning trigger (don't
   leave a "soft-deleted but still-authenticating" account).
-- **Emerging**: `draft-ietf-scim-events` ("SCIM Profile for Security Event Tokens") adds
-  asynchronous SCIM events via SETs; in the RFC Editor queue as of late 2025 — track it
-  for event-driven provisioning, but it is not yet an RFC.
+- **SCIM Security Events — RFC 9967 (May 2026)**: the SCIM Profile for Security Event
+  Tokens (SETs; updates RFC 7643/7644) is now the standard mechanism for asynchronous,
+  event-driven provisioning signals — prefer it over ad-hoc webhooks or polling for
+  propagating lifecycle changes across domains.
 
 ## 9. Legacy: WS-Federation
 

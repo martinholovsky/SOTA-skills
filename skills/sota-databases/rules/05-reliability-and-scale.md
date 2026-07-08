@@ -157,8 +157,9 @@ vacuum/replication permanently behind despite tuning; single-tenant whales
 
 Everything here applies equally to **Valkey** (BSD-3, Linux Foundation fork;
 the default open alternative since Redis moved to AGPLv3 tri-licensing — AWS
-ElastiCache and GCP Memorystore ship it). Caveat: Redis Ltd modules
-(RedisJSON/Search/TimeSeries) have no mature Valkey equivalents yet.
+ElastiCache and GCP Memorystore ship it). Module gap has mostly closed:
+valkey-json and valkey-search are GA (1.0+) and ship in the official
+valkey-bundle — only a TimeSeries-equivalent module is still missing.
 
 ### Rule: Cache-aside with TTLs is the default pattern; invalidation is designed, not hoped.
 ```

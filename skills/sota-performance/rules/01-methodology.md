@@ -28,7 +28,9 @@ Per-runtime profilers (sampling, production-safe unless noted):
 - **JVM**: async-profiler (CPU + alloc + locks, no safepoint bias), JFR
   (always-on flight recorder, < 2% overhead).
 - **Node.js**: `node --prof`, `--cpu-prof`, Chrome DevTools, `0x` for
-  flamegraphs; `clinic.js` for event-loop diagnostics.
+  flamegraphs; `perf_hooks.monitorEventLoopDelay` for event-loop lag
+  (rules/04 §9). Clinic.js is unmaintained (per its own README) — flag it
+  where found; don't adopt.
 - **Python**: `py-spy` (attach to live process, no code change), `cProfile`
   (deterministic, high overhead — dev only), `memray` for allocations.
 - **Rust/C++**: `perf` + flamegraph, `heaptrack`/`valgrind --tool=massif` (dev).

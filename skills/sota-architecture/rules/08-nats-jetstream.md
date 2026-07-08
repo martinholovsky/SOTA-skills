@@ -10,11 +10,13 @@ and backpressure mechanics live in **sota-async-concurrency**; TLS/mesh/leafnode
 transport security in **sota-network-security**; NKEY/JWT/account auth in
 **sota-identity-access** and **sota-secrets-management**.
 
-Version: written against **NATS Server 2.11/2.12** (current line, mid-2026).
-KV and Object stores are GA and JetStream-backed. The `jetstream` Go package is
-the current API; the older `nc.JetStream()` JetStreamContext is legacy. Pin and
-track your server line — per-message TTL, KV limit markers, and the message
-scheduler are recent additions gated on server API level.
+Version: written against **NATS Server 2.11/2.12**; 2.14 has since superseded
+2.12 (2.13 was skipped; 2.12.x continues as a maintenance line) — run the
+latest stable release and verify the current line with a quick web search at
+time of use. KV and Object stores are GA and JetStream-backed. The `jetstream`
+Go package is the current API; the older `nc.JetStream()` JetStreamContext is
+legacy. Pin and track your server line — per-message TTL, KV limit markers, and
+the message scheduler are recent additions gated on server API level.
 
 ## Core NATS vs JetStream: choose per subject, not per cluster
 
@@ -223,8 +225,8 @@ defer cc.Stop()
   the rules/03 §12 "let the store arbitrate" pattern without a separate lock
   service. **Watchers** stream changes (config hot-reload, coordination);
   **history** keeps N prior revisions (bucket `History`, default 1).
-- The user's services already use NATS KV for **token revocation** — a good fit:
-  fast reads, watch-driven propagation, CAS for safe updates. Keep that pattern.
+- NATS KV is a good fit for **token revocation** lists and similar hot lookups:
+  fast reads, watch-driven propagation, CAS for safe updates.
 - KV TTL: bucket-level TTL is long-standing; **per-key TTL** is newer (NATS 2.11+,
   via per-message TTL / `Nats-TTL` and KV limit markers) — verify your server
   supports it before relying on it, and note the stream's `MaxAge` still takes

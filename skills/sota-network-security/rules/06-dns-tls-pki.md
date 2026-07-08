@@ -1,4 +1,3 @@
-<!-- last-verified: 2026-06 -->
 # 06 — DNS, TLS & PKI
 
 Scope: DNS security (DNSSEC, DNS firewall / RPZ, DoH/DoT, split-horizon, registrar/CAA hygiene,
@@ -46,11 +45,13 @@ nmap --script ssl-enum-ciphers -p 443 host        # flags TLS<1.2, weak ciphers,
 grep -rEn 'TLSv1\.0|TLSv1\.1|SSLv3|min_version.*1\.0' ./config
 ```
 
-**R3 — HSTS on web origins, OCSP stapling, modern key types.** `Strict-Transport-Security` with a
-sensible max-age (and `includeSubDomains` once you're sure) so browsers refuse plaintext. Enable
-**OCSP stapling** at the edge (CRL/OCSP checks owned by the server, not punted to the client);
-short-lived certs (R1) reduce reliance on revocation anyway — a 47-day cert that's compromised
-expires fast. Prefer ECDSA (P-256) certs for performance; RSA-2048+ acceptable.
+**R3 — HSTS on web origins, short lifetimes as the revocation story, modern key types.**
+`Strict-Transport-Security` with a sensible max-age (and `includeSubDomains` once you're sure) so
+browsers refuse plaintext. Short-lived certs (R1) are now the primary revocation mechanism — a
+47-day compromised cert expires fast. **Let's Encrypt ended OCSP** (URLs dropped from certs May
+2025, responders off Aug 2025; revocation is CRL-only), so OCSP stapling is impossible on LE certs;
+enable stapling only where the CA still operates OCSP. Prefer ECDSA (P-256) certs for performance;
+RSA-2048+ acceptable.
 
 **R3.1 — Enable hybrid post-quantum key exchange where the stack supports it.** Offer the
 `X25519MLKEM768` hybrid group on TLS 1.3 (already default-on in modern stacks, e.g. Go 1.24+;
@@ -138,7 +139,8 @@ grep -rEn 'InsecureSkipVerify|verify=false|--insecure|NODE_TLS_REJECT_UNAUTHORIZ
       manual renewal or cert older than the current CA/B cap (200d in 2026) → finding.
 - [ ] TLS 1.2 minimum (1.3 preferred), weak ciphers/protocols disabled across edge, ingress, mesh,
       internal? (`nmap --script ssl-enum-ciphers`.)
-- [ ] HSTS on web origins; OCSP stapling enabled?
+- [ ] HSTS on web origins? OCSP stapling only where the CA still runs OCSP (Let's Encrypt ended it
+      Aug 2025 — don't flag its absence on LE certs)?
 - [ ] CAA records on public zones restrict issuance to your CA(s)?
 - [ ] Split-horizon: no internal hostnames in public DNS; zones scanned for dangling records?
 - [ ] DNSSEC stance decided (managed, on identity-anchor zones)?

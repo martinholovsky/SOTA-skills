@@ -1,5 +1,3 @@
-<!-- last-verified: 2026-07 -->
-
 # 05 — Composer, static analysis, and CI
 
 The PHP supply chain is Composer + Packagist; code quality is enforced by

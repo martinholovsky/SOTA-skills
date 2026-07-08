@@ -122,9 +122,14 @@ Out of scope: unfreezing flow cleanup → #901.
 - **Stacked PRs for large changes**: a sequence of dependent, individually
   reviewable PRs (each targeting the previous branch), reviewed and merged in
   order. This is how you keep §1's size discipline on multi-thousand-line
-  features. Tooling (Graphite, `gh`/`git` stacking workflows, `git-spice`,
-  jj-based flows) automates the rebase cascade; without tooling, keep stacks
-  ≤3 deep or the rebase tax exceeds the review benefit.
+  features. GitHub now ships native stacked PRs (private preview as of
+  mid-2026: `gh stack` CLI, a stack map in the PR UI, branch protection and CI
+  evaluated against the final target branch, auto-rebase of the remaining
+  stack after each merge) — prefer it where enabled, since reviewers need no
+  third-party account. Until then, tooling (Graphite, `gh`/`git` stacking
+  workflows, `git-spice`, jj-based flows) automates the rebase cascade;
+  without tooling, keep stacks ≤3 deep or the rebase tax exceeds the review
+  benefit.
 - Each PR in a stack must stand alone: green CI, coherent description, no
   forward references that make it unreviewable without reading the whole stack.
 

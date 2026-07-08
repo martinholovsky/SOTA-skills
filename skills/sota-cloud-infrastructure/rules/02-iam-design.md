@@ -73,7 +73,9 @@ short-lived and auto-rotated by the provider:
   `PassRole` to specific role ARNs plus `iam:PassedToService`.
 - Use **conditions as containment**: `aws:SourceVpce`/`SourceIp` for data-plane
   access, `aws:ResourceOrgID`/`PrincipalOrgID` to stop confused-deputy and
-  cross-org exfiltration, `sts:ExternalId` for third-party assume-role.
+  cross-org exfiltration, `sts:ExternalId` for third-party assume-role. On AWS,
+  enforce the org-perimeter conditions once, centrally, with an RCP (rules/01 §3)
+  instead of hand-copying them into every resource policy.
 - Resource policies (bucket/key/queue policies) are a second IAM system — audit them
   with the same rigor. A perfect identity policy is irrelevant if the bucket policy
   grants `Principal: "*"`.

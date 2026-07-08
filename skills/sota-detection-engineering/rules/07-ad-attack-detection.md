@@ -1,5 +1,3 @@
-<!-- last-verified: 2026-07 -->
-
 # 07 — Active Directory Attack Detection
 
 Detective controls for on-premises **Active Directory**: the Kerberos/NTLM
@@ -191,7 +189,25 @@ detect: any write to the RBCD attribute by a non-tier0 principal
   configuration by admins — allowlist the tier-0 change process and alert on
   everyone else. Requires Directory Service Changes auditing + SACLs (§1).
 
-## 3. AD deception
+### dMSA abuse / BadSuccessor — T1098 (where Windows Server 2025 DCs exist)
+
+```
+source: Security 5137/5136 + Directory Service 2946
+detect: dMSA object (msDS-DelegatedManagedServiceAccount) created (5137) by a
+        non-tier0 principal or in an unusual OU,
+   OR a write (5136) to migration-link attributes
+      msDS-ManagedAccountPrecededByLink / msDS-DelegatedMSAState,
+   OR repeated dMSA TGTs / key-package fetches (2946) for one dMSA
+```
+
+- **Signal:** BadSuccessor (CVE-2025-53779, patched Aug 2025) links an
+  attacker-created dMSA to a privileged account so the KDC merges that account's
+  privileges and keys into the dMSA's tickets. The patch closes the direct
+  escalation, but dMSA linkage still yields credential acquisition/lateral
+  movement in already-compromised domains — the writes stay detection-worthy.
+  **FPs:** genuine gMSA→dMSA migrations — allowlist the tier-0 migration
+  process. Requires SACLs on dMSA objects/attributes (§1); event 2946 is in the
+  Directory Service log, not Security.
 
 Deception in AD yields near-zero-FP signals (identity attackers walk into it):
 
@@ -230,6 +246,7 @@ an untested Kerberoasting rule is a hope, not a detection.
 - [ ] Is **NTLM relay / forced auth (T1187)** covered (NTLMv1 usage, relayed-identity mismatch, machine-account outbound auth after coercion)?
 - [ ] Is **password spraying (T1110.003)** detected across **both 4625 and Kerberos 4768/4771 failures** (horizontal fan-out below lockout threshold)?
 - [ ] Is there a **5136 detection on writes to `msDS-AllowedToActOnBehalfOfOtherIdentity`** (RBCD) and SPN-added-to-user, alerting on non-tier-0 writers?
+- [ ] Where **Windows Server 2025 DCs** exist, is **dMSA abuse (BadSuccessor, CVE-2025-53779)** covered — dMSA creation (5137) by non-tier-0 principals or in unusual OUs, **5136 writes to `msDS-ManagedAccountPrecededByLink` / `msDS-DelegatedMSAState`**, and repeated dMSA TGTs (2946)?
 - [ ] Are **honeytoken SPN accounts / canary objects** deployed (any 4769/4662 against them = high-fidelity alert) and **wired to IR at max severity**?
 - [ ] Is each detection **ATT&CK-mapped, FP-documented, and validated against the real technique** (rules/06) before it is trusted?
 - [ ] Does each detection carry known **false positives and an owner** (rules/01/04), with suppressions expiring rather than permanent?

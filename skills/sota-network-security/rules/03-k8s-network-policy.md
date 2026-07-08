@@ -1,4 +1,3 @@
-<!-- last-verified: 2026-06 -->
 # 03 — Kubernetes Network Policy Depth
 
 Scope: Kubernetes `NetworkPolicy`, `CiliumNetworkPolicy` (CNP/CCNP), the namespaced default-deny
@@ -10,11 +9,13 @@ Where this sits: **sota-kubernetes** owns admission/RBAC and *that NetworkPolicy
 CNI is wired*; this skill owns the policy *content and depth*. sota-cloud-infrastructure rules/03
 owns the cluster's VPC/subnet/IPAM. sota-detection-engineering consumes Hubble flows.
 
-Verified (2026-06-14): Cilium current stable line **1.19** (1.19.3, Apr 2026); fully implements the
-upstream `networking.k8s.io/v1` NetworkPolicy and adds L7 via Envoy. ANP/BANP ship from the
-sig-network `network-policy-api` working group as **out-of-tree CRDs at
-`policy.networking.k8s.io/v1alpha1` — still ALPHA** (a v1alpha2 `ClusterNetworkPolicy` consolidating
-ANP+BANP under a tier field is in proposal). Pin behavior; don't assume GA semantics.
+Verified (2026-07): Cilium fully implements the upstream `networking.k8s.io/v1` NetworkPolicy and
+adds L7 via Envoy — run the latest stable patch and verify the current release with a quick search
+at time of use (the 2026 patch train fixed policy-bypass CVEs; see §4). The sig-network working
+group merged ANP+BANP into a single **`ClusterNetworkPolicy` CRD at
+`policy.networking.k8s.io/v1alpha2`** (Oct 2025; a `tier` field selects Admin vs Baseline) — still
+ALPHA, out-of-tree; ANP/BANP `v1alpha1` remain usable at v0.1.7. Pin behavior; don't assume GA
+semantics.
 
 ---
 
@@ -111,6 +112,13 @@ Beware the **`world` / `reserved:world` entity** and `toCIDR: 0.0.0.0/0` — all
 sensitive endpoint is the Critical over-broad finding from rules/02 (the real OpenBao/Grafana/
 registry-from-`world` case). Audit every CNP for `world`, `all`, `0.0.0.0/0`.
 
+**Patch floor (2026 CVEs):** Cilium below **1.19.4 / 1.18.10 / 1.17.16** has known
+policy-bypass/hijack CVEs that undermine this file's guarantees — CVE-2026-33726 (L7 proxy could
+bypass NetworkPolicy for same-node traffic; fixed 1.19.2/1.18.8/1.17.14), CVE-2026-49445 (Envoy
+admin socket exposure with L7 enabled — info disclosure/cluster disruption; fixed 1.19.2), and
+CVE-2026-53935 (`CiliumLocalRedirectPolicy` `addressMatcher` cross-namespace service-traffic
+hijack; fixed 1.19.4). Check the running version against Cilium's security advisories.
+
 ## 5. Egress control & DNS-aware egress
 
 **R5 — Egress is first-class; allowlist by FQDN, not open `0.0.0.0/0`.** Cilium's DNS-aware policy
@@ -155,11 +163,12 @@ log, FQDN policy = what's allowed.
   default-deny) that namespaced NetworkPolicy can *override*. Use it to make default-deny the
   cluster baseline so a new namespace isn't accidentally allow-all.
 
-Status: `policy.networking.k8s.io/v1alpha1`, **alpha**, out-of-tree CRDs; Cilium and others
-implement subsets. The consolidation into `ClusterNetworkPolicy` (v1alpha2, tiered) is proposed but
-not stable. **Verify your CNI's support matrix and pin versions**; don't build a control you can't
-test. Until ANP/BANP is solid in your cluster, a Cilium *clusterwide* policy (CCNP) achieves the
-cluster-scoped default-deny today.
+Status: the `policy.networking.k8s.io` CRDs are **alpha**, out-of-tree. Since Oct 2025 ANP+BANP
+are consolidated into **`ClusterNetworkPolicy` (v1alpha2)** — `tier: Admin` replaces ANP,
+`tier: Baseline` replaces BANP — and the working group will base the beta on ClusterNetworkPolicy,
+so plan migration toward it. Cilium and others implement subsets; **verify your CNI's support
+matrix and pin versions** — don't build a control you can't test. Until it's solid in your
+cluster, a Cilium *clusterwide* policy (CCNP) achieves the cluster-scoped default-deny today.
 
 ```yaml
 # Cilium clusterwide default-deny baseline (works today on the user's stack)
@@ -208,4 +217,7 @@ audit cross-cluster policies for `world`/wildcard exactly as single-cluster.
 - [ ] Is there a cluster-scoped default-deny baseline (BANP/ANP if stable, else
       CiliumClusterwideNetworkPolicy) so new namespaces aren't allow-all?
 - [ ] Is Hubble enabled and flows exported to detection?
-- [ ] ANP/BANP usage: is the alpha API status pinned and the CNI support verified?
+- [ ] ANP/BANP/ClusterNetworkPolicy usage: is the alpha API status pinned, CNI support verified,
+      and migration to `ClusterNetworkPolicy` (v1alpha2, tiered) planned?
+- [ ] Is Cilium at/above the 2026 CVE-fix floor (1.19.4 / 1.18.10 / 1.17.16) and checked against
+      current security advisories?

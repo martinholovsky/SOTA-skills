@@ -1,5 +1,3 @@
-<!-- last-verified: 2026-07 -->
-
 # 07 — Framework security: boundary, authz, SSRF, CVEs
 
 The security pass for both stacks. This consolidates the framework-specific angles;

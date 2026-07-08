@@ -1,5 +1,3 @@
-<!-- last-verified: 2026-07 -->
-
 # 03 — Files, deserialization, and SSRF
 
 PHP's include system, stream wrappers, and native serialization form one

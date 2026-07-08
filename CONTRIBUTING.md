@@ -63,11 +63,14 @@ AGENTS.md                     # guidance for AI assistants working on the repo
   (a target, not a floor — compact rules files are fine; the hard cap is 500).
 - Ends with an **`## Audit checklist`** — yes/no questions, ideally with
   grep/lint patterns, so the rule can be used to hunt violations.
-- When you verify (or re-verify) a file's fast-moving claims against primary
-  sources, record it as the file's **first line**:
-  `<!-- last-verified: YYYY-MM -->`. A monthly CI job
-  (`scripts/check-freshness.sh`) reports files whose marker is past the
-  re-verify window and the unstamped backlog.
+- Fast-moving claims must be verified against primary sources when written.
+  Library-wide re-verification is tracked by the root **`LAST-VERIFIED`** file
+  (YYYY-MM-DD of the last full-library sweep: per-skill research against
+  primary sources, findings adversarially verified, fixes applied). Update it
+  only after such a sweep — not on ordinary edits. A monthly CI job
+  (`scripts/check-freshness.sh`) goes red when the stamp exceeds the
+  re-verify window. Do not add per-file `<!-- last-verified -->` line-1
+  markers (retired convention; the script warns about strays).
 
 **Findings format** (AUDIT mode, used throughout):
 

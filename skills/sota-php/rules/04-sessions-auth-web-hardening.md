@@ -1,5 +1,3 @@
-<!-- last-verified: 2026-07 -->
-
 # 04 — Sessions, auth, crypto, and web hardening
 
 Framework-neutral: whether sessions come from raw `session_start()` or a

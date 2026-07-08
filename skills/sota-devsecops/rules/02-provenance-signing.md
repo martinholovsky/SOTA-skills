@@ -22,6 +22,14 @@ SLSA v1.2 (approved Nov 2025; Build-track levels unchanged since v1.0), practica
   v1.2 also promotes the **Source track** to approved status (SOURCE_LEVEL_1–3: history
   retention, continuous branch-protection enforcement, source VSAs) — it formalizes what
   rules/01 §1.7 already requires; cite it when an org wants a named target.
+- **Valid provenance attests build origin, not code safety.** The Mini Shai-Hulud worm
+  wave (2026, CVE-2026-45321) published 84 malicious versions across 42 npm packages in
+  under six minutes — all carrying *valid* SLSA Build L3 attestations, because a
+  `pull_request_target` + cache-poisoning chain ran attacker code in the trusted release
+  workflow and lifted its OIDC token from runner process memory. Provenance verification
+  only holds when layered on the controls it assumes (rules/01 §1.4 no
+  `pull_request_target` with secrets, §1.6 cache isolation in release workflows) and the
+  rules/03 §3.7 cooldown — never treat it as a malware gate.
 - Audit framing: "no provenance" on deployed artifacts is Medium alone, High when combined
   with mutable tags or shared registry push creds (because then nothing distinguishes a
   legit artifact from an injected one).
@@ -182,7 +190,8 @@ Long-lived registry tokens in CI are the npm/PyPI compromise vector. Replace the
   are now capped at 90 days (Oct 2025), and TOTP 2FA is being phased out in favor of
   WebAuthn/passkeys — any long-lived `NPM_TOKEN` you find is already dead or about to
   expire silently and break the release pipeline. The provenance badge lets consumers
-  verify the package was built from the public repo by the stated workflow.
+  verify the package was built from the public repo by the stated workflow — build
+  origin, not code safety (§2.1).
 - **Rules for both**: publish only from a tag-triggered, environment-gated workflow on the
   protected release workflow file; never from `workflow_dispatch` on arbitrary refs.
 - Audit: `NPM_TOKEN`/`PYPI_API_TOKEN`(account-scoped) in secrets = High (and for npm, a

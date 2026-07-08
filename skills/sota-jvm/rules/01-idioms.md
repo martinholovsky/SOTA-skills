@@ -41,7 +41,8 @@ the type system, and expression-oriented code**. References:
 - **Platform types** (`String!`) are the #1 interop NPE source: a Java method
   with no nullability annotation is seen by Kotlin as "could be null but
   unchecked." Treat Java return values as nullable at the boundary, or annotate
-  the Java side (`@Nullable`/`@NonNull`, JSpecify) so Kotlin enforces it.
+  the Java side with JSpecify `@Nullable`/`@NonNull` (the standard — Kotlin 2
+  translates JSpecify to its nullability) so Kotlin enforces it.
 - Annotate Java APIs consumed by Kotlin; use `@JvmStatic`/`@JvmOverloads`/
   `@JvmName` when exposing Kotlin to Java. Kotlin `data class` `copy`/
   destructuring won't appear in Java — design the cross-language surface

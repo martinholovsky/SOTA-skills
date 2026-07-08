@@ -1,4 +1,3 @@
-<!-- last-verified: 2026-07 -->
 # 03 — Secure SDLC: NIST SSDF (SP 800-218)
 
 The framework that turns "we develop securely" from a claim into an assessable set

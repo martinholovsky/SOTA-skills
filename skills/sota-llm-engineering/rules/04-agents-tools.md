@@ -1,4 +1,3 @@
-<!-- last-verified: 2026-06 -->
 # Rules 04 — Agents & Tool Use
 
 An agent is a loop where the model decides what happens next. That autonomy is
@@ -195,7 +194,7 @@ deprecation policy). Engineering consequences:
   prompts or agent-visible config (sota-secrets-management). Request the
   **narrowest scope per server** (`mail.readonly`, not `mail.full`) and prefer
   short-lived tokens over long-lived PATs.
-- **When you *operate* an MCP server (DN self-hosts them), harden the server,
+- **When you operate/self-host an MCP server, harden the server,
   not just the client** (OWASP MCP Security): bind local HTTP/SSE transports to
   `127.0.0.1`, not `0.0.0.0`; **validate the `Origin`/`Host` header on every
   request** to block DNS-rebinding from a browser tab; use non-guessable session
