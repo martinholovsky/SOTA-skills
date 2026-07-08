@@ -121,6 +121,11 @@ would catch the *behavior* this IOC is a symptom of?" Build that instead.
   old version silently misrepresents gaps.
 - **Map every detection to technique IDs** in its metadata. This is what makes
   coverage measurable.
+- **Use ATT&CK's structured detection objects.** v18 (Oct 2025) retired the
+  free-text Detections/Data Sources in favor of machine-readable **Detection
+  Strategies (DETxxxx)** and **Analytics (ANxxxx)** objects, extended to Mobile
+  in v19. Map detection metadata to DET/AN IDs where applicable, and mine the
+  Analytics as hypothesis fuel and a coverage cross-check.
 - **ATT&CK Navigator** renders coverage as a heatmap layer (JSON). Generate it
   from your detection metadata automatically — a hand-maintained layer rots
   instantly. Color by confidence (validated vs. unvalidated vs. none), not mere

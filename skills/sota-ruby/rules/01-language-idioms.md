@@ -1,4 +1,3 @@
-<!-- last-verified: 2026-07 -->
 # 01 — Language baseline & idioms
 
 Modern Ruby (2026 baseline): a supported interpreter, frozen string literals

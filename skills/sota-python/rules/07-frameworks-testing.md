@@ -191,8 +191,8 @@ def test_sort_idempotent(xs: list[int]) -> None:
 ### Markers, selection, and suite layering
 
 ```toml
-[tool.pytest.ini_options]
-addopts = "-ra --strict-markers --strict-config"
+[tool.pytest]                       # pytest 9+ native table — real TOML types (arrays, bools)
+addopts = ["-ra", "--strict-markers", "--strict-config"]
 markers = [
   "slow: takes >1s, excluded from default run",
   "integration: needs docker services",
@@ -200,6 +200,10 @@ markers = [
 testpaths = ["tests"]
 ```
 
+- pytest 9 (Nov 2025): the native `[tool.pytest]` table (or a `pytest.toml` file) replaces
+  `[tool.pytest.ini_options]` as the state-of-the-art spelling — `ini_options` still works
+  pre- and post-9, but the two tables cannot coexist. 9 also drops Python 3.9 and merges
+  `pytest-subtests` into core (`subtests` fixture — no plugin needed for loop-style asserts).
 - `--strict-markers` always — a typo'd `@pytest.mark.integratoin` silently creates a marker
   and your "skip integration" filter stops matching.
 - Layer the suite: fast unit tests run on every push (`-m "not slow and not integration"`);

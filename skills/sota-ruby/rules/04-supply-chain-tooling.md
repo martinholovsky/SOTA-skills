@@ -1,4 +1,3 @@
-<!-- last-verified: 2026-07 -->
 # 04 — Supply chain & tooling: Bundler, linting, scanning, CI
 
 The Ruby supply chain runs through RubyGems + Bundler; the quality gates are

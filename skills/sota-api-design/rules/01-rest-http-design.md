@@ -13,6 +13,9 @@ workflow, contract testing.
   state transition), reify it as a resource: `POST /searches`, `POST /transfers`,
   `POST /orders/{id}/cancellations`. This gives the operation an ID, a status, and
   auditability for free.
+- For pure reads that merely outgrow the URL, the **QUERY method** (RFC 10008, 2026)
+  is the standards-track alternative — safe, idempotent, cacheable — where your
+  proxies/gateways/frameworks support it; `POST /searches` stays the compatibility fallback.
 - Use plural nouns consistently (`/users`, `/users/{id}`). Never mix `/user/{id}`
   and `/users`.
 - Limit nesting to **two levels** (`/orgs/{org}/projects/{id}`). Deeper nesting bakes
@@ -31,6 +34,7 @@ workflow, contract testing.
 |---|---|---|---|
 | GET | yes | yes | Read. Never mutate on GET — caches/prefetchers will trigger it. |
 | HEAD | yes | yes | Metadata/existence checks. |
+| QUERY | yes | yes | Safe read with a request body (RFC 10008, 2026); responses cacheable. Searches/filters too large for a URL. Ecosystem support is early — fall back to `POST /searches` (§1) where proxies/frameworks lack it. |
 | PUT | no | yes | Full replace at a client-chosen or known URL. |
 | PATCH | no | **no** (unless designed so) | Partial update. Prefer JSON Merge Patch (RFC 7386) for simple cases; JSON Patch (RFC 6902) when array surgery is needed. |
 | POST | no | no | Create under a collection; non-idempotent actions. Pair with idempotency keys (§6). |
@@ -112,6 +116,8 @@ HTTP/1.1 200 OK
   For richer needs adopt one convention and document it: bracketed operators
   (`?created_at[gte]=2026-01-01`) or a defined mini-language. Never accept raw query
   expressions you interpolate into SQL.
+- Filter/search payloads too large for a URL: QUERY (RFC 10008) where supported,
+  else reified `POST /searches` (§1).
 - Validate every filter/sort field against an **allowlist**. `?sort=password_hash`
   or sorting on an unindexed column is an availability bug.
 - Sorting: `?sort=-created_at,name` (leading `-` = desc). Multi-field allowed, all

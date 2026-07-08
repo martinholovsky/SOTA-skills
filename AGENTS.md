@@ -46,9 +46,10 @@ symlinks to it — edit only this file, never the symlinks.
    social-preview pill must all match a recount of the `skills/` tree.
 
 Separately, `scripts/check-freshness.sh` (run monthly by
-`.github/workflows/freshness.yml`, report-only) tracks each rules file's
-line-1 `<!-- last-verified: YYYY-MM -->` marker — update it whenever you
-re-verify a file's fast-moving claims against primary sources.
+`.github/workflows/freshness.yml`) tracks the root `LAST-VERIFIED` stamp —
+the date of the last full-library re-verification sweep against primary
+sources. Update it only after such a sweep; the run goes red when the stamp
+exceeds the 12-month window. Per-file line-1 markers are retired.
 
 Secrets are scanned by **gitleaks** (`.gitleaks.toml`, which disables only the
 noisy entropy-based `generic-api-key` rule so the security skills' intentional
@@ -81,5 +82,5 @@ pre-commit hook scans each commit locally.
   preview)
 - [SECURITY.md](SECURITY.md) — reporting bad guidance or a leaked secret
 - [CHANGELOG.md](CHANGELOG.md) — release history (top entry = current version;
-  also mirrored in `VERSION`); releases 1.4.0 and earlier are archived in
+  also mirrored in `VERSION`); releases 1.6.0 and earlier are archived in
   [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md)

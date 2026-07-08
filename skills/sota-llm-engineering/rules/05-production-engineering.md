@@ -1,4 +1,3 @@
-<!-- last-verified: 2026-06 -->
 # Rules 05 — Production Engineering
 
 The model is a remote dependency with variable latency, hard rate limits,
@@ -9,13 +8,17 @@ versioned upstream — plus tracing rich enough to debug nondeterminism.
 ## 1. Model selection & routing
 
 **Select per task on your eval (rules/01), not per vibe or leaderboard.**
-Providers ship capability tiers with ~5–25× price spreads between flagship
-and small models (illustrative, verified June 2026: Anthropic Opus 4.8
-$5/$25 per MTok vs Haiku 4.5 $1/$5; OpenAI GPT-5.5/5.4 family and Google
-Gemini 3.5/3.1 tier similarly — re-verify prices before encoding them).
-The pattern, stable across providers: **frontier tier** for hard reasoning/
-agentic work, **mid tier** for most production volume, **small/fast tier**
-for classification, routing, extraction, and judges.
+Providers ship capability tiers with ~5–25× price spreads between frontier
+and small models (illustrative, verified July 2026: Anthropic frontier tier
+$10/$50 per MTok, Opus tier $5/$25, Sonnet tier $2–3/$10–15 introductory→
+standard, Haiku 4.5 $1/$5; OpenAI and Google tier similarly — re-verify
+prices before encoding them). Tokenizers also change between model
+generations — the same text can tokenize to ~30% more tokens on a newer
+model (per Anthropic's pricing page for its 2026 generation) — so cost
+estimates built from a price table must re-baseline token counts per model,
+not just prices. The pattern, stable across providers: **frontier tier**
+for hard reasoning/agentic work, **mid tier** for most production volume,
+**small/fast tier** for classification, routing, extraction, and judges.
 
 - **Right-size empirically:** run the eval suite on the candidate tier below
   your current one; if scores hold, take the savings. Most production
@@ -201,7 +204,8 @@ them follows the same pipeline:
 
 - [ ] Each route's model chosen by eval evidence; tier-below test performed;
       models/params/prompts in a config registry, none inline; price/limit
-      claims in code or docs re-verified, not folklore.
+      claims in code or docs re-verified, not folklore; token counts
+      re-baselined when the model (and its tokenizer) generation changes.
 - [ ] Single gateway module owns all provider calls (auth, retries, tracing,
       budgets); no scattered direct SDK calls; abstraction does not mask
       provider-native caching/structured-output/batch features.

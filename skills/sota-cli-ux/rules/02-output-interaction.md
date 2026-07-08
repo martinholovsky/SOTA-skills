@@ -175,6 +175,33 @@ exit codes, streaming, progress, prompts, verbosity levels, error messages.
   (`Authorization: Bearer ***`). Verbose modes leaking tokens into CI logs is
   a Critical finding.
 
+## 9. AI agents as a third user
+
+- **Agents are now a consumer class of their own** alongside the human at a
+  TTY and the script in CI — a stricter script: everything above (pure
+  `--json`, structured errors, distinct exit codes, never prompt on non-TTY)
+  applies, plus the constraints below. A well-designed CLI is a peer agent
+  interface to an MCP server, not a lesser one.
+- Once agents drive the tool, the surface is **frozen, additive-only**: agents
+  act on stale knowledge of your flags for months, so never remove or
+  repurpose — only add (rules/03 §7, with less slack).
+- **Output costs context window.** Offer `--fields` (or equivalent) to select
+  top-level JSON fields; keep default JSON lean; paginate large lists.
+- Put the remediation in-band: JSON-mode errors carry `code`/`message` plus a
+  machine-actionable `remediation` (the exact command to run) — an agent can
+  act on that, not on prose (§7's fix line, machine-readable).
+- Mutations: replace the interactive confirmation with a **confirmation
+  envelope** — the first call returns the concrete plan, a distinct exit
+  code, and the exact re-invocation (e.g. with `--confirm`); executing
+  requires that second call. Never gate a mutation on a TTY prompt an agent
+  cannot answer.
+- **Validate inputs locally before any network call**: agents hallucinate
+  plausible-looking values (wrong-format IDs, invisible control characters);
+  a precise client-side error beats a round-trip and a vague 404.
+- Consider suppressing did-you-mean suggestions in machine modes: for an
+  agent, an unknown command should be a hard, unambiguous failure, not a
+  guess it may adopt (rules/01 §1's never-auto-execute rule still holds).
+
 ## Audit checklist
 
 - [ ] Data on stdout only; logs/progress/prompts/errors on stderr; verified by `tool cmd >out 2>err` inspection.
@@ -191,3 +218,5 @@ exit codes, streaming, progress, prompts, verbosity levels, error messages.
 - [ ] Errors name the failing path/value, state the cause, and give a copy-pasteable fix; stack traces only under `--debug`; errors prefixed and on stderr.
 - [ ] `-q` and `-v`/`-vv` exist; verbosity alters stderr only; stdout data identical at every level.
 - [ ] No secret/token appears at any verbosity level, including `--debug`.
+- [ ] Agent-facing surface: JSON output field-selectable (`--fields` or equivalent); JSON-mode errors include a machine-actionable remediation; mutations offer a non-interactive confirm protocol (plan + explicit `--confirm` re-invocation), not a TTY-only prompt.
+- [ ] Inputs validated locally (format/charset) before network calls; in machine modes unknown commands/flags fail hard rather than fuzzy-matching.

@@ -1,4 +1,3 @@
-<!-- last-verified: 2026-07 -->
 # 05 — ISA/IEC 62443 for OT / ICS / Embedded
 
 The cybersecurity standard for **operational technology**: industrial control

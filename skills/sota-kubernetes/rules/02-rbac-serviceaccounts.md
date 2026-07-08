@@ -89,7 +89,9 @@ namespace ≈ the union of every identity whose token/cred lives there.** Specif
   or mounts host paths/Secrets — pod-create is a classic lateral/escalation primitive.
 
 Treat broad `secrets` read, `pods` create, and `serviceaccounts/token` create as
-near-Secret-equivalent and near-impersonate-equivalent; scope them hard.
+near-Secret-equivalent and near-impersonate-equivalent; scope them hard. Policy-engine
+CRDs belong in the same class: create/update on Kyverno (namespaced) policies runs
+attacker logic inside the admission-controller pod (`rules/03` §2, CVE-2026-4789).
 
 ### 2.6 The Helm-chart-grants-cluster-admin trap
 Charts and operators bundle their own RBAC. A values toggle like
@@ -172,7 +174,7 @@ closure of what subject X can do, and can it escalate?" Tools:
 - [ ] `escalate`/`bind`/`impersonate` granted only to a named, audited admin path — never automation? (`kubectl who-can escalate clusterroles`, etc.)
 - [ ] No `cluster-admin` (or any broad role) bound to a ServiceAccount, `system:authenticated`, or `system:unauthenticated`? (`kubectl get clusterrolebindings -o json | jq '...roleRef.name=="cluster-admin"'`)
 - [ ] Aggregated ClusterRoles reviewed — nothing unexpected aggregates into `admin`/`edit`/`view`?
-- [ ] Broad `secrets` read, `pods` create, and `serviceaccounts/token` create scoped tightly (treated as escalation primitives)?
+- [ ] Broad `secrets` read, `pods` create, `serviceaccounts/token` create, and policy-engine CRD writes (`rules/03`) scoped tightly (treated as escalation primitives)?
 - [ ] `automountServiceAccountToken: false` is the default; only API-calling pods opt in? (`grep -rL automountServiceAccountToken` deployments; check SA spec)
 - [ ] No manually-created long-lived `service-account-token` Secrets; external consumers use short-lived audience-scoped TokenRequest tokens?
 - [ ] One SA per workload, `default` SA unused/unbound, no SA shared across apps?

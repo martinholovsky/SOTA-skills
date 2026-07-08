@@ -55,8 +55,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "b" {
 
 - Bucket policies: require TLS (`aws:SecureTransport`), pin org
   (`aws:PrincipalOrgID`) on shared buckets, restrict to VPC endpoints
-  (`aws:SourceVpce`) for internal data planes. Access logging on sensitive buckets
-  to the central log account.
+  (`aws:SourceVpce`) for internal data planes. The TLS and org-perimeter
+  conditions are better enforced org-wide once via an RCP (rules/01 §3); keep
+  bucket policies for the bucket-specific conditions. Access logging on sensitive
+  buckets to the central log account.
 - Cross-account writes (log delivery, partner drops): bucket-owner-enforced
   ownership + explicit service principals with source-account/org conditions —
   never `Principal:"*"` with a prefix "restriction".

@@ -1,5 +1,3 @@
-<!-- last-verified: 2026-07 -->
-
 # 06 — SSR & hydration: mismatches, serialization, caching, CSP
 
 Cross-cutting concerns of server rendering, shared by Next and Nuxt. Framework

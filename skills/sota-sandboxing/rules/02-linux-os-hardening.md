@@ -117,14 +117,17 @@ mount namespaces (file scope). Designs that claim path filtering in seccomp are 
 
 ## 4. Landlock
 
-**R4.1 — Use Landlock for unprivileged filesystem (and 5.19+ network-port) scoping.**
+**R4.1 — Use Landlock for unprivileged filesystem (and 6.7+ network-port) scoping.**
 It is stackable, needs no root, and complements seccomp: seccomp limits *which*
-syscalls, Landlock limits *which objects*. ABI v4+ adds TCP bind/connect port control;
-ABI v6 adds IPC scoping (`LANDLOCK_SCOPE_SIGNAL`,
+syscalls, Landlock limits *which objects*. ABI v4 (kernel 6.7) adds TCP bind/connect
+port control; ABI v6 adds IPC scoping (`LANDLOCK_SCOPE_SIGNAL`,
 `LANDLOCK_SCOPE_ABSTRACT_UNIX_SOCKET`) — close these channels for untrusted code;
 ABI v7 (kernel 6.15+) emits `LANDLOCK_ACCESS` denial records via the audit
-subsystem — wire them into detection; ABI v8 adds a TSYNC-style flag to apply a
-ruleset across all threads of the process.
+subsystem — wire them into detection; ABI v8 (kernel 7.0) adds
+`LANDLOCK_RESTRICT_SELF_TSYNC` to apply a ruleset across all threads of the
+process; mainline docs add ABI v9 (pathname-UNIX-socket scoping,
+`LANDLOCK_ACCESS_FS_RESOLVE_UNIX`) and v10 (UDP bind/connect-send scoping + quiet
+rule logging) — check the landlock(7) VERSIONS table for the kernels shipping them.
 
 ```c
 // allow read-only on /usr, read-write only on the job dir; everything else denied

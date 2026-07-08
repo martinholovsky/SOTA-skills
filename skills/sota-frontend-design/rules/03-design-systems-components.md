@@ -11,7 +11,7 @@ Token architecture (each tier references only the tier below):
 2. **Semantic / alias**: meaning — `color.bg.accent`, `color.text.danger`, `radius.interactive`. *This is the public API.*
 3. **Component** (optional, sparingly): `button.bg`, `card.padding` — only when a component must be themed independently.
 
-- Author in the **W3C Design Tokens format** (`*.tokens.json`, `$value`/`$type`/`$description`, aliases via `{color.blue.600}`) — the DTCG spec reached its first stable release (2025.10, Oct 2025): theming, modern color spaces, and cross-tool interop are now standardized, and Figma imports/exports variables natively in this format. Compile with Style Dictionary (v4+ supports DTCG) to CSS custom properties, TS constants, and native platform outputs. One source of truth, generated everywhere.
+- Author in the **W3C Design Tokens format** (`*.tokens.json`, `$value`/`$type`/`$description`, aliases via `{color.blue.600}`) — the DTCG spec reached its first stable release (2025.10, Oct 2025): theming, modern color spaces, and cross-tool interop are now standardized, and Figma imports/exports variables natively in this format. Compile with Style Dictionary v5 (v5.3+ handles the 2025.10 structured color/dimension value formats; v4 supports only the pre-stable DTCG draft) to CSS custom properties, TS constants, and native platform outputs. One source of truth, generated everywhere.
 
 ```jsonc
 // GOOD: tokens.json (DTCG) — typed, aliased, themable

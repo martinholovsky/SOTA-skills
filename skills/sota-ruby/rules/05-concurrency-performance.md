@@ -1,4 +1,3 @@
-<!-- last-verified: 2026-07 -->
 # 05 — Concurrency & performance: GVL, jobs, JIT, GC, N+1
 
 Ruby's concurrency story is shaped by the GVL; its performance story by the

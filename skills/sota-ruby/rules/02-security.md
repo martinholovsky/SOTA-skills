@@ -1,4 +1,3 @@
-<!-- last-verified: 2026-07 -->
 # 02 — Security: injection, deserialization, ReDoS, secrets
 
 Ruby-specific rules for input crossing a trust boundary. Primary references:

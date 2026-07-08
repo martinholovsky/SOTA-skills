@@ -136,6 +136,13 @@ become the deployment authority**:
   = High. Treat even *read-only* Argo access as sensitive and patch the controller as
   tier-0 software: CVE-2026-42880 (CVSS 9.6, fixed in 3.3.9/3.2.11) let read-only users
   extract plaintext k8s Secrets via the ServerSideDiff endpoint.
+- **Repo-server/Redis network isolation is mandatory, not optional**: the repo-server's
+  internal gRPC service is unauthenticated and carries a publicly disclosed, still-unpatched
+  RCE (Synacktiv, Jul 2026 — reported Jan 2025, no CVE): any compromised pod that can reach
+  its port can execute commands via crafted Kustomize/Helm options, read the Redis password,
+  poison cached manifests, and ride auto-sync into attacker-controlled deployments. The Helm
+  chart ships NetworkPolicies but they are **off by default** (`networkPolicy.create: false`)
+  — enable them so only Argo components can reach repo-server and Redis ports.
 - **Auto-sync to prod only with gates in front**: auto-sync + self-heal is correct *when*
   the path into the repo is gated (reviews + verified images). Argo sync windows and
   health checks; sync waves for ordering.
@@ -257,7 +264,7 @@ schema?" If no, rollback is fiction for that release window.
 - [ ] TF state: remote encrypted versioned backend with locking; no state/tfvars in git; backend access least-privilege; secrets kept out of state via ephemeral/write-only/external-manager patterns
 - [ ] Plan on PR with read-only role; saved plan artifact applied verbatim post-merge in a reviewer-gated environment with a separate apply role; no laptop applies; no fork PRs planning with real creds
 - [ ] Scheduled drift detection per workspace, alerts owned and actioned (codify or revert); human prod console access read-only outside break-glass
-- [ ] GitOps repo protected like prod (reviews, CODEOWNERS per env path); Argo/Flux RBAC + AppProject/destination constraints; no plaintext secrets in repos (ESO/SOPS/Sealed); third-party charts/manifests pinned by version/digest
+- [ ] GitOps repo protected like prod (reviews, CODEOWNERS per env path); Argo/Flux RBAC + AppProject/destination constraints; Argo NetworkPolicies enabled — repo-server gRPC is unauthenticated with an unpatched public RCE (mid-2026); no plaintext secrets in repos (ESO/SOPS/Sealed); third-party charts/manifests pinned by version/digest
 - [ ] Image automation constrained to digest bumps of signed images with a path-scoped token
 - [ ] Progressive delivery with automated metric analysis and auto-rollback; blue/green rollback path tested; feature flags have owners/expiry and audited control plane
 - [ ] Rollback: previous digests retained and re-deployable via pipeline; migrations expand/contract (N-1 compatible); rollback drilled within the last quarter

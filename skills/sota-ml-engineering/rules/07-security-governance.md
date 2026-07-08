@@ -23,16 +23,21 @@ rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
 - **Membership inference / model inversion** — inferring whether a record was in
   training, or reconstructing training data, from outputs/confidences. Minimize
   output granularity; consider differential privacy for sensitive training data.
-- ATLAS is a living knowledge base (v5.x: 16 tactics, 84 techniques as of late
-  2025 — check current); use it to enumerate threats during design, like
-  ATT&CK for AI.
+- ATLAS is a living knowledge base (date-based `v2026.MM` releases since May
+  2026; techniques now carry platform designations — Predictive AI, Generative
+  AI, Agentic AI, Enterprise — check current); use it to enumerate threats
+  during design, like ATT&CK for AI.
 
 ## 2. ML supply chain
 
-- **Never load an untrusted model artifact.** `pickle`/`joblib`/`cloudpickle`/
-  `torch.load` execute arbitrary code on load — a malicious model file is RCE.
-  Load models only from trusted, integrity-verified sources; prefer
-  **`safetensors`**/ONNX (data, not code). This is CRITICAL on sight (`rules/05`).
+- **Never load an untrusted model artifact.** `pickle`/`joblib`/`cloudpickle`
+  execute arbitrary code on load — a malicious model file is RCE. `torch.load`
+  defaults to `weights_only=True` (restricted unpickler) since PyTorch 2.6:
+  `weights_only=False` or torch <2.6 is still arbitrary code execution, and even
+  `weights_only=True` was bypassed to RCE on ≤2.5.1 (CVE-2025-32434, fixed in
+  2.6.0) — treat it as hardening, not a trust boundary. Load models only from
+  trusted, integrity-verified sources; prefer **`safetensors`**/ONNX (data, not
+  code). `weights_only=False` on untrusted input is CRITICAL on sight (`rules/05`).
 - Verify integrity/provenance of models and datasets (hashes, signing); pin and
   scan ML dependencies (the PyData/CUDA stack is large attack surface) — cross-ref
   `sota-devsecops`. Beware pre-trained weights/datasets from unvetted hubs.
@@ -78,6 +83,8 @@ rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
 ```bash
 # Unsafe model deserialization — CRITICAL
 grep -rnE '\b(pickle\.load|joblib\.load|cloudpickle|torch\.load)\b' --include='*.py' .
+grep -rnE 'weights_only\s*=\s*False' --include='*.py' .    # arbitrary code execution on load
+grep -rnE 'torch\s*[=<>~!]=+\s*[12]\.[0-5]\b' requirements*.txt pyproject.toml 2>/dev/null  # <2.6: CVE-2025-32434 weights_only bypass
 grep -rniE 'safetensors|onnx' --include='*.py' . || echo "consider safetensors/ONNX over pickle"
 
 # Model/data provenance & integrity — HIGH

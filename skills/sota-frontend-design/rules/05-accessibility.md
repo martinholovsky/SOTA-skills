@@ -2,7 +2,8 @@
 
 WCAG 2.2 AA is the legal and ethical floor (EAA in force since June 2025 — national enforcement
 and fines now active across EU member states, with EN 301 549 being updated to incorporate
-WCAG 2.2; ADA Title II 2026–27 deadlines). WCAG 3.0 remains a Working Draft (March 2026 draft;
+WCAG 2.2; ADA Title II deadlines extended to April 2027/2028 by DOJ interim final rule, Apr 2026 —
+its standard is WCAG 2.1 AA, so building to 2.2 AA exceeds it). WCAG 3.0 remains a Working Draft (March 2026 draft;
 Recommendation not expected before ~2028) — informative only, never the conformance target.
 Build to 2.2 AA by default; treat select AAA criteria (focus appearance, target size 44px) as
 the quality bar. Automated tools catch ~30–40% of issues — the rest is semantics, keyboard, and

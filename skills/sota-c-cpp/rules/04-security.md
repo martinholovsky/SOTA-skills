@@ -6,7 +6,7 @@ until validated. In C/C++ the memory-safety classes (`rules/02`) and UB
 the input-handling, API, and build-hardening controls. Standards:
 [SEI CERT C](https://wiki.sei.cmu.edu/confluence/display/c) /
 [CERT C++](https://cmu-sei.github.io/secure-coding-standards/sei-cert-cpp-coding-standard/),
-[MISRA C:2023 / C++:2023](https://misra.org.uk/) (safety-critical),
+[MISRA C:2025 / C++:2023](https://misra.org.uk/) (safety-critical),
 [OpenSSF Compiler Hardening Guide](https://best.openssf.org/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.html).
 
 ## 1. Banned and dangerous functions

@@ -138,7 +138,7 @@ for app-side review. Database-layer obligations:
 - LIKE inputs: escape `%`/`_` even when parameterized (DoS/filter-bypass, not
   injection, but same review).
 - NoSQL/operator injection isn't only a SQL problem — parameterize for every
-  engine DN runs. **Redis/Valkey:** never build `EVAL`/`EVALSHA` Lua bodies or
+  engine in use. **Redis/Valkey:** never build `EVAL`/`EVALSHA` Lua bodies or
   `KEYS`/command names from untrusted input; pass user data only as `ARGV`/key
   args (the client builds the command as an arg vector, so values stay inert).
   **Qdrant:** assemble filters from a typed allowlist of fields/operators, never

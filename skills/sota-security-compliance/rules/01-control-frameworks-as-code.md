@@ -1,4 +1,3 @@
-<!-- last-verified: 2026-07 -->
 # 01 — Control Frameworks as Code (NIST CSF 2.0 spine)
 
 The reusable engine under every regime in this skill: pick an organizing spine,

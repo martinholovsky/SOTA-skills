@@ -52,6 +52,12 @@ network/file/DB/config as untrusted. Reference:
   security headers/HSTS; don't leak stack traces in production responses.
 - **Secrets**: never in source/`appsettings.json` committed to git — use user
   secrets (dev), env, or a vault (`sota-secrets-management`); don't log them.
+- **Runtime patch level is an audit surface**: the memory-safe runtime's
+  residual risk includes framework CVEs — e.g. CVE-2025-55315 (Kestrel HTTP
+  request smuggling, fixed in 8.0.21/9.0.10/10.0 RC2) and CVE-2026-45591
+  (SignalR/Blazor Server MessagePack nested-array DoS, fixed in
+  8.0.28/9.0.17/10.0.9, June 2026). Self-contained/AOT-published apps embed
+  the framework — they need a rebuild and redeploy, not just host patching.
 
 ## 5. Cryptography & transport
 
@@ -63,8 +69,13 @@ network/file/DB/config as untrusted. Reference:
   (`Rfc2898DeriveBytes`/PBKDF2, or Argon2/bcrypt via a library) — never plain
   MD5/SHA-1 (HIGH).
 - Use ASP.NET Core **Data Protection** for at-rest tokens/cookies rather than
-  hand-rolled crypto. Constant-time compare (`CryptographicOperations.FixedTimeEquals`)
-  for MACs/tokens.
+  hand-rolled crypto — and keep the package patched:
+  `Microsoft.AspNetCore.DataProtection` 10.0.0–10.0.6 let attackers forge
+  authentication cookies and decrypt protected payloads (CVE-2026-40372,
+  fixed in **10.0.7**). Patching alone isn't enough after exposure: forged
+  artifacts stay valid, so revoke the key ring (`RevokeAllKeys()`) and rotate
+  tokens/API keys issued during the vulnerable window. Constant-time compare
+  (`CryptographicOperations.FixedTimeEquals`) for MACs/tokens.
 - **TLS**: never disable validation — `ServerCertificateCustomValidationCallback`
   returning `true` (or `HttpClientHandler` accepting all certs) is HIGH/CRITICAL.
 
@@ -95,6 +106,10 @@ grep -rnE 'ServerCertificateCustomValidationCallback|RemoteCertificateValidation
 
 # Secrets in config/source — HIGH
 grep -rniE '(password|pwd|secret|apikey|api_key|connectionstring)\s*[=:]' appsettings*.json --include='*.cs' . | head
+
+# Vulnerable framework/package patch levels — HIGH
+grep -rnE 'Microsoft\.AspNetCore\.DataProtection' --include='*.csproj' --include='packages.lock.json' .  # 10.0.0–10.0.6 = CVE-2026-40372 (need 10.0.7+); if exposed while vulnerable: key ring revoked + tokens rotated?
+dotnet --list-runtimes  # ASP.NET Core < 8.0.21/9.0.10 (CVE-2025-55315) or < 8.0.28/9.0.17/10.0.9 (CVE-2026-45591)? Check container base-image tags; self-contained/AOT apps need rebuild
 
 # Static security analysis: enable security CA rules + a SAST (rules/06)
 ```

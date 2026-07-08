@@ -1,4 +1,3 @@
-<!-- last-verified: 2026-06 -->
 # 05 — Edge, Ingress & Egress
 
 Scope: WAF (OWASP CRS, Coraza/ModSecurity), ingress/API-gateway hardening, DDoS posture, TLS
@@ -33,6 +32,13 @@ IP directly; it must be refused.
 **R2 — Minimal exposure and version hygiene at the edge.** Expose only 443 (and 80→443 redirect);
 disable unused methods/modules; keep the proxy and WAF engine patched (a WAF with a known bypass CVE
 is theater). Don't leak backend topology in headers (`Server`, `X-Powered-By`, internal hostnames).
+
+**R2.1 — No EOL controllers in the L7 data path.** `kubernetes/ingress-nginx` — long the most common
+Kubernetes ingress controller — was retired in **March 2026** (repo read-only, **no further security
+fixes**); the Kubernetes Steering/Security Response Committees state that remaining on it leaves you
+vulnerable to attack. Finding it running is a High finding: migrate to a maintained **Gateway API**
+implementation (`ingress2gateway` automates much of the conversion) or another maintained ingress
+controller.
 
 ## 2. WAF (OWASP CRS on Coraza / ModSecurity)
 
@@ -135,6 +141,8 @@ logging beats either alone: the allowlist blocks the easy path, the logs catch t
       directly from outside — must be refused.
 - [ ] Is the WAF (CRS on Coraza/ModSecurity) in **blocking** mode at a tuned PL, current version —
       not detection-only-forever, not unpatched?
+- [ ] Is the ingress controller maintained? `kubernetes/ingress-nginx` is EOL (March 2026, no
+      security fixes) → High; migrate to a maintained Gateway API implementation.
 - [ ] Is the public cert terminated at the edge and traffic re-encrypted (not plaintext) to
       backends across the cluster network?
 - [ ] Does the app trust `X-Forwarded-For`/`CF-Connecting-IP` **only** from known proxy ranges

@@ -165,6 +165,10 @@ code  = f"{secrets.randbelow(1_000_000):06d}"
   string allocates happily; 3.11+ caps str→int at 4300 digits by default
   (`sys.set_int_max_str_digits`) — don't raise that limit on request paths. Cap input length
   before parsing.
+- **`webbrowser.open()` command injection:** crafted URLs (e.g. containing `%action`)
+  passed to `webbrowser.open()` reach the shell with certain browser types —
+  CVE-2026-4519 and its incomplete-fix follow-up CVE-2026-4786 (2026). Never pass
+  user-influenced URLs; validate scheme/host first, and keep the interpreter patched.
 - **Header/CRLF injection:** never place raw user input into HTTP headers, email headers
   (`email.message` does folding — still validate), or redis/SMTP protocol lines; reject
   `\r`/`\n` in any value destined for a protocol line.
@@ -249,6 +253,7 @@ grep -rnE "re\.(match|search|fullmatch|findall|sub)\(" --include="*.py" src/ | h
 grep -rnE "\((\.\*|\\\\w\+|\[\^?[^]]*\]\+)\)[\*\+]" --include="*.py" src/                 # nested quantifiers
 grep -rn "zlib.decompress\|Image.open" --include="*.py" src/                              # size budgets present?
 grep -rn "set_int_max_str_digits" --include="*.py" src/
+grep -rn "webbrowser.open" --include="*.py" src/                               # user-influenced URL? [HIGH] CVE-2026-4519/4786
 
 # Supply chain
 grep -rn "git+http" pyproject.toml uv.lock 2>/dev/null | grep -v "@[0-9a-f]\{40\}"

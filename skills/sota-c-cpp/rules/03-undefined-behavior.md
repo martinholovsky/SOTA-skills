@@ -18,7 +18,9 @@ exploit UB at `-O2`. Treat any UBSan diagnostic as CRITICAL/HIGH. Reference:
 - **Out-of-bounds access** — indexing/pointer past an object (incl. one-past-
   the-end deref). Often the optimizer assumes in-bounds and reorders.
 - **Use of uninitialized values** (CERT EXP33-C) — reading an automatic
-  variable before assignment. Initialize at declaration.
+  variable before assignment. Initialize at declaration. C++26 (P2795)
+  downgrades this from UB to defined "erroneous behavior" — still a bug, but
+  no longer optimizer-exploitable once you compile as C++26.
 - **Null / misaligned / invalid pointer deref** — incl. calling a method on a
   null `this`. The optimizer may assume a dereferenced pointer is non-null and
   delete subsequent null checks.
@@ -38,7 +40,8 @@ exploit UB at `-O2`. Treat any UBSan diagnostic as CRITICAL/HIGH. Reference:
   small-allocation is a classic exploit primitive (`rules/04`).
 - Use checked arithmetic: GCC/Clang `__builtin_add_overflow`/`mul_overflow`,
   or C23 `<stdckdint.h>` `ckd_add`/`ckd_mul`. For C++ prefer typed wrappers or
-  range checks; C++26 adds explicit overflow-aware helpers (verify availability).
+  range checks; C++26 adds saturating helpers in `<numeric>`
+  (`std::add_sat`/`sub_sat`/`mul_sat`, P0543).
 - Avoid implicit narrowing/sign conversions; compile with `-Wconversion
   -Wsign-conversion`. Brace-init (`int x{expr};`) rejects narrowing at compile
   time.

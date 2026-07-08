@@ -102,7 +102,7 @@ schema validation are boundary controls (see `03` §queue).
 | **N**on-repudiation | Can the subject NOT plausibly deny an action they should be able to deny? (inverse of STRIDE-R) |
 | **D**etecting | Can an outsider learn a person exists in the system (login timing, "email already registered")? |
 | **D**ata disclosure | Is more personal data collected/stored/shared than the purpose needs? |
-| **U**nawareness | Does the subject not know what's collected or shared? |
+| **U**nawareness & unintervenability | Does the subject not know what's collected/shared — or have no way to access, correct, or erase it? |
 | **N**on-compliance | Does the flow violate stated policy / GDPR-class obligations (retention, purpose, residency)? |
 
 Use LINDDUN GO (card-style, per-flow prompts) for sprint-speed work; full
@@ -239,7 +239,8 @@ system every sprint (re-derives known results, exhausts goodwill).
 - [ ] STRIDE applied per-interaction at every trust boundary crossing; flows
       skipped only when source and destination share boundary AND privilege.
 - [ ] LINDDUN (or equivalent privacy pass) performed wherever personal data is
-      collected, stored, or shared; linkability and detectability considered.
+      collected, stored, or shared; linkability, detectability, and
+      intervenability (subject can access/correct/erase) considered.
 - [ ] Crown-jewel assets have an attack tree or equivalent all-paths analysis.
 - [ ] Detection/response coverage assessed (kill-chain or ATT&CK mapping) for
       at least the top abuse scenario; logging gaps captured as requirements.

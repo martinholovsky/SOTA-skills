@@ -1,5 +1,3 @@
-<!-- last-verified: 2026-07 -->
-
 # 01 — Language baseline & idioms
 
 Modern PHP is a strictly-typed language. Most legacy-PHP pain (type juggling,

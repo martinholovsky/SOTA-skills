@@ -120,6 +120,11 @@ defer root.Close()
 f, err := root.Open(userPath) // cannot escape baseDir, even via symlinks
 ```
 
+Caveat: containment is only as good as the toolchain — CVE-2026-39822
+(fixed in 1.26.5/1.25.12, 2026-07) let `root.Open("symlink/")` follow a
+trailing-slash symlink out of the Root on Unix (go.dev issue #79005).
+Reinforces the §8 keep-the-toolchain-current rule.
+
 Pre-1.24 fallback (and for path *strings* not yet opened):
 
 ```go
@@ -261,9 +266,12 @@ cfg := &tls.Config{MinVersion: tls.VersionTLS12} // TLS13 for internal-only
 - **The stdlib itself is the top vuln surface** — H1 2026 alone patched DoS
   CVEs in `crypto/tls` (CVE-2026-32283, TLS 1.3 key-update flood),
   `crypto/x509` (CVE-2026-32280, CVE-2026-27145) and `net/mail`
-  (CVE-2026-42499). govulncheck only helps if the *toolchain* is current:
-  track the monthly patch releases (1.26.4 / 1.25.11 as of 2026-06) and
-  rebuild/redeploy on security point releases.
+  (CVE-2026-42499); 1.26.5/1.25.12 (2026-07) fixed CVE-2026-39822 (os.Root
+  symlink escape, §4) and CVE-2026-42505 (`crypto/tls` ECH leaked pre-shared
+  key identities, de-anonymizing server hostnames). govulncheck only helps
+  if the *toolchain* is current: track the monthly patch releases (verify
+  the current level at go.dev/doc/devel/release) and rebuild/redeploy on
+  security point releases.
 - **`go.sum` committed always**; builds verify hashes against it and the
   checksum DB (sum.golang.org), on by default. `GONOSUMDB` and `GONOPROXY`
   exempt matching module patterns from sumdb/proxy; `GOPRIVATE` sets both —
@@ -298,6 +306,7 @@ grep -rn 'exec.Command' --include='*.go' .                        # verify argv 
 # Path traversal — HIGH
 grep -rnE 'filepath\.Join\([^)]*(r\.|req\.|input|name|param|id)' --include='*.go' .
 grep -rn 'os.Root\|filepath.IsLocal' --include='*.go' .           # mitigations present?
+go version   # os.Root containment needs >=1.26.5/1.25.12 — CVE-2026-39822 symlink escape
 grep -rnE 'os\.(Open|Create|ReadFile|WriteFile|Remove)' --include='*.go' . # trace path provenance
 
 # TLS — CRITICAL/HIGH

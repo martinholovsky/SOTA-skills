@@ -187,10 +187,12 @@ Impact: payouts delayed; no data loss (queue is durable).
 Docs are now read by agents as well as humans. Same content, two consumers.
 
 - **AGENTS.md** is the open, Markdown-only convention for repo-level agent
-  instructions (agents.md; tens of thousands of repos; read by Claude Code,
-  Codex CLI, Cursor, Copilot, Gemini CLI, and others as of 2026). **CLAUDE.md**
-  is Claude Code's native equivalent. Maintain one canonical file; if a tool
-  needs the other name, symlink or include rather than fork the content.
+  instructions (agents.md; 60k+ open-source projects; stewarded by the Agentic
+  AI Foundation under the Linux Foundation; read by Codex CLI, Cursor, Copilot,
+  Gemini CLI, and 20+ other tools as of mid-2026). **CLAUDE.md** is Claude
+  Code's native equivalent — Claude Code reads CLAUDE.md, not AGENTS.md, hence
+  the advice that follows. Maintain one canonical file; if a tool needs the
+  other name, symlink or include rather than fork the content.
 - **Keep agent docs minimal and high-signal.** Evidence as of 2026: bloated or
   auto-generated context files often *reduce* agent performance and raise cost;
   short, human-curated files with genuinely non-obvious repo knowledge help.

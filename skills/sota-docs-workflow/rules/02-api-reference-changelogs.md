@@ -110,8 +110,9 @@ contract most docs omit.
 
 ## §6 Changelog discipline
 
-- **Format: Keep a Changelog** (keepachangelog.com, v1.1.0 — current as of
-  2026): `## [version] - date` sections with `Added / Changed / Deprecated /
+- **Format: Keep a Changelog** (keepachangelog.com, v2.0.0 — 2026-06; the
+  format itself is unchanged from 1.1.x, so existing changelogs stay valid):
+  `## [version] - date` sections with `Added / Changed / Deprecated /
   Removed / Fixed / Security` subsections, plus an `Unreleased` section at top
   so changes are recorded in the PR that makes them, not reconstructed at
   release time.
@@ -126,7 +127,8 @@ contract most docs omit.
 - Automation (conventional commits → changelog via semantic-release /
   release-please / git-cliff — rules/04 §2) generates the *draft*; a human edits
   it into user language before release. Automation removes the blank page, not
-  the editorial pass.
+  the editorial pass (Keep a Changelog 2.0.0 codifies the same stance for
+  LLM-assisted drafting: machines draft, humans curate).
 - **Changelog vs release notes**: the changelog is the complete, append-only,
   per-version record in the repo; release notes are the curated announcement
   (highlights, upgrade guidance, thanks) per release. Generate release notes

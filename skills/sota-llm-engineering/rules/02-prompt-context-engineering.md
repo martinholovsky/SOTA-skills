@@ -1,4 +1,3 @@
-<!-- last-verified: 2026-06 -->
 # Rules 02 — Prompt & Context Engineering
 
 A prompt is production code: versioned, tested, reviewed, and structured for

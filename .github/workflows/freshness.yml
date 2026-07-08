@@ -1,7 +1,7 @@
-# Monthly freshness report (roadmap item 3): lists rules files whose
-# last-verified marker is past the re-verify window, plus the unstamped
-# backlog. A red run means claims need re-verification — see
-# scripts/check-freshness.sh for the marker convention.
+# Monthly freshness report (roadmap item 3): checks the library-level
+# LAST-VERIFIED stamp against the re-verify window. A red run means the
+# library is due a full re-verification sweep — see
+# scripts/check-freshness.sh for the stamp convention.
 name: Freshness
 
 on:
@@ -24,4 +24,4 @@ jobs:
       - name: Freshness report
         run: |
           set -o pipefail
-          ./scripts/check-freshness.sh --list-unstamped | tee -a "$GITHUB_STEP_SUMMARY"
+          ./scripts/check-freshness.sh | tee -a "$GITHUB_STEP_SUMMARY"

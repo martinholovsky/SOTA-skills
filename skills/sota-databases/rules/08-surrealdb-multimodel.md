@@ -9,9 +9,9 @@ applies in full; this file maps it onto SurrealDB's mechanisms.
 ## Version & auth model
 
 ### Rule: Know which version line you run; the auth model changed at 2.0.
-- Current stable line is **3.x** (3.1.x as of mid-2026); 2.x still receives
-  maintenance releases. Pin and track your line — auth and index syntax
-  differ across major versions.
+- Current stable line is **3.x** (verify the current release when you pin);
+  2.x still receives maintenance releases. Pin and track your line — auth and
+  index syntax differ across major versions.
 - Since v2.0.0, authentication is defined with **`DEFINE ACCESS`**, which
   replaced the older `DEFINE SCOPE`. Any code, docs, or AI-generated snippets
   using `DEFINE SCOPE`/`scope auth` are pre-2.0 and must not be cargo-culted
@@ -114,11 +114,21 @@ DEFINE FIELD created_at ON order TYPE datetime DEFAULT time::now() READONLY;
   (e.g. internal flags, PII fields readable only by the owner).
 - Remember the bypass: permissions bind **record users only**; system users
   and root skip them. The cross-tenant leak test from file 01/06 applies —
-  authenticate as two record users in CI and prove isolation.
-- Advisory worth encoding: **CVE-2025-11060** — LIVE query subscriptions
-  could expose data not permitted to the subscriber (fixed in 2.1.9 / 2.2.8 /
-  2.3.8 / 3.0.0-alpha.8). If you use `LIVE SELECT`, run a fixed version and
-  include live-query results in the cross-tenant leak test.
+  authenticate as two record users in CI and prove isolation, exercising the
+  shapes that have actually bypassed permissions: graph-edge and reference
+  traversals, indexed `ORDER BY` on restricted fields, and `LIVE SELECT`
+  results — not just direct `SELECT`s.
+- Permission enforcement has a **patch floor** — bypasses recur, so track the
+  advisory feed for your line. Known floors: **CVE-2025-11060** (LIVE query
+  results exposed unpermitted data; fixed in 2.1.9 / 2.2.8 / 2.3.8 /
+  3.0.0-alpha.8); the **3.1.5 batch (June 2026)** — field-level SELECT
+  permissions bypassed via graph/reference traversals, indexed-ORDER-BY
+  ordering leak on restricted fields, deep-operator-chain DoS, and a High
+  arbitrary file read via `DEFINE ANALYZER mapper()` (GHSA-cc8f-fcx3-gpjr);
+  the **3.2.0 batch (July 2026)** — High custom-API namespace/database scope
+  override (GHSA-848m-r628-vrxw), writes inside a `PERMISSIONS` clause
+  bypassing table permissions (GHSA-66r2-5gwj-gxm2), and JWKS SSRF. On 3.x,
+  run ≥ 3.1.5 at minimum, ≥ 3.2.0 where custom API routes exist.
 
 ## Capabilities hardening
 
@@ -141,6 +151,11 @@ surreal start --deny-all \
 - `--allow-net` is SSRF-from-the-database; if queries must call out, pin
   exact targets. Flag names and defaults evolve — verify the current
   capabilities page for your version when auditing.
+- Query file access is deny-by-default since 3.1.5: with no
+  `SURREAL_FILE_ALLOWLIST` configured, every path is denied. Pre-3.1.5 an
+  empty allowlist meant *no* restriction — the arbitrary-file-read vector of
+  GHSA-cc8f-fcx3-gpjr. Leave the allowlist unset unless queries genuinely
+  need files, then pin exact directories.
 
 ## Network exposure & TLS
 
@@ -205,7 +220,9 @@ surreal start --deny-all \
 ## Audit checklist
 
 - [ ] Version line known and pinned; no pre-2.0 `DEFINE SCOPE` syntax in
-      migrations/docs; LIVE-query-affected versions (CVE-2025-11060) ruled out.
+      migrations/docs; version meets the advisory patch floor — 3.x: ≥ 3.1.5
+      (June 2026 permission-bypass/file-read batch), ≥ 3.2.0 where custom API
+      routes exist; 2.x: CVE-2025-11060 LIVE-query fix versions.
 - [ ] Auth via `DEFINE ACCESS` (RECORD for end users); `DURATION FOR TOKEN`
       and `FOR SESSION` short and explicit; `AUTHENTICATE` re-checks account
       state; JWT access methods pin algorithm/keys.
@@ -219,7 +236,8 @@ surreal start --deny-all \
       fields on SCHEMALESS tables.
 - [ ] No `PERMISSIONS FULL` on user-data tables; all four verbs scoped to
       `$auth`; field-level permissions on sensitive fields; cross-tenant leak
-      test (including LIVE queries) in CI.
+      test in CI covers LIVE queries, graph/reference traversals, and indexed
+      ORDER BY on restricted fields.
 - [ ] Server runs deny-by-default capabilities: no `--allow-all`, no
       `--allow-guests`, scripting denied, functions and outbound net
       allow-listed; flags re-verified against current docs.

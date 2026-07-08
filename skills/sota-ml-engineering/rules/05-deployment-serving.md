@@ -21,9 +21,11 @@ progressive rollout validated on live traffic.
   environment** (container; pinned libs). The serving-time framework/version
   must match what the model expects — a silent library mismatch changes outputs.
 - Prefer portable, **safe** model formats: ONNX for cross-framework serving,
-  `safetensors` over `pickle` (`rules/07`). Use a serving runtime (TorchServe,
-  Triton, KServe, BentoML, or a framework server) rather than ad-hoc Flask where
-  scale/standardization matters.
+  `safetensors` over `pickle` (`rules/07`). Use a serving runtime (Triton,
+  KServe, BentoML, Ray Serve, or a framework server) rather than ad-hoc Flask
+  where scale/standardization matters. Do **not** adopt TorchServe — the repo
+  was archived Aug 2025 (no updates or security patches); flag it in existing
+  systems and migrate.
 - The serving path must apply the **same feature transforms** as training
   (`rules/02`) — share code or a feature store, never reimplement.
 
@@ -65,6 +67,7 @@ grep -rniE 'predict|inference|serve' --include='*.py' . | head
 # Safe model format & reproducible env — HIGH
 grep -rniE 'pickle|joblib|torch.load|cloudpickle' --include='*.py' . | head    # unsafe load? (rules/07)
 grep -rniE 'safetensors|onnx|torchscript' --include='*.py' . | head
+grep -rniE 'torchserve|torch-model-archiver' . | head    # EOL runtime (archived Aug 2025, no security patches) — HIGH
 ls Dockerfile* requirements*.txt poetry.lock uv.lock conda*.yml 2>/dev/null     # serving env pinned?
 
 # Registry-gated deploy + rollback — HIGH

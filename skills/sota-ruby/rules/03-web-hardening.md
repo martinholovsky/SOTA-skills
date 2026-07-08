@@ -1,4 +1,3 @@
-<!-- last-verified: 2026-07 -->
 # 03 — Web hardening (framework-neutral)
 
 Rules for any Ruby web surface — Rack app, Rails, Sinatra, Hanami, Grape,

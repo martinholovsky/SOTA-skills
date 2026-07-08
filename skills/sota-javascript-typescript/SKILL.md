@@ -9,7 +9,7 @@ description: State-of-the-art JavaScript and TypeScript engineering (2026) for b
 
 This skill encodes 2026 state-of-the-art for JS/TS so generated code is strict, secure, and fast by default — and so audits of existing code find the bug classes that actually bite: untyped boundaries, floating promises, XSS sinks, prototype pollution, supply-chain gaps, event-loop blocking, and leak-prone listeners. It has two operating modes; pick one explicitly at the start of a task.
 
-Baseline assumptions (mid-2026): TypeScript ≥5.9 strict (6.0 is current and the last JS-based compiler; TS 7 "tsgo" native preview available), ESM-first, Node LTS ≥22 (24 = active LTS; Node 26 ships Temporal by default), ES2024+ available, React 19.2-era with Server Components and React Compiler 1.0 where relevant, vitest 4 + flat-config ESLint (v9/v10).
+Baseline assumptions (mid-2026): TypeScript ≥5.9 strict (6.0 = last JS-based compiler; 7.0 Go-native stable since July 2026, shipped as the regular `typescript` package — frameworks embedding the compiler API via Volar, e.g. Vue/Angular/Astro/Svelte, stay on 6.0 until a stable plugin API lands), ESM-first, Node LTS ≥22 (24 = active LTS; Node 26 ships Temporal by default), ES2024+ available, React 19.2-era with Server Components and React Compiler 1.0 where relevant, vitest 4 + flat-config ESLint (v9/v10).
 
 ## BUILD mode (writing or modifying code)
 

@@ -8,8 +8,9 @@ proper benchmark harness; never tune GC flags by guess. Cross-reference
 ## 1. Garbage collectors — pick by goal
 
 - **G1** (default) — balanced throughput/latency; good for most server apps.
-- **Generational ZGC** (`-XX:+UseZGC -XX:+ZGenerational`, default-generational
-  in recent JDKs) — sub-millisecond pauses for large heaps / latency-sensitive
+- **Generational ZGC** (`-XX:+UseZGC` — generational-only since JDK 24, JEP
+  490; the `ZGenerational` flag is obsolete and will eventually make the JVM
+  refuse to start) — sub-millisecond pauses for large heaps / latency-sensitive
   services; slightly lower peak throughput.
 - **Parallel** — max throughput for batch jobs where pause time doesn't matter.
 - Set `-Xmx`/`-Xms` deliberately; in containers rely on container-awareness
@@ -71,6 +72,7 @@ grep -rnE 'List<Integer>|Map<Integer,|Map<.*,Integer>' --include='*.java' . # bo
 
 # GC/heap flags sane and container-aware?
 grep -rnE 'Xmx|Xms|MaxRAMPercentage|UseZGC|UseG1GC|UseParallelGC' Dockerfile* k8s/ deploy/ *.sh 2>/dev/null
+grep -rn 'ZGenerational' Dockerfile* k8s/ deploy/ *.sh 2>/dev/null   # obsolete since JDK 24 (JEP 490)
 grep -rn 'UseContainerSupport' . 2>/dev/null
 
 # Benchmark hygiene — verify JMH, not nanoTime loops

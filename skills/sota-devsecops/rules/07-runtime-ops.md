@@ -10,34 +10,49 @@ The pipeline's signatures and attestations (rules/02) mean nothing if the cluste
 whatever it's handed. Admission is where supply chain security becomes mandatory.
 
 ```yaml
-# Kyverno — require cosign keyless signature from the release workflow, prod namespaces
-apiVersion: kyverno.io/v1
-kind: ClusterPolicy
+# Kyverno ImageValidatingPolicy (CEL, v1 — GA since 1.17) — require cosign keyless
+# signature + provenance from the release workflow, prod namespaces
+apiVersion: policies.kyverno.io/v1
+kind: ImageValidatingPolicy
 metadata: { name: verify-image-signature }
 spec:
+  validationActions: [Deny]                          # not Audit — see rollout
   webhookConfiguration: { failurePolicy: Fail }
-  rules:
-    - name: require-signed-images
-      match:
-        any:
-          - resources:
-              kinds: [Pod]
-              namespaces: [prod-*]
-      failureAction: Enforce        # rule-level (Kyverno 1.13+); not Audit — see rollout.
-                                    # spec.validationFailureAction is deprecated; newer
-                                    # Kyverno (1.14+) also offers a dedicated ImageValidatingPolicy.
-      verifyImages:
-        - imageReferences: ["ghcr.io/myorg/*"]
-          mutateDigest: true                 # rewrite tag → verified digest
-          attestors:
-            - entries:
-                - keyless:
-                    subject: "https://github.com/myorg/*/.github/workflows/release.yml@refs/heads/main"
-                    issuer: "https://token.actions.githubusercontent.com"
-                    rekor: { url: https://rekor.sigstore.dev }
-          attestations:
-            - type: https://slsa.dev/provenance/v1   # require provenance, not just a signature
+  validationConfigurations: { mutateDigest: true }   # rewrite tag → verified digest
+  matchConstraints:
+    namespaceSelector: { matchLabels: { env: prod } }
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        resources: [pods]
+        operations: [CREATE, UPDATE]
+  matchImageReferences:
+    - glob: "ghcr.io/myorg/*"
+  attestors:
+    - name: release
+      cosign:
+        keyless:
+          identities:
+            - subject: "https://github.com/myorg/*/.github/workflows/release.yml@refs/heads/main"
+              issuer: "https://token.actions.githubusercontent.com"
+        ctlog: { url: "https://rekor.sigstore.dev" }
+  attestations:
+    - name: provenance
+      intoto: { type: https://slsa.dev/provenance/v1 }  # require provenance, not just a signature
+  validations:
+    - expression: >-
+        images.containers.map(i, verifyImageSignatures(i, [attestors.release])).all(e, e > 0)
+      message: image not signed by the release workflow
+    - expression: >-
+        images.containers.map(i, verifyAttestationSignatures(i,
+        attestations.provenance, [attestors.release])).all(e, e > 0)
+      message: missing or unverified provenance attestation
 ```
+
+Legacy: the `kyverno.io/v1` ClusterPolicy `verifyImages` pattern still works but is
+deprecated since Kyverno 1.17 (Feb 2026; critical fixes only from 1.18, removal planned
+for v1.20, Oct 2026) — write new policies against the CEL v1 types and migrate existing
+ones via the project's ClusterPolicy→CEL migration guide, pinning the same subject/issuer.
 
 Rules:
 - **Registry allowlist first**: a policy verifying `ghcr.io/myorg/*` but admitting
@@ -55,7 +70,8 @@ Rules:
 - Cover all Pod-producing paths (Kyverno/policy-controller handle Pod via workload
   controllers; verify your policy matches Deployments/CronJobs creation too, or relies on
   Pod-level matching that can't be skipped).
-- **Rollout pattern**: `Audit` → triage violations to zero → flip to `Enforce`. Shipping
+- **Rollout pattern**: `Audit` → triage violations to zero → flip to enforce (`Deny` for
+  the CEL policy types). Shipping
   straight to Enforce breaks workloads and gets the policy deleted; staying in Audit
   forever is the Medium finding "decorative admission".
 - Alternatives: Sigstore `policy-controller` (`ClusterImagePolicy`) if you want
@@ -127,6 +143,9 @@ results:
     resources: [unsigned-pod, dockerhub-pod]
     result: fail            # if this fixture ever "passes", the gate is open — CI must catch it
 ```
+
+(Fixture above uses the legacy ClusterPolicy schema; the Kyverno CLI also tests the CEL
+v1 policy types — carry the same deny-case fixtures over when migrating.)
 
 OPA equivalent: `opa test policies/ -v` with `deny` rule unit tests, plus
 `conftest test --policy policies/ fixtures/` in the same required check.
@@ -246,7 +265,7 @@ dashboard of everything in this skill.
 
 ## Audit checklist
 
-- [ ] Admission enforces (not audits) image verification in prod: exact signer identity + issuer, provenance attestation required, registry allowlist, tag→digest mutation, `failurePolicy: Fail`, all Pod-paths covered
+- [ ] Admission enforces (not audits) image verification in prod: exact signer identity + issuer, provenance attestation required, registry allowlist, tag→digest mutation, `failurePolicy: Fail`, all Pod-paths covered; Kyverno policies on the CEL v1 types (ClusterPolicy deprecated since 1.17, removal planned v1.20)
 - [ ] Baseline workload policies enforced: PSA restricted-equivalent, no `:latest`, non-root, resource limits, attribution labels
 - [ ] Policies in git, GitOps-deployed, with CI-tested deny cases; exceptions are scoped, owned, time-bound, PR-reviewed, and inventoried
 - [ ] CI/CD, deploy, admission, registry, and control-plane audit events stream to tamper-resistant storage with ≥1y retention; pipeline identities are alertable principals

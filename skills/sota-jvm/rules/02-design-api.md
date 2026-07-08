@@ -11,8 +11,10 @@ file covers type/API design; idioms are in `01`, concurrency in `03`.
 - **Java**: there is no built-in nullable type, so make it *checked*:
   - `Optional<T>` as a **return** type for "maybe absent" (Bloch: not for
     fields, parameters, or collections — an empty collection is the absence).
-  - Annotate with `@Nullable`/`@NonNull` (JSpecify is the emerging standard) and
-    enforce with **NullAway**/Error Prone so violations fail the build.
+  - Annotate with `@Nullable`/`@NonNull` (JSpecify is the standard — adopted
+    portfolio-wide by Spring Framework 7 / Boot 4, which deprecated Spring's
+    own `org.springframework.lang` annotations) and enforce with
+    **NullAway**/Error Prone so violations fail the build.
   - Never return `null` for a collection/array — return empty.
 - Validate arguments at public-method entry (`Objects.requireNonNull`,
   `require`/`check` in Kotlin) and fail fast with a clear message.
@@ -91,6 +93,9 @@ grep -rnE 'static (?!final)[A-Za-z<>]+ [a-z]' --include='*.java' .
 
 # throws Exception / overbroad — LOW/MEDIUM
 grep -rn 'throws Exception' --include='*.java' .
+
+# Deprecated Spring nullability annotations (Spring 7+ is JSpecify) — LOW
+grep -rnE 'org\.springframework\.lang\.(Nullable|NonNull)' --include='*.java' --include='*.kt' .
 
 # Enforcement: Error Prone + NullAway, SpotBugs, detekt
 ```

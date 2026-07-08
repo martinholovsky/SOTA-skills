@@ -23,7 +23,8 @@ finding until proven otherwise.
   transiently in queryable form.
 - Verify with the library's `verify()` (constant-time); rehash-on-login when
   parameters are below current policy.
-- Password policy (NIST SP 800-63B): length ≥ 8 (encourage ≥ 12, allow 64+),
+- Password policy (NIST SP 800-63B-4, final Aug 2025): length ≥ 15 when the
+  password is the sole factor (≥ 8 permitted only as part of MFA), allow 64+,
   allow all printable chars + unicode, **no composition rules, no periodic
   rotation**. Check candidates against a breach corpus (k-anonymity HIBP API).
 - Rate-limit and lockout: per-account *and* per-IP throttling, with exponential

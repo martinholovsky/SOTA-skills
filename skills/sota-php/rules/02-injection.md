@@ -1,5 +1,3 @@
-<!-- last-verified: 2026-07 -->
-
 # 02 — Injection: SQL, shell, and XSS
 
 Trust-boundary thinking: `$_GET`/`$_POST`/`$_COOKIE`/headers, uploaded files, DB

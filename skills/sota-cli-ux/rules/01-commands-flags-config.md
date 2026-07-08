@@ -37,6 +37,9 @@ defaults, dangerous operations, config precedence, env var naming, help text.
   Never auto-execute the guess — `tool prune` guessed from `tool prun` deleting
   data is unforgivable. (cobra: disable `SuggestionsMinimumDistance` auto-run is
   default-safe; clap: `suggestions` on by default; argparse: add a custom hook.)
+  Agent-facing/machine modes may disable suggestions entirely (e.g. cobra's
+  `DisableSuggestions`) — for an AI agent an unknown command should fail hard,
+  not offer a guess it might adopt (rules/02 §9).
 
 ## 2. Flag syntax — POSIX/GNU, no improvisation
 

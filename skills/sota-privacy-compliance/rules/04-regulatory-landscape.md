@@ -1,4 +1,3 @@
-<!-- last-verified: 2026-06 -->
 # 04 — Regulatory Landscape: Engineering Obligations
 
 What each major regime actually demands from the codebase and infrastructure.
@@ -81,6 +80,13 @@ from data sales; Rhode Island as low as 35k).
   data flows; "Do Not Sell or Share" link; service-provider contracts restricting
   use (the DPA analog); California also enforces data-broker registration and
   (effective 2026) location/health-adjacent restrictions.
+- CPPA's finalized regulations (effective 1 Jan 2026): **risk assessments**
+  (DPIA analog) for high-risk processing — pre-2026 processing assessed by
+  31 Dec 2027, first submissions to the CPPA by 1 Apr 2028; **ADMT**
+  significant-decision obligations (pre-use notice, opt-out, access right) from
+  **1 Jan 2027** — same profiling opt-out machinery as rules/03 §7; annual
+  **cybersecurity audits** phase in with certifications due 1 Apr 2028–2030 by
+  revenue tier.
 - Universal quirk to encode: deletion/access SLAs cluster at 45 days; cure
   periods vary and are disappearing — don't architect around "we'll fix it if
   warned."
@@ -160,13 +166,16 @@ MFA, automated log review, payment-page script integrity and tamper-detection
 - In force 1 Aug 2024. Prohibited practices + AI literacy: applicable since
   **2 Feb 2025**. GPAI (general-purpose model) obligations: since **2 Aug 2025**.
 - General applicability: **2 Aug 2026**.
-- **Digital Omnibus on AI (provisional agreement 7 May 2026, formal adoption
-  expected mid-2026):** postpones high-risk obligations — Annex III (use-case
-  high-risk: employment, credit, education, essential services...) from Aug 2026
-  to **2 Dec 2027**; Annex I (AI in regulated products) to **2 Aug 2028**. Treat
-  these as the working dates once formally adopted; do not treat the delay as a
-  reason to defer architecture — the obligations are data/logging/docs-shaped and
-  cheap at design time, brutal at retrofit time.
+- **Digital Omnibus on AI (adopted: Parliament 16 Jun 2026, Council 29 Jun 2026;
+  OJ publication pending as of early Jul 2026):** postpones high-risk
+  obligations — Annex III (use-case high-risk: employment, credit, education,
+  essential services...) from Aug 2026 to **2 Dec 2027**; Annex I (AI in
+  regulated products) to **2 Aug 2028**. These are now the operative dates; do
+  not treat the delay as a reason to defer architecture — the obligations are
+  data/logging/docs-shaped and cheap at design time, brutal at retrofit time.
+  The omnibus also adds a prohibited practice (AI generation of CSAM /
+  non-consensual intimate content) and postpones Art. 50 synthetic-content
+  marking to **2 Dec 2026** for systems on the market before 2 Aug 2026.
 
 **Engineering obligations if your system is high-risk (provider side):** risk
 management system across lifecycle; data governance (training-data relevance,
@@ -244,7 +253,7 @@ deny[msg] {
 - [ ] Cross-border flows enumerated with transfer mechanism per processor (incl. support/admin access paths); DPF certifications verified where relied on
 - [ ] DPIA trigger checklist embedded in design-review process; existing high-risk processing has DPIAs on file
 - [ ] Breach capability meets 72h GDPR clock today (rules/06); pending Digital Omnibus changes tracked, not assumed
-- [ ] US: single rights pipeline covers strictest state requirements; GPC honored; sensitive-data opt-in implemented; state-tracker re-checked this quarter
+- [ ] US: single rights pipeline covers strictest state requirements; GPC honored; sensitive-data opt-in implemented; state-tracker re-checked this quarter; California risk-assessment/ADMT/cyber-audit deadlines (2026–2030 phase-in) tracked
 - [ ] Minors: age signal modeled and gating where service could reach under-18s; no targeted ads to known minors; parental-consent flow where required
 - [ ] HIPAA (if applicable): §164.312 safeguards mapped to controls; encryption + MFA universal (NPRM-proof); BAAs precede every PHI vendor flow
 - [ ] PCI: scope minimized (hosted fields/tokenization); no CVV at rest anywhere (grep + scanner); CDE segmented; payment-page script integrity controls live

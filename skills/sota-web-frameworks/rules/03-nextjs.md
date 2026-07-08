@@ -1,5 +1,3 @@
-<!-- last-verified: 2026-07 -->
-
 # 03 — Next.js: App Router, Server Actions, caching, CVEs
 
 Baseline: Next.js 16.x (App Router). Pages Router still ships but is not the

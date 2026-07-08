@@ -20,8 +20,9 @@ description: >-
 Expert-level rules for building and auditing command-line tools: the grammar of
 commands/flags/args, config layering, human-vs-machine output, TTY-aware
 interaction, exit codes, signal handling, lifecycle behavior, and distribution.
-The core thesis: **a CLI has two users — a human at a TTY and a script in CI —
-and every design decision must serve both without flags-gymnastics.** Rules are
+The core thesis: **a CLI has three users — a human at a TTY, a script in CI,
+and an AI agent driving the tool (a stricter script) — and every design
+decision must serve all three without flags-gymnastics.** Rules are
 imperative with rationale and good/bad terminal examples; every rules file ends
 with an audit checklist. Load only the files relevant to the task via the index
 below.
@@ -94,7 +95,7 @@ When reviewing an existing CLI:
 Where: <file:line | command invocation that reproduces it>
 Rule: <rules-file §section>
 Issue: <what is wrong, with observed evidence (transcript or code)>
-Impact: <who breaks: the human at the TTY, the script in CI, or both>
+Impact: <who breaks: the human at the TTY, the script in CI, an agent driving the tool, or all>
 Fix: <specific change; exact flag/stream/exit-code where load-bearing>
 ```
 
@@ -106,7 +107,7 @@ command line whenever the issue was observed by running the tool.
 | File | Read this when... |
 |---|---|
 | `rules/01-commands-flags-config.md` | Designing/auditing the command surface: subcommand grammar (noun-verb consistency), POSIX/GNU flag conventions, short/long forms, `--` separator, args vs flags vs stdin, defaults, dangerous-op flags, config precedence chain, env var naming, help text quality, suggest-on-typo. |
-| `rules/02-output-interaction.md` | Anything the tool prints or asks: stdout vs stderr contract, `--json`/`--plain`, TTY detection, color and `NO_COLOR`/`TERM`, exit codes as API, streaming vs buffering, progress indication, prompts and `--yes`/CI behavior, quiet/verbose levels, error message anatomy, `--debug` vs stack traces. |
+| `rules/02-output-interaction.md` | Anything the tool prints or asks: stdout vs stderr contract, `--json`/`--plain`, TTY detection, color and `NO_COLOR`/`TERM`, exit codes as API, streaming vs buffering, progress indication, prompts and `--yes`/CI behavior, quiet/verbose levels, error message anatomy, `--debug` vs stack traces, agent-facing design (`--fields`, confirmation envelopes, frozen output contracts). |
 | `rules/03-behavior-lifecycle.md` | Runtime behavior and tool lifecycle: startup latency, idempotent re-runnable commands, `--dry-run`, SIGINT/SIGTERM handling, crash-only resumable design, network-op responsiveness and offline behavior, self-update caution, telemetry consent, XDG base directories, shell completions, semantic versioning of the CLI surface. |
 | `rules/04-distribution-docs.md` | Shipping and documenting: single-binary packaging, install channels (brew/curl-script/registry) with checksums + signatures, docs generated from the `--help` source of truth, man pages, README quickstart, version pinning for CI. |
 

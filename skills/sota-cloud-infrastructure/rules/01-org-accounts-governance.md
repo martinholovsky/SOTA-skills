@@ -91,8 +91,32 @@ Policy deny assignments):
 }
 ```
 
-- SCPs/org policies do not grant anything; test them with org-policy dry-run / SCP
-  simulation against real workflows before enforcing, and roll out OU-by-OU.
+- **AWS: pair SCPs with Resource Control Policies (RCPs).** SCPs cap what
+  principals in member accounts may do; RCPs cap what *any* principal — including
+  ones outside the org — may do to **resources** in member accounts (S3, STS, KMS,
+  SQS, Secrets Manager, DynamoDB, ECR, CloudWatch Logs, and more). Use an RCP for
+  the org-wide data perimeter — deny access from principals outside the org,
+  require TLS — instead of repeating those conditions in every bucket/key policy
+  (rules/02 §3, rules/05 §1). RCPs don't affect the management account or
+  service-linked roles.
+
+```json
+// GOOD: RCP fragment — org-wide S3 identity perimeter (external principals denied
+// even where a bucket policy grants them access)
+{
+  "Effect": "Deny",
+  "Principal": "*",
+  "Action": "s3:*",
+  "Resource": "*",
+  "Condition": {
+    "StringNotEqualsIfExists": { "aws:PrincipalOrgID": "o-example" },
+    "BoolIfExists": { "aws:PrincipalIsAWSService": "false" }
+  }
+}
+```
+
+- SCPs/RCPs/org policies do not grant anything; test them with org-policy dry-run /
+  SCP simulation against real workflows before enforcing, and roll out OU-by-OU.
 - Pair preventive guardrails with detective baseline: AWS Config / Security Hub, GCP
   Security Command Center, Azure Defender for Cloud / Policy compliance — deployed
   org-wide from the security account, findings centralized. (Alert routing and
@@ -198,6 +222,8 @@ contacts.
       login pages someone).
 - [ ] SCPs/org policies enforce, at minimum: no audit-log tampering, no public
       buckets, region restriction, no new IAM users/SA keys, no leaving org.
+- [ ] AWS: RCPs enforce the org-wide data perimeter on supported services (deny
+      principals outside the org, require TLS) — not left to per-resource policies.
 - [ ] Guardrails attached at OU/folder level, inherited by new accounts automatically.
 - [ ] Account vending is automated and IaC-defined; pick a recent account and verify
       it matches the baseline.

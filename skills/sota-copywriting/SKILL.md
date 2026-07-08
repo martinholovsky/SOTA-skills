@@ -95,7 +95,7 @@ rewritten line.
 |---|---|
 | `rules/01-positioning-value-proposition.md` | Deciding what the copy argues: audience and awareness stages, value-proposition structure, benefit-vs-feature discipline, message hierarchy, differentiation claims, evidence types, we-vs-you framing. |
 | `rules/02-headlines-landing-pages.md` | Writing the page: headline craft and variants, above-fold contract, section flow (attention→interest→desire→action as a heuristic), scannability, CTA wording and placement, social-proof presentation, pricing-page honesty. |
-| `rules/03-seo-content.md` | Content meant to be found: search-intent matching, people-first content and E-E-A-T, Google spam policies (scaled content abuse, site reputation abuse, doorway pages), titles/meta as display heuristics, structured-data honesty, AI-assisted content discipline, content maintenance. |
+| `rules/03-seo-content.md` | Content meant to be found: search-intent matching, people-first content and E-E-A-T, Google spam policies (scaled content abuse, site reputation abuse, doorway pages), titles/meta as display heuristics, structured-data honesty, AI-assisted content discipline, generative-AI search surfaces (AI Overviews/AI Mode — still SEO, no GEO folklore), content maintenance. |
 | `rules/04-claims-legal-trust.md` | The accuracy/legal gate: claim substantiation, puffery vs objective claims, FTC Endorsement Guides (16 CFR 255) and Consumer Reviews Rule (16 CFR 465), testimonial consent and typicality, dark patterns, email law (CAN-SPAM, GDPR/ePrivacy), security/uptime claim hygiene. |
 
 ## Top-10 non-negotiables

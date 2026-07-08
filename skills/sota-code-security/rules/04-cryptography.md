@@ -156,12 +156,14 @@ mac_key  = HKDF(master, info=b"app/v1/url-signing",      length=32)
   audit every HTTP client construction for verification overrides.
 
 ```nginx
-# GOOD: server baseline (nginx) — TLS 1.2/1.3, AEAD+ECDHE only, OCSP stapling
+# GOOD: server baseline (nginx) — TLS 1.2/1.3, AEAD+ECDHE only
 ssl_protocols TLSv1.2 TLSv1.3;
 ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;
 ssl_prefer_server_ciphers off;        # TLS1.3 best practice: client picks
-ssl_stapling on; ssl_stapling_verify on;
 ssl_session_tickets off;              # or rotate ticket keys — static keys break FS
+# no ssl_stapling: OCSP is being retired — Let's Encrypt dropped OCSP URLs from
+# certs (May 2025) and shut its responders (Aug 2025) in favor of CRLs; enable
+# stapling only for a CA that still runs OCSP
 # generate from Mozilla SSL Config Generator ("intermediate") and re-check yearly
 ```
 

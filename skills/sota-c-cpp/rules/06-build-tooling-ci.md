@@ -51,8 +51,11 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
 ## 4. Fuzzing for input parsers
 
 - Any code parsing untrusted bytes (network, file formats, decoders) gets a
-  fuzz target: **libFuzzer** (`-fsanitize=fuzzer,address,undefined`) or AFL++.
-  Run continuously; enroll high-value OSS in [OSS-Fuzz](https://google.github.io/oss-fuzz/).
+  fuzz target: prefer **AFL++** or **FuzzTest**/Centipede for new targets —
+  libFuzzer is in maintenance mode (bug fixes only, per the LLVM docs; its
+  authors moved to Centipede), though the `-fsanitize=fuzzer` interface and
+  existing libFuzzer targets remain supported. Run continuously; enroll
+  high-value OSS in [OSS-Fuzz](https://google.github.io/oss-fuzz/).
 - Keep a seed corpus and regression corpus in-repo; a new crash is a CRITICAL
   finding. Pair fuzzing with ASan/UBSan so memory/UB bugs surface.
 

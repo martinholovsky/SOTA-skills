@@ -1,4 +1,3 @@
-<!-- last-verified: 2026-07 -->
 # 04 — EU Cyber Resilience Act (CRA)
 
 The first horizontal EU law that makes **product cybersecurity** a legal

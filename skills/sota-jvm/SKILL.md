@@ -71,7 +71,7 @@ manually. Check the dependency tree against known-CVE databases.
 | Severity | Meaning | Examples |
 |---|---|---|
 | **CRITICAL** | Exploitable on reachable input | `ObjectInputStream.readObject` on untrusted data, JNDI lookup of attacker URL (Log4Shell), SpEL/OGNL/`ScriptEngine` eval of input, SQL via string concat, XXE with DTD enabled |
-| **HIGH** | Likely incident or security weakness | `Runtime.exec`/`ProcessBuilder` with a shell + interpolation, missing TLS verification, `MessageDigest` MD5/SHA-1 or `Cipher` ECB/`DES` for security, `SecureRandom` seeded predictably, blocking pinning a carrier thread under load |
+| **HIGH** | Likely incident or security weakness | `Runtime.exec`/`ProcessBuilder` with a shell + interpolation, missing TLS verification, `MessageDigest` MD5/SHA-1 or `Cipher` ECB/`DES` for security, `SecureRandom` seeded predictably, `synchronized`+blocking pinning a carrier thread under load (JDK 21–23 only; fixed in 24+ via JEP 491) |
 | **MEDIUM** | Correctness/maintainability hazard | Data race on shared mutable state, `equals` without `hashCode`, mutable static state, swallowed exceptions, Kotlin platform-type NPE, resource not in try-with-resources/`use` |
 | **LOW** | Idiom/perf debt | Mutable collections returned from APIs, raw types, `Optional` fields/params, needless boxing on hot path, `synchronized` where `j.u.c` fits |
 | **INFO** | Style/doc/hygiene | Formatting, naming, missing `@Override`/`@Nullable` annotations |
@@ -118,8 +118,9 @@ three highest-leverage fixes, and which checklists/analyzers were run.
    collections over hand-rolled locking. A data race is a real bug, not a
    nondeterministic annoyance. (`rules/03`)
 5. **Virtual threads for blocking I/O concurrency (Java 21+); don't pin.**
-   Avoid `synchronized` around blocking calls on virtual threads (pins the
-   carrier — use `ReentrantLock`); never pool virtual threads. (`rules/03`)
+   On JDK 21–23 `synchronized` around blocking calls pins the carrier (use
+   `ReentrantLock`); JDK 24+ removes most pinning (JEP 491). Never pool
+   virtual threads. (`rules/03`)
 6. **Resources are closed deterministically** — try-with-resources (Java) or
    `use {}` (Kotlin) for everything `AutoCloseable`. A leak on the exception
    path is the default failure of manual `finally`. (`rules/02`)
