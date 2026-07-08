@@ -24,11 +24,13 @@ Ordered; revisit after each release.
    promises "fast-moving claims are web-verified against primary sources";
    today only ~21 of 220 rules files carry any verification date, so the
    promise is unauditable — and every "2026 baseline" assertion goes silently
-   stale in 2027. *(Mechanism landed 2026-07-04: line-1 markers — the 18 files
-   with dated in-text verification stamped from those dates —
-   `scripts/check-freshness.sh`, and a monthly `freshness.yml` report.
-   Remaining: the ~210-file verification backfill; files are stamped only
-   when actually re-verified, never retroactively.)*
+   stale in 2027. *(Mechanism landed 2026-07-04 as per-file line-1 markers;
+   SUPERSEDED 2026-07-09, PR #52: a full-library verification sweep
+   (per-skill web research, adversarially verified, 65 fixes applied)
+   replaced the per-file ledger with a single root `LAST-VERIFIED` stamp —
+   the per-file backfill would have duplicated git metadata at 210-file
+   scale. `check-freshness.sh` now reds when the stamp exceeds the
+   12-month window; re-sweeping resets it. DONE.)*
 4. **Release procedure in-repo** (`RELEASING.md` or a CONTRIBUTING section):
    VERSION + plugin.json + CHANGELOG + tag + GitHub release, plus the
    version-bearing strings in README/CLAUDE.md. Eight releases shipped in the
