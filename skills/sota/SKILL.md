@@ -1,12 +1,12 @@
 ---
 name: sota
 description: >-
-  Master router for the SOTA engineering skills library. Use this skill whenever the user asks to build, design, implement, refactor, harden, optimize, review, or audit an application, service, or codebase and the request spans more than one domain — or when you are unsure which specific sota-* skill applies. It maps the task (build mode or audit mode) to the right domain skills (architecture, code security, threat modeling, secrets, sandboxing, performance, async/concurrency, APIs/websockets, devsecops, databases, frontend, web frameworks, observability, testing, LLM engineering, ML engineering, cloud, kubernetes, identity & access, network security, detection engineering, data engineering, privacy/compliance, security/compliance, mobile, CLI UX, UX writing, copywriting, shell scripting, docs/workflow) and language skills (Rust, Go, C/C++, Java/Kotlin, Python, JS/TS, .NET/C#, PHP, Ruby). Trigger keywords: SOTA, best practices, audit my code, security review, compliance, hardening, prod readiness, code quality.
+  Master router for the SOTA engineering skills library. Use this skill whenever the user asks to build, design, implement, refactor, harden, optimize, review, or audit an application, service, or codebase and the request spans more than one domain — or when you are unsure which specific sota-* skill applies. It maps the task (build or audit mode) to the right domain skills (architecture, code security, threat modeling, secrets, sandboxing, performance, async/concurrency, APIs, devsecops, databases, frontend, web frameworks, observability, testing, LLM engineering, ML engineering, cloud, kubernetes, identity & access, network security, confidential computing, detection engineering, data engineering, privacy/compliance, security/compliance, mobile, CLI UX, UX writing, copywriting, shell scripting, docs/workflow) and language skills (Rust, Go, C/C++, JVM, Python, JS/TS, .NET/C#, PHP, Ruby). Trigger keywords: SOTA, best practices, audit my code, security review, compliance, hardening, prod readiness, code quality.
 ---
 
 # SOTA Engineering Skills — Master Router
 
-A library of 39 domain skills, each with a `SKILL.md` entry point and a `rules/`
+A library of 40 domain skills, each with a `SKILL.md` entry point and a `rules/`
 folder of focused rule files (every file < 500 lines). Each skill works in two
 modes:
 
@@ -72,6 +72,7 @@ rules files that match the code in front of you. Never load all skills at once.
 | `sota-kubernetes` | Kubernetes platform security & ops — RBAC & escalation paths, admission control (PSA/Kyverno/Gatekeeper/VAP, Audit→Enforce), GitOps controllers (Argo CD/Flux, AppProject scoping), operators/CRDs/webhooks, control plane & etcd encryption, Helm supply chain, multi-tenancy, cluster lifecycle, K8s audit logging; self-hosted (Talos/k3s) and managed |
 | `sota-identity-access` | Identity infrastructure & access management — OIDC/OAuth2.1/SAML/SCIM protocols, running an IdP (Kanidm/Keycloak/etc.), RBAC/ABAC/ReBAC authorization design, group→role mapping, joiner-mover-leaver lifecycle, deprovisioning, privileged access & break-glass, SPIFFE/workload identity, phishing-resistant MFA/passkeys, federation risk |
 | `sota-network-security` | Network security as a discipline — zero-trust (NIST 800-207), segmentation & blast-radius, the `world`/`any` over-broad-rule trap, Kubernetes NetworkPolicy depth (Cilium L7, default-deny egress), service mesh & mTLS / internal encryption, edge/ingress/WAF, egress control & metadata-endpoint blocking, DNS/TLS/PKI & cert lifecycle |
+| `sota-confidential-computing` | Protecting workloads/data from the infrastructure operator — TEEs (AMD SEV-SNP, Intel TDX, ARM CCA, SGX enclaves, Nitro Enclaves, confidential GPUs), remote attestation (RATS, attest-then-release), confidential VMs/nodes/containers on K8s (CoCo/Kata/Trustee), and cryptographic PETs (FHE, MPC, ZKP, PSI) when hardware trust is off the table |
 | `sota-detection-engineering` | Detective controls, SOC & IR — detection-as-code, Sigma/YARA/Suricata/Falco/Tetragon rules, ATT&CK coverage, SIEM & telemetry coverage, alert tuning/SOAR, threat hunting & intel (STIX/TAXII), deception/honeytokens, incident response (NIST 800-61), detection validation (Atomic Red Team/Caldera) |
 | `sota-data-engineering` | Data pipelines, ELT/orchestration, dbt, Kafka/streaming, CDC, schema registry, lakehouse (Iceberg/Delta/Parquet), data quality/contracts, warehouse modeling |
 | `sota-privacy-compliance` | PII inventory/classification, privacy by design, consent, DSAR/deletion architecture, retention, GDPR/CCPA/HIPAA/PCI/AI Act engineering obligations, SOC 2/ISO 27001 audit readiness, breach response |
@@ -163,6 +164,14 @@ rules files that match the code in front of you. Never load all skills at once.
     FIPS-140-3-validated-module requirements → `sota-security-compliance`
     rules/02. Language-specific APIs (JCA, `crypto/*`, .NET) stay in the language
     skill. The stance throughout is **use a vetted library, don't roll your own**.
+19. **Which direction does the trust boundary point?** Protecting the *host
+    from the workload* (untrusted code, seccomp/microVMs/WASM sandboxes) →
+    `sota-sandboxing`. Protecting the *workload from the host/operator* —
+    TEEs (SEV-SNP/TDX/CCA/SGX), remote attestation, confidential
+    VMs/containers, or computing on encrypted data (FHE/MPC/ZKP) →
+    `sota-confidential-computing`. Both can apply to one system. Key
+    custody/release stays `sota-secrets-management`; differential privacy and
+    de-identification stay `sota-privacy-compliance`.
 
 ## BUILD mode — workflow
 

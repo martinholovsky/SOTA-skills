@@ -27,22 +27,23 @@ find skills -name '*.md' -exec cat {} + | wc -l  # ~L lines
 Then update every surface that carries a count:
 
 - **README**: badge `skills-N`, hero sentence "N skills (M files, ~Lk lines)",
-  social-preview `alt` text, and a table row per new skill.
+  and a table row per new skill. The social-preview `alt` text says **"N+"**
+  (a floor, e.g. "40+") — leave it alone unless the tree count falls below
+  the floor or you deliberately raise it.
 - **Router** (`skills/sota/SKILL.md`): body "A library of N domain skills"
   (N = total − 1), a routing-table row + library-map entry per new skill, and
   the domain list in the frontmatter description — which must stay
   **≤ 1024 characters** (invariant 4; it hit the cap at v1.8.0 and needed a
   trim).
 - **`.claude-plugin/marketplace.json`**: counts in the plugin `description`.
-- **`assets/social-preview.html`**: the "N skills" pill — the *only* count in
-  the image by design (the tagline is deliberately count-free; the pill sat
-  stale at "30 skills" for three releases before v1.8.0). Re-render the PNG:
-  serve the directory over localhost (`python3 -m http.server`) and
-  screenshot at exactly **1280×640** with a headless browser — `file://` is
-  typically blocked. Commit both files.
-- GitHub **Settings → Social preview** is a separate manual upload — updating
-  `assets/social-preview.png` in the repo does **not** refresh it; re-upload
-  the new PNG there.
+- **`assets/social-preview.html`**: the pill reads **"N+ skills"** (a floor —
+  "40+" since 2026-07-09) so the image does NOT need re-rendering or
+  re-uploading on every skill addition; invariant 6 only fails if the tree
+  count drops below the floor. When you *do* raise the floor: re-render the
+  PNG by serving the directory over localhost (`python3 -m http.server`) and
+  screenshotting at exactly **1280×640** with a headless browser (`file://`
+  is typically blocked), commit both files, and re-upload the PNG at GitHub
+  **Settings → Social preview** (the repo file does not refresh it).
 
 ## 3. Land the PR
 
