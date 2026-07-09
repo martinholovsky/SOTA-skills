@@ -71,6 +71,13 @@ Ordered; revisit after each release.
   rules/06; XSS-sink names in rules/05). Closes the frontend-framework gap that sat
   between the language skill (`sota-javascript-typescript`) and the design skill
   (`sota-frontend-design`) without overlapping either. 40 skills total.
+- **`sota-confidential-computing`** *(shipped 2026-07-09)* — TEEs
+  (SEV-SNP/TDX/ARM CCA, SGX enclaves, Nitro Enclaves, confidential GPUs),
+  remote attestation (RATS RFC 9334, attest-then-release), confidential
+  Kubernetes (CoCo/Kata/Trustee), and cryptographic PETs (FHE/MPC/ZKP/PSI).
+  Covers the workload-from-host trust direction — the inverse of
+  `sota-sandboxing`; router rule 19 encodes the boundary. Demand-driven
+  (user gap-check found zero prior coverage). 41 skills total.
 
 ## Maintenance mode (de-prioritized by audit evidence)
 

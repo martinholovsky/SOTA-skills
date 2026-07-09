@@ -72,9 +72,11 @@ skills.
 - [ ] `./scripts/check-invariants.sh` passes
 - [ ] `VERSION` == `plugin.json` version == the tag you're about to push
 - [ ] CHANGELOG top entry is the new version, dated, with its link ref
-- [ ] If the skill count changed: README badge/hero/alt, router body +
-      description, marketplace.json, social-preview pill + regenerated PNG
-      all show the recounted numbers
+- [ ] If the skill count changed: README badge/hero, router body +
+      description, plugin/marketplace.json show the recounted numbers
+      (the social-preview pill + README alt are "N+" floors — touch them
+      only when deliberately raising the floor, which also means
+      re-rendering the PNG)
 - [ ] New skills appear in the README table and the router's routing table +
       library map
-- [ ] GitHub Settings social-preview re-upload done (or consciously deferred)
+- [ ] GitHub Settings social-preview re-upload — only if the PNG changed
