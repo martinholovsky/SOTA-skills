@@ -44,6 +44,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Low-severity sweep triage (2026-07-09)** — the 75 never-verified
+  low-severity suggestions from the 2026-07-08 sweep were re-verified
+  hypothesis-by-hypothesis against primary sources by one agent per skill:
+  **58 applied** (each cites the verifying source; e.g. GraphQL @oneOf per
+  the September 2025 spec edition, Mercurius WS depth-bypass CVE-2026-30241
+  checklist item, NATS 2.12–2.15 feature gates + the 2.15 ack-subject ACL
+  migration warning, PEP 734 subinterpreters + Python 3.14 asyncio
+  introspection, Go 1.25 testing/synctest, C++26 DIS status), **32 skipped**
+  with recorded reasons (refuted, already covered by the verified-fix pass,
+  or not worth the lines). No version pins added; all invariants green.
 - **Freshness sweep 2026-07-08** — full-library research pass (one web-research
   agent per skill, 34 skills; every high/medium finding independently
   adversarially verified against primary sources) fixed **7 high + 58 medium**

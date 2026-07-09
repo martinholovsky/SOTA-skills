@@ -221,7 +221,9 @@ dropping is fine (drop = cancel) but resources must be in Drop, not in
 ("wait a bit for the worker to pick it up"). Sleeps are a race with a
 deadline: flaky in CI, broken under load. Replace with explicit
 synchronization: events, joins, polling-with-timeout on the actual condition,
-fake clocks (`tokio::time::pause`, `looptime`). Production code that
+fake clocks (`tokio::time::pause`, `looptime`, Go's `testing/synctest`
+bubbles — GA in 1.25, `synctest.Wait` replaces sleep-and-hope).
+Production code that
 "sleeps to let X finish" is finding-worthy as written — it encodes an
 ordering assumption with no enforcement.
 

@@ -204,9 +204,9 @@ traces (long tasks right after LCP); TBT ≫ 300 ms in lab.
   class and country — averages across devices hide the phones where you fail.
 - Know the SPA blind spot: classic CWV attributes everything after the initial
   load to that first page — soft (in-app) navigations aren't measured. Chrome's
-  Soft Navigations API (origin-trialed through Chrome 147; announced at I/O
-  2026 as shipping in an upcoming release) extends LCP/CLS/INP to SPA route
-  changes — adopt via the web-vitals library once stable.
+  Soft Navigations API (launching unflagged from Chrome 151; the final API
+  differs from earlier origin-trial shapes) extends LCP/CLS/INP to SPA route
+  changes — adopt via the web-vitals library once it ships.
 
 Calibrate against real conditions — what a byte budget means on the wire:
 

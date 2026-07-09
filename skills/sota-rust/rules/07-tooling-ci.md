@@ -36,9 +36,12 @@ await_holding_lock = "deny"
   specific lints with a comment — this catches new pedantic lints on toolchain
   updates instead of opting out of the future.
 - **Deny-warnings in CI only**: `cargo clippy --all-targets --all-features --
-  -D warnings` in CI; locally keep warn so WIP compiles. Hardcoding
-  `#![deny(warnings)]` in source breaks builds on every new rustc lint —
-  don't.
+  -D warnings` in CI; locally keep warn so WIP compiles. For build warnings,
+  Cargo's `build.warnings = "allow"/"warn"/"deny"` config (stable since Rust
+  1.97) is the first-class knob — set `CARGO_BUILD_WARNINGS=deny` in the CI
+  environment, not in committed config, so local builds stay on warn.
+  Hardcoding `#![deny(warnings)]` in source breaks builds on every new rustc
+  lint — don't.
 - Per-site `#[allow(clippy::xyz, reason = "...")]` (lint reasons are stable)
   over module-level allows; an allow without a reason is a finding.
 - Run clippy on the same pinned toolchain as the build (lint sets drift across
@@ -149,7 +152,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 ## 7. Edition 2024 notes
 
 Current edition as of mid-2026; new code starts here (`edition = "2024"`,
-Rust ≥1.85; current stable is 1.96, May 2026). The next edition is expected
+Rust ≥1.85; verify latest stable at releases.rs). The next edition is expected
 ~2027 on the usual three-year cadence — nothing to migrate toward yet.
 Migration: `cargo fix --edition` then review. Key changes that affect rules in
 this skill:

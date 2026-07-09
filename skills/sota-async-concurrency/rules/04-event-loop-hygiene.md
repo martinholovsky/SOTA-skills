@@ -170,7 +170,9 @@ sprinkled through the call graph. Crossings mid-stack are findings.
 
 - **Python:** run with `loop.set_debug(True)` + `loop.slow_callback_duration =
   0.05` in staging — logs any callback >50ms with its name. `aiodebug` /
-  `aiomonitor` for production.
+  `aiomonitor` for production. On 3.14+, `python -m asyncio ps|pstree PID`
+  inspects a live process's task tree (`pstree` also reports await-graph
+  cycles, i.e. async deadlocks); `asyncio.print_call_graph()` in-process.
 - **Node:** monitor event-loop lag/utilization (`perf_hooks.monitorEventLoopDelay`,
   `performance.eventLoopUtilization()`); alert at p99 lag >100ms.
   `blocked-at` pinpoints offenders in dev.

@@ -43,6 +43,9 @@ or give it a real aggregation job.
 - Mutations: one **input object** per mutation (`input PlaceOrderInput`), one
   **payload type** per mutation containing the changed entity + `userErrors:
   [UserError!]!` (§6). Name mutations verb-first: `placeOrder`, `cancelSubscription`.
+- Mutually exclusive input variants: use a **`@oneOf` input object** (standardized
+  in the September 2025 spec edition) — exactly one field set, enforced by the type
+  system — instead of multiple nullable fields plus runtime validation.
 - Global object identification: `id: ID!` globally unique (encode type+id),
   `node(id:)` lookup — enables client-side normalized caching.
 - Model relationships as fields, not foreign keys: `order.customer: Customer`, not
@@ -236,7 +239,7 @@ type CancelOrderPayload {
 - [ ] All list fields paginated (connections) with enforced max page size; no unbounded lists.
 - [ ] Non-null used deliberately; cross-service-backed fields nullable (error-bubbling blast radius understood).
 - [ ] Every data-fetching resolver goes through per-request DataLoaders; integration test asserts query counts (no N+1).
-- [ ] Depth limit, cost analysis (with list multipliers), and alias/root-field caps active in production — verify by sending a hostile query in staging.
+- [ ] Depth limit, cost analysis (with list multipliers), and alias/root-field caps active in production — verify by sending a hostile query in staging over **both** the HTTP path and the WebSocket/SSE subscription path (cf. CVE-2026-30241: Mercurius enforced queryDepth on HTTP but not WS subscriptions; fixed in 16.8.0).
 - [ ] Operation batching capped or disabled; cost charged against rate limits.
 - [ ] Introspection + field suggestions disabled in production for private schemas; no GraphiQL exposed.
 - [ ] First-party clients use a persisted-query allowlist (trusted documents); APQ not mistaken for security.

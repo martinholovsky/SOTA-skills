@@ -16,7 +16,12 @@ latest stable release and verify the current line with a quick web search at
 time of use. KV and Object stores are GA and JetStream-backed. The `jetstream`
 Go package is the current API; the older `nc.JetStream()` JetStreamContext is
 legacy. Pin and track your server line — per-message TTL, KV limit markers, and
-the message scheduler are recent additions gated on server API level.
+the 2.12+ additions (atomic batch publish, distributed counters, message
+scheduling — recurring/cron schedules from 2.14) are gated on server API level.
+Upgrade note: the v2 ack-subject format becomes the default in 2.15 — accounts
+with granular `$JS.ACK.<stream>.>`/`$JS.FC.<stream>.>` permissions or
+imports/exports must update their ACLs before upgrading (a catch-all
+`$JS.ACK.>` needs no change).
 
 ## Core NATS vs JetStream: choose per subject, not per cluster
 
@@ -100,6 +105,9 @@ BAD: nats stream add ORDERS --subjects 'orders.>' --storage file
   aggregate many streams into one (fan-in, cross-region roll-up), with optional
   per-source subject transforms and filters. Neither is a substitute for R3:
   they copy asynchronously and lag; HA is replicas, aggregation is mirrors/sources.
+- **Mirror promotion** (2.12+) converts a mirror into a writable stream for DR
+  failover — a recovery lever, not HA: the mirror is async and may lag behind
+  the origin at promotion time, so reconcile for the tail you may have lost.
 
 ## Publish & idempotent dedup: the duplicate window
 
@@ -120,6 +128,11 @@ BAD: nats stream add ORDERS --subjects 'orders.>' --storage file
 - This is only half of effectively-once. The other half is **idempotent /
   de-duplicated consumption** (rules/03 §2) — the duplicate window does nothing
   for duplicates a consumer sees from redelivery.
+- **Atomic batch publish** (2.12+) writes a multi-message batch to one stream
+  all-or-nothing — use it where multi-message atomicity previously forced an
+  outbox-style workaround; 2.14 adds a fast flow-controlled variant
+  (`AllowBatchPublish`). It does **not** replace the outbox for DB-write +
+  publish dual-writes (rules/03) — that atomicity spans two systems.
 
 ```go
 js, _ := jetstream.New(nc)

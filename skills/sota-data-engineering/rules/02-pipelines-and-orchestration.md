@@ -137,7 +137,9 @@ Applies to Airflow (3.x as of 2026), Dagster, Prefect, and kin.
   table task A writes, but no edge exists and B just runs "later by cron" —
   is a HIGH finding (cron-spaghetti). Prefer dataset/asset-aware scheduling
   (Airflow assets, Dagster assets): downstream runs *because* upstream
-  produced, not because it's 6am.
+  produced, not because it's 6am. Partitioned assets (Airflow 3.2+) extend
+  this per logical interval — downstream triggers per partition, unifying
+  asset scheduling with the logical-time rule above.
 
 ```python
 # BAD: coupled by cron offsets and hope

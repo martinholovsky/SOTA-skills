@@ -83,11 +83,12 @@ low-privileged domain account — that is the realistic starting position.
     and disables the migrated account's old password (verify:
     `learn.microsoft.com/windows-server/identity/ad-ds/manage/delegated-managed-service-accounts/delegated-managed-service-accounts-overview`).
     Prefer these over human-set service passwords wherever the service supports
-    them. *Caveat:* dMSA is new and has published abuse research — **BadSuccessor**
-    (privilege escalation via dMSA migration) and **Golden dMSA** (key
-    derivation) — so restrict who can create/migrate dMSAs and monitor it
-    (detection rules/07); treat these as "needs ongoing verification" as patches
-    land.
+    them. *Caveat:* dMSA has published abuse research — **BadSuccessor**
+    (privilege escalation via dMSA migration; patched as **CVE-2025-53779**,
+    Aug 2025 — the KDC now requires a bidirectional dMSA↔superseded-account
+    link) and **Golden dMSA** (key derivation). Post-patch variants still abuse
+    over-permissive dMSA rights, so restrict dMSA creation/migration to tier-0
+    and monitor it (detection rules/07).
   - **AES-only service accounts.** Set `msDS-SupportedEncryptionTypes` to
     AES128/256 (etype 17/18) and disable RC4 so the roast target is far more
     expensive; do this estate-wide only after confirming no RC4 dependency.
@@ -203,6 +204,14 @@ a cloud compromise (and vice-versa):
   entire token-issuance trust to an on-prem STS — a golden-SAML target — and is
   generally the heaviest to secure. Pick per outage-tolerance and threat model;
   document the choice.
+- **Retire legacy cloud-side auth paths.** Eliminate remaining **legacy Azure AD
+  Graph API** dependencies (migrate to Microsoft Graph) and alert on anomalous
+  Graph/actor-token activity: **CVE-2025-55241** (CVSS 10.0; reported and fixed
+  Jul 2025, disclosed Sep 2025) let an attacker mint an undocumented **Actor
+  token** in their own tenant and impersonate any user — including Global
+  Admins — in *any* other tenant via Azure AD Graph, bypassing MFA, Conditional
+  Access, and most logging. IdP-internal legacy auth paths can bypass every
+  conditional control; treat them as tier-0 attack surface.
 - **Cloud Kerberos / hybrid join**: where AD and Entra co-issue, the tier-0
   boundary now spans both control planes — apply the higher bar of the two, and
   keep privileged cloud roles (Global Admin) on separate phishing-resistant
@@ -225,3 +234,4 @@ a cloud compromise (and vice-versa):
 - [ ] Are **Credential Guard** and **authentication policies/silos** enabled for privileged accounts/hosts?
 - [ ] Is **`krbtgt` rotated on a cadence and twice on suspected compromise** (rotations spaced beyond max ticket lifetime)? A never-rotated `krbtgt` is a finding.
 - [ ] Is the **directory-sync host + connector account treated as tier-0**, and is the **PHS/PTA/federation** choice deliberate, documented, and consistent with the tiering model?
+- [ ] Any remaining **legacy Azure AD Graph API** dependencies, and is anomalous **Graph/actor-token** activity alerted on (CVE-2025-55241 class)?

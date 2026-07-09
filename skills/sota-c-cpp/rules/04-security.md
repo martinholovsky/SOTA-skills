@@ -78,11 +78,17 @@ network-facing or setuid binary is a HIGH finding. From the OpenSSF guide:
 -fstack-clash-protection                    # large-stack probing
 -fcf-protection=full                        # CET: indirect-branch protection
 -fstrict-flex-arrays=3                      # only true flex arrays are unbounded
+-ftrivial-auto-var-init=zero                # zero-init locals (kills uninit reads)
+-fzero-init-padding-bits=all                # zero padding bits too (GCC 15+)
+-mbranch-protection=standard                # AArch64 PAC/BTI (-fcf-protection analogue)
 -fPIE -pie                                  # ASLR for the executable
 -Wl,-z,relro -Wl,-z,now                     # full RELRO (GOT read-only)
 -Wl,-z,noexecstack -Wl,-z,nodlopen          # non-exec stack, no dlopen
 ```
 
+- libc++ builds: production uses hardening mode FAST
+  (`-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST`, cheap checks); the
+  EXTENSIVE mode (`rules/02`) is for debug/test builds.
 - Add `-fsanitize=address,undefined` to the *debug/test* build (not prod).
   Consider `-fhardened` (GCC 14+) as a shorthand umbrella — verify your
   compiler version supports it.

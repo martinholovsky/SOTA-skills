@@ -106,6 +106,13 @@ gate disabled within a week. Instead:
   treat alerts marked *active* by validity checks as §3 incidents, not backlog.
 - **Fork PR safety:** secret-bearing workflows never run on `pull_request` from forks; audit
   any `pull_request_target` usage that checks out PR code (classic exfil vector — High).
+- **Install-time harvesting worms:** the Shai-Hulud npm worms (Sept/Nov 2025, hundreds of
+  packages) ran a bundled TruffleHog on developer machines and CI at install time, exfiltrated
+  hits to newly created public GitHub repos, self-propagated via stolen npm/GitHub tokens, and
+  registered victims as self-hosted Actions runners. Defenses: `--ignore-scripts` (or isolated,
+  token-free install steps) in CI, no long-lived registry/VCS/cloud tokens on laptops or runners
+  (rules/01 §4 OIDC instead), and treat sudden public-repo creation or self-hosted-runner
+  registration under an org identity as a §3 leak trigger.
 
 ## 3. Post-leak runbook: rotate first
 
@@ -242,6 +249,8 @@ Triage every hit per SKILL.md severity table; redact values in the report (prefi
 - [ ] `.gitignore` covers `.env*`, key/cert files, tfstate, kubeconfig, `.netrc`; no such files
       tracked (`git ls-files` check).
 - [ ] Fork PRs receive no secrets; `pull_request_target` does not execute fork code.
+- [ ] CI installs run with lifecycle scripts disabled (or in token-free steps); alerts exist
+      for sudden public-repo creation and self-hosted-runner registration under org identities.
 - [ ] Leak runbook exists, is current, and orders rotate → assess (logs since leak time) →
       purge → harden → record; revocation paths tested per credential class.
 - [ ] Past incidents: history actually rewritten (filter-repo + force-push + re-clone), forks/

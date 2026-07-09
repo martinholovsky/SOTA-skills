@@ -96,9 +96,12 @@ protocols, deserializers, decompressors, query languages, anything reachable
 from user input in C/C++/unsafe-Rust (memory safety) — but logic bugs and
 panics in safe languages too (Go has native fuzzing in the toolchain since
 1.18; cargo-fuzz for Rust; Atheris/Jazzer for Python/JVM; per-language detail
-in language skills). Engines: AFL++ (actively maintained), libFuzzer (in
-maintenance mode — supported, no new features), honggfuzz; for OSS libraries,
-continuous fuzzing via OSS-Fuzz.
+in language skills). Engines: AFL++ (actively maintained), honggfuzz, and
+libFuzzer (maintenance mode — bug fixes only; its authors moved to
+Centipede, now part of FuzzTest). For new in-process C/C++ targets prefer
+FuzzTest (property-style API over a coverage-guided engine — libFuzzer's
+successor); existing libFuzzer targets and OSS-Fuzz integrations are fine
+as-is. For OSS libraries, continuous fuzzing via OSS-Fuzz.
 
 ```go
 // Go native fuzz target: corpus seeds + a roundtrip property, not just "no crash"

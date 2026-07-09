@@ -121,6 +121,14 @@ Two regimes cover most senders; apply the stricter when audiences mix:
 - Subject lines are claims: "Re:"/"Fwd:" fakery, false urgency, and
   bait-and-switch subjects violate the deception rules *and* train users to
   ignore you.
+- **Mailbox-provider bulk-sender rules gate delivery before any law does**:
+  Gmail and Yahoo require senders of 5,000+ messages/day to authenticate with
+  aligned SPF + DKIM + DMARC, support RFC 8058 one-click unsubscribe
+  (`List-Unsubscribe`/`List-Unsubscribe-Post` headers; Yahoo: honored within
+  2 days), and keep reported spam rates below 0.3%; Microsoft Outlook
+  (consumer) enforces the same authentication bar since May 2025. Stricter in
+  practice than CAN-SPAM's 10-business-day window — non-compliant bulk mail
+  gets junked or rejected regardless of legal compliance.
 - Sunset/engagement policies (stop mailing the long-unengaged) are
   deliverability hygiene and consent hygiene at once.
 
@@ -165,6 +173,8 @@ Two regimes cover most senders; apply the stricter when audiences mix:
 - [ ] Email: unsubscribe present/working/honored ≤ 10 business days;
       physical address present; EU sends have consent or soft-opt-in records;
       subjects truthful; no promotions disguised as transactional mail
+- [ ] Bulk sends (5,000+/day): SPF + DKIM + DMARC aligned, RFC 8058
+      one-click-unsubscribe headers present, reported spam rate < 0.3%
 - [ ] Legal pages consistent with marketing promises; badges current and
       verifiable
 - [ ] Re-verification schedule ran on time for comparisons/stats/pricing;

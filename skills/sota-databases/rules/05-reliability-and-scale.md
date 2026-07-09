@@ -54,7 +54,11 @@ Read-your-own-writes breaks when a user's next request hits a lagging replica.
 - Near-zero-downtime **major version upgrades**: logical replica on the new
   version → cutover. (`pg_upgrade --link` is the fast in-place alternative
   with brief downtime; dump/restore is for small DBs only.) Don't camp on an
-  EOL major version — that's an audit finding on its own.
+  EOL major version — that's an audit finding on its own. Minor updates
+  matter too: apply the quarterly minor releases within a defined SLA —
+  they carry security fixes up to RCE class (the Feb 2026 minors fixed
+  arbitrary-code-execution bugs in pgcrypto, CVE-2026-2005, and intarray,
+  CVE-2026-2004).
 - **CDC** (Debezium-style) for feeding warehouses/search/caches: monitor slot
   lag religiously — an abandoned logical slot pins WAL until the disk fills
   (see vacuum section); set `max_slot_wal_keep_size` as the safety valve.
@@ -254,5 +258,7 @@ remains the right queue when jobs must commit atomically with data.
 - [ ] Redis holding non-cache state has AOF persistence, tested failover,
       noeviction, and is separated from the LRU cache instance; no
       KEYS/unbounded-range commands in code.
-- [ ] Postgres major version supported (not EOL); logical/CDC slots monitored
-      with max_slot_wal_keep_size set.
+- [ ] Postgres major version supported (not EOL) and quarterly minor updates
+      applied within a defined SLA (minors fix RCE-class bugs — e.g. pgcrypto
+      CVE-2026-2005); logical/CDC slots monitored with max_slot_wal_keep_size
+      set.

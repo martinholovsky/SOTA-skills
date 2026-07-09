@@ -23,7 +23,10 @@ freed memory, overrunning a buffer, or invoking undefined behavior (UB) that
 the optimizer then weaponizes. These rules exist to claw back the safety the
 language doesn't give you — through RAII, the type system, sanitizers, hardened
 build flags, and disciplined review. Baseline: C++23 (ISO/IEC 14882:2024) and
-C17/C23; flag where a control needs a newer toolchain. Every rule states the
+C17/C23; flag where a control needs a newer toolchain. C++26 is feature-complete
+(DIS ballot 2026) — contracts, reflection, erroneous behavior for uninitialized
+reads, and a standardized hardened standard library; the last is usable today
+via libc++/libstdc++ hardening flags (`rules/02`). Every rule states the
 *why*; every rules file ends with an audit checklist of grep/clang-tidy/
 sanitizer patterns.
 

@@ -5,7 +5,7 @@ Threat model first: the attacker **owns the device**. They can decompile your bi
 1. Client-side mechanisms raise attacker *cost* — they are deterrents. Only the server *enforces*.
 2. Anything in the binary — strings, endpoints, keys, feature flags — is public the day you ship.
 
-Anchor audits to **OWASP MASVS v2.1** (control groups: MASVS-STORAGE, -CRYPTO, -AUTH, -NETWORK, -PLATFORM, -CODE, -RESILIENCE, -PRIVACY) with the MASTG for concrete test procedures. An audit should be able to state, per group, what was examined.
+Anchor audits to **OWASP MASVS v2.1** (control groups: MASVS-STORAGE, -CRYPTO, -AUTH, -NETWORK, -PLATFORM, -CODE, -RESILIENCE, -PRIVACY) with the **MASTG v2** (v2.0.0 stable since June 2026; modular tests with stable `MASTG-TEST-*` IDs — cite the IDs in findings) for concrete test procedures. An audit should be able to state, per group, what was examined.
 
 ## Storage & secrets
 

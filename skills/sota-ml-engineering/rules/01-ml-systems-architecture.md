@@ -42,9 +42,11 @@ the model.
 ## 4. Model registry & artifacts
 
 - A **model registry** (MLflow-style) is the source of truth for trained models:
-  versioned artifacts with their metrics, data/code/config lineage, stage
-  (staging/production/archived), and approver. Promotion is an explicit,
-  gated transition (`rules/04`, `rules/05`), not a file copy.
+  versioned artifacts with their metrics, data/code/config lineage, deployment
+  label (version **aliases** like `@champion`/`@challenger` — MLflow deprecated
+  fixed staging/production/archived stages in favor of aliases and tags), and
+  approver. Promotion is an explicit, gated transition (`rules/04`, `rules/05`),
+  not a file copy.
 - Store the model with everything needed to reproduce and explain it: training
   data reference + hash, feature versions, hyperparameters, code commit,
   environment, and eval report.

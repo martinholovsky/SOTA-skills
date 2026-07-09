@@ -27,7 +27,15 @@ finding where all three legs coexist.
 
 **R1.3 — Plan for compromise, not for prevention.** Injection defenses (prompt
 hardening, classifiers, spotlighting) reduce frequency; the sandbox bounds impact.
-Size the boundary as if injection success rate were 100%.
+Size the boundary as if injection success rate were 100% — not hypothetical:
+prompt-injection escapes of IDE-agent terminal sandboxes are a demonstrated CVE
+class (e.g. Cursor "DuneSlide", CVE-2026-50548/-50549, CVSS 9.8, fixed in 3.0);
+the R2.1 boundary floor plus egress denial is what contains a hijacked agent.
+
+For a shared audit taxonomy, map findings to the OWASP Top 10 for Agentic
+Applications (2026): this file's controls address ASI01 goal hijack (R1.2),
+ASI02 tool misuse (§3), ASI05 unexpected code execution (§2), and ASI06
+memory/context poisoning (R2.3).
 
 ## 2. Executing model-generated code
 

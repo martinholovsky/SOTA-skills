@@ -15,6 +15,7 @@ dispositioned threats (see `04`, `05`).
 | Business-risk-driven, exec-facing, regulated org | PASTA (or PASTA-lite) | Ties threats to business impact; expensive — don't use for sprints |
 | Understanding a realistic adversary's end-to-end campaign | Kill chain / ATT&CK mapping | Validates detection & response coverage, not just prevention |
 | Small, low-risk delta; PR review; time-boxed | Shostack's four questions only | 15 minutes of structured thinking beats zero minutes of process |
+| Agentic / multi-agent AI system | STRIDE-per-interaction + agent catalog (`03` §8); CSA MAESTRO's layered analysis for complex multi-agent ecosystems | Agent threats (goal hijack, memory poisoning, collusion) span layers STRIDE alone doesn't name |
 
 Rationale: methods fail in predictable ways — STRIDE over-generates duplicates,
 LINDDUN is privacy-only, PASTA stalls in stage ceremony, attack trees go stale.

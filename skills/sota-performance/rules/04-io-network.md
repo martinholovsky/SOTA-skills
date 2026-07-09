@@ -171,6 +171,11 @@ Rules:
   CPU for ~0%), payloads < ~1 KB (header overhead, MTU fits anyway).
 - zstd **dictionaries** give 2–5× better ratios on small similar payloads
   (per-message JSON/events) — train on a sample, version the dictionary.
+- **Compression Dictionary Transport** (RFC 9842: `dcb`/`dcz` encodings,
+  `Use-As-Dictionary`/`Available-Dictionary` headers) delta-compresses new
+  asset versions against ones the client already cached — big wins on
+  frequently redeployed JS bundles and templated HTML. Chromium-only (not
+  Baseline); serve as progressive enhancement over the br/zstd/gzip ladder.
 - Compression level is a live tuning knob under CPU pressure: dropping a level
   is a cheap capacity lever.
 - Security: BREACH-style attacks — don't compress responses mixing secrets

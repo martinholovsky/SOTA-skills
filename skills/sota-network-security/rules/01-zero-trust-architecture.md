@@ -5,9 +5,11 @@ enforcement points; identity-aware access over network-location trust; microsegm
 strategy; ZTNA vs traditional VPN; de-perimeterization; the identity-aware (BeyondCorp-style) proxy.
 This file is the *why*; rules/02–06 are the *how*.
 
-Anchors (verified 2026-06-14): **NIST SP 800-207** "Zero Trust Architecture" (Aug 2020) is the
-definitive reference; **CISA Zero Trust Maturity Model v2.0** (Apr 2023, current) gives the maturity
-ladder across five pillars — Identity, Devices, Networks, Applications & Workloads, Data.
+Anchors (verified 2026-07-09): **NIST SP 800-207** "Zero Trust Architecture" (Aug 2020) is the
+definitive reference; **NIST SP 1800-35** "Implementing a Zero Trust Architecture" (final, Jun 2025)
+is its practical companion — NCCoE example builds mapped to 800-207, useful in BUILD mode; **CISA
+Zero Trust Maturity Model v2.0** (Apr 2023, current) gives the maturity ladder across five pillars —
+Identity, Devices, Networks, Applications & Workloads, Data.
 
 ---
 

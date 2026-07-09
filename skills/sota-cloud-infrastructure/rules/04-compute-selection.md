@@ -18,7 +18,13 @@ staff.
    infrastructure ops, per-request pricing beats idle provisioning. Wrong when:
    long-lived connections (websockets at scale), sustained high constant load
    (always-on container is cheaper), heavy local state, > a few GB memory/GPU needs,
-   or latency budgets that can't absorb cold starts.
+   or latency budgets that can't absorb cold starts. Two AWS options shift these
+   break-evens: Lambda Managed Instances (GA since re:Invent 2025) runs functions on
+   EC2-backed capacity with multi-request execution environments and Savings
+   Plans/RI pricing — steady-load functions may now beat migrating to containers
+   (decide with measured cost numbers); Lambda MicroVMs (2026) add suspendable
+   isolated sandboxes up to 8 h for code-execution/agent workloads past the 15-min
+   cap.
 3. **Containers on managed runners** (Cloud Run / Fargate-on-ECS / Azure Container
    Apps) — **the default for standard web services and workers in 2026.** You bring
    an image; provider runs, scales, patches hosts. Choose when: HTTP services,

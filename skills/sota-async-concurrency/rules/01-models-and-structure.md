@@ -22,7 +22,8 @@ What dominates the workload?
 │   ├── Runtime has parallel threads (Go, Rust, Java, C#,
 │   │   Python 3.13+ free-threaded)    → thread pool, size ≈ cores
 │   └── GIL-constrained (CPython w/ GIL, Node JS-land)
-│       → process pool / worker_threads (V8 isolates count as this)
+│       → process pool / worker_threads (V8 isolates count as this);
+│         subinterpreter pool on CPython 3.14+ (see Python note)
 ├── Both (typical server: I/O front, CPU spikes)
 │   → async front-end + bounded worker pool for CPU (rule 04)
 └── Long-lived stateful entities, supervision, distribution
@@ -40,6 +41,10 @@ classic failures: blocked loops (rule 04) and 10,000 threads.
 - **Python:** asyncio coroutines for I/O; `ProcessPoolExecutor` for CPU under
   the GIL. Python 3.13+ free-threaded builds make thread pools viable for CPU,
   but C extensions must declare support — verify before relying on it.
+  Python 3.14+ adds subinterpreters (PEP 734: `concurrent.interpreters`,
+  `concurrent.futures.InterpreterPoolExecutor`) — per-interpreter-GIL
+  parallelism in one process, cheaper than a process pool, but objects cross
+  the boundary by pickling, not by reference.
 - **Node:** one JS thread per isolate. CPU work goes to `worker_threads`
   (or `piscina`); never compute on the main loop.
 - **Go:** goroutines are M:N scheduled — blocking syscalls don't block the

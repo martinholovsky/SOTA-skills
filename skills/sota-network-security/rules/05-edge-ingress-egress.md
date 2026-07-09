@@ -13,10 +13,11 @@ mechanics (CNP/FQDN); this file owns the edge and the egress *discipline*. sota-
 owns API rate-limiting design; sota-code-security rules/01 (SSRF) and rules/05 (CORS/CSP) own the
 app side.
 
-Verified (2026-06-14): **OWASP CRS** current line **4.x** (4.25 is the first CRS-4 LTS; 4.27.x
-released 2026) — runs on **OWASP ModSecurity** *and* **OWASP Coraza** (Go, SecLang-compatible, the
-modern engine; both are now OWASP projects). **IMDSv2** is token-required and account-enforceable;
-metadata IP `169.254.169.254` / `fd00:ec2::254`. Pin CRS version.
+Verified (2026-07-09): **OWASP CRS** current line **4.x** (4.25 is the first CRS-4 LTS, patched
+through Q3 2027; verify latest at coreruleset.org). **CRS 3.3.x support ends Q3 2026** — a WAF still
+on 3.3 is a finding. CRS runs on **OWASP ModSecurity** *and* **OWASP Coraza** (Go,
+SecLang-compatible, the modern engine; both are now OWASP projects). **IMDSv2** is token-required
+and account-enforceable; metadata IP `169.254.169.254` / `fd00:ec2::254`. Pin CRS version.
 
 ---
 
@@ -140,7 +141,8 @@ logging beats either alone: the allowlist blocks the easy path, the logs catch t
 - [ ] Are backends reachable only via the edge/ingress? Hit a backend pod IP / origin public IP
       directly from outside — must be refused.
 - [ ] Is the WAF (CRS on Coraza/ModSecurity) in **blocking** mode at a tuned PL, current version —
-      not detection-only-forever, not unpatched?
+      not detection-only-forever, not unpatched? A ruleset still on CRS 3.3.x (end of support
+      Q3 2026) is a finding.
 - [ ] Is the ingress controller maintained? `kubernetes/ingress-nginx` is EOL (March 2026, no
       security fixes) → High; migrate to a maintained Gateway API implementation.
 - [ ] Is the public cert terminated at the edge and traffic re-encrypted (not plaintext) to

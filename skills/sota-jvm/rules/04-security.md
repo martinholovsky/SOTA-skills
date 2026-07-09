@@ -19,6 +19,13 @@ Standards: [SEI CERT Oracle Java](https://wiki.sei.cmu.edu/confluence/display/ja
 - If native serialization is unavoidable, install a strict **`ObjectInputFilter`**
   allowlist (JEP 290, `setObjectInputFilter` / `jdk.serialFilter`) limiting
   classes and graph size. Treat it as defense-in-depth, not a fix.
+- **Framework surfaces deserialize too** — gadget entry points are shifting from
+  direct `readObject` to message converters and persisted state. Spring JMS
+  `MappingJackson2MessageConverter` instantiated attacker-chosen classes from
+  message type headers (CVE-2026-41855; fix adds `setTrustedPackages(...)`), and
+  Spring Statemachine's Kryo persistence lacked a class allowlist
+  (CVE-2026-41862). Require an explicit type allowlist on any converter or
+  persistence layer that resolves classes from data.
 
 ## 2. Injection (SQL, command, LDAP, expression)
 
@@ -80,6 +87,7 @@ Standards: [SEI CERT Oracle Java](https://wiki.sei.cmu.edu/confluence/display/ja
 # Deserialization — CRITICAL
 grep -rnE 'readObject\(|ObjectInputStream|XMLDecoder' --include='*.java' .
 grep -rnE 'enableDefaultTyping|@JsonTypeInfo|activateDefaultTyping' --include='*.java' .  # Jackson polymorphic
+grep -rnE 'MappingJackson2MessageConverter|JacksonJsonMessageConverter|new Kryo\(' --include='*.java' --include='*.kt' .  # framework deser — verify type allowlist
 
 # Injection — CRITICAL/HIGH
 grep -rnE '(createQuery|createNativeQuery|prepareStatement|executeQuery|executeUpdate)\([^?)]*\+' --include='*.java' .

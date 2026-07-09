@@ -125,10 +125,14 @@ prompt = f"Answer this: {user_input}. Use document: {doc}. Reply as JSON."
 
 Prompt caching is a **prefix match**: providers cache the rendered prompt up
 to a breakpoint, and any byte change anywhere in the prefix invalidates
-everything after it. Economics (Anthropic, verified June 2026; other
+everything after it. Economics (Anthropic, verified July 2026; other
 providers similar in shape): cache reads ~0.1× input price, writes ~1.25×
 (5-min TTL) or 2× (1-h TTL); render order is tools → system → messages;
-minimum cacheable prefix ~1–4K tokens depending on model. A cache-hostile
+minimum cacheable prefix ~0.5–4K tokens depending on model. Providers now
+also offer an automatic mode (e.g. a single top-level `cache_control` field)
+that advances the breakpoint as the conversation grows — the right default
+for multi-turn chat; explicit breakpoints (up to 4) remain the tool for
+prefixes with mixed change frequencies. A cache-hostile
 prompt structure can triple spend and add seconds of latency — silently.
 
 - **Freeze the prefix:** deterministic tool ordering (sort by name), frozen

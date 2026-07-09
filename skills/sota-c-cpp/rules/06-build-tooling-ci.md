@@ -21,6 +21,10 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
   clang-analyzer see exact flags.
 - Pin the toolchain (compiler version) in CI; build with multiple compilers
   (GCC + Clang, and MSVC if you ship Windows) — each finds different bugs.
+- CMake 4.x removed compatibility with policy versions <3.5:
+  `cmake_minimum_required(<3.5)` now errors (`CMAKE_POLICY_VERSION_MINIMUM` is
+  the escape hatch). Audit legacy subprojects and FetchContent deps for old
+  floors before a CMake 4 toolchain bump.
 
 ## 2. Warnings and static analysis
 

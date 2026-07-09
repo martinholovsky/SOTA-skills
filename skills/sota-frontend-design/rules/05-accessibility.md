@@ -211,7 +211,7 @@ and voice control (Label-in-Name check) on critical flows.
 
 By frequency × user impact (WebAIM Million + field experience) — use as triage order:
 
-1. **Low-contrast text** (~80% of sites) — Level AA 1.4.3. High impact, trivial fix.
+1. **Low-contrast text** (~84% of home pages, WebAIM Million 2026 — worsening year-over-year) — Level AA 1.4.3. High impact, trivial fix.
 2. **Missing accessible names**: icon buttons, inputs without labels, links that say "click here"/"learn more" (1.1.1, 1.3.1, 2.4.4, 4.1.2). Blocks task completion outright.
 3. **Keyboard inoperability / invisible focus**: div-buttons, `outline: none`, hover-only menus, focus traps in custom widgets (2.1.1, 2.4.7). Blocker-severity.
 4. **No focus management** in SPAs/dialogs: focus lost on route change, not trapped/restored in modals (2.4.3). Blocker for SR/keyboard users.

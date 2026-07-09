@@ -35,6 +35,10 @@ of the design, and the design survives a re-implementation of the tasks.
 - **Every requirement is testable** — a user story plus acceptance criteria in
   concrete, checkable terms. Vague criteria ("works correctly") generate vague
   code. Concrete criteria become scenarios/tests (`sota-testing` rules/08).
+  **EARS notation** ("WHEN *trigger* THE SYSTEM SHALL *response*") is a proven
+  concrete syntax — unambiguous to humans and agents, and machine-checkable:
+  tooling can now verify implementations against EARS-style requirements (e.g.
+  Kiro writes `requirements.md` in EARS and property-tests code against it).
 - **Mark unknowns explicitly.** Use an open-questions list or a
   `[NEEDS CLARIFICATION]` marker (Spec Kit convention) rather than letting the
   author — or the agent — silently assume. Unresolved markers **block**
