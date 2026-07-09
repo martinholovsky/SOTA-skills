@@ -187,8 +187,8 @@ Cache-Control: no-store                      (on authenticated/personal response
   (§2) limits what an injected/compromised script can load next.
 - Tag managers are remote-code-execution-as-a-service for marketing — gate
   container changes with review, exclude payment/auth pages from them
-  entirely (also a PCI DSS 4.0 §6.4.3/11.6.1 requirement: script inventory +
-  integrity monitoring on payment pages).
+  entirely (also a PCI DSS 4.0.1 §6.4.3/11.6.1 requirement, mandatory since
+  March 2025: script inventory + integrity monitoring on payment pages).
 - Embedding untrusted content: `<iframe sandbox>` (no `allow-same-origin` +
   `allow-scripts` together on same-site content — that nullifies the sandbox),
   minimal `allow=` permissions; untrusted HTML never via `srcdoc` without

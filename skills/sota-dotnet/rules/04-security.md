@@ -47,6 +47,9 @@ network/file/DB/config as untrusted. Reference:
 - **Antiforgery** for cookie-authenticated state-changing requests
   (`[ValidateAntiForgeryToken]` / the antiforgery middleware). **CORS** locked
   to specific origins — never `AllowAnyOrigin()` with credentials.
+- **Passkeys**: ASP.NET Core Identity has built-in passkey (WebAuthn) support
+  in .NET 10+ — prefer them for new interactive logins (depth:
+  `sota-code-security`, `sota-identity-access`).
 - Validate/bind model input (data annotations / explicit validation); don't
   over-post (use DTOs/`[Bind]` allowlists, not the EF entity directly). Set
   security headers/HSTS; don't leak stack traces in production responses.
@@ -76,6 +79,11 @@ network/file/DB/config as untrusted. Reference:
   artifacts stay valid, so revoke the key ring (`RevokeAllKeys()`) and rotate
   tokens/API keys issued during the vulnerable window. Constant-time compare
   (`CryptographicOperations.FixedTimeEquals`) for MACs/tokens.
+- **Post-quantum**: .NET 10 ships PQC in the BCL — `MLKem` (FIPS 203) plus
+  `MLDsa`/`SlhDsa`/`CompositeMLDsa` (FIPS 204/205; still `[Experimental]`,
+  SYSLIB5006), backed by OpenSSL 3.5+ or Windows CNG with PQC support. For new
+  long-lived signatures/key exchange, plan migration on these built-ins rather
+  than unvetted packages.
 - **TLS**: never disable validation — `ServerCertificateCustomValidationCallback`
   returning `true` (or `HttpClientHandler` accepting all certs) is HIGH/CRITICAL.
 

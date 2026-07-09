@@ -31,6 +31,10 @@ set -euo pipefail
   pipeline fails if any element fails (not just the last).
 - Optionally `shopt -s inherit_errexit` (bash ≥4.4): makes command substitutions inherit
   `-e`; without it, `var=$(false; echo ok)` succeeds silently.
+- bash ≥5.3 adds `${ cmd; }` — command substitution run *in the current shell* (no
+  subshell/fork): assignments, `cd`, and `shopt` changes inside **persist** in the parent,
+  unlike `$(cmd)`. The `-e`-masking rules here apply to it unchanged (`inherit_errexit`
+  covers both forms). Guard it as a bash ≥5.3-only feature (§1).
 
 **Where `set -e` does NOT fire — memorize this list; each is a real bug class:**
 

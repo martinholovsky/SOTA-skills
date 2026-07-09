@@ -186,8 +186,9 @@ Long-lived registry tokens in CI are the npm/PyPI compromise vector. Replace the
   GitHub environment with required reviewers for releases.
 - **npm**: use OIDC trusted publishing (GA since July 2025; provenance attestations are
   published by default with it). The registry forced this direction: legacy classic
-  tokens were revoked and generation disabled (Nov 2025), write-enabled granular tokens
-  are now capped at 90 days (Oct 2025), and TOTP 2FA is being phased out in favor of
+  tokens are gone (creation disabled Nov 2025, remaining tokens permanently revoked
+  Dec 2025), `npm login` now issues 2-hour session tokens, write-enabled granular
+  tokens are capped at 90 days (Oct 2025), and TOTP 2FA is being phased out in favor of
   WebAuthn/passkeys — any long-lived `NPM_TOKEN` you find is already dead or about to
   expire silently and break the release pipeline. The provenance badge lets consumers
   verify the package was built from the public repo by the stated workflow — build

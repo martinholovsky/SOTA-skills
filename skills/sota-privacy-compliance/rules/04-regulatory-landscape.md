@@ -32,7 +32,10 @@ its consequences in code is yours.
 **International transfers (Ch. V).** Personal data leaving the EU/EEA requires a
 transfer mechanism: adequacy decision (e.g., EU–US Data Privacy Framework for
 certified US companies — verify the receiving entity's certification and the
-framework's current validity before relying on it), Standard Contractual Clauses
+framework's current validity before relying on it: a CJEU appeal against the
+adequacy decision is pending (C-703/25 P), and the June 2026 US Supreme Court
+ruling ending FTC commissioners' removal protections has raised fresh
+independent-oversight questions), Standard Contractual Clauses
 (SCCs) + transfer impact assessment, or BCRs. Engineering consequences:
 - Know region per processor (rules/01 §4) — including support access and admin
   consoles, not just storage ("data at rest in EU, support in US" is a transfer).

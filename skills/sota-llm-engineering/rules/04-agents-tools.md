@@ -179,7 +179,10 @@ deprecation policy). Engineering consequences:
 
 - **Pin the protocol revision** you build against (2025-11-25 today); track
   the 2026-07-28 RC and plan migration — don't hand-roll protocol handling;
-  use maintained official SDKs that absorb revision churn.
+  use maintained official SDKs that absorb revision churn. The RC deprecates
+  the Roots, Sampling, and Logging primitives and removes protocol-level
+  sessions — new servers shouldn't adopt those primitives or depend on
+  `Mcp-Session-Id` state.
 - **Treat third-party MCP servers as untrusted dependencies:** version-pin,
   review tool descriptions before exposing them to your model (description
   text is prompt input — injection surface, sota-code-security rules/08), and apply your own

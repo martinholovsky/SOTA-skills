@@ -38,9 +38,9 @@ rebalance protocol is GA in 4.0+ and consumers opt in via
   (one consumer per partition max). Size with headroom (you can add
   partitions but that **reshuffles key→partition mapping**, breaking
   per-key ordering across the boundary — plan it, don't improvise it).
-  KIP-932 "share groups" (queue semantics, more consumers than partitions)
-  exist in Kafka 4.x but sacrifice per-key ordering — only for true queue
-  workloads.
+  KIP-932 "share groups" (queue semantics, more consumers than partitions,
+  per-record acks) are production-ready since Kafka 4.2 but sacrifice
+  per-key ordering — only for true queue workloads.
 - **Consumer groups & offsets:** commit offsets only after the message's
   effects are durably stored. Auto-commit-on-poll means a crash between
   commit and processing **loses data**; commit-after-process means

@@ -40,7 +40,11 @@ rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
   code). `weights_only=False` on untrusted input is CRITICAL on sight (`rules/05`).
 - Verify integrity/provenance of models and datasets (hashes, signing); pin and
   scan ML dependencies (the PyData/CUDA stack is large attack surface) — cross-ref
-  `sota-devsecops`. Beware pre-trained weights/datasets from unvetted hubs.
+  `sota-devsecops`. Beware pre-trained weights/datasets from unvetted hubs — and
+  don't treat a passing pickle scan as a trust boundary: blacklist-based scanners
+  (picklescan-style, used by major model hubs) were repeatedly bypassed in 2025
+  (multiple CVSS 9.3 CVEs: renamed extensions, corrupted ZIP flags, subclassed
+  imports). Only trusted sources + integrity verification + safe formats count.
 - Protect the model registry and feature store with authn/z; a tampered registry
   ships a tampered model.
 

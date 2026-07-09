@@ -8,7 +8,7 @@ Stack choice is a one-way door: migrating a shipped app between stacks is a rewr
 |---|---|
 | iOS | iOS 26 current (26.5.x); iOS 27 announced at WWDC (June 8–12, 2026), developer betas out, public release expected Sept 2026. Apple uses year-based naming (jumped 18 → 26 in 2025). |
 | iOS SDK requirement | Since **April 28, 2026**, App Store uploads must be built with Xcode 26 / iOS 26 SDK. Building with the 26 SDK applies the Liquid Glass appearance to system controls by default — re-test UI on SDK bump. |
-| Android | Android 16 (API 36) current stable; Android 17 stable rolling out from June 2026 (Pixels first). |
+| Android | Android 17 (API 37) stable since June 16, 2026 (Pixels first, OEM rollouts ongoing); Play target-API mandate remains API 36 (next row). |
 | Play target API | New apps and updates must target **API 36 by Aug 31, 2026** (API 35 floor for Wear OS / Android TV). Stale targets make the app invisible to new users on newer devices. |
 | Play 16 KB pages | Since **Nov 1, 2025**, new apps/updates targeting Android 15+ must support 16 KB page sizes on 64-bit devices. Pure-JVM/Kotlin apps comply automatically; anything with native `.so` libraries (including most RN/Flutter plugins) must use compatible builds. Verify in Play Console app bundle explorer. |
 | Swift | Swift 6.3.x (Xcode 26.5). Swift 6 strict concurrency is the norm for new code. |
@@ -17,7 +17,7 @@ Stack choice is a one-way door: migrating a shipped app between stacks is a rewr
 | React Native | 0.86 (Jun 2026) — fixes the Android 15+ edge-to-edge issues (insets, `KeyboardAvoidingView`) that the mandatory API-36 edge-to-edge (1.4) exposes; repo moved to the `react` GitHub org under the React Foundation. 0.85 (Apr 2026) **removed** the Bridge from the codebase entirely (no fallback, no interop, no shim). New Architecture (JSI + Fabric + TurboModules) became non-disableable in 0.82 (Oct 2025); the Bridge interop layer stayed functional through 0.84. Hermes is the default engine on both platforms. |
 | Flutter | 3.44 current stable; ~4 stable releases/year; Material/Cupertino libraries being split into separately-versioned packages. |
 | Kotlin Multiplatform | KMP stable since 2023 for shared logic. Compose Multiplatform for iOS **stable since 1.8.0 (May 2025)** — production-ready (Netflix, Cash App scale), but iOS fidelity still trails SwiftUI for platform-idiomatic feel; budget per-platform polish. |
-| OWASP MASVS | v2.1 current (adds MASVS-PRIVACY); verification levels replaced by MAS profiles + MASWE weakness enumeration. |
+| OWASP MASVS | v2.1 current (adds MASVS-PRIVACY); verification levels replaced by MAS profiles + MASWE weakness enumeration. MASTG v2.0.0 stable (June 2026) supplies the test procedures. |
 
 ## Rules
 

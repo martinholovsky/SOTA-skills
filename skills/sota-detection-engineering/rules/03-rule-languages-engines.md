@@ -87,8 +87,8 @@ trivial casing/spacing — anchor on behavior + parent/child + context.
 ## 3. YARA / YARA-X
 
 YARA matches patterns in files and memory. **YARA-X** is the Rust rewrite and
-the current standard: it reached **1.0 stable (June 2025)** and continues to
-ship (e.g. 1.11.0, Jan 2026); legacy YARA is in **maintenance mode** (bug fixes
+the current standard: it reached **1.0 stable (June 2025)** and ships frequent
+releases; legacy YARA is in **maintenance mode** (bug fixes
 only, no new features). New rules target YARA-X; validate with `yr check` and
 scan with `yr scan`. (Source: virustotal.github.io/yara-x, VirusTotal blog.)
 
@@ -144,7 +144,9 @@ Both observe kernel-level behavior via eBPF; choose by need.
 
 - **Falco** — CNCF *graduated*; mature rules language and large community
   ruleset; rich syscall + container + K8s-audit detection; primarily *detect/
-  alert*. Current line is v0.x (e.g. v0.43.0, Jan 2026 — verify at falco.io).
+  alert*. Current line is v0.x (verify at falco.io); v0.44 removed the legacy
+  (non-CO-RE) eBPF probe and gVisor engine support — older kernels need the
+  kernel-module driver or an older Falco.
 - **Tetragon** — part of **Cilium**; very low-overhead eBPF observability with
   **in-kernel enforcement** (it can *kill* a process or block an action in the
   kernel, not just alert), driven by `TracingPolicy` CRDs. Production-ready on

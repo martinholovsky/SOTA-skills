@@ -38,7 +38,7 @@ below.
 - Enable hardened standard-library assertions so OOB container access traps
   instead of corrupting: libstdc++ `-D_GLIBCXX_ASSERTIONS`, libc++
   `-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE` (LLVM 18+ — verify
-  for your toolchain).
+  for your toolchain; EXTENSIVE for debug/test, FAST in production — `rules/04` §5).
 
 ```cpp
 // BAD — trusts len from the wire; OOB read/write

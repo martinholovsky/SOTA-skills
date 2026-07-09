@@ -40,6 +40,10 @@ import httpx
 Run with `uv run script.py` — uv resolves and caches the deps. This is the correct form for
 repo maintenance scripts; reject scripts that assume "whatever is installed globally".
 
+Governance note: Astral (uv/ruff/ty) announced its acquisition by OpenAI in March 2026; the
+tools remain permissively licensed and developed in the open. The technical recommendation
+stands — weigh the ownership change like any vendor dependency when standardizing.
+
 ## 2. pyproject.toml — single source of truth
 
 All metadata, dependencies, and tool config live in `pyproject.toml`. No `setup.py`, no

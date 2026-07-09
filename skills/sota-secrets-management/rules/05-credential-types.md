@@ -76,7 +76,10 @@ Usually irreplaceable by federation — manage the static secret well:
 
 - **Automate issuance: ACME everywhere** (Let's Encrypt/ZeroSSL via cert-manager, Caddy,
   certbot, cloud LB-managed certs). ≤90-day certs make key compromise self-limiting and force
-  the automation that prevents 2am expiry outages. A multi-year manually-installed cert is a
+  the automation that prevents 2am expiry outages. The industry mandates this direction:
+  CA/Browser Forum ballot SC-081v3 caps public TLS validity at 200 days since March 2026,
+  dropping to 100 days (March 2027) and 47 days (March 2029) — manual issuance is being
+  regulated out of existence. A multi-year manually-installed cert is a
   Medium finding (process smell), expired-soon without automation is operationally urgent.
 - **Generate the key where it terminates** (CSR flow); never email/chat a `.key` or `.pfx`.
   Wildcard cert keys copied to N servers multiply exposure N-fold — prefer per-host/per-SAN

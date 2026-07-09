@@ -139,8 +139,8 @@ Idempotency-Key: 6c1f6c1e-9c5a-4f7e-b2f3-1d2a3b4c5d6e
 {"amount": 5000, "currency": "EUR"}
 ```
 
-Server contract (Stripe semantics; standardized by IETF
-`draft-ietf-httpapi-idempotency-key-header`):
+Server contract (Stripe semantics; the IETF `draft-ietf-httpapi-idempotency-key-header`
+captured the same convention but expired without becoming an RFC):
 - Key + endpoint + auth principal scope the dedupe record.
 - First request: store key + request hash **before** executing; execute; store the
   response; return it.

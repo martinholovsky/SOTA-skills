@@ -44,6 +44,10 @@ Rules:
 - **Record the vector string, not just the number** (e.g.
   `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H`) so reviewers can audit the
   assumptions — the vector is the rating; the number is a summary.
+- **Note the version prefix.** CVSS v4.0 (the current spec, 2023) replaced
+  temporal metrics with threat metrics (CVSS-B/BT/BTE nomenclature); v3.1 and
+  v4.0 scores coexist in feeds — the prefix says which rules produced the
+  number, so never compare scores across versions.
 - **CVSS ≠ exploitation probability.** For "will this actually be exploited",
   consult exploit-prediction signals (EPSS-class scores, KEV-style
   known-exploited lists) and your own exposure; severity and likelihood are

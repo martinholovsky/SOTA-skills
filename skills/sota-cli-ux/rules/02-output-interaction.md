@@ -77,7 +77,10 @@ exit codes, streaming, progress, prompts, verbosity levels, error messages.
   1. `--color`/`--no-color` flag (or `--color=always|never|auto`)
   2. `NO_COLOR` env var **set and non-empty** → no color (per no-color.org;
      empty string does *not* disable). `CLICOLOR_FORCE`/`FORCE_COLOR` non-empty
-     → force color (de facto conventions; support if low-cost)
+     → force color, winning over `NO_COLOR` (per force-color.org, which — like
+     no-color.org — ignores the value; note the Node/chalk divergence:
+     `FORCE_COLOR=0` disables, `1|2|3` set color depth — pick one behavior
+     and document it)
   3. auto: color only if the stream is a TTY and `TERM` is set and ≠ `dumb`
 - `--color=always` must exist — users pipe through `less -R` and CI renderers
   that handle ANSI. Auto-detection alone strands them.
