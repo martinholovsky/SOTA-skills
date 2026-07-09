@@ -19,6 +19,11 @@ By contributing you agree your contribution is licensed under
    regulations) must be checked against a **primary source** — a spec, vendor
    doc, CVE/CWE, or official release — and cited. Prefer "needs verification"
    over a confident guess. The library's value is that its claims hold up.
+   Corollary — **no rot-prone version pins**: never write "the current release
+   is X.Y"; say "latest stable, verify at the official source". Version
+   numbers are for semantic boundaries only ("GA since", "fixed in", CVE fix
+   versions, spec editions). Recommend maintained tools; when one goes EOL,
+   point at its maintained successor and keep a one-line EOL note.
 3. **Stay lean.** Every Markdown file is **≤ 500 lines** so skills load
    incrementally without blowing the context window. If a topic outgrows that,
    split it into another `rules/NN-topic.md`.
@@ -101,10 +106,12 @@ are marked "needs verification", never asserted.
    locally — CI always enforces it.)
 5. **version drift**: `VERSION`, `plugin.json`, and the CHANGELOG top entry
    must agree; the newest `v*` tag must never be ahead of `VERSION`;
-6. **count drift**: every count-bearing surface (README badge/hero/alt, router
-   body, plugin/marketplace descriptions, social-preview pill) must match a
-   recount of the `skills/` tree — adding or removing a skills file means
-   updating those surfaces in the same PR.
+6. **count drift**: the exact-count surfaces (README badge/hero, router body,
+   plugin/marketplace descriptions) must match a recount of the `skills/`
+   tree — adding or removing a skills file means updating them in the same
+   PR. The social-preview pill and README alt carry an **"N+" floor** instead
+   (checked only against dropping below it), so the image needs no per-release
+   re-render.
 
 Secrets are scanned separately by **gitleaks** (config in `.gitleaks.toml`);
 CI scans the full git history, the pre-commit hook scans each commit.

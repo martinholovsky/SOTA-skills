@@ -69,6 +69,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Contributor docs synced to this cycle's policy changes: AGENTS.md and
+  CONTRIBUTING.md now state the **no-version-pins rule** (latest stable +
+  semantic boundaries only, EOL→successor) as a standing convention and
+  describe invariant 6's exact-count vs "N+"-floor split; RELEASING.md's
+  pre-tag checklist matches the floor model; docs/ROADMAP.md logs
+  `sota-confidential-computing` under coverage additions.
 - **Version-claim policy applied library-wide**: rot-prone "current release is
   X.Y" claims replaced with "use the latest stable release — verify via a
   quick web search"; version numbers that mark semantic boundaries

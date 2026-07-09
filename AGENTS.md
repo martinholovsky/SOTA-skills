@@ -41,9 +41,11 @@ symlinks to it — edit only this file, never the symlinks.
 5. **version drift** — `VERSION`, `plugin.json` `"version"`, and the CHANGELOG
    top entry must agree, and the newest `v*` tag must never be ahead of
    `VERSION` (it may lag during an open release PR);
-6. **count drift** — the README badge/hero/social-alt, the router body's
-   "N domain skills", the plugin + marketplace descriptions, and the
-   social-preview pill must all match a recount of the `skills/` tree.
+6. **count drift** — the README badge/hero, the router body's "N domain
+   skills", and the plugin + marketplace descriptions must match a recount of
+   the `skills/` tree; the social-preview pill and README alt are **"N+"
+   floors** (they fail only if the tree count drops below the floor), so the
+   PNG is not re-rendered per release.
 
 Separately, `scripts/check-freshness.sh` (run monthly by
 `.github/workflows/freshness.yml`) tracks the root `LAST-VERIFIED` stamp —
@@ -68,6 +70,13 @@ pre-commit hook scans each commit locally.
 - **Verify claims.** Fast-moving facts (versions, specs, advisories) are checked
   against a primary source and cited; uncertain items are marked
   "needs verification", never asserted.
+- **No rot-prone version pins.** Skills never claim "the current release is
+  X.Y" — write "latest stable" and tell the reader to verify at the official
+  source. Version numbers mark **semantic boundaries only** ("GA since",
+  "introduced/fixed/removed in", CVE fix versions, spec editions). When a
+  recommended tool goes EOL/unmaintained, replace it with the maintained
+  successor (project-recommended target first, then CNCF), keeping a one-line
+  EOL note for auditors. (Policy since the 2026-07-08 freshness sweep.)
 - **Skill anatomy.** `skills/sota-<domain>/SKILL.md` (two-field frontmatter —
   `name` + `description`; BUILD/AUDIT workflows; top-10 non-negotiables; a rules
   index) plus `rules/NN-topic.md` files, each ≤ 500 lines and ending in an
