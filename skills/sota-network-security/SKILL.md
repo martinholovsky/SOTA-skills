@@ -13,7 +13,7 @@ description: >-
   Hubble, service mesh, mTLS, Istio, Linkerd, SPIFFE, ingress, egress, WAF,
   CRS, Coraza, egress gateway, FQDN allowlist, IMDS, 169.254.169.254, DNS
   firewall, DNSSEC, DoH, TLS 1.3, ACME, step-ca, private CA, WireGuard,
-  bastion, identity-aware proxy, segmentation audit. Owns SECURITY posture on
+  bastion, identity-aware proxy, DDoS, segmentation audit. Owns SECURITY posture on
   top of cloud network setup (sota-cloud-infrastructure owns VPC/subnet/DNS
   setup).
 ---
@@ -111,7 +111,7 @@ Group repeated instances (e.g. 12 namespaces with no egress policy) into one fin
 | rules/02-segmentation-blast-radius.md | Designing/auditing zones and tiers, north-south vs east-west, the flat-network and over-broad-rule (`any`/`0.0.0.0/0`/`world`) traps, microsegmentation, lateral-movement containment, firewall/SG default-deny, remote access (WireGuard, bastion vs IAP) |
 | rules/03-k8s-network-policy.md | Writing/auditing Kubernetes NetworkPolicy, CiliumNetworkPolicy, the namespaced default-deny (ingress AND egress) pattern, the "default-deny that isn't" trap, ANP/BANP, L7/identity policy, DNS-aware egress, egress gateways, Hubble visibility |
 | rules/04-service-mesh-mtls.md | The plaintext-internal-traffic problem, choosing/auditing a mesh (Istio sidecar vs ambient, Linkerd, Cilium mesh), mTLS everywhere, mesh authorization policy, SPIFFE identity, and deciding mesh vs plain TLS |
-| rules/05-edge-ingress-egress.md | WAF (CRS/Coraza), ingress/API-gateway hardening, TLS termination + re-encryption, trusted-IP handling behind Cloudflare, egress as a first-class control, FQDN allowlisting, blocking the metadata endpoint, the SSRF-meets-egress chain |
+| rules/05-edge-ingress-egress.md | WAF (CRS/Coraza), ingress/API-gateway hardening, TLS termination + re-encryption, trusted-IP handling behind Cloudflare, DDoS posture (edge scrubbing + self-hosted kernel hardening: SYN cookies/synproxy, conntrack, rp_filter, no open UDP reflectors), egress as a first-class control, FQDN allowlisting, blocking the metadata endpoint, the SSRF-meets-egress chain |
 | rules/06-dns-tls-pki.md | DNS security (DNSSEC, RPZ/DNS firewall, DoH/DoT, split-horizon, CAA, tunneling), TLS posture (1.3, ciphers, HSTS, OCSP), shrinking cert lifetimes + ACME automation, internal PKI (step-ca), short-lived certs, pinning tradeoffs |
 
 Cross-cutting tasks read multiple files: a full network audit touches all six; "lock down our

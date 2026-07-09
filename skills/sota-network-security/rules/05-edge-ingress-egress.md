@@ -1,6 +1,7 @@
 # 05 — Edge, Ingress & Egress
 
-Scope: WAF (OWASP CRS, Coraza/ModSecurity), ingress/API-gateway hardening, DDoS posture, TLS
+Scope: WAF (OWASP CRS, Coraza/ModSecurity), ingress/API-gateway hardening, DDoS posture (edge
+scrubbing + self-hosted L3/4 kernel hardening), TLS
 termination + re-encryption to backends, reverse-proxy trusted-IP / allowlist handling (behind
 Cloudflare), Cloudflare-tunnel / identity-aware-proxy patterns, and **egress as a first-class
 control**: default-deny egress, egress gateways/proxies, FQDN allowlisting, preventing C2/exfil, and
@@ -99,11 +100,36 @@ authenticated proxy.
 
 ## 5. DDoS posture
 
-**R8 — Absorb at the edge, rate-limit per-identity, cap autoscaling.** Cloudflare absorbs L3/4 and
-much L7; add WAF rate-limiting rules and per-route/per-identity limits (design owned by
-sota-api-design rules/07). Cap autoscaling so a flood can't scale your bill or cluster infinitely.
-"We never considered DDoS" is the finding; record the stance. Best DDoS surface is none — keep
-non-public surfaces non-public (tunnels, IAP).
+**R8 — Absorb at the edge, rate-limit per-identity, cap autoscaling.** A scrubbing edge (e.g.
+Cloudflare, a cloud provider's DDoS tier, or an Anycast scrubbing provider) absorbs L3/4 and much
+L7; add WAF rate-limiting rules and per-route/per-identity limits (design owned by
+sota-api-design rules/07). Cap autoscaling so a flood can't scale your bill or cluster infinitely
+(economic/"yo-yo" DoS). "We never considered DDoS" is the finding; record the stance. Best DDoS
+surface is none — keep non-public surfaces non-public (tunnels, IAP). Cloud L3/4 mitigation posture
+(Shield/Cloud Armor/Azure DDoS tiers) is sota-cloud-infrastructure rules/03 §10; this rule owns the
+edge you operate.
+
+**R8.1 — Self-hosted / bare-metal edge: harden the kernel, you are the scrubber.** When there is no
+Anycast provider in front (e.g. a bare-metal or Talos edge exposed directly), L3/4 defense is yours.
+Baseline, matched to the exposed protocols:
+- **SYN floods:** enable TCP **SYN cookies** (`net.ipv4.tcp_syncookies=1`) — the kernel answers with
+  a cryptographic cookie instead of holding half-open state when the SYN backlog overflows. For a
+  high-rate edge, add a **synproxy** (nftables) in front of the listener so flood SYNs never create
+  conntrack entries: it needs `tcp_syncookies` **and** `tcp_timestamps` on, `notrack` on SYNs in the
+  raw table, `nf_conntrack_tcp_loose=0`, and a rule matching `ct state invalid,untracked`
+  (per the nftables synproxy wiki). Note syncookies disable some TCP options — expected trade-off
+  under attack, not a steady-state default concern.
+- **Conntrack exhaustion** is its own DoS: a stateful firewall drops new flows once
+  `nf_conntrack_max` fills. Size it (and the hashsize) to expected concurrency, alert on
+  `nf_conntrack_count` / "table full" drops, and `notrack` high-volume stateless traffic so it never
+  consumes a slot.
+- **Anti-spoofing:** enable **reverse-path filtering** (`rp_filter`, strict where routing allows;
+  RFC 3704) so spoofed-source packets are dropped at ingress.
+- **Don't be an amplifier (BCP 38 / RFC 2827):** never expose an **open** UDP reflector — recursive
+  DNS resolver, NTP `monlist`, memcached, SSDP, chargen — to the internet; bind them internally or
+  require auth. An exposed open resolver makes you a weapon in someone else's reflection attack and a
+  target for the return traffic. Prefer TCP or authenticated protocols on the public edge; rate-limit
+  or drop unsolicited UDP you don't serve.
 
 ## 6. Egress as a first-class control
 
@@ -158,3 +184,8 @@ logging beats either alone: the allowlist blocks the easy path, the logs catch t
 - [ ] Is egress funneled through an inspectable choke point and are egress/proxy logs exported to
       detection?
 - [ ] DDoS stance recorded; per-identity rate limits and autoscale caps set?
+- [ ] Self-hosted/bare-metal edge with no scrubbing provider in front: `tcp_syncookies` on,
+      `rp_filter` enabled, `nf_conntrack_max` sized + drops alerted, synproxy on high-rate TCP
+      listeners? (`sysctl net.ipv4.tcp_syncookies net.ipv4.conf.all.rp_filter`)
+- [ ] No open UDP reflector (recursive DNS, NTP monlist, memcached, SSDP, chargen) exposed to the
+      internet — you are not an amplification source (BCP 38)?
