@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  :root{
+    --bg:#0a0e14;
+    --panel:#0f1620;
+    --ink:#e6edf3;
+    --muted:#8b98a9;
+    --line:#1d2733;
+    --green:#4ade80;
+    --green-dim:#2fa45f;
+    --amber:#fbbf24;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1400px;height:672px}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,"SF Pro Display","Segoe UI",Helvetica,Arial,sans-serif;
+    position:relative;
+    overflow:hidden;
+  }
+  .grid{
+    position:absolute;inset:0;
+    background-image:radial-gradient(rgba(120,160,200,.07) 1.2px, transparent 1.2px);
+    background-size:26px 26px;
+    mask-image:linear-gradient(180deg,rgba(0,0,0,.9),rgba(0,0,0,.25));
+  }
+  .glow{
+    position:absolute;width:700px;height:700px;border-radius:50%;
+    right:-240px;top:-300px;
+    background:radial-gradient(circle, rgba(74,222,128,.14), transparent 62%);
+    filter:blur(8px);
+  }
+  .wrap{position:relative;height:100%;padding:42px 60px 40px;display:flex;flex-direction:column}
+  .mono{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace}
+
+  .eyebrow{
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    font-size:16px;letter-spacing:.32em;text-transform:uppercase;
+    color:var(--green);font-weight:600;
+  }
+  .eyebrow .dim{color:var(--muted)}
+  h1{margin-top:14px;font-size:40px;font-weight:800;letter-spacing:-.018em}
+  h1 .accent{color:var(--green)}
+
+  .flow{display:flex;align-items:stretch;gap:0;margin-top:28px;flex:1}
+  .stage{
+    flex:1;background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:22px 22px 18px;display:flex;flex-direction:column;position:relative;
+  }
+  .stage .num{
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    font-size:14px;color:var(--green);font-weight:700;letter-spacing:.12em;
+  }
+  .stage h2{font-size:22px;font-weight:750;margin-top:6px;letter-spacing:-.01em}
+  .stage p{margin-top:10px;font-size:16.5px;line-height:1.42;color:#c7d2de}
+  .stage p b{color:var(--ink)}
+  .stage .ex{
+    margin-top:auto;padding-top:14px;
+  }
+  .chip{
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    display:inline-block;background:#0b1a12;border:1px solid #1e4630;border-radius:8px;
+    color:var(--green);font-size:14.5px;padding:8px 11px;line-height:1.45;
+  }
+  .chip.dim{background:#101724;border-color:var(--line);color:#aab7c8}
+  .arrow{
+    align-self:center;width:46px;text-align:center;flex:0 0 46px;
+    color:var(--green-dim);font-size:26px;font-weight:700;
+  }
+
+  .foot{
+    margin-top:26px;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:16px 22px;display:flex;align-items:center;gap:14px;
+  }
+  .foot .lbl{
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    font-size:14px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;flex:0 0 auto;
+  }
+  .pill{
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    font-size:15px;border:1px solid #1e4630;background:#0b1a12;color:var(--green);
+    border-radius:999px;padding:6px 13px;white-space:nowrap;
+  }
+  .foot .note{margin-left:auto;font-size:15.5px;color:var(--muted)}
+  .foot .note b{color:#c7d2de}
+</style>
+</head>
+<body>
+  <div class="grid"></div>
+  <div class="glow"></div>
+  <div class="wrap">
+    <div class="eyebrow">How it works <span class="dim">·</span> <span class="dim">seamless skill invocation</span></div>
+    <h1>Plain prompt in — <span class="accent">the right skills load themselves</span></h1>
+
+    <div class="flow">
+      <div class="stage">
+        <div class="num">1 · YOU PROMPT</div>
+        <h2>Plain language</h2>
+        <p>No skill names, no trigger words, no stack required — your <b>profile</b> (or the skills' own selection rules) fills in the rest.</p>
+        <div class="ex"><span class="chip">&gt; Add file upload to our invoices API</span></div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="stage">
+        <div class="num">2 · AUTO-ROUTING</div>
+        <h2>Task → skills</h2>
+        <p>The prompt is matched against every skill's description; the <b>sota router</b> maps task + mode (<b>BUILD</b> or <b>AUDIT</b>) to the domains it touches.</p>
+        <div class="ex"><span class="chip dim">upload → security · API · language · tests</span></div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="stage">
+        <div class="num">3 · SELECTIVE LOAD</div>
+        <h2>Only what's needed</h2>
+        <p>Each skill's index picks the matching <b>rules files</b> (every file &lt; 500 lines) — never the whole library, so context stays lean.</p>
+        <div class="ex"><span class="chip dim">SKILL.md → rules/09-ingestion … nothing else</span></div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="stage">
+        <div class="num">4 · APPLIED</div>
+        <h2>Build · audit · verify</h2>
+        <p>BUILD applies the rules while writing and <b>self-checks the diff</b> against each audit checklist; AUDIT emits <b>file:line | rule | severity | effort | fix</b>.</p>
+        <div class="ex"><span class="chip">✓ hardened upload + tests + checklist pass</span></div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <span class="lbl">Loaded for this prompt</span>
+      <span class="pill">code-security</span>
+      <span class="pill">api-design</span>
+      <span class="pill">python</span>
+      <span class="pill">testing</span>
+      <span class="note"><b>4 of 40+ skills</b> — routing is automatic; an optional always-on directive makes it phrasing-independent</span>
+    </div>
+  </div>
+</body>
+</html>

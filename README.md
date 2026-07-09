@@ -27,12 +27,14 @@ Two commands to install:
 /plugin install sota-skills@sota-skills
 ```
 
-Then describe the task in plain language — routing loads the right skills:
+Then describe the task in plain language — routing loads the right skills; the
+stack comes from your profile or the skills' defaults (naming one is optional):
 
-> Design a multi-tenant invoicing service. Postgres, FastAPI.
+> Design a multi-tenant invoicing service.
 
-> Run a full audit of this repo — every finding with severity, effort, and a
-> fix, ending in a prioritized roadmap.
+> Run a full audit of this repo — severity, effort, and fix on every finding.
+
+<img src="assets/how-it-works.png" alt="How it works: a plain prompt is routed automatically — the sota router maps the task to skills, only the matching rules files load, and the rules are applied in BUILD or AUDIT mode" width="100%">
 
 More install options: [Installation](#installation) · more prompts: [Using it](#using-it).
 
@@ -41,7 +43,8 @@ More install options: [Installation](#installation) · more prompts: [Using it](
 Findings name the control they violate — not just "this looks wrong":
 
 - **Security** — OWASP Top 10 (2025), ASVS, API & LLM Top 10; findings cite CWE IDs
-- **Languages** — SEI CERT (C, C++, Java), MISRA C/C++, ANSSI Rust guide
+- **Languages** — all 9 language skills (Rust → Ruby, below) get the same rigor;
+  formal standards where they exist: SEI CERT (C, C++, Java), MISRA C/C++, ANSSI Rust
 - **Supply chain** — SLSA, Sigstore, in-toto, SBOM (CycloneDX/SPDX), NIST SSDF
 - **Cloud & identity** — CIS Benchmarks, NIST 800-207 zero trust, NIST 800-63-4,
   OAuth 2.1, FAPI 2.0, passkeys, SPIFFE
@@ -106,8 +109,7 @@ performance, API evolvability, per-language idioms, SLOs, test-suite health.
 
 ### Coverage & non-goals
 
-Deliberately **not covered**: Scala/Elixir, standalone C (it lives inside
-`sota-c-cpp`), platform-engineering/IDP depth. File a *skill request* issue.
+Deliberately **not covered**: Scala/Elixir, standalone C (inside `sota-c-cpp`), platform-engineering/IDP depth. File a *skill request* issue.
 
 ## Installation
 
@@ -244,7 +246,7 @@ skill, *scope* to one rule file, or *stack* an exact combo.
 
 **Building** — plain prompts; routing picks the skills:
 
-> Design a multi-tenant invoicing service. Postgres, FastAPI.
+> Design a multi-tenant invoicing service — stack from my profile, or propose one.
 
 > Add a websocket endpoint for live notifications.
 
@@ -307,8 +309,7 @@ skill, *scope* to one rule file, or *stack* an exact combo.
   time budget ("crown jewels only"). The methodology file asks otherwise.
 - **Ask for the report format** — default audit output is executive summary →
   findings by severity → roadmap by risk-reduction-per-effort → positive notes.
-- **Re-verify version-sensitive facts** — pinned facts age between edits; hold the
-  model to web-checking before pinning versions.
+- **Re-verify version-sensitive facts** — web-check before pinning any version.
 
 ## Optional setup & integrations
 
@@ -425,8 +426,7 @@ skills/
     SKILL.md                     # when to use, BUILD/AUDIT workflows,
                                  # severity conventions, rules index, top-10
     rules/
-      01-<topic>.md              # ~80–350 lines each, ends with an
-      02-<topic>.md              # executable Audit checklist
+      NN-<topic>.md              # ~80–350 lines each, ends with an Audit checklist
       ...
 profiles/
   <user>.md                      # personal stack defaults consulted by router

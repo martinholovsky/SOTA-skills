@@ -28,6 +28,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   corrected against primary sources (CCC, AMD/Intel/Arm docs, RFC editor,
   Azure/GCP docs, CNCF, NIST, ISO). Per repo policy no current-version pins —
   "latest stable, verify at time of use" throughout.
+- **README "how it works" diagram** (`assets/how-it-works.png` + HTML source):
+  a four-stage invocation flow (plain prompt → auto-routing → selective
+  rules-file loading → BUILD/AUDIT application) with a worked file-upload
+  example showing 4 skills loading automatically. Deliberately count-stable
+  ("40+") so it never needs re-rendering on skill additions. Also clarified
+  two README lines: the language-standards bullet no longer reads as
+  "only 4 languages supported", and the invoicing example prompts no longer
+  imply the user must name a stack (profile/skill defaults fill it in).
 - **Count-surface floor model for the social preview**: the image pill and
   README alt now read **"40+"** so the PNG needs no re-render/re-upload per
   skill addition; `check-invariants.sh` gained `ck_floor` (fails only if the
