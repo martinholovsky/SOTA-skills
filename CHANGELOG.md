@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`sota-confidential-computing`** — confidential computing and cryptographic
+  PETs (41 skills total): protecting workloads and data in use from the
+  infrastructure they run on — the explicit inverse of `sota-sandboxing`
+  (router cross-cutting rule 19 encodes the boundary). SKILL.md + 5 rules:
+  01 threat model & selection (CCC definition test — memory encryption alone
+  is not CC; five-rung escalation ladder; adversary→mechanism table),
+  02 TEE technologies (SEV→SEV-ES→SEV-SNP insufficiency ladder, TDX on
+  TME/TME-MK, ARM CCA status incl. Azure Cobalt 200, SGX/LibOS reality,
+  Nitro Enclaves' distinct trust model, NVIDIA confidential GPUs,
+  side-channel posture), 03 remote attestation (RATS RFC 9334 roles,
+  attest-then-release, evidence hard rules, hosted vs self-hosted verifiers,
+  TCB recovery, RA-TLS/IETF SEAT), 04 confidential Kubernetes (nodes vs pods,
+  CoCo/Kata/Trustee KBS, AKS preview retirement caveat, operational reality),
+  05 PETs/COED (FHE families + ISO/IEC 28033 + NIST PEC, MPC/threshold, ZKP
+  circuit risk, PSI/OPRF, TEE-vs-PET-vs-DP selection). Built by 5 parallel
+  research agents + 2 adversarial verifiers; 54 claims re-verified, 8
+  corrected against primary sources (CCC, AMD/Intel/Arm docs, RFC editor,
+  Azure/GCP docs, CNCF, NIST, ISO). Per repo policy no current-version pins —
+  "latest stable, verify at time of use" throughout.
+- **Count-surface floor model for the social preview**: the image pill and
+  README alt now read **"40+"** so the PNG needs no re-render/re-upload per
+  skill addition; `check-invariants.sh` gained `ck_floor` (fails only if the
+  tree count drops below the floor); PNG re-rendered once; RELEASING.md
+  updated.
+
 ### Fixed
 
 - **Freshness sweep 2026-07-08** — full-library research pass (one web-research

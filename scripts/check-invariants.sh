@@ -198,6 +198,14 @@ v6=0
 ck() { # ck <found> <expected> <surface>
   [ "$1" = "$2" ] || { note "$3: says '${1:-<not found>}', tree says '$2'"; v6=1; }
 }
+ck_floor() { # ck_floor <found-floor> <actual> <surface> — "N+" surfaces (the
+  # social-preview image and its alt say "40+" so the PNG needn't be
+  # re-rendered/re-uploaded every release): pass while actual >= floor.
+  case "$1" in
+    ''|*[!0-9]*) note "$3: no 'N+' floor found (expected e.g. '40+')"; v6=1; return ;;
+  esac
+  [ "$2" -ge "$1" ] || { note "$3: floor '$1+' is ahead of tree count '$2'"; v6=1; }
+}
 n_skills=$(git ls-files 'skills/*/SKILL.md' | wc -l | tr -d ' ')
 n_files=$(git ls-files 'skills/' | grep -c '\.md$' || true)
 n_lines=$(git ls-files 'skills/' | grep '\.md$' | tr '\n' '\0' | xargs -0 cat | awk 'END{print NR}')
@@ -213,16 +221,16 @@ ck "$(printf '%s' "$hero" | grep -oE '\([0-9]+ files' | grep -oE '[0-9]+' || tru
    "$n_files" "README hero file count"
 ck "$(printf '%s' "$hero" | grep -oE '~[0-9]+k lines' | grep -oE '[0-9]+' || true)" \
    "$n_klines" "README hero ~k-lines"
-ck "$(sed -n 's/.*alt="SOTA Engineering Skills — \([0-9]*\) .*/\1/p' README.md | head -n 1)" \
-   "$n_skills" "README social-preview alt"
+ck_floor "$(sed -n 's/.*alt="SOTA Engineering Skills — \([0-9]*\)+ .*/\1/p' README.md | head -n 1)" \
+   "$n_skills" "README social-preview alt (N+)"
 ck "$(sed -n 's/^A library of \([0-9]*\) domain skills.*/\1/p' skills/sota/SKILL.md | head -n 1)" \
    "$n_domains" "router body (skills/sota/SKILL.md)"
 for j in .claude-plugin/plugin.json .claude-plugin/marketplace.json; do
   ck "$(sed -n 's/.*(\([0-9]*\) skills).*/\1/p' "$j" | head -n 1)" "$n_skills" "$j skill count"
   ck "$(sed -n 's/.*across \([0-9]*\) domains.*/\1/p' "$j" | head -n 1)" "$n_domains" "$j domain count"
 done
-ck "$(sed -n 's/.*>\([0-9]*\) skills<.*/\1/p' assets/social-preview.html | head -n 1)" \
-   "$n_skills" "social-preview.html pill (re-render the PNG too)"
+ck_floor "$(sed -n 's/.*>\([0-9]*\)+ skills<.*/\1/p' assets/social-preview.html | head -n 1)" \
+   "$n_skills" "social-preview.html pill (N+)"
 if [ "$v6" -eq 0 ]; then echo "    ok"; else fail=1; fi
 
 # --- Result ---------------------------------------------------------------
