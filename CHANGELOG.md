@@ -5,6 +5,23 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`sota-network-security` rules/05 — self-hosted / bare-metal DDoS
+  hardening** (R8.1): the one gap in the library's DDoS coverage. Existing
+  guidance assumed a scrubbing edge (Cloudflare/Shield/Cloud Armor); this
+  adds the L3/4 kernel layer for edges with no provider in front — TCP SYN
+  cookies + nftables synproxy (prereqs per the nftables wiki), conntrack-table
+  exhaustion sizing/alerting, reverse-path filtering (RFC 3704), and
+  not-being-an-amplifier hygiene (BCP 38 / RFC 2827 — no open DNS/NTP/
+  memcached/SSDP/chargen reflectors). R8 reframed to name edge scrubbing
+  generically (Anycast/provider tiers), with cross-refs to
+  sota-cloud-infrastructure rules/03 §10. Two audit-checklist items + SKILL
+  index/scope/trigger updates. All claims primary-sourced (nftables wiki,
+  kernel.org ip-sysctl, RFC 2827/3704).
+
 ## [1.12.0] - 2026-07-09
 
 ### Added
