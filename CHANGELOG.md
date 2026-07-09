@@ -5,7 +5,7 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.12.0] - 2026-07-09
 
 ### Added
 
@@ -375,6 +375,7 @@ from 34 to 35 skills.
 Releases **1.6.0 and earlier** are archived in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md).
 
+[1.12.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.12.0
 [1.11.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.11.0
 [1.10.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.10.0
 [1.9.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.9.0
