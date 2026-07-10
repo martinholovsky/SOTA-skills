@@ -18,7 +18,7 @@ description: >-
 # SOTA Ruby (2026)
 
 Expert-level rules for producing and auditing production Ruby. Baseline language
-line: **Ruby 3.4+**, with Ruby 4.0 (released 2025-12-25) as the current stable
+line: **Ruby 3.4+**, with Ruby 4.0 (released 2025-12-25) as the latest major
 line. Per the [official branches page](https://www.ruby-lang.org/en/downloads/branches/):
 4.0 and 3.4 are in normal maintenance; 3.3 is security-maintenance only
 (expected EOL 2027-03); 3.2 and older are EOL (3.2 since 2026-04-01) — running

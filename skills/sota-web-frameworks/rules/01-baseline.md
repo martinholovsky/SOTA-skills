@@ -10,8 +10,8 @@ security releases weekly.
 |---|---|---|---|
 | React | 19.2.x | 19.x | 18.x maintained but no new features; React Compiler needs 19 idioms |
 | Next.js | 16.2.x | 15.x (16.x preferred) | **Active LTS 16.x**, **Maintenance LTS 15.x** (critical + security ~2y from 2024-10-21). Everything **< 15 is unsupported** — treat as a finding |
-| Vue | 3.5.39 | 3.5+ | Vue 2 **EOL 2023-12-31** (paid extended support only). 3.6 (Vapor mode) in beta — not stable |
-| Nuxt | 4.4.8 | 4.x | Nuxt 3 **security-patches-only until 2026-07-31** (then EOL); Nuxt 2 EOL 2024-06-30; Nuxt 5 (unreleased) brings Nitro v3 + h3 v2 |
+| Vue | 3.5.x | 3.5+ | Vue 2 **EOL 2023-12-31** (paid extended support only). 3.6 (Vapor mode) in beta — not stable |
+| Nuxt | 4.4.x | 4.x | Nuxt 3 **security-patches-only until 2026-07-31** (then EOL); Nuxt 2 EOL 2024-06-30; Nuxt 5 (unreleased) brings Nitro v3 + h3 v2 |
 | Nitro | 2.13.x | 2.x | v3 in beta; ships with Nuxt 5 |
 | Pinia | 3.x | 3.x | Pinia 3 dropped Vue 2; default Nuxt/Vue store |
 

@@ -271,7 +271,8 @@ For a **full project audit**, work in passes:
   04 SLOs & alerting, 05 operational readiness, 06 audit playbook
 - **sota-testing/rules**: 01 strategy & shape, 02 test design & quality,
   03 doubles & test data, 04 integration/contract/system, 05 e2e & UI,
-  06 property/fuzzing/mutation, 07 suite health & CI
+  06 property/fuzzing/mutation, 07 suite health & CI, 08 BDD/spec-by-example,
+  09 security testing
 - **sota-llm-engineering/rules**: 01 evals, 02 prompt & context engineering,
   03 RAG & retrieval, 04 agents & tools, 05 production engineering,
   06 data & lifecycle
@@ -291,6 +292,9 @@ For a **full project audit**, work in passes:
 - **sota-network-security/rules**: 01 zero-trust architecture,
   02 segmentation & blast radius, 03 K8s network policy, 04 service mesh &
   mTLS, 05 edge/ingress/egress, 06 DNS/TLS/PKI
+- **sota-confidential-computing/rules**: 01 threat model & selection,
+  02 TEE technologies, 03 remote attestation, 04 confidential Kubernetes,
+  05 PETs & computing on encrypted data
 - **sota-detection-engineering/rules**: 01 detection-engineering discipline,
   02 telemetry & SIEM data layer, 03 rule languages & engines, 04 alerting/
   triage/SOC/SOAR, 05 hunting/intel/deception, 06 incident response &
@@ -313,7 +317,7 @@ For a **full project audit**, work in passes:
   correctness, 03 security, 04 CI & operational scripts
 - **sota-docs-workflow/rules**: 01 documentation architecture, 02 API
   reference & changelogs, 03 code review & PR workflow, 04 commits/branches/
-  releases
+  releases, 05 spec-driven development
 - **sota-ux-writing/rules**: 01 voice/tone & plain language, 02 microcopy &
   components, 03 errors & feedback, 04 accessibility & localization
 - **sota-copywriting/rules**: 01 positioning & value proposition,

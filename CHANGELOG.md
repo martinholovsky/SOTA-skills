@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Audit 2026-07-10 content corrections** (all primary-source verified):
+  OWASP Top 10 2025 mislabel — Insecure Design is **A06**, not A04
+  (`sota-code-security` rules/09); JSON Merge Patch citation **RFC 7386 →
+  7396** (obsoleted 2014, `sota-api-design` rules/01); ingress-nginx wording —
+  the 2026 CVE wave **was** patched in the final releases (≥1.13.9/1.14.5/
+  1.15.1), the standing risk is post-EOL CVEs (`sota-kubernetes` rules/01);
+  Iceberg v3 "GA across major engines" overstated → GA on Snowflake/Databricks/
+  Spark, Trino still lagging (`sota-data-engineering` rules/01); a
+  `grep -v "--"` end-of-options bug in an audit checklist
+  (`sota-javascript-typescript` rules/07); a dangling retired-convention
+  "last-verified" reference (`sota-confidential-computing` rules/04); and
+  ~7 rot-prone version pins reworded to the no-pins policy (Rust 1.96→"recent
+  stable", golangci-lint, Swift, Flutter, PHP, Ruby, Vue/Nuxt patch→minor).
+- **Router library map** (`skills/sota/SKILL.md`) — added the missing
+  `sota-confidential-computing` bullet (41st skill) and refreshed the stale
+  `sota-testing` (→09) and `sota-docs-workflow` (→05) bullets. Routing table
+  and per-skill indexes were already correct; only the map overview drifted.
+
 ### Added
 
 - **`docs/AUDIT-2026-07-10.md`** — second adversarial repository audit (13

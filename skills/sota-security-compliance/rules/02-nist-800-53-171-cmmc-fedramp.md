@@ -13,8 +13,8 @@ rest are scopes and assessment wrappers over it.
 
 ## 1. SP 800-53 — the control catalog
 
-**Status:** **Rev 5**, finalized 10 Dec 2020 (Rev 5.1.1); the control **baselines**
-in **SP 800-53B** reached **Release 5.2.0 on 27 Aug 2025** — the catalog is current
+**Status:** **Rev 5**, finalized 10 Dec 2020 (Rev 5.1.1); the **SP 800-53/53B** catalog and baselines
+reached **Release 5.2.0 on 27 Aug 2025** — the catalog is current
 and actively maintained, no Rev 6 (csrc.nist.gov/pubs/sp/800/53/r5/upd1/final).
 
 **20 control families**; Rev 5 added **PT** (PII processing) and **SR** (supply-

@@ -225,7 +225,7 @@ steps:
 
 - [ ] CI runs typecheck, lint, tests as blocking steps — `cat .github/workflows/*.yml | grep -E "tsc|eslint|vitest|test"`; missing typecheck gate = MEDIUM.
 - [ ] ESLint config is flat + `strictTypeChecked` (type-aware): `grep -rn "strictTypeChecked\|projectService" eslint.config.*` — syntax-only linting in a TS repo = MEDIUM.
-- [ ] `grep -rn "eslint-disable" src/ | grep -v "--"` — disables without reason comments; count trend (LOW each, MEDIUM in volume).
+- [ ] `grep -rn "eslint-disable" src/ | grep -v -- "--"` — disables without reason comments; count trend (LOW each, MEDIUM in volume).
 - [ ] `grep -rn "querySelector\|container\." src/**/*.test.tsx` and `getByTestId` density — implementation-coupled tests (LOW/MEDIUM).
 - [ ] `grep -rn "fireEvent" src/` in component tests — should be `userEvent` (LOW).
 - [ ] `grep -rn "waitForTimeout\|setTimeout" e2e/ tests/` — sleep-based waits = flake (MEDIUM).

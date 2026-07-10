@@ -20,7 +20,8 @@ description: >-
 
 This skill encodes the 2026 state of the art for production Rust: the idioms,
 security posture, performance discipline, and CI baseline expected of an
-expert Rust codebase. Baseline as of mid-2026: stable Rust 1.96 (May 2026),
+expert Rust codebase. Baseline as of mid-2026: a recent stable Rust toolchain (verify the current
+release at blog.rust-lang.org),
 edition 2024 (next edition expected ~2027), tokio still 1.x. It serves two modes — **BUILD** (write new code to this
 standard) and **AUDIT** (find where existing code falls short, with severity
 and evidence). The detailed rules live in `rules/*.md`; load only the files
