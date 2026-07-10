@@ -29,6 +29,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Installer script defects** (2026-07-10 audit): `install.sh` no longer
+  aborts (`set -e`, exit 1) when the user declines a routing prompt — routing
+  setup is best-effort and now always returns success, so pre-commit setup and
+  the final instructions still run (Q-MED-4, reproduced fixed: exit 0, reaches
+  the end); `install.sh` profile-linking no longer silently clobbers a real
+  file in `~/.claude/profiles` — it backs up + asks first, matching
+  `setup_claude_md`'s contract, and keeps the file untouched non-interactively
+  (Q-MED-5, reproduced: user content preserved); and `init-gates.sh` writes
+  `.pre-commit-config.yaml` as 644 instead of the `mktemp` 600 (Q-LOW).
 - **Audit 2026-07-10 content corrections** (all primary-source verified):
   OWASP Top 10 2025 mislabel — Insecure Design is **A06**, not A04
   (`sota-code-security` rules/09); JSON Merge Patch citation **RFC 7386 →

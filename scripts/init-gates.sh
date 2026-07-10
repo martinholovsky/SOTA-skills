@@ -387,6 +387,9 @@ assemble() {
   fi
   [ -f "$CONFIG" ] && cp "$CONFIG" "$CONFIG.bak"
   mv "$tmp" "$CONFIG"
+  # mktemp creates 0600; a committed repo config should be world-readable, not
+  # owner-only (2026-07-10 audit Q-LOW). 644 is the conventional perm.
+  chmod 644 "$CONFIG"
 }
 
 # --- run ---------------------------------------------------------------------
