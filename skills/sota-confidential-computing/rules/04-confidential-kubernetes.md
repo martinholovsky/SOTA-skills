@@ -49,7 +49,7 @@ each layer adds attestation surface and failure modes.
 
 ## 2. Confidential nodes (managed offerings)
 
-Verified against vendor docs as of this file's last-verified date; **re-verify
+Provider GA states move fast; **re-verify
 GA status at the provider's documentation before committing to a design.**
 
 - **GKE Confidential GKE Nodes** — GA. Original GA on AMD SEV; AMD SEV-SNP and

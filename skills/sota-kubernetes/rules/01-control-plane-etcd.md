@@ -207,7 +207,8 @@ machine:
   -24514/-1580/-3288/-4342; CSI SMB/NFS subDir path traversal CVE-2026-3864/-3865), and
   the distro (Talos/k3s/k0s).
 - **ingress-nginx is EOL** (retired by SIG Network/SRC; maintenance ended March 2026, repo
-  read-only, no fixes even for the 2026 CVE wave above). A deployed ingress-nginx is a
+  read-only). The 2026 CVE wave *was* patched in the final releases (>=1.13.9/1.14.5/1.15.1);
+  the standing risk is that any CVE found after EOL gets **no** fix. A deployed ingress-nginx is a
   standing High finding: migrate to Gateway API or an actively maintained ingress
   controller (ingress/edge config depth is `sota-network-security`).
 
@@ -225,4 +226,4 @@ machine:
 - [ ] Nodes: minimal/hardened OS, kube-bench passing, no routine SSH? Talos: SecureBoot + TPM/LUKS2 disk encryption, machineconfig/talosconfig stored as secrets and scoped? k3s/k0s: `--secrets-encryption` on, unused add-ons disabled?
 - [ ] Running a SUPPORTED minor (not EOL)? Skew within policy (control plane ≥ nodes, ≤3 minors)? (`kubectl version`, `kubectl get nodes -o wide`)
 - [ ] CVE-response runbook exists and covers control plane + every add-on/controller + ingress/CSI + distro?
-- [ ] No EOL ingress-nginx still deployed (retired March 2026, unpatched 2026 CVE wave — High; migration to Gateway API or a maintained controller done or dated)?
+- [ ] No EOL ingress-nginx still deployed (retired March 2026 — final releases patched the 2026 CVE wave, but any post-EOL CVE is unpatched — High; migration to Gateway API or a maintained controller done or dated)?

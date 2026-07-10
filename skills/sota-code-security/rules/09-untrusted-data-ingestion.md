@@ -7,7 +7,7 @@ data *feeds and content*, where the bytes themselves are the weapon: hostile
 parsers (image/archive/PDF/Office/XML/CSV), resource-exhaustion at the ingest
 boundary, schema validation, feed provenance, and the render/LLM exits. Maps to
 OWASP A08:2025 (Software or Data Integrity Failures), A05:2025 (Injection),
-A04:2025 (Insecure Design). CWE-409, CWE-776, CWE-434, CWE-22, CWE-502, CWE-1333.
+A06:2025 (Insecure Design). CWE-409, CWE-776, CWE-434, CWE-22, CWE-502, CWE-1333.
 
 This is **not** rules/01 (injection at a *sink* — SQL/shell/path/template) nor
 rules/05 (encoding at the *render* sink). Those fix the moment data meets an

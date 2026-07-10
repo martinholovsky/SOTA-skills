@@ -36,7 +36,7 @@ workflow, contract testing.
 | HEAD | yes | yes | Metadata/existence checks. |
 | QUERY | yes | yes | Safe read with a request body (RFC 10008, 2026); responses cacheable. Searches/filters too large for a URL. Ecosystem support is early — fall back to `POST /searches` (§1) where proxies/frameworks lack it. |
 | PUT | no | yes | Full replace at a client-chosen or known URL. |
-| PATCH | no | **no** (unless designed so) | Partial update. Prefer JSON Merge Patch (RFC 7386) for simple cases; JSON Patch (RFC 6902) when array surgery is needed. |
+| PATCH | no | **no** (unless designed so) | Partial update. Prefer JSON Merge Patch (RFC 7396) for simple cases; JSON Patch (RFC 6902) when array surgery is needed. |
 | POST | no | no | Create under a collection; non-idempotent actions. Pair with idempotency keys (§6). |
 | DELETE | no | yes | Delete. Repeat DELETE returns 404 or 204 — both acceptable; pick one and document it. |
 

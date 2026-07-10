@@ -71,7 +71,7 @@ is fine but redundant. `gofumpt` over `gofmt`: stricter, zero-config,
 no debates.
 
 Version notes (2026-06): golangci-lint v2.9.0+ is required for Go 1.26
-support (current: v2.12.x). `noctx` now also flags missing-ctx `log/slog`,
+support (use the latest stable). `noctx` now also flags missing-ctx `log/slog`,
 `os/exec` and `crypto/tls` call sites, not just HTTP requests; `errcheck`
 v1.10+ excludes `crypto/rand.Read` by default (it never fails).
 

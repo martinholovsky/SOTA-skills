@@ -19,7 +19,7 @@ description: >-
 ## Purpose
 
 This skill encodes the 2026 state of the art for PHP: a supported-version baseline
-(PHP 8.3+ floor, 8.5 current stable — see `rules/01`), `strict_types` everywhere, typed
+(PHP 8.3+ floor; 8.5 is the latest annual line — verify current, see `rules/01`), `strict_types` everywhere, typed
 object-oriented design, security-by-default at every trust boundary, a locked and audited
 Composer supply chain, and measured runtime performance. It serves two modes:
 
