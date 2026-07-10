@@ -21,9 +21,12 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
 
 ## Next — grow what the prototypes started
 
-4. **Grow the eval golden sets** (contract, migration-safety, prompt-injection
-   cases) and run a real **with-vs-without baseline** measurement; record the
-   number as the first efficacy data point.
+4. **Eval golden sets + first baseline** — *done 2026-07-10* (33 cases; first
+   with-vs-without run in [`evals/results/2026-07-10/BASELINE.md`](../evals/results/2026-07-10/BASELINE.md):
+   **+0.08 routing recall lift** from the cross-cutting rules; audit cases
+   saturated). **Live follow-through:** add **harder audit cases** (multi-vuln,
+   subtler authz/business-logic — the audit arm needs them to discriminate) and
+   re-run averaged over several samples for a stable trend.
 5. **First 6-month accuracy sweep** comes due ~Jan 2027 (freshness window) —
    run it per the `docs/MAINTENANCE.md` runbook and bump `LAST-VERIFIED`.
 

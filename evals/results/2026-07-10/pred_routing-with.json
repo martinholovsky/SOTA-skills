@@ -1,0 +1,82 @@
+{
+    "r01": [
+        "sota-api-design",
+        "sota-code-security",
+        "sota-testing"
+    ],
+    "r02": [
+        "sota-kubernetes",
+        "sota-devsecops",
+        "sota-sandboxing",
+        "sota-network-security",
+        "sota-shell-scripting"
+    ],
+    "r03": [
+        "sota-architecture",
+        "sota-databases",
+        "sota-api-design"
+    ],
+    "r04": [
+        "sota-network-security"
+    ],
+    "r05": [
+        "sota-shell-scripting"
+    ],
+    "r06": [
+        "sota-devsecops",
+        "sota-secrets-management"
+    ],
+    "r07": [
+        "sota-llm-engineering",
+        "sota-code-security",
+        "sota-databases",
+        "sota-sandboxing"
+    ],
+    "r08": [
+        "sota-golang",
+        "sota-code-security",
+        "sota-api-design"
+    ],
+    "r09": [
+        "sota-frontend-design",
+        "sota-web-frameworks"
+    ],
+    "r10": [
+        "sota-confidential-computing"
+    ],
+    "r11": [
+        "sota-ux-writing"
+    ],
+    "r12": [
+        "sota-performance",
+        "sota-databases",
+        "sota-observability"
+    ],
+    "r13": [
+        "sota-testing",
+        "sota-api-design"
+    ],
+    "r14": [
+        "sota-databases"
+    ],
+    "r15": [
+        "sota-code-security",
+        "sota-sandboxing"
+    ],
+    "r16": [
+        "sota-mobile"
+    ],
+    "r17": [
+        "sota-privacy-compliance"
+    ],
+    "r18": [
+        "sota-observability"
+    ],
+    "r19": [
+        "sota-threat-modeling"
+    ],
+    "r20": [
+        "sota-cloud-infrastructure",
+        "sota-devsecops"
+    ]
+}

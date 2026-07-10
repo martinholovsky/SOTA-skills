@@ -60,9 +60,20 @@ for the schema). Add cases freely; keep `expect` to unambiguous must-haves.
   treat the score as a *regression signal*, not an absolute grade. The point is
   the delta over time, not the third decimal place.
 
+## Recorded runs
+
+`results/<date>/` holds the raw per-arm predictions + a `BASELINE.md` writeup
+for each run, so scores are re-scorable and comparable over time. First run:
+[`results/2026-07-10/BASELINE.md`](results/2026-07-10/BASELINE.md) — a
+measurable **+0.08 routing recall lift** with the library (the cross-cutting
+routing rules), and an honest finding that the audit cases are too easy to
+discriminate yet (both arms 13/13).
+
 ## Extending
 
 Add a new case kind by giving each case an `id` and an `expect` list — `score.py`
-is generic over the expected/predicted set comparison. Good next sets: contract
-tests the API skill should demand, migration-safety cases for the DB skill,
-prompt-injection cases for the LLM/agent skills.
+is generic over the expected/predicted set comparison. Highest-value next set
+(from the baseline): **harder audit cases** — multi-vuln snippets and subtler
+authz/business-logic cases where a bare model misses what a skill-guided audit
+catches. Also: contract tests the API skill should demand, migration-safety
+cases for the DB skill.

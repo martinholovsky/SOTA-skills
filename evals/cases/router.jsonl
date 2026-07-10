@@ -14,3 +14,11 @@
 {"id": "r10", "kind": "routing", "prompt": "Run sensitive workloads on rented cloud VMs with hardware attestation.", "expect": ["sota-confidential-computing"]}
 {"id": "r11", "kind": "routing", "prompt": "Rewrite the error messages and empty states on our settings screen.", "expect": ["sota-ux-writing"]}
 {"id": "r12", "kind": "routing", "prompt": "Checkout is slow in production — figure out why.", "expect": ["sota-performance"]}
+{"id": "r13", "kind": "routing", "prompt": "Write consumer-driven contract tests between our two services.", "expect": ["sota-testing"]}
+{"id": "r14", "kind": "routing", "prompt": "Is this database migration safe to run with zero downtime?", "expect": ["sota-databases"]}
+{"id": "r15", "kind": "routing", "prompt": "Our LLM agent runs tools on user input — check it for prompt injection and sandbox escapes.", "expect": ["sota-code-security", "sota-sandboxing"]}
+{"id": "r16", "kind": "routing", "prompt": "Build an offline-first sync feature for our iOS app.", "expect": ["sota-mobile"]}
+{"id": "r17", "kind": "routing", "prompt": "We're adding a user data-export feature — what are our GDPR obligations?", "expect": ["sota-privacy-compliance"]}
+{"id": "r18", "kind": "routing", "prompt": "Add OpenTelemetry tracing and SLOs across our services.", "expect": ["sota-observability"]}
+{"id": "r19", "kind": "routing", "prompt": "Threat-model our new payment flow before we build it.", "expect": ["sota-threat-modeling"]}
+{"id": "r20", "kind": "routing", "prompt": "Write Terraform for our AWS landing zone with IAM guardrails.", "expect": ["sota-cloud-infrastructure", "sota-devsecops"]}
