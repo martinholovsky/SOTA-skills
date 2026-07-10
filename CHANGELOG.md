@@ -5,6 +5,23 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`docs/AUDIT-2026-07-10.md`** — second adversarial repository audit (13
+  fan-out auditors across 4 lenses + refutation pass, at v1.12.1). Verdict:
+  **strong health** — all 6 invariants pass, supply-chain pins genuine, ~150
+  rot-prone content claims sampled and primary-source-verified with only a
+  handful of small errors, no dangerous advice. Headline findings are
+  strategic: no automated content-accuracy gate, no eval harness, coverage
+  expansion exhausted vs near-zero adoption. Plus a tail of low-severity
+  content/script defects (OWASP A04→A06 mislabel, RFC 7386→7396, ingress-nginx
+  "unpatched" wording, router library-map omission of the 41st skill,
+  `check-invariants` check-2 fence bypass, two `install.sh` interactive-path
+  bugs, ~8 residual version-pins). 11/11 non-trivial findings survived
+  adversarial verification; 0 refuted.
+
 ## [1.12.1] - 2026-07-10
 
 ### Added
