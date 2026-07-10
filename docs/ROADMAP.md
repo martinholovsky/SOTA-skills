@@ -78,6 +78,16 @@ Ordered; revisit after each release.
   Covers the workload-from-host trust direction — the inverse of
   `sota-sandboxing`; router rule 19 encodes the boundary. Demand-driven
   (user gap-check found zero prior coverage). 41 skills total.
+- **Within-skill gap closures** *(2026-07-09/10, demand-driven)* — two coverage
+  gaps found by user-prompted assessments, closed as sections in
+  `sota-network-security` (no new skill): **rules/05 R8.1** self-hosted /
+  bare-metal L3/4 DDoS hardening (SYN cookies/synproxy, conntrack, rp_filter,
+  no-open-reflector — the library assumed a scrubbing edge); **rules/06
+  R12–R14** email authentication & anti-spoofing (SPF/DKIM/DMARC, MTA-STS/DANE,
+  bulk-sender rules — previously only incidental SPF/DKIM mentions). Assessment
+  also judged firmware/UEFI/measured-boot-as-a-discipline a real-but-niche gap,
+  deliberately **not** built (partly subsumed by confidential-computing +
+  kubernetes; revisit only on demand).
 
 ## Maintenance mode (de-prioritized by audit evidence)
 
