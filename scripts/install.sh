@@ -155,7 +155,7 @@ setup_claude_md() {
     # shellcheck disable=SC2088  # ~ is display text in the prompt, not a path
     ask_yn "~/.claude/CLAUDE.md is a broken symlink — replace it with a real file holding the directive?" y \
       && { rm -f "$f"; emit_routing_block >"$f"; log "wrote ~/.claude/CLAUDE.md (real file)"; }
-    return
+    return 0
   fi
   if [ -e "$f" ]; then
     if ask_yn "Append the SOTA routing directive to $where?" y; then
@@ -167,6 +167,10 @@ setup_claude_md() {
     ask_yn "Create ~/.claude/CLAUDE.md with the SOTA routing directive?" y \
       && { mkdir -p "$(dirname "$f")"; emit_routing_block >"$f"; log "created ~/.claude/CLAUDE.md"; }
   fi
+  # Declining any prompt above is a valid outcome, not an error — return
+  # success so `set -e` doesn't abort the installer before pre-commit setup
+  # and the final instructions (2026-07-10 audit Q-MED-4).
+  return 0
 }
 
 setup_hook() {
@@ -252,8 +256,12 @@ maybe_setup_routing() {
        fi ;;
   esac
   [ "$go" -eq 1 ] || return 0
-  setup_claude_md
-  setup_hook
+  # Best-effort routing setup: declining a prompt inside either function is a
+  # valid outcome, so never let it abort the installer before pre-commit setup
+  # and the final instructions (2026-07-10 audit Q-MED-4).
+  setup_claude_md || true
+  setup_hook || true
+  return 0
 }
 
 while [ $# -gt 0 ]; do
@@ -329,8 +337,20 @@ if [ "$TARGET" = "$HOME/.claude/skills" ] && [ "$USE_COPY" -eq 0 ]; then
   prof="$(find "$REPO/profiles" -maxdepth 1 -name '*.md' ! -name 'example.md.template' 2>/dev/null | head -n1 || true)"
   if [ -n "$prof" ]; then
     mkdir -p "$HOME/.claude/profiles"
-    ln -sfn "$prof" "$HOME/.claude/profiles/$(basename "$prof")"
-    log "linked profile: ~/.claude/profiles/$(basename "$prof")"
+    dst="$HOME/.claude/profiles/$(basename "$prof")"
+    if [ -e "$dst" ] && [ ! -L "$dst" ]; then
+      # A real file (not our symlink) already lives there — never clobber it
+      # silently; back up + ask, matching setup_claude_md's contract
+      # (2026-07-10 audit Q-MED-5). Non-interactive default is 'n' (keep it).
+      if ask_yn "$dst is a real file — back it up and replace with a link to the repo profile?" n; then
+        backup "$dst"; ln -sfn "$prof" "$dst"; log "linked profile: ~/.claude/profiles/$(basename "$prof")"
+      else
+        log "left existing ~/.claude/profiles/$(basename "$prof") untouched"
+      fi
+    else
+      ln -sfn "$prof" "$dst"
+      log "linked profile: ~/.claude/profiles/$(basename "$prof")"
+    fi
   else
     log "no profile yet — cp profiles/example.md.template profiles/<you>.md, then re-run"
   fi
