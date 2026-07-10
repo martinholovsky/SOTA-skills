@@ -1,0 +1,657 @@
+{
+    "summary": "Re-run efficacy eval with per-case rationale logging + hardened control + context self-report",
+    "agentCount": 4,
+    "logs": [
+        "Logged re-run: 4 arms with per-case rationale + context self-report"
+    ],
+    "result": {
+        "routing": {
+            "with": {
+                "predictions": {
+                    "r01": {
+                        "items": [
+                            "sota-api-design",
+                            "sota-code-security",
+                            "sota-sandboxing",
+                            "sota-testing"
+                        ],
+                        "why": "REST route=api-design; user file uploads=code-security rule13 untrusted-data + sandboxing parser isolation; BUILD-logic=testing (rule7)"
+                    },
+                    "r02": {
+                        "items": [
+                            "sota-kubernetes",
+                            "sota-sandboxing",
+                            "sota-network-security",
+                            "sota-devsecops",
+                            "sota-shell-scripting"
+                        ],
+                        "why": "K8s manifest audit trio (rule9: kubernetes+network-security+sandboxing); Dockerfiles=devsecops build/containers; RUN lines=shell-scripting (rule17)"
+                    },
+                    "r03": {
+                        "items": [
+                            "sota-architecture",
+                            "sota-databases",
+                            "sota-api-design",
+                            "sota-code-security",
+                            "sota-testing"
+                        ],
+                        "why": "multi-tenant design=architecture+databases(RLS); billing API=api-design; payments/tenant-isolation=code-security; BUILD=testing"
+                    },
+                    "r04": {
+                        "items": [
+                            "sota-network-security"
+                        ],
+                        "why": "email auth SPF/DKIM/DMARC anti-spoofing lives in network-security rules/06"
+                    },
+                    "r05": {
+                        "items": [
+                            "sota-shell-scripting",
+                            "sota-devsecops"
+                        ],
+                        "why": "bash script + cleanup-on-failure traps=shell-scripting; deploy step=devsecops deployment"
+                    },
+                    "r06": {
+                        "items": [
+                            "sota-devsecops",
+                            "sota-secrets-management",
+                            "sota-shell-scripting"
+                        ],
+                        "why": "CI/GitHub Actions/pinned-actions/SBOM=devsecops; OIDC workload identity=secrets-management; CI run blocks=shell-scripting (rule17)"
+                    },
+                    "r07": {
+                        "items": [
+                            "sota-llm-engineering",
+                            "sota-code-security",
+                            "sota-sandboxing",
+                            "sota-databases",
+                            "sota-testing"
+                        ],
+                        "why": "RAG+tools LLM feature fans out (rules5/8): llm-engineering quality, code-security rules/08 prompt-injection, sandboxing rules/05 tool exec, databases rules/07 vectors; BUILD=testing/evals"
+                    },
+                    "r08": {
+                        "items": [
+                            "sota-golang",
+                            "sota-code-security",
+                            "sota-api-design",
+                            "sota-testing"
+                        ],
+                        "why": "language stacks on domain (rule1): Go HTTP service audit=golang+code-security+api-design; AUDIT suite-health=testing"
+                    },
+                    "r09": {
+                        "items": [
+                            "sota-frontend-design",
+                            "sota-web-frameworks",
+                            "sota-javascript-typescript"
+                        ],
+                        "why": "frontend rule6: WCAG a11y=frontend-design; React engineering=web-frameworks; language=js-ts"
+                    },
+                    "r10": {
+                        "items": [
+                            "sota-confidential-computing",
+                            "sota-cloud-infrastructure",
+                            "sota-secrets-management"
+                        ],
+                        "why": "rule19 protect workload-from-host: hardware attestation/confidential VMs=confidential-computing; rented cloud VMs=cloud-infrastructure; key release=secrets-management"
+                    },
+                    "r11": {
+                        "items": [
+                            "sota-ux-writing",
+                            "sota-frontend-design"
+                        ],
+                        "why": "rule16 in-product error/empty-state text=ux-writing; the component patterns=frontend-design UX-patterns"
+                    },
+                    "r12": {
+                        "items": [
+                            "sota-observability",
+                            "sota-databases",
+                            "sota-performance"
+                        ],
+                        "why": "'why is this slow in prod'=observability; rule3 query perf starts databases then performance"
+                    },
+                    "r13": {
+                        "items": [
+                            "sota-testing",
+                            "sota-api-design"
+                        ],
+                        "why": "consumer-driven contract testing=testing rules/04; inter-service contract=api-design evolution"
+                    },
+                    "r14": {
+                        "items": [
+                            "sota-databases"
+                        ],
+                        "why": "zero-downtime migration safety=databases rules/02"
+                    },
+                    "r15": {
+                        "items": [
+                            "sota-code-security",
+                            "sota-sandboxing",
+                            "sota-llm-engineering"
+                        ],
+                        "why": "rules5/8 LLM security split: prompt injection=code-security rules/08; sandbox escapes/tool exec=sandboxing rules/05; agent design=llm-engineering"
+                    },
+                    "r16": {
+                        "items": [
+                            "sota-mobile",
+                            "sota-api-design",
+                            "sota-testing"
+                        ],
+                        "why": "iOS offline-first/sync=mobile (Swift); sync protocol/conflict=api-design; BUILD=testing"
+                    },
+                    "r17": {
+                        "items": [
+                            "sota-privacy-compliance",
+                            "sota-code-security"
+                        ],
+                        "why": "rule15 personal data + GDPR DSAR/export=privacy-compliance; export authz/data-exposure=code-security"
+                    },
+                    "r18": {
+                        "items": [
+                            "sota-observability"
+                        ],
+                        "why": "OpenTelemetry tracing + SLOs across services=observability"
+                    },
+                    "r19": {
+                        "items": [
+                            "sota-threat-modeling",
+                            "sota-code-security"
+                        ],
+                        "why": "threat-model new flow pre-build=threat-modeling (STRIDE/DFD); payment security controls=code-security"
+                    },
+                    "r20": {
+                        "items": [
+                            "sota-cloud-infrastructure",
+                            "sota-devsecops"
+                        ],
+                        "why": "AWS landing zone + cloud IAM guardrails=cloud-infrastructure; Terraform IaC=devsecops rules/06"
+                    }
+                },
+                "context_report": "WITH-LIBRARY arm. My context contained the global CLAUDE.md 'consult the sota router skill first' directive and the full sota-* skill list. I read the master router at skills/sota/SKILL.md and applied its routing table plus cross-cutting rules directly: rule1 (language stacks on domain: r08 Go), rule3 (query perf: databases before performance, r12), rules5/8 (LLM fan-out: r07/r15), rule6 (frontend/React set: r09), rule7 (tests accompany BUILD/AUDIT: r01/r03/r07/r08/r16), rule9 (K8s audit trio: r02), rule13 (untrusted-data ingestion incl. uploads: r01), rule15 (personal data\u2192privacy: r17), rule16 (UI text split: r11), rule17 (shell hides in Dockerfile/CI: r02/r05/r06), rule19 (workload-from-host\u2192confidential-computing: r10). The eval_inputs.json was used only as test data (prompts), not as an answer key. Set scoped to routing cases r01-r20 per the task framing ('which engineering skills each routing case should load'); audit cases handled by a separate arm."
+            },
+            "without": {
+                "predictions": {
+                    "r01": {
+                        "items": [
+                            "sota-api-design",
+                            "sota-code-security"
+                        ],
+                        "why": "REST endpoint = API design; user file uploads cross a trust boundary = code security"
+                    },
+                    "r02": {
+                        "items": [
+                            "sota-kubernetes",
+                            "sota-devsecops"
+                        ],
+                        "why": "K8s manifests = kubernetes; Dockerfiles/container builds = devsecops"
+                    },
+                    "r03": {
+                        "items": [
+                            "sota-architecture",
+                            "sota-databases"
+                        ],
+                        "why": "Multi-tenant SaaS service design = architecture; billing data layer = databases"
+                    },
+                    "r04": {
+                        "items": [
+                            "sota-network-security"
+                        ],
+                        "why": "SPF/DKIM/DMARC are DNS/domain email-auth controls, closest to network-security"
+                    },
+                    "r05": {
+                        "items": [
+                            "sota-shell-scripting"
+                        ],
+                        "why": "Bash deploy script with cleanup = shell scripting"
+                    },
+                    "r06": {
+                        "items": [
+                            "sota-devsecops"
+                        ],
+                        "why": "GitHub Actions, pinned actions, OIDC, SBOM = devsecops CI/CD supply chain"
+                    },
+                    "r07": {
+                        "items": [
+                            "sota-llm-engineering"
+                        ],
+                        "why": "RAG chatbot with tool use = LLM application engineering"
+                    },
+                    "r08": {
+                        "items": [
+                            "sota-golang",
+                            "sota-code-security"
+                        ],
+                        "why": "Go service = golang; vulnerability audit = code security"
+                    },
+                    "r09": {
+                        "items": [
+                            "sota-frontend-design",
+                            "sota-web-frameworks"
+                        ],
+                        "why": "WCAG 2.2 AA accessibility = frontend design; React page = web frameworks"
+                    },
+                    "r10": {
+                        "items": [
+                            "sota-confidential-computing"
+                        ],
+                        "why": "Sensitive workloads on rented VMs with hardware attestation = confidential computing"
+                    },
+                    "r11": {
+                        "items": [
+                            "sota-ux-writing"
+                        ],
+                        "why": "Rewriting error messages and empty-state copy = UX writing"
+                    },
+                    "r12": {
+                        "items": [
+                            "sota-performance"
+                        ],
+                        "why": "Slow-in-production diagnosis = performance"
+                    },
+                    "r13": {
+                        "items": [
+                            "sota-testing"
+                        ],
+                        "why": "Consumer-driven contract tests = testing"
+                    },
+                    "r14": {
+                        "items": [
+                            "sota-databases"
+                        ],
+                        "why": "Zero-downtime DB migration safety = databases"
+                    },
+                    "r15": {
+                        "items": [
+                            "sota-code-security",
+                            "sota-sandboxing",
+                            "sota-llm-engineering"
+                        ],
+                        "why": "Prompt injection on an LLM agent = code security + LLM; sandbox escapes = sandboxing"
+                    },
+                    "r16": {
+                        "items": [
+                            "sota-mobile"
+                        ],
+                        "why": "Offline-first sync for an iOS app = mobile"
+                    },
+                    "r17": {
+                        "items": [
+                            "sota-privacy-compliance"
+                        ],
+                        "why": "GDPR obligations for data export = privacy compliance"
+                    },
+                    "r18": {
+                        "items": [
+                            "sota-observability"
+                        ],
+                        "why": "OpenTelemetry tracing and SLOs = observability"
+                    },
+                    "r19": {
+                        "items": [
+                            "sota-threat-modeling"
+                        ],
+                        "why": "Threat-model a payment flow before building = threat modeling"
+                    },
+                    "r20": {
+                        "items": [
+                            "sota-cloud-infrastructure",
+                            "sota-identity-access"
+                        ],
+                        "why": "AWS landing zone/Terraform = cloud infrastructure; IAM guardrails = identity-access"
+                    },
+                    "a01": {
+                        "items": [
+                            "sota-python",
+                            "sota-code-security"
+                        ],
+                        "why": "Python string-concatenated SQL = SQL injection; language + code security"
+                    },
+                    "a02": {
+                        "items": [
+                            "sota-javascript-typescript",
+                            "sota-code-security"
+                        ],
+                        "why": "JS child_process.exec with user input = command injection; language + code security"
+                    },
+                    "a03": {
+                        "items": [
+                            "sota-python",
+                            "sota-code-security"
+                        ],
+                        "why": "MD5 password hashing = weak crypto; Python + code security"
+                    },
+                    "a04": {
+                        "items": [
+                            "sota-golang",
+                            "sota-code-security"
+                        ],
+                        "why": "Go InsecureSkipVerify disables TLS verification; language + code security"
+                    },
+                    "a05": {
+                        "items": [
+                            "sota-python",
+                            "sota-code-security"
+                        ],
+                        "why": "pickle.loads on request body = insecure deserialization; Python + code security"
+                    },
+                    "a06": {
+                        "items": [
+                            "sota-python",
+                            "sota-code-security"
+                        ],
+                        "why": "Non-constant-time token compare = timing attack; Python + code security"
+                    },
+                    "a07": {
+                        "items": [
+                            "sota-python",
+                            "sota-code-security"
+                        ],
+                        "why": "Fetch order by user-supplied id with no ownership check = IDOR; Python + code security"
+                    },
+                    "a08": {
+                        "items": [
+                            "sota-python",
+                            "sota-code-security"
+                        ],
+                        "why": "update(**request.get_json()) = mass assignment; Python + code security"
+                    },
+                    "a09": {
+                        "items": [
+                            "sota-python",
+                            "sota-code-security"
+                        ],
+                        "why": "requests.get on user-supplied URL = SSRF; Python + code security"
+                    },
+                    "a10": {
+                        "items": [
+                            "sota-python",
+                            "sota-code-security"
+                        ],
+                        "why": "Nested-quantifier regex on user input = ReDoS; Python + code security"
+                    },
+                    "a11": {
+                        "items": [
+                            "sota-python",
+                            "sota-code-security"
+                        ],
+                        "why": "open() with user-supplied filename = path traversal; Python + code security"
+                    },
+                    "a12": {
+                        "items": [
+                            "sota-python",
+                            "sota-code-security"
+                        ],
+                        "why": "lxml.fromstring on user XML = XXE; Python + code security"
+                    },
+                    "a13": {
+                        "items": [
+                            "sota-javascript-typescript",
+                            "sota-code-security"
+                        ],
+                        "why": "_.merge of parsed user JSON = prototype pollution; JS + code security"
+                    }
+                },
+                "context_report": "This is the WITHOUT-LIBRARY (control) arm and I complied with its constraints. My context did contain the global CLAUDE.md directive to \"consult the sota router skill first, load matching sota-* skills\" and the full list of sota-* skill names (both as available Skill-tool entries with descriptions and as the skills array in eval_inputs.json). I deliberately DISREGARDED the router directive: I did not invoke the `sota` router skill, did not apply its cross-cutting fan-out rules, and did not read anything under /Users/martinholovsky/Github/SOTA-skills/skills/. I read only eval_inputs.json (test data). Predictions were produced solely by naive prompt/snippet -> skill-name matching plus my own base judgment. Note: the rich skill descriptions surfaced in the tool list are more than bare names, but I intentionally leaned on plain name-level matching and general knowledge rather than the router's routing logic or any rules files."
+            }
+        },
+        "audit": {
+            "with": {
+                "predictions": {
+                    "a01": {
+                        "items": [
+                            "sql-injection"
+                        ],
+                        "why": "rule 01\u00a72: request param string-concatenated into SELECT, not parameterized"
+                    },
+                    "a02": {
+                        "items": [
+                            "command-injection"
+                        ],
+                        "why": "rule 01\u00a73: child_process.exec (shell) with req.query.host concatenated"
+                    },
+                    "a03": {
+                        "items": [
+                            "weak-password-hashing"
+                        ],
+                        "why": "rule 04: MD5 used to store password, not a slow salted KDF"
+                    },
+                    "a04": {
+                        "items": [
+                            "tls-verification-disabled"
+                        ],
+                        "why": "rule 04/crypto: InsecureSkipVerify:true disables cert validation"
+                    },
+                    "a05": {
+                        "items": [
+                            "unsafe-deserialization"
+                        ],
+                        "why": "rule 01\u00a78: pickle.loads on untrusted request body = RCE by design"
+                    },
+                    "a06": {
+                        "items": [
+                            "non-constant-time-comparison"
+                        ],
+                        "why": "rule 02/04: secret compared with == leaks via timing"
+                    },
+                    "a07": {
+                        "items": [
+                            "idor"
+                        ],
+                        "why": "rule 03: object fetched by client-supplied order_id with no ownership check"
+                    },
+                    "a08": {
+                        "items": [
+                            "mass-assignment"
+                        ],
+                        "why": "rule 01/03: update(**request json) applies all attacker-controlled fields"
+                    },
+                    "a09": {
+                        "items": [
+                            "ssrf"
+                        ],
+                        "why": "rule 01\u00a75: requests.get on user-supplied callback_url with no IP allowlist"
+                    },
+                    "a10": {
+                        "items": [
+                            "redos"
+                        ],
+                        "why": "rule 01\u00a710: nested quantifier (\\w+\\s?)* on unbounded input"
+                    },
+                    "a11": {
+                        "items": [
+                            "path-traversal"
+                        ],
+                        "why": "rule 01\u00a74: user filename joined to UPLOAD_DIR without canonical containment check"
+                    },
+                    "a12": {
+                        "items": [
+                            "xxe"
+                        ],
+                        "why": "rule 01\u00a76: lxml.etree.fromstring on user XML without disabling DTD/entities"
+                    },
+                    "a13": {
+                        "items": [
+                            "prototype-pollution"
+                        ],
+                        "why": "rule 01\u00a79: lodash merge of parsed request body allows __proto__ poisoning"
+                    }
+                },
+                "context_report": "WITH-LIBRARY arm. My context did contain the CLAUDE.md 'consult the sota router skill first' directive and the full sota-* skill list. I relied on the library: I read /Users/martinholovsky/Github/SOTA-skills/skills/sota-code-security/rules/01-input-injection.md and applied its Audit checklist and CWE-mapped sections (\u00a72 SQLi, \u00a73 command injection, \u00a74 path traversal, \u00a75 SSRF, \u00a76 XXE, \u00a78 deserialization, \u00a79 prototype pollution, \u00a710 ReDoS) to classify each snippet; crypto/authz/authn categories (weak hashing, TLS verify, non-constant-time compare, IDOR, mass-assignment) map to rules 02/03/04. My assigned set was the 13 audit snippets (a01-a13); each is a single-vulnerability example. Inputs were read as test data only; no answer key was present in eval_inputs.json."
+            },
+            "without": {
+                "predictions": {
+                    "a01": {
+                        "items": [
+                            "sql-injection"
+                        ],
+                        "why": "User input request.args['id'] concatenated directly into SQL query string"
+                    },
+                    "a02": {
+                        "items": [
+                            "command-injection"
+                        ],
+                        "why": "req.query.host concatenated into a shell command via child_process.exec"
+                    },
+                    "a03": {
+                        "items": [
+                            "weak-password-hashing"
+                        ],
+                        "why": "MD5 is a fast unsalted hash unsuitable for password storage"
+                    },
+                    "a04": {
+                        "items": [
+                            "tls-verification-disabled"
+                        ],
+                        "why": "InsecureSkipVerify:true disables TLS certificate validation"
+                    },
+                    "a05": {
+                        "items": [
+                            "unsafe-deserialization"
+                        ],
+                        "why": "pickle.loads on attacker-controlled request body enables RCE"
+                    },
+                    "a06": {
+                        "items": [
+                            "non-constant-time-comparison"
+                        ],
+                        "why": "Secret token compared with == leaking timing information"
+                    },
+                    "a07": {
+                        "items": [
+                            "idor"
+                        ],
+                        "why": "Order fetched by user-supplied id with no ownership/authorization check"
+                    },
+                    "a08": {
+                        "items": [
+                            "mass-assignment"
+                        ],
+                        "why": "All posted JSON fields applied to user.update without allowlist"
+                    },
+                    "a09": {
+                        "items": [
+                            "ssrf"
+                        ],
+                        "why": "Server fetches an attacker-controlled callback_url"
+                    },
+                    "a10": {
+                        "items": [
+                            "redos"
+                        ],
+                        "why": "Nested quantifier (\\w+\\s?)* causes catastrophic backtracking"
+                    },
+                    "a11": {
+                        "items": [
+                            "path-traversal"
+                        ],
+                        "why": "User-supplied filename joined into path allows ../ traversal"
+                    },
+                    "a12": {
+                        "items": [
+                            "xxe"
+                        ],
+                        "why": "lxml.etree.fromstring parses untrusted XML with entity resolution enabled"
+                    },
+                    "a13": {
+                        "items": [
+                            "prototype-pollution"
+                        ],
+                        "why": "lodash merge of parsed JSON body allows __proto__ pollution"
+                    }
+                },
+                "context_report": "My context did contain the standing 'consult the sota router skill first' directive (in CLAUDE.md) and the full sota-* skill list was present in the system reminder. Per the WITHOUT-LIBRARY control arm instructions, I disregarded that directive entirely: I did not invoke the sota router or any sota-* skill, and I did not read anything under /Users/martinholovsky/Github/SOTA-skills/skills/. I only read the eval_inputs.json test data and classified each audit snippet using my own security knowledge alone."
+            }
+        }
+    },
+    "workflowProgress": [
+        {
+            "type": "workflow_phase",
+            "index": 1,
+            "title": "Run"
+        },
+        {
+            "type": "workflow_agent",
+            "index": 1,
+            "label": "routing:with",
+            "phaseIndex": 1,
+            "phaseTitle": "Run",
+            "agentId": "ada89dd62cd29c5c8",
+            "model": "claude-opus-4-8",
+            "state": "done",
+            "startedAt": 1783722014275,
+            "queuedAt": 1783722011637,
+            "attempt": 1,
+            "lastToolName": "StructuredOutput",
+            "lastToolSummary": "WITH-LIBRARY arm. My context contained the global CLAUDE.md\u2026",
+            "promptPreview": "Decide which engineering skills each routing case should load. Inputs at /Users/martinholovsky/Github/SOTA-skills/eval_inputs.json (JSON: {routing:[{id,prompt}], audit:[{id,language,snippet}], skills:[...]}). Read it (test data only, no answers). Return predictions[id] = {items:[...], why:\"one line\"} for EVERY case in your set, plus a context_report.\nWITH-LIBRARY arm: Read /Users/martinholovsky/Gi\u2026",
+            "lastProgressAt": 1783722279313,
+            "tokens": 43128,
+            "toolCalls": 7,
+            "durationMs": 265038,
+            "resultPreview": "{\"predictions\":{\"r01\":{\"items\":[\"sota-api-design\",\"sota-code-security\",\"sota-sandboxing\",\"sota-testing\"],\"why\":\"REST route=api-design; user file uploads=code-security rule13 untrusted-data + sandboxing parser isolation; BUILD-logic=testing (rule7)\"},\"r02\":{\"items\":[\"sota-kubernetes\",\"sota-sandboxing\",\"sota-network-security\",\"sota-devsecops\",\"sota-shell-scripting\"],\"why\":\"K8s manifest audit trio (r\u2026"
+        },
+        {
+            "type": "workflow_agent",
+            "index": 2,
+            "label": "routing:without(hardened)",
+            "phaseIndex": 1,
+            "phaseTitle": "Run",
+            "agentId": "a6f5a980257de2c44",
+            "model": "claude-opus-4-8",
+            "state": "done",
+            "startedAt": 1783722014059,
+            "queuedAt": 1783722011637,
+            "attempt": 1,
+            "lastToolName": "StructuredOutput",
+            "lastToolSummary": "This is the WITHOUT-LIBRARY (control) arm and I complied wi\u2026",
+            "promptPreview": "Decide which engineering skills each routing case should load. Inputs at /Users/martinholovsky/Github/SOTA-skills/eval_inputs.json (JSON: {routing:[{id,prompt}], audit:[{id,language,snippet}], skills:[...]}). Read it (test data only, no answers). Return predictions[id] = {items:[...], why:\"one line\"} for EVERY case in your set, plus a context_report.\nWITHOUT-LIBRARY (control) arm: Your context may\u2026",
+            "lastProgressAt": 1783722197891,
+            "tokens": 27500,
+            "toolCalls": 6,
+            "durationMs": 183832,
+            "resultPreview": "{\"predictions\":{\"r01\":{\"items\":[\"sota-api-design\",\"sota-code-security\"],\"why\":\"REST endpoint = API design; user file uploads cross a trust boundary = code security\"},\"r02\":{\"items\":[\"sota-kubernetes\",\"sota-devsecops\"],\"why\":\"K8s manifests = kubernetes; Dockerfiles/container builds = devsecops\"},\"r03\":{\"items\":[\"sota-architecture\",\"sota-databases\"],\"why\":\"Multi-tenant SaaS service design = architec\u2026"
+        },
+        {
+            "type": "workflow_agent",
+            "index": 3,
+            "label": "audit:with",
+            "phaseIndex": 1,
+            "phaseTitle": "Run",
+            "agentId": "a5906e66f71425e07",
+            "model": "claude-opus-4-8",
+            "state": "done",
+            "startedAt": 1783722014018,
+            "queuedAt": 1783722011637,
+            "attempt": 1,
+            "lastToolName": "StructuredOutput",
+            "lastToolSummary": "WITH-LIBRARY arm. My context did contain the CLAUDE.md 'con\u2026",
+            "promptPreview": "Classify vulnerabilities in each audit snippet. Inputs at /Users/martinholovsky/Github/SOTA-skills/eval_inputs.json (JSON: {routing:[{id,prompt}], audit:[{id,language,snippet}], skills:[...]}). Read it (test data only, no answers). Return predictions[id] = {items:[...], why:\"one line\"} for EVERY case in your set, plus a context_report.\nCategory vocabulary (exact slugs): sql-injection, command-inje\u2026",
+            "lastProgressAt": 1783722203464,
+            "tokens": 38431,
+            "toolCalls": 8,
+            "durationMs": 189446,
+            "resultPreview": "{\"predictions\":{\"a01\":{\"items\":[\"sql-injection\"],\"why\":\"rule 01\u00a72: request param string-concatenated into SELECT, not parameterized\"},\"a02\":{\"items\":[\"command-injection\"],\"why\":\"rule 01\u00a73: child_process.exec (shell) with req.query.host concatenated\"},\"a03\":{\"items\":[\"weak-password-hashing\"],\"why\":\"rule 04: MD5 used to store password, not a slow salted KDF\"},\"a04\":{\"items\":[\"tls-verification-disabl\u2026"
+        },
+        {
+            "type": "workflow_agent",
+            "index": 4,
+            "label": "audit:without(hardened)",
+            "phaseIndex": 1,
+            "phaseTitle": "Run",
+            "agentId": "a0ea580841bb87bae",
+            "model": "claude-opus-4-8",
+            "state": "done",
+            "startedAt": 1783722013660,
+            "queuedAt": 1783722011637,
+            "attempt": 1,
+            "lastToolName": "StructuredOutput",
+            "lastToolSummary": "My context did contain the standing 'consult the sota route\u2026",
+            "promptPreview": "Classify vulnerabilities in each audit snippet. Inputs at /Users/martinholovsky/Github/SOTA-skills/eval_inputs.json (JSON: {routing:[{id,prompt}], audit:[{id,language,snippet}], skills:[...]}). Read it (test data only, no answers). Return predictions[id] = {items:[...], why:\"one line\"} for EVERY case in your set, plus a context_report.\nCategory vocabulary (exact slugs): sql-injection, command-inje\u2026",
+            "lastProgressAt": 1783722189097,
+            "tokens": 31371,
+            "toolCalls": 8,
+            "durationMs": 175437,
+            "resultPreview": "{\"predictions\":{\"a01\":{\"items\":[\"sql-injection\"],\"why\":\"User input request.args['id'] concatenated directly into SQL query string\"},\"a02\":{\"items\":[\"command-injection\"],\"why\":\"req.query.host concatenated into a shell command via child_process.exec\"},\"a03\":{\"items\":[\"weak-password-hashing\"],\"why\":\"MD5 is a fast unsalted hash unsuitable for password storage\"},\"a04\":{\"items\":[\"tls-verification-disabl\u2026"
+        }
+    ],
+    "totalTokens": 140430,
+    "totalToolCalls": 29
+}

@@ -21,12 +21,15 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
 
 ## Next — grow what the prototypes started
 
-4. **Eval golden sets + first baseline** — *done 2026-07-10* (33 cases; first
-   with-vs-without run in [`evals/results/2026-07-10/BASELINE.md`](../evals/results/2026-07-10/BASELINE.md):
-   **+0.08 routing recall lift** from the cross-cutting rules; audit cases
-   saturated). **Live follow-through:** add **harder audit cases** (multi-vuln,
-   subtler authz/business-logic — the audit arm needs them to discriminate) and
-   re-run averaged over several samples for a stable trend.
+4. **Eval golden sets + baseline (2 runs)** — *done 2026-07-10/11* (33 cases;
+   [`evals/results/2026-07-10/BASELINE.md`](../evals/results/2026-07-10/BASELINE.md)):
+   replicated **~+0.10 routing recall lift** from the router's cross-cutting
+   rules (mechanism-confirmed by logged per-case rationales), with a
+   control-validity analysis (the number is a lower bound vs a routing-aware
+   control). **Live follow-through:** (a) add **harder audit cases** (the audit
+   arm saturates at 13/13); (b) run a **truly isolated control** (no sota
+   `CLAUDE.md`/registry) for a clean library-vs-nothing number; (c) average
+   several samples per arm.
 5. **First 6-month accuracy sweep** comes due ~Jan 2027 (freshness window) —
    run it per the `docs/MAINTENANCE.md` runbook and bump `LAST-VERIFIED`.
 
