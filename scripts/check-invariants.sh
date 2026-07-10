@@ -16,6 +16,9 @@
 #   6. Count-bearing surfaces match the tree: README badge/hero/social-alt,
 #      the router's "N domain skills", plugin.json + marketplace.json
 #      descriptions, and the social-preview pill.
+#   7. Router completeness: every skill appears in the router's routing table
+#      AND its library map (skills/sota/SKILL.md), and every map entry names a
+#      real skill (catches the map-drift the 2026-07-10 audit found).
 #
 # Portable to macOS bash 3.2 (no mapfile/associative arrays). Check 4 needs
 # python3 for correct Unicode character counting; it is skipped with a warning
@@ -32,7 +35,7 @@ fail=0
 note() { printf '    %s\n' "$1"; }
 
 # --- 1. Line budget -------------------------------------------------------
-echo "[1/6] Markdown files <= ${MAX_LINES} lines"
+echo "[1/7] Markdown files <= ${MAX_LINES} lines"
 over=0
 while IFS= read -r f; do
   [ -f "$f" ] || { note "SKIPPED (tracked but missing from worktree): $f"; continue; }
@@ -46,13 +49,16 @@ done < <(git ls-files '*.md')
 if [ "$over" -eq 0 ]; then echo "    ok"; else fail=1; fi
 
 # --- 2. Audit checklist ends every rules file ------------------------------
-echo "[2/6] Every skills/*/rules/*.md ends with an '## Audit checklist'"
+echo "[2/7] Every skills/*/rules/*.md ends with an '## Audit checklist'"
 missing=0
 while IFS= read -r f; do
   [ -f "$f" ] || { note "SKIPPED (tracked but missing from worktree): $f"; continue; }
   # The checklist must be the file's LAST '## ' heading (docs say "ends
-  # with") — a mention inside a code fence or mid-file no longer satisfies.
-  last_h2=$(grep -E '^## ' "$f" | tail -n 1 || true)
+  # with"). Track code-fence state so a '## Audit checklist' INSIDE a fence
+  # doesn't satisfy the check (the 2026-07-01 fix missed this; 2026-07-10
+  # audit reproduced the bypass). A trailing suffix is still allowed — four
+  # files use '## Audit checklist (meta — …)' legitimately.
+  last_h2=$(awk '/^(```|~~~)/{fence=!fence} !fence && /^## /{h=$0} END{print h}' "$f")
   case "$last_h2" in
     '## Audit checklist'*) ;;
     *) note "MISSING/NOT-LAST '## Audit checklist': $f"; missing=1 ;;
@@ -71,7 +77,7 @@ if [ "$missing" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # .denylist.local (git-ignored, one ERE per line, '#' comments). When neither
 # exists (e.g. an external fork's PR), only the generic phrases are checked —
 # the maintainer's pre-commit hook and this repo's CI carry the full list.
-echo "[3/6] No internal-name leaks"
+echo "[3/7] No internal-name leaks"
 DENY='the user runs|the user operates'
 if [ -n "${SOTA_DENYLIST:-}" ]; then
   DENY="$DENY|$SOTA_DENYLIST"
@@ -107,7 +113,7 @@ fi
 # Code, Codex, ...) skip any skill that exceeds it. Count Unicode characters
 # (descriptions use em-dashes: 1 char, 3 bytes) via python3, parsing both
 # folded block scalars (`>-`) and plain single-line descriptions.
-echo "[4/6] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
+echo "[4/7] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
 if command -v python3 >/dev/null 2>&1; then
   if desc_out=$(python3 - "$MAX_DESC" <<'PY'
 import sys, glob, re
@@ -161,12 +167,14 @@ fi
 # One version, four places: VERSION, plugin.json, the CHANGELOG's top entry,
 # and (after the release lands) the newest v* tag. Drift here shipped a main
 # briefly claiming 1.8.0 with 1.9.0 content (2026-07-03) — hence a hard check.
-echo "[5/6] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
+echo "[5/7] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
 v5=0
 ver=$(tr -d '[:space:]' < VERSION)
-case "$ver" in
-  *[!0-9.]*|.*|*.|'') note "VERSION is not a plain X.Y.Z semver: '$ver'"; v5=1 ;;
-esac
+# Strict X.Y.Z: rejects interior malformations (1..2, 1.2, 1.2.3.4) the old
+# character-class guard missed (2026-07-10 audit).
+if ! printf '%s' "$ver" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+  note "VERSION is not a plain X.Y.Z semver: '$ver'"; v5=1
+fi
 pj=$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' .claude-plugin/plugin.json | head -n 1)
 [ "$pj" = "$ver" ] || { note "plugin.json version '$pj' != VERSION '$ver'"; v5=1; }
 top=$(grep -m 1 -E '^## \[' CHANGELOG.md | sed 's/^## \[\([^]]*\)\].*/\1/')
@@ -193,7 +201,7 @@ if [ "$v5" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # rot on surfaces nobody recounts (the social preview said "30 skills" for
 # three releases). Recount from the tree and compare every tracked surface;
 # RELEASING.md lists the same surfaces for manual release edits.
-echo "[6/6] Count-bearing surfaces match the tree"
+echo "[6/7] Count-bearing surfaces match the tree"
 v6=0
 ck() { # ck <found> <expected> <surface>
   [ "$1" = "$2" ] || { note "$3: says '${1:-<not found>}', tree says '$2'"; v6=1; }
@@ -232,6 +240,26 @@ done
 ck_floor "$(sed -n 's/.*>\([0-9]*\)+ skills<.*/\1/p' assets/social-preview.html | head -n 1)" \
    "$n_skills" "social-preview.html pill (N+)"
 if [ "$v6" -eq 0 ]; then echo "    ok"; else fail=1; fi
+
+# --- 7. Router completeness -----------------------------------------------
+# Every domain skill must appear in the router's routing table (as a
+# `sota-name` table row) AND its library map (as **sota-name/rules**); every
+# library-map entry must name a real skill dir. Catches the drift the
+# 2026-07-10 audit found: sota-confidential-computing was added to the table
+# but missing from the map for a full release.
+echo "[7/7] Router lists every skill (routing table + library map)"
+v7=0
+router=skills/sota/SKILL.md
+bt='`'
+for d in skills/sota-*/; do
+  name=$(basename "$d")
+  grep -qE "^\| ${bt}${name}${bt} " "$router" || { note "routing table missing: $name"; v7=1; }
+  grep -qF "**${name}/rules**" "$router" || { note "library map missing: $name"; v7=1; }
+done
+while IFS= read -r name; do
+  [ -d "skills/$name" ] || { note "library map names a non-existent skill: $name"; v7=1; }
+done < <(grep -oE '\*\*sota-[a-z-]+/rules\*\*' "$router" | sed 's/\*\*//g; s#/rules##')
+if [ "$v7" -eq 0 ]; then echo "    ok"; else fail=1; fi
 
 # --- Result ---------------------------------------------------------------
 echo

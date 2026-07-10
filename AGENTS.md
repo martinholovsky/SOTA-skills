@@ -46,6 +46,10 @@ symlinks to it — edit only this file, never the symlinks.
    the `skills/` tree; the social-preview pill and README alt are **"N+"
    floors** (they fail only if the tree count drops below the floor), so the
    PNG is not re-rendered per release.
+7. **router drift** — every domain skill must appear in the router's routing
+   table AND its library map (both in `skills/sota/SKILL.md`); a skill added
+   to one but not the other is a finding (added after the 2026-07-10 audit
+   found the 41st skill missing from the map for a full release).
 
 Separately, `scripts/check-freshness.sh` (run monthly by
 `.github/workflows/freshness.yml`) tracks the root `LAST-VERIFIED` stamp —
