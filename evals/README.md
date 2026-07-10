@@ -62,12 +62,15 @@ for the schema). Add cases freely; keep `expect` to unambiguous must-haves.
 
 ## Recorded runs
 
-`results/<date>/` holds the raw per-arm predictions + a `BASELINE.md` writeup
-for each run, so scores are re-scorable and comparable over time. First run:
-[`results/2026-07-10/BASELINE.md`](results/2026-07-10/BASELINE.md) — a
-measurable **+0.08 routing recall lift** with the library (the cross-cutting
-routing rules), and an honest finding that the audit cases are too easy to
-discriminate yet (both arms 13/13).
+`results/<date>/` holds the raw per-arm predictions (+ rationales for the
+logged run) so scores are re-scorable and comparable over time. Writeup:
+[`results/2026-07-10/BASELINE.md`](results/2026-07-10/BASELINE.md) — two runs, a
+replicated **~+0.10 routing recall lift** attributable to the router's
+cross-cutting rules, a **control-validity analysis** (the "without-library" arm
+is a routing-aware control, not truly library-free — so the number is a lower
+bound), and the finding that the audit cases are too easy to discriminate yet
+(both arms 13/13). A clean library-vs-nothing run needs an isolated environment
+(no sota `CLAUDE.md`, no registered skills).
 
 ## Extending
 

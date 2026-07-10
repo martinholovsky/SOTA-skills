@@ -9,17 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Eval golden sets grown + first efficacy baseline** (roadmap Next). Cases
-  expanded to 20 routing + 13 audit (`evals/cases/`); a with-vs-without run
-  (both arms the same base model — with-library reads the repo skill files,
-  without-library is forbidden from `skills/`) is recorded in
-  `evals/results/2026-07-10/BASELINE.md` with the raw per-arm predictions.
-  Result: a measurable **+0.08 routing recall lift** (0.92→1.00) — the
-  without-library arm missed a must-load skill on 4/20 cases, all explained by
-  the router's cross-cutting rules (tests-accompany-everything,
-  AI-security→code-security, sandboxing-for-containers). Honest finding: the
-  audit cases are saturated (both arms 13/13), so harder multi-vuln cases are
-  the top next-iteration action.
+- **Eval golden sets grown + efficacy baseline (2 runs) + control-validity
+  analysis** (roadmap Next). Cases expanded to 20 routing + 13 audit
+  (`evals/cases/`). Two with-vs-without runs recorded in
+  `evals/results/2026-07-10/BASELINE.md` (raw predictions + a logged re-run
+  with per-case rationales in `results/2026-07-11/`). **Routing recall lift
+  +0.08 then +0.11 (~+0.10, replicated)**, driven entirely by the router's
+  cross-cutting rules (the without-arm's logged rationales show naive
+  keyword-matching that misses exactly the rule-driven cases: r01 testing, r02
+  sandboxing, r07 code-security, r20 devsecops). **Control-validity honesty:** a
+  probe confirmed the "without-library" arm is *not* a clean library-free
+  control — the global `CLAUDE.md` routing directive and the injected skill
+  registry are ambient in every subagent (the profile's mapping tables are NOT,
+  refuting one suspected leak). The lift is therefore a **lower bound** vs a
+  routing-aware control, but it is mechanism-attributable to the router rules
+  (which live only in `skills/sota/SKILL.md`, unread by the control). Audit
+  cases saturated (both arms 13/13) — harder multi-vuln cases + an isolated
+  clean-control run are the next actions.
 
 ## [1.13.0] - 2026-07-10
 
