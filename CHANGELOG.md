@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Content-accuracy runbook + eval harness** (2026-07-10 audit STRAT-HIGH-1/2,
+  the two top strategic gaps). `docs/MAINTENANCE.md` documents the reproducible
+  per-skill re-verification sweep (extract rot-prone claims → verify vs primary
+  sources → fix under the no-pins/EOL policies → adversarial re-verify → bump
+  `LAST-VERIFIED`) that previously lived only in maintainer memory, and states
+  honestly which dimensions are CI-automated vs human/agent discipline. The
+  freshness re-verify window is cut **12 → 6 months** (content drifts far
+  faster; 6mo stays clearable). New `evals/` prototype: a runnable
+  efficacy-regression harness — golden-set cases (`cases/router.jsonl`,
+  `cases/audit.jsonl`) + `score.py` (recall/precision vs an agent's
+  predictions, exit 1 on any miss). Deliberately not in CI (an LLM eval is
+  non-deterministic); it gives a repeatable with-vs-without baseline. Harness
+  verified end-to-end this session (perfect predictions → exit 0, misses →
+  exit 1); AGENTS.md/CONTRIBUTING.md link the runbook.
 - **Invariant 7 — router completeness** (`check-invariants.sh`): every domain
   skill must appear in the router's routing table AND library map; every map
   entry must name a real skill. Automates the drift class the 2026-07-10 audit

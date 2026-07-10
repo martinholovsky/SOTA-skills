@@ -74,8 +74,9 @@ AGENTS.md                     # guidance for AI assistants working on the repo
   primary sources, findings adversarially verified, fixes applied). Update it
   only after such a sweep — not on ordinary edits. A monthly CI job
   (`scripts/check-freshness.sh`) goes red when the stamp exceeds the
-  re-verify window. Do not add per-file `<!-- last-verified -->` line-1
-  markers (retired convention; the script warns about strays).
+  re-verify window (**6 months**). Do not add per-file `<!-- last-verified -->`
+  line-1 markers (retired convention; the script warns about strays). The
+  step-by-step sweep runbook is [docs/MAINTENANCE.md](docs/MAINTENANCE.md).
 
 **Findings format** (AUDIT mode, used throughout):
 

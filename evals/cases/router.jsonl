@@ -1,0 +1,16 @@
+# Routing golden set — does the sota router load the clearly-relevant skills?
+# `expect` = must-load skills (recall-focused). Derived from the router's own
+# routing table + cross-cutting rules in skills/sota/SKILL.md. Extra loads are
+# not penalized as errors; a MISS of an expected skill is the real signal.
+{"id": "r01", "kind": "routing", "prompt": "Add a REST endpoint that accepts file uploads from users.", "expect": ["sota-api-design", "sota-code-security", "sota-testing"]}
+{"id": "r02", "kind": "routing", "prompt": "Review our Dockerfiles and Kubernetes manifests for security issues.", "expect": ["sota-kubernetes", "sota-sandboxing"]}
+{"id": "r03", "kind": "routing", "prompt": "Design a multi-tenant SaaS billing service.", "expect": ["sota-architecture", "sota-databases", "sota-api-design"]}
+{"id": "r04", "kind": "routing", "prompt": "Set up SPF, DKIM and DMARC so our domain can't be spoofed.", "expect": ["sota-network-security"]}
+{"id": "r05", "kind": "routing", "prompt": "Write a bash script that deploys our app and cleans up on failure.", "expect": ["sota-shell-scripting"]}
+{"id": "r06", "kind": "routing", "prompt": "Harden our GitHub Actions CI pipeline: pinned actions, OIDC, SBOM.", "expect": ["sota-devsecops"]}
+{"id": "r07", "kind": "routing", "prompt": "Add a RAG chatbot over our docs with tool use.", "expect": ["sota-llm-engineering", "sota-code-security"]}
+{"id": "r08", "kind": "routing", "prompt": "Audit this Go HTTP service for vulnerabilities.", "expect": ["sota-golang", "sota-code-security"]}
+{"id": "r09", "kind": "routing", "prompt": "Bring our React settings page up to WCAG 2.2 AA.", "expect": ["sota-frontend-design", "sota-web-frameworks"]}
+{"id": "r10", "kind": "routing", "prompt": "Run sensitive workloads on rented cloud VMs with hardware attestation.", "expect": ["sota-confidential-computing"]}
+{"id": "r11", "kind": "routing", "prompt": "Rewrite the error messages and empty states on our settings screen.", "expect": ["sota-ux-writing"]}
+{"id": "r12", "kind": "routing", "prompt": "Checkout is slow in production — figure out why.", "expect": ["sota-performance"]}

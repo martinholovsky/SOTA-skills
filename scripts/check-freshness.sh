@@ -6,13 +6,14 @@
 # sources. Since 2026-07 that promise is tracked with a SINGLE library-level
 # stamp: the root `LAST-VERIFIED` file holds the date (YYYY-MM-DD) of the last
 # full-library re-verification sweep (per-skill research against primary
-# sources — see the sweep procedure referenced in CONTRIBUTING.md). Update it
-# only after such a sweep, not on ordinary edits (git history already records
-# those).
+# sources — see the runbook in docs/MAINTENANCE.md). Update it only after such
+# a sweep, not on ordinary edits (git history already records those).
 #
 # This script:
 #   - fails (exit 1) if the stamp is older than the re-verify window
-#     (default 12 months) — a red scheduled run is the re-sweep signal;
+#     (default 6 months — content drifts far faster than the old 12-month
+#     window allowed, per the 2026-07-10 audit; 6mo stays clearable so a red
+#     report stays meaningful rather than perpetually-ignored);
 #   - warns about any stray per-file `<!-- last-verified: ... -->` line-1
 #     markers (the pre-2026-07 convention; they should no longer exist).
 #
@@ -23,7 +24,7 @@ set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 
-WINDOW=12
+WINDOW=6
 while [ $# -gt 0 ]; do
   case "$1" in
     --window-months) shift; WINDOW="${1:?--window-months needs a number}" ;;
