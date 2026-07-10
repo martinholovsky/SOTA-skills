@@ -112,7 +112,7 @@ Group repeated instances (e.g. 12 namespaces with no egress policy) into one fin
 | rules/03-k8s-network-policy.md | Writing/auditing Kubernetes NetworkPolicy, CiliumNetworkPolicy, the namespaced default-deny (ingress AND egress) pattern, the "default-deny that isn't" trap, ANP/BANP, L7/identity policy, DNS-aware egress, egress gateways, Hubble visibility |
 | rules/04-service-mesh-mtls.md | The plaintext-internal-traffic problem, choosing/auditing a mesh (Istio sidecar vs ambient, Linkerd, Cilium mesh), mTLS everywhere, mesh authorization policy, SPIFFE identity, and deciding mesh vs plain TLS |
 | rules/05-edge-ingress-egress.md | WAF (CRS/Coraza), ingress/API-gateway hardening, TLS termination + re-encryption, trusted-IP handling behind Cloudflare, DDoS posture (edge scrubbing + self-hosted kernel hardening: SYN cookies/synproxy, conntrack, rp_filter, no open UDP reflectors), egress as a first-class control, FQDN allowlisting, blocking the metadata endpoint, the SSRF-meets-egress chain |
-| rules/06-dns-tls-pki.md | DNS security (DNSSEC, RPZ/DNS firewall, DoH/DoT, split-horizon, CAA, tunneling), TLS posture (1.3, ciphers, HSTS, OCSP), shrinking cert lifetimes + ACME automation, internal PKI (step-ca), short-lived certs, pinning tradeoffs |
+| rules/06-dns-tls-pki.md | DNS security (DNSSEC, RPZ/DNS firewall, DoH/DoT, split-horizon, CAA, tunneling), TLS posture (1.3, ciphers, HSTS, OCSP), shrinking cert lifetimes + ACME automation, internal PKI (step-ca), short-lived certs, pinning tradeoffs, email authentication & anti-spoofing (SPF/DKIM/DMARC, MTA-STS/DANE, bulk-sender rules) |
 
 Cross-cutting tasks read multiple files: a full network audit touches all six; "lock down our
 cluster" is rules/02 + rules/03 (+ rules/04 if a mesh exists).

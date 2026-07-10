@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`sota-network-security` rules/06 — email authentication & anti-spoofing**
+  (R12–R14): the library had no coverage of SPF/DKIM/DMARC beyond incidental
+  mentions — a real gap given domain spoofing (BEC/phishing) and deliverability.
+  Adds SPF (RFC 7208, `-all`, 10-lookup limit), DKIM (RFC 6376, >=2048-bit +
+  rotation), **DMARC** (RFC 9989 — the 2026 Proposed Standard obsoleting the
+  original RFC 7489; reporting RFC 9990/9991) with the `p=none→quarantine→reject`
+  progression and alignment as the actual anti-spoofing control, MTA-STS
+  (RFC 8461) + TLS-RPT (RFC 8460) + DANE-for-SMTP (RFC 7672), parked/non-sending
+  domain lockdown, ARC (RFC 8617), and the Gmail/Yahoo bulk-sender requirements
+  (5,000+/day: SPF+DKIM+aligned DMARC, RFC 8058 one-click unsubscribe, spam
+  <0.3%). BIMI noted accurately as an IETF draft (not an RFC), VMC optional.
+  Three audit-checklist items + SKILL/router routing updates. Cross-refs
+  sota-copywriting rules/04 (marketing-mail content law) and
+  sota-detection-engineering (DMARC RUA as a spoofing feed). Every claim
+  primary-sourced (RFC editor/IETF datatracker + the Gmail/Yahoo sender rules).
 - **`sota-network-security` rules/05 — self-hosted / bare-metal DDoS
   hardening** (R8.1): the one gap in the library's DDoS coverage. Existing
   guidance assumed a scrubbing edge (Cloudflare/Shield/Cloud Armor); this

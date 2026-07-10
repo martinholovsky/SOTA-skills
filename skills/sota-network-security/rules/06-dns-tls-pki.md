@@ -2,9 +2,9 @@
 
 Scope: DNS security (DNSSEC, DNS firewall / RPZ, DoH/DoT, split-horizon, registrar/CAA hygiene,
 DNS-tunneling/exfil), TLS posture (1.3, cipher/version policy, HSTS, OCSP/CRL), certificate
-lifecycle automation (ACME) and the shrinking max cert lifetimes that force it, and internal PKI
+lifecycle automation (ACME) and the shrinking max cert lifetimes that force it, internal PKI
 (e.g. step-ca — short-lived certs, private CA trust distribution, cert-pinning
-tradeoffs).
+tradeoffs), and email authentication / anti-spoofing (SPF, DKIM, DMARC, MTA-STS/DANE).
 
 Where this sits: sota-cloud-infrastructure rules/03 owns DNS zone/registrar *setup* and
 provider-managed cert provisioning; this skill owns the *security posture* (DNS firewalling,
@@ -133,6 +133,51 @@ property; extra leaf-pinning is usually net-negative. `InsecureSkipVerify` / `--
 grep -rEn 'InsecureSkipVerify|verify=false|--insecure|NODE_TLS_REJECT_UNAUTHORIZED *= *0|sslmode=disable' .
 ```
 
+## 5. Email authentication & anti-spoofing (SPF / DKIM / DMARC)
+
+Your domain is an identity anyone can forge until you publish these DNS records. An unprotected
+domain gets spoofed for phishing/BEC (your brand, your users); it also lands legitimate mail in
+spam. All three are DNS records this skill owns; the *content* law of marketing mail (CAN-SPAM,
+consent) is sota-copywriting rules/04.
+
+**R12 — Publish SPF, DKIM, and DMARC; DMARC is the one that actually stops spoofing.**
+- **SPF** (RFC 7208): a TXT record listing IPs/includes allowed to send for the domain, ending in
+  `-all` (hard fail). Watch the **10-DNS-lookup limit** — too many `include:` chains → `permerror`
+  → SPF silently stops protecting. SPF alone breaks on forwarding (the relay's IP isn't yours), so
+  it is necessary but not sufficient.
+- **DKIM** (RFC 6376): sign outbound mail with a private key; publish the public key at
+  `<selector>._domainkey`. Use a **>=2048-bit key**, rotate it (per-selector rotation lets you roll
+  without downtime), and keep the private key in a secret store (sota-secrets-management), never in
+  the repo.
+- **DMARC** (RFC 9989, which obsoletes the original RFC 7489; aggregate/failure reporting are
+  RFC 9990/9991): a `_dmarc` TXT policy that ties SPF/DKIM to the visible `From:` domain via
+  **alignment** — a pass only counts if the SPF or DKIM domain *aligns* with the From domain, which
+  is what blocks look-alike spoofing. **Roll the policy forward, monitoring aggregate (RUA) reports
+  at each step:** `p=none` (observe only — collect reports, fix your legitimate senders) →
+  `p=quarantine` → `p=reject` (the goal; forged mail is refused). Stopping at `p=none` gives
+  visibility but **zero protection** — a common finding.
+
+**R13 — Lock down transport and non-sending domains too.**
+- **MTA-STS** (RFC 8461) + **TLS-RPT** (RFC 8460): MTA-STS publishes a policy requiring senders to
+  use authenticated TLS to your inbound MX (defeating STARTTLS-stripping downgrade attacks);
+  TLS-RPT emails you JSON reports of TLS/policy failures. Roll MTA-STS `testing` → `enforce` using
+  the reports, same discipline as DMARC. **DANE for SMTP** (RFC 7672) is the DNSSEC-anchored
+  alternative/complement (TLSA records) — only where the zone is DNSSEC-signed (R6).
+- **Parked/non-sending domains and subdomains** are prime spoofing targets: publish
+  `v=spf1 -all` + `p=reject` (and an empty DKIM) on every domain that never sends mail, so
+  attackers can't send *as* them. Set the DMARC subdomain policy (`sp=`) explicitly.
+- **ARC** (RFC 8617) preserves authentication results across legitimate forwarders/mailing lists
+  that would otherwise break SPF/DKIM — enable it if you forward mail.
+
+**R14 — Bulk-sender rules are now table stakes.** Since Feb 2024, Gmail and Yahoo require senders of
+**5,000+ messages/day** to their users to authenticate with SPF *and* DKIM, publish DMARC (at least
+`p=none`), keep the From domain aligned, offer **one-click unsubscribe** (List-Unsubscribe with
+RFC 8058) on bulk mail, and hold the spam-complaint rate **below 0.3%** (aim <0.1%); Microsoft added
+equivalent requirements (enforcement from 2025). Treat these as the minimum for any transactional or
+marketing sender. Monitor DMARC RUA reports as a *spoofing-detection* feed as well — hand them to
+sota-detection-engineering. (Logo display via **BIMI** is an IETF draft, not yet an RFC, and rewards
+reaching DMARC enforcement; a Verified Mark Certificate is optional evidence, not required.)
+
 ## Audit checklist
 
 - [ ] Are all public certs ACME/managed and auto-renewed, with expiry alerts as backstop? Any
@@ -152,3 +197,10 @@ grep -rEn 'InsecureSkipVerify|verify=false|--insecure|NODE_TLS_REJECT_UNAUTHORIZ
       (not worked around with `--insecure`); CA key HSM/KMS-protected; per-purpose intermediates?
 - [ ] Cert pinning (if used) pins CA/intermediate with backup pins and a rotation story — not leaf,
       not skipped verification? Hunt `InsecureSkipVerify|--insecure|sslmode=disable`.
+- [ ] Email: SPF (`-all`, under the 10-lookup limit), DKIM (>=2048-bit, rotated), and DMARC
+      published — and is DMARC actually enforcing (`p=quarantine`/`p=reject`), not stuck at
+      `p=none`? (`dig TXT _dmarc.<domain>`.) RUA reports monitored?
+- [ ] Parked/non-sending domains and subdomains publish `v=spf1 -all` + `p=reject` so they can't be
+      spoofed? Inbound transport hardened (MTA-STS enforce + TLS-RPT, or DANE on DNSSEC zones)?
+- [ ] Bulk senders (5,000+/day to Gmail/Yahoo): SPF+DKIM+aligned DMARC, RFC 8058 one-click
+      unsubscribe, spam rate <0.3%?
