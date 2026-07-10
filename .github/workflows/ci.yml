@@ -22,6 +22,20 @@ jobs:
           # tagless checkout would silently skip that comparison.
           fetch-depth: 0
           fetch-tags: true
+      - name: Require denylist secret on trusted runs
+        # check 3 silently degrades to generic-only if SOTA_DENYLIST is absent.
+        # That fallback is correct for fork PRs (which don't receive secrets)
+        # but on push-to-main and same-repo PRs a missing secret means the
+        # authoritative scan isn't running — fail loudly instead (2026-07-10
+        # audit S-MED-1).
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          SOTA_DENYLIST: ${{ secrets.SOTA_DENYLIST }}
+        run: |
+          if [ -z "${SOTA_DENYLIST}" ]; then
+            echo "::error::SOTA_DENYLIST secret is empty on a trusted run — check 3 would degrade to generic-only. Restore the secret."
+            exit 1
+          fi
       - name: Check invariants
         # SOTA_DENYLIST (repository secret) carries the private internal-name
         # patterns for check 3; fork PRs don't receive it and fall back to the

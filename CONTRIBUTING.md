@@ -112,6 +112,9 @@ are marked "needs verification", never asserted.
    PR. The social-preview pill and README alt carry an **"N+" floor** instead
    (checked only against dropping below it), so the image needs no per-release
    re-render.
+7. **router drift**: every domain skill must appear in the router's routing
+   table AND its library map (both in `skills/sota/SKILL.md`) — adding a skill
+   means updating both.
 
 Secrets are scanned separately by **gitleaks** (config in `.gitleaks.toml`);
 CI scans the full git history, the pre-commit hook scans each commit.

@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Invariant 7 — router completeness** (`check-invariants.sh`): every domain
+  skill must appear in the router's routing table AND library map; every map
+  entry must name a real skill. Automates the drift class the 2026-07-10 audit
+  found (the 41st skill was missing from the map for a full release).
+  Documented in AGENTS.md/CONTRIBUTING.md.
+
+### Changed
+
+- **Invariant-gate hardening** (2026-07-10 audit): check 2 now tracks code-fence
+  state so a `## Audit checklist` inside a fence no longer satisfies the
+  "ends-with" rule (the 2026-07-01 fix was incomplete; verified identical
+  verdicts on all current files); check 5's semver guard is a strict
+  `X.Y.Z` regex that rejects interior malformations (`1..2`, `1.2`, `1.2.3.4`);
+  and CI now fails loudly if `SOTA_DENYLIST` is empty on a trusted (push-to-main
+  or same-repo-PR) run instead of silently degrading check 3 to generic-only
+  (S-MED-1). Each change adversarially tested to confirm it catches the
+  violation.
+
 ### Fixed
 
 - **Audit 2026-07-10 content corrections** (all primary-source verified):
