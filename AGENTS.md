@@ -55,7 +55,9 @@ Separately, `scripts/check-freshness.sh` (run monthly by
 `.github/workflows/freshness.yml`) tracks the root `LAST-VERIFIED` stamp —
 the date of the last full-library re-verification sweep against primary
 sources. Update it only after such a sweep; the run goes red when the stamp
-exceeds the 12-month window. Per-file line-1 markers are retired.
+exceeds the **6-month** window. Per-file line-1 markers are retired. The
+sweep runbook and the efficacy eval harness live in
+[docs/MAINTENANCE.md](docs/MAINTENANCE.md) and [evals/](evals/).
 
 Secrets are scanned by **gitleaks** (`.gitleaks.toml`, which disables only the
 noisy entropy-based `generic-api-key` rule so the security skills' intentional
@@ -93,6 +95,8 @@ pre-commit hook scans each commit locally.
 - [RELEASING.md](RELEASING.md) — how to cut a release, including every
   version- and count-bearing surface (README, router, manifests, social
   preview)
+- [docs/MAINTENANCE.md](docs/MAINTENANCE.md) — accuracy sweep runbook +
+  eval harness (keeping fast-moving claims true and measuring efficacy)
 - [SECURITY.md](SECURITY.md) — reporting bad guidance or a leaked secret
 - [CHANGELOG.md](CHANGELOG.md) — release history (top entry = current version;
   also mirrored in `VERSION`); releases 1.6.0 and earlier are archived in

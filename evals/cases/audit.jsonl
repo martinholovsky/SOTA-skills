@@ -1,0 +1,9 @@
+# Audit golden set — does an audit (with the relevant skills loaded) flag the
+# planted vulnerability? `expect` = finding categories the agent MUST report.
+# Snippets are deliberately vulnerable, minimal, and unambiguous. `kind` audit.
+{"id": "a01", "kind": "audit", "language": "python", "snippet": "cur.execute(\"SELECT * FROM users WHERE id = \" + request.args['id'])", "expect": ["sql-injection"]}
+{"id": "a02", "kind": "audit", "language": "javascript", "snippet": "child_process.exec('ping ' + req.query.host)", "expect": ["command-injection"]}
+{"id": "a03", "kind": "audit", "language": "python", "snippet": "stored = hashlib.md5(password.encode()).hexdigest()", "expect": ["weak-password-hashing"]}
+{"id": "a04", "kind": "audit", "language": "go", "snippet": "tls.Config{InsecureSkipVerify: true}", "expect": ["tls-verification-disabled"]}
+{"id": "a05", "kind": "audit", "language": "python", "snippet": "obj = pickle.loads(request.body)", "expect": ["unsafe-deserialization"]}
+{"id": "a06", "kind": "audit", "language": "python", "snippet": "if user_supplied_token == secret_token:  # string ==", "expect": ["non-constant-time-comparison"]}
