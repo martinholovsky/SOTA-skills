@@ -7,3 +7,10 @@
 {"id": "a04", "kind": "audit", "language": "go", "snippet": "tls.Config{InsecureSkipVerify: true}", "expect": ["tls-verification-disabled"]}
 {"id": "a05", "kind": "audit", "language": "python", "snippet": "obj = pickle.loads(request.body)", "expect": ["unsafe-deserialization"]}
 {"id": "a06", "kind": "audit", "language": "python", "snippet": "if user_supplied_token == secret_token:  # string ==", "expect": ["non-constant-time-comparison"]}
+{"id": "a07", "kind": "audit", "language": "python", "snippet": "order = Order.query.get(request.args['order_id']); return order.to_json()", "expect": ["idor"]}
+{"id": "a08", "kind": "audit", "language": "python", "snippet": "user.update(**request.get_json())  # apply all posted fields", "expect": ["mass-assignment"]}
+{"id": "a09", "kind": "audit", "language": "python", "snippet": "resp = requests.get(request.json['callback_url'])", "expect": ["ssrf"]}
+{"id": "a10", "kind": "audit", "language": "python", "snippet": "re.match(r'^(\\w+\\s?)*$', user_input)", "expect": ["redos"]}
+{"id": "a11", "kind": "audit", "language": "python", "snippet": "open(os.path.join(UPLOAD_DIR, request.args['filename']))", "expect": ["path-traversal"]}
+{"id": "a12", "kind": "audit", "language": "python", "snippet": "doc = lxml.etree.fromstring(user_supplied_xml)", "expect": ["xxe"]}
+{"id": "a13", "kind": "audit", "language": "javascript", "snippet": "const cfg = _.merge({}, JSON.parse(req.body))", "expect": ["prototype-pollution"]}

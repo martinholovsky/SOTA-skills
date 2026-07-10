@@ -5,6 +5,22 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Eval golden sets grown + first efficacy baseline** (roadmap Next). Cases
+  expanded to 20 routing + 13 audit (`evals/cases/`); a with-vs-without run
+  (both arms the same base model — with-library reads the repo skill files,
+  without-library is forbidden from `skills/`) is recorded in
+  `evals/results/2026-07-10/BASELINE.md` with the raw per-arm predictions.
+  Result: a measurable **+0.08 routing recall lift** (0.92→1.00) — the
+  without-library arm missed a must-load skill on 4/20 cases, all explained by
+  the router's cross-cutting rules (tests-accompany-everything,
+  AI-security→code-security, sandboxing-for-containers). Honest finding: the
+  audit cases are saturated (both arms 13/13), so harder multi-vuln cases are
+  the top next-iteration action.
+
 ## [1.13.0] - 2026-07-10
 
 ### Added

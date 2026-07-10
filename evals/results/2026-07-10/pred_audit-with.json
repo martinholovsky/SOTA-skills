@@ -1,0 +1,41 @@
+{
+    "a01": [
+        "sql-injection"
+    ],
+    "a02": [
+        "command-injection"
+    ],
+    "a03": [
+        "weak-password-hashing"
+    ],
+    "a04": [
+        "tls-verification-disabled"
+    ],
+    "a05": [
+        "unsafe-deserialization"
+    ],
+    "a06": [
+        "non-constant-time-comparison"
+    ],
+    "a07": [
+        "idor"
+    ],
+    "a08": [
+        "mass-assignment"
+    ],
+    "a09": [
+        "ssrf"
+    ],
+    "a10": [
+        "redos"
+    ],
+    "a11": [
+        "path-traversal"
+    ],
+    "a12": [
+        "xxe"
+    ],
+    "a13": [
+        "prototype-pollution"
+    ]
+}
