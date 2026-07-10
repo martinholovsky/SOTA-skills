@@ -99,5 +99,5 @@ pre-commit hook scans each commit locally.
   eval harness (keeping fast-moving claims true and measuring efficacy)
 - [SECURITY.md](SECURITY.md) — reporting bad guidance or a leaked secret
 - [CHANGELOG.md](CHANGELOG.md) — release history (top entry = current version;
-  also mirrored in `VERSION`); releases 1.6.0 and earlier are archived in
+  also mirrored in `VERSION`); releases 1.7.1 and earlier are archived in
   [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md)

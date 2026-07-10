@@ -1,9 +1,45 @@
 # Roadmap
 
-Priorities set by the 2026-07-01 audit ([AUDIT-2026-07-01.md](AUDIT-2026-07-01.md)).
-Ordered; revisit after each release.
+Priorities set by the **2026-07-10 audit**
+([AUDIT-2026-07-10.md](AUDIT-2026-07-10.md)). Ordered; revisit after each
+release. The 2026-07-01 cycle is fully executed and kept below as history.
 
-## Now — correctness of what's shipped
+## Now — prove and protect accuracy *(done this cycle)*
+
+The audit's verdict was "content is trustworthy; the gap is that nothing
+*proves or protects* accuracy." Closed 2026-07-10 (PRs #63–#66):
+
+1. **Content-accuracy runbook + shorter window** — `docs/MAINTENANCE.md`
+   documents the reproducible per-skill re-verification sweep (was only in
+   maintainer memory); `check-freshness.sh` window cut 12→6 months. *(#66)*
+2. **Audit defect cleanup** — content corrections (OWASP/RFC/ingress/Iceberg/
+   version-pins) + router-map refresh *(#63)*; **invariant 7** (router
+   completeness) + check-2 fence / check-5 semver / CI fail-open hardening
+   *(#64)*; installer decline-abort + profile-clobber *(#65)*.
+3. **Eval-harness prototype** — `evals/` (golden-set cases + `score.py`,
+   verified end-to-end) makes the efficacy claim measurable. *(#66)*
+
+## Next — grow what the prototypes started
+
+4. **Grow the eval golden sets** (contract, migration-safety, prompt-injection
+   cases) and run a real **with-vs-without baseline** measurement; record the
+   number as the first efficacy data point.
+5. **First 6-month accuracy sweep** comes due ~Jan 2027 (freshness window) —
+   run it per the `docs/MAINTENANCE.md` runbook and bump `LAST-VERIFIED`.
+
+## Later — distribution over coverage
+
+6. **Pause net-new skills; invest in distribution.** Coverage is an exhausted
+   lever at current adoption (audit: 4 stars / 1 issue after 41 skills). Put
+   the effort into visibility (marketplace, a published before/after audit
+   demo) and the badge→verifiable-audit idea (link the "Built with" badge to a
+   committed audit report + commit SHA). *(audit STRAT-MED-1)*
+
+---
+
+## Completed — 2026-07-01 audit cycle *(history)*
+
+### Now — correctness of what's shipped
 
 1. **Fix the audit's HIGH and MEDIUM findings.** The two HIGHs
    (sota-security-compliance frontmatter invalid under strict YAML;
@@ -17,7 +53,7 @@ Ordered; revisit after each release.
    CI job in #37; version-lockstep (check 5) and count-surface (check 6)
    invariants on 2026-07-04.)*
 
-## Next — keep the core promise true
+### Next — keep the core promise true
 
 3. **Freshness ledger.** Per-rules-file `last-verified: YYYY-MM` metadata plus
    a scheduled CI job reporting files past their re-verify window. The README
@@ -47,7 +83,7 @@ Ordered; revisit after each release.
    primary source and redirects security-sensitive reports to the private
    advisory flow — plus a contact-link config; Discussions enabled.)*
 
-## Later — coverage decisions (decide, don't drift)
+### Later — coverage decisions (decide, don't drift)
 
 6. **Close or declare the language/domain gaps.** PHP and Ruby have no skill
    (incidental mentions only); Swift exists only at sota-mobile's
