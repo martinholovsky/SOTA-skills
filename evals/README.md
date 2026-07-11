@@ -78,7 +78,7 @@ python3 evals/run-clean.py --cases evals/cases/audit-hard.jsonl
 
 `results/<date>/` holds raw per-arm predictions (+ rationales / clean-run
 outputs). Writeup: [`results/2026-07-10/BASELINE.md`](results/2026-07-10/BASELINE.md).
-Headline (clean, by dimension): **freshness +0.50–0.75** (2026 facts — the
+Headline (clean, by dimension): **freshness +0.50–0.65** (20 cases) (2026 facts — the
 library's core value; the base model is *confidently wrong* without it),
 **routing +0.09–0.14** (the router's cross-cutting rules; even opus-4.8 misses
 them unaided), **audit +0.00** (strong models recognize textbook vulns

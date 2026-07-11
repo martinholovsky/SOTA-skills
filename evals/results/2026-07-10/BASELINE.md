@@ -2,10 +2,10 @@
 
 The efficacy eval across three dimensions, plus an honest investigation of
 control validity. **Headline: the library's lift is small on routing (+~0.10)
-and zero on audit, but large on *freshness* (+0.50–0.75) — because currency is
+and zero on audit, but large on *freshness* (+0.50–0.65) — because currency is
 what a frozen training cutoff lacks. See §Freshness.** Golden sets: 20 routing
 (`cases/router.jsonl`), 13+7 audit (`cases/audit.jsonl`, `cases/audit-hard.jsonl`),
-8 freshness (`cases/freshness.jsonl`). Scored with `evals/score.py` /
+20 freshness (`cases/freshness.jsonl`). Scored with `evals/score.py` /
 `evals/run-clean.py`.
 
 - **Run 1** (2026-07-10): in-session, raw predictions here (`pred_*.json`).
@@ -127,27 +127,35 @@ target (or the audit lift genuinely is ~0 for strong models).
 Routing and audit test what a strong model *already does well* (pick a skill
 area; recognize a textbook vuln) — so small/zero lift is expected and honest.
 The library's real value is **currency**: 2026 facts a frozen training cutoff
-lacks. The freshness eval (`cases/freshness.jsonl`, 8 objective current-fact
-questions, each answer carried in a specific rules file) measures it clean:
+lacks. The freshness eval (`cases/freshness.jsonl`, **20** objective current-fact
+questions across domains, each answer carried in a specific rules file) measures
+it clean (with-library = **1.00** on all 20, both models):
 
-| Model | without-library recall | with-library | **lift** |
-|---|---|---|---|
-| `claude-sonnet-4.6` | 0.25 | 1.00 | **+0.75** |
-| `claude-opus-4.8` | 0.50 | 1.00 | **+0.50** |
+| Model | without-library recall | lift |
+|---|---|---|
+| `claude-sonnet-4.6` | 0.35 | **+0.65** |
+| `claude-opus-4.8` | 0.50 | **+0.50** |
 
-The without-library arm is not just missing facts — it is **confidently wrong**
-(the dangerous failure mode the library prevents). Verbatim, no library:
+The without-library arm is not just missing facts — it is **confidently wrong,
+and sometimes fabricates** (the dangerous failure mode the library prevents).
+Verbatim, no library:
 
-- DMARC: *"RFC 7489 remains the formal DMARC standard"* (it's **RFC 9989**, 2026).
+- DMARC: *"RFC 7489 remains the formal standard"* (it's **RFC 9989**, 2026).
 - OWASP 2025 Insecure Design: *"A04"* (it's **A06**).
-- ingress-nginx: *"actively maintained and stable"* (it's **EOL**, Mar 2026).
+- ingress-nginx: *"still actively maintained"* (it's **EOL**, Mar 2026).
 - NIST 800-63B-4 min password: *"8 characters"* (it's **15** when sole factor).
-- TorchServe: *"remains actively maintained by PyTorch/AWS"* (**archived** Aug 2025).
+- MISRA C: *"MISRA C:2023"* (it's **MISRA C:2025**); OpenAPI *"3.1.1"* (**3.2**);
+  Keep-a-Changelog *"1.1.0"* (**2.0**); Kubernetes user-ns GA *"1.30"/"1.33"*
+  (**1.36**); Cilium mTLS *"WireGuard / SPIFFE"* (**ztunnel**); Azure CCA CPU
+  *"Cobalt 100"* (**200**); rust-lld default *"Rust 1.71"* (**1.90**).
+- **Hallucinated RFCs**: RateLimit headers *"published — RFC 9440"* (it's a
+  **draft**); SCIM events *"RFC 9816"* (it's **RFC 9967**). The model invents
+  plausible, wrong RFC numbers with confidence.
 
-Even **opus-4.8** (strongest) gets only 4/8 unaided. This is the library's
-headline value, **5–7× the routing lift**: not "does the model know a capability
-exists" but "does it have the current, correct facts" — where it is often wrong
-and sure of itself.
+Even **opus-4.8** (strongest) gets only 10/20 unaided. This is the library's
+headline value, **~5× the routing lift**: not "does the model know a capability
+exists" but "does it have the current, correct facts" — where it is often wrong,
+fabricating, and sure of itself.
 
 ## Honest limitations
 
@@ -173,14 +181,14 @@ measure*:
 
 | Dimension | What it tests | Clean lift |
 |---|---|---|
-| **Freshness** | current 2026 facts (RFCs, CVEs, EOLs, versions, spec editions) | **+0.50 to +0.75** |
+| **Freshness** | current 2026 facts (RFCs, CVEs, EOLs, versions, spec editions) | **+0.50 to +0.65** |
 | Routing | which skill area applies | +0.09 to +0.14 |
 | Audit | recognizing a textbook vulnerability | +0.00 |
 
 The small routing lift and zero audit lift are real and honest — a capable model
 already knows SQLi exists and that testing matters. But those measure the
 library's *weakest* dimensions. Its **core value is currency**, where the lift is
-large (+0.50–0.75) and the base model is not merely uncertain but **confidently
+large (+0.50–0.65) and the base model is not merely uncertain but **confidently
 wrong** — asserting RFC 7489, OWASP A04, "8 characters," and "TorchServe is
 maintained" with no hedging. An agent without the library ships those errors;
 with it, it ships the 2026-correct facts. That is the number that answers "is

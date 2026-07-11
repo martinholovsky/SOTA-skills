@@ -63,7 +63,7 @@ performance, API evolvability, per-language idioms, SLOs, test-suite health.
 
 **Measured, not asserted.** A current model *without* the library is confidently
 wrong on 2026 facts (wrong DMARC RFC, an EOL'd tool it calls "maintained"); the
-library closes the gap — +0.50–0.75 recall on currency ([evals/](evals/)).
+library closes the gap — +0.50–0.65 recall on currency ([evals/](evals/)).
 
 ## Skills
 

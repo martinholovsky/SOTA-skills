@@ -26,7 +26,7 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
    **routing lift ~+0.10 replicates in a true library-vs-nothing raw-API
    control** (+0.09/+0.14/+0.09 across sonnet-4.6/sonnet-5/opus-4.8) — the
    contamination concern is resolved, the lift is real. **Audit +0.00**
-   (strong models recognize textbook vulns unaided). **Freshness +0.50–0.75**
+   (strong models recognize textbook vulns unaided). **Freshness +0.50–0.65**
    (`cases/freshness.jsonl`) — the decisive dimension: the base model is
    *confidently wrong* on 2026 facts (DMARC RFC, OWASP numbering, EOLs,
    versions) the library carries. The library's value is **currency**, not
