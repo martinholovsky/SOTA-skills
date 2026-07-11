@@ -5,6 +5,23 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.1] - 2026-07-11
+
+### Changed
+
+- **Grew the freshness eval 8 → 20 cases** (`evals/cases/freshness.jsonl`): +12
+  objective 2026-current-fact cases across domains (TypeScript 7 GA, Cilium
+  ztunnel, PQ MLKEM768, OpenAPI 3.2, K8s user-ns 1.36, Keep-a-Changelog 2.0,
+  MISRA C:2025, RateLimit draft status, SCIM RFC 9967, libFuzzer maintenance,
+  Azure Cobalt 200, rust-lld 1.90) — each verified present in the library +
+  primary-source correct + token-scorable. Clean 20-case lift **+0.65
+  (sonnet-4.6) / +0.50 (opus-4.8)**, with-library 1.00 on all 20. The tighter
+  set strengthens the finding and reveals the base model **fabricates**
+  plausible wrong facts with confidence — invents RFC 9440 for RateLimit
+  headers, RFC 9816 for SCIM events; "Cobalt 100" not 200, "MISRA C:2023" not
+  2025, Keep-a-Changelog "1.1.0" not 2.0. BASELINE.md / README / ROADMAP
+  updated to the robust 20-case figures.
+
 ## [1.14.0] - 2026-07-11
 
 ### Added
@@ -40,15 +57,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the freshness evidence ("Measured, not asserted") linking `evals/`. **Audit
   lift = +0.00, model-independent** (haiku→sonnet-4.6, original + harder cases):
   strong models recognize textbook vulns library-or-not. **Freshness lift =
-  +0.65 (sonnet-4.6) / +0.50 (opus-4.8)** on **20** objective 2026-current-fact
+  +0.75 (sonnet-4.6) / +0.50 (opus-4.8)** on **8** objective 2026-current-fact
   cases (`cases/freshness.jsonl`, each answer carried in a rules file;
-  with-library = 1.00 on all 20) — the decisive finding: the base model is not
-  just missing current facts but **confidently wrong, and sometimes
-  fabricates** (asserts RFC 7489 not 9989, OWASP A04 not A06, MISRA C:2023 not
-  2025, OpenAPI 3.1.1 not 3.2, Keep-a-Changelog 1.1.0 not 2.0, K8s user-ns GA
-  1.30/1.33 not 1.36, Cilium WireGuard not ztunnel, Cobalt 100 not 200; and
-  *invents* RFC 9440/9816 for facts it doesn't know). So the library's value is
-  currency (large lift, ~5× routing), not routing/recognition (small/zero).
+  with-library 1.00) — the decisive finding: the base model is not just missing
+  current facts but **confidently wrong** (asserts RFC 7489 not 9989, OWASP A04
+  not A06, ingress-nginx "maintained", NIST "8 chars" not 15, TorchServe
+  "maintained"), while the with-library arm is 1.00. So the library's value is
+  currency (large lift, ~5–7× routing), not routing/recognition (small/zero).
   Also: `.env` added to `.gitignore` (was untracked but unignored).
 
 ## [1.13.0] - 2026-07-10
@@ -408,6 +423,7 @@ first-screen impact.
 Releases **1.7.1 and earlier** are archived in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md).
 
+[1.14.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.14.1
 [1.14.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.14.0
 [1.13.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.13.0
 [1.12.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.12.1
