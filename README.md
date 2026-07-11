@@ -61,6 +61,10 @@ regulation writes down: cancellation & backpressure, retries with jitter,
 circuit breakers, outbox/saga, zero-downtime migrations, measure-first
 performance, API evolvability, per-language idioms, SLOs, test-suite health.
 
+**Measured, not asserted.** A current model *without* the library is confidently
+wrong on 2026 facts (wrong DMARC RFC, an EOL'd tool it calls "maintained"); the
+library closes the gap — +0.50–0.75 recall on currency ([evals/](evals/)).
+
 ## Skills
 
 | Skill | Covers |
@@ -247,10 +251,6 @@ skill, *scope* to one rule file, or *stack* an exact combo.
 **Building** — plain prompts; routing picks the skills:
 
 > Design a multi-tenant invoicing service — stack from my profile, or propose one.
-
-> Add a websocket endpoint for live notifications.
-
-> Build the settings page — dark mode, WCAG 2.2 AA.
 
 > Add a RAG search feature over our docs, and write the evals first.
 

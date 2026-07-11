@@ -21,8 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   even opus-4.8 misses the same rule-driven skills without the router (r01
   testing, r02 sandboxing, r07 code-security, r09 web-frameworks). So the
   in-session +0.08/+0.11 was **not** a contamination artifact — the routing
-  lift is real and attributable to the cross-cutting rules. **Audit lift =
-  +0.00, model-independent** (haiku→sonnet-4.6, original + harder cases):
+  lift is real and attributable to the cross-cutting rules. README now cites
+  the freshness evidence ("Measured, not asserted") linking `evals/`. **Audit
+  lift = +0.00, model-independent** (haiku→sonnet-4.6, original + harder cases):
   strong models recognize textbook vulns library-or-not. **Freshness lift =
   +0.75 (sonnet-4.6) / +0.50 (opus-4.8)** — the decisive finding: a new
   `cases/freshness.jsonl` (8 objective 2026-current facts, each carried in a
