@@ -9,23 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Eval golden sets grown + efficacy baseline (2 runs) + control-validity
-  analysis** (roadmap Next). Cases expanded to 20 routing + 13 audit
-  (`evals/cases/`). Two with-vs-without runs recorded in
-  `evals/results/2026-07-10/BASELINE.md` (raw predictions + a logged re-run
-  with per-case rationales in `results/2026-07-11/`). **Routing recall lift
-  +0.08 then +0.11 (~+0.10, replicated)**, driven entirely by the router's
-  cross-cutting rules (the without-arm's logged rationales show naive
-  keyword-matching that misses exactly the rule-driven cases: r01 testing, r02
-  sandboxing, r07 code-security, r20 devsecops). **Control-validity honesty:** a
-  probe confirmed the "without-library" arm is *not* a clean library-free
-  control — the global `CLAUDE.md` routing directive and the injected skill
-  registry are ambient in every subagent (the profile's mapping tables are NOT,
-  refuting one suspected leak). The lift is therefore a **lower bound** vs a
-  routing-aware control, but it is mechanism-attributable to the router rules
-  (which live only in `skills/sota/SKILL.md`, unread by the control). Audit
-  cases saturated (both arms 13/13) — harder multi-vuln cases + an isolated
-  clean-control run are the next actions.
+- **Eval golden sets + efficacy baseline + clean isolated control** (roadmap
+  Next, done). Cases expanded to 20 routing + 13 audit + 7 harder audit
+  (`evals/cases/`). New `evals/run-clean.py` — a **raw model-API** harness
+  (OpenRouter, key from `.env`, never committed) that removes the in-session
+  contamination entirely (no HOME/`CLAUDE.md`/skill-registry) for a true
+  library-vs-nothing control. Findings (all in
+  `evals/results/2026-07-10/BASELINE.md`, raw in `results/2026-07-11/`):
+  **routing recall lift replicates ~+0.10 in the clean control** — +0.09
+  (sonnet-4.6), +0.14 (sonnet-5), +0.09 (opus-4.8), with-library 1.00 each;
+  even opus-4.8 misses the same rule-driven skills without the router (r01
+  testing, r02 sandboxing, r07 code-security, r09 web-frameworks). So the
+  in-session +0.08/+0.11 was **not** a contamination artifact — the routing
+  lift is real and attributable to the cross-cutting rules. **Audit lift =
+  +0.00, model-independent** (haiku→sonnet-4.6, original + harder cases):
+  strong models recognize textbook vulns library-or-not, so the library's audit
+  value is elsewhere (coverage/rare findings/discipline), not captured here.
+  Also: `.env` added to `.gitignore` (was untracked but unignored).
 
 ## [1.13.0] - 2026-07-10
 

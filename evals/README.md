@@ -60,17 +60,28 @@ for the schema). Add cases freely; keep `expect` to unambiguous must-haves.
   treat the score as a *regression signal*, not an absolute grade. The point is
   the delta over time, not the third decimal place.
 
+## Clean isolated run (no session contamination)
+
+`score.py` scores an agent you drive by hand *inside* a Claude Code session —
+where the sota `CLAUDE.md` directive + skill registry are ambient, so the
+"without-library" arm isn't truly library-free. **`run-clean.py`** removes that:
+it makes **raw model-API calls** (OpenRouter; `OPENROUTER_API_KEY` from env or
+`.env`, never committed) with the library content pasted into the with-arm only.
+
+```sh
+python3 evals/run-clean.py --cases evals/cases/router.jsonl --model anthropic/claude-sonnet-4.6
+python3 evals/run-clean.py --cases evals/cases/audit-hard.jsonl
+```
+
 ## Recorded runs
 
-`results/<date>/` holds the raw per-arm predictions (+ rationales for the
-logged run) so scores are re-scorable and comparable over time. Writeup:
-[`results/2026-07-10/BASELINE.md`](results/2026-07-10/BASELINE.md) — two runs, a
-replicated **~+0.10 routing recall lift** attributable to the router's
-cross-cutting rules, a **control-validity analysis** (the "without-library" arm
-is a routing-aware control, not truly library-free — so the number is a lower
-bound), and the finding that the audit cases are too easy to discriminate yet
-(both arms 13/13). A clean library-vs-nothing run needs an isolated environment
-(no sota `CLAUDE.md`, no registered skills).
+`results/<date>/` holds raw per-arm predictions (+ rationales / clean-run
+outputs). Writeup: [`results/2026-07-10/BASELINE.md`](results/2026-07-10/BASELINE.md).
+Headline: a **replicated ~+0.10 routing recall lift** from the router's
+cross-cutting rules — confirmed both in-session (+0.08/+0.11) and in the clean
+control (+0.09/+0.14/+0.09 on sonnet-4.6/sonnet-5/opus-4.8); even opus-4.8
+misses the same rule-driven skills without the router. **Audit lift = +0.00,
+model-independent** — strong models recognize textbook vulns library-or-not.
 
 ## Extending
 

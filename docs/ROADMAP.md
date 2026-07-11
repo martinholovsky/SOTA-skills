@@ -21,15 +21,15 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
 
 ## Next — grow what the prototypes started
 
-4. **Eval golden sets + baseline (2 runs)** — *done 2026-07-10/11* (33 cases;
-   [`evals/results/2026-07-10/BASELINE.md`](../evals/results/2026-07-10/BASELINE.md)):
-   replicated **~+0.10 routing recall lift** from the router's cross-cutting
-   rules (mechanism-confirmed by logged per-case rationales), with a
-   control-validity analysis (the number is a lower bound vs a routing-aware
-   control). **Live follow-through:** (a) add **harder audit cases** (the audit
-   arm saturates at 13/13); (b) run a **truly isolated control** (no sota
-   `CLAUDE.md`/registry) for a clean library-vs-nothing number; (c) average
-   several samples per arm.
+4. **Eval baseline + clean isolated control** — *done 2026-07-10/11*
+   ([`BASELINE.md`](../evals/results/2026-07-10/BASELINE.md); `evals/run-clean.py`):
+   **routing lift ~+0.10 replicates in a true library-vs-nothing raw-API
+   control** (+0.09/+0.14/+0.09 across sonnet-4.6/sonnet-5/opus-4.8) — the
+   contamination concern is resolved, the lift is real. **Audit lift +0.00,
+   model-independent** even on harder cases — strong models recognize textbook
+   vulns unaided. **Live follow-through:** the audit eval needs a different
+   target (rarer/nuanced findings, or coverage-at-scale) to measure anything;
+   average more samples for a tighter routing CI.
 5. **First 6-month accuracy sweep** comes due ~Jan 2027 (freshness window) —
    run it per the `docs/MAINTENANCE.md` runbook and bump `LAST-VERIFIED`.
 

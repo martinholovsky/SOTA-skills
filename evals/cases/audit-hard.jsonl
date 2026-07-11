@@ -1,0 +1,10 @@
+# Harder audit golden set — multi-vuln + subtler cases meant to DISCRIMINATE
+# (the base audit.jsonl saturates at 13/13). `expect` = every category that
+# must be flagged; a partial catch (misses one of a multi-vuln) scores <1.
+{"id": "ah01", "kind": "audit", "language": "python", "snippet": "name=request.args['name']; rows=db.execute(\"SELECT * FROM u WHERE name='\"+name+\"'\"); return \"<h1>Hello \"+name+\"</h1>\"", "expect": ["sql-injection", "xss"]}
+{"id": "ah02", "kind": "audit", "language": "python", "snippet": "u = User(**request.get_json()); u.save()  # posted JSON may set is_admin=true", "expect": ["mass-assignment"]}
+{"id": "ah03", "kind": "audit", "language": "python", "snippet": "charge_card(request.json['amount_cents'])  # amount comes from the client", "expect": ["business-logic-flaw"]}
+{"id": "ah04", "kind": "audit", "language": "python", "snippet": "reset_token = str(random.random())[2:10]", "expect": ["insecure-random"]}
+{"id": "ah05", "kind": "audit", "language": "python", "snippet": "log.info('login attempt user=' + request.args['user'])", "expect": ["log-injection"]}
+{"id": "ah06", "kind": "audit", "language": "python", "snippet": "return redirect(request.args.get('next'))", "expect": ["open-redirect"]}
+{"id": "ah07", "kind": "audit", "language": "python", "snippet": "return '<div class=bio>' + stored_user_bio + '</div>'  # bio is stored user input", "expect": ["xss"]}
