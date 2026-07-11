@@ -1,0 +1,37 @@
+{
+ "without-library": {
+  "recall": 0.25,
+  "misses": {
+   "f01": "want ['9989']; got: 'rfc 7489 remains the formal dmarc standard; rfc 9091 is experimental, '",
+   "f02": "want ['A06', 'a06']; got: 'a04 \u2013 insecure design.'",
+   "f03": "want ['eol', 'end of life', 'end-of-life', 'retired', 'no longer', 'unmaintained', 'not maintained']; got: 'actively maintained and stable.'",
+   "f05": "want ['10008']; got: 'rfc 9110 does not define query; as of mid-2026 the http query method d'",
+   "f06": "want ['15']; got: 'minimum 8 characters when password is the sole factor per sp 800-63b-4'",
+   "f07": "want ['archived', 'unmaintained', 'eol', 'deprecated', 'no longer']; got: 'viable \u2013 torchserve remains actively maintained by pytorch/aws.'"
+  },
+  "predictions": {
+   "f01": "RFC 7489 remains the formal DMARC standard; RFC 9091 is experimental, so RFC 7489 is still the operative standard.",
+   "f02": "A04 \u2013 Insecure Design.",
+   "f03": "Actively maintained and stable.",
+   "f04": "RFC 7396 defines JSON Merge Patch and remains in force.",
+   "f05": "RFC 9110 does not define QUERY; as of mid-2026 the HTTP QUERY method draft has not been published as a final RFC.",
+   "f06": "Minimum 8 characters when password is the sole factor per SP 800-63B-4 final.",
+   "f07": "Viable \u2013 TorchServe remains actively maintained by PyTorch/AWS.",
+   "f08": "Let's Encrypt shut down its OCSP responders in 2025, replacing revocation signaling with CRLs only."
+  }
+ },
+ "with-library": {
+  "recall": 1.0,
+  "misses": {},
+  "predictions": {
+   "f01": "RFC 9989",
+   "f02": "A06",
+   "f03": "EOL \u2014 retired by SIG Network/SRC, maintenance ended March 2026, repository read-only.",
+   "f04": "RFC 7396",
+   "f05": "RFC 10008",
+   "f06": "15 characters",
+   "f07": "Archived (repo archived August 2025, no updates or security patches).",
+   "f08": "No \u2014 Let's Encrypt ended OCSP (URLs dropped from certs May 2025, responders shut down August 2025); revocation is CRL-only."
+  }
+ }
+}

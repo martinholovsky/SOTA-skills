@@ -23,9 +23,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in-session +0.08/+0.11 was **not** a contamination artifact — the routing
   lift is real and attributable to the cross-cutting rules. **Audit lift =
   +0.00, model-independent** (haiku→sonnet-4.6, original + harder cases):
-  strong models recognize textbook vulns library-or-not, so the library's audit
-  value is elsewhere (coverage/rare findings/discipline), not captured here.
-  Also: `.env` added to `.gitignore` (was untracked but unignored).
+  strong models recognize textbook vulns library-or-not. **Freshness lift =
+  +0.75 (sonnet-4.6) / +0.50 (opus-4.8)** — the decisive finding: a new
+  `cases/freshness.jsonl` (8 objective 2026-current facts, each carried in a
+  rules file) shows the base model is not just missing current facts but
+  **confidently wrong** (asserts RFC 7489 not 9989, OWASP A04 not A06,
+  ingress-nginx "maintained", NIST "8 chars" not 15, TorchServe "maintained"),
+  while the with-library arm is 1.00. So the library's value is currency (large
+  lift, ~5–7× routing), not routing/recognition (small/zero). Also: `.env`
+  added to `.gitignore` (was untracked but unignored).
 
 ## [1.13.0] - 2026-07-10
 

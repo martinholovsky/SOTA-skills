@@ -1,0 +1,14 @@
+# Freshness golden set — current (2026) facts the library carries but a frozen
+# training cutoff gets wrong. `expect` = case-insensitive substring tokens; a
+# case scores 1 if the answer contains ANY of them. `skill` names the rules
+# file(s) the with-library arm gets (the fact lives there). This measures the
+# library's core value: currency the base model lacks (and is often confidently
+# wrong about). kind=freshness.
+{"id": "f01", "kind": "freshness", "question": "Which RFC number is the current IETF DMARC standard as of 2026 (the one now in force)?", "expect": ["9989"], "skill": ["skills/sota-network-security/rules/06-dns-tls-pki.md"]}
+{"id": "f02", "kind": "freshness", "question": "In the OWASP Top 10 2025, what is the A-number (like A0x) of the 'Insecure Design' category?", "expect": ["A06", "a06"], "skill": ["skills/sota-code-security/rules/09-untrusted-data-ingestion.md"]}
+{"id": "f03", "kind": "freshness", "question": "As of mid-2026 is the Kubernetes ingress-nginx controller still actively maintained? State its status in one phrase.", "expect": ["eol", "end of life", "end-of-life", "retired", "no longer", "unmaintained", "not maintained"], "skill": ["skills/sota-kubernetes/rules/01-control-plane-etcd.md"]}
+{"id": "f04", "kind": "freshness", "question": "Which RFC currently defines JSON Merge Patch (the one in force, not the obsoleted earlier one)?", "expect": ["7396"], "skill": ["skills/sota-api-design/rules/01-rest-http-design.md"]}
+{"id": "f05", "kind": "freshness", "question": "Which RFC number standardizes the HTTP QUERY method?", "expect": ["10008"], "skill": ["skills/sota-api-design/rules/01-rest-http-design.md"]}
+{"id": "f06", "kind": "freshness", "question": "Per NIST SP 800-63B-4 (final), what is the minimum password length when the password is the SOLE authentication factor?", "expect": ["15"], "skill": ["skills/sota-code-security/rules/02-authentication.md"]}
+{"id": "f07", "kind": "freshness", "question": "Should a new 2026 project adopt TorchServe as its model-serving runtime? Give the one-word status reason.", "expect": ["archived", "unmaintained", "eol", "deprecated", "no longer"], "skill": ["skills/sota-ml-engineering/rules/05-deployment-serving.md"]}
+{"id": "f08", "kind": "freshness", "question": "As of 2026, does Let's Encrypt still run OCSP responders for certificate revocation? State what happened to OCSP.", "expect": ["ended", "dropped", "discontinued", "stopped", "shut down", "no longer", "removed"], "skill": ["skills/sota-network-security/rules/06-dns-tls-pki.md"]}
