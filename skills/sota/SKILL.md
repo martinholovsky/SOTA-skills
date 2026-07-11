@@ -156,8 +156,9 @@ rules files that match the code in front of you. Never load all skills at once.
     the repo's "language" is something else.
 18. **Cryptography fans out — there is no single crypto skill (by design).**
     Algorithm choice, AEAD/nonce discipline, CSPRNG, in-code key handling, TLS
-    client config, constant-time comparison, crypto agility, and post-quantum
-    migration → `sota-code-security` rules/04. The key *material* — storage
+    client config, constant-time comparison, tamper-evident logs/audit ledgers
+    (keyed hash chains, external anchoring, integrity-vs-completeness), crypto
+    agility, and post-quantum migration → `sota-code-security` rules/04. The key *material* — storage
     backends (KMS/HSM, Vault, SOPS+age), lifecycle, rotation, per-credential-type
     handling → `sota-secrets-management`. Transport/PKI — TLS server config, cert
     lifecycle/ACME, private CA, mTLS → `sota-network-security` rules/06.
