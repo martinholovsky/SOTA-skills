@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **code-security rules/04 §8 — Tamper-evident logs & audit ledgers** (NIST
+  AU-9/AU-10). New section codifying the audit-ledger pattern: unkeyed hash
+  chains detect accidents, not adversaries (HMAC or external anchoring
+  required); tail truncation / whole-stream deletion is invisible to
+  chain-walk verification; hash every attested field incl. server timestamps;
+  canonical preimage encoding (§7); **integrity ≠ completeness** (attest and
+  report separately); verification must be possible off the storing system;
+  vantage (self-reported vs independent chokepoint →
+  detection-engineering rules/02); erasure-by-design for immutable stores
+  (privacy rules/03 §4 crypto-shredding). +2 audit-checklist items;
+  code-security SKILL.md index row and router rule 18 (crypto fan-out)
+  updated. Motivated by a real audit of a public "tamper-evident AI-agent
+  ledger" where this gap class recurred (unkeyed SHA-256 chain marketed as
+  compliance evidence).
+
 - **Eval golden sets + efficacy baseline + clean isolated control** (roadmap
   Next, done). Cases expanded to 20 routing + 13 audit + 7 harder audit
   (`evals/cases/`). New `evals/run-clean.py` — a **raw model-API** harness

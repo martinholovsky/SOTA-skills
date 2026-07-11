@@ -30,7 +30,7 @@ by default (CWE-1240).
   (RSA-2048, P-256) deprecated after 2030 and all quantum-vulnerable
   RSA/ECDSA/ECDH/DSA disallowed after 2035 — maintain a cryptographic
   inventory (CBOM) now so the swap to ML-KEM/ML-DSA/SLH-DSA is a config
-  change, not a rewrite (see §8 crypto agility).
+  change, not a rewrite (see §9 crypto agility).
 
 ## 2. AEAD and nonce discipline (CWE-323)
 
@@ -208,7 +208,46 @@ if hmac.compare_digest(hashlib.sha256(token.encode()).digest(),
   dependencies is the minimum (CWE-494, A08:2025; supply chain is now its own
   OWASP category, A03:2025).
 
-## 8. Secrets hygiene in code & pipelines
+## 8. Tamper-evident logs & audit ledgers (NIST AU-9/AU-10)
+
+Applies to anything claiming "tamper-evident", "audit-grade", or "immutable"
+records: hash-chained audit logs, compliance trails (EU AI Act Art. 12, FINRA
+4511 WORM), agent/action ledgers, signed receipts.
+
+- An **unkeyed hash chain** (each record carries the previous record's SHA-256)
+  detects accidental corruption and naive edits only — an attacker with write
+  access to the store recomputes every hash and forges a clean chain. Integrity
+  against an adversary needs a key or an anchor: HMAC/sign entries with a key
+  held outside the store's trust domain, and/or periodically **anchor the chain
+  head externally** (signed checkpoints, RFC 3161 timestamps, forward to
+  WORM/SIEM, transparency-log publish).
+- **Tail truncation is invisible** to chain-walk verification — deleting the
+  newest N records leaves a perfectly valid chain; so does deleting an entire
+  chain/stream. Detection needs an externally recorded head (hash + count),
+  signed close markers, or an out-of-store registry of chains.
+- Hash **every field you attest** — including server-assigned timestamps and
+  anything used to order or attribute records. Unhashed "projection" columns
+  can be rewritten without breaking the chain.
+- The preimage must be a canonical, unambiguous encoding (§7): delimiter-joined
+  concatenation of attacker-influenced fields is forgeable via field-boundary
+  shifting.
+- **Integrity ≠ completeness.** A chain proves what was *delivered*, not what
+  *happened*: records dropped before ingestion (client buffers, "never raise"
+  SDKs, server-assigned sequence numbers) leave no gap. If completeness is a
+  claim, attest it separately (source-assigned sequence numbers, declared
+  counts, close markers) and report the two verdicts separately.
+- Verification must be possible **off the system that stores the data**
+  (standalone verifier + a documented, cross-language canonicalization spec).
+  A `verify` that only runs on the server being audited proves little.
+- Vantage matters: a record emitted voluntarily by the monitored component can
+  be omitted at will — for security evidence prefer an independent chokepoint
+  (proxy, gateway, kernel, append-only sink). See sota-detection-engineering
+  rules/02 (telemetry integrity).
+- Immutable/append-only stores holding personal data need erasure designed up
+  front — per-subject crypto-shredding (sota-privacy-compliance rules/03 §4);
+  retrofitting deletion breaks either the chain or the law.
+
+## 9. Secrets hygiene in code & pipelines
 
 - Secret detection in CI (gitleaks/trufflehog) blocking merges; pre-commit hooks
   as the early net. On any hit: **rotate first**, then scrub history.
@@ -222,7 +261,7 @@ if hmac.compare_digest(hashlib.sha256(token.encode()).digest(),
 - Crypto agility: central crypto module/wrapper so algorithm/params live in one
   place; grep-able, upgradeable, with ciphertext version tags.
 
-## 9. Audit grep starters
+## 10. Audit grep starters
 
 High-signal patterns to sweep for in AUDIT mode (confirm reachability before
 reporting — see SKILL.md):
@@ -254,3 +293,5 @@ createCipheriv\(.*, *(['"]).{1,16}\1  (short/static key/nonce)
 - [ ] Is sensitive-field encryption application-layer (envelope, AAD-bound), with deterministic encryption confined to blind indexes?
 - [ ] Are dependencies and release artifacts checksum/signature-verified in CI/CD?
 - [ ] Is there a single crypto wrapper module rather than scattered primitive calls?
+- [ ] Is any "tamper-evident"/audit ledger keyed (HMAC/signature) or externally anchored — not a bare unkeyed hash chain — with tail truncation and whole-stream deletion detectable?
+- [ ] Is ledger completeness attested separately from integrity (source-assigned seq / close markers), and is verification possible off the storing system?
