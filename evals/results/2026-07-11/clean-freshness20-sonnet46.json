@@ -1,0 +1,68 @@
+{
+ "without-library": {
+  "recall": 0.35,
+  "misses": {
+   "f01": "want ['9989']; got: 'rfc 7489 was the original; rfc 9091 is an experimental update, but the'",
+   "f02": "want ['A06', 'a06']; got: 'a04 \u2013 insecure design.'",
+   "f03": "want ['eol', 'end of life', 'end-of-life', 'retired', 'no longer', 'unmaintained', 'not maintained']; got: 'still actively maintained.'",
+   "f05": "want ['10008']; got: 'rfc 9110 does not define query; as of mid-2026 the http query method i'",
+   "f10": "want ['ztunnel']; got: \"cilium's built-in wireguard-based transparent encryption (in-cluster m\"",
+   "f12": "want ['3.2']; got: 'openapi specification 3.1.1.'",
+   "f13": "want ['1.36']; got: 'kubernetes 1.30.'",
+   "f14": "want ['2.0']; got: 'version 1.1.0 (major version 1).'",
+   "f15": "want ['2025']; got: 'misra c:2023.'",
+   "f16": "want ['draft']; got: 'published rfc \u2014 rfc 9440.'",
+   "f17": "want ['9967']; got: 'i do not have reliable knowledge of a 2026 rfc specifically standardiz'",
+   "f19": "want ['cobalt 200', 'cobalt-200']; got: \"azure cobalt 100 with arm cca support (announced as part of azure's co\"",
+   "f20": "want ['1.90']; got: 'rust 1.71.'"
+  },
+  "predictions": {
+   "f01": "RFC 7489 was the original; RFC 9091 is an experimental update, but the widely cited current standard is RFC 7489 (no replacement RFC has superseded it as of mid-2026).",
+   "f02": "A04 \u2013 Insecure Design.",
+   "f03": "Still actively maintained.",
+   "f04": "RFC 7396 defines JSON Merge Patch and remains in force.",
+   "f05": "RFC 9110 does not define QUERY; as of mid-2026 the HTTP QUERY method is still an IETF Internet-Draft (draft-ietf-httpbis-safe-method-w-body), not yet a published RFC.",
+   "f06": "15 characters minimum.",
+   "f07": "Deprecated.",
+   "f08": "Let's Encrypt shut down its OCSP responders in 2025, replacing revocation signaling with CRLs.",
+   "f09": "Still in preview / not yet shipped as the stable typescript package.",
+   "f10": "Cilium's built-in WireGuard-based transparent encryption (in-cluster mTLS via WireGuard).",
+   "f11": "X25519MLKEM768 (X25519 + ML-KEM-768 hybrid).",
+   "f12": "OpenAPI Specification 3.1.1.",
+   "f13": "Kubernetes 1.30.",
+   "f14": "Version 1.1.0 (major version 1).",
+   "f15": "MISRA C:2023.",
+   "f16": "Published RFC \u2014 RFC 9440.",
+   "f17": "I do not have reliable knowledge of a 2026 RFC specifically standardizing a SCIM profile for Security Event Tokens.",
+   "f18": "libFuzzer is in maintenance mode; its authors now focus on Centipede (Google's new fuzzing engine).",
+   "f19": "Azure Cobalt 100 with ARM CCA support (announced as part of Azure's confidential computing initiative in November 2025).",
+   "f20": "Rust 1.71."
+  }
+ },
+ "with-library": {
+  "recall": 1.0,
+  "misses": {},
+  "predictions": {
+   "f01": "RFC 9989",
+   "f02": "A06",
+   "f03": "EOL \u2014 retired/read-only since March 2026, no longer actively maintained",
+   "f04": "RFC 7396",
+   "f05": "RFC 10008",
+   "f06": "15 characters",
+   "f07": "Archived (EOL August 2025)",
+   "f08": "Let's Encrypt ended OCSP \u2014 URLs dropped from certs May 2025, responders shut down August 2025; revocation is CRL-only",
+   "f09": "Generally available \u2014 shipped as the stable typescript package since July 2026",
+   "f10": "ztunnel integration (per-node proxy from Istio ambient mode), Beta in Cilium 1.19, TCP-only",
+   "f11": "X25519MLKEM768",
+   "f12": "OpenAPI 3.2 (released September 2025)",
+   "f13": "Kubernetes v1.36",
+   "f14": "Version 2.0.0 (2026)",
+   "f15": "MISRA C:2025",
+   "f16": "Still an Internet-Draft (draft-ietf-httpapi-ratelimit-headers)",
+   "f17": "RFC 9967",
+   "f18": "Maintenance mode only (bug fixes); authors moved to Centipede",
+   "f19": "Azure Cobalt 200",
+   "f20": "Rust 1.90"
+  }
+ }
+}

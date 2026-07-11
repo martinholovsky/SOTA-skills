@@ -40,14 +40,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the freshness evidence ("Measured, not asserted") linking `evals/`. **Audit
   lift = +0.00, model-independent** (haiku→sonnet-4.6, original + harder cases):
   strong models recognize textbook vulns library-or-not. **Freshness lift =
-  +0.75 (sonnet-4.6) / +0.50 (opus-4.8)** — the decisive finding: a new
-  `cases/freshness.jsonl` (8 objective 2026-current facts, each carried in a
-  rules file) shows the base model is not just missing current facts but
-  **confidently wrong** (asserts RFC 7489 not 9989, OWASP A04 not A06,
-  ingress-nginx "maintained", NIST "8 chars" not 15, TorchServe "maintained"),
-  while the with-library arm is 1.00. So the library's value is currency (large
-  lift, ~5–7× routing), not routing/recognition (small/zero). Also: `.env`
-  added to `.gitignore` (was untracked but unignored).
+  +0.65 (sonnet-4.6) / +0.50 (opus-4.8)** on **20** objective 2026-current-fact
+  cases (`cases/freshness.jsonl`, each answer carried in a rules file;
+  with-library = 1.00 on all 20) — the decisive finding: the base model is not
+  just missing current facts but **confidently wrong, and sometimes
+  fabricates** (asserts RFC 7489 not 9989, OWASP A04 not A06, MISRA C:2023 not
+  2025, OpenAPI 3.1.1 not 3.2, Keep-a-Changelog 1.1.0 not 2.0, K8s user-ns GA
+  1.30/1.33 not 1.36, Cilium WireGuard not ztunnel, Cobalt 100 not 200; and
+  *invents* RFC 9440/9816 for facts it doesn't know). So the library's value is
+  currency (large lift, ~5× routing), not routing/recognition (small/zero).
+  Also: `.env` added to `.gitignore` (was untracked but unignored).
 
 ## [1.13.0] - 2026-07-10
 

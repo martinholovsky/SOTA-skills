@@ -1,0 +1,65 @@
+{
+ "without-library": {
+  "recall": 0.5,
+  "misses": {
+   "f01": "want ['9989']; got: 'rfc 7489'",
+   "f02": "want ['A06', 'a06']; got: 'a04'",
+   "f03": "want ['eol', 'end of life', 'end-of-life', 'retired', 'no longer', 'unmaintained', 'not maintained']; got: 'in maintenance/retirement mode; being replaced by ingate (gateway api)'",
+   "f05": "want ['10008']; got: 'rfc 9110 does not define it; standardized in draft \u2014 no final rfc yet '",
+   "f06": "want ['15']; got: '8 characters'",
+   "f10": "want ['ztunnel']; got: 'spiffe/spire-based identities via mutual tls, using its transparent en'",
+   "f12": "want ['3.2']; got: '3.1.1'",
+   "f13": "want ['1.36']; got: '1.33'",
+   "f14": "want ['2.0']; got: '1.x (1.1.0)'",
+   "f17": "want ['9967']; got: 'rfc 9816'"
+  },
+  "predictions": {
+   "f01": "RFC 7489",
+   "f02": "A04",
+   "f03": "In maintenance/retirement mode; being replaced by InGate (Gateway API), retirement announced",
+   "f04": "RFC 7396",
+   "f05": "RFC 9110 does not define it; standardized in draft \u2014 no final RFC yet as of mid-2026",
+   "f06": "8 characters",
+   "f07": "No \u2014 deprecated",
+   "f08": "No \u2014 Let's Encrypt ended OCSP in 2025, relying on CRLs only",
+   "f09": "Still in preview (not yet the stable typescript package)",
+   "f10": "SPIFFE/SPIRE-based identities via mutual TLS, using its Transparent Encryption / WireGuard/IPsec with SPIFFE identities",
+   "f11": "X25519MLKEM768",
+   "f12": "3.1.1",
+   "f13": "1.33",
+   "f14": "1.x (1.1.0)",
+   "f15": "MISRA C:2025",
+   "f16": "Still an Internet-Draft",
+   "f17": "RFC 9816",
+   "f18": "Maintenance mode; authors focus on fuzztest/Centipede",
+   "f19": "Azure Cobalt (Cobalt 200)",
+   "f20": "Rust 1.90"
+  }
+ },
+ "with-library": {
+  "recall": 1.0,
+  "misses": {},
+  "predictions": {
+   "f01": "RFC 9989",
+   "f02": "A06:2025",
+   "f03": "EOL/retired (maintenance ended March 2026, repo read-only)",
+   "f04": "RFC 7396",
+   "f05": "RFC 10008",
+   "f06": "15 characters",
+   "f07": "No \u2014 archived (Aug 2025, no security patches)",
+   "f08": "No \u2014 OCSP ended (URLs dropped May 2025, responders off Aug 2025; CRL-only)",
+   "f09": "GA \u2014 stable since July 2026, shipped as the regular typescript package",
+   "f10": "ztunnel integration (per-node proxy from Istio ambient), Beta in 1.19, TCP-only",
+   "f11": "X25519MLKEM768",
+   "f12": "OpenAPI 3.2 (released Sep 2025)",
+   "f13": "v1.36",
+   "f14": "2.0.0",
+   "f15": "MISRA C:2025",
+   "f16": "Still an Internet-Draft (draft-ietf-httpapi-ratelimit-headers)",
+   "f17": "RFC 9967",
+   "f18": "Maintenance mode; authors moved to Centipede",
+   "f19": "Cobalt 200",
+   "f20": "Rust 1.90"
+  }
+ }
+}
