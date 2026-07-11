@@ -1,0 +1,58 @@
+{
+ "without-library": {
+  "recall": 1.0,
+  "misses": {},
+  "predictions": {
+   "ah01": [
+    "sql-injection",
+    "xss"
+   ],
+   "ah02": [
+    "mass-assignment"
+   ],
+   "ah03": [
+    "business-logic-flaw"
+   ],
+   "ah04": [
+    "insecure-random"
+   ],
+   "ah05": [
+    "log-injection"
+   ],
+   "ah06": [
+    "open-redirect"
+   ],
+   "ah07": [
+    "xss"
+   ]
+  }
+ },
+ "with-library": {
+  "recall": 1.0,
+  "misses": {},
+  "predictions": {
+   "ah01": [
+    "sql-injection",
+    "xss"
+   ],
+   "ah02": [
+    "mass-assignment"
+   ],
+   "ah03": [
+    "business-logic-flaw"
+   ],
+   "ah04": [
+    "insecure-random"
+   ],
+   "ah05": [
+    "log-injection"
+   ],
+   "ah06": [
+    "open-redirect"
+   ],
+   "ah07": [
+    "xss"
+   ]
+  }
+ }
+}
