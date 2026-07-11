@@ -69,7 +69,8 @@ it makes **raw model-API calls** (OpenRouter; `OPENROUTER_API_KEY` from env or
 `.env`, never committed) with the library content pasted into the with-arm only.
 
 ```sh
-python3 evals/run-clean.py --cases evals/cases/router.jsonl --model anthropic/claude-sonnet-4.6
+python3 evals/run-clean.py --cases evals/cases/freshness.jsonl --model anthropic/claude-sonnet-4.6
+python3 evals/run-clean.py --cases evals/cases/router.jsonl
 python3 evals/run-clean.py --cases evals/cases/audit-hard.jsonl
 ```
 
@@ -77,11 +78,11 @@ python3 evals/run-clean.py --cases evals/cases/audit-hard.jsonl
 
 `results/<date>/` holds raw per-arm predictions (+ rationales / clean-run
 outputs). Writeup: [`results/2026-07-10/BASELINE.md`](results/2026-07-10/BASELINE.md).
-Headline: a **replicated ~+0.10 routing recall lift** from the router's
-cross-cutting rules — confirmed both in-session (+0.08/+0.11) and in the clean
-control (+0.09/+0.14/+0.09 on sonnet-4.6/sonnet-5/opus-4.8); even opus-4.8
-misses the same rule-driven skills without the router. **Audit lift = +0.00,
-model-independent** — strong models recognize textbook vulns library-or-not.
+Headline (clean, by dimension): **freshness +0.50–0.75** (2026 facts — the
+library's core value; the base model is *confidently wrong* without it),
+**routing +0.09–0.14** (the router's cross-cutting rules; even opus-4.8 misses
+them unaided), **audit +0.00** (strong models recognize textbook vulns
+library-or-not). The lift is only "small" if you measure the easy dimensions.
 
 ## Extending
 

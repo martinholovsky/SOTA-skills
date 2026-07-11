@@ -69,7 +69,19 @@ def audit_library_context():
 
 
 def build_prompt(cases, kind, with_lib):
-    stripped = [{k: v for k, v in c.items() if k != "expect"} for c in cases]
+    if kind == "freshness":
+        tasks = json.dumps([{"id": c["id"], "question": c["question"]} for c in cases], indent=1)
+        head = "Answer each question with the CURRENT (mid-2026) fact, in ONE short line each."
+        if with_lib:
+            files = sorted({f for c in cases for f in c.get("skill", [])})
+            ctx = "\n\n".join(open(os.path.join(ROOT, f), encoding="utf-8").read() for f in files)
+            lib = f"\n\nUse this current reference material:\n\n{ctx}\n\n"
+        else:
+            lib = "\n\nUse only your own knowledge.\n\n"
+        return (f"{head}{lib}Questions:\n{tasks}\n\n"
+                'Output ONLY a JSON object mapping each id to your one-line answer string, '
+                'e.g. {"f01": "RFC 9989"}. No prose, no code fence.')
+    stripped = [{k: v for k, v in c.items() if k not in ("expect", "skill")} for c in cases]
     tasks = json.dumps(stripped, indent=1)
     if kind == "audit":
         vocab = ", ".join(VOCAB)
@@ -108,15 +120,22 @@ def call(model, key, prompt):
     return json.loads(txt[s:e + 1])
 
 
-def score(cases, preds):
+def score(cases, preds, kind):
     tot, misses = 0.0, {}
     for c in cases:
-        exp = set(c["expect"])
-        got = set(preds.get(c["id"], []))
-        r = len(exp & got) / len(exp)
+        if kind == "freshness":
+            ans = str(preds.get(c["id"], "")).lower()
+            hit = any(tok.lower() in ans for tok in c["expect"])
+            r = 1.0 if hit else 0.0
+            if not hit:
+                misses[c["id"]] = f"want {c['expect']}; got: {ans[:70]!r}"
+        else:
+            exp = set(c["expect"])
+            got = set(preds.get(c["id"], []))
+            r = len(exp & got) / len(exp)
+            if r < 1.0:
+                misses[c["id"]] = sorted(exp - got)
         tot += r
-        if r < 1.0:
-            misses[c["id"]] = sorted(exp - got)
     return tot / len(cases), misses
 
 
@@ -134,7 +153,7 @@ def main():
     for with_lib in (False, True):
         arm = "with-library" if with_lib else "without-library"
         preds = call(a.model, key, build_prompt(cases, kind, with_lib))
-        rec, misses = score(cases, preds)
+        rec, misses = score(cases, preds, kind)
         result[arm] = {"recall": rec, "misses": misses, "predictions": preds}
         print(f"{arm:16s} recall={rec:.2f}"
               + (f"  misses: {misses}" if misses else "  (no misses)"))

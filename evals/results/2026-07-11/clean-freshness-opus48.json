@@ -1,0 +1,35 @@
+{
+ "without-library": {
+  "recall": 0.5,
+  "misses": {
+   "f01": "want ['9989']; got: 'rfc 7489 (dmarc remains informational; no new standards-track rfc in f'",
+   "f02": "want ['A06', 'a06']; got: 'a04'",
+   "f05": "want ['10008']; got: 'rfc 9110 does not define it; http query is standardized in a separate '",
+   "f06": "want ['15']; got: '8 characters'"
+  },
+  "predictions": {
+   "f01": "RFC 7489 (DMARC remains Informational; no new standards-track RFC in force as of mid-2026)",
+   "f02": "A04",
+   "f03": "Retired/maintenance-only \u2014 being wound down in favor of Gateway API (InGate)",
+   "f04": "RFC 7396",
+   "f05": "RFC 9110 does not define it; HTTP QUERY is standardized in a separate RFC \u2014 RFC 9110 not applicable; the QUERY method RFC number had not yet been assigned as of mid-2026 (still draft)",
+   "f06": "8 characters",
+   "f07": "No \u2014 deprecated",
+   "f08": "No \u2014 Let's Encrypt ended OCSP support, moving fully to CRLs (OCSP responder shut down in 2025)"
+  }
+ },
+ "with-library": {
+  "recall": 1.0,
+  "misses": {},
+  "predictions": {
+   "f01": "RFC 9989",
+   "f02": "A06:2025",
+   "f03": "No \u2014 EOL, retired March 2026, repo read-only",
+   "f04": "RFC 7396",
+   "f05": "RFC 10008",
+   "f06": "15 characters",
+   "f07": "No \u2014 archived (Aug 2025, no security patches)",
+   "f08": "No \u2014 OCSP URLs dropped May 2025, responders shut off Aug 2025; revocation is CRL-only"
+  }
+ }
+}
