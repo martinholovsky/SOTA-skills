@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`docs/WHY-IT-WORKS.md` — the measured case, honestly framed** + a README
+  highlight linking it. Curates the by-dimension lift (**vs. an *unguided model***,
+  explicitly **not** vs. other libraries — we haven't benchmarked one) and the
+  four design benefits verifiable in-repo (auto-routing/composition, freshness-
+  maintained + primary-source-cited, build+audit, CI-gated quality). README hero
+  now states the honest comparison and links the doc.
 - **Completeness eval — the library's thesis, measured** (`evals/cases/completeness.jsonl`,
   `evals/run-completeness.py`). Given a minimal "build X for my app" prompt with
   no security/logging cues, does the model embed best practices from v1? Clean
