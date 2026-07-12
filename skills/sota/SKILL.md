@@ -201,10 +201,10 @@ rules files that match the code in front of you. Never load all skills at once.
    file ends with one) *and* operating principle 5 against your own diff, item
    by item. For every unmet item either **implement it** or state explicitly
    why it's out of scope — silence is not allowed. This step is what turns
-   rules-in-context into rules-in-code: measured, it lifts a "build X" task's
-   best-practice coverage from ~0.89 to ~0.98 (`evals/run-completeness.py`).
-   The concerns a base model silently skips — rate limiting, transport, tests,
-   structured logging, idempotency — live here; close them before you ship.
+   rules-in-context into rules-in-code — measured to materially lift a "build X"
+   task's best-practice coverage (`evals/run-completeness.py`). The concerns a
+   base model silently skips — rate limiting, transport, tests, structured
+   logging, idempotency — live here; close them before you ship.
 
 ## AUDIT mode — workflow
 

@@ -18,6 +18,8 @@ Auth: OPENROUTER_API_KEY (read from env or ./.env). Never printed or committed.
 Usage:
   python3 evals/run-clean.py --cases evals/cases/audit-hard.jsonl
   python3 evals/run-clean.py --cases evals/cases/router.jsonl --model anthropic/claude-sonnet-4.6
+  # average N samples per arm for a spread (needs temp>0, else runs are identical):
+  python3 evals/run-clean.py --cases evals/cases/freshness.jsonl --samples 3 --temp 0.7
 Exit 0 always (it reports; scoring is the output, not a gate).
 """
 import argparse
@@ -106,9 +108,9 @@ def _skill_dirs():
     return [d for d in glob.glob(os.path.join(ROOT, "skills/sota-*")) if os.path.isdir(d)]
 
 
-def call(model, key, prompt):
+def call(model, key, prompt, temp=0.0):
     body = json.dumps({"model": model, "messages": [{"role": "user", "content": prompt}],
-                       "temperature": 0}).encode()
+                       "temperature": temp}).encode()
     req = urllib.request.Request("https://openrouter.ai/api/v1/chat/completions", data=body,
                                  headers={"Authorization": f"Bearer {key}",
                                           "Content-Type": "application/json"})
@@ -143,20 +145,36 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cases", required=True)
     ap.add_argument("--model", default="anthropic/claude-sonnet-4.6")
+    ap.add_argument("--samples", type=int, default=1,
+                    help="runs per arm; mean recall is reported. >1 only varies at --temp>0")
+    ap.add_argument("--temp", type=float, default=0.0,
+                    help="sampling temperature; keep 0 for a deterministic single run")
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
+    if a.samples > 1 and a.temp == 0.0:
+        print("note: --samples>1 at --temp 0 gives identical deterministic runs; "
+              "use --temp 0.7 for real variance.\n")
     key = load_env_key()
     cases = load_cases(a.cases)
     kind = cases[0].get("kind", "audit")
-    print(f"model={a.model}  kind={kind}  cases={len(cases)}  (clean API run, no sota config)\n")
+    print(f"model={a.model}  kind={kind}  cases={len(cases)}  samples={a.samples}  "
+          f"temp={a.temp}  (clean API run, no sota config)\n")
     result = {}
     for with_lib in (False, True):
         arm = "with-library" if with_lib else "without-library"
-        preds = call(a.model, key, build_prompt(cases, kind, with_lib))
-        rec, misses = score(cases, preds, kind)
-        result[arm] = {"recall": rec, "misses": misses, "predictions": preds}
-        print(f"{arm:16s} recall={rec:.2f}"
-              + (f"  misses: {misses}" if misses else "  (no misses)"))
+        prompt = build_prompt(cases, kind, with_lib)
+        recalls, last_misses, last_preds = [], {}, {}
+        for _ in range(a.samples):
+            preds = call(a.model, key, prompt, temp=a.temp)
+            rec, last_misses = score(cases, preds, kind)
+            recalls.append(rec)
+            last_preds = preds
+        mean = sum(recalls) / len(recalls)
+        result[arm] = {"recall": mean, "recalls": recalls, "misses": last_misses,
+                       "predictions": last_preds}
+        spread = f"  (min {min(recalls):.2f}, max {max(recalls):.2f}, n={len(recalls)})" if a.samples > 1 else ""
+        print(f"{arm:16s} recall={mean:.2f}{spread}"
+              + (f"  misses: {last_misses}" if last_misses else "  (no misses)"))
     lift = result["with-library"]["recall"] - result["without-library"]["recall"]
     print(f"\nLIFT (with − without) = {lift:+.2f}")
     if a.out:

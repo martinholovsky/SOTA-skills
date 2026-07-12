@@ -1,0 +1,110 @@
+{
+ "without-library": {
+  "recall": 1.0,
+  "recalls": [
+   1.0
+  ],
+  "misses": {},
+  "predictions": {
+   "ah01": [
+    "sql-injection",
+    "xss"
+   ],
+   "ah02": [
+    "mass-assignment"
+   ],
+   "ah03": [
+    "business-logic-flaw"
+   ],
+   "ah04": [
+    "insecure-random"
+   ],
+   "ah05": [
+    "log-injection"
+   ],
+   "ah06": [
+    "open-redirect"
+   ],
+   "ah07": [
+    "xss"
+   ],
+   "ah08": [
+    "idor"
+   ],
+   "ah09": [
+    "ssrf"
+   ],
+   "ah10": [
+    "business-logic-flaw"
+   ],
+   "ah11": [
+    "prototype-pollution"
+   ],
+   "ah12": [
+    "path-traversal",
+    "command-injection"
+   ],
+   "ah13": [
+    "hardcoded-secret",
+    "non-constant-time-comparison"
+   ],
+   "ah14": [
+    "redos"
+   ]
+  }
+ },
+ "with-library": {
+  "recall": 1.0,
+  "recalls": [
+   1.0
+  ],
+  "misses": {},
+  "predictions": {
+   "ah01": [
+    "sql-injection",
+    "xss"
+   ],
+   "ah02": [
+    "mass-assignment"
+   ],
+   "ah03": [
+    "business-logic-flaw"
+   ],
+   "ah04": [
+    "insecure-random"
+   ],
+   "ah05": [
+    "log-injection"
+   ],
+   "ah06": [
+    "open-redirect"
+   ],
+   "ah07": [
+    "xss"
+   ],
+   "ah08": [
+    "idor"
+   ],
+   "ah09": [
+    "ssrf"
+   ],
+   "ah10": [
+    "business-logic-flaw"
+   ],
+   "ah11": [
+    "prototype-pollution"
+   ],
+   "ah12": [
+    "path-traversal",
+    "command-injection"
+   ],
+   "ah13": [
+    "hardcoded-secret",
+    "non-constant-time-comparison"
+   ],
+   "ah14": [
+    "redos"
+   ]
+  }
+ }
+}
