@@ -61,9 +61,9 @@ regulation writes down: cancellation & backpressure, retries with jitter,
 circuit breakers, outbox/saga, zero-downtime migrations, measure-first
 performance, API evolvability, per-language idioms, SLOs, test-suite health.
 
-**Measured, not asserted.** Told to "build an API" (no security cues), a base
-model embeds ~60% of best practices — skipping tests, rate limits, logging,
-transport; the library's BUILD self-audit lifts it to ~98% (+0.39) ([evals/](evals/) — honest).
+**Measured, not asserted.** Vs. an *unguided model* (same model, no library), the library lifts a bare
+"build an API" prompt from ~60% to ~98% best-practice coverage (**+0.39**), is large on 2026 facts
+(**+0.50–0.65**), and helps routing (**+0.10**) — clean, blind-judged. [Why it works & results →](docs/WHY-IT-WORKS.md)
 
 ## Skills
 
