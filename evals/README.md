@@ -14,10 +14,17 @@ audit STRAT-HIGH-2).
 
 ## Cases
 
-- `cases/router.jsonl` — routing: a plain prompt → the skills that must load.
-  Tests the router's task→skill mapping.
-- `cases/audit.jsonl` — audit: a deliberately vulnerable snippet → the finding
-  category an audit must flag. Tests that the security skills catch the obvious.
+- `cases/router.jsonl` (20) — routing: a plain prompt → the skills that must
+  load. Tests the router's task→skill mapping.
+- `cases/audit.jsonl` (13) — audit: a deliberately vulnerable snippet → the
+  finding category an audit must flag. Tests that the security skills catch the
+  obvious. `cases/audit-hard.jsonl` (14) is the harder set — multi-vuln + subtle
+  (IDOR/SSRF/TOCTOU/ReDoS); it *still* saturates at 1.00 both arms (see below).
+- `cases/completeness.jsonl` (7) — a minimal "build X" task → a rubric of
+  universal best practices a blind judge scores the generated code against.
+- `cases/freshness.jsonl` (32) — a current-2026 fact question → the token a
+  correct answer must contain. Every fact is present in the library and was
+  primary-source-verified.
 
 Each line is one case with an `id` and an `expect` list (see `score.py` header
 for the schema). Add cases freely; keep `expect` to unambiguous must-haves.
@@ -78,25 +85,26 @@ python3 evals/run-clean.py --cases evals/cases/audit-hard.jsonl
 
 `results/<date>/` holds raw per-arm predictions (+ rationales / clean-run
 outputs). Writeup: [`results/2026-07-10/BASELINE.md`](results/2026-07-10/BASELINE.md).
-Headline (clean, by dimension): **completeness +0.39** (0.59→0.98 — from a bare
-"build X" prompt the library embeds the tests/rate-limits/logging/transport a
-base model skips; the thesis, and the part web-search can't replace),
-**freshness +0.50–0.65** (2026 facts; base model *confidently wrong*, but a
-web-search agent recovers most of it), **routing +0.09–0.14**, **audit +0.00**.
-The lift is only "small" if you measure the easy dimensions. Run:
+Headline (clean, by dimension): **completeness +0.36** (0.57→0.93 over 7 build
+tasks — from a bare "build X" prompt the library embeds the tests/rate-limits/
+logging/transport a base model skips; the thesis, and the part web-search can't
+replace), **freshness +0.50–0.65** (32 cases of 2026 facts; base model
+*confidently wrong*, but a web-search agent recovers most of it), **routing
++0.09–0.14**, **audit +0.00** (even the 14 harder cases saturate). The lift is
+only "small" if you measure the easy dimensions. Run:
 `python3 evals/run-completeness.py`.
 
 The completeness number is load-bearing on *how* the library is applied. Pasting
-the rules into context alone reaches only **0.89** — the model reads the guidance
-but silently drops peripheral concerns (rate limiting, transport, tests). Running
-the router's **BUILD self-audit** (apply non-negotiables, then check the diff
-against each rules file's Audit checklist and fill every gap) is what closes
-0.89→0.98. The one residual miss (c2 upload, rate limiting) is a *coverage* gap,
-not a self-audit failure: the router sends uploads to `code-security`+`sandboxing`,
-so the rate-limiting rule was never in scope for its checklist to catch — the fix
-is operating principle 5 (universal non-negotiables) in the router. A clean
-single-script run of the fixed harness — `results/2026-07-12/completeness-full-rerun.json`
-— reproduces without=0.59, with=0.98 end-to-end (c1/c3/c4 → 1.00, c2 → 0.91).
+the rules into context alone reaches only ~0.89 (measured on the first 4 tasks) —
+the model reads the guidance but silently drops peripheral concerns. Running the
+router's **BUILD self-audit** (apply non-negotiables, then check the diff against
+each rules file's Audit checklist and fill every gap) is what lifts it; the 7-task
+mean settles at **0.93**. The residual with-arm misses — **transport** (3/7) and
+**rate limiting** (2/7) — are *coverage* gaps, not self-audit failures: those
+cross-cutting rules live in one domain skill and fall outside a task's routed
+scope unless the router's **operating principle 5** (universal non-negotiables)
+pulls them in. Artifacts: `results/2026-07-12/completeness-full-rerun.json`
+(c1–c4, single-script) + `completeness-7case.json` (7-task summary).
 
 ## Extending
 

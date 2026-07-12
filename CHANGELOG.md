@@ -28,6 +28,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Eval suite hardened (2026-07-12).** Grew and stress-tested every golden set,
+  all claims validated against primary sources:
+  - **Completeness 4 → 7 build tasks** (+search endpoint, webhook receiver,
+    password-reset). 7-task lift **+0.36 (0.57 → 0.93)** — the harder tasks pull
+    the 4-task ceiling of 0.98 down by exposing a **systematic residual: transport
+    (3/7) and rate limiting (2/7) dropped even with the self-audit** — the same
+    cross-cutting-coverage class operating principle 5 addresses.
+  - **Freshness 20 → 32 cases** (+12 across languages/security/cloud/crypto/web
+    specs, each grep-confirmed in the library and primary-source-verified). Lift
+    **+0.50** (with 0.97, without 0.47); the base model still *fabricates* (RFC
+    9334 for EAT, PG 17 for `uuidv7`).
+  - **Harder audit 7 → 14 cases** — realistic, non-telegraphed, multi-vuln
+    (IDOR/SSRF-bypass/TOCTOU/prototype-pollution/ReDoS). **Still +0.00**: a
+    capable model catches them *in isolation*, so a real audit lift needs
+    cross-file context, not more snippets — an honest, now-robust finding.
+  - **Multi-sample support** — `--samples N` / `--temp T` on both harnesses
+    (default 1 / 0). Freshness holds at 3 samples (**with 0.97±0.00, without
+    0.44±0.03**) — retires the single-sample caveat on the cheap dimensions.
 - **Completeness measured against the real BUILD process, not just "rules in
   context" — lift restated +0.30 → +0.39 (0.59 → 0.98)** (`results/2026-07-12/`).
   The original with-arm only *pasted* the rules and scored 0.89; a forcing-

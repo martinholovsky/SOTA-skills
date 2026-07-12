@@ -3,13 +3,13 @@
 The efficacy eval across four dimensions, plus an honest investigation of
 control validity. **Headline: the library's biggest, least-redundant value is
 *completeness* — from a bare "build X" prompt, applied via the BUILD self-audit,
-it lifts best-practice coverage ~0.59→0.98 (+0.39), embedding the tests/rate-
-limits/logging/transport a base model systematically skips (rules pasted without
-the self-audit reach only 0.89 — the step is load-bearing). It's also large on
-*freshness* (+0.50–0.65), small
+it lifts best-practice coverage ~0.57→0.93 (+0.36) over 7 build tasks, embedding
+the tests/rate-limits/logging/transport a base model systematically skips (rules
+pasted without the self-audit reach only ~0.89 — the step is load-bearing). It's
+also large on *freshness* (+0.50–0.65), small
 on routing (+~0.10), zero on audit. See §Completeness / §Freshness.** Golden
-sets: 4 completeness build-tasks (`cases/completeness.jsonl`), 20 routing, 13+7
-audit, 20 freshness. Scored with `evals/score.py` / `run-clean.py` /
+sets: 7 completeness build-tasks (`cases/completeness.jsonl`), 20 routing, 13+14
+audit, 32 freshness. Scored with `evals/score.py` / `run-clean.py` /
 `run-completeness.py`.
 
 - **Run 1** (2026-07-10): in-session, raw predictions here (`pred_*.json`).
@@ -179,18 +179,30 @@ non-negotiables, then check the diff against each rules file's Audit checklist
 and fill every gap). The self-audit is how the library is *actually* used, and
 it's the difference between 0.89 and 0.98:
 
-| Task | without | with (rules pasted) | with (BUILD self-audit) |
+| Task | without | with (BUILD self-audit) | with-arm still misses |
 |---|---|---|---|
-| ticket API | 0.67 | 0.83 | **1.00** |
-| file upload | 0.55 | 0.91 | 0.91 |
-| email worker | 0.64 | 0.91 | **1.00** |
-| login | 0.50 | 0.90 | **1.00** |
-| **mean** | **0.59** | **0.89** | **0.98** |
+| ticket API | 0.67 | **1.00** | — |
+| file upload | 0.45 | 0.91 | ratelimit |
+| email worker | 0.73 | **1.00** | — |
+| login | 0.50 | **1.00** | — |
+| search endpoint | 0.60 | 0.90 | transport |
+| webhook receiver | 0.40 | 0.80 | ratelimit, transport |
+| password reset | 0.64 | 0.91 | transport |
+| **mean (7)** | **0.57** | **0.93** | |
 
-Lift (without → BUILD self-audit) = **+0.39**. All BUILD-self-audit artifacts
-finished cleanly (`finish=stop`, 56–87 KB, no truncation). Reproduced end-to-end
-in one clean run of the fixed harness (`results/2026-07-12/completeness-full-rerun.json`):
-identical mean without=0.59, with=0.98 — c1/c3/c4 → 1.00, c2 → 0.91 (ratelimit).
+Lift (without → BUILD self-audit) = **+0.36** over 7 tasks. (The first 4 come
+from the clean single-script run `results/2026-07-12/completeness-full-rerun.json`;
+the 3 harder tasks from the extension run, same method — `completeness-7case.json`.)
+On those first 4, *rules pasted without the self-audit* averaged only 0.89 vs 0.98
+with it — the self-audit is what converts rules-in-context to rules-in-code. The
+harder tasks pull the ceiling to 0.93 by exposing a **systematic residual**:
+**transport** enforcement is dropped in 3 of 7 and **rate limiting** in 2 of 7,
+even *with* the self-audit. Both are *coverage* gaps, not self-audit failures —
+those cross-cutting rules live in one domain skill (`network-security` for TLS,
+`api-design` for rate limits) and fall outside a task's routed scope unless the
+router's **operating principle 5** (universal non-negotiables) pulls them in. The
+eval leaves them as honest sentinels rather than pasting principle 5 (which would
+teach to the test).
 
 **What the base model skips unprompted** (frequency across the 4 tasks) — this
 is the finding: **tests 4/4**, **rate limiting 3/4**, **structured logging 2/4**,
@@ -214,17 +226,20 @@ transport/tests are router operating principle 5 ("universal non-negotiables").
 
 **Honest caveats.** (1) The base model already does ~60% unprompted — it's not
 building nothing, it does the obvious majority; the library closes the
-*systematic* remainder. (2) With the BUILD self-audit it's ~98%, **not** 100% —
-the lone miss is **c2 upload rate limiting**, and it's a *coverage* gap, not a
-self-audit failure: the router routes uploads to `code-security`+`sandboxing`, so
-the rate-limiting rule was never in that case's pasted scope for the self-audit
-to catch (operating principle 5 is the production fix; the eval leaves c2 as a
-regression sentinel rather than teaching to the test). Note the enumerated hint
+*systematic* remainder. (2) With the BUILD self-audit it's ~93% over 7 tasks,
+**not** 100% — the residual is **transport (3/7) and rate limiting (2/7)**, a
+*coverage* gap, not a self-audit failure: those cross-cutting rules live in one
+domain skill (`network-security`/`api-design`) and fall outside a task's pasted
+scope for the self-audit
+to catch (operating principle 5 is the production fix; the eval leaves them as
+regression sentinels rather than teaching to the test). Note the enumerated hint
 in the forcing text ("…rate limiting, transport…") did **not** trivially satisfy
-the rubric — c2 still missed rate limiting — so the eval retains discriminative
-power. (3) Single run per arm; LLM-as-judge (spot-validated against the artifacts
-— accurate, and *strict* on "enforced vs. merely mentioned", applied equally to
-both arms). (4) Rubric criteria are universal best practices, not sota-invented,
+the rubric — those cross-cutting items are still missed — so the eval retains
+discriminative power. (3) Single run per arm for completeness (deterministic at
+temp 0); the cheap dimensions now run multi-sample (freshness holds at 3 samples:
+with 0.97±0.00, without 0.44±0.03). LLM-as-judge is spot-validated against the
+artifacts — *strict* on "enforced vs. merely mentioned", applied equally to
+both arms. (4) Rubric criteria are universal best practices, not sota-invented,
 so a base model that "just knew" would score high too — it mostly doesn't.
 (5) Unlike freshness, this gap is **not** closed by "verify via web search": an
 agent won't search "should I add rate limiting" — it just omits it. This is the
@@ -232,11 +247,15 @@ library's most defensible, least-redundant value.
 
 ## Honest limitations
 
-- **Audit eval is saturated** — both arms 13/13 across both runs, including the
-  "harder" cases (IDOR, mass-assignment, ReDoS, XXE, prototype-pollution). On
-  unambiguous single-vuln snippets the base model already catches everything.
-  **Top next action:** multi-vuln snippets and subtler authz/business-logic
-  cases where a systematic skill-guided audit beats recognition.
+- **Audit eval is saturated — confirmed on harder cases.** Both arms score 1.00
+  on `audit.jsonl` (13) AND on the grown `audit-hard.jsonl` (14) — the latter now
+  includes realistic, non-telegraphed, multi-vuln and subtle cases (IDOR behind a
+  clean parameterized query, an `endsWith` SSRF allowlist bypass, a check-then-act
+  TOCTOU, a recursive-merge prototype pollution, a command-injection+path-traversal
+  combo, a hardcoded-key + non-constant-time compare, a catastrophic-backtracking
+  regex). A capable model catches them all *in isolation*. **Conclusion:** a real
+  audit lift needs whole-repo, cross-file context a snippet can't carry — that's a
+  different eval to build, not more snippets.
 - **In-session control is contaminated (RESOLVED for routing)** — the runs 1/2
   numbers are lower bounds because the directive + registry are ambient in a
   configured session. The 2026-07-11 clean API run (§ above) removes that
@@ -254,21 +273,21 @@ measure*:
 
 | Dimension | What it tests | Clean lift |
 |---|---|---|
-| **Completeness** | best practices embedded from a bare "build X" prompt (BUILD self-audit) | **+0.39** (0.59→0.98) |
-| **Freshness** | current 2026 facts (RFCs, CVEs, EOLs, versions, spec editions) | **+0.50 to +0.65** |
+| **Completeness** | best practices embedded from a bare "build X" prompt (BUILD self-audit, 7 tasks) | **+0.36** (0.57→0.93) |
+| **Freshness** | current 2026 facts (RFCs, CVEs, EOLs, versions, spec editions; 32) | **+0.50 to +0.65** |
 | Routing | which skill area applies | +0.09 to +0.14 |
-| Audit | recognizing a textbook vulnerability | +0.00 |
+| Audit | recognizing a textbook vulnerability (13 + 14 harder) | +0.00 |
 
 The small routing lift and zero audit lift are real and honest — a capable model
 already knows SQLi exists and that testing matters. But those measure the
 library's *weakest* dimensions. Its two real values:
 
-- **Completeness** — the thesis. Asked to "build an API" with no security cues,
-  the base model produces ~60%-complete work and *systematically* omits tests,
-  rate limiting, logging, transport, idempotency; with the library applied via
-  its BUILD self-audit it reaches ~98% (rules-in-context alone only ~89% — the
-  self-audit step is what closes it). This gap is **not** closable by "just
-  verify via search" (an agent won't
+- **Completeness** — the thesis. Asked to "build X" with no security cues, the
+  base model produces ~57%-complete work and *systematically* omits tests, rate
+  limiting, logging, transport, idempotency; with the library applied via its
+  BUILD self-audit it reaches ~93% over 7 tasks (rules-in-context alone only ~89%
+  on the first 4 — the self-audit step is what closes it). This gap is **not**
+  closable by "just verify via search" (an agent won't
   search "should I add rate limiting" — it just skips it), which makes it the
   library's most defensible value.
 - **Currency** — large lift (+0.50–0.65); the base model is **confidently wrong**

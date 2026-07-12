@@ -27,9 +27,9 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
    control** (+0.09/+0.14/+0.09 across sonnet-4.6/sonnet-5/opus-4.8) — the
    contamination concern is resolved, the lift is real. **Audit +0.00**;
    **Freshness +0.50–0.65** (base model confidently wrong on 2026 facts, but a
-   web-search agent recovers most of it). **Completeness +0.39** (0.59→0.98,
-   `cases/completeness.jsonl` + `run-completeness.py`, blind opus judge) — the
-   **thesis, validated**: from a bare "build X" prompt the base model skips
+   web-search agent recovers most of it). **Completeness +0.36** (0.57→0.93 over
+   7 tasks, `cases/completeness.jsonl` + `run-completeness.py`, blind opus judge)
+   — the **thesis, validated**: from a bare "build X" prompt the base model skips
    tests/rate-limits/logging/transport ~40% of the time; the library embeds
    them, and search can't close this gap. **The +0.39 is load-bearing on the
    BUILD *self-audit*** — pasting rules alone reaches only 0.89 (model reads the
@@ -41,12 +41,17 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
    routing can't lose them (the lone residual miss — c2 upload rate-limiting —
    was exactly this coverage gap). Curated for readers in
    [`docs/WHY-IT-WORKS.md`](WHY-IT-WORKS.md) (honest "vs. an unguided model"
-   framing — see the unexplored idea below). **Live follow-through:** grow the
-   completeness + freshness sets; average more samples per arm for tighter CIs
-   (current runs are single-sample — a directional signal, not a tight CI).
-   **Pending:** a release cut for the [Unreleased] completeness work (PRs
-   #78–#81 — eval + self-audit gate + operating principle 5 + results doc;
-   candidate v1.15.0).
+   framing — see the unexplored idea below). **Eval-suite hardening — done
+   2026-07-12:** completeness 4→**7** tasks (0.57→0.93, +0.36; the 3 harder tasks
+   surfaced **transport (3/7) and rate-limiting (2/7)** as the systematic residual
+   — the operating-principle-5 coverage class); freshness 20→**32** cases
+   (all primary-source-verified; +0.50, and +0.53 at 3 samples with 0.97±0.00 vs
+   0.44±0.03); harder-audit 7→**14** — still +0.00 (a capable model catches even
+   subtle/multi-vuln snippets *in isolation*, so a real audit lift needs
+   cross-file context, not more snippets); and `--samples/--temp` added to both
+   harnesses (retires the single-sample caveat on the cheap dimensions).
+   **Pending:** a release cut for the [Unreleased] completeness + eval-hardening
+   work (PRs #78–#82 + this batch; candidate v1.15.0).
 5. **First 6-month accuracy sweep** comes due ~Jan 2027 (freshness window) —
    run it per the `docs/MAINTENANCE.md` runbook and bump `LAST-VERIFIED`.
 
@@ -67,6 +72,13 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
   pasted as a third arm and report the delta. Deferred until there's a reason to
   make the comparison (user weighed it 2026-07-12 and chose the honest
   vs-unguided framing for now).
+- **Cross-file / repo-level audit eval.** The audit dimension is +0.00 and stays
+  there even on 14 harder *snippet* cases (2026-07-12) — a capable model catches
+  isolated vulns. The only way a skill-guided audit plausibly beats recognition is
+  multi-file context: an authz check in file A that a handler in file B forgets, a
+  taint that crosses modules, a migration that breaks an invariant elsewhere. That
+  needs a different harness (a small planted-vuln repo, not a `snippet` field) —
+  the real frontier for measuring audit value.
 
 ---
 

@@ -1,0 +1,56 @@
+{
+ "note": "7-case completeness, temp=0. c1-c4 from completeness-full-rerun.json; c5-c7 from extension run (same FORCE self-audit + blind opus judge).",
+ "cases": {
+  "c1_ticket_api": {
+   "without": 0.67,
+   "with": 1.0,
+   "with_missing": []
+  },
+  "c2_upload": {
+   "without": 0.45,
+   "with": 0.91,
+   "with_missing": [
+    "ratelimit"
+   ]
+  },
+  "c3_emailjob": {
+   "without": 0.73,
+   "with": 1.0,
+   "with_missing": []
+  },
+  "c4_login": {
+   "without": 0.5,
+   "with": 1.0,
+   "with_missing": []
+  },
+  "c5_search": {
+   "without": 0.6,
+   "with": 0.9,
+   "with_missing": [
+    "transport"
+   ]
+  },
+  "c6_webhook": {
+   "without": 0.4,
+   "with": 0.8,
+   "with_missing": [
+    "ratelimit",
+    "transport"
+   ]
+  },
+  "c7_pwreset": {
+   "without": 0.64,
+   "with": 0.91,
+   "with_missing": [
+    "transport"
+   ]
+  }
+ },
+ "mean_without": 0.57,
+ "mean_with": 0.931,
+ "lift": 0.361,
+ "residual_with_misses": {
+  "ratelimit": 2,
+  "transport": 3
+ }
+}
