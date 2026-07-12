@@ -47,6 +47,19 @@ rules files that match the code in front of you. Never load all skills at once.
    stack profile (preferred stores, auth provider, license policy, platform
    conventions), its choices are the defaults for BUILD mode and the expected
    baseline for AUDIT mode.
+5. **Universal build non-negotiables (apply regardless of routing).** Some
+   controls are cross-cutting: they belong on the work no matter which domain
+   skill routed it, so they must not be lost when a task lands on a skill whose
+   top-10 omits them. On **any network-reachable endpoint or handler** — HTTP,
+   RPC, queue consumer, webhook, upload — apply all of: **(a)** abuse control —
+   rate limiting / quotas / concurrency caps keyed to the caller (details in
+   `sota-api-design` rules/07, but required even when that skill wasn't
+   loaded); **(b)** transport enforcement — TLS in transit, HSTS for browsers,
+   no plaintext fallback (config in `sota-network-security` rules/06);
+   **(c)** tests accompany the logic (see routing rule 7). A base model
+   silently drops these when the prompt doesn't name them; you do not. If one
+   is deliberately handled elsewhere (e.g. rate limiting at the gateway), say
+   so — don't just omit it.
 
 ## Routing table
 
@@ -180,10 +193,18 @@ rules files that match the code in front of you. Never load all skills at once.
 2. Read each relevant skill's `SKILL.md`; from its index, open only the rules
    files matching the work (e.g. adding a websocket endpoint → api-design
    rules/05, async rules/06, code-security rules/02 for auth at upgrade).
-3. Apply the **top-10 non-negotiables** of every loaded skill unconditionally;
-   apply detailed rules as the code demands.
-4. Before finishing, run each loaded rules file's **Audit checklist** against
-   your own diff — every rules file ends with one.
+3. Apply the **top-10 non-negotiables** of every loaded skill unconditionally,
+   plus the **universal build non-negotiables** (operating principle 5) on any
+   endpoint/handler; apply detailed rules as the code demands.
+4. **Self-audit gate — do not present code until this passes.** Before
+   finishing, run each loaded rules file's **Audit checklist** (every rules
+   file ends with one) *and* operating principle 5 against your own diff, item
+   by item. For every unmet item either **implement it** or state explicitly
+   why it's out of scope — silence is not allowed. This step is what turns
+   rules-in-context into rules-in-code: measured, it lifts a "build X" task's
+   best-practice coverage from ~0.89 to ~0.98 (`evals/run-completeness.py`).
+   The concerns a base model silently skips — rate limiting, transport, tests,
+   structured logging, idempotency — live here; close them before you ship.
 
 ## AUDIT mode — workflow
 

@@ -27,12 +27,20 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
    control** (+0.09/+0.14/+0.09 across sonnet-4.6/sonnet-5/opus-4.8) — the
    contamination concern is resolved, the lift is real. **Audit +0.00**;
    **Freshness +0.50–0.65** (base model confidently wrong on 2026 facts, but a
-   web-search agent recovers most of it). **Completeness +0.30** (0.59→0.89,
+   web-search agent recovers most of it). **Completeness +0.39** (0.59→0.98,
    `cases/completeness.jsonl` + `run-completeness.py`, blind opus judge) — the
    **thesis, validated**: from a bare "build X" prompt the base model skips
    tests/rate-limits/logging/transport ~40% of the time; the library embeds
-   them, and search can't close this gap. **Live follow-through:** grow the
-   completeness + freshness sets; average more samples per arm for tighter CIs.
+   them, and search can't close this gap. **The +0.39 is load-bearing on the
+   BUILD *self-audit*** — pasting rules alone reaches only 0.89 (model reads the
+   guidance, silently drops peripheral concerns); running the router's
+   check-your-diff-against-each-Audit-checklist step closes 0.89→0.98
+   (`results/2026-07-12/`). Surfaced two skill fixes, both landed: the self-audit
+   is now a hard BUILD gate, and cross-cutting concerns (rate-limiting/transport/
+   tests) are router operating principle 5 ("universal non-negotiables") so
+   routing can't lose them (the lone residual miss — c2 upload rate-limiting —
+   was exactly this coverage gap). **Live follow-through:** grow the completeness
+   + freshness sets; average more samples per arm for tighter CIs.
 5. **First 6-month accuracy sweep** comes due ~Jan 2027 (freshness window) —
    run it per the `docs/MAINTENANCE.md` runbook and bump `LAST-VERIFIED`.
 

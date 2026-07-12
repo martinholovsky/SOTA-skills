@@ -8,8 +8,14 @@ implementation from v1 — vs a without-library model that builds "some X"?
 
 Method (clean, raw OpenRouter API — no sota config anywhere):
   - Generate: both arms get the SAME minimal task. The with-library arm ALSO
-    gets the relevant skill rules pasted in with "apply these standards"
-    (simulating an agent that loaded the skills). The without arm gets nothing.
+    gets the relevant skill rules pasted in AND runs the router's BUILD workflow
+    — apply the non-negotiables, then self-audit the diff against each rules
+    file's Audit checklist and fill every gap (simulating an agent that loaded
+    the skills and followed the BUILD process, not just read the rules). Pasting
+    rules without the self-audit under-measures the library: the model reads the
+    guidance but silently drops peripheral concerns (rate limiting, transport,
+    tests); the self-audit step is what closed 0.89 → 0.98. The without arm gets
+    nothing.
   - Judge: a DIFFERENT model, BLIND to which arm produced the artifact, scores
     each artifact against the case's fixed rubric of universal best practices
     (present/absent per criterion). Completeness = present / total.
@@ -58,11 +64,22 @@ def load_cases():
             if x.strip() and not x.startswith("#")]
 
 
+# Mirrors the router's BUILD workflow (skills/sota/SKILL.md steps 3-4): apply the
+# non-negotiables, then self-audit the diff against each Audit checklist and fill
+# every gap. This is the forcing function the plain "paste rules" arm omitted.
+BUILD_WORKFLOW = (
+    "\n\n---\nBUILD PROCESS (follow it): (1) apply the NON-NEGOTIABLES of the "
+    "standards above unconditionally. (2) CRITICAL — before finishing, go through "
+    "EVERY '## Audit checklist' at the end of the standards above and verify your "
+    "code satisfies each item; for any gap (rate limiting, transport/TLS "
+    "enforcement, tests, structured logging, idempotency, etc.) ADD it, or state "
+    "explicitly why it is out of scope. Do not present incomplete code.\n\nTask: ")
+
+
 def gen_prompt(case, with_lib):
     if with_lib:
         ctx = "\n\n".join(open(os.path.join(ROOT, s), encoding="utf-8").read() for s in case["skills"])
-        return (f"Apply the following engineering standards to your implementation:\n\n{ctx}\n\n"
-                f"---\n\nTask: {case['task']}")
+        return f"Apply the following engineering standards:\n\n{ctx}{BUILD_WORKFLOW}{case['task']}"
     return case["task"]
 
 
@@ -73,7 +90,7 @@ def judge(artifact, rubric, model, k):
         "For EACH checklist item, decide whether the artifact GENUINELY addresses it — mark "
         "\"present\" only if it is actually implemented or explicitly handled in the artifact, "
         "not merely a TODO/comment/aspiration, and \"absent\" otherwise. Judge only what is in the "
-        f"artifact.\n\nCHECKLIST:\n{items}\n\nARTIFACT:\n```\n{artifact[:60000]}\n```\n\n"
+        f"artifact.\n\nCHECKLIST:\n{items}\n\nARTIFACT:\n```\n{artifact[:100000]}\n```\n\n"
         'Output ONLY a JSON object mapping each item id to "present" or "absent". No prose.')
     txt = call(model, prompt, k, max_tokens=1500)
     s, e = txt.find("{"), txt.rfind("}")
@@ -95,7 +112,9 @@ def main():
         row = {"rubric_n": len(c["rubric"]), "arms": {}}
         for with_lib in (False, True):
             arm = "with" if with_lib else "without"
-            art = call(a.build_model, gen_prompt(c, with_lib), k, max_tokens=16000)
+            # 32k: the self-audit with-arm emits substantially longer output;
+            # 16k truncated tests/logging off the end and scored them absent.
+            art = call(a.build_model, gen_prompt(c, with_lib), k, max_tokens=32000)
             verdict = judge(art, c["rubric"], a.judge_model, k)
             present = [r["id"] for r in c["rubric"] if verdict.get(r["id"]) == "present"]
             recall = len(present) / len(c["rubric"])

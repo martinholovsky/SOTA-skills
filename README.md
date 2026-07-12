@@ -63,7 +63,7 @@ performance, API evolvability, per-language idioms, SLOs, test-suite health.
 
 **Measured, not asserted.** Told to "build an API" (no security cues), a base
 model embeds ~60% of best practices — skipping tests, rate limits, logging,
-transport; the library lifts it to ~90% (+0.30) ([evals/](evals/) — honest, by-dimension).
+transport; the library's BUILD self-audit lifts it to ~98% (+0.39) ([evals/](evals/) — honest).
 
 ## Skills
 

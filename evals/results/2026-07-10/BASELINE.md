@@ -2,9 +2,11 @@
 
 The efficacy eval across four dimensions, plus an honest investigation of
 control validity. **Headline: the library's biggest, least-redundant value is
-*completeness* — from a bare "build X" prompt it lifts best-practice coverage
-~0.59→0.89 (+0.30), embedding the tests/rate-limits/logging/transport a base
-model systematically skips. It's also large on *freshness* (+0.50–0.65), small
+*completeness* — from a bare "build X" prompt, applied via the BUILD self-audit,
+it lifts best-practice coverage ~0.59→0.98 (+0.39), embedding the tests/rate-
+limits/logging/transport a base model systematically skips (rules pasted without
+the self-audit reach only 0.89 — the step is load-bearing). It's also large on
+*freshness* (+0.50–0.65), small
 on routing (+~0.10), zero on audit. See §Completeness / §Freshness.** Golden
 sets: 4 completeness build-tasks (`cases/completeness.jsonl`), 20 routing, 13+7
 audit, 20 freshness. Scored with `evals/score.py` / `run-clean.py` /
@@ -171,13 +173,23 @@ artifact against a fixed rubric of **universal** best practices (authz, input
 validation, transport, structured logging, rate limiting, error hygiene, tests,
 …). 4 build tasks (ticket API, file upload, email worker, login), 44 criteria.
 
-| Task | without | with | lift |
+The with-arm was measured two ways — pasting the rules into context ("rules
+pasted") vs. also running the router's **BUILD self-audit** (apply the
+non-negotiables, then check the diff against each rules file's Audit checklist
+and fill every gap). The self-audit is how the library is *actually* used, and
+it's the difference between 0.89 and 0.98:
+
+| Task | without | with (rules pasted) | with (BUILD self-audit) |
 |---|---|---|---|
-| ticket API | 0.67 | 0.83 | +0.17 |
-| file upload | 0.55 | 0.91 | +0.36 |
-| email worker | 0.64 | 0.91 | +0.27 |
-| login | 0.50 | 0.90 | +0.40 |
-| **mean** | **0.59** | **0.89** | **+0.30** |
+| ticket API | 0.67 | 0.83 | **1.00** |
+| file upload | 0.55 | 0.91 | 0.91 |
+| email worker | 0.64 | 0.91 | **1.00** |
+| login | 0.50 | 0.90 | **1.00** |
+| **mean** | **0.59** | **0.89** | **0.98** |
+
+Lift (without → BUILD self-audit) = **+0.39**. All BUILD-self-audit artifacts
+finished cleanly (`finish=stop`, 56–87 KB, no truncation);
+`results/2026-07-12/completeness-forced.json`.
 
 **What the base model skips unprompted** (frequency across the 4 tasks) — this
 is the finding: **tests 4/4**, **rate limiting 3/4**, **structured logging 2/4**,
@@ -187,17 +199,35 @@ password-logging + CSRF** (login). Exactly the "security isn't there, logging
 isn't there, transport is weak, no tests" gap — embedded by default with the
 library, absent without it.
 
+**The forcing-function finding (why 0.89, then why 0.98).** Pasting the rules is
+not enough: the model reads the guidance, builds the core feature well, and
+*silently drops* the peripheral cross-cutting concerns (verified — the ticket-API
+rules-only artifact had **zero** rate-limiting and no transport enforcement
+despite the api-design rate-limiting guidance sitting in its context). Adding the
+one step the plain arm omitted — the router's "run each Audit checklist against
+your diff and fill the gaps before finishing" — took the mean 0.89 → 0.98, with 3
+of 4 tasks reaching a perfect 1.00. **The completeness value lives in the BUILD
+self-audit, not merely in the rules being present.** This surfaced two skill
+fixes (both landed): the self-audit is now a hard BUILD gate, and rate-limiting/
+transport/tests are router operating principle 5 ("universal non-negotiables").
+
 **Honest caveats.** (1) The base model already does ~60% unprompted — it's not
 building nothing, it does the obvious majority; the library closes the
-*systematic* remainder. (2) With the library it's ~89%, **not** 100% — it still
-skipped tests (2×), rate limiting (2×), and transport (1×); the library nudges,
-it doesn't guarantee. (3) Single run per arm; LLM-as-judge (spot-validated
-against the artifacts — accurate, and *strict* on "enforced vs. merely
-mentioned", applied equally to both arms). (4) Rubric criteria are universal
-best practices, not sota-invented, so a base model that "just knew" would score
-high too — it mostly doesn't. (5) Unlike freshness, this gap is **not** closed
-by "verify via web search": an agent won't search "should I add rate limiting" —
-it just omits it. This is the library's most defensible, least-redundant value.
+*systematic* remainder. (2) With the BUILD self-audit it's ~98%, **not** 100% —
+the lone miss is **c2 upload rate limiting**, and it's a *coverage* gap, not a
+self-audit failure: the router routes uploads to `code-security`+`sandboxing`, so
+the rate-limiting rule was never in that case's pasted scope for the self-audit
+to catch (operating principle 5 is the production fix; the eval leaves c2 as a
+regression sentinel rather than teaching to the test). Note the enumerated hint
+in the forcing text ("…rate limiting, transport…") did **not** trivially satisfy
+the rubric — c2 still missed rate limiting — so the eval retains discriminative
+power. (3) Single run per arm; LLM-as-judge (spot-validated against the artifacts
+— accurate, and *strict* on "enforced vs. merely mentioned", applied equally to
+both arms). (4) Rubric criteria are universal best practices, not sota-invented,
+so a base model that "just knew" would score high too — it mostly doesn't.
+(5) Unlike freshness, this gap is **not** closed by "verify via web search": an
+agent won't search "should I add rate limiting" — it just omits it. This is the
+library's most defensible, least-redundant value.
 
 ## Honest limitations
 
@@ -223,7 +253,7 @@ measure*:
 
 | Dimension | What it tests | Clean lift |
 |---|---|---|
-| **Completeness** | best practices embedded from a bare "build X" prompt | **+0.30** (0.59→0.89) |
+| **Completeness** | best practices embedded from a bare "build X" prompt (BUILD self-audit) | **+0.39** (0.59→0.98) |
 | **Freshness** | current 2026 facts (RFCs, CVEs, EOLs, versions, spec editions) | **+0.50 to +0.65** |
 | Routing | which skill area applies | +0.09 to +0.14 |
 | Audit | recognizing a textbook vulnerability | +0.00 |
@@ -234,8 +264,10 @@ library's *weakest* dimensions. Its two real values:
 
 - **Completeness** — the thesis. Asked to "build an API" with no security cues,
   the base model produces ~60%-complete work and *systematically* omits tests,
-  rate limiting, logging, transport, idempotency; with the library it reaches
-  ~89%. This gap is **not** closable by "just verify via search" (an agent won't
+  rate limiting, logging, transport, idempotency; with the library applied via
+  its BUILD self-audit it reaches ~98% (rules-in-context alone only ~89% — the
+  self-audit step is what closes it). This gap is **not** closable by "just
+  verify via search" (an agent won't
   search "should I add rate limiting" — it just skips it), which makes it the
   library's most defensible value.
 - **Currency** — large lift (+0.50–0.65); the base model is **confidently wrong**

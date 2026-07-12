@@ -14,16 +14,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   no security/logging cues, does the model embed best practices from v1? Clean
   raw-API generate-then-**blind-judge** (opus-4.8 grades sonnet-4.6's artifacts
   against a universal rubric, blind to arm) over 4 build tasks / 44 criteria:
-  **completeness lift +0.30 (0.59 → 0.89)** — the base model embeds ~60%
-  unprompted but *systematically* skips **tests (4/4 tasks), rate limiting (3/4),
-  logging (2/4), transport (2/4)**, plus idempotency, safe upload storage,
-  anti-brute-force, CSRF. The library closes that gap to ~89%. Unlike freshness,
-  this is **not** recoverable by "verify via search" (an agent won't search
-  "should I add rate limiting"). Validated: no output truncation (an initial
-  14k-char judge cap + 8k-token gen cap was found penalizing the longer
-  with-arm and fixed → 60k / 16k), judge spot-checked accurate vs the artifacts.
-  Full writeup in `results/2026-07-10/BASELINE.md` (§Completeness); the
-  four-dimension summary now leads with completeness.
+  the base model embeds ~60% unprompted but *systematically* skips **tests,
+  rate limiting, logging, transport**, plus idempotency, safe upload storage,
+  anti-brute-force, CSRF. Unlike freshness, this is **not** recoverable by
+  "verify via search" (an agent won't search "should I add rate limiting").
+  Full writeup in `results/2026-07-10/BASELINE.md` (§Completeness).
+
+### Changed
+
+- **Completeness measured against the real BUILD process, not just "rules in
+  context" — lift restated +0.30 → +0.39 (0.59 → 0.98)** (`results/2026-07-12/`).
+  The original with-arm only *pasted* the rules and scored 0.89; a forcing-
+  function experiment showed the model reads the guidance but silently drops
+  peripheral concerns. Running the router's **BUILD self-audit** (apply
+  non-negotiables, then check the diff against each rules file's Audit checklist
+  and fill every gap) closes **0.89 → 0.98** — 3 of 4 tasks reach a perfect 1.00.
+  `run-completeness.py`'s with-arm now runs that self-audit (gen cap 16k→32k to
+  fit the longer output; judge window 60k→100k). The lone residual (c2 upload,
+  rate limiting) is a *coverage* gap, not a self-audit failure.
+
+- **Router: two skill fixes surfaced by the completeness diagnostic**
+  (`skills/sota/SKILL.md`). (1) BUILD step 4 is now a **hard self-audit gate** —
+  "do not present code until every Audit-checklist item is implemented or
+  explicitly scoped out" (was soft prose; it's what lifts 0.89→0.98). (2) New
+  **operating principle 5 — universal build non-negotiables**: rate limiting,
+  transport enforcement, and tests apply to *any* endpoint/handler regardless of
+  which domain skill routed the task, so a concern that lives in one skill's
+  top-10 (e.g. rate limiting in `sota-api-design`) is no longer lost when the
+  task routes elsewhere (e.g. an upload → `code-security`+`sandboxing`).
 
 ## [1.14.1] - 2026-07-11
 

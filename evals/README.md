@@ -78,13 +78,24 @@ python3 evals/run-clean.py --cases evals/cases/audit-hard.jsonl
 
 `results/<date>/` holds raw per-arm predictions (+ rationales / clean-run
 outputs). Writeup: [`results/2026-07-10/BASELINE.md`](results/2026-07-10/BASELINE.md).
-Headline (clean, by dimension): **completeness +0.30** (0.59→0.89 — from a bare
+Headline (clean, by dimension): **completeness +0.39** (0.59→0.98 — from a bare
 "build X" prompt the library embeds the tests/rate-limits/logging/transport a
 base model skips; the thesis, and the part web-search can't replace),
 **freshness +0.50–0.65** (2026 facts; base model *confidently wrong*, but a
 web-search agent recovers most of it), **routing +0.09–0.14**, **audit +0.00**.
 The lift is only "small" if you measure the easy dimensions. Run:
 `python3 evals/run-completeness.py`.
+
+The completeness number is load-bearing on *how* the library is applied. Pasting
+the rules into context alone reaches only **0.89** — the model reads the guidance
+but silently drops peripheral concerns (rate limiting, transport, tests). Running
+the router's **BUILD self-audit** (apply non-negotiables, then check the diff
+against each rules file's Audit checklist and fill every gap) is what closes
+0.89→0.98. The one residual miss (c2 upload, rate limiting) is a *coverage* gap,
+not a self-audit failure: the router sends uploads to `code-security`+`sandboxing`,
+so the rate-limiting rule was never in scope for its checklist to catch — the fix
+is operating principle 5 (universal non-negotiables) in the router, and `results/
+2026-07-12/completeness-forced.json` records it.
 
 ## Extending
 
