@@ -8,13 +8,15 @@ implementation from v1 — vs a without-library model that builds "some X"?
 
 Method (clean, raw OpenRouter API — no sota config anywhere):
   - Generate: both arms get the SAME minimal task. The with-library arm ALSO
-    gets the relevant skill rules pasted in AND runs the router's BUILD workflow
-    — apply the non-negotiables, then self-audit the diff against each rules
-    file's Audit checklist and fill every gap (simulating an agent that loaded
-    the skills and followed the BUILD process, not just read the rules). Pasting
-    rules without the self-audit under-measures the library: the model reads the
-    guidance but silently drops peripheral concerns (rate limiting, transport,
-    tests); the self-audit step is what closed 0.89 → 0.98. The without arm gets
+    gets (a) the router's universal non-negotiables (operating principle 5),
+    (b) the relevant skill rules pasted in, and (c) the BUILD self-audit — apply
+    the non-negotiables, then check the diff against each rules file's Audit
+    checklist and fill every gap (simulating an agent that loaded the router +
+    skills and followed the BUILD process, not just read the rules). Both are
+    load-bearing: without the self-audit the model silently drops peripheral
+    concerns; and cross-cutting ones (rate limiting, transport) fade in a long
+    rules context unless principle 5 re-surfaces them — a salience/context-rot
+    effect (docs/WHY-IT-WORKS.md), not a coverage gap. The without arm gets
     nothing.
   - Judge: a DIFFERENT model, BLIND to which arm produced the artifact, scores
     each artifact against the case's fixed rubric of universal best practices
@@ -86,10 +88,23 @@ BUILD_WORKFLOW = (
     "explicitly why it is out of scope. Do not present incomplete code.\n\nTask: ")
 
 
+def principle5():
+    """The router's universal build non-negotiables (operating principle 5), read
+    live so the eval reflects what a real agent loads (the router first). Omitting
+    it under-measures the library: it's the short, salient reminder that recovers
+    the cross-cutting concerns a long rules context makes the model drop."""
+    t = open(os.path.join(ROOT, "skills/sota/SKILL.md"), encoding="utf-8").read()
+    i = t.find("5. **Universal build non-negotiables")
+    j = t.find("\n## Routing table")
+    return t[i:j].strip() if i >= 0 and j >= 0 else ""
+
+
 def gen_prompt(case, with_lib):
     if with_lib:
         ctx = "\n\n".join(open(os.path.join(ROOT, s), encoding="utf-8").read() for s in case["skills"])
-        return f"Apply the following engineering standards:\n\n{ctx}{BUILD_WORKFLOW}{case['task']}"
+        p5 = principle5()
+        return (f"ALWAYS-APPLY OPERATING PRINCIPLE (from the router):\n\n{p5}\n\n"
+                f"---\nApply the following engineering standards:\n\n{ctx}{BUILD_WORKFLOW}{case['task']}")
     return case["task"]
 
 

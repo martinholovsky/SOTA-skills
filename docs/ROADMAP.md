@@ -27,24 +27,23 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
    control** (+0.09/+0.14/+0.09 across sonnet-4.6/sonnet-5/opus-4.8) — the
    contamination concern is resolved, the lift is real. **Audit +0.00**;
    **Freshness +0.50–0.65** (base model confidently wrong on 2026 facts, but a
-   web-search agent recovers most of it). **Completeness +0.36** (0.57→0.93 over
-   7 tasks, `cases/completeness.jsonl` + `run-completeness.py`, blind opus judge)
-   — the **thesis, validated**: from a bare "build X" prompt the base model skips
-   tests/rate-limits/logging/transport ~40% of the time; the library embeds
-   them, and search can't close this gap. **The +0.39 is load-bearing on the
-   BUILD *self-audit*** — pasting rules alone reaches only 0.89 (model reads the
-   guidance, silently drops peripheral concerns); running the router's
-   check-your-diff-against-each-Audit-checklist step closes 0.89→0.98
-   (`results/2026-07-12/`). Surfaced two skill fixes, both landed: the self-audit
-   is now a hard BUILD gate, and cross-cutting concerns (rate-limiting/transport/
-   tests) are router operating principle 5 ("universal non-negotiables") so
-   routing can't lose them (the lone residual miss — c2 upload rate-limiting —
-   was exactly this coverage gap). Curated for readers in
+   web-search agent recovers most of it). **Completeness +0.39** (0.60→0.99 over
+   7 tasks, full library, `cases/completeness.jsonl` + `run-completeness.py`,
+   blind opus judge) — the **thesis, validated**: from a bare "build X" prompt the
+   base model skips tests/rate-limits/logging/transport ~40% of the time; the
+   library embeds them, and search can't close this gap. **Load-bearing as an
+   ablation:** base 0.60 → +rules ~0.89 → +BUILD self-audit 0.93 → +principle 5
+   0.99 (`results/2026-07-13/`). Surfaced fixes, all landed: the self-audit is a
+   hard BUILD gate; cross-cutting concerns are the router's short **operating
+   principle 5**; and the BUILD workflow now says load-lean + plan-with-checklist
+   + terminal re-read. **Root-cause investigation (2026-07-13):** the residual is
+   NOT a coverage gap (the forgotten rule was in scope + in a checklist); it's a
+   **salience / context-rot attention effect** — *adding* the missing rule made it
+   worse, a short reminder fixed it ([`docs/WHY-COMPLETENESS-RESIDUAL.md`](WHY-COMPLETENESS-RESIDUAL.md),
+   experiments + literature). Curated for readers in
    [`docs/WHY-IT-WORKS.md`](WHY-IT-WORKS.md) (honest "vs. an unguided model"
    framing — see the unexplored idea below). **Eval-suite hardening — done
-   2026-07-12:** completeness 4→**7** tasks (0.57→0.93, +0.36; the 3 harder tasks
-   surfaced **transport (3/7) and rate-limiting (2/7)** as the systematic residual
-   — the operating-principle-5 coverage class); freshness 20→**32** cases
+   2026-07-12:** completeness 4→**7** tasks; freshness 20→**32** cases
    (all primary-source-verified; +0.50, and +0.53 at 3 samples with 0.97±0.00 vs
    0.44±0.03); harder-audit 7→**14** — still +0.00 (a capable model catches even
    subtle/multi-vuln snippets *in isolation*, so a real audit lift needs

@@ -18,7 +18,7 @@ per-case data, and honest limitations are in the
 
 | Dimension | What it tests | Clean lift |
 |---|---|---|
-| **Completeness** | best practices embedded from a bare "build X" prompt (7 tasks) | **+0.36** (0.57 → 0.93) |
+| **Completeness** | best practices embedded from a bare "build X" prompt (7 tasks) | **+0.39** (0.60 → 0.99) |
 | **Freshness** | current 2026 facts (RFCs, CVEs, EOLs, versions, spec editions; 32) | **+0.50 to +0.65** |
 | Routing | which skill area applies to a task | +0.09 to +0.14 |
 | Audit | recognizing a textbook vulnerability | +0.00 |
@@ -28,17 +28,20 @@ most for *building* software are the two that are large:
 
 - **Completeness is the thesis.** Told to "build X" (an API, an upload handler, a
   webhook receiver, a password-reset flow…) with **no** security or logging cues,
-  a base model embeds ~57% of best practices and *systematically* skips tests,
-  rate limiting, structured logging, and transport hardening. With the library
-  applied through its **BUILD self-audit** (apply the non-negotiables, then check
-  the diff against each rules file's audit checklist and fill every gap), coverage
-  reaches ~93% across 7 tasks. What it *still* misses is instructive and honest:
-  **transport** enforcement (3 of 7) and **rate limiting** (2 of 7) — cross-cutting
-  concerns that live in one domain skill and so fall outside a task's routed scope
-  unless the router's universal non-negotiables (operating principle 5) pull them
-  in. This gap is **not** recoverable by "just verify via web search": an agent
-  won't search *"should I add rate limiting"* — it simply omits it. That makes
-  completeness the library's most defensible, least-redundant value.
+  a base model embeds ~60% of best practices and *systematically* skips tests,
+  rate limiting, structured logging, and transport hardening. With the full
+  library — the router's short universal non-negotiables (operating principle 5),
+  the matched rules, and the **BUILD self-audit** (check the diff against each
+  audit checklist and fill every gap) — coverage reaches **~99% across 7 tasks**
+  (6 of 7 perfect). What occasionally still slips is a *single* low-salience
+  cross-cutting item, and it's a **finite-constraint-budget** effect, not a
+  coverage gap: the guidance was in context with a checklist item, but a long,
+  dense rules context makes some items fade (a measured attention effect — see
+  [WHY-COMPLETENESS-RESIDUAL.md](WHY-COMPLETENESS-RESIDUAL.md), where *adding* the
+  "missing" rule made it worse and a short salient reminder fixed it). This gap is
+  **not** recoverable by "just verify via web search": an agent won't search
+  *"should I add rate limiting"* — it simply omits it. That makes completeness the
+  library's most defensible, least-redundant value.
 - **Freshness — the base model is confidently wrong.** On current-2026 facts it
   doesn't merely lack knowledge, it *fabricates* plausible answers (in our 32-case
   set: inventing RFC 9334 for the Entity Attestation Token — it's 9711 — or

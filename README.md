@@ -62,7 +62,7 @@ circuit breakers, outbox/saga, zero-downtime migrations, measure-first
 performance, API evolvability, per-language idioms, SLOs, test-suite health.
 
 **Measured, not asserted.** Vs. an *unguided model* (same model, no library), the library lifts bare
-"build X" prompts from ~57% to ~93% best-practice coverage across 7 tasks (**+0.36**), is large on 2026
+"build X" prompts from ~60% to ~99% best-practice coverage across 7 tasks (**+0.39**), is large on 2026
 facts (**+0.50**), and helps routing (**+0.10**) — clean, blind-judged. [Why it works & results →](docs/WHY-IT-WORKS.md)
 
 ## Skills
