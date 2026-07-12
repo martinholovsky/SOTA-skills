@@ -39,8 +39,14 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
    is now a hard BUILD gate, and cross-cutting concerns (rate-limiting/transport/
    tests) are router operating principle 5 ("universal non-negotiables") so
    routing can't lose them (the lone residual miss — c2 upload rate-limiting —
-   was exactly this coverage gap). **Live follow-through:** grow the completeness
-   + freshness sets; average more samples per arm for tighter CIs.
+   was exactly this coverage gap). Curated for readers in
+   [`docs/WHY-IT-WORKS.md`](WHY-IT-WORKS.md) (honest "vs. an unguided model"
+   framing — see the unexplored idea below). **Live follow-through:** grow the
+   completeness + freshness sets; average more samples per arm for tighter CIs
+   (current runs are single-sample — a directional signal, not a tight CI).
+   **Pending:** a release cut for the [Unreleased] completeness work (PRs
+   #78–#81 — eval + self-audit gate + operating principle 5 + results doc;
+   candidate v1.15.0).
 5. **First 6-month accuracy sweep** comes due ~Jan 2027 (freshness window) —
    run it per the `docs/MAINTENANCE.md` runbook and bump `LAST-VERIFIED`.
 
@@ -51,6 +57,16 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
    the effort into visibility (marketplace, a published before/after audit
    demo) and the badge→verifiable-audit idea (link the "Built with" badge to a
    committed audit report + commit SHA). *(audit STRAT-MED-1)*
+
+## Unexplored ideas
+
+- **Comparative benchmark vs. a named competing skill library.** Every eval to
+  date is library-vs-*nothing* (an unguided model), so the public claim is
+  honestly limited to that; we make **no** "better than library X" claim. To
+  earn one, run `run-completeness.py`/`run-clean.py` with a competitor's content
+  pasted as a third arm and report the delta. Deferred until there's a reason to
+  make the comparison (user weighed it 2026-07-12 and chose the honest
+  vs-unguided framing for now).
 
 ---
 
