@@ -1,0 +1,77 @@
+{
+ "c1_ticket_api": {
+  "rubric_n": 12,
+  "without": {
+   "recall": 0.667,
+   "missing": [
+    "ratelimit",
+    "logging",
+    "transport",
+    "tests"
+   ]
+  },
+  "with": {
+   "recall": 0.833,
+   "missing": [
+    "ratelimit",
+    "transport"
+   ]
+  }
+ },
+ "c2_upload": {
+  "rubric_n": 11,
+  "without": {
+   "recall": 0.545,
+   "missing": [
+    "storage",
+    "imagebomb",
+    "ratelimit",
+    "logging",
+    "tests"
+   ]
+  },
+  "with": {
+   "recall": 0.909,
+   "missing": [
+    "ratelimit"
+   ]
+  }
+ },
+ "c3_emailjob": {
+  "rubric_n": 11,
+  "without": {
+   "recall": 0.636,
+   "missing": [
+    "idempotency",
+    "ratelimit",
+    "metrics",
+    "tests"
+   ]
+  },
+  "with": {
+   "recall": 0.909,
+   "missing": [
+    "tests"
+   ]
+  }
+ },
+ "c4_login": {
+  "rubric_n": 10,
+  "without": {
+   "recall": 0.5,
+   "missing": [
+    "bruteforce",
+    "nopwlog",
+    "transport",
+    "csrf",
+    "tests"
+   ]
+  },
+  "with": {
+   "recall": 0.9,
+   "missing": [
+    "tests"
+   ]
+  }
+ }
+}

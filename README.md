@@ -61,9 +61,9 @@ regulation writes down: cancellation & backpressure, retries with jitter,
 circuit breakers, outbox/saga, zero-downtime migrations, measure-first
 performance, API evolvability, per-language idioms, SLOs, test-suite health.
 
-**Measured, not asserted.** A current model *without* the library is confidently
-wrong on 2026 facts (wrong DMARC RFC, an EOL'd tool it calls "maintained"); the
-library closes the gap — +0.50–0.65 recall on currency ([evals/](evals/)).
+**Measured, not asserted.** Told to "build an API" (no security cues), a base
+model embeds ~60% of best practices — skipping tests, rate limits, logging,
+transport; the library lifts it to ~90% (+0.30) ([evals/](evals/) — honest, by-dimension).
 
 ## Skills
 
