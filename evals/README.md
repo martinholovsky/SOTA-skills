@@ -94,8 +94,9 @@ against each rules file's Audit checklist and fill every gap) is what closes
 0.89→0.98. The one residual miss (c2 upload, rate limiting) is a *coverage* gap,
 not a self-audit failure: the router sends uploads to `code-security`+`sandboxing`,
 so the rate-limiting rule was never in scope for its checklist to catch — the fix
-is operating principle 5 (universal non-negotiables) in the router, and `results/
-2026-07-12/completeness-forced.json` records it.
+is operating principle 5 (universal non-negotiables) in the router. A clean
+single-script run of the fixed harness — `results/2026-07-12/completeness-full-rerun.json`
+— reproduces without=0.59, with=0.98 end-to-end (c1/c3/c4 → 1.00, c2 → 0.91).
 
 ## Extending
 

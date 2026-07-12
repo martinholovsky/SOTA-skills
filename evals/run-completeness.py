@@ -32,6 +32,7 @@ import argparse
 import json
 import os
 import sys
+import time
 import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -53,10 +54,17 @@ def key():
 def call(model, prompt, k, max_tokens=8000):
     body = json.dumps({"model": model, "messages": [{"role": "user", "content": prompt}],
                        "temperature": 0, "max_tokens": max_tokens}).encode()
-    req = urllib.request.Request("https://openrouter.ai/api/v1/chat/completions", data=body,
-                                 headers={"Authorization": f"Bearer {k}", "Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=300) as r:
-        return json.load(r)["choices"][0]["message"]["content"]
+    last = None
+    for attempt in range(4):  # retry transient network/5xx; large gens can trickle
+        try:
+            req = urllib.request.Request("https://openrouter.ai/api/v1/chat/completions", data=body,
+                                         headers={"Authorization": f"Bearer {k}", "Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=300) as r:
+                return json.load(r)["choices"][0]["message"]["content"]
+        except Exception as e:  # noqa: BLE001 — retry any transient failure
+            last = e
+            time.sleep(3 * (attempt + 1))
+    raise last
 
 
 def load_cases():
@@ -112,12 +120,14 @@ def main():
         row = {"rubric_n": len(c["rubric"]), "arms": {}}
         for with_lib in (False, True):
             arm = "with" if with_lib else "without"
+            print(f"  {c['id']:16s} {arm:8s} generating…", flush=True)
             # 32k: the self-audit with-arm emits substantially longer output;
             # 16k truncated tests/logging off the end and scored them absent.
             art = call(a.build_model, gen_prompt(c, with_lib), k, max_tokens=32000)
             verdict = judge(art, c["rubric"], a.judge_model, k)
             present = [r["id"] for r in c["rubric"] if verdict.get(r["id"]) == "present"]
             recall = len(present) / len(c["rubric"])
+            print(f"  {c['id']:16s} {arm:8s} recall={recall:.2f}  len={len(art)}", flush=True)
             row["arms"][arm] = {"recall": recall, "present": present,
                                 "missing": [r["id"] for r in c["rubric"] if r["id"] not in present],
                                 "artifact": art}

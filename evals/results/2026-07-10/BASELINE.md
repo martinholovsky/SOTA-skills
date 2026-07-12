@@ -188,8 +188,9 @@ it's the difference between 0.89 and 0.98:
 | **mean** | **0.59** | **0.89** | **0.98** |
 
 Lift (without → BUILD self-audit) = **+0.39**. All BUILD-self-audit artifacts
-finished cleanly (`finish=stop`, 56–87 KB, no truncation);
-`results/2026-07-12/completeness-forced.json`.
+finished cleanly (`finish=stop`, 56–87 KB, no truncation). Reproduced end-to-end
+in one clean run of the fixed harness (`results/2026-07-12/completeness-full-rerun.json`):
+identical mean without=0.59, with=0.98 — c1/c3/c4 → 1.00, c2 → 0.91 (ratelimit).
 
 **What the base model skips unprompted** (frequency across the 4 tasks) — this
 is the finding: **tests 4/4**, **rate limiting 3/4**, **structured logging 2/4**,
