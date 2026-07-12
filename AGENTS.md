@@ -100,6 +100,10 @@ pre-commit hook scans each commit locally.
 - [docs/WHY-IT-WORKS.md](docs/WHY-IT-WORKS.md) — the measured-efficacy case
   (lift **vs. an unguided model**, not vs. other libraries) + the design
   benefits; keep its numbers in sync with the eval results when they change
+- [docs/WHY-COMPLETENESS-RESIDUAL.md](docs/WHY-COMPLETENESS-RESIDUAL.md) — why a
+  with-library build still occasionally drops a cross-cutting rule (a salience /
+  context-length attention effect, **not** a coverage gap) and the BUILD-workflow
+  design that counters it
 - [SECURITY.md](SECURITY.md) — reporting bad guidance or a leaked secret
 - [CHANGELOG.md](CHANGELOG.md) — release history (top entry = current version;
   also mirrored in `VERSION`); releases 1.7.1 and earlier are archived in

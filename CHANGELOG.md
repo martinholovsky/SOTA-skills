@@ -28,13 +28,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Root-caused the completeness residual and rewrote the BUILD workflow around
+  it (2026-07-13, `docs/WHY-COMPLETENESS-RESIDUAL.md`).** Earlier notes called
+  the occasional dropped rate-limit/transport a "coverage gap" — **investigation
+  disproved that**: the forgotten item was in context *and* in a pasted Audit
+  checklist, and *adding* the missing rule made it **worse** (context 72→100 KB,
+  compliance fell) while a short salient reminder recovered it to 1.00. It's a
+  documented attention effect (context rot / instruction-count degradation;
+  [Chroma 2025], [Liu 2023], [arXiv 2507.11538]), reproduced across five
+  controlled c6_webhook experiments + a 4-case principle-5 recovery test.
+  **`skills/sota/SKILL.md` changes:** operating principle 5 shortened for salience
+  (947→765 chars); BUILD workflow now says **load lean** (extra rules *lower*
+  compliance — correctness, not economy), **plan with the checks up front**, and
+  **self-audit LAST with a terminal re-read** (recency), plus recommend a
+  separate fresh-context audit pass + deterministic CI gates. The eval's with-arm
+  now pastes principle 5, so the number reflects the real library (0.93 → 0.99).
 - **Eval suite hardened (2026-07-12).** Grew and stress-tested every golden set,
   all claims validated against primary sources:
   - **Completeness 4 → 7 build tasks** (+search endpoint, webhook receiver,
-    password-reset). 7-task lift **+0.36 (0.57 → 0.93)** — the harder tasks pull
-    the 4-task ceiling of 0.98 down by exposing a **systematic residual: transport
-    (3/7) and rate limiting (2/7) dropped even with the self-audit** — the same
-    cross-cutting-coverage class operating principle 5 addresses.
+    password-reset), and the with-arm now includes the router's **operating
+    principle 5** so it measures what a real agent loads. **Full-library lift
+    +0.39 (0.60 → 0.99, 6/7 perfect)** (`results/2026-07-13/`); ablation: base
+    0.60 → +rules ~0.89 → +self-audit 0.93 → +principle 5 0.99.
   - **Freshness 20 → 32 cases** (+12 across languages/security/cloud/crypto/web
     specs, each grep-confirmed in the library and primary-source-verified). Lift
     **+0.50** (with 0.97, without 0.47); the base model still *fabricates* (RFC
@@ -447,46 +462,9 @@ other agent that reads `AGENTS.md` — not just Claude Code.
 - Fixed **social-preview image saying "30 skills"** (stale through three
   releases): regenerated at 37; tagline now count-free by design (PR #41).
 
-## [1.8.0] - 2026-07-02
-
-Two new user-facing-words skills (37 skills total) plus a README overhaul for
-first-screen impact.
-
-### Added
-
-- **`sota-ux-writing`** — the words *inside* the product: voice/tone systems
-  and plain language (ISO 24495-1:2023), microcopy (buttons, labels, empty
-  states, onboarding, notifications), error/feedback message craft (incl.
-  security-sensitive errors), and accessible/localizable interface text
-  (WCAG 2.2 language criteria, accessible names, ICU plurals, i18n-safe
-  strings, inclusive language). 4 rules files with grep-able audit checklists.
-- **`sota-copywriting`** — outward-facing content: positioning and value
-  propositions, headlines/landing pages/CTAs, SEO content (search intent,
-  E-E-A-T, Google spam policies incl. scaled-content and site-reputation
-  abuse), and the claims/legal layer — substantiation, FTC Endorsement Guides
-  (16 CFR 255, 2023) and Consumer Reviews Rule (16 CFR 465, 2024), dark
-  patterns, email law (CAN-SPAM, GDPR/ePrivacy). Regulations verified against
-  primary sources (eCFR, Federal Register, ISO, Google Search Central).
-- Router: routing-table rows and library-map entries for both skills, plus
-  cross-cutting rule 16 splitting user-facing words (UI text vs marketing vs
-  technical docs).
-- **README "Standards & practices baked in" section** — named standards by
-  area (each verified as actually cited in the rules files) plus the practice
-  layer no regulation writes down.
-- **"Built with SOTA Skills" attribution badge** — copy-paste shields.io
-  snippet in README → Optional setup ("Built with", deliberately not
-  "certified by" — unverifiable certification is what `sota-copywriting`
-  rules/04 §6 flags).
-
-### Changed
-
-- **README restructured for the skimming reader**: hook → two install
-  commands → two example prompts → standards → skills table; directory tree
-  and modes detail moved down beside "How it works".
-
 ---
 
-Releases **1.7.1 and earlier** are archived in
+Releases **1.8.0 and earlier** are archived in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md).
 
 [1.14.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.14.1
@@ -497,4 +475,3 @@ Releases **1.7.1 and earlier** are archived in
 [1.11.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.11.0
 [1.10.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.10.0
 [1.9.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.9.0
-[1.8.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.8.0

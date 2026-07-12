@@ -6,6 +6,43 @@ keep that file under the repository's 500-line cap. Same format
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)); current releases
 live in the root CHANGELOG.
 
+## [1.8.0] - 2026-07-02
+
+Two new user-facing-words skills (37 skills total) plus a README overhaul for
+first-screen impact.
+
+### Added
+
+- **`sota-ux-writing`** — the words *inside* the product: voice/tone systems
+  and plain language (ISO 24495-1:2023), microcopy (buttons, labels, empty
+  states, onboarding, notifications), error/feedback message craft (incl.
+  security-sensitive errors), and accessible/localizable interface text
+  (WCAG 2.2 language criteria, accessible names, ICU plurals, i18n-safe
+  strings, inclusive language). 4 rules files with grep-able audit checklists.
+- **`sota-copywriting`** — outward-facing content: positioning and value
+  propositions, headlines/landing pages/CTAs, SEO content (search intent,
+  E-E-A-T, Google spam policies incl. scaled-content and site-reputation
+  abuse), and the claims/legal layer — substantiation, FTC Endorsement Guides
+  (16 CFR 255, 2023) and Consumer Reviews Rule (16 CFR 465, 2024), dark
+  patterns, email law (CAN-SPAM, GDPR/ePrivacy). Regulations verified against
+  primary sources (eCFR, Federal Register, ISO, Google Search Central).
+- Router: routing-table rows and library-map entries for both skills, plus
+  cross-cutting rule 16 splitting user-facing words (UI text vs marketing vs
+  technical docs).
+- **README "Standards & practices baked in" section** — named standards by
+  area (each verified as actually cited in the rules files) plus the practice
+  layer no regulation writes down.
+- **"Built with SOTA Skills" attribution badge** — copy-paste shields.io
+  snippet in README → Optional setup ("Built with", deliberately not
+  "certified by" — unverifiable certification is what `sota-copywriting`
+  rules/04 §6 flags).
+
+### Changed
+
+- **README restructured for the skimming reader**: hook → two install
+  commands → two example prompts → standards → skills table; directory tree
+  and modes detail moved down beside "How it works".
+
 ## [1.7.1] - 2026-07-01
 
 Fixes every confirmed finding of the 2026-07-01 adversarial audit
@@ -447,3 +484,4 @@ First public release.
 [1.2.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.2.0
 [1.1.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.1.0
 [1.0.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.0.0
+[1.8.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.8.0

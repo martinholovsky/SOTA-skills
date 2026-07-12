@@ -1,0 +1,16 @@
+Completeness "forgetting" investigation — c6_webhook worst case, temp=0, blind opus judge.
+Baseline (rules + BUILD self-audit, no principle 5): missing [ratelimit, transport], recall 0.80
+
+V1_salience  base + explicit "MUST enforce HTTPS + rate-limit"  72KB  → ratelimit=present transport=present  (1.00)
+V2_coverage  base + web-security/05 + network-security/06       100KB → ratelimit=ABSENT  transport=ABSENT   (WORSE — context rot)
+V3_opus      base, builder=opus-4.8                             72KB  → ratelimit=absent  transport=PRESENT  (dropped tests instead)
+V4_minctx    only webhooks.md                                   12KB  → ratelimit=absent  transport=absent   (low-salience clause persists)
+
+V5 shipped operating-principle-5 prepended (generic, not rubric-specific), 4 forgetting cases:
+  c2_upload   recall 1.00  recovered [ratelimit]
+  c5_search   recall 1.00  recovered [transport]
+  c6_webhook  recall 1.00  recovered [ratelimit, transport]
+  c7_pwreset  recall 0.91  recovered [transport] but dropped [sessioninvalidate]  (finite constraint budget)
+
+Data check: in ALL 7 completeness tasks, transport AND rate-limit were mentioned + in a pasted
+Audit checklist, yet still dropped in c2/c5/c6/c7 — refutes "coverage gap"; the concern was in scope.

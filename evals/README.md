@@ -85,7 +85,7 @@ python3 evals/run-clean.py --cases evals/cases/audit-hard.jsonl
 
 `results/<date>/` holds raw per-arm predictions (+ rationales / clean-run
 outputs). Writeup: [`results/2026-07-10/BASELINE.md`](results/2026-07-10/BASELINE.md).
-Headline (clean, by dimension): **completeness +0.36** (0.57→0.93 over 7 build
+Headline (clean, by dimension): **completeness +0.39** (0.60→0.99 over 7 build
 tasks — from a bare "build X" prompt the library embeds the tests/rate-limits/
 logging/transport a base model skips; the thesis, and the part web-search can't
 replace), **freshness +0.50–0.65** (32 cases of 2026 facts; base model
@@ -94,17 +94,18 @@ replace), **freshness +0.50–0.65** (32 cases of 2026 facts; base model
 only "small" if you measure the easy dimensions. Run:
 `python3 evals/run-completeness.py`.
 
-The completeness number is load-bearing on *how* the library is applied. Pasting
-the rules into context alone reaches only ~0.89 (measured on the first 4 tasks) —
-the model reads the guidance but silently drops peripheral concerns. Running the
-router's **BUILD self-audit** (apply non-negotiables, then check the diff against
-each rules file's Audit checklist and fill every gap) is what lifts it; the 7-task
-mean settles at **0.93**. The residual with-arm misses — **transport** (3/7) and
-**rate limiting** (2/7) — are *coverage* gaps, not self-audit failures: those
-cross-cutting rules live in one domain skill and fall outside a task's routed
-scope unless the router's **operating principle 5** (universal non-negotiables)
-pulls them in. Artifacts: `results/2026-07-12/completeness-full-rerun.json`
-(c1–c4, single-script) + `completeness-7case.json` (7-task summary).
+The completeness number is load-bearing on *how* the library is applied — an
+ablation: base model **0.60**; + rules pasted **~0.89** (first 4 tasks; the model
+reads the guidance but silently drops peripheral concerns); + the **BUILD
+self-audit** (check the diff against each Audit checklist, fill every gap)
+**0.93** (7 tasks); + the router's short **universal non-negotiables** (operating
+principle 5) **0.99** (7 tasks, 6/7 perfect — what a real agent loads). The
+occasional slip is a **finite-constraint-budget** effect, **not** a coverage gap:
+the guidance was in context with a checklist item, but a long dense context makes
+a low-salience item fade — *adding* the "missing" rule made it worse; a short
+salient reminder fixed it (see
+[`docs/WHY-COMPLETENESS-RESIDUAL.md`](../docs/WHY-COMPLETENESS-RESIDUAL.md)).
+Artifact: `results/2026-07-13/completeness-7case-p5.json`.
 
 ## Extending
 
