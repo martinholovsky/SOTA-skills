@@ -1,12 +1,14 @@
 # Eval baseline — routing lift, with control-validity analysis
 
-The efficacy eval across three dimensions, plus an honest investigation of
-control validity. **Headline: the library's lift is small on routing (+~0.10)
-and zero on audit, but large on *freshness* (+0.50–0.65) — because currency is
-what a frozen training cutoff lacks. See §Freshness.** Golden sets: 20 routing
-(`cases/router.jsonl`), 13+7 audit (`cases/audit.jsonl`, `cases/audit-hard.jsonl`),
-20 freshness (`cases/freshness.jsonl`). Scored with `evals/score.py` /
-`evals/run-clean.py`.
+The efficacy eval across four dimensions, plus an honest investigation of
+control validity. **Headline: the library's biggest, least-redundant value is
+*completeness* — from a bare "build X" prompt it lifts best-practice coverage
+~0.59→0.89 (+0.30), embedding the tests/rate-limits/logging/transport a base
+model systematically skips. It's also large on *freshness* (+0.50–0.65), small
+on routing (+~0.10), zero on audit. See §Completeness / §Freshness.** Golden
+sets: 4 completeness build-tasks (`cases/completeness.jsonl`), 20 routing, 13+7
+audit, 20 freshness. Scored with `evals/score.py` / `run-clean.py` /
+`run-completeness.py`.
 
 - **Run 1** (2026-07-10): in-session, raw predictions here (`pred_*.json`).
 - **Run 2** (2026-07-11): in-session logged re-run — per-case rationales +
@@ -157,6 +159,46 @@ headline value, **~5× the routing lift**: not "does the model know a capability
 exists" but "does it have the current, correct facts" — where it is often wrong,
 fabricating, and sure of itself.
 
+## Completeness — the library's actual thesis (2026-07-12)
+
+The eval that matters most: given a **minimal "build X for my app" prompt with
+no security/logging/transport cues**, does the model embed the cross-cutting
+best practices *from v1* — or build "some X" that's missing them until someone
+notices? Method (`evals/run-completeness.py`, clean raw API): both arms get the
+same bare task; the **with-library** arm also gets the relevant skill rules
+pasted; a **different model (opus-4.8), blind to arm**, scores each produced
+artifact against a fixed rubric of **universal** best practices (authz, input
+validation, transport, structured logging, rate limiting, error hygiene, tests,
+…). 4 build tasks (ticket API, file upload, email worker, login), 44 criteria.
+
+| Task | without | with | lift |
+|---|---|---|---|
+| ticket API | 0.67 | 0.83 | +0.17 |
+| file upload | 0.55 | 0.91 | +0.36 |
+| email worker | 0.64 | 0.91 | +0.27 |
+| login | 0.50 | 0.90 | +0.40 |
+| **mean** | **0.59** | **0.89** | **+0.30** |
+
+**What the base model skips unprompted** (frequency across the 4 tasks) — this
+is the finding: **tests 4/4**, **rate limiting 3/4**, **structured logging 2/4**,
+**transport/HTTPS 2/4**, plus per-domain **idempotency** (email double-send),
+**safe storage + image-bomb** handling (upload), **anti-brute-force + no
+password-logging + CSRF** (login). Exactly the "security isn't there, logging
+isn't there, transport is weak, no tests" gap — embedded by default with the
+library, absent without it.
+
+**Honest caveats.** (1) The base model already does ~60% unprompted — it's not
+building nothing, it does the obvious majority; the library closes the
+*systematic* remainder. (2) With the library it's ~89%, **not** 100% — it still
+skipped tests (2×), rate limiting (2×), and transport (1×); the library nudges,
+it doesn't guarantee. (3) Single run per arm; LLM-as-judge (spot-validated
+against the artifacts — accurate, and *strict* on "enforced vs. merely
+mentioned", applied equally to both arms). (4) Rubric criteria are universal
+best practices, not sota-invented, so a base model that "just knew" would score
+high too — it mostly doesn't. (5) Unlike freshness, this gap is **not** closed
+by "verify via web search": an agent won't search "should I add rate limiting" —
+it just omits it. This is the library's most defensible, least-redundant value.
+
 ## Honest limitations
 
 - **Audit eval is saturated** — both arms 13/13 across both runs, including the
@@ -181,16 +223,26 @@ measure*:
 
 | Dimension | What it tests | Clean lift |
 |---|---|---|
+| **Completeness** | best practices embedded from a bare "build X" prompt | **+0.30** (0.59→0.89) |
 | **Freshness** | current 2026 facts (RFCs, CVEs, EOLs, versions, spec editions) | **+0.50 to +0.65** |
 | Routing | which skill area applies | +0.09 to +0.14 |
 | Audit | recognizing a textbook vulnerability | +0.00 |
 
 The small routing lift and zero audit lift are real and honest — a capable model
 already knows SQLi exists and that testing matters. But those measure the
-library's *weakest* dimensions. Its **core value is currency**, where the lift is
-large (+0.50–0.65) and the base model is not merely uncertain but **confidently
-wrong** — asserting RFC 7489, OWASP A04, "8 characters," and "TorchServe is
-maintained" with no hedging. An agent without the library ships those errors;
-with it, it ships the 2026-correct facts. That is the number that answers "is
-the library worth it": on anything fast-moving, decisively yes; on timeless
-well-trodden tasks, modestly. All clean, reproducible via `evals/run-clean.py`.
+library's *weakest* dimensions. Its two real values:
+
+- **Completeness** — the thesis. Asked to "build an API" with no security cues,
+  the base model produces ~60%-complete work and *systematically* omits tests,
+  rate limiting, logging, transport, idempotency; with the library it reaches
+  ~89%. This gap is **not** closable by "just verify via search" (an agent won't
+  search "should I add rate limiting" — it just skips it), which makes it the
+  library's most defensible value.
+- **Currency** — large lift (+0.50–0.65); the base model is **confidently wrong**
+  on 2026 facts (RFC 7489 not 9989, TorchServe "maintained"), *but* a web-search-
+  enabled agent recovers most of this (0.35→0.95), so it's real yet partly
+  redundant for tool-using agents.
+
+Answer to "is the library worth it": for embedding complete, current practice
+from v1 — yes, and completeness is the part search can't replace. All clean and
+reproducible via `evals/run-clean.py` and `evals/run-completeness.py`.

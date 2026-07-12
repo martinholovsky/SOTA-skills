@@ -78,11 +78,13 @@ python3 evals/run-clean.py --cases evals/cases/audit-hard.jsonl
 
 `results/<date>/` holds raw per-arm predictions (+ rationales / clean-run
 outputs). Writeup: [`results/2026-07-10/BASELINE.md`](results/2026-07-10/BASELINE.md).
-Headline (clean, by dimension): **freshness +0.50–0.65** (20 cases) (2026 facts — the
-library's core value; the base model is *confidently wrong* without it),
-**routing +0.09–0.14** (the router's cross-cutting rules; even opus-4.8 misses
-them unaided), **audit +0.00** (strong models recognize textbook vulns
-library-or-not). The lift is only "small" if you measure the easy dimensions.
+Headline (clean, by dimension): **completeness +0.30** (0.59→0.89 — from a bare
+"build X" prompt the library embeds the tests/rate-limits/logging/transport a
+base model skips; the thesis, and the part web-search can't replace),
+**freshness +0.50–0.65** (2026 facts; base model *confidently wrong*, but a
+web-search agent recovers most of it), **routing +0.09–0.14**, **audit +0.00**.
+The lift is only "small" if you measure the easy dimensions. Run:
+`python3 evals/run-completeness.py`.
 
 ## Extending
 

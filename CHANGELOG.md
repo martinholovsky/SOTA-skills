@@ -5,6 +5,26 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Completeness eval — the library's thesis, measured** (`evals/cases/completeness.jsonl`,
+  `evals/run-completeness.py`). Given a minimal "build X for my app" prompt with
+  no security/logging cues, does the model embed best practices from v1? Clean
+  raw-API generate-then-**blind-judge** (opus-4.8 grades sonnet-4.6's artifacts
+  against a universal rubric, blind to arm) over 4 build tasks / 44 criteria:
+  **completeness lift +0.30 (0.59 → 0.89)** — the base model embeds ~60%
+  unprompted but *systematically* skips **tests (4/4 tasks), rate limiting (3/4),
+  logging (2/4), transport (2/4)**, plus idempotency, safe upload storage,
+  anti-brute-force, CSRF. The library closes that gap to ~89%. Unlike freshness,
+  this is **not** recoverable by "verify via search" (an agent won't search
+  "should I add rate limiting"). Validated: no output truncation (an initial
+  14k-char judge cap + 8k-token gen cap was found penalizing the longer
+  with-arm and fixed → 60k / 16k), judge spot-checked accurate vs the artifacts.
+  Full writeup in `results/2026-07-10/BASELINE.md` (§Completeness); the
+  four-dimension summary now leads with completeness.
+
 ## [1.14.1] - 2026-07-11
 
 ### Changed
