@@ -1,0 +1,35 @@
+{
+ "note": "with-arm = router BUILD workflow (rules pasted + self-audit forcing). All finish=stop, no truncation.",
+ "build_model": "anthropic/claude-sonnet-4.6",
+ "judge_model": "anthropic/claude-opus-4.8",
+ "without_arm_source": "results/2026-07-10 BASELINE (unchanged prompt): mean 0.59",
+ "with_forcing": {
+  "c1_ticket_api": {
+   "recall": 1.0,
+   "len": 78311,
+   "missing": []
+  },
+  "c2_upload": {
+   "recall": 0.91,
+   "len": 56803,
+   "missing": [
+    "ratelimit (api-design/07 not in c2 routed scope)"
+   ]
+  },
+  "c3_emailjob": {
+   "recall": 1.0,
+   "len": 86655,
+   "missing": []
+  },
+  "c4_login": {
+   "recall": 1.0,
+   "len": 83593,
+   "missing": []
+  }
+ },
+ "mean_with_forcing": 0.978,
+ "mean_without": 0.59,
+ "lift": 0.388,
+ "prior_rules_only_with": 0.89,
+ "delta_from_self_audit": 0.088
+}
