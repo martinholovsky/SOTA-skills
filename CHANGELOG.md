@@ -30,8 +30,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   non-negotiables, then check the diff against each rules file's Audit checklist
   and fill every gap) closes **0.89 → 0.98** — 3 of 4 tasks reach a perfect 1.00.
   `run-completeness.py`'s with-arm now runs that self-audit (gen cap 16k→32k to
-  fit the longer output; judge window 60k→100k). The lone residual (c2 upload,
-  rate limiting) is a *coverage* gap, not a self-audit failure.
+  fit the longer output; judge window 60k→100k), and gained per-arm progress
+  logging + transient-error retries so long 32k generations are observable and
+  resilient. The lone residual (c2 upload, rate limiting) is a *coverage* gap,
+  not a self-audit failure. Reproduced end-to-end in one clean single-script run
+  (`results/2026-07-12/completeness-full-rerun.json`): without=0.59, with=0.98,
+  c1/c3/c4 → 1.00, c2 → 0.91.
 
 - **Router: two skill fixes surfaced by the completeness diagnostic**
   (`skills/sota/SKILL.md`). (1) BUILD step 4 is now a **hard self-audit gate** —
