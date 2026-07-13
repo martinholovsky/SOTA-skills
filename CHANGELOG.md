@@ -5,86 +5,68 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.15.0] - 2026-07-13
+
+The measured-efficacy release: completeness proven as the library's thesis, the
+one residual root-caused, and the BUILD workflow rewritten around it.
 
 ### Added
 
-- **`docs/WHY-IT-WORKS.md` — the measured case, honestly framed** + a README
-  highlight linking it. Curates the by-dimension lift (**vs. an *unguided model***,
-  explicitly **not** vs. other libraries — we haven't benchmarked one) and the
-  four design benefits verifiable in-repo (auto-routing/composition, freshness-
-  maintained + primary-source-cited, build+audit, CI-gated quality). README hero
-  now states the honest comparison and links the doc.
 - **Completeness eval — the library's thesis, measured** (`evals/cases/completeness.jsonl`,
   `evals/run-completeness.py`). Given a minimal "build X for my app" prompt with
   no security/logging cues, does the model embed best practices from v1? Clean
-  raw-API generate-then-**blind-judge** (opus-4.8 grades sonnet-4.6's artifacts
-  against a universal rubric, blind to arm) over 4 build tasks / 44 criteria:
-  the base model embeds ~60% unprompted but *systematically* skips **tests,
-  rate limiting, logging, transport**, plus idempotency, safe upload storage,
-  anti-brute-force, CSRF. Unlike freshness, this is **not** recoverable by
-  "verify via search" (an agent won't search "should I add rate limiting").
-  Full writeup in `results/2026-07-10/BASELINE.md` (§Completeness).
+  raw-API, generate-then-**blind-judge** (opus-4.8 grades sonnet-4.6's artifacts,
+  blind to arm), 7 build tasks. Vs. an unguided model the full library lifts
+  best-practice coverage **0.60 → 0.99 (+0.39), 6/7 tasks perfect** — embedding
+  the tests/rate-limits/logging/transport a base model *systematically* skips.
+  Unlike freshness, this is **not** recoverable by "verify via search" (an agent
+  won't search "should I add rate limiting"), which makes it the most defensible,
+  least-redundant value. Ablation: base 0.60 → +rules ~0.89 → +BUILD self-audit
+  0.93 → +router principle 5 0.99.
+- **`docs/WHY-IT-WORKS.md`** — the measured case, framed honestly (**vs. an
+  unguided model**, explicitly *not* vs. other libraries — we haven't benchmarked
+  one) + the four in-repo-verifiable benefits (auto-routing/composition,
+  freshness-maintained + primary-source-cited, build+audit, CI-gated quality).
+  README hero links it.
+- **`docs/WHY-COMPLETENESS-RESIDUAL.md`** — why a with-library build still
+  occasionally drops a cross-cutting rule, and the design that counters it.
 
 ### Changed
 
-- **Root-caused the completeness residual and rewrote the BUILD workflow around
-  it (2026-07-13, `docs/WHY-COMPLETENESS-RESIDUAL.md`).** Earlier notes called
-  the occasional dropped rate-limit/transport a "coverage gap" — **investigation
-  disproved that**: the forgotten item was in context *and* in a pasted Audit
-  checklist, and *adding* the missing rule made it **worse** (context 72→100 KB,
-  compliance fell) while a short salient reminder recovered it to 1.00. It's a
-  documented attention effect (context rot / instruction-count degradation;
-  [Chroma 2025], [Liu 2023], [arXiv 2507.11538]), reproduced across five
-  controlled c6_webhook experiments + a 4-case principle-5 recovery test.
-  **`skills/sota/SKILL.md` changes:** operating principle 5 shortened for salience
-  (947→765 chars); BUILD workflow now says **load lean** (extra rules *lower*
-  compliance — correctness, not economy), **plan with the checks up front**, and
-  **self-audit LAST with a terminal re-read** (recency), plus recommend a
-  separate fresh-context audit pass + deterministic CI gates. The eval's with-arm
-  now pastes principle 5, so the number reflects the real library (0.93 → 0.99).
-- **Eval suite hardened (2026-07-12).** Grew and stress-tested every golden set,
-  all claims validated against primary sources:
-  - **Completeness 4 → 7 build tasks** (+search endpoint, webhook receiver,
-    password-reset), and the with-arm now includes the router's **operating
-    principle 5** so it measures what a real agent loads. **Full-library lift
-    +0.39 (0.60 → 0.99, 6/7 perfect)** (`results/2026-07-13/`); ablation: base
-    0.60 → +rules ~0.89 → +self-audit 0.93 → +principle 5 0.99.
-  - **Freshness 20 → 32 cases** (+12 across languages/security/cloud/crypto/web
-    specs, each grep-confirmed in the library and primary-source-verified). Lift
-    **+0.50** (with 0.97, without 0.47); the base model still *fabricates* (RFC
-    9334 for EAT, PG 17 for `uuidv7`).
-  - **Harder audit 7 → 14 cases** — realistic, non-telegraphed, multi-vuln
-    (IDOR/SSRF-bypass/TOCTOU/prototype-pollution/ReDoS). **Still +0.00**: a
-    capable model catches them *in isolation*, so a real audit lift needs
-    cross-file context, not more snippets — an honest, now-robust finding.
-  - **Multi-sample support** — `--samples N` / `--temp T` on both harnesses
-    (default 1 / 0). Freshness holds at 3 samples (**with 0.97±0.00, without
-    0.44±0.03**) — retires the single-sample caveat on the cheap dimensions.
-- **Completeness measured against the real BUILD process, not just "rules in
-  context" — lift restated +0.30 → +0.39 (0.59 → 0.98)** (`results/2026-07-12/`).
-  The original with-arm only *pasted* the rules and scored 0.89; a forcing-
-  function experiment showed the model reads the guidance but silently drops
-  peripheral concerns. Running the router's **BUILD self-audit** (apply
-  non-negotiables, then check the diff against each rules file's Audit checklist
-  and fill every gap) closes **0.89 → 0.98** — 3 of 4 tasks reach a perfect 1.00.
-  `run-completeness.py`'s with-arm now runs that self-audit (gen cap 16k→32k to
-  fit the longer output; judge window 60k→100k), and gained per-arm progress
-  logging + transient-error retries so long 32k generations are observable and
-  resilient. The lone residual (c2 upload, rate limiting) is a *coverage* gap,
-  not a self-audit failure. Reproduced end-to-end in one clean single-script run
-  (`results/2026-07-12/completeness-full-rerun.json`): without=0.59, with=0.98,
-  c1/c3/c4 → 1.00, c2 → 0.91.
-
-- **Router: two skill fixes surfaced by the completeness diagnostic**
-  (`skills/sota/SKILL.md`). (1) BUILD step 4 is now a **hard self-audit gate** —
-  "do not present code until every Audit-checklist item is implemented or
-  explicitly scoped out" (was soft prose; it's what lifts 0.89→0.98). (2) New
-  **operating principle 5 — universal build non-negotiables**: rate limiting,
-  transport enforcement, and tests apply to *any* endpoint/handler regardless of
-  which domain skill routed the task, so a concern that lives in one skill's
-  top-10 (e.g. rate limiting in `sota-api-design`) is no longer lost when the
-  task routes elsewhere (e.g. an upload → `code-security`+`sandboxing`).
+- **Root-caused the completeness residual; it is a salience / context-length
+  attention effect, NOT a "coverage gap"** (`docs/WHY-COMPLETENESS-RESIDUAL.md`).
+  In all 7 tasks the forgotten rule was in context *and* in a pasted Audit
+  checklist, yet dropped. Five controlled experiments (+ a 4-case recovery test)
+  disprove the coverage story: **adding the missing rule files made it worse**
+  (context 72→100 KB, compliance fell — live context rot), while a **short salient
+  reminder recovered it to 1.00**. Matches the literature — context rot
+  ([Chroma 2025](https://www.trychroma.com/research/context-rot)), lost-in-the-middle
+  ([Liu 2023](https://cs.stanford.edu/~nfliu/papers/lost-in-the-middle.arxiv2023.pdf)),
+  instruction-count decay ([arXiv 2507.11538](https://arxiv.org/html/2507.11538v1)).
+  It occurs in a single call, so it is not a workflow/subagent artifact — chains
+  only amplify it.
+- **Router BUILD workflow rewritten around the finding** (`skills/sota/SKILL.md`):
+  a **hard self-audit gate** (step 4 — do not present code until every checklist
+  item is implemented or explicitly scoped out); a short **operating principle 5**
+  (universal non-negotiables — rate-limiting / transport / tests / logging on any
+  endpoint, kept short for salience, 947→765 chars); **load lean** (extra
+  similar-looking rules *measurably lower* compliance — correctness, not economy);
+  **plan with the checks up front**; **self-audit LAST with a terminal re-read**
+  (recency); plus recommend a separate fresh-context audit pass + deterministic
+  CI gates. The eval's with-arm now pastes principle 5, so its number reflects the
+  real library.
+- **Eval suite hardened and validated against primary sources.** Completeness
+  4 → 7 build tasks (+search, webhook, password-reset). **Freshness 20 → 32
+  cases** (+12 across languages/security/cloud/crypto/web specs, each
+  grep-confirmed in the library and primary-source-verified) — lift **+0.50**
+  (with 0.97, without 0.47), and +0.53 at 3 samples; the base model still
+  *fabricates* (RFC 9334 for EAT, PG 17 for `uuidv7`). **Harder audit 7 → 14
+  cases** (realistic, non-telegraphed, multi-vuln: IDOR / SSRF-bypass / TOCTOU /
+  prototype-pollution / ReDoS) — **still +0.00**: a capable model catches them
+  *in isolation*, so a real audit lift needs cross-file context, not more
+  snippets. **Multi-sample** `--samples N` / `--temp T` on both harnesses
+  (default 1 / 0), plus 32k gen cap / 100k judge window / progress logging +
+  retries for observable, resilient long runs.
 
 ## [1.14.1] - 2026-07-11
 
@@ -467,6 +449,7 @@ other agent that reads `AGENTS.md` — not just Claude Code.
 Releases **1.8.0 and earlier** are archived in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md).
 
+[1.15.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.15.0
 [1.14.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.14.1
 [1.14.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.14.0
 [1.13.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.13.0
