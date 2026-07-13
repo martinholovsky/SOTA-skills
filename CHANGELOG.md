@@ -34,6 +34,15 @@ Evaluation-harness additions (no skill-content change; not in CI — see
   the 0.99 paste-based simulation and vs 0.60 unguided base, confirming the
   simulation is a faithful proxy. Result: `evals/results/2026-07-13/LIVE-BUILD.md`
   (+ `live-build.json`).
+- **Multi-sample eval tightening** (roadmap item 1) —
+  `evals/results/2026-07-13/MULTI-SAMPLE.md` + `completeness-3sample.json` +
+  `routing-3sample.json`. Re-ran the value dimensions at `--samples 3 --temp
+  0.7`: completeness **0.60 → 1.00 (+0.39)** (reproduces the single-sample
+  headline; with-arm ±0.01 across-case sd, 6/7 cases perfectly steady), routing
+  **0.90 → 1.00 (+0.10)** (with-arm ±0.00), freshness **0.44 → 0.97 (+0.53)**
+  (reused 3× run). The with-library arm is near-zero variance everywhere; the
+  sampling wobble is all in the unguided arm. Retires the single-sample caveat in
+  `docs/WHY-IT-WORKS.md`.
 - **Publication draft** — `docs/writeups/completeness-blind-spot.md`, a
   reader-facing write-up of the completeness/salience finding (context rot →
   dropped rate-limiting; adding rules made it worse, a short reminder fixed it),
@@ -461,27 +470,9 @@ Roadmap items 2, 3, 5, and 6 executed (see `docs/ROADMAP.md` annotations):
   Active Directory/Kerberos depth declared out of scope for now and queued as
   approved follow-up builds.
 
-## [1.9.0] - 2026-07-03
-
-Cross-tool support: the library now works with Gemini CLI, Codex, and any
-other agent that reads `AGENTS.md` — not just Claude Code.
-
-- Cross-tool contributor guidance: root `CLAUDE.md` renamed to **`AGENTS.md`**
-  (the open standard Codex/Cursor/Copilot read natively); `CLAUDE.md` and
-  `GEMINI.md` are now symlinks to it, so Claude Code and Gemini CLI load it too.
-- README hero now states the supported tools (native on Claude Code; Gemini
-  CLI, Codex, and other `AGENTS.md` agents via `scripts/gen-agents-md.sh`).
-- CHANGELOG: releases 1.4.0 and earlier moved to `docs/CHANGELOG-archive.md`
-  (the file had reached the 500-line invariant cap); the archive step is now
-  part of the release procedure in `RELEASING.md`.
-- Added **`RELEASING.md`** — the release procedure in-repo (roadmap item 4):
-  version- and count-bearing surfaces, PNG re-render, pre-tag checklist.
-- Fixed **social-preview image saying "30 skills"** (stale through three
-  releases): regenerated at 37; tagline now count-free by design (PR #41).
-
 ---
 
-Releases **1.8.0 and earlier** are archived in
+Releases **1.9.0 and earlier** are archived in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md).
 
 [1.15.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.15.0
@@ -492,4 +483,3 @@ Releases **1.8.0 and earlier** are archived in
 [1.12.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.12.0
 [1.11.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.11.0
 [1.10.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.10.0
-[1.9.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.9.0

@@ -6,6 +6,19 @@ keep that file under the repository's 500-line cap. Same format
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)); current releases
 live in the root CHANGELOG.
 
+## [1.9.0] - 2026-07-03
+
+Cross-tool support: the library now works with Gemini CLI, Codex, and any agent
+that reads `AGENTS.md` — not just Claude Code.
+
+- Root `CLAUDE.md` renamed to **`AGENTS.md`** (the open standard); `CLAUDE.md` +
+  `GEMINI.md` are symlinks to it. README hero lists supported tools.
+- Added **`RELEASING.md`** (roadmap item 4): version/count surfaces, PNG
+  re-render, pre-tag checklist. Releases ≤ 1.4.0 moved to this archive (500-line
+  cap); archive step now part of the release procedure.
+- Fixed **social-preview "30 skills"** (stale through three releases): regenerated
+  at 37; tagline now count-free by design (PR #41).
+
 ## [1.8.0] - 2026-07-02
 
 Two new user-facing-words skills (37 skills total) plus a README overhaul for

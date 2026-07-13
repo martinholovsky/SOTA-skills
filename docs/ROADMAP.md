@@ -9,12 +9,16 @@ release. The 2026-07-01 cycle is fully executed and kept below as history.
 Nothing is blocking; v1.15.0 shipped clean. Ordered by value. **Items 2 and 3
 were executed 2026-07-13 (post-v1.15.0, Unreleased in CHANGELOG) — see notes.**
 
-1. **Tighten the eval numbers (confidence, not point estimates).** Completeness
-   is single-sample (deterministic at temp 0); routing/freshness mostly single.
-   Run `run-completeness.py --samples N --temp 0.7` (support already added) and
-   report mean ± spread; grow the completeness (7) and freshness (32) sets.
-   Small–medium effort, high trust payoff. **(OpenRouter credit restored
-   2026-07-13 — no longer blocked; still the top open eval task.)**
+1. **Tighten the eval numbers (confidence, not point estimates).** **Multi-sample
+   DONE 2026-07-13** — [`evals/results/2026-07-13/MULTI-SAMPLE.md`](../evals/results/2026-07-13/MULTI-SAMPLE.md).
+   All three value dimensions re-run at `--samples 3 --temp 0.7`: completeness
+   **0.60 → 1.00 (+0.39)** with the with-arm at ±0.01 across-case sd (reproduces
+   the single-sample headline, 6/7 cases perfectly steady); routing **0.90 → 1.00
+   (+0.10)**, with-arm ±0.00; freshness **0.44 → 0.97 (+0.53)**, with-arm ±0.00
+   (reused). The with-library arm is near-zero variance everywhere; the sampling
+   wobble is all in the unguided arm. Single-sample caveat retired. **Remaining
+   sub-task:** *grow* the completeness (7) and freshness (32) sets — that's
+   content authoring (new cases), not a re-run, and is still open.
 2. **Validate the v1.15.0 BUILD-workflow changes in a *real* agent run.**
    **DONE 2026-07-13, fully closed** — [`evals/results/2026-07-13/LIVE-BUILD.md`](../evals/results/2026-07-13/LIVE-BUILD.md).
    Seven live sub-agents built the 7 completeness tasks through the real router
