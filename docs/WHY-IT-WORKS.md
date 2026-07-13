@@ -41,7 +41,10 @@ most for *building* software are the two that are large:
   "missing" rule made it worse and a short salient reminder fixed it). This gap is
   **not** recoverable by "just verify via web search": an agent won't search
   *"should I add rate limiting"* — it simply omits it. That makes completeness the
-  library's most defensible, least-redundant value.
+  library's most defensible, least-redundant value. And it is not a
+  paste-simulation artifact: seven **live** agents driven through the real router
+  BUILD workflow scored **0.99 (6/7 perfect)**, identical to the simulation
+  ([live-agent validation](../evals/results/2026-07-13/LIVE-BUILD.md)).
 - **Freshness — the base model is confidently wrong.** On current-2026 facts it
   doesn't merely lack knowledge, it *fabricates* plausible answers (in our 32-case
   set: inventing RFC 9334 for the Entity Attestation Token — it's 9711 — or

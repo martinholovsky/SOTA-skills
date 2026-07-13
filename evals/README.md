@@ -103,6 +103,11 @@ its files under `DIR/<case-id>/`, then:
 python3 evals/judge-live-build.py --builds DIR   # same blind opus judge + rubrics
 ```
 
+Result (2026-07-13, 7 live sub-agent builds): **0.99 mean, 6/7 perfect** —
+identical to the 0.99 paste-based simulation and vs 0.60 unguided base, so the
+simulation is a faithful proxy for the real router flow
+([`results/2026-07-13/LIVE-BUILD.md`](results/2026-07-13/LIVE-BUILD.md)).
+
 ## Recorded runs
 
 `results/<date>/` holds raw per-arm predictions (+ rationales / clean-run
