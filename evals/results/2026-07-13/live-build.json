@@ -1,0 +1,131 @@
+{
+ "mean": 0.987012987012987,
+ "n": 7,
+ "cases": {
+  "c1_ticket_api": {
+   "recall": 1.0,
+   "present": [
+    "authn",
+    "authz",
+    "validation",
+    "sqli",
+    "ratelimit",
+    "pagination",
+    "logging",
+    "errhygiene",
+    "transport",
+    "outschema",
+    "sizelimit",
+    "tests"
+   ],
+   "missing": [],
+   "artifact_len": 74624
+  },
+  "c2_upload": {
+   "recall": 1.0,
+   "present": [
+    "authn_authz",
+    "contenttype",
+    "sizelimit",
+    "pathtraversal",
+    "storage",
+    "imagebomb",
+    "reencode",
+    "ratelimit",
+    "logging",
+    "errhygiene",
+    "tests"
+   ],
+   "missing": [],
+   "artifact_len": 56904
+  },
+  "c3_emailjob": {
+   "recall": 1.0,
+   "present": [
+    "idempotency",
+    "retry",
+    "deadletter",
+    "ratelimit",
+    "secrets",
+    "logging",
+    "metrics",
+    "concurrency",
+    "shutdown",
+    "errhandling",
+    "tests"
+   ],
+   "missing": [],
+   "artifact_len": 101916
+  },
+  "c4_login": {
+   "recall": 1.0,
+   "present": [
+    "pwhash",
+    "bruteforce",
+    "enumeration",
+    "consttime",
+    "session",
+    "validation",
+    "nopwlog",
+    "transport",
+    "csrf",
+    "tests"
+   ],
+   "missing": [],
+   "artifact_len": 61817
+  },
+  "c5_search": {
+   "recall": 1.0,
+   "present": [
+    "authn",
+    "authz",
+    "validation",
+    "sqli",
+    "pagination",
+    "ratelimit",
+    "logging",
+    "errhygiene",
+    "transport",
+    "tests"
+   ],
+   "missing": [],
+   "artifact_len": 88328
+  },
+  "c6_webhook": {
+   "recall": 1.0,
+   "present": [
+    "sigverify",
+    "constanttime",
+    "idempotency",
+    "validation",
+    "sizelimit",
+    "ratelimit",
+    "logging",
+    "errhygiene",
+    "transport",
+    "tests"
+   ],
+   "missing": [],
+   "artifact_len": 77056
+  },
+  "c7_pwreset": {
+   "recall": 0.9090909090909091,
+   "present": [
+    "tokenentropy",
+    "tokenhash",
+    "tokenexpiry",
+    "tokensingleuse",
+    "noenum",
+    "ratelimit",
+    "notokenlog",
+    "pwhash",
+    "transport",
+    "tests"
+   ],
+   "missing": [
+    "sessioninvalidate"
+   ],
+   "artifact_len": 68617
+  }
+ }
+}

@@ -13,20 +13,19 @@ were executed 2026-07-13 (post-v1.15.0, Unreleased in CHANGELOG) — see notes.*
    is single-sample (deterministic at temp 0); routing/freshness mostly single.
    Run `run-completeness.py --samples N --temp 0.7` (support already added) and
    report mean ± spread; grow the completeness (7) and freshness (32) sets.
-   Small–medium effort, high trust payoff. **(Blocked on OpenRouter credit as of
-   2026-07-13 — account exhausted, `total_usage` ≥ `total_credits`; needs a
-   top-up before any further API-based eval run, including item 2's scalar.)**
+   Small–medium effort, high trust payoff. **(OpenRouter credit restored
+   2026-07-13 — no longer blocked; still the top open eval task.)**
 2. **Validate the v1.15.0 BUILD-workflow changes in a *real* agent run.**
-   **DONE (qualitative) 2026-07-13** — [`evals/results/2026-07-13/LIVE-BUILD.md`](../evals/results/2026-07-13/LIVE-BUILD.md).
+   **DONE 2026-07-13, fully closed** — [`evals/results/2026-07-13/LIVE-BUILD.md`](../evals/results/2026-07-13/LIVE-BUILD.md).
    Seven live sub-agents built the 7 completeness tasks through the real router
    flow (load-lean → checklist → terminal self-audit). Verified from their
    `process.md` audit logs (primary source): all 7 followed the workflow;
-   cross-cutting concerns (rate-limit/logging/tests/transport) present in every
-   applicable build; the self-audit gate **caught and fixed real gaps** live
-   (c6: prod `/docs` exposure + unbounded DB critical section; c3: orphaned-task
-   cancellation bug) — the simulation's mechanism, confirmed outside the sim. The
-   one deferred piece is the **blind-judge recall scalar** (blocked on item-1
-   credit); `evals/judge-live-build.py` produces it in one command post-top-up.
+   cross-cutting concerns present in every applicable build; the self-audit gate
+   **caught and fixed real gaps** live (c6: prod `/docs` exposure + unbounded DB
+   critical section; c3: orphaned-task cancellation bug). The blind-judge scalar
+   (run once credit was restored) is **0.99 mean, 6/7 perfect — identical to the
+   0.99 simulation and vs 0.60 base**, proving the paste-based eval is a faithful
+   proxy for the live router flow (`evals/results/2026-07-13/live-build.json`).
 3. **Cross-file / repo-level audit eval.** **DONE 2026-07-13** —
    [`evals/results/2026-07-13/REPO-AUDIT.md`](../evals/results/2026-07-13/REPO-AUDIT.md),
    `evals/run-repo-audit.py`, 15-file fixture with 8 defects invisible in any

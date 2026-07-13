@@ -7,12 +7,34 @@ router-driven flow** — a live agent that reads the router, loads lean, plans w
 a checklist, and runs the terminal self-audit gate — behave the same, or does the
 paste over-state what an actual agent does?
 
-**Answer: validated.** Seven fresh sub-agents were each handed only the bare
-"build X" completeness task plus the standing sota directive (consult the router,
-follow BUILD mode). All seven independently followed the workflow, and the
-terminal self-audit gate demonstrably recovered the cross-cutting concerns and
-caught real gaps — the exact mechanism the simulation credits for the
-completeness lift, now confirmed outside the simulation.
+**Answer: validated, and the number matches the simulation exactly.** Seven fresh
+sub-agents were each handed only the bare "build X" completeness task plus the
+standing sota directive (consult the router, follow BUILD mode). The blind opus
+judge scores the live-agent builds at **0.99 mean completeness (6/7 perfect)** —
+identical to the 0.99 the paste-based simulation produces, and far above the 0.60
+unguided base. All seven independently followed the workflow, and the terminal
+self-audit gate demonstrably recovered the cross-cutting concerns and caught real
+gaps — the exact mechanism the simulation credits for the completeness lift, now
+confirmed outside the simulation.
+
+| build | live-agent recall | note |
+|---|---|---|
+| c1 ticket-api | 1.00 | |
+| c2 upload | 1.00 | |
+| c3 email-worker | 1.00 | |
+| c4 login | 1.00 | |
+| c5 search | 1.00 | |
+| c6 webhook | 1.00 | |
+| c7 pw-reset | 0.91 | dropped `sessioninvalidate` — wired a documented `NoOpSessionRevoker()` stub, not real cross-session invalidation; the judge strictly (correctly) scores a no-op as absent |
+| **mean** | **0.99** | vs 0.99 simulated, 0.60 base — `results/2026-07-13/live-build.json` |
+
+The single miss is itself the thesis in miniature: c7 handled every other
+reset-flow control (CSPRNG token, hash-at-rest, TTL, single-use, uniform
+anti-enumeration response, rate limit, argon2, no-token-logging) and left the one
+*cross-cutting* item — invalidate other sessions on credential change — as a stub.
+That is the finite-constraint-budget / salience effect
+([WHY-COMPLETENESS-RESIDUAL.md](../../docs/WHY-COMPLETENESS-RESIDUAL.md)), not a
+coverage gap: the concern was in scope and the agent even scaffolded for it.
 
 ## Setup
 
@@ -75,24 +97,19 @@ This is the simulation's claim made concrete: the self-audit-LAST step is not
 ceremonial — in a live flow it re-surfaces faded cross-cutting concerns *and*
 finds bugs the first pass introduced.
 
-## The one thing still pending: the reproducible recall number
+## The reproducible recall number (completed)
 
-The automated blind-judge recall (to place the live builds on the same
-0.60-base / 0.99-simulated scale) did **not** complete: the OpenRouter account
-is out of credits (HTTP 402; `total_usage` 225.14 ≥ `total_credits` 225.00, and
-the two repo-audit runs earlier today spent the tail). `evals/judge-live-build.py`
-is written, its artifact collector verified (it prunes `.venv`/caches and reads
-the ~19–22 authored files per build), and it will produce the number in one
-command once credits are topped up:
+The blind-judge scalar ran once OpenRouter credit was restored:
 
 ```sh
 python3 evals/judge-live-build.py --builds <live-build-dir> \
   --out evals/results/2026-07-13/live-build.json
+# → MEAN live-agent completeness = 0.99 (n=7)
 ```
 
-So the **qualitative + structural** validation of roadmap item 2 is complete and
-positive; the **single scalar** that would let us write "live-agent completeness
-= 0.XX vs 0.99 simulated" is deferred to the next run with credit available. It
-does not change the finding — every applicable build carries the cross-cutting
-concerns, and the self-audit gate provably works in the live flow — but it is
-recorded honestly as unfinished rather than asserted.
+`live-build.json` holds the per-case present/missing detail. The live-agent mean
+(**0.99**) equals the paste-based simulation (**0.99**) — which is the point: it
+confirms `run-completeness.py`'s pasted-content arm is a faithful proxy for what a
+real router-driven agent produces, so the 0.60→0.99 completeness lift is not an
+artifact of the simulation. Roadmap item 2 is fully closed: the live flow both
+carries the cross-cutting concerns and reaches the simulated recall.
