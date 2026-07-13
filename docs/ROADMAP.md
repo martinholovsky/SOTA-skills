@@ -4,6 +4,37 @@ Priorities set by the **2026-07-10 audit**
 ([AUDIT-2026-07-10.md](AUDIT-2026-07-10.md)). Ordered; revisit after each
 release. The 2026-07-01 cycle is fully executed and kept below as history.
 
+## Open tasks — next-session pick-up *(as of v1.15.0, 2026-07-13)*
+
+Nothing is blocking; v1.15.0 shipped clean. Ordered by value:
+
+1. **Tighten the eval numbers (confidence, not point estimates).** Completeness
+   is single-sample (deterministic at temp 0); routing/freshness mostly single.
+   Run `run-completeness.py --samples N --temp 0.7` (support already added) and
+   report mean ± spread; grow the completeness (7) and freshness (32) sets.
+   Small–medium effort, high trust payoff.
+2. **Validate the v1.15.0 BUILD-workflow changes in a *real* agent run.** The
+   eval *pastes* principle 5 to simulate the router; confirm the actual
+   router-driven flow (load-lean → plan-with-checklist → terminal re-read)
+   behaves the same in a live Claude Code build, not just the pasted-content sim.
+3. **Cross-file / repo-level audit eval** (Unexplored, below). Audit is +0.00 and
+   stays there even on 14 hard *snippet* cases — the only path to a real audit
+   lift is multi-file context. Needs a new harness (small planted-vuln repo).
+4. **Constraint-budget probe** *(new, from the v1.15.0 whack-a-mole: c1 dropped
+   size-limit when principle 5 was added).** Measure how many simultaneous
+   non-negotiables a model reliably satisfies — informs how short principle 5 and
+   per-task checklists must stay. Directly tests the salience/attention finding
+   in [`WHY-COMPLETENESS-RESIDUAL.md`](WHY-COMPLETENESS-RESIDUAL.md).
+5. **Multi-turn / agentic amplification test** *(new)*. The forgetting was
+   measured in a *single* call; the literature says chains/subagents make it
+   worse. Build the same task across a subagent chain and see if the fixes hold.
+6. **Deferred — competitor-library benchmark** (Unexplored, below): only if a
+   "better than library X" claim is wanted; needs a named target.
+7. **Distribution over coverage** (item 6): marketplace visibility, a published
+   before/after audit demo, badge→verifiable-audit.
+8. **Scheduled — first 6-month accuracy sweep ~Jan 2027** (item 5): re-verify
+   fast-moving claims per `docs/MAINTENANCE.md` and bump `LAST-VERIFIED`.
+
 ## Now — prove and protect accuracy *(done this cycle)*
 
 The audit's verdict was "content is trustworthy; the gap is that nothing
