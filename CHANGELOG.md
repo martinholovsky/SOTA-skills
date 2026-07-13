@@ -31,6 +31,11 @@ Evaluation-harness additions (no skill-content change; not in CI — see
   This scores artifacts from a **real sub-agent** driven over each build task
   through the actual router BUILD workflow, with the same blind opus judge and
   rubrics. Result recorded in `evals/results/2026-07-13/LIVE-BUILD.md`.
+- **Publication draft** — `docs/writeups/completeness-blind-spot.md`, a
+  reader-facing write-up of the completeness/salience finding (context rot →
+  dropped rate-limiting; adding rules made it worse, a short reminder fixed it),
+  with the before/after data and honest boundary. Draft for the maintainer to
+  publish (roadmap item 7, distribution).
 
 ## [1.15.0] - 2026-07-13
 
