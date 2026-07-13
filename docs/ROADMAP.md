@@ -52,7 +52,13 @@ were executed 2026-07-13 (post-v1.15.0, Unreleased in CHANGELOG) — see notes.*
 6. **Deferred — competitor-library benchmark** (Unexplored, below): only if a
    "better than library X" claim is wanted; needs a named target.
 7. **Distribution over coverage** (item 6): marketplace visibility, a published
-   before/after audit demo, badge→verifiable-audit.
+   before/after demo, badge→verifiable-audit. **Started 2026-07-13:** a
+   publication draft of the completeness/salience finding is ready at
+   [`docs/writeups/completeness-blind-spot.md`](writeups/completeness-blind-spot.md)
+   (with the verified before/after contrast — webhook 0.50→1.00, upload
+   0.55→1.00). Maintainer to publish (LinkedIn is the proven referral channel per
+   traffic data). Note: the compelling demo is **completeness** before/after, not
+   audit — audit lift is +0.00 (item 3), so an audit demo would undersell.
 8. **Scheduled — first 6-month accuracy sweep ~Jan 2027** (item 5): re-verify
    fast-moving claims per `docs/MAINTENANCE.md` and bump `LAST-VERIFIED`.
 
