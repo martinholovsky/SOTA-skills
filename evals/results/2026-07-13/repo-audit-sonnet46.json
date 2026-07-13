@@ -1,0 +1,270 @@
+{
+ "without-library": {
+  "category_recall": 1.0,
+  "strict_recall": 1.0,
+  "category_recalls": [
+   1.0
+  ],
+  "strict_recalls": [
+   1.0
+  ],
+  "detail": {
+   "p1_idor": {
+    "category": "idor",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p2_mass_assignment": {
+    "category": "mass-assignment",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p3_sql_injection": {
+    "category": "sql-injection",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p4_ssrf": {
+    "category": "ssrf",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p5_missing_authentication": {
+    "category": "missing-authentication",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p6_session_not_revoked": {
+    "category": "business-logic-flaw",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p7_tls_verification_disabled": {
+    "category": "tls-verification-disabled",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p8_insecure_random": {
+    "category": "insecure-random",
+    "category_found": true,
+    "strict_found": true
+   }
+  },
+  "findings": [
+   {
+    "category": "insecure-random",
+    "file": "tokens.py",
+    "why": "make_token uses random.choice (non-cryptographic PRNG) to generate session and password-reset tokens, making them predictable."
+   },
+   {
+    "category": "sql-injection",
+    "file": "search.py",
+    "why": "build_where interpolates user-supplied keyword and status directly into SQL string passed to raw_query, enabling SQL injection."
+   },
+   {
+    "category": "ssrf",
+    "file": "orders.py",
+    "why": "create_order passes user-supplied callback_url directly to fetch() with no validation of scheme or destination, enabling SSRF."
+   },
+   {
+    "category": "tls-verification-disabled",
+    "file": "config.py",
+    "why": "verify_tls defaults to false (VERIFY_TLS env var must be explicitly set to 'true'), so outbound TLS certificate verification is off by default."
+   },
+   {
+    "category": "tls-verification-disabled",
+    "file": "http_client.py",
+    "why": "fetch() passes settings.verify_tls to httpx.Client, which defaults to False per config, disabling TLS verification on all outbound requests."
+   },
+   {
+    "category": "missing-authentication",
+    "file": "admin.py",
+    "why": "Admin routes /admin/orders and /admin/orders/{id}/status have no authentication or authorization check; any unauthenticated caller can access or modify all orders."
+   },
+   {
+    "category": "idor",
+    "file": "orders.py",
+    "why": "get_order fetches any order by ID without verifying the requesting user owns it, allowing access to other users' orders."
+   },
+   {
+    "category": "idor",
+    "file": "orders.py",
+    "why": "update_order patches any order by ID without verifying the requesting user owns it, allowing modification of other users' orders."
+   },
+   {
+    "category": "mass-assignment",
+    "file": "orders_service.py",
+    "why": "update_order builds UPDATE SET from all non-null fields in OrderUpdate including user_id and amount_cents, letting callers reassign order ownership or manipulate pricing."
+   },
+   {
+    "category": "mass-assignment",
+    "file": "models.py",
+    "why": "OrderUpdate exposes user_id and amount_cents as patchable fields, allowing clients to change order ownership and financial amounts."
+   },
+   {
+    "category": "sql-injection",
+    "file": "orders_service.py",
+    "why": "update_order builds SET clause by interpolating column names from model fields directly into SQL string without whitelisting, enabling SQL injection via crafted field names."
+   },
+   {
+    "category": "non-constant-time-comparison",
+    "file": "reset.py",
+    "why": "confirm_reset compares token hashes via SQL equality which may short-circuit, and no constant-time comparison is used when validating the reset token."
+   },
+   {
+    "category": "business-logic-flaw",
+    "file": "reset.py",
+    "why": "confirm_reset rate-limits on a global key 'reset:confirm' rather than per-token or per-user, allowing distributed brute-force of reset tokens across different keys."
+   },
+   {
+    "category": "business-logic-flaw",
+    "file": "sessions.py",
+    "why": "change_password and confirm_reset do not call revoke_all_for_user after credential change, violating the documented invariant and leaving existing sessions valid after a takeover."
+   },
+   {
+    "category": "log-injection",
+    "file": "app.py",
+    "why": "on_error logs request.url.path unsanitized via log.exception, allowing attackers to inject newlines and fake log entries through crafted URL paths."
+   }
+  ]
+ },
+ "with-library": {
+  "category_recall": 1.0,
+  "strict_recall": 1.0,
+  "category_recalls": [
+   1.0
+  ],
+  "strict_recalls": [
+   1.0
+  ],
+  "detail": {
+   "p1_idor": {
+    "category": "idor",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p2_mass_assignment": {
+    "category": "mass-assignment",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p3_sql_injection": {
+    "category": "sql-injection",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p4_ssrf": {
+    "category": "ssrf",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p5_missing_authentication": {
+    "category": "missing-authentication",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p6_session_not_revoked": {
+    "category": "business-logic-flaw",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p7_tls_verification_disabled": {
+    "category": "tls-verification-disabled",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p8_insecure_random": {
+    "category": "insecure-random",
+    "category_found": true,
+    "strict_found": true
+   }
+  },
+  "findings": [
+   {
+    "category": "insecure-random",
+    "file": "tokens.py",
+    "why": "make_token uses random.choice (non-CSPRNG) to generate session and reset tokens, making them predictable"
+   },
+   {
+    "category": "missing-authentication",
+    "file": "admin.py",
+    "why": "admin router has no authentication or authorization check; any caller can list all orders or change any order status"
+   },
+   {
+    "category": "sql-injection",
+    "file": "search.py",
+    "why": "build_where interpolates user-supplied keyword and status directly into SQL string passed to raw_query, enabling SQL injection"
+   },
+   {
+    "category": "sql-injection",
+    "file": "orders_service.py",
+    "why": "update_order builds SET clause by interpolating column names from model_dump keys directly into an f-string SQL query without allowlist validation"
+   },
+   {
+    "category": "ssrf",
+    "file": "orders.py",
+    "why": "create_order fetches user-supplied callback_url with no scheme allowlist, IP validation, or SSRF protection"
+   },
+   {
+    "category": "tls-verification-disabled",
+    "file": "config.py",
+    "why": "verify_tls defaults to False, so all outbound HTTPS requests skip certificate verification unless the env var is explicitly set"
+   },
+   {
+    "category": "tls-verification-disabled",
+    "file": "http_client.py",
+    "why": "fetch passes settings.verify_tls to httpx.Client, which is False by default, disabling TLS certificate verification"
+   },
+   {
+    "category": "idor",
+    "file": "orders.py",
+    "why": "get_order fetches any order by ID without checking that the order belongs to the authenticated user"
+   },
+   {
+    "category": "idor",
+    "file": "orders.py",
+    "why": "update_order patches any order by ID without verifying ownership by the authenticated user"
+   },
+   {
+    "category": "mass-assignment",
+    "file": "models.py",
+    "why": "OrderUpdate exposes status, amount_cents, and user_id as client-writable fields, allowing privilege escalation and price/owner manipulation"
+   },
+   {
+    "category": "mass-assignment",
+    "file": "orders_service.py",
+    "why": "update_order applies all non-null fields from OrderUpdate including user_id and amount_cents directly to the DB without server-side filtering"
+   },
+   {
+    "category": "non-constant-time-comparison",
+    "file": "sessions.py",
+    "why": "user_for looks up sessions by raw token equality in SQL rather than using a constant-time comparison, enabling timing-based token oracle"
+   },
+   {
+    "category": "missing-authentication",
+    "file": "reset.py",
+    "why": "confirm_reset rate-limits on a global key reset:confirm rather than per-token or per-user, allowing distributed brute-force of reset tokens"
+   },
+   {
+    "category": "hardcoded-secret",
+    "file": "config.py",
+    "why": "DATABASE_URL defaults to a hardcoded plaintext localhost connection string in source code"
+   },
+   {
+    "category": "log-injection",
+    "file": "app.py",
+    "why": "request.url.path is logged directly without sanitizing CR/LF characters, enabling log injection via crafted URLs"
+   },
+   {
+    "category": "business-logic-flaw",
+    "file": "profile.py",
+    "why": "change_password does not revoke existing sessions after a password change, allowing stolen sessions to remain valid indefinitely"
+   },
+   {
+    "category": "business-logic-flaw",
+    "file": "reset.py",
+    "why": "confirm_reset does not revoke all existing user sessions after a successful password reset, leaving compromised sessions active"
+   }
+  ]
+ }
+}

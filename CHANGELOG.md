@@ -5,6 +5,33 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+Evaluation-harness additions (no skill-content change; not in CI — see
+`evals/README.md`). These execute two roadmap follow-ups from v1.15.0.
+
+### Added
+
+- **Cross-file repo-audit eval** (`evals/run-repo-audit.py`,
+  `evals/cases/repo-audit.jsonl`, `evals/cases/repo-audit/orderdesk/`). A 15-file
+  FastAPI fixture with **8 defects that are invisible in any single file** (an
+  authz check one layer assumes another enforces, a taint crossing modules, an
+  invariant one file documents and another violates, an insecure default trusted
+  by its caller). Answers roadmap item 3 — the only identified path to a real
+  audit lift. Result: **+0.00** on both `claude-sonnet-4.6` and `claude-opus-4.8`
+  (strict, file-attributed scoring). When the whole repo fits in one context, a
+  capable model reads across files unaided; making defects cross-file changes
+  nothing while every file is visible. The library makes **no audit-lift claim**;
+  the real frontier is a repo too large to hold at once (agentic selective
+  reading), logged as the open follow-up
+  (`evals/results/2026-07-13/REPO-AUDIT.md`).
+- **Live-agent BUILD validation** (`evals/judge-live-build.py`). Closes the
+  completeness eval's one simulation gap (roadmap item 2): `run-completeness.py`
+  *pastes* the router's principle 5 + rules to stand in for what an agent loads.
+  This scores artifacts from a **real sub-agent** driven over each build task
+  through the actual router BUILD workflow, with the same blind opus judge and
+  rubrics. Result recorded in `evals/results/2026-07-13/LIVE-BUILD.md`.
+
 ## [1.15.0] - 2026-07-13
 
 The measured-efficacy release: completeness proven as the library's thesis, the

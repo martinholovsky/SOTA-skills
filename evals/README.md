@@ -20,6 +20,16 @@ audit STRAT-HIGH-2).
   finding category an audit must flag. Tests that the security skills catch the
   obvious. `cases/audit-hard.jsonl` (14) is the harder set — multi-vuln + subtle
   (IDOR/SSRF/TOCTOU/ReDoS); it *still* saturates at 1.00 both arms (see below).
+- `cases/repo-audit.jsonl` (8) + `cases/repo-audit/orderdesk/` — a 15-file
+  FastAPI app with 8 defects that are **invisible in any single file** (an authz
+  check one layer assumes another enforces, a taint that crosses modules, an
+  invariant one file documents and another violates, an insecure default trusted
+  elsewhere). Scored by `run-repo-audit.py`. Result: **+0.00** on sonnet-4.6 and
+  opus-4.8 — when the whole repo fits in one context, a capable model reads
+  across files and catches cross-file defects unaided
+  ([`results/2026-07-13/REPO-AUDIT.md`](results/2026-07-13/REPO-AUDIT.md)). The
+  real audit-lift frontier is a repo too large to hold at once (agentic,
+  selective reading), logged there as the open follow-up.
 - `cases/completeness.jsonl` (7) — a minimal "build X" task → a rubric of
   universal best practices a blind judge scores the generated code against.
 - `cases/freshness.jsonl` (32) — a current-2026 fact question → the token a
@@ -79,6 +89,18 @@ it makes **raw model-API calls** (OpenRouter; `OPENROUTER_API_KEY` from env or
 python3 evals/run-clean.py --cases evals/cases/freshness.jsonl --model anthropic/claude-sonnet-4.6
 python3 evals/run-clean.py --cases evals/cases/router.jsonl
 python3 evals/run-clean.py --cases evals/cases/audit-hard.jsonl
+python3 evals/run-repo-audit.py          # cross-file audit (own fixture repo + harness)
+```
+
+**Live-agent BUILD validation** (`judge-live-build.py`) closes the completeness
+eval's one simulation gap: `run-completeness.py` *pastes* the router's principle
+5 + rules to stand in for what an agent loads. To confirm the real router-driven
+flow behaves the same, drive an actual sub-agent over each `completeness` task
+(handed only the bare "build X" prompt + the standing sota directive), collect
+its files under `DIR/<case-id>/`, then:
+
+```sh
+python3 evals/judge-live-build.py --builds DIR   # same blind opus judge + rubrics
 ```
 
 ## Recorded runs

@@ -6,20 +6,41 @@ release. The 2026-07-01 cycle is fully executed and kept below as history.
 
 ## Open tasks — next-session pick-up *(as of v1.15.0, 2026-07-13)*
 
-Nothing is blocking; v1.15.0 shipped clean. Ordered by value:
+Nothing is blocking; v1.15.0 shipped clean. Ordered by value. **Items 2 and 3
+were executed 2026-07-13 (post-v1.15.0, Unreleased in CHANGELOG) — see notes.**
 
 1. **Tighten the eval numbers (confidence, not point estimates).** Completeness
    is single-sample (deterministic at temp 0); routing/freshness mostly single.
    Run `run-completeness.py --samples N --temp 0.7` (support already added) and
    report mean ± spread; grow the completeness (7) and freshness (32) sets.
-   Small–medium effort, high trust payoff.
-2. **Validate the v1.15.0 BUILD-workflow changes in a *real* agent run.** The
-   eval *pastes* principle 5 to simulate the router; confirm the actual
-   router-driven flow (load-lean → plan-with-checklist → terminal re-read)
-   behaves the same in a live Claude Code build, not just the pasted-content sim.
-3. **Cross-file / repo-level audit eval** (Unexplored, below). Audit is +0.00 and
-   stays there even on 14 hard *snippet* cases — the only path to a real audit
-   lift is multi-file context. Needs a new harness (small planted-vuln repo).
+   Small–medium effort, high trust payoff. **(Blocked on OpenRouter credit as of
+   2026-07-13 — account exhausted, `total_usage` ≥ `total_credits`; needs a
+   top-up before any further API-based eval run, including item 2's scalar.)**
+2. **Validate the v1.15.0 BUILD-workflow changes in a *real* agent run.**
+   **DONE (qualitative) 2026-07-13** — [`evals/results/2026-07-13/LIVE-BUILD.md`](../evals/results/2026-07-13/LIVE-BUILD.md).
+   Seven live sub-agents built the 7 completeness tasks through the real router
+   flow (load-lean → checklist → terminal self-audit). Verified from their
+   `process.md` audit logs (primary source): all 7 followed the workflow;
+   cross-cutting concerns (rate-limit/logging/tests/transport) present in every
+   applicable build; the self-audit gate **caught and fixed real gaps** live
+   (c6: prod `/docs` exposure + unbounded DB critical section; c3: orphaned-task
+   cancellation bug) — the simulation's mechanism, confirmed outside the sim. The
+   one deferred piece is the **blind-judge recall scalar** (blocked on item-1
+   credit); `evals/judge-live-build.py` produces it in one command post-top-up.
+3. **Cross-file / repo-level audit eval.** **DONE 2026-07-13** —
+   [`evals/results/2026-07-13/REPO-AUDIT.md`](../evals/results/2026-07-13/REPO-AUDIT.md),
+   `evals/run-repo-audit.py`, 15-file fixture with 8 defects invisible in any
+   single file. Result: **+0.00 on sonnet-4.6 and opus-4.8** (strict,
+   file-attributed). The finding *refines* the hypothesis: cross-file is not the
+   barrier — **context the model can't hold at once** is. A ~17 KB repo pastes
+   whole, so recognition (already saturated) catches everything. The real
+   frontier is now item 3′ below.
+3′. **Agentic large-repo audit eval** *(new, replaces the snippet/small-repo
+   version).* The only untested audit-lift path left: a repo too large to hold in
+   context, audited through a **tool-driven agent loop** (selective file reads
+   under a budget), with-library vs without — where the router's "which files to
+   open, what to connect" guidance is the thing under test, not recognition.
+   Materially bigger harness (a real agent loop, not one API call).
 4. **Constraint-budget probe** *(new, from the v1.15.0 whack-a-mole: c1 dropped
    size-limit when principle 5 was added).** Measure how many simultaneous
    non-negotiables a model reliably satisfies — informs how short principle 5 and
@@ -103,13 +124,16 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
   pasted as a third arm and report the delta. Deferred until there's a reason to
   make the comparison (user weighed it 2026-07-12 and chose the honest
   vs-unguided framing for now).
-- **Cross-file / repo-level audit eval.** The audit dimension is +0.00 and stays
-  there even on 14 harder *snippet* cases (2026-07-12) — a capable model catches
-  isolated vulns. The only way a skill-guided audit plausibly beats recognition is
-  multi-file context: an authz check in file A that a handler in file B forgets, a
-  taint that crosses modules, a migration that breaks an invariant elsewhere. That
-  needs a different harness (a small planted-vuln repo, not a `snippet` field) —
-  the real frontier for measuring audit value.
+- **Cross-file / repo-level audit eval.** ~~Unexplored~~ **Explored 2026-07-13,
+  no lift** ([`evals/results/2026-07-13/REPO-AUDIT.md`](../evals/results/2026-07-13/REPO-AUDIT.md)).
+  Built the planted-vuln repo (8 defects invisible in any single file) the audit
+  dimension was said to need. Result: **+0.00** on two models — when the whole
+  repo fits in one context, cross-file collapses to "read it all" and recognition
+  (already saturated) catches everything. The hypothesis was wrong about *why*
+  audit is +0.00: the barrier is **context that exceeds what the model holds**,
+  not file-spanning per se. The genuine remaining frontier is the agentic
+  large-repo eval (open task 3′) — a repo too big to paste, audited under a
+  context budget through tool-driven reads.
 
 ---
 

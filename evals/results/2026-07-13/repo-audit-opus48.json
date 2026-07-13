@@ -1,0 +1,275 @@
+{
+ "without-library": {
+  "category_recall": 1.0,
+  "strict_recall": 1.0,
+  "category_recalls": [
+   1.0
+  ],
+  "strict_recalls": [
+   1.0
+  ],
+  "detail": {
+   "p1_idor": {
+    "category": "idor",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p2_mass_assignment": {
+    "category": "mass-assignment",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p3_sql_injection": {
+    "category": "sql-injection",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p4_ssrf": {
+    "category": "ssrf",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p5_missing_authentication": {
+    "category": "missing-authentication",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p6_session_not_revoked": {
+    "category": "business-logic-flaw",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p7_tls_verification_disabled": {
+    "category": "tls-verification-disabled",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p8_insecure_random": {
+    "category": "insecure-random",
+    "category_found": true,
+    "strict_found": true
+   }
+  },
+  "findings": [
+   {
+    "category": "sql-injection",
+    "file": "search.py",
+    "why": "build_where interpolates keyword, status, and user_id directly into SQL passed to raw_query"
+   },
+   {
+    "category": "sql-injection",
+    "file": "search.py",
+    "why": "limit and offset are interpolated into the SQL string via f-string"
+   },
+   {
+    "category": "ssrf",
+    "file": "orders.py",
+    "why": "create_order fetches attacker-controlled callback_url with no host/scheme validation"
+   },
+   {
+    "category": "tls-verification-disabled",
+    "file": "config.py",
+    "why": "verify_tls defaults to false, so outbound HTTP requests skip TLS certificate verification"
+   },
+   {
+    "category": "tls-verification-disabled",
+    "file": "http_client.py",
+    "why": "httpx.Client verify follows settings.verify_tls which defaults to disabled"
+   },
+   {
+    "category": "insecure-random",
+    "file": "tokens.py",
+    "why": "make_token uses random.choice (non-cryptographic PRNG) for session and reset tokens"
+   },
+   {
+    "category": "missing-authentication",
+    "file": "admin.py",
+    "why": "admin routes have no require_user or is_admin check, exposing cross-tenant operations to anyone"
+   },
+   {
+    "category": "idor",
+    "file": "orders.py",
+    "why": "get_order returns any order by id without checking ownership against the authenticated user"
+   },
+   {
+    "category": "idor",
+    "file": "orders.py",
+    "why": "update_order mutates any order by id without verifying it belongs to the caller"
+   },
+   {
+    "category": "mass-assignment",
+    "file": "orders_service.py",
+    "why": "update_order applies arbitrary OrderUpdate fields including user_id, status, amount_cents from client input"
+   },
+   {
+    "category": "mass-assignment",
+    "file": "models.py",
+    "why": "OrderUpdate exposes user_id, amount_cents, and status for client-controlled updates"
+   },
+   {
+    "category": "business-logic-flaw",
+    "file": "reset.py",
+    "why": "confirm_reset does not revoke existing sessions after password change, violating documented invariant"
+   },
+   {
+    "category": "business-logic-flaw",
+    "file": "profile.py",
+    "why": "change_password does not revoke existing sessions after credential change, violating documented invariant"
+   },
+   {
+    "category": "business-logic-flaw",
+    "file": "reset.py",
+    "why": "reset request rate limit keyed by email allows enumeration/abuse and confirm limiter uses a static key"
+   },
+   {
+    "category": "log-injection",
+    "file": "app.py",
+    "why": "request.url.path logged unsanitized allows CRLF/log forging"
+   }
+  ]
+ },
+ "with-library": {
+  "category_recall": 1.0,
+  "strict_recall": 1.0,
+  "category_recalls": [
+   1.0
+  ],
+  "strict_recalls": [
+   1.0
+  ],
+  "detail": {
+   "p1_idor": {
+    "category": "idor",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p2_mass_assignment": {
+    "category": "mass-assignment",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p3_sql_injection": {
+    "category": "sql-injection",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p4_ssrf": {
+    "category": "ssrf",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p5_missing_authentication": {
+    "category": "missing-authentication",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p6_session_not_revoked": {
+    "category": "business-logic-flaw",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p7_tls_verification_disabled": {
+    "category": "tls-verification-disabled",
+    "category_found": true,
+    "strict_found": true
+   },
+   "p8_insecure_random": {
+    "category": "insecure-random",
+    "category_found": true,
+    "strict_found": true
+   }
+  },
+  "findings": [
+   {
+    "category": "sql-injection",
+    "file": "search.py",
+    "why": "build_where interpolates user_id, keyword, and status directly into SQL string passed to raw_query, and limit/offset are f-string-interpolated too"
+   },
+   {
+    "category": "sql-injection",
+    "file": "orders_service.py",
+    "why": "update_order builds column names into the SET clause from dict keys derived from client-controlled OrderUpdate fields"
+   },
+   {
+    "category": "insecure-random",
+    "file": "tokens.py",
+    "why": "make_token uses random.choice (non-CSPRNG) for session tokens and password-reset tokens"
+   },
+   {
+    "category": "tls-verification-disabled",
+    "file": "config.py",
+    "why": "verify_tls defaults to false, so outbound HTTP requests skip TLS certificate verification by default"
+   },
+   {
+    "category": "ssrf",
+    "file": "orders.py",
+    "why": "create_order fetches user-supplied callback_url with no scheme/IP allowlist, enabling SSRF to internal/metadata endpoints"
+   },
+   {
+    "category": "mass-assignment",
+    "file": "orders_service.py",
+    "why": "OrderUpdate exposes amount_cents and user_id, and update_order blindly applies them allowing price/ownership manipulation"
+   },
+   {
+    "category": "idor",
+    "file": "orders.py",
+    "why": "get_order and update_order fetch/mutate by order_id with no ownership/tenant check on the authenticated user"
+   },
+   {
+    "category": "missing-authentication",
+    "file": "admin.py",
+    "why": "admin router endpoints have no require_user or admin authorization dependency, exposing cross-tenant order listing and status changes to anyone"
+   },
+   {
+    "category": "idor",
+    "file": "admin.py",
+    "why": "set_status updates any order by id with no authorization check"
+   },
+   {
+    "category": "weak-password-hashing",
+    "file": "auth.py",
+    "why": "PasswordHasher() uses default parameters and no check_needs_rehash / rehash-on-login"
+   },
+   {
+    "category": "non-constant-time-comparison",
+    "file": "reset.py",
+    "why": "reset token lookup compares SHA-256 hex via SQL equality but token is low-entropy from non-CSPRNG; no constant-time compare and token generation is insecure"
+   },
+   {
+    "category": "business-logic-flaw",
+    "file": "reset.py",
+    "why": "confirm_reset sets a new password but never revokes existing sessions (revoke_all_for_user documented but not called) and does not enforce single-use before commit atomically"
+   },
+   {
+    "category": "business-logic-flaw",
+    "file": "profile.py",
+    "why": "change_password does not revoke other sessions after credential change despite revoke_all_for_user being the documented invariant"
+   },
+   {
+    "category": "log-injection",
+    "file": "app.py",
+    "why": "on_error logs request.url.path (user-controlled) without CR/LF sanitization"
+   },
+   {
+    "category": "hardcoded-secret",
+    "file": "config.py",
+    "why": "database_url defaults to a hardcoded connection string in source"
+   },
+   {
+    "category": "csrf",
+    "file": "orders.py",
+    "why": "state-changing endpoints rely on bearer header but no anti-CSRF/Origin checks; cookie-based misuse and login-CSRF surface unaddressed across app"
+   },
+   {
+    "category": "missing-authentication",
+    "file": "app.py",
+    "why": "TrustedHostMiddleware allowed_hosts=['*'] disables host validation enabling Host-header attacks"
+   },
+   {
+    "category": "business-logic-flaw",
+    "file": "reset.py",
+    "why": "request_reset rate-limits per-email allowing enumeration-free but attacker-controlled key bypass and does not rate-limit per-IP; reset does not invalidate on password change elsewhere"
+   }
+  ]
+ }
+}
