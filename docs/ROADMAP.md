@@ -49,8 +49,9 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
    subtle/multi-vuln snippets *in isolation*, so a real audit lift needs
    cross-file context, not more snippets); and `--samples/--temp` added to both
    harnesses (retires the single-sample caveat on the cheap dimensions).
-   **Pending:** a release cut for the [Unreleased] completeness + eval-hardening
-   work (PRs #78–#82 + this batch; candidate v1.15.0).
+   **Shipped as v1.15.0** (2026-07-13, PRs #78–#85). Remaining follow-through:
+   grow the completeness + freshness sets further and average more samples per
+   arm for tighter CIs.
 5. **First 6-month accuracy sweep** comes due ~Jan 2027 (freshness window) —
    run it per the `docs/MAINTENANCE.md` runbook and bump `LAST-VERIFIED`.
 
