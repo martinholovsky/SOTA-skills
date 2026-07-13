@@ -58,10 +58,14 @@ most for *building* software are the two that are large:
   both arms. A real audit lift would need whole-repo, cross-file context a snippet
   can't carry. We say so.
 
-Robustness: the cheap dimensions are now run **multi-sample** (`--samples N
---temp T`); the freshness lift holds at 3 samples (with 0.97±0.00, without
-0.44±0.03). Completeness/routing are still reported single-sample (deterministic
-at temp 0) — averaging those is on the [roadmap](ROADMAP.md).
+Robustness: every value dimension is now run **multi-sample** (`--samples 3
+--temp 0.7`), and the pattern is consistent — **the with-library arm has
+near-zero variance while the unguided arm both scores lower and wobbles.**
+Completeness holds at **0.60 → 1.00 (+0.39)** with the with-arm at ±0.01
+across-case sd (6/7 cases perfectly steady); routing at **0.90 → 1.00 (+0.10)**,
+with-arm ±0.00; freshness at **0.44 → 0.97 (+0.53)**, with-arm ±0.00. The
+library's contribution isn't a lucky sample — it removes the unguided model's
+case-by-case unreliability ([multi-sample writeup](../evals/results/2026-07-13/MULTI-SAMPLE.md)).
 
 ## What you get by design (beyond the numbers)
 

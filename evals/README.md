@@ -121,6 +121,13 @@ replace), **freshness +0.50–0.65** (32 cases of 2026 facts; base model
 only "small" if you measure the easy dimensions. Run:
 `python3 evals/run-completeness.py`.
 
+**Multi-sample confidence** (2026-07-13, `--samples 3 --temp 0.7`,
+[`results/2026-07-13/MULTI-SAMPLE.md`](results/2026-07-13/MULTI-SAMPLE.md)): the
+lifts hold and the **with-library arm is near-zero variance** — completeness
+0.60→1.00 (+0.39, with-arm ±0.01 across-case sd, 6/7 cases perfectly steady),
+routing 0.90→1.00 (+0.10, ±0.00), freshness 0.44→0.97 (+0.53, ±0.00). The
+sampling wobble is all in the unguided arm; the library removes it.
+
 The completeness number is load-bearing on *how* the library is applied — an
 ablation: base model **0.60**; + rules pasted **~0.89** (first 4 tasks; the model
 reads the guidance but silently drops peripheral concerns); + the **BUILD

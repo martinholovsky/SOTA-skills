@@ -1,0 +1,239 @@
+{
+ "without-library": {
+  "recall": 0.8999999999999999,
+  "recalls": [
+   0.9083333333333332,
+   0.8833333333333332,
+   0.9083333333333332
+  ],
+  "misses": {
+   "r01": [
+    "sota-testing"
+   ],
+   "r02": [
+    "sota-sandboxing"
+   ],
+   "r07": [
+    "sota-code-security"
+   ],
+   "r09": [
+    "sota-web-frameworks"
+   ]
+  },
+  "predictions": {
+   "r01": [
+    "sota-api-design",
+    "sota-web-frameworks",
+    "sota-code-security"
+   ],
+   "r02": [
+    "sota-kubernetes",
+    "sota-devsecops",
+    "sota-code-security"
+   ],
+   "r03": [
+    "sota-architecture",
+    "sota-api-design",
+    "sota-databases",
+    "sota-identity-access"
+   ],
+   "r04": [
+    "sota-network-security",
+    "sota-security-compliance"
+   ],
+   "r05": [
+    "sota-shell-scripting",
+    "sota-cli-ux"
+   ],
+   "r06": [
+    "sota-devsecops",
+    "sota-secrets-management",
+    "sota-identity-access",
+    "sota-code-security"
+   ],
+   "r07": [
+    "sota-llm-engineering",
+    "sota-python",
+    "sota-api-design"
+   ],
+   "r08": [
+    "sota-golang",
+    "sota-code-security",
+    "sota-network-security"
+   ],
+   "r09": [
+    "sota-frontend-design",
+    "sota-javascript-typescript",
+    "sota-ux-writing"
+   ],
+   "r10": [
+    "sota-confidential-computing",
+    "sota-cloud-infrastructure",
+    "sota-identity-access"
+   ],
+   "r11": [
+    "sota-ux-writing",
+    "sota-copywriting"
+   ],
+   "r12": [
+    "sota-performance",
+    "sota-databases",
+    "sota-observability"
+   ],
+   "r13": [
+    "sota-testing",
+    "sota-api-design"
+   ],
+   "r14": [
+    "sota-databases",
+    "sota-testing"
+   ],
+   "r15": [
+    "sota-llm-engineering",
+    "sota-sandboxing",
+    "sota-code-security",
+    "sota-threat-modeling"
+   ],
+   "r16": [
+    "sota-mobile",
+    "sota-async-concurrency",
+    "sota-databases"
+   ],
+   "r17": [
+    "sota-privacy-compliance",
+    "sota-data-engineering"
+   ],
+   "r18": [
+    "sota-observability",
+    "sota-cloud-infrastructure"
+   ],
+   "r19": [
+    "sota-threat-modeling",
+    "sota-security-compliance",
+    "sota-code-security"
+   ],
+   "r20": [
+    "sota-cloud-infrastructure",
+    "sota-identity-access",
+    "sota-devsecops"
+   ]
+  }
+ },
+ "with-library": {
+  "recall": 1.0,
+  "recalls": [
+   1.0,
+   1.0,
+   1.0
+  ],
+  "misses": {},
+  "predictions": {
+   "r01": [
+    "sota-api-design",
+    "sota-code-security",
+    "sota-sandboxing",
+    "sota-testing"
+   ],
+   "r02": [
+    "sota-kubernetes",
+    "sota-sandboxing",
+    "sota-devsecops",
+    "sota-shell-scripting"
+   ],
+   "r03": [
+    "sota-architecture",
+    "sota-api-design",
+    "sota-databases",
+    "sota-code-security",
+    "sota-identity-access",
+    "sota-threat-modeling",
+    "sota-testing"
+   ],
+   "r04": [
+    "sota-network-security"
+   ],
+   "r05": [
+    "sota-shell-scripting"
+   ],
+   "r06": [
+    "sota-devsecops",
+    "sota-secrets-management",
+    "sota-code-security"
+   ],
+   "r07": [
+    "sota-llm-engineering",
+    "sota-code-security",
+    "sota-sandboxing",
+    "sota-databases",
+    "sota-testing"
+   ],
+   "r08": [
+    "sota-golang",
+    "sota-code-security",
+    "sota-api-design",
+    "sota-threat-modeling",
+    "sota-secrets-management"
+   ],
+   "r09": [
+    "sota-frontend-design",
+    "sota-web-frameworks",
+    "sota-javascript-typescript",
+    "sota-ux-writing"
+   ],
+   "r10": [
+    "sota-confidential-computing",
+    "sota-secrets-management",
+    "sota-cloud-infrastructure"
+   ],
+   "r11": [
+    "sota-ux-writing",
+    "sota-frontend-design"
+   ],
+   "r12": [
+    "sota-performance",
+    "sota-databases",
+    "sota-observability",
+    "sota-async-concurrency"
+   ],
+   "r13": [
+    "sota-testing",
+    "sota-api-design"
+   ],
+   "r14": [
+    "sota-databases"
+   ],
+   "r15": [
+    "sota-code-security",
+    "sota-sandboxing",
+    "sota-llm-engineering",
+    "sota-threat-modeling"
+   ],
+   "r16": [
+    "sota-mobile",
+    "sota-async-concurrency",
+    "sota-testing"
+   ],
+   "r17": [
+    "sota-privacy-compliance",
+    "sota-databases",
+    "sota-code-security"
+   ],
+   "r18": [
+    "sota-observability",
+    "sota-architecture"
+   ],
+   "r19": [
+    "sota-threat-modeling",
+    "sota-code-security",
+    "sota-api-design",
+    "sota-secrets-management"
+   ],
+   "r20": [
+    "sota-cloud-infrastructure",
+    "sota-identity-access",
+    "sota-devsecops",
+    "sota-security-compliance"
+   ]
+  }
+ }
+}
