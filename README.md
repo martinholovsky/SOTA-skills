@@ -26,6 +26,17 @@ Two commands to install:
 /plugin marketplace add martinholovsky/SOTA-skills
 /plugin install sota-skills@sota-skills
 ```
+**Or clone + link** (best if you want a local checkout to read, hack on, or pin).
+Skills are discovered from `.claude/skills/` (per project) or `~/.claude/skills/`
+(personal, all projects). Clone the repo, then run the installer — it symlinks
+every skill (and your profile, if you have one):
+
+```sh
+git clone https://github.com/martinholovsky/SOTA-skills && cd SOTA-skills
+./scripts/install.sh                 # personal: ~/.claude/skills (all projects)
+./scripts/install.sh --project DIR   # one project: DIR/.claude/skills
+./scripts/install.sh --copy          # copy instead of symlink (pin a snapshot)
+```
 
 Then describe the task in plain language — routing loads the right skills; the
 stack comes from your profile or the skills' defaults (naming one is optional):
