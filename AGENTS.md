@@ -107,7 +107,7 @@ pre-commit hook scans each commit locally.
 - [SECURITY.md](SECURITY.md) — reporting bad guidance or a leaked secret
 - [CHANGELOG.md](CHANGELOG.md) — release history (top entry = current version;
   also mirrored in `VERSION`); older releases are archived to keep every file
-  under the 500-line cap — **1.9.0–1.5.0** in
+  under the 500-line cap — **1.10.0–1.5.0** in
   [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md) and **1.4.0 and earlier**
   in [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md) (split 2026-07-14);
   when an archive nears 500, start the next numbered part rather than growing it

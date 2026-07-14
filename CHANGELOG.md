@@ -49,6 +49,19 @@ Evaluation-harness additions (no skill-content change; not in CI — see
   with the before/after data and honest boundary. Draft for the maintainer to
   publish (roadmap item 7, distribution).
 
+### Added
+
+- **Competitor benchmark** (`evals/run-competitors.py`,
+  `evals/cases/competitors.json`, `results/2026-07-13/COMPETITOR-BENCHMARK.md`) —
+  SOTA vs. the most popular competing guidance libraries on the 7 completeness
+  tasks, content-only and blind-judged. **SOTA 0.99 vs ECC (~230k★) 0.87,
+  awesome-cursorrules (~40k★) 0.83, alirezarezvani/claude-skills (~23k★) 0.81**;
+  unguided 0.58. SOTA wins or ties every one of the 21 head-to-head cases and
+  loses none; competitors are legitimate (all beat unguided by +0.23–0.28) but
+  drop the cross-cutting non-negotiables (rate limiting, transport, tests) SOTA
+  embeds. Clears the roadmap honesty gate for a scoped, reproducible "vs library
+  X" claim; `docs/WHY-IT-WORKS.md` now carries it.
+
 ### Changed
 
 - **README surfaces the measured lift up front** — the dense one-liner is now a
@@ -433,55 +446,9 @@ one residual root-caused, and the BUILD workflow rewritten around it.
   count surfaces updated to 40 skills / 289 files / ~57k lines (README
   badge/hero/alt/table, plugin.json, marketplace.json, social-preview pill + PNG).
 
-## [1.10.0] - 2026-07-04
-
-Coverage complete + auditable promises: two new language skills (39 total),
-Swift-language and AD/Kerberos depth, and every remaining roadmap item
-executed — invariant lint gate, freshness ledger, structured feedback intake.
-
-The four coverage builds approved under roadmap item 6 (39 skills total):
-
-- **`sota-php`** — PHP 8.3+ floor / 8.5 current (verified php.net), strict
-  idioms, OWASP-grade security (PDO, escaping, uploads/LFI, unserialize/Phar,
-  sessions), Composer supply chain (`composer audit`), PHPStan/Psalm,
-  OPcache/FPM/JIT. SKILL.md + 6 rules files.
-- **`sota-ruby`** — Ruby 4.0 current / 3.4 maintained (verified
-  ruby-lang.org), idioms & typing (RBS/Sorbet), security (SQLi, ERB escaping,
-  Marshal/`YAML.load` semantics since Psych 4, ReDoS + `Regexp.timeout`),
-  Bundler supply chain (bundler-audit, lockfile checksums since Bundler 2.6),
-  GVL/Ractors/YJIT (ZJIT flagged experimental). SKILL.md + 5 rules files.
-- **Swift as a language** — `sota-mobile` rules/07: Swift 6.3 strict
-  concurrency (verified swift.org), actors/Sendable, structured concurrency,
-  ARC/retain cycles, unsafe interop, SPM registry security, Swift Testing.
-- **Active Directory/Kerberos/ADCS** — `sota-identity-access` rules/07
-  (Enterprise Access Model, delegation, Kerberoasting/gMSA/dMSA, ESC classes,
-  KB5014754 enforcement, Windows LAPS) + `sota-detection-engineering`
-  rules/07 (event-ID telemetry baseline, Sigma-style detections with ATT&CK
-  IDs, AD deception), cross-linked. README "Coverage & non-goals" now lists
-  only true non-goals; router/manifests/counts updated to 39 skills.
-
-Roadmap items 2, 3, 5, and 6 executed (see `docs/ROADMAP.md` annotations):
-
-- **Invariants 5 & 6** in `check-invariants.sh`: version lockstep (`VERSION`
-  == `plugin.json` == CHANGELOG top; newest tag never ahead) and count-surface
-  drift (README badge/hero/alt, router body, plugin/marketplace descriptions,
-  social-preview pill vs a recount of the tree). CI invariants job now checks
-  out full history so the tag comparison runs.
-- **Freshness ledger**: rules files carry a line-1
-  `<!-- last-verified: YYYY-MM -->` marker (18 files stamped from their
-  existing in-text dates — never retroactively); `scripts/check-freshness.sh`
-  + a monthly `freshness.yml` workflow report stale markers and the unstamped
-  backlog.
-- **Feedback intake**: bad-guidance and skill-request issue forms (primary
-  source required; security-sensitive reports routed to private advisories)
-  and GitHub Discussions enabled.
-- **README "Coverage & non-goals"**: PHP, Ruby, Swift-as-a-language, and
-  Active Directory/Kerberos depth declared out of scope for now and queued as
-  approved follow-up builds.
-
 ---
 
-Releases **1.9.0 and earlier** are archived: 1.9.0–1.5.0 in
+Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
@@ -492,4 +459,3 @@ Releases **1.9.0 and earlier** are archived: 1.9.0–1.5.0 in
 [1.12.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.12.1
 [1.12.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.12.0
 [1.11.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.11.0
-[1.10.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.10.0

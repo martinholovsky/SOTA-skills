@@ -4,9 +4,55 @@ Older SOTA-skills releases, moved out of [CHANGELOG.md](../CHANGELOG.md) to
 keep that file under the repository's 500-line cap. Same format
 ([Keep a Changelog](https://keepachangelog.com/en/1.1.0/) /
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)); current releases
-live in the root CHANGELOG. This file holds **1.9.0 down to 1.5.0**; still older
+live in the root CHANGELOG. This file holds **1.10.0 down to 1.5.0**; still older
 releases (**1.4.0 and earlier**) are in
 [CHANGELOG-archive-2.md](CHANGELOG-archive-2.md).
+
+## [1.10.0] - 2026-07-04
+
+Coverage complete + auditable promises: two new language skills (39 total),
+Swift-language and AD/Kerberos depth, and every remaining roadmap item
+executed — invariant lint gate, freshness ledger, structured feedback intake.
+
+The four coverage builds approved under roadmap item 6 (39 skills total):
+
+- **`sota-php`** — PHP 8.3+ floor / 8.5 current (verified php.net), strict
+  idioms, OWASP-grade security (PDO, escaping, uploads/LFI, unserialize/Phar,
+  sessions), Composer supply chain (`composer audit`), PHPStan/Psalm,
+  OPcache/FPM/JIT. SKILL.md + 6 rules files.
+- **`sota-ruby`** — Ruby 4.0 current / 3.4 maintained (verified
+  ruby-lang.org), idioms & typing (RBS/Sorbet), security (SQLi, ERB escaping,
+  Marshal/`YAML.load` semantics since Psych 4, ReDoS + `Regexp.timeout`),
+  Bundler supply chain (bundler-audit, lockfile checksums since Bundler 2.6),
+  GVL/Ractors/YJIT (ZJIT flagged experimental). SKILL.md + 5 rules files.
+- **Swift as a language** — `sota-mobile` rules/07: Swift 6.3 strict
+  concurrency (verified swift.org), actors/Sendable, structured concurrency,
+  ARC/retain cycles, unsafe interop, SPM registry security, Swift Testing.
+- **Active Directory/Kerberos/ADCS** — `sota-identity-access` rules/07
+  (Enterprise Access Model, delegation, Kerberoasting/gMSA/dMSA, ESC classes,
+  KB5014754 enforcement, Windows LAPS) + `sota-detection-engineering`
+  rules/07 (event-ID telemetry baseline, Sigma-style detections with ATT&CK
+  IDs, AD deception), cross-linked. README "Coverage & non-goals" now lists
+  only true non-goals; router/manifests/counts updated to 39 skills.
+
+Roadmap items 2, 3, 5, and 6 executed (see `docs/ROADMAP.md` annotations):
+
+- **Invariants 5 & 6** in `check-invariants.sh`: version lockstep (`VERSION`
+  == `plugin.json` == CHANGELOG top; newest tag never ahead) and count-surface
+  drift (README badge/hero/alt, router body, plugin/marketplace descriptions,
+  social-preview pill vs a recount of the tree). CI invariants job now checks
+  out full history so the tag comparison runs.
+- **Freshness ledger**: rules files carry a line-1
+  `<!-- last-verified: YYYY-MM -->` marker (18 files stamped from their
+  existing in-text dates — never retroactively); `scripts/check-freshness.sh`
+  + a monthly `freshness.yml` workflow report stale markers and the unstamped
+  backlog.
+- **Feedback intake**: bad-guidance and skill-request issue forms (primary
+  source required; security-sensitive reports routed to private advisories)
+  and GitHub Discussions enabled.
+- **README "Coverage & non-goals"**: PHP, Ruby, Swift-as-a-language, and
+  Active Directory/Kerberos depth declared out of scope for now and queued as
+  approved follow-up builds.
 
 ## [1.9.0] - 2026-07-03
 
@@ -385,6 +431,7 @@ goes from 30 to 34 skills.
   PHP) signature detection at ingest (`rules/09`), and Redis `EVAL`/Qdrant-filter
   injection guidance (`sota-databases/rules/06`).
 
+[1.10.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.10.0
 [1.9.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.9.0
 [1.8.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.8.0
 [1.7.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.7.1

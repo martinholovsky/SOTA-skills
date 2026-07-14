@@ -4,10 +4,10 @@ Most prompt/skill collections *assert* they make an assistant better. This one
 **measures it**, publishes the harness, and reports the numbers by dimension —
 including the dimensions where the lift is small or zero.
 
-**What the comparison is (and isn't).** Every number here is the library
+**What the comparison is.** The headline numbers below are the library
 **vs. an *unguided model*** — the same model, same task, with the library loaded
-vs. with nothing. It is **not** a comparison against other skill libraries; we
-have not benchmarked one, so we make no claim of superiority over them. The
+vs. with nothing. Separately, a **fair head-to-head against the most popular
+competing libraries** now exists too (see [below](#vs-competing-libraries)). The
 control is clean: raw model-API calls (OpenRouter, no Claude Code config or skill
 registry), and a **different** model grades each artifact **blind** to which arm
 produced it. Reproduce it yourself with [`evals/`](../evals/); full methodology,
@@ -66,6 +66,31 @@ across-case sd (6/7 cases perfectly steady); routing at **0.90 → 1.00 (+0.10)*
 with-arm ±0.00; freshness at **0.44 → 0.97 (+0.53)**, with-arm ±0.00. The
 library's contribution isn't a lucky sample — it removes the unguided model's
 case-by-case unreliability ([multi-sample writeup](../evals/results/2026-07-13/MULTI-SAMPLE.md)).
+
+## Vs. competing libraries
+
+The comparisons above are vs. *nothing*. We also ran SOTA head-to-head against the
+most popular competing guidance libraries on the same 7 build tasks — same rubric,
+same blind judge, **content-only** (SOTA's self-audit forcing function turned off,
+so its win is the guidance, not the method):
+
+| Library | Stars | Completeness |
+|---|---|---|
+| **SOTA** | — | **0.99** |
+| ECC | ~230k | 0.87 |
+| awesome-cursorrules | ~40k | 0.83 |
+| alirezarezvani/claude-skills | ~23k | 0.81 |
+| unguided model | — | 0.58 |
+
+**SOTA wins or ties every one of the 21 head-to-head cases and loses none** — yet
+the competitors are no strawmen (all three beat an unguided model by +0.23–0.28).
+Where they fall short is the same place unguided models do: the **cross-cutting
+production non-negotiables** — rate limiting, transport/TLS, tests, structured
+logging — dropped endpoint after endpoint (even the ~230k-star ECC omits rate
+limiting on 3 of 7 tasks). That is exactly what SOTA's operating principle 5 + the
+matched rules exist to close. Scope is honest: one task family (Python/FastAPI
+backend), single-sample, content-only; full method, per-arm misses, and
+limitations in the [competitor benchmark](../evals/results/2026-07-13/COMPETITOR-BENCHMARK.md).
 
 ## What you get by design (beyond the numbers)
 
