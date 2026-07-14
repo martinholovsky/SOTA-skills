@@ -481,8 +481,9 @@ Roadmap items 2, 3, 5, and 6 executed (see `docs/ROADMAP.md` annotations):
 
 ---
 
-Releases **1.9.0 and earlier** are archived in
-[docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md).
+Releases **1.9.0 and earlier** are archived: 1.9.0–1.5.0 in
+[docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
+[docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
 [1.15.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.15.0
 [1.14.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.14.1

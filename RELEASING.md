@@ -11,7 +11,7 @@ lands through a PR — `main` is protected for everyone, including admins (see
 |---|---|
 | `VERSION` | the new semver, single line |
 | `.claude-plugin/plugin.json` | `"version"`; also the skill/domain counts in `"description"` if they changed |
-| `CHANGELOG.md` | new `## [X.Y.Z] - YYYY-MM-DD` section at the top **and** a `[X.Y.Z]: …/releases/tag/vX.Y.Z` link ref at the bottom (top entry = current version — no `[Unreleased]` left behind); when the file nears the 500-line cap, move the oldest release sections **and their link refs** to `docs/CHANGELOG-archive.md` |
+| `CHANGELOG.md` | new `## [X.Y.Z] - YYYY-MM-DD` section at the top **and** a `[X.Y.Z]: …/releases/tag/vX.Y.Z` link ref at the bottom (top entry = current version — no `[Unreleased]` left behind); when the file nears the 500-line cap, move the oldest release sections **and their link refs** into the newest `docs/CHANGELOG-archive*.md` — and when an archive itself nears 500, start the next numbered part (`docs/CHANGELOG-archive-3.md`, …) rather than growing it. Each archive file's headings and `[X.Y.Z]:` refs must stay in the same file |
 
 ## 2. Count-bearing surfaces (when the skill count changes)
 
