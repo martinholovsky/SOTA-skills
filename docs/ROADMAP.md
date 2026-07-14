@@ -6,8 +6,11 @@ release. The 2026-07-01 cycle is fully executed and kept below as history.
 
 ## Open tasks — next-session pick-up *(as of v1.15.0, 2026-07-13)*
 
-Nothing is blocking; v1.15.0 shipped clean. Ordered by value. **Items 2 and 3
-were executed 2026-07-13 (post-v1.15.0, Unreleased in CHANGELOG) — see notes.**
+Nothing is blocking; v1.15.0 shipped clean. Ordered by value. **Items 1, 2, 3
+were executed and item 7 started 2026-07-13/14 (post-v1.15.0, all Unreleased in
+CHANGELOG, PRs #88–#93) — see notes.** The README now surfaces the measured
+lifts as a scannable list and shows the clone/script install right after the
+plugin method (PRs #92–#93).
 
 1. **Tighten the eval numbers (confidence, not point estimates).** **Multi-sample
    DONE 2026-07-13** — [`evals/results/2026-07-13/MULTI-SAMPLE.md`](../evals/results/2026-07-13/MULTI-SAMPLE.md).
@@ -55,13 +58,17 @@ were executed 2026-07-13 (post-v1.15.0, Unreleased in CHANGELOG) — see notes.*
 6. **Deferred — competitor-library benchmark** (Unexplored, below): only if a
    "better than library X" claim is wanted; needs a named target.
 7. **Distribution over coverage** (item 6): marketplace visibility, a published
-   before/after demo, badge→verifiable-audit. **Started 2026-07-13:** a
-   publication draft of the completeness/salience finding is ready at
+   before/after demo, badge→verifiable-audit. **Started 2026-07-13/14:** (a) the
+   README now leads with the measured lifts as a scannable list (completeness
+   +0.39, freshness +0.53, routing +0.10) and puts the clone/script install right
+   after the plugin method (PRs #92–#93); (b) a publication draft of the
+   completeness/salience finding is ready at
    [`docs/writeups/completeness-blind-spot.md`](writeups/completeness-blind-spot.md)
-   (with the verified before/after contrast — webhook 0.50→1.00, upload
-   0.55→1.00). Maintainer to publish (LinkedIn is the proven referral channel per
-   traffic data). Note: the compelling demo is **completeness** before/after, not
-   audit — audit lift is +0.00 (item 3), so an audit demo would undersell.
+   (verified before/after — webhook 0.50→1.00, upload 0.55→1.00). **Still open:**
+   the maintainer publishes the write-up (LinkedIn is the proven referral channel
+   per traffic data); marketplace visibility and badge→verifiable-audit are
+   untouched. The compelling demo is **completeness** before/after, not audit —
+   audit lift is +0.00 (item 3), so an audit demo would undersell.
 8. **Scheduled — first 6-month accuracy sweep ~Jan 2027** (item 5): re-verify
    fast-moving claims per `docs/MAINTENANCE.md` and bump `LAST-VERIFIED`.
 
@@ -110,9 +117,10 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
    subtle/multi-vuln snippets *in isolation*, so a real audit lift needs
    cross-file context, not more snippets); and `--samples/--temp` added to both
    harnesses (retires the single-sample caveat on the cheap dimensions).
-   **Shipped as v1.15.0** (2026-07-13, PRs #78–#85). Remaining follow-through:
-   grow the completeness + freshness sets further and average more samples per
-   arm for tighter CIs.
+   **Shipped as v1.15.0** (2026-07-13, PRs #78–#85). Follow-through: the
+   multi-sample averaging is **done** (2026-07-13, PR #91 — see Open tasks item 1,
+   with-arm near-zero variance); *growing* the completeness + freshness sets is
+   still open (Open tasks item 1, content authoring).
 5. **First 6-month accuracy sweep** comes due ~Jan 2027 (freshness window) —
    run it per the `docs/MAINTENANCE.md` runbook and bump `LAST-VERIFIED`.
 
@@ -250,3 +258,17 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
   secret) so the tree no longer discloses it.
 - **Telemetry/analytics in the scripts** — privacy stance; feedback comes
   from issues (see item 5).
+- **Importing an external system-design "fundamentals" guide** — assessed
+  2026-07-14 (a compiled X-thread series on scaling/architecture: load
+  balancing, CDN, caching layers, API gateway, CAP, sharding, replication,
+  consistency, queues, fault tolerance, etc.). **No action:** it is a *secondary
+  source* (can't be cited under the primary-source policy), and a topic-by-topic
+  check found full coverage already — caching + stale-while-revalidate
+  (`sota-performance/05`, `sota-architecture/05`), CDN/origin-lock
+  (`sota-cloud-infrastructure/03 §9`), L4/L7 LB + health checks
+  (`cloud-infrastructure/03 §8`, `architecture/04`), gateway-vs-mesh N-S/E-W
+  (`sota-network-security`), rate limiting (router principle 5), and the
+  distributed-systems topics across `sota-architecture/03,05` + `sota-databases`.
+  Only marginal non-coverage: enumerating LB *algorithms* (deliberately subsumed
+  by the "use managed LBs + meaningful health checks" stance) and back-of-envelope
+  capacity estimation (an interview skill, not a BUILD/AUDIT rule — a non-goal).
