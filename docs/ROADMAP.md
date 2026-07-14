@@ -138,9 +138,25 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
   date is library-vs-*nothing* (an unguided model), so the public claim is
   honestly limited to that; we make **no** "better than library X" claim. To
   earn one, run `run-completeness.py`/`run-clean.py` with a competitor's content
-  pasted as a third arm and report the delta. Deferred until there's a reason to
-  make the comparison (user weighed it 2026-07-12 and chose the honest
-  vs-unguided framing for now).
+  pasted as a **third arm** (same fixed rubric, same blind opus judge, same token
+  budget) and report the delta — **publishing it even if SOTA ties or loses.**
+  **Targets validated 2026-07-14** (GitHub star counts + content classification):
+  the closest true peer is **`alirezarezvani/claude-skills`** (~22.6k★, MIT — a
+  multi-domain Claude-Code skills library *with* engineering + `audit/` skills and
+  a plugin, structured like SOTA → PRIMARY target); the most-starred rules library
+  is **`PatrickJS/awesome-cursorrules`** (~40.3k★, CC0 — per-stack `.cursorrules`
+  content, SECONDARY / brand-name comparison); tertiary `sanjeed5/awesome-cursor-
+  rules-mdc` (~3.5k★, CC0). **Excluded with reason:** `travisvn/awesome-claude-
+  skills` (link list, no content); `ComposioHQ/awesome-claude-skills` (~67k★ but
+  productivity/marketing skills, not software engineering). Fairness controls:
+  pick each competitor's *best-matching* content per task (not a strawman), record
+  commit SHAs, state format/scope caveats. Expected edge = freshness (SOTA is
+  primary-source-verified; competitor rules go stale) + the cross-cutting
+  completeness the self-audit/principle-5 design recovers; expected non-edge = raw
+  "does the code work". **Cost:** a 3-arm completeness run ≈ 1.5× the 2-arm (~$16
+  per competitor per full run) — one pilot fits the current ~$36 balance; more
+  needs a top-up. Still gated on the maintainer wanting a "vs X" claim at all
+  (2026-07-12 decision was to keep the honest vs-unguided framing).
 - **Cross-file / repo-level audit eval.** ~~Unexplored~~ **Explored 2026-07-13,
   no lift** ([`evals/results/2026-07-13/REPO-AUDIT.md`](../evals/results/2026-07-13/REPO-AUDIT.md)).
   Built the planted-vuln repo (8 defects invisible in any single file) the audit
