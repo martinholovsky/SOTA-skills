@@ -90,7 +90,17 @@ python3 evals/run-clean.py --cases evals/cases/freshness.jsonl --model anthropic
 python3 evals/run-clean.py --cases evals/cases/router.jsonl
 python3 evals/run-clean.py --cases evals/cases/audit-hard.jsonl
 python3 evals/run-repo-audit.py          # cross-file audit (own fixture repo + harness)
+python3 evals/run-competitors.py --competitors-dir DIR   # SOTA vs competing libraries
 ```
+
+**Competitor benchmark** (`run-competitors.py`, `cases/competitors.json`): SOTA
+vs. the most popular competing guidance libraries on the 7 completeness tasks —
+content-only, blind-judged. Result (2026-07-14): **SOTA 0.99 vs ECC ~230k★ 0.87,
+awesome-cursorrules ~40k★ 0.83, alirezarezvani/claude-skills ~23k★ 0.81** (unguided
+0.58) — SOTA wins/ties every case, loses none; competitors drop the same
+cross-cutting concerns (rate limiting, transport, tests). Clone each competitor at
+the pinned SHA into `DIR`
+([`results/2026-07-13/COMPETITOR-BENCHMARK.md`](results/2026-07-13/COMPETITOR-BENCHMARK.md)).
 
 **Live-agent BUILD validation** (`judge-live-build.py`) closes the completeness
 eval's one simulation gap: `run-completeness.py` *pastes* the router's principle

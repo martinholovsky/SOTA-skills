@@ -1,0 +1,700 @@
+{
+ "arms": [
+  "without",
+  "sota",
+  "ECC",
+  "claude-skills",
+  "awesome-cursorrules"
+ ],
+ "cases": {
+  "c1_ticket_api": {
+   "rubric_n": 12,
+   "arms": {
+    "without": {
+     "recall": 0.6666666666666666,
+     "present": [
+      "authn",
+      "authz",
+      "validation",
+      "sqli",
+      "pagination",
+      "errhygiene",
+      "outschema",
+      "sizelimit"
+     ],
+     "missing": [
+      "ratelimit",
+      "logging",
+      "transport",
+      "tests"
+     ],
+     "artifact_len": 15747
+    },
+    "sota": {
+     "recall": 1.0,
+     "present": [
+      "authn",
+      "authz",
+      "validation",
+      "sqli",
+      "ratelimit",
+      "pagination",
+      "logging",
+      "errhygiene",
+      "transport",
+      "outschema",
+      "sizelimit",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 69238
+    },
+    "ECC": {
+     "recall": 1.0,
+     "present": [
+      "authn",
+      "authz",
+      "validation",
+      "sqli",
+      "ratelimit",
+      "pagination",
+      "logging",
+      "errhygiene",
+      "transport",
+      "outschema",
+      "sizelimit",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 47454
+    },
+    "claude-skills": {
+     "recall": 0.75,
+     "present": [
+      "authn",
+      "authz",
+      "validation",
+      "sqli",
+      "pagination",
+      "errhygiene",
+      "outschema",
+      "sizelimit",
+      "tests"
+     ],
+     "missing": [
+      "ratelimit",
+      "logging",
+      "transport"
+     ],
+     "artifact_len": 52205
+    },
+    "awesome-cursorrules": {
+     "recall": 0.8333333333333334,
+     "present": [
+      "authn",
+      "authz",
+      "validation",
+      "sqli",
+      "pagination",
+      "logging",
+      "errhygiene",
+      "outschema",
+      "sizelimit",
+      "tests"
+     ],
+     "missing": [
+      "ratelimit",
+      "transport"
+     ],
+     "artifact_len": 64555
+    }
+   }
+  },
+  "c2_upload": {
+   "rubric_n": 11,
+   "arms": {
+    "without": {
+     "recall": 0.45454545454545453,
+     "present": [
+      "authn_authz",
+      "contenttype",
+      "sizelimit",
+      "pathtraversal",
+      "reencode"
+     ],
+     "missing": [
+      "storage",
+      "imagebomb",
+      "ratelimit",
+      "logging",
+      "errhygiene",
+      "tests"
+     ],
+     "artifact_len": 18512
+    },
+    "sota": {
+     "recall": 1.0,
+     "present": [
+      "authn_authz",
+      "contenttype",
+      "sizelimit",
+      "pathtraversal",
+      "storage",
+      "imagebomb",
+      "reencode",
+      "ratelimit",
+      "logging",
+      "errhygiene",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 44674
+    },
+    "ECC": {
+     "recall": 0.7272727272727273,
+     "present": [
+      "authn_authz",
+      "contenttype",
+      "sizelimit",
+      "pathtraversal",
+      "reencode",
+      "logging",
+      "errhygiene",
+      "tests"
+     ],
+     "missing": [
+      "storage",
+      "imagebomb",
+      "ratelimit"
+     ],
+     "artifact_len": 43291
+    },
+    "claude-skills": {
+     "recall": 0.8181818181818182,
+     "present": [
+      "authn_authz",
+      "contenttype",
+      "sizelimit",
+      "pathtraversal",
+      "imagebomb",
+      "reencode",
+      "ratelimit",
+      "logging",
+      "errhygiene"
+     ],
+     "missing": [
+      "storage",
+      "tests"
+     ],
+     "artifact_len": 34960
+    },
+    "awesome-cursorrules": {
+     "recall": 0.7272727272727273,
+     "present": [
+      "authn_authz",
+      "contenttype",
+      "sizelimit",
+      "pathtraversal",
+      "reencode",
+      "ratelimit",
+      "logging",
+      "tests"
+     ],
+     "missing": [
+      "storage",
+      "imagebomb",
+      "errhygiene"
+     ],
+     "artifact_len": 79248
+    }
+   }
+  },
+  "c3_emailjob": {
+   "rubric_n": 11,
+   "arms": {
+    "without": {
+     "recall": 0.7272727272727273,
+     "present": [
+      "retry",
+      "deadletter",
+      "secrets",
+      "logging",
+      "metrics",
+      "concurrency",
+      "shutdown",
+      "errhandling"
+     ],
+     "missing": [
+      "idempotency",
+      "ratelimit",
+      "tests"
+     ],
+     "artifact_len": 22977
+    },
+    "sota": {
+     "recall": 1.0,
+     "present": [
+      "idempotency",
+      "retry",
+      "deadletter",
+      "ratelimit",
+      "secrets",
+      "logging",
+      "metrics",
+      "concurrency",
+      "shutdown",
+      "errhandling",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 74315
+    },
+    "ECC": {
+     "recall": 0.7272727272727273,
+     "present": [
+      "retry",
+      "deadletter",
+      "secrets",
+      "logging",
+      "concurrency",
+      "shutdown",
+      "errhandling",
+      "tests"
+     ],
+     "missing": [
+      "idempotency",
+      "ratelimit",
+      "metrics"
+     ],
+     "artifact_len": 59875
+    },
+    "claude-skills": {
+     "recall": 1.0,
+     "present": [
+      "idempotency",
+      "retry",
+      "deadletter",
+      "ratelimit",
+      "secrets",
+      "logging",
+      "metrics",
+      "concurrency",
+      "shutdown",
+      "errhandling",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 63023
+    },
+    "awesome-cursorrules": {
+     "recall": 0.9090909090909091,
+     "present": [
+      "idempotency",
+      "retry",
+      "deadletter",
+      "secrets",
+      "logging",
+      "metrics",
+      "concurrency",
+      "shutdown",
+      "errhandling",
+      "tests"
+     ],
+     "missing": [
+      "ratelimit"
+     ],
+     "artifact_len": 66804
+    }
+   }
+  },
+  "c4_login": {
+   "rubric_n": 10,
+   "arms": {
+    "without": {
+     "recall": 0.5,
+     "present": [
+      "pwhash",
+      "enumeration",
+      "consttime",
+      "session",
+      "validation"
+     ],
+     "missing": [
+      "bruteforce",
+      "nopwlog",
+      "transport",
+      "csrf",
+      "tests"
+     ],
+     "artifact_len": 8111
+    },
+    "sota": {
+     "recall": 1.0,
+     "present": [
+      "pwhash",
+      "bruteforce",
+      "enumeration",
+      "consttime",
+      "session",
+      "validation",
+      "nopwlog",
+      "transport",
+      "csrf",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 53366
+    },
+    "ECC": {
+     "recall": 0.9,
+     "present": [
+      "pwhash",
+      "bruteforce",
+      "enumeration",
+      "consttime",
+      "session",
+      "validation",
+      "nopwlog",
+      "transport",
+      "tests"
+     ],
+     "missing": [
+      "csrf"
+     ],
+     "artifact_len": 32814
+    },
+    "claude-skills": {
+     "recall": 0.7,
+     "present": [
+      "pwhash",
+      "bruteforce",
+      "enumeration",
+      "consttime",
+      "session",
+      "validation",
+      "nopwlog"
+     ],
+     "missing": [
+      "transport",
+      "csrf",
+      "tests"
+     ],
+     "artifact_len": 30531
+    },
+    "awesome-cursorrules": {
+     "recall": 0.9,
+     "present": [
+      "pwhash",
+      "bruteforce",
+      "enumeration",
+      "consttime",
+      "session",
+      "validation",
+      "nopwlog",
+      "transport",
+      "tests"
+     ],
+     "missing": [
+      "csrf"
+     ],
+     "artifact_len": 44034
+    }
+   }
+  },
+  "c5_search": {
+   "rubric_n": 10,
+   "arms": {
+    "without": {
+     "recall": 0.6,
+     "present": [
+      "authn",
+      "authz",
+      "validation",
+      "sqli",
+      "pagination",
+      "errhygiene"
+     ],
+     "missing": [
+      "ratelimit",
+      "logging",
+      "transport",
+      "tests"
+     ],
+     "artifact_len": 18946
+    },
+    "sota": {
+     "recall": 1.0,
+     "present": [
+      "authn",
+      "authz",
+      "validation",
+      "sqli",
+      "pagination",
+      "ratelimit",
+      "logging",
+      "errhygiene",
+      "transport",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 92544
+    },
+    "ECC": {
+     "recall": 0.9,
+     "present": [
+      "authn",
+      "authz",
+      "validation",
+      "sqli",
+      "pagination",
+      "logging",
+      "errhygiene",
+      "transport",
+      "tests"
+     ],
+     "missing": [
+      "ratelimit"
+     ],
+     "artifact_len": 48207
+    },
+    "claude-skills": {
+     "recall": 0.9,
+     "present": [
+      "authn",
+      "authz",
+      "validation",
+      "sqli",
+      "pagination",
+      "ratelimit",
+      "logging",
+      "errhygiene",
+      "tests"
+     ],
+     "missing": [
+      "transport"
+     ],
+     "artifact_len": 51016
+    },
+    "awesome-cursorrules": {
+     "recall": 0.9,
+     "present": [
+      "authn",
+      "authz",
+      "validation",
+      "sqli",
+      "pagination",
+      "logging",
+      "errhygiene",
+      "transport",
+      "tests"
+     ],
+     "missing": [
+      "ratelimit"
+     ],
+     "artifact_len": 63559
+    }
+   }
+  },
+  "c6_webhook": {
+   "rubric_n": 10,
+   "arms": {
+    "without": {
+     "recall": 0.5,
+     "present": [
+      "sigverify",
+      "constanttime",
+      "idempotency",
+      "validation",
+      "errhygiene"
+     ],
+     "missing": [
+      "sizelimit",
+      "ratelimit",
+      "logging",
+      "transport",
+      "tests"
+     ],
+     "artifact_len": 14870
+    },
+    "sota": {
+     "recall": 1.0,
+     "present": [
+      "sigverify",
+      "constanttime",
+      "idempotency",
+      "validation",
+      "sizelimit",
+      "ratelimit",
+      "logging",
+      "errhygiene",
+      "transport",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 66617
+    },
+    "ECC": {
+     "recall": 0.9,
+     "present": [
+      "sigverify",
+      "constanttime",
+      "idempotency",
+      "validation",
+      "ratelimit",
+      "logging",
+      "errhygiene",
+      "transport",
+      "tests"
+     ],
+     "missing": [
+      "sizelimit"
+     ],
+     "artifact_len": 46803
+    },
+    "claude-skills": {
+     "recall": 0.8,
+     "present": [
+      "sigverify",
+      "constanttime",
+      "idempotency",
+      "validation",
+      "sizelimit",
+      "logging",
+      "errhygiene",
+      "transport"
+     ],
+     "missing": [
+      "ratelimit",
+      "tests"
+     ],
+     "artifact_len": 32929
+    },
+    "awesome-cursorrules": {
+     "recall": 0.8,
+     "present": [
+      "sigverify",
+      "constanttime",
+      "idempotency",
+      "validation",
+      "logging",
+      "errhygiene",
+      "transport",
+      "tests"
+     ],
+     "missing": [
+      "sizelimit",
+      "ratelimit"
+     ],
+     "artifact_len": 51267
+    }
+   }
+  },
+  "c7_pwreset": {
+   "rubric_n": 11,
+   "arms": {
+    "without": {
+     "recall": 0.6363636363636364,
+     "present": [
+      "tokenentropy",
+      "tokenhash",
+      "tokenexpiry",
+      "tokensingleuse",
+      "noenum",
+      "notokenlog",
+      "pwhash"
+     ],
+     "missing": [
+      "ratelimit",
+      "transport",
+      "sessioninvalidate",
+      "tests"
+     ],
+     "artifact_len": 25629
+    },
+    "sota": {
+     "recall": 0.9090909090909091,
+     "present": [
+      "tokenentropy",
+      "tokenhash",
+      "tokenexpiry",
+      "tokensingleuse",
+      "noenum",
+      "ratelimit",
+      "notokenlog",
+      "pwhash",
+      "transport",
+      "tests"
+     ],
+     "missing": [
+      "sessioninvalidate"
+     ],
+     "artifact_len": 68679
+    },
+    "ECC": {
+     "recall": 0.9090909090909091,
+     "present": [
+      "tokenentropy",
+      "tokenhash",
+      "tokenexpiry",
+      "tokensingleuse",
+      "noenum",
+      "ratelimit",
+      "notokenlog",
+      "pwhash",
+      "transport",
+      "tests"
+     ],
+     "missing": [
+      "sessioninvalidate"
+     ],
+     "artifact_len": 39558
+    },
+    "claude-skills": {
+     "recall": 0.7272727272727273,
+     "present": [
+      "tokenentropy",
+      "tokenhash",
+      "tokenexpiry",
+      "tokensingleuse",
+      "noenum",
+      "ratelimit",
+      "notokenlog",
+      "pwhash"
+     ],
+     "missing": [
+      "transport",
+      "sessioninvalidate",
+      "tests"
+     ],
+     "artifact_len": 33733
+    },
+    "awesome-cursorrules": {
+     "recall": 0.7272727272727273,
+     "present": [
+      "tokenentropy",
+      "tokenhash",
+      "tokenexpiry",
+      "tokensingleuse",
+      "noenum",
+      "notokenlog",
+      "pwhash",
+      "tests"
+     ],
+     "missing": [
+      "ratelimit",
+      "transport",
+      "sessioninvalidate"
+     ],
+     "artifact_len": 71217
+    }
+   }
+  }
+ },
+ "means": {
+  "without": 0.5835497835497836,
+  "sota": 0.987012987012987,
+  "ECC": 0.8662337662337664,
+  "claude-skills": 0.8136363636363637,
+  "awesome-cursorrules": 0.8281385281385282
+ }
+}

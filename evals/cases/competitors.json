@@ -1,0 +1,45 @@
+{
+  "_note": "Competitor content manifest for run-competitors.py. Content is NOT vendored here (it is third-party); clone each repo at the pinned SHA into a --competitors-dir and the harness concatenates the listed files into that competitor's guidance bundle. Files chosen 2026-07-14 as each repo's best-matching content for building a secure Python/FastAPI backend feature (the completeness tasks), at a token budget comparable to a SOTA per-case arm. Licenses permit reuse (MIT / CC0); attribute in any published result.",
+  "competitors": {
+    "ECC": {
+      "repo": "affaan-m/ECC",
+      "sha": "ed387446052dfbc6b52de149406b70efa65edc59",
+      "license": "MIT",
+      "stars_approx": 230000,
+      "files": [
+        "the-security-guide.md",
+        "agents/fastapi-reviewer.md",
+        "agents/python-reviewer.md",
+        "agents/security-reviewer.md"
+      ]
+    },
+    "claude-skills": {
+      "repo": "alirezarezvani/claude-skills",
+      "sha": "84dc5a4f6ab93df5195805010572d7d0f874dadb",
+      "license": "MIT",
+      "stars_approx": 22600,
+      "files": [
+        "standards/security/security-standards.md",
+        "engineering/security-guidance/skills/security-guidance/SKILL.md",
+        "engineering/strict-api/SKILL.md",
+        "engineering/skills/api-design-reviewer/SKILL.md"
+      ]
+    },
+    "awesome-cursorrules": {
+      "repo": "PatrickJS/awesome-cursorrules",
+      "sha": "b044f956f021b6e8877f16781bcfc466a6a120e9",
+      "license": "CC0-1.0",
+      "stars_approx": 40300,
+      "files": [
+        "rules/fastapi.mdc",
+        "rules/fastapi-production-architecture-cursorrules-prompt-file.mdc",
+        "rules/python.mdc",
+        "rules/python-312-fastapi-best-practices-cursorrules-prom.mdc",
+        "rules/python-cursorrules-prompt-file-best-practices.mdc",
+        "rules/python-fastapi-best-practices-cursorrules-prompt-f.mdc",
+        "rules/python-fastapi-scalable-api-cursorrules-prompt-fil.mdc",
+        "rules/security-devsecops-ssdls-appsec.mdc"
+      ]
+    }
+  }
+}

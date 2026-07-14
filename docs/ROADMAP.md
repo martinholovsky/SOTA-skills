@@ -134,12 +134,23 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
 
 ## Unexplored ideas
 
-- **Comparative benchmark vs. a named competing skill library.** Every eval to
-  date is library-vs-*nothing* (an unguided model), so the public claim is
-  honestly limited to that; we make **no** "better than library X" claim. To
-  earn one, run `run-completeness.py`/`run-clean.py` with a competitor's content
-  pasted as a **third arm** (same fixed rubric, same blind opus judge, same token
-  budget) and report the delta — **publishing it even if SOTA ties or loses.**
+- **Comparative benchmark vs. named competing libraries.** ~~Unexplored~~
+  **DONE 2026-07-14** ([`evals/results/2026-07-13/COMPETITOR-BENCHMARK.md`](../evals/results/2026-07-13/COMPETITOR-BENCHMARK.md),
+  `evals/run-competitors.py`, `evals/cases/competitors.json`). SOTA vs. the fair
+  peers, content-only, blind-judged, 7 build tasks: **SOTA 0.99 > ECC ~230k★ 0.87
+  > awesome-cursorrules ~40k★ 0.83 > alirezarezvani/claude-skills ~23k★ 0.81**
+  (unguided 0.58). SOTA wins/ties every one of 21 cases, loses none; competitors
+  are legitimate (all +0.23–0.28 over unguided) but drop the cross-cutting
+  non-negotiables SOTA embeds. The honesty gate is **cleared** — `WHY-IT-WORKS.md`
+  now carries a scoped "vs library X" claim. **Follow-ups still open:** multi-sample
+  the arms; broaden beyond the one task family (frontend/data/mobile); optionally
+  add an *as-deployed* comparison (each library with its own method, not
+  content-only). Original plan/targets kept below for reference.
+- **(reference) Original competitor-benchmark plan.** Every eval to
+  date is library-vs-*nothing* (an unguided model), so the public claim was
+  honestly limited to that; to earn a "vs X" claim, run a competitor's content
+  as a **third arm** (same fixed rubric, blind judge, token budget) and report the
+  delta — **publishing it even if SOTA ties or loses.**
   **Targets validated 2026-07-14 via the GitHub API** (stars + created-date +
   license + repo structure). **Pick on purpose-overlap, not raw stars** — many
   high-star repos are a *different kind* of thing, and the biggest ones are all
