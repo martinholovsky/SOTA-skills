@@ -140,23 +140,40 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
   earn one, run `run-completeness.py`/`run-clean.py` with a competitor's content
   pasted as a **third arm** (same fixed rubric, same blind opus judge, same token
   budget) and report the delta — **publishing it even if SOTA ties or loses.**
-  **Targets validated 2026-07-14** (GitHub star counts + content classification):
-  the closest true peer is **`alirezarezvani/claude-skills`** (~22.6k★, MIT — a
-  multi-domain Claude-Code skills library *with* engineering + `audit/` skills and
-  a plugin, structured like SOTA → PRIMARY target); the most-starred rules library
-  is **`PatrickJS/awesome-cursorrules`** (~40.3k★, CC0 — per-stack `.cursorrules`
-  content, SECONDARY / brand-name comparison); tertiary `sanjeed5/awesome-cursor-
-  rules-mdc` (~3.5k★, CC0). **Excluded with reason:** `travisvn/awesome-claude-
-  skills` (link list, no content); `ComposioHQ/awesome-claude-skills` (~67k★ but
-  productivity/marketing skills, not software engineering). Fairness controls:
-  pick each competitor's *best-matching* content per task (not a strawman), record
-  commit SHAs, state format/scope caveats. Expected edge = freshness (SOTA is
-  primary-source-verified; competitor rules go stale) + the cross-cutting
-  completeness the self-audit/principle-5 design recovers; expected non-edge = raw
-  "does the code work". **Cost:** a 3-arm completeness run ≈ 1.5× the 2-arm (~$16
-  per competitor per full run) — one pilot fits the current ~$36 balance; more
-  needs a top-up. Still gated on the maintainer wanting a "vs X" claim at all
-  (2026-07-12 decision was to keep the honest vs-unguided framing).
+  **Targets validated 2026-07-14 via the GitHub API** (stars + created-date +
+  license + repo structure). **Pick on purpose-overlap, not raw stars** — many
+  high-star repos are a *different kind* of thing, and the biggest ones are all
+  2026-new with explosive (plausibly inflated) star growth, so treat the numbers
+  skeptically. Tiers:
+  - **Same-kind engineering guidance a model reads to build/audit code** (the fair
+    completeness peers): **`affaan-m/ECC`** (~230k★, MIT, cross-AI — Claude/Codex/
+    Cursor/Gemini/Kimi/Kiro; "agent harness… skills, security, research-first dev"
+    → highest-profile, PRIMARY); **`alirezarezvani/claude-skills`** (~22.6k★, MIT,
+    multi-domain engineering + `audit/` + plugin, structured like SOTA → closest
+    same-kind peer); **`PatrickJS/awesome-cursorrules`** (~40.3k★, CC0, per-stack
+    `.cursorrules` → the rules-library reference); tertiary
+    `SebastienDegodez/copilot-instructions` (~190★ but genuinely same-kind: DDD/
+    clean-arch/testing rules) and `sanjeed5/awesome-cursor-rules-mdc` (~3.5k★).
+  - **Popular but a *different axis*** (compare only on a workflow/quality axis, not
+    build-completeness): **`garrytan/gstack`** (~122k★, cross-AI — a 23-tool
+    role/workflow setup, not a rules library); **`multica-ai/andrej-karpathy-
+    skills`** (~192k★ but **no license** → can't legally reuse content; mostly one
+    behavior CLAUDE.md).
+  - **Excluded, different category:** `x1xhlol/system-prompts-and-models-of-ai-
+    tools` (~142k★ leaked tool prompts); `JuliusBrussee/caveman` (~89k★ token
+    gimmick); `agentsmd/agents.md` (the spec/website); `travisvn/awesome-claude-
+    skills` (link list); `ComposioHQ/awesome-claude-skills` (~67k★ productivity).
+  Fairness controls: each competitor's *best-matching* content per task (not a
+  strawman), same fixed rubric + blind opus judge + token budget, record commit
+  SHAs, respect licenses (skip no-license repos for pasted content), state
+  format/scope caveats, **publish even if SOTA ties/loses.** Expected edge =
+  freshness (SOTA primary-source-verified; competitor rules go stale) + the
+  cross-cutting completeness the self-audit/principle-5 design recovers; expected
+  non-edge = raw "does the code work". **Cost:** ~$16 per competitor per full
+  completeness run (3-arm ≈ 1.5× the 2-arm) — one pilot fits the current ~$36
+  balance; the full ECC/alirezarezvani/cursorrules sweep needs a top-up. Still
+  gated on the maintainer wanting a "vs X" claim at all (2026-07-12 chose the
+  honest vs-unguided framing).
 - **Cross-file / repo-level audit eval.** ~~Unexplored~~ **Explored 2026-07-13,
   no lift** ([`evals/results/2026-07-13/REPO-AUDIT.md`](../evals/results/2026-07-13/REPO-AUDIT.md)).
   Built the planted-vuln repo (8 defects invisible in any single file) the audit
