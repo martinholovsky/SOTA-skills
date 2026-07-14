@@ -53,9 +53,10 @@ Evaluation-harness additions (no skill-content change; not in CI — see
 
 - **README surfaces the measured lift up front** — the dense one-liner is now a
   scannable per-dimension list (completeness +0.39, freshness +0.53, routing
-  +0.10, with the multi-sample endpoints and the "near-zero variance" note), and
-  the clone/script install method now follows the plugin method directly (the
-  plugin-extras note moved below both).
+  +0.10, with the multi-sample endpoints and the "near-zero variance" note). The
+  clone/script install method now sits in the top quick-install block right after
+  the plugin commands; the Installation section keeps the clone-path details
+  without repeating the command blocks.
 
 ## [1.15.0] - 2026-07-13
 

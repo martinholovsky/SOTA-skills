@@ -26,6 +26,7 @@ Two commands to install:
 /plugin marketplace add martinholovsky/SOTA-skills
 /plugin install sota-skills@sota-skills
 ```
+
 **Or clone + link** (best if you want a local checkout to read, hack on, or pin).
 Skills are discovered from `.claude/skills/` (per project) or `~/.claude/skills/`
 (personal, all projects). Clone the repo, then run the installer — it symlinks
@@ -131,28 +132,15 @@ Deliberately **not covered**: Scala/Elixir, standalone C (inside `sota-c-cpp`), 
 
 ## Installation
 
-**Easiest — as a Claude Code plugin** (installs all skills, updates via
-`/plugin`):
+Both commands are shown at the top — the **plugin** (`/plugin`, auto-updates on
+version bump) or **clone + link** (`./scripts/install.sh`, a local checkout to
+read, hack on, or pin). A few details on the clone path:
 
-```text
-/plugin marketplace add martinholovsky/SOTA-skills
-/plugin install sota-skills@sota-skills
-```
-
-**Or clone + link** (best if you want a local checkout to read, hack on, or pin).
-Skills are discovered from `.claude/skills/` (per project) or `~/.claude/skills/`
-(personal, all projects). Clone the repo, then run the installer — it symlinks
-every skill (and your profile, if you have one):
-
-```sh
-git clone https://github.com/martinholovsky/SOTA-skills && cd SOTA-skills
-./scripts/install.sh                 # personal: ~/.claude/skills (all projects)
-./scripts/install.sh --project DIR   # one project: DIR/.claude/skills
-./scripts/install.sh --copy          # copy instead of symlink (pin a snapshot)
-```
-
-Prefer no script? `./scripts/install.sh` only symlinks `skills/*/` into
-`~/.claude/skills/` — do that by hand if you'd rather.
+- Skills are discovered from `.claude/skills/` (per project) or `~/.claude/skills/`
+  (personal, all projects); `install.sh` symlinks every skill and your profile.
+- `--project DIR` scopes to one repo; `--copy` pins a snapshot instead of linking.
+- Prefer no script? It only symlinks `skills/*/` into `~/.claude/skills/` — do
+  that by hand if you'd rather.
 
 The plugin (or `--copy`) installs the skills; a few extras (routing reminder,
 status line, pre-commit gates, AGENTS.md) aren't auto-enabled — see
