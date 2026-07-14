@@ -61,9 +61,12 @@ regulation writes down: cancellation & backpressure, retries with jitter,
 circuit breakers, outbox/saga, zero-downtime migrations, measure-first
 performance, API evolvability, per-language idioms, SLOs, test-suite health.
 
-**Measured, not asserted.** Vs. an *unguided model* (same model, no library), the library lifts bare
-"build X" prompts from ~60% to ~99% best-practice coverage across 7 tasks (**+0.39**), is large on 2026
-facts (**+0.50**), and helps routing (**+0.10**) — clean, blind-judged. [Why it works & results →](docs/WHY-IT-WORKS.md)
+**Measured, not asserted** — library vs. an *unguided model* (same model, no
+library); clean, blind-judged, stable across samples ([results & method →](docs/WHY-IT-WORKS.md)):
+
+- **Completeness +0.39** — from a bare "build X" prompt, best-practice coverage goes ~60% → ~100% (7 tasks): the model stops silently dropping tests, rate limiting, structured logging, and TLS. Web search can't recover this.
+- **Freshness +0.53** — current-2026 facts (RFCs, CVEs, EOLs) 0.44 → 0.97, where an unguided model is *confidently wrong*.
+- **Routing +0.10** — the right skills load for the task (0.90 → 1.00), even ones a keyword read misses; with the library, results barely move run-to-run.
 
 ## Skills
 
@@ -125,11 +128,6 @@ Deliberately **not covered**: Scala/Elixir, standalone C (inside `sota-c-cpp`), 
 /plugin install sota-skills@sota-skills
 ```
 
-The plugin installs the skills; a few extras (routing reminder, status line,
-pre-commit gates, AGENTS.md) aren't auto-enabled — see
-[Optional extras for plugin users](#optional-extras-for-plugin-users). On first
-run the plugin shows a one-time notice pointing there.
-
 **Or clone + link** (best if you want a local checkout to read, hack on, or pin).
 Skills are discovered from `.claude/skills/` (per project) or `~/.claude/skills/`
 (personal, all projects). Clone the repo, then run the installer — it symlinks
@@ -142,12 +140,13 @@ git clone https://github.com/martinholovsky/SOTA-skills && cd SOTA-skills
 ./scripts/install.sh --copy          # copy instead of symlink (pin a snapshot)
 ```
 
-Prefer no script? The personal install is just:
+Prefer no script? `./scripts/install.sh` only symlinks `skills/*/` into
+`~/.claude/skills/` — do that by hand if you'd rather.
 
-```sh
-mkdir -p ~/.claude/skills
-for d in skills/*/; do ln -sfn "$(pwd)/$d" ~/.claude/skills/"$(basename "$d")"; done
-```
+The plugin (or `--copy`) installs the skills; a few extras (routing reminder,
+status line, pre-commit gates, AGENTS.md) aren't auto-enabled — see
+[Optional extras for plugin users](#optional-extras-for-plugin-users). On first
+run the plugin shows a one-time notice pointing there.
 
 ### Updating
 

@@ -49,6 +49,14 @@ Evaluation-harness additions (no skill-content change; not in CI — see
   with the before/after data and honest boundary. Draft for the maintainer to
   publish (roadmap item 7, distribution).
 
+### Changed
+
+- **README surfaces the measured lift up front** — the dense one-liner is now a
+  scannable per-dimension list (completeness +0.39, freshness +0.53, routing
+  +0.10, with the multi-sample endpoints and the "near-zero variance" note), and
+  the clone/script install method now follows the plugin method directly (the
+  plugin-extras note moved below both).
+
 ## [1.15.0] - 2026-07-13
 
 The measured-efficacy release: completeness proven as the library's thesis, the
