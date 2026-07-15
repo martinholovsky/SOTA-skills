@@ -9,12 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Competitor-benchmark bar chart** (`assets/benchmark-{light,dark}.svg`,
-  regenerable via `assets/gen-benchmark-chart.py`) — a theme-aware SVG visual of
-  best-practice completeness per library (SOTA-skills 99% highlighted vs the
-  field), embedded in the README, `evals/results/RESULTS.md`, and
-  `docs/WHY-IT-WORKS.md` via `<picture>` (light/dark). Palette validated with the
-  dataviz skill's checker; alt text carries the numbers.
+- **Competitor-benchmark bar chart** (`assets/benchmark-{light,dark}.svg` +
+  matching 1440px `.png`, regenerable via `assets/gen-benchmark-chart.py`) — a
+  theme-aware visual of best-practice completeness per library (SOTA-skills 99%
+  highlighted vs the field), embedded in the README, `evals/results/RESULTS.md`,
+  and `docs/WHY-IT-WORKS.md` via `<picture>` (light/dark SVG). The PNGs are for
+  LinkedIn/slides/anywhere SVG isn't supported. Palette validated with the dataviz
+  skill's checker; alt text carries the numbers.
 - **Discoverability overhaul.** `docs/INDEX.md` (a find-it-fast map: every topic →
   where it's documented, organized by intent), `docs/CONTEXT-MANAGEMENT.md` (the
   single home for how the library keeps the model applying rules as context fills —
