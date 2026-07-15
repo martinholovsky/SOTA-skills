@@ -116,7 +116,7 @@ python3 evals/judge-live-build.py --builds DIR   # same blind opus judge + rubri
 ```
 
 Result (2026-07-13, 7 live sub-agent builds): **0.99 mean, 6/7 perfect** —
-identical to the 0.99 paste-based simulation and vs 0.60 unguided base, so the
+matching the 0.99 paste-based simulation (0.987 vs 0.988) and far above the 0.60 unguided base, so the
 simulation is a faithful proxy for the real router flow
 ([`results/2026-07-13/LIVE-BUILD.md`](results/2026-07-13/LIVE-BUILD.md)).
 
@@ -126,9 +126,9 @@ simulation is a faithful proxy for the real router flow
 outputs). Writeup: [`results/2026-07-10/BASELINE.md`](results/2026-07-10/BASELINE.md).
 Headline (clean, by dimension): **completeness +0.39** (0.60→0.99 over 7 build
 tasks — from a bare "build X" prompt the library embeds the tests/rate-limits/
-logging/transport a base model skips; the thesis, and the part web-search can't
-replace), **freshness +0.50–0.65** (32 cases of 2026 facts; base model
-*confidently wrong*, but a web-search agent recovers most of it), **routing
+logging/transport a base model skips; the thesis, and the part web-search likely can't
+replace — predicted, not measured here), **freshness +0.50–0.53** (32-case set; base model
+*confidently wrong*, but a web-search agent would likely recover most of it — predicted, not measured here), **routing
 +0.09–0.14**, **audit +0.00** (even the 14 harder cases saturate). The lift is
 only "small" if you measure the easy dimensions. Run:
 `python3 evals/run-completeness.py`.

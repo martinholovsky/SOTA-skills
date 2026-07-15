@@ -29,13 +29,13 @@ a build task (the probe, `c6_webhook`). Arms:
 | reminder (guidance + reminder) | 1.00 | 1.00 | 1.00 |
 
 Decay (anchor K0→K30): **+0.00**. Reminder recovery: **+0.00** (nothing to
-recover). An 18.7 KB guidance block loaded at turn 1 was **still fully applied
+recover). An ~18.6K-token (~72 KB) guidance block loaded at turn 1 was **still fully applied
 after 30 unrelated turns** — the guidance did not fade at this session length.
 
 ## Honest reading — this bounds the problem, it doesn't find the breaking point
 
-The null result is real but limited by design: the filler is only ~3.3 KB at K=30,
-tiny next to the 18.7 KB guidance, so it can't meaningfully *dilute* the anchor —
+The null result is real but limited by design: the filler is only ~3.2K tokens (~13 KB) at K=30,
+tiny next to the ~18.6K-token guidance, so it can't meaningfully *dilute* the anchor —
 the guidance still dominates context and the model keeps applying it. So the
 finding is: **at moderate session length with a large, dominant guidance block,
 there is no decay** (reassuring), but the test hasn't stressed the regime where

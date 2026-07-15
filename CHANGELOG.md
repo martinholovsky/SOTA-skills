@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Accuracy sweep (4-way doc audit against the result JSONs).** Corrected claims stated more strongly than the data: the **web-search recovers/can't-recover** claims (freshness + completeness) were never measured — now marked as predictions; the live-agent 0.99 was called *identical* to the 0.99 simulation (actually 0.987 vs 0.988) — softened to *matching*; `claude-skills` 3-tightest confidence 83% → **82%** (recomputed 0.8249); DECAY guidance/filler sizes were tokens mislabeled as KB (18.7 KB → **~18.6K tokens / ~72 KB**); freshness **+0.65** was mis-attributed to the 32-case set (it's a 20-case run; 32-case is +0.53); `completeness-blind-spot` upload 0.55 → **0.58** (multi-sample mean); ROADMAP item 6 and the AGENTS.md WHY-IT-WORKS pointer were stale (competitor benchmark is done, WHY now carries a scoped vs-libraries section); star counts dated. Cited literature was spot-verified accurate (Chroma 2025 '18 models') and left as-is.
+
 ### Added
 
 - **Competitor-benchmark bar chart** (`assets/benchmark-{light,dark}.svg` +

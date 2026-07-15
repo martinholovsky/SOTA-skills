@@ -19,7 +19,7 @@ per-case data, and honest limitations are in the
 | Dimension | What it tests | Clean lift |
 |---|---|---|
 | **Completeness** | best practices embedded from a bare "build X" prompt (7 tasks) | **+0.39** (0.60 → 0.99) |
-| **Freshness** | current 2026 facts (RFCs, CVEs, EOLs, versions, spec editions; 32) | **+0.50 to +0.65** |
+| **Freshness** | current 2026 facts (RFCs, CVEs, EOLs, versions, spec editions; 32) | **+0.50–0.53** (32-case; +0.65 on a 20-case run) |
 | Routing | which skill area applies to a task | +0.09 to +0.14 |
 | Audit | recognizing a textbook vulnerability | +0.00 |
 
@@ -39,19 +39,21 @@ most for *building* software are the two that are large:
   dense rules context makes some items fade (a measured attention effect — see
   [WHY-COMPLETENESS-RESIDUAL.md](WHY-COMPLETENESS-RESIDUAL.md), where *adding* the
   "missing" rule made it worse and a short salient reminder fixed it). This gap is
-  **not** recoverable by "just verify via web search": an agent won't search
+  unlikely to be recoverable by "just verify via web search" (untested — no search
+  arm was run; the reasoning is direct): an agent won't search
   *"should I add rate limiting"* — it simply omits it. That makes completeness the
   library's most defensible, least-redundant value. And it is not a
   paste-simulation artifact: seven **live** agents driven through the real router
-  BUILD workflow scored **0.99 (6/7 perfect)**, identical to the simulation
+  BUILD workflow scored **0.99 (6/7 perfect)**, matching the simulation (0.987 vs 0.988)
   ([live-agent validation](../evals/results/2026-07-13/LIVE-BUILD.md)).
 - **Freshness — the base model is confidently wrong.** On current-2026 facts it
   doesn't merely lack knowledge, it *fabricates* plausible answers (in our 32-case
   set: inventing RFC 9334 for the Entity Attestation Token — it's 9711 — or
   claiming PostgreSQL 17 added `uuidv7()` when it was 18). The library carries the
   verified fact (with-library **0.97**, dead steady across samples; without **0.44
-  ±0.03**). A web-search agent recovers much of this gap, so we report freshness
-  as *partly* redundant for tool-using agents — stated plainly rather than inflated.
+  ±0.03**). A web-search agent would *likely* recover much of this gap (searchable facts —
+  predicted, not measured in this harness), so we report freshness as *plausibly*
+  partly redundant for tool-using agents — stated plainly rather than inflated.
 - **Audit +0.00 is reported, not hidden.** On isolated snippets a capable model
   already recognizes the vulnerability — even the 14 *harder* cases (subtle IDOR,
   SSRF allowlist bypass, TOCTOU, prototype pollution, multi-vuln) score 1.00 in
@@ -70,7 +72,8 @@ case-by-case unreliability ([multi-sample writeup](../evals/results/2026-07-13/M
 ## Vs. competing libraries
 
 The comparisons above are vs. *nothing*. We also ran SOTA head-to-head against the
-most popular competing guidance libraries on the same 7 build tasks — same rubric,
+most-starred competing guidance libraries (by GitHub stars, snapshot 2026-07-14)
+on the same 7 build tasks — same rubric,
 same blind judge, **content-only** (SOTA's self-audit forcing function turned off,
 so its win is the guidance, not the method):
 
