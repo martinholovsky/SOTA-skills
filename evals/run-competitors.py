@@ -77,6 +77,13 @@ def guided_prompt(bundle, task):
     return (f"Apply the following engineering guidance:\n\n{bundle}{NEUTRAL_BUILD}{task}")
 
 
+def _spread(xs):
+    lo, hi = min(xs), max(xs)
+    mean = sum(xs) / len(xs)
+    sd = (sum((x - mean) ** 2 for x in xs) / len(xs)) ** 0.5
+    return mean, lo, hi, sd
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--competitors-dir", required=True,
@@ -84,17 +91,26 @@ def main():
     ap.add_argument("--build-model", default="anthropic/claude-sonnet-4.6")
     ap.add_argument("--judge-model", default="anthropic/claude-opus-4.8")
     ap.add_argument("--only", default=None, help="comma list of competitor keys to run")
+    ap.add_argument("--ids", default=None, help="comma list of case ids to run (subset)")
+    ap.add_argument("--samples", type=int, default=1,
+                    help="generations per (case,arm); mean recall reported. >1 needs --temp>0")
+    ap.add_argument("--temp", type=float, default=0.0)
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
+    if a.samples > 1 and a.temp == 0.0:
+        print("note: --samples>1 at --temp 0 gives identical deterministic runs; use --temp 0.7.\n")
     k = _rc.key()
     cases = _rc.load_cases()
+    if a.ids:
+        want = set(a.ids.split(","))
+        cases = [c for c in cases if c["id"] in want]
     manifest = json.load(open(MANIFEST, encoding="utf-8"))["competitors"]
     comps = list(manifest)
     if a.only:
         comps = [c for c in comps if c in a.only.split(",")]
     arms = ["without", "sota"] + comps
-    print(f"build={a.build_model}  judge={a.judge_model}  cases={len(cases)}  "
-          f"arms={arms}  (content-only, blind judge)\n")
+    print(f"build={a.build_model}  judge={a.judge_model}  cases={len(cases)}  arms={arms}  "
+          f"samples={a.samples}  temp={a.temp}  (content-only, blind judge)\n")
 
     results, totals = {}, {arm: 0.0 for arm in arms}
     for c in cases:
@@ -106,19 +122,30 @@ def main():
                 prompt = guided_prompt(sota_bundle(c), c["task"])
             else:
                 prompt = guided_prompt(competitor_bundle(manifest[arm], a.competitors_dir), c["task"])
-            print(f"  {c['id']:16s} {arm:20s} generating…", flush=True)
-            art = _rc.call(a.build_model, prompt, k, max_tokens=32000, temp=0.0)
-            verdict = _rc.judge(art, c["rubric"], a.judge_model, k)
-            present = [r["id"] for r in c["rubric"] if verdict.get(r["id"]) == "present"]
-            recall = len(present) / len(c["rubric"])
-            totals[arm] += recall
-            row["arms"][arm] = {"recall": recall, "present": present,
-                                "missing": [r["id"] for r in c["rubric"] if r["id"] not in present],
-                                "artifact_len": len(art)}
-            print(f"  {c['id']:16s} {arm:20s} recall={recall:.2f}", flush=True)
+            recalls, last_present, last_len = [], [], 0
+            for s in range(a.samples):
+                print(f"  {c['id']:16s} {arm:20s} gen {s+1}/{a.samples}…", flush=True)
+                art = _rc.call(a.build_model, prompt, k, max_tokens=32000, temp=a.temp)
+                verdict = _rc.judge(art, c["rubric"], a.judge_model, k)
+                last_present = [r["id"] for r in c["rubric"] if verdict.get(r["id"]) == "present"]
+                recalls.append(len(last_present) / len(c["rubric"]))
+                last_len = len(art)
+            mean, lo, hi, sd = _spread(recalls)
+            totals[arm] += mean
+            row["arms"][arm] = {"recall": mean, "recalls": recalls, "min": lo, "max": hi, "sd": sd,
+                                "present": last_present,
+                                "missing": [r["id"] for r in c["rubric"] if r["id"] not in last_present],
+                                "artifact_len": last_len}
+            spread = f"  (min {lo:.2f} max {hi:.2f} sd {sd:.02f})" if a.samples > 1 else ""
+            print(f"  {c['id']:16s} {arm:20s} recall={mean:.2f}{spread}", flush=True)
         results[c["id"]] = row
-        line = "  ".join(f"{arm}={row['arms'][arm]['recall']:.2f}" for arm in arms)
+        line = "  ".join(f"{arm[:10]}={row['arms'][arm]['recall']:.2f}" for arm in arms)
         print(f"{c['id']:16s} {line}")
+        if a.out:  # incremental save after every case — crash-safe
+            n_done = len(results)
+            json.dump({"arms": arms, "samples": a.samples, "temp": a.temp,
+                       "cases": results, "means": {arm: totals[arm]/n_done for arm in arms}},
+                      open(a.out, "w"), indent=1)
     n = len(cases)
     print("\nMEAN completeness by arm:")
     for arm in arms:
@@ -126,8 +153,6 @@ def main():
         delta = f"  (vs sota {m - totals['sota']/n:+.2f}, vs unguided {m - totals['without']/n:+.2f})" if arm not in ("without", "sota") else ""
         print(f"  {arm:20s} {m:.3f}{delta}")
     if a.out:
-        json.dump({"arms": arms, "cases": results,
-                   "means": {arm: totals[arm]/n for arm in arms}}, open(a.out, "w"), indent=1)
         print(f"saved {a.out}")
 
 

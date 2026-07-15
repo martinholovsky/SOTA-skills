@@ -57,12 +57,36 @@ principle 5* + the matched rules are designed to close.
   `competitor-benchmark.json`. Reproduce: `python3 evals/run-competitors.py
   --competitors-dir <clones>`.
 
+## Confidence — the lead survives sampling (multi-sample, 2026-07-14)
+
+The main table is single-sample (temp 0). To check the lead isn't a lucky draw, we
+re-ran **3 samples at temp 0.7** on the **3 tightest cases** — c1, c3, c7, the ones
+where a competitor *tied* SOTA in the single-sample run (`competitor-benchmark-3sample.json`):
+
+| arm | mean (3 tight cases) | vs SOTA |
+|---|---|---|
+| **SOTA** | **0.98** | — |
+| ECC | 0.87 | −0.11 |
+| claude-skills | 0.83 | −0.15 |
+| awesome-cursorrules | 0.82 | −0.16 |
+| unguided | 0.65 | −0.33 |
+
+The gaps (−0.11 to −0.16) are **the same** as the single-sample full-7 run
+(−0.12 to −0.17), and **on every one of these cases SOTA's *worst* sample is ≥ each
+competitor's *best* sample** — competitors occasionally tie SOTA at the ceiling
+(ECC/cursorrules hit 1.00 on c1; ECC ties at 0.91 on c7) but never beat it. SOTA's
+own variance is near-zero (sd 0.00 on c1/c3, 0.04 on c7). The lead is stable.
+*(Multi-sampling the other 4 cases and the full 7 was left for a top-up — those
+were the least contested, so the tight-case check is the informative one.)*
+
 ## Honest limitations (state them, don't bury them)
 
 - **One task family** — 7 Python/FastAPI backend-security build tasks. A different
   domain (frontend, data pipelines, mobile) could shift the ordering; this is the
   domain we measured.
-- **Single sample, temp 0** (deterministic). Not yet multi-sampled per arm.
+- **Mostly single-sample, temp 0** (deterministic). A 3-sample/temp-0.7 confidence
+  check on the 3 tightest cases (above) confirms the lead holds; the other 4 cases
+  and the full 7 are not yet multi-sampled (budget).
 - **Content selection is a judgment call** — we picked each competitor's most
   relevant files; a different reviewer might pick slightly differently. The manifest
   makes it inspectable and re-runnable.
