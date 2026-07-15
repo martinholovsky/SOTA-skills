@@ -35,7 +35,13 @@ fail=0
 note() { printf '    %s\n' "$1"; }
 
 # --- 1. Line budget -------------------------------------------------------
-echo "[1/7] Markdown files <= ${MAX_LINES} lines"
+# The cap is load-bearing ONLY for skill files: a rules/SKILL file over ~500
+# lines defeats incremental loading (the whole point is that the model reads the
+# rules that match the task, not a wall of text). Non-skill Markdown (README,
+# CHANGELOG, docs/) is human/agent-facing prose, not loaded as a skill, so it is
+# intentionally uncapped (decided 2026-07-15) — navigability there comes from a
+# table of contents and docs/INDEX.md, not a line ceiling.
+echo "[1/7] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
 over=0
 while IFS= read -r f; do
   [ -f "$f" ] || { note "SKIPPED (tracked but missing from worktree): $f"; continue; }
@@ -45,7 +51,7 @@ while IFS= read -r f; do
     note "OVER ${MAX_LINES} (${n} lines): $f"
     over=1
   fi
-done < <(git ls-files '*.md')
+done < <(git ls-files 'skills/*/*.md' 'skills/*/rules/*.md')
 if [ "$over" -eq 0 ]; then echo "    ok"; else fail=1; fi
 
 # --- 2. Audit checklist ends every rules file ------------------------------
