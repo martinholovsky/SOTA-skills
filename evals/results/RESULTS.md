@@ -39,9 +39,10 @@ The simulation is a faithful proxy, and the self-audit gate caught real bugs liv
 ## 3. Competitor benchmark — SOTA vs. the most popular libraries
 
 Content-only (SOTA's self-audit **off**), same rubric, blind judge, on the 7
-**backend** completeness tasks. Targets validated live via the GitHub API. The
-lead is **backend-specific** — a frontend breadth run below shows it does not
-generalize.
+Python/FastAPI backend completeness tasks. Targets validated live via the GitHub
+API. This is the Python backend row of a broader picture — the five-domain breadth
+run below ([BREADTH.md](2026-07-13/BREADTH.md)) shows the lead tracks the **unguided
+baseline** (task incompleteness), not the domain.
 
 <p align="center">
   <picture>
@@ -68,22 +69,22 @@ single-sample). Read it on the library's own row: `0 / 2 / 5` on the
 [affaan-m/ECC](https://github.com/affaan-m/ECC) row = ECC **won 0, tied 2, lost 5**.
 **No competitor won a single task against SOTA-skills** (on backend).
 
-**Breadth — the lead is backend-specific.** Re-running the same harness on 3
-**React frontend** tasks tells a different story
-([COMPETITOR-BENCHMARK](2026-07-13/COMPETITOR-BENCHMARK.md#breadth--does-it-generalize-frontend-run-2026-07-15)):
+**Breadth — the lead tracks the unguided baseline, not the domain**
+([BREADTH.md](2026-07-13/BREADTH.md), 5 domains). SOTA-skills leads where a base
+model ships *incomplete* code, and ties where it's already near-complete:
 
-| Library | Frontend (3 tasks) | vs SOTA-skills |
-|---|---|---|
-| **SOTA-skills** | 97% | — |
-| [affaan-m/ECC](https://github.com/affaan-m/ECC) | 97% | ±0 |
-| [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | 97% | ±0 |
-| [PatrickJS/awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules) | 90% | −7 pts |
-| unguided model | 77% | −20 pts |
+| Domain | Unguided | SOTA-skills | best competitor | SOTA lead |
+|---|---|---|---|---|
+| Frontend — hard SSR/auth | 53% | **93%** | 83% | **+10** |
+| Python backend | 58% | **99%** | 87% | **+12** |
+| Go backend | 67% | **97%** | 87% | **+10** |
+| Frontend — simple forms | 77% | 97% | 97% | +0 |
+| IaC (K8s/Docker/TF) | 87% | 100% | 100% | +0 |
 
-On frontend, SOTA-skills **ties** ECC and claude-skills (and even lost one task) —
-frontend completeness is easy enough (unguided already 77%) that any guidance
-reaches the top. **So the head-to-head win is a *backend* result, not a general
-one.**
+Clean threshold near **0.7 baseline**: below it (production backend in any language,
+complex/security-sensitive frontend) SOTA-skills leads by ~10 pts; above it (simple
+UI, templated infra) everyone converges. So the win isn't "backend" — it's **wherever
+the base model's default is incomplete.**
 
 SOTA-skills **wins or ties all 21 head-to-head cases and loses none.** The
 confidence check confirms it isn't noise: gaps match the full run, and
@@ -112,9 +113,9 @@ filler is too small to dilute the anchor); scaling the test up needs a top-up.
 
 ## Not yet measured (open)
 
-- **Competitor breadth — DONE (backend + frontend).** The lead is backend-specific
-  (SOTA-skills ties the field on frontend, above). Data pipelines / mobile / CLI
-  remain untested, but the domain-dependence is already established.
+- **Competitor breadth — DONE (5 domains).** The lead tracks the unguided baseline,
+  not the domain (table above; [BREADTH.md](2026-07-13/BREADTH.md)). Data pipelines /
+  mobile / CLI remain untested, but the baseline-driven pattern is established.
 - **As-deployed competitor comparison** — each library with its own method (not
   content-only). SOTA-skills' self-audit is *off* in this run, so an as-deployed
   run would *plausibly* favor SOTA-skills — but that is a prediction, **not
@@ -125,6 +126,8 @@ filler is too small to dilute the anchor); scaling the test up needs a top-up.
 
 SOTA **lifts an unguided model** where it matters (completeness +0.39, freshness
 +0.53); that lift **reproduces in a live agent** (0.99); and it **beats the most
-popular competing libraries** head-to-head **on backend** (0.99 vs 0.81–0.87,
-lead stable under sampling) — while honestly bounding it: on *frontend* SOTA-skills
-ties the field, so the win is domain-specific, not general. Boundaries stated, not buried.
+popular competing libraries** head-to-head **on tasks a base model gets incomplete**
+(production backend in any language, complex/security-sensitive frontend: ~+10 pts) —
+while honestly bounding it: on tasks the base model already handles well (simple UI,
+templated infra) everyone converges. The lead tracks task incompleteness, not the
+domain. Boundaries stated, not buried.

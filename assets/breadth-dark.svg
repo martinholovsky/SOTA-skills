@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 486" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" role="img" aria-label="Completeness by domain (unguided / best competitor / SOTA-skills): hard frontend 53/83/93, Python backend 58/87/99, Go backend 67/87/97, simple frontend 77/97/97, IaC 87/100/100. SOTA-skills leads where the unguided baseline is low, ties where it is high.">
+<rect x="0.5" y="0.5" width="759" height="485" rx="12" fill="#0d1117" stroke="#30363d"/>
+<text x="24" y="40" font-size="19" font-weight="700" fill="#e6edf3">Where the library earns its keep</text>
+<text x="24" y="62" font-size="12" fill="#8b949e">Completeness % by domain, ordered by how complete an <tspan font-style="italic">unguided</tspan> model already is. SOTA-skills leads where the model ships incomplete code; ties where it doesn’t.</text>
+<rect x="24" y="80" width="12" height="12" rx="3" fill="#484f58"/>
+<text x="41" y="90" font-size="11.5" fill="#e6edf3">unguided model</text>
+<rect x="150.60000000000002" y="80" width="12" height="12" rx="3" fill="#768390"/>
+<text x="167.60000000000002" y="90" font-size="11.5" fill="#e6edf3">best competitor</text>
+<rect x="284.1" y="80" width="12" height="12" rx="3" fill="#3fb950"/>
+<text x="301.1" y="90" font-size="11.5" fill="#e6edf3">SOTA-skills</text>
+<text x="24" y="145" font-size="12" font-weight="600" fill="#e6edf3">Frontend — hard SSR / auth</text>
+<rect x="232" y="114" width="372" height="13" rx="4" fill="#21262d"/>
+<rect x="232" y="114" width="197.2" height="13" rx="4" fill="#484f58"/>
+<text x="436.2" y="124.5" font-size="11.5" font-weight="400" fill="#e6edf3">53%</text>
+<rect x="232" y="131" width="372" height="13" rx="4" fill="#21262d"/>
+<rect x="232" y="131" width="308.8" height="13" rx="4" fill="#768390"/>
+<text x="547.8" y="141.5" font-size="11.5" font-weight="400" fill="#e6edf3">83%</text>
+<rect x="232" y="148" width="372" height="13" rx="4" fill="#21262d"/>
+<rect x="232" y="148" width="346.0" height="13" rx="4" fill="#3fb950"/>
+<text x="585.0" y="158.5" font-size="11.5" font-weight="700" fill="#e6edf3">93%</text>
+<text x="24" y="215" font-size="12" font-weight="600" fill="#e6edf3">Python backend</text>
+<rect x="232" y="184" width="372" height="13" rx="4" fill="#21262d"/>
+<rect x="232" y="184" width="215.8" height="13" rx="4" fill="#484f58"/>
+<text x="454.8" y="194.5" font-size="11.5" font-weight="400" fill="#e6edf3">58%</text>
+<rect x="232" y="201" width="372" height="13" rx="4" fill="#21262d"/>
+<rect x="232" y="201" width="323.6" height="13" rx="4" fill="#768390"/>
+<text x="562.6" y="211.5" font-size="11.5" font-weight="400" fill="#e6edf3">87%</text>
+<rect x="232" y="218" width="372" height="13" rx="4" fill="#21262d"/>
+<rect x="232" y="218" width="368.3" height="13" rx="4" fill="#3fb950"/>
+<text x="607.3" y="228.5" font-size="11.5" font-weight="700" fill="#e6edf3">99%</text>
+<text x="24" y="285" font-size="12" font-weight="600" fill="#e6edf3">Go backend</text>
+<rect x="232" y="254" width="372" height="13" rx="4" fill="#21262d"/>
+<rect x="232" y="254" width="249.2" height="13" rx="4" fill="#484f58"/>
+<text x="488.2" y="264.5" font-size="11.5" font-weight="400" fill="#e6edf3">67%</text>
+<rect x="232" y="271" width="372" height="13" rx="4" fill="#21262d"/>
+<rect x="232" y="271" width="323.6" height="13" rx="4" fill="#768390"/>
+<text x="562.6" y="281.5" font-size="11.5" font-weight="400" fill="#e6edf3">87%</text>
+<rect x="232" y="288" width="372" height="13" rx="4" fill="#21262d"/>
+<rect x="232" y="288" width="360.8" height="13" rx="4" fill="#3fb950"/>
+<text x="599.8" y="298.5" font-size="11.5" font-weight="700" fill="#e6edf3">97%</text>
+<text x="24" y="355" font-size="12" font-weight="600" fill="#e6edf3">Frontend — simple forms</text>
+<rect x="232" y="324" width="372" height="13" rx="4" fill="#21262d"/>
+<rect x="232" y="324" width="286.4" height="13" rx="4" fill="#484f58"/>
+<text x="525.4" y="334.5" font-size="11.5" font-weight="400" fill="#e6edf3">77%</text>
+<rect x="232" y="341" width="372" height="13" rx="4" fill="#21262d"/>
+<rect x="232" y="341" width="360.8" height="13" rx="4" fill="#768390"/>
+<text x="599.8" y="351.5" font-size="11.5" font-weight="400" fill="#e6edf3">97%</text>
+<rect x="232" y="358" width="372" height="13" rx="4" fill="#21262d"/>
+<rect x="232" y="358" width="360.8" height="13" rx="4" fill="#3fb950"/>
+<text x="599.8" y="368.5" font-size="11.5" font-weight="700" fill="#e6edf3">97%</text>
+<text x="24" y="425" font-size="12" font-weight="600" fill="#e6edf3">IaC — K8s / Docker / Terraform</text>
+<rect x="232" y="394" width="372" height="13" rx="4" fill="#21262d"/>
+<rect x="232" y="394" width="323.6" height="13" rx="4" fill="#484f58"/>
+<text x="562.6" y="404.5" font-size="11.5" font-weight="400" fill="#e6edf3">87%</text>
+<rect x="232" y="411" width="372" height="13" rx="4" fill="#21262d"/>
+<rect x="232" y="411" width="372.0" height="13" rx="4" fill="#768390"/>
+<text x="611.0" y="421.5" font-size="11.5" font-weight="400" fill="#e6edf3">100%</text>
+<rect x="232" y="428" width="372" height="13" rx="4" fill="#21262d"/>
+<rect x="232" y="428" width="372.0" height="13" rx="4" fill="#3fb950"/>
+<text x="611.0" y="438.5" font-size="11.5" font-weight="700" fill="#e6edf3">100%</text>
+<text x="24" y="472" font-size="10.5" fill="#8b949e">Content-only, blind-judged; best-competitor = the strongest of ECC / claude-skills / cursorrules per domain · data: evals/results/2026-07-13/BREADTH.md</text>
+</svg>

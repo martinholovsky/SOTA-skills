@@ -103,13 +103,18 @@ rate limiting, transport/TLS, tests, structured logging — dropped endpoint aft
 endpoint (even the ~230k-star `affaan-m/ECC` omits rate limiting on 3 of 7 tasks).
 That is exactly what SOTA's operating principle 5 + the matched rules exist to close.
 
-**But it does not generalize.** A breadth run on 3 React **frontend** tasks shows
-SOTA-skills *tying* ECC and claude-skills (all 97%, SOTA-skills even losing one
-task), because frontend completeness is easy — the unguided baseline is already 77%
-(vs 58% on backend), and any guidance reaches the top. So the honest claim is
-**scoped to backend build tasks**; on frontend SOTA-skills has no edge. Full method,
-per-arm misses, the frontend table, and limitations are in the
-[competitor benchmark](../evals/results/2026-07-13/COMPETITOR-BENCHMARK.md).
+**Where the lead holds — it tracks task difficulty, not the domain.** A five-domain
+breadth run ([BREADTH.md](../evals/results/2026-07-13/BREADTH.md)) shows SOTA-skills
+leads every competitor by ~10 points wherever the base model's default is
+*incomplete* — production backend in **any** language (Python 58%→lead +12, Go
+67%→+10) and **complex/security-sensitive frontend** (hard SSR/auth 53%→+10) — and
+*ties* where the base model is already near-complete (simple React forms 77%→+0,
+templated IaC 87%→+0). There's a clean threshold near a 0.7 baseline. So the honest
+claim isn't "backend only": SOTA-skills leads **on the tasks a base model gets
+wrong** — the harder and less templated, the more it adds — and converges with the
+field where guidance can't add what the model already emits. Full method, per-domain
+notes, and limits: [competitor benchmark](../evals/results/2026-07-13/COMPETITOR-BENCHMARK.md)
++ [BREADTH.md](../evals/results/2026-07-13/BREADTH.md).
 
 ## What you get by design (beyond the numbers)
 

@@ -1,0 +1,384 @@
+{
+ "arms": [
+  "without",
+  "sota",
+  "ECC",
+  "claude-skills",
+  "awesome-cursorrules"
+ ],
+ "samples": 1,
+ "temp": 0.0,
+ "cases": {
+  "i1_k8s_deployment": {
+   "rubric_n": 10,
+   "arms": {
+    "without": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "nonroot",
+      "readonlyfs",
+      "dropcaps",
+      "resources",
+      "pinnedimage",
+      "probes",
+      "noprivileged",
+      "seccomp",
+      "secrets",
+      "availability"
+     ],
+     "missing": [],
+     "artifact_len": 5266
+    },
+    "sota": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "nonroot",
+      "readonlyfs",
+      "dropcaps",
+      "resources",
+      "pinnedimage",
+      "probes",
+      "noprivileged",
+      "seccomp",
+      "secrets",
+      "availability"
+     ],
+     "missing": [],
+     "artifact_len": 34921
+    },
+    "ECC": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "nonroot",
+      "readonlyfs",
+      "dropcaps",
+      "resources",
+      "pinnedimage",
+      "probes",
+      "noprivileged",
+      "seccomp",
+      "secrets",
+      "availability"
+     ],
+     "missing": [],
+     "artifact_len": 17565
+    },
+    "claude-skills": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "nonroot",
+      "readonlyfs",
+      "dropcaps",
+      "resources",
+      "pinnedimage",
+      "probes",
+      "noprivileged",
+      "seccomp",
+      "secrets",
+      "availability"
+     ],
+     "missing": [],
+     "artifact_len": 20464
+    },
+    "awesome-cursorrules": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "nonroot",
+      "readonlyfs",
+      "dropcaps",
+      "resources",
+      "pinnedimage",
+      "probes",
+      "noprivileged",
+      "seccomp",
+      "secrets",
+      "availability"
+     ],
+     "missing": [],
+     "artifact_len": 20945
+    }
+   }
+  },
+  "i2_dockerfile": {
+   "rubric_n": 10,
+   "arms": {
+    "without": {
+     "recall": 0.7,
+     "recalls": [
+      0.7
+     ],
+     "min": 0.7,
+     "max": 0.7,
+     "sd": 0.0,
+     "present": [
+      "nonroot",
+      "pinnedbase",
+      "multistage",
+      "nosecrets",
+      "nocache",
+      "workdir",
+      "noroot_ports"
+     ],
+     "missing": [
+      "minimalcopy",
+      "healthcheck",
+      "pinneddeps"
+     ],
+     "artifact_len": 1863
+    },
+    "sota": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "nonroot",
+      "pinnedbase",
+      "multistage",
+      "nosecrets",
+      "minimalcopy",
+      "nocache",
+      "healthcheck",
+      "pinneddeps",
+      "workdir",
+      "noroot_ports"
+     ],
+     "missing": [],
+     "artifact_len": 9484
+    },
+    "ECC": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "nonroot",
+      "pinnedbase",
+      "multistage",
+      "nosecrets",
+      "minimalcopy",
+      "nocache",
+      "healthcheck",
+      "pinneddeps",
+      "workdir",
+      "noroot_ports"
+     ],
+     "missing": [],
+     "artifact_len": 9692
+    },
+    "claude-skills": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "nonroot",
+      "pinnedbase",
+      "multistage",
+      "nosecrets",
+      "minimalcopy",
+      "nocache",
+      "healthcheck",
+      "pinneddeps",
+      "workdir",
+      "noroot_ports"
+     ],
+     "missing": [],
+     "artifact_len": 7826
+    },
+    "awesome-cursorrules": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "nonroot",
+      "pinnedbase",
+      "multistage",
+      "nosecrets",
+      "minimalcopy",
+      "nocache",
+      "healthcheck",
+      "pinneddeps",
+      "workdir",
+      "noroot_ports"
+     ],
+     "missing": [],
+     "artifact_len": 9232
+    }
+   }
+  },
+  "i3_terraform_s3": {
+   "rubric_n": 10,
+   "arms": {
+    "without": {
+     "recall": 0.9,
+     "recalls": [
+      0.9
+     ],
+     "min": 0.9,
+     "max": 0.9,
+     "sd": 0.0,
+     "present": [
+      "blockpublic",
+      "encryption",
+      "versioning",
+      "tlsonly",
+      "leastpriv",
+      "logging",
+      "lifecycle",
+      "nocreds",
+      "tags"
+     ],
+     "missing": [
+      "ownership"
+     ],
+     "artifact_len": 11085
+    },
+    "sota": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "blockpublic",
+      "encryption",
+      "versioning",
+      "tlsonly",
+      "leastpriv",
+      "logging",
+      "lifecycle",
+      "nocreds",
+      "ownership",
+      "tags"
+     ],
+     "missing": [],
+     "artifact_len": 51694
+    },
+    "ECC": {
+     "recall": 0.9,
+     "recalls": [
+      0.9
+     ],
+     "min": 0.9,
+     "max": 0.9,
+     "sd": 0.0,
+     "present": [
+      "blockpublic",
+      "encryption",
+      "versioning",
+      "tlsonly",
+      "leastpriv",
+      "logging",
+      "lifecycle",
+      "nocreds",
+      "tags"
+     ],
+     "missing": [
+      "ownership"
+     ],
+     "artifact_len": 17840
+    },
+    "claude-skills": {
+     "recall": 0.9,
+     "recalls": [
+      0.9
+     ],
+     "min": 0.9,
+     "max": 0.9,
+     "sd": 0.0,
+     "present": [
+      "blockpublic",
+      "encryption",
+      "versioning",
+      "tlsonly",
+      "leastpriv",
+      "logging",
+      "lifecycle",
+      "nocreds",
+      "tags"
+     ],
+     "missing": [
+      "ownership"
+     ],
+     "artifact_len": 21097
+    },
+    "awesome-cursorrules": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "blockpublic",
+      "encryption",
+      "versioning",
+      "tlsonly",
+      "leastpriv",
+      "logging",
+      "lifecycle",
+      "nocreds",
+      "ownership",
+      "tags"
+     ],
+     "missing": [],
+     "artifact_len": 35581
+    }
+   }
+  }
+ },
+ "means": {
+  "without": 0.8666666666666667,
+  "sota": 1.0,
+  "ECC": 0.9666666666666667,
+  "claude-skills": 0.9666666666666667,
+  "awesome-cursorrules": 1.0
+ }
+}
