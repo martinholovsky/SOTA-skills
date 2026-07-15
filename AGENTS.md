@@ -26,7 +26,13 @@ symlinks to it — edit only this file, never the symlinks.
 
 `scripts/check-invariants.sh` fails the build on:
 
-1. any tracked `*.md` over **500 lines**;
+1. any **skill** Markdown (`skills/*/SKILL.md` or `skills/*/rules/*.md`) over
+   **500 lines** — the cap is load-bearing only there (it keeps incremental
+   loading working; the model reads the rules that match the task, not a wall of
+   text). Non-skill Markdown (README, CHANGELOG, `docs/`) is human/agent-facing
+   prose, **not** loaded as a skill, so it is intentionally **uncapped** (decided
+   2026-07-15) — navigability there comes from a table of contents and
+   [docs/INDEX.md](docs/INDEX.md), not a line ceiling;
 2. any `skills/*/rules/*.md` whose **last `## ` heading isn't
    `## Audit checklist`** (the checklist must end the file);
 3. an **internal-name denylist** — the library must stay generic. The private
@@ -107,7 +113,7 @@ pre-commit hook scans each commit locally.
 - [SECURITY.md](SECURITY.md) — reporting bad guidance or a leaked secret
 - [CHANGELOG.md](CHANGELOG.md) — release history (top entry = current version;
   also mirrored in `VERSION`); older releases are archived to keep every file
-  under the 500-line cap — **1.10.0–1.5.0** in
+  for navigability (CHANGELOG is no longer line-capped, so archiving is now
+  optional hygiene, not forced): **1.10.0–1.5.0** in
   [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md) and **1.4.0 and earlier**
-  in [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md) (split 2026-07-14);
-  when an archive nears 500, start the next numbered part rather than growing it
+  in [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md)
