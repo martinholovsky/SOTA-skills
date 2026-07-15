@@ -60,7 +60,10 @@ Evaluation-harness additions (no skill-content change; not in CI — see
   loses none; competitors are legitimate (all beat unguided by +0.23–0.28) but
   drop the cross-cutting non-negotiables (rate limiting, transport, tests) SOTA
   embeds. Clears the roadmap honesty gate for a scoped, reproducible "vs library
-  X" claim; `docs/WHY-IT-WORKS.md` now carries it.
+  X" claim; `docs/WHY-IT-WORKS.md` now carries it. A **3-sample/temp-0.7 confidence
+  check** on the 3 tightest cases confirms the lead holds — SOTA's worst sample is
+  ≥ each competitor's best, and the gaps match the single-sample run. The harness
+  gained `--samples/--temp`, `--ids`, and crash-safe incremental `--out` saving.
 
 ### Changed
 
