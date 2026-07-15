@@ -145,10 +145,14 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
   (unguided 0.58). SOTA wins/ties every one of 21 cases, loses none; competitors
   are legitimate (all +0.23–0.28 over unguided) but drop the cross-cutting
   non-negotiables SOTA embeds. The honesty gate is **cleared** — `WHY-IT-WORKS.md`
-  now carries a scoped "vs library X" claim. **Follow-ups still open:** multi-sample
-  the arms; broaden beyond the one task family (frontend/data/mobile); optionally
-  add an *as-deployed* comparison (each library with its own method, not
-  content-only). Original plan/targets kept below for reference.
+  now carries a scoped "vs library X" claim. **Breadth DONE 2026-07-15 — the lead
+  is backend-specific:** on 3 React frontend tasks SOTA-skills *ties* ECC and
+  claude-skills (all 97%, even losing one task); frontend completeness is easy
+  (unguided 77% vs 58% backend) so any guidance reaches the top. So the claim is
+  scoped to **backend**, not general (`competitor-breadth-frontend.json`).
+  **Follow-ups still open:** multi-sample the arms; more domains (data/mobile/CLI);
+  optionally an *as-deployed* comparison (each library with its own method).
+  Original plan/targets kept below for reference.
 - **(reference) Original competitor-benchmark plan.** Every eval to
   date is library-vs-*nothing* (an unguided model), so the public claim was
   honestly limited to that; to earn a "vs X" claim, run a competitor's content

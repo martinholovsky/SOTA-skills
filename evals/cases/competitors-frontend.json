@@ -1,0 +1,44 @@
+{
+  "_note": "Frontend competitor bundles for the breadth arm (run-competitors.py --manifest). Each competitor's BEST-matching FRONTEND content for building a React component, at a token budget comparable to a SOTA per-case arm. Same repos/SHAs as competitors.json. NOTE: alirezarezvani/claude-skills has no React/frontend-specific content (it is backend/ops/business-focused), so its bundle is its best general engineering+security guidance — an honest reflection that the library lacks frontend breadth, which the result will show. Content NOT vendored; clone each repo at its SHA into --competitors-dir.",
+  "competitors": {
+    "ECC": {
+      "repo": "affaan-m/ECC",
+      "sha": "ed387446052dfbc6b52de149406b70efa65edc59",
+      "license": "MIT",
+      "stars_approx": 230000,
+      "files": [
+        "agents/react-build-resolver.md",
+        "agents/typescript-reviewer.md",
+        "agents/security-reviewer.md",
+        "the-security-guide.md"
+      ]
+    },
+    "claude-skills": {
+      "repo": "alirezarezvani/claude-skills",
+      "sha": "84dc5a4f6ab93df5195805010572d7d0f874dadb",
+      "license": "MIT",
+      "stars_approx": 22600,
+      "_frontend_note": "No React/frontend-specific skill exists in this repo; best-available general engineering + security guidance used.",
+      "files": [
+        "standards/security/security-standards.md",
+        "engineering/security-guidance/skills/security-guidance/SKILL.md",
+        "engineering/strict-api/SKILL.md",
+        "engineering/skills/api-design-reviewer/SKILL.md"
+      ]
+    },
+    "awesome-cursorrules": {
+      "repo": "PatrickJS/awesome-cursorrules",
+      "sha": "b044f956f021b6e8877f16781bcfc466a6a120e9",
+      "license": "CC0-1.0",
+      "stars_approx": 40300,
+      "files": [
+        "rules/nextjs-react-typescript-cursorrules-prompt-file.mdc",
+        "rules/cursor-ai-react-typescript-shadcn-ui-cursorrules-p.mdc",
+        "rules/nextjs-react-tailwind-cursorrules-prompt-file.mdc",
+        "rules/javascript-typescript-code-quality-cursorrules-pro.mdc",
+        "rules/cypress-accessibility-testing-cursorrules-prompt-file.mdc",
+        "rules/security-devsecops-ssdls-appsec.mdc"
+      ]
+    }
+  }
+}
