@@ -74,16 +74,20 @@ most popular competing guidance libraries on the same 7 build tasks — same rub
 same blind judge, **content-only** (SOTA's self-audit forcing function turned off,
 so its win is the guidance, not the method):
 
+Scores are % of a fixed best-practice rubric the generated code implements
+(blind-judged); higher is better.
+
 | Library | Stars | Completeness |
 |---|---|---|
-| **SOTA** | — | **0.99** |
-| [affaan-m/ECC](https://github.com/affaan-m/ECC) | ~230k | 0.87 |
-| [PatrickJS/awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules) | ~40k | 0.83 |
-| [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | ~23k | 0.81 |
-| unguided model | — | 0.58 |
+| [**SOTA-skills**](https://github.com/martinholovsky/SOTA-skills) | — | **99%** |
+| [affaan-m/ECC](https://github.com/affaan-m/ECC) | ~230k | 87% |
+| [PatrickJS/awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules) | ~40k | 83% |
+| [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | ~23k | 81% |
+| unguided model | — | 58% |
 
-**SOTA wins or ties every one of the 21 head-to-head cases and loses none** — yet
-the competitors are no strawmen (all three beat an unguided model by +0.23–0.28).
+**SOTA-skills wins or ties every one of the 21 head-to-head cases and loses none**
+(across the 7 build tasks, per competitor: higher / equal / lower) — yet the
+competitors are no strawmen (all three beat an unguided model by +23 to +28 pts).
 Where they fall short is the same place unguided models do: the **cross-cutting
 production non-negotiables** — rate limiting, transport/TLS, tests, structured
 logging — dropped endpoint after endpoint (even the ~230k-star `affaan-m/ECC` omits rate

@@ -95,7 +95,7 @@ python3 evals/run-competitors.py --competitors-dir DIR   # SOTA vs competing lib
 
 **Competitor benchmark** (`run-competitors.py`, `cases/competitors.json`): SOTA
 vs. the most popular competing guidance libraries on the 7 completeness tasks —
-content-only, blind-judged. Result (2026-07-14): **SOTA 0.99 vs
+content-only, blind-judged. Result (2026-07-14): **SOTA-skills 0.99 vs
 [affaan-m/ECC](https://github.com/affaan-m/ECC) ~230k★ 0.87,
 [PatrickJS/awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules) ~40k★ 0.83,
 [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) ~23k★ 0.81** (unguided
