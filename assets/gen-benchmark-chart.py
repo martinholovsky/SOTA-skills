@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the competitor-benchmark bar chart (light + dark SVGs) in assets/.
+"""Generate the competitor-benchmark bar chart (light + dark) in assets/.
 
 A single-measure magnitude chart: best-practice completeness (%) per library, with
 SOTA-skills emphasized. Identity is carried by the text labels (each bar is named),
@@ -7,9 +7,14 @@ so color is not load-bearing — the brand green marks SOTA-skills, recessive gr
 carry the rest. Numbers come from evals/results/2026-07-13/competitor-benchmark.json
 (the 7-task, content-only, blind-judged means, rounded to whole %).
 
+Emits both SVG (used on GitHub) and, if `rsvg-convert` is installed, a 2x PNG
+(1440px wide — for LinkedIn/slides/anywhere SVG isn't supported).
+
 Regenerate: python3 assets/gen-benchmark-chart.py
 """
 import os
+import shutil
+import subprocess
 
 ROWS = [
     ("SOTA-skills", 99, "sota"),
@@ -69,12 +74,24 @@ def svg(theme_name):
     return "\n".join(out) + "\n"
 
 
+PNG_WIDTH = 1440  # 2x the 720px viewBox — retina / social-share resolution
+
+
 def main():
     here = os.path.dirname(os.path.abspath(__file__))
+    have_rsvg = shutil.which("rsvg-convert")
     for mode in ("light", "dark"):
-        path = os.path.join(here, f"benchmark-{mode}.svg")
-        open(path, "w", encoding="utf-8").write(svg(mode))
-        print("wrote", path)
+        svg_path = os.path.join(here, f"benchmark-{mode}.svg")
+        open(svg_path, "w", encoding="utf-8").write(svg(mode))
+        print("wrote", svg_path)
+        if have_rsvg:
+            png_path = os.path.join(here, f"benchmark-{mode}.png")
+            subprocess.run(["rsvg-convert", "-w", str(PNG_WIDTH), svg_path, "-o", png_path],
+                           check=True)
+            print("wrote", png_path)
+    if not have_rsvg:
+        print("note: rsvg-convert not found — SVGs written, PNGs skipped "
+              "(install librsvg, or: rsvg-convert -w 1440 benchmark-light.svg -o benchmark-light.png)")
 
 
 if __name__ == "__main__":
