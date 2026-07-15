@@ -77,16 +77,16 @@ so its win is the guidance, not the method):
 | Library | Stars | Completeness |
 |---|---|---|
 | **SOTA** | — | **0.99** |
-| ECC | ~230k | 0.87 |
-| awesome-cursorrules | ~40k | 0.83 |
-| alirezarezvani/claude-skills | ~23k | 0.81 |
+| [affaan-m/ECC](https://github.com/affaan-m/ECC) | ~230k | 0.87 |
+| [PatrickJS/awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules) | ~40k | 0.83 |
+| [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | ~23k | 0.81 |
 | unguided model | — | 0.58 |
 
 **SOTA wins or ties every one of the 21 head-to-head cases and loses none** — yet
 the competitors are no strawmen (all three beat an unguided model by +0.23–0.28).
 Where they fall short is the same place unguided models do: the **cross-cutting
 production non-negotiables** — rate limiting, transport/TLS, tests, structured
-logging — dropped endpoint after endpoint (even the ~230k-star ECC omits rate
+logging — dropped endpoint after endpoint (even the ~230k-star `affaan-m/ECC` omits rate
 limiting on 3 of 7 tasks). That is exactly what SOTA's operating principle 5 + the
 matched rules exist to close. Scope is honest: one task family (Python/FastAPI
 backend), single-sample, content-only; full method, per-arm misses, and

@@ -41,20 +41,22 @@ The simulation is a faithful proxy, and the self-audit gate caught real bugs liv
 Content-only (SOTA's self-audit **off**), same rubric, blind judge, on the 7
 completeness tasks. Targets validated live via the GitHub API.
 
-| Library | Stars | 7-task (1×) | 3 tightest cases (3×, temp 0.7) |
-|---|---|---|---|
-| **SOTA** | — | **0.99** | **0.98** |
-| ECC | ~230k | 0.87 | 0.87 |
-| awesome-cursorrules | ~40k | 0.83 | 0.82 |
-| alirezarezvani/claude-skills | ~23k | 0.81 | 0.83 |
-| unguided | — | 0.58 | 0.65 |
+One consolidated view — every competitor's standing in a single table:
+
+| Library | Stars | Completeness (7 tasks) | Confidence (3 tightest, 3×) | Gap vs SOTA | Head-to-head vs SOTA |
+|---|---|---|---|---|---|
+| **SOTA** | — | **0.99** | **0.98** | — | — |
+| [affaan-m/ECC](https://github.com/affaan-m/ECC) | ~230k | 0.87 | 0.87 | −0.12 | 5 win / 2 tie / 0 loss |
+| [PatrickJS/awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules) | ~40k | 0.83 | 0.82 | −0.16 | 7 win / 0 tie / 0 loss |
+| [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | ~23k | 0.81 | 0.83 | −0.17 | 6 win / 1 tie / 0 loss |
+| unguided model | — | 0.58 | 0.65 | −0.40 | — |
 
 SOTA **wins or ties all 21 single-sample cases and loses none.** The confidence
 check confirms it isn't noise: gaps match the full run, and **SOTA's worst sample
 ≥ each competitor's best sample** on every tight case. Competitors are legitimate
 (all beat unguided by +0.17–0.28) but drop the cross-cutting non-negotiables (rate
-limiting, transport, tests) — even the ~230k-star ECC omits rate limiting on 3 of
-7 tasks. Full method + honest limits (one task family, content-only, bundle-size
+limiting, transport, tests) — even the ~230k-star [affaan-m/ECC](https://github.com/affaan-m/ECC)
+omits rate limiting on 3 of 7 tasks. Full method + honest limits (one task family, content-only, bundle-size
 asymmetry): [COMPETITOR-BENCHMARK](2026-07-13/COMPETITOR-BENCHMARK.md).
 
 ## 4. Skill-application decay over a long session
