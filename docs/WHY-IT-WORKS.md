@@ -77,6 +77,13 @@ so its win is the guidance, not the method):
 Scores are % of a fixed best-practice rubric the generated code implements
 (blind-judged); higher is better.
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="../assets/benchmark-dark.svg">
+    <img alt="Best-practice completeness by library: SOTA-skills 99%, affaan-m/ECC 87%, PatrickJS/awesome-cursorrules 83%, alirezarezvani/claude-skills 81%, unguided model 58%." src="../assets/benchmark-light.svg" width="100%">
+  </picture>
+</p>
+
 | Library | Stars | Completeness |
 |---|---|---|
 | [**SOTA-skills**](https://github.com/martinholovsky/SOTA-skills) | — | **99%** |

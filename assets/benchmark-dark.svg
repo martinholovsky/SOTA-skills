@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 340" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" role="img" aria-label="Best-practice completeness by library: SOTA-skills 99%, affaan-m/ECC 87%, PatrickJS/awesome-cursorrules 83%, alirezarezvani/claude-skills 81%, unguided model 58%.">
+<rect x="0.5" y="0.5" width="719" height="339" rx="12" fill="#0d1117" stroke="#30363d"/>
+<text x="24" y="40" font-size="19" font-weight="700" fill="#e6edf3">How complete is the generated code?</text>
+<text x="24" y="62" font-size="12" fill="#8b949e">% of a fixed best-practice rubric implemented — blind-judged, 7 build tasks, content-only. Higher is better.</text>
+<text x="24" y="112" font-size="12.5" font-weight="700" fill="#e6edf3">SOTA-skills</text>
+<rect x="250" y="97" width="410" height="20" rx="4" fill="#21262d"/>
+<rect x="250" y="97" width="405.9" height="20" rx="4" fill="#3fb950"/>
+<text x="663.9" y="112" font-size="13" font-weight="700" fill="#e6edf3">99%</text>
+<text x="24" y="158" font-size="12.5" font-weight="400" fill="#e6edf3">affaan-m/ECC</text>
+<rect x="250" y="143" width="410" height="20" rx="4" fill="#21262d"/>
+<rect x="250" y="143" width="356.7" height="20" rx="4" fill="#768390"/>
+<text x="614.7" y="158" font-size="13" font-weight="400" fill="#e6edf3">87%</text>
+<text x="24" y="204" font-size="12.5" font-weight="400" fill="#e6edf3">PatrickJS/awesome-cursorrules</text>
+<rect x="250" y="189" width="410" height="20" rx="4" fill="#21262d"/>
+<rect x="250" y="189" width="340.3" height="20" rx="4" fill="#768390"/>
+<text x="598.3" y="204" font-size="13" font-weight="400" fill="#e6edf3">83%</text>
+<text x="24" y="250" font-size="12.5" font-weight="400" fill="#e6edf3">alirezarezvani/claude-skills</text>
+<rect x="250" y="235" width="410" height="20" rx="4" fill="#21262d"/>
+<rect x="250" y="235" width="332.1" height="20" rx="4" fill="#768390"/>
+<text x="590.1" y="250" font-size="13" font-weight="400" fill="#e6edf3">81%</text>
+<text x="24" y="296" font-size="12.5" font-weight="400" fill="#e6edf3">unguided model</text>
+<rect x="250" y="281" width="410" height="20" rx="4" fill="#21262d"/>
+<rect x="250" y="281" width="237.8" height="20" rx="4" fill="#545d68"/>
+<text x="495.8" y="296" font-size="13" font-weight="400" fill="#e6edf3">58%</text>
+<text x="24" y="323" font-size="10.5" fill="#8b949e">SOTA-skills wins or ties all 21 head-to-head cases (loses none) · data: evals/results/RESULTS.md</text>
+</svg>

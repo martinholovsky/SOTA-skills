@@ -41,6 +41,13 @@ The simulation is a faithful proxy, and the self-audit gate caught real bugs liv
 Content-only (SOTA's self-audit **off**), same rubric, blind judge, on the 7
 completeness tasks. Targets validated live via the GitHub API.
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="../../assets/benchmark-dark.svg">
+    <img alt="Best-practice completeness by library: SOTA-skills 99%, affaan-m/ECC 87%, PatrickJS/awesome-cursorrules 83%, alirezarezvani/claude-skills 81%, unguided model 58%." src="../../assets/benchmark-light.svg" width="100%">
+  </picture>
+</p>
+
 One consolidated view — every competitor's standing in a single table. Scores are
 **% of a fixed best-practice rubric the generated code actually implements**
 (blind-judged); higher is better.
