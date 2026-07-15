@@ -25,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Every competitor-repo reference now uses its full `owner/repo` name + a
+  GitHub link** (no bare "ECC"/"claude-skills"/"awesome-cursorrules", which
+  collide with unrelated same-named repos), and `evals/results/RESULTS.md` bundles
+  all competitor numbers into **one consolidated per-repo table** (completeness,
+  confidence, gap vs SOTA, head-to-head).
 - **The 500-line cap now applies to skill Markdown only** (`skills/**/*.md`), where
   it's load-bearing for incremental loading. README, CHANGELOG, and `docs/` are
   uncapped — navigability comes from the TOC + `docs/INDEX.md`, not a line ceiling.
@@ -77,8 +82,10 @@ Evaluation-harness additions (no skill-content change; not in CI — see
 - **Competitor benchmark** (`evals/run-competitors.py`,
   `evals/cases/competitors.json`, `results/2026-07-13/COMPETITOR-BENCHMARK.md`) —
   SOTA vs. the most popular competing guidance libraries on the 7 completeness
-  tasks, content-only and blind-judged. **SOTA 0.99 vs ECC (~230k★) 0.87,
-  awesome-cursorrules (~40k★) 0.83, alirezarezvani/claude-skills (~23k★) 0.81**;
+  tasks, content-only and blind-judged. **SOTA 0.99 vs
+  [affaan-m/ECC](https://github.com/affaan-m/ECC) (~230k★) 0.87,
+  [PatrickJS/awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules) (~40k★) 0.83,
+  [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) (~23k★) 0.81**;
   unguided 0.58. SOTA wins or ties every one of the 21 head-to-head cases and
   loses none; competitors are legitimate (all beat unguided by +0.23–0.28) but
   drop the cross-cutting non-negotiables (rate limiting, transport, tests) SOTA

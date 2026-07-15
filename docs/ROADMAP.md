@@ -137,8 +137,10 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
 - **Comparative benchmark vs. named competing libraries.** ~~Unexplored~~
   **DONE 2026-07-14** ([`evals/results/2026-07-13/COMPETITOR-BENCHMARK.md`](../evals/results/2026-07-13/COMPETITOR-BENCHMARK.md),
   `evals/run-competitors.py`, `evals/cases/competitors.json`). SOTA vs. the fair
-  peers, content-only, blind-judged, 7 build tasks: **SOTA 0.99 > ECC ~230k★ 0.87
-  > awesome-cursorrules ~40k★ 0.83 > alirezarezvani/claude-skills ~23k★ 0.81**
+  peers, content-only, blind-judged, 7 build tasks: **SOTA 0.99 >
+  [affaan-m/ECC](https://github.com/affaan-m/ECC) ~230k★ 0.87 >
+  [PatrickJS/awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules) ~40k★ 0.83 >
+  [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) ~23k★ 0.81**
   (unguided 0.58). SOTA wins/ties every one of 21 cases, loses none; competitors
   are legitimate (all +0.23–0.28 over unguided) but drop the cross-cutting
   non-negotiables SOTA embeds. The honesty gate is **cleared** — `WHY-IT-WORKS.md`
@@ -157,23 +159,23 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
   2026-new with explosive (plausibly inflated) star growth, so treat the numbers
   skeptically. Tiers:
   - **Same-kind engineering guidance a model reads to build/audit code** (the fair
-    completeness peers): **`affaan-m/ECC`** (~230k★, MIT, cross-AI — Claude/Codex/
+    completeness peers): **[affaan-m/ECC](https://github.com/affaan-m/ECC)** (~230k★, MIT, cross-AI — Claude/Codex/
     Cursor/Gemini/Kimi/Kiro; "agent harness… skills, security, research-first dev"
-    → highest-profile, PRIMARY); **`alirezarezvani/claude-skills`** (~22.6k★, MIT,
+    → highest-profile, PRIMARY); **[alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills)** (~22.6k★, MIT,
     multi-domain engineering + `audit/` + plugin, structured like SOTA → closest
-    same-kind peer); **`PatrickJS/awesome-cursorrules`** (~40.3k★, CC0, per-stack
+    same-kind peer); **[PatrickJS/awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules)** (~40.3k★, CC0, per-stack
     `.cursorrules` → the rules-library reference); tertiary
-    `SebastienDegodez/copilot-instructions` (~190★ but genuinely same-kind: DDD/
-    clean-arch/testing rules) and `sanjeed5/awesome-cursor-rules-mdc` (~3.5k★).
+    [SebastienDegodez/copilot-instructions](https://github.com/SebastienDegodez/copilot-instructions) (~190★ but genuinely same-kind: DDD/
+    clean-arch/testing rules) and [sanjeed5/awesome-cursor-rules-mdc](https://github.com/sanjeed5/awesome-cursor-rules-mdc) (~3.5k★).
   - **Popular but a *different axis*** (compare only on a workflow/quality axis, not
-    build-completeness): **`garrytan/gstack`** (~122k★, cross-AI — a 23-tool
+    build-completeness): **[garrytan/gstack](https://github.com/garrytan/gstack)** (~122k★, cross-AI — a 23-tool
     role/workflow setup, not a rules library); **`multica-ai/andrej-karpathy-
     skills`** (~192k★ but **no license** → can't legally reuse content; mostly one
     behavior CLAUDE.md).
   - **Excluded, different category:** `x1xhlol/system-prompts-and-models-of-ai-
-    tools` (~142k★ leaked tool prompts); `JuliusBrussee/caveman` (~89k★ token
-    gimmick); `agentsmd/agents.md` (the spec/website); `travisvn/awesome-claude-
-    skills` (link list); `ComposioHQ/awesome-claude-skills` (~67k★ productivity).
+    tools` (~142k★ leaked tool prompts); [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) (~89k★ token
+    gimmick); [agentsmd/agents.md](https://github.com/agentsmd/agents.md) (the spec/website); `travisvn/awesome-claude-
+    skills` (link list); [ComposioHQ/awesome-claude-skills](https://github.com/ComposioHQ/awesome-claude-skills) (~67k★ productivity).
   Fairness controls: each competitor's *best-matching* content per task (not a
   strawman), same fixed rubric + blind opus judge + token budget, record commit
   SHAs, respect licenses (skip no-license repos for pasted content), state
@@ -182,7 +184,8 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
   cross-cutting completeness the self-audit/principle-5 design recovers; expected
   non-edge = raw "does the code work". **Cost:** ~$16 per competitor per full
   completeness run (3-arm ≈ 1.5× the 2-arm) — one pilot fits the current ~$36
-  balance; the full ECC/alirezarezvani/cursorrules sweep needs a top-up. Still
+  balance; the full `affaan-m/ECC` / `alirezarezvani/claude-skills` /
+  `PatrickJS/awesome-cursorrules` sweep needs a top-up. Still
   gated on the maintainer wanting a "vs X" claim at all (2026-07-12 chose the
   honest vs-unguided framing).
 - **Cross-file / repo-level audit eval.** ~~Unexplored~~ **Explored 2026-07-13,
