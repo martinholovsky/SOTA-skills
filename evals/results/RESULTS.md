@@ -41,21 +41,29 @@ The simulation is a faithful proxy, and the self-audit gate caught real bugs liv
 Content-only (SOTA's self-audit **off**), same rubric, blind judge, on the 7
 completeness tasks. Targets validated live via the GitHub API.
 
-One consolidated view — every competitor's standing in a single table:
+One consolidated view — every competitor's standing in a single table. Scores are
+**% of a fixed best-practice rubric the generated code actually implements**
+(blind-judged); higher is better.
 
-| Library | Stars | Completeness (7 tasks) | Confidence (3 tightest, 3×) | Gap vs SOTA | Head-to-head vs SOTA |
+| Library | Stars | Completeness (7 tasks) | Confidence (3 tightest, 3×) | Gap vs SOTA-skills | Tasks won / tied / lost¹ |
 |---|---|---|---|---|---|
-| **SOTA** | — | **0.99** | **0.98** | — | — |
-| [affaan-m/ECC](https://github.com/affaan-m/ECC) | ~230k | 0.87 | 0.87 | −0.12 | 5 win / 2 tie / 0 loss |
-| [PatrickJS/awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules) | ~40k | 0.83 | 0.82 | −0.16 | 7 win / 0 tie / 0 loss |
-| [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | ~23k | 0.81 | 0.83 | −0.17 | 6 win / 1 tie / 0 loss |
-| unguided model | — | 0.58 | 0.65 | −0.40 | — |
+| [**SOTA-skills**](https://github.com/martinholovsky/SOTA-skills) | — | **99%** | **98%** | — | — |
+| [affaan-m/ECC](https://github.com/affaan-m/ECC) | ~230k | 87% | 87% | −12 pts | 5 / 2 / 0 |
+| [PatrickJS/awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules) | ~40k | 83% | 82% | −16 pts | 7 / 0 / 0 |
+| [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | ~23k | 81% | 83% | −17 pts | 6 / 1 / 0 |
+| unguided model | — | 58% | 65% | −40 pts | — |
 
-SOTA **wins or ties all 21 single-sample cases and loses none.** The confidence
-check confirms it isn't noise: gaps match the full run, and **SOTA's worst sample
-≥ each competitor's best sample** on every tight case. Competitors are legitimate
-(all beat unguided by +0.17–0.28) but drop the cross-cutting non-negotiables (rate
-limiting, transport, tests) — even the ~230k-star [affaan-m/ECC](https://github.com/affaan-m/ECC)
+¹ **Tasks won / tied / lost** — across the 7 build tasks, how many
+SOTA-skills scored *higher than* / *equal to* / *lower than* that competitor
+(single-sample). E.g. `5 / 2 / 0` = SOTA-skills beat [affaan-m/ECC](https://github.com/affaan-m/ECC)
+on 5 tasks, tied on 2, and never lost.
+
+SOTA-skills **wins or ties all 21 head-to-head cases and loses none.** The
+confidence check confirms it isn't noise: gaps match the full run, and
+**SOTA-skills' worst sample ≥ each competitor's best sample** on every tight case.
+Competitors are legitimate (all beat an unguided model by +17 to +28 pts) but drop
+the cross-cutting non-negotiables (rate limiting, transport, tests) — even the
+~230k-star [affaan-m/ECC](https://github.com/affaan-m/ECC)
 omits rate limiting on 3 of 7 tasks. Full method + honest limits (one task family, content-only, bundle-size
 asymmetry): [COMPETITOR-BENCHMARK](2026-07-13/COMPETITOR-BENCHMARK.md).
 

@@ -82,7 +82,7 @@ Evaluation-harness additions (no skill-content change; not in CI — see
 - **Competitor benchmark** (`evals/run-competitors.py`,
   `evals/cases/competitors.json`, `results/2026-07-13/COMPETITOR-BENCHMARK.md`) —
   SOTA vs. the most popular competing guidance libraries on the 7 completeness
-  tasks, content-only and blind-judged. **SOTA 0.99 vs
+  tasks, content-only and blind-judged. **SOTA-skills 0.99 vs
   [affaan-m/ECC](https://github.com/affaan-m/ECC) (~230k★) 0.87,
   [PatrickJS/awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules) (~40k★) 0.83,
   [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) (~23k★) 0.81**;
