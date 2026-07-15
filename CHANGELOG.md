@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Discoverability overhaul.** `docs/INDEX.md` (a find-it-fast map: every topic →
+  where it's documented, organized by intent), `docs/CONTEXT-MANAGEMENT.md` (the
+  single home for how the library keeps the model applying rules as context fills —
+  the re-injection hook, principle 5, terminal re-read, deterministic gates, and
+  the *why*), and `evals/results/RESULTS.md` (a consolidated scoreboard of every
+  measured number). README gained a **table of contents** and deep-doc links; both
+  new indexes are linked from AGENTS.md.
+- **Skill-application decay eval** (`evals/run-decay.py`,
+  `results/2026-07-13/DECAY.md`) — the first measurement of the *temporal*
+  (multi-turn) dimension of rule forgetting, not just single-call. Arms: anchor /
+  reminder (the `UserPromptSubmit`-hook analog) / control. First run: **no decay at
+  moderate scale** (guidance held over 30 unrelated turns); bounds the problem but
+  needs a bigger intervening context to find the breaking point (roadmap item 5).
+
+### Changed
+
+- **The 500-line cap now applies to skill Markdown only** (`skills/**/*.md`), where
+  it's load-bearing for incremental loading. README, CHANGELOG, and `docs/` are
+  uncapped — navigability comes from the TOC + `docs/INDEX.md`, not a line ceiling.
+  CHANGELOG archiving is now optional hygiene, not forced. *(PR #100)*
+
 Evaluation-harness additions (no skill-content change; not in CI — see
 `evals/README.md`). These execute two roadmap follow-ups from v1.15.0.
 
