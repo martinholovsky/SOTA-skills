@@ -96,7 +96,9 @@ filler is too small to dilute the anchor); scaling the test up needs a top-up.
 - **Competitor breadth** — the head-to-head is one task family (Python/FastAPI
   backend); frontend/data/mobile untested.
 - **As-deployed competitor comparison** — each library with its own method (not
-  content-only); would only widen SOTA's lead.
+  content-only). SOTA-skills' self-audit is *off* in this run, so an as-deployed
+  run would *plausibly* favor SOTA-skills — but that is a prediction, **not
+  measured** (a competitor's own method could help it too).
 - **Full-7 multi-sample** of the competitor arms (only the 3 tightest done).
 
 ## The three-layer story

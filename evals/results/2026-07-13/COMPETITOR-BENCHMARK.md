@@ -52,8 +52,10 @@ principle 5* + the matched rules are designed to close.
   SOTA's non-negotiables to the competitors), so the only variable is the pasted
   guidance. **SOTA's self-audit forcing function is *not* used here** — the number
   is content-only, so SOTA's win is its guidance, not its method. In real
-  deployment SOTA's self-audit widens the gap (it lifts SOTA to 0.99 *with* the
-  gate in `run-completeness.py`; here SOTA reaches 0.987 on content alone).
+  deployment SOTA-skills also runs its self-audit (measured: SOTA reaches 0.99
+  *with* the gate in `run-completeness.py`, vs 0.987 on content alone here).
+  Whether that *widens* the lead in an as-deployed run is a prediction, **not
+  measured** — a competitor deployed with its own method could improve too.
 - **Each competitor's best-matching content** for "build a secure Python/FastAPI
   backend feature," at a token budget in the same ballpark as a SOTA arm, pinned
   by commit SHA in [`evals/cases/competitors.json`](../../cases/competitors.json).
