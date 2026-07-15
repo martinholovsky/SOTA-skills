@@ -92,6 +92,19 @@ library); clean, blind-judged, stable across samples ([results & method →](doc
 - **Freshness +0.53** — current-2026 facts (RFCs, CVEs, EOLs) 0.44 → 0.97, where an unguided model is *confidently wrong*.
 - **Routing +0.10** — the right skills load for the task (0.90 → 1.00), even ones a keyword read misses; with the library, results barely move run-to-run.
 
+And not just vs. an unguided model — **head-to-head against the most popular
+guidance libraries**, SOTA-skills leads on completeness (content-only, blind-judged;
+it wins or ties all 21 cases and loses none):
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/benchmark-dark.svg">
+    <img alt="Best-practice completeness by library: SOTA-skills 99%, affaan-m/ECC 87%, PatrickJS/awesome-cursorrules 83%, alirezarezvani/claude-skills 81%, unguided model 58%." src="assets/benchmark-light.svg" width="100%">
+  </picture>
+</p>
+
+[Consolidated table, method & honest limits →](evals/results/RESULTS.md)
+
 ## Skills
 
 | Skill | Covers |
