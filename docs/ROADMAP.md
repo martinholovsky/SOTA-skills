@@ -4,13 +4,36 @@ Priorities set by the **2026-07-10 audit**
 ([AUDIT-2026-07-10.md](AUDIT-2026-07-10.md)). Ordered; revisit after each
 release. The 2026-07-01 cycle is fully executed and kept below as history.
 
-## Open tasks — next-session pick-up *(as of v1.15.0, 2026-07-13)*
+## Open tasks — next-session pick-up *(as of 2026-07-15)*
 
-Nothing is blocking; v1.15.0 shipped clean. Ordered by value. **Items 1, 2, 3, 6
-were executed and item 7 started 2026-07-13/14 (post-v1.15.0, all Unreleased in
-CHANGELOG, PRs #88–#93) — see notes.** The README now surfaces the measured
-lifts as a scannable list and shows the clone/script install right after the
-plugin method (PRs #92–#93).
+**Big post-v1.15.0 session — PRs #88–#109, all in CHANGELOG `[Unreleased]`
+(13 entries; main is well ahead of the v1.15.0 tag).** Executed: multi-sample
+tightening (item 1), live-agent BUILD validation (item 2), cross-file audit
+(item 3, +0.00 → agentic large-repo is the frontier, 3′), the **competitor
+benchmark** (item 6) **and its frontend breadth run** (the lead is
+**backend-specific** — SOTA-skills ties the field on frontend), a first
+**decay/multi-turn** run (item 5, no decay at moderate scale), a **discoverability
+overhaul** (docs/INDEX.md, docs/CONTEXT-MANAGEMENT.md, RESULTS.md scoreboard,
+README TOC), the **500-line cap scoped to skill files only** (README/CHANGELOG/docs
+uncapped), a **4-way accuracy sweep** (hedged the unmeasured web-search claims, fixed
+several numbers), and a **theme-aware benchmark chart** (SVG + PNG).
+
+**Now open, ordered by value:**
+- **Cut v1.16.0.** 13 `[Unreleased]` entries have accumulated; roll them into a
+  release per `RELEASING.md` (VERSION/plugin.json/CHANGELOG/tag; count surfaces
+  unchanged — still 41 skills). *(top mechanical task)*
+- **Distribution** (item 7): publish the salience write-up
+  (`docs/writeups/completeness-blind-spot.md`) — LinkedIn is the proven channel;
+  marketplace visibility; badge→verifiable-audit.
+- **As-deployed competitor comparison** + **more competitor domains** (data/mobile/
+  CLI); the backend/frontend split already shows the lead is domain-dependent.
+- **Agentic large-repo audit** (3′) and **constraint-budget probe** (4).
+- **Multi-turn amplification, at scale** (5): the decay run found *no* decay at
+  moderate scale — needs much larger intervening context to find the breaking point.
+- **Grow the eval case sets** (item 1 sub-task, content authoring).
+- **First 6-month accuracy sweep ~Jan 2027** (item 8; bump `LAST-VERIFIED`).
+
+Historical per-item notes below (kept as the record of what was done):
 
 1. **Tighten the eval numbers (confidence, not point estimates).** **Multi-sample
    DONE 2026-07-13** — [`evals/results/2026-07-13/MULTI-SAMPLE.md`](../evals/results/2026-07-13/MULTI-SAMPLE.md).
@@ -52,12 +75,18 @@ plugin method (PRs #92–#93).
    non-negotiables a model reliably satisfies — informs how short principle 5 and
    per-task checklists must stay. Directly tests the salience/attention finding
    in [`WHY-COMPLETENESS-RESIDUAL.md`](WHY-COMPLETENESS-RESIDUAL.md).
-5. **Multi-turn / agentic amplification test** *(new)*. The forgetting was
-   measured in a *single* call; the literature says chains/subagents make it
-   worse. Build the same task across a subagent chain and see if the fixes hold.
-6. **Competitor-library benchmark** — **DONE 2026-07-14** (see "Unexplored ideas"
-   below for the full result): SOTA-skills beats the fair peers on completeness,
-   content-only. The honesty gate is cleared for a *scoped* "vs library X" claim.
+5. **Multi-turn / agentic amplification test** *(new)*. **First run DONE 2026-07-15**
+   (`evals/run-decay.py`, `results/2026-07-13/DECAY.md`): guidance at turn 1 → K
+   filler turns → build probe. **No decay at moderate scale** (guidance held over 30
+   turns) — the filler is too small to dilute a ~18.6K-token anchor, so it bounds
+   the problem but doesn't find the breaking point. **Open:** scale up (much larger
+   intervening context, or a subagent chain).
+6. **Competitor-library benchmark** — **DONE 2026-07-14/15** (see "Unexplored ideas"
+   below for the full result): SOTA-skills beats the fair peers on completeness on
+   **backend** tasks, content-only. **Breadth run (frontend, 2026-07-15) bounds it:
+   SOTA-skills ties the field on frontend → the lead is backend-specific, not
+   general.** The honesty gate is cleared for a *scoped-to-backend* "vs library X"
+   claim; every doc surface was rescoped accordingly.
 7. **Distribution over coverage** (item 6): marketplace visibility, a published
    before/after demo, badge→verifiable-audit. **Started 2026-07-13/14:** (a) the
    README now leads with the measured lifts as a scannable list (completeness
