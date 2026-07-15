@@ -45,18 +45,19 @@ One consolidated view — every competitor's standing in a single table. Scores 
 **% of a fixed best-practice rubric the generated code actually implements**
 (blind-judged); higher is better.
 
-| Library | Stars | Completeness (7 tasks) | Confidence (3 tightest, 3×) | Gap vs SOTA-skills | Tasks won / tied / lost¹ |
+| Library | Stars | Completeness (7 tasks) | Confidence (3 tightest, 3×) | Gap vs SOTA-skills | This library vs SOTA-skills — won / tied / lost¹ |
 |---|---|---|---|---|---|
 | [**SOTA-skills**](https://github.com/martinholovsky/SOTA-skills) | — | **99%** | **98%** | — | — |
-| [affaan-m/ECC](https://github.com/affaan-m/ECC) | ~230k | 87% | 87% | −12 pts | 5 / 2 / 0 |
-| [PatrickJS/awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules) | ~40k | 83% | 82% | −16 pts | 7 / 0 / 0 |
-| [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | ~23k | 81% | 83% | −17 pts | 6 / 1 / 0 |
+| [affaan-m/ECC](https://github.com/affaan-m/ECC) | ~230k | 87% | 87% | −12 pts | 0 / 2 / 5 |
+| [PatrickJS/awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules) | ~40k | 83% | 82% | −16 pts | 0 / 0 / 7 |
+| [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | ~23k | 81% | 83% | −17 pts | 0 / 1 / 6 |
 | unguided model | — | 58% | 65% | −40 pts | — |
 
-¹ **Tasks won / tied / lost** — across the 7 build tasks, how many
-SOTA-skills scored *higher than* / *equal to* / *lower than* that competitor
-(single-sample). E.g. `5 / 2 / 0` = SOTA-skills beat [affaan-m/ECC](https://github.com/affaan-m/ECC)
-on 5 tasks, tied on 2, and never lost.
+¹ **This library's record against SOTA-skills**, across the 7 build tasks (how many
+that library scored *higher than* / *equal to* / *lower than* SOTA-skills,
+single-sample). Read it on the library's own row: `0 / 2 / 5` on the
+[affaan-m/ECC](https://github.com/affaan-m/ECC) row = ECC **won 0, tied 2, lost 5**.
+**No competitor won a single task against SOTA-skills.**
 
 SOTA-skills **wins or ties all 21 head-to-head cases and loses none.** The
 confidence check confirms it isn't noise: gaps match the full run, and
