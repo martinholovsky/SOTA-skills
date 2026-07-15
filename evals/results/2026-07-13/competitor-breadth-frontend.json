@@ -1,0 +1,388 @@
+{
+ "arms": [
+  "without",
+  "sota",
+  "ECC",
+  "claude-skills",
+  "awesome-cursorrules"
+ ],
+ "samples": 1,
+ "temp": 0.0,
+ "cases": {
+  "f1_login_form": {
+   "rubric_n": 10,
+   "arms": {
+    "without": {
+     "recall": 0.9,
+     "recalls": [
+      0.9
+     ],
+     "min": 0.9,
+     "max": 0.9,
+     "sd": 0.0,
+     "present": [
+      "controlled",
+      "validation",
+      "labels",
+      "pwmask",
+      "errorstate",
+      "loadingstate",
+      "nosecrets",
+      "xss",
+      "nopwlog"
+     ],
+     "missing": [
+      "tests"
+     ],
+     "artifact_len": 10666
+    },
+    "sota": {
+     "recall": 0.9,
+     "recalls": [
+      0.9
+     ],
+     "min": 0.9,
+     "max": 0.9,
+     "sd": 0.0,
+     "present": [
+      "validation",
+      "labels",
+      "pwmask",
+      "errorstate",
+      "loadingstate",
+      "nosecrets",
+      "xss",
+      "nopwlog",
+      "tests"
+     ],
+     "missing": [
+      "controlled"
+     ],
+     "artifact_len": 49503
+    },
+    "ECC": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "controlled",
+      "validation",
+      "labels",
+      "pwmask",
+      "errorstate",
+      "loadingstate",
+      "nosecrets",
+      "xss",
+      "nopwlog",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 32220
+    },
+    "claude-skills": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "controlled",
+      "validation",
+      "labels",
+      "pwmask",
+      "errorstate",
+      "loadingstate",
+      "nosecrets",
+      "xss",
+      "nopwlog",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 24965
+    },
+    "awesome-cursorrules": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "controlled",
+      "validation",
+      "labels",
+      "pwmask",
+      "errorstate",
+      "loadingstate",
+      "nosecrets",
+      "xss",
+      "nopwlog",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 14342
+    }
+   }
+  },
+  "f2_data_table": {
+   "rubric_n": 10,
+   "arms": {
+    "without": {
+     "recall": 0.7,
+     "recalls": [
+      0.7
+     ],
+     "min": 0.7,
+     "max": 0.7,
+     "sd": 0.0,
+     "present": [
+      "fetchloading",
+      "errorstate",
+      "emptystate",
+      "search",
+      "keys",
+      "xss",
+      "bounded"
+     ],
+     "missing": [
+      "semantictable",
+      "cleanup",
+      "tests"
+     ],
+     "artifact_len": 11874
+    },
+    "sota": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "fetchloading",
+      "errorstate",
+      "emptystate",
+      "search",
+      "semantictable",
+      "keys",
+      "xss",
+      "cleanup",
+      "bounded",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 52669
+    },
+    "ECC": {
+     "recall": 0.9,
+     "recalls": [
+      0.9
+     ],
+     "min": 0.9,
+     "max": 0.9,
+     "sd": 0.0,
+     "present": [
+      "fetchloading",
+      "errorstate",
+      "emptystate",
+      "search",
+      "semantictable",
+      "keys",
+      "xss",
+      "cleanup",
+      "tests"
+     ],
+     "missing": [
+      "bounded"
+     ],
+     "artifact_len": 42657
+    },
+    "claude-skills": {
+     "recall": 0.9,
+     "recalls": [
+      0.9
+     ],
+     "min": 0.9,
+     "max": 0.9,
+     "sd": 0.0,
+     "present": [
+      "fetchloading",
+      "errorstate",
+      "emptystate",
+      "search",
+      "semantictable",
+      "keys",
+      "xss",
+      "cleanup",
+      "tests"
+     ],
+     "missing": [
+      "bounded"
+     ],
+     "artifact_len": 30589
+    },
+    "awesome-cursorrules": {
+     "recall": 0.8,
+     "recalls": [
+      0.8
+     ],
+     "min": 0.8,
+     "max": 0.8,
+     "sd": 0.0,
+     "present": [
+      "fetchloading",
+      "errorstate",
+      "emptystate",
+      "search",
+      "semantictable",
+      "keys",
+      "xss",
+      "tests"
+     ],
+     "missing": [
+      "cleanup",
+      "bounded"
+     ],
+     "artifact_len": 19205
+    }
+   }
+  },
+  "f3_image_upload": {
+   "rubric_n": 10,
+   "arms": {
+    "without": {
+     "recall": 0.7,
+     "recalls": [
+      0.7
+     ],
+     "min": 0.7,
+     "max": 0.7,
+     "sd": 0.0,
+     "present": [
+      "accept",
+      "clientsize",
+      "typecheck",
+      "preview",
+      "loadingstate",
+      "errorstate",
+      "xss"
+     ],
+     "missing": [
+      "revoke",
+      "label",
+      "tests"
+     ],
+     "artifact_len": 9445
+    },
+    "sota": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "accept",
+      "clientsize",
+      "typecheck",
+      "preview",
+      "revoke",
+      "loadingstate",
+      "errorstate",
+      "label",
+      "xss",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 51011
+    },
+    "ECC": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "accept",
+      "clientsize",
+      "typecheck",
+      "preview",
+      "revoke",
+      "loadingstate",
+      "errorstate",
+      "label",
+      "xss",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 53719
+    },
+    "claude-skills": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "accept",
+      "clientsize",
+      "typecheck",
+      "preview",
+      "revoke",
+      "loadingstate",
+      "errorstate",
+      "label",
+      "xss",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 29988
+    },
+    "awesome-cursorrules": {
+     "recall": 0.9,
+     "recalls": [
+      0.9
+     ],
+     "min": 0.9,
+     "max": 0.9,
+     "sd": 0.0,
+     "present": [
+      "accept",
+      "clientsize",
+      "typecheck",
+      "preview",
+      "revoke",
+      "loadingstate",
+      "errorstate",
+      "label",
+      "xss"
+     ],
+     "missing": [
+      "tests"
+     ],
+     "artifact_len": 21378
+    }
+   }
+  }
+ },
+ "means": {
+  "without": 0.7666666666666666,
+  "sota": 0.9666666666666667,
+  "ECC": 0.9666666666666667,
+  "claude-skills": 0.9666666666666667,
+  "awesome-cursorrules": 0.9
+ }
+}

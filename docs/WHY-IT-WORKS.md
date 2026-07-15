@@ -95,16 +95,21 @@ Scores are % of a fixed best-practice rubric the generated code implements
 | [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | ~23k | 81% |
 | unguided model | — | 58% |
 
-**SOTA-skills wins or ties every one of the 21 head-to-head cases and loses none**
-(across the 7 build tasks, per competitor: higher / equal / lower) — yet the
-competitors are no strawmen (all three beat an unguided model by +23 to +28 pts).
-Where they fall short is the same place unguided models do: the **cross-cutting
-production non-negotiables** — rate limiting, transport/TLS, tests, structured
-logging — dropped endpoint after endpoint (even the ~230k-star `affaan-m/ECC` omits rate
-limiting on 3 of 7 tasks). That is exactly what SOTA's operating principle 5 + the
-matched rules exist to close. Scope is honest: one task family (Python/FastAPI
-backend), single-sample, content-only; full method, per-arm misses, and
-limitations in the [competitor benchmark](../evals/results/2026-07-13/COMPETITOR-BENCHMARK.md).
+This is a **backend** result. On these 7 tasks SOTA-skills wins or ties every one
+of the 21 head-to-head cases and loses none — yet the competitors are no strawmen
+(all three beat an unguided model by +23 to +28 pts). Where they fall short is the
+same place unguided models do: the **cross-cutting production non-negotiables** —
+rate limiting, transport/TLS, tests, structured logging — dropped endpoint after
+endpoint (even the ~230k-star `affaan-m/ECC` omits rate limiting on 3 of 7 tasks).
+That is exactly what SOTA's operating principle 5 + the matched rules exist to close.
+
+**But it does not generalize.** A breadth run on 3 React **frontend** tasks shows
+SOTA-skills *tying* ECC and claude-skills (all 97%, SOTA-skills even losing one
+task), because frontend completeness is easy — the unguided baseline is already 77%
+(vs 58% on backend), and any guidance reaches the top. So the honest claim is
+**scoped to backend build tasks**; on frontend SOTA-skills has no edge. Full method,
+per-arm misses, the frontend table, and limitations are in the
+[competitor benchmark](../evals/results/2026-07-13/COMPETITOR-BENCHMARK.md).
 
 ## What you get by design (beyond the numbers)
 

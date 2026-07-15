@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Competitor breadth experiment (frontend) — concludes the comparison.**
+  `evals/cases/completeness-frontend.jsonl` (3 React tasks), `evals/cases/competitors-frontend.json`, `results/2026-07-13/competitor-breadth-frontend.json`; `run-competitors.py` gained `--cases`/`--manifest`. Honest **negative** result: on frontend SOTA-skills **ties** ECC and alirezarezvani/claude-skills (all 97%, even losing one task) and leads PatrickJS/awesome-cursorrules by 7 pts — because the unguided baseline is already 77% (vs 58% on backend), so any guidance reaches the top. **The completeness lead is backend-specific and does not generalize.** All docs (README, WHY-IT-WORKS, RESULTS, ROADMAP, the chart alt) rescoped to backend.
 - **Competitor-benchmark bar chart** (`assets/benchmark-{light,dark}.svg` +
   matching 1440px `.png`, regenerable via `assets/gen-benchmark-chart.py`) — a
   theme-aware visual of best-practice completeness per library (SOTA-skills 99%

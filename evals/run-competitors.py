@@ -92,6 +92,11 @@ def main():
     ap.add_argument("--judge-model", default="anthropic/claude-opus-4.8")
     ap.add_argument("--only", default=None, help="comma list of competitor keys to run")
     ap.add_argument("--ids", default=None, help="comma list of case ids to run (subset)")
+    ap.add_argument("--cases", default=None,
+                    help="path to a completeness-style .jsonl (default: the backend set); "
+                         "use e.g. evals/cases/completeness-frontend.jsonl for the breadth arm")
+    ap.add_argument("--manifest", default=MANIFEST,
+                    help="path to a competitor manifest json (must match the --cases domain)")
     ap.add_argument("--samples", type=int, default=1,
                     help="generations per (case,arm); mean recall reported. >1 needs --temp>0")
     ap.add_argument("--temp", type=float, default=0.0)
@@ -100,11 +105,16 @@ def main():
     if a.samples > 1 and a.temp == 0.0:
         print("note: --samples>1 at --temp 0 gives identical deterministic runs; use --temp 0.7.\n")
     k = _rc.key()
-    cases = _rc.load_cases()
+    if a.cases:
+        path = a.cases if os.path.isabs(a.cases) else os.path.join(ROOT, a.cases)
+        cases = [json.loads(x) for x in open(path, encoding="utf-8")
+                 if x.strip() and not x.startswith("#")]
+    else:
+        cases = _rc.load_cases()
     if a.ids:
         want = set(a.ids.split(","))
         cases = [c for c in cases if c["id"] in want]
-    manifest = json.load(open(MANIFEST, encoding="utf-8"))["competitors"]
+    manifest = json.load(open(a.manifest, encoding="utf-8"))["competitors"]
     comps = list(manifest)
     if a.only:
         comps = [c for c in comps if c in a.only.split(",")]

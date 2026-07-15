@@ -88,11 +88,46 @@ own variance is near-zero (sd 0.00 on c1/c3, 0.04 on c7). The lead is stable.
 *(Multi-sampling the other 4 cases and the full 7 was left for a top-up — those
 were the least contested, so the tight-case check is the informative one.)*
 
+## Breadth — does it generalize? (frontend, run 2026-07-15)
+
+The result above is one task family (Python/FastAPI backend). To test whether the
+lead generalizes, we ran the **same harness on 3 React frontend tasks** (login
+form, searchable data table, image-upload-with-preview), each with an objective
+10-item rubric (controlled inputs, accessible labels, loading/error/empty states,
+XSS-safe rendering, cleanup, tests). Each competitor got its **best frontend
+content** (`competitors-frontend.json`); [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills)
+has no React-specific content, so it got its best general bundle — honestly noted.
+`competitor-breadth-frontend.json`:
+
+| Library | Frontend completeness (3 tasks) | vs SOTA-skills | Head-to-head (won/tied/lost vs SOTA-skills) |
+|---|---|---|---|
+| [**SOTA-skills**](https://github.com/martinholovsky/SOTA-skills) | **97%** | — | — |
+| [affaan-m/ECC](https://github.com/affaan-m/ECC) | 97% | **±0** | 1 / 1 / 1 |
+| [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | 97% | **±0** | 1 / 1 / 1 |
+| [PatrickJS/awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules) | 90% | −7 pts | 2 / 0 / 1 |
+| unguided model | 77% | −20 pts | — |
+
+**On frontend, SOTA-skills has no advantage** — it *ties* ECC and claude-skills at
+97% (and even *lost* the login-form task, 90% vs their 100%, by missing controlled
+inputs). The reason is structural, not a fluke: **the unguided baseline is far
+higher here (77% vs 58% on backend)** because frontend completeness is *easy* — a
+capable base model already knows React best practices (controlled inputs, labels,
+escaping), so the small remaining gap (mostly missing tests) closes with almost any
+"be thorough" guidance. Tellingly, claude-skills tied SOTA-skills **with no frontend
+content at all**. SOTA-skills' big backend lead came from the cross-cutting
+*production* non-negotiables (rate limiting, transport, idempotency) the base model
+silently drops — and frontend has no equivalent set that competitors miss.
+
+**Conclusion: the completeness lead is backend-specific and does NOT generalize to
+frontend.** That is the honest scope, and it is exactly what a breadth test exists
+to find.
+
 ## Honest limitations (state them, don't bury them)
 
-- **One task family** — 7 Python/FastAPI backend-security build tasks. A different
-  domain (frontend, data pipelines, mobile) could shift the ordering; this is the
-  domain we measured.
+- **Two task families measured, not more** — 7 Python/FastAPI backend tasks (SOTA
+  leads) + 3 React frontend tasks (SOTA ties; see above). Data pipelines, mobile,
+  CLI, etc. are untested; the backend-vs-frontend split already shows the lead is
+  domain-dependent.
 - **Mostly single-sample, temp 0** (deterministic). A 3-sample/temp-0.7 confidence
   check on the 3 tightest cases (above) confirms the lead holds; the other 4 cases
   and the full 7 are not yet multi-sampled (budget).
@@ -113,5 +148,7 @@ against the single most-starred cross-AI peer ([affaan-m/ECC](https://github.com
 the most-starred rules library ([PatrickJS/awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules)),
 and the closest same-kind skills library
 ([alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills)).
-The claim is scoped to **completeness on backend build tasks**,
-content-only, and is reproducible from this repo.
+But the breadth test **bounds** it: the claim is honestly scoped to
+**completeness on *backend* build tasks** (content-only, reproducible). On
+*frontend* SOTA-skills ties the field — so "SOTA-skills beats the popular
+libraries" is true for backend and **must not** be stated as a general claim.
