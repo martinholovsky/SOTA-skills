@@ -1,0 +1,40 @@
+{
+ "_note": "IaC breadth bundles \u2014 each competitor's best infra/IaC content. cursorrules is thin on infra (best-available: docker + k8s-docs + appsec).",
+ "competitors": {
+  "ECC": {
+   "repo": "affaan-m/ECC",
+   "sha": "ed387446052dfbc6b52de149406b70efa65edc59",
+   "license": "MIT",
+   "stars_approx": 230000,
+   "files": [
+    "skills/kubernetes-patterns/SKILL.md",
+    "skills/docker-patterns/SKILL.md",
+    "skills/deployment-patterns/SKILL.md",
+    "skills/security-review/cloud-infrastructure-security.md"
+   ]
+  },
+  "claude-skills": {
+   "repo": "alirezarezvani/claude-skills",
+   "sha": "84dc5a4f6ab93df5195805010572d7d0f874dadb",
+   "license": "MIT",
+   "stars_approx": 22600,
+   "files": [
+    "engineering/kubernetes-operator/skills/kubernetes-operator/SKILL.md",
+    "engineering/docker-development/skills/docker-development/SKILL.md",
+    "engineering/terraform-patterns/skills/terraform-patterns/SKILL.md",
+    "engineering-team/skills/senior-devops/SKILL.md"
+   ]
+  },
+  "awesome-cursorrules": {
+   "repo": "PatrickJS/awesome-cursorrules",
+   "sha": "b044f956f021b6e8877f16781bcfc466a6a120e9",
+   "license": "CC0-1.0",
+   "stars_approx": 40300,
+   "files": [
+    "rules/docker.mdc",
+    "rules/kubernetes-mkdocs-documentation-cursorrules-prompt.mdc",
+    "rules/security-devsecops-ssdls-appsec.mdc"
+   ]
+  }
+ }
+}

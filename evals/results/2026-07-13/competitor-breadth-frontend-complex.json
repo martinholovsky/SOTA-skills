@@ -1,0 +1,394 @@
+{
+ "arms": [
+  "without",
+  "sota",
+  "ECC",
+  "claude-skills",
+  "awesome-cursorrules"
+ ],
+ "samples": 1,
+ "temp": 0.0,
+ "cases": {
+  "cf1_auth_dashboard": {
+   "rubric_n": 10,
+   "arms": {
+    "without": {
+     "recall": 0.6,
+     "recalls": [
+      0.6
+     ],
+     "min": 0.6,
+     "max": 0.6,
+     "sd": 0.0,
+     "present": [
+      "authserver",
+      "noleak",
+      "nosensitive",
+      "serverfetch",
+      "xss",
+      "errloading"
+     ],
+     "missing": [
+      "headers",
+      "validation",
+      "cache",
+      "tests"
+     ],
+     "artifact_len": 30578
+    },
+    "sota": {
+     "recall": 0.9,
+     "recalls": [
+      0.9
+     ],
+     "min": 0.9,
+     "max": 0.9,
+     "sd": 0.0,
+     "present": [
+      "authserver",
+      "noleak",
+      "nosensitive",
+      "serverfetch",
+      "xss",
+      "headers",
+      "errloading",
+      "cache",
+      "tests"
+     ],
+     "missing": [
+      "validation"
+     ],
+     "artifact_len": 46323
+    },
+    "ECC": {
+     "recall": 0.8,
+     "recalls": [
+      0.8
+     ],
+     "min": 0.8,
+     "max": 0.8,
+     "sd": 0.0,
+     "present": [
+      "authserver",
+      "noleak",
+      "nosensitive",
+      "serverfetch",
+      "xss",
+      "headers",
+      "errloading",
+      "validation"
+     ],
+     "missing": [
+      "cache",
+      "tests"
+     ],
+     "artifact_len": 37015
+    },
+    "claude-skills": {
+     "recall": 0.8,
+     "recalls": [
+      0.8
+     ],
+     "min": 0.8,
+     "max": 0.8,
+     "sd": 0.0,
+     "present": [
+      "authserver",
+      "noleak",
+      "nosensitive",
+      "serverfetch",
+      "xss",
+      "errloading",
+      "validation",
+      "cache"
+     ],
+     "missing": [
+      "headers",
+      "tests"
+     ],
+     "artifact_len": 29320
+    },
+    "awesome-cursorrules": {
+     "recall": 0.5,
+     "recalls": [
+      0.5
+     ],
+     "min": 0.5,
+     "max": 0.5,
+     "sd": 0.0,
+     "present": [
+      "authserver",
+      "noleak",
+      "serverfetch",
+      "xss",
+      "errloading"
+     ],
+     "missing": [
+      "nosensitive",
+      "headers",
+      "validation",
+      "cache",
+      "tests"
+     ],
+     "artifact_len": 26377
+    }
+   }
+  },
+  "cf2_server_action": {
+   "rubric_n": 10,
+   "arms": {
+    "without": {
+     "recall": 0.7,
+     "recalls": [
+      0.7
+     ],
+     "min": 0.7,
+     "max": 0.7,
+     "sd": 0.0,
+     "present": [
+      "authserver",
+      "authz",
+      "validation",
+      "massassign",
+      "revalidate",
+      "errhandling",
+      "noleak"
+     ],
+     "missing": [
+      "xss",
+      "csrf",
+      "tests"
+     ],
+     "artifact_len": 9809
+    },
+    "sota": {
+     "recall": 0.9,
+     "recalls": [
+      0.9
+     ],
+     "min": 0.9,
+     "max": 0.9,
+     "sd": 0.0,
+     "present": [
+      "authserver",
+      "authz",
+      "validation",
+      "massassign",
+      "revalidate",
+      "errhandling",
+      "noleak",
+      "csrf",
+      "tests"
+     ],
+     "missing": [
+      "xss"
+     ],
+     "artifact_len": 29324
+    },
+    "ECC": {
+     "recall": 0.8,
+     "recalls": [
+      0.8
+     ],
+     "min": 0.8,
+     "max": 0.8,
+     "sd": 0.0,
+     "present": [
+      "authserver",
+      "authz",
+      "validation",
+      "massassign",
+      "errhandling",
+      "noleak",
+      "xss",
+      "csrf"
+     ],
+     "missing": [
+      "revalidate",
+      "tests"
+     ],
+     "artifact_len": 12894
+    },
+    "claude-skills": {
+     "recall": 0.6,
+     "recalls": [
+      0.6
+     ],
+     "min": 0.6,
+     "max": 0.6,
+     "sd": 0.0,
+     "present": [
+      "authserver",
+      "authz",
+      "validation",
+      "massassign",
+      "errhandling",
+      "noleak"
+     ],
+     "missing": [
+      "revalidate",
+      "xss",
+      "csrf",
+      "tests"
+     ],
+     "artifact_len": 18609
+    },
+    "awesome-cursorrules": {
+     "recall": 0.6,
+     "recalls": [
+      0.6
+     ],
+     "min": 0.6,
+     "max": 0.6,
+     "sd": 0.0,
+     "present": [
+      "authserver",
+      "authz",
+      "validation",
+      "massassign",
+      "errhandling",
+      "noleak"
+     ],
+     "missing": [
+      "revalidate",
+      "xss",
+      "csrf",
+      "tests"
+     ],
+     "artifact_len": 14064
+    }
+   }
+  },
+  "cf3_ssr_search": {
+   "rubric_n": 10,
+   "arms": {
+    "without": {
+     "recall": 0.3,
+     "recalls": [
+      0.3
+     ],
+     "min": 0.3,
+     "max": 0.3,
+     "sd": 0.0,
+     "present": [
+      "serverfetch",
+      "xss",
+      "states"
+     ],
+     "missing": [
+      "validation",
+      "injection",
+      "hydration",
+      "bounded",
+      "abuse",
+      "headers",
+      "tests"
+     ],
+     "artifact_len": 21232
+    },
+    "sota": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "serverfetch",
+      "validation",
+      "injection",
+      "xss",
+      "states",
+      "hydration",
+      "bounded",
+      "abuse",
+      "headers",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 40904
+    },
+    "ECC": {
+     "recall": 0.9,
+     "recalls": [
+      0.9
+     ],
+     "min": 0.9,
+     "max": 0.9,
+     "sd": 0.0,
+     "present": [
+      "serverfetch",
+      "validation",
+      "injection",
+      "xss",
+      "states",
+      "hydration",
+      "bounded",
+      "abuse",
+      "headers"
+     ],
+     "missing": [
+      "tests"
+     ],
+     "artifact_len": 39838
+    },
+    "claude-skills": {
+     "recall": 0.7,
+     "recalls": [
+      0.7
+     ],
+     "min": 0.7,
+     "max": 0.7,
+     "sd": 0.0,
+     "present": [
+      "serverfetch",
+      "validation",
+      "injection",
+      "xss",
+      "states",
+      "bounded",
+      "abuse"
+     ],
+     "missing": [
+      "hydration",
+      "headers",
+      "tests"
+     ],
+     "artifact_len": 33002
+    },
+    "awesome-cursorrules": {
+     "recall": 0.7,
+     "recalls": [
+      0.7
+     ],
+     "min": 0.7,
+     "max": 0.7,
+     "sd": 0.0,
+     "present": [
+      "serverfetch",
+      "validation",
+      "injection",
+      "xss",
+      "states",
+      "hydration",
+      "bounded"
+     ],
+     "missing": [
+      "abuse",
+      "headers",
+      "tests"
+     ],
+     "artifact_len": 19032
+    }
+   }
+  }
+ },
+ "means": {
+  "without": 0.5333333333333333,
+  "sota": 0.9333333333333332,
+  "ECC": 0.8333333333333334,
+  "claude-skills": 0.6999999999999998,
+  "awesome-cursorrules": 0.6
+ }
+}

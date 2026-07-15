@@ -13,8 +13,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Competitor breadth experiment (frontend) — concludes the comparison.**
-  `evals/cases/completeness-frontend.jsonl` (3 React tasks), `evals/cases/competitors-frontend.json`, `results/2026-07-13/competitor-breadth-frontend.json`; `run-competitors.py` gained `--cases`/`--manifest`. Honest **negative** result: on frontend SOTA-skills **ties** ECC and alirezarezvani/claude-skills (all 97%, even losing one task) and leads PatrickJS/awesome-cursorrules by 7 pts — because the unguided baseline is already 77% (vs 58% on backend), so any guidance reaches the top. **The completeness lead is backend-specific and does not generalize.** All docs (README, WHY-IT-WORKS, RESULTS, ROADMAP, the chart alt) rescoped to backend.
+- **Competitor breadth experiment (five domains) — concludes the comparison.**
+  `evals/results/2026-07-13/BREADTH.md` plus the case/manifest/result files for
+  Go backend, complex frontend (SSR/auth), simple frontend, and IaC
+  (`evals/cases/completeness-{go,iac,frontend,frontend-complex}.jsonl`,
+  `evals/cases/competitors-{go,iac,frontend}.json`,
+  `results/2026-07-13/competitor-breadth-{go,iac,frontend,frontend-complex}.json`);
+  `run-competitors.py` gained `--cases`/`--manifest`/`--ids`/`--samples`/`--temp`
+  and incremental `--out` saving. **Finding: the lead tracks the *unguided
+  baseline*, not the domain.** Below a ~0.7 baseline (Python backend 58%→lead +12,
+  Go 67%→+10, hard SSR/auth frontend 53%→+10) SOTA-skills leads every competitor by
+  ~10 pts; above it (simple React forms 77%→+0, templated IaC 87%→+0) everyone
+  converges. This **supersedes** the earlier "backend-specific" reading — the first
+  frontend run used *easy* forms; a re-run with the invisible concerns (server-side
+  authz, secret-boundary leakage, injection, hydration, CSP) shows SOTA-skills leads
+  hard frontend too. All docs (README, WHY-IT-WORKS, RESULTS, COMPETITOR-BENCHMARK,
+  ROADMAP) reframed from "backend-specific" to baseline-driven.
+- **Five-domain breadth chart** (`assets/breadth-{light,dark}.svg` + matching
+  1520px `.png`, regenerable via `assets/gen-breadth-chart.py`) — a theme-aware
+  grouped bar of unguided / best-competitor / SOTA-skills completeness across the
+  five domains, ordered by baseline so the lead-where-incomplete pattern is visible;
+  embedded in `BREADTH.md`. Palette validated with the dataviz skill's checker.
 - **Competitor-benchmark bar chart** (`assets/benchmark-{light,dark}.svg` +
   matching 1440px `.png`, regenerable via `assets/gen-benchmark-chart.py`) — a
   theme-aware visual of best-practice completeness per library (SOTA-skills 99%

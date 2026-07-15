@@ -10,8 +10,9 @@ release. The 2026-07-01 cycle is fully executed and kept below as history.
 (13 entries; main is well ahead of the v1.15.0 tag).** Executed: multi-sample
 tightening (item 1), live-agent BUILD validation (item 2), cross-file audit
 (item 3, +0.00 → agentic large-repo is the frontier, 3′), the **competitor
-benchmark** (item 6) **and its frontend breadth run** (the lead is
-**backend-specific** — SOTA-skills ties the field on frontend), a first
+benchmark** (item 6) **and a 5-domain breadth run** (the lead tracks the unguided
+baseline, not the domain — SOTA-skills leads on incomplete-by-default tasks: backend
+[Python+Go] + hard frontend; ties on simple UI + templated IaC), a first
 **decay/multi-turn** run (item 5, no decay at moderate scale), a **discoverability
 overhaul** (docs/INDEX.md, docs/CONTEXT-MANAGEMENT.md, RESULTS.md scoreboard,
 README TOC), the **500-line cap scoped to skill files only** (README/CHANGELOG/docs
@@ -83,9 +84,11 @@ Historical per-item notes below (kept as the record of what was done):
    intervening context, or a subagent chain).
 6. **Competitor-library benchmark** — **DONE 2026-07-14/15** (see "Unexplored ideas"
    below for the full result): SOTA-skills beats the fair peers on completeness on
-   **backend** tasks, content-only. **Breadth run (frontend, 2026-07-15) bounds it:
-   SOTA-skills ties the field on frontend → the lead is backend-specific, not
-   general.** The honesty gate is cleared for a *scoped-to-backend* "vs library X"
+   backend tasks, content-only. **5-domain breadth (2026-07-15/16) reframes it: the
+   lead tracks the unguided BASELINE, not the domain** — SOTA-skills leads +~10 pts
+   where a base model ships incomplete code (Python+Go backend, hard SSR/auth
+   frontend; baseline ≤0.67) and ties where it's already complete (simple frontend
+   77%, IaC 87%). See `results/2026-07-13/BREADTH.md`. The honesty gate is cleared for a *scoped-to-backend* "vs library X"
    claim; every doc surface was rescoped accordingly.
 7. **Distribution over coverage** (item 6): marketplace visibility, a published
    before/after demo, badge→verifiable-audit. **Started 2026-07-13/14:** (a) the
@@ -174,8 +177,10 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
   (unguided 0.58). SOTA wins/ties every one of 21 cases, loses none; competitors
   are legitimate (all +0.23–0.28 over unguided) but drop the cross-cutting
   non-negotiables SOTA embeds. The honesty gate is **cleared** — `WHY-IT-WORKS.md`
-  now carries a scoped "vs library X" claim. **Breadth DONE 2026-07-15 — the lead
-  is backend-specific:** on 3 React frontend tasks SOTA-skills *ties* ECC and
+  now carries a scoped "vs library X" claim. **Breadth DONE 2026-07-15/16 — lead tracks the
+  BASELINE not the domain (5 domains, BREADTH.md):** SOTA-skills leads where the base
+  model is incomplete (backend any-lang, hard frontend) and ties where it's complete
+  (simple frontend, IaC). [old note kept:] on 3 simple React tasks SOTA-skills ties ECC and
   claude-skills (all 97%, even losing one task); frontend completeness is easy
   (unguided 77% vs 58% backend) so any guidance reaches the top. So the claim is
   scoped to **backend**, not general (`competitor-breadth-frontend.json`).

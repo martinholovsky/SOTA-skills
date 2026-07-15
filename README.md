@@ -103,10 +103,12 @@ guidance libraries on backend build tasks**, SOTA-skills leads on completeness
   </picture>
 </p>
 
-This edge is **backend-specific** — a breadth run on frontend tasks shows
-SOTA-skills tying the field (frontend completeness is easy enough that any guidance
-reaches the top). We measure it and say so. [Consolidated table, the frontend
-breadth result, method & honest limits →](evals/results/RESULTS.md)
+A **five-domain breadth test** shows *when* this edge holds: SOTA-skills leads the
+field wherever a base model ships **incomplete** code — production backend in any
+language *and* complex/security-sensitive frontend (~+10 pts) — and **ties** where the
+base model is already near-complete (simple UI, templated infra). The lead tracks task
+difficulty, not the domain — we measure it and say so.
+[Full breadth result, consolidated table, method & honest limits →](evals/results/RESULTS.md)
 
 ## Skills
 
