@@ -97,6 +97,13 @@ pre-commit hook scans each commit locally.
 
 ## Pointers
 
+- [docs/INDEX.md](docs/INDEX.md) — **find-it-fast index**: where every topic is
+  documented, organized by what you're trying to do (start here if lost)
+- [docs/CONTEXT-MANAGEMENT.md](docs/CONTEXT-MANAGEMENT.md) — how the library keeps
+  the model applying rules as context fills (re-injection hook, principle 5,
+  terminal re-read, gates) + the decay measurement
+- [evals/results/RESULTS.md](evals/results/RESULTS.md) — consolidated scoreboard of
+  every measured number
 - [CONTRIBUTING.md](CONTRIBUTING.md) — full contribution guide and PR checklist
 - [RELEASING.md](RELEASING.md) — how to cut a release, including every
   version- and count-bearing surface (README, router, manifests, social

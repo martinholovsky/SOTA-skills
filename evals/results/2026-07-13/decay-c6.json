@@ -1,0 +1,181 @@
+{
+ "task": "c6_webhook",
+ "depths": [
+  0,
+  15,
+  30
+ ],
+ "results": {
+  "control": {
+   "0": {
+    "recall": 0.4,
+    "present": [
+     "sigverify",
+     "constanttime",
+     "validation",
+     "logging"
+    ],
+    "missing": [
+     "idempotency",
+     "sizelimit",
+     "ratelimit",
+     "errhygiene",
+     "transport",
+     "tests"
+    ],
+    "artifact_len": 13852,
+    "msgs": 1
+   },
+   "15": {
+    "recall": 0.4,
+    "present": [
+     "sigverify",
+     "constanttime",
+     "validation",
+     "errhygiene"
+    ],
+    "missing": [
+     "idempotency",
+     "sizelimit",
+     "ratelimit",
+     "logging",
+     "transport",
+     "tests"
+    ],
+    "artifact_len": 3380,
+    "msgs": 31
+   },
+   "30": {
+    "recall": 0.4,
+    "present": [
+     "sigverify",
+     "constanttime",
+     "validation",
+     "errhygiene"
+    ],
+    "missing": [
+     "idempotency",
+     "sizelimit",
+     "ratelimit",
+     "logging",
+     "transport",
+     "tests"
+    ],
+    "artifact_len": 3269,
+    "msgs": 61
+   }
+  },
+  "anchor": {
+   "0": {
+    "recall": 1.0,
+    "present": [
+     "sigverify",
+     "constanttime",
+     "idempotency",
+     "validation",
+     "sizelimit",
+     "ratelimit",
+     "logging",
+     "errhygiene",
+     "transport",
+     "tests"
+    ],
+    "missing": [],
+    "artifact_len": 58360,
+    "msgs": 3
+   },
+   "15": {
+    "recall": 1.0,
+    "present": [
+     "sigverify",
+     "constanttime",
+     "idempotency",
+     "validation",
+     "sizelimit",
+     "ratelimit",
+     "logging",
+     "errhygiene",
+     "transport",
+     "tests"
+    ],
+    "missing": [],
+    "artifact_len": 35068,
+    "msgs": 33
+   },
+   "30": {
+    "recall": 1.0,
+    "present": [
+     "sigverify",
+     "constanttime",
+     "idempotency",
+     "validation",
+     "sizelimit",
+     "ratelimit",
+     "logging",
+     "errhygiene",
+     "transport",
+     "tests"
+    ],
+    "missing": [],
+    "artifact_len": 25093,
+    "msgs": 63
+   }
+  },
+  "reminder": {
+   "0": {
+    "recall": 1.0,
+    "present": [
+     "sigverify",
+     "constanttime",
+     "idempotency",
+     "validation",
+     "sizelimit",
+     "ratelimit",
+     "logging",
+     "errhygiene",
+     "transport",
+     "tests"
+    ],
+    "missing": [],
+    "artifact_len": 41920,
+    "msgs": 3
+   },
+   "15": {
+    "recall": 1.0,
+    "present": [
+     "sigverify",
+     "constanttime",
+     "idempotency",
+     "validation",
+     "sizelimit",
+     "ratelimit",
+     "logging",
+     "errhygiene",
+     "transport",
+     "tests"
+    ],
+    "missing": [],
+    "artifact_len": 43340,
+    "msgs": 33
+   },
+   "30": {
+    "recall": 1.0,
+    "present": [
+     "sigverify",
+     "constanttime",
+     "idempotency",
+     "validation",
+     "sizelimit",
+     "ratelimit",
+     "logging",
+     "errhygiene",
+     "transport",
+     "tests"
+    ],
+    "missing": [],
+    "artifact_len": 34520,
+    "msgs": 63
+   }
+  }
+ }
+}

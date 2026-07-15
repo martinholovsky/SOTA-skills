@@ -50,6 +50,18 @@ stack comes from your profile or the skills' defaults (naming one is optional):
 
 More install options: [Installation](#installation) · more prompts: [Using it](#using-it).
 
+## Contents
+
+- [Standards & practices baked in](#standards--practices-baked-in)
+- [Skills](#skills) · [Coverage & non-goals](#coverage--non-goals)
+- [Installation](#installation) · [Always-on routing](#always-on-routing-recommended) · [Updating](#updating)
+- [Using it](#using-it)
+- [Optional setup & integrations](#optional-setup--integrations) — [badge](#badge), [gates](#enforcing-the-gates), [other agents](#other-ai-agents-codex-copilot-gemini-), [status line](#status-line-optional), [plugin extras](#optional-extras-for-plugin-users)
+- [Structure](#structure) · [How it works](#how-it-works) · [Conventions](#conventions)
+- [Contributing](#contributing) · [License](#license)
+
+**Deeper docs:** [Find it fast (docs index)](docs/INDEX.md) · [Does it work? (measured results)](evals/results/RESULTS.md) · [Why it works](docs/WHY-IT-WORKS.md) · [Keeping rules applied as context fills](docs/CONTEXT-MANAGEMENT.md) · [Roadmap](docs/ROADMAP.md)
+
 ## Standards & practices baked in
 
 Findings name the control they violate — not just "this looks wrong":
