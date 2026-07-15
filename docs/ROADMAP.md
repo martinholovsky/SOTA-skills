@@ -6,7 +6,7 @@ release. The 2026-07-01 cycle is fully executed and kept below as history.
 
 ## Open tasks — next-session pick-up *(as of v1.15.0, 2026-07-13)*
 
-Nothing is blocking; v1.15.0 shipped clean. Ordered by value. **Items 1, 2, 3
+Nothing is blocking; v1.15.0 shipped clean. Ordered by value. **Items 1, 2, 3, 6
 were executed and item 7 started 2026-07-13/14 (post-v1.15.0, all Unreleased in
 CHANGELOG, PRs #88–#93) — see notes.** The README now surfaces the measured
 lifts as a scannable list and shows the clone/script install right after the
@@ -30,8 +30,8 @@ plugin method (PRs #92–#93).
    cross-cutting concerns present in every applicable build; the self-audit gate
    **caught and fixed real gaps** live (c6: prod `/docs` exposure + unbounded DB
    critical section; c3: orphaned-task cancellation bug). The blind-judge scalar
-   (run once credit was restored) is **0.99 mean, 6/7 perfect — identical to the
-   0.99 simulation and vs 0.60 base**, proving the paste-based eval is a faithful
+   (run once credit was restored) is **0.99 mean, 6/7 perfect — matching the
+   0.99 simulation (0.987 vs 0.988) and far above the 0.60 base**, proving the paste-based eval is a faithful
    proxy for the live router flow (`evals/results/2026-07-13/live-build.json`).
 3. **Cross-file / repo-level audit eval.** **DONE 2026-07-13** —
    [`evals/results/2026-07-13/REPO-AUDIT.md`](../evals/results/2026-07-13/REPO-AUDIT.md),
@@ -55,8 +55,9 @@ plugin method (PRs #92–#93).
 5. **Multi-turn / agentic amplification test** *(new)*. The forgetting was
    measured in a *single* call; the literature says chains/subagents make it
    worse. Build the same task across a subagent chain and see if the fixes hold.
-6. **Deferred — competitor-library benchmark** (Unexplored, below): only if a
-   "better than library X" claim is wanted; needs a named target.
+6. **Competitor-library benchmark** — **DONE 2026-07-14** (see "Unexplored ideas"
+   below for the full result): SOTA-skills beats the fair peers on completeness,
+   content-only. The honesty gate is cleared for a *scoped* "vs library X" claim.
 7. **Distribution over coverage** (item 6): marketplace visibility, a published
    before/after demo, badge→verifiable-audit. **Started 2026-07-13/14:** (a) the
    README now leads with the measured lifts as a scannable list (completeness
@@ -95,7 +96,7 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
    control** (+0.09/+0.14/+0.09 across sonnet-4.6/sonnet-5/opus-4.8) — the
    contamination concern is resolved, the lift is real. **Audit +0.00**;
    **Freshness +0.50–0.65** (base model confidently wrong on 2026 facts, but a
-   web-search agent recovers most of it). **Completeness +0.39** (0.60→0.99 over
+   web-search agent would likely recover most of it — predicted, untested). **Completeness +0.39** (0.60→0.99 over
    7 tasks, full library, `cases/completeness.jsonl` + `run-completeness.py`,
    blind opus judge) — the **thesis, validated**: from a bare "build X" prompt the
    base model skips tests/rate-limits/logging/transport ~40% of the time; the

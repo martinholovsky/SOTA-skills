@@ -66,9 +66,9 @@ Fight the attention shape; don't out-muscle it with volume.
   | anchor (guidance at turn 1) | 1.00 | 1.00 | 1.00 |
   | reminder (guidance + per-prompt reminder) | 1.00 | 1.00 | 1.00 |
 
-  **No decay at this scale** — an 18.7 KB guidance block loaded at turn 1 was still
+  **No decay at this scale** — an ~18.6K-token (~72 KB) guidance block loaded at turn 1 was still
   fully applied after 30 unrelated turns. That *bounds* the problem (moderate
-  sessions are safe here) but does **not** find the breaking point: the ~3.3 KB of
+  sessions are safe here) but does **not** find the breaking point: the ~3.2K tokens of
   filler is small next to the guidance, so it can't dilute it. A real decay test
   needs much larger intervening context (or a smaller anchor); the harness takes
   `--depths` and a bigger filler to scale up. Logged as roadmap item 5, still open

@@ -57,7 +57,7 @@ One consolidated view — every competitor's standing in a single table. Scores 
 | [**SOTA-skills**](https://github.com/martinholovsky/SOTA-skills) | — | **99%** | **98%** | — | — |
 | [affaan-m/ECC](https://github.com/affaan-m/ECC) | ~230k | 87% | 87% | −12 pts | 0 / 2 / 5 |
 | [PatrickJS/awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules) | ~40k | 83% | 82% | −16 pts | 0 / 0 / 7 |
-| [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | ~23k | 81% | 83% | −17 pts | 0 / 1 / 6 |
+| [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | ~23k | 81% | 82% | −17 pts | 0 / 1 / 6 |
 | unguided model | — | 58% | 65% | −40 pts | — |
 
 ¹ **This library's record against SOTA-skills**, across the 7 build tasks (how many
@@ -86,7 +86,7 @@ Does a rule loaded early stop being applied as the session grows?
 | guidance at turn 1 | 1.00 | 1.00 | **1.00** (no decay) | [DECAY](2026-07-13/DECAY.md) |
 | no guidance (control) | 0.40 | 0.40 | 0.40 | |
 
-First run: **no decay at moderate scale** — an 18.7 KB guidance block held after 30
+First run: **no decay at moderate scale** — an ~18.6K-token (~72 KB) guidance block held after 30
 unrelated turns. This *bounds* the problem but doesn't find the breaking point (the
 filler is too small to dilute the anchor); scaling the test up needs a top-up.
 *(roadmap item 5, still open.)*

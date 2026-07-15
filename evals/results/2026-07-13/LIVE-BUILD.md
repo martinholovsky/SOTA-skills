@@ -11,7 +11,7 @@ paste over-state what an actual agent does?
 sub-agents were each handed only the bare "build X" completeness task plus the
 standing sota directive (consult the router, follow BUILD mode). The blind opus
 judge scores the live-agent builds at **0.99 mean completeness (6/7 perfect)** —
-identical to the 0.99 the paste-based simulation produces, and far above the 0.60
+matching the 0.99 the paste-based simulation produces (0.987 live vs 0.988 simulated), and far above the 0.60
 unguided base. All seven independently followed the workflow, and the terminal
 self-audit gate demonstrably recovered the cross-cutting concerns and caught real
 gaps — the exact mechanism the simulation credits for the completeness lift, now
@@ -108,7 +108,7 @@ python3 evals/judge-live-build.py --builds <live-build-dir> \
 ```
 
 `live-build.json` holds the per-case present/missing detail. The live-agent mean
-(**0.99**) equals the paste-based simulation (**0.99**) — which is the point: it
+(**0.987**) matches the paste-based simulation (**0.988**) — which is the point: it
 confirms `run-completeness.py`'s pasted-content arm is a faithful proxy for what a
 real router-driven agent produces, so the 0.60→0.99 completeness lift is not an
 artifact of the simulation. Roadmap item 2 is fully closed: the live flow both

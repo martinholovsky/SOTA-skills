@@ -111,7 +111,8 @@ pre-commit hook scans each commit locally.
 - [docs/MAINTENANCE.md](docs/MAINTENANCE.md) — accuracy sweep runbook +
   eval harness (keeping fast-moving claims true and measuring efficacy)
 - [docs/WHY-IT-WORKS.md](docs/WHY-IT-WORKS.md) — the measured-efficacy case
-  (lift **vs. an unguided model**, not vs. other libraries) + the design
+  (lift **vs. an unguided model**, plus a scoped head-to-head vs. named competing
+  libraries) + the design
   benefits; keep its numbers in sync with the eval results when they change
 - [docs/WHY-COMPLETENESS-RESIDUAL.md](docs/WHY-COMPLETENESS-RESIDUAL.md) — why a
   with-library build still occasionally drops a cross-cutting rule (a salience /

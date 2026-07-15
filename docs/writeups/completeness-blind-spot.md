@@ -32,7 +32,7 @@ Two real examples, base model with nothing added:
 | Task | Base-model coverage | What it silently dropped |
 |---|---|---|
 | Payment **webhook receiver** | **0.50** | idempotency, body-size limit, rate limiting, transport/TLS, tests |
-| Profile-picture **upload** | **0.55** | safe storage location, decompression-bomb defense, rate limiting, error hygiene, tests |
+| Profile-picture **upload** | **0.58** | safe storage location, decompression-bomb defense, rate limiting, error hygiene, tests |
 
 Across 7 such tasks the base model averages **0.60** — it embeds ~60% of best
 practices and *systematically* skips the same peripheral four: tests, rate
@@ -80,8 +80,8 @@ different — our number is from a **single call**, so chains only amplify it.
 
 ## Why this is the most useful thing a skill library can fix
 
-Note which failure this is. A tool-using agent can recover a **freshness** gap by
-searching the web. It cannot recover this one: **an agent will not search "should
+Note which failure this is. A tool-using agent can *plausibly* recover a **freshness** gap by
+searching the web (predicted, untested). It should not recover this one: **an agent will not search "should
 I add rate limiting"** — it just omits it. Completeness is the gap that web access
 doesn't close, which makes it the highest-value thing to engineer against.
 

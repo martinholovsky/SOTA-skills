@@ -76,7 +76,7 @@ where a competitor *tied* SOTA-skills in the single-sample run (`competitor-benc
 |---|---|---|
 | [**SOTA-skills**](https://github.com/martinholovsky/SOTA-skills) | **98%** | — |
 | [affaan-m/ECC](https://github.com/affaan-m/ECC) | 87% | −11 pts |
-| [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | 83% | −15 pts |
+| [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | 82% | −15 pts |
 | [PatrickJS/awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules) | 82% | −16 pts |
 | unguided | 65% | −33 pts |
 
