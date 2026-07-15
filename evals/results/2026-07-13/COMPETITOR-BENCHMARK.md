@@ -9,16 +9,17 @@ on the 7 completeness tasks, same fixed rubric, same blind opus-4.8 judge.
 all three, and never loses a single case.** Scores are % of a fixed best-practice
 rubric the generated code implements (blind-judged); higher is better.
 
-| Library | Completeness | vs SOTA-skills | vs unguided | Tasks won / tied / lost¹ |
+| Library | Completeness | vs SOTA-skills | vs unguided | This library vs SOTA-skills — won / tied / lost¹ |
 |---|---|---|---|---|
 | [**SOTA-skills**](https://github.com/martinholovsky/SOTA-skills) | **99%** | — | +40 pts | — |
-| [affaan-m/ECC](https://github.com/affaan-m/ECC) (~230k★) | 87% | **−12 pts** | +28 pts | 5 / 2 / 0 |
-| [PatrickJS/awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules) (~40.3k★) | 83% | **−16 pts** | +24 pts | 7 / 0 / 0 |
-| [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) (~22.6k★) | 81% | **−17 pts** | +23 pts | 6 / 1 / 0 |
+| [affaan-m/ECC](https://github.com/affaan-m/ECC) (~230k★) | 87% | **−12 pts** | +28 pts | 0 / 2 / 5 |
+| [PatrickJS/awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules) (~40.3k★) | 83% | **−16 pts** | +24 pts | 0 / 0 / 7 |
+| [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) (~22.6k★) | 81% | **−17 pts** | +23 pts | 0 / 1 / 6 |
 | unguided | 58% | −40 pts | — | — |
 
-¹ across the 7 build tasks, how many SOTA-skills scored higher / equal / lower vs
-that competitor (single-sample).
+¹ Read on each library's own row: how many of the 7 build tasks *that library*
+won / tied / lost against SOTA-skills (single-sample). `0 / 2 / 5` on the
+`affaan-m/ECC` row = ECC won 0, tied 2, lost 5. No competitor won a single task.
 
 SOTA wins or ties **every one of the 21 head-to-head cases; it loses none.** And
 the competitors are **not strawmen** — all three lift completeness +0.23 to +0.28
