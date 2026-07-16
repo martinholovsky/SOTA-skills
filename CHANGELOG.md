@@ -26,9 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Regression-tested (our [context-rot finding](docs/WHY-COMPLETENESS-RESIDUAL.md)
   warns added text can lower salience): the 3× completeness eval held at **0.991
   with-arm / +0.385 lift** (vs 0.996 / +0.395 — Δ −0.005, within sampling noise;
-  no cross-cutting concern systematically dropped). Raw:
-  `evals/results/2026-07-13/completeness-3sample-postadopt.json`; summary in
-  `evals/results/RESULTS.md`.
+  no cross-cutting concern systematically dropped), and the 3× routing eval (which
+  pastes the whole router, so it sees principle 6) **held at 1.00** with-arm, no
+  misses. Raw: `evals/results/2026-07-13/completeness-3sample-postadopt.json` +
+  `routing-3sample-postadopt.json`; summary in `evals/results/RESULTS.md`.
 
 ### Fixed
 

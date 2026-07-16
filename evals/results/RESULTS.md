@@ -34,7 +34,10 @@ guidance text can lower salience. Result: with-arm **0.991** (was 0.996), lift
 **+0.385** (was +0.395) — statistically unchanged (Δ −0.005, inside the run's
 sampling noise; the two dipped cases have an **empty aggregate missing-set**, i.e.
 no cross-cutting concern was systematically dropped, and c7 — the prior wobbler —
-went to 1.00). The changes are kept. Raw: `2026-07-13/completeness-3sample-postadopt.json`.
+went to 1.00). Routing was re-run too (principle 6 is added to the router, which
+the routing eval pastes whole): with-arm **held at 1.00** (n=3, no misses), lift
++0.09. The changes are kept. Raw:
+`2026-07-13/completeness-3sample-postadopt.json` + `routing-3sample-postadopt.json`.
 
 ## 2. Live-agent validation
 
