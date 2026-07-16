@@ -31,10 +31,15 @@ audit STRAT-HIGH-2).
   real audit-lift frontier is a repo too large to hold at once (agentic,
   selective reading), logged there as the open follow-up.
 - `cases/completeness.jsonl` (7) — a minimal "build X" task → a rubric of
-  universal best practices a blind judge scores the generated code against.
+  universal best practices a blind judge scores the generated code against. The
+  breadth run adds `completeness-{go,iac,frontend,frontend-complex}.jsonl` (3 each)
+  for the five-domain baseline analysis.
 - `cases/freshness.jsonl` (32) — a current-2026 fact question → the token a
   correct answer must contain. Every fact is present in the library and was
   primary-source-verified.
+- `cases/desc-routing.jsonl` (10) — an adversarially-confusable task → the correct
+  skill (`expect`) and the tempting wrong sibling (`distractor`). Scored by
+  `run-desc-routing.py` as an A/B on the description cross-refs (result: +0.00).
 
 Each line is one case with an `id` and an `expect` list (see `score.py` header
 for the schema). Add cases freely; keep `expect` to unambiguous must-haves.
@@ -91,6 +96,8 @@ python3 evals/run-clean.py --cases evals/cases/router.jsonl
 python3 evals/run-clean.py --cases evals/cases/audit-hard.jsonl
 python3 evals/run-repo-audit.py          # cross-file audit (own fixture repo + harness)
 python3 evals/run-competitors.py --competitors-dir DIR   # SOTA vs competing libraries
+python3 evals/run-decay.py               # multi-turn skill-application decay (anchor/reminder/control)
+python3 evals/run-desc-routing.py --samples 3 --temp 0.7   # description-catalogue routing A/B
 ```
 
 **Competitor benchmark** (`run-competitors.py`, `cases/competitors.json`): SOTA
@@ -103,6 +110,27 @@ content-only, blind-judged. Result (2026-07-14): **SOTA-skills 0.99 vs
 cross-cutting concerns (rate limiting, transport, tests). Clone each competitor at
 the pinned SHA into `DIR`
 ([`results/2026-07-13/COMPETITOR-BENCHMARK.md`](results/2026-07-13/COMPETITOR-BENCHMARK.md)).
+A five-domain **breadth** run then reframes it: the lead tracks the *unguided
+baseline*, not the domain — SOTA leads ~+10 where a base model ships incomplete code
+(production backend in any language, complex/security-sensitive frontend) and ties
+where it doesn't (simple UI, templated IaC)
+([`results/2026-07-13/BREADTH.md`](results/2026-07-13/BREADTH.md)).
+
+**Skill-application decay** (`run-decay.py`, `results/2026-07-13/DECAY.md`): the
+*temporal* dimension — does a rule loaded early stop being applied as a session
+grows? Arms: anchor / reminder (the `UserPromptSubmit`-hook analog) / control. First
+run: **no decay at moderate scale** (guidance held over 30 unrelated turns; anchor
+1.00, control 0.40) — bounds the problem but needs a bigger intervening context to
+find the breaking point.
+
+**Description-catalogue routing A/B** (`run-desc-routing.py`,
+`cases/desc-routing.jsonl`, `results/2026-07-13/desc-routing-3sample.json`): measures
+the skill **auto-loader** path (pick from the description catalogue), distinct from
+the router table above. A/Bs the catalogue with vs without the negative cross-refs
+("Not for X — use sota-Y") on 10 adversarially-confusable tasks. **Honest +0.00** —
+the model never routed to the warned-against sibling in either arm, so the
+description-selection path is already saturated for a frontier model (like audit); the
+cross-refs are kept as zero-cost defensive clarity, no lift claimed.
 
 **Live-agent BUILD validation** (`judge-live-build.py`) closes the completeness
 eval's one simulation gap: `run-completeness.py` *pastes* the router's principle
