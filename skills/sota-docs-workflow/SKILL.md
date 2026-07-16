@@ -44,7 +44,9 @@ When creating docs or setting up workflow:
    (`rules/01` §2, §4).
 3. **README = what / why / 5-minute quickstart / honest status**, then links
    out (`rules/01` §3). Runbooks are alert-linked and command-exact
-   (`rules/01` §5).
+   (`rules/01` §5). Ship the **documentation baseline** — README + LICENSE +
+   CHANGELOG always; SECURITY/CONTRIBUTING/CODE_OF_CONDUCT once public — each with
+   one canonical home, not scattered copies (`rules/01` §8).
 4. **Reference is generated** from OpenAPI/docstrings/rustdoc/godoc with
    warnings-as-errors; doc comments carry the why, contract, and failure
    modes; examples run in CI (`rules/02` §1–4).
@@ -118,7 +120,7 @@ evidence (a doc you executed, a PR you read) — no findings from vibes.
 
 | File | Read this when... |
 |---|---|
-| `rules/01-documentation-architecture.md` | Writing/structuring/auditing any docs: Diátaxis modes, docs-as-code CI (link checks, doc tests), README front-door, decay control (ownership, freshness, aggressive deletion), runbooks, onboarding docs, discoverability, AGENTS.md/CLAUDE.md and llms.txt. |
+| `rules/01-documentation-architecture.md` | Writing/structuring/auditing any docs: Diátaxis modes, docs-as-code CI (link checks, doc tests), README front-door, decay control (ownership, freshness, aggressive deletion), runbooks, onboarding docs, discoverability, AGENTS.md/CLAUDE.md and llms.txt, and the repo **documentation baseline** (must-have docs + community-health files: LICENSE/SECURITY/CONTRIBUTING/CODE_OF_CONDUCT, and where GitHub looks for them). |
 | `rules/02-api-reference-changelogs.md` | API/library reference docs: generation from source (OpenAPI/docstrings/rustdoc/godoc), docstring content (why/contract/failures), runnable examples and doctests, error documentation, versioned docs, Keep a Changelog discipline, migration guides. |
 | `rules/03-code-review-pr-workflow.md` | PR and review process: PR sizing and slicing, description discipline (what/why/how-tested), review SLAs and WIP limits, reviewer/author conduct, blocking vs non-blocking comments, draft and stacked PRs, automation boundaries, reviewing AI-generated code. |
 | `rules/04-commits-branches-releases.md` | Git history and shipping: atomic/bisectable commits, message discipline, Conventional Commits and when they pay, trunk-based vs gitflow honesty, SemVer semantics, breaking-change pipeline, tag immutability, release notes vs changelog, release automation. |

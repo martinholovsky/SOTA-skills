@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`sota-docs-workflow` rules/01 §8 "The documentation baseline"** — the must-have
+  doc set every repo should carry, closing a real gap (the individual docs were
+  covered but scattered, and the community-health files SECURITY/CODE_OF_CONDUCT/
+  SUPPORT/GOVERNANCE were absent entirely). Enumerates *always* (README + LICENSE +
+  CHANGELOG) vs *trigger-based* (CONTRIBUTING/CODE_OF_CONDUCT/SECURITY once public,
+  runbooks once on-call, AGENTS.md for AI-assisted repos, ADR log, CODEOWNERS), with
+  GitHub's community-health-file search precedence (`.github/` → root → `docs/`,
+  verified against GitHub docs) and the single-canonical-home rule so the baseline
+  itself doesn't become sprawl. Two audit-checklist lines added; SKILL index + BUILD
+  step updated.
+
 ### Changed
 
 - **`evals/results/RESULTS.md` now embeds the five-domain breadth chart** and
