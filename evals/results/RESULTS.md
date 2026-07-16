@@ -25,6 +25,17 @@ model already recognizes vulnerabilities, even cross-file when the repo fits in
 context. The real remaining audit frontier is an **agentic large-repo** audit
 (too big to hold at once); logged in the [roadmap](../../docs/ROADMAP.md).
 
+**Regression check (2026-07-16).** Three guidance changes adopted from an external
+review (negative routing cross-refs; a plan-concreteness clause in BUILD step 3; a
+new "claim done only with evidence" operating principle) were regression-tested by
+re-running this 3× completeness eval — because our own
+[context-rot finding](../../docs/WHY-COMPLETENESS-RESIDUAL.md) warns that *adding*
+guidance text can lower salience. Result: with-arm **0.991** (was 0.996), lift
+**+0.385** (was +0.395) — statistically unchanged (Δ −0.005, inside the run's
+sampling noise; the two dipped cases have an **empty aggregate missing-set**, i.e.
+no cross-cutting concern was systematically dropped, and c7 — the prior wobbler —
+went to 1.00). The changes are kept. Raw: `2026-07-13/completeness-3sample-postadopt.json`.
+
 ## 2. Live-agent validation
 
 Does the paste-based completeness eval reflect a real router-driven agent?
