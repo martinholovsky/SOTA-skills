@@ -31,6 +31,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   misses. Raw: `evals/results/2026-07-13/completeness-3sample-postadopt.json` +
   `routing-3sample-postadopt.json`; summary in `evals/results/RESULTS.md`.
 
+- **Description-based routing eval** (`evals/run-desc-routing.py`,
+  `evals/cases/desc-routing.jsonl`, `results/2026-07-13/desc-routing-3sample.json`)
+  — the first measurement of the skill **auto-loader** path (pick a skill from the
+  description catalogue), distinct from the router table. A/Bs the catalogue with vs
+  without the negative cross-references added above, on 10 adversarially-confusable
+  tasks. **Honest +0.00:** the model never routed to the warned-against sibling in
+  *either* arm (distractor-pick 0.00 across all cases/samples), so the cross-ref had
+  nothing to fix — the description-selection path is already saturated for a frontier
+  model, like audit. The cross-refs are kept as zero-cost defensive clarity; no
+  routing lift is claimed. Summary in `evals/results/RESULTS.md` §5.
+
 ### Fixed
 
 - **Accuracy sweep (4-way doc audit against the result JSONs).** Corrected claims stated more strongly than the data: the **web-search recovers/can't-recover** claims (freshness + completeness) were never measured — now marked as predictions; the live-agent 0.99 was called *identical* to the 0.99 simulation (actually 0.987 vs 0.988) — softened to *matching*; `claude-skills` 3-tightest confidence 83% → **82%** (recomputed 0.8249); DECAY guidance/filler sizes were tokens mislabeled as KB (18.7 KB → **~18.6K tokens / ~72 KB**); freshness **+0.65** was mis-attributed to the 32-case set (it's a 20-case run; 32-case is +0.53); `completeness-blind-spot` upload 0.55 → **0.58** (multi-sample mean); ROADMAP item 6 and the AGENTS.md WHY-IT-WORKS pointer were stale (competitor benchmark is done, WHY now carries a scoped vs-libraries section); star counts dated. Cited literature was spot-verified accurate (Chroma 2025 '18 models') and left as-is.
