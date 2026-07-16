@@ -83,9 +83,17 @@ single-sample). Read it on the library's own row: `0 / 2 / 5` on the
 [affaan-m/ECC](https://github.com/affaan-m/ECC) row = ECC **won 0, tied 2, lost 5**.
 **No competitor won a single task against SOTA-skills** (on backend).
 
-**Breadth — the lead tracks the unguided baseline, not the domain**
-([BREADTH.md](2026-07-13/BREADTH.md), 5 domains). SOTA-skills leads where a base
-model ships *incomplete* code, and ties where it's already near-complete:
+**Breadth — the lead tracks the unguided baseline, not the domain** (5 domains).
+SOTA-skills leads where a base model ships *incomplete* code and ties where it's
+already near-complete. Ordered by unguided baseline, the green lead appears only
+where the unguided bar is low:
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="../../assets/breadth-dark.svg">
+    <img alt="Completeness % by domain (unguided / best competitor / SOTA-skills), ordered by unguided baseline: hard frontend 53/83/93, Python backend 58/87/99, Go backend 67/87/97, simple frontend 77/97/97, IaC 87/100/100. SOTA-skills leads where the baseline is low and ties where it is high." src="../../assets/breadth-light.svg" width="100%">
+  </picture>
+</p>
 
 | Domain | Unguided | SOTA-skills | best competitor | SOTA lead |
 |---|---|---|---|---|
@@ -98,7 +106,12 @@ model ships *incomplete* code, and ties where it's already near-complete:
 Clean threshold near **0.7 baseline**: below it (production backend in any language,
 complex/security-sensitive frontend) SOTA-skills leads by ~10 pts; above it (simple
 UI, templated infra) everyone converges. So the win isn't "backend" — it's **wherever
-the base model's default is incomplete.**
+the base model's default is incomplete.** The mechanism: the library forces in the
+concerns a base model silently omits, and that headroom is large only when the missing
+pieces need non-trivial added logic (rate-limit middleware, a server-side auth check),
+small when they're a well-known template field the model already emits (a K8s
+`securityContext`, a React controlled input). Per-domain notes + raw data:
+[BREADTH.md](2026-07-13/BREADTH.md).
 
 SOTA-skills **wins or ties all 21 head-to-head cases and loses none.** The
 confidence check confirms it isn't noise: gaps match the full run, and
