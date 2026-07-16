@@ -7,7 +7,8 @@ description: >-
   caching, or throughput — designing latency budgets, fixing N+1 and
   accidental-quadratic patterns, tuning allocation/GC pressure, network and
   I/O efficiency, cache architecture, Core Web Vitals, or setting up
-  benchmarks and regression gates. Trigger keywords: performance,
+  benchmarks and regression gates. Not for concurrency correctness (races,
+  deadlocks, cancellation) — use sota-async-concurrency. Trigger keywords: performance,
   optimization, latency, profiling, slow, memory usage, caching, throughput,
   bottleneck, p99, flamegraph, Core Web Vitals.
 ---

@@ -76,16 +76,22 @@ def load_cases():
             if x.strip() and not x.startswith("#")]
 
 
-# Mirrors the router's BUILD workflow (skills/sota/SKILL.md steps 3-4): apply the
-# non-negotiables, then self-audit the diff against each Audit checklist and fill
-# every gap. This is the forcing function the plain "paste rules" arm omitted.
+# Mirrors the router's BUILD workflow (skills/sota/SKILL.md steps 3-4): plan the
+# task as concrete checkable items, apply the non-negotiables, then self-audit the
+# diff against each Audit checklist and fill every gap. The self-audit is the
+# forcing function the plain "paste rules" arm omitted; the concrete-plan step
+# mirrors step 3's plan-first discipline.
 BUILD_WORKFLOW = (
     "\n\n---\nBUILD PROCESS (follow it): (1) apply the NON-NEGOTIABLES of the "
-    "standards above unconditionally. (2) CRITICAL — before finishing, go through "
-    "EVERY '## Audit checklist' at the end of the standards above and verify your "
-    "code satisfies each item; for any gap (rate limiting, transport/TLS "
-    "enforcement, tests, structured logging, idempotency, etc.) ADD it, or state "
-    "explicitly why it is out of scope. Do not present incomplete code.\n\nTask: ")
+    "standards above unconditionally. (2) plan first — before writing code, list "
+    "the task's requirements as concrete, checkable items (each a specific outcome "
+    "you can mark done/not-done, e.g. 'rate-limit login to N/min per IP', not a "
+    "vague 'add rate limiting'), then implement against that list. (3) CRITICAL — "
+    "before finishing, go through EVERY '## Audit checklist' at the end of the "
+    "standards above and verify your code satisfies each item; for any gap (rate "
+    "limiting, transport/TLS enforcement, tests, structured logging, idempotency, "
+    "etc.) ADD it, or state explicitly why it is out of scope. Do not present "
+    "incomplete code.\n\nTask: ")
 
 
 def principle5():

@@ -8,7 +8,8 @@ description: >-
   (packaging, checksums, docs). Use when designing or building any command
   line tool, subcommand, TUI, or developer tool — in any framework (argparse,
   click, typer, clap, cobra, oclif, commander) — AND when auditing an existing
-  CLI for usability, scriptability, and compatibility. Trigger keywords: CLI,
+  CLI for usability, scriptability, and compatibility. Not for shell-script
+  correctness or security — use sota-shell-scripting. Trigger keywords: CLI,
   command line tool, flags, subcommands, terminal output, TUI, developer tool,
   argparse, clap, cobra, exit code, shell completion, man page, stdin, stdout.
 ---
