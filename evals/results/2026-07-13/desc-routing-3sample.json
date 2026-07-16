@@ -1,0 +1,267 @@
+{
+ "model": "anthropic/claude-sonnet-4.6",
+ "samples": 3,
+ "temp": 0.7,
+ "cases": {
+  "q1_react_ui": {
+   "task": "Build a Next.js dashboard page using React server components that fetches data and renders a sortable table, handling hydration and client/server data fetching correctly.",
+   "expect": "sota-web-frameworks",
+   "distractor": "sota-api-design",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-web-frameworks",
+      "sota-web-frameworks",
+      "sota-web-frameworks"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-web-frameworks",
+      "sota-web-frameworks",
+      "sota-web-frameworks"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "q2_sigma_detection": {
+   "task": "Write a Sigma detection rule that flags lateral movement via anomalous Kerberos TGS requests in Windows security logs, and map it to MITRE ATT&CK.",
+   "expect": "sota-detection-engineering",
+   "distractor": "sota-observability",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-detection-engineering",
+      "sota-detection-engineering",
+      "sota-detection-engineering"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-detection-engineering",
+      "sota-detection-engineering",
+      "sota-detection-engineering"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "q3_latency_opt": {
+   "task": "Our checkout endpoint's p99 latency is 1.2s under load. Profile it, find the bottleneck, and optimize throughput.",
+   "expect": "sota-performance",
+   "distractor": "sota-async-concurrency",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-performance",
+      "sota-performance",
+      "sota-performance"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-performance",
+      "sota-performance",
+      "sota-performance"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "q4_data_race": {
+   "task": "Under concurrency we're hitting intermittent data races and an occasional deadlock between two goroutines sharing a map. Fix the synchronization.",
+   "expect": "sota-async-concurrency",
+   "distractor": "sota-performance",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-golang",
+      "sota-golang",
+      "sota-golang"
+     ],
+     "correct": 0.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-golang",
+      "sota-golang",
+      "sota-golang"
+     ],
+     "correct": 0.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "q5_code_vuln_review": {
+   "task": "Review this Python request handler at the code level for injection, XSS, and insecure deserialization vulnerabilities.",
+   "expect": "sota-code-security",
+   "distractor": "sota-threat-modeling",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "q6_appcode_audit": {
+   "task": "Audit our application's source code for exploitable vulnerabilities like SQL injection and SSRF in the request-handling functions.",
+   "expect": "sota-code-security",
+   "distractor": "sota-devsecops",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "q7_pod_hardening": {
+   "task": "Harden our Kubernetes workloads: set securityContext runAsNonRoot, drop Linux capabilities, and enforce a read-only root filesystem on the pods.",
+   "expect": "sota-kubernetes",
+   "distractor": "sota-devsecops",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-sandboxing",
+      "sota-sandboxing",
+      "sota-sandboxing"
+     ],
+     "correct": 0.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-sandboxing",
+      "sota-sandboxing",
+      "sota-sandboxing"
+     ],
+     "correct": 0.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "q8_bash_review": {
+   "task": "Review this Bash deployment script for unquoted variable expansions, command injection, and unsafe use of eval.",
+   "expect": "sota-shell-scripting",
+   "distractor": "sota-cli-ux",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-shell-scripting",
+      "sota-shell-scripting",
+      "sota-shell-scripting"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-shell-scripting",
+      "sota-shell-scripting",
+      "sota-shell-scripting"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "q9_etl_pipeline": {
+   "task": "Design an ETL pipeline that ingests Kafka event streams, transforms them, and loads them into our analytics warehouse with schema evolution.",
+   "expect": "sota-data-engineering",
+   "distractor": "sota-databases",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-data-engineering",
+      "sota-data-engineering",
+      "sota-data-engineering"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-data-engineering",
+      "sota-data-engineering",
+      "sota-data-engineering"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "q10_ui_microcopy": {
+   "task": "Write the button labels, empty-state text, and inline validation error messages for our checkout UI.",
+   "expect": "sota-ux-writing",
+   "distractor": "sota-docs-workflow",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-ux-writing",
+      "sota-ux-writing",
+      "sota-ux-writing"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-ux-writing",
+      "sota-ux-writing",
+      "sota-ux-writing"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  }
+ },
+ "summary": {
+  "with-xref": {
+   "correct": 0.8,
+   "distractor": 0.0
+  },
+  "without-xref": {
+   "correct": 0.8,
+   "distractor": 0.0
+  }
+ }
+}

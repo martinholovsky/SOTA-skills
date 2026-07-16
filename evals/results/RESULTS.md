@@ -125,6 +125,31 @@ unrelated turns. This *bounds* the problem but doesn't find the breaking point (
 filler is too small to dilute the anchor); scaling the test up needs a top-up.
 *(roadmap item 5, still open.)*
 
+## 5. Description-based routing — do the negative cross-refs help? (A/B, +0.00)
+
+Skill descriptions carry negative cross-references ("Not for X — use sota-Y") to
+disambiguate confusable siblings. This is the path a skill **auto-loader** uses
+(pick from the description catalogue), distinct from the router table §1 measures.
+[`run-desc-routing.py`](../run-desc-routing.py) A/Bs the *same* catalogue with vs
+without those clauses on 10 adversarially-confusable tasks (each names the correct
+skill and the tempting sibling), 3× temp 0.7, objective name-match scoring.
+
+| arm | correct | distractor-pick | Source |
+|---|---|---|---|
+| with cross-refs | 0.80 | **0.00** | [desc-routing-3sample.json](2026-07-13/desc-routing-3sample.json) |
+| without cross-refs | 0.80 | **0.00** | |
+
+**Honest +0.00.** The model **never** routed to the warned-against sibling in
+*either* arm (distractor-pick 0.00 across all 10 cases × 3 samples, perfectly
+steady) — so the cross-ref had nothing to fix here. The two non-`expect` picks are
+*defensible co-answers*, not distractor mis-routes (a goroutine-race task → the Go
+language skill; pod-securityContext hardening → `sota-sandboxing`, which covers pod
+security), and they are identical in both arms. Like audit (+0.00), a capable model
+already does the easy version: the description-selection path is **saturated** for a
+frontier model on these pairs. The cross-refs are kept anyway — zero runtime cost,
+harmless, and plausibly useful for weaker/smaller models or genuinely ambiguous
+phrasings outside this set (a prediction, not measured). No routing lift is claimed.
+
 ## Not yet measured (open)
 
 - **Competitor breadth — DONE (5 domains).** The lead tracks the unguided baseline,
