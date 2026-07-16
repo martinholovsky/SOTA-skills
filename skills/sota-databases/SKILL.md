@@ -7,7 +7,8 @@ description: >-
   and scale, security, and vector/AI workloads. Use when designing a new data
   layer, writing or reviewing schemas/migrations/queries, debugging slow or
   contended database workloads, or auditing an existing database for
-  correctness, performance, and security. Trigger keywords: database, SQL,
+  correctness, performance, and security. Not for ETL or streaming data
+  pipelines — use sota-data-engineering. Trigger keywords: database, SQL,
   Postgres, schema, migration, index, query, ORM, transaction, NoSQL, Redis,
   vector DB, pgvector, replication, partitioning, connection pool, RLS,
   EXPLAIN, deadlock, sharding, caching, SurrealDB, SurrealQL, Qdrant,

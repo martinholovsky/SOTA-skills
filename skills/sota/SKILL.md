@@ -57,6 +57,12 @@ rules files that match the code in front of you. Never load all skills at once.
    coverage gap. Keep this list short and **re-check it last, before you ship**
    (BUILD step 4). If one is deliberately handled elsewhere (e.g. rate limiting
    at the gateway), say so — don't silently omit it.
+6. **Claim "done" only with evidence.** Never report a task complete or a fix
+   working from plausibility — "should work", "this fixes it", "Done!" are not
+   evidence. State the check you actually ran and its result: test output with
+   pass/fail counts and exit code, the command and its output, or the reproduced
+   behavior. If you did not run it, say so plainly. Unverified completion is not
+   completion — this applies to your own build output before you hand it back.
 
 ## Routing table
 
@@ -197,9 +203,13 @@ rules files that match the code in front of you. Never load all skills at once.
 3. **Plan first, with the checks in the plan.** Before writing code, list a
    short **requirements checklist for this task** — the top-10 non-negotiables
    of each loaded skill + the **universal build non-negotiables** (operating
-   principle 5) that apply to any endpoint/handler. Named up front and verified
-   at the end, constraints are followed far better than when left implicit.
-   Then implement against that checklist; apply detailed rules as code demands.
+   principle 5) that apply to any endpoint/handler. Make each item **concrete
+   and checkable** — a specific outcome you can mark done/not-done at step 4
+   ("rate-limit login to N/min per IP", not "add rate limiting"; "reject uploads
+   over N MB", not "validate uploads"); vague items ("handle errors", "make it
+   secure") don't survive to the plan. Named up front and verified at the end,
+   constraints are followed far better than when left implicit. Then implement
+   against that checklist; apply detailed rules as code demands.
 4. **Self-audit gate (do this LAST — do not present code until it passes).**
    Re-read each loaded rules file's **Audit checklist** (every rules file ends
    with one) *and* operating principle 5, and verify your diff satisfies every

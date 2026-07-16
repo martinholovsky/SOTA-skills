@@ -6,7 +6,9 @@ description: >-
   API security/operations. Use when designing or building any API surface
   (endpoints, schemas, protos, realtime channels, webhook senders/receivers)
   AND when auditing/reviewing existing APIs for correctness, evolvability,
-  security, and operational robustness. Trigger keywords: API, REST, GraphQL,
+  security, and operational robustness. Not for browser UI, rendering, or
+  client-framework concerns — use sota-web-frameworks or sota-frontend-design.
+  Trigger keywords: API, REST, GraphQL,
   gRPC, endpoint, websocket, SSE, realtime, WebRTC, webhook, versioning, OpenAPI,
   pagination, idempotency, rate limit, problem+json, protobuf, deprecation.
 ---

@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Three conventions adopted from an external agent-orchestration review**
+  (pure-Markdown, generic; runtime-bound ideas like memory-bank persistence,
+  RAG, and worktree locks were deliberately skipped):
+  1. **Negative routing cross-references** — 9 confusable skill descriptions now
+     name the sibling to use instead ("Not for X — use sota-Y": api-design,
+     observability, async-concurrency, performance, threat-modeling, devsecops,
+     cli-ux, databases, docs-workflow), sharpening disambiguation inline. No
+     harness reads skill descriptions, so this is off every measured eval path.
+  2. **Plan-concreteness** — router BUILD step 3 now requires each planned
+     checklist item be a concrete, checkable done/not-done outcome (vague items
+     rejected); mirrored into `run-completeness.py`'s `BUILD_WORKFLOW` so the eval
+     reflects the real workflow.
+  3. **Evidence-based completion** — new router operating principle 6: never claim
+     "done"/"working" from plausibility; state the check run and its result.
+  Regression-tested (our [context-rot finding](docs/WHY-COMPLETENESS-RESIDUAL.md)
+  warns added text can lower salience): the 3× completeness eval held at **0.991
+  with-arm / +0.385 lift** (vs 0.996 / +0.395 — Δ −0.005, within sampling noise;
+  no cross-cutting concern systematically dropped). Raw:
+  `evals/results/2026-07-13/completeness-3sample-postadopt.json`; summary in
+  `evals/results/RESULTS.md`.
+
 ### Fixed
 
 - **Accuracy sweep (4-way doc audit against the result JSONs).** Corrected claims stated more strongly than the data: the **web-search recovers/can't-recover** claims (freshness + completeness) were never measured — now marked as predictions; the live-agent 0.99 was called *identical* to the 0.99 simulation (actually 0.987 vs 0.988) — softened to *matching*; `claude-skills` 3-tightest confidence 83% → **82%** (recomputed 0.8249); DECAY guidance/filler sizes were tokens mislabeled as KB (18.7 KB → **~18.6K tokens / ~72 KB**); freshness **+0.65** was mis-attributed to the 32-case set (it's a 20-case run; 32-case is +0.53); `completeness-blind-spot` upload 0.55 → **0.58** (multi-sample mean); ROADMAP item 6 and the AGENTS.md WHY-IT-WORKS pointer were stale (competitor benchmark is done, WHY now carries a scoped vs-libraries section); star counts dated. Cited literature was spot-verified accurate (Chroma 2025 '18 models') and left as-is.

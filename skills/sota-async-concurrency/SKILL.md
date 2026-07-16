@@ -6,7 +6,8 @@ description: >-
   building anything with async/await, threads, processes, event loops, task
   groups, channels, or queues — and when auditing existing code for race
   conditions, deadlocks, leaked tasks, blocked event loops, missing
-  cancellation, or backpressure failures. Trigger keywords: async, await,
+  cancellation, or backpressure failures. Not for latency/throughput profiling
+  and optimization — use sota-performance. Trigger keywords: async, await,
   concurrency, parallelism, threads, race condition, deadlock, event loop,
   channels, queues, semaphore, mutex, cancellation, timeout, backpressure,
   task group, goroutine, tokio, asyncio.

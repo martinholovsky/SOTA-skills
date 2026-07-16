@@ -1,7 +1,7 @@
 ---
 name: sota-devsecops
 description: >-
-  State-of-the-art DevSecOps and software supply chain security (2026). Applies when building or auditing CI/CD pipelines, GitHub Actions workflows, supply chain controls, SBOM generation, SAST/secret-scanning gates, dependency management, container builds, container/artifact registries, IaC (Terraform), GitOps, and deployment strategy. Trigger keywords: CI/CD, pipeline, GitHub Actions, supply chain, SBOM, SAST, dependency, container build, container registry, registry security, Zot, Harbor, ECR, GAR, ACR, GHCR, immutable tags, pull-through cache, IaC, Terraform, deployment, provenance, SLSA, cosign, dependabot, renovate. Use for BOTH setting up new pipelines and auditing existing ones.
+  State-of-the-art DevSecOps and software supply chain security (2026). Applies when building or auditing CI/CD pipelines, GitHub Actions workflows, supply chain controls, SBOM generation, SAST/secret-scanning gates, dependency management, container builds, container/artifact registries, IaC (Terraform), GitOps, and deployment strategy. Trigger keywords: CI/CD, pipeline, GitHub Actions, supply chain, SBOM, SAST, dependency, container build, container registry, registry security, Zot, Harbor, ECR, GAR, ACR, GHCR, immutable tags, pull-through cache, IaC, Terraform, deployment, provenance, SLSA, cosign, dependabot, renovate. Use for BOTH setting up new pipelines and auditing existing ones. Not for application code vulnerabilities (use sota-code-security) or in-cluster runtime hardening (use sota-kubernetes).
 ---
 
 # SOTA DevSecOps & Supply Chain Security

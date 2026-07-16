@@ -6,7 +6,8 @@ description: >-
   architecture that touches untrusted input, new trust boundaries, sensitive
   data, or third-party dependencies (BUILD mode), and when reviewing, auditing,
   or pen-test-scoping an existing codebase to reconstruct its implicit threat
-  model and find gaps (AUDIT mode). Trigger keywords: threat model, STRIDE,
+  model and find gaps (AUDIT mode). Not for code-level vulnerability review —
+  use sota-code-security. Trigger keywords: threat model, STRIDE,
   LINDDUN, PASTA, attack tree, kill chain, data flow diagram, DFD, trust
   boundary, attack surface, abuse case, security design review, security
   architecture review, risk rating, DREAD, CVSS, security requirements,

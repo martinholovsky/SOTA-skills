@@ -7,7 +7,9 @@ description: >-
   and the team workflow around code: pull requests, code review conduct,
   commit discipline, branching, and releases. Use when writing or structuring
   any documentation AND when auditing docs quality, and when designing or
-  auditing collaboration workflow. Trigger keywords: documentation, docs,
+  auditing collaboration workflow. Not for in-product UI microcopy (use
+  sota-ux-writing) or marketing/landing-page copy (use sota-copywriting).
+  Trigger keywords: documentation, docs,
   README, API docs, docstring, changelog, release notes, migration guide,
   code review, pull request, PR description, commit messages, conventional
   commits, branching, semver, onboarding, runbook, AGENTS.md, llms.txt,
