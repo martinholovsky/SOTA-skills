@@ -4,30 +4,40 @@ Priorities set by the **2026-07-10 audit**
 ([AUDIT-2026-07-10.md](AUDIT-2026-07-10.md)). Ordered; revisit after each
 release. The 2026-07-01 cycle is fully executed and kept below as history.
 
-## Open tasks — next-session pick-up *(as of 2026-07-15)*
+## Open tasks — next-session pick-up *(as of 2026-07-16)*
 
-**Big post-v1.15.0 session — PRs #88–#109, all in CHANGELOG `[Unreleased]`
-(13 entries; main is well ahead of the v1.15.0 tag).** Executed: multi-sample
-tightening (item 1), live-agent BUILD validation (item 2), cross-file audit
-(item 3, +0.00 → agentic large-repo is the frontier, 3′), the **competitor
-benchmark** (item 6) **and a 5-domain breadth run** (the lead tracks the unguided
-baseline, not the domain — SOTA-skills leads on incomplete-by-default tasks: backend
-[Python+Go] + hard frontend; ties on simple UI + templated IaC), a first
-**decay/multi-turn** run (item 5, no decay at moderate scale), a **discoverability
-overhaul** (docs/INDEX.md, docs/CONTEXT-MANAGEMENT.md, RESULTS.md scoreboard,
-README TOC), the **500-line cap scoped to skill files only** (README/CHANGELOG/docs
-uncapped), a **4-way accuracy sweep** (hedged the unmeasured web-search claims, fixed
-several numbers), and a **theme-aware benchmark chart** (SVG + PNG).
+**v1.16.0 released** (2026-07-16, PR #115, tag `v1.16.0`) — rolled up the big
+post-v1.15.0 batch (PRs #88–#114). Executed across it: multi-sample tightening
+(item 1), live-agent BUILD validation (item 2), cross-file audit (item 3, +0.00 →
+agentic large-repo is the frontier, 3′), the **competitor benchmark** (item 6)
+**and a 5-domain breadth run** (the lead tracks the unguided baseline, not the
+domain — SOTA-skills leads on incomplete-by-default tasks: backend [Python+Go] +
+hard frontend; ties on simple UI + templated IaC), a first **decay/multi-turn** run
+(item 5, no decay at moderate scale), a **discoverability overhaul** (docs/INDEX.md,
+docs/CONTEXT-MANAGEMENT.md, RESULTS.md scoreboard, README TOC), the **500-line cap
+scoped to skill files only**, a **4-way accuracy sweep**, and **theme-aware
+benchmark + breadth charts**.
+
+**Post-release, same session (PRs #111–#117):** concluded the breadth comparison
+(#111); mined a separate agent-orchestration project (`~/Github/Dev-AID`) and adopted
+**three pure-Markdown conventions, each independently measured** — negative routing
+cross-refs, plan-concreteness in BUILD step 3, and an evidence-based-completion
+operating principle (#112) — with regression checks proving no loss (completeness
+held **0.991/+0.385** #112; routing held **1.00** #113); built the **description-
+routing eval** measuring the skill auto-loader path (#114, honest **+0.00** —
+saturated like audit; cross-refs kept as zero-cost defensive clarity); cut **v1.16.0**
+(#115); consolidated the breadth chart + full story into RESULTS.md (#116); and added
+**`sota-docs-workflow` rules/01 §8 "The documentation baseline"** — the must-have doc
+set incl. community-health files, GitHub search precedence verified (#117). Runtime-
+bound Dev-AID ideas (memory-bank persistence, RAG, worktree locks, agent framework)
+were deliberately **not** ported.
 
 **Now open, ordered by value:**
-- **Cut v1.16.0.** 13 `[Unreleased]` entries have accumulated; roll them into a
-  release per `RELEASING.md` (VERSION/plugin.json/CHANGELOG/tag; count surfaces
-  unchanged — still 41 skills). *(top mechanical task)*
 - **Distribution** (item 7): publish the salience write-up
   (`docs/writeups/completeness-blind-spot.md`) — LinkedIn is the proven channel;
   marketplace visibility; badge→verifiable-audit.
 - **As-deployed competitor comparison** + **more competitor domains** (data/mobile/
-  CLI); the backend/frontend split already shows the lead is domain-dependent.
+  CLI); the baseline-driven finding is established but these extend it.
 - **Agentic large-repo audit** (3′) and **constraint-budget probe** (4).
 - **Multi-turn amplification, at scale** (5): the decay run found *no* decay at
   moderate scale — needs much larger intervening context to find the breaking point.
