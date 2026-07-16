@@ -5,6 +5,16 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **`evals/results/RESULTS.md` now embeds the five-domain breadth chart** and
+  carries the full breadth story inline (chart + table + 0.7-baseline threshold +
+  the "why the baseline predicts the lift" mechanism), so the scoreboard is
+  self-contained instead of splitting the visual off into `BREADTH.md`. `BREADTH.md`
+  stays as the per-domain-notes and raw-data appendix.
+
 ## [1.16.0] - 2026-07-16
 
 The competitor + breadth release: a fair, blind, reproducible head-to-head against
