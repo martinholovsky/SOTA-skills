@@ -214,8 +214,47 @@ Docs are now read by agents as well as humans. Same content, two consumers.
   command blocks, tables over prose for facts. These were good practices for
   humans already; agents just raised the price of ignoring them.
 
+## §8 The documentation baseline — what every repo carries
+
+Docs aren't just "whatever got written." A small **baseline set** should exist,
+each with **one home** (§4 — the baseline is a floor, never a license to
+duplicate). Create each when its trigger fires, not preemptively: an unmaintained
+`CONTRIBUTING` or `CODE_OF_CONDUCT` full of rules nobody follows is itself a
+finding, not a checkbox win.
+
+**Always (any repo shared with anyone):**
+
+- **README** — the front door (§3): what, why, ≤5-minute quickstart, honest status.
+- **LICENSE** — without one, default copyright applies and **no one may legally
+  reuse the code** (choosealicense.com). Choose deliberately; it **cannot** be
+  inherited from an org default — GitHub requires it in each repo.
+- **CHANGELOG** — user-facing change history, updated in the PR that makes the
+  change (rules/02 §6); absent it, users reverse-engineer releases from commits.
+
+**When the trigger fires (conditionally required):**
+
+| Trigger | Doc |
+|---|---|
+| Public, or accepts outside contributions | `CONTRIBUTING.md` (how to propose changes) + `CODE_OF_CONDUCT.md` (behavior + an enforcement contact) |
+| Handles anything security-relevant | `SECURITY.md` — how to report a vulnerability **privately** (a channel or advisory, never "open an issue") + supported-version policy |
+| Users need a place to ask / triage routing | `SUPPORT.md` — where questions go, so issues stay for bugs |
+| On-call / production service | runbooks (§5) + an incident/postmortem template |
+| AI-assisted repo | `AGENTS.md`/`CLAUDE.md` (§7) |
+| Architectural decisions accrue | an ADR log (`sota-architecture`) |
+| Multi-maintainer / org project | `CODEOWNERS`, plus `GOVERNANCE.md`/`MAINTAINERS` when decision rights aren't obvious |
+
+**Placement.** GitHub recognizes the community-health files (`CODE_OF_CONDUCT`,
+`CONTRIBUTING`, `SECURITY`, `SUPPORT`, `GOVERNANCE`, `FUNDING`) from **`.github/`,
+then the repo root, then `docs/`** (that precedence); an org-level **public**
+`.github` repo supplies defaults for repos lacking their own (GitHub docs). Keep
+exactly one canonical copy — per repo or via the org default, not both. README and
+LICENSE live at the repo root (GitHub surfaces them in the repo header) and are
+**not** inheritable community-health files.
+
 ## Audit checklist
 
+- [ ] Baseline present for the repo's stage: README + LICENSE + CHANGELOG always; CONTRIBUTING/CODE_OF_CONDUCT/SECURITY/SUPPORT once public or contribution-accepting; runbooks once on-call — each with one canonical home (no duplicate copies across root/`.github`/`docs`).
+- [ ] `SECURITY.md` gives a private vulnerability-reporting channel (not "open an issue") and a supported-version policy; `LICENSE` is present and intentional (its absence = all-rights-reserved, blocking reuse).
 - [ ] Docs classified by Diátaxis mode; no page mixes tutorial/how-to/reference/explanation; titles declare the mode.
 - [ ] Tutorials run end-to-end on a clean environment (verified recently, versions pinned).
 - [ ] Docs live in-repo, change via reviewed PRs, and behavior-changing code PRs touch docs.
