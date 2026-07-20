@@ -68,6 +68,19 @@ extension mismatch, env-filter mismatch, unawaited async assertion) — delibera
 **not** written into the rule, since that is fitting guidance to the test set.
 
 **Now open, ordered by value:**
+- **BLOCKED — verify the flagship +0.39 against the CURRENT BUILD workflow.**
+  `evals/run-completeness.py`'s `BUILD_WORKFLOW` is a **hardcoded mirror** of router
+  BUILD steps 3–4 and has **drifted**: the falsification clause added to step 4 in
+  #119 is not in it. So the most-cited number in the project was measured against a
+  frozen copy of a workflow that no longer matches what ships. Proven, not suspected
+  (`evals/results/2026-07-20/AUDIT-PROCESS.md` §1). The fix is deliberate and
+  measured — baseline 3× with the drifted mirror, sync it, re-run 3×, report whether
+  +0.39 holds — and was **started and blocked on 2026-07-20: the OpenRouter balance
+  is exhausted** (verified via the credits API: $325.00 credited / $325.40 used /
+  **−$0.40**; the run failed with HTTP 402). The mirror was deliberately **not**
+  synced blind, because changing the basis of the headline number without being able
+  to re-measure is the exact failure this item exists to fix. Needs a credit top-up,
+  then ~2 completeness runs. **Do this before +0.39 is promoted anywhere new.**
 - **Distribution** (item 7): publish the salience write-up
   (`docs/writeups/completeness-blind-spot.md`) — LinkedIn is the proven channel;
   marketplace visibility; badge→verifiable-audit.
