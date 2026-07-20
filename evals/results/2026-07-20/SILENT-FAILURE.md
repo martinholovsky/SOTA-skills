@@ -1,47 +1,64 @@
 # Silent control failure — eval for `sota-code-security` rules/10
 
 **Date:** 2026-07-20 · **Model:** `anthropic/claude-sonnet-4.6` ·
-**Judge:** `anthropic/claude-opus-4.8` (open-ended design only, blind to arm) ·
-**Cases:** [`evals/cases/silent-failure.jsonl`](../../cases/silent-failure.jsonl) (15)
+**Judge:** `anthropic/claude-opus-4.8` (open-ended design, blind to arm) ·
+**Cases:** [`evals/cases/silent-failure.jsonl`](../../cases/silent-failure.jsonl) — **49**
+
+> **Correction (same day).** An earlier version of this page reported a
+> **+0.07** library lift from a **15-case** version of this set, and that number
+> reached `RESULTS.md`. Growing the set to 49 cases **did not reproduce it**:
+> the lift is **+0.03 (vocabulary design)** and **−0.01 (open-ended design)**,
+> both inside run-to-run spread. **The +0.07 was small-sample noise and is
+> retracted.** The scoreboard row has been corrected. This section is kept
+> rather than deleted — the retraction is the result.
 
 ## What was measured
 
 Whether the library helps a model detect a **silently inert control** — a check,
-scanner, policy, or test that appears active but has no effect, where a broken
+scanner, policy, or test that appears active but has no effect, so a broken
 system and a working one look identical from outside. This is the class
 [`rules/10`](../../../skills/sota-code-security/rules/10-silent-control-failure.md)
 was added for (PR #119).
 
-The case set is 13 positives (one per hiding place in rules/10 — weak existence
-checks, optional-dependency degradation, empty rulesets, swallowed enforcement
-exceptions, overloaded flags, early-return and truncation bypasses, ignored
-config keys, doc/code default drift, hardcoded report values, shipped-artifact
-gaps, two vacuous tests) plus **2 negative controls** (`sf14`, `sf15`) where the
-control fails *loudly* and the correct answer is "not silent". The negatives
-exist because an arm that cries no-op at everything would otherwise score 1.00.
-Languages are mixed (Python, Go, JS, YAML, Dockerfile) — the
-[breadth run](../2026-07-13/BREADTH.md) showed domain effects are real.
+**49 cases:** 41 positives, **8 negative controls** (`not-silent` — the control
+fails loudly, so flagging it is the error), and **6 of the positives tagged
+`novel`** — mechanisms rules/10 does **not** enumerate (a case-sensitive
+blocklist regex against lowercased input, an unawaited async authz check,
+decorator/route ordering that bypasses an admin guard, inverted config-merge
+precedence, a context timeout never attached to the request, a retry loop that
+swallows its final failure). The novel subgroup is the **generalization probe**:
+it separates "the guidance teaches the lens" from "the guidance recites its own
+list". Languages: Python 30, Go 8, JS 4, YAML 3, TS/SQL/Dockerfile/Markdown 1 each.
 
-Two designs were run, because the first cannot answer the question that matters:
+Two designs, three arms each:
 
-- **Vocabulary design** (`run-clean.py`) — both arms get a 19-slug vocabulary
-  that already enumerates the taxonomy. Measures *classification* once you know
-  the classes exist.
-- **Open-ended design** (`run-silent-open.py`) — no vocabulary. Free-form
-  one-line mechanism per case, graded by a **different** model, blind to arm,
-  against a reference mechanism. Measures *discovery*.
+- **Vocabulary** (`run-clean.py`) — both arms get a 25-slug vocabulary naming the
+  taxonomy. Measures *classification*.
+- **Open-ended** (`run-silent-open.py`) — no vocabulary; free-form mechanism per
+  case, graded by a **different** model blind to arm. Measures *discovery*.
+- Third arm in both: **ablated** — the full skill *minus rules/10*.
 
-Both designs run a third arm: **ablated** — the full skill *minus rules/10* — to
-isolate the new file's contribution from the other nine rules files.
+## Results at n=49
 
-## Results
-
-| Design | Samples | Without | With (full) | With (ablated) | Full lift | **rules/10 contribution** |
+| Design | Samples | Without | With (full) | With (ablated) | Library lift | rules/10 |
 |---|---|---|---|---|---|---|
-| Vocabulary | 3× @0.7 | 0.87 | **1.00** | 1.00 | +0.13 | **+0.00** |
-| Open-ended | 1× @0.0 | 0.87 | 0.93 | 0.93 | +0.07 | **+0.00** |
-| Open-ended | 3× @0.7 | 0.93 | **1.00** | 0.93 | +0.07 | **+0.07** |
-| Open-ended | 5× @1.0 | 0.92 | 0.99 | 0.95 | +0.07 | **+0.04** |
+| Vocabulary | 3× @0.7 | 0.891 | **0.918** | 0.918 | **+0.03** | **+0.00** |
+| Open-ended | 5× @1.0 | 0.935 | 0.927 | 0.910 | **−0.01** | +0.02 |
+
+Per-arm run spread (open-ended): without 0.918–0.959, with 0.878–0.959, ablated
+0.898–0.918. **Every difference in the table is smaller than the spread of the
+arms producing it.**
+
+Subgroup recall (open-ended, mean of 5):
+
+| Subgroup | Without | With (full) | With (ablated) |
+|---|---|---|---|
+| **Novel** (6 unenumerated mechanisms) | **1.00** | 0.83 | 0.83 |
+| **Negative controls** (8 loud failures) | 1.00 | 1.00 | 1.00 |
+
+What the n=15 → n=49 change did: the added cases are harder, which **broke the
+ceiling** (the with-arm was 0.99–1.00 at n=15, leaving no headroom to measure).
+With headroom, the lift disappeared.
 
 Reproduce:
 
@@ -51,62 +68,66 @@ python3 evals/run-clean.py --cases evals/cases/silent-failure.jsonl --samples 3 
 python3 evals/run-silent-open.py --samples 5 --temp 1.0
 ```
 
-Raw artifacts: `silent-failure-3sample.json`, `silent-failure-ablated-3sample.json`,
-`silent-open-{1,3,5}sample.json` in this directory.
+Artifacts: `silent-failure-49-3sample.json`, `silent-failure-49-ablated-3sample.json`,
+`silent-open-49-5sample.json` (n=15 originals kept alongside for the comparison).
 
 ## Findings
 
-**1. The full library lifts detection: +0.07 to +0.13, consistently and in both
-designs.** The with-library arm reaches 0.99–1.00; the unguided arm sits at
-0.87–0.93. Unlike the audit evals, this dimension does **not** saturate at the
-baseline — an unguided frontier model does miss some of these.
+**1. No measurable library lift on this dimension at n=49.** +0.03 in one design,
+−0.01 in the other, both inside noise. The earlier +0.07 does not replicate.
+Silent-control detection joins audit (+0.00), cross-file audit (+0.00) and
+description-routing (+0.00) as a dimension where a frontier model, *once told
+what to look for*, does not need the library.
 
-**2. rules/10's own marginal contribution is NOT resolvable at this case-set
-size, and no lift is claimed for it.** Across four runs it lands between +0.00
-and +0.07 — but one case is worth 0.067 at n=15, and the per-arm spread in the
-5-sample run (±0.07) is as large as the effect. The 1-sample and 3-sample runs
-disagree about *which* case each arm misses. That is noise, not a signal.
-Honest statement: **the new file did not measurably improve detection over the
-rest of `sota-code-security` on this set.**
+**2. rules/10's own contribution is +0.00 / +0.02** — the ablated arm matches or
+nearly matches the full arm in both designs. The vocabulary design is now clean
+on this point: with and ablated are **identical (0.918, zero spread, same four
+missed cases)**. The file adds nothing measurable on this set.
 
-**3. The reason is a ceiling, and the ceiling is partly built into the eval.**
-Both designs must *state the task* — "report any control that appears active but
-has no effect" — or the unguided arm has nothing to answer. But that framing
-**is** the falsification question, which is the core of rules/10. So the eval
-hands every arm the lens for free and then measures who applies it best. What
-rules/10 actually contributes — knowing to ask the question **at all, unprompted,
-during an ordinary audit** — is precisely what this design cannot measure.
+**3. The one signal worth acting on is negative: taxonomy anchoring.** On the six
+mechanisms rules/10 does *not* list, the unguided arm scored **1.00** and both
+library arms **0.83**. It is a one-case difference at n=6 — **not** statistically
+solid — but it points the way the concern runs: a model handed an 11-item list
+may pattern-match against the list instead of applying the underlying question.
+That is precisely the failure mode the file's own §1 warns about. **Needs more
+novel cases before it is a finding.**
 
-This is the same wall the [cross-file audit](../2026-07-13/REPO-AUDIT.md) hit
-(+0.00): once the task is posed clearly and the code fits in one context, a
-capable model performs well unaided. The measurable frontier is **agentic** —
-give an agent a large repo and a generic "audit this", and measure whether silent
-no-ops appear in the findings at all. That run is not built yet.
+**4. Four cases defeat every arm** (`sf18` Go release-build-tag no-op, `sf19`
+`*.yaml` glob vs `.yml` files, `sf20` env filter `prod` vs `production`, `sf37`
+unawaited `expect().rejects`). rules/10 §2.3 covers "empty ruleset" abstractly,
+but neither the guidance nor the base model connects it to a *glob or filter that
+silently matches nothing*. Tempting to add those examples to the rule — **that
+would be fitting the guidance to the test set**, so it is logged, not done.
 
 ## Limitations (read before citing any number)
 
-- **The case set was authored from rules/10.** It tests the classes that file
-  enumerates, not discovery of classes nobody wrote down. It cannot show the
-  taxonomy is complete — only that these 13 instances are detectable.
-- **n=15 with 1-case granularity (0.067).** Differences below ~0.13 are not
-  resolvable. Growing the set is the fix, and is the logged follow-up.
+- **41 of 49 positives were authored from rules/10's own taxonomy.** Only 6 test
+  generalization. That ratio should invert as the set grows.
+- **n=49 gives 0.020 granularity**, but the *arms* vary by ±0.04, so the real
+  resolution is worse than the case count suggests. Differences under ~0.05 are
+  not interpretable here.
+- **The novel subgroup is 6 cases.** Treat finding 3 as a hypothesis.
 - **Single model, single judge pairing.** No cross-model replication.
-- **Batched prompts.** All 15 cases go in one call per arm, so cases can prime
-  each other. This matches the existing `run-clean.py` design (comparability),
-  but it is not how a real audit arrives one file at a time.
-- **The negative controls work but are few.** `sf14`/`sf15` were answered
-  correctly in nearly every run; two cases is thin protection against an
-  over-flagging arm. `sf15` is the most-missed case in the with-library arm —
-  weak evidence that heavy silent-failure guidance nudges toward over-flagging a
-  loud, correct control. Worth watching as the set grows.
+- **Batched prompts** — all 49 cases in one call per arm, so cases prime each
+  other. Matches `run-clean.py`'s existing design for comparability; not how a
+  real audit arrives.
+- **Both designs must state the task**, and that framing *is* the falsification
+  question rules/10 teaches. So the eval hands every arm the lens and measures
+  application. What the rule uniquely offers — asking unprompted — remains
+  unmeasured by construction.
 
 ## What this changes
 
-Nothing in the library is reverted. rules/10 stays on the evidence that (a) the
-full library measurably leads on this dimension, (b) the file adds no measurable
-*harm* (the with-arm is at or above the ablated arm in three of four runs), and
-(c) its content is a documented gap-analysis result, not a guess. But **it is not
-backed by a measured lift of its own**, and must not be cited as one.
+`RESULTS.md` corrected: the silent-control row now reads **no measurable lift**,
+not +0.07.
 
-The honest scoreboard entry is: *silent-control detection — full library
-0.99 vs unguided 0.92 (+0.07); rules/10's marginal contribution unresolved.*
+rules/10 is **not** reverted, but its justification is now explicitly *not*
+efficacy: it stands on being a documented gap-analysis result with no measured
+harm on the enumerated classes. If the taxonomy-anchoring signal in finding 3
+reproduces on a larger novel subgroup, that calculus changes and the file should
+be rewritten to lead harder on the question and lighter on the list.
+
+Open follow-ups: (a) grow the **novel** subgroup to 20+ so finding 3 resolves;
+(b) the agentic design (large repo, generic "audit this", do silent no-ops appear
+unprompted?) — the only design that can measure what this file is for;
+(c) cross-model replication.
