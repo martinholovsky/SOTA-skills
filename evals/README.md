@@ -37,18 +37,24 @@ audit STRAT-HIGH-2).
 - `cases/freshness.jsonl` (32) — a current-2026 fact question → the token a
   correct answer must contain. Every fact is present in the library and was
   primary-source-verified.
-- `cases/silent-failure.jsonl` (15) — a control that **looks enabled and does
+- `cases/silent-failure.jsonl` (49) — a control that **looks enabled and does
   nothing** (inert scanner, fail-open policy, ruleset that loads zero rules,
   truncation before inspection, a test that passes against a no-op'd body …) →
-  the mechanism by which it is inert. 13 positives + **2 negative controls**
-  whose correct answer is "not silent" (the control fails loudly), so an arm that
-  cries no-op at everything cannot score 1.00. Tests `sota-code-security`
-  rules/10. Two designs: `run-clean.py` (vocabulary given — classification) and
-  `run-silent-open.py` (free-form, blind opus judge — discovery), both with an
-  `--ablate` arm that removes rules/10 to isolate its contribution. Result: the
-  full library leads (**0.92 → 0.99**), but **rules/10's own contribution is
-  unresolved at n=15** and no lift is claimed for it
+  the mechanism by which it is inert. 41 positives + **8 negative controls** whose
+  correct answer is "not silent" (the control fails loudly), so an arm that cries
+  no-op at everything cannot score 1.00; **6 positives are tagged `novel`** —
+  mechanisms `sota-code-security` rules/10 does *not* enumerate, which separates
+  "teaches the lens" from "recites its own list". Two designs: `run-clean.py`
+  (vocabulary given — classification) and `run-silent-open.py` (free-form, blind
+  opus judge — discovery), both with an `--ablate` arm that removes rules/10.
+  Result: **+0.00 — no measurable lift** (+0.03 / −0.01 across designs, inside
+  per-arm spread), and rules/10's own contribution is +0.00. An earlier **+0.07
+  from a 15-case version did not replicate and is retracted**; the larger set's
+  harder cases broke the ceiling that produced it
   ([`results/2026-07-20/SILENT-FAILURE.md`](results/2026-07-20/SILENT-FAILURE.md)).
+  **Case-authoring note:** cases carry answer keys (`expect`, `reference`) and
+  analysis metadata (`novel`); both runners whitelist `id`/`language`/`snippet`
+  into the prompt, so a new field cannot silently leak the answer.
 - `cases/desc-routing.jsonl` (10) — an adversarially-confusable task → the correct
   skill (`expect`) and the tempting wrong sibling (`distractor`). Scored by
   `run-desc-routing.py` as an A/B on the description cross-refs (result: +0.00).

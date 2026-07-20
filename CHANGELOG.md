@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Silent-control eval grown 15 → 49 cases, and its headline lift RETRACTED.**
+  The 15-case set saturated the with-library arm (0.99–1.00), leaving no headroom
+  to measure. The set now carries **41 positives + 8 negative controls** (loud
+  failures, incl. a display-only truncation and a *documented deliberate*
+  fail-open, both of which must NOT be flagged) and **6 positives tagged `novel`**
+  — mechanisms rules/10 does not enumerate (case-sensitive blocklist regex vs
+  lowercased input, unawaited async authz check, decorator/route ordering bypass,
+  inverted config-merge precedence, a context timeout never attached to its
+  request, a retry loop that swallows its final failure) — which separates
+  "teaches the lens" from "recites its own list". Harder positives were added
+  across Go/TS/SQL/YAML/Helm/Markdown.
+  **Result: the +0.07 lift measured at n=15 does not replicate.** At n=49 it is
+  **+0.03** (vocabulary design) and **−0.01** (open-ended design), both inside a
+  per-arm spread of ±0.04; rules/10's own ablated contribution is **+0.00** (the
+  vocabulary design's with- and ablated arms are *identical* — 0.918, zero spread,
+  same four missed cases). `RESULTS.md` corrected from +0.07 to +0.00 with the
+  retraction stated in place. One signal logged as a **hypothesis, not a finding**:
+  on the 6 unenumerated mechanisms the *unguided* arm scored 1.00 and both library
+  arms 0.83 — possible **taxonomy anchoring**, one case at n=6, needs a larger
+  novel subgroup. Four cases defeat every arm (build-tag no-op, `*.yaml` glob vs
+  `.yml`, env-filter mismatch, unawaited `expect().rejects`); adding them to the
+  rule text was deliberately **not** done, as that would fit the guidance to the
+  test set.
+- **Both eval runners now whitelist prompt fields** (`id`/`language`/`snippet`)
+  instead of blacklisting known answer keys — a new case field such as `novel` or
+  `reference` can no longer leak the answer into the prompt just because nobody
+  updated a strip list. `run-silent-open.py` additionally reports **novel** and
+  **negative-control** subgroup recall per arm.
+
 ### Added
 
 - **`sota-code-security` rules/10 "Silent control failure"** — a new rule file for
@@ -50,11 +81,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   **`--ablate`** flag that drops rules/10 from the with-library arm to isolate a
   single file's contribution, and `evals/run-silent-open.py` — an open-ended,
   no-vocabulary variant graded by a **different** model blind to the arm.
-  **Result, reported as measured:** the full library leads on this dimension
-  (**0.92 → 0.99, +0.07**, 5×@1.0) and it is the one audit-family dimension that
-  does *not* saturate at the unguided baseline — but **rules/10's own marginal
-  contribution is not resolvable at n=15** (+0.00 to +0.07 across four runs, with a
-  per-arm spread of the same magnitude), so **no lift is claimed for the new file**.
+  **Result, reported as measured:** at the initial 15 cases the library appeared to
+  lead **0.92 → 0.99 (+0.07)**, and that number briefly shipped in `RESULTS.md`.
+  **It did not replicate and is retracted** — see the grow-the-set entry below.
   The design's own limit is documented: both arms must be *told* to hunt inert
   controls, and that framing is the falsification question itself, so what the rule
   actually adds — asking unprompted — is what this design cannot measure. Writeup,
