@@ -37,20 +37,21 @@ audit STRAT-HIGH-2).
 - `cases/freshness.jsonl` (32) — a current-2026 fact question → the token a
   correct answer must contain. Every fact is present in the library and was
   primary-source-verified.
-- `cases/silent-failure.jsonl` (49) — a control that **looks enabled and does
+- `cases/silent-failure.jsonl` (69) — a control that **looks enabled and does
   nothing** (inert scanner, fail-open policy, ruleset that loads zero rules,
   truncation before inspection, a test that passes against a no-op'd body …) →
   the mechanism by which it is inert. 41 positives + **8 negative controls** whose
   correct answer is "not silent" (the control fails loudly), so an arm that cries
-  no-op at everything cannot score 1.00; **6 positives are tagged `novel`** —
+  no-op at everything cannot score 1.00; **26 positives are tagged `novel`** —
   mechanisms `sota-code-security` rules/10 does *not* enumerate, which separates
   "teaches the lens" from "recites its own list". Two designs: `run-clean.py`
   (vocabulary given — classification) and `run-silent-open.py` (free-form, blind
   opus judge — discovery), both with an `--ablate` arm that removes rules/10.
-  Result: **+0.00 — no measurable lift** (+0.03 / −0.01 across designs, inside
-  per-arm spread), and rules/10's own contribution is +0.00. An earlier **+0.07
-  from a 15-case version did not replicate and is retracted**; the larger set's
-  harder cases broke the ceiling that produced it
+  Result: **+0.00 — no measurable lift**, reproduced at n=49 and again at n=69.
+  An earlier **+0.07 from a 15-case version did not replicate and is retracted**.
+  The `novel` subgroup was grown 6 → 26 to test whether the enumerated catalogue
+  *anchors* the model onto its own list: **it does not** (0.96 unguided vs 0.92
+  with-library — one case, inside run spread), so that hypothesis is retired too
   ([`results/2026-07-20/SILENT-FAILURE.md`](results/2026-07-20/SILENT-FAILURE.md)).
   **Case-authoring note:** cases carry answer keys (`expect`, `reference`) and
   analysis metadata (`novel`); the runners whitelist only the input fields
@@ -184,6 +185,36 @@ Result (2026-07-13, 7 live sub-agent builds): **0.99 mean, 6/7 perfect** —
 matching the 0.99 paste-based simulation (0.987 vs 0.988) and far above the 0.60 unguided base, so the
 simulation is a faithful proxy for the real router flow
 ([`results/2026-07-13/LIVE-BUILD.md`](results/2026-07-13/LIVE-BUILD.md)).
+
+## Harness conventions (learned the hard way, 2026-07-20)
+
+In one day, **four** changes to this harness silently did nothing while still
+printing a plausible number:
+
+| What broke | What it printed |
+|---|---|
+| A prompt-field whitelist that dropped `prompt` | The routing eval sent the model bare case ids — and a recall score |
+| An ablation keyed on a section **number** | A renumber broke the match; the "ablated" arm would have been the full corpus |
+| A scripted CHANGELOG edit whose anchor string didn't exist on that branch | "updated" — and the commit shipped without the entry |
+| A wait condition matching a per-case `lift=` progress line | A still-running job reported complete, at 1 case of 7 |
+
+These are the exact class `sota-code-security` rules/10 describes, in the tooling
+that measures the library. So:
+
+- **Guards abort, never warn.** `run-clean.py` refuses to run a case with no
+  content field; `run-adjudication.py` refuses if its ablation target is missing;
+  `run-completeness.py` refuses if the router's BUILD section no longer matches the
+  hash its `BUILD_WORKFLOW` mirror was synced against. Three of the four failures
+  above were caught by a guard like these.
+- **Watch the guard fail before trusting it.** Every one of them was verified by
+  deliberately breaking the input and confirming the abort.
+- **Wait on a terminal artifact, not a log substring.** `--out` is written last;
+  key completion checks on the file existing.
+- **Assert a scripted edit landed.** Re-read the file; do not trust the script's
+  own success message.
+- **Pin what you mirror.** Anything hand-copied from the library into the harness
+  (currently `BUILD_WORKFLOW`) carries a hash of its source and fails loudly on
+  drift — the mirror rotted for four days and nothing noticed.
 
 ## Recorded runs
 

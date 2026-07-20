@@ -76,6 +76,33 @@ def load_cases():
             if x.strip() and not x.startswith("#")]
 
 
+# DRIFT GUARD. BUILD_WORKFLOW below is a hand-compressed MIRROR of the router's
+# BUILD section, not a live read — it is kept compressed so results stay comparable
+# with every historical run. A mirror silently rots: on 2026-07-20 the falsification
+# clause added to router step 4 (PR #119) was missing here for four days, so the
+# project's most-cited number (+0.39) was being measured against a workflow that no
+# longer shipped. Nothing failed; the eval just quietly measured the wrong thing.
+# So: pin the router section's hash. If the router changes, this aborts and forces a
+# decision — re-sync the mirror and update the hash, or consciously accept the drift.
+ROUTER_BUILD_SHA = "71a9d78ea5e9e341"
+
+
+def _assert_mirror_fresh():
+    """Abort if the router's BUILD section moved without this mirror being re-synced."""
+    import hashlib
+    t = open(os.path.join(ROOT, "skills/sota/SKILL.md"), encoding="utf-8").read()
+    i, j = t.find("## BUILD mode — workflow"), t.find("## AUDIT mode — workflow")
+    if i < 0 or j < 0 or j <= i:
+        sys.exit("router BUILD section not found — cannot verify the mirror is fresh.")
+    got = hashlib.sha256(t[i:j].strip().encode()).hexdigest()[:16]
+    if got != ROUTER_BUILD_SHA:
+        sys.exit(
+            f"MIRROR DRIFT: router BUILD section is {got}, mirror pinned to "
+            f"{ROUTER_BUILD_SHA}.\nBUILD_WORKFLOW in this file no longer reflects the "
+            f"router. Re-sync it and set ROUTER_BUILD_SHA={got}, or the eval will "
+            f"measure a workflow that is not shipped. Refusing to run.")
+
+
 # Mirrors the router's BUILD workflow (skills/sota/SKILL.md steps 3-4): plan the
 # task as concrete checkable items, apply the non-negotiables, then self-audit the
 # diff against each Audit checklist and fill every gap. The self-audit is the
@@ -90,8 +117,10 @@ BUILD_WORKFLOW = (
     "before finishing, go through EVERY '## Audit checklist' at the end of the "
     "standards above and verify your code satisfies each item; for any gap (rate "
     "limiting, transport/TLS enforcement, tests, structured logging, idempotency, "
-    "etc.) ADD it, or state explicitly why it is out of scope. Do not present "
-    "incomplete code.\n\nTask: ")
+    "etc.) ADD it, or state explicitly why it is out of scope. For every control, "
+    "safeguard, or check you added, also ask: if this were silently a no-op, would "
+    "anything observable differ? If nothing would — no log, no metric, no failing "
+    "test — it is not done. Do not present incomplete code.\n\nTask: ")
 
 
 def principle5():
@@ -138,6 +167,7 @@ def main():
                     help="build-model temperature; keep 0 for a deterministic single run")
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
+    _assert_mirror_fresh()   # never measure a workflow that isn't shipped
     if a.samples > 1 and a.temp == 0.0:
         print("note: --samples>1 at --temp 0 gives identical deterministic runs; "
               "use --temp 0.7 for real variance.\n")

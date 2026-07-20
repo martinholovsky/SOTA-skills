@@ -5,6 +5,48 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **`run-completeness.py`'s `BUILD_WORKFLOW` mirror had drifted from the router, and
+  the drift class is now closed.** That constant is a hand-compressed mirror of router
+  BUILD steps 3–4 (kept compressed so results stay comparable with every historical
+  run) — but it is *not* a live read, and the falsification clause added to router
+  step 4 in #119 was missing from it for four days. The project's most-cited number
+  was therefore being measured against a workflow that no longer shipped. Nothing
+  failed; the eval quietly measured the wrong thing.
+  Fixed deliberately and measured, never synced blind: **arm A (drifted mirror)
+  measured without 0.59 → with 1.00, LIFT +0.40**, reproducing the recorded +0.39 —
+  so the figure was never wrong, only measured against stale text. The mirror is now
+  synced and a **`ROUTER_BUILD_SHA` pin** was added: the runner hashes the router's
+  BUILD section and **aborts** if it no longer matches what the mirror was synced
+  against, rather than measuring unshipped text. Guard watched to fire on a synthetic
+  router edit before being trusted.
+
+### Changed
+
+- **Docs hygiene against this cycle's work.** `evals/README.md`: silent-failure case
+  count corrected 49 → **69** and the novel subgroup 6 → **26** (both stale), with the
+  retracted +0.07 and the retired anchoring hypothesis stated in place. `docs/INDEX.md`
+  gained rows for the two new writeups (AUDIT-PROCESS, SILENT-FAILURE) — the honest
+  +0.00 results were previously unfindable from the index. `docs/ROADMAP.md`: the
+  top item moved BLOCKED → IN PROGRESS with the arm-A number; "grow the eval case
+  sets" replaced with what actually remains thin (the 8 negative controls, the 7-case
+  completeness set, competitor domains beyond the five measured); and the distribution
+  item grounded in measured traffic (~24 organic clones/day vs 7 stars, 0 watchers,
+  1 issue ever — LinkedIn confirmed as top referrer).
+- **New `evals/README.md` section: harness conventions**, written from four
+  self-inflicted silent failures in one day — a prompt-field whitelist that dropped
+  `prompt` (the routing eval sent bare ids and still printed a recall score), an
+  ablation keyed on a section *number* that a renumber broke, a scripted CHANGELOG
+  edit whose anchor did not exist on its branch, and a wait condition that matched a
+  per-case progress line and called a still-running job complete. Rules: guards abort
+  rather than warn; watch the guard fail before trusting it; wait on a terminal
+  artifact, not a log substring; assert a scripted edit landed; pin what you mirror.
+  `AGENTS.md` points at it — the same failure class `rules/10` describes, occurring in
+  the tooling that measures the library.
+
 ## [1.17.0] - 2026-07-20
 
 The **silent-failure release**, and an unusually honest one. New coverage for the
