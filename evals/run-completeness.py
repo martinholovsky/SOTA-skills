@@ -157,6 +157,37 @@ def judge(artifact, rubric, model, k):
     return json.loads(txt[s:e + 1])
 
 
+# Eval artifacts store MODEL-GENERATED code verbatim, and a model asked to build a
+# payments endpoint will happily write `sk_live_...` into an example. That is not a
+# real credential, but a secret-SHAPED string in a public repo is still wrong: it
+# trips push protection, trains readers on a bad example, and buries any genuine leak
+# in noise. On 2026-07-20 exactly this blocked a push. So scrub at write time — the
+# class, not the instance — and leave a visible marker so the artifact stays honest.
+_SECRET_PATTERNS = [
+    r"sk_(?:live|test)_[A-Za-z0-9]{6,}",       # Stripe
+    r"AKIA[0-9A-Z]{16}",                        # AWS access key id
+    r"gh[pousr]_[A-Za-z0-9]{20,}",              # GitHub tokens
+    r"xox[baprs]-[A-Za-z0-9-]{10,}",            # Slack
+    r"AIza[0-9A-Za-z_\-]{20,}",                 # Google API key
+    r"-----BEGIN [A-Z ]*PRIVATE KEY-----",      # PEM private keys
+]
+
+
+def scrub_secrets(obj):
+    """Replace secret-shaped strings anywhere in a nested structure, visibly."""
+    import re
+    if isinstance(obj, str):
+        out = obj
+        for pat in _SECRET_PATTERNS:
+            out = re.sub(pat, "[SCRUBBED-SECRET-SHAPED-STRING]", out)
+        return out
+    if isinstance(obj, dict):
+        return {k: scrub_secrets(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [scrub_secrets(v) for v in obj]
+    return obj
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--build-model", default="anthropic/claude-sonnet-4.6")
@@ -207,7 +238,7 @@ def main():
     print(f"\nMEAN completeness  without={tot_wo/n:.2f}  with={tot_wl/n:.2f}  "
           f"LIFT={((tot_wl-tot_wo)/n):+.2f}")
     if a.out:
-        json.dump(results, open(a.out, "w"), indent=1)
+        json.dump(scrub_secrets(results), open(a.out, "w"), indent=1)
         print(f"saved {a.out}")
 
 

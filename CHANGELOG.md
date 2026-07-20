@@ -9,6 +9,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The flagship completeness number is now verified against the workflow that
+  actually ships — `0.58 → 0.98, +0.40`.** Both arms were run with one variable
+  changed: the drifted mirror measured **0.59 → 1.00 (+0.40)** and the synced mirror
+  **0.58 → 0.98 (+0.40)**. So the published `+0.39` was **never wrong** — it was
+  measured against stale text and reproduces either way. `RESULTS.md`, `README.md`
+  and `docs/WHY-IT-WORKS.md` now carry the synced figures rather than numbers
+  produced by a workflow the library no longer ships. The 0.02 with-arm difference is
+  **one case** (c1 lost transport, sizelimit, pagination) and is **not** separable
+  from sampling variance in a single run — logged as a follow-up (repeat arm B 3×),
+  not claimed, though it points exactly where our own
+  [context-rot finding](docs/WHY-COMPLETENESS-RESIDUAL.md) predicts. Method,
+  per-case table and limits:
+  [`evals/results/2026-07-20/MIRROR-VERIFICATION.md`](evals/results/2026-07-20/MIRROR-VERIFICATION.md).
+- **Eval artifacts are now secret-scrubbed at write time.** Artifacts store
+  model-generated code verbatim, and a model asked to build a payments endpoint
+  writes `sk_live_...` into its examples — which blocked a push on 2026-07-20 (two
+  synthetic Stripe-shaped strings in `c1_ticket_api`'s generated code; not real
+  credentials, but secret-shaped strings do not belong in a public repo: they trip
+  push protection, train readers on a bad example, and bury a genuine leak in noise).
+  `scrub_secrets()` replaces Stripe/AWS/GitHub/Slack/Google/PEM-shaped strings with a
+  **visible** `[SCRUBBED-SECRET-SHAPED-STRING]` marker — the class, not the instance —
+  and runs on every artifact write. Existing artifacts cleaned (4 → 0); recall scores
+  are unaffected. Verified by feeding it known key shapes and confirming they are
+  replaced. Note this is the *second* time push protection caught something local
+  gitleaks did not: `.gitleaks.toml` disables the entropy rule so the security skills'
+  deliberate examples don't false-positive, which also blinds it to vendor-specific
+  patterns. Two scanners, two coverage sets.
 - **`run-completeness.py`'s `BUILD_WORKFLOW` mirror had drifted from the router, and
   the drift class is now closed.** That constant is a hand-compressed mirror of router
   BUILD steps 3–4 (kept compressed so results stay comparable with every historical

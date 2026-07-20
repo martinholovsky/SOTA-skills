@@ -68,19 +68,17 @@ extension mismatch, env-filter mismatch, unawaited async assertion) — delibera
 **not** written into the rule, since that is fitting guidance to the test set.
 
 **Now open, ordered by value:**
-- **IN PROGRESS — verify the flagship +0.39 against the CURRENT BUILD workflow.**
-  `evals/run-completeness.py`'s `BUILD_WORKFLOW` is a **hand-compressed mirror** of
-  router BUILD steps 3–4, not a live read, and it had **drifted** for four days (the
-  falsification clause added in #119 was missing), so the most-cited number was being
-  measured against a workflow that no longer shipped. Unblocked 2026-07-20 after a
-  credit top-up. **Arm A (drifted mirror) measured: without 0.59 → with 1.00,
-  LIFT +0.40** — reproducing the recorded +0.39, so the figure was never wrong, only
-  measured against stale text. The mirror is now synced and **arm B is running**;
-  the open question is whether the with-arm holds at ~1.00 once the falsification
-  clause is in the prompt. **Drift can no longer recur silently**: the mirror pins a
-  sha256 of the router's BUILD section (`ROUTER_BUILD_SHA`) and the runner aborts on
-  mismatch rather than measuring unshipped text — guard watched to fire before being
-  trusted.
+- **DONE 2026-07-20 — the flagship number is verified against the workflow that
+  ships.** `BUILD_WORKFLOW` had drifted from router BUILD steps 3–4 for four days.
+  Both arms run: drifted **0.59 → 1.00 (+0.40)**, synced **0.58 → 0.98 (+0.40)**. The
+  `+0.39` was never wrong — only measured against stale text; `RESULTS.md` now carries
+  the synced numbers. Drift cannot recur silently (`ROUTER_BUILD_SHA` pins the router
+  section; the runner aborts on mismatch, guard watched to fire).
+  [MIRROR-VERIFICATION.md](../evals/results/2026-07-20/MIRROR-VERIFICATION.md).
+  **One open follow-up:** the synced with-arm is 0.02 lower, entirely from one case
+  (c1 dropping transport/sizelimit/pagination). Not separable from sampling variance
+  in a single run, but it points where our own context-rot finding predicts. **Repeat
+  arm B 3× more** to tell noise from a real salience cost of the falsification clause.
 - **Distribution** (item 7): publish the salience write-up
   (`docs/writeups/completeness-blind-spot.md`) — LinkedIn is the proven channel
   (corroborated 2026-07-20: it is the **top referrer** in GitHub traffic);

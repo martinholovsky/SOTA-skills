@@ -12,13 +12,27 @@ Same model, same task, library loaded vs. nothing.
 
 | Dimension | Without | With SOTA | Lift | Samples | Source |
 |---|---|---|---|---|---|
-| **Completeness** (7 build tasks) | 0.60 | **1.00** | **+0.39** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
+| **Completeness** (7 build tasks) | 0.58 | **0.98** | **+0.40** | 3×, temp 0.7 | [MIRROR-VERIFICATION](2026-07-20/MIRROR-VERIFICATION.md) |
 | **Freshness** (32 current-2026 facts) | 0.44 | **0.97** | **+0.53** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
 | Routing (20 tasks) | 0.90 | **1.00** | **+0.10** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
 | Silent-control detection (49 inert-control cases) | 0.94 | 0.93 | +0.00 | 5×, temp 1.0 | [SILENT-FAILURE](2026-07-20/SILENT-FAILURE.md) |
 | Audit **precision** (30 claims, 15 false) | 1.00 | 1.00 | +0.00 | 3×, temp 0.7 | [AUDIT-PROCESS](2026-07-20/AUDIT-PROCESS.md) |
 | Audit (14 hard snippets) | 1.00 | 1.00 | +0.00 | 1× | [BASELINE](2026-07-10/BASELINE.md) |
 | Cross-file audit (8-defect repo) | 1.00 | 1.00 | +0.00 | 2 models | [REPO-AUDIT](2026-07-13/REPO-AUDIT.md) |
+
+**Completeness re-verified against the workflow that actually ships (2026-07-20).**
+`run-completeness.py`'s `BUILD_WORKFLOW` is a hand-compressed **mirror** of router
+BUILD steps 3–4, and it had drifted — the falsification clause added in #119 was
+missing for four days, so this row was being measured against text that no longer
+shipped. Both arms were run: drifted **0.59 → 1.00 (+0.40)**, synced **0.58 → 0.98
+(+0.40)**. The `+0.39` figure was never wrong; the row now carries the synced
+numbers. The 0.02 with-arm difference is **one case** (c1 lost transport, sizelimit,
+pagination) and is not separable from sampling variance in a single run — logged, not
+claimed, and pointed in the direction our own
+[context-rot finding](../../docs/WHY-COMPLETENESS-RESIDUAL.md) predicts. Drift can no
+longer recur silently: `ROUTER_BUILD_SHA` pins the router section and the runner
+aborts on mismatch. Method, per-case table, limits:
+[MIRROR-VERIFICATION.md](2026-07-20/MIRROR-VERIFICATION.md).
 
 The with-library arm is **near-zero variance** on every value dimension
 (completeness ±0.01 across-case sd, routing/freshness ±0.00); the sampling wobble
@@ -193,7 +207,7 @@ phrasings outside this set (a prediction, not measured). No routing lift is clai
 
 ## The three-layer story
 
-SOTA **lifts an unguided model** where it matters (completeness +0.39, freshness
+SOTA **lifts an unguided model** where it matters (completeness +0.40, freshness
 +0.53); that lift **reproduces in a live agent** (0.99); and it **beats the most
 popular competing libraries** head-to-head **on tasks a base model gets incomplete**
 (production backend in any language, complex/security-sensitive frontend: ~+10 pts) —
