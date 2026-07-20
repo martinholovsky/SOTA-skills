@@ -276,7 +276,17 @@ For a **full project audit**, work in passes:
    whose tests still pass when the body is replaced with a no-op. This class is
    invisible to the other passes — the code isn't wrong, it's inert — and to
    pattern-based SAST for the same reason.
-5. **Findings.** Emit every finding in the canonical cross-domain format
+5. **Decision-ledger review.** Code passes find defects in what was built; they
+   cannot find the defect where the code faithfully implements a choice that
+   **stopped being right** — a store picked for scale that never arrived, a
+   rewrite justified by a benchmark that no longer reproduces, an expired
+   constraint still shaping the design. Reconstruct the expensive-to-reverse
+   decisions (ADRs, design docs, CHANGELOG, the PRs that introduced each major
+   component) and classify each **JUSTIFIED / STALE / UNJUSTIFIED /
+   UNVERIFIABLE**. Where a decision rests on a number, **re-measure it this
+   session** — a benchmark in a two-year-old ADR is a historical claim, not a
+   current fact. Full procedure: `rules/01-audit-methodology.md` §6.
+6. **Findings.** Emit every finding in the canonical cross-domain format
    (`file:line | rule | severity | effort | fix`) — skill-local block formats
    are fine within a domain pass but must carry an effort field so the
    roll-up can be sequenced — deduplicate across domains,
@@ -289,7 +299,7 @@ For a **full project audit**, work in passes:
    - **Medium** — deviation from SOTA with real but bounded impact.
    - **Low** — hygiene, polish, future-proofing.
    - **Info** — no direct risk: observations, tech-debt notes, future-proofing.
-6. **Refute before reporting.** Re-reading your own finding re-runs the reasoning
+7. **Refute before reporting.** Re-reading your own finding re-runs the reasoning
    that produced it — it is the weakest check available. Every Critical/High gets
    an **independent pass prompted to kill it** (a separate agent, or a
    fresh-context hostile read), working from the code at the pinned commit rather
@@ -299,7 +309,7 @@ For a **full project audit**, work in passes:
    are dropped or downgraded **with the refutation recorded**, so the next auditor
    doesn't re-raise them. Absence claims ("no X found") get a refuter too, and
    carry the heavier burden of principle 3. Full procedure and failure modes:
-   `rules/01-audit-methodology.md` §6.
+   `rules/01-audit-methodology.md` §7.
 
 ## Library map (rules files per skill)
 
