@@ -289,10 +289,17 @@ For a **full project audit**, work in passes:
    - **Medium** — deviation from SOTA with real but bounded impact.
    - **Low** — hygiene, polish, future-proofing.
    - **Info** — no direct risk: observations, tech-debt notes, future-proofing.
-6. **Verify before reporting.** Re-read each Critical/High finding's code in
-   full context; drop or downgrade anything you cannot substantiate with a
-   concrete failure scenario, or mark it "needs verification". Absence claims
-   ("no X found") carry the heavier burden of principle 3.
+6. **Refute before reporting.** Re-reading your own finding re-runs the reasoning
+   that produced it — it is the weakest check available. Every Critical/High gets
+   an **independent pass prompted to kill it** (a separate agent, or a
+   fresh-context hostile read), working from the code at the pinned commit rather
+   than your write-up, defaulting to REFUTED when the evidence is ambiguous. Use
+   distinct lenses where a finding can fail more than one way — is the mechanism
+   real, is it reachable, is the stated impact inflated. Survivors ship; the rest
+   are dropped or downgraded **with the refutation recorded**, so the next auditor
+   doesn't re-raise them. Absence claims ("no X found") get a refuter too, and
+   carry the heavier burden of principle 3. Full procedure and failure modes:
+   `rules/01-audit-methodology.md` §6.
 
 ## Library map (rules files per skill)
 

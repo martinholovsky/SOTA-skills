@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Adversarial verification in AUDIT mode** — `sota/rules/01-audit-methodology.md`
+  gains **§6 "Try to kill your own findings"**, and the router's AUDIT workflow step 6
+  changes from *verify* to **refute**. Re-reading your own finding re-runs the
+  reasoning that produced it, so it is the weakest check available; every
+  Critical/High now gets an **independent pass prompted to kill it** — a separate
+  agent or a fresh-context hostile read, working from the code at the pinned commit
+  rather than the write-up, defaulting to REFUTED when evidence is ambiguous.
+  Includes the three distinct refuter lenses (is the mechanism real / is it
+  reachable / is the impact inflated), majority-refute-kills, **recording
+  refutations** so the next auditor doesn't re-raise them, a refuter for absence
+  claims, effort scaling by severity, and the two failure modes that make the pass
+  theatre (the rubber-stamp refuter told to "verify" rather than refute, and
+  refuting the *description* instead of the code). Report §7 and hygiene §8
+  renumbered accordingly; one audit-checklist line added.
+  Adopted from a field-tested external audit harness — verified first that the
+  library had **no** independent-refutation language anywhere (`grep` for
+  refut/adversarial/independent-verify across `sota/` and `sota-testing/` returned
+  zero hits), so this is a genuine gap, not a restatement. **Unmeasured:** the audit
+  dimension already saturates at +0.00, so the existing evals cannot show a lift
+  here; no efficacy claim is made.
+
 - **`sota-code-security` rules/10 "Silent control failure"** — a new rule file for
   the class the library had no home for: a control, feature, or safeguard that
   **appears active but does nothing**, where a broken system and a working system
