@@ -5,7 +5,20 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.17.0] - 2026-07-20
+
+The **silent-failure release**, and an unusually honest one. New coverage for the
+class where a control *looks* enabled and does nothing; adversarial refutation and
+decision-ledger review added to AUDIT mode; and three new eval instruments — two of
+which returned **+0.00**, plus a **headline lift that was measured, failed to
+replicate on a larger set, and is retracted here rather than quietly kept**. No
+skill added (41 unchanged): content, evals, and docs.
+
+**Reading guide.** The library's audit dimension now saturates on four independent
+instruments (recall, cross-file, silent-control, precision), so nothing added to the
+audit path in this release carries an efficacy claim. What *is* measured and holding:
+completeness +0.39, freshness +0.53, routing +0.10 (re-verified at 1.00 with-arm
+twice in this cycle, after the router grew ~5%).
 
 ### Changed
 
@@ -737,6 +750,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.17.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.17.0
 [1.16.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.16.0
 [1.15.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.15.0
 [1.14.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.14.1
