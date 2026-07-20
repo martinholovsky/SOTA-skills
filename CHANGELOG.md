@@ -5,6 +5,30 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Gap-reporting loop — the library's first path for learning from use.** The
+  project has no telemetry by design, which also means a wrong rule, a stale
+  version claim, or a missing skill stays in the library for everyone until a human
+  reports it. Measured reality at v1.17.0: **~24 organic clones/day against 7 stars
+  and one issue ever filed** (GitHub traffic API; the three days with zero CI runs
+  show clones exactly equal to unique cloners). Hundreds of installs, no signal.
+  The fix uses the one channel this project uniquely has — the user is talking to an
+  agent that **already read the skills**. A new short router section tells that agent
+  to surface a **one-line** note when the library actually let the user down (a rule
+  contradicted by a primary source it just checked; a rule that doesn't fit and
+  states no exception; real surface area with no owning skill; guidance that would
+  have shipped a defect), with the issue-template link — and explicitly *not* for
+  personal preference, unneeded rules, or mid-task. Deliberately placed **outside**
+  the always-apply operating principles so it does not dilute the measured
+  principle-5/6 salience. README gains a matching section (issue templates already
+  existed; nothing pointed users at them). Regression-checked — the router grew
+  443 → 467 lines and the routing eval pastes it whole: with-arm **held at 1.00**
+  (3×@0.7, no misses), lift +0.11. Artifact:
+  `evals/results/2026-07-20/routing-3sample-postfeedback.json`.
+
 ## [1.17.0] - 2026-07-20
 
 The **silent-failure release**, and an unusually honest one. New coverage for the
