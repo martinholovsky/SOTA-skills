@@ -43,6 +43,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and require positive observations to be evidenced by **effect** (a rejection,
   a log, a test that fails when the control is disabled) rather than presence.
   Two audit-checklist lines added.
+- **Eval case set for the silent-control class** — `evals/cases/silent-failure.jsonl`
+  (15 cases: 13 positives, one per hiding place, across Python/Go/JS/YAML/Dockerfile,
+  plus **2 negative controls** whose correct answer is "not silent" so an
+  over-flagging arm cannot score 1.00), a `silent` kind in `run-clean.py`, a new
+  **`--ablate`** flag that drops rules/10 from the with-library arm to isolate a
+  single file's contribution, and `evals/run-silent-open.py` — an open-ended,
+  no-vocabulary variant graded by a **different** model blind to the arm.
+  **Result, reported as measured:** the full library leads on this dimension
+  (**0.92 → 0.99, +0.07**, 5×@1.0) and it is the one audit-family dimension that
+  does *not* saturate at the unguided baseline — but **rules/10's own marginal
+  contribution is not resolvable at n=15** (+0.00 to +0.07 across four runs, with a
+  per-arm spread of the same magnitude), so **no lift is claimed for the new file**.
+  The design's own limit is documented: both arms must be *told* to hunt inert
+  controls, and that framing is the falsification question itself, so what the rule
+  actually adds — asking unprompted — is what this design cannot measure. Writeup,
+  raw artifacts, and limitations:
+  [`evals/results/2026-07-20/SILENT-FAILURE.md`](evals/results/2026-07-20/SILENT-FAILURE.md);
+  scoreboard row added to `evals/results/RESULTS.md`.
 - Cross-references so each home keeps its own doctrine: `sota-testing` rules/06
   (hand-mutating a control's body as a no-tooling audit probe, plus the
   missing-dependency and mutation-didn't-take traps), `sota-observability`

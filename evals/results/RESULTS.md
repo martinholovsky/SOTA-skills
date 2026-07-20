@@ -15,6 +15,7 @@ Same model, same task, library loaded vs. nothing.
 | **Completeness** (7 build tasks) | 0.60 | **1.00** | **+0.39** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
 | **Freshness** (32 current-2026 facts) | 0.44 | **0.97** | **+0.53** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
 | Routing (20 tasks) | 0.90 | **1.00** | **+0.10** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
+| Silent-control detection (15 inert-control cases) | 0.92 | **0.99** | **+0.07** | 5×, temp 1.0 | [SILENT-FAILURE](2026-07-20/SILENT-FAILURE.md) |
 | Audit (14 hard snippets) | 1.00 | 1.00 | +0.00 | 1× | [BASELINE](2026-07-10/BASELINE.md) |
 | Cross-file audit (8-defect repo) | 1.00 | 1.00 | +0.00 | 2 models | [REPO-AUDIT](2026-07-13/REPO-AUDIT.md) |
 
@@ -24,6 +25,17 @@ is all in the unguided arm. Audit is +0.00 and reported, not hidden — a capabl
 model already recognizes vulnerabilities, even cross-file when the repo fits in
 context. The real remaining audit frontier is an **agentic large-repo** audit
 (too big to hold at once); logged in the [roadmap](../../docs/ROADMAP.md).
+
+**Silent-control detection is the one audit-family dimension that does NOT
+saturate** (0.92 unguided) — inert controls are harder for a base model than
+ordinary vulnerabilities. But an **ablation isolating the rule file written for
+this class (`sota-code-security` rules/10) returned no resolvable contribution**
+(+0.00 to +0.07 across four runs, with a per-arm spread of the same size at
+n=15). No lift is claimed for that file. The eval design is the limiting factor:
+both arms must be *told* to look for inert controls, and that framing is itself
+the lens the rule teaches — so what the rule actually adds (asking the question
+unprompted) is what the design cannot measure. Details and limitations in
+[SILENT-FAILURE.md](2026-07-20/SILENT-FAILURE.md).
 
 **Regression check (2026-07-16).** Three guidance changes adopted from an external
 review (negative routing cross-refs; a plan-concreteness clause in BUILD step 3; a

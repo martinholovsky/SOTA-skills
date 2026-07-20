@@ -1,0 +1,143 @@
+{
+ "_meta": {
+  "model": "anthropic/claude-sonnet-4.6",
+  "judge": "anthropic/claude-opus-4.8",
+  "cases": 15,
+  "samples": 3,
+  "temp": 0.7,
+  "design": "open-ended"
+ },
+ "without-library": {
+  "recall": 0.9333333333333332,
+  "recalls": [
+   0.9333333333333333,
+   0.9333333333333333,
+   0.9333333333333333
+  ],
+  "answers": {
+   "sf01": "model_dir.is_dir() is evaluated once at construction time; if the init container later populates the directory the flag stays False, but more critically if the directory exists but is empty or the init container fails silently after creating the dir, enabled=True and _predict runs on a broken model \u2014 conversely, if the directory is deleted after init, enabled stays True; the real silent-failure mode is that the directory created by a failed init container still passes is_dir(), leaving enabled=True while the model is absent/corrupt and _predict may silently return no detections.",
+   "sf02": "clamd is listed only under optional dev dependencies so it is never installed in the production Docker image, causing clamd=None always, making scan_upload unconditionally return {\"clean\": True} while appearing to perform malware scanning.",
+   "sf03": "The shipped config file contains only commented-out rules, so rules=[] and the WAF loads with zero rules, causing blocks() to always return False while the log line says 'WAF ENABLED with 0 rules' \u2014 enforcement is silently absent.",
+   "sf04": "On any policy-engine error the function returns true (allow), so a failing or unreachable policy engine silently grants access to everything while appearing to perform authorization.",
+   "sf05": "If the DEBUG environment variable is set to '1', verify_signature is skipped entirely, allowing unauthenticated webhook requests to be processed without any error or log entry indicating signature verification was bypassed.",
+   "sf06": "Payloads larger than MAX_INSPECT (1 MiB) are silently allowed without DLP inspection, so an attacker can bypass the DLP check by sending a body exceeding that threshold.",
+   "sf07": "Only the first 8192 bytes of the payload are scanned, but the entire original payload is stored; malware or prohibited content placed after byte 8192 passes the scanner and is stored undetected.",
+   "sf08": "The 'enforce: true' field is placed under the 'logging' section in the YAML, but ScannerCfg (which has the enforce field) is parsed from the 'scanner' section; the logging section maps to LoggingCfg which has no enforce field, so scanner.enforce remains False while the operator believes enforcement is enabled.",
+   "sf09": "The documentation states the default for verify_signatures is true, but the code default is False; any deployment that relies on the documented default and omits the setting runs without signature verification while believing it is protected.",
+   "sf10": "The printed completion message hardcodes '50000 events written' regardless of the actual value of 'written', so operators submitting this as compliance evidence cannot detect a partial or empty export.",
+   "sf11": "The Dockerfile copies only detect.py and server.py from the build stage but never copies the rules directory, so RULES_DIR does not exist in the final image, load() always returns [], and the detector never matches anything while appearing operational.",
+   "sf12": "The test asserts only that the status code is 200 or 400 and the response is fast; a 200 response with injected data returned is accepted as passing, so the test does not verify that SQL injection is actually blocked.",
+   "sf13": "The CI environment does not install the yara package, so the test is unconditionally skipped and always reports 0 failures, giving false assurance that malicious uploads are rejected.",
+   "sf14": "NOT-SILENT",
+   "sf15": "NOT-SILENT"
+  },
+  "verdicts": {
+   "sf01": "HIT",
+   "sf02": "HIT",
+   "sf03": "HIT",
+   "sf04": "HIT",
+   "sf05": "MISS",
+   "sf06": "HIT",
+   "sf07": "HIT",
+   "sf08": "HIT",
+   "sf09": "HIT",
+   "sf10": "HIT",
+   "sf11": "HIT",
+   "sf12": "HIT",
+   "sf13": "HIT",
+   "sf14": "HIT",
+   "sf15": "HIT"
+  },
+  "misses": [
+   "sf05"
+  ]
+ },
+ "with-library": {
+  "recall": 1.0,
+  "recalls": [
+   1.0,
+   1.0,
+   1.0
+  ],
+  "answers": {
+   "sf01": "model_dir.is_dir() passes for an empty directory (e.g. init container failed to populate it), so self.enabled=True while _predict has no actual model weights to load \u2014 or silently returns [] \u2014 making the scanner a no-op with no error emitted",
+   "sf02": "clamd is listed only under optional-dependencies.dev and the Dockerfile installs without extras, so clamd is never present in the shipped image; every scan returns {\"clean\": True} with no log or metric indicating the scanner is absent",
+   "sf03": "the shipped waf.example.yaml contains only commented-out rules, so doc.get(\"rules\",[]) yields an empty list; Waf is constructed with zero rules and blocks() always returns False, yet the log line says 'WAF ENABLED with 0 rules' implying it is active",
+   "sf04": "on any policy-engine error the function returns true (allow), silently granting access with no log, metric, or distinguishable signal \u2014 a policy-engine outage is indistinguishable from a legitimate authorization grant",
+   "sf05": "DEBUG is documented as controlling verbose logging and a stats endpoint, but the code also uses it to skip webhook signature verification; setting DEBUG=0 in prod looks correct per the docs while the security check runs, but any path that sets DEBUG=1 silently disables signature verification without that being documented as its effect",
+   "sf06": "an attacker supplying an empty body or a body larger than MAX_INSPECT triggers the early return of Verdict.ALLOW, bypassing dlp_engine.inspect entirely \u2014 both conditions are attacker-controllable on the outbound-email path",
+   "sf07": "scanner.scan receives only the first 8192 bytes while the full payload is stored; malicious content placed beyond byte 8192 passes the clean verdict and is stored, making the scan a no-op for anything padded past the truncation boundary",
+   "sf08": "enforce: true is placed under the logging: section in the YAML but ScannerCfg is the model that defines enforce; the key lands in LoggingCfg which has no enforce field, and because neither model uses extra='forbid', the key is silently ignored and ScannerCfg.enforce stays False",
+   "sf09": "docs/configuration.md states verify_signatures defaults to true, but Config.verify_signatures defaults to False in the code; any deployment that omits the setting runs without signature verification while believing (per docs) that it is protected",
+   "sf10": "the print statement hardcodes '50000 events written' as a string literal regardless of how many rows were actually written; if the cursor yields fewer (or more) rows the compliance evidence records the wrong count with no observable discrepancy",
+   "sf11": "the Dockerfile copies only detect.py and server.py from the build stage, omitting the rules/ directory entirely; RULES_DIR.exists() returns False at runtime, load() returns [], and detection never matches anything \u2014 no error is raised",
+   "sf12": "the test asserts only that the status code is 200 or 400 and that the response is fast; a handler that executes the injected SQL and returns 200 with results passes both assertions, so the test cannot distinguish a working injection defense from a broken one",
+   "sf13": "yara is not installed in the CI base extra, so the test is skipped every run and reports 0 failures; the security control (malicious-upload rejection) is never exercised in CI, giving a false green signal",
+   "sf14": "NOT-SILENT",
+   "sf15": "NOT-SILENT"
+  },
+  "verdicts": {
+   "sf01": "HIT",
+   "sf02": "HIT",
+   "sf03": "HIT",
+   "sf04": "HIT",
+   "sf05": "HIT",
+   "sf06": "HIT",
+   "sf07": "HIT",
+   "sf08": "HIT",
+   "sf09": "HIT",
+   "sf10": "HIT",
+   "sf11": "HIT",
+   "sf12": "HIT",
+   "sf13": "HIT",
+   "sf14": "HIT",
+   "sf15": "HIT"
+  },
+  "misses": []
+ },
+ "with-library-ablated": {
+  "recall": 0.9333333333333332,
+  "recalls": [
+   0.9333333333333333,
+   0.9333333333333333,
+   0.9333333333333333
+  ],
+  "answers": {
+   "sf01": "model_dir.is_dir() is evaluated once at construction time; if the init container hasn't populated the directory yet (or it is later removed), self.enabled stays False and scan() silently returns [] (allow-all) with no error or alert",
+   "sf02": "clamd is listed only under optional dev dependencies and the Dockerfile installs only base dependencies, so clamd is never importable in production, causing scan_upload() to always return {\"clean\": True} without any error or log warning",
+   "sf03": "the shipped config file contains only commented-out rules, so doc.get(\"rules\", []) yields an empty list; the WAF logs as ENABLED with 0 rules and blocks() always returns False, silently allowing all requests",
+   "sf04": "on any policy-engine error the function returns True (allow), so an outage, timeout, or exception in policyEngine.Check silently grants access rather than denying it \u2014 fail-open with no observable difference from a working allow decision",
+   "sf05": "when DEBUG=1, verify_signature() is skipped entirely, so any caller who can set that environment variable (or any deployment where it is accidentally set) receives unauthenticated webhook processing with no error raised",
+   "sf06": "bodies larger than MAX_INSPECT (1 MiB) return Verdict.ALLOW without inspection, so an attacker can bypass the DLP engine by sending a payload just over 1 MiB, and the path looks identical to a clean-verdict allow",
+   "sf07": "only the first 8192 bytes are scanned but the entire payload is stored and presumably later processed, so a malicious payload with a clean header followed by malicious content after byte 8192 passes the scan and is stored intact",
+   "sf08": "the 'enforce' key is defined under 'logging' in the YAML but ScannerCfg (which the operator intends to control) defaults enforce to False and never reads it; the scanner runs with enforce=False regardless of what the config file says",
+   "sf09": "the documentation states the default is true, but the code default is False; any deployment that relies on the documented default (i.e. omits the key) runs with signature verification disabled without any error or warning",
+   "sf10": "the printed count is hardcoded as '50000' rather than the actual 'written' variable, so if the cursor returns fewer rows (truncated export, partial failure) the compliance evidence always claims 50000 events were written",
+   "sf11": "the Dockerfile copies only detect.py and server.py but never copies the rules directory, so RULES_DIR.exists() is always False at runtime and load() silently returns [], meaning detect() never matches anything",
+   "sf12": "the test only checks that the status code is 200 or 400 and that the response is fast; a 200 response could mean the injection succeeded and returned data \u2014 the test does not assert that no injected results are returned, so it passes whether or not injection is blocked",
+   "sf13": "yara is not installed in CI (only the base extra is installed), so the test is unconditionally skipped via skipif; the malicious-upload rejection path is never exercised and the suite reports 0 failures regardless of whether the feature works",
+   "sf14": "NOT-SILENT",
+   "sf15": "NOT-SILENT"
+  },
+  "verdicts": {
+   "sf01": "MISS",
+   "sf02": "HIT",
+   "sf03": "HIT",
+   "sf04": "HIT",
+   "sf05": "HIT",
+   "sf06": "HIT",
+   "sf07": "HIT",
+   "sf08": "HIT",
+   "sf09": "HIT",
+   "sf10": "HIT",
+   "sf11": "HIT",
+   "sf12": "HIT",
+   "sf13": "HIT",
+   "sf14": "HIT",
+   "sf15": "HIT"
+  },
+  "misses": [
+   "sf01"
+  ]
+ }
+}

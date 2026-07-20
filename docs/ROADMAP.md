@@ -43,8 +43,20 @@ were already strong and are cross-referenced, not duplicated. Wired into the
 **default** paths rather than left opt-in: router BUILD step 4 (falsification
 question over every control in the diff), a new AUDIT **step 4 silent-control
 pass**, routing rule 20, and the asymmetric evidence burden in operating
-principle 3 + `sota/rules/01` §5. **Not yet measured** — an eval case set for
-this class (inject a silent no-op, score detection) is the open follow-up.
+principle 3 + `sota/rules/01` §5. **Then measured** (same day,
+[`evals/results/2026-07-20/SILENT-FAILURE.md`](../evals/results/2026-07-20/SILENT-FAILURE.md)):
+a 15-case set (13 positives + 2 loud-failure negative controls) run two ways —
+vocabulary-given and open-ended/blind-judged — plus an **ablation arm** that drops
+rules/10 from the with-library context. The full library leads **0.92 → 0.99
+(+0.07)** and this is the one audit-family dimension that does *not* saturate at
+the unguided baseline, but **rules/10's marginal contribution is unresolved at
+n=15** (+0.00 to +0.07, per-arm spread the same size) and **no lift is claimed for
+the file**. Open follow-ups from that run: (a) **grow the set past ~40 cases** so
+the 0.067 granularity stops dominating; (b) the design's real limit — both arms
+must be *told* to hunt inert controls, which hands over the lens rules/10 teaches,
+so the honest test is the **agentic** one (large repo + generic "audit this" →
+do silent no-ops appear in the findings unprompted?), the same frontier the
+cross-file audit run identified; (c) cross-model replication.
 
 **Now open, ordered by value:**
 - **Distribution** (item 7): publish the salience write-up
