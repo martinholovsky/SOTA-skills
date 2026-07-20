@@ -108,8 +108,17 @@ def build_prompt(cases, kind, with_lib, ablate=False):
     # WHITELIST, not blacklist: a case carries answer keys ("expect", "reference") and
     # analysis metadata ("novel", "tier"), and a new field must never leak into the
     # prompt just because nobody added it to a strip list. Only these reach the model.
-    keep = ("id", "language", "snippet")
+    # Must list the INPUT field of every kind routed here — `prompt` (router),
+    # `snippet` (audit/silent). Omitting one silently reduces its cases to bare ids
+    # and the run still prints a plausible number (this exact bug shipped in the
+    # first draft: router cases lost `prompt`), hence the guard below.
+    keep = ("id", "language", "snippet", "prompt", "task")
     stripped = [{k: v for k, v in c.items() if k in keep} for c in cases]
+    for s in stripped:
+        if len(s) < 2:
+            sys.exit(f"case {s.get('id')!r}: no content field survived the prompt "
+                     f"whitelist — add this kind's input field to `keep` in "
+                     f"build_prompt(). Refusing to run a content-free eval.")
     tasks = json.dumps(stripped, indent=1)
     if kind == "silent":
         vocab = ", ".join(SILENT_VOCAB)
