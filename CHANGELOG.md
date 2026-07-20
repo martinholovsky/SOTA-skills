@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Audit-precision eval + the regression check for this PR** —
+  `evals/cases/finding-adjudication.jsonl` (30 code+claim pairs, 15 genuine / 15
+  plausible-but-wrong across six distinct refutation classes) and
+  `evals/run-adjudication.py`, scoring **specificity** (refute the false claims) and
+  **sensitivity** (keep the real ones) with an ablation arm that strips §6. Every
+  other audit set here measures *recall*; this measures the false-positive side that
+  refutation actually targets. **Result: +0.00 — all three arms 1.00**, zero wrong
+  answers in 90 adjudications per arm. Run twice: the first framing enumerated the
+  ways a claim can fail (i.e. handed §6's content to every arm) and was replaced with
+  a neutral one — identical 1.00s, so the saturation is not a framing artifact.
+  Routing was re-run as the regression check for today's three router edits and
+  **held at 1.00** (lift +0.10, both matching the recorded multi-sample numbers).
+  Completeness was deliberately **not** re-run and the reason is documented: all 17
+  skill files it loads are unchanged since v1.16.0, its `principle5()` extract is
+  byte-identical (sha `2a36f20d8e51`), and its `BUILD_WORKFLOW` is a hardcoded mirror
+  — so it is structurally blind to today's changes and a green run would have been a
+  vacuous test. That mirror's drift from the router is logged, not silently synced.
+  **Four audit instruments now saturate** (recall, cross-file, silent-control,
+  precision); the writeup states plainly that no current instrument can score an
+  audit-*process* change, and recommends stopping additions to the audit path until
+  an agentic one exists:
+  [`evals/results/2026-07-20/AUDIT-PROCESS.md`](evals/results/2026-07-20/AUDIT-PROCESS.md).
 - **Adversarial verification in AUDIT mode** — `sota/rules/01-audit-methodology.md`
   gains **§6 "Try to kill your own findings"**, and the router's AUDIT workflow step 6
   changes from *verify* to **refute**. Re-reading your own finding re-runs the

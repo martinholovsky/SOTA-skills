@@ -16,6 +16,7 @@ Same model, same task, library loaded vs. nothing.
 | **Freshness** (32 current-2026 facts) | 0.44 | **0.97** | **+0.53** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
 | Routing (20 tasks) | 0.90 | **1.00** | **+0.10** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
 | Silent-control detection (15 inert-control cases) | 0.92 | **0.99** | **+0.07** | 5×, temp 1.0 | [SILENT-FAILURE](2026-07-20/SILENT-FAILURE.md) |
+| Audit **precision** (30 claims, 15 false) | 1.00 | 1.00 | +0.00 | 3×, temp 0.7 | [AUDIT-PROCESS](2026-07-20/AUDIT-PROCESS.md) |
 | Audit (14 hard snippets) | 1.00 | 1.00 | +0.00 | 1× | [BASELINE](2026-07-10/BASELINE.md) |
 | Cross-file audit (8-defect repo) | 1.00 | 1.00 | +0.00 | 2 models | [REPO-AUDIT](2026-07-13/REPO-AUDIT.md) |
 

@@ -49,6 +49,15 @@ audit STRAT-HIGH-2).
   full library leads (**0.92 → 0.99**), but **rules/10's own contribution is
   unresolved at n=15** and no lift is claimed for it
   ([`results/2026-07-20/SILENT-FAILURE.md`](results/2026-07-20/SILENT-FAILURE.md)).
+- `cases/finding-adjudication.jsonl` (30) — audit **precision**, the mirror of every
+  other audit set here: a code snippet + a *claimed* finding → UPHELD or REFUTED.
+  15 genuine claims and 15 plausible-but-wrong ones failing for six distinct reasons
+  (upstream guard, unreachable code, inflated severity, misread mechanism, already
+  mitigated, behaviour that is actually correct). Scored by `run-adjudication.py` on
+  **specificity** (refute the false) and **sensitivity** (keep the real), with an
+  ablation arm that strips `rules/01` §6. Result: **+0.00 — all three arms 1.00**,
+  zero wrong answers in 90 adjudications per arm
+  ([`results/2026-07-20/AUDIT-PROCESS.md`](results/2026-07-20/AUDIT-PROCESS.md)).
 - `cases/desc-routing.jsonl` (10) — an adversarially-confusable task → the correct
   skill (`expect`) and the tempting wrong sibling (`distractor`). Scored by
   `run-desc-routing.py` as an A/B on the description cross-refs (result: +0.00).
@@ -112,6 +121,7 @@ python3 evals/run-decay.py               # multi-turn skill-application decay (a
 python3 evals/run-desc-routing.py --samples 3 --temp 0.7   # description-catalogue routing A/B
 python3 evals/run-clean.py --cases evals/cases/silent-failure.jsonl --ablate  # rules/10 ablation
 python3 evals/run-silent-open.py --samples 5 --temp 1.0    # silent controls, open-ended + judged
+python3 evals/run-adjudication.py --samples 3 --temp 0.7   # audit precision (false-positive resistance)
 ```
 
 `--ablate` (on `run-clean.py`) drops `rules/10-silent-control-failure.md` from the
