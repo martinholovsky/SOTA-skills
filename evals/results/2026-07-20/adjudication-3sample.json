@@ -1,0 +1,174 @@
+{
+ "_meta": {
+  "model": "anthropic/claude-sonnet-4.6",
+  "cases": 30,
+  "samples": 3,
+  "temp": 0.7,
+  "metric": "audit precision"
+ },
+ "without-library": {
+  "accuracy": 1.0,
+  "sensitivity": 1.0,
+  "specificity": 1.0,
+  "runs": [
+   {
+    "accuracy": 1.0,
+    "sensitivity": 1.0,
+    "specificity": 1.0
+   },
+   {
+    "accuracy": 1.0,
+    "sensitivity": 1.0,
+    "specificity": 1.0
+   },
+   {
+    "accuracy": 1.0,
+    "sensitivity": 1.0,
+    "specificity": 1.0
+   }
+  ],
+  "wrong": [],
+  "predictions": {
+   "fa01": "UPHELD",
+   "fa02": "UPHELD",
+   "fa03": "UPHELD",
+   "fa04": "UPHELD",
+   "fa05": "UPHELD",
+   "fa06": "UPHELD",
+   "fa07": "UPHELD",
+   "fa08": "UPHELD",
+   "fa09": "UPHELD",
+   "fa10": "UPHELD",
+   "fa11": "UPHELD",
+   "fa12": "UPHELD",
+   "fa13": "UPHELD",
+   "fa14": "UPHELD",
+   "fa15": "UPHELD",
+   "fa16": "REFUTED",
+   "fa17": "REFUTED",
+   "fa18": "REFUTED",
+   "fa19": "REFUTED",
+   "fa20": "REFUTED",
+   "fa21": "REFUTED",
+   "fa22": "REFUTED",
+   "fa23": "REFUTED",
+   "fa24": "REFUTED",
+   "fa25": "REFUTED",
+   "fa26": "REFUTED",
+   "fa27": "REFUTED",
+   "fa28": "REFUTED",
+   "fa29": "REFUTED",
+   "fa30": "REFUTED"
+  }
+ },
+ "with-library": {
+  "accuracy": 1.0,
+  "sensitivity": 1.0,
+  "specificity": 1.0,
+  "runs": [
+   {
+    "accuracy": 1.0,
+    "sensitivity": 1.0,
+    "specificity": 1.0
+   },
+   {
+    "accuracy": 1.0,
+    "sensitivity": 1.0,
+    "specificity": 1.0
+   },
+   {
+    "accuracy": 1.0,
+    "sensitivity": 1.0,
+    "specificity": 1.0
+   }
+  ],
+  "wrong": [],
+  "predictions": {
+   "fa01": "UPHELD",
+   "fa02": "UPHELD",
+   "fa03": "UPHELD",
+   "fa04": "UPHELD",
+   "fa05": "UPHELD",
+   "fa06": "UPHELD",
+   "fa07": "UPHELD",
+   "fa08": "UPHELD",
+   "fa09": "UPHELD",
+   "fa10": "UPHELD",
+   "fa11": "UPHELD",
+   "fa12": "UPHELD",
+   "fa13": "UPHELD",
+   "fa14": "UPHELD",
+   "fa15": "UPHELD",
+   "fa16": "REFUTED",
+   "fa17": "REFUTED",
+   "fa18": "REFUTED",
+   "fa19": "REFUTED",
+   "fa20": "REFUTED",
+   "fa21": "REFUTED",
+   "fa22": "REFUTED",
+   "fa23": "REFUTED",
+   "fa24": "REFUTED",
+   "fa25": "REFUTED",
+   "fa26": "REFUTED",
+   "fa27": "REFUTED",
+   "fa28": "REFUTED",
+   "fa29": "REFUTED",
+   "fa30": "REFUTED"
+  }
+ },
+ "with-library-ablated": {
+  "accuracy": 1.0,
+  "sensitivity": 1.0,
+  "specificity": 1.0,
+  "runs": [
+   {
+    "accuracy": 1.0,
+    "sensitivity": 1.0,
+    "specificity": 1.0
+   },
+   {
+    "accuracy": 1.0,
+    "sensitivity": 1.0,
+    "specificity": 1.0
+   },
+   {
+    "accuracy": 1.0,
+    "sensitivity": 1.0,
+    "specificity": 1.0
+   }
+  ],
+  "wrong": [],
+  "predictions": {
+   "fa01": "UPHELD",
+   "fa02": "UPHELD",
+   "fa03": "UPHELD",
+   "fa04": "UPHELD",
+   "fa05": "UPHELD",
+   "fa06": "UPHELD",
+   "fa07": "UPHELD",
+   "fa08": "UPHELD",
+   "fa09": "UPHELD",
+   "fa10": "UPHELD",
+   "fa11": "UPHELD",
+   "fa12": "UPHELD",
+   "fa13": "UPHELD",
+   "fa14": "UPHELD",
+   "fa15": "UPHELD",
+   "fa16": "REFUTED",
+   "fa17": "REFUTED",
+   "fa18": "REFUTED",
+   "fa19": "REFUTED",
+   "fa20": "REFUTED",
+   "fa21": "REFUTED",
+   "fa22": "REFUTED",
+   "fa23": "REFUTED",
+   "fa24": "REFUTED",
+   "fa25": "REFUTED",
+   "fa26": "REFUTED",
+   "fa27": "REFUTED",
+   "fa28": "REFUTED",
+   "fa29": "REFUTED",
+   "fa30": "REFUTED"
+  }
+ }
+}

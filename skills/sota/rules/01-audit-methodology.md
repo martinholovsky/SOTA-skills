@@ -95,7 +95,7 @@ option where capability is equivalent.
 | Licenses | cargo-deny (Rust); trivy license scan; syft SBOM license fields | Filter against the project's allowed-license policy. |
 
 Run each tool against the pinned commit; record the exact tool version and
-command line (needed for §7 reproducibility).
+command line (needed for §8 reproducibility).
 
 ### Triage discipline — tool output is raw material, not findings
 
@@ -182,7 +182,7 @@ not ready to ship:
    this query", with the changed line), referencing the relevant skill's
    rules file for the full pattern. Never "sanitize input".
 8. **Effort estimate** — trivial / small / medium / large. Severity says
-   what hurts; effort enables the roadmap in §6.
+   what hurts; effort enables the roadmap in §7.
 
 Two asymmetries the evidence standard has to carry:
 
@@ -197,17 +197,64 @@ Two asymmetries the evidence standard has to carry:
 - **"The control is present" is not "the control works."** Evidence for a
   positive observation must show *effect*, not existence — the log line it
   emitted, the request it rejected, the test that fails when it's disabled.
-  See `sota-code-security` rules/10; this applies to §6's positive-observations
+  See `sota-code-security` rules/10; this applies to §7's positive-observations
   section too, where an inert control praised as a strength is the worst
   possible reporting error.
 
 The library's short finding format (`file:line | rule | severity | effort | fix`)
 is the working format during passes; expand each surviving finding into the
 full evidence block for the report. Skill-local block formats are fine during
-a single-domain pass, but they must carry the effort field — §6's roadmap is
+a single-domain pass, but they must carry the effort field — §7's roadmap is
 sequenced by risk-reduction-per-effort and can't be built without it.
 
-## 6. Report structure
+## 6. Adversarial verification — try to kill your own findings
+
+Re-reading your own finding is the weakest possible check: you re-run the
+reasoning that produced it and reach the same conclusion. Confirmation bias is
+not defeated by attention. Before a finding ships, someone — a separate agent, a
+colleague, or you in a deliberately hostile pass with fresh context — must try
+to **refute** it.
+
+The pass:
+
+1. **State the finding as a falsifiable claim.** "An unauthenticated caller can
+   read any tenant's invoices via `GET /invoices/{id}`" — not "weak access
+   control in the invoices module". A claim you cannot refute is a claim you
+   cannot verify.
+2. **Assign refuters, prompted to kill it.** The instruction is *find the reason
+   this is wrong*, not *check this*. Default the verdict to REFUTED when the
+   evidence is ambiguous — an unrefutable finding must earn its survival.
+3. **Use distinct lenses when a finding can fail in more than one way.** Three
+   identical reviewers are worth less than three different questions:
+   - **Correctness** — is the mechanism real? Read the full path, not the
+     snippet. Is there an upstream guard the finding missed?
+   - **Reachability** — can attacker-controlled input actually get here? Dead
+     code, an unregistered route, or a caller that always sanitizes downgrades
+     it to hardening debt.
+   - **Severity inflation** — does the stated impact follow, or is a Medium
+     dressed as a Critical? Rate the *demonstrated* impact.
+4. **Majority-refute kills it.** Survivors ship; the rest are dropped or
+   downgraded with the refutation recorded — a refuted finding is a result, not
+   waste, and stops the next auditor re-raising it.
+5. **Verify the negatives too.** "Authorization is enforced everywhere" is a
+   finding-shaped claim with the heavier burden of `SKILL.md` principle 3. Give
+   absence claims a refuter whose job is to find one counter-example.
+
+Scale it to stakes: every Critical/High gets refuted, always. Mediums get a pass
+when the audit is high-stakes or the finding drives an expensive fix. Skip it for
+Low/Info hygiene items — the overhead outruns the value.
+
+Two failure modes to avoid:
+
+- **The rubber-stamp refuter.** An agent told to "verify" agrees. Prompt it to
+  *refute*, give it the code rather than your summary, and do not show it your
+  confidence level — a refuter that reads "I'm certain this is exploitable"
+  inherits the certainty.
+- **Refuting the description instead of the code.** The refuter must open the
+  file at the pinned commit. A refutation built on the finding's prose only
+  tests your writing.
+
+## 7. Report structure
 
 Deliver in exactly this order:
 
@@ -219,7 +266,8 @@ Deliver in exactly this order:
    against, tools run with exact versions and commands, audit date. This
    makes the audit reproducible and bounds its claims.
 3. **Findings** — grouped Critical → High → Medium → Low → Info; within a
-   severity, ordered by exploitability. Each in the full §5 evidence block.
+   severity, ordered by exploitability. Each in the full §5 evidence block, and
+   each Critical/High having survived the §6 refutation pass.
 4. **Prioritized remediation roadmap** — *not a finding dump in severity
    order*. Sequence by **risk-reduction-per-effort**: quick critical wins
    first (trivial/small fixes to Critical/High), then high-impact larger
@@ -232,7 +280,7 @@ Deliver in exactly this order:
 6. **Appendix** — full triaged tool output, the inventory from §2, DFDs and
    trust-boundary sketches, suppression-comment review.
 
-## 7. Audit hygiene
+## 8. Audit hygiene
 
 - **Reproducible**: pin the commit; record exact tool versions and full
   command lines so anyone can re-run the audit and re-verify each finding.
@@ -287,6 +335,10 @@ Deliver in exactly this order:
       remediation, and effort estimate?
 - [ ] Borderline severities state the deciding assumption explicitly?
 - [ ] Uncertain findings marked "needs verification", not asserted?
+- [ ] **Every Critical/High refuted by an independent pass** — a separate agent
+      or a fresh-context hostile read prompted to *kill* the finding, working
+      from the code and not from your write-up, with survivors kept and
+      refutations recorded (§6)?
 - [ ] Every **absence claim** ("no X found", "enforced everywhere") backed by a
       widened search plus a second independent method, with the search stated?
 - [ ] Positive observations evidenced by **effect** (a rejection, a log, a test

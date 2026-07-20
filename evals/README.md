@@ -53,8 +53,20 @@ audit STRAT-HIGH-2).
   harder cases broke the ceiling that produced it
   ([`results/2026-07-20/SILENT-FAILURE.md`](results/2026-07-20/SILENT-FAILURE.md)).
   **Case-authoring note:** cases carry answer keys (`expect`, `reference`) and
-  analysis metadata (`novel`); both runners whitelist `id`/`language`/`snippet`
-  into the prompt, so a new field cannot silently leak the answer.
+  analysis metadata (`novel`); the runners whitelist only the input fields
+  (`id`/`language`/`snippet`/`prompt`/`task`) into the prompt, so a new field
+  cannot silently leak the answer — and `run-clean.py` aborts if a case is left
+  with no content field at all, the guard added after that whitelist silently
+  emptied the routing eval.
+- `cases/finding-adjudication.jsonl` (30) — audit **precision**, the mirror of every
+  other audit set here: a code snippet + a *claimed* finding → UPHELD or REFUTED.
+  15 genuine claims and 15 plausible-but-wrong ones failing for six distinct reasons
+  (upstream guard, unreachable code, inflated severity, misread mechanism, already
+  mitigated, behaviour that is actually correct). Scored by `run-adjudication.py` on
+  **specificity** (refute the false) and **sensitivity** (keep the real), with an
+  ablation arm that strips `rules/01` §6. Result: **+0.00 — all three arms 1.00**,
+  zero wrong answers in 90 adjudications per arm
+  ([`results/2026-07-20/AUDIT-PROCESS.md`](results/2026-07-20/AUDIT-PROCESS.md)).
 - `cases/desc-routing.jsonl` (10) — an adversarially-confusable task → the correct
   skill (`expect`) and the tempting wrong sibling (`distractor`). Scored by
   `run-desc-routing.py` as an A/B on the description cross-refs (result: +0.00).
@@ -118,6 +130,7 @@ python3 evals/run-decay.py               # multi-turn skill-application decay (a
 python3 evals/run-desc-routing.py --samples 3 --temp 0.7   # description-catalogue routing A/B
 python3 evals/run-clean.py --cases evals/cases/silent-failure.jsonl --ablate  # rules/10 ablation
 python3 evals/run-silent-open.py --samples 5 --temp 1.0    # silent controls, open-ended + judged
+python3 evals/run-adjudication.py --samples 3 --temp 0.7   # audit precision (false-positive resistance)
 ```
 
 `--ablate` (on `run-clean.py`) drops `rules/10-silent-control-failure.md` from the
