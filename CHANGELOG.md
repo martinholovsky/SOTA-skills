@@ -62,6 +62,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   audit-*process* change, and recommends stopping additions to the audit path until
   an agentic one exists:
   [`evals/results/2026-07-20/AUDIT-PROCESS.md`](evals/results/2026-07-20/AUDIT-PROCESS.md).
+- **Decision-ledger review in AUDIT mode** — `sota/rules/01-audit-methodology.md`
+  gains **§6**, and the router's AUDIT workflow a **step 5**. Code passes find defects
+  in what was built; they cannot find the defect where the code faithfully implements
+  a choice that **stopped being right** — a datastore picked for scale that never
+  arrived, a rewrite justified by a benchmark that no longer reproduces, an expired
+  constraint still shaping the design. Reconstruct the expensive-to-reverse decisions
+  (ADRs, design docs, CHANGELOG, the PRs that introduced each major component) and
+  classify each **JUSTIFIED / STALE / UNJUSTIFIED / UNVERIFIABLE**, with STALE
+  (sound when made, inputs since expired) kept distinct from UNJUSTIFIED (the stated
+  reasoning never supported it). Where a decision rests on a **number**, re-run that
+  measurement *this session* — a benchmark in a two-year-old ADR is a historical
+  claim, not a current fact — or mark the decision unverifiable and say what would
+  confirm it. Ledger-vs-code is checked **both** directions (recorded-but-not-
+  implemented is as much a finding as implemented-but-not-recorded). Verdicts carry a
+  severity and feed the roadmap. Report structure gains a **Decision ledger** section;
+  one audit-checklist line added; §7–§9 renumbered.
+  `sota-architecture` rules/01 §4 owns *writing* ADRs and is cross-referenced, not
+  duplicated — this is the audit side. Verified the gap on current `main` first:
+  zero hits for ADR/decision-record/stale-justification anywhere under `skills/sota/`.
+  **Unmeasured, deliberately:** four audit instruments now saturate at +0.00
+  (recall, cross-file, silent-control, precision), so no current eval can score an
+  audit-*process* change — see
+  [`evals/results/2026-07-20/AUDIT-PROCESS.md`](evals/results/2026-07-20/AUDIT-PROCESS.md).
+  No efficacy claim is made, and this is the **last** planned audit-path addition
+  until an agentic instrument exists.
 - **Adversarial verification in AUDIT mode** — `sota/rules/01-audit-methodology.md`
   gains **§6 "Try to kill your own findings"**, and the router's AUDIT workflow step 6
   changes from *verify* to **refute**. Re-reading your own finding re-runs the

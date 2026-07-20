@@ -38,8 +38,21 @@ run_clean = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(run_clean)
 ROOT = run_clean.ROOT
 
-SEC6_START = "## 6. Adversarial verification"
-SEC6_END = "## 7. Report structure"
+# Match the section by its TITLE, not its number. The first version hardcoded
+# "## 6. Adversarial verification" / "## 7. Report structure"; inserting the
+# decision-ledger section renumbered both and the ablation stopped matching. The
+# guard in library_context() caught it (it aborts rather than silently returning
+# an unablated corpus) — keep that guard, and stop depending on the numbering.
+SEC_ABLATE_TITLE = "Adversarial verification"
+SEC_NEXT_TITLE = "Report structure"
+
+
+def _section_bounds(text, title, next_title):
+    """Byte offsets of a '## N. <title>' section, whatever N happens to be."""
+    import re
+    a = re.search(rf"^## \d+\. {re.escape(title)}", text, re.M)
+    b = re.search(rf"^## \d+\. {re.escape(next_title)}", text, re.M)
+    return (a.start() if a else -1), (b.start() if b else -1)
 
 # NEUTRAL by design. An earlier draft listed the ways a claim can fail (misread
 # mechanism, upstream guard, unreachable, already mitigated, inflated severity) —
@@ -57,10 +70,17 @@ def library_context(ablate=False):
     meth = open(os.path.join(ROOT, "skills/sota/rules/01-audit-methodology.md"),
                 encoding="utf-8").read()
     if ablate:
-        i, j = meth.find(SEC6_START), meth.find(SEC6_END)
-        if i < 0 or j < 0:
-            raise SystemExit("§6 markers not found — ablation would silently no-op")
+        i, j = _section_bounds(meth, SEC_ABLATE_TITLE, SEC_NEXT_TITLE)
+        if i < 0 or j < 0 or j <= i:
+            raise SystemExit(
+                f"ablation target section not found (looked for '## N. {SEC_ABLATE_TITLE}' "
+                f"through '## N. {SEC_NEXT_TITLE}'). Refusing to run: a silent no-op "
+                f"ablation would report a fake +0.00 contribution.")
+        removed = meth[i:j]
         meth = meth[:i] + meth[j:]
+        if SEC_ABLATE_TITLE in meth or len(removed) < 500:
+            raise SystemExit(f"ablation removed only {len(removed)} chars or left the "
+                             f"section behind — refusing to run.")
     router = open(os.path.join(ROOT, "skills/sota/SKILL.md"), encoding="utf-8").read()
     i, j = router.find("## Operating principles"), router.find("## Routing table")
     return f"{router[i:j].strip()}\n\n---\n\n{meth}"

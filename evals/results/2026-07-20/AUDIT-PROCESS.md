@@ -137,6 +137,45 @@ generic "audit this", scored on whether the right questions get asked unprompted
 the same frontier the [cross-file audit](../2026-07-13/REPO-AUDIT.md) and
 [silent-control](SILENT-FAILURE.md) runs both hit.
 
+## 5. Post-decision-ledger regression (same day, after §6 was added)
+
+`rules/01` grew 365 → 428 lines and the router 433 → 443 when the decision-ledger
+section landed. Both are pasted whole by an eval, so both were re-run.
+
+| Eval | Before | After decision-ledger | Verdict |
+|---|---|---|---|
+| Routing (20, 3×@0.7) | with 1.00 / lift +0.10 | **with 1.00** / lift +0.11 | held |
+| Audit precision (30, 3×@0.7) | 1.00 / 1.00 / 1.00 | **1.00 / 1.00 / 1.00** | held |
+
+No salience cost detected from any of today's four audit-path additions.
+
+Two evals were **proven unaffected instead of re-run**, on the same
+input-identity argument as §1: the completeness set loads 17 skill files, **none**
+of them touched today, and its `principle5()` extract is still byte-identical
+(sha `2a36f20d8e51`); the silent-control set pastes the `sota-code-security`
+rules, **unchanged** since PR #119.
+
+### The ablation arm caught its own breakage
+
+The first run of this regression **aborted**:
+
+```
+§6 markers not found — ablation would silently no-op
+```
+
+Adding the decision-ledger section renumbered *Adversarial verification* from §6
+to §7, and `run-adjudication.py` had hardcoded `"## 6. Adversarial verification"`.
+Without the guard the ablation would have found nothing to remove, silently
+returned the **full** corpus as the "ablated" arm, and reported a fake +0.00
+contribution that looked exactly like the real one.
+
+That is the failure this whole line of work is about — a control (the ablation)
+that appears to run and does nothing — and it was caught only because the runner
+was written to abort rather than proceed. The markers now match on section
+**title** rather than number, and the ablation additionally asserts that it
+removed a non-trivial block and that the section is genuinely gone. Both guards
+were watched to fire before being trusted.
+
 ## Appendix — a live false positive, caught by push protection
 
 Case `fa22` originally used a vendor's **published documentation test key**

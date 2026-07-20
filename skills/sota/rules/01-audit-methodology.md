@@ -95,7 +95,7 @@ option where capability is equivalent.
 | Licenses | cargo-deny (Rust); trivy license scan; syft SBOM license fields | Filter against the project's allowed-license policy. |
 
 Run each tool against the pinned commit; record the exact tool version and
-command line (needed for §8 reproducibility).
+command line (needed for §9 reproducibility).
 
 ### Triage discipline — tool output is raw material, not findings
 
@@ -182,7 +182,7 @@ not ready to ship:
    this query", with the changed line), referencing the relevant skill's
    rules file for the full pattern. Never "sanitize input".
 8. **Effort estimate** — trivial / small / medium / large. Severity says
-   what hurts; effort enables the roadmap in §7.
+   what hurts; effort enables the roadmap in §8.
 
 Two asymmetries the evidence standard has to carry:
 
@@ -197,17 +197,72 @@ Two asymmetries the evidence standard has to carry:
 - **"The control is present" is not "the control works."** Evidence for a
   positive observation must show *effect*, not existence — the log line it
   emitted, the request it rejected, the test that fails when it's disabled.
-  See `sota-code-security` rules/10; this applies to §7's positive-observations
+  See `sota-code-security` rules/10; this applies to §8's positive-observations
   section too, where an inert control praised as a strength is the worst
   possible reporting error.
 
 The library's short finding format (`file:line | rule | severity | effort | fix`)
 is the working format during passes; expand each surviving finding into the
 full evidence block for the report. Skill-local block formats are fine during
-a single-domain pass, but they must carry the effort field — §7's roadmap is
+a single-domain pass, but they must carry the effort field — §8's roadmap is
 sequenced by risk-reduction-per-effort and can't be built without it.
 
-## 6. Adversarial verification — try to kill your own findings
+## 6. Decision-ledger review — audit the decisions, not just the code
+
+Code review finds defects in what was built. It cannot find the defect where the
+code is a faithful implementation of a choice that **stopped being right** — a
+datastore picked for a scale that never arrived, a benchmark-justified rewrite
+whose benchmark no longer reproduces, a constraint that expired two years ago and
+is still shaping the design. That class is invisible to every pass above and is
+often the most expensive thing in the repo.
+
+`sota-architecture` rules/01 §4 owns **writing** ADRs. This is the audit side:
+reading them back and asking whether they still hold.
+
+**Reconstruct the ledger.** Sources, in order of reliability: ADRs
+(`docs/adr/`), design docs and RFCs, the CHANGELOG, PR descriptions on the
+commits that introduced each major component, and — last — comments. Where no
+record exists, the decision is still there, just undocumented: infer it from the
+code and label it *reconstructed, unconfirmed*. A major component with no
+discoverable rationale is itself a finding.
+
+**For each significant decision, classify it:**
+
+- **JUSTIFIED** — the reasoning holds and the evidence still reproduces.
+- **STALE** — sound when made, no longer: the constraint expired, the alternative
+  got better, the load never materialized, the dependency went EOL. Not a mistake;
+  a decision that has outlived its inputs. Say what changed.
+- **UNJUSTIFIED** — the stated reasoning does not support the decision, or the
+  evidence cited was never checked. Distinguish this from STALE plainly; it is a
+  judgment about the decision as made.
+- **UNVERIFIABLE** — no rationale survives and none can be reconstructed. Record
+  it rather than guessing.
+
+**Re-measure anything a decision rests on.** When the justification is a number —
+a benchmark, a latency or throughput target, a recall/false-positive rate, "X is
+faster than Y", "this doesn't scale" — **re-run it this session** and report the
+result, including in heavyweight environments when that is the only honest way to
+check. A number in a two-year-old ADR is a historical claim, not a current fact.
+If you cannot re-run it, mark the decision UNVERIFIABLE and say precisely what
+would confirm it (principles 0 and 6 apply here with full force). Respect the
+repo's documented environment constraints and teardown rules when you do.
+
+**Check the ledger against reality, both directions.** A decision recorded but
+never implemented is as much a finding as one implemented but never recorded —
+the ADR says "we use the outbox pattern", the code dual-writes. And a superseded
+ADR still describing current behavior misleads every future reader.
+
+**Report as findings.** STALE and UNJUSTIFIED entries carry a severity like any
+other finding (impact of continuing on the current path × likelihood it bites),
+and feed §8's roadmap — reversing an expensive decision is usually *large* effort
+and belongs sequenced, not buried in prose. Quote both sides: the recorded
+rationale and what you measured.
+
+Scope it: the decisions worth this treatment are the expensive-to-reverse ones —
+datastore, broker, service boundaries, auth model, tenancy model, language or
+framework, build/deploy topology. Do not ledger-review every merged PR.
+
+## 7. Adversarial verification — try to kill your own findings
 
 Re-reading your own finding is the weakest possible check: you re-run the
 reasoning that produced it and reach the same conclusion. Confirmation bias is
@@ -254,7 +309,7 @@ Two failure modes to avoid:
   file at the pinned commit. A refutation built on the finding's prose only
   tests your writing.
 
-## 7. Report structure
+## 8. Report structure
 
 Deliver in exactly this order:
 
@@ -265,22 +320,26 @@ Deliver in exactly this order:
    covered (with the recorded exclusions from §1), standards asserted
    against, tools run with exact versions and commands, audit date. This
    makes the audit reproducible and bounds its claims.
-3. **Findings** — grouped Critical → High → Medium → Low → Info; within a
+3. **Decision ledger** — the §6 table: each significant decision →
+   JUSTIFIED / STALE / UNJUSTIFIED / UNVERIFIABLE, with the recorded rationale
+   and the evidence you re-checked. Omit the section only if the repo has no
+   discoverable decisions; say so if you do.
+4. **Findings** — grouped Critical → High → Medium → Low → Info; within a
    severity, ordered by exploitability. Each in the full §5 evidence block, and
-   each Critical/High having survived the §6 refutation pass.
-4. **Prioritized remediation roadmap** — *not a finding dump in severity
+   each Critical/High having survived the §7 refutation pass.
+5. **Prioritized remediation roadmap** — *not a finding dump in severity
    order*. Sequence by **risk-reduction-per-effort**: quick critical wins
    first (trivial/small fixes to Critical/High), then high-impact larger
    work, then hardening. Group related fixes that share a root cause or a
    code area into one work item. The reader should be able to start work
    from the roadmap alone.
-5. **Positive observations** — what is already done well (good patterns,
+6. **Positive observations** — what is already done well (good patterns,
    solid boundaries, tooling in place), so it is preserved through
    remediation rather than accidentally regressed.
-6. **Appendix** — full triaged tool output, the inventory from §2, DFDs and
+7. **Appendix** — full triaged tool output, the inventory from §2, DFDs and
    trust-boundary sketches, suppression-comment review.
 
-## 8. Audit hygiene
+## 9. Audit hygiene
 
 - **Reproducible**: pin the commit; record exact tool versions and full
   command lines so anyone can re-run the audit and re-verify each finding.
@@ -335,10 +394,14 @@ Deliver in exactly this order:
       remediation, and effort estimate?
 - [ ] Borderline severities state the deciding assumption explicitly?
 - [ ] Uncertain findings marked "needs verification", not asserted?
+- [ ] **Decision ledger reviewed** — expensive-to-reverse decisions reconstructed
+      and classified JUSTIFIED / STALE / UNJUSTIFIED / UNVERIFIABLE, every number a
+      decision rests on **re-measured this session** (or the decision marked
+      unverifiable), and ledger-vs-code checked both directions (§6)?
 - [ ] **Every Critical/High refuted by an independent pass** — a separate agent
       or a fresh-context hostile read prompted to *kill* the finding, working
       from the code and not from your write-up, with survivors kept and
-      refutations recorded (§6)?
+      refutations recorded (§7)?
 - [ ] Every **absence claim** ("no X found", "enforced everywhere") backed by a
       widened search plus a second independent method, with the search stated?
 - [ ] Positive observations evidenced by **effect** (a rejection, a log, a test
