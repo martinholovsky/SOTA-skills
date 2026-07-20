@@ -155,6 +155,13 @@ hours):
   diff-scoped job catches weak tests while they're fresh.
 - **As an audit probe**: one run on a "well-covered" module tells you in an
   afternoon whether 90% line coverage means anything.
+- **As a control probe** (no tooling needed): hand-mutate one security control's
+  body to the permissive no-op (`return True`, `return []`) and run the suite.
+  Nothing fails ⇒ that control is untested however many tests name it. Two traps
+  make this lie — the path may be skipped for an unrelated reason (a disabled
+  optional dependency), and the mutation may not have taken (editable installs,
+  stale bytecode, cached images). Force the path live and assert the mutation's
+  runtime effect before trusting a green run. `sota-code-security` rules/10.
 
 ```text
 # What a survivor means (PIT/Stryker-style report line)

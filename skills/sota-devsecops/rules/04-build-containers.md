@@ -88,6 +88,13 @@ Hard rules:
   the base supports it.
 - `ENTRYPOINT` exec-form (`["/app"]`), `HEALTHCHECK` for non-k8s runtimes; no `sudo`, no
   setuid binaries you didn't ask for (distroless solves this class).
+- **The image must contain what the code needs at runtime**, not just what the
+  checkout has: data files, rulesets, models, migrations, and optional extras are
+  dropped silently by package manifests and stage copies. "Works in a dev
+  checkout, dead in the image" is a silent no-op, not a crash — the feature just
+  returns empty. Smoke-test each control **against the built image**, and have
+  the component assert its required artifacts at startup (`sota-code-security`
+  rules/10 §2.11).
 
 ### 4.2.1 Interpreted-runtime variant (Node example; Python is isomorphic)
 

@@ -15,7 +15,7 @@
 **Make your AI coding assistant build and audit like your most senior engineer.**
 
 Your assistant is brilliant — it just doesn't know your standards. SOTA-skills teaches
-it: 41 skills (295 files, ~60k lines) encoding state-of-the-art 2026 practices for
+it: 41 skills (296 files, ~60k lines) encoding state-of-the-art 2026 practices for
 building **and** auditing software, fast-moving claims web-verified against primary
 sources. Native on Claude Code; works with Gemini CLI, Codex, and any agent that reads
 `AGENTS.md`. Every file stays under 500 lines, so the right rules load when needed.

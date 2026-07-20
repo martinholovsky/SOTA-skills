@@ -75,6 +75,13 @@ Rules:
   fallbacks are for surviving the night, not for permanent operation.
 - Test degradation paths in CI or chaos drills; an unexercised fallback is
   assumed broken.
+- **One shared helper, deduped per cause.** Route every degradation through a
+  single `degraded(component, reason)` call rather than ad-hoc warnings, and
+  dedupe per (component, reason) — not per request. Per-request warnings get
+  filtered by operators and stop being read, which returns the system to silent
+  failure. This matters most for **security controls**: a scanner or policy
+  engine running inert must be a distinct health state, not a quiet default
+  (`sota-code-security` rules/10).
 
 ## 3. Debug endpoints: powerful and dangerous
 

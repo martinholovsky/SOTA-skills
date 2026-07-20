@@ -32,6 +32,20 @@ set incl. community-health files, GitHub search precedence verified (#117). Runt
 bound Dev-AID ideas (memory-bank persistence, RAG, worktree locks, agent framework)
 were deliberately **not** ported.
 
+**Post-v1.16.0 (2026-07-20):** added **`sota-code-security` rules/10 "Silent
+control failure"** — controls that look enabled and do nothing. A gap analysis
+over the whole tree found 9 of its 12 concepts uncovered anywhere (the falsi-
+fication question, optional-dependency degradation, weak existence checks,
+zero-rule loads, attacker-triggerable early returns, doc/code default drift,
+hardcoded report numbers, shipped-artifact gaps, asymmetric negative-claim
+evidence); fail-open (rules/03) and test vacuity (`sota-testing` rules/02/06/09)
+were already strong and are cross-referenced, not duplicated. Wired into the
+**default** paths rather than left opt-in: router BUILD step 4 (falsification
+question over every control in the diff), a new AUDIT **step 4 silent-control
+pass**, routing rule 20, and the asymmetric evidence burden in operating
+principle 3 + `sota/rules/01` §5. **Not yet measured** — an eval case set for
+this class (inject a silent no-op, score detection) is the open follow-up.
+
 **Now open, ordered by value:**
 - **Distribution** (item 7): publish the salience write-up
   (`docs/writeups/completeness-blind-spot.md`) — LinkedIn is the proven channel;

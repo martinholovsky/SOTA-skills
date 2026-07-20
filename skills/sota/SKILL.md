@@ -42,7 +42,11 @@ rules files that match the code in front of you. Never load all skills at once.
    standard (CWE, OWASP, MITRE ATT&CK/ATLAS) where one applies, and proposes a
    concrete fix. Uncertain findings are marked "needs verification", never
    asserted. Borderline severities state the deciding assumption ("High if
-   internet-facing; Medium if internal-only").
+   internet-facing; Medium if internal-only"). **A negative claim needs more
+   proof than a positive one**: "no instances of X" and "I only looked one way"
+   are indistinguishable from the outside, so before asserting absence, widen
+   the search and use a second independent method — and state the search you
+   actually ran.
 4. **Stack profile.** If the repo or `~/.claude` contains a `profiles/*.md`
    stack profile (preferred stores, auth provider, license policy, platform
    conventions), its choices are the defaults for BUILD mode and the expected
@@ -69,7 +73,7 @@ rules files that match the code in front of you. Never load all skills at once.
 | Skill | Use when the task involves... |
 |---|---|
 | `sota-architecture` | System design, service boundaries, monolith vs microservices, DDD, event-driven design, sagas/outbox, resilience (timeouts/retries/circuit breakers), scalability, multi-tenancy, 12-factor/cloud-native, architectural anti-patterns |
-| `sota-code-security` | Writing or reviewing code that touches untrusted input, authn/authz, sessions/JWT/OAuth, crypto, XSS/CSRF/CORS, file uploads, deserialization, error/log hygiene, LLM/agent app security |
+| `sota-code-security` | Writing or reviewing code that touches untrusted input, authn/authz, sessions/JWT/OAuth, crypto, XSS/CSRF/CORS, file uploads, deserialization, error/log hygiene, LLM/agent app security, silent control failure (a safeguard that looks enabled and does nothing) |
 | `sota-threat-modeling` | Designing a new system/feature with security in mind, drawing trust boundaries and DFDs, STRIDE/LINDDUN, risk rating, reconstructing a threat model from an existing codebase |
 | `sota-secrets-management` | API keys, passwords, tokens, signing/TLS/SSH keys, .env files, Vault/cloud secret managers, workload identity (OIDC), secret rotation, leak detection and remediation |
 | `sota-sandboxing` | Isolation of untrusted code or input, least privilege, seccomp/Landlock/capabilities, container/K8s hardening, microVMs, WASM sandboxes, subprocess hygiene, sandboxing AI-agent code execution |
@@ -189,6 +193,15 @@ rules files that match the code in front of you. Never load all skills at once.
     `sota-confidential-computing`. Both can apply to one system. Key
     custody/release stays `sota-secrets-management`; differential privacy and
     de-identification stay `sota-privacy-compliance`.
+20. **"It's enabled" is a claim, not a fact.** Whenever a control's *presence*
+    is established but its *effect* isn't — a banner, a config flag, a green
+    test, "we have a scanner" — route to `sota-code-security` rules/10 (silent
+    control failure). It pairs with `sota-testing` rules/06 (mutation-probe the
+    control) and rules/09 (a security test must be watched to fail),
+    `sota-observability` rules/05 (degradation must be visible), and
+    `sota-devsecops` rules/04 (does the shipped artifact contain what the
+    control needs at runtime?). Not for controls that are simply *missing* —
+    that's the owning domain skill's audit checklist.
 
 ## BUILD mode — workflow
 
@@ -214,7 +227,11 @@ rules files that match the code in front of you. Never load all skills at once.
    Re-read each loaded rules file's **Audit checklist** (every rules file ends
    with one) *and* operating principle 5, and verify your diff satisfies every
    item. For each unmet item, **implement it** or state why it's out of scope —
-   silence is not allowed. Doing this *last* is deliberate: a long build context
+   silence is not allowed. For every control, safeguard, or check in the diff,
+   also ask the **falsification question**: *if this were silently a no-op,
+   would anything observable differ?* If nothing would — no log, no metric, no
+   test that fails — the control is not done (`sota-code-security` rules/10).
+   Doing this *last* is deliberate: a long build context
    makes mid-context rules fade, so a final re-read is what catches the rate
    limiting, transport, tests, and logging a model otherwise silently drops
    (measured: this recovery is the bulk of the library's completeness lift,
@@ -249,7 +266,17 @@ For a **full project audit**, work in passes:
    applicable. For an infrastructure/cluster audit the heavy hitters are
    `sota-kubernetes`, `sota-network-security`, `sota-identity-access`,
    `sota-sandboxing`, and `sota-detection-engineering`.
-4. **Findings.** Emit every finding in the canonical cross-domain format
+4. **Silent-control pass (always run it).** The per-domain passes ask "is the
+   control there?" — this one asks "does it *do* anything?". For every control
+   they confirmed exists, apply `sota-code-security` rules/10: swallowed
+   enforcement exceptions, presence decided by `exists()` rather than a loaded
+   artifact, rulesets that load zero rules, truncation before inspection,
+   attacker-triggerable early returns, config keys silently ignored, defaults
+   that differ between docs and code, degradation nothing logs, and controls
+   whose tests still pass when the body is replaced with a no-op. This class is
+   invisible to the other passes — the code isn't wrong, it's inert — and to
+   pattern-based SAST for the same reason.
+5. **Findings.** Emit every finding in the canonical cross-domain format
    (`file:line | rule | severity | effort | fix`) — skill-local block formats
    are fine within a domain pass but must carry an effort field so the
    roll-up can be sequenced — deduplicate across domains,
@@ -262,9 +289,10 @@ For a **full project audit**, work in passes:
    - **Medium** — deviation from SOTA with real but bounded impact.
    - **Low** — hygiene, polish, future-proofing.
    - **Info** — no direct risk: observations, tech-debt notes, future-proofing.
-5. **Verify before reporting.** Re-read each Critical/High finding's code in
+6. **Verify before reporting.** Re-read each Critical/High finding's code in
    full context; drop or downgrade anything you cannot substantiate with a
-   concrete failure scenario, or mark it "needs verification".
+   concrete failure scenario, or mark it "needs verification". Absence claims
+   ("no X found") carry the heavier burden of principle 3.
 
 ## Library map (rules files per skill)
 
@@ -276,7 +304,8 @@ For a **full project audit**, work in passes:
   08 NATS JetStream messaging
 - **sota-code-security/rules**: 01 input & injection, 02 authentication,
   03 authorization, 04 cryptography, 05 web security, 06 memory & resource
-  safety, 07 data exposure, 08 LLM/AI security, 09 untrusted-data ingestion
+  safety, 07 data exposure, 08 LLM/AI security, 09 untrusted-data ingestion,
+  10 silent control failure (controls that look enabled and do nothing)
 - **sota-threat-modeling/rules**: 01 methodologies, 02 decomposition,
   03 threat catalogs, 04 risk rating & treatment, 05 outputs &
   operationalization, 06 audit reconstruction
