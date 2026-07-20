@@ -62,8 +62,10 @@ JUDGE = (
 
 
 def build_task_prompt(cases, with_lib, ablate):
-    strip = ("expect", "skill", "reference", "kind")
-    tasks = json.dumps([{k: v for k, v in c.items() if k not in strip} for c in cases], indent=1)
+    # Whitelist (see run-clean.build_prompt): answer keys and analysis metadata
+    # ("expect", "reference", "novel") must never reach the model.
+    keep = ("id", "language", "snippet")
+    tasks = json.dumps([{k: v for k, v in c.items() if k in keep} for c in cases], indent=1)
     if with_lib:
         lib = (f"\n\nApply the following security guidance:\n\n"
                f"{run_clean.audit_library_context(ablate)}\n\n")
@@ -108,16 +110,27 @@ def main():
             answers = run_clean.call(a.model, key, prompt, temp=a.temp)
             verdicts = run_clean.call(a.judge_model, key,
                                       build_judge_prompt(cases, answers), temp=0.0)
-            hits = sum(1 for c in cases if str(verdicts.get(c["id"], "")).upper() == "HIT")
-            scores.append(hits / len(cases))
+            def hit(c):
+                return str(verdicts.get(c["id"], "")).upper() == "HIT"
+            scores.append(sum(1 for c in cases if hit(c)) / len(cases))
+            # subgroups: does the guidance transfer to mechanisms rules/10 never
+            # lists (novel), and does it avoid over-flagging loud controls (neg)?
+            nov = [c for c in cases if c.get("novel")]
+            neg = [c for c in cases if c["expect"] == ["not-silent"]]
             last = {"answers": answers, "verdicts": verdicts,
-                    "misses": [c["id"] for c in cases
-                               if str(verdicts.get(c["id"], "")).upper() != "HIT"]}
+                    "novel_recall": sum(1 for c in nov if hit(c)) / len(nov) if nov else None,
+                    "negative_recall": sum(1 for c in neg if hit(c)) / len(neg) if neg else None,
+                    "misses": [c["id"] for c in cases if not hit(c)]}
         mean = sum(scores) / len(scores)
         result[name] = {"recall": mean, "recalls": scores, **last}
         spread = (f"  (min {min(scores):.2f}, max {max(scores):.2f}, n={len(scores)})"
                   if a.samples > 1 else "")
-        print(f"{name:22s} recall={mean:.2f}{spread}  misses: {last['misses'] or '(none)'}")
+        sub = ""
+        if last.get("novel_recall") is not None:
+            sub = (f"  [novel {last['novel_recall']:.2f}"
+                   f" | loud-controls {last['negative_recall']:.2f}]")
+        print(f"{name:22s} recall={mean:.2f}{spread}{sub}\n{'':22s} misses: "
+              f"{last['misses'] or '(none)'}")
 
     base = result["without-library"]["recall"]
     print(f"\nLIFT full library      = {result['with-library']['recall'] - base:+.2f}")

@@ -45,6 +45,11 @@ SILENT_VOCAB = [
     "swallowed-enforcement-exception", "overloaded-flag", "early-return-bypass",
     "truncation-before-inspection", "ignored-config-key", "doc-code-default-drift",
     "hardcoded-report-value", "shipped-artifact-gap", "vacuous-test", "not-silent",
+    # mechanisms NOT enumerated in rules/10 — the generalization probe (cases
+    # tagged "novel": does the guidance transfer, or only recall its own list?)
+    "regex-never-matches", "unawaited-async-check", "decorator-order-bypass",
+    "setting-overwritten", "timeout-not-applied", "retry-swallows-failure",
+    # distractors from VOCAB so the choice is never 1-of-N-obvious
     "sql-injection", "missing-authentication", "hardcoded-secret", "idor",
     "path-traversal", "insecure-random",
 ]
@@ -100,9 +105,20 @@ def build_prompt(cases, kind, with_lib, ablate=False):
         return (f"{head}{lib}Questions:\n{tasks}\n\n"
                 'Output ONLY a JSON object mapping each id to your one-line answer string, '
                 'e.g. {"f01": "RFC 9989"}. No prose, no code fence.')
-    # "reference" is the answer key used by run-silent-open.py's judge — never prompt it.
-    strip = ("expect", "skill", "reference")
-    stripped = [{k: v for k, v in c.items() if k not in strip} for c in cases]
+    # WHITELIST, not blacklist: a case carries answer keys ("expect", "reference") and
+    # analysis metadata ("novel", "tier"), and a new field must never leak into the
+    # prompt just because nobody added it to a strip list. Only these reach the model.
+    # Must list the INPUT field of every kind routed here — `prompt` (router),
+    # `snippet` (audit/silent). Omitting one silently reduces its cases to bare ids
+    # and the run still prints a plausible number (this exact bug shipped in the
+    # first draft: router cases lost `prompt`), hence the guard below.
+    keep = ("id", "language", "snippet", "prompt", "task")
+    stripped = [{k: v for k, v in c.items() if k in keep} for c in cases]
+    for s in stripped:
+        if len(s) < 2:
+            sys.exit(f"case {s.get('id')!r}: no content field survived the prompt "
+                     f"whitelist — add this kind's input field to `keep` in "
+                     f"build_prompt(). Refusing to run a content-free eval.")
     tasks = json.dumps(stripped, indent=1)
     if kind == "silent":
         vocab = ", ".join(SILENT_VOCAB)

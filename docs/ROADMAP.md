@@ -45,18 +45,27 @@ question over every control in the diff), a new AUDIT **step 4 silent-control
 pass**, routing rule 20, and the asymmetric evidence burden in operating
 principle 3 + `sota/rules/01` §5. **Then measured** (same day,
 [`evals/results/2026-07-20/SILENT-FAILURE.md`](../evals/results/2026-07-20/SILENT-FAILURE.md)):
-a 15-case set (13 positives + 2 loud-failure negative controls) run two ways —
-vocabulary-given and open-ended/blind-judged — plus an **ablation arm** that drops
-rules/10 from the with-library context. The full library leads **0.92 → 0.99
-(+0.07)** and this is the one audit-family dimension that does *not* saturate at
-the unguided baseline, but **rules/10's marginal contribution is unresolved at
-n=15** (+0.00 to +0.07, per-arm spread the same size) and **no lift is claimed for
-the file**. Open follow-ups from that run: (a) **grow the set past ~40 cases** so
-the 0.067 granularity stops dominating; (b) the design's real limit — both arms
-must be *told* to hunt inert controls, which hands over the lens rules/10 teaches,
-so the honest test is the **agentic** one (large repo + generic "audit this" →
-do silent no-ops appear in the findings unprompted?), the same frontier the
-cross-file audit run identified; (c) cross-model replication.
+a case set run two ways — vocabulary-given and open-ended/blind-judged — plus an
+**ablation arm** that drops rules/10 from the with-library context. A first
+15-case version showed **+0.07**; the set was then **grown to 49** (41 positives,
+8 loud-failure negative controls, 6 mechanisms rules/10 does *not* enumerate) and
+**the lift did not replicate**: **+0.03** vocabulary / **−0.01** open-ended, both
+inside a per-arm spread of ±0.04, with rules/10's ablated contribution **+0.00**.
+The +0.07 was small-sample noise (the 15-case with-arm sat at 0.99–1.00 — no
+headroom); it is **retracted** in `RESULTS.md` and the writeup. Silent-control
+detection therefore joins audit / cross-file audit / desc-routing as a **+0.00**
+dimension. rules/10 is kept on gap-analysis grounds with **no efficacy claim**.
+Open follow-ups: (a) **grow the `novel` subgroup to 20+** — on the current 6, the
+*unguided* arm scored 1.00 vs 0.83 for both library arms, a possible
+**taxonomy-anchoring** effect (a model handed an 11-item list may match against
+the list instead of applying the question) that is a hypothesis at n=6 and would,
+if it reproduces, argue for rewriting rules/10 to lead on the question and lighten
+the catalogue; (b) the **agentic** design (large repo + generic "audit this" → do
+silent no-ops appear unprompted?) — the only design that can measure what the file
+is actually for, and the same frontier the cross-file audit run identified;
+(c) cross-model replication. Four cases defeat every arm (build-tag no-op, glob
+extension mismatch, env-filter mismatch, unawaited async assertion) — deliberately
+**not** written into the rule, since that is fitting guidance to the test set.
 
 **Now open, ordered by value:**
 - **Distribution** (item 7): publish the salience write-up

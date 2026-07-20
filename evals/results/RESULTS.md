@@ -15,7 +15,7 @@ Same model, same task, library loaded vs. nothing.
 | **Completeness** (7 build tasks) | 0.60 | **1.00** | **+0.39** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
 | **Freshness** (32 current-2026 facts) | 0.44 | **0.97** | **+0.53** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
 | Routing (20 tasks) | 0.90 | **1.00** | **+0.10** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
-| Silent-control detection (15 inert-control cases) | 0.92 | **0.99** | **+0.07** | 5×, temp 1.0 | [SILENT-FAILURE](2026-07-20/SILENT-FAILURE.md) |
+| Silent-control detection (49 inert-control cases) | 0.94 | 0.93 | +0.00 | 5×, temp 1.0 | [SILENT-FAILURE](2026-07-20/SILENT-FAILURE.md) |
 | Audit **precision** (30 claims, 15 false) | 1.00 | 1.00 | +0.00 | 3×, temp 0.7 | [AUDIT-PROCESS](2026-07-20/AUDIT-PROCESS.md) |
 | Audit (14 hard snippets) | 1.00 | 1.00 | +0.00 | 1× | [BASELINE](2026-07-10/BASELINE.md) |
 | Cross-file audit (8-defect repo) | 1.00 | 1.00 | +0.00 | 2 models | [REPO-AUDIT](2026-07-13/REPO-AUDIT.md) |
@@ -27,15 +27,19 @@ model already recognizes vulnerabilities, even cross-file when the repo fits in
 context. The real remaining audit frontier is an **agentic large-repo** audit
 (too big to hold at once); logged in the [roadmap](../../docs/ROADMAP.md).
 
-**Silent-control detection is the one audit-family dimension that does NOT
-saturate** (0.92 unguided) — inert controls are harder for a base model than
-ordinary vulnerabilities. But an **ablation isolating the rule file written for
-this class (`sota-code-security` rules/10) returned no resolvable contribution**
-(+0.00 to +0.07 across four runs, with a per-arm spread of the same size at
-n=15). No lift is claimed for that file. The eval design is the limiting factor:
-both arms must be *told* to look for inert controls, and that framing is itself
-the lens the rule teaches — so what the rule actually adds (asking the question
-unprompted) is what the design cannot measure. Details and limitations in
+**Retraction (2026-07-20).** This row first shipped as **0.92 → 0.99 (+0.07)**
+from a 15-case set. Growing the set to **49** — adding harder cases that broke the
+ceiling, 8 negative controls, and 6 mechanisms the rule file does *not* enumerate
+— **did not reproduce it**: +0.03 (vocabulary design), −0.01 (open-ended design),
+both inside a per-arm spread of ±0.04. **The +0.07 was small-sample noise.** The
+row now reads +0.00. An ablation isolating `sota-code-security` rules/10 returns
+**+0.00** (vocabulary design: with and ablated identical at 0.918, same four
+missed cases). Two things worth knowing: on the 6 **unenumerated** mechanisms the
+*unguided* arm scored 1.00 and both library arms 0.83 — a possible
+**taxonomy-anchoring** effect, one case at n=6, a hypothesis and not yet a
+finding; and the design's own limit is that both arms must be *told* to hunt inert
+controls, which is the lens the rule teaches, so what it uniquely adds stays
+unmeasured. Full detail, subgroup tables, and limitations in
 [SILENT-FAILURE.md](2026-07-20/SILENT-FAILURE.md).
 
 **Regression check (2026-07-16).** Three guidance changes adopted from an external

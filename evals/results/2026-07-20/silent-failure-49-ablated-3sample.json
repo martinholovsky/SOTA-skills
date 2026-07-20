@@ -1,0 +1,358 @@
+{
+ "_meta": {
+  "model": "anthropic/claude-sonnet-4.6",
+  "kind": "silent",
+  "cases": 49,
+  "samples": 3,
+  "temp": 0.7,
+  "ablate": true
+ },
+ "without-library": {
+  "recall": 0.891156462585034,
+  "recalls": [
+   0.8979591836734694,
+   0.8775510204081632,
+   0.8979591836734694
+  ],
+  "misses": {
+   "sf06": [
+    "early-return-bypass"
+   ],
+   "sf18": [
+    "optional-dependency-degradation"
+   ],
+   "sf19": [
+    "empty-ruleset-loaded"
+   ],
+   "sf20": [
+    "empty-ruleset-loaded"
+   ],
+   "sf37": [
+    "vacuous-test"
+   ]
+  },
+  "predictions": {
+   "sf01": [
+    "optional-dependency-degradation",
+    "weak-existence-check"
+   ],
+   "sf02": [
+    "optional-dependency-degradation"
+   ],
+   "sf03": [
+    "empty-ruleset-loaded"
+   ],
+   "sf04": [
+    "swallowed-enforcement-exception"
+   ],
+   "sf05": [
+    "overloaded-flag"
+   ],
+   "sf06": [
+    "truncation-before-inspection"
+   ],
+   "sf07": [
+    "truncation-before-inspection"
+   ],
+   "sf08": [
+    "ignored-config-key"
+   ],
+   "sf09": [
+    "doc-code-default-drift"
+   ],
+   "sf10": [
+    "hardcoded-report-value"
+   ],
+   "sf11": [
+    "shipped-artifact-gap"
+   ],
+   "sf12": [
+    "vacuous-test"
+   ],
+   "sf13": [
+    "vacuous-test"
+   ],
+   "sf14": [
+    "not-silent"
+   ],
+   "sf15": [
+    "not-silent"
+   ],
+   "sf16": [
+    "weak-existence-check",
+    "optional-dependency-degradation"
+   ],
+   "sf17": [
+    "optional-dependency-degradation"
+   ],
+   "sf18": [
+    "shipped-artifact-gap"
+   ],
+   "sf19": [
+    "regex-never-matches"
+   ],
+   "sf20": [
+    "regex-never-matches"
+   ],
+   "sf21": [
+    "swallowed-enforcement-exception"
+   ],
+   "sf22": [
+    "swallowed-enforcement-exception"
+   ],
+   "sf23": [
+    "overloaded-flag",
+    "setting-overwritten"
+   ],
+   "sf24": [
+    "early-return-bypass"
+   ],
+   "sf25": [
+    "early-return-bypass"
+   ],
+   "sf26": [
+    "truncation-before-inspection"
+   ],
+   "sf27": [
+    "truncation-before-inspection"
+   ],
+   "sf28": [
+    "ignored-config-key"
+   ],
+   "sf29": [
+    "ignored-config-key"
+   ],
+   "sf30": [
+    "doc-code-default-drift"
+   ],
+   "sf31": [
+    "doc-code-default-drift"
+   ],
+   "sf32": [
+    "hardcoded-report-value"
+   ],
+   "sf33": [
+    "shipped-artifact-gap"
+   ],
+   "sf34": [
+    "shipped-artifact-gap"
+   ],
+   "sf35": [
+    "vacuous-test"
+   ],
+   "sf36": [
+    "vacuous-test"
+   ],
+   "sf37": [
+    "unawaited-async-check"
+   ],
+   "sf38": [
+    "regex-never-matches"
+   ],
+   "sf39": [
+    "unawaited-async-check"
+   ],
+   "sf40": [
+    "decorator-order-bypass"
+   ],
+   "sf41": [
+    "setting-overwritten"
+   ],
+   "sf42": [
+    "timeout-not-applied"
+   ],
+   "sf43": [
+    "retry-swallows-failure"
+   ],
+   "sf44": [
+    "not-silent"
+   ],
+   "sf45": [
+    "not-silent"
+   ],
+   "sf46": [
+    "not-silent"
+   ],
+   "sf47": [
+    "not-silent"
+   ],
+   "sf48": [
+    "not-silent"
+   ],
+   "sf49": [
+    "not-silent"
+   ]
+  }
+ },
+ "with-library-ablated": {
+  "recall": 0.9183673469387755,
+  "recalls": [
+   0.9183673469387755,
+   0.9183673469387755,
+   0.9183673469387755
+  ],
+  "misses": {
+   "sf18": [
+    "optional-dependency-degradation"
+   ],
+   "sf19": [
+    "empty-ruleset-loaded"
+   ],
+   "sf20": [
+    "empty-ruleset-loaded"
+   ],
+   "sf37": [
+    "vacuous-test"
+   ]
+  },
+  "predictions": {
+   "sf01": [
+    "weak-existence-check"
+   ],
+   "sf02": [
+    "optional-dependency-degradation"
+   ],
+   "sf03": [
+    "empty-ruleset-loaded"
+   ],
+   "sf04": [
+    "swallowed-enforcement-exception"
+   ],
+   "sf05": [
+    "overloaded-flag"
+   ],
+   "sf06": [
+    "early-return-bypass"
+   ],
+   "sf07": [
+    "truncation-before-inspection"
+   ],
+   "sf08": [
+    "ignored-config-key"
+   ],
+   "sf09": [
+    "doc-code-default-drift"
+   ],
+   "sf10": [
+    "hardcoded-report-value"
+   ],
+   "sf11": [
+    "shipped-artifact-gap"
+   ],
+   "sf12": [
+    "vacuous-test"
+   ],
+   "sf13": [
+    "vacuous-test"
+   ],
+   "sf14": [
+    "not-silent"
+   ],
+   "sf15": [
+    "not-silent"
+   ],
+   "sf16": [
+    "weak-existence-check"
+   ],
+   "sf17": [
+    "optional-dependency-degradation"
+   ],
+   "sf18": [
+    "overloaded-flag"
+   ],
+   "sf19": [
+    "regex-never-matches"
+   ],
+   "sf20": [
+    "regex-never-matches"
+   ],
+   "sf21": [
+    "swallowed-enforcement-exception"
+   ],
+   "sf22": [
+    "swallowed-enforcement-exception"
+   ],
+   "sf23": [
+    "overloaded-flag"
+   ],
+   "sf24": [
+    "early-return-bypass"
+   ],
+   "sf25": [
+    "early-return-bypass"
+   ],
+   "sf26": [
+    "truncation-before-inspection"
+   ],
+   "sf27": [
+    "truncation-before-inspection"
+   ],
+   "sf28": [
+    "ignored-config-key"
+   ],
+   "sf29": [
+    "ignored-config-key"
+   ],
+   "sf30": [
+    "doc-code-default-drift"
+   ],
+   "sf31": [
+    "doc-code-default-drift"
+   ],
+   "sf32": [
+    "hardcoded-report-value"
+   ],
+   "sf33": [
+    "shipped-artifact-gap"
+   ],
+   "sf34": [
+    "shipped-artifact-gap"
+   ],
+   "sf35": [
+    "vacuous-test"
+   ],
+   "sf36": [
+    "vacuous-test"
+   ],
+   "sf37": [
+    "unawaited-async-check"
+   ],
+   "sf38": [
+    "regex-never-matches"
+   ],
+   "sf39": [
+    "unawaited-async-check"
+   ],
+   "sf40": [
+    "decorator-order-bypass"
+   ],
+   "sf41": [
+    "setting-overwritten"
+   ],
+   "sf42": [
+    "timeout-not-applied"
+   ],
+   "sf43": [
+    "retry-swallows-failure"
+   ],
+   "sf44": [
+    "not-silent"
+   ],
+   "sf45": [
+    "not-silent"
+   ],
+   "sf46": [
+    "not-silent"
+   ],
+   "sf47": [
+    "not-silent"
+   ],
+   "sf48": [
+    "not-silent"
+   ],
+   "sf49": [
+    "not-silent"
+   ]
+  }
+ }
+}
