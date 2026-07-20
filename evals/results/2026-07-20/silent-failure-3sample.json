@@ -1,0 +1,132 @@
+{
+ "_meta": {
+  "model": "anthropic/claude-sonnet-4.6",
+  "kind": "silent",
+  "cases": 15,
+  "samples": 3,
+  "temp": 0.7,
+  "ablate": false
+ },
+ "without-library": {
+  "recall": 0.8666666666666667,
+  "recalls": [
+   0.8666666666666667,
+   0.8666666666666667,
+   0.8666666666666667
+  ],
+  "misses": {
+   "sf06": [
+    "early-return-bypass"
+   ],
+   "sf13": [
+    "vacuous-test"
+   ]
+  },
+  "predictions": {
+   "sf01": [
+    "weak-existence-check",
+    "optional-dependency-degradation"
+   ],
+   "sf02": [
+    "optional-dependency-degradation"
+   ],
+   "sf03": [
+    "empty-ruleset-loaded"
+   ],
+   "sf04": [
+    "swallowed-enforcement-exception"
+   ],
+   "sf05": [
+    "overloaded-flag"
+   ],
+   "sf06": [
+    "truncation-before-inspection"
+   ],
+   "sf07": [
+    "truncation-before-inspection"
+   ],
+   "sf08": [
+    "ignored-config-key"
+   ],
+   "sf09": [
+    "doc-code-default-drift"
+   ],
+   "sf10": [
+    "hardcoded-report-value"
+   ],
+   "sf11": [
+    "shipped-artifact-gap"
+   ],
+   "sf12": [
+    "vacuous-test"
+   ],
+   "sf13": [
+    "early-return-bypass"
+   ],
+   "sf14": [
+    "not-silent"
+   ],
+   "sf15": [
+    "not-silent"
+   ]
+  }
+ },
+ "with-library": {
+  "recall": 1.0,
+  "recalls": [
+   1.0,
+   1.0,
+   1.0
+  ],
+  "misses": {},
+  "predictions": {
+   "sf01": [
+    "weak-existence-check"
+   ],
+   "sf02": [
+    "optional-dependency-degradation",
+    "shipped-artifact-gap"
+   ],
+   "sf03": [
+    "empty-ruleset-loaded"
+   ],
+   "sf04": [
+    "swallowed-enforcement-exception"
+   ],
+   "sf05": [
+    "overloaded-flag"
+   ],
+   "sf06": [
+    "early-return-bypass"
+   ],
+   "sf07": [
+    "truncation-before-inspection"
+   ],
+   "sf08": [
+    "ignored-config-key"
+   ],
+   "sf09": [
+    "doc-code-default-drift"
+   ],
+   "sf10": [
+    "hardcoded-report-value"
+   ],
+   "sf11": [
+    "shipped-artifact-gap"
+   ],
+   "sf12": [
+    "vacuous-test"
+   ],
+   "sf13": [
+    "vacuous-test",
+    "shipped-artifact-gap"
+   ],
+   "sf14": [
+    "not-silent"
+   ],
+   "sf15": [
+    "not-silent"
+   ]
+  }
+ }
+}

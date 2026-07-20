@@ -1,0 +1,149 @@
+{
+ "_meta": {
+  "model": "anthropic/claude-sonnet-4.6",
+  "judge": "anthropic/claude-opus-4.8",
+  "cases": 15,
+  "samples": 5,
+  "temp": 1.0,
+  "design": "open-ended"
+ },
+ "without-library": {
+  "recall": 0.9199999999999999,
+  "recalls": [
+   0.9333333333333333,
+   0.8666666666666667,
+   0.8666666666666667,
+   0.9333333333333333,
+   1.0
+  ],
+  "answers": {
+   "sf01": "model_dir.is_dir() is evaluated once at construction time; if the init container later populates the directory (or it exists but is empty/corrupt), enabled stays whatever it was at boot and the scanner silently runs or stays disabled regardless of actual model availability.",
+   "sf02": "clamd is an optional dev dependency never installed in the production Docker image, so clamd is always None at runtime and every upload silently returns {\"clean\": True} without any scan.",
+   "sf03": "The deployed config is the example file with only commented-out rules, so rules list is always empty, Waf.blocks() always returns False, and the WAF log line claims it is ENABLED with 0 rules \u2014 blocking nothing silently.",
+   "sf04": "On any policy-engine error the function returns true (allow), so a failing or unavailable policy engine silently grants all access instead of denying or alerting.",
+   "sf05": "When DEBUG=1, verify_signature is skipped entirely, so any environment where that variable is set (e.g. a staging box accidentally receiving production webhooks) silently accepts unauthenticated requests.",
+   "sf06": "Payloads larger than MAX_INSPECT (1 MiB) are silently allowed without DLP inspection, so an attacker can bypass the control by sending a body just over 1 MiB.",
+   "sf07": "The scanner inspects only the first 8192 bytes but the full payload is stored; malicious content appended after byte 8192 passes silently and is persisted.",
+   "sf08": "enforce: true is placed under the logging section in the YAML, but ScannerCfg.enforce defaults to False and is never populated from that key, so scanner enforcement stays disabled while the operator believes it is on.",
+   "sf09": "The documentation states verify_signatures defaults to true, but the code default is False; any caller that omits the field silently skips signature verification.",
+   "sf10": "The audit export message hardcodes '50000 events written' regardless of the actual value of the written counter, so operators pasting this into compliance evidence always see a plausible fixed number even if zero or a different count of rows were exported.",
+   "sf11": "The Dockerfile copies only detect.py and server.py from the build stage but never copies the rules/ directory, so RULES_DIR never exists in the container, load() always returns [], and detection never matches anything.",
+   "sf12": "The test only asserts the status code is 200 or 400 and the response is fast; it never checks that the injection payload was actually sanitized or rejected, so a vulnerable endpoint that returns 200 with injected results passes the test silently.",
+   "sf13": "The test is skipped whenever the yara package is absent (which is always the case in CI), so the malicious-upload rejection is never verified and CI reports a clean suite regardless of whether the control works.",
+   "sf14": "NOT-SILENT",
+   "sf15": "NOT-SILENT"
+  },
+  "verdicts": {
+   "sf01": "HIT",
+   "sf02": "HIT",
+   "sf03": "HIT",
+   "sf04": "HIT",
+   "sf05": "HIT",
+   "sf06": "HIT",
+   "sf07": "HIT",
+   "sf08": "HIT",
+   "sf09": "HIT",
+   "sf10": "HIT",
+   "sf11": "HIT",
+   "sf12": "HIT",
+   "sf13": "HIT",
+   "sf14": "HIT",
+   "sf15": "HIT"
+  },
+  "misses": []
+ },
+ "with-library": {
+  "recall": 0.9866666666666667,
+  "recalls": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.9333333333333333
+  ],
+  "answers": {
+   "sf01": "is_dir() on an empty directory returns True, setting self.enabled=True while _predict has no model weights to load \u2014 an empty init-container dir is indistinguishable from a populated one, so the scanner reports enabled while doing nothing useful",
+   "sf02": "clamd is listed only under optional dev dependencies and the Dockerfile installs no extras, so clamd is never present in the shipped image; every upload returns {\"clean\": True} silently with no log or metric indicating the scanner is absent",
+   "sf03": "the shipped example config contains only commented-out rules, so doc.get(\"rules\", []) yields an empty list; load_waf logs 'WAF ENABLED with 0 rules' and Waf.blocks() always returns False \u2014 zero rules is treated as a valid, active ruleset",
+   "sf04": "on any policy-engine error the function returns True (allow), so an outage, timeout, or misconfiguration silently grants all access with no log or metric emitted to distinguish a policy error from a legitimate permit",
+   "sf05": "DEBUG is documented as controlling only verbose logging and a stats endpoint, but in webhooks.py it also gates signature verification \u2014 setting DEBUG=1 (e.g. in a staging leak to prod) silently disables the only webhook authentication check",
+   "sf06": "an empty body or a body exceeding MAX_INSPECT returns Verdict.ALLOW, so an attacker can bypass DLP inspection by sending a payload larger than 1 MiB, which is trivially achievable on an outbound-email path",
+   "sf07": "scanner.scan() is called on only the first 8192 bytes while the full payload is stored; malicious content placed beyond byte 8192 passes the clean verdict and is stored, making the scan a no-op for any payload with a benign header prefix",
+   "sf08": "enforce: true is placed under the logging section in config.yaml but the field belongs to ScannerCfg; because the models use default unknown-key behavior (Pydantic v1 ignores extra fields by default), the key is silently dropped and scanner.enforce remains False \u2014 the operator believes enforcement is on",
+   "sf09": "docs/configuration.md states verify_signatures defaults to true, but Config.verify_signatures defaults to False in code; any deployment using the default (omitting the key) runs without signature verification while operators believe it is on",
+   "sf10": "the print statement hardcodes '50000 events written' as a string literal regardless of how many rows were actually written; compliance evidence records the wrong count and a partial or empty export is indistinguishable from a complete one",
+   "sf11": "the Dockerfile COPY stage copies only detect.py and server.py but omits the rules/ directory entirely; RULES_DIR.exists() returns False at runtime, load() returns [], and the detector silently never matches anything in the shipped image",
+   "sf12": "the test asserts only that the status code is 200 or 400 and the response is fast \u2014 both conditions hold whether or not SQL injection is blocked (a successful injected query also returns 200 quickly); replacing the protection with a no-op leaves the test green",
+   "sf13": "yara is not installed in the CI base extra, so the test is unconditionally skipped; the suite reports 0 failures while the malicious-upload rejection path is never exercised, manufacturing false safety",
+   "sf14": "NOT-SILENT",
+   "sf15": "NONE"
+  },
+  "verdicts": {
+   "sf01": "HIT",
+   "sf02": "HIT",
+   "sf03": "HIT",
+   "sf04": "HIT",
+   "sf05": "HIT",
+   "sf06": "HIT",
+   "sf07": "HIT",
+   "sf08": "HIT",
+   "sf09": "HIT",
+   "sf10": "HIT",
+   "sf11": "HIT",
+   "sf12": "HIT",
+   "sf13": "HIT",
+   "sf14": "HIT",
+   "sf15": "MISS"
+  },
+  "misses": [
+   "sf15"
+  ]
+ },
+ "with-library-ablated": {
+  "recall": 0.9466666666666667,
+  "recalls": [
+   0.9333333333333333,
+   0.9333333333333333,
+   1.0,
+   0.9333333333333333,
+   0.9333333333333333
+  ],
+  "answers": {
+   "sf01": "model_dir.is_dir() is evaluated once at construction; if the init container hasn't populated the directory yet (or the directory exists but is empty), self.enabled stays False and every scan silently returns [] \u2014 the scanner appears active (ENABLED=True logs) but never inspects anything when the directory is absent at boot.",
+   "sf02": "clamd is an optional dev dependency not installed in the production Docker image, so the import always fails, clamd stays None, and scan_upload always returns {\"clean\": True} \u2014 AV scanning appears present in code but is permanently bypassed in every deployed environment.",
+   "sf03": "The shipped config file contains only commented-out rules, so doc.get(\"rules\", []) yields an empty list; Waf.blocks() always returns False, yet the log line announces 'WAF ENABLED with 0 rules' \u2014 the WAF looks active but never blocks anything.",
+   "sf04": "On any policy-engine error the function returns true (allow), so an unavailable, crashing, or timing-out policy engine silently grants access to every resource \u2014 the authorization check appears to be running but fails open without any observable signal.",
+   "sf05": "When the DEBUG environment variable is set to '1', verify_signature is skipped entirely, allowing any unsigned or forged webhook to be processed \u2014 the signature verification control looks conditional but is completely disabled in debug mode with no error or warning.",
+   "sf06": "Bodies larger than MAX_INSPECT (1 MiB) receive an unconditional ALLOW verdict, so an attacker can bypass DLP inspection by simply sending a payload exceeding 1 MiB \u2014 the size guard that looks like a safety cap is actually an uninspected-pass gate for large content.",
+   "sf07": "Only the first 8192 bytes are passed to the scanner while the entire payload is stored on a clean verdict, so malware placed beyond byte 8192 passes the scan and is stored \u2014 the scanner appears to cover the whole upload but actually inspects only a small prefix.",
+   "sf08": "The Cfg model places 'enforce' under 'logging' (LoggingCfg) rather than 'scanner' (ScannerCfg), so the operator-set scanner.enforce: true in the YAML is silently ignored \u2014 ScannerCfg.enforce stays at its default of False and enforcement is never enabled.",
+   "sf09": "The code default for verify_signatures is False, contradicting the documentation that says the default is true \u2014 any installation that relies on the documented default or omits the setting runs without signature verification while believing it is protected.",
+   "sf10": "The printed count is a hardcoded literal '50000' rather than the value of the 'written' counter, so regardless of how many rows were actually exported the message always claims 50000 events \u2014 operators inserting this line into compliance evidence receive a fabricated, unverified record count.",
+   "sf11": "The Dockerfile copies detect.py but not the rules directory, so RULES_DIR never exists in the container, load() always returns [], and the detector never matches anything \u2014 the detection component is silently inert in every deployed image.",
+   "sf12": "The assertion only checks that the status code is 200 or 400 and that the response is fast; a 200 response containing injected data fully satisfies both conditions \u2014 the test passes whether or not injection is actually blocked, giving false assurance.",
+   "sf13": "The yara package is not installed in the base CI environment, so the test is always skipped and reported as 0 failures \u2014 the malicious-upload rejection is never actually exercised, making the test suite claim clean while the security property is untested.",
+   "sf14": "NOT-SILENT",
+   "sf15": "NOT-SILENT"
+  },
+  "verdicts": {
+   "sf01": "HIT",
+   "sf02": "HIT",
+   "sf03": "HIT",
+   "sf04": "HIT",
+   "sf05": "MISS",
+   "sf06": "HIT",
+   "sf07": "HIT",
+   "sf08": "HIT",
+   "sf09": "HIT",
+   "sf10": "HIT",
+   "sf11": "HIT",
+   "sf12": "HIT",
+   "sf13": "HIT",
+   "sf14": "HIT",
+   "sf15": "HIT"
+  },
+  "misses": [
+   "sf05"
+  ]
+ }
+}

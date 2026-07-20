@@ -9,6 +9,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`sota-code-security` rules/10 "Silent control failure"** — a new rule file for
+  the class the library had no home for: a control, feature, or safeguard that
+  **appears active but does nothing**, where a broken system and a working system
+  are indistinguishable from the outside. Organized around the *falsification
+  question* ("if this were silently a no-op, would anything observable differ? —
+  if no, that IS the finding"), then eleven places no-ops hide: weak existence
+  checks (`exists()`/`is_dir()` standing in for a loaded artifact), optional-
+  dependency degradation (`except ImportError` → feature vanishes), empty or
+  placeholder rulesets loaded as real, swallowed exceptions on the enforcement
+  path, overloaded flags, attacker-triggerable early returns, truncation before
+  inspection, config keys silently ignored by permissive schemas, doc/code drift
+  on defaults, hardcoded numbers in tool output, and **shipped-artifact gaps**
+  ("works in a dev checkout, dead in the image"). Plus the mutation probe for
+  vacuous tests (with the two traps that make a green run lie), the shared
+  deduped-per-cause degraded-control helper, and the evidence rules — including
+  that **a negative claim needs more proof than a positive one**.
+  A prior gap analysis confirmed 9 of these 12 concepts had no coverage anywhere
+  in the tree; fail-open (rules/03) and test vacuity (`sota-testing` rules/02/06/
+  09) were already covered and are cross-referenced rather than duplicated.
+- **The lens is now part of the default BUILD and AUDIT paths**, not an opt-in
+  file: the router's BUILD self-audit gate (step 4) asks the falsification
+  question of every control in the diff; AUDIT mode gains a **step 4
+  "silent-control pass"** run over the controls the domain passes confirmed
+  exist (the class is invisible to those passes and to pattern-based SAST,
+  because the code isn't wrong — it's inert); `sota-code-security` BUILD mode
+  gains step 6 ("every control must be falsifiable") and AUDIT mode step 5
+  ("check the inert"); and routing rule 20 ("'it's enabled' is a claim, not a
+  fact") points at it from the router.
+- **Asymmetric evidence burden for negative claims** — router operating
+  principle 3 and `sota/rules/01-audit-methodology.md` §5 now require a widened
+  search plus a second independent method before asserting "no instances of X",
+  and require positive observations to be evidenced by **effect** (a rejection,
+  a log, a test that fails when the control is disabled) rather than presence.
+  Two audit-checklist lines added.
+- **Eval case set for the silent-control class** — `evals/cases/silent-failure.jsonl`
+  (15 cases: 13 positives, one per hiding place, across Python/Go/JS/YAML/Dockerfile,
+  plus **2 negative controls** whose correct answer is "not silent" so an
+  over-flagging arm cannot score 1.00), a `silent` kind in `run-clean.py`, a new
+  **`--ablate`** flag that drops rules/10 from the with-library arm to isolate a
+  single file's contribution, and `evals/run-silent-open.py` — an open-ended,
+  no-vocabulary variant graded by a **different** model blind to the arm.
+  **Result, reported as measured:** the full library leads on this dimension
+  (**0.92 → 0.99, +0.07**, 5×@1.0) and it is the one audit-family dimension that
+  does *not* saturate at the unguided baseline — but **rules/10's own marginal
+  contribution is not resolvable at n=15** (+0.00 to +0.07 across four runs, with a
+  per-arm spread of the same magnitude), so **no lift is claimed for the new file**.
+  The design's own limit is documented: both arms must be *told* to hunt inert
+  controls, and that framing is the falsification question itself, so what the rule
+  actually adds — asking unprompted — is what this design cannot measure. Writeup,
+  raw artifacts, and limitations:
+  [`evals/results/2026-07-20/SILENT-FAILURE.md`](evals/results/2026-07-20/SILENT-FAILURE.md);
+  scoreboard row added to `evals/results/RESULTS.md`.
+- Cross-references so each home keeps its own doctrine: `sota-testing` rules/06
+  (hand-mutating a control's body as a no-tooling audit probe, plus the
+  missing-dependency and mutation-didn't-take traps), `sota-observability`
+  rules/05 (one shared degraded helper, deduped per cause not per request),
+  `sota-devsecops` rules/04 (the built image must contain what the code needs at
+  runtime; smoke-test controls against the artifact, not the checkout).
+
 - **`sota-docs-workflow` rules/01 §8 "The documentation baseline"** — the must-have
   doc set every repo should carry, closing a real gap (the individual docs were
   covered but scattered, and the community-health files SECURITY/CODE_OF_CONDUCT/

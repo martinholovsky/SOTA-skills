@@ -7,14 +7,14 @@ description: >-
   payments, multi-tenant features, crypto/secrets handling, parsers, CLI/exec
   wrappers, LLM agents or tool-calling — AND whenever AUDITING code for
   security (security review, pentest-prep, vulnerability hunt, threat model,
-  hardening, OWASP, CWE, injection, XSS, CSRF, SSRF, IDOR, deserialization,
-  prompt injection, secrets leak, "is this code safe"). Trigger keywords:
+  hardening, OWASP, CWE, secrets leak, "is this code safe"). Trigger keywords:
   secure, security, vulnerability, exploit, harden, audit, authn, authz,
   authentication, authorization, crypto, TLS, sanitize, validate, injection,
   SQLi, XSS, CSRF, SSRF, IDOR, JWT, OAuth, PKCE, passkey, argon2, CSP, CORS,
   upload, rate limit, prompt injection, tool-call security, data ingestion,
   feed, parser, file upload, archive, zip bomb, decompression bomb, webhook,
-  scraping, RAG corpus, deserialization, polyglot.
+  scraping, RAG corpus, deserialization, polyglot, silent failure, fail-open,
+  no-op control, vacuous test.
 ---
 
 # SOTA Code Security
@@ -55,7 +55,13 @@ adversary-readable; every privileged operation needs an explicit, code-enforced
 5. **When requirements force a deviation** (e.g. shell-out unavoidable, CORS
    must reflect origins), implement the rules file's documented mitigation
    stack and leave a `SECURITY:` comment stating the residual risk.
-6. **Finish with the file's audit checklist.** Before declaring code complete,
+6. **Every control must be falsifiable.** For each control you add, ask: *if
+   this were silently a no-op, would anything observable differ?* If nothing
+   would — no log, no metric, no failing test — the control is not finished.
+   Assert on real loaded artifacts (not `exists()`), fail closed *and* loudly,
+   never truncate before inspecting, and make degradation a distinct, metered
+   state. rules/10 is the full catalog.
+7. **Finish with the file's audit checklist.** Before declaring code complete,
    run the relevant rules files' end-of-file checklists against your own diff;
    fix every "no".
 
@@ -66,7 +72,8 @@ Process:
    consumers, cron jobs, WS/gRPC, webhooks, file ingestion, LLM tool loops),
    secrets locations, authz enforcement points, outbound fetchers.
 2. **Sweep by rules file**, prioritized: 03 (authz) and 01 (injection) find the
-   most criticals; then 02, 05, 08, 04, 07, 06. For each file, grep-drive the
+   most criticals; then 02, 05, 08, 04, 07, 06, and 10 (silent no-ops) as a
+   pass over whatever the others confirmed exists. For each file, grep-drive the
    hunt from its named sinks/APIs (e.g. `shell=True`, `dangerouslySetInnerHTML`,
    `verify=False`, `pickle.loads`, `merge(`, `Object.assign(.*req.body`,
    `permit!`, `algorithms=` absent near `jwt.`).
@@ -78,9 +85,15 @@ Process:
    limiting, absent CSRF tokens, absent tenant predicate, absent timeout,
    absent security headers. Use each rules file's audit checklist as the
    completeness gate; every "no" answer becomes a finding or an accepted risk.
-5. **Verify, then report.** No speculative findings: state the concrete exploit
+5. **Check the inert**: a control that is *present* but does nothing is invisible
+   to steps 2–4, because the code is not wrong — it is a no-op. Run rules/10 as
+   its own pass over every control the sweep confirmed exists: swallowed
+   exceptions, weak existence checks, truncation before inspection, degradation
+   that never logs, and tests that pass against a no-op'd body.
+6. **Verify, then report.** No speculative findings: state the concrete exploit
    scenario; if exploitability is uncertain, say what's unverified and rate
-   conservatively.
+   conservatively. Absence claims ("no instances of X") need a wider search and
+   a second method than presence claims do.
 
 ### Severity conventions (CVSS-style impact mapping)
 
@@ -123,6 +136,7 @@ of one weakness into a single finding listing all locations.
 | [rules/07-data-exposure.md](rules/07-data-exposure.md) | Leak-free error handling, oracle-free responses, logging redaction & log injection, security event logging, mass assignment, response over-exposure, debug surfaces in prod | ...designing errors/logging, binding request bodies to models, shaping API responses, or auditing what an attacker learns from outputs |
 | [rules/08-llm-ai-security.md](rules/08-llm-ai-security.md) | Prompt injection (direct/indirect), lethal trifecta, dual-LLM/taint gating, tool-call authorization & human-in-the-loop, model output as untrusted data, RAG ACLs, model supply chain | ...building or auditing anything with an LLM: agents, tool calling, RAG, chat UIs rendering model output, MCP servers, prompt/completion logging |
 | [rules/09-untrusted-data-ingestion.md](rules/09-untrusted-data-ingestion.md) | Hostile data feeds/content; ingest as a trust boundary, provenance/taint tagging; sandboxed parsers (image/archive/PDF/Office/XML/CSV/JSON, fuzzy-hash); zip-slip/zip-bomb/pixel-bomb/decompression caps; size/rate/timeout DoS controls, quarantine/DLQ; parse-don't-validate, MIME sniffing, polyglots, AV; feed integrity & broker pattern | ...ingesting attacker-authored external data — threat-intel/RSS feeds, scraped content, user uploads, third-party webhooks/APIs, RAG corpora, email, file imports — through parsers into storage/UI; auditing collectors, upload endpoints, or feed pipelines |
+| [rules/10-silent-control-failure.md](rules/10-silent-control-failure.md) | Controls that look enabled and do nothing: the falsification question, weak existence checks, optional-dependency degradation, empty/placeholder rulesets, swallowed enforcement exceptions, overloaded flags, early-return and truncation bypasses, silently-ignored config keys, doc/code default drift, hardcoded report numbers, shipped-artifact gaps; mutation-probing a control; the degraded-control helper; absence-claim evidence | ...you are about to trust that a control is working — any audit pass over controls that *exist*, any build where a safeguard's failure would be invisible, any "it's enabled" claim from a banner, config, or green test |
 
 ## Top-10 non-negotiables
 

@@ -36,6 +36,21 @@ VOCAB = [
     "insecure-random", "missing-authentication", "log-injection", "hardcoded-secret",
     "business-logic-flaw",
 ]
+# Silent-control-failure vocabulary (cases/silent-failure.jsonl). The last six are
+# distractors drawn from VOCAB so the choice isn't 1-of-13, and "not-silent" is the
+# correct answer for the two loud-failure controls. BOTH arms get this list, so the
+# without-library arm is not handicapped on naming — only on recognizing.
+SILENT_VOCAB = [
+    "weak-existence-check", "optional-dependency-degradation", "empty-ruleset-loaded",
+    "swallowed-enforcement-exception", "overloaded-flag", "early-return-bypass",
+    "truncation-before-inspection", "ignored-config-key", "doc-code-default-drift",
+    "hardcoded-report-value", "shipped-artifact-gap", "vacuous-test", "not-silent",
+    "sql-injection", "missing-authentication", "hardcoded-secret", "idor",
+    "path-traversal", "insecure-random",
+]
+# rules/10 is the file under test; --ablate drops it from the with-library arm to
+# isolate its contribution from the rest of sota-code-security.
+ABLATE_FILE = "10-silent-control-failure.md"
 
 
 def load_env_key():
@@ -64,13 +79,15 @@ def read(*parts):
     return open(os.path.join(ROOT, *parts), encoding="utf-8").read()
 
 
-def audit_library_context():
+def audit_library_context(ablate=False):
     import glob
     files = sorted(glob.glob(os.path.join(ROOT, "skills/sota-code-security/rules/*.md")))
+    if ablate:
+        files = [f for f in files if os.path.basename(f) != ABLATE_FILE]
     return "\n\n".join(open(f, encoding="utf-8").read() for f in files)
 
 
-def build_prompt(cases, kind, with_lib):
+def build_prompt(cases, kind, with_lib, ablate=False):
     if kind == "freshness":
         tasks = json.dumps([{"id": c["id"], "question": c["question"]} for c in cases], indent=1)
         head = "Answer each question with the CURRENT (mid-2026) fact, in ONE short line each."
@@ -83,13 +100,27 @@ def build_prompt(cases, kind, with_lib):
         return (f"{head}{lib}Questions:\n{tasks}\n\n"
                 'Output ONLY a JSON object mapping each id to your one-line answer string, '
                 'e.g. {"f01": "RFC 9989"}. No prose, no code fence.')
-    stripped = [{k: v for k, v in c.items() if k not in ("expect", "skill")} for c in cases]
+    # "reference" is the answer key used by run-silent-open.py's judge — never prompt it.
+    strip = ("expect", "skill", "reference")
+    stripped = [{k: v for k, v in c.items() if k not in strip} for c in cases]
     tasks = json.dumps(stripped, indent=1)
-    if kind == "audit":
+    if kind == "silent":
+        vocab = ", ".join(SILENT_VOCAB)
+        head = ("You are reviewing code for controls that are SILENTLY INERT — a check, "
+                "scanner, policy, or test that appears to be active but has no effect, so a "
+                "broken system and a working one look identical from outside. For each "
+                "snippet, list the slugs that apply, using ONLY this vocabulary: "
+                f"{vocab}. If the control fails LOUDLY (it raises, logs an error, or emits a "
+                "metric when it cannot do its job), answer [\"not-silent\"].")
+        lib = (f"\n\nApply the following security guidance:\n\n"
+               f"{audit_library_context(ablate)}\n\n"
+               if with_lib else "\n\nUse only your own security knowledge.\n\n")
+    elif kind == "audit":
         vocab = ", ".join(VOCAB)
         head = (f"You are a security code reviewer. For each snippet, list the vulnerability "
                 f"category slugs that apply, using ONLY this vocabulary: {vocab}.")
-        lib = (f"\n\nApply the following security guidance:\n\n{audit_library_context()}\n\n"
+        lib = (f"\n\nApply the following security guidance:\n\n"
+               f"{audit_library_context(ablate)}\n\n"
                if with_lib else "\n\nUse only your own security knowledge.\n\n")
     else:
         names = ", ".join(sorted(os.path.basename(d) for d in _skill_dirs()))
@@ -150,6 +181,9 @@ def main():
     ap.add_argument("--temp", type=float, default=0.0,
                     help="sampling temperature; keep 0 for a deterministic single run")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--ablate", action="store_true",
+                    help=f"with-library arm EXCLUDES rules/{ABLATE_FILE} — isolates that "
+                         "file's contribution from the rest of the skill")
     a = ap.parse_args()
     if a.samples > 1 and a.temp == 0.0:
         print("note: --samples>1 at --temp 0 gives identical deterministic runs; "
@@ -157,12 +191,15 @@ def main():
     key = load_env_key()
     cases = load_cases(a.cases)
     kind = cases[0].get("kind", "audit")
+    abl = f"  ABLATED(-{ABLATE_FILE})" if a.ablate else ""
     print(f"model={a.model}  kind={kind}  cases={len(cases)}  samples={a.samples}  "
-          f"temp={a.temp}  (clean API run, no sota config)\n")
-    result = {}
+          f"temp={a.temp}{abl}  (clean API run, no sota config)\n")
+    result = {"_meta": {"model": a.model, "kind": kind, "cases": len(cases),
+                        "samples": a.samples, "temp": a.temp, "ablate": a.ablate}}
     for with_lib in (False, True):
-        arm = "with-library" if with_lib else "without-library"
-        prompt = build_prompt(cases, kind, with_lib)
+        arm = ("with-library-ablated" if a.ablate else "with-library") if with_lib \
+            else "without-library"
+        prompt = build_prompt(cases, kind, with_lib, a.ablate)
         recalls, last_misses, last_preds = [], {}, {}
         for _ in range(a.samples):
             preds = call(a.model, key, prompt, temp=a.temp)
@@ -175,7 +212,8 @@ def main():
         spread = f"  (min {min(recalls):.2f}, max {max(recalls):.2f}, n={len(recalls)})" if a.samples > 1 else ""
         print(f"{arm:16s} recall={mean:.2f}{spread}"
               + (f"  misses: {last_misses}" if last_misses else "  (no misses)"))
-    lift = result["with-library"]["recall"] - result["without-library"]["recall"]
+    with_arm = "with-library-ablated" if a.ablate else "with-library"
+    lift = result[with_arm]["recall"] - result["without-library"]["recall"]
     print(f"\nLIFT (with − without) = {lift:+.2f}")
     if a.out:
         json.dump(result, open(a.out, "w"), indent=1)

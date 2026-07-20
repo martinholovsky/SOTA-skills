@@ -126,6 +126,11 @@ Budget explicit manual passes for the classes SAST is structurally blind to:
 - Crypto misuse: right primitive, wrong protocol; key handling; nonce reuse.
 - Prompt-injection, excessive-agency, and tool-poisoning paths in LLM/agent
   code (pair with `sota-code-security` rules/08).
+- **Controls that exist but are inert** — a safeguard whose success and whose
+  total failure look identical from outside. SAST is blind to this by
+  construction: the code isn't wrong, it's a no-op. Run it as its own pass
+  (`sota-code-security` rules/10) over the controls the earlier passes
+  confirmed exist.
 
 ## 4. Severity model
 
@@ -178,6 +183,23 @@ not ready to ship:
    rules file for the full pattern. Never "sanitize input".
 8. **Effort estimate** — trivial / small / medium / large. Severity says
    what hurts; effort enables the roadmap in §6.
+
+Two asymmetries the evidence standard has to carry:
+
+- **Negative claims need more proof than positive ones.** "No hardcoded secrets
+  remain", "authorization is enforced everywhere", "nothing in this class was
+  found" — a narrow search and a true absence produce identical output. Before
+  any absence claim, widen the search (synonyms, other languages, generated and
+  vendored trees, config as well as code) and confirm with a **second
+  independent method** (grep *and* AST/call-graph *and* a dynamic or mutation
+  probe). Then state the search performed, so the reader can judge its reach.
+  An unqualified absence claim is the one finding-type nobody can falsify.
+- **"The control is present" is not "the control works."** Evidence for a
+  positive observation must show *effect*, not existence — the log line it
+  emitted, the request it rejected, the test that fails when it's disabled.
+  See `sota-code-security` rules/10; this applies to §6's positive-observations
+  section too, where an inert control praised as a strength is the worst
+  possible reporting error.
 
 The library's short finding format (`file:line | rule | severity | effort | fix`)
 is the working format during passes; expand each surviving finding into the
@@ -255,6 +277,9 @@ Deliver in exactly this order:
 - [ ] Existing suppression comments reviewed?
 - [ ] Manual passes done for logic, authz/BOLA, boundary crossings, races,
       crypto misuse, prompt-injection paths?
+- [ ] **Silent-control pass run** over the controls confirmed to exist — inert
+      safeguards, fail-open catches, degradation nothing logs, tests that pass
+      against a no-op'd body (`sota-code-security` rules/10)?
 
 **Finding quality**
 - [ ] Every finding has title, severity+justification, file:line@commit,
@@ -262,6 +287,10 @@ Deliver in exactly this order:
       remediation, and effort estimate?
 - [ ] Borderline severities state the deciding assumption explicitly?
 - [ ] Uncertain findings marked "needs verification", not asserted?
+- [ ] Every **absence claim** ("no X found", "enforced everywhere") backed by a
+      widened search plus a second independent method, with the search stated?
+- [ ] Positive observations evidenced by **effect** (a rejection, a log, a test
+      that fails when disabled), not by the control's mere presence?
 
 **Report**
 - [ ] Executive summary in plain language with severity counts and top

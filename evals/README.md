@@ -37,6 +37,18 @@ audit STRAT-HIGH-2).
 - `cases/freshness.jsonl` (32) — a current-2026 fact question → the token a
   correct answer must contain. Every fact is present in the library and was
   primary-source-verified.
+- `cases/silent-failure.jsonl` (15) — a control that **looks enabled and does
+  nothing** (inert scanner, fail-open policy, ruleset that loads zero rules,
+  truncation before inspection, a test that passes against a no-op'd body …) →
+  the mechanism by which it is inert. 13 positives + **2 negative controls**
+  whose correct answer is "not silent" (the control fails loudly), so an arm that
+  cries no-op at everything cannot score 1.00. Tests `sota-code-security`
+  rules/10. Two designs: `run-clean.py` (vocabulary given — classification) and
+  `run-silent-open.py` (free-form, blind opus judge — discovery), both with an
+  `--ablate` arm that removes rules/10 to isolate its contribution. Result: the
+  full library leads (**0.92 → 0.99**), but **rules/10's own contribution is
+  unresolved at n=15** and no lift is claimed for it
+  ([`results/2026-07-20/SILENT-FAILURE.md`](results/2026-07-20/SILENT-FAILURE.md)).
 - `cases/desc-routing.jsonl` (10) — an adversarially-confusable task → the correct
   skill (`expect`) and the tempting wrong sibling (`distractor`). Scored by
   `run-desc-routing.py` as an A/B on the description cross-refs (result: +0.00).
@@ -98,7 +110,13 @@ python3 evals/run-repo-audit.py          # cross-file audit (own fixture repo + 
 python3 evals/run-competitors.py --competitors-dir DIR   # SOTA vs competing libraries
 python3 evals/run-decay.py               # multi-turn skill-application decay (anchor/reminder/control)
 python3 evals/run-desc-routing.py --samples 3 --temp 0.7   # description-catalogue routing A/B
+python3 evals/run-clean.py --cases evals/cases/silent-failure.jsonl --ablate  # rules/10 ablation
+python3 evals/run-silent-open.py --samples 5 --temp 1.0    # silent controls, open-ended + judged
 ```
+
+`--ablate` (on `run-clean.py`) drops `rules/10-silent-control-failure.md` from the
+with-library arm, so a new rule file's contribution can be separated from the rest
+of the skill. Generalize it by changing `ABLATE_FILE` when testing a different file.
 
 **Competitor benchmark** (`run-competitors.py`, `cases/competitors.json`): SOTA
 vs. the most popular competing guidance libraries on the 7 completeness tasks —
