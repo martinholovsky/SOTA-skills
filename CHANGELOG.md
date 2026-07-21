@@ -5,6 +5,35 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Silent-control audit of `evals/` — the library's own rules/10 applied to the
+  harness that measures it.** Four silent failures surfaced here on 2026-07-20, every
+  one found *incidentally*; this was a deliberate pass. **Two confirmed findings in
+  ten files, both demonstrated live before being fixed**, and both sharing the
+  property that makes them worse than an ordinary bug: **their failure mode produces
+  `+0.00`** — a result this project has legitimately published four times, so a fake
+  null would be indistinguishable from a real one.
+  **F1 — an empty library corpus yields a "with-library" arm containing no library.**
+  `run-clean.audit_library_context()`, `run-repo-audit.library_context()` and
+  `run-desc-routing.catalogue()` all globbed their corpus and never checked the count;
+  a wrong cwd or renamed directory hands the with-arm `""` and still prints a recall.
+  Reproduced live (`with-library corpus: 0 chars`, no error). All three now abort.
+  **F2 — `--ablate` silently ablates nothing when its target is renamed.** The filter
+  was a filename equality test whose result was never asserted, so a rename leaves the
+  "ablated" arm as the *full* corpus and reports a fake +0.00 contribution — while the
+  run header still prints `ABLATED(...)`. Reproduced live (`removed=0 chars`). Now
+  aborts. This was the **third** instance of one pattern (after
+  `run-adjudication.py`'s section-number marker and `run-completeness.py`'s drifted
+  mirror), so every ablation and mirror in the harness is now guarded: *a
+  transformation whose result is never asserted*. Every guard watched to fire.
+  Categories checked with nothing found are stated explicitly (optional-dependency
+  degradation, swallowed enforcement exceptions, truncation, hardcoded reporting,
+  shipped-artifact gaps) rather than padded. Report:
+  [`evals/results/2026-07-21/EVALS-SELF-AUDIT.md`](evals/results/2026-07-21/EVALS-SELF-AUDIT.md).
+
 ## [1.18.0] - 2026-07-21
 
 The **learning-from-use** release. Ships the library's first path for hearing from its

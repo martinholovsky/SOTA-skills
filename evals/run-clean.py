@@ -105,10 +105,27 @@ def read(*parts):
 
 
 def audit_library_context(ablate=False):
+    """The with-library corpus. Guarded, because BOTH failure modes here are silent
+    and both produce +0.00 — a result this project has legitimately published many
+    times, so a fake one would be indistinguishable from a real null:
+      * an empty glob (wrong cwd, renamed dir) hands the "with" arm NO library at all;
+      * an --ablate whose target no longer matches removes nothing, so the "ablated"
+        arm IS the full corpus and the tool reports a fake +0.00 contribution.
+    """
     import glob
     files = sorted(glob.glob(os.path.join(ROOT, "skills/sota-code-security/rules/*.md")))
+    if not files:
+        sys.exit(f"library corpus is EMPTY (globbed skills/sota-code-security/rules/*.md "
+                 f"under {ROOT}). The with-library arm would get no library and the run "
+                 f"would report +0.00. Refusing to run.")
     if ablate:
-        files = [f for f in files if os.path.basename(f) != ABLATE_FILE]
+        kept = [f for f in files if os.path.basename(f) != ABLATE_FILE]
+        if len(kept) == len(files):
+            sys.exit(f"--ablate matched nothing: {ABLATE_FILE!r} is not among the "
+                     f"{len(files)} rules files. The 'ablated' arm would be the FULL "
+                     f"corpus and the contribution would read as a fake +0.00. "
+                     f"Update ABLATE_FILE. Refusing to run.")
+        files = kept
     return "\n\n".join(open(f, encoding="utf-8").read() for f in files)
 
 
