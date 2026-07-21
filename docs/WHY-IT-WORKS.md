@@ -63,11 +63,10 @@ most for *building* software are the two that are large:
 Robustness: every value dimension is now run **multi-sample** (`--samples 3
 --temp 0.7`), and the pattern is consistent — **the with-library arm has
 near-zero variance while the unguided arm both scores lower and wobbles.**
-Completeness holds at **0.59 → 0.98 (+0.39)** with the with-arm at ±0.004 across two runs
-(re-verified 2026-07-20 against the workflow that actually *ships*, after the
-eval's `BUILD_WORKFLOW` mirror was found drifted — both arms measured +0.40;
-see [MIRROR-VERIFICATION](../evals/results/2026-07-20/MIRROR-VERIFICATION.md))
-across-case sd (6/7 cases perfectly steady); routing at **0.90 → 1.00 (+0.10)**,
+Completeness holds at **0.59 → 0.98 (+0.39)**, a two-run mean with the with-arm at
+±0.004 between runs (re-verified 2026-07-20/21 against the workflow that actually
+*ships*, after the eval's `BUILD_WORKFLOW` mirror was found drifted; see
+[MIRROR-VERIFICATION](../evals/results/2026-07-20/MIRROR-VERIFICATION.md)); routing at **0.90 → 1.00 (+0.10)**,
 with-arm ±0.00; freshness at **0.44 → 0.97 (+0.53)**, with-arm ±0.00. The
 library's contribution isn't a lucky sample — it removes the unguided model's
 case-by-case unreliability ([multi-sample writeup](../evals/results/2026-07-13/MULTI-SAMPLE.md)).

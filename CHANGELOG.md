@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Docs hygiene + harness/measurement conventions extended.** `evals/README.md`'s
+  "Harness conventions" now carries the two findings from the deliberate self-audit
+  (an unchecked corpus glob; an `--ablate` that matched nothing) and a new
+  **Measurement conventions** section: *one run is a data point, not a number — never
+  publish from n=1* (twice in a week a single run produced a figure a larger sample
+  walked back), *grow the set before trusting a subgroup signal* (the n=6 anchoring
+  "finding" evaporated at n=26), and *scrub artifacts but don't trust the scrub —
+  gitleaks and push protection are the backstop, not the pattern list*.
+  `docs/WHY-IT-WORKS.md` had a stale `+0.40` **and** an orphaned sentence fragment
+  introduced by an earlier edit in this cycle — both repaired.
 - **Completeness follow-up resolved, and the published figure corrected to `+0.39`
   (0.59 → 0.98).** v1.18.0 shipped `+0.40` from a **single** synced run; arm B was
   repeated and the two-run mean is **+0.39** — back on the original number. The 0.02
