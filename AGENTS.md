@@ -104,6 +104,12 @@ pre-commit hook scans each commit locally.
   terminal re-read, gates) + the decay measurement
 - [evals/results/RESULTS.md](evals/results/RESULTS.md) — consolidated scoreboard of
   every measured number
+- [evals/README.md](evals/README.md) — the efficacy harness: what each case set
+  measures, how to run it, and the **harness conventions** (guards abort rather than
+  warn; watch a guard fail before trusting it; wait on a terminal artifact, not a log
+  substring; assert a scripted edit landed; pin anything hand-mirrored from the
+  library). Read it before changing anything under `evals/` — four harness changes in
+  one day silently measured nothing while still printing plausible numbers
 - [CONTRIBUTING.md](CONTRIBUTING.md) — full contribution guide and PR checklist
 - [RELEASING.md](RELEASING.md) — how to cut a release, including every
   version- and count-bearing surface (README, router, manifests, social

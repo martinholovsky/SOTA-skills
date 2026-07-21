@@ -60,28 +60,38 @@ extension mismatch, env-filter mismatch, unawaited async assertion) — delibera
 **not** written into the rule, since that is fitting guidance to the test set.
 
 **Now open, ordered by value:**
-- **BLOCKED — verify the flagship +0.39 against the CURRENT BUILD workflow.**
-  `evals/run-completeness.py`'s `BUILD_WORKFLOW` is a **hardcoded mirror** of router
-  BUILD steps 3–4 and has **drifted**: the falsification clause added to step 4 in
-  #119 is not in it. So the most-cited number in the project was measured against a
-  frozen copy of a workflow that no longer matches what ships. Proven, not suspected
-  (`evals/results/2026-07-20/AUDIT-PROCESS.md` §1). The fix is deliberate and
-  measured — baseline 3× with the drifted mirror, sync it, re-run 3×, report whether
-  +0.39 holds — and was **started and blocked on 2026-07-20: the OpenRouter balance
-  is exhausted** (verified via the credits API: $325.00 credited / $325.40 used /
-  **−$0.40**; the run failed with HTTP 402). The mirror was deliberately **not**
-  synced blind, because changing the basis of the headline number without being able
-  to re-measure is the exact failure this item exists to fix. Needs a credit top-up,
-  then ~2 completeness runs. **Do this before +0.39 is promoted anywhere new.**
+- **DONE 2026-07-20 — the flagship number is verified against the workflow that
+  ships.** `BUILD_WORKFLOW` had drifted from router BUILD steps 3–4 for four days.
+  Both arms run: drifted **0.59 → 1.00 (+0.40)**, synced **0.58 → 0.98 (+0.40)**. The
+  `+0.39` was never wrong — only measured against stale text; `RESULTS.md` now carries
+  the synced numbers. Drift cannot recur silently (`ROUTER_BUILD_SHA` pins the router
+  section; the runner aborts on mismatch, guard watched to fire).
+  [MIRROR-VERIFICATION.md](../evals/results/2026-07-20/MIRROR-VERIFICATION.md).
+  **One open follow-up:** the synced with-arm is 0.02 lower, entirely from one case
+  (c1 dropping transport/sizelimit/pagination). Not separable from sampling variance
+  in a single run, but it points where our own context-rot finding predicts. **Repeat
+  arm B 3× more** to tell noise from a real salience cost of the falsification clause.
 - **Distribution** (item 7): publish the salience write-up
-  (`docs/writeups/completeness-blind-spot.md`) — LinkedIn is the proven channel;
-  marketplace visibility; badge→verifiable-audit.
+  (`docs/writeups/completeness-blind-spot.md`) — LinkedIn is the proven channel
+  (corroborated 2026-07-20: it is the **top referrer** in GitHub traffic);
+  marketplace visibility; badge→verifiable-audit. **Traffic measured 2026-07-20:**
+  ~24 organic clones/day (the three days with zero CI runs show clones exactly equal
+  to unique cloners) against **7 stars, 0 watchers, 1 issue ever**. Since the install
+  path *is* `git clone`, clones are the adoption metric and stars badly understate it
+  — but the project also learns nothing from those users, which is what the
+  **gap-reporting loop** (#124, shipped) is meant to change. Whether it produces
+  reports is unmeasured; if it yields nothing in a few weeks, cut it.
 - **As-deployed competitor comparison** + **more competitor domains** (data/mobile/
   CLI); the baseline-driven finding is established but these extend it.
 - **Agentic large-repo audit** (3′) and **constraint-budget probe** (4).
 - **Multi-turn amplification, at scale** (5): the decay run found *no* decay at
   moderate scale — needs much larger intervening context to find the breaking point.
-- **Grow the eval case sets** (item 1 sub-task, content authoring).
+- **Grow the eval case sets** (item 1 sub-task, content authoring). Done this cycle:
+  silent-failure 15 → **69** (35 enumerated + 26 novel + 8 negative controls) and a
+  new 30-case audit-precision set. Still thin: the **8 negative controls** (an arm
+  that over-flags is only weakly penalised — and the one unexplained signal left is
+  there, the ablated arm scoring 1.00 vs 0.75 on them), the 7-case completeness set,
+  and competitor domains beyond the five measured.
 - **First 6-month accuracy sweep ~Jan 2027** (item 8; bump `LAST-VERIFIED`).
 
 Historical per-item notes below (kept as the record of what was done):

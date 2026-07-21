@@ -56,6 +56,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   across both runners). Writeup:
   [`evals/results/2026-07-20/SILENT-FAILURE.md`](evals/results/2026-07-20/SILENT-FAILURE.md).
 
+- **Docs hygiene against this cycle's work.** `evals/README.md`: silent-failure case
+  count corrected 49 → **69** and the novel subgroup 6 → **26** (both stale), with the
+  retracted +0.07 and the retired anchoring hypothesis stated in place. `docs/INDEX.md`
+  gained rows for the two new writeups (AUDIT-PROCESS, SILENT-FAILURE) — the honest
+  +0.00 results were previously unfindable from the index. `docs/ROADMAP.md`: the
+  top item moved BLOCKED → IN PROGRESS with the arm-A number; "grow the eval case
+  sets" replaced with what actually remains thin (the 8 negative controls, the 7-case
+  completeness set, competitor domains beyond the five measured); and the distribution
+  item grounded in measured traffic (~24 organic clones/day vs 7 stars, 0 watchers,
+  1 issue ever — LinkedIn confirmed as top referrer).
+- **New `evals/README.md` section: harness conventions**, written from four
+  self-inflicted silent failures in one day — a prompt-field whitelist that dropped
+  `prompt` (the routing eval sent bare ids and still printed a recall score), an
+  ablation keyed on a section *number* that a renumber broke, a scripted CHANGELOG
+  edit whose anchor did not exist on its branch, and a wait condition that matched a
+  per-case progress line and called a still-running job complete. Rules: guards abort
+  rather than warn; watch the guard fail before trusting it; wait on a terminal
+  artifact, not a log substring; assert a scripted edit landed; pin what you mirror.
+  `AGENTS.md` points at it — the same failure class `rules/10` describes, occurring in
+  the tooling that measures the library.
+
+### Fixed
+
+- **The flagship completeness number is now verified against the workflow that
+  actually ships — `0.58 → 0.98, +0.40`.** Both arms were run with one variable
+  changed: the drifted mirror measured **0.59 → 1.00 (+0.40)** and the synced mirror
+  **0.58 → 0.98 (+0.40)**. So the published `+0.39` was **never wrong** — it was
+  measured against stale text and reproduces either way. `RESULTS.md`, `README.md`
+  and `docs/WHY-IT-WORKS.md` now carry the synced figures rather than numbers
+  produced by a workflow the library no longer ships. The 0.02 with-arm difference is
+  **one case** (c1 lost transport, sizelimit, pagination) and is **not** separable
+  from sampling variance in a single run — logged as a follow-up (repeat arm B 3×),
+  not claimed, though it points exactly where our own
+  [context-rot finding](docs/WHY-COMPLETENESS-RESIDUAL.md) predicts. Method,
+  per-case table and limits:
+  [`evals/results/2026-07-20/MIRROR-VERIFICATION.md`](evals/results/2026-07-20/MIRROR-VERIFICATION.md).
+- **Eval artifacts are now secret-scrubbed at write time.** Artifacts store
+  model-generated code verbatim, and a model asked to build a payments endpoint
+  writes `sk_live_...` into its examples — which blocked a push on 2026-07-20 (two
+  synthetic Stripe-shaped strings in `c1_ticket_api`'s generated code; not real
+  credentials, but secret-shaped strings do not belong in a public repo: they trip
+  push protection, train readers on a bad example, and bury a genuine leak in noise).
+  `scrub_secrets()` replaces Stripe/AWS/GitHub/Slack/Google/PEM-shaped strings with a
+  **visible** `[SCRUBBED-SECRET-SHAPED-STRING]` marker — the class, not the instance —
+  and runs on every artifact write. Existing artifacts cleaned (4 → 0); recall scores
+  are unaffected. Verified by feeding it known key shapes and confirming they are
+  replaced. Note this is the *second* time push protection caught something local
+  gitleaks did not: `.gitleaks.toml` disables the entropy rule so the security skills'
+  deliberate examples don't false-positive, which also blinds it to vendor-specific
+  patterns. Two scanners, two coverage sets.
+- **`run-completeness.py`'s `BUILD_WORKFLOW` mirror had drifted from the router, and
+  the drift class is now closed.** That constant is a hand-compressed mirror of router
+  BUILD steps 3–4 (kept compressed so results stay comparable with every historical
+  run) — but it is *not* a live read, and the falsification clause added to router
+  step 4 in #119 was missing from it for four days. The project's most-cited number
+  was therefore being measured against a workflow that no longer shipped. Nothing
+  failed; the eval quietly measured the wrong thing.
+  Fixed deliberately and measured, never synced blind: **arm A (drifted mirror)
+  measured without 0.59 → with 1.00, LIFT +0.40**, reproducing the recorded +0.39 —
+  so the figure was never wrong, only measured against stale text. The mirror is now
+  synced and a **`ROUTER_BUILD_SHA` pin** was added: the runner hashes the router's
+  BUILD section and **aborts** if it no longer matches what the mirror was synced
+  against, rather than measuring unshipped text. Guard watched to fire on a synthetic
+  router edit before being trusted.
+
 ## [1.17.0] - 2026-07-20
 
 The **silent-failure release**, and an unusually honest one. New coverage for the
