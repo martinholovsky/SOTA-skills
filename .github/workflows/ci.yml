@@ -44,6 +44,13 @@ jobs:
         env:
           SOTA_DENYLIST: ${{ secrets.SOTA_DENYLIST }}
         run: ./scripts/check-invariants.sh
+      - name: Eval scoring tests
+        # The scoring functions produce every number this project publishes. A
+        # mutation probe on 2026-07-21 replaced score() with `return 1.0` and NOTHING
+        # noticed — no test suite existed and CI never touched evals/. These golden
+        # tests are mutation-resistant (each scorer checked at 1.0, 0.0 and a partial)
+        # and were watched to fail against that exact mutation before being trusted.
+        run: python3 evals/test_scoring.py
 
   shellcheck:
     name: Shell lint (shellcheck)

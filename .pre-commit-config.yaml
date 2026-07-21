@@ -19,3 +19,9 @@ repos:
         language: script
         pass_filenames: false
         always_run: true
+      - id: eval-scoring-tests
+        name: Eval scoring tests (the scorers produce every published number)
+        entry: python3 evals/test_scoring.py
+        language: system
+        pass_filenames: false
+        files: '^evals/.*\.py$'

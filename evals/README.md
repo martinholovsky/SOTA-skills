@@ -227,6 +227,32 @@ that measures the library. So:
   loader and every ablation aborts rather than returning silently-empty context. Both
   failure modes print a plausible `+0.00`.
 
+## The scorers are tested (and the tests are mutation-checked)
+
+`evals/test_scoring.py` — plain `python3`, no pytest — covers `run-clean.score()`,
+`run-adjudication.score()` and `run-repo-audit.score()`. It runs in **CI** and in
+**pre-commit** whenever `evals/*.py` changes.
+
+It exists because a mutation probe on 2026-07-21 replaced `run-clean.score()` with
+`return 1.0, {}` and asked what would notice:
+
+```
+check-invariants.sh   PASSES
+pre-commit            PASSES
+scoring a deliberately wrong prediction set -> 1.00
+```
+
+Nothing did. There was no test suite in the repo and CI never touched `evals/`, so the
+code producing **every number this project publishes** was unverified — a scorer stuck
+at 1.00 would have made all of it a lie, silently.
+
+The tests are deliberately mutation-resistant: each scorer is checked at **1.0, 0.0
+and a partial value**, so a constant-return mutation dies on the 0.0 rows and a
+swapped-metric mutation dies on the partial ones. `run-repo-audit` additionally has a
+row where category-recall and strict-recall legitimately differ, which fails if the
+two are ever conflated. **Both mutations were watched to fail before the tests were
+trusted.**
+
 ## Measurement conventions
 
 - **One run is a data point, not a number. Never publish from n=1.** Twice in one week
