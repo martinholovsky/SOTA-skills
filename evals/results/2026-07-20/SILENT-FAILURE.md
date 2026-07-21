@@ -148,6 +148,48 @@ Two secondary observations, both one-or-two cases and neither claimed:
   loud controls. At n=8 that is not a finding; it is the thing to watch if the
   negative-control set grows.
 
+## Negative controls grown 8 → 20 (2026-07-21): the over-flagging signal was noise too
+
+The last unexplained signal in this set: at n=8 loud controls, the **ablated** arm
+scored 1.00 while both other arms scored 0.75 — hinting that rules/10's catalogue
+might nudge a model into over-flagging correct, loudly-failing controls.
+
+Twelve more negatives were authored, each written to *superficially resemble* a
+positive class so an arm matching on shape rather than reasoning about effect would
+trip: an `exists()` check that also asserts the artifact is non-empty, an optional
+import converted into a startup failure, a `chmod` that actually restricts, a
+first-match-wins policy ordered correctly, a timeout attached via
+`NewRequestWithContext`, a retry loop that re-raises after metering, decorators in the
+right order, a case-insensitive blocklist, an awaited authz check, a redaction whose
+return value is used. Set: **81 cases — 35 enumerated positives, 26 novel, 20
+negative controls.**
+
+| Arm | Overall (range) | Novel (26) | **Loud controls (20)** |
+|---|---|---|---|
+| without-library | 0.91 (0.84–0.95) | 0.92 | **1.00** |
+| with-library | 0.93 (0.88–0.98) | 0.96 | **1.00** |
+| with-library-ablated | 0.89 (0.81–0.96) | 0.92 | **1.00** |
+
+**All three arms score 1.00 on the loud controls.** The over-flagging hint was 2 of 8
+cases, and it disappears at n=20. No arm over-flags correct controls; the signal is
+retired alongside the anchoring hypothesis it was a cousin of.
+
+Two things worth noting honestly:
+
+- **Overall lift is +0.02** (0.91 → 0.93) with per-arm ranges of ±0.05–0.07 — wider
+  spread than earlier runs, because the added cases are harder. That is still
+  effectively **+0.00**, consistent with n=49 and n=69. Silent-control detection
+  remains a saturated dimension.
+- The **novel** subgroup now reads 0.92 unguided vs 0.96 with-library — the *opposite*
+  direction from the original anchoring worry, and again a one-case difference. It is
+  not a finding in either direction. What both runs establish is that the enumerative
+  content pattern neither helps nor hurts generalization measurably.
+
+**Every subgroup signal this set has produced has evaporated when the subgroup grew**
+— anchoring at n=6→26, over-flagging at n=8→20. That is the strongest argument in this
+repo for the "grow the set before trusting a subgroup" rule now written into
+`evals/README.md`.
+
 ## Limitations (read before citing any number)
 
 - **41 of 49 positives were authored from rules/10's own taxonomy.** Only 6 test
