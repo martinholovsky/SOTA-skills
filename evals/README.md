@@ -40,15 +40,15 @@ audit STRAT-HIGH-2).
 - `cases/silent-failure.jsonl` (81) — a control that **looks enabled and does
   nothing** (inert scanner, fail-open policy, ruleset that loads zero rules,
   truncation before inspection, a test that passes against a no-op'd body …) →
-  the mechanism by which it is inert. 41 positives + **8 negative controls** whose
-  correct answer is "not silent" (the control fails loudly), so an arm that cries
+  the mechanism by which it is inert. 61 positives (35 enumerated + **26 tagged
+  `novel`**, mechanisms `sota-code-security` rules/10 does *not* enumerate — which
+  separates "teaches the lens" from "recites its own list") + **20 negative controls**
+  whose correct answer is "not silent" (the control fails loudly), so an arm that cries
   no-op at everything cannot score 1.00 — each negative deliberately *resembles* a
-  positive class, so shape-matching trips; **26 positives are tagged `novel`** —
-  mechanisms `sota-code-security` rules/10 does *not* enumerate, which separates
-  "teaches the lens" from "recites its own list". Two designs: `run-clean.py`
+  positive class, so shape-matching trips. Two designs: `run-clean.py`
   (vocabulary given — classification) and `run-silent-open.py` (free-form, blind
   opus judge — discovery), both with an `--ablate` arm that removes rules/10.
-  Result: **+0.00 — no measurable lift**, reproduced at n=49 and again at n=69.
+  Result: **+0.00 — no measurable lift**, reproduced at n=49, n=69 and n=81.
   An earlier **+0.07 from a 15-case version did not replicate and is retracted**.
   The `novel` subgroup was grown 6 → 26 to test whether the enumerated catalogue
   *anchors* the model onto its own list: **it does not** (0.96 unguided vs 0.92
