@@ -170,6 +170,13 @@ _SECRET_PATTERNS = [
     r"xox[baprs]-[A-Za-z0-9-]{10,}",            # Slack
     r"AIza[0-9A-Za-z_\-]{20,}",                 # Google API key
     r"-----BEGIN [A-Z ]*PRIVATE KEY-----",      # PEM private keys
+    r"eyJ[A-Za-z0-9_-]{5,}\.eyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}",   # JWTs
+]
+# The list above is INCOMPLETE by construction — it enumerates shapes, and a model
+# writing example code invents new ones. It missed a fake JWT on 2026-07-21 and
+# gitleaks (a second, independent method) caught it. Treat gitleaks as the backstop,
+# not this list, and add a pattern whenever it fires. Never bypass push protection.
+_UNUSED = [
 ]
 
 

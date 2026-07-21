@@ -69,6 +69,9 @@ def catalogue(strip_xref):
         if strip_xref:
             desc = XREF_RE.sub("", desc).strip()
         items.append((name, desc))
+    if not items:                       # empty catalogue => both arms identical => fake +0.00
+        sys.exit(f"skill catalogue is EMPTY (globbed skills/sota-* under {ROOT}). "
+                 f"Both arms would be identical. Refusing to run.")
     return items
 
 

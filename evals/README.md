@@ -186,7 +186,7 @@ matching the 0.99 paste-based simulation (0.987 vs 0.988) and far above the 0.60
 simulation is a faithful proxy for the real router flow
 ([`results/2026-07-13/LIVE-BUILD.md`](results/2026-07-13/LIVE-BUILD.md)).
 
-## Harness conventions (learned the hard way, 2026-07-20)
+## Harness conventions (learned the hard way, 2026-07-20/21)
 
 In one day, **four** changes to this harness silently did nothing while still
 printing a plausible number:
@@ -197,6 +197,14 @@ printing a plausible number:
 | An ablation keyed on a section **number** | A renumber broke the match; the "ablated" arm would have been the full corpus |
 | A scripted CHANGELOG edit whose anchor string didn't exist on that branch | "updated" — and the commit shipped without the entry |
 | A wait condition matching a per-case `lift=` progress line | A still-running job reported complete, at 1 case of 7 |
+| A corpus loader that never checked its glob count | The **with-library** arm got an empty corpus — and still printed a recall |
+| `--ablate` matching no file after a rename | The "ablated" arm *was* the full corpus — a fake **+0.00 contribution** |
+
+The last two were found by a **deliberate** rules/10 pass over this directory
+([EVALS-SELF-AUDIT.md](results/2026-07-21/EVALS-SELF-AUDIT.md)), not by accident, and
+both share the property that makes them worse than ordinary bugs: **their failure mode
+is `+0.00`** — a result this project has legitimately published four times, so a fake
+null is indistinguishable from a real one.
 
 These are the exact class `sota-code-security` rules/10 describes, in the tooling
 that measures the library. So:
@@ -215,6 +223,25 @@ that measures the library. So:
 - **Pin what you mirror.** Anything hand-copied from the library into the harness
   (currently `BUILD_WORKFLOW`) carries a hash of its source and fails loudly on
   drift — the mirror rotted for four days and nothing noticed.
+- **Assert the corpus is non-empty, and that a filter removed something.** Every
+  loader and every ablation aborts rather than returning silently-empty context. Both
+  failure modes print a plausible `+0.00`.
+
+## Measurement conventions
+
+- **One run is a data point, not a number. Never publish from n=1.** Twice in one week
+  a single run produced a figure a larger sample walked back: `+0.07` on
+  silent-control detection (retracted at n=49) and `+0.40` on completeness (a two-run
+  mean put it back at `+0.39`). Report a mean across ≥2 runs, or state the sample size
+  in the same breath as the number.
+- **Grow the set before trusting a subgroup signal.** The taxonomy-anchoring
+  "finding" at n=6 evaporated at n=26. Subgroup differences of one or two cases are
+  not findings.
+- **Artifacts store model-generated code, so scrub them — and don't trust the scrub.**
+  `scrub_secrets()` covers known key shapes, but the list is incomplete *by
+  construction*: a model writing example code invents new shapes, and it missed a JWT
+  the day after it was added. **gitleaks and GitHub push protection are the backstop,
+  not the pattern list.** Add a pattern whenever one fires; never bypass the block.
 
 ## Recorded runs
 

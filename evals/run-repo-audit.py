@@ -75,6 +75,9 @@ def repo_text():
 
 def library_context():
     files = sorted(glob.glob(os.path.join(ROOT, "skills/sota-code-security/rules/*.md")))
+    if not files:                       # empty corpus => with-arm gets no rules => fake +0.00
+        sys.exit(f"library corpus is EMPTY under {ROOT}. Refusing to run a with-library "
+                 f"arm that contains no library.")
     rules = "\n\n".join(open(f, encoding="utf-8").read() for f in files)
     router = open(os.path.join(ROOT, "skills/sota/SKILL.md"), encoding="utf-8").read()
     return f"{router}\n\n{rules}"

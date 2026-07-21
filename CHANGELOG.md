@@ -5,6 +5,69 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **Docs hygiene + harness/measurement conventions extended.** `evals/README.md`'s
+  "Harness conventions" now carries the two findings from the deliberate self-audit
+  (an unchecked corpus glob; an `--ablate` that matched nothing) and a new
+  **Measurement conventions** section: *one run is a data point, not a number — never
+  publish from n=1* (twice in a week a single run produced a figure a larger sample
+  walked back), *grow the set before trusting a subgroup signal* (the n=6 anchoring
+  "finding" evaporated at n=26), and *scrub artifacts but don't trust the scrub —
+  gitleaks and push protection are the backstop, not the pattern list*.
+  `docs/WHY-IT-WORKS.md` had a stale `+0.40` **and** an orphaned sentence fragment
+  introduced by an earlier edit in this cycle — both repaired.
+- **Completeness follow-up resolved, and the published figure corrected to `+0.39`
+  (0.59 → 0.98).** v1.18.0 shipped `+0.40` from a **single** synced run; arm B was
+  repeated and the two-run mean is **+0.39** — back on the original number. The 0.02
+  with-arm dip that looked like it might be a salience cost of the falsification
+  clause was **noise**: c1_ticket_api recovered 0.86 → 0.94, and its own swing across
+  three runs (0.86–0.97) is larger than the 0.016 gap it was supposed to explain. No
+  measurable cost; hypothesis closed. README, WHY-IT-WORKS and RESULTS.md updated.
+  **Standing lesson recorded: stop publishing from n=1** — this is the second time in
+  a week a single run produced a figure a larger sample walked back (the other being
+  the retracted +0.07 on silent-control detection).
+
+### Fixed
+
+- **The artifact secret-scrubber was itself incomplete — a JWT pattern was missing,
+  and gitleaks caught what it did not.** Added in v1.18.0 covering Stripe/AWS/GitHub/
+  Slack/Google/PEM shapes, it missed a fake JWT the model wrote into generated code
+  on the very next run. That is the enumeration problem the library warns about,
+  occurring in our own tooling: the pattern list is incomplete *by construction*
+  because a model inventing example code invents new shapes. JWT pattern added,
+  artifact re-scrubbed (1 → 0, scores unchanged), and the code now says plainly that
+  **gitleaks is the backstop, not the list** — add a pattern whenever it fires, and
+  never bypass push protection. Third time this week a second, independent scanner
+  caught what the first missed.
+
+- **Silent-control audit of `evals/` — the library's own rules/10 applied to the
+  harness that measures it.** Four silent failures surfaced here on 2026-07-20, every
+  one found *incidentally*; this was a deliberate pass. **Two confirmed findings in
+  ten files, both demonstrated live before being fixed**, and both sharing the
+  property that makes them worse than an ordinary bug: **their failure mode produces
+  `+0.00`** — a result this project has legitimately published four times, so a fake
+  null would be indistinguishable from a real one.
+  **F1 — an empty library corpus yields a "with-library" arm containing no library.**
+  `run-clean.audit_library_context()`, `run-repo-audit.library_context()` and
+  `run-desc-routing.catalogue()` all globbed their corpus and never checked the count;
+  a wrong cwd or renamed directory hands the with-arm `""` and still prints a recall.
+  Reproduced live (`with-library corpus: 0 chars`, no error). All three now abort.
+  **F2 — `--ablate` silently ablates nothing when its target is renamed.** The filter
+  was a filename equality test whose result was never asserted, so a rename leaves the
+  "ablated" arm as the *full* corpus and reports a fake +0.00 contribution — while the
+  run header still prints `ABLATED(...)`. Reproduced live (`removed=0 chars`). Now
+  aborts. This was the **third** instance of one pattern (after
+  `run-adjudication.py`'s section-number marker and `run-completeness.py`'s drifted
+  mirror), so every ablation and mirror in the harness is now guarded: *a
+  transformation whose result is never asserted*. Every guard watched to fire.
+  Categories checked with nothing found are stated explicitly (optional-dependency
+  degradation, swallowed enforcement exceptions, truncation, hardcoded reporting,
+  shipped-artifact gaps) rather than padded. Report:
+  [`evals/results/2026-07-21/EVALS-SELF-AUDIT.md`](evals/results/2026-07-21/EVALS-SELF-AUDIT.md).
+
 ## [1.18.0] - 2026-07-21
 
 The **learning-from-use** release. Ships the library's first path for hearing from its

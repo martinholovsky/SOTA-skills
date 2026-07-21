@@ -18,7 +18,7 @@ per-case data, and honest limitations are in the
 
 | Dimension | What it tests | Clean lift |
 |---|---|---|
-| **Completeness** | best practices embedded from a bare "build X" prompt (7 tasks) | **+0.40** (0.58 → 0.98) |
+| **Completeness** | best practices embedded from a bare "build X" prompt (7 tasks) | **+0.39** (0.59 → 0.98) |
 | **Freshness** | current 2026 facts (RFCs, CVEs, EOLs, versions, spec editions; 32) | **+0.50–0.53** (32-case; +0.65 on a 20-case run) |
 | Routing | which skill area applies to a task | +0.09 to +0.14 |
 | Audit | recognizing a textbook vulnerability | +0.00 |
@@ -63,11 +63,10 @@ most for *building* software are the two that are large:
 Robustness: every value dimension is now run **multi-sample** (`--samples 3
 --temp 0.7`), and the pattern is consistent — **the with-library arm has
 near-zero variance while the unguided arm both scores lower and wobbles.**
-Completeness holds at **0.58 → 0.98 (+0.40)** with the with-arm at ±0.01
-(re-verified 2026-07-20 against the workflow that actually *ships*, after the
-eval's `BUILD_WORKFLOW` mirror was found drifted — both arms measured +0.40;
-see [MIRROR-VERIFICATION](../evals/results/2026-07-20/MIRROR-VERIFICATION.md))
-across-case sd (6/7 cases perfectly steady); routing at **0.90 → 1.00 (+0.10)**,
+Completeness holds at **0.59 → 0.98 (+0.39)**, a two-run mean with the with-arm at
+±0.004 between runs (re-verified 2026-07-20/21 against the workflow that actually
+*ships*, after the eval's `BUILD_WORKFLOW` mirror was found drifted; see
+[MIRROR-VERIFICATION](../evals/results/2026-07-20/MIRROR-VERIFICATION.md)); routing at **0.90 → 1.00 (+0.10)**,
 with-arm ±0.00; freshness at **0.44 → 0.97 (+0.53)**, with-arm ±0.00. The
 library's contribution isn't a lucky sample — it removes the unguided model's
 case-by-case unreliability ([multi-sample writeup](../evals/results/2026-07-13/MULTI-SAMPLE.md)).
