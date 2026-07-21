@@ -81,6 +81,31 @@ configuration re-run 3× more, to see whether c1 recovers.
    trusted. Changing router BUILD steps 3–4 now *forces* a decision instead of
    silently invalidating the headline.
 
+## Follow-up resolved (2026-07-21): the 0.02 dip was noise
+
+The open question above — whether the synced arm's 0.02 drop was a real salience cost
+of the falsification clause — was settled by repeating arm B.
+
+| Run | without | with | lift |
+|---|---|---|---|
+| A — drifted mirror | 0.593 | 0.996 | +0.40 |
+| B — synced, run 1 | 0.578 | 0.976 | +0.40 |
+| **B — synced, run 2** | 0.602 | **0.983** | **+0.38** |
+| **Two-run synced mean** | **0.590** | **0.980** | **+0.39** |
+
+**c1_ticket_api across the three runs: 0.97 → 0.86 → 0.94.** It recovered, and its own
+swing is **0.11** — larger than the 0.016 gap between the drifted and synced means it
+was supposed to explain. c1 is simply the noisiest case in the set; there is **no
+measurable cost** to the falsification clause. The hypothesis is closed.
+
+**And a correction on our own process.** `+0.40` was published from a *single* synced
+run; the two-run mean is **+0.39**, which is where the published figure now sits —
+back on the original number. That is the second time this week a single run produced a
+figure that a larger sample walked back (the other being the retracted +0.07 on
+silent-control detection). The lesson is not subtle: **one run is a data point, not a
+number**, and this project should stop publishing from n=1 even when the harness is
+otherwise clean.
+
 ## Limitations
 
 - **One run per arm.** The −0.02 is not separable from sampling variance without a

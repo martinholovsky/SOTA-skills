@@ -88,7 +88,7 @@ performance, API evolvability, per-language idioms, SLOs, test-suite health.
 **Measured, not asserted** — library vs. an *unguided model* (same model, no
 library); clean, blind-judged, stable across samples ([results & method →](docs/WHY-IT-WORKS.md)):
 
-- **Completeness +0.40** — from a bare "build X" prompt, best-practice coverage goes ~58% → ~98% (7 tasks): the model stops silently dropping tests, rate limiting, structured logging, and TLS. Web search likely can't recover this (an agent won't search "should I add rate limiting").
+- **Completeness +0.39** — from a bare "build X" prompt, best-practice coverage goes ~59% → ~98% (7 tasks): the model stops silently dropping tests, rate limiting, structured logging, and TLS. Web search likely can't recover this (an agent won't search "should I add rate limiting").
 - **Freshness +0.53** — current-2026 facts (RFCs, CVEs, EOLs) 0.44 → 0.97, where an unguided model is *confidently wrong*.
 - **Routing +0.10** — the right skills load for the task (0.90 → 1.00), even ones a keyword read misses; with the library, results barely move run-to-run.
 

@@ -12,7 +12,7 @@ Same model, same task, library loaded vs. nothing.
 
 | Dimension | Without | With SOTA | Lift | Samples | Source |
 |---|---|---|---|---|---|
-| **Completeness** (7 build tasks) | 0.58 | **0.98** | **+0.40** | 3×, temp 0.7 | [MIRROR-VERIFICATION](2026-07-20/MIRROR-VERIFICATION.md) |
+| **Completeness** (7 build tasks) | 0.59 | **0.98** | **+0.39** | 2 runs × 3, temp 0.7 | [MIRROR-VERIFICATION](2026-07-20/MIRROR-VERIFICATION.md) |
 | **Freshness** (32 current-2026 facts) | 0.44 | **0.97** | **+0.53** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
 | Routing (20 tasks) | 0.90 | **1.00** | **+0.10** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
 | Silent-control detection (49 inert-control cases) | 0.94 | 0.93 | +0.00 | 5×, temp 1.0 | [SILENT-FAILURE](2026-07-20/SILENT-FAILURE.md) |
@@ -24,12 +24,15 @@ Same model, same task, library loaded vs. nothing.
 `run-completeness.py`'s `BUILD_WORKFLOW` is a hand-compressed **mirror** of router
 BUILD steps 3–4, and it had drifted — the falsification clause added in #119 was
 missing for four days, so this row was being measured against text that no longer
-shipped. Both arms were run: drifted **0.59 → 1.00 (+0.40)**, synced **0.58 → 0.98
-(+0.40)**. The `+0.39` figure was never wrong; the row now carries the synced
-numbers. The 0.02 with-arm difference is **one case** (c1 lost transport, sizelimit,
-pagination) and is not separable from sampling variance in a single run — logged, not
-claimed, and pointed in the direction our own
-[context-rot finding](../../docs/WHY-COMPLETENESS-RESIDUAL.md) predicts. Drift can no
+shipped. Both arms were run, and the synced arm **twice**: drifted **0.59 → 1.00 (+0.40)**;
+synced **0.58 → 0.98 (+0.40)** and **0.60 → 0.98 (+0.38)**, two-run mean
+**0.59 → 0.98 (+0.39)** — which is where the row now sits. The original `+0.39` was
+never wrong. A 0.02 with-arm dip in the first synced run looked like it might be a
+salience cost of the falsification clause; **the repeat run refuted that** — c1
+recovered 0.86 → 0.94 and is simply the noisiest case (0.86–0.97 across three runs,
+a 0.11 swing on its own). No measurable cost. Note the honest sequence: `+0.40` was
+published from **one** synced run and the two-run mean is `+0.39` — small samples
+again. Drift can no
 longer recur silently: `ROUTER_BUILD_SHA` pins the router section and the runner
 aborts on mismatch. Method, per-case table, limits:
 [MIRROR-VERIFICATION.md](2026-07-20/MIRROR-VERIFICATION.md).
@@ -207,7 +210,7 @@ phrasings outside this set (a prediction, not measured). No routing lift is clai
 
 ## The three-layer story
 
-SOTA **lifts an unguided model** where it matters (completeness +0.40, freshness
+SOTA **lifts an unguided model** where it matters (completeness +0.39, freshness
 +0.53); that lift **reproduces in a live agent** (0.99); and it **beats the most
 popular competing libraries** head-to-head **on tasks a base model gets incomplete**
 (production backend in any language, complex/security-sensitive frontend: ~+10 pts) —

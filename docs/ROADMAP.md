@@ -67,10 +67,13 @@ extension mismatch, env-filter mismatch, unawaited async assertion) — delibera
   the synced numbers. Drift cannot recur silently (`ROUTER_BUILD_SHA` pins the router
   section; the runner aborts on mismatch, guard watched to fire).
   [MIRROR-VERIFICATION.md](../evals/results/2026-07-20/MIRROR-VERIFICATION.md).
-  **One open follow-up:** the synced with-arm is 0.02 lower, entirely from one case
-  (c1 dropping transport/sizelimit/pagination). Not separable from sampling variance
-  in a single run, but it points where our own context-rot finding predicts. **Repeat
-  arm B 3× more** to tell noise from a real salience cost of the falsification clause.
+  **Follow-up CLOSED 2026-07-21:** arm B was repeated and the 0.02 dip was **noise** —
+  c1 recovered 0.86 → 0.94, and its own swing across three runs (0.86–0.97, 0.11) is
+  larger than the gap it was meant to explain. No measurable cost to the falsification
+  clause. Two-run synced mean: **0.59 → 0.98 (+0.39)**, now the published figure —
+  note that `+0.40` had been published from a *single* run. **Standing lesson: stop
+  publishing from n=1.** Second time this week a single run produced a figure a larger
+  sample walked back (the other: the retracted +0.07 on silent-control detection).
 - **Distribution** (item 7): publish the salience write-up
   (`docs/writeups/completeness-blind-spot.md`) — LinkedIn is the proven channel
   (corroborated 2026-07-20: it is the **top referrer** in GitHub traffic);

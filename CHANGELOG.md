@@ -7,7 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Completeness follow-up resolved, and the published figure corrected to `+0.39`
+  (0.59 → 0.98).** v1.18.0 shipped `+0.40` from a **single** synced run; arm B was
+  repeated and the two-run mean is **+0.39** — back on the original number. The 0.02
+  with-arm dip that looked like it might be a salience cost of the falsification
+  clause was **noise**: c1_ticket_api recovered 0.86 → 0.94, and its own swing across
+  three runs (0.86–0.97) is larger than the 0.016 gap it was supposed to explain. No
+  measurable cost; hypothesis closed. README, WHY-IT-WORKS and RESULTS.md updated.
+  **Standing lesson recorded: stop publishing from n=1** — this is the second time in
+  a week a single run produced a figure a larger sample walked back (the other being
+  the retracted +0.07 on silent-control detection).
+
 ### Fixed
+
+- **The artifact secret-scrubber was itself incomplete — a JWT pattern was missing,
+  and gitleaks caught what it did not.** Added in v1.18.0 covering Stripe/AWS/GitHub/
+  Slack/Google/PEM shapes, it missed a fake JWT the model wrote into generated code
+  on the very next run. That is the enumeration problem the library warns about,
+  occurring in our own tooling: the pattern list is incomplete *by construction*
+  because a model inventing example code invents new shapes. JWT pattern added,
+  artifact re-scrubbed (1 → 0, scores unchanged), and the code now says plainly that
+  **gitleaks is the backstop, not the list** — add a pattern whenever it fires, and
+  never bypass push protection. Third time this week a second, independent scanner
+  caught what the first missed.
 
 - **Silent-control audit of `evals/` — the library's own rules/10 applied to the
   harness that measures it.** Four silent failures surfaced here on 2026-07-20, every
