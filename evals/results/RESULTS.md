@@ -34,10 +34,10 @@ ceiling, 8 negative controls, and 6 mechanisms the rule file does *not* enumerat
 both inside a per-arm spread of ±0.04. **The +0.07 was small-sample noise.** The
 row now reads +0.00. An ablation isolating `sota-code-security` rules/10 returns
 **+0.00** (vocabulary design: with and ablated identical at 0.918, same four
-missed cases). Two things worth knowing: on the 6 **unenumerated** mechanisms the
-*unguided* arm scored 1.00 and both library arms 0.83 — a possible
-**taxonomy-anchoring** effect, one case at n=6, a hypothesis and not yet a
-finding; and the design's own limit is that both arms must be *told* to hunt inert
+missed cases). Two things worth knowing: the **taxonomy-anchoring hypothesis is now
+tested and retired** — the novel subgroup was grown 6 → 26 and the gap collapsed
+from 1.00 vs 0.83 to **0.96 vs 0.92 (one case, inside run spread)**, so the
+library's enumerative content pattern is not shown to hurt generalization; and the design's own limit is that both arms must be *told* to hunt inert
 controls, which is the lens the rule teaches, so what it uniquely adds stays
 unmeasured. Full detail, subgroup tables, and limitations in
 [SILENT-FAILURE.md](2026-07-20/SILENT-FAILURE.md).

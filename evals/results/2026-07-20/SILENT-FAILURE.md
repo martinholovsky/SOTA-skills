@@ -99,6 +99,55 @@ but neither the guidance nor the base model connects it to a *glob or filter tha
 silently matches nothing*. Tempting to add those examples to the rule — **that
 would be fitting the guidance to the test set**, so it is logged, not done.
 
+## Anchoring hypothesis — tested at n=26 novel, NOT supported
+
+Finding 3 above (from the n=49 run) was flagged as a hypothesis: on the 6
+mechanisms rules/10 does *not* enumerate, the **unguided** arm scored 1.00 and both
+library arms 0.83, hinting that an enumerated catalogue might make a model
+pattern-match the list instead of applying the underlying question. Because the
+library is ~296 files of largely enumerative guidance, that would have been an
+indictment of its dominant content pattern — so it was worth resolving properly.
+
+The novel subgroup was grown **6 → 26** (20 new mechanisms rules/10 never lists:
+a local `def` shadowing an imported validator, a signature compared against
+itself, `return` inside a loop body, middleware registered after its routes, an
+`except` clause for a type never raised, a validator whose result is discarded,
+`or` short-circuiting past an ownership check, an `lru_cache` key that omits the
+principal, a commented-out signal-handler registration, `bool("false")`, an
+autouse fixture disabling the rate limiter suite-wide, a `chmod` that ORs
+permissions *wider*, an allowlist consulted after the request is sent, a security
+logger pinned above its own events, a seconds/minutes TTL mismatch, an inverted
+predicate, a redaction whose copy is discarded, a wildcard allow shadowing a deny
+under first-match-wins, a feature gate read at import time, and a broad `except`
+inside a rule loop). Total set: **69 cases — 35 enumerated positives, 26 novel,
+8 negative controls.**
+
+| Arm | Overall | **Novel (26)** | Loud controls (8) |
+|---|---|---|---|
+| without-library | 0.94 | **0.96** (25/26) | 0.75 (6/8) |
+| with-library | 0.94 | **0.92** (24/26) | 0.75 (6/8) |
+| with-library-ablated | 0.90 | 0.92 (24/26) | 1.00 (8/8) |
+
+3× @0.7. Artifact: `anchoring-69-3sample.json`.
+
+**Verdict: the anchoring hypothesis is not supported and is retired.** The gap
+collapsed from 1.00 vs 0.83 at n=6 to **0.96 vs 0.92 at n=26 — a single case**,
+well inside the per-arm run spread (without-library ranged 0.91–0.96 across the
+three samples). The n=6 signal was small-sample noise, exactly as it was labelled.
+The library's enumerative content pattern is **not** shown to reduce
+generalization to unlisted mechanisms.
+
+Two secondary observations, both one-or-two cases and neither claimed:
+
+- Overall library lift is **+0.00** (0.94 vs 0.94), reproducing the n=49 result on
+  a set 40% larger and much harder. Silent-control detection stays a saturated
+  dimension.
+- The **ablated** arm scored 1.00 on the loud-control negatives while both other
+  arms scored 0.75 (a 2-of-8 difference). If anything that hints the *opposite* of
+  anchoring — that rules/10's catalogue slightly encourages over-flagging correct,
+  loud controls. At n=8 that is not a finding; it is the thing to watch if the
+  negative-control set grows.
+
 ## Limitations (read before citing any number)
 
 - **41 of 49 positives were authored from rules/10's own taxonomy.** Only 6 test
