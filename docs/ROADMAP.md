@@ -91,10 +91,12 @@ extension mismatch, env-filter mismatch, unawaited async assertion) — delibera
   moderate scale — needs much larger intervening context to find the breaking point.
 - **Grow the eval case sets** (item 1 sub-task, content authoring). Done this cycle:
   silent-failure 15 → **69** (35 enumerated + 26 novel + 8 negative controls) and a
-  new 30-case audit-precision set. Still thin: the **8 negative controls** (an arm
-  that over-flags is only weakly penalised — and the one unexplained signal left is
-  there, the ablated arm scoring 1.00 vs 0.75 on them), the 7-case completeness set,
-  and competitor domains beyond the five measured.
+  new 30-case audit-precision set. **Negative controls grown 8 → 20 on
+  2026-07-21 and the over-flagging signal RESOLVED as noise** — all three arms now
+  score 1.00 on them (the 0.75-vs-1.00 hint was 2 of 8 cases). Every subgroup signal
+  this set has produced has evaporated when the subgroup grew: anchoring at 6→26,
+  over-flagging at 8→20. Still thin: the 7-case completeness set and competitor
+  domains beyond the five measured.
 - **First 6-month accuracy sweep ~Jan 2027** (item 8; bump `LAST-VERIFIED`).
 
 Historical per-item notes below (kept as the record of what was done):

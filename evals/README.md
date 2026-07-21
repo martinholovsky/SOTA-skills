@@ -37,12 +37,13 @@ audit STRAT-HIGH-2).
 - `cases/freshness.jsonl` (32) — a current-2026 fact question → the token a
   correct answer must contain. Every fact is present in the library and was
   primary-source-verified.
-- `cases/silent-failure.jsonl` (69) — a control that **looks enabled and does
+- `cases/silent-failure.jsonl` (81) — a control that **looks enabled and does
   nothing** (inert scanner, fail-open policy, ruleset that loads zero rules,
   truncation before inspection, a test that passes against a no-op'd body …) →
   the mechanism by which it is inert. 41 positives + **8 negative controls** whose
   correct answer is "not silent" (the control fails loudly), so an arm that cries
-  no-op at everything cannot score 1.00; **26 positives are tagged `novel`** —
+  no-op at everything cannot score 1.00 — each negative deliberately *resembles* a
+  positive class, so shape-matching trips; **26 positives are tagged `novel`** —
   mechanisms `sota-code-security` rules/10 does *not* enumerate, which separates
   "teaches the lens" from "recites its own list". Two designs: `run-clean.py`
   (vocabulary given — classification) and `run-silent-open.py` (free-form, blind
@@ -260,9 +261,11 @@ trusted.**
   silent-control detection (retracted at n=49) and `+0.40` on completeness (a two-run
   mean put it back at `+0.39`). Report a mean across ≥2 runs, or state the sample size
   in the same breath as the number.
-- **Grow the set before trusting a subgroup signal.** The taxonomy-anchoring
-  "finding" at n=6 evaporated at n=26. Subgroup differences of one or two cases are
-  not findings.
+- **Grow the set before trusting a subgroup signal.** *Every* subgroup signal this
+  harness has produced has evaporated when the subgroup grew: taxonomy-anchoring at
+  n=6 → 26, over-flagging of loud controls at n=8 → 20. Subgroup differences of one or
+  two cases are not findings — treat them as a reason to author more cases, never as a
+  result.
 - **Artifacts store model-generated code, so scrub them — and don't trust the scrub.**
   `scrub_secrets()` covers known key shapes, but the list is incomplete *by
   construction*: a model writing example code invents new shapes, and it missed a JWT

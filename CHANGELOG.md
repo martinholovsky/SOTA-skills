@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Negative controls grown 8 → 20; the over-flagging signal is resolved as noise.**
+  The last unexplained result in the silent-failure set was the *ablated* arm scoring
+  1.00 on the loud controls while both other arms scored 0.75 — a hint that rules/10's
+  catalogue might nudge a model into flagging correct, loudly-failing controls. Twelve
+  more negatives were authored, each deliberately *resembling* a positive class so an
+  arm matching on shape rather than effect would trip (an `exists()` check that also
+  asserts non-emptiness, an optional import raised at startup, a `chmod` that actually
+  restricts, correct first-match-wins ordering, a timeout attached via
+  `NewRequestWithContext`, a retry loop that re-raises, decorators in the right order).
+  Set is now **81 cases: 35 enumerated positives, 26 novel, 20 negative controls.**
+  **Result: all three arms score 1.00 on the loud controls** — the hint was 2 of 8
+  cases and it disappears at n=20. Overall lift **+0.02** with per-arm ranges of
+  ±0.05–0.07, i.e. still effectively +0.00 and consistent with n=49 and n=69.
+  Noteworthy: **every subgroup signal this set has produced has evaporated when the
+  subgroup grew** (anchoring 6→26, over-flagging 8→20) — the strongest evidence in
+  this repo for the "grow the set before trusting a subgroup" rule.
+
 ### Added
 
 - **The eval scoring functions now have tests — and they run in CI.** A mutation probe
