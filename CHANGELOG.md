@@ -5,7 +5,17 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.18.0] - 2026-07-21
+
+The **learning-from-use** release. Ships the library's first path for hearing from its
+users, retires an open hypothesis about its own content pattern, and re-verifies the
+headline number against the workflow that actually ships. No skill added (41
+unchanged): router content, evals, and docs.
+
+**If you upgrade for one reason, it is this:** the completeness figure quoted in
+v1.17.0 (`+0.39`, `0.60 → 1.00`) was measured against a *drifted copy* of the BUILD
+workflow. Both arms have now been run — the number reproduces at **+0.40** either way
+— and every user-facing surface now carries the verified `0.58 → 0.98 (+0.40)`.
 
 ### Added
 
@@ -866,6 +876,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.18.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.18.0
 [1.17.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.17.0
 [1.16.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.16.0
 [1.15.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.15.0
