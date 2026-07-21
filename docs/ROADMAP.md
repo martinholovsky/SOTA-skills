@@ -55,15 +55,7 @@ The +0.07 was small-sample noise (the 15-case with-arm sat at 0.99–1.00 — no
 headroom); it is **retracted** in `RESULTS.md` and the writeup. Silent-control
 detection therefore joins audit / cross-file audit / desc-routing as a **+0.00**
 dimension. rules/10 is kept on gap-analysis grounds with **no efficacy claim**.
-Open follow-ups: (a) **grow the `novel` subgroup to 20+** — on the current 6, the
-*unguided* arm scored 1.00 vs 0.83 for both library arms, a possible
-**taxonomy-anchoring** effect (a model handed an 11-item list may match against
-the list instead of applying the question) that is a hypothesis at n=6 and would,
-if it reproduces, argue for rewriting rules/10 to lead on the question and lighten
-the catalogue; (b) the **agentic** design (large repo + generic "audit this" → do
-silent no-ops appear unprompted?) — the only design that can measure what the file
-is actually for, and the same frontier the cross-file audit run identified;
-(c) cross-model replication. Four cases defeat every arm (build-tag no-op, glob
+Open follow-ups: (a) **DONE 2026-07-20 — the `novel` subgroup was grown 6 → 26 and the taxonomy-anchoring hypothesis is RETIRED**: the gap collapsed from 1.00 vs 0.83 (n=6) to **0.96 vs 0.92 (n=26) — one case, inside run spread**, so the library's enumerative content pattern is *not* shown to reduce generalization to unlisted mechanisms. Overall lift reproduced at **+0.00** on the 69-case set. One thing to watch if the negative set grows: the ablated arm scored 1.00 on the 8 loud-control negatives vs 0.75 for both other arms, hinting mildly at over-flagging rather than anchoring (2 of 8 — not a finding). (b) the **agentic** design remains the only one that can measure what the file is for; (c) cross-model replication.
 extension mismatch, env-filter mismatch, unawaited async assertion) — deliberately
 **not** written into the rule, since that is fitting guidance to the test set.
 

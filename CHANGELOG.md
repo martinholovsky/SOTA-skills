@@ -7,6 +7,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Gap-reporting loop — the library's first path for learning from use.** The
+  project has no telemetry by design, which also means a wrong rule, a stale
+  version claim, or a missing skill stays in the library for everyone until a human
+  reports it. Measured reality at v1.17.0: **~24 organic clones/day against 7 stars
+  and one issue ever filed** (GitHub traffic API; the three days with zero CI runs
+  show clones exactly equal to unique cloners). Hundreds of installs, no signal.
+  The fix uses the one channel this project uniquely has — the user is talking to an
+  agent that **already read the skills**. A new short router section tells that agent
+  to surface a **one-line** note when the library actually let the user down (a rule
+  contradicted by a primary source it just checked; a rule that doesn't fit and
+  states no exception; real surface area with no owning skill; guidance that would
+  have shipped a defect), with the issue-template link — and explicitly *not* for
+  personal preference, unneeded rules, or mid-task. Deliberately placed **outside**
+  the always-apply operating principles so it does not dilute the measured
+  principle-5/6 salience. README gains a matching section (issue templates already
+  existed; nothing pointed users at them). Regression-checked — the router grew
+  443 → 467 lines and the routing eval pastes it whole: with-arm **held at 1.00**
+  (3×@0.7, no misses), lift +0.11. Artifact:
+  `evals/results/2026-07-20/routing-3sample-postfeedback.json`.
+
+### Changed
+
+- **Taxonomy-anchoring hypothesis tested and RETIRED** — the open question from
+  v1.17.0, and the one that mattered most: the library is ~296 files of largely
+  *enumerative* guidance, so if catalogues make a model pattern-match the list
+  instead of applying the underlying question, that indicts the dominant content
+  pattern. At n=6 novel mechanisms the unguided arm had scored 1.00 vs 0.83 for
+  both library arms. The novel subgroup was grown **6 → 26** (20 mechanisms
+  `rules/10` never lists — a `def` shadowing an imported validator, a signature
+  compared against itself, `return` inside a loop body, middleware registered after
+  its routes, an autouse fixture disabling the rate limiter suite-wide, a `chmod`
+  that ORs permissions *wider*, an allowlist consulted after the request is sent, a
+  seconds/minutes TTL mismatch, an inverted predicate, a wildcard allow shadowing a
+  deny under first-match-wins, a feature gate read at import time, …). The set is
+  now **69 cases: 35 enumerated positives, 26 novel, 8 negative controls.**
+  **Result: not supported.** The gap collapsed to **0.96 vs 0.92 — a single case**,
+  inside the per-arm run spread (0.91–0.96). The n=6 signal was small-sample noise,
+  exactly as it was labelled, and the enumerative content pattern is **not** shown
+  to reduce generalization to unlisted mechanisms. Overall library lift reproduced
+  at **+0.00** on a set 40% larger and harder, consistent with the n=49 run.
+  Logged but explicitly **not** claimed: the *ablated* arm scored 1.00 on the 8
+  loud-control negatives vs 0.75 for both other arms — if anything the opposite of
+  anchoring, hinting at mild over-flagging; 2 of 8, to watch if that set grows.
+  `SILENT_VOCAB` extended with the 20 new slugs; no answer-key leakage (verified
+  across both runners). Writeup:
+  [`evals/results/2026-07-20/SILENT-FAILURE.md`](evals/results/2026-07-20/SILENT-FAILURE.md).
+
+- **Docs hygiene against this cycle's work.** `evals/README.md`: silent-failure case
+  count corrected 49 → **69** and the novel subgroup 6 → **26** (both stale), with the
+  retracted +0.07 and the retired anchoring hypothesis stated in place. `docs/INDEX.md`
+  gained rows for the two new writeups (AUDIT-PROCESS, SILENT-FAILURE) — the honest
+  +0.00 results were previously unfindable from the index. `docs/ROADMAP.md`: the
+  top item moved BLOCKED → IN PROGRESS with the arm-A number; "grow the eval case
+  sets" replaced with what actually remains thin (the 8 negative controls, the 7-case
+  completeness set, competitor domains beyond the five measured); and the distribution
+  item grounded in measured traffic (~24 organic clones/day vs 7 stars, 0 watchers,
+  1 issue ever — LinkedIn confirmed as top referrer).
+- **New `evals/README.md` section: harness conventions**, written from four
+  self-inflicted silent failures in one day — a prompt-field whitelist that dropped
+  `prompt` (the routing eval sent bare ids and still printed a recall score), an
+  ablation keyed on a section *number* that a renumber broke, a scripted CHANGELOG
+  edit whose anchor did not exist on its branch, and a wait condition that matched a
+  per-case progress line and called a still-running job complete. Rules: guards abort
+  rather than warn; watch the guard fail before trusting it; wait on a terminal
+  artifact, not a log substring; assert a scripted edit landed; pin what you mirror.
+  `AGENTS.md` points at it — the same failure class `rules/10` describes, occurring in
+  the tooling that measures the library.
+
 ### Fixed
 
 - **The flagship completeness number is now verified against the workflow that
@@ -50,29 +120,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   BUILD section and **aborts** if it no longer matches what the mirror was synced
   against, rather than measuring unshipped text. Guard watched to fire on a synthetic
   router edit before being trusted.
-
-### Changed
-
-- **Docs hygiene against this cycle's work.** `evals/README.md`: silent-failure case
-  count corrected 49 → **69** and the novel subgroup 6 → **26** (both stale), with the
-  retracted +0.07 and the retired anchoring hypothesis stated in place. `docs/INDEX.md`
-  gained rows for the two new writeups (AUDIT-PROCESS, SILENT-FAILURE) — the honest
-  +0.00 results were previously unfindable from the index. `docs/ROADMAP.md`: the
-  top item moved BLOCKED → IN PROGRESS with the arm-A number; "grow the eval case
-  sets" replaced with what actually remains thin (the 8 negative controls, the 7-case
-  completeness set, competitor domains beyond the five measured); and the distribution
-  item grounded in measured traffic (~24 organic clones/day vs 7 stars, 0 watchers,
-  1 issue ever — LinkedIn confirmed as top referrer).
-- **New `evals/README.md` section: harness conventions**, written from four
-  self-inflicted silent failures in one day — a prompt-field whitelist that dropped
-  `prompt` (the routing eval sent bare ids and still printed a recall score), an
-  ablation keyed on a section *number* that a renumber broke, a scripted CHANGELOG
-  edit whose anchor did not exist on its branch, and a wait condition that matched a
-  per-case progress line and called a still-running job complete. Rules: guards abort
-  rather than warn; watch the guard fail before trusting it; wait on a terminal
-  artifact, not a log substring; assert a scripted edit landed; pin what you mirror.
-  `AGENTS.md` points at it — the same failure class `rules/10` describes, occurring in
-  the tooling that measures the library.
 
 ## [1.17.0] - 2026-07-20
 

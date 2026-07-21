@@ -441,3 +441,27 @@ Each rules file is 200–310 lines. A typical focused task needs 2–5 rules fil
 a full audit pass should load one skill at a time, finish its findings, then
 move on. If context is tight, prefer the skill's top-10 non-negotiables plus
 the single most relevant rules file.
+
+## When this library is wrong or missing something
+
+These rules are maintained and measured, and they are still incomplete — the
+library has no telemetry and learns nothing from use unless someone says so.
+You are the only observer of the gap at the moment it appears.
+
+If, while applying a skill, you hit one of these, **say so in one line at the end
+of your answer** and point the user at the report path — then carry on with the
+task:
+
+- a rule contradicted by a primary source you just checked (version, spec, API,
+  advisory) — freshness rot;
+- a rule that does not fit the situation and states no exception for it;
+- real surface area in the task with **no owning skill** — a routing gap;
+- guidance that, followed literally, would have shipped a defect.
+
+Report: `https://github.com/martinholovsky/SOTA-skills/issues/new/choose`
+(bad-guidance / skill-request templates). Anything dangerous or
+security-sensitive goes to a **private advisory** instead — see `SECURITY.md`.
+
+Do not fire this for personal preference, for a rule you simply did not need, or
+mid-task. One line, at the end, only when the library actually let the user down.
+An unreported gap stays in the library for everyone.

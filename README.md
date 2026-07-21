@@ -58,7 +58,7 @@ More install options: [Installation](#installation) · more prompts: [Using it](
 - [Using it](#using-it)
 - [Optional setup & integrations](#optional-setup--integrations) — [badge](#badge), [gates](#enforcing-the-gates), [other agents](#other-ai-agents-codex-copilot-gemini-), [status line](#status-line-optional), [plugin extras](#optional-extras-for-plugin-users)
 - [Structure](#structure) · [How it works](#how-it-works) · [Conventions](#conventions)
-- [Contributing](#contributing) · [License](#license)
+- [Found a gap? Tell us](#found-a-gap-tell-us--its-the-only-signal-we-get) · [Contributing](#contributing) · [License](#license)
 
 **Deeper docs:** [Find it fast (docs index)](docs/INDEX.md) · [Does it work? (measured results)](evals/results/RESULTS.md) · [Why it works](docs/WHY-IT-WORKS.md) · [Keeping rules applied as context fills](docs/CONTEXT-MANAGEMENT.md) · [Roadmap](docs/ROADMAP.md)
 
@@ -506,6 +506,22 @@ Naming one (or the `sota` router) just makes the routing explicit. From there:
   unconditionally; load detailed rules files only as the task demands.
 - Borderline severities state the deciding assumption; unconfirmed findings
   are marked "needs verification", never asserted.
+
+## Found a gap? Tell us — it's the only signal we get
+
+This library has **no telemetry**. Nothing reports back, by design. That also
+means a wrong rule, a stale version claim, or a task with no owning skill stays
+in the library for everyone until a human says so.
+
+If a skill was wrong, outdated, or missing when you needed it:
+[**open an issue**](https://github.com/martinholovsky/SOTA-skills/issues/new/choose)
+(bad-guidance / skill-request templates — both take about a minute). Dangerous or
+security-sensitive guidance goes to a [private advisory](SECURITY.md) instead.
+
+The assistant will usually flag these itself: the router tells it to surface a
+one-line note when the library lets you down, rather than papering over it.
+
+If it saved you time, a ⭐ helps other engineers find it.
 
 ## Contributing
 
