@@ -15,7 +15,7 @@ Same model, same task, library loaded vs. nothing.
 | **Completeness** (7 build tasks) | 0.59 | **0.98** | **+0.39** | 2 runs × 3, temp 0.7 | [MIRROR-VERIFICATION](2026-07-20/MIRROR-VERIFICATION.md) |
 | **Freshness** (32 current-2026 facts) | 0.44 | **0.97** | **+0.53** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
 | Routing (20 tasks) | 0.90 | **1.00** | **+0.10** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
-| Silent-control detection (49 inert-control cases) | 0.94 | 0.93 | +0.00 | 5×, temp 1.0 | [SILENT-FAILURE](2026-07-20/SILENT-FAILURE.md) |
+| Silent-control detection (81 inert-control cases) | 0.91 | 0.93 | +0.00 | 3×, temp 0.7 | [SILENT-FAILURE](2026-07-20/SILENT-FAILURE.md) |
 | Audit **precision** (30 claims, 15 false) | 1.00 | 1.00 | +0.00 | 3×, temp 0.7 | [AUDIT-PROCESS](2026-07-20/AUDIT-PROCESS.md) |
 | Audit (14 hard snippets) | 1.00 | 1.00 | +0.00 | 1× | [BASELINE](2026-07-10/BASELINE.md) |
 | Cross-file audit (8-defect repo) | 1.00 | 1.00 | +0.00 | 2 models | [REPO-AUDIT](2026-07-13/REPO-AUDIT.md) |
@@ -43,6 +43,21 @@ is all in the unguided arm. Audit is +0.00 and reported, not hidden — a capabl
 model already recognizes vulnerabilities, even cross-file when the repo fits in
 context. The real remaining audit frontier is an **agentic large-repo** audit
 (too big to hold at once); logged in the [roadmap](../../docs/ROADMAP.md).
+
+**The audit-family result, stated plainly (2026-07-21).** All four rows above that
+score audit ability sit at **+0.00**: audit-hard recall, cross-file repo audit,
+silent-control detection (n=81), and audit precision. Across *recall and precision*,
+a frontier model handed the code and the question does not need the library — and
+**every subgroup signal that looked like an exception dissolved when its subgroup
+grew** (taxonomy-anchoring 6→26, over-flagging of loud controls 8→20). This is not
+"the audit content is worthless": it is "no single-prompt eval can distinguish
+audit-*process* guidance, because when the code and the question both fit one prompt
+the model is already at ceiling." The library's audit half is currently justified by
+gap analysis and one real-world self-audit that found two genuine defects in the
+harness ([EVALS-SELF-AUDIT](2026-07-21/EVALS-SELF-AUDIT.md)) — **not by a measured
+lift**, and that is stated rather than implied. The only design that could move it is
+the agentic large-repo audit. The measured lift lives entirely in **BUILD**
+(completeness +0.39, freshness +0.53).
 
 **Retraction (2026-07-20).** This row first shipped as **0.92 → 0.99 (+0.07)**
 from a 15-case set. Growing the set to **49** — adding harder cases that broke the

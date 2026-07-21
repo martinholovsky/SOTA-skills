@@ -105,6 +105,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   shipped-artifact gaps) rather than padded. Report:
   [`evals/results/2026-07-21/EVALS-SELF-AUDIT.md`](evals/results/2026-07-21/EVALS-SELF-AUDIT.md).
 
+### Changed
+
+- **Doc hygiene: stale silent-failure counts corrected and the audit-null story
+  consolidated.** `evals/README.md` still said "41 positives + 8 negative controls"
+  (doubly stale — the set is 61 positives + 20 negatives at 81 cases); fixed, and the
+  +0.00 result annotated as reproduced at n=49/69/81. The `RESULTS.md` scoreboard row
+  moved 49 → 81 cases, and a new paragraph states the audit-family result plainly in
+  one place for the first time: **all four audit-ability rows are +0.00** (recall,
+  cross-file, silent-control, precision), every apparent subgroup exception dissolved
+  when its subgroup grew, and the library's audit half is justified by gap analysis
+  plus one real self-audit — **not by a measured lift**. The measured lift lives
+  entirely in BUILD (completeness +0.39, freshness +0.53).
+
 ## [1.18.0] - 2026-07-21
 
 The **learning-from-use** release. Ships the library's first path for hearing from its
