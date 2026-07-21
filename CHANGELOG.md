@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **The eval scoring functions now have tests — and they run in CI.** A mutation probe
+  replaced `run-clean.score()` with `return 1.0, {}` and asked what would notice:
+  `check-invariants.sh` passed, `pre-commit` passed, and scoring a deliberately wrong
+  prediction set returned **1.00**. Nothing noticed, because **there was no test suite
+  in the repo and CI never touched `evals/`** — the code producing every number this
+  project publishes (the README's +0.39, every +0.00 reported as an honest null) was
+  unverified. A scorer stuck at 1.00 would have made all of it a lie, silently: the
+  rules/10 class at its worst, in the one place it would do the most damage.
+  `evals/test_scoring.py` (plain `python3`, no new dependency) covers all three
+  scorers with **mutation-resistant** rows — each checked at 1.0, 0.0 *and* a partial
+  value, so constant-return mutations die on the 0.0 rows and swapped-metric mutations
+  die on the partials; `run-repo-audit` gets a row where category- and strict-recall
+  legitimately differ. **Both mutations were watched to fail before the tests were
+  trusted.** Wired into CI (`Eval scoring tests`) and pre-commit (on `evals/*.py`), so
+  it cannot become a test that exists but never runs.
+
 ### Changed
 
 - **Docs hygiene + harness/measurement conventions extended.** `evals/README.md`'s
