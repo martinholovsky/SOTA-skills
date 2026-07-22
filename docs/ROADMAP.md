@@ -60,6 +60,13 @@ extension mismatch, env-filter mismatch, unawaited async assertion) — delibera
 **not** written into the rule, since that is fitting guidance to the test set.
 
 **Now open, ordered by value:**
+- **DONE 2026-07-22 — cross-model replication of the BUILD lift.** Every completeness
+  number had used one build model. Re-run with `openai/gpt-5.1` (different family)
+  driving BUILD, same judge/rubrics/tasks: **0.44 → 0.88, +0.44** (every case positive).
+  The +0.39 is **not sonnet-specific**; the lift is larger where the baseline is lower,
+  reproducing the "lift tracks incompleteness" mechanism across models. Cost $1.87.
+  [CROSS-MODEL.md](../evals/results/2026-07-22/CROSS-MODEL.md). Follow-ups: a second
+  cross-family model (gemini) and cross-model freshness/routing remain single-build-model.
 - **DONE 2026-07-20 — the flagship number is verified against the workflow that
   ships.** `BUILD_WORKFLOW` had drifted from router BUILD steps 3–4 for four days.
   Both arms run: drifted **0.59 → 1.00 (+0.40)**, synced **0.58 → 0.98 (+0.40)**. The

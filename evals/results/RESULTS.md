@@ -37,6 +37,19 @@ longer recur silently: `ROUTER_BUILD_SHA` pins the router section and the runner
 aborts on mismatch. Method, per-case table, limits:
 [MIRROR-VERIFICATION.md](2026-07-20/MIRROR-VERIFICATION.md).
 
+**Cross-model replication (2026-07-22): the +0.39 is not sonnet-specific.** Every
+completeness number had used one build model (`sonnet-4.6`). Re-running the eval with a
+**different-family frontier model**, `openai/gpt-5.1`, driving BUILD — same judge, same
+rubrics, same 7 tasks — gives **0.44 → 0.88, lift +0.44** (every case positive, +0.29
+to +0.55). The lift generalizes and is *larger where the baseline is lower* (gpt-5.1's
+unguided arm is 0.44 vs sonnet's 0.59), the same "lift tracks incompleteness" mechanism
+the breadth study found across domains, now reproduced across models. The with-arm
+ceiling is lower (0.88 vs 0.98) — the library takes gpt-5.1 to *very good*, not
+*near-perfect*. The blind judge shares a family with sonnet but not gpt-5.1, so if
+anything +0.44 is a conservative floor. Two families ≠ model-agnostic, but the
+single-model assumption is discharged for the flagship dimension.
+[CROSS-MODEL.md](2026-07-22/CROSS-MODEL.md).
+
 The with-library arm is **near-zero variance** on every value dimension
 (completeness ±0.01 across-case sd, routing/freshness ±0.00); the sampling wobble
 is all in the unguided arm. Audit is +0.00 and reported, not hidden — a capable
