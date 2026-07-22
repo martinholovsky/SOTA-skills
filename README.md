@@ -14,11 +14,21 @@
 
 **Make your AI coding assistant build and audit like your most senior engineer.**
 
-Your assistant is brilliant — it just doesn't know your standards. SOTA-skills teaches
-it: 41 skills (296 files, ~60k lines) encoding state-of-the-art 2026 practices for
-building **and** auditing software, fast-moving claims web-verified against primary
-sources. Native on Claude Code; works with Gemini CLI, Codex, and any agent that reads
-`AGENTS.md`. Every file stays under 500 lines, so the right rules load when needed.
+Your assistant is brilliant — it just doesn't know your standards, and it forgets the
+ones it does know as the task grows long. SOTA-skills fixes both, and the fix is
+**measured**: from a bare "build X" prompt, best-practice coverage climbs from **~59%
+to ~98% (+0.39)** — the model stops silently dropping tests, rate limiting, structured
+logging, and TLS ([see every number →](evals/results/RESULTS.md)).
+
+It works by being a **loop, not a prompt dump**: route in only the rules a task needs,
+re-state them every turn, and re-check them *last* before shipping — so the guidance
+survives a long context instead of fading into it. That's why it beats a bigger prompt
+instead of becoming one. Native on Claude Code; works with Gemini CLI, Codex, and any
+agent that reads `AGENTS.md`.
+
+Under the hood: **41 skills (296 files, ~60k lines)** of state-of-the-art 2026
+practice, each file under 500 lines so only the matching rules load, every fast-moving
+claim web-verified against a primary source.
 
 Two commands to install:
 
