@@ -5,6 +5,21 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **Roadmap refreshed to the live state and a broken sentence repaired.** The
+  "Open tasks" stamp was stale (*as of 2026-07-16* — three releases and a week
+  behind); replaced with a **2026-07-22** current-state block that summarizes the
+  v1.17→v1.19 stretch and lists what is *genuinely* open (distribution/adoption first,
+  then the agentic audit, then the cheap incremental runs), separated cleanly from the
+  dated per-cycle history below. An orphaned fragment in the history (a sentence that
+  began mid-clause, *"extension mismatch, env-filter mismatch…"*, left by an earlier
+  edit) was completed and the cross-model follow-up marked done. `docs/INDEX.md` gained
+  a row pointing at the cross-model result, which was otherwise unfindable from the
+  index. Docs-only; no measured number changed.
+
 ## [1.19.0] - 2026-07-22
 
 The **de-risk-the-foundation** release. The flagship BUILD lift is now shown to hold

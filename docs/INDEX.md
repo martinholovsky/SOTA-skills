@@ -28,6 +28,7 @@ trying to do**, not by file. (Kept in sync by hand; if a link rots, open an issu
 |---|---|
 | See every measured number at a glance | [`evals/results/RESULTS.md`](../evals/results/RESULTS.md) |
 | Read the measured case (vs. unguided + vs. competitors) | [WHY-IT-WORKS.md](WHY-IT-WORKS.md) |
+| Check the lift isn't model-specific (cross-model) | [CROSS-MODEL.md](../evals/results/2026-07-22/CROSS-MODEL.md) |
 | Run the evals myself | [`evals/README.md`](../evals/README.md) |
 | See the SOTA-vs-competitor benchmark | [COMPETITOR-BENCHMARK.md](../evals/results/2026-07-13/COMPETITOR-BENCHMARK.md) |
 | Read a shareable write-up of the key finding | [writeups/completeness-blind-spot.md](writeups/completeness-blind-spot.md) |

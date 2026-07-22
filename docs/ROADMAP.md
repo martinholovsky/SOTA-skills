@@ -4,7 +4,41 @@ Priorities set by the **2026-07-10 audit**
 ([AUDIT-2026-07-10.md](AUDIT-2026-07-10.md)). Ordered; revisit after each
 release. The 2026-07-01 cycle is fully executed and kept below as history.
 
-## Open tasks — next-session pick-up *(as of 2026-07-16)*
+## Open tasks — next-session pick-up *(as of 2026-07-22)*
+
+**Current state (2026-07-22, after v1.19.0).** The foundation is de-risked and the
+release cadence caught up: **v1.17.0 → v1.19.0** shipped across 2026-07-20…22.
+Landed this stretch — silent-control `rules/10` (measured **+0.00**, the +0.07 and
+the taxonomy-anchoring signal both retracted as noise), adversarial verification and
+decision-ledger review in AUDIT mode, the gap-reporting loop, the drifted
+`BUILD_WORKFLOW` mirror found and pinned (`ROUTER_BUILD_SHA`), the eval **scoring
+functions given mutation-tests in CI**, negative controls grown 8→20 (over-flagging
+resolved as noise), the README re-led on the proven lift + an architecture
+infographic, and — the headline — **cross-model replication: the +0.39 completeness
+lift is not sonnet-specific** (`openai/gpt-5.1` shows **+0.44**).
+
+**Genuinely open, ordered by value:**
+1. **Distribution / adoption** — the real bottleneck. ~24 organic clones/day vs **7
+   stars, 0 watchers, 1 issue ever**; the gap-reporting loop has produced **0 reports**
+   at 3 days (too early to judge; cut if still nil in a few weeks). Publish the
+   salience write-up + the infographic (LinkedIn is the measured top referrer). A
+   **people problem, not a measurement one** — the highest-leverage lever left.
+2. **Agentic large-repo audit** — the *only* design that could move AUDIT off +0.00
+   (all four single-prompt audit instruments saturate). Needs a new tool-using harness
+   + a large ground-truth-defect fixture + two-axis (recall × efficiency) scoring;
+   cost band **$15–60**, deferred by the user until later.
+3. **Cheap incremental confidence** (~$3 within current credit): a 2nd cross-family
+   BUILD model (gemini-2.5-pro) → "holds across three families"; cross-model freshness
+   + routing (both still single-build-model).
+4. **As-deployed competitor comparison** (~$8) and competitor domains beyond the five.
+5. **Multi-turn amplification at scale** — needs much larger intervening context than
+   the moderate-scale decay run.
+6. **First 6-month accuracy sweep ~Jan 2027** (`LAST-VERIFIED` 2026-07-08).
+
+Credit ~**$8.79** (verify via the OpenRouter credits API, never assume). The dated
+per-cycle record below is the history; this block is the live picture.
+
+---
 
 **v1.16.0 released** (2026-07-16, PR #115, tag `v1.16.0`) — rolled up the big
 post-v1.15.0 batch (PRs #88–#114). Executed across it: multi-sample tightening
@@ -55,11 +89,12 @@ The +0.07 was small-sample noise (the 15-case with-arm sat at 0.99–1.00 — no
 headroom); it is **retracted** in `RESULTS.md` and the writeup. Silent-control
 detection therefore joins audit / cross-file audit / desc-routing as a **+0.00**
 dimension. rules/10 is kept on gap-analysis grounds with **no efficacy claim**.
-Open follow-ups: (a) **DONE 2026-07-20 — the `novel` subgroup was grown 6 → 26 and the taxonomy-anchoring hypothesis is RETIRED**: the gap collapsed from 1.00 vs 0.83 (n=6) to **0.96 vs 0.92 (n=26) — one case, inside run spread**, so the library's enumerative content pattern is *not* shown to reduce generalization to unlisted mechanisms. Overall lift reproduced at **+0.00** on the 69-case set. One thing to watch if the negative set grows: the ablated arm scored 1.00 on the 8 loud-control negatives vs 0.75 for both other arms, hinting mildly at over-flagging rather than anchoring (2 of 8 — not a finding). (b) the **agentic** design remains the only one that can measure what the file is for; (c) cross-model replication.
-extension mismatch, env-filter mismatch, unawaited async assertion) — deliberately
-**not** written into the rule, since that is fitting guidance to the test set.
+Open follow-ups: (a) **DONE 2026-07-20 — the `novel` subgroup was grown 6 → 26 and the taxonomy-anchoring hypothesis is RETIRED**: the gap collapsed from 1.00 vs 0.83 (n=6) to **0.96 vs 0.92 (n=26) — one case, inside run spread**, so the library's enumerative content pattern is *not* shown to reduce generalization to unlisted mechanisms. Overall lift reproduced at **+0.00** on the 69-case set. One thing to watch if the negative set grows: the ablated arm scored 1.00 on the 8 loud-control negatives vs 0.75 for both other arms, hinting mildly at over-flagging rather than anchoring (2 of 8 — not a finding). (b) the **agentic** design remains the only one that can measure what the file is for; (c) cross-model replication — **DONE 2026-07-22** (gpt-5.1, see the cross-model
+entry below). Note kept from that work: the four cases that defeat every arm (build-tag
+no-op, glob extension mismatch, env-filter mismatch, unawaited async assertion) were
+deliberately **not** written into the rule, since that is fitting guidance to the test set.
 
-**Now open, ordered by value:**
+**Cycle detail (2026-07-20…22) — done items, kept as the record:**
 - **DONE 2026-07-22 — cross-model replication of the BUILD lift.** Every completeness
   number had used one build model. Re-run with `openai/gpt-5.1` (different family)
   driving BUILD, same judge/rubrics/tasks: **0.44 → 0.88, +0.44** (every case positive).
