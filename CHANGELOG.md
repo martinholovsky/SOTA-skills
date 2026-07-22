@@ -5,7 +5,18 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.19.0] - 2026-07-22
+
+The **de-risk-the-foundation** release. The flagship BUILD lift is now shown to hold
+across model families, the eval harness that produces every published number finally
+has tests, the last two open eval signals resolved as noise, and the README leads with
+what's proven instead of what's voluminous. No skill added (41 unchanged): evals,
+harness, and positioning.
+
+**Headline:** the completeness lift (**+0.39**, `0.59 → 0.98`) is **not sonnet-specific**
+— a different-family frontier model (`openai/gpt-5.1`) shows **+0.44** on the same tasks,
+the single largest untested assumption in the evidence base, now discharged for the
+flagship dimension.
 
 ### Changed
 
@@ -1020,6 +1031,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.19.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.0
 [1.18.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.18.0
 [1.17.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.17.0
 [1.16.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.16.0
