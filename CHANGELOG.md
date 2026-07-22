@@ -118,6 +118,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   plus one real self-audit — **not by a measured lift**. The measured lift lives
   entirely in BUILD (completeness +0.39, freshness +0.53).
 
+### Changed
+
+- **README hero re-led with the measured lift and the *loop*, not the volume.** The
+  opening had led with "41 skills (296 files, ~60k lines)" — which reads as exactly
+  the prompt-dump this library outperforms. It now opens with the proven result
+  (best-practice coverage **~59% → ~98%, +0.39**, from a bare "build X" prompt, linked
+  to the scoreboard) and the one-line mechanism that differentiates it — *a loop, not a
+  prompt dump: route lean, re-state every turn, re-check last*. The volume figure moves
+  to a supporting "under the hood" line (kept intact for invariant 6). A distribution
+  move, not a content one: ~500 unique cloners/14 days were converting to 7 stars, and
+  the hero was selling the wrong thing.
+
 ## [1.18.0] - 2026-07-21
 
 The **learning-from-use** release. Ships the library's first path for hearing from its
