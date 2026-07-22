@@ -66,7 +66,7 @@ near-zero variance while the unguided arm both scores lower and wobbles.**
 Completeness holds at **0.59 → 0.98 (+0.39)**, a two-run mean with the with-arm at
 ±0.004 between runs (re-verified 2026-07-20/21 against the workflow that actually
 *ships*, after the eval's `BUILD_WORKFLOW` mirror was found drifted; see
-[MIRROR-VERIFICATION](../evals/results/2026-07-20/MIRROR-VERIFICATION.md)); routing at **0.90 → 1.00 (+0.10)**,
+[MIRROR-VERIFICATION](../evals/results/2026-07-20/MIRROR-VERIFICATION.md)); and it is **not sonnet-specific — a different-family frontier model (`openai/gpt-5.1`) shows +0.44 on the same tasks**, [CROSS-MODEL](../evals/results/2026-07-22/CROSS-MODEL.md)); routing at **0.90 → 1.00 (+0.10)**,
 with-arm ±0.00; freshness at **0.44 → 0.97 (+0.53)**, with-arm ±0.00. The
 library's contribution isn't a lucky sample — it removes the unguided model's
 case-by-case unreliability ([multi-sample writeup](../evals/results/2026-07-13/MULTI-SAMPLE.md)).

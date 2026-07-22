@@ -118,6 +118,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   plus one real self-audit — **not by a measured lift**. The measured lift lives
   entirely in BUILD (completeness +0.39, freshness +0.53).
 
+### Added
+
+- **Cross-model replication of the flagship BUILD lift — it is not sonnet-specific.**
+  Every completeness number this project had published used one build model
+  (`claude-sonnet-4.6`), the single largest unhedged assumption in the evidence base.
+  Re-running the completeness eval with a **different-family frontier model**,
+  `openai/gpt-5.1`, driving BUILD — same blind judge (`opus-4.8`), same rubrics, same 7
+  tasks — gives **0.44 → 0.88, lift +0.44** (every case positive, +0.29 to +0.55),
+  against sonnet's **0.59 → 0.98, +0.39**. The lift generalizes and is *larger where the
+  baseline is lower* (gpt-5.1's unguided arm is 0.44 vs sonnet's 0.59) — the same "lift
+  tracks incompleteness" mechanism the breadth study found across domains, now
+  reproduced across models. The with-arm ceiling is lower (0.88 vs 0.98): the library
+  takes gpt-5.1 to *very good*, not *near-perfect*. The blind judge shares a family with
+  sonnet but not gpt-5.1, so +0.44 is a conservative floor. Two families is not
+  "model-agnostic", but the single-model assumption is discharged for the flagship
+  dimension. Cost $1.87. Writeup:
+  [`evals/results/2026-07-22/CROSS-MODEL.md`](evals/results/2026-07-22/CROSS-MODEL.md);
+  `RESULTS.md` + `docs/WHY-IT-WORKS.md` updated.
+
 ### Changed
 
 - **README hero re-led with the measured lift and the *loop*, not the volume.** The
