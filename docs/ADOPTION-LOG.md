@@ -24,7 +24,9 @@ lessons-log — its own best structural idea, applied to ourselves.
 - **Landed-in pointer, not a promise.** An `adopted` entry names the concrete
   change (rule file + section, or script + check) and the release it shipped in.
   This is the commit-hash-on-apply idea from the source vault, expressed as our
-  version + PR rather than a bare hash.
+  version + PR rather than a bare hash. Adoptions land between releases, so write
+  `unreleased` when the version isn't known yet — the release cut greps for that
+  word and stamps it ([RELEASING.md](../RELEASING.md) §1).
 - **Convergent ≠ adopted.** When an external repo independently arrives at
   something we already do, record it as `rejected: already ours` — it is
   validation, not a change. Do not manufacture a diff to "adopt" it.
