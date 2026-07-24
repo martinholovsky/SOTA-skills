@@ -37,6 +37,18 @@ Rules that follow from how models attend and how caches key (§5):
 - **One source of truth per rule.** Contradictions between system prompt,
   few-shots, and templates produce nondeterministic obedience. When editing,
   search for the old rule everywhere — including the examples.
+- **Self-contained prompt: inline what the model must obey; never point it at
+  a file it may not have.** A prompt that says *"use the schema in `config.py`"*
+  or *"follow the MISP format from the other doc"* works only when that file
+  happens to be in context. When it is not — a different entrypoint, a trimmed
+  context, a fresh session — the model does not error; it **fabricates** a
+  plausible substitute (invented field names, wrong enum arms, a hallucinated
+  format) and the output looks right. A cross-reference to out-of-context
+  material silently degrades to hallucination. Inline every schema, format,
+  enum, and hard rule the prompt depends on (or assemble it in code before the
+  call). This is the *opposite* of the on-demand file loading a coding agent
+  does from a router — the model executing a prompt has no loader and cannot
+  fetch what you name. (Adopted 2026-07-24; see docs/ADOPTION-LOG.md.)
 - **Don't prompt what you can enforce in code.** Format → schema (§6).
   Authorization → code (sota-code-security rules/08). Budgets → harness
   (rules/04). Prompts are steering, never the enforcement boundary.
@@ -221,6 +233,9 @@ category = data.get("category", "other")                    # silently launders 
       interpolated into the prefix; per-request content injected late.
 - [ ] Critical instructions placed at the edges of long contexts; no
       contradictions across system prompt / few-shots / templates.
+- [ ] Prompt is self-contained: every schema/format/enum/rule it depends on is
+      inlined or code-assembled, not referenced by pointing at a file that may
+      not be in context (which degrades silently to fabrication).
 - [ ] Context assembled under explicit per-category token budgets; provider
       token counter used; truncation explicit, boundary-aware, surfaced.
 - [ ] Few-shots consistent with current instructions, demonstrate boundary

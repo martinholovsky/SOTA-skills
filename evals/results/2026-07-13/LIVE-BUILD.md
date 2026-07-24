@@ -33,7 +33,7 @@ reset-flow control (CSPRNG token, hash-at-rest, TTL, single-use, uniform
 anti-enumeration response, rate limit, argon2, no-token-logging) and left the one
 *cross-cutting* item — invalidate other sessions on credential change — as a stub.
 That is the finite-constraint-budget / salience effect
-([WHY-COMPLETENESS-RESIDUAL.md](../../docs/WHY-COMPLETENESS-RESIDUAL.md)), not a
+([WHY-COMPLETENESS-RESIDUAL.md](../../../docs/WHY-COMPLETENESS-RESIDUAL.md)), not a
 coverage gap: the concern was in scope and the agent even scaffolded for it.
 
 ## Setup

@@ -19,9 +19,16 @@
 #   7. Router completeness: every skill appears in the router's routing table
 #      AND its library map (skills/sota/SKILL.md), and every map entry names a
 #      real skill (catches the map-drift the 2026-07-10 audit found).
+#   8. Internal links resolve: every relative Markdown link to a *.md target
+#      (in any tracked *.md) points at a file that exists — catches doc/README/
+#      INDEX/CHANGELOG link rot when a file is moved or renamed. Scope is *.md
+#      targets only: non-.md relative links overlap prose/code fragments that
+#      match the [text](x) shape (e.g. type annotations) and false-positive.
+#      (Idea adopted from the training-knowledge-vault vault-doctor, 2026-07-24;
+#      see docs/ADOPTION-LOG.md.)
 #
-# Portable to macOS bash 3.2 (no mapfile/associative arrays). Check 4 needs
-# python3 for correct Unicode character counting; it is skipped with a warning
+# Portable to macOS bash 3.2 (no mapfile/associative arrays). Checks 4 and 8 need
+# python3 (Unicode char counting; link parsing); they are skipped with a warning
 # if python3 is absent locally (CI runs on a runner that always has it).
 # Check 5's tag comparison is skipped with a note when no v* tags are visible
 # (e.g. a shallow CI checkout without tags).
@@ -41,7 +48,7 @@ note() { printf '    %s\n' "$1"; }
 # CHANGELOG, docs/) is human/agent-facing prose, not loaded as a skill, so it is
 # intentionally uncapped (decided 2026-07-15) — navigability there comes from a
 # table of contents and docs/INDEX.md, not a line ceiling.
-echo "[1/7] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
+echo "[1/8] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
 over=0
 while IFS= read -r f; do
   [ -f "$f" ] || { note "SKIPPED (tracked but missing from worktree): $f"; continue; }
@@ -55,7 +62,7 @@ done < <(git ls-files 'skills/*/*.md' 'skills/*/rules/*.md')
 if [ "$over" -eq 0 ]; then echo "    ok"; else fail=1; fi
 
 # --- 2. Audit checklist ends every rules file ------------------------------
-echo "[2/7] Every skills/*/rules/*.md ends with an '## Audit checklist'"
+echo "[2/8] Every skills/*/rules/*.md ends with an '## Audit checklist'"
 missing=0
 while IFS= read -r f; do
   [ -f "$f" ] || { note "SKIPPED (tracked but missing from worktree): $f"; continue; }
@@ -83,7 +90,7 @@ if [ "$missing" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # .denylist.local (git-ignored, one ERE per line, '#' comments). When neither
 # exists (e.g. an external fork's PR), only the generic phrases are checked —
 # the maintainer's pre-commit hook and this repo's CI carry the full list.
-echo "[3/7] No internal-name leaks"
+echo "[3/8] No internal-name leaks"
 DENY='the user runs|the user operates'
 if [ -n "${SOTA_DENYLIST:-}" ]; then
   DENY="$DENY|$SOTA_DENYLIST"
@@ -119,7 +126,7 @@ fi
 # Code, Codex, ...) skip any skill that exceeds it. Count Unicode characters
 # (descriptions use em-dashes: 1 char, 3 bytes) via python3, parsing both
 # folded block scalars (`>-`) and plain single-line descriptions.
-echo "[4/7] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
+echo "[4/8] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
 if command -v python3 >/dev/null 2>&1; then
   if desc_out=$(python3 - "$MAX_DESC" <<'PY'
 import sys, glob, re
@@ -173,7 +180,7 @@ fi
 # One version, four places: VERSION, plugin.json, the CHANGELOG's top entry,
 # and (after the release lands) the newest v* tag. Drift here shipped a main
 # briefly claiming 1.8.0 with 1.9.0 content (2026-07-03) — hence a hard check.
-echo "[5/7] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
+echo "[5/8] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
 v5=0
 ver=$(tr -d '[:space:]' < VERSION)
 # Strict X.Y.Z: rejects interior malformations (1..2, 1.2, 1.2.3.4) the old
@@ -207,7 +214,7 @@ if [ "$v5" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # rot on surfaces nobody recounts (the social preview said "30 skills" for
 # three releases). Recount from the tree and compare every tracked surface;
 # RELEASING.md lists the same surfaces for manual release edits.
-echo "[6/7] Count-bearing surfaces match the tree"
+echo "[6/8] Count-bearing surfaces match the tree"
 v6=0
 ck() { # ck <found> <expected> <surface>
   [ "$1" = "$2" ] || { note "$3: says '${1:-<not found>}', tree says '$2'"; v6=1; }
@@ -253,7 +260,7 @@ if [ "$v6" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # library-map entry must name a real skill dir. Catches the drift the
 # 2026-07-10 audit found: sota-confidential-computing was added to the table
 # but missing from the map for a full release.
-echo "[7/7] Router lists every skill (routing table + library map)"
+echo "[7/8] Router lists every skill (routing table + library map)"
 v7=0
 router=skills/sota/SKILL.md
 bt='`'
@@ -266,6 +273,57 @@ while IFS= read -r name; do
   [ -d "skills/$name" ] || { note "library map names a non-existent skill: $name"; v7=1; }
 done < <(grep -oE '\*\*sota-[a-z-]+/rules\*\*' "$router" | sed 's/\*\*//g; s#/rules##')
 if [ "$v7" -eq 0 ]; then echo "    ok"; else fail=1; fi
+
+# --- 8. Internal Markdown links resolve -----------------------------------
+# Every relative Markdown link whose target is a *.md file must resolve to a
+# file that exists, in ANY tracked *.md (skills, README, docs, CHANGELOG,
+# evals). Catches the link rot a rename/move leaves behind — the class the
+# 2026-07-24 dry run found already live in evals/results (../../docs vs the
+# real ../../../docs). Scoped to *.md targets on purpose: broadening to every
+# relative link flags prose/code fragments that match the [text](x) shape
+# (type annotations like `(x: T)`, `(std|default)`) — a false-positive source
+# with no rot-catching upside. Fenced AND inline code are stripped so link-shaped
+# examples (in ``` fences or `backticks`) are not scanned. Idea from vault-doctor
+# (training-knowledge-vault); see docs/ADOPTION-LOG.md.
+echo "[8/8] Internal Markdown links resolve (*.md targets)"
+if command -v python3 >/dev/null 2>&1; then
+  if link_out=$(python3 - <<'PY'
+import os, re, sys
+files = [l for l in os.popen("git ls-files '*.md'").read().splitlines() if l.strip()]
+LINK = re.compile(r'(?<!\!)\[[^\]]*\]\(([^)]+)\)')   # [text](target); (?<!!) skips images
+bad = 0
+for f in files:
+    try:
+        text = open(f, encoding='utf-8').read()
+    except OSError:
+        continue
+    # drop fenced AND inline code so link-shaped *examples* (e.g. this file's own
+    # `[text](file.md)`) are not mistaken for real links
+    text = re.sub(r'```.*?```', '', text, flags=re.S)
+    text = re.sub(r'~~~.*?~~~', '', text, flags=re.S)
+    text = re.sub(r'`[^`\n]*`', '', text)
+    for m in LINK.finditer(text):
+        raw = m.group(1).strip()
+        if raw.startswith(('http://', 'https://', 'mailto:', 'tel:', '#', '<')):
+            continue                                   # external / anchor-only / autolink
+        tgt = raw.split('#', 1)[0].split('?', 1)[0].strip()
+        if not tgt.endswith('.md'):
+            continue                                   # *.md targets only (see comment)
+        target = os.path.normpath(os.path.join(os.path.dirname(f), tgt))
+        if not os.path.exists(target):
+            print(f"BROKEN LINK  {f}: ({raw})")
+            bad = 1
+sys.exit(1 if bad else 0)
+PY
+  ); then
+    echo "    ok"
+  else
+    printf '%s\n' "$link_out" | sed 's/^/    /'
+    fail=1
+  fi
+else
+  note "SKIPPED: python3 not found (CI enforces this check)"
+fi
 
 # --- Result ---------------------------------------------------------------
 echo
