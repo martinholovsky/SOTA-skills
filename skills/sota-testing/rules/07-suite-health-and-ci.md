@@ -79,7 +79,18 @@ GOOD: diff-coverage: changed lines >= 85% branch coverage   AND
       (stored number auto-raises; lowering it requires a reviewed commit)
 ```
 - Exclude generated/vendored code from measurement; measuring it inflates
-  the number and buries the signal.
+  the number and buries the signal. Same for the environment-bound shell that
+  unit tests cannot drive (GUI, device, process-spawn adapters) — but the fix
+  there is architectural: make that boundary explicit and keep it thin
+  (`sota-architecture` rules/02 §14), then measure the core.
+- **Rank the gaps by risk, not by size of deficit.** Coverage alone cannot say
+  where the next test belongs. Cross it with complexity: a module that is both
+  **branch-dense and thinly covered** is the highest-value target, and the
+  composite (complexity weighted by how little of it is verified) ranks work
+  better than either number alone. A 200-branch payment router at 50% is a
+  finding; a 3-line getter at 0% is not. Use the ranking to aim mutation runs
+  (`rules/06` §6.3) and review attention — as a *pointer*, never as a gate,
+  or it becomes the same Goodhart target as a coverage threshold.
 - Reporting coverage in PRs: show the uncovered lines, not just the delta
   percentage — reviewers act on lines, not numbers.
 
@@ -187,6 +198,15 @@ A red main/merge-queue is a site incident for the team's delivery:
       trivial code) → Medium; ratchet/diff-coverage instead → good.
 - [ ] Is generated/vendored code excluded from coverage? Check coverage
       config excludes vs `*_pb2.py|.pb.go|generated|vendor` → Low.
+- [ ] Does the measured scope match the testable core, or does an
+      environment-bound shell (UI, device, process-spawn adapters) sit in the
+      denominator? Whole-tree measurement with an untestable region →
+      Low–Medium (the number is noise; fix the boundary, `sota-architecture`
+      rules/02 §14).
+- [ ] Are coverage gaps prioritized against complexity (branch-dense +
+      thinly-covered first), or is the backlog being worked by whatever moves
+      the percentage fastest (trivial modules) → Medium (effort aimed at the
+      metric, not the risk).
 - [ ] Pipeline timing: PR wall-clock now vs 6 months ago (CI history). >15
       min and growing with no sharding/selection plan → Medium.
 - [ ] Slowest tests known? Runner timing reports enabled and reviewed? No

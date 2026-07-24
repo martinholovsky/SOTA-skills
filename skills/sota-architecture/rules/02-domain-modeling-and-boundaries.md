@@ -221,6 +221,48 @@ responsibility and its key invariants. If the sentence needs "and", consider
 splitting; if two contexts' sentences keep mentioning each other, consider
 merging or formalizing the seam (customer/supplier with a contract).
 
+## 14. The testability boundary (humble object)
+
+**Rule:** Every system has a shell that automated tests cannot meaningfully
+drive — GUI and rendering, external devices, real clocks and networks, process
+spawning, anything that opens a window, needs a display, or hangs without one.
+Draw that boundary **explicitly** and keep the shell **thin**: all decisions
+move inward to the testable core, and the shell degenerates into a translator
+with no branches worth asserting (the "humble object"). This is §4's adapter
+rule stated as a testability constraint rather than a dependency one.
+
+**Rule:** No business `if` in the shell. A conditional, loop, or calculation in
+a UI callback, device driver wrapper, or CLI entrypoint is logic that has
+escaped the core — move it in and leave a call behind.
+
+**Rule:** Make the boundary **machine-readable** — a package/module split the
+build understands, not a convention in someone's head. Coverage, mutation, and
+complexity tooling then measure the core only. Measuring the untestable shell
+distorts every number in both directions and buries the signal (see
+`sota-testing` rules/07 §7.2 and rules/06 §6.3).
+
+**Rationale:** this is the precondition for any test metric meaning anything.
+"62% coverage" over a codebase where a third is an untestable UI shell is not
+a number, it's noise; the same 62% over an explicitly bounded core is a signal
+you can act on. Teams that skip this step end up either gaming the metric or
+disbelieving it — and disbelieving it is the more expensive outcome.
+
+```text
+BAD:  render_invoice_row(inv):          # in the view layer
+        if inv.total > credit_limit and not inv.customer.is_exempt:
+          badge = "OVER LIMIT"          # a business rule, untestable without a UI
+
+GOOD: core:  invoice.limit_status(customer) -> OverLimit | Ok   # unit-tested
+      shell: render_invoice_row(inv) -> badge_for(inv.limit_status(cust))
+             # no branch of its own; one smoke test proves it is wired
+```
+
+**Rule:** The shell still needs *some* verification — a small number of
+end-to-end or smoke tests that prove it is wired up (`sota-testing` rules/05),
+not unit metrics. And treat shell growth as an **architecture** finding: if the
+untestable region keeps expanding, logic is leaking outward, and no amount of
+test discipline will reach it.
+
 ## Audit checklist
 
 - Can the team produce a context map? Are seam relationship types (ACL, conformist, published language) explicit?
@@ -240,3 +282,5 @@ merging or formalizing the seam (customer/supplier with a contract).
 - Do list/dashboard reads go through dedicated read models, or do they load aggregates in bulk?
 - Do any write decisions consume read-model/projection data instead of loading the aggregate?
 - Are services/modules named after capabilities or after entities (noun-services)?
+- Is the boundary between the testable core and the environment-bound shell (GUI, device, IO, process spawn) explicit in the build, or only in convention? Does business branching live in that shell?
+- Does the shell keep growing release over release (logic leaking outward), and do coverage/mutation/complexity tools measure the core or the whole tree?

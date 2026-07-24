@@ -181,6 +181,17 @@ calculate_interest.py:41  mutated `<` -> `<=`   SURVIVED
   `calculate_interest` is a finding; ten in a logging shim are noise. Triage
   like bug reports: kill (add the missing assertion), suppress-with-reason
   (equivalent/dont-care), or accept (documented untested zone).
+- **Baseline the survivors so runs are diffable.** An absolute score is a bad
+  gate for the same reason a global coverage target is (rules/07 §7.2). Persist
+  the current survivor set as a checked-in baseline and fail CI only on *new*
+  survivors — the mutation analogue of a coverage ratchet, and what makes a
+  minutes-long scoped run gate-worthy. Two conditions keep the diff honest:
+  **pin the mutation engine version** next to the baseline (engines change their
+  operator sets between releases; a baseline compared across versions attributes
+  tool churn to your code, and re-baselining is then a deliberate step in the
+  upgrade), and **let only the tool write it** — a hand-edited baseline is a live
+  survivor marked dead, the same manufactured safety as an assertion-free test
+  (rules/02 §2.7).
 - Trend per-module mutation score on risk-critical code; a *drop* is the
   signal (new code arriving with weaker tests), the absolute number less so.
 
@@ -240,6 +251,10 @@ into the CI test suite.
 - [ ] Mutation score gamed? Tests asserting incidental internals near
       mutation-config thresholds, blanket mutant suppressions without reasons
       → High.
+- [ ] If a survivor baseline/manifest gates CI: is the mutation engine version
+      pinned beside it, and is the file tool-generated? Unpinned engine → Low
+      (diff attributes tool churn to code); hand-edited entries (check
+      `git log -p` for manual edits) → High (live survivors marked dead).
 - [ ] Approval/golden suites: do they have an owner and a retirement plan, or
       are 3-year-old approvals still the only tests on refactored code →
       Medium (frozen bugs).
