@@ -5,6 +5,45 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`sota-architecture` rules/02 §14 — the testability boundary (humble
+  object).** Every system has a shell automated tests cannot drive (GUI,
+  devices, real clocks/networks, process spawn); draw that boundary explicitly
+  in the build, keep it thin, allow it no business branching, and measure
+  coverage/mutation/complexity against the core only. Includes the corollary
+  that a *growing* shell is an architecture finding, not a testing one. Two
+  checklist items added. The library had hexagonal ports/adapters (§4) and the
+  generated/vendored coverage exclusion, but nothing connecting them — a
+  `grep` for `humble object|near IO|adapter shell|untestable` across
+  `sota-architecture` and `sota-testing` returned zero hits.
+- **`sota-testing` rules/06 §6.3 — mutation survivor baselines.** Persist the
+  survivor set and gate CI on *new* survivors (the mutation analogue of the
+  coverage ratchet) instead of an absolute score, under two conditions: the
+  mutation engine version is pinned beside the baseline (engines change
+  operator sets between releases, so an unpinned diff attributes tool churn to
+  your code), and only the tool writes the file (a hand-edited baseline is a
+  live survivor marked dead). Checklist item added.
+- **`sota-testing` rules/07 §7.2 — rank coverage gaps by complexity.** Cross
+  coverage with branch density to aim the next test and the next mutation run;
+  a branch-dense thinly-covered module outranks a 3-line getter at 0%. Stated
+  as a pointer, never a gate, so it does not become the Goodhart target that
+  §7.2 already warns coverage thresholds are. Two checklist items added, one
+  of them tying the measured scope back to the rules/02 §14 boundary.
+
+### Changed
+
+- **`docs/ADOPTION-LOG.md`** — second entry: three ideas adopted from
+  [swarm-forge](https://github.com/unclebob/swarm-forge) (read at source level
+  on `main`, `six-pack`, and `adversaries`), one recorded as `rejected:
+  contrary` (its resolve-at-latest tool policy, which also breaks its own
+  mutation baseline — none of the seven tool repos carries a tag, verified via
+  the GitHub API), and **six convergences** recorded as `rejected: already
+  ours` with the file:line that covers each. All three adoptions are reasoned,
+  **not measured** — the entry says so explicitly and forbids citing a lift.
+
 ## [1.19.1] - 2026-07-24
 
 The **adopt-what-we-verified** release: five ideas mined from an external repo
