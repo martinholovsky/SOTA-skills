@@ -42,9 +42,9 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-07-24 | training-knowledge-vault lessons-log loop | A locked, triaged, commit-tracked ledger for turning observations into curated changes | **adopted (as this file)** | `docs/ADOPTION-LOG.md` · v1.19.1 |
 | 2026-07-24 | training-knowledge-vault (structure) | Per-file `volatility`, stable `id`s, personas, prompts, sessions, model-map | **rejected: non-fit** | — |
 | 2026-07-24 | training-knowledge-vault (convergent) | `AGENTS.md` + tool adapters; nav-parity CI check; "encode the lesson as a check"; system-prompt token budgeting | **rejected: already ours** | — |
-| 2026-07-24 | [swarm-forge](https://github.com/unclebob/swarm-forge) `engineering.prompt` | Separate the testable core from the environment-bound shell; only the core participates in coverage/mutation/complexity tooling | **adopted** | `sota-architecture/rules/02` §14 · unreleased |
-| 2026-07-24 | swarm-forge `hardender.prompt` | Differential mutation against a persisted manifest — gate on new survivors, not an absolute score | **adopted** | `sota-testing/rules/06` §6.3 · unreleased |
-| 2026-07-24 | swarm-forge `crap4go`/`crap4clj` tools | Complexity × coverage composite to rank where the next test belongs | **adopted** | `sota-testing/rules/07` §7.2 · unreleased |
+| 2026-07-24 | [swarm-forge](https://github.com/unclebob/swarm-forge) `engineering.prompt` | Separate the testable core from the environment-bound shell; only the core participates in coverage/mutation/complexity tooling | **adopted** | `sota-architecture/rules/02` §14 · v1.19.2 |
+| 2026-07-24 | swarm-forge `hardender.prompt` | Differential mutation against a persisted manifest — gate on new survivors, not an absolute score | **adopted** | `sota-testing/rules/06` §6.3 · v1.19.2 |
+| 2026-07-24 | swarm-forge `crap4go`/`crap4clj` tools | Complexity × coverage composite to rank where the next test belongs | **adopted** | `sota-testing/rules/07` §7.2 · v1.19.2 |
 | 2026-07-24 | swarm-forge (convergent) | Scoped/diff mutation; mutation as a control probe; read survivors don't average; reviewer must not modify audited code; heartbeat on long runs; verify the other role ran the tool | **rejected: already ours** | — |
 | 2026-07-24 | swarm-forge `engineering.prompt` Startup Tools | Resolve every tool at latest upstream each run; never reuse cached/vendored copies | **rejected: contrary** | — |
 

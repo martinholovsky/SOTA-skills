@@ -5,7 +5,16 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.19.2] - 2026-07-24
+
+The **second intake** release: three ideas mined from
+[swarm-forge](https://github.com/unclebob/swarm-forge) — an agent-orchestration
+harness whose engineering content is deliberately thin — each verified absent
+from our tree before landing. The headline is a genuine hole it exposed: we had
+hexagonal ports/adapters and we had coverage exclusions, but nothing joining
+them into the **testability boundary** that makes any test metric interpretable.
+Six of its rules turned out to be ones we already had, recorded as convergences
+rather than manufactured diffs. No skill added (41 unchanged).
 
 ### Added
 
@@ -43,6 +52,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the GitHub API), and **six convergences** recorded as `rejected: already
   ours` with the file:line that covers each. All three adoptions are reasoned,
   **not measured** — the entry says so explicitly and forbids citing a lift.
+- **`RELEASING.md` — ADOPTION-LOG version stamping.** Adoptions land in ordinary
+  PRs between releases, so a log entry's "Landed in" cell is written before the
+  shipping version is known. `unreleased` is now the documented placeholder, and
+  the release cut stamps it: a row in the §1 version-bearing files table plus a
+  pre-tag checklist grep. Deliberately a runbook step, not a ninth invariant —
+  the marker is *correct* until the cut, so CI failing on it would be backwards.
 
 ## [1.19.1] - 2026-07-24
 
@@ -1126,6 +1141,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.19.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.2
 [1.19.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.1
 [1.19.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.0
 [1.18.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.18.0
