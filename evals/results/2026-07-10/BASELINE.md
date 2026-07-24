@@ -193,7 +193,7 @@ mentioned *and* in a pasted Audit checklist, yet dropped; **adding** the missing
 rule made it *worse* (context grew, compliance fell) while a short salient
 reminder (principle 5) fixed it. It's a documented attention effect (context
 rot / instruction-count degradation), analysed in
-[`docs/WHY-COMPLETENESS-RESIDUAL.md`](../../docs/WHY-COMPLETENESS-RESIDUAL.md).
+[`docs/WHY-COMPLETENESS-RESIDUAL.md`](../../../docs/WHY-COMPLETENESS-RESIDUAL.md).
 Principle 5 is generic library content (any endpoint: rate-limit/TLS/tests/logging),
 not the rubric — the whack-a-mole (recover X, drop Y) shows the number isn't gamed.
 
@@ -224,7 +224,7 @@ perfect), **not** 100% — one task drops a single low-salience item. This is a
 **finite-constraint-budget** attention effect, **not** a coverage gap: the item
 was mentioned and in a pasted checklist, yet dropped, and *adding* the rule made
 it worse while a short salient reminder (principle 5) fixed it (see
-[`docs/WHY-COMPLETENESS-RESIDUAL.md`](../../docs/WHY-COMPLETENESS-RESIDUAL.md)).
+[`docs/WHY-COMPLETENESS-RESIDUAL.md`](../../../docs/WHY-COMPLETENESS-RESIDUAL.md)).
 The eval isn't gamed: principle 5 is generic (not the rubric), and the
 whack-a-mole (recover X, drop Y) shows the rubric items it names aren't
 auto-satisfied. (3) Single run per arm for completeness (deterministic at

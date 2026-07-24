@@ -56,6 +56,13 @@ symlinks to it — edit only this file, never the symlinks.
    table AND its library map (both in `skills/sota/SKILL.md`); a skill added
    to one but not the other is a finding (added after the 2026-07-10 audit
    found the 41st skill missing from the map for a full release).
+8. **link rot** — every relative Markdown link to a `*.md` target (in any
+   tracked `*.md`) must resolve to a file that exists, so a moved/renamed file
+   can't leave a dead link in the README, `docs/`, CHANGELOG, or a skill.
+   Scoped to `*.md` targets (non-`.md` relative links overlap `[text](x)`-shaped
+   prose/code and false-positive); needs `python3`, skipped-with-warning if
+   absent locally, enforced in CI. Adopted 2026-07-24 from the
+   training-knowledge-vault vault-doctor — see [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md).
 
 Separately, `scripts/check-freshness.sh` (run monthly by
 `.github/workflows/freshness.yml`) tracks the root `LAST-VERIFIED` stamp —

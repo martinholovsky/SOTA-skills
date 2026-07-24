@@ -44,6 +44,7 @@ trying to do**, not by file. (Kept in sync by hand; if a link rots, open an issu
 | Full contribution conventions | [CONTRIBUTING.md](../CONTRIBUTING.md) |
 | Cut a release | [RELEASING.md](../RELEASING.md) |
 | Keep fast-moving claims accurate (sweep runbook) | [MAINTENANCE.md](MAINTENANCE.md) |
+| See which external ideas were adopted/rejected and why | [ADOPTION-LOG.md](ADOPTION-LOG.md) |
 | See what's planned / open | [ROADMAP.md](ROADMAP.md) |
 | Report bad guidance or a leaked secret | [SECURITY.md](../SECURITY.md) |
 

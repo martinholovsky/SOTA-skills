@@ -29,7 +29,7 @@ This **reproduces the single-sample headline exactly** (0.60 → 0.99/1.00, +0.3
 and adds the shape: the with-library arm is essentially deterministic even at
 temp 0.7 (6/7 cases ±0.00; only c7 varies, and only because its
 cross-session-invalidation slip toggles — the finite-constraint-budget item from
-[WHY-COMPLETENESS-RESIDUAL.md](../../docs/WHY-COMPLETENESS-RESIDUAL.md)). All the
+[WHY-COMPLETENESS-RESIDUAL.md](../../../docs/WHY-COMPLETENESS-RESIDUAL.md)). All the
 sampling variance is in the **unguided** arm (c6 ±0.08, c7 ±0.07) — an unguided
 model's completeness is a coin-flip case by case; the library removes that.
 
@@ -61,7 +61,7 @@ variance** (completeness ±0.01, routing ±0.00, freshness ±0.00) while the
 unguided arm both scores lower and wobbles. The library's contribution is not a
 lucky sample — it's the removal of the unguided model's case-by-case
 unreliability. This retires the "single-sample" caveat previously flagged in
-[WHY-IT-WORKS.md](../../docs/WHY-IT-WORKS.md) for completeness and routing.
+[WHY-IT-WORKS.md](../../../docs/WHY-IT-WORKS.md) for completeness and routing.
 
 Cost: ~$12 of OpenRouter credit (completeness 3× dominates; routing negligible;
 freshness reused). Estimated ~$11 up front from recorded token sizes + live

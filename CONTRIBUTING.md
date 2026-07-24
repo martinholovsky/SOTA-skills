@@ -94,7 +94,9 @@ are marked "needs verification", never asserted.
 
 `scripts/check-invariants.sh` runs in pre-commit and CI and fails the build on:
 
-1. any tracked `*.md` over **500 lines**;
+1. any **skill** Markdown (`skills/*/SKILL.md` or `skills/*/rules/*.md`) over
+   **500 lines** — the cap is skill-files-only (README/CHANGELOG/`docs/` are
+   uncapped prose, decided 2026-07-15);
 2. any `skills/*/rules/*.md` that doesn't **end** with an
    **`## Audit checklist`** (it must be the file's last `## ` heading);
 3. any **internal/private reference** leaking into tracked files (the private
@@ -116,6 +118,12 @@ are marked "needs verification", never asserted.
 7. **router drift**: every domain skill must appear in the router's routing
    table AND its library map (both in `skills/sota/SKILL.md`) — adding a skill
    means updating both.
+8. **link rot**: every relative Markdown link to a `*.md` target (in any
+   tracked `*.md`) must resolve — a moved or renamed file can't leave a dead
+   link behind. Scoped to `*.md` targets to avoid false-positives on
+   `[text](x)`-shaped prose/code; needs `python3` (skipped-with-warning if
+   absent locally, enforced in CI). Adopted from the training-knowledge-vault
+   vault-doctor (see [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md)).
 
 Secrets are scanned separately by **gitleaks** (config in `.gitleaks.toml`);
 CI scans the full git history, the pre-commit hook scans each commit.

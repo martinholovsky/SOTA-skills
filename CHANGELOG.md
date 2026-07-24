@@ -5,10 +5,51 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.19.1] - 2026-07-24
+
+The **adopt-what-we-verified** release: five ideas mined from an external repo
+([training-knowledge-vault](https://github.com/Eolas-bith/training-knowledge-vault)),
+each validated against our own tree before landing, three adopted and two
+recorded as already-covered. No skill added (41 unchanged). New
+[`docs/ADOPTION-LOG.md`](docs/ADOPTION-LOG.md) is the audit trail.
+
+### Added
+
+- **Invariant 8 — internal Markdown link resolution.**
+  `scripts/check-invariants.sh` now fails the build on any relative Markdown link
+  to a `*.md` target that doesn't resolve, so a moved/renamed file can't leave a
+  dead link in the README, `docs/`, CHANGELOG, or a skill. Scoped to `*.md`
+  targets (broadening false-positives on `[text](x)`-shaped prose/code). The
+  dry-run that justified it immediately caught **5 real broken links** in
+  `evals/results/**` (`../../docs/…` for a path that needs `../../../docs/…`) —
+  fixed in this release. Idea from the source repo's `vault-doctor.py`.
+- **`sota-llm-engineering` rules/02 — self-contained prompts.** A new rule in §1:
+  a prompt that references a schema/format in a file the model may not have
+  loaded degrades *silently to fabrication*; inline every schema/enum/rule the
+  prompt depends on. Scoped so it does not contradict a coding agent's on-demand
+  rule loading. Checklist item added.
+- **`sota-code-security` rules/10 §2.12 — instruction standing in for a control.**
+  A "do not surface / do not reveal / ignore instructions below" instruction over
+  data or permissions in the same context is a silent control: attention leakage
+  shapes output without quotation, and prompt injection overrides it — enforce
+  structurally/in code (cross-refs rules/08 §1–2, rules/07 §2). Checklist item added.
+- **`docs/ADOPTION-LOG.md`** — an external-idea intake ledger (adopted/rejected/
+  deferred/superseded, observation-before-diagnosis, landed-in pointers),
+  itself the fifth idea borrowed from the source repo's lessons-log discipline.
+  Linked from `docs/INDEX.md`.
+
+### Fixed
+
+- Five broken relative links in `evals/results/2026-07-10/` and
+  `evals/results/2026-07-13/` (`../../docs/…` → `../../../docs/…`), surfaced by
+  the new invariant 8.
 
 ### Changed
 
+- Invariant docs updated for the new check (`AGENTS.md`, `CONTRIBUTING.md`,
+  `docs/WHY-IT-WORKS.md`: "seven" → "eight"). Corrected two stale statements of
+  the 500-line cap that still said "any tracked `*.md`" — it has been
+  skill-files-only since 2026-07-15.
 - **Roadmap refreshed to the live state and a broken sentence repaired.** The
   "Open tasks" stamp was stale (*as of 2026-07-16* — three releases and a week
   behind); replaced with a **2026-07-22** current-state block that summarizes the
@@ -1046,6 +1087,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.19.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.1
 [1.19.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.0
 [1.18.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.18.0
 [1.17.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.17.0
