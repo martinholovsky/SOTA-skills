@@ -11,6 +11,7 @@ lands through a PR — `main` is protected for everyone, including admins (see
 |---|---|
 | `VERSION` | the new semver, single line |
 | `.claude-plugin/plugin.json` | `"version"`; also the skill/domain counts in `"description"` if they changed |
+| `docs/ADOPTION-LOG.md` | any `adopted` row whose **Landed in** cell still says `unreleased` gets the shipping version — `grep -n '· unreleased' docs/ADOPTION-LOG.md`, replace each with `vX.Y.Z`. Adoptions land in ordinary PRs between releases, so the version isn't knowable when the entry is written; nothing in CI catches a stale marker (it's prose), which is exactly why it's on this list |
 | `CHANGELOG.md` | new `## [X.Y.Z] - YYYY-MM-DD` section at the top **and** a `[X.Y.Z]: …/releases/tag/vX.Y.Z` link ref at the bottom (top entry = current version — no `[Unreleased]` left behind). CHANGELOG is **no longer line-capped** (the 500-line invariant is skill-files-only since 2026-07-15), so archiving old releases is now **optional hygiene** for navigability, not forced: when the root gets long, you *may* move the oldest sections **and their link refs** into the newest `docs/CHANGELOG-archive*.md` (headings and `[X.Y.Z]:` refs must stay in the same file) |
 
 ## 2. Count-bearing surfaces (when the skill count changes)
@@ -72,6 +73,9 @@ skills.
 - [ ] `./scripts/check-invariants.sh` passes
 - [ ] `VERSION` == `plugin.json` version == the tag you're about to push
 - [ ] CHANGELOG top entry is the new version, dated, with its link ref
+- [ ] `grep -n '· unreleased' docs/ADOPTION-LOG.md` returns nothing — every
+      adopted row carries the version it shipped in (match the `· ` separator,
+      not the bare word: the file's own conventions section says "unreleased")
 - [ ] If the skill count changed: README badge/hero, router body +
       description, plugin/marketplace.json show the recounted numbers
       (the social-preview pill + README alt are "N+" floors — touch them
