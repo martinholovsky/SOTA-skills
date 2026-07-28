@@ -5,6 +5,34 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **Docs refreshed to the post-v1.19.6 state**, and stale claims corrected:
+  - `docs/MAINTENANCE.md` said CI enforces **7** invariants — it is **9** since
+    v1.19.5. The only stale count left in the tree (`grep -rn "[0-9] invariants"`
+    over docs/README/AGENTS/CONTRIBUTING/evals now returns nothing wrong).
+  - `docs/ROADMAP.md` "Open tasks" was stamped **2026-07-22** and predated six
+    releases. Re-stamped 2026-07-28 with what v1.19.1–v1.19.6 actually shipped,
+    the day-zero field-validation result, and six new open items (see below).
+    Adoption signals re-checked live via `gh` rather than restated: **8 stars, 0
+    watchers, 2 forks, 1 issue ever** — and **0 gap reports in 6 days**.
+  - The roadmap's OpenRouter credit figure is now marked *as of 2026-07-22, not
+    re-checked* instead of reading as current — no paid eval ran this cycle.
+  - `RELEASING.md` now says to consolidate duplicate `[Unreleased]` sections
+    before a cut, and that invariant 9 fails the build on them.
+  - `AGENTS.md` (and so `CLAUDE.md`/`GEMINI.md`, its symlinks) gained pointers to
+    `docs/VERIFY-SETUP.md` and `docs/ADOPTION-LOG.md`, neither of which was
+    listed despite both being current working surfaces.
+
+  New open items recorded in the roadmap: no update-notification path for clone
+  installs; nothing reports which version is in use; `scripts/verify-setup.sh`
+  for the deterministic half of VERIFY-SETUP; the `gh-sota` extension considered
+  and **deferred with its reason** (gh requires a `gh-*` repo name, and its
+  update notice fires only on invocation); router headroom at **497/500**; and
+  one unverified README claim about marketplace session-start re-checks.
+
 ## [1.19.6] - 2026-07-28
 
 The **field-found** release: both changes came from watching the library be used

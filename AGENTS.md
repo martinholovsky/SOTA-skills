@@ -124,6 +124,15 @@ pre-commit hook scans each commit locally.
   substring; assert a scripted edit landed; pin anything hand-mirrored from the
   library). Read it before changing anything under `evals/` — four harness changes in
   one day silently measured nothing while still printing plausible numbers
+- [docs/VERIFY-SETUP.md](docs/VERIFY-SETUP.md) — the **read-only setup check**: a
+  paste-in prompt that reports whether the library reaches a repo, whether its
+  agent file is *true*, and whether its gates are real rather than merely
+  configured. `init-gates.sh` sets a repo up; this is what checks the result
+- [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md) — the **external-idea intake
+  ledger**: every idea evaluated from an outside repo, paper, or review with a
+  verdict and reason (adopted / rejected / deferred / superseded). A rejection
+  with its reason stops the same idea being re-litigated; a `rejected: already
+  covered` verdict must cite the file:line that covers it
 - [CONTRIBUTING.md](CONTRIBUTING.md) — full contribution guide and PR checklist
 - [RELEASING.md](RELEASING.md) — how to cut a release, including every
   version- and count-bearing surface (README, router, manifests, social
