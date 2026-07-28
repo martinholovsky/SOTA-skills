@@ -334,20 +334,51 @@ design out on day zero:
   copies that drift and spends context twice. Repo file = repo-specific only.
   The inverse is worse: repo-specific facts stranded in a personal file no
   teammate has.
-- **Forking the file per tool.** Keep one canonical `AGENTS.md` with
-  `CLAUDE.md` / `GEMINI.md` as symlinks (§7) — but know the failure mode first.
-  Git records a symlink as such, and where `core.symlinks` is false (set
-  automatically at clone time on filesystems that can't represent one) symlinks
-  are, in git's words, "checked out as small plain files that contain the link
-  text" (`git help config`) — the agent then reads the string `AGENTS.md` as the
-  whole file. If any contributor is on such a checkout, generate the duplicates
-  in CI from the canonical file and fail the build on drift instead.
+- **Forking the file per tool.** Keep one canonical `AGENTS.md` (§7) and pick
+  how the other names reach it, knowing the trade of each:
+  1. **A one-line pointer file** — `CLAUDE.md` containing
+     `See [AGENTS.md](AGENTS.md).` and nothing else. Platform-independent, no
+     build step, and it cannot silently degrade; the cost is one hop the agent
+     must follow. Observed in the wild on large cross-platform projects, and the
+     safest default.
+  2. **A symlink** — exact, but know the failure mode: git records a symlink as
+     such, and where `core.symlinks` is false (set automatically at clone time
+     on filesystems that can't represent one) symlinks are, in git's words,
+     "checked out as small plain files that contain the link text"
+     (`git help config`). The agent then reads the bare string `AGENTS.md` as
+     the entire file and follows no instructions at all — a silent failure, not
+     a visible one.
+  3. **CI-generated duplicates** from the canonical file, failing the build on
+     drift. Exact and platform-independent, at the cost of a job to maintain.
+
+  Anything else — hand-maintained copies — drifts, and the copy that goes stale
+  is the one your teammate's tool reads.
 
 **Bootstrap the invariants as checks, not prose.** Anything the repo must never
 regress — no secret in a commit, every internal link resolving, a required file
 present — is worth a hook or CI job on day zero, when it costs one file and
 passes trivially. The same check proposed at ten thousand commits arrives red
 and gets disabled.
+
+**An ambient install doesn't travel — decide per repo.** Rule libraries, agent
+skills and linters installed at user scope resolve against *your* home
+directory. A teammate's clone and a CI runner resolve nothing, so a repo that
+depends on them is one that only works on one machine. Two honest options, and
+the choice belongs in the repo's contributing docs either way:
+
+- **Solo or private-to-you** — the ambient install is enough; write down
+  nothing, and don't pretend the repo is self-contained.
+- **Shared, public, or CI-checked** — make it repo-resident: vendor or
+  project-scope the tooling (for this library, `install.sh --project .`, or
+  `--copy` to pin a snapshot rather than link to a path only you have), *or*
+  state the install step in `CONTRIBUTING.md` so a contributor can reproduce it.
+  Whichever you choose, the **gates** must be repo-resident regardless — a
+  secret scan that exists only in your shell is not a control on anyone else's
+  commit (`sota-code-security` rules/10: a control nobody else runs is a no-op
+  everywhere but your machine).
+
+A pointer file that references tooling the reader doesn't have is worse than no
+pointer: it reads as a satisfied requirement.
 
 ## Audit checklist
 
@@ -360,6 +391,7 @@ and gets disabled.
 - [ ] The agent file carries only what the agent would otherwise get wrong (exact commands, deviations, traps) — not a restatement of ambient/global rules or anything readable from the code; one canonical file, with per-tool names symlinked or CI-generated rather than forked.
 - [ ] Solved failures land in a troubleshooting playbook keyed on the literal symptom, written in the PR that fixed them; entries invalidated by a root-cause fix are deleted, and a thrice-reported symptom was fixed in code rather than re-documented.
 - [ ] The repo got `.gitignore` + secret scanning and a LICENSE before its first commit, and its must-never-regress invariants are enforced by a hook or CI job rather than described in prose.
+- [ ] Nothing the repo depends on resolves only against one contributor's home directory: gates are repo-resident, and any user-scoped tooling a shared repo assumes is either vendored/project-scoped or documented as an install step (§10).
 - [ ] README: one-sentence what, why, ≤5-minute copy-pasteable quickstart, honest badges, ownership/support pointer.
 - [ ] Every doc/dir has an owner (CODEOWNERS or equivalent); high-traffic pages have a freshness/review signal.
 - [ ] No known-stale pages kept "for reference"; deletions leave redirects/tombstones; no duplicated facts across pages.
