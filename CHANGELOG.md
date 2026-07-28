@@ -5,6 +5,29 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Invariant 9 — at most one `## [Unreleased]`, and it must be the top entry**
+  (`scripts/check-invariants.sh`), with archives allowed none. Invariant 5 reads
+  only the *first* `## [` heading, so a second `[Unreleased]` further down was
+  invisible to CI; on 2026-07-28 PRs #142 and #143 each opened one above
+  `[1.19.3]` and `main` carried both until the v1.19.4 cut caught it by hand.
+  Fence-aware (a heading quoted inside a code block doesn't count), portable to
+  bash 3.2, no `python3` needed. Documented in AGENTS.md and CONTRIBUTING.md,
+  where the contributor-facing rule is: if `[Unreleased]` exists, add to it.
+
+  Watched to fail before being trusted, on all four cases — duplicate headings,
+  a single one buried below a release, one in an archive, and one quoted inside
+  a fence (must pass). The second case exposed a defect **in the check itself**:
+  `grep -m 1` on a pipe closes it early, the upstream `printf` dies of SIGPIPE,
+  and `pipefail` + `set -e` then killed the script mid-check — it printed its
+  heading and nothing else. Fixed by reading the first heading without an
+  early-exit consumer. (Invariant 5's `grep -m 1` is safe because it reads a
+  file, not a pipe.) A guard that dies silently is the failure this repo keeps
+  writing rules about; only running it against a real break surfaced it.
+
 ## [1.19.4] - 2026-07-28
 
 The **field-testing** release. v1.19.3 wrote down what a new repo needs; this one
