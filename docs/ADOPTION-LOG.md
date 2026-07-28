@@ -54,6 +54,10 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-07-28 | claude-project-scaffold README "Design Philosophy" + context-rot rationale | Include only what the agent would get wrong without it; short agent files beat bloated ones | **rejected: already ours** | — |
 | 2026-07-28 | claude-project-scaffold `templates/adr-template.md` | Full ADR template with alternatives and consequences | **rejected: already covered** | — |
 | 2026-07-28 | claude-project-scaffold `.claude/memory/`, `commands/`, `hooks/`, `presets/`, `scaffold.sh` | Generated slash commands, lint-on-edit hook, memory index, preset engine | **rejected: runtime-bound** | — |
+| 2026-07-28 | Live agent session scaffolding [asterinas](https://github.com/asterinas/asterinas) (`aster-env.sh`) | A host-capability report: probe the machine, print per target what works and what each gap blocks | **adopted** | `sota-docs-workflow/rules/01` §6 · unreleased |
+| 2026-07-28 | Same session (`rust-post-edit.sh`, check-only by design) | Automation firing on an agent's edits must report, not rewrite — a rewrite stales the agent's own view of the file | **adopted** | `sota-docs-workflow/rules/01` §7 · unreleased |
+| 2026-07-28 | Same session — `docker`-only probe missed a running podman | Detect by capability, not by one implementation's name | **rejected: already ours** | — |
+| 2026-07-28 | Same session — `tools/format_all.sh` exits 0 while checking nothing; `AGENTS.md` pins a stale toolchain; gate proven by making it fail; bash 3.2 empty-array and `set -e` in command substitution | Four rules of ours, independently rediscovered in the wild | **rejected: already ours** | — |
 
 ## Entries
 
@@ -261,3 +265,54 @@ was already the router's BUILD step 4 and is now restated for day zero in §10.
 **Measurement status:** all four are content refinements adopted on reasoning,
 **not measured**. Do not cite a lift. None is a plausible completeness-eval
 candidate — they govern repo artifacts, not generated code.
+
+### 2026-07-28 — a live agent session on asterinas, two adoptions
+
+Source: a full Claude Code transcript of "scaffold this repo for development"
+run against a clone of <https://github.com/asterinas/asterinas> (a Rust OS
+kernel, 4304 commits), 2026-07-28. Not a repo of ideas — a *worked example*,
+which makes it a different kind of source: what it produced under real
+constraints is the observation, and the question is which parts generalise.
+
+**Adopted (2).** The session's `aster-env.sh` is a **host-capability report** —
+it probes the machine and prints, per `make` target, whether it works here and
+what each gap blocks. It exists because the repo's canonical loop is a container
+the host didn't have, so the agent repeatedly proposed `make kernel` and
+repeatedly failed. That generalises to any repo whose documented dev loop
+doesn't run on every supported host, and it is genuinely absent here: every
+`preflight` in this library is CORS, `doctor` appears nowhere, and §6 covered
+joiners rather than host deltas. Landed in `rules/01` §6 with the three
+properties that make it work — probe capabilities rather than one
+implementation's name, name what each gap blocks, and report rather than gate.
+
+The second is smaller and less obvious: the session's post-edit hook is
+**deliberately check-only**, and its header says why — a hook that reformats a
+file *after* the agent wrote it invalidates the agent's view, so the next edit
+fails or clobbers. Automation aimed at agents therefore reports and lets the
+agent apply the fix; rewriting belongs at commit time or in CI, where nothing
+holds a live view. Zero hits across the tree; landed in `rules/01` §7.
+
+**Rejected: already ours (two clusters, both worth recording).** The session
+self-corrected mid-run — it had probed for `docker` only and missed a running
+podman. That is the same class as two defects fixed in the router the same day
+(a bare `LICENSE` match missing `LICENSE-MPL`, a hardcoded
+`.pre-commit-config.yaml` missing other hook managers), but the principle is
+already stated at `sota/rules/01-audit-methodology.md` §"negative claims need
+more proof": *a narrow search and a true absence produce identical output*. Three
+instances in one day argue for **applying** it at each probe site, not for a new
+rule — so it is recorded here as a convergence, with the router fix as the
+application.
+
+Separately, the run independently rediscovered four rules of ours: an upstream
+`format_all.sh` that exits 0 while its BSD-sed extraction silently checks nothing
+(`sota-code-security` rules/10, silent control failure, found in the wild); an
+`AGENTS.md` pinning a toolchain three versions stale (`rules/01` §7, "a wrong
+command silently corrupts every agent run"); proving the new gate by injecting
+faults and watching it fail (our watch-a-guard-fail convention); and both bash
+3.2 empty-array-under-`set -u` and `set -e` not firing inside command
+substitution (`sota-shell-scripting` rules/01:126 and :48). All four are
+validation, not change — but the last is worth noting as a *routing* miss rather
+than a coverage one: the rules existed and were rediscovered by debugging.
+
+**Measurement status:** both adoptions are content refinements taken on
+reasoning, **not measured**. Do not cite a lift.

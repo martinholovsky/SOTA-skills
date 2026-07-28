@@ -58,6 +58,39 @@ trusting it as written:
   resolves only on your machine, the `--project .` / `--copy` options for a
   shared repo, and a pointer to the day-zero list.
 
+## [Unreleased]
+
+Two rules taken from a *worked example* rather than a repo of ideas: a full
+agent session scaffolding a clone of
+[asterinas](https://github.com/asterinas/asterinas) (Rust OS kernel, 4304
+commits), where the canonical dev loop is a container the host didn't have.
+
+### Added
+
+- **`sota-docs-workflow` rules/01 §6 — the host-capability report.** Where a
+  repo's documented dev loop doesn't run on every supported host, ship a small
+  executable report that probes the machine and prints, per target, whether it
+  works here and **what each gap blocks**. Its three load-bearing properties:
+  probe capabilities rather than one implementation's name (a `docker` check
+  reports "no runtime" on a machine running podman), name the consequence of
+  each gap so nobody discovers it through a ten-minute failed build, and report
+  rather than gate. Verified absent — every `preflight` in the library was CORS
+  and `doctor` appeared nowhere.
+- **`sota-docs-workflow` rules/01 §7 — automation on an agent's edits must
+  check, not rewrite.** A format-on-write hook is right for a human editor and
+  wrong for an agent: rewriting the file *after* the agent wrote it stales the
+  agent's view, so its next edit fails or clobbers the reformat. Such hooks
+  report (non-zero, with file and fix) and let the agent apply it; rewriting
+  belongs at commit time or in CI, where nothing holds a live view. Zero prior
+  hits across the tree. Two audit-checklist items added.
+
+Both adopted on reasoning, **not measured** — no lift claimed. The same session
+independently rediscovered five rules we already had (silent control failure in
+an upstream script that exits 0 while checking nothing, agent-doc decay, proving
+a gate by making it fail, and two shell-safety rules); those are recorded in
+[docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md) as convergences, including one
+noted as a *routing* miss rather than a coverage gap.
+
 ## [1.19.3] - 2026-07-28
 
 Third intake pass, against
