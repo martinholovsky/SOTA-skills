@@ -200,6 +200,20 @@ Docs are now read by agents as well as humans. Same content, two consumers.
   from language defaults, files/dirs the agent must not touch, commit/PR
   conventions, known traps. Content that doesn't: anything the agent can read
   from code, generic best practices, restated style guides.
+- **The minimal shape.** Four blocks is enough for most repos; anything past
+  them has to earn its line against the test above.
+
+  ```text
+  # <repo> — one line: what it is, who runs it
+  ## Tech stack     table, only where a wrong guess sends the agent down a wrong path
+  ## Dev commands   the exact build / test / lint / run lines, with the flags you use
+  ## Conventions    2–5 repo rules that cannot be inferred from the code
+  ## Traps          the things that look fine and aren't
+  ```
+
+  A stack table an agent could rebuild by opening `package.json` is padding. The
+  row that earns its place is the one **contradicting** the default: the test
+  runner that isn't the framework's, the port that isn't the documented one.
 - **Agent docs decay like all docs** — review them when commands change; a wrong
   test command in AGENTS.md silently corrupts every agent run.
 - **llms.txt** (llmstxt.org): root-level Markdown index of a site's docs for LLM
@@ -251,6 +265,90 @@ exactly one canonical copy — per repo or via the org default, not both. README
 LICENSE live at the repo root (GitHub surfaces them in the repo header) and are
 **not** inheritable community-health files.
 
+## §9 The troubleshooting playbook — where solved failures accrue
+
+§5's runbooks serve the on-call reader mid-incident. A **troubleshooting
+playbook** serves a different reader: a contributor or an agent who just hit an
+error on their own machine, in a test run, or in CI. It is not alert-linked and
+not severity-ranked — it is a growing index of **failures already solved once**,
+so the second encounter costs a lookup instead of a re-debug.
+
+One entry per failure, three parts, nothing else:
+
+```text
+### Symptom: <the literal error text or observable behaviour>
+**Diagnosis:** <the actual cause, stated as a fact about this repo>
+**Fix:** <exact commands, or the file to change>
+```
+
+- **Key on what the reader sees, not on what you now know.** The heading is the
+  string they will paste into a search box — the exception name, the status
+  code, the log line. "Environment misconfiguration" is unfindable by someone
+  staring at `ModuleNotFoundError`.
+- **Write it in the PR that fixes the bug**, while the cause is still known. A
+  playbook backfilled later doesn't get written.
+- **The diagnosis must be repo-specific.** "Check your dependencies" is not a
+  diagnosis; "the dev server resolves imports from `src/` only, so a module
+  added outside it resolves after a reinstall and not before" is.
+- **Delete entries the fix made impossible.** Once a class of failure is closed
+  at the root — a validation, a default, a guard — its entry is a false lead
+  and goes (§4).
+- **It is a repo artifact, not a chat log**: in-repo, linked from both the
+  README's contributing path and the agent file (§7), or neither audience finds
+  it.
+
+A symptom reported a third time is a signal to **stop writing entries** — that
+fix belongs in the code or the setup script, not the playbook.
+
+## §10 Day zero — a new repo inherits no context, however good your tooling
+
+An installed agent skills library, a personal `~/.claude/CLAUDE.md`, a house
+style guide: all of it is **ambient** — attached to a machine or an account. A
+freshly initialised repo inherits none of it, and neither does the teammate, the
+CI runner, or the agent that clones it tomorrow. Whatever the repo's correctness
+depends on has to live **in the repo**. Two questions, in this order.
+
+**1. What must exist before the first commit?** Only two things, because both
+are expensive to add later:
+
+- **`.gitignore` + secret scanning.** A credential committed in commit 1 is not
+  fixed by deleting it in commit 2 — it is in the history, and removing it costs
+  a rewrite *plus* rotating the credential (`sota-secrets-management` rules/04).
+  The pre-commit hook is cheapest while the history is one commit long.
+- **`LICENSE`.** Its absence is not neutral (§8): all rights reserved, and not
+  inheritable from an org default. Adding one later needs sign-off from everyone
+  who has contributed by then.
+
+Everything else in the §8 baseline still follows §8's rule — created when its
+trigger fires, not pre-seeded. An empty `CONTRIBUTING.md` on day zero is the
+decay problem (§4) with a head start.
+
+**2. What can only the repo tell an agent?** A general skills library knows how
+to write a Go service; it cannot know that *this* one is tested behind a flag,
+deploys from a branch that isn't the default one, or has a directory nothing may
+touch. That gap is the agent file (§7), held to §7's test. Two failure modes to
+design out on day zero:
+
+- **Restating ambient rules in the repo file.** If a personal or org-level agent
+  file already says "use conventional commits", repeating it in-repo creates two
+  copies that drift and spends context twice. Repo file = repo-specific only.
+  The inverse is worse: repo-specific facts stranded in a personal file no
+  teammate has.
+- **Forking the file per tool.** Keep one canonical `AGENTS.md` with
+  `CLAUDE.md` / `GEMINI.md` as symlinks (§7) — but know the failure mode first.
+  Git records a symlink as such, and where `core.symlinks` is false (set
+  automatically at clone time on filesystems that can't represent one) symlinks
+  are, in git's words, "checked out as small plain files that contain the link
+  text" (`git help config`) — the agent then reads the string `AGENTS.md` as the
+  whole file. If any contributor is on such a checkout, generate the duplicates
+  in CI from the canonical file and fail the build on drift instead.
+
+**Bootstrap the invariants as checks, not prose.** Anything the repo must never
+regress — no secret in a commit, every internal link resolving, a required file
+present — is worth a hook or CI job on day zero, when it costs one file and
+passes trivially. The same check proposed at ten thousand commits arrives red
+and gets disabled.
+
 ## Audit checklist
 
 - [ ] Baseline present for the repo's stage: README + LICENSE + CHANGELOG always; CONTRIBUTING/CODE_OF_CONDUCT/SECURITY/SUPPORT once public or contribution-accepting; runbooks once on-call — each with one canonical home (no duplicate copies across root/`.github`/`docs`).
@@ -259,6 +357,9 @@ LICENSE live at the repo root (GitHub surfaces them in the repo header) and are
 - [ ] Tutorials run end-to-end on a clean environment (verified recently, versions pinned).
 - [ ] Docs live in-repo, change via reviewed PRs, and behavior-changing code PRs touch docs.
 - [ ] CI checks links (lychee or equivalent) and lints docs; internal links gate PRs.
+- [ ] The agent file carries only what the agent would otherwise get wrong (exact commands, deviations, traps) — not a restatement of ambient/global rules or anything readable from the code; one canonical file, with per-tool names symlinked or CI-generated rather than forked.
+- [ ] Solved failures land in a troubleshooting playbook keyed on the literal symptom, written in the PR that fixed them; entries invalidated by a root-cause fix are deleted, and a thrice-reported symptom was fixed in code rather than re-documented.
+- [ ] The repo got `.gitignore` + secret scanning and a LICENSE before its first commit, and its must-never-regress invariants are enforced by a hook or CI job rather than described in prose.
 - [ ] README: one-sentence what, why, ≤5-minute copy-pasteable quickstart, honest badges, ownership/support pointer.
 - [ ] Every doc/dir has an owner (CODEOWNERS or equivalent); high-traffic pages have a freshness/review signal.
 - [ ] No known-stale pages kept "for reference"; deletions leave redirects/tombstones; no duplicated facts across pages.

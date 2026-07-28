@@ -47,6 +47,13 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-07-24 | swarm-forge `crap4go`/`crap4clj` tools | Complexity × coverage composite to rank where the next test belongs | **adopted** | `sota-testing/rules/07` §7.2 · v1.19.2 |
 | 2026-07-24 | swarm-forge (convergent) | Scoped/diff mutation; mutation as a control probe; read survivors don't average; reviewer must not modify audited code; heartbeat on long runs; verify the other role ran the tool | **rejected: already ours** | — |
 | 2026-07-24 | swarm-forge `engineering.prompt` Startup Tools | Resolve every tool at latest upstream each run; never reuse cached/vendored copies | **rejected: contrary** | — |
+| 2026-07-28 | [claude-project-scaffold](https://github.com/martinholovsky/claude-project-scaffold) `templates/troubleshooting.md.tmpl` | A repo-resident Symptom → Diagnosis → Fix playbook where solved dev failures accrue | **adopted** | `sota-docs-workflow/rules/01` §9 · unreleased |
+| 2026-07-28 | claude-project-scaffold `templates/CLAUDE.md.tmpl` | A minimal four-block skeleton for the agent file (stack / commands / conventions / traps) | **adopted** | `sota-docs-workflow/rules/01` §7 · unreleased |
+| 2026-07-28 | claude-project-scaffold `templates/adr-index.md.tmpl` | An ADR `index.md` status table + sequential kebab-case numbering, committed with the code | **adopted** | `sota-architecture/rules/01` §4 · unreleased |
+| 2026-07-28 | claude-project-scaffold (gap it exposed, not content it had) | A fresh repo inherits nothing from an ambient/global agent setup — bootstrap order and canonical-file mechanics | **adopted** | `sota-docs-workflow/rules/01` §10 · unreleased |
+| 2026-07-28 | claude-project-scaffold README "Design Philosophy" + context-rot rationale | Include only what the agent would get wrong without it; short agent files beat bloated ones | **rejected: already ours** | — |
+| 2026-07-28 | claude-project-scaffold `templates/adr-template.md` | Full ADR template with alternatives and consequences | **rejected: already covered** | — |
+| 2026-07-28 | claude-project-scaffold `.claude/memory/`, `commands/`, `hooks/`, `presets/`, `scaffold.sh` | Generated slash commands, lint-on-edit hook, memory index, preset engine | **rejected: runtime-bound** | — |
 
 ## Entries
 
@@ -197,3 +204,60 @@ is precisely the axis this library covers; it implies no change here.
 **not measured**. Do not cite a lift for them. The testability-boundary rule is
 the only one with a plausible claim to changing generated code; if a future
 eval round has spare budget, it is the one worth a completeness case.
+
+### 2026-07-28 — claude-project-scaffold (martinholovsky), three adoptions + one exposed gap
+
+Source: <https://github.com/martinholovsky/claude-project-scaffold>, MIT, read at
+full depth (2157 lines, last pushed 2026-04-14), 2026-07-28. It is an
+**agent-context scaffolder**, not a repo scaffolder: it generates `CLAUDE.md`,
+`.claude/{rules,memory,commands,hooks}`, an ADR directory, and preset-specific
+smoke scripts, and touches none of LICENSE, `.gitignore`, CI, or branch
+protection. That framing matters for what could be taken — most of its *stated*
+philosophy is ground this library already held, and the largest thing we took is
+something it does not contain.
+
+**Adopted (3).** The **troubleshooting playbook** (`rules/01` §9) was the clean
+gap: a `grep` for `Symptom|playbook|troubleshooting` across `sota-docs-workflow`
+and `sota-observability` returned only the on-call/alerting sense — §5 runbooks
+(`rules/01:130`), symptom-based paging (`sota-observability/rules/04:108`) —
+never the dev-loop artifact where a solved local failure is written down so the
+second encounter is a lookup. Our version adds the two disciplines the template
+lacks: delete an entry once a root-cause fix makes it a false lead, and treat a
+symptom reported three times as a signal to fix the code rather than document it
+again. The **minimal agent-file skeleton** (`rules/01` §7) filled a smaller hole
+— §7:196 said what content earns its place but gave no shape to hang it on. The
+**ADR index and numbering** (`sota-architecture/rules/01` §4) likewise: we had
+the format and the "an ADR without a downside is marketing" rule (`rules/01:93`)
+but nothing on the directory, and a status column that is all `proposed` is the
+cheapest possible read on a stalled decision process.
+
+**The gap it exposed (the largest addition).** The scaffold exists because a new
+repo has no agent context — but it treats that as a file-generation problem. The
+underlying rule is broader and belongs in the library: an installed skills
+library, a personal `~/.claude/CLAUDE.md`, and a house style guide are all
+*ambient*, and a fresh repo, a teammate's clone, and a CI runner inherit none of
+them. `rules/01` §10 states that, orders the two artifacts that must precede the
+first commit (`.gitignore` + secret scanning, LICENSE) with the reason each is
+expensive later, splits ambient-vs-repo content in both directions, and records
+the `core.symlinks=false` failure mode — symlinks "checked out as small plain
+files that contain the link text" (verified against `git help config`), which
+silently reduces a symlinked `CLAUDE.md` to the string `AGENTS.md`.
+
+**Rejected: already ours.** The README's "only include what Claude would get
+wrong without it" and its context-rot rationale restate `rules/01` §7:196-202
+almost phrase for phrase, and this library additionally *measures* the effect
+(`docs/CONTEXT-MANAGEMENT.md`, the decay eval). Its ADR template is a longer
+form of one we already carry, without the downside-required rule. Convergence,
+not a change.
+
+**Rejected: runtime-bound.** The 975-line `scaffold.sh`, the preset variable API,
+the `PostToolUse` lint hook, the generated slash commands, and the
+`.claude/memory/` index are executable harness machinery, and this library is
+Markdown-only by construction — the same disposition the memory-bank and
+worktree-lock ideas got in the dev-aid pass (PRs #112-114). The one idea inside
+them that generalises, pushing critical invariants into deterministic gates,
+was already the router's BUILD step 4 and is now restated for day zero in §10.
+
+**Measurement status:** all four are content refinements adopted on reasoning,
+**not measured**. Do not cite a lift. None is a plausible completeness-eval
+candidate — they govern repo artifacts, not generated code.
