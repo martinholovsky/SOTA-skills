@@ -12,6 +12,7 @@ trying to do**, not by file. (Kept in sync by hand; if a link rots, open an issu
 | Understand how a prompt gets routed to skills | [README → How it works](../README.md#how-it-works); [`skills/sota/SKILL.md`](../skills/sota/SKILL.md) |
 | See example prompts (build & audit) | [README → Using it](../README.md#using-it) |
 | Enforce the rules as git hooks | [README → Enforcing the gates](../README.md#enforcing-the-gates) |
+| **Verify a repo is actually set up** (read-only check: library reaching it, agent file true, gates real not just configured) | [**VERIFY-SETUP.md**](VERIFY-SETUP.md) |
 | Use it with Codex / Gemini / other AGENTS.md agents | [README → Other AI agents](../README.md#other-ai-agents-codex-copilot-gemini-) |
 
 ## Keep the model applying the rules (context / "forgetting")

@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`docs/VERIFY-SETUP.md` — the read-only setup check.** `init-gates.sh` sets a
+  repo up; nothing checked the result, and "configured" and "working" render
+  identically. A paste-in prompt that reports whether the library reaches the
+  directory, whether the repo's agent file is *true*, and whether its gates are
+  real — changing nothing, and marking anything unobservable as UNVERIFIED
+  rather than passing it. Linked from README → Enforcing the gates and
+  docs/INDEX.md. Derived from two live runs against a 4300-commit repository:
+  the first run's own limitations produced four of its checks (claims-vs-commands,
+  the three-state hook distinction, execute-vs-reject, and can-you-land-the-fix),
+  each a gap the run exposed rather than something reasoned in advance.
+- **`sota-code-security` rules/10 §2.13 — a control that never executes.** One
+  step earlier than "runs but does nothing": a gate whose trigger never fires —
+  an `issue_comment` job nobody comments on, a path filter matching nothing, a
+  branch filter naming a renamed branch. Its whole run history is *skipped*, and
+  **all-skipped is not all-green, but every dashboard renders it the same way**.
+  Verify on two axes (ever executed / ever rejected) and state the sample.
+  Found in the wild: a review workflow with 5/5 skipped runs. One checklist item.
+- **`sota-docs-workflow` rules/01 §7 — check an agent file's *claims*, not just
+  that its commands exist.** The two rot at different rates and only the first
+  gets noticed. Observed on that same repo: all seven `make` targets resolved,
+  while the stated toolchain was seven months stale and the stated contents of
+  `make check` were wrong. Verify in two passes, and prefer linking the file that
+  owns a fact over asserting it. One checklist item.
+
 - **Invariant 9 — at most one `## [Unreleased]`, and it must be the top entry**
   (`scripts/check-invariants.sh`), with archives allowed none. Invariant 5 reads
   only the *first* `## [` heading, so a second `[Unreleased]` further down was

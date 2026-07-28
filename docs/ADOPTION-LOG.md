@@ -58,6 +58,9 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-07-28 | Same session (`rust-post-edit.sh`, check-only by design) | Automation firing on an agent's edits must report, not rewrite — a rewrite stales the agent's own view of the file | **adopted** | `sota-docs-workflow/rules/01` §7 · v1.19.4 |
 | 2026-07-28 | Same session — `docker`-only probe missed a running podman | Detect by capability, not by one implementation's name | **rejected: already ours** | — |
 | 2026-07-28 | Same session — `tools/format_all.sh` exits 0 while checking nothing; `AGENTS.md` pins a stale toolchain; gate proven by making it fail; bash 3.2 empty-array and `set -e` in command substitution | Four rules of ours, independently rediscovered in the wild | **rejected: already ours** | — |
+| 2026-07-28 | Two live verification runs on an [asterinas](https://github.com/asterinas/asterinas) clone | A read-only setup check: is the library reaching this repo, is its agent file true, are its gates real | **adopted** | `docs/VERIFY-SETUP.md` · unreleased |
+| 2026-07-28 | Same runs — a review workflow with 5/5 *skipped* runs | A control whose trigger never fires: all-skipped is not all-green | **adopted** | `sota-code-security/rules/10` §2.13 · unreleased |
+| 2026-07-28 | Same runs — 7/7 `make` targets resolved while the stated toolchain was 7 months stale | Verify an agent file's claims, not just that its commands exist | **adopted** | `sota-docs-workflow/rules/01` §7 · unreleased |
 
 ## Entries
 
@@ -316,3 +319,49 @@ than a coverage one: the rules existed and were rediscovered by debugging.
 
 **Measurement status:** both adoptions are content refinements taken on
 reasoning, **not measured**. Do not cite a lift.
+
+### 2026-07-28 — the verification prompt, and what running it twice taught
+
+Source: two live read-only verification runs against a clone of
+<https://github.com/asterinas/asterinas>, 2026-07-28 — the second run using a
+prompt revised from the first run's own shortcomings. Neither run is an external
+repo of ideas; the *artifact under test was our own instruction*, which makes
+this the first entry where the observation is a measurement of our own output.
+
+**Adopted (3).** `docs/VERIFY-SETUP.md` fills a hole the library created for
+itself: `init-gates.sh` and `gen-agents-md.sh` set a repo up, and nothing ever
+checked the result. The distinction it exists to enforce is that **"configured"
+and "working" render identically** — a `.pre-commit-config.yaml` with no
+installed hook, a scanner nobody has watched reject anything, a CI job whose
+every run is skipped.
+
+Four of its checks were **not** designed; they are the first run's limitations,
+promoted:
+
+1. *Claims, not just commands.* The first prompt asked only whether named
+   commands exist. All seven `make` targets resolved — and the run found, on its
+   own initiative, that the file's stated toolchain was seven months stale and
+   its description of `make check` was wrong. That extension is now the
+   instruction, and the underlying rule landed in `rules/01` §7.
+2. *Three states for a hook*, not two: installed / configured-but-not-installed /
+   nothing configured at all. The run had to invent `N/A — nothing to install`
+   because the prompt offered no verdict that fit; an absent gate is a different
+   finding from an inert one.
+3. *Executed vs rejected.* Asked only "has it rejected anything", the run
+   surfaced something better — a review workflow whose five most recent runs were
+   all **skipped**, i.e. a trigger that never fires. That is a genuinely earlier
+   failure than the inert-control class we already had, and landed as
+   `sota-code-security` rules/10 §2.13.
+4. *Can you land the fix?* The run volunteered that the repo was upstream, not
+   the operator's — so every finding was an upstream PR, not local config. A fix
+   list you cannot land is a different deliverable.
+
+**Not adopted, worth recording.** The run's routing dry-run named 16 specific
+rules files; all 16 were verified to exist. That is the check working, not a
+change — but it is the reason the dry-run stays in the prompt: a routing
+verification that accepted plausible-looking filenames would be the most
+dangerous possible false pass.
+
+**Measurement status:** all three are content refinements adopted on reasoning,
+**not measured**. Do not cite a lift. `VERIFY-SETUP.md` is prose, not an
+enforced invariant — nothing in CI checks that a downstream repo ran it.
