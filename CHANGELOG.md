@@ -5,6 +5,40 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+Follow-up to the v1.19.3 day-zero work: the library now **raises** day zero
+itself instead of waiting to be asked, and says plainly that an install is
+personal rather than repo-resident.
+
+### Added
+
+- **Router `skills/sota/SKILL.md` — a "Day zero" section.** On the first BUILD
+  task in an unfamiliar repo, check by *looking* (gate config, LICENSE, agent
+  file, git history length) and, if two or more are missing and the history is
+  short, surface `init-gates.sh` / `gen-agents-md.sh` **once, in a line**. Two
+  guards are part of the rule: a long history means a mature repo that decided
+  against them (say nothing), and **offer, never perform** — the scripts write
+  config into the user's repo, and a decline is decided. Placed outside the
+  `## BUILD mode — workflow` block on purpose: it is a per-repo precondition,
+  not a per-task step, and keeping it out leaves the eval-pinned BUILD section
+  byte-identical (`ROUTER_BUILD_SHA` still `71a9d78ea5e9e341`, verified).
+- **`sota-docs-workflow` rules/01 §10 — "an ambient install doesn't travel".**
+  User-scoped rule libraries, skills and linters resolve against one home
+  directory; a teammate's clone and CI see nothing. Solo vs shared is an
+  explicit choice, but the **gates** must be repo-resident either way — a
+  secret scan that exists only in your shell is not a control on anyone else's
+  commit. Plus: a pointer file referencing tooling the reader lacks is worse
+  than no pointer, because it reads as a satisfied requirement. One
+  audit-checklist item added.
+
+### Changed
+
+- **README Installation** gains "An install is personal, not repo-resident" —
+  that one install covers every project including brand-new ones, that it
+  resolves only on your machine, the `--project .` / `--copy` options for a
+  shared repo, and a pointer to the day-zero list.
+
 ## [1.19.3] - 2026-07-28
 
 Third intake pass, against

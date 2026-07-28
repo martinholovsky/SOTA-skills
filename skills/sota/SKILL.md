@@ -203,6 +203,27 @@ rules files that match the code in front of you. Never load all skills at once.
     control needs at runtime?). Not for controls that are simply *missing* —
     that's the owning domain skill's audit checklist.
 
+## Day zero — a repo this library has not been applied to yet
+
+Installing is *ambient*: the rules apply in every directory, including a repo
+with no gates, no agent file and no LICENSE. They then govern the code you write
+and nothing else — the repo keeps accepting unscanned commits. Check this
+**once per repo**, on the first BUILD task in an unfamiliar one, by looking (not
+inferring): is there a `.pre-commit-config.yaml` or a CI secret scan, a
+`LICENSE`, an `AGENTS.md`/`CLAUDE.md`, and how long is the git history? Two or
+more missing **and** a history of a few commits = day zero. A long history means
+a mature repo that likely decided against them; say nothing.
+
+When it fires, say it **once, in a line, with the command**, then get on with the
+task: `scripts/init-gates.sh` + `pre-commit install --hook-type pre-push` for
+gates (before the first commit, while a leaked credential is still free to
+remove), `scripts/gen-agents-md.sh` for the cross-tool entry point. Full ordering
+and reasoning — LICENSE, `.gitignore`, ambient-vs-repo-resident, the
+`core.symlinks` trap — in `sota-docs-workflow` rules/01 §10.
+
+**Offer, never perform.** These write config into the user's repo. Mention once,
+act only on a yes, and treat a decline as decided.
+
 ## BUILD mode — workflow
 
 1. Identify the domains the feature touches (table above) and the language(s).

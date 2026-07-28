@@ -187,6 +187,31 @@ status line, pre-commit gates, AGENTS.md) aren't auto-enabled — see
 [Optional extras for plugin users](#optional-extras-for-plugin-users). On first
 run the plugin shows a one-time notice pointing there.
 
+### An install is personal, not repo-resident
+
+Installing once makes the skills apply in **every** project you open, new ones
+included — there is nothing to run per repo, and a brand-new repo is covered the
+moment you start work in it. But the install resolves against *your* home
+directory: a teammate's clone and a CI runner see none of it.
+
+So for a repo shared with anyone, decide explicitly:
+
+```sh
+./scripts/install.sh --project .   # repo-resident: .claude/skills/ in the repo
+./scripts/install.sh --project . --copy   # ...pinned snapshot, not symlinks to your paths
+```
+
+— or leave it personal and put the install step in `CONTRIBUTING.md` so a
+contributor can reproduce it. What must **not** stay personal is the gates: a
+secret scan that lives only in your shell doesn't run on anyone else's commit.
+Wire those into the repo with [`init-gates.sh`](#enforcing-the-gates).
+
+And the things no install can supply per repo — gates, LICENSE, `.gitignore`, an
+agent file, and the order to create them in — are the day-zero list in
+[`sota-docs-workflow` rules/01 §10](skills/sota-docs-workflow/rules/01-documentation-architecture.md).
+The router raises it once, unprompted, the first time it meets a repo that has
+none of them.
+
 ### Updating
 
 **Plugin install:** updates ship when the version bumps — `/plugin update

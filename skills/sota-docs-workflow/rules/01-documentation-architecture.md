@@ -349,6 +349,26 @@ present — is worth a hook or CI job on day zero, when it costs one file and
 passes trivially. The same check proposed at ten thousand commits arrives red
 and gets disabled.
 
+**An ambient install doesn't travel — decide per repo.** Rule libraries, agent
+skills and linters installed at user scope resolve against *your* home
+directory. A teammate's clone and a CI runner resolve nothing, so a repo that
+depends on them is one that only works on one machine. Two honest options, and
+the choice belongs in the repo's contributing docs either way:
+
+- **Solo or private-to-you** — the ambient install is enough; write down
+  nothing, and don't pretend the repo is self-contained.
+- **Shared, public, or CI-checked** — make it repo-resident: vendor or
+  project-scope the tooling (for this library, `install.sh --project .`, or
+  `--copy` to pin a snapshot rather than link to a path only you have), *or*
+  state the install step in `CONTRIBUTING.md` so a contributor can reproduce it.
+  Whichever you choose, the **gates** must be repo-resident regardless — a
+  secret scan that exists only in your shell is not a control on anyone else's
+  commit (`sota-code-security` rules/10: a control nobody else runs is a no-op
+  everywhere but your machine).
+
+A pointer file that references tooling the reader doesn't have is worse than no
+pointer: it reads as a satisfied requirement.
+
 ## Audit checklist
 
 - [ ] Baseline present for the repo's stage: README + LICENSE + CHANGELOG always; CONTRIBUTING/CODE_OF_CONDUCT/SECURITY/SUPPORT once public or contribution-accepting; runbooks once on-call — each with one canonical home (no duplicate copies across root/`.github`/`docs`).
@@ -360,6 +380,7 @@ and gets disabled.
 - [ ] The agent file carries only what the agent would otherwise get wrong (exact commands, deviations, traps) — not a restatement of ambient/global rules or anything readable from the code; one canonical file, with per-tool names symlinked or CI-generated rather than forked.
 - [ ] Solved failures land in a troubleshooting playbook keyed on the literal symptom, written in the PR that fixed them; entries invalidated by a root-cause fix are deleted, and a thrice-reported symptom was fixed in code rather than re-documented.
 - [ ] The repo got `.gitignore` + secret scanning and a LICENSE before its first commit, and its must-never-regress invariants are enforced by a hook or CI job rather than described in prose.
+- [ ] Nothing the repo depends on resolves only against one contributor's home directory: gates are repo-resident, and any user-scoped tooling a shared repo assumes is either vendored/project-scoped or documented as an install step (§10).
 - [ ] README: one-sentence what, why, ≤5-minute copy-pasteable quickstart, honest badges, ownership/support pointer.
 - [ ] Every doc/dir has an owner (CODEOWNERS or equivalent); high-traffic pages have a freshness/review signal.
 - [ ] No known-stale pages kept "for reference"; deletions leave redirects/tombstones; no duplicated facts across pages.
