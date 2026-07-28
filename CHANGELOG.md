@@ -5,7 +5,13 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.19.5] - 2026-07-28
+
+The **verify-what-you-set-up** release. The library could scaffold a repo and
+could state what a repo needs; nothing checked the result, and nothing in CI
+noticed when two PRs each opened a `[Unreleased]` section. Every item here comes
+from something being run rather than reasoned about. No skill added (41
+unchanged).
 
 ### Added
 
@@ -1312,6 +1318,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.19.5]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.5
 [1.19.4]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.4
 [1.19.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.3
 [1.19.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.2

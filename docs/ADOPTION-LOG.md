@@ -58,9 +58,9 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-07-28 | Same session (`rust-post-edit.sh`, check-only by design) | Automation firing on an agent's edits must report, not rewrite — a rewrite stales the agent's own view of the file | **adopted** | `sota-docs-workflow/rules/01` §7 · v1.19.4 |
 | 2026-07-28 | Same session — `docker`-only probe missed a running podman | Detect by capability, not by one implementation's name | **rejected: already ours** | — |
 | 2026-07-28 | Same session — `tools/format_all.sh` exits 0 while checking nothing; `AGENTS.md` pins a stale toolchain; gate proven by making it fail; bash 3.2 empty-array and `set -e` in command substitution | Four rules of ours, independently rediscovered in the wild | **rejected: already ours** | — |
-| 2026-07-28 | Two live verification runs on an [asterinas](https://github.com/asterinas/asterinas) clone | A read-only setup check: is the library reaching this repo, is its agent file true, are its gates real | **adopted** | `docs/VERIFY-SETUP.md` · unreleased |
-| 2026-07-28 | Same runs — a review workflow with 5/5 *skipped* runs | A control whose trigger never fires: all-skipped is not all-green | **adopted** | `sota-code-security/rules/10` §2.13 · unreleased |
-| 2026-07-28 | Same runs — 7/7 `make` targets resolved while the stated toolchain was 7 months stale | Verify an agent file's claims, not just that its commands exist | **adopted** | `sota-docs-workflow/rules/01` §7 · unreleased |
+| 2026-07-28 | Two live verification runs on an [asterinas](https://github.com/asterinas/asterinas) clone | A read-only setup check: is the library reaching this repo, is its agent file true, are its gates real | **adopted** | `docs/VERIFY-SETUP.md` · v1.19.5 |
+| 2026-07-28 | Same runs — a review workflow with 5/5 *skipped* runs | A control whose trigger never fires: all-skipped is not all-green | **adopted** | `sota-code-security/rules/10` §2.13 · v1.19.5 |
+| 2026-07-28 | Same runs — 7/7 `make` targets resolved while the stated toolchain was 7 months stale | Verify an agent file's claims, not just that its commands exist | **adopted** | `sota-docs-workflow/rules/01` §7 · v1.19.5 |
 
 ## Entries
 
