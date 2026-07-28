@@ -182,6 +182,28 @@ Impact: payouts delayed; no data loss (queue is durable).
 - Keep an entry-point index per repo/team (`docs/README.md`): what docs exist,
   one line each, by Diátaxis mode. Indexes decay too — keep them short.
 
+**Where the canonical dev loop doesn't run everywhere, ship a capability
+report.** Plenty of repos have one documented path — a container, a specific
+OS, a licensed toolchain — and a reality where a given machine runs only part of
+it. Prose ("requires Docker") doesn't help someone who *has* a runtime that
+isn't the named one, or who can't tell which of twenty `make` targets are
+reachable. A small executable report does: it probes the host and prints, per
+target, **works here / doesn't, and what each gap blocks**.
+
+- **Probe capabilities, not one implementation's name.** A check for `docker`
+  reports "no container runtime" on a machine running podman; a check for
+  `LICENSE` misses `LICENSE-MPL`. A single-name probe returns a false absence
+  that then gets acted on — the audit-side statement of the same rule is
+  `sota/rules/01-audit-methodology.md` ("a narrow search and a true absence
+  produce identical output").
+- **Every "unavailable" line names what it blocks**, so the reader learns the
+  consequence without discovering it through a ten-minute failed build.
+- **Report, never gate.** It exits 0 by design; it describes the host, it
+  doesn't judge it. Keep the gate a separate command.
+- Its audience is now agents as much as humans: without one, an agent proposes
+  the documented command, fails, and retries it — the failure mode this artifact
+  exists to prevent.
+
 ## §7 AI-era documentation
 
 Docs are now read by agents as well as humans. Same content, two consumers.
@@ -216,6 +238,14 @@ Docs are now read by agents as well as humans. Same content, two consumers.
   runner that isn't the framework's, the port that isn't the documented one.
 - **Agent docs decay like all docs** — review them when commands change; a wrong
   test command in AGENTS.md silently corrupts every agent run.
+- **Automation that fires on an agent's edits must check, not rewrite.** A
+  format-on-write hook is fine for a human editor and wrong for an agent: it
+  changes the file *after* the agent wrote it, so the agent's view of that file
+  is now stale and its next edit either fails or clobbers the reformatting. Have
+  such hooks **report** the problem (non-zero, with the file and the fix) and let
+  the agent apply it — the same content, in the one order that keeps both sides
+  consistent. Reserve rewriting for hooks that run at commit or in CI, where no
+  agent holds a live view.
 - **llms.txt** (llmstxt.org): root-level Markdown index of a site's docs for LLM
   consumption. Status as of mid-2026: community convention, ~10% site adoption,
   not an IETF standard, major crawlers don't commit to fetching it — but coding
@@ -397,6 +427,8 @@ pointer: it reads as a satisfied requirement.
 - [ ] No known-stale pages kept "for reference"; deletions leave redirects/tombstones; no duplicated facts across pages.
 - [ ] Every page-able alert links to a runbook; runbooks are command-exact, decision-tree ordered, flag destructive steps, and were updated after the last incident that used them.
 - [ ] Onboarding guide exists, and the newest joiner actually filed fixes against it.
+- [ ] Where the canonical dev loop doesn't run on every supported host, a capability report says per target what works here and what each gap blocks — probing capabilities rather than one implementation's name, and reporting rather than gating (§6).
+- [ ] No automation rewrites files in response to an agent's edits (format-on-write hooks report instead); rewriting is confined to commit-time or CI, where nothing holds a live view of the file (§7).
 - [ ] One search surface covers internal docs; error messages/alerts/code link into docs.
 - [ ] AGENTS.md/CLAUDE.md exists, is short and human-curated, has exact build/test commands, and matches current reality; no forked divergent copies.
 - [ ] Public docs site: llms.txt generated (not hand-written) if published; pages are self-contained with stable headings.
