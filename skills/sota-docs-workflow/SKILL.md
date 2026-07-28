@@ -58,9 +58,13 @@ When creating docs or setting up workflow:
    commits with imperative ≤72-char subjects; conventional commits only if
    automation consumes them (`rules/04` §1–3).
 7. **Agent docs**: one short, human-curated AGENTS.md/CLAUDE.md with exact
-   commands and repo-specific traps — never auto-generated bloat
-   (`rules/01` §7).
-8. Before declaring done, self-review against the relevant files' **Audit
+   commands and repo-specific traps — never auto-generated bloat, never a
+   restatement of ambient/global rules (`rules/01` §7, §10). On a **new repo**,
+   `.gitignore` + secret scanning and LICENSE land before the first commit
+   (`rules/01` §10).
+8. **Solved failures accrue** in a symptom-keyed troubleshooting playbook,
+   written in the PR that fixed them (`rules/01` §9).
+9. Before declaring done, self-review against the relevant files' **Audit
    checklists**.
 
 ## AUDIT mode

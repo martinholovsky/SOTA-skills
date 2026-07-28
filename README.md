@@ -26,7 +26,7 @@ survives a long context instead of fading into it. That's why it beats a bigger 
 instead of becoming one. Native on Claude Code; works with Gemini CLI, Codex, and any
 agent that reads `AGENTS.md`.
 
-Under the hood: **41 skills (296 files, ~60k lines)** of state-of-the-art 2026
+Under the hood: **41 skills (296 files, ~61k lines)** of state-of-the-art 2026
 practice, each file under 500 lines so only the matching rules load, every fast-moving
 claim web-verified against a primary source.
 

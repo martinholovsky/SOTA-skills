@@ -93,6 +93,14 @@ this?" must have a greppable answer.
 **Rule:** An ADR without a *Consequences* section listing at least one downside
 is marketing, not a decision record. Reject it in review.
 
+**Directory discipline.** Sequential kebab-case filenames
+(`0012-use-outbox-for-order-events.md`) plus an `index.md` holding one row per
+ADR — number, title, status, date. The index is what makes the practice
+auditable at a glance: a status column that is all `proposed` is a stalled
+process, and a superseded chain is legible without opening a file. Commit the
+ADR **in the PR that implements the decision** where one exists, so rationale
+and code land together; a pre-implementation decision lands on its own.
+
 ## 5. Practice evolutionary architecture with fitness functions
 
 **Rule:** Encode architectural qualities as automated, continuously-run checks

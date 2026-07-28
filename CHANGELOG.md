@@ -5,6 +5,51 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+Third intake pass, against
+[claude-project-scaffold](https://github.com/martinholovsky/claude-project-scaffold)
+— an agent-context scaffolder, not a repo scaffolder. Most of its content turned
+out to be ours already (the minimal-agent-file principle, the context-rot
+rationale, the ADR format), recorded as convergences. Three ideas were genuinely
+absent and landed; the gap the source *didn't* cover — that a fresh repo
+inherits nothing from an ambient/global agent setup — became the fourth and
+largest addition. No skill added (41 unchanged).
+
+### Added
+
+- **`sota-docs-workflow` rules/01 §9 — the troubleshooting playbook.** The
+  dev-facing counterpart to §5's on-call runbooks: a symptom-keyed index of
+  failures already solved once, in Symptom → Diagnosis → Fix form, written in
+  the PR that fixed the bug. Includes the two rules the source didn't have —
+  delete entries a root-cause fix invalidated, and treat a thrice-reported
+  symptom as a signal to fix the code instead of documenting it again. Verified
+  absent: "symptom" appeared across the library only in the alerting/on-call
+  sense.
+- **`sota-docs-workflow` rules/01 §10 — day zero in a new repo.** An installed
+  skills library, a personal `CLAUDE.md`, and a house style guide are *ambient*;
+  a fresh repo, a teammate's clone, and a CI runner inherit none of them.
+  Covers the only two artifacts that must precede the first commit (`.gitignore`
+  + secret scanning, LICENSE) and why; the ambient-vs-repo split for agent files
+  in both directions; and the `core.symlinks=false` failure mode that turns a
+  symlinked `CLAUDE.md` into a one-line text file (verified against
+  `git help config`), with CI generation as the fallback.
+- **`sota-docs-workflow` rules/01 §7 — the minimal agent-file shape.** §7 said
+  what content earns its place but gave no skeleton; it now carries a four-block
+  one, with the rule that the row which earns its place is the one contradicting
+  the default.
+- **`sota-architecture` rules/01 §4 — ADR directory discipline.** Sequential
+  kebab-case filenames plus an `index.md` status table, and committing the ADR
+  in the PR that implements the decision. The format and the
+  consequences-with-a-downside rule were already there; the directory-level
+  practice that makes a stalled process visible was not.
+
+### Changed
+
+- `sota-docs-workflow/SKILL.md` BUILD mode now routes new-repo bootstrap and the
+  troubleshooting playbook (steps 7–8), and rules/01 gains three audit-checklist
+  items.
+
 ## [1.19.2] - 2026-07-24
 
 The **second intake** release: three ideas mined from
