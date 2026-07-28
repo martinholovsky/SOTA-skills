@@ -63,6 +63,13 @@ symlinks to it — edit only this file, never the symlinks.
    prose/code and false-positive); needs `python3`, skipped-with-warning if
    absent locally, enforced in CI. Adopted 2026-07-24 from the
    training-knowledge-vault vault-doctor — see [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md).
+9. **duplicate `[Unreleased]`** — `CHANGELOG.md` carries at most one
+   `## [Unreleased]` heading and it must be the topmost entry; the archives
+   carry none. Invariant 5 reads only the *first* `## [` heading, so a second
+   `[Unreleased]` further down was invisible to CI: on 2026-07-28 two feature
+   PRs each opened one above `[1.19.3]` and `main` carried both until a human
+   noticed during the release cut. Fence-aware, so a heading quoted inside a
+   code block doesn't count.
 
 Separately, `scripts/check-freshness.sh` (run monthly by
 `.github/workflows/freshness.yml`) tracks the root `LAST-VERIFIED` stamp —

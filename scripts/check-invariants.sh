@@ -26,6 +26,11 @@
 #      match the [text](x) shape (e.g. type annotations) and false-positive.
 #      (Idea adopted from the training-knowledge-vault vault-doctor, 2026-07-24;
 #      see docs/ADOPTION-LOG.md.)
+#   9. CHANGELOG has at most one "## [Unreleased]" heading, it is the topmost
+#      entry, and the archives have none. Check 5 only compares the TOP entry
+#      to VERSION, so a second [Unreleased] lower down passed CI silently — on
+#      2026-07-28 two feature PRs each added one above [1.19.3] and main
+#      carried both until the release cut noticed by hand.
 #
 # Portable to macOS bash 3.2 (no mapfile/associative arrays). Checks 4 and 8 need
 # python3 (Unicode char counting; link parsing); they are skipped with a warning
@@ -48,7 +53,7 @@ note() { printf '    %s\n' "$1"; }
 # CHANGELOG, docs/) is human/agent-facing prose, not loaded as a skill, so it is
 # intentionally uncapped (decided 2026-07-15) — navigability there comes from a
 # table of contents and docs/INDEX.md, not a line ceiling.
-echo "[1/8] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
+echo "[1/9] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
 over=0
 while IFS= read -r f; do
   [ -f "$f" ] || { note "SKIPPED (tracked but missing from worktree): $f"; continue; }
@@ -62,7 +67,7 @@ done < <(git ls-files 'skills/*/*.md' 'skills/*/rules/*.md')
 if [ "$over" -eq 0 ]; then echo "    ok"; else fail=1; fi
 
 # --- 2. Audit checklist ends every rules file ------------------------------
-echo "[2/8] Every skills/*/rules/*.md ends with an '## Audit checklist'"
+echo "[2/9] Every skills/*/rules/*.md ends with an '## Audit checklist'"
 missing=0
 while IFS= read -r f; do
   [ -f "$f" ] || { note "SKIPPED (tracked but missing from worktree): $f"; continue; }
@@ -90,7 +95,7 @@ if [ "$missing" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # .denylist.local (git-ignored, one ERE per line, '#' comments). When neither
 # exists (e.g. an external fork's PR), only the generic phrases are checked —
 # the maintainer's pre-commit hook and this repo's CI carry the full list.
-echo "[3/8] No internal-name leaks"
+echo "[3/9] No internal-name leaks"
 DENY='the user runs|the user operates'
 if [ -n "${SOTA_DENYLIST:-}" ]; then
   DENY="$DENY|$SOTA_DENYLIST"
@@ -126,7 +131,7 @@ fi
 # Code, Codex, ...) skip any skill that exceeds it. Count Unicode characters
 # (descriptions use em-dashes: 1 char, 3 bytes) via python3, parsing both
 # folded block scalars (`>-`) and plain single-line descriptions.
-echo "[4/8] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
+echo "[4/9] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
 if command -v python3 >/dev/null 2>&1; then
   if desc_out=$(python3 - "$MAX_DESC" <<'PY'
 import sys, glob, re
@@ -180,7 +185,7 @@ fi
 # One version, four places: VERSION, plugin.json, the CHANGELOG's top entry,
 # and (after the release lands) the newest v* tag. Drift here shipped a main
 # briefly claiming 1.8.0 with 1.9.0 content (2026-07-03) — hence a hard check.
-echo "[5/8] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
+echo "[5/9] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
 v5=0
 ver=$(tr -d '[:space:]' < VERSION)
 # Strict X.Y.Z: rejects interior malformations (1..2, 1.2, 1.2.3.4) the old
@@ -214,7 +219,7 @@ if [ "$v5" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # rot on surfaces nobody recounts (the social preview said "30 skills" for
 # three releases). Recount from the tree and compare every tracked surface;
 # RELEASING.md lists the same surfaces for manual release edits.
-echo "[6/8] Count-bearing surfaces match the tree"
+echo "[6/9] Count-bearing surfaces match the tree"
 v6=0
 ck() { # ck <found> <expected> <surface>
   [ "$1" = "$2" ] || { note "$3: says '${1:-<not found>}', tree says '$2'"; v6=1; }
@@ -260,7 +265,7 @@ if [ "$v6" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # library-map entry must name a real skill dir. Catches the drift the
 # 2026-07-10 audit found: sota-confidential-computing was added to the table
 # but missing from the map for a full release.
-echo "[7/8] Router lists every skill (routing table + library map)"
+echo "[7/9] Router lists every skill (routing table + library map)"
 v7=0
 router=skills/sota/SKILL.md
 bt='`'
@@ -285,7 +290,7 @@ if [ "$v7" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # with no rot-catching upside. Fenced AND inline code are stripped so link-shaped
 # examples (in ``` fences or `backticks`) are not scanned. Idea from vault-doctor
 # (training-knowledge-vault); see docs/ADOPTION-LOG.md.
-echo "[8/8] Internal Markdown links resolve (*.md targets)"
+echo "[8/9] Internal Markdown links resolve (*.md targets)"
 if command -v python3 >/dev/null 2>&1; then
   if link_out=$(python3 - <<'PY'
 import os, re, sys
@@ -324,6 +329,47 @@ PY
 else
   note "SKIPPED: python3 not found (CI enforces this check)"
 fi
+
+# --- 9. One [Unreleased] section, at the top ---------------------------------
+# Check 5 reads only the FIRST '## [' heading, so a duplicate [Unreleased]
+# further down is invisible to it. Two feature PRs each opened one above the
+# previous release (2026-07-28) and both sat on main until a human noticed
+# during the release cut. Fence-aware, like check 2: a CHANGELOG entry may
+# legitimately quote '## [Unreleased]' inside a code fence.
+echo "[9/9] CHANGELOG has at most one [Unreleased], and it is the top entry"
+v9=0
+changelogs="CHANGELOG.md $(git ls-files 'docs/CHANGELOG-archive*.md' | tr '\n' ' ')"
+for cl in $changelogs; do
+  [ -f "$cl" ] || continue
+  # strip fenced blocks so quoted headings inside ``` are not counted
+  body=$(awk '/^(```|~~~)/ { fence = !fence; next } !fence' "$cl")
+  n=$(printf '%s\n' "$body" | grep -cE '^## \[Unreleased\]' || true)
+  case "$cl" in
+    CHANGELOG.md)
+      if [ "$n" -gt 1 ]; then
+        note "CHANGELOG.md has $n '## [Unreleased]' headings — merge them into one"
+        v9=1
+      elif [ "$n" -eq 1 ]; then
+        # No `grep -m 1` / `head` here: they close the pipe early, the upstream
+        # printf dies of SIGPIPE, and `set -o pipefail` + `set -e` then kill the
+        # script mid-check — it printed the heading and nothing else. (Check 5's
+        # `grep -m 1` is safe only because it reads a FILE, not a pipe.)
+        first=$(printf '%s\n' "$body" | grep -E '^## \[' | sed -n '1s/^## \[\([^]]*\)\].*/\1/p')
+        if [ "$first" != "Unreleased" ]; then
+          note "CHANGELOG.md has an [Unreleased] section below [$first] — it must be the top entry"
+          v9=1
+        fi
+      fi
+      ;;
+    *)
+      if [ "$n" -gt 0 ]; then
+        note "$cl has an '## [Unreleased]' heading — archives hold released versions only"
+        v9=1
+      fi
+      ;;
+  esac
+done
+if [ "$v9" -eq 0 ]; then echo "    ok"; else fail=1; fi
 
 # --- Result ---------------------------------------------------------------
 echo

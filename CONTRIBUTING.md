@@ -124,6 +124,12 @@ are marked "needs verification", never asserted.
    `[text](x)`-shaped prose/code; needs `python3` (skipped-with-warning if
    absent locally, enforced in CI). Adopted from the training-knowledge-vault
    vault-doctor (see [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md)).
+9. **duplicate `[Unreleased]`**: `CHANGELOG.md` may carry at most one
+   `## [Unreleased]` heading, and it must be the topmost entry; the archive
+   files carry none. Practical effect for contributors: if `[Unreleased]`
+   already exists, **add to it** — don't open a second one. Invariant 5 only
+   inspects the first `## [` heading, so duplicates below it used to pass CI
+   (two PRs did exactly that on 2026-07-28).
 
 Secrets are scanned separately by **gitleaks** (config in `.gitleaks.toml`);
 CI scans the full git history, the pre-commit hook scans each commit.
