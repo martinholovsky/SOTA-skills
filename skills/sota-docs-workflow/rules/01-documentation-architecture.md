@@ -238,6 +238,17 @@ Docs are now read by agents as well as humans. Same content, two consumers.
   runner that isn't the framework's, the port that isn't the documented one.
 - **Agent docs decay like all docs** — review them when commands change; a wrong
   test command in AGENTS.md silently corrupts every agent run.
+- **Check the file's *claims*, not just that its commands exist.** The two rot
+  at different rates and only the first is ever noticed. A verification that
+  confirms every named target resolves passes happily while the file asserts a
+  pinned toolchain seven months stale, an image tag long superseded, or that a
+  given target runs a check it doesn't. Observed exactly that on a 4300-commit
+  project: all seven `make` targets existed; the stated toolchain and the stated
+  contents of `make check` were both wrong. So verify in two passes — every
+  command resolves to a real target, **and** every factual assertion still
+  matches the file it describes. Better still, delete the assertion and link the
+  source of truth: a sentence naming the pin will drift, a pointer to
+  `rust-toolchain.toml` cannot.
 - **Automation that fires on an agent's edits must check, not rewrite.** A
   format-on-write hook is fine for a human editor and wrong for an agent: it
   changes the file *after* the agent wrote it, so the agent's view of that file
@@ -428,6 +439,7 @@ pointer: it reads as a satisfied requirement.
 - [ ] Every page-able alert links to a runbook; runbooks are command-exact, decision-tree ordered, flag destructive steps, and were updated after the last incident that used them.
 - [ ] Onboarding guide exists, and the newest joiner actually filed fixes against it.
 - [ ] Where the canonical dev loop doesn't run on every supported host, a capability report says per target what works here and what each gap blocks — probing capabilities rather than one implementation's name, and reporting rather than gating (§6).
+- [ ] Agent-file verification covers claims as well as commands: every named target resolves **and** every factual assertion (pins, tags, what a target does) still matches its source — with drift-prone assertions replaced by a link to the file that owns the fact (§7).
 - [ ] No automation rewrites files in response to an agent's edits (format-on-write hooks report instead); rewriting is confined to commit-time or CI, where nothing holds a live view of the file (§7).
 - [ ] One search surface covers internal docs; error messages/alerts/code link into docs.
 - [ ] AGENTS.md/CLAUDE.md exists, is short and human-curated, has exact build/test commands, and matches current reality; no forked divergent copies.

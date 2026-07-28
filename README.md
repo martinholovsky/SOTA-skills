@@ -413,6 +413,14 @@ yourself in place. The hooks call your project's own toolchain, so install the
 per-language tools it lists on exit (and `pre-commit install` if the script
 couldn't).
 
+**Then check it actually took.** `init-gates.sh` sets things up; nothing
+verifies the result, and "configured" and "working" render identically — a
+config file with no installed hook is not a control, and a CI job whose every
+run is *skipped* is a gate on paper. [docs/VERIFY-SETUP.md](docs/VERIFY-SETUP.md)
+is a read-only prompt you paste into an agent: it reports whether the library,
+this repo's context, and its gates are in place, changes nothing, and marks
+anything it could not observe as UNVERIFIED rather than passing it.
+
 Add `--docs-gate` to also install a pre-commit hook that **blocks a commit which
 changes code but updates no docs** (README/CHANGELOG/`docs/`/`*.md`) — so docs
 stay current without you having to ask. It writes a small helper to

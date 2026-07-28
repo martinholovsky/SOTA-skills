@@ -273,6 +273,34 @@ in-context data and the output, that is the finding — regardless of how
 carefully the instruction is worded. (Class added 2026-07-24 from the
 training-knowledge-vault lesson on attention leakage; see docs/ADOPTION-LOG.md.)
 
+### 2.13 A control that never executes
+
+One step earlier than "runs but does nothing": a gate whose **trigger condition
+never fires**. It is configured, committed, listed in the docs and visible in
+the UI — and its entire run history is *skipped*. Nothing errors, because
+nothing ran.
+
+Where it shows up: a CI job gated on an event that never occurs (an
+`issue_comment` trigger for a review workflow nobody comments on; a path filter
+that matches no real path; a branch filter naming a branch since renamed), a
+scheduled job on a disabled schedule, a hook registered under a lifecycle event
+the tool no longer emits, a policy scoped to a label nothing carries.
+
+The tell is in the run history, not the config: **all-skipped is not all-green,
+but every dashboard renders it the same way.** So verify a gate on two axes,
+not one:
+
+- **Has it ever executed?** Read real run history (`gh run list`, the pipeline's
+  own log) and count non-skipped runs. Zero means the trigger is unreachable —
+  the finding is the trigger, not the gate's logic.
+- **Has it ever rejected anything?** A gate with executions but no failures has
+  still never been observed doing its job (§1's falsification question, and
+  `sota-testing` rules/09 — watch a security test fail before trusting it).
+
+State the sample when reporting either: "no non-skipped run in the last N" is a
+bounded observation, not "never". A single-name search compounds this — see
+`sota/rules/01-audit-methodology.md` on absence claims.
+
 ## 3. Vacuous tests — the meta-case
 
 A test that passes against broken code is worse than no test: it manufactures
@@ -380,6 +408,10 @@ Design:
       below", authz-in-prompt) standing in for an enforced boundary over data or
       permissions that live in the same context? Enforce structurally/in code
       (rules/08 §1–2), not by instruction — §2.12.
+- [ ] For each gate, does run history show it has ever **executed** (not
+      all-skipped: an unreachable trigger, path/branch filter, or dead
+      lifecycle event) and ever **rejected** anything? State the sample size —
+      "not in the last N runs" is not "never" — §2.13.
 - [ ] Early-return guards on empty/oversized/unparseable input that an attacker
       can deliberately trigger to skip inspection?
 - [ ] Any truncation (`[:N]`, byte caps, `LIMIT`) on the path *into* a scan,
