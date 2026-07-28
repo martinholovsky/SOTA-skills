@@ -4,9 +4,72 @@ Priorities set by the **2026-07-10 audit**
 ([AUDIT-2026-07-10.md](AUDIT-2026-07-10.md)). Ordered; revisit after each
 release. The 2026-07-01 cycle is fully executed and kept below as history.
 
-## Open tasks — next-session pick-up *(as of 2026-07-22)*
+## Open tasks — next-session pick-up *(as of 2026-07-28)*
 
-**Current state (2026-07-22, after v1.19.0).** The foundation is de-risked and the
+**Current state (2026-07-28, after v1.19.6).** Six patch releases landed
+2026-07-24…28 (**v1.19.1 → v1.19.6**), and the notable shift is *how* they were
+found: v1.19.1–2 came from reading external repos, v1.19.3–6 from **running the
+library and watching it fail**. Landed: three external intakes recorded in
+[ADOPTION-LOG.md](ADOPTION-LOG.md) (training-knowledge-vault, swarm-forge,
+claude-project-scaffold) with rejections logged alongside adoptions; the
+**day-zero** work (router section + `rules/01` §10 + host-capability report +
+agent-hooks-must-not-rewrite); [VERIFY-SETUP.md](VERIFY-SETUP.md), a read-only
+setup-check prompt; **invariants 8 and 9** (internal-link resolution;
+single-`[Unreleased]`); `sota-code-security` rules/10 **§2.13 a control that
+never executes**; `sota-docs-workflow` rules/01 §7 **verify an agent file's
+claims, not just its commands**; and the **liveness/async-def contradiction**
+between two of our own rules, plus the router rule for resolving such conflicts.
+All six are content/CI changes — **none measured**, none claiming a lift.
+
+**Field validation this cycle (n=1 per arm, not a measurement).** The day-zero
+trigger fired correctly on a purpose-built fresh repo (`~/Github/daycheck`:
+1 commit, no gates/licence/agent file) — once, in a line, offering rather than
+running the scripts, and the build proceeded. It stayed correctly silent on a
+mature 4304-commit repo. **It only fires when the `sota` router actually loads**:
+a vague three-word prompt routed to clarifying questions instead and skipped it.
+Silence is therefore not evidence the rule is broken — check the router loaded
+first.
+
+**New open items from this cycle:**
+
+- **No update-notification path for clone installs.** Symlinked skills update the
+  moment you `git pull`, but nothing ever tells you to pull. The plugin's
+  `SessionStart` notice (`hooks/hooks.json` → `scripts/plugin-notice.sh`) is
+  marker-guarded to fire **once ever**, so it is onboarding, not a version
+  channel. Cheapest fix: `install.sh --update` already pulls and knows both
+  versions — have it print the delta and point at the CHANGELOG. A `SessionStart`
+  version check would reach passive users but **phones home**; that is a
+  deliberate privacy decision, needs a TTL cache and must fail open, and is not
+  to be built without an explicit call.
+- **Nothing reports which version is in use.** No skill carries a version
+  reference, so a bug report ("the day-zero check fired wrongly") cannot say
+  which release produced it. Cheaper and less contentious than the notification
+  question; probably the first thing to do.
+- **`scripts/verify-setup.sh`** — the deterministic half of VERIFY-SETUP.md (does
+  a gate exist, is the hook installed, has this workflow ever run non-skipped,
+  licence present under any name). A script does that better than a prompt, per
+  the library's own "push invariants into deterministic gates". The prompt keeps
+  the half a script cannot do: judging whether an agent file's *content* is
+  meaningful and its claims true.
+- **`gh-sota` extension — considered and deferred, with reason.** gh requires the
+  repo to be named `gh-*` with a root executable of the same name (verified in
+  `gh extension --help`, 2.96.0), so it cannot live in this repo; it would need a
+  thin shim repo delegating to `scripts/`. Its headline benefit does not
+  materialise either: gh's update notice fires **on invocation**, and nobody
+  invokes a CLI for a library used inside an agent session. Revisit only if
+  one-command install becomes the bottleneck.
+- **Router headroom: 497/500 lines.** The next router addition needs a trim
+  first. `ROUTER_BUILD_SHA` is still `71a9d78ea5e9e341` — every router edit this
+  cycle landed outside the eval-pinned BUILD block, so historical completeness
+  runs stay comparable.
+- **Unverified claim in the README** — that git-hosted plugin marketplaces
+  re-check at session start. Documented, not checked against a primary source.
+  `rules/01` §7 now tells readers to verify claims like this; we should take our
+  own advice.
+
+**Prior open items, still open (2026-07-22 framing, re-checked today):**
+
+The foundation is de-risked and the
 release cadence caught up: **v1.17.0 → v1.19.0** shipped across 2026-07-20…22.
 Landed this stretch — silent-control `rules/10` (measured **+0.00**, the +0.07 and
 the taxonomy-anchoring signal both retracted as noise), adversarial verification and
@@ -18,11 +81,14 @@ infographic, and — the headline — **cross-model replication: the +0.39 compl
 lift is not sonnet-specific** (`openai/gpt-5.1` shows **+0.44**).
 
 **Genuinely open, ordered by value:**
-1. **Distribution / adoption** — the real bottleneck. ~24 organic clones/day vs **7
-   stars, 0 watchers, 1 issue ever**; the gap-reporting loop has produced **0 reports**
-   at 3 days (too early to judge; cut if still nil in a few weeks). Publish the
-   salience write-up + the infographic (LinkedIn is the measured top referrer). A
-   **people problem, not a measurement one** — the highest-leverage lever left.
+1. **Distribution / adoption** — the real bottleneck. Re-checked 2026-07-28 via
+   `gh`: **8 stars, 0 watchers, 2 forks, 1 issue ever** (closed, 2026-06-29). The
+   gap-reporting loop has now produced **0 reports in 6 days** — still short of a
+   verdict, but the "cut it if nil in a few weeks" clock is running. Note the
+   asymmetry this cycle exposed: three real gaps were found by *us* running the
+   library, none by an external reporter. Publish the salience write-up + the
+   infographic (LinkedIn is the measured top referrer). A **people problem, not a
+   measurement one** — the highest-leverage lever left.
 2. **Agentic large-repo audit** — the *only* design that could move AUDIT off +0.00
    (all four single-prompt audit instruments saturate). Needs a new tool-using harness
    + a large ground-truth-defect fixture + two-axis (recall × efficiency) scoring;
@@ -35,8 +101,11 @@ lift is not sonnet-specific** (`openai/gpt-5.1` shows **+0.44**).
    the moderate-scale decay run.
 6. **First 6-month accuracy sweep ~Jan 2027** (`LAST-VERIFIED` 2026-07-08).
 
-Credit ~**$8.79** (verify via the OpenRouter credits API, never assume). The dated
-per-cycle record below is the history; this block is the live picture.
+Credit was ~**$8.79 as of 2026-07-22** and has **not been re-checked since** — no
+paid eval ran in the 2026-07-24…28 cycle (all six releases were content/CI work).
+Verify via the OpenRouter credits API before planning anything paid; never assume
+this figure. The dated per-cycle record below is the history; this block is the
+live picture.
 
 ---
 
