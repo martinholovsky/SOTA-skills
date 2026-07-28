@@ -481,6 +481,13 @@ task:
 - real surface area in the task with **no owning skill** — a routing gap;
 - guidance that, followed literally, would have shipped a defect.
 
+**Two loaded rules that contradict each other** are usually a scope collision:
+one is a general default, the other a requirement inside a narrower domain. The
+narrower wins *in its domain* — pick by which failure mode is worse here (a
+needless idiom vs an outage), never silently: name the rule you followed and why
+in a comment beside the code, or the next reader reverts it. Then report it —
+the fix is an explicit exception in whichever rule was too broad.
+
 Report: `https://github.com/martinholovsky/SOTA-skills/issues/new/choose`
 (bad-guidance / skill-request templates). Anything dangerous or
 security-sensitive goes to a **private advisory** instead — see `SECURITY.md`.

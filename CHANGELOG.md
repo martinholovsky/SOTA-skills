@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Router — how to resolve two loaded rules that contradict each other.** The
+  library has 41 skills that can disagree and, until now, said nothing about
+  what to do when they do: a `grep` for `conflict|precedence|disagree|override`
+  across `skills/sota/SKILL.md` returned only an unrelated table row. Six lines
+  in "When this library is wrong": a contradiction is usually a **scope
+  collision** (a general default vs a requirement inside a narrower domain), the
+  narrower wins *in its domain*, pick by which failure mode is worse here, and
+  **never resolve it silently** — name the rule you followed and why in a comment
+  beside the code, or the next reader reverts it. Then report it, because a
+  contradiction needing judgment is itself a defect. Placed next to the report
+  path, outside the eval-pinned BUILD block (`ROUTER_BUILD_SHA` unchanged).
+
 ### Fixed
 
 - **`sota-python` rules/07 §1 contradicted `sota-observability` rules/05 §1.**
@@ -25,6 +39,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   collision, resolved it correctly by judgment, and documented why — but only
   because the model was thinking. The rule as written would have produced the
   wrong code for a literal reader. Third gap this week surfaced by field use.
+
+  **Scoped deliberately to Python**, verified rather than assumed: no other
+  language skill carries an analogous "async without await" rule (checked all
+  eight), and the trap is FastAPI-specific — a `def` handler is dispatched to
+  the anyio threadpool. `sota-javascript-typescript` rules/04 shows a *sync*
+  `/healthz` handler, which is correct for Node, where nothing dispatches
+  request handlers to a threadpool. No equivalent carve-out is needed elsewhere.
 
 ## [1.19.5] - 2026-07-28
 
