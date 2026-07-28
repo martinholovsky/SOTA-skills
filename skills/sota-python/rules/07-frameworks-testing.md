@@ -55,6 +55,14 @@ async def create_user(payload: UserIn, svc: UserService = Depends(get_user_servi
   SQLAlchemy async session / httpx.AsyncClient). Mixed stack? Make the endpoint `def` and
   stay sync, or fix the stack. An `async def` endpoint with zero `await` inside is a bug
   marker — it gains nothing and risks someone adding blocking calls later.
+- **Exception: the liveness probe.** A liveness endpoint is *supposed* to await nothing —
+  its job is "is the event loop responsive", so `sota-observability` rules/05 §1 specifies
+  process-internal-only, "usually just return 200". Written as `def` it runs in the anyio
+  threadpool, where saturation by slow sync handlers delays the probe and the orchestrator
+  restarts a process whose event loop was fine — the restart storm rules/05 exists to
+  prevent. So a no-`await` `async def` is **correct** here and the marker does not apply.
+  Say so in the docstring, or the next reader "fixes" it. Readiness (`/readyz`), which does
+  check dependencies, follows the normal rule.
 - Background work: `BackgroundTasks` for small post-response work; real job queue
   (arq/celery/temporal) for anything that must survive a process restart.
 
@@ -233,6 +241,7 @@ grep -rn "async def" $(grep -rln "APIRouter\|FastAPI" --include="*.py" src/) | h
 grep -rn "requests\.\|time.sleep\|session.query\|Session(" --include="*.py" src/ | grep -i route  # sync-in-async [HIGH]
 grep -rn "@\(app\|router\)\.\(get\|post\|put\|delete\)" --include="*.py" src/ -A3 | grep -L response_model | head  # ORM leak risk
 grep -rn "AsyncClient()" --include="*.py" src/ | grep -v lifespan              # per-request clients [MEDIUM]
+grep -rn -B2 "livez\|/health\|healthz" --include="*.py" src/ | grep "^.*def "  # liveness: `async def`, no deps (§1 exception)
 grep -rn "^[A-Z_]* = .*Session\|^engine = " --include="*.py" src/              # module-global state vs Depends
 
 # Django ORM

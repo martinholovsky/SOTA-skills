@@ -5,6 +5,27 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **`sota-python` rules/07 §1 contradicted `sota-observability` rules/05 §1.**
+  rules/07:56 called an `async def` endpoint with zero `await` "a bug marker";
+  rules/05 specifies a liveness probe as process-internal-only, "usually just
+  return 200" — which *is* a no-`await` `async def`. A reader following rules/07
+  literally makes the handler `def`, it runs in the anyio threadpool, and
+  saturation by slow sync handlers delays the probe until the orchestrator
+  restarts a process whose event loop was fine: the restart storm rules/05
+  exists to prevent. rules/07 now carves the liveness case out explicitly, cross-
+  references rules/05 §1, tells the author to say so in the docstring (or the
+  next reader "fixes" it), and notes that readiness follows the normal rule. One
+  audit-checklist grep added.
+
+  Found by running the library, not reading it: a live BUILD session hit the
+  collision, resolved it correctly by judgment, and documented why — but only
+  because the model was thinking. The rule as written would have produced the
+  wrong code for a literal reader. Third gap this week surfaced by field use.
+
 ## [1.19.5] - 2026-07-28
 
 The **verify-what-you-set-up** release. The library could scaffold a repo and
