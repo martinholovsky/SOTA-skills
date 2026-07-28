@@ -209,10 +209,12 @@ Installing is *ambient*: the rules apply in every directory, including a repo
 with no gates, no agent file and no LICENSE. They then govern the code you write
 and nothing else — the repo keeps accepting unscanned commits. Check this
 **once per repo**, on the first BUILD task in an unfamiliar one, by looking (not
-inferring): is there a `.pre-commit-config.yaml` or a CI secret scan, a
-`LICENSE`, an `AGENTS.md`/`CLAUDE.md`, and how long is the git history? Two or
-more missing **and** a history of a few commits = day zero. A long history means
-a mature repo that likely decided against them; say nothing.
+inferring): is there a `.pre-commit-config.yaml` **or any other hook manager or
+CI job** running a secret scan; a license file (`LICENSE*`, `COPYING*` or
+`COPYRIGHT` — never match the bare name, projects name it after the licence);
+an `AGENTS.md`/`CLAUDE.md`; and how long is the git history? Two or more missing
+**and** a history of a few commits = day zero. A long history means a mature
+repo that likely decided against them; say nothing.
 
 When it fires, say it **once, in a line, with the command**, then get on with the
 task: `scripts/init-gates.sh` + `pre-commit install --hook-type pre-push` for

@@ -32,6 +32,25 @@ personal rather than repo-resident.
   than no pointer, because it reads as a satisfied requirement. One
   audit-checklist item added.
 
+### Fixed
+
+Both found by running the new detection against a real repo
+([asterinas](https://github.com/asterinas/asterinas), 4304 commits) rather than
+trusting it as written:
+
+- **Licence detection matched the bare name `LICENSE`.** Asterinas ships
+  `LICENSE-MPL` + `COPYRIGHT`, so a literal check reports the licence missing
+  and feeds a false signal into the day-zero trigger. The router now matches
+  `LICENSE*` / `COPYING*` / `COPYRIGHT`, and says explicitly not to match the
+  bare name. Gate detection likewise widened beyond `.pre-commit-config.yaml`
+  to any hook manager or CI job.
+- **rules/01 §10 offered only two ways to point a second tool at `AGENTS.md`**
+  (symlink, CI-generated copy). Asterinas uses a third that is better than
+  both — a 28-byte `CLAUDE.md` reading `See [AGENTS.md](AGENTS.md).`:
+  platform-independent, no build step, and unable to degrade silently the way a
+  `core.symlinks=false` checkout does. It is now option 1 and the recommended
+  default, with the trade (one hop the agent must follow) stated.
+
 ### Changed
 
 - **README Installation** gains "An install is personal, not repo-resident" —

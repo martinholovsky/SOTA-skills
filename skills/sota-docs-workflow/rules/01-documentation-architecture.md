@@ -334,14 +334,25 @@ design out on day zero:
   copies that drift and spends context twice. Repo file = repo-specific only.
   The inverse is worse: repo-specific facts stranded in a personal file no
   teammate has.
-- **Forking the file per tool.** Keep one canonical `AGENTS.md` with
-  `CLAUDE.md` / `GEMINI.md` as symlinks (§7) — but know the failure mode first.
-  Git records a symlink as such, and where `core.symlinks` is false (set
-  automatically at clone time on filesystems that can't represent one) symlinks
-  are, in git's words, "checked out as small plain files that contain the link
-  text" (`git help config`) — the agent then reads the string `AGENTS.md` as the
-  whole file. If any contributor is on such a checkout, generate the duplicates
-  in CI from the canonical file and fail the build on drift instead.
+- **Forking the file per tool.** Keep one canonical `AGENTS.md` (§7) and pick
+  how the other names reach it, knowing the trade of each:
+  1. **A one-line pointer file** — `CLAUDE.md` containing
+     `See [AGENTS.md](AGENTS.md).` and nothing else. Platform-independent, no
+     build step, and it cannot silently degrade; the cost is one hop the agent
+     must follow. Observed in the wild on large cross-platform projects, and the
+     safest default.
+  2. **A symlink** — exact, but know the failure mode: git records a symlink as
+     such, and where `core.symlinks` is false (set automatically at clone time
+     on filesystems that can't represent one) symlinks are, in git's words,
+     "checked out as small plain files that contain the link text"
+     (`git help config`). The agent then reads the bare string `AGENTS.md` as
+     the entire file and follows no instructions at all — a silent failure, not
+     a visible one.
+  3. **CI-generated duplicates** from the canonical file, failing the build on
+     drift. Exact and platform-independent, at the cost of a job to maintain.
+
+  Anything else — hand-maintained copies — drifts, and the copy that goes stale
+  is the one your teammate's tool reads.
 
 **Bootstrap the invariants as checks, not prose.** Anything the repo must never
 regress — no secret in a commit, every internal link resolving, a required file
