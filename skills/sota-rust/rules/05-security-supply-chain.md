@@ -63,6 +63,14 @@ unknown-git = "deny"          # git deps pinned by rev only, allowlisted
   on build machines; rotate anything exposed to an unvetted build.
 - Pin GitHub Actions by SHA, not tag; CI tokens least-privilege
   (`permissions: contents: read` default).
+- **Declared but not reached**: an unused crate is still install/build-time trust
+  granted (`build.rs`, proc-macros) for zero function. `cargo machete` runs on
+  stable but is deliberately imprecise — false positives for crates used only
+  from `build.rs`-generated code and for import names that differ from package
+  names (`--with-metadata` fixes the latter); `cargo +nightly udeps` needs
+  nightly and documents false *negatives*. Neither settles it alone: prove a
+  candidate by removing it in a scratch copy and running the real build, clippy,
+  and full suite — `sota-devsecops` rules/03 §3.9.
 
 ## 3. Integer overflow — release mode wraps
 

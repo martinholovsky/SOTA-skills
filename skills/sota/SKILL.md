@@ -80,7 +80,7 @@ rules files that match the code in front of you. Never load all skills at once.
 | `sota-performance` | Latency, throughput, profiling, memory usage, caching (incl. stampede protection), I/O and network efficiency, Core Web Vitals, performance regression in CI |
 | `sota-async-concurrency` | async/await, threads, goroutines, channels, races, deadlocks, event-loop blocking, cancellation/timeouts, graceful shutdown, backpressure, bounded queues |
 | `sota-api-design` | REST/HTTP semantics, pagination, idempotency, versioning/deprecation, GraphQL, gRPC/proto evolution, websockets/SSE/realtime, webhooks, API rate limiting and tenant isolation |
-| `sota-devsecops` | CI/CD pipelines, GitHub Actions hardening, supply chain (SLSA, Sigstore, SBOM, dependency confusion), container builds, SAST/secret-scanning gates, Terraform/GitOps, admission control |
+| `sota-devsecops` | CI/CD pipelines, GitHub Actions hardening, supply chain (SLSA, Sigstore, SBOM, dependency confusion), unused/inert dependencies and upstream-health checks, container builds, SAST/secret-scanning gates, Terraform/GitOps, admission control |
 | `sota-databases` | Schema design, Postgres/NoSQL choice, migrations (zero-downtime), indexes/EXPLAIN, transactions/isolation, connection pooling, replication/backups, Redis, RLS/DB security, pgvector |
 | `sota-frontend-design` | UI/UX, visual design, typography/color/layout, design systems and tokens, components, forms, accessibility (WCAG 2.2), motion/animation design, modern CSS, responsive design |
 | `sota-web-frameworks` | React/Next.js and Vue/Nuxt engineering — Server Components & Server Actions, the RSC/client trust boundary, Next caching (`use cache`/PPR/ISR), Nitro server routes, hydration correctness, SSR state serialization, and framework-specific security & CVEs |
@@ -363,8 +363,8 @@ For a **full project audit**, work in passes:
   03 GraphQL, 04 gRPC & protocols, 05 realtime/websockets/SSE, 06 webhooks,
   07 security & operations
 - **sota-devsecops/rules**: 01 pipeline security, 02 provenance & signing,
-  03 dependencies, 04 build & containers, 05 analysis gates,
-  06 IaC & deployment, 07 runtime & ops, 08 registry security
+  03 dependencies (incl. §3.9 declared-but-not-reached), 04 build & containers,
+  05 analysis gates, 06 IaC & deployment, 07 runtime & ops, 08 registry security
 - **sota-databases/rules**: 01 choosing & modeling, 02 schema & migrations,
   03 queries & indexes, 04 transactions & concurrency, 05 reliability & scale,
   06 security & compliance, 07 vector & AI, 08 SurrealDB & multi-model

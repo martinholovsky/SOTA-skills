@@ -61,6 +61,14 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-07-28 | Two live verification runs on an [asterinas](https://github.com/asterinas/asterinas) clone | A read-only setup check: is the library reaching this repo, is its agent file true, are its gates real | **adopted** | `docs/VERIFY-SETUP.md` · v1.19.5 |
 | 2026-07-28 | Same runs — a review workflow with 5/5 *skipped* runs | A control whose trigger never fires: all-skipped is not all-green | **adopted** | `sota-code-security/rules/10` §2.13 · v1.19.5 |
 | 2026-07-28 | Same runs — 7/7 `make` targets resolved while the stated toolchain was 7 months stale | Verify an agent file's claims, not just that its commands exist | **adopted** | `sota-docs-workflow/rules/01` §7 · v1.19.5 |
+| 2026-07-30 | A user-authored audit prompt for the "declared but not reached" class (CVEs/versions explicitly out of scope) | Trace every direct dep / registered module / plugin to a real entrypoint; prove "unreached" by deleting it and running the real build | **adopted** | `sota-devsecops/rules/03` §3.9 · unreleased |
+| 2026-07-30 | Same prompt | Leverage ratio: symbols called vs transitive modules inherited (<5 / >10 → replace-in-house candidate) | **adopted** | `sota-devsecops/rules/03` §3.9.4 · unreleased |
+| 2026-07-30 | Same prompt | Upstream health from a primary source fetched this session (`gh api` archived / `pushed_at` / contributor count), reported as dates | **adopted** | `sota-devsecops/rules/03` §3.9.5 · unreleased |
+| 2026-07-30 | Same prompt | Never reimplement an algorithm whose output is persisted and must stay comparable with stored data (fuzzy hashes, digests, tokenizers) | **adopted** | `sota-devsecops/rules/03` §3.9.6 · unreleased |
+| 2026-07-30 | Same prompt | A/B/C/D finding taxonomy (DELETE / REPLACE IN-HOUSE / KEEP / UNMAINTAINED-but-keep) with the successor named for D | **adopted** | `sota-devsecops/rules/03` §3.9.6 · unreleased |
+| 2026-07-30 | Same prompt | Negative claims need two independent methods; `file:line \| claim \| severity \| effort \| evidence`; mark the unverified | **rejected: already ours** | — |
+| 2026-07-30 | Validating the above (`gh api` on 8 tool repos) | `gh api` follows renames silently — a 200 under the manifest's name is not evidence the project is still there; read `full_name` back | **adopted** | `sota-devsecops/rules/03` §3.9.5 · unreleased |
+| 2026-07-30 | Same validation — Ruby/.NET candidates are single-maintainer, low-adoption | Where no established tool exists, say so and go straight to the deletion proof rather than naming a fringe tool | **adopted** | `sota-devsecops/rules/03` §3.9.2 · unreleased |
 
 ## Entries
 
@@ -365,3 +373,85 @@ dangerous possible false pass.
 **Measurement status:** all three are content refinements adopted on reasoning,
 **not measured**. Do not cite a lift. `VERIFY-SETUP.md` is prose, not an
 enforced invariant — nothing in CI checks that a downstream repo ran it.
+
+### 2026-07-30 — an audit prompt with CVEs ruled out, and what the library couldn't answer
+
+Source: a user-authored audit prompt for the **"declared but not reached"** class —
+dependencies, modules, and plugins that are wired in and inert — with an explicit
+exclusion: *do not report CVEs or versions, CI already covers that.* No external
+repo involved; the artifact under test was the library's coverage of a question
+posed from outside it.
+
+That exclusion is what made the prompt useful. Strip CVEs and versions from
+`rules/03-dependencies.md` and almost nothing remains that applies: the file's
+268 lines were lockfiles, confusion, typosquats, SBOM, scanning, VEX, Renovate,
+vendoring — the *vulnerable-shipped-code* question, start to finish. All eight
+occurrences of `reachab*` in the file sat in §3.6 and its checklist line, and
+every one of them means CVE-triage reachability: is the **vulnerable function**
+reached. Whether a dependency is reached *at all* was not asked anywhere in the
+library.
+
+**Covered already (1 of 6, and covered well).** The prompt's requirement that
+negative claims need two independent methods is stated three times over —
+router principle 3, `sota/rules/01` §5, `sota-code-security` rules/10 §5 — plus
+a refuter assigned specifically to absence claims (`rules/01` §7.5). So is the
+finding format, the effort field, and "mark the unverified".
+
+**The near-misses, which are the interesting part.** Three requirements had a
+close relative that stopped one step short:
+
+1. *Proof by construction.* rules/10 §3 is the identical epistemology — no-op the
+   control body, run the suite, and it already names the two traps that make the
+   result lie (the mutation didn't take; a missing dependency masked the path).
+   It had simply never been pointed at a **removed package** instead of a
+   disabled control. §3.9.3 is that same procedure re-aimed, and it inherits both
+   traps in their dependency form (vendored copy still on disk, lockfile not
+   regenerated; a suite that never exercised the path).
+2. *Reachability.* `rules/01` §7 already uses reachability as a refutation lens —
+   "dead code, an unregistered route… downgrades it to hardening debt" — to kill
+   *findings*. Never to evaluate a *dependency*.
+3. *The impossible-path trap* (a symbol referenced on a branch the live decoder
+   cannot produce) is rules/10 §2.13 one layer down: there, a gate whose trigger
+   never fires; here, a dependency whose reference is real but whose branch is
+   unreachable. Both are cross-linked now, because the tell is the same — has it
+   *ever executed*, not does it exist.
+
+**Genuinely absent (2).** The leverage ratio existed only as a BUILD-time gate on
+*adding* a dependency, in two languages (`sota-golang` rules/05, `sota-javascript-typescript`
+rules/05) — no audit-side sweep, no threshold, nothing for Python/Rust/JVM/.NET/PHP/Ruby.
+And upstream health was mandated *in principle* (operating principle 0) without a
+single command; the "name the maintained successor" rule existed as this repo's own
+authoring convention, never as guidance for auditing someone else's tree.
+
+**One idea the library did not have in any form.** The KEEP bucket's prohibition
+on reimplementing **an algorithm whose output is persisted and must stay
+comparable with stored data**. "Don't roll your own crypto" is everywhere in the
+library; this is a different failure mode — a reimplementation can be perfectly
+*equivalent* and still invalidate every stored value it must compare against, and
+nothing errors. It belongs in the silent-failure family, and it is cited as such.
+
+**What validating the entry taught (2 more adoptions).** Every tool named in
+§3.9.2 was checked live via `gh api repos/<owner>/<repo>` — the same command the
+rule prescribes. Two results changed the rule:
+
+- **`gh api` follows renames silently.** `repos/fpgmaas/deptry` answers as
+  `osprey-oss/deptry`; `repos/icanhazstring/composer-unused` as
+  `composer-unused/composer-unused`. Both are the URLs a manifest or a README
+  would still carry. A 200 under the old name reads as "project fine, still
+  there" when the project has in fact moved owners — so the rule now says read
+  `full_name` back, and distinguishes a rename from a 404.
+- **Ruby has no established tool, and .NET's is thin.** The candidates are
+  5-star projects with **exactly one contributor each** (`gh api
+  repos/<o>/<r>/contributors` → length 1), and the Ruby one's last push was
+  2025-01-03 — over 18 months before this check. Naming
+  them would have violated the no-rot-prone-recommendations convention within
+  months. Saying *no established tool exists — go straight to the deletion proof*
+  is both honest and the stronger instruction, since dynamic `require` and
+  autoload defeat static analysis in Ruby by construction anyway.
+
+**Measurement status:** all adoptions here are content refinements taken on
+reasoning, **not measured**. Do not cite a lift. Note also what this entry does
+*not* claim: the tool table is a fact about tools as of 2026-07-30, not a
+recommendation with a shelf life — §3.9.2 tells the reader to re-verify before
+trusting any row, which is the only maintainable posture for a table of eight
+third-party projects.

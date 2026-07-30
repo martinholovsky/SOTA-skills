@@ -163,6 +163,7 @@ Knip finds unused files, exports, types, and dependencies — the stuff `tsc` ca
 
 - Run in CI (`knip --reporter compact`); triage with `--include dependencies` first (unused deps = supply-chain surface, rules/05), then files, then exports.
 - Pairs with `tsc --noUnusedLocals --noUnusedParameters` (intra-file) — knip covers inter-file.
+- Knip's output is a **candidate list, not a finding**: a package loaded dynamically (string `require`, plugin manifest, DI by convention) reads as unused, and a package whose symbol is referenced only on an unreachable branch reads as used. Prove each candidate by deleting it in a scratch copy and running the real build + suite — `sota-devsecops` rules/03 §3.9.
 - Unused exports kill tree-shaking analysis precision and mislead readers; deleting code is a feature.
 
 ## Library publishing: publint + arethetypeswrong

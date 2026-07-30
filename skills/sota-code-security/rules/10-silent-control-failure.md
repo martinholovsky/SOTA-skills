@@ -301,6 +301,12 @@ State the sample when reporting either: "no non-skipped run in the last N" is a
 bounded observation, not "never". A single-name search compounds this — see
 `sota/rules/01-audit-methodology.md` on absence claims.
 
+The same shape one layer down, in the dependency graph rather than the control
+plane: a declared dependency, registered module, or plugin that is wired in and
+never reached — including the case where its symbol *is* referenced, but only on
+a branch the live code path cannot produce. That sweep, with deletion-as-proof,
+is `sota-devsecops` rules/03 §3.9.
+
 ## 3. Vacuous tests — the meta-case
 
 A test that passes against broken code is worse than no test: it manufactures
