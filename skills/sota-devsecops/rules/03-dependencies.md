@@ -400,6 +400,18 @@ gh api "repos/<owner>/<repo>/contributors?per_page=1" --include | grep -i '^link
   invalidates every stored value it has to compare against, and the failure is silent —
   comparisons keep returning answers, just wrong ones (`sota-code-security` rules/10). The
   library-wide stance is in `sota/SKILL.md`: use a vetted library, don't roll your own.
+
+  **For protocols the line is which side you are on** — added 2026-07-31 after this
+  clause was found genuinely ambiguous on a request signer. Primitives are out
+  unconditionally. A *protocol* is out whenever **this** system is the **validating**
+  side: there a canonicalisation, parsing or comparison bug fails **permissively and
+  silently** — it accepts what it should reject, and nothing errors. That is the
+  rules/10 family and it is the reason the prohibition exists. Composing stdlib
+  primitives per a published spec to produce something a **remote authority validates**
+  is a different class: a wrong signature is rejected on the first request, loudly. If
+  you take that path, **state which side you are on**, pin the spec version you
+  implemented, and test against the publisher's own vectors where they exist. When you
+  cannot say which side fails first, treat it as validating and keep the library.
 - **D. UNMAINTAINED but must keep** — name the maintained fork or successor and the date
   you checked it. If none exists, say so; the migration is a roadmap item with an owner,
   not a one-line fix.

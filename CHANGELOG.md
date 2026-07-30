@@ -5,6 +5,45 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **`sota-devsecops` rules/03 §3.9.6 — the protocol prohibition now says which side
+  you are on.** The clause read *"never recommend an in-house implementation of:
+  crypto primitives or protocols…"*, which forbids writing a request signer against a
+  published spec — something reasonable, and something the rule's own reasoning does
+  not actually argue against. Found by building a case set for the §3.9.4-vs-§3.9.6
+  conflict, where the ambiguity made the answer key unusable.
+
+  Primitives remain out unconditionally. A **protocol** is out whenever *this* system
+  is the **validating** side: there a canonicalisation, parsing or comparison bug
+  fails **permissively and silently** — it accepts what it should reject and nothing
+  errors, which is the `rules/10` family and the reason the prohibition exists.
+  Composing stdlib primitives per a published spec so that a **remote authority**
+  validates the result is a different class: a wrong signature is rejected on the
+  first request, loudly. Taking that path now requires stating which side you are on,
+  pinning the spec version, and testing against the publisher's vectors where they
+  exist — and when you cannot say which side fails first, treat it as validating and
+  keep the library.
+
+### Added
+
+- **`evals/cases/reimplement.jsonl` + `run-reimplement.py` — documentation, not a
+  measured instrument.** Ten cases (5 disqualified / 5 legitimate) encoding the
+  §3.9.4-vs-§3.9.6 conflict, with every legitimate case resembling a disqualified one
+  so that *ratio-only* and *refuse-everything* both land at exactly **0.500** — a
+  three-arm selftest in CI holds that, and four guards abort on an empty case file, a
+  vacuous reason axis, a one-sided case file, and a report with no parsable lines
+  (all four verified to exit non-zero). `test_scoring.py` grows to **38 checks**,
+  including the row where the decision and reason metrics legitimately diverge, which
+  is what a metric-conflating mutation dies on.
+
+  **It has never been run and no number from it may be cited.** Seven audit
+  instruments already read +0.00 and the roadmap records "do not build another
+  audit-recall instrument"; an eighth run was declined. It is kept because building it
+  produced the rule fix above, and the scorer stays so the case set stays checkable.
+
 ## [1.19.8] - 2026-07-31
 
 ### Changed

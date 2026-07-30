@@ -61,6 +61,7 @@ jobs:
         run: |
           bash evals/cases/dead-path/selfcheck.sh
           python3 evals/run-dead-path.py --selftest
+          python3 evals/run-reimplement.py --selftest
 
   shellcheck:
     name: Shell lint (shellcheck)

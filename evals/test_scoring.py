@@ -33,7 +33,7 @@ FAILURES = []
 CHECKS = 0
 # Floor for the number of assertions that must actually execute. Raise it when
 # you add checks; a drop means a test stopped running, not that nothing broke.
-MIN_CHECKS = 25
+MIN_CHECKS = 38
 
 
 def load(fname, modname):
@@ -149,8 +149,59 @@ def test_run_repo_audit():
     check("wrong file -> strict 0.5", strict, 0.5)
 
 
+# --------------------------------------------------------------------------
+# run-reimplement.score() — decision + reason, where the reason axis is scored
+# over a SUBSET (the KEEP cases). The subset is the mutation-bait here: a
+# scorer that scores reason over all cases, or that conflates it with decision,
+# dies on the "one KEEP justified generically" row below.
+# --------------------------------------------------------------------------
+def test_run_reimplement():
+    print("run-reimplement.score()")
+    m = load("run-reimplement.py", "rri")
+    cases = [
+        {"id": "k1", "decision": "KEEP", "accept": ["KEEP"], "reason_must_match": "persist|stored"},
+        {"id": "k2", "decision": "KEEP", "accept": ["KEEP"], "reason_must_match": "persist|stored"},
+        {"id": "r1", "decision": "REPLACE", "accept": ["REPLACE"], "reason_must_match": ""},
+        {"id": "r2", "decision": "REPLACE", "accept": ["REPLACE"], "reason_must_match": ""},
+    ]
+    perfect = {"k1": ("KEEP", "the digest is persisted and compared"),
+               "k2": ("KEEP", "stored values would be invalidated"),
+               "r1": ("REPLACE", "nothing stored"), "r2": ("REPLACE", "mechanical")}
+    s = m.score(cases, perfect)
+    check("perfect -> decision 1.0", s["decision"], 1.0)
+    check("perfect -> reason 1.0", s["reason"], 1.0)
+    check("perfect -> both 1.0", s["both"], 1.0)
+    check("reason denominator is the KEEP subset", s["reason_n"], 2)
+
+    # Degenerate strategy A: apply the leverage ratio and replace everything.
+    s = m.score(cases, {c["id"]: ("REPLACE", "few symbols, many modules") for c in cases})
+    check("replace-everything -> decision 0.5", s["decision"], 0.5)   # kills `return 1.0`
+    check("replace-everything -> reason 0.0", s["reason"], 0.0)
+
+    # Degenerate strategy B: refuse everything, with no mechanism named.
+    s = m.score(cases, {c["id"]: ("KEEP", "risky to reimplement") for c in cases})
+    check("refuse-everything -> decision 0.5", s["decision"], 0.5)
+    check("refuse-everything -> reason 0.0", s["reason"], 0.0)
+
+    # The discriminating row: every decision right, but one KEEP justified with a
+    # generic reason. decision and reason MUST diverge here — a mutation that
+    # conflates the two metrics, or scores reason over all 4 cases, dies on this.
+    mixed = dict(perfect); mixed["k2"] = ("KEEP", "it seems risky to reimplement")
+    s = m.score(cases, mixed)
+    check("right calls, one generic reason -> decision 1.0", s["decision"], 1.0)
+    check("right calls, one generic reason -> reason 0.5", s["reason"], 0.5)
+    check("right calls, one generic reason -> both 0.75", s["both"], 0.75)
+
+    # Naming the mechanism while voting the wrong way earns nothing.
+    s = m.score(cases, {**perfect, "k1": ("REPLACE", "the digest is persisted and compared")})
+    check("mechanism named but decision wrong -> reason 0.5", s["reason"], 0.5)
+
+    check("missing predictions -> decision 0.0", m.score(cases, {})["decision"], 0.0)
+
+
 if __name__ == "__main__":
-    for t in (test_run_clean, test_run_adjudication, test_run_repo_audit):
+    for t in (test_run_clean, test_run_adjudication, test_run_repo_audit,
+              test_run_reimplement):
         try:
             t()
         except Exception as e:                       # a scorer that crashes is a failure
