@@ -96,6 +96,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   without a change, and behind-upstream — each verified to exit 0 without
   tripping `set -euo pipefail`.
 
+### Changed
+
+- **The dead-path eval was run, and it is an honest +0.00 that refutes our own
+  explanation.** Six live Claude Code sub-agents, 3 per arm, identical prompts
+  except the treatment: **both arms scored 1.000 verdict / 1.000 proof**, 12/12
+  items each, including both inverted traps and the REFUTED case. The
+  pre-registered hypothesis — *"a bare agent reasons and scores ~0.25 verdict /
+  0.00 proof; a library-guided one runs the mutations"* — is **wrong**. The bare
+  agents worked in scratch copies, mutated the controls, deleted the modules and
+  ran `trace.Trace` unprompted; one used `dis` to identify `POP_TOP` after the
+  control's `CALL` as the bytecode tell for a discarded return. Nothing asked them
+  to.
+  - This matters beyond one eval: the standing explanation for the other four
+    audit nulls was that they score *recognition*, and a procedure-graded
+    instrument would separate the arms. It did not. That explanation is retired,
+    and `RESULTS.md` says so at the top of the audit section.
+  - The arms differ only in **reporting discipline** — ACTIVE/LATENT labels 0/3 vs
+    3/3, claims bounded by what actually ran 0/3 vs 3/3, flagging that the fix
+    moves a decision boundary 0/3 vs 3/3. Post-hoc, n=3, and partly tautological
+    (the library arm was told to follow a file that defines that vocabulary).
+    **Not a lift, and not to be cited as one.**
+  - Two disclosures in the write-up: the scorer's execution regex was **widened
+    mid-run** after a false negative on a real, prose-described deletion proof (no
+    arm's ranking changed; the `--selftest` guard still separates the arms 0.000 vs
+    1.000), and one agent's report file is a transcription because the harness
+    blocked it from writing `.md` — its verdict lines are verbatim, its method text
+    abridged. Full detail: `evals/results/2026-07-30/DEAD-PATH.md`.
+
 ### Fixed
 
 - **The rest of the automation got the same treatment as the invariant checks**

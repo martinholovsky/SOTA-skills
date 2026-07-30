@@ -48,9 +48,17 @@ LINE_RE = re.compile(
 
 # A proof must name something that was RUN and something that was OBSERVED.
 # Naming a command alone is a plan, not evidence.
+# Execution is often reported in prose ("removed the file, ran the full suite")
+# rather than as a pasted command line. Requiring a command token scored those as
+# unproven — a false negative found on 2026-07-30 when a live agent's correct,
+# executed deletion proof was marked absent. The narrow forms stay; natural-
+# language execution verbs are added. The OBSERVED_RE half is what keeps this
+# honest: "ran the suite" alone still fails without an observed outcome, and the
+# --selftest reasoning arm (grep/reads/asserts, no execution) must still score 0.
 RAN_RE = re.compile(
     r"(unittest|pytest|python3?\s|go\s+(build|test|vet)|npm\s|cargo\s|make\s|rm\s|"
-    r"delete[sd]?\b|no-?op|mutat|\$\s|`[^`]+`)",
+    r"delete[sd]?\b|remov(e|ed|ing)\b|\bran\b|re-?ran\b|execut(e|ed|ing)\b|"
+    r"no-?op|mutat|trace[sd]?\b|\$\s|`[^`]+`)",
     re.IGNORECASE,
 )
 OBSERVED_RE = re.compile(

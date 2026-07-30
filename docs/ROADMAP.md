@@ -76,17 +76,28 @@ first.
   and a flaky gate gets disabled. Still open: the eval runners and CI steps print
   no duration, and there is no recorded baseline to compare a future run against,
   so "it got 30× faster" is visible only to a human reading two logs.
-- **The dead-path eval has never been run against a live agent.** The fixture,
-  ground truth, deterministic scorer, fixture selfcheck and scorer selftest all
-  exist and run in CI (2026-07-30) — but no arm has been executed, so there is **no
-  number**, and none should be cited. Running it needs a tool-using agent driven
-  over a scratch copy of `evals/cases/dead-path/`, then
-  `run-dead-path.py --report`. Cheap next step: 4–6 local Claude Code sub-agents,
-  with-library vs bare, no OpenRouter spend for the deterministic half. The
-  hypothesis worth testing is narrow and falsifiable: **a bare agent reasons and
-  scores ~0.25 verdict / 0.00 proof; a library-guided one runs the mutations.** If
-  both arms run the procedure unprompted, this lands at +0.00 like the other four
-  and that is a real answer worth recording.
+- ~~**The dead-path eval has never been run against a live agent.**~~ **Run
+  2026-07-30 — and the hypothesis was wrong.** Six local sub-agents, 3 per arm:
+  **both arms 1.000/1.000, +0.00**. The pre-registered prediction ("a bare agent
+  reasons and scores ~0.25 verdict / 0.00 proof") is **refuted** — the bare agents
+  worked in scratch copies, mutated the controls, deleted the modules, ran
+  `trace.Trace`, and one used `dis` to spot the discarded return, none of it
+  requested. So "these instruments score recognition, not procedure" no longer
+  explains the audit family's saturation
+  ([DEAD-PATH](../evals/results/2026-07-30/DEAD-PATH.md)). The arms differ only in
+  reporting discipline (ACTIVE/LATENT labels 0/3 vs 3/3, bounded claims 0/3 vs
+  3/3, decision-boundary fix-risk 0/3 vs 3/3) — post-hoc, partly tautological
+  since the library arm was told to use that vocabulary, and **not a lift**.
+- **Where the audit frontier actually is, after that null.** Two readings survive
+  and neither is tested. (a) *The brief did the work*: naming four suspects and
+  demanding a `PROOF` field is a strong nudge; a genuinely unscoped "audit this
+  repo" over a large tree might separate the arms — this run is weak evidence for
+  prioritising the **agentic large-repo audit** (item 2 below) over building more
+  small fixtures. (b) *The scored axes are the wrong ones*: an instrument grading
+  labels, bounded claims and fix-risk would measure something, but it would be
+  measuring adherence to our own vocabulary, a far weaker claim than "finds more
+  bugs" — it must never be reported as a lift. Do not build a sixth small fixture
+  without a reason to expect a different answer.
 
 - **No gate notices a capability that never reached a front-door surface.**
   Invariant 6 fails the build on a wrong *number* in the README; nothing fails on a

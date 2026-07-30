@@ -27,8 +27,12 @@ audit STRAT-HIGH-2).
   accuracy and *proof compliance* (a right verdict with no executed evidence is not
   full credit). `selfcheck.sh` re-derives the fixture's six planted properties by
   mutation; `--selftest` proves the scorer still separates a report that reasoned
-  from one that ran. Both run in CI. **Not yet run against a live agent** — the
-  instrument exists, the number does not.
+  from one that ran. Both run in CI. **Run 2026-07-30, 6 live sub-agents, 3 per
+  arm: +0.00 — both arms 1.000/1.000.** The pre-registered hypothesis (bare agents
+  reason, guided ones run the procedure) is **refuted**: the bare agents mutated
+  the controls, deleted the modules and traced execution unprompted, and got both
+  inverted traps and the REFUTED case right
+  ([DEAD-PATH](results/2026-07-30/DEAD-PATH.md)).
 - `cases/router.jsonl` (20) — routing: a plain prompt → the skills that must
   load. Tests the router's task→skill mapping.
 - `cases/audit.jsonl` (13) — audit: a deliberately vulnerable snippet → the
