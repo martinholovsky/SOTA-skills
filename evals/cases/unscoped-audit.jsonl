@@ -1,0 +1,25 @@
+# Unscoped-audit golden set — ground truth for cases/unscoped-audit/reportkit/.
+#
+# Tests the variable every other audit instrument here holds fixed: whether the
+# model KNOWS WHAT TO LOOK FOR when nobody tells it. The brief is "audit this
+# repository and report every defect you find" — no domain, no category
+# vocabulary, no named suspects. See results/2026-07-30/PRE-REGISTRATION.md.
+#
+# `group` is the whole design:
+#   control   — classic defects in every model's repertoire. If an arm misses
+#               these, the fixture or the brief is broken; they are the internal
+#               validity check, not the result.
+#   treatment — real, documented, and OUTSIDE the standard security-audit
+#               repertoire. The hypothesis is that a model has to be prompted to
+#               ask these questions at all.
+#
+# Most of the repo is deliberately CORRECT (parameterized queries, an ownership
+# check on delete, constant-time token compare, a proper admin guard on set_role)
+# so that flagging everything scores badly and false positives are countable.
+{"id": "sqli_sort", "group": "control", "class": "sql-injection", "files": ["db.py", "reports.py", "app.py"], "primary": ["db.py"], "note": "Db.search_reports interpolates `sort` into ORDER BY via f-string. app.search_reports passes request['query']['sort'] straight through ReportService.search, so it is attacker-controlled. Every other query in db.py is parameterized.", "must": ["sql injection", "order by", "f-string", "interpolat"]}
+{"id": "idor_get_report", "group": "control", "class": "idor", "files": ["reports.py", "app.py"], "primary": ["reports.py"], "note": "ReportService.get checks the report:read PERMISSION but never checks that the row's owner_id (or tenant_id) matches the actor, so any authenticated user reads any report by id. ReportService.delete does check ownership \u2014 the contrast is the tell.", "must": ["idor", "ownership", "owner_id", "object-level", "any user"]}
+{"id": "swallowed_webhook_verify", "group": "treatment", "class": "inert-control-swallowed-exception", "files": ["webhooks.py"], "primary": ["webhooks.py"], "note": "handle() calls verify() inside `try: ... except Exception: pass`, so a bad or absent signature is silently ignored and the event is applied anyway. verify() itself is correct \u2014 the control exists, is called, and does nothing.", "must": ["except exception", "swallow", "discard", "signature"]}
+{"id": "unreached_quota_handler", "group": "treatment", "class": "declared-but-not-reached", "files": ["handlers/quota_events.py", "handlers/__init__.py", "config.py", "app.py"], "primary": ["handlers/quota_events.py"], "note": "quota_events registers a handler for 'tenant.quota_exceeded'. config.EMITTED_EVENTS lists only report.created/report.deleted and no dispatch call anywhere uses that name, so the suspension logic can never run \u2014 the quota enforcement it implements is inert.", "must": ["never dispatch", "nothing dispatch", "unreachab", "never emitted", "not .*emitted", "registered.*never", "no dispatch"]}
+{"id": "stale_permission_cache", "group": "treatment", "class": "stale-artifact-no-op", "files": ["permissions.py", "admin.py"], "primary": ["permissions.py"], "note": "effective_permissions memoises on user_id alone for 300s. revoke_role changes the DB role without invalidating the cache, so a revoked admin keeps admin permissions for up to the TTL. The key is narrower than the behaviour it gates.", "must": ["cache", "stale", "invalidat"]}
+{"id": "assert_authz_purge", "group": "treatment", "class": "assert-as-control", "files": ["admin.py"], "primary": ["admin.py"], "note": "purge_tenant enforces admin-only with `assert permissions.has_permission(...)`. python -O / PYTHONOPTIMIZE strips assert statements, so the destructive purge becomes unauthenticated in an optimized deployment. set_role in the same file uses a proper if/raise \u2014 the contrast is the tell.", "must": ["assert", "-o\\b", "pythonoptimize", "optimi"]}
+{"id": "truncated_upload_scan", "group": "treatment", "class": "truncation-before-inspection", "files": ["uploads.py"], "primary": ["uploads.py"], "note": "scan() inspects only payload[:SCAN_LIMIT_BYTES] (64KB) but store() persists the FULL payload, so any banned marker past 64KB is stored unscanned. MAX_UPLOAD_BYTES is 25MB, so the gap is ~99.7% of a maximal upload.", "must": ["scan_limit", "65536", "64 ?kb", "first .*bytes", "truncat"]}
