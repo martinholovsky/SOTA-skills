@@ -61,6 +61,18 @@ first.
 
 **New open items from the 2026-07-30 cycle:**
 
+- **Our own gates now report a denominator — the rest of the repo's automation does
+  not.** `check-invariants.sh` fails closed on an empty scope after a mutation
+  showed checks 2 and 10 passing over zero files. The same question is unasked of
+  `check-freshness.sh`, the eval runners, and the CI workflow steps: each can
+  succeed having examined nothing. Cheap, mechanical follow-up; apply
+  `sota-code-security` rules/11 §2.2 to them one at a time.
+- **Duration is not recorded for any of our automation.** rules/11 §2.1 calls
+  wall-time-vs-claimed-work the highest-yield tell, and none of our scripts or CI
+  jobs print how long they took against how much they examined. A one-line
+  `SECONDS`/timestamp per check would make the tell available on our own runs —
+  and would make a future "it got much faster" regression visible.
+
 - **No gate notices a capability that never reached a front-door surface.**
   Invariant 6 fails the build on a wrong *number* in the README; nothing fails on a
   missing *feature*. That is why five audit capabilities went undocumented for three
@@ -127,12 +139,15 @@ first.
   materialise either: gh's update notice fires **on invocation**, and nobody
   invokes a CLI for a library used inside an agent session. Revisit only if
   one-command install becomes the bottleneck.
-- **Router headroom: 497/500 lines** (re-counted 2026-07-30 — v1.19.7's routing-table
-  and library-map edits were made net-zero on purpose, by recombining a wrapped line).
-  The next router addition needs a trim first. `ROUTER_BUILD_SHA` is still
-  `71a9d78ea5e9e341`, **re-computed and matched 2026-07-30**, so every router edit
-  across v1.19.x landed outside the eval-pinned BUILD block and historical
-  completeness runs stay comparable.
+- **Router headroom: 500/500 lines — exhausted.** The rules/11 pointer in AUDIT
+  step 4 consumed the last three lines, and invariant 1 caught the overflow at 504
+  mid-edit; the text was compressed twice to fit. **The next router addition must
+  trim first — there is no slack at all.** Candidates when that day comes: the
+  per-domain pass ordering in AUDIT step 3 (11 lines, largely re-derivable from the
+  routing table) and the severity glossary in step 6 (5 lines, duplicated in
+  `rules/01` §4). `ROUTER_BUILD_SHA` is still `71a9d78ea5e9e341`, **re-computed and
+  matched after every router edit on 2026-07-30**, so all of them landed outside the
+  eval-pinned BUILD block and historical completeness runs stay comparable.
 - ~~**Unverified claim in the README** — that git-hosted plugin marketplaces
   re-check at session start.~~ **Checked 2026-07-30 and it was wrong in the way
   that matters.** The Claude Code docs state that *"third-party and local

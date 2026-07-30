@@ -11,6 +11,12 @@ absence is observable. In **AUDIT**, this is a distinct pass — the classes bel
 are invisible to source-pattern SAST, because the code is not *wrong*, it is
 *inert*.
 
+**Finding these at codebase scale is rules/11** — the cheap diagnostics (duration
+vs claimed work, printing every gate's denominator, cross-scale delta), plus three
+classes that are correctness rather than security: scale-dependent silence, a cache
+key narrower than the behaviour it gates, and a parser generalised from one sample.
+Sweep with rules/11 to decide *where* to apply this file.
+
 Related: fail-open authorization → rules/03 §"authz bypass patterns"; integer
 truncation → rules/06; prompt-as-control and the LLM threat model → rules/08
 §1–2 (§2.12 here frames it as a silent-control class); test vacuity and mutation

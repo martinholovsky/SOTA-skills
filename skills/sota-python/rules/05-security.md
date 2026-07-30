@@ -147,6 +147,22 @@ code  = f"{secrets.randbelow(1_000_000):06d}"
   disable redirects or re-validate per hop. httpx: set `follow_redirects=False` and handle
   explicitly.
 
+## 7a. `assert` is not a control — `-O` deletes it
+
+`python3 -O` and `PYTHONOPTIMIZE=1` strip `assert` statements entirely. Verified:
+a function whose `assert x > 0` raised under a normal run printed `passed` under
+both. So any validation, authorization, or bounds check written as an `assert`
+**does not exist** in an optimized deployment, and the source still reads correct.
+
+- Validation and security checks are `if not ok: raise ...`, never `assert`.
+- Keep `assert` for impossible internal states you want loud in development.
+- Audit: `grep -rn "assert " --include="*.py"` over request handlers, validators
+  and permission code, then check whether the runtime is invoked with `-O` /
+  `PYTHONOPTIMIZE` (Dockerfile `CMD`, entrypoint, `uv run` flags).
+- Note the sibling trap: lenient numeric parsing. `int(" 12 \n")` is `12` and
+  `float("1_0")` is `10.0` — a corrupt field yields a plausible number rather
+  than an error. Full class: `sota-code-security` rules/11 §3.3.
+
 ## 8. Input-adjacent denial of service & injection oddities
 
 - **ReDoS:** user input through a regex with nested/ambiguous quantifiers
