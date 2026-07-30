@@ -52,6 +52,14 @@ now_m=$(date +%m)
 age=$(( (now_y * 12 + ${now_m#0}) - (y * 12 + ${m#0}) ))
 
 total=$(git ls-files 'skills/*/rules/*.md' | wc -l | tr -d ' ')
+# Fail closed on an empty scope. This report already printed its denominator, but
+# printing "0 rules files" and continuing is the same silent pass that
+# check-invariants.sh shipped until 2026-07-30: a drifted pathspec makes the run
+# green while it examines nothing (sota-code-security rules/11 §2.2).
+if [ "$total" -eq 0 ]; then
+  echo "error: examined 0 rules files — pathspec drift? refusing to report freshness" >&2
+  exit 1
+fi
 echo "Freshness report (window: ${WINDOW} months) — ${total} rules files"
 echo "  library last-verified: ${stamp}  (${age} months ago)"
 

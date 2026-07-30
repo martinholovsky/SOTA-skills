@@ -51,6 +51,16 @@ jobs:
         # tests are mutation-resistant (each scorer checked at 1.0, 0.0 and a partial)
         # and were watched to fail against that exact mutation before being trusted.
         run: python3 evals/test_scoring.py
+      - name: Dead-path fixture + scorer selfcheck
+        # The fixture measures a PROCEDURE (mutate the control, delete the dep, run
+        # the build), so it is only worth anything while its planted properties still
+        # hold. selfcheck.sh re-derives all six by mutation against the real suite;
+        # --selftest proves the scorer still separates a report that reasoned from one
+        # that ran. A fixture that quietly loses its traps keeps printing plausible
+        # scores while measuring nothing — the class it exists to detect.
+        run: |
+          bash evals/cases/dead-path/selfcheck.sh
+          python3 evals/run-dead-path.py --selftest
 
   shellcheck:
     name: Shell lint (shellcheck)

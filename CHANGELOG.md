@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **A procedure-compliance eval — `evals/cases/dead-path/` + `run-dead-path.py`.**
+  Every existing audit instrument scores *recognition* and returns **+0.00**,
+  because a frontier model handed the code and the question is already at ceiling.
+  This one scores whether the model **does the procedure** rules/11 and §3.9
+  require — mutate the control, delete the dependency, run the real build — which
+  is behaviour, not knowledge, and is checkable without a judge.
+  - The fixture is built so a careful static read gets **half the items wrong**:
+    `csv_export` looks unused (named only as a config string) but is resolved at
+    runtime, so deleting it breaks the suite → **KEEP**; `xml_export` is
+    statically imported and called from a branch whose condition the only entry
+    constructor can never produce → **DELETE**; `check_currency` looks untested
+    (no test names it) but a no-op mutation breaks the suite → **REFUTED**, so
+    flagging everything scores *worse*; `validate_amount` reads as enforcement but
+    its boolean is discarded, so an over-limit entry posts → **CONFIRMED**.
+  - Scored on two axes because they fail differently: **verdict accuracy** and
+    **proof compliance** (a correct verdict with no command-plus-observed-outcome
+    is not full credit — rules/11 §5). Deterministic: no API key, no network.
+  - `selfcheck.sh` re-derives all six planted properties **by mutation** against
+    the real suite, and `--selftest` feeds the scorer one report that only reasoned
+    and one that ran, failing unless they separate (they score **0.000** and
+    **1.000**). Both wired into CI, because a fixture that quietly loses its traps
+    keeps printing plausible numbers while measuring nothing.
+  - **Not yet run against a live agent.** The instrument exists; the number does
+    not, and none is claimed.
+
+
 - **`sota-code-security` rules/11 — dead-path diagnostics.** rules/10 asks, per
   control, "if this were a no-op would anything look different?". rules/11 is the
   **sweep**: the cheap signals that surface the family across a codebase without
@@ -72,6 +98,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The rest of the automation got the same treatment as the invariant checks**
+  (the two roadmap items opened yesterday). `check-freshness.sh` printed its
+  denominator but never failed on zero — a drifted pathspec would have reported
+  freshness over nothing; it now exits 1. `evals/test_scoring.py` printed
+  `PASS: eval scoring functions behave correctly` **without saying how many
+  assertions ran**, so an early return or an emptied test tuple read exactly like
+  a pass; it now prints `(25 checks)` and fails below a floor — watched to fail by
+  simulating a test that returns early (`only 17 ran, expected at least 25`).
+  `check-invariants.sh` now reports its **wall time** alongside the denominators,
+  since rules/11 §2.1's tell is unavailable unless someone records the duration;
+  printed, deliberately **not gated** — a duration threshold in CI is flaky under
+  runner variance, and a flaky gate gets disabled, which is how a control becomes
+  inert.
+- **A suspected third case was REFUTED and is recorded as such.** CI's
+  `shellcheck -S warning scripts/*.sh` looked like it would pass silently if
+  `scripts/` were renamed. Verified in bash (CI's shell): an unmatched glob stays
+  literal, shellcheck exits **2** with `scripts/*.sh: openBinaryFile: does not
+  exist`. It fails loudly. Reported rather than "fixed", per rules/11 §5.
 - **Our own gates were vacuous under an empty scope — found with the diagnostic
   rules/11 §2.2 teaches, and fixed.** `scripts/check-invariants.sh` enumerated
   files via `git ls-files 'skills/*/rules/*.md'`; mutating that pathspec to match
