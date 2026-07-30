@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`sota-devsecops` rules/03 §3.9 — the declared-but-not-reached sweep.** The
+  dependency file covered whether what you ship is *vulnerable* (CVEs, SBOM,
+  confusion, typosquats) and never whether a declared dependency is **reached at
+  all**. Found by running an audit prompt against the library that explicitly
+  excluded CVEs and versions: five of its six requirements had no home. The new
+  section covers reachability tracing from a real entrypoint (with the
+  impossible-path trap — a symbol referenced only on a branch the live code
+  cannot produce — and its inverse, dynamic loading, where static tools
+  false-*positive*); per-ecosystem tooling with each tool's blind spot named;
+  **deletion as proof** (scratch copy, real build + lint + full suite, exact
+  commands, exit codes, before/after transitive counts) with the two traps that
+  make a green run lie; the leverage ratio (<5 symbols used / >10 modules
+  inherited); upstream health fetched **this session** via `gh api`; and an
+  A–D classification (DELETE / REPLACE IN-HOUSE / KEEP / UNMAINTAINED-but-keep).
+
+  Every tool named was verified live on 2026-07-30 via `gh api repos/<o>/<r>` —
+  the same command the rule prescribes. Two checks were promoted from what that
+  verification itself turned up: `gh api` **follows renames silently**
+  (`fpgmaas/deptry` answers as `osprey-oss/deptry`, `icanhazstring/composer-unused`
+  as `composer-unused/composer-unused`), so `full_name` must be read back; and
+  the honest per-ecosystem answer for Ruby is that **no established tool exists**
+  — its candidates are single-maintainer and low-adoption, which is precisely
+  the case the deletion proof exists for.
+
+  The KEEP bucket's do-not-reimplement list adds a class the library did not
+  have: **an algorithm whose output is persisted and must stay comparable with
+  stored data** (fuzzy/LSH hashes, similarity digests, tokenizers, ID derivations).
+  A merely *equivalent* reimplementation invalidates every stored value it has to
+  compare against, and the failure is silent — comparisons keep returning
+  answers, just wrong ones.
+
+- Cross-refs so the sweep is reachable from where the question gets asked:
+  `sota/rules/01` §2 inventory, `sota-code-security` rules/10 §2.13 (the sibling
+  class one layer up), the router's routing table and library map, and the four
+  language skills that had partial or zero coverage — `sota-golang` rules/05
+  (`go mod why -m` and its test-inclusive graph), `sota-javascript-typescript`
+  rules/07 (knip output is a candidate list, not a finding), `sota-python`
+  rules/01 (`deptry` DEP002/003/005), `sota-rust` rules/05 (`cargo machete`
+  false positives vs `cargo udeps` nightly + false negatives).
+
 ### Changed
 
 - **Docs refreshed to the post-v1.19.6 state**, and stale claims corrected:

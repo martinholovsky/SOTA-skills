@@ -283,6 +283,12 @@ cfg := &tls.Config{MinVersion: tls.VersionTLS12} // TLS13 for internal-only
   third-party module needs maintenance signal (recent releases, issue
   hygiene), a license check, and a reason a 50-line vendored function can't
   replace it. Transitives count: `go mod graph | wc -l` before/after.
+- **Audit side — already-landed deps**: `go mod why -m <module>` prints
+  `(main module does not need module …)` for an unreached one — verbatim, exit 0
+  — but its graph includes tests of reachable packages (`-vendor` excludes tests
+  *of dependencies*; your own test-only deps still read as reached). A tool's
+  silence is not proof — the sweep, the deletion proof, and the leverage-ratio
+  and upstream-health checks are `sota-devsecops` rules/03 §3.9.
 - `go mod tidy` enforced in CI (`git diff --exit-code go.mod go.sum` after).
 - Pin tool versions via 1.24 `tool` directives in go.mod (`rules/07`) so the
   linter/codegen supply chain is hash-verified too.
