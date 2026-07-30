@@ -62,7 +62,7 @@ More install options: [Installation](#installation) · more prompts: [Using it](
 
 ## Contents
 
-- [Standards & practices baked in](#standards--practices-baked-in) · [What the audit hunts that a scanner can't](#what-the-audit-hunts-that-a-scanner-cant)
+- [Standards & practices baked in](#standards--practices-baked-in) · [What the audit hunts that a scanner can't](#what-the-audit-hunts-that-a-scanner-cant) · [How the numbers are kept honest](#how-the-numbers-are-kept-honest)
 - [Skills](#skills) · [Coverage & non-goals](#coverage--non-goals)
 - [Installation](#installation) · [Always-on routing](#always-on-routing-recommended) · [Updating](#updating)
 - [Using it](#using-it)
@@ -157,13 +157,41 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   stated. ([methodology §5, §7](skills/sota/rules/01-audit-methodology.md))
 
 **Where this is *not* backed by a number:** the measured lift is in BUILD
-(completeness, freshness). Every audit eval sits at **+0.00** — recall, precision,
-cross-file, and inert-control detection at n=81 — because a frontier model handed the
-code *and* the question is already at ceiling; one earlier audit lift was **retracted**
-when its sample grew from 15 to 49 cases. The audit half is justified by gap analysis
-and self-audits that found real defects, not by a measured lift, and it is reported
+(completeness, freshness). **Seven audit instruments across three designs all sit at
++0.00** — recognition (snippets, cross-file repo, precision), procedure (does the model
+actually mutate the control and re-run the build), and question-set (an unscoped
+"audit this repository", with defect classes outside the standard repertoire). A
+frontier model handed the code is already at ceiling, and it stays at ceiling when you
+stop telling it what to look for. The audit half is justified by gap analysis and by
+real defects it found in this repo — **not by a measured lift**, and it is reported
 that way rather than implied.
-[Null results & the retraction →](evals/results/RESULTS.md)
+[Every null, the retraction, and the pre-registered predictions that were wrong →](evals/results/RESULTS.md)
+
+### How the numbers are kept honest
+
+The measurement discipline is the part that is hard to copy, so it is worth stating
+plainly. Every item below is in the repo, not a claim about it:
+
+- **Nulls are published, not buried.** Seven +0.00 rows sit on the
+  [scoreboard](evals/results/RESULTS.md) next to the +0.39 — including the four that
+  say the audit half of this library adds nothing a good model doesn't already do.
+- **A lift was retracted.** An early +0.07 on inert-control detection did not
+  reproduce when the sample grew from 15 to 49 cases. It was withdrawn and the
+  retraction is documented rather than quietly dropped.
+- **Predictions are pre-registered.** Before the 2026-07-30 audit experiments ran,
+  the expected numbers and ranges were committed and pushed
+  ([PRE-REGISTRATION.md](evals/results/2026-07-30/PRE-REGISTRATION.md)). Both
+  predictions turned out wrong — one by three times its own lower bound — and are
+  reported as wrong.
+- **The scorers are themselves tested.** A mutation probe once replaced a scoring
+  function with `return 1.0` and nothing noticed; the golden tests that now run in CI
+  were watched to fail against that exact mutation first.
+- **The library is applied to itself, and it finds things.** Its own
+  dead-path rules caught this repo's CI gates passing over **zero files** — green,
+  exit 0, examining nothing — and the fix was verified by re-running the mutation.
+
+The point is not that every number is flattering. It is that you can tell which ones
+are load-bearing, because the ones that aren't are labelled.
 
 ## Skills
 
