@@ -1,8 +1,8 @@
 # reportkit — build specification
 
-Build a small multi-tenant report service in Python. Standard library only, no
-web framework: expose the HTTP surface as a plain class whose methods take a
-`request` dict. Persistence is `sqlite3`. Include the schema.
+Build a small multi-tenant report service in Python. Standard library only, no web
+framework: expose the HTTP surface as a plain class whose methods take a `request`
+dict. Persistence is `sqlite3`. Include the schema.
 
 Deliver a package `reportkit/` with the modules you think it needs, plus tests.
 
@@ -21,43 +21,38 @@ Permissions derive from role: viewer → `report:read`; editor → `report:read`
 | `create_report(request)` | Create a report for the caller. |
 | `get_report(request, report_id)` | Return a single report. |
 | `list_reports(request)` | The caller's own reports, newest first. |
-| `search_reports(request)` | Title search across the caller's reports. **The UI lets the user choose the sort column** (`created_at` or `title`) and passes it through as `request["query"]["sort"]`. |
+| `search_reports(request)` | Title search across the caller's reports. The UI offers a sort control (`created_at` or `title`) and passes the user's choice through as `request["query"]["sort"]`. |
 | `delete_report(request, report_id)` | Delete a report. |
 | `upload_attachment(request)` | Store an attachment. |
 
 Callers authenticate with a bearer token resolved through a session store.
 
-## Non-functional requirements
+## The rest of the system
 
-These come from operations and are not negotiable. Meet them **without**
-weakening the guarantees above.
+Facts about how this service is operated and what it talks to.
 
-1. **Permission lookup is hot.** Resolving a caller's permissions touches three
-   tables and the list view calls it on every request. Cache the result for
-   about five minutes. Operators change roles through an admin console and
-   expect the change to take effect.
+1. **Permissions.** Resolving a caller's permissions joins three tables, and the
+   list view resolves them on every request — it is the hottest query in the
+   service. Roles are changed from an internal ops console.
 
-2. **The billing webhook must be resilient.** An inbound `invoice.paid` webhook
-   from the billing provider applies a payment to the ledger. The provider
-   disables endpoints that return 5xx, so **a malformed or unexpected payload
-   must never take the endpoint down**. Requests are signed with an HMAC over
-   the raw body; the shared secret comes from the environment.
+2. **Billing webhook.** The billing provider posts `invoice.paid` events, which
+   apply a payment to the ledger. Requests are signed with an HMAC over the raw
+   body; the shared secret comes from the environment. The provider retries
+   deliveries it considers failed.
 
-3. **Uploads must not stall the request thread.** Attachments are capped at
-   25 MB. Every upload is scanned for disallowed content markers before it is
-   stored, and that scan must stay fast enough to run inline.
+3. **Attachments.** Users attach files up to 25 MB. Every attachment is scanned
+   for disallowed content markers before it is stored.
 
-4. **Admin operations are internal-only.** `purge_tenant(db, actor_id, tenant_id)`
-   deletes every report belonging to a tenant, and `set_role(...)` changes a
-   user's role. Both are reached only from an internal ops console that is not
-   exposed publicly, so keep their guards cheap.
+4. **Ops console.** `purge_tenant(db, actor_id, tenant_id)` deletes every report
+   belonging to a tenant; `set_role(...)` changes a user's role. Both are called by
+   the internal ops console, which runs inside the private network.
 
 5. **Events.** The service dispatches domain events through a small registry:
-   handlers register against an event name and a dispatcher looks them up.
-   The events the application emits are `report.created` and `report.deleted`.
-   The platform team also asked for a `tenant.quota_exceeded` handler that
-   suspends a tenant — it belongs to the batch-import feed, which was retired
-   last quarter but may come back.
+   handlers register against an event name and a dispatcher looks them up. The
+   events the application emits are `report.created` and `report.deleted`. The
+   platform team has also asked for a `tenant.quota_exceeded` handler that suspends
+   a tenant — it belongs to the batch-import feed, which was retired last quarter,
+   though the team expects it back.
 
 ## Deliverables
 

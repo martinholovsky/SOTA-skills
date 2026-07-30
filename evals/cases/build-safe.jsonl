@@ -1,3 +1,26 @@
+# SPEC-WRITING RULE — read before editing cases/build-safe/SPEC.md.
+#
+# The first spec destroyed this instrument. It stated the quality property to
+# preserve ("operators expect the change to take effect", "must never take the
+# endpoint down", "must stay fast enough to run inline"), which handed the model
+# the consideration set. Three bare agents scored 1.000 and it measured nothing
+# (results/2026-07-30/BUILD-SAFE.md) — the audit-vocabulary leak in a new costume.
+#
+# The rule: SPEC.md states FEATURES and FACTS, never the property to preserve.
+#   leak  "roles change and must take effect"      -> names the answer
+#   fine  "roles are changed from the ops console" -> a fact; staleness is the
+#                                                     builder's to notice
+#   leak  "must never return 5xx"                  -> names the answer
+#   fine  "the provider retries failed deliveries" -> a fact about the world
+#
+# A product tension ("the retired feed may come back", "the hottest query",
+# "attachments reach 25 MB") is legitimate: it creates pressure without disclosing
+# the resolution. A "must ..." clause about robustness, freshness or latency is a
+# leak. This note lives HERE and not in SPEC.md on purpose — an earlier draft put
+# it in the spec as an HTML comment, which is still text the agent reads, and it
+# named every leaked property plus the defect classes. Keep guidance about the
+# instrument out of the artifact the subject sees.
+#
 # build-safe rubric — does the model WRITE the defect, not can it FIND one.
 #
 # Seven audit instruments now read +0.00: a frontier model finds these classes

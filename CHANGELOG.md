@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **`evals/cases/build-safe/SPEC.md` rewritten to stop leaking its own answers**,
+  and the rule behind it recorded where a subject cannot read it. The first spec
+  stated the quality property to preserve; the rewrite states features and facts
+  only. Verified: zero "must …" clauses and zero defect names remain, with all six
+  product tensions intact. The note explaining this was initially placed in the spec
+  as an HTML comment — still text the agent reads, naming every leaked property —
+  and now lives in the ground-truth file's header. General form: **keep guidance
+  about the instrument out of the artifact the subject sees.**
+- **`evals/README` gained a "Live-agent A/B runs" convention block**, so the
+  contamination lessons stop living only in a result write-up: a bare arm is not
+  bare by default (sub-agents inherit the agent-file rule to consult this library,
+  and the API harness's *"use only your own security knowledge"* line did not
+  survive the move to live agents); never encode the arm in a path or label
+  (agents read `ub1` as "unguided-bare" and self-assigned); establish contamination
+  per agent from citation evidence, never from the prompt or self-report; and the
+  contamination detector is itself an instrument that needs a known-positive and a
+  known-negative — ours produced one false positive and then a false negative on a
+  known-contaminated report. Also added: bound what an instrument reads, and read
+  the denominator it prints.
+
 ### Added
 
 - **`sota-code-security` rules/11 §7 — the instrument that measures a control is

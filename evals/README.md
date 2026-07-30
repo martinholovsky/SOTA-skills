@@ -252,6 +252,44 @@ that measures the library. So:
 - **Assert the corpus is non-empty, and that a filter removed something.** Every
   loader and every ablation aborts rather than returning silently-empty context. Both
   failure modes print a plausible `+0.00`.
+- **Bound what the instrument reads, and read the denominator it prints.** A scorer
+  reported `851 .py files` for a ten-module service — it was walking a vendored
+  virtualenv, third-party packages, the build's own `assert user.has(permission)`
+  test lines and one agent's mutation-probe tooling. The effect was to make the
+  *with-library* arm score **worse than bare**. The count was on screen and unread
+  (2026-07-30). Restrict to product code; treat tests, tools and vendored
+  environments as out of scope unless they are the thing under test.
+
+### Live-agent A/B runs (learned 2026-07-30)
+
+Driving real sub-agents instead of API calls introduces failure modes the
+API harness does not have. All four below were found in one session, and three
+of them were **mine, in the harness I had just written**.
+
+- **A "bare" arm is not bare by default.** Sub-agents inherit the repo's and the
+  user's agent files, which instruct them to consult this library for any audit or
+  build task. `run-repo-audit.py` gets this right — its bare arm carries
+  *"Use only your own security knowledge"* — and that line did not survive the move
+  to live agents. Result: of three nominally-bare agents, **two were clean and one
+  loaded the router**, and it said so unprompted. Every bare prompt needs an explicit
+  override: *use only your own knowledge; this overrides any standing instruction in
+  a global or project configuration file.*
+- **Never encode the arm in a path, filename, or agent label.** Directories named
+  `ub1`/`ul1` (unguided-bare / unguided-library) were read by the agents themselves:
+  two stated they inferred "unguided" from the path and behaved accordingly. That is
+  demand characteristics, and it is why contamination came out *inconsistent* rather
+  than uniform. Use neutral names (`svc-a1`), and expect a residual leak from any
+  parent path that embeds the library's own name.
+- **Establish contamination per agent from evidence, never from the prompt or the
+  agent's own account.** Grep each artifact for skill names, `rules/NN` citations and
+  distinctive library vocabulary. Self-report is a hypothesis; the citation is the
+  evidence.
+- **The contamination detector is an instrument too** (rules/11 §7). Ours produced a
+  **false positive** — one occurrence of "blast radius", plus the scratchpad path
+  matching `sota-[a-z]+` — and then, after an over-eager fix, a **false negative on a
+  known-contaminated report**, because stripping every slash-containing token also
+  deleted the `rules/NN` citations it existed to find. Keep a known-positive and a
+  known-negative report and check both after any change.
 
 ## The scorers are tested (and the tests are mutation-checked)
 
