@@ -19,6 +19,12 @@ AVOIDANCE of seven defect classes over the produced code.
 | Arm | n | avoided |
 |---|---|---|
 | bare (verified library-free, 0 citations each) | 3 | **1.000** |
+| library (46–90 citations each) | 3 | 0.857 / 1.000 / 0.857 |
+
+The library arm's two sub-1.000 scores are **scorer false positives, not deficits**
+— one is a chunked scan (`payload[:CHUNK]` in a loop, the *safe* implementation)
+matching a prefix-slice pattern. They are not evidence of anything and are not
+reported as such. With the bare arm at ceiling, no lift is measurable either way.
 
 All three shipped 106–142 passing tests, an allowlisted `ORDER BY` map,
 write-through cache invalidation, streamed upload caps with boundary-straddling
@@ -54,10 +60,23 @@ A second contributor: the spec is a page long. `completeness.jsonl`'s task is on
 sentence, and its baseline is 0.59 precisely because the model must supply the
 consideration set itself.
 
-## The scorer was wrong four times, always the same direction
+## The scorer was wrong eight times
 
-Every correction was a **false negative punishing a better implementation** —
-recorded because the pattern generalises to any regex-based code scorer:
+**A fifth class, found last and worst: unbounded scope.** The scorer printed
+"851 .py files" for a ten-module service — it was reading a vendored virtualenv,
+third-party packages, the project's own `assert user.has(permission)` test lines,
+and one agent's mutation-probe tooling. That made the *library* arm look worse
+than bare. **The denominator was printed and I did not read it** — precisely the
+failure rules/11 §2.2 exists to prevent, committed by the person who wrote it.
+Scope is now bounded to product code (tests, tools, vendored envs excluded).
+
+## The first four, and they did not all run one way
+
+Correction to an earlier characterisation of these: I described all four as false
+negatives punishing better implementations. **That was wrong — #3 ran the other
+way**, making the *defective* reference look safe. Errors in both directions is
+worse than one-directional bias, because only the excusing direction agrees with
+the hoped-for result and so nobody chases it.
 
 1. Keyed on `def get_report`; the defective method is `ReportService.get`.
 2. Flagged the *correct* SQLi fix — the safe spelling is still an f-string, over

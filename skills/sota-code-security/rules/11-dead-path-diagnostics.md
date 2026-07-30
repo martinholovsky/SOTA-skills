@@ -319,6 +319,69 @@ Start by enumerating every gate, guard, and audit in the codebase. For each: rea
 the comment, read the code, then **make it fail on purpose**. The controls you
 cannot make fail are the finding.
 
+## 7. The instrument that measures a control is itself a control
+
+A scorer, a quality gate, a benchmark, a coverage threshold, a lint config, a
+dashboard — anything whose output decides whether something is **OK** — is a
+control, and every rule in this file applies to it. This is the most commonly
+skipped application, because measurement code reads as scaffolding rather than as
+production, and nobody threat-models scaffolding.
+
+The asymmetry is what makes it dangerous. A broken feature produces a complaint.
+**A broken instrument produces a number** — and numbers are believed, quoted, and
+put in a README.
+
+### 7.1 Four failure modes specific to instruments
+
+- **Unbounded or unread scope.** §2.2 turned inward: an instrument must report
+  what it examined, *and someone must read it*. A scorer that printed "851 files"
+  for a ten-module service was reading a vendored virtualenv, third-party
+  packages, and the project's own test assertions — `assert user.has(permission)`
+  in a test file counted as an authorization control. The denominator was on
+  screen and went unread, which is the failure §2.2 exists to prevent.
+- **Generalised from one sample** (§3.3, applied to yourself). Patterns written
+  against a single reference implementation flag every *other* correct spelling:
+  a check keyed on the method name that reference happened to use; a rule that
+  flagged the *correct* fix because the safe spelling shared a shape with the
+  unsafe one; a matcher that could not follow a check extracted into a helper;
+  a slice-detector that could not tell "scan a prefix" from "scan in chunks".
+  Every one punished code **better** than the sample it was written against.
+- **Errors run both ways, and only one direction gets investigated.** The same
+  instrument that penalises a good implementation can excuse a real defect —
+  flat text matching once credited an unprotected read path with the ownership
+  check belonging to a sibling function. The excusing direction is the one nobody
+  chases, because it agrees with the hoped-for result.
+- **The instrument that cannot fail.** A scorer returning a plausible number
+  whatever it is handed. A mutation harness reporting **18/18 controls caught**
+  while every run died before the test suite started — each non-zero exit read as
+  "caught". Both look exactly like success.
+
+### 7.2 The bar
+
+**Never trust a number from an instrument you have not watched produce a *wrong*
+answer on purpose.** Before its output is quoted anywhere:
+
+- **Two references, both in CI.** A known-bad input it must score at the floor and
+  a known-good input it must score at the ceiling. If they do not separate, there
+  is no measurement — only output. Keep them as fixtures, not as memories.
+- **A negative control** for anything that classifies: an item that must *not* be
+  flagged. A detector that flags everything scores perfectly on a positives-only
+  corpus, and that is the corpus everyone builds first.
+- **Abort, never warn, on a missing result.** If a run produced no parsable
+  summary, exit non-zero. "No output" must never be readable as "nothing found".
+- **Assert the mutation took** (§2.5). Editable installs, copied trees, stale
+  caches and vendored environments all mean the code you changed may not be the
+  code that ran.
+
+### 7.3 Changing an instrument after you have seen results
+
+Sometimes correct: a demonstrable false negative is a defect, not an
+inconvenience. It is also exactly how a result gets massaged into the shape
+someone wanted. So make it auditable — **say that you changed it, why, and the
+before/after numbers; show the references still separate; and confirm no case's
+ranking moved for any reason other than the fix.** An instrument quietly widened
+after a disappointing run is indistinguishable from a fabricated one.
+
 ---
 
 ## Audit checklist
@@ -352,3 +415,13 @@ cannot make fail are the finding.
       validation before shipping (§5)?
 - [ ] Config and feature flags traced **end-to-end**: read, validated, *and*
       applied to the branch they name (§6.7)?
+- [ ] **Every instrument treated as a control** — each scorer, gate, benchmark and
+      threshold has a known-bad reference it scores at the floor and a known-good
+      one it scores at the ceiling, both wired into CI (§7.2)?
+- [ ] Each instrument **reports what it examined**, and that denominator was
+      actually read — no scanning of vendored environments, third-party packages,
+      or the project's own tests as if they were product code (§7.1)?
+- [ ] Classifying harnesses carry a **negative control**, and a run producing no
+      parsable summary **aborts** rather than reading as "nothing found" (§7.2)?
+- [ ] Any instrument changed **after** results were seen is disclosed with the
+      before/after numbers and evidence that no ranking moved for another reason (§7.3)?

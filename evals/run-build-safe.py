@@ -49,11 +49,21 @@ def source_of(build_dir):
     handler and says so in NOTES.md has resolved the pressure correctly, and the
     `safe` patterns are written to credit that.
     """
+    # SCOPE. The scorer must read the PRODUCT code, not everything on disk. A
+    # build that shipped a virtualenv gave 851 .py files and scored badly on
+    # third-party code, pytest assertions (`assert principal.has(permission)`) and
+    # the agent's own mutation-probe tooling. The denominator was printed and I
+    # did not read it — the exact failure rules/11 §2.2 exists to prevent.
+    skip = ("__pycache__", "/.venv", "/venv", "site-packages", "/node_modules",
+            "/tests", "/test", "/tools", "/scripts", "/.git")
     parts, py_texts, n_py = [], [], 0
     for base, _dirs, files in os.walk(build_dir):
-        if "__pycache__" in base:
+        norm = "/" + base.replace(os.sep, "/").strip("/") + "/"
+        if any(k in norm for k in skip):
             continue
         for f in sorted(files):
+            if f.startswith("test_") or f.endswith("_test.py"):
+                continue
             if f.endswith((".py", ".md")):
                 t = open(os.path.join(base, f), encoding="utf-8", errors="replace").read()
                 parts.append(t)

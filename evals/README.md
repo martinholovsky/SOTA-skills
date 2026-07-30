@@ -208,6 +208,12 @@ simulation is a faithful proxy for the real router flow
 
 ## Harness conventions (learned the hard way, 2026-07-20/21)
 
+These are the repo-local form of `sota-code-security` rules/11 §7 — *the
+instrument that measures a control is itself a control*. That section was
+written on 2026-07-30 after the same class recurred: three new scorers needed
+eight corrections between them, one of them scanning a vendored virtualenv and
+the project's own test assertions as if they were product code.
+
 In one day, **four** changes to this harness silently did nothing while still
 printing a plausible number:
 

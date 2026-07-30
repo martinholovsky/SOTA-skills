@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`sota-code-security` rules/11 §7 — the instrument that measures a control is
+  itself a control.** Scorers, quality gates, benchmarks, coverage thresholds and
+  dashboards decide whether something is *OK*, so every rule in that file applies
+  to them — the most commonly skipped application, because measurement code reads
+  as scaffolding. The asymmetry: a broken feature produces a complaint, a broken
+  instrument produces a **number**, and numbers get quoted.
+  - Four instrument-specific failure modes, each observed: unbounded or **unread**
+    scope (a scorer printed "851 files" for a ten-module service — it was reading a
+    vendored virtualenv and the project's own test assertions, and the denominator
+    went unread); generalising from one sample (§3.3 turned inward — patterns
+    written against a single reference flag every *other* correct spelling, each
+    time punishing code better than the sample); errors running **both** ways, with
+    only the excusing direction going unchased because it agrees with the hoped-for
+    result; and the instrument that cannot fail (a mutation harness reporting
+    18/18 caught while every run died before the tests started).
+  - The bar: **never trust a number from an instrument you have not watched produce
+    a wrong answer on purpose.** Two references wired into CI (known-bad at the
+    floor, known-good at the ceiling), a negative control for anything that
+    classifies, abort-don't-warn on a missing summary, and assert the mutation took.
+  - §7.3 covers changing an instrument *after* seeing results — sometimes correct,
+    also how a result gets massaged: disclose the change, the reason, and the
+    before/after, and show no ranking moved for another reason.
+  - Written because the class recurred: three new scorers needed eight corrections
+    between them in one session, on top of four harness failures already recorded in
+    `evals/README`. That file now points at the rule; the lesson had been repo-local
+    and so invisible to anyone using the library elsewhere.
+
+### Added
+
 - **A procedure-compliance eval — `evals/cases/dead-path/` + `run-dead-path.py`.**
   Every existing audit instrument scores *recognition* and returns **+0.00**,
   because a frontier model handed the code and the question is already at ceiling.
