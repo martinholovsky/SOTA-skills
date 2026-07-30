@@ -99,5 +99,28 @@ sortable by a column the user picks" — without *must take effect*, *must never
 5xx*, *must stay fast*. Then the tension is real and the safety judgment has to
 come from the model rather than the brief.
 
-Until that rewrite, this measures nothing, and the fixture, scorer and references
-are kept only because they are the reusable half.
+## The rewrite (2026-07-30, same day)
+
+`SPEC.md` was rewritten to the rule *state features and facts, never the property
+to preserve*. Removed: "operators expect the change to take effect", "must never
+take the endpoint down", "must stay fast enough to run inline", "keep their guards
+cheap". Kept: the product tensions that create the pressure without disclosing the
+resolution — the hottest query, a provider that retries, a 25 MB cap, an ops
+console on the private network, a retired feed the team expects back.
+
+Verified after the rewrite: **0** occurrences of any "must …" quality clause or
+defect name in the spec, and all six pressure points still present.
+
+**One thing the rewrite nearly broke.** The maintainer note explaining the leak was
+first written *into* `SPEC.md` as an HTML comment — which is still text the agent
+reads, and it named all three leaked properties plus the defect classes. That would
+have been a worse leak than the original. It now lives in the header of
+`cases/build-safe.jsonl`, which never travels to a subject. General form: **keep
+guidance about the instrument out of the artifact the subject sees.**
+
+**Whether the thinner spec discriminates is not yet known.** A two-agent bare pilot
+was launched; if the bare arm still scores 1.000, the instrument is still at
+ceiling and the classes may simply not be elicitable from a spec at all. No claim
+either way until it lands.
+
+The fixture, scorer and both references are unchanged and reusable.
