@@ -4,9 +4,38 @@ Priorities set by the **2026-07-10 audit**
 ([AUDIT-2026-07-10.md](AUDIT-2026-07-10.md)). Ordered; revisit after each
 release. The 2026-07-01 cycle is fully executed and kept below as history.
 
-## Open tasks — next-session pick-up *(as of 2026-07-28)*
+## Open tasks — next-session pick-up *(as of 2026-07-30)*
 
-**Current state (2026-07-28, after v1.19.6).** Six patch releases landed
+**This cycle (2026-07-30, v1.19.7 — "inert dependency").** One release, from a
+**third** discovery mode: not an external repo (v1.19.1–2) and not us running the
+library (v1.19.3–6), but a **user-authored audit prompt aimed at the library's
+coverage**, with CVEs and versions explicitly ruled out of scope. Under that
+exclusion, 5 of its 6 requirements had no home — `rules/03-dependencies.md`
+answered "is what we ship vulnerable" from end to end and never "is this
+dependency reached at all" (all eight `reachab*` mentions in the file were
+CVE-triage reachability). Landed: `sota-devsecops` rules/03 **§3.9
+declared-but-not-reached** (entrypoint tracing incl. the impossible-path trap,
+per-ecosystem tools each with its documented blind spot, **deletion-as-proof**,
+leverage ratio, `gh api` upstream health, A–D taxonomy), cross-refs into the four
+language skills with partial or zero coverage, and 8 rows + an entry in
+[ADOPTION-LOG.md](ADOPTION-LOG.md). **Not measured — do not cite a lift.**
+
+Two rules came out of *validating* that section rather than writing it: `gh api`
+follows repo renames silently (so a 200 under a manifest's URL is not evidence the
+project is still there), and where an ecosystem has no established tool (Ruby;
+.NET is thin) the honest instruction is to skip the tool and go straight to the
+deletion proof. Four first-draft claims were wrong and were corrected against
+primary sources; one (`pushed_at` "moves on any branch push") could not be
+confirmed and was **dropped** rather than shipped.
+
+**Also this cycle: the README's audit half was invisible.** Grep on `main` before
+the cut returned **0 hits** for `adversarial`, `refut`, `decision ledger`, `inert`,
+`no-op`, and `ADOPTION-LOG` — five capabilities shipped across v1.17.0–v1.19.7 that
+no reader could find from the front door, and "How it works" still described a
+five-step audit chain that predated three of its own passes. Fixed with a new
+README section carrying its own +0.00 caveat. The generalisable finding is below.
+
+**Prior cycle (2026-07-28, after v1.19.6).** Six patch releases landed
 2026-07-24…28 (**v1.19.1 → v1.19.6**), and the notable shift is *how* they were
 found: v1.19.1–2 came from reading external repos, v1.19.3–6 from **running the
 library and watching it fail**. Landed: three external intakes recorded in
@@ -30,7 +59,36 @@ a vague three-word prompt routed to clarifying questions instead and skipped it.
 Silence is therefore not evidence the rule is broken — check the router loaded
 first.
 
-**New open items from this cycle:**
+**New open items from the 2026-07-30 cycle:**
+
+- **No gate notices a capability that never reached a front-door surface.**
+  Invariant 6 fails the build on a wrong *number* in the README; nothing fails on a
+  missing *feature*. That is why five audit capabilities went undocumented for three
+  releases — the same silent-surface shape `sota-code-security` rules/10 describes
+  for controls. Interim fix landed in [RELEASING.md](../RELEASING.md): the pre-tag
+  checklist now says to grep the README and `docs/INDEX.md` for a distinctive term
+  from each capability the release added. A real gate would need a machine-readable
+  list of capabilities per release — worth considering, not obviously worth the
+  ceremony.
+- **§3.9 may be the one audit instrument that could move off +0.00.** Every audit
+  eval saturates because a frontier model handed the code *and* the question is
+  already at ceiling — but §3.9 grades a **procedure** (copy the tree, delete the
+  dependency, run the real build, report exit codes) rather than a recognition. An
+  eval that scores whether the model *actually ran the deletion* instead of asserting
+  "appears unused" would test something the saturated instruments cannot reach. Needs
+  a tool-using harness, so it shares the blocker with the agentic large-repo audit
+  (item 2 below) — cheaper, though: a small fixture repo with two genuinely inert
+  dependencies and one reached only from a test.
+- **The §3.9 tool table will rot.** It names eight third-party projects, each with
+  its documented blind spot, all verified live 2026-07-30. Two had already been
+  **renamed** under the URLs a manifest would carry. It is now a named target in
+  [MAINTENANCE.md](MAINTENANCE.md); the section itself tells readers to re-verify
+  before trusting a row, which is the only maintainable posture.
+- **Ruby and .NET have no dependency-reachability tool worth naming.** Recorded as a
+  deliberate gap, not an oversight (candidates: 5 stars, one contributor each, one
+  with no push since 2025-01-03). Revisit if a maintained option appears.
+
+**Open items from the 2026-07-28 cycle (still open):**
 
 - **No update-notification path for clone installs.** Symlinked skills update the
   moment you `git pull`, but nothing ever tells you to pull. The plugin's
@@ -58,10 +116,12 @@ first.
   materialise either: gh's update notice fires **on invocation**, and nobody
   invokes a CLI for a library used inside an agent session. Revisit only if
   one-command install becomes the bottleneck.
-- **Router headroom: 497/500 lines.** The next router addition needs a trim
-  first. `ROUTER_BUILD_SHA` is still `71a9d78ea5e9e341` — every router edit this
-  cycle landed outside the eval-pinned BUILD block, so historical completeness
-  runs stay comparable.
+- **Router headroom: 497/500 lines** (re-counted 2026-07-30 — v1.19.7's routing-table
+  and library-map edits were made net-zero on purpose, by recombining a wrapped line).
+  The next router addition needs a trim first. `ROUTER_BUILD_SHA` is still
+  `71a9d78ea5e9e341`, **re-computed and matched 2026-07-30**, so every router edit
+  across v1.19.x landed outside the eval-pinned BUILD block and historical
+  completeness runs stay comparable.
 - **Unverified claim in the README** — that git-hosted plugin marketplaces
   re-check at session start. Documented, not checked against a primary source.
   `rules/01` §7 now tells readers to verify claims like this; we should take our
@@ -81,14 +141,16 @@ infographic, and — the headline — **cross-model replication: the +0.39 compl
 lift is not sonnet-specific** (`openai/gpt-5.1` shows **+0.44**).
 
 **Genuinely open, ordered by value:**
-1. **Distribution / adoption** — the real bottleneck. Re-checked 2026-07-28 via
-   `gh`: **8 stars, 0 watchers, 2 forks, 1 issue ever** (closed, 2026-06-29). The
-   gap-reporting loop has now produced **0 reports in 6 days** — still short of a
-   verdict, but the "cut it if nil in a few weeks" clock is running. Note the
-   asymmetry this cycle exposed: three real gaps were found by *us* running the
-   library, none by an external reporter. Publish the salience write-up + the
-   infographic (LinkedIn is the measured top referrer). A **people problem, not a
-   measurement one** — the highest-leverage lever left.
+1. **Distribution / adoption** — the real bottleneck. Re-checked live 2026-07-30 via
+   `gh api`: **8 stars, 0 watchers, 2 forks** — unmoved in two days — and **exactly
+   one true issue ever** (#4, closed; filtering `has("pull_request")` out of the
+   issues endpoint, which otherwise counts all 150+ PRs as issues). The gap-reporting
+   loop has produced **0 external reports in 8 days**. The asymmetry is now sharper,
+   not softer: every gap closed in v1.19.3–v1.19.7 was found by *us* running the
+   library or by the maintainer aiming a prompt at it — **none by an external
+   reporter**. Publish the salience write-up + the infographic (LinkedIn is the
+   measured top referrer). A **people problem, not a measurement one** — the
+   highest-leverage lever left.
 2. **Agentic large-repo audit** — the *only* design that could move AUDIT off +0.00
    (all four single-prompt audit instruments saturate). Needs a new tool-using harness
    + a large ground-truth-defect fixture + two-axis (recall × efficiency) scoring;

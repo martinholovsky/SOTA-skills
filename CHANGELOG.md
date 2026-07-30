@@ -5,6 +5,45 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **`CONTRIBUTING.md` carried the same wrong cap the README did.** Rule 3 said
+  "Every Markdown file is ≤ 500 lines" and the PR checklist said "All touched files
+  are ≤ 500 lines". The cap has been **skill-files-only since PR #100**
+  (2026-07-15) — README/CHANGELOG/`docs/` are deliberately uncapped. Both fixed,
+  with the reason (incremental rule loading) and where navigability comes from
+  instead. `AGENTS.md` was checked and needed no change: its wording already scopes
+  the cap correctly ("the cap is load-bearing only there").
+- **`RELEASING.md` gained the step that would have caught the invisible-audit-half
+  problem** — a new §2b "Front-door surfaces", because **no invariant catches a
+  capability that never got a sentence anywhere a reader looks**. Invariant 6 fails
+  on a wrong *number* in the README; nothing fails on a missing *feature*, which is
+  how five audit capabilities went undocumented across v1.17.0–v1.19.7. The pre-tag
+  checklist now carries a matching item. Also documented there: avoid dots in release
+  branch names — the assistant's `Bash(git checkout *.*)` deny rule matches a branch
+  name containing dots, so `release/v1.19.7` is refused while
+  `chore/release-v1-19-7` works. It bit again at this cut.
+- **`docs/MAINTENANCE.md` now names its high-rot targets** instead of treating every
+  claim as equally durable. First on the list is §3.9.2's eight-project tool table,
+  which demonstrated its own failure mode the day it landed: two of the eight had
+  been renamed under the URLs a manifest still carries. The runbook now says to
+  re-verify with `gh api` **and read `full_name` back**, and flags that the Ruby row
+  asserts a *negative* ("no established tool") that needs re-checking rather than
+  assuming.
+- **`docs/ROADMAP.md` re-stamped to 2026-07-30 / post-v1.19.7**, recording a third
+  discovery mode (a user-authored prompt aimed at the library's own coverage, with
+  CVEs ruled out), four new open items, and live re-checked adoption signals: **8
+  stars, 0 watchers, 2 forks, exactly one true issue ever** (#4, closed — filtering
+  `has("pull_request")` out of the issues endpoint, which otherwise counts every PR
+  as an issue), and **0 external gap reports in 8 days**. `ROUTER_BUILD_SHA` was
+  **re-computed and matched** (`71a9d78ea5e9e341`), confirming v1.19.7's router edits
+  landed outside the eval-pinned BUILD block, so historical completeness runs stay
+  comparable. Router headroom re-counted at 497/500.
+- **`docs/INDEX.md`** points at the README's new audit section, so the capability is
+  reachable from the find-it-fast index rather than only from the README itself.
+
 ## [1.19.7] - 2026-07-30
 
 ### Added

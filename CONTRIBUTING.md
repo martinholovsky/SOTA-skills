@@ -24,9 +24,13 @@ By contributing you agree your contribution is licensed under
    numbers are for semantic boundaries only ("GA since", "fixed in", CVE fix
    versions, spec editions). Recommend maintained tools; when one goes EOL,
    point at its maintained successor and keep a one-line EOL note.
-3. **Stay lean.** Every Markdown file is **≤ 500 lines** so skills load
-   incrementally without blowing the context window. If a topic outgrows that,
-   split it into another `rules/NN-topic.md`.
+3. **Stay lean.** Every **skill** file (`skills/*/SKILL.md`, `skills/*/rules/*.md`)
+   is **≤ 500 lines** so skills load incrementally without blowing the context
+   window. If a topic outgrows that, split it into another `rules/NN-topic.md`.
+   The cap is load-bearing *only* there: README, CHANGELOG and `docs/` are read
+   by humans and agents rather than loaded as skills, so they are deliberately
+   **uncapped** (decided 2026-07-15, PR #100) — navigability there comes from a
+   table of contents and [docs/INDEX.md](docs/INDEX.md).
 
 ## Repository layout
 
@@ -165,7 +169,7 @@ Run the invariant checks any time:
 - [ ] Stays generic — no personal/company stack, project names, or "you run X".
 - [ ] New fast-moving claims cite a primary source.
 - [ ] Every touched `rules/*.md` still ends with `## Audit checklist`.
-- [ ] All touched files are ≤ 500 lines.
+- [ ] All touched **skill** files (`skills/**`) are ≤ 500 lines (README/CHANGELOG/`docs/` are uncapped).
 - [ ] No secrets in examples (masked/placeholder only).
 - [ ] `pre-commit` / `scripts/check-invariants.sh` passes.
 
