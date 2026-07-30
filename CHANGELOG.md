@@ -17,6 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   as an HTML comment — still text the agent reads, naming every leaked property —
   and now lives in the ground-truth file's header. General form: **keep guidance
   about the instrument out of the artifact the subject sees.**
+- **The build-safe instrument is closed, not pending.** The rewritten spec was
+  tested: two bare agents scored **1.000 / 1.000**, making five bare builds across
+  two spec versions all at ceiling. These seven defect classes are **not elicitable
+  from a spec** at this model tier. The residue is a distinction worth keeping —
+  the +0.39 completeness lift comes from *cross-cutting omissions* under a
+  one-sentence prompt (rate limiting, logging, TLS, tests), while these are *local
+  correctness decisions inside a feature the model is actively writing*. Defect
+  avoidance and practice completeness are different measurement targets, and only
+  the second has ever shown a gap here. Recorded with "do not rebuild this
+  instrument" so a third spec version is not attempted.
 - **`docs/INDEX.md` now reaches the day's results.** The find-it-fast index had
   **zero** pointers to the four 2026-07-30 result files, so the most consequential
   findings — why the audit half has no measured lift, a prediction written down

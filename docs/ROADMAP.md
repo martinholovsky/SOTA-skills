@@ -61,8 +61,15 @@ first.
 
 **New open items from the 2026-07-30 cycle:**
 
-- **Does the rewritten build-safe spec discriminate? Unknown — a bare pilot is
-  mid-flight.** `SPEC.md` was rewritten the same day to *state features and facts,
+- ~~**Does the rewritten build-safe spec discriminate?**~~ **Tested 2026-07-31: no.**
+  Two bare agents on the thin spec scored **1.000 / 1.000** — five bare builds across
+  two spec versions, all at ceiling. These seven classes are **not elicitable from a
+  spec** at this model tier. The useful residue is a distinction, not a number:
+  the +0.39 comes from **cross-cutting omissions** under a one-sentence prompt
+  (rate limiting, logging, TLS, tests), whereas these are **local correctness
+  decisions inside a feature the model is actively writing**, and it makes them
+  well. Defect-avoidance and practice-completeness are different targets; only the
+  second has ever shown a gap. **Do not rebuild this instrument.** Original entry: `SPEC.md` was rewritten the same day to *state features and facts,
   never the property to preserve* (verified: zero "must …" quality clauses, zero
   defect names, all six product tensions intact). Whether that restores discriminating
   power is untested: if the bare arm still scores 1.000, these classes may not be
