@@ -94,15 +94,26 @@ first.
   moment you `git pull`, but nothing ever tells you to pull. The plugin's
   `SessionStart` notice (`hooks/hooks.json` → `scripts/plugin-notice.sh`) is
   marker-guarded to fire **once ever**, so it is onboarding, not a version
-  channel. Cheapest fix: `install.sh --update` already pulls and knows both
-  versions — have it print the delta and point at the CHANGELOG. A `SessionStart`
+  channel. **Partly done (2026-07-30).** The claim previously recorded here — that
+  `install.sh --update` "already knows both versions" — was **false**: the script
+  had **zero** references to `VERSION` (`grep -c VERSION scripts/install.sh` → 0).
+  It now reads `VERSION` before and after the pull and prints the delta
+  (`1.19.7 → 1.20.0 — see CHANGELOG.md`), and `--version` reports the release,
+  checkout, upstream state as of the last fetch, and whether the install is
+  symlinked or a pinned `--copy` snapshot. What remains open is the *push* half:
+  nothing tells a passive user to pull in the first place. A `SessionStart`
   version check would reach passive users but **phones home**; that is a
   deliberate privacy decision, needs a TTL cache and must fail open, and is not
   to be built without an explicit call.
-- **Nothing reports which version is in use.** No skill carries a version
-  reference, so a bug report ("the day-zero check fired wrongly") cannot say
-  which release produced it. Cheaper and less contentious than the notification
-  question; probably the first thing to do.
+- ~~**Nothing reports which version is in use.**~~ **Done 2026-07-30** —
+  `scripts/install.sh --version` reports it (release from `VERSION`, `git
+  describe`, upstream-ahead count as of the last fetch, symlink-vs-snapshot
+  install mode), and the README's Updating section tells reporters to quote it.
+  Tested on six paths: normal checkout, non-git snapshot, missing `VERSION`,
+  unlinked target, `--update` with and without a version change, and behind-
+  upstream. Still true that **no skill file carries a version**, deliberately:
+  a version string inside a skill is one more surface to bump every release, and
+  `VERSION` is already the invariant-5-guarded source of truth.
 - **`scripts/verify-setup.sh`** — the deterministic half of VERIFY-SETUP.md (does
   a gate exist, is the hook installed, has this workflow ever run non-skipped,
   licence present under any name). A script does that better than a prompt, per
@@ -122,10 +133,17 @@ first.
   `71a9d78ea5e9e341`, **re-computed and matched 2026-07-30**, so every router edit
   across v1.19.x landed outside the eval-pinned BUILD block and historical
   completeness runs stay comparable.
-- **Unverified claim in the README** — that git-hosted plugin marketplaces
-  re-check at session start. Documented, not checked against a primary source.
-  `rules/01` §7 now tells readers to verify claims like this; we should take our
-  own advice.
+- ~~**Unverified claim in the README** — that git-hosted plugin marketplaces
+  re-check at session start.~~ **Checked 2026-07-30 and it was wrong in the way
+  that matters.** The Claude Code docs state that *"third-party and local
+  development marketplaces have auto-update disabled by default"* — this is a
+  third-party marketplace, so a plugin user gets **no** automatic refresh unless
+  they explicitly enable it; and even enabled, the check runs after session start
+  "with a random delay of up to ten minutes" while the running session keeps its
+  launch versions. The README implied users were being kept current when by
+  default they are not. Fixed with the quote, the opt-in path, and a pointer to
+  `--version`. **This makes the notification item above more important, not less**:
+  neither install path pushes updates by default.
 
 **Prior open items, still open (2026-07-22 framing, re-checked today):**
 

@@ -2,7 +2,7 @@
 
 The library's value is that its fast-moving claims (versions, CVEs, RFCs,
 specs, GA states, tool status, standards) hold up against primary sources.
-CI enforces *structure* (the 9 invariants in `scripts/check-invariants.sh` +
+CI enforces *structure* (the 10 invariants in `scripts/check-invariants.sh` +
 gitleaks + shellcheck) but **cannot** verify that a claim is *true* — that
 needs web access and judgment. This file is the human/agent process that
 covers the accuracy dimension CI can't, plus how efficacy is measured.

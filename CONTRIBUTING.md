@@ -134,6 +134,12 @@ are marked "needs verification", never asserted.
    already exists, **add to it** — don't open a second one. Invariant 5 only
    inspects the first `## [` heading, so duplicates below it used to pass CI
    (two PRs did exactly that on 2026-07-28).
+10. **unindexed rules file**: every `skills/*/rules/*.md` must be referenced by
+    its own `SKILL.md`. Practical effect: when you add a rules file, add a row
+    for it to that skill's rules index in the same PR — otherwise the model
+    never loads it, because it reads only the files the index names. Invariant 8
+    does not catch this: **30 of 41** `SKILL.md` files list rules as plain
+    backticked text rather than links, so a rename leaves no link to resolve.
 
 Secrets are scanned separately by **gitleaks** (config in `.gitleaks.toml`);
 CI scans the full git history, the pre-commit hook scans each commit.
@@ -169,6 +175,7 @@ Run the invariant checks any time:
 - [ ] Stays generic — no personal/company stack, project names, or "you run X".
 - [ ] New fast-moving claims cite a primary source.
 - [ ] Every touched `rules/*.md` still ends with `## Audit checklist`.
+- [ ] Any **new** `rules/*.md` has a row in its skill's rules index (invariant 10).
 - [ ] All touched **skill** files (`skills/**`) are ≤ 500 lines (README/CHANGELOG/`docs/` are uncapped).
 - [ ] No secrets in examples (masked/placeholder only).
 - [ ] `pre-commit` / `scripts/check-invariants.sh` passes.

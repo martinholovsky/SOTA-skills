@@ -253,8 +253,23 @@ none of them.
 ### Updating
 
 **Plugin install:** updates ship when the version bumps — `/plugin update
-sota-skills@sota-skills` (or `/plugin marketplace update sota-skills`). Git-hosted
-marketplaces also check at session start.
+sota-skills@sota-skills` (or `/plugin marketplace update sota-skills`).
+
+**Do not assume auto-update covers you.** Per the
+[Claude Code docs](https://code.claude.com/docs/en/discover-plugins#configure-auto-updates)
+(checked 2026-07-30): *"Third-party and local development marketplaces have
+auto-update disabled by default"* — this is a third-party marketplace, so unless you
+turned it on (`/plugin` → **Marketplaces** → the entry → **Enable auto-update**),
+nothing updates on its own. Even with it enabled, the check runs *after* your session
+starts "with a random delay of up to ten minutes", and the running session keeps the
+versions it loaded at launch, so a refresh lands on `/reload-plugins` or your next
+launch — never mid-turn. Run `/plugin update` when you want a known-current library.
+
+**Which version am I on?** `scripts/install.sh --version` reports the release, the
+checkout (`git describe`), whether your remote is ahead as of the last fetch, and
+whether the skills are symlinked (update live) or a pinned `--copy` snapshot. Quote
+it in a bug report — otherwise a report about a rule's behaviour can't be tied to the
+release that produced it.
 
 **Clone install:** because linking is symlink-based, **existing skills update
 the moment you pull** — the symlinks already point at the live files:
@@ -620,7 +635,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). The short version: keep skills generic,
 verify fast-moving claims against primary sources, keep **skill** files
 (`skills/**`) ≤ 500 lines — that cap keeps incremental rule loading working and
 does not apply to README/CHANGELOG/`docs/`, which are read by humans — and end
-each rules file with an audit checklist. Nine invariants enforce this in
+each rules file with an audit checklist. Ten invariants enforce this in
 `scripts/check-invariants.sh` (pre-commit + CI), covering line caps, checklist
 placement, description limits, version and count drift, router completeness, and
 internal link resolution — plus gitleaks (full-history scan in CI; per-commit via
