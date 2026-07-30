@@ -20,6 +20,8 @@ Same model, same task, library loaded vs. nothing.
 | Audit (14 hard snippets) | 1.00 | 1.00 | +0.00 | 1× | [BASELINE](2026-07-10/BASELINE.md) |
 | Cross-file audit (8-defect repo) | 1.00 | 1.00 | +0.00 | 2 models | [REPO-AUDIT](2026-07-13/REPO-AUDIT.md) |
 | Dead-path **procedure** (4 items, live sub-agents) | 1.00 | 1.00 | +0.00 | 3 per arm | [DEAD-PATH](2026-07-30/DEAD-PATH.md) |
+| Unscoped audit A — no vocabulary (8 defects) | 1.00 | 1.00 | +0.00 | 3 per arm | [UNSCOPED-AUDIT](2026-07-30/UNSCOPED-AUDIT.md) |
+| Unscoped audit B — unusual defect classes (7) | 1.00 | 1.00 | +0.00 | 3 per arm | [UNSCOPED-AUDIT](2026-07-30/UNSCOPED-AUDIT.md) |
 
 **Completeness re-verified against the workflow that actually ships (2026-07-20).**
 `run-completeness.py`'s `BUILD_WORKFLOW` is a hand-compressed **mirror** of router
@@ -57,6 +59,20 @@ is all in the unguided arm. Audit is +0.00 and reported, not hidden — a capabl
 model already recognizes vulnerabilities, even cross-file when the repo fits in
 context. The real remaining audit frontier is an **agentic large-repo** audit
 (too big to hold at once); logged in the [roadmap](../../docs/ROADMAP.md).
+
+**Final (2026-07-30) — seven instruments, three designs, one answer: stop building
+audit-recall instruments.** After the procedure design also returned +0.00, the
+remaining explanation was that every instrument *hands the model its search space*
+(`run-repo-audit.py` supplies a 21-slug vocabulary containing all 8 planted
+answers) while the +0.39 BUILD instrument does not. Two experiments tested that,
+pre-registered with numbers before either ran. **Both +0.00, both predictions
+wrong** — the second by ~3x its own lower bound. Verified-library-free agents,
+given only *"audit this repository"*, found a swallowed webhook signature, a
+handler registered for an event nothing emits, a cache key narrower than the
+behaviour it gates, an `assert`-as-authorization, and a scanner reading 64 KB of
+a 25 MB allowance. The audit half is justified by gap analysis and by real
+defects it found in this repo — **not by a measured lift**, and that is now the
+settled position ([UNSCOPED-AUDIT](2026-07-30/UNSCOPED-AUDIT.md)).
 
 **Update (2026-07-30) — the leading explanation for the audit nulls is refuted.**
 The four nulls below were explained by "these instruments score *recognition*, and
