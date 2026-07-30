@@ -17,6 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   as an HTML comment — still text the agent reads, naming every leaked property —
   and now lives in the ground-truth file's header. General form: **keep guidance
   about the instrument out of the artifact the subject sees.**
+- **`docs/INDEX.md` now reaches the day's results.** The find-it-fast index had
+  **zero** pointers to the four 2026-07-30 result files, so the most consequential
+  findings — why the audit half has no measured lift, a prediction written down
+  before the run that killed it, and an eval that failed as an *instrument* rather
+  than as a result — were reachable only by knowing they existed. Four rows added.
+- **`docs/ROADMAP.md`** records two pending items rather than implying closure: the
+  rewritten build-safe spec is **untested** (a bare pilot is mid-flight, and no
+  build-safe number should be cited until it lands), and **calibration** is the one
+  untested claim left about the audit half — measurable, but it would measure
+  adherence to our own reporting doctrine and must never be reported as a lift.
 - **`evals/README` gained a "Live-agent A/B runs" convention block**, so the
   contamination lessons stop living only in a result write-up: a bare arm is not
   bare by default (sub-agents inherit the agent-file rule to consult this library,

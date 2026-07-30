@@ -61,6 +61,20 @@ first.
 
 **New open items from the 2026-07-30 cycle:**
 
+- **Does the rewritten build-safe spec discriminate? Unknown — a bare pilot is
+  mid-flight.** `SPEC.md` was rewritten the same day to *state features and facts,
+  never the property to preserve* (verified: zero "must …" quality clauses, zero
+  defect names, all six product tensions intact). Whether that restores discriminating
+  power is untested: if the bare arm still scores 1.000, these classes may not be
+  elicitable from a spec at all, and that is the finding. **Do not cite a build-safe
+  number until the pilot lands and is scored.**
+- **Calibration remains the only untested claim about the audit half.** Across four
+  settings today, every library arm downgraded its own findings on evidence, bounded
+  claims by what it had actually run, and labelled what it had not verified; no bare
+  arm did. Nothing in the harness scores that. An instrument would measure adherence
+  to our own reporting doctrine — a far weaker claim than "finds more bugs" — so if
+  it is ever built, it must not be reported as a lift.
+
 - **The BUILD-safe eval needs a thinner spec before it measures anything.**
   Built 2026-07-30 to test whether the library stops these defect classes being
   *written* rather than found. The bare arm scored **1.000 (n=3, verified
