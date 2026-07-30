@@ -5,7 +5,15 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.19.8] - 2026-07-31
+
+### Changed
+
+- **README gained the seventh class**: `rules/11 §7` — your own scorer, gate or
+  benchmark is a control too. Found by the front-door grep that `RELEASING.md`
+  §2b added at the previous cut: the only "instrument" hits in the README were
+  about *eval* instruments, so a capability shipped since v1.19.7 had no
+  front-door mention. The step earned its place one release after being written.
 
 ### Changed
 
@@ -1738,6 +1746,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.19.8]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.8
 [1.19.7]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.7
 [1.19.6]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.6
 [1.19.5]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.5

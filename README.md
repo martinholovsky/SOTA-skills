@@ -122,7 +122,7 @@ difficulty, not the domain — we measure it and say so.
 
 ### What the audit hunts that a scanner can't
 
-Six classes of defect survive every linter, SAST rule, and CVE scanner, because in
+Seven classes of defect survive every linter, SAST rule, and CVE scanner, because in
 each one the code isn't *wrong*. The library hunts them as explicit passes:
 
 - **Controls that are inert** — a safeguard whose success and whose total failure look
@@ -138,6 +138,14 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   crosses, a cache key narrower than the behaviour it gates, a control written as
   an `assert` that `-O`/`NDEBUG`/a missing `-ea` deletes in production.
   ([rules/11](skills/sota-code-security/rules/11-dead-path-diagnostics.md))
+- **Your own scorer, gate or benchmark doing none of the above** — the same file
+  ends by turning the lens around: anything whose output decides whether something
+  is *OK* is a control too. A broken feature produces a complaint; a broken
+  instrument produces a **number**, and numbers get quoted. So give it a known-bad
+  input it must fail and a known-good one it must pass, bound what it reads, and
+  never trust a number from an instrument you haven't watched produce a *wrong*
+  answer on purpose.
+  ([rules/11 §7](skills/sota-code-security/rules/11-dead-path-diagnostics.md))
 - **Dependencies declared but never reached** — packages, modules, and plugins wired in
   and inert. Proven by *deleting* them in a scratch copy and running the real build,
   lint, and full suite, with exit codes and before/after transitive counts reported —
