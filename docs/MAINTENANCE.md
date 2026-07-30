@@ -53,6 +53,23 @@ fix what has drifted. Do it as a **rolling** pass (a few skills a month) or a
    caught (e.g. the 2026-07 sweeps caught "BIMI = RFC 8910" and a stale
    DMARC RFC this way).
 
+**Named high-rot targets** (check these even in a rolling pass):
+
+- **`sota-devsecops` rules/03 §3.9.2 — the dependency-reachability tool table.**
+  Eight third-party projects, each row asserting that tool's *documented* blind
+  spot; all verified live 2026-07-30. Highest-rot item in the library by
+  construction, and it demonstrated its own failure mode on the day it landed: two
+  of the eight had been **renamed** under the URLs a manifest still carries
+  (`fpgmaas/deptry` → `osprey-oss/deptry`, `icanhazstring/composer-unused` →
+  `composer-unused/composer-unused`). Re-verify each with
+  `gh api repos/<o>/<r> --jq '{full_name, archived, pushed_at}'` and **read
+  `full_name` back** — `gh api` follows renames silently, so a 200 under the old
+  name is not evidence the project is where the row says it is. The Ruby row
+  asserts a *negative* ("no established tool"); re-check that a maintained option
+  has not appeared rather than assuming it still holds.
+- **Tool names generally** — the §3 tool matrix in `sota/rules/01`: renames, forks
+  and license splits (Semgrep → Opengrep) are the common drift, not version bumps.
+
 **At scale**, this is a natural multi-agent job: one research+fix agent per
 skill in parallel, then an independent adversarial verify pass, then land the
 fixes via PR. The 2026-07-08 sweep (65 fixes) and 2026-07-10 audit followed

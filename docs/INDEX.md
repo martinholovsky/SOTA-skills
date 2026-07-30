@@ -34,6 +34,7 @@ trying to do**, not by file. (Kept in sync by hand; if a link rots, open an issu
 | See the SOTA-vs-competitor benchmark | [COMPETITOR-BENCHMARK.md](../evals/results/2026-07-13/COMPETITOR-BENCHMARK.md) |
 | Read a shareable write-up of the key finding | [writeups/completeness-blind-spot.md](writeups/completeness-blind-spot.md) |
 | See what the library does **not** lift (the honest +0.00s) | [AUDIT-PROCESS.md](../evals/results/2026-07-20/AUDIT-PROCESS.md) |
+| Know what the audit hunts that a scanner can't (inert controls, unreached dependencies, stale decisions, refutation, absence claims) | [README → What the audit hunts](../README.md#what-the-audit-hunts-that-a-scanner-cant) |
 | Read the retraction + the retired anchoring hypothesis | [SILENT-FAILURE.md](../evals/results/2026-07-20/SILENT-FAILURE.md) |
 
 ## Contribute / operate the repo
@@ -44,7 +45,7 @@ trying to do**, not by file. (Kept in sync by hand; if a link rots, open an issu
 | Know the invariants CI enforces | [AGENTS.md → Invariants](../AGENTS.md#invariants-enforced-in-pre-commit-and-ci) |
 | Full contribution conventions | [CONTRIBUTING.md](../CONTRIBUTING.md) |
 | Cut a release | [RELEASING.md](../RELEASING.md) |
-| Keep fast-moving claims accurate (sweep runbook) | [MAINTENANCE.md](MAINTENANCE.md) |
+| Keep fast-moving claims accurate (sweep runbook + named high-rot targets) | [MAINTENANCE.md](MAINTENANCE.md) |
 | See which external ideas were adopted/rejected and why | [ADOPTION-LOG.md](ADOPTION-LOG.md) |
 | See what's planned / open | [ROADMAP.md](ROADMAP.md) |
 | Report bad guidance or a leaked secret | [SECURITY.md](../SECURITY.md) |

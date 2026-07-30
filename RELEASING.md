@@ -46,6 +46,27 @@ Then update every surface that carries a count:
   is typically blocked), commit both files, and re-upload the PNG at GitHub
   **Settings → Social preview** (the repo file does not refresh it).
 
+## 2b. Front-door surfaces (every release) — no gate catches these
+
+Invariant 6 fails the build on a wrong **number** in the README. **Nothing** fails
+on a capability that never got a sentence anywhere a reader looks. That gap is not
+hypothetical: at the v1.19.7 cut, grepping `main` returned **0 hits** in `README.md`
+for `adversarial`, `refut`, `decision ledger`, `inert`, `no-op`, and `ADOPTION-LOG` —
+five capabilities shipped across v1.17.0–v1.19.7 with no front-door mention, and
+"How it works" still described an audit chain that predated three of its own passes.
+
+So before tagging, for each capability this release (and the last few) added:
+
+```sh
+grep -ic '<distinctive term>' README.md docs/INDEX.md
+```
+
+Zero hits is a **documentation finding**, not a polish item — fix it in the release
+PR. Two habits that go with it: say where a capability is *not* backed by a measured
+number rather than letting the reader assume, and re-read the long-lived prose while
+you are there (that cut found "keep every file ≤ 500 lines" in both README and
+CONTRIBUTING, a cap that has been skill-files-only since PR #100).
+
 ## 3. Land the PR
 
 ```sh
@@ -53,6 +74,11 @@ Then update every surface that carries a count:
 git checkout -b <branch> && git commit && git push
 # open the PR; both required checks green → squash-merge
 ```
+
+**Branch naming:** avoid dots. The assistant's permission rule `Bash(git checkout *.*)`
+— meant to block file-discarding checkouts — also matches a *branch* name containing
+dots, so `release/v1.19.7` is denied while `chore/release-v1-19-7` works. This bites
+at almost every cut (it did again at v1.19.7); a human shell is unaffected.
 
 ## 4. Tag and publish (after the squash-merge)
 
@@ -83,4 +109,7 @@ skills.
       re-rendering the PNG)
 - [ ] New skills appear in the README table and the router's routing table +
       library map
+- [ ] **Front-door grep done (§2b)** — every capability this release added has a
+      mention in README/`docs/INDEX.md`, and anything unbacked by a measured number
+      says so
 - [ ] GitHub Settings social-preview re-upload — only if the PNG changed
