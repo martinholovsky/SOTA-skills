@@ -5,7 +5,7 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.19.7] - 2026-07-30
 
 ### Added
 
@@ -51,6 +51,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **README: the audit half of the library was invisible.** The README sold BUILD
+  completeness and listed standards; nothing described what the audit actually
+  *does*, so five capabilities shipped across v1.17.0–v1.19.7 were documented
+  nowhere a reader would look. New section **"What the audit hunts that a scanner
+  can't"** covers inert controls, declared-but-unreached dependencies, decisions
+  that stopped being right, adversarial refutation, and absence-claim discipline —
+  each linked to the rules file that owns it. It carries its own honest caveat:
+  the measured lift is in BUILD, every audit eval sits at **+0.00**, and one
+  earlier audit lift was retracted when its sample grew 15 → 49 cases. Also:
+  "How it works" step 3 described a 5-step audit chain that omitted the
+  silent-control pass, the decision ledger, and the refutation pass — now the
+  real seven; two Conventions bullets added (negative claims need a second
+  independent method; positive observations must show *effect*, not existence).
+- **README fixed a stale invariant claim.** Contributing said "keep every file
+  ≤ 500 lines". The cap has been **skill-files-only since PR #100** (2026-07-15) —
+  README/CHANGELOG/`docs/` are deliberately uncapped, which is why this file and
+  `docs/` can hold full narrative entries. It now says so, names the reason
+  (incremental rule loading), states that nine invariants enforce the conventions,
+  and links `docs/ADOPTION-LOG.md`, which the README had never mentioned.
 - **Docs refreshed to the post-v1.19.6 state**, and stale claims corrected:
   - `docs/MAINTENANCE.md` said CI enforces **7** invariants — it is **9** since
     v1.19.5. The only stale count left in the tree (`grep -rn "[0-9] invariants"`
@@ -1435,6 +1454,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.19.7]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.7
 [1.19.6]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.6
 [1.19.5]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.5
 [1.19.4]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.4
