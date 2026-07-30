@@ -61,6 +61,18 @@ first.
 
 **New open items from the 2026-07-30 cycle:**
 
+- **The BUILD-safe eval needs a thinner spec before it measures anything.**
+  Built 2026-07-30 to test whether the library stops these defect classes being
+  *written* rather than found. The bare arm scored **1.000 (n=3, verified
+  library-free)** — ceiling, so no lift is measurable
+  ([BUILD-SAFE](../evals/results/2026-07-30/BUILD-SAFE.md)). Cause is mine: the
+  spec states the non-functional property to defend ("expect the change to take
+  effect", "must never take the endpoint down"), which is the audit-vocabulary
+  leak in a new costume — it supplies the consideration set. Fix: state the
+  feature, not the requirement, and let the safety judgment come from the model.
+  The fixture, scorer, and two references are reusable as-is; only SPEC.md needs
+  rewriting. **Not on the scoreboard — it is an instrument failure, not a null.**
+
 - ~~**Our own gates now report a denominator — the rest of the automation does
   not.**~~ **Done 2026-07-30.** `check-freshness.sh` now exits 1 on an empty scope
   (it printed the denominator but never failed on it); `evals/test_scoring.py`
