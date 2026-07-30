@@ -19,6 +19,7 @@ Same model, same task, library loaded vs. nothing.
 | Audit **precision** (30 claims, 15 false) | 1.00 | 1.00 | +0.00 | 3×, temp 0.7 | [AUDIT-PROCESS](2026-07-20/AUDIT-PROCESS.md) |
 | Audit (14 hard snippets) | 1.00 | 1.00 | +0.00 | 1× | [BASELINE](2026-07-10/BASELINE.md) |
 | Cross-file audit (8-defect repo) | 1.00 | 1.00 | +0.00 | 2 models | [REPO-AUDIT](2026-07-13/REPO-AUDIT.md) |
+| Dead-path **procedure** (4 items, live sub-agents) | 1.00 | 1.00 | +0.00 | 3 per arm | [DEAD-PATH](2026-07-30/DEAD-PATH.md) |
 
 **Completeness re-verified against the workflow that actually ships (2026-07-20).**
 `run-completeness.py`'s `BUILD_WORKFLOW` is a hand-compressed **mirror** of router
@@ -56,6 +57,19 @@ is all in the unguided arm. Audit is +0.00 and reported, not hidden — a capabl
 model already recognizes vulnerabilities, even cross-file when the repo fits in
 context. The real remaining audit frontier is an **agentic large-repo** audit
 (too big to hold at once); logged in the [roadmap](../../docs/ROADMAP.md).
+
+**Update (2026-07-30) — the leading explanation for the audit nulls is refuted.**
+The four nulls below were explained by "these instruments score *recognition*, and
+a frontier model is already at ceiling there". `rules/11`/§3.9 grade a
+**procedure** instead — mutate the control, delete the dependency, run the build —
+so a fifth instrument was built specifically to test that distinction, with a
+fixture whose traps make a careful static read get **half the items wrong**. Six
+live sub-agents, 3 per arm: **both arms scored 1.000/1.000, +0.00**. The bare
+agents ran the mutations, deletions and traces unprompted, and hit both inverted
+traps and the REFUTED case. So the saturation is not about recognition-vs-procedure
+([DEAD-PATH](2026-07-30/DEAD-PATH.md); the arms differ only in *reporting*
+discipline — labels, bounded claims, fix-risk — which nothing here measures and
+which must not be cited as a lift).
 
 **The audit-family result, stated plainly (2026-07-21).** All four rows above that
 score audit ability sit at **+0.00**: audit-hard recall, cross-file repo audit,
