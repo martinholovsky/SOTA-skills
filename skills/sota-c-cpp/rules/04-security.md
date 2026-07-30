@@ -36,6 +36,15 @@ Replace on sight (CERT STR/FIO; MISRA):
   most important control against C/C++ RCE.
 - For binary parsers: never trust an embedded length field; cap it against the
   remaining buffer. Fuzz the parser (`rules/06`).
+- **`assert()` is compiled out by `-DNDEBUG`** — verified: a program whose
+  `assert(x > 0)` aborted in a normal build printed `passed` when rebuilt with
+  `-DNDEBUG`, which release presets set by default — CMake's
+  `Modules/Compiler/GNU.cmake` appends `-DNDEBUG` to the `RELEASE`,
+  `RELWITHDEBINFO` **and** `MINSIZEREL` init flags, so every non-Debug build type
+  strips them. A bounds or validation check written as `assert`
+  therefore does not exist in the shipped binary. Use an explicit `if` that
+  returns/aborts, or a hardened contract macro that survives release flags; keep
+  `assert` for impossible internal states. Class: `sota-code-security` rules/11 §4.
 
 ## 3. Format-string and injection
 

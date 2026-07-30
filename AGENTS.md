@@ -81,6 +81,14 @@ symlinks to it — edit only this file, never the symlinks.
     passed when this landed — it is a regression gate, watched to fail on an
     injected file and on a renamed reference first.
 
+**Every file-list-driven check reports its denominator** (`ok (255 rules files)`)
+and **fails closed on an empty scope**. Added 2026-07-30 after a mutation showed
+checks 2 and 10 printing `ok` — and the script exiting 0 — while examining *zero*
+files, because the `skills/*/rules/*.md` pathspec had been made to match nothing;
+invariant 6's tree recount did not catch it, since the `SKILL.md` count it
+recounts was unaffected. `0 checked, 0 failed, exit 0` is the signature of a gate
+that verifies nothing (`sota-code-security` rules/11 §2.2).
+
 Separately, `scripts/check-freshness.sh` (run monthly by
 `.github/workflows/freshness.yml`) tracks the root `LAST-VERIFIED` stamp —
 the date of the last full-library re-verification sweep against primary

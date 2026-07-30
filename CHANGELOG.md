@@ -9,6 +9,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`sota-code-security` rules/11 — dead-path diagnostics.** rules/10 asks, per
+  control, "if this were a no-op would anything look different?". rules/11 is the
+  **sweep**: the cheap signals that surface the family across a codebase without
+  reading every line, plus three classes rules/10 does not cover because they are
+  correctness rather than security. From two user-authored audit prompts; the
+  library covered roughly two thirds of them, and the third that was missing is
+  where this file starts.
+  - **Diagnostics**: duration-vs-claimed-work (the highest-yield tell, and the
+    only one needing no code reading); **printing every gate's denominator** —
+    `0 checked, 0 failed, exit 0` is the family's signature; cross-scale delta;
+    telemetry silence; and proving a fix's new path actually executed.
+  - **Classes**: scale-dependent silence (unbounded traversal, size-gated paths no
+    fixture crosses, and budgets that truncate **coverage** while reporting a
+    normal result); stale-artifact no-ops (a cache/tag/fingerprint key narrower
+    than the behaviour — "what input can change while the key stays constant?");
+    and format assumptions generalised from one sample, including lenient parsers
+    that return a plausible-but-wrong value instead of raising.
+  - **`assert` is not a control.** Verified by running each case 2026-07-30:
+    `python3 -O` and `PYTHONOPTIMIZE=1` deleted a failing `assert` (the program
+    printed `passed`); `cc -DNDEBUG` did the same in C; Java disables assertions
+    by default, and Oracle's guide calls disabled ones "essentially equivalent to
+    empty statements". CMake's `Modules/Compiler/GNU.cmake` appends `-DNDEBUG` to
+    `RELEASE`, `RELWITHDEBINFO` *and* `MINSIZEREL`, so every non-Debug C/C++ build
+    strips them. Cross-refs landed in `sota-python` rules/05, `sota-c-cpp`
+    rules/04, `sota-jvm` rules/04.
+  - **Evidence bar**: one *discriminating* proof per class, and ACTIVE / LATENT /
+    REFUTED labels (report refuted suspicions too). Plus: a fix that moves a
+    detector's decision boundary needs known-bad/known-good validation before
+    shipping, or a silent miss is traded for a silent flood.
+- Cross-refs where a builder meets these classes: `sota-testing` rules/03 §3.7a
+  (fixtures must cross the thresholds the code branches on), `sota-performance`
+  rules/01 §9a (duration as a *correctness* signal, not just a cost one), the
+  router's AUDIT step 4, and the README's audit section (now six classes).
+
+
 - **Invariant 10 — every `skills/*/rules/*.md` must be referenced by its own
   `SKILL.md`.** The library's loading model is that `SKILL.md` loads first and the
   model reads only the rules files its index names, so an unindexed rules file is
@@ -34,6 +69,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   non-git snapshot, missing `VERSION`, unlinked target, `--update` with and
   without a change, and behind-upstream — each verified to exit 0 without
   tripping `set -euo pipefail`.
+
+### Fixed
+
+- **Our own gates were vacuous under an empty scope — found with the diagnostic
+  rules/11 §2.2 teaches, and fixed.** `scripts/check-invariants.sh` enumerated
+  files via `git ls-files 'skills/*/rules/*.md'`; mutating that pathspec to match
+  nothing (simulating a `rules/` directory rename) made checks 2 and 10 print
+  `ok` and the script exit **0** while examining **zero files**. Check 6's tree
+  recount did *not* catch it, because the `SKILL.md` count it recounts was
+  unaffected — one gate's green does not cover another gate's scope. Classified
+  **LATENT**: the mechanism was verified, and verified not to have fired (today's
+  pathspecs match 296/255 files). Checks 1, 2, 7 and 10 now report their
+  denominator (`ok (255 rules files)`) and **fail closed** on an empty scope; the
+  same mutation now exits **1**. An early version of the fix printed `ok` on the
+  line after a failure note — misleading green, the exact defect this file warns
+  about — corrected so the count prints only on success.
 
 ### Changed
 

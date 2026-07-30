@@ -52,6 +52,21 @@ MAX_DESC=1024
 fail=0
 note() { printf '    %s\n' "$1"; }
 
+# Every file-list-driven check reports HOW MANY items it examined, and fails on
+# an empty scope. "0 checked, 0 failed, exit 0" is the signature of a gate whose
+# pathspec drifted — the gate reads as green while verifying nothing. Found here
+# by mutation on 2026-07-30: renaming the rules/ pathspec made checks 2 and 10
+# print "ok" over zero files, and check 6's tree recount did NOT catch it because
+# the SKILL.md count was unchanged. See sota-code-security rules/11 §2.
+# Returns 1 on an empty scope so callers can set fail=1.
+scope() {  # <count> <noun> — returns 1 on an empty scope; prints nothing on success
+  if [ "$1" -eq 0 ]; then
+    note "SCOPE EMPTY: examined 0 $2 — pathspec drift? a gate that checks nothing passes silently"
+    return 1
+  fi
+  return 0
+}
+
 # --- 1. Line budget -------------------------------------------------------
 # The cap is load-bearing ONLY for skill files: a rules/SKILL file over ~500
 # lines defeats incremental loading (the whole point is that the model reads the
@@ -61,8 +76,10 @@ note() { printf '    %s\n' "$1"; }
 # table of contents and docs/INDEX.md, not a line ceiling.
 echo "[1/10] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
 over=0
+seen1=0
 while IFS= read -r f; do
   [ -f "$f" ] || { note "SKIPPED (tracked but missing from worktree): $f"; continue; }
+  seen1=$((seen1 + 1))
   # awk NR, not `wc -l`: counts a final line without trailing newline too.
   n=$(awk 'END{print NR}' "$f")
   if [ "$n" -gt "$MAX_LINES" ]; then
@@ -70,13 +87,16 @@ while IFS= read -r f; do
     over=1
   fi
 done < <(git ls-files 'skills/*/*.md' 'skills/*/rules/*.md')
-if [ "$over" -eq 0 ]; then echo "    ok"; else fail=1; fi
+scope "$seen1" "skill files" || over=1
+if [ "$over" -eq 0 ]; then echo "    ok ($seen1 skill files)"; else fail=1; fi
 
 # --- 2. Audit checklist ends every rules file ------------------------------
 echo "[2/10] Every skills/*/rules/*.md ends with an '## Audit checklist'"
 missing=0
+seen2=0
 while IFS= read -r f; do
   [ -f "$f" ] || { note "SKIPPED (tracked but missing from worktree): $f"; continue; }
+  seen2=$((seen2 + 1))
   # The checklist must be the file's LAST '## ' heading (docs say "ends
   # with"). Track code-fence state so a '## Audit checklist' INSIDE a fence
   # doesn't satisfy the check (the 2026-07-01 fix missed this; 2026-07-10
@@ -88,7 +108,8 @@ while IFS= read -r f; do
     *) note "MISSING/NOT-LAST '## Audit checklist': $f"; missing=1 ;;
   esac
 done < <(git ls-files 'skills/*/rules/*.md')
-if [ "$missing" -eq 0 ]; then echo "    ok"; else fail=1; fi
+scope "$seen2" "rules files" || missing=1
+if [ "$missing" -eq 0 ]; then echo "    ok ($seen2 rules files)"; else fail=1; fi
 
 # --- 3. No internal/private references -------------------------------------
 # Keep the library generic and shareable. Two pattern sets:
@@ -273,17 +294,20 @@ if [ "$v6" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # but missing from the map for a full release.
 echo "[7/10] Router lists every skill (routing table + library map)"
 v7=0
+seen7=0
 router=skills/sota/SKILL.md
 bt='`'
 for d in skills/sota-*/; do
   name=$(basename "$d")
+  seen7=$((seen7 + 1))
   grep -qE "^\| ${bt}${name}${bt} " "$router" || { note "routing table missing: $name"; v7=1; }
   grep -qF "**${name}/rules**" "$router" || { note "library map missing: $name"; v7=1; }
 done
 while IFS= read -r name; do
   [ -d "skills/$name" ] || { note "library map names a non-existent skill: $name"; v7=1; }
 done < <(grep -oE '\*\*sota-[a-z-]+/rules\*\*' "$router" | sed 's/\*\*//g; s#/rules##')
-if [ "$v7" -eq 0 ]; then echo "    ok"; else fail=1; fi
+scope "$seen7" "domain skills" || v7=1
+if [ "$v7" -eq 0 ]; then echo "    ok ($seen7 domain skills)"; else fail=1; fi
 
 # --- 8. Internal Markdown links resolve -----------------------------------
 # Every relative Markdown link whose target is a *.md file must resolve to a
@@ -390,7 +414,9 @@ if [ "$v9" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # and on a renamed reference before being trusted.
 echo "[10/10] Every skills/*/rules/*.md is referenced by its own SKILL.md"
 v10=0
+seen10=0
 while IFS= read -r rf; do
+  seen10=$((seen10 + 1))
   skill_dir=$(dirname "$(dirname "$rf")")
   sk="$skill_dir/SKILL.md"
   base=$(basename "$rf")
@@ -402,7 +428,8 @@ while IFS= read -r rf; do
     v10=1
   fi
 done < <(git ls-files 'skills/*/rules/*.md')
-if [ "$v10" -eq 0 ]; then echo "    ok"; else fail=1; fi
+scope "$seen10" "rules files indexed" || v10=1
+if [ "$v10" -eq 0 ]; then echo "    ok ($seen10 rules files indexed)"; else fail=1; fi
 
 # --- Result ---------------------------------------------------------------
 echo

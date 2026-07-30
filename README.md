@@ -26,7 +26,7 @@ survives a long context instead of fading into it. That's why it beats a bigger 
 instead of becoming one. Native on Claude Code; works with Gemini CLI, Codex, and any
 agent that reads `AGENTS.md`.
 
-Under the hood: **41 skills (296 files, ~61k lines)** of state-of-the-art 2026
+Under the hood: **41 skills (297 files, ~61k lines)** of state-of-the-art 2026
 practice, each file under 500 lines so only the matching rules load, every fast-moving
 claim web-verified against a primary source.
 
@@ -122,7 +122,7 @@ difficulty, not the domain — we measure it and say so.
 
 ### What the audit hunts that a scanner can't
 
-Five classes of defect survive every linter, SAST rule, and CVE scanner, because in
+Six classes of defect survive every linter, SAST rule, and CVE scanner, because in
 each one the code isn't *wrong*. The library hunts them as explicit passes:
 
 - **Controls that are inert** — a safeguard whose success and whose total failure look
@@ -131,6 +131,13 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   every run is *skipped*, a test that still passes when the control's body is replaced
   with a no-op.
   ([rules/10](skills/sota-code-security/rules/10-silent-control-failure.md))
+- **Stages that report success while doing nothing** — found by the cheap signals
+  rather than by reading every line: a step returning "nothing found" far faster
+  than its claimed work allows, a gate that never prints how many items it
+  examined (`0 checked, 0 failed, exit 0`), a size-gated branch no fixture
+  crosses, a cache key narrower than the behaviour it gates, a control written as
+  an `assert` that `-O`/`NDEBUG`/a missing `-ea` deletes in production.
+  ([rules/11](skills/sota-code-security/rules/11-dead-path-diagnostics.md))
 - **Dependencies declared but never reached** — packages, modules, and plugins wired in
   and inert. Proven by *deleting* them in a scratch copy and running the real build,
   lint, and full suite, with exit codes and before/after transitive counts reported —

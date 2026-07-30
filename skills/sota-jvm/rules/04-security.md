@@ -80,6 +80,14 @@ Standards: [SEI CERT Oracle Java](https://wiki.sei.cmu.edu/confluence/display/ja
   cross-ref `sota-secrets-management`).
 - **Spring/framework**: keep dependencies patched (Spring4Shell, Log4Shell were
   dependency CVEs — `rules/06`); enable CSRF/auth correctly (`sota-code-security`).
+- **`assert` is not a control**: assertions are **disabled by default** at
+  runtime — Oracle's own guide says so, and adds that once disabled they are
+  "essentially equivalent to empty statements in semantics and performance".
+  Production JVMs are rarely started with `-ea`, so a validation or bounds check
+  written as `assert` is a no-op in the deployment while reading correct in
+  source. Use an explicit `if` + throw (or `Objects.requireNonNull`,
+  `Preconditions`-style checks that survive). Class:
+  `sota-code-security` rules/11 §4.
 
 ## Audit checklist
 

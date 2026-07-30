@@ -208,6 +208,25 @@ One more invariant: optimizations must not erode security — identity-keyed
 caching, constant-time comparisons, and validation/size limits are not
 overhead to shave (rules/05 §9, sota-code-security).
 
+## 9a. Duration as a correctness signal, not just a cost one
+
+Profiling asks "why is this slow?". Turn it around once per pipeline: **is any
+stage suspiciously *fast*?** A step that reports "nothing to do" far quicker than
+its claimed work allows did not do the work — a scan that returns 0 findings in
+2 s over 40k files, a migration that returns instantly, a backup that finishes in
+seconds. It is the cheapest diagnostic available and needs no code reading.
+
+Two forms worth timing deliberately:
+
+- **Duration vs claimed work** — record the wall time *and* the input size, then
+  compare against the order of magnitude the work implies.
+- **Duration constant across scales** — if a 100-item and a 100k-item input take
+  the same time, size is not reaching the work. Same test as §"cross-scale delta".
+
+A stage that got dramatically faster while reporting the same result is a
+regression signal, not a win, until you can say what work was removed. Full class
+and the evidence bar: `sota-code-security` rules/11 §2.1.
+
 ## 10. Performance regression testing in CI
 
 Performance regressions ship silently; functional tests pass at any speed.

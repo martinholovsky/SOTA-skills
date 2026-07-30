@@ -69,6 +69,16 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-07-30 | Same prompt | Negative claims need two independent methods; `file:line \| claim \| severity \| effort \| evidence`; mark the unverified | **rejected: already ours** | — |
 | 2026-07-30 | Validating the above (`gh api` on 8 tool repos) | `gh api` follows renames silently — a 200 under the manifest's name is not evidence the project is still there; read `full_name` back | **adopted** | `sota-devsecops/rules/03` §3.9.5 · v1.19.7 |
 | 2026-07-30 | Same validation — Ruby/.NET candidates are single-maintainer, low-adoption | Where no established tool exists, say so and go straight to the deletion proof rather than naming a fringe tool | **adopted** | `sota-devsecops/rules/03` §3.9.2 · v1.19.7 |
+| 2026-07-30 | Two user-authored "silent-control & dead-path/dead-layer" audit prompts | **Duration, not result** — a stage reporting "nothing found" faster than its claimed work allows did not run; highest-yield tell, no code reading needed | **adopted** | `sota-code-security/rules/11` §2.1 + `sota-performance/rules/01` §9a · unreleased |
+| 2026-07-30 | Same prompts | **Scope of the check** — every gate prints how many items it examined; `0 checked, 0 failed, exit 0` is the family's signature | **adopted** | `rules/11` §2.2 + `scripts/check-invariants.sh` · unreleased |
+| 2026-07-30 | Same prompts | Scale-dependent silence: size-gated paths fixtures never cross; budgets that truncate **coverage** while reporting a normal result | **adopted** | `rules/11` §3.1 + `sota-testing/rules/03` §3.7a · unreleased |
+| 2026-07-30 | Same prompts | Stale-artifact no-op: a cache/tag/fingerprint key narrower than the behaviour — "what input can change while the key stays constant?" | **adopted** | `rules/11` §3.2 · unreleased |
+| 2026-07-30 | Same prompts | Format assumption from one sample; lenient parsers returning plausible-but-wrong values instead of raising | **adopted** | `rules/11` §3.3 · unreleased |
+| 2026-07-30 | Same prompts (the "assertions" entry in their gate list) | An `assert` is not a control: `-O`/`PYTHONOPTIMIZE`, `-DNDEBUG`, and Java's default-off assertions delete it in production | **adopted** | `rules/11` §4 + `sota-python`/`sota-c-cpp`/`sota-jvm` · unreleased |
+| 2026-07-30 | Same prompts | ACTIVE / LATENT / REFUTED labels; one *discriminating* proof per class; report REFUTED too | **adopted** | `rules/11` §5 · unreleased |
+| 2026-07-30 | Second prompt only | A fix that moves a detector's decision boundary needs known-bad/known-good validation before shipping | **adopted** | `rules/11` §5 · unreleased |
+| 2026-07-30 | Both prompts | Mutation-test every gate; vacuous tests; telemetry silence; comments are a hypothesis; the disqualifier list | **rejected: already covered** | — (`rules/10` §3, §2.9, §4; `sota-testing` rules/06 + rules/09) |
+| 2026-07-30 | Second prompt's seed examples (target-repo `file:line` calibration) | Naming a specific repo's files as calibration anchors | **rejected: non-fit** | — (the library stays generic; the *classes* were adopted, the examples were not) |
 
 ## Entries
 
@@ -455,3 +465,63 @@ reasoning, **not measured**. Do not cite a lift. Note also what this entry does
 recommendation with a shelf life — §3.9.2 tells the reader to re-verify before
 trusting any row, which is the only maintainable posture for a table of eight
 third-party projects.
+
+### 2026-07-30 — two dead-path audit prompts, and the gate that caught itself
+
+Source: two user-authored audit prompts on the same family — "Silent-Control &
+Dead-Path Audit (general)" and a "Dead-Layer" variant carrying seed examples from
+a real scanner codebase. Same five classes, same validation protocol; the second
+adds sharper sub-cases.
+
+**Coverage before: roughly two thirds.** `sota-code-security` rules/10 already
+owned the spine — the falsification question (§1), silent-zero in three forms
+(§2.1–2.4), the vacuous-control catalog, and the mutation procedure with the two
+traps that make a green result lie (§3). `sota-testing` rules/09 already required
+watching a security test fail. `sota-shell-scripting` rules/01 already covered
+empty globs and exit-code masking. Those were logged **rejected: already covered**
+rather than re-litigated.
+
+**What was genuinely missing was the *hunt*, not the catalog.** rules/10 tells you
+how to interrogate a control you are already looking at. Neither prompt's most
+valuable idea was a class at all — it was a **diagnostic** that tells you *where*
+to look without reading every line:
+
+- **Duration, not result.** The library had nothing on wall-time-versus-claimed-
+  work anywhere across 41 skills. It is the cheapest signal in the family and the
+  only one requiring no code reading.
+- **Scope of the check.** "0 checked, 0 failed, exit 0" — the observation that a
+  gate must publish its *denominator*.
+
+Three classes were also absent because they are **correctness, not security**,
+and so had no natural home in a security-controls file: scale-dependent silence,
+stale-artifact no-ops (a cache key narrower than the behaviour), and format
+assumptions generalised from one sample. They landed in a new `rules/11` with
+cross-refs into `sota-testing` (fixtures must cross the thresholds the code
+branches on) and `sota-performance` (duration as a *correctness* signal).
+
+**The gate caught itself.** Applying §2.2's diagnostic to this repo's own
+`check-invariants.sh` produced a real **LATENT** finding: mutating the pathspec
+`skills/*/rules/*.md` to match nothing made checks 2 and 10 print `ok` and the
+script exit **0** having examined **zero files** — and check 6's tree recount did
+not catch it, because the `SKILL.md` count it recounts was unaffected. Fixed the
+same day: four checks now print their denominator and fail closed on an empty
+scope, and the same mutation exits 1. An early cut of the fix printed `ok` on the
+line *after* the failure note — misleading green, the precise defect the new file
+warns about — which is itself the argument for watching a fix run rather than
+trusting it.
+
+**Verified rather than asserted.** Every `assert`-stripping claim was run:
+`python3 -O` and `PYTHONOPTIMIZE=1` deleted a failing assertion (program printed
+`passed`), `cc -DNDEBUG` did the same in C, and — with no JDK available locally —
+Java's default-off behaviour was taken from Oracle's own guide rather than
+memory. CMake's `Modules/Compiler/GNU.cmake` was read directly to confirm
+`-DNDEBUG` reaches `RELEASE`, `RELWITHDEBINFO` *and* `MINSIZEREL`. The lenient-
+parser examples (`parseInt("12abc") → 12`, `float("1_0") → 10.0`) are real output.
+
+**Not adopted:** the second prompt's seed examples name a specific repo's files as
+calibration anchors. The classes were adopted; the examples were not — the library
+stays generic.
+
+**Measurement status:** content refinements adopted on reasoning plus one measured
+self-finding (the empty-scope defect, proven by mutation with before/after exit
+codes). **No efficacy lift is claimed or measured. Do not cite one.**
