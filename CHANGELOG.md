@@ -7,8 +7,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Invariant 10 — every `skills/*/rules/*.md` must be referenced by its own
+  `SKILL.md`.** The library's loading model is that `SKILL.md` loads first and the
+  model reads only the rules files its index names, so an unindexed rules file is
+  written, capped, checklist-ed — and never loaded. It is the skill-level twin of
+  invariant 7 (a skill missing from the router) and the same class as the new
+  §3.9, turned on ourselves. **Invariant 8 does not cover it:** measured
+  2026-07-30, **30 of 41** `SKILL.md` files list their rules as plain backticked
+  text rather than Markdown links, so a rename leaves the link checker nothing to
+  resolve — verified by renaming `sota-golang/rules/01-errors.md` and watching
+  invariant 8 report `ok` while invariant 10 caught it. All 255 rules files pass,
+  so this is a **regression gate, not a repair**; watched to fail on two injected
+  cases (an unindexed new file, and a renamed reference) before being trusted,
+  per the harness convention.
+- **`scripts/install.sh --version`** — nothing reported which release was in use,
+  so a bug report ("the day-zero check fired wrongly") could not name the version
+  that produced it. Reports the release (read from `VERSION`, never hardcoded),
+  `git describe` incl. `-dirty`, whether the remote is ahead **as of the last
+  fetch** (no implicit network call), and whether skills are symlinked (update
+  live) or a pinned `--copy` snapshot. **`--update` now prints the version delta**
+  (`1.19.7 → 1.20.0 — see CHANGELOG.md`) or `(unchanged)`: because symlinked
+  skills change under you on a pull, "nothing happened" and "you just moved three
+  releases" previously looked identical. Tested on six paths — normal checkout,
+  non-git snapshot, missing `VERSION`, unlinked target, `--update` with and
+  without a change, and behind-upstream — each verified to exit 0 without
+  tripping `set -euo pipefail`.
+
 ### Changed
 
+- **The README told users auto-update would keep them current. It doesn't.** The
+  roadmap had flagged "git-hosted marketplaces also check at session start" as
+  documented-but-unverified; checked against the Claude Code docs 2026-07-30, it is
+  wrong in the way that matters: *"Third-party and local development marketplaces
+  have auto-update disabled by default"* — this is a third-party marketplace, so a
+  plugin user gets **no** automatic refresh unless they turn it on. Even enabled,
+  the check runs after session start "with a random delay of up to ten minutes"
+  while the running session keeps its launch versions. The section now carries the
+  quote, the opt-in path (`/plugin` → Marketplaces → Enable auto-update), and a
+  pointer to `--version`. This makes the open update-notification item **more**
+  pressing, not less: neither install path pushes updates by default.
+- **`docs/ROADMAP.md` corrected an item that was itself wrong.** It claimed
+  `install.sh --update` "already pulls and knows both versions — have it print the
+  delta". The script had **zero** references to `VERSION`
+  (`grep -c VERSION scripts/install.sh` → 0), so the cheap fix it proposed did not
+  exist. Now implemented, and the item split into what is done (report) and what
+  remains open (push).
+- **A third copy of the stale 500-line claim, this time inside the checker.**
+  `scripts/check-invariants.sh`'s own header said invariant 1 covers "every tracked
+  `*.md`", contradicting its own implementation (skills-only, with a comment
+  explaining why). Fixed. After the README and CONTRIBUTING fixes, that is three
+  places one policy change failed to reach — the reason RELEASING.md §2b now says
+  to re-read long-lived prose at each cut.
 - **`CONTRIBUTING.md` carried the same wrong cap the README did.** Rule 3 said
   "Every Markdown file is ≤ 500 lines" and the PR checklist said "All touched files
   are ≤ 500 lines". The cap has been **skill-files-only since PR #100**

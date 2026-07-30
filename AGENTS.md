@@ -70,6 +70,16 @@ symlinks to it — edit only this file, never the symlinks.
    PRs each opened one above `[1.19.3]` and `main` carried both until a human
    noticed during the release cut. Fence-aware, so a heading quoted inside a
    code block doesn't count.
+10. **unindexed rules file** — every `skills/*/rules/*.md` must be referenced by
+    its own `SKILL.md`. The model reads only the rules files the index points at,
+    so an unindexed one is written, capped, checklist-ed — and never loaded. It is
+    the skill-level twin of invariant 7 (a skill missing from the router) and the
+    same class as `sota-devsecops` rules/03 §3.9, turned on ourselves. Invariant 8
+    does **not** cover it: **30 of 41** `SKILL.md` files list their rules as
+    plain backticked text rather than Markdown links, so a rename leaves nothing
+    for the link checker to resolve (measured 2026-07-30). All 255 rules files
+    passed when this landed — it is a regression gate, watched to fail on an
+    injected file and on a renamed reference first.
 
 Separately, `scripts/check-freshness.sh` (run monthly by
 `.github/workflows/freshness.yml`) tracks the root `LAST-VERIFIED` stamp —

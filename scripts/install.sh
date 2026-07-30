@@ -24,6 +24,7 @@
 #   scripts/install.sh                 # link skills into ~/.claude/skills (all projects)
 #   scripts/install.sh --project DIR   # link into DIR/.claude/skills (one project)
 #   scripts/install.sh --update        # git pull --ff-only first, then re-link
+#   scripts/install.sh --version       # report which release is installed, and where
 #   scripts/install.sh --copy          # copy instead of symlink (pin a snapshot)
 #   scripts/install.sh --routing       # also set up always-on routing (force)
 #   scripts/install.sh --no-routing    # skip the routing offer
@@ -39,6 +40,7 @@ readonly SKILLS_SRC="$REPO/skills"
 
 TARGET="$HOME/.claude/skills"
 DO_UPDATE=0
+DO_VERSION=0
 USE_COPY=0
 DO_ROUTING=-1   # -1 = ask/auto, 0 = skip, 1 = force
 ASSUME_YES=0
@@ -51,6 +53,49 @@ warn() { printf 'warning: %s\n' "$*" >&2; }
 die()  { printf 'error: %s\n' "$*" >&2; exit 1; }
 
 usage() { sed -n '2,/^set -euo/p' "$0" | sed 's/^# \{0,1\}//; /^set -euo/d'; exit "${1:-0}"; }
+
+# --- version reporting -------------------------------------------------------
+# Nothing in the library reported which release was in use, so a bug report
+# ("the day-zero check fired wrongly") could not name the version that produced
+# it. VERSION is the single source of truth (invariant 5 keeps it in lockstep
+# with plugin.json and the CHANGELOG top entry), so read it rather than
+# hardcoding a number anywhere.
+read_version() {  # <repo> — prints the release string, or "unknown"
+  local f="$1/VERSION"
+  [ -r "$f" ] && tr -d '[:space:]' <"$f" || printf 'unknown'
+}
+
+report_version() {
+  local v git_desc="" head="" behind=""
+  v="$(read_version "$REPO")"
+  printf 'SOTA-skills %s\n' "$v"
+  if git -C "$REPO" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    # --dirty marks uncommitted local edits, so no separate dirty check is needed.
+    git_desc="$(git -C "$REPO" describe --tags --always --dirty 2>/dev/null || true)"
+    head="$(git -C "$REPO" rev-parse --short HEAD 2>/dev/null || true)"
+    log "checkout: ${git_desc:-?} (HEAD $head)"
+    # Is a newer release already fetched? Report it without touching the network.
+    if git -C "$REPO" rev-parse --verify -q '@{upstream}' >/dev/null 2>&1; then
+      behind="$(git -C "$REPO" rev-list --count 'HEAD..@{upstream}' 2>/dev/null || printf '0')"
+      if [ "${behind:-0}" -gt 0 ]; then
+        log "upstream: $behind commit(s) ahead — run scripts/install.sh --update"
+      else
+        log "upstream: level as of the last fetch (a fetch is not implied)"
+      fi
+    fi
+  else
+    log "checkout: not a git repository (snapshot or plugin cache)"
+  fi
+  # Where the skills actually resolve from — a --copy snapshot does NOT track VERSION.
+  local probe="$TARGET/sota"
+  if [ -L "$probe" ]; then
+    log "install:  symlinked → $(readlink "$probe") (updates live on git pull)"
+  elif [ -d "$probe" ]; then
+    log "install:  copied snapshot at $probe — pinned, will NOT update; re-run with --copy to refresh"
+  else
+    log "install:  not linked into $TARGET"
+  fi
+}
 
 # --- interactive / routing helpers -------------------------------------------
 readonly RT_BEGIN="<!-- >>> sota-skills routing (managed by install.sh) >>> -->"
@@ -267,6 +312,7 @@ maybe_setup_routing() {
 while [ $# -gt 0 ]; do
   case "$1" in
     --update)     DO_UPDATE=1 ;;
+    --version)    DO_VERSION=1 ;;
     --copy)       USE_COPY=1 ;;
     --project)    shift; [ $# -gt 0 ] || die "--project needs a directory"; TARGET="$1/.claude/skills" ;;
     --routing)    DO_ROUTING=1 ;;
@@ -280,11 +326,26 @@ done
 
 [ -d "$SKILLS_SRC" ] || die "no skills/ dir at $SKILLS_SRC — run from a SOTA-skills checkout"
 
+# --version is a read-only report: print and exit before touching anything.
+if [ "$DO_VERSION" -eq 1 ]; then
+  report_version
+  exit 0
+fi
+
 # --- optional self-update ----------------------------------------------------
 if [ "$DO_UPDATE" -eq 1 ]; then
   if git -C "$REPO" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    was="$(read_version "$REPO")"
     log "updating $(basename "$REPO") (git pull --ff-only)…"
     git -C "$REPO" pull --ff-only || die "pull failed — resolve manually, then re-run"
+    now="$(read_version "$REPO")"
+    # Report the delta explicitly: symlinked skills change under you on a pull,
+    # so "nothing to do" and "you just moved three releases" looked identical.
+    if [ "$was" != "$now" ]; then
+      log "version:  $was → $now — see CHANGELOG.md for what changed"
+    else
+      log "version:  $now (unchanged)"
+    fi
   else
     warn "$REPO is not a git checkout — skipping --update"
   fi
