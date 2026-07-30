@@ -118,9 +118,35 @@ have been a worse leak than the original. It now lives in the header of
 `cases/build-safe.jsonl`, which never travels to a subject. General form: **keep
 guidance about the instrument out of the artifact the subject sees.**
 
-**Whether the thinner spec discriminates is not yet known.** A two-agent bare pilot
-was launched; if the bare arm still scores 1.000, the instrument is still at
-ceiling and the classes may simply not be elicitable from a spec at all. No claim
-either way until it lands.
+**The thinner spec did not restore discriminating power.** Two bare agents on the
+rewritten spec, both verified library-free: **1.000 and 1.000**. Same ceiling.
+
+One of them went past the reference answer: it noticed permissions are a pure
+function of role, so the "three-table join" computes a constant — and **deleted the
+cache** instead of adding invalidation. No cache, no staleness window. The other
+mutation-checked its own suite across nine controls and fixed two false claims it
+had written in its own comments after `EXPLAIN QUERY PLAN` contradicted them.
+
+## Conclusion: these classes are not elicitable from a spec at this tier
+
+Fat spec or thin, a capable agent asked to *build this service* writes an
+allowlisted sort, an ownership predicate, a non-swallowing webhook, a full-payload
+scan and real admin guards, and declines to wire a handler nothing emits. Five
+bare builds across two spec versions, all 1.000.
+
+**This is worth contrasting with the +0.39 completeness result rather than filed
+next to it.** Those rubric items are **cross-cutting omissions** under a
+one-sentence prompt — rate limiting, structured logging, TLS, tests — things a
+model drops because nobody named them and the task did not imply them. The seven
+classes here are **local correctness decisions inside a feature the model is
+actively writing**, and it makes them well.
+
+So defect-**avoidance** and practice-**completeness** are different measurement
+targets, and only the second has ever shown a gap in this project. That is the
+useful finding from this instrument, and it is a finding about *where a lift can
+exist at all* — not a result about the library, which never got a comparable arm
+because the bare arm never left the ceiling.
+
+**Do not rebuild this instrument.** A third spec version is not the missing piece.
 
 The fixture, scorer and both references are unchanged and reusable.
