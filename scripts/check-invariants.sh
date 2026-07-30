@@ -47,6 +47,15 @@ set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 
+# Wall time for the whole run, reported at the end next to the denominators.
+# rules/11 §2.1: a gate that reports "nothing wrong" far faster than its claimed
+# work allows did not do the work — but that tell is unavailable unless someone
+# records the duration. Printed, never gated: a duration threshold in CI is flaky
+# under runner variance, and a flaky gate gets disabled, which is how a control
+# becomes inert. Whole seconds only ($SECONDS), because sub-second timing is not
+# portable to the macOS bash 3.2 this script still supports.
+START_SECONDS=$SECONDS
+
 MAX_LINES=500
 MAX_DESC=1024
 fail=0
@@ -437,4 +446,5 @@ if [ "$fail" -ne 0 ]; then
   echo "FAIL: repository invariants violated (see above)."
   exit 1
 fi
-echo "PASS: all repository invariants satisfied."
+printf 'PASS: all repository invariants satisfied (10 checks over %s skill files / %s rules files, %ss).\n' \
+  "${seen1:-?}" "${seen2:-?}" "$((SECONDS - START_SECONDS))"

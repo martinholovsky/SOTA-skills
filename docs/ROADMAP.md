@@ -61,17 +61,32 @@ first.
 
 **New open items from the 2026-07-30 cycle:**
 
-- **Our own gates now report a denominator — the rest of the repo's automation does
-  not.** `check-invariants.sh` fails closed on an empty scope after a mutation
-  showed checks 2 and 10 passing over zero files. The same question is unasked of
-  `check-freshness.sh`, the eval runners, and the CI workflow steps: each can
-  succeed having examined nothing. Cheap, mechanical follow-up; apply
-  `sota-code-security` rules/11 §2.2 to them one at a time.
-- **Duration is not recorded for any of our automation.** rules/11 §2.1 calls
-  wall-time-vs-claimed-work the highest-yield tell, and none of our scripts or CI
-  jobs print how long they took against how much they examined. A one-line
-  `SECONDS`/timestamp per check would make the tell available on our own runs —
-  and would make a future "it got much faster" regression visible.
+- ~~**Our own gates now report a denominator — the rest of the automation does
+  not.**~~ **Done 2026-07-30.** `check-freshness.sh` now exits 1 on an empty scope
+  (it printed the denominator but never failed on it); `evals/test_scoring.py`
+  now prints `(25 checks)` and fails below a floor, watched to fail by simulating
+  an early return (`only 17 ran, expected at least 25`). One suspicion was
+  **REFUTED** and recorded: CI's `shellcheck scripts/*.sh` fails loudly on an
+  unmatched glob in bash (exit 2), so there was nothing to fix. Still unexamined:
+  what gitleaks reports as its scope over the full history.
+- ~~**Duration is not recorded for any of our automation.**~~ **Partly done
+  2026-07-30.** `check-invariants.sh` prints wall time with its denominators
+  (`10 checks over 297 skill files / 256 rules files, 10s`). Deliberately printed
+  and **not gated** — a duration threshold in CI is flaky under runner variance,
+  and a flaky gate gets disabled. Still open: the eval runners and CI steps print
+  no duration, and there is no recorded baseline to compare a future run against,
+  so "it got 30× faster" is visible only to a human reading two logs.
+- **The dead-path eval has never been run against a live agent.** The fixture,
+  ground truth, deterministic scorer, fixture selfcheck and scorer selftest all
+  exist and run in CI (2026-07-30) — but no arm has been executed, so there is **no
+  number**, and none should be cited. Running it needs a tool-using agent driven
+  over a scratch copy of `evals/cases/dead-path/`, then
+  `run-dead-path.py --report`. Cheap next step: 4–6 local Claude Code sub-agents,
+  with-library vs bare, no OpenRouter spend for the deterministic half. The
+  hypothesis worth testing is narrow and falsifiable: **a bare agent reasons and
+  scores ~0.25 verdict / 0.00 proof; a library-guided one runs the mutations.** If
+  both arms run the procedure unprompted, this lands at +0.00 like the other four
+  and that is a real answer worth recording.
 
 - **No gate notices a capability that never reached a front-door surface.**
   Invariant 6 fails the build on a wrong *number* in the README; nothing fails on a

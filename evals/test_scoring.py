@@ -30,6 +30,10 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FAILURES = []
+CHECKS = 0
+# Floor for the number of assertions that must actually execute. Raise it when
+# you add checks; a drop means a test stopped running, not that nothing broke.
+MIN_CHECKS = 25
 
 
 def load(fname, modname):
@@ -40,6 +44,8 @@ def load(fname, modname):
 
 
 def check(label, got, want):
+    global CHECKS
+    CHECKS += 1
     ok = abs(got - want) < 1e-9 if isinstance(want, float) else got == want
     if not ok:
         FAILURES.append(f"{label}: got {got!r}, want {want!r}")
@@ -156,4 +162,12 @@ if __name__ == "__main__":
         for f in FAILURES:
             print(f"  - {f}")
         sys.exit(1)
-    print("PASS: eval scoring functions behave correctly")
+    # Report the denominator and fail closed on an empty scope: "0 checked, 0
+    # failed, exit 0" is indistinguishable from a real pass, and an early return
+    # or an emptied test tuple would have printed PASS here forever
+    # (sota-code-security rules/11 §2.2).
+    if CHECKS < MIN_CHECKS:
+        print(f"FAIL: only {CHECKS} scoring check(s) ran, expected at least "
+              f"{MIN_CHECKS} — did a test return early?")
+        sys.exit(1)
+    print(f"PASS: eval scoring functions behave correctly ({CHECKS} checks)")

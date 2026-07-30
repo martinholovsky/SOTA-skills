@@ -14,6 +14,21 @@ audit STRAT-HIGH-2).
 
 ## Cases
 
+- `cases/dead-path.jsonl` (4) + `cases/dead-path/` — **the only instrument here
+  that scores a *procedure* rather than a recognition**, and the one design that
+  might move the audit family off +0.00. Every other audit set asks "can the model
+  spot this?" and the answer is already yes without the library. This one asks
+  whether the model **mutates the control, deletes the dependency, and runs the
+  real build** — what `sota-code-security` rules/11 and `sota-devsecops` rules/03
+  §3.9 require. The fixture is built so a careful static read gets **half the items
+  wrong**: two look like the opposite of what they are, and one is a REFUTED case
+  that punishes flagging everything. Scored deterministically by
+  `run-dead-path.py` — no judge, no API key, no network — on two axes, verdict
+  accuracy and *proof compliance* (a right verdict with no executed evidence is not
+  full credit). `selfcheck.sh` re-derives the fixture's six planted properties by
+  mutation; `--selftest` proves the scorer still separates a report that reasoned
+  from one that ran. Both run in CI. **Not yet run against a live agent** — the
+  instrument exists, the number does not.
 - `cases/router.jsonl` (20) — routing: a plain prompt → the skills that must
   load. Tests the router's task→skill mapping.
 - `cases/audit.jsonl` (13) — audit: a deliberately vulnerable snippet → the

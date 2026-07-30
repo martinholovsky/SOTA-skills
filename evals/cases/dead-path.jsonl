@@ -1,0 +1,23 @@
+# Dead-path procedure golden set — ground truth for cases/dead-path/.
+#
+# UNLIKE every other case set here, this does NOT measure whether the model can
+# RECOGNIZE a defect. All four audit instruments that score recognition sit at
+# +0.00 (see results/RESULTS.md): a frontier model handed the code and the
+# question is already at ceiling. This set measures whether the model DOES THE
+# PROCEDURE that sota-code-security rules/11 and sota-devsecops rules/03 §3.9
+# require — mutate the control, delete the dependency, run the real build — and
+# it is built so that reasoning without running gets HALF THE ITEMS WRONG.
+#
+# Each item is a trap for the opposite behaviour:
+#   - two look one way and are the other (static reading gives the wrong verdict)
+#   - one is a REFUTED case: a model that flags everything scores worse, not better
+#
+# `accept` lists every verdict scored correct. `proof_must_run` marks items whose
+# verdict is only reachable by executing something.
+# Ground truth lives OUTSIDE cases/dead-path/ on purpose: point the agent at the
+# fixture directory (copy it to a scratch dir first) and it cannot read this file.
+# Run: python3 evals/run-dead-path.py --report REPORT.md   (see evals/README.md).
+{"id": "csv_export", "kind": "dependency", "verdict": "KEEP", "accept": ["KEEP"], "proof_must_run": true, "looks": "unused — no static import anywhere; the name appears only as a string in config.EXPORTER", "truth": "resolved at runtime by importlib in exporters/load(); it is the default exporter for every non-legacy entry", "discriminating_proof": "delete ledger/exporters/csv_export.py in a scratch copy and run the suite: it FAILS", "trap": "a grep-based 'unused dependency' sweep deletes it and breaks export for every entry"}
+{"id": "xml_export", "kind": "dependency", "verdict": "DELETE", "accept": ["DELETE"], "proof_must_run": true, "looks": "used — statically imported in app.py and called from a branch in export()", "truth": "the branch tests source == Source.LEGACY_BATCH, and parse() — the only entry constructor — always sets Source.API, so the branch cannot execute", "discriminating_proof": "delete the module AND its dead import/branch in a scratch copy, then run the suite: it PASSES", "trap": "deleting only the file breaks the import, and an agent that stops there wrongly concludes the module is reached"}
+{"id": "check_currency", "kind": "control", "verdict": "REFUTED", "accept": ["REFUTED"], "proof_must_run": true, "looks": "untested — no test function names it, so a coverage-by-test-name read calls it vacuous", "truth": "it is exercised through app.ingest(); replacing its body with a permissive no-op breaks the suite", "discriminating_proof": "no-op the currency check in a scratch copy and run the suite: it FAILS, so the control is real and the suspicion is refuted", "trap": "a model that reasons from test names reports a vacuous control that is in fact covered"}
+{"id": "validate_amount", "kind": "control", "verdict": "CONFIRMED", "accept": ["ACTIVE", "LATENT", "CONFIRMED"], "proof_must_run": true, "looks": "enforced — called on the ingest path, right next to a control that does raise", "truth": "it RETURNS a boolean that ingest() discards, so an over-limit amount posts; replacing the body with `return True` leaves the suite green", "discriminating_proof": "no-op it and run the suite (PASSES), or call app.ingest with amount=10**9 and observe the entry is returned rather than rejected", "trap": "the call site reads as enforcement; only the discarded return value gives it away"}
