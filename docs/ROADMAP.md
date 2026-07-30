@@ -88,8 +88,19 @@ first.
   reporting discipline (ACTIVE/LATENT labels 0/3 vs 3/3, bounded claims 0/3 vs
   3/3, decision-boundary fix-risk 0/3 vs 3/3) — post-hoc, partly tautological
   since the library arm was told to use that vocabulary, and **not a lift**.
-- **Where the audit frontier actually is, after that null.** Two readings survive
-  and neither is tested. (a) *The brief did the work*: naming four suspects and
+- ~~**Where the audit frontier actually is, after that null.**~~ **Both readings
+  tested 2026-07-30 and both are dead** ([UNSCOPED-AUDIT](../evals/results/2026-07-30/UNSCOPED-AUDIT.md)):
+  stripping the answer vocabulary changed nothing (A), and unusual defect classes
+  under an unscoped brief changed nothing (B) — verified-clean bare agents scored
+  1.000 on both. **Do not build another audit-recall instrument.** The one
+  untested claim is *calibration*: every library arm downgraded its own findings
+  on evidence and bounded claims by what it had run; no bare arm did. Measurable,
+  but it measures adherence to our own doctrine — a far weaker claim than "finds
+  more bugs", and not to be reported as a lift. **Effort moves to BUILD**, which
+  is where the measured lift is (+0.39 completeness, +0.53 freshness).
+  Original framing kept below for the record.
+
+  Two readings survived the dead-path null and neither is tested. (a) *The brief did the work*: naming four suspects and
   demanding a `PROOF` field is a strong nudge; a genuinely unscoped "audit this
   repo" over a large tree might separate the arms — this run is weak evidence for
   prioritising the **agentic large-repo audit** (item 2 below) over building more
