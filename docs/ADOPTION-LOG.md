@@ -61,14 +61,14 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-07-28 | Two live verification runs on an [asterinas](https://github.com/asterinas/asterinas) clone | A read-only setup check: is the library reaching this repo, is its agent file true, are its gates real | **adopted** | `docs/VERIFY-SETUP.md` · v1.19.5 |
 | 2026-07-28 | Same runs — a review workflow with 5/5 *skipped* runs | A control whose trigger never fires: all-skipped is not all-green | **adopted** | `sota-code-security/rules/10` §2.13 · v1.19.5 |
 | 2026-07-28 | Same runs — 7/7 `make` targets resolved while the stated toolchain was 7 months stale | Verify an agent file's claims, not just that its commands exist | **adopted** | `sota-docs-workflow/rules/01` §7 · v1.19.5 |
-| 2026-07-30 | A user-authored audit prompt for the "declared but not reached" class (CVEs/versions explicitly out of scope) | Trace every direct dep / registered module / plugin to a real entrypoint; prove "unreached" by deleting it and running the real build | **adopted** | `sota-devsecops/rules/03` §3.9 · unreleased |
-| 2026-07-30 | Same prompt | Leverage ratio: symbols called vs transitive modules inherited (<5 / >10 → replace-in-house candidate) | **adopted** | `sota-devsecops/rules/03` §3.9.4 · unreleased |
-| 2026-07-30 | Same prompt | Upstream health from a primary source fetched this session (`gh api` archived / `pushed_at` / contributor count), reported as dates | **adopted** | `sota-devsecops/rules/03` §3.9.5 · unreleased |
-| 2026-07-30 | Same prompt | Never reimplement an algorithm whose output is persisted and must stay comparable with stored data (fuzzy hashes, digests, tokenizers) | **adopted** | `sota-devsecops/rules/03` §3.9.6 · unreleased |
-| 2026-07-30 | Same prompt | A/B/C/D finding taxonomy (DELETE / REPLACE IN-HOUSE / KEEP / UNMAINTAINED-but-keep) with the successor named for D | **adopted** | `sota-devsecops/rules/03` §3.9.6 · unreleased |
+| 2026-07-30 | A user-authored audit prompt for the "declared but not reached" class (CVEs/versions explicitly out of scope) | Trace every direct dep / registered module / plugin to a real entrypoint; prove "unreached" by deleting it and running the real build | **adopted** | `sota-devsecops/rules/03` §3.9 · v1.19.7 |
+| 2026-07-30 | Same prompt | Leverage ratio: symbols called vs transitive modules inherited (<5 / >10 → replace-in-house candidate) | **adopted** | `sota-devsecops/rules/03` §3.9.4 · v1.19.7 |
+| 2026-07-30 | Same prompt | Upstream health from a primary source fetched this session (`gh api` archived / `pushed_at` / contributor count), reported as dates | **adopted** | `sota-devsecops/rules/03` §3.9.5 · v1.19.7 |
+| 2026-07-30 | Same prompt | Never reimplement an algorithm whose output is persisted and must stay comparable with stored data (fuzzy hashes, digests, tokenizers) | **adopted** | `sota-devsecops/rules/03` §3.9.6 · v1.19.7 |
+| 2026-07-30 | Same prompt | A/B/C/D finding taxonomy (DELETE / REPLACE IN-HOUSE / KEEP / UNMAINTAINED-but-keep) with the successor named for D | **adopted** | `sota-devsecops/rules/03` §3.9.6 · v1.19.7 |
 | 2026-07-30 | Same prompt | Negative claims need two independent methods; `file:line \| claim \| severity \| effort \| evidence`; mark the unverified | **rejected: already ours** | — |
-| 2026-07-30 | Validating the above (`gh api` on 8 tool repos) | `gh api` follows renames silently — a 200 under the manifest's name is not evidence the project is still there; read `full_name` back | **adopted** | `sota-devsecops/rules/03` §3.9.5 · unreleased |
-| 2026-07-30 | Same validation — Ruby/.NET candidates are single-maintainer, low-adoption | Where no established tool exists, say so and go straight to the deletion proof rather than naming a fringe tool | **adopted** | `sota-devsecops/rules/03` §3.9.2 · unreleased |
+| 2026-07-30 | Validating the above (`gh api` on 8 tool repos) | `gh api` follows renames silently — a 200 under the manifest's name is not evidence the project is still there; read `full_name` back | **adopted** | `sota-devsecops/rules/03` §3.9.5 · v1.19.7 |
+| 2026-07-30 | Same validation — Ruby/.NET candidates are single-maintainer, low-adoption | Where no established tool exists, say so and go straight to the deletion proof rather than naming a fringe tool | **adopted** | `sota-devsecops/rules/03` §3.9.2 · v1.19.7 |
 
 ## Entries
 

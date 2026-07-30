@@ -62,7 +62,7 @@ More install options: [Installation](#installation) · more prompts: [Using it](
 
 ## Contents
 
-- [Standards & practices baked in](#standards--practices-baked-in)
+- [Standards & practices baked in](#standards--practices-baked-in) · [What the audit hunts that a scanner can't](#what-the-audit-hunts-that-a-scanner-cant)
 - [Skills](#skills) · [Coverage & non-goals](#coverage--non-goals)
 - [Installation](#installation) · [Always-on routing](#always-on-routing-recommended) · [Updating](#updating)
 - [Using it](#using-it)
@@ -119,6 +119,44 @@ language *and* complex/security-sensitive frontend (~+10 pts) — and **ties** w
 base model is already near-complete (simple UI, templated infra). The lead tracks task
 difficulty, not the domain — we measure it and say so.
 [Full breadth result, consolidated table, method & honest limits →](evals/results/RESULTS.md)
+
+### What the audit hunts that a scanner can't
+
+Five classes of defect survive every linter, SAST rule, and CVE scanner, because in
+each one the code isn't *wrong*. The library hunts them as explicit passes:
+
+- **Controls that are inert** — a safeguard whose success and whose total failure look
+  identical from outside: a swallowed enforcement exception, a ruleset that loads zero
+  rules, presence decided by `exists()` rather than a loaded artifact, a CI gate whose
+  every run is *skipped*, a test that still passes when the control's body is replaced
+  with a no-op.
+  ([rules/10](skills/sota-code-security/rules/10-silent-control-failure.md))
+- **Dependencies declared but never reached** — packages, modules, and plugins wired in
+  and inert. Proven by *deleting* them in a scratch copy and running the real build,
+  lint, and full suite, with exit codes and before/after transitive counts reported —
+  a grep is not proof.
+  ([rules/03 §3.9](skills/sota-devsecops/rules/03-dependencies.md))
+- **Decisions that stopped being right** — the datastore picked for scale that never
+  arrived, the rewrite justified by a benchmark that no longer reproduces. Every
+  expensive-to-reverse decision is classified **JUSTIFIED / STALE / UNJUSTIFIED /
+  UNVERIFIABLE**, and any number one rests on is **re-measured this session**.
+- **Findings that don't survive contact** — every Critical/High gets an independent pass
+  *prompted to kill it*, working from the code rather than the write-up and defaulting
+  to REFUTED when the evidence is ambiguous. Refutations are recorded, so the next
+  auditor doesn't re-raise them.
+- **Absence claims** — "no hardcoded secrets remain" is the one finding nobody can
+  falsify: a narrow search and a true absence produce identical output. Any absence
+  claim needs a widened search **plus a second independent method**, with the search
+  stated. ([methodology §5, §7](skills/sota/rules/01-audit-methodology.md))
+
+**Where this is *not* backed by a number:** the measured lift is in BUILD
+(completeness, freshness). Every audit eval sits at **+0.00** — recall, precision,
+cross-file, and inert-control detection at n=81 — because a frontier model handed the
+code *and* the question is already at ceiling; one earlier audit lift was **retracted**
+when its sample grew from 15 to 49 cases. The audit half is justified by gap analysis
+and self-audits that found real defects, not by a measured lift, and it is reported
+that way rather than implied.
+[Null results & the retraction →](evals/results/RESULTS.md)
 
 ## Skills
 
@@ -530,9 +568,12 @@ Naming one (or the `sota` router) just makes the routing explicit. From there:
 2. **BUILD mode** applies the rules while writing code and self-checks the
    diff against each loaded rules file's Audit checklist before presenting it.
 3. **AUDIT mode** hunts violations and reports findings as
-   `file:line | rule | severity | effort | fix`. Full audits follow
-   `sota/rules/01-audit-methodology.md` (scoping → inventory → tooling →
-   per-domain passes → report with a prioritized roadmap).
+   `file:line | rule | severity | effort | fix`. A full audit runs seven passes:
+   recon → threat model → per-domain passes → **silent-control pass** (does each
+   control confirmed to exist actually *do* anything?) → **decision-ledger review**
+   → findings → **refute before reporting**. Scoping, evidence standard, severity
+   model and report structure come from `sota/rules/01-audit-methodology.md`; the
+   report ends in a roadmap sequenced by risk-reduction-per-effort.
 4. If `profiles/<you>.md` exists, its stack choices are BUILD defaults and the
    AUDIT baseline (deviations get flagged).
 
@@ -549,6 +590,13 @@ Naming one (or the `sota` router) just makes the routing explicit. From there:
   unconditionally; load detailed rules files only as the task demands.
 - Borderline severities state the deciding assumption; unconfirmed findings
   are marked "needs verification", never asserted.
+- **A negative claim needs more proof than a positive one.** "No instances of X"
+  and "I only looked one way" are indistinguishable from the outside, so an
+  absence claim requires a widened search plus a **second independent method**,
+  and the search actually run is stated.
+- **A positive observation must show effect, not existence** — the request it
+  rejected, the log line it emitted, the test that fails when it's disabled.
+  An inert control praised as a strength is the worst reporting error available.
 
 ## Found a gap? Tell us — it's the only signal we get
 
@@ -569,11 +617,17 @@ If it saved you time, a ⭐ helps other engineers find it.
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). The short version: keep skills generic,
-verify fast-moving claims against primary sources, keep every file ≤ 500 lines,
-and end each rules file with an audit checklist. These are enforced by
-`scripts/check-invariants.sh` (pre-commit + CI) plus gitleaks (full-history
-scan in CI; per-commit via the pre-commit hook). Security issues
-and conduct: [SECURITY.md](SECURITY.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+verify fast-moving claims against primary sources, keep **skill** files
+(`skills/**`) ≤ 500 lines — that cap keeps incremental rule loading working and
+does not apply to README/CHANGELOG/`docs/`, which are read by humans — and end
+each rules file with an audit checklist. Nine invariants enforce this in
+`scripts/check-invariants.sh` (pre-commit + CI), covering line caps, checklist
+placement, description limits, version and count drift, router completeness, and
+internal link resolution — plus gitleaks (full-history scan in CI; per-commit via
+the pre-commit hook). Ideas taken from outside the repo are recorded with a
+verdict and reason in [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md), so a
+rejection isn't re-litigated. Security issues and conduct:
+[SECURITY.md](SECURITY.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ## License
 
