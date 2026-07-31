@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Three conventions moved to their point of use** — step 4 of the ledger plan,
+  and the one step its data actually supported. The principle comes from a measured
+  failure: `LAST-VERIFIED` was documented in three places and mentioned across nine
+  files, and two sessions still nearly broke it. **Proximity beats repetition.**
+  - **`LAST-VERIFIED` now carries its own rule.** This required teaching
+    `check-freshness.sh` to strip comment lines — its strict
+    `tr -d '[:space:]'` + `YYYY-MM-DD` glob was *precisely why* the rule could not
+    live in the file it governs. Both rejection paths were re-verified after the
+    change (comments-only and comment-plus-malformed-date each still exit 1), because
+    a parser loosened until it accepts anything is worse than the problem it solved.
+  - **`scripts/check-invariants.sh` gained an "adding a check?" block.** The file had
+    **zero** guidance on adding a check, despite being where every check is added:
+    watch it fail first (invariant 9's first cut printed its heading and nothing else
+    — a `grep -m 1` on a pipe SIGPIPE'd the upstream `printf`), print your
+    denominator and fail on an empty scope, and skip rather than guess when a
+    prerequisite is missing.
+  - **All three live-agent runners now carry the A/B conventions** they govern —
+    that a bare arm is not bare by default (sub-agents inherit the agent files and 2
+    of 3 loaded the router anyway), and that the arm must never be encoded in a path
+    or label. None of the three carried this before.
+
+  **The move exposed an imprecision in invariant 11, fixed in the same change.**
+  The gate keyed on the *file* changing rather than the *stamp* changing — so this
+  very commit, which only added comments, demanded an escape and got one
+  reflexively. A gate that fires on non-events trains people to wave it through,
+  which is how it becomes decorative (rules/11 §7). It now compares the parsed date
+  and reports `LAST-VERIFIED touched but the stamp is unchanged` for comment-only
+  edits. The fail path was **re-watched** after the refinement rather than assumed:
+  a real date bump with no escape still exits 1.
+
+  Not moved: the remaining judgment conventions have no single point of use.
+  *Verify every claim* applies everywhere, which is exactly why it cannot be
+  relocated and must stay a principle.
+
 ### Added
 
 - **`docs/CONVENTIONS-LEDGER.md`** — which repo conventions are enforced, which are

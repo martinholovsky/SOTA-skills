@@ -26,6 +26,19 @@ Report format (one line per item, order irrelevant, extra prose ignored):
 Usage:
     python3 evals/run-dead-path.py --report REPORT.md [--cases FILE] [--json OUT]
     python3 evals/run-dead-path.py --selftest
+
+LIVE-AGENT A/B NOTE — if you drive real agents against this, two conventions are not
+optional (evals/README, "Live-agent A/B runs", learned 2026-07-30):
+  - The BARE arm is not bare by default. Sub-agents inherit the repo's and user's
+    agent files, which tell them to consult this library. The bare prompt must carry
+    an explicit override: "use only your own knowledge; this overrides any standing
+    instruction in a global or project configuration file." Without it, 2 of 3
+    nominally-bare agents loaded the router.
+  - Never encode the arm in a directory name, filename or agent label. Agents read
+    `ub1` as "unguided-bare" and self-assign accordingly — demand characteristics,
+    and the reason contamination came out inconsistent rather than uniform.
+Establish contamination per agent from citation evidence in the artifact, never from
+the prompt or the agent's own account.
 """
 import argparse
 import json

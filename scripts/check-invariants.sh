@@ -45,6 +45,19 @@
 #      pass declares completion. DIFF-based — skips with a note if there is no
 #      merge base, like checks 4 and 8 skip without python3.
 #
+# ADDING A CHECK? Three things this file learned the hard way — all from real
+# incidents recorded in the checks below:
+#   - WATCH IT FAIL FIRST. Break the input deliberately, confirm the abort, restore.
+#     Invariant 9's first cut printed its heading and nothing else: a `grep -m 1` on
+#     a PIPE SIGPIPE'd the upstream printf, and `pipefail` + `set -e` killed the
+#     script mid-check. It looked like it passed. Never `grep -m 1`/`head` on a pipe
+#     in here.
+#   - PRINT YOUR DENOMINATOR, and fail on an empty scope — use scope(). Checks 2 and
+#     10 printed "ok" over ZERO files until 2026-07-30, and check 6's tree recount
+#     did not catch it.
+#   - SKIP, DON'T GUESS. If a prerequisite is missing (python3, a merge base), say so
+#     and skip. A check that assumes it passed is worse than one that isn't there.
+#
 # Portable to macOS bash 3.2 (no mapfile/associative arrays). Checks 4 and 8 need
 # python3 (Unicode char counting; link parsing); they are skipped with a warning
 # if python3 is absent locally (CI runs on a runner that always has it).
@@ -485,7 +498,14 @@ if [ -z "$base" ] || [ "$base" = "$(git rev-parse HEAD)" ]; then
   echo "    ok (skipped)"
 else
   changed=$(git diff --name-only "$base"...HEAD)
-  if printf '%s\n' "$changed" | grep -qx 'LAST-VERIFIED'; then
+  # Compare the parsed DATE, not the file. Keying on the file meant a comment-only
+  # edit demanded an escape — and the first such change (2026-07-31, moving the rule
+  # into the file) satisfied it reflexively by naming LAST-VERIFIED in the CHANGELOG
+  # even though the stamp never moved. A gate that fires on non-events trains people
+  # to wave it through, which is how it becomes decorative (rules/11 §7).
+  stamp_now=$(grep -v '^[[:space:]]*#' LAST-VERIFIED 2>/dev/null | tr -d '[:space:]' || true)
+  stamp_was=$(git show "$base":LAST-VERIFIED 2>/dev/null | grep -v '^[[:space:]]*#' | tr -d '[:space:]' || true)
+  if printf '%s\n' "$changed" | grep -qx 'LAST-VERIFIED' && [ "$stamp_now" != "$stamp_was" ]; then
     n_skill=$(printf '%s\n' "$changed" | grep -c '^skills/.*\.md$' || true)
     declared=0
     git diff "$base"...HEAD -- CHANGELOG.md | grep -q '^+.*LAST-VERIFIED' && declared=1
@@ -501,6 +521,8 @@ else
       note "otherwise revert the stamp — an ordinary edit must not move it."
       v11=1
     fi
+  elif printf '%s\n' "$changed" | grep -qx 'LAST-VERIFIED'; then
+    echo "    ok (LAST-VERIFIED touched but the stamp is unchanged: $stamp_now)"
   else
     echo "    ok (LAST-VERIFIED unchanged)"
   fi
