@@ -498,7 +498,14 @@ if [ -z "$base" ] || [ "$base" = "$(git rev-parse HEAD)" ]; then
   echo "    ok (skipped)"
 else
   changed=$(git diff --name-only "$base"...HEAD)
-  if printf '%s\n' "$changed" | grep -qx 'LAST-VERIFIED'; then
+  # Compare the parsed DATE, not the file. Keying on the file meant a comment-only
+  # edit demanded an escape — and the first such change (2026-07-31, moving the rule
+  # into the file) satisfied it reflexively by naming LAST-VERIFIED in the CHANGELOG
+  # even though the stamp never moved. A gate that fires on non-events trains people
+  # to wave it through, which is how it becomes decorative (rules/11 §7).
+  stamp_now=$(grep -v '^[[:space:]]*#' LAST-VERIFIED 2>/dev/null | tr -d '[:space:]' || true)
+  stamp_was=$(git show "$base":LAST-VERIFIED 2>/dev/null | grep -v '^[[:space:]]*#' | tr -d '[:space:]' || true)
+  if printf '%s\n' "$changed" | grep -qx 'LAST-VERIFIED' && [ "$stamp_now" != "$stamp_was" ]; then
     n_skill=$(printf '%s\n' "$changed" | grep -c '^skills/.*\.md$' || true)
     declared=0
     git diff "$base"...HEAD -- CHANGELOG.md | grep -q '^+.*LAST-VERIFIED' && declared=1
@@ -514,6 +521,8 @@ else
       note "otherwise revert the stamp — an ordinary edit must not move it."
       v11=1
     fi
+  elif printf '%s\n' "$changed" | grep -qx 'LAST-VERIFIED'; then
+    echo "    ok (LAST-VERIFIED touched but the stamp is unchanged: $stamp_now)"
   else
     echo "    ok (LAST-VERIFIED unchanged)"
   fi
