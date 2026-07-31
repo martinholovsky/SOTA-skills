@@ -59,6 +59,31 @@ a vague three-word prompt routed to clarifying questions instead and skipped it.
 Silence is therefore not evidence the rule is broken — check the router loaded
 first.
 
+**New open items from the 2026-07-31 cycle:**
+
+- **One gateable convention remains ungated: every scoreboard row must declare its
+  sample size.** Surfaced by [CONVENTIONS-LEDGER.md](CONVENTIONS-LEDGER.md), which
+  extracted **41 distinct conventions** from the five agent-facing docs and found
+  **11 enforced as invariants plus 4 more enforced inside the eval runners** — so
+  reading `check-invariants.sh` alone undercounts enforcement by about a third.
+  Applying three filters (has it already failed · does it fail silently · is it
+  mechanically checkable) left exactly **one** actionable candidate against a
+  predicted 2–4. It would be a **regression guard**, not a repair: all 10 rows
+  currently populate the Samples column. Low priority precisely because it passes
+  today.
+- **`RELEASING.md` §2b's front-door grep stays blocked** on needing machine-readable
+  capability names per release — carried forward, still the only other candidate.
+- **The reimplement case set is documentation, never run**
+  (`evals/cases/reimplement.jsonl`). If anyone ever runs it, the predictions written
+  *before* any run exist in the case-file header and must be used rather than fresh
+  ones. A null there is the **eighth** and the recorded conclusion is to stop, not
+  to author a ninth.
+- **The remaining ~18 judgment conventions were deliberately not relocated.** Three
+  with an identifiable point of use were moved 2026-07-31 (the stamp file, the
+  invariant script's "adding a check?" block, the live-agent runners). The rest —
+  *verify every claim* chief among them — apply everywhere, which is why they cannot
+  be moved and must stay principles. Do not "finish" this by relocating the other 18.
+
 **New open items from the 2026-07-30 cycle:**
 
 - ~~**Does the rewritten build-safe spec discriminate?**~~ **Tested 2026-07-31: no.**
@@ -82,7 +107,10 @@ first.
   to our own reporting doctrine — a far weaker claim than "finds more bugs" — so if
   it is ever built, it must not be reported as a lift.
 
-- **The BUILD-safe eval needs a thinner spec before it measures anything.**
+- ~~**The BUILD-safe eval needs a thinner spec before it measures anything.**~~
+  **SUPERSEDED 2026-07-31** — the thinner spec was written *and* tested, and it did
+  not discriminate either (see the closed item above). Kept for the diagnosis it
+  records; the remedy it proposes is done and did not work.
   Built 2026-07-30 to test whether the library stops these defect classes being
   *written* rather than found. The bare arm scored **1.000 (n=3, verified
   library-free)** — ceiling, so no lift is measurable
