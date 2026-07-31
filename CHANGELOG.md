@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Invariant 11 — `LAST-VERIFIED` moves only alongside a sweep.** The stamp
+  records the last *full* re-verification pass, not the newest verified fact, so a
+  rules section may legitimately carry today's verification dates while the stamp
+  reads months old. Bumping it on an ordinary edit asserts a sweep that never
+  happened — a false green planted in the one control whose job is detecting stale
+  claims.
+
+  The rule was already written in `AGENTS.md`, `docs/MAINTENANCE.md` and
+  `check-freshness.sh`'s own header, and **two separate sessions still proposed
+  bumping it wrongly**, catching themselves only on verification. A convention
+  documented three times and still nearly broken twice is `sota-code-security`
+  rules/10 §2.12 — a natural-language instruction standing in for an enforced
+  control — so it became a gate.
+
+  Two escapes, matching the batched and rolling passes the runbook allows: a
+  **sweep-shaped diff** (≥ 20 skill files; the real 2026-07-08 sweep touched
+  **100**, so the floor sits far below a genuine one), or **naming `LAST-VERIFIED`
+  in the CHANGELOG**, which the runbook already requires and which is how a rolling
+  pass declares completion.
+
+  This is the repo's first **diff-based** invariant — every other check reads the
+  whole tree — so with no merge base it skips with a note rather than guessing,
+  the way checks 4 and 8 skip without `python3`. Watched to fail before being
+  trusted (rules/11 §7): a lone stamp bump exits **1** with an actionable message,
+  a 25-skill-file diff passes, and a CHANGELOG declaration passes.
+
 ### Changed
 
 - **`sota-devsecops` rules/03 §3.9.6 — the protocol prohibition now says which side

@@ -678,7 +678,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). The short version: keep skills generic,
 verify fast-moving claims against primary sources, keep **skill** files
 (`skills/**`) ≤ 500 lines — that cap keeps incremental rule loading working and
 does not apply to README/CHANGELOG/`docs/`, which are read by humans — and end
-each rules file with an audit checklist. Ten invariants enforce this in
+each rules file with an audit checklist. Eleven invariants enforce this in
 `scripts/check-invariants.sh` (pre-commit + CI), covering line caps, checklist
 placement, description limits, version and count drift, router completeness, and
 internal link resolution — plus gitleaks (full-history scan in CI; per-commit via

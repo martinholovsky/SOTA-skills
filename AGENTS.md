@@ -89,6 +89,20 @@ invariant 6's tree recount did not catch it, since the `SKILL.md` count it
 recounts was unaffected. `0 checked, 0 failed, exit 0` is the signature of a gate
 that verifies nothing (`sota-code-security` rules/11 §2.2).
 
+11. **`LAST-VERIFIED` moves only with a sweep** — the stamp records the last
+    *full* re-verification pass, not the newest verified fact, so a rules section
+    may carry today's verification dates while the stamp is months old. Bumping it
+    on an ordinary edit asserts a sweep that never happened, planting a false green
+    in the one control whose job is detecting stale claims. Two escapes, matching
+    the batched and rolling passes [docs/MAINTENANCE.md](docs/MAINTENANCE.md)
+    allows: a **sweep-shaped diff** (≥ 20 skill files — the real 2026-07-08 sweep
+    touched **100**), or **naming `LAST-VERIFIED` in the CHANGELOG**, which the
+    runbook already requires. Added 2026-07-31 after the rule — already written in
+    three places — was still nearly broken twice: a convention that keeps almost
+    failing is `sota-code-security` rules/10 §2.12, an instruction standing in for
+    an enforced control. This is the first **diff-based** invariant; with no merge
+    base it skips with a note rather than guessing.
+
 Separately, `scripts/check-freshness.sh` (run monthly by
 `.github/workflows/freshness.yml`) tracks the root `LAST-VERIFIED` stamp —
 the date of the last full-library re-verification sweep against primary

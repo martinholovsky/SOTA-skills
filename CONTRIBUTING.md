@@ -141,6 +141,12 @@ are marked "needs verification", never asserted.
     does not catch this: **30 of 41** `SKILL.md` files list rules as plain
     backticked text rather than links, so a rename leaves no link to resolve.
 
+11. **`LAST-VERIFIED` moves only with a sweep**: the stamp is the date of the last
+    *full* re-verification pass, not a recency marker. Practical effect: don't touch
+    it on an ordinary edit, even one that verified its own facts. If you really did
+    complete a pass, either the diff is sweep-shaped (≥ 20 skill files) or you name
+    `LAST-VERIFIED` in the CHANGELOG entry.
+
 Secrets are scanned separately by **gitleaks** (config in `.gitleaks.toml`);
 CI scans the full git history, the pre-commit hook scans each commit.
 

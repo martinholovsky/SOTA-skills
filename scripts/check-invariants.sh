@@ -37,6 +37,13 @@
 #      reads only the rules files the SKILL.md index points at, so an unindexed
 #      rules file is never loaded — written, capped, checklist-ed, unreachable.
 #      Skill-level twin of check 7 (a skill missing from the router).
+#  11. LAST-VERIFIED only moves alongside a sweep. The stamp records the last
+#      FULL re-verification pass, not the newest verified fact, so bumping it on
+#      an ordinary edit asserts a sweep that never happened. Escapes: a
+#      sweep-shaped diff (>= 20 skill files; the real 2026-07-08 sweep touched
+#      100), or naming LAST-VERIFIED in the CHANGELOG, which is how a rolling
+#      pass declares completion. DIFF-based — skips with a note if there is no
+#      merge base, like checks 4 and 8 skip without python3.
 #
 # Portable to macOS bash 3.2 (no mapfile/associative arrays). Checks 4 and 8 need
 # python3 (Unicode char counting; link parsing); they are skipped with a warning
@@ -83,7 +90,7 @@ scope() {  # <count> <noun> — returns 1 on an empty scope; prints nothing on s
 # CHANGELOG, docs/) is human/agent-facing prose, not loaded as a skill, so it is
 # intentionally uncapped (decided 2026-07-15) — navigability there comes from a
 # table of contents and docs/INDEX.md, not a line ceiling.
-echo "[1/10] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
+echo "[1/11] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
 over=0
 seen1=0
 while IFS= read -r f; do
@@ -100,7 +107,7 @@ scope "$seen1" "skill files" || over=1
 if [ "$over" -eq 0 ]; then echo "    ok ($seen1 skill files)"; else fail=1; fi
 
 # --- 2. Audit checklist ends every rules file ------------------------------
-echo "[2/10] Every skills/*/rules/*.md ends with an '## Audit checklist'"
+echo "[2/11] Every skills/*/rules/*.md ends with an '## Audit checklist'"
 missing=0
 seen2=0
 while IFS= read -r f; do
@@ -131,7 +138,7 @@ if [ "$missing" -eq 0 ]; then echo "    ok ($seen2 rules files)"; else fail=1; f
 # .denylist.local (git-ignored, one ERE per line, '#' comments). When neither
 # exists (e.g. an external fork's PR), only the generic phrases are checked —
 # the maintainer's pre-commit hook and this repo's CI carry the full list.
-echo "[3/10] No internal-name leaks"
+echo "[3/11] No internal-name leaks"
 DENY='the user runs|the user operates'
 if [ -n "${SOTA_DENYLIST:-}" ]; then
   DENY="$DENY|$SOTA_DENYLIST"
@@ -167,7 +174,7 @@ fi
 # Code, Codex, ...) skip any skill that exceeds it. Count Unicode characters
 # (descriptions use em-dashes: 1 char, 3 bytes) via python3, parsing both
 # folded block scalars (`>-`) and plain single-line descriptions.
-echo "[4/10] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
+echo "[4/11] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
 if command -v python3 >/dev/null 2>&1; then
   if desc_out=$(python3 - "$MAX_DESC" <<'PY'
 import sys, glob, re
@@ -221,7 +228,7 @@ fi
 # One version, four places: VERSION, plugin.json, the CHANGELOG's top entry,
 # and (after the release lands) the newest v* tag. Drift here shipped a main
 # briefly claiming 1.8.0 with 1.9.0 content (2026-07-03) — hence a hard check.
-echo "[5/10] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
+echo "[5/11] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
 v5=0
 ver=$(tr -d '[:space:]' < VERSION)
 # Strict X.Y.Z: rejects interior malformations (1..2, 1.2, 1.2.3.4) the old
@@ -255,7 +262,7 @@ if [ "$v5" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # rot on surfaces nobody recounts (the social preview said "30 skills" for
 # three releases). Recount from the tree and compare every tracked surface;
 # RELEASING.md lists the same surfaces for manual release edits.
-echo "[6/10] Count-bearing surfaces match the tree"
+echo "[6/11] Count-bearing surfaces match the tree"
 v6=0
 ck() { # ck <found> <expected> <surface>
   [ "$1" = "$2" ] || { note "$3: says '${1:-<not found>}', tree says '$2'"; v6=1; }
@@ -301,7 +308,7 @@ if [ "$v6" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # library-map entry must name a real skill dir. Catches the drift the
 # 2026-07-10 audit found: sota-confidential-computing was added to the table
 # but missing from the map for a full release.
-echo "[7/10] Router lists every skill (routing table + library map)"
+echo "[7/11] Router lists every skill (routing table + library map)"
 v7=0
 seen7=0
 router=skills/sota/SKILL.md
@@ -329,7 +336,7 @@ if [ "$v7" -eq 0 ]; then echo "    ok ($seen7 domain skills)"; else fail=1; fi
 # with no rot-catching upside. Fenced AND inline code are stripped so link-shaped
 # examples (in ``` fences or `backticks`) are not scanned. Idea from vault-doctor
 # (training-knowledge-vault); see docs/ADOPTION-LOG.md.
-echo "[8/10] Internal Markdown links resolve (*.md targets)"
+echo "[8/11] Internal Markdown links resolve (*.md targets)"
 if command -v python3 >/dev/null 2>&1; then
   if link_out=$(python3 - <<'PY'
 import os, re, sys
@@ -375,7 +382,7 @@ fi
 # previous release (2026-07-28) and both sat on main until a human noticed
 # during the release cut. Fence-aware, like check 2: a CHANGELOG entry may
 # legitimately quote '## [Unreleased]' inside a code fence.
-echo "[9/10] CHANGELOG has at most one [Unreleased], and it is the top entry"
+echo "[9/11] CHANGELOG has at most one [Unreleased], and it is the top entry"
 v9=0
 changelogs="CHANGELOG.md $(git ls-files 'docs/CHANGELOG-archive*.md' | tr '\n' ' ')"
 for cl in $changelogs; do
@@ -421,7 +428,7 @@ if [ "$v9" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # to ourselves. All 255 rules files passed when this landed, so it is a
 # regression gate, not a repair; it was watched to fail on an injected file
 # and on a renamed reference before being trusted.
-echo "[10/10] Every skills/*/rules/*.md is referenced by its own SKILL.md"
+echo "[10/11] Every skills/*/rules/*.md is referenced by its own SKILL.md"
 v10=0
 seen10=0
 while IFS= read -r rf; do
@@ -440,11 +447,71 @@ done < <(git ls-files 'skills/*/rules/*.md')
 scope "$seen10" "rules files indexed" || v10=1
 if [ "$v10" -eq 0 ]; then echo "    ok ($seen10 rules files indexed)"; else fail=1; fi
 
+# --- 11. LAST-VERIFIED only moves alongside a sweep -------------------------
+# The stamp is the date of the last FULL re-verification pass, not a recency
+# marker for the newest verified fact — so a rules section may carry today's
+# verification dates while the stamp is months old, by design. Bumping it on an
+# ordinary edit asserts a sweep that never happened, planting a false green in
+# the one control whose job is detecting stale claims.
+#
+# That rule was already written in AGENTS.md, docs/MAINTENANCE.md and
+# check-freshness.sh's own header — and two separate sessions still proposed
+# bumping it wrongly and caught themselves only on verification. A convention
+# documented three times and still nearly broken twice is exactly
+# `sota-code-security` rules/10 §2.12: a natural-language instruction standing in
+# for an enforced control. So it becomes a gate.
+#
+# Two legitimate escapes, because docs/MAINTENANCE.md allows a BATCHED or a
+# ROLLING pass:
+#   (a) the diff is sweep-shaped — the 2026-07-08 sweep touched 100 skill files
+#       (31 skills, 65 findings), so the floor sits far below a real one;
+#   (b) the CHANGELOG diff names LAST-VERIFIED — which the runbook already
+#       requires ("note the sweep in the CHANGELOG"), and which is how a rolling
+#       pass declares its completion.
+# This is the first DIFF-based invariant; every other check reads the whole tree.
+# With no merge base it skips with a note rather than guessing, like checks 4/8.
+SWEEP_MIN_SKILL_FILES=20
+echo "[11/11] LAST-VERIFIED moves only with a sweep (batched diff, or declared in CHANGELOG)"
+v11=0
+base=""
+for ref in origin/main main; do
+  if git rev-parse --verify -q "$ref" >/dev/null 2>&1; then
+    base=$(git merge-base HEAD "$ref" 2>/dev/null || true)
+    [ -n "$base" ] && break
+  fi
+done
+if [ -z "$base" ] || [ "$base" = "$(git rev-parse HEAD)" ]; then
+  note "SKIPPED (no merge base to diff against, or nothing ahead of it)"
+  echo "    ok (skipped)"
+else
+  changed=$(git diff --name-only "$base"...HEAD)
+  if printf '%s\n' "$changed" | grep -qx 'LAST-VERIFIED'; then
+    n_skill=$(printf '%s\n' "$changed" | grep -c '^skills/.*\.md$' || true)
+    declared=0
+    git diff "$base"...HEAD -- CHANGELOG.md | grep -q '^+.*LAST-VERIFIED' && declared=1
+    if [ "$n_skill" -ge "$SWEEP_MIN_SKILL_FILES" ]; then
+      echo "    ok (LAST-VERIFIED moved with $n_skill skill files — sweep-shaped)"
+    elif [ "$declared" -eq 1 ]; then
+      echo "    ok (LAST-VERIFIED moved and declared in the CHANGELOG)"
+    else
+      note "LAST-VERIFIED changed, but this diff touches only $n_skill skill file(s)"
+      note "and the CHANGELOG does not mention LAST-VERIFIED. The stamp records a"
+      note "FULL re-verification pass (the 2026-07-08 sweep touched 100 skill files)."
+      note "If this really completes a rolling pass, say so in the CHANGELOG entry;"
+      note "otherwise revert the stamp — an ordinary edit must not move it."
+      v11=1
+    fi
+  else
+    echo "    ok (LAST-VERIFIED unchanged)"
+  fi
+fi
+if [ "$v11" -ne 0 ]; then fail=1; fi
+
 # --- Result ---------------------------------------------------------------
 echo
 if [ "$fail" -ne 0 ]; then
   echo "FAIL: repository invariants violated (see above)."
   exit 1
 fi
-printf 'PASS: all repository invariants satisfied (10 checks over %s skill files / %s rules files, %ss).\n' \
+printf 'PASS: all repository invariants satisfied (11 checks over %s skill files / %s rules files, %ss).\n' \
   "${seen1:-?}" "${seen2:-?}" "$((SECONDS - START_SECONDS))"
