@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`docs/ROADMAP.md` — one item was stale and is now marked superseded.** It said
+  *"the BUILD-safe eval needs a thinner spec before it measures anything"*, while a
+  closed item twenty lines above records that the thinner spec was written **and**
+  tested and did not discriminate either. Kept for the diagnosis it holds; the
+  remedy it proposes is done and did not work. Also records this cycle's items: the
+  one remaining gateable convention (a Samples-column regression guard, low priority
+  because it currently passes), §2b's grep still blocked, the reimplement set being
+  documentation-never-run, and an explicit note **not** to "finish" the point-of-use
+  work by relocating the other ~18 judgment conventions.
+- **`scripts/check-freshness.sh`'s header caught up with its own parser** — it still
+  described `LAST-VERIFIED` as holding only a date, after the parser was taught to
+  strip `#` comments so the file could carry the rule that governs it. Now also
+  points at invariant 11.
+
 - **Three conventions moved to their point of use** — step 4 of the ledger plan,
   and the one step its data actually supported. The principle comes from a measured
   failure: `LAST-VERIFIED` was documented in three places and mentioned across nine

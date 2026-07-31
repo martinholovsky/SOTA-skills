@@ -7,7 +7,11 @@
 # stamp: the root `LAST-VERIFIED` file holds the date (YYYY-MM-DD) of the last
 # full-library re-verification sweep (per-skill research against primary
 # sources — see the runbook in docs/MAINTENANCE.md). Update it only after such
-# a sweep, not on ordinary edits (git history already records those).
+# a sweep, not on ordinary edits (git history already records those) — now
+# enforced by invariant 11, which compares the parsed DATE and requires either a
+# sweep-shaped diff or a CHANGELOG entry naming LAST-VERIFIED.
+# The file may carry '#' comment lines, which this script strips: it holds the
+# rule that governs it, at the point of use (docs/CONVENTIONS-LEDGER.md).
 #
 # This script:
 #   - fails (exit 1) if the stamp is older than the re-verify window
