@@ -77,6 +77,17 @@ For these the fix is never a fourth copy of the text. It is **proximity**: the
 LAST-VERIFIED rule failed while written in three places, all far from the point of
 use. One line *in* the file being edited would likely have outperformed all three.
 
+**Applied 2026-07-31** to the three cases with an identifiable point of use:
+
+| Convention | Moved to | Note |
+|---|---|---|
+| `LAST-VERIFIED` is a sweep stamp, don't bump it | **`LAST-VERIFIED` itself** | required teaching `check-freshness.sh` to strip comment lines — the strict `YYYY-MM-DD` parser was *why* the rule could not live where it was needed |
+| Watch a guard fail · print the denominator · skip don't guess | **`scripts/check-invariants.sh` header**, as an "adding a check?" block | the file had **zero** guidance on adding a check |
+| A bare arm is not bare · never encode the arm in a path | **all three live-agent runners' docstrings** | none of them carried it, though they are what the conventions govern |
+
+The rest of the judgment list has no single point of use — *verify every claim* applies
+everywhere, which is precisely why it cannot be relocated and must stay a principle.
+
 ### Gateable but not gated (2 candidates)
 
 | Candidate | Incident? | Silent? | Checkable? | Verdict |

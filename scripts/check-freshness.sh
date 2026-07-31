@@ -39,7 +39,12 @@ if [ ! -f LAST-VERIFIED ]; then
   exit 1
 fi
 
-stamp=$(tr -d '[:space:]' < LAST-VERIFIED)
+# Comment lines are stripped so the stamp file can carry the rule that governs it
+# AT THE POINT OF USE. The rule was previously written only in AGENTS.md,
+# docs/MAINTENANCE.md and this script's header — three copies, all far from the
+# file — and two sessions still proposed bumping it wrongly (see
+# docs/CONVENTIONS-LEDGER.md). Proximity beats repetition.
+stamp=$(grep -v '^[[:space:]]*#' LAST-VERIFIED | tr -d '[:space:]')
 case "$stamp" in
   [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;;
   *) echo "error: LAST-VERIFIED must contain a YYYY-MM-DD date, got: '$stamp'" >&2; exit 1 ;;

@@ -45,6 +45,19 @@
 #      pass declares completion. DIFF-based — skips with a note if there is no
 #      merge base, like checks 4 and 8 skip without python3.
 #
+# ADDING A CHECK? Three things this file learned the hard way — all from real
+# incidents recorded in the checks below:
+#   - WATCH IT FAIL FIRST. Break the input deliberately, confirm the abort, restore.
+#     Invariant 9's first cut printed its heading and nothing else: a `grep -m 1` on
+#     a PIPE SIGPIPE'd the upstream printf, and `pipefail` + `set -e` killed the
+#     script mid-check. It looked like it passed. Never `grep -m 1`/`head` on a pipe
+#     in here.
+#   - PRINT YOUR DENOMINATOR, and fail on an empty scope — use scope(). Checks 2 and
+#     10 printed "ok" over ZERO files until 2026-07-30, and check 6's tree recount
+#     did not catch it.
+#   - SKIP, DON'T GUESS. If a prerequisite is missing (python3, a merge base), say so
+#     and skip. A check that assumes it passed is worse than one that isn't there.
+#
 # Portable to macOS bash 3.2 (no mapfile/associative arrays). Checks 4 and 8 need
 # python3 (Unicode char counting; link parsing); they are skipped with a warning
 # if python3 is absent locally (CI runs on a runner that always has it).
