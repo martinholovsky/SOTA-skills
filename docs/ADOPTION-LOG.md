@@ -79,6 +79,9 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-07-30 | Second prompt only | A fix that moves a detector's decision boundary needs known-bad/known-good validation before shipping | **adopted** | `rules/11` §5 · v1.19.8 |
 | 2026-07-30 | Both prompts | Mutation-test every gate; vacuous tests; telemetry silence; comments are a hypothesis; the disqualifier list | **rejected: already covered** | — (`rules/10` §3, §2.9, §4; `sota-testing` rules/06 + rules/09) |
 | 2026-07-30 | Second prompt's seed examples (target-repo `file:line` calibration) | Naming a specific repo's files as calibration anchors | **rejected: non-fit** | — (the library stays generic; the *classes* were adopted, the examples were not) |
+| 2026-08-01 | A separate live agent session, three proposals handed over as analysis | A same-class checker (classifier/judge from the same model family) is **not** an independent layer — common-cause failure; escalate-only cascades are deductively worse | **adopted** | `sota-code-security/rules/08` §1 · [Unreleased] |
+| 2026-08-01 | Same handover | A TEE does not fix a **completeness** gap — "never recorded" is a liveness failure, outside the confidential-computing guarantee | **adopted** | `sota-code-security/rules/04` §8 · [Unreleased] |
+| 2026-08-01 | Same handover | A vendor control-plane API reporting `confidentialCompute: true` over an instance whose CC status is OFF | **rejected: already covered** | — (`rules/10` §2.2 line 102 "check the shipped artifact, not the checkout" + §2.11 shipped-artifact gaps) |
 
 ## Entries
 
@@ -525,3 +528,49 @@ stays generic.
 **Measurement status:** content refinements adopted on reasoning plus one measured
 self-finding (the empty-scope defect, proven by mutation with before/after exit
 codes). **No efficacy lift is claimed or measured. Do not cite one.**
+
+### 2026-08-01 — three proposals from a handover session, two adopted
+
+The two adoptions share a shape: **a control that is counted in a threat model
+while being structurally incapable of covering the case it is counted for.**
+
+**1. Same-class checkers (`rules/08` §1).** A classifier or judge drawn from the
+same model family as the system it guards shares that system's blind spots by
+construction, so the two do not multiply into defence in depth. The sharper half
+is the escalate-only variant, which is wrong *deductively* rather than
+empirically: a tier that only sees inputs the primary scored **uncertain** cannot
+see an input the primary scored **confidently wrong** — the exact failure it was
+added to catch. Its marginal recall on the hard class is bounded by the primary's
+uncertainty coverage, not by its own accuracy, so a better second model does not
+repair it. The rule's demand is therefore a measurement, not an architecture:
+measure marginal recall **on the hard class specifically** before calling it a
+layer. It closes onto `rules/10` §1 — a layer that adds nothing on the class you
+care about is a control that looks enabled and does nothing.
+
+**2. TEEs and completeness (`rules/04` §8).** §8 already separated integrity from
+completeness for audit ledgers. The addition names the wrong turn people actually
+take: reaching for confidential computing to fix "records that were never
+emitted". Hardware can protect a record once it exists; nothing in the CC
+guarantee compels a component to emit one. That is **liveness**, and
+`sota-confidential-computing` rules/01 §2 (availability row) and rules/04 §7
+already state it from the CC side — the cross-ref makes it reachable from the
+crypto side, where the mistake is made.
+
+**3. Rejected: already covered.** The third proposal — a vendor control-plane API
+reporting `confidentialCompute: true` for an instance whose CC status is OFF — is
+`rules/10` at the hardware layer. §2.2 already says outright *"check the shipped
+artifact, not the checkout"* (line 102) and §2.11 is *"Shipped-artifact gaps"*,
+whose whole subject is a control that is present where you look and absent where
+it runs. A vendor's assertion about a machine is the checkout; the machine's own
+attestation is the artifact. Adding a cloud-specific instance would narrow a
+general rule to one provider's field name.
+
+**Verification.** Every quoted claim in the handover was checked verbatim against
+the files before editing (one grep of mine missed on case — the text is
+`**Self-preference**` — so the handover was right and I was wrong). Both edited
+files stayed under the 500-line cap (316 and 306), both kept `## Audit checklist`
+as the last heading, and both gained a checklist item — an addition with no
+checklist entry is a rule the audit pass cannot reach.
+
+**Measurement status:** adopted on reasoning. **No efficacy lift is claimed or
+measured. Do not cite one.**

@@ -236,6 +236,15 @@ records: hash-chained audit logs, compliance trails (EU AI Act Art. 12, FINRA
   SDKs, server-assigned sequence numbers) leave no gap. If completeness is a
   claim, attest it separately (source-assigned sequence numbers, declared
   counts, close markers) and report the two verdicts separately.
+  **A TEE does not fix this** — a common and expensive wrong turn. Confidential
+  computing protects a record's confidentiality and integrity *once it exists*;
+  no hardware can compel a component to emit one. "Never recorded" is a
+  **liveness** failure, and liveness sits explicitly outside the CC guarantee:
+  the host may refuse to schedule, pause, or destroy the enclave at will
+  (`sota-confidential-computing` rules/01 §2, availability row; rules/04 §7
+  states that any design assuming a TEE guarantees liveness is wrong). The fix is
+  the separate completeness attestation above, taken at a vantage the monitored
+  component does not control — see the vantage bullet below.
 - Verification must be possible **off the system that stores the data**
   (standalone verifier + a documented, cross-language canonicalization spec).
   A `verify` that only runs on the server being audited proves little.
@@ -295,3 +304,4 @@ createCipheriv\(.*, *(['"]).{1,16}\1  (short/static key/nonce)
 - [ ] Is there a single crypto wrapper module rather than scattered primitive calls?
 - [ ] Is any "tamper-evident"/audit ledger keyed (HMAC/signature) or externally anchored — not a bare unkeyed hash chain — with tail truncation and whole-stream deletion detectable?
 - [ ] Is ledger completeness attested separately from integrity (source-assigned seq / close markers), and is verification possible off the storing system?
+- [ ] Is a TEE/confidential-computing control proposed to fix a **completeness** gap ("records that were never emitted")? That is a liveness failure and sits outside the CC guarantee — the fix is a separate completeness attestation at a vantage the monitored component does not control.

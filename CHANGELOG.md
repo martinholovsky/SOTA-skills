@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`sota-code-security/rules/08` §1 — a same-class checker is not an independent
+  layer.** A classifier, judge or "second opinion" tier drawn from the same model
+  family as the system it guards shares that system's blind spots by construction:
+  **common-cause failure**, so the two do not multiply into defence in depth however
+  the diagram is drawn. Escalate-only cascades are worse *deductively*, not
+  empirically — a tier that only sees inputs the primary scored **uncertain** cannot
+  see one the primary scored **confidently wrong**, which is the failure it was added
+  to catch; its marginal recall on the hard class is bounded by the primary's
+  uncertainty coverage, not by its own accuracy, so a better second model does not fix
+  it. The rule's demand is a measurement: marginal recall **on the hard class**, not on
+  a mixed corpus where easy cases dominate the mean. Closes onto `rules/10` §1 — a
+  layer that adds nothing on the class you care about is a control that looks enabled
+  and does nothing. Same reasoning for any guard sharing a substrate (model family,
+  tokenizer, training corpus, or the normalization step that produced the miss).
+- **`sota-code-security/rules/04` §8 — a TEE does not fix a completeness gap.** §8
+  already separated integrity from completeness for audit ledgers; this names the
+  expensive wrong turn — reaching for confidential computing to fix *"records that were
+  never emitted"*. CC protects a record's confidentiality and integrity once it exists;
+  no hardware can compel a component to emit one. That is a **liveness** failure and
+  sits outside the guarantee. Cross-refs `sota-confidential-computing` rules/01 §2
+  (availability row) and rules/04 §7, which state it from the CC side — the new text
+  makes it reachable from the crypto side, where the mistake is actually made.
+- Audit-checklist entries for both, so each new rule is reachable from an audit pass.
+
 ### Changed
 
 - **`docs/ROADMAP.md` — one item was stale and is now marked superseded.** It said

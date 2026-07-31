@@ -42,6 +42,26 @@ code around it, never by the prompt itself.
     send_email/exfiltrate-capable tools) — taint tracking at the orchestrator.
   - Prompt-injection classifiers/heuristics as telemetry and friction, not as
     the security boundary.
+  - **A same-class checker is not an independent layer.** A classifier, judge, or
+    "second opinion" tier drawn from the same model family as the system it
+    guards shares that system's blind spots *by construction*: the inputs that
+    slip past the primary are disproportionately the ones the checker also reads
+    as benign. This is **common-cause failure** — two components that fail
+    together do not multiply into defence in depth, however the diagram is drawn.
+    **Escalate-only cascades are strictly worse**, and deductively so: a tier that
+    only sees inputs the primary scored *uncertain* cannot see an input the
+    primary scored confidently — and a confidently-wrong score is precisely the
+    failure you needed caught. Its marginal recall on the hard class is bounded
+    by the primary's uncertainty coverage, not by its own accuracy, so a better
+    second model does not fix it.
+    Therefore: **do not count such a tier as a layer in a threat model** until you
+    have measured its marginal recall *on the hard class specifically* — the
+    inputs the primary gets wrong — rather than on a mixed corpus where easy
+    cases dominate the mean. A layer that adds nothing on the class you care
+    about is a control that looks enabled and does nothing (rules/10 §1). The
+    same reasoning applies to any guard sharing a substrate with the guarded
+    system: the same model family, the same tokenizer, the same training corpus,
+    or the same normalization step that produced the miss.
 - The lethal trifecta to refuse by design: (a) access to private data +
   (b) exposure to untrusted content + (c) an exfiltration channel (tool that
   sends data out, markdown image rendering, link generation). Any agent with
@@ -294,3 +314,4 @@ mcpServers|\.mcp\.json|claude_desktop_config entries without version pin or defi
 - [ ] Are MCP tool definitions hash-pinned at approval with re-approval forced on any change (rug pull), and is the *full* description shown to the approver (tool poisoning)?
 - [ ] Are high-privilege tools isolated from third-party servers in separate sessions/agents (tool shadowing), with tool listings treated as untrusted input before any invocation (line jumping)?
 - [ ] Are reasoning-token budgets capped per request with consumption-anomaly alerting (OverThink-class), and is untrusted content kept out of reasoning scaffolds (H-CoT/CoT hijacking)?
+- [ ] Is any classifier/judge/"second opinion" tier counted as a defence layer in the threat model **from the same model family** as the system it guards — without a measured marginal recall on the hard class (the inputs the primary gets wrong)? Common-cause failure; an escalate-only tier is bounded by the primary's uncertainty coverage and cannot see a confidently-wrong score.
