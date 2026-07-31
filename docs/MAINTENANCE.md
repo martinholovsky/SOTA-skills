@@ -2,7 +2,7 @@
 
 The library's value is that its fast-moving claims (versions, CVEs, RFCs,
 specs, GA states, tool status, standards) hold up against primary sources.
-CI enforces *structure* (the 10 invariants in `scripts/check-invariants.sh` +
+CI enforces *structure* (the 11 invariants in `scripts/check-invariants.sh` +
 gitleaks + shellcheck) but **cannot** verify that a claim is *true* — that
 needs web access and judgment. This file is the human/agent process that
 covers the accuracy dimension CI can't, plus how efficacy is measured.
@@ -76,7 +76,9 @@ fixes via PR. The 2026-07-08 sweep (65 fixes) and 2026-07-10 audit followed
 exactly this shape, reproducible from the CHANGELOG entries.
 
 **After a full pass:** set `LAST-VERIFIED` to today (`date +%F`), note the
-sweep in the CHANGELOG, and open a PR. Do **not** add per-file markers — that
+sweep in the CHANGELOG, and open a PR. **Invariant 11 enforces that pairing** —
+the stamp may only move in a diff that is sweep-shaped (≥ 20 skill files) or that
+names `LAST-VERIFIED` in the CHANGELOG. A rolling pass takes the second escape. Do **not** add per-file markers — that
 convention is retired.
 
 ## 3. Measuring efficacy (the eval harness)
