@@ -332,7 +332,7 @@ trusted.**
 
 ## Measurement conventions
 
-- **One run is a data point, not a number. Never publish from n=1.** Twice in one week
+- **One run is a data point, not a number. Never publish an n=1 figure without its sample size attached.** Twice in one week
   a single run produced a figure a larger sample walked back: `+0.07` on
   silent-control detection (retracted at n=49) and `+0.40` on completeness (a two-run
   mean put it back at `+0.39`). Report a mean across ≥2 runs, or state the sample size

@@ -47,6 +47,7 @@ trying to do**, not by file. (Kept in sync by hand; if a link rots, open an issu
 |---|---|
 | Land a change (branch → PR → checks → merge) | [AGENTS.md → Landing a change](../AGENTS.md#landing-a-change) |
 | Know the invariants CI enforces | [AGENTS.md → Invariants](../AGENTS.md#invariants-enforced-in-pre-commit-and-ci) |
+| See which conventions are *enforced* vs. prose, and why the rest aren't gated | [CONVENTIONS-LEDGER.md](CONVENTIONS-LEDGER.md) |
 | Full contribution conventions | [CONTRIBUTING.md](../CONTRIBUTING.md) |
 | Cut a release | [RELEASING.md](../RELEASING.md) |
 | Keep fast-moving claims accurate (sweep runbook + named high-rot targets) | [MAINTENANCE.md](MAINTENANCE.md) |
