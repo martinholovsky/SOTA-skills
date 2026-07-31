@@ -30,6 +30,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     of 3 loaded the router anyway), and that the arm must never be encoded in a path
     or label. None of the three carried this before.
 
+  **The move exposed an imprecision in invariant 11, fixed in the same change.**
+  The gate keyed on the *file* changing rather than the *stamp* changing — so this
+  very commit, which only added comments, demanded an escape and got one
+  reflexively. A gate that fires on non-events trains people to wave it through,
+  which is how it becomes decorative (rules/11 §7). It now compares the parsed date
+  and reports `LAST-VERIFIED touched but the stamp is unchanged` for comment-only
+  edits. The fail path was **re-watched** after the refinement rather than assumed:
+  a real date bump with no escape still exits 1.
+
   Not moved: the remaining judgment conventions have no single point of use.
   *Verify every claim* applies everywhere, which is exactly why it cannot be
   relocated and must stay a principle.
