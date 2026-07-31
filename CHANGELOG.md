@@ -29,6 +29,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`docs/INDEX.md`** reaches the reimplement case set, and the case file now
+  carries the predictions written **before** any run existed — so if it is ever
+  run, the pre-registration is the authoring session's, not one composed after
+  seeing data. It also records, in advance, that a null there is the **eighth**
+  and the conclusion is to stop rather than author a ninth.
 - **`evals/cases/reimplement.jsonl` + `run-reimplement.py` — documentation, not a
   measured instrument.** Ten cases (5 disqualified / 5 legitimate) encoding the
   §3.9.4-vs-§3.9.6 conflict, with every legitimate case resembling a disqualified one

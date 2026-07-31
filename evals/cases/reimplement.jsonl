@@ -15,7 +15,18 @@
 # legitimate REPLACE, conditional on stating which side you are on, pinning the
 # spec version, and testing against AWS's published vectors.
 #
-# It is deliberately NOT added back: the 5/5 split is what pins both degenerate
+# IF THIS IS EVER RUN, these predictions were written BEFORE any run existed
+# (authoring session, 2026-07-31) and must be used rather than fresh ones — a
+# prediction composed after seeing data is not a prediction:
+#     decision  bare 0.70 (0.50-0.90) | library 0.85 (0.65-1.00) | delta +0.15
+#     reason    bare 0.30 (0.10-0.55) | library 0.75 (0.50-1.00) | delta +0.45
+#     confidence the reason delta exceeds +0.15: ~40%
+# The honest prior is null: seven instruments already read +0.00, and the reason
+# axis is the only part with a real shot because it asks for a mechanism rather
+# than a recognition. Decided in advance: if both axes come back null, that is the
+# EIGHTH null and the conclusion is to stop, not to author a ninth.
+#
+# The s3_put case is deliberately NOT added back: the 5/5 split is what pins both degenerate
 # strategies at exactly 0.500, and a sixth REPLACE would move refuse-everything to
 # 0.455 and cost the instrument its cleanest property.
 #

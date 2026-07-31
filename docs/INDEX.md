@@ -37,6 +37,7 @@ trying to do**, not by file. (Kept in sync by hand; if a link rots, open an issu
 | Understand why the **audit** half has no measured lift (7 instruments, 3 designs) | [UNSCOPED-AUDIT.md](../evals/results/2026-07-30/UNSCOPED-AUDIT.md) · [DEAD-PATH.md](../evals/results/2026-07-30/DEAD-PATH.md) |
 | See a prediction written down **before** the run that killed it | [PRE-REGISTRATION.md](../evals/results/2026-07-30/PRE-REGISTRATION.md) |
 | Read an eval that failed as an *instrument* rather than as a result | [BUILD-SAFE.md](../evals/results/2026-07-30/BUILD-SAFE.md) |
+| See the edges of the do-not-reimplement rule (§3.9.6), as worked cases | [`evals/cases/reimplement.jsonl`](../evals/cases/reimplement.jsonl) — documentation, never run |
 | Know what the audit hunts that a scanner can't (inert controls, unreached dependencies, stale decisions, refutation, absence claims) | [README → What the audit hunts](../README.md#what-the-audit-hunts-that-a-scanner-cant) |
 | Read the retraction + the retired anchoring hypothesis | [SILENT-FAILURE.md](../evals/results/2026-07-20/SILENT-FAILURE.md) |
 
