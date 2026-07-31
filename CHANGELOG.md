@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`docs/CONVENTIONS-LEDGER.md`** — which repo conventions are enforced, which are
+  prose, and why the rest should stay prose. Built after invariant 11, so the next
+  documented-but-unenforced rule is found deliberately rather than by luck.
+  Mechanically extracted from the five agent-facing docs: **49 raw entries, 8
+  duplicates, 41 distinct**, of which **11** are invariants and **4** more are
+  enforced inside the eval runners — so reading `check-invariants.sh` alone
+  undercounts what this repo enforces by about a third.
+  - It corrects an earlier estimate of "~122 conventions", which came from a loose
+    regex matching any bold line or any line containing *must/never/always* — an
+    over-count of roughly 3×, recorded so it is not repeated.
+  - Applying three filters (has it already failed · does it fail silently · is it
+    mechanically checkable) yields **one** actionable candidate, not the 2–4
+    predicted: a regression guard requiring every scoreboard row to declare its
+    sample size. The other candidate (§2b's front-door grep) stays **blocked** on
+    needing machine-readable capability names.
+  - For the ~18 judgment conventions the ledger argues against a fourth copy of the
+    text and for **proximity**: `LAST-VERIFIED` failed while documented in three
+    places, all far from the point of use.
+
+### Changed
+
+- **`evals/README` — the n=1 convention contradicted itself.** Its bolded headline
+  read *"Never publish from n=1"* while the next sentence permitted it *"or state
+  the sample size"*. A skim-reader saw a prohibition, a close reader a disclosure
+  rule, and the scoreboard follows the body (the audit row is a declared `1×`, and
+  is therefore compliant). Headline reworded to match the rule it actually states.
+  Found by checking the scoreboard for a violation and discovering a wording defect
+  instead.
+
 - **Invariant 11 — `LAST-VERIFIED` moves only alongside a sweep.** The stamp
   records the last *full* re-verification pass, not the newest verified fact, so a
   rules section may legitimately carry today's verification dates while the stamp
