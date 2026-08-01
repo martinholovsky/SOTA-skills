@@ -171,6 +171,25 @@ Run the invariant checks any time:
 ./scripts/check-invariants.sh
 ```
 
+### Rendered assets
+
+`assets/*.png` are **build outputs** of the `assets/*.html` next to them, and
+both are committed. Nothing regenerates them — so editing the HTML without
+re-rendering leaves the README showing the *old* claim while the diff looks
+fixed. Re-render over localhost (`file://` is typically blocked by the
+browser's local-file policy) at the size the existing PNG already is:
+
+```sh
+cd assets && python3 -m http.server 8731     # then screenshot headless:
+# how-it-works.html  -> how-it-works.png   at 1400x672
+# social-preview.html -> social-preview.png at 1280x640
+```
+
+Confirm the result with `sips -g pixelWidth -g pixelHeight assets/<name>.png`
+before committing — a wrong-sized re-render is a silent regression in the
+README's layout. `social-preview.png` additionally needs a manual re-upload at
+GitHub **Settings → Social preview**; the repo file does not refresh it.
+
 ## Submitting a change
 
 1. Fork and branch (`git checkout -b improve-sota-databases-indexing`).
@@ -187,6 +206,11 @@ Run the invariant checks any time:
 - [ ] Any **new** `rules/*.md` has a row in its skill's rules index (invariant 10).
 - [ ] All touched **skill** files (`skills/**`) are ≤ 500 lines (README/CHANGELOG/`docs/` are uncapped).
 - [ ] No secrets in examples (masked/placeholder only).
+- [ ] Touched an `assets/*.html`? **Re-render its `.png` in the same commit.**
+      The README embeds the *image*, never the source, so an un-rendered fix is
+      invisible to every reader while looking done in the diff — which is
+      exactly what happened to `how-it-works` in #173 (see
+      [rendered assets](#rendered-assets) for the render command).
 - [ ] `pre-commit` / `scripts/check-invariants.sh` passes.
 
 ## Adding a whole new skill

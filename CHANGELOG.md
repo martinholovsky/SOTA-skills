@@ -21,6 +21,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `CONVENTIONS-LEDGER`'s enforced list. `AGENTS.md`, `CONTRIBUTING.md` and the
   script's header now lead with the rule in one line and say outright that any
   line-cap claim not scoped to skill files is stale.
+
+  **Correction: the `how-it-works` fix reached the source and not the surface.**
+  It edited `assets/how-it-works.html`, but the README embeds
+  `assets/how-it-works.png`, which was last rendered in #55 (2026-07-09) and was
+  not re-rendered — so every reader kept seeing `every file < 500 lines` while
+  the diff, the commit message and the line above all reported the surface fixed.
+  Rendered now; the same claim that opened this entry had been *counted* on a
+  surface it never reached, which is the shape v1.19.9 is named for.
+- **The `how-it-works` diagram shows the loop it describes.** The README hero
+  argues the library is "a **loop**, not a prompt dump — route in only the rules a
+  task needs, re-state them every turn, and re-check them *last* before shipping",
+  and [docs/CONTEXT-MANAGEMENT.md](docs/CONTEXT-MANAGEMENT.md) documents six
+  defenses behind that claim. The diagram drew a **one-way four-box pipeline** and
+  showed exactly one of the six (stage 4's terminal self-check). It now carries a
+  return path from stage 4 back to stage 2 for the per-prompt re-injection —
+  labelled **optional · always-on**, because that layer is opt-in setup
+  (`install.sh --routing`) and the diagram must not imply it ships on by default.
+  The footer's always-on aside moved into that rail and now points at the six
+  defenses. The repo URL was added to the header, since the image travels
+  (LinkedIn, forks, docs) far from anything that links back.
+- **`CONTRIBUTING.md` gained a "Rendered assets" section and a PR-checklist line**
+  — `assets/*.png` are committed build outputs of the `*.html` beside them, nothing
+  regenerates them, and the README embeds the image. The section carries the render
+  command, the exact size per asset, the `file://`-is-blocked reason for serving
+  over localhost, and the `sips` dimension check. Placed in `CONTRIBUTING.md`, not
+  `RELEASING.md`: the failure happened in an ordinary docs PR, not at a release cut,
+  so release-time guidance would have been guidance at the wrong point of use
+  (v1.19.9's proximity finding, applied).
+- **A candidate invariant 12 is logged, not built** — fail when an `assets/*.html`
+  has a newer last-commit than its paired `*.png`. It passes all three
+  [CONVENTIONS-LEDGER](docs/CONVENTIONS-LEDGER.md) filters (it has already failed;
+  it fails silently, since nobody reads the HTML; it is mechanically checkable from
+  `git log -1`), which makes it the second gateable candidate that ledger has found.
+  Deliberately deferred to its own PR so the gate can be **watched to fail** on this
+  exact commit's parent before it is trusted.
 - **Two stale invariant counts fixed.** `docs/MAINTENANCE.md` said
   `check-invariants.sh` runs **7 checks** and `docs/WHY-IT-WORKS.md` said **eight
   invariants**; both are **11** (the script prints its own count, so the drift was
