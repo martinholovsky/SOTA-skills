@@ -5,7 +5,14 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.19.9] - 2026-08-01
+
+**The counted-as-a-layer release.** Five changes with one shape between them: a
+control that is *counted* — in a threat model, in a release runbook, in a repo's
+list of conventions — while being structurally unable to cover the case it is
+counted for. A second-opinion classifier from the same model family. A TEE bought
+to fix records that were never emitted. A rule written three times and still nearly
+broken twice. **Nothing here is measured; no lift is claimed for any of it.**
 
 ### Added
 
@@ -33,8 +40,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   makes it reachable from the crypto side, where the mistake is actually made.
 - Audit-checklist entries for both, so each new rule is reachable from an audit pass.
 
+- **`docs/CONVENTIONS-LEDGER.md`** — which repo conventions are enforced, which are
+  prose, and why the rest should stay prose. Built after invariant 11, so the next
+  documented-but-unenforced rule is found deliberately rather than by luck.
+  Mechanically extracted from the five agent-facing docs: **49 raw entries, 8
+  duplicates, 41 distinct**, of which **11** are invariants and **4** more are
+  enforced inside the eval runners — so reading `check-invariants.sh` alone
+  undercounts what this repo enforces by about a third.
+  - It corrects an earlier estimate of "~122 conventions", which came from a loose
+    regex matching any bold line or any line containing *must/never/always* — an
+    over-count of roughly 3×, recorded so it is not repeated.
+  - Applying three filters (has it already failed · does it fail silently · is it
+    mechanically checkable) yields **one** actionable candidate, not the 2–4
+    predicted: a regression guard requiring every scoreboard row to declare its
+    sample size. The other candidate (§2b's front-door grep) stays **blocked** on
+    needing machine-readable capability names.
+  - For the ~18 judgment conventions the ledger argues against a fourth copy of the
+    text and for **proximity**: `LAST-VERIFIED` failed while documented in three
+    places, all far from the point of use.
+
+- **`docs/INDEX.md`** reaches the reimplement case set, and the case file now
+  carries the predictions written **before** any run existed — so if it is ever
+  run, the pre-registration is the authoring session's, not one composed after
+  seeing data. It also records, in advance, that a null there is the **eighth**
+  and the conclusion is to stop rather than author a ninth.
+- **`evals/cases/reimplement.jsonl` + `run-reimplement.py` — documentation, not a
+  measured instrument.** Ten cases (5 disqualified / 5 legitimate) encoding the
+  §3.9.4-vs-§3.9.6 conflict, with every legitimate case resembling a disqualified one
+  so that *ratio-only* and *refuse-everything* both land at exactly **0.500** — a
+  three-arm selftest in CI holds that, and four guards abort on an empty case file, a
+  vacuous reason axis, a one-sided case file, and a report with no parsable lines
+  (all four verified to exit non-zero). `test_scoring.py` grows to **38 checks**,
+  including the row where the decision and reason metrics legitimately diverge, which
+  is what a metric-conflating mutation dies on.
+
+  **It has never been run and no number from it may be cited.** Seven audit
+  instruments already read +0.00 and the roadmap records "do not build another
+  audit-recall instrument"; an eighth run was declined. It is kept because building it
+  produced the rule fix above, and the scorer stays so the case set stays checkable.
+
 ### Changed
 
+- **README — the audit-class list grew from seven classes to eight.** The §2b
+  front-door grep returned **0 hits** in `README.md` and `docs/INDEX.md` for every
+  term this release added, the **second consecutive cut** where that happened *with
+  the checklist item already written* — evidence the habit does not stick without the
+  gate §2b still lacks. New class: **"Layers that were never layers"**, covering both
+  additions above. `RELEASING.md` §2b now also says where such a fix belongs — the
+  README is the front door for a rule-level capability; `docs/INDEX.md` indexes
+  *documents*, so a new rule inside an existing file usually does not earn a row there.
+- **`RELEASING.md`'s pre-tag `ADOPTION-LOG` check is now case-insensitive and
+  bracket-tolerant** (`grep -ni '· \[\?unreleased'`). Two rows in this release were
+  written `· [Unreleased]`, which the documented case-sensitive `grep -n '· unreleased'`
+  **would not have matched** — a checklist step that silently matches nothing, in the
+  release that is otherwise about exactly that.
+- **`AGENTS.md`** gained a pointer to `docs/CONVENTIONS-LEDGER.md`, which shipped in
+  v1.19.8 with no mention in the file every agent reads first, and records that the
+  adoption ledger also takes proposals from **our own** sessions, not only outside repos.
 - **`docs/ROADMAP.md` — one item was stale and is now marked superseded.** It said
   *"the BUILD-safe eval needs a thinner spec before it measures anything"*, while a
   closed item twenty lines above records that the thinner spec was written **and**
@@ -83,29 +145,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   *Verify every claim* applies everywhere, which is exactly why it cannot be
   relocated and must stay a principle.
 
-### Added
-
-- **`docs/CONVENTIONS-LEDGER.md`** — which repo conventions are enforced, which are
-  prose, and why the rest should stay prose. Built after invariant 11, so the next
-  documented-but-unenforced rule is found deliberately rather than by luck.
-  Mechanically extracted from the five agent-facing docs: **49 raw entries, 8
-  duplicates, 41 distinct**, of which **11** are invariants and **4** more are
-  enforced inside the eval runners — so reading `check-invariants.sh` alone
-  undercounts what this repo enforces by about a third.
-  - It corrects an earlier estimate of "~122 conventions", which came from a loose
-    regex matching any bold line or any line containing *must/never/always* — an
-    over-count of roughly 3×, recorded so it is not repeated.
-  - Applying three filters (has it already failed · does it fail silently · is it
-    mechanically checkable) yields **one** actionable candidate, not the 2–4
-    predicted: a regression guard requiring every scoreboard row to declare its
-    sample size. The other candidate (§2b's front-door grep) stays **blocked** on
-    needing machine-readable capability names.
-  - For the ~18 judgment conventions the ledger argues against a fourth copy of the
-    text and for **proximity**: `LAST-VERIFIED` failed while documented in three
-    places, all far from the point of use.
-
-### Changed
-
 - **`evals/README` — the n=1 convention contradicted itself.** Its bolded headline
   read *"Never publish from n=1"* while the next sentence permitted it *"or state
   the sample size"*. A skim-reader saw a prohibition, a close reader a disclosure
@@ -140,8 +179,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   trusted (rules/11 §7): a lone stamp bump exits **1** with an actionable message,
   a 25-skill-file diff passes, and a CHANGELOG declaration passes.
 
-### Changed
-
 - **`sota-devsecops` rules/03 §3.9.6 — the protocol prohibition now says which side
   you are on.** The clause read *"never recommend an in-house implementation of:
   crypto primitives or protocols…"*, which forbids writing a request signer against a
@@ -159,28 +196,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   pinning the spec version, and testing against the publisher's vectors where they
   exist — and when you cannot say which side fails first, treat it as validating and
   keep the library.
-
-### Added
-
-- **`docs/INDEX.md`** reaches the reimplement case set, and the case file now
-  carries the predictions written **before** any run existed — so if it is ever
-  run, the pre-registration is the authoring session's, not one composed after
-  seeing data. It also records, in advance, that a null there is the **eighth**
-  and the conclusion is to stop rather than author a ninth.
-- **`evals/cases/reimplement.jsonl` + `run-reimplement.py` — documentation, not a
-  measured instrument.** Ten cases (5 disqualified / 5 legitimate) encoding the
-  §3.9.4-vs-§3.9.6 conflict, with every legitimate case resembling a disqualified one
-  so that *ratio-only* and *refuse-everything* both land at exactly **0.500** — a
-  three-arm selftest in CI holds that, and four guards abort on an empty case file, a
-  vacuous reason axis, a one-sided case file, and a report with no parsable lines
-  (all four verified to exit non-zero). `test_scoring.py` grows to **38 checks**,
-  including the row where the decision and reason metrics legitimately diverge, which
-  is what a metric-conflating mutation dies on.
-
-  **It has never been run and no number from it may be cited.** Seven audit
-  instruments already read +0.00 and the roadmap records "do not build another
-  audit-recall instrument"; an eighth run was declined. It is kept because building it
-  produced the rule fix above, and the scorer stays so the case set stays checkable.
 
 ## [1.19.8] - 2026-07-31
 
@@ -1923,6 +1938,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.19.9]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.9
 [1.19.8]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.8
 [1.19.7]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.7
 [1.19.6]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.6

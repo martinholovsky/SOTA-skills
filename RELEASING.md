@@ -62,7 +62,11 @@ grep -ic '<distinctive term>' README.md docs/INDEX.md
 ```
 
 Zero hits is a **documentation finding**, not a polish item — fix it in the release
-PR. Two habits that go with it: say where a capability is *not* backed by a measured
+PR. `README.md` is the front door and is where a rule-level capability earns its
+sentence; `docs/INDEX.md` indexes *documents*, so a new rule inside an existing file
+usually belongs in the README's class list rather than as an INDEX row. It has now
+read zero at **two consecutive cuts** (v1.19.7, v1.19.9), which is the argument for
+the gate this section still lacks, not evidence the habit is taking. Two habits that go with it: say where a capability is *not* backed by a measured
 number rather than letting the reader assume, and re-read the long-lived prose while
 you are there (that cut found "keep every file ≤ 500 lines" in both README and
 CONTRIBUTING, a cap that has been skill-files-only since PR #100).
@@ -99,9 +103,13 @@ skills.
 - [ ] `./scripts/check-invariants.sh` passes
 - [ ] `VERSION` == `plugin.json` version == the tag you're about to push
 - [ ] CHANGELOG top entry is the new version, dated, with its link ref
-- [ ] `grep -n '· unreleased' docs/ADOPTION-LOG.md` returns nothing — every
-      adopted row carries the version it shipped in (match the `· ` separator,
-      not the bare word: the file's own conventions section says "unreleased")
+- [ ] `grep -ni '· \[\?unreleased' docs/ADOPTION-LOG.md` returns nothing — every
+      adopted row carries the version it shipped in. Match the `· ` separator
+      rather than the bare word (the file's own conventions section says
+      "unreleased"), and keep it **case-insensitive and bracket-tolerant**: at the
+      v1.19.9 cut two rows had been written `· [Unreleased]`, which the previous
+      case-sensitive pattern did not match. A checklist step that silently matches
+      nothing is the class `sota-code-security` rules/11 §2.2 is about
 - [ ] If the skill count changed: README badge/hero, router body +
       description, plugin/marketplace.json show the recounted numbers
       (the social-preview pill + README alt are "N+" floors — touch them

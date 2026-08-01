@@ -164,7 +164,16 @@ pre-commit hook scans each commit locally.
   ledger**: every idea evaluated from an outside repo, paper, or review with a
   verdict and reason (adopted / rejected / deferred / superseded). A rejection
   with its reason stops the same idea being re-litigated; a `rejected: already
-  covered` verdict must cite the file:line that covers it
+  covered` verdict must cite the file:line that covers it. **Adoptions do not
+  only come from outside**: at v1.19.9 a separate agent session applying the
+  library handed back three proposals citing this repo's own `file:line` — the
+  ledger takes those on the same terms, rejections included
+- [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md) — which of this repo's
+  conventions are **enforced** (11 invariants + 4 more inside the eval runners) and
+  which are prose, with the three filters a convention must pass to earn a gate
+  (has it already failed · does it fail silently · is it mechanically checkable).
+  Read it before proposing a new gate — it argues against gating the ~18 judgment
+  conventions, because a flaky gate gets disabled and leaves you worse off
 - [CONTRIBUTING.md](CONTRIBUTING.md) — full contribution guide and PR checklist
 - [RELEASING.md](RELEASING.md) — how to cut a release, including every
   version- and count-bearing surface (README, router, manifests, social
