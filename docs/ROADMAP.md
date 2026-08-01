@@ -149,7 +149,8 @@ first.
 - ~~**Our own gates now report a denominator — the rest of the automation does
   not.**~~ **Done 2026-07-30.** `check-freshness.sh` now exits 1 on an empty scope
   (it printed the denominator but never failed on it); `evals/test_scoring.py`
-  now prints `(25 checks)` and fails below a floor, watched to fail by simulating
+  now prints `(25 checks)` — the floor has since risen to **38** — and fails below
+  it, watched to fail by simulating
   an early return (`only 17 ran, expected at least 25`). One suspicion was
   **REFUTED** and recorded: CI's `shellcheck scripts/*.sh` fails loudly on an
   unmatched glob in bash (exit 2), so there was nothing to fix. Still unexamined:

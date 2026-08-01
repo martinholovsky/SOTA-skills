@@ -95,7 +95,7 @@ grow the golden sets as coverage warrants.
 
 | Dimension | Gate | Automated? |
 |---|---|---|
-| Structure (line cap, checklist-last, description cap, counts, router completeness) | `check-invariants.sh` (7 checks) | Yes — pre-commit + CI |
+| Structure (skill-file line cap, checklist-last, description cap, counts, router completeness, link resolution, rules-file indexing, `LAST-VERIFIED` pairing) | `check-invariants.sh` (**11 checks**) | Yes — pre-commit + CI |
 | Secrets | gitleaks (full history) | Yes — CI |
 | Shell quality | shellcheck | Yes — CI |
 | Claim **accuracy** | this runbook + `LAST-VERIFIED` | No — human/agent, monthly red-flag |

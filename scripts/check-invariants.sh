@@ -5,8 +5,9 @@
 #
 # Invariants:
 #   1. Every tracked SKILL file (skills/*/*.md, skills/*/rules/*.md) is <= 500
-#      lines, so skills load incrementally. Non-skill Markdown (README,
-#      CHANGELOG, docs/) is deliberately uncapped — see the check itself.
+#      lines, so skills load incrementally. ONLY INSTRUCTION FILES ARE CAPPED:
+#      a file is capped iff an agent loads it as instructions. Everything else
+#      (README, CHANGELOG, docs/, evals/, scripts) is deliberately uncapped.
 #   2. Every skills/*/rules/*.md ends with an "## Audit checklist".
 #   3. No internal/private references leak in (the library stays generic).
 #   4. Every skills/*/SKILL.md description is <= 1024 characters (Agent Skills
@@ -97,11 +98,13 @@ scope() {  # <count> <noun> — returns 1 on an empty scope; prints nothing on s
 }
 
 # --- 1. Line budget -------------------------------------------------------
-# The cap is load-bearing ONLY for skill files: a rules/SKILL file over ~500
-# lines defeats incremental loading (the whole point is that the model reads the
-# rules that match the task, not a wall of text). Non-skill Markdown (README,
-# CHANGELOG, docs/) is human/agent-facing prose, not loaded as a skill, so it is
-# intentionally uncapped (decided 2026-07-15) — navigability there comes from a
+# ONLY INSTRUCTION FILES ARE CAPPED. A file is capped iff an agent loads it as
+# instructions -- skills/*/SKILL.md and skills/*/rules/*.md, nothing else. The cap
+# is load-bearing only there: a rules/SKILL file over ~500 lines defeats
+# incremental loading (the whole point is that the model reads the rules matching
+# the task, not a wall of text). Everything else in this repo -- README,
+# CHANGELOG, docs/, evals/, AGENTS.md, these scripts -- is prose or code read by
+# people, deliberately uncapped since 2026-07-15; navigability there comes from a
 # table of contents and docs/INDEX.md, not a line ceiling.
 echo "[1/11] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
 over=0

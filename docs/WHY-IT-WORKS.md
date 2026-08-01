@@ -145,10 +145,12 @@ comparison to anyone else required.
    `file:line | rule violated | severity | effort | fix` and maps to a standard
    (CWE, OWASP, MITRE ATT&CK/ATLAS) where one applies.
 
-4. **CI-gated library quality.** Eight invariants
+4. **CI-gated library quality.** Eleven invariants
    ([`check-invariants.sh`](../scripts/check-invariants.sh)) block a bad change at
-   the door: every skill file ≤ 500 lines (so the *right* rules load, not a wall
-   of text), every rules file ends with an audit checklist, skill descriptions
+   the door: every **skill** file ≤ 500 lines — `skills/*/SKILL.md` and
+   `skills/*/rules/*.md`, the files an agent actually loads, and nothing else (so
+   the *right* rules load, not a wall of text; README, CHANGELOG and `docs/` are
+   prose for people and are deliberately uncapped), every rules file ends with an audit checklist, skill descriptions
    stay within the Agent-Skills spec cap, versions stay in lockstep, the router
    lists every skill, internal Markdown links resolve (no dead cross-references),
    and no internal names leak. Plus gitleaks over the full history.

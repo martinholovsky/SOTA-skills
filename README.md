@@ -27,7 +27,8 @@ instead of becoming one. Native on Claude Code; works with Gemini CLI, Codex, an
 agent that reads `AGENTS.md`.
 
 Under the hood: **41 skills (297 files, ~61k lines)** of state-of-the-art 2026
-practice, each file under 500 lines so only the matching rules load, every fast-moving
+practice, each **instruction** file under 500 lines so only the matching rules load —
+the cap applies to `skills/**` alone, never to README/CHANGELOG/`docs/` — every fast-moving
 claim web-verified against a primary source.
 
 Two commands to install:
