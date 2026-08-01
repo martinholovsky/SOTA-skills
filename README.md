@@ -57,7 +57,7 @@ stack comes from your profile or the skills' defaults (naming one is optional):
 
 > Run a full audit of this repo — severity, effort, and fix on every finding.
 
-<img src="assets/how-it-works.png" alt="How it works: a plain prompt is routed automatically — the sota router maps the task to skills, only the matching rules files load, and the rules are applied in BUILD or AUDIT mode" width="100%">
+<img src="assets/how-it-works.png" alt="How it works: a plain prompt is routed automatically — the sota router maps the task to skills, only the matching rules files load, and the rules are applied in BUILD or AUDIT mode; a return path shows the routing directive re-stated on every prompt so the rules survive a long session" width="100%">
 
 More install options: [Installation](#installation) · more prompts: [Using it](#using-it).
 

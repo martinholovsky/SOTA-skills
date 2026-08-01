@@ -37,12 +37,18 @@
   .wrap{position:relative;height:100%;padding:42px 60px 40px;display:flex;flex-direction:column}
   .mono{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace}
 
+  .top{display:flex;align-items:baseline;gap:20px}
   .eyebrow{
     font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
     font-size:16px;letter-spacing:.32em;text-transform:uppercase;
     color:var(--green);font-weight:600;
   }
   .eyebrow .dim{color:var(--muted)}
+  .repo{
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    font-size:15px;color:var(--muted);margin-left:auto;flex:0 0 auto;letter-spacing:.02em;
+  }
+  .repo b{color:#c7d2de;font-weight:600}
   h1{margin-top:14px;font-size:40px;font-weight:800;letter-spacing:-.018em}
   h1 .accent{color:var(--green)}
 
@@ -72,8 +78,30 @@
     color:var(--green-dim);font-size:26px;font-weight:700;
   }
 
+  /* the return path: stage 4 back to stage 2, spanning their centres */
+  .loop{
+    position:relative;margin:20px 11.5% 0 37.5%;min-height:52px;
+    border:1px dashed #1e4630;border-radius:12px;
+    background:rgba(11,26,18,.32);
+    display:flex;align-items:center;gap:13px;padding:11px 16px;
+  }
+  .loop::before,.loop::after{
+    content:"";position:absolute;bottom:100%;height:20px;
+    border-left:1px dashed #1e4630;
+  }
+  .loop::before{left:-1px}
+  .loop::after{right:-1px}
+  .loop .head{color:var(--green-dim);font-size:24px;font-weight:700;line-height:1;flex:0 0 auto}
+  .loop .tag{
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    font-size:12.5px;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--amber);font-weight:700;flex:0 0 auto;
+  }
+  .loop .txt{font-size:16px;color:#c7d2de;line-height:1.32;flex:1 1 auto;min-width:0}
+  .loop .txt b{color:var(--ink)}
+
   .foot{
-    margin-top:26px;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    margin-top:20px;background:var(--panel);border:1px solid var(--line);border-radius:12px;
     padding:16px 22px;display:flex;align-items:center;gap:14px;
   }
   .foot .lbl{
@@ -93,7 +121,10 @@
   <div class="grid"></div>
   <div class="glow"></div>
   <div class="wrap">
-    <div class="eyebrow">How it works <span class="dim">·</span> <span class="dim">seamless skill invocation</span></div>
+    <div class="top">
+      <div class="eyebrow">How it works <span class="dim">·</span> <span class="dim">seamless skill invocation</span></div>
+      <div class="repo">github.com/<b>martinholovsky/SOTA-skills</b></div>
+    </div>
     <h1>Plain prompt in — <span class="accent">the right skills load themselves</span></h1>
 
     <div class="flow">
@@ -126,13 +157,19 @@
       </div>
     </div>
 
+    <div class="loop">
+      <span class="head">←</span>
+      <span class="tag">optional · always-on</span>
+      <span class="txt">the routing directive is <b>re-stated on every prompt</b>, so rules loaded 30 turns ago don't fade</span>
+    </div>
+
     <div class="foot">
       <span class="lbl">Loaded for this prompt</span>
       <span class="pill">code-security</span>
       <span class="pill">api-design</span>
       <span class="pill">python</span>
       <span class="pill">testing</span>
-      <span class="note"><b>4 of 40+ skills</b> — routing is automatic; an optional always-on directive makes it phrasing-independent</span>
+      <span class="note"><b>4 of 40+ skills</b> — routing is automatic; six defenses keep the rules <b>applied</b> as context fills</span>
     </div>
   </div>
 </body>
