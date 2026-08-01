@@ -49,7 +49,7 @@ A convention earns a gate only if it passes **all three**:
 
 ### Enforced (11) — invariants 1–11
 
-Line cap · audit-checklist placement · internal-name denylist · description cap ·
+Skill-file line cap · audit-checklist placement · internal-name denylist · description cap ·
 version lockstep · count surfaces · router completeness · link resolution ·
 single `[Unreleased]` · rules-file indexed by its SKILL.md · `LAST-VERIFIED` sweep
 pairing. Each is in `scripts/check-invariants.sh` and documented in `AGENTS.md`.

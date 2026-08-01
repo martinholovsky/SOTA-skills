@@ -24,9 +24,10 @@ By contributing you agree your contribution is licensed under
    numbers are for semantic boundaries only ("GA since", "fixed in", CVE fix
    versions, spec editions). Recommend maintained tools; when one goes EOL,
    point at its maintained successor and keep a one-line EOL note.
-3. **Stay lean.** Every **skill** file (`skills/*/SKILL.md`, `skills/*/rules/*.md`)
-   is **≤ 500 lines** so skills load incrementally without blowing the context
-   window. If a topic outgrows that, split it into another `rules/NN-topic.md`.
+3. **Stay lean — instruction files only.** Every **skill** file
+   (`skills/*/SKILL.md`, `skills/*/rules/*.md`) is **≤ 500 lines** so skills load
+   incrementally without blowing the context window. Nothing else in the repo has
+   a line cap. If a topic outgrows that, split it into another `rules/NN-topic.md`.
    The cap is load-bearing *only* there: README, CHANGELOG and `docs/` are read
    by humans and agents rather than loaded as skills, so they are deliberately
    **uncapped** (decided 2026-07-15, PR #100) — navigability there comes from a
@@ -99,8 +100,10 @@ are marked "needs verification", never asserted.
 `scripts/check-invariants.sh` runs in pre-commit and CI and fails the build on:
 
 1. any **skill** Markdown (`skills/*/SKILL.md` or `skills/*/rules/*.md`) over
-   **500 lines** — the cap is skill-files-only (README/CHANGELOG/`docs/` are
-   uncapped prose, decided 2026-07-15);
+   **500 lines** — **only instruction files are capped**: a file is capped iff an
+   agent loads it *as instructions*. Everything else in the repo (README,
+   CHANGELOG, `docs/`, `evals/`, scripts) is uncapped prose or code, decided
+   2026-07-15;
 2. any `skills/*/rules/*.md` that doesn't **end** with an
    **`## Audit checklist`** (it must be the file's last `## ` heading);
 3. any **internal/private reference** leaking into tracked files (the private

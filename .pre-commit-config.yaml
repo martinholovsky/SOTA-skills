@@ -14,7 +14,7 @@ repos:
   - repo: local
     hooks:
       - id: sota-invariants
-        name: SOTA-skills invariants (<=500 lines, audit checklists, no internal refs)
+        name: SOTA-skills invariants (skill files <=500 lines, audit checklists, no internal refs)
         entry: scripts/check-invariants.sh
         language: script
         pass_filenames: false

@@ -27,12 +27,17 @@ symlinks to it — edit only this file, never the symlinks.
 `scripts/check-invariants.sh` fails the build on:
 
 1. any **skill** Markdown (`skills/*/SKILL.md` or `skills/*/rules/*.md`) over
-   **500 lines** — the cap is load-bearing only there (it keeps incremental
-   loading working; the model reads the rules that match the task, not a wall of
-   text). Non-skill Markdown (README, CHANGELOG, `docs/`) is human/agent-facing
-   prose, **not** loaded as a skill, so it is intentionally **uncapped** (decided
-   2026-07-15) — navigability there comes from a table of contents and
-   [docs/INDEX.md](docs/INDEX.md), not a line ceiling;
+   **500 lines**. The rule in one line: **only instruction files are capped.**
+   A file is capped if and only if an agent loads it *as instructions* — that is
+   `skills/*/SKILL.md` and `skills/*/rules/*.md`, and nothing else in the repo.
+   The cap is load-bearing only there: it keeps incremental loading working, so
+   the model reads the rules that match the task rather than a wall of text.
+   **Everything else is uncapped** and deliberately so (decided 2026-07-15) —
+   README, CHANGELOG, `docs/`, `evals/`, `AGENTS.md` itself and every script are
+   prose and code for people (and for an agent *reading*, not *obeying*, them);
+   navigability there comes from a table of contents and
+   [docs/INDEX.md](docs/INDEX.md), not a line ceiling. If you find a line-cap
+   claim anywhere that does not say *skill files*, it is stale — fix it;
 2. any `skills/*/rules/*.md` whose **last `## ` heading isn't
    `## Audit checklist`** (the checklist must end the file);
 3. an **internal-name denylist** — the library must stay generic. The private

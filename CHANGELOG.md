@@ -5,6 +5,28 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **The 500-line cap is stated as *instruction-files-only* everywhere it appears.**
+  A file is capped **iff an agent loads it as instructions** — `skills/*/SKILL.md`
+  and `skills/*/rules/*.md`, nothing else. README, CHANGELOG, `docs/`, `evals/`,
+  `AGENTS.md` and the scripts have **no line cap at all** (decided 2026-07-15,
+  PR #100). The scope was already correct in `check-invariants.sh`, `AGENTS.md`,
+  `CONTRIBUTING.md`'s checklist and the README's contributing section, but five
+  surfaces still read as a repo-wide rule and have been fixed: the README hero
+  ("each file under 500 lines"), the pre-commit hook's own name, the
+  `how-it-works` diagram, the router's opening paragraph, and
+  `CONVENTIONS-LEDGER`'s enforced list. `AGENTS.md`, `CONTRIBUTING.md` and the
+  script's header now lead with the rule in one line and say outright that any
+  line-cap claim not scoped to skill files is stale.
+- **Two stale invariant counts fixed.** `docs/MAINTENANCE.md` said
+  `check-invariants.sh` runs **7 checks** and `docs/WHY-IT-WORKS.md` said **eight
+  invariants**; both are **11** (the script prints its own count, so the drift was
+  only ever in the prose). `docs/ROADMAP.md`'s `test_scoring.py` floor note now
+  records that 25 has since risen to **38**.
+
 ## [1.19.9] - 2026-08-01
 
 **The counted-as-a-layer release.** Five changes with one shape between them: a
