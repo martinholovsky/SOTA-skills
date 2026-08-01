@@ -49,13 +49,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `RELEASING.md`: the failure happened in an ordinary docs PR, not at a release cut,
   so release-time guidance would have been guidance at the wrong point of use
   (v1.19.9's proximity finding, applied).
-- **A candidate invariant 12 is logged, not built** — fail when an `assets/*.html`
-  has a newer last-commit than its paired `*.png`. It passes all three
-  [CONVENTIONS-LEDGER](docs/CONVENTIONS-LEDGER.md) filters (it has already failed;
-  it fails silently, since nobody reads the HTML; it is mechanically checkable from
-  `git log -1`), which makes it the second gateable candidate that ledger has found.
-  Deliberately deferred to its own PR so the gate can be **watched to fail** on this
-  exact commit's parent before it is trusted.
+- **Invariant 12 — a rendered asset is never older than its source.** Every
+  `assets/*.png` must be committed no earlier than the `assets/*.html` it renders.
+  It passes all three [CONVENTIONS-LEDGER](docs/CONVENTIONS-LEDGER.md) filters (it
+  had already failed, that same day; it fails silently, since nobody reads the HTML
+  and the PNG looks fine — it just says the old thing; and it is checkable from
+  `git log -1` alone).
+  - **Commit times, not mtimes.** A fresh clone stamps every file with the checkout
+    time, so an mtime comparison would pass on every CI runner while examining
+    nothing — `rules/11` §2.2, built into the gate meant to prevent it. Equal
+    timestamps pass: rendering in the same commit as the edit is the wanted
+    behaviour, not a violation.
+  - **Escape: `[no-render]` in the HTML's own commit subject**, for an edit that
+    cannot change the output. A declaration rather than a heuristic, because
+    nothing short of rendering both can distinguish a cosmetic HTML edit from a
+    load-bearing one — and invariant 11 already learned that a gate firing on
+    non-events gets waved through until it is decorative.
+  - **Watched to fail on six paths before being trusted**, per the script's own
+    "adding a check?" block: the real defect (a worktree at `0f08094`, the commit
+    where the drift existed → exit 1), a live HTML-only commit (exit 1), an HTML
+    with no committed PNG (exit 1), a drifted pathspec (`SCOPE EMPTY`, exit 1), the
+    declared escape (exit 0), and current `main` (exit 0, `ok (2 asset pairs)`).
+  - One earlier attempt at the fail-watch was **vacuous** and is recorded because
+    it is the failure mode this repo keeps rediscovering: a `git reset --hard`
+    reverted the still-uncommitted script, so two mutation cases ran against a
+    build with no check 12 in it and printed nothing at all. Empty output — not a
+    passing result — is what exposed it. The check is now committed before any
+    mutation runs, and the mutations run in a throwaway worktree.
+  - The first diagnostic printed `%cs` (date only) and so reported the **same date**
+    on both lines of a same-day miss while asserting one was older. It prints full
+    timestamps now: a finding that reads as a broken check is one people switch off.
 - **Two stale invariant counts fixed.** `docs/MAINTENANCE.md` said
   `check-invariants.sh` runs **7 checks** and `docs/WHY-IT-WORKS.md` said **eight
   invariants**; both are **11** (the script prints its own count, so the drift was

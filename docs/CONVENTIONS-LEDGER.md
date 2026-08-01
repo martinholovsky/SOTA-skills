@@ -25,7 +25,7 @@ item).
 | Raw entries | 49 |
 | Duplicates (the invariant list appears in both `AGENTS.md` and `CONTRIBUTING.md`) | 8 |
 | **Distinct conventions** | **41** |
-| Already enforced as invariants | 11 |
+| Already enforced as invariants | 12 (11 when this ledger was derived) |
 
 An earlier estimate of "~122" came from a loose regex that matched any bold line or
 any line containing *must/never/always*. It was an over-count by ~3×, and is
@@ -47,12 +47,13 @@ A convention earns a gate only if it passes **all three**:
 
 ## The ledger
 
-### Enforced (11) — invariants 1–11
+### Enforced (12) — invariants 1–12
 
 Skill-file line cap · audit-checklist placement · internal-name denylist · description cap ·
 version lockstep · count surfaces · router completeness · link resolution ·
 single `[Unreleased]` · rules-file indexed by its SKILL.md · `LAST-VERIFIED` sweep
-pairing. Each is in `scripts/check-invariants.sh` and documented in `AGENTS.md`.
+pairing · rendered asset no older than its source. Each is in
+`scripts/check-invariants.sh` and documented in `AGENTS.md`.
 
 ### Enforced in code, outside the invariant script (4)
 
@@ -88,6 +89,21 @@ use. One line *in* the file being edited would likely have outperformed all thre
 The rest of the judgment list has no single point of use — *verify every claim* applies
 everywhere, which is precisely why it cannot be relocated and must stay a principle.
 
+### Gated after this ledger was derived (1)
+
+| Candidate | Incident? | Silent? | Checkable? | Verdict |
+|---|---|---|---|---|
+| A rendered `assets/*.png` is never older than its `*.html` | **yes** — PR #173 (2026-08-01) fixed a stale line-cap claim in `how-it-works.html` and did not re-render the PNG; `main` served the old claim all day | **yes** — nobody reads the HTML, and the PNG looks fine, it just says the old thing | **yes** — commit times from `git log -1`, no rendering required | **gated same day** as invariant 12 |
+
+This one is the ledger's most useful entry, because **it was not on the list.**
+The ledger was derived by matching the repo's convention format across the five
+agent-facing docs — and this convention was *nowhere in those docs to be matched*.
+It was not an ungated convention; it was an **unwritten** one, and the extraction
+method is structurally blind to that class. The finding below that "the gateable set
+is small" is therefore a statement about *written* conventions only. A second source
+of candidates exists and is not searchable: things this repo does by habit and has
+never said out loud, which surface only when one of them fails.
+
 ### Gateable but not gated (2 candidates)
 
 | Candidate | Incident? | Silent? | Checkable? | Verdict |
@@ -109,6 +125,14 @@ find a breach and found a wording defect instead, which is the more useful resul
 2–4, the ledger yields **one actionable candidate**, and it is a regression guard
 rather than a repair. That is the honest output: most conventions here either are
 already enforced or govern judgment a gate cannot reach.
+
+**2b. …but only among conventions that were written down (added 2026-08-01).**
+One day after this ledger shipped, a real defect produced invariant 12 — a
+convention that passed all three filters and appeared in *none* of the five source
+documents, because nobody had ever written it. The extraction method cannot find
+what was never stated, so finding 2 bounds the **documented** set, not the real one.
+Practical consequence: re-deriving this ledger will not find the next invariant 12.
+Only an incident will.
 
 **3. Enforcement is not concentrated in the invariant script.** Four conventions are
 enforced inside the eval runners. Anyone auditing "what does this repo actually
