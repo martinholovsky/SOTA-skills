@@ -79,8 +79,8 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-07-30 | Second prompt only | A fix that moves a detector's decision boundary needs known-bad/known-good validation before shipping | **adopted** | `rules/11` §5 · v1.19.8 |
 | 2026-07-30 | Both prompts | Mutation-test every gate; vacuous tests; telemetry silence; comments are a hypothesis; the disqualifier list | **rejected: already covered** | — (`rules/10` §3, §2.9, §4; `sota-testing` rules/06 + rules/09) |
 | 2026-07-30 | Second prompt's seed examples (target-repo `file:line` calibration) | Naming a specific repo's files as calibration anchors | **rejected: non-fit** | — (the library stays generic; the *classes* were adopted, the examples were not) |
-| 2026-08-01 | A separate live agent session, three proposals handed over as analysis | A same-class checker (classifier/judge from the same model family) is **not** an independent layer — common-cause failure; escalate-only cascades are deductively worse | **adopted** | `sota-code-security/rules/08` §1 · [Unreleased] |
-| 2026-08-01 | Same handover | A TEE does not fix a **completeness** gap — "never recorded" is a liveness failure, outside the confidential-computing guarantee | **adopted** | `sota-code-security/rules/04` §8 · [Unreleased] |
+| 2026-08-01 | A separate live agent session, three proposals handed over as analysis | A same-class checker (classifier/judge from the same model family) is **not** an independent layer — common-cause failure; escalate-only cascades are deductively worse | **adopted** | `sota-code-security/rules/08` §1 · v1.19.9 |
+| 2026-08-01 | Same handover | A TEE does not fix a **completeness** gap — "never recorded" is a liveness failure, outside the confidential-computing guarantee | **adopted** | `sota-code-security/rules/04` §8 · v1.19.9 |
 | 2026-08-01 | Same handover | A vendor control-plane API reporting `confidentialCompute: true` over an instance whose CC status is OFF | **rejected: already covered** | — (`rules/10` §2.2 line 102 "check the shipped artifact, not the checkout" + §2.11 shipped-artifact gaps) |
 
 ## Entries

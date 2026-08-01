@@ -122,7 +122,7 @@ difficulty, not the domain — we measure it and say so.
 
 ### What the audit hunts that a scanner can't
 
-Seven classes of defect survive every linter, SAST rule, and CVE scanner, because in
+Eight classes of defect survive every linter, SAST rule, and CVE scanner, because in
 each one the code isn't *wrong*. The library hunts them as explicit passes:
 
 - **Controls that are inert** — a safeguard whose success and whose total failure look
@@ -131,6 +131,16 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   every run is *skipped*, a test that still passes when the control's body is replaced
   with a no-op.
   ([rules/10](skills/sota-code-security/rules/10-silent-control-failure.md))
+- **Layers that were never layers** — the same test applied to an *architecture*
+  diagram rather than a function. A second-opinion classifier drawn from the same
+  model family as the system it guards shares its blind spots by construction
+  (**common-cause failure**), and one that only ever sees what the primary already
+  flagged *uncertain* cannot, even in principle, catch what the primary got
+  confidently wrong. A TEE bought to fix records that were **never emitted** is
+  answering a **liveness** question no hardware guarantee covers. Both are counted in
+  a threat model and neither reaches the case it is counted for.
+  ([rules/08 §1](skills/sota-code-security/rules/08-llm-ai-security.md),
+  [rules/04 §8](skills/sota-code-security/rules/04-cryptography.md))
 - **Stages that report success while doing nothing** — found by the cheap signals
   rather than by reading every line: a step returning "nothing found" far faster
   than its claimed work allows, a gate that never prints how many items it

@@ -4,9 +4,33 @@ Priorities set by the **2026-07-10 audit**
 ([AUDIT-2026-07-10.md](AUDIT-2026-07-10.md)). Ordered; revisit after each
 release. The 2026-07-01 cycle is fully executed and kept below as history.
 
-## Open tasks — next-session pick-up *(as of 2026-07-30)*
+## Open tasks — next-session pick-up *(as of 2026-08-01)*
 
-**This cycle (2026-07-30, v1.19.7 — "inert dependency").** One release, from a
+**This cycle (2026-08-01, v1.19.9 — "counted as a layer").** A **fourth** discovery
+mode, after external repos (v1.19.1–2), running the library ourselves (v1.19.3–6),
+and a user-authored audit prompt (v1.19.7): **a separate agent session applying the
+library to its own problem handed back three proposed additions, each citing our
+`file:line`.** Two were adopted — `sota-code-security` rules/08 §1 (a same-class
+checker is not an independent layer; common-cause failure, and escalate-only cascades
+fail *deductively* because a tier seeing only the primary's *uncertain* inputs cannot
+see a confidently-wrong one) and rules/04 §8 (a TEE does not fix a **completeness**
+gap; "never recorded" is liveness, outside the CC guarantee). The third — a vendor API
+reporting `confidentialCompute: true` over a box with CC off — was **rejected: already
+covered** by `rules/10` §2.2 (line 102, *"check the shipped artifact, not the
+checkout"*) and §2.11. All three are in [ADOPTION-LOG.md](ADOPTION-LOG.md).
+**Not measured — do not cite a lift.**
+
+Two process notes from the cut. The §2b front-door grep returned **0 hits** for every
+term this release added, exactly as at v1.19.7 — the second consecutive cycle where
+capabilities landed in rules files with no front-door sentence, which is evidence the
+habit does not stick without the gate that §2b still lacks. Fixed by extending the
+README's audit-class list from seven classes to eight. And the two adoption rows were
+first stamped `· [Unreleased]`, which the pre-tag checklist's `grep -n '· unreleased'`
+**would not have matched** (case and brackets); the grep is now case-insensitive and
+bracket-tolerant. A checklist item that silently matches nothing is the same class the
+release itself is about.
+
+**Prior cycle (2026-07-30, v1.19.7 — "inert dependency").** One release, from a
 **third** discovery mode: not an external repo (v1.19.1–2) and not us running the
 library (v1.19.3–6), but a **user-authored audit prompt aimed at the library's
 coverage**, with CVEs and versions explicitly ruled out of scope. Under that
