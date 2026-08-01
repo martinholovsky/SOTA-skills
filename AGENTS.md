@@ -107,6 +107,22 @@ that verifies nothing (`sota-code-security` rules/11 §2.2).
     failing is `sota-code-security` rules/10 §2.12, an instruction standing in for
     an enforced control. This is the first **diff-based** invariant; with no merge
     base it skips with a note rather than guessing.
+12. **a rendered asset is never older than its source** — every `assets/*.png` must
+    be committed no earlier than the `assets/*.html` it renders. The PNGs are
+    committed **build outputs** and nothing regenerates them, so an HTML fix that is
+    not re-rendered reaches nobody: the README embeds the *image*, never the source.
+    Added 2026-08-01, the same day it failed — PR #173 rewrote the stale line-cap
+    claim in `how-it-works.html` (the entire point of that PR) and left the PNG at
+    its 2026-07-09 render, so `main` served the old claim all day while the diff,
+    the commit message and the CHANGELOG all read as done. It is the invariant-1
+    story from the outside: a fix *counted* on a surface it never reached.
+    Compares **commit** times, not mtimes — a fresh clone stamps every file with
+    the checkout time, so an mtime check would pass on any runner while examining
+    nothing. Equal timestamps pass, since rendering in the same commit is the
+    wanted behaviour. Escape: **`[no-render]` in the HTML's own commit subject**,
+    a declaration rather than a heuristic, because nothing short of rendering both
+    can tell a cosmetic HTML edit from a load-bearing one. Render command and
+    per-asset sizes: [CONTRIBUTING.md](CONTRIBUTING.md) → *Rendered assets*.
 
 Separately, `scripts/check-freshness.sh` (run monthly by
 `.github/workflows/freshness.yml`) tracks the root `LAST-VERIFIED` stamp —
@@ -174,7 +190,7 @@ pre-commit hook scans each commit locally.
   library handed back three proposals citing this repo's own `file:line` — the
   ledger takes those on the same terms, rejections included
 - [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md) — which of this repo's
-  conventions are **enforced** (11 invariants + 4 more inside the eval runners) and
+  conventions are **enforced** (12 invariants + 4 more inside the eval runners) and
   which are prose, with the three filters a convention must pass to earn a gate
   (has it already failed · does it fail silently · is it mechanically checkable).
   Read it before proposing a new gate — it argues against gating the ~18 judgment

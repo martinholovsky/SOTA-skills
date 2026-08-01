@@ -149,6 +149,13 @@ are marked "needs verification", never asserted.
     it on an ordinary edit, even one that verified its own facts. If you really did
     complete a pass, either the diff is sweep-shaped (≥ 20 skill files) or you name
     `LAST-VERIFIED` in the CHANGELOG entry.
+12. **rendered assets are current**: every `assets/*.png` must be committed no
+    earlier than the `assets/*.html` it renders. Practical effect: edit the HTML,
+    re-render the PNG, commit **both together** (see
+    [Rendered assets](#rendered-assets)). If the edit genuinely cannot change the
+    output, put `[no-render]` in the commit subject. Added the day it failed —
+    #173's whole point was fixing a claim in `how-it-works.html`, the PNG was not
+    re-rendered, and the README kept showing the old text.
 
 Secrets are scanned separately by **gitleaks** (config in `.gitleaks.toml`);
 CI scans the full git history, the pre-commit hook scans each commit.

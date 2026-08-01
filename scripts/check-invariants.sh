@@ -45,6 +45,14 @@
 #      100), or naming LAST-VERIFIED in the CHANGELOG, which is how a rolling
 #      pass declares completion. DIFF-based — skips with a note if there is no
 #      merge base, like checks 4 and 8 skip without python3.
+#  12. Every assets/*.png is no older than the assets/*.html it renders. The PNGs
+#      are committed build outputs and nothing regenerates them, so an un-rendered
+#      HTML fix is invisible: the README embeds the image, never the source. PR
+#      #173 fixed a stale line-cap claim in how-it-works.html and left the PNG at
+#      its 2026-07-09 render, so main served the old claim all day while the diff
+#      read as done. HISTORY-based (commit times, not mtimes — a fresh clone
+#      stamps every file identically); escape is "[no-render]" in the HTML's own
+#      commit subject.
 #
 # ADDING A CHECK? Three things this file learned the hard way — all from real
 # incidents recorded in the checks below:
@@ -106,7 +114,7 @@ scope() {  # <count> <noun> — returns 1 on an empty scope; prints nothing on s
 # CHANGELOG, docs/, evals/, AGENTS.md, these scripts -- is prose or code read by
 # people, deliberately uncapped since 2026-07-15; navigability there comes from a
 # table of contents and docs/INDEX.md, not a line ceiling.
-echo "[1/11] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
+echo "[1/12] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
 over=0
 seen1=0
 while IFS= read -r f; do
@@ -123,7 +131,7 @@ scope "$seen1" "skill files" || over=1
 if [ "$over" -eq 0 ]; then echo "    ok ($seen1 skill files)"; else fail=1; fi
 
 # --- 2. Audit checklist ends every rules file ------------------------------
-echo "[2/11] Every skills/*/rules/*.md ends with an '## Audit checklist'"
+echo "[2/12] Every skills/*/rules/*.md ends with an '## Audit checklist'"
 missing=0
 seen2=0
 while IFS= read -r f; do
@@ -154,7 +162,7 @@ if [ "$missing" -eq 0 ]; then echo "    ok ($seen2 rules files)"; else fail=1; f
 # .denylist.local (git-ignored, one ERE per line, '#' comments). When neither
 # exists (e.g. an external fork's PR), only the generic phrases are checked —
 # the maintainer's pre-commit hook and this repo's CI carry the full list.
-echo "[3/11] No internal-name leaks"
+echo "[3/12] No internal-name leaks"
 DENY='the user runs|the user operates'
 if [ -n "${SOTA_DENYLIST:-}" ]; then
   DENY="$DENY|$SOTA_DENYLIST"
@@ -190,7 +198,7 @@ fi
 # Code, Codex, ...) skip any skill that exceeds it. Count Unicode characters
 # (descriptions use em-dashes: 1 char, 3 bytes) via python3, parsing both
 # folded block scalars (`>-`) and plain single-line descriptions.
-echo "[4/11] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
+echo "[4/12] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
 if command -v python3 >/dev/null 2>&1; then
   if desc_out=$(python3 - "$MAX_DESC" <<'PY'
 import sys, glob, re
@@ -244,7 +252,7 @@ fi
 # One version, four places: VERSION, plugin.json, the CHANGELOG's top entry,
 # and (after the release lands) the newest v* tag. Drift here shipped a main
 # briefly claiming 1.8.0 with 1.9.0 content (2026-07-03) — hence a hard check.
-echo "[5/11] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
+echo "[5/12] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
 v5=0
 ver=$(tr -d '[:space:]' < VERSION)
 # Strict X.Y.Z: rejects interior malformations (1..2, 1.2, 1.2.3.4) the old
@@ -278,7 +286,7 @@ if [ "$v5" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # rot on surfaces nobody recounts (the social preview said "30 skills" for
 # three releases). Recount from the tree and compare every tracked surface;
 # RELEASING.md lists the same surfaces for manual release edits.
-echo "[6/11] Count-bearing surfaces match the tree"
+echo "[6/12] Count-bearing surfaces match the tree"
 v6=0
 ck() { # ck <found> <expected> <surface>
   [ "$1" = "$2" ] || { note "$3: says '${1:-<not found>}', tree says '$2'"; v6=1; }
@@ -324,7 +332,7 @@ if [ "$v6" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # library-map entry must name a real skill dir. Catches the drift the
 # 2026-07-10 audit found: sota-confidential-computing was added to the table
 # but missing from the map for a full release.
-echo "[7/11] Router lists every skill (routing table + library map)"
+echo "[7/12] Router lists every skill (routing table + library map)"
 v7=0
 seen7=0
 router=skills/sota/SKILL.md
@@ -352,7 +360,7 @@ if [ "$v7" -eq 0 ]; then echo "    ok ($seen7 domain skills)"; else fail=1; fi
 # with no rot-catching upside. Fenced AND inline code are stripped so link-shaped
 # examples (in ``` fences or `backticks`) are not scanned. Idea from vault-doctor
 # (training-knowledge-vault); see docs/ADOPTION-LOG.md.
-echo "[8/11] Internal Markdown links resolve (*.md targets)"
+echo "[8/12] Internal Markdown links resolve (*.md targets)"
 if command -v python3 >/dev/null 2>&1; then
   if link_out=$(python3 - <<'PY'
 import os, re, sys
@@ -398,7 +406,7 @@ fi
 # previous release (2026-07-28) and both sat on main until a human noticed
 # during the release cut. Fence-aware, like check 2: a CHANGELOG entry may
 # legitimately quote '## [Unreleased]' inside a code fence.
-echo "[9/11] CHANGELOG has at most one [Unreleased], and it is the top entry"
+echo "[9/12] CHANGELOG has at most one [Unreleased], and it is the top entry"
 v9=0
 changelogs="CHANGELOG.md $(git ls-files 'docs/CHANGELOG-archive*.md' | tr '\n' ' ')"
 for cl in $changelogs; do
@@ -444,7 +452,7 @@ if [ "$v9" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # to ourselves. All 255 rules files passed when this landed, so it is a
 # regression gate, not a repair; it was watched to fail on an injected file
 # and on a renamed reference before being trusted.
-echo "[10/11] Every skills/*/rules/*.md is referenced by its own SKILL.md"
+echo "[10/12] Every skills/*/rules/*.md is referenced by its own SKILL.md"
 v10=0
 seen10=0
 while IFS= read -r rf; do
@@ -487,7 +495,7 @@ if [ "$v10" -eq 0 ]; then echo "    ok ($seen10 rules files indexed)"; else fail
 # This is the first DIFF-based invariant; every other check reads the whole tree.
 # With no merge base it skips with a note rather than guessing, like checks 4/8.
 SWEEP_MIN_SKILL_FILES=20
-echo "[11/11] LAST-VERIFIED moves only with a sweep (batched diff, or declared in CHANGELOG)"
+echo "[11/12] LAST-VERIFIED moves only with a sweep (batched diff, or declared in CHANGELOG)"
 v11=0
 base=""
 for ref in origin/main main; do
@@ -532,11 +540,96 @@ else
 fi
 if [ "$v11" -ne 0 ]; then fail=1; fi
 
+# --- 12. Rendered assets are current --------------------------------------
+# assets/*.png are committed BUILD OUTPUTS of the assets/*.html beside them, and
+# nothing regenerates them. The README embeds the PNG and never the source — so an
+# HTML edit that is not re-rendered is invisible to every reader, while the diff,
+# the commit message and the CHANGELOG all report the surface fixed.
+#
+# Not hypothetical: PR #173 (2026-08-01) changed how-it-works.html from "every file
+# < 500 lines" to "each < 500 lines" — the entire point of that PR — and left
+# how-it-works.png at its #55 render from 2026-07-09. main served the stale claim
+# for the rest of the day on the one surface anybody actually looks at.
+#
+# Passes all three docs/CONVENTIONS-LEDGER.md filters: it has already failed; it
+# fails SILENTLY (nobody reads the HTML, and the PNG looks fine — it just says the
+# old thing); and it is mechanically checkable from git log alone.
+#
+# COMMIT times, not mtimes: a fresh clone stamps every file with the checkout time,
+# so an mtime comparison would pass on any CI runner — green while examining
+# nothing (rules/11 §2.2). Equal timestamps PASS: rendering in the same commit as
+# the edit is the wanted behaviour, not a violation.
+#
+# Escape: "[no-render]" in the HTML's own last commit subject, for an edit that
+# cannot change the output. Deliberately a DECLARATION and not a heuristic —
+# invariant 11 learned that a gate firing on non-events gets waved through until it
+# is decorative, and nothing short of rendering both can tell a cosmetic HTML edit
+# from a load-bearing one.
+#
+# HISTORY-based, like check 11's diff: with no commit history for a pair it skips
+# with a note rather than guessing, because a shallow clone must not read as a pass.
+echo "[12/12] Rendered assets: each assets/*.png is no older than its *.html"
+v12=0
+seen12=0
+checked12=0
+while IFS= read -r html; do
+  seen12=$((seen12 + 1))
+  png="${html%.html}.png"
+  html_ct=$(git log -1 --format=%ct -- "$html" 2>/dev/null || true)
+  if [ -z "$html_ct" ]; then
+    note "SKIPPED (no commit history for $html — shallow clone?)"
+    continue
+  fi
+  if ! git ls-files --error-unmatch "$png" >/dev/null 2>&1; then
+    note "NEVER RENDERED: $html has no committed $png"
+    note "  Render it and commit both (CONTRIBUTING.md -> Rendered assets)."
+    v12=1
+    continue
+  fi
+  png_ct=$(git log -1 --format=%ct -- "$png" 2>/dev/null || true)
+  if [ -z "$png_ct" ]; then
+    note "SKIPPED (no commit history for $png — shallow clone?)"
+    continue
+  fi
+  checked12=$((checked12 + 1))
+  if [ "$html_ct" -gt "$png_ct" ]; then
+    # Captured into a variable, NOT piped into grep -q: an early-exiting grep on a
+    # pipe SIGPIPEs the upstream git and pipefail turns a MATCH into a failure —
+    # the exact shape that made invariant 9's first cut look like it passed.
+    subject=$(git log -1 --format=%s -- "$html" 2>/dev/null || true)
+    case "$subject" in
+      *"[no-render]"*)
+        note "ok, declared [no-render]: $html"
+        continue
+        ;;
+    esac
+    note "STALE RENDER: $png is older than $html"
+    # Full timestamp, not %cs: a same-day miss printed the SAME date on both lines
+    # while asserting one was older, which reads as a broken check rather than a
+    # real finding — and a check nobody believes is one they turn off.
+    note "  $html last changed $(git log -1 --format=%ci -- "$html")"
+    note "  $png last changed $(git log -1 --format=%ci -- "$png")"
+    note "  The README embeds the PNG, not the source. Re-render and commit both"
+    note "  (CONTRIBUTING.md -> Rendered assets), or put [no-render] in the commit"
+    note "  subject when the edit cannot change the output."
+    v12=1
+  fi
+done < <(git ls-files 'assets/*.html')
+scope "$seen12" "rendered asset sources" || v12=1
+if [ "$v12" -eq 0 ]; then
+  if [ "$checked12" -eq 0 ] && [ "$seen12" -gt 0 ]; then
+    echo "    ok (skipped — no usable commit history)"
+  else
+    echo "    ok ($checked12 asset pairs)"
+  fi
+fi
+if [ "$v12" -ne 0 ]; then fail=1; fi
+
 # --- Result ---------------------------------------------------------------
 echo
 if [ "$fail" -ne 0 ]; then
   echo "FAIL: repository invariants violated (see above)."
   exit 1
 fi
-printf 'PASS: all repository invariants satisfied (11 checks over %s skill files / %s rules files, %ss).\n' \
+printf 'PASS: all repository invariants satisfied (12 checks over %s skill files / %s rules files, %ss).\n' \
   "${seen1:-?}" "${seen2:-?}" "$((SECONDS - START_SECONDS))"
