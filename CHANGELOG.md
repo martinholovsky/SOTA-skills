@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **A skill description violated a documented constraint, found by applying this
+  repo's own absence-claim rule to itself.** `sota-dotnet`'s `description` contained
+  `Span<T>/Memory<T>` — C# generics, but `<T>` is also a well-formed XML start tag,
+  and Anthropic's Agent Skills reference states that `name` and `description`
+  *"Cannot contain XML tags"*. Rewritten as "Span and Memory" (965 → 963 chars).
+  - **How it surfaced is the point.** The claim under test was *"there is no hard
+    size cap for skills"* — an **absence claim**, and `skills/sota/rules/01` §5/§7
+    require a widened search **plus a second independent method**, because a narrow
+    search and a true absence are indistinguishable. The first source
+    (`agentskills.io/specification`) does not mention XML tags at all. Only the
+    second (`platform.claude.com` Agent Skills reference) carries that constraint —
+    and a reserved-word rule for `name` (`anthropic`, `claude`) that the spec page
+    also omits. One source would have missed both.
+  - The absence claim itself **held**, and the second source states it more
+    strongly than the first: *"No practical limit on bundled content… There's no
+    context penalty for bundled content that isn't used."*
+- **Invariant 4 now checks both new constraints** — an XML tag in `name` or
+  `description`, and a reserved word in `name`. Watched to fail on the real defect
+  (`XML TAG in description ['<T>', '<T>']`), on a synthetic `claude-golang` name
+  (`RESERVED WORD 'claude'`), and to pass on the clean tree. It stays inside
+  invariant 4 rather than becoming invariant 14: same file, same parse, same
+  failure mode — a description a loader silently mangles or rejects.
+
 ### Changed
 
 - **`AGENTS.md` is back under the platform's 200-line target** (234 → **170**

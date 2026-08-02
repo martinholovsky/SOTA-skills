@@ -35,7 +35,7 @@ one — lives in the script's own header, at the point of use, and the practical
 | 1 | a **skill** file (`skills/*/SKILL.md`, `skills/*/rules/*.md`) exceeds **500 lines** |
 | 2 | a `skills/*/rules/*.md` doesn't end with `## Audit checklist` |
 | 3 | an internal-name denylist hits (the library must stay generic) |
-| 4 | a `SKILL.md` `description` exceeds **1024 chars** (spec cap — loaders silently skip it) or is unquoted YAML containing `: ` |
+| 4 | a `SKILL.md` `description` exceeds **1024 chars** (spec cap — loaders silently skip it), is unquoted YAML containing `: `, or either `name`/`description` contains an **XML tag**; also a reserved word (`anthropic`, `claude`) in `name` |
 | 5 | `VERSION`, `plugin.json` and the CHANGELOG top entry disagree, or a tag is ahead of `VERSION` |
 | 6 | a count-bearing surface drifts from a recount of `skills/` (the social-preview pill and README alt are **"N+" floors**) |
 | 7 | a skill is missing from the router's routing table **or** its library map |

@@ -112,6 +112,10 @@ are marked "needs verification", never asserted.
 4. any `skills/*/SKILL.md` `description` over **1024 characters** (the Agent
    Skills cap) or written as an unquoted inline scalar containing `: ` —
    invalid YAML that makes loaders skip the skill; use `description: >-`.
+   Also rejected: an **XML tag** in `name` or `description`, and a reserved
+   word (`anthropic`, `claude`) in `name` — both stated in Anthropic's Agent
+   Skills reference. `sota-dotnet` carried `Span<T>/Memory<T>`, a well-formed
+   XML start tag, until 2026-08-02.
    (Check 4 needs `python3`, and is skipped with a warning if it is absent
    locally — CI always enforces it.)
 5. **version drift**: `VERSION`, `plugin.json`, and the CHANGELOG top entry
