@@ -79,6 +79,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - The first diagnostic printed `%cs` (date only) and so reported the **same date**
     on both lines of a same-day miss while asserting one was older. It prints full
     timestamps now: a finding that reads as a broken check is one people switch off.
+- **Invariant 13 — every scoreboard row declares its sample size.** Each row of the
+  results table in [evals/results/RESULTS.md](evals/results/RESULTS.md) must fill its
+  `Samples` cell. A lift from one run is typographically identical to a lift from ten,
+  and this repo has been burned twice: a **+0.07** retracted when the set grew 15 → 49,
+  and a **+0.40** corrected to **+0.39** by a second run. Neither looked uncertain on
+  the page.
+  - Like invariant 10 it is a **regression guard** with no incident of its own — all
+    10 rows pass today. It catches the *next* row added without an `n`, which is the
+    cheap moment; the expensive moment is after the number has been quoted.
+  - **Shape-driven, not position-driven**: it finds the table by its `Samples`
+    **header** and checks that column in every data row beneath. So a renamed or
+    dropped column fails closed (`SCOPE EMPTY`) rather than passing over zero rows —
+    the drift a hardcoded column index sails straight past.
+  - The loop reads from a **process substitution, not a pipe**. A `| while` runs in a
+    subshell, so every `v13=1` set inside it would be discarded on exit: a gate that
+    finds offenders, prints them, and still exits 0.
+  - Watched to fail on four paths first: a blanked `Samples` cell (exit 1, naming the
+    row), a renamed column (`SCOPE EMPTY`, exit 1), a missing scoreboard file
+    (skipped, not assumed), and the clean tree (exit 0, `ok (10 scoreboard rows)`).
+  - This closes the **last actionable candidate** in
+    [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md). One candidate remains
+    (§2b's front-door grep) and is blocked on machine-readable capability names.
+- **Five stale surfaces fixed, found by re-checking the ones this cycle touched.**
+  - `README.md` still said **"Eleven invariants"** — missed by the earlier sweep
+    because its grep was case-sensitive. Its list of what they cover also omitted
+    four: rules-file indexing, the single `[Unreleased]`, `LAST-VERIFIED` pairing,
+    and rendered-asset currency. Both fixed, and the list now names all thirteen
+    areas rather than trailing off after six.
+  - `docs/MAINTENANCE.md`'s structure row had its **count** bumped to 12 in the same
+    breath as leaving its **parenthetical list** without the new check — a count that
+    agrees with the script while the prose beside it does not.
+  - `docs/INDEX.md` had **no route to the render procedure** added a day earlier: a
+    documented procedure with no front-door row, which is `RELEASING.md` §2b's class
+    applied to the index rather than the README.
+  - `RELEASING.md`'s social-preview step described re-rendering by hand with no
+    mention that **invariant 12 now enforces the commit-both half**, and no pointer
+    to the fuller procedure in `CONTRIBUTING.md`.
+  - `docs/ROADMAP.md`'s open-tasks header still read *as of 2026-08-01* and called
+    §2b "the only other candidate" while the Samples guard was still listed as open.
 - **Two stale invariant counts fixed.** `docs/MAINTENANCE.md` said
   `check-invariants.sh` runs **7 checks** and `docs/WHY-IT-WORKS.md` said **eight
   invariants**; both are **11** (the script prints its own count, so the drift was

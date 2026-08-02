@@ -123,6 +123,18 @@ that verifies nothing (`sota-code-security` rules/11 §2.2).
     a declaration rather than a heuristic, because nothing short of rendering both
     can tell a cosmetic HTML edit from a load-bearing one. Render command and
     per-asset sizes: [CONTRIBUTING.md](CONTRIBUTING.md) → *Rendered assets*.
+13. **every scoreboard row declares its sample size** — each row of the results
+    table in [evals/results/RESULTS.md](evals/results/RESULTS.md) must fill its
+    `Samples` cell. A lift from one run is typographically identical to a lift from
+    ten, and this repo has been burned twice: a **+0.07** retracted when the set
+    grew 15 → 49, and a **+0.40** corrected to **+0.39** by a second run. Neither
+    looked uncertain on the page. Like invariant 10 this is a **regression guard**
+    with no incident of its own — all 10 rows pass today; it catches the *next* row
+    added without one, which is the cheap moment. **Shape-driven**: it locates the
+    table by its `Samples` header rather than a column index, so renaming or
+    dropping the column fails closed instead of passing over zero rows. Closes the
+    last actionable candidate in
+    [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md).
 
 Separately, `scripts/check-freshness.sh` (run monthly by
 `.github/workflows/freshness.yml`) tracks the root `LAST-VERIFIED` stamp —
@@ -190,7 +202,7 @@ pre-commit hook scans each commit locally.
   library handed back three proposals citing this repo's own `file:line` — the
   ledger takes those on the same terms, rejections included
 - [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md) — which of this repo's
-  conventions are **enforced** (12 invariants + 4 more inside the eval runners) and
+  conventions are **enforced** (13 invariants + 4 more inside the eval runners) and
   which are prose, with the three filters a convention must pass to earn a gate
   (has it already failed · does it fail silently · is it mechanically checkable).
   Read it before proposing a new gate — it argues against gating the ~18 judgment

@@ -53,6 +53,13 @@
 #      read as done. HISTORY-based (commit times, not mtimes — a fresh clone
 #      stamps every file identically); escape is "[no-render]" in the HTML's own
 #      commit subject.
+#  13. Every scoreboard row in evals/results/RESULTS.md declares its sample size.
+#      A lift from one run is typographically identical to a lift from ten, and
+#      this repo has been burned twice: a +0.07 retracted when the set grew 15 ->
+#      49, and a +0.40 corrected to +0.39 by a second run. A REGRESSION GUARD like
+#      check 10 — all 10 rows pass today. Shape-driven (finds the table by its
+#      "Samples" header), so a renamed or dropped column fails closed instead of
+#      passing over zero rows.
 #
 # ADDING A CHECK? Three things this file learned the hard way — all from real
 # incidents recorded in the checks below:
@@ -114,7 +121,7 @@ scope() {  # <count> <noun> — returns 1 on an empty scope; prints nothing on s
 # CHANGELOG, docs/, evals/, AGENTS.md, these scripts -- is prose or code read by
 # people, deliberately uncapped since 2026-07-15; navigability there comes from a
 # table of contents and docs/INDEX.md, not a line ceiling.
-echo "[1/12] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
+echo "[1/13] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
 over=0
 seen1=0
 while IFS= read -r f; do
@@ -131,7 +138,7 @@ scope "$seen1" "skill files" || over=1
 if [ "$over" -eq 0 ]; then echo "    ok ($seen1 skill files)"; else fail=1; fi
 
 # --- 2. Audit checklist ends every rules file ------------------------------
-echo "[2/12] Every skills/*/rules/*.md ends with an '## Audit checklist'"
+echo "[2/13] Every skills/*/rules/*.md ends with an '## Audit checklist'"
 missing=0
 seen2=0
 while IFS= read -r f; do
@@ -162,7 +169,7 @@ if [ "$missing" -eq 0 ]; then echo "    ok ($seen2 rules files)"; else fail=1; f
 # .denylist.local (git-ignored, one ERE per line, '#' comments). When neither
 # exists (e.g. an external fork's PR), only the generic phrases are checked —
 # the maintainer's pre-commit hook and this repo's CI carry the full list.
-echo "[3/12] No internal-name leaks"
+echo "[3/13] No internal-name leaks"
 DENY='the user runs|the user operates'
 if [ -n "${SOTA_DENYLIST:-}" ]; then
   DENY="$DENY|$SOTA_DENYLIST"
@@ -198,7 +205,7 @@ fi
 # Code, Codex, ...) skip any skill that exceeds it. Count Unicode characters
 # (descriptions use em-dashes: 1 char, 3 bytes) via python3, parsing both
 # folded block scalars (`>-`) and plain single-line descriptions.
-echo "[4/12] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
+echo "[4/13] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
 if command -v python3 >/dev/null 2>&1; then
   if desc_out=$(python3 - "$MAX_DESC" <<'PY'
 import sys, glob, re
@@ -252,7 +259,7 @@ fi
 # One version, four places: VERSION, plugin.json, the CHANGELOG's top entry,
 # and (after the release lands) the newest v* tag. Drift here shipped a main
 # briefly claiming 1.8.0 with 1.9.0 content (2026-07-03) — hence a hard check.
-echo "[5/12] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
+echo "[5/13] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
 v5=0
 ver=$(tr -d '[:space:]' < VERSION)
 # Strict X.Y.Z: rejects interior malformations (1..2, 1.2, 1.2.3.4) the old
@@ -286,7 +293,7 @@ if [ "$v5" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # rot on surfaces nobody recounts (the social preview said "30 skills" for
 # three releases). Recount from the tree and compare every tracked surface;
 # RELEASING.md lists the same surfaces for manual release edits.
-echo "[6/12] Count-bearing surfaces match the tree"
+echo "[6/13] Count-bearing surfaces match the tree"
 v6=0
 ck() { # ck <found> <expected> <surface>
   [ "$1" = "$2" ] || { note "$3: says '${1:-<not found>}', tree says '$2'"; v6=1; }
@@ -332,7 +339,7 @@ if [ "$v6" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # library-map entry must name a real skill dir. Catches the drift the
 # 2026-07-10 audit found: sota-confidential-computing was added to the table
 # but missing from the map for a full release.
-echo "[7/12] Router lists every skill (routing table + library map)"
+echo "[7/13] Router lists every skill (routing table + library map)"
 v7=0
 seen7=0
 router=skills/sota/SKILL.md
@@ -360,7 +367,7 @@ if [ "$v7" -eq 0 ]; then echo "    ok ($seen7 domain skills)"; else fail=1; fi
 # with no rot-catching upside. Fenced AND inline code are stripped so link-shaped
 # examples (in ``` fences or `backticks`) are not scanned. Idea from vault-doctor
 # (training-knowledge-vault); see docs/ADOPTION-LOG.md.
-echo "[8/12] Internal Markdown links resolve (*.md targets)"
+echo "[8/13] Internal Markdown links resolve (*.md targets)"
 if command -v python3 >/dev/null 2>&1; then
   if link_out=$(python3 - <<'PY'
 import os, re, sys
@@ -406,7 +413,7 @@ fi
 # previous release (2026-07-28) and both sat on main until a human noticed
 # during the release cut. Fence-aware, like check 2: a CHANGELOG entry may
 # legitimately quote '## [Unreleased]' inside a code fence.
-echo "[9/12] CHANGELOG has at most one [Unreleased], and it is the top entry"
+echo "[9/13] CHANGELOG has at most one [Unreleased], and it is the top entry"
 v9=0
 changelogs="CHANGELOG.md $(git ls-files 'docs/CHANGELOG-archive*.md' | tr '\n' ' ')"
 for cl in $changelogs; do
@@ -452,7 +459,7 @@ if [ "$v9" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # to ourselves. All 255 rules files passed when this landed, so it is a
 # regression gate, not a repair; it was watched to fail on an injected file
 # and on a renamed reference before being trusted.
-echo "[10/12] Every skills/*/rules/*.md is referenced by its own SKILL.md"
+echo "[10/13] Every skills/*/rules/*.md is referenced by its own SKILL.md"
 v10=0
 seen10=0
 while IFS= read -r rf; do
@@ -495,7 +502,7 @@ if [ "$v10" -eq 0 ]; then echo "    ok ($seen10 rules files indexed)"; else fail
 # This is the first DIFF-based invariant; every other check reads the whole tree.
 # With no merge base it skips with a note rather than guessing, like checks 4/8.
 SWEEP_MIN_SKILL_FILES=20
-echo "[11/12] LAST-VERIFIED moves only with a sweep (batched diff, or declared in CHANGELOG)"
+echo "[11/13] LAST-VERIFIED moves only with a sweep (batched diff, or declared in CHANGELOG)"
 v11=0
 base=""
 for ref in origin/main main; do
@@ -568,7 +575,7 @@ if [ "$v11" -ne 0 ]; then fail=1; fi
 #
 # HISTORY-based, like check 11's diff: with no commit history for a pair it skips
 # with a note rather than guessing, because a shallow clone must not read as a pass.
-echo "[12/12] Rendered assets: each assets/*.png is no older than its *.html"
+echo "[12/13] Rendered assets: each assets/*.png is no older than its *.html"
 v12=0
 seen12=0
 checked12=0
@@ -625,11 +632,73 @@ if [ "$v12" -eq 0 ]; then
 fi
 if [ "$v12" -ne 0 ]; then fail=1; fi
 
+# --- 13. Every scoreboard row declares its sample size ---------------------
+# The last actionable candidate in docs/CONVENTIONS-LEDGER.md. A lift from one run
+# is typographically identical to a lift from ten, and this repo has been burned by
+# exactly that twice: a +0.07 on inert-control detection did not survive growing the
+# set from 15 to 49 cases and was RETRACTED, and a +0.40 published from one synced
+# run became +0.39 on the two-run mean. Neither number looked uncertain on the page.
+#
+# Like invariant 10, this is a REGRESSION GUARD with no incident of its own: all 10
+# rows populate the column today. It prevents the next row from being added without
+# one, which is the cheap moment to catch it — the expensive moment is after the
+# number has been quoted somewhere.
+#
+# Shape-driven, not position-driven: it finds any table whose header has a "Samples"
+# column and checks that column in every data row beneath it. So it also fails when
+# the column is RENAMED or dropped (0 tables -> SCOPE EMPTY), which is the drift a
+# hardcoded column index would sail straight past.
+echo "[13/13] Every scoreboard row declares its sample size"
+v13=0
+BOARD="evals/results/RESULTS.md"
+if [ ! -f "$BOARD" ]; then
+  note "SKIPPED (no $BOARD in this checkout)"
+  echo "    ok (skipped)"
+else
+  s13=$(awk -F'|' '
+    /^\|/ {
+      if (!intable) {
+        for (i = 1; i <= NF; i++) {
+          g = $i; gsub(/^[ \t]+|[ \t]+$/, "", g)
+          if (g == "Samples") { col = i; intable = 1; tables++; next }
+        }
+        next
+      }
+      if ($0 ~ /^\|[ :|-]*$/) next          # the |---|---| separator row
+      rows++
+      cell = $col;  gsub(/^[ \t]+|[ \t]+$/, "", cell)
+      label = $2;   gsub(/^[ \t]+|[ \t]+$/, "", label)
+      if (cell == "") printf "EMPTY\t%d\t%s\n", NR, label
+      next
+    }
+    { intable = 0 }                          # a non-table line ends the table
+    END { printf "TABLES\t%d\nROWS\t%d\n", tables, rows }
+  ' "$BOARD")
+  n_tables=$(printf '%s\n' "$s13" | awk -F'\t' '$1=="TABLES"{print $2}')
+  n_rows=$(printf '%s\n' "$s13" | awk -F'\t' '$1=="ROWS"{print $2}')
+  # Process substitution, NOT a pipe: a `| while` runs the loop in a subshell and
+  # every v13=1 set inside it is discarded when the subshell exits — a gate that
+  # finds offenders, prints them, and still exits 0.
+  while IFS="$(printf '\t')" read -r kind line label; do
+    [ "$kind" = "EMPTY" ] || continue
+    note "NO SAMPLE SIZE: $BOARD:$line — \"$label\""
+    v13=1
+  done < <(printf '%s\n' "$s13")
+  if [ "$v13" -ne 0 ]; then
+    note "  A number without its n reads exactly like a number with one. State the"
+    note "  sample size in the row (\"3×, temp 0.7\", \"1×\") — see evals/README.md."
+  fi
+  scope "${n_tables:-0}" "scoreboard tables with a Samples column" || v13=1
+  scope "${n_rows:-0}" "scoreboard rows" || v13=1
+  if [ "$v13" -eq 0 ]; then echo "    ok ($n_rows scoreboard rows)"; fi
+fi
+if [ "$v13" -ne 0 ]; then fail=1; fi
+
 # --- Result ---------------------------------------------------------------
 echo
 if [ "$fail" -ne 0 ]; then
   echo "FAIL: repository invariants violated (see above)."
   exit 1
 fi
-printf 'PASS: all repository invariants satisfied (12 checks over %s skill files / %s rules files, %ss).\n' \
+printf 'PASS: all repository invariants satisfied (13 checks over %s skill files / %s rules files, %ss).\n' \
   "${seen1:-?}" "${seen2:-?}" "$((SECONDS - START_SECONDS))"

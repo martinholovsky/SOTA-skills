@@ -145,7 +145,7 @@ comparison to anyone else required.
    `file:line | rule violated | severity | effort | fix` and maps to a standard
    (CWE, OWASP, MITRE ATT&CK/ATLAS) where one applies.
 
-4. **CI-gated library quality.** Twelve invariants
+4. **CI-gated library quality.** Thirteen invariants
    ([`check-invariants.sh`](../scripts/check-invariants.sh)) block a bad change at
    the door: every **skill** file ≤ 500 lines — `skills/*/SKILL.md` and
    `skills/*/rules/*.md`, the files an agent actually loads, and nothing else (so

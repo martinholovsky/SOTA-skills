@@ -156,6 +156,11 @@ are marked "needs verification", never asserted.
     output, put `[no-render]` in the commit subject. Added the day it failed —
     #173's whole point was fixing a claim in `how-it-works.html`, the PNG was not
     re-rendered, and the README kept showing the old text.
+13. **every scoreboard row declares its sample size**: each row of the results
+    table in `evals/results/RESULTS.md` must fill its `Samples` cell. Practical
+    effect: adding a row means stating its `n` (`3×, temp 0.7`, `1×`) — a number
+    without one reads exactly like a number with one. A regression guard: it passes
+    today and exists to keep it that way.
 
 Secrets are scanned separately by **gitleaks** (config in `.gitleaks.toml`);
 CI scans the full git history, the pre-commit hook scans each commit.
