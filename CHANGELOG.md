@@ -5,6 +5,32 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **`RELEASING.md`'s minor-vs-patch rule now matches 31 releases of practice.** It
+  said *"adding a skill is a **minor** bump; fixes to existing content are a
+  **patch**"* — whose first half is exceptionless and whose second half misleads,
+  because it reads as *no new skill → patch*. Measured with `git ls-tree` across
+  every tag: **6** skill-adding releases, **all 6 minor** (so a skill is
+  *sufficient*), but **15 of 21 minors added no skill at all** (so it is never
+  *necessary*). The rule that actually separates them, spot-checked against six
+  releases: **minor when the library gains a new surface someone can *use*** — a
+  skill, a script or command, a hook, a cross-tool integration (v1.9.0's
+  `AGENTS.md` support), or a new eval instrument (v1.13.0, v1.14.0, v1.17.0,
+  v1.18.0); **patch when the change lives inside surfaces that already exist** —
+  rule text, docs, intakes, and, on the evidence, **a new CI invariant on its
+  own**: invariants 8, 9 and 11 each shipped in a *patch*. Invariants 12 and 13
+  rode a minor because that release also added two scripts and a hook. Tie-breaker
+  recorded for the next cut: does a reader of the release notes gain something new
+  to run? Found while cutting v1.20.0, where the old line would have argued for a
+  patch.
+- **`AGENTS.md` and `docs/INDEX.md` describe the setup check as the two halves it
+  now is.** Both still framed it as a paste-in prompt, which had been true for four
+  days: `scripts/verify-setup.sh` answers the mechanical half in a second and tells
+  the agent which checks are left. Both now say to run the script first.
+
 ## [1.20.0] - 2026-08-02
 
 **The reported-but-never-read release.** Every change here traces to the same
