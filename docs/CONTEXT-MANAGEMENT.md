@@ -46,6 +46,48 @@ Fight the attention shape; don't out-muscle it with volume.
    an endpoint has no rate limiting or TLS moves the invariant out of "attention"
    entirely. ([README → Enforcing the gates](../README.md#enforcing-the-gates).)
 
+## Do long rules files need a table of contents? Tested — no (pilot, 2026-08-02)
+
+Anthropic's skill-authoring guidance says: *"For reference files longer than 100
+lines, include a table of contents at the top. This ensures Claude can see the full
+scope of available information **even when previewing with partial reads**."* **242 of
+this repo's rules files exceed 100 lines and none carries a TOC**, so the question is
+whether that costs anything.
+
+It was tested rather than assumed, because the claim rests on a *mechanism* — partial
+reads — that may simply not occur here. Four arms, one agent each, an unguessable
+canary constant (`PROBE_QUARANTINE_RUNS = 17`) planted so a correct answer proves
+retrieval rather than prior knowledge. The prompt never mentions position, length or
+tables of contents, and **the arm is not encoded in any path** (opaque workspace IDs),
+because two agents in an earlier study read their arm out of a directory name.
+
+| Arm | File | Canary depth | TOC | Canary found | Tool calls |
+|---|---|---|---|---|---|
+| A control | 434 lines | 99% | no | **yes** | 1 |
+| B treatment | 446 lines | 99% | **yes** | **yes** | 1 |
+| C positive control | 434 lines | **1%** | no | **yes** | 1 |
+| D stress | **1,719 lines / 92 KB** | 99% | no | **yes** | 2 |
+
+**The positive control is what makes this readable.** Arm C moved the canary to the
+top; it scored identically to A, so there was no depth effect for a TOC to correct.
+The agents read the files whole — two said so unprompted ("read the file in full
+(434/446 lines)"), and arm D's agent reported the canary's exact line range in a
+1,719-line file. Arm B's only measurable effect was **+183 tokens** of context for the
+TOC itself.
+
+**Conclusion: the 242-file TOC sweep is not justified**, and would be pure added
+context cost at these lengths.
+
+**Limits, stated because they bound the claim.** *n* = 1 per arm — a pilot, not a
+result, and not on the scoreboard. It exercises one path: the `Read` tool in a Claude
+Code sub-agent on a **directly named** file. The guidance's own stated trigger is
+different — *"Claude may partially read files when they're referenced **from other
+referenced files**"* — i.e. nested references. That condition is untested here, and it
+does not arise in this library anyway, because `SKILL.md → rules/NN.md` is already the
+**one level deep** structure the same guidance prescribes. Finally, the canary sat
+after the `## Audit checklist` heading, which two agents flagged as anomalous; that
+salience may have aided detection.
+
 ## The 500-line cap is a proxy, and a loose one (measured 2026-08-02)
 
 The Agent Skills specification states the budget in **tokens**, not lines:

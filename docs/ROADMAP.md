@@ -117,6 +117,16 @@ first.
   rows. **The actionable set from written conventions is now empty.**
 - **`RELEASING.md` §2b's front-door grep stays blocked** on needing machine-readable
   capability names per release.
+- **CLOSED 2026-08-02: long rules files do NOT need a table of contents.** The
+  skill-authoring guidance recommends one for reference files over 100 lines
+  *"even when previewing with partial reads"*, and 242 of ours qualify with none.
+  Tested with a planted canary across four arms (control / TOC / positive control /
+  4× stress at 1,719 lines): **every arm retrieved it, every agent read the file
+  whole, and the positive control showed no depth effect for a TOC to correct**.
+  The sweep is not justified. *n*=1 per arm — a pilot, not on the scoreboard; it
+  covers direct `Read` calls, while the guidance's stated trigger is *nested*
+  references, which this library does not use. Detail:
+  [CONTEXT-MANAGEMENT.md](CONTEXT-MANAGEMENT.md).
 - **NEW 2026-08-02: the router is 2× the spec's token budget, and invariant 1 cannot
   see it.** The Agent Skills spec states the budget in **tokens** — *"Instructions
   (< 5000 tokens recommended)"* — and enforces nothing; invariant 1 checks the

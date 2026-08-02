@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Tested whether long rules files need a table of contents. They don't — so the
+  242-file sweep is off the table.** Anthropic's skill-authoring guidance says
+  reference files over 100 lines should carry a TOC *"even when previewing with
+  partial reads"*; **242 of this repo's rules files exceed 100 lines and none has
+  one**. Rather than assume, the *mechanism* was tested: four arms, one agent each,
+  an unguessable canary constant so a hit proves retrieval and not prior knowledge,
+  the prompt silent about position/length/TOCs, and the arm kept out of every path
+  (opaque workspace IDs — two agents in an earlier study read their arm from a
+  directory name).
+  - Control (434 lines, canary at 99% depth, no TOC): **found**. With a TOC:
+    **found**. Stress at **1,719 lines / 92 KB**, 4× the repo's longest rules file:
+    **found**, with the agent reporting the canary's exact line range.
+  - **The positive control is what makes it readable**: moving the canary to 1%
+    depth changed nothing, so there was no depth effect for a TOC to correct. Every
+    agent read the file whole — two said so unprompted. The TOC's only measurable
+    effect was **+183 tokens** of context.
+  - **Limits stated rather than implied**: *n* = 1 per arm, a pilot, deliberately
+    **not** on the scoreboard. It covers the `Read`-tool path on a directly named
+    file; the guidance's own trigger is *nested* references, which this library does
+    not have — `SKILL.md → rules/NN.md` is already the "one level deep" structure the
+    same guidance prescribes.
+
 ### Fixed
 
 - **A skill description violated a documented constraint, found by applying this
