@@ -116,7 +116,27 @@ first.
   index, so renaming or dropping the column fails closed instead of passing over zero
   rows. **The actionable set from written conventions is now empty.**
 - **`RELEASING.md` §2b's front-door grep stays blocked** on needing machine-readable
-  capability names per release — now the **only** remaining candidate.
+  capability names per release.
+- **NEW 2026-08-02: the router is 2× the spec's token budget, and invariant 1 cannot
+  see it.** The Agent Skills spec states the budget in **tokens** — *"Instructions
+  (< 5000 tokens recommended)"* — and enforces nothing; invariant 1 checks the
+  *line* half because lines are cheap to count. Measured across 297 skill files,
+  line density varies **3.3×** (38–127 bytes/line), so a 500-line file lands
+  anywhere between ~4,750 and ~15,870 tokens. **12 files already exceed ~5,000
+  tokens and 11 of them pass invariant 1 comfortably.** Exactly one breaches the
+  recommendation where it applies (the `SKILL.md` body): `skills/sota/SKILL.md` at
+  **~10,211 tokens**, at 500/500 lines with no slack. It matters twice over —
+  context cost, and Claude Code's compaction keeps only *"the first 5,000 tokens"*
+  of a re-attached skill, so half the router would not survive a summarization.
+  - A byte-or-token check passes all three ledger filters but **would fail on `main`
+    today**, and the only fix is trimming the router — a design decision, not a
+    mechanical one. The pre-existing trim candidates are recorded below (the
+    per-domain pass ordering in AUDIT step 3, the duplicated severity glossary in
+    step 6).
+  - **Unverified in practice**: `bytes/4` is a heuristic and the real tokenizer will
+    differ. Measure with a real tokenizer before acting on any specific number.
+  - Detail and the measurement table:
+    [CONTEXT-MANAGEMENT.md](CONTEXT-MANAGEMENT.md).
 - **The reimplement case set is documentation, never run**
   (`evals/cases/reimplement.jsonl`). If anyone ever runs it, the predictions written
   *before* any run exist in the case-file header and must be used rather than fresh

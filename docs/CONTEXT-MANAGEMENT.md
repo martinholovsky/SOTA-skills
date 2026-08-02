@@ -46,6 +46,51 @@ Fight the attention shape; don't out-muscle it with volume.
    an endpoint has no rate limiting or TLS moves the invariant out of "attention"
    entirely. ([README → Enforcing the gates](../README.md#enforcing-the-gates).)
 
+## The 500-line cap is a proxy, and a loose one (measured 2026-08-02)
+
+The Agent Skills specification states the budget in **tokens**, not lines:
+
+> **Progressive disclosure** — 1. Metadata (~100 tokens): `name` and `description`
+> loaded at startup for all skills. 2. **Instructions (< 5000 tokens recommended)**:
+> the full `SKILL.md` body is loaded when the skill is activated. 3. Resources (as
+> needed).
+>
+> Keep your main `SKILL.md` under 500 lines.
+
+Invariant 1 enforces the *line* half because lines are trivially checkable. But
+lines predict tokens only as well as line length allows, and across this repo's
+**297** skill files line density varies **3.3×** — 38 to 127 bytes per line, median
+57. So, by a `bytes/4` estimate:
+
+| A 500-line file at… | ≈ tokens | vs. the 5,000 recommendation |
+|---|---|---|
+| the sparsest observed density | ~4,750 | within budget |
+| the **median** density | ~7,118 | **42% over** |
+| the densest observed density | ~15,870 | **3× over** |
+
+**12 of 297 files already exceed ~5,000 tokens, and 11 of them pass invariant 1
+comfortably** — `sota-mobile/rules/07-swift-language.md` is 254 lines, half the cap,
+and ~6,737 tokens. A line cap cannot see that.
+
+Two things keep this from being urgent. The 5,000-token figure applies to the
+`SKILL.md` **body** (stage 2); for `rules/*.md`, which are stage-3 resources, the
+spec gives no number, only *"keep individual reference files focused — agents load
+these on demand, so smaller files mean less use of context."* And exactly **one**
+file breaches the recommendation where it actually applies: `skills/sota/SKILL.md`,
+the router, at **~10,211 tokens — 2× the budget** while sitting at exactly 500/500
+lines.
+
+There is no hard cap anywhere here. The spec's only hard limits are on frontmatter
+(`name` ≤ 64, `description` ≤ 1024 — invariant 4 — `compatibility` ≤ 500), and of the
+body it says outright: *"There are no format restrictions."* Nothing truncates a
+skill at load. What a token overrun costs is context, and — see below — survival
+across compaction.
+
+**Not gated, deliberately.** A byte-or-token check passes all three
+[CONVENTIONS-LEDGER](CONVENTIONS-LEDGER.md) filters, but it would fail on `main`
+today, and the only fix is trimming a router that has no line slack left. That is a
+design decision, not a mechanical one; it is logged in [ROADMAP.md](ROADMAP.md).
+
 ## A platform behaviour the six defenses do not cover (recorded 2026-08-02)
 
 Auto-compaction **truncates a re-attached skill**. Per the Claude Code skills
@@ -55,9 +100,14 @@ tokens of each**"*, and re-attached skills *"share a combined budget of 25,000
 tokens"*, filled from the most recently invoked — so older skills can be dropped
 entirely after a long session.
 
-That interacts with this library in a way none of the six defenses addresses,
-because they all fight *attention*, and this is *deletion*. A rough `bytes/4`
-estimate of what exceeds the per-skill 5,000-token cut:
+**That 5,000 is the same 5,000 as above, and the match is not a coincidence**: a
+`SKILL.md` written to the spec's recommended instruction budget survives a
+compaction intact, and one written past it is silently cut in half. The budget is
+sized to the format.
+
+This interacts with the library in a way none of the six defenses addresses, because
+they all fight *attention* and this is *deletion*. A rough `bytes/4` estimate of what
+exceeds the per-skill 5,000-token cut:
 
 | File | ~tokens |
 |---|---|
