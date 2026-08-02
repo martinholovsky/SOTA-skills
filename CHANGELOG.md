@@ -5,7 +5,21 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.20.0] - 2026-08-02
+
+**The reported-but-never-read release.** Every change here traces to the same
+shape: a control that *was already printing what you needed* and nobody looked.
+`gitleaks` prints `179 commits scanned` — in a shallow clone it prints `1` and
+still exits 0. The scoreboard prints a `Samples` column — nothing checked a new
+row filled it. The `how-it-works` diagram's source was fixed and the rendered PNG
+the README actually embeds was not, so `main` served the corrected-and-still-wrong
+claim all day. The eval runners printed no duration at all. Two invariants (12,
+13), two scripts, and one CI fix later, the denominators are read.
+
+The one deliberate inversion: the new update reminder reports **less** than it
+could. It never phones home, because the value was the nudge, not the telemetry.
+
+**Nothing here is measured; no lift is claimed for any of it.**
 
 ### Added
 
@@ -2154,6 +2168,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.20.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.20.0
 [1.19.9]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.9
 [1.19.8]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.8
 [1.19.7]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.7
