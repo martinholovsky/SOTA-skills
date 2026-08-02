@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Invariant 14 — a release declares its front-door terms, and they resolve.**
+  Closes the last actionable candidate in
+  [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md), which had it **blocked**
+  on *"needs a machine-readable capability list per release"*.
+  - **That objection was right, and is still right: discovery cannot be gated.**
+    Deciding what counts as a capability is judgement. What *can* be gated is the
+    **declaration** — the same move invariant 11 makes for `LAST-VERIFIED`, where
+    the escape is a claim that must be *true*. A release adds
+    `**Front door checked:** term · term` to its CHANGELOG section and the gate
+    proves every term resolves in `README.md`/`docs/INDEX.md` **and** appears in
+    that release's own entry — so a filler word cannot buy a pass.
+  - **Fires only when `VERSION` changes**, so it adds nothing to an ordinary PR.
+    The problem it fixes is release-time: invariant 6 fails on a wrong *number* in
+    the README, and nothing failed on a *capability* that never got a sentence —
+    five shipped across v1.17.0–v1.19.7 with zero README hits.
+  - **Watched to fail on five paths**: ordinary PR (skips, no ceremony), release
+    with no declaration (fails, naming the required line), a term in no front door
+    (fails, naming the term), a term absent from the release's own entry (fails),
+    and a valid release (passes, `ok (2 terms declared, all resolve)`).
+  - **The fail-watch found a real bug rather than confirming behaviour.** The first
+    cut read the *topmost* `## [` section, which is `[Unreleased]` when one still
+    sits above the new entry — so it reported "no declaration" for a release that
+    had one. It now selects the section matching `VERSION`. Case C failing for the
+    wrong reason is what exposed it.
+
 ### Changed
 
 - **One decision table now settles every size question.**

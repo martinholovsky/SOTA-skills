@@ -24,7 +24,7 @@ symlinks to it — edit only this file, never the symlinks.
 
 ## Invariants (enforced in pre-commit and CI)
 
-`scripts/check-invariants.sh` runs **13 checks** and fails the build on any of
+`scripts/check-invariants.sh` runs **14 checks** and fails the build on any of
 them. One line each below. The *rationale* — and the real incident behind every
 one — lives in the script's own header, at the point of use, and the practical
 "what this means for your PR" version is in
@@ -45,6 +45,7 @@ one — lives in the script's own header, at the point of use, and the practical
 | 11 | `LAST-VERIFIED` moves without a sweep. Escapes: a sweep-shaped diff (≥ 20 skill files) or naming it in the CHANGELOG. The only **diff-based** check; skips with a note when there's no merge base |
 | 12 | an `assets/*.png` is older than the `*.html` it renders — the README embeds the *image*, never the source, so an un-rendered fix reaches nobody. Escape: `[no-render]` in the commit subject |
 | 13 | a scoreboard row in `evals/results/RESULTS.md` leaves its `Samples` cell empty |
+| 14 | a **release** (VERSION changed) carries no `**Front door checked:**` line in its CHANGELOG section, or a declared term resolves in neither `README.md`/`docs/INDEX.md` nor the release's own entry |
 
 **Only instruction files are capped.** A file is capped if and only if an agent
 loads it *as instructions* — `skills/*/SKILL.md` and `skills/*/rules/*.md`, and
@@ -142,7 +143,7 @@ the setting. The pre-commit hook scans each commit locally.
   library handed back three proposals citing this repo's own `file:line` — the
   ledger takes those on the same terms, rejections included
 - [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md) — which of this repo's
-  conventions are **enforced** (13 invariants + 4 more inside the eval runners) and
+  conventions are **enforced** (14 invariants + 4 more inside the eval runners) and
   which are prose, with the three filters a convention must pass to earn a gate
   (has it already failed · does it fail silently · is it mechanically checkable).
   Read it before proposing a new gate — it argues against gating the ~18 judgment

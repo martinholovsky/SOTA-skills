@@ -78,10 +78,10 @@ Then update every surface that carries a count:
   `how-it-works` was in #173. Full procedure and per-asset sizes:
   [CONTRIBUTING.md → Rendered assets](CONTRIBUTING.md#rendered-assets).
 
-## 2b. Front-door surfaces (every release) — no gate catches these
+## 2b. Front-door surfaces (every release) — now gated by invariant 14
 
-Invariant 6 fails the build on a wrong **number** in the README. **Nothing** fails
-on a capability that never got a sentence anywhere a reader looks. That gap is not
+Invariant 6 fails the build on a wrong **number** in the README. Until 2026-08-02
+**nothing** failed on a capability that never got a sentence anywhere a reader looks. That gap is not
 hypothetical: at the v1.19.7 cut, grepping `main` returned **0 hits** in `README.md`
 for `adversarial`, `refut`, `decision ledger`, `inert`, `no-op`, and `ADOPTION-LOG` —
 five capabilities shipped across v1.17.0–v1.19.7 with no front-door mention, and
@@ -96,9 +96,22 @@ grep -ic '<distinctive term>' README.md docs/INDEX.md
 Zero hits is a **documentation finding**, not a polish item — fix it in the release
 PR. `README.md` is the front door and is where a rule-level capability earns its
 sentence; `docs/INDEX.md` indexes *documents*, so a new rule inside an existing file
-usually belongs in the README's class list rather than as an INDEX row. It has now
-read zero at **two consecutive cuts** (v1.19.7, v1.19.9), which is the argument for
-the gate this section still lacks, not evidence the habit is taking. Two habits that go with it: say where a capability is *not* backed by a measured
+usually belongs in the README's class list rather than as an INDEX row. It read zero at **three consecutive cuts**
+(v1.19.7, v1.19.9, v1.20.0) — which was the argument for a gate, not evidence the
+habit was taking.
+
+**Invariant 14 now enforces the verification.** Add to the new version's CHANGELOG
+section:
+
+```text
+**Front door checked:** verify-setup · update-reminder · commits scanned
+```
+
+Every term must appear in `README.md` or `docs/INDEX.md` **and** in that release's own
+CHANGELOG entry, so a filler word cannot buy a pass. The check fires **only** when
+`VERSION` changes, so ordinary PRs are unaffected. It gates the *verification*, not
+the *discovery* — deciding what counts as a capability is still yours, and the grep
+above is still how you find them. Two habits that go with it: say where a capability is *not* backed by a measured
 number rather than letting the reader assume, and re-read the long-lived prose while
 you are there (that cut found "keep every file ≤ 500 lines" in both README and
 CONTRIBUTING, a cap that has been skill-files-only since PR #100).
@@ -151,5 +164,7 @@ skills.
       library map
 - [ ] **Front-door grep done (§2b)** — every capability this release added has a
       mention in README/`docs/INDEX.md`, and anything unbacked by a measured number
-      says so
+      says so. Then record it: **invariant 14 fails the build** unless the new
+      CHANGELOG section carries `**Front door checked:** term · term` and every term
+      resolves
 - [ ] GitHub Settings social-preview re-upload — only if the PNG changed

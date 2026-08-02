@@ -25,7 +25,7 @@ item).
 | Raw entries | 49 |
 | Duplicates (the invariant list appears in both `AGENTS.md` and `CONTRIBUTING.md`) | 8 |
 | **Distinct conventions** | **41** |
-| Already enforced as invariants | 13 (11 when this ledger was derived) |
+| Already enforced as invariants | 14 (11 when this ledger was derived) |
 
 An earlier estimate of "~122" came from a loose regex that matched any bold line or
 any line containing *must/never/always*. It was an over-count by ~3×, and is
@@ -47,7 +47,7 @@ A convention earns a gate only if it passes **all three**:
 
 ## The ledger
 
-### Enforced (13) — invariants 1–13
+### Enforced (14) — invariants 1–14
 
 Skill-file line cap · audit-checklist placement · internal-name denylist · description cap ·
 version lockstep · count surfaces · router completeness · link resolution ·
@@ -104,11 +104,23 @@ is small" is therefore a statement about *written* conventions only. A second so
 of candidates exists and is not searchable: things this repo does by habit and has
 never said out loud, which surface only when one of them fails.
 
-### Gateable but not gated (1 candidate)
+### Gateable but not gated (0 candidates)
 
 | Candidate | Incident? | Silent? | Checkable? | Verdict |
 |---|---|---|---|---|
-| Front-door capability grep (`RELEASING.md` §2b) | **yes** — five capabilities shipped with no README mention | **yes** — nothing errors | **no** — needs a machine-readable capability list per release | **blocked**, recorded in ROADMAP |
+| Front-door capability grep (`RELEASING.md` §2b) | **yes** — five capabilities shipped with no README mention | **yes** — nothing errors | ~~**no**~~ → **yes** | **GATED 2026-08-02 as invariant 14** |
+
+**How the block came off.** This sat blocked on *"needs a machine-readable
+capability list per release"* — true, and still true: **discovery cannot be
+gated**, because "what counts as a capability" is judgement. What can be gated is
+the **declaration**, which is the same move invariant 11 makes for `LAST-VERIFIED`:
+the escape is a claim that must be *true*. A release states its front-door terms
+and the gate proves each one resolves — in `README.md`/`docs/INDEX.md` **and** in
+the release's own entry, so a filler word cannot buy a pass. The residual risk is a
+deliberately gamed declaration, which is a different failure from the oversight
+this fixes.
+
+**The actionable set from written conventions is now empty.**
 
 **Closed 2026-08-02: the Samples-column guard shipped as invariant 13.** It was
 this ledger's one actionable candidate — *every scoreboard row declares its sample
