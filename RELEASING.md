@@ -45,6 +45,10 @@ Then update every surface that carries a count:
   screenshotting at exactly **1280×640** with a headless browser (`file://`
   is typically blocked), commit both files, and re-upload the PNG at GitHub
   **Settings → Social preview** (the repo file does not refresh it).
+  **Invariant 12 now enforces the commit-both half**: any `assets/*.html` whose
+  paired PNG is older fails CI, so a re-render can no longer be forgotten the way
+  `how-it-works` was in #173. Full procedure and per-asset sizes:
+  [CONTRIBUTING.md → Rendered assets](CONTRIBUTING.md#rendered-assets).
 
 ## 2b. Front-door surfaces (every release) — no gate catches these
 

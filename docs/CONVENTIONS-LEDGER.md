@@ -25,7 +25,7 @@ item).
 | Raw entries | 49 |
 | Duplicates (the invariant list appears in both `AGENTS.md` and `CONTRIBUTING.md`) | 8 |
 | **Distinct conventions** | **41** |
-| Already enforced as invariants | 12 (11 when this ledger was derived) |
+| Already enforced as invariants | 13 (11 when this ledger was derived) |
 
 An earlier estimate of "~122" came from a loose regex that matched any bold line or
 any line containing *must/never/always*. It was an over-count by ~3×, and is
@@ -47,12 +47,12 @@ A convention earns a gate only if it passes **all three**:
 
 ## The ledger
 
-### Enforced (12) — invariants 1–12
+### Enforced (13) — invariants 1–13
 
 Skill-file line cap · audit-checklist placement · internal-name denylist · description cap ·
 version lockstep · count surfaces · router completeness · link resolution ·
 single `[Unreleased]` · rules-file indexed by its SKILL.md · `LAST-VERIFIED` sweep
-pairing · rendered asset no older than its source. Each is in
+pairing · rendered asset no older than its source · scoreboard rows declare their sample size. Each is in
 `scripts/check-invariants.sh` and documented in `AGENTS.md`.
 
 ### Enforced in code, outside the invariant script (4)
@@ -104,12 +104,25 @@ is small" is therefore a statement about *written* conventions only. A second so
 of candidates exists and is not searchable: things this repo does by habit and has
 never said out loud, which surface only when one of them fails.
 
-### Gateable but not gated (2 candidates)
+### Gateable but not gated (1 candidate)
 
 | Candidate | Incident? | Silent? | Checkable? | Verdict |
 |---|---|---|---|---|
-| Every scoreboard row declares its sample size | **yes** — a `+0.07` retracted at n=49, and `+0.40` corrected to `+0.39` by a second run | **yes** — a number from one run is typographically identical to one from ten | **yes** — the Samples column exists and all 10 rows populate it | **regression guard**, like invariant 10: it currently passes, so it prevents drift rather than repairing a defect |
 | Front-door capability grep (`RELEASING.md` §2b) | **yes** — five capabilities shipped with no README mention | **yes** — nothing errors | **no** — needs a machine-readable capability list per release | **blocked**, recorded in ROADMAP |
+
+**Closed 2026-08-02: the Samples-column guard shipped as invariant 13.** It was
+this ledger's one actionable candidate — *every scoreboard row declares its sample
+size* — with its incident (a `+0.07` retracted when the set grew 15 → 49; a `+0.40`
+corrected to `+0.39` by a second run), its silence (a number from one run is
+typographically identical to one from ten), and its checkability (the `Samples`
+column, populated in all 10 rows) all already argued above. The implementation
+locates the table by its **header** rather than a column index, so renaming or
+dropping the column fails closed instead of passing over zero rows.
+
+That leaves **one** candidate, and it is blocked on a prerequisite this ledger
+cannot supply. The actionable set from *written* conventions is now empty — which,
+with finding 2b below, is the useful state to be in: the next gate will come from an
+incident, not from re-reading the docs.
 
 ## Findings
 
@@ -124,7 +137,8 @@ find a breach and found a wording defect instead, which is the more useful resul
 **2. The gateable set is small — 2, and one is blocked.** Against a prediction of
 2–4, the ledger yields **one actionable candidate**, and it is a regression guard
 rather than a repair. That is the honest output: most conventions here either are
-already enforced or govern judgment a gate cannot reach.
+already enforced or govern judgment a gate cannot reach. *(That one candidate
+shipped as invariant 13 on 2026-08-02; the remaining candidate is still blocked.)*
 
 **2b. …but only among conventions that were written down (added 2026-08-01).**
 One day after this ledger shipped, a real defect produced invariant 12 — a

@@ -4,9 +4,28 @@ Priorities set by the **2026-07-10 audit**
 ([AUDIT-2026-07-10.md](AUDIT-2026-07-10.md)). Ordered; revisit after each
 release. The 2026-07-01 cycle is fully executed and kept below as history.
 
-## Open tasks — next-session pick-up *(as of 2026-08-01)*
+## Open tasks — next-session pick-up *(as of 2026-08-02)*
 
-**This cycle (2026-08-01, v1.19.9 — "counted as a layer").** A **fourth** discovery
+**Latest cycle (2026-08-02, PRs #174–#176).** Two invariants and a diagram, from a
+**fifth** discovery mode: *writing marketing copy about the repo forced a look at a
+surface nobody reads from inside it.* Drafting a LinkedIn post about what shipped
+since v1.0.0 led to the how-it-works diagram, and the diagram turned out to be
+**stale against its own source** — #173 had fixed the line-cap wording in
+`assets/how-it-works.html` and never re-rendered `how-it-works.png`, so `main` served
+the old claim all day while the diff, the commit message and the CHANGELOG all read
+as done. Landed: the render + a diagram that finally shows the *loop* the README
+argues for (#174), **invariant 12** — a rendered asset is never older than its source
+(#175), and **invariant 13** — every scoreboard row declares its sample size (#176),
+which closes the ledger's last actionable candidate.
+
+The generalisable finding is in [CONVENTIONS-LEDGER.md](CONVENTIONS-LEDGER.md)
+finding 2b: **invariant 12's convention appeared in none of the five documents the
+ledger extracts from.** It was *unwritten*, not merely ungated, and a method that
+matches the repo's convention format is structurally blind to that class. So "the
+gateable set is small" bounds the **documented** set only — re-deriving the ledger
+will not find the next invariant 12, and only an incident will.
+
+**Prior cycle (2026-08-01, v1.19.9 — "counted as a layer").** A **fourth** discovery
 mode, after external repos (v1.19.1–2), running the library ourselves (v1.19.3–6),
 and a user-authored audit prompt (v1.19.7): **a separate agent session applying the
 library to its own problem handed back three proposed additions, each citing our
@@ -85,18 +104,19 @@ first.
 
 **New open items from the 2026-07-31 cycle:**
 
-- **One gateable convention remains ungated: every scoreboard row must declare its
-  sample size.** Surfaced by [CONVENTIONS-LEDGER.md](CONVENTIONS-LEDGER.md), which
-  extracted **41 distinct conventions** from the five agent-facing docs and found
-  **11 enforced as invariants plus 4 more enforced inside the eval runners** — so
-  reading `check-invariants.sh` alone undercounts enforcement by about a third.
-  Applying three filters (has it already failed · does it fail silently · is it
-  mechanically checkable) left exactly **one** actionable candidate against a
-  predicted 2–4. It would be a **regression guard**, not a repair: all 10 rows
-  currently populate the Samples column. Low priority precisely because it passes
-  today.
+- ~~**One gateable convention remains ungated: every scoreboard row must declare its
+  sample size.**~~ **CLOSED 2026-08-02 — shipped as invariant 13.** Surfaced by
+  [CONVENTIONS-LEDGER.md](CONVENTIONS-LEDGER.md), which extracted **41 distinct
+  conventions** from the five agent-facing docs and found **11 enforced as invariants
+  plus 4 more enforced inside the eval runners** — so reading `check-invariants.sh`
+  alone undercounts enforcement by about a third. Applying three filters left exactly
+  **one** actionable candidate against a predicted 2–4, and it was a **regression
+  guard** rather than a repair: all 10 rows already populated the Samples column. The
+  implementation finds the table by its `Samples` **header** rather than a column
+  index, so renaming or dropping the column fails closed instead of passing over zero
+  rows. **The actionable set from written conventions is now empty.**
 - **`RELEASING.md` §2b's front-door grep stays blocked** on needing machine-readable
-  capability names per release — carried forward, still the only other candidate.
+  capability names per release — now the **only** remaining candidate.
 - **The reimplement case set is documentation, never run**
   (`evals/cases/reimplement.jsonl`). If anyone ever runs it, the predictions written
   *before* any run exist in the case-file header and must be used rather than fresh
