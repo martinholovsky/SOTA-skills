@@ -218,6 +218,40 @@ setup_claude_md() {
   return 0
 }
 
+# A SessionStart hook that occasionally reminds the user updates exist. It makes
+# NO network request — see scripts/update-reminder.sh for why that is a design
+# choice and not a gap. This is the clone-install half of the update story:
+# symlinked skills update the moment you `git pull`, but nothing ever told you to
+# pull, and the plugin's first-run notice fires once ever so it is onboarding,
+# not a version channel.
+setup_update_reminder() {
+  local s="$HOME/.claude/settings.json" tmp cmd
+  cmd="\"$REPO/scripts/update-reminder.sh\""
+  if ! command -v jq >/dev/null 2>&1; then
+    warn "jq not found — skipping update-reminder hook"; return
+  fi
+  if [ -f "$s" ] && jq -e --arg sig "update-reminder.sh" \
+      '[.hooks.SessionStart[]?.hooks[]?.command // ""] | any(contains($sig))' "$s" >/dev/null 2>&1; then
+    log "sota update-reminder hook already present — up to date"; return
+  fi
+  ask_yn "Add a SessionStart hook that reminds you to check for updates every ~14 days (no network calls)?" y || return
+  tmp="$(mktemp)"
+  if [ -e "$s" ]; then
+    backup "$s"
+    if jq --arg c "$cmd" '.hooks.SessionStart = ((.hooks.SessionStart // []) + [{hooks:[{type:"command",command:$c}]}])' "$s" >"$tmp" 2>/dev/null; then
+      cat "$tmp" >"$s"   # cat (not mv) so a symlinked settings.json keeps its link
+      log "added SessionStart update-reminder hook (silence it with SOTA_UPDATE_REMINDER_DAYS=0)"
+    else
+      warn "could not parse $s as JSON — left unchanged"
+    fi
+  else
+    mkdir -p "$(dirname "$s")"
+    jq -n --arg c "$cmd" '{hooks:{SessionStart:[{hooks:[{type:"command",command:$c}]}]}}' >"$s"
+    log "created ~/.claude/settings.json with the update-reminder hook"
+  fi
+  rm -f "$tmp"
+}
+
 setup_hook() {
   local s="$HOME/.claude/settings.json" tmp
   if ! command -v jq >/dev/null 2>&1; then
@@ -306,6 +340,7 @@ maybe_setup_routing() {
   # and the final instructions (2026-07-10 audit Q-MED-4).
   setup_claude_md || true
   setup_hook || true
+  setup_update_reminder || true
   return 0
 }
 
