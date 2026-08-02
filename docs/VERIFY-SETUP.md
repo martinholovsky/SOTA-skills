@@ -1,9 +1,26 @@
 # Verifying a repo's setup — the read-only check
 
 `scripts/init-gates.sh` and `scripts/gen-agents-md.sh` **set things up**.
-Nothing checks the result. This is that check: a prompt you paste into a coding
-agent that reports whether the library, this repo's own context, and its gates
-are actually in place — and changes nothing.
+Nothing checks the result. This is that check, in two halves that answer
+different questions — run both:
+
+```sh
+/path/to/SOTA-skills/scripts/verify-setup.sh          # deterministic half
+/path/to/SOTA-skills/scripts/verify-setup.sh --runs 200   # widen the CI-history sample
+```
+
+**`scripts/verify-setup.sh`** does everything mechanical and does it identically
+every time: are the skills reachable, is the routing hook installed, does the
+profile symlink resolve, is there a licence under *any* name, which gate
+mechanisms exist, is a hook actually **installed** rather than merely configured,
+and — from real run conclusions — has CI ever *executed* and ever *rejected*
+anything. It is strictly read-only and exits 1 if any check FAILs.
+
+**The prompt below** does the half a script cannot: whether the agent file's
+content is *meaningful* (check 4), whether its factual claims are still *true*
+(check 5b — where agent files actually rot), and the routing dry-run (check 11).
+Run the script first; it answers a dozen checks in a second and tells the agent
+which ones are left.
 
 It exists because "configured" and "working" are different states that render
 identically. A `.pre-commit-config.yaml` with no installed hook is a file, not a

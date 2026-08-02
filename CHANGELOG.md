@@ -7,6 +7,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`scripts/verify-setup.sh` — the deterministic half of
+  [docs/VERIFY-SETUP.md](docs/VERIFY-SETUP.md)**, open since the 2026-07-28 cycle.
+  14 checks, strictly **read-only**, exit 1 on any FAIL: skills reachability and
+  whether the *router* is among them, the three always-on routing layers reported
+  separately, profile symlinks resolving, a licence under *any* name, which gate
+  mechanisms exist, whether a hook is **installed** rather than merely configured,
+  and — from real run conclusions — whether CI has ever *executed* and ever
+  *rejected* anything. `--runs N` widens the run-history sample.
+  - The read-only claim is **verified, not asserted**: hashing the file tree and
+    `git status` before and after a full run shows both unchanged.
+  - The three checks a script cannot do (agent-file content, whether its claims
+    are still *true*, the routing dry-run) print as `N/A — judgement check` with a
+    pointer to the prompt, so the split is visible where you run it rather than
+    only in the doc.
+  - **Writing it found a bug in itself.** Check 8 used `git grep`, which reads only
+    **tracked** files — so an untracked `.pre-commit-config.yaml` configuring
+    gitleaks was reported as *no secret scanning*. That is a false FAIL on exactly
+    the case the doc names first ("on a repo you just scaffolded"), and it was found
+    by running the fail path, not by reading the code. Now plain `grep`.
+  - **It also validated its own UNVERIFIED vocabulary.** On this repo check 10b
+    (*has CI ever rejected anything?*) reads UNVERIFIED at the default 60-run
+    sample — 60/60 success — and turns up **1 failure at 200**. "Not in the last 60"
+    really is not "never"; the sample size is printed for that reason.
+- **`evals/_elapsed.py` — the eval runners report their wall time.** All 13 now
+  print `[<runner> elapsed 12.3s]`, closing the runner half of the duration item.
+  Registered with `atexit` so the line survives the `sys.exit(...)` several runners
+  use on an empty corpus — the fast-exit case most worth timing — and written to
+  **stderr** so a runner whose stdout is piped or parsed is not handed an extra
+  line. **Printed, never gated**: these call a remote API whose latency is not ours,
+  and a flaky gate gets disabled. Verified end-to-end on the two `--selftest` paths
+  CI runs without an API key, plus `py_compile` across all of `evals/`.
+
+### Fixed
+
+- **The secret scan reported a denominator nobody read.** `gitleaks` prints
+  `179 commits scanned`, and the roadmap had carried *"still unexamined: what
+  gitleaks reports as its scope"* since 2026-07-30. Examined: in a `--depth 1`
+  clone of this repo it scans **1 of 179 commits**, prints `no leaks found`, and
+  **exits 0** — a green secret scan over 0.5% of history, where `fetch-depth: 0`
+  is the only thing preventing it and nothing asserts that. CI now asserts the
+  scope.
+  - The assertion keys on `git rev-parse --is-shallow-repository`, **not** on a
+    commit count. `git rev-list --count HEAD` truncates to 1 in the same clone, so
+    it degrades alongside the scan it would be checking; and the three available
+    numbers disagree anyway (measured: rev-list HEAD **175**, rev-list --all
+    **181**, gitleaks **179** — gitleaks walks refs beyond HEAD), so any equality
+    test would be flaky, and a flaky gate gets disabled.
+  - It also fails when gitleaks prints **no** `N commits scanned` line: an output
+    format we can no longer parse means the scope is no longer verified, which must
+    not read as a pass.
+  - Watched to fail on four paths: shallow clone (exit 1), unparsable output (exit
+    1), a degenerate 1-commit count on a non-shallow tree (exit 1), and the real
+    repo (exit 0, `179 commits scanned`).
+
 ### Changed
 
 - **The 500-line cap is stated as *instruction-files-only* everywhere it appears.**

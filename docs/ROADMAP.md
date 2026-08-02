@@ -173,15 +173,31 @@ first.
   it, watched to fail by simulating
   an early return (`only 17 ran, expected at least 25`). One suspicion was
   **REFUTED** and recorded: CI's `shellcheck scripts/*.sh` fails loudly on an
-  unmatched glob in bash (exit 2), so there was nothing to fix. Still unexamined:
-  what gitleaks reports as its scope over the full history.
+  unmatched glob in bash (exit 2), so there was nothing to fix. ~~Still unexamined:
+  what gitleaks reports as its scope over the full history.~~ **Examined
+  2026-08-02 — it reports a denominator and nobody read it.** gitleaks prints
+  `179 commits scanned`; measured in a `--depth 1` clone of this repo it scans
+  **1 of 179**, prints `no leaks found`, and **exits 0** — a green secret scan over
+  0.5% of history, with `fetch-depth: 0` the only thing preventing it and nothing
+  asserting that. CI now asserts the scope. The assertion keys on
+  `git rev-parse --is-shallow-repository`, **not** on a commit count, for a reason
+  worth keeping: `git rev-list --count HEAD` truncates to 1 in the same clone, so
+  it degrades alongside the scan it would be checking — and the three available
+  numbers disagree anyway (rev-list HEAD 175, rev-list --all 181, gitleaks 179),
+  so any equality test would be flaky. It also fails if gitleaks stops printing the
+  line at all, since an unparsable output means the scope is no longer verified.
 - ~~**Duration is not recorded for any of our automation.**~~ **Partly done
   2026-07-30.** `check-invariants.sh` prints wall time with its denominators
   (`10 checks over 297 skill files / 256 rules files, 10s`). Deliberately printed
   and **not gated** — a duration threshold in CI is flaky under runner variance,
-  and a flaky gate gets disabled. Still open: the eval runners and CI steps print
-  no duration, and there is no recorded baseline to compare a future run against,
-  so "it got 30× faster" is visible only to a human reading two logs.
+  and a flaky gate gets disabled. **The runner half is done 2026-08-02**: all 13
+  runners now print `[<runner> elapsed 12.3s]` via `evals/_elapsed.py`, registered
+  with `atexit` so the line survives the `sys.exit(...)` several of them use on an
+  empty corpus — the fast-exit case most worth timing. To **stderr**, so a runner
+  whose stdout is piped or parsed is not handed an extra line. Printed, never
+  gated: these call a remote API whose latency is not ours. **Still open**: no
+  recorded baseline to compare a future run against, so "it got 30× faster" is
+  still visible only to a human reading two logs.
 - ~~**The dead-path eval has never been run against a live agent.**~~ **Run
   2026-07-30 — and the hypothesis was wrong.** Six local sub-agents, 3 per arm:
   **both arms 1.000/1.000, +0.00**. The pre-registered prediction ("a bare agent
@@ -269,12 +285,22 @@ first.
   upstream. Still true that **no skill file carries a version**, deliberately:
   a version string inside a skill is one more surface to bump every release, and
   `VERSION` is already the invariant-5-guarded source of truth.
-- **`scripts/verify-setup.sh`** — the deterministic half of VERIFY-SETUP.md (does
-  a gate exist, is the hook installed, has this workflow ever run non-skipped,
-  licence present under any name). A script does that better than a prompt, per
-  the library's own "push invariants into deterministic gates". The prompt keeps
-  the half a script cannot do: judging whether an agent file's *content* is
-  meaningful and its claims true.
+- ~~**`scripts/verify-setup.sh`** — the deterministic half of VERIFY-SETUP.md.~~
+  **DONE 2026-08-02.** 14 checks, strictly read-only (verified by hashing the file
+  tree and `git status` before/after), exits 1 on any FAIL, `--runs N` widens the
+  CI-history sample. The prompt keeps the half a script cannot do: whether an agent
+  file's *content* is meaningful (4) and whether its claims are still true (5b),
+  plus the routing dry-run (11) — each now labelled `N/A — judgement check` in the
+  script's own output so the split is visible where you run it.
+  - **Writing it found a bug in itself.** Check 8 used `git grep`, which reads only
+    **tracked** files, so an untracked `.pre-commit-config.yaml` configuring
+    gitleaks was reported as *no secret scanning* — a false FAIL on precisely the
+    case the doc names first ("on a repo you just scaffolded"). Found by running
+    the fail path, not by reading the code. Now plain `grep`.
+  - **And it validated its own UNVERIFIED vocabulary.** On this repo, check 10b
+    (*has CI ever rejected anything?*) reads UNVERIFIED at the default 60-run
+    sample — 60/60 success — and turns up **1 failure at 200**. "Not in the last
+    60" really is not "never", and that is why `--runs` exists.
 - **`gh-sota` extension — considered and deferred, with reason.** gh requires the
   repo to be named `gh-*` with a root executable of the same name (verified in
   `gh extension --help`, 2.96.0), so it cannot live in this repo; it would need a

@@ -95,5 +95,37 @@ jobs:
           tar -xzf "$TARBALL" gitleaks
           sudo install -m 0755 gitleaks /usr/local/bin/gitleaks
           gitleaks version
-      - name: Scan (full git history)
-        run: gitleaks git --config .gitleaks.toml --redact --verbose .
+      - name: Scan (full git history) + assert the scan's scope
+        # gitleaks PRINTS its denominator ("179 commits scanned") and nothing ever
+        # read it. Measured 2026-08-02: in a --depth 1 clone of this repo it scans
+        # 1 of 179 commits, prints "no leaks found", and exits 0 — a green secret
+        # scan over 0.5% of history. `fetch-depth: 0` above is the only thing
+        # preventing that, and a gate whose correctness rests on a setting nobody
+        # asserts is `sota-code-security` rules/11 §2.2.
+        #
+        # The scope is asserted from the SHALLOW FLAG, not from a commit count.
+        # Counts cannot do it: `git rev-list --count HEAD` truncates to 1 in the
+        # same clone, so it degrades alongside the scan it would be checking. The
+        # three numbers do not agree either (measured here: rev-list HEAD 175,
+        # rev-list --all 181, gitleaks 179 — gitleaks walks refs beyond HEAD), so
+        # any equality test would be flaky, and a flaky gate gets disabled.
+        run: |
+          set -euo pipefail
+          if [ "$(git rev-parse --is-shallow-repository)" != "false" ]; then
+            echo "::error::Shallow checkout — gitleaks cannot scan full history. Restore fetch-depth: 0."
+            exit 1
+          fi
+          # Log outside the worktree: a file written into the repo root would be
+          # committable by accident and in scope for the next scan.
+          LOG="${RUNNER_TEMP:-/tmp}/gitleaks.log"
+          gitleaks git --config .gitleaks.toml --redact --verbose . 2>&1 | tee "$LOG"
+          scanned=$(grep -oE '[0-9]+ commits scanned' "$LOG" | grep -oE '^[0-9]+' || true)
+          if [ -z "$scanned" ]; then
+            echo "::error::gitleaks printed no 'N commits scanned' line — output format changed, so the scope is no longer verified."
+            exit 1
+          fi
+          if [ "$scanned" -lt 2 ]; then
+            echo "::error::gitleaks scanned only ${scanned} commit(s) on a non-shallow checkout."
+            exit 1
+          fi
+          echo "gitleaks scope OK: ${scanned} commits scanned, non-shallow checkout."
