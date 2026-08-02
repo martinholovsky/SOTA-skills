@@ -8,7 +8,7 @@ description: >-
   concurrency (ConfigureAwait, channels, cancellation, TPL), security (OWASP
   .NET, deserialization — BinaryFormatter removed in .NET 9, EF/Dapper SQL
   injection, ASP.NET Core auth, Data Protection, crypto), performance (GC,
-  Span<T>/Memory<T>, BenchmarkDotNet, Native AOT), and build/tooling/CI (dotnet
+  Span and Memory, BenchmarkDotNet, Native AOT), and build/tooling/CI (dotnet
   CLI, NuGet lockfiles & supply chain, Roslyn analyzers, nullable). Trigger
   keywords - C#, .NET, dotnet, ASP.NET Core, async, await, Task, record,
   nullable reference types, Span, EF Core, Dapper, LINQ, NuGet, Roslyn analyzer,

@@ -235,6 +235,22 @@ def get_desc(text):
                 err = "unquoted ':' in inline description (invalid YAML — use 'description: >-')"
             return rest.strip('\'"'), err        # plain / quoted single line
     return None, None
+def get_name(text):
+    m = re.match(r'---\n(.*?)\n---', text, re.S)
+    if not m:
+        return None
+    n = re.search(r'^name:\s*(.+)$', m.group(1), re.M)
+    return n.group(1).strip().strip('\'"') if n else None
+
+# Anthropic's Agent Skills reference states two constraints the agentskills.io
+# spec page does not: `name` and `description` "Cannot contain XML tags", and
+# `name` "Cannot contain reserved words: anthropic, claude". Found 2026-08-02 by
+# re-verifying an ABSENCE claim ("there is no size cap") against a SECOND
+# independent source, exactly as skills/sota/rules/01 sections 5 and 7 require --
+# and the second source is the only one that carries these. sota-dotnet's
+# description held `Span<T>/Memory<T>`, which is a well-formed XML start tag.
+XML_TAG = re.compile(r'<[A-Za-z/][^>]*>')
+RESERVED = ('anthropic', 'claude')
 for f in sorted(glob.glob('skills/*/SKILL.md')):
     d, err = get_desc(open(f, encoding='utf-8').read())
     if not d:
@@ -243,6 +259,17 @@ for f in sorted(glob.glob('skills/*/SKILL.md')):
         print(f"{err}: {f}"); bad = 1
     if len(d) > cap:
         print(f"OVER {cap} ({len(d)} chars): {f}"); bad = 1
+    hits = XML_TAG.findall(d)
+    if hits:
+        print(f"XML TAG in description {hits[:3]} (spec: descriptions cannot contain XML tags): {f}")
+        bad = 1
+    n = get_name(open(f, encoding='utf-8').read())
+    if n:
+        if XML_TAG.search(n):
+            print(f"XML TAG in name: {f}"); bad = 1
+        for w in RESERVED:
+            if w in n.lower():
+                print(f"RESERVED WORD '{w}' in name '{n}': {f}"); bad = 1
 sys.exit(1 if bad else 0)
 PY
   ); then
