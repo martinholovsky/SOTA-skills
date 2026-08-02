@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **One decision table now settles every size question.**
+  `docs/CONTEXT-MANAGEMENT.md` gains *Size limits: what to actually do* — all ten
+  limits that govern this library, each marked **hard** or **recommendation**,
+  each with its verified source and a standing decision. Written because this
+  cycle produced findings across four documents and the useful form of that is one
+  table, not four narratives. The load-bearing entries: `description` is at
+  **1024/1024** with no slack, the router is at **500/500 lines** with no slack,
+  long `rules/*.md` are **correct by design**, and the router's 2× token overrun is
+  **accepted rather than restructured** — trimming it would break
+  `ROUTER_BUILD_SHA` and invalidate comparability with every historical +0.39 run,
+  while the compaction truncation it causes is self-healing on the next invocation.
 - **Tested whether long rules files need a table of contents. They don't — so the
   242-file sweep is off the table.** Anthropic's skill-authoring guidance says
   reference files over 100 lines should carry a TOC *"even when previewing with

@@ -46,6 +46,43 @@ Fight the attention shape; don't out-muscle it with volume.
    an endpoint has no rate limiting or TLS moves the invariant out of "attention"
    entirely. ([README → Enforcing the gates](../README.md#enforcing-the-gates).)
 
+## Size limits: what to actually do (settled 2026-08-02)
+
+Every size number that governs this library, verified against three official sources
+(`agentskills.io/specification`, the `platform.claude.com` Agent Skills reference and
+its best-practices page, and the Claude Code memory/skills docs), with the standing
+decision for each. **Nothing here is a guess; where a number is a heuristic it says so.**
+
+| Limit | Kind | Us | Do |
+|---|---|---|---|
+| `name` ≤ 64 chars | **hard** | fine | nothing — gated (inv. 4) |
+| `description` ≤ 1024 chars | **hard** | router at **1024/1024** | **watch it** — no slack; any new domain in the description means trimming another |
+| no XML tags in `name`/`description` | **hard** | fixed 2026-08-02 | nothing — gated (inv. 4) |
+| no reserved words (`anthropic`, `claude`) in `name` | **hard** | fine | nothing — gated (inv. 4) |
+| `description` + `when_to_use` ≤ 1,536 in the listing | **hard** truncation | 1024, no `when_to_use` | nothing — 512 spare |
+| `SKILL.md` < 500 lines | recommendation | router at **500/500** | nothing — gated (inv. 1), but **no slack: the next router addition must trim first** |
+| `SKILL.md` body < 5,000 tokens | recommendation | router ≈ **9,945** (2×) | **accept, don't restructure** — see below |
+| `rules/*.md` length | **no budget** — stage-3 resources | 162 over 200 lines | nothing — **long is correct by design**; the spec says move detail *into* these |
+| TOC for reference files > 100 lines | recommendation | 242 without one | **skip** — tested, no retrieval benefit at 4× our longest file |
+| first 5,000 tokens kept on compaction re-attach | **hard** truncation | router loses ~half | **accept** — a later invocation reloads it in full |
+
+**Why the router stays as it is.** It is the one file exceeding a documented
+recommendation, and the temptation is to restructure it into the spec's "high-level
+guide with references" pattern. Three reasons not to, in order of weight:
+
+1. **It would invalidate the flagship number.** `ROUTER_BUILD_SHA` pins the BUILD
+   section that `run-completeness.py` mirrors; moving those steps into a referenced
+   file breaks comparability with every historical **+0.39** run.
+2. **The compaction truncation is self-healing.** It applies to the copy *carried
+   forward* past a summary. A subsequent invocation reads `SKILL.md` again in full —
+   and defense 5, the per-prompt routing directive, is what prompts that re-invocation.
+   (Inferred from the documented behaviour; not separately observed.)
+3. **The overrun costs context, not correctness.** Nothing truncates at load; all
+   three sources agree there is no hard size cap.
+
+Revisit only when the router must **grow** — it is at 500/500 lines, so growth forces
+a trim regardless, and that is the moment to do both at once.
+
 ## Do long rules files need a table of contents? Tested — no (pilot, 2026-08-02)
 
 Anthropic's skill-authoring guidance says: *"For reference files longer than 100
