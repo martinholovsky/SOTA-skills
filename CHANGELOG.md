@@ -9,6 +9,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`AGENTS.md` is back under the platform's 200-line target** (234 → **170**
+  lines, 15.4 → 10.9 KiB). `CLAUDE.md` and `GEMINI.md` symlink to it, so it loads
+  into **every** session, and the Claude Code memory documentation is explicit:
+  *"target under 200 lines per CLAUDE.md file. Longer files consume more context
+  and reduce adherence."* There is **no hard limit** — *"CLAUDE.md files are loaded
+  in full regardless of length"* — so nothing was truncating; adherence was the
+  cost. The file had crossed the target while gaining invariants 12 and 13.
+  - The 128-line invariant section became a **13-row table**, one line each. No
+    detail was lost: the rationale and the incident behind every invariant already
+    live in `check-invariants.sh`'s own header (the point of use), and the
+    practical "what this means for your PR" version in `CONTRIBUTING.md` — both
+    verified to carry all 13 before the cut.
+  - The file now states its own constraint, because it is the one file in the repo
+    where invariant 1 does *not* apply and a **different, ungated** limit does.
+    That is the `docs/CONVENTIONS-LEDGER.md` "unwritten convention" class again:
+    a real constraint, documented nowhere in the repo, discovered by exceeding it.
+- **The `rules/*.md` files were checked against the same target and deliberately
+  left alone.** The 200-line figure governs *always-loaded* context. Skills load on
+  demand — *"unlike CLAUDE.md content, a skill's body loads only when it's used, so
+  long reference material costs almost nothing until you need it"* — and their
+  documented cap is *"keep `SKILL.md` under 500 lines; move detailed reference
+  material to separate files"*, which is invariant 1 exactly, with `rules/*.md`
+  being those separate files. **162 of 256 rules files exceed 200 lines and that is
+  correct by design**; splitting them would work against the documented model.
+- **`docs/CONTEXT-MANAGEMENT.md` records a platform behaviour none of the six
+  defenses covers.** Auto-compaction *"re-attaches the most recent invocation of
+  each skill after the summary, keeping the **first 5,000 tokens of each**"*, with a
+  combined 25,000-token budget. The six defenses fight *attention*; this is
+  *deletion*. By a rough `bytes/4` estimate the router (~10,200 tokens) and two
+  rules files exceed the per-skill cut. **Explicitly recorded as unverified** — read
+  off the docs and a byte heuristic, not observed in a session — and deliberately
+  not acted on, since the router has no line slack and the honest next step is to
+  watch a real compaction first.
+
 - **`RELEASING.md`'s minor-vs-patch rule now matches 31 releases of practice.** It
   said *"adding a skill is a **minor** bump; fixes to existing content are a
   **patch**"* — whose first half is exceptionless and whose second half misleads,

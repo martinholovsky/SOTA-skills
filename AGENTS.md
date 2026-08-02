@@ -24,117 +24,51 @@ symlinks to it — edit only this file, never the symlinks.
 
 ## Invariants (enforced in pre-commit and CI)
 
-`scripts/check-invariants.sh` fails the build on:
+`scripts/check-invariants.sh` runs **13 checks** and fails the build on any of
+them. One line each below. The *rationale* — and the real incident behind every
+one — lives in the script's own header, at the point of use, and the practical
+"what this means for your PR" version is in
+[CONTRIBUTING.md](CONTRIBUTING.md#the-invariants-enforced).
 
-1. any **skill** Markdown (`skills/*/SKILL.md` or `skills/*/rules/*.md`) over
-   **500 lines**. The rule in one line: **only instruction files are capped.**
-   A file is capped if and only if an agent loads it *as instructions* — that is
-   `skills/*/SKILL.md` and `skills/*/rules/*.md`, and nothing else in the repo.
-   The cap is load-bearing only there: it keeps incremental loading working, so
-   the model reads the rules that match the task rather than a wall of text.
-   **Everything else is uncapped** and deliberately so (decided 2026-07-15) —
-   README, CHANGELOG, `docs/`, `evals/`, `AGENTS.md` itself and every script are
-   prose and code for people (and for an agent *reading*, not *obeying*, them);
-   navigability there comes from a table of contents and
-   [docs/INDEX.md](docs/INDEX.md), not a line ceiling. If you find a line-cap
-   claim anywhere that does not say *skill files*, it is stale — fix it;
-2. any `skills/*/rules/*.md` whose **last `## ` heading isn't
-   `## Audit checklist`** (the checklist must end the file);
-3. an **internal-name denylist** — the library must stay generic. The private
-   patterns are deliberately untracked (git-ignored `.denylist.local` locally,
-   `SOTA_DENYLIST` secret in CI); without them only the generic
-   reader-assumption phrases are checked, e.g. on external fork PRs;
-4. any `skills/*/SKILL.md` **`description` over 1024 characters** — the Agent
-   Skills spec cap; loaders silently skip a skill whose description exceeds it
-   — or an unquoted inline description containing `: ` (invalid YAML; strict
-   loaders reject the skill — use `description: >-`).
-   (Needs `python3`; skipped with a warning if absent locally, enforced in CI.)
-5. **version drift** — `VERSION`, `plugin.json` `"version"`, and the CHANGELOG
-   top entry must agree, and the newest `v*` tag must never be ahead of
-   `VERSION` (it may lag during an open release PR);
-6. **count drift** — the README badge/hero, the router body's "N domain
-   skills", and the plugin + marketplace descriptions must match a recount of
-   the `skills/` tree; the social-preview pill and README alt are **"N+"
-   floors** (they fail only if the tree count drops below the floor), so the
-   PNG is not re-rendered per release.
-7. **router drift** — every domain skill must appear in the router's routing
-   table AND its library map (both in `skills/sota/SKILL.md`); a skill added
-   to one but not the other is a finding (added after the 2026-07-10 audit
-   found the 41st skill missing from the map for a full release).
-8. **link rot** — every relative Markdown link to a `*.md` target (in any
-   tracked `*.md`) must resolve to a file that exists, so a moved/renamed file
-   can't leave a dead link in the README, `docs/`, CHANGELOG, or a skill.
-   Scoped to `*.md` targets (non-`.md` relative links overlap `[text](x)`-shaped
-   prose/code and false-positive); needs `python3`, skipped-with-warning if
-   absent locally, enforced in CI. Adopted 2026-07-24 from the
-   training-knowledge-vault vault-doctor — see [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md).
-9. **duplicate `[Unreleased]`** — `CHANGELOG.md` carries at most one
-   `## [Unreleased]` heading and it must be the topmost entry; the archives
-   carry none. Invariant 5 reads only the *first* `## [` heading, so a second
-   `[Unreleased]` further down was invisible to CI: on 2026-07-28 two feature
-   PRs each opened one above `[1.19.3]` and `main` carried both until a human
-   noticed during the release cut. Fence-aware, so a heading quoted inside a
-   code block doesn't count.
-10. **unindexed rules file** — every `skills/*/rules/*.md` must be referenced by
-    its own `SKILL.md`. The model reads only the rules files the index points at,
-    so an unindexed one is written, capped, checklist-ed — and never loaded. It is
-    the skill-level twin of invariant 7 (a skill missing from the router) and the
-    same class as `sota-devsecops` rules/03 §3.9, turned on ourselves. Invariant 8
-    does **not** cover it: **30 of 41** `SKILL.md` files list their rules as
-    plain backticked text rather than Markdown links, so a rename leaves nothing
-    for the link checker to resolve (measured 2026-07-30). All 255 rules files
-    passed when this landed — it is a regression gate, watched to fail on an
-    injected file and on a renamed reference first.
+| # | The build fails when… |
+|---|---|
+| 1 | a **skill** file (`skills/*/SKILL.md`, `skills/*/rules/*.md`) exceeds **500 lines** |
+| 2 | a `skills/*/rules/*.md` doesn't end with `## Audit checklist` |
+| 3 | an internal-name denylist hits (the library must stay generic) |
+| 4 | a `SKILL.md` `description` exceeds **1024 chars** (spec cap — loaders silently skip it) or is unquoted YAML containing `: ` |
+| 5 | `VERSION`, `plugin.json` and the CHANGELOG top entry disagree, or a tag is ahead of `VERSION` |
+| 6 | a count-bearing surface drifts from a recount of `skills/` (the social-preview pill and README alt are **"N+" floors**) |
+| 7 | a skill is missing from the router's routing table **or** its library map |
+| 8 | a relative Markdown link to a `*.md` target doesn't resolve |
+| 9 | `CHANGELOG.md` carries more than one `## [Unreleased]`, or it isn't the top entry |
+| 10 | a `rules/*.md` isn't referenced by its own `SKILL.md` — written, capped, checklist-ed, and never loaded |
+| 11 | `LAST-VERIFIED` moves without a sweep. Escapes: a sweep-shaped diff (≥ 20 skill files) or naming it in the CHANGELOG. The only **diff-based** check; skips with a note when there's no merge base |
+| 12 | an `assets/*.png` is older than the `*.html` it renders — the README embeds the *image*, never the source, so an un-rendered fix reaches nobody. Escape: `[no-render]` in the commit subject |
+| 13 | a scoreboard row in `evals/results/RESULTS.md` leaves its `Samples` cell empty |
 
-**Every file-list-driven check reports its denominator** (`ok (255 rules files)`)
+**Only instruction files are capped.** A file is capped if and only if an agent
+loads it *as instructions* — `skills/*/SKILL.md` and `skills/*/rules/*.md`, and
+nothing else in the repo. README, CHANGELOG, `docs/`, `evals/`, this file and every
+script are **uncapped** and deliberately so (decided 2026-07-15): navigability there
+comes from a table of contents and [docs/INDEX.md](docs/INDEX.md), not a line
+ceiling. **If you find a line-cap claim anywhere that does not say *skill files*, it
+is stale — fix it.** The 500 matches the Agent Skills guidance (*"keep `SKILL.md`
+under 500 lines; move detailed reference material to separate files"*), and those
+separate files are exactly what `rules/*.md` are.
+
+**This file is the exception that proves it.** `CLAUDE.md` and `GEMINI.md` symlink
+here, so this file loads into **every** session — the platform's guidance is to
+*"target under 200 lines per CLAUDE.md file"*, because long always-loaded files
+reduce adherence. That is a different constraint from invariant 1 and is not gated.
+Keep it under 200: put detail in `CONTRIBUTING.md` and leave a pointer.
+
+**Every file-list-driven check reports its denominator** (`ok (256 rules files)`)
 and **fails closed on an empty scope**. Added 2026-07-30 after a mutation showed
 checks 2 and 10 printing `ok` — and the script exiting 0 — while examining *zero*
-files, because the `skills/*/rules/*.md` pathspec had been made to match nothing;
-invariant 6's tree recount did not catch it, since the `SKILL.md` count it
-recounts was unaffected. `0 checked, 0 failed, exit 0` is the signature of a gate
-that verifies nothing (`sota-code-security` rules/11 §2.2).
-
-11. **`LAST-VERIFIED` moves only with a sweep** — the stamp records the last
-    *full* re-verification pass, not the newest verified fact, so a rules section
-    may carry today's verification dates while the stamp is months old. Bumping it
-    on an ordinary edit asserts a sweep that never happened, planting a false green
-    in the one control whose job is detecting stale claims. Two escapes, matching
-    the batched and rolling passes [docs/MAINTENANCE.md](docs/MAINTENANCE.md)
-    allows: a **sweep-shaped diff** (≥ 20 skill files — the real 2026-07-08 sweep
-    touched **100**), or **naming `LAST-VERIFIED` in the CHANGELOG**, which the
-    runbook already requires. Added 2026-07-31 after the rule — already written in
-    three places — was still nearly broken twice: a convention that keeps almost
-    failing is `sota-code-security` rules/10 §2.12, an instruction standing in for
-    an enforced control. This is the first **diff-based** invariant; with no merge
-    base it skips with a note rather than guessing.
-12. **a rendered asset is never older than its source** — every `assets/*.png` must
-    be committed no earlier than the `assets/*.html` it renders. The PNGs are
-    committed **build outputs** and nothing regenerates them, so an HTML fix that is
-    not re-rendered reaches nobody: the README embeds the *image*, never the source.
-    Added 2026-08-01, the same day it failed — PR #173 rewrote the stale line-cap
-    claim in `how-it-works.html` (the entire point of that PR) and left the PNG at
-    its 2026-07-09 render, so `main` served the old claim all day while the diff,
-    the commit message and the CHANGELOG all read as done. It is the invariant-1
-    story from the outside: a fix *counted* on a surface it never reached.
-    Compares **commit** times, not mtimes — a fresh clone stamps every file with
-    the checkout time, so an mtime check would pass on any runner while examining
-    nothing. Equal timestamps pass, since rendering in the same commit is the
-    wanted behaviour. Escape: **`[no-render]` in the HTML's own commit subject**,
-    a declaration rather than a heuristic, because nothing short of rendering both
-    can tell a cosmetic HTML edit from a load-bearing one. Render command and
-    per-asset sizes: [CONTRIBUTING.md](CONTRIBUTING.md) → *Rendered assets*.
-13. **every scoreboard row declares its sample size** — each row of the results
-    table in [evals/results/RESULTS.md](evals/results/RESULTS.md) must fill its
-    `Samples` cell. A lift from one run is typographically identical to a lift from
-    ten, and this repo has been burned twice: a **+0.07** retracted when the set
-    grew 15 → 49, and a **+0.40** corrected to **+0.39** by a second run. Neither
-    looked uncertain on the page. Like invariant 10 this is a **regression guard**
-    with no incident of its own — all 10 rows pass today; it catches the *next* row
-    added without one, which is the cheap moment. **Shape-driven**: it locates the
-    table by its `Samples` header rather than a column index, so renaming or
-    dropping the column fails closed instead of passing over zero rows. Closes the
-    last actionable candidate in
-    [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md).
+files. `0 checked, 0 failed, exit 0` is the signature of a gate that verifies
+nothing (`sota-code-security` rules/11 §2.2). Adding a check? The script's header
+carries the three rules that file learned the hard way: watch it fail first, print
+your denominator, and skip rather than guess.
 
 Separately, `scripts/check-freshness.sh` (run monthly by
 `.github/workflows/freshness.yml`) tracks the root `LAST-VERIFIED` stamp —
@@ -147,8 +81,10 @@ sweep runbook and the efficacy eval harness live in
 Secrets are scanned by **gitleaks** (`.gitleaks.toml`, which disables only the
 noisy entropy-based `generic-api-key` rule so the security skills' intentional
 secret-shaped examples don't false-positive). CI scans the **full git history**
-(`gitleaks git` on a `fetch-depth: 0` checkout), not just the working tree; the
-pre-commit hook scans each commit locally.
+(`gitleaks git` on a `fetch-depth: 0` checkout), not just the working tree, and
+**asserts that scope**: a shallow checkout scans 1 commit, reports "no leaks
+found", and exits 0, so the workflow fails on a shallow clone rather than trusting
+the setting. The pre-commit hook scans each commit locally.
 
 ## Conventions that matter
 
