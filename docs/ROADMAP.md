@@ -271,11 +271,21 @@ first.
   It now reads `VERSION` before and after the pull and prints the delta
   (`1.19.7 → 1.20.0 — see CHANGELOG.md`), and `--version` reports the release,
   checkout, upstream state as of the last fetch, and whether the install is
-  symlinked or a pinned `--copy` snapshot. What remains open is the *push* half:
-  nothing tells a passive user to pull in the first place. A `SessionStart`
-  version check would reach passive users but **phones home**; that is a
-  deliberate privacy decision, needs a TTL cache and must fail open, and is not
-  to be built without an explicit call.
+  symlinked or a pinned `--copy` snapshot. ~~What remains open is the *push*
+  half.~~ **DONE 2026-08-02 — and the phone-home question was dissolved rather
+  than answered.** `scripts/update-reminder.sh` runs on `SessionStart` and, at
+  most once every 14 days, tells the user their install is getting old and how to
+  check. **It makes no network request** — it cannot know whether a new version
+  exists, only how long since it last spoke. That is the point: the benefit was
+  *reminding you updates exist*, which needs no telemetry, and a real check from
+  every session start would turn a documentation library into something that
+  reports when and how often you work. The check stays manual and is one command
+  (`install.sh --update`). TTL from the state file's mtime (`find -mtime`, because
+  GNU `date -d` and BSD `date -v` disagree), silent on first run, opt-out with
+  `SOTA_UPDATE_REMINDER_DAYS=0`, and **fails open on every path** — unwritable
+  data dir, missing `VERSION`, garbage in the env. Reaches **both** install paths:
+  the plugin via `hooks/hooks.json`, clone installs via `install.sh`'s routing
+  setup (which is what the original item was actually about).
 - ~~**Nothing reports which version is in use.**~~ **Done 2026-07-30** —
   `scripts/install.sh --version` reports it (release from `VERSION`, `git
   describe`, upstream-ahead count as of the last fetch, symlink-vs-snapshot
@@ -301,7 +311,13 @@ first.
     (*has CI ever rejected anything?*) reads UNVERIFIED at the default 60-run
     sample — 60/60 success — and turns up **1 failure at 200**. "Not in the last
     60" really is not "never", and that is why `--runs` exists.
-- **`gh-sota` extension — considered and deferred, with reason.** gh requires the
+- ~~**`gh-sota` extension — considered and deferred, with reason.**~~ **CANCELLED
+  2026-08-02, not deferred.** Its one real benefit was update notification, and
+  that is now delivered directly by the SessionStart reminder below — without a
+  second repo, a shim, or a CLI nobody would invoke. Closing it rather than
+  leaving it "deferred" forever: a deferred item with a dead rationale is
+  indistinguishable from a live one on a list. Original reasoning, kept because it
+  is still why the shape never worked: gh requires the
   repo to be named `gh-*` with a root executable of the same name (verified in
   `gh extension --help`, 2.96.0), so it cannot live in this repo; it would need a
   thin shim repo delegating to `scripts/`. Its headline benefit does not

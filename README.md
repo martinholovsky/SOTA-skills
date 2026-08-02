@@ -319,6 +319,15 @@ starts "with a random delay of up to ten minutes", and the running session keeps
 versions it loaded at launch, so a refresh lands on `/reload-plugins` or your next
 launch — never mid-turn. Run `/plugin update` when you want a known-current library.
 
+**An occasional nudge, with no telemetry.** Nothing pushes updates on either path,
+so a `SessionStart` hook mentions — at most once every **14 days** — that your copy
+has been sitting for a while, and how to check. **It makes no network request.** It
+cannot tell whether a new version exists, only how long since it last spoke: the
+useful part was the reminder, and a real check from every session start would turn a
+documentation library into something that reports when and how often you work. You
+run the check. Installed by `install.sh` (clone) and by the plugin's own hook; silence
+it with `SOTA_UPDATE_REMINDER_DAYS=0`, or set your own interval in days.
+
 **Which version am I on?** `scripts/install.sh --version` reports the release, the
 checkout (`git describe`), whether your remote is ahead as of the last fetch, and
 whether the skills are symlinked (update live) or a pinned `--copy` snapshot. Quote

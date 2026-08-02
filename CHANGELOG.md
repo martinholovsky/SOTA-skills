@@ -9,6 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`scripts/update-reminder.sh` — an occasional update nudge that makes no
+  network request.** Closes the *push* half of the update-notification item, open
+  since the 2026-07-28 cycle: symlinked skills update the moment you `git pull`,
+  but nothing ever told you to pull, and the plugin's first-run notice is
+  marker-guarded to fire once ever, so it is onboarding rather than a version
+  channel.
+  - **The phone-home question was dissolved, not answered.** The roadmap had this
+    blocked on "a `SessionStart` version check reaches passive users but phones
+    home — a deliberate privacy decision, not to be built without an explicit
+    call." The resolution is that the *benefit* — reminding you updates exist —
+    never needed the network. The hook cannot tell whether a new version exists,
+    only how long since it last spoke. A real check from every session start would
+    turn a documentation library into something that reports when and how often you
+    work; you run the check instead, and it is one command.
+  - **Verified, not asserted**: run under a `PATH` seeded with `curl`/`wget`/`git`/
+    `nc`/`ssh` stubs that report any invocation, it makes **zero** attempts. The
+    only external commands it uses are `find`, `tr`, `mkdir`, `printf`, `dirname`
+    and `pwd`.
+  - Silent on first run (a fresh install is current by definition), then at most one
+    message every `SOTA_UPDATE_REMINDER_DAYS` days (default 14, `0` disables). TTL
+    from the state file's **mtime** via `find -mtime` rather than date arithmetic,
+    because GNU `date -d` and BSD/macOS `date -v` disagree.
+  - **Fails open on every path**, because a `SessionStart` hook that errors degrades
+    the session it is attached to: unwritable data dir, missing `VERSION`, and
+    garbage in the interval env var were each tested and each exit 0.
+  - Reaches **both** install paths — the plugin via `hooks/hooks.json`, clone
+    installs via a new `setup_update_reminder` in `install.sh`. The installer path
+    was tested against a `settings.json` already holding the user's *own*
+    `SessionStart` hook: that hook and an unrelated `theme` key survive untouched,
+    and a second run adds nothing (idempotent).
 - **`scripts/verify-setup.sh` — the deterministic half of
   [docs/VERIFY-SETUP.md](docs/VERIFY-SETUP.md)**, open since the 2026-07-28 cycle.
   14 checks, strictly **read-only**, exit 1 on any FAIL: skills reachability and
@@ -40,6 +70,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   line. **Printed, never gated**: these call a remote API whose latency is not ours,
   and a flaky gate gets disabled. Verified end-to-end on the two `--selftest` paths
   CI runs without an API key, plus `py_compile` across all of `evals/`.
+
+### Removed
+
+- **The `gh-sota` extension idea is cancelled, not deferred.** Its one real benefit
+  was update notification, now delivered directly by the `SessionStart` reminder
+  above — without a second repo, a shim, or a CLI nobody would invoke for a library
+  used *inside* an agent session. The original blocker stands and is kept in the
+  roadmap for why the shape never worked (gh requires a `gh-*` repo with a matching
+  root executable, so it could not live here). Closed rather than left deferred: a
+  deferred item whose rationale has died is indistinguishable, on a list, from a
+  live one.
 
 ### Fixed
 
