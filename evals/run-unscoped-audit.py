@@ -174,4 +174,6 @@ def main():
 
 
 if __name__ == "__main__":
+    from _elapsed import report_on_exit
+    report_on_exit("run-unscoped-audit")
     main()

@@ -523,10 +523,22 @@ couldn't).
 **Then check it actually took.** `init-gates.sh` sets things up; nothing
 verifies the result, and "configured" and "working" render identically — a
 config file with no installed hook is not a control, and a CI job whose every
-run is *skipped* is a gate on paper. [docs/VERIFY-SETUP.md](docs/VERIFY-SETUP.md)
-is a read-only prompt you paste into an agent: it reports whether the library,
-this repo's context, and its gates are in place, changes nothing, and marks
-anything it could not observe as UNVERIFIED rather than passing it.
+run is *skipped* is a gate on paper.
+
+```sh
+/path/to/SOTA-skills/scripts/verify-setup.sh     # read-only; --runs N widens the CI sample
+```
+
+It reports skills reachability, the routing hook, the profile symlink, a licence
+under *any* name, which gates exist, whether a hook is **installed** rather than
+merely configured, and — from real run conclusions — whether CI has ever
+*executed* and ever *rejected* anything. It changes nothing and exits 1 on any
+FAIL. Anything it could not observe is marked **UNVERIFIED**, never passed: on
+this repo the reject-history check reads UNVERIFIED at the default sample and
+turns up a real rejection at `--runs 200`, which is why the sample size is
+printed. [docs/VERIFY-SETUP.md](docs/VERIFY-SETUP.md) carries the other half — a
+paste-in prompt for the judgement calls a script can't make: whether the agent
+file's content is meaningful and whether its claims are still *true*.
 
 Add `--docs-gate` to also install a pre-commit hook that **blocks a commit which
 changes code but updates no docs** (README/CHANGELOG/`docs/`/`*.md`) — so docs
