@@ -33,6 +33,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   material to separate files"*, which is invariant 1 exactly, with `rules/*.md`
   being those separate files. **162 of 256 rules files exceed 200 lines and that is
   correct by design**; splitting them would work against the documented model.
+- **Validated against the Agent Skills spec: there is no byte cap for skills, but
+  the 500-line cap is a loose proxy for the one budget that exists.** Prompted by
+  the observation that `MEMORY.md`'s hard cap is *"200 lines **or** 25KB, whichever
+  comes first"* — so a few long lines can exhaust it well under 200 lines. Checked
+  whether the same shape applies to skills:
+  - **It does not, as a hard cap.** The spec's only hard limits are on frontmatter
+    (`name` ≤ 64, `description` ≤ **1024** — which confirms invariant 4 — and
+    `compatibility` ≤ 500). Of the body it says outright: *"There are no format
+    restrictions."* Nothing truncates a skill at load. And the 200-line/25KB rule is
+    scoped in the memory docs to `MEMORY.md` alone: *"This limit applies only to
+    `MEMORY.md`. CLAUDE.md files are loaded in full regardless of length."*
+  - **But the budget it stands in for is stated in tokens, not lines**:
+    *"Instructions (< 5000 tokens recommended)"*. Measured across this repo's **297**
+    skill files, line density varies **3.3×** (38–127 bytes/line, median 57), so a
+    500-line file lands anywhere between **~4,750 and ~15,870 tokens** — the median
+    density already puts it 42% over. **12 files exceed ~5,000 tokens and 11 of them
+    pass invariant 1 comfortably** (`sota-mobile/rules/07-swift-language.md`: 254
+    lines, half the cap, ~6,737 tokens).
+  - **Exactly one file breaches the recommendation where it applies** — the
+    `SKILL.md` body: `skills/sota/SKILL.md` at **~10,211 tokens**, 2× the budget,
+    at 500/500 lines with no slack. `rules/*.md` are stage-3 resources, for which
+    the spec gives no number.
+  - **Logged, not gated.** A byte-or-token check passes all three ledger filters but
+    would fail on `main` today, and the only fix is trimming a router with no line
+    slack — a design decision. Recorded in `docs/ROADMAP.md` with the explicit
+    caveat that `bytes/4` is a heuristic and a real tokenizer should be used before
+    acting on any specific number.
 - **`docs/CONTEXT-MANAGEMENT.md` records a platform behaviour none of the six
   defenses covers.** Auto-compaction *"re-attaches the most recent invocation of
   each skill after the summary, keeping the **first 5,000 tokens of each**"*, with a
