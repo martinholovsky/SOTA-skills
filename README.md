@@ -208,6 +208,10 @@ plainly. Every item below is in the repo, not a claim about it:
 - **The library is applied to itself, and it finds things.** Its own
   dead-path rules caught this repo's CI gates passing over **zero files** — green,
   exit 0, examining nothing — and the fix was verified by re-running the mutation.
+  The same lens later caught this repo's **secret scan**: `gitleaks` prints
+  `179 commits scanned`, and nobody read it. In a shallow clone it scans **1 of
+  179**, prints `no leaks found`, and exits 0 — a green scan over 0.5% of history,
+  with one CI setting the only thing preventing it. CI now asserts the scope.
 
 The point is not that every number is flattering. It is that you can tell which ones
 are load-bearing, because the ones that aren't are labelled.
@@ -320,7 +324,8 @@ versions it loaded at launch, so a refresh lands on `/reload-plugins` or your ne
 launch — never mid-turn. Run `/plugin update` when you want a known-current library.
 
 **An occasional nudge, with no telemetry.** Nothing pushes updates on either path,
-so a `SessionStart` hook mentions — at most once every **14 days** — that your copy
+so a `SessionStart` hook (`scripts/update-reminder.sh`) mentions — at most once
+every **14 days** — that your copy
 has been sitting for a while, and how to check. **It makes no network request.** It
 cannot tell whether a new version exists, only how long since it last spoke: the
 useful part was the reminder, and a real check from every session start would turn a
