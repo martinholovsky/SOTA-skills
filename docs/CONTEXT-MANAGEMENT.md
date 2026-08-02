@@ -46,6 +46,38 @@ Fight the attention shape; don't out-muscle it with volume.
    an endpoint has no rate limiting or TLS moves the invariant out of "attention"
    entirely. ([README → Enforcing the gates](../README.md#enforcing-the-gates).)
 
+## A platform behaviour the six defenses do not cover (recorded 2026-08-02)
+
+Auto-compaction **truncates a re-attached skill**. Per the Claude Code skills
+documentation: after the conversation is summarized, Claude Code *"re-attaches the
+most recent invocation of each skill after the summary, **keeping the first 5,000
+tokens of each**"*, and re-attached skills *"share a combined budget of 25,000
+tokens"*, filled from the most recently invoked — so older skills can be dropped
+entirely after a long session.
+
+That interacts with this library in a way none of the six defenses addresses,
+because they all fight *attention*, and this is *deletion*. A rough `bytes/4`
+estimate of what exceeds the per-skill 5,000-token cut:
+
+| File | ~tokens |
+|---|---|
+| `skills/sota/SKILL.md` (the router) | ~10,200 |
+| `sota-devsecops/rules/03-dependencies.md` | ~7,300 |
+| `sota-code-security/rules/10-silent-control-failure.md` | ~5,700 |
+
+So after a compaction, a re-attached router keeps roughly its first half. **This is
+unverified in practice** — it is read off the documentation and a byte-count
+heuristic, not observed in a session, and the ordering inside each file decides what
+actually survives. It is recorded rather than acted on: the router is at 500/500
+lines with no slack (see [ROADMAP.md](ROADMAP.md)), and the honest next step is to
+*watch* a compaction and see what is retained before reshaping anything around a
+number we have not measured.
+
+Note it does **not** change the 500-line cap's justification. Invariant 1 exists for
+incremental loading, and the Agent Skills guidance it matches is explicit that long
+reference material is cheap *until used*. This is about what happens to a skill
+already loaded when the window is summarized.
+
 ## How we measure it
 
 - **Single-call salience** — the completeness eval + five controlled experiments
