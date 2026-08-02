@@ -1,9 +1,37 @@
 # Releasing
 
-How to cut a SOTA-skills release. Adding a skill is a **minor** bump (the
-library only ever adds); fixes to existing content are a **patch**. Everything
-lands through a PR — `main` is protected for everyone, including admins (see
-[AGENTS.md](AGENTS.md)).
+How to cut a SOTA-skills release. Everything lands through a PR — `main` is
+protected for everyone, including admins (see [AGENTS.md](AGENTS.md)).
+
+## Minor or patch?
+
+One line used to say *"adding a skill is a minor bump; fixes to existing content
+are a patch."* The first half is exceptionless. The second half misled at the
+v1.20.0 cut, because it reads as *no new skill → patch*, and that is not what this
+repo has ever done. Measured across all 31 releases (`git ls-tree` per tag):
+
+| | |
+|---|---|
+| Skill-adding releases | **6**, and **all 6 were minor** — the rule holds in that direction |
+| Minor bumps | **21** — so **15 of 21 added no skill at all** |
+| Patch bumps | **10**, none of which added a skill |
+
+So a new skill is **sufficient** for a minor and never **necessary**. What actually
+separates the 15 no-skill minors from the 10 patches, spot-checked against six of
+them (v1.9.0, v1.13.0, v1.14.0, v1.17.0, v1.18.0, v1.20.0):
+
+- **Minor — the library gains a new surface someone can *use*.** A skill, a script
+  or command (`v1.20.0`: `verify-setup.sh`, `update-reminder.sh`), a hook, a
+  cross-tool integration (`v1.9.0`: `AGENTS.md` support), or a new eval instrument
+  or harness (`v1.13.0`, `v1.14.0`, `v1.17.0`, `v1.18.0`).
+- **Patch — the change lives inside surfaces that already exist.** Rule text,
+  doc fixes, corrections, an intake, and — on the evidence — **a new CI invariant on
+  its own**: invariants 8, 9 and 11 each shipped in a patch (`v1.19.1`, `v1.19.5`,
+  `v1.19.9`). Invariants 12 and 13 rode a minor because that release also added two
+  scripts and a hook, not because they were invariants.
+
+When it is genuinely unclear, ask whether a *reader of the release notes gains
+something new to run*. If not, it is a patch.
 
 ## 1. Version-bearing files (every release)
 

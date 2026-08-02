@@ -189,10 +189,14 @@ pre-commit hook scans each commit locally.
   substring; assert a scripted edit landed; pin anything hand-mirrored from the
   library). Read it before changing anything under `evals/` — four harness changes in
   one day silently measured nothing while still printing plausible numbers
-- [docs/VERIFY-SETUP.md](docs/VERIFY-SETUP.md) — the **read-only setup check**: a
-  paste-in prompt that reports whether the library reaches a repo, whether its
-  agent file is *true*, and whether its gates are real rather than merely
-  configured. `init-gates.sh` sets a repo up; this is what checks the result
+- **The read-only setup check, in two halves** — `init-gates.sh` sets a repo up;
+  these check the result, because "configured" and "working" render identically.
+  `scripts/verify-setup.sh` does the mechanical half (skills reachable, hook
+  installed vs merely configured, licence under any name, whether CI has ever
+  *executed* and ever *rejected* — `--runs N` widens that sample);
+  [docs/VERIFY-SETUP.md](docs/VERIFY-SETUP.md) is the paste-in prompt for the half
+  a script cannot do — whether the agent file's content is meaningful and whether
+  its claims are still *true*
 - [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md) — the **external-idea intake
   ledger**: every idea evaluated from an outside repo, paper, or review with a
   verdict and reason (adopted / rejected / deferred / superseded). A rejection
