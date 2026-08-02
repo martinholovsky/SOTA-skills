@@ -165,6 +165,11 @@ are marked "needs verification", never asserted.
     effect: adding a row means stating its `n` (`3×, temp 0.7`, `1×`) — a number
     without one reads exactly like a number with one. A regression guard: it passes
     today and exists to keep it that way.
+14. **a release declares its front-door terms**: only fires when `VERSION`
+    changes, so an ordinary PR is unaffected. Practical effect: a release PR adds
+    `**Front door checked:** term · term` to its CHANGELOG section, and each term
+    must appear in `README.md` or `docs/INDEX.md` **and** in that release's own
+    entry. See [RELEASING.md](RELEASING.md) §2b for why.
 
 Secrets are scanned separately by **gitleaks** (config in `.gitleaks.toml`);
 CI scans the full git history, the pre-commit hook scans each commit.

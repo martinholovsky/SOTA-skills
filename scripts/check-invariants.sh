@@ -60,6 +60,14 @@
 #      check 10 — all 10 rows pass today. Shape-driven (finds the table by its
 #      "Samples" header), so a renamed or dropped column fails closed instead of
 #      passing over zero rows.
+#  14. A release declares its front-door terms, and they resolve. Invariant 6 fails
+#      on a wrong NUMBER in the README; nothing failed on a CAPABILITY that never
+#      got a sentence anywhere a reader looks -- five shipped across v1.17.0-v1.19.7
+#      with zero README hits. Discovery ("what counts as a capability") is judgement
+#      and cannot be gated; DECLARATION can, so a release must carry
+#      "**Front door checked:** a · b" in its CHANGELOG section, and every term must
+#      resolve in README.md or docs/INDEX.md AND appear in that release's own entry.
+#      DIFF-based, release commits only — silent on an ordinary PR.
 #
 # ADDING A CHECK? Three things this file learned the hard way — all from real
 # incidents recorded in the checks below:
@@ -121,7 +129,7 @@ scope() {  # <count> <noun> — returns 1 on an empty scope; prints nothing on s
 # CHANGELOG, docs/, evals/, AGENTS.md, these scripts -- is prose or code read by
 # people, deliberately uncapped since 2026-07-15; navigability there comes from a
 # table of contents and docs/INDEX.md, not a line ceiling.
-echo "[1/13] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
+echo "[1/14] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
 over=0
 seen1=0
 while IFS= read -r f; do
@@ -138,7 +146,7 @@ scope "$seen1" "skill files" || over=1
 if [ "$over" -eq 0 ]; then echo "    ok ($seen1 skill files)"; else fail=1; fi
 
 # --- 2. Audit checklist ends every rules file ------------------------------
-echo "[2/13] Every skills/*/rules/*.md ends with an '## Audit checklist'"
+echo "[2/14] Every skills/*/rules/*.md ends with an '## Audit checklist'"
 missing=0
 seen2=0
 while IFS= read -r f; do
@@ -169,7 +177,7 @@ if [ "$missing" -eq 0 ]; then echo "    ok ($seen2 rules files)"; else fail=1; f
 # .denylist.local (git-ignored, one ERE per line, '#' comments). When neither
 # exists (e.g. an external fork's PR), only the generic phrases are checked —
 # the maintainer's pre-commit hook and this repo's CI carry the full list.
-echo "[3/13] No internal-name leaks"
+echo "[3/14] No internal-name leaks"
 DENY='the user runs|the user operates'
 if [ -n "${SOTA_DENYLIST:-}" ]; then
   DENY="$DENY|$SOTA_DENYLIST"
@@ -205,7 +213,7 @@ fi
 # Code, Codex, ...) skip any skill that exceeds it. Count Unicode characters
 # (descriptions use em-dashes: 1 char, 3 bytes) via python3, parsing both
 # folded block scalars (`>-`) and plain single-line descriptions.
-echo "[4/13] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
+echo "[4/14] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
 if command -v python3 >/dev/null 2>&1; then
   if desc_out=$(python3 - "$MAX_DESC" <<'PY'
 import sys, glob, re
@@ -286,7 +294,7 @@ fi
 # One version, four places: VERSION, plugin.json, the CHANGELOG's top entry,
 # and (after the release lands) the newest v* tag. Drift here shipped a main
 # briefly claiming 1.8.0 with 1.9.0 content (2026-07-03) — hence a hard check.
-echo "[5/13] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
+echo "[5/14] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
 v5=0
 ver=$(tr -d '[:space:]' < VERSION)
 # Strict X.Y.Z: rejects interior malformations (1..2, 1.2, 1.2.3.4) the old
@@ -320,7 +328,7 @@ if [ "$v5" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # rot on surfaces nobody recounts (the social preview said "30 skills" for
 # three releases). Recount from the tree and compare every tracked surface;
 # RELEASING.md lists the same surfaces for manual release edits.
-echo "[6/13] Count-bearing surfaces match the tree"
+echo "[6/14] Count-bearing surfaces match the tree"
 v6=0
 ck() { # ck <found> <expected> <surface>
   [ "$1" = "$2" ] || { note "$3: says '${1:-<not found>}', tree says '$2'"; v6=1; }
@@ -366,7 +374,7 @@ if [ "$v6" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # library-map entry must name a real skill dir. Catches the drift the
 # 2026-07-10 audit found: sota-confidential-computing was added to the table
 # but missing from the map for a full release.
-echo "[7/13] Router lists every skill (routing table + library map)"
+echo "[7/14] Router lists every skill (routing table + library map)"
 v7=0
 seen7=0
 router=skills/sota/SKILL.md
@@ -394,7 +402,7 @@ if [ "$v7" -eq 0 ]; then echo "    ok ($seen7 domain skills)"; else fail=1; fi
 # with no rot-catching upside. Fenced AND inline code are stripped so link-shaped
 # examples (in ``` fences or `backticks`) are not scanned. Idea from vault-doctor
 # (training-knowledge-vault); see docs/ADOPTION-LOG.md.
-echo "[8/13] Internal Markdown links resolve (*.md targets)"
+echo "[8/14] Internal Markdown links resolve (*.md targets)"
 if command -v python3 >/dev/null 2>&1; then
   if link_out=$(python3 - <<'PY'
 import os, re, sys
@@ -440,7 +448,7 @@ fi
 # previous release (2026-07-28) and both sat on main until a human noticed
 # during the release cut. Fence-aware, like check 2: a CHANGELOG entry may
 # legitimately quote '## [Unreleased]' inside a code fence.
-echo "[9/13] CHANGELOG has at most one [Unreleased], and it is the top entry"
+echo "[9/14] CHANGELOG has at most one [Unreleased], and it is the top entry"
 v9=0
 changelogs="CHANGELOG.md $(git ls-files 'docs/CHANGELOG-archive*.md' | tr '\n' ' ')"
 for cl in $changelogs; do
@@ -486,7 +494,7 @@ if [ "$v9" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # to ourselves. All 255 rules files passed when this landed, so it is a
 # regression gate, not a repair; it was watched to fail on an injected file
 # and on a renamed reference before being trusted.
-echo "[10/13] Every skills/*/rules/*.md is referenced by its own SKILL.md"
+echo "[10/14] Every skills/*/rules/*.md is referenced by its own SKILL.md"
 v10=0
 seen10=0
 while IFS= read -r rf; do
@@ -529,7 +537,7 @@ if [ "$v10" -eq 0 ]; then echo "    ok ($seen10 rules files indexed)"; else fail
 # This is the first DIFF-based invariant; every other check reads the whole tree.
 # With no merge base it skips with a note rather than guessing, like checks 4/8.
 SWEEP_MIN_SKILL_FILES=20
-echo "[11/13] LAST-VERIFIED moves only with a sweep (batched diff, or declared in CHANGELOG)"
+echo "[11/14] LAST-VERIFIED moves only with a sweep (batched diff, or declared in CHANGELOG)"
 v11=0
 base=""
 for ref in origin/main main; do
@@ -602,7 +610,7 @@ if [ "$v11" -ne 0 ]; then fail=1; fi
 #
 # HISTORY-based, like check 11's diff: with no commit history for a pair it skips
 # with a note rather than guessing, because a shallow clone must not read as a pass.
-echo "[12/13] Rendered assets: each assets/*.png is no older than its *.html"
+echo "[12/14] Rendered assets: each assets/*.png is no older than its *.html"
 v12=0
 seen12=0
 checked12=0
@@ -675,7 +683,7 @@ if [ "$v12" -ne 0 ]; then fail=1; fi
 # column and checks that column in every data row beneath it. So it also fails when
 # the column is RENAMED or dropped (0 tables -> SCOPE EMPTY), which is the drift a
 # hardcoded column index would sail straight past.
-echo "[13/13] Every scoreboard row declares its sample size"
+echo "[13/14] Every scoreboard row declares its sample size"
 v13=0
 BOARD="evals/results/RESULTS.md"
 if [ ! -f "$BOARD" ]; then
@@ -721,11 +729,94 @@ else
 fi
 if [ "$v13" -ne 0 ]; then fail=1; fi
 
+# --- 14. A release declares its front-door terms, and they resolve ---------
+# Invariant 6 fails on a wrong NUMBER in the README. Nothing failed on a
+# capability that never got a sentence anywhere a reader looks: at the v1.19.7 cut,
+# `adversarial`, `refut`, `decision ledger`, `inert`, `no-op` and `ADOPTION-LOG` all
+# returned ZERO hits in README.md — five capabilities shipped across three releases
+# with no front-door mention. RELEASING.md section 2b has prescribed the grep since,
+# and it has caught something at THREE consecutive cuts, which is the argument for a
+# gate rather than evidence the habit sticks.
+#
+# DISCOVERY IS NOT MECHANIZABLE -- "what counts as a capability" is judgement, which
+# is why this candidate sat blocked in docs/CONVENTIONS-LEDGER.md. DECLARATION IS.
+# So this gates the verification, not the discovery, exactly as invariant 11 gates
+# LAST-VERIFIED with escapes that are declarations which must be TRUE.
+#
+# Only fires on a RELEASE commit (VERSION changed against the merge base), so it adds
+# nothing to an ordinary PR. On a release it requires, in the new version's CHANGELOG
+# section, a line of the form:
+#
+#     **Front door checked:** term one · term two · term three
+#
+# and then verifies every term BOTH ways: it must appear in README.md or
+# docs/INDEX.md (the front door is real), AND in that release's own CHANGELOG section
+# (you cannot pass by declaring a filler word that was never part of the release).
+# A missing line on a release commit fails closed.
+echo "[14/14] A release declares its front-door terms, and they resolve"
+v14=0
+base14=""
+for ref in origin/main main; do
+  if git rev-parse --verify -q "$ref" >/dev/null 2>&1; then
+    base14=$(git merge-base HEAD "$ref" 2>/dev/null || true)
+    [ -n "$base14" ] && break
+  fi
+done
+if [ -z "$base14" ] || [ "$base14" = "$(git rev-parse HEAD)" ]; then
+  note "SKIPPED (no merge base to diff against, or nothing ahead of it)"
+  echo "    ok (skipped)"
+elif ! git diff --name-only "$base14"...HEAD | grep -qx 'VERSION'; then
+  echo "    ok (not a release commit — VERSION unchanged)"
+else
+  # The release section is the one matching VERSION -- NOT the topmost '## ['
+  # heading. Keying on the top heading read [Unreleased] instead when one still sat
+  # above the new entry, and reported "no declaration" for a release that had one.
+  # Found by watching case C fail for the wrong reason.
+  ver=$(tr -d '[:space:]' < VERSION)
+  sec=$(awk -v v="## [$ver]" 'index($0,v)==1{f=1;print;next} f&&/^## \[/{exit} f{print}' CHANGELOG.md)
+  if [ -z "$sec" ]; then
+    note "VERSION is $ver but CHANGELOG.md has no '## [$ver]' section to check"
+    v14=1
+    sec=""
+  fi
+  decl=$(printf '%s\n' "$sec" | grep -i '\*\*Front door checked:\*\*' || true)
+  if [ -z "$decl" ]; then
+    note "VERSION changed but this release declares no front-door check."
+    note "  Add to the new CHANGELOG section (RELEASING.md section 2b):"
+    note "    **Front door checked:** <term> · <term>"
+    note "  Each term must appear in README.md or docs/INDEX.md, and in this section."
+    v14=1
+  else
+    terms=$(printf '%s\n' "$decl" | sed 's/.*\*\*[Ff]ront door checked:\*\*//' \
+      | tr '·,;' '\n' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/^[`*]*//; s/[`*.]*$//' \
+      | grep -v '^$' || true)
+    n_terms=0
+    while IFS= read -r t; do
+      [ -n "$t" ] || continue
+      n_terms=$((n_terms + 1))
+      if ! grep -qi -- "$t" README.md docs/INDEX.md 2>/dev/null; then
+        note "NO FRONT DOOR: \"$t\" appears in neither README.md nor docs/INDEX.md"
+        v14=1
+      fi
+      # Guard against declaring a word that was never part of this release.
+      if ! printf '%s\n' "$sec" | grep -v '\*\*[Ff]ront door checked:\*\*' | grep -qi -- "$t"; then
+        note "NOT IN THIS RELEASE: \"$t\" is declared but absent from the release's own entry"
+        v14=1
+      fi
+    done <<EOF
+$terms
+EOF
+    scope "$n_terms" "declared front-door terms" || v14=1
+    if [ "$v14" -eq 0 ]; then echo "    ok ($n_terms terms declared, all resolve)"; fi
+  fi
+fi
+if [ "$v14" -ne 0 ]; then fail=1; fi
+
 # --- Result ---------------------------------------------------------------
 echo
 if [ "$fail" -ne 0 ]; then
   echo "FAIL: repository invariants violated (see above)."
   exit 1
 fi
-printf 'PASS: all repository invariants satisfied (13 checks over %s skill files / %s rules files, %ss).\n' \
+printf 'PASS: all repository invariants satisfied (14 checks over %s skill files / %s rules files, %ss).\n' \
   "${seen1:-?}" "${seen2:-?}" "$((SECONDS - START_SECONDS))"

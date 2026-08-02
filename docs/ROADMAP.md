@@ -115,8 +115,16 @@ first.
   implementation finds the table by its `Samples` **header** rather than a column
   index, so renaming or dropping the column fails closed instead of passing over zero
   rows. **The actionable set from written conventions is now empty.**
-- **`RELEASING.md` §2b's front-door grep stays blocked** on needing machine-readable
-  capability names per release.
+- ~~**`RELEASING.md` §2b's front-door grep stays blocked**~~ **CLOSED 2026-08-02 —
+  shipped as invariant 14.** It was blocked on *"needs a machine-readable capability
+  list per release"*, which was true and still is: **discovery cannot be gated**,
+  because what counts as a capability is judgement. What *can* be gated is the
+  **declaration** — the same move invariant 11 makes for `LAST-VERIFIED`. A release
+  states its front-door terms and the gate proves each resolves, in
+  `README.md`/`docs/INDEX.md` **and** in the release's own entry. Fires only when
+  `VERSION` changes, so ordinary PRs are untouched. **The actionable set from
+  written conventions is now empty** — the next gate will come from an incident,
+  not from re-reading the docs.
 - **CLOSED 2026-08-02: long rules files do NOT need a table of contents.** The
   skill-authoring guidance recommends one for reference files over 100 lines
   *"even when previewing with partial reads"*, and 242 of ours qualify with none.
