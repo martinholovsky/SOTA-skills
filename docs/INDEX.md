@@ -8,6 +8,7 @@ trying to do**, not by file. (Kept in sync by hand; if a link rots, open an issu
 | I want to… | Go to |
 |---|---|
 | Install it (plugin or clone) | [README → Installation](../README.md#installation) |
+| Update a clone to the latest release | `scripts/update.sh` (an alias for `scripts/install.sh --update`); [README → Updating](../README.md#updating) |
 | Make the skills apply to **every** prompt (always-on routing) | [README → Always-on routing](../README.md#always-on-routing-recommended) |
 | Understand how a prompt gets routed to skills | [README → How it works](../README.md#how-it-works); [`skills/sota/SKILL.md`](../skills/sota/SKILL.md) |
 | See example prompts (build & audit) | [README → Using it](../README.md#using-it) |

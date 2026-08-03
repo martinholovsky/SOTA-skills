@@ -5,6 +5,47 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.21.0] - 2026-08-03
+
+**The output-you-can-read release.** Nothing the installer *does* changed — what changed
+is that you can tell its actions apart. Every line it printed was the same two-space
+grey, so "created your `CLAUDE.md`" and "already up to date" were indistinguishable at a
+glance; and the one command everybody needs after the first day — updating — existed only
+as a *flag* on the install command, which is discoverable if you already know it is there.
+
+**Front door checked:** update.sh · --color · NO_COLOR
+
+**Nothing here is measured; no lift is claimed for any of it.**
+
+### Added
+
+- **`scripts/update.sh`** — the update path was reachable only as a *flag*
+  (`install.sh --update`), which is discoverable if you already know it exists. The new
+  script is a **pure `exec` forwarder** (`exec install.sh --update "$@"`) and holds no
+  logic of its own by design: a wrapper carrying its own copy of the update rules is a
+  wrapper that drifts from them. Every install.sh flag still works
+  (`update.sh --yes`, `--project DIR`, `--no-color`, …). The three places that named the
+  old command — the installer's closing hint, the "upstream is ahead" line, and the
+  SessionStart update reminder — now point at `scripts/update.sh`.
+
+### Changed
+
+- **`scripts/install.sh` output is colour- and emoji-coded.** The installer printed one
+  undifferentiated wall of two-space-indented lines, so "created your CLAUDE.md" and
+  "already up to date" looked identical and the sections (update / skills / routing /
+  hygiene) had no visible boundary. It now prints emoji section headers and three
+  distinct line kinds — `✓` green (something was done), `↻` cyan (changed, or you should
+  act), `·` dim (a no-op or context) — with `⚠ warning:` and `✗ error:` on stderr.
+  **The decoration is never the message**: every line still says in words what it means,
+  the `warning:`/`error:` prefixes stay, and the glyphs degrade to ASCII (`+ ~ - ! x`).
+- **…and it turns itself off, per stream** (`sota-cli-ux` rules/02 §4). Colour requires a
+  terminal on *that* stream, `TERM` set and not `dumb`; `NO_COLOR` (non-empty) disables,
+  `FORCE_COLOR`/`CLICOLOR_FORCE` re-enables, and the new **`--color=always|never|auto`**
+  (plus `--no-color`) beats both. Emoji additionally require a UTF-8 locale, so a C-locale
+  box gets ASCII markers rather than mojibake. Verified by running the installer under a
+  pty, piped, with stdout redirected but stderr on the tty, and with each of `NO_COLOR`,
+  `TERM=dumb`, `LC_ALL=C` and `--color=always`.
+
 ## [1.20.1] - 2026-08-03
 
 **The don't-do-the-thing release.** Four questions answered with evidence instead of
@@ -2445,6 +2486,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.21.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.21.0
 [1.20.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.20.1
 [1.20.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.20.0
 [1.19.9]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.9

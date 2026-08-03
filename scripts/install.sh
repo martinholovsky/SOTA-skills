@@ -24,12 +24,19 @@
 #   scripts/install.sh                 # link skills into ~/.claude/skills (all projects)
 #   scripts/install.sh --project DIR   # link into DIR/.claude/skills (one project)
 #   scripts/install.sh --update        # git pull --ff-only first, then re-link
+#                                      #   (scripts/update.sh is an alias for it)
 #   scripts/install.sh --version       # report which release is installed, and where
 #   scripts/install.sh --copy          # copy instead of symlink (pin a snapshot)
 #   scripts/install.sh --routing       # also set up always-on routing (force)
 #   scripts/install.sh --no-routing    # skip the routing offer
 #   scripts/install.sh --yes           # assume the recommended answer to prompts
+#   scripts/install.sh --color=WHEN    # always | never | auto (default; --no-color = never)
 #   scripts/install.sh --help
+#
+# Output: colour and emoji are decorative only — every line still says what it
+# means in words. They turn themselves off when the stream is not a terminal, on
+# a non-UTF-8 locale, on TERM=dumb, or when NO_COLOR is set; FORCE_COLOR (or
+# CLICOLOR_FORCE) turns them back on, and --color/--no-color beats both.
 #
 set -euo pipefail
 
@@ -44,13 +51,79 @@ DO_VERSION=0
 USE_COPY=0
 DO_ROUTING=-1   # -1 = ask/auto, 0 = skip, 1 = force
 ASSUME_YES=0
+COLOR_MODE=auto # auto | always | never  (--color=WHEN / --no-color)
 
 INTERACTIVE=0
 { [ -t 0 ] && [ -t 1 ]; } && INTERACTIVE=1
 
-log()  { printf '  %s\n' "$*"; }
-warn() { printf 'warning: %s\n' "$*" >&2; }
-die()  { printf 'error: %s\n' "$*" >&2; exit 1; }
+# --- output style ------------------------------------------------------------
+# Colour/emoji policy, in precedence order: --color flag → FORCE_COLOR /
+# CLICOLOR_FORCE (non-empty) → NO_COLOR (non-empty) → auto, meaning "the stream
+# is a terminal and TERM is set and not dumb". Detection is PER STREAM because
+# status goes to stdout and warnings/errors to stderr, and only one of the two
+# may be a pipe (`install.sh > log.txt` must still colour its errors).
+#
+# Decoration never carries meaning on its own: "warning:"/"error:" stay in the
+# text for colourblind and NO_COLOR readers, and the status glyphs degrade to
+# ASCII (+ - ~ ! x) whenever emoji are off — so a CI log or a C-locale box gets
+# readable markers instead of mojibake.
+supports_color() {  # $1 = fd number, or "tty" for a stream that is one by definition
+  case "$COLOR_MODE" in never) return 1 ;; always) return 0 ;; esac
+  [ -n "${FORCE_COLOR:-}${CLICOLOR_FORCE:-}" ] && return 0
+  [ -n "${NO_COLOR:-}" ] && return 1
+  case "${TERM:-}" in ''|dumb) return 1 ;; esac
+  [ "$1" = tty ] || [ -t "$1" ] || return 1
+  return 0
+}
+
+utf8_locale() {
+  case "${LC_ALL:-${LC_CTYPE:-${LANG:-}}}" in
+    *UTF-8*|*utf-8*|*UTF8*|*utf8*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+init_style() {
+  if supports_color 1; then
+    C_RESET=$'\033[0m'; C_BOLD=$'\033[1m'; C_DIM=$'\033[2m'
+    C_GREEN=$'\033[32m'; C_CYAN=$'\033[36m'
+  else
+    C_RESET=''; C_BOLD=''; C_DIM=''; C_GREEN=''; C_CYAN=''
+  fi
+  if supports_color 2; then
+    E_RESET=$'\033[0m'; E_YELLOW=$'\033[33m'; E_RED=$'\033[31m'
+  else
+    E_RESET=''; E_YELLOW=''; E_RED=''
+  fi
+  # The prompt is written to /dev/tty, which is a terminal by definition — the
+  # stream test cannot apply, but the flag/env policy still does.
+  if [ "$INTERACTIVE" -eq 1 ] && supports_color tty; then
+    P_RESET=$'\033[0m'; P_BOLD=$'\033[1m'; P_CYAN=$'\033[36m'
+  else
+    P_RESET=''; P_BOLD=''; P_CYAN=''
+  fi
+  # Emoji ride along with colour, and additionally need a UTF-8 locale.
+  EMOJI=0
+  if [ "$COLOR_MODE" != never ] && utf8_locale && supports_color 1; then EMOJI=1; fi
+  if [ "$EMOJI" -eq 1 ]; then
+    G_OK='✓'; G_CHG='↻'; G_INFO='·'; G_WARN='⚠'; G_ERR='✗'; G_ASK='?'
+  else
+    G_OK='+'; G_CHG='~'; G_INFO='-'; G_WARN='!'; G_ERR='x'; G_ASK='?'
+  fi
+}
+init_style   # provisional, so an early die() is styled; re-run after flag parsing
+
+ok()   { printf '  %s%s%s %s\n' "$C_GREEN" "$G_OK"   "$C_RESET" "$*"; }   # did something
+chg()  { printf '  %s%s%s %s\n' "$C_CYAN"  "$G_CHG"  "$C_RESET" "$*"; }   # changed / act on this
+log()  { printf '  %s%s %s%s\n' "$C_DIM"   "$G_INFO" "$*" "$C_RESET"; }   # no-op / context
+warn() { printf '  %s%s warning:%s %s\n' "$E_YELLOW" "$G_WARN" "$E_RESET" "$*" >&2; }
+die()  { printf '  %s%s error:%s %s\n'   "$E_RED"    "$G_ERR"  "$E_RESET" "$*" >&2; exit 1; }
+
+section() {  # $1 = emoji, $2 = title
+  local mark=""
+  if [ "$EMOJI" -eq 1 ]; then mark="$1  "; fi
+  printf '\n%s%s%s%s\n' "$C_BOLD" "$mark" "$2" "$C_RESET"
+}
 
 usage() { sed -n '2,/^set -euo/p' "$0" | sed 's/^# \{0,1\}//; /^set -euo/d'; exit "${1:-0}"; }
 
@@ -68,7 +141,7 @@ read_version() {  # <repo> — prints the release string, or "unknown"
 report_version() {
   local v git_desc="" head="" behind=""
   v="$(read_version "$REPO")"
-  printf 'SOTA-skills %s\n' "$v"
+  section '🧩' "SOTA-skills $v"
   if git -C "$REPO" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     # --dirty marks uncommitted local edits, so no separate dirty check is needed.
     git_desc="$(git -C "$REPO" describe --tags --always --dirty 2>/dev/null || true)"
@@ -78,7 +151,7 @@ report_version() {
     if git -C "$REPO" rev-parse --verify -q '@{upstream}' >/dev/null 2>&1; then
       behind="$(git -C "$REPO" rev-list --count 'HEAD..@{upstream}' 2>/dev/null || printf '0')"
       if [ "${behind:-0}" -gt 0 ]; then
-        log "upstream: $behind commit(s) ahead — run scripts/install.sh --update"
+        chg "upstream: $behind commit(s) ahead — run scripts/update.sh"
       else
         log "upstream: level as of the last fetch (a fetch is not implied)"
       fi
@@ -109,7 +182,10 @@ ask_yn() {  # $1 prompt, $2 default(y|n); honors --yes and non-interactive
   if [ "$ASSUME_YES" -eq 1 ] || [ "$INTERACTIVE" -eq 0 ]; then
     [ "$def" = y ] && return 0 || return 1
   fi
-  printf '%s [%s] ' "$1" "$([ "$def" = y ] && printf 'Y/n' || printf 'y/N')" >/dev/tty
+  local choices
+  choices="$([ "$def" = y ] && printf 'Y/n' || printf 'y/N')"
+  printf '  %s%s%s %s [%s%s%s] ' \
+    "$P_CYAN" "$G_ASK" "$P_RESET" "$1" "$P_BOLD" "$choices" "$P_RESET" >/dev/tty
   read -r ans </dev/tty || ans=""
   [ -z "$ans" ] && ans="$def"
   case "$ans" in [Yy]*) return 0 ;; *) return 1 ;; esac
@@ -190,7 +266,7 @@ setup_claude_md() {
       log "routing directive in ~/.claude/CLAUDE.md — up to date"; return
     fi
     if ask_yn "The managed SOTA routing directive in $where is out of date — refresh it in place?" y; then
-      backup "$f"; refresh_block "$f"; log "refreshed routing directive in ~/.claude/CLAUDE.md"
+      backup "$f"; refresh_block "$f"; ok "refreshed routing directive in ~/.claude/CLAUDE.md"
     else
       log "left existing directive unchanged"
     fi
@@ -199,18 +275,18 @@ setup_claude_md() {
   if [ -L "$f" ] && [ ! -e "$f" ]; then           # dangling symlink
     # shellcheck disable=SC2088  # ~ is display text in the prompt, not a path
     ask_yn "~/.claude/CLAUDE.md is a broken symlink — replace it with a real file holding the directive?" y \
-      && { rm -f "$f"; emit_routing_block >"$f"; log "wrote ~/.claude/CLAUDE.md (real file)"; }
+      && { rm -f "$f"; emit_routing_block >"$f"; ok "wrote ~/.claude/CLAUDE.md (real file)"; }
     return 0
   fi
   if [ -e "$f" ]; then
     if ask_yn "Append the SOTA routing directive to $where?" y; then
-      backup "$f"; { printf '\n'; emit_routing_block; } >>"$f"; log "appended directive to ~/.claude/CLAUDE.md"
+      backup "$f"; { printf '\n'; emit_routing_block; } >>"$f"; ok "appended directive to ~/.claude/CLAUDE.md"
     else
       log "skipped — copy the block from README's 'Always-on routing' yourself"
     fi
   else
     ask_yn "Create ~/.claude/CLAUDE.md with the SOTA routing directive?" y \
-      && { mkdir -p "$(dirname "$f")"; emit_routing_block >"$f"; log "created ~/.claude/CLAUDE.md"; }
+      && { mkdir -p "$(dirname "$f")"; emit_routing_block >"$f"; ok "created ~/.claude/CLAUDE.md"; }
   fi
   # Declining any prompt above is a valid outcome, not an error — return
   # success so `set -e` doesn't abort the installer before pre-commit setup
@@ -240,14 +316,14 @@ setup_update_reminder() {
     backup "$s"
     if jq --arg c "$cmd" '.hooks.SessionStart = ((.hooks.SessionStart // []) + [{hooks:[{type:"command",command:$c}]}])' "$s" >"$tmp" 2>/dev/null; then
       cat "$tmp" >"$s"   # cat (not mv) so a symlinked settings.json keeps its link
-      log "added SessionStart update-reminder hook (silence it with SOTA_UPDATE_REMINDER_DAYS=0)"
+      ok "added SessionStart update-reminder hook (silence it with SOTA_UPDATE_REMINDER_DAYS=0)"
     else
       warn "could not parse $s as JSON — left unchanged"
     fi
   else
     mkdir -p "$(dirname "$s")"
     jq -n --arg c "$cmd" '{hooks:{SessionStart:[{hooks:[{type:"command",command:$c}]}]}}' >"$s"
-    log "created ~/.claude/settings.json with the update-reminder hook"
+    ok "created ~/.claude/settings.json with the update-reminder hook"
   fi
   rm -f "$tmp"
 }
@@ -269,7 +345,7 @@ setup_hook() {
       if jq --arg c "$HOOK_CMD" --arg sig "$HOOK_SIG" \
           '.hooks.UserPromptSubmit |= map(.hooks |= map(if ((.command // "") | contains($sig)) then .command = $c else . end))' \
           "$s" >"$tmp" 2>/dev/null; then
-        cat "$tmp" >"$s"; log "refreshed sota UserPromptSubmit hook to latest wording"
+        cat "$tmp" >"$s"; ok "refreshed sota UserPromptSubmit hook to latest wording"
       else
         warn "could not parse $s as JSON — left unchanged"
       fi
@@ -286,14 +362,14 @@ setup_hook() {
     backup "$s"
     if jq --arg c "$HOOK_CMD" '.hooks.UserPromptSubmit = ((.hooks.UserPromptSubmit // []) + [{hooks:[{type:"command",command:$c}]}])' "$s" >"$tmp" 2>/dev/null; then
       cat "$tmp" >"$s"   # cat (not mv) so a symlinked settings.json keeps its link
-      log "added UserPromptSubmit hook to ~/.claude/settings.json"
+      ok "added UserPromptSubmit hook to ~/.claude/settings.json"
     else
       warn "could not parse $s as JSON — left unchanged"
     fi
   else
     mkdir -p "$(dirname "$s")"
     jq -n --arg c "$HOOK_CMD" '{hooks:{UserPromptSubmit:[{hooks:[{type:"command",command:$c}]}]}}' >"$s"
-    log "created ~/.claude/settings.json with the hook"
+    ok "created ~/.claude/settings.json with the hook"
   fi
   rm -f "$tmp"
 }
@@ -304,6 +380,7 @@ setup_hook() {
 maybe_setup_precommit() {
   [ -f "$REPO/.pre-commit-config.yaml" ] || return 0
   git -C "$REPO" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 0
+  section '🔒' 'Contributor hygiene'
   local hook
   hook="$(git -C "$REPO" rev-parse --git-path hooks/pre-commit 2>/dev/null || true)"
   case "$hook" in /*) ;; *) hook="$REPO/$hook" ;; esac
@@ -312,12 +389,12 @@ maybe_setup_precommit() {
     return 0
   fi
   if ! command -v pre-commit >/dev/null 2>&1; then
-    log "contributor tip: 'pipx install pre-commit' (or 'brew install pre-commit'), then 'pre-commit install' — runs the gitleaks + invariants gate on each commit (CI enforces it regardless)"
+    chg "contributor tip: 'pipx install pre-commit' (or 'brew install pre-commit'), then 'pre-commit install' — runs the gitleaks + invariants gate on each commit (CI enforces it regardless)"
     return 0
   fi
   ask_yn "Install the repo's pre-commit hook (gitleaks + invariants on every commit)?" y || return 0
   if (cd "$REPO" && pre-commit install >/dev/null); then
-    log "pre-commit hook installed in this checkout"
+    ok "pre-commit hook installed in this checkout"
   else
     warn "pre-commit install failed — run 'pre-commit install' in $REPO manually"
   fi
@@ -328,9 +405,11 @@ maybe_setup_routing() {
   [ "$TARGET" = "$HOME/.claude/skills" ] && [ "$USE_COPY" -eq 0 ] || return 0
   local go=0
   case "$DO_ROUTING" in
-    1) go=1 ;;
+    1) section '🧭' 'Always-on routing'; go=1 ;;
     0) return 0 ;;
     *) if [ "$INTERACTIVE" -eq 1 ] || [ "$ASSUME_YES" -eq 1 ]; then
+         # Header first: the question and everything it prints belong under it.
+         section '🧭' 'Always-on routing'
          ask_yn "Set up always-on routing (global directive + prompt hook) so skills apply without trigger words?" y && go=1
        fi ;;
   esac
@@ -353,11 +432,20 @@ while [ $# -gt 0 ]; do
     --routing)    DO_ROUTING=1 ;;
     --no-routing) DO_ROUTING=0 ;;
     --yes|-y)     ASSUME_YES=1 ;;
+    --color)      shift; [ $# -gt 0 ] || die "--color needs always|never|auto"; COLOR_MODE="$1" ;;
+    --color=*)    COLOR_MODE="${1#*=}" ;;
+    --no-color)   COLOR_MODE=never ;;
     -h|--help)    usage 0 ;;
     *)            die "unknown argument: $1 (try --help)" ;;
   esac
   shift
 done
+
+case "$COLOR_MODE" in
+  auto|always|never) ;;
+  *) die "--color takes always|never|auto (got: $COLOR_MODE)" ;;
+esac
+init_style   # now with the flags applied
 
 [ -d "$SKILLS_SRC" ] || die "no skills/ dir at $SKILLS_SRC — run from a SOTA-skills checkout"
 
@@ -369,15 +457,16 @@ fi
 
 # --- optional self-update ----------------------------------------------------
 if [ "$DO_UPDATE" -eq 1 ]; then
+  section '📥' 'Update'
   if git -C "$REPO" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     was="$(read_version "$REPO")"
-    log "updating $(basename "$REPO") (git pull --ff-only)…"
+    chg "updating $(basename "$REPO") (git pull --ff-only)…"
     git -C "$REPO" pull --ff-only || die "pull failed — resolve manually, then re-run"
     now="$(read_version "$REPO")"
     # Report the delta explicitly: symlinked skills change under you on a pull,
     # so "nothing to do" and "you just moved three releases" looked identical.
     if [ "$was" != "$now" ]; then
-      log "version:  $was → $now — see CHANGELOG.md for what changed"
+      ok "version:  $was → $now — see CHANGELOG.md for what changed"
     else
       log "version:  $now (unchanged)"
     fi
@@ -389,6 +478,7 @@ fi
 mkdir -p "$TARGET"
 
 # --- link (or copy) every skill, idempotently --------------------------------
+section '🔗' 'Skills'
 linked=0; created=0
 for src in "$SKILLS_SRC"/*/; do
   name="$(basename "$src")"
@@ -421,12 +511,12 @@ if [ "$USE_COPY" -eq 0 ] && [ -d "$TARGET" ]; then
     [ -L "$dest" ] || continue
     tgt="$(readlink "$dest")"
     case "$tgt" in
-      "$SKILLS_SRC"/*) [ -e "$tgt" ] || { rm -f "$dest"; pruned=$((pruned + 1)); log "pruned stale link: $(basename "$dest")"; } ;;
+      "$SKILLS_SRC"/*) [ -e "$tgt" ] || { rm -f "$dest"; pruned=$((pruned + 1)); chg "pruned stale link: $(basename "$dest")"; } ;;
     esac
   done
 fi
 
-log "linked $linked skill(s) into $TARGET ($created new, $pruned pruned)$([ "$USE_COPY" -eq 1 ] && echo ' [copied]')"
+ok "linked $linked skill(s) into $TARGET ($created new, $pruned pruned)$([ "$USE_COPY" -eq 1 ] && echo ' [copied]')"
 
 # --- profile convenience (personal install only) -----------------------------
 if [ "$TARGET" = "$HOME/.claude/skills" ] && [ "$USE_COPY" -eq 0 ]; then
@@ -439,27 +529,27 @@ if [ "$TARGET" = "$HOME/.claude/skills" ] && [ "$USE_COPY" -eq 0 ]; then
       # silently; back up + ask, matching setup_claude_md's contract
       # (2026-07-10 audit Q-MED-5). Non-interactive default is 'n' (keep it).
       if ask_yn "$dst is a real file — back it up and replace with a link to the repo profile?" n; then
-        backup "$dst"; ln -sfn "$prof" "$dst"; log "linked profile: ~/.claude/profiles/$(basename "$prof")"
+        backup "$dst"; ln -sfn "$prof" "$dst"; ok "linked profile: ~/.claude/profiles/$(basename "$prof")"
       else
         log "left existing ~/.claude/profiles/$(basename "$prof") untouched"
       fi
     else
       ln -sfn "$prof" "$dst"
-      log "linked profile: ~/.claude/profiles/$(basename "$prof")"
+      ok "linked profile: ~/.claude/profiles/$(basename "$prof")"
     fi
   else
-    log "no profile yet — cp profiles/example.md.template profiles/<you>.md, then re-run"
+    chg "no profile yet — cp profiles/example.md.template profiles/<you>.md, then re-run"
   fi
 fi
 
 maybe_setup_routing
 maybe_setup_precommit
 
-cat <<NEXT
-
-Done. To update later:
-  git -C "$REPO" pull   # existing skills update live (symlinks); then…
-  "$REPO/scripts/install.sh"   # …re-link to pick up any new skills
-
-Or in one step:  scripts/install.sh --update
-NEXT
+section '✅' 'Done'
+printf '  %sTo update later:%s\n' "$C_DIM" "$C_RESET"
+printf '    git -C "%s" pull   %s# existing skills update live (symlinks); then…%s\n' \
+  "$REPO" "$C_DIM" "$C_RESET"
+printf '    "%s/scripts/install.sh"   %s# …re-link to pick up any new skills%s\n' \
+  "$REPO" "$C_DIM" "$C_RESET"
+printf '  %sOr in one step:%s  %s"%s/scripts/update.sh"%s\n' \
+  "$C_DIM" "$C_RESET" "$C_CYAN" "$REPO" "$C_RESET"
