@@ -205,6 +205,11 @@ plainly. Every item below is in the repo, not a claim about it:
 - **The scorers are themselves tested.** A mutation probe once replaced a scoring
   function with `return 1.0` and nothing noticed; the golden tests that now run in CI
   were watched to fail against that exact mutation first.
+- **The eval runners carry a duration baseline.** Each run records to a local ledger
+  and the next run of the same runner prints the delta — `[run-completeness elapsed
+  12.3s over 7 cases | previous 380.0s — 30.9x faster]` — because "finished far faster
+  than the work allows" is a *comparison*, and a duration without its denominator says
+  nothing. A swing over 5× is flagged for a human; nothing is gated on time.
 - **The library is applied to itself, and it finds things.** Its own
   dead-path rules caught this repo's CI gates passing over **zero files** — green,
   exit 0, examining nothing — and the fix was verified by re-running the mutation.
@@ -721,7 +726,8 @@ placement, description limits, version and count drift, router completeness,
 internal link resolution, every rules file being reachable from its skill's index,
 a single `[Unreleased]` CHANGELOG entry, the `LAST-VERIFIED` stamp moving only
 with a sweep, a rendered `assets/*.png` never being older than the `*.html` it
-comes from, and every scoreboard row declaring its sample size — plus gitleaks
+comes from, every scoreboard row declaring its sample size, and a release
+declaring the **front door** terms its new capabilities landed on — plus gitleaks
 (full-history scan in CI; per-commit via the pre-commit hook). Ideas taken from outside the repo are recorded with a
 verdict and reason in [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md), so a
 rejection isn't re-litigated. Security issues and conduct:

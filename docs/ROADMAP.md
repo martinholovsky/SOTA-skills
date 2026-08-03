@@ -4,9 +4,50 @@ Priorities set by the **2026-07-10 audit**
 ([AUDIT-2026-07-10.md](AUDIT-2026-07-10.md)). Ordered; revisit after each
 release. The 2026-07-01 cycle is fully executed and kept below as history.
 
-## Open tasks — next-session pick-up *(as of 2026-08-02)*
+## Start here next session *(as of 2026-08-03)*
 
-**Latest cycle (2026-08-02, PRs #174–#176).** Two invariants and a diagram, from a
+Everything actionable, ordered. Each line says what it is, why it is not done, and the
+first move. **The written-conventions backlog is empty** — invariant 14 closed the last
+gateable candidate — so nothing below comes from re-reading docs; the next gate will
+come from an incident.
+
+| # | Item | Why not done | First move |
+|---|---|---|---|
+| 1 | **Distribution / adoption** — the actual bottleneck (4 stars after 41 skills) | Not a code task; needs a person, not a gate | Publish the salience write-up; a before/after audit demo |
+| 2 | **Real-repo audit eval** — the *only* remaining way to move AUDIT off +0.00 | A synthetic fixture is **ruled out** (2026-08-03, twice) | Pick an OSS repo at a known-vulnerable commit; ground truth from its CVE/patch |
+| 3 | **Paid eval runs** — 2nd cross-family model (~$3), as-deployed competitor comparison (~$8) | Costs money; needs an explicit go and a credit check | Verify OpenRouter credit via its API, then ask before spending |
+| 4 | **Router trim** — it is 2× the spec's ~5k-token recommendation at 500/500 lines | Deliberate: trimming breaks `ROUTER_BUILD_SHA` and the +0.39's comparability | **Only when the router must grow** — then trim and re-baseline together |
+| 5 | **Denominators for 5 eval runners** — 7 of 12 declare one | No single `cases = load…` line to hook | Add `note_work(n, "cases")` when next touching each |
+| 6 | **§3.9 tool table rot** — 8 named third-party projects, 2 already renamed | Watch item; needs re-verification, not a decision | Re-check the 8 URLs at the next accuracy sweep |
+| 7 | **6-month accuracy sweep** | Scheduled | ~Jan 2027; bump `LAST-VERIFIED` only after a full pass |
+
+**Explicit do-nots** (each has a recorded reason — do not re-litigate): another
+audit-recall instrument · a synthetic large-repo fixture · rebuilding the BUILD-safe
+instrument · relocating the remaining ~18 judgment conventions · running the
+`reimplement` set · splitting long `rules/*.md` · adding a TOC to rules files ·
+a SessionStart version check that phones home · `gh-sota`.
+
+## Open tasks — next-session pick-up *(as of 2026-08-03)*
+
+**This cycle's research, in one place (2026-08-02/03).** Four questions were answered
+with evidence rather than reasoning, and three of the four answers were *"don't do the
+thing"*:
+
+1. **Do long rules files need a table of contents?** No — planted-canary test across 4
+   arms including a positive control and a 1,719-line stress file; every arm retrieved
+   it, agents read files whole. 242-file sweep cancelled.
+   ([CONTEXT-MANAGEMENT](CONTEXT-MANAGEMENT.md))
+2. **What size limits actually govern this library?** Verified against three official
+   sources; one decision table now settles it. Hard limits are frontmatter only; the
+   500-line cap is a *loose proxy* for a ~5k-token recommendation (density varies 3.3×).
+   ([CONTEXT-MANAGEMENT](CONTEXT-MANAGEMENT.md) → *Size limits*)
+3. **Can a synthetic large-repo fixture test audit skill?** No, demonstrated twice —
+   a planted defect is by construction a deviation from filler, found mechanically.
+   ([BIG-REPO-AUDIT](../evals/results/2026-08-03/BIG-REPO-AUDIT.md))
+4. **Can §2b's front-door check be gated?** Yes — not by gating *discovery* (judgement)
+   but by gating the *declaration*, invariant 11's pattern. Shipped as invariant 14.
+
+**Latest cycle (2026-08-02/03, PRs #174–#188).** Two invariants and a diagram, from a
 **fifth** discovery mode: *writing marketing copy about the repo forced a look at a
 surface nobody reads from inside it.* Drafting a LinkedIn post about what shipped
 since v1.0.0 led to the how-it-works diagram, and the diagram turned out to be
