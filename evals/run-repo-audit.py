@@ -144,6 +144,8 @@ def main():
               "use --temp 0.7 for real variance.\n")
     k = key()
     cases = load_cases()
+    from _elapsed import note_work   # duration baseline needs a denominator
+    note_work(len(cases), "cases")
     repo = repo_text()
     print(f"model={a.model}  planted_defects={len(cases)}  samples={a.samples}  "
           f"temp={a.temp}  (clean API run, no sota config)\n")

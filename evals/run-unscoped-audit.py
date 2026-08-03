@@ -155,6 +155,8 @@ def main():
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args()
     cases = load_cases(a.cases)
+    from _elapsed import note_work   # duration baseline needs a denominator
+    note_work(len(cases), "cases")
     if a.selftest:
         sys.exit(selftest(cases))
     if not a.report:

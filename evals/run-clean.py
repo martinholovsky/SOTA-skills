@@ -243,6 +243,8 @@ def main():
               "use --temp 0.7 for real variance.\n")
     key = load_env_key()
     cases = load_cases(a.cases)
+    from _elapsed import note_work   # duration baseline needs a denominator
+    note_work(len(cases), "cases")
     kind = cases[0].get("kind", "audit")
     abl = f"  ABLATED(-{ABLATE_FILE})" if a.ablate else ""
     print(f"model={a.model}  kind={kind}  cases={len(cases)}  samples={a.samples}  "

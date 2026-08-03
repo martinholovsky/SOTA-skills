@@ -9,6 +9,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The eval runners now have a duration baseline, not just a printed duration.**
+  Closes the open half of the duration item: every run appends to a git-ignored
+  `evals/results/durations.tsv`, and the next run of the same runner prints the delta
+  — `[run-completeness elapsed 12.3s over 7 cases | previous 380.0s — 30.9x faster
+  (total)  <-- CHECK THIS: a large swing usually means the work changed, not the
+  speed]`.
+  - **Printing alone was never enough.** `sota-code-security` rules/11 §2.1's tell —
+    a step that finishes far faster than its claimed work allows did not do the work
+    — is a **comparison**, and there was nothing to compare against. It was
+    *"visible only to a human reading two logs"*; it is now in the log you are
+    already reading.
+  - **A duration without a denominator is the same defect in time form.** "12s" says
+    nothing; "12s over 7 cases" does. **7 of 12 runners** declare one via
+    `note_work(len(cases), "cases")`; the other five have no single `cases = load…`
+    line to hook, so their rows record `-` and print `[no denominator — bare seconds,
+    weak evidence]` rather than being quietly compared. Differing corpus sizes are
+    compared **per case**, and the line says which basis it used.
+  - **The ledger is git-ignored, and that is correctness rather than convenience**: a
+    duration is only comparable on the same machine and network, so committing one
+    would invite exactly the cross-machine comparison it cannot support — and would
+    dirty the tree on every local run.
+  - **Printed, never gated**, consistent with `check-invariants.sh`'s own wall-time
+    decision: these call a remote API whose latency is not ours, and a flaky gate
+    gets disabled. **Fails open on every path** — corrupt ledger, unwritable
+    location, and absent ledger were each tested by breaking them.
+  - **The CI half of the item needed nothing built.** The GitHub API already returns
+    `started_at`/`completed_at` per *step* (verified 2026-08-03:
+    `Check invariants 21:48:18 → 21:48:20`), so per-step duration is already
+    observable. Recorded rather than reimplemented.
+  - Verified end-to-end on the two `--selftest` paths CI runs without an API key —
+    both still PASS, with correct denominators (dead-path **4**, reimplement **10**,
+    matching their real case counts) — plus `py_compile` across `evals/` and
+    `test_scoring.py` still green at 38 checks.
+
 - **Invariant 14 — a release declares its front-door terms, and they resolve.**
   Closes the last actionable candidate in
   [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md), which had it **blocked**

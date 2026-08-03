@@ -211,6 +211,8 @@ def main():
     args = ap.parse_args()
 
     cases = load_cases(args.cases)
+    from _elapsed import note_work   # duration baseline needs a denominator
+    note_work(len(cases), "cases")
     if args.selftest:
         sys.exit(selftest(cases))
     if not args.report:
