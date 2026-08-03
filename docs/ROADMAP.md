@@ -224,7 +224,16 @@ first.
   numbers disagree anyway (rev-list HEAD 175, rev-list --all 181, gitleaks 179),
   so any equality test would be flaky. It also fails if gitleaks stops printing the
   line at all, since an unparsable output means the scope is no longer verified.
-- ~~**Duration is not recorded for any of our automation.**~~ **Partly done
+- ~~**Duration is not recorded for any of our automation.**~~ **DONE 2026-08-03.**
+  The remaining half — no recorded baseline — is closed: `_elapsed.py` appends every
+  run to a git-ignored `evals/results/durations.tsv` and the next run of the same
+  runner prints the delta, flagging a swing of ≥ 5×. §2.1's tell is a *comparison*,
+  so printing alone never sufficed. Denominators matter as much as the seconds
+  ("12s over 7 cases", not "12s"): **7 of 12 runners declare one**, the rest record
+  `-` and are labelled weak evidence rather than silently compared. The ledger is
+  machine-local by design — a duration is only comparable on the same machine and
+  network. **The CI half needed nothing**: the GitHub API already exposes
+  `started_at`/`completed_at` per step (verified). Original entry: **Partly done
   2026-07-30.** `check-invariants.sh` prints wall time with its denominators
   (`10 checks over 297 skill files / 256 rules files, 10s`). Deliberately printed
   and **not gated** — a duration threshold in CI is flaky under runner variance,

@@ -265,6 +265,30 @@ that measures the library. So:
 - **Assert the corpus is non-empty, and that a filter removed something.** Every
   loader and every ablation aborts rather than returning silently-empty context. Both
   failure modes print a plausible `+0.00`.
+- **Every runner records its duration, and compares against its own last run.**
+  `_elapsed.py` prints `[run-x elapsed 12.3s over 7 cases | previous 380.1s — 30.9x
+  faster (total)]` to **stderr** on exit, and appends the row to
+  `evals/results/durations.tsv`. `rules/11` §2.1's tell — a step that finishes far
+  faster than its claimed work allows did not do the work — is a *comparison*, so
+  printing alone was not enough; the previous run has to be there to compare to.
+  A swing of ≥ 5× is flagged in the text with *"a large swing usually means the work
+  changed, not the speed"*.
+  - **A duration without a denominator is the same defect in time form.** "12s" says
+    nothing; "12s over 7 cases" does. Runners call `note_work(len(cases), "cases")`;
+    **7 of 12 do** — the other five have no single `cases = load…` line to hook, and
+    their rows record `-` and print `[no denominator — bare seconds, weak evidence]`
+    rather than being quietly compared. Add the call when you next touch one.
+  - Corpus sizes differing between runs are compared **per case**, and the line says
+    `(per case)` so the basis is never ambiguous.
+  - **The ledger is git-ignored, and that is correctness, not convenience**: a
+    duration is only comparable on the same machine and network, so committing one
+    would invite exactly the cross-machine comparison it cannot support.
+  - **Printed, never gated**, and it **fails open on every path** — a missing,
+    unreadable or corrupt ledger, or an unwritable location, must never break a run.
+    All three were tested by breaking them.
+  - **CI steps needed nothing**: the GitHub API already returns `started_at`/
+    `completed_at` per *step* (verified 2026-08-03), so per-step duration is already
+    observable there.
 - **Bound what the instrument reads, and read the denominator it prints.** A scorer
   reported `851 .py files` for a ten-module service — it was walking a vendored
   virtualenv, third-party packages, the build's own `assert user.has(permission)`

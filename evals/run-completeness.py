@@ -211,6 +211,8 @@ def main():
               "use --temp 0.7 for real variance.\n")
     k = key()
     cases = load_cases()
+    from _elapsed import note_work   # duration baseline needs a denominator
+    note_work(len(cases), "cases")
     print(f"build={a.build_model}  judge={a.judge_model}  cases={len(cases)}  "
           f"samples={a.samples}  temp={a.temp}  (clean API, blind judge)\n")
     results, tot_wo, tot_wl = {}, 0.0, 0.0

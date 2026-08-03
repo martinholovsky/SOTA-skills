@@ -20,3 +20,7 @@ __pycache__/
 
 # Local secrets (OPENROUTER_API_KEY etc.) — never commit
 .env
+
+# Eval duration ledger — machine-local by design (a duration is only
+# comparable on the same machine/network); see evals/_elapsed.py.
+evals/results/durations.tsv
