@@ -9,6 +9,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The agentic large-repo audit was attempted, and a synthetic fixture cannot do it**
+  ([BIG-REPO-AUDIT](evals/results/2026-08-03/BIG-REPO-AUDIT.md)). This was the one
+  audit design the roadmap kept open after seven +0.00 results, on the theory that
+  prior instruments saturated because code and question both fit one prompt.
+  - Two fixture generations, **360+ files / ~95k tokens** each, six planted defects
+    from classes this library owns. Bare-arm recall: **6/6, 6/6, 6/6** (v1) and
+    **6/6, 5/6** (v2). At ceiling, with no library.
+  - **The library arm was never run, and that is the disciplined call**: with the bare
+    arm at ceiling there is no headroom, and the instrument is confounded, so any
+    number would be uninterpretable. Publishing one would be worse than having none.
+  - **The reason generalises, and is the actual finding.** In a synthetic corpus a
+    planted defect is *by construction* a deviation from generated filler, and agents
+    find deviations mechanically — v1 by file naming (*"the six seeded-looking
+    modules"*), v2, after that tell was removed, by AST-normalising every method body:
+    *"the only substantive code is six methods that deviate from the template."*
+    **Scaling the repo makes the anomaly cheaper to find, not harder**, because more
+    filler is a stronger baseline to diff against.
+  - **The pre-registered prediction was wrong by ~2×** — bare 0.30–0.50 predicted,
+    0.92–1.00 measured — and is reported as wrong, in the direction the repo's own
+    prior evidence favoured and the prediction discounted.
+  - Recorded as an **instrument failure, not a null**, and deliberately kept **off the
+    scoreboard**. What would be needed: a *real* repository with *real* defects at a
+    known commit, where the flaw is ordinary code someone believed was correct.
+- **Two roadmap entries this cycle closed but left reading as open** are now marked:
+  the front-door capability gate (invariant 14) and the clone-install update path
+  (`update-reminder.sh`).
+
 - **The eval runners now have a duration baseline, not just a printed duration.**
   Closes the open half of the duration item: every run appends to a git-ignored
   `evals/results/durations.tsv`, and the next run of the same runner prints the delta

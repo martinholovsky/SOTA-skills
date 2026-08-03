@@ -279,7 +279,9 @@ first.
   bugs" — it must never be reported as a lift. Do not build a sixth small fixture
   without a reason to expect a different answer.
 
-- **No gate notices a capability that never reached a front-door surface.**
+- ~~**No gate notices a capability that never reached a front-door surface.**~~
+  **CLOSED 2026-08-02 — invariant 14.** Original entry below; the gate verifies the
+  *declaration*, since discovery is judgement and cannot be gated.
   Invariant 6 fails the build on a wrong *number* in the README; nothing fails on a
   missing *feature*. That is why five audit capabilities went undocumented for three
   releases — the same silent-surface shape `sota-code-security` rules/10 describes
@@ -308,7 +310,9 @@ first.
 
 **Open items from the 2026-07-28 cycle (still open):**
 
-- **No update-notification path for clone installs.** Symlinked skills update the
+- ~~**No update-notification path for clone installs.**~~ **CLOSED 2026-08-02 —
+  `scripts/update-reminder.sh`**, reaching both install paths and making no network
+  request. Original entry below. Symlinked skills update the
   moment you `git pull`, but nothing ever tells you to pull. The plugin's
   `SessionStart` notice (`hooks/hooks.json` → `scripts/plugin-notice.sh`) is
   marker-guarded to fire **once ever**, so it is onboarding, not a version
@@ -416,7 +420,19 @@ lift is not sonnet-specific** (`openai/gpt-5.1` shows **+0.44**).
    reporter**. Publish the salience write-up + the infographic (LinkedIn is the
    measured top referrer). A **people problem, not a measurement one** — the
    highest-leverage lever left.
-2. **Agentic large-repo audit** — the *only* design that could move AUDIT off +0.00
+2. **Agentic large-repo audit** — **ATTEMPTED 2026-08-03; a SYNTHETIC fixture cannot
+   do it** ([BIG-REPO-AUDIT](../evals/results/2026-08-03/BIG-REPO-AUDIT.md)). Two
+   fixture generations, 360+ files and ~95k tokens each, six planted defects. The bare
+   arm scored **6/6, 6/6, 6/6** on v1 and **6/6, 5/6** on v2 — at ceiling, no headroom,
+   so the library arm was never run and no number is published. The reason
+   generalises: **in a synthetic corpus a planted defect is by construction a deviation
+   from generated filler, and agents find deviations mechanically** — v1 by file
+   naming, v2 by AST-normalising every method body and diffing. Scaling the repo makes
+   the anomaly *cheaper* to spot, not harder. The pre-registered prediction (bare
+   0.30–0.50) was **wrong by ~2×**. What would be needed instead: a **real** repository
+   with **real** defects at a known commit, where the flaw is ordinary code someone
+   believed was correct. Original framing — the *only* design that could move AUDIT off
+   +0.00
    (all four single-prompt audit instruments saturate). Needs a new tool-using harness
    + a large ground-truth-defect fixture + two-axis (recall × efficiency) scoring;
    cost band **$15–60**, deferred by the user until later.
