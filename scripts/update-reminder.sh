@@ -13,7 +13,7 @@
 # The whole benefit here — reminding you that updates exist — needs none of that.
 # If you want the actual check, YOU run it, and it is one command:
 #
-#     scripts/install.sh --update      # pulls, then prints the version delta
+#     scripts/update.sh                # pulls, then prints the version delta
 #
 # Behaviour: silent on first run (a fresh install is current by definition, and
 # the plugin's first-run notice is already speaking), then at most one line every
@@ -66,6 +66,6 @@ if [ -n "$version" ]; then
 else
   printf 'SOTA-skills has been installed here for over %s days. No update check was made (this library never phones home).\n' "$days"
 fi
-printf 'If they want to check for a newer release: run `scripts/install.sh --update`, or browse https://github.com/martinholovsky/SOTA-skills/releases\n'
+printf 'If they want to check for a newer release: run `scripts/update.sh`, or browse https://github.com/martinholovsky/SOTA-skills/releases\n'
 printf 'To silence this: export SOTA_UPDATE_REMINDER_DAYS=0 (or set it to a different number of days).\n'
 exit 0

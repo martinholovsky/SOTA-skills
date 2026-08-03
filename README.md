@@ -50,6 +50,11 @@ git clone https://github.com/martinholovsky/SOTA-skills && cd SOTA-skills
 ./scripts/install.sh --copy          # copy instead of symlink (pin a snapshot)
 ```
 
+The installer colour-codes what it did (`✓` done · `↻` changed or act on this ·
+`·` no-op) and drops to plain ASCII when the output is not a terminal, on a
+non-UTF-8 locale, on `TERM=dumb`, or with `NO_COLOR` set — `--color=always|never|auto`
+(or `--no-color`) overrides the detection either way.
+
 Then describe the task in plain language — routing loads the right skills; the
 stack comes from your profile or the skills' defaults (naming one is optional):
 
@@ -355,7 +360,8 @@ To also pick up **newly added** skills (a pull alone won't link a brand-new
 skill directory) and prune links to removed ones — pull and re-link at once:
 
 ```sh
-./scripts/install.sh --update        # git pull --ff-only, then re-link
+./scripts/update.sh                  # git pull --ff-only, then re-link
+./scripts/install.sh --update        # the same thing — update.sh is a thin alias
 ```
 
 It's idempotent: re-running only links what's new and prunes what's gone, and
