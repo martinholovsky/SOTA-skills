@@ -779,7 +779,12 @@ else
     v14=1
     sec=""
   fi
-  decl=$(printf '%s\n' "$sec" | grep -i '\*\*Front door checked:\*\*' || true)
+  # ANCHORED to line start. Unanchored, this also matched the format example quoted
+  # inside invariant 14's own CHANGELOG entry ("`**Front door checked:** term · term`
+  # to its CHANGELOG section..."), and the two matches concatenated into garbage terms.
+  # Found on this gate's FIRST real release, which is the point of shipping it early.
+  # A declaration is its own line: unindented, unbackticked.
+  decl=$(printf '%s\n' "$sec" | grep -i '^\*\*Front door checked:\*\*' || true)
   if [ -z "$decl" ]; then
     note "VERSION changed but this release declares no front-door check."
     note "  Add to the new CHANGELOG section (RELEASING.md section 2b):"

@@ -5,7 +5,49 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.20.1] - 2026-08-03
+
+**The don't-do-the-thing release.** Four questions answered with evidence instead of
+reasoning, and three answers were *no*: long rules files do **not** need a table of
+contents (242-file sweep cancelled), a **synthetic** large-repo fixture **cannot** test
+audit skill (built twice, ruled out), and the router should **not** be restructured to
+hit a token recommendation. The fourth was yes: §2b's front-door check **can** be
+gated — not by gating discovery, which is judgement, but by gating the declaration.
+
+**Front door checked:** front door · duration
+
+**Nothing here is measured; no lift is claimed for any of it.**
+
+### Changed
+
+- **`docs/ROADMAP.md` opens with *Start here next session*** — every actionable item in
+  one ordered table with why it is not done and the first move, plus an explicit
+  **do-not** list so nine settled decisions are not re-litigated. Added because this
+  cycle's real output was largely *decisions not to act*, and those are worthless if the
+  next session cannot find them.
+- **This cycle's research is summarised in one block** instead of scattered across four
+  documents: the TOC test, the size-limits table, the synthetic-fixture result, and how
+  §2b's gate came unblocked.
+- **Two stale claims in `evals/results/RESULTS.md` corrected.** It twice called the
+  agentic large-repo audit *"the real remaining audit frontier"*; both are now qualified
+  — a **synthetic** one is ruled out, and only a real repo with real defects could still
+  test it.
+- **`docs/ROADMAP.md`'s header and cycle range were stale** (*as of 2026-08-02*, "PRs
+  #174–#176"); corrected.
+- **README gained the two front-door sentences §2b's grep found missing** — the
+  fourteenth invariant (the sentence claimed "Fourteen" while listing thirteen) and the
+  eval duration baseline.
+
+### Fixed
+
+- **Invariant 14 caught two real defects on its own first release**, which is why it
+  shipped before a cut rather than after one.
+  - Its pattern was **unanchored**, so it also matched the format example quoted inside
+    its own CHANGELOG entry; the two matches concatenated into a garbage "term". Now
+    anchored to line start — a declaration is its own line, unindented and unbackticked.
+  - It then rejected `sample size` as **declared but absent from this release's entry**,
+    correctly: that capability shipped in v1.20.0. The anti-filler guard earned itself
+    on first use.
 
 ### Added
 
@@ -2403,6 +2445,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.20.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.20.1
 [1.20.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.20.0
 [1.19.9]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.9
 [1.19.8]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.19.8

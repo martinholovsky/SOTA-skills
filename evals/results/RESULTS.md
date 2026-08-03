@@ -57,7 +57,12 @@ The with-library arm is **near-zero variance** on every value dimension
 (completeness ±0.01 across-case sd, routing/freshness ±0.00); the sampling wobble
 is all in the unguided arm. Audit is +0.00 and reported, not hidden — a capable
 model already recognizes vulnerabilities, even cross-file when the repo fits in
-context. The real remaining audit frontier is an **agentic large-repo** audit
+context. The audit frontier was an **agentic large-repo** audit — **and as of
+2026-08-03 a *synthetic* one is ruled out**: a planted defect is by construction a
+deviation from generated filler, and agents find deviations mechanically (bare arm
+6/6 across two fixture generations,
+[BIG-REPO-AUDIT](2026-08-03/BIG-REPO-AUDIT.md)). Only a **real** repo with **real**
+defects could still test it. Original framing: an agentic large-repo audit
 (too big to hold at once); logged in the [roadmap](../../docs/ROADMAP.md).
 
 **Final (2026-07-30) — seven instruments, three designs, one answer: stop building
@@ -99,7 +104,9 @@ the model is already at ceiling." The library's audit half is currently justifie
 gap analysis and one real-world self-audit that found two genuine defects in the
 harness ([EVALS-SELF-AUDIT](2026-07-21/EVALS-SELF-AUDIT.md)) — **not by a measured
 lift**, and that is stated rather than implied. The only design that could move it is
-the agentic large-repo audit. The measured lift lives entirely in **BUILD**
+the agentic large-repo audit — *since qualified: a synthetic fixture cannot do it
+(2026-08-03), only a real repo with real defects could*. The measured lift lives
+entirely in **BUILD**
 (completeness +0.39, freshness +0.53).
 
 **Retraction (2026-07-20).** This row first shipped as **0.92 → 0.99 (+0.07)**
