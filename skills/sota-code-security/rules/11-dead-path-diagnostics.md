@@ -2,7 +2,7 @@
 
 rules/10 asks, one control at a time, *"if this were a no-op, would anything look
 different?"* This file is the **hunt**: the cheap signals that surface the family
-across a whole codebase without reading every line, three classes rules/10 does
+across a whole codebase without reading every line, four classes rules/10 does
 not cover (they are not security controls at all — they are correctness), and the
 evidence bar a finding in this family has to clear.
 
@@ -91,6 +91,13 @@ A neighbouring check that recounted the tree did **not** catch it, because the
 count it recounted (`SKILL.md` files) was unaffected — worth stating as its own
 lesson: *one gate's green does not cover another gate's scope.*
 
+The commonest instance ships inside the toolchains themselves: `go test ./...`
+over a package with no test files prints `? x [no test files]` and **exits 0**
+(verified 2026-08-04 on the installed Go). A test stage whose selector matches
+nothing is therefore green by default in the place it matters most. Gate on a
+floor for tests actually executed, never on the runner's exit code — and check
+*your* runner's zero-collected behaviour rather than assuming it, they differ.
+
 Rule for BUILD: a gate prints `ok (N items)`, and `N == 0` is a failure unless
 zero is explicitly expected and asserted as such. Rule for AUDIT: for every gate,
 ask what its denominator was on the last run, and whether anything would say so.
@@ -121,7 +128,7 @@ bites mutation testing: an editable install, a copied tree, a stale image, or
 cached bytecode means the code you edited may not be the code that ran
 (rules/10 §3). Assert the runtime effect before trusting any before/after result.
 
-## 3. Three classes rules/10 does not cover
+## 3. Four classes rules/10 does not cover
 
 ### 3.1 Scale-dependent silence — correct small, broken large
 
@@ -218,6 +225,31 @@ Rule for BUILD: parse strictly at the boundary — reject trailing garbage, requ
 the declared type, validate against the interface's schema rather than against
 the one response you saw — and record which interface **version** you validated
 against, because that is the input §3.2 says your cache key is probably missing.
+
+### 3.4 Contract drift by interaction — the seam nobody declared
+
+Neither component is wrong. A change to a **producer** silently alters a layout
+its **consumer** depends on: file name, directory shape, column order, separator,
+units, encoding, per-label files where there was one combined file. Both sides
+pass their own tests — each knows only its own side of the seam.
+
+What separates this from §3.3 is *where the assumption lives*: §3.3 is a consumer
+generalising from one sample of an external interface; this is an internal seam
+**no schema describes**, so nothing exists for a registry or a compat check to
+compare. Declared contracts are `sota-data-engineering` rules/04 and
+`sota-testing` rules/04 — this class is what is left when none exists.
+
+The high-yield trigger is a change that is not a code change: **selecting a
+different backend, engine, driver, or frontend** for one class of input, where
+the new one writes a different layout as a side effect. One config line moves,
+the format change is undocumented, and the stage downstream reads zero rows and
+reports "produced no output" — a silent zero (§1) with an innocent-looking cause.
+
+Rule for BUILD: when you change a producer, **run the consumer on that
+producer's real output** before merging; isolation tests pass on both sides while
+the seam is broken. Rule for AUDIT: for every artifact handed between stages,
+name its layout, its writer and its reader — where no schema pins them, the pair
+is a finding awaiting its first change.
 
 ## 4. An assert is not a control in production
 
@@ -319,6 +351,13 @@ Start by enumerating every gate, guard, and audit in the codebase. For each: rea
 the comment, read the code, then **make it fail on purpose**. The controls you
 cannot make fail are the finding.
 
+Do one thing before any of that reading: **run every script CI, a hook, or a
+runbook references, and record which produce output and which do not.** A
+measurement tool nobody has executed this quarter is presumed dead until it
+prints something — the ones needing credentials, a daemon, a rules directory, a
+model file, or a network fail in precisely the way a clean result looks, and one
+environment change (auth switched on) kills them all at once.
+
 ## 7. The instrument that measures a control is itself a control
 
 A scorer, a quality gate, a benchmark, a coverage threshold, a lint config, a
@@ -351,6 +390,16 @@ put in a README.
   flat text matching once credited an unprotected read path with the ownership
   check belonging to a sibling function. The excusing direction is the one nobody
   chases, because it agrees with the hoped-for result.
+- **The guard that is an instance of what it guards.** Least intuitive, highest
+  yield: the control existing to prevent class X is itself an example of it.
+  Three real forms — a test asserting "*every* call site passes auth" that
+  scanned one directory and accepted `auth=None`, its predicate being `"auth=" in
+  line` (wrong **scope** *and* a predicate the defect satisfies); a tripwire
+  nested inside another gate's success branch, so items failing the outer gate
+  got neither; a coverage audit whose denominator counts only items that survived
+  earlier filtering. Ask of every guard: **if the defect this exists for were
+  present now, would it fail?** Then introduce it and check. §2.2 catches an
+  *empty* scope; this catches one merely wrong, and a predicate merely weak.
 - **The instrument that cannot fail.** A scorer returning a plausible number
   whatever it is handed. A mutation harness reporting **18/18 controls caught**
   while every run died before the test suite started — each non-zero exit read as
@@ -372,6 +421,15 @@ answer on purpose.** Before its output is quoted anywhere:
 - **Assert the mutation took** (§2.5). Editable installs, copied trees, stale
   caches and vendored environments all mean the code you changed may not be the
   code that ran.
+- **Sample and read before you count.** Report a count only after reading a
+  sample of what it matched. A regex over prose over-counts hard — one such
+  sweep reported 50 unearned claims (rules/10 §2.10) where reading found 8.
+- **Validate on inputs where failure is possible.** "No false positives on three
+  clean libraries" establishes nothing if none of them contains the construct the
+  control keys on: it could not have failed. Pick inputs that *can* fail.
+- **When a wrapper reports an empty reason, go one layer down.** A CLI that
+  swallows its child's log turns a named, fixable cause into "produced no
+  output". The answer is usually one command deeper, not one hypothesis further.
 
 ### 7.3 Changing an instrument after you have seen results
 
@@ -415,6 +473,16 @@ after a disappointing run is indistinguishable from a fabricated one.
       validation before shipping (§5)?
 - [ ] Config and feature flags traced **end-to-end**: read, validated, *and*
       applied to the branch they name (§6.7)?
+- [ ] Every artifact handed **between stages** has its layout, writer and reader
+      named, and any producer change validated by **running the consumer on real
+      output** — not by each side's own tests (§3.4)?
+- [ ] Every script CI, a hook or a runbook references **actually executed this
+      pass**, the silent ones recorded as dead until proven otherwise (§6)?
+- [ ] Each guard asked the recursive question — **if the defect it exists for
+      were present now, would it fail?** — checking its *scope* and whether its
+      *predicate* is satisfied by the defect itself (§7.1)?
+- [ ] Counts reported only after **reading a sample** of what matched, and any
+      clean-corpus validation done on inputs that **could** have failed (§7.2)?
 - [ ] **Every instrument treated as a control** — each scorer, gate, benchmark and
       threshold has a known-bad reference it scores at the floor and a known-good
       one it scores at the ceiling, both wired into CI (§7.2)?

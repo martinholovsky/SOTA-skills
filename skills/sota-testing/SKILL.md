@@ -100,7 +100,7 @@ End every audit with: findings table, top-3 risks, and a prioritized fix list
 | File | Read this when... |
 |------|-------------------|
 | `rules/01-strategy-and-shape.md` | choosing pyramid/trophy/honeycomb, defining unit vs integration boundaries, deciding what NOT to test, risk-based prioritization, budgeting test cost |
-| `rules/02-test-design-quality.md` | writing or reviewing any test: behavior-over-implementation, AAA, naming, one logical assertion, determinism (clock/random/network), test smells catalog, snapshot discipline |
+| `rules/02-test-design-quality.md` | writing or reviewing any test: behavior-over-implementation, AAA, naming, one logical assertion, determinism (clock/random/network — incl. **proving hermeticity by running the suite with egress blocked**, and tests that pass because a real call succeeded), test smells catalog (assertion-free, tautological, the liar, mystery guest, resource optimism), snapshot discipline |
 | `rules/03-doubles-and-test-data.md` | deciding mock vs fake vs stub, fixing over-mocked suites, building test data (builders/factories vs fixtures), seeding test DBs, using production data |
 | `rules/04-integration-contract-system.md` | testing against real DBs/brokers (Testcontainers-style), contract testing between services (Pact, schema-based), API testing, migrations, message/queue tests, ephemeral environments |
 | `rules/05-e2e-and-ui.md` | building or pruning an e2e suite: critical-path selection, selector strategy, auto-waiting, page objects/screenplay, visual regression, when to delete e2e tests |

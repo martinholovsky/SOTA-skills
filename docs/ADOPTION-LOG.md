@@ -82,6 +82,18 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-08-01 | A separate live agent session, three proposals handed over as analysis | A same-class checker (classifier/judge from the same model family) is **not** an independent layer — common-cause failure; escalate-only cascades are deductively worse | **adopted** | `sota-code-security/rules/08` §1 · v1.19.9 |
 | 2026-08-01 | Same handover | A TEE does not fix a **completeness** gap — "never recorded" is a liveness failure, outside the confidential-computing guarantee | **adopted** | `sota-code-security/rules/04` §8 · v1.19.9 |
 | 2026-08-01 | Same handover | A vendor control-plane API reporting `confidentialCompute: true` over an instance whose CC status is OFF | **rejected: already covered** | — (`rules/10` §2.2 line 102 "check the shipped artifact, not the checkout" + §2.11 shipped-artifact gaps) |
+| 2026-08-04 | An inert-control audit prompt (classes 6–12), handed over as a spec | **Unearned claims in output are words as well as numbers** — `verified`/`reachable from`/`tainted`, severity or confidence from a constant; match the claim's *shape*, and read the sentence before counting it | **adopted** | `rules/10` §2.10 · unreleased |
+| 2026-08-04 | Same prompt (class 8) | **The guard is an instance of what it guards** — a coverage test whose *scope* is narrower than the population and whose *predicate* the defect satisfies (`"auth=" in line` accepts `auth=None`); a tripwire nested in another gate's success branch; a denominator counting only survivors | **adopted** | `rules/11` §7.1 · unreleased |
+| 2026-08-04 | Same prompt (class 11) | **Contract drift by interaction** — a producer/consumer seam *no schema declares*, where the trigger is a config-level backend/frontend swap and both sides' isolation tests pass | **adopted** | `rules/11` §3.4 · unreleased |
+| 2026-08-04 | Same prompt (class 12) | Sample and read before you count; a control validated on inputs that **cannot** produce the failure proves nothing; when a wrapper reports an empty reason, go one layer down | **adopted** | `rules/11` §7.2 · unreleased |
+| 2026-08-04 | Same prompt (class 9) | The *detection* half of test-environment leakage: **block egress and re-run**; the config object the SUT never reads; assertions that contradict the test's own name | **adopted** | `sota-testing/rules/02` §2.6 + checklist · unreleased |
+| 2026-08-04 | Same prompt (class 7) | Run every script CI, a hook or a runbook references **before** reading any of them; record which produce output | **adopted** | `rules/11` §6 · unreleased |
+| 2026-08-04 | Standard test-smells catalog ([testsmells.org](https://testsmells.org/pages/testsmells.html), after van Deursen et al.) | **Resource optimism** as its own smell, and *mystery guest* in its original external-resource sense — ours had narrowed the standard name to a readability defect | **adopted** | `sota-testing/rules/02` §2.7 · unreleased |
+| 2026-08-04 | [GitHub Docs — Status checks](https://docs.github.com/en/pull-requests/reference/status-checks) | A **skipped job reports *Success*** and does not block a PR "even if it is a required check" — worse than §2.13's "all-skipped is not all-green" | **adopted** | `rules/10` §2.13 · unreleased |
+| 2026-08-04 | Verified locally this session | `go test ./...` over a package with no test files exits **0** — the empty-denominator rule instantiated in the toolchain | **adopted** | `rules/11` §2.2 · unreleased |
+| 2026-08-04 | Cross-skill sweep prompted by the same prompt | **A control parked in observe-only mode** (Kyverno `Audit`, PSA `warn`, WAF detection-only, `SCMP_ACT_LOG`, CSP report-only, DMARC `p=none`, `--soft-fail`) is inert as a *destination*; the staged rollouts existed, the inert-control framing did not | **adopted** | `rules/10` §2.14 · unreleased |
+| 2026-08-04 | Same prompt (classes 7, 10, 12 — the covered remainder) | Dead instruments; record rot; the auditor's instrument as a control; negative-claim burden | **rejected: already covered** | — (`rules/10` §2.2/§2.13, `rules/11` §7.1–7.3; `rules/10` §2.9, `rules/11` §5 "comments are a hypothesis", `sota/rules/01` §6 decision ledger) |
+| 2026-08-04 | Same prompt — candidates checked and found already ours | Alerting-pipeline dead-man's switch; admission `failurePolicy: Ignore`; `continue-on-error`/soft-fail gate steps; suppression-baseline rot; coverage-target gaming | **rejected: already ours** | — (`sota-observability` rules/04 + rules/02, `sota-kubernetes` rules/05, `sota-devsecops` rules/05, `sota-testing` rules/07 §7.2) |
 
 ## Entries
 
@@ -571,6 +583,76 @@ the files before editing (one grep of mine missed on case — the text is
 files stayed under the 500-line cap (316 and 306), both kept `## Audit checklist`
 as the last heading, and both gained a checklist item — an addition with no
 checklist entry is a rule the audit pass cannot reach.
+
+**Measurement status:** adopted on reasoning. **No efficacy lift is claimed or
+measured. Do not cite one.**
+
+### 2026-08-04 — an inert-control audit spec (classes 6–12), and the grep that lied
+
+A handover spec proposing **seven inert-control classes** beyond the five this
+library already carries. The verdict split three ways: two classes were already
+covered end-to-end, four were covered as a *rule* but not as a *probe*, and the
+genuinely new material was narrower — and sharper — than the spec's framing
+suggested.
+
+**The instrument failed first, which is the entry's real lesson.** The opening
+sweep ran `rg -rn --no-heading -i "<pattern>" skills/`. In ripgrep `-r` is
+`--replace`, so `n` became the replacement string: every match was overwritten
+in the output (`provenance` → `n`, `delimiters` → `ns`) and line numbers
+vanished. The output was plausible, and four "gaps" nearly shipped from it. It
+was caught only by running a **positive control** (a known-present term that had
+to hit) and a **negative control** (a nonsense term that had to miss) before
+trusting anything — which is `rules/11` §7.2's own bar, applied to the auditor.
+This is why §7.2 gained "sample and read before you count": the same session
+later produced a second `-r` typo, and the correct grep run beside it exposed it
+immediately.
+
+**What was already covered, and stayed rejected.** Dead instruments (`rules/10`
+§2.2 optional-dependency degradation, §2.13 "has it ever executed"), record rot
+(§2.9 doc/code default drift, `rules/11` §5 "comments are a hypothesis",
+`sota/rules/01` §6's decision ledger with its *re-measure it this session* rule),
+and the auditor's-own-instrument framework (`rules/11` §7 in full). Five further
+candidates surfaced by the cross-skill sweep were also already ours — the
+alerting-pipeline dead-man's switch, `failurePolicy: Ignore`, soft-fail gate
+steps, suppression-baseline rot, coverage-target gaming. Recording those stops
+the next reader re-proposing them.
+
+**What the gaps actually were.** Three of the four are *the audit half of a build
+rule we already state*. `sota-testing` said "unit tests touch no sockets" in
+three places and offered no way to find out that they do — hence the egress
+block. `rules/10` §2.10 governed the numbers a tool prints and not the words —
+hence the verification-verb half. `rules/11` §7 declared instruments to be
+controls without ever turning the recursion on **guards** — hence §7.1's new
+bullet, and the sub-shape that matters most is not scope but **predicate**: a
+test that greps for `"auth="` passes on `auth=None`, so the guard's own check is
+satisfied by the defect it exists to catch. Only §3.4 (contract drift by
+interaction) was a class the library had no seat for at all: every contract rule
+we own presumes a *declared* contract with a registry to compare against, and
+this class is precisely what remains when none exists.
+
+**Two facts verified against primary sources rather than the spec.** GitHub's
+own docs state that a skipped job "will report its status as 'Success'" and
+"will not prevent a pull request from merging, even if it is a required check" —
+strictly worse than §2.13's existing "all-skipped is not all-green", so §2.13
+now says so with the citation. And `go test ./...` over a package with no test
+files exits **0**, run here this session; the widely-repeated claim that pytest
+and Jest behave identically was *not* reproducible on this machine and was
+deliberately left out rather than asserted.
+
+**One correction to our own catalog.** `sota-testing` rules/02 used **mystery
+guest** for a readability defect (hidden fixture data). In the standard
+test-smells catalog the name means a test reaching an *external resource*, with
+**resource optimism** as its sibling. Ours had quietly narrowed a standard term —
+record rot in our own file, found while auditing for it. Both are now stated.
+
+**Verification.** Every claim above was checked against the tree before editing,
+with `file:line` for each. Both edited `sota-code-security` files stayed under
+the 500-line cap — but only just (**493** and **495**), after two rounds of
+trimming when the first draft pushed `rules/11` to 505 and the gate caught it.
+**That pair is now effectively full: the next addition to this family needs a
+`rules/12` split, not another squeeze.** Invariant 6 also fired for real — the
++141 lines rolled the README's `~61k lines` to `~62k`, which is exactly the drift
+that surface exists to catch.
 
 **Measurement status:** adopted on reasoning. **No efficacy lift is claimed or
 measured. Do not cite one.**

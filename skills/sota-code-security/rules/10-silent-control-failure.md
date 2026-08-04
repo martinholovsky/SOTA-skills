@@ -12,9 +12,10 @@ are invisible to source-pattern SAST, because the code is not *wrong*, it is
 *inert*.
 
 **Finding these at codebase scale is rules/11** — the cheap diagnostics (duration
-vs claimed work, printing every gate's denominator, cross-scale delta), plus three
+vs claimed work, printing every gate's denominator, cross-scale delta), plus four
 classes that are correctness rather than security: scale-dependent silence, a cache
-key narrower than the behaviour it gates, and a parser generalised from one sample.
+key narrower than the behaviour it gates, a parser generalised from one sample, and
+a producer/consumer seam no schema declares.
 Sweep with rules/11 to decide *where* to apply this file.
 
 Related: fail-open authorization → rules/03 §"authz bypass patterns"; integer
@@ -217,7 +218,7 @@ sides** and quote both in the finding (`docs/config.md:41` says
 test that asserts the documented default against the parsed default, so the two
 cannot drift again.
 
-### 2.10 Hardcoded values in reporting output
+### 2.10 Unearned claims in reporting output — the numbers and the words
 
 A tool that **prints numbers as literals** instead of deriving them from what it
 actually did: a summary line saying "wrote 512 records" from a format string, a
@@ -227,6 +228,18 @@ asserting a version or a rule count that is not read from the loaded state.
 Rule: every number a tool reports is **computed from the artifact it produced**
 (`len(written)`, the actual byte count, the loaded rule count). Literals drift
 silently and operators record wrong values — including in compliance evidence.
+
+The same rule governs the **words**, and that half is missed far more often
+because prose does not look like data. `verified`, `confirmed`, `reachable
+from`, `tainted`, `exploitable`, `sanitized` — and any `severity` or
+`confidence` set from a constant — are assertions the reader acts on. Ask of
+each: **which line would have to succeed for this word to be true, and can I
+make that line fail?** If none does, weaken the sentence or earn the claim.
+Two traps: hedging every message containing "tainted" leaves the identical claim
+phrased "reachable from input", so match the claim's *shape*, not a keyword; and
+"TLS certificate not verified" describes the *analysed code's* defect and is
+correct English, so read the sentence before counting it — a regex classifier
+over-counts badly here (rules/11 §7.2).
 
 ### 2.11 Shipped-artifact gaps
 
@@ -303,6 +316,13 @@ not one:
   still never been observed doing its job (§1's falsification question, and
   `sota-testing` rules/09 — watch a security test fail before trusting it).
 
+One platform mechanic makes this actively worse than uninformative. On GitHub, a
+**skipped job reports its status as *Success*** and "will not prevent a pull
+request from merging, even if it is a required check"
+([GitHub Docs — Status checks](https://docs.github.com/en/pull-requests/reference/status-checks),
+checked 2026-08-04) — so a required gate whose `if:` condition stops matching
+goes *green*, not pending. Read job conclusions, never the merge button.
+
 State the sample when reporting either: "no non-skipped run in the last N" is a
 bounded observation, not "never". A single-name search compounds this — see
 `sota/rules/01-audit-methodology.md` on absence claims.
@@ -312,6 +332,24 @@ plane: a declared dependency, registered module, or plugin that is wired in and
 never reached — including the case where its symbol *is* referenced, but only on
 a branch the live code path cannot produce. That sweep, with deletion-as-proof,
 is `sota-devsecops` rules/03 §3.9.
+
+### 2.14 A control parked in observe-only mode
+
+A control in audit / warn / dry-run / report-only mode is a *plan* to enforce,
+and it renders on every dashboard exactly like one that enforces: Kyverno
+`validationFailureAction: Audit`, Pod Security Admission `warn`, a WAF in
+detection-only, seccomp `SCMP_ACT_LOG`, CSP `report-only`, DMARC `p=none`, a
+scanner wired `--soft-fail`. Each is correct **as a rollout stage** and inert as
+a destination — the staged ladders are `sota-devsecops` rules/07 (audit → triage
+to zero → enforce) and `sota-network-security` rules/06 (DMARC).
+
+Rule: observe-only ships with an **owner and an expiry date**, enforced
+somewhere that fails — the discipline `sota-testing` rules/07 §7.1 puts on a
+quarantined test, for the same reason: the worst steady state is a permanent
+one. AUDIT: read the *mode field* first for every policy engine, admission
+controller and edge control, then ask how long it has held that value and what
+was supposed to flip it. "Enabled" is not "enforcing", and no consumer of the
+dashboard can tell the difference.
 
 ## 3. Vacuous tests — the meta-case
 
@@ -433,7 +471,13 @@ Design:
 - [ ] Security/privacy/cost-relevant defaults verified in **both** docs and code,
       with a test pinning the documented default to the parsed one?
 - [ ] Numbers in tool output derived from what was actually produced, never
-      printed as literals?
+      printed as literals — **and every verification word** (`verified`,
+      `confirmed`, `reachable`, `tainted`, `sanitized`) plus every severity or
+      confidence field traceable to a line that can fail, matched by claim shape
+      rather than keyword and confirmed by reading (§2.10)?
+- [ ] Any control sitting in audit / warn / dry-run / report-only mode carrying
+      an owner and an expiry, rather than having lived there since it shipped
+      (§2.14)?
 - [ ] Control smoke tests run against the **built artifact** (image/package/
       binary), not only the source checkout? Startup asserts its own required
       artifacts?
