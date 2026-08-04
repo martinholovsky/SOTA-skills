@@ -5,6 +5,98 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+**The audit half of a rule we already had.** An external inert-control audit spec
+(seven classes beyond our five) was evaluated against the tree class by class. Two
+were already covered end to end and stay rejected; the rest split into a pattern
+worth naming: **we had stated the build rule and never written the probe.** The
+library said "unit tests touch no sockets" in three places and offered no way to
+find out that they do; it governed the *numbers* a tool prints and not the *words*;
+it declared instruments to be controls without ever turning that recursion on
+guards. Full reasoning, including the five candidates rejected as already ours, is
+in [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md) (entry 2026-08-04).
+
+**Nothing here is measured; no lift is claimed for any of it.**
+
+### Added
+
+- **`sota-code-security` rules/10 §2.10 — unearned claims are words, not just
+  numbers.** The section governed literals in reporting output. It now also
+  governs the verbs: `verified`, `confirmed`, `reachable from`, `tainted`,
+  `sanitized`, and any severity or confidence set from a constant. The test is
+  "which line would have to succeed for this word to be true, and can I make that
+  line fail?" — with both traps stated, because keyword-hedging every message
+  saying "tainted" leaves the identical claim phrased "reachable from input", and
+  "TLS certificate not verified" is correct English describing the analysed code.
+- **`sota-code-security` rules/10 §2.14 — a control parked in observe-only mode.**
+  Kyverno `Audit`, PSA `warn`, WAF detection-only, `SCMP_ACT_LOG`, CSP
+  report-only, DMARC `p=none`, `--soft-fail`. Each is correct as a rollout *stage*
+  and inert as a destination, and renders identically to an enforcing control on
+  every dashboard. Ships with an owner and an expiry, enforced somewhere that
+  fails — the discipline `sota-testing` rules/07 §7.1 puts on a quarantined test.
+  The staged ladders already existed in `sota-devsecops` rules/07 and
+  `sota-network-security` rules/06; the inert-control framing did not.
+- **`sota-code-security` rules/11 §3.4 — contract drift by interaction.** Neither
+  component is wrong: a producer change silently alters a layout its consumer
+  depends on, and both sides' isolation tests pass while the seam is broken. The
+  distinguishing feature is that **no schema declares this seam**, so nothing
+  exists for a registry or compat check to compare — every contract rule we own
+  presumes a declared contract. The high-yield trigger is a config-level backend
+  or frontend swap that changes the output layout as a side effect. Rule: run the
+  consumer on the producer's real output before merging.
+- **`sota-code-security` rules/11 §7.1 — the guard that is an instance of what it
+  guards.** §7 already said an instrument is a control; it never turned the
+  recursion on guards. Three forms: a coverage test whose *scope* is narrower than
+  the population **and** whose *predicate* the defect satisfies (`"auth=" in line`
+  passes on `auth=None`); a tripwire nested inside another gate's success branch;
+  a denominator counting only the items that survived earlier filtering. §2.2
+  catches an *empty* scope — this catches one merely wrong, and a predicate merely
+  weak.
+- **`sota-code-security` rules/11 §7.2 — three rules for the auditor's own
+  instrument.** Sample and read before you count (a regex over prose reported 50
+  unearned claims where reading found 8); a control validated on inputs that
+  **cannot** produce the failure proves nothing, which is the negative control's
+  twin; when a wrapper reports an empty reason, go one layer down.
+- **`sota-code-security` rules/11 §6 — run every script before reading any of
+  them.** A measurement tool nobody has executed this quarter is presumed dead
+  until it prints something; the ones needing credentials, a daemon, a rules
+  directory or a network fail in precisely the way a clean result looks, and one
+  environment change kills them all at once.
+- **`sota-testing` rules/02 §2.6 — prove hermeticity, don't assert it.** Block
+  egress and run the suite; anything that fails was not the unit test it claimed
+  to be. What this catches is not a slow test but one *passing for the wrong
+  reason*, its usual mechanism being a config object the SUT never reads (it
+  resolves from the environment instead — `rules/11` §6.7). Plus: check each
+  surviving assertion against the test's own **name**.
+- **`sota-testing` rules/02 §2.7 — resource optimism** added as its own smell, and
+  **mystery guest** restored to its standard external-resource sense. Ours had
+  narrowed a standard catalog term to a readability defect — record rot in our own
+  file, found while auditing for it.
+
+### Changed
+
+- **`rules/10` §2.13 now cites the platform mechanic.** Per
+  [GitHub Docs](https://docs.github.com/en/pull-requests/reference/status-checks),
+  a **skipped job reports its status as *Success*** and "will not prevent a pull
+  request from merging, even if it is a required check" — strictly worse than
+  §2.13's existing "all-skipped is not all-green". A required gate whose `if:`
+  condition stops matching turns green, not pending.
+- **`rules/11` §2.2 gained the instance everyone meets.** `go test ./...` over a
+  package with no test files prints `? x [no test files]` and **exits 0**
+  (verified this session). Gate on a floor for tests actually executed, never on
+  the runner's exit code — and check *your* runner rather than assuming, since
+  they differ.
+- `rules/11` §3 is now "**Four** classes rules/10 does not cover", with the
+  matching count in `rules/10`'s header pointer; both `SKILL.md` routing rows and
+  the README's `~62k lines` figure updated (invariant 6 caught that one).
+
+### Note for the next contributor
+
+`rules/10` and `rules/11` now sit at **493** and **495** of the 500-line cap. That
+pair is effectively full: the next addition to this family needs a `rules/12`
+split, not another round of trimming.
+
 ## [1.21.0] - 2026-08-03
 
 **The output-you-can-read release.** Nothing the installer *does* changed — what changed

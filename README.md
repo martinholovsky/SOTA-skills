@@ -26,7 +26,7 @@ survives a long context instead of fading into it. That's why it beats a bigger 
 instead of becoming one. Native on Claude Code; works with Gemini CLI, Codex, and any
 agent that reads `AGENTS.md`.
 
-Under the hood: **41 skills (297 files, ~61k lines)** of state-of-the-art 2026
+Under the hood: **41 skills (297 files, ~62k lines)** of state-of-the-art 2026
 practice, each **instruction** file under 500 lines so only the matching rules load —
 the cap applies to `skills/**` alone, never to README/CHANGELOG/`docs/` — every fast-moving
 claim web-verified against a primary source.
@@ -134,8 +134,10 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
 - **Controls that are inert** — a safeguard whose success and whose total failure look
   identical from outside: a swallowed enforcement exception, a ruleset that loads zero
   rules, presence decided by `exists()` rather than a loaded artifact, a CI gate whose
-  every run is *skipped*, a test that still passes when the control's body is replaced
-  with a no-op.
+  every run is *skipped* (and on GitHub a skipped job reports **Success** to branch
+  protection), a policy engine left in `Audit`/`warn`/report-only since the day it
+  shipped, a report whose word "verified" traces to no line that can fail, a test that
+  still passes when the control's body is replaced with a no-op.
   ([rules/10](skills/sota-code-security/rules/10-silent-control-failure.md))
 - **Layers that were never layers** — the same test applied to an *architecture*
   diagram rather than a function. A second-opinion classifier drawn from the same
@@ -160,7 +162,9 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   instrument produces a **number**, and numbers get quoted. So give it a known-bad
   input it must fail and a known-good one it must pass, bound what it reads, and
   never trust a number from an instrument you haven't watched produce a *wrong*
-  answer on purpose.
+  answer on purpose. The sharpest case is a **guard that is an instance of what it
+  guards** — a coverage test whose scope is narrower than the population *and* whose
+  predicate the defect satisfies, so it passes on exactly what it exists to catch.
   ([rules/11 §7](skills/sota-code-security/rules/11-dead-path-diagnostics.md))
 - **Dependencies declared but never reached** — packages, modules, and plugins wired in
   and inert. Proven by *deleting* them in a scratch copy and running the real build,

@@ -162,6 +162,17 @@ A test may consume only inputs it controls. The big three leaks:
 - **Network.** Unit tests touch no sockets. Integration tests touch only
   dependencies the test started itself (`rules/04`). Tests against
   third-party live endpoints belong in a separate, non-blocking suite.
+  **Prove this rather than asserting it: block egress and run the suite.**
+  Anything that fails was not the unit test it claimed to be. What this catches
+  is not a slow test — it is a test that *passes for the wrong reason*, because
+  a real call succeeded where the assertion was supposed to do the work. The
+  usual mechanism is a config object the code under test never reads: the test
+  constructs `Config(providers=[])` while the SUT resolves providers from the
+  environment (`sota-code-security` rules/11 §6.7 — a setting counts as applied
+  only when you have traced it end-to-end). While you are there, check each
+  surviving assertion against the test's own **name**: a test called
+  `test_no_providers` asserting `healthy is True` is telling you that one of the
+  two is wrong, and the real calls are why nobody noticed.
 - **Concurrency.** Never assert on timing ("done within 50ms") as a proxy for
   correctness. Synchronize on events/promises/channels; use the runtime's
   virtual-time tools for timeout logic. `sleep(100ms)` is a flake with a fuse:
@@ -197,10 +208,19 @@ Name the smell in audit findings; each has a standard fix.
 - **Mockery / excessive mocking** (High): more lines configuring doubles than
   asserting outcomes; asserting interactions with internals. Fix via 2.1 and
   `rules/03` boundary discipline.
-- **Mystery guest** (Medium): the assertion depends on data the reader can't
-  see — a 400-line shared fixture, a magic row in `seed.sql`, file #47 in
-  `testdata/`. Fix: builders with only the relevant fields explicit
-  (`rules/03` §3.5); keep shared fixtures immutable and tiny.
+- **Mystery guest** (Medium): the assertion depends on something outside the
+  test the reader can't see — a 400-line shared fixture, a magic row in
+  `seed.sql`, file #47 in `testdata/`, or (the original sense of the name in the
+  standard catalog) an *external resource* the test reaches for: a file on disk,
+  a database, a host. Fix: builders with only the relevant fields explicit
+  (`rules/03` §3.5); keep shared fixtures immutable and tiny; replace the
+  external resource with a double or move the test to `rules/04`.
+- **Resource optimism** (High): the test assumes an external resource is
+  *present* — a path, a mount, a reachable endpoint — so its outcome is a
+  property of the machine, not of the code. It passes where the resource exists
+  and fails, or worse passes vacuously, where it does not. Mystery guest is a
+  readability defect; this one is a hermeticity defect, and §2.6's egress block
+  is how you find the network half of it.
 - **Conditional logic in tests** (Medium→High): `if/else`, `try/except`-and-
   continue, loops with branch-dependent assertions. A test with branches has
   untested branches of itself. Fix: split into one straight-line test per
@@ -264,6 +284,10 @@ rendered emails. They are a trap as a default assertion.
       Grep: `spyOn\(.*(as any)|verify\(.*internal|assert_called.*_private|reflect` in tests → High.
 - [ ] Real time in tests/SUT under test? Grep:
       `datetime\.now|time\.Now\(\)|Date\.now|new Date\(\)|System\.currentTimeMillis|Instant\.now` in test paths and in modules with boundary-condition tests → High.
+- [ ] **Unit suite run with egress blocked** — any new failure is a test that
+      was passing because a real call succeeded → High each; then re-read those
+      tests' names against their assertions, and check whether the config they
+      construct is the config the SUT actually reads (§2.6).
 - [ ] Sleeps as sync? Grep: `time\.sleep|time\.Sleep|Thread\.sleep|setTimeout|waitForTimeout|page\.wait_for_timeout` in tests → High each.
 - [ ] Order/parallel safety: does CI run the suite shuffled and parallel?
       Run shuffled once during audit; any new failure → High.
