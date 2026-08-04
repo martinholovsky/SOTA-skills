@@ -9,9 +9,10 @@ evidence bar a finding in this family has to clear.
 Use it in AUDIT as the sweep that decides *where* to apply rules/10, and in BUILD
 as the set of properties that make a stage falsifiable before you ship it.
 
-Related: inert controls (the catalog) → rules/10; fail-open authz → rules/03;
-truncation before inspection → rules/10 §2.7; mutation testing and watching a
-test fail → `sota-testing` rules/06 and rules/09; degradation telemetry →
+Related: inert controls (the catalog) → rules/10; **proving a control works, and
+validating the instrument or guard that reported it → rules/12**; fail-open authz
+→ rules/03; truncation before inspection → rules/10 §2.7; mutation testing and
+watching a test fail → `sota-testing` rules/06 and rules/09; degradation telemetry →
 `sota-observability` rules/05; scale and cost → `sota-performance` rules/01;
 shell/CI exit-code masking → `sota-shell-scripting` rules/01.
 
@@ -91,12 +92,17 @@ A neighbouring check that recounted the tree did **not** catch it, because the
 count it recounted (`SKILL.md` files) was unaffected — worth stating as its own
 lesson: *one gate's green does not cover another gate's scope.*
 
-The commonest instance ships inside the toolchains themselves: `go test ./...`
-over a package with no test files prints `? x [no test files]` and **exits 0**
-(verified 2026-08-04 on the installed Go). A test stage whose selector matches
-nothing is therefore green by default in the place it matters most. Gate on a
-floor for tests actually executed, never on the runner's exit code — and check
-*your* runner's zero-collected behaviour rather than assuming it, they differ.
+The commonest instance ships inside the toolchains themselves, **and they do not
+agree with each other** — which is the whole point. Both verified by running them:
+`go test ./...` over a package with no test files prints `? x [no test files]` and
+**exits 0**; `pytest` on the same empty scope prints `no tests ran` and **exits 5**,
+as it does for a file with no test functions and for a `-k` selector that deselects
+everything (pytest 9.1.1). One fails closed, one fails green. So a test stage whose
+selector drifts is silently green on one toolchain and loud on the next, and no
+amount of folklore about "runners exit 0 when they find nothing" tells you which
+you have. Gate on a floor for tests **actually executed**, never on the exit code,
+and confirm your own runner's zero-collected behaviour by running it — an exit 5
+that CI discards is worth exactly as much as an exit 0.
 
 Rule for BUILD: a gate prints `ok (N items)`, and `N == 0` is a failure unless
 zero is explicitly expected and asserted as such. Rule for AUDIT: for every gate,
@@ -114,7 +120,7 @@ of §3.1: it catches a threshold-gated path without finding the threshold first.
 A stage that emits no log lines cannot be distinguished from a stage that did
 nothing. Silence is not evidence of health; it is absence of evidence. Any stage
 on a data path emits at least a start/finish pair carrying its denominator
-(§2.2). See rules/10 §4 for the degraded-control helper and the gauge that stays
+(§2.2). See rules/10 §3 for the degraded-control helper and the gauge that stays
 1 while a control is degraded.
 
 ### 2.5 Did the changed code execute?
@@ -126,7 +132,7 @@ The cheap proof: make the new branch emit exactly once (a log line, a counter, a
 one-shot `print`), run the real workload, and show the emission. The same trap
 bites mutation testing: an editable install, a copied tree, a stale image, or
 cached bytecode means the code you edited may not be the code that ran
-(rules/10 §3). Assert the runtime effect before trusting any before/after result.
+(rules/12 §1). Assert the runtime effect before trusting any before/after result.
 
 ## 3. Four classes rules/10 does not cover
 
@@ -155,7 +161,7 @@ The tell: **the threshold is a literal in the code and no fixture crosses it.**
 logs `skipped 12 rules (budget exhausted)` at INFO and returns a normal-looking
 result has reported *partial* coverage as *complete*. The consumer cannot tell
 "clean" from "clean as far as we got". Rule: a truncating budget degrades loudly
-(rules/10 §4) **and** the result carries the partiality in its own value —
+(rules/10 §3) **and** the result carries the partiality in its own value —
 `coverage: partial`, `skipped: 12`, a distinct status — never only in a log line.
 An audit finding here is the missing field, not the budget.
 
@@ -291,7 +297,7 @@ mechanism you did not trigger is not a confirmed finding.
 
 | Class | The proof that discriminates |
 |---|---|
-| Vacuous control | **Mutation test.** Inject the exact failure the control claims to catch, run it, show it still reports green (rules/10 §3) |
+| Vacuous control | **Mutation test.** Inject the exact failure the control claims to catch, run it, show it still reports green (rules/12 §1) |
 | Silent zero | Show the failure return is **identical** to the success-but-empty return, and name **one consumer** that cannot distinguish them |
 | Scale-dependent | State the trigger numerically; show fixtures never cross it; measure both scales where cheap |
 | Stale artifact | Change the omitted input; show the key unchanged and the stale artifact reused |
@@ -358,87 +364,14 @@ prints something — the ones needing credentials, a daemon, a rules directory, 
 model file, or a network fail in precisely the way a clean result looks, and one
 environment change (auth switched on) kills them all at once.
 
-## 7. The instrument that measures a control is itself a control
+## 7. Then turn the lens around
 
-A scorer, a quality gate, a benchmark, a coverage threshold, a lint config, a
-dashboard — anything whose output decides whether something is **OK** — is a
-control, and every rule in this file applies to it. This is the most commonly
-skipped application, because measurement code reads as scaffolding rather than as
-production, and nobody threat-models scaffolding.
-
-The asymmetry is what makes it dangerous. A broken feature produces a complaint.
-**A broken instrument produces a number** — and numbers are believed, quoted, and
-put in a README.
-
-### 7.1 Four failure modes specific to instruments
-
-- **Unbounded or unread scope.** §2.2 turned inward: an instrument must report
-  what it examined, *and someone must read it*. A scorer that printed "851 files"
-  for a ten-module service was reading a vendored virtualenv, third-party
-  packages, and the project's own test assertions — `assert user.has(permission)`
-  in a test file counted as an authorization control. The denominator was on
-  screen and went unread, which is the failure §2.2 exists to prevent.
-- **Generalised from one sample** (§3.3, applied to yourself). Patterns written
-  against a single reference implementation flag every *other* correct spelling:
-  a check keyed on the method name that reference happened to use; a rule that
-  flagged the *correct* fix because the safe spelling shared a shape with the
-  unsafe one; a matcher that could not follow a check extracted into a helper;
-  a slice-detector that could not tell "scan a prefix" from "scan in chunks".
-  Every one punished code **better** than the sample it was written against.
-- **Errors run both ways, and only one direction gets investigated.** The same
-  instrument that penalises a good implementation can excuse a real defect —
-  flat text matching once credited an unprotected read path with the ownership
-  check belonging to a sibling function. The excusing direction is the one nobody
-  chases, because it agrees with the hoped-for result.
-- **The guard that is an instance of what it guards.** Least intuitive, highest
-  yield: the control existing to prevent class X is itself an example of it.
-  Three real forms — a test asserting "*every* call site passes auth" that
-  scanned one directory and accepted `auth=None`, its predicate being `"auth=" in
-  line` (wrong **scope** *and* a predicate the defect satisfies); a tripwire
-  nested inside another gate's success branch, so items failing the outer gate
-  got neither; a coverage audit whose denominator counts only items that survived
-  earlier filtering. Ask of every guard: **if the defect this exists for were
-  present now, would it fail?** Then introduce it and check. §2.2 catches an
-  *empty* scope; this catches one merely wrong, and a predicate merely weak.
-- **The instrument that cannot fail.** A scorer returning a plausible number
-  whatever it is handed. A mutation harness reporting **18/18 controls caught**
-  while every run died before the test suite started — each non-zero exit read as
-  "caught". Both look exactly like success.
-
-### 7.2 The bar
-
-**Never trust a number from an instrument you have not watched produce a *wrong*
-answer on purpose.** Before its output is quoted anywhere:
-
-- **Two references, both in CI.** A known-bad input it must score at the floor and
-  a known-good input it must score at the ceiling. If they do not separate, there
-  is no measurement — only output. Keep them as fixtures, not as memories.
-- **A negative control** for anything that classifies: an item that must *not* be
-  flagged. A detector that flags everything scores perfectly on a positives-only
-  corpus, and that is the corpus everyone builds first.
-- **Abort, never warn, on a missing result.** If a run produced no parsable
-  summary, exit non-zero. "No output" must never be readable as "nothing found".
-- **Assert the mutation took** (§2.5). Editable installs, copied trees, stale
-  caches and vendored environments all mean the code you changed may not be the
-  code that ran.
-- **Sample and read before you count.** Report a count only after reading a
-  sample of what it matched. A regex over prose over-counts hard — one such
-  sweep reported 50 unearned claims (rules/10 §2.10) where reading found 8.
-- **Validate on inputs where failure is possible.** "No false positives on three
-  clean libraries" establishes nothing if none of them contains the construct the
-  control keys on: it could not have failed. Pick inputs that *can* fail.
-- **When a wrapper reports an empty reason, go one layer down.** A CLI that
-  swallows its child's log turns a named, fixable cause into "produced no
-  output". The answer is usually one command deeper, not one hypothesis further.
-
-### 7.3 Changing an instrument after you have seen results
-
-Sometimes correct: a demonstrable false negative is a defect, not an
-inconvenience. It is also exactly how a result gets massaged into the shape
-someone wanted. So make it auditable — **say that you changed it, why, and the
-before/after numbers; show the references still separate; and confirm no case's
-ranking moved for any reason other than the fix.** An instrument quietly widened
-after a disappointing run is indistinguishable from a fabricated one.
+Every diagnostic above is run *by* something — a script, a gate, a scorer, a
+grep. Each of those is a control by the definition in §1, and the sweep is not
+finished until they have been held to the same standard: **rules/12** carries the
+mutation probe, the bar an instrument must clear before its number is quoted, and
+the guard that is an instance of what it guards. A finding produced by an
+unvalidated instrument is not yet a finding.
 
 ---
 
@@ -478,18 +411,5 @@ after a disappointing run is indistinguishable from a fabricated one.
       output** — not by each side's own tests (§3.4)?
 - [ ] Every script CI, a hook or a runbook references **actually executed this
       pass**, the silent ones recorded as dead until proven otherwise (§6)?
-- [ ] Each guard asked the recursive question — **if the defect it exists for
-      were present now, would it fail?** — checking its *scope* and whether its
-      *predicate* is satisfied by the defect itself (§7.1)?
-- [ ] Counts reported only after **reading a sample** of what matched, and any
-      clean-corpus validation done on inputs that **could** have failed (§7.2)?
-- [ ] **Every instrument treated as a control** — each scorer, gate, benchmark and
-      threshold has a known-bad reference it scores at the floor and a known-good
-      one it scores at the ceiling, both wired into CI (§7.2)?
-- [ ] Each instrument **reports what it examined**, and that denominator was
-      actually read — no scanning of vendored environments, third-party packages,
-      or the project's own tests as if they were product code (§7.1)?
-- [ ] Classifying harnesses carry a **negative control**, and a run producing no
-      parsable summary **aborts** rather than reading as "nothing found" (§7.2)?
-- [ ] Any instrument changed **after** results were seen is disclosed with the
-      before/after numbers and evidence that no ranking moved for another reason (§7.3)?
+- [ ] The tools that produced these findings held to the same standard —
+      mutation probe, instrument bar, guard recursion (§7 → **rules/12**)?

@@ -555,7 +555,7 @@ else
   # edit demanded an escape — and the first such change (2026-07-31, moving the rule
   # into the file) satisfied it reflexively by naming LAST-VERIFIED in the CHANGELOG
   # even though the stamp never moved. A gate that fires on non-events trains people
-  # to wave it through, which is how it becomes decorative (rules/11 §7).
+  # to wave it through, which is how it becomes decorative (rules/12 §2).
   stamp_now=$(grep -v '^[[:space:]]*#' LAST-VERIFIED 2>/dev/null | tr -d '[:space:]' || true)
   stamp_was=$(git show "$base":LAST-VERIFIED 2>/dev/null | grep -v '^[[:space:]]*#' | tr -d '[:space:]' || true)
   if printf '%s\n' "$changed" | grep -qx 'LAST-VERIFIED' && [ "$stamp_now" != "$stamp_was" ]; then

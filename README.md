@@ -26,7 +26,7 @@ survives a long context instead of fading into it. That's why it beats a bigger 
 instead of becoming one. Native on Claude Code; works with Gemini CLI, Codex, and any
 agent that reads `AGENTS.md`.
 
-Under the hood: **41 skills (297 files, ~62k lines)** of state-of-the-art 2026
+Under the hood: **41 skills (298 files, ~62k lines)** of state-of-the-art 2026
 practice, each **instruction** file under 500 lines so only the matching rules load —
 the cap applies to `skills/**` alone, never to README/CHANGELOG/`docs/` — every fast-moving
 claim web-verified against a primary source.
@@ -156,8 +156,8 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   crosses, a cache key narrower than the behaviour it gates, a control written as
   an `assert` that `-O`/`NDEBUG`/a missing `-ea` deletes in production.
   ([rules/11](skills/sota-code-security/rules/11-dead-path-diagnostics.md))
-- **Your own scorer, gate or benchmark doing none of the above** — the same file
-  ends by turning the lens around: anything whose output decides whether something
+- **Your own scorer, gate or benchmark doing none of the above** — a whole file
+  turns the lens around: anything whose output decides whether something
   is *OK* is a control too. A broken feature produces a complaint; a broken
   instrument produces a **number**, and numbers get quoted. So give it a known-bad
   input it must fail and a known-good one it must pass, bound what it reads, and
@@ -165,7 +165,7 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   answer on purpose. The sharpest case is a **guard that is an instance of what it
   guards** — a coverage test whose scope is narrower than the population *and* whose
   predicate the defect satisfies, so it passes on exactly what it exists to catch.
-  ([rules/11 §7](skills/sota-code-security/rules/11-dead-path-diagnostics.md))
+  ([rules/12](skills/sota-code-security/rules/12-verifying-the-verifier.md))
 - **Dependencies declared but never reached** — packages, modules, and plugins wired in
   and inert. Proven by *deleting* them in a scratch copy and running the real build,
   lint, and full suite, with exit codes and before/after transitive counts reported —
