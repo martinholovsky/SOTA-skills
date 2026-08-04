@@ -7,6 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**The rules/12 split — the inert-control family gets a third file.** The previous
+entry below shipped `rules/10` and `rules/11` at 493 and 495 of the 500-line cap and
+said plainly that the next addition needed a split rather than another squeeze. This
+is that split, and the boundary is not arbitrary: rules/10 catalogs inert controls,
+rules/11 sweeps for them at scale, and **rules/12 is the third move — proving a
+specific control works, then turning the same suspicion on everything that did the
+proving.** That layer was previously split across two files (a mutation procedure at
+the end of one, an instrument section at the end of the other) and belonged together.
+
+### Added
+
+- **`sota-code-security` rules/12 — Verifying the Verifier** (191 lines). Composed
+  from `rules/10` §3 (the mutation probe for a security control) and `rules/11` §7
+  (your instrument is a control), plus the **guard that is an instance of what it
+  guards** promoted from a bullet to its own §3 with all three forms written out:
+  the predicate the defect satisfies (`"auth=" in line` passes on `auth=None`), the
+  guard nested in another gate's success branch, and the denominator counting only
+  survivors. Its organising asymmetry: a broken feature produces a complaint, but a
+  **broken verifier produces a green tick or a number**, and both get believed.
+- **`rules/11` §7 "Then turn the lens around"** — a short hand-off replacing the
+  moved section, stating the rule that motivates the file: a finding produced by an
+  unvalidated instrument is not yet a finding.
+
+### Changed
+
+- **`rules/10` renumbered**: §3 (vacuous tests) moved out, so §4 → §3 (degradation
+  helper) and §5 → §4 (evidence rules). All live cross-references repointed —
+  `rules/11` ×4, `sota-devsecops` rules/03, README, `docs/CONVENTIONS-LEDGER.md`,
+  `evals/README.md` ×2, and a comment in `scripts/check-invariants.sh`. Historical
+  CHANGELOG and ADOPTION-LOG entries were deliberately **not** rewritten: they
+  record what shipped at the version they describe.
+- **`### 7.1 Four failure modes` listed five bullets** — count-rot introduced by the
+  previous entry when the guard bullet was added without updating the heading. Fixed
+  structurally rather than by editing the number: the guard is now its own section
+  and 7.1 (`rules/12` §2.1) is back to four.
+- **The router's library map had never listed `rules/11`.** `skills/sota/SKILL.md`
+  stopped at "10 silent control failure"; it now lists 10, 11 and 12. Invariant 7
+  gates skills against the router, not *rules files*, so this drifted unnoticed —
+  and `sota/SKILL.md` is itself at exactly 500 lines, so the entry was rewritten to
+  fit the same four lines rather than growing the file.
+- **`rules/11` §2.2 — the runners disagree, which is the point.** Both verified by
+  running them: `go test ./...` over a package with no test files **exits 0**, while
+  `pytest` on the same empty scope **exits 5** — as it does for a file with no test
+  functions and for a `-k` selector that deselects everything (pytest 9.1.1). One
+  fails closed, one fails green, so no folklore about "runners exit 0 when they find
+  nothing" tells you which you have. (The previous entry deliberately omitted the
+  pytest half as unverified; it is now measured.)
+- README file count 297 → **298** (invariant 6 again), and the "your own scorer"
+  class now points at `rules/12`.
+
+### Family headroom after the split
+
+`rules/10` 468, `rules/11` 415, `rules/12` 191 — from 12 lines of combined headroom
+to 426.
+
 **The audit half of a rule we already had.** An external inert-control audit spec
 (seven classes beyond our five) was evaluated against the tree class by class. Two
 were already covered end to end and stay rejected; the rest split into a pattern

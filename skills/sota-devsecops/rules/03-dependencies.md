@@ -330,7 +330,7 @@ it is **"X was removed and the real build, lint/vet, and full test suite still p
    dependency and the compiler just named the call site for you — record that as the
    reachability evidence and close the candidate.
 
-Two traps that make a green run lie (same shape as rules/10 §3, where the mutation is a
+Two traps that make a green run lie (same shape as `sota-code-security` rules/12 §1, where the mutation is a
 no-op'd control rather than a removed package):
 
 - **The deletion did not take.** A vendored copy still on disk, a lockfile not regenerated,

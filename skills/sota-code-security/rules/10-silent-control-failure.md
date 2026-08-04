@@ -11,6 +11,11 @@ absence is observable. In **AUDIT**, this is a distinct pass — the classes bel
 are invisible to source-pattern SAST, because the code is not *wrong*, it is
 *inert*.
 
+**Proving a control here actually works is rules/12** — the mutation probe (replace
+the body with the permissive no-op and watch what fails), plus the suspicion turned
+on everything doing the checking: your scorers, gates and benchmarks, and the guard
+that is an instance of what it guards.
+
 **Finding these at codebase scale is rules/11** — the cheap diagnostics (duration
 vs claimed work, printing every gate's denominator, cross-scale delta), plus four
 classes that are correctness rather than security: scale-dependent silence, a cache
@@ -20,8 +25,9 @@ Sweep with rules/11 to decide *where* to apply this file.
 
 Related: fail-open authorization → rules/03 §"authz bypass patterns"; integer
 truncation → rules/06; prompt-as-control and the LLM threat model → rules/08
-§1–2 (§2.12 here frames it as a silent-control class); test vacuity and mutation
-testing → `sota-testing` rules/06 and rules/09; degradation telemetry →
+§1–2 (§2.12 here frames it as a silent-control class); the mutation probe and the
+instrument/guard pass → rules/12; test vacuity and mutation testing in general →
+`sota-testing` rules/06 and rules/09; degradation telemetry →
 `sota-observability` rules/05; build/runtime artifact drift → `sota-devsecops`
 rules/04.
 
@@ -239,7 +245,7 @@ Two traps: hedging every message containing "tainted" leaves the identical claim
 phrased "reachable from input", so match the claim's *shape*, not a keyword; and
 "TLS certificate not verified" describes the *analysed code's* defect and is
 correct English, so read the sentence before counting it — a regex classifier
-over-counts badly here (rules/11 §7.2).
+over-counts badly here (rules/12 §2.2).
 
 ### 2.11 Shipped-artifact gaps
 
@@ -351,37 +357,7 @@ controller and edge control, then ask how long it has held that value and what
 was supposed to flip it. "Enabled" is not "enforcing", and no consumer of the
 dashboard can tell the difference.
 
-## 3. Vacuous tests — the meta-case
-
-A test that passes against broken code is worse than no test: it manufactures
-false safety. `sota-testing` rules/02 (assertion-free, tautological), rules/06
-(mutation testing), and rules/09 (security regression tests must be watched to
-fail) own the general doctrine. What this file adds is the targeted procedure
-for a **security control**:
-
-1. Replace the control's body with the permissive no-op — `return []`,
-   `return True`, `pass`.
-2. Run the suite.
-3. **Nothing fails ⇒ that control is untested**, regardless of how many tests
-   name it. Report it as a finding, not as a coverage note.
-
-Two traps that make step 3 lie:
-
-- **Masked by a missing dependency.** The assertion passes because the feature
-  was disabled for an *unrelated* reason (§2.2) — the real path never ran. Force
-  the dependency present (monkeypatch the availability check) so the control is
-  actually exercised.
-- **The mutation did not take.** Editable installs, copied/rsync'd trees, stale
-  bytecode, and cached images mean the original code may still be running.
-  **Assert the mutation's runtime effect** — make the no-op print or raise once —
-  before trusting a "zero failures" result.
-
-Then build the **structural** test that catches the class: assert the loaded rule
-count is non-zero, assert every reference-config key resolves, assert the
-documented default equals the parsed default, assert the control's telemetry is
-emitted. Instance tests catch today's bug; structural tests catch the next one.
-
-## 4. Make degradation loud — one helper, deduped per cause
+## 3. Make degradation loud — one helper, deduped per cause
 
 When a control cannot do its job, exactly one mechanism reports it. Scattering
 ad-hoc `logger.warning` calls produces per-request noise that gets filtered, and
@@ -404,7 +380,7 @@ Design:
 - Alert on the gauge being 1 for longer than a deploy: fallbacks are for
   surviving the night, not for permanent operation.
 
-## 5. Evidence rules for this hunt
+## 4. Evidence rules for this hunt
 
 - **Read the code in full context.** No speculation, no pattern-matching. The
   whole point of this class is that it looks fine.
@@ -481,9 +457,8 @@ Design:
 - [ ] Control smoke tests run against the **built artifact** (image/package/
       binary), not only the source checkout? Startup asserts its own required
       artifacts?
-- [ ] Mutation probe run on security-critical paths (replace body with the
-      permissive no-op) — with the dependency forced present and the mutation's
-      runtime effect asserted before trusting a green run?
+- [ ] Mutation probe run on security-critical paths, and the instrument or guard
+      that reported the result validated in turn — the whole of rules/12?
 - [ ] One shared degraded-control helper, deduped per cause, emitting log +
       gauge + health state — not per-request warnings?
 - [ ] Findings state what looks enabled, why it is inert, and a concrete

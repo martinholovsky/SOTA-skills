@@ -10,7 +10,7 @@ invariant 11 (2026-07-31).
 
 This ledger exists so the next such case is found deliberately rather than by luck.
 It is **not** an argument for gating everything: a gate per convention means false
-positives, and rules/11 §7 is explicit that a flaky gate gets disabled, which leaves
+positives, and rules/12 §2 is explicit that a flaky gate gets disabled, which leaves
 you worse off than the prose you replaced.
 
 ## Method
