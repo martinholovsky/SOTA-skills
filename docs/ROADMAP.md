@@ -23,6 +23,7 @@ from re-reading anything.
 | 7 | **6-month accuracy sweep** | Scheduled | ~Jan 2027; bump `LAST-VERIFIED` only after a full pass |
 | ~~8~~ | ~~Gate the router's library map against `rules/*` files~~ | **DONE 2026-08-05 — invariant 15.** Compares the `NN` numbers the map enumerates per skill against `skills/<skill>/rules/NN-*.md`, both directions. Watched to fail on the real defect (drop `11` from the map) and on its inverse (map lists a file that does not exist) before being trusted |
 | ~~9~~ | ~~A negative control for our own CI~~ | **DONE 2026-08-05 — `scripts/check-negative-controls.sh`**, its own CI job. Injects a known-bad per invariant into a disposable worktree and requires *the intended check* to complain; any other failure is a FALSE PASS. 5/5 on invariants 1, 2, 6, 10, 15 |
+| 8 | **Gate README's documented hook against `install.sh`'s `HOOK_CMD`** — three different hook texts existed simultaneously on 2026-08-05, and the README's was the one a new user would copy | Candidate. Clears all three ledger filters; not built because it arrived during a release cut | Extract the `command` string from the README's fenced JSON block, compare to `HOOK_CMD`, fail on mismatch. Watch it fail first, and add its known-bad to `check-negative-controls.sh` |
 
 **Explicit do-nots** (each has a recorded reason — do not re-litigate): another
 audit-recall instrument · a synthetic large-repo fixture · rebuilding the BUILD-safe
@@ -39,7 +40,28 @@ is fine; splitting to help a reader navigate is still not.
 
 ## Open tasks — next-session pick-up *(as of 2026-08-05)*
 
-**The v1.21.1 cycle (2026-08-04/05), in one place.** An external inert-control audit
+**The v1.22.0 cycle — activation, and gates that prove they can fail.** Two threads
+closed and one opened:
+
+1. **Activation is defense 0, and it was broken.** A real ~25-turn session invoked
+   **zero** `sota-*` skills; the router body was never read, so its content was
+   irrelevant. Only the frontmatter `description` auto-loads, which makes it the whole
+   trigger classifier. The old verbs assumed you own the codebase; non-owned-code
+   triggers (PR review, diff, upstream contribution) are now in, paid for by cutting the
+   31-domain enumeration. Full mechanism and the three causes:
+   [CONTEXT-MANAGEMENT § the precondition](CONTEXT-MANAGEMENT.md).
+2. **Structure beat repetition, which is the transferable finding.** The re-injected
+   hook had two numbered rules and one subordinate clause. The numbered rules were
+   obeyed every turn; the clause was dropped every turn. Same text, same repetition.
+   Defense 5 works on *grammatical form*, not on presence.
+3. **Both v1.21.1 gate candidates shipped** — invariant 15 (router library map vs rules
+   files) and `check-negative-controls.sh`. The harness found a defect in *itself* on
+   its first run, which is the argument for its FALSE-PASS assertion.
+4. **Still unmeasured, and must stay labelled so.** Nothing in v1.22.0 has an efficacy
+   number. `desc-routing` reads +0.00 (saturated) and cannot distinguish two
+   descriptions; the AUDIT arm remains +0.00 across seven instruments.
+
+**The previous cycle (v1.21.1, 2026-08-04/05).** An external inert-control audit
 spec (seven classes) and two commissioned research reports were taken in; the
 inert-control family became three files. What a next session should carry forward:
 

@@ -220,6 +220,11 @@ plainly. Every item below is in the repo, not a claim about it:
 - **A lift was retracted.** An early +0.07 on inert-control detection did not
   reproduce when the sample grew from 15 to 49 cases. It was withdrawn and the
   retraction is documented rather than quietly dropped.
+- **The gates are proven able to fail.** `scripts/check-negative-controls.sh` runs
+  in CI as its own job: it injects a known-bad per invariant into a disposable git
+  worktree and requires *the intended check* to be the one that complains — a
+  non-zero exit for any other reason is reported as a false pass, not a catch.
+  A passing gate proves the tree is clean; only this proves the gate still works.
 - **Predictions are pre-registered.** Before the 2026-07-30 audit experiments ran,
   the expected numbers and ranges were committed and pushed
   ([PRE-REGISTRATION.md](evals/results/2026-07-30/PRE-REGISTRATION.md)). Both
@@ -734,6 +739,12 @@ Naming one (or the `sota` router) just makes the routing explicit. From there:
 - **A positive observation must show effect, not existence** — the request it
   rejected, the log line it emitted, the test that fails when it's disabled.
   An inert control praised as a strength is the worst reporting error available.
+- **Publishing under someone else's name raises the evidence bar.** A finding for
+  the person who asked is cheap to retract; the same claim posted as them — a
+  **pull request** review comment, an issue, a commit message upstream — is public,
+  attributed and permanent. Verify by execution rather than inference, say what you
+  did not test, and never publish on someone's behalf without their approval of the
+  final text.
 
 ## Found a gap? Tell us — it's the only signal we get
 

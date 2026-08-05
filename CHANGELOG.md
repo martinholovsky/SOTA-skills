@@ -5,7 +5,21 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.22.0] - 2026-08-05
+
+**The activation release — and gates that prove they can fail.** Two findings, both
+from real sessions rather than from re-reading docs. First: a ~25-turn session doing
+upstream-contribution work invoked **zero** `sota-*` skills, because only the
+frontmatter `description` auto-loads and the old trigger verbs all assumed you own the
+codebase. The router's content was never in question; it was never read. Second: the
+repo's own CI printed "ok" fifteen times without anything ever proving those checks
+could still fail — the thing this library requires of everyone else.
+
+**Front door checked:** check-negative-controls · pull request · publishing · negative control
+
+**Nothing in this release is measured; no lift is claimed.** `desc-routing` reads
+**+0.00 (saturated)** and cannot distinguish two descriptions; the AUDIT arm remains
++0.00 across seven instruments.
 
 **Activation, not content.** A real ~25-turn session doing upstream contribution work
 invoked **zero** `sota-*` skills. The router body — which already contained rules that
@@ -2831,6 +2845,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.22.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.0
 [1.21.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.21.1
 [1.21.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.21.0
 [1.20.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.20.1
