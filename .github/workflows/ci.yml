@@ -63,6 +63,31 @@ jobs:
           python3 evals/run-dead-path.py --selftest
           python3 evals/run-reimplement.py --selftest
 
+  negative-controls:
+    name: Negative controls (the gate can fail)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          persist-credentials: false
+          # The harness creates a git worktree and runs the full gate inside it,
+          # so it needs the same history/tags the invariants job needs — otherwise
+          # the POSITIVE control (clean copy must pass) fails for an unrelated
+          # reason and the run aborts with no results.
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Prove check-invariants.sh still rejects known-bad input
+        # The invariants job proves the gate PASSES on a good tree. Nothing proved
+        # it can still FAIL — and "ok" from a working check is byte-identical to
+        # "ok" from one whose pathspec drifted. This job injects a known-bad per
+        # invariant and requires the INTENDED check to be the one that complains;
+        # a non-zero exit for any other reason is reported as a FALSE PASS.
+        # sota-code-security rules/12 §1/§2.2 + sota-devsecops rules/05 §5.6.
+        # Not in pre-commit: it runs the full gate once per mutation (~1 min).
+        env:
+          SOTA_DENYLIST: ${{ secrets.SOTA_DENYLIST }}
+        run: ./scripts/check-negative-controls.sh
+
   shellcheck:
     name: Shell lint (shellcheck)
     runs-on: ubuntu-latest

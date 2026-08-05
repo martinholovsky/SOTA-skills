@@ -104,13 +104,13 @@ is small" is therefore a statement about *written* conventions only. A second so
 of candidates exists and is not searchable: things this repo does by habit and has
 never said out loud, which surface only when one of them fails.
 
-### Gateable but not gated (2 candidates, both from incidents)
+### Gateable but not gated (0 candidates — both shipped 2026-08-05)
 
 | Candidate | Incident? | Silent? | Checkable? | Verdict |
 |---|---|---|---|---|
 | Front-door capability grep (`RELEASING.md` §2b) | **yes** — five capabilities shipped with no README mention | **yes** — nothing errors | ~~**no**~~ → **yes** | **GATED 2026-08-02 as invariant 14** |
-| **Router library map lists every `rules/*` file** | **yes** — `rules/11` was absent from the map in `skills/sota/SKILL.md` for two releases (found 2026-08-05) | **yes** — invariant 7 gates *skills* against the router and invariant 10 gates rules files against their *own* `SKILL.md`; the map itself is checked by neither, so drift there is silent | **yes** — diff `git ls-files 'skills/*/rules/*.md'` against the map's entries | **OPEN — clears all three filters.** ROADMAP #8 |
-| **A negative control for our own gates** | **partly** — no gate of ours has been caught inert, but two were caught *examining nothing* (2026-07-30) and the fix was to print the denominator, not to prove the check can reject | **yes** — an invariant that can no longer fail prints the same `ok` as one that can | **yes** — a fixture directory each invariant must reject, asserted non-zero | **OPEN — self-application.** We require this of every security gate in `rules/12` §1 and `sota-devsecops` rules/05 §5.6 and do not do it. ROADMAP #9 |
+| **Router library map lists every `rules/*` file** | **yes** — `rules/11` was absent from the map in `skills/sota/SKILL.md` for two releases (found 2026-08-05) | **yes** — invariant 7 gates *skills* against the router and invariant 10 gates rules files against their *own* `SKILL.md`; the map itself is checked by neither, so drift there is silent | **yes** — diff `git ls-files 'skills/*/rules/*.md'` against the map's entries | **GATED 2026-08-05 as invariant 15** — both directions, watched to fail on the real defect and its inverse first |
+| **A negative control for our own gates** | **partly** — no gate of ours has been caught inert, but two were caught *examining nothing* (2026-07-30) and the fix was to print the denominator, not to prove the check can reject | **yes** — an invariant that can no longer fail prints the same `ok` as one that can | **yes** — a fixture directory each invariant must reject, asserted non-zero | **GATED 2026-08-05 as `scripts/check-negative-controls.sh`**, its own CI job — 5/5 mutations caught by the intended check |
 
 **How the block came off.** This sat blocked on *"needs a machine-readable
 capability list per release"* — true, and still true: **discovery cannot be
@@ -149,6 +149,17 @@ their evidence, and do not flatten it — the router-map candidate has a real in
 behind it, while the negative-control candidate is argued from doctrine and a
 near-miss. The first is ready to build; the second should be built because we require
 it of others, which is a weaker reason and should be stated as one.
+
+**Both shipped the same day they were recorded (2026-08-05), and the weaker one
+earned its keep immediately.** The negative-control harness was argued from doctrine
+rather than from an incident — and on its **first run** it reported a FALSE PASS on
+its own probe 15: `git clean` does not remove *staged* files, so a fixture added by
+probe 10 leaked forward and the next mutation failed on the file-count check instead
+of the check it targeted. A harness that accepted any non-zero exit would have printed
+**5/5 caught** and been wrong about one of them. That is the `rules/12` §2.1
+"instrument that cannot fail" mode, caught in our own instrument, by the one assertion
+added specifically to catch it. The doctrine-only candidate is no longer
+doctrine-only; **treat this as the incident.**
 
 ## Findings
 
