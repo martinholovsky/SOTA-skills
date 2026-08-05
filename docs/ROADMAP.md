@@ -4,12 +4,13 @@ Priorities set by the **2026-07-10 audit**
 ([AUDIT-2026-07-10.md](AUDIT-2026-07-10.md)). Ordered; revisit after each
 release. The 2026-07-01 cycle is fully executed and kept below as history.
 
-## Start here next session *(as of 2026-08-03)*
+## Start here next session *(as of 2026-08-05)*
 
 Everything actionable, ordered. Each line says what it is, why it is not done, and the
 first move. **The written-conventions backlog is empty** — invariant 14 closed the last
-gateable candidate — so nothing below comes from re-reading docs; the next gate will
-come from an incident.
+gateable candidate — so nothing below comes from re-reading docs. That prediction held:
+the two new candidates at #8 and #9 both came from **incidents during v1.21.1**, not
+from re-reading anything.
 
 | # | Item | Why not done | First move |
 |---|---|---|---|
@@ -20,16 +21,50 @@ come from an incident.
 | 5 | **Denominators for 5 eval runners** — 7 of 12 declare one | No single `cases = load…` line to hook | Add `note_work(n, "cases")` when next touching each |
 | 6 | **§3.9 tool table rot** — 8 named third-party projects, 2 already renamed | Watch item; needs re-verification, not a decision | Re-check the 8 URLs at the next accuracy sweep |
 | 7 | **6-month accuracy sweep** | Scheduled | ~Jan 2027; bump `LAST-VERIFIED` only after a full pass |
+| 8 | **Gate the router's library map against `rules/*` files** — invariant 7 checks the router lists every *skill*; nothing checks it lists every rules *file*, so `rules/11` sat unlisted for two releases (found 2026-08-05) | Candidate, not yet built. Mechanically checkable and it has already failed once — it clears two of the ledger's three filters | Extend invariant 7 (or add 15) to diff `skills/*/rules/*.md` against the map in `skills/sota/SKILL.md`. **Watch it fail first**, and note `sota/SKILL.md` is at exactly 500 lines |
+| 9 | **A negative control for our own CI** — we now require every security gate to ship a committed known-bad it must reject (`rules/12` §1, devsecops rules/05 §5.6); `check-invariants.sh` has none | Pure self-application, found by writing the rule. Today the only proof a check can fail is a human mutating it by hand | Add a fixture directory each invariant must reject, run it in CI as a second job, and assert **non-zero exit**. Start with invariants 1, 2 and 6, which have already caught real drift |
 
 **Explicit do-nots** (each has a recorded reason — do not re-litigate): another
 audit-recall instrument · a synthetic large-repo fixture · rebuilding the BUILD-safe
 instrument · relocating the remaining ~18 judgment conventions · running the
-`reimplement` set · splitting long `rules/*.md` · adding a TOC to rules files ·
-a SessionStart version check that phones home · `gh-sota`.
+`reimplement` set · splitting long `rules/*.md` **for navigability** · adding a TOC to
+rules files · a SessionStart version check that phones home · `gh-sota`.
 
-## Open tasks — next-session pick-up *(as of 2026-08-03)*
+**One do-not needed narrowing (2026-08-05).** "Splitting long `rules/*.md`" was
+recorded against the *TOC/navigability* question — agents read files whole, so
+splitting buys no retrieval benefit. It never covered the **500-line invariant**, which
+is a hard cap and a different reason entirely; v1.21.1 split the inert-control family
+into `rules/10`/`11`/`12` when the first two reached 493 and 495. Splitting for the cap
+is fine; splitting to help a reader navigate is still not.
 
-**This cycle's research, in one place (2026-08-02/03).** Four questions were answered
+## Open tasks — next-session pick-up *(as of 2026-08-05)*
+
+**The v1.21.1 cycle (2026-08-04/05), in one place.** An external inert-control audit
+spec (seven classes) and two commissioned research reports were taken in; the
+inert-control family became three files. What a next session should carry forward:
+
+1. **The recurring gap shape is "the rule without the probe."** Three of four gaps in
+   the first intake, and three of four in the second, were cases where the library
+   *stated the BUILD rule* and never wrote the **AUDIT probe** — "unit tests touch no
+   sockets" appeared in three places with no way to find out that they do. When
+   evaluating a proposal, grep the rule first (it is usually there, often more than
+   once), then ask separately whether anything says how to *detect the violation*.
+2. **Research reports land ~4 of 13, and their citations are the liability.** One
+   report misquoted NIST SSDF PO.3.3 by folding a footnote into the clause, and
+   over-generalised a formal-verification statistic from hardware to software. Extract
+   the primary document and grep it yourself; read abstracts, never search summaries
+   (one rendered EvoMap's "84% of approved **assets**" as "84% of **agents**").
+   Where a source is paywalled (IEC 61508 clauses) or unreachable (EUR-Lex returned
+   only recitals for the CRA annexes), name the *concept* and say in the file that the
+   clause number is unverified. Full detail: [ADOPTION-LOG](ADOPTION-LOG.md) 2026-08-05.
+3. **Two gate candidates arrived from incidents** — now #8 and #9 above. Both were
+   found by *doing the work*, which is what the ledger predicted would happen once the
+   written-conventions backlog emptied.
+4. **Still unmeasured, and must stay labelled so.** Nothing in v1.21.1 has an efficacy
+   number. The AUDIT arm remains at +0.00 across seven instruments; none of this
+   changes that, and none of it may be cited as if it did.
+
+**The previous cycle's research (2026-08-02/03).** Four questions were answered
 with evidence rather than reasoning, and three of the four answers were *"don't do the
 thing"*:
 

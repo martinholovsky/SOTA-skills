@@ -154,7 +154,11 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   than its claimed work allows, a gate that never prints how many items it
   examined (`0 checked, 0 failed, exit 0`), a size-gated branch no fixture
   crosses, a cache key narrower than the behaviour it gates, a control written as
-  an `assert` that `-O`/`NDEBUG`/a missing `-ea` deletes in production.
+  an `assert` that `-O`/`NDEBUG`/a missing `-ea` deletes in production. When a
+  tool's correct output cannot be stated at all — the **test oracle problem**, which
+  is why "it found 0" goes unchallenged — a **metamorphic** check pins how the
+  output must *change*: a fixture with N known items, and an assertion that the
+  count moves when the input does.
   ([rules/11](skills/sota-code-security/rules/11-dead-path-diagnostics.md))
 - **Your own scorer, gate or benchmark doing none of the above** — a whole file
   turns the lens around: anything whose output decides whether something
@@ -165,7 +169,17 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   answer on purpose. The sharpest case is a **guard that is an instance of what it
   guards** — a coverage test whose scope is narrower than the population *and* whose
   predicate the defect satisfies, so it passes on exactly what it exists to catch.
-  ([rules/12](skills/sota-code-security/rules/12-verifying-the-verifier.md))
+  The remedy every mature discipline reached independently — the proof test, the
+  clinical positive control, aviation built-in test, adversary emulation — is one
+  move: a **negative control**, a committed known-bad the gate must reject on every
+  run, verified **per target** rather than once, because a tripwire that fires for 2
+  of 20 targets looks identical to full coverage. Worth knowing that **no mainstream
+  framework asks for this**: NIST SSDF and the EU CRA require a record that a scan
+  *ran*, OpenSSF Scorecard's SAST check detects only that a tool is *configured*, and
+  SLSA will sign provenance for a scanner set to scan zero files. A passing
+  compliance check is evidence of process, not of protection.
+  ([rules/12](skills/sota-code-security/rules/12-verifying-the-verifier.md),
+  [devsecops rules/05](skills/sota-devsecops/rules/05-analysis-gates.md))
 - **Dependencies declared but never reached** — packages, modules, and plugins wired in
   and inert. Proven by *deleting* them in a scratch copy and running the real build,
   lint, and full suite, with exit codes and before/after transitive counts reported —
