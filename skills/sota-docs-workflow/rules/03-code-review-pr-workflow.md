@@ -168,7 +168,45 @@ AI assistance raises PR volume; the review bar does not move.
   side, like a linter with opinions — they reduce trivial findings reaching
   humans, they don't replace the human approval (§3's "stake my name on it").
 
+## §8 Claims you publish under someone else's name
+
+A finding you hand to the person who asked costs one reader's trust and is cheap
+to withdraw. The same finding posted to a **PR review comment, an issue, a commit
+message, or a mailing list** is public, attributed to whoever's account sent it,
+indexed, and quoted back years later. Upstream, it is also read by maintainers who
+have never met you and will calibrate every later report against this one. Treat
+the audience change as an evidence-bar change, not a tone change.
+
+Before anything leaves for a third party:
+
+- **Verify by execution, not inference.** Reading a source file and concluding how
+  a flag behaves is a hypothesis; running `--help`, the test, or the actual code
+  path is evidence. Most wrong public claims are correct reasoning from an
+  unchecked premise.
+- **Say what you did not test.** "Reproduced on x86-64 with `make run`; not tried
+  under TDX" is a stronger comment than one that quietly implies full coverage.
+- **Check whether it is already known** — read the whole thread, the linked
+  issues, and the commit that introduced the line. A duplicate report costs the
+  maintainer more than silence would have.
+- **Attack your own claim first** (`sota` principle 7): restate it from the tool
+  output rather than from your own earlier summary. A false report in a
+  maintainer's own subsystem is the most expensive kind.
+- **Never publish on someone's behalf without their approval of the final text.**
+  Draft it, show it, let them send it. This is not a formality — their name is on
+  it and the reputational cost lands on them, not on the drafter.
+
+The `§3` conduct rules still apply on top: ask rather than assert ("what happens
+if `items` is empty here?"), label blocking vs non-blocking, comment on the code
+and never the author. Conduct and evidence are separate axes — a politely worded
+claim that turns out to be false still burns the credibility.
+
 ## Audit checklist
+
+- [ ] Anything published to a **third party under someone else's name** (PR
+      comment, issue, commit message, upstream post) verified by **execution not
+      inference**, with untested parts named, the thread checked for a duplicate,
+      the claim restated from tool output rather than your own summary, and the
+      final text approved by the person whose account sends it (§8)?
 
 - [ ] Median merged-PR size is small (≲400 substantive lines); large PRs are exceptions with stated justification or a reviewing map.
 - [ ] PRs are one logical change; refactors land separately from behavior changes.

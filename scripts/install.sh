@@ -174,8 +174,14 @@ report_version() {
 readonly RT_BEGIN="<!-- >>> sota-skills routing (managed by install.sh) >>> -->"
 readonly RT_END="<!-- <<< sota-skills routing <<< -->"
 # kept on one line; contains "sota" so re-runs detect it and never duplicate
-readonly HOOK_SIG="sota standing rules:"   # stable marker identifying our own hook
-readonly HOOK_CMD="echo 'sota standing rules: (1) validate every claim about code/system/config/versions/facts against a primary source before answering or proposing, and label anything unverified; (2) keep docs current in the same change. For code tasks, route through the sota skill and apply the matching sota-* skills; treat ~/.claude/profiles as the baseline.'"
+# Match on a phrase that survives rewording, not on the opening words. The old
+# marker was "sota standing rules:" — the first three words of the message — so a
+# user who reworded the opening (the natural thing to do) silently un-managed
+# their own hook: --update then ADDED A SECOND one instead of refreshing it.
+# Observed on a real install 2026-08-05. "sota-* skills" appears in every version
+# of this hook we have ever shipped and in hand-edited variants of it.
+readonly HOOK_SIG="sota-* skills"          # stable marker identifying our own hook
+readonly HOOK_CMD="echo 'sota standing rules (every answer): (1) VALIDATE — check any claim about code, system state, config, versions or facts against a primary source before asserting it, and label anything unverified. (2) KEEP DOCS CURRENT — update affected docs in the same change. (3) ROUTE BEFORE YOU ACT — if the turn touches code, a diff, a config or a build/CI file, invoke the sota skill FIRST and apply the matching sota-* skills. Reading a file counts. If you have already read code this session without routing, route now. Treat ~/.claude/profiles as the stack baseline; stop and ask on security-relevant choices.'"
 
 ask_yn() {  # $1 prompt, $2 default(y|n); honors --yes and non-interactive
   local def="${2:-y}" ans

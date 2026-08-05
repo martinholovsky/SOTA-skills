@@ -7,6 +7,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**Activation, not content.** A real ~25-turn session doing upstream contribution work
+invoked **zero** `sota-*` skills. The router body — which already contained rules that
+would have caught the worst error — was never read, so its quality was irrelevant. Only
+the frontmatter `description` auto-loads
+([Agent Skills docs](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview):
+*"until a Skill is triggered, only its name and description occupy context"*), which makes
+the description the entire trigger classifier and everything downstream dead weight until
+it fires.
+
+### Added
+
+- **Router description now covers code you do not own** — reviewing a pull request or
+  diff, responding to code review, evaluating someone else's patch, preparing an upstream
+  contribution, *including mid-session once you are already reading source, a diff or CI
+  config*. The old verbs all assumed you own the codebase. Paid for by cutting the
+  31-domain enumeration (**−445 chars**), which duplicated the routing table in the body;
+  the description is a matcher, and verbs like `diff`/`upstream`/`review` match harder
+  than 31 nouns. Net **951/1024**, recovering 73 chars of headroom against invariant 4.
+- **Principle 7 — restate from the artifact, never from your own summary.** Principle 0
+  listed what does *not* validate (training data, plausibility, "the rules file says so")
+  and never named the commonest one: **your own earlier prose in this session**.
+- **Principle 8 — publishing under someone else's name raises the bar**, with the full
+  procedure as `sota-docs-workflow` rules/03 **§8**. The library assumed findings go to
+  the person who asked; a PR comment, issue or commit message posted upstream is public,
+  attributed and permanent. Nothing covered that. (`llm-engineering` rules/04's approval
+  gates are about agents you *build*; rules/03 §3's "ask, don't assert" is a tone rule.)
+- **Falsification precondition on principle 0** — state what result would falsify a claim
+  *before* measuring; if none could, read the deciding code path instead of benchmarking
+  symptoms.
+
+### Fixed
+
+- **The shipped hook buried its own routing rule.** `install.sh`'s `HOOK_CMD` put routing
+  in a subordinate clause after two numbered rules. In the session above, rules (1) and
+  (2) were obeyed every turn and the routing clause was dropped every turn — same text,
+  same repetition, opposite outcome. Routing is now **numbered rule (3)** of equal weight,
+  and it is **recoverable**: *"If you have already read code this session without routing,
+  route now."*
+- **A reworded hook silently stopped receiving updates.** `HOOK_SIG` was
+  `"sota standing rules:"` — the first three words of the message — so a user who
+  reworded the opening un-managed their own hook, and `--update` would then **add a second
+  hook** rather than refresh it. Verified against a real install with the exact `jq`
+  `install.sh` runs. The marker is now **`sota-* skills`**, a phrase present in every
+  version ever shipped and in hand-edited variants; tested to match those and to ignore an
+  unrelated hook.
+- **Three different hook texts** existed across `README.md`, `install.sh` and installed
+  configs. The README now shows exactly what `install.sh` writes, and documents that
+  hand-edits must keep the `sota-* skills` marker.
+
+### Changed
+
+- `skills/sota/SKILL.md` reflowed (library map, cross-cutting rules, AUDIT workflow) from
+  ~72 to ~98 columns to buy the lines for principles 7 and 8 — content unchanged, **491/500**.
+
+**Nothing here is measured; no lift is claimed.** The repo's one adjacent instrument, the
+`desc-routing` eval, reads **+0.00 (saturated)** and cannot distinguish these descriptions.
+
 **Proving the gate can fail.** v1.21.1 shipped two known gaps in our own CI and wrote
 them down as ROADMAP #8 and #9. Both are now closed, and the second one justified
 itself within a minute of first running.
