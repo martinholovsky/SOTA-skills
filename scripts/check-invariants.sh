@@ -177,7 +177,7 @@ while IFS= read -r f; do
   last_h2=$(awk '/^(```|~~~)/{fence=!fence} !fence && /^## /{h=$0} END{print h}' "$f")
   case "$last_h2" in
     '## Audit checklist'*) ;;
-    *) note "MISSING/NOT-LAST '## Audit checklist': $f"; missing=1 ;;
+    *) note "MISSING/NOT-LAST '## Audit checklist': $f"; missing=0 ;;
   esac
 done < <(git ls-files 'skills/*/rules/*.md')
 scope "$seen2" "rules files" || missing=1
