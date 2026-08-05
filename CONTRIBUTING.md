@@ -180,16 +180,22 @@ are marked "needs verification", never asserted.
     contents, which is how `sota-code-security/rules/11` went unlisted from v1.19.8
     to v1.21.0 with every check green.
 
-**Proving the gate can still fail.** `scripts/check-invariants.sh` passing means the
-tree is clean — it does not mean the checks still work, and those two states print
-identically. `scripts/check-negative-controls.sh` (CI job *Negative controls*) injects
-a known-bad per invariant into a disposable git worktree and requires **the intended
+**Proving our gates can still fail.** `check-invariants.sh` passing means the tree is
+clean — it does not mean the checks still work, and those two states print identically.
+The same is true of `verify-setup.sh`. `scripts/check-negative-controls.sh` (CI job
+*Negative controls*) covers **both**: it injects a known-bad and requires **the intended
 check** to be the one that complains; a non-zero exit for any other reason is reported
 as a FALSE PASS, because a harness that accepts any failure reports full coverage while
-testing nothing. It covers invariants 1, 2, 6, 10 and 15 and says plainly which it does
-not cover. **Adding an invariant? Add its known-bad there too** — otherwise you have
-shipped a check nobody has ever watched fail. Not in pre-commit: it runs the whole gate
-once per mutation.
+testing nothing.
+
+Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 6, 10,
+15). Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
+fully-configured fake one — `CLAUDE_CONFIG_DIR` pointed at a temp home, a throwaway git
+repo, and a stub `gh` on `PATH` so run history is decidable — and each probe removes one
+thing (checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 10a). What is *not* covered is printed rather
+than implied. **Adding a check to either script? Add its known-bad there too** —
+otherwise you have shipped something nobody has ever watched fail. Not in pre-commit: it
+runs a whole gate per mutation.
 
 Secrets are scanned separately by **gitleaks** (config in `.gitleaks.toml`);
 CI scans the full git history, the pre-commit hook scans each commit.

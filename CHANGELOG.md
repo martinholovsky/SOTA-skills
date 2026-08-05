@@ -5,6 +5,50 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.22.1] - 2026-08-05
+
+**Turning the negative-control bar on our second gate — and finding a rotted number
+while doing it.**
+
+### Fixed
+
+- **`verify-setup.sh` printed a hardcoded, repo-specific, and by then false number.**
+  Check 10b's message carried `(this repo: 0 failures in 60, 1 in 200)`. Two defects in
+  one parenthetical: the script is **generic** and runs against anyone's repo, so a
+  sample measured on *this* one is wrong for the reader (AGENTS.md: *"never phrase
+  guidance as an assumption about the reader's setup"*); and it had **rotted in three
+  days** — re-measured 2026-08-05, the last 200 runs are 200/200 success and the single
+  failure sits at ~position 400 (2026-07-14), pushed out of the window by this session's
+  CI volume. It is `rules/10` §2.10 — a literal in reporting output instead of a derived
+  value — inside the script whose whole job is verifying claims. The derived
+  `$n_runs` and the actionable `Widen with --runs N` remain.
+
+### Added
+
+- **`check-negative-controls.sh` part B — negative controls for `verify-setup.sh`.**
+  It had 14 checks and nothing had ever proven one could fail. The fixture is inverted
+  from part A: `verify-setup.sh` audits a **machine**, so part B builds a
+  fully-configured fake one — `CLAUDE_CONFIG_DIR` at a temp home (the script reads that
+  env var, so the real `~/.claude` is never touched), a throwaway git repo, and a stub
+  `gh` on `PATH` so run history is decidable — then **removes one thing per probe**.
+  10 probes over checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9 and 10a; the harness now reports
+  **15/15**. Extended the existing script rather than adding a second CI job.
+- Both parts keep the FALSE-PASS rule: a non-zero exit for any reason *other than the
+  intended check* is reported as a false pass, not a catch.
+
+### Verification
+
+Watched to fail, per the script's own bar: making `verify-setup.sh` check 6a
+unconditionally pass makes the probe report **`NOT CAUGHT: This check is INERT`** and
+the harness exit 1. `CLAUDE_CONFIG_DIR` redirection was proven rather than assumed (a
+temp home with 2 planted skills reports 2, against the real 41). `shellcheck -S warning`
+caught an `rm -rf "$VS/home"` that would expand to `rm -rf /home` on an empty variable —
+now `${VS:?}`.
+
+**Front door checked:** check-negative-controls · verify-setup
+
+**Nothing here is measured; no lift is claimed.**
+
 ## [1.22.0] - 2026-08-05
 
 **The activation release — and gates that prove they can fail.** Two findings, both
@@ -2845,6 +2889,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.22.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.1
 [1.22.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.0
 [1.21.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.21.1
 [1.21.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.21.0
