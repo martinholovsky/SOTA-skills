@@ -104,11 +104,13 @@ is small" is therefore a statement about *written* conventions only. A second so
 of candidates exists and is not searchable: things this repo does by habit and has
 never said out loud, which surface only when one of them fails.
 
-### Gateable but not gated (0 candidates)
+### Gateable but not gated (2 candidates, both from incidents)
 
 | Candidate | Incident? | Silent? | Checkable? | Verdict |
 |---|---|---|---|---|
 | Front-door capability grep (`RELEASING.md` §2b) | **yes** — five capabilities shipped with no README mention | **yes** — nothing errors | ~~**no**~~ → **yes** | **GATED 2026-08-02 as invariant 14** |
+| **Router library map lists every `rules/*` file** | **yes** — `rules/11` was absent from the map in `skills/sota/SKILL.md` for two releases (found 2026-08-05) | **yes** — invariant 7 gates *skills* against the router and invariant 10 gates rules files against their *own* `SKILL.md`; the map itself is checked by neither, so drift there is silent | **yes** — diff `git ls-files 'skills/*/rules/*.md'` against the map's entries | **OPEN — clears all three filters.** ROADMAP #8 |
+| **A negative control for our own gates** | **partly** — no gate of ours has been caught inert, but two were caught *examining nothing* (2026-07-30) and the fix was to print the denominator, not to prove the check can reject | **yes** — an invariant that can no longer fail prints the same `ok` as one that can | **yes** — a fixture directory each invariant must reject, asserted non-zero | **OPEN — self-application.** We require this of every security gate in `rules/12` §1 and `sota-devsecops` rules/05 §5.6 and do not do it. ROADMAP #9 |
 
 **How the block came off.** This sat blocked on *"needs a machine-readable
 capability list per release"* — true, and still true: **discovery cannot be
@@ -135,6 +137,18 @@ That leaves **one** candidate, and it is blocked on a prerequisite this ledger
 cannot supply. The actionable set from *written* conventions is now empty — which,
 with finding 2b below, is the useful state to be in: the next gate will come from an
 incident, not from re-reading the docs.
+
+**And it did, twice, within three days (2026-08-05).** The two rows added above came
+out of ordinary work — a router map found stale while adding a rules file, and a rule
+we wrote for everyone else and had not applied to ourselves. Neither was discoverable
+by re-reading a convention, because neither was ever written down as one; both match
+the "unwritten conventions" bucket this ledger says is not searchable. That is the
+mechanism working as designed, and it is worth recording as evidence for it: **the
+prediction was made on 2026-08-02 and paid out on 2026-08-05.** Note the asymmetry in
+their evidence, and do not flatten it — the router-map candidate has a real incident
+behind it, while the negative-control candidate is argued from doctrine and a
+near-miss. The first is ready to build; the second should be built because we require
+it of others, which is a weaker reason and should be stated as one.
 
 ## Findings
 

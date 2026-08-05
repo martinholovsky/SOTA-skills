@@ -5,7 +5,22 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.21.1] - 2026-08-05
+
+**The inert-control release — three days of "the rule was there, the probe wasn't."**
+An external audit spec (seven classes beyond our five) and two commissioned research
+reports were taken in, and the recurring finding was the same each time: the library
+*stated the BUILD rule* and had never written the **AUDIT probe**. It said "unit tests
+touch no sockets" in three places and offered no way to find out that they do; it
+governed the *numbers* a tool prints and not the *words*; it declared instruments to be
+controls without ever turning that recursion on **guards**. The inert-control family is
+now three files — `rules/10` catalogs, `rules/11` sweeps, **`rules/12` proves a control
+works and distrusts whatever did the proving.**
+
+**Front door checked:** negative control · metamorphic · oracle problem · rules/12
+
+**Nothing here is measured; no lift is claimed for any of it.** The AUDIT arm remains
+at +0.00 across seven instruments, and none of this changes that.
 
 **Naming the prior art, and the four gaps two research reports found.** Two
 commissioned reports on inert controls were evaluated against the tree. They agree
@@ -2703,6 +2718,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.21.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.21.1
 [1.21.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.21.0
 [1.20.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.20.1
 [1.20.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.20.0

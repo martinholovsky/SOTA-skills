@@ -63,13 +63,21 @@ here, so this file loads into **every** session — the platform's guidance is t
 reduce adherence. That is a different constraint from invariant 1 and is not gated.
 Keep it under 200: put detail in `CONTRIBUTING.md` and leave a pointer.
 
-**Every file-list-driven check reports its denominator** (`ok (256 rules files)`)
+**Every file-list-driven check reports its denominator** (`ok (257 rules files)`)
 and **fails closed on an empty scope**. Added 2026-07-30 after a mutation showed
 checks 2 and 10 printing `ok` — and the script exiting 0 — while examining *zero*
 files. `0 checked, 0 failed, exit 0` is the signature of a gate that verifies
 nothing (`sota-code-security` rules/11 §2.2). Adding a check? The script's header
 carries the three rules that file learned the hard way: watch it fail first, print
 your denominator, and skip rather than guess.
+
+**Two gaps in the gates, known and unfixed** (v1.21.1). *Adding a `rules/NN` file?*
+Invariant 10 checks it is indexed by its own `SKILL.md`, and invariant 7 checks the
+router lists every **skill** — **nothing checks the router's library map lists every
+rules *file***, which is how `rules/11` sat unlisted there for two releases. Update
+`skills/sota/SKILL.md` by hand, and note it is at **exactly 500 lines**, so reflow
+an existing line rather than adding one. *And* the gates enumerate via `git ls-files`,
+so an **unstaged new file is invisible** to them — `git add` before believing a count.
 
 Separately, `scripts/check-freshness.sh` (run monthly by
 `.github/workflows/freshness.yml`) tracks the root `LAST-VERIFIED` stamp —
