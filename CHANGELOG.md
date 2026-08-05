@@ -5,6 +5,35 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.22.2] - 2026-08-05
+
+**Invariant 16 — the hook we document is the hook we install.** `install.sh` *writes*
+the `UserPromptSubmit` hook and `README.md` *documents* it, and nothing kept them equal.
+On 2026-08-05 three texts existed simultaneously: the README block (two revisions
+behind), `HOOK_CMD`, and what was actually in a real `settings.json`. The README's is
+the one a reader copies **by hand**, so the stale one is the version that spreads — and
+nothing executes a README, so the drift is silent by construction.
+
+**Front door checked:** install.sh · UserPromptSubmit
+
+### Added
+
+- **Invariant 16.** Parses the README's fenced JSON block rather than regexing the
+  string, so reformatting the block is not a false positive, and compares the extracted
+  `command` to the single `HOOK_CMD` assignment in `install.sh`.
+- Its **known-bad is in `check-negative-controls.sh`**, per the rule this repo now
+  applies to itself: a check whose failure nobody has watched is not a check. The
+  harness reports **16/16**.
+
+### Verification
+
+Watched to fail **four** ways, then restored: README drifts; `install.sh` drifts; the
+README block is removed (fails **closed** via `SCOPE EMPTY`, not silently); and the
+`HOOK_CMD` assignment is renamed (same). The two empty-scope cases matter most — they
+are the mode where a gate keeps printing green over nothing.
+
+**Nothing here is measured; no lift is claimed.**
+
 ## [1.22.1] - 2026-08-05
 
 **Turning the negative-control bar on our second gate — and finding a rotted number
@@ -2889,6 +2918,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.22.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.2
 [1.22.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.1
 [1.22.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.0
 [1.21.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.21.1

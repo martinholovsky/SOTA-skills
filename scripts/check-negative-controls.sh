@@ -140,6 +140,10 @@ probe 10 "rules file not referenced by its own SKILL.md" "not referenced in"
 ( cd "$WT" && perl -0pi -e 's/10 silent control failure, 11 dead-path diagnostics, /10 silent control failure, /' skills/sota/SKILL.md )
 probe 15 "router library map omits an existing rules file" "map missing:"
 
+# 16 — README documents a hook install.sh does not write (the 2026-08-05 defect).
+( cd "$WT" && perl -0pi -e 's/\(3\) ROUTE BEFORE YOU ACT/(3) route whenever/' README.md )
+probe 16 "README's documented hook drifted from HOOK_CMD" "README documents a hook install.sh does not write."
+
 
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
@@ -261,7 +265,7 @@ if [ "$failed" -ne 0 ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh: invariants 1, 2, 6, 10, 15. The diff-, history-"
+echo "      check-invariants.sh: invariants 1, 2, 6, 10, 15, 16. The diff-, history-"
 echo "      and release-shaped checks (5, 8, 9, 11, 12, 13, 14) are NOT covered."
 echo "      verify-setup.sh: checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 10a. Checks 5"
 echo "      and 11 are judgement (N/A by design) and 10b/12 need a different fixture."

@@ -77,6 +77,14 @@
 #      reports BOTH a file missing from the map and a map entry naming a file that
 #      does not exist. Needs python3 (map entries wrap across lines); skipped with
 #      a note if absent, like checks 4 and 8.
+#  16. The hook README documents == the hook install.sh writes. install.sh WRITES
+#      the UserPromptSubmit hook and README DOCUMENTS it; nothing kept them equal.
+#      On 2026-08-05 three texts existed at once — the README block (two revisions
+#      behind), HOOK_CMD, and what was in a real settings.json — and the README's
+#      is the one a reader copies by hand, so the stale one is the one that
+#      spreads. Parses the fenced JSON rather than regexing the string, so
+#      reformatting the block is not a false positive. Needs python3; skipped with
+#      a note if absent, like checks 4, 8 and 15.
 #
 # ADDING A CHECK? Three things this file learned the hard way — all from real
 # incidents recorded in the checks below:
@@ -138,7 +146,7 @@ scope() {  # <count> <noun> — returns 1 on an empty scope; prints nothing on s
 # CHANGELOG, docs/, evals/, AGENTS.md, these scripts -- is prose or code read by
 # people, deliberately uncapped since 2026-07-15; navigability there comes from a
 # table of contents and docs/INDEX.md, not a line ceiling.
-echo "[1/15] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
+echo "[1/16] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
 over=0
 seen1=0
 while IFS= read -r f; do
@@ -155,7 +163,7 @@ scope "$seen1" "skill files" || over=1
 if [ "$over" -eq 0 ]; then echo "    ok ($seen1 skill files)"; else fail=1; fi
 
 # --- 2. Audit checklist ends every rules file ------------------------------
-echo "[2/15] Every skills/*/rules/*.md ends with an '## Audit checklist'"
+echo "[2/16] Every skills/*/rules/*.md ends with an '## Audit checklist'"
 missing=0
 seen2=0
 while IFS= read -r f; do
@@ -186,7 +194,7 @@ if [ "$missing" -eq 0 ]; then echo "    ok ($seen2 rules files)"; else fail=1; f
 # .denylist.local (git-ignored, one ERE per line, '#' comments). When neither
 # exists (e.g. an external fork's PR), only the generic phrases are checked —
 # the maintainer's pre-commit hook and this repo's CI carry the full list.
-echo "[3/15] No internal-name leaks"
+echo "[3/16] No internal-name leaks"
 DENY='the user runs|the user operates'
 if [ -n "${SOTA_DENYLIST:-}" ]; then
   DENY="$DENY|$SOTA_DENYLIST"
@@ -222,7 +230,7 @@ fi
 # Code, Codex, ...) skip any skill that exceeds it. Count Unicode characters
 # (descriptions use em-dashes: 1 char, 3 bytes) via python3, parsing both
 # folded block scalars (`>-`) and plain single-line descriptions.
-echo "[4/15] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
+echo "[4/16] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
 if command -v python3 >/dev/null 2>&1; then
   if desc_out=$(python3 - "$MAX_DESC" <<'PY'
 import sys, glob, re
@@ -303,7 +311,7 @@ fi
 # One version, four places: VERSION, plugin.json, the CHANGELOG's top entry,
 # and (after the release lands) the newest v* tag. Drift here shipped a main
 # briefly claiming 1.8.0 with 1.9.0 content (2026-07-03) — hence a hard check.
-echo "[5/15] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
+echo "[5/16] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
 v5=0
 ver=$(tr -d '[:space:]' < VERSION)
 # Strict X.Y.Z: rejects interior malformations (1..2, 1.2, 1.2.3.4) the old
@@ -337,7 +345,7 @@ if [ "$v5" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # rot on surfaces nobody recounts (the social preview said "30 skills" for
 # three releases). Recount from the tree and compare every tracked surface;
 # RELEASING.md lists the same surfaces for manual release edits.
-echo "[6/15] Count-bearing surfaces match the tree"
+echo "[6/16] Count-bearing surfaces match the tree"
 v6=0
 ck() { # ck <found> <expected> <surface>
   [ "$1" = "$2" ] || { note "$3: says '${1:-<not found>}', tree says '$2'"; v6=1; }
@@ -383,7 +391,7 @@ if [ "$v6" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # library-map entry must name a real skill dir. Catches the drift the
 # 2026-07-10 audit found: sota-confidential-computing was added to the table
 # but missing from the map for a full release.
-echo "[7/15] Router lists every skill (routing table + library map)"
+echo "[7/16] Router lists every skill (routing table + library map)"
 v7=0
 seen7=0
 router=skills/sota/SKILL.md
@@ -411,7 +419,7 @@ if [ "$v7" -eq 0 ]; then echo "    ok ($seen7 domain skills)"; else fail=1; fi
 # with no rot-catching upside. Fenced AND inline code are stripped so link-shaped
 # examples (in ``` fences or `backticks`) are not scanned. Idea from vault-doctor
 # (training-knowledge-vault); see docs/ADOPTION-LOG.md.
-echo "[8/15] Internal Markdown links resolve (*.md targets)"
+echo "[8/16] Internal Markdown links resolve (*.md targets)"
 if command -v python3 >/dev/null 2>&1; then
   if link_out=$(python3 - <<'PY'
 import os, re, sys
@@ -457,7 +465,7 @@ fi
 # previous release (2026-07-28) and both sat on main until a human noticed
 # during the release cut. Fence-aware, like check 2: a CHANGELOG entry may
 # legitimately quote '## [Unreleased]' inside a code fence.
-echo "[9/15] CHANGELOG has at most one [Unreleased], and it is the top entry"
+echo "[9/16] CHANGELOG has at most one [Unreleased], and it is the top entry"
 v9=0
 changelogs="CHANGELOG.md $(git ls-files 'docs/CHANGELOG-archive*.md' | tr '\n' ' ')"
 for cl in $changelogs; do
@@ -503,7 +511,7 @@ if [ "$v9" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # to ourselves. All 255 rules files passed when this landed, so it is a
 # regression gate, not a repair; it was watched to fail on an injected file
 # and on a renamed reference before being trusted.
-echo "[10/15] Every skills/*/rules/*.md is referenced by its own SKILL.md"
+echo "[10/16] Every skills/*/rules/*.md is referenced by its own SKILL.md"
 v10=0
 seen10=0
 while IFS= read -r rf; do
@@ -546,7 +554,7 @@ if [ "$v10" -eq 0 ]; then echo "    ok ($seen10 rules files indexed)"; else fail
 # This is the first DIFF-based invariant; every other check reads the whole tree.
 # With no merge base it skips with a note rather than guessing, like checks 4/8.
 SWEEP_MIN_SKILL_FILES=20
-echo "[11/15] LAST-VERIFIED moves only with a sweep (batched diff, or declared in CHANGELOG)"
+echo "[11/16] LAST-VERIFIED moves only with a sweep (batched diff, or declared in CHANGELOG)"
 v11=0
 base=""
 for ref in origin/main main; do
@@ -619,7 +627,7 @@ if [ "$v11" -ne 0 ]; then fail=1; fi
 #
 # HISTORY-based, like check 11's diff: with no commit history for a pair it skips
 # with a note rather than guessing, because a shallow clone must not read as a pass.
-echo "[12/15] Rendered assets: each assets/*.png is no older than its *.html"
+echo "[12/16] Rendered assets: each assets/*.png is no older than its *.html"
 v12=0
 seen12=0
 checked12=0
@@ -692,7 +700,7 @@ if [ "$v12" -ne 0 ]; then fail=1; fi
 # column and checks that column in every data row beneath it. So it also fails when
 # the column is RENAMED or dropped (0 tables -> SCOPE EMPTY), which is the drift a
 # hardcoded column index would sail straight past.
-echo "[13/15] Every scoreboard row declares its sample size"
+echo "[13/16] Every scoreboard row declares its sample size"
 v13=0
 BOARD="evals/results/RESULTS.md"
 if [ ! -f "$BOARD" ]; then
@@ -762,7 +770,7 @@ if [ "$v13" -ne 0 ]; then fail=1; fi
 # docs/INDEX.md (the front door is real), AND in that release's own CHANGELOG section
 # (you cannot pass by declaring a filler word that was never part of the release).
 # A missing line on a release commit fails closed.
-echo "[14/15] A release declares its front-door terms, and they resolve"
+echo "[14/16] A release declares its front-door terms, and they resolve"
 v14=0
 base14=""
 for ref in origin/main main; do
@@ -833,7 +841,7 @@ if [ "$v14" -ne 0 ]; then fail=1; fi
 # (v1.19.8 → v1.21.0) with all fourteen checks green. Both directions matter: a
 # file absent from the map is invisible to a router-driven load, and a map entry
 # for a file that no longer exists sends the model after nothing.
-echo "[15/15] Router library map lists every rules file (both directions)"
+echo "[15/16] Router library map lists every rules file (both directions)"
 v15=0
 if command -v python3 >/dev/null 2>&1; then
   map_out=$(python3 - <<'MAPPY'
@@ -899,11 +907,91 @@ else
 fi
 if [ "$v15" -ne 0 ]; then fail=1; fi
 
+# --- 16. The documented hook matches the installed hook -------------------
+# install.sh WRITES the UserPromptSubmit hook; README DOCUMENTS it. Nothing kept
+# them equal, and on 2026-08-05 three different texts existed at once: the
+# README's block (two revisions behind), install.sh's HOOK_CMD, and what was
+# actually in a user's settings.json. The README's is the one a reader copies by
+# hand, so a stale block is the version that spreads. Silent by construction —
+# nothing executes the README.
+echo "[16/16] README's documented hook == install.sh's HOOK_CMD"
+v16=0
+if command -v python3 >/dev/null 2>&1; then
+  hook_out=$(python3 - <<'HOOKPY'
+import re, json, sys
+
+FENCE = chr(96) * 3
+try:
+    readme = open("README.md", encoding="utf-8").read()
+    lines = open("scripts/install.sh", encoding="utf-8").read().splitlines()
+except OSError as e:
+    print("ERROR: %s" % e); print("SCOPE 0"); sys.exit(1)
+
+# The shipped value: the one HOOK_CMD assignment in install.sh.
+PREFIX = 'readonly HOOK_CMD="'
+sh = [l for l in lines if l.startswith(PREFIX)]
+if len(sh) != 1:
+    print("expected exactly 1 HOOK_CMD assignment in scripts/install.sh, found %d" % len(sh))
+    print("SCOPE 0"); sys.exit(1)
+shipped = sh[0][len(PREFIX):-1]
+
+# The documented value: parse the fenced JSON rather than regexing the string, so
+# a reformat of the block is not a false positive.
+blocks = [b for b in re.findall(FENCE + r'json\n(.*?)' + FENCE, readme, re.S)
+          if "UserPromptSubmit" in b]
+documented = []
+for b in blocks:
+    try:
+        d = json.loads(b)
+    except json.JSONDecodeError as e:
+        print("README JSON block does not parse: %s" % e)
+        print("SCOPE 0"); sys.exit(1)
+    for grp in d.get("hooks", {}).get("UserPromptSubmit", []):
+        for h in grp.get("hooks", []):
+            if "command" in h:
+                documented.append(h["command"])
+
+if not documented:
+    print("no UserPromptSubmit command found in any README json block — "
+          "the documented hook vanished, or the block stopped being valid JSON")
+    print("SCOPE 0"); sys.exit(1)
+
+bad = 0
+for d in documented:
+    if d != shipped:
+        bad += 1
+        print("README documents a hook install.sh does not write.")
+        print("  README    (%d chars): %s" % (len(d), d[:90]))
+        print("  HOOK_CMD  (%d chars): %s" % (len(shipped), shipped[:90]))
+        for i, (x, y) in enumerate(zip(d, shipped)):
+            if x != y:
+                print("  first difference at char %d: %r vs %r" % (i, d[i:i+40], shipped[i:i+40]))
+                break
+        else:
+            print("  one is a prefix of the other (length differs)")
+print("SCOPE %d" % len(documented))
+sys.exit(1 if bad else 0)
+HOOKPY
+  ) || v16=1
+  n16=$(printf '%s\n' "$hook_out" | sed -n 's/^SCOPE //p')
+  while IFS= read -r l; do
+    case "$l" in SCOPE\ *|'') ;; *) note "$l" ;; esac
+  done <<EOF
+$hook_out
+EOF
+  scope "${n16:-0}" "documented hook commands" || v16=1
+  if [ "$v16" -eq 0 ]; then echo "    ok (${n16:-0} documented hook, matches HOOK_CMD)"; fi
+else
+  note "SKIPPED (python3 not found; CI always has it)"
+  echo "    ok (skipped)"
+fi
+if [ "$v16" -ne 0 ]; then fail=1; fi
+
 # --- Result ---------------------------------------------------------------
 echo
 if [ "$fail" -ne 0 ]; then
   echo "FAIL: repository invariants violated (see above)."
   exit 1
 fi
-printf 'PASS: all repository invariants satisfied (15 checks over %s skill files / %s rules files, %ss).\n' \
+printf 'PASS: all repository invariants satisfied (16 checks over %s skill files / %s rules files, %ss).\n' \
   "${seen1:-?}" "${seen2:-?}" "$((SECONDS - START_SECONDS))"

@@ -179,6 +179,13 @@ are marked "needs verification", never asserted.
     checks a rules file is indexed by its *own* `SKILL.md`; neither reads the map's
     contents, which is how `sota-code-security/rules/11` went unlisted from v1.19.8
     to v1.21.0 with every check green.
+16. **the hook `README.md` documents matches the one `install.sh` writes**
+    (`HOOK_CMD`). Practical effect: change the re-injection hook's wording in one
+    place and you must change it in the other. On 2026-08-05 three texts existed at
+    once — the README block, `HOOK_CMD`, and what was in a real `settings.json` —
+    and the README's is the one a reader copies by hand, so the stale one is the
+    one that spreads. The check parses the fenced JSON rather than regexing the
+    string, so reformatting the block is not a false positive.
 
 **Proving our gates can still fail.** `check-invariants.sh` passing means the tree is
 clean — it does not mean the checks still work, and those two states print identically.
