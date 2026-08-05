@@ -68,6 +68,15 @@
 #      "**Front door checked:** a · b" in its CHANGELOG section, and every term must
 #      resolve in README.md or docs/INDEX.md AND appear in that release's own entry.
 #      DIFF-based, release commits only — silent on an ordinary PR.
+#  15. The router's library map lists every rules FILE, both directions. Check 7
+#      proves each SKILL appears in the map; check 10 proves each rules file is
+#      indexed by its OWN SKILL.md. Neither looks at the map's CONTENTS, so
+#      sota-code-security/rules/11 sat unlisted in skills/sota/SKILL.md for two
+#      releases (v1.19.8 → v1.21.0) with every check green. Compares the NN numbers
+#      the map enumerates per skill against skills/<skill>/rules/NN-*.md, and
+#      reports BOTH a file missing from the map and a map entry naming a file that
+#      does not exist. Needs python3 (map entries wrap across lines); skipped with
+#      a note if absent, like checks 4 and 8.
 #
 # ADDING A CHECK? Three things this file learned the hard way — all from real
 # incidents recorded in the checks below:
@@ -129,7 +138,7 @@ scope() {  # <count> <noun> — returns 1 on an empty scope; prints nothing on s
 # CHANGELOG, docs/, evals/, AGENTS.md, these scripts -- is prose or code read by
 # people, deliberately uncapped since 2026-07-15; navigability there comes from a
 # table of contents and docs/INDEX.md, not a line ceiling.
-echo "[1/14] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
+echo "[1/15] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
 over=0
 seen1=0
 while IFS= read -r f; do
@@ -146,7 +155,7 @@ scope "$seen1" "skill files" || over=1
 if [ "$over" -eq 0 ]; then echo "    ok ($seen1 skill files)"; else fail=1; fi
 
 # --- 2. Audit checklist ends every rules file ------------------------------
-echo "[2/14] Every skills/*/rules/*.md ends with an '## Audit checklist'"
+echo "[2/15] Every skills/*/rules/*.md ends with an '## Audit checklist'"
 missing=0
 seen2=0
 while IFS= read -r f; do
@@ -177,7 +186,7 @@ if [ "$missing" -eq 0 ]; then echo "    ok ($seen2 rules files)"; else fail=1; f
 # .denylist.local (git-ignored, one ERE per line, '#' comments). When neither
 # exists (e.g. an external fork's PR), only the generic phrases are checked —
 # the maintainer's pre-commit hook and this repo's CI carry the full list.
-echo "[3/14] No internal-name leaks"
+echo "[3/15] No internal-name leaks"
 DENY='the user runs|the user operates'
 if [ -n "${SOTA_DENYLIST:-}" ]; then
   DENY="$DENY|$SOTA_DENYLIST"
@@ -213,7 +222,7 @@ fi
 # Code, Codex, ...) skip any skill that exceeds it. Count Unicode characters
 # (descriptions use em-dashes: 1 char, 3 bytes) via python3, parsing both
 # folded block scalars (`>-`) and plain single-line descriptions.
-echo "[4/14] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
+echo "[4/15] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
 if command -v python3 >/dev/null 2>&1; then
   if desc_out=$(python3 - "$MAX_DESC" <<'PY'
 import sys, glob, re
@@ -294,7 +303,7 @@ fi
 # One version, four places: VERSION, plugin.json, the CHANGELOG's top entry,
 # and (after the release lands) the newest v* tag. Drift here shipped a main
 # briefly claiming 1.8.0 with 1.9.0 content (2026-07-03) — hence a hard check.
-echo "[5/14] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
+echo "[5/15] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
 v5=0
 ver=$(tr -d '[:space:]' < VERSION)
 # Strict X.Y.Z: rejects interior malformations (1..2, 1.2, 1.2.3.4) the old
@@ -328,7 +337,7 @@ if [ "$v5" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # rot on surfaces nobody recounts (the social preview said "30 skills" for
 # three releases). Recount from the tree and compare every tracked surface;
 # RELEASING.md lists the same surfaces for manual release edits.
-echo "[6/14] Count-bearing surfaces match the tree"
+echo "[6/15] Count-bearing surfaces match the tree"
 v6=0
 ck() { # ck <found> <expected> <surface>
   [ "$1" = "$2" ] || { note "$3: says '${1:-<not found>}', tree says '$2'"; v6=1; }
@@ -374,7 +383,7 @@ if [ "$v6" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # library-map entry must name a real skill dir. Catches the drift the
 # 2026-07-10 audit found: sota-confidential-computing was added to the table
 # but missing from the map for a full release.
-echo "[7/14] Router lists every skill (routing table + library map)"
+echo "[7/15] Router lists every skill (routing table + library map)"
 v7=0
 seen7=0
 router=skills/sota/SKILL.md
@@ -402,7 +411,7 @@ if [ "$v7" -eq 0 ]; then echo "    ok ($seen7 domain skills)"; else fail=1; fi
 # with no rot-catching upside. Fenced AND inline code are stripped so link-shaped
 # examples (in ``` fences or `backticks`) are not scanned. Idea from vault-doctor
 # (training-knowledge-vault); see docs/ADOPTION-LOG.md.
-echo "[8/14] Internal Markdown links resolve (*.md targets)"
+echo "[8/15] Internal Markdown links resolve (*.md targets)"
 if command -v python3 >/dev/null 2>&1; then
   if link_out=$(python3 - <<'PY'
 import os, re, sys
@@ -448,7 +457,7 @@ fi
 # previous release (2026-07-28) and both sat on main until a human noticed
 # during the release cut. Fence-aware, like check 2: a CHANGELOG entry may
 # legitimately quote '## [Unreleased]' inside a code fence.
-echo "[9/14] CHANGELOG has at most one [Unreleased], and it is the top entry"
+echo "[9/15] CHANGELOG has at most one [Unreleased], and it is the top entry"
 v9=0
 changelogs="CHANGELOG.md $(git ls-files 'docs/CHANGELOG-archive*.md' | tr '\n' ' ')"
 for cl in $changelogs; do
@@ -494,7 +503,7 @@ if [ "$v9" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # to ourselves. All 255 rules files passed when this landed, so it is a
 # regression gate, not a repair; it was watched to fail on an injected file
 # and on a renamed reference before being trusted.
-echo "[10/14] Every skills/*/rules/*.md is referenced by its own SKILL.md"
+echo "[10/15] Every skills/*/rules/*.md is referenced by its own SKILL.md"
 v10=0
 seen10=0
 while IFS= read -r rf; do
@@ -537,7 +546,7 @@ if [ "$v10" -eq 0 ]; then echo "    ok ($seen10 rules files indexed)"; else fail
 # This is the first DIFF-based invariant; every other check reads the whole tree.
 # With no merge base it skips with a note rather than guessing, like checks 4/8.
 SWEEP_MIN_SKILL_FILES=20
-echo "[11/14] LAST-VERIFIED moves only with a sweep (batched diff, or declared in CHANGELOG)"
+echo "[11/15] LAST-VERIFIED moves only with a sweep (batched diff, or declared in CHANGELOG)"
 v11=0
 base=""
 for ref in origin/main main; do
@@ -610,7 +619,7 @@ if [ "$v11" -ne 0 ]; then fail=1; fi
 #
 # HISTORY-based, like check 11's diff: with no commit history for a pair it skips
 # with a note rather than guessing, because a shallow clone must not read as a pass.
-echo "[12/14] Rendered assets: each assets/*.png is no older than its *.html"
+echo "[12/15] Rendered assets: each assets/*.png is no older than its *.html"
 v12=0
 seen12=0
 checked12=0
@@ -683,7 +692,7 @@ if [ "$v12" -ne 0 ]; then fail=1; fi
 # column and checks that column in every data row beneath it. So it also fails when
 # the column is RENAMED or dropped (0 tables -> SCOPE EMPTY), which is the drift a
 # hardcoded column index would sail straight past.
-echo "[13/14] Every scoreboard row declares its sample size"
+echo "[13/15] Every scoreboard row declares its sample size"
 v13=0
 BOARD="evals/results/RESULTS.md"
 if [ ! -f "$BOARD" ]; then
@@ -753,7 +762,7 @@ if [ "$v13" -ne 0 ]; then fail=1; fi
 # docs/INDEX.md (the front door is real), AND in that release's own CHANGELOG section
 # (you cannot pass by declaring a filler word that was never part of the release).
 # A missing line on a release commit fails closed.
-echo "[14/14] A release declares its front-door terms, and they resolve"
+echo "[14/15] A release declares its front-door terms, and they resolve"
 v14=0
 base14=""
 for ref in origin/main main; do
@@ -817,11 +826,84 @@ EOF
 fi
 if [ "$v14" -ne 0 ]; then fail=1; fi
 
+# --- 15. Router library map lists every rules FILE ------------------------
+# Check 7 proves every SKILL is in the map. Check 10 proves every rules file is
+# indexed by its OWN SKILL.md. Neither reads the map's CONTENTS — which is how
+# sota-code-security/rules/11 stayed unlisted in the router for two releases
+# (v1.19.8 → v1.21.0) with all fourteen checks green. Both directions matter: a
+# file absent from the map is invisible to a router-driven load, and a map entry
+# for a file that no longer exists sends the model after nothing.
+echo "[15/15] Router library map lists every rules file (both directions)"
+v15=0
+if command -v python3 >/dev/null 2>&1; then
+  map_out=$(python3 - <<'MAPPY'
+import os, re, glob, sys
+router = "skills/sota/SKILL.md"
+try:
+    lines = open(router, encoding="utf-8").read().splitlines()
+except OSError as e:
+    print("ERROR: cannot read %s: %s" % (router, e))
+    print("SCOPE 0")
+    sys.exit(1)
+
+# A map entry is "- **<skill>/rules**: 01 title, 02 title, ..." and wraps onto
+# indented continuation lines until the next list item or an unindented line.
+entries, name = {}, None
+for line in lines:
+    m = re.match(r'^- \*\*(sota-[a-z-]+)/rules\*\*:(.*)$', line)
+    if m:
+        name = m.group(1)
+        entries[name] = m.group(2)
+        continue
+    if name is not None:
+        if line.startswith("- ") or (line.strip() and not line.startswith("  ")):
+            name = None
+        else:
+            entries[name] += " " + line
+
+# Anchor each number to a list position (entry start, or after a comma) so a
+# title containing digits cannot read as a rules number: "02 NIST 800-53/800-171"
+# must yield 02 and never 80, 53 or 17.
+NUM = re.compile(r'(?:^|[:,])\s*(\d{2})\s')
+dirs = sorted(glob.glob("skills/sota-*/rules"))
+bad = 0
+for d in dirs:
+    skill = d.split("/")[1]
+    files = set()
+    for f in glob.glob(d + "/*.md"):
+        b = os.path.basename(f)
+        if re.match(r'^\d{2}-', b):
+            files.add(b[:2])
+    listed = set(NUM.findall(entries.get(skill, "")))
+    for n in sorted(files - listed):
+        print("map missing: %s/rules/%s-*.md exists but the router does not list it" % (skill, n))
+        bad += 1
+    for n in sorted(listed - files):
+        print("map stale: router lists %s/rules %s but no such file exists" % (skill, n))
+        bad += 1
+print("SCOPE %d" % len(dirs))
+sys.exit(1 if bad else 0)
+MAPPY
+  ) || v15=1
+  n15=$(printf '%s\n' "$map_out" | sed -n 's/^SCOPE //p')
+  while IFS= read -r l; do
+    case "$l" in SCOPE\ *|'') ;; *) note "$l" ;; esac
+  done <<EOF
+$map_out
+EOF
+  scope "${n15:-0}" "skills with a rules/ dir" || v15=1
+  if [ "$v15" -eq 0 ]; then echo "    ok (${n15:-0} skills, map matches the tree)"; fi
+else
+  note "SKIPPED (python3 not found; CI always has it)"
+  echo "    ok (skipped)"
+fi
+if [ "$v15" -ne 0 ]; then fail=1; fi
+
 # --- Result ---------------------------------------------------------------
 echo
 if [ "$fail" -ne 0 ]; then
   echo "FAIL: repository invariants violated (see above)."
   exit 1
 fi
-printf 'PASS: all repository invariants satisfied (14 checks over %s skill files / %s rules files, %ss).\n' \
+printf 'PASS: all repository invariants satisfied (15 checks over %s skill files / %s rules files, %ss).\n' \
   "${seen1:-?}" "${seen2:-?}" "$((SECONDS - START_SECONDS))"

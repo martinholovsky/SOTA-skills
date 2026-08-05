@@ -24,7 +24,7 @@ symlinks to it — edit only this file, never the symlinks.
 
 ## Invariants (enforced in pre-commit and CI)
 
-`scripts/check-invariants.sh` runs **14 checks** and fails the build on any of
+`scripts/check-invariants.sh` runs **15 checks** and fails the build on any of
 them. One line each below. The *rationale* — and the real incident behind every
 one — lives in the script's own header, at the point of use, and the practical
 "what this means for your PR" version is in
@@ -46,6 +46,7 @@ one — lives in the script's own header, at the point of use, and the practical
 | 12 | an `assets/*.png` is older than the `*.html` it renders — the README embeds the *image*, never the source, so an un-rendered fix reaches nobody. Escape: `[no-render]` in the commit subject |
 | 13 | a scoreboard row in `evals/results/RESULTS.md` leaves its `Samples` cell empty |
 | 14 | a **release** (VERSION changed) carries no `**Front door checked:**` line in its CHANGELOG section, or a declared term resolves in neither `README.md`/`docs/INDEX.md` nor the release's own entry |
+| 15 | the router's **library map** omits a `rules/NN` file that exists, or names one that doesn't — checks 7 and 10 both miss this, and `rules/11` went unlisted for two releases |
 
 **Only instruction files are capped.** A file is capped if and only if an agent
 loads it *as instructions* — `skills/*/SKILL.md` and `skills/*/rules/*.md`, and
@@ -71,13 +72,21 @@ nothing (`sota-code-security` rules/11 §2.2). Adding a check? The script's head
 carries the three rules that file learned the hard way: watch it fail first, print
 your denominator, and skip rather than guess.
 
-**Two gaps in the gates, known and unfixed** (v1.21.1). *Adding a `rules/NN` file?*
-Invariant 10 checks it is indexed by its own `SKILL.md`, and invariant 7 checks the
-router lists every **skill** — **nothing checks the router's library map lists every
-rules *file***, which is how `rules/11` sat unlisted there for two releases. Update
-`skills/sota/SKILL.md` by hand, and note it is at **exactly 500 lines**, so reflow
-an existing line rather than adding one. *And* the gates enumerate via `git ls-files`,
-so an **unstaged new file is invisible** to them — `git add` before believing a count.
+**Both gaps that paragraph named are now closed** (they were open for one release).
+*Adding a `rules/NN` file?* Invariant 10 checks it is indexed by its own `SKILL.md`
+and **invariant 15** checks the router's library map lists it, both directions —
+that map was unchecked, which is how `rules/11` sat unlisted for two releases.
+`skills/sota/SKILL.md` is at **exactly 500 lines**, so reflow an existing line
+rather than adding one. Note the gates enumerate via `git ls-files`, so an
+**unstaged new file is invisible** to them — `git add` before believing a count.
+
+**`scripts/check-negative-controls.sh` proves the gate can still fail.** CI runs it
+as its own job: it injects a known-bad per invariant into a disposable worktree and
+requires *the intended check* to be the one that complains — a non-zero exit for any
+other reason is a **FALSE PASS**, not a catch. Covers invariants 1, 2, 6, 10, 15;
+the diff-, history- and release-shaped ones are not covered and it says so. Too slow
+for pre-commit (one full gate run per mutation). Adding an invariant? Add its
+known-bad here too, or you have shipped a check nobody has watched fail.
 
 Separately, `scripts/check-freshness.sh` (run monthly by
 `.github/workflows/freshness.yml`) tracks the root `LAST-VERIFIED` stamp —
@@ -151,7 +160,7 @@ the setting. The pre-commit hook scans each commit locally.
   library handed back three proposals citing this repo's own `file:line` — the
   ledger takes those on the same terms, rejections included
 - [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md) — which of this repo's
-  conventions are **enforced** (14 invariants + 4 more inside the eval runners) and
+  conventions are **enforced** (15 invariants + 4 more inside the eval runners) and
   which are prose, with the three filters a convention must pass to earn a gate
   (has it already failed · does it fail silently · is it mechanically checkable).
   Read it before proposing a new gate — it argues against gating the ~18 judgment

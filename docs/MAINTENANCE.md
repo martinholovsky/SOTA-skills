@@ -2,7 +2,7 @@
 
 The library's value is that its fast-moving claims (versions, CVEs, RFCs,
 specs, GA states, tool status, standards) hold up against primary sources.
-CI enforces *structure* (the 14 invariants in `scripts/check-invariants.sh` +
+CI enforces *structure* (the 15 invariants in `scripts/check-invariants.sh` +
 gitleaks + shellcheck) but **cannot** verify that a claim is *true* — that
 needs web access and judgment. This file is the human/agent process that
 covers the accuracy dimension CI can't, plus how efficacy is measured.
@@ -95,7 +95,7 @@ grow the golden sets as coverage warrants.
 
 | Dimension | Gate | Automated? |
 |---|---|---|
-| Structure (skill-file line cap, checklist-last, description cap, counts, router completeness, link resolution, rules-file indexing, `LAST-VERIFIED` pairing, rendered-asset currency, scoreboard sample sizes, release front-door terms) | `check-invariants.sh` (**14 checks**) | Yes — pre-commit + CI |
+| Structure (skill-file line cap, checklist-last, description cap, counts, router completeness, link resolution, rules-file indexing, `LAST-VERIFIED` pairing, rendered-asset currency, scoreboard sample sizes, release front-door terms, router library-map completeness) | `check-invariants.sh` (**15 checks**) | Yes — pre-commit + CI |
 | Secrets | gitleaks (full history) | Yes — CI |
 | Shell quality | shellcheck | Yes — CI |
 | Claim **accuracy** | this runbook + `LAST-VERIFIED` | No — human/agent, monthly red-flag |

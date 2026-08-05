@@ -5,6 +5,62 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+**Proving the gate can fail.** v1.21.1 shipped two known gaps in our own CI and wrote
+them down as ROADMAP #8 and #9. Both are now closed, and the second one justified
+itself within a minute of first running.
+
+### Added
+
+- **Invariant 15 — the router's library map lists every rules file, both
+  directions.** Invariant 7 proves every *skill* is in the map; invariant 10 proves
+  every rules file is indexed by its *own* `SKILL.md`. Neither reads the map's
+  **contents**, which is how `sota-code-security/rules/11` sat unlisted in
+  `skills/sota/SKILL.md` from **v1.19.8 to v1.21.0** with all fourteen checks green.
+  The check compares the `NN` numbers the map enumerates per skill against
+  `skills/<skill>/rules/NN-*.md` and reports a file missing from the map *and* a map
+  entry naming a file that does not exist. The number is anchored to a list position
+  so a title containing digits cannot be misread — `02 NIST 800-53/800-171` yields
+  `02`, never `80` or `53`. **Watched to fail first**, per the script's own header:
+  once by recreating the real defect, once on its inverse, then restored.
+- **`scripts/check-negative-controls.sh` — a negative control for our own gates**,
+  running in CI as its own job. `check-invariants.sh` passing proves the *tree* is
+  clean; it has never proved the *checks* still work, and those two states print
+  identically. The harness injects a known-bad per invariant into a disposable git
+  worktree and requires **the intended check** to be the one that complains — a
+  non-zero exit for any other reason is a **FALSE PASS**, not a catch. It runs a
+  positive control first (clean copy must pass, else abort rather than report), and
+  copies in the working-tree gate and byte-compares it, because a worktree at `HEAD`
+  would otherwise test the *committed* gate rather than the one being edited.
+  Covers invariants 1, 2, 6, 10, 15; states plainly that the diff-, history- and
+  release-shaped checks are **not** covered.
+
+### Why the second one earned its keep immediately
+
+On its **first run** the harness reported a FALSE PASS against its own probe 15.
+`git clean` does not remove *staged* files, so a fixture added by probe 10 leaked
+into the next mutation, which then failed on the file-count check instead of the
+check it targeted. **A harness that accepted any non-zero exit would have printed
+`5/5 caught` and been wrong about one of them** — precisely the `rules/12` §2.1
+"instrument that cannot fail" mode, caught in our own instrument by the one
+assertion added to catch it. Fixed with `git reset --hard` (which clears the index)
+plus a re-copy and re-compare of the gate, since the reset also reverts it.
+
+### Changed
+
+- Invariant count **14 → 15** across `AGENTS.md` (table + prose),
+  `CONTRIBUTING.md` (numbered list + a new "proving the gate can still fail"
+  section) and `docs/MAINTENANCE.md`. `docs/ROADMAP.md` line 426 says "14 checks"
+  about **`verify-setup.sh`**, a different script, and was deliberately left alone.
+- `AGENTS.md`'s "two gaps in the gates, known and unfixed" paragraph — added one
+  release ago — was **false as of this change** and now records both as closed.
+- ROADMAP #8/#9 struck through with what shipped; `docs/CONVENTIONS-LEDGER.md`
+  moves both candidates from "gateable but not gated" (2 → **0**) to gated, and
+  records that the doctrine-only candidate is no longer doctrine-only.
+
+**Nothing here is measured; no lift is claimed.**
+
 ## [1.21.1] - 2026-08-05
 
 **The inert-control release — three days of "the rule was there, the probe wasn't."**

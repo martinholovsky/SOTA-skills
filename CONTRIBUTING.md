@@ -170,6 +170,26 @@ are marked "needs verification", never asserted.
     `**Front door checked:** term · term` to its CHANGELOG section, and each term
     must appear in `README.md` or `docs/INDEX.md` **and** in that release's own
     entry. See [RELEASING.md](RELEASING.md) §2b for why.
+15. **the router's library map lists every rules file**, both directions: a
+    `skills/<skill>/rules/NN-*.md` that the map in `skills/sota/SKILL.md` does not
+    enumerate, or a number the map enumerates with no such file. Practical effect:
+    adding a `rules/NN` means editing that map too — and `skills/sota/SKILL.md` is
+    at **exactly 500 lines** (invariant 1), so reflow an existing line rather than
+    adding one. Invariant 7 checks the map lists every *skill* and invariant 10
+    checks a rules file is indexed by its *own* `SKILL.md`; neither reads the map's
+    contents, which is how `sota-code-security/rules/11` went unlisted from v1.19.8
+    to v1.21.0 with every check green.
+
+**Proving the gate can still fail.** `scripts/check-invariants.sh` passing means the
+tree is clean — it does not mean the checks still work, and those two states print
+identically. `scripts/check-negative-controls.sh` (CI job *Negative controls*) injects
+a known-bad per invariant into a disposable git worktree and requires **the intended
+check** to be the one that complains; a non-zero exit for any other reason is reported
+as a FALSE PASS, because a harness that accepts any failure reports full coverage while
+testing nothing. It covers invariants 1, 2, 6, 10 and 15 and says plainly which it does
+not cover. **Adding an invariant? Add its known-bad there too** — otherwise you have
+shipped a check nobody has ever watched fail. Not in pre-commit: it runs the whole gate
+once per mutation.
 
 Secrets are scanned separately by **gitleaks** (config in `.gitleaks.toml`);
 CI scans the full git history, the pre-commit hook scans each commit.
