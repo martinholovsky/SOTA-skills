@@ -21,11 +21,26 @@ from re-reading anything.
 | 5 | **Denominators for 5 eval runners** — 7 of 12 declare one | No single `cases = load…` line to hook | Add `note_work(n, "cases")` when next touching each |
 | 6 | **§3.9 tool table rot** — 8 named third-party projects, 2 already renamed | Watch item; needs re-verification, not a decision | Re-check the 8 URLs at the next accuracy sweep |
 | 7 | **6-month accuracy sweep** | Scheduled | ~Jan 2027; bump `LAST-VERIFIED` only after a full pass |
-| ~~8~~ | ~~Gate the router's library map against `rules/*` files~~ | **DONE 2026-08-05 — invariant 15.** Compares the `NN` numbers the map enumerates per skill against `skills/<skill>/rules/NN-*.md`, both directions. Watched to fail on the real defect (drop `11` from the map) and on its inverse (map lists a file that does not exist) before being trusted |
-| ~~9~~ | ~~A negative control for our own CI~~ | **DONE 2026-08-05 — `scripts/check-negative-controls.sh`**, its own CI job. Injects a known-bad per invariant into a disposable worktree and requires *the intended check* to complain; any other failure is a FALSE PASS. 5/5 on invariants 1, 2, 6, 10, 15 |
-| ~~9~~ | ~~`verify-setup.sh` has 14 checks and no negative control~~ | **DONE 2026-08-05.** `check-negative-controls.sh` gained a part B: a fully-configured fake machine (`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`), 10 probes over checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 10a. Watched to fail: making check 6a always-pass makes the probe report NOT CAUGHT/INERT |
-| ~~8~~ | ~~Two CI jobs run but cannot block~~ | **DONE 2026-08-05.** All four jobs are now required checks. **Watched to block, not just configured:** a throwaway PR (#201) made invariant 2 inert so only `Negative controls` failed — `mergeStateStatus` went **UNSTABLE → BLOCKED** across the protection change, and a real `gh pr merge` was refused with *"the base branch policy prohibits the merge"*. Everything outside `required_status_checks` diffed identical before/after; `enforce_admins` still true |
-| ~~8~~ | ~~Gate README's documented hook against `install.sh`'s `HOOK_CMD`~~ | **DONE 2026-08-05 — invariant 16.** Parses the README's fenced JSON (not a regex over the string, so reformatting is not a false positive) and compares to `HOOK_CMD`. Watched to fail four ways: README drift, install.sh drift, and both fail-closed cases (block removed, assignment renamed) which hit SCOPE EMPTY rather than passing. Known-bad added to `check-negative-controls.sh` |
+
+**Closed in the v1.22.x cycle (2026-08-05)** — kept here rather than in the table above,
+which is for what is still *actionable*. Numbering is deliberately dropped: these five were
+items 8 and 9 across three separate cuts, and re-using the numbers made the table unreadable.
+
+- **Gate the router's library map against `rules/*` files** — shipped as **invariant 15**
+  (v1.22.0). Both directions; watched to fail on the real defect (drop `11` from the map)
+  and on its inverse before being trusted.
+- **A negative control for our own CI** — shipped as `scripts/check-negative-controls.sh`
+  (v1.22.0), its own CI job. Injects a known-bad per invariant and requires *the intended
+  check* to complain; any other failure is a FALSE PASS.
+- **`verify-setup.sh` had 14 checks and no negative control** — closed by part B (v1.22.1):
+  a fully-configured fake machine (`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`), 10
+  probes. Watched to fail: making check 6a always-pass makes the probe report NOT CAUGHT.
+- **Gate README's documented hook against `install.sh`'s `HOOK_CMD`** — shipped as
+  **invariant 16** (v1.22.2). Parses the fenced JSON rather than regexing the string.
+  Watched to fail four ways, including both fail-closed cases.
+- **Two CI jobs ran but could not block** — fixed (v1.22.3): all four jobs are now required
+  checks. Watched to *block*: a PR with only `Negative controls` failing went
+  **UNSTABLE → BLOCKED** across the change, and a real merge attempt was refused.
 
 **Explicit do-nots** (each has a recorded reason — do not re-litigate): another
 audit-recall instrument · a synthetic large-repo fixture · rebuilding the BUILD-safe
