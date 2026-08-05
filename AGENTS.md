@@ -20,7 +20,8 @@ symlinks to it — edit only this file, never the symlinks.
 2. make the edit, then run `./scripts/check-invariants.sh`
    (and optionally `pre-commit run --all-files`)
 3. push the branch and open a PR
-4. both required checks must pass, then squash-merge
+4. all four required checks must pass, then squash-merge — invariants, secret scan,
+   shell lint, and the negative-control harness that proves the gates can still fail
 
 ## Invariants (enforced in pre-commit and CI)
 
