@@ -104,13 +104,14 @@ is small" is therefore a statement about *written* conventions only. A second so
 of candidates exists and is not searchable: things this repo does by habit and has
 never said out loud, which surface only when one of them fails.
 
-### Gateable but not gated (0 candidates — both shipped 2026-08-05)
+### Gateable but not gated (1 candidate)
 
 | Candidate | Incident? | Silent? | Checkable? | Verdict |
 |---|---|---|---|---|
 | Front-door capability grep (`RELEASING.md` §2b) | **yes** — five capabilities shipped with no README mention | **yes** — nothing errors | ~~**no**~~ → **yes** | **GATED 2026-08-02 as invariant 14** |
 | **Router library map lists every `rules/*` file** | **yes** — `rules/11` was absent from the map in `skills/sota/SKILL.md` for two releases (found 2026-08-05) | **yes** — invariant 7 gates *skills* against the router and invariant 10 gates rules files against their *own* `SKILL.md`; the map itself is checked by neither, so drift there is silent | **yes** — diff `git ls-files 'skills/*/rules/*.md'` against the map's entries | **GATED 2026-08-05 as invariant 15** — both directions, watched to fail on the real defect and its inverse first |
 | **A negative control for our own gates** | **partly** — no gate of ours has been caught inert, but two were caught *examining nothing* (2026-07-30) and the fix was to print the denominator, not to prove the check can reject | **yes** — an invariant that can no longer fail prints the same `ok` as one that can | **yes** — a fixture directory each invariant must reject, asserted non-zero | **GATED 2026-08-05 as `scripts/check-negative-controls.sh`**, its own CI job — 5/5 mutations caught by the intended check |
+| **The documented hook matches the installed hook** | **yes** — three different texts existed at once (2026-08-05): `README.md`'s JSON block, `install.sh`'s `HOOK_CMD`, and what was actually in a user's `settings.json`; the README's was two revisions behind | **yes** — nothing reads the README, so a doc showing a hook we no longer install is indistinguishable from a correct one | **yes** — extract the `command` string from the README's fenced JSON and compare it to `HOOK_CMD` | **OPEN.** Clears all three filters. Narrow (one doc, one variable) which is an argument for it, not against. ROADMAP #8 |
 
 **How the block came off.** This sat blocked on *"needs a machine-readable
 capability list per release"* — true, and still true: **discovery cannot be

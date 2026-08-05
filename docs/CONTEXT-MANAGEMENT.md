@@ -41,7 +41,10 @@ Fight the attention shape; don't out-muscle it with volume.
 5. **Per-prompt re-injection** — the `UserPromptSubmit` hook that re-states the
    routing directive every prompt (the answer up top;
    [README](../README.md#always-on-routing-recommended)). This is the defense that
-   directly targets *multi-turn* decay.
+   directly targets *multi-turn* decay. **Write each rule as a numbered imperative
+   of equal weight** — a directive demoted to a subordinate clause is re-injected
+   every turn and ignored every turn (measured in the field; see
+   [the precondition section](#the-precondition-all-six-defenses-assume-measured-in-the-field-2026-08-05)).
 6. **Deterministic gates for the critical few** — a lint/CI check that fails when
    an endpoint has no rate limiting or TLS moves the invariant out of "attention"
    entirely. ([README → Enforcing the gates](../README.md#enforcing-the-gates).)
@@ -169,6 +172,55 @@ across compaction.
 [CONVENTIONS-LEDGER](CONVENTIONS-LEDGER.md) filters, but it would fail on `main`
 today, and the only fix is trimming a router that has no line slack left. That is a
 design decision, not a mechanical one; it is logged in [ROADMAP.md](ROADMAP.md).
+
+## The precondition all six defenses assume (measured in the field, 2026-08-05)
+
+Every defense above fights for the model's *attention* over content that is
+already in context. **None of them applies if the skill never loads at all**, and
+that is not a hypothetical: a real ~25-turn session doing upstream-contribution
+work invoked **zero** `sota-*` skills. The router body already contained the rules
+that would have caught the worst error in that session. It was never read, so its
+quality was irrelevant.
+
+The mechanism is worth stating exactly, because it decides where effort pays off.
+Per the [Agent Skills docs](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview),
+only Level 1 loads at startup — *"until a Skill is triggered, only its name and
+description occupy context"* — and the `description` is *"what Claude matches your
+request against when determining whether to trigger the Skill."* So:
+
+```
+auto-loaded  →  frontmatter description only   (~100 tokens, always present)
+inert        →  SKILL.md body + rules/*.md     (loads only when triggered)
+```
+
+The description is therefore not a hint. It is the **entire trigger classifier**,
+and the other ~40 KB is dead weight until it fires. Three things went wrong:
+
+- **The trigger verbs assumed you own the code.** "build, design, implement,
+  refactor, harden, optimize, review, or audit an application, service, or
+  codebase" does not describe reading a maintainer's review, judging someone
+  else's patch, or preparing an upstream contribution. Fixed by adding
+  non-owned-code triggers (v1.22.0).
+- **Matching is per-prompt; the session drifted.** The individual prompts were
+  "we have got response \<url\>", "what's the link on lychee?", "post it". The
+  engineering nature emerged across ~20 turns and no single prompt named a code
+  task. There is no "this conversation became a code task" mechanism, so the
+  description now names the mid-session case explicitly and the hook makes it
+  recoverable.
+- **Structure beat repetition in the hook, and this is the transferable finding.**
+  The re-injected hook carried three rules. Two were numbered imperatives; routing
+  was a subordinate clause after a semicolon in a run-on sentence. Rules (1) and
+  (2) were followed **every turn**; the routing clause was dropped **every turn**.
+  Same text, same per-prompt repetition, opposite outcome. Defense 5 works — but
+  it works on *grammatical form*, not on presence. A directive demoted to a tail
+  clause is re-injected and still ignored.
+
+So treat activation as **defense 0**: the cheapest thing in this document is
+making sure the description matches the situation, because everything else is
+conditional on it. It is also the least measurable — the repo's one adjacent
+instrument, the `desc-routing` eval, reads **+0.00 (saturated)** and cannot
+distinguish two descriptions. Changes here are reasoned, not measured, and are
+labelled that way in the CHANGELOG.
 
 ## A platform behaviour the six defenses do not cover (recorded 2026-08-02)
 
