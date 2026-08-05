@@ -5,6 +5,30 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Found, not fixed
+
+- **Two CI jobs run but cannot block a merge.** Branch protection requires only
+  `Repository invariants` and `Secret scan (gitleaks)`; `Negative controls (the gate
+  can fail)` and `Shell lint (shellcheck)` are **not** required, so a PR can merge with
+  either red. The harness built in v1.22.1–v1.22.2 to prove our gates can fail is itself
+  unable to stop anything — a gate that executes with no enforcement power, the same
+  family as "all-skipped is not all-green" (`rules/10` §2.13). Found by diffing
+  `gh api …/branches/main/protection` against the workflow's job list. **Not fixed
+  unilaterally**: changing branch protection is an enforcement decision on a protected
+  branch. ROADMAP #8 carries the command and the verification step.
+
+### Changed
+
+- **`docs/INDEX.md` gained the two rows this session's work needed.** The find-it-fast
+  index had **zero** hits for `negative control` and for skill *activation* — both
+  capabilities shipped in v1.22.0–v1.22.2 with no way to find them from the index a
+  lost reader is told to start at. Added: *"prove the gates themselves can still fail"*
+  → `scripts/check-negative-controls.sh`, and *"work out why a skill never fired at
+  all"* → the CONTEXT-MANAGEMENT precondition section. The anchor was derived from the
+  live heading rather than assumed (invariant 8 resolves `*.md` targets, not fragments).
+
 ## [1.22.2] - 2026-08-05
 
 **Invariant 16 — the hook we document is the hook we install.** `install.sh` *writes*

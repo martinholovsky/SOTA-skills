@@ -21,6 +21,7 @@ trying to do**, not by file. (Kept in sync by hand; if a link rots, open an issu
 | I want to… | Go to |
 |---|---|
 | **Understand how the library keeps rules applied as context fills** (re-injection, principle 5, terminal re-read, gates) | [**CONTEXT-MANAGEMENT.md**](CONTEXT-MANAGEMENT.md) |
+| **Work out why a skill never fired at all** (skill *activation*) — only the frontmatter `description` auto-loads, so it is the whole trigger classifier; the body is inert until the Skill tool runs | [CONTEXT-MANAGEMENT → the precondition all six defenses assume](CONTEXT-MANAGEMENT.md#the-precondition-all-six-defenses-assume-measured-in-the-field-2026-08-05) |
 | Set up the per-prompt **re-injection hook** | [README → Always-on routing, layer 3](../README.md#always-on-routing-recommended) |
 | Understand *why* a rule sometimes still gets dropped | [WHY-COMPLETENESS-RESIDUAL.md](WHY-COMPLETENESS-RESIDUAL.md) |
 
@@ -49,6 +50,7 @@ trying to do**, not by file. (Kept in sync by hand; if a link rots, open an issu
 | Land a change (branch → PR → checks → merge) | [AGENTS.md → Landing a change](../AGENTS.md#landing-a-change) |
 | Know the invariants CI enforces | [AGENTS.md → Invariants](../AGENTS.md#invariants-enforced-in-pre-commit-and-ci) |
 | See which conventions are *enforced* vs. prose, and why the rest aren't gated | [CONVENTIONS-LEDGER.md](CONVENTIONS-LEDGER.md) |
+| **Prove the gates themselves can still fail** (a passing gate shows the tree is clean, not that the check works) | `scripts/check-negative-controls.sh` — injects a known-bad per check and requires *the intended one* to complain; CI job *Negative controls* |
 | Full contribution conventions | [CONTRIBUTING.md](../CONTRIBUTING.md) |
 | Re-render a README diagram after editing its HTML (sizes, why `file://` fails) | [CONTRIBUTING.md → Rendered assets](../CONTRIBUTING.md#rendered-assets) |
 | Check a repo's setup is real, not just configured | `scripts/verify-setup.sh` (deterministic) + [VERIFY-SETUP.md](VERIFY-SETUP.md) (the judgement half) |
