@@ -5,19 +5,26 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.22.3] - 2026-08-05
+
+**Closing the loop on the gates.** The v1.22.x cycle built a harness to prove our checks
+can fail, then found the harness itself could not block a merge. This closes that, and
+tidies the roadmap the cycle left messy.
+
+**Front door checked:** negative control · activation
 
 ### Fixed
 
 - **All four CI jobs are now required checks.** Branch protection required only
   `Repository invariants` and `Secret scan (gitleaks)`; `Negative controls (the gate can
   fail)` and `Shell lint (shellcheck)` ran on every PR and **could not block a merge** —
-  so the harness built in v1.22.1–v1.22.2 to prove our gates can fail was itself unable
-  to stop anything. A gate that executes with no enforcement power is `rules/10` §2.13
-  one level up.
+  so the harness built to prove our gates can fail was itself unable to stop anything.
+  A gate that executes with no enforcement power is `rules/10` §2.13 one level up.
 
   **Watched to block, not merely configured.** A throwaway PR made invariant 2 inert so
-  that *only* the negative-controls job failed, isolating which job protection reacts to:
+  that *only* the negative-controls job failed — `check-invariants.sh` stays green when
+  one of its checks goes inert, which is exactly the defect the harness exists to catch,
+  so the other three jobs stayed passing and the protection's reaction was unambiguous:
 
   ```
   BEFORE   mergeable=MERGEABLE  mergeStateStatus=UNSTABLE   ← could have been merged
@@ -25,32 +32,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
            gh pr merge → "the base branch policy prohibits the merge"
   ```
 
-  Same PR, same failing job, only the protection changed. Applied via the dedicated
-  `required_status_checks` endpoint so nothing else moved: everything outside that key
-  diffed **identical** before/after, `enforce_admins` is still `true`, and `strict`
-  stayed `false`. The test branch was closed unmerged — its mutation must never land.
-
-### Found, not fixed (was)
-
-- **Two CI jobs run but cannot block a merge.** Branch protection requires only
-  `Repository invariants` and `Secret scan (gitleaks)`; `Negative controls (the gate
-  can fail)` and `Shell lint (shellcheck)` are **not** required, so a PR can merge with
-  either red. The harness built in v1.22.1–v1.22.2 to prove our gates can fail is itself
-  unable to stop anything — a gate that executes with no enforcement power, the same
-  family as "all-skipped is not all-green" (`rules/10` §2.13). Found by diffing
-  `gh api …/branches/main/protection` against the workflow's job list. **Not fixed
-  unilaterally**: changing branch protection is an enforcement decision on a protected
-  branch. **Now fixed — see above.**
+  `UNSTABLE` vs `BLOCKED` is the discriminating observable — `UNSTABLE` means a
+  *non-required* check failed. Applied via the dedicated `required_status_checks`
+  endpoint, not the full `/protection` PATCH, which requires every field and silently
+  drops what you omit: everything outside that key diffed **identical** before/after,
+  `enforce_admins` stayed `true`, `strict` stayed `false`.
+- **`docs/ROADMAP.md`'s actionable table had three rows numbered 8 and two numbered 9**,
+  because three consecutive cuts each appended "the next item" without checking. Record
+  rot of our own making. The five completed items now sit in a dated **closed list**
+  below the table, without numbers; the table holds only what is still actionable (1–7).
 
 ### Changed
 
-- **`docs/INDEX.md` gained the two rows this session's work needed.** The find-it-fast
-  index had **zero** hits for `negative control` and for skill *activation* — both
-  capabilities shipped in v1.22.0–v1.22.2 with no way to find them from the index a
-  lost reader is told to start at. Added: *"prove the gates themselves can still fail"*
-  → `scripts/check-negative-controls.sh`, and *"work out why a skill never fired at
-  all"* → the CONTEXT-MANAGEMENT precondition section. The anchor was derived from the
-  live heading rather than assumed (invariant 8 resolves `*.md` targets, not fragments).
+- **`docs/INDEX.md` gained the two rows this cycle needed.** The find-it-fast index had
+  **zero** hits for `negative control` and for skill *activation* — both shipped in
+  v1.22.0–v1.22.2 with no way to reach them from the index a lost reader is told to start
+  at. The `CONTEXT-MANAGEMENT.md` anchor was derived from the live heading rather than
+  assumed: invariant 8 resolves `*.md` targets, not fragments.
+- `AGENTS.md` and `RELEASING.md` said **"both required checks"** — now four.
+  `docs/AUDIT-2026-07-01.md`'s "both checks green" is a dated historical record and was
+  deliberately left alone.
+
+**Nothing here is measured; no lift is claimed.**
 
 ## [1.22.2] - 2026-08-05
 
@@ -2965,6 +2968,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.22.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.3
 [1.22.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.2
 [1.22.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.1
 [1.22.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.0
