@@ -1,7 +1,16 @@
 ---
 name: sota
 description: >-
-  Master router for the SOTA engineering skills library. Use this skill whenever the user asks to build, design, implement, refactor, harden, optimize, review, or audit an application, service, or codebase and the request spans more than one domain — or when you are unsure which specific sota-* skill applies. It maps the task (build or audit mode) to the right domain skills (architecture, code security, threat modeling, secrets, sandboxing, performance, async/concurrency, APIs, devsecops, databases, frontend, web frameworks, observability, testing, LLM engineering, ML engineering, cloud, kubernetes, identity & access, network security, confidential computing, detection engineering, data engineering, privacy/compliance, security/compliance, mobile, CLI UX, UX writing, copywriting, shell scripting, docs/workflow) and language skills (Rust, Go, C/C++, JVM, Python, JS/TS, .NET/C#, PHP, Ruby). Trigger keywords: SOTA, best practices, audit my code, security review, compliance, hardening, prod readiness, code quality.
+  Master router for the SOTA engineering skills library. Use this skill whenever the user asks to
+  build, design, implement, refactor, harden, optimize, review, or audit an application, service, or
+  codebase and the request spans more than one domain — or when you are unsure which specific sota-*
+  skill applies. Also use when working on a codebase you do not own: reviewing a pull request or
+  diff, responding to code review, evaluating someone else's patch, or preparing an upstream
+  contribution — including mid-session, once you are already reading source, a diff, or CI config.
+  It maps the task (build or audit mode) to the right domain and language skills (Rust, Go, C/C++,
+  JVM, Python, JS/TS, .NET/C#, PHP, Ruby). Trigger keywords: SOTA, best practices, audit my code,
+  security review, compliance, hardening, prod readiness, code quality, pull request, PR review,
+  review comment, maintainer feedback, patch, diff, upstream, contribute, merge request.
 ---
 
 # SOTA Engineering Skills — Master Router
@@ -29,7 +38,10 @@ rules files that match the code in front of you. Never load all skills at once.
    CVEs, tool capabilities), or a reproduced behavior (for bugs). Training
    data, plausibility, and "the rules file says so" do not validate anything.
    What cannot be validated is either omitted or explicitly marked
-   "needs verification" — never asserted.
+   "needs verification" — never asserted. **Before measuring, state what result
+   would falsify the claim.** If no obtainable result could, the experiment is
+   theater — read the code path that decides the behavior instead of
+   benchmarking its symptoms.
 1. **Freshness first.** The library's version/spec/regulation facts were
    web-verified as of the last refresh (see README). Never trust them — or
    training data — for anything version- or CVE-sensitive at use time:
@@ -67,6 +79,21 @@ rules files that match the code in front of you. Never load all skills at once.
    pass/fail counts and exit code, the command and its output, or the reproduced
    behavior. If you did not run it, say so plainly. Unverified completion is not
    completion — this applies to your own build output before you hand it back.
+7. **Restate from the artifact, never from your own summary.** Re-reading your
+   own write-up re-runs the reasoning that produced it — the weakest check
+   available. Before a claim reaches anything user-visible, go back to the
+   primary source: re-read the tool output, or re-run the command. Your earlier
+   prose in this session is not a primary source; summaries silently drop the
+   case that contradicts them and raw output does not. Full adversarial
+   procedure for audit findings: AUDIT step 7 and `rules/01` §7.
+8. **Publishing under someone else's name raises the bar.** A claim to the
+   person who asked costs one reader's trust and is cheap to retract. A claim
+   published as them — a PR review comment, an issue, a commit message, a
+   mailing-list post — is public, attributed and effectively permanent. Verify
+   every factual claim by execution rather than inference, say which parts you
+   did not test, check the thread first for whether it is already known, and
+   never publish on someone's behalf without approval of the final text. Full
+   procedure: `sota-docs-workflow` rules/03 §8.
 
 ## Routing table
 
@@ -115,93 +142,84 @@ rules files that match the code in front of you. Never load all skills at once.
 
 ## Cross-cutting routing rules
 
-1. **Language skills stack on domain skills.** Auditing a Go API server →
-   `sota-golang` + `sota-api-design` + `sota-code-security`. The language skill
-   covers idioms and runtime-specific traps; domain skills cover the design.
-2. **Security tasks usually need three skills.** Code-level flaws →
-   `sota-code-security`; design-level gaps → `sota-threat-modeling`; leaked or
-   mishandled credentials → `sota-secrets-management`. Pipeline/supply-chain →
-   `sota-devsecops`; isolation blast-radius → `sota-sandboxing`.
-3. **Performance complaints about queries** → start in `sota-databases`
-   (EXPLAIN, indexes, N+1) before `sota-performance` (caching, I/O).
-4. **Anything realtime** (websockets, SSE, pub/sub fanout) →
-   `sota-api-design` rules/05 + `sota-async-concurrency` (backpressure).
-5. **AI/LLM features** → `sota-code-security` rules/08 (prompt injection,
-   tool authorization) + `sota-sandboxing` rules/05 (executing model output) +
-   `sota-databases` rules/07 (vectors/RAG).
-6. **Frontend work** → `sota-frontend-design` for design/UX/a11y/motion;
-   `sota-web-frameworks` for React/Next or Vue/Nuxt engineering (RSC/client
-   boundary, Server Actions, caching, hydration, SSR security);
-   `sota-javascript-typescript` for the language/TS; `sota-performance` rules/06
+1. **Language skills stack on domain skills.** Auditing a Go API server → `sota-golang` + `sota-
+   api-design` + `sota-code-security`. The language skill covers idioms and runtime-specific
+   traps; domain skills cover the design.
+2. **Security tasks usually need three skills.** Code-level flaws → `sota-code-security`; design-
+   level gaps → `sota-threat-modeling`; leaked or mishandled credentials → `sota-secrets-
+   management`. Pipeline/supply-chain → `sota-devsecops`; isolation blast-radius → `sota-
+   sandboxing`.
+3. **Performance complaints about queries** → start in `sota-databases` (EXPLAIN, indexes, N+1)
+   before `sota-performance` (caching, I/O).
+4. **Anything realtime** (websockets, SSE, pub/sub fanout) → `sota-api-design` rules/05 + `sota-
+   async-concurrency` (backpressure).
+5. **AI/LLM features** → `sota-code-security` rules/08 (prompt injection, tool authorization) +
+   `sota-sandboxing` rules/05 (executing model output) + `sota-databases` rules/07 (vectors/RAG).
+6. **Frontend work** → `sota-frontend-design` for design/UX/a11y/motion; `sota-web-frameworks` for
+   React/Next or Vue/Nuxt engineering (RSC/client boundary, Server Actions, caching, hydration,
+   SSR security); `sota-javascript-typescript` for the language/TS; `sota-performance` rules/06
    for Web Vitals. A React/Next or Vue/Nuxt security review pulls all four.
-7. **Tests accompany everything.** Any BUILD task that writes logic also loads
-   `sota-testing` (strategy + design rules); any AUDIT includes a suite-health
-   pass. Language-specific runner mechanics stay in the language skills.
-8. **LLM features split three ways.** Quality/architecture →
-   `sota-llm-engineering`; security (prompt injection, tool authz) →
-   `sota-code-security` rules/08; executing model output → `sota-sandboxing`
-   rules/05; PII in prompts/logs → `sota-privacy-compliance`.
-9. **Infra layers split four ways.** Cloud-provider setup (accounts, VPC,
-   compute, cost, DR) → `sota-cloud-infrastructure`; the Kubernetes platform
-   itself (RBAC, admission, GitOps controllers, operators, etcd) →
-   `sota-kubernetes`; pod/container/workload isolation mechanics →
-   `sota-sandboxing`; CI/CD and supply chain → `sota-devsecops`. A K8s cluster
-   audit loads `sota-kubernetes` + `sota-network-security` + `sota-sandboxing`.
-10. **Identity is its own layer.** App-level login/session/JWT-validation code →
-   `sota-code-security` rules/02-03; identity *infrastructure* (IdP, OIDC/SAML
-   config, RBAC/role-mapping design, provisioning, break-glass, SPIFFE) →
-   `sota-identity-access`; the credentials themselves → `sota-secrets-management`.
-11. **Network: setup vs security.** Cloud VPC/DNS/CDN provisioning →
-   `sota-cloud-infrastructure` rules/03; segmentation, zero-trust, NetworkPolicy
-   depth, service mesh/mTLS, egress/DNS/PKI posture → `sota-network-security`.
-12. **Prevention vs detection.** Building the control → the relevant domain
-   skill; verifying you'd *catch* the attack at runtime (logs, rules, hunting,
-   IR) → `sota-detection-engineering`. Ops telemetry plumbing stays in
-   `sota-observability`; design-time threat enumeration in `sota-threat-modeling`.
-13. **Ingesting untrusted/attacker-authored data** (feeds, scraping, uploads,
-   webhooks, RAG corpora, hostile parsers) → `sota-code-security` rules/09,
-   with `sota-sandboxing` rules/04 for parser isolation.
-14. **Data: OLTP vs analytics.** App databases → `sota-databases`; pipelines,
-    streaming, warehouse/lakehouse → `sota-data-engineering`; anything touching
-    personal data → add `sota-privacy-compliance`.
-15. **Any handling of user/personal data** (new fields, exports, logs,
-    analytics, ML training) → check `sota-privacy-compliance` minimization and
-    retention rules, even when the task isn't "about" privacy.
-16. **User-facing words split three ways.** In-product UI text (labels,
-    errors, empty states) → `sota-ux-writing`; marketing/site/email content →
-    `sota-copywriting`; technical docs → `sota-docs-workflow`. The component
-    patterns the text lives in stay `sota-frontend-design`.
-17. **Shell scripts hide everywhere** — CI run blocks, Dockerfile RUN lines,
-    Makefiles, entrypoints. Audit them with `sota-shell-scripting` even when
-    the repo's "language" is something else.
-18. **Cryptography fans out — there is no single crypto skill (by design).**
-    Algorithm choice, AEAD/nonce discipline, CSPRNG, in-code key handling, TLS
-    client config, constant-time comparison, tamper-evident logs/audit ledgers
-    (keyed hash chains, external anchoring, integrity-vs-completeness), crypto
-    agility, and post-quantum migration → `sota-code-security` rules/04. The key *material* — storage
-    backends (KMS/HSM, Vault, SOPS+age), lifecycle, rotation, per-credential-type
-    handling → `sota-secrets-management`. Transport/PKI — TLS server config, cert
-    lifecycle/ACME, private CA, mTLS → `sota-network-security` rules/06.
-    FIPS-140-3-validated-module requirements → `sota-security-compliance`
-    rules/02. Language-specific APIs (JCA, `crypto/*`, .NET) stay in the language
-    skill. The stance throughout is **use a vetted library, don't roll your own**.
-19. **Which direction does the trust boundary point?** Protecting the *host
-    from the workload* (untrusted code, seccomp/microVMs/WASM sandboxes) →
-    `sota-sandboxing`. Protecting the *workload from the host/operator* —
-    TEEs (SEV-SNP/TDX/CCA/SGX), remote attestation, confidential
-    VMs/containers, or computing on encrypted data (FHE/MPC/ZKP) →
-    `sota-confidential-computing`. Both can apply to one system. Key
-    custody/release stays `sota-secrets-management`; differential privacy and
-    de-identification stay `sota-privacy-compliance`.
-20. **"It's enabled" is a claim, not a fact.** Whenever a control's *presence*
-    is established but its *effect* isn't — a banner, a config flag, a green
-    test, "we have a scanner" — route to `sota-code-security` rules/10 (silent
-    control failure). It pairs with `sota-testing` rules/06 (mutation-probe the
-    control) and rules/09 (a security test must be watched to fail),
-    `sota-observability` rules/05 (degradation must be visible), and
-    `sota-devsecops` rules/04 (does the shipped artifact contain what the
-    control needs at runtime?). Not for controls that are simply *missing* —
-    that's the owning domain skill's audit checklist.
+7. **Tests accompany everything.** Any BUILD task that writes logic also loads `sota-testing`
+   (strategy + design rules); any AUDIT includes a suite-health pass. Language-specific runner
+   mechanics stay in the language skills.
+8. **LLM features split three ways.** Quality/architecture → `sota-llm-engineering`; security
+   (prompt injection, tool authz) → `sota-code-security` rules/08; executing model output → `sota-
+   sandboxing` rules/05; PII in prompts/logs → `sota-privacy-compliance`.
+9. **Infra layers split four ways.** Cloud-provider setup (accounts, VPC, compute, cost, DR) →
+   `sota-cloud-infrastructure`; the Kubernetes platform itself (RBAC, admission, GitOps
+   controllers, operators, etcd) → `sota-kubernetes`; pod/container/workload isolation mechanics →
+   `sota-sandboxing`; CI/CD and supply chain → `sota-devsecops`. A K8s cluster audit loads `sota-
+   kubernetes` + `sota-network-security` + `sota-sandboxing`.
+10. **Identity is its own layer.** App-level login/session/JWT-validation code → `sota-code-
+    security` rules/02-03; identity *infrastructure* (IdP, OIDC/SAML config, RBAC/role-mapping
+    design, provisioning, break-glass, SPIFFE) → `sota-identity-access`; the credentials
+    themselves → `sota-secrets-management`.
+11. **Network: setup vs security.** Cloud VPC/DNS/CDN provisioning → `sota-cloud-infrastructure`
+    rules/03; segmentation, zero-trust, NetworkPolicy depth, service mesh/mTLS, egress/DNS/PKI
+    posture → `sota-network-security`.
+12. **Prevention vs detection.** Building the control → the relevant domain skill; verifying you'd
+    *catch* the attack at runtime (logs, rules, hunting, IR) → `sota-detection-engineering`. Ops
+    telemetry plumbing stays in `sota-observability`; design-time threat enumeration in `sota-
+    threat-modeling`.
+13. **Ingesting untrusted/attacker-authored data** (feeds, scraping, uploads, webhooks, RAG
+    corpora, hostile parsers) → `sota-code-security` rules/09, with `sota-sandboxing` rules/04 for
+    parser isolation.
+14. **Data: OLTP vs analytics.** App databases → `sota-databases`; pipelines, streaming,
+    warehouse/lakehouse → `sota-data-engineering`; anything touching personal data → add `sota-
+    privacy-compliance`.
+15. **Any handling of user/personal data** (new fields, exports, logs, analytics, ML training) →
+    check `sota-privacy-compliance` minimization and retention rules, even when the task isn't
+    "about" privacy.
+16. **User-facing words split three ways.** In-product UI text (labels, errors, empty states) →
+    `sota-ux-writing`; marketing/site/email content → `sota-copywriting`; technical docs → `sota-
+    docs-workflow`. The component patterns the text lives in stay `sota-frontend-design`.
+17. **Shell scripts hide everywhere** — CI run blocks, Dockerfile RUN lines, Makefiles,
+    entrypoints. Audit them with `sota-shell-scripting` even when the repo's "language" is
+    something else.
+18. **Cryptography fans out — there is no single crypto skill (by design).** Algorithm choice,
+    AEAD/nonce discipline, CSPRNG, in-code key handling, TLS client config, constant-time
+    comparison, tamper-evident logs/audit ledgers (keyed hash chains, external anchoring,
+    integrity-vs-completeness), crypto agility, and post-quantum migration → `sota-code-security`
+    rules/04. The key *material* — storage backends (KMS/HSM, Vault, SOPS+age), lifecycle,
+    rotation, per-credential-type handling → `sota-secrets-management`. Transport/PKI — TLS server
+    config, cert lifecycle/ACME, private CA, mTLS → `sota-network-security` rules/06.
+    FIPS-140-3-validated-module requirements → `sota-security-compliance` rules/02. Language-
+    specific APIs (JCA, `crypto/*`, .NET) stay in the language skill. The stance throughout is
+    **use a vetted library, don't roll your own**.
+19. **Which direction does the trust boundary point?** Protecting the *host from the workload*
+    (untrusted code, seccomp/microVMs/WASM sandboxes) → `sota-sandboxing`. Protecting the
+    *workload from the host/operator* — TEEs (SEV-SNP/TDX/CCA/SGX), remote attestation,
+    confidential VMs/containers, or computing on encrypted data (FHE/MPC/ZKP) → `sota-
+    confidential-computing`. Both can apply to one system. Key custody/release stays `sota-
+    secrets-management`; differential privacy and de-identification stay `sota-privacy-
+    compliance`.
+20. **"It's enabled" is a claim, not a fact.** Whenever a control's *presence* is established but
+    its *effect* isn't — a banner, a config flag, a green test, "we have a scanner" — route to
+    `sota-code-security` rules/10 (silent control failure). It pairs with `sota-testing` rules/06
+    (mutation-probe the control) and rules/09 (a security test must be watched to fail), `sota-
+    observability` rules/05 (degradation must be visible), and `sota-devsecops` rules/04 (does the
+    shipped artifact contain what the control needs at runtime?). Not for controls that are simply
+    *missing* — that's the owning domain skill's audit checklist.
 
 ## Day zero — a repo this library has not been applied to yet
 
@@ -273,193 +291,166 @@ matrix and triage discipline, the evidence standard, and the report template.
 For a focused audit, load the matching skills and follow their AUDIT sections.
 For a **full project audit**, work in passes:
 
-1. **Recon.** Inventory the repo: languages, frameworks, entry points (HTTP
-   routes, queues, cron, webhooks), data stores, CI config, Dockerfiles, IaC.
-   This determines which skills apply; skip skills with no matching surface.
-2. **Threat model first.** `sota-threat-modeling` rules/06 (reconstruction):
-   assets, trust boundaries, entry points. Its output prioritizes the rest.
-3. **Per-domain passes.** For each applicable skill, follow its AUDIT mode and
-   audit checklists. Suggested order: secrets sweep (fast, high yield) →
-   code security (incl. rules/09 untrusted-data ingestion) → language-specific
-   (incl. shell scripts) → API → database → async/concurrency →
-   identity & access → sandboxing/devsecops → kubernetes platform →
-   network security → cloud infrastructure → privacy/compliance → architecture
-   → testing suite health → performance → observability → detection-engineering
-   posture → frontend/a11y → LLM features, data pipelines, mobile, CLI, docs as
-   applicable. For an infrastructure/cluster audit the heavy hitters are
-   `sota-kubernetes`, `sota-network-security`, `sota-identity-access`,
-   `sota-sandboxing`, and `sota-detection-engineering`.
-4. **Silent-control pass (always run it).** The per-domain passes ask "is the
-   control there?" — this one asks "does it *do* anything?". For every control
-   they confirmed exists, apply `sota-code-security` rules/10: swallowed
-   enforcement exceptions, presence decided by `exists()` rather than a loaded
-   artifact, rulesets that load zero rules, truncation before inspection,
-   attacker-triggerable early returns, config keys silently ignored, defaults
-   that differ between docs and code, degradation nothing logs, and controls
-   whose tests still pass when the body is replaced with a no-op. This class is
-   invisible to the other passes — the code isn't wrong, it's inert — and to
-   pattern-based SAST for the same reason. **Sweep with `rules/11` first** to find
-   *where* to look: stage duration vs work claimed, every gate's denominator
-   (`0 checked, 0 failed, exit 0`), size-gated paths no fixture crosses, cache keys
-   narrower than the behaviour, one-sample parsers, `assert`-as-control.
-5. **Decision-ledger review.** Code passes find defects in what was built; they
-   cannot find the defect where the code faithfully implements a choice that
-   **stopped being right** — a store picked for scale that never arrived, a
-   rewrite justified by a benchmark that no longer reproduces, an expired
-   constraint still shaping the design. Reconstruct the expensive-to-reverse
-   decisions (ADRs, design docs, CHANGELOG, the PRs that introduced each major
-   component) and classify each **JUSTIFIED / STALE / UNJUSTIFIED /
-   UNVERIFIABLE**. Where a decision rests on a number, **re-measure it this
-   session** — a benchmark in a two-year-old ADR is a historical claim, not a
-   current fact. Full procedure: `rules/01-audit-methodology.md` §6.
-6. **Findings.** Emit every finding in the canonical cross-domain format
-   (`file:line | rule | severity | effort | fix`) — skill-local block formats
-   are fine within a domain pass but must carry an effort field so the
-   roll-up can be sequenced — deduplicate across domains,
-   and roll up into the report structure from `rules/01-audit-methodology.md`:
-   executive summary → scope & methodology → findings by severity →
-   remediation roadmap sequenced by risk-reduction-per-effort → positive
-   observations → appendix. Severity meanings:
-   - **Critical** — exploitable now or data-loss risk; fix before anything else.
-   - **High** — serious weakness or reliability hazard; fix this sprint.
-   - **Medium** — deviation from SOTA with real but bounded impact.
-   - **Low** — hygiene, polish, future-proofing.
-   - **Info** — no direct risk: observations, tech-debt notes, future-proofing.
-7. **Refute before reporting.** Re-reading your own finding re-runs the reasoning
-   that produced it — it is the weakest check available. Every Critical/High gets
-   an **independent pass prompted to kill it** (a separate agent, or a
-   fresh-context hostile read), working from the code at the pinned commit rather
-   than your write-up, defaulting to REFUTED when the evidence is ambiguous. Use
-   distinct lenses where a finding can fail more than one way — is the mechanism
-   real, is it reachable, is the stated impact inflated. Survivors ship; the rest
-   are dropped or downgraded **with the refutation recorded**, so the next auditor
-   doesn't re-raise them. Absence claims ("no X found") get a refuter too, and
-   carry the heavier burden of principle 3. Full procedure and failure modes:
-   `rules/01-audit-methodology.md` §7.
+1. **Recon.** Inventory the repo: languages, frameworks, entry points (HTTP routes, queues, cron,
+   webhooks), data stores, CI config, Dockerfiles, IaC. This determines which skills apply; skip
+   skills with no matching surface.
+2. **Threat model first.** `sota-threat-modeling` rules/06 (reconstruction): assets, trust
+   boundaries, entry points. Its output prioritizes the rest.
+3. **Per-domain passes.** For each applicable skill, follow its AUDIT mode and audit checklists.
+   Suggested order: secrets sweep (fast, high yield) → code security (incl. rules/09 untrusted-
+   data ingestion) → language-specific (incl. shell scripts) → API → database → async/concurrency
+   → identity & access → sandboxing/devsecops → kubernetes platform → network security → cloud
+   infrastructure → privacy/compliance → architecture → testing suite health → performance →
+   observability → detection-engineering posture → frontend/a11y → LLM features, data pipelines,
+   mobile, CLI, docs as applicable. For an infrastructure/cluster audit the heavy hitters are
+   `sota-kubernetes`, `sota-network-security`, `sota-identity-access`, `sota-sandboxing`, and
+   `sota-detection-engineering`.
+4. **Silent-control pass (always run it).** The per-domain passes ask "is the control there?" —
+   this one asks "does it *do* anything?". For every control they confirmed exists, apply `sota-
+   code-security` rules/10: swallowed enforcement exceptions, presence decided by `exists()`
+   rather than a loaded artifact, rulesets that load zero rules, truncation before inspection,
+   attacker-triggerable early returns, config keys silently ignored, defaults that differ between
+   docs and code, degradation nothing logs, and controls whose tests still pass when the body is
+   replaced with a no-op. This class is invisible to the other passes — the code isn't wrong, it's
+   inert — and to pattern-based SAST for the same reason. **Sweep with `rules/11` first** to find
+   *where* to look: stage duration vs work claimed, every gate's denominator (`0 checked, 0
+   failed, exit 0`), size-gated paths no fixture crosses, cache keys narrower than the behaviour,
+   one-sample parsers, `assert`-as-control.
+5. **Decision-ledger review.** Code passes find defects in what was built; they cannot find the
+   defect where the code faithfully implements a choice that **stopped being right** — a store
+   picked for scale that never arrived, a rewrite justified by a benchmark that no longer
+   reproduces, an expired constraint still shaping the design. Reconstruct the expensive-to-
+   reverse decisions (ADRs, design docs, CHANGELOG, the PRs that introduced each major component)
+   and classify each **JUSTIFIED / STALE / UNJUSTIFIED / UNVERIFIABLE**. Where a decision rests on
+   a number, **re-measure it this session** — a benchmark in a two-year-old ADR is a historical
+   claim, not a current fact. Full procedure: `rules/01-audit-methodology.md` §6.
+6. **Findings.** Emit every finding in the canonical cross-domain format (`file:line | rule |
+   severity | effort | fix`) — skill-local block formats are fine within a domain pass but must
+   carry an effort field so the roll-up can be sequenced — deduplicate across domains, and roll up
+   into the report structure from `rules/01-audit-methodology.md`: executive summary → scope &
+   methodology → findings by severity → remediation roadmap sequenced by risk-reduction-per-effort
+   → positive observations → appendix. Severity meanings:
+- **Critical** — exploitable now or data-loss risk; fix before anything else.
+- **High** — serious weakness or reliability hazard; fix this sprint.
+- **Medium** — deviation from SOTA with real but bounded impact.
+- **Low** — hygiene, polish, future-proofing.
+- **Info** — no direct risk: observations, tech-debt notes, future-proofing.
+7. **Refute before reporting.** Re-reading your own finding re-runs the reasoning that produced it
+   — it is the weakest check available. Every Critical/High gets an **independent pass prompted to
+   kill it** (a separate agent, or a fresh-context hostile read), working from the code at the
+   pinned commit rather than your write-up, defaulting to REFUTED when the evidence is ambiguous.
+   Use distinct lenses where a finding can fail more than one way — is the mechanism real, is it
+   reachable, is the stated impact inflated. Survivors ship; the rest are dropped or downgraded
+   **with the refutation recorded**, so the next auditor doesn't re-raise them. Absence claims
+   ("no X found") get a refuter too, and carry the heavier burden of principle 3. Full procedure
+   and failure modes: `rules/01-audit-methodology.md` §7.
 
 ## Library map (rules files per skill)
 
-- **sota/rules**: 01 audit methodology (process, tool matrix, evidence
-  standard, report template — read first for any full audit)
-- **sota-architecture/rules**: 01 styles & decisions, 02 domain modeling,
-  03 distributed systems & events, 04 resilience, 05 scalability & state,
-  06 cloud-native config & delivery, 07 anti-patterns catalog,
-  08 NATS JetStream messaging
-- **sota-code-security/rules**: 01 input & injection, 02 authentication,
-  03 authorization, 04 cryptography, 05 web security, 06 memory & resource
-  safety, 07 data exposure, 08 LLM/AI security, 09 untrusted-data ingestion,
-  10 silent control failure, 11 dead-path diagnostics, 12 verifying the verifier
-- **sota-threat-modeling/rules**: 01 methodologies, 02 decomposition,
-  03 threat catalogs, 04 risk rating & treatment, 05 outputs &
-  operationalization, 06 audit reconstruction
-- **sota-secrets-management/rules**: 01 lifecycle & workload identity,
-  02 storage backends, 03 application patterns, 04 detection & remediation,
-  05 credential types
-- **sota-sandboxing/rules**: 01 isolation boundaries, 02 Linux/OS hardening,
-  03 containers & microVMs, 04 process/app sandboxing, 05 AI-agent sandboxing
-- **sota-performance/rules**: 01 methodology, 02 algorithms & data structures,
-  03 memory, 04 I/O & network, 05 caching, 06 frontend/web
-- **sota-async-concurrency/rules**: 01 models & structure, 02 correctness,
-  03 primitives, 04 event-loop hygiene, 05 cancellation/timeouts/shutdown,
-  06 backpressure & flow control, 07 audit bug catalog
-- **sota-api-design/rules**: 01 REST/HTTP, 02 versioning & evolution,
-  03 GraphQL, 04 gRPC & protocols, 05 realtime/websockets/SSE, 06 webhooks,
-  07 security & operations
-- **sota-devsecops/rules**: 01 pipeline security, 02 provenance & signing,
-  03 dependencies (incl. §3.9 declared-but-not-reached), 04 build & containers,
-  05 analysis gates, 06 IaC & deployment, 07 runtime & ops, 08 registry security
-- **sota-databases/rules**: 01 choosing & modeling, 02 schema & migrations,
-  03 queries & indexes, 04 transactions & concurrency, 05 reliability & scale,
-  06 security & compliance, 07 vector & AI, 08 SurrealDB & multi-model
-- **sota-frontend-design/rules**: 01 typography & color, 02 layout/spacing/
-  responsive, 03 design systems & components, 04 UX patterns,
-  05 accessibility, 06 motion design, 07 visual craft & distinctiveness
-- **sota-web-frameworks/rules**: 01 baseline (versions/support, render modes),
-  02 React 19 (hooks, Actions, React Compiler), 03 Next.js (App Router, Server
-  Actions, caching, CVEs), 04 Vue 3 (Composition API, reactivity, XSS),
-  05 Nuxt 4 (data fetching, server routes, CVEs), 06 SSR & hydration
-  (mismatches, serialization, caching, CSP), 07 framework security & CVEs
-- **sota-observability/rules**: 01 structured logging, 02 metrics, 03 tracing,
-  04 SLOs & alerting, 05 operational readiness, 06 audit playbook
-- **sota-testing/rules**: 01 strategy & shape, 02 test design & quality,
-  03 doubles & test data, 04 integration/contract/system, 05 e2e & UI,
-  06 property/fuzzing/mutation, 07 suite health & CI, 08 BDD/spec-by-example,
-  09 security testing
-- **sota-llm-engineering/rules**: 01 evals, 02 prompt & context engineering,
-  03 RAG & retrieval, 04 agents & tools, 05 production engineering,
-  06 data & lifecycle
-- **sota-ml-engineering/rules**: 01 ML systems architecture, 02 data & features
-  (leakage/skew), 03 training & experimentation, 04 evaluation & validation,
-  05 deployment & serving, 06 monitoring & drift, 07 security & governance
-- **sota-cloud-infrastructure/rules**: 01 org/accounts/governance, 02 IAM
-  design, 03 networking, 04 compute selection, 05 data & storage,
-  06 cost/FinOps, 07 resilience & DR
-- **sota-kubernetes/rules**: 01 control plane & etcd, 02 RBAC &
-  serviceaccounts, 03 admission & policy, 04 GitOps controllers,
-  05 operators/CRDs/webhooks, 06 workloads & tenancy, 07 supply chain & audit
-- **sota-identity-access/rules**: 01 federation protocols, 02 IdP operations,
-  03 authorization models, 04 lifecycle & provisioning, 05 privileged &
-  workload identity, 06 MFA/federation/assurance, 07 Active Directory &
-  Kerberos/ADCS hardening
-- **sota-network-security/rules**: 01 zero-trust architecture,
-  02 segmentation & blast radius, 03 K8s network policy, 04 service mesh &
-  mTLS, 05 edge/ingress/egress, 06 DNS/TLS/PKI
-- **sota-confidential-computing/rules**: 01 threat model & selection,
-  02 TEE technologies, 03 remote attestation, 04 confidential Kubernetes,
-  05 PETs & computing on encrypted data
-- **sota-detection-engineering/rules**: 01 detection-engineering discipline,
-  02 telemetry & SIEM data layer, 03 rule languages & engines, 04 alerting/
-  triage/SOC/SOAR, 05 hunting/intel/deception, 06 incident response &
-  validation, 07 AD attack detection (Kerberoasting/DCSync/ADCS)
-- **sota-data-engineering/rules**: 01 architecture & modeling, 02 pipelines &
-  orchestration, 03 streaming & CDC, 04 data quality & contracts, 05 storage &
-  performance, 06 operations & governance
-- **sota-privacy-compliance/rules**: 01 data inventory & classification,
-  02 privacy by design, 03 consent & user rights, 04 regulatory landscape,
-  05 audit-ready engineering, 06 incident & breach readiness
-- **sota-security-compliance/rules**: 01 control-frameworks-as-code (CSF 2.0
-  spine), 02 NIST 800-53/800-171/CMMC/FedRAMP, 03 SSDF secure SDLC, 04 EU Cyber
-  Resilience Act, 05 ISA/IEC 62443 (OT/ICS)
-- **sota-mobile/rules**: 01 platform & stack, 02 architecture & state,
-  03 offline/background/push, 04 security, 05 performance,
-  06 release & operations, 07 Swift language (Swift 6 concurrency, ARC, SPM)
-- **sota-cli-ux/rules**: 01 commands/flags/config, 02 output & interaction,
-  03 behavior & lifecycle, 04 distribution & docs
-- **sota-shell-scripting/rules**: 01 safety baseline, 02 robustness &
-  correctness, 03 security, 04 CI & operational scripts
-- **sota-docs-workflow/rules**: 01 documentation architecture, 02 API
-  reference & changelogs, 03 code review & PR workflow, 04 commits/branches/
-  releases, 05 spec-driven development
-- **sota-ux-writing/rules**: 01 voice/tone & plain language, 02 microcopy &
-  components, 03 errors & feedback, 04 accessibility & localization
-- **sota-copywriting/rules**: 01 positioning & value proposition,
-  02 headlines/landing pages/CTAs, 03 SEO content, 04 claims/legal/trust
-- **sota-rust/rules**: 01 ownership & API design, 02 errors & panics,
-  03 unsafe discipline, 04 async/tokio, 05 security & supply chain,
-  06 performance, 07 tooling & CI
-- **sota-golang/rules**: 01 errors, 02 design, 03 concurrency,
-  04 HTTP services, 05 security, 06 performance, 07 tooling & CI
-- **sota-c-cpp/rules**: 01 idioms (RAII/ownership), 02 memory safety,
-  03 undefined behavior, 04 security (CERT/MISRA/hardening), 05 concurrency,
-  06 build/tooling & CI, 07 performance
-- **sota-jvm/rules**: 01 idioms (Java/Kotlin), 02 API/null/immutability design,
-  03 concurrency (virtual threads, JMM, coroutines), 04 security
-  (deserialization/injection/XXE/JNDI/crypto), 05 performance (GC/JFR/GraalVM),
-  06 build/tooling & CI
-- **sota-python/rules**: 01 tooling & project setup, 02 typing & correctness,
-  03 idioms & pitfalls, 04 async, 05 security, 06 performance,
-  07 frameworks & testing
-- **sota-javascript-typescript/rules**: 01 tsconfig & types, 02 language
-  idioms, 03 async patterns, 04 Node backend, 05 security, 06 performance,
-  07 testing & tooling
-- **sota-dotnet/rules**: 01 idioms (records/NRT/patterns), 02 API/disposal/DI
-  design, 03 async & concurrency, 04 security (SQL/deserialization/ASP.NET
-  Core/crypto), 05 performance (GC/Span/AOT), 06 build/tooling & CI
-- **sota-php/rules**: 01 language baseline & idioms, 02 injection (SQL/XSS),
-  03 files/deserialization/SSRF, 04 sessions/auth/web hardening, 05 Composer &
-  tooling, 06 performance & runtime
-- **sota-ruby/rules**: 01 language & idioms, 02 security, 03 web hardening,
-  04 supply chain & tooling, 05 concurrency & performance
+- **sota/rules**: 01 audit methodology (process, tool matrix, evidence standard, report template —
+  read first for any full audit)
+- **sota-architecture/rules**: 01 styles & decisions, 02 domain modeling, 03 distributed systems &
+  events, 04 resilience, 05 scalability & state, 06 cloud-native config & delivery, 07 anti-
+  patterns catalog, 08 NATS JetStream messaging
+- **sota-code-security/rules**: 01 input & injection, 02 authentication, 03 authorization, 04
+  cryptography, 05 web security, 06 memory & resource safety, 07 data exposure, 08 LLM/AI
+  security, 09 untrusted-data ingestion, 10 silent control failure, 11 dead-path diagnostics, 12
+  verifying the verifier
+- **sota-threat-modeling/rules**: 01 methodologies, 02 decomposition, 03 threat catalogs, 04 risk
+  rating & treatment, 05 outputs & operationalization, 06 audit reconstruction
+- **sota-secrets-management/rules**: 01 lifecycle & workload identity, 02 storage backends, 03
+  application patterns, 04 detection & remediation, 05 credential types
+- **sota-sandboxing/rules**: 01 isolation boundaries, 02 Linux/OS hardening, 03 containers &
+  microVMs, 04 process/app sandboxing, 05 AI-agent sandboxing
+- **sota-performance/rules**: 01 methodology, 02 algorithms & data structures, 03 memory, 04 I/O &
+  network, 05 caching, 06 frontend/web
+- **sota-async-concurrency/rules**: 01 models & structure, 02 correctness, 03 primitives, 04
+  event-loop hygiene, 05 cancellation/timeouts/shutdown, 06 backpressure & flow control, 07 audit
+  bug catalog
+- **sota-api-design/rules**: 01 REST/HTTP, 02 versioning & evolution, 03 GraphQL, 04 gRPC &
+  protocols, 05 realtime/websockets/SSE, 06 webhooks, 07 security & operations
+- **sota-devsecops/rules**: 01 pipeline security, 02 provenance & signing, 03 dependencies (incl.
+  §3.9 declared-but-not-reached), 04 build & containers, 05 analysis gates, 06 IaC & deployment,
+  07 runtime & ops, 08 registry security
+- **sota-databases/rules**: 01 choosing & modeling, 02 schema & migrations, 03 queries & indexes,
+  04 transactions & concurrency, 05 reliability & scale, 06 security & compliance, 07 vector & AI,
+  08 SurrealDB & multi-model
+- **sota-frontend-design/rules**: 01 typography & color, 02 layout/spacing/ responsive, 03 design
+  systems & components, 04 UX patterns, 05 accessibility, 06 motion design, 07 visual craft &
+  distinctiveness
+- **sota-web-frameworks/rules**: 01 baseline (versions/support, render modes), 02 React 19 (hooks,
+  Actions, React Compiler), 03 Next.js (App Router, Server Actions, caching, CVEs), 04 Vue 3
+  (Composition API, reactivity, XSS), 05 Nuxt 4 (data fetching, server routes, CVEs), 06 SSR &
+  hydration (mismatches, serialization, caching, CSP), 07 framework security & CVEs
+- **sota-observability/rules**: 01 structured logging, 02 metrics, 03 tracing, 04 SLOs & alerting,
+  05 operational readiness, 06 audit playbook
+- **sota-testing/rules**: 01 strategy & shape, 02 test design & quality, 03 doubles & test data,
+  04 integration/contract/system, 05 e2e & UI, 06 property/fuzzing/mutation, 07 suite health & CI,
+  08 BDD/spec-by-example, 09 security testing
+- **sota-llm-engineering/rules**: 01 evals, 02 prompt & context engineering, 03 RAG & retrieval,
+  04 agents & tools, 05 production engineering, 06 data & lifecycle
+- **sota-ml-engineering/rules**: 01 ML systems architecture, 02 data & features (leakage/skew), 03
+  training & experimentation, 04 evaluation & validation, 05 deployment & serving, 06 monitoring &
+  drift, 07 security & governance
+- **sota-cloud-infrastructure/rules**: 01 org/accounts/governance, 02 IAM design, 03 networking,
+  04 compute selection, 05 data & storage, 06 cost/FinOps, 07 resilience & DR
+- **sota-kubernetes/rules**: 01 control plane & etcd, 02 RBAC & serviceaccounts, 03 admission &
+  policy, 04 GitOps controllers, 05 operators/CRDs/webhooks, 06 workloads & tenancy, 07 supply
+  chain & audit
+- **sota-identity-access/rules**: 01 federation protocols, 02 IdP operations, 03 authorization
+  models, 04 lifecycle & provisioning, 05 privileged & workload identity, 06
+  MFA/federation/assurance, 07 Active Directory & Kerberos/ADCS hardening
+- **sota-network-security/rules**: 01 zero-trust architecture, 02 segmentation & blast radius, 03
+  K8s network policy, 04 service mesh & mTLS, 05 edge/ingress/egress, 06 DNS/TLS/PKI
+- **sota-confidential-computing/rules**: 01 threat model & selection, 02 TEE technologies, 03
+  remote attestation, 04 confidential Kubernetes, 05 PETs & computing on encrypted data
+- **sota-detection-engineering/rules**: 01 detection-engineering discipline, 02 telemetry & SIEM
+  data layer, 03 rule languages & engines, 04 alerting/ triage/SOC/SOAR, 05
+  hunting/intel/deception, 06 incident response & validation, 07 AD attack detection
+  (Kerberoasting/DCSync/ADCS)
+- **sota-data-engineering/rules**: 01 architecture & modeling, 02 pipelines & orchestration, 03
+  streaming & CDC, 04 data quality & contracts, 05 storage & performance, 06 operations &
+  governance
+- **sota-privacy-compliance/rules**: 01 data inventory & classification, 02 privacy by design, 03
+  consent & user rights, 04 regulatory landscape, 05 audit-ready engineering, 06 incident & breach
+  readiness
+- **sota-security-compliance/rules**: 01 control-frameworks-as-code (CSF 2.0 spine), 02 NIST
+  800-53/800-171/CMMC/FedRAMP, 03 SSDF secure SDLC, 04 EU Cyber Resilience Act, 05 ISA/IEC 62443
+  (OT/ICS)
+- **sota-mobile/rules**: 01 platform & stack, 02 architecture & state, 03 offline/background/push,
+  04 security, 05 performance, 06 release & operations, 07 Swift language (Swift 6 concurrency,
+  ARC, SPM)
+- **sota-cli-ux/rules**: 01 commands/flags/config, 02 output & interaction, 03 behavior &
+  lifecycle, 04 distribution & docs
+- **sota-shell-scripting/rules**: 01 safety baseline, 02 robustness & correctness, 03 security, 04
+  CI & operational scripts
+- **sota-docs-workflow/rules**: 01 documentation architecture, 02 API reference & changelogs, 03
+  code review & PR workflow, 04 commits/branches/ releases, 05 spec-driven development
+- **sota-ux-writing/rules**: 01 voice/tone & plain language, 02 microcopy & components, 03 errors
+  & feedback, 04 accessibility & localization
+- **sota-copywriting/rules**: 01 positioning & value proposition, 02 headlines/landing pages/CTAs,
+  03 SEO content, 04 claims/legal/trust
+- **sota-rust/rules**: 01 ownership & API design, 02 errors & panics, 03 unsafe discipline, 04
+  async/tokio, 05 security & supply chain, 06 performance, 07 tooling & CI
+- **sota-golang/rules**: 01 errors, 02 design, 03 concurrency, 04 HTTP services, 05 security, 06
+  performance, 07 tooling & CI
+- **sota-c-cpp/rules**: 01 idioms (RAII/ownership), 02 memory safety, 03 undefined behavior, 04
+  security (CERT/MISRA/hardening), 05 concurrency, 06 build/tooling & CI, 07 performance
+- **sota-jvm/rules**: 01 idioms (Java/Kotlin), 02 API/null/immutability design, 03 concurrency
+  (virtual threads, JMM, coroutines), 04 security (deserialization/injection/XXE/JNDI/crypto), 05
+  performance (GC/JFR/GraalVM), 06 build/tooling & CI
+- **sota-python/rules**: 01 tooling & project setup, 02 typing & correctness, 03 idioms &
+  pitfalls, 04 async, 05 security, 06 performance, 07 frameworks & testing
+- **sota-javascript-typescript/rules**: 01 tsconfig & types, 02 language idioms, 03 async
+  patterns, 04 Node backend, 05 security, 06 performance, 07 testing & tooling
+- **sota-dotnet/rules**: 01 idioms (records/NRT/patterns), 02 API/disposal/DI design, 03 async &
+  concurrency, 04 security (SQL/deserialization/ASP.NET Core/crypto), 05 performance
+  (GC/Span/AOT), 06 build/tooling & CI
+- **sota-php/rules**: 01 language baseline & idioms, 02 injection (SQL/XSS), 03
+  files/deserialization/SSRF, 04 sessions/auth/web hardening, 05 Composer & tooling, 06
+  performance & runtime
+- **sota-ruby/rules**: 01 language & idioms, 02 security, 03 web hardening, 04 supply chain &
+  tooling, 05 concurrency & performance
 
 ## Context budget discipline
 

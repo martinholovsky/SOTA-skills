@@ -438,18 +438,31 @@ BUILD default and AUDIT baseline, and stop-and-ask on security-relevant choices.
 
 **3. (Optional) A per-prompt reminder.** A directive read many turns ago can
 fade from a long context; a `UserPromptSubmit` hook in `~/.claude/settings.json`
-re-injects it on every prompt:
+re-injects it on every prompt. `install.sh --routing` writes exactly this, and
+`--update` offers to refresh the wording when a release changes it:
 
 ```json
 {
   "hooks": {
     "UserPromptSubmit": [
       { "hooks": [ { "type": "command",
-        "command": "echo 'Route code tasks through the sota router and apply the matching sota-* skills; the profile is the stack baseline.'" } ] }
+        "command": "echo 'sota standing rules (every answer): (1) VALIDATE — check any claim about code, system state, config, versions or facts against a primary source before asserting it, and label anything unverified. (2) KEEP DOCS CURRENT — update affected docs in the same change. (3) ROUTE BEFORE YOU ACT — if the turn touches code, a diff, a config or a build/CI file, invoke the sota skill FIRST and apply the matching sota-* skills. Reading a file counts. If you have already read code this session without routing, route now. Treat ~/.claude/profiles as the stack baseline; stop and ask on security-relevant choices.'" } ] }
     ]
   }
 }
 ```
+
+Each rule is a **numbered imperative of equal weight**. That is not cosmetic: in
+a real session where routing was the *third clause of a run-on sentence*, rules
+(1) and (2) were obeyed every turn and the routing clause was dropped every turn
+— same text, same repetition, opposite outcome. Rule (3)'s last sentence makes
+the trigger **recoverable**: a long session often becomes a code task without any
+single prompt saying so, and routing late beats not routing.
+
+If you hand-edit the wording, keep the phrase **`sota-* skills`** in it — that is
+the marker `install.sh` uses to recognise the hook as its own. Reword past it and
+your hook stops receiving updates, and a later `--update` adds a second one
+beside it instead of refreshing it.
 
 No mechanism *forces* a model to run a skill — the three layers feed it
 instructions it chooses to follow, making routing reliable, not phrasing-dependent.
