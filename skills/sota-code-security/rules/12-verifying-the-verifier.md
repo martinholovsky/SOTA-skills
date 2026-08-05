@@ -16,6 +16,19 @@ place by anything, and in AUDIT as the pass that runs *after* rules/10 and
 rules/11 have produced findings — because a finding produced by an unvalidated
 instrument is not yet a finding (§2, §3).
 
+**Outside software this is settled practice, under four different names.** Every
+discipline that has to trust a detector tests it with something it *must* catch:
+a **proof test**, which exists because a safety function's dangerous failures
+stay hidden until the moment of demand (IEC 61508's framing); a **positive
+control** in an assay, where a run whose known-positive comes back negative is
+void rather than clean; **built-in test** on aircraft systems; and adversary
+emulation in detection engineering, where `sota-detection-engineering` rules/06
+already requires proving a detection fires against the real technique. Software
+CI tests the code with the tests and almost never tests the tests, gates and
+scanners with a known-bad. Closing that asymmetry is what this file is for. The
+design-level generalisation is **poka-yoke**: prefer making the inert state
+impossible or self-announcing over making it detectable.
+
 Related: the inert-control catalog → rules/10; the codebase-scale sweep →
 rules/11; vacuous tests in general, mutation testing, and watching a security
 test fail → `sota-testing` rules/02, rules/06 and rules/09; the audit-level
@@ -123,6 +136,28 @@ before/after numbers; show the references still separate; and confirm no case's
 ranking moved for any reason other than the fix.** An instrument quietly widened
 after a disappointing run is indistinguishable from a fabricated one.
 
+### 2.4 Evidence the subject supplies about itself
+
+An instrument that accepts the evaluated party's own report of its result is not
+measuring, it is transcribing. The failure mode is not that subjects lie — it is
+that the cheapest passing artifact wins and nothing in the loop prefers a real
+one.
+
+The scale of it has now been measured. A study of the EvoMap agent-to-agent
+network (1.5M assets, 128K agents) found that **"over 84% of approved assets
+bypass quality checks using vacuous tests (e.g. `console.log()`)"** — the
+platform asked agents to submit their own local execution logs as evidence of
+correctness, and nothing independent re-ran them
+([arXiv:2605.25815](https://arxiv.org/abs/2605.25815), 2026). Approval stayed
+near-total and meant nothing.
+
+Rule: **the party under evaluation never supplies the evidence of its own
+evaluation.** Re-execute the check somewhere you control, or verify the artifact
+against something the subject cannot author — a hash you computed, a count you
+took, a log the harness emitted. This binds CI jobs that report their own status,
+vendors self-attesting to a control, and any model asked to grade its own output
+(`sota-llm-engineering` rules/01 on judges; `rules/08` §1 on same-class checkers).
+
 ## 3. The guard that is an instance of what it guards
 
 The least intuitive shape in this whole family, and the highest-yield: **the
@@ -154,6 +189,27 @@ Then **introduce the defect and check** — the same discipline §1 applies to a
 control, applied to the thing that checks the control. A guard you have not
 watched reject something is a guard with an unverified predicate, and its scope
 is unverified until you have seen what it enumerated (rules/11 §2.2).
+
+**Verify per target, not once.** A guard protects a *population*: 20 call sites,
+40 modules, every route. Watching it reject one member proves the predicate can
+fire and says nothing about the other 19. Inject the defect into **each** member
+and assert the guard trips for every one. The real shape this catches is a
+tripwire that fired for 2 of 20 targets and stayed green for the remaining 18 —
+indistinguishable from full coverage on any single-instance test. For a security
+gate the acceptable kill rate is **100%**: unlike a code mutation score, where
+surviving mutants are triaged and a number below 1.0 is normal
+(`sota-testing` rules/06), a gate that misses its own target defect on a member
+of its population is simply void for that member.
+
+The oldest name for the underlying error is **vacuous satisfaction** — a
+conditional that holds because its antecedent is never true. "Every call site
+passes auth" is vacuously true over zero call sites, and the check reports the
+same green it would report over a thousand correct ones. Ball and Kupferman's
+*Vacuity in Testing* quotes the original hardware-verification result: "typically
+20% of specifications pass vacuously during the first formal-verification runs of
+a new hardware design, and vacuous passes always point to a real problem in
+either the design or its specification or environment." Treat a green from an
+unstated denominator as vacuous until you have seen the denominator.
 
 One corollary worth stating on its own: **one gate's green does not cover another
 gate's scope.** Two checks over what looks like the same tree can enumerate
@@ -187,5 +243,11 @@ whose pathspec drifted.
       the defect it exists for were present now, would it fail?** — with its
       *scope* enumerated and its *predicate* checked against the defect itself,
       not merely read (§3)?
+- [ ] Guards verified **per target**, not once — the defect injected into every
+      member of the protected population, kill rate **100%** for a security gate,
+      and no "every X passes Y" green accepted without its denominator (§3)?
+- [ ] No control accepting the **evaluated party's own report** as evidence —
+      re-executed where you control it, or checked against an artifact the
+      subject could not author (§2.4)?
 - [ ] No guard nested inside another gate's success branch, and no coverage
       denominator computed over survivors of earlier filtering (§3)?

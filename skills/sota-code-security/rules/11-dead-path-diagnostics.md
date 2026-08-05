@@ -134,6 +134,28 @@ bites mutation testing: an editable install, a copied tree, a stale image, or
 cached bytecode means the code you edited may not be the code that ran
 (rules/12 §1). Assert the runtime effect before trusting any before/after result.
 
+### 2.6 When you cannot state the right answer, state how it must change
+
+The reason a tool emitting nothing survives review is that nobody holds an oracle
+for its output. That difficulty has a name — the **test oracle problem** (Barr,
+Harman, McMinn, Shahbaz & Yoo, *IEEE TSE* 41(5):507–525, 2015,
+doi:10.1109/TSE.2014.2372785). You cannot write "the analyser should find 1,283
+functions" for an arbitrary repository, so nothing in the pipeline contradicts
+"it found 0", and §1's silent zero ships.
+
+A **metamorphic relation** gets you an oracle anyway: you cannot state the
+output, but you can state how it must *change*. Commit a fixture with N known
+functions and assert the extracted count is N; add one and assert the count
+rises; remove half and assert it falls. `sota-testing` rules/06 §4 owns the
+technique for application code — the use here is different and cheaper. It is a
+**liveness oracle for a tool whose correct output you do not know**, and it is
+the one diagnostic in this file that catches an analyser emitting an
+empty-but-well-formed artifact while exiting 0.
+
+§2.3's cross-scale delta is the same idea without a fixture; the fixture buys you
+an absolute assertion instead of a relative one, and it belongs in CI rather than
+in an audit.
+
 ## 3. Four classes rules/10 does not cover
 
 ### 3.1 Scale-dependent silence — correct small, broken large
@@ -385,6 +407,9 @@ unvalidated instrument is not yet a finding.
 - [ ] Cross-scale delta run on at least the stages that gate on size: output
       that does not grow with input investigated (§2.3)?
 - [ ] No stage on a data path is **silent** — start/finish with counts (§2.4)?
+- [ ] Any tool whose correct output cannot be stated carries a **metamorphic
+      liveness check** in CI — a fixture with a known count, and an assertion
+      that the count moves when the input does (§2.6)?
 - [ ] After each fix, the **new path proven to have executed** (emission, counter,
       or asserted runtime effect), not just "tests pass" (§2.5)?
 - [ ] Unbounded traversals/recursion/variable-length queries bounded, and every

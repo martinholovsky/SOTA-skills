@@ -158,6 +158,46 @@ confidence scores.
 
 ## 5.6 Gates that don't get bypassed
 
+### What the standards ask for — and the one thing none of them ask
+
+Worth knowing precisely, because it bounds what a green compliance answer is
+worth. Two frameworks require **evidence the scan ran**:
+
+- **NIST SSDF (SP 800-218 v1.1)** — **PW.8.2**: "Scope the testing, design the
+  tests, perform the testing, and document the results, including recording and
+  triaging all discovered issues and recommended remediations…". **PO.3.3**:
+  "Configure tools to generate artifacts of their support of secure software
+  development practices as defined by the organization" — where the document's
+  own footnote defines an artifact as "a piece of evidence".
+- **EU CRA (Regulation (EU) 2024/2847)** — Annex VII requires the technical
+  documentation to contain "reports of the tests carried out to verify the
+  conformity of the product with digital elements and of the vulnerability
+  handling processes with the applicable essential cybersecurity requirements".
+
+One does not even require that. **OpenSSF Scorecard's SAST check detects tool
+*presence*** — it "looks for known GitHub apps such as CodeQL
+(github-code-scanning) or SonarCloud … or the use of 'github/codeql-action' in a
+GitHub workflow". Its Dependency-Update-Tool check says so outright: it "can
+determine only whether the dependency update tool is enabled; it does not ensure
+that the tool is run". Only CI-Tests reads an outcome, and it "only considers
+tests which run successfully".
+
+**None of them require evidence that the gate is capable of failing.** A scanner
+misconfigured to scan zero files satisfies every clause above and yields a
+documented, attestable record of having found nothing — SLSA will even sign
+provenance proving that the scan executed, because provenance covers *how the
+artifact was built*, never whether the scan was semantically capable of a
+finding. So treat a passing compliance check as evidence of process, not of
+protection. The missing evidence is a **negative control** — a committed
+known-bad the gate must reject on every run — and it is not asked for by any
+mainstream framework, which is exactly why it has to be a house rule
+(`sota-code-security` rules/12 §1 and §3).
+
+*(SSDF and Scorecard wording verified against the primary documents 2026-08-05;
+the CRA sentence verified against published copies of the regulation text rather
+than EUR-Lex directly — confirm the Annex VII point number before quoting it in
+a filing.)*
+
 The mechanics that make everything above real:
 
 - **Required status checks, by exact job name**, in branch protection/rulesets. A check
@@ -241,6 +281,7 @@ remove it. Diff-aware modes, caching, and tiering are how gates survive.
 ## Audit checklist
 
 - [ ] SAST: diff-aware Semgrep (org rules included) required on PRs; CodeQL (or equivalent deep SAST) on default branch; full scans scheduled
+- [ ] Every security gate ships a **negative control** — a committed known-bad it must reject on every run. No framework (SSDF, CRA, Scorecard, SLSA) requires this; a passing compliance check is evidence of process, not protection (§5.6, `sota-code-security` rules/12)
 - [ ] All inline suppressions (`nosemgrep`/`#nosec`/checkov skips) carry justifications; suppression inventory reviewed; baseline only shrinks
 - [ ] Secret scanning: push protection org-wide, PR diff scan, history scanned at onboarding; committed secrets trigger rotation, not just removal; bypass events reviewed
 - [ ] IaC scanning on PRs (plan-aware where possible) with the high-signal defaults non-exceptable; custom org policies versioned + tested

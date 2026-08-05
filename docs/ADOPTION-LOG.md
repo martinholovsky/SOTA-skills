@@ -94,6 +94,15 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-08-04 | Cross-skill sweep prompted by the same prompt | **A control parked in observe-only mode** (Kyverno `Audit`, PSA `warn`, WAF detection-only, `SCMP_ACT_LOG`, CSP report-only, DMARC `p=none`, `--soft-fail`) is inert as a *destination*; the staged rollouts existed, the inert-control framing did not | **adopted** | `rules/10` §2.14 · unreleased |
 | 2026-08-04 | Same prompt (classes 7, 10, 12 — the covered remainder) | Dead instruments; record rot; the auditor's instrument as a control; negative-claim burden | **rejected: already covered** | — (`rules/10` §2.2/§2.13, `rules/11` §7.1–7.3; `rules/10` §2.9, `rules/11` §5 "comments are a hypothesis", `sota/rules/01` §6 decision ledger) |
 | 2026-08-04 | Same prompt — candidates checked and found already ours | Alerting-pipeline dead-man's switch; admission `failurePolicy: Ignore`; `continue-on-error`/soft-fail gate steps; suppression-baseline rot; coverage-target gaming | **rejected: already ours** | — (`sota-observability` rules/04 + rules/02, `sota-kubernetes` rules/05, `sota-devsecops` rules/05, `sota-testing` rules/07 §7.2) |
+| 2026-08-05 | Two commissioned research reports on inert controls ("Missing SOTA Audit Controls" = **A**; "The Inert-Control Class" = **B**) | **Per-target kill verification** — a guard protects a population; watching it reject one member says nothing about the other 19 (the 2-of-20 tripwire). 100% kill rate for a security gate | **adopted** | `sota-code-security/rules/12` §3 · unreleased |
+| 2026-08-05 | Report B (Q3, instance 1) | **Metamorphic relation as a liveness oracle for a tool** — when you cannot state the correct output, state how it must *change*; the only diagnostic that catches an analyser emitting an empty-but-well-formed artifact | **adopted** | `sota-code-security/rules/11` §2.6 · unreleased |
+| 2026-08-05 | Report B (Q5), verified against primary sources | **The standards gap**: SSDF PW.8.2/PO.3.3 and CRA Annex VII require a record that the scan *ran*; Scorecard's SAST check detects tool *presence* only; **none require evidence a gate can fail** | **adopted** | `sota-devsecops/rules/05` §5.6 · unreleased |
+| 2026-08-05 | Both reports (Q1/Q2) | The cross-discipline lineage the library used unnamed: **proof test** (IEC 61508 dangerous-undetected), **positive control** (assay validity), **BITE** (aviation), **poka-yoke**, **vacuous satisfaction** (Ball & Kupferman), **the test oracle problem** (Barr et al., IEEE TSE 41(5), 2015) | **adopted** | `rules/12` intro + §3, `rules/11` §2.6 · unreleased |
+| 2026-08-05 | Report A only — the one thing B missed | **EvoMap** (arXiv:2605.25815, 1.5M assets / 128K agents): "over 84% of approved assets bypass quality checks using vacuous tests (e.g. `console.log()`)" — hard data that self-supplied evidence collapses at scale. B asserts no such corpus exists | **adopted** | `sota-code-security/rules/12` §2.4 · unreleased |
+| 2026-08-05 | Report A, Rule 3 | "Enforce a minimum **Mutation Score** threshold in CI" | **rejected: contrary** | — contradicts `sota-testing` rules/07 §7.2 ("never set a global percentage target — Goodhart's law is undefeated") and rules/06 §6.3 differential mutation (gate on *new survivors*, adopted 2026-07-24 from swarm-forge). B's per-gate kill rate is compatible and was adopted; A's global score is not |
+| 2026-08-05 | Report B, R8 | **GSN / assurance-case notation** for critical controls | **rejected: non-fit** | — a notation, not a mechanism; its own cited critique (Leveson: arguments "assume the conclusion") points back at what we already run, `sota/rules/01` §7 adversarial refutation |
+| 2026-08-05 | Report A, Rule 4 | Cryptographically **signed volumetric execution artifacts** verified by release gateways | **rejected: partial — insight kept, machinery dropped** | the insight (SLSA proves execution, never efficacy) landed in `sota-devsecops/rules/05` §5.6; the signing machinery is speculative and unbuilt |
+| 2026-08-05 | Both reports — checked and found already ours | R2 execution evidence/volumetric assertions; R3 fail-closed gates; R6 assertion polarity + egress sandbox; R7 meta-monitoring/heartbeat; the **ML Test Score** rubric ("worth adopting wholesale") | **rejected: already ours** | — (`rules/11` §2.2/§2.4/§3.1, `rules/10` §2.1/§2.4/§2.6, `sota-testing/rules/02` §2.6–2.7, `sota-observability/rules/04:249`, and `sota-ml-engineering/rules/04:6` which has cited ML Test Score since before these reports) |
 
 ## Entries
 
@@ -645,14 +654,98 @@ test-smells catalog the name means a test reaching an *external resource*, with
 **resource optimism** as its sibling. Ours had quietly narrowed a standard term —
 record rot in our own file, found while auditing for it. Both are now stated.
 
-**Verification.** Every claim above was checked against the tree before editing,
-with `file:line` for each. Both edited `sota-code-security` files stayed under
+**Verification (2026-08-04 entry).** Every claim above was checked against the tree
+before editing, with `file:line` for each. Both edited `sota-code-security` files
+stayed under
 the 500-line cap — but only just (**493** and **495**), after two rounds of
 trimming when the first draft pushed `rules/11` to 505 and the gate caught it.
 **That pair is now effectively full: the next addition to this family needs a
 `rules/12` split, not another squeeze.** Invariant 6 also fired for real — the
 +141 lines rolled the README's `~61k lines` to `~62k`, which is exactly the drift
 that surface exists to catch.
+
+**Measurement status:** adopted on reasoning. **No efficacy lift is claimed or
+measured. Do not cite one.**
+
+### 2026-08-05 — two research reports on the same eight instances, and why only one survived quoting
+
+Two commissioned reports on inert controls, written against the same eight
+evidence instances: **A** ("Missing SOTA Audit Controls") and **B** ("The
+Inert-Control Class"). They converge on the same headline — *the missing layer is
+a control that must be shown capable of failing* — and they are **not** of equal
+quality. Every claim either report made that would become library text was
+checked against a primary source first, and that check is the reason this entry
+records four adoptions instead of thirteen.
+
+**Where the reports disagreed, B was right.** Report A misquotes SSDF **PO.3.3**
+as *"Configure tools to generate **evidence and** artifacts…"*; the actual clause,
+extracted from the NIST SP 800-218 v1.1 PDF, reads *"Configure tools to generate
+**artifacts**⁶ of their support of secure software development practices as
+defined by the organization"*, with footnote 6 supplying the words A folded into
+the clause: *"An artifact is 'a piece of evidence'."* B quotes it exactly, and
+quotes **PW.8.2** and all three OpenSSF Scorecard checks verbatim — all confirmed
+against `ossf/scorecard` `docs/checks.md`. A also over-generalises the vacuity
+statistic: the "20%" is Ball & Kupferman quoting Beer et al., scoped to *"a new
+**hardware** design"* and stating that vacuous passes *"always"* point to a real
+problem; A reports it as spanning "hardware and software" and softens it to
+"almost always". A's cross-discipline sourcing is weakest of all — aviation BITE
+cited to two Scribd uploads and a flight-simulator datasheet, "silent control
+failure" to a vendor homepage, alert fatigue to an unrelated GitHub repository.
+The *reasoning* in A is sound; its **references are not load-bearing**, and the
+misquote is recorded here so nobody re-derives PO.3.3 from that PDF.
+
+**Report A nonetheless found the one thing B asserts does not exist.** B states
+plainly that there is "no published corpus quantifying how often a scanner is
+misconfigured to scan nothing, or a gate is silently inert", and no large-scale
+study of monitors failing silently. A cites **EvoMap** (arXiv:2605.25815, HKUST,
+May 2026), whose abstract — fetched and read — reports that across **1.5M assets
+and 128K agents**, *"over 84% of approved assets bypass quality checks using
+vacuous tests (e.g. `console.log()`)"*, because the platform accepted each agent's
+own execution log as proof of correctness. That is the closest measured analogue
+we have to this whole family, and it is now `rules/12` §2.4. A search-engine
+summary of the same paper rendered it as "84% of **agents**"; the abstract says
+**approved assets**. The number was taken from the abstract, not the summary.
+
+**Three of the four adopted gaps are the same shape as last entry's.** Per-target
+kill verification, the metamorphic liveness oracle, and the standards gap are all
+cases where the library held the principle and lacked the *specific move*:
+`rules/12` §3 said "introduce the defect and check" in the singular against a
+guard that protects a population of twenty; `sota-testing` rules/06 §4 had
+metamorphic relations as a property-based pattern with nothing connecting them to
+a tool that emits zero; and `sota-devsecops` had the negative-control rule without
+ever saying that **no framework asks for one**. The fourth adoption is pure
+naming: the library had been describing proof tests, positive controls, BITE,
+poka-yoke, vacuous satisfaction and the oracle problem for months without using
+any of those words — `poka-yoke` and `oracle problem` returned **zero** hits
+across all 41 skills before this change.
+
+**Two rejections worth keeping.** Report A's Rule 3 — enforce a minimum mutation
+score in CI — is **contrary** to a position adopted here on 2026-07-24: `rules/07`
+§7.2 refuses global percentage targets on Goodhart grounds, and `rules/06` §6.3
+gates on *new survivors* against a persisted manifest. B's equivalent (per-gate
+kill rate, where 100% is the right bar because a gate that misses its own target
+defect is void) is compatible and was adopted; A's global score is not, and the
+distinction is the whole point. B's R8 (GSN assurance cases) is **non-fit** for
+the reason B itself supplies: Leveson's critique that such arguments "assume the
+conclusion" describes exactly the failure our `sota/rules/01` §7 refutation pass
+exists to prevent, and a notation is not a mechanism.
+
+**One thing both reports missed, which the library already has.** Neither applies
+its own R1 recursively: a committed negative-control fixture is itself a control,
+and it can be path-filtered, skipped, or — per `rules/10` §2.13 and GitHub's own
+docs — *reported as Success because its job was skipped*. `rules/12` §3 is that
+question. Neither report addresses the gate that fails correctly while nobody
+reads the output, which is `rules/11` §7.1 and this repo's own v1.20.0 incident.
+
+**Verification.** SSDF PO.3.3 / PW.7.2 / PW.8.2 and footnote 6 extracted from the
+primary PDF; Scorecard's three checks fetched from `ossf/scorecard`
+`docs/checks.md`; the EvoMap abstract and the Barr et al. citation (IEEE TSE
+41(5):507–525, 2015, doi:10.1109/TSE.2014.2372785) confirmed; the Ball &
+Kupferman text pulled and read at the quoted paragraph. **Not verified and
+therefore not quoted as clause text:** IEC 61508 §3.8.5/§3.8.6 (paywalled — the
+*concept* is named, no clause number is asserted), and the CRA Annex VII **point
+number** (the sentence was confirmed against published copies of the regulation,
+not EUR-Lex, which returned only recitals; the file says so at the point of use).
 
 **Measurement status:** adopted on reasoning. **No efficacy lift is claimed or
 measured. Do not cite one.**

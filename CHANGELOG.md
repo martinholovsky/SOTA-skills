@@ -7,6 +7,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**Naming the prior art, and the four gaps two research reports found.** Two
+commissioned reports on inert controls were evaluated against the tree. They agree
+on the headline — the missing layer is a control shown *capable of failing* — and
+they are not of equal quality: one misquotes NIST SSDF PO.3.3, over-generalises the
+formal-verification vacuity statistic from hardware to software, and sources
+aviation self-test to Scribd uploads. Every claim that became library text was
+checked against a primary source first, which is why four gaps landed out of
+thirteen proposals. Full verdicts, both rejections, and the misquote are in
+[docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md) (entry 2026-08-05).
+
+**Nothing here is measured; no lift is claimed for any of it.**
+
+### Added
+
+- **`rules/12` §3 — per-target kill verification.** A guard protects a
+  *population*. Watching it reject one member proves the predicate can fire and
+  says nothing about the other 19; the real shape is a tripwire that fired for 2
+  of 20 targets and stayed green for 18, indistinguishable from full coverage on
+  any single-instance test. Inject the defect into **each** member. For a security
+  gate the bar is a **100% kill rate** — unlike a code mutation score, where
+  surviving mutants are triaged and a number below 1.0 is normal.
+- **`rules/12` §2.4 — evidence the subject supplies about itself.** An instrument
+  that accepts the evaluated party's own report is transcribing, not measuring.
+  The anchor is now measured: across 1.5M assets and 128K agents, **"over 84% of
+  approved assets bypass quality checks using vacuous tests (e.g. `console.log()`)"**
+  ([arXiv:2605.25815](https://arxiv.org/abs/2605.25815)) — the platform accepted
+  each agent's own execution log as proof. Notably the *other* report asserts no
+  such corpus exists; this one found it.
+- **`rules/11` §2.6 — when you cannot state the right answer, state how it must
+  change.** A **metamorphic relation** as a liveness oracle for a tool: commit a
+  fixture with N known items, assert the count is N, assert it rises when you add
+  one. The only diagnostic in that file that catches an analyser emitting an
+  empty-but-well-formed artifact while exiting 0.
+- **`sota-devsecops` rules/05 §5.6 — what the standards ask for, and the one thing
+  none of them ask.** SSDF **PW.8.2**/**PO.3.3** and CRA **Annex VII** require a
+  record that the scan *ran*; OpenSSF Scorecard's SAST check detects tool
+  *presence* only, and its Dependency-Update-Tool check says outright it "does not
+  ensure that the tool is run". **None require evidence the gate can fail** — SLSA
+  will sign provenance for a scanner configured to scan zero files. So a passing
+  compliance check is evidence of process, not protection, and the negative
+  control has to be a house rule.
+
+### Changed
+
+- **The cross-discipline lineage is now named.** The library had described proof
+  tests (IEC 61508's dangerous-undetected framing), positive controls, aviation
+  built-in test, poka-yoke, **vacuous satisfaction** (Ball & Kupferman, quoting
+  Beer et al. on hardware verification) and **the test oracle problem** (Barr,
+  Harman, McMinn, Shahbaz & Yoo, *IEEE TSE* 41(5):507–525, 2015) for months
+  without using any of those words — `poka-yoke` and `oracle problem` returned
+  **zero** hits across all 41 skills. Named in `rules/12` intro + §3 and
+  `rules/11` §2.6.
+
+### Rejected (recorded so they are not re-litigated)
+
+- **A minimum mutation-score threshold in CI** — contrary to `sota-testing`
+  rules/07 §7.2 ("never set a global percentage target") and rules/06 §6.3
+  differential mutation, adopted 2026-07-24. The *per-gate* kill rate above is
+  compatible and was adopted; a global score is not.
+- **GSN / assurance-case notation** — a notation, not a mechanism, and its own
+  cited critique (arguments that "assume the conclusion") describes what
+  `sota/rules/01` §7 adversarial refutation already prevents.
+
+### Not verified, and therefore not asserted
+
+IEC 61508 §3.8.5/§3.8.6 clause text is paywalled — the *concept* is named and no
+clause number is quoted. The CRA Annex VII **point number** was not confirmed
+(EUR-Lex returned only recitals); the sentence was verified against published
+copies of the regulation, and `rules/05` says so at the point of use.
+
 **The rules/12 split — the inert-control family gets a third file.** The previous
 entry below shipped `rules/10` and `rules/11` at 493 and 495 of the 500-line cap and
 said plainly that the next addition needed a split rather than another squeeze. This
