@@ -7,7 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Found, not fixed
+### Fixed
+
+- **All four CI jobs are now required checks.** Branch protection required only
+  `Repository invariants` and `Secret scan (gitleaks)`; `Negative controls (the gate can
+  fail)` and `Shell lint (shellcheck)` ran on every PR and **could not block a merge** —
+  so the harness built in v1.22.1–v1.22.2 to prove our gates can fail was itself unable
+  to stop anything. A gate that executes with no enforcement power is `rules/10` §2.13
+  one level up.
+
+  **Watched to block, not merely configured.** A throwaway PR made invariant 2 inert so
+  that *only* the negative-controls job failed, isolating which job protection reacts to:
+
+  ```
+  BEFORE   mergeable=MERGEABLE  mergeStateStatus=UNSTABLE   ← could have been merged
+  AFTER    mergeable=MERGEABLE  mergeStateStatus=BLOCKED
+           gh pr merge → "the base branch policy prohibits the merge"
+  ```
+
+  Same PR, same failing job, only the protection changed. Applied via the dedicated
+  `required_status_checks` endpoint so nothing else moved: everything outside that key
+  diffed **identical** before/after, `enforce_admins` is still `true`, and `strict`
+  stayed `false`. The test branch was closed unmerged — its mutation must never land.
+
+### Found, not fixed (was)
 
 - **Two CI jobs run but cannot block a merge.** Branch protection requires only
   `Repository invariants` and `Secret scan (gitleaks)`; `Negative controls (the gate
@@ -17,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   family as "all-skipped is not all-green" (`rules/10` §2.13). Found by diffing
   `gh api …/branches/main/protection` against the workflow's job list. **Not fixed
   unilaterally**: changing branch protection is an enforcement decision on a protected
-  branch. ROADMAP #8 carries the command and the verification step.
+  branch. **Now fixed — see above.**
 
 ### Changed
 

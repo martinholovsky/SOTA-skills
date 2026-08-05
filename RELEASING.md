@@ -121,7 +121,7 @@ CONTRIBUTING, a cap that has been skill-files-only since PR #100).
 ```sh
 ./scripts/check-invariants.sh        # same checks as CI
 git checkout -b <branch> && git commit && git push
-# open the PR; both required checks green → squash-merge
+# open the PR; all four required checks green → squash-merge
 ```
 
 **Branch naming:** avoid dots. The assistant's permission rule `Bash(git checkout *.*)`
