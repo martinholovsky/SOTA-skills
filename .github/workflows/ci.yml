@@ -76,12 +76,14 @@ jobs:
           # reason and the run aborts with no results.
           fetch-depth: 0
           fetch-tags: true
-      - name: Prove check-invariants.sh still rejects known-bad input
+      - name: Prove check-invariants.sh and verify-setup.sh still reject known-bad input
         # The invariants job proves the gate PASSES on a good tree. Nothing proved
         # it can still FAIL — and "ok" from a working check is byte-identical to
-        # "ok" from one whose pathspec drifted. This job injects a known-bad per
-        # invariant and requires the INTENDED check to be the one that complains;
-        # a non-zero exit for any other reason is reported as a FALSE PASS.
+        # "ok" from one whose pathspec drifted. This job injects a known-bad and
+        # requires the INTENDED check to be the one that complains; a non-zero exit
+        # for any other reason is reported as a FALSE PASS. Two subjects: part A
+        # mutates a good tree in a worktree, part B builds a fully-configured fake
+        # machine for verify-setup.sh and removes one thing per probe.
         # sota-code-security rules/12 §1/§2.2 + sota-devsecops rules/05 §5.6.
         # Not in pre-commit: it runs the full gate once per mutation (~1 min).
         env:

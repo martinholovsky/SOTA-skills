@@ -246,7 +246,12 @@ else
     if [ "$n_rej" -gt 0 ]; then
       row "PASS" "10b. CI has rejected" "$n_rej failure(s) in $n_runs sampled — observed doing its job"
     else
-      row "UNVERIFIED" "10b. CI has rejected" "no failures in $n_runs sampled run(s) — that is not 'never'. Widen with --runs N (this repo: 0 failures in 60, 1 in 200)"
+      # No hardcoded sample here. This script runs against ANY repo, and a number
+      # measured on one is both wrong for the reader and rot-prone: the note used
+      # to read "this repo: 0 failures in 60, 1 in 200" and was false three days
+      # later once CI volume pushed that failure out of the window (rules/10 §2.10
+      # — a literal in reporting output instead of a derived value).
+      row "UNVERIFIED" "10b. CI has rejected" "no failures in $n_runs sampled run(s) — that is not 'never'. Widen with --runs N"
     fi
   fi
 fi

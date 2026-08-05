@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 #
-# Negative controls for check-invariants.sh — proof the gate can still FAIL.
+# Negative controls — proof our own gates can still FAIL.
+#
+# Two subjects: scripts/check-invariants.sh (part A) and scripts/verify-setup.sh
+# (part B). One script, one CI job, one bar.
 #
 # WHY THIS EXISTS. check-invariants.sh prints "ok" fifteen times on a clean tree.
 # So does a check whose pathspec drifted, whose predicate stopped matching, or
@@ -137,6 +140,116 @@ probe 10 "rules file not referenced by its own SKILL.md" "not referenced in"
 ( cd "$WT" && perl -0pi -e 's/10 silent control failure, 11 dead-path diagnostics, /10 silent control failure, /' skills/sota/SKILL.md )
 probe 15 "router library map omits an existing rules file" "map missing:"
 
+
+# =============================================================================
+# Part B — negative controls for scripts/verify-setup.sh
+# =============================================================================
+# Same bar, different subject. verify-setup.sh reports whether a MACHINE + REPO
+# are really set up, so its known-bad is a fixture, not a file edit: a fake
+# CLAUDE_CONFIG_DIR (the script reads that env var, so HOME is never touched), a
+# throwaway git repo, and a stub `gh` on PATH so check 10's run history is ours
+# to decide.
+#
+# The inversion matters. Part A mutates a GOOD tree and expects a failure. Here
+# the fixture starts good — every check passing — and each probe REMOVES one
+# thing, then requires that specific check to report FAIL. A probe that fails
+# some *other* check is a FALSE PASS, exactly as in part A: removing a gate
+# config cascades into checks 8 and 9, so "something went red" proves nothing.
+
+echo
+echo "Negative controls for scripts/verify-setup.sh"
+VS=$(mktemp -d)
+cleanup_vs() { rm -rf "${VS:?}"; }
+trap 'cleanup; cleanup_vs' EXIT   # part A's worktree AND this fixture
+
+build_fixture() {  # a machine+repo where every check passes
+  rm -rf "${VS:?}/home" "${VS:?}/repo" "${VS:?}/bin"
+  mkdir -p "$VS/home/skills" "$VS/home/profiles" "$VS/bin" "$VS/repo/.github/workflows"
+  # library reach: the router plus a couple of domain skills
+  mkdir -p "$VS/home/skills/sota" "$VS/home/skills/sota-testing" "$VS/home/skills/sota-golang"
+  # always-on routing: both layers
+  printf 'routing: consult the sota router.\n' > "$VS/home/CLAUDE.md"
+  printf '{"hooks":{"UserPromptSubmit":[{"hooks":[{"command":"echo sota"}]}]}}\n' > "$VS/home/settings.json"
+  printf 'stack\n' > "$VS/home/profiles/example.md"
+  # repo context
+  cd "$VS/repo"
+  git init -q . && git config user.email t@e && git config user.name t
+  printf 'MIT\n' > LICENSE; printf '*.log\n' > .gitignore
+  printf '# readme\n' > README.md; printf '# agents\n' > AGENTS.md
+  printf 'repos:\n  - repo: gitleaks/gitleaks\n' > .pre-commit-config.yaml
+  printf 'name: CI\non: [push]\njobs: {a: {runs-on: ubuntu-latest, steps: []}}\n' > .github/workflows/ci.yml
+  printf '#!/bin/sh\nexit 0\n' > .git/hooks/pre-commit; chmod +x .git/hooks/pre-commit
+  git remote add origin https://example.invalid/x.git
+  # stub gh: authenticated, and every sampled run concluded "success"
+  cat > "$VS/bin/gh" <<'GH'
+#!/bin/sh
+case "$1 $2" in
+  "auth status") exit 0 ;;
+  "run list")    i=0; while [ $i -lt 60 ]; do echo success; i=$((i+1)); done; exit 0 ;;
+esac
+exit 0
+GH
+  chmod +x "$VS/bin/gh"
+  cd "$REPO"
+}
+
+run_vs() {  # sets VS_OUT / VS_RC
+  VS_RC=0
+  VS_OUT=$( cd "$VS/repo" && CLAUDE_CONFIG_DIR="$VS/home" PATH="$VS/bin:$PATH" \
+            bash "$REPO/scripts/verify-setup.sh" 2>&1 ) || VS_RC=$?
+}
+
+build_fixture
+printf '  [positive control] fully-configured fixture must PASS ... '
+run_vs
+if [ "$VS_RC" -eq 0 ] && ! printf '%s\n' "$VS_OUT" | grep -q '^FAIL'; then
+  echo "ok"
+else
+  echo "FAIL"
+  echo "  The known-good fixture does not pass, so every probe below would be"
+  echo "  meaningless. Nothing was run."
+  printf '%s\n' "$VS_OUT" | grep -E '^(FAIL|PARTIAL)' | sed 's/^/    /'
+  exit 1
+fi
+
+vs_probe() {  # <name> <expected check label>  — fixture already broken by caller
+  local name="$1" want="$2"
+  tested=$((tested + 1))
+  run_vs
+  if [ "$VS_RC" -eq 0 ]; then
+    echo "  [vs] $name — NOT CAUGHT: verify-setup still exited 0. This check is INERT."
+    failed=$((failed + 1))
+  elif printf '%s\n' "$VS_OUT" | grep -q "^FAIL.*${want}"; then
+    echo "  [vs] $name — caught"
+    caught=$((caught + 1))
+  else
+    echo "  [vs] $name — FALSE PASS: it failed, but not on '${want}'."
+    printf '%s\n' "$VS_OUT" | grep '^FAIL' | head -2 | sed 's/^/        got: /'
+    failed=$((failed + 1))
+  fi
+  build_fixture
+}
+
+rm -rf "$VS/home/skills";                       vs_probe "no skills installed"            "1. sota skills reachable"
+rm -f "$VS/home/settings.json" "$VS/home/CLAUDE.md"; vs_probe "no routing directive or hook"  "2. always-on routing"
+ln -sf /nonexistent/x.md "$VS/home/profiles/dangling.md"; vs_probe "dangling profile symlink" "3. stack profile"
+rm -f "$VS/repo/AGENTS.md";                     vs_probe "no agent file"                  "4. agent file present"
+rm -f "$VS/repo/LICENSE";                       vs_probe "no licence"                     "6a. licence"
+rm -f "$VS/repo/.gitignore";                    vs_probe "no .gitignore"                  "6b. .gitignore"
+rm -rf "$VS/repo/.pre-commit-config.yaml" "$VS/repo/.github"; vs_probe "no gate mechanism" "7. gate mechanisms found"
+printf 'repos:\n  - repo: some/other-linter\n' > "$VS/repo/.pre-commit-config.yaml"
+rm -rf "$VS/repo/.github";                      vs_probe "gates without secret scanning"  "8. secret scanning configured"
+rm -f "$VS/repo/.git/hooks/pre-commit";         vs_probe "hook manager configured, not installed" "9. hooks installed"
+cat > "$VS/bin/gh" <<'GH'
+#!/bin/sh
+case "$1 $2" in
+  "auth status") exit 0 ;;
+  "run list")    i=0; while [ $i -lt 60 ]; do echo skipped; i=$((i+1)); done; exit 0 ;;
+esac
+exit 0
+GH
+chmod +x "$VS/bin/gh";                          vs_probe "CI history is all-skipped"      "10a. CI has executed"
+
 # --- result ---------------------------------------------------------------
 echo
 if [ "$tested" -eq 0 ]; then
@@ -148,5 +261,7 @@ if [ "$failed" -ne 0 ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      Covers invariants 1, 2, 6, 10, 15. The diff-, history- and"
-echo "      release-shaped checks (5, 8, 9, 11, 12, 13, 14) are NOT covered."
+echo "      check-invariants.sh: invariants 1, 2, 6, 10, 15. The diff-, history-"
+echo "      and release-shaped checks (5, 8, 9, 11, 12, 13, 14) are NOT covered."
+echo "      verify-setup.sh: checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 10a. Checks 5"
+echo "      and 11 are judgement (N/A by design) and 10b/12 need a different fixture."
