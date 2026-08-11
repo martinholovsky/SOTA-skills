@@ -209,7 +209,7 @@ between two of our own rules, plus the router rule for resolving such conflicts.
 All six are content/CI changes — **none measured**, none claiming a lift.
 
 **Field validation this cycle (n=1 per arm, not a measurement).** The day-zero
-trigger fired correctly on a purpose-built fresh repo (`~/Github/daycheck`:
+trigger fired correctly on a purpose-built fresh repo (one throwaway checkout:
 1 commit, no gates/licence/agent file) — once, in a line, offering rather than
 running the scripts, and the build proceeded. It stayed correctly silent on a
 mature 4304-commit repo. **It only fires when the `sota` router actually loads**:
@@ -580,7 +580,7 @@ scoped to skill files only**, a **4-way accuracy sweep**, and **theme-aware
 benchmark + breadth charts**.
 
 **Post-release, same session (PRs #111–#117):** concluded the breadth comparison
-(#111); mined a separate agent-orchestration project (`~/Github/Dev-AID`) and adopted
+(#111); mined a separate agent-orchestration project of the maintainer's and adopted
 **three pure-Markdown conventions, each independently measured** — negative routing
 cross-refs, plan-concreteness in BUILD step 3, and an evidence-based-completion
 operating principle (#112) — with regression checks proving no loss (completeness
@@ -590,7 +590,8 @@ saturated like audit; cross-refs kept as zero-cost defensive clarity); cut **v1.
 (#115); consolidated the breadth chart + full story into RESULTS.md (#116); and added
 **`sota-docs-workflow` rules/01 §8 "The documentation baseline"** — the must-have doc
 set incl. community-health files, GitHub search precedence verified (#117). Runtime-
-bound Dev-AID ideas (memory-bank persistence, RAG, worktree locks, agent framework)
+bound ideas from that project (memory-bank persistence, RAG, worktree locks, agent
+framework)
 were deliberately **not** ported.
 
 **Post-v1.16.0 (2026-07-20):** added **`sota-code-security` rules/10 "Silent

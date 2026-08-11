@@ -310,7 +310,8 @@ not a change.
 the `PostToolUse` lint hook, the generated slash commands, and the
 `.claude/memory/` index are executable harness machinery, and this library is
 Markdown-only by construction — the same disposition the memory-bank and
-worktree-lock ideas got in the dev-aid pass (PRs #112-114). The one idea inside
+worktree-lock ideas got in the earlier orchestration-project pass (PRs #112-114).
+The one idea inside
 them that generalises, pushing critical invariants into deterministic gates,
 was already the router's BUILD step 4 and is now restated for day zero in §10.
 
