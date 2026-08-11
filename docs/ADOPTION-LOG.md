@@ -103,6 +103,13 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-08-05 | Report B, R8 | **GSN / assurance-case notation** for critical controls | **rejected: non-fit** | — a notation, not a mechanism; its own cited critique (Leveson: arguments "assume the conclusion") points back at what we already run, `sota/rules/01` §7 adversarial refutation |
 | 2026-08-05 | Report A, Rule 4 | Cryptographically **signed volumetric execution artifacts** verified by release gateways | **rejected: partial — insight kept, machinery dropped** | the insight (SLSA proves execution, never efficacy) landed in `sota-devsecops/rules/05` §5.6; the signing machinery is speculative and unbuilt |
 | 2026-08-05 | Both reports — checked and found already ours | R2 execution evidence/volumetric assertions; R3 fail-closed gates; R6 assertion polarity + egress sandbox; R7 meta-monitoring/heartbeat; the **ML Test Score** rubric ("worth adopting wholesale") | **rejected: already ours** | — (`rules/11` §2.2/§2.4/§3.1, `rules/10` §2.1/§2.4/§2.6, `sota-testing/rules/02` §2.6–2.7, `sota-observability/rules/04:249`, and `sota-ml-engineering/rules/04:6` which has cited ML Test Score since before these reports) |
+| 2026-08-11 | [spanchain](https://github.com/ghostfactory-art/spanchain) `docs/arch/hash-chain.md` | **A partitioned chain must chain its partitions** — segmenting a ledger (epochs, rotated files, daily partitions) with a per-segment `prev_hash = NULL` reset makes deletion of a whole *interior* segment verify clean; their pre-fix verifier also reset its carried hash at the boundary | **adopted** | `sota-code-security/rules/04` §8 + checklist · unreleased |
+| 2026-08-11 | Same source — where the bug actually lived | A verifier that walks a sequence in chunks and **resets its carried state at the seam**: predicate right, traversal right, blind to the removal of a whole chunk — a fourth form of "the guard that is an instance of what it guards", and a seam axis for per-target verification | **adopted** | `sota-code-security/rules/12` §3 + checklist · unreleased |
+| 2026-08-11 | Same source — `canonical_encode` and its stated cause | Canonicalization fails in **two** directions: the library stated only forgery. A default map/JSON encoder is not canonical, so identical data hashes differently and the ledger reports tamper on untouched records — an alarm wrong on ordinary traffic gets muted. Name the spec (RFC 8785) and pin it with a known-answer vector, or the "verify off the storing system" requirement is two implementations free to disagree | **adopted** | `sota-code-security/rules/04` §8 + checklist · unreleased |
+| 2026-08-11 | spanchain README, "Replay validates Span Chain's integrity, not your agent's behavior" | A record-and-replay (cassette) harness re-executes nothing: it tests pipeline determinism, and as a CI quality gate it stays green through a prompt rewrite, a model swap or a retrieval change | **adopted** | `sota-llm-engineering/rules/01` §5 + checklist · unreleased |
+| 2026-08-11 | spanchain — six findings checked against our tree first | Unkeyed chain forgeable by a DB-write attacker; tail truncation invisible; unhashed projection columns; canonical preimage required; in-memory ingest buffer loses records with no gap (integrity ≠ completeness); offline verification | **rejected: already ours** | — `sota-code-security/rules/04` §8, six for six, arrived at independently: `:217` unkeyed, `:224` tail truncation, `:241` unhashed projection columns, `:244` canonical preimage, `:265` integrity ≠ completeness, `:279` off-system verification |
+| 2026-08-11 | spanchain — pre-GF-703 telemetry inside `Repo.transaction`; GF-827 conditional terminal write; append-only store holding personal data; EU AI Act Art. 12 | Post-commit notification, compare-and-set instead of check-then-write, erasure from immutable stores, AI Act record-keeping | **rejected: already covered** | — `sota-ruby/rules/05:82`, `sota-databases/rules/05:175`, `sota-architecture/rules/02:127`; `sota-async-concurrency/rules/02` §"Check-then-act / TOCTOU"; `sota-privacy-compliance/rules/03:125`; `sota-code-security/rules/04:214` |
+| 2026-08-11 | spanchain — dead-letter drops deliberately break `verify_ledger` ("a deliberate audit signal") | An integrity verdict that is routinely red for operational reasons trains operators to ignore it; a known gap should be a signed in-chain marker, not a hole | **deferred** | revisit if a second implementation shows the same design — one project's trade-off is not yet a rule |
 
 ## Entries
 
@@ -749,3 +756,45 @@ not EUR-Lex, which returned only recitals; the file says so at the point of use)
 
 **Measurement status:** adopted on reasoning. **No efficacy lift is claimed or
 measured. Do not cite one.**
+
+### 2026-08-11 — spanchain (ghostfactory-art), three adopted, three rejected, one deferred
+
+Source: <https://github.com/ghostfactory-art/spanchain> — an Elixir/OTP hash-chained
+audit ledger for AI agent runs (MIT, v0.x, 1 star, created 2026-06-06, last push
+2026-06-15). Read: `README.md`, `docs/arch/hash-chain.md`, `docs/arch/eval-and-replay.md`,
+`docs/arch/open-questions.md`, plus repo metadata and the commit list via `gh api`.
+
+**Why a 1-star project was worth reading.** Its architecture docs state the *limits* of
+its own crypto rather than the marketing version — the README says "immutable,
+cryptographically verifiable" while `hash-chain.md` says an attacker with DB write can
+recompute a clean chain. Six of its lessons are already in `sota-code-security/rules/04`
+§8, arrived at independently on both sides; that convergence is the reason to trust the
+three that were **not** there.
+
+**The three adopted are one incident, one omission, and one sentence.** The incident
+(their GF-666) is an interior-segment deletion that verified clean because each epoch
+restarted `prev_hash = NULL` *and* the verifier reset its carried hash at the boundary —
+so it landed twice, as a ledger rule in `rules/04` §8 and as a fourth guard form in
+`rules/12` §3, since the defect was in the checking, not the writing. The omission is
+that every canonicalization mention in the library framed it as an attacker problem; the
+false-alarm direction (non-deterministic encoder → tamper reported on untouched records →
+alarm muted → inert control) was absent, and no file named a canonicalization spec. The
+sentence is the README's "Replay validates Span Chain's integrity, not your agent's
+behavior", which generalises to any cassette harness wired into a CI quality gate.
+
+**Verification.** RFC 8785 confirmed at rfc-editor.org (JSON Canonicalization Scheme,
+June 2020, Informational, Independent Submission). The Go quote is verbatim from the
+language specification, "For statements with range clause"; the Elixir quote is verbatim
+from the `Map` documentation. **Not verified and therefore not asserted:** the ">32 keys
+switches to a HAMT" threshold their doc gives as the cause — the official Elixir docs
+state only that map entries follow no order, so `rules/04` says the order "may change
+with size as the map switches internal representation" and gives no number.
+
+**Not usable as an audit fixture.** The obvious hope — a real repo with a real defect,
+which [`ROADMAP.md`](ROADMAP.md) records as the only remaining route to measuring audit
+recall — does not survive contact: the public history is 18 commits starting from a
+squashed `Initial release — Span Chain v0.1.0` (2026-06-07), so the pre-fix verifier is
+not in it. Only the narrative is.
+
+**Measurement status:** adopted on reasoning. **No efficacy lift is claimed or measured.
+Do not cite one.**

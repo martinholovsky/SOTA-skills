@@ -5,6 +5,50 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+**Three rules from a 1-star repo that documented its own failures.** An intake pass over
+[spanchain](https://github.com/ghostfactory-art/spanchain) (Elixir hash-chained audit
+ledger for agent runs) found six of its lessons already in `sota-code-security/rules/04`
+§8 — independently arrived at on both sides — and three that were not. Full intake with
+verdicts, rejections and the verification notes: [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md)
+2026-08-11.
+
+### Added
+
+- **`sota-code-security/rules/04` §8 — a partitioned chain must chain its partitions.**
+  Ledgers get segmented for ordinary reasons (fixed-size epochs to bound an index, daily
+  partitions, rotated files) and the obvious implementation starts each segment with
+  `prev_hash = NULL`. Deleting a whole **interior** segment then verifies clean on both
+  sides of the hole. §8 previously enumerated two deletion geometries, tail and
+  whole-stream; the rule now names three and says which a chain walk can and cannot
+  catch. Audit checklist asks for the fixture: one whole interior segment removed.
+- **`sota-code-security/rules/12` §3 — a fourth form of "the guard that is an instance of
+  what it guards".** The segment bug lived in the *verifier*, which reset its carried
+  hash at each boundary: predicate right, traversal right, blind to the removal of a
+  whole chunk. Also a new axis for §3's per-target rule — for a guard that walks a
+  sequence the population includes the **seams** (first chunk, last chunk, interior chunk
+  removed, empty chunk), and three of those four survive any amount of single-record
+  mutation.
+- **`sota-code-security/rules/04` §8 — canonicalization fails in two directions, and
+  "canonical" must name a spec.** The library said "canonical, unambiguous encoding" in
+  three places and never said how to get one; a reader complying with `sort_keys=True`
+  has a single-language encoder with unpinned float and escaping behaviour, which
+  contradicts the same section's requirement that verification run off the storing
+  system. Now names RFC 8785 (JSON Canonicalization Scheme, June 2020, Informational) or
+  a written encoder spec, pinned by a committed known-answer vector. Adds the missing
+  **false-alarm** direction: a default map/JSON encoder is not canonical — quoting the Go
+  spec ("the iteration order over maps is not specified…") and the Elixir `Map` docs
+  ("key-value pairs in a map do not follow any order") — so identical data hashes
+  differently, the ledger reports tamper on untouched records, and an alarm that is wrong
+  on ordinary traffic gets muted, which is `rules/10`'s inert control by another route.
+- **`sota-llm-engineering/rules/01` §5 — a replay harness is not an eval.** Recorded-trace
+  or cassette replay re-executes nothing, so it tests pipeline determinism, not the
+  system's behaviour; wired into the gate as if it were the suite, the CI job stays green
+  through a prompt rewrite, a model swap or a retrieval change. Suites must declare what
+  is live and what is replayed, and the gate must fail with the model endpoint
+  unreachable — the file's first link into the silent-control family.
+
 ## [1.22.3] - 2026-08-05
 
 **Closing the loop on the gates.** The v1.22.x cycle built a harness to prove our checks
