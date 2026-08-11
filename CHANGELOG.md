@@ -14,6 +14,20 @@ ledger for agent runs) found six of its lessons already in `sota-code-security/r
 verdicts, rejections and the verification notes: [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md)
 2026-08-11.
 
+### Fixed
+
+- **An internal-name leak the internal-name check could not see.** Two tracked docs
+  named one of the maintainer's other projects, and one of those lines also carried a
+  local `~/` path; a third line elsewhere did the same. Invariant 3 passed on all of it,
+  because the private denylist had no pattern for that name — the gate was green on an
+  incomplete **list**, not a clean tree, which is `rules/12` §3's guard-whose-predicate-
+  misses-its-own-target in this repo's own machinery. Lines redacted (the meaning is
+  kept, the identifiers are gone), the private list extended, and the new pattern
+  **watched to fail** against a staged known-bad before being trusted (`[3/16]` flagging
+  the probe, full run exiting 1, then 0 once removed). The pre-2026-07-01 disclosure in
+  git history is unchanged and stays an accepted risk — re-confirmed with the sweep's
+  scope recorded in [docs/AUDIT-2026-07-01.md](docs/AUDIT-2026-07-01.md) S1.
+
 ### Added
 
 - **`sota-code-security/rules/04` §8 — a partitioned chain must chain its partitions.**
