@@ -159,6 +159,19 @@ Eval results are artifacts: persist run ID, git SHA, model versions, scores
 per case. "We can't reproduce last month's score" means you don't have evals,
 you have anecdotes.
 
+**A replay harness is not an eval.** Recorded-trace or cassette replay —
+re-ingesting captured requests and responses instead of calling the model — is
+worth having, but it re-executes nothing, so it tests your pipeline's
+determinism (parsing, schema drift, orchestration, tool wiring), not the
+system's behavior. Wired into the gate as if it were the suite above, it yields
+a CI job that stays green through a prompt rewrite, a model swap, or a
+retrieval change, because none of those are on the replayed path — and the
+greenness is indistinguishable from the real thing. Declare per suite what is
+**live** and what is **replayed**, and apply the falsification question
+(`sota/SKILL.md` BUILD step 4): if your quality gate would still pass with the
+model endpoint unreachable, it is measuring the harness (`sota-code-security`
+rules/10).
+
 ## 6. Error analysis discipline
 
 Scores tell you *that* something is wrong; error analysis tells you *what to
@@ -235,6 +248,9 @@ Production is the only honest distribution. Build the loop:
       tags; cost/latency gated alongside quality.
 - [ ] Eval runs persisted as artifacts (run ID, SHA, model versions,
       per-case results) and reproducible.
+- [ ] Each suite declares what is **live** vs **replayed**, and the quality
+      gate fails with the model endpoint unreachable — a replay-only gate
+      measures the harness, not the model.
 - [ ] Online signal exists (sampled judging and/or user feedback) and is
       distinct from — not a substitute for — offline gates.
 - [ ] Error-analysis loop visible in history: failure taxonomy, incident

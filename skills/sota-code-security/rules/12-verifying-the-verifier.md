@@ -165,7 +165,7 @@ control that exists to prevent class X is itself an example of class X.** It is
 not a variant of §2 — an instrument reports a number, a guard renders a verdict,
 and a guard that cannot fail blocks nothing while appearing to block everything.
 
-Three forms, all observed:
+Four forms, all observed:
 
 - **The predicate the defect satisfies.** A test asserting "*every* driver call
   site passes auth" that scanned only one directory **and** accepted `auth=None`
@@ -180,6 +180,15 @@ Three forms, all observed:
   the items that made it past earlier filtering reports high coverage of a
   population it has already narrowed. rules/11 §2.2 catches an *empty* scope;
   this is a scope that is merely **wrong**, which prints a healthy number.
+- **The guard whose scope is continuous but whose state is not.** A verifier
+  that walks a sequence in chunks — a hash chain by epoch, a log by rotated
+  file, a reconciliation by day — and **resets its carried state at each
+  boundary**. It rejects every defect *inside* a chunk and is blind to the
+  removal of a whole one, which is the cheapest edit available to whoever wants
+  the record gone. Predicate right, traversal right, scope nominally complete:
+  the checking stops at the seam between iterations, and nothing in the output
+  distinguishes "all chunks verified" from "verified each chunk in isolation".
+  Worked instance: `rules/04` §8, chained partitions.
 
 The question to ask of every guard, gate, coverage assertion and tripwire:
 
@@ -200,6 +209,12 @@ gate the acceptable kill rate is **100%**: unlike a code mutation score, where
 surviving mutants are triaged and a number below 1.0 is normal
 (`sota-testing` rules/06), a gate that misses its own target defect on a member
 of its population is simply void for that member.
+
+For a guard that walks a sequence, that population includes the **seams**. An
+injected defect lands inside one chunk, exercises the predicate, and never
+touches the carry-over between chunks — so boundary cases have to be enumerated
+deliberately: first chunk, last chunk, a whole interior chunk removed, an empty
+chunk. Three of those four survive any amount of single-record mutation.
 
 The oldest name for the underlying error is **vacuous satisfaction** — a
 conditional that holds because its antecedent is never true. "Every call site
@@ -251,3 +266,7 @@ whose pathspec drifted.
       subject could not author (§2.4)?
 - [ ] No guard nested inside another gate's success branch, and no coverage
       denominator computed over survivors of earlier filtering (§3)?
+- [ ] For any verifier that walks a sequence in chunks (chained epochs, rotated
+      logs, daily partitions), is the **seam** probed as well as the interior —
+      first/last chunk, a whole interior chunk removed, an empty chunk — rather
+      than only single-record mutations that never reach the carry-over (§3)?
