@@ -28,6 +28,14 @@ verdicts, rejections and the verification notes: [docs/ADOPTION-LOG.md](docs/ADO
   git history is unchanged and stays an accepted risk — re-confirmed with the sweep's
   scope recorded in [docs/AUDIT-2026-07-01.md](docs/AUDIT-2026-07-01.md) S1.
 
+  [CONTRIBUTING.md](CONTRIBUTING.md) now documents the part that bit: the list lives in
+  two places that cannot see each other (a git-ignored local file and a **write-only**
+  CI secret), so a name added to one silently leaves the other lane open. It also
+  documents the **canary** — a synthetic pattern in both copies that lets anyone prove
+  the secret is loaded and blocking by pushing a file containing it, without printing a
+  real internal name into a public CI log, which is what probing with a real name would
+  do.
+
 ### Added
 
 - **`sota-code-security/rules/04` §8 — a partitioned chain must chain its partitions.**

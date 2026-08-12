@@ -109,6 +109,29 @@ are marked "needs verification", never asserted.
 3. any **internal/private reference** leaking into tracked files (the private
    pattern list is intentionally not in the repo; PRs from forks run the
    generic checks and the maintainer's CI runs the full list);
+
+   The list lives in **two places that cannot see each other**: `.denylist.local`
+   (git-ignored) for the pre-commit hook, and the `SOTA_DENYLIST` repository
+   secret for CI. The secret is **write-only** — nothing can read it back to diff
+   it — so a pattern added to one place and not the other leaves a gate that is
+   green in one lane and blocking in the other. Add a new name to **both**, in
+   the same sitting.
+
+   **A green check 3 means "no match", which is not the same as "clean".** On
+   2026-08-11 a sweep found a project name in two tracked docs that the check had
+   passed over for a month, because the name was simply not in the list — the
+   guard's predicate did not cover its own target (`sota-code-security/rules/12`
+   §3, in our own machinery). When your set of private names changes, the list is
+   what has to change; the check will not discover the gap for you.
+
+   **To prove the secret is live, use the canary — never a real name.** Both
+   copies of the list carry one synthetic pattern that matches nothing real
+   (see the comment in `.denylist.local`). Push a branch with a file containing
+   it and check 3 must fail; that demonstrates the secret is loaded, parsed and
+   blocking, while the only string reaching the **public** CI log is an invented
+   one. Probing with a real internal name would publish exactly what the control
+   exists to suppress. The canary literal must never appear in a tracked file
+   either — it is on the list, so it would fail the build permanently.
 4. any `skills/*/SKILL.md` `description` over **1024 characters** (the Agent
    Skills cap) or written as an unquoted inline scalar containing `: ` —
    invalid YAML that makes loaders skip the skill; use `description: >-`.
