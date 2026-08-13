@@ -16,6 +16,17 @@ verdicts, rejections and the verification notes: [docs/ADOPTION-LOG.md](docs/ADO
 
 ### Fixed
 
+- **The real-repo audit subject was mischaracterized, and reading the tree caught it.**
+  [DESIGN-real-repo-audit.md](evals/DESIGN-real-repo-audit.md) described Harbor's 8
+  advisories as a *missing* authorization check. They are not: at `v2.5.1` every
+  vulnerable handler already calls `requireAccess`, and `retention.go` has 11 checks for
+  11 handlers. What is missing is the **object-to-tenant binding** — that the policy or
+  execution named in the URL belongs to the project the caller was authorized against
+  (34 object-binding lines added in the fix, against 1 project-access line). It is OWASP
+  API1:2023, and a *silent control* in `rules/10`'s sense: the guard runs, returns nil,
+  and everything downstream believes authorization happened. A better subject than the
+  original reading, and the correction only surfaced because the claim was checked
+  against the tree instead of the filenames.
 - **An internal-name leak the internal-name check could not see.** Two tracked docs
   named one of the maintainer's other projects, and one of those lines also carried a
   local `~/` path; a third line elsewhere did the same. Invariant 3 passed on all of it,
