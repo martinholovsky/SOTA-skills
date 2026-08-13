@@ -71,9 +71,32 @@ immutability handlers.
 
 ### Why this candidate and not a memory-safety CVE
 
-1. **The defect is an absence.** Nothing is wrong on the line; a check that
-   should exist does not. Pattern-based SAST is structurally poor at this, and
-   it is the exact claim `sota-code-security` rules/03 makes.
+1. **The authorization check is present, passes, and authorizes the wrong
+   object.** *(Corrected 2026-08-13 — the first version of this file said "a
+   check that should exist does not". That was wrong, and reading the v2.5.1
+   tree rather than the filenames is what caught it.)* At v2.5.1 the handlers
+   already call `requireAccess(ctx, p, rbac.ActionUpdate)`; `retention.go` has
+   11 checks for 11 exported handlers and `immutable.go` 4 for 4. What is
+   missing is the **binding of the object to the tenant** — that the policy,
+   execution or robot named in the URL actually belongs to the project the
+   caller was just authorized against. The v2.5.2 patch adds exactly that:
+
+   ```go
+   // v2.5.2, notification_policy.go — the whole defect, stated positively
+   + if projectID != l.ProjectID {
+   +     return errors.NotFoundError(fmt.Errorf("project id:%d, webhook policy id: %d not found", projectID, policyID))
+   + }
+   ```
+
+   Counting added lines across the six handlers: **34 object-binding checks vs 1
+   project-access check**. So this is OWASP **API1:2023 Broken Object Level
+   Authorization**, and it is a *silent control* in the `rules/10` sense — the
+   guard runs, returns nil, and everyone downstream believes authorization
+   happened. A grep for "is there an authz call on this handler" answers **yes**
+   on every vulnerable site. That makes it a far better subject than a missing
+   check would have been: the only way to find it is to reason about *which
+   object* was authorized, which is the claim `sota-code-security` rules/03 and
+   `sota-api-design` rules/07 actually make.
 2. **Eight items, not one.** Recall over a set is a measurement; finding one
    planted bug is an anecdote. It also permits partial credit and a per-item
    refutation pass.
@@ -118,5 +141,45 @@ immutability handlers.
    that this one does too, and the design is worth running because it is the
    only untried shape left, not because it is expected to win.
 
-**Cost estimate: unverified.** No token count has been measured for an agentic
-audit of a repo this size; do not quote one until a dry run produces it.
+## Dry run, 2026-08-13 — what ran and what did not
+
+**The model arm did not run.** The stored `OPENROUTER_API_KEY` returns
+`HTTP 401 {"error":{"message":"User not found."}}` on both `/api/v1/credits` and
+`/api/v1/key`. No sample was taken, so there is still no number of any kind.
+
+*Instrument note, in the spirit of `rules/12` §2:* the first credit check parsed
+the response with `.get('data',{})` and printed **"remaining: $0.00"** — turning
+an authentication failure into a plausible balance. A reader would have concluded
+"out of credit" and topped up an account that was never the problem. The parser
+was the thing that failed, and it failed *quietly and legibly*, which is the
+whole failure mode this library documents. Any replacement must assert the HTTP
+status before reading a field.
+
+**What was measured instead** — the subject at the pinned commit
+`b0506782b4`, `*.go` excluding `*_test.go`, token column is `bytes / 4` and is an
+**estimate**, not a measurement:
+
+| Scope | Files | LOC | Bytes | ~Tokens |
+|---|---|---|---|---|
+| `src/server/v2.0/handler` | 55 | 9,576 | 300,758 | ~75k |
+| `src/server` | 123 | 15,017 | 472,592 | ~118k |
+| `src/controller` | 109 | 16,860 | 507,716 | ~127k |
+| `src` (whole) | 5,431 | 1,641,671 | 54,139,135 | ~13.5M |
+
+Three design consequences fall straight out of those numbers:
+
+1. **Whole-`src` cannot be read.** At ~13.5M estimated tokens it exceeds every
+   context window on the market, so the audit is necessarily **agentic and
+   selective** — which is the shape the roadmap always said was the real
+   frontier, now with a number attached.
+2. **`src/server` + `src/controller` ≈ 245k estimated tokens** read
+   exhaustively. That fits a 1M-context model in a single pass and does not fit
+   a 200k one, so the arms must either be matched on context size or the scope
+   bounded identically for both. Record which.
+3. **The handler directory alone (~75k) is too small to be the scope.** It
+   contains the answer set; pointing an arm at it telegraphs the population
+   (see the bias note above). Scope at `src/server` or wider.
+
+**Still unmeasured:** actual token consumption of an agentic run (input depends
+on what the arm chooses to read), wall-clock, and dollar cost. A single sample
+produces all three, and needs a working key.
