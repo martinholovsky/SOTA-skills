@@ -405,6 +405,14 @@ salient reminder fixed it (see
 [`docs/WHY-COMPLETENESS-RESIDUAL.md`](../docs/WHY-COMPLETENESS-RESIDUAL.md)).
 Artifact: `results/2026-07-13/completeness-7case-p5.json`.
 
+## Designed but not built
+
+- [DESIGN-real-repo-audit.md](DESIGN-real-repo-audit.md) — the real-repo audit
+  eval: subject selected and verified (Harbor at `v2.5.1`, 8 broken-authorization
+  advisories fixed in `v2.5.2`), ground truth extractable from the patches,
+  biases stated up front. **Nothing measured** — it needs a paid run and an
+  explicit go. The +0.00 prior stands until a run says otherwise.
+
 ## Extending
 
 Add a new case kind by giving each case an `id` and an `expect` list — `score.py`
