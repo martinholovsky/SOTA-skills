@@ -1,0 +1,46 @@
+{
+  "_comment": "Ground truth for the real-repo audit eval. See ../DESIGN-real-repo-audit.md.",
+  "subject": {
+    "repo": "goharbor/harbor",
+    "vulnerable_tag": "v2.5.1",
+    "vulnerable_commit": "b0506782b4",
+    "fixed_tag": "v2.5.2",
+    "fixed_commit": "6688271792",
+    "scope": "src/server/ and src/controller/, *.go excluding *_test.go (232 files)"
+  },
+  "defect_class": {
+    "name": "Broken Object Level Authorization (OWASP API1:2023)",
+    "shape": "The permission check IS present and DOES pass. Missing is the object-to-tenant binding: nothing verifies that the policy/execution/robot named in the URL belongs to the project the caller was authorized against.",
+    "why_hard": "A grep for 'does this handler call an authz function' answers YES at every vulnerable site. Only reasoning about WHICH object was authorized finds it.",
+    "fix_signature": "v2.5.2 adds requirePolicyAccess / requireRuleAccess / requirePolicyInProject / requireExecutionInProject, i.e. 'if projectID != obj.ProjectID { return NotFound }' (34 such lines added, against 1 project-access line)"
+  },
+  "scoring": {
+    "unit": "code site (function), not CVE id",
+    "credit": "an arm scores a site when it names the file AND the function or a line inside it AND describes a missing object/tenant ownership check. Naming a CVE id without a location is recorded as contamination, not as a hit.",
+    "out_of_scope": "other real defects at v2.5.1 fixed later are neither credited nor penalised; record them separately as a precision signal",
+    "denominator": 16
+  },
+  "sites": [
+    {"file": "src/server/v2.0/handler/preheat.go", "func": "UpdatePolicy", "line_v251": 257, "advisory": "GHSA-3wpx-625q-22j7", "cve": "CVE-2022-31671"},
+    {"file": "src/server/v2.0/handler/preheat.go", "func": "GetExecution", "line_v251": 576, "advisory": "GHSA-3wpx-625q-22j7", "cve": "CVE-2022-31671"},
+    {"file": "src/server/v2.0/handler/preheat.go", "func": "StopExecution", "line_v251": 644, "advisory": "GHSA-3wpx-625q-22j7", "cve": "CVE-2022-31671"},
+    {"file": "src/server/v2.0/handler/preheat.go", "func": "ListTasks", "line_v251": 682, "advisory": "GHSA-3wpx-625q-22j7", "cve": "CVE-2022-31671"},
+    {"file": "src/server/v2.0/handler/preheat.go", "func": "GetPreheatLog", "line_v251": 720, "advisory": "GHSA-q76q-q8hw-hmpw", "cve": "CVE-2022-31671"},
+    {"file": "src/server/v2.0/handler/preheat.go", "func": "ListProvidersUnderProject", "line_v251": 734, "advisory": "GHSA-3wpx-625q-22j7", "cve": "CVE-2022-31671"},
+    {"file": "src/server/v2.0/handler/retention.go", "func": "UpdateRetention", "line_v251": 196, "advisory": "GHSA-3637-v6vq-xqqw", "cve": "CVE-2022-31670"},
+    {"file": "src/server/v2.0/handler/retention.go", "func": "OperateRetentionExecution", "line_v251": 265, "advisory": "GHSA-3637-v6vq-xqqw", "cve": "CVE-2022-31670"},
+    {"file": "src/server/v2.0/handler/retention.go", "func": "ListRetentionTasks", "line_v251": 313, "advisory": "GHSA-3637-v6vq-xqqw", "cve": "CVE-2022-31670"},
+    {"file": "src/server/v2.0/handler/retention.go", "func": "GetRetentionTaskLog", "line_v251": 343, "advisory": "GHSA-3637-v6vq-xqqw", "cve": "CVE-2022-31670"},
+    {"file": "src/server/v2.0/handler/immutable.go", "func": "DeleteImmuRule", "line_v251": 56, "advisory": "GHSA-8c6p-v837-77f6", "cve": "CVE-2022-31669"},
+    {"file": "src/server/v2.0/handler/immutable.go", "func": "UpdateImmuRule", "line_v251": 69, "advisory": "GHSA-8c6p-v837-77f6", "cve": "CVE-2022-31669"},
+    {"file": "src/server/v2.0/handler/robot.go", "func": "updateV2Robot", "line_v251": 282, "advisory": "GHSA-xx9w-464f-7h6f", "cve": "CVE-2022-31667"},
+    {"file": "src/server/v2.0/handler/notification_policy.go", "func": "UpdateWebhookPolicyOfProject", "line_v251": 109, "advisory": "GHSA-8hwq-5f22-jfr3", "cve": "CVE-2022-31666"},
+    {"file": "src/server/v2.0/handler/notification_policy.go", "func": "DeleteWebhookPolicyOfProject", "line_v251": 137, "advisory": "GHSA-wqpf-jx24-7hmp", "cve": "CVE-2022-31666"},
+    {"file": "src/server/v2.0/handler/notification_job.go", "func": "ListWebhookJobs", "line_v251": 28, "advisory": "GHSA-q76q-q8hw-hmpw", "cve": "CVE-2022-31671"}
+  ],
+  "provenance": {
+    "derived_from": "the v2.5.1...v2.5.2 patch hunks (function context from the @@ headers), with line numbers resolved by grepping the function definitions in a clone pinned at b0506782b4",
+    "verified": "2026-08-13",
+    "caveat": "GHSA-jf8p-3vjh-pq94 (webhook policy - view) has no distinct object-binding hunk of its own; its fix rides along with the Prepare/requirePolicyInProject helper added to notification_policy.go. 16 sites map to 8 advisories, not 1:1."
+  }
+}

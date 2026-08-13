@@ -119,6 +119,8 @@ def main():
     key = load_env_key()
     cases = [json.loads(l) for l in open(CASES, encoding="utf-8")
              if l.strip() and not l.startswith("#")]
+    from _elapsed import note_work   # duration baseline needs a denominator
+    note_work(len(cases), "cases")
     names = [os.path.basename(d) for d in glob.glob(os.path.join(ROOT, "skills/sota-*"))
              if os.path.isdir(d)]
     arms = {"with-xref": catalogue(False), "without-xref": catalogue(True)}

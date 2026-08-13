@@ -114,6 +114,8 @@ def main():
     if a.ids:
         want = set(a.ids.split(","))
         cases = [c for c in cases if c["id"] in want]
+    from _elapsed import note_work   # duration baseline needs a denominator
+    note_work(len(cases), "cases")
     manifest = json.load(open(a.manifest, encoding="utf-8"))["competitors"]
     comps = list(manifest)
     if a.only:

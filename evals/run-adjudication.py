@@ -128,6 +128,8 @@ def main():
 
     key = run_clean.load_env_key()
     cases = run_clean.load_cases(a.cases)
+    from _elapsed import note_work   # duration baseline needs a denominator
+    note_work(len(cases), "cases")
     n_real = sum(1 for c in cases if c["expect"] == ["UPHELD"])
     print(f"model={a.model}  cases={len(cases)} ({n_real} real / {len(cases)-n_real} false)  "
           f"samples={a.samples}  temp={a.temp}\n")

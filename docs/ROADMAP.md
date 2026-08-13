@@ -21,15 +21,32 @@ Every number in this table was re-counted on 2026-08-13, not carried forward.
 | 3 | **Real-repo audit eval** — the *only* remaining way to move AUDIT off +0.00 | A synthetic fixture is **ruled out** (2026-08-03, twice), and the first real candidate failed on evidence: spanchain's public history is 18 commits from a squashed initial release, so its documented pre-fix verifier is not in it ([ADOPTION-LOG](ADOPTION-LOG.md) 2026-08-11) | Pick an OSS repo at a known-vulnerable commit **and confirm the vulnerable commit is actually in the public history before anything else** |
 | 4 | **Paid eval runs** — 2nd cross-family model (~$3), as-deployed competitor comparison (~$8) | Costs money; needs an explicit go and a credit check | Verify OpenRouter credit via its API, then ask before spending |
 | 5 | **Router trim** — 2× the spec's ~5k-token recommendation | Deliberate: trimming breaks `ROUTER_BUILD_SHA` and the +0.39's comparability. **491/500 lines** on 2026-08-13 — the activation rewrite left 9 lines of headroom that `AGENTS.md` was still calling "exactly 500" | **Only when the router must grow** — then trim and re-baseline together |
-| 6 | **Denominators for 5 eval runners** — 7 of 12 declare one (verified 2026-08-13) | No single `cases = load…` line to hook | The five without `note_work`: `run-adjudication`, `run-competitors`, `run-decay`, `run-desc-routing`, `run-silent-open`. Add `note_work(n, "cases")` when next touching each |
-| 7 | **§3.9 tool table rot** — 8 ecosystem rows; the file itself flags that two of the named projects have been renamed under their old URLs | Watch item; needs re-verification, not a decision | Re-check the named projects at the next accuracy sweep |
-| 8 | **6-month accuracy sweep** | Scheduled | `LAST-VERIFIED` reads **2026-07-08**, so due ~**2027-01-08**; bump it only after a full pass |
+| 6 | **6-month accuracy sweep** | Scheduled | `LAST-VERIFIED` reads **2026-07-08**, so due ~**2027-01-08**; bump it only after a full pass |
 
 **Pending, not blocked: a release cut.** `[Unreleased]` carries four rule additions and
 one fix. By this repo's own test (`RELEASING.md` §"Minor or patch?" — minor = the library
 gains a surface someone can *use*; patch = the change lives inside existing surfaces) it
 is a **patch, 1.22.4**: no new skill, script, or gate. Invariant 14 will require a
 `**Front door checked:**` line whose terms resolve.
+
+**Closed 2026-08-13 (this session), both with evidence rather than a tick:**
+
+- **Every eval runner declares its denominator — 12 of 12.** The five that did not
+  (`run-adjudication`, `run-competitors`, `run-decay`, `run-desc-routing`,
+  `run-silent-open`) now call `note_work` at the point the count is known.
+  `run-decay` gets `arm-depth runs`, not `cases`: it drives **one** case across every
+  arm × depth, so "cases" would have declared a denominator of 1 for a run that does
+  15 units of work — a wrong denominator is worse than none. Verified by executing the
+  import from a script in `evals/`, not by reading it, and `test_scoring.py` still
+  passes 38 checks.
+- **§3.9 tool-table rot: re-checked, none found.** All six named third-party projects
+  resolve, none archived, all pushed within four months (`knip` 2026-08-11, `deptry`
+  2026-08-12, `cargo-machete` 2026-08-10, `cargo-udeps` 2026-04-29, `composer-unused`
+  2026-04-27, `ReferenceTrimmer` 2026-08-12). The rename the file warns about is
+  confirmed live — `fpgmaas/deptry` still answers and reports `full_name:
+  osprey-oss/deptry` — and the rules file already carries the new name. Checked by
+  reading `full_name` back, per the ledger's own lesson that the API follows renames
+  silently.
 
 **Closed since the 2026-08-05 cut** (2026-08-11/13, PRs #204, #205, #207):
 

@@ -161,6 +161,10 @@ def main():
     case = next(c for c in _rc.load_cases() if c["id"] == a.task)
     depths = [int(x) for x in a.depths.split(",")]
     arms = ["control", "anchor", "reminder"]
+    # Denominator here is not "cases" — this runner drives ONE case across every
+    # arm x depth combination, so the unit that scales the duration is the run.
+    from _elapsed import note_work
+    note_work(len(arms) * len(depths), "arm-depth runs")
     print(f"task={a.task}  arms={arms}  depths={depths}  build={a.build_model}  "
           f"judge={a.judge_model}  (multi-turn decay, blind judge)\n")
     results = {}

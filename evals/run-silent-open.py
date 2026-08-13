@@ -95,6 +95,8 @@ def main():
 
     key = run_clean.load_env_key()
     cases = run_clean.load_cases(a.cases)
+    from _elapsed import note_work   # duration baseline needs a denominator
+    note_work(len(cases), "cases")
     print(f"model={a.model}  judge={a.judge_model}  cases={len(cases)}  "
           f"samples={a.samples}  temp={a.temp}  (open-ended, no vocabulary)\n")
 
