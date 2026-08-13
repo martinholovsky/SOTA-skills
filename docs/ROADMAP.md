@@ -4,23 +4,46 @@ Priorities set by the **2026-07-10 audit**
 ([AUDIT-2026-07-10.md](AUDIT-2026-07-10.md)). Ordered; revisit after each
 release. The 2026-07-01 cycle is fully executed and kept below as history.
 
-## Start here next session *(as of 2026-08-05)*
+## Start here next session *(as of 2026-08-13)*
 
 Everything actionable, ordered. Each line says what it is, why it is not done, and the
 first move. **The written-conventions backlog is empty** — invariant 14 closed the last
-gateable candidate — so nothing below comes from re-reading docs. That prediction held:
-the two new candidates at #8 and #9 both came from **incidents during v1.21.1**, not
-from re-reading anything.
+gateable candidate — so nothing below comes from re-reading docs. That prediction has now
+held twice: the v1.21.1 candidates came from incidents, and the three additions of
+2026-08-11 came from **reading an outside implementation's own failure notes**.
+
+Every number in this table was re-counted on 2026-08-13, not carried forward.
 
 | # | Item | Why not done | First move |
 |---|---|---|---|
-| 1 | **Distribution / adoption** — the actual bottleneck (4 stars after 41 skills) | Not a code task; needs a person, not a gate | Publish the salience write-up; a before/after audit demo |
-| 2 | **Real-repo audit eval** — the *only* remaining way to move AUDIT off +0.00 | A synthetic fixture is **ruled out** (2026-08-03, twice) | Pick an OSS repo at a known-vulnerable commit; ground truth from its CVE/patch |
-| 3 | **Paid eval runs** — 2nd cross-family model (~$3), as-deployed competitor comparison (~$8) | Costs money; needs an explicit go and a credit check | Verify OpenRouter credit via its API, then ask before spending |
-| 4 | **Router trim** — it is 2× the spec's ~5k-token recommendation at 500/500 lines | Deliberate: trimming breaks `ROUTER_BUILD_SHA` and the +0.39's comparability | **Only when the router must grow** — then trim and re-baseline together |
-| 5 | **Denominators for 5 eval runners** — 7 of 12 declare one | No single `cases = load…` line to hook | Add `note_work(n, "cases")` when next touching each |
-| 6 | **§3.9 tool table rot** — 8 named third-party projects, 2 already renamed | Watch item; needs re-verification, not a decision | Re-check the 8 URLs at the next accuracy sweep |
-| 7 | **6-month accuracy sweep** | Scheduled | ~Jan 2027; bump `LAST-VERIFIED` only after a full pass |
+| 1 | **Secret/local denylist divergence** — the CI `SOTA_DENYLIST` was rewritten 2026-08-11 from the local list; the old value was set a day *after* the local file and is unreadable | Only the maintainer's memory can say whether a pattern existed **only** in the secret | Recall whether anything was added to the secret on 2026-07-09 alone; if unsure, re-derive the full name list once and set both lanes together |
+| 2 | **Distribution / adoption** — still the bottleneck, though less flat than it looked (**13 stars, 2 forks** on 2026-08-13, up from 4 at the last cut) | Not a code task; needs a person, not a gate | Publish the salience write-up; a before/after audit demo |
+| 3 | **Real-repo audit eval** — the *only* remaining way to move AUDIT off +0.00 | A synthetic fixture is **ruled out** (2026-08-03, twice), and the first real candidate failed on evidence: spanchain's public history is 18 commits from a squashed initial release, so its documented pre-fix verifier is not in it ([ADOPTION-LOG](ADOPTION-LOG.md) 2026-08-11) | Pick an OSS repo at a known-vulnerable commit **and confirm the vulnerable commit is actually in the public history before anything else** |
+| 4 | **Paid eval runs** — 2nd cross-family model (~$3), as-deployed competitor comparison (~$8) | Costs money; needs an explicit go and a credit check | Verify OpenRouter credit via its API, then ask before spending |
+| 5 | **Router trim** — 2× the spec's ~5k-token recommendation | Deliberate: trimming breaks `ROUTER_BUILD_SHA` and the +0.39's comparability. **491/500 lines** on 2026-08-13 — the activation rewrite left 9 lines of headroom that `AGENTS.md` was still calling "exactly 500" | **Only when the router must grow** — then trim and re-baseline together |
+| 6 | **Denominators for 5 eval runners** — 7 of 12 declare one (verified 2026-08-13) | No single `cases = load…` line to hook | The five without `note_work`: `run-adjudication`, `run-competitors`, `run-decay`, `run-desc-routing`, `run-silent-open`. Add `note_work(n, "cases")` when next touching each |
+| 7 | **§3.9 tool table rot** — 8 ecosystem rows; the file itself flags that two of the named projects have been renamed under their old URLs | Watch item; needs re-verification, not a decision | Re-check the named projects at the next accuracy sweep |
+| 8 | **6-month accuracy sweep** | Scheduled | `LAST-VERIFIED` reads **2026-07-08**, so due ~**2027-01-08**; bump it only after a full pass |
+
+**Pending, not blocked: a release cut.** `[Unreleased]` carries four rule additions and
+one fix. By this repo's own test (`RELEASING.md` §"Minor or patch?" — minor = the library
+gains a surface someone can *use*; patch = the change lives inside existing surfaces) it
+is a **patch, 1.22.4**: no new skill, script, or gate. Invariant 14 will require a
+`**Front door checked:**` line whose terms resolve.
+
+**Closed since the 2026-08-05 cut** (2026-08-11/13, PRs #204, #205, #207):
+
+- **Three rules adopted from an outside implementation's own incident notes** — chained
+  partitions and two-directional canonicalization in `sota-code-security/rules/04` §8, a
+  fourth guard form in `rules/12` §3, and "a replay harness is not an eval" in
+  `sota-llm-engineering/rules/01` §5. Six further findings were checked and **rejected as
+  already ours**, which is the signal that made the three worth taking.
+- **A leak the leak-check could not see** — a project name sat in two tracked docs for a
+  month behind a green invariant 3, because the private list had no pattern for it. Green
+  meant "no match", not "clean": `rules/12` §3 in our own machinery. Redacted, both lanes
+  extended, and the CI secret **proven live** by a synthetic canary rather than by a real
+  name (which would have published to a public log the very thing the control suppresses).
+  The two-lane rule and the canary procedure are now in `CONTRIBUTING.md`.
 
 **Closed in the v1.22.x cycle (2026-08-05)** — kept here rather than in the table above,
 which is for what is still *actionable*. Numbering is deliberately dropped: these five were
