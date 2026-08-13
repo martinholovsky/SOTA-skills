@@ -14,6 +14,24 @@ ledger for agent runs) found six of its lessons already in `sota-code-security/r
 verdicts, rejections and the verification notes: [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md)
 2026-08-11.
 
+### Changed
+
+- **Business-logic flaws are now reachable by name.** A coverage/depth audit of that
+  defect class against OWASP WSTG-BUSL (all **10** sub-tests, IDs read from OWASP's own
+  repo — the task that commissioned this audit recalled 9 and missed
+  `WSTG-BUSL-10 Test Payment Functionality`), API6:2023 and the CWE-840 cluster found the
+  **content is there — 10 of 10 map at depth ≥3, most at 4** — but the class was
+  unreachable: "business logic", "checkout", "refund" and "state machine" appeared in
+  **zero** of 41 `SKILL.md` descriptions, and "workflow" appeared only in the CI, SOC and
+  docs senses. Descriptions are the only auto-loaded trigger classifier, so the fix is one
+  word-pair in `sota-code-security`'s description (998 → 1014 of the 1024 cap).
+
+  **Two drafted rules edits were cut after refutation**, which is the point of running
+  one: the BUSL-07 and BUSL-10 "gaps" were both covered under other names, and the
+  refuter's own surviving residual (currency mismatch) fell to
+  `rules/01-input-injection.md:28`. No rule text changed.
+  [COVERAGE-BUSINESS-LOGIC-2026-08-13](docs/COVERAGE-BUSINESS-LOGIC-2026-08-13.md)
+
 ### Measured
 
 - **The real-repo audit eval ran: no measurable lift, and a new contamination vector.**

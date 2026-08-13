@@ -14,7 +14,7 @@ description: >-
   upload, rate limit, prompt injection, tool-call security, data ingestion,
   feed, parser, file upload, archive, zip bomb, decompression bomb, webhook,
   scraping, RAG corpus, deserialization, polyglot, silent failure, fail-open,
-  no-op control, vacuous test.
+  no-op control, vacuous test, business logic.
 ---
 
 # SOTA Code Security
