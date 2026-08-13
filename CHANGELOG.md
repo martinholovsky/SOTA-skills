@@ -14,6 +14,25 @@ ledger for agent runs) found six of its lessons already in `sota-code-security/r
 verdicts, rejections and the verification notes: [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md)
 2026-08-11.
 
+### Measured
+
+- **The real-repo audit eval ran: no measurable lift, and a new contamination vector.**
+  Four live agents (2 bare, 2 library) audited Harbor `v2.5.1` against 16 real
+  broken-object-level-authorization sites. Clean result: **bare 15/16, library 15/16** —
+  the eighth audit instrument to read ≈ +0.00, and the first on a real repository with
+  real CVEs. **Two of four arms were discarded**: they looked up Harbor's *fixed* source
+  mid-audit, proven by counting symbols the fix introduces (`requirePolicyAccess` and
+  friends, 63 and 54 occurrences) which exist nowhere in the vulnerable tree. A synthetic
+  subject leaks the answer through structure; a real one leaks it through the internet.
+  The probe is now a documented harness convention.
+  [REAL-REPO-AUDIT](evals/results/2026-08-13/REAL-REPO-AUDIT.md)
+- **Third model family confirms the completeness lift: `google/gemini-3.1-pro-preview`,
+  0.41 → 0.96, lift +0.55** ($1.63, 7 cases, n=1 per arm). Three labs, three positive
+  lifts — +0.39 sonnet, +0.44 gpt-5.1, +0.55 gemini — and the same relationship each
+  time: the lift tracks the **baseline**, not the lab. Recorded as a confirmation of
+  direction, not a precision estimate.
+  [CROSS-FAMILY-GEMINI](evals/results/2026-08-13/CROSS-FAMILY-GEMINI.md)
+
 ### Fixed
 
 - **The real-repo audit subject was mischaracterized, and reading the tree caught it.**

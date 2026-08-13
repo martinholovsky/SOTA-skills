@@ -328,6 +328,30 @@ of them were **mine, in the harness I had just written**.
   deleted the `rules/NN` citations it existed to find. Keep a known-positive and a
   known-negative report and check both after any change.
 
+### Real subjects leak the answer through the internet (learned 2026-08-13)
+
+Running an audit arm against a **real** repository at a **real** vulnerable commit
+removes the synthetic fixture's tell (a planted defect is a deviation from generated
+filler) and replaces it with the opposite one: any agent with network access can look
+up the patched version, and the more capable the agent, the more likely it is to try.
+Two of four arms did — one of them a *bare* arm, which then reported that the gaps
+"are closed in current upstream by an explicitly added ownership check" and named the
+helpers.
+
+- **Probe it mechanically.** Name the symbols the **fix introduces** and assert their
+  count is zero in each arm's transcript. In the Harbor run those were
+  `requirePolicyAccess`, `requireExecutionInProject`, `requireRuleAccess`,
+  `requirePolicyInProject` — none of which exist in the vulnerable tree, so a non-zero
+  count is proof, not suspicion. It needs no judgement and no self-report.
+- **Stripping `.git` is not enough.** The arms identified the subject from `VERSION`
+  and `go.mod` in seconds. Assume identification; defend against *lookup* — sandbox the
+  network for the arms, or run the probe and discard.
+- **Discard, do not adjust.** A contaminated arm is void for recall, the way an assay
+  whose positive control fails is void. Two of four were discarded, leaving n=1 per
+  arm, and the writeup says so rather than reporting four samples.
+
+Full run: [results/2026-08-13/REAL-REPO-AUDIT.md](results/2026-08-13/REAL-REPO-AUDIT.md).
+
 ## The scorers are tested (and the tests are mutation-checked)
 
 `evals/test_scoring.py` — plain `python3`, no pytest — covers `run-clean.score()`,
