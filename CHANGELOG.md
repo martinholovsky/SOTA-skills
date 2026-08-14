@@ -5,7 +5,15 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.22.4] - 2026-08-14
+
+**Rules from someone else's incident notes, a leak the leak-check could not see, and
+the eighth audit null.** Three of this cycle's rule additions came from reading an
+outside implementation's own failure write-ups; one came from our own gate passing
+while a name sat in two tracked docs. The measurement half is one positive and one
+null, both published.
+
+**Front door checked:** business logic · cross-family · real-repo
 
 **Three rules from a 1-star repo that documented its own failures.** An intake pass over
 [spanchain](https://github.com/ghostfactory-art/spanchain) (Elixir hash-chained audit
@@ -3082,6 +3090,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.22.4]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.4
 [1.22.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.3
 [1.22.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.2
 [1.22.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.1
