@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Stale claims removed from the docs that carry them.** `AGENTS.md` said the
+  negative-control harness runs **15 probes** and enumerated five invariant probes; it
+  runs **16** and the enumeration omitted invariant 16, which shipped with its own probe
+  in v1.22.2 (re-counted: 6 in part A, 10 in part B). And
+  [WHY-IT-WORKS.md](docs/WHY-IT-WORKS.md) still explained the audit +0.00 by saying a
+  real lift "would need whole-repo, cross-file context a snippet can't carry" — that
+  hypothesis was **tested and falsified** this cycle on a real repository with real CVEs,
+  on both recall and precision, so the page now says so and points at what is actually
+  untested (a different dependent variable, not more context). The third cross-family
+  result was added there too.
+
 ### Measured
 
 - **Audit precision measured: 1.00 vs 1.00 — the ninth null.** All 59 findings from the
