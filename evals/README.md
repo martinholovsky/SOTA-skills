@@ -328,6 +328,28 @@ of them were **mine, in the harness I had just written**.
   deleted the `rules/NN` citations it existed to find. Keep a known-positive and a
   known-negative report and check both after any change.
 
+### An HTTP 200 with empty content is not a successful call (learned 2026-08-14)
+
+Every runner here reads `choices[0].message.content`. A **reasoning model can spend its
+entire `max_tokens` budget on reasoning and return `content: null` under a 200** —
+measured at 7289 of 8000 completion tokens, 3132 of them reasoning, on a call that
+*succeeded*. So it is intermittent and temperature-dependent, which is exactly why a
+`--samples 1 --temp 0` run can pass and the `--samples 3 --temp 0.7` re-run of the same
+thing cannot.
+
+- **The crash is the good outcome.** `run-completeness.py` handed the `None` to
+  `judge()`, which died 80 lines later with `'NoneType' object is not subscriptable`. An
+  **empty string** would have been judged normally, scored ~0, and silently depressed
+  that arm — a wrong number instead of a stack trace.
+- **Guard every runner, not the one that broke.** The sweep after the first fix found the
+  same raw read in `run-clean.py`, `run-decay.py`, `run-desc-routing.py` and
+  `run-repo-audit.py`; `run-clean.py` is what produces the flagship +0.39.
+- **Warn on truncation too.** `finish_reason == "length"` means the artifact is a
+  **floor, not a measurement** — score it and you are measuring the token budget.
+- **Prove the guard with a stub, not a live call.** A fake 200 carrying
+  `{"content": null}` costs nothing and hits the branch deterministically; a live call
+  only reaches it when the model happens to over-reason.
+
 ### Real subjects leak the answer through the internet (learned 2026-08-13)
 
 Running an audit arm against a **real** repository at a **real** vulnerable commit

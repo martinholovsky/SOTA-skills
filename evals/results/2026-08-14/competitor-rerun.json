@@ -1,0 +1,282 @@
+{
+ "arms": [
+  "without",
+  "sota",
+  "ECC",
+  "claude-skills",
+  "awesome-cursorrules"
+ ],
+ "samples": 1,
+ "temp": 0.0,
+ "cases": {
+  "c1_ticket_api": {
+   "rubric_n": 12,
+   "arms": {
+    "without": {
+     "recall": 0.6666666666666666,
+     "recalls": [
+      0.6666666666666666
+     ],
+     "min": 0.6666666666666666,
+     "max": 0.6666666666666666,
+     "sd": 0.0,
+     "present": [
+      "authn",
+      "authz",
+      "validation",
+      "sqli",
+      "pagination",
+      "errhygiene",
+      "outschema",
+      "sizelimit"
+     ],
+     "missing": [
+      "ratelimit",
+      "logging",
+      "transport",
+      "tests"
+     ],
+     "artifact_len": 16514
+    },
+    "sota": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "authn",
+      "authz",
+      "validation",
+      "sqli",
+      "ratelimit",
+      "pagination",
+      "logging",
+      "errhygiene",
+      "transport",
+      "outschema",
+      "sizelimit",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 65087
+    },
+    "ECC": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "authn",
+      "authz",
+      "validation",
+      "sqli",
+      "ratelimit",
+      "pagination",
+      "logging",
+      "errhygiene",
+      "transport",
+      "outschema",
+      "sizelimit",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 42182
+    },
+    "claude-skills": {
+     "recall": 0.8333333333333334,
+     "recalls": [
+      0.8333333333333334
+     ],
+     "min": 0.8333333333333334,
+     "max": 0.8333333333333334,
+     "sd": 0.0,
+     "present": [
+      "authn",
+      "authz",
+      "validation",
+      "sqli",
+      "pagination",
+      "logging",
+      "errhygiene",
+      "outschema",
+      "sizelimit",
+      "tests"
+     ],
+     "missing": [
+      "ratelimit",
+      "transport"
+     ],
+     "artifact_len": 51123
+    },
+    "awesome-cursorrules": {
+     "recall": 0.9166666666666666,
+     "recalls": [
+      0.9166666666666666
+     ],
+     "min": 0.9166666666666666,
+     "max": 0.9166666666666666,
+     "sd": 0.0,
+     "present": [
+      "authn",
+      "authz",
+      "validation",
+      "sqli",
+      "pagination",
+      "logging",
+      "errhygiene",
+      "transport",
+      "outschema",
+      "sizelimit",
+      "tests"
+     ],
+     "missing": [
+      "ratelimit"
+     ],
+     "artifact_len": 60763
+    }
+   }
+  },
+  "c2_upload": {
+   "rubric_n": 11,
+   "arms": {
+    "without": {
+     "recall": 0.5454545454545454,
+     "recalls": [
+      0.5454545454545454
+     ],
+     "min": 0.5454545454545454,
+     "max": 0.5454545454545454,
+     "sd": 0.0,
+     "present": [
+      "authn_authz",
+      "contenttype",
+      "sizelimit",
+      "pathtraversal",
+      "reencode",
+      "errhygiene"
+     ],
+     "missing": [
+      "storage",
+      "imagebomb",
+      "ratelimit",
+      "logging",
+      "tests"
+     ],
+     "artifact_len": 17845
+    },
+    "sota": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "authn_authz",
+      "contenttype",
+      "sizelimit",
+      "pathtraversal",
+      "storage",
+      "imagebomb",
+      "reencode",
+      "ratelimit",
+      "logging",
+      "errhygiene",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 44112
+    },
+    "ECC": {
+     "recall": 0.9090909090909091,
+     "recalls": [
+      0.9090909090909091
+     ],
+     "min": 0.9090909090909091,
+     "max": 0.9090909090909091,
+     "sd": 0.0,
+     "present": [
+      "authn_authz",
+      "contenttype",
+      "sizelimit",
+      "pathtraversal",
+      "storage",
+      "imagebomb",
+      "reencode",
+      "logging",
+      "errhygiene",
+      "tests"
+     ],
+     "missing": [
+      "ratelimit"
+     ],
+     "artifact_len": 39202
+    },
+    "claude-skills": {
+     "recall": 0.6363636363636364,
+     "recalls": [
+      0.6363636363636364
+     ],
+     "min": 0.6363636363636364,
+     "max": 0.6363636363636364,
+     "sd": 0.0,
+     "present": [
+      "authn_authz",
+      "contenttype",
+      "sizelimit",
+      "pathtraversal",
+      "imagebomb",
+      "ratelimit",
+      "errhygiene"
+     ],
+     "missing": [
+      "storage",
+      "reencode",
+      "logging",
+      "tests"
+     ],
+     "artifact_len": 36450
+    },
+    "awesome-cursorrules": {
+     "recall": 0.6363636363636364,
+     "recalls": [
+      0.6363636363636364
+     ],
+     "min": 0.6363636363636364,
+     "max": 0.6363636363636364,
+     "sd": 0.0,
+     "present": [
+      "authn_authz",
+      "sizelimit",
+      "pathtraversal",
+      "ratelimit",
+      "logging",
+      "errhygiene",
+      "tests"
+     ],
+     "missing": [
+      "contenttype",
+      "storage",
+      "imagebomb",
+      "reencode"
+     ],
+     "artifact_len": 65620
+    }
+   }
+  }
+ },
+ "means": {
+  "without": 0.606060606060606,
+  "sota": 1.0,
+  "ECC": 0.9545454545454546,
+  "claude-skills": 0.7348484848484849,
+  "awesome-cursorrules": 0.7765151515151515
+ }
+}

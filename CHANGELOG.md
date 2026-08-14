@@ -5,6 +5,23 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **The empty-completion guard is now a recorded convention, not just code.**
+  [CONVENTIONS-LEDGER](docs/CONVENTIONS-LEDGER.md) goes from **four** runner-enforced
+  conventions to **five** — and it arrived the way that ledger predicts they do, from an
+  incident rather than from re-reading the docs. `AGENTS.md` and the evals harness
+  conventions were updated to match.
+- **Competitor benchmark re-run in flight** at the pinned competitor SHAs, with the same
+  build model as the 2026-07-13 original (`git log -S` confirms the default was
+  introduced by the original benchmark commit and never changed, so the library content
+  is the only variable). The **as-deployed** variant stays unbuilt and is now recorded as
+  blocked on a *design* decision rather than effort: "as their users install them" means
+  something different per competitor, and choosing those mechanics chooses the result on
+  a public claim about named third parties.
+
 ## [1.22.5] - 2026-08-14
 
 **Instruments, corrected.** Every entry here is a measuring tool that was wrong or
