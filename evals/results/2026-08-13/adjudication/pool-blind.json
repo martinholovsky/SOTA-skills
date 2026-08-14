@@ -1,0 +1,415 @@
+[
+ {
+  "file": "src/controller/artifact/processor/base/manifest.go",
+  "line": 99,
+  "sev": "?",
+  "claim": "reached on every manifest PUT (putManifest \u2192 artifact.Ctl.Ensure \u2192 abstractor.go:83 \u2192 AbstractMetadata). Any user with push rights to their own project uploads a multi-GB JSON config blob plus a manifest referencing it; core decodes it whole into Go objects (JSON\u2192map inflates several-fold) and OOMs.",
+  "id": "F01"
+ },
+ {
+  "file": "src/server/v2.0/handler/gc.go",
+  "line": 70,
+  "sev": "Low",
+  "claim": "The Redis connection URL, password included, is persisted into GC job parameters and echoed by the API",
+  "id": "F02"
+ },
+ {
+  "file": "src/server/v2.0/handler/notification_policy.go",
+  "line": 130,
+  "sev": "?",
+  "claim": "a project admin passes another project's policy ID and re-parents that policy into their own project while rewriting its target URL, auth header and event types \u2014 silently redirecting the victim's security/audit notifications to an attacker-controlled endpoint.",
+  "id": "F03"
+ },
+ {
+  "file": "src/server/v2.0/handler/icon.go",
+  "line": 37,
+  "sev": "Low",
+  "claim": "Icon retrieval has no authentication or project check at all",
+  "id": "F04"
+ },
+ {
+  "file": "src/server/handler/job_status_hook.go",
+  "line": 37,
+  "sev": "Medium",
+  "claim": "the job-status hook handler performs no authentication or authorization whatsoever \u2014 it decodes the body and calls task.HkHandler.Handle, which looks up a task by the attacker-supplied JobID and writes the attacker-supplied Status (src/pkg/task/hook.go:50-86). The `secret` security generator (src/server/middleware/security/secret.go:29) exists for exactly this caller but is never required. Routed ",
+  "id": "F05"
+ },
+ {
+  "file": "src/controller/artifact/controller.go",
+  "line": 586,
+  "sev": "Medium",
+  "claim": "Artifact label attachment performs no label-scope validation",
+  "id": "F06"
+ },
+ {
+  "file": "src/server/middleware/repoproxy/proxy.go",
+  "line": 170,
+  "sev": "?",
+  "claim": "GET by tag through a proxy project returns Docker-Content-Digest: \"\" and Etag: \"\" \u2014 a broken integrity and cache-validation header rather than a wrong one.",
+  "id": "F07"
+ },
+ {
+  "file": "src/controller/artifact/annotation/v1alpha1.go",
+  "line": 85,
+  "sev": "?",
+  "claim": "silent control failure (CWE-561). The LimitReader on :83 does bound this particular read, so it is not itself a DoS \u2014 but an oversized icon layer is silently TRUNCATED to 1 MB, content-sniffed on the truncated head and accepted, instead of being rejected as the code intends. This is the check that would otherwise have constrained the icon pixel-bomb above.",
+  "id": "F08"
+ },
+ {
+  "file": "src/server/middleware/contenttrust/cosign.go",
+  "line": 56,
+  "sev": "?",
+  "claim": "any user with push rights to the project pushes a fabricated `sha256-<digest>.sig` manifest containing one layer with that media type, and the project's \"images must be signed\" policy is permanently satisfied for that artifact. A control that is present and inert (CWE-347).",
+  "id": "F09"
+ },
+ {
+  "file": "src/server/middleware/immutable/pushmf.go",
+  "line": 52,
+  "sev": "?",
+  "claim": "immutable-tag protection silently lapses whenever the artifact lookup errors, letting a protected release tag be overwritten. Fail-open enforcement (CWE-636); the not-found case needs the allow, the rest do not.",
+  "id": "F10"
+ },
+ {
+  "file": "src/controller/icon/controller.go",
+  "line": 136,
+  "sev": "?",
+  "claim": "a small, valid PNG whose IHDR declares e.g. 30000x30000 is a few KB \u2014 it passes the push-time content-type sniff at v1alpha1.go:94 and is recorded as the artifact icon (v1alpha1.go:97). GET /api/v2.0/icons/{digest} then decodes it into a ~3.6 GB pixel buffer and OOMs harbor-core. The read endpoint (src/server/v2.0/handler/icon.go:38) performs no authorization at all, so the trigger is unauthentica",
+  "id": "F11"
+ },
+ {
+  "file": "src/server/v2.0/handler/scan.go",
+  "line": 102,
+  "sev": "Low",
+  "claim": "Scan report log fetched by report UUID with no binding to the authorized artifact",
+  "id": "F12"
+ },
+ {
+  "file": "src/server/v2.0/handler/notification_policy.go",
+  "line": 129,
+  "sev": "High",
+  "claim": "Webhook policy update takes its ID from the request body and force-reassigns the project",
+  "id": "F13"
+ },
+ {
+  "file": "src/controller/scan/base_controller.go",
+  "line": 333,
+  "sev": "Medium",
+  "claim": "Scan stop resolves the execution by artifact digest alone, ignoring project",
+  "id": "F14"
+ },
+ {
+  "file": "src/server/v2.0/handler/retention.go",
+  "line": 326,
+  "sev": "Medium",
+  "claim": "Retention tasks listed for an execution ID unrelated to the authorized policy",
+  "id": "F15"
+ },
+ {
+  "file": "src/server/handler/job_status_hook.go",
+  "line": 37,
+  "sev": "Medium",
+  "claim": "Job status hook accepts and acts on unauthenticated, unsigned status changes",
+  "id": "F16"
+ },
+ {
+  "file": "src/server/v2.0/handler/notification_policy.go",
+  "line": 143,
+  "sev": "High",
+  "claim": "Webhook policy deleted by ID with no project ownership check",
+  "id": "F17"
+ },
+ {
+  "file": "src/server/v2.0/handler/immutable.go",
+  "line": 62,
+  "sev": "?",
+  "claim": "an attacker with immutable-tag rights in their own project deletes another project's immutable-tag rules, stripping the tamper-protection that prevents release tags being overwritten there.",
+  "id": "F18"
+ },
+ {
+  "file": "src/controller/artifact/processor/chart/chart.go",
+  "line": 87,
+  "sev": "?",
+  "claim": "reachable by a low-privileged reader: GET .../artifacts/{ref}/additions/values.yaml needs only ActionRead on ResourceArtifactAddition (src/server/v2.0/handler/artifact.go:431). An attacker pushes an artifact whose config mediaType is application/vnd.cncf.helm.config.v1+json (chart.go:41) with an arbitrarily large second layer, then requests the addition. Computed per request and not cached, so con",
+  "id": "F19"
+ },
+ {
+  "file": "src/server/v2.0/handler/retention.go",
+  "line": 197,
+  "sev": "High",
+  "claim": "Tag-retention policy update authorizes against the request body's scope, then writes the policy named by the URL ID",
+  "id": "F20"
+ },
+ {
+  "file": "src/controller/registry/controller.go",
+  "line": 91,
+  "sev": "?",
+  "claim": "127.0.0.1, 169.254.169.254 (cloud IMDS) and all RFC1918 addresses are accepted; :97 then calls IsHealthy against the URL and returns healthy/unhealthy plus error text, giving a working SSRF probe oracle. Low because the endpoint is system-admin gated (src/server/v2.0/handler/registry.go:45) and pointing a registry endpoint somewhere is the feature's purpose \u2014 the defect worth fixing is the comment",
+  "id": "F21"
+ },
+ {
+  "file": "src/server/v2.0/handler/preheat.go",
+  "line": 650,
+  "sev": "?",
+  "claim": "any project maintainer aborts arbitrary system executions by ID \u2014 garbage collection, replication runs, scan-all, retention \u2014 a cross-tenant and system-level denial of service.",
+  "id": "F22"
+ },
+ {
+  "file": "src/controller/immutable/controller.go",
+  "line": 59,
+  "sev": "High",
+  "claim": "Immutable-tag rule updated/toggled by body-supplied ID without comparing the rule's project to the caller's",
+  "id": "F23"
+ },
+ {
+  "file": "src/server/v2.0/handler/notification_policy.go",
+  "line": 155,
+  "sev": "High",
+  "claim": "Webhook policy of any project readable via `GET`, leaking the target URL **and** its auth header",
+  "id": "F24"
+ },
+ {
+  "file": "src/server/middleware/csrf/csrf.go",
+  "line": 57,
+  "sev": "Low",
+  "claim": "The configured CSRF HMAC key is written verbatim to the log",
+  "id": "F25"
+ },
+ {
+  "file": "src/server/v2.0/handler/preheat.go",
+  "line": 262,
+  "sev": "High",
+  "claim": "P2P preheat policy update accepts `id` and `project_id` from the body with no ownership check",
+  "id": "F26"
+ },
+ {
+  "file": "src/controller/artifact/processor/chart/chart.go",
+  "line": 87,
+  "sev": "Medium",
+  "claim": "Unbounded `ReadAll` plus in-memory archive expansion of an attacker-supplied blob",
+  "id": "F27"
+ },
+ {
+  "file": "src/server/v2.0/handler/retention.go",
+  "line": 353,
+  "sev": "Medium",
+  "claim": "Retention task log fetched by arbitrary task ID",
+  "id": "F28"
+ },
+ {
+  "file": "src/server/v2.0/handler/notification_job.go",
+  "line": 34,
+  "sev": "Medium",
+  "claim": "Webhook job history listed for a policy belonging to another project",
+  "id": "F29"
+ },
+ {
+  "file": "src/server/middleware/blob/put_manifest.go",
+  "line": 37,
+  "sev": "Medium",
+  "claim": "Manifest `PUT` body buffered entirely in memory before any size check",
+  "id": "F30"
+ },
+ {
+  "file": "src/server/v2.0/handler/robot.go",
+  "line": 287,
+  "sev": "Medium",
+  "claim": "Robot update authorizes against a namespace supplied in the request body instead of the robot's own project",
+  "id": "F31"
+ },
+ {
+  "file": "src/controller/immutable/controller.go",
+  "line": 64,
+  "sev": "?",
+  "claim": "reached from src/server/v2.0/handler/immutable.go:84, which copies the rule ID out of the request body (:75). A project admin disables any other project's immutable-tag rule by ID, then overwrites that project's protected tags.",
+  "id": "F32"
+ },
+ {
+  "file": "src/server/v2.0/handler/notification_policy.go",
+  "line": 143,
+  "sev": "?",
+  "claim": "cross-tenant destruction: an attacker with webhook-delete in their own project removes another project's webhook policies, blinding that tenant's notification/alerting before further abuse.",
+  "id": "F33"
+ },
+ {
+  "file": "src/server/middleware/csrf/csrf.go",
+  "line": 57,
+  "sev": "?",
+  "claim": "secret material in logs (CWE-532). Impact is bounded because the malformed key is then discarded in favour of a generated one, so the logged value is not the key in use \u2014 but the operator-supplied secret still lands in log aggregation.",
+  "id": "F34"
+ },
+ {
+  "file": "src/server/v2.0/handler/immutable.go",
+  "line": 62,
+  "sev": "High",
+  "claim": "Immutable-tag rule deleted by ID with no project ownership check",
+  "id": "F35"
+ },
+ {
+  "file": "src/server/v2.0/handler/robot.go",
+  "line": 287,
+  "sev": "?",
+  "claim": "any authenticated user creates their own project (so becomes its admin), then submits another project's robot ID with level=project and namespace=<own project>. requireAccess passes, and the victim robot's permissions are wiped and re-created, or it is disabled / re-dated. The only remaining barrier is the name equality check at :291, which needs the victim robot's name \u2014 guessable for human-named",
+  "id": "F36"
+ },
+ {
+  "file": "src/controller/artifact/processor/chart/chart.go",
+  "line": 92,
+  "sev": "?",
+  "claim": "decompression bomb stacked on the previous finding \u2014 a ~1 MB gzip layer that passes any input-side size check expands to gigabytes inside core's heap, via the same low-privilege addition endpoint.",
+  "id": "F37"
+ },
+ {
+  "file": "src/server/v2.0/handler/scan.go",
+  "line": 43,
+  "sev": "Low",
+  "claim": "`Prepare` computes an error responder and discards it, so the request proceeds on a failed path-unescape",
+  "id": "F38"
+ },
+ {
+  "file": "src/server/middleware/repoproxy/proxy.go",
+  "line": 80,
+  "sev": "?",
+  "claim": "proxy-cache blob responses ship with no Docker-Content-Digest and no Content-Length. Not directly exploitable \u2014 clients verify blobs against the manifest digest \u2014 but it silently removes the integrity header the code believes it is sending.",
+  "id": "F39"
+ },
+ {
+  "file": "src/server/v2.0/handler/preheat.go",
+  "line": 725,
+  "sev": "Medium",
+  "claim": "Preheat task log fetched by arbitrary task ID",
+  "id": "F40"
+ },
+ {
+  "file": "src/server/middleware/util/util.go",
+  "line": 71,
+  "sev": "?",
+  "claim": "a caller with push rights on a repository sets `User-Agent: cosign` on a manifest GET and bypasses all three pull-time gates that call this helper \u2014 vulnerability prevention (src/server/middleware/vulnerable/vulnerable.go:71), Notary content trust (src/server/middleware/contenttrust/notary.go:56) and Cosign content trust (src/server/middleware/contenttrust/cosign.go:41). A security decision taken ",
+  "id": "F41"
+ },
+ {
+  "file": "src/server/v2.0/handler/retention.go",
+  "line": 277,
+  "sev": "Medium",
+  "claim": "Retention execution stopped using `eid` after authorizing on an unrelated policy `id`",
+  "id": "F42"
+ },
+ {
+  "file": "src/server/v2.0/handler/notification_job.go",
+  "line": 34,
+  "sev": "?",
+  "claim": "lists webhook delivery jobs \u2014 status and event payload metadata \u2014 for any other project's policy.",
+  "id": "F43"
+ },
+ {
+  "file": "src/controller/artifact/processor/default.go",
+  "line": 112,
+  "sev": "?",
+  "claim": "easier to reach than the previous one: defaultProcessor handles any *unregistered* config mediaType (processor.go:68-71), so the attacker simply names their config \"application/vnd.anything.config.v1+json\". Adds unbounded DB row growth to the memory exhaustion.",
+  "id": "F44"
+ },
+ {
+  "file": "src/server/v2.0/handler/notification_policy.go",
+  "line": 155,
+  "sev": "?",
+  "claim": "any user holding webhook-read in any one project \u2014 including a project they created themselves \u2014 iterates integer policy IDs and reads every other project's webhook endpoint URL together with its auth_header, which is a live bearer credential for the victim's notification receiver. Cross-tenant credential theft, scriptable, no precondition beyond one project membership.",
+  "id": "F45"
+ },
+ {
+  "file": "src/server/middleware/util/util.go",
+  "line": 70,
+  "sev": "High",
+  "claim": "Attacker-set `User-Agent: cosign` disables content trust, cosign verification and CVE blocking",
+  "id": "F46"
+ },
+ {
+  "file": "src/server/v2.0/handler/preheat.go",
+  "line": 650,
+  "sev": "Medium",
+  "claim": "Preheat execution of any project can be stopped",
+  "id": "F47"
+ },
+ {
+  "file": "src/server/v2.0/handler/model/scanner.go",
+  "line": 43,
+  "sev": "High",
+  "claim": "Scanner adapter credential returned in the API payload to the lowest-privileged project role",
+  "id": "F48"
+ },
+ {
+  "file": "src/server/v2.0/handler/retention.go",
+  "line": 205,
+  "sev": "?",
+  "claim": "a user with retention rights in their own project supplies scope=<own project> plus another project's policy ID, and overwrites that project's tag-retention rules and scope \u2014 destroying or hijacking the victim's retention configuration.",
+  "id": "F49"
+ },
+ {
+  "file": "src/server/v2.0/handler/preheat.go",
+  "line": 581,
+  "sev": "?",
+  "claim": "ID enumeration discloses other tenants' execution and task metadata \u2014 vendor type, status and extra_attrs, which carry resource names.",
+  "id": "F50"
+ },
+ {
+  "file": "src/server/middleware/vulnerable/vulnerable.go",
+  "line": 110,
+  "sev": "Critical",
+  "claim": "\"Prevent vulnerable images from running\" is skipped for every multi-arch image",
+  "id": "F51"
+ },
+ {
+  "file": "src/controller/proxy/controller.go",
+  "line": 229,
+  "sev": "?",
+  "claim": "a hostile or compromised upstream returns payload P under header digest D where sha256(P) != D; Harbor caches and re-serves P under D and records the artifact under D in its own DB and UI. Deciding assumption: requires a hostile upstream or MITM on an endpoint configured Insecure/http \u2014 docker and containerd verify manifest digests themselves, so client-side impact is bounded; Harbor's own metadat",
+  "id": "F52"
+ },
+ {
+  "file": "src/server/v2.0/handler/retention.go",
+  "line": 353,
+  "sev": "?",
+  "claim": "with retention-read on any one policy, an attacker reads any retention task log \u2014 which enumerates the repositories and tags deleted in other projects \u2014 and can stop other projects' retention executions.",
+  "id": "F53"
+ },
+ {
+  "file": "src/server/v2.0/handler/preheat.go",
+  "line": 581,
+  "sev": "Medium",
+  "claim": "Preheat execution of any project readable",
+  "id": "F54"
+ },
+ {
+  "file": "src/controller/artifact/processor/chart/chart.go",
+  "line": 91,
+  "sev": "?",
+  "claim": "an attacker who aborts or stalls the layer read leaks a connection and a file descriptor per request; repeatable, so it is a slow resource-exhaustion primitive against core.",
+  "id": "F55"
+ },
+ {
+  "file": "src/server/middleware/immutable/pushmf.go",
+  "line": 49,
+  "sev": "Medium",
+  "claim": "Immutable-tag enforcement fails open on every error class",
+  "id": "F56"
+ },
+ {
+  "file": "src/server/v2.0/handler/scan.go",
+  "line": 102,
+  "sev": "?",
+  "claim": "a user with scan-read in any project reads the scan job log of any artifact system-wide \u2014 package inventory and vulnerability detail of other tenants' private images. Rated Medium rather than High only because report UUIDs are random: exploitation needs a leaked ID (retained from prior access, or from a shared report link).",
+  "id": "F57"
+ },
+ {
+  "file": "src/server/v2.0/handler/preheat.go",
+  "line": 267,
+  "sev": "?",
+  "claim": "a maintainer of one project overwrites any preheat (P2P distribution) policy in any project \u2014 provider, filters, cron trigger, enabled flag \u2014 redirecting another tenant's image distribution to an attacker-chosen provider.",
+  "id": "F58"
+ },
+ {
+  "file": "src/server/v2.0/handler/preheat.go",
+  "line": 725,
+  "sev": "?",
+  "claim": "any project maintainer reads the raw job log of any task in the system by ID \u2014 replication, GC, retention and scan tasks belonging to other tenants \u2014 which enumerates their repositories, tags and registry endpoints.",
+  "id": "F59"
+ }
+]

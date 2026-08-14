@@ -22,7 +22,8 @@ Same model, same task, library loaded vs. nothing.
 | Dead-path **procedure** (4 items, live sub-agents) | 1.00 | 1.00 | +0.00 | 3 per arm | [DEAD-PATH](2026-07-30/DEAD-PATH.md) |
 | Unscoped audit A — no vocabulary (8 defects) | 1.00 | 1.00 | +0.00 | 3 per arm | [UNSCOPED-AUDIT](2026-07-30/UNSCOPED-AUDIT.md) |
 | Unscoped audit B — unusual defect classes (7) | 1.00 | 1.00 | +0.00 | 3 per arm | [UNSCOPED-AUDIT](2026-07-30/UNSCOPED-AUDIT.md) |
-| **Real-repo audit** — Harbor v2.5.1, 16 real BOLA sites, live agents | 15/16 | 15/16 | +0.00 | 1 clean per arm (2 of 4 discarded for contamination) | [REAL-REPO-AUDIT](2026-08-13/REAL-REPO-AUDIT.md) |
+| **Real-repo audit — recall** — Harbor v2.5.1, 16 real BOLA sites, live agents | 15/16 | 15/16 | +0.00 | 1 clean per arm (2 of 4 discarded for contamination) | [REAL-REPO-AUDIT](2026-08-13/REAL-REPO-AUDIT.md) |
+| **Real-repo audit — precision** — 59 findings, blinded 3-way adjudication vs the code | 1.00 | 1.00 | +0.00 | 29 + 30 findings, 1 report per arm; adjudicator passed a 4/4 known-answer control | [REAL-REPO-AUDIT](2026-08-13/REAL-REPO-AUDIT.md) |
 
 **Completeness re-verified against the workflow that actually ships (2026-07-20).**
 `run-completeness.py`'s `BUILD_WORKFLOW` is a hand-compressed **mirror** of router
