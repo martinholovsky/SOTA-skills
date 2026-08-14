@@ -127,7 +127,16 @@ def chat(model, messages, k, max_tokens=32000, temp=0.0):
                 "https://openrouter.ai/api/v1/chat/completions", data=body,
                 headers={"Authorization": f"Bearer {k}", "Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=300) as r:
-                return json.load(r)["choices"][0]["message"]["content"]
+                d = json.load(r)
+            ch = d["choices"][0]
+            content = ch["message"]["content"]
+            # HTTP 200 with null/empty content is NOT success — a reasoning model can
+            # burn the whole max_tokens budget on reasoning and return nothing. Raise so
+            # the retry above engages, then fail loudly. See run-completeness.py call().
+            if not content:
+                raise RuntimeError(f"empty completion from {model}: "
+                                   f"finish_reason={ch.get('finish_reason')}")
+            return content
         except Exception as e:  # noqa: BLE001
             last = e
             import time

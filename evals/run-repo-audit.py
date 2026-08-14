@@ -107,7 +107,13 @@ def call(model, prompt, k, temp=0.0):
     req = urllib.request.Request("https://openrouter.ai/api/v1/chat/completions", data=body,
                                  headers={"Authorization": f"Bearer {k}", "Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=240) as r:
-        txt = json.load(r)["choices"][0]["message"]["content"]
+        d = json.load(r)
+    ch = d["choices"][0]
+    txt = ch["message"]["content"]
+    # HTTP 200 with null/empty content is NOT success (see run-completeness.py call()):
+    # None here would surface later as an AttributeError far from the cause.
+    if not txt:
+        sys.exit(f"empty completion from {model}: finish_reason={ch.get('finish_reason')}")
     s, e = txt.find("["), txt.rfind("]")
     if s < 0 or e < 0:
         sys.exit(f"model did not return a JSON array:\n{txt[:400]}")
