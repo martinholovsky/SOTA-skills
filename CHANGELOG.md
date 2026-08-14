@@ -7,7 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Measured
+
+- **Cross-family #2 re-run at 3 samples/arm: 0.38 → 0.96, lift +0.58** (`$4.48`, 1753 s,
+  temp 0.7 — the same multi-sample protocol the other value dimensions use). The n=1
+  caveat is discharged: **all 7 cases positive** (+0.52 to +0.67), and the arms behave as
+  they do everywhere else — with-arm mean 0.96 with a max within-case sample spread of
+  **0.10**, against the unguided arm's **0.18**. Three labs now read +0.39 / +0.44 /
+  +0.58. [CROSS-FAMILY-GEMINI](evals/results/2026-08-13/CROSS-FAMILY-GEMINI.md)
+
 ### Fixed
+
+- **`run-completeness.py` treated an empty completion as a successful call.** A reasoning
+  model can spend its whole `max_tokens` budget on reasoning and return
+  `content: null` under HTTP 200; the harness passed that to the judge, where it
+  surfaced 80 lines away as `'NoneType' object is not subscriptable`. Worse than the
+  crash was the near miss: an **empty artifact that reached the judge would have scored
+  ~0 and silently depressed an arm**. `call()` now retries an empty completion and then
+  fails loudly with the finish reason, and warns when `finish_reason == "length"` because
+  a truncated artifact is a floor, not a measurement. Watched to fail before being
+  trusted (`max_tokens=1` → `RuntimeError: empty completion … finish_reason=length`), and
+  the 3× run that followed produced **zero** truncation warnings.
 
 - **Stale claims removed from the docs that carry them.** `AGENTS.md` said the
   negative-control harness runs **15 probes** and enumerated five invariant probes; it

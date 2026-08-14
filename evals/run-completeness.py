@@ -64,7 +64,24 @@ def call(model, prompt, k, max_tokens=8000, temp=0.0):
             req = urllib.request.Request("https://openrouter.ai/api/v1/chat/completions", data=body,
                                          headers={"Authorization": f"Bearer {k}", "Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=300) as r:
-                return json.load(r)["choices"][0]["message"]["content"]
+                d = json.load(r)
+            ch = d["choices"][0]
+            content = ch["message"]["content"]
+            # A 200 with null/empty content is NOT success. Reasoning models can spend
+            # the whole max_tokens budget on reasoning and return nothing: on
+            # 2026-08-14 gemini-3.1-pro returned content=None mid-run and the crash
+            # surfaced 80 lines later as `'NoneType' object is not subscriptable` in
+            # judge(). Retry it, then fail LOUDLY with the finish reason — an empty
+            # artifact that reaches the judge scores ~0 and silently depresses an arm.
+            if not content:
+                raise RuntimeError(
+                    f"empty completion from {model}: finish_reason="
+                    f"{ch.get('finish_reason')} native={ch.get('native_finish_reason')} "
+                    f"usage={d.get('usage', {}).get('completion_tokens_details', {})}")
+            if ch.get("finish_reason") == "length":
+                print(f"      WARNING: {model} hit max_tokens ({max_tokens}) — artifact "
+                      f"is TRUNCATED, the score for it is a floor, not a measurement")
+            return content
         except Exception as e:  # noqa: BLE001 — retry any transient failure
             last = e
             time.sleep(3 * (attempt + 1))
