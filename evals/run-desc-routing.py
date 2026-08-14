@@ -93,7 +93,16 @@ def call(model, key, prompt, temp, tries=4):
                                          headers={"Authorization": f"Bearer {key}",
                                                   "Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=180) as r:
-                return json.load(r)["choices"][0]["message"]["content"]
+                d = json.load(r)
+            ch = d["choices"][0]
+            content = ch["message"]["content"]
+            # HTTP 200 with null/empty content is NOT success — a reasoning model can
+            # burn the whole max_tokens budget on reasoning and return nothing. Raise so
+            # the retry above engages, then fail loudly. See run-completeness.py call().
+            if not content:
+                raise RuntimeError(f"empty completion from {model}: "
+                                   f"finish_reason={ch.get('finish_reason')}")
+            return content
         except Exception as e:  # transient network/5xx — retry with linear backoff
             if attempt == tries - 1:
                 raise

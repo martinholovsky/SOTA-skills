@@ -18,6 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The same empty-completion defect was in four more runners — now guarded in all of
+  them.** After fixing `run-completeness.py`, a sweep found `run-clean.py`,
+  `run-decay.py`, `run-desc-routing.py` and `run-repo-audit.py` reading
+  `choices[0].message.content` raw with no check. That set includes **`run-clean.py`,
+  which produces the flagship +0.39** — and the two importers (`run-adjudication`,
+  `run-silent-open`) plus `run-competitors` inherit its `call()`, so four files cover all
+  twelve runners. Each guard was **watched to fire** against a stubbed
+  200-with-null-content response, not merely compiled: two exit with
+  `empty completion from …: finish_reason=length`, two raise it so their retry loop
+  engages first.
 - **`run-completeness.py` treated an empty completion as a successful call.** A reasoning
   model can spend its whole `max_tokens` budget on reasoning and return
   `content: null` under HTTP 200; the harness passed that to the judge, where it
