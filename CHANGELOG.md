@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+### Measured
+
+- **Competitor benchmark re-run: the published claim holds after a month of library
+  change.** SOTA **98.7%**, ECC 84.9%, awesome-cursorrules 80.0%, claude-skills 77.0%,
+  unguided **58.2%** — and SOTA again **won 17, tied 4, lost 0** of 21 head-to-head
+  cases. Same build model (`git log -S` shows the default was set by the original
+  benchmark commit and never changed) and the same pinned competitor SHAs, so library
+  content was the only variable. **The unguided arm reproducing to 0.2 points is the
+  control** that says the harness and judge did not drift underneath the comparison.
+  Competitor moves of 2–4 points are **not** claimed as regressions — n=1 per arm, and a
+  2-point move is one rubric item on one case.
+  [COMPETITOR-RERUN](evals/results/2026-08-14/COMPETITOR-RERUN.md)
+
+### Fixed
+
+- **A partial results artifact reached `main`, and the runner now refuses to hide it.**
+  A `git add -A` in an unrelated docs commit swept up `competitor-rerun.json` while the
+  run was still executing, and it merged. The committed file was **valid JSON with 2 of 7
+  cases** and `means` recomputed over just those two — `ECC` read **0.954** against a true
+  **0.849**, with nothing in the artifact saying it was partial. That is the dangerous
+  shape: not corrupt, just plausibly wrong. The incremental save stays (it is deliberate
+  crash-safety); the artifact now carries `cases_done`, `cases_total` and `complete` so a
+  reader or scorer can refuse an unfinished file instead of averaging it. The complete
+  file replaces the partial one in this change.
+
+
 ### Added
 
 - **zsh does not word-split unquoted expansions — and the library said it did.**
