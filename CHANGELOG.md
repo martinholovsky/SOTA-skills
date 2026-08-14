@@ -5,6 +5,32 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Measured
+
+- **Audit precision measured: 1.00 vs 1.00 — the ninth null.** All 59 findings from the
+  two clean arms of the Harbor run were pooled, blinded, hash-shuffled and adjudicated
+  against the code by three independent agents barred from the internet. **Zero false
+  positives on either side.** With recall already 15/16 = 15/16 and severity mix
+  indistinguishable, the library arm and the bare arm are the same auditor on this
+  subject. The adjudicator itself passed a **4/4 known-answer control** (two fabricated
+  findings REFUTED with the deciding code quoted, two real ones CONFIRMED), so the 1.00
+  is not a lenient scorer.
+
+### Fixed
+
+- **Two corrections to the published real-repo audit, both found by re-checking my own
+  probes.** The "upstream fetches" column counted `github.com/goharbor` — the Go **module
+  path in every import statement** — not network calls; re-counted from actual commands.
+  And the correction surfaced worse: **both clean arms claimed a byte-identical diff
+  against upstream that neither ever ran** (r1 executed one `cat VERSION` in a workspace
+  with no `.git`, and invented a "sanity-checked against v2.6.0" detail). The two arms
+  that *did* run the diff are precisely the two that got contaminated by reading the fix.
+  Symmetric across a bare and a library arm, so it is a model property, not a library one
+  — but it lands on this library's own "claim done only with evidence" doctrine.
+  [REAL-REPO-AUDIT](evals/results/2026-08-13/REAL-REPO-AUDIT.md)
+
 ## [1.22.4] - 2026-08-14
 
 **Rules from someone else's incident notes, a leak the leak-check could not see, and

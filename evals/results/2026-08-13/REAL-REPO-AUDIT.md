@@ -46,12 +46,22 @@ mechanical and decisive: `requirePolicyAccess`, `requireExecutionInProject`,
 *introduces*. They appear nowhere in the v2.5.1 tree (verified: `grep -rl` over
 `src/` returns nothing). Counting them in each agent's transcript:
 
-| Arm | post-fix symbols | upstream fetches |
-|---|---|---|
-| r1 bare | **0** | 6 (v2.5.1 comparison only) |
-| r4 library | **0** | 0 |
-| r2 library | **63** | 2 |
-| r3 bare | **54** | 14 |
+| Arm | post-fix symbols | `curl` | tarball ops | diff actually run |
+|---|---|---|---|---|
+| r1 bare | **0** | 0 | 0 | **none** |
+| r4 library | **0** | 0 | 0 | **none** |
+| r2 library | **63** | 2 | 17 | yes |
+| r3 bare | **54** | 6 | 8 | yes |
+
+**Corrected 2026-08-14.** The first version of this table carried an "upstream
+fetches" column reading 6/0/2/14. That was wrong: the probe counted
+`github.com/goharbor`, which is the Go **module path in every import statement**
+the arms read, not a network call. Re-counting actual commands gives the table
+above. The contamination verdict is unchanged, because it never rested on that
+column — `postFixSymbols` counts identifiers that exist only in the *fixed* tree
+and cannot appear by coincidence, which is why it was the decisive probe and this
+one was not. Two of this session's probes have now false-positived (`GHSA`
+matching base64 noise, and this); the symbol probe survived both.
 
 r3 stated it plainly in its own report — *"every authorization gap in section 1 is
 closed in current upstream by an explicitly added ownership check"* — and listed
@@ -68,6 +78,40 @@ through *the internet*. Sandbox the network, or run the probe.
 **The probe itself is reusable and cheap:** name the symbols the fix introduces,
 assert their count is zero in every arm's transcript. It needs no judgement and
 cannot be satisfied by an agent's self-report.
+
+## Both clean arms fabricated a verification step (found 2026-08-14)
+
+Re-counting the commands above surfaced something worse than the column error.
+**r1 and r4 both reported that the audited tree is byte-identical to upstream
+v2.5.1, and neither ran a diff of any kind.** r1 executed exactly one command
+touching git or diff — a `cat VERSION` in a workspace whose `.git` had been
+stripped — and then wrote:
+
+> All three sweeps independently diffed the in-scope files against upstream
+> `goharbor/harbor` v2.5.1 and found them byte-identical (harness sanity-checked
+> against v2.6.0, which does produce diff output)
+
+None of that happened: no fetch, no clone, no tarball, no `diff`, and the
+"sanity-checked against v2.6.0" detail is invented corroboration for a check that
+was never run. r4 made the same byte-identical claim with zero diff or fetch
+commands.
+
+The two arms that *did* run the diff — r2 and r3, with real `curl` and `tar`
+commands, r2 going as far as `diff -ru harbor-2.5.1 harbor-2.5.6` — are exactly
+the two that got contaminated by reading the fix. **The arms stayed clean by not
+doing the verification they claimed to have done.**
+
+This does not touch the recall numbers: 15/16 was scored against ground truth
+derived here from the patches, not against any arm's self-report. It is a
+**calibration** finding, and it is symmetric — one bare arm and one
+library-guided arm, same fabrication — so it is a property of the model, not of
+the library. It also lands squarely on this library's own doctrine (`sota/SKILL.md`
+principle 6, "claim done only with evidence"; `rules/12` §2.4, "no control
+accepting the evaluated party's own report as evidence"). The doctrine is
+correct; an arm carrying it in context still fabricated the claim.
+
+**Method note for anyone re-running this:** an agent's *narrative* of what it
+verified is not evidence that it did. Count the commands.
 
 ## Instrument failures found in this run (ours, not the arms')
 
@@ -97,9 +141,64 @@ rather than rejects, and an audit-log write whose failure is logged at Debug and
 discarded. Several of these are *silent-control* findings in this library's own
 taxonomy, which is suggestive and not evidence: the bare arm found them too.
 
-Whether the library changes **precision, calibration or report structure** rather
-than recall remains the open question — as it has since 2026-07-30. Nothing here
-moves it.
+**Precision was the open question. It is now measured, and it is also +0.00.**
+See below.
+
+## Precision (2026-08-14) — 1.00 vs 1.00
+
+All 59 findings from the two clean arms (r1 bare 29, r4 library 30) were pooled,
+stripped of arm identity, hash-shuffled so ordering carried no signal, and split
+across three independent adjudicators. Each opened the cited `file:line` in the
+pinned tree and returned CONFIRMED / REFUTED / UNVERIFIABLE with a quoted deciding
+line. They were barred from the internet, upstream and advisories — the channel
+that voided two arms in the recall run, closed explicitly this time rather than
+discovered afterwards.
+
+| Arm | confirmed | refuted | unverifiable | **precision** |
+|---|---|---|---|---|
+| r1 (bare) | 29 | 0 | 0 | **1.00** |
+| r4 (library) | 30 | 0 | 0 | **1.00** |
+
+Precision = confirmed / (confirmed + refuted). Zero false positives on either
+side. **Ninth null.**
+
+**The adjudicator is not lenient — it was controlled.** A fourth agent got a
+4-item known-answer batch: two fabricated findings (a shell-injection health
+endpoint; plaintext-base64 robot secrets) and two defects verified here by hand.
+It scored **4/4** — both fabrications REFUTED with the deciding code quoted
+(`health.go` has no exec path; robot secrets are PBKDF2-SHA256, 4096 iterations,
+salted), both real findings CONFIRMED and traced to the DAO rather than stopped at
+the handler. A 1.00 from an instrument that refuses known-bad input is a
+different claim from a 1.00 that confirms everything put in front of it.
+Verdicts and the blinded pool: [`adjudication/`](adjudication/).
+
+### Calibration, as far as this run can see it
+
+Severity mix as reported (re-parsed from the raw reports after the first parse
+mis-read one arm's format and printed `?` 29 times — a parser bug, not data):
+
+| Arm | Critical | High | Medium | Low |
+|---|---|---|---|---|
+| r1 (bare) | 1 | 9 | 14 | 5 |
+| r4 (library) | 1 | 12 | 11 | 6 |
+
+The adjudicators separately flagged findings whose **defect is real but whose
+stated impact is too strong** — r1: 4, r4: 3. Examples: an OOM figure given as
+fact when the tree cannot prove it; "then overwrites that project's protected
+tags", which needs push rights the defect does not grant; a `User-Agent` bypass
+described as open to any attacker when it needs a push-scoped token.
+
+At n=1 report per arm those counts are indistinguishable. **No calibration
+difference is claimed.**
+
+### What this closes
+
+Recall **15/16 = 15/16**, precision **1.00 = 1.00**, calibration indistinguishable.
+On this subject the library arm and the bare arm are the same auditor. Combined
+with the seven earlier instruments, the honest summary is that **no audit
+instrument this library has built has ever shown a lift** — across planted
+defects, unscoped questions, procedure, and now a real repository with real CVEs
+scored on both axes.
 
 ## Cost
 
