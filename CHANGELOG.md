@@ -17,9 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   platform that defaults to zsh. Verified by execution, not assertion:
   `printf "[%s]" $args` → `[one two three]`, `${=args}` → `[one][two][three]`.
 
-  Shipped with its audit half, because the class is otherwise invisible: **`shellcheck`
-  refuses zsh outright** (`SC1071 … only supports sh/bash/dash/ksh`, confirmed by running
-  it), so every `#!/bin/zsh` script has *zero* linter coverage. The checklist adds the
+  Shipped with its audit half. **`shellcheck` refuses zsh outright** (`SC1071 … only
+  supports sh/bash/dash/ksh`, confirmed by running it — and popular web summaries claim
+  the opposite, which the binary settles). The checklist now carries a verified tool
+  table rather than the absence claim this entry first made: `zsh -n` catches **syntax
+  only** (proven on a broken script), `WARN_CREATE_GLOBAL` is runtime and narrow, and
+  `z-shell/zsh-lint` exists and is actively pushed (~33 stars) — so "no linter for zsh"
+  is false, while "no widely-adopted static analyser catches the splitting class" holds.
+  The checklist adds the
   grep for `${var:+--flag $var}` and bare `cmd $args`, and names the symptom that
   misleads: a **usage error (exit 2) from the callee**, which reads as a bug in the tool
   rather than in the harness calling it. `rules/02` §4 gained zsh's `${pipestatus[1]}`

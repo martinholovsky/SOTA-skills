@@ -251,11 +251,22 @@ files=(/data/*); count=${#files[@]}                               # with nullglo
 
 ## Audit checklist
 
-Run `shellcheck -S style` first; then hunt manually. **`shellcheck` refuses zsh** —
-`SC1071 (error): ShellCheck only supports sh/bash/dash/ksh/'busybox sh' scripts`
-(verified by running it, 2026-08-14) — so every `#!/bin/zsh` script and every
-zsh-interactive snippet in your docs has **zero linter coverage** and must be read by
-hand. Find them first: `grep -rln '^#!.*zsh' .`
+Run `shellcheck -S style` first; then hunt manually.
+
+**zsh is not covered by shellcheck, and its tooling is thinner — but it is not nothing.**
+Find the zsh files first (`grep -rln '^#!.*zsh' .`), then know what can and cannot check
+them (all verified 2026-08-14):
+
+| Tool | Covers zsh? | Evidence |
+|---|---|---|
+| `shellcheck` | **No** | `SC1071 (error): ShellCheck only supports sh/bash/dash/ksh/'busybox sh' scripts` — run it and see. Note that popular web summaries claim otherwise; they are wrong, and the binary settles it |
+| `zsh -n` | **Syntax only** | catches parse errors and exits 1 (`broken.zsh:4: parse error near '\n'`); it does **not** find quoting or splitting bugs, which is the class this section is about |
+| `zsh -o WARN_CREATE_GLOBAL` / `WARN_NESTED_VAR` | Narrow, runtime | flags accidental globals as the script *runs* — not static analysis |
+| `z-shell/zsh-lint` | Claims to | third-party, ~33 stars, actively pushed as of 2026-08-14. Small and low-adoption — treat as a candidate generator, verify its findings, and re-check maintenance before you depend on it |
+
+So the practical answer is `zsh -n` in CI for syntax, plus a **manual read for the
+splitting/joining class** — no widely-adopted static analyser catches
+`cmd $args` being one argument in zsh.
 
 - [ ] `grep -rn '^#!/bin/sh' scripts/` then scan those files for `[[`, arrays, `local -`,
       `${var//`, `pipefail` → bashism-in-sh (SC3xxx series).
