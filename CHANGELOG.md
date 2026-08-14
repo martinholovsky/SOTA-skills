@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **zsh does not word-split unquoted expansions — and the library said it did.**
+  `sota-shell-scripting/rules/01` §3 stated word splitting as universal, which is a
+  *bash* fact: zsh's `SH_WORD_SPLIT` is off in native mode (the manual marks it
+  `<K> <S>`, ksh/sh emulation only). So `cmd $args` passes **one** argument in zsh, and
+  the same line that is a splitting bug in bash is a **joining** bug in zsh — on the
+  platform that defaults to zsh. Verified by execution, not assertion:
+  `printf "[%s]" $args` → `[one two three]`, `${=args}` → `[one][two][three]`.
+
+  Shipped with its audit half, because the class is otherwise invisible: **`shellcheck`
+  refuses zsh outright** (`SC1071 … only supports sh/bash/dash/ksh`, confirmed by running
+  it), so every `#!/bin/zsh` script has *zero* linter coverage. The checklist adds the
+  grep for `${var:+--flag $var}` and bare `cmd $args`, and names the symptom that
+  misleads: a **usage error (exit 2) from the callee**, which reads as a bug in the tool
+  rather than in the harness calling it. `rules/02` §4 gained zsh's `${pipestatus[1]}`
+  (1-indexed) beside bash's `${PIPESTATUS[0]}`.
+
 ### Changed
 
 - **The empty-completion guard is now a recorded convention, not just code.**

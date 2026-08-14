@@ -84,6 +84,9 @@ die() { err "$@"; exit 1; }
 ## 4. Pipelines: pipefail awareness and PIPESTATUS
 
 - `set -o pipefail` makes the pipeline status the rightmost nonzero status. Two follow-ups:
+  - **zsh spells it differently and indexes from 1**: `${pipestatus[1]}` is the first
+    stage (`${PIPESTATUS[0]}` in bash). `cmd | tail -1; echo $?` reports `tail`'s status
+    in both shells — when the exit code is the thing under test, drop the pipe.
   - To know *which* element failed: `"${PIPESTATUS[@]}"` (bash; copy it immediately — any
     next command overwrites it):
 

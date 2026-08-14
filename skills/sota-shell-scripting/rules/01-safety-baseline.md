@@ -79,6 +79,31 @@ Rule: treat `set -e` as a backstop, not error handling. Critical steps get expli
 Unquoted expansions undergo word splitting (on `$IFS`) **and** glob expansion. This is the
 single largest shell bug class.
 
+**In zsh they do not** — and that inverts the bug. zsh's `SH_WORD_SPLIT`, *"Causes field
+splitting to be performed on unquoted parameter expansions"*, is **off** in native zsh
+(the manual marks it `<K> <S>` — ksh/sh emulation only; verified 2026-08-14 against the
+zsh Options manual). So `cmd $args` passes the whole string as **one argument**, and the
+same line that is a splitting bug in bash is a *joining* bug in zsh. It matters because
+macOS defaults to zsh, so a snippet pasted from a bash-shaped rule silently changes
+meaning in an interactive shell and in any `#!/bin/zsh` script.
+
+```zsh
+args="gate check --json"
+cmd $args           # zsh: ONE argument "gate check --json" — usually a usage error
+cmd ${=args}        # explicit split — three arguments
+argv=(gate check --json); cmd $argv   # better: an array, correct in both shells
+cmd ${3:+--flag $3}  # zsh: passes "--flag /path" as one argument
+```
+
+The failure mode is what makes this expensive: the callee reports a **usage error
+(exit 2)**, which reads as a bug in the tool being tested rather than in the harness
+calling it. `for x in "a b"; do cmd $x; done` and `${var:+--flag $var}` are where it
+bites hardest. Same family: `$?` after a pipeline is the **last** stage's status —
+`${pipestatus[1]}` in zsh, `${PIPESTATUS[0]}` in bash (rules/02 §4).
+
+**Arrays are the portable answer.** They mean what they say in both shells; `${=var}` is
+a zsh-only escape hatch for a string you did not build.
+
 ```bash
 # BAD — splits on spaces, expands *, ?, [ in the value
 rm -rf $build_dir/$target      # build_dir="my project" → rm -rf my project/...
@@ -226,7 +251,11 @@ files=(/data/*); count=${#files[@]}                               # with nullglo
 
 ## Audit checklist
 
-Run `shellcheck -S style` first; then hunt manually:
+Run `shellcheck -S style` first; then hunt manually. **`shellcheck` refuses zsh** —
+`SC1071 (error): ShellCheck only supports sh/bash/dash/ksh/'busybox sh' scripts`
+(verified by running it, 2026-08-14) — so every `#!/bin/zsh` script and every
+zsh-interactive snippet in your docs has **zero linter coverage** and must be read by
+hand. Find them first: `grep -rln '^#!.*zsh' .`
 
 - [ ] `grep -rn '^#!/bin/sh' scripts/` then scan those files for `[[`, arrays, `local -`,
       `${var//`, `pipefail` → bashism-in-sh (SC3xxx series).
@@ -234,6 +263,12 @@ Run `shellcheck -S style` first; then hunt manually:
 - [ ] SC2086 (unquoted expansion) — treat every instance in a destructive command
       (`rm`, `mv`, `cp`, `chmod`, `chown`, `ssh`, `kill`) as HIGH.
 - [ ] SC2155 — `grep -rn 'local [a-zA-Z_]*=\$(' --include='*.sh'` (masked exit status).
+- [ ] **zsh joining bugs** (the inverse of SC2086, and unlinted): in any zsh script or
+      snippet, `grep -nE '\$\{[a-zA-Z_]+:\+[^}]*\$' -e '[a-z] \$[a-zA-Z_]+$'` for
+      `${var:+--flag $var}` and bare `cmd $args`. Each passes **one** argument in zsh
+      where bash passes several. Confirm by running it: `printf "[%s]" $args` prints one
+      bracket group, `${=args}` prints several. Symptom to recognise in a bug report — a
+      **usage error (exit 2) from the callee**, which looks like the tool is broken.
 - [ ] `set -e` false confidence: grep for `if .*&&\|if [a-z_]*;` over functions with
       critical side effects; check `$(...)` in assignments without `inherit_errexit`.
 - [ ] SC2046 (unquoted `$(...)`), SC2068 (unquoted `$@`/array), SC2048 (`$*`).
