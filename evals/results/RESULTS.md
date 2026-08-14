@@ -55,13 +55,14 @@ anything +0.44 is a conservative floor. Two families ≠ model-agnostic, but the
 single-model assumption is discharged for the flagship dimension.
 [CROSS-MODEL.md](2026-07-22/CROSS-MODEL.md).
 
-**Third family (2026-08-13): `google/gemini-3.1-pro-preview`, 0.41 → 0.96, lift
-+0.55.** Three labs, three positive lifts (+0.39 / +0.44 / +0.55), and the same
+**Third family (2026-08-13/14): `google/gemini-3.1-pro-preview`, 0.38 → 0.96, lift
++0.58 at n=3, temp 0.7** (the n=1 run read +0.55; both are recorded).** Three labs, three positive lifts (+0.39 / +0.44 / +0.55), and the same
 relationship each time — the lift tracks the **baseline**, not the lab: gemini's
 unguided arm is the lowest measured (0.41) and takes the largest lift, sonnet's is
-the highest (0.59) and takes the smallest. n=1 per arm at temp 0, so this is a
-confirmation of *direction*, not a precision estimate; re-run at 3× before quoting
-it beside the multi-sample numbers. Cost $1.63.
+the highest (0.59) and takes the smallest. Re-run at **3 samples per arm** on 2026-08-14: every one of the 7 cases positive
+(+0.52 to +0.67), with-arm mean 0.96 and max within-case spread 0.10 against the
+unguided arm's 0.18 — the same higher-and-steadier pattern as the other
+dimensions. Cost $4.48 (n=3) + $1.63 (n=1).
 [CROSS-FAMILY-GEMINI.md](2026-08-13/CROSS-FAMILY-GEMINI.md).
 
 The with-library arm is **near-zero variance** on every value dimension
