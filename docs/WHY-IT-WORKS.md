@@ -22,6 +22,7 @@ per-case data, and honest limitations are in the
 | **Freshness** | current 2026 facts (RFCs, CVEs, EOLs, versions, spec editions; 32) | **+0.50–0.53** (32-case; +0.65 on a 20-case run) |
 | Routing | which skill area applies to a task | +0.09 to +0.14 |
 | Audit | recognizing a textbook vulnerability | +0.00 |
+| Audit — **real repo, real CVEs** | recall *and* precision on 16 live BOLA sites (Harbor v2.5.1) | +0.00 / +0.00 |
 
 The lift is only "small" if you measure the easy dimensions. The two that matter
 most for *building* software are the two that are large:
@@ -57,8 +58,24 @@ most for *building* software are the two that are large:
 - **Audit +0.00 is reported, not hidden.** On isolated snippets a capable model
   already recognizes the vulnerability — even the 14 *harder* cases (subtle IDOR,
   SSRF allowlist bypass, TOCTOU, prototype pollution, multi-vuln) score 1.00 in
-  both arms. A real audit lift would need whole-repo, cross-file context a snippet
-  can't carry. We say so.
+  both arms.
+
+  **This page used to say a real audit lift "would need whole-repo, cross-file
+  context a snippet can't carry". That hypothesis was tested on 2026-08-13 and it
+  is false.** Two live agents audited a real container registry at a real
+  vulnerable commit — 232 files, ~245k tokens of Go, 16 genuine
+  broken-object-level-authorization sites disclosed as 5 CVEs — with the whole
+  repository available and no snippet framing. **Recall 15/16 for both arms.
+  Precision 1.00 for both arms**, over 59 findings adjudicated blind against the
+  code by scorers that passed a 4/4 known-answer control. Severity mix
+  indistinguishable. That is the ninth audit instrument to read ≈ +0.00, and the
+  explanation this page offered for the previous eight does not survive it.
+  [REAL-REPO-AUDIT](../evals/results/2026-08-13/REAL-REPO-AUDIT.md).
+
+  What remains untested is not *more context* but a different **dependent
+  variable** — time-to-find, report usability, or whether a non-expert reaches the
+  same findings. Accuracy, on every instrument built so far, is saturated in both
+  arms.
 
 Robustness: every value dimension is now run **multi-sample** (`--samples 3
 --temp 0.7`), and the pattern is consistent — **the with-library arm has
@@ -66,7 +83,7 @@ near-zero variance while the unguided arm both scores lower and wobbles.**
 Completeness holds at **0.59 → 0.98 (+0.39)**, a two-run mean with the with-arm at
 ±0.004 between runs (re-verified 2026-07-20/21 against the workflow that actually
 *ships*, after the eval's `BUILD_WORKFLOW` mirror was found drifted; see
-[MIRROR-VERIFICATION](../evals/results/2026-07-20/MIRROR-VERIFICATION.md)); and it is **not sonnet-specific — a different-family frontier model (`openai/gpt-5.1`) shows +0.44 on the same tasks**, [CROSS-MODEL](../evals/results/2026-07-22/CROSS-MODEL.md)); routing at **0.90 → 1.00 (+0.10)**,
+[MIRROR-VERIFICATION](../evals/results/2026-07-20/MIRROR-VERIFICATION.md)); and it is **not sonnet-specific — three model families from three labs all show a positive lift: `openai/gpt-5.1` +0.44 ([CROSS-MODEL](../evals/results/2026-07-22/CROSS-MODEL.md)) and `google/gemini-3.1-pro-preview` 0.41 → 0.96, +0.55 ([CROSS-FAMILY-GEMINI](../evals/results/2026-08-13/CROSS-FAMILY-GEMINI.md), n=1 per arm)**. The lift tracks the *baseline*, not the lab: the weaker the unguided arm, the larger the gain. Routing sits at **0.90 → 1.00 (+0.10)**,
 with-arm ±0.00; freshness at **0.44 → 0.97 (+0.53)**, with-arm ±0.00. The
 library's contribution isn't a lucky sample — it removes the unguided model's
 case-by-case unreliability ([multi-sample writeup](../evals/results/2026-07-13/MULTI-SAMPLE.md)).

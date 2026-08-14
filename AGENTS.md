@@ -91,8 +91,10 @@ as its own job, over **two** subjects: `check-invariants.sh` (part A) and
 check* to be the one that complains — a non-zero exit for any other reason is a
 **FALSE PASS**, not a catch. Part A mutates a good tree in a disposable git worktree;
 part B is inverted — it builds a fully-configured fake machine (`CLAUDE_CONFIG_DIR`
-+ a throwaway repo + a stub `gh`) and removes one thing per probe. 15 probes: invariants
-1, 2, 6, 10, 15 and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 10a. What is *not*
++ a throwaway repo + a stub `gh`) and removes one thing per probe. **16 probes**
+(re-counted 2026-08-14; it said 15 and omitted invariant 16, which shipped in
+v1.22.2 with its own probe): invariants 1, 2, 6, 10, 15, 16 and verify-setup checks
+1, 2, 3, 4, 6a, 6b, 7, 8, 9, 10a. What is *not*
 covered is printed, not implied. Too slow for pre-commit (one full run per mutation).
 **Adding a check to either script? Add its known-bad here too**, or you have shipped
 something nobody has watched fail.
