@@ -55,7 +55,7 @@ single `[Unreleased]` · rules-file indexed by its SKILL.md · `LAST-VERIFIED` s
 pairing · rendered asset no older than its source · scoreboard rows declare their sample size. Each is in
 `scripts/check-invariants.sh` and documented in `AGENTS.md`.
 
-### Enforced in code, outside the invariant script (4)
+### Enforced in code, outside the invariant script (5)
 
 | Convention | Where enforced |
 |---|---|
@@ -63,6 +63,7 @@ pairing · rendered asset no older than its source · scoreboard rows declare th
 | Assert the corpus is non-empty / a filter removed something | guards inside each runner |
 | Guards abort, never warn | the runners' own abort paths |
 | Don't trust the scrub | gitleaks is the backstop, in pre-commit and CI |
+| **A 200 with empty content is not success** (added 2026-08-14) | every runner that calls a model: empty completion → retry → fail loudly with `finish_reason`; `finish_reason == "length"` warns, because a truncated artifact is a floor not a measurement |
 
 ### Judgment — correctly ungateable (≈18)
 
@@ -187,9 +188,11 @@ what was never stated, so finding 2 bounds the **documented** set, not the real 
 Practical consequence: re-deriving this ledger will not find the next invariant 12.
 Only an incident will.
 
-**3. Enforcement is not concentrated in the invariant script.** Four conventions are
-enforced inside the eval runners. Anyone auditing "what does this repo actually
-enforce?" by reading `check-invariants.sh` alone would undercount by a third.
+**3. Enforcement is not concentrated in the invariant script.** **Five** conventions are
+enforced inside the eval runners (four when this ledger was first derived; the fifth
+arrived on 2026-08-14 the way the ledger predicts they do — from an incident, not from
+re-reading the docs). Anyone auditing "what does this repo actually enforce?" by reading
+`check-invariants.sh` alone would undercount.
 
 ## What this does not claim
 

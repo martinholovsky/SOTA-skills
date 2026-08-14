@@ -171,7 +171,7 @@ the setting. The pre-commit hook scans each commit locally.
   library handed back three proposals citing this repo's own `file:line` — the
   ledger takes those on the same terms, rejections included
 - [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md) — which of this repo's
-  conventions are **enforced** (16 invariants + 4 more inside the eval runners) and
+  conventions are **enforced** (16 invariants + 5 more inside the eval runners) and
   which are prose, with the three filters a convention must pass to earn a gate
   (has it already failed · does it fail silently · is it mechanically checkable).
   Read it before proposing a new gate — it argues against gating the ~18 judgment

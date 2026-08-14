@@ -5,6 +5,46 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **zsh does not word-split unquoted expansions — and the library said it did.**
+  `sota-shell-scripting/rules/01` §3 stated word splitting as universal, which is a
+  *bash* fact: zsh's `SH_WORD_SPLIT` is off in native mode (the manual marks it
+  `<K> <S>`, ksh/sh emulation only). So `cmd $args` passes **one** argument in zsh, and
+  the same line that is a splitting bug in bash is a **joining** bug in zsh — on the
+  platform that defaults to zsh. Verified by execution, not assertion:
+  `printf "[%s]" $args` → `[one two three]`, `${=args}` → `[one][two][three]`.
+
+  Shipped with its audit half. **`shellcheck` refuses zsh outright** (`SC1071 … only
+  supports sh/bash/dash/ksh`, confirmed by running it — and popular web summaries claim
+  the opposite, which the binary settles). The checklist now carries a verified tool
+  table rather than the absence claim this entry first made: `zsh -n` catches **syntax
+  only** (proven on a broken script), `WARN_CREATE_GLOBAL` is runtime and narrow, and
+  `z-shell/zsh-lint` exists and is actively pushed (~33 stars) — so "no linter for zsh"
+  is false, while "no widely-adopted static analyser catches the splitting class" holds.
+  The checklist adds the
+  grep for `${var:+--flag $var}` and bare `cmd $args`, and names the symptom that
+  misleads: a **usage error (exit 2) from the callee**, which reads as a bug in the tool
+  rather than in the harness calling it. `rules/02` §4 gained zsh's `${pipestatus[1]}`
+  (1-indexed) beside bash's `${PIPESTATUS[0]}`.
+
+### Changed
+
+- **The empty-completion guard is now a recorded convention, not just code.**
+  [CONVENTIONS-LEDGER](docs/CONVENTIONS-LEDGER.md) goes from **four** runner-enforced
+  conventions to **five** — and it arrived the way that ledger predicts they do, from an
+  incident rather than from re-reading the docs. `AGENTS.md` and the evals harness
+  conventions were updated to match.
+- **Competitor benchmark re-run in flight** at the pinned competitor SHAs, with the same
+  build model as the 2026-07-13 original (`git log -S` confirms the default was
+  introduced by the original benchmark commit and never changed, so the library content
+  is the only variable). The **as-deployed** variant stays unbuilt and is now recorded as
+  blocked on a *design* decision rather than effort: "as their users install them" means
+  something different per competitor, and choosing those mechanics chooses the result on
+  a public claim about named third parties.
+
 ## [1.22.5] - 2026-08-14
 
 **Instruments, corrected.** Every entry here is a measuring tool that was wrong or
