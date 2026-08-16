@@ -94,10 +94,24 @@ def contamination(text):
 
 
 def found(case, text):
+    """Credit a defect only when the file and the mechanism appear in the SAME block.
+
+    The pre-registered rule is "names the mechanism AND points at one of that case's
+    primary files". Matching both anywhere in the report (the pre-2026-08-16 behaviour)
+    credits a report that mentions db.py in one paragraph and "sql injection" in
+    another — over-crediting BOTH arms toward the ceiling, which is the direction that
+    manufactures a +0.00. Blocks are paragraph-ish: blank-line separated, which is how
+    findings are actually written.
+    """
     low = text.lower()
-    file_hit = any(os.path.basename(f).lower() in low for f in case["primary"])
-    mech_hit = any(re.search(k, low, re.IGNORECASE) for k in case["must"])
-    return file_hit and mech_hit, file_hit, mech_hit
+    file_any = any(os.path.basename(f).lower() in low for f in case["primary"])
+    mech_any = any(re.search(k, low, re.IGNORECASE) for k in case["must"])
+    for block in re.split(r"\n\s*\n", low):
+        f_hit = any(os.path.basename(f).lower() in block for f in case["primary"])
+        m_hit = any(re.search(k, block, re.IGNORECASE) for k in case["must"])
+        if f_hit and m_hit:
+            return True, file_any, mech_any
+    return False, file_any, mech_any
 
 
 def score(cases, text):

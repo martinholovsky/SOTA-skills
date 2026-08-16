@@ -9,6 +9,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Instrument audit, final pass — every remaining finding closed.**
+  - **Negative-control coverage: 6 of 16 invariants probed → 11 of 16.** New probes for
+    invariants **3, 4, 7, 8, 13** — all single-file edits, so the old "diff-, history- or
+    release-shaped" rationale never applied to them. `PASS: 21/21`. The remaining five
+    (5, 9, 11, 12, 14) genuinely need state a worktree lacks (a tag, a merge base, an
+    mtime) and the harness now says exactly that. Probe 3 synthesises its trigger phrase
+    at runtime because writing it literally made the harness trip check 3 — **the gate
+    caught its own probe**, which is the best evidence it works.
+  - **`run-decay` silently measured a different depth than it printed.** `FILLER[:depth]`
+    caps at 30, so `--depths 0,12,60` reported "depth=60" while measuring 30 — and the
+    DECAY headline is computed from `depths[-1]`. Now refuses.
+  - **`run-repo-audit` had no empty-fixture guard** (its sibling ten lines below does): a
+    renamed fixture dir would hand both arms an empty source and print a fake `+0.00`.
+  - **`run-unscoped-audit` credited a defect when the file and the mechanism appeared
+    anywhere in the report** — a report naming `db.py` in one paragraph and "sql
+    injection" in another scored a hit. Matching is now windowed to the same block.
+    **This changes a published method:** the +0.00 in `RESULTS.md` was produced by the
+    looser matcher and would need a re-run to be strictly comparable. Both arms were at
+    ceiling, so the direction of any change is to lower both — recorded rather than
+    quietly re-scored.
+  - **`install.sh` leaked temp files on any abort** — four `mktemp` sites cleaned only on
+    the success path. Now a registry plus an `EXIT` trap. The first attempt was **broken
+    and the test caught it**: the tracker ran inside `$( )`, a subshell, so the parent's
+    registry stayed empty and the trap cleaned nothing. Rewritten to track in the parent
+    shell; verified by aborting mid-run and confirming zero files remain.
+
+
 - **Instrument audit, second pass — the remaining findings.**
   - **The judge parser validated nothing.** All four judge-driven instruments call one
     `judge()`; it parsed the reply and scored `verdict.get(id) == "present"`, so a

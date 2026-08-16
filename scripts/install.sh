@@ -173,6 +173,17 @@ report_version() {
 # --- interactive / routing helpers -------------------------------------------
 readonly RT_BEGIN="<!-- >>> sota-skills routing (managed by install.sh) >>> -->"
 readonly RT_END="<!-- <<< sota-skills routing <<< -->"
+
+# Temp-file registry + EXIT trap. Four mktemp sites were cleaned only on the success
+# path (found 2026-08-16), so any `set -e` abort or Ctrl-C between creation and the
+# trailing `rm -f` leaked a file into $TMPDIR. gen-agents-md.sh already does this.
+TMPFILES=""
+# track() runs in the PARENT shell on purpose. An earlier attempt wrapped mktemp in a
+# function whose output was captured with $( ) — a subshell, so TMPFILES never made it
+# back and the trap cleaned nothing. The test caught it; the shape is the lesson.
+track() { TMPFILES="$TMPFILES $1"; }
+# shellcheck disable=SC2064,SC2154  # expand TMPFILES at trap time; _t is the loop var
+trap 'for _t in $TMPFILES; do rm -f "$_t"; done' EXIT
 # kept on one line; contains "sota" so re-runs detect it and never duplicate
 # Match on a phrase that survives rewording, not on the opening words. The old
 # marker was "sota standing rules:" — the first three words of the message — so a
@@ -246,7 +257,7 @@ extract_block() {  # $1 file
 # target keeps its link.
 refresh_block() {  # $1 file
   local f="$1" blk tmp
-  blk="$(mktemp)"; tmp="$(mktemp)"
+  blk="$(mktemp)"; track "$blk"; tmp="$(mktemp)"; track "$tmp"
   emit_routing_block >"$blk"
   awk -v b="$RT_BEGIN" -v e="$RT_END" -v blk="$blk" '
     $0 == b { while ((getline l < blk) > 0) print l; close(blk); inblk = 1; next }
@@ -331,7 +342,7 @@ setup_update_reminder() {
     log "sota update-reminder hook already present — up to date"; return
   fi
   ask_yn "Add a SessionStart hook that reminds you to check for updates every ~14 days (no network calls)?" y || return
-  tmp="$(mktemp)"
+  tmp="$(mktemp)"; track "$tmp"
   if [ -e "$s" ]; then
     backup "$s"
     if jq --arg c "$cmd" '.hooks.SessionStart = ((.hooks.SessionStart // []) + [{hooks:[{type:"command",command:$c}]}])' "$s" >"$tmp" 2>/dev/null; then
@@ -361,7 +372,7 @@ setup_hook() {
       fi
       ask_yn "The sota UserPromptSubmit reminder hook is out of date — refresh its wording?" y \
         || { log "left existing hook unchanged"; return; }
-      tmp="$(mktemp)"; backup "$s"
+      tmp="$(mktemp)"; track "$tmp"; backup "$s"
       if jq --arg c "$HOOK_CMD" --arg sig "$HOOK_SIG" \
           '.hooks.UserPromptSubmit |= map(.hooks |= map(if ((.command // "") | contains($sig)) then .command = $c else . end))' \
           "$s" >"$tmp" 2>/dev/null; then
@@ -377,7 +388,7 @@ setup_hook() {
     fi
   fi
   ask_yn "Add a UserPromptSubmit hook that re-injects the standing rules each prompt?" y || return
-  tmp="$(mktemp)"
+  tmp="$(mktemp)"; track "$tmp"
   if [ -e "$s" ]; then
     backup "$s"
     if jq --arg c "$HOOK_CMD" '.hooks.UserPromptSubmit = ((.hooks.UserPromptSubmit // []) + [{hooks:[{type:"command",command:$c}]}])' "$s" >"$tmp" 2>/dev/null; then
