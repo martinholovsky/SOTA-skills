@@ -5,7 +5,16 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.22.6] - 2026-08-16
+
+**The audit turned inward.** A scoped audit of the code that *measures* this library —
+`evals/` and `scripts/`, the two areas 15 of 16 invariants never touch — found a
+Critical data-loss bug, two gates that passed while structurally unable to see anything,
+and a drift guard that did not span what it protects. **Zero findings in `skills/`.**
+The prediction was committed before any auditor reported. Alongside it, five findings
+from a session that used the library on a real project, each re-validated here.
+
+**Front door checked:** negative-control · instrument · invariant
 
 ### Added
 
@@ -3413,6 +3422,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.22.6]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.6
 [1.22.5]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.5
 [1.22.4]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.4
 [1.22.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.3
