@@ -13,9 +13,15 @@ lessons-log — its own best structural idea, applied to ourselves.
 
 ## How this log works
 
-- **States:** `adopted` · `rejected` · `deferred` · `superseded`. Every entry
-  ends in one of these — nothing stays `open` here; if it needs more thought it
-  is `deferred` with the condition to revisit.
+- **States:** `adopted` · `rejected` · `deferred` · `superseded` · **`adopted with a
+  correction`**. Every entry ends in one of these — nothing stays `open` here; if it
+  needs more thought it is `deferred` with the condition to revisit. The fifth was added
+  2026-08-16 for a real case: a proposal whose *substance* was right but whose *wording*
+  would have licensed the opposite behaviour. Recording it as plain `adopted` would have
+  hidden the edit from the person who wrote the proposal, and `rejected` would have been
+  false. Use it when you ship an idea in materially different words, and say what you
+  changed and why — the reasoning is the part that stops the original phrasing coming
+  back.
 - **Observation before diagnosis.** State what the source *actually says* and
   what we *verified against our own tree* separately from the verdict. The
   temptation is to declare a "gap" from a keyword search; the rule is to read the
@@ -123,6 +129,7 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-08-16 | Same brief | Validate **captured command output**, not just arguments: `!= "0"` is satisfied by `""`, `error`, `null` and any usage message, so a failed read reads as success | **adopted** | `sota-shell-scripting/rules/02` §2 · v1.22.7 |
 | 2026-08-16 | Same brief — its own routing question | Put the finding in `sota-observability` rules/05 §8 (synthetic monitoring) instead of `rules/12` | **rejected: wrong owner** | — §8 is about probing a **running production service** end-to-end ("from outside your network, from the regions users are in", tagging synthetic traffic). This finding is the correctness of a verification instrument you wrote to check your own work, which is `rules/12` §2's stated subject. No pointer added either: it would imply a relationship that is not there |
 | 2026-08-16 | Same brief — drafted wording changed on adoption | The draft said §2.2's rule "**inverts**" for pollers | **adopted with a correction** | — §2.2's *principle* (an unreadable result must never read as a terminal answer) is exactly what the tri-state preserves; only its *remedy* (abort) inverts. Shipped as "the principle holds, the remedy does not", because "the rule inverts" would license dropping §2.2 inside a watcher |
+| 2026-08-16 | Own roadmap item (open since the 2026-07-13 competitor benchmark) | Run an **as-deployed** competitor comparison — each library loaded the way its users install it, rather than a hand-picked content bundle | **rejected: measures corpus size and a saturated retrieval path, not guidance quality** | — verified against the pinned clones: **ECC ships 889 `SKILL.md` + `.claude-plugin/marketplace.json`, claude-skills 777 + `.claude-plugin/`/`.codex-plugin/`**, so two of three deploy through *our own* mechanism at 20× our corpus (41). The measurement would land on library size, and on a description-selection layer `run-desc-routing.py` already scores **+0.00 / saturated** ([RESULTS](../evals/results/RESULTS.md) §5). No neutral executor exists either — simulating a loader none of them ships lets our choices decide the result; real per-plugin sessions are non-deterministic and hard to blind. A retrieval **miss** would also score as a content zero, which reads as rigged when published about a named third party |
 
 ## Entries
 
