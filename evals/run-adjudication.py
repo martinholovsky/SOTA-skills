@@ -31,6 +31,7 @@ import argparse
 import importlib.util
 import json
 import os
+import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _spec = importlib.util.spec_from_file_location("run_clean", os.path.join(_HERE, "run-clean.py"))
@@ -83,6 +84,9 @@ def library_context(ablate=False):
                              f"section behind — refusing to run.")
     router = open(os.path.join(ROOT, "skills/sota/SKILL.md"), encoding="utf-8").read()
     i, j = router.find("## Operating principles"), router.find("## Routing table")
+    if i < 0 or j < 0 or j <= i:
+        sys.exit("router principle markers not found — the with-library arm would ship "
+                 "zero router principles. Refusing to run.")
     return f"{router[i:j].strip()}\n\n---\n\n{meth}"
 
 
@@ -90,7 +94,12 @@ def build_prompt(cases, with_lib, ablate):
     keep = ("id", "language", "snippet", "claim")
     tasks = json.dumps([{k: v for k, v in c.items() if k in keep} for c in cases], indent=1)
     for c in cases:  # structural guard (see run-clean.build_prompt)
-        assert "snippet" in c and "claim" in c, f"{c['id']}: missing input field"
+        # An assert is not a control (rules/11 §4): `python -O` removes it, and testing
+        # the INPUT dict rather than what is actually sent is vacuous against the defect
+        # it exists for. Exit instead, and test the content not the key.
+        if not str(c.get("snippet", "")).strip() or not str(c.get("claim", "")).strip():
+            sys.exit(f"case {c.get('id','?')} has an empty snippet/claim — the model "
+                     f"would be judged on nothing. Refusing to run.")
     lib = (f"\n\nApply the following audit methodology:\n\n{library_context(ablate)}\n\n"
            if with_lib else "\n\nUse only your own security judgement.\n\n")
     return (f"{FRAMING}{lib}Cases:\n{tasks}\n\n"

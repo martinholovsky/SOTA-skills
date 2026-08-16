@@ -97,9 +97,21 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           persist-credentials: false
-      - name: shellcheck scripts/
+      - name: shellcheck scripts/ and tracked *.sh
         # shellcheck is preinstalled on ubuntu-latest runners.
-        run: shellcheck -S warning scripts/*.sh
+        # -S style, NOT -S warning: SC2086 (unquoted expansion) is info-level, so
+        # `-S warning` exits 0 on `rm -rf $dir` — the very class this repo's
+        # sota-shell-scripting rules/01 §3 calls "a bug, not style" (found 2026-08-16,
+        # reproduced: a file with rm -rf $d/build passes at warning, 2 hits at style).
+        # Scope is every tracked .sh, not just scripts/ — evals/cases/dead-path/
+        # selfcheck.sh is executed by CI and was linted by nothing.
+        run: |
+          set -euo pipefail
+          files=$(git ls-files '*.sh')
+          [ -n "$files" ] || { echo "no shell files matched — pathspec drift"; exit 1; }
+          echo "$files" | tr ' ' '\n' | sed 's/^/  /'
+          # shellcheck disable=SC2086  # word splitting is intended: a file list
+          shellcheck -S style $files
 
   secrets:
     name: Secret scan (gitleaks)

@@ -147,6 +147,49 @@ done
 
 - Don't hardcode tool paths except in privileged scripts with a sanitized PATH (rules/03).
 
+### A missing tool is a decision, not automatically a failure
+
+`|| die` above is right for a tool the script cannot be correct without. It is wrong
+for everything else, and the difference matters most in **gates and checks**, where
+"the tool isn't installed" must never be reported as "the check passed".
+
+Classify each dependency once, and make the behaviour match:
+
+| The tool is… | Do | Never |
+|---|---|---|
+| **required for correctness** (the script's whole job) | `die` with the install command for this platform | proceed with a degraded result |
+| **required for one check** inside a larger run | run the rest, **SKIP that check with a named note** — `SKIPPED: python3 not found (CI enforces this check)` — and make the skip visible in the summary | print `ok`, or count the skip as a pass |
+| **optional / an enhancement** | proceed, note the reduced capability once | fail the run |
+| **missing on an interactive run** | **stop and ask the human to install it**, naming the exact command, then continue or exit on their answer | silently install it, or `sudo` anything unasked |
+
+```bash
+need() {  # need <cmd> <what it is for> <install hint>
+  command -v "$1" >/dev/null 2>&1 && return 0
+  if [ -t 0 ] && [ -t 1 ]; then          # a human is present: ask, do not guess
+    printf 'Missing %s (needed for %s). Install with: %s\n' "$1" "$2" "$3" >&2
+    printf 'Install it now and press Enter to continue, or Ctrl-C to abort: ' >&2
+    read -r _
+    command -v "$1" >/dev/null 2>&1 && return 0
+  fi
+  return 1
+}
+
+need shellcheck "shell linting" "brew install shellcheck" \
+  || note "SKIPPED: shellcheck not found — shell lint did not run"
+```
+
+Two rules that make this safe rather than sloppy:
+
+- **A skipped check is not a passed check.** Print the skip on the same line the check
+  would have used, count skips separately, and never let the summary read clean when a
+  check did not execute (`sota-code-security` rules/10 §2.13 — a control that never runs).
+  This repo does exactly that: four invariants print `SKIPPED: python3 not found` and CI,
+  where python3 always exists, enforces them for real.
+- **Never auto-install.** Installing software is a change to the user's machine; on a
+  non-interactive run there is no one to consent, so degrade or fail loudly instead.
+  Ask, print the command, and let the human run it — a script that quietly installs a
+  package manager's worth of dependencies is a supply-chain event, not a convenience.
+
 ## 7. Network calls: timeouts and bounded retries
 
 A network call without a timeout is a hang waiting to happen; without retry discipline it
@@ -263,6 +306,11 @@ mapfile -d '' logs < <(find . -name '*.log' -print0)
 
 ## Audit checklist
 
+- [ ] **Missing-tool behaviour classified**: does every `command -v` failure `die`,
+      skip-with-a-named-note, or ask an interactive human — and does the summary ever
+      read clean while a check did not execute? Probe:
+      `PATH=/usr/bin:/bin <script>` with a dependency removed, and confirm the run
+      reports a SKIP rather than an `ok`. No script may auto-install a dependency.
 - [ ] No `--help`: `grep -rLn -- '--help\|-h)' --include='*.sh'` → MEDIUM for any operator-facing script.
 - [ ] Unknown options silently ignored: `case` parse loops missing a `-*)` error arm.
 - [ ] SC2230 — `grep -rn 'which ' --include='*.sh'` → replace with `command -v`.

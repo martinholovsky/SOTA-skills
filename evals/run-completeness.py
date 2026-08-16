@@ -148,7 +148,21 @@ def principle5():
     t = open(os.path.join(ROOT, "skills/sota/SKILL.md"), encoding="utf-8").read()
     i = t.find("5. **Universal build non-negotiables")
     j = t.find("\n## Routing table")
-    return t[i:j].strip() if i >= 0 and j >= 0 else ""
+    if i < 0 or j < 0 or j <= i:
+        # 2026-08-16: this used to `return ""` on a moved marker. Principle 5 is the
+        # component this project credits with the bulk of the +0.39, so an empty
+        # return silently WEAKENS the treatment arm and under-reports the lift — the
+        # direction nobody investigates because it reads as conservative. It is not
+        # covered by ROUTER_BUILD_SHA either: that hash spans BUILD→AUDIT (~24k-27k),
+        # principle 5 lives at ~4k. Abort instead.
+        sys.exit("principle 5 markers not found in skills/sota/SKILL.md — the "
+                 "with-library arm would silently lose the universal non-negotiables. "
+                 "Fix the marker or update principle5(). Refusing to run.")
+    p5 = t[i:j].strip()
+    if len(p5) < 500:                       # floor: the real block is ~2.3k chars
+        sys.exit(f"principle 5 extracted only {len(p5)} chars — markers moved or the "
+                 f"section shrank; refusing to run on a truncated treatment arm.")
+    return p5
 
 
 def gen_prompt(case, with_lib):

@@ -135,6 +135,10 @@ def build_prompt(cases, kind, with_lib, ablate=False):
         head = "Answer each question with the CURRENT (mid-2026) fact, in ONE short line each."
         if with_lib:
             files = sorted({f for c in cases for f in c.get("skill", [])})
+            if not files:
+                sys.exit("freshness corpus is empty — no case carries a 'skill' key, so "
+                         "the with-library arm would get no reference material and the "
+                         "published +0.50 would collapse to a fake +0.00. Refusing to run.")
             ctx = "\n\n".join(open(os.path.join(ROOT, f), encoding="utf-8").read() for f in files)
             lib = f"\n\nUse this current reference material:\n\n{ctx}\n\n"
         else:

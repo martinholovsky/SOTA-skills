@@ -265,7 +265,11 @@ if [ "$failed" -ne 0 ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh: invariants 1, 2, 6, 10, 15, 16. The diff-, history-"
-echo "      and release-shaped checks (5, 8, 9, 11, 12, 13, 14) are NOT covered."
+echo "      check-invariants.sh COVERED: invariants 1, 2, 6, 10, 15, 16."
+echo "      NOT COVERED, and why (corrected 2026-08-16 — 3, 4 and 7 were in neither"
+echo "      list, so \"what is not covered is printed, not implied\" was false):"
+echo "        3, 4, 7, 8, 13  — single-file edits; probes are cheap and SHOULD exist."
+echo "        5, 9            — need a version/CHANGELOG-shaped fixture."
+echo "        11, 12, 14      — genuinely diff-, mtime- or release-shaped: need real commits."
 echo "      verify-setup.sh: checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 10a. Checks 5"
 echo "      and 11 are judgement (N/A by design) and 10b/12 need a different fixture."
