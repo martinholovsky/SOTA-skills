@@ -24,7 +24,15 @@ from reportkit.reports import ReportService  # noqa: E402
 FAIL = []
 
 
+# A floor, so deleting an ok() call cannot leave the summary reading the same
+# (found 2026-08-16: the PASS line hardcoded "7 planted defects, 6 demonstrated" and
+# the 6 was already stale — a literal in reporting output, rules/10 §2.10).
+MIN_CHECKS = 7
+CHECKS = []
+
+
 def ok(label, condition, detail=""):
+    CHECKS.append(label)
     print(f"  {'ok  ' if condition else 'FAIL'} {label}{(' — ' + detail) if detail else ''}")
     if not condition:
         FAIL.append(label)
@@ -129,4 +137,8 @@ print()
 if FAIL:
     print(f"FAIL: {len(FAIL)} planted defect(s) no longer behave as the ground truth claims: {FAIL}")
     sys.exit(1)
-print("PASS: fixture intact (7 planted defects, 6 demonstrated at runtime).")
+if len(CHECKS) < MIN_CHECKS:
+    print(f"FAIL: only {len(CHECKS)} checks ran, floor is {MIN_CHECKS} — a check was "
+          f"deleted or skipped; this selfcheck would otherwise print the same PASS.")
+    sys.exit(1)
+print(f"PASS: fixture intact ({len(CHECKS)} checks run, floor {MIN_CHECKS}).")

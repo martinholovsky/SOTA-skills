@@ -94,7 +94,11 @@ failed=0
 # whole reason (b) is there. `git reset --hard` clears the index too; it also
 # reverts the gate we deliberately copied in, so the copy is redone and re-verified.
 restore() {
-  ( cd "$WT" && git reset -q --hard HEAD && git clean -fdq ) >/dev/null 2>&1 || true
+  # No `|| true`: a failed reset leaks the previous mutation into the next probe,
+  # which would then measure the wrong thing (found 2026-08-16).
+  ( cd "$WT" && git reset -q --hard HEAD && git clean -fdq ) >/dev/null 2>&1 \
+    || { echo "FATAL: could not restore the probe worktree — later probes would be"; \
+         echo "       contaminated by the previous mutation."; exit 1; }
   cp "$REPO/$GATE" "$WT/$GATE"
   cmp -s "$REPO/$GATE" "$WT/$GATE" || { echo "FAIL: gate copy did not survive restore"; exit 1; }
 }
@@ -102,6 +106,17 @@ restore() {
 probe() {  # <id> <name> <expected substring>   — mutation already applied
   local id="$1" name="$2" want="$3"
   tested=$((tested + 1))
+  # ASSERT THE MUTATION TOOK (added 2026-08-16). Every mutation below is a hardcoded
+  # literal — a count, a phrase, a path. When one goes stale the edit is a silent
+  # no-op, the gate correctly passes, and this harness then reports "NOT CAUGHT:
+  # INERT", accusing a healthy gate. A stale probe must fail as a PROBE, loudly.
+  if git -C "$WT" diff --quiet && [ -z "$(git -C "$WT" status --porcelain)" ]; then
+    echo "  [$id] $name — PROBE BROKEN: the mutation changed nothing (stale literal?)."
+    echo "        This is a defect in the probe, not evidence about the gate."
+    failed=$((failed + 1))
+    restore
+    return
+  fi
   run_gate
   if [ "$GATE_RC" -eq 0 ]; then
     echo "  [$id] $name — NOT CAUGHT: the gate still passed. This check is INERT."

@@ -9,6 +9,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Instrument audit, second pass — the remaining findings.**
+  - **The judge parser validated nothing.** All four judge-driven instruments call one
+    `judge()`; it parsed the reply and scored `verdict.get(id) == "present"`, so a
+    *well-formed* reply of the wrong shape scored **0.00 in silence** — `{"results":{…}}`
+    and `"Present"` with a capital P both demonstrated at 0.00/12. It now normalises case
+    and **aborts** on missing/extra ids or values outside present/absent. Each of the four
+    failure modes was replayed against the real rubric shape.
+  - **Competitor SHAs are now enforced, not just documented.** `comp["sha"]` appeared only
+    inside an error string, so every published competitor number rested on an unverified
+    clone — in a repo that pins `ROUTER_BUILD_SHA` for exactly this reason. The runner now
+    compares `git rev-parse HEAD` against the manifest and refuses on mismatch (proven
+    both directions), and the artifact records build/judge model, manifest path and the
+    resolved SHAs.
+  - **Artifact provenance**: the flagship completeness artifact stored only case results —
+    no models, samples, temp, or router SHA. It now writes a `_meta` block.
+  - **A stale probe used to accuse a healthy gate.** Every mutation in the negative-control
+    harness is a hardcoded literal; when one goes stale the edit is a no-op and the probe
+    reported `NOT CAUGHT: INERT`. It now asserts the mutation actually changed the tree
+    and reports **PROBE BROKEN** instead — watched to fire by neutering probe 1. `restore()`
+    also no longer swallows a failed reset with `|| true`, which would have leaked one
+    probe's mutation into the next.
+  - **The denylist degrade is now announced** — an all-comment `.denylist.local` silently
+    fell back to two generic phrases with output byte-identical to a full scan.
+  - **`install.sh backup()` clobbered the original** on a second `--update`, overwriting
+    the backup with the already-modified file. Rewritten as a real function (kept-backup,
+    no `cp` on a missing file, `die` on failure) after the one-line version introduced an
+    `A && B || C` bug — the same class fixed in `verify-setup.sh` earlier in this cycle.
+  - **Two known-good/known-bad selftests ran nowhere.** `run-build-safe.py --selftest` and
+    `unscoped-audit/selfcheck.py` are the repo's only reference *pairs* and no CI job or
+    hook invoked them; both are now in CI. The unscoped-audit selfcheck also hardcoded
+    "7 planted defects, 6 demonstrated" (the 6 already stale) — it now counts its own
+    checks against a floor, watched to fail at `MIN_CHECKS = 8`.
+  - Workflow-level `defaults: run: shell: bash` (steps were getting `bash -e {0}` — no
+    `pipefail`, no `-u`), and `.gitattributes` pins `*.sh`/`*.py` to LF so a CRLF commit
+    cannot produce `/usr/bin/env: bash\r`.
+
+
 - **Instrument audit: a Critical data-loss bug in `install.sh`, and two gates that
   passed while unable to see anything.** Three scoped auditors read `evals/*.py` and
   `scripts/*.sh` at `cc1529b` against `rules/10`–`12`. The prediction was

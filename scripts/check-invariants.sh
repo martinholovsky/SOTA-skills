@@ -200,7 +200,13 @@ if [ -n "${SOTA_DENYLIST:-}" ]; then
   DENY="$DENY|$SOTA_DENYLIST"
 elif [ -f .denylist.local ]; then
   extra=$(grep -vE '^[[:space:]]*(#|$)' .denylist.local | paste -sd'|' - || true)
-  [ -n "$extra" ] && DENY="$DENY|$extra"
+  if [ -n "$extra" ]; then
+    DENY="$DENY|$extra"
+  else
+    # An all-comment or unreadable .denylist.local silently degraded this check to the
+    # two generic phrases, with output byte-identical to a full scan (found 2026-08-16).
+    note "(private denylist present but empty/unparseable — generic checks only)"
+  fi
 else
   note "(private denylist unavailable — generic checks only)"
 fi
