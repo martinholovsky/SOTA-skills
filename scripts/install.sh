@@ -197,7 +197,17 @@ ask_yn() {  # $1 prompt, $2 default(y|n); honors --yes and non-interactive
   case "$ans" in [Yy]*) return 0 ;; *) return 1 ;; esac
 }
 
-backup() { [ -e "$1" ] && cp -L "$1" "$1.bak" && log "backed up $1 → $1.bak"; }
+# Never clobber an existing backup: a second --update would overwrite the ORIGINAL
+# with the already-modified file, losing exactly what the backup exists for.
+backup() {
+  [ -e "$1" ] || return 0
+  if [ -e "$1.bak" ]; then
+    log "backup already exists, keeping it: $1.bak"
+    return 0
+  fi
+  cp -L "$1" "$1.bak" || die "could not back up $1"
+  log "backed up $1 → $1.bak"
+}
 
 emit_routing_block() {
   cat <<'MD'

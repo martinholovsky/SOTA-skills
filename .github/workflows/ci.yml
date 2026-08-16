@@ -8,6 +8,12 @@ on:
 permissions:
   contents: read
 
+# Every `run:` gets -euo pipefail; without this a step gets `bash -e {0}`
+# (no pipefail, no -u) and a failing producer in a pipe passes silently.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   invariants:
     name: Repository invariants
@@ -97,6 +103,13 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           persist-credentials: false
+      - name: known-good/known-bad references (selftests)
+        # These two carry the repo's only known-bad/known-good reference PAIRS and were
+        # invoked by nothing (found 2026-08-16) — a control that never executes.
+        run: |
+          python3 evals/run-build-safe.py --selftest
+          python3 evals/cases/unscoped-audit/selfcheck.py
+
       - name: shellcheck scripts/ and tracked *.sh
         # shellcheck is preinstalled on ubuntu-latest runners.
         # -S style, NOT -S warning: SC2086 (unquoted expansion) is info-level, so

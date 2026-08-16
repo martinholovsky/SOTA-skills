@@ -27,6 +27,7 @@ Usage: python3 evals/run-competitors.py --competitors-dir DIR [--build-model M]
 """
 import argparse
 import json
+import shlex
 import os
 import sys
 import importlib.util
@@ -70,6 +71,17 @@ def competitor_bundle(comp, cdir):
         if not os.path.exists(p):
             sys.exit(f"missing competitor file: {p}\n(clone {comp['repo']} at {comp['sha']} into {cdir})")
         parts.append(f"===== {rel} =====\n{read(p)}")
+    # PIN WHAT YOU COMPARE AGAINST (found 2026-08-16): comp["sha"] appeared only
+    # inside an error string, so every published competitor number rested on an
+    # unverified clone — in a repo that pins ROUTER_BUILD_SHA for exactly this reason.
+    head = os.popen(f'git -C {shlex.quote(base)} rev-parse HEAD 2>/dev/null').read().strip()
+    if not head:
+        sys.exit(f"{comp['repo']}: {base} is not a git clone — cannot verify it sits at "
+                 f"the pinned SHA {comp['sha'][:10]}. Refusing to run.")
+    if not head.startswith(comp["sha"][:10]):
+        sys.exit(f"{comp['repo']}: clone is at {head[:10]}, manifest pins "
+                 f"{comp['sha'][:10]}. Refusing to publish a comparison against "
+                 f"unpinned competitor content.")
     return "\n\n".join(parts)
 
 
@@ -118,6 +130,9 @@ def main():
     note_work(len(cases), "cases")
     manifest = json.load(open(a.manifest, encoding="utf-8"))["competitors"]
     comps = list(manifest)
+    # Provenance in the artifact, not just in a commit message: a reader must be able
+    # to check what was compared without taking the runner's word for it.
+    resolved_shas = {kk: manifest[kk]["sha"] for kk in manifest}
     if a.only:
         comps = [c for c in comps if c in a.only.split(",")]
     arms = ["without", "sota"] + comps
@@ -161,6 +176,8 @@ def main():
             # its own completeness so a reader (or a scorer) can refuse it.
             n_done = len(results)
             json.dump({"arms": arms, "samples": a.samples, "temp": a.temp,
+                       "build_model": a.build_model, "judge_model": a.judge_model,
+                       "manifest": a.manifest, "competitor_shas": resolved_shas,
                        "cases_done": n_done, "cases_total": len(cases),
                        "complete": n_done == len(cases),
                        "cases": results, "means": {arm: totals[arm]/n_done for arm in arms}},

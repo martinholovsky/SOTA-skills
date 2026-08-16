@@ -185,7 +185,27 @@ def judge(artifact, rubric, model, k):
         'Output ONLY a JSON object mapping each item id to "present" or "absent". No prose.')
     txt = call(model, prompt, k, max_tokens=1500)
     s, e = txt.find("{"), txt.rfind("}")
-    return json.loads(txt[s:e + 1])
+    if s < 0 or e < 0:
+        sys.exit(f"judge returned no JSON object:\n{txt[:400]}")
+    verdict = json.loads(txt[s:e + 1])
+    # VALIDATE THE SHAPE, do not just parse it (found 2026-08-16). Scoring reads
+    # `verdict.get(id) == "present"`, so a *well-formed* reply of the wrong shape
+    # scores 0.00 in silence: {"results": {...}} nests the ids away, and "Present"
+    # with a capital P is not "present". Demonstrated at 0.00/12 for both. Missing
+    # or extra ids mean the judge answered a different question than we asked.
+    want = {r["id"] for r in rubric}
+    if not isinstance(verdict, dict):
+        sys.exit(f"judge returned {type(verdict).__name__}, expected an object:\n{txt[:300]}")
+    verdict = {kk: (vv.lower() if isinstance(vv, str) else vv) for kk, vv in verdict.items()}
+    missing, extra = want - set(verdict), set(verdict) - want
+    if missing or extra:
+        sys.exit(f"judge verdict does not match the rubric — missing {sorted(missing)}, "
+                 f"unexpected {sorted(extra)}. Scoring this would silently under-count. "
+                 f"Raw:\n{txt[:400]}")
+    badv = {kk: vv for kk, vv in verdict.items() if vv not in ("present", "absent")}
+    if badv:
+        sys.exit(f"judge returned values outside present/absent: {badv}. Raw:\n{txt[:300]}")
+    return verdict
 
 
 # Eval artifacts store MODEL-GENERATED code verbatim, and a model asked to build a
@@ -278,7 +298,14 @@ def main():
     print(f"\nMEAN completeness  without={tot_wo/n:.2f}  with={tot_wl/n:.2f}  "
           f"LIFT={((tot_wl-tot_wo)/n):+.2f}")
     if a.out:
-        json.dump(scrub_secrets(results), open(a.out, "w"), indent=1)
+        # Provenance (found missing 2026-08-16): the flagship artifact stored only case
+        # results — no build/judge model, samples, temp, or the router SHA the whole
+        # comparison is pinned to. A number nobody can attribute is not evidence.
+        out_obj = {"_meta": {"build_model": a.build_model, "judge_model": a.judge_model,
+                             "samples": a.samples, "temp": a.temp,
+                             "router_build_sha": ROUTER_BUILD_SHA},
+                   **scrub_secrets(results)}
+        json.dump(out_obj, open(a.out, "w"), indent=1)
         print(f"saved {a.out}")
 
 
