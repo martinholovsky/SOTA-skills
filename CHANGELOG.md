@@ -5,7 +5,15 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.22.7] - 2026-08-16
+
+**Two rules written because I broke them.** A gate joined to an irreversible action with
+`;` instead of `&&` — so a push ran while the check printed FAIL — and a verification
+instrument that runs *over time*, where "abort on a missing result" kills the watch and a
+dead watcher is indistinguishable from a waiting one. Both arrived from field use, both
+ship with an audit probe, and both name the failure as observed rather than as advice.
+
+**Front door checked:** instrument · shell · invariant
 
 ### Added
 
@@ -3466,6 +3474,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.22.7]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.7
 [1.22.6]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.6
 [1.22.5]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.5
 [1.22.4]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.4
