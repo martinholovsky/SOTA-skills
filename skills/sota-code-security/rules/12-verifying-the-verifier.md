@@ -138,6 +138,47 @@ answer on purpose.** Before its output is quoted anywhere:
   swallows its child's log turns a named, fixable cause into "produced no
   output". The answer is usually one command deeper, not one hypothesis further.
 
+### 2.2a Instruments that run over time
+
+§2.2's **principle** holds everywhere: an unreadable result must never be readable as a
+terminal answer. Its **remedy** does not. "Abort on a missing result" is right for an
+instrument that runs **once** — a scorer, a scan, a gate. Abort on the first unreadable
+read in one that runs *until a condition holds* — a watcher, a poller, a readiness or
+completion check — and it dies on any transient failure. Because silence is a watcher's
+**normal state**, a dead watcher and a waiting one are indistinguishable, so the event is
+lost with no signal at all. Both directions are live defects:
+
+| resolution of an unreadable read | result | how visible |
+|---|---|---|
+| fail **open** — treat it as "done" | invents a success | none: looks like the happy path |
+| fail **closed by aborting** | the watch dies | none: looks like "still waiting" |
+
+A binary done/not-done cannot express "I could not tell", so either resolution is wrong
+some of the time. Use three states:
+
+- **DONE** — only on a positively validated terminal signal. **Assert the success
+  condition, never its negation**: validate the value is digits, then `[ "$n" -ge 1 ]`.
+  Never `[ "$n" != "0" ]` — *every* error string satisfies it (verified: `""`, `error`,
+  `null` and a usage message all compare `!= "0"`).
+- **NOT DONE** — keep waiting.
+- **UNKNOWN** — the read itself failed. Keep waiting, but **count consecutive unknowns**
+  and emit blindness as its own event past a threshold. "I have not been able to observe
+  this for N minutes" is a different fact from "not yet", and only one of them means the
+  watch is worthless.
+
+Cross-check the terminal signal against an **independent** one — the job's status field
+against the scheduler's last-success timestamp; a process exit against the artifact it
+should have written. A single field cannot detect its own read failure; two disagreeing
+fields announce it.
+
+Observed: a completion watcher reported success on a job that was 89% done and still
+running, because a transient API read returned empty and the check was `!= "0"`. What
+exposed it was a contradiction **inside its own output** — success printed beside a
+last-success timestamp a week stale. That is the design rule: **make a watcher print the
+independent signal next to its verdict**, so a false verdict has something to disagree
+with. Shell mechanics: `sota-shell-scripting` rules/02 §2. The scope-and-predicate
+version of this question is §3.
+
 ### 2.3 Changing an instrument after you have seen results
 
 Sometimes correct: a demonstrable false negative is a defect, not an
@@ -246,6 +287,11 @@ whose pathspec drifted.
 
 ## Audit checklist
 
+- [ ] Any instrument that runs **over time** (watcher, poller, readiness or completion
+      check): does it distinguish **not-yet** from **cannot-tell**, assert the terminal
+      condition positively rather than as `!= 0`, bound the unknown state so persistent
+      blindness is reported, and print an **independent** signal beside its verdict
+      (§2.2a)?
 - [ ] **Mutation probe run on security-critical paths** — control body replaced
       with the permissive no-op, with the dependency forced present and the
       mutation's **runtime effect asserted** before trusting a green run (§1)?

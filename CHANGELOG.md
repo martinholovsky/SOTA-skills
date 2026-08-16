@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`rules/12` §2.2a — instruments that run over time.** §2.2's "abort on a missing
+  result" is right for a one-shot scorer and wrong for a watcher: abort on the first
+  unreadable read and the watch dies on any transient failure, and because **silence is a
+  watcher's normal state**, a dead watcher and a waiting one are indistinguishable. Both
+  resolutions of an unreadable read are live defects — fail open invents a success, fail
+  closed-by-aborting loses the event — so the section adds a **third state**: done /
+  not-done / **cannot-tell**, with the terminal condition asserted *positively*, a bound
+  on consecutive unknowns so persistent blindness is reported, and an **independent
+  signal printed beside the verdict** so a false verdict has something to disagree with.
+  Reported from a watcher that announced success on a job that was 89% done, because
+  `!= "0"` is satisfied by an empty read. Paired in `sota-shell-scripting` rules/02 §2:
+  validate **captured output**, not just arguments — verified that `""`, `error`, `null`
+  and a usage message all compare `!= "0"`.
+
+  Two decisions recorded in [ADOPTION-LOG](docs/ADOPTION-LOG.md): the finding stays in
+  `rules/12` rather than `sota-observability` §8 (which owns probing a *running service*,
+  a different subject), and the drafted wording "§2.2 **inverts**" was corrected to "its
+  principle holds, its remedy does not" — the stronger claim would license dropping §2.2
+  inside a watcher, which is the opposite of the intent.
+
+
 - **A gate and the irreversible action it gates must be joined by `&&`, never `;`**
   (`sota-shell-scripting` rules/04 §1b, with an audit probe). In a script `set -e` stops
   you; typed at a prompt or joined with `;` inside a CI `run:` block, nothing does — the
