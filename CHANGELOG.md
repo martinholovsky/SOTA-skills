@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **The as-deployed competitor comparison is rejected, not deferred.** It sat on the
+  roadmap as a ~$8 purchase; checking the pinned clones instead of memory shows it is not
+  a purchase and not a harness gap — it is a measurement that would land on the wrong
+  variable. **ECC ships 889 `SKILL.md` files with a `.claude-plugin/marketplace.json`;
+  claude-skills ships 777** — so two of three competitors deploy through *our own*
+  mechanism over a corpus 20× ours (41). The result would partly measure repo size, and
+  it would route through a description-selection layer `run-desc-routing.py` already
+  scores at **+0.00, saturated**. Neither confound has a neutral fix: simulating a loader
+  none of them ships lets our choices decide the outcome, and a retrieval **miss** would
+  score as a content zero — defensible as a deployment fact, rigged-looking as a published
+  claim about a named third party. The content-only benchmark stays the claim, with its
+  own disclosed weakness (the maintainer hand-picks 4–8 files per competitor), which is
+  the better-understood limitation. Reasoning kept in
+  [ROADMAP](docs/ROADMAP.md) and [ADOPTION-LOG](docs/ADOPTION-LOG.md) so it is not
+  re-litigated.
+
+
 - **`adopted with a correction` is now a documented ledger verdict.**
   [ADOPTION-LOG](docs/ADOPTION-LOG.md) said every entry ends in one of four states, and
   v1.22.7 introduced a fifth without saying so. It exists for the real case it was coined

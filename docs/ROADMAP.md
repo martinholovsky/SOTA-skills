@@ -18,9 +18,40 @@ Every number in this table was re-counted on 2026-08-13, not carried forward.
 |---|---|---|---|
 | 1 | **Distribution / adoption** — still the bottleneck, though less flat than it looked (**13 stars, 2 forks** on 2026-08-13, up from 4 at the last cut) | Not a code task; needs a person, not a gate | Publish the salience write-up; a before/after audit demo |
 | 2 | **Real-repo audit eval — CLOSED 2026-08-14.** Recall *and* precision both measured, both +0.00 | Recall 15/16 = 15/16; precision **1.00 = 1.00** over 59 blinded findings, adjudicator controlled at 4/4; severity mix indistinguishable. Nine instruments, zero lifts | Nothing. Do **not** build a tenth audit-recall or audit-precision instrument. If the audit claim is ever revisited, it needs a different *dependent variable* (time-to-find, report usability, or defects found by a non-expert), not another accuracy metric |
-| 3 | **Competitor comparison — content-only re-run DONE 2026-08-14/15, claim holds. As-deployed still needs a DESIGN decision** | Re-run at the pinned SHAs with the same build model: SOTA 98.7 / ECC 84.9 / cursorrules 80.0 / claude-skills 77.0 / unguided 58.2, and 17 wins / 4 ties / 0 losses of 21 — with the unguided arm reproducing to 0.2 points as the drift control. **As-deployed** remains blocked on judgement: "as their users install them" differs per competitor (glob auto-load vs Skill tool vs prose a human pastes), and choosing those mechanics chooses the result | Decide the as-deployed mechanics **with the maintainer**, or drop the row. Consider n=3 before quoting any competitor *delta* |
+| 3 | **Competitor comparison — content-only re-run DONE 2026-08-14/15, claim holds. As-deployed REJECTED 2026-08-16** | Re-run at the pinned SHAs with the same build model: SOTA 98.7 / ECC 84.9 / cursorrules 80.0 / claude-skills 77.0 / unguided 58.2, 17 wins / 4 ties / 0 losses of 21, unguided arm reproducing to 0.2 points as the drift control. **As-deployed is rejected, not deferred:** it measures corpus size and a retrieval path we have already found saturated, not guidance quality — reasoning below the table | Nothing. Do not re-open without a new argument that answers the corpus-size confound |
 | 4 | **Router trim** — 2× the spec's ~5k-token recommendation | Deliberate: trimming breaks `ROUTER_BUILD_SHA` and the +0.39's comparability. **491/500 lines** on 2026-08-13 — the activation rewrite left 9 lines of headroom that `AGENTS.md` was still calling "exactly 500" | **Only when the router must grow** — then trim and re-baseline together |
 | 5 | **6-month accuracy sweep** | Scheduled | `LAST-VERIFIED` reads **2026-07-08**, so due ~**2027-01-08**; bump it only after a full pass |
+
+**Why the as-deployed competitor comparison is rejected (2026-08-16), not deferred.**
+Checked against the pinned clones rather than from memory: **ECC ships 889 `SKILL.md`
+files with a `.claude-plugin/marketplace.json`, claude-skills ships 777 with
+`.claude-plugin/` and `.codex-plugin/`** — so two of the three competitors deploy through
+*exactly our own mechanism*, and only awesome-cursorrules differs (257 `.mdc` +
+199 `.cursorrules`, glob-loaded). "As deployed" is therefore not three mechanisms; it is
+our mechanism over a corpus 20× ours (41 vs 889).
+
+That makes the measurement land on two things we do not want to publish as a claim about
+a named third party:
+
+- **Corpus size, not guidance quality.** A larger library is likelier to *have* a
+  matching skill and likelier to surface a distractor. Either way the number partly
+  measures how big someone else's repo is.
+- **A retrieval path we have already measured as saturated.** `run-desc-routing.py` A/Bs
+  the description-selection layer and reads **+0.00** ([RESULTS](../evals/results/RESULTS.md) §5).
+  Testing competitors through a layer that does not discriminate for *us* cannot produce
+  an honest comparative result.
+
+Two further blockers with no neutral resolution: simulating a loader none of them ships
+means our simulation choices decide the outcome, while driving real sessions per plugin is
+non-deterministic and hard to blind; and a retrieval **miss** (the loader surfaces nothing
+relevant) would score as a content zero, which is a real deployment outcome but reads as
+rigged when published under our name.
+
+The content-only benchmark stays the claim, and it is deliberately conservative — it turns
+*off* SOTA's self-audit forcing function, so a win there is the guidance, not the method.
+Its known weakness is that the maintainer hand-picks 4–8 files per competitor; that is
+disclosed in [COMPETITOR-BENCHMARK](../evals/results/2026-07-13/COMPETITOR-BENCHMARK.md)
+and is a better-understood limitation than the confounds above.
 
 **Pending, not blocked: a release cut.** `[Unreleased]` carries four rule additions and
 one fix. By this repo's own test (`RELEASING.md` §"Minor or patch?" — minor = the library
@@ -875,7 +906,8 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
   (unguided 77% vs 58% backend) so any guidance reaches the top. So the claim is
   scoped to **backend**, not general (`competitor-breadth-frontend.json`).
   **Follow-ups still open:** multi-sample the arms; more domains (data/mobile/CLI);
-  optionally an *as-deployed* comparison (each library with its own method).
+  ~~optionally an *as-deployed* comparison~~ — **rejected 2026-08-16**, see the reasoning
+  under the open-items table.
   Original plan/targets kept below for reference.
 - **(reference) Original competitor-benchmark plan.** Every eval to
   date is library-vs-*nothing* (an unguided model), so the public claim was
