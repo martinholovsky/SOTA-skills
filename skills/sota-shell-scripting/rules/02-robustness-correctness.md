@@ -57,6 +57,28 @@ Validate before acting, fail with a message naming the bad value:
 
 - Validate *types* of things shell is bad at (numbers, enums, paths) with `[[ =~ ]]` or
   case patterns; reject rather than sanitize.
+- **Validate captured output, not just arguments.** The `=~ ^[0-9]+$` guard above is
+  routinely applied to CLI arguments and skipped for values captured from a command —
+  where it matters *more*, because a failed command yields an empty or error string that
+  silently satisfies **string** comparisons:
+
+  ```bash
+  # BAD — an empty or error value is != "0", so a failed read reads as "yes"
+  n=$(some-cli get thing --format '{{.count}}')
+  if [ "$n" != "0" ]; then echo "done"; fi
+
+  # GOOD — validate first, compare numerically, give "unreadable" its own branch
+  n=$(some-cli get thing --format '{{.count}}' 2>/dev/null) || n=""
+  case $n in
+    ''|*[!0-9]*) echo "cannot tell" ;;            # NOT the same as zero
+    *)           [ "$n" -ge 1 ] && echo "done" ;;
+  esac
+  ```
+
+  **Assert the condition you want, not its negation.** `!= "0"` is satisfied by `""`,
+  `error`, `null`, and every usage message a broken invocation prints — verified. For a
+  check that runs repeatedly until something completes, "cannot tell" must stay distinct
+  from "not yet": `sota-code-security` rules/12 §2.2a.
 - Required environment variables: check up front, all at once, not at first use:
 
 ```bash
