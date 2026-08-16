@@ -52,6 +52,37 @@ extra variables:
 **Beyond ~30 lines, move the step body to a committed script** (`ci/build.sh`): testable
 locally, lintable by ShellCheck directly, diffable, and immune to YAML quoting.
 
+## 1b. Separate a gate from the thing it gates with `&&`, never `;`
+
+The one-liner that runs a check and then does the irreversible thing is where the
+check quietly stops mattering:
+
+```bash
+# BAD — the push runs whether or not the gate passed. `;` ignores exit status.
+./scripts/check.sh; git push
+./scripts/check.sh | tail -2; git push          # worse: the pipe hides it too
+
+# GOOD — the gate is a precondition, not a preamble
+./scripts/check.sh && git push
+./scripts/check.sh || { echo "gate failed, not pushing" >&2; exit 1; }
+git push
+```
+
+This is the *interactive* twin of `set -e` (§1, rules/01 §2): in a script errexit would
+stop you; typed at a prompt or joined with `;` in a CI `run:` block, nothing does. The
+tell is that you saw the failure scroll past and the next command ran anyway.
+
+Two aggravating factors worth naming, because they make the failure invisible rather
+than merely ignored:
+
+- **A pipe rewrites the status.** `check.sh | tail -2` reports `tail`'s success, so even
+  `&&` would not save you — read the producer's status (`${PIPESTATUS[0]}` in bash,
+  `${pipestatus[1]}` in zsh, rules/01 §3) or drop the pipe.
+- **Diff-based checks can legitimately differ before and after a push**, because their
+  merge base changes. Re-run the gate *after* the branch exists upstream before
+  concluding the tree is broken — and never let the first, pre-push result authorise the
+  push.
+
 ## 2. Container entrypoint scripts
 
 **`exec` the final process — non-negotiable.** Without `exec`, the shell stays as PID 1,
@@ -155,6 +186,7 @@ exec > >(stdbuf -oL tee -a "$logfile") 2>&1
 
 ## Audit checklist
 
+- [ ] **Gate-then-act joined by `;`**: `grep -rnE '\.(sh|py)[^&|]*; *(git (push|tag|commit)|kubectl|terraform apply|rm )' --include='*.sh' .` — a check whose exit status the next command ignores. Also flag `check | tail`/`| head` before an action: the pipe hides the producer's status.
 - [ ] Workflows: `grep -rn '\${{' .github/workflows/ | grep -i 'head_ref\|pull_request\.\(title\|body\)\|commits\|issue\.\(title\|body\)\|comment\.body'`
       inside `run:` → CRITICAL (injection); fix via `env:` indirection.
 - [ ] `grep -rLn 'shell: bash\|pipefail' .github/workflows/*.yml` — steps relying on
