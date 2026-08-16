@@ -169,6 +169,13 @@ def main():
     k = _rc.key()
     case = next(c for c in _rc.load_cases() if c["id"] == a.task)
     depths = [int(x) for x in a.depths.split(",")]
+    # FILLER[:depth] caps SILENTLY (found 2026-08-16): --depths 0,12,60 printed
+    # "depth=60" while measuring depth 30, and the DECAY headline is computed from
+    # depths[-1]. A measurement that quietly measures something else is worse than
+    # one that fails.
+    if max(depths) > len(FILLER):
+        sys.exit(f"--depths max is {max(depths)} but only {len(FILLER)} filler turns "
+                 f"exist; the run would report a depth it never reached.")
     arms = ["control", "anchor", "reminder"]
     # Denominator here is not "cases" — this runner drives ONE case across every
     # arm x depth combination, so the unit that scales the duration is the run.

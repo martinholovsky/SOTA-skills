@@ -159,6 +159,36 @@ probe 15 "router library map omits an existing rules file" "map missing:"
 ( cd "$WT" && perl -0pi -e 's/\(3\) ROUTE BEFORE YOU ACT/(3) route whenever/' README.md )
 probe 16 "README's documented hook drifted from HOOK_CMD" "README documents a hook install.sh does not write."
 
+# --- Added 2026-08-16 -------------------------------------------------------
+# These five invariants were previously unprobed AND (3, 4, 7) not even declared
+# uncovered. All five are single-file edits, so the old rationale ("diff-, history-
+# or release-shaped") never applied to them. Probe 3 deliberately uses a GENERIC
+# phrase: the worktree is `git worktree add HEAD`, so the untracked .denylist.local
+# is absent and only the built-in patterns are active locally.
+
+# 3 — an internal-name leak (generic phrase, always in DENY).
+# Build the phrase at runtime: writing it literally here would make THIS file trip
+# check 3 (it did, on the first attempt — the gate caught its own probe).
+deny_word=user
+( cd "$WT" && printf '\nNote: the %s runs a private cluster.\n' "$deny_word" >> README.md )
+probe 3 "internal-name leak in a tracked file" "Internal reference(s) found"
+
+# 4 — a SKILL.md description pushed over the 1024-char cap.
+( cd "$WT" && perl -0pi -e 's/(\nname: sota-golang\ndescription: )/$1PADDING. /' skills/sota-golang/SKILL.md   && perl -0pi -e 's/(\ndescription: PADDING\. )/$1 . ("filler text to breach the description cap. " x 25)/e' skills/sota-golang/SKILL.md )
+probe 4 "SKILL.md description over the 1024-char cap" "OVER 1024"
+
+# 7 — a skill missing from the router's routing table.
+( cd "$WT" && perl -ni -e 'print unless /^\| `sota-golang` \|/' skills/sota/SKILL.md )
+probe 7 "skill missing from the router routing table" "routing table missing:"
+
+# 8 — a relative link to a *.md target that does not resolve.
+( cd "$WT" && printf '\nSee [the missing page](docs/NO-SUCH-FILE-HERE.md).\n' >> README.md )
+probe 8 "internal markdown link does not resolve" "BROKEN LINK"
+
+# 13 — a scoreboard row with an empty Samples cell.
+( cd "$WT" && perl -pi -e 's/\| 2 runs × 3, temp 0\.7 \|/|  |/ if /\*\*Completeness\*\* \(7 build tasks\)/' evals/results/RESULTS.md )
+probe 13 "scoreboard row with no sample size" "NO SAMPLE SIZE:"
+
 
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
@@ -280,11 +310,10 @@ if [ "$failed" -ne 0 ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: invariants 1, 2, 6, 10, 15, 16."
-echo "      NOT COVERED, and why (corrected 2026-08-16 — 3, 4 and 7 were in neither"
-echo "      list, so \"what is not covered is printed, not implied\" was false):"
-echo "        3, 4, 7, 8, 13  — single-file edits; probes are cheap and SHOULD exist."
-echo "        5, 9            — need a version/CHANGELOG-shaped fixture."
-echo "        11, 12, 14      — genuinely diff-, mtime- or release-shaped: need real commits."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16 (11 of 16)."
+echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
+echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
+echo "        11, 14      — diff-based: they compare against a merge base."
+echo "        12          — mtime-based: needs a rendered asset older than its source."
 echo "      verify-setup.sh: checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 10a. Checks 5"
 echo "      and 11 are judgement (N/A by design) and 10b/12 need a different fixture."

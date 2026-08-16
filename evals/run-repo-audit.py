@@ -70,6 +70,12 @@ def repo_text():
         if name == "__init__.py":
             continue
         parts.append(f"===== FILE: {name} =====\n{open(f, encoding='utf-8').read()}")
+    # Empty scope must fail closed (rules/11 §2.2). library_context() ten lines below
+    # already guards this; repo_text() did not, so a renamed fixture dir would hand
+    # BOTH arms an empty application source and print LIFT +0.00 — a manufactured null.
+    if not parts:
+        sys.exit(f"fixture repo is empty: no *.py under {REPO_DIR}. Both arms would "
+                 f"audit nothing and the run would report a fake +0.00.")
     return "\n\n".join(parts)
 
 

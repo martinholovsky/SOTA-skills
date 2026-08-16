@@ -29,7 +29,23 @@ gains a surface someone can *use*; patch = the change lives inside existing surf
 is a **patch, 1.22.4**: no new skill, script, or gate. Invariant 14 will require a
 `**Front door checked:**` line whose terms resolve.
 
-**Closed 2026-08-13 (this session), both with evidence rather than a tick:**
+**Closed 2026-08-16 — the instrument audit (PRs #223, #224, #225).** Prediction
+[pre-registered and committed before any finding](../evals/results/2026-08-16/PRE-REGISTRATION-INSTRUMENT-AUDIT.md);
+it held — **highest severity in `scripts/`, zero findings in `skills/`**. Closed: a
+**Critical** data-loss bug in `install.sh` (an altered END marker deleted every user line
+below the managed block), invariants 4 and 8 printing `ok` over an empty scope, CI's shell
+lint unable to see SC2086, `principle5()` silently emptying the flagship's treatment arm,
+`judge-live-build` averaging over survivors, a judge parser that scored 0.00 on a
+wrong-shaped reply, unpinned competitor clones, and a negative-control harness that
+misreported its own coverage. Probe coverage **6/16 → 11/16** (21/21 mutations caught).
+
+**Still open from that audit, deliberately:** probes for invariants 5, 9, 11, 12, 14 —
+each needs state a disposable worktree lacks (a tag, a merge base, an mtime), so they need
+a fixture, not another probe. And `run-unscoped-audit`'s scoring was tightened *after* its
++0.00 was published: the number would need a re-run to be strictly comparable (both arms
+were at ceiling, so any change lowers both).
+
+**Closed 2026-08-13, both with evidence rather than a tick:**
 
 - **Every eval runner declares its denominator — 12 of 12.** The five that did not
   (`run-adjudication`, `run-competitors`, `run-decay`, `run-desc-routing`,
