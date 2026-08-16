@@ -154,8 +154,15 @@ def main():
         line = "  ".join(f"{arm[:10]}={row['arms'][arm]['recall']:.2f}" for arm in arms)
         print(f"{c['id']:16s} {line}")
         if a.out:  # incremental save after every case — crash-safe
+            # ...but a partial save is VALID JSON with plausible `means` computed over the
+            # cases done so far. On 2026-08-14 a `git add -A` during a run committed a
+            # 2-of-7 file whose ECC mean read 0.954 against a true 0.849 — nothing in the
+            # artifact said it was partial. Crash-safety stays; the artifact now states
+            # its own completeness so a reader (or a scorer) can refuse it.
             n_done = len(results)
             json.dump({"arms": arms, "samples": a.samples, "temp": a.temp,
+                       "cases_done": n_done, "cases_total": len(cases),
+                       "complete": n_done == len(cases),
                        "cases": results, "means": {arm: totals[arm]/n_done for arm in arms}},
                       open(a.out, "w"), indent=1)
     n = len(cases)

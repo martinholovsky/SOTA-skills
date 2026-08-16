@@ -188,6 +188,8 @@ One consolidated view — every competitor's standing in a single table. Scores 
 | [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | ~23k | 81% | 82% | −17 pts | 0 / 1 / 6 |
 | unguided model | — | 58% | 65% | −40 pts | — |
 
+**Re-run 2026-08-14/15 — the ranking and the gap are stable.** Same build model (verified unchanged since the original commit), same pinned competitor SHAs: SOTA **98.7%**, ECC 84.9%, awesome-cursorrules 80.0%, claude-skills 77.0%, unguided **58.2%** — and SOTA again **won 17, tied 4, lost 0** of 21 head-to-head cases. The unguided arm reproducing to 0.2 points is the control that says the harness did not drift. Competitor moves of 2–4 points are **not** claimed as regressions (n=1 per arm). [COMPETITOR-RERUN](2026-08-14/COMPETITOR-RERUN.md).
+
 ¹ **This library's record against SOTA-skills**, across the 7 build tasks (how many
 that library scored *higher than* / *equal to* / *lower than* SOTA-skills,
 single-sample). Read it on the library's own row: `0 / 2 / 5` on the

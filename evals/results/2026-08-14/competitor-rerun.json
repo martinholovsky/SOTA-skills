@@ -270,13 +270,645 @@
      "artifact_len": 65620
     }
    }
+  },
+  "c3_emailjob": {
+   "rubric_n": 11,
+   "arms": {
+    "without": {
+     "recall": 0.7272727272727273,
+     "recalls": [
+      0.7272727272727273
+     ],
+     "min": 0.7272727272727273,
+     "max": 0.7272727272727273,
+     "sd": 0.0,
+     "present": [
+      "retry",
+      "deadletter",
+      "secrets",
+      "logging",
+      "metrics",
+      "concurrency",
+      "shutdown",
+      "errhandling"
+     ],
+     "missing": [
+      "idempotency",
+      "ratelimit",
+      "tests"
+     ],
+     "artifact_len": 25279
+    },
+    "sota": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "idempotency",
+      "retry",
+      "deadletter",
+      "ratelimit",
+      "secrets",
+      "logging",
+      "metrics",
+      "concurrency",
+      "shutdown",
+      "errhandling",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 89692
+    },
+    "ECC": {
+     "recall": 0.7272727272727273,
+     "recalls": [
+      0.7272727272727273
+     ],
+     "min": 0.7272727272727273,
+     "max": 0.7272727272727273,
+     "sd": 0.0,
+     "present": [
+      "retry",
+      "deadletter",
+      "secrets",
+      "logging",
+      "concurrency",
+      "shutdown",
+      "errhandling",
+      "tests"
+     ],
+     "missing": [
+      "idempotency",
+      "ratelimit",
+      "metrics"
+     ],
+     "artifact_len": 64870
+    },
+    "claude-skills": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "idempotency",
+      "retry",
+      "deadletter",
+      "ratelimit",
+      "secrets",
+      "logging",
+      "metrics",
+      "concurrency",
+      "shutdown",
+      "errhandling",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 70850
+    },
+    "awesome-cursorrules": {
+     "recall": 0.8181818181818182,
+     "recalls": [
+      0.8181818181818182
+     ],
+     "min": 0.8181818181818182,
+     "max": 0.8181818181818182,
+     "sd": 0.0,
+     "present": [
+      "idempotency",
+      "retry",
+      "deadletter",
+      "secrets",
+      "logging",
+      "concurrency",
+      "shutdown",
+      "errhandling",
+      "tests"
+     ],
+     "missing": [
+      "ratelimit",
+      "metrics"
+     ],
+     "artifact_len": 97912
+    }
+   }
+  },
+  "c4_login": {
+   "rubric_n": 10,
+   "arms": {
+    "without": {
+     "recall": 0.5,
+     "recalls": [
+      0.5
+     ],
+     "min": 0.5,
+     "max": 0.5,
+     "sd": 0.0,
+     "present": [
+      "pwhash",
+      "enumeration",
+      "consttime",
+      "session",
+      "validation"
+     ],
+     "missing": [
+      "bruteforce",
+      "nopwlog",
+      "transport",
+      "csrf",
+      "tests"
+     ],
+     "artifact_len": 9778
+    },
+    "sota": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "pwhash",
+      "bruteforce",
+      "enumeration",
+      "consttime",
+      "session",
+      "validation",
+      "nopwlog",
+      "transport",
+      "csrf",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 51489
+    },
+    "ECC": {
+     "recall": 0.8,
+     "recalls": [
+      0.8
+     ],
+     "min": 0.8,
+     "max": 0.8,
+     "sd": 0.0,
+     "present": [
+      "pwhash",
+      "bruteforce",
+      "enumeration",
+      "consttime",
+      "session",
+      "validation",
+      "nopwlog",
+      "tests"
+     ],
+     "missing": [
+      "transport",
+      "csrf"
+     ],
+     "artifact_len": 37189
+    },
+    "claude-skills": {
+     "recall": 0.7,
+     "recalls": [
+      0.7
+     ],
+     "min": 0.7,
+     "max": 0.7,
+     "sd": 0.0,
+     "present": [
+      "pwhash",
+      "bruteforce",
+      "enumeration",
+      "consttime",
+      "session",
+      "validation",
+      "nopwlog"
+     ],
+     "missing": [
+      "transport",
+      "csrf",
+      "tests"
+     ],
+     "artifact_len": 30879
+    },
+    "awesome-cursorrules": {
+     "recall": 0.8,
+     "recalls": [
+      0.8
+     ],
+     "min": 0.8,
+     "max": 0.8,
+     "sd": 0.0,
+     "present": [
+      "pwhash",
+      "bruteforce",
+      "enumeration",
+      "consttime",
+      "session",
+      "validation",
+      "nopwlog",
+      "tests"
+     ],
+     "missing": [
+      "transport",
+      "csrf"
+     ],
+     "artifact_len": 43097
+    }
+   }
+  },
+  "c5_search": {
+   "rubric_n": 10,
+   "arms": {
+    "without": {
+     "recall": 0.6,
+     "recalls": [
+      0.6
+     ],
+     "min": 0.6,
+     "max": 0.6,
+     "sd": 0.0,
+     "present": [
+      "authn",
+      "authz",
+      "validation",
+      "sqli",
+      "pagination",
+      "errhygiene"
+     ],
+     "missing": [
+      "ratelimit",
+      "logging",
+      "transport",
+      "tests"
+     ],
+     "artifact_len": 18946
+    },
+    "sota": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "authn",
+      "authz",
+      "validation",
+      "sqli",
+      "pagination",
+      "ratelimit",
+      "logging",
+      "errhygiene",
+      "transport",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 64660
+    },
+    "ECC": {
+     "recall": 0.9,
+     "recalls": [
+      0.9
+     ],
+     "min": 0.9,
+     "max": 0.9,
+     "sd": 0.0,
+     "present": [
+      "authn",
+      "authz",
+      "validation",
+      "sqli",
+      "pagination",
+      "ratelimit",
+      "logging",
+      "errhygiene",
+      "tests"
+     ],
+     "missing": [
+      "transport"
+     ],
+     "artifact_len": 40616
+    },
+    "claude-skills": {
+     "recall": 0.8,
+     "recalls": [
+      0.8
+     ],
+     "min": 0.8,
+     "max": 0.8,
+     "sd": 0.0,
+     "present": [
+      "authn",
+      "authz",
+      "validation",
+      "sqli",
+      "pagination",
+      "logging",
+      "errhygiene",
+      "tests"
+     ],
+     "missing": [
+      "ratelimit",
+      "transport"
+     ],
+     "artifact_len": 45697
+    },
+    "awesome-cursorrules": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "authn",
+      "authz",
+      "validation",
+      "sqli",
+      "pagination",
+      "ratelimit",
+      "logging",
+      "errhygiene",
+      "transport",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 56257
+    }
+   }
+  },
+  "c6_webhook": {
+   "rubric_n": 10,
+   "arms": {
+    "without": {
+     "recall": 0.4,
+     "recalls": [
+      0.4
+     ],
+     "min": 0.4,
+     "max": 0.4,
+     "sd": 0.0,
+     "present": [
+      "sigverify",
+      "constanttime",
+      "logging",
+      "errhygiene"
+     ],
+     "missing": [
+      "idempotency",
+      "validation",
+      "sizelimit",
+      "ratelimit",
+      "transport",
+      "tests"
+     ],
+     "artifact_len": 11348
+    },
+    "sota": {
+     "recall": 1.0,
+     "recalls": [
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0,
+     "sd": 0.0,
+     "present": [
+      "sigverify",
+      "constanttime",
+      "idempotency",
+      "validation",
+      "sizelimit",
+      "ratelimit",
+      "logging",
+      "errhygiene",
+      "transport",
+      "tests"
+     ],
+     "missing": [],
+     "artifact_len": 44262
+    },
+    "ECC": {
+     "recall": 0.7,
+     "recalls": [
+      0.7
+     ],
+     "min": 0.7,
+     "max": 0.7,
+     "sd": 0.0,
+     "present": [
+      "sigverify",
+      "constanttime",
+      "idempotency",
+      "validation",
+      "logging",
+      "errhygiene",
+      "tests"
+     ],
+     "missing": [
+      "sizelimit",
+      "ratelimit",
+      "transport"
+     ],
+     "artifact_len": 37027
+    },
+    "claude-skills": {
+     "recall": 0.6,
+     "recalls": [
+      0.6
+     ],
+     "min": 0.6,
+     "max": 0.6,
+     "sd": 0.0,
+     "present": [
+      "sigverify",
+      "constanttime",
+      "idempotency",
+      "validation",
+      "logging",
+      "errhygiene"
+     ],
+     "missing": [
+      "sizelimit",
+      "ratelimit",
+      "transport",
+      "tests"
+     ],
+     "artifact_len": 32105
+    },
+    "awesome-cursorrules": {
+     "recall": 0.7,
+     "recalls": [
+      0.7
+     ],
+     "min": 0.7,
+     "max": 0.7,
+     "sd": 0.0,
+     "present": [
+      "sigverify",
+      "constanttime",
+      "idempotency",
+      "validation",
+      "logging",
+      "errhygiene",
+      "tests"
+     ],
+     "missing": [
+      "sizelimit",
+      "ratelimit",
+      "transport"
+     ],
+     "artifact_len": 42615
+    }
+   }
+  },
+  "c7_pwreset": {
+   "rubric_n": 11,
+   "arms": {
+    "without": {
+     "recall": 0.6363636363636364,
+     "recalls": [
+      0.6363636363636364
+     ],
+     "min": 0.6363636363636364,
+     "max": 0.6363636363636364,
+     "sd": 0.0,
+     "present": [
+      "tokenentropy",
+      "tokenhash",
+      "tokenexpiry",
+      "tokensingleuse",
+      "noenum",
+      "notokenlog",
+      "pwhash"
+     ],
+     "missing": [
+      "ratelimit",
+      "transport",
+      "sessioninvalidate",
+      "tests"
+     ],
+     "artifact_len": 19443
+    },
+    "sota": {
+     "recall": 0.9090909090909091,
+     "recalls": [
+      0.9090909090909091
+     ],
+     "min": 0.9090909090909091,
+     "max": 0.9090909090909091,
+     "sd": 0.0,
+     "present": [
+      "tokenentropy",
+      "tokenhash",
+      "tokenexpiry",
+      "tokensingleuse",
+      "noenum",
+      "ratelimit",
+      "notokenlog",
+      "pwhash",
+      "transport",
+      "tests"
+     ],
+     "missing": [
+      "sessioninvalidate"
+     ],
+     "artifact_len": 51494
+    },
+    "ECC": {
+     "recall": 0.9090909090909091,
+     "recalls": [
+      0.9090909090909091
+     ],
+     "min": 0.9090909090909091,
+     "max": 0.9090909090909091,
+     "sd": 0.0,
+     "present": [
+      "tokenentropy",
+      "tokenhash",
+      "tokenexpiry",
+      "tokensingleuse",
+      "noenum",
+      "ratelimit",
+      "notokenlog",
+      "pwhash",
+      "transport",
+      "tests"
+     ],
+     "missing": [
+      "sessioninvalidate"
+     ],
+     "artifact_len": 33453
+    },
+    "claude-skills": {
+     "recall": 0.8181818181818182,
+     "recalls": [
+      0.8181818181818182
+     ],
+     "min": 0.8181818181818182,
+     "max": 0.8181818181818182,
+     "sd": 0.0,
+     "present": [
+      "tokenentropy",
+      "tokenhash",
+      "tokenexpiry",
+      "tokensingleuse",
+      "noenum",
+      "ratelimit",
+      "notokenlog",
+      "pwhash",
+      "transport"
+     ],
+     "missing": [
+      "sessioninvalidate",
+      "tests"
+     ],
+     "artifact_len": 30966
+    },
+    "awesome-cursorrules": {
+     "recall": 0.7272727272727273,
+     "recalls": [
+      0.7272727272727273
+     ],
+     "min": 0.7272727272727273,
+     "max": 0.7272727272727273,
+     "sd": 0.0,
+     "present": [
+      "tokenentropy",
+      "tokenhash",
+      "tokenexpiry",
+      "tokensingleuse",
+      "noenum",
+      "notokenlog",
+      "pwhash",
+      "tests"
+     ],
+     "missing": [
+      "ratelimit",
+      "transport",
+      "sessioninvalidate"
+     ],
+     "artifact_len": 68634
+    }
+   }
   }
  },
  "means": {
-  "without": 0.606060606060606,
-  "sota": 1.0,
-  "ECC": 0.9545454545454546,
-  "claude-skills": 0.7348484848484849,
-  "awesome-cursorrules": 0.7765151515151515
- }
+  "without": 0.5822510822510824,
+  "sota": 0.987012987012987,
+  "ECC": 0.8493506493506494,
+  "claude-skills": 0.7696969696969697,
+  "awesome-cursorrules": 0.7997835497835498
+ },
+ "cases_done": 7,
+ "cases_total": 7,
+ "complete": true
 }
