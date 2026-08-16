@@ -74,6 +74,17 @@ control, and every rule in rules/10 and rules/11 applies to it. This is the most
 commonly skipped application, because measurement code reads as scaffolding
 rather than as production, and nobody threat-models scaffolding.
 
+**The smallest instrument is the command you just typed.** A verification one-liner
+is unlinted, unreviewed code that runs against the system under test, and when it is
+wrong it manufactures a finding *about the product*. Before reporting anything that
+rests on one, re-run it in the plainest form available — no unquoted expansion, no
+pipe, one command — and compare. Three tells that the harness is the bug, not the
+subject: a **usage error (exit 2) from the callee**, a result that contradicts a
+passing unit test, and a status read through a pipe (`cmd | tail -1; echo $?` reports
+`tail`). Shell-specific mechanics — zsh joining, `${pipestatus[1]}` vs
+`${PIPESTATUS[0]}` — are in `sota-shell-scripting` rules/01 §3, which nothing will
+route you to when the task does not look shell-shaped. That is exactly when it bites.
+
 ### 2.1 Four failure modes specific to instruments
 
 - **Unbounded or unread scope.** rules/11 §2.2 turned inward: an instrument must

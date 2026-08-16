@@ -17,10 +17,12 @@ on everything doing the checking: your scorers, gates and benchmarks, and the gu
 that is an instance of what it guards.
 
 **Finding these at codebase scale is rules/11** — the cheap diagnostics (duration
-vs claimed work, printing every gate's denominator, cross-scale delta), plus four
+vs claimed work, printing every gate's denominator, cross-scale delta), plus five
 classes that are correctness rather than security: scale-dependent silence, a cache
-key narrower than the behaviour it gates, a parser generalised from one sample, and
-a producer/consumer seam no schema declares.
+key narrower than the behaviour it gates, a parser generalised from one sample, a
+producer/consumer seam no schema declares, and a filter whose predicate matches the
+ambient environment (an absolute path, a hostname) so a collection is correct on one
+machine and empty on another.
 Sweep with rules/11 to decide *where* to apply this file.
 
 Related: fail-open authorization → rules/03 §"authz bypass patterns"; integer
@@ -338,6 +340,16 @@ plane: a declared dependency, registered module, or plugin that is wired in and
 never reached — including the case where its symbol *is* referenced, but only on
 a branch the live code path cannot produce. That sweep, with deletion-as-proof,
 is `sota-devsecops` rules/03 §3.9.
+
+**Three states, not two.** Skipped and failed are the ones people check; the third is
+**created but never started** — the platform refused the run (billing, a spending
+limit, exhausted minutes). Those report **failure**, not skipped, so an all-skipped
+test misses them entirely, and the reason lives in the run's **annotations**, not its
+logs. The tell is *every job failing within seconds with no step output*. A pipeline in
+that state is unproven, and unproven pipelines rot: one that had never executed a
+single job turned out to set a workflow-wide env var that its own first step rejected,
+so it could never have passed — invisible for as long as nothing ran it (checked
+2026-08-16; GitHub's skipped-reports-Success behaviour is above).
 
 ### 2.14 A control parked in observe-only mode
 

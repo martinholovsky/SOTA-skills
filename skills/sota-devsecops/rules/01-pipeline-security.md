@@ -276,8 +276,37 @@ name!), `github.event.pull_request.head.ref`, commit messages
 - Prefer fetching at use-time from a secrets manager via OIDC (Vault JWT auth, AWS Secrets
   Manager) over storing in GitHub at all — central audit + rotation.
 
+## 1.11 Prove the pipeline runs — before you trust anything it reports
+
+Every section above hardens a pipeline. None of them establishes that it has ever
+executed. A workflow that has never run is not "probably fine": it is untested code
+that gates your merges, and it fails in ways review does not catch — a workflow-wide
+env var the first step rejects, a tool that is not on the runner, a path that only
+exists in the author's tree.
+
+- **Run the jobs locally against a fresh clone of committed state**, not the working
+  tree. The working tree hides dependence on untracked files, and that dependence is
+  the most common reason a green local run turns red on a runner.
+- **Treat missing tooling as a hard failure, not a skip.** A local harness that skips
+  the step it cannot run reports success for work it never did — `rules/10` §2.13 in
+  your own scaffolding. Print what was substituted (a marketplace action replaced by
+  its CLI equivalent) rather than hiding it, so the run's coverage is legible.
+- **Do this even when CI works.** It is the only way to prove a workflow before its
+  first push, and it turns a 10-minute push/wait/fix loop into seconds.
+- Off-the-shelf local runners for GitHub Actions exist; evaluate one against your
+  workflow before adopting it, and do not assume action-for-action fidelity.
+
+Then check the run history itself, per `sota-code-security` rules/10 §2.13: a job that
+was **skipped** reports Success, and a run the platform **refused** (billing, spending
+limits) reports failure within seconds with no step logs and its reason only in the
+annotations. Both look like "CI exists" from the badge.
+
 ## Audit checklist
 
+- [ ] **Has this pipeline ever executed?** Count non-skipped, non-refused runs. A
+      skipped job reports Success and a platform-refused run fails in seconds with no
+      step logs — neither is evidence the workflow works. If it has never run green,
+      execute the jobs locally against a fresh clone before trusting any gate it claims.
 - [ ] Every workflow has a top-level `permissions:` block; no `write-all`; `id-token: write` only in federating jobs
 - [ ] No long-lived cloud keys in secrets; OIDC trust policies pin `aud` and an exact `sub` (repo + ref/environment, no wildcards)
 - [ ] All third-party actions pinned to full commit SHAs with version comments; pins maintained by Renovate/Dependabot; org actions-allowlist enabled

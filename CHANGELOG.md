@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Five field-use findings from a live build, each re-validated here before landing.**
+  A handoff brief from a session that used the library end to end on a real project. Every
+  anchor and every empirical claim was re-checked at this commit rather than taken on
+  trust; full intake with the one rejection is in
+  [ADOPTION-LOG](docs/ADOPTION-LOG.md) 2026-08-16.
+
+  - **The auditor's own verification one-liner is an uninstrumented instrument**
+    (`sota/SKILL.md` rule 17 + `rules/12` §2). Unlinted shell, run against the system
+    under test, producing false findings *about the product* — three in one session, all
+    zsh joining/pipeline bugs this library already documents. The rule existed; nothing
+    **routed** to it, because the task did not look shell-shaped. Rule 17 now names the
+    commands you type, and `rules/12` §2 carries the three tells and an explicit
+    cross-reference.
+  - **`set -e` cannot be re-armed, and `$-` lies about it** (`sota-shell-scripting`
+    rules/01 §2). Inside a suspended call tree neither `set -e` nor `set -o errexit`
+    restores errexit, while `case $- in *e*)` still matches — the shell reports the safety
+    flag as enabled while it is behaviourally inert. **Reproduced here on GNU bash 5.3.15
+    *and* 3.2.57** (the brief had only checked 5.3.15), so the rule states both. Only
+    explicit `&&` or a fresh `bash -c` work.
+  - **`SECURITY.md`'s "never open an issue" now has a private-repo carve-out**
+    (`sota-docs-workflow` rules/01, both the table row and the checklist). GitHub's
+    private vulnerability reporting is **public-repo only** — *"Owners and administrators
+    of public repositories can enable private vulnerability reporting"* (docs, checked
+    2026-08-16) — so the rule pointed at a feature that cannot be enabled, while the thing
+    it forbade (a collaborator-only tracker) *is* private. The file must now name the
+    switch to make on going public.
+  - **Location-dependent silence** — a new class in `rules/11` §3.5, with the count fixed
+    in all **four** ripple sites. A filter whose predicate matches the *ambient
+    environment* rather than the data: `"private" not in p.parts` against an absolute path
+    empties the collection on macOS, where `/var` resolves to `/private/var` (verified).
+    Generalises to hostnames, usernames, env vars and locales; the defences are anchoring
+    the predicate and asserting non-empty on every collection a suite iterates.
+  - **A platform-refused pipeline is a third state** (`rules/10` §2.13) and **proving a
+    pipeline runs** is now a section (`sota-devsecops` rules/01 §1.11). Refused runs
+    report *failure*, not skipped, so the all-skipped test misses them; the tell is every
+    job failing in seconds with no step logs and the reason only in annotations. The
+    remedy — run the jobs locally against a fresh clone of committed state, treat missing
+    tooling as a hard failure, print substitutions — deliberately names **no tool**, since
+    the brief flagged its own suggestion as unevaluated.
+
+
 ### Changed
 
 - **Docs re-synced to what the audit changed, with the numbers re-counted rather than

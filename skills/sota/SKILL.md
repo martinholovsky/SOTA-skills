@@ -194,8 +194,11 @@ rules files that match the code in front of you. Never load all skills at once.
     `sota-ux-writing`; marketing/site/email content → `sota-copywriting`; technical docs → `sota-
     docs-workflow`. The component patterns the text lives in stay `sota-frontend-design`.
 17. **Shell scripts hide everywhere** — CI run blocks, Dockerfile RUN lines, Makefiles,
-    entrypoints. Audit them with `sota-shell-scripting` even when the repo's "language" is
-    something else.
+    entrypoints, **and the one-liners you type to verify a claim**. That last one is
+    unlinted shell run against the system under test: when it is wrong it produces a false
+    finding *about the product*. A usage error (exit 2) from the callee is the tell. Audit
+    all of it with `sota-shell-scripting` — especially its rules/01 §3, which the task will
+    not route you to when the work does not look shell-shaped.
 18. **Cryptography fans out — there is no single crypto skill (by design).** Algorithm choice,
     AEAD/nonce discipline, CSPRNG, in-code key handling, TLS client config, constant-time
     comparison, tamper-evident logs/audit ledgers (keyed hash chains, external anchoring,

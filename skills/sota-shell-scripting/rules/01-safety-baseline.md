@@ -48,6 +48,28 @@ set -euo pipefail
 | Command substitution in a larger command | `echo "$(false)"` succeeds |
 | Subshell `(exit 1) || true` patterns, `! cmd` | negation makes failure "expected" |
 
+**Inside a suspended context you cannot get errexit back, and `$-` lies about it.**
+Re-running `set -e` or `set -o errexit` in the function or subshell does **not**
+restore it, and `case $- in *e*)` still matches — the shell reports the safety flag
+as enabled while it is behaviourally inert, so you cannot detect the suspension by
+inspecting the shell's own state. Verified on GNU bash **5.3.15 and 3.2.57** (macOS
+`/bin/bash`), 2026-08-16:
+
+```bash
+a() ( false; echo RAN )              # inherited -e   -> RAN, exit 0
+b() ( set -e; false; echo RAN )      # re-armed       -> RAN, exit 0   <-- does not work
+c() ( set -o errexit; false; echo RAN )  #             -> RAN, exit 0
+e() ( false && echo RAN )            # explicit &&    -> exit 1        <-- works
+f() ( bash -c 'set -e; false; echo RAN' )  # new process -> exit 1     <-- works
+g() ( case $- in *e*) echo "flag IS set";; esac; false; echo RAN )  # prints BOTH
+```
+
+Only two constructs are reliable there: **explicit `&&` chaining**, or a **fresh
+`bash -c`**. This is an unfalsifiable control inside the shell itself — the
+`sota-code-security` rules/10 §1 question ("if this were a no-op, would anything
+differ?") applied to bash, and the reason `set -e` is a backstop rather than error
+handling.
+
 Consequences:
 
 ```bash
@@ -270,6 +292,10 @@ splitting/joining class** — no widely-adopted static analyser catches
 
 - [ ] `grep -rn '^#!/bin/sh' scripts/` then scan those files for `[[`, arrays, `local -`,
       `${var//`, `pipefail` → bashism-in-sh (SC3xxx series).
+- [ ] **`set -e` believed inside a suspended context**: `set -e`/`set -o errexit`
+      re-armed inside a function called from a condition, or `$-` inspected to prove
+      errexit is live — both are inert there. Probe: `f() ( set -e; false; echo RAN )`
+      called from an `if`; if RAN prints, that whole call tree is unprotected.
 - [ ] Missing preamble: `grep -rLn 'set -euo pipefail\|set -eu' --include='*.sh' .`
 - [ ] SC2086 (unquoted expansion) — treat every instance in a destructive command
       (`rm`, `mv`, `cp`, `chmod`, `chown`, `ssh`, `kill`) as HIGH.
