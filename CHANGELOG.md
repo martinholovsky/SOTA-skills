@@ -5,6 +5,29 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **A gate and the irreversible action it gates must be joined by `&&`, never `;`**
+  (`sota-shell-scripting` rules/04 §1b, with an audit probe). In a script `set -e` stops
+  you; typed at a prompt or joined with `;` inside a CI `run:` block, nothing does — the
+  check runs, prints FAIL, and the push happens anyway because it was the next token.
+  Two aggravating factors named because they make it invisible rather than merely
+  ignored: a pipe rewrites the status (`check | tail -2` reports `tail`), and
+  **diff-based checks legitimately differ before and after a push** because their merge
+  base changes — so a pre-push result must never be what authorises the push.
+
+### Changed
+
+- **`RELEASING.md` now documents how invariant 14 actually matches.** The comparison is
+  literal (`grep -F`) and the front-door line is excluded from the entry search, so a
+  term cannot satisfy itself. Both failure modes are recorded because both happened on
+  real cuts: declaring `negative control` when the entry writes `negative-control`, and
+  declaring a word that appears only in the declaration. Includes a one-liner to test a
+  candidate term before committing to it, plus the note that invariants 11 and 14 are
+  diff-based and should be re-run once the branch exists upstream.
+
 ## [1.22.6] - 2026-08-16
 
 **The audit turned inward.** A scoped audit of the code that *measures* this library —

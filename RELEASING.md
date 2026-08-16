@@ -108,7 +108,24 @@ section:
 ```
 
 Every term must appear in `README.md` or `docs/INDEX.md` **and** in that release's own
-CHANGELOG entry, so a filler word cannot buy a pass. The check fires **only** when
+CHANGELOG entry, so a filler word cannot buy a pass.
+
+**The match is literal (`grep -F`) and the front-door line is excluded from the entry
+search**, so a term cannot satisfy itself. Two ways this bites at cut time, both seen on
+real cuts: declaring `negative control` when the entry writes `negative-control`
+(hyphenation counts), and declaring a word that only appears in the declaration line.
+Check a candidate before you commit to it:
+
+```sh
+sec=$(awk -v v="## [$VER]" 'index($0,v)==1{f=1;print;next} f&&/^## \[/{exit} f{print}' CHANGELOG.md)
+printf '%s\n' "$sec" | grep -v 'ront door checked' | grep -qiF -- "$term" && \
+  grep -qiF -- "$term" README.md docs/INDEX.md && echo "usable"
+```
+
+Note also that invariant 14 and invariant 11 are **diff-based**: they resolve against a
+merge base, so they can report differently before and after the release branch is pushed.
+Re-run the gate once the branch exists upstream, and never let a pre-push result be the
+thing that authorises the push (`sota-shell-scripting` rules/04 §1b). The check fires **only** when
 `VERSION` changes, so ordinary PRs are unaffected. It gates the *verification*, not
 the *discovery* — deciding what counts as a capability is still yours, and the grep
 above is still how you find them. Two habits that go with it: say where a capability is *not* backed by a measured
