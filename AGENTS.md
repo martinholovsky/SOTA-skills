@@ -69,7 +69,10 @@ Keep it under 200: put detail in `CONTRIBUTING.md` and leave a pointer.
 **Every file-list-driven check reports its denominator** (`ok (257 rules files)`)
 and **fails closed on an empty scope**. Added 2026-07-30 after a mutation showed
 checks 2 and 10 printing `ok` — and the script exiting 0 — while examining *zero*
-files. `0 checked, 0 failed, exit 0` is the signature of a gate that verifies
+files. **This sentence was false for two more checks until 2026-08-16**: 4 and 8
+were never retrofitted with `scope()`, so a drifted glob printed `ok` and exited 0
+in the one file that states the rule. Both now print counts and were watched to
+fail closed. If you add a check, the sentence is a promise you have to keep. `0 checked, 0 failed, exit 0` is the signature of a gate that verifies
 nothing (`sota-code-security` rules/11 §2.2). Adding a check? The script's header
 carries the three rules that file learned the hard way: watch it fail first, print
 your denominator, and skip rather than guess.
@@ -91,10 +94,14 @@ as its own job, over **two** subjects: `check-invariants.sh` (part A) and
 check* to be the one that complains — a non-zero exit for any other reason is a
 **FALSE PASS**, not a catch. Part A mutates a good tree in a disposable git worktree;
 part B is inverted — it builds a fully-configured fake machine (`CLAUDE_CONFIG_DIR`
-+ a throwaway repo + a stub `gh`) and removes one thing per probe. **16 probes**
-(re-counted 2026-08-14; it said 15 and omitted invariant 16, which shipped in
-v1.22.2 with its own probe): invariants 1, 2, 6, 10, 15, 16 and verify-setup checks
-1, 2, 3, 4, 6a, 6b, 7, 8, 9, 10a. What is *not*
++ a throwaway repo + a stub `gh`) and removes one thing per probe. **21 probes**
+(2026-08-16; was 16, and before that the sentence said 15 while omitting invariant
+16): invariants **1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16** — 11 of 16 — and
+verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 10a. The five unprobed invariants
+(5, 9, 11, 12, 14) each need state a disposable worktree lacks — a tag, a merge
+base, an mtime — and the harness prints that reason. **A probe now asserts its own
+mutation landed**: every mutation is a hardcoded literal, and a stale one used to
+make the harness print `NOT CAUGHT: INERT`, accusing a healthy gate. What is *not*
 covered is printed, not implied. Too slow for pre-commit (one full run per mutation).
 **Adding a check to either script? Add its known-bad here too**, or you have shipped
 something nobody has watched fail.

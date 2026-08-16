@@ -328,6 +328,23 @@ of them were **mine, in the harness I had just written**.
   deleted the `rules/NN` citations it existed to find. Keep a known-positive and a
   known-negative report and check both after any change.
 
+### Validate the judge's verdict, don't just parse it (learned 2026-08-16)
+
+All four judge-driven instruments share one `judge()`. It parsed the reply and scored
+`verdict.get(id) == "present"` — so a **well-formed reply of the wrong shape scored 0.00
+in silence**. Demonstrated against the real rubric: `{"results": {…}}` nests the ids away
+(0.00/12) and `"Present"` with a capital P is not `"present"` (0.00/12). Neither is a
+parse error, so nothing raised.
+
+- **Assert the key set, not just the JSON.** `set(verdict) == {r["id"] for r in rubric}`,
+  and every value in `{present, absent}`. Missing or extra ids mean the judge answered a
+  different question than the one asked.
+- **Normalise what is safely normalisable** (case), **abort on the rest**. Guessing at a
+  nested shape is how you invent a score.
+- The same discipline applies to *your own* artifacts: record `_meta` (models, samples,
+  temp, the SHA the comparison is pinned to). A number nobody can attribute is not
+  evidence, and this repo published one for months.
+
 ### An HTTP 200 with empty content is not a successful call (learned 2026-08-14)
 
 Every runner here reads `choices[0].message.content`. A **reasoning model can spend its

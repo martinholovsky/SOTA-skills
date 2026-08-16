@@ -55,7 +55,7 @@ single `[Unreleased]` · rules-file indexed by its SKILL.md · `LAST-VERIFIED` s
 pairing · rendered asset no older than its source · scoreboard rows declare their sample size. Each is in
 `scripts/check-invariants.sh` and documented in `AGENTS.md`.
 
-### Enforced in code, outside the invariant script (5)
+### Enforced in code, outside the invariant script (8)
 
 | Convention | Where enforced |
 |---|---|
@@ -64,6 +64,9 @@ pairing · rendered asset no older than its source · scoreboard rows declare th
 | Guards abort, never warn | the runners' own abort paths |
 | Don't trust the scrub | gitleaks is the backstop, in pre-commit and CI |
 | **A 200 with empty content is not success** (added 2026-08-14) | every runner that calls a model: empty completion → retry → fail loudly with `finish_reason`; `finish_reason == "length"` warns, because a truncated artifact is a floor not a measurement |
+| **A judge verdict must match the rubric it was asked about** (2026-08-16) | `run-completeness.judge()`, shared by all four judge-driven instruments: aborts on missing/extra ids or values outside present/absent, and normalises case — a well-formed reply of the wrong shape used to score 0.00 in silence |
+| **Pin what you compare against** (2026-08-16) | `run-competitors.py` compares each clone's `git rev-parse HEAD` to the manifest SHA and refuses on mismatch; the artifact records models, manifest path and resolved SHAs |
+| **A probe must assert its own mutation landed** (2026-08-16) | `check-negative-controls.sh probe()`: a stale hardcoded literal used to make the harness report the *gate* inert |
 
 ### Judgment — correctly ungateable (≈18)
 
@@ -188,11 +191,12 @@ what was never stated, so finding 2 bounds the **documented** set, not the real 
 Practical consequence: re-deriving this ledger will not find the next invariant 12.
 Only an incident will.
 
-**3. Enforcement is not concentrated in the invariant script.** **Five** conventions are
-enforced inside the eval runners (four when this ledger was first derived; the fifth
-arrived on 2026-08-14 the way the ledger predicts they do — from an incident, not from
-re-reading the docs). Anyone auditing "what does this repo actually enforce?" by reading
-`check-invariants.sh` alone would undercount.
+**3. Enforcement is not concentrated in the invariant script.** **Eight** conventions are
+enforced outside it (four when this ledger was first derived). Every one added since
+arrived the way this ledger predicts — **from an incident, never from re-reading the
+docs**: three of them on 2026-08-16 from a scoped audit of the instruments themselves.
+Anyone auditing "what does this repo actually enforce?" by reading `check-invariants.sh`
+alone would undercount by a third.
 
 ## What this does not claim
 

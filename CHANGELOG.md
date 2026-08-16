@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Docs re-synced to what the audit changed, with the numbers re-counted rather than
+  carried forward.** `AGENTS.md`: **16 → 21 negative-control probes**, and the enumeration
+  now names the 11 probed invariants plus the five that need a fixture a worktree cannot
+  provide. Its "every file-list-driven check reports its denominator" sentence is now
+  annotated with the fact that it was **false for checks 4 and 8** until this cycle — in
+  the one file that states the rule. `CONVENTIONS-LEDGER`: runner-enforced conventions
+  **5 → 8** (judge-verdict shape, pin-what-you-compare-against, a probe must assert its own
+  mutation) — every one of them arrived from an incident, which is that ledger's own
+  thesis. `evals/README` gained the judge-shape convention with the two demonstrated
+  0.00/12 failures. `ROADMAP` records the audit outcome and its two deliberate residuals.
+
 ### Fixed
 
 - **Instrument audit, final pass — every remaining finding closed.**
