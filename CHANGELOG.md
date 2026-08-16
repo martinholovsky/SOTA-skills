@@ -5,7 +5,16 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.22.8] - 2026-08-16
+
+**A rejection, and three counts that had drifted.** The as-deployed competitor
+comparison is closed as *rejected* rather than deferred — checking the pinned clones
+showed it would measure corpus size and a retrieval path already scored saturated, not
+guidance quality. Alongside it, the docs were re-counted against the tree: the router
+headroom, the ledger's own list of verdict states, and a roadmap row whose premise had
+been overtaken by evidence.
+
+**Front door checked:** competitor · benchmark · roadmap
 
 ### Changed
 
@@ -3508,6 +3517,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.22.8]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.8
 [1.22.7]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.7
 [1.22.6]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.6
 [1.22.5]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.5
