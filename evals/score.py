@@ -70,6 +70,9 @@ def main(argv):
         print(f"{cid:<6} {recall:>7.2f} {prec:>6.2f}  {', '.join(misses) or '-'}{flag}")
 
     n = sum(1 for c in cases if c.get("expect"))
+    if n == 0:
+        sys.exit('SCOPE EMPTY: scored 0 cases — a scorer that scores nothing must not exit 0')
+
     if n:
         print("-" * 60)
         print(f"mean recall {total_recall / n:.2f}   mean precision {total_prec / n:.2f}"

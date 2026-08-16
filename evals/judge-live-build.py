@@ -76,14 +76,17 @@ def main():
     print(f"judge={a.judge_model}  cases={len(cases)}  builds={a.builds}  (live-agent BUILD, blind judge)\n")
     results, tot = {}, 0.0
     n = 0
+    skipped = []
     for c in cases:
         case_dir = os.path.join(a.builds, c["id"])
         if not os.path.isdir(case_dir):
             print(f"  {c['id']:16s} SKIP (no build dir)")
+            skipped.append({"id": c["id"], "why": "no build dir"})
             continue
         art = collect_artifact(case_dir)
         if not art.strip():
             print(f"  {c['id']:16s} SKIP (empty build)")
+            skipped.append({"id": c["id"], "why": "empty build"})
             continue
         verdict = _rc.judge(art, c["rubric"], a.judge_model, k)
         present = [r["id"] for r in c["rubric"] if verdict.get(r["id"]) == "present"]
@@ -94,12 +97,29 @@ def main():
         results[c["id"]] = {"recall": recall, "present": present, "missing": missing,
                             "artifact_len": len(art)}
         print(f"  {c['id']:16s} recall={recall:.2f}  missing: {', '.join(missing) or '-'}")
+    # A mean over SURVIVORS is the defect run-competitors.py was fixed for on
+    # 2026-08-14 and this file still had (found 2026-08-16): skipped cases shrink n,
+    # the mean looks healthy, and the artifact recorded only mean/n/cases so a
+    # 3-of-7 run was indistinguishable from a complete one. This instrument produced
+    # the published 0.987. Abort on nothing judged; label partial runs loudly and in
+    # the artifact.
+    if n == 0:
+        sys.exit(f"judged 0 of {len(cases)} cases — every build was missing or empty; "
+                 f"nothing to average. Check --builds ({a.builds}). Refusing to report.")
+    complete = (n == len(cases))
     if n:
-        print(f"\nMEAN live-agent completeness = {tot/n:.2f}  (n={n})")
-        print("compare: base (no library) 0.60 | simulated with-library 0.99 "
-              "(results/2026-07-13/completeness-7case-p5.json)")
+        partial = "" if complete else f"  ** PARTIAL: {n} of {len(cases)} cases **"
+        print(f"\nMEAN live-agent completeness = {tot/n:.2f}  (n={n}){partial}")
+        if not complete:
+            print(f"  skipped: {', '.join(s['id'] for s in skipped)} — this mean is over "
+                  f"survivors, not the case set; do not compare it to a 7-case number.")
+        else:
+            print("compare: base (no library) 0.60 | simulated with-library 0.99 "
+                  "(results/2026-07-13/completeness-7case-p5.json)")
     if a.out:
-        json.dump({"mean": tot / n if n else None, "n": n, "cases": results},
+        json.dump({"mean": tot / n if n else None, "n": n,
+                   "cases_done": n, "cases_total": len(cases), "complete": complete,
+                   "skipped": skipped, "cases": results},
                   open(a.out, "w"), indent=1)
         print(f"saved {a.out}")
 

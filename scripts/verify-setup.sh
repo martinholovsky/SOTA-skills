@@ -157,11 +157,27 @@ fi
 row "N/A" "5. agent file is TRUE" "judgement check — run the prompt in docs/VERIFY-SETUP.md (5a commands resolve, 5b claims still accurate)"
 
 # Capabilities, not one implementation's filename.
-lic=$(ls LICENSE* COPYING* COPYRIGHT* 2>/dev/null | head -1 || true)
-[ -n "$lic" ] && row "PASS" "6a. licence" "$lic" || row "FAIL" "6a. licence" "no LICENSE*/COPYING*/COPYRIGHT* — nobody may legally reuse this"
-[ -f .gitignore ] && row "PASS" "6b. .gitignore" "present" || row "FAIL" "6b. .gitignore" "absent"
-rdm=$(ls README* 2>/dev/null | head -1 || true)
-[ -n "$rdm" ] && row "PASS" "6c. README" "$rdm" || row "FAIL" "6c. README" "absent"
+# First match wins; a glob loop, not `ls` — this repo's own rules/01 says never
+# parse ls, and A && B || C (SC2015) prints BOTH rows if the first `row` ever fails.
+lic=""
+for c in LICENSE* COPYING* COPYRIGHT*; do [ -e "$c" ] && { lic="$c"; break; }; done
+if [ -n "$lic" ]; then
+  row "PASS" "6a. licence" "$lic"
+else
+  row "FAIL" "6a. licence" "no LICENSE*/COPYING*/COPYRIGHT* — nobody may legally reuse this"
+fi
+if [ -f .gitignore ]; then
+  row "PASS" "6b. .gitignore" "present"
+else
+  row "FAIL" "6b. .gitignore" "absent"
+fi
+rdm=""
+for c in README*; do [ -e "$c" ] && { rdm="$c"; break; }; done
+if [ -n "$rdm" ]; then
+  row "PASS" "6c. README" "$rdm"
+else
+  row "FAIL" "6c. README" "absent"
+fi
 
 # --- C. Are the gates real, or just configured? ---------------------------
 section "C. Gates"
@@ -176,7 +192,7 @@ if [ -d .github/workflows ]; then
   [ "$n_wf" -gt 0 ] && gates="$gates ci(${n_wf}-workflow)"
 fi
 if [ -n "$gates" ]; then
-  row "PASS" "7. gate mechanisms found" "$(echo "$gates" | sed 's/^ //')"
+  row "PASS" "7. gate mechanisms found" "${gates# }"
 else
   row "FAIL" "7. gate mechanisms found" "no pre-commit / husky / lefthook / CI workflows — nothing gates this repo"
 fi
@@ -201,7 +217,7 @@ if [ -n "$scan_paths" ]; then
   done
 fi
 if [ -n "$scan_hits" ]; then
-  row "PASS" "8. secret scanning configured" "$(echo "$scan_hits" | sed 's/^ //') referenced in a gate config"
+  row "PASS" "8. secret scanning configured" "${scan_hits# } referenced in a gate config"
 else
   row "FAIL" "8. secret scanning configured" "no gitleaks/trufflehog/detect-secrets/ggshield in any gate config"
 fi

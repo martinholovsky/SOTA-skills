@@ -7,6 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Instrument audit: a Critical data-loss bug in `install.sh`, and two gates that
+  passed while unable to see anything.** Three scoped auditors read `evals/*.py` and
+  `scripts/*.sh` at `cc1529b` against `rules/10`–`12`. The prediction was
+  [pre-registered and committed first](evals/results/2026-08-16/PRE-REGISTRATION-INSTRUMENT-AUDIT.md);
+  it held — **highest severity in `scripts/`, zero findings in `skills/`**.
+
+  - **Critical — `install.sh` could delete a user's file.** With an altered/indented END
+    marker, `grep -qF` (substring) passed and `extract_block` returned BEGIN→EOF, so it
+    was non-empty and the emptiness guard passed too; `refresh_block`'s awk then never
+    left its delete branch and **erased every line below the block** in
+    `~/.claude/CLAUDE.md`. Reproduced end-to-end. Both marker greps are now `-qxF` and
+    the block check is end-anchored (`tail -n 1 == RT_END`). Verified three ways: the
+    bad case refuses, a healthy block still proceeds, an indented BEGIN falls through.
+  - **Invariants 4 and 8 had no denominator** — a drifted glob printed `ok` and exited 0,
+    contradicting `AGENTS.md:69` ("every file-list-driven check reports its denominator").
+    Both now print counts (`ok (41 descriptions)`, `ok (351 markdown files)`) and were
+    **watched to fail closed** on a mutated pathspec.
+  - **CI's shell lint could not see its own top defect class.** `shellcheck -S warning`
+    exits 0 on `rm -rf $dir` because SC2086 is info-level — the class this repo's
+    `sota-shell-scripting` rules/01 §3 calls "a bug, not style". Raised to `-S style`,
+    widened from `scripts/*.sh` to every tracked `.sh` (which brought
+    `evals/cases/dead-path/selfcheck.sh` under lint for the first time), and made to fail
+    closed on an empty file list. The tree was cleaned to **0 findings at style** first —
+    `ls`-parsing and `A && B || C` fixed properly rather than suppressed.
+  - **`principle5()` returned `""` on a moved marker**, silently weakening the treatment
+    arm of the flagship +0.39 — and `ROUTER_BUILD_SHA` does not cover it (the hash spans
+    chars 24111–26758; principle 5 lives at 4079–6433, **disjoint**). Now aborts, with a
+    length floor. Watched to fire.
+  - **`judge-live-build.py` averaged over survivors** — the defect fixed in
+    `run-competitors.py` two days earlier, in the instrument that produced the published
+    **0.987**. Now aborts when nothing was judged, labels partial runs in stdout *and*
+    the artifact (`cases_done`/`cases_total`/`complete`/`skipped`).
+  - **The negative-control harness misreported its own coverage**: invariants 3, 4 and 7
+    were in neither the covered nor the "not covered" list, so
+    `AGENTS.md:97` ("what is not covered is printed, not implied") was false. The list is
+    now exhaustive — 6 covered + 10 uncovered = 16, no overlap — and says *why* each is
+    uncovered. Harness still **16/16**.
+  - **Invariant 14 matched front-door terms as a regex** (`a.b` matched `axb`); both
+    greps are now `-F`.
+  - Silent-zero guards added and each watched to fire: `score.py` (empty corpus),
+    `run-adjudication.py` (`assert` → `sys.exit`, plus a router-marker guard),
+    `run-desc-routing.py` (the ablation must actually remove something, or the null is
+    manufactured), `run-clean.py` (empty freshness corpus).
+
+### Added
+
+- **A missing tool is a decision, not automatically a failure**
+  (`sota-shell-scripting/rules/02` §6). `|| die` is right only for a dependency the
+  script cannot be correct without; for everything else the rule is now explicit —
+  **skip the affected check with a named note** (never let a summary read clean when a
+  check did not execute), degrade for optional tooling, and **on an interactive run stop
+  and ask the human to install it, printing the exact command**. Never auto-install:
+  installing software is a change to someone's machine and a non-interactive run has
+  nobody to consent. Ships with a `need()` helper and its audit half.
+
+
 
 ### Measured
 

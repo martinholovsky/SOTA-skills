@@ -276,7 +276,9 @@ def get_name(text):
 # description held `Span<T>/Memory<T>`, which is a well-formed XML start tag.
 XML_TAG = re.compile(r'<[A-Za-z/][^>]*>')
 RESERVED = ('anthropic', 'claude')
-for f in sorted(glob.glob('skills/*/SKILL.md')):
+files4 = sorted(glob.glob('skills/*/SKILL.md'))
+print("SCOPE %d" % len(files4))
+for f in files4:
     d, err = get_desc(open(f, encoding='utf-8').read())
     if not d:
         print(f"MISSING/EMPTY description: {f}"); bad = 1; continue
@@ -298,9 +300,16 @@ for f in sorted(glob.glob('skills/*/SKILL.md')):
 sys.exit(1 if bad else 0)
 PY
   ); then
-    echo "    ok"
+    # Denominator, per this file's own rule at the top: a drifted glob that
+    # examines 0 files used to print "ok" and exit 0 here (found 2026-08-16).
+    n4=$(printf '%s\n' "$desc_out" | sed -n 's/^SCOPE //p')
+    if scope "${n4:-0}" "SKILL.md descriptions"; then
+      echo "    ok (${n4} descriptions)"
+    else
+      fail=1
+    fi
   else
-    printf '%s\n' "$desc_out" | sed 's/^/    /'
+    printf '%s\n' "$desc_out" | grep -v '^SCOPE ' | sed 's/^/    /'
     fail=1
   fi
 else
@@ -424,6 +433,7 @@ if command -v python3 >/dev/null 2>&1; then
   if link_out=$(python3 - <<'PY'
 import os, re, sys
 files = [l for l in os.popen("git ls-files '*.md'").read().splitlines() if l.strip()]
+print("SCOPE %d" % len(files))
 LINK = re.compile(r'(?<!\!)\[[^\]]*\]\(([^)]+)\)')   # [text](target); (?<!!) skips images
 bad = 0
 for f in files:
@@ -450,9 +460,15 @@ for f in files:
 sys.exit(1 if bad else 0)
 PY
   ); then
-    echo "    ok"
+    # Denominator (added 2026-08-16): an empty pathspec used to print "ok", exit 0.
+    n8=$(printf '%s\n' "$link_out" | sed -n 's/^SCOPE //p')
+    if scope "${n8:-0}" "markdown files"; then
+      echo "    ok (${n8} markdown files)"
+    else
+      fail=1
+    fi
   else
-    printf '%s\n' "$link_out" | sed 's/^/    /'
+    printf '%s\n' "$link_out" | grep -v '^SCOPE ' | sed 's/^/    /'
     fail=1
   fi
 else
@@ -809,6 +825,7 @@ else
     note "  Each term must appear in README.md or docs/INDEX.md, and in this section."
     v14=1
   else
+    # shellcheck disable=SC2016  # single-quoted sed scripts, not expansions
     terms=$(printf '%s\n' "$decl" | sed 's/.*\*\*[Ff]ront door checked:\*\*//' \
       | tr '·,;' '\n' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/^[`*]*//; s/[`*.]*$//' \
       | grep -v '^$' || true)
@@ -816,12 +833,12 @@ else
     while IFS= read -r t; do
       [ -n "$t" ] || continue
       n_terms=$((n_terms + 1))
-      if ! grep -qi -- "$t" README.md docs/INDEX.md 2>/dev/null; then
+      if ! grep -qiF -- "$t" README.md docs/INDEX.md 2>/dev/null; then
         note "NO FRONT DOOR: \"$t\" appears in neither README.md nor docs/INDEX.md"
         v14=1
       fi
       # Guard against declaring a word that was never part of this release.
-      if ! printf '%s\n' "$sec" | grep -v '\*\*[Ff]ront door checked:\*\*' | grep -qi -- "$t"; then
+      if ! printf '%s\n' "$sec" | grep -v '\*\*[Ff]ront door checked:\*\*' | grep -qiF -- "$t"; then
         note "NOT IN THIS RELEASE: \"$t\" is declared but absent from the release's own entry"
         v14=1
       fi

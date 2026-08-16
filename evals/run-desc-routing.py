@@ -133,6 +133,15 @@ def main():
     names = [os.path.basename(d) for d in glob.glob(os.path.join(ROOT, "skills/sota-*"))
              if os.path.isdir(d)]
     arms = {"with-xref": catalogue(False), "without-xref": catalogue(True)}
+    # Assert the ablation TOOK (rules/12 §2.2). If no description matched XREF_RE the
+    # two arms are byte-identical and this tool prints a fake +0.000 — a manufactured
+    # null in a project that publishes real ones. Both sibling ablations already abort.
+    changed = sum(1 for a, b in zip(arms["with-xref"].splitlines(),
+                                    arms["without-xref"].splitlines()) if a != b)
+    if changed == 0:
+        sys.exit("ablation removed nothing: both arms are identical, so any result is a "
+                 "fake null. Check XREF_RE against the current descriptions.")
+    print(f"  ablation: {changed} description line(s) differ between arms")
     print(f"model={a.model}  cases={len(cases)}  samples={a.samples}  temp={a.temp}  "
           f"arms={list(arms)}  (clean API, objective name-match scoring)\n")
     result = {"model": a.model, "samples": a.samples, "temp": a.temp, "cases": {}}

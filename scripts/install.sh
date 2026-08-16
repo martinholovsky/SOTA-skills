@@ -254,16 +254,20 @@ setup_claude_md() {
   [ -L "$f" ] && tgt="$(readlink "$f")"
   [ -n "$tgt" ] && where="$where (symlink → $tgt; likely managed by your dotfiles — commit it there)"
 
-  if [ -f "$f" ] && grep -qF "$RT_BEGIN" "$f" 2>/dev/null; then
-    if ! grep -qF "$RT_END" "$f" 2>/dev/null; then
+  if [ -f "$f" ] && grep -qxF "$RT_BEGIN" "$f" 2>/dev/null; then
+    if ! grep -qxF "$RT_END" "$f" 2>/dev/null; then
       # shellcheck disable=SC2088  # ~ is display text in the message, not a path
       warn "~/.claude/CLAUDE.md has the start marker but no end marker — leaving it untouched; fix by hand or delete the block and re-run"
       return
     fi
-    if [ -z "$(extract_block "$f")" ]; then
-      # Markers found by substring, but extract_block (exact whole-line match)
-      # sees nothing: they were re-indented/altered. A refresh would be a
-      # silent no-op loop — refuse instead.
+    if [ "$(extract_block "$f" | tail -n 1)" != "$RT_END" ]; then
+      # extract_block stops at an EXACT end-marker line. If its last line is not
+      # RT_END it ran to EOF, i.e. the end marker was altered/indented — and
+      # refresh_block's awk would then never leave its delete branch and would
+      # erase every user line below the block. 2026-08-16: the previous test was
+      # `[ -z "$(extract_block ...)" ]`, which an altered END passes (the block
+      # extends to EOF, so it is non-empty). Proven to delete user content; the
+      # marker greps above are `-qxF` for the same reason.
       # shellcheck disable=SC2088  # ~ is display text in the message, not a path
       warn "~/.claude/CLAUDE.md has sota routing markers that are altered (indented?) — leaving it untouched; restore the exact marker lines or delete the block and re-run"
       return
