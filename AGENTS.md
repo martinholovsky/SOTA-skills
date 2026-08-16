@@ -81,10 +81,12 @@ your denominator, and skip rather than guess.
 *Adding a `rules/NN` file?* Invariant 10 checks it is indexed by its own `SKILL.md`
 and **invariant 15** checks the router's library map lists it, both directions —
 that map was unchecked, which is how `rules/11` sat unlisted for two releases.
-`skills/sota/SKILL.md` sits at **491 lines against the 500 cap** (re-counted
-2026-08-13; it read "exactly 500" here for a week after the activation rewrite
-took it to 491), so there is room for a map line — but treat that headroom as
-nearly spent and prefer reflowing an existing line. Note the gates enumerate via
+`skills/sota/SKILL.md` sits at **494 lines against the 500 cap** (re-counted
+2026-08-16; it has read "exactly 500" and then "491" here while the file moved
+underneath both). **Six lines left.** The next addition to the router almost
+certainly has to reflow or replace an existing line rather than append one — and
+the number in this sentence has been wrong twice, so re-count with
+`grep -c '' skills/sota/SKILL.md` rather than trusting it. Note the gates enumerate via
 `git ls-files`, so an **unstaged new file is invisible** to them — `git add`
 before believing a count.
 

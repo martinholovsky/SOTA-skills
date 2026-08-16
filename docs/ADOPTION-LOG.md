@@ -13,9 +13,15 @@ lessons-log — its own best structural idea, applied to ourselves.
 
 ## How this log works
 
-- **States:** `adopted` · `rejected` · `deferred` · `superseded`. Every entry
-  ends in one of these — nothing stays `open` here; if it needs more thought it
-  is `deferred` with the condition to revisit.
+- **States:** `adopted` · `rejected` · `deferred` · `superseded` · **`adopted with a
+  correction`**. Every entry ends in one of these — nothing stays `open` here; if it
+  needs more thought it is `deferred` with the condition to revisit. The fifth was added
+  2026-08-16 for a real case: a proposal whose *substance* was right but whose *wording*
+  would have licensed the opposite behaviour. Recording it as plain `adopted` would have
+  hidden the edit from the person who wrote the proposal, and `rejected` would have been
+  false. Use it when you ship an idea in materially different words, and say what you
+  changed and why — the reasoning is the part that stops the original phrasing coming
+  back.
 - **Observation before diagnosis.** State what the source *actually says* and
   what we *verified against our own tree* separately from the verdict. The
   temptation is to declare a "gap" from a keyword search; the rule is to read the

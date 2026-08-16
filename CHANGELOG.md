@@ -5,6 +5,23 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **`adopted with a correction` is now a documented ledger verdict.**
+  [ADOPTION-LOG](docs/ADOPTION-LOG.md) said every entry ends in one of four states, and
+  v1.22.7 introduced a fifth without saying so. It exists for the real case it was coined
+  for: a proposal whose *substance* was right but whose *wording* would have licensed the
+  opposite behaviour. Plain `adopted` would hide the edit from whoever wrote the proposal;
+  `rejected` would be false.
+- **Docs re-counted against the tree.** `AGENTS.md` claimed the router sits at 491 lines;
+  it is **494** — six left against the 500 cap, so the next router addition has to reflow
+  rather than append. That number has now been wrong twice in this file, so the sentence
+  tells the reader to re-count instead of trusting it. `ROADMAP` drops the closed
+  denylist-divergence row (re-derived and canary-proven 2026-08-13) and renumbers; the
+  remaining five were each re-checked, including the star count, which is unchanged at 13.
+
 ## [1.22.7] - 2026-08-16
 
 **Two rules written because I broke them.** A gate joined to an irreversible action with
