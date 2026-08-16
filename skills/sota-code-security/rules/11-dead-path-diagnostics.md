@@ -2,7 +2,7 @@
 
 rules/10 asks, one control at a time, *"if this were a no-op, would anything look
 different?"* This file is the **hunt**: the cheap signals that surface the family
-across a whole codebase without reading every line, four classes rules/10 does
+across a whole codebase without reading every line, five classes rules/10 does
 not cover (they are not security controls at all — they are correctness), and the
 evidence bar a finding in this family has to clear.
 
@@ -77,6 +77,13 @@ enumerated skill files via `git ls-files 'skills/*/rules/*.md'`; renaming the
 ```
 # BEFORE — pathspec mutated to match nothing:
 [2/10] Every skills/*/rules/*.md ends with an '## Audit checklist'
+- [ ] **Environment-dependent predicates**: any filter tested against an absolute
+      path, hostname, username, env var or locale — `grep -rn "\.parts\|os.environ\|
+      gethostname" ` near a comprehension. Run the suite from a `mktemp -d` clone, not
+      the working tree; on macOS that path resolves under `/private`, which is exactly
+      the component such filters tend to exclude.
+- [ ] **Every collection a suite iterates has a non-empty assertion** — without one an
+      empty parameter set reports SKIPPED and the suite passes vacuously.
     ok
 [10/10] Every skills/*/rules/*.md is referenced by its own SKILL.md
     ok
@@ -156,7 +163,7 @@ empty-but-well-formed artifact while exiting 0.
 an absolute assertion instead of a relative one, and it belongs in CI rather than
 in an audit.
 
-## 3. Four classes rules/10 does not cover
+## 3. Five classes rules/10 does not cover
 
 ### 3.1 Scale-dependent silence — correct small, broken large
 
@@ -278,6 +285,39 @@ producer's real output** before merging; isolation tests pass on both sides whil
 the seam is broken. Rule for AUDIT: for every artifact handed between stages,
 name its layout, its writer and its reader — where no schema pins them, the pair
 is a finding awaiting its first change.
+
+### 3.5 Location-dependent silence — correct here, empty there
+
+A filter whose predicate can match something in the **ambient environment** rather
+than in the data. The canonical shape is a path-component exclusion tested against an
+**absolute** path:
+
+```python
+# BAD — p.parts is absolute, so this depends on where the checkout lives
+files = sorted(p for p in ROOT.rglob("*.yaml") if "private" not in p.parts)
+
+# GOOD — anchor the predicate to a known root
+files = sorted(p for p in ROOT.rglob("*.yaml") if "private" not in p.relative_to(ROOT).parts)
+```
+
+On macOS `/var` is a symlink to `/private/var`, so a checkout made under `mktemp -d`
+resolves beneath a `private` component and the filter matches **every** file. Verified
+2026-08-16: `Path(mktemp_dir).resolve()` contains `private` in `.parts`. The suite then
+reported `SKIPPED [1] ... got empty parameter set` for three parametrised tests, the
+schema validation scanned nothing, and coverage still read 86%. It passed in the
+author's working tree and failed only in a fresh clone — and would have passed on a
+CI runner too, whose checkout path contains no `private` component.
+
+Generalise past paths: **any predicate that can be satisfied by the environment** —
+an absolute path component, a hostname, a username, an env var, a locale, a timezone —
+differs between laptop, container and runner, and the failure mode is an empty
+collection rather than an error. Two defences, and you want both:
+
+- **Anchor the predicate** to a known root or an explicit allowlist, never to whatever
+  the ambient string happens to contain.
+- **Assert non-empty on every collection a suite iterates.** `assert files, "no
+  fixtures found; this suite would vacuously pass"` is what turns silence into a
+  failure — in the reported case it was the *only* reason the bug surfaced.
 
 ## 4. An assert is not a control in production
 

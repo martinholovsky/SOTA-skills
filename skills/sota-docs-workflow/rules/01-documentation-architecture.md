@@ -291,12 +291,22 @@ finding, not a checkbox win.
 | Trigger | Doc |
 |---|---|
 | Public, or accepts outside contributions | `CONTRIBUTING.md` (how to propose changes) + `CODE_OF_CONDUCT.md` (behavior + an enforcement contact) |
-| Handles anything security-relevant | `SECURITY.md` — how to report a vulnerability **privately** (a channel or advisory, never "open an issue") + supported-version policy |
+| Handles anything security-relevant | `SECURITY.md` — how to report a vulnerability **privately** (a channel or advisory, never "open an issue" — unless the repo is *private*, see below) + supported-version policy |
 | Users need a place to ask / triage routing | `SUPPORT.md` — where questions go, so issues stay for bugs |
 | On-call / production service | runbooks (§5) + an incident/postmortem template |
 | AI-assisted repo | `AGENTS.md`/`CLAUDE.md` (§7) |
 | Architectural decisions accrue | an ADR log (`sota-architecture`) |
 | Multi-maintainer / org project | `CODEOWNERS`, plus `GOVERNANCE.md`/`MAINTAINERS` when decision rights aren't obvious |
+
+**Private-repo carve-out.** While a repository is still private the default advice has
+no reachable channel: GitHub's private vulnerability reporting is **public-repo only** —
+*"Owners and administrators of public repositories can enable private vulnerability
+reporting on their repositories"* (GitHub docs, checked 2026-08-16; the API returns
+`404` against a private repo). Meanwhile a private repo's issue tracker is visible only
+to collaborators, so for that audience it **is** a private channel. So while private,
+point reporters at the tracker or a named address, and do not promise a feature that
+cannot be enabled. **Name the switch to make on going public inside the file itself** —
+that is the moment the advice inverts, and the moment it is most likely to be forgotten.
 
 **Placement.** GitHub recognizes the community-health files (`CODE_OF_CONDUCT`,
 `CONTRIBUTING`, `SECURITY`, `SUPPORT`, `GOVERNANCE`, `FUNDING`) from **`.github/`,
@@ -424,7 +434,7 @@ pointer: it reads as a satisfied requirement.
 ## Audit checklist
 
 - [ ] Baseline present for the repo's stage: README + LICENSE + CHANGELOG always; CONTRIBUTING/CODE_OF_CONDUCT/SECURITY/SUPPORT once public or contribution-accepting; runbooks once on-call — each with one canonical home (no duplicate copies across root/`.github`/`docs`).
-- [ ] `SECURITY.md` gives a private vulnerability-reporting channel (not "open an issue") and a supported-version policy; `LICENSE` is present and intentional (its absence = all-rights-reserved, blocking reuse).
+- [ ] `SECURITY.md` gives a private vulnerability-reporting channel (not "open an issue" — except on a *private* repo, where the collaborator-only tracker is acceptable and GitHub's private reporting cannot be enabled at all; the file must then name the switch to make on going public) and a supported-version policy; `LICENSE` is present and intentional (its absence = all-rights-reserved, blocking reuse).
 - [ ] Docs classified by Diátaxis mode; no page mixes tutorial/how-to/reference/explanation; titles declare the mode.
 - [ ] Tutorials run end-to-end on a clean environment (verified recently, versions pinned).
 - [ ] Docs live in-repo, change via reviewed PRs, and behavior-changing code PRs touch docs.
