@@ -877,12 +877,25 @@ file's failure mode, so §5b ends by pointing at `rules/11` §2.2: a reconciliat
 never reported a break has the inert-control signature, and must print its denominator on
 *both* sides.
 
-**Verification.** The deferred-constraint mechanism in `rules/01` was checked against the
-[PostgreSQL CREATE TRIGGER reference](https://www.postgresql.org/docs/current/sql-createtrigger.html):
-a constraint trigger may only be `AFTER` and `FOR EACH ROW`, and `DEFERRABLE INITIALLY
-DEFERRED` fires it at end-of-transaction rather than end-of-statement. Both restrictions
-are stated in the rule, because a reader who writes `BEFORE` or `FOR EACH STATEMENT` gets a
-syntax error rather than a silent downgrade. **Corrected during the review, not asserted:**
+**Verification — the DDL was executed, not just read.** The
+[PostgreSQL CREATE TRIGGER reference](https://www.postgresql.org/docs/current/sql-createtrigger.html)
+says a constraint trigger may only be `AFTER` and `FOR EACH ROW`, and that `DEFERRABLE
+INITIALLY DEFERRED` fires it at end-of-transaction rather than end-of-statement. The
+rule's schema and trigger were then run verbatim on **PostgreSQL 17.11** in a throwaway
+container, with the negative control first — because a deferred check that quietly fires
+at statement time would still *pass* a happy-path test:
+
+- one-sided write → `INSERT 0 1` **succeeds**, and the transaction fails at `COMMIT`
+  ("journal … unbalanced in USD: sums to -500"). That asymmetry is the whole proof that
+  the deferral is real;
+- legs of −500/+499 rejected; a journal netting to zero **across** USD and EUR rejected —
+  which is the claim that the check must group by currency;
+- replaying the same operation conflicts on `journals.external_id`, while NULL
+  `external_id` repeats freely for internal journals;
+- `BEFORE` and `FOR EACH STATEMENT` are **syntax errors**, so a reader who ignores those
+  two restrictions is stopped rather than silently downgraded.
+
+**Corrected during the review, not asserted:**
 the first reading of ch16/ch18 was written up as a geospatial coverage *gap*;
 `sota-databases/rules/03:40` already lists geometry under GiST, so the entry says "thin,
 not absent" and the idea is deferred rather than adopted.

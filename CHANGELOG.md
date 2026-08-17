@@ -21,8 +21,11 @@ told you to use "ledger rows with unique keys" — while `debit` and `double-ent
   journal; the balance is derived (a rollup is a cache a job re-derives and compares),
   and corrections are reversing entries. Sum-zero is enforced by a **deferred constraint
   trigger**, not app code — a one-sided write becomes an invariant the database rejects
-  instead of drift a customer reports months later. Verified against the PostgreSQL
-  `CREATE TRIGGER` reference: constraint triggers may only be `AFTER` and `FOR EACH ROW`.
+  instead of drift a customer reports months later. The DDL was **executed on PostgreSQL
+  17.11, negative control first**: a one-sided write returns `INSERT 0 1` and fails at
+  `COMMIT` — the asymmetry that proves the deferral is real — and `BEFORE` / `FOR EACH
+  STATEMENT` are syntax errors, so the two restrictions the rule states stop a reader
+  rather than silently downgrading the check.
 - **`sota-architecture` rules/03 §5b — reconciliation against an external system of
   record.** The word appeared eight times in the tree and never as a rule: every instance
   was domain-bound (orphaned accounts, a webhook backfill API, pipeline row counts).
