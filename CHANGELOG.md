@@ -5,6 +5,53 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+**The domain the library kept gesturing at.** An external intake
+([system-design-notes](https://github.com/liquidslr/system-design-notes), read at full
+depth, 29 files) landed three rules, all from the same blind spot: the library banned
+float money in five language skills, required prices to be recomputed server-side, and
+told you to use "ledger rows with unique keys" — while `debit` and `double-entry` scored
+**zero** hits across `skills/`. It knew everything about money except how to model it.
+
+### Added
+
+- **`sota-databases` rules/01 — ledgers and consumable balances.** The authoritative
+  state is append-only entries, at least two per movement summing to zero under one
+  journal; the balance is derived (a rollup is a cache a job re-derives and compares),
+  and corrections are reversing entries. Sum-zero is enforced by a **deferred constraint
+  trigger**, not app code — a one-sided write becomes an invariant the database rejects
+  instead of drift a customer reports months later. The DDL was **executed on PostgreSQL
+  17.11, negative control first**: a one-sided write returns `INSERT 0 1` and fails at
+  `COMMIT` — the asymmetry that proves the deferral is real — and `BEFORE` / `FOR EACH
+  STATEMENT` are syntax errors, so the two restrictions the rule states stop a reader
+  rather than silently downgrading the check.
+- **`sota-architecture` rules/03 §5b — reconciliation against an external system of
+  record.** The word appeared eight times in the tree and never as a rule: every instance
+  was domain-bound (orphaned accounts, a webhook backfill API, pipeline row counts).
+  §2–§4 buy *integrity*; reconciliation is the only thing that buys **completeness**.
+  Reconcile against the counterparty's extract, not your own event log; classify breaks
+  into auto-adjustable / manual / unclassified; age them. A reconciliation that has never
+  reported a break has the inert-control signature (`sota-code-security` rules/11 §2.2).
+- **`sota-architecture` rules/03 §5 — conservative leg ordering.** Debit before credit, so
+  a crash between legs leaves value *missing* (recoverable by compensation) rather than
+  *duplicated* (not, once spent). Credit-first only where the credit provably cannot be
+  consumed before the terminal state — enforced, not assumed.
+
+### Changed
+
+- Audit checklists gained the probe for each rule, not just the rule
+  (`grep -rn "SET balance"` for the mutable-balance CRITICAL; "has the reconciliation ever
+  been observed reporting a break?").
+- Routing surfaces updated so the new material is reachable: the router's routing table
+  rows for `sota-architecture` and `sota-databases`, and both skills' rules-index rows.
+- [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md): the intake recorded in full — three
+  adopted, two deferred (event-sourcing determinism; geospatial, which is **thin, not
+  absent**), four rejected, including one **rejected: contrary** (the source teaches CAP
+  as "pick two of three"; `rules/03` §1 is PACELC and per-operation). The source is
+  unlicensed and derivative of a copyrighted book, so nothing was copied — only the idea
+  class, re-derived.
+
 ## [1.22.8] - 2026-08-16
 
 **A rejection, and three counts that had drifted.** The as-deployed competitor

@@ -91,7 +91,7 @@ the top 3 fixes by risk-reduction-per-effort.
 
 | File | Read this when... |
 |------|-------------------|
-| `rules/01-choosing-and-modeling.md` | Picking an engine (SQL vs NoSQL/KV/columnar/time-series/vector); designing tables; deciding normalization, JSONB usage, primary keys, soft deletes, audit/history tables, or multi-tenancy. |
+| `rules/01-choosing-and-modeling.md` | Picking an engine (SQL vs NoSQL/KV/columnar/time-series/vector); designing tables; deciding normalization, JSONB usage, primary keys, soft deletes, audit/history tables, ledgers and account balances, or multi-tenancy. |
 | `rules/02-schema-migrations.md` | Writing or reviewing any migration; altering hot tables; planning zero-downtime schema changes; backfills; setting up migration tooling or testing. |
 | `rules/03-queries-and-indexes.md` | Writing/reviewing queries or ORM code; reading EXPLAIN ANALYZE; choosing index types or composite column order; pagination; N+1 suspicion; CTEs and window functions. |
 | `rules/04-transactions-concurrency.md` | Anything with concurrent writes: isolation levels, locking (FOR UPDATE, SKIP LOCKED, advisory), job queues, idempotency, deadlocks, long transactions, connection pooling. |

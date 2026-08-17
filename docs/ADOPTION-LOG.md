@@ -130,6 +130,15 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-08-16 | Same brief — its own routing question | Put the finding in `sota-observability` rules/05 §8 (synthetic monitoring) instead of `rules/12` | **rejected: wrong owner** | — §8 is about probing a **running production service** end-to-end ("from outside your network, from the regions users are in", tagging synthetic traffic). This finding is the correctness of a verification instrument you wrote to check your own work, which is `rules/12` §2's stated subject. No pointer added either: it would imply a relationship that is not there |
 | 2026-08-16 | Same brief — drafted wording changed on adoption | The draft said §2.2's rule "**inverts**" for pollers | **adopted with a correction** | — §2.2's *principle* (an unreadable result must never read as a terminal answer) is exactly what the tri-state preserves; only its *remedy* (abort) inverts. Shipped as "the principle holds, the remedy does not", because "the rule inverts" would license dropping §2.2 inside a watcher |
 | 2026-08-16 | Own roadmap item (open since the 2026-07-13 competitor benchmark) | Run an **as-deployed** competitor comparison — each library loaded the way its users install it, rather than a hand-picked content bundle | **rejected: measures corpus size and a saturated retrieval path, not guidance quality** | — verified against the pinned clones: **ECC ships 889 `SKILL.md` + `.claude-plugin/marketplace.json`, claude-skills 777 + `.claude-plugin/`/`.codex-plugin/`**, so two of three deploy through *our own* mechanism at 20× our corpus (41). The measurement would land on library size, and on a description-selection layer `run-desc-routing.py` already scores **+0.00 / saturated** ([RESULTS](../evals/results/RESULTS.md) §5). No neutral executor exists either — simulating a loader none of them ships lets our choices decide the result; real per-plugin sessions are non-deterministic and hard to blind. A retrieval **miss** would also score as a content zero, which reads as rigged when published about a named third party |
+| 2026-08-17 | [system-design-notes](https://github.com/liquidslr/system-design-notes) ch26 "Double-entry ledger system" | Money movement is modelled as **append-only entries that sum to zero**, at least two per movement — so a one-sided write is a rejected invariant, not drift | **adopted** | `sota-databases/rules/01` §"Ledgers" + checklist · unreleased |
+| 2026-08-17 | Same source, ch26 §Reconciliation + ch21 §Data monitoring and correctness | Where an external party holds authoritative state, a **periodic recompare against their own extract** is a required control, with a three-bucket break taxonomy (auto-adjustable / manual / unclassified) | **adopted** | `sota-architecture/rules/03` §5b + checklist · unreleased |
+| 2026-08-17 | Same source, ch27 (the invalid-choice table) | **Order multi-leg moves so partial completion is conservative** — debit before credit; a crash must leave value missing (recoverable), never duplicated (not) | **adopted** | `sota-architecture/rules/03` §5 + checklist · unreleased |
+| 2026-08-17 | Same source, ch27 §Event sourcing | The replay preconditions: the state machine must be **deterministic** (no wall clock, RNG, or external IO), and since commands are non-deterministic only the *event* log needs durability | **deferred** | revisit when `rules/03` §6 is next edited — the adoption bar there (snapshotting, upcasting, crypto-shredding) is the right home, but it is one paragraph and this is a fourth clause; not worth a standalone edit |
+| 2026-08-17 | Same source, ch16/ch18 (geohash, quadtree, S2, the naive 2-D range query) | Geospatial modelling and indexing — SRID/geography-vs-geometry, `ST_DWithin` vs a hand-rolled bounding box, haversine in the `WHERE` clause defeating the index | **deferred** | **thin, not absent**: `sota-databases/rules/03:40` already lists "geometry" as a GiST use case. Revisit if a second source raises it or a real audit hits it — the library has deliberately not gone broad, and this is a low-frequency surface |
+| 2026-08-17 | Same source, ch24 §Correctness verification (per-object checksums, scrubbing, erasure coding) | Detect silent at-rest corruption by storing checksums and re-verifying in the background | **rejected: vendor concern** | — the library's stance is use a vetted implementation; ZFS/Ceph/S3-class storage scrubs for you, and `sota-databases/rules/05:5` already requires rehearsed restores, which is the application-level check that matters. `sota-cloud-infrastructure/rules/05:88` covers the adjacent real risk (replication faithfully copies corruption) |
+| 2026-08-17 | Same source, ch06 (Merkle-tree anti-entropy, vector clocks, sloppy quorum, W+R>N) | Replica divergence detection and conflict resolution | **rejected: datastore-internal** | — these are things Cassandra/Dynamo-class stores do *for* the application; no defect an application engineer can commit |
+| 2026-08-17 | Same source, ch01/04/05/07–15/17–21/23/25 | Rate-limiter algorithms, consistent hashing, Snowflake IDs, watermarks & event-time, lambda/kappa + keep-the-raw-data, delivery semantics & the exactly-once myth, DLQ/retry/backoff, optimistic vs pessimistic locking, idempotency keys via unique constraint, never trust a client-supplied score or price, TSDB cardinality/downsampling, push-vs-pull metrics | **rejected: already ours** | — `sota-data-engineering/rules/03:148-155` (watermarks/event time/late data) and `rules/01:39-43` (raw lands immutably, replayability); `sota-architecture/rules/03` §3 (exactly-once myth), §7 (DLQ/backoff), §2 (idempotency keys); `sota-databases/rules/04:9-41` (lost update, FOR UPDATE, optimistic) and `:100-113` (idempotency via `ON CONFLICT`); `sota-code-security/rules/07:130` (prices/totals/balances recomputed server-side); `sota-observability` rules/02 + rules/04 |
+| 2026-08-17 | Same source, ch06 "CAP — only two of the three can be achieved", "CA systems"; ch01 master/slave | The pick-two framing of CAP | **rejected: contrary** | — contradicts `sota-architecture/rules/03` §1, which is PACELC and **per-operation** ("balance reads are linearizable, product-view reads are eventually consistent with ≤5 s staleness"), not per-system. The terminology is also dated |
 
 ## Entries
 
@@ -816,6 +825,91 @@ which [`ROADMAP.md`](ROADMAP.md) records as the only remaining route to measurin
 recall — does not survive contact: the public history is 18 commits starting from a
 squashed `Initial release — Span Chain v0.1.0` (2026-06-07), so the pre-fix verifier is
 not in it. Only the narrative is.
+
+**Measurement status:** adopted on reasoning. **No efficacy lift is claimed or measured.
+Do not cite one.**
+
+### 2026-08-17 — system-design-notes (liquidslr), three adopted, two deferred, four rejected
+
+Source: <https://github.com/liquidslr/system-design-notes> — 12.3k stars, 2.4k forks,
+created 2024-12-24, last push 2026-08-12. Read: all 29 Markdown files (~356 KB of prose;
+the other ~83 MB is figures), plus repo metadata via `gh api`. It is chapter notes on
+*System Design Interview — An Insider's Guide* (Vol 1+2), which its own README states.
+
+**The licence decides the shape of every adoption here.** `gh api` returns
+`"license": null`, and a recursive tree scan for `licen|copying|copyright` finds nothing —
+the root holds only `.gitignore` and `Readme.md`. So the repo is all-rights-reserved *and*
+derivative of a copyrighted book, while this library ships CC BY 4.0. Nothing was copied:
+no text, no tables, no figures, and not the chapter structure, which is the book's. What
+was taken is the *idea class*, re-derived and re-worded here, and the credit belongs to
+the idea rather than to this repo. That constraint is worth recording because it will
+recur — notes-on-a-book repos are a large and popular genre, and most of them are
+unlicensed.
+
+**Interview-prep material is a weak source, and the yield reflects that.** Twenty-three of
+the twenty-eight chapters produced nothing: rate-limiter algorithms, consistent hashing,
+Snowflake IDs, quorum arithmetic, watermarks, lambda/kappa, delivery semantics, DLQs,
+optimistic locking and idempotency keys are all already ours, in most cases in more
+operational detail than the source carries. One chapter is actively **contrary** — ch06
+teaches CAP as "pick two of three" with a "CA system" category, where `rules/03` §1 is
+PACELC and per-operation. The three adoptions all come from the Vol-2 financial chapters
+(26–28), which is the part of the book with a domain the library had not modelled.
+
+**The gap they exposed is money, specifically.** The library had `debit` and `double-entry`
+at **zero** hits across `skills/`, confirmed by a second sweep on the concepts
+(`accounting|two legs|sums to zero|money movement`) that returned only unrelated matches.
+It knew a great deal *about* money — float money is banned in five language skills, prices
+must be recomputed server-side, `UPDATE ... WHERE balance >= x` is the atomic-claim
+pattern, counters are not idempotent so use "ledger rows with unique keys"
+(`sota-databases/rules/04:117`) — but nothing said how to **model** the ledger those rules
+kept gesturing at, and nothing carried the balanced-pair invariant that turns a one-sided
+write into a constraint violation. Half the rule was already there for a different reason;
+the half that makes the database reject the bug was missing.
+
+**Reconciliation was present eight times and absent as a rule.** Every existing hit is
+domain-bound: orphaned accounts (`sota-identity-access/rules/04:51`), a webhook consumer's
+backfill API (`sota-api-design/rules/06:119`), pipeline row counts
+(`sota-data-engineering/rules/02:103`), GitOps drift. None of them generalise, and the
+general statement is the one that matters — it is the **completeness** check on a seam
+where §2–§4 only buy integrity, which is the same integrity-vs-completeness distinction
+`sota-code-security/rules/04` §8 already draws for audit ledgers. It also inherits that
+file's failure mode, so §5b ends by pointing at `rules/11` §2.2: a reconciliation that has
+never reported a break has the inert-control signature, and must print its denominator on
+*both* sides.
+
+**Verification — the DDL was executed, not just read.** The
+[PostgreSQL CREATE TRIGGER reference](https://www.postgresql.org/docs/current/sql-createtrigger.html)
+says a constraint trigger may only be `AFTER` and `FOR EACH ROW`, and that `DEFERRABLE
+INITIALLY DEFERRED` fires it at end-of-transaction rather than end-of-statement. The
+rule's schema and trigger were then run verbatim on **PostgreSQL 17.11** in a throwaway
+container, with the negative control first — because a deferred check that quietly fires
+at statement time would still *pass* a happy-path test:
+
+- one-sided write → `INSERT 0 1` **succeeds**, and the transaction fails at `COMMIT`
+  ("journal … unbalanced in USD: sums to -500"). That asymmetry is the whole proof that
+  the deferral is real;
+- legs of −500/+499 rejected; a journal netting to zero **across** USD and EUR rejected —
+  which is the claim that the check must group by currency;
+- replaying the same operation conflicts on `journals.external_id`, while NULL
+  `external_id` repeats freely for internal journals;
+- `BEFORE` and `FOR EACH STATEMENT` are **syntax errors**, so a reader who ignores those
+  two restrictions is stopped rather than silently downgraded.
+
+**Corrected during the review, not asserted:**
+the first reading of ch16/ch18 was written up as a geospatial coverage *gap*;
+`sota-databases/rules/03:40` already lists geometry under GiST, so the entry says "thin,
+not absent" and the idea is deferred rather than adopted.
+
+**Sample size is one.** Every adoption rests on a single book's treatment, which the log's
+own discipline would normally push toward `deferred`. They were taken anyway because none
+of the three is a project's trade-off: double-entry bookkeeping predates computing,
+reconciliation is standard practice wherever two ledgers meet, and debit-before-credit is a
+statement about which failure states are recoverable, not a preference. The two ideas that
+*are* judgement calls — the event-sourcing determinism clause and geospatial — are deferred
+with the condition to revisit.
+
+**Not added to the top-10.** `sota-architecture`'s non-negotiables list is exactly ten and
+curated; neither new rule displaces anything on it.
 
 **Measurement status:** adopted on reasoning. **No efficacy lift is claimed or measured.
 Do not cite one.**
