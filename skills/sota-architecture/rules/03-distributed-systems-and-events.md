@@ -102,6 +102,55 @@ queue), which must be designed, not improvised.
 **Rule:** Every saga has a timeout and a terminal failure state visible in
 monitoring. Sagas stuck "in progress" for hours are a High finding.
 
+**Rule:** Order the steps so a partial completion leaves the *conservative*
+state — take value out of the source first, put it into the destination last.
+Debit then credit; consume the coupon then grant the discount; decrement stock
+then confirm the order; revoke the old grant then issue the new one. A crash
+between legs then leaves value **missing**, which compensation or retry can
+recover, instead of value **duplicated**, which nothing recovers once the
+destination has spent it. Credit-first is defensible only when the credited
+resource provably cannot be consumed before the saga reaches its terminal state
+— and that must be *enforced* (a pending/held balance excluded from the
+spendable one), never assumed. The cost is real: debit-first strands the payer's
+value while the saga is in flight, which is why the timeout-to-terminal-state
+above and a user-visible pending status are part of this rule, not extras.
+
+## 5b. Reconciliation: the completeness check on an external integration
+
+**Rule:** Where an external system holds authoritative state that you also
+record — payment processor, exchange, carrier, billing vendor, another team's
+service — the two records *will* diverge: a webhook is dropped, a call times out
+after the far side committed, a retry posts twice. Idempotency and retries bound
+the damage; neither tells you a divergence happened. A periodic reconciliation
+does. On a money-, inventory-, or entitlement-bearing integration, its absence
+is a High finding. Note what this is: §2–§4 give you *integrity* — each record
+you wrote is correct. Reconciliation is the only thing that gives you
+**completeness** — that no record is missing.
+
+**Rule:** Reconcile against the counterparty's own extract, not against your own
+records. Their settlement file, statement, or list endpoint is an independent
+observation; recomputing your database from your own event log proves internal
+consistency and says nothing about the seam. Where they publish no extract, the
+paginated read API over the period is the substitute — the same call the webhook
+was meant to save you (webhook senders owe consumers exactly this, see
+`sota-api-design` rules/06).
+
+**Rule:** Classify breaks; a count alone is not a result. Three buckets with
+three different actions: **(a)** known shape, safe to adjust by a written rule —
+automate it, and log every adjustment; **(b)** known shape, needs a human —
+queue it; **(c)** unclassified — page someone, because an unclassified break is
+indistinguishable from a bug still producing them. An automated (a) adjustment
+on a money path posts as a reversing ledger entry, never an in-place correction
+(`sota-databases` rules/01). Breaks also **age**: alert on the oldest unresolved
+break, not only on the count, or one permanently stuck break becomes background
+noise that hides the next twenty.
+
+**Rule:** A reconciliation that has never reported a break is not evidence of
+correctness — it is the inert-control signature. Print the denominator (rows
+compared on *each* side, and the period covered), fail closed when either side
+reads zero, and prove it can fire by seeding a known break. Diagnostics:
+`sota-code-security` rules/11 §2.2 and rules/12.
+
 ## 6. Event-driven architecture: events are facts
 
 **Rule:** An event states a fact that happened (`PaymentCaptured`), in past
@@ -278,6 +327,8 @@ weekly:
 - Do public write APIs accept idempotency keys?
 - Does anything depend on exactly-once *delivery*? Any naked dual-writes (DB write + publish without outbox/CDC)?
 - Does every multi-service workflow have defined, idempotent compensations and a timeout-to-terminal-failure path? Can you answer "where is workflow X stuck" from a dashboard?
+- Do multi-leg money/inventory/entitlement workflows take value from the source *before* granting it at the destination? Where a credit lands first, is that balance provably held out of the spendable one — enforced, not assumed?
+- Does every integration where an external party holds authoritative state have a periodic reconciliation against **their** extract (not your own event log), with breaks classified into auto-adjustable / manual / unclassified, aged, and alerted? Has that reconciliation ever been observed reporting a break, and does it print how many rows it compared on each side?
 - Are events past-tense facts with producer ownership, or commands in disguise?
 - Does every queue have bounded size, retry-with-backoff, DLQ, DLQ alerting, and a tested redrive runbook?
 - Are poison messages separated from transient failures, or retried identically?

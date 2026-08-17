@@ -190,6 +190,66 @@ Use trigger-maintained history tables or a temporal extension; query with
 for domains that genuinely replay events — it is an architecture, not a table
 pattern.
 
+## Ledgers: money and consumable balances
+
+### Rule: The balance is derived from append-only entries, never a column you UPDATE.
+A mutable `accounts.balance` records the result of every past write and the
+reason for none of them. It drifts silently when one side of a transfer fails,
+and a retried `balance = balance - $1` is indistinguishable from a second
+payment (file 04: counters are not idempotent). Model the movement instead:
+
+```sql
+CREATE TABLE journals (              -- one row per movement
+  id          uuid PRIMARY KEY,
+  external_id text UNIQUE,           -- the operation this posts for; a retry conflicts
+  reason      text NOT NULL,
+  posted_at   timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE ledger_entries (
+  id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  journal_id  uuid   NOT NULL REFERENCES journals(id),
+  account_id  bigint NOT NULL REFERENCES accounts(id),
+  amount      bigint NOT NULL,       -- signed minor units: negative debit, positive credit
+  currency    text   NOT NULL CHECK (currency ~ '^[A-Z]{3}$')
+);
+CREATE INDEX ledger_balance ON ledger_entries (account_id, currency) INCLUDE (amount);
+```
+- **Every movement posts at least two entries summing to zero**, in one
+  transaction, under one `journal_id`. That is the whole point: a one-sided
+  write becomes an invariant the database rejects, rather than drift you learn
+  about months later from a customer.
+- Nothing UPDATEs or DELETEs an entry. A mistake is corrected by posting the
+  reversing entry, which preserves the history of the mistake.
+- `external_id UNIQUE` on the journal, not the entry, is the idempotency key —
+  one movement, one external operation, however many legs. NULL repeats freely,
+  so internal journals need no synthetic value.
+- Balance = `SUM(amount)`. When that gets slow, add a rollup (or a per-period
+  closing balance and sum only entries since). The rollup is a **cache** — a job
+  that re-derives it from the entries and compares is the cheapest correctness
+  alarm you will ever own; a rollup that cannot be re-derived is just the
+  mutable column again.
+
+### Rule: Enforce sum-zero in the database, not in the service that writes it.
+`CHECK` cannot span rows, so the invariant needs a constraint that runs once the
+whole journal is written. In Postgres that is a deferred constraint trigger —
+per the [CREATE TRIGGER
+reference](https://www.postgresql.org/docs/current/sql-createtrigger.html), a
+constraint trigger may only be `AFTER` and `FOR EACH ROW`, and
+`DEFERRABLE INITIALLY DEFERRED` moves the check from end-of-statement to
+end-of-transaction:
+
+```sql
+CREATE CONSTRAINT TRIGGER ledger_balanced
+  AFTER INSERT ON ledger_entries
+  DEFERRABLE INITIALLY DEFERRED
+  FOR EACH ROW EXECUTE FUNCTION assert_journal_sums_to_zero();
+-- the function: SUM(amount) per (journal_id, currency) must be 0, else RAISE
+```
+Enforced in application code only, the invariant holds for the code paths that
+remembered it. Group by **currency**: a journal netting to zero across two
+currencies is two unbalanced journals: cross-currency movement posts through an
+explicit FX account so both sides balance in their own unit.
+
 ## Multi-tenancy
 
 ### Rule: Default to shared tables with `tenant_id` + Row-Level Security.
@@ -260,6 +320,12 @@ multi-tenant system: HIGH.
       business states.
 - [ ] Audit/history requirements met by trigger-based append-only tables with
       actor attribution and partitioned retention — not ad hoc app logging.
+- [ ] Money and consumable balances: append-only entries, at least two per
+      movement summing to zero, with sum-zero enforced by a **deferred DB
+      constraint** rather than app code; balance derived (or a rollup that a job
+      re-derives and compares); corrections posted as reversing entries. A
+      mutable `balance` column UPDATEd in place on a money path is CRITICAL —
+      `grep -rn "balance *= *balance\|SET balance" migrations/ src/`.
 - [ ] Multi-tenant: RLS enabled AND forced on every tenant-scoped table,
       SET LOCAL tenant context, non-BYPASSRLS app role, tenant_id-leading
       indexes, automated cross-tenant isolation test.
