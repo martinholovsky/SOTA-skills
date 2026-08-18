@@ -98,8 +98,10 @@ Findings name the control they violate — not just "this looks wrong":
 
 Named standards are the floor. Most of the library is the practice layer no
 regulation writes down: cancellation & backpressure, retries with jitter,
-circuit breakers, outbox/saga, zero-downtime migrations, measure-first
-performance, API evolvability, per-language idioms, SLOs, test-suite health.
+circuit breakers, outbox/saga, double-entry ledgers and the reconciliation
+that proves an integration is *complete* rather than merely correct,
+zero-downtime migrations, measure-first performance, API evolvability,
+per-language idioms, SLOs, test-suite health.
 
 **Measured, not asserted** — library vs. an *unguided model* (same model, no
 library); clean, blind-judged, stable across samples ([results & method →](docs/WHY-IT-WORKS.md)):
@@ -199,14 +201,21 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   stated. ([methodology §5, §7](skills/sota/rules/01-audit-methodology.md))
 
 **Where this is *not* backed by a number:** the measured lift is in BUILD
-(completeness, freshness). **Seven audit instruments across three designs all sit at
+(completeness, freshness). **Nine audit instruments across four designs all sit at
 +0.00** — recognition (snippets, cross-file repo, precision), procedure (does the model
-actually mutate the control and re-run the build), and question-set (an unscoped
-"audit this repository", with defect classes outside the standard repertoire). A
-frontier model handed the code is already at ceiling, and it stays at ceiling when you
-stop telling it what to look for. The audit half is justified by gap analysis and by
-real defects it found in this repo — **not by a measured lift**, and it is reported
-that way rather than implied.
+actually mutate the control and re-run the build), question-set (an unscoped
+"audit this repository", with defect classes outside the standard repertoire), and,
+since 2026-08-14, a **real repository at a real vulnerable commit** — the one design a
+synthetic fixture provably could not stand in for, because a planted defect is a
+deviation from its filler and agents find deviations without security reasoning. That
+last one is the strongest form of the test and it closed the question: across 16 real
+BOLA sites in Harbor v2.5.1 both arms recalled **15/16**, and across 59 blinded
+findings both scored precision **1.00**. A frontier model handed the code is already at
+ceiling — on synthetic code, on real code, and when you stop telling it what to look
+for. The audit half is justified by gap analysis and by real defects it found in this
+repo — **not by a measured lift**, and it is reported that way rather than implied.
+There will be no tenth accuracy instrument: only a different *dependent variable*
+(time-to-find, report usability, reach for a non-expert) is still untested.
 [Every null, the retraction, and the pre-registered predictions that were wrong →](evals/results/RESULTS.md)
 
 ### How the numbers are kept honest

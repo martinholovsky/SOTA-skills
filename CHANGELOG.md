@@ -5,7 +5,7 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.22.9] - 2026-08-18
 
 **The domain the library kept gesturing at.** An external intake
 ([system-design-notes](https://github.com/liquidslr/system-design-notes), read at full
@@ -13,6 +13,11 @@ depth, 29 files) landed three rules, all from the same blind spot: the library b
 float money in five language skills, required prices to be recomputed server-side, and
 told you to use "ledger rows with unique keys" — while `debit` and `double-entry` scored
 **zero** hits across `skills/`. It knew everything about money except how to model it.
+
+Cutting it also turned the lens on the docs, which is where most of this entry's line
+count went: a release cut is the moment stale claims are cheapest to catch.
+
+**Front door checked:** double-entry · reconciliation · ledger
 
 ### Added
 
@@ -51,6 +56,40 @@ told you to use "ledger rows with unique keys" — while `debit` and `double-ent
   as "pick two of three"; `rules/03` §1 is PACELC and per-operation). The source is
   unlicensed and derivative of a copyrighted book, so nothing was copied — only the idea
   class, re-derived.
+
+### Fixed — four stale claims, found by re-reading rather than by a gate
+
+None of these had a gate that could catch them; all four were prose asserting a state
+the tree had moved past.
+
+- **README claimed "seven audit instruments across three designs"** while the scoreboard
+  carried **nine rows across four**. The missing two are the strongest form of the test —
+  a real repository at a real vulnerable commit — so the stale number understated the
+  evidence rather than overstating it: across 16 real BOLA sites in Harbor v2.5.1 both
+  arms recalled 15/16, and across 59 blinded findings both scored precision 1.00.
+- **`evals/DESIGN-real-repo-audit.md` still announced itself as "nothing measured yet",
+  "No run, no number, no lift"** — four days after the eval ran and closed the question.
+  A reader following the link from RESULTS would have concluded the opposite of the
+  truth. Re-headed as executed, with the outcome and a pointer to the results; the
+  method sections are kept, since those held up.
+- **[RESULTS.md](evals/results/RESULTS.md)** called the audit question "Final" at seven
+  instruments. The dated paragraph is left standing — it was true when written, and
+  rewriting history is not correcting it — with a **superseding** note above it: closed
+  at nine instruments and four designs, and no tenth accuracy instrument.
+- **[docs/ROADMAP.md](docs/ROADMAP.md)** carried a router count of 491/500 (actual:
+  **494**, six lines of headroom) and a "pending release cut" for **1.22.4**, five patch
+  versions ago.
+
+### Changed — docs
+
+- [AGENTS.md](AGENTS.md) now honours its own "keep it under 200 lines" rule for the
+  first time in several releases — **208 → 199** — by compressing narration of
+  *closed* incidents while keeping every operative rule. It is the one file that loads
+  into every session, so its length is a live cost, not a tidiness question.
+- [docs/ROADMAP.md](docs/ROADMAP.md) gained the two deferred ideas as an explicit open
+  item, so neither gets silently dropped or silently re-litigated.
+- The negative-control harness was **re-run** rather than cited from memory:
+  `PASS: 21/21 mutations caught by the intended check`.
 
 ## [1.22.8] - 2026-08-16
 
@@ -3564,6 +3603,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.22.9]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.9
 [1.22.8]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.8
 [1.22.7]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.7
 [1.22.6]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.6

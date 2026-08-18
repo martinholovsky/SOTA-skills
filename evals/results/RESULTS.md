@@ -77,6 +77,20 @@ deviation from generated filler, and agents find deviations mechanically (bare a
 defects could still test it. Original framing: an agentic large-repo audit
 (too big to hold at once); logged in the [roadmap](../../docs/ROADMAP.md).
 
+**Closed (2026-08-14) — nine instruments, four designs. The "Final (2026-07-30)"
+paragraph below is superseded on its scope, not its conclusion.** It called the question
+at seven instruments while naming the one design that could still overturn it: a *real*
+repository at a *real* vulnerable commit. That design was then built and run — Harbor
+v2.5.1, 16 real BOLA sites, live agents — and it returned the same answer on both
+dependent variables: recall **15/16 = 15/16**, precision **1.00 = 1.00** over 59 blinded
+findings with the adjudicator controlled at 4/4 (rows above). The audit arm is therefore
+**+0.00 across nine instruments and four designs**, and the strongest available form of
+the test is among them. **Do not build a tenth accuracy instrument** — recall and
+precision are both exhausted. Only a different *dependent variable* (time-to-find,
+report usability, reach for a non-expert) is untested, and calibration remains
+measurable but would measure adherence to our own doctrine, never to be reported as a
+lift.
+
 **Final (2026-07-30) — seven instruments, three designs, one answer: stop building
 audit-recall instruments.** After the procedure design also returned +0.00, the
 remaining explanation was that every instrument *hands the model its search space*

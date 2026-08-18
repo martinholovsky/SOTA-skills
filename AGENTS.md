@@ -50,45 +50,38 @@ one — lives in the script's own header, at the point of use, and the practical
 | 15 | the router's **library map** omits a `rules/NN` file that exists, or names one that doesn't — checks 7 and 10 both miss this, and `rules/11` went unlisted for two releases |
 | 16 | the hook `README.md` **documents** differs from the one `install.sh` **writes** (`HOOK_CMD`) — the README's is what a reader copies by hand, so a stale block is the version that spreads |
 
-**Only instruction files are capped.** A file is capped if and only if an agent
-loads it *as instructions* — `skills/*/SKILL.md` and `skills/*/rules/*.md`, and
-nothing else in the repo. README, CHANGELOG, `docs/`, `evals/`, this file and every
-script are **uncapped** and deliberately so (decided 2026-07-15): navigability there
-comes from a table of contents and [docs/INDEX.md](docs/INDEX.md), not a line
-ceiling. **If you find a line-cap claim anywhere that does not say *skill files*, it
-is stale — fix it.** The 500 matches the Agent Skills guidance (*"keep `SKILL.md`
-under 500 lines; move detailed reference material to separate files"*), and those
-separate files are exactly what `rules/*.md` are.
+**Only instruction files are capped** — a file is capped iff an agent loads it *as
+instructions*: `skills/*/SKILL.md` and `skills/*/rules/*.md`, nothing else. README,
+CHANGELOG, `docs/`, `evals/`, this file and every script are **uncapped**,
+deliberately (decided 2026-07-15) — navigability there comes from a table of contents
+and [docs/INDEX.md](docs/INDEX.md), not a ceiling. **A line-cap claim anywhere that
+does not say *skill files* is stale — fix it.** The 500 matches the Agent Skills
+guidance (*"keep `SKILL.md` under 500 lines; move detailed reference material to
+separate files"*), and `rules/*.md` are exactly those separate files.
 
-**This file is the exception that proves it.** `CLAUDE.md` and `GEMINI.md` symlink
-here, so this file loads into **every** session — the platform's guidance is to
-*"target under 200 lines per CLAUDE.md file"*, because long always-loaded files
-reduce adherence. That is a different constraint from invariant 1 and is not gated.
-Keep it under 200: put detail in `CONTRIBUTING.md` and leave a pointer.
+**This file is the exception.** `CLAUDE.md` and `GEMINI.md` symlink here, so it loads
+into **every** session, where the platform's guidance is *"target under 200 lines"* —
+long always-loaded files reduce adherence. Ungated, and a different constraint from
+invariant 1. Keep it under 200: detail goes to `CONTRIBUTING.md` behind a pointer.
 
 **Every file-list-driven check reports its denominator** (`ok (257 rules files)`)
-and **fails closed on an empty scope**. Added 2026-07-30 after a mutation showed
-checks 2 and 10 printing `ok` — and the script exiting 0 — while examining *zero*
-files. **This sentence was false for two more checks until 2026-08-16**: 4 and 8
-were never retrofitted with `scope()`, so a drifted glob printed `ok` and exited 0
-in the one file that states the rule. Both now print counts and were watched to
-fail closed. If you add a check, the sentence is a promise you have to keep. `0 checked, 0 failed, exit 0` is the signature of a gate that verifies
-nothing (`sota-code-security` rules/11 §2.2). Adding a check? The script's header
-carries the three rules that file learned the hard way: watch it fail first, print
-your denominator, and skip rather than guess.
+and **fails closed on an empty scope** — `0 checked, 0 failed, exit 0` is the
+signature of a gate that verifies nothing (`sota-code-security` rules/11 §2.2).
+Added 2026-07-30 after checks 2 and 10 printed `ok` over *zero* files; 4 and 8 were
+only retrofitted 2026-08-16, so this very sentence was false for a while in the one
+file that states the rule. If you add a check that is a promise you must keep, and
+the script's header carries the three rules the lesson produced: watch it fail
+first, print your denominator, skip rather than guess.
 
-**Both gaps that paragraph named are now closed** (they were open for one release).
-*Adding a `rules/NN` file?* Invariant 10 checks it is indexed by its own `SKILL.md`
-and **invariant 15** checks the router's library map lists it, both directions —
-that map was unchecked, which is how `rules/11` sat unlisted for two releases.
-`skills/sota/SKILL.md` sits at **494 lines against the 500 cap** (re-counted
-2026-08-16; it has read "exactly 500" and then "491" here while the file moved
-underneath both). **Six lines left.** The next addition to the router almost
-certainly has to reflow or replace an existing line rather than append one — and
-the number in this sentence has been wrong twice, so re-count with
-`grep -c '' skills/sota/SKILL.md` rather than trusting it. Note the gates enumerate via
-`git ls-files`, so an **unstaged new file is invisible** to them — `git add`
-before believing a count.
+*Adding a `rules/NN` file?* Invariant 10 checks its own `SKILL.md` indexes it and
+**invariant 15** checks the router's library map lists it, both directions — that
+map went unchecked long enough for `rules/11` to sit unlisted for two releases.
+`skills/sota/SKILL.md` sits at **494 lines against the 500 cap — six left**, so the
+next router addition almost certainly reflows or replaces a line rather than
+appending one. That number has been wrong twice (it has read "exactly 500", then
+"491"), so re-count with `grep -c '' skills/sota/SKILL.md` rather than trusting it.
+The gates enumerate via `git ls-files`, so an **unstaged new file is invisible** to
+them — `git add` before believing a count.
 
 **`scripts/check-negative-controls.sh` proves our gates can still fail.** CI runs it
 as its own job, over **two** subjects: `check-invariants.sh` (part A) and
@@ -97,8 +90,9 @@ check* to be the one that complains — a non-zero exit for any other reason is 
 **FALSE PASS**, not a catch. Part A mutates a good tree in a disposable git worktree;
 part B is inverted — it builds a fully-configured fake machine (`CLAUDE_CONFIG_DIR`
 + a throwaway repo + a stub `gh`) and removes one thing per probe. **21 probes**
-(2026-08-16; was 16, and before that the sentence said 15 while omitting invariant
-16): invariants **1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16** — 11 of 16 — and
+(re-run 2026-08-18: `PASS: 21/21 mutations caught by the intended check`; the count
+in this sentence has itself been wrong twice, so run it): invariants
+**1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16** — 11 of 16 — and
 verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 10a. The five unprobed invariants
 (5, 9, 11, 12, 14) each need state a disposable worktree lacks — a tag, a merge
 base, an mtime — and the harness prints that reason. **A probe now asserts its own
@@ -172,13 +166,12 @@ the setting. The pre-commit hook scans each commit locally.
   a script cannot do — whether the agent file's content is meaningful and whether
   its claims are still *true*
 - [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md) — the **external-idea intake
-  ledger**: every idea evaluated from an outside repo, paper, or review with a
-  verdict and reason (adopted / rejected / deferred / superseded). A rejection
-  with its reason stops the same idea being re-litigated; a `rejected: already
-  covered` verdict must cite the file:line that covers it. **Adoptions do not
-  only come from outside**: at v1.19.9 a separate agent session applying the
-  library handed back three proposals citing this repo's own `file:line` — the
-  ledger takes those on the same terms, rejections included
+  ledger**: every idea from an outside repo, paper or review, with a verdict and
+  reason (adopted / adopted-with-a-correction / rejected / deferred / superseded).
+  A recorded rejection stops the idea being re-litigated; `rejected: already
+  covered` must cite the file:line that covers it. Intake is not only external —
+  a session *applying* the library, and an unlicensed source whose ideas can be
+  taken but whose text cannot, both land here on the same terms
 - [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md) — which of this repo's
   conventions are **enforced** (16 invariants + 5 more inside the eval runners) and
   which are prose, with the three filters a convention must pass to earn a gate
@@ -189,16 +182,14 @@ the setting. The pre-commit hook scans each commit locally.
 - [RELEASING.md](RELEASING.md) — how to cut a release, including every
   version- and count-bearing surface (README, router, manifests, social
   preview)
-- [docs/MAINTENANCE.md](docs/MAINTENANCE.md) — accuracy sweep runbook +
-  eval harness (keeping fast-moving claims true and measuring efficacy)
+- [docs/MAINTENANCE.md](docs/MAINTENANCE.md) — accuracy sweep runbook + eval harness
 - [docs/WHY-IT-WORKS.md](docs/WHY-IT-WORKS.md) — the measured-efficacy case
   (lift **vs. an unguided model**, plus a scoped head-to-head vs. named competing
   libraries) + the design
   benefits; keep its numbers in sync with the eval results when they change
 - [docs/WHY-COMPLETENESS-RESIDUAL.md](docs/WHY-COMPLETENESS-RESIDUAL.md) — why a
-  with-library build still occasionally drops a cross-cutting rule (a salience /
-  context-length attention effect, **not** a coverage gap) and the BUILD-workflow
-  design that counters it
+  with-library build still drops a cross-cutting rule now and then (a salience /
+  context-length attention effect, **not** a coverage gap) + the counter-design
 - [SECURITY.md](SECURITY.md) — reporting bad guidance or a leaked secret
 - [CHANGELOG.md](CHANGELOG.md) — release history (top entry = current version;
   also mirrored in `VERSION`); older releases are archived to keep every file
