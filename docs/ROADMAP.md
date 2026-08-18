@@ -21,6 +21,7 @@ Every number in this table was re-counted on 2026-08-18, not carried forward.
 | 3 | **Competitor comparison — content-only re-run DONE 2026-08-14/15, claim holds. As-deployed REJECTED 2026-08-16** | Re-run at the pinned SHAs with the same build model: SOTA 98.7 / ECC 84.9 / cursorrules 80.0 / claude-skills 77.0 / unguided 58.2, 17 wins / 4 ties / 0 losses of 21, unguided arm reproducing to 0.2 points as the drift control. **As-deployed is rejected, not deferred:** it measures corpus size and a retrieval path we have already found saturated, not guidance quality — reasoning below the table | Nothing. Do not re-open without a new argument that answers the corpus-size confound |
 | 4 | **Router trim** — 2× the spec's ~5k-token recommendation | Deliberate: trimming breaks `ROUTER_BUILD_SHA` and the +0.39's comparability. **494/500 lines** on 2026-08-18 (re-counted with `grep -c '' skills/sota/SKILL.md`; it has read "exactly 500", then 491, then 494 — never trust the number in prose) — **six lines of headroom**, so the next router addition almost certainly reflows or replaces a line rather than appending one | **Only when the router must grow** — then trim and re-baseline together |
 | 5 | **6-month accuracy sweep** | Scheduled | `LAST-VERIFIED` reads **2026-07-08**, so due ~**2027-01-08**; bump it only after a full pass |
+| 7 | **`sota-rust` has no `std::process::Command` coverage at all** (found 2026-08-18 while validating cross-references for `sota-sandboxing/rules/04` R5.3a) | Out of scope for a batch whose subject was the *placement* of existing language guidance; writing a Rust subprocess section on the spot would have been unvalidated breadth | Confirm with `grep -rn 'process::Command' skills/sota-rust/` (read **zero** on 2026-08-18). Then either add argv/env/deadline guidance to `sota-rust/rules/05` §security, or decide deliberately that `sota-sandboxing/rules/04` R5.1's one-line table is the intended home and say so there. Do **not** infer the Rust deadline semantics from Go's or Python's — both were measured this session and they *disagree* |
 | 6 | **Two deferred ideas from the 2026-08-17 intake** ([ADOPTION-LOG](ADOPTION-LOG.md) 2026-08-17) | Both are one source's judgement call, not established practice, so neither cleared the bar for `adopted` | **(a) Event-sourcing replay preconditions** — the state machine must be deterministic (no wall clock, RNG, external IO), and since commands are non-deterministic only the *event* log needs durability. Fold into `sota-architecture/rules/03` §6 the next time that paragraph is edited; not worth a standalone PR. **(b) Geospatial modelling/indexing** — **thin, not absent**: `sota-databases/rules/03:40` already lists geometry under GiST, so this is SRID/geography-vs-geometry, `ST_DWithin` vs a hand-rolled bounding box, and haversine in `WHERE` defeating the index. Revisit only if a second source raises it or a real audit hits it |
 
 **Why the as-deployed competitor comparison is rejected (2026-08-16), not deferred.**
@@ -61,6 +62,32 @@ adding a skill, script, or gate. Invariant 14 requires each one to carry a
 `**Front door checked:**` line whose terms resolve, and at the 1.22.9 cut it did its job —
 the release's own capability (double-entry ledgers, reconciliation) read **zero** in
 `README.md` until the cut added the sentence.
+
+**This cycle (PR #236, 2026-08-18) — a session transcript, five for five.** A session
+that *applied* the library to Go subprocess sandboxing handed back five proposals; all
+five landed, **three of them with a correction**, which is the field-brief pattern
+holding at a larger sample (see [ADOPTION-LOG](ADOPTION-LOG.md) 2026-08-18). Three
+things worth carrying forward:
+
+1. **The library's own rules had a direction.** `rules/12`'s mutation probe installs the
+   *permissive* no-op, `sota-testing` rules/09 §1 says the assertion is refusal "not that
+   the happy path works", and `sota-sandboxing` rules/01's probe list was **entirely**
+   denial arms. Three independent sites all pointed one way, so a control that blocks
+   *everything* passed all of them. When a class is missing, check whether the existing
+   rules are asymmetric rather than absent — that shape is invisible to a coverage grep,
+   because the rule *is* there.
+2. **Both of the transcript's self-reported misses were already ours**, the zsh one
+   **twice** (routing rule 17 and `rules/12` §2). A third statement was deliberately not
+   written: that is the effect measured in
+   [WHY-COMPLETENESS-RESIDUAL](WHY-COMPLETENESS-RESIDUAL.md), where adding the missing
+   rule made adherence *worse*. The fix taken was **placement** — a cross-reference at
+   the paragraph where the exec call gets written, not another statement of the rule.
+3. **Reviewing the rendered diff caught two defects the invariants could not.** A
+   comparison table in `rules/12` contained a cell filled in by symmetry rather than by a
+   run (a 400 MiB deny arm at a 512 MiB `RLIMIT_DATA` cap — which would have *succeeded*),
+   and an "orders of magnitude" claim that the table beneath it contradicted. Both were
+   mine, both survived authoring, and neither is machine-checkable. Read the diff as a
+   reader, not as the author.
 
 **Closed 2026-08-16 — the instrument audit (PRs #223, #224, #225).** Prediction
 [pre-registered and committed before any finding](../evals/results/2026-08-16/PRE-REGISTRATION-INSTRUMENT-AUDIT.md);
