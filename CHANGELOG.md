@@ -5,6 +5,83 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+**The arm nobody writes.** An external session transcript — a session *applying* the
+library to Go subprocess sandboxing — came back with five proposals. All five landed,
+three of them with a correction, and the most useful one inverts a rule the library
+already had.
+
+`rules/12`'s mutation probe is **directional**: it installs the *permissive* no-op and
+asks what fails, which finds the control that does nothing. Nothing finds the opposite —
+an enforcement control (cap, quota, filter, allowlist, sandbox policy) tightened until it
+refuses the legitimate case too. Both defects pass the same test, because a security suite
+asserts refusal and refusal is exactly what an over-tight control produces. `sota-testing`
+rules/09 §1 said so in as many words ("the assertion is that the attack is *refused*, not
+that the happy path works") and `sota-sandboxing` rules/01's in-sandbox probe was
+**entirely** denial arms — a policy that denies everything passed all of them.
+
+The worked instance is the batch's other finding, and it is why the two arrived together.
+`RLIMIT_AS` is not usable as a memory budget: measured in a container, a Go 1.26 hello
+world reserves **1,227,204 kB** of address space at **2,376 kB** RSS and a Temurin 25
+process **3,937,756 kB**, so any AS cap near the real working set kills the process at
+startup. `RLIMIT_DATA` — which has covered private anonymous `mmap` since Linux 4.7 —
+does the job. Deny-only, the two configurations are indistinguishable: neither lets the
+runaway allocation through — the AS cap only because nothing runs at all — and one of
+them also refuses every legitimate run. The allow arm is the only thing that tells
+them apart.
+
+### Added
+
+- **`sota-code-security/rules/12` §1a — the control that blocks everything.** The
+  two-arm rule for enforcement controls, the asymmetry that explains why only the inert
+  half ever gets found, and "a negative control on the environment is not a negative
+  control on the control". Counterweights at `sota-testing/rules/09` §1 and
+  `sota-sandboxing/rules/01` R5.1b, both of which pointed the other way.
+- **`sota-sandboxing/rules/02` R7.2a — never `RLIMIT_AS` for a memory budget**, with the
+  measured Go/JVM reservation table and `RLIMIT_DATA`'s Linux 4.7 boundary; cross-referenced
+  from `rules/04` §1.2. The library never *recommended* `RLIMIT_AS` — this is the missing
+  warning, not a corrected instruction.
+- **`sota-sandboxing/rules/02` R7.2b — no cgroup available for a nested child.** A
+  four-rung fallback ladder, and the tell that makes the situation findable: the cgroupfs
+  is mounted `ro` while `cgroup.controllers` still lists `memory`, so **probe with `mkdir`,
+  never by reading the controller list**. `GOMEMLIMIT`/`-Xmx` are documented soft limits
+  and are not a boundary for untrusted code.
+- **`sota-devsecops/rules/05` §5.6 — the negative control proves the gate *can* fail, not
+  that it still covers you.** A refactor that moves code into a nested module, a second
+  manifest, a submodule or a sidecar image shrinks the gate's scope with no diff to the
+  workflow file: `govulncheck ./...` analyses the current module only. The temporal form of
+  `rules/11` §2.2 — fail the build when a gate's enumerated denominator **drops**.
+- **`sota-sandboxing/rules/04` R5.3a — a timeout that waits on inherited pipes is not a
+  deadline**, and the semantics differ per language (Python 3.14 fires on schedule with a
+  pipe-holding grandchild; Go's `Wait` does not without `cmd.WaitDelay`). Carries the
+  pointers into `sota-golang`, `sota-python` and `sota-javascript-typescript` that §5 never
+  had — the placement fix for a trap that lives in the language skill while you are reading
+  the domain one.
+
+### Changed
+
+- **`sota-devsecops/rules/03` §3.6** — advisory **applicability** added as a fourth triage
+  axis beside reachability, exposure and KEV/EPSS. "Only 32-bit platforms are affected" is
+  a precondition in the advisory prose that no scanner ordering reflects; it resolves to a
+  `not_affected` VEX from the closed OpenVEX justification list, not an ignore-with-expiry.
+
+### Notes
+
+- Every factual claim in this entry was reproduced this session rather than cited: the
+  Go/JVM reservations and both rlimit arms in a Linux container, the nested-module omission
+  by running `go list ./...`, the Python timeout behaviour by running it, and the cgroup
+  `ro` mount by attempting the `mkdir`. `WaitDelay`, `SetMemoryLimit`, `setrlimit(2)` and
+  the OpenVEX justification list come from their primary docs.
+- The transcript's own two misses — `cmd.WaitDelay` and zsh word-splitting — were both
+  **already in the library**, the second one twice (routing rule 17 and `rules/12` §2).
+  Deliberately not restated a third time: that is the salience effect documented in
+  [WHY-COMPLETENESS-RESIDUAL](docs/WHY-COMPLETENESS-RESIDUAL.md), where adding the missing
+  rule made adherence *worse*. The placement fix (R5.3a) was taken instead.
+- Logged as eight rows in [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md), including one
+  **deferred**: `sota-rust` has no `std::process::Command` coverage at all, found while
+  validating the R5.3a cross-references.
+
 ## [1.22.9] - 2026-08-18
 
 **The domain the library kept gesturing at.** An external intake

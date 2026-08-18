@@ -194,6 +194,55 @@ the workload is a JIT (then confine the JIT dir alone).
 single-process jobs (cgroup `cpu.max` throttles but never terminates — you also need
 a wall-clock kill, see `05` §4).
 
+**R7.2a — never `RLIMIT_AS` for a memory budget; use `RLIMIT_DATA` or the cgroup.**
+`RLIMIT_AS` bounds *reserved address space*, and every modern managed runtime
+reserves gigabytes of it at startup regardless of its resident set — so an AS cap
+anywhere near the real memory need kills the process **at startup**, on legitimate
+input. Measured 2026-08-18 in a container, linux/amd64:
+
+| runtime | `VmSize` at startup | `VmRSS` | under `ulimit -v 512M` |
+|---|---|---|---|
+| Go 1.26, hello world | 1,227,204 kB (~1.17 GiB) | 2,376 kB | `fatal error: failed to reserve page summary memory` |
+| Temurin 25, `-Xmx128m` | 3,937,756 kB (~3.75 GiB) | 112,908 kB | `Could not reserve enough space for 131072 KB object heap` |
+
+Reported against Go 1.14, whose allocator change introduced the jump
+(golang/go#38010); it has not come back down — the row above is Go 1.26. **`RLIMIT_DATA` is the working knob**: since Linux 4.7 it covers private
+anonymous `mmap` as well as `brk` (`man 2 setrlimit`), so it bounds a Go or JVM heap
+without touching the reservation. Same run, both arms: `ulimit -d 512M` completes a
+200 MiB workload, `ulimit -d 128M` kills a 400 MiB one. On kernels older than 4.7
+`RLIMIT_DATA` bounds only `brk` and will not cap an mmap-backed heap at all — check
+the kernel before relying on it. Testing only the deny arm here is how the AS cap
+survives review: it refuses the runaway allocation exactly as intended, and also
+every legitimate one (`sota-code-security` rules/12 §1a).
+
+**R7.2b — when you cannot get a cgroup (a child inside an existing container).**
+`memory.max` is the right primitive and is routinely *unavailable* to the process
+that needs it: in a default container the cgroupfs is mounted **`ro`**, so you
+cannot create the child cgroup — while `cgroup.controllers` cheerfully lists `cpu io
+memory pids`. Verified 2026-08-18 (podman, `cgroupns=private`, unprivileged):
+`mkdir /sys/fs/cgroup/probe` → `Read-only file system`; remounting it `rw` →
+`Permission denied`. **Probe with `mkdir`, never by reading `cgroup.controllers`** —
+the controller list describes the hierarchy, not your write access to it (the
+"it's enabled" claim of `sota-code-security` rules/10, applied to cgroups).
+Fallbacks, best first:
+
+1. **A delegated sub-cgroup** — needs the runtime to hand you a writable subtree
+   (systemd `Delegate=yes`, or a rw cgroupfs mount). Never satisfy this by mounting
+   the *host* cgroupfs writable into the sandbox (R2.4).
+2. **`RLIMIT_DATA`** (R7.2a) — kernel-enforced, per-process, needs no privilege and
+   survives the nesting. The realistic answer for a forked worker.
+3. **Give the child its own container/pod** with its own limits instead of nesting —
+   the only option that also restores `pids.max` and `cpu.max`.
+4. **A parent watchdog** polling the child's RSS and `SIGKILL`-ing it — lossy by the
+   poll interval, so budget headroom; it terminates rather than throttles, which is
+   what a runaway parser needs.
+
+Runtime knobs are **not** a boundary for untrusted code: `GOMEMLIMIT` is documented
+as a *soft* limit that excludes `syscall.Mmap` and C-allocated memory
+(`runtime/debug.SetMemoryLimit`), `-Xmx` bounds only the Java heap, and the workload
+can raise either. Use them for your own risky parser, never as the cap on code you
+do not trust.
+
 **R7.3 — Scrub inherited state across the boundary:** close all FDs except the
 designed ones (`close_range(3, ~0U, 0)` or `O_CLOEXEC` discipline), reset signal
 handlers/mask, empty environment then set an explicit one, `umask 077`, detach
@@ -248,6 +297,10 @@ do not change the boundary class.
       unprivileged userns creation restricted on untrusted-code hosts.
 - [ ] cgroup v2 budget present: `memory.max` + `swap.max=0`, `pids.max`, `cpu.max`,
       `memory.oom.group=1`; host cgroupfs not writable from inside.
+- [ ] Memory bounded by cgroup `memory.max` or `RLIMIT_DATA` — **never
+      `RLIMIT_AS`**, which kills Go/JVM workloads at startup (R7.2a); where no
+      cgroup can be created, the fallback is chosen deliberately and write access
+      was probed with `mkdir`, not inferred from `cgroup.controllers` (R7.2b).
 - [ ] seccomp: deny-by-default allowlist (not the Docker default for high-risk
       workloads); all ABIs covered; R3.2 hard-deny set absent from allowlist;
       filter loaded after `no_new_privs`, before untrusted code.

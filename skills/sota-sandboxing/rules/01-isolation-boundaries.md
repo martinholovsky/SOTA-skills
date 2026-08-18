@@ -180,6 +180,14 @@ policy denies and fails the build if anything succeeds:
 - write to `/`, `/etc`, the host-visible mounts; exec a setuid binary;
 - fork bomb / 2× memory.max allocation, expecting clean containment + kill.
 
+**R5.1b — the probe needs an allow arm.** Every bullet above is a denial: the build
+fails if something *succeeds*. A policy that denies everything passes all of them.
+Add one arm that runs the **representative legitimate workload** to completion
+inside the same policy — the real parser on a real input, the real job on a real
+payload — and fail the build if *that* is refused, killed or truncated. Without it
+the probe cannot tell a working sandbox from a sandbox nobody can use, and the
+difference surfaces in production instead (`sota-code-security` rules/12 §1a).
+
 **R5.2 — Test the failure mode, not just the policy:** kill the seccomp loader,
 point at a kernel without Landlock, make the proxy unreachable — the workload must
 *abort*, not proceed (R1.4). Chaos-test fail-closed annually at minimum.
@@ -223,5 +231,8 @@ finding (Medium).
 - [ ] In-sandbox denial probe exists and runs in CI; fail-closed behavior
       chaos-tested; runtime state matches the spec (CapEff/Seccomp/NoNewPrivs
       inspected, not assumed).
+- [ ] The probe has an **allow arm** as well as its denial arms — the real
+      workload completes inside the real policy, so a sandbox that denies
+      everything cannot pass CI (R5.1b).
 - [ ] Side-channel posture documented for cross-tenant confidentiality (SMT,
       core scheduling, memory dedup disabled where required).

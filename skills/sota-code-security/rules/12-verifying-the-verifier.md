@@ -66,6 +66,49 @@ count is non-zero, assert every reference-config key resolves, assert the
 documented default equals the parsed default, assert the control's telemetry is
 emitted. Instance tests catch today's bug; structural tests catch the next one.
 
+## 1a. The other direction — the control that blocks everything
+
+§1's probe is **directional**. It installs the *permissive* no-op and asks what
+fails, which finds the control that does nothing. Nothing in it can find the
+opposite defect: an **enforcement** control — a cap, quota, limit, filter,
+allowlist, sandbox policy — set so tight that it refuses the legitimate case too.
+Both defects pass the same test, because a security suite asserts *refusal*
+(`sota-testing` rules/09 §1) and refusal is exactly what an over-tight control
+produces.
+
+The asymmetry is why only one of the two ever gets found. An inert control fails
+toward the attacker and nothing observable changes. An over-tight one fails toward
+the user and is loud — *in production*, weeks later, on the input nobody tested.
+
+**Every enforcement control needs two arms, and the deny arm is the one everybody
+writes:**
+
+1. **Deny arm** — the abusive case is refused. (The one you already have.)
+2. **Allow arm** — a *representative legitimate* case completes unchanged under the
+   same policy. Not a reduced case, not a synthetic one: the real workload's
+   ordinary input.
+
+**A negative control on the environment is not a negative control on the control.**
+Proving the machine can allocate a gigabyte says nothing about whether *your cap*
+permits legitimate work — an arm like that exercises the environment and passes
+whether or not the control exists at all. The allow arm has to run **through** the
+control.
+
+Worked instance, both arms measured (Go 1.26, linux/amd64, container, 2026-08-18):
+
+| memory cap | deny arm — over-budget allocation refused | allow arm — 200 MiB legitimate run completes |
+|---|---|---|
+| `ulimit -v` (`RLIMIT_AS`) | yes — **vacuously**: the process never starts | **no** — `fatal error: failed to reserve page summary memory` at `-v 512M` |
+| `ulimit -d` (`RLIMIT_DATA`) | yes — 400 MiB refused at `-d 128M` | yes — completes at `-d 512M` |
+
+Deny-only, the two configurations are indistinguishable and both read as "the cap
+works" — and the `RLIMIT_AS` row passes its deny arm **vacuously** (§3), for the
+same reason it fails the allow arm: nothing ever runs (`sota-sandboxing` rules/02
+R7.2a). The allow arm is the only thing that separates a working budget from a
+control that refuses everything — and it is precisely the arm the deny-only habit
+drops. The same gap applies to a WAF ruleset, an egress allowlist, an input
+validator, an admission policy, and a rate limiter keyed too narrowly.
+
 ## 2. Your instrument is a control
 
 A scorer, a quality gate, a benchmark, a coverage threshold, a lint config, a
@@ -295,6 +338,10 @@ whose pathspec drifted.
 - [ ] **Mutation probe run on security-critical paths** — control body replaced
       with the permissive no-op, with the dependency forced present and the
       mutation's **runtime effect asserted** before trusting a green run (§1)?
+- [ ] Every **enforcement** control (cap, quota, filter, allowlist, sandbox
+      policy) carries an **allow arm** as well as a deny arm — a representative
+      legitimate case completing *through* the control, not against the bare
+      environment — so "blocks everything" cannot read as "works" (§1a)?
 - [ ] Structural tests added alongside the instance test — non-zero loaded rule
       count, every reference-config key resolving, documented default equal to
       parsed default, control telemetry actually emitted (§1)?

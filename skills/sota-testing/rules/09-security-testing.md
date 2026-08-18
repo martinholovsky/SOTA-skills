@@ -28,6 +28,12 @@ skills.
 - Security tests are **negative tests**: the assertion is that the attack is
   *refused* (403/404/422, rejected, no state change), not that the happy path
   works. A suite with only positive cases is blind to every control bypass.
+- **…and every enforcement control still needs one allow case.** Negative-only is
+  the right emphasis and the wrong totality: a cap, quota, filter, allowlist or
+  policy that refuses *everything* passes every negative test you can write. Pair
+  each enforcement control's refusal test with one assertion that a representative
+  legitimate request completes **through** that same control — not around it, and
+  not against the bare environment (`sota-code-security` rules/12 §1a).
 
 ## 2. WSTG as the verification map
 
@@ -161,3 +167,6 @@ Layer the automation; none of it replaces the regression tests above.
       no shared state) and able to fail (verified against the vulnerable version)?
 - [ ] WSTG categories relevant to the surface walked as a coverage check — any
       exposed category with zero tests is a gap?
+- [ ] Each enforcement control (cap, quota, rate limit, filter, allowlist, policy)
+      has an **allow case** beside its refusal cases, so a control that blocks
+      legitimate traffic cannot pass the suite (`sota-code-security` rules/12 §1a)?
