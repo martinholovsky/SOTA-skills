@@ -11,7 +11,8 @@ description: >-
   Rust code, reviewing or auditing existing Rust, designing crate APIs,
   debugging borrow checker or Send/Sync errors, or hardening Rust services.
   Triggers: Rust, cargo, crate, tokio, unsafe, lifetime, borrow checker,
-  clippy, async Rust, Cargo.toml, thiserror, anyhow, serde, Miri, MSRV.
+  clippy, async Rust, Cargo.toml, thiserror, anyhow, serde, Miri, MSRV,
+  std::process::Command, subprocess, spawn a process.
 ---
 
 # SOTA Rust (2026)
@@ -33,8 +34,8 @@ checklist" of grep/clippy patterns — use those verbatim in AUDIT mode.
 When writing or modifying Rust code:
 
 1. **Scope the work, load the rules.** Pick the relevant `rules/` files from
-   the index. Touching async code? Load 04. Adding a dependency or parsing
-   network input? Load 05. Writing any `unsafe`? Load 03 — no exceptions.
+   the index. Touching async code? Load 04. Adding a dependency, parsing
+   network input, or spawning an external program? Load 05. Writing any `unsafe`? Load 03 — no exceptions.
 2. **Design types first.** Newtypes for domain primitives, errors per
    subsystem (thiserror for libs, anyhow for apps), ownership tree before
    `Arc<Mutex<_>>`, public API minimal and borrowed (`&str`/`&[T]` params).
@@ -109,7 +110,7 @@ fixes with outsized value).
 | [rules/02-errors-and-panics.md](rules/02-errors-and-panics.md) | Choosing thiserror vs anyhow/eyre; designing error enums; unwrap/expect policy and invariant messages; context discipline; panic policy for servers, FFI, and `Drop` (no panic in destructors); Option/Result combinator flow |
 | [rules/03-unsafe-discipline.md](rules/03-unsafe-discipline.md) | Writing or reviewing ANY `unsafe`; SAFETY comment standards; UB catalog (aliasing, uninit, transmute, FFI lifetimes); Miri/sanitizers/loom in CI; cargo-geiger; soundness review protocol |
 | [rules/04-async-tokio.md](rules/04-async-tokio.md) | Anything async: tokio, spawn vs spawn_blocking, Send/Sync bound errors, `select!` and cancellation safety, JoinSet/TaskTracker, channel selection, locks across await, async traits, graceful shutdown |
-| [rules/05-security-supply-chain.md](rules/05-security-supply-chain.md) | Network-facing or deployed code; adding dependencies; cargo audit/deny/vet; integer overflow on untrusted input; panic-DoS; zeroize/constant-time for secrets; serde hardening (untagged enums, size limits); service-edge defaults |
+| [rules/05-security-supply-chain.md](rules/05-security-supply-chain.md) | Network-facing or deployed code; adding dependencies; cargo audit/deny/vet; integer overflow on untrusted input; panic-DoS; zeroize/constant-time for secrets; serde hardening (untagged enums, size limits); service-edge defaults; **spawning external programs** (`std::process::Command` — argv vs shell, the Windows `.bat` CVE, a dropped `Child` that keeps running, deadlines that don't kill, §9) |
 | [rules/06-performance.md](rules/06-performance.md) | Performance work or claims: profiling (samply/perf/flamegraph, criterion/divan), allocation reduction (Cow/SmallVec/buffer reuse), accidental clones, iterator fusion, release profile (LTO, codegen-units, panic=abort), PGO |
 | [rules/07-tooling-ci.md](rules/07-tooling-ci.md) | Setting up or auditing repo scaffolding: clippy policy and pedantic triage, rustfmt, nextest, MSRV declaration+testing, additive feature flags, docs.rs discipline, edition 2024 migration, CI baseline. **Test *strategy* — suite shape, TDD, doubles, test data, flake policy — lives in `sota-testing`; load it for any build that writes logic. This file owns Rust runner mechanics only.** |
 

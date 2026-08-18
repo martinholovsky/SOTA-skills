@@ -218,6 +218,101 @@ network:
   alert-fatigue vector that buries real errors; reserve `error!` for
   operator-actionable events.
 
+## 9. Running external programs — `std::process::Command`
+
+`Command` takes a program plus an argument vector and **there is no shell**: the
+docs are explicit that "shell syntax like quotes, escaped characters, word
+splitting, glob patterns, variable substitution, etc. have no effect". That makes
+the classic injection hard to write by accident and moves the risk somewhere else.
+Behaviour below was **measured on rustc 1.97.1 / tokio 1.53, macOS** unless a doc
+is quoted; re-check the platform-specific items on your target.
+
+**R9.1 — Arguments are never split, by either API.** `.arg("-l -a")` passes the
+single argument `-l -a` (measured), and `.args([..])` merely iterates — neither
+splits on whitespace. The Rust mistake is therefore the *inverse* of the shell
+one: a string assembled as though it were a command line arrives as one nonsense
+argument, and `Command::new("ls -l")` looks for a program literally named `ls -l`.
+That failure is loud and harmless. The dangerous spelling is the one that puts a
+shell back:
+
+```rust
+// BAD — a shell, and therefore injection, is back
+Command::new("sh").arg("-c").arg(format!("convert {path} out.png"))
+// GOOD — absolute program, argv, end-of-options, no shell
+Command::new("/usr/bin/convert").arg("--").arg(&path).arg("out.png")
+```
+
+**R9.2 — Argument injection survives argv.** A value beginning with `-` becomes a
+flag. Pin your own flags first, then `--`, then validated operands; prefer a
+library binding to a CLI wrapper for attacker-influenced parameters.
+`sota-sandboxing` rules/04 §5 lists the exec-capable argument gadgets
+(`find -exec`, `tar --checkpoint-action`, `ssh -o ProxyCommand`, …) to check for.
+
+**R9.3 — Windows `.bat`/`.cmd` is a documented exception (CVE-2024-24576).**
+`cmd.exe` and batch files decode their command line non-standardly, so argv-safety
+does not hold there: before **Rust 1.77.2**, passing untrusted arguments to a batch
+file could run arbitrary shell commands. The fix did not make escaping safe — the
+standard library now **returns an `InvalidInput` error when it cannot safely escape
+an argument**, and the current `Command` docs still carry the warning that for
+`cmd.exe` "a malicious argument can potentially run arbitrary shell commands". So:
+MSRV **≥ 1.77.2** for anything that may run on Windows, propagate that
+`InvalidInput` rather than unwrapping it, and treat `CommandExt::raw_arg` as
+trusted-input-only.
+
+**R9.4 — Dropping a `Child` neither kills nor reaps it.** "There is no
+implementation of `Drop` for child processes, so if you do not ensure the `Child`
+has exited then it will continue to run, even after the `Child` handle to the child
+process has gone out of scope" — measured: still alive 600 ms after the handle was
+dropped. The same docs warn that a terminated-but-unwaited process "is still around
+as a *zombie*" and that too many "may exhaust global resources (for example process
+IDs)". So an error path that returns early while holding a `Child` leaks a *running
+process*, not just a handle — and `?` makes that the easy path to write. Own the
+child on every exit route, including the error and cancellation ones.
+
+**R9.5 — `std` has no timeout, and a tokio timeout does not kill the child.**
+Neither `wait()` nor `wait_with_output()` takes a deadline, and `wait_with_output()`
+waits for **EOF on the pipes**, which a grandchild that inherited them can hold open
+indefinitely. Measured, and this is where Rust differs from Go (whose `Wait` blocks
+past context cancellation unless `cmd.WaitDelay` is set):
+`tokio::time::timeout(2s, child.wait_with_output())` **does** fire at 2.0 s under
+exactly that pipe-holding grandchild, so Rust needs no `WaitDelay` equivalent.
+But firing only cancels *your future* — the child and its grandchild keep running.
+Pair the deadline with `.kill_on_drop(true)` (measured: the child is gone 600 ms
+after the handle drops) or kill and `wait()` explicitly. In sync code the
+long-standing option is the `wait-timeout` crate — mature rather than active (last
+release 2025-02, still 0.2.x, ~50M recent downloads), so check its upstream health
+before adopting it (`sota-devsecops` rules/03 §3.9.5); otherwise use a supervisor
+thread you actually join. Never abandon a thread parked in `wait()`. Killing the
+direct child does not signal its *group*: for that, spawn it into its own group
+with `process_group(0)` (Unix, stable since **1.64**) and signal the group.
+
+**R9.6 — Output is buffered without a cap.** `output()`/`wait_with_output()`
+collect the child's stdout into a `Vec<u8>` with no limit — measured, 5 MB of
+`/dev/zero` buffered without complaint, and a hostile child can make that
+unbounded. For anything attacker-influenced, take `Stdio::piped()` and read with an
+explicit `.take(MAX)`, or send output to a file or `Stdio::null()`.
+
+**R9.7 — Environment and program resolution both have sharp edges.** The child
+inherits the parent's environment by default. `env_clear()` gives it **zero**
+variables (measured) — but a *bare* program name still resolves, because with
+`PATH` removed `execvp` falls back to an OS-defined default (the docs say typically
+`/bin:/usr/bin`, "not the parent's `PATH`"): measured, bare `uname` still ran while
+a binary present only in the process's working directory did **not**, so that
+fallback did not include `.` here. Do not rely on either half — **pass an absolute
+path**. Relative program paths are worse: the docs call the interpretation relative
+to the parent's cwd versus `current_dir` "platform specific and unstable" and
+recommend `canonicalize`; measured on macOS, `Command::new("./p").current_dir(d)`
+ran `d/p`. Use `uid`/`gid` to drop privilege where relevant (both trigger
+`setgroups(0, NULL)` unless groups are set explicitly, dropping supplementary
+groups). `CommandExt::pre_exec` is `unsafe` for a real reason — the closure runs
+after `fork` in the child, where "normal operations like `malloc`, accessing
+environment variables through `std::env` or acquiring a mutex are not guaranteed to
+work"; keep it async-signal-safe or use a purpose-built crate.
+
+For the isolation the child itself needs — seccomp/Landlock, fd-only interfaces,
+memory budgets — see `sota-sandboxing` rules/04 §5 and rules/02 R7.2a.
+
+
 ## Audit checklist
 
 - [ ] CI has `cargo deny check` (or `cargo audit`) on PRs **and** a scheduled
@@ -253,6 +348,21 @@ network:
 - [ ] Logs: `rg 'info!|warn!|error!|debug!' -t rust` near auth/headers — no
       `Authorization`/`Cookie`/body logging; user strings as structured
       fields, not message interpolation.
+- [ ] Subprocess: `rg 'Command::new\("(sh|bash|cmd|powershell)"' -t rust` and
+      `rg '\.arg\("-c"\)' -t rust` — a shell with any interpolated value = Critical.
+      `rg 'Command::new\(' -t rust` for non-absolute program names on
+      attacker-reachable paths = Medium (R9.1, R9.7).
+- [ ] Every spawned `Child` is killed **and** waited on every exit path, including
+      `?` early-returns and cancellation — `rg 'spawn\(\)' -t rust` and read the
+      error paths; a dropped `Child` keeps running and then becomes a zombie
+      (R9.4). Deployed code targeting Windows declares MSRV **≥ 1.77.2** (R9.3).
+- [ ] Every subprocess wait has a deadline **and** a kill: a bare
+      `wait()`/`wait_with_output()` = High on any attacker-influenced child, and a
+      `tokio::time::timeout` without `.kill_on_drop(true)` (or an explicit kill)
+      leaves the child running when it fires (R9.5).
+- [ ] `rg 'output\(\)|wait_with_output' -t rust` where the child's output size is
+      not bounded by the caller = Medium (R9.6); `rg 'pre_exec' -t rust` — the
+      closure must be async-signal-safe (R9.7).
 - [ ] Severity calibration: RCE/memory corruption = Critical; authn/authz
       bypass, SQLi, traversal = Critical/High; attacker-reachable panic or
       unbounded allocation = High; missing CI audit gates = Medium-High;

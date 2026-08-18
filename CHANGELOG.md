@@ -5,6 +5,71 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+**Three languages, three behaviours, one test.** The v1.22.10 cut left one deferral on
+the roadmap: `sota-rust` had **zero** coverage of `std::process::Command` — subprocess
+hygiene for Rust existed only as a one-line parenthetical in `sota-sandboxing`. That
+deferral carried an explicit warning: *do not infer Rust's deadline semantics from Go's
+or Python's, because those two were measured and they disagree.* Worked out, it was
+worth the caution — Rust is a third answer, not a copy of either.
+
+Under the same test (a child that exits immediately after spawning a grandchild which
+inherits the pipe):
+
+| | behaviour under a 2 s deadline |
+|---|---|
+| Go | `Wait` blocks **past** context cancellation until `cmd.WaitDelay` is set |
+| Python 3.14 | `subprocess.run(timeout=)` raises **on schedule** |
+| Rust + tokio | `timeout` fires **on schedule** — and leaves the child *and* grandchild **running** |
+
+Rust needs no `WaitDelay` equivalent, and that is exactly what makes it easy to get
+wrong: the deadline works, so the code looks correct, while cancelling a future is not
+killing a process. The rule pairs the deadline with `.kill_on_drop(true)`.
+
+### Added
+
+- **`sota-rust/rules/05` §9 — running external programs**, seven rules with four audit
+  probes: argv is never split by either API (so the Rust mistake is the *inverse* of the
+  shell one); argument injection still survives argv; the Windows `.bat`/`.cmd` exception
+  (**CVE-2024-24576**, fixed in Rust 1.77.2, where std now returns `InvalidInput` rather
+  than escaping unsafely); a dropped `Child` that **neither kills nor reaps** — it keeps
+  running, then becomes a zombie, and `?` makes that the easy path to write; deadlines
+  that do not kill; `output()` buffering without a cap; and environment/program
+  resolution, where `env_clear()` empties the environment but a **bare program name still
+  resolves** through an OS-default path.
+- Cross-references at the point of need: `sota-rust/rules/04` gains the cancellation
+  corollary (a spawned process is owned state exactly like a spawned task), and
+  `sota-rust/SKILL.md` routes to rules/05 on "spawning an external program" with
+  `std::process::Command` added to its trigger list.
+
+### Fixed
+
+- **`sota-sandboxing/rules/04` R5.1 told you to "beware `.arg` vs `.args` splitting".
+  Neither splits** — measured. The line invited exactly the wrong mental model of an API
+  whose argv guarantee is its main safety property; it now states the guarantee and names
+  the one documented exception (Windows batch files).
+- R5.3a's per-language deadline pointers now include Rust, and say plainly that the three
+  measured languages behave three different ways — which is the argument for reading the
+  language skill rather than generalising.
+
+### Notes
+
+- Everything above was **executed on rustc 1.97.1 / tokio 1.53**, not carried over: argv
+  non-splitting, the surviving child after a dropped handle, the tokio timeout,
+  `kill_on_drop`, unbounded output buffering, `env_clear` behaviour, and relative-path
+  resolution against `current_dir`. Doc-sourced claims (the `cmd.exe` warning, the missing
+  `Drop`, the zombie note, `pre_exec`'s unsafety, `process_group` stable since 1.64) are
+  quoted from `std` and from the Rust security advisory.
+- One measurement was **discarded and re-run**: the first `env_clear` probe read `PATH`
+  by way of `/bin/sh`, so it measured the *shell's* invented default rather than Rust's
+  fallback. Re-run against `/usr/bin/env` directly, it showed an empty environment — and
+  a follow-up probe showed the OS-default lookup does **not** include the working
+  directory here, overturning the hypothesis the first reading suggested.
+- No efficacy number attaches to this work; the AUDIT arm remains +0.00 across nine
+  instruments.
+
+
 ## [1.22.10] - 2026-08-18
 
 **The arm nobody writes.** An external session transcript — a session *applying* the

@@ -159,8 +159,9 @@ subprocess.run(["convert", "--", path, "out.png"], shell=False, ...)
 ```
 Same rule per language: Python `shell=False`; Node `execFile`/`spawn` (never
 `exec`, never `spawn(..., {shell:true})`); Go `exec.Command` (fine; never wrap in
-`sh -c`); Rust `Command` (fine; beware `.arg` vs `.args` splitting); Java
-`ProcessBuilder` with list.
+`sh -c`); Rust `Command` (fine — measured 2026-08-19, **neither `.arg` nor `.args`
+splits on whitespace**, so the argv guarantee holds; the documented exception is
+Windows `.bat`/`.cmd`, `sota-rust` rules/05 §9); Java `ProcessBuilder` with list.
 
 **R5.2 — Argument-level injection still exists with argv arrays:** values starting
 with `-` become flags (use `--` separators); some tools have argument-driven exec
@@ -185,8 +186,13 @@ on context cancel and then blocks in `Wait` anyway, because "if `WaitDelay` is z
 (the default), I/O pipes will be read until EOF, which might not occur until
 orphaned subprocesses of the command have also closed their descriptors for the
 pipes" (`os/exec` package docs). Set `cmd.WaitDelay` (Go 1.20+). Do not generalise
-from whichever language you used last — read that language's subprocess section
-before trusting the timeout: `sota-golang` rules/05 §3, `sota-python` rules/05 §2,
+from whichever language you used last — three of them behave three different ways
+under the same test. Go's `Wait` blocks past context cancellation until
+`cmd.WaitDelay` is set; Python's raises on schedule; **Rust/tokio's `timeout` fires
+on schedule but leaves the child and its grandchild running**, because cancelling
+the future is not killing the process (`.kill_on_drop(true)`, measured 2026-08-19).
+Read that language's subprocess section before trusting the timeout: `sota-golang`
+rules/05 §3, `sota-python` rules/05 §2, `sota-rust` rules/05 §9,
 `sota-javascript-typescript` rules/05 ("Command injection via child_process").
 This is the shape of trap that lives in the *language* skill while you are reading
 the *domain* one, so the routing that brought you here will not bring you to it.
