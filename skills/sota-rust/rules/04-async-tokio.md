@@ -130,6 +130,11 @@ impl Drop for InFlightGuard<'_> { fn drop(&mut self) { self.0.dec(); } }
   leak unless tracked (see §4) or aborted. Dropping a `JoinSet` *does* abort
   its tasks.
 
+**Cancelling a `timeout` around a child process does not kill the process.** The
+future is dropped, the OS process is not — rules/05 §9 (R9.5) has the measured
+behaviour and `.kill_on_drop(true)`. A spawned process is owned state exactly like a
+spawned task, and cancellation is where that ownership is usually dropped.
+
 ## 4. Structured concurrency
 
 Unsupervised `tokio::spawn` is a goto: errors vanish, panics vanish, shutdown
