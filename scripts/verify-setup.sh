@@ -237,6 +237,52 @@ else
   row "N/A" "9. hooks installed" "no local hook manager configured"
 fi
 
+# 9a. A stage DECLARED in the config but never installed is a gate on paper.
+# pre-commit writes .git/hooks/<type> only when `pre-commit install --hook-type
+# <type>` runs, or when `default_install_hook_types` names it. Adding
+# `stages: [pre-push]` to the config does NOT create the hook — verified
+# 2026-08-19 on pre-commit 4.6.0: the config gained a pre-push hook, the commit
+# still ran the pre-commit ones, and .git/hooks/pre-push was never created. So a
+# gate can arrive in a config (via a pull, or a generator re-run) and never run,
+# while check 9 above reports "hooks installed" on the strength of a different
+# hook entirely. Same class as rules/10 §2.13, inside the script written for it.
+if [ -f .pre-commit-config.yaml ]; then
+  # Exact tokens, never a substring test: "commit-msg" is a substring of
+  # "prepare-commit-msg", and a substring match would report the wrong stage.
+  # `|| true`: under `set -euo pipefail` a grep that matches nothing exits 1 and
+  # aborts the whole script mid-run — which is how the first cut of this check
+  # silently truncated the report after check 9 and still exited 0. Watched it
+  # happen 2026-08-19 before this guard existed.
+  stage_tokens=$(grep -hE '^[[:space:]]*(stages|default_install_hook_types)[[:space:]]*:' \
+                   .pre-commit-config.yaml 2>/dev/null \
+                 | sed 's/^[^:]*://' | tr -d '[]",' | tr ' ' '\n' \
+                 | grep -E '^[a-z][a-z-]*$' | sort -u || true)
+  declared=""; missing=""
+  for ht in $stage_tokens; do
+    case "$ht" in
+      # pre-commit itself is check 9's job; "manual" installs no hook at all.
+      pre-commit|manual|always) continue ;;
+      pre-push|commit-msg|prepare-commit-msg|pre-merge-commit) ;;
+      post-checkout|post-commit|post-merge|post-rewrite) ;;
+      *) continue ;;   # not a hook type we can check for
+    esac
+    declared="$declared $ht"
+    [ -f "$hookdir/$ht" ] || missing="$missing $ht"
+  done
+  if [ -z "$declared" ]; then
+    row "N/A" "9a. declared stages installed" "config declares no stage beyond pre-commit"
+  elif [ -n "$missing" ]; then
+    fixcmd="pre-commit install"
+    for ht in $missing; do fixcmd="$fixcmd --hook-type $ht"; done
+    row "FAIL" "9a. declared stages installed" \
+        "config declares${declared}, but $hookdir has no${missing} hook — declaring a stage does not install it; run: $fixcmd"
+  else
+    row "PASS" "9a. declared stages installed" "every declared stage has a hook file:${declared}"
+  fi
+else
+  row "N/A" "9a. declared stages installed" "no .pre-commit-config.yaml"
+fi
+
 # Has each workflow ever EXECUTED, and ever REJECTED anything?
 if [ "$n_wf" -eq 0 ]; then
   row "N/A" "10. CI run history" "no workflows to have a history"

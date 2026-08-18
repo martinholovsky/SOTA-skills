@@ -89,11 +89,11 @@ as its own job, over **two** subjects: `check-invariants.sh` (part A) and
 check* to be the one that complains — a non-zero exit for any other reason is a
 **FALSE PASS**, not a catch. Part A mutates a good tree in a disposable git worktree;
 part B is inverted — it builds a fully-configured fake machine (`CLAUDE_CONFIG_DIR`
-+ a throwaway repo + a stub `gh`) and removes one thing per probe. **21 probes**
-(re-run 2026-08-18: `PASS: 21/21 mutations caught by the intended check`; the count
++ a throwaway repo + a stub `gh`) and removes one thing per probe. **22 probes**
+(re-run 2026-08-19: `PASS: 22/22 mutations caught by the intended check`; the count
 in this sentence has itself been wrong twice, so run it): invariants
 **1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16** — 11 of 16 — and
-verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 10a. The five unprobed invariants
+verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. The five unprobed invariants
 (5, 9, 11, 12, 14) each need state a disposable worktree lacks — a tag, a merge
 base, an mtime — and the harness prints that reason. **A probe now asserts its own
 mutation landed**: every mutation is a hardcoded literal, and a stale one used to
