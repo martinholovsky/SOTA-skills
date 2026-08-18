@@ -289,6 +289,12 @@ rm -rf "$VS/repo/.pre-commit-config.yaml" "$VS/repo/.github"; vs_probe "no gate 
 printf 'repos:\n  - repo: some/other-linter\n' > "$VS/repo/.pre-commit-config.yaml"
 rm -rf "$VS/repo/.github";                      vs_probe "gates without secret scanning"  "8. secret scanning configured"
 rm -f "$VS/repo/.git/hooks/pre-commit";         vs_probe "hook manager configured, not installed" "9. hooks installed"
+# A stage declared in the config installs NO hook (pre-commit 4.6.0, verified
+# 2026-08-19). Check 9 still passes here — the pre-commit hook file is present —
+# which is exactly why 9a exists and why this probe names 9a, not 9.
+printf 'repos:\n  - repo: gitleaks/gitleaks\n    hooks:\n      - id: gitleaks\n        stages: [pre-push]\n' \
+  > "$VS/repo/.pre-commit-config.yaml"
+vs_probe "stage declared in config, its hook never installed" "9a. declared stages installed"
 cat > "$VS/bin/gh" <<'GH'
 #!/bin/sh
 case "$1 $2" in
@@ -315,5 +321,5 @@ echo "      NOT COVERED, and why — every remaining one needs state a worktree 
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        11, 14      — diff-based: they compare against a merge base."
 echo "        12          — mtime-based: needs a rendered asset older than its source."
-echo "      verify-setup.sh: checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 10a. Checks 5"
+echo "      verify-setup.sh: checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. Checks 5"
 echo "      and 11 are judgement (N/A by design) and 10b/12 need a different fixture."

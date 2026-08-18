@@ -425,6 +425,17 @@ the managed routing directive and reminder hook in place** when their wording
 changes upstream — prompting first, backing up, touching only the managed
 block; a hook you customized is left untouched.
 
+**What an update does *not* refresh: the gates in your own repos.** `update.sh`
+re-links skills and re-syncs this checkout's own hooks; it never reaches a repo you
+ran [`init-gates.sh`](#enforcing-the-gates) in, so those gates stay at the release
+that generated them. Re-run `init-gates.sh` there — it rewrites only its own managed
+block, so it is safe to repeat. This matters most for **hook types**: pre-commit
+writes `.git/hooks/<type>` at install time, so a config that *gains* a
+`pre-push` stage installs nothing on its own and the new gate silently never runs
+(verified on pre-commit 4.6.0). `verify-setup.sh` check **9a** reports exactly that —
+a declared stage with no hook file — which check 9 cannot see, because a different
+hook being present makes it read "installed".
+
 ### Always-on routing (recommended)
 
 Skill descriptions are matched per prompt, so routing is opt-in and depends on

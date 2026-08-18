@@ -94,7 +94,12 @@ check for `docker` misses podman, `LICENSE` misses `LICENSE-MPL`,
 9. Are the gates INSTALLED, not merely configured? Check `.git/hooks/` for
    non-sample hooks and `core.hooksPath`. Distinguish three states: installed /
    configured-but-not-installed (a file, not a control) / nothing configured at
-   all (N/A, not a failure).
+   all (N/A, not a failure). "Installed" is **per hook type, not per
+   repo**: pre-commit writes `.git/hooks/<type>` only at install time, so a config
+   that declares `stages: [pre-push]` installs nothing by itself and that gate
+   never runs, while the present `pre-commit` hook makes the repo read "installed"
+   (verified on pre-commit 4.6.0). The script's check 9a compares declared stages
+   against hook files; if you are doing this by hand, list both and diff them.
 10. For each gate, establish TWO things from observable history — use
     `gh run list --limit 60` (or the CI provider's equivalent) and read real
     conclusions:
