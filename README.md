@@ -130,7 +130,7 @@ difficulty, not the domain — we measure it and say so.
 
 ### What the audit hunts that a scanner can't
 
-Eight classes of defect survive every linter, SAST rule, and CVE scanner, because in
+Nine classes of defect survive every linter, SAST rule, and CVE scanner, because in
 each one the code isn't *wrong*. The library hunts them as explicit passes:
 
 - **Controls that are inert** — a safeguard whose success and whose total failure look
@@ -141,6 +141,20 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   shipped, a report whose word "verified" traces to no line that can fail, a test that
   still passes when the control's body is replaced with a no-op.
   ([rules/10](skills/sota-code-security/rules/10-silent-control-failure.md))
+- **Controls that block everything** — the mirror image, and the one every other pass
+  here looks past. An *enforcement* control (cap, quota, filter, allowlist, sandbox
+  policy) can be tightened until it refuses the legitimate case too, and it passes the
+  same tests: a security suite asserts *refusal*, refusal is exactly what an over-tight
+  control produces, and the mutation probe above only ever installs the **permissive**
+  no-op, so it looks in one direction. The fix is an **allow arm** — a representative
+  legitimate case that must complete *through* the control, never against the bare
+  environment, because proving the machine can do the work says nothing about whether
+  your control permits it. Worked instance: a memory budget set with `RLIMIT_AS`
+  refuses the runaway allocation exactly as intended, and also kills every Go or JVM
+  process **at startup**, since those runtimes reserve gigabytes of address space they
+  never touch (measured: 1.17 GiB reserved against 2.3 MiB resident).
+  ([rules/12 §1a](skills/sota-code-security/rules/12-verifying-the-verifier.md),
+  [sandboxing rules/02](skills/sota-sandboxing/rules/02-linux-os-hardening.md))
 - **Layers that were never layers** — the same test applied to an *architecture*
   diagram rather than a function. A second-opinion classifier drawn from the same
   model family as the system it guards shares its blind spots by construction
@@ -179,7 +193,11 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   framework asks for this**: NIST SSDF and the EU CRA require a record that a scan
   *ran*, OpenSSF Scorecard's SAST check detects only that a tool is *configured*, and
   SLSA will sign provenance for a scanner set to scan zero files. A passing
-  compliance check is evidence of process, not of protection.
+  compliance check is evidence of process, not of protection. And a negative control
+  answers only whether the gate *can* fail — never whether it still covers you: a
+  refactor into a nested module, a second manifest or a sidecar image moves code out of
+  a gate's scope with no diff to the workflow file, so watch the number of units each
+  gate **enumerated** and treat a drop as a failure.
   ([rules/12](skills/sota-code-security/rules/12-verifying-the-verifier.md),
   [devsecops rules/05](skills/sota-devsecops/rules/05-analysis-gates.md))
 - **Dependencies declared but never reached** — packages, modules, and plugins wired in
