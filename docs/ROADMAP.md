@@ -4,7 +4,7 @@ Priorities set by the **2026-07-10 audit**
 ([AUDIT-2026-07-10.md](AUDIT-2026-07-10.md)). Ordered; revisit after each
 release. The 2026-07-01 cycle is fully executed and kept below as history.
 
-## Start here next session *(as of 2026-08-13)*
+## Start here next session *(as of 2026-08-18)*
 
 Everything actionable, ordered. Each line says what it is, why it is not done, and the
 first move. **The written-conventions backlog is empty** — invariant 14 closed the last
@@ -12,15 +12,16 @@ gateable candidate — so nothing below comes from re-reading docs. That predict
 held twice: the v1.21.1 candidates came from incidents, and the three additions of
 2026-08-11 came from **reading an outside implementation's own failure notes**.
 
-Every number in this table was re-counted on 2026-08-13, not carried forward.
+Every number in this table was re-counted on 2026-08-18, not carried forward.
 
 | # | Item | Why not done | First move |
 |---|---|---|---|
-| 1 | **Distribution / adoption** — still the bottleneck, though less flat than it looked (**13 stars, 2 forks** on 2026-08-13, up from 4 at the last cut) | Not a code task; needs a person, not a gate | Publish the salience write-up; a before/after audit demo |
+| 1 | **Distribution / adoption** — still the bottleneck, though less flat than it looked (**13 stars, 2 forks**, re-checked live via `gh api` on 2026-08-18 — flat for five days) | Not a code task; needs a person, not a gate | Publish the salience write-up; a before/after audit demo |
 | 2 | **Real-repo audit eval — CLOSED 2026-08-14.** Recall *and* precision both measured, both +0.00 | Recall 15/16 = 15/16; precision **1.00 = 1.00** over 59 blinded findings, adjudicator controlled at 4/4; severity mix indistinguishable. Nine instruments, zero lifts | Nothing. Do **not** build a tenth audit-recall or audit-precision instrument. If the audit claim is ever revisited, it needs a different *dependent variable* (time-to-find, report usability, or defects found by a non-expert), not another accuracy metric |
 | 3 | **Competitor comparison — content-only re-run DONE 2026-08-14/15, claim holds. As-deployed REJECTED 2026-08-16** | Re-run at the pinned SHAs with the same build model: SOTA 98.7 / ECC 84.9 / cursorrules 80.0 / claude-skills 77.0 / unguided 58.2, 17 wins / 4 ties / 0 losses of 21, unguided arm reproducing to 0.2 points as the drift control. **As-deployed is rejected, not deferred:** it measures corpus size and a retrieval path we have already found saturated, not guidance quality — reasoning below the table | Nothing. Do not re-open without a new argument that answers the corpus-size confound |
-| 4 | **Router trim** — 2× the spec's ~5k-token recommendation | Deliberate: trimming breaks `ROUTER_BUILD_SHA` and the +0.39's comparability. **491/500 lines** on 2026-08-13 — the activation rewrite left 9 lines of headroom that `AGENTS.md` was still calling "exactly 500" | **Only when the router must grow** — then trim and re-baseline together |
+| 4 | **Router trim** — 2× the spec's ~5k-token recommendation | Deliberate: trimming breaks `ROUTER_BUILD_SHA` and the +0.39's comparability. **494/500 lines** on 2026-08-18 (re-counted with `grep -c '' skills/sota/SKILL.md`; it has read "exactly 500", then 491, then 494 — never trust the number in prose) — **six lines of headroom**, so the next router addition almost certainly reflows or replaces a line rather than appending one | **Only when the router must grow** — then trim and re-baseline together |
 | 5 | **6-month accuracy sweep** | Scheduled | `LAST-VERIFIED` reads **2026-07-08**, so due ~**2027-01-08**; bump it only after a full pass |
+| 6 | **Two deferred ideas from the 2026-08-17 intake** ([ADOPTION-LOG](ADOPTION-LOG.md) 2026-08-17) | Both are one source's judgement call, not established practice, so neither cleared the bar for `adopted` | **(a) Event-sourcing replay preconditions** — the state machine must be deterministic (no wall clock, RNG, external IO), and since commands are non-deterministic only the *event* log needs durability. Fold into `sota-architecture/rules/03` §6 the next time that paragraph is edited; not worth a standalone PR. **(b) Geospatial modelling/indexing** — **thin, not absent**: `sota-databases/rules/03:40` already lists geometry under GiST, so this is SRID/geography-vs-geometry, `ST_DWithin` vs a hand-rolled bounding box, and haversine in `WHERE` defeating the index. Revisit only if a second source raises it or a real audit hits it |
 
 **Why the as-deployed competitor comparison is rejected (2026-08-16), not deferred.**
 Checked against the pinned clones rather than from memory: **ECC ships 889 `SKILL.md`
@@ -53,11 +54,13 @@ Its known weakness is that the maintainer hand-picks 4–8 files per competitor;
 disclosed in [COMPETITOR-BENCHMARK](../evals/results/2026-07-13/COMPETITOR-BENCHMARK.md)
 and is a better-understood limitation than the confounds above.
 
-**Pending, not blocked: a release cut.** `[Unreleased]` carries four rule additions and
-one fix. By this repo's own test (`RELEASING.md` §"Minor or patch?" — minor = the library
-gains a surface someone can *use*; patch = the change lives inside existing surfaces) it
-is a **patch, 1.22.4**: no new skill, script, or gate. Invariant 14 will require a
-`**Front door checked:**` line whose terms resolve.
+**Release cadence, for reference.** That test (`RELEASING.md` §"Minor or patch?" —
+minor = the library gains a surface someone can *use*; patch = the change lives inside
+existing surfaces) has produced a run of patches: 1.22.4 through **1.22.9**, none of them
+adding a skill, script, or gate. Invariant 14 requires each one to carry a
+`**Front door checked:**` line whose terms resolve, and at the 1.22.9 cut it did its job —
+the release's own capability (double-entry ledgers, reconciliation) read **zero** in
+`README.md` until the cut added the sentence.
 
 **Closed 2026-08-16 — the instrument audit (PRs #223, #224, #225).** Prediction
 [pre-registered and committed before any finding](../evals/results/2026-08-16/PRE-REGISTRATION-INSTRUMENT-AUDIT.md);

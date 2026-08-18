@@ -1,13 +1,24 @@
-# Design — the real-repo audit eval (candidate selected, nothing measured yet)
+# Design — the real-repo audit eval (RUN 2026-08-13/14; question closed)
 
-**Status: design + verified candidate. No run, no number, no lift.** Running it
-costs money (roadmap item "paid eval runs") and needs an explicit go. Nothing in
-this file may be cited as a result.
+**Status: EXECUTED. Results supersede this file's planning language.** The eval was
+run against `goharbor/harbor` v2.5.1 over 16 real BOLA sites: recall **15/16 = 15/16**,
+precision **1.00 = 1.00** over 59 blinded findings, adjudicator controlled at 4/4 —
+**+0.00 on both**, half the run discarded for a contamination vector the design had not
+anticipated. Read the outcome, not the plan:
+[results/2026-08-13/REAL-REPO-AUDIT.md](results/2026-08-13/REAL-REPO-AUDIT.md).
 
-## Why this exists
+This file is kept for its **method** — subject selection, the precondition that killed
+the previous candidate, and the blinding scheme — all of which held up and are reusable.
+Its forward-looking sentences ("nothing measured yet", "needs an explicit go") are
+historical. **Do not build a tenth accuracy instrument**: audit recall and precision are
+both closed at nine instruments across four designs, and only a different *dependent
+variable* (time-to-find, report usability, reach for a non-expert) remains untested.
 
-The AUDIT arm reads **+0.00 across seven instruments and three designs**
-(`results/2026-07-30/UNSCOPED-AUDIT.md`, `DEAD-PATH.md`). Two of those designs
+## Why this existed
+
+At design time the AUDIT arm read **+0.00 across seven instruments and three designs**
+(`results/2026-07-30/UNSCOPED-AUDIT.md`, `DEAD-PATH.md`) — now nine and four, with this
+eval supplying the fourth design and the last two instruments. Two of those designs
 used *synthetic* fixtures, and on 2026-08-03 the synthetic route was ruled out
 twice: a planted defect is a **deviation from generated filler**, and agents find
 deviations structurally, without security reasoning — the bare arm scored 6/6.
