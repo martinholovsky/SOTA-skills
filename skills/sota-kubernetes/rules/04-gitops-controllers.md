@@ -130,6 +130,48 @@ Current Argo CD line is ~3.4.x (verify). Stay on a supported minor, watch the ad
 feed, and patch Critical auth/secret-exposure issues on the emergency track. Flux likewise
 publishes advisories — track its controllers' CVEs.
 
+## 7. Write-back controllers — the success log is not the commit
+
+§1–§6 cover what the controller may do *inward*: git → cluster. A controller that
+also writes **outward** — an image-update controller, a PR bot, config sync
+committing rendered manifests back — is an instrument reporting on itself, so
+`sota-code-security` rules/12 §2 applies to it in full. Its log describes the
+update it *decided* to make, not the write landing.
+
+**R7.1 — Verify at the remote, never from the controller's own counters.**
+`git ls-remote` the branch, read the file on `origin`, or diff the rendered
+manifest. A line like `images_considered=2 images_skipped=0 images_updated=1
+errors=0` reports decisions taken in memory, and is emitted independently of any
+commit.
+
+Measured (2026-08-18, a GitOps image-update controller on a private cluster).
+A second image alias was added to one custom resource so that two images built
+from the same commit would move in lockstep. The controller then logged
+`Committing 1 parameter update(s)` and `Successfully updated the live application
+spec` **every reconcile cycle for ~15 minutes across ~7 cycles**, while making no
+`git commit` or `git push` at all — nothing in its own log, and the remote branch
+never moved. Net effect: the primary application silently stopped auto-deploying
+and the two images skewed apart, which is the exact invariant the second alias
+existed to guarantee. Removing the alias, with the primary image deliberately left
+on the old tag so the next reconcile was a clean experiment, produced a commit
+within **84 seconds** — that is what established cause rather than correlation.
+The controller-side root cause was never found and did not need to be: the
+operator has to check the remote, not explain the bug.
+
+**R7.2 — A per-object counter counts decisions; an aggregate hides the failure.**
+Both traps are in that incident. `updated=1` counts what the reconciler resolved
+to do. And where a controller manages N objects, one object's success masks
+another's silent failure in any rolled-up total — the write kept working for one
+image and stopped for the other while the aggregate stayed healthy. **Assert on
+all N, not on the sum.** Alert on the **age of the last observed remote change**,
+which goes stale by itself when writes stop; a counter of successes never will.
+
+**R7.3 — This is a liveness gap, not an integrity one.** Nothing was corrupted and
+no alarm was wrong: a write that should have happened did not, and every signal
+reporting on it was a signal about intent. Freshness is the only observable that
+degrades when an outbound write stops — the same distinction `sota-code-security`
+rules/04 §8 draws between integrity and completeness for audit ledgers.
+
 ## Audit checklist
 
 - [ ] GitOps is the only write path to prod (no routine human `kubectl apply`); GitOps repos have branch protection + required review + signed commits?
@@ -142,3 +184,4 @@ publishes advisories — track its controllers' CVEs.
 - [ ] Prod sync gated (approval/sync windows), not blind auto-sync; `prune`/`selfHeal` reviewed; drift alerted and triaged as a security signal?
 - [ ] Promotion = move verified digest through git; rollback = git revert (not hand-edits)?
 - [ ] Argo CD/Flux on a supported version, CVE feed tracked, recent Critical advisories (Secret-extraction, cred-exposure) patched? (`argocd version`)
+- [ ] Any controller that writes **outward** (image updater, PR bot, config sync committing back) is verified **at the remote** — `git ls-remote` / the file on `origin` / a rendered-manifest diff — not from its own `updated=N errors=0`; freshness of the last remote change is alerted, and a controller managing N objects asserts on all N rather than an aggregate? (§7)

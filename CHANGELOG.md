@@ -27,8 +27,41 @@ Rust needs no `WaitDelay` equivalent, and that is exactly what makes it easy to 
 wrong: the deadline works, so the code looks correct, while cancelling a future is not
 killing a process. The rule pairs the deadline with `.kill_on_drop(true)`.
 
+**A second brief, and a rule that had a direction.** A field brief from a session
+applying the library returned three findings and an observation. Two were real gaps; one
+was already in the tree at the brief's own anchor commit; and the observation turned out
+to contain something better than the change it proposed — a rule the library states
+absolutely that its own evidence contradicts.
+
+`sota-testing` rules/07 said **"never assert wall-clock durations"**, no carve-out. The
+brief's evidence table says the single unit test that caught a live defect in that session
+*was* a wall-clock assertion: a 300 ms deadline measured at **30.28 s**, because a
+grandchild holding an inherited pipe kept the wait alive. Both are right, about different
+things — a percentage margin on shared CI is the flake that bullet is about; two orders of
+magnitude is not. Same shape as v1.22.10's allow arm: an existing rule with a *direction*,
+not a missing rule.
+
 ### Added
 
+- **`sota-kubernetes/rules/04` §7 — write-back controllers.** Anything reconciling
+  *outward* (image updaters, PR bots, config sync committing back) is an instrument
+  reporting on itself: its log describes the update it **decided** on, not the write
+  landing. Measured — a controller logged `Committing 1 parameter update(s)` and
+  `updated=1 errors=0` every reconcile for ~15 minutes across ~7 cycles while pushing no
+  commit at all, silently stopping auto-deploy; cause established, not inferred, by
+  removing the trigger and watching a commit appear in **84 seconds**. Verify at the
+  **remote**; alert on the *age of the last remote change*, which goes stale by itself
+  when writes stop, where a success counter never will; and where a controller manages N
+  objects, assert on all N — one object's success hides another's silent failure in any
+  aggregate.
+- **`sota-observability/rules/02` §4a — `now` vs `offset X` is two samples, not a trend**,
+  and it convinces *more* than one sample, which is what makes it dangerous. Measured: a
+  p99 of **0.40 s now** against **8.83 s at 24 h** — a tidy 22x — on a series that swings
+  **0.11–13.40 s** across the day, while the load-invariant absolute count was flat. Two
+  points cannot separate a step change from a diurnal swing. A percentile is a *ratio*, so
+  prefer a load-invariant absolute count for "is this still happening"; and a production
+  series cannot be re-run, so sampling more *offsets* is the only equivalent of a
+  benchmark's repeat runs.
 - **`sota-rust/rules/05` §9 — running external programs**, seven rules with four audit
   probes: argv is never split by either API (so the Rust mistake is the *inverse* of the
   shell one); argument injection still survives argv; the Windows `.bat`/`.cmd` exception
@@ -45,6 +78,11 @@ killing a process. The rule pairs the deadline with `.kill_on_drop(true)`.
 
 ### Fixed
 
+- **`sota-testing/rules/07` §3 banned wall-clock assertions outright.** Carved out: where
+  the deadline *is* the behaviour under test — a timeout, a cancellation, a kill-on-drop,
+  a watchdog — elapsed time is the only oracle, and injecting the clock tests the
+  arithmetic while proving nothing about whether the deadline fires. Assert with an
+  order-of-magnitude margin.
 - **`sota-sandboxing/rules/04` R5.1 told you to "beware `.arg` vs `.args` splitting".
   Neither splits** — measured. The line invited exactly the wrong mental model of an API
   whose argv guarantee is its main safety property; it now states the guarantee and names
@@ -66,6 +104,16 @@ killing a process. The rule pairs the deadline with `.kill_on_drop(true)`.
   fallback. Re-run against `/usr/bin/env` directly, it showed an empty environment — and
   a follow-up probe showed the OS-default lookup does **not** include the working
   directory here, overturning the hypothesis the first reading suggested.
+- **One of the brief's three findings was rejected as already ours**, and the claim was
+  false at the brief's *own* anchor commit: `sota-sandboxing/rules/04` already carried the
+  language-skill cross-references there, from the very PR the brief credits elsewhere in
+  its own text. Worth recording because it is the finding whose subject is missing a rule
+  that was already present — and because the obvious excuse does not apply: the installed
+  copy is a symlink farm into the repo and is byte-identical, so it cannot lag.
+- **Two of the brief's suggestions were declined.** Moving the BUILD self-audit earlier
+  would break a *measured* placement (its last position is where the completeness lift is
+  attributed), and the router has six lines of headroom, so it would reflow rather than
+  append. The hook-versus-typed-instruction note is a delivery-docs question, not a rule.
 - No efficacy number attaches to this work; the AUDIT arm remains +0.00 across nine
   instruments.
 
