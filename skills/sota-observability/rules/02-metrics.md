@@ -159,6 +159,43 @@ histogram_quantile(0.99,
 - Report p50/p95/p99, not the average; keep max/p99.9 visible for tail
   debugging. Track tail latency per dependency, not just at the edge.
 
+### 4a. `now` vs `offset X` is two samples, not a trend
+
+And it convinces *more* than a single sample, which is exactly what makes it
+dangerous: a before/after pair looks like a measurement. Neither point carries an
+error bar, and a bursty series will hand you whatever ratio the two landing spots
+imply.
+
+Measured (2026-08-18). After a fix that bounded a set of unbounded aggregate
+queries, a write-latency p99 read **0.40 s now** against **8.83 s at `offset
+24h`** — a tidy 22x improvement, ready to report. Sampling the same metric at
+hourly offsets across the same day:
+
+```
+-0h 0.40 | -2h 11.59 | -4h 10.49 | -6h 9.54 | -9h 0.11 | -12h 13.40 | -18h 4.38 | -24h 8.97
+```
+
+The series swings **0.11–13.40 s**. "Now" had landed in a trough and "24 h ago" on
+a peak. Across that spread the same pair of reads could have shown anything from a
+**122x improvement** to a **122x regression** (13.40 / 0.11), depending only on
+where the two points landed. The load-invariant signal over the same windows — the **absolute
+rate** of queries slower than the threshold, which a change in total query volume
+cannot move — was flat, i.e. nothing had changed. The fix was real and useful; the
+22x was an artefact of two points.
+
+Rules:
+- Before quoting any before/after from production telemetry, **sample the
+  intervening window**. Two points cannot distinguish a step change from a
+  diurnal swing, and the diurnal swing is the common case.
+- When the question is "is this still happening", prefer a **load-invariant
+  absolute count** to a percentile. A percentile is a **ratio**: a traffic-mix
+  shift, a retry storm, or a batch job ending moves it without anything
+  improving, because the denominator moved.
+- This is not the "many samples, report variance" of a benchmark
+  (`sota-performance` rules/01 §3). A production series **cannot be re-run**, so
+  sampling more *offsets* of the same series is the only equivalent available —
+  and a deploy marker on the chart is worth more than either number.
+
 ## 5. Exemplars: metrics → traces in one click
 
 An exemplar attaches a sampled trace_id to a histogram bucket observation.
@@ -265,5 +302,9 @@ Rules:
       spanmetrics provides the metric↔trace bridge.
 - [ ] `service.version` and environment present on all series; deploys are
       correlatable with metric shifts.
+- [ ] Does any before/after claim from production telemetry rest on exactly two
+      points (`now` vs `offset X`)? The intervening window must be sampled, and
+      "is it still happening" answered with a load-invariant absolute count
+      rather than a percentile, whose denominator moves on its own (§4a).
 - [ ] Metrics pipeline self-monitored (scrape/export failures alerted);
       unused metrics pruned.

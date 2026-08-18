@@ -85,6 +85,11 @@ Non-negotiables for any benchmark:
    constant-arrival-rate load (wrk2, vegeta, k6 `constant-arrival-rate`) when
    measuring latency under a target throughput.
 
+**A production metric you cannot re-run has no "run it 30 times".** §3's remedy
+assumes a repeatable benchmark. For a live series the equivalent is sampling more
+*offsets*, never a `now` vs `offset 24h` pair — `sota-observability` rules/02 §4a
+has the measured case where such a pair showed 22x on a series that had not moved.
+
 ## 4. Percentiles, not averages
 
 Averages are arithmetic fiction for latency. Latency distributions are

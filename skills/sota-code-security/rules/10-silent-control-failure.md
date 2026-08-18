@@ -428,6 +428,11 @@ Design:
 
 ## Audit checklist
 
+- [ ] Anything that writes **outward** on a schedule (a GitOps write-back
+      controller, a PR bot, a sync job) verified at the **destination** rather
+      than from its own success counters — its log reports the update it decided
+      to make, not the write landing (`sota-kubernetes` rules/04 §7)?
+
 - [ ] For each security control in scope: if it were a no-op, would any log,
       metric, response, or test differ? No → finding, regardless of current
       correctness.

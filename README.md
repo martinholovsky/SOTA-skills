@@ -139,8 +139,12 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   every run is *skipped* (and on GitHub a skipped job reports **Success** to branch
   protection), a policy engine left in `Audit`/`warn`/report-only since the day it
   shipped, a report whose word "verified" traces to no line that can fail, a test that
-  still passes when the control's body is replaced with a no-op.
-  ([rules/10](skills/sota-code-security/rules/10-silent-control-failure.md))
+  still passes when the control's body is replaced with a no-op, a **write-back
+  controller** logging `updated=1 errors=0` every cycle for fifteen minutes while
+  pushing no commit at all — its log describes the update it *decided* on, not the
+  write landing.
+  ([rules/10](skills/sota-code-security/rules/10-silent-control-failure.md),
+  [kubernetes rules/04 §7](skills/sota-kubernetes/rules/04-gitops-controllers.md))
 - **Controls that block everything** — the mirror image, and the one every other pass
   here looks past. An *enforcement* control (cap, quota, filter, allowlist, sandbox
   policy) can be tightened until it refuses the legitimate case too, and it passes the

@@ -27,7 +27,17 @@ also masks *real* intermittent bugs, the most expensive kind.
    - **Async/race**: fixed sleeps, unawaited promises, racing a spinner,
      assertion before settle. Fix via `rules/02` §2.6, `rules/05` §5.3.
    - **Time**: real clocks, midnight/DST/month boundaries, timeout tuned to
-     a fast machine. Fix: inject clock; never assert wall-clock durations.
+     a fast machine. Fix: inject clock; never assert wall-clock durations —
+     **except where the deadline itself is the behaviour under test.** A
+     timeout, a cancellation, a kill-on-drop or a watchdog has no oracle other
+     than elapsed time: injecting the clock tests the arithmetic and says
+     nothing about whether the deadline *fires*. Assert those with an
+     **order-of-magnitude** margin rather than a percentage one — a 300 ms
+     budget asserted at `< 5 s` leaves a ~16x cushion, and one such
+     assertion caught a real case measured at **30.28 s**, where a grandchild
+     holding an inherited pipe kept the wait alive (`sota-sandboxing` rules/04
+     R5.3a). The flake this bullet is about is a *percentage* margin on shared
+     infrastructure; two orders of magnitude is not that.
    - **Infra/environment**: port collisions, disk full, container pull
      flakes, third-party sandbox blips. Fix in harness/CI, not the test.
    - **Test bug**: nondeterministic data (unseeded random, map ordering),
