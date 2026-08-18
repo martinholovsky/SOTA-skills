@@ -173,6 +173,17 @@ Triage discipline — the part everyone fails:
   auth path outranks an unreachable Critical in a build-time tool. Recent grype releases
   bundle KEV and EPSS data and sort output by a computed risk score — use that ordering
   as the triage queue instead of bolting KEV lookups on by hand.
+- **Applicability is a fourth axis, and it lives in the advisory prose, not in the
+  score.** "Affected only on 32-bit platforms", "only when feature X is enabled",
+  "only the CLI entrypoint, not the library" is neither reachability nor exposure
+  nor KEV — and no scanner ordering reflects it, because a scanner reads the
+  affected *version range* and the CVSS vector, not the paragraph that rules you
+  out. Open the advisory and read its affected-platform / affected-configuration
+  text before triaging. When it excludes you, that is a `not_affected` VEX
+  (`vulnerable_code_not_present` when the affected code is not built for your
+  platform; `vulnerable_code_not_in_execute_path` when the affected feature is off),
+  not an ignore-with-expiry — the justification list is closed, so pick from it
+  rather than writing prose.
 - **Record decisions as VEX** (OpenVEX): `not_affected` with justification
   (`vulnerable_code_not_in_execute_path`, etc.) or `affected` + remediation deadline. Feed
   VEX back into scanners so triaged findings stop re-alerting — that's what keeps the gate
@@ -430,7 +441,7 @@ dynamic-loading trap, a code-only search is structurally incapable of settling i
 - [ ] No `--extra-index-url` public/private mixing; npm internals scoped; GOPRIVATE set; internal names reserved publicly; fetches go through a caching proxy with audit log
 - [ ] Install scripts disabled by default in CI (`--ignore-scripts`/pnpm allowlist); new-dependency review covers install hooks, obfuscation, maintainer churn
 - [ ] SBOM (CycloneDX/SPDX) generated per artifact from lockfile + image, attached to the digest, queryable centrally
-- [ ] Scanning: PR diff gate + scheduled scans of deployed digests; triage uses reachability/KEV/EPSS; decisions recorded as VEX; ignores have owner + expiry; SLAs enforced
+- [ ] Scanning: PR diff gate + scheduled scans of deployed digests; triage uses reachability/KEV/EPSS **and the advisory's own affected-platform/affected-configuration text** (§3.6); decisions recorded as VEX; ignores have owner + expiry; SLAs enforced
 - [ ] Renovate/Dependabot active with cooldown (`minimumReleaseAge`), grouping, automerge restricted to dev/patch with green required checks; Actions + Docker digests auto-pinned
 - [ ] Vendored deps (if any) are scanner-visible, auto-refreshed, and unpatched (or patches tracked upstream)
 - [ ] **Inert-dependency sweep run (§3.9)**: every direct dependency, registered module, and plugin traced to a real entrypoint — not just to an import — with the impossible-path and dynamic-loading traps checked in both directions

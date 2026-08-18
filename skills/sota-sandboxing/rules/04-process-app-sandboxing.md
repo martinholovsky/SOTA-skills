@@ -21,7 +21,10 @@ make "parse attacker bytes in the main service process" indefensible.
 3. Worker applies its own sandbox *before* touching input bytes:
    `no_new_privs` → drop caps → Landlock (empty fs policy) → strict seccomp
    allowlist (compute-only: read/write/mmap/brk/futex/exit; **no openat, no socket,
-   no exec**) → rlimits (`RLIMIT_FSIZE`, `RLIMIT_CORE=0`) → cgroup budget.
+   no exec**) → rlimits (`RLIMIT_FSIZE`, `RLIMIT_CORE=0`) → cgroup budget. Memory
+   belongs in the cgroup or in `RLIMIT_DATA` — **never `RLIMIT_AS`**, which kills a
+   Go or JVM worker at startup (`02` R7.2a); when no cgroup can be created here,
+   `02` R7.2b has the ladder.
 4. Worker writes the *normalized* result (decoded RGBA, extracted text, re-encoded
    archive listing) to the output FD; parent enforces output size/shape limits.
 5. Worker exits; one worker per input; **never reuse a worker across inputs** from
@@ -174,6 +177,20 @@ program path (no PATH lookup of attacker-named binaries), `close_fds=True` /
 (kill the *process group*: `start_new_session=True` then `killpg`), and stdout/stderr
 size caps (a child that prints 10GB is a DoS on your log pipeline).
 
+**R5.3a — a timeout that waits on inherited pipes is not a deadline, and the
+semantics differ per language.** Verified 2026-08-18: Python 3.14's
+`subprocess.run(..., timeout=)` raises `TimeoutExpired` on schedule even when a
+*grandchild* still holds the pipe — but Go's `exec.CommandContext` kills the child
+on context cancel and then blocks in `Wait` anyway, because "if `WaitDelay` is zero
+(the default), I/O pipes will be read until EOF, which might not occur until
+orphaned subprocesses of the command have also closed their descriptors for the
+pipes" (`os/exec` package docs). Set `cmd.WaitDelay` (Go 1.20+). Do not generalise
+from whichever language you used last — read that language's subprocess section
+before trusting the timeout: `sota-golang` rules/05 §3, `sota-python` rules/05 §2,
+`sota-javascript-typescript` rules/05 ("Command injection via child_process").
+This is the shape of trap that lives in the *language* skill while you are reading
+the *domain* one, so the routing that brought you here will not bring you to it.
+
 **R5.4 — Files handed to children:** pass FDs not paths where possible; if paths,
 re-validate with `openat2(RESOLVE_BENEATH)` semantics; never let a child write to a
 directory it can also execute from (no write+exec staging dirs).
@@ -236,6 +253,10 @@ building block, not a per-process sandbox API.
       reachable (`find -exec`, `tar --checkpoint-action`, delegates…).
 - [ ] Subprocesses get explicit minimal env, absolute paths, `close_fds`,
       process-group kill on timeout, bounded stdout/stderr.
+- [ ] The timeout is a real deadline in *this* language — pipes held by a
+      grandchild cannot extend it past the limit (Go: `cmd.WaitDelay` set) — and
+      memory is capped with `RLIMIT_DATA`/cgroup, never `RLIMIT_AS` (R5.3a, `02`
+      R7.2a).
 - [ ] macOS: shipped apps use App Sandbox + Hardened Runtime with minimal
       entitlements; untrusted code on macOS runs in VMs, not sandbox-exec alone;
       any sandbox-exec use documented as unsupported-interface risk.

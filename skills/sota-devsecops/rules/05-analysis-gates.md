@@ -240,6 +240,33 @@ required-checks list against the actual workflow job names — orphaned required
 (job renamed/deleted) either block everything (visible, gets fixed) or, with
 "required check expected but not run" semantics misconfigured, silently stop gating.
 
+### The negative control proves the gate *can* fail — not that it still covers you
+
+A committed known-bad answers "can this gate fail?". It never answers "does this
+gate still see the code that matters?", and the two come apart the moment somebody
+refactors. A gate's scope is a path or module expression, and ordinary,
+well-motivated containment moves code out from under it with **no diff to the
+workflow file and no change in risk**:
+
+- `govulncheck ./...` analyses **the current module only** — it uses "the same
+  package path syntax that the go command uses", and `go list ./...` in a module
+  containing a nested `go.mod` silently omits that nested module (verified by
+  execution, 2026-08-18). Extract the risky parser into its own module and a
+  blocking finding becomes an invisible one.
+- Same shape elsewhere: a second `package.json` outside the lockfile the SCA reads,
+  a git submodule, a directory added to `.semgrepignore`, a vendored tree, code
+  moved into a sidecar image the scanner never pulls.
+
+Through all of it the known-bad sits in the main module, the gate keeps rejecting
+it, and the gate keeps proving it *can* fail. This is the temporal form of
+`sota-code-security` rules/11 §2.2: **the same gate's green today does not cover
+the scope it had yesterday.** The check is mechanical — have every gate print the
+number of units it enumerated (modules, packages, files) and fail the build when
+that number **drops**, exactly as you would treat a coverage drop; a refactor that
+legitimately shrinks the tree then costs one deliberate baseline update. Containment
+is good engineering. Containment without repointing the scanner is just a smaller
+blind spot.
+
 ## 5.7 Test discipline — no flaky-mute culture
 
 Flaky tests are a security topic: a suite people retry-until-green will also be retried
@@ -282,6 +309,7 @@ remove it. Diff-aware modes, caching, and tiering are how gates survive.
 
 - [ ] SAST: diff-aware Semgrep (org rules included) required on PRs; CodeQL (or equivalent deep SAST) on default branch; full scans scheduled
 - [ ] Every security gate ships a **negative control** — a committed known-bad it must reject on every run. No framework (SSDF, CRA, Scorecard, SLSA) requires this; a passing compliance check is evidence of process, not protection (§5.6, `sota-code-security` rules/12)
+- [ ] Every gate prints the **number of units it enumerated** and the build fails when that number drops — a refactor that moves code into a nested module, a second manifest, a submodule or a sidecar image silently shrinks the gate's scope while the negative control keeps passing (§5.6)
 - [ ] All inline suppressions (`nosemgrep`/`#nosec`/checkov skips) carry justifications; suppression inventory reviewed; baseline only shrinks
 - [ ] Secret scanning: push protection org-wide, PR diff scan, history scanned at onboarding; committed secrets trigger rotation, not just removal; bypass events reviewed
 - [ ] IaC scanning on PRs (plan-aware where possible) with the high-signal defaults non-exceptable; custom org policies versioned + tested
