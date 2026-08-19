@@ -4,7 +4,7 @@ Priorities set by the **2026-07-10 audit**
 ([AUDIT-2026-07-10.md](AUDIT-2026-07-10.md)). Ordered; revisit after each
 release. The 2026-07-01 cycle is fully executed and kept below as history.
 
-## Start here next session *(as of 2026-08-18)*
+## Start here next session *(as of 2026-08-19)*
 
 Everything actionable, ordered. Each line says what it is, why it is not done, and the
 first move. **The written-conventions backlog is empty** — invariant 14 closed the last
@@ -12,17 +12,20 @@ gateable candidate — so nothing below comes from re-reading docs. That predict
 held twice: the v1.21.1 candidates came from incidents, and the three additions of
 2026-08-11 came from **reading an outside implementation's own failure notes**.
 
-Every number in this table was re-counted on 2026-08-18, not carried forward.
+Every number in this table was re-counted on 2026-08-19, not carried forward.
 
 | # | Item | Why not done | First move |
 |---|---|---|---|
-| 1 | **Distribution / adoption** — still the bottleneck, though less flat than it looked (**13 stars, 2 forks**, re-checked live via `gh api` on 2026-08-18 — flat for five days) | Not a code task; needs a person, not a gate | Publish the salience write-up; a before/after audit demo |
+| 1 | **Distribution / adoption** — still the bottleneck, though less flat than it looked (**13 stars, 2 forks**, re-checked live via `gh api` on 2026-08-19 — unchanged for six days) | Not a code task; needs a person, not a gate | Publish the salience write-up; a before/after audit demo |
 | 2 | **Real-repo audit eval — CLOSED 2026-08-14.** Recall *and* precision both measured, both +0.00 | Recall 15/16 = 15/16; precision **1.00 = 1.00** over 59 blinded findings, adjudicator controlled at 4/4; severity mix indistinguishable. Nine instruments, zero lifts | Nothing. Do **not** build a tenth audit-recall or audit-precision instrument. If the audit claim is ever revisited, it needs a different *dependent variable* (time-to-find, report usability, or defects found by a non-expert), not another accuracy metric |
 | 3 | **Competitor comparison — content-only re-run DONE 2026-08-14/15, claim holds. As-deployed REJECTED 2026-08-16** | Re-run at the pinned SHAs with the same build model: SOTA 98.7 / ECC 84.9 / cursorrules 80.0 / claude-skills 77.0 / unguided 58.2, 17 wins / 4 ties / 0 losses of 21, unguided arm reproducing to 0.2 points as the drift control. **As-deployed is rejected, not deferred:** it measures corpus size and a retrieval path we have already found saturated, not guidance quality — reasoning below the table | Nothing. Do not re-open without a new argument that answers the corpus-size confound |
-| 4 | **Router trim** — 2× the spec's ~5k-token recommendation | Deliberate: trimming breaks `ROUTER_BUILD_SHA` and the +0.39's comparability. **494/500 lines** on 2026-08-18 (re-counted with `grep -c '' skills/sota/SKILL.md`; it has read "exactly 500", then 491, then 494 — never trust the number in prose) — **six lines of headroom**, so the next router addition almost certainly reflows or replaces a line rather than appending one | **Only when the router must grow** — then trim and re-baseline together |
+| 4 | **Router trim** — 2× the spec's ~5k-token recommendation | Deliberate: trimming breaks `ROUTER_BUILD_SHA` and the +0.39's comparability. **494/500 lines** on 2026-08-19 (re-counted with `grep -c '' skills/sota/SKILL.md`; it has read "exactly 500", then 491, then 494 — never trust the number in prose) — **six lines of headroom**, so the next router addition almost certainly reflows or replaces a line rather than appending one | **Only when the router must grow** — then trim and re-baseline together |
 | 5 | **6-month accuracy sweep** | Scheduled | `LAST-VERIFIED` reads **2026-07-08**, so due ~**2027-01-08**; bump it only after a full pass |
-| 7 | **`sota-rust` subprocess coverage — CLOSED 2026-08-19.** The gap was real (zero hits, three independent greps) and is now `sota-rust/rules/05` §9, seven rules with four audit probes | Every claim measured on rustc 1.97.1 / tokio 1.53 rather than carried over from Go or Python — which mattered: **three languages behaved three different ways** under the same pipe-holding-grandchild test. Go's `Wait` blocks past cancellation without `WaitDelay`; Python's raises on schedule; **Rust/tokio's `timeout` fires on schedule but leaves the child running**, because cancelling a future is not killing a process | Nothing. Two corrections rippled out: `sota-sandboxing/rules/04` R5.1 claimed "beware `.arg` vs `.args` splitting" and **neither splits** (measured), and R5.3a's per-language pointer list now includes Rust |
 | 6 | **Two deferred ideas from the 2026-08-17 intake** ([ADOPTION-LOG](ADOPTION-LOG.md) 2026-08-17) | Both are one source's judgement call, not established practice, so neither cleared the bar for `adopted` | **(a) Event-sourcing replay preconditions** — the state machine must be deterministic (no wall clock, RNG, external IO), and since commands are non-deterministic only the *event* log needs durability. Fold into `sota-architecture/rules/03` §6 the next time that paragraph is edited; not worth a standalone PR. **(b) Geospatial modelling/indexing** — **thin, not absent**: `sota-databases/rules/03:40` already lists geometry under GiST, so this is SRID/geography-vs-geometry, `ST_DWithin` vs a hand-rolled bounding box, and haversine in `WHERE` defeating the index. Revisit only if a second source raises it or a real audit hits it |
+| 7 | **`sota-rust` subprocess coverage — CLOSED 2026-08-19.** The gap was real (zero hits, three independent greps) and is now `sota-rust/rules/05` §9, seven rules with four audit probes | Every claim measured on rustc 1.97.1 / tokio 1.53 rather than carried over from Go or Python — which mattered: **three languages behaved three different ways** under the same pipe-holding-grandchild test. Go's `Wait` blocks past cancellation without `WaitDelay`; Python's raises on schedule; **Rust/tokio's `timeout` fires on schedule but leaves the child running**, because cancelling a future is not killing a process | Nothing. Two corrections rippled out: `sota-sandboxing/rules/04` R5.1 claimed "beware `.arg` vs `.args` splitting" and **neither splits** (measured), and R5.3a's per-language pointer list now includes Rust |
+| 8 | **The per-language rows in cross-skill tables are unverified.** `sota-sandboxing/rules/04` R5.1's Rust entry was **wrong** ("beware `.arg` vs `.args` splitting" — neither splits, measured 2026-08-19) | The rows are one clause each and are written from recall; nothing gates them — invariant 8 checks that links resolve, not that sentences are true | Opportunistic, not a project: when a task puts a real toolchain in front of you, measure that language's row and fix it in passing. **Node and Java are still unmeasured** in that table. The measured spread is the argument — three languages gave three different subprocess-deadline behaviours |
+| 9 | **Should this repo have a `pre-push` stage of its own?** It tells users to install one (`sota/SKILL.md` §Day zero, `init-gates.sh` writes `default_install_hook_types: [pre-commit, pre-push]`) and has none | Not an oversight to fix blindly — a pre-push stage that re-runs the pre-commit hooks doubles the work on every push for no new signal | The case *for* is narrow and real: invariants **11 and 14 are diff-based** and resolve against a merge base, so they behave differently before and after a push (`sota-shell-scripting` rules/04 §1b) — which is a pre-push concern, not a pre-commit one. Decide deliberately; check 9a now reports the answer either way |
+| 10 | **Two suggestions from the 2026-08-18 brief were declined, on purpose** | Recorded so they are not re-litigated | **(a)** Moving BUILD step 4's gate advice earlier: its last position is where the measured completeness lift is attributed, and the router has **six lines** of headroom, so it would reflow rather than append. Revisit only with a measurement. **(b)** The hook-versus-typed-instruction note: **done** as documentation (README, always-on routing), stated as mechanism rather than as a measured effect |
 
 **Why the as-deployed competitor comparison is rejected (2026-08-16), not deferred.**
 Checked against the pinned clones rather than from memory: **ECC ships 889 `SKILL.md`
@@ -62,6 +65,27 @@ adding a skill, script, or gate. Invariant 14 requires each one to carry a
 `**Front door checked:**` line whose terms resolve, and at the 1.22.9 cut it did its job —
 the release's own capability (double-entry ledgers, reconciliation) read **zero** in
 `README.md` until the cut added the sentence.
+
+**This cycle (PRs #240-242, 2026-08-19) — a brief, a question, and two of my own
+errors.** A second field brief plus one operator question about `update.sh`. Carry
+forward:
+
+1. **The gate hole came from a *question about a script*, not from reading a rule.**
+   "Are pre-commits updated by update.sh?" surfaced that `pre-commit` writes
+   `.git/hooks/<type>` only at install time, so a release adding a `pre-push` stage
+   reaches every user's config and nobody's hooks — and `verify-setup.sh` check 9
+   could not see it, because it counts hook *files* and the pre-commit one is present.
+   Now check 9a, with a probe (harness 21 → **22**, still 22/22). The library's
+   own gate-scope rule (`devsecops/rules/05` §5.6) predicted this shape a day earlier.
+2. **The first cut of check 9a aborted its own script and exited 0.** Under
+   `set -euo pipefail` a grep matching nothing takes the whole run with it, so the
+   report truncated after check 9 and returned success. Caught by *running* it. If you
+   add a check to `verify-setup.sh`, run it against a repo where the new branch matches
+   nothing before you trust a green.
+3. **Two derived numbers of mine were wrong on first write** — a comparison-table cell
+   filled in by symmetry rather than by a command, and a ratio range that contradicted
+   the series printed beneath it. Both were caught by re-reading the rendered diff, not
+   by any gate, and neither is machine-checkable. Budget a reader's pass over the diff.
 
 **This cycle (PR #236, 2026-08-18) — a session transcript, five for five.** A session
 that *applied* the library to Go subprocess sandboxing handed back five proposals; all

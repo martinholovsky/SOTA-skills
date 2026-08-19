@@ -196,9 +196,11 @@ are marked "needs verification", never asserted.
 15. **the router's library map lists every rules file**, both directions: a
     `skills/<skill>/rules/NN-*.md` that the map in `skills/sota/SKILL.md` does not
     enumerate, or a number the map enumerates with no such file. Practical effect:
-    adding a `rules/NN` means editing that map too — and `skills/sota/SKILL.md` is
-    at **exactly 500 lines** (invariant 1), so reflow an existing line rather than
-    adding one. Invariant 7 checks the map lists every *skill* and invariant 10
+    adding a `rules/NN` means editing that map too — and `skills/sota/SKILL.md` sits
+    close to the 500-line cap (invariant 1), so reflow an existing line rather than
+    adding one. **Re-count it, never trust a number in prose**
+    (`grep -c '' skills/sota/SKILL.md` — 494 on 2026-08-19; this sentence has read
+    "exactly 500" and "491" at other times, both wrong when written). Invariant 7 checks the map lists every *skill* and invariant 10
     checks a rules file is indexed by its *own* `SKILL.md`; neither reads the map's
     contents, which is how `sota-code-security/rules/11` went unlisted from v1.19.8
     to v1.21.0 with every check green.
@@ -218,11 +220,12 @@ check** to be the one that complains; a non-zero exit for any other reason is re
 as a FALSE PASS, because a harness that accepts any failure reports full coverage while
 testing nothing.
 
-Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 6, 10,
-15). Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
+Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 3, 4, 6,
+7, 8, 10, 13, 15, 16 — 11 of 16; the harness prints the list and why the rest are not
+covered, so read its output rather than this sentence). Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
 fully-configured fake one — `CLAUDE_CONFIG_DIR` pointed at a temp home, a throwaway git
 repo, and a stub `gh` on `PATH` so run history is decidable — and each probe removes one
-thing (checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 10a). What is *not* covered is printed rather
+thing (checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a). What is *not* covered is printed rather
 than implied. **Adding a check to either script? Add its known-bad there too** —
 otherwise you have shipped something nobody has ever watched fail. Not in pre-commit: it
 runs a whole gate per mutation.

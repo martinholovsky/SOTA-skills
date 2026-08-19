@@ -514,6 +514,17 @@ beside it instead of refreshing it.
 No mechanism *forces* a model to run a skill — the three layers feed it
 instructions it chooses to follow, making routing reliable, not phrasing-dependent.
 
+**With the hook in place, re-typing the same instruction adds nothing mechanically.**
+Rule (1) is already prepended to every prompt you send, so "always validate your
+claims" is a second copy of text the model has just received. What is *not*
+redundant is naming the **technique** instead of the goal — "re-read the state,
+don't trust your summary", "verify at the remote", "run it rather than reason about
+it". The failure mode this library keeps finding is never *forgot to care*; it is
+*checked the wrong artefact*, and only the specific phrasing redirects that.
+Operating principle 7 is the generic form of it. (Reported from a session using the
+library, 2026-08-18: an observation about mechanism, not a measured effect — nobody
+can run the counterfactual.)
+
 ## Using it
 
 With always-on routing set up (above), you **don't name anything** — describe

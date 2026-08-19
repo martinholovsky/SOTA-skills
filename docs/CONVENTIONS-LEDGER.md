@@ -25,7 +25,7 @@ item).
 | Raw entries | 49 |
 | Duplicates (the invariant list appears in both `AGENTS.md` and `CONTRIBUTING.md`) | 8 |
 | **Distinct conventions** | **41** |
-| Already enforced as invariants | 14 (11 when this ledger was derived) |
+| Already enforced as invariants | 16 (11 when this ledger was derived) |
 
 An earlier estimate of "~122" came from a loose regex that matched any bold line or
 any line containing *must/never/always*. It was an over-count by ~3×, and is
@@ -47,13 +47,18 @@ A convention earns a gate only if it passes **all three**:
 
 ## The ledger
 
-### Enforced (14) — invariants 1–14
+### Enforced (16) — invariants 1–16
 
 Skill-file line cap · audit-checklist placement · internal-name denylist · description cap ·
 version lockstep · count surfaces · router completeness · link resolution ·
 single `[Unreleased]` · rules-file indexed by its SKILL.md · `LAST-VERIFIED` sweep
-pairing · rendered asset no older than its source · scoreboard rows declare their sample size. Each is in
-`scripts/check-invariants.sh` and documented in `AGENTS.md`.
+pairing · rendered asset no older than its source · scoreboard rows declare their sample size ·
+**a release declares its front-door terms and they resolve** · **the router's library map
+lists every `rules/NN` file, both directions** · **the hook `README.md` documents equals the
+one `install.sh` writes**. Each is in `scripts/check-invariants.sh` and documented in
+`AGENTS.md`. (Corrected 2026-08-19: this section read "(14) — invariants 1–14" and named
+only thirteen, while 15 and 16 were already gated and described in the table below —
+the ledger of what is enforced had itself drifted from what is enforced.)
 
 ### Enforced in code, outside the invariant script (8)
 
