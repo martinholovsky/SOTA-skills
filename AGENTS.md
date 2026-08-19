@@ -46,7 +46,7 @@ PR" version is in [CONTRIBUTING.md](CONTRIBUTING.md#the-invariants-enforced).
 | 11 | `LAST-VERIFIED` moves without a sweep. Escapes: a sweep-shaped diff (≥ 20 skill files) or naming it in the CHANGELOG. The only **diff-based** check; skips with a note when there's no merge base |
 | 12 | an `assets/*.png` is older than the `*.html` it renders — the README embeds the *image*, never the source, so an un-rendered fix reaches nobody. Escape: `[no-render]` in the commit subject |
 | 13 | a scoreboard row in `evals/results/RESULTS.md` leaves its `Samples` cell empty |
-| 14 | a **release** (VERSION changed) carries no `**Front door checked:**` line in its CHANGELOG section, or a declared term resolves in neither `README.md`/`docs/INDEX.md` nor the release's own entry |
+| 14 | a **release** (VERSION changed) carries no `**Front door checked:**` line in its CHANGELOG section, or a declared term is missing from `README.md`/`docs/INDEX.md` **or** from the release's own entry |
 | 15 | the router's **library map** omits a `rules/NN` file that exists, or names one that doesn't — checks 7 and 10 both miss this, and `rules/11` went unlisted for two releases |
 | 16 | the hook `README.md` **documents** differs from the one `install.sh` **writes** (`HOOK_CMD`) — the README's is what a reader copies by hand, so a stale block is the version that spreads |
 | 17 | a document that **describes** the checks disagrees with them — a stated count that isn't the script's, or a restated negative-control coverage list that isn't the harness's. Counts inside `"quotes"` are read as history, not claims |
