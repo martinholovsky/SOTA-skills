@@ -5,6 +5,22 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **The v1.22.14 cut's finding is now recorded where a future gate proposal will
+  meet it.** `docs/CONVENTIONS-LEDGER.md` states where invariant 17 stops — it
+  asserts that every stated count equals the script's own `[k/N]` and that
+  `AGENTS.md`/`CONTRIBUTING.md` enumerate 1..N with no gaps, and **nothing about
+  what a description means** — with the first instance against it: `AGENTS.md`'s
+  invariant 14 row described an OR across README/INDEX/entry where
+  `scripts/check-invariants.sh:842` and `:848` require an AND, while agreeing on
+  every number. Through the three filters it is incident **yes**, silent **yes**,
+  mechanically checkable **no**, so it is recorded as ungateable rather than
+  proposed as invariant 18. `docs/ROADMAP.md` carries it as item 11, and its
+  intro paragraph — which claimed nothing in the table comes from re-reading docs
+  — now names item 11 as the near-exception, since it was found exactly that way.
 ## [1.22.14] - 2026-08-19
 
 **A rule that pointed one way.** `rules/10` §2.7 has warned against truncating input

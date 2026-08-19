@@ -183,6 +183,22 @@ what that costs the "re-read the docs" strategy: this document was re-read at tw
 consecutive release cuts and the heading survived both, because a reader checking
 *whether a convention is gated* looks at the rows, not at the count above them.
 
+**Where invariant 17 stops, stated with an instance (2026-08-19, the v1.22.14 cut).**
+It asserts two things and no more: every stated count equals the script's own `[k/N]`,
+and `AGENTS.md`/`CONTRIBUTING.md` each enumerate 1..N with no gaps. It does **not**
+compare what a description *means* to what the check *does*. The first instance is
+already on the board: `AGENTS.md`'s invariant 14 row read "a declared term resolves in
+**neither** `README.md`/`docs/INDEX.md` **nor** the release's own entry" — an OR across
+all three — while `check-invariants.sh:842` requires (README **or** INDEX) and `:848`
+requires the release's own entry, an AND. `CONTRIBUTING.md` item 14 was already correct,
+so two documents describing one gate agreed on the count and disagreed on the logic.
+Through the three filters: incident **yes** (once), silent **yes**, mechanically
+checkable **no** — matching the semantics of two restatements written at deliberately
+different granularities is the judgement class this ledger exists to argue against
+gating, and it is the same residual `CONTRIBUTING.md` item 17 already states for row 12
+versus item 12. The remedy stays a habit: read the prose beside the script at each cut,
+which is how this one surfaced.
+
 ## Findings
 
 **1. The "never publish from n=1" convention contradicts itself.** The bolded
