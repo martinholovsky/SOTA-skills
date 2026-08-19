@@ -311,14 +311,14 @@ For a **full project audit**, work in passes:
 4. **Silent-control pass (always run it).** The per-domain passes ask "is the control there?" —
    this one asks "does it *do* anything?". For every control they confirmed exists, apply `sota-
    code-security` rules/10: swallowed enforcement exceptions, presence decided by `exists()`
-   rather than a loaded artifact, rulesets that load zero rules, truncation before inspection,
-   attacker-triggerable early returns, config keys silently ignored, defaults that differ between
-   docs and code, degradation nothing logs, and controls whose tests still pass when the body is
-   replaced with a no-op. This class is invisible to the other passes — the code isn't wrong, it's
-   inert — and to pattern-based SAST for the same reason. **Sweep with `rules/11` first** to find
-   *where* to look: stage duration vs work claimed, every gate's denominator (`0 checked, 0
-   failed, exit 0`), size-gated paths no fixture crosses, cache keys narrower than the behaviour,
-   one-sample parsers, `assert`-as-control.
+   rather than a loaded artifact, rulesets that load zero rules, truncation into an inspector or
+   out of a generator, attacker-triggerable early returns, config keys silently ignored, defaults
+   that differ between docs and code, degradation nothing logs, and controls whose tests still
+   pass when the body is replaced with a no-op. This class is invisible to the other passes — the
+   code isn't wrong, it's inert — and to pattern-based SAST for the same reason. **Sweep with
+   `rules/11` first** to find *where* to look: stage duration vs work claimed, every gate's
+   denominator (`0 checked, 0 failed, exit 0`), size-gated paths no fixture crosses, cache keys
+   narrower than the behaviour, one-sample parsers, `assert`-as-control.
 5. **Decision-ledger review.** Code passes find defects in what was built; they cannot find the
    defect where the code faithfully implements a choice that **stopped being right** — a store
    picked for scale that never arrived, a rewrite justified by a benchmark that no longer

@@ -173,7 +173,7 @@ is a bypass. Oversized/unparseable input on a security path is **reject**, not
 allow. If it must be allowed for availability, it is a documented, metered
 fail-open (§2.4), and the guard is placed *after* the control wherever possible.
 
-### 2.7 Truncation before inspection
+### 2.7 Truncation into an inspector — or out of a generator
 
 Any `[:limit]`, `head -c`, `LIMIT n`, buffer cap, or "first N bytes" applied
 *before* a validation, scan, or signature check.
@@ -188,6 +188,16 @@ cannot handle unbounded input, cap the input at the **boundary** and reject
 what exceeds the cap — do not inspect a prefix and pass the whole. See rules/06
 for the numeric analogue (width truncation defeating size checks) and rules/04
 for signature-chain truncation.
+
+**The mirror — a cap on a generator's *output*, then parsed.** Same family,
+opposite direction: an unset `max_tokens` inheriting a chat-sized default, a
+`--max-results`, a capped read of stdout. **There is no truncation operator to
+grep for** — the cap lives in a default the call site never names. The fragment
+then either fails to parse, where §2.4's swallowed handler turns it into an
+empty-but-valid result (§2.3), or — line-oriented output — parses clean as a
+*prefix* nothing downstream can tell from the whole. Rule: bound the producer's
+**scope** (a page, a narrowed query), never its output, and compare produced
+size against the cap before parsing (rules/11 §2.2).
 
 ### 2.8 Config keys in the wrong section, silently ignored
 
@@ -458,7 +468,8 @@ Design:
 - [ ] Early-return guards on empty/oversized/unparseable input that an attacker
       can deliberately trigger to skip inspection?
 - [ ] Any truncation (`[:N]`, byte caps, `LIMIT`) on the path *into* a scan,
-      validation, or signature check?
+      validation, or signature check — or a cap on a **generator's output**
+      (unset `max_tokens`, `--max-results`) whose fragment is then parsed?
 - [ ] Config/policy schemas reject unknown keys, and every key in the reference
       config resolves to a real field of its section (tested structurally)?
 - [ ] Security/privacy/cost-relevant defaults verified in **both** docs and code,
