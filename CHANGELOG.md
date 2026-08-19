@@ -5,6 +5,43 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+**Nothing checked the documents that describe the checks.** Twice in one week a doc
+that *describes* the gates drifted from the gates: `CONTRIBUTING.md` listed part A's
+negative-control coverage as five invariants when the harness printed eleven, and
+`docs/CONVENTIONS-LEDGER.md` headed its enforced section **"(14) — invariants 1–14"**
+while 15 and 16 were already gated *and* described in its own table below. Both were
+found by reading, both after shipping. A document that under-describes the gates is
+indistinguishable from a correct one — which is the class every other invariant here
+exists for, now aimed at our own prose.
+
+### Added
+
+- **Invariant 17 — docs describing the invariants agree with the scripts.** It derives
+  the authority from `check-invariants.sh` itself (every `[k/N]` marker must share one
+  `N`, and the `k`s must be exactly `1..N`), then requires every stated count in
+  `AGENTS.md`, `CONTRIBUTING.md`, `docs/CONVENTIONS-LEDGER.md` and
+  `docs/MAINTENANCE.md` to match it, and both negative-control coverage lists to be
+  restated exactly as `check-negative-controls.sh` prints them. **12 claims checked.**
+- **A probe for it**, bringing part A to **12 of 17** invariants covered.
+
+### Notes
+
+- **A count inside `"quotes"` is read as a quotation, not a claim.** Without that, the
+  correction note added last release — which records that the ledger *used to* say
+  "(14) — invariants 1–14" — would trip the very check it motivated. It is the
+  supersede-don't-edit rule made mechanical.
+- Two defects in the check were caught by running it before trusting it. `"Invariant 10
+  checks its own SKILL.md"` matched as a phantom **"0 checks"** (the look-behind needs a
+  `\b` before the digits, or it anchors on the trailing digit of `10`), and the
+  coverage lists are prose that **wraps at ~80 columns**, so a substring test failed on
+  where the line happened to break. Both fixes carry the incident in a comment.
+- The gate then immediately caught a live drift: adding the probe changed the harness's
+  coverage line to `12 of 17`, and invariant 17 failed until `AGENTS.md` and
+  `CONTRIBUTING.md` were updated to match. It was useful within a minute of existing.
+
+
 ## [1.22.11] - 2026-08-19
 
 **Three languages, three behaviours, one test.** The v1.22.10 cut left one deferral on

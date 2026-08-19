@@ -211,6 +211,16 @@ are marked "needs verification", never asserted.
     and the README's is the one a reader copies by hand, so the stale one is the
     one that spreads. The check parses the fenced JSON rather than regexing the
     string, so reformatting the block is not a false positive.
+17. **a document that describes the checks disagrees with them**: any stated count
+    of invariants/checks that isn't the number `check-invariants.sh` prints, or a
+    restatement of the negative-control coverage lists that isn't what
+    `check-negative-controls.sh` prints. Practical effect: if you add a check,
+    the count in `AGENTS.md`, `CONTRIBUTING.md`, `docs/CONVENTIONS-LEDGER.md` and
+    `docs/MAINTENANCE.md` must move with it. Added 2026-08-19 after this file
+    understated part A's coverage by six invariants and the ledger headed its
+    enforced section "(14)" while 16 were gated. A number inside `"quotes"` is
+    treated as a quotation of old wording, not as a claim — that is how a
+    correction note can record what a document *used* to say.
 
 **Proving our gates can still fail.** `check-invariants.sh` passing means the tree is
 clean — it does not mean the checks still work, and those two states print identically.
@@ -221,8 +231,8 @@ as a FALSE PASS, because a harness that accepts any failure reports full coverag
 testing nothing.
 
 Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 3, 4, 6,
-7, 8, 10, 13, 15, 16 — 11 of 16; the harness prints the list and why the rest are not
-covered, so read its output rather than this sentence). Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
+7, 8, 10, 13, 15, 16, 17 — 12 of 17; the harness prints the list and why the rest are
+not covered, so read its output rather than this sentence). Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
 fully-configured fake one — `CLAUDE_CONFIG_DIR` pointed at a temp home, a throwaway git
 repo, and a stub `gh` on `PATH` so run history is decidable — and each probe removes one
 thing (checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a). What is *not* covered is printed rather
