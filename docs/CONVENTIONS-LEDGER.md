@@ -122,6 +122,7 @@ never said out loud, which surface only when one of them fails.
 | **Router library map lists every `rules/*` file** | **yes** — `rules/11` was absent from the map in `skills/sota/SKILL.md` for two releases (found 2026-08-05) | **yes** — invariant 7 gates *skills* against the router and invariant 10 gates rules files against their *own* `SKILL.md`; the map itself is checked by neither, so drift there is silent | **yes** — diff `git ls-files 'skills/*/rules/*.md'` against the map's entries | **GATED 2026-08-05 as invariant 15** — both directions, watched to fail on the real defect and its inverse first |
 | **A negative control for our own gates** | **partly** — no gate of ours has been caught inert, but two were caught *examining nothing* (2026-07-30) and the fix was to print the denominator, not to prove the check can reject | **yes** — an invariant that can no longer fail prints the same `ok` as one that can | **yes** — a fixture directory each invariant must reject, asserted non-zero | **GATED 2026-08-05 as `scripts/check-negative-controls.sh`**, its own CI job — 5/5 mutations caught by the intended check |
 | **The documented hook matches the installed hook** | **yes** — three different texts existed at once (2026-08-05): `README.md`'s JSON block, `install.sh`'s `HOOK_CMD`, and what was actually in a user's `settings.json`; the README's was two revisions behind | **yes** — nothing reads the README, so a doc showing a hook we no longer install is indistinguishable from a correct one | **yes** — extract the `command` string from the README's fenced JSON and compare it to `HOOK_CMD` | **GATED 2026-08-05 as invariant 16** — parses the README's fenced JSON and compares to `HOOK_CMD`; watched to fail on both drift directions and both empty-scope cases |
+| **A document that describes the checks agrees with them** | **yes** — twice in one week (2026-08-19): `CONTRIBUTING.md` listed part A's negative-control coverage as five invariants when the harness printed eleven, and this very file headed its enforced section "(14) — invariants 1–14" while 15 and 16 were gated *and described in the table below it* | **yes** — nothing reads these documents; a doc that under-describes the gates renders identically to a correct one, and both incidents were found by eye, after shipping | **yes** — the count is derivable from `check-invariants.sh`'s own `[k/N]` markers, and the coverage lists are printed verbatim by `check-negative-controls.sh` | **GATED 2026-08-19 as invariant 17** — with a deliberate carve-out: a number inside `"quotes"` is read as a quotation of old wording, not a claim, so a correction note can record what a document *used* to say. Scope stops where derivation does: the **probe count is not gated**, because a static count of call sites reads 13 against an actual 23 |
 | **Every CI job that can fail is a required check** | **yes** — `Negative controls` and `Shell lint` have run on every PR since they were added and neither can block a merge (found 2026-08-05) | **yes** — a non-required job renders identically to a required one in the PR UI; only the protection API distinguishes them | **yes** — diff the workflow's job names against `required_status_checks.contexts` | **CLOSED 2026-08-05** — all four jobs made required. Not a script: the remedy was a protection change, so the "gate" here is GitHub's own. Verified the way this ledger demands — a PR with a deliberately failing negative control went from mergeable to refused |
 
 **How the block came off.** This sat blocked on *"needs a machine-readable
@@ -172,6 +173,15 @@ of the check it targeted. A harness that accepted any non-zero exit would have p
 "instrument that cannot fail" mode, caught in our own instrument, by the one assertion
 added specifically to catch it. The doctrine-only candidate is no longer
 doctrine-only; **treat this as the incident.**
+
+**A third payout, 2026-08-19 — and this one indicted the ledger itself.** Invariant 17
+also came from an incident rather than from re-reading conventions, and the incident
+was *this file*: its enforced section said "(14)" while sixteen were gated, with the
+two missing ones written out in the table above. A ledger of what is enforced had
+drifted from what is enforced, which is the exact class it exists to catalogue. Note
+what that costs the "re-read the docs" strategy: this document was re-read at two
+consecutive release cuts and the heading survived both, because a reader checking
+*whether a convention is gated* looks at the rows, not at the count above them.
 
 ## Findings
 

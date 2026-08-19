@@ -5,6 +5,41 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+**The gate that was one release old had a hole, and the ledger had not recorded
+itself.** Invariant 17 shipped yesterday checking that documents describing the checks
+agree with them. Two follow-ups it needed, both found by reading it rather than by it
+firing.
+
+### Added
+
+- **Invariant 17 now asserts the *enumerations*, not just the counts.** A stated count
+  and the actual list can drift apart independently: correct "runs 18 checks" in four
+  files and forget a table row, and every count claim still agrees. `AGENTS.md`'s table
+  and `CONTRIBUTING.md`'s numbered list must now each enumerate **1..N with no gaps**.
+  Watched to fail both ways before being trusted — dropping AGENTS row 12 reports
+  `missing [12]`, renumbering CONTRIBUTING item 9 reports `missing [9]` — and to pass
+  again after restore. **14 claims checked**, up from 12.
+- **`docs/CONVENTIONS-LEDGER.md` gains the three-filters row for invariant 17** —
+  incident, silence, checkability — which the ledger existed to record and had not.
+
+### Notes
+
+- **The ledger's standing prediction paid out a third time, and this one indicted the
+  ledger itself.** It predicted in 2026-08-02 that "the next gate will come from an
+  incident, not from re-reading the docs"; invariant 17 did, and the incident *was this
+  file* — its enforced section said "(14)" while sixteen were gated, with the two
+  missing ones written out in the table directly above. Worth noting what that costs
+  the re-read strategy: the document was re-read at two consecutive release cuts and
+  the heading survived both, because a reader checking *whether a convention is gated*
+  looks at the rows, not at the count above them.
+- **The residual is stated where the invariant is documented.** Invariant 17 does not
+  check that `AGENTS.md` row 12 and `CONTRIBUTING.md` item 12 *describe the same thing*
+  — only that both enumerate all of them. Matching prose across two deliberately
+  different granularities is not mechanically checkable, and a flaky gate gets disabled.
+
+
 ## [1.22.12] - 2026-08-19
 
 **Nothing checked the documents that describe the checks.** Twice in one week a doc
