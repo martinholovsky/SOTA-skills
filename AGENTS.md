@@ -90,9 +90,9 @@ as its own job, over **two** subjects: `check-invariants.sh` (part A) and
 check* to be the one that complains — a non-zero exit for any other reason is a
 **FALSE PASS**, not a catch. Part A mutates a good tree in a disposable git worktree;
 part B is inverted — it builds a fully-configured fake machine (`CLAUDE_CONFIG_DIR`
-+ a throwaway repo + a stub `gh`) and removes one thing per probe. **22 probes**
-(re-run 2026-08-19: `PASS: 22/22 mutations caught by the intended check`; the count
-in this sentence has itself been wrong twice, so run it): invariants
++ a throwaway repo + a stub `gh`) and removes one thing per probe. **23 probes**
+(re-run 2026-08-19: `PASS: 23/23`; wrong twice before, and deliberately **not**
+gated — a static count of call sites reads 13, so only running it is authoritative): invariants
 **1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17** — 12 of 17 — and
 verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. The five unprobed invariants
 (5, 9, 11, 12, 14) each need state a disposable worktree lacks — a tag, a merge
