@@ -220,7 +220,13 @@ are marked "needs verification", never asserted.
     understated part A's coverage by six invariants and the ledger headed its
     enforced section "(14)" while 16 were gated. A number inside `"quotes"` is
     treated as a quotation of old wording, not as a claim — that is how a
-    correction note can record what a document *used* to say.
+    correction note can record what a document *used* to say. It also requires
+    `AGENTS.md`'s table and this list to enumerate **1..N** with no gaps, since
+    the stated count and the actual list can drift apart independently. **What it
+    does not check**: that row 12 and item 12 *describe the same invariant* — only
+    that both enumerate all of them. Matching prose across two deliberately
+    different granularities is not mechanically checkable, and a flaky gate gets
+    disabled ([CONVENTIONS-LEDGER](docs/CONVENTIONS-LEDGER.md)).
 
 **Proving our gates can still fail.** `check-invariants.sh` passing means the tree is
 clean — it does not mean the checks still work, and those two states print identically.

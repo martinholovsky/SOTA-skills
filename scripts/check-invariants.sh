@@ -1089,6 +1089,26 @@ for f in DOCS:
                     print("%s:%d says %r but check-invariants.sh has %d checks"
                           % (f, ln, m.group(0).strip(), N))
 
+# --- the per-invariant descriptions must enumerate all N ---------------------
+# The stated count and the actual list can drift apart: update "runs 18 checks"
+# and forget the table row, and every count claim still agrees. AGENTS.md carries
+# one table row per invariant; CONTRIBUTING.md carries one numbered item.
+ENUMS = [("AGENTS.md", re.compile(r'^\| (\d+) \| ', re.M), "invariant table rows"),
+         ("CONTRIBUTING.md", re.compile(r'^(\d+)\. ', re.M), "numbered invariant items")]
+for f, pat, label in ENUMS:
+    try:
+        raw = pathlib.Path(f).read_text(encoding="utf-8")
+    except OSError as e:
+        print("cannot read %s: %s" % (f, e)); bad += 1; continue
+    nums = sorted({int(x) for x in pat.findall(raw)})
+    claims += 1
+    if nums != list(range(1, N + 1)):
+        bad += 1
+        missing = [i for i in range(1, N + 1) if i not in nums]
+        print("%s's %s are %s, not 1..%d%s"
+              % (f, label, nums if len(nums) < 25 else "%d entries" % len(nums), N,
+                 " (missing %s)" % missing if missing else ""))
+
 # --- the two coverage lists the harness prints must appear verbatim ----------
 def harness_list(prefix):
     m = re.search(re.escape(prefix) + r'\s*([0-9a-z, ]+?)\s*(?:\(|\.)', neg)
