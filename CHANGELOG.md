@@ -5,7 +5,15 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.22.14] - 2026-08-19
+
+**A rule that pointed one way.** `rules/10` §2.7 has warned against truncating input
+on the way *into* an inspector since it was written. A field brief showed the inverse
+costs the same and is harder to see: a cap on a generator's **output**, then parsed —
+and the reason it is harder is that there is no truncation operator anywhere in the
+code to grep for. The cap lives in a default the call site never names.
+
+**Front door checked:** truncation · generator · denominator
 
 ### Added
 
@@ -38,6 +46,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   four links in the reported chain were **already covered** (rules/10 §2.3,
   §2.4 and rules/11 §1), and that the fourth was stated for LLM output only, in
   a skill an inert-control pass never loads — *unreachable*, not absent.
+
+### Changed
+
+- **`AGENTS.md` invariant 14 described a weaker check than the script runs.** Its row
+  read "a declared term resolves in **neither** `README.md`/`docs/INDEX.md` **nor** the
+  release's own entry", which is an OR across all three; `check-invariants.sh:842-850`
+  requires the term in (README **or** INDEX) **and** in the entry. `CONTRIBUTING.md`
+  item 14 already stated it correctly. Invariant 17 does not catch this — it checks
+  counts and enumerations, not prose — so it was found the way the ledger keeps
+  predicting: by re-reading at a cut.
+- **`README.md`** — the inert-controls class list gains the case this release added, so
+  the capability has a sentence where a reader looks (RELEASING.md §2b).
 
 ## [1.22.13] - 2026-08-19
 
@@ -3993,6 +4013,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.22.14]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.14
 [1.22.13]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.13
 [1.22.12]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.12
 [1.22.11]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.11

@@ -138,8 +138,10 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   rules, presence decided by `exists()` rather than a loaded artifact, a CI gate whose
   every run is *skipped* (and on GitHub a skipped job reports **Success** to branch
   protection), a policy engine left in `Audit`/`warn`/report-only since the day it
-  shipped, a report whose word "verified" traces to no line that can fail, a test that
-  still passes when the control's body is replaced with a no-op, a **write-back
+  shipped, a report whose word "verified" traces to no line that can fail, silent
+  truncation on the way *out* of a generator — an unset token cap returns a
+  fragment that a swallowed parse error publishes as a valid empty result — a
+  test that still passes when the control's body is replaced with a no-op, a **write-back
   controller** logging `updated=1 errors=0` every cycle for fifteen minutes while
   pushing no commit at all — its log describes the update it *decided* on, not the
   write landing.
