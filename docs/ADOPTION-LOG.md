@@ -157,6 +157,7 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-08-19 | Roadmap item 9, approved by the operator | **A `pre-push` stage for this repo** — it prescribed one and had none | **adopted** | `.pre-commit-config.yaml`. Runs the invariants at pre-push because that is the first local moment the diff-based 11/14 have a commit to read. Every hook now pins `stages:` explicitly — measured: a hook with no `stages:` key runs at *every* configured stage, which is the doubling the item warned about · v1.22.12 |
 | 2026-08-19 | Roadmap item 8, worked | **The Node row was written from recall** | **adopted with a correction** | `sota-sandboxing/rules/04` R5.1 + `sota-javascript-typescript/rules/05`. The row was *right* but incomplete: Node now ships **DEP0190** deprecating args-with-`shell:true`, and Node's `timeout` fires on schedule while leaving the grandchild alive **and reporting `err = null`**. Java remains unmeasured — the JDK is absent here — and is recorded as open rather than asserted · v1.22.12 |
 | 2026-08-19 | Reading invariant 17 back the day after it shipped | **A stated count and the actual list drift independently** — correcting "runs N checks" everywhere while forgetting a table row leaves every count claim in agreement | **adopted** | `check-invariants.sh` [17] now asserts `AGENTS.md`'s table and `CONTRIBUTING.md`'s list each enumerate **1..N with no gaps**; watched to fail both ways and to pass after restore. Residual stated in CONTRIBUTING item 17: it does **not** check that row 12 and item 12 describe the same invariant, because matching prose across two deliberately different granularities is not mechanically checkable · v1.22.13 |
+| 2026-08-19 | Field brief from a session applying the library — a recon profile that came back empty | **A cap on a generator's *output*, then parsed.** `rules/10` §2.7 covers truncating input *into* an inspector; the inverse — an unset `max_tokens` truncating a JSON document that is then `json.loads`-ed — is the same family and the rule text, example and checklist all point at input | **adopted with a correction** | `sota-code-security/rules/10` §2.7 (the mirror + checklist), `rules/11` §2.2 (the tell: produced size landing on its cap; a parse-error offset needs the document length), `sota-llm-engineering/rules/02` (set `max_tokens` explicitly, assert `output_tokens < max_tokens`) + the three index surfaces that said "truncation before inspection". Correction: the brief reads the class as unstated, and it is stated — for LLM output only, at `sota-llm-engineering/rules/02:199` and `rules/04:251` ("truncated output never parsed as valid"), in a skill an inert-control pass never loads. What was genuinely absent is the **general** producer form, the **unset-default** variant (no truncation operator to grep for, so §2.7's own procedure walks past it), and the size-vs-cap arithmetic — `rules/05:147` alerts on a `stop_reason=max_tokens` spike, which is the metadata tell, not the arithmetic one |
 
 ## Entries
 
@@ -931,3 +932,53 @@ curated; neither new rule displaces anything on it.
 
 **Measurement status:** adopted on reasoning. **No efficacy lift is claimed or measured.
 Do not cite one.**
+
+### 2026-08-19 — a recon profile that came back empty, and the half of §2.7 that was missing
+
+**Source.** A field brief from a session applying the library: an LLM-backed reconnaissance
+step reported `Relevant CWEs: 0, Confidence: 0%` on a codebase that was not empty, and the
+result was then cached against the source-tree hash so every later run reused the failure.
+
+**The chain, as reported and reproduced by the reporter.** Four links, and only the first is
+a bug in the ordinary sense: (1) the call passed no `max_tokens` and silently inherited a
+chat-sized `4096` default; (2) the provider returned a **syntactically incomplete** document —
+4,843 characters ending mid-array, no exception, no flag; (3) the parser's
+`except (json.JSONDecodeError, Exception)` converted the hard failure into a *valid* empty
+profile — correct type, in-range confidence, empty lists, indistinguishable from "this
+codebase has no notable CWEs"; (4) a downstream threat model was built on the empty profile
+and persisted.
+
+**Three of the four links were already covered**, which is why the brief is worth logging
+rather than just fixing: `rules/10` §2.4 (swallowed exceptions on the enforcement path) is a
+direct hit on link 3, `rules/10` §2.3 names exactly this shape ("distinguish *empty because
+configured empty* from *empty because parsing dropped everything*"), and `rules/11` §1 ("zero
+is a legitimate answer") explains why the failure survived: `0 CWEs / 0% confidence` is a
+shape a healthy run also produces.
+
+**What was not covered — link 1.** `rules/10` §2.7 is the nearest rule and its text, its
+example (`scan(payload[:8192])`) and its checklist line all point at truncation **into** an
+inspector. An auditor following it literally greps every `[:limit]` on a scan input and walks
+straight past a `provider.complete()` with no `max_tokens`. Adopted as the mirrored half of
+§2.7, framed on the tell that makes it findable: **there is no truncation operator to grep
+for** — the cap lives in a default the call site never names.
+
+**Correction to the brief.** It reads the class as unstated; it is stated — for LLM output
+only, at `sota-llm-engineering/rules/02:199` ("Check `stop_reason` before parsing.
+`max_tokens` → truncated JSON") and `rules/04:251` ("truncated output never parsed as valid").
+So the accurate finding is not *absent* but *unreachable*: the rule lives in a skill an
+inert-control audit never loads, and it is scoped to one producer type. The brief's second
+claim — "nothing says check the output-token count against the cap" — survives with a caveat:
+`rules/05:147` alerts on a **spike in `stop_reason=max_tokens`**, which is the metadata tell,
+and depends on a wrapper that surfaces `stop_reason` at all. The arithmetic tell
+(`output_tokens == max_tokens`) was genuinely nowhere, and is now `rules/11` §2.2 — it is the
+cheapest check in this family and costs one comparison.
+
+**The diagnostic sub-lesson, adopted verbatim in substance.** The reporter first argued
+*against* truncation from "4,096 output tokens, failure at char 3,023", reasoning that 4,096
+tokens should yield 12–16k characters — sound reasoning, wrong conclusion, because 3,023 was
+the last character of the document. **A parse-error offset is uninterpretable without the
+document length.** Landed alongside the tripwire in `rules/11` §2.2, which is the denominator
+section: an offset is a numerator.
+
+**Measurement status:** adopted on reasoning and on the reporter's reproduction. **No efficacy
+lift is claimed or measured. Do not cite one.**

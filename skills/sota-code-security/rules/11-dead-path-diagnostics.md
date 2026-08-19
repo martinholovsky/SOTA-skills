@@ -115,6 +115,20 @@ Rule for BUILD: a gate prints `ok (N items)`, and `N == 0` is a failure unless
 zero is explicitly expected and asserted as such. Rule for AUDIT: for every gate,
 ask what its denominator was on the last run, and whether anything would say so.
 
+**The same arithmetic on the output side: a produced size that lands exactly on
+its limit is a truncation report.** The cheapest tell in this family, and it
+needs no cooperation from the producer — compare what came back against the cap
+that bounded it (`output_tokens == max_tokens`, rows == `LIMIT`, bytes == the
+buffer) and treat equality as truncated until shown otherwise. Field-reported
+and reproduced 2026-08-19: a recon call left `max_tokens` unset, inherited a
+4096 default, and a 4,843-character JSON fragment reached `json.loads` as a
+plain string — no exception from the provider, no flag, and a swallowing
+`except` (rules/10 §2.4) then published it as an empty profile. Corollary: **a
+parse-error offset is uninterpretable without the document length.** "Failed at
+char 3,023" argues *against* truncation while you assume 4,096 tokens yield
+12–16k characters, and *for* it the moment you learn 3,023 was the last
+character — so log the size beside the offset. Class and fix: rules/10 §2.7.
+
 ### 2.3 Cross-scale delta
 
 Run the same stage on a small and a large input. **Output that does not grow with
@@ -444,6 +458,9 @@ unvalidated instrument is not yet a finding.
       flagged, with the measured seconds and input size (§2.1)?
 - [ ] **Every gate reports its denominator** (`ok (N items)`), and an unexpected
       **zero scope fails closed** — no `0 checked, 0 failed, exit 0` anywhere (§2.2)?
+- [ ] Every **generated** result checked against the cap that bounded it before
+      parsing (`output_tokens == max_tokens`, rows == `LIMIT`), and parse-error
+      offsets logged beside the document size (§2.2)?
 - [ ] Cross-scale delta run on at least the stages that gate on size: output
       that does not grow with input investigated (§2.3)?
 - [ ] No stage on a data path is **silent** — start/finish with counts (§2.4)?

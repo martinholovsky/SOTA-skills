@@ -5,6 +5,40 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`sota-code-security/rules/10` §2.7 gains its mirrored half — a cap on a
+  generator's *output*, then parsed.** The section, its example
+  (`scan(payload[:8192])`) and its checklist line all pointed at truncation
+  **into** an inspector, so an auditor following it greps every `[:limit]` on a
+  scan input and walks past a `provider.complete()` with no `max_tokens`. The
+  tell that makes the inverse findable is that **there is no truncation operator
+  to grep for**: the cap lives in a default the call site never names. Heading
+  widened to "Truncation into an inspector — or out of a generator", and the
+  three index surfaces that restated the old phrasing (`sota/SKILL.md` AUDIT
+  step 4, `sota-code-security/SKILL.md` non-negotiable 6 and AUDIT step 5,
+  the rules/10 table row) updated with it.
+- **`sota-code-security/rules/11` §2.2 gains the tell and its corollary.** A
+  produced size that lands exactly on its limit is a truncation report —
+  `output_tokens == max_tokens`, rows == `LIMIT`, bytes == the buffer — and it
+  needs no cooperation from the producer, unlike `stop_reason`. Corollary, from
+  the reporting session's own wrong turn: **a parse-error offset is
+  uninterpretable without the document length**; "failed at char 3,023" argues
+  against truncation until you learn 3,023 was the last character. It lands in
+  the denominator section because an offset is a numerator.
+- **`sota-llm-engineering/rules/02`: set `max_tokens` explicitly at every
+  structured-output call site.** An unset cap inherits a client default sized
+  for chat, so a long JSON document hits it silently and the call returns a
+  fragment rather than an error. Where usage is reported, assert
+  `output_tokens < max_tokens` — a wrapper that drops `stop_reason` leaves that
+  arithmetic as the only tell.
+- **`docs/ADOPTION-LOG.md`**: the intake entry, recording that three of the
+  four links in the reported chain were **already covered** (rules/10 §2.3,
+  §2.4 and rules/11 §1), and that the fourth was stated for LLM output only, in
+  a skill an inert-control pass never loads — *unreachable*, not absent.
+
 ## [1.22.13] - 2026-08-19
 
 **The gate that was one release old had a hole, and the ledger had not recorded

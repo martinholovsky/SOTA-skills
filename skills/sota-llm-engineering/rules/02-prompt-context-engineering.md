@@ -200,6 +200,12 @@ category = data.get("category", "other")                    # silently launders 
   (raise the cap, don't repair-loop it); `refusal` → no schema guarantee
   (handle explicitly). Code that indexes `content[0]` unconditionally
   breaks on refusal-shaped responses.
+- **Set `max_tokens` explicitly at every structured-output call site.** An unset
+  cap inherits a client/config default sized for chat, so a long JSON document
+  hits it silently — the call returns a fragment, not an error. Where the
+  provider reports usage, also assert `output_tokens < max_tokens`: a wrapper
+  that drops `stop_reason` leaves that arithmetic as your only tell
+  (`sota-code-security/rules/10` §2.7, `rules/11` §2.2).
 - **Schema design for models:** flat-ish, every field `description`-annotated,
   enums for closed sets, `additionalProperties: false`, no clever recursion.
   Include an escape hatch field (`"unsure": true` / `"other"` enum arm) so
@@ -251,7 +257,8 @@ category = data.get("category", "other")                    # silently launders 
       or strict tool schema), client-validated, bounded repair then explicit
       reject; no regex/substring JSON harvesting.
 - [ ] `stop_reason`/refusal/truncation handled before parsing; no
-      unconditional `content[0]` access.
+      unconditional `content[0]` access; `max_tokens` set explicitly at every
+      structured-output call site, and `output_tokens < max_tokens` asserted.
 - [ ] Schemas: descriptions on fields, enums for closed sets, escape-hatch
       field present, provider-unsupported constraints validated client-side.
 - [ ] No prompt rot: every rule traceable to an eval case; legacy
