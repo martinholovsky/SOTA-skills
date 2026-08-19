@@ -249,7 +249,7 @@ CI scans the full git history, the pre-commit hook scans each commit.
 
 ```sh
 pipx install pre-commit     # or: brew install pre-commit
-pre-commit install          # run the same checks on every commit
+pre-commit install          # installs BOTH stages (see .pre-commit-config.yaml)
 ```
 
 (`scripts/install.sh` also checks for the hook when run from a checkout and

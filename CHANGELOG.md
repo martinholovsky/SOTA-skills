@@ -26,6 +26,29 @@ exists for, now aimed at our own prose.
   restated exactly as `check-negative-controls.sh` prints them. **12 claims checked.**
 - **A probe for it**, bringing part A to **12 of 17** invariants covered.
 
+- **A `pre-push` stage, and the reason it earns its keep.** This repo told users to
+  install one (`init-gates.sh` writes `default_install_hook_types` for *their* repos)
+  and had none itself. It does now — running the invariants, because that is the first
+  local moment the **diff-based** ones (11, 14) have a commit to read: at pre-commit
+  time the change is only *staged*, so they skip and pass. Every hook now states its
+  `stages` **explicitly** — a hook with no `stages:` key runs at *every* configured
+  stage (measured), which would have silently doubled the pre-commit suite onto every
+  push. `verify-setup.sh` check 9a, added last release, now reports PASS here.
+
+### Changed
+
+- **The Node row in `sota-sandboxing/rules/04` R5.1 is now measured, not recalled**
+  (Node 22): argv is not split, `execFile` gives no shell, `{shell:true}` restores it —
+  and **Node itself deprecates that spelling**, `DEP0190`, because the args are
+  concatenated unescaped. Added to `sota-javascript-typescript/rules/05` too, with the
+  instruction to treat a DEP0190 warning as a finding rather than noise.
+- **A fourth runtime joins the deadline table, and it is the worst case.** Node's
+  `timeout` fired at **305 ms** on a 300 ms budget — the deadline works — but the
+  **grandchild was still running** and `err` was **`null`**, because the direct child
+  had exited 0. The caller cannot tell the deadline fired at all. Four measured now
+  (Go, Python, Rust, Node) and **no two agree on all three questions**; Java is
+  explicitly *not* among them and its row is still written from recall.
+
 ### Notes
 
 - **A count inside `"quotes"` is read as a quotation, not a claim.** Without that, the
@@ -40,6 +63,13 @@ exists for, now aimed at our own prose.
 - The gate then immediately caught a live drift: adding the probe changed the harness's
   coverage line to `12 of 17`, and invariant 17 failed until `AGENTS.md` and
   `CONTRIBUTING.md` were updated to match. It was useful within a minute of existing.
+- **The probe count is deliberately *not* gated.** A static count of call sites reads
+  13 against an actual 23, because part B invokes `vs_probe` inline on the mutation
+  line. A gate that has to guess is a gate that ships a wrong number, so the harness's
+  own printed total stays the authority — invariant 17 covers what *is* statically
+  derivable and stops there.
+- Java could not be measured: `/usr/bin/java` here is the macOS stub. Recorded as an
+  open roadmap item rather than quietly asserted.
 
 
 ## [1.22.11] - 2026-08-19

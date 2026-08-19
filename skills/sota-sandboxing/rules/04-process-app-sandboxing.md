@@ -158,7 +158,9 @@ subprocess.run(f"convert {path} out.png", shell=True)
 subprocess.run(["convert", "--", path, "out.png"], shell=False, ...)
 ```
 Same rule per language: Python `shell=False`; Node `execFile`/`spawn` (never
-`exec`, never `spawn(..., {shell:true})`); Go `exec.Command` (fine; never wrap in
+`exec`, never `spawn(..., {shell:true})` — measured 2026-08-19, and **Node itself now
+deprecates that spelling**, `DEP0190`, because args are concatenated unescaped); Go
+`exec.Command` (fine; never wrap in
 `sh -c`); Rust `Command` (fine — measured 2026-08-19, **neither `.arg` nor `.args`
 splits on whitespace**, so the argv guarantee holds; the documented exception is
 Windows `.bat`/`.cmd`, `sota-rust` rules/05 §9); Java `ProcessBuilder` with list.
@@ -194,6 +196,20 @@ the future is not killing the process (`.kill_on_drop(true)`, measured 2026-08-1
 Read that language's subprocess section before trusting the timeout: `sota-golang`
 rules/05 §3, `sota-python` rules/05 §2, `sota-rust` rules/05 §9,
 `sota-javascript-typescript` rules/05 ("Command injection via child_process").
+
+Four measured under the same test, and no two agree on all three questions —
+**Java is not among them and its row above is unverified**:
+
+| runtime | deadline fires? | process tree killed? | caller told? |
+|---|---|---|---|
+| Go 1.26 | **no** — `Wait` blocks past ctx cancel until `WaitDelay` is set | — | — |
+| Python 3.14 | yes, on schedule | not by the timeout | yes — `TimeoutExpired` |
+| Rust 1.97 + tokio | yes (2.0 s) | no — child *and* grandchild keep running | yes — `Err` from `timeout` |
+| Node 22 | yes (305 ms on a 300 ms budget) | no — grandchild still running | **no — `err` was `null`** |
+
+The column that matters is the last one: three of the four leave the process tree
+alive, and Node does not even surface an error, so "the timeout worked" and "the work
+is still running" are the same observation.
 This is the shape of trap that lives in the *language* skill while you are reading
 the *domain* one, so the routing that brought you here will not bring you to it.
 

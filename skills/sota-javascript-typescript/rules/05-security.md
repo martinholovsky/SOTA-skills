@@ -176,6 +176,23 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
 - Still validate the arg itself: allowlist characters/paths (argument injection — `--flag`-shaped filenames — can still subvert tools; prepend `--` where supported).
 - Path traversal cousin: joining user input into paths — `const p = path.resolve(base, name); if (!p.startsWith(base + path.sep)) reject();`
 - Same family: never interpolate into SQL (parameterized queries only), `Function`, YAML `load` (use `safeLoad` semantics), or `vm`.
+- **Node deprecated the dangerous spelling itself.** `DEP0190` — "Passing `args` to
+  the `node:child_process` module's `execFile()` and `spawn()` methods with the
+  `shell` option enabled is deprecated … the arguments are not properly escaped when
+  passed to the shell". Measured on Node 22: `spawnSync('/bin/echo', ['$HOME'],
+  {shell:true})` prints the expanded home directory **and emits the DEP0190 runtime
+  warning**, while the same call without `shell` prints the literal `$HOME`. Treat a
+  DEP0190 warning in logs or CI as a finding, not noise — it marks a live injection
+  sink.
+- **`timeout:` bounds your wait, not the process tree, and may report no error.**
+  Measured on Node 22 with a child that exits immediately after spawning a grandchild
+  holding stdout: `execFile(..., {timeout: 300})` called back at **305 ms** — the
+  deadline works — but the **grandchild was still running**, and `err` was **`null`**,
+  because the direct child had exited 0. So the caller cannot tell from the callback
+  that the deadline fired at all. If the child may fork, spawn it with
+  `detached: true` and kill the process **group** (`process.kill(-child.pid)`), and
+  decide explicitly what a timeout means for your caller rather than inferring it from
+  `err`.
 
 ## Open redirects and file uploads
 
