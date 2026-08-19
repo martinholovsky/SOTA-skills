@@ -5,7 +5,7 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.22.12] - 2026-08-19
 
 **Nothing checked the documents that describe the checks.** Twice in one week a doc
 that *describes* the gates drifted from the gates: `CONTRIBUTING.md` listed part A's
@@ -15,6 +15,8 @@ while 15 and 16 were already gated *and* described in its own table below. Both 
 found by reading, both after shipping. A document that under-describes the gates is
 indistinguishable from a correct one — which is the class every other invariant here
 exists for, now aimed at our own prose.
+
+**Front door checked:** invariant 17 · pre-push
 
 ### Added
 
@@ -3920,6 +3922,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.22.12]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.12
 [1.22.11]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.11
 [1.22.10]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.10
 [1.22.9]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.9

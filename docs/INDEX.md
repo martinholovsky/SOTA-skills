@@ -52,6 +52,7 @@ trying to do**, not by file. (Kept in sync by hand; if a link rots, open an issu
 |---|---|
 | Land a change (branch → PR → checks → merge) | [AGENTS.md → Landing a change](../AGENTS.md#landing-a-change) |
 | Know the invariants CI enforces | [AGENTS.md → Invariants](../AGENTS.md#invariants-enforced-in-pre-commit-and-ci) |
+| Understand why a doc that *describes* the gates can't quietly drift from them | **invariant 17** — it derives the count from `check-invariants.sh`'s own `[k/N]` markers and requires every stated count and restated coverage list to match; a number inside `"quotes"` is read as history, not a claim ([AGENTS.md → Invariants](../AGENTS.md#invariants-enforced-in-pre-commit-and-ci)) |
 | See which conventions are *enforced* vs. prose, and why the rest aren't gated | [CONVENTIONS-LEDGER.md](CONVENTIONS-LEDGER.md) |
 | **Prove the gates themselves can still fail** (a passing gate shows the tree is clean, not that the check works) | `scripts/check-negative-controls.sh` — injects a known-bad per check and requires *the intended one* to complain; CI job *Negative controls* |
 | Full contribution conventions | [CONTRIBUTING.md](../CONTRIBUTING.md) |
