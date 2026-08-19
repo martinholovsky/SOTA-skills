@@ -5,7 +5,7 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.22.11] - 2026-08-19
 
 **Three languages, three behaviours, one test.** The v1.22.10 cut left one deferral on
 the roadmap: `sota-rust` had **zero** coverage of `std::process::Command` — subprocess
@@ -40,6 +40,8 @@ grandchild holding an inherited pipe kept the wait alive. Both are right, about 
 things — a percentage margin on shared CI is the flake that bullet is about; two orders of
 magnitude is not. Same shape as v1.22.10's allow arm: an existing rule with a *direction*,
 not a missing rule.
+
+**Front door checked:** write-back · std::process::Command · hook type
 
 ### Added
 
@@ -3851,6 +3853,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.22.11]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.11
 [1.22.10]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.10
 [1.22.9]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.9
 [1.22.8]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.8
