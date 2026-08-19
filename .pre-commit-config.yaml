@@ -1,15 +1,40 @@
 # Pre-commit hooks for SOTA-skills.
 #
 # Setup:  pipx install pre-commit   (or: brew install pre-commit)
-#         pre-commit install
+#         pre-commit install        # installs BOTH stages, see below
 #
 # Hooks mirror the CI checks so violations are caught before they are pushed.
+#
+# TWO STAGES, and the split is deliberate.
+#   pre-commit — everything that can judge a single commit's content.
+#   pre-push   — the checks that need COMMITS TO EXIST. Invariants 11 and 14 are
+#                diff-based: they resolve against `git merge-base HEAD origin/main`,
+#                so at pre-commit time the change is still only staged and there is
+#                nothing for them to read. They report "SKIPPED (no merge base to
+#                diff against, or nothing ahead of it)" and pass. Once the commit
+#                exists they have a real diff, and pre-push is the first moment that
+#                is true locally. RELEASING.md §2b says the same thing from the
+#                other side: never let a pre-push result authorise the push.
+#
+# `default_install_hook_types` is what makes a plain `pre-commit install` create
+# BOTH hook files. Without it, adding a pre-push stage here installs nothing and
+# the gate silently never runs — verified on pre-commit 4.6.0, and the reason
+# `verify-setup.sh` check 9a exists.
+#
+# Every hook below states its `stages` EXPLICITLY. A hook with no `stages:` key
+# runs at every configured stage (measured), so omitting it here would silently
+# double the pre-commit suite onto every push.
+default_install_hook_types: [pre-commit, pre-push]
+
 repos:
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.0
     hooks:
       - id: gitleaks
         # Uses .gitleaks.toml in the repo root automatically.
+        # Per-commit scope only. The FULL-history scan is CI's job (and CI asserts
+        # that scope, because a shallow checkout scans 1 commit and exits 0).
+        stages: [pre-commit]
 
   - repo: local
     hooks:
@@ -19,9 +44,18 @@ repos:
         language: script
         pass_filenames: false
         always_run: true
+        stages: [pre-commit]
       - id: eval-scoring-tests
         name: Eval scoring tests (the scorers produce every published number)
         entry: python3 evals/test_scoring.py
         language: system
         pass_filenames: false
         files: '^evals/.*\.py$'
+        stages: [pre-commit]
+      - id: sota-invariants-diff
+        name: SOTA-skills invariants incl. the diff-based ones (LAST-VERIFIED, front-door terms)
+        entry: scripts/check-invariants.sh
+        language: script
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]

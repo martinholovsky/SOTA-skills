@@ -146,7 +146,7 @@ scope() {  # <count> <noun> — returns 1 on an empty scope; prints nothing on s
 # CHANGELOG, docs/, evals/, AGENTS.md, these scripts -- is prose or code read by
 # people, deliberately uncapped since 2026-07-15; navigability there comes from a
 # table of contents and docs/INDEX.md, not a line ceiling.
-echo "[1/16] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
+echo "[1/17] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
 over=0
 seen1=0
 while IFS= read -r f; do
@@ -163,7 +163,7 @@ scope "$seen1" "skill files" || over=1
 if [ "$over" -eq 0 ]; then echo "    ok ($seen1 skill files)"; else fail=1; fi
 
 # --- 2. Audit checklist ends every rules file ------------------------------
-echo "[2/16] Every skills/*/rules/*.md ends with an '## Audit checklist'"
+echo "[2/17] Every skills/*/rules/*.md ends with an '## Audit checklist'"
 missing=0
 seen2=0
 while IFS= read -r f; do
@@ -194,7 +194,7 @@ if [ "$missing" -eq 0 ]; then echo "    ok ($seen2 rules files)"; else fail=1; f
 # .denylist.local (git-ignored, one ERE per line, '#' comments). When neither
 # exists (e.g. an external fork's PR), only the generic phrases are checked —
 # the maintainer's pre-commit hook and this repo's CI carry the full list.
-echo "[3/16] No internal-name leaks"
+echo "[3/17] No internal-name leaks"
 DENY='the user runs|the user operates'
 if [ -n "${SOTA_DENYLIST:-}" ]; then
   DENY="$DENY|$SOTA_DENYLIST"
@@ -236,7 +236,7 @@ fi
 # Code, Codex, ...) skip any skill that exceeds it. Count Unicode characters
 # (descriptions use em-dashes: 1 char, 3 bytes) via python3, parsing both
 # folded block scalars (`>-`) and plain single-line descriptions.
-echo "[4/16] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
+echo "[4/17] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
 if command -v python3 >/dev/null 2>&1; then
   if desc_out=$(python3 - "$MAX_DESC" <<'PY'
 import sys, glob, re
@@ -326,7 +326,7 @@ fi
 # One version, four places: VERSION, plugin.json, the CHANGELOG's top entry,
 # and (after the release lands) the newest v* tag. Drift here shipped a main
 # briefly claiming 1.8.0 with 1.9.0 content (2026-07-03) — hence a hard check.
-echo "[5/16] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
+echo "[5/17] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
 v5=0
 ver=$(tr -d '[:space:]' < VERSION)
 # Strict X.Y.Z: rejects interior malformations (1..2, 1.2, 1.2.3.4) the old
@@ -360,7 +360,7 @@ if [ "$v5" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # rot on surfaces nobody recounts (the social preview said "30 skills" for
 # three releases). Recount from the tree and compare every tracked surface;
 # RELEASING.md lists the same surfaces for manual release edits.
-echo "[6/16] Count-bearing surfaces match the tree"
+echo "[6/17] Count-bearing surfaces match the tree"
 v6=0
 ck() { # ck <found> <expected> <surface>
   [ "$1" = "$2" ] || { note "$3: says '${1:-<not found>}', tree says '$2'"; v6=1; }
@@ -406,7 +406,7 @@ if [ "$v6" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # library-map entry must name a real skill dir. Catches the drift the
 # 2026-07-10 audit found: sota-confidential-computing was added to the table
 # but missing from the map for a full release.
-echo "[7/16] Router lists every skill (routing table + library map)"
+echo "[7/17] Router lists every skill (routing table + library map)"
 v7=0
 seen7=0
 router=skills/sota/SKILL.md
@@ -434,7 +434,7 @@ if [ "$v7" -eq 0 ]; then echo "    ok ($seen7 domain skills)"; else fail=1; fi
 # with no rot-catching upside. Fenced AND inline code are stripped so link-shaped
 # examples (in ``` fences or `backticks`) are not scanned. Idea from vault-doctor
 # (training-knowledge-vault); see docs/ADOPTION-LOG.md.
-echo "[8/16] Internal Markdown links resolve (*.md targets)"
+echo "[8/17] Internal Markdown links resolve (*.md targets)"
 if command -v python3 >/dev/null 2>&1; then
   if link_out=$(python3 - <<'PY'
 import os, re, sys
@@ -487,7 +487,7 @@ fi
 # previous release (2026-07-28) and both sat on main until a human noticed
 # during the release cut. Fence-aware, like check 2: a CHANGELOG entry may
 # legitimately quote '## [Unreleased]' inside a code fence.
-echo "[9/16] CHANGELOG has at most one [Unreleased], and it is the top entry"
+echo "[9/17] CHANGELOG has at most one [Unreleased], and it is the top entry"
 v9=0
 changelogs="CHANGELOG.md $(git ls-files 'docs/CHANGELOG-archive*.md' | tr '\n' ' ')"
 for cl in $changelogs; do
@@ -533,7 +533,7 @@ if [ "$v9" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # to ourselves. All 255 rules files passed when this landed, so it is a
 # regression gate, not a repair; it was watched to fail on an injected file
 # and on a renamed reference before being trusted.
-echo "[10/16] Every skills/*/rules/*.md is referenced by its own SKILL.md"
+echo "[10/17] Every skills/*/rules/*.md is referenced by its own SKILL.md"
 v10=0
 seen10=0
 while IFS= read -r rf; do
@@ -576,7 +576,7 @@ if [ "$v10" -eq 0 ]; then echo "    ok ($seen10 rules files indexed)"; else fail
 # This is the first DIFF-based invariant; every other check reads the whole tree.
 # With no merge base it skips with a note rather than guessing, like checks 4/8.
 SWEEP_MIN_SKILL_FILES=20
-echo "[11/16] LAST-VERIFIED moves only with a sweep (batched diff, or declared in CHANGELOG)"
+echo "[11/17] LAST-VERIFIED moves only with a sweep (batched diff, or declared in CHANGELOG)"
 v11=0
 base=""
 for ref in origin/main main; do
@@ -649,7 +649,7 @@ if [ "$v11" -ne 0 ]; then fail=1; fi
 #
 # HISTORY-based, like check 11's diff: with no commit history for a pair it skips
 # with a note rather than guessing, because a shallow clone must not read as a pass.
-echo "[12/16] Rendered assets: each assets/*.png is no older than its *.html"
+echo "[12/17] Rendered assets: each assets/*.png is no older than its *.html"
 v12=0
 seen12=0
 checked12=0
@@ -722,7 +722,7 @@ if [ "$v12" -ne 0 ]; then fail=1; fi
 # column and checks that column in every data row beneath it. So it also fails when
 # the column is RENAMED or dropped (0 tables -> SCOPE EMPTY), which is the drift a
 # hardcoded column index would sail straight past.
-echo "[13/16] Every scoreboard row declares its sample size"
+echo "[13/17] Every scoreboard row declares its sample size"
 v13=0
 BOARD="evals/results/RESULTS.md"
 if [ ! -f "$BOARD" ]; then
@@ -792,7 +792,7 @@ if [ "$v13" -ne 0 ]; then fail=1; fi
 # docs/INDEX.md (the front door is real), AND in that release's own CHANGELOG section
 # (you cannot pass by declaring a filler word that was never part of the release).
 # A missing line on a release commit fails closed.
-echo "[14/16] A release declares its front-door terms, and they resolve"
+echo "[14/17] A release declares its front-door terms, and they resolve"
 v14=0
 base14=""
 for ref in origin/main main; do
@@ -864,7 +864,7 @@ if [ "$v14" -ne 0 ]; then fail=1; fi
 # (v1.19.8 → v1.21.0) with all fourteen checks green. Both directions matter: a
 # file absent from the map is invisible to a router-driven load, and a map entry
 # for a file that no longer exists sends the model after nothing.
-echo "[15/16] Router library map lists every rules file (both directions)"
+echo "[15/17] Router library map lists every rules file (both directions)"
 v15=0
 if command -v python3 >/dev/null 2>&1; then
   map_out=$(python3 - <<'MAPPY'
@@ -937,7 +937,7 @@ if [ "$v15" -ne 0 ]; then fail=1; fi
 # actually in a user's settings.json. The README's is the one a reader copies by
 # hand, so a stale block is the version that spreads. Silent by construction —
 # nothing executes the README.
-echo "[16/16] README's documented hook == install.sh's HOOK_CMD"
+echo "[16/17] README's documented hook == install.sh's HOOK_CMD"
 v16=0
 if command -v python3 >/dev/null 2>&1; then
   hook_out=$(python3 - <<'HOOKPY'
@@ -1010,11 +1010,134 @@ else
 fi
 if [ "$v16" -ne 0 ]; then fail=1; fi
 
+# [17] The documents that DESCRIBE the checks drift from the checks themselves.
+# Twice in one week: CONTRIBUTING.md listed part A's negative-control coverage as
+# five invariants when the harness printed eleven, and CONVENTIONS-LEDGER.md headed
+# its enforced section "(14) — invariants 1–14" while 15 and 16 were already gated
+# and described in its own table below. Nothing read those documents, so a doc that
+# under-describes the gates is indistinguishable from a correct one — the same
+# class every other check here is about, aimed at our own prose.
+#
+# Two traps this had to be built around, both real in the current tree:
+#   - "invariant 15 checks the router's library map" is a number followed by the
+#     word "checks" and is NOT a count. Excluded by look-behind.
+#   - a correction note that QUOTES the old wording ("(14) — invariants 1–14") is
+#     history, not a claim. Counts inside double quotes are ignored, which is the
+#     same supersede-don't-edit rule the CHANGELOG follows.
+echo "[17/17] Docs describing the invariants agree with the scripts"
+v17=0
+if command -v python3 >/dev/null 2>&1; then
+  doc_out=$(python3 - <<'DOCPY'
+import re, sys, pathlib
+
+DOCS = ["AGENTS.md", "CONTRIBUTING.md",
+        "docs/CONVENTIONS-LEDGER.md", "docs/MAINTENANCE.md"]
+
+def norm(s):
+    s = s.replace("*", "").replace("`", "")
+    return re.sub(r'"[^"\n]*"', '""', s)      # quotations are history, not claims
+
+def flat(s):
+    # Collapse wrapping: these lists are prose and wrap at ~80 cols, so a
+    # substring test against the raw text fails on where the line happened to
+    # break. Cost me one false positive before it was written down.
+    return re.sub(r'\s+', ' ', norm(s))
+
+try:
+    inv = pathlib.Path("scripts/check-invariants.sh").read_text(encoding="utf-8")
+    neg = pathlib.Path("scripts/check-negative-controls.sh").read_text(encoding="utf-8")
+except OSError as e:
+    print("ERROR: %s" % e); print("SCOPE 0"); sys.exit(1)
+
+# --- the authority: the numbering the script actually prints -----------------
+marks = re.findall(r'echo "\[(\d+)/(\d+)\]', inv)
+if not marks:
+    print("no [k/N] check markers found in check-invariants.sh")
+    print("SCOPE 0"); sys.exit(1)
+totals = {int(n) for _, n in marks}
+if len(totals) != 1:
+    print("check markers disagree on the total: %s" % sorted(totals))
+    print("SCOPE 0"); sys.exit(1)
+N = totals.pop()
+ks = [int(k) for k, _ in marks]
+if sorted(ks) != list(range(1, N + 1)):
+    print("check numbers are not exactly 1..%d: %s" % (N, sorted(ks)))
+    print("SCOPE 0"); sys.exit(1)
+
+bad = 0
+claims = 0
+
+# --- every stated count must be N -------------------------------------------
+COUNT_PATS = [
+    # \b before the digits, or "Invariant 10 checks" matches the trailing "0"
+    # and reports a phantom "0 checks" — it did, before the boundary was added.
+    re.compile(r'(?<!invariant )(?<!Invariant )\b(\d+)\s+(?:checks|invariants)\b'),
+    re.compile(r'invariants\s+1\s*[–-]\s*(\d+)'),
+    re.compile(r'Enforced\s*\((\d+)\)'),
+]
+for f in DOCS:
+    try:
+        text = pathlib.Path(f).read_text(encoding="utf-8")
+    except OSError as e:
+        print("cannot read %s: %s" % (f, e)); bad += 1; continue
+    for ln, line in enumerate(norm(text).splitlines(), 1):
+        for pat in COUNT_PATS:
+            for m in pat.finditer(line):
+                claims += 1
+                if int(m.group(1)) != N:
+                    bad += 1
+                    print("%s:%d says %r but check-invariants.sh has %d checks"
+                          % (f, ln, m.group(0).strip(), N))
+
+# --- the two coverage lists the harness prints must appear verbatim ----------
+def harness_list(prefix):
+    m = re.search(re.escape(prefix) + r'\s*([0-9a-z, ]+?)\s*(?:\(|\.)', neg)
+    return m.group(1).strip() if m else None
+
+covered = harness_list("check-invariants.sh COVERED:")
+vs_list = harness_list("verify-setup.sh: checks")
+m = re.search(r'COVERED:[^(]*\((\d+ of \d+)\)', neg)
+ratio = m.group(1) if m else None
+if not covered or not vs_list or not ratio:
+    print("could not extract the coverage lists from check-negative-controls.sh")
+    print("SCOPE 0"); sys.exit(1)
+
+for f in ("AGENTS.md", "CONTRIBUTING.md"):
+    try:
+        text = flat(pathlib.Path(f).read_text(encoding="utf-8"))
+    except OSError as e:
+        print("cannot read %s: %s" % (f, e)); bad += 1; continue
+    for label, want in (("part A invariant list", covered),
+                        ("part A ratio", ratio),
+                        ("part B check list", vs_list)):
+        claims += 1
+        if want not in text:
+            bad += 1
+            print("%s does not restate the harness's %s (%r)" % (f, label, want))
+
+print("SCOPE %d" % claims)
+sys.exit(1 if bad else 0)
+DOCPY
+  ) || v17=1
+  n17=$(printf '%s\n' "$doc_out" | sed -n 's/^SCOPE //p')
+  while IFS= read -r l; do
+    case "$l" in SCOPE\ *|'') ;; *) note "$l" ;; esac
+  done <<EOF
+$doc_out
+EOF
+  scope "${n17:-0}" "documented count/coverage claims" || v17=1
+  if [ "$v17" -eq 0 ]; then echo "    ok (${n17:-0} claims checked against the scripts)"; fi
+else
+  note "SKIPPED (python3 not found; CI always has it)"
+  echo "    ok (skipped)"
+fi
+if [ "$v17" -ne 0 ]; then fail=1; fi
+
 # --- Result ---------------------------------------------------------------
 echo
 if [ "$fail" -ne 0 ]; then
   echo "FAIL: repository invariants violated (see above)."
   exit 1
 fi
-printf 'PASS: all repository invariants satisfied (16 checks over %s skill files / %s rules files, %ss).\n' \
+printf 'PASS: all repository invariants satisfied (17 checks over %s skill files / %s rules files, %ss).\n' \
   "${seen1:-?}" "${seen2:-?}" "$((SECONDS - START_SECONDS))"
