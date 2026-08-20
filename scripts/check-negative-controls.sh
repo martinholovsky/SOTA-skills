@@ -207,6 +207,14 @@ probe 17 "a doc's invariant count disagrees with the script" "but check-invarian
      skills/sota-code-security/rules/12-verifying-the-verifier.md )
 probe 18 "a section reference dangles after a renumber" "resolves nowhere"
 
+# 19 — silencing the coverage check by EXEMPTING a check instead of probing it.
+# That is the one-line move invariant 19's pin exists to stop, so it is the half
+# worth probing: the other half (a check with no known-bad at all) demonstrated
+# itself on introduction, when 19 flagged 19.
+( cd "$WT" && perl -pi -e 's/^(\s*echo "\s+)12(\s+— mtime-based)/${1}12, 18${2}/' \
+     scripts/check-negative-controls.sh )
+probe 19 "a check is exempted rather than probed" "GREW by"
+
 
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
@@ -334,7 +342,7 @@ if [ "$failed" -ne 0 ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18 (13 of 18)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18, 19 (14 of 19)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        11, 14      — diff-based: they compare against a merge base."

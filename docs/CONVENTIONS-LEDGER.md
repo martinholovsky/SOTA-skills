@@ -47,7 +47,7 @@ A convention earns a gate only if it passes **all three**:
 
 ## The ledger
 
-### Enforced (18) — invariants 1–18
+### Enforced (19) — invariants 1–19
 
 Skill-file line cap · audit-checklist placement · internal-name denylist · description cap ·
 version lockstep · count surfaces · router completeness · link resolution ·
@@ -56,7 +56,8 @@ pairing · rendered asset no older than its source · scoreboard rows declare th
 **a release declares its front-door terms and they resolve** · **the router's library map
 lists every `rules/NN` file, both directions** · **the hook `README.md` documents equals the
 one `install.sh` writes** · **a document describing the checks agrees with them** ·
-**every `§` section reference resolves**.
+**every `§` section reference resolves** · **every check has a known-bad, and the
+exempt set is pinned**.
 Each is in `scripts/check-invariants.sh` and documented in
 `AGENTS.md`. (Corrected 2026-08-19: this section read "(14) — invariants 1–14" and named
 only thirteen, while 15 and 16 were already gated and described in the table below —

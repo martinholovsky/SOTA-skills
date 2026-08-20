@@ -120,66 +120,19 @@ START_SECONDS=$SECONDS
 MAX_LINES=500
 MAX_DESC=1024
 fail=0
-# --- --self-test: every check must have a known-bad, or a declared exemption ---
-# `sota-code-security` rules/12 §1b: a negative control belongs INSIDE the tool, so
-# "every check can go red" is a property of the suite rather than of whoever last
-# edited it. Until 2026-08-20 this repo did not practise its own rule — the probes
-# lived only in check-negative-controls.sh, and remembering to add one was a
-# sentence in AGENTS.md. Invariant 18 was added without a probe in the same commit,
-# which is the failure mode exactly.
-#
-# The structural half runs in a second and is the part that cannot be forgotten:
-# a check that is neither probed nor declared-exempt fails. Both sets are derived
-# from check-negative-controls.sh itself — the `probe N` calls and the numbers in
-# its own "NOT COVERED" block — so there is no second list to drift. The probe
-# COUNT stays ungated on purpose (a static count of call sites under-reads).
-# Then it hands off to the harness, which actually watches each check fail.
+# --- --self-test: the suite, then the harness that watches it fail ----------
+# `sota-code-security` rules/12 §1b: the negative control belongs INSIDE the tool.
+# The structural half of that ("no check lacks a known-bad") is no longer gated
+# behind this flag — it is **invariant 19**, and runs on every ordinary
+# invocation, because it costs ~50 ms and a check you must remember to run is a
+# convention, not a property. What remains behind the flag is the expensive half:
+# the harness, which actually mutates the tree and watches each check go red.
 if [ "${1:-}" = "--self-test" ]; then
   harness="$(dirname "$0")/check-negative-controls.sh"
   [ -r "$harness" ] || { echo "FAIL: cannot read $harness"; exit 1; }
-  python3 - "$0" "$harness" <<'SELFPY' || exit 1
-import re, sys, pathlib
-inv, neg = (pathlib.Path(a).read_text(encoding="utf-8") for a in sys.argv[1:3])
-
-marks = re.findall(r'echo "\[(\d+)/(\d+)\]', inv)
-totals = {int(n) for _, n in marks}
-if len(totals) != 1:
-    print("FAIL: check markers disagree on the total: %s" % sorted(totals)); sys.exit(1)
-N = totals.pop()
-checks = set(range(1, N + 1))
-
-probed = {int(m) for m in re.findall(r'^probe (\d+) ', neg, re.M)}
-
-# the exemptions, read from the harness's own NOT COVERED block — the same text
-# invariant 17 already gates the documentation against
-tail = neg.split("NOT COVERED", 1)
-declared = set()
-if len(tail) == 2:
-    for line in tail[1].splitlines():
-        m = re.match(r'\s*echo "\s+((?:\d+,\s*)*\d+)\s+—', line)
-        if m:
-            declared |= {int(x) for x in re.findall(r'\d+', m.group(1))}
-
-missing = sorted(checks - probed - declared)
-both    = sorted(probed & declared)
-strays  = sorted((probed | declared) - checks)
-bad = 0
-for n in missing:
-    bad = 1
-    print("FAIL: check %d has no known-bad in check-negative-controls.sh and is not "
-          "declared unprobeable — add a probe, or say why it cannot have one" % n)
-for n in both:
-    bad = 1
-    print("FAIL: check %d is both probed and declared unprobeable" % n)
-for n in strays:
-    bad = 1
-    print("FAIL: %d is probed or declared but is not a check in this script" % n)
-if bad: sys.exit(1)
-print("    ok (%d checks: %d probed, %d declared unprobeable, 0 unaccounted)"
-      % (N, len(probed), len(declared)))
-SELFPY
-  echo "[self-test] structural: every check accounted for"
-  echo "[self-test] handing off to the harness — it watches each one actually fail"
+  "$0" || exit 1                     # invariant 19 is in here
+  echo
+  echo "[self-test] structure verified above (invariant 19); now watching each check fail"
   exec "$harness"
 fi
 
@@ -209,7 +162,7 @@ scope() {  # <count> <noun> — returns 1 on an empty scope; prints nothing on s
 # CHANGELOG, docs/, evals/, AGENTS.md, these scripts -- is prose or code read by
 # people, deliberately uncapped since 2026-07-15; navigability there comes from a
 # table of contents and docs/INDEX.md, not a line ceiling.
-echo "[1/18] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
+echo "[1/19] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
 over=0
 seen1=0
 while IFS= read -r f; do
@@ -226,7 +179,7 @@ scope "$seen1" "skill files" || over=1
 if [ "$over" -eq 0 ]; then echo "    ok ($seen1 skill files)"; else fail=1; fi
 
 # --- 2. Audit checklist ends every rules file ------------------------------
-echo "[2/18] Every skills/*/rules/*.md ends with an '## Audit checklist'"
+echo "[2/19] Every skills/*/rules/*.md ends with an '## Audit checklist'"
 missing=0
 seen2=0
 while IFS= read -r f; do
@@ -257,7 +210,7 @@ if [ "$missing" -eq 0 ]; then echo "    ok ($seen2 rules files)"; else fail=1; f
 # .denylist.local (git-ignored, one ERE per line, '#' comments). When neither
 # exists (e.g. an external fork's PR), only the generic phrases are checked —
 # the maintainer's pre-commit hook and this repo's CI carry the full list.
-echo "[3/18] No internal-name leaks"
+echo "[3/19] No internal-name leaks"
 DENY='the user runs|the user operates'
 if [ -n "${SOTA_DENYLIST:-}" ]; then
   DENY="$DENY|$SOTA_DENYLIST"
@@ -299,7 +252,7 @@ fi
 # Code, Codex, ...) skip any skill that exceeds it. Count Unicode characters
 # (descriptions use em-dashes: 1 char, 3 bytes) via python3, parsing both
 # folded block scalars (`>-`) and plain single-line descriptions.
-echo "[4/18] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
+echo "[4/19] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
 if command -v python3 >/dev/null 2>&1; then
   if desc_out=$(python3 - "$MAX_DESC" <<'PY'
 import sys, glob, re
@@ -389,7 +342,7 @@ fi
 # One version, four places: VERSION, plugin.json, the CHANGELOG's top entry,
 # and (after the release lands) the newest v* tag. Drift here shipped a main
 # briefly claiming 1.8.0 with 1.9.0 content (2026-07-03) — hence a hard check.
-echo "[5/18] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
+echo "[5/19] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
 v5=0
 ver=$(tr -d '[:space:]' < VERSION)
 # Strict X.Y.Z: rejects interior malformations (1..2, 1.2, 1.2.3.4) the old
@@ -423,7 +376,7 @@ if [ "$v5" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # rot on surfaces nobody recounts (the social preview said "30 skills" for
 # three releases). Recount from the tree and compare every tracked surface;
 # RELEASING.md lists the same surfaces for manual release edits.
-echo "[6/18] Count-bearing surfaces match the tree"
+echo "[6/19] Count-bearing surfaces match the tree"
 v6=0
 ck() { # ck <found> <expected> <surface>
   [ "$1" = "$2" ] || { note "$3: says '${1:-<not found>}', tree says '$2'"; v6=1; }
@@ -469,7 +422,7 @@ if [ "$v6" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # library-map entry must name a real skill dir. Catches the drift the
 # 2026-07-10 audit found: sota-confidential-computing was added to the table
 # but missing from the map for a full release.
-echo "[7/18] Router lists every skill (routing table + library map)"
+echo "[7/19] Router lists every skill (routing table + library map)"
 v7=0
 seen7=0
 router=skills/sota/SKILL.md
@@ -497,7 +450,7 @@ if [ "$v7" -eq 0 ]; then echo "    ok ($seen7 domain skills)"; else fail=1; fi
 # with no rot-catching upside. Fenced AND inline code are stripped so link-shaped
 # examples (in ``` fences or `backticks`) are not scanned. Idea from vault-doctor
 # (training-knowledge-vault); see docs/ADOPTION-LOG.md.
-echo "[8/18] Internal Markdown links resolve (*.md targets)"
+echo "[8/19] Internal Markdown links resolve (*.md targets)"
 if command -v python3 >/dev/null 2>&1; then
   if link_out=$(python3 - <<'PY'
 import os, re, sys
@@ -550,7 +503,7 @@ fi
 # previous release (2026-07-28) and both sat on main until a human noticed
 # during the release cut. Fence-aware, like check 2: a CHANGELOG entry may
 # legitimately quote '## [Unreleased]' inside a code fence.
-echo "[9/18] CHANGELOG has at most one [Unreleased], and it is the top entry"
+echo "[9/19] CHANGELOG has at most one [Unreleased], and it is the top entry"
 v9=0
 changelogs="CHANGELOG.md $(git ls-files 'docs/CHANGELOG-archive*.md' | tr '\n' ' ')"
 for cl in $changelogs; do
@@ -596,7 +549,7 @@ if [ "$v9" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # to ourselves. All 255 rules files passed when this landed, so it is a
 # regression gate, not a repair; it was watched to fail on an injected file
 # and on a renamed reference before being trusted.
-echo "[10/18] Every skills/*/rules/*.md is referenced by its own SKILL.md"
+echo "[10/19] Every skills/*/rules/*.md is referenced by its own SKILL.md"
 v10=0
 seen10=0
 while IFS= read -r rf; do
@@ -639,7 +592,7 @@ if [ "$v10" -eq 0 ]; then echo "    ok ($seen10 rules files indexed)"; else fail
 # This is the first DIFF-based invariant; every other check reads the whole tree.
 # With no merge base it skips with a note rather than guessing, like checks 4/8.
 SWEEP_MIN_SKILL_FILES=20
-echo "[11/18] LAST-VERIFIED moves only with a sweep (batched diff, or declared in CHANGELOG)"
+echo "[11/19] LAST-VERIFIED moves only with a sweep (batched diff, or declared in CHANGELOG)"
 v11=0
 base=""
 for ref in origin/main main; do
@@ -712,7 +665,7 @@ if [ "$v11" -ne 0 ]; then fail=1; fi
 #
 # HISTORY-based, like check 11's diff: with no commit history for a pair it skips
 # with a note rather than guessing, because a shallow clone must not read as a pass.
-echo "[12/18] Rendered assets: each assets/*.png is no older than its *.html"
+echo "[12/19] Rendered assets: each assets/*.png is no older than its *.html"
 v12=0
 seen12=0
 checked12=0
@@ -785,7 +738,7 @@ if [ "$v12" -ne 0 ]; then fail=1; fi
 # column and checks that column in every data row beneath it. So it also fails when
 # the column is RENAMED or dropped (0 tables -> SCOPE EMPTY), which is the drift a
 # hardcoded column index would sail straight past.
-echo "[13/18] Every scoreboard row declares its sample size"
+echo "[13/19] Every scoreboard row declares its sample size"
 v13=0
 BOARD="evals/results/RESULTS.md"
 if [ ! -f "$BOARD" ]; then
@@ -855,7 +808,7 @@ if [ "$v13" -ne 0 ]; then fail=1; fi
 # docs/INDEX.md (the front door is real), AND in that release's own CHANGELOG section
 # (you cannot pass by declaring a filler word that was never part of the release).
 # A missing line on a release commit fails closed.
-echo "[14/18] A release declares its front-door terms, and they resolve"
+echo "[14/19] A release declares its front-door terms, and they resolve"
 v14=0
 base14=""
 for ref in origin/main main; do
@@ -927,7 +880,7 @@ if [ "$v14" -ne 0 ]; then fail=1; fi
 # (v1.19.8 → v1.21.0) with all fourteen checks green. Both directions matter: a
 # file absent from the map is invisible to a router-driven load, and a map entry
 # for a file that no longer exists sends the model after nothing.
-echo "[15/18] Router library map lists every rules file (both directions)"
+echo "[15/19] Router library map lists every rules file (both directions)"
 v15=0
 if command -v python3 >/dev/null 2>&1; then
   map_out=$(python3 - <<'MAPPY'
@@ -1000,7 +953,7 @@ if [ "$v15" -ne 0 ]; then fail=1; fi
 # actually in a user's settings.json. The README's is the one a reader copies by
 # hand, so a stale block is the version that spreads. Silent by construction —
 # nothing executes the README.
-echo "[16/18] README's documented hook == install.sh's HOOK_CMD"
+echo "[16/19] README's documented hook == install.sh's HOOK_CMD"
 v16=0
 if command -v python3 >/dev/null 2>&1; then
   hook_out=$(python3 - <<'HOOKPY'
@@ -1087,7 +1040,7 @@ if [ "$v16" -ne 0 ]; then fail=1; fi
 #   - a correction note that QUOTES the old wording ("(14) — invariants 1–14") is
 #     history, not a claim. Counts inside double quotes are ignored, which is the
 #     same supersede-don't-edit rule the CHANGELOG follows.
-echo "[17/18] Docs describing the invariants agree with the scripts"
+echo "[17/19] Docs describing the invariants agree with the scripts"
 v17=0
 if command -v python3 >/dev/null 2>&1; then
   doc_out=$(python3 - <<'DOCPY'
@@ -1238,7 +1191,7 @@ if [ "$v17" -ne 0 ]; then fail=1; fi
 # every skill named on the line and against the containing skill, and any hit
 # passes. A gate that flags correct prose gets disabled, which leaves you worse
 # off than no gate (docs/CONVENTIONS-LEDGER.md).
-echo "[18/18] Section references (§N) resolve to a real section"
+echo "[18/19] Section references (§N) resolve to a real section"
 v18=0
 if command -v python3 >/dev/null 2>&1; then
   ref_out=$(python3 scripts/lib/check-section-refs.py 2>&1) || v18=1
@@ -1256,11 +1209,96 @@ else
 fi
 if [ "$v18" -ne 0 ]; then fail=1; fi
 
+# --- 19. Every check has a known-bad, and the exempt set has not grown -------
+# rules/12 §1b applied to this repo. Two halves, and the second is the one with
+# teeth: without it, "every check is probed or declared unprobeable" is satisfied
+# by adding your new check number to the declared-unprobeable list, which is a
+# one-line way to silence the check that exists to stop you.
+#
+# So the exempt set is PINNED here. Growing it is a deliberate edit to this line,
+# which a reviewer sees. This literal is a tripwire, not a cached count — the
+# distinction that makes it different from the stale literals rules/10 §1 warns
+# about is that nothing derives it and everything compares against it.
+#
+# Runs on every invocation (~50 ms), not behind --self-test: a check you have to
+# remember to run is a convention. Invariant 18 was added WITHOUT a probe in the
+# very commit that introduced it, which is what this exists to make impossible.
+EXPECTED_UNPROBED="5 9 11 12 14"
+echo "[19/19] Every check has a known-bad, or a pinned reason it cannot"
+v19=0
+if command -v python3 >/dev/null 2>&1; then
+  st_out=$(python3 - "$0" "$(dirname "$0")/check-negative-controls.sh" "$EXPECTED_UNPROBED" <<'STPY'
+import re, sys, pathlib
+try:
+    inv = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+    neg = pathlib.Path(sys.argv[2]).read_text(encoding="utf-8")
+except OSError as e:
+    print("cannot read: %s" % e); print("SCOPE 0"); sys.exit(1)
+pinned = {int(x) for x in sys.argv[3].split()}
+
+marks = re.findall(r'echo "\[(\d+)/(\d+)\]', inv)
+totals = {int(n) for _, n in marks}
+if len(totals) != 1:
+    print("check markers disagree on the total: %s" % sorted(totals)); print("SCOPE 0"); sys.exit(1)
+N = totals.pop()
+checks = set(range(1, N + 1))
+
+probed = {int(m) for m in re.findall(r'^probe (\d+) ', neg, re.M)}
+tail = neg.split("NOT COVERED", 1)
+declared = set()
+if len(tail) == 2:
+    for line in tail[1].splitlines():
+        m = re.match(r'\s*echo "\s+((?:\d+,\s*)*\d+)\s+—', line)
+        if m:
+            declared |= {int(x) for x in re.findall(r'\d+', m.group(1))}
+
+bad = 0
+for n in sorted(checks - probed - declared):
+    bad = 1
+    print("check %d has no known-bad in check-negative-controls.sh and no declared "
+          "reason it cannot have one — add a probe, or say why (and pin it)" % n)
+for n in sorted(probed & declared):
+    bad = 1; print("check %d is both probed and declared unprobeable" % n)
+for n in sorted((probed | declared) - checks):
+    bad = 1; print("%d is probed or declared but is not a check in this script" % n)
+
+if declared != pinned:
+    bad = 1
+    grew = sorted(declared - pinned); shrank = sorted(pinned - declared)
+    if grew:
+        print("the declared-unprobeable set GREW by %s — a new check may not be "
+              "exempted by adding it to that list; probe it, or edit EXPECTED_UNPROBED "
+              "deliberately with the reason" % grew)
+    if shrank:
+        print("checks %s are now probed but EXPECTED_UNPROBED still exempts them — "
+              "good news, update the pin" % shrank)
+if bad:
+    print("SCOPE %d" % N); sys.exit(1)
+print("SCOPE %d" % N)
+print("    ok (%d checks: %d probed, %d unprobeable and pinned, 0 unaccounted)"
+      % (N, len(probed), len(declared)))
+STPY
+) || v19=1
+  while IFS= read -r l; do
+    case "$l" in SCOPE\ *|'    ok ('*|'') ;; *) note "$l" ;; esac
+  done <<EOF
+$st_out
+EOF
+  n19=$(printf '%s\n' "$st_out" | sed -n 's/^SCOPE //p')
+  scope "${n19:-0}" "checks accounted for" || v19=1
+  if [ "$v19" -eq 0 ]; then printf '%s\n' "$st_out" | sed -n 's/^    ok (/    ok (/p'; fi
+else
+  note "SKIPPED (python3 not found; CI always has it)"
+  echo "    ok (skipped)"
+fi
+# Fail CLOSED: a suite that cannot verify its own coverage prints no PASS line.
+if [ "$v19" -ne 0 ]; then fail=1; fi
+
 # --- Result ---------------------------------------------------------------
 echo
 if [ "$fail" -ne 0 ]; then
   echo "FAIL: repository invariants violated (see above)."
   exit 1
 fi
-printf 'PASS: all repository invariants satisfied (18 checks over %s skill files / %s rules files, %ss).\n' \
+printf 'PASS: all repository invariants satisfied (19 checks over %s skill files / %s rules files, %ss).\n' \
   "${seen1:-?}" "${seen2:-?}" "$((SECONDS - START_SECONDS))"
