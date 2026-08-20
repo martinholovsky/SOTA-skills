@@ -73,6 +73,26 @@ AGENTS.md                     # guidance for AI assistants working on the repo
   (a target, not a floor — compact rules files are fine; the hard cap is 500).
 - Ends with an **`## Audit checklist`** — yes/no questions, ideally with
   grep/lint patterns, so the rule can be used to hunt violations.
+- **The two halves must correspond, in both directions.** Invariant 2 checks the
+  checklist *exists*; nothing checks that it matches the guidance above it, and the
+  mismatch is silent either way:
+  - **A checklist item with no build rule** tells an auditor to flag something the
+    build half never told anyone to do. That is the direction that wastes other
+    people's time — a team follows the library, ships, and is then marked down by the
+    same library. If an item has no counterpart above it, either add the build rule or
+    move the item to the file that owns it.
+  - **A build rule with no checklist item** is the more common direction (it is the
+    library's most frequently rediscovered gap — see `docs/ADOPTION-LOG.md`): the rule
+    is stated, often more than once, and no one wrote down how an auditor would detect
+    the violation. When adding a build rule, ask separately *how would I find this in
+    someone else's codebase* — and if the honest answer is "you would not", say so in
+    the rule rather than leaving a silent hole.
+  - **The exception, stated so it is not treated as a defect:** advisory sections
+    ("prefer X where it fits") and sections whose check genuinely lives in a sibling
+    skill do not need a local item. Cross-reference the owner instead.
+  This is a **judgement** convention and is deliberately not gated — see
+  [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md) for the measurement that
+  showed why a mechanical version does not work.
 - Fast-moving claims must be verified against primary sources when written.
   Library-wide re-verification is tracked by the root **`LAST-VERIFIED`** file
   (YYYY-MM-DD of the last full-library sweep: per-skill research against

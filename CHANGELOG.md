@@ -9,6 +9,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **A parser ladder for languages without a native AST** (`sota-testing/rules/02` §2.10).
+  "Author guards in AST" is unhelpful where AST is not at hand, which is exactly when
+  people reach for regex. Six rungs, take the first that carries your claim: the
+  language's own AST → a **semantic index** when the claim needs *types* or cross-file
+  resolution (**CodeQL** — verified locally at 2.26.2, extractors for go, python, rust,
+  java, cpp, csharp, javascript, ruby, swift plus yaml/xml/html/actions; or SCIP/LSIF) →
+  a **cross-language structural matcher** (**Opengrep**; ast-grep/tree-sitter) → the
+  **toolchain's own analysis API**, so the guard runs in the existing build → the
+  **artifact or the runtime**, when the claim is about what *ships* or what is *live* →
+  regex only where the input has no grammar. Rung 2 answers §2.10's own honest limit
+  rather than working around it, and **rung 5 can be cheaper than rung 1**. Shell and
+  config are explicitly not exceptions: `mvdan.cc/sh/v3/syntax` parses POSIX sh, bash and
+  mksh with a `Walk`, and YAML/HCL/JSON/Dockerfile/SQL all have parsers.
+- **The BUILD↔AUDIT correspondence is now a stated convention** (`CONTRIBUTING.md`),
+  in both directions and with its exception. Invariant 2 checks a checklist *exists*;
+  nothing checked that it matches the guidance above it. An item with no build rule marks
+  a team down for following the library; a build rule with no item is this library's most
+  rediscovered gap. Advisory sections and checks owned by a sibling skill are exempt —
+  cross-reference the owner.
+
+### Changed
+
+- **Opengrep replaces Semgrep as the prescribed SAST engine**, aligning
+  `sota-devsecops/rules/05` §5.1 with the position `sota/rules/01` had already taken —
+  the audit skill listed *"Opengrep or Semgrep CE"* while the gate file still prescribed
+  Semgrep throughout. LGPL-2.1, multi-vendor consortium, rule format compatible.
+  **Verified against Opengrep 1.27.1 in a container**, because a wrong command in a
+  copy-pasteable CI block is the worst kind of defect: **there is no `opengrep ci`** — the
+  subcommands are `scan`/`test`/`validate`/`show`/`lsp`, so a workflow copied from
+  `semgrep ci` does not run, and the rule now says so. `scan --error` exits 1 on findings
+  and `--baseline-commit` gives the diff-aware behaviour; `.semgrepignore` is still
+  honoured and `nosem`/`nosemgrep`/`noopengrep` are all accepted, so porting the engine
+  does not silently re-expose anything previously suppressed. Also swept
+  `sota-devsecops` rules/07, `sota-python` rules/05, `sota-ruby` rules/04 and
+  `sota-threat-modeling` rules/06.
+
+
 - **`sota-testing/rules/02` §2.10 — which method a durable guard is written in.** The
   library stated a method default for an **audit search** (widen it, use a second
   independent method, say what you ran) and none for the **guard** that search leaves
