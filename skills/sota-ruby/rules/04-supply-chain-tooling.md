@@ -83,7 +83,7 @@ bundle audit check --update    # --update pulls the latest advisory DB
   `brakeman.ignore` with a note per entry — an ignore file nobody can explain
   is a finding.
 - Non-Rails codebases: RuboCop's `Security/*` cops plus the greps in
-  `rules/02`/`rules/03`; Semgrep with a Ruby ruleset is a good neutral
+  `rules/02`/`rules/03`; Opengrep with a Ruby ruleset is a good neutral
   supplement.
 - Secret scanning (gitleaks/trufflehog as neutral examples) runs on every
   push, on the full history at least once.

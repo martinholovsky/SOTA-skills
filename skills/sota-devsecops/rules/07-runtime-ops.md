@@ -257,7 +257,7 @@ create an unaudited one permanently:
 Runtime signals feed back into the pipeline: admission denials reveal unsigned/legacy
 images to migrate; drift corrections reveal process gaps; scanner findings on *deployed*
 digests (rules/03 §3.6) drive rebuild-and-promote of patched bases (rules/04 §4.3);
-incident retros add Semgrep rules (rules/05 §5.1) and admission policies. A DevSecOps
+incident retros add Opengrep rules (rules/05 §5.1) and admission policies. A DevSecOps
 setup that only adds controls and never tunes them ends as the bypassed, resented variety.
 Track: gate latency, exception/suppression counts and ages, time-to-remediate by severity,
 rollback drill recency, restore test results. Those five trends are the honest health

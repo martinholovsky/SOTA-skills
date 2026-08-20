@@ -123,7 +123,7 @@ Tools feed the audit; they are never the audit:
   candidate Absent/Partial cells — each still needs the reachability walk
   (§3.2) before it becomes a finding. Forwarding scanner output as an audit
   is the canonical failure mode of this discipline.
-- **Targeted code sweeps** (semgrep/grep) excel at the matrix's repetitive
+- **Targeted code sweeps** (opengrep/grep) excel at the matrix's repetitive
   cells: authz-check presence per route, raw-SQL escape hatches, `verify=False`,
   skip-auth decorators, `dangerouslySetInnerHTML`. Save the rule set — it
   becomes the structural regression guard you recommend (`04` §5 VER-2).
