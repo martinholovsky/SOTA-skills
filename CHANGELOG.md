@@ -5,7 +5,23 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.23.0] - 2026-08-20
+
+**Build the gate before the refactor that needs it.** Splitting two capped rules files
+would have broken a class of cross-reference nothing checked — so the check came first.
+It found **six live defects on the unmodified tree** before a line moved, then caught
+**27 more** that the split itself broke across eight skills. Applying the ledger's three
+filters at *proposal* time, "has it already failed?" read **no**; running the check
+answered it retroactively. A planned change is a legitimate second source of gates,
+because *"what would this break that nothing would tell me about?"* points straight at
+the class that fails silently.
+
+Also: a three-idea intake where two were covered as *classes* and missing as
+*mechanisms*, the in-band sentinel measured across nine languages (two rows changed on
+measurement rather than being confirmed), the last unmeasured subprocess row closed in a
+container, and this repo finally practising the rule it published that morning.
+
+**Front door checked:** self-test · section reference · in-band sentinel
 
 ### Added
 
@@ -4211,6 +4227,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.23.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.23.0
 [1.22.14]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.14
 [1.22.13]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.13
 [1.22.12]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.12
