@@ -98,7 +98,10 @@ Link: <https://api.example.com/docs/migrate-orders-v2>; rel="deprecation"
 ```
 
 4. **Measure** — per-key metrics on deprecated-surface usage. You cannot sunset
-   what you can't attribute. Dashboards by API key/account.
+   what you can't attribute. Dashboards by API key/account. If that telemetry does
+   not exist, the substitute — counting stored data that carries the feature's shape
+   — answers a *different* question and errs toward keep-it: `sota-observability`
+   rules/05 §7a.
 5. **Nag** — targeted emails to remaining callers; for stragglers, scheduled
    **brownouts** (return `410`/`503` for 5 minutes, then 1 hour, announced in
    advance) — converts ignored emails into pager alerts on the client side.

@@ -94,7 +94,7 @@ with the shortest path to YES.
 | `rules/02-metrics.md` | Adding Prometheus/OTel metrics, choosing counter vs gauge vs histogram, designing labels, computing percentiles, applying RED/USE, linking metrics to traces via exemplars |
 | `rules/03-tracing.md` | Instrumenting with OpenTelemetry, deciding what gets a span, propagating context across HTTP/queues/jobs, choosing head vs tail sampling, using (or avoiding) baggage |
 | `rules/04-slos-alerting.md` | Defining SLIs/SLOs, error budgets, writing burn-rate alerts, reviewing alert quality, fighting alert fatigue, deciding page vs ticket |
-| `rules/05-operational-readiness.md` | Implementing health endpoints, exposing graceful degradation, securing debug endpoints, continuous profiling, Sentry-style error tracking, building dashboards |
+| `rules/05-operational-readiness.md` | Implementing health endpoints, exposing graceful degradation, securing debug endpoints, continuous profiling, Sentry-style error tracking, building dashboards, **edge access logs as a decision-grade signal** — and the question with no instrument, where a proxy measurement silently answers a different one |
 | `rules/06-audit-playbook.md` | Auditing a codebase's observability posture end-to-end; common gaps catalog; scoring and reporting |
 
 ## Top 10 non-negotiables

@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **A negative control belongs *inside* the tool, not beside it.**
+  `sota-code-security/rules/12` §1b: the mutation probe, the instrument bar and
+  the committed known-bad were all already there, and in every one of them the
+  probe is an artifact somebody maintains **next to** the checks — so it proves
+  today's checks can fail and says nothing about the check added next week,
+  because joining the harness is a convention enforced by prose and a reviewer.
+  Prefer a `--self-test`/`doctor` mode that walks the same check registry the
+  ordinary run walks: a check with **no declared known-bad fails the self-test**,
+  the probe ships to the operator's own installation (where §1's stale-install
+  trap actually bites), and the known-bad sits where a new check's reviewer is
+  already reading. With the three rules that decide whether its output means
+  anything — attribute the catch to the **named** check (a non-zero exit for an
+  unrelated reason is a false pass), assert the mutation took, report
+  checks-probed over checks-registered — and the two things it does not
+  establish, which must be printed rather than assumed: a skip prints its reason,
+  and a check that can fail may still have stopped covering the code that
+  matters. The CLI half is `sota-cli-ux/rules/03` §2a, for any tool whose output
+  is a **verdict** rather than an artifact: `"0 problems found"` and `"0 checks
+  ran"` print the same.
+- **The question with no instrument, and the substitute that answers a different
+  one.** `sota-observability/rules/05` §7a. The requirement for per-route/per-field
+  usage telemetry was already stated twice in `sota-api-design` (rules/02 §5 step
+  4, rules/03 §11 — *"without per-field usage data you can never delete
+  anything"*), in a skill an observability or platform task never loads;
+  `sota-observability` mentioned access logs once, only to exclude the health
+  endpoint from them. Edge access logs are now a **required** stream wherever a
+  gateway fronts a deprecable surface, retained across a full deprecation runway
+  — a 30-day retention cannot support a decision with a 6-month runway. The new
+  part is the residual: with the signal absent, *"is this feature used?"* gets
+  answered from the **corpus**, which measures whether data shaped like the
+  feature exists rather than whether anyone requests it — a different question
+  whose error has a **direction**, since stored data outlives its last reader and
+  so over-reports use. Generalised (commit count for maintenance, manifest
+  presence for reachability, a dashboard existing for someone opening it), with
+  the rule that a substitution is named in the same sentence as the number.
+
 ### Changed
 
 - **The v1.22.14 cut's finding is now recorded where a future gate proposal will

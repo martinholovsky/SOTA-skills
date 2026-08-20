@@ -158,6 +158,9 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-08-19 | Roadmap item 8, worked | **The Node row was written from recall** | **adopted with a correction** | `sota-sandboxing/rules/04` R5.1 + `sota-javascript-typescript/rules/05`. The row was *right* but incomplete: Node now ships **DEP0190** deprecating args-with-`shell:true`, and Node's `timeout` fires on schedule while leaving the grandchild alive **and reporting `err = null`**. Java remains unmeasured — the JDK is absent here — and is recorded as open rather than asserted · v1.22.12 |
 | 2026-08-19 | Reading invariant 17 back the day after it shipped | **A stated count and the actual list drift independently** — correcting "runs N checks" everywhere while forgetting a table row leaves every count claim in agreement | **adopted** | `check-invariants.sh` [17] now asserts `AGENTS.md`'s table and `CONTRIBUTING.md`'s list each enumerate **1..N with no gaps**; watched to fail both ways and to pass after restore. Residual stated in CONTRIBUTING item 17: it does **not** check that row 12 and item 12 describe the same invariant, because matching prose across two deliberately different granularities is not mechanically checkable · v1.22.13 |
 | 2026-08-19 | Field brief from a session applying the library — a recon profile that came back empty | **A cap on a generator's *output*, then parsed.** `rules/10` §2.7 covers truncating input *into* an inspector; the inverse — an unset `max_tokens` truncating a JSON document that is then `json.loads`-ed — is the same family and the rule text, example and checklist all point at input | **adopted with a correction** | `sota-code-security/rules/10` §2.7 (the mirror + checklist), `rules/11` §2.2 (the tell: produced size landing on its cap; a parse-error offset needs the document length), `sota-llm-engineering/rules/02` (set `max_tokens` explicitly, assert `output_tokens < max_tokens`) + the three index surfaces that said "truncation before inspection". Correction: the brief reads the class as unstated, and it is stated — for LLM output only, at `sota-llm-engineering/rules/02:199` and `rules/04:251` ("truncated output never parsed as valid"), in a skill an inert-control pass never loads. What was genuinely absent is the **general** producer form, the **unset-default** variant (no truncation operator to grep for, so §2.7's own procedure walks past it), and the size-vs-cap arithmetic — `rules/05:147` alerts on a `stop_reason=max_tokens` spike, which is the metadata tell, not the arithmetic one · v1.22.14 |
+| 2026-08-20 | Field brief from a session applying the library — three ideas | **A `--self-test` mutation harness as a mode of the tool**, so "this check can go red" is a property of the health suite rather than of whoever last edited it | **adopted with a correction** | `sota-code-security/rules/12` §1b + checklist, `sota-cli-ux/rules/03` §2a + checklist, two SKILL.md index rows. Correction: the *class* is covered three times over (rules/12 §1 mutation probe, §2.1 "the instrument that cannot fail" — which is literally a mutation harness reading every non-zero exit as a catch — and `sota-devsecops/rules/05`:311 "every gate ships a committed known-bad"). What was absent is the **packaging**: everywhere the library states it, the probe is a committed fixture plus a separate job, i.e. a convention someone must remember when adding a check. Nothing said to make it a mode of the tool, where a check with no declared known-bad *fails the self-test* · unreleased |
+| 2026-08-20 | Same brief, idea 3 | **Gateway access logs, still absent — which is why "is this graph feature used?" was answered by measuring the corpus instead** | **adopted with a correction** | `sota-observability/rules/05` §7a + checklist, cross-ref from `sota-api-design/rules/02` §5 step 4, observability SKILL.md row. Correction: the requirement is **already stated**, at `sota-api-design/rules/03`:227 ("without per-field usage data you can never delete anything") and `rules/02`:100 ("You cannot sunset what you can't attribute") — so the accurate verdict is *unreachable, not absent*: it lives in `sota-api-design`, which an observability or platform task never loads, and `sota-observability` mentions access logs exactly once (`rules/05`:56) and only to *exclude* the health endpoint from them. The genuinely new part is the **residual** the brief's incident actually produced — the substitute measurement. `grep -rniE "proxy (metric\|measure)\|answers a different question" skills/` returned zero hits · unreleased |
+| 2026-08-20 | Same brief, idea 2 | **A lint for the `-1` sentinel** — an out-of-domain numeric value meaning absent/unknown/error | **deferred** | Confirmed absent, two independent searches: `grep -rniE "sentinel" skills/` returns 23 hits, all unrelated (Go error sentinels, Redis/Microsoft Sentinel, queue-shutdown sentinels); `grep -rniE "return -1\|returns -1\|in-band\|magic (number\|value\|constant)"` returns nothing on the class. Nearest coverage is `sota-c-cpp/rules/04`:25 (`atoi` "no error report" → `strtol` + errno), one row in a banned-API table, and `sota-performance/rules/05`:170, the only positive statement of the principle (a cached-absence sentinel must be *distinct from* a real value) and confined to negative caching. **Deferred, not adopted**, on placement: the right home depends on where the sentinel lives — schema column, function return, or a value crossing an API boundary — and a rule written to the wrong layer gets a grep nobody runs. Revisit condition: the reporter names the layer |
 
 ## Entries
 
@@ -982,3 +985,60 @@ section: an offset is a numerator.
 
 **Measurement status:** adopted on reasoning and on the reporter's reproduction. **No efficacy
 lift is claimed or measured. Do not cite one.**
+
+### 2026-08-20 — three ideas from a session applying the library; two adopted, one deferred on placement
+
+The intake shape from `docs/MAINTENANCE.md` again: a session that *used* the library
+hands back what it found missing. Two of the three were already covered as classes and
+missing as **mechanisms**, which is the correction worth recording — a keyword search
+would have closed both as "already covered" and shipped nothing.
+
+**1. `--self-test` as a mode, not a harness.** The library states the mutation probe
+(`rules/12` §1), states that an instrument must be watched to produce a wrong answer
+(§2.2), states that every gate needs a committed known-bad (`sota-devsecops/rules/05`
+§5.6), and even names this exact failure — §2.1's *"a mutation harness reporting 18/18
+controls caught while every run died before the test suite started"*. In all of it the
+probe is an artifact **beside** the checks. The brief's claim is about ownership: a
+harness in a separate CI job proves today's checks can fail and says nothing about the
+check added next week, because joining it is a convention enforced by prose and a
+reviewer. Put the probe inside the tool and a check with no declared known-bad fails
+the self-test, which moves the property from a person to the suite.
+
+This repository is the worked example, and it is on the wrong side of its own new rule:
+`scripts/check-negative-controls.sh` is a separate CI job, the "add your known-bad here
+too" instruction lives as a sentence in `AGENTS.md`, and 12 of 17 invariants are probed
+— the gap being reported only because the harness prints it. Not changed here; recorded
+so the next person deciding whether to fold it into `check-invariants.sh --self-test`
+has the argument.
+
+**2. Gateway access logs.** Filed as absent; it is *unreachable*. `sota-api-design`
+rules/02 §5 step 4 and rules/03 §11 both state the requirement, one of them in the
+brief's own words ("without per-field usage data you can never delete anything"), and
+`sota-observability` — which owns the telemetry pipeline under router rule 12 — mentions
+access logs once, to say the health endpoint should be excluded from them. Second
+release running, the accurate verdict is a **skill boundary**, not a coverage hole.
+
+The reusable part is the half the incident produced and no rule stated: with the signal
+absent, the question got answered from the **corpus**, which measures whether data
+shaped like the feature *exists* rather than whether anyone *requests* it. Those differ,
+and the error has a direction — stored data outlives its last reader, so the substitute
+over-reports use and argues for keeping the feature. That generalises (commit count for
+maintenance, manifest presence for reachability — `sota-devsecops/rules/03` §3.9 — a
+dashboard existing for someone opening it), so it landed as a class in
+`sota-observability/rules/05` §7a rather than as a line in the deprecation pipeline.
+
+**3. The `-1` sentinel lint — deferred, and the reason is placement, not doubt.** The
+class is genuinely absent (searches in the table row above), it produces exactly the
+silent failure this library specialises in — an out-of-domain value survives arithmetic,
+`SUM`, `min()`, sorting and threshold comparisons without a type error and just moves
+the answer — and it is mechanically greppable, which is the filter
+[CONVENTIONS-LEDGER.md](CONVENTIONS-LEDGER.md) asks a new rule to pass. What is missing
+is the layer. A schema column carrying `-1` instead of `NULL` is a `sota-databases`
+rules/02 rule with a `information_schema` query behind it; a function returning `-1` for
+"not found" is a language-skill rule with a per-language grep; a `-1` crossing an API
+boundary is `sota-api-design` rules/02 §6 (open-enum discipline, tolerant readers). The
+greps differ, and a rule filed to the wrong layer ships a detector nobody runs against
+the code that has the defect. Held until the reporter names it.
+
+**Measurement status:** adopted on reasoning. **No efficacy lift is claimed or
+measured. Do not cite one.**
