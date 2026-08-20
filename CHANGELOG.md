@@ -9,6 +9,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Invariant 18 — a `§` section reference must resolve.** Invariant 8 resolves
+  `[text](file.md)` links; a `§` reference is **prose**, so the ~1,300 of them
+  across `skills/` were checked by nothing and broke silently whenever a section
+  was renumbered or a rules file split. Built deliberately **before** the split
+  below, and it found **six live defects on its first run over the unmodified
+  tree** — `rules/11 §6.7` cited from two files including across a skill
+  boundary, `sota-golang` rules/07 §6 in a five-section file, and four cross-skill
+  refs whose bare `rules/NN` silently resolved to the *citing* skill's own
+  numbering. Two authoring conventions had to be modelled before it was precise,
+  both found by **reading the findings** rather than trusting the count
+  (`sota-code-security` rules/12 §2.2): a heading may number itself `## 3.` **or**
+  `## §3 ` (missing the second form read one whole file as unnumbered and hid 102
+  valid references), and `§N.M` means a `### N.M` heading in some files and **item
+  M of the ordered list in §N** in others. The first draft flagged **nine correct
+  references** — rules/12 §2.1's *"generalised from one sample"*, committed by the
+  instrument itself. Deliberately **fail-open on ambiguity**, because a gate that
+  flags correct prose gets disabled ([CONVENTIONS-LEDGER](docs/CONVENTIONS-LEDGER.md));
+  an explicit `rules/NN` that exists nowhere **is** flagged, a case a probe caught
+  slipping through the first design. Watched to fail on three mutations, each
+  caught for the intended reason; a missing script makes it fail **closed**.
+  Harness now **24 probes, 13 of 18 invariants**.
+- **`sota-code-security` rules/13 and rules/14 — the two capped files split at
+  seams they already had.** `rules/11` §3 (*"Five classes rules/10 does not
+  cover"*) becomes **[rules/13 — Context-Dependent Silence](skills/sota-code-security/rules/13-context-dependent-silence.md)**:
+  five defects that are *correct under the condition you tested and silently wrong
+  under the one you shipped into* — scale, staleness, one-sample formats, an
+  undeclared seam, and location. `rules/10` §2.10–2.14 becomes
+  **[rules/14 — The Control That Is Not In Force](skills/sota-code-security/rules/14-control-not-in-force.md)**:
+  not a control that runs and does nothing, but one that is **not there** — absent
+  from the shipped artifact, standing as an instruction rather than code, never
+  triggered, parked in observe-only mode, and the report that claims otherwise.
+  `rules/11` 497 → 357 and `rules/10` 496 → 362. **Invariant 18 caught 27
+  references the split broke, across eight skills** — including one written the
+  same day in `sota-c-cpp` — which is the entire argument for building the check
+  first. With the headroom recovered, `rules/11` §6's hunt list gains the in-band
+  sentinel entry that had nowhere to go.
+
+
 - **A negative control belongs *inside* the tool, not beside it.**
   `sota-code-security/rules/12` §1b: the mutation probe, the instrument bar and
   the committed known-bad were all already there, and in every one of them the

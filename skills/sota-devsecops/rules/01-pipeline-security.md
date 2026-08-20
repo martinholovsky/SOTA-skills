@@ -288,7 +288,7 @@ exists in the author's tree.
   tree. The working tree hides dependence on untracked files, and that dependence is
   the most common reason a green local run turns red on a runner.
 - **Treat missing tooling as a hard failure, not a skip.** A local harness that skips
-  the step it cannot run reports success for work it never did — `sota-code-security` rules/10 §2.13 in
+  the step it cannot run reports success for work it never did — `sota-code-security` rules/14 §4 in
   your own scaffolding. Print what was substituted (a marketplace action replaced by
   its CLI equivalent) rather than hiding it, so the run's coverage is legible.
 - **Do this even when CI works.** It is the only way to prove a workflow before its
@@ -296,7 +296,7 @@ exists in the author's tree.
 - Off-the-shelf local runners for GitHub Actions exist; evaluate one against your
   workflow before adopting it, and do not assume action-for-action fidelity.
 
-Then check the run history itself, per `sota-code-security` rules/10 §2.13: a job that
+Then check the run history itself, per `sota-code-security` rules/14 §4: a job that
 was **skipped** reports Success, and a run the platform **refused** (billing, spending
 limits) reports failure within seconds with no step logs and its reason only in the
 annotations. Both look like "CI exists" from the badge.

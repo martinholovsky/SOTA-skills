@@ -209,7 +209,7 @@ exists, the suite is green, and the branch only ever runs in production.
 
 The failure class this belongs to — correct on small inputs, broken or
 pathological on large, with nothing in the output saying so — is
-`sota-code-security` rules/11 §3.1.
+`sota-code-security` rules/13 §1.
 
 ## 3.8 Doubles hygiene
 

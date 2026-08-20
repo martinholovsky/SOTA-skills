@@ -358,7 +358,7 @@ For a **full project audit**, work in passes:
 - **sota-code-security/rules**: 01 input & injection, 02 authentication, 03 authorization, 04
   cryptography, 05 web security, 06 memory & resource safety, 07 data exposure, 08 LLM/AI
   security, 09 untrusted-data ingestion, 10 silent control failure, 11 dead-path diagnostics, 12
-  verifying the verifier
+  verifying the verifier, 13 context-dependent silence, 14 the control that is not in force
 - **sota-threat-modeling/rules**: 01 methodologies, 02 decomposition, 03 threat catalogs, 04 risk
   rating & treatment, 05 outputs & operationalization, 06 audit reconstruction
 - **sota-secrets-management/rules**: 01 lifecycle & workload identity, 02 storage backends, 03

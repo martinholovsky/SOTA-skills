@@ -161,7 +161,7 @@ both. So any validation, authorization, or bounds check written as an `assert`
   `PYTHONOPTIMIZE` (Dockerfile `CMD`, entrypoint, `uv run` flags).
 - Note the sibling trap: lenient numeric parsing. `int(" 12 \n")` is `12` and
   `float("1_0")` is `10.0` — a corrupt field yields a plausible number rather
-  than an error. Full class: `sota-code-security` rules/11 §3.3.
+  than an error. Full class: `sota-code-security` rules/13 §3.
 
 ## 8. Input-adjacent denial of service & injection oddities
 

@@ -131,7 +131,7 @@ rather than its value.
   (`-Wtautological-constant-out-of-range-compare`) only in the **broken**
   configuration, so a developer on a signed-`char` machine sees neither the bug nor
   the warning. Always `int c; while ((c = getchar()) != EOF)`. This is the
-  location-dependent silence class — `sota-code-security` rules/11 §3.5.
+  location-dependent silence class — `sota-code-security` rules/13 §5.
 - POSIX's `-1`-plus-`errno` is a genuine out-of-band pair; it only degrades into an
   in-band sentinel when the caller keeps the `-1` and drops `errno`.
 - **C++ has the alternatives — use them:** `std::optional<T>` for absent,

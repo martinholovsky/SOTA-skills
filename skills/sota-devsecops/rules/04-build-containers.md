@@ -94,7 +94,7 @@ Hard rules:
   checkout, dead in the image" is a silent no-op, not a crash — the feature just
   returns empty. Smoke-test each control **against the built image**, and have
   the component assert its required artifacts at startup (`sota-code-security`
-  rules/10 §2.11).
+  rules/14 §2).
 
 ### 4.2.1 Interpreted-runtime variant (Node example; Python is isomorphic)
 

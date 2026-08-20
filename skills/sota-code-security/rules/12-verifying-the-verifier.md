@@ -182,7 +182,7 @@ route you to when the task does not look shell-shaped. That is exactly when it b
   user.has(permission)` in a test file counted as an authorization control. The
   denominator was on screen and went unread, which is the failure rules/11 §2.2
   exists to prevent.
-- **Generalised from one sample** (rules/11 §3.3, applied to yourself). Patterns
+- **Generalised from one sample** (rules/13 §3, applied to yourself). Patterns
   written against a single reference implementation flag every *other* correct
   spelling: a check keyed on the method name that reference happened to use; a
   rule that flagged the *correct* fix because the safe spelling shared a shape
@@ -218,7 +218,7 @@ answer on purpose.** Before its output is quoted anywhere:
   the code that ran.
 - **Sample and read before you count.** Report a count only after reading a
   sample of what it matched. A regex over prose over-counts hard — one such
-  sweep reported 50 unearned claims (rules/10 §2.10) where reading found 8.
+  sweep reported 50 unearned claims (rules/14 §1) where reading found 8.
 - **Validate on inputs where failure is possible.** "No false positives on three
   clean libraries" establishes nothing if none of them contains the construct the
   control keys on: it could not have failed. Pick inputs that *can* fail.
