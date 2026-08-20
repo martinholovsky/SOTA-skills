@@ -26,6 +26,30 @@ Rule: every number a tool reports is **computed from the artifact it produced**
 (`len(written)`, the actual byte count, the loaded rule count). Literals drift
 silently and operators record wrong values — including in compliance evidence.
 
+**Computed is not enough — compute it from what you *returned*.** A number derived
+from an **intermediate the function later discards** satisfies the no-literals reading
+above and still lies. `len(mandatory)` logged beside the computation kept printing
+`1 adjudicated` after `return mandatory + sampled` became `return sampled`: the count
+was computed, from a real collection, at a line that really ran — and it described work
+that no longer left the function. Nothing about the emission was wrong, which is why
+nothing about the emission changed.
+
+**A function cannot attest to its own return value.** Every emission site has a *suffix*
+after it — a filter, an early return, an exception path, a later reassignment — that can
+drop or reshape the result long after the line has been written. So **site the claim in
+the consumer, derived from the value it actually received**. A producer may log its
+*intent*; only the consumer can report the *effect*. This is the reporting-output twin
+of `sota-kubernetes` rules/04 §7: a success log is a claim about what was decided, not
+about what landed.
+
+**Probe it by mutating the application and reading the output — not the test suite.**
+The usual probe changes the control's body and watches the suite fail (`rules/12` §1);
+that answers *is this tested*, a different question from *does the log tell the truth*.
+Change what the function returns, run the real workload, and read the emitted line.
+Where the process runs **unattended — a cron job, a pipeline stage, an agent loop — the
+log is the only witness**, so a log that survives the mutation unchanged is itself the
+finding.
+
 The same rule governs the **words**, and that half is missed far more often
 because prose does not look like data. `verified`, `confirmed`, `reachable
 from`, `tainted`, `exploitable`, `sanitized` — and any `severity` or
@@ -36,7 +60,11 @@ Two traps: hedging every message containing "tainted" leaves the identical claim
 phrased "reachable from input", so match the claim's *shape*, not a keyword; and
 "TLS certificate not verified" describes the *analysed code's* defect and is
 correct English, so read the sentence before counting it — a regex classifier
-over-counts badly here (rules/12 §2.2).
+over-counts badly here (rules/12 §2.2). A third instance, reported by someone writing a
+test for this very paragraph: the test **failed on its own explanatory comment**, which
+quoted the log line it was hunting for. Matching the *words* rather than the *emission*
+is precisely the error above, committed while building the detector for it — which is
+how reliably this trap fires.
 
 ## 2. Shipped-artifact gaps
 
@@ -164,6 +192,13 @@ dashboard can tell the difference.
 - [ ] Does any **report or output** claim more than the run establishes — a count
       of things not examined, or a verification word (`verified`, `reachable`,
       `tainted`) applied to something merely matched (§1)?
+- [ ] Is every reported number computed from the value the function **returned**, not
+      from an intermediate it discards — and is the claim **sited in the consumer**,
+      derived from what was received rather than from what the producer intended to
+      send (§1)?
+- [ ] Was that verified by **mutating the application and reading the output** rather
+      than by a passing test suite? Anything running unattended has the log as its only
+      witness, so a log unchanged by the mutation is the finding (§1).
 - [ ] Is every control the runtime needs **present in the shipped artifact** — the
       image, the wheel, the bundle — and not only in the source tree (§2)?
 - [ ] Is any safeguard carried by a **natural-language instruction** where an

@@ -5,6 +5,43 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`sota-code-security/rules/14` §1 — computed is not enough; compute it from what you
+  *returned*.** §1 already required every reported number to be **computed from the
+  artifact it produced** rather than printed as a literal. A number derived from an
+  **intermediate the function later discards** satisfies that reading and still lies:
+  `len(mandatory)` logged beside the computation kept printing `1 adjudicated` after
+  `return mandatory + sampled` became `return sampled` — computed, from a real
+  collection, at a line that really ran, describing work that no longer left the
+  function. **A function cannot attest to its own return value**, because every emission
+  site has a *suffix* — a filter, an early return, an exception path, a reassignment —
+  that can drop the result after the line is written. So **site the claim in the
+  consumer**, derived from the value received: a producer may log its *intent*, only the
+  consumer reports the *effect*. That is the reporting-output twin of `sota-kubernetes`
+  rules/04 §7 (a success log is a claim about what was decided, not what landed), and a
+  class generalising across two unrelated domains is worth stating plainly. **Probe it by
+  mutating the application and reading the output, not the test suite** — `rules/12` §1's
+  probe answers *is this tested*, which comes apart from *does the log tell the truth*
+  exactly where it matters: an **unattended run has the log as its only witness**, so a
+  log unchanged by the mutation is itself the finding. Two audit-checklist items added.
+- **Cross-references at both anchors the class sits between.** `rules/11` §2.4 said
+  silence is not evidence of health; it now states the harder inverse — **speech is not
+  either**, when the claim is sited upstream of the effect it describes. And §2.5's "make
+  the new branch emit exactly once" gains its **placement precondition**: an emission
+  proves the line it sits on ran, not that its result survived the rest of the function.
+- **A third instance of §1's own keyword-vs-shape trap, recorded in place.** The
+  reporter's first test for this defect **failed on its own explanatory comment**, which
+  quoted the log line it was hunting for — matching the words instead of the emission,
+  while writing the detector for the paragraph that warns against it.
+
+### Changed
+
+- **README hero line: `~63k` → `~64k` lines.** Caught by invariant 6 rather than by eye
+  (`README hero ~k-lines: says '63', tree says '64'`); the tree reads 63,501.
+
 ## [1.23.0] - 2026-08-20
 
 **Build the gate before the refactor that needs it.** Splitting two capped rules files

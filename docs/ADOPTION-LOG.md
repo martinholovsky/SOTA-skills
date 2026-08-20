@@ -180,6 +180,7 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-08-20 | Same brief, idea 3 | **Gateway access logs, still absent — which is why "is this graph feature used?" was answered by measuring the corpus instead** | **adopted with a correction** | `sota-observability/rules/05` §7a + checklist, cross-ref from `sota-api-design/rules/02` §5 step 4, observability SKILL.md row. Correction: the requirement is **already stated**, at `sota-api-design/rules/03`:227 ("without per-field usage data you can never delete anything") and `rules/02`:100 ("You cannot sunset what you can't attribute") — so the accurate verdict is *unreachable, not absent*: it lives in `sota-api-design`, which an observability or platform task never loads, and `sota-observability` mentions access logs exactly once (`rules/05`:56) and only to *exclude* the health endpoint from them. The genuinely new part is the **residual** the brief's incident actually produced — the substitute measurement. `grep -rniE "proxy (metric\|measure)\|answers a different question" skills/` returned zero hits · v1.23.0 |
 | 2026-08-20 | Same brief, idea 2 (deferred, then answered the same day with a measured field report) | **The in-band sentinel — a value from the domain standing in for absent** | **adopted** | `sota-architecture/rules/02` §8a (**the class, stated once, language-neutral**), `sota-python/rules/02` §2a (worked example) + checklist greps, `sota-databases/rules/01` *Modeling hygiene* + checklist (persistence half), one-line pointer in `sota-python/rules/03` §12, two SKILL.md rows. Confirmed absent by two searches before writing (`sentinel` → 23 hits, all unrelated; `return -1|in-band|magic (number|value)` → nothing on the class); nearest prior coverage was `sota-c-cpp/rules/04`:25 (one banned-API row) and `sota-performance/rules/05`:170 (the principle, stated once and scoped to cached absence). **Filed to databases `rules/01` rather than the reporter's suggested `rules/02`**: how absence is encoded is a modeling decision, and `rules/02` is migrations. **Scope corrected on review**: the first cut filed the class inside `sota-python`, which would have hidden a language-neutral defect from nine other language readers — the per-language part is the *detector*, not the class. Now a §8a in architecture plus a **measured** row in each of Go, Rust, C/C++, JVM, JS/TS, .NET, PHP, Ruby, and a pointer from Swift. The reporter's measurement is what made it writable — see the entry · v1.23.0 |
 | 2026-08-20 | Operator question — "if `sota-code-security` is close to full, can't you split it… maybe `-audit` and `-build`?" | **Split the files, not the skill — and gate `§` references first** | **adopted with a correction** | `scripts/check-invariants.sh` invariant **18** + `scripts/lib/check-section-refs.py` + harness probe 18 (24 probes), then `rules/13` (from `rules/11` §3) and `rules/14` (from `rules/10` §2.10–2.14): 497→357 and 496→362 lines. **Correction, with the measurement**: a skill split buys **no** headroom — invariant 1 enumerates per *file*, so the files arrive unchanged — and build/audit is the wrong axis here because invariant 2 welds an `## Audit checklist` onto all 259 rules files. The build-vs-audit framing is recorded as declined in `docs/ROADMAP.md` item 12, with the defensible seam (classes vs verification) and its router-line cost. The check went first **because the split is what creates the hazard**, and it found six live defects before a single line moved, then caught 27 the split itself broke · v1.23.0 |
+| 2026-08-20 | Field brief from a session applying the library — a refinement of `rules/14` §1 | **Computed is not enough — compute it from what you *returned***, and site the claim in the **consumer** | **adopted** | `sota-code-security/rules/14` §1 + two checklist items, with cross-refs added at `rules/11` §2.4 (silence is not evidence of health — *and neither is speech*, when the claim is sited upstream of the effect) and §2.5 (an emission proves the line it sits on ran, not that its result survived the suffix of the function). Verified absent before writing: `git grep` for *site the claim* / *in the consumer* / *derived from the value received* returned only unrelated hits (Go interface placement, backpressure, registry pinning); *intermediate vs returned value* and *the log is the only witness* returned nothing; and `rules/12` §1's probe says only "run the suite" · unreleased |
 
 ## Entries
 
@@ -1144,3 +1145,48 @@ filed further from where a sweep would look.
 
 **Measurement status:** adopted on reasoning. **No efficacy lift is claimed or
 measured. Do not cite one.**
+
+### 2026-08-20 — a refinement of rules/14 §1, from the session that hit it
+
+`rules/14` §1 already said every reported number must be **computed from the artifact it
+produced**, not printed as a literal. The brief's claim is that this passes a defect it
+should catch, and the worked instance is convincing: `len(mandatory)` logged beside the
+computation kept printing `1 adjudicated` after `return mandatory + sampled` became
+`return sampled`. The count was computed, from a real collection, at a line that really
+ran. It was still false, because the collection it counted no longer left the function —
+and **nothing about the emission was wrong**, which is exactly why nothing about the
+emission changed.
+
+Three parts, all adopted:
+
+- **Compute it from what you returned**, not from an intermediate that is later
+  discarded. This is the narrowing the existing rule lacked: "the artifact it produced"
+  is satisfied by an intermediate.
+- **A function cannot attest to its own return value** — every emission site has a
+  *suffix* (a filter, an early return, an exception path, a reassignment) that can drop
+  or reshape the result after the line is written. Hence: **site the claim in the
+  consumer**, derived from the value received. That is the reporting-output twin of
+  `sota-kubernetes` rules/04 §7, adopted at v1.22.11 for write-back controllers — a
+  success log is a claim about what was *decided*, not about what *landed*. The class
+  generalising across two unrelated domains is the argument for stating it plainly.
+- **Probe by mutating the application and reading the output, not the suite.** `rules/12`
+  §1's probe answers *is this tested*; this asks *does the log tell the truth*. They come
+  apart precisely where it matters — an **unattended run has the log as its only
+  witness**, so a log unchanged by the mutation is itself the finding.
+
+**Verified absent before writing**, three independent searches: *site the claim* /
+*in the consumer* / *derived from the value received* returned only unrelated hits (Go
+interface placement, consumer backpressure, registry digest pinning); *intermediate
+value vs returned value* returned nothing on the class; *only witness* / *unattended*
+returned one shell-scripting hit about install scripts. `rules/12` §1 step 2 reads
+"Run the suite" and nothing else.
+
+**The footnote is the best evidence in the brief.** The reporter's first test for this
+defect **failed on its own explanatory comment**, which quoted the log line it was
+hunting for — matching the *words* instead of the *emission*. That is precisely the
+keyword-vs-shape trap `rules/14` §1 already warns about, committed while writing the
+detector for that very paragraph. Recorded in place, because a rule that catches its own
+author while he is implementing it needs no further argument for being stated.
+
+**Measurement status:** adopted on reasoning and the reporter's observed behaviour. **No
+efficacy lift is claimed or measured. Do not cite one.**
