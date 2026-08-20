@@ -9,14 +9,19 @@ so nothing checked ~1,300 of them. See the header comment in check-invariants.sh
 """
 import collections, glob, re, subprocess, sys
 
-HEADING  = re.compile(r'^#{2,4}\s+§?(\d+(?:\.\d+)*[a-z]?)[.\s]')   # `## 3.` and `## §3 `
+# `## 3.`, `## §3 `, `## 8a.`, `### 2.2a` and `### 1b.1`. The letter suffix binds to
+# EACH component, not just the last: an earlier `(\d+(?:\.\d+)*[a-z]?)` read `### 1b.1`
+# as heading `1b`, which silently re-satisfied a `§1b` reference after `## 1b.` was
+# renamed — and made negative-control probe 18 report INERT (caught 2026-08-20 by the
+# harness, not by review).
+HEADING  = re.compile(r'^#{2,4}\s+§?(\d+[a-z]?(?:\.\d+[a-z]?)*)[.\s]')
 FENCE    = re.compile(r'^\s*```')
 # External standards cite with `§` too (45 CFR §164.312, PCI DSS §6.4.3) and are
 # never internal sections. Keyword-gated rather than shape-gated: §6.4.3 is
 # shaped exactly like an internal reference.
 EXTERNAL = re.compile(r'(CFR|PCI|DSS|ASVS|NIST|HIPAA|GDPR|\bISO\b|\bIEC\b|62443'
                       r'|800-\d|USC|Art\.)[^\n]{0,40}$')
-SEC      = re.compile(r'§(\d+(?:\.\d+){0,2}[a-z]?)\b')
+SEC      = re.compile(r'§(\d+[a-z]?(?:\.\d+[a-z]?){0,2})\b')   # §3, §8a, §2.2a, §1b.1
 RULES    = re.compile(r'`?rules/(\d{2})[a-z0-9-]*`?|(?<![\w/])`(\d{2})`')
 SKILL    = re.compile(r'\b(sota(?:-[a-z]+)*)\b')
 ITEM     = re.compile(r'^\s{0,3}(\d+)\.\s')            # a top-level ordered-list item
