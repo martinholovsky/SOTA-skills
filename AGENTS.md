@@ -101,15 +101,11 @@ own mutation landed**: every mutation is a hardcoded literal, and a stale one ma
 harness print `NOT CAUGHT: INERT`, accusing a healthy gate. What is *not* covered is
 printed, not implied. Too slow for pre-commit (one full gate run per mutation).
 
-**`check-invariants.sh --self-test` is the front door**, added 2026-08-20 so the repo
-practises `sota-code-security` rules/12 §1b: the negative control belongs *inside* the
-tool, not beside it. Its structural half runs in a second and **fails on any check that
-is neither probed nor declared unprobeable** — so a check can no longer be added and its
-known-bad forgotten, which is what happened to invariant 18 in the commit that
-introduced it. Both sets are derived from the harness itself (`probe N` calls and the
-numbers in its own *NOT COVERED* block), so there is no second list to drift. It then
-hands off to the harness, which watches each check actually fail. The probe **count**
-stays ungated on purpose — a static count of call sites under-reads.
+**Adding a check? Run `./scripts/check-invariants.sh --self-test`** (rules/12 §1b
+applied to us, 2026-08-20). Its structural pass takes a second and **fails on any check
+neither probed nor declared unprobeable**, deriving both sets from the harness so
+nothing can drift; then it runs the harness. Prose asking you to remember was what let
+invariant 18 ship probe-less. Details: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Separately, `scripts/check-freshness.sh` (run monthly by
 `.github/workflows/freshness.yml`) tracks the root `LAST-VERIFIED` stamp — the date
