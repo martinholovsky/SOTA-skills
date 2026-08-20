@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Invariant 18's heading parser read `### 1b.1` as heading `1b`** — the letter suffix
+  bound only to the last component. Adding a `§1b.1` subsection therefore re-satisfied a
+  `§1b` reference even after `## 1b.` was renamed, so **negative-control probe 18 went
+  INERT**: the gate reported healthy while verifying nothing. Caught by the harness on
+  the very commit that introduced the subsection, not by review — which is the whole
+  argument for running it. `2.2a` and `8a` parse unchanged; `1b.1` now parses as itself.
+  Clean tree: 1,349 → 1,363 references resolved.
+
 ### Added
 
 - **Four cross-references that make the same day's own additions reachable.** Each class
