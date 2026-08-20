@@ -89,17 +89,16 @@ them — `git add` before believing a count.
 its own job, over **two** subjects: `check-invariants.sh` (part A) and `verify-setup.sh`
 (part B). Each probe injects a known-bad and requires *the intended check* to be the one
 that complains — a non-zero exit for any other reason is a **FALSE PASS**, not a catch.
-Part A mutates a good tree in a disposable git worktree; part B is inverted — it builds
-a fully-configured fake machine (`CLAUDE_CONFIG_DIR` + a throwaway repo + a stub `gh`)
-and removes one thing per probe. **24 probes** (re-run 2026-08-20: `PASS: 24/24`; wrong
-twice before, and deliberately **not** gated — a static count of call sites under-reads,
-so only running it is authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16,
+Part A mutates a good tree in a disposable git worktree; part B is inverted, building a
+fully-configured fake machine (`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and
+removing one thing per probe. **24 probes** (re-run 2026-08-20: `PASS: 24/24`; wrong twice
+before, and deliberately **not** gated — a static count of call sites under-reads, so only
+running it is authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16,
 17, 18** — 13 of 18 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. The five
-unprobed invariants (5, 9, 11, 12, 14) each need state a disposable worktree lacks — a
-tag, a merge base, an mtime — and the harness prints that reason. **A probe asserts its
-own mutation landed**: every mutation is a hardcoded literal, and a stale one made the
-harness print `NOT CAUGHT: INERT`, accusing a healthy gate. What is *not* covered is
-printed, not implied. Too slow for pre-commit (one full gate run per mutation).
+unprobed invariants (5, 9, 11, 12, 14) each need state a worktree lacks — a tag, a merge
+base, an mtime — and the harness prints that reason. **A probe asserts its own mutation
+landed**: they are hardcoded literals, and a stale one made the harness print `NOT
+CAUGHT: INERT`, accusing a healthy gate. What is *not* covered is printed, not implied.
 **Adding a check? Run `./scripts/check-invariants.sh --self-test`** — its structural
 pass **fails on any check neither probed nor declared unprobeable** (both sets derived
 from the harness, so nothing drifts), then runs the harness. Prose asking you to
