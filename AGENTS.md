@@ -50,7 +50,7 @@ PR" version is in [CONTRIBUTING.md](CONTRIBUTING.md#the-invariants-enforced).
 | 15 | the router's **library map** omits a `rules/NN` file that exists, or names one that doesn't — checks 7 and 10 both miss this, and `rules/11` went unlisted for two releases |
 | 16 | the hook `README.md` **documents** differs from the one `install.sh` **writes** (`HOOK_CMD`) — the README's is what a reader copies by hand, so a stale block is the version that spreads |
 | 17 | a document that **describes** the checks disagrees with them — a stated count that isn't the script's, or a restated negative-control coverage list that isn't the harness's. Counts inside `"quotes"` are read as history, not claims |
-| 18 | a **`§` section reference** resolves nowhere — invariant 8 reads `[text](file.md)` links, and a `§` reference is prose, so ~1,300 of them went unchecked and broke silently on any renumber or file split |
+| 18 | a **`§` section reference** resolves nowhere — invariant 8 reads only `[text](file.md)` links, so ~1,300 prose references went unchecked and broke silently on any renumber or split |
 
 **Only instruction files are capped** — a file is capped iff an agent loads it *as
 instructions*: `skills/*/SKILL.md` and `skills/*/rules/*.md`, nothing else. README,
@@ -100,12 +100,10 @@ tag, a merge base, an mtime — and the harness prints that reason. **A probe as
 own mutation landed**: every mutation is a hardcoded literal, and a stale one made the
 harness print `NOT CAUGHT: INERT`, accusing a healthy gate. What is *not* covered is
 printed, not implied. Too slow for pre-commit (one full gate run per mutation).
-
-**Adding a check? Run `./scripts/check-invariants.sh --self-test`** (rules/12 §1b
-applied to us, 2026-08-20). Its structural pass takes a second and **fails on any check
-neither probed nor declared unprobeable**, deriving both sets from the harness so
-nothing can drift; then it runs the harness. Prose asking you to remember was what let
-invariant 18 ship probe-less. Details: [CONTRIBUTING.md](CONTRIBUTING.md).
+**Adding a check? Run `./scripts/check-invariants.sh --self-test`** — its structural
+pass **fails on any check neither probed nor declared unprobeable** (both sets derived
+from the harness, so nothing drifts), then runs the harness. Prose asking you to
+remember is what let invariant 18 ship probe-less; rules/12 §1b applied to us.
 
 Separately, `scripts/check-freshness.sh` (run monthly by
 `.github/workflows/freshness.yml`) tracks the root `LAST-VERIFIED` stamp — the date
@@ -124,9 +122,9 @@ the setting. The pre-commit hook scans each commit locally.
 
 ## Conventions that matter
 
-- **Keep it generic.** Never commit personal or company-specific stacks or
-  project names, and never phrase guidance as an assumption about the reader's
-  setup. Products appear only as neutral examples ("e.g. PostgreSQL").
+- **Keep it generic.** Never commit personal or company-specific stacks or project
+  names, and never phrase guidance as an assumption about the reader's setup. Products
+  appear only as neutral examples ("e.g. PostgreSQL").
   Personalization lives in a local `profiles/<you>.md`, which is git-ignored
   (`profiles/*` except `profiles/example.md.template`) and must never be
   committed.
