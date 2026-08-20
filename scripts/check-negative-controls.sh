@@ -195,8 +195,15 @@ probe 13 "scoreboard row with no sample size" "NO SAMPLE SIZE:"
 
 # 17 — a document that describes the checks, disagreeing with them. This is the
 # shape that shipped twice: AGENTS.md kept its old count while the script grew.
-( cd "$WT" && perl -pi -e 's/runs \*\*18 checks\*\*/runs **17 checks**/' AGENTS.md )
-probe 17 "a doc's invariant count disagrees with the script" "but check-invariants.sh has 18 checks"
+# The mutation is DERIVED (decrement whatever count is there) rather than hardcoded.
+# Every other probe pins a literal on purpose — but this one's literal is the
+# invariant count, so it goes stale on every single check added: it did so twice on
+# 2026-08-20 alone, and each time the landed-assertion caught it as PROBE BROKEN
+# rather than as a defect. Deriving removes the recurring cost; the landed assertion
+# still fires if the substitution matches nothing. The expected substring is likewise
+# trimmed to the part that does not move.
+( cd "$WT" && perl -pi -e 's/runs \*\*(\d+) checks\*\*/"runs **" . ($1 - 1) . " checks**"/e' AGENTS.md )
+probe 17 "a doc's invariant count disagrees with the script" "but check-invariants.sh has"
 
 # 18 — a `§` reference left dangling by a renumbered section. This is the split
 # hazard the check was built for: rename one heading and every citation of it
