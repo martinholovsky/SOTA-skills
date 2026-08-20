@@ -145,7 +145,19 @@ Rules:
 
 The single highest-leverage logging practice. Instead of 15 scattered
 breadcrumb lines per request, emit ONE rich event at completion carrying
-everything needed to characterize that request. Scattered lines force
+everything needed to characterize that request.
+
+**"At completion" is doing real work in that sentence.** A line emitted mid-function
+attests only that *that line ran* — not that its result survived the filter, early
+return, exception path or reassignment that follows it. A count computed from a
+collection the function later discards is still a computed count, and still false: one
+real case logged `1 adjudicated` for weeks after the `return` beneath it stopped
+including that collection. So **site a claim where the value is consumed**, derived from
+what was actually returned or written: a producer may log its *intent*, only the
+consumer can report the *effect*. Verify it by changing what the function returns and
+reading the emitted line — for anything running unattended (cron, pipeline stage, agent
+loop) the log is the **only witness**, so a log unchanged by that mutation is the
+finding. Full class: `sota-code-security` rules/14 §1. Scattered lines force
 join-by-timestamp archaeology; the wide event makes "show me slow checkouts
 for enterprise tenants on v2.14" a single query.
 
