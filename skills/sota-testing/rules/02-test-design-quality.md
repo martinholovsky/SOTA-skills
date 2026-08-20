@@ -272,8 +272,66 @@ rendered emails. They are a trap as a default assertion.
   can only understand by chasing four helper files has the mystery-guest
   smell with extra steps.
 
+## 2.10 Which method a durable guard is written in
+
+Auditing and authoring are different activities with different lifetimes, and the
+library states a default for the first but not the second. An **audit search** is
+discarded the day it runs — grep is often the right tool, and `sota-code-security`
+rules/10's absence rule already governs it (widen the search, use a second independent
+method, state what you ran). A **guard** is a permanent claim that a property holds,
+re-evaluated on every commit by people who will not re-derive it. It deserves a stronger
+default:
+
+| method | establishes | cannot establish |
+|---|---|---|
+| text / regex | nothing durable | code vs. a *comment about* code; per-site scope |
+| **AST** | structure — call sites, arguments, definitions | dynamic access, types, runtime values |
+| **execution / interception** | behaviour — the value actually arrives | only what the test exercises |
+| **mutation** | that the guard *can* fail | that the mutation took — assert it |
+
+- **Author structural guards in AST, not text.** Two failure modes are specific to text
+  and neither is prevented by care. A guard for `Scanner\s*\(` flagged the file that
+  documented *in a comment* that the call had been removed — text cannot tell code from
+  prose about code. And a file-scope check ("does this file mention the factory
+  anywhere?") lets **one compliant site excuse every other site in the same file**; a
+  real regression passed. Inspect the node: for a call, its own keyword arguments.
+- **A structural guard cannot carry a behavioural claim.** *"The argument is forwarded"*
+  is structure; *"the configured value arrives"* is behaviour, and needs interception or
+  execution. Reported case: AST proved a `depth` argument was forwarded and could not
+  show whether the forwarded value was the configured `16` or a stale `4`.
+- **Mutation-test the guard, then verify the mutation took** (rules/06 §6.3).
+- **Regex only where no parser exists** — a DSL, a log format, a config dialect, prose.
+  Name which, in a comment, so the exception does not spread by imitation.
+- **Name the parser, or the rule gets ignored exactly where it is least convenient.**
+  AST is free in some ecosystems (Python `ast`, Ruby `Prism`, Go `go/ast`, Rust `syn`,
+  TS `typescript` compiler API / `ts-morph`, Java `JavaParser`, PHP `nikic/PHP-Parser`)
+  and an install away in others — and "no parser at hand" is the moment people reach for
+  regex. Decide the parser once, per language, at the same time you decide the guard.
+
+**The honest limit, which the guidance must state or it manufactures the false
+confidence the rest of this library exists to prevent: AST does not resolve types.** A
+field audit still counts `.timeout_sec` on *any* object, so a name collision with an
+unrelated attribute reads as live — a **false negative**, the more dangerous direction.
+AST removes string-and-comment noise; it does not remove name ambiguity. The output of a
+structural sweep is a **candidate list to verify**, never a verdict, and "AST-based" is
+exactly the phrase that tempts a reader to treat it as one.
+
+Measured on one 38k-test Python codebase: the same audit rewritten from `grep` to
+`ast.walk` went from **74 orphan candidates to 61**. The thirteen were fields read via
+`getattr(cfg, "name")` with a string literal — which the AST pass sees and grep does not.
+More precise *and* more sensitive, not a trade.
+
 ## Audit checklist
 
+- [ ] Durable guards written in **AST** where the claim is structural, not regex over
+      source? Two tells that a text guard is in place: it can match a *comment about*
+      the code, and it checks file scope rather than the offending node, so one
+      compliant site excuses the rest of the file (§2.10).
+- [ ] Any structural guard carrying a **behavioural** claim ("the configured value
+      arrives") that only execution or interception can support (§2.10)?
+- [ ] Does any structural sweep get reported as a **verdict** rather than a candidate
+      list? AST does not resolve types, so a name collision reads as live — a false
+      negative (§2.10).
 - [ ] Assertion-free tests? Mechanical sweep: list test functions lacking any
       assert/expect/require/verify token → Critical each.
 - [ ] Can flagship tests fail? Invert one assertion or `return` early in the

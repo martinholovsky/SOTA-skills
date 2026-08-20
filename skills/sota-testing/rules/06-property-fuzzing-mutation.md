@@ -167,8 +167,12 @@ hours):
   Nothing fails ⇒ that control is untested however many tests name it. Two traps
   make this lie — the path may be skipped for an unrelated reason (a disabled
   optional dependency), and the mutation may not have taken (editable installs,
-  stale bytecode, cached images). Force the path live and assert the mutation's
-  runtime effect before trusting a green run. `sota-code-security` rules/10.
+  stale bytecode, cached images — and, in any repo with `ruff format`/`black`/
+  `prettier`, a **formatter reflow**: a multi-line patch that no longer matches
+  because the code was folded onto one line, which is the most common cause of all
+  and the one that looks least like an environment problem). Force the path live and
+  assert the mutation's runtime effect before trusting a green run.
+  `sota-code-security` rules/10.
 
 ```text
 # What a survivor means (PIT/Stryker-style report line)

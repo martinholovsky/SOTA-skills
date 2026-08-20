@@ -87,7 +87,7 @@ def main():
             prev = lines[i - 2][-80:] if i >= 2 else ''
             joined, off = prev + ' ' + line, len(prev) + 1
             skills_here = [m.group(1) for m in SKILL.finditer(joined)] + [own]
-            rules_here = [(m.start(), m.end(), m.group(1) or m.group(2))
+            rules_here = [(m.start(), m.end(), m.group(1) or m.group(2), m.group(1) is None)
                           for m in RULES.finditer(joined)]
             for m in SEC.finditer(joined):
                 if m.end() <= off:            # matched wholly inside the carried tail
@@ -95,8 +95,16 @@ def main():
                 if EXTERNAL.search(joined[:m.start()]):
                     continue
                 sec, cands, dangling = m.group(1), {f}, set()
-                for (start, end, nn) in rules_here:
-                    if 0 <= m.start() - end <= 120 or 0 <= start - m.end() <= 40:
+                for (start, end, nn, shorthand) in rules_here:
+                    # `NN` (backticked bare number) is genuinely ambiguous with a
+                    # literal value — `16` as a configured depth read as "rules/16"
+                    # and produced a false positive on correct prose. The explicit
+                    # `rules/NN` form keeps a wide window; the shorthand must sit
+                    # immediately before the §, which is the only way it is ever
+                    # actually written (`(\`02\` §8)`).
+                    near = ((0 <= m.start() - end <= (2 if shorthand else 120))
+                            or (0 <= start - m.end() <= 40 and not shorthand))
+                    if near:
                         hit = False
                         for sk in skills_here:
                             target = rules_file(sk, nn)
