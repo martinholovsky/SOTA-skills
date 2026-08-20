@@ -144,7 +144,13 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   test that still passes when the control's body is replaced with a no-op, a **write-back
   controller** logging `updated=1 errors=0` every cycle for fifteen minutes while
   pushing no commit at all — its log describes the update it *decided* on, not the
-  write landing.
+  write landing. The same shape one layer down: a count that is **computed and still
+  false**, because it was derived from an intermediate the function discards and emitted
+  before the `return` that dropped it. No function can attest to its own return value —
+  every emission site has a suffix that can drop the result after the line is written —
+  so the claim belongs in the *consumer*, derived from the value received. Where a job
+  runs unattended, its log is the only witness, so the probe is to change what the
+  function returns and read the output, not to re-run the tests.
   ([rules/10](skills/sota-code-security/rules/10-silent-control-failure.md),
   [rules/14](skills/sota-code-security/rules/14-control-not-in-force.md),
   [kubernetes rules/04 §7](skills/sota-kubernetes/rules/04-gitops-controllers.md))
