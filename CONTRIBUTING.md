@@ -228,6 +228,20 @@ are marked "needs verification", never asserted.
     and any hit passes), because a gate that flags correct prose gets disabled.
     **What it does not check**: plain `rules/NN` mentions with no `§` beside them,
     and it cannot tell a *wrong-but-existing* section from a right one.
+19. **a check has no known-bad, or the exempt set grew**: every check in
+    `check-invariants.sh` must be either probed by `check-negative-controls.sh` or
+    listed in that script's own *NOT COVERED* block — and that exempt set is
+    **pinned** in `EXPECTED_UNPROBED`, because otherwise the cheapest way to satisfy
+    this check is to add your new check number to the exempt list. Growing it is a
+    deliberate edit a reviewer sees. Runs on **every** invocation (~50 ms), not behind
+    `--self-test`: a check you have to remember to run is a convention, not a
+    property. Added 2026-08-20 after invariant 18 shipped **probe-less in the very
+    commit that introduced it**; 19 caught *itself* the same way on introduction,
+    which is the shortest possible demonstration that it works. `--self-test` still
+    exists and now means "run the suite, then run the harness that watches each check
+    fail". **What it does not check**: the probe *count* (a static count of call sites
+    reads 13 against an actual 25), or whether a probe's assertion is meaningful —
+    only that one exists.
 17. **a document that describes the checks disagrees with them**: any stated count
     of invariants/checks that isn't the number `check-invariants.sh` prints, or a
     restatement of the negative-control coverage lists that isn't what
@@ -254,7 +268,7 @@ as a FALSE PASS, because a harness that accepts any failure reports full coverag
 testing nothing.
 
 Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 3, 4, 6,
-7, 8, 10, 13, 15, 16, 17, 18 — 13 of 18; the harness prints the list and why the rest are
+7, 8, 10, 13, 15, 16, 17, 18, 19 — 14 of 19; the harness prints the list and why the rest are
 not covered, so read its output rather than this sentence). Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
 fully-configured fake one — `CLAUDE_CONFIG_DIR` pointed at a temp home, a throwaway git
 repo, and a stub `gh` on `PATH` so run history is decidable — and each probe removes one
