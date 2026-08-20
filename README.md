@@ -208,8 +208,8 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   gate **enumerated** and treat a drop as a failure.
   ([rules/12](skills/sota-code-security/rules/12-verifying-the-verifier.md),
   [devsecops rules/05](skills/sota-devsecops/rules/05-analysis-gates.md))
-- **Absence encoded as a value** — a number whose domain includes an
-  "absent/unknown/error" marker (`-1`, `0`, `""`, `9999-12-31`). It type-checks and no
+- **Absence encoded as a value** — the **in-band sentinel**: a number whose domain
+  includes an "absent/unknown/error" marker (`-1`, `0`, `""`, `9999-12-31`). It type-checks and no
   linter flags it: `-1` is *truthy*, so the `if x:` presence check everyone reaches for
   admits it, and because the sentinel carries an **ordering** it loses every `<` and
   wins every `>` — one missing operand makes a guard skip silently in one direction and
