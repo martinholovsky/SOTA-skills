@@ -144,13 +144,23 @@ on a data path emits at least a start/finish pair carrying its denominator
 (§2.2). See rules/10 §3 for the degraded-control helper and the gauge that stays
 1 while a control is degraded.
 
+**The inverse also holds, and it is the harder half: speech is not evidence of health
+either**, when the claim is sited *upstream* of the effect it describes. A line reading
+`1 adjudicated` proves a count was computed there, not that the count survived the rest
+of the function. Site the claim in the consumer, derived from the value received —
+`rules/14` §1.
+
 ### 2.5 Did the changed code execute?
 
 **After any fix, prove the new path ran.** A fix that is never reached is
 indistinguishable from a fix that works — and both look like a green suite.
 
 The cheap proof: make the new branch emit exactly once (a log line, a counter, a
-one-shot `print`), run the real workload, and show the emission. The same trap
+one-shot `print`), run the real workload, and show the emission. **Placement is a
+precondition of that proof**: an emission establishes that the line it sits on ran, not
+that its result survived the suffix of the function — the filter, early return or
+reassignment that comes after it. Put the emission where the value is *consumed*, or it
+answers a weaker question than the one you asked (`rules/14` §1). The same trap
 bites mutation testing: an editable install, a copied tree, a stale image, or
 cached bytecode means the code you edited may not be the code that ran
 (rules/12 §1). Assert the runtime effect before trusting any before/after result.
