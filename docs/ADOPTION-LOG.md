@@ -39,6 +39,24 @@ lessons-log — its own best structural idea, applied to ourselves.
 
 ## Log
 
+> **Pointer translation, 2026-08-20.** `sota-code-security` `rules/10` and `rules/11`
+> were split. Landed-in pointers in older rows are **left as written** — they record
+> where an idea landed *at that release*, and rewriting them would falsify the history
+> this log exists to keep. Translate with this map:
+>
+> | old | new |
+> |---|---|
+> | `rules/10` §2.10 | `rules/14` §1 (unearned claims in reporting output) |
+> | `rules/10` §2.11 | `rules/14` §2 (shipped-artifact gaps) |
+> | `rules/10` §2.12 | `rules/14` §3 (instruction standing in for a control) |
+> | `rules/10` §2.13 | `rules/14` §4 (a control that never executes) |
+> | `rules/10` §2.14 | `rules/14` §5 (parked in observe-only mode) |
+> | `rules/11` §3.1–3.5 | `rules/13` §1–§5 (context-dependent silence) |
+>
+> Invariant 18 keeps *live* `§` references honest, but its scope is `skills/` only —
+> which is why this note exists rather than a gate.
+
+
 | Date | Source | Idea | Verdict | Landed in |
 |------|--------|------|---------|-----------|
 | 2026-07-24 | [training-knowledge-vault](https://github.com/Eolas-bith/training-knowledge-vault) `vault-doctor.py` | Resolve internal Markdown links in CI so a move/rename can't leave dead links | **adopted** | `scripts/check-invariants.sh` invariant 8 · v1.19.1 |
@@ -1007,10 +1025,16 @@ the self-test, which moves the property from a person to the suite.
 
 This repository is the worked example, and it is on the wrong side of its own new rule:
 `scripts/check-negative-controls.sh` is a separate CI job, the "add your known-bad here
-too" instruction lives as a sentence in `AGENTS.md`, and 12 of 17 invariants are probed
-— the gap being reported only because the harness prints it. Not changed here; recorded
-so the next person deciding whether to fold it into `check-invariants.sh --self-test`
-has the argument.
+too" instruction lives as a sentence in `AGENTS.md`, and "12 of 17 invariants are
+probed" — the gap being reported only because the harness prints it.
+
+**Closed later the same day.** That paragraph was written as an argument for someone
+else to act on; the argument was good enough to act on immediately.
+`check-invariants.sh --self-test` now fails on any check that is neither probed nor
+declared unprobeable, deriving both sets from the harness so there is no second list to
+drift (ROADMAP item 14). The counts above are left in quotes as what was true that
+morning — invariant 17 reads a quoted number as history, not a claim — and the current
+figures are 24 probes, 13 of 18.
 
 **2. Gateway access logs.** Filed as absent; it is *unreachable*. `sota-api-design`
 rules/02 §5 step 4 and rules/03 §11 both state the requirement, one of them in the

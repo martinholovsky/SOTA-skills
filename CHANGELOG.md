@@ -43,6 +43,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Front-door surfaces the split silently invalidated.** No gate catches these:
+  `README.md` cited `rules/11` for two classes that had moved to `rules/13`, and
+  `rules/10` for three that had moved to `rules/14`; `docs/CONVENTIONS-LEDGER.md`
+  pointed at `rules/10` §2.12 for the class now at `rules/14` §3. Invariant 8 sees a
+  file link that still resolves, and **invariant 18's scope is `skills/` only**, so
+  `docs/` references remain on trust — which is why `docs/ADOPTION-LOG.md` now carries
+  a **pointer-translation table** rather than eight rewritten history rows: a landed-in
+  pointer records where an idea shipped *at that release*, and rewriting it would
+  falsify the history the log exists to keep.
+- **Two measured numbers in `docs/CONTEXT-MANAGEMENT.md` had rotted.** It said *"the
+  router is at 500/500 lines with no slack"* — re-counted, it is **494/500**, and that
+  number has previously read 491, so the sentence now says never to trust it in prose.
+  Its token table still listed `rules/10` as the third-largest instruction file; after
+  the split the third is `sota-docs-workflow/rules/01`.
+- **`docs/INDEX.md` knew none of this**, which is the recurring failure where a
+  capability lands in a rules file and never reaches the front door: it now routes to
+  `rules/13`, `rules/14`, the in-band-sentinel class, invariant 18 (with its
+  `skills/`-only scope stated), and `--self-test`.
+- **The README's audit-class count is now ten, not nine** — absence-encoded-as-a-value
+  is exactly what that section claims to hunt (the code is not wrong, and no linter
+  flags it) and it was missing from the front door.
+
+
 - **A cross-language claim the new measurement exposed as overstated.** R5.3a said
   the four measured runtimes agreed on *"no two … on all three questions"*. At that
   table's own granularity it was already false before Java arrived: Python and Rust

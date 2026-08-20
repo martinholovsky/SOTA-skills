@@ -244,13 +244,15 @@ exceeds the per-skill 5,000-token cut:
 |---|---|
 | `skills/sota/SKILL.md` (the router) | ~10,200 |
 | `sota-devsecops/rules/03-dependencies.md` | ~7,300 |
-| `sota-code-security/rules/10-silent-control-failure.md` | ~5,700 |
+| `sota-docs-workflow/rules/01-documentation-architecture.md` | ~7,200 |
 
 So after a compaction, a re-attached router keeps roughly its first half. **This is
 unverified in practice** — it is read off the documentation and a byte-count
 heuristic, not observed in a session, and the ordering inside each file decides what
-actually survives. It is recorded rather than acted on: the router is at 500/500
-lines with no slack (see [ROADMAP.md](ROADMAP.md)), and the honest next step is to
+actually survives. It is recorded rather than acted on: the router is at **494/500**
+lines (re-counted 2026-08-20 with `grep -c ''`; this sentence previously read
+"500/500 with no slack", and the number has also read 491 — never trust it in prose,
+see [ROADMAP.md](ROADMAP.md) item 4), and the honest next step is to
 *watch* a compaction and see what is retained before reshaping anything around a
 number we have not measured.
 

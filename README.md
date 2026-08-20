@@ -130,7 +130,7 @@ difficulty, not the domain — we measure it and say so.
 
 ### What the audit hunts that a scanner can't
 
-Nine classes of defect survive every linter, SAST rule, and CVE scanner, because in
+Ten classes of defect survive every linter, SAST rule, and CVE scanner, because in
 each one the code isn't *wrong*. The library hunts them as explicit passes:
 
 - **Controls that are inert** — a safeguard whose success and whose total failure look
@@ -146,6 +146,7 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   pushing no commit at all — its log describes the update it *decided* on, not the
   write landing.
   ([rules/10](skills/sota-code-security/rules/10-silent-control-failure.md),
+  [rules/14](skills/sota-code-security/rules/14-control-not-in-force.md),
   [kubernetes rules/04 §7](skills/sota-kubernetes/rules/04-gitops-controllers.md))
 - **Controls that block everything** — the mirror image, and the one every other pass
   here looks past. An *enforcement* control (cap, quota, filter, allowlist, sandbox
@@ -181,7 +182,8 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   is why "it found 0" goes unchallenged — a **metamorphic** check pins how the
   output must *change*: a fixture with N known items, and an assertion that the
   count moves when the input does.
-  ([rules/11](skills/sota-code-security/rules/11-dead-path-diagnostics.md))
+  ([rules/11](skills/sota-code-security/rules/11-dead-path-diagnostics.md),
+  [rules/13](skills/sota-code-security/rules/13-context-dependent-silence.md))
 - **Your own scorer, gate or benchmark doing none of the above** — a whole file
   turns the lens around: anything whose output decides whether something
   is *OK* is a control too. A broken feature produces a complaint; a broken
@@ -206,6 +208,17 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   gate **enumerated** and treat a drop as a failure.
   ([rules/12](skills/sota-code-security/rules/12-verifying-the-verifier.md),
   [devsecops rules/05](skills/sota-devsecops/rules/05-analysis-gates.md))
+- **Absence encoded as a value** — a number whose domain includes an
+  "absent/unknown/error" marker (`-1`, `0`, `""`, `9999-12-31`). It type-checks and no
+  linter flags it: `-1` is *truthy*, so the `if x:` presence check everyone reaches for
+  admits it, and because the sentinel carries an **ordering** it loses every `<` and
+  wins every `>` — one missing operand makes a guard skip silently in one direction and
+  fire spuriously in the other, from a single input. The tell is not the constant but
+  the **asymmetric guard**: one operand filtered against the sentinel and the other, in
+  the same comparison, not — because that filtering is applied per site, so it lands
+  only where the author happened to be thinking about it.
+  ([architecture rules/02 §8a](skills/sota-architecture/rules/02-domain-modeling-and-boundaries.md),
+  with a per-language row measured on each toolchain)
 - **Dependencies declared but never reached** — packages, modules, and plugins wired in
   and inert. Proven by *deleting* them in a scratch copy and running the real build,
   lint, and full suite, with exit codes and before/after transitive counts reported —

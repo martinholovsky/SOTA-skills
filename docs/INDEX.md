@@ -15,6 +15,9 @@ trying to do**, not by file. (Kept in sync by hand; if a link rots, open an issu
 | Enforce the rules as git hooks | [README → Enforcing the gates](../README.md#enforcing-the-gates) |
 | **Verify a repo is actually set up** (read-only: library reaching it, gates real not just configured, agent file *true*) | Run `scripts/verify-setup.sh` first (mechanical half), then [**VERIFY-SETUP.md**](VERIFY-SETUP.md) for the judgement half |
 | Use it with Codex / Gemini / other AGENTS.md agents | [README → Other AI agents](../README.md#other-ai-agents-codex-copilot-gemini-) |
+| Audit a defect that is **correct where you tested it** — a size-gated path no fixture crosses, a cache key narrower than the behaviour, a format read from one sample, an undeclared seam, an environment-dependent default | [`sota-code-security/rules/13`](../skills/sota-code-security/rules/13-context-dependent-silence.md) (split out of rules/11 §3, 2026-08-20) |
+| Audit a control that is **not there** rather than inert — absent from the shipped artifact, standing as an instruction, never triggered, parked in observe-only, or a report claiming more than ran | [`sota-code-security/rules/14`](../skills/sota-code-security/rules/14-control-not-in-force.md) (split out of rules/10 §2.10–2.14, 2026-08-20) |
+| Find absence encoded as a value (`-1`, `0`, `""`) — why it type-checks, and the asymmetric-guard tell | [`sota-architecture/rules/02` §8a](../skills/sota-architecture/rules/02-domain-modeling-and-boundaries.md), plus a measured row in every language skill |
 
 ## Keep the model applying the rules (context / "forgetting")
 
@@ -54,7 +57,9 @@ trying to do**, not by file. (Kept in sync by hand; if a link rots, open an issu
 | Know the invariants CI enforces | [AGENTS.md → Invariants](../AGENTS.md#invariants-enforced-in-pre-commit-and-ci) |
 | Understand why a doc that *describes* the gates can't quietly drift from them | **invariant 17** — it derives the count from `check-invariants.sh`'s own `[k/N]` markers and requires every stated count and restated coverage list to match; a number inside `"quotes"` is read as history, not a claim ([AGENTS.md → Invariants](../AGENTS.md#invariants-enforced-in-pre-commit-and-ci)) |
 | See which conventions are *enforced* vs. prose, and why the rest aren't gated | [CONVENTIONS-LEDGER.md](CONVENTIONS-LEDGER.md) |
-| **Prove the gates themselves can still fail** (a passing gate shows the tree is clean, not that the check works) | `scripts/check-negative-controls.sh` — injects a known-bad per check and requires *the intended one* to complain; CI job *Negative controls* |
+| **Prove the gates themselves can still fail** (a passing gate shows the tree is clean, not that the check works) | **`./scripts/check-invariants.sh --self-test`** — the front door. Its structural pass fails on any check that is neither probed nor declared unprobeable, then runs `scripts/check-negative-controls.sh`, which injects a known-bad per check and requires *the intended one* to complain; CI job *Negative controls* |
+| Add a check and not forget its known-bad | Run `--self-test` above. It exists because the instruction it replaced was prose, and prose did not stop invariant 18 shipping probe-less in its own commit (`sota-code-security` rules/12 §1b applied to us) |
+| Understand why a `§` section reference can't quietly rot | **invariant 18** — invariant 8 resolves only `[text](file.md)` links, so ~1,300 prose `§` references were checked by nothing; it found six live defects on its first run and caught 27 more when `rules/10`/`rules/11` were split. **Scope is `skills/` only** — `docs/` references are still on trust ([AGENTS.md → Invariants](../AGENTS.md#invariants-enforced-in-pre-commit-and-ci)) |
 | Full contribution conventions | [CONTRIBUTING.md](../CONTRIBUTING.md) |
 | Re-render a README diagram after editing its HTML (sizes, why `file://` fails) | [CONTRIBUTING.md → Rendered assets](../CONTRIBUTING.md#rendered-assets) |
 | Check a repo's setup is real, not just configured | `scripts/verify-setup.sh` (deterministic) + [VERIFY-SETUP.md](VERIFY-SETUP.md) (the judgement half) |

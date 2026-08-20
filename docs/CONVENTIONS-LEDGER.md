@@ -4,7 +4,7 @@ A rule written in prose is a **hypothesis that people will read it**. This repo 
 one measured counter-example: `LAST-VERIFIED` was documented in three separate
 places, mentioned across nine files, and **two separate sessions still proposed
 bumping it wrongly**, catching themselves only on verification. That is
-`sota-code-security` rules/10 §2.12 — *a natural-language instruction standing in
+`sota-code-security` rules/14 §3 — *a natural-language instruction standing in
 for an enforced control* — occurring in this repo's own tooling, so it became
 invariant 11 (2026-07-31).
 
