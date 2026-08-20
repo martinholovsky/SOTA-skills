@@ -95,14 +95,13 @@ removing one thing per probe. **24 probes** (re-run 2026-08-20: `PASS: 24/24`; w
 before, and deliberately **not** gated — a static count of call sites under-reads, so only
 running it is authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16,
 17, 18** — 13 of 18 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. The five
-unprobed invariants (5, 9, 11, 12, 14) each need state a worktree lacks — a tag, a merge
-base, an mtime — and the harness prints that reason. **A probe asserts its own mutation
-landed**: they are hardcoded literals, and a stale one made the harness print `NOT
-CAUGHT: INERT`, accusing a healthy gate. What is *not* covered is printed, not implied.
-**Adding a check? Run `./scripts/check-invariants.sh --self-test`** — its structural
-pass **fails on any check neither probed nor declared unprobeable** (both sets derived
-from the harness, so nothing drifts), then runs the harness. Prose asking you to
-remember is what let invariant 18 ship probe-less; rules/12 §1b applied to us.
+unprobed invariants (5, 9, 11, 12, 14) need state a worktree lacks (a tag, a merge base,
+an mtime); the harness prints that reason, so what is *not* covered is printed rather than
+implied. **A probe asserts its own mutation landed** — they are hardcoded literals, and a
+stale one printed `NOT CAUGHT: INERT`, accusing a healthy gate.
+**Adding a check? Run `./scripts/check-invariants.sh --self-test`** — it **fails on any
+check neither probed nor declared unprobeable** (both sets derived from the harness), then
+runs it. Prose asking you to remember is what let invariant 18 ship probe-less.
 
 Separately, `scripts/check-freshness.sh` (run monthly by
 `.github/workflows/freshness.yml`) tracks the root `LAST-VERIFIED` stamp — the date
