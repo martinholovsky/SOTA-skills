@@ -259,9 +259,16 @@ not covered, so read its output rather than this sentence). Part B is the invers
 fully-configured fake one — `CLAUDE_CONFIG_DIR` pointed at a temp home, a throwaway git
 repo, and a stub `gh` on `PATH` so run history is decidable — and each probe removes one
 thing (checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a). What is *not* covered is printed rather
-than implied. **Adding a check to either script? Add its known-bad there too** —
-otherwise you have shipped something nobody has ever watched fail. Not in pre-commit: it
-runs a whole gate per mutation.
+than implied. Not in pre-commit: it runs a whole gate per mutation.
+
+**Adding a check? Run `./scripts/check-invariants.sh --self-test`.** Its structural pass
+takes a second and fails if your new check has neither a known-bad in
+`check-negative-controls.sh` nor an entry in that script's *NOT COVERED* block saying
+why it cannot have one — so "I'll add the probe later" stops being possible rather than
+being discouraged. (It then runs the full harness, which is the slow part.) This exists
+because the instruction it replaces — *add its known-bad there too* — was prose, and
+prose did not stop invariant 18 shipping probe-less in its own commit. It is the rule
+from `sota-code-security` rules/12 §1b applied to us.
 
 Secrets are scanned separately by **gitleaks** (config in `.gitleaks.toml`);
 CI scans the full git history, the pre-commit hook scans each commit.

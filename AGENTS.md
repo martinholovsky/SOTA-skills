@@ -99,9 +99,17 @@ unprobed invariants (5, 9, 11, 12, 14) each need state a disposable worktree lac
 tag, a merge base, an mtime — and the harness prints that reason. **A probe asserts its
 own mutation landed**: every mutation is a hardcoded literal, and a stale one made the
 harness print `NOT CAUGHT: INERT`, accusing a healthy gate. What is *not* covered is
-printed, not implied. Too slow for pre-commit (one full gate run per mutation). **Adding
-a check to either script? Add its known-bad here too**, or you have shipped something
-nobody has watched fail.
+printed, not implied. Too slow for pre-commit (one full gate run per mutation).
+
+**`check-invariants.sh --self-test` is the front door**, added 2026-08-20 so the repo
+practises `sota-code-security` rules/12 §1b: the negative control belongs *inside* the
+tool, not beside it. Its structural half runs in a second and **fails on any check that
+is neither probed nor declared unprobeable** — so a check can no longer be added and its
+known-bad forgotten, which is what happened to invariant 18 in the commit that
+introduced it. Both sets are derived from the harness itself (`probe N` calls and the
+numbers in its own *NOT COVERED* block), so there is no second list to drift. It then
+hands off to the harness, which watches each check actually fail. The probe **count**
+stays ungated on purpose — a static count of call sites under-reads.
 
 Separately, `scripts/check-freshness.sh` (run monthly by
 `.github/workflows/freshness.yml`) tracks the root `LAST-VERIFIED` stamp — the date

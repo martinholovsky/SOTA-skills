@@ -120,6 +120,69 @@ START_SECONDS=$SECONDS
 MAX_LINES=500
 MAX_DESC=1024
 fail=0
+# --- --self-test: every check must have a known-bad, or a declared exemption ---
+# `sota-code-security` rules/12 §1b: a negative control belongs INSIDE the tool, so
+# "every check can go red" is a property of the suite rather than of whoever last
+# edited it. Until 2026-08-20 this repo did not practise its own rule — the probes
+# lived only in check-negative-controls.sh, and remembering to add one was a
+# sentence in AGENTS.md. Invariant 18 was added without a probe in the same commit,
+# which is the failure mode exactly.
+#
+# The structural half runs in a second and is the part that cannot be forgotten:
+# a check that is neither probed nor declared-exempt fails. Both sets are derived
+# from check-negative-controls.sh itself — the `probe N` calls and the numbers in
+# its own "NOT COVERED" block — so there is no second list to drift. The probe
+# COUNT stays ungated on purpose (a static count of call sites under-reads).
+# Then it hands off to the harness, which actually watches each check fail.
+if [ "${1:-}" = "--self-test" ]; then
+  harness="$(dirname "$0")/check-negative-controls.sh"
+  [ -r "$harness" ] || { echo "FAIL: cannot read $harness"; exit 1; }
+  python3 - "$0" "$harness" <<'SELFPY' || exit 1
+import re, sys, pathlib
+inv, neg = (pathlib.Path(a).read_text(encoding="utf-8") for a in sys.argv[1:3])
+
+marks = re.findall(r'echo "\[(\d+)/(\d+)\]', inv)
+totals = {int(n) for _, n in marks}
+if len(totals) != 1:
+    print("FAIL: check markers disagree on the total: %s" % sorted(totals)); sys.exit(1)
+N = totals.pop()
+checks = set(range(1, N + 1))
+
+probed = {int(m) for m in re.findall(r'^probe (\d+) ', neg, re.M)}
+
+# the exemptions, read from the harness's own NOT COVERED block — the same text
+# invariant 17 already gates the documentation against
+tail = neg.split("NOT COVERED", 1)
+declared = set()
+if len(tail) == 2:
+    for line in tail[1].splitlines():
+        m = re.match(r'\s*echo "\s+((?:\d+,\s*)*\d+)\s+—', line)
+        if m:
+            declared |= {int(x) for x in re.findall(r'\d+', m.group(1))}
+
+missing = sorted(checks - probed - declared)
+both    = sorted(probed & declared)
+strays  = sorted((probed | declared) - checks)
+bad = 0
+for n in missing:
+    bad = 1
+    print("FAIL: check %d has no known-bad in check-negative-controls.sh and is not "
+          "declared unprobeable — add a probe, or say why it cannot have one" % n)
+for n in both:
+    bad = 1
+    print("FAIL: check %d is both probed and declared unprobeable" % n)
+for n in strays:
+    bad = 1
+    print("FAIL: %d is probed or declared but is not a check in this script" % n)
+if bad: sys.exit(1)
+print("    ok (%d checks: %d probed, %d declared unprobeable, 0 unaccounted)"
+      % (N, len(probed), len(declared)))
+SELFPY
+  echo "[self-test] structural: every check accounted for"
+  echo "[self-test] handing off to the harness — it watches each one actually fail"
+  exec "$harness"
+fi
+
 note() { printf '    %s\n' "$1"; }
 
 # Every file-list-driven check reports HOW MANY items it examined, and fails on

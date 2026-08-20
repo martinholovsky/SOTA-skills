@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`check-invariants.sh --self-test` — the repo now practises the rule it published
+  the same day.** `sota-code-security` rules/12 §1b argues a negative control belongs
+  *inside* the tool, so *"every check can go red"* is a property of the suite rather
+  than of whoever last edited it. This repo did not do that: the probes lived only in
+  `check-negative-controls.sh`, and remembering to add one was **a sentence in
+  `AGENTS.md`** — prose which did not stop **invariant 18 shipping probe-less in its own
+  commit**. The structural pass runs in a second and fails on any check that is neither
+  probed nor declared unprobeable, so "I'll add the probe later" is no longer possible.
+  Both sets are **derived from the harness itself** — the `probe N` calls and the
+  numbers in its own *NOT COVERED* block — so there is no second list to drift out of
+  sync. It then hands off to the harness, which watches each check actually fail.
+  Watched to fail on two mutations (a deleted `probe 13`; a probe added for the
+  declared-unprobeable check 5), with the clean tree reporting *18 checks: 13 probed,
+  5 declared unprobeable, 0 unaccounted*. The probe **count** stays deliberately
+  ungated — a static count of call sites reads 13 against an actual 24.
+
+
 - **The Java subprocess row, measured at last — and it changed three claims.** Run on
   **Temurin 25.0.3** in a podman container, because no JDK is installed on the machine
   that wrote every other row. `ProcessBuilder` is confirmed (no whitespace splitting,
