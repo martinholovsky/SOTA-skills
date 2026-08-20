@@ -241,6 +241,9 @@ except StorageError:
 
 - `is`/`is not` only for `None`, `True`, `False`, sentinels, enums — never for strings/ints
   (interning makes it *sometimes* work, which is worse).
+- Returning `-1`/`0`/`""` to mean "absent" instead of `None`: type-checks, survives a
+  truthiness check, and flips ordering comparisons. Producer shape and the three
+  detectors in rules/02 §2a.
 - Naive datetimes: always `datetime.now(tz=timezone.utc)`; `utcnow()` is deprecated and naive
   (ruff DTZ).
 - `zip(a, b, strict=True)` (3.10+) when silent truncation would hide a length-mismatch bug.

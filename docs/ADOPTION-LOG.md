@@ -160,7 +160,7 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-08-19 | Field brief from a session applying the library — a recon profile that came back empty | **A cap on a generator's *output*, then parsed.** `rules/10` §2.7 covers truncating input *into* an inspector; the inverse — an unset `max_tokens` truncating a JSON document that is then `json.loads`-ed — is the same family and the rule text, example and checklist all point at input | **adopted with a correction** | `sota-code-security/rules/10` §2.7 (the mirror + checklist), `rules/11` §2.2 (the tell: produced size landing on its cap; a parse-error offset needs the document length), `sota-llm-engineering/rules/02` (set `max_tokens` explicitly, assert `output_tokens < max_tokens`) + the three index surfaces that said "truncation before inspection". Correction: the brief reads the class as unstated, and it is stated — for LLM output only, at `sota-llm-engineering/rules/02:199` and `rules/04:251` ("truncated output never parsed as valid"), in a skill an inert-control pass never loads. What was genuinely absent is the **general** producer form, the **unset-default** variant (no truncation operator to grep for, so §2.7's own procedure walks past it), and the size-vs-cap arithmetic — `rules/05:147` alerts on a `stop_reason=max_tokens` spike, which is the metadata tell, not the arithmetic one · v1.22.14 |
 | 2026-08-20 | Field brief from a session applying the library — three ideas | **A `--self-test` mutation harness as a mode of the tool**, so "this check can go red" is a property of the health suite rather than of whoever last edited it | **adopted with a correction** | `sota-code-security/rules/12` §1b + checklist, `sota-cli-ux/rules/03` §2a + checklist, two SKILL.md index rows. Correction: the *class* is covered three times over (rules/12 §1 mutation probe, §2.1 "the instrument that cannot fail" — which is literally a mutation harness reading every non-zero exit as a catch — and `sota-devsecops/rules/05`:311 "every gate ships a committed known-bad"). What was absent is the **packaging**: everywhere the library states it, the probe is a committed fixture plus a separate job, i.e. a convention someone must remember when adding a check. Nothing said to make it a mode of the tool, where a check with no declared known-bad *fails the self-test* · unreleased |
 | 2026-08-20 | Same brief, idea 3 | **Gateway access logs, still absent — which is why "is this graph feature used?" was answered by measuring the corpus instead** | **adopted with a correction** | `sota-observability/rules/05` §7a + checklist, cross-ref from `sota-api-design/rules/02` §5 step 4, observability SKILL.md row. Correction: the requirement is **already stated**, at `sota-api-design/rules/03`:227 ("without per-field usage data you can never delete anything") and `rules/02`:100 ("You cannot sunset what you can't attribute") — so the accurate verdict is *unreachable, not absent*: it lives in `sota-api-design`, which an observability or platform task never loads, and `sota-observability` mentions access logs exactly once (`rules/05`:56) and only to *exclude* the health endpoint from them. The genuinely new part is the **residual** the brief's incident actually produced — the substitute measurement. `grep -rniE "proxy (metric\|measure)\|answers a different question" skills/` returned zero hits · unreleased |
-| 2026-08-20 | Same brief, idea 2 | **A lint for the `-1` sentinel** — an out-of-domain numeric value meaning absent/unknown/error | **deferred** | Confirmed absent, two independent searches: `grep -rniE "sentinel" skills/` returns 23 hits, all unrelated (Go error sentinels, Redis/Microsoft Sentinel, queue-shutdown sentinels); `grep -rniE "return -1\|returns -1\|in-band\|magic (number\|value\|constant)"` returns nothing on the class. Nearest coverage is `sota-c-cpp/rules/04`:25 (`atoi` "no error report" → `strtol` + errno), one row in a banned-API table, and `sota-performance/rules/05`:170, the only positive statement of the principle (a cached-absence sentinel must be *distinct from* a real value) and confined to negative caching. **Deferred, not adopted**, on placement: the right home depends on where the sentinel lives — schema column, function return, or a value crossing an API boundary — and a rule written to the wrong layer gets a grep nobody runs. Revisit condition: the reporter names the layer |
+| 2026-08-20 | Same brief, idea 2 (deferred, then answered the same day with a measured field report) | **The in-band sentinel — a value from the domain standing in for absent** | **adopted** | `sota-python/rules/02` §2a + checklist greps (primary: the producer is a function return, and the greps are per-language), `sota-databases/rules/01` *Modeling hygiene* + checklist (persistence half), one-line pointer in `sota-python/rules/03` §12, two SKILL.md rows. Confirmed absent by two searches before writing (`sentinel` → 23 hits, all unrelated; `return -1|in-band|magic (number|value)` → nothing on the class); nearest prior coverage was `sota-c-cpp/rules/04`:25 (one banned-API row) and `sota-performance/rules/05`:170 (the principle, stated once and scoped to cached absence). **Filed to `rules/01` rather than the reporter's suggested `rules/02`**: how absence is encoded is a modeling decision, and `rules/02` is migrations. The reporter's measurement is what made it writable — see the entry · unreleased |
 
 ## Entries
 
@@ -1027,18 +1027,57 @@ maintenance, manifest presence for reachability — `sota-devsecops/rules/03` §
 dashboard existing for someone opening it), so it landed as a class in
 `sota-observability/rules/05` §7a rather than as a line in the deprecation pipeline.
 
-**3. The `-1` sentinel lint — deferred, and the reason is placement, not doubt.** The
-class is genuinely absent (searches in the table row above), it produces exactly the
-silent failure this library specialises in — an out-of-domain value survives arithmetic,
-`SUM`, `min()`, sorting and threshold comparisons without a type error and just moves
-the answer — and it is mechanically greppable, which is the filter
-[CONVENTIONS-LEDGER.md](CONVENTIONS-LEDGER.md) asks a new rule to pass. What is missing
-is the layer. A schema column carrying `-1` instead of `NULL` is a `sota-databases`
-rules/02 rule with a `information_schema` query behind it; a function returning `-1` for
-"not found" is a language-skill rule with a per-language grep; a `-1` crossing an API
-boundary is `sota-api-design` rules/02 §6 (open-enum discipline, tolerant readers). The
-greps differ, and a rule filed to the wrong layer ships a detector nobody runs against
-the code that has the defect. Held until the reporter names it.
+**3. The in-band sentinel — deferred on placement for one turn, then adopted.** The
+class was clearly absent (searches in the table row) and clearly the kind of thing this
+library exists for, but the layer was unknown, and a rule filed to the wrong layer ships
+a detector nobody runs against the code that has the defect. The reporter came back with
+a declaration, a caller, and — the part that decided the rule's shape — a **measured
+per-field distribution** over 505,079 real rows.
+
+What that measurement changed, and why the rule would have been wrong without it:
+
+- The obvious rule is *"lint for `-1` in this field"*. Sound on five of the eight fields
+  the reporter measured (0 legitimate negatives, 9–99.95% sentinel), and **100% false
+  positive on two of them**, where the upstream producer emits `-1` legitimately (an
+  index meaning "not an argument"). One converter, one sentinel constant, eight fields,
+  **heterogeneous domains** — so the rule keys on the **declaration** (a producer
+  returning the same constant from a not-found branch and an `except` branch), and a
+  value lint is added only per-field, behind a domain declaration that in practice does
+  not exist yet. Writing that declaration down is part of the fix, not a prerequisite
+  for it.
+- On the two ambiguous fields the sentinel is **unrecoverable in principle**: a stored
+  `-1` could be the producer's real value or a converted empty, and no amount of
+  downstream care can tell. That is the argument for `NULL`/omitted-property in the
+  persistence half — a graph or document store has native absence, so writing a sentinel
+  *discards* information the store would have kept for free.
+- The reporter checked all four failure modes I proposed and returned **three noes with
+  evidence** (no aggregates over the field in a 2,141-query catalog; 0 of 16,631 findings
+  displaying a negative line; no sorts) and one yes: **comparison against a threshold**,
+  in 102 clauses across 41 rule files using line-number ordering as a temporal proxy. The
+  three noes are what let the rule say *check the queries that order or compare first*
+  instead of listing every hazard equally.
+
+**The tell the rule is built on is the reporter's, and it is the best part of the brief:
+the author knew.** In the guard they found, the *collection* side of a comparison is
+filtered against the sentinel (`x > 0`) and the *scalar* on the other side of the same
+`<` is not. Sentinel-filtering is applied per-site, so it lands wherever the author was
+thinking about it and is omitted everywhere else — which makes an **asymmetric guard** a
+far better audit signal than the sentinel constant, and it is visible in a diff. The
+`if line_num:` presence check above it is defeated by the same value, since `-1` is
+truthy.
+
+**Scope honestly recorded, from the reporter's own framing:** static reachability plus a
+measured input rate (the field is empty in 9.2% of nodes), with no before/after showing a
+specific result gained or lost. **Latent with measured exposure, not active.** The rule
+is written to that standard — it claims the predicate flips, not that a given finding was
+missed.
+
+**Not landed, and why:** the audit-sweep half belongs in `sota-code-security` rules/10
+§2 or rules/11 §3, which are the files that catalogue exactly this shape. Both are at
+**496 and 497 lines against the 500 cap**, so adding a class there means reflowing one
+of them — a separate change with its own review, not a squeeze. The detectors live in
+the two rules files' audit checklists meanwhile, so the audit half is not missing, only
+filed further from where a sweep would look.
 
 **Measurement status:** adopted on reasoning. **No efficacy lift is claimed or
 measured. Do not cite one.**

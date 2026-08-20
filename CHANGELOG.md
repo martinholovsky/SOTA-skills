@@ -28,6 +28,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   matters. The CLI half is `sota-cli-ux/rules/03` §2a, for any tool whose output
   is a **verdict** rather than an artifact: `"0 problems found"` and `"0 checks
   ran"` print the same.
+- **The in-band sentinel — a value from the domain standing in for absent.**
+  `sota-python/rules/02` §2a is the producer half: a converter returning `-1` (or
+  `0`, or `""`) instead of `None` type-checks, collapses *absent* and *malformed*
+  into one indistinguishable value, survives the `if x:` presence check because
+  `-1` is truthy, and — the part that changes answers — carries an **ordering**, so
+  it silently loses every `<` against a real value and wins every `>`. Where
+  line/offset/version numbers are compared as a proxy for sequence, one missing
+  operand flips the predicate, and *which* way it flips depends on which side went
+  missing: fail-open in one direction, false positive in the other, from a single
+  input. The audit tell is not the constant but the **asymmetric guard** — one
+  operand filtered against the sentinel, the other, in the same comparison, not —
+  because sentinel-filtering is applied per site and so lands only where the author
+  was thinking about it. Three detectors in decreasing precision (producer /
+  asymmetric guard / truthiness-as-presence), with the constraint that decides the
+  rule's shape: **a value-based lint is only sound on a field with a stated
+  non-negative domain**, and one converter applying one sentinel across a
+  heterogeneous field set makes it 100% false-positive on any field whose producer
+  emits that value legitimately. Key on the declaration; add the value lint per
+  field. `sota-databases/rules/01` *Modeling hygiene* is the persistence half —
+  absence is `NULL` or an omitted property, and a document/graph store makes a
+  sentinel **worse**, not better, because it discards native absence the store would
+  have kept for free. Pointer from `sota-python/rules/03` §12; both audit checklists
+  extended, with *check the queries that order or compare first*.
 - **The question with no instrument, and the substitute that answers a different
   one.** `sota-observability/rules/05` §7a. The requirement for per-route/per-field
   usage telemetry was already stated twice in `sota-api-design` (rules/02 §5 step

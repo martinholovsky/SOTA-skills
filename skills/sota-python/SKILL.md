@@ -99,7 +99,7 @@ information, not omission).
 | File | Read this when... |
 |---|---|
 | `rules/01-tooling-project-setup.md` | starting/scaffolding a project; reviewing pyproject/uv/ruff/CI setup; choosing type checker; questions about uv lockfiles, PEP 723 scripts, src/ layout, 3.12–3.14 features, free-threading |
-| `rules/02-typing-correctness.md` | annotating APIs; choosing TypedDict vs dataclass vs pydantic; Protocol vs ABC; generics/`Self`/`ParamSpec`; Any leaks; `assert_never` exhaustiveness; where runtime validation belongs |
+| `rules/02-typing-correctness.md` | annotating APIs; choosing TypedDict vs dataclass vs pydantic; Protocol vs ABC; generics/`Self`/`ParamSpec`; Any leaks; **in-band sentinels (`-1` for absent) — the defect `int \| None` exists to prevent, invisible to the type checker**; `assert_never` exhaustiveness; where runtime validation belongs |
 | `rules/03-idioms-pitfalls.md` | any general Python code; mutable defaults, closures, comprehensions, context managers, pathlib, EAFP, dataclass/enum patterns, itertools/functools; designing exceptions; logging setup |
 | `rules/04-async.md` | any `async def` in sight: TaskGroup vs gather, blocking-the-loop, fire-and-forget, timeouts/cancellation, async generators, anyio, sync-ORM-in-async bugs |
 | `rules/05-security.md` | auditing for vulnerabilities; handling untrusted input; subprocess/SQL/paths/archives/secrets; pickle/eval/yaml; SSRF/XML; dependency auditing and supply chain |
