@@ -290,6 +290,10 @@ Design:
   (synonyms, other languages, generated code, vendored trees), use a **second
   independent method** (grep *and* AST/call-graph *and* a mutation run), and
   state the search you actually performed so the reader can judge its reach.
+  That governs the **search**, which is discarded once it has answered. If the
+  conclusion is instead left behind as a durable **guard**, it needs the stronger
+  default in `sota-testing` rules/02 §2.10: structure in AST, behaviour by execution,
+  regex only where no parser exists.
 - **Before claiming a fix works**: add the regression test, then **revert the fix
   and confirm the test fails**. A regression test is not evidence until it has
   been watched to fail. Report the exact command and the pass/fail counts —

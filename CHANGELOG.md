@@ -9,6 +9,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`sota-testing/rules/02` §2.10 — which method a durable guard is written in.** The
+  library stated a method default for an **audit search** (widen it, use a second
+  independent method, say what you ran) and none for the **guard** that search leaves
+  behind. The two differ in *lifetime*: a search is discarded the day it runs; a guard is
+  a standing claim re-evaluated on every commit by people who will not re-derive it. So:
+  **AST as the floor for structural claims, execution or interception for behavioural
+  ones, mutation on both, regex only where no parser exists** — and name which, so the
+  exception does not spread by imitation. Two failure modes are specific to text and
+  neither is prevented by care: a guard can match a **comment about** the code it
+  policies, and a file-scope check lets **one compliant site excuse every other site in
+  the same file** (a real regression passed that way). Added beyond the brief: **name the
+  parser, per language** — "no parser at hand" is exactly when people reach for regex, so
+  that choice belongs in the same decision as the guard. Stated with its limit, because
+  the phrase "AST-based" invites false confidence: **AST does not resolve types**, a name
+  collision reads as live — a false *negative* — and the output is a candidate list, never
+  a verdict. Three audit-checklist items; cross-referenced from `sota-code-security`
+  rules/10's absence-claim bullet.
+
+### Changed
+
+- **Formatter reflow is now a fourth "the mutation did not take" cause**, in both homes
+  (`sota-testing/rules/06` §6.3 and `sota-code-security/rules/12` §1). A multi-line revert
+  can silently match nothing because `ruff format`/`black`/`prettier` folded the target
+  onto one line — the most common cause in any formatted repo, and the one an
+  *environmental* checklist (editable installs, stale bytecode, cached images) will never
+  catch, because nothing about the environment is wrong.
+- **Invariant 18's `` `NN` `` shorthand now has to sit immediately before the `§`.** It
+  read a backticked configuration value — `` `16` `` — as a rules-file reference and
+  reported `rules/16 ... does not exist`: a false positive on correct prose, which is the
+  failure that gets a gate switched off. The explicit `rules/NN` form keeps its wide
+  window. Verified discriminating rather than merely disabled: `` `02` §9 `` still
+  resolves to a file with a §9 from a file that has only §1–§7. References resolved
+  1,363 → 1,368.
+
+
 - **Invariant 19 — every check has a known-bad, and the exempt set is pinned.** Three
   proposed refinements of the previous day's `--self-test` collapsed into one gate.
   **(a) Run it always.** The structural pass costs **49 ms** (measured), and it sat

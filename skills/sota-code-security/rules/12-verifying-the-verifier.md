@@ -57,7 +57,10 @@ Two traps that make step 3 lie:
   ran. Force the dependency present (monkeypatch the availability check) so the
   control is actually exercised.
 - **The mutation did not take.** Editable installs, copied/rsync'd trees, stale
-  bytecode, and cached images mean the original code may still be running.
+  bytecode, and cached images mean the original code may still be running — as does a
+  **formatter reflow**, where a multi-line revert silently matches nothing because
+  `ruff format`/`black`/`prettier` folded the target onto one line. That last one is
+  not an environment fault, which is why it survives the environmental checklist.
   **Assert the mutation's runtime effect** — make the no-op print or raise once —
   before trusting a "zero failures" result.
 

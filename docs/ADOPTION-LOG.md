@@ -183,6 +183,7 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-08-20 | Field brief from a session applying the library — a refinement of `rules/14` §1 | **Computed is not enough — compute it from what you *returned***, and site the claim in the **consumer** | **adopted** | `sota-code-security/rules/14` §1 + two checklist items, with cross-refs added at `rules/11` §2.4 (silence is not evidence of health — *and neither is speech*, when the claim is sited upstream of the effect) and §2.5 (an emission proves the line it sits on ran, not that its result survived the suffix of the function). Verified absent before writing: `git grep` for *site the claim* / *in the consumer* / *derived from the value received* returned only unrelated hits (Go interface placement, backpressure, registry pinning); *intermediate vs returned value* and *the log is the only witness* returned nothing; and `rules/12` §1's probe says only "run the suite" · v1.23.1 |
 | 2026-08-20 | **Self-audit of the same day's own work** — "do we have gaps elsewhere?" | Four classes shipped 2026-08-20 were stated only where the incident happened, and were **unreachable from the skills that need them** | **adopted** | `sota-devsecops/rules/05` §5.6 + checklist (a negative control belongs in a `--self-test` **mode of the runner**, not only as a fixture beside it — that file is the canonical home for "every gate ships a known-bad" and a DevSecOps reader never loads `rules/12`), `sota-observability/rules/01` §5 (**"at completion" is load-bearing** — a mid-function line attests only that the line ran; site the claim where the value is consumed), `sota-testing/rules/06` §6.3 (**mutate and read the output, not the suite** — every other probe in that section ends in "run the tests", which cannot answer whether the report is truthful), and `sota-code-security/rules/12` §1b.1 (**a planned change is a legitimate source of a gate**). Verified absent in all four before writing · unreleased |
 | 2026-08-20 | Operator question — "are there other bright ideas like this we should adopt?" | Three refinements of the same day's `--self-test`, which collapsed into one gate: **run it always**, **fail closed**, and **pin the exempt set** | **adopted** | `scripts/check-invariants.sh` invariant **19** + harness probe 19 (25 probes, 14 of 19). The third is the one with teeth: without a pin, "every check is probed or declared unprobeable" is satisfied by adding your new check number to the exempt list. Measured first — the structural pass costs **49 ms**, which is what makes "always" defensible. It caught **itself** on introduction. Also derived probe 17's mutation instead of pinning the invariant count, after that literal went stale twice in one day · unreleased |
+| 2026-08-20 | Field brief — *a method hierarchy for authoring durable guards* (one session on a 38k-test Python codebase) | **Auditing and authoring are different activities**: the library states a method default for the search and none for the guard the search leaves behind | **adopted with one addition** | `sota-testing/rules/02` §2.10 + three checklist items, cross-referenced from `sota-code-security/rules/10`'s absence bullet; **formatter reflow** added as a fourth mutation-did-not-take cause in `sota-testing/rules/06` §6.3 and `sota-code-security/rules/12` §1. Both of the brief's "not a duplicate" citations verified **accurate** (rules/10:286-292 and rules/06:169), and the gap confirmed: all seven `AST` mentions in `skills/` are about auditing, RAG splitting, Python `match`, or a coincidental Cypher relationship name — **none about authoring**. My addition: **name the parser per language**, because "no parser at hand" is precisely when people reach for regex · unreleased |
 
 ## Entries
 
@@ -1192,3 +1193,56 @@ author while he is implementing it needs no further argument for being stated.
 
 **Measurement status:** adopted on reasoning and the reporter's observed behaviour. **No
 efficacy lift is claimed or measured. Do not cite one.**
+
+### 2026-08-20 — authoring vs auditing, and the guard that matched its own comment
+
+A field brief proposing a method hierarchy for **authoring** durable guards: AST as the
+floor for structural claims, execution for behavioural ones, mutation on both, regex only
+where no parser exists.
+
+**Both "this is not a duplicate" citations were checked and both are accurate** — which
+is worth recording, because the failure mode of a well-argued proposal is usually its
+citations (see 2026-08-05, where one of two reports did not survive quoting).
+`sota-code-security/rules/10`:286-292 does carry *"a negative claim needs more proof than
+a positive one"* together with the *"second independent method (grep **and** AST/call-graph
+**and** a mutation run)"* wording, and `sota-testing/rules/06`:169 does warn that the
+mutation may not have taken. The brief's point is that **both govern the search, not the
+guard** — and that is right. The distinction the library was missing is one of *lifetime*:
+an audit search is discarded the day it runs; a guard is a standing claim re-evaluated on
+every commit by people who will not re-derive it, so it deserves the stronger default.
+
+Gap confirmed independently: all seven `AST` mentions in `skills/` are about auditing, RAG
+chunk-splitting, Python `match` destructuring, or a Cypher relationship type that happens
+to be spelled `[:AST*]`. None is about the method a guard is written in.
+
+**The strongest evidence is a recurrence, not the argument.** Failure mode 1 — *a guard
+matched its own explanatory comment*, a regex for `Scanner\s*\(` flagging the file that
+documented in a comment that the call had been removed — is the **second independent
+report of that exact shape in one day**. The earlier one was a test that failed on its own
+comment because the comment quoted the log line it hunted for. Two different people, two
+different guards, the same trap, hours apart. That is a class, not an anecdote.
+
+**Adopted with one addition.** The brief's hierarchy is stated as written, including its
+honest limit (AST does not resolve types, so a name collision reads as live — a **false
+negative**, the more dangerous direction, and the output stays a candidate list rather
+than a verdict). What it does not say, and what decides whether the rule is followed:
+**name the parser, per language.** AST is free in Python/Go/Rust/Ruby and an install away
+elsewhere, and "no parser at hand" is exactly the moment someone reaches for regex — so
+the parser choice belongs in the same decision as the guard, not in a later one.
+
+**Formatter reflow** is adopted as a fourth mutation-did-not-take cause alongside the
+environmental three. It is the most common cause in any repo running `ruff format`,
+`black` or `prettier`, and the one least likely to be caught by an environmental
+checklist, because nothing about the environment is wrong.
+
+**A finding about our own instrument, from writing this up.** Invariant 18 rejected the
+new §2.10 — it read a backticked configuration value, `` `16` ``, as the `` `NN` ``
+rules-file shorthand and reported `rules/16 ... does not exist`. A false positive on
+correct prose, which is the failure that gets a gate switched off. The shorthand now has
+to sit **immediately** before the `§` (the only way it is ever actually written), while
+the explicit `rules/NN` form keeps its wide window. Verified discriminating: pointing
+`` `02` §9 `` still resolves to `sota-threat-modeling/rules/02`, which has a §9, from a
+file that has only §1–§7. References resolved: 1,363 → 1,368.
+
+**Measurement status:** the brief's 74 → 61 orphan-candidate figure is the reporter's,
+on their codebase, and is quoted as such. **No efficacy lift is claimed for the library.**
