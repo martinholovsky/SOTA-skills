@@ -143,7 +143,11 @@ probe 1 "line budget (rules file over 500 lines)" "OVER 500"
 probe 2 "audit checklist missing from a rules file" "MISSING/NOT-LAST '## Audit checklist'"
 
 # 6 — count-bearing surfaces match the tree.
-( cd "$WT" && perl -0pi -e 's/\*\*41 skills \(298 files/**41 skills (999 files/' README.md )
+# The literal here tracks the README's real count and goes stale on every file
+# add/split — which is exactly what the mutation-landed assertion is for: it
+# printed PROBE BROKEN on 2026-08-20 when rules/13 and rules/14 moved 298 -> 300,
+# instead of reporting a healthy invariant 6 as uncaught.
+( cd "$WT" && perl -0pi -e 's/\*\*41 skills \(300 files/**41 skills (999 files/' README.md )
 probe 6 "README file count drifted from the tree" "README hero file count"
 
 # 10 — a rules file its own SKILL.md never indexes.
