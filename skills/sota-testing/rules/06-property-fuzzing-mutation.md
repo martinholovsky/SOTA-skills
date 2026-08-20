@@ -155,6 +155,13 @@ hours):
   diff-scoped job catches weak tests while they're fresh.
 - **As an audit probe**: one run on a "well-covered" module tells you in an
   afternoon whether 90% line coverage means anything.
+- **As an observability probe — mutate, then read the *output*, not the suite.**
+  Every use above ends in "run the tests", which answers *is this constrained by a
+  test*. A different and equally silent question is *does what this thing reports tell
+  the truth*, and the suite cannot answer it: change what a function returns, run the
+  real workload, and read the emitted line. A summary that is unchanged by the mutation
+  is the finding. This is the only probe available where a job runs unattended and its
+  log is the sole witness (`sota-code-security` rules/14 §1).
 - **As a control probe** (no tooling needed): hand-mutate one security control's
   body to the permissive no-op (`return True`, `return []`) and run the suite.
   Nothing fails ⇒ that control is untested however many tests name it. Two traps

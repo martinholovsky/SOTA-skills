@@ -244,7 +244,18 @@ required-checks list against the actual workflow job names — orphaned required
 
 A committed known-bad answers "can this gate fail?". It never answers "does this
 gate still see the code that matters?", and the two come apart the moment somebody
-refactors. A gate's scope is a path or module expression, and ordinary,
+refactors.
+
+**Where the known-bad lives decides whether it survives.** A fixture beside the gate
+proves *today's* gate can fail and says nothing about the gate added next sprint,
+because joining the fixture set is a convention — enforced by a line in a contributing
+guide and by whoever reviews the PR. Prefer a **`--self-test` mode of the gate runner**
+that walks the same registry of checks the normal run walks, injects each check's
+declared known-bad, and asserts *that check, by name*, is the one that complains. A
+check with no declared known-bad then **fails the self-test** instead of being silently
+exempt, and the probe ships to the operator rather than living only in your CI. Full
+procedure, including why a non-zero exit for an unrelated reason is a false pass:
+`sota-code-security` rules/12 §1b. A gate's scope is a path or module expression, and ordinary,
 well-motivated containment moves code out from under it with **no diff to the
 workflow file and no change in risk**:
 
@@ -308,7 +319,7 @@ remove it. Diff-aware modes, caching, and tiering are how gates survive.
 ## Audit checklist
 
 - [ ] SAST: diff-aware Semgrep (org rules included) required on PRs; CodeQL (or equivalent deep SAST) on default branch; full scans scheduled
-- [ ] Every security gate ships a **negative control** — a committed known-bad it must reject on every run. No framework (SSDF, CRA, Scorecard, SLSA) requires this; a passing compliance check is evidence of process, not protection (§5.6, `sota-code-security` rules/12)
+- [ ] Every security gate ships a **negative control** — a committed known-bad it must reject on every run, and it is reachable as a **mode of the runner** (`--self-test`) rather than only as a fixture beside it, so a newly added check with no known-bad fails rather than passing unprobed (`sota-code-security` rules/12 §1b). No framework (SSDF, CRA, Scorecard, SLSA) requires this; a passing compliance check is evidence of process, not protection (§5.6, `sota-code-security` rules/12)
 - [ ] Every gate prints the **number of units it enumerated** and the build fails when that number drops — a refactor that moves code into a nested module, a second manifest, a submodule or a sidecar image silently shrinks the gate's scope while the negative control keeps passing (§5.6)
 - [ ] All inline suppressions (`nosemgrep`/`#nosec`/checkov skips) carry justifications; suppression inventory reviewed; baseline only shrinks
 - [ ] Secret scanning: push protection org-wide, PR diff scan, history scanned at onboarding; committed secrets trigger rotation, not just removal; bypass events reviewed

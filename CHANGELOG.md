@@ -5,6 +5,40 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Invariant 18's heading parser read `### 1b.1` as heading `1b`** — the letter suffix
+  bound only to the last component. Adding a `§1b.1` subsection therefore re-satisfied a
+  `§1b` reference even after `## 1b.` was renamed, so **negative-control probe 18 went
+  INERT**: the gate reported healthy while verifying nothing. Caught by the harness on
+  the very commit that introduced the subsection, not by review — which is the whole
+  argument for running it. `2.2a` and `8a` parse unchanged; `1b.1` now parses as itself.
+  Clean tree: 1,349 → 1,363 references resolved.
+
+### Added
+
+- **Four cross-references that make the same day's own additions reachable.** Each class
+  shipped in v1.23.0/v1.23.1 was stated where the incident happened and nowhere else,
+  which is the *unreachable, not absent* shape this library keeps rediscovering. Verified
+  absent in all four homes before writing:
+  - `sota-devsecops/rules/05` §5.6 + checklist — the negative control belongs in a
+    **`--self-test` mode of the gate runner**, not only as a fixture beside it. That file
+    is the canonical home for "every security gate ships a known-bad", and a DevSecOps
+    reader never loads `sota-code-security` rules/12, where the placement argument lives.
+  - `sota-observability/rules/01` §5 — **"at completion" is doing real work in that
+    sentence**. A line emitted mid-function attests only that *that line ran*, not that
+    its result survived the filter, early return or reassignment beneath it. Site the
+    claim where the value is consumed. This is the skill where people actually write log
+    lines, and the rule lived only in an audit file.
+  - `sota-testing/rules/06` §6.3 — **mutate and read the *output*, not the suite.** Every
+    other probe in that section ends in "run the tests", which answers *is this
+    constrained by a test* and cannot answer *does what this reports tell the truth*.
+  - `sota-code-security/rules/12` §1b.1 — **a planned change is a legitimate source of a
+    gate**, with the caution that the "has it already failed?" filter reads *no* at
+    proposal time *by construction* for a class nothing reports.
+
 ## [1.23.1] - 2026-08-20
 
 **A count that is computed, and still false.** `rules/14` §1 already banned reported

@@ -154,6 +154,32 @@ skip must print its reason instead of folding into the pass count; and a check t
 can fail may still have stopped covering the code that matters — scope drift is a
 separate failure with no diff to the check (`sota-devsecops` rules/05 §5.6).
 
+### 1b.1 A planned change is a legitimate source of a gate
+
+Gates are usually said to come from incidents — something failed, so now it is checked.
+That under-counts one case badly. **Before a rename, a move, a renumber or a split, ask
+what class of reference or assumption it invalidates and whether anything would report
+it.** Where the answer is *nothing would*, build that check first: the refactor then
+becomes its own negative control, because you can watch the check go red on damage you
+caused deliberately.
+
+The usual "has this already failed?" filter reads **no** at proposal time here, and that
+reading is unreliable — a class nothing reports has no incident history *by
+construction*. Running the check is what answers it. Worked case: a documentation tree
+carried ~1,300 prose section references (`§2.4`, `rules/13 §5`) that no link checker
+could see, because a link checker resolves `[text](file.md)` and a `§` reference is
+prose. The check was written to protect a planned file split; on its **first run against
+the unmodified tree** it found six live breakages, then caught 27 more the split itself
+caused. Both sets were invisible the day before, and the second would have shipped.
+
+Two cautions from the same case, because a check like this is an instrument (§2). **Read
+the findings before believing the count** — successive drafts reported 46, 29, 17, 13 and
+finally 6, and the shrinkage was not tuning but discovering two authoring conventions the
+first draft had not modelled, one of which made it flag *correct* references (§2.1's
+"generalised from one sample", committed by the instrument itself). And **fail open on
+ambiguity**: where a reference could plausibly resolve more than one way, accept it. A
+gate that flags correct work gets switched off, which leaves you worse off than no gate.
+
 ## 2. Your instrument is a control
 
 A scorer, a quality gate, a benchmark, a coverage threshold, a lint config, a
