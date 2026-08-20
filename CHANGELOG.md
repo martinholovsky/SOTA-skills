@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Invariant 19 — every check has a known-bad, and the exempt set is pinned.** Three
+  proposed refinements of the previous day's `--self-test` collapsed into one gate.
+  **(a) Run it always.** The structural pass costs **49 ms** (measured), and it sat
+  behind an opt-in flag — but a check you have to remember to run is a convention, not a
+  property, which is precisely how **invariant 18 shipped probe-less in the very commit
+  that introduced it**. **(b) Fail closed.** As a numbered check it sets `fail=1`, so a
+  suite that cannot verify its own coverage prints **no `PASS` line at all**, rather than
+  reporting green beside a warning nobody reads. **(c) Pin the exempt set** — the half
+  with teeth. Without it, *"every check is probed or declared unprobeable"* is satisfied
+  by adding your new check's number to the exempt list, a one-line way to silence the
+  check that exists to stop you. `EXPECTED_UNPROBED` is a **tripwire, not a cached
+  count**: nothing derives it, everything compares against it, so growing it is a
+  deliberate edit a reviewer sees. It **caught itself** on introduction (`check 19 has no
+  known-bad`) — the shortest demonstration available that it works. Watched to fail three
+  ways: a deleted probe, a check exempted instead of probed (`GREW by [13]`), and a pin
+  left stale in the *good* direction. `--self-test` survives with a narrower meaning —
+  run the suite, then run the harness. Harness now **25 probes, 14 of 19**.
+
+### Changed
+
+- **Probe 17's mutation is derived rather than pinned.** Its literal is the invariant
+  count, so it goes stale every time a check is added — twice on 2026-08-20 alone, each
+  surfacing as `PROBE BROKEN` rather than as a defect. That is the landed-assertion guard
+  working, and also a recurring cost. It now decrements whatever count is present, with
+  its expected substring trimmed to the part that does not move. Every *other* probe
+  keeps its hardcoded literal deliberately; this one is the exception because its literal
+  tracks a number the repo changes on purpose.
+
 ### Fixed
 
 - **Invariant 18's heading parser read `### 1b.1` as heading `1b`** — the letter suffix
