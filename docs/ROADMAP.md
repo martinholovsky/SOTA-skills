@@ -4,7 +4,7 @@ Priorities set by the **2026-07-10 audit**
 ([AUDIT-2026-07-10.md](AUDIT-2026-07-10.md)). Ordered; revisit after each
 release. The 2026-07-01 cycle is fully executed and kept below as history.
 
-## Start here next session *(as of 2026-08-19)*
+## Start here next session *(as of 2026-08-20)*
 
 Everything actionable, ordered. Each line says what it is, why it is not done, and the
 first move. **The written-conventions backlog is empty** — invariant 14 closed the last
@@ -15,7 +15,9 @@ Item 11 is the near-exception that shows the shape rather than breaking it: it *
 found by re-reading docs, at the v1.22.14 cut — and it is **not gateable**, so it earns
 a ledger row and a habit, not a check.
 
-Every number in this table was re-counted on 2026-08-19, not carried forward.
+Every number in this table was re-counted on 2026-08-19, and items 12–14's on
+2026-08-20 — not carried forward. (This stamp itself went stale within a day of
+being written, which is the case for re-reading it at every cut.)
 
 | # | Item | Why not done | First move |
 |---|---|---|---|
@@ -32,6 +34,7 @@ Every number in this table was re-counted on 2026-08-19, not carried forward.
 | 11 | **Invariant 17 sees counts, not meaning — first instance found 2026-08-19 at the v1.22.14 cut** | `AGENTS.md`'s invariant 14 row read "a declared term resolves in **neither** `README.md`/`docs/INDEX.md` **nor** the release's own entry" — an OR across all three — while `scripts/check-invariants.sh:842` requires (README **or** INDEX) and `:848` requires the release's own entry, an AND. `CONTRIBUTING.md` item 14 was already correct, so two documents describing one gate disagreed **in logic while agreeing in count**, which is exactly what invariant 17 cannot see: it asserts every stated count equals N and that `AGENTS.md`/`CONTRIBUTING.md` enumerate 1..N with no gaps, nothing more (read at `check-invariants.sh:1027`+) | **Nothing to build.** Applying the three filters ([CONVENTIONS-LEDGER](CONVENTIONS-LEDGER.md)): incident **yes** (once), silent **yes**, mechanically checkable **no** — comparing the semantics of two prose restatements written at deliberately different granularities is the judgement class the ledger argues against gating. The remedy is the habit that caught it: re-read the prose *beside the script* at each cut. Recorded so it is not re-litigated as a gate proposal |
 | 12 | **A skill-level split of `sota-code-security` (vulnerability classes vs control verification) — considered 2026-08-20, NOT done** | The operator proposed splitting the skill, first on a build/audit axis. **Build/audit is the wrong axis for this library**: invariant 2 requires every one of the 259 `rules/*.md` to end with `## Audit checklist`, so the audit half is welded to the build half by a gate, and an audit-only injection file would need the build half's facts to be usable. The defensible seam is **rules/01–09 (vulnerability classes) vs 10–14 (control verification)**, now 5 files and ~1,500 lines. Not done because it does not solve the cap (invariant 1 is **per file** — `git ls-files 'skills/*/*.md' 'skills/*/rules/*.md'`, so a split skill carries the same files at the same sizes) and it costs router lines: `skills/sota/SKILL.md` is at **494/500**, and a new skill needs a routing-table row, a library-map entry and probably a cross-cutting rule | **Only if `sota-code-security` grows a sixth verification file**, and then trim the router in the same change (item 4). Recorded so the build/audit framing is not re-proposed |
 | 13 | **The next two files approaching the cap** | `sota-docs-workflow/rules/01` at **456** and `sota-devsecops/rules/03` at **451** (measured 2026-08-20 across all 300 skill files: 266 are under 300 lines, and only these two plus the router sit above 450). Neither blocks anything | **Nothing now.** Split reactively, when a file blocks a real addition, at a seam it already has — the pattern from PR #192 and from the 2026-08-20 split of `rules/10`/`rules/11`. A proactive sweep is the shape v1.20.1 already cancelled (the 242-file TOC sweep), and it would silently break `§` references — except that invariant 18 now catches those, which is the one thing that changed |
+| 14 | **This repo does not practise `sota-code-security` rules/12 §1b, which it published on 2026-08-20** | That rule says a negative control belongs *inside* the tool as a `--self-test` mode, so "every check can go red" is a property of the suite rather than of whoever last edited it. Here it is a **separate script** (`scripts/check-negative-controls.sh`), the "add your known-bad too" instruction is a **sentence in `AGENTS.md`**, and coverage stands at **13 of 18** — a gap visible only because the harness prints it. Invariant 18 was added without a probe in the same commit; it took a second, deliberate step | **Fold the probes into `check-invariants.sh --self-test`**, so a check with no declared known-bad fails the run. Two things to keep from the current design: the probe count stays **ungated** (a static count of call sites under-reads), and every mutation keeps asserting it landed — that assertion is what printed `PROBE BROKEN` on 2026-08-20 instead of accusing a healthy invariant 6 |
 
 **Why the as-deployed competitor comparison is rejected (2026-08-16), not deferred.**
 Checked against the pinned clones rather than from memory: **ECC ships 889 `SKILL.md`

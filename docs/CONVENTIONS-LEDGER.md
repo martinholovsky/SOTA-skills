@@ -153,6 +153,18 @@ cannot supply. The actionable set from *written* conventions is now empty — wh
 with finding 2b below, is the useful state to be in: the next gate will come from an
 incident, not from re-reading the docs.
 
+**And a third time, in a new way (2026-08-20, invariant 18).** The prediction holds —
+nothing about `§` references was ever a *written* convention, so re-reading the docs
+could not have surfaced it. What is new is the trigger: the gate was proposed because a
+**planned change** (splitting two rules files) would create a hazard nothing checked,
+and it was built *before* the change. Applying the three filters honestly at proposal
+time, the first one — *has it already failed?* — read **no**. Running the check answered
+it retroactively: **six live defects** already existed, one of them a cross-skill
+citation. So the useful lesson is narrower than "gates come from incidents": a gate can
+also come from asking **what would this refactor break that nothing would tell me
+about**, and the answer is often that it is already broken. Cost of getting the order
+right: 27 further references broke during the split, all caught.
+
 **And it did, twice, within three days (2026-08-05).** The two rows added above came
 out of ordinary work — a router map found stale while adding a rules file, and a rule
 we wrote for everyone else and had not applied to ourselves. Neither was discoverable
