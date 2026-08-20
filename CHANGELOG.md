@@ -5,7 +5,19 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.23.1] - 2026-08-20
+
+**A count that is computed, and still false.** `rules/14` §1 already banned reported
+numbers printed as literals — they must be *computed from the artifact produced*. A
+field brief showed a defect that satisfies exactly that and lies anyway: the count was
+computed, from a real collection, at a line that really ran, and described work that no
+longer left the function. The narrowing is **compute it from what you returned**, and
+the structural reason is that **no function can attest to its own return value** —
+every emission site has a suffix that can drop the result after the line is written. So
+site the claim in the consumer, and probe it by mutating the application and reading the
+output rather than re-running the suite.
+
+**Front door checked:** attest to its own return value · only witness
 
 ### Added
 
@@ -4264,6 +4276,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.23.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.23.1
 [1.23.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.23.0
 [1.22.14]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.14
 [1.22.13]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.13
