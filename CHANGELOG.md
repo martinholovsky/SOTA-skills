@@ -9,6 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The Java subprocess row, measured at last — and it changed three claims.** Run on
+  **Temurin 25.0.3** in a podman container, because no JDK is installed on the machine
+  that wrote every other row. `ProcessBuilder` is confirmed (no whitespace splitting,
+  no shell: `ProcessBuilder("echo", "$HOME")` prints `$HOME` literally). What the row
+  did *not* say: **`Runtime.getRuntime().exec(String)` tokenizes on whitespace** — the
+  `shell:true` of Java — and the JDK says so itself, all three `String`-taking
+  overloads carrying `@Deprecated(since="18", forRemoval=false)` while the `String[]`
+  ones carry nothing, read off `Runtime.class` by reflection rather than from docs.
+  On deadlines, `waitFor(t, unit)` fires on schedule (2003 ms on a 2 s budget) and
+  **returns `false`**, so unlike Node the caller *is* told; `destroy()` reaps only the
+  direct child and orphans a pipe-holding grandchild; and **`Process.descendants()` +
+  `destroyForcibly()` does kill the tree** — making Java the only one of the five
+  runtimes with a portable process-tree kill. `sota-sandboxing` rules/04 R5.1 and
+  R5.3a, `sota-jvm` rules/04 with two new audit greps.
+
+### Fixed
+
+- **A cross-language claim the new measurement exposed as overstated.** R5.3a said
+  the four measured runtimes agreed on *"no two … on all three questions"*. At that
+  table's own granularity it was already false before Java arrived: Python and Rust
+  answer all three identically and differ only in mechanism. Replaced with what the
+  table shows — **not one of the five kills the process tree as part of the timeout**,
+  one (Node) does not even tell the caller, and exactly one (Java) ships a portable way
+  to clean up afterwards — with a dated note saying not to restore the stronger
+  phrasing.
+- **The probe's own first run was wrong, and is recorded that way.** Its liveness
+  check matched a `sleep` orphaned by the *previous* phase, so it reported Java's
+  tree-kill as failing. Re-run with per-phase markers and a control that demonstrably
+  reads both `true` and `false` before either result was believed
+  (`sota-code-security` rules/12 §2).
+
+
 - **Invariant 18 — a `§` section reference must resolve.** Invariant 8 resolves
   `[text](file.md)` links; a `§` reference is **prose**, so the ~1,300 of them
   across `skills/` were checked by nothing and broke silently whenever a section
