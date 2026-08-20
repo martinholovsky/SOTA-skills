@@ -17,7 +17,7 @@ go mod tidy && git diff --exit-code go.mod go.sum
 go build ./...                           # catches main-package breakage tests miss
 ```
 
-Pin tool versions (see §6); cache `~/go/pkg/mod` and golangci-lint cache.
+Pin tool versions (see §4); cache `~/go/pkg/mod` and golangci-lint cache.
 A repo missing `-race` or govulncheck in CI: HIGH audit finding.
 
 On toolchain upgrades, run Go 1.26's revamped `go fix` — it now applies

@@ -145,6 +145,67 @@ through five layers, or a state machine as a string column with stringly-typed
 transitions. Encode the state machine: explicit states, explicit allowed
 transitions, transition methods on the aggregate.
 
+## 8a. Absence is not a value — the in-band sentinel
+
+**Rule:** Encode "absent", "unknown" and "failed" **outside** the value's domain —
+`Option`/`Maybe`, a nullable type, a second return value, `NULL`, an omitted
+property, or an exception. Never a member of the domain itself: `-1`, `0`, `""`,
+`9999-12-31`, `0.0.0.0`, `MAX_INT`.
+
+It is the same defect as a stringly-typed state machine (§8), and it is harder to
+see because it **type-checks**. Three consequences, none of which any compiler
+reports:
+
+- **Distinct causes collapse into one value.** *Absent* and *malformed* returned as
+  the same constant can never be told apart, counted, or alerted on downstream — so
+  a parser regression upstream is indistinguishable from ordinary sparse data.
+- **Presence checks silently pass.** `if x:` / `if (x)` reads as "do I have a
+  value?" and admits `-1`, which is truthy in every language that has a truthiness
+  rule. `0` fails the same check on a legitimate value. Neither spelling can work,
+  because the value carries no absence information to test.
+- **It has an ordering, so it changes answers rather than crashing.** A sentinel
+  **loses** every `<` against a real value and **wins** every `>`. Wherever a
+  number is compared as a proxy for sequence — line/offset numbers for "happens
+  before", version numbers, timestamps-as-ints, retry counts — one missing operand
+  flips the predicate, and *which way* depends on which side went missing:
+
+  ```text
+  use(-1) > alloc(20)  -> False   # fails closed: the real relation is not reported
+  use(20) > alloc(-1)  -> True    # fails OPEN: reported, on an unknown operand
+  ```
+
+  Both from one input, in one comparison. (Measured, Python 3.14; the arithmetic is
+  the same in every language whose sentinel is an ordinary number.)
+
+**Rule:** When a wire format, a fixed-width store, or a stdlib you don't own forces
+a sentinel, it is **per field with its domain written down** — not one constant
+applied across a set of fields whose domains differ. That last shape is the common
+one and the unrecoverable one: on a field where the producer *also* emits the
+sentinel legitimately, a stored value is ambiguous forever and no downstream care
+recovers it.
+
+**Auditing it.** The constant is a poor signal — it is everywhere and usually fine.
+Three probes, decreasing precision:
+
+1. **Producer:** one function returning the *same* constant from a not-found branch
+   and from an error/`except` branch. Near-zero false positives; fix it once and
+   every caller is fixed.
+2. **Asymmetric guard** — the highest-yield tell. A comparison where **one operand
+   is filtered against the sentinel and the other is not**
+   (`min(x for x in xs if x > 0) < line_num`, where `line_num` is unfiltered).
+   Sentinel-filtering is applied per site, so it lands wherever the author was
+   thinking about it and is omitted everywhere else. Visible in a diff.
+3. **Truthiness-as-presence:** `if n:` guarding a number whose domain includes the
+   sentinel. High recall, high false-positive rate — use it to build a reading
+   list, not a gate.
+
+**A value-based lint is only sound on a field with a stated non-negative (or
+otherwise sentinel-free) domain.** Measure the per-field distribution before
+linting; a field where the sentinel is 99% of rows and one where it is 0% are
+different problems, and a field whose producer emits it legitimately makes such a
+lint 100% false-positive. Language-specific stdlib traps and the idiomatic
+alternative: each `sota-<language>` skill. Persistence: `sota-databases` rules/01.
+
 ## 9. Repositories and persistence
 
 **Rule:** One repository per aggregate (not per table). Repositories return
@@ -265,6 +326,10 @@ test discipline will reach it.
 
 ## Audit checklist
 
+- [ ] Absence/unknown/failure encoded **outside** the value domain (option type,
+      nullable, second return value, `NULL`, omitted property, exception) — no
+      `-1`/`0`/`""`/`9999-12-31` sentinels. Where one is forced: per-field domain
+      documented, and the **comparison** sites audited first (§8a).
 - Can the team produce a context map? Are seam relationship types (ACL, conformist, published language) explicit?
 - Does any domain term ("customer", "order", "account") have different meanings sharing one class/table across contexts?
 - Are aggregates small, referenced by ID, and modified one-per-transaction? Search for transactions touching multiple aggregates.

@@ -77,7 +77,7 @@ severity, the three highest-leverage fixes, and which checklists were run.
 
 | File | Read this when... |
 |---|---|
-| `rules/01-errors.md` | Writing/reviewing any error path: wrapping with `%w`, `errors.Is/As`, sentinel vs typed errors, panic/recover policy, error API design for libraries vs apps |
+| `rules/01-errors.md` | Writing/reviewing any error path: wrapping with `%w`, `errors.Is/As`, sentinel vs typed errors, **in-band sentinels (absence encoded as `-1`/`0`/`""`)** and comma-ok, panic/recover policy, error API design for libraries vs apps |
 | `rules/02-design.md` | Designing packages or APIs: interface placement and size, package layout and `internal/`, naming, zero values, generics restraint, embedding, functional options, `context.Context` discipline |
 | `rules/03-concurrency.md` | Anything with `go`, `chan`, `sync`, or `select`: goroutine lifecycle ownership, leak catalog, errgroup fan-out, channels-vs-mutex decision, race patterns, worker pools, semaphores, `time.After` traps |
 | `rules/04-http-services.md` | Building or auditing HTTP servers/clients: all five server timeouts, client timeouts and body hygiene, connection reuse, graceful shutdown, middleware, `slog` structured logging, request-scoped values |

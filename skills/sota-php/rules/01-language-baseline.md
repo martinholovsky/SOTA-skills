@@ -120,6 +120,31 @@ fallthrough hazards).
   plus magic-hash pitfalls (`"0e123..." == "0e456..."`). Use `hash_equals()`
   (see `rules/04`).
 
+## 4a. In-band sentinels — `strpos` is the textbook case
+
+PHP's search functions return **`false`** for not-found, and a legitimate match at
+the start returns **`0`** (verified, PHP 8.5.8): `strpos("abc","z")` is `false`,
+`strpos("abc","a")` is `int(0)`. With loose comparison `0 == false` is **true**, so
+`if (strpos($h,$n) == false)` reports "not found" on a match at offset 0 — the
+canonical instance of the class in `sota-architecture` rules/02 §8a, and the reason
+§4's identity rule exists.
+
+```php
+if (strpos($h, $n) === false) { /* not found */ }   // === is mandatory, not style
+```
+
+- Same shape: `array_search` (returns `false`; verified), `strrpos`, `stripos`.
+  `str_contains`/`str_starts_with` (8.0+) return real `bool` — prefer them whenever
+  you only need the yes/no, and the trap disappears.
+- Writing your own: return `null` (with a `?int` return type under `strict_types`)
+  or throw. Returning `false` from an `int`-ish function reproduces the stdlib's
+  worst API in code you control.
+- `intval("x")` / `(int)"x"` is `0`, indistinguishable from `(int)"0"` — use
+  `filter_var($s, FILTER_VALIDATE_INT)`, which returns `false` for invalid, and test
+  it with `===`.
+- Audit: `grep -rnE '(strpos|stripos|strrpos|array_search)\s*\(' --include='*.php' src/ | grep -v '==='`
+  — every hit without `===` is a finding.
+
 ## 5. Errors and exceptions, not silence
 
 - Production ini: `display_errors=Off`, `log_errors=On`; development:

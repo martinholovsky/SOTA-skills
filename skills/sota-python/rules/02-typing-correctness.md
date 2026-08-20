@@ -41,6 +41,95 @@ def handler(user: User | None) -> str:
 - Return `None` for "absent" only when callers genuinely branch on it; raising a precise
   exception is usually better than `T | None` propagating through five layers.
 
+## 2a. In-band sentinels: `-1` is not `None`
+
+The failure §2 exists to prevent has a second spelling that the type checker cannot
+see. The class is language-neutral and stated once in `sota-architecture` rules/02
+§8a; this section is the Python instance and the worked example.
+
+Python's own stdlib offers both spellings, which is the cleanest illustration there
+is: `"abc".find("z")` returns **`-1`** while `"abc".index("z")` **raises
+`ValueError`** (verified, CPython 3.14.6). `find` is safe only because you test it on
+the next line; the defect is the same value being stored, returned, or compared later.
+
+Instead of `int | None`, a converter returns a **value from the domain** to mean
+"absent":
+
+```python
+_SENTINEL = -1                                   # "missing int"
+
+def _convert(key: str, raw: str) -> int:
+    if not raw:
+        return _SENTINEL                         # absent
+    try:
+        return int(raw)
+    except ValueError:
+        return _SENTINEL                         # malformed — same value, different cause
+```
+
+Three defects, none of which is a type error:
+
+- **Two conditions collapse into one value.** Absent and malformed are
+  indistinguishable downstream, so the one that matters (a parser bug upstream)
+  can never be counted, alerted on, or told apart from ordinary sparse data.
+- **`-1` is truthy**, so `if line_num:` — which reads as a presence check and is the
+  idiom people reach for — **passes** on the sentinel and admits it to the body.
+  `0`, the other popular sentinel, fails the same test on a legitimate value. Neither
+  spelling of the check is right, because the value carries no absence information.
+- **It has an ordering.** The sentinel silently **loses** every `<` comparison against
+  a real value and **wins** every `>`. Where line/offset/version numbers are compared
+  as a proxy for ordering — `use > alloc`, `check < call`, `end >= start` — one
+  missing operand flips the predicate, and *which* direction it flips depends on which
+  side went missing. That is a fail-open in one direction and a false positive in the
+  other, from one input.
+
+**The tell that this is a class and not a slip: the author usually defends one operand
+and not the other.**
+
+```python
+# the collection is filtered against the sentinel...
+lo = min((x for x in candidates if x and x > 0), default=0)
+# ...the scalar on the other side of the same comparison is not
+if lo > 0 and lo < line_num:                     # line_num may be -1 → False → guard skipped
+    ...
+```
+
+Whoever wrote `x > 0` knew the sentinel existed. Filtering is per-site, so it is
+applied wherever the author was thinking about it and omitted everywhere else — which
+makes an **asymmetric guard** a far better audit signal than the sentinel constant
+itself.
+
+**Fix, in order of preference:** return `int | None` and narrow at the call site; or
+raise for the malformed case and return `None` only for absent, so the two causes stay
+distinct. Reach for a sentinel only when a wire format or a fixed-width store forbids
+absence — and then it is **per field**, documented with that field's domain, never one
+constant applied across a heterogeneous set (see `sota-databases` rules/01, *Modeling
+hygiene*, for the persistence half).
+
+### Detecting it — three probes, decreasing precision
+
+1. **Producer (near-zero false positives, AST-checkable).** One function returning the
+   *same constant* from a not-found branch and from an `except` branch. That shape is
+   almost never intentional, and it is the declaration — fix it once and every caller
+   is fixed.
+2. **Asymmetric guard (the one that catches the live bug).** A comparison where one
+   operand is filtered against the sentinel and the other is not. Greppable in review
+   and visible in a diff; see the example above.
+3. **Truthiness-as-presence.** `if x:` / `if x and ...` guarding an `int` whose domain
+   includes the sentinel or `0`. High recall, high false-positive rate — use it to
+   build a list to read, not a gate.
+
+**A value-based lint ("flag any `-1` in this field") is only sound where the field's
+domain is stated non-negative, and you cannot assume that per-field from the converter
+— the converter is uniform, the domains are not.** A field where the producer emits
+`-1` legitimately (an index meaning "not an argument", an enum's *unset* member, a
+`ORDER` that is genuinely signed) makes such a lint 100% false positive, and the code
+*cannot recover* which meaning a stored `-1` had. So: key the rule on the
+**declaration**, and add a value lint only on the subset that carries an explicit
+non-negative domain declaration — which usually does not exist yet, and writing it
+down is part of the fix. Measure the per-field distribution before you lint: a field
+where the sentinel is 99% of rows and one where it is 0% are different problems.
+
 ## 3. No `Any` leaks
 
 `Any` disables checking transitively — one `Any` return poisons every downstream variable.
@@ -235,6 +324,12 @@ grep -rn "# noqa$" --include="*.py" .
 # Legacy typing forms — ruff UP should be clean
 uvx ruff check --select UP,ANN --statistics .
 grep -rn "typing.Optional\|typing.List\|typing.Dict\|Optional\[" --include="*.py" src/ | head
+
+# In-band sentinels standing in for None (§2a) [HIGH where the value is compared]
+grep -rnE "return -1|return 0[^.0-9]|= *-1 *(#|$)" --include="*.py" src/    # producer: same constant from two branches?
+grep -rnB2 -- "-> int:" --include="*.py" src/ | grep -c "except"            # int-returning fn with an except arm
+grep -rnE "if [a-z_]+ (and|>) 0.*<|> 0.*if" --include="*.py" src/           # asymmetric guard: one operand filtered
+grep -rnE "^\s*if [a-z_]*(num|idx|index|count|offset|line|col)[a-z_]*:" --include="*.py" src/  # truthiness-as-presence
 
 # Unhandled Optionals / implicit None returns
 uvx mypy --strict src/ 2>&1 | grep -c "error"                     # any errors = not strict-clean

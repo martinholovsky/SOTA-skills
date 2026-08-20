@@ -163,7 +163,15 @@ deprecates that spelling**, `DEP0190`, because args are concatenated unescaped);
 `exec.Command` (fine; never wrap in
 `sh -c`); Rust `Command` (fine — measured 2026-08-19, **neither `.arg` nor `.args`
 splits on whitespace**, so the argv guarantee holds; the documented exception is
-Windows `.bat`/`.cmd`, `sota-rust` rules/05 §9); Java `ProcessBuilder` with list.
+Windows `.bat`/`.cmd`, `sota-rust` rules/05 §9); Java `ProcessBuilder` with a
+**list** (measured 2026-08-20 on Temurin 25.0.3: it does *not* split on whitespace and
+no shell is involved — `ProcessBuilder("echo", "$HOME")` prints `$HOME` literally).
+Java's footgun is the *other* API: **`Runtime.getRuntime().exec(String)` tokenizes the
+string on whitespace** (measured: `exec("printf [%s]\n one two")` printed `[one]` and
+`[two]` separately), which is the same defect as `shell:true` — and the JDK says so
+itself: all three `String`-taking `exec` overloads carry
+`@Deprecated(since="18", forRemoval=false)` while the `String[]` ones carry nothing
+(read from `Runtime.class` reflection on the running JDK, not from docs).
 
 **R5.2 — Argument-level injection still exists with argv arrays:** values starting
 with `-` become flags (use `--` separators); some tools have argument-driven exec
@@ -197,8 +205,7 @@ Read that language's subprocess section before trusting the timeout: `sota-golan
 rules/05 §3, `sota-python` rules/05 §2, `sota-rust` rules/05 §9,
 `sota-javascript-typescript` rules/05 ("Command injection via child_process").
 
-Four measured under the same test, and no two agree on all three questions —
-**Java is not among them and its row above is unverified**:
+**Five** runtimes measured under the same test:
 
 | runtime | deadline fires? | process tree killed? | caller told? |
 |---|---|---|---|
@@ -206,10 +213,19 @@ Four measured under the same test, and no two agree on all three questions —
 | Python 3.14 | yes, on schedule | not by the timeout | yes — `TimeoutExpired` |
 | Rust 1.97 + tokio | yes (2.0 s) | no — child *and* grandchild keep running | yes — `Err` from `timeout` |
 | Node 22 | yes (305 ms on a 300 ms budget) | no — grandchild still running | **no — `err` was `null`** |
+| Java 25 (Temurin 25.0.3) | yes (2003 ms on a 2 s budget) | not by the timeout, and `destroy()` orphans the grandchild — **but `Process.descendants()` + `destroyForcibly()` does kill it** | yes — `waitFor(t, unit)` returns `false` |
 
-The column that matters is the last one: three of the four leave the process tree
-alive, and Node does not even surface an error, so "the timeout worked" and "the work
-is still running" are the same observation.
+**Not one of the five kills the process tree as part of the timeout.** Read the last
+column next: Node does not even surface an error, so "the timeout worked" and "the work
+is still running" are the same observation there. Then read Java's middle cell — it is
+the only one of the five with a **portable process-tree API** (`descendants()`,
+Java 9+), so it is the only one where cleaning up after the deadline is a language
+feature rather than a `pgrep`/process-group exercise.
+
+*(Correction, 2026-08-20: this paragraph previously claimed "no two agree on all three
+questions". At this table's granularity that was already overstated before Java was
+added — Python and Rust answer all three the same way and differ only in mechanism.
+Replaced with what the table actually shows. Do not restore the stronger phrasing.)*
 This is the shape of trap that lives in the *language* skill while you are reading
 the *domain* one, so the routing that brought you here will not bring you to it.
 

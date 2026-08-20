@@ -19,6 +19,26 @@ file covers type/API design; idioms are in `01`, concurrency in `03`.
 - Validate arguments at public-method entry (`Objects.requireNonNull`,
   `require`/`check` in Kotlin) and fail fast with a clear message.
 
+## 1a. In-band sentinels: `-1` is not absence
+
+The JDK returns `-1` for "not found" throughout `String` — `indexOf`, `lastIndexOf`,
+and their `int`/`String`/`fromIndex` overloads all document *"or -1 if there is no
+such occurrence"* (Java SE 21 API docs). Documented and idiomatic there; the class
+(`sota-architecture` rules/02 §8a) is what happens when *your* API does it undocumented.
+
+- §1's rule is the answer for references: absence is `null` with an annotation, or
+  `Optional<T>` on a return. For primitives use `OptionalInt`/`OptionalLong`/
+  `OptionalDouble` or a boxed `Integer` — not a magic `int`.
+- Kotlin: `Int?` costs a box and is still the right call over `-1`; `indexOf`
+  returning `-1` is inherited from the JDK, so wrap it (`indexOfOrNull`) rather than
+  letting `-1` travel.
+- Never `Optional` on a **field** or a parameter (it is not `Serializable`, and it
+  adds a state); `Optional` is a return-type idiom. That constraint is why
+  primitives on fields so often regress to a sentinel — use a boxed type and
+  `@Nullable` instead.
+- Audit: `grep -rnE 'return -1;' --include='*.java' --include='*.kt' src/` for
+  producers, then comparisons where one operand is `-1`-filtered and the other is not.
+
 ## 2. Immutability and value semantics
 
 - Prefer immutable types (records, `final` fields, Kotlin `data class` with

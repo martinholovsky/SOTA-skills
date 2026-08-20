@@ -134,7 +134,7 @@ character — so log the size beside the offset. Class and fix: rules/10 §2.7.
 Run the same stage on a small and a large input. **Output that does not grow with
 input is suspect.** Findings, rows, log lines, bytes written, duration — pick a
 quantity the work should move and compare the two runs. This is the cheap version
-of §3.1: it catches a threshold-gated path without finding the threshold first.
+of `rules/13` §1: it catches a threshold-gated path without finding the threshold first.
 
 ### 2.4 Telemetry silence
 
@@ -179,159 +179,10 @@ in an audit.
 
 ## 3. Five classes rules/10 does not cover
 
-### 3.1 Scale-dependent silence — correct small, broken large
-
-Code that is right on fixtures and pathological or wrong in production, where the
-difference is a number nobody crossed in a test.
-
-Shapes to look for:
-
-- **Unbounded traversal**: recursion without a depth cap; variable-length graph
-  queries with no bound (`[:AST*]` rather than `[:AST*1..12]`, Cypher
-  variable-length patterns, SQL recursive CTEs without a depth column). Unbounded
-  is not "thorough" — it is a query that times out and returns nothing on the
-  inputs that matter most.
-- **Whole-input reads**: loading a file, table, or response fully into memory.
-- **Per-item queries inside a loop** over an unbounded set (N+1).
-- **Budgets that truncate rather than fail** (time, size, row, token caps).
-- **Paths gated behind a size threshold that fixtures never cross** — chunking,
-  sharding, pagination, streaming, multi-part upload. The gated branch is
-  effectively untested code that only ever runs in production.
-
-The tell: **the threshold is a literal in the code and no fixture crosses it.**
-
-**Budget exhaustion is the silent sub-case worth its own rule.** A stage that
-logs `skipped 12 rules (budget exhausted)` at INFO and returns a normal-looking
-result has reported *partial* coverage as *complete*. The consumer cannot tell
-"clean" from "clean as far as we got". Rule: a truncating budget degrades loudly
-(rules/10 §3) **and** the result carries the partiality in its own value —
-`coverage: partial`, `skipped: 12`, a distinct status — never only in a log line.
-An audit finding here is the missing field, not the budget.
-
-Proof required: state the trigger **numerically** (threshold, node count, row
-count) and show the fixtures never reach it. Measure at both scales where cheap.
-Performance framing of the same code → `sota-performance` rules/01; the fixture
-side → `sota-testing` rules/03.
-
-### 3.2 Stale-artifact no-op — a key narrower than the behaviour
-
-A cache, tag, fingerprint, or memo keyed on **fewer inputs than actually
-determine the output**, so a real change is silently ignored and a stale artifact
-is reused. Nothing errors; the pipeline is simply operating on last week's answer.
-
-Ask of every key: **what input can change while the key stays constant?**
-
-Where they hide: cache keys, memoization decorators, content hashes, image and
-artifact tags, `if exists: skip`, lockfiles, generated code checked into the
-repo, incremental-build stamps.
-
-The usual omissions are not the source file — they are everything *around* it:
-the tool or ruleset **version**, compiler/interpreter flags, the config that
-selects behaviour, the environment or platform, and the schema the output is
-shaped by. A scanner cache keyed on the target's hash but not on the ruleset
-version keeps serving pre-rule-update results.
-
-Proof required: change the omitted input, show the key is unchanged, and show the
-stale artifact being reused (a cache-hit log, an unchanged output hash, a build
-that skipped the step).
-
-Rule for BUILD: the key covers every input that changes the output, tool versions
-included; when unsure, add a version salt and take the cheap re-computation. See
-`sota-devsecops` rules/04 for the security-relevant case (a cache key must also
-carry the **trust context**, or a lower-trust build can poison a release).
-
-### 3.3 Format assumption generalised from one sample
-
-A parser built against one observed sample of an external interface, where a
-sibling field, a newer version, or an edge case has another shape. Indexing into
-external JSON/CSV (`x[0]`, chained `.get().get()`), assumed column counts, a
-tagged union read as a flat record, an optional field treated as required.
-
-**The silent sub-case: lenient parsers that accept malformed input and return a
-plausible-but-wrong value** rather than raising. Verified 2026-07-30 on the
-installed runtimes:
-
-```js
-parseInt("12abc")   // 12      — trailing garbage ignored
-parseInt("")        // NaN     — which then propagates as a number
-Number(" 12 ")      // 12      — surrounding whitespace accepted
-```
-
-```python
-int(" 12 \n")       # 12       — whitespace accepted
-float("1_0")        # 10.0     — underscore separators accepted: "1_0" is not 1.0
-```
-
-A corrupted or unexpected field therefore yields *a number*, not an error, and
-every downstream stage treats it as data. This is a silent zero with a plausible
-disguise.
-
-Proof required: produce a **real sample from the installed version** that
-violates the assumption — captured output, a recorded response, a fixture pulled
-from the actual tool. Not a hypothetical.
-
-Rule for BUILD: parse strictly at the boundary — reject trailing garbage, require
-the declared type, validate against the interface's schema rather than against
-the one response you saw — and record which interface **version** you validated
-against, because that is the input §3.2 says your cache key is probably missing.
-
-### 3.4 Contract drift by interaction — the seam nobody declared
-
-Neither component is wrong. A change to a **producer** silently alters a layout
-its **consumer** depends on: file name, directory shape, column order, separator,
-units, encoding, per-label files where there was one combined file. Both sides
-pass their own tests — each knows only its own side of the seam.
-
-What separates this from §3.3 is *where the assumption lives*: §3.3 is a consumer
-generalising from one sample of an external interface; this is an internal seam
-**no schema describes**, so nothing exists for a registry or a compat check to
-compare. Declared contracts are `sota-data-engineering` rules/04 and
-`sota-testing` rules/04 — this class is what is left when none exists.
-
-The high-yield trigger is a change that is not a code change: **selecting a
-different backend, engine, driver, or frontend** for one class of input, where
-the new one writes a different layout as a side effect. One config line moves,
-the format change is undocumented, and the stage downstream reads zero rows and
-reports "produced no output" — a silent zero (§1) with an innocent-looking cause.
-
-Rule for BUILD: when you change a producer, **run the consumer on that
-producer's real output** before merging; isolation tests pass on both sides while
-the seam is broken. Rule for AUDIT: for every artifact handed between stages,
-name its layout, its writer and its reader — where no schema pins them, the pair
-is a finding awaiting its first change.
-
-### 3.5 Location-dependent silence — correct here, empty there
-
-A filter whose predicate can match something in the **ambient environment** rather
-than in the data. The canonical shape is a path-component exclusion tested against an
-**absolute** path:
-
-```python
-# BAD — p.parts is absolute, so this depends on where the checkout lives
-files = sorted(p for p in ROOT.rglob("*.yaml") if "private" not in p.parts)
-
-# GOOD — anchor the predicate to a known root
-files = sorted(p for p in ROOT.rglob("*.yaml") if "private" not in p.relative_to(ROOT).parts)
-```
-
-On macOS `/var` is a symlink to `/private/var`, so a checkout made under `mktemp -d`
-resolves beneath a `private` component and the filter matches **every** file. Verified
-2026-08-16: `Path(mktemp_dir).resolve()` contains `private` in `.parts`. The suite then
-reported `SKIPPED [1] ... got empty parameter set` for three parametrised tests, the
-schema validation scanned nothing, and coverage still read 86%. It passed in the
-author's working tree and failed only in a fresh clone — and would have passed on a
-CI runner too, whose checkout path contains no `private` component.
-
-Generalise past paths: **any predicate that can be satisfied by the environment** —
-an absolute path component, a hostname, a username, an env var, a locale, a timezone —
-differs between laptop, container and runner, and the failure mode is an empty
-collection rather than an error. Two defences, and you want both:
-
-- **Anchor the predicate** to a known root or an explicit allowlist, never to whatever
-  the ambient string happens to contain.
-- **Assert non-empty on every collection a suite iterates.** `assert files, "no
-  fixtures found; this suite would vacuously pass"` is what turns silence into a
-  failure — in the reported case it was the *only* reason the bug surfaced.
+Moved to [`rules/13`](13-context-dependent-silence.md) — scale-dependent silence,
+stale-artifact no-ops, format assumptions generalised from one sample, contract
+drift at an undeclared seam, and location-dependent silence. §2's diagnostics are
+how you notice one; `rules/13` is what you are looking at once you do.
 
 ## 4. An assert is not a control in production
 
@@ -411,7 +262,7 @@ control switched off. Say so in the finding rather than shipping the fix blind.
 
 1. **Every gate**: CI jobs, pre-commit hooks, health and readiness checks,
    admission/validation webhooks, authz checks, quality gates. Mutation-test each
-   one — a gate you have never seen reject anything is unverified (rules/10 §2.13).
+   one — a gate you have never seen reject anything is unverified (rules/14 §4).
 2. **The tests *of* those gates**: does any test assert the gate **fails** on bad
    input? Happy-path-only tests are how vacuous controls survive review
    (`sota-testing` rules/09).
@@ -422,12 +273,21 @@ control switched off. Say so in the finding rather than shipping the fix blind.
 5. **Shell and CI glue**: pipelines without `pipefail` mask a non-final failure;
    globs that match nothing; `find -exec` over an empty set; `|| true`; any
    command whose exit code is discarded (`sota-shell-scripting` rules/01).
-6. **Caches, tags, fingerprints** (§3.2).
+6. **Caches, tags, fingerprints** (`rules/13` §2).
 7. **Feature flags and config**: is the value **read** *and also* **applied**? A
    config field that parses, validates, and is never plumbed to the code path it
    names is a silent no-op — distinct from rules/10 §2.5, where the flag *is*
    applied, just more broadly than its name claims. Trace one flag end-to-end
    from file to the branch it is supposed to control.
+8. **In-band sentinels on a compared value** — a number whose domain includes an
+   "absent/unknown/error" marker (`-1`, `0`, `""`, `9999-12-31`). It defeats a
+   presence check (`-1` is truthy), and because it has an **ordering** it loses
+   every `<` and wins every `>`, so a guard silently skips one way and fires
+   spuriously the other. Grep the *producer* — one function returning the same
+   constant from a not-found branch and an error branch — then look for the
+   **asymmetric guard**: a comparison with one operand filtered against the
+   sentinel and the other not. That asymmetry, not the constant, is the finding
+   (`sota-architecture` rules/02 §8a).
 
 Start by enumerating every gate, guard, and audit in the codebase. For each: read
 the comment, read the code, then **make it fail on purpose**. The controls you
@@ -470,14 +330,14 @@ unvalidated instrument is not yet a finding.
 - [ ] After each fix, the **new path proven to have executed** (emission, counter,
       or asserted runtime effect), not just "tests pass" (§2.5)?
 - [ ] Unbounded traversals/recursion/variable-length queries bounded, and every
-      **size-gated path** exercised by a fixture that crosses the threshold (§3.1)?
+      **size-gated path** exercised by a fixture that crosses the threshold (`rules/13` §1)?
 - [ ] Truncating budgets degrade **loudly and in the returned value**
-      (`coverage: partial`), never only in a log line (§3.1)?
+      (`coverage: partial`), never only in a log line (`rules/13` §1)?
 - [ ] Every cache/tag/fingerprint key audited with "what input can change while
-      the key stays constant?" — tool/ruleset **version** included (§3.2)?
+      the key stays constant?" — tool/ruleset **version** included (`rules/13` §2)?
 - [ ] External-interface parsers validated against the **declared schema** and a
       real sample from the installed version, not one observed response; numeric
-      parsing rejects trailing garbage (§3.3)?
+      parsing rejects trailing garbage (`rules/13` §3)?
 - [ ] **No security, authz, bounds, or data-integrity check implemented as an
       `assert`**, and the deployment's flags (`-O`, `NDEBUG`, `PYTHONOPTIMIZE`,
       missing `-ea`) checked against any assert on a control path (§4)?
@@ -490,7 +350,7 @@ unvalidated instrument is not yet a finding.
       applied to the branch they name (§6.7)?
 - [ ] Every artifact handed **between stages** has its layout, writer and reader
       named, and any producer change validated by **running the consumer on real
-      output** — not by each side's own tests (§3.4)?
+      output** — not by each side's own tests (`rules/13` §4)?
 - [ ] Every script CI, a hook or a runbook references **actually executed this
       pass**, the silent ones recorded as dead until proven otherwise (§6)?
 - [ ] The tools that produced these findings held to the same standard —

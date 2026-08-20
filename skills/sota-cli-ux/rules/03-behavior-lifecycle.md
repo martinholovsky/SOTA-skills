@@ -44,6 +44,33 @@ shell completions, versioning the CLI surface.
   (`8 updated, 1 skipped, 1 failed`); overall exit nonzero if any failed
   (rules/02 §3); support resume rather than redo (§4).
 
+## 2a. `--self-test` for tools whose output is a verdict
+
+A linter, a health checker, a scanner, a policy gate, a `doctor` command — anything
+whose output is a **verdict** rather than an artifact — is an instrument, and an
+instrument that cannot fail returns a plausible verdict on whatever it is handed
+(`sota-code-security` rules/12 §2). From the outside a user cannot tell: *"0
+problems found"* and *"0 checks ran"* print the same, and the second is the ordinary
+result of a bad path, an empty glob, an over-narrow filter, or a missing toolchain.
+
+- **Ship a `--self-test`** (or `doctor --self-test`) that injects each check's
+  declared known-bad and asserts *that named check* reports it. Exit nonzero when a
+  check has no known-bad, when a mutation is not caught, **or when a probe fails for
+  an unrelated reason** — a non-zero exit from the wrong cause is a false pass, not
+  a catch (`sota-code-security` rules/12 §1b).
+- **Print the denominator on every ordinary run**, not only under `--self-test`:
+  `checked 128 files, 3 problems`. A count of zero problems is only meaningful
+  beside a count of what was examined, and users read the summary line, not the
+  config.
+- **Skips are output, not silence.** A check that could not run (missing toolchain,
+  no network, unsupported platform) prints `skipped: <reason>` and is counted
+  separately from `passed`. Folding skips into passes is how a tool reports green on
+  a machine where it did almost nothing.
+- **Keep `--self-test` offline and side-effect-free.** It is what a user runs when
+  they already suspect the tool, so it must not need the network, must not write to
+  the paths it checks, and must work on an installed copy — not just in the source
+  tree (`--dry-run`'s "exercise the real path" rule, §2, applies to it too).
+
 ## 3. Signals: Ctrl-C is sacred
 
 - First SIGINT: stop accepting new work, cancel in-flight operations, run
@@ -175,6 +202,7 @@ shell completions, versioning the CLI surface.
 - [ ] `time tool --help` ≪ 500ms; no network I/O on `--help`/`--version` (verify: airplane-mode or strace/dtruss spot-check).
 - [ ] Re-running `init`/`create`/`apply` twice converges; second run no-ops or reports "already" without failing.
 - [ ] Every mutating command has `--dry-run`; it runs the real plan path, prints concrete changes, writes nothing, and fails (nonzero) on what would fail.
+- [ ] Verdict-producing tools (lint/scan/check/`doctor`) ship a `--self-test` that injects each check's known-bad and asserts the **named** check caught it; every run prints what it examined, and skips are reported with a reason, never folded into passes.
 - [ ] Batch operations: per-item results + summary; nonzero exit on partial failure; resumable rather than restart-from-zero.
 - [ ] First Ctrl-C: prompt cleanup + quick exit, status 130 (signal re-raised); second Ctrl-C: immediate; terminal state (echo, cursor, raw mode) restored — tested inside prompts and progress bars.
 - [ ] Ctrl-C interrupts in-flight network calls promptly; SIGTERM handled like non-interactive SIGINT.

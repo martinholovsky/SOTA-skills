@@ -4,7 +4,7 @@ A rule written in prose is a **hypothesis that people will read it**. This repo 
 one measured counter-example: `LAST-VERIFIED` was documented in three separate
 places, mentioned across nine files, and **two separate sessions still proposed
 bumping it wrongly**, catching themselves only on verification. That is
-`sota-code-security` rules/10 §2.12 — *a natural-language instruction standing in
+`sota-code-security` rules/14 §3 — *a natural-language instruction standing in
 for an enforced control* — occurring in this repo's own tooling, so it became
 invariant 11 (2026-07-31).
 
@@ -47,7 +47,7 @@ A convention earns a gate only if it passes **all three**:
 
 ## The ledger
 
-### Enforced (17) — invariants 1–17
+### Enforced (18) — invariants 1–18
 
 Skill-file line cap · audit-checklist placement · internal-name denylist · description cap ·
 version lockstep · count surfaces · router completeness · link resolution ·
@@ -55,7 +55,8 @@ single `[Unreleased]` · rules-file indexed by its SKILL.md · `LAST-VERIFIED` s
 pairing · rendered asset no older than its source · scoreboard rows declare their sample size ·
 **a release declares its front-door terms and they resolve** · **the router's library map
 lists every `rules/NN` file, both directions** · **the hook `README.md` documents equals the
-one `install.sh` writes** · **a document describing the checks agrees with them**.
+one `install.sh` writes** · **a document describing the checks agrees with them** ·
+**every `§` section reference resolves**.
 Each is in `scripts/check-invariants.sh` and documented in
 `AGENTS.md`. (Corrected 2026-08-19: this section read "(14) — invariants 1–14" and named
 only thirteen, while 15 and 16 were already gated and described in the table below —
@@ -123,6 +124,7 @@ never said out loud, which surface only when one of them fails.
 | **A negative control for our own gates** | **partly** — no gate of ours has been caught inert, but two were caught *examining nothing* (2026-07-30) and the fix was to print the denominator, not to prove the check can reject | **yes** — an invariant that can no longer fail prints the same `ok` as one that can | **yes** — a fixture directory each invariant must reject, asserted non-zero | **GATED 2026-08-05 as `scripts/check-negative-controls.sh`**, its own CI job — 5/5 mutations caught by the intended check |
 | **The documented hook matches the installed hook** | **yes** — three different texts existed at once (2026-08-05): `README.md`'s JSON block, `install.sh`'s `HOOK_CMD`, and what was actually in a user's `settings.json`; the README's was two revisions behind | **yes** — nothing reads the README, so a doc showing a hook we no longer install is indistinguishable from a correct one | **yes** — extract the `command` string from the README's fenced JSON and compare it to `HOOK_CMD` | **GATED 2026-08-05 as invariant 16** — parses the README's fenced JSON and compares to `HOOK_CMD`; watched to fail on both drift directions and both empty-scope cases |
 | **A document that describes the checks agrees with them** | **yes** — twice in one week (2026-08-19): `CONTRIBUTING.md` listed part A's negative-control coverage as five invariants when the harness printed eleven, and this very file headed its enforced section "(14) — invariants 1–14" while 15 and 16 were gated *and described in the table below it* | **yes** — nothing reads these documents; a doc that under-describes the gates renders identically to a correct one, and both incidents were found by eye, after shipping | **yes** — the count is derivable from `check-invariants.sh`'s own `[k/N]` markers, and the coverage lists are printed verbatim by `check-negative-controls.sh` | **GATED 2026-08-19 as invariant 17** — with a deliberate carve-out: a number inside `"quotes"` is read as a quotation of old wording, not a claim, so a correction note can record what a document *used* to say. Scope stops where derivation does: the **probe count is not gated**, because a static count of call sites reads 13 against an actual 23 |
+| **Every `§` section reference resolves** | **yes** — six live defects on the check's *first* run over an unmodified tree (2026-08-20): `rules/11 §6.7` cited from two files including across a skill boundary, `sota-golang` rules/07 §6 in a five-section file, and four cross-skill refs whose bare `rules/NN` resolved to the citing skill's own numbering | **yes** — a `§` reference is prose, so invariant 8's link resolver never saw one; a stale pointer is indistinguishable from a good one until a reader follows it, and ~1,300 of them exist | **yes** — headings and ordered-list items are both parseable, and the reference forms are regular | **GATED 2026-08-20 as invariant 18**, deliberately **fail-open on ambiguity**: a bare `rules/NN` is tried against every skill named on the line and the containing skill, and any hit passes. Two authoring conventions had to be modelled before it was precise — `## §N ` headings and `§N.M` meaning *item M of §N* — and its own first draft flagged nine correct references, which is rules/12 §2.1's "generalised from one sample" committed by the instrument itself |
 | **Every CI job that can fail is a required check** | **yes** — `Negative controls` and `Shell lint` have run on every PR since they were added and neither can block a merge (found 2026-08-05) | **yes** — a non-required job renders identically to a required one in the PR UI; only the protection API distinguishes them | **yes** — diff the workflow's job names against `required_status_checks.contexts` | **CLOSED 2026-08-05** — all four jobs made required. Not a script: the remedy was a protection change, so the "gate" here is GitHub's own. Verified the way this ledger demands — a PR with a deliberately failing negative control went from mergeable to refused |
 
 **How the block came off.** This sat blocked on *"needs a machine-readable
@@ -150,6 +152,18 @@ That leaves **one** candidate, and it is blocked on a prerequisite this ledger
 cannot supply. The actionable set from *written* conventions is now empty — which,
 with finding 2b below, is the useful state to be in: the next gate will come from an
 incident, not from re-reading the docs.
+
+**And a third time, in a new way (2026-08-20, invariant 18).** The prediction holds —
+nothing about `§` references was ever a *written* convention, so re-reading the docs
+could not have surfaced it. What is new is the trigger: the gate was proposed because a
+**planned change** (splitting two rules files) would create a hazard nothing checked,
+and it was built *before* the change. Applying the three filters honestly at proposal
+time, the first one — *has it already failed?* — read **no**. Running the check answered
+it retroactively: **six live defects** already existed, one of them a cross-skill
+citation. So the useful lesson is narrower than "gates come from incidents": a gate can
+also come from asking **what would this refactor break that nothing would tell me
+about**, and the answer is often that it is already broken. Cost of getting the order
+right: 27 further references broke during the split, all caught.
 
 **And it did, twice, within three days (2026-08-05).** The two rows added above came
 out of ordinary work — a router map found stale while adding a rules file, and a rule

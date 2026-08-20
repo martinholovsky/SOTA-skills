@@ -39,6 +39,24 @@ lessons-log — its own best structural idea, applied to ourselves.
 
 ## Log
 
+> **Pointer translation, 2026-08-20.** `sota-code-security` `rules/10` and `rules/11`
+> were split. Landed-in pointers in older rows are **left as written** — they record
+> where an idea landed *at that release*, and rewriting them would falsify the history
+> this log exists to keep. Translate with this map:
+>
+> | old | new |
+> |---|---|
+> | `rules/10` §2.10 | `rules/14` §1 (unearned claims in reporting output) |
+> | `rules/10` §2.11 | `rules/14` §2 (shipped-artifact gaps) |
+> | `rules/10` §2.12 | `rules/14` §3 (instruction standing in for a control) |
+> | `rules/10` §2.13 | `rules/14` §4 (a control that never executes) |
+> | `rules/10` §2.14 | `rules/14` §5 (parked in observe-only mode) |
+> | `rules/11` §3.1–3.5 | `rules/13` §1–§5 (context-dependent silence) |
+>
+> Invariant 18 keeps *live* `§` references honest, but its scope is `skills/` only —
+> which is why this note exists rather than a gate.
+
+
 | Date | Source | Idea | Verdict | Landed in |
 |------|--------|------|---------|-----------|
 | 2026-07-24 | [training-knowledge-vault](https://github.com/Eolas-bith/training-knowledge-vault) `vault-doctor.py` | Resolve internal Markdown links in CI so a move/rename can't leave dead links | **adopted** | `scripts/check-invariants.sh` invariant 8 · v1.19.1 |
@@ -158,6 +176,10 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-08-19 | Roadmap item 8, worked | **The Node row was written from recall** | **adopted with a correction** | `sota-sandboxing/rules/04` R5.1 + `sota-javascript-typescript/rules/05`. The row was *right* but incomplete: Node now ships **DEP0190** deprecating args-with-`shell:true`, and Node's `timeout` fires on schedule while leaving the grandchild alive **and reporting `err = null`**. Java remains unmeasured — the JDK is absent here — and is recorded as open rather than asserted · v1.22.12 |
 | 2026-08-19 | Reading invariant 17 back the day after it shipped | **A stated count and the actual list drift independently** — correcting "runs N checks" everywhere while forgetting a table row leaves every count claim in agreement | **adopted** | `check-invariants.sh` [17] now asserts `AGENTS.md`'s table and `CONTRIBUTING.md`'s list each enumerate **1..N with no gaps**; watched to fail both ways and to pass after restore. Residual stated in CONTRIBUTING item 17: it does **not** check that row 12 and item 12 describe the same invariant, because matching prose across two deliberately different granularities is not mechanically checkable · v1.22.13 |
 | 2026-08-19 | Field brief from a session applying the library — a recon profile that came back empty | **A cap on a generator's *output*, then parsed.** `rules/10` §2.7 covers truncating input *into* an inspector; the inverse — an unset `max_tokens` truncating a JSON document that is then `json.loads`-ed — is the same family and the rule text, example and checklist all point at input | **adopted with a correction** | `sota-code-security/rules/10` §2.7 (the mirror + checklist), `rules/11` §2.2 (the tell: produced size landing on its cap; a parse-error offset needs the document length), `sota-llm-engineering/rules/02` (set `max_tokens` explicitly, assert `output_tokens < max_tokens`) + the three index surfaces that said "truncation before inspection". Correction: the brief reads the class as unstated, and it is stated — for LLM output only, at `sota-llm-engineering/rules/02:199` and `rules/04:251` ("truncated output never parsed as valid"), in a skill an inert-control pass never loads. What was genuinely absent is the **general** producer form, the **unset-default** variant (no truncation operator to grep for, so §2.7's own procedure walks past it), and the size-vs-cap arithmetic — `rules/05:147` alerts on a `stop_reason=max_tokens` spike, which is the metadata tell, not the arithmetic one · v1.22.14 |
+| 2026-08-20 | Field brief from a session applying the library — three ideas | **A `--self-test` mutation harness as a mode of the tool**, so "this check can go red" is a property of the health suite rather than of whoever last edited it | **adopted with a correction** | `sota-code-security/rules/12` §1b + checklist, `sota-cli-ux/rules/03` §2a + checklist, two SKILL.md index rows. Correction: the *class* is covered three times over (rules/12 §1 mutation probe, §2.1 "the instrument that cannot fail" — which is literally a mutation harness reading every non-zero exit as a catch — and `sota-devsecops/rules/05`:311 "every gate ships a committed known-bad"). What was absent is the **packaging**: everywhere the library states it, the probe is a committed fixture plus a separate job, i.e. a convention someone must remember when adding a check. Nothing said to make it a mode of the tool, where a check with no declared known-bad *fails the self-test* · unreleased |
+| 2026-08-20 | Same brief, idea 3 | **Gateway access logs, still absent — which is why "is this graph feature used?" was answered by measuring the corpus instead** | **adopted with a correction** | `sota-observability/rules/05` §7a + checklist, cross-ref from `sota-api-design/rules/02` §5 step 4, observability SKILL.md row. Correction: the requirement is **already stated**, at `sota-api-design/rules/03`:227 ("without per-field usage data you can never delete anything") and `rules/02`:100 ("You cannot sunset what you can't attribute") — so the accurate verdict is *unreachable, not absent*: it lives in `sota-api-design`, which an observability or platform task never loads, and `sota-observability` mentions access logs exactly once (`rules/05`:56) and only to *exclude* the health endpoint from them. The genuinely new part is the **residual** the brief's incident actually produced — the substitute measurement. `grep -rniE "proxy (metric\|measure)\|answers a different question" skills/` returned zero hits · unreleased |
+| 2026-08-20 | Same brief, idea 2 (deferred, then answered the same day with a measured field report) | **The in-band sentinel — a value from the domain standing in for absent** | **adopted** | `sota-architecture/rules/02` §8a (**the class, stated once, language-neutral**), `sota-python/rules/02` §2a (worked example) + checklist greps, `sota-databases/rules/01` *Modeling hygiene* + checklist (persistence half), one-line pointer in `sota-python/rules/03` §12, two SKILL.md rows. Confirmed absent by two searches before writing (`sentinel` → 23 hits, all unrelated; `return -1|in-band|magic (number|value)` → nothing on the class); nearest prior coverage was `sota-c-cpp/rules/04`:25 (one banned-API row) and `sota-performance/rules/05`:170 (the principle, stated once and scoped to cached absence). **Filed to databases `rules/01` rather than the reporter's suggested `rules/02`**: how absence is encoded is a modeling decision, and `rules/02` is migrations. **Scope corrected on review**: the first cut filed the class inside `sota-python`, which would have hidden a language-neutral defect from nine other language readers — the per-language part is the *detector*, not the class. Now a §8a in architecture plus a **measured** row in each of Go, Rust, C/C++, JVM, JS/TS, .NET, PHP, Ruby, and a pointer from Swift. The reporter's measurement is what made it writable — see the entry · unreleased |
+| 2026-08-20 | Operator question — "if `sota-code-security` is close to full, can't you split it… maybe `-audit` and `-build`?" | **Split the files, not the skill — and gate `§` references first** | **adopted with a correction** | `scripts/check-invariants.sh` invariant **18** + `scripts/lib/check-section-refs.py` + harness probe 18 (24 probes), then `rules/13` (from `rules/11` §3) and `rules/14` (from `rules/10` §2.10–2.14): 497→357 and 496→362 lines. **Correction, with the measurement**: a skill split buys **no** headroom — invariant 1 enumerates per *file*, so the files arrive unchanged — and build/audit is the wrong axis here because invariant 2 welds an `## Audit checklist` onto all 259 rules files. The build-vs-audit framing is recorded as declined in `docs/ROADMAP.md` item 12, with the defensible seam (classes vs verification) and its router-line cost. The check went first **because the split is what creates the hazard**, and it found six live defects before a single line moved, then caught 27 the split itself broke · unreleased |
 
 ## Entries
 
@@ -982,3 +1004,143 @@ section: an offset is a numerator.
 
 **Measurement status:** adopted on reasoning and on the reporter's reproduction. **No efficacy
 lift is claimed or measured. Do not cite one.**
+
+### 2026-08-20 — three ideas from a session applying the library; two adopted, one deferred on placement
+
+The intake shape from `docs/MAINTENANCE.md` again: a session that *used* the library
+hands back what it found missing. Two of the three were already covered as classes and
+missing as **mechanisms**, which is the correction worth recording — a keyword search
+would have closed both as "already covered" and shipped nothing.
+
+**1. `--self-test` as a mode, not a harness.** The library states the mutation probe
+(`rules/12` §1), states that an instrument must be watched to produce a wrong answer
+(§2.2), states that every gate needs a committed known-bad (`sota-devsecops/rules/05`
+§5.6), and even names this exact failure — §2.1's *"a mutation harness reporting 18/18
+controls caught while every run died before the test suite started"*. In all of it the
+probe is an artifact **beside** the checks. The brief's claim is about ownership: a
+harness in a separate CI job proves today's checks can fail and says nothing about the
+check added next week, because joining it is a convention enforced by prose and a
+reviewer. Put the probe inside the tool and a check with no declared known-bad fails
+the self-test, which moves the property from a person to the suite.
+
+This repository is the worked example, and it is on the wrong side of its own new rule:
+`scripts/check-negative-controls.sh` is a separate CI job, the "add your known-bad here
+too" instruction lives as a sentence in `AGENTS.md`, and "12 of 17 invariants are
+probed" — the gap being reported only because the harness prints it.
+
+**Closed later the same day.** That paragraph was written as an argument for someone
+else to act on; the argument was good enough to act on immediately.
+`check-invariants.sh --self-test` now fails on any check that is neither probed nor
+declared unprobeable, deriving both sets from the harness so there is no second list to
+drift (ROADMAP item 14). The counts above are left in quotes as what was true that
+morning — invariant 17 reads a quoted number as history, not a claim — and the current
+figures are 24 probes, 13 of 18.
+
+**2. Gateway access logs.** Filed as absent; it is *unreachable*. `sota-api-design`
+rules/02 §5 step 4 and rules/03 §11 both state the requirement, one of them in the
+brief's own words ("without per-field usage data you can never delete anything"), and
+`sota-observability` — which owns the telemetry pipeline under router rule 12 — mentions
+access logs once, to say the health endpoint should be excluded from them. Second
+release running, the accurate verdict is a **skill boundary**, not a coverage hole.
+
+The reusable part is the half the incident produced and no rule stated: with the signal
+absent, the question got answered from the **corpus**, which measures whether data
+shaped like the feature *exists* rather than whether anyone *requests* it. Those differ,
+and the error has a direction — stored data outlives its last reader, so the substitute
+over-reports use and argues for keeping the feature. That generalises (commit count for
+maintenance, manifest presence for reachability — `sota-devsecops/rules/03` §3.9 — a
+dashboard existing for someone opening it), so it landed as a class in
+`sota-observability/rules/05` §7a rather than as a line in the deprecation pipeline.
+
+**3. The in-band sentinel — deferred on placement for one turn, then adopted.** The
+class was clearly absent (searches in the table row) and clearly the kind of thing this
+library exists for, but the layer was unknown, and a rule filed to the wrong layer ships
+a detector nobody runs against the code that has the defect. The reporter came back with
+a declaration, a caller, and — the part that decided the rule's shape — a **measured
+per-field distribution** over 505,079 real rows.
+
+What that measurement changed, and why the rule would have been wrong without it:
+
+- The obvious rule is *"lint for `-1` in this field"*. Sound on five of the eight fields
+  the reporter measured (0 legitimate negatives, 9–99.95% sentinel), and **100% false
+  positive on two of them**, where the upstream producer emits `-1` legitimately (an
+  index meaning "not an argument"). One converter, one sentinel constant, eight fields,
+  **heterogeneous domains** — so the rule keys on the **declaration** (a producer
+  returning the same constant from a not-found branch and an `except` branch), and a
+  value lint is added only per-field, behind a domain declaration that in practice does
+  not exist yet. Writing that declaration down is part of the fix, not a prerequisite
+  for it.
+- On the two ambiguous fields the sentinel is **unrecoverable in principle**: a stored
+  `-1` could be the producer's real value or a converted empty, and no amount of
+  downstream care can tell. That is the argument for `NULL`/omitted-property in the
+  persistence half — a graph or document store has native absence, so writing a sentinel
+  *discards* information the store would have kept for free.
+- The reporter checked all four failure modes I proposed and returned **three noes with
+  evidence** (no aggregates over the field in a 2,141-query catalog; 0 of 16,631 findings
+  displaying a negative line; no sorts) and one yes: **comparison against a threshold**,
+  in 102 clauses across 41 rule files using line-number ordering as a temporal proxy. The
+  three noes are what let the rule say *check the queries that order or compare first*
+  instead of listing every hazard equally.
+
+**The tell the rule is built on is the reporter's, and it is the best part of the brief:
+the author knew.** In the guard they found, the *collection* side of a comparison is
+filtered against the sentinel (`x > 0`) and the *scalar* on the other side of the same
+`<` is not. Sentinel-filtering is applied per-site, so it lands wherever the author was
+thinking about it and is omitted everywhere else — which makes an **asymmetric guard** a
+far better audit signal than the sentinel constant, and it is visible in a diff. The
+`if line_num:` presence check above it is defeated by the same value, since `-1` is
+truthy.
+
+**Scope honestly recorded, from the reporter's own framing:** static reachability plus a
+measured input rate (the field is empty in 9.2% of nodes), with no before/after showing a
+specific result gained or lost. **Latent with measured exposure, not active.** The rule
+is written to that standard — it claims the predicate flips, not that a given finding was
+missed.
+
+**Scope corrected on review — the first cut filed it in the wrong place.** I put the
+class inside `sota-python` and justified it with "the producer is a function return and
+the greps are per-language". That justifies per-language **detectors**; it does not
+justify a per-language **class**, and filing it there would have hidden a universal
+defect from nine other language readers. The library already has the pattern for this —
+router cross-cutting rule 18, *"cryptography fans out — there is no single crypto
+skill"*. So: the class is stated once and language-neutrally in `sota-architecture`
+rules/02 §8a (next to *value objects and invariant-encoding types*, which is the same
+idea for a different axis), and each language skill carries the row that is actually
+specific to it.
+
+**Every language row was run, not recalled** — the [[cross-language-summary-tables-are-unverified]]
+lesson, applied deliberately after a Rust row in `sota-sandboxing` rules/04 shipped wrong.
+Seven of nine on a local toolchain (Python 3.14.6, Go 1.26.5, Node 24, PHP 8.5.8, Ruby
+4.0.6, rustc 1.97.1, clang 21), two from primary docs because no JDK or .NET SDK is
+installed here (Java SE 21 API docs; learn.microsoft.com `Int32.TryParse`, .NET 10) and
+labelled as such in the text. Two results changed the content rather than confirming it:
+
+- **The C row is platform-dependent, and I would have written it as universal.**
+  `(char)EOF == EOF` is **true** under the default signed `char` on x86-64 Darwin and
+  **false** under `-funsigned-char` (the default on ARM/PowerPC Linux) — so the classic
+  `getchar` bug is invisible on many developers' machines. And the diagnostic runs the
+  wrong way for them: clang emits `-Wtautological-constant-out-of-range-compare` only in
+  the *broken* configuration. That is `sota-code-security` rules/11 §3.5
+  (location-dependent silence), cited in place.
+- **JS `NaN` is better-behaved than `-1`, which inverts the obvious advice.** Measured:
+  `NaN > 20` and `NaN < 20` are **both false** (and `NaN === NaN` is false), so `NaN`
+  *poisons* and can never silently win a comparison; `-1 < 20` is **true**, so `-1`
+  *lies*. `parseInt`'s `NaN` is therefore the safer of the two sentinels. Also recorded:
+  `-1 ?? fallback` is `-1`, so `??` does not rescue a sentinel.
+
+Also measured and used: PHP's `strpos("abc","a") == false` is **true** while `=== false`
+is false — the canonical instance, and the reason PHP's row is the strictest; Ruby's
+search methods return `nil` (clean) while `"12abc".to_i` is `12` (silent partial parse);
+Rust's `None::<i32>.unwrap_or(-1)` is `-1`, which is how the sentinel re-enters a
+language that had designed it out; Go's `strings.Index` → `-1` is documented and
+idiomatic, so its row is about *undocumented* ones and about dropping `Atoi`'s error.
+
+**Not landed, and why:** the audit-sweep half belongs in `sota-code-security` rules/10
+§2 or rules/11 §3, which are the files that catalogue exactly this shape. Both are at
+**496 and 497 lines against the 500 cap**, so adding a class there means reflowing one
+of them — a separate change with its own review, not a squeeze. The detectors live in
+the two rules files' audit checklists meanwhile, so the audit half is not missing, only
+filed further from where a sweep would look.
+
+**Measurement status:** adopted on reasoning. **No efficacy lift is claimed or
+measured. Do not cite one.**

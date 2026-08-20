@@ -139,8 +139,8 @@ detect (ESC1-style): certificate request on an auth-EKU template where the
   ESC1 primitive), or a low-privileged account obtaining a cert that authenticates
   as an admin, then a **cert-based TGT (4768, PKINIT)** shortly after. **FPs:**
   enrollment agents legitimately enrolling on behalf of others (allowlist them),
-  auto-enrollment. **Enrich** with the template name and EKU. See identity
-  rules/07 §3 for which templates are dangerous (ESC1/ESC4/ESC6/ESC8).
+  auto-enrollment. **Enrich** with the template name and EKU. See
+  `sota-identity-access` rules/07 §3 for which templates are dangerous (ESC1/ESC4/ESC6/ESC8).
 
 ### NTLM relay & forced authentication — T1187
 

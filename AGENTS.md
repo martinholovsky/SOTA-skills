@@ -26,7 +26,7 @@ enforcement is on). Every change goes through a pull request:
 
 ## Invariants (enforced in pre-commit and CI)
 
-`scripts/check-invariants.sh` runs **17 checks** and fails the build on any of them. One
+`scripts/check-invariants.sh` runs **18 checks** and fails the build on any of them. One
 line each below. The *rationale* — and the real incident behind every one — lives in the
 script's own header, at the point of use, and the practical "what this means for your
 PR" version is in [CONTRIBUTING.md](CONTRIBUTING.md#the-invariants-enforced).
@@ -50,6 +50,7 @@ PR" version is in [CONTRIBUTING.md](CONTRIBUTING.md#the-invariants-enforced).
 | 15 | the router's **library map** omits a `rules/NN` file that exists, or names one that doesn't — checks 7 and 10 both miss this, and `rules/11` went unlisted for two releases |
 | 16 | the hook `README.md` **documents** differs from the one `install.sh` **writes** (`HOOK_CMD`) — the README's is what a reader copies by hand, so a stale block is the version that spreads |
 | 17 | a document that **describes** the checks disagrees with them — a stated count that isn't the script's, or a restated negative-control coverage list that isn't the harness's. Counts inside `"quotes"` are read as history, not claims |
+| 18 | a **`§` section reference** resolves nowhere — invariant 8 reads only `[text](file.md)` links, so ~1,300 prose references went unchecked and broke silently on any renumber or split |
 
 **Only instruction files are capped** — a file is capped iff an agent loads it *as
 instructions*: `skills/*/SKILL.md` and `skills/*/rules/*.md`, nothing else. README,
@@ -88,19 +89,19 @@ them — `git add` before believing a count.
 its own job, over **two** subjects: `check-invariants.sh` (part A) and `verify-setup.sh`
 (part B). Each probe injects a known-bad and requires *the intended check* to be the one
 that complains — a non-zero exit for any other reason is a **FALSE PASS**, not a catch.
-Part A mutates a good tree in a disposable git worktree; part B is inverted — it builds
-a fully-configured fake machine (`CLAUDE_CONFIG_DIR` + a throwaway repo + a stub `gh`)
-and removes one thing per probe. **23 probes** (re-run 2026-08-19: `PASS: 23/23`; wrong
-twice before, and deliberately **not** gated — a static count of call sites reads 13, so
-only running it is authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16,
-17** — 12 of 17 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. The five
-unprobed invariants (5, 9, 11, 12, 14) each need state a disposable worktree lacks — a
-tag, a merge base, an mtime — and the harness prints that reason. **A probe asserts its
-own mutation landed**: every mutation is a hardcoded literal, and a stale one made the
-harness print `NOT CAUGHT: INERT`, accusing a healthy gate. What is *not* covered is
-printed, not implied. Too slow for pre-commit (one full gate run per mutation). **Adding
-a check to either script? Add its known-bad here too**, or you have shipped something
-nobody has watched fail.
+Part A mutates a good tree in a disposable git worktree; part B is inverted, building a
+fully-configured fake machine (`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and
+removing one thing per probe. **24 probes** (re-run 2026-08-20: `PASS: 24/24`; wrong twice
+before, and deliberately **not** gated — a static count of call sites under-reads, so only
+running it is authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16,
+17, 18** — 13 of 18 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. The five
+unprobed invariants (5, 9, 11, 12, 14) need state a worktree lacks (a tag, a merge base,
+an mtime); the harness prints that reason, so what is *not* covered is printed rather than
+implied. **A probe asserts its own mutation landed** — they are hardcoded literals, and a
+stale one printed `NOT CAUGHT: INERT`, accusing a healthy gate.
+**Adding a check? Run `./scripts/check-invariants.sh --self-test`** — it **fails on any
+check neither probed nor declared unprobeable** (both sets derived from the harness), then
+runs it. Prose asking you to remember is what let invariant 18 ship probe-less.
 
 Separately, `scripts/check-freshness.sh` (run monthly by
 `.github/workflows/freshness.yml`) tracks the root `LAST-VERIFIED` stamp — the date
@@ -119,9 +120,9 @@ the setting. The pre-commit hook scans each commit locally.
 
 ## Conventions that matter
 
-- **Keep it generic.** Never commit personal or company-specific stacks or
-  project names, and never phrase guidance as an assumption about the reader's
-  setup. Products appear only as neutral examples ("e.g. PostgreSQL").
+- **Keep it generic.** Never commit personal or company-specific stacks or project
+  names, and never phrase guidance as an assumption about the reader's setup. Products
+  appear only as neutral examples ("e.g. PostgreSQL").
   Personalization lives in a local `profiles/<you>.md`, which is git-ignored
   (`profiles/*` except `profiles/example.md.template`) and must never be
   committed.
@@ -172,7 +173,7 @@ the setting. The pre-commit hook scans each commit locally.
   a session *applying* the library, and an unlicensed source whose ideas can be
   taken but whose text cannot, both land here on the same terms
 - [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md) — which of this repo's
-  conventions are **enforced** (17 invariants + 5 more inside the eval runners) and
+  conventions are **enforced** (18 invariants + 5 more inside the eval runners) and
   which are prose, with the three filters a convention must pass to earn a gate
   (has it already failed · does it fail silently · is it mechanically checkable).
   Read it before proposing a new gate — it argues against gating the ~18 judgment

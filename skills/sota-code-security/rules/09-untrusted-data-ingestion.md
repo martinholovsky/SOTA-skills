@@ -114,7 +114,7 @@ with zipfile.ZipFile(fp) as z:
   DoS — set a max nesting depth and document/field size cap; reject unbounded
   arrays before materializing. Use streaming parsers with limits for large feeds.
   CSV formula injection (CWE-1236) is an *export* concern handled at the render
-  boundary (§7), but neutralize on ingest too if cells round-trip to users.
+  boundary (`rules/01` §11), but neutralize on ingest too if cells round-trip to users.
 - **Fuzzy-hash / similarity libs on hostile input.** ssdeep/tlsh/imagehash and
   similar are fed exactly the malware/spam they analyze; malformed input crashes
   or OOMs them. Run them inside the same parser sandbox, time-bounded, with the

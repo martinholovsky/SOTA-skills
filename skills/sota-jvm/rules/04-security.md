@@ -34,6 +34,18 @@ Standards: [SEI CERT Oracle Java](https://wiki.sei.cmu.edu/confluence/display/ja
   "internal" values. `ORDER BY`/identifiers can't be bound: allowlist them.
 - **OS command**: `ProcessBuilder` with an argument **list** and no shell; never
   `Runtime.exec("sh -c " + input)`. Validate/allowlist the program.
+  **`Runtime.getRuntime().exec(String)` tokenizes its argument on whitespace** — it is
+  the `shell:true` of Java, and one tainted value carrying a space becomes two
+  arguments. The JDK agrees: the three `String`-taking overloads are
+  `@Deprecated(since="18", forRemoval=false)`; the `String[]` ones are not (read off
+  `Runtime.class` on Temurin 25.0.3, 2026-08-20). Any surviving `exec(String)` call is
+  a finding on the deprecation alone — grep below.
+  **Deadlines**: `waitFor(t, unit)` returns `false` on timeout and fires on schedule
+  (2003 ms on a 2 s budget, measured) — but it kills **nothing**, and `destroy()` reaps
+  only the direct child, orphaning any grandchild holding the inherited pipe. Java is
+  the one mainstream runtime with a portable fix: `p.descendants().forEach(
+  ProcessHandle::destroyForcibly)` before `p.destroyForcibly()` (Java 9+, verified to
+  kill the grandchild). Cross-language comparison: `sota-sandboxing` rules/04 R5.3a.
 - **LDAP/JNDI**: never pass attacker-controlled names to `Context.lookup` —
   this is the Log4Shell (CVE-2021-44228) class. Disable remote-codebase loading;
   validate URLs against an allowlist; keep logging libs patched.
@@ -100,6 +112,11 @@ grep -rnE 'MappingJackson2MessageConverter|JacksonJsonMessageConverter|new Kryo\
 # Injection — CRITICAL/HIGH
 grep -rnE '(createQuery|createNativeQuery|prepareStatement|executeQuery|executeUpdate)\([^?)]*\+' --include='*.java' .
 grep -rnE 'Runtime\.getRuntime\(\)\.exec|new ProcessBuilder' --include='*.java' --include='*.kt' .
+# The String-taking exec overloads TOKENIZE on whitespace and are @Deprecated(since=18):
+# a hit here is a finding on the deprecation alone, before any taint analysis.
+grep -rnE 'Runtime\.getRuntime\(\)\.exec\(\s*"' --include='*.java' --include='*.kt' .
+# waitFor(t,unit) reaps nothing: a destroy() with no descendants() sweep orphans grandchildren
+grep -rn 'waitFor(' --include='*.java' --include='*.kt' . | grep -v 'descendants'
 grep -rnE 'ctx\.lookup|InitialContext|new InitialDirContext' --include='*.java' .   # JNDI/Log4Shell-class
 grep -rnE 'SpelExpressionParser|Ognl|ScriptEngineManager|getEngineByName' --include='*.java' .
 

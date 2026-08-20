@@ -304,6 +304,26 @@ multi-tenant system: HIGH.
   CASCADE only when the child is meaningless without the parent).
 - Booleans that will grow a third state are status columns; model them as
   such the first time.
+- **Absence is `NULL` — or, in a document/graph store, an omitted property — never
+  an in-band value.** A `-1`, `0`, `9999-12-31` or `""` standing in for "unknown"
+  is a value the engine will happily compare, sort, index and aggregate as if it
+  were real. `NULL` is the one encoding every engine already knows to exclude from
+  `<`/`>` and from `AVG`; a sentinel pushes that filtering onto every read, and the
+  reads that forget fail **silently and directionally** — a sentinel loses every
+  `<` against a real value and wins every `>`, so an ordering predicate flips one
+  way or the other depending on which operand is missing. Document and
+  schemaless stores make this worse, not better: they have native property absence,
+  so writing a sentinel *discards* information the store would have kept for free,
+  and there is no column definition left for a reviewer to notice it in.
+- If a sentinel is genuinely forced (a fixed-width wire format, an upstream export
+  that cannot express absence), it is **per field with its domain written down**,
+  enforced (`CHECK (col >= 0 OR col = -1)` and a comment saying which is which),
+  and filtered **centrally on the read path** — one view, one repository method —
+  not re-derived in each of the queries that happen to remember. One sentinel
+  constant applied uniformly across a set of fields with *different* domains is the
+  common shape and the unrecoverable one: on a field where the producer also emits
+  that value legitimately, a stored sentinel is ambiguous forever. Producer-side
+  detail: `sota-python` rules/02 §2a.
 
 ## Audit checklist
 
@@ -332,3 +352,9 @@ multi-tenant system: HIGH.
 - [ ] Types: timestamptz everywhere, no float money, FK columns indexed,
       ON DELETE explicit, NOT NULL default, citext for case-insensitive
       unique text.
+- [ ] Absence modeled as `NULL`/omitted property, not an in-band sentinel
+      (`-1`, `0`, `9999-12-31`, `""`). Where one is forced: per-field domain
+      documented, a CHECK constraint distinguishing sentinel from legitimate
+      value, and read-path filtering centralized rather than repeated per query.
+      Check the queries that **order or compare** the column first — that is
+      where a sentinel changes an answer instead of just looking odd.

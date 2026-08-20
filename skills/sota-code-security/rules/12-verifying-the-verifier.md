@@ -109,6 +109,51 @@ control that refuses everything — and it is precisely the arm the deny-only ha
 drops. The same gap applies to a WAF ruleset, an egress allowlist, an input
 validator, an admission policy, and a rate limiter keyed too narrowly.
 
+## 1b. Where the probe lives decides whether it survives
+
+§1 and §1a describe probes as things you *run*. In any suite that keeps them they
+are also things somebody *maintains*, and the two usual homes both leak:
+
+- **Beside the checks** — a separate harness or CI job that injects a known-bad per
+  check. It proves today's checks can fail. It says nothing about the check added
+  next week, because joining the harness is a **convention**, enforced by a sentence
+  in a contributing guide and by whoever happens to review the PR.
+- **In a reviewer's memory** — "we watched it fail once". Unrecorded, and gone with
+  the person.
+
+Prefer a third home: **a mode of the tool itself** — `--self-test`, a `doctor`
+subcommand — that walks the same registry of checks the ordinary run walks, injects
+each check's declared known-bad, and asserts that *that check, by name* is the one
+that reports. "Every check can go red" then stops being a property of who last
+edited the suite and becomes a property of the suite:
+
+- a check with **no declared known-bad fails the self-test** instead of being
+  silently exempt, so the probe cannot be forgotten at the moment a check is added
+  — which is the only moment it is ever forgotten;
+- the probe **ships with the tool**, so it runs against the operator's own
+  installation — exactly where §1's stale-install and missing-dependency traps bite
+  (rules/11 §2.5), and where a harness that only ever runs in your CI cannot look;
+- the known-bad sits **next to the check's definition**, where the reviewer of a new
+  check is already reading.
+
+**The self-test is itself an instrument** (§2) and inherits every rule there. Three
+that decide whether its output means anything:
+
+- **Attribute the catch.** Requiring "the run failed" accepts a non-zero exit for an
+  unrelated reason as proof — a **false pass**, not a catch. Assert the intended
+  check is the one that complains.
+- **Assert the mutation took** (§1). A probe whose hardcoded known-bad has drifted
+  out of sync with the check reports `NOT CAUGHT` and accuses a healthy check.
+- **Report the denominator**: checks probed over checks registered. The gap is the
+  interesting number, and it is invisible in a pass/fail line.
+
+Two things a self-test does **not** establish, and both belong in its output rather
+than in a reader's assumption: checks whose known-bad needs state it cannot
+fabricate (a tag, a merge base, an mtime, a live upstream) are **skipped**, and a
+skip must print its reason instead of folding into the pass count; and a check that
+can fail may still have stopped covering the code that matters — scope drift is a
+separate failure with no diff to the check (`sota-devsecops` rules/05 §5.6).
+
 ## 2. Your instrument is a control
 
 A scorer, a quality gate, a benchmark, a coverage threshold, a lint config, a
@@ -137,7 +182,7 @@ route you to when the task does not look shell-shaped. That is exactly when it b
   user.has(permission)` in a test file counted as an authorization control. The
   denominator was on screen and went unread, which is the failure rules/11 §2.2
   exists to prevent.
-- **Generalised from one sample** (rules/11 §3.3, applied to yourself). Patterns
+- **Generalised from one sample** (rules/13 §3, applied to yourself). Patterns
   written against a single reference implementation flag every *other* correct
   spelling: a check keyed on the method name that reference happened to use; a
   rule that flagged the *correct* fix because the safe spelling shared a shape
@@ -173,7 +218,7 @@ answer on purpose.** Before its output is quoted anywhere:
   the code that ran.
 - **Sample and read before you count.** Report a count only after reading a
   sample of what it matched. A regex over prose over-counts hard — one such
-  sweep reported 50 unearned claims (rules/10 §2.10) where reading found 8.
+  sweep reported 50 unearned claims (rules/14 §1) where reading found 8.
 - **Validate on inputs where failure is possible.** "No false positives on three
   clean libraries" establishes nothing if none of them contains the construct the
   control keys on: it could not have failed. Pick inputs that *can* fail.
@@ -338,6 +383,11 @@ whose pathspec drifted.
 - [ ] **Mutation probe run on security-critical paths** — control body replaced
       with the permissive no-op, with the dependency forced present and the
       mutation's **runtime effect asserted** before trusting a green run (§1)?
+- [ ] Negative controls run as a **mode of the tool** (`--self-test`, `doctor`), not
+      only as a harness beside it — a check with no declared known-bad fails the
+      self-test, each probe asserts the **named** check caught it rather than
+      accepting any non-zero exit, skips print their reason, and the run reports
+      checks-probed over checks-registered (§1b)?
 - [ ] Every **enforcement** control (cap, quota, filter, allowlist, sandbox
       policy) carries an **allow arm** as well as a deny arm — a representative
       legitimate case completing *through* the control, not against the bare

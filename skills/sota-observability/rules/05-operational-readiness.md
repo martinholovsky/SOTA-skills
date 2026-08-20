@@ -219,6 +219,48 @@ Rules:
 - No averaged percentiles, no per-instance p99 walls (rules/02 §4); prefer
   route/tenant breakdowns over instance breakdowns for symptom dashboards.
 
+## 7a. The question with no instrument, and the substitute that answers a different one
+
+§7 assumes the data exists. The harder failure is a question with **no** instrument
+behind it — and it never presents as a gap, because somebody always finds a proxy
+and the proxy returns a number.
+
+The canonical case is a removal decision. *"Is this feature still used?"* is a
+question about **requests**, and it is answerable only from request-level telemetry
+at the edge: gateway/ingress/load-balancer access logs, or per-route and per-field
+usage metrics (`sota-api-design` rules/02 §5 step 4, rules/03 §11 — *without
+per-field usage data you can never delete anything*). With those absent, the
+reachable substitute is the **stored data**: query the corpus, count what carries
+the feature's shape, conclude.
+
+That answers *"does data shaped like this exist"* — a different question, with a
+different answer and a **known direction of error**. Stored data outlives its last
+reader, so the corpus systematically over-reports use and the substitute is biased
+toward keep-it. The shape recurs: commit count standing in for maintenance, a
+dependency's presence in a manifest standing in for it being reached (`sota-devsecops`
+rules/03 §3.9), a dashboard existing standing in for someone opening it.
+
+Rules:
+- **Edge access logs are a required telemetry stream**, not an optional one, wherever
+  a gateway/ingress/LB fronts a versioned or deprecable surface. Sample if volume
+  demands, but **retain across one deprecation runway** — rules/02 §5 publishes a
+  ≥ 6-month runway, so 30-day retention cannot support the decision it exists for.
+  Log the route *template* and the principal *id*, not the raw path and identity
+  (cardinality and PII: rules/01).
+- **Instrument the question you will be asked, not only the ones you are asked
+  today.** "Which surfaces can we retire?" is asked of every system that lives long
+  enough; it needs a per-route/per-field usage counter from the day the surface
+  ships (rules/02 §5's "usage metric the day its successor ships").
+- **When you substitute, say so in the same sentence as the number.** Name the
+  question you could answer, the question you were asked, and the direction the
+  substitution errs. *"Zero rows carry this field"* is evidence; *"nobody uses this
+  feature"* is a claim that measurement does not support.
+- **Prefer instrumenting forward over inferring backward.** If the signal is absent
+  and the decision is reversible, adding the counter and waiting one runway is
+  usually cheaper and always sounder than building a more elaborate proxy. Record
+  the gap as a finding in its own right — *a decision was made on a substitute
+  measure* is a durable observability defect, and it recurs on the next removal.
+
 ## 8. Synthetic monitoring
 
 Real-user telemetry goes silent exactly when traffic does — overnight
@@ -264,3 +306,8 @@ Rules:
       click-through to traces/logs.
 - [ ] Dashboards and alerts are code-reviewed and provisioned, not
       hand-edited; stale dashboards pruned.
+- [ ] Edge access logs (gateway/ingress/LB) exist for every deprecable surface,
+      with per-route/per-field usage counters and retention covering a full
+      deprecation runway — and where a usage question was answered from stored
+      data instead, the substitution and its direction of error are stated
+      beside the number, not left implied (§7a).

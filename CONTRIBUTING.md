@@ -211,6 +211,23 @@ are marked "needs verification", never asserted.
     and the README's is the one a reader copies by hand, so the stale one is the
     one that spreads. The check parses the fenced JSON rather than regexing the
     string, so reformatting the block is not a false positive.
+18. **a `§` section reference resolves nowhere**: invariant 8 resolves
+    `[text](file.md)` links; a `§` reference is **prose**, so the ~1,300 of them
+    across `skills/` were checked by nothing and broke silently whenever a section
+    was renumbered or a rules file split. Practical effect: if you renumber a
+    section, move one between files, or add a cross-skill pointer, name the skill
+    (`` `sota-golang` rules/05 §3 ``) — a bare `rules/NN` resolves against **your
+    own** skill. Added 2026-08-20, immediately before splitting `rules/10` and
+    `rules/11`, and it found **six** live defects on its first run over the
+    unmodified tree. Two conventions it had to learn, both found by *reading* the
+    findings rather than trusting the count: a heading may number itself `## 3.`
+    **or** `## §3 ` (missing the second form hid 102 valid references), and `§N.M`
+    means a `### N.M` heading in some files and **item M of the ordered list in
+    §N** in others — both legitimate. It is deliberately **fail-open on ambiguity**
+    (a bare `rules/NN` is tried against every skill named on the line and your own,
+    and any hit passes), because a gate that flags correct prose gets disabled.
+    **What it does not check**: plain `rules/NN` mentions with no `§` beside them,
+    and it cannot tell a *wrong-but-existing* section from a right one.
 17. **a document that describes the checks disagrees with them**: any stated count
     of invariants/checks that isn't the number `check-invariants.sh` prints, or a
     restatement of the negative-control coverage lists that isn't what
@@ -237,14 +254,21 @@ as a FALSE PASS, because a harness that accepts any failure reports full coverag
 testing nothing.
 
 Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 3, 4, 6,
-7, 8, 10, 13, 15, 16, 17 — 12 of 17; the harness prints the list and why the rest are
+7, 8, 10, 13, 15, 16, 17, 18 — 13 of 18; the harness prints the list and why the rest are
 not covered, so read its output rather than this sentence). Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
 fully-configured fake one — `CLAUDE_CONFIG_DIR` pointed at a temp home, a throwaway git
 repo, and a stub `gh` on `PATH` so run history is decidable — and each probe removes one
 thing (checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a). What is *not* covered is printed rather
-than implied. **Adding a check to either script? Add its known-bad there too** —
-otherwise you have shipped something nobody has ever watched fail. Not in pre-commit: it
-runs a whole gate per mutation.
+than implied. Not in pre-commit: it runs a whole gate per mutation.
+
+**Adding a check? Run `./scripts/check-invariants.sh --self-test`.** Its structural pass
+takes a second and fails if your new check has neither a known-bad in
+`check-negative-controls.sh` nor an entry in that script's *NOT COVERED* block saying
+why it cannot have one — so "I'll add the probe later" stops being possible rather than
+being discouraged. (It then runs the full harness, which is the slow part.) This exists
+because the instruction it replaces — *add its known-bad there too* — was prose, and
+prose did not stop invariant 18 shipping probe-less in its own commit. It is the rule
+from `sota-code-security` rules/12 §1b applied to us.
 
 Secrets are scanned separately by **gitleaks** (config in `.gitleaks.toml`);
 CI scans the full git history, the pre-commit hook scans each commit.

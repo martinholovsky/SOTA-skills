@@ -297,7 +297,7 @@ Three traps:
   decoder cannot emit, a handler registered for an event no producer sends, an adapter
   selected by a config value nothing sets. The symbol is genuinely referenced, so tools and
   greps mark the dependency used — but the branch is unreachable. One step earlier than
-  this is `sota-code-security` rules/10 §2.13 (a gate whose trigger never fires); the same
+  this is `sota-code-security` rules/14 §4 (a gate whose trigger never fires); the same
   two-axis check applies — *has this path ever executed*, not *does it exist*.
 - **Side-effect-only imports.** `import _ "…"` for a driver, a decorator that registers
   into a table, a plugin discovered by entry point. Legitimate — but confirm something

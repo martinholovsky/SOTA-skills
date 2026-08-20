@@ -7,6 +7,188 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`check-invariants.sh --self-test` — the repo now practises the rule it published
+  the same day.** `sota-code-security` rules/12 §1b argues a negative control belongs
+  *inside* the tool, so *"every check can go red"* is a property of the suite rather
+  than of whoever last edited it. This repo did not do that: the probes lived only in
+  `check-negative-controls.sh`, and remembering to add one was **a sentence in
+  `AGENTS.md`** — prose which did not stop **invariant 18 shipping probe-less in its own
+  commit**. The structural pass runs in a second and fails on any check that is neither
+  probed nor declared unprobeable, so "I'll add the probe later" is no longer possible.
+  Both sets are **derived from the harness itself** — the `probe N` calls and the
+  numbers in its own *NOT COVERED* block — so there is no second list to drift out of
+  sync. It then hands off to the harness, which watches each check actually fail.
+  Watched to fail on two mutations (a deleted `probe 13`; a probe added for the
+  declared-unprobeable check 5), with the clean tree reporting *18 checks: 13 probed,
+  5 declared unprobeable, 0 unaccounted*. The probe **count** stays deliberately
+  ungated — a static count of call sites reads 13 against an actual 24.
+
+
+- **The Java subprocess row, measured at last — and it changed three claims.** Run on
+  **Temurin 25.0.3** in a podman container, because no JDK is installed on the machine
+  that wrote every other row. `ProcessBuilder` is confirmed (no whitespace splitting,
+  no shell: `ProcessBuilder("echo", "$HOME")` prints `$HOME` literally). What the row
+  did *not* say: **`Runtime.getRuntime().exec(String)` tokenizes on whitespace** — the
+  `shell:true` of Java — and the JDK says so itself, all three `String`-taking
+  overloads carrying `@Deprecated(since="18", forRemoval=false)` while the `String[]`
+  ones carry nothing, read off `Runtime.class` by reflection rather than from docs.
+  On deadlines, `waitFor(t, unit)` fires on schedule (2003 ms on a 2 s budget) and
+  **returns `false`**, so unlike Node the caller *is* told; `destroy()` reaps only the
+  direct child and orphans a pipe-holding grandchild; and **`Process.descendants()` +
+  `destroyForcibly()` does kill the tree** — making Java the only one of the five
+  runtimes with a portable process-tree kill. `sota-sandboxing` rules/04 R5.1 and
+  R5.3a, `sota-jvm` rules/04 with two new audit greps.
+
+### Fixed
+
+- **Front-door surfaces the split silently invalidated.** No gate catches these:
+  `README.md` cited `rules/11` for two classes that had moved to `rules/13`, and
+  `rules/10` for three that had moved to `rules/14`; `docs/CONVENTIONS-LEDGER.md`
+  pointed at `rules/10` §2.12 for the class now at `rules/14` §3. Invariant 8 sees a
+  file link that still resolves, and **invariant 18's scope is `skills/` only**, so
+  `docs/` references remain on trust — which is why `docs/ADOPTION-LOG.md` now carries
+  a **pointer-translation table** rather than eight rewritten history rows: a landed-in
+  pointer records where an idea shipped *at that release*, and rewriting it would
+  falsify the history the log exists to keep.
+- **Two measured numbers in `docs/CONTEXT-MANAGEMENT.md` had rotted.** It said *"the
+  router is at 500/500 lines with no slack"* — re-counted, it is **494/500**, and that
+  number has previously read 491, so the sentence now says never to trust it in prose.
+  Its token table still listed `rules/10` as the third-largest instruction file; after
+  the split the third is `sota-docs-workflow/rules/01`.
+- **`docs/INDEX.md` knew none of this**, which is the recurring failure where a
+  capability lands in a rules file and never reaches the front door: it now routes to
+  `rules/13`, `rules/14`, the in-band-sentinel class, invariant 18 (with its
+  `skills/`-only scope stated), and `--self-test`.
+- **The README's audit-class count is now ten, not nine** — absence-encoded-as-a-value
+  is exactly what that section claims to hunt (the code is not wrong, and no linter
+  flags it) and it was missing from the front door.
+
+
+- **A cross-language claim the new measurement exposed as overstated.** R5.3a said
+  the four measured runtimes agreed on *"no two … on all three questions"*. At that
+  table's own granularity it was already false before Java arrived: Python and Rust
+  answer all three identically and differ only in mechanism. Replaced with what the
+  table shows — **not one of the five kills the process tree as part of the timeout**,
+  one (Node) does not even tell the caller, and exactly one (Java) ships a portable way
+  to clean up afterwards — with a dated note saying not to restore the stronger
+  phrasing.
+- **The probe's own first run was wrong, and is recorded that way.** Its liveness
+  check matched a `sleep` orphaned by the *previous* phase, so it reported Java's
+  tree-kill as failing. Re-run with per-phase markers and a control that demonstrably
+  reads both `true` and `false` before either result was believed
+  (`sota-code-security` rules/12 §2).
+
+
+- **Invariant 18 — a `§` section reference must resolve.** Invariant 8 resolves
+  `[text](file.md)` links; a `§` reference is **prose**, so the ~1,300 of them
+  across `skills/` were checked by nothing and broke silently whenever a section
+  was renumbered or a rules file split. Built deliberately **before** the split
+  below, and it found **six live defects on its first run over the unmodified
+  tree** — `rules/11 §6.7` cited from two files including across a skill
+  boundary, `sota-golang` rules/07 §6 in a five-section file, and four cross-skill
+  refs whose bare `rules/NN` silently resolved to the *citing* skill's own
+  numbering. Two authoring conventions had to be modelled before it was precise,
+  both found by **reading the findings** rather than trusting the count
+  (`sota-code-security` rules/12 §2.2): a heading may number itself `## 3.` **or**
+  `## §3 ` (missing the second form read one whole file as unnumbered and hid 102
+  valid references), and `§N.M` means a `### N.M` heading in some files and **item
+  M of the ordered list in §N** in others. The first draft flagged **nine correct
+  references** — rules/12 §2.1's *"generalised from one sample"*, committed by the
+  instrument itself. Deliberately **fail-open on ambiguity**, because a gate that
+  flags correct prose gets disabled ([CONVENTIONS-LEDGER](docs/CONVENTIONS-LEDGER.md));
+  an explicit `rules/NN` that exists nowhere **is** flagged, a case a probe caught
+  slipping through the first design. Watched to fail on three mutations, each
+  caught for the intended reason; a missing script makes it fail **closed**.
+  Harness now **24 probes, 13 of 18 invariants**.
+- **`sota-code-security` rules/13 and rules/14 — the two capped files split at
+  seams they already had.** `rules/11` §3 (*"Five classes rules/10 does not
+  cover"*) becomes **[rules/13 — Context-Dependent Silence](skills/sota-code-security/rules/13-context-dependent-silence.md)**:
+  five defects that are *correct under the condition you tested and silently wrong
+  under the one you shipped into* — scale, staleness, one-sample formats, an
+  undeclared seam, and location. `rules/10` §2.10–2.14 becomes
+  **[rules/14 — The Control That Is Not In Force](skills/sota-code-security/rules/14-control-not-in-force.md)**:
+  not a control that runs and does nothing, but one that is **not there** — absent
+  from the shipped artifact, standing as an instruction rather than code, never
+  triggered, parked in observe-only mode, and the report that claims otherwise.
+  `rules/11` 497 → 357 and `rules/10` 496 → 362. **Invariant 18 caught 27
+  references the split broke, across eight skills** — including one written the
+  same day in `sota-c-cpp` — which is the entire argument for building the check
+  first. With the headroom recovered, `rules/11` §6's hunt list gains the in-band
+  sentinel entry that had nowhere to go.
+
+
+- **A negative control belongs *inside* the tool, not beside it.**
+  `sota-code-security/rules/12` §1b: the mutation probe, the instrument bar and
+  the committed known-bad were all already there, and in every one of them the
+  probe is an artifact somebody maintains **next to** the checks — so it proves
+  today's checks can fail and says nothing about the check added next week,
+  because joining the harness is a convention enforced by prose and a reviewer.
+  Prefer a `--self-test`/`doctor` mode that walks the same check registry the
+  ordinary run walks: a check with **no declared known-bad fails the self-test**,
+  the probe ships to the operator's own installation (where §1's stale-install
+  trap actually bites), and the known-bad sits where a new check's reviewer is
+  already reading. With the three rules that decide whether its output means
+  anything — attribute the catch to the **named** check (a non-zero exit for an
+  unrelated reason is a false pass), assert the mutation took, report
+  checks-probed over checks-registered — and the two things it does not
+  establish, which must be printed rather than assumed: a skip prints its reason,
+  and a check that can fail may still have stopped covering the code that
+  matters. The CLI half is `sota-cli-ux/rules/03` §2a, for any tool whose output
+  is a **verdict** rather than an artifact: `"0 problems found"` and `"0 checks
+  ran"` print the same.
+- **The in-band sentinel — a value from the domain standing in for absent.**
+  `sota-python/rules/02` §2a is the producer half: a converter returning `-1` (or
+  `0`, or `""`) instead of `None` type-checks, collapses *absent* and *malformed*
+  into one indistinguishable value, survives the `if x:` presence check because
+  `-1` is truthy, and — the part that changes answers — carries an **ordering**, so
+  it silently loses every `<` against a real value and wins every `>`. Where
+  line/offset/version numbers are compared as a proxy for sequence, one missing
+  operand flips the predicate, and *which* way it flips depends on which side went
+  missing: fail-open in one direction, false positive in the other, from a single
+  input. The audit tell is not the constant but the **asymmetric guard** — one
+  operand filtered against the sentinel, the other, in the same comparison, not —
+  because sentinel-filtering is applied per site and so lands only where the author
+  was thinking about it. Three detectors in decreasing precision (producer /
+  asymmetric guard / truthiness-as-presence), with the constraint that decides the
+  rule's shape: **a value-based lint is only sound on a field with a stated
+  non-negative domain**, and one converter applying one sentinel across a
+  heterogeneous field set makes it 100% false-positive on any field whose producer
+  emits that value legitimately. Key on the declaration; add the value lint per
+  field. `sota-databases/rules/01` *Modeling hygiene* is the persistence half —
+  absence is `NULL` or an omitted property, and a document/graph store makes a
+  sentinel **worse**, not better, because it discards native absence the store would
+  have kept for free. Pointer from `sota-python/rules/03` §12; both audit checklists
+  extended, with *check the queries that order or compare first*. **Nine language
+  skills carry a measured row** — Go, Rust, C/C++, JVM, JS/TS, .NET, PHP, Ruby, plus a
+  pointer from Swift — because the class is universal and only the *detector* is
+  per-language. Seven rows were run on a local toolchain and two taken from primary
+  docs (no JDK or .NET SDK here) and labelled as such. Two runs changed the text
+  rather than confirming it: the C `EOF` bug is **platform-dependent**
+  (`(char)EOF == EOF` is true under the default signed `char`, false under
+  `-funsigned-char`, and clang warns only in the *broken* configuration — so it is
+  invisible on many developers' machines), and JS `NaN` is the **better-behaved**
+  sentinel (`NaN > 20` and `NaN < 20` are both false, so it poisons and can never win
+  a comparison; `-1 < 20` is true, so it lies) — which inverts the advice you would
+  write from memory.
+- **The question with no instrument, and the substitute that answers a different
+  one.** `sota-observability/rules/05` §7a. The requirement for per-route/per-field
+  usage telemetry was already stated twice in `sota-api-design` (rules/02 §5 step
+  4, rules/03 §11 — *"without per-field usage data you can never delete
+  anything"*), in a skill an observability or platform task never loads;
+  `sota-observability` mentioned access logs once, only to exclude the health
+  endpoint from them. Edge access logs are now a **required** stream wherever a
+  gateway fronts a deprecable surface, retained across a full deprecation runway
+  — a 30-day retention cannot support a decision with a 6-month runway. The new
+  part is the residual: with the signal absent, *"is this feature used?"* gets
+  answered from the **corpus**, which measures whether data shaped like the
+  feature exists rather than whether anyone requests it — a different question
+  whose error has a **direction**, since stored data outlives its last reader and
+  so over-reports use. Generalised (commit count for maintenance, manifest
+  presence for reachability, a dashboard existing for someone opening it), with
+  the rule that a substitution is named in the same sentence as the number.
+
 ### Changed
 
 - **The v1.22.14 cut's finding is now recorded where a future gate proposal will

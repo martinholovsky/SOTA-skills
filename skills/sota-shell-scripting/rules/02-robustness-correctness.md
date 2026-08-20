@@ -204,7 +204,7 @@ Two rules that make this safe rather than sloppy:
 
 - **A skipped check is not a passed check.** Print the skip on the same line the check
   would have used, count skips separately, and never let the summary read clean when a
-  check did not execute (`sota-code-security` rules/10 §2.13 — a control that never runs).
+  check did not execute (`sota-code-security` rules/14 §4 — a control that never runs).
   This repo does exactly that: four invariants print `SKIPPED: python3 not found` and CI,
   where python3 always exists, enforces them for real.
 - **Never auto-install.** Installing software is a change to the user's machine; on a

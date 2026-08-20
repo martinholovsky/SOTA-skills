@@ -83,7 +83,7 @@ The engineering contract that makes translation possible:
 ## 5. Layout-facing and locale-facing consequences
 
 - **Budget for expansion**: German/Finnish run roughly +35% over English
-  (worst-case strings and container behavior: frontend rules/04 §2a); write
+  (worst-case strings and container behavior: `sota-frontend-design` rules/04 §2a); write
   short English *and* let containers grow — both, not either.
 - Dates, numbers, currency, lists, relative time: **always through locale
   APIs** (`Intl.*` on the web, platform equivalents elsewhere) — never
