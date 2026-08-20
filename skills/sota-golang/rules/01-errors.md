@@ -108,6 +108,27 @@ Context errors: check `errors.Is(err, context.Canceled)` /
 `context.DeadlineExceeded` before counting a failure as a real one — a
 canceled request is not a dependency outage; don't page on it.
 
+### In-band sentinels — Go's are documented, yours are not
+
+Go's stdlib deliberately returns in-band sentinels and **documents them**:
+`strings.Index`/`LastIndex` return `-1` when not found (verified, go1.26.5). That is
+idiomatic and fine *because the contract is published and every caller is expected
+to test it*. The defect is the undocumented one you write yourself — the class is
+`sota-architecture` rules/02 §8a.
+
+- `strconv.Atoi("x")` returns `(0, err)` (verified, go1.26.5). The `0` is a perfectly
+  ordinary value; the error is the only thing distinguishing it from `Atoi("0")`.
+  Dropping `err` converts an out-of-band signal into an in-band one, which is
+  precisely what `errcheck` exists to stop.
+- Go has no sum type, so the out-of-band alternatives are **comma-ok**
+  (`v, ok := m[k]`) or `(T, error)`. Return one of them; a `func f() int` that
+  answers `-1` for "no value" has no way to say why.
+- `*int` for "optional int" is legal and usually worse than comma-ok — it moves the
+  check to a nil dereference and heap-allocates. Prefer `(int, bool)`.
+- Audit: `grep -rnE 'return -1|return 0, nil' --include='*.go' .` for producers, then
+  the tell that actually finds the bug — a comparison where one side is filtered
+  against the sentinel and the other is not.
+
 ## 4. Sentinel vs typed vs opaque — choosing the error kind
 
 | Kind | When | Example |

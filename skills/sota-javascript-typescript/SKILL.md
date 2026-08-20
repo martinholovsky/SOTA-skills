@@ -47,7 +47,7 @@ Order the report CRITICAL→LOW, deduplicate repeated patterns into one finding 
 | File | Read this when... |
 |---|---|
 | [rules/01-typescript-config-and-types.md](rules/01-typescript-config-and-types.md) | touching tsconfig; designing types/interfaces; seeing `any`/casts; modeling state; validating input shape; setting up a library or monorepo; deciding zod-vs-types questions |
-| [rules/02-language-idioms.md](rules/02-language-idioms.md) | writing any JS/TS logic: equality, `??`/`?.`, array methods, immutability, Map/Set, error classes and Result types, generators, dates (Temporal), money/number precision |
+| [rules/02-language-idioms.md](rules/02-language-idioms.md) | writing any JS/TS logic: equality, `??`/`?.`, array methods, immutability, Map/Set, **in-band sentinels (absence encoded as `-1`/`0`/`""`)** — **`-1` lies where `NaN` poisons**, error classes and Result types, generators, dates (Temporal), money/number precision |
 | [rules/03-async-patterns.md](rules/03-async-patterns.md) | anything with promises/async: combinator choice, floating promises, AbortController/timeouts, event-loop ordering, top-level await, workers, streams, async race conditions |
 | [rules/04-node-backend.md](rules/04-node-backend.md) | building/auditing Node services: runtime choice, dropping deps for built-ins, env config, HTTP hardening (timeouts/body limits), graceful shutdown, process error policy, pino |
 | [rules/05-security.md](rules/05-security.md) | any security-relevant code or audit: XSS sinks, CSP, prototype pollution, npm supply chain, ReDoS, token storage/JWT, postMessage, child_process injection, SSRF |

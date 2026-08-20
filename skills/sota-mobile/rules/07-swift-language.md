@@ -119,7 +119,7 @@ register(domain)
 
 ### 7.7 Errors: `throws` untyped by default; typed where the boundary is closed
 
-- Errors are typed Swift `enum`s conforming to `Error` (with associated values for context), thrown with `throw`/`throws` — not `NSError` codes, not sentinel returns, not `fatalError` for recoverable conditions.
+- Errors are typed Swift `enum`s conforming to `Error` (with associated values for context), thrown with `throw`/`throws` — not `NSError` codes, not sentinel returns, not `fatalError` for recoverable conditions. Same rule for *values*: absence is `Optional`, never `-1`/`0`/`""` — the class, its ordering hazard and the three audit probes are in `sota-architecture` rules/02 §8a.
 - **Typed throws** (`throws(ParseError)`) is implemented since Swift 6.0 (SE-0413, verified: [proposal status](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0413-typed-throws.md)) — and the proposal itself says plain `throws` "remains the better default error-handling mechanism for most Swift code." Use typed throws where the proposal recommends: same-module/package code where the error set is closed, generic code passing through a caller's error type (`rethrows` replacement), and embedded/no-existential environments. Do **not** type a public API's throws to today's single error enum — you've frozen your error surface into the ABI.
 
 ```swift

@@ -127,6 +127,27 @@ end
   with a default, `find` vs `find!`-style APIs — pick the non-raising variant
   when absence is normal.
 
+## 5a. In-band sentinels — the stdlib is clean, the converters are not
+
+Ruby's search methods return `nil`, not `-1`: `"abc".index("z")` and
+`[1,2].index(3)` are both `nil` (verified, Ruby 4.0.6). So the class in
+`sota-architecture` rules/02 §8a rarely arrives from the stdlib's search API — it
+arrives from **conversion** and from hand-rolled returns.
+
+- `"x".to_i` is `0` and `"12abc".to_i` is `12` (verified) — garbage and a partial
+  parse both succeed silently, and `0` is indistinguishable from `"0".to_i`. Use
+  `Integer(str)`, which raises `ArgumentError` (verified), or
+  `Integer(str, exception: false)` which returns `nil`. Same for `to_f`/`Float()`.
+- `nil` is falsy and `0`/`-1` are **truthy** in Ruby, so `if n` is a correct presence
+  check against `nil` and a broken one against a numeric sentinel. That asymmetry is
+  the argument for keeping absence as `nil` all the way down.
+- Returning `-1`/`0`/`false` from your own method where `nil` fits: don't. `nil` +
+  `&.`/`then`/pattern matching (§3) is the idiom; a sentinel opts out of all three.
+- RBS/Sorbet: type it `Integer?`, and the checker will make callers handle it. A
+  magic `-1` inside `Integer` is invisible to Steep and Sorbet alike.
+- Audit: `grep -rnE '\.to_i\b|\.to_f\b' --include='*.rb' app/ lib/ | grep -v 'to_i\.to_s'`
+  and `grep -rnE 'return (-1|0)$' --include='*.rb' app/ lib/`.
+
 ## 6. Typing: RBS, Sorbet, Steep
 
 Gradual typing is optional but SOTA for libraries and large apps. Two

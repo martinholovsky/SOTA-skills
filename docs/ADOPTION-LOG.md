@@ -160,7 +160,7 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-08-19 | Field brief from a session applying the library — a recon profile that came back empty | **A cap on a generator's *output*, then parsed.** `rules/10` §2.7 covers truncating input *into* an inspector; the inverse — an unset `max_tokens` truncating a JSON document that is then `json.loads`-ed — is the same family and the rule text, example and checklist all point at input | **adopted with a correction** | `sota-code-security/rules/10` §2.7 (the mirror + checklist), `rules/11` §2.2 (the tell: produced size landing on its cap; a parse-error offset needs the document length), `sota-llm-engineering/rules/02` (set `max_tokens` explicitly, assert `output_tokens < max_tokens`) + the three index surfaces that said "truncation before inspection". Correction: the brief reads the class as unstated, and it is stated — for LLM output only, at `sota-llm-engineering/rules/02:199` and `rules/04:251` ("truncated output never parsed as valid"), in a skill an inert-control pass never loads. What was genuinely absent is the **general** producer form, the **unset-default** variant (no truncation operator to grep for, so §2.7's own procedure walks past it), and the size-vs-cap arithmetic — `rules/05:147` alerts on a `stop_reason=max_tokens` spike, which is the metadata tell, not the arithmetic one · v1.22.14 |
 | 2026-08-20 | Field brief from a session applying the library — three ideas | **A `--self-test` mutation harness as a mode of the tool**, so "this check can go red" is a property of the health suite rather than of whoever last edited it | **adopted with a correction** | `sota-code-security/rules/12` §1b + checklist, `sota-cli-ux/rules/03` §2a + checklist, two SKILL.md index rows. Correction: the *class* is covered three times over (rules/12 §1 mutation probe, §2.1 "the instrument that cannot fail" — which is literally a mutation harness reading every non-zero exit as a catch — and `sota-devsecops/rules/05`:311 "every gate ships a committed known-bad"). What was absent is the **packaging**: everywhere the library states it, the probe is a committed fixture plus a separate job, i.e. a convention someone must remember when adding a check. Nothing said to make it a mode of the tool, where a check with no declared known-bad *fails the self-test* · unreleased |
 | 2026-08-20 | Same brief, idea 3 | **Gateway access logs, still absent — which is why "is this graph feature used?" was answered by measuring the corpus instead** | **adopted with a correction** | `sota-observability/rules/05` §7a + checklist, cross-ref from `sota-api-design/rules/02` §5 step 4, observability SKILL.md row. Correction: the requirement is **already stated**, at `sota-api-design/rules/03`:227 ("without per-field usage data you can never delete anything") and `rules/02`:100 ("You cannot sunset what you can't attribute") — so the accurate verdict is *unreachable, not absent*: it lives in `sota-api-design`, which an observability or platform task never loads, and `sota-observability` mentions access logs exactly once (`rules/05`:56) and only to *exclude* the health endpoint from them. The genuinely new part is the **residual** the brief's incident actually produced — the substitute measurement. `grep -rniE "proxy (metric\|measure)\|answers a different question" skills/` returned zero hits · unreleased |
-| 2026-08-20 | Same brief, idea 2 (deferred, then answered the same day with a measured field report) | **The in-band sentinel — a value from the domain standing in for absent** | **adopted** | `sota-python/rules/02` §2a + checklist greps (primary: the producer is a function return, and the greps are per-language), `sota-databases/rules/01` *Modeling hygiene* + checklist (persistence half), one-line pointer in `sota-python/rules/03` §12, two SKILL.md rows. Confirmed absent by two searches before writing (`sentinel` → 23 hits, all unrelated; `return -1|in-band|magic (number|value)` → nothing on the class); nearest prior coverage was `sota-c-cpp/rules/04`:25 (one banned-API row) and `sota-performance/rules/05`:170 (the principle, stated once and scoped to cached absence). **Filed to `rules/01` rather than the reporter's suggested `rules/02`**: how absence is encoded is a modeling decision, and `rules/02` is migrations. The reporter's measurement is what made it writable — see the entry · unreleased |
+| 2026-08-20 | Same brief, idea 2 (deferred, then answered the same day with a measured field report) | **The in-band sentinel — a value from the domain standing in for absent** | **adopted** | `sota-architecture/rules/02` §8a (**the class, stated once, language-neutral**), `sota-python/rules/02` §2a (worked example) + checklist greps, `sota-databases/rules/01` *Modeling hygiene* + checklist (persistence half), one-line pointer in `sota-python/rules/03` §12, two SKILL.md rows. Confirmed absent by two searches before writing (`sentinel` → 23 hits, all unrelated; `return -1|in-band|magic (number|value)` → nothing on the class); nearest prior coverage was `sota-c-cpp/rules/04`:25 (one banned-API row) and `sota-performance/rules/05`:170 (the principle, stated once and scoped to cached absence). **Filed to databases `rules/01` rather than the reporter's suggested `rules/02`**: how absence is encoded is a modeling decision, and `rules/02` is migrations. **Scope corrected on review**: the first cut filed the class inside `sota-python`, which would have hidden a language-neutral defect from nine other language readers — the per-language part is the *detector*, not the class. Now a §8a in architecture plus a **measured** row in each of Go, Rust, C/C++, JVM, JS/TS, .NET, PHP, Ruby, and a pointer from Swift. The reporter's measurement is what made it writable — see the entry · unreleased |
 
 ## Entries
 
@@ -1071,6 +1071,44 @@ measured input rate (the field is empty in 9.2% of nodes), with no before/after 
 specific result gained or lost. **Latent with measured exposure, not active.** The rule
 is written to that standard — it claims the predicate flips, not that a given finding was
 missed.
+
+**Scope corrected on review — the first cut filed it in the wrong place.** I put the
+class inside `sota-python` and justified it with "the producer is a function return and
+the greps are per-language". That justifies per-language **detectors**; it does not
+justify a per-language **class**, and filing it there would have hidden a universal
+defect from nine other language readers. The library already has the pattern for this —
+router cross-cutting rule 18, *"cryptography fans out — there is no single crypto
+skill"*. So: the class is stated once and language-neutrally in `sota-architecture`
+rules/02 §8a (next to *value objects and invariant-encoding types*, which is the same
+idea for a different axis), and each language skill carries the row that is actually
+specific to it.
+
+**Every language row was run, not recalled** — the [[cross-language-summary-tables-are-unverified]]
+lesson, applied deliberately after a Rust row in `sota-sandboxing` rules/04 shipped wrong.
+Seven of nine on a local toolchain (Python 3.14.6, Go 1.26.5, Node 24, PHP 8.5.8, Ruby
+4.0.6, rustc 1.97.1, clang 21), two from primary docs because no JDK or .NET SDK is
+installed here (Java SE 21 API docs; learn.microsoft.com `Int32.TryParse`, .NET 10) and
+labelled as such in the text. Two results changed the content rather than confirming it:
+
+- **The C row is platform-dependent, and I would have written it as universal.**
+  `(char)EOF == EOF` is **true** under the default signed `char` on x86-64 Darwin and
+  **false** under `-funsigned-char` (the default on ARM/PowerPC Linux) — so the classic
+  `getchar` bug is invisible on many developers' machines. And the diagnostic runs the
+  wrong way for them: clang emits `-Wtautological-constant-out-of-range-compare` only in
+  the *broken* configuration. That is `sota-code-security` rules/11 §3.5
+  (location-dependent silence), cited in place.
+- **JS `NaN` is better-behaved than `-1`, which inverts the obvious advice.** Measured:
+  `NaN > 20` and `NaN < 20` are **both false** (and `NaN === NaN` is false), so `NaN`
+  *poisons* and can never silently win a comparison; `-1 < 20` is **true**, so `-1`
+  *lies*. `parseInt`'s `NaN` is therefore the safer of the two sentinels. Also recorded:
+  `-1 ?? fallback` is `-1`, so `??` does not rescue a sentinel.
+
+Also measured and used: PHP's `strpos("abc","a") == false` is **true** while `=== false`
+is false — the canonical instance, and the reason PHP's row is the strictest; Ruby's
+search methods return `nil` (clean) while `"12abc".to_i` is `12` (silent partial parse);
+Rust's `None::<i32>.unwrap_or(-1)` is `-1`, which is how the sentinel re-enters a
+language that had designed it out; Go's `strings.Index` → `-1` is documented and
+idiomatic, so its row is about *undocumented* ones and about dropping `Atoi`'s error.
 
 **Not landed, and why:** the audit-sweep half belongs in `sota-code-security` rules/10
 §2 or rules/11 §3, which are the files that catalogue exactly this shape. Both are at

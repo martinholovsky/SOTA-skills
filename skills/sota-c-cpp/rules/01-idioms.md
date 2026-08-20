@@ -114,6 +114,30 @@ public:
 - `noexcept` on functions that truly can't throw (destructors, swaps, moves);
   a `throw` escaping `noexcept` calls `std::terminate`.
 
+## 7a. In-band sentinels, and the platform that changes the answer
+
+C has no option type, so the in-band sentinel (`sota-architecture` rules/02 §8a) is
+the *native* idiom — and its two classic bugs are both about the sentinel's type
+rather than its value.
+
+- `atoi("x")` and `atoi("0")` both return `0` (verified, clang 21, macOS): failure
+  and a legitimate parse are indistinguishable. Use `strtol` + `errno`/`endptr`
+  (already in rules/04's banned-API table).
+- **`EOF` is `-1` as an `int`, and storing it in a `char` breaks the comparison —
+  on some platforms only.** Measured, clang 21 on x86-64 Darwin: with the default
+  **signed** `char`, `(char)EOF == EOF` is **true** and the code works; compiled
+  `-funsigned-char` (the default on ARM and PowerPC Linux) it is **false**, and the
+  read loop never terminates. Note which way the diagnostic runs: clang warns
+  (`-Wtautological-constant-out-of-range-compare`) only in the **broken**
+  configuration, so a developer on a signed-`char` machine sees neither the bug nor
+  the warning. Always `int c; while ((c = getchar()) != EOF)`. This is the
+  location-dependent silence class — `sota-code-security` rules/11 §3.5.
+- POSIX's `-1`-plus-`errno` is a genuine out-of-band pair; it only degrades into an
+  in-band sentinel when the caller keeps the `-1` and drops `errno`.
+- **C++ has the alternatives — use them:** `std::optional<T>` for absent,
+  `std::expected<T,E>` (C++23) for failed. A function returning `int` where `-1`
+  means "no result" is a C++ API bug, not a style preference.
+
 ## 8. C-specific idioms (when the target is C)
 
 - Initialize every variable at declaration; designated initializers (C99+) for

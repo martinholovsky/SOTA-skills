@@ -12,6 +12,26 @@ DI and options patterns. Idioms are in `01`, async in `03`.
   (deserialized/wire data can violate them): `ArgumentNullException.ThrowIfNull`,
   range/format guards.
 
+## 1a. In-band sentinels vs `int?` and the Try pattern
+
+`String.IndexOf` returns `-1` for not-found, and `Int32.TryParse` sets its `out`
+parameter to **zero on failure** — *"contains the … value equivalent … if the
+conversion succeeded, or zero if the conversion failed"* (learn.microsoft.com,
+`System.Int32.TryParse`, .NET 10; some overloads say *"an undefined value on
+failure"*). So `TryParse` is the right shape — the `bool` return is out-of-band —
+but the `out` value **is** an in-band sentinel the moment the `bool` is ignored.
+
+- §1's nullability contract extends to value types: `int?`/`Nullable<T>` is the
+  answer for an absent number, not `-1` or `0`. `int?` participates in
+  `HasValue`/pattern matching; a magic `int` participates in nothing.
+- Prefer `TryParse` over `Parse`, and **use the `bool`** — `if (int.TryParse(s, out
+  var n))`, never `int.TryParse(s, out var n); use(n);`. A discarded `bool` converts
+  a correct API into the class in `sota-architecture` rules/02 §8a.
+- Nullable reference types cover references only; NRT being on says nothing about a
+  `-1` in an `int`. Don't let a clean NRT build read as absence being modeled.
+- Audit: `grep -rnE 'return -1;|out var [a-z]+\);' --include='*.cs' src/` and
+  comparisons where one operand is `-1`-filtered.
+
 ## 2. Immutability & value semantics
 
 - Prefer immutable public types (records, `init` properties, `IReadOnlyList<T>`/

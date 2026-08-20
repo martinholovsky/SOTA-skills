@@ -89,7 +89,7 @@ highest-leverage fixes, and which checklists were run.
 
 | File | Read this when... |
 |---|---|
-| `rules/01-language-idioms.md` | Choosing/verifying the Ruby version baseline; frozen string literals; pattern matching; `Data` vs `Struct`; exception design; typing with RBS/Sorbet/Steep; general idioms and pitfalls |
+| `rules/01-language-idioms.md` | Choosing/verifying the Ruby version baseline; frozen string literals; pattern matching; `Data` vs `Struct`; exception design; **`nil` over a sentinel, and `to_i` silently returning `0` for garbage**; typing with RBS/Sorbet/Steep; general idioms and pitfalls |
 | `rules/02-security.md` | Any input crossing a trust boundary: SQL injection (ActiveRecord/Sequel), command injection (`system`/backticks/`Open3`), deserialization (`Marshal`, YAML/Psych), ReDoS and regex anchors, `eval`/`send`/`constantize`, secrets and randomness, path traversal |
 | `rules/03-web-hardening.md` | Building or auditing anything web-facing: XSS/ERB escaping, mass assignment and strong params, CSRF, sessions/cookies, security headers, open redirects, SSRF, file uploads — framework-neutral |
 | `rules/04-supply-chain-tooling.md` | Bundler and Gemfile.lock discipline, lockfile checksums, bundler-audit, RuboCop/StandardRB, Brakeman, RSpec/Minitest mechanics, CI gates, gem authoring/publishing |

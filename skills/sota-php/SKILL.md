@@ -94,7 +94,7 @@ explicit "checked and clean" areas.
 
 | File | Read this when... |
 |---|---|
-| `rules/01-language-baseline.md` | choosing/verifying PHP version floor (support/EOL table); writing any PHP: strict_types, typed properties, enums, readonly, match, fibers, 8.4/8.5 features, comparison pitfalls, error handling, deprecations |
+| `rules/01-language-baseline.md` | choosing/verifying PHP version floor (support/EOL table); writing any PHP: strict_types, typed properties, enums, readonly, match, fibers, 8.4/8.5 features, comparison pitfalls incl. **`strpos` returning `false` where `0` is a real match**, error handling, deprecations |
 | `rules/02-injection.md` | code touching SQL, shell, or HTML output: PDO prepared statements, command execution, XSS and context-aware escaping, template engines, eval-family bans |
 | `rules/03-files-deserialization-ssrf.md` | file uploads, include/require paths, stream wrappers (LFI/RFI/`phar://`), `unserialize` and Phar object injection, XXE, server-side URL fetching (SSRF) |
 | `rules/04-sessions-auth-web-hardening.md` | login/session/auth code: session cookie flags and fixation, password_hash/argon2id, sodium crypto, CSRF, security headers, production php.ini hardening |

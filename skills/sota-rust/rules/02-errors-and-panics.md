@@ -144,6 +144,27 @@ bad input, missing files, network failure, or anything an attacker controls.
   Err(e)`) — that's `.map(f)`. Clippy: `manual_map`, `question_mark`,
   `needless_match`.
 
+### 6a. Don't unwrap an Option back into a sentinel
+
+Rust makes the in-band sentinel (`sota-architecture` rules/02 §8a) hard to write by
+accident: `str::find` and `Iterator::position` return `Option<usize>`, not `-1`
+(verified, rustc 1.97.1). The way it gets reintroduced is at the *seam*:
+
+- `opt.unwrap_or(-1)`, `unwrap_or_default()` on a numeric `Option`, or
+  `unwrap_or(0)` — each discards the type system's absence encoding and hands a
+  domain value downstream (verified: `None::<i32>.unwrap_or(-1)` is `-1`). Push the
+  `Option` outward instead; collapse it only where the value is *consumed*, and then
+  with `match`/`ok_or`, not a magic number.
+- FFI and wire boundaries are where it enters: a C ABI returning `-1`/`errno`, a
+  protobuf `int32` with no `optional`, `serde` deserializing a field whose absence
+  the schema encodes as a value. Convert **at the boundary** into `Option`/`Result`
+  — the anti-corruption-layer rule, applied to a scalar.
+- `#[serde(default)]` on a numeric field silently substitutes `0` for absent. That
+  is an in-band sentinel chosen by an attribute; use `Option<T>` unless `0` is
+  genuinely the right value.
+- Audit: `grep -rnE 'unwrap_or\(-?[0-9]+\)|unwrap_or_default\(\)' --include='*.rs' .`
+  and `serde(default)` on numeric fields.
+
 ## 7. Retryability & error classification
 
 Services need errors classified for *behavior*, not just display. Encode the

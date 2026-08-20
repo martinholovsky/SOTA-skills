@@ -44,7 +44,15 @@ def handler(user: User | None) -> str:
 ## 2a. In-band sentinels: `-1` is not `None`
 
 The failure §2 exists to prevent has a second spelling that the type checker cannot
-see. Instead of `int | None`, a converter returns a **value from the domain** to mean
+see. The class is language-neutral and stated once in `sota-architecture` rules/02
+§8a; this section is the Python instance and the worked example.
+
+Python's own stdlib offers both spellings, which is the cleanest illustration there
+is: `"abc".find("z")` returns **`-1`** while `"abc".index("z")` **raises
+`ValueError`** (verified, CPython 3.14.6). `find` is safe only because you test it on
+the next line; the defect is the same value being stored, returned, or compared later.
+
+Instead of `int | None`, a converter returns a **value from the domain** to mean
 "absent":
 
 ```python

@@ -50,7 +50,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   absence is `NULL` or an omitted property, and a document/graph store makes a
   sentinel **worse**, not better, because it discards native absence the store would
   have kept for free. Pointer from `sota-python/rules/03` §12; both audit checklists
-  extended, with *check the queries that order or compare first*.
+  extended, with *check the queries that order or compare first*. **Nine language
+  skills carry a measured row** — Go, Rust, C/C++, JVM, JS/TS, .NET, PHP, Ruby, plus a
+  pointer from Swift — because the class is universal and only the *detector* is
+  per-language. Seven rows were run on a local toolchain and two taken from primary
+  docs (no JDK or .NET SDK here) and labelled as such. Two runs changed the text
+  rather than confirming it: the C `EOF` bug is **platform-dependent**
+  (`(char)EOF == EOF` is true under the default signed `char`, false under
+  `-funsigned-char`, and clang warns only in the *broken* configuration — so it is
+  invisible on many developers' machines), and JS `NaN` is the **better-behaved**
+  sentinel (`NaN > 20` and `NaN < 20` are both false, so it poisons and can never win
+  a comparison; `-1 < 20` is true, so it lies) — which inverts the advice you would
+  write from memory.
 - **The question with no instrument, and the substitute that answers a different
   one.** `sota-observability/rules/05` §7a. The requirement for per-route/per-field
   usage telemetry was already stated twice in `sota-api-design` (rules/02 §5 step

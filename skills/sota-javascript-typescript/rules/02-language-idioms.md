@@ -48,6 +48,32 @@ Pick the method that states intent; reviewers read methods faster than loop bodi
 - Early-exit needs: `some`/`every`/`find` short-circuit; `map`/`filter` don't — use `for...of` when you must break out of a transform.
 - Don't chain `filter().map()` over hot million-element arrays; one `for...of` or `flatMap` pass is fine. Below that scale, readability wins.
 
+## In-band sentinels: `-1`, and why `NaN` is the better-behaved one
+
+`indexOf`, `lastIndexOf` and `findIndex` all return `-1` when not found (verified,
+Node 24). The idiom is fine where you test it immediately — `.includes()` /
+`.some()` say what you mean — and becomes the class in `sota-architecture` rules/02 §8a
+the moment the `-1` is stored, passed, or compared later.
+
+Two sentinels with **opposite** failure behaviour, both verified:
+
+| | `> 20` | `< 20` | consequence |
+|---|---|---|---|
+| `-1` | `false` | `true` | **lies**: wins one ordering, loses the other |
+| `NaN` | `false` | `false` | **poisons**: every comparison is false, incl. `NaN === NaN` |
+
+`parseInt("x")` → `NaN` is therefore the *safer* of the two: it cannot silently win
+a comparison, and `Number.isNaN` is an unambiguous test. `-1` cannot be tested
+without knowing the field's domain. Neither is as good as `null`/`undefined` with
+`strictNullChecks` and `??` (see *Nullish discipline* above) — note `-1 ?? fallback`
+is `-1`, so `??` does **not** rescue a sentinel; only `null`/`undefined` trigger it.
+
+- TS: type the absent case (`number | null`), never `number` with a documented
+  magic value. A `-1` in a return type is invisible to every checker.
+- Audit: `grep -rnE 'return -1|=== -1|!== -1' --include='*.ts' --include='*.js' src/`
+  — the `=== -1` hits are usually correct (immediate tests); the `return -1` hits are
+  the producers, and a stored `-1` is where it goes wrong.
+
 ## Immutability patterns
 
 Mutating shared data causes spooky action at a distance and breaks React/state-library change detection.

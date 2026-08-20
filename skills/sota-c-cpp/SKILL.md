@@ -96,7 +96,7 @@ three highest-leverage fixes, and which checklists/sanitizers were run.
 
 | File | Read this when... |
 |---|---|
-| `rules/01-idioms.md` | Writing/reviewing any C++: RAII and the rule of zero/five, ownership with `unique_ptr`/`shared_ptr`, value semantics and move, `const`/`constexpr`, references vs pointers, casts, `enum class`, error handling (exceptions vs `std::expected` vs error codes), C-vs-C++ idiom choices |
+| `rules/01-idioms.md` | Writing/reviewing any C++: RAII and the rule of zero/five, ownership with `unique_ptr`/`shared_ptr`, value semantics and move, `const`/`constexpr`, references vs pointers, casts, `enum class`, error handling (exceptions vs `std::expected` vs error codes), **in-band sentinels (absence encoded as `-1`/`0`/`""`)** incl. **`EOF` in a `char` — broken only where `char` is unsigned**, C-vs-C++ idiom choices |
 | `rules/02-memory-safety.md` | Anything touching pointers, buffers, lifetimes, or allocation: bounds, use-after-free/return, dangling references and views (`string_view`/`span`), iterator invalidation, ownership discipline, sanitizers (ASan/MSan), `_FORTIFY_SOURCE`/`_GLIBCXX_ASSERTIONS` |
 | `rules/03-undefined-behavior.md` | Reasoning about UB and the optimizer: integer overflow, strict aliasing, uninitialized reads, null/misaligned access, signed shifts, data races as UB, `unsigned` arithmetic, UBSan, why "it worked in debug" proves nothing |
 | `rules/04-security.md` | Any input crossing a trust boundary: CERT C/C++ + MISRA, banned functions (`gets`/`strcpy`/`sprintf`/`system`), integer-overflow-to-allocation, format strings, path traversal/TOCTOU, command injection, deserialization/parsers, CSPRNG, the OpenSSF hardening flag set |
