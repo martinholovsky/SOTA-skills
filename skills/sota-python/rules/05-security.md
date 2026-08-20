@@ -218,8 +218,10 @@ both. So any validation, authorization, or bounds check written as an `assert`
 
 - Ruff `S` ruleset (bandit port) in the standard select (rules/01) — covers most greps below
   natively: S301 pickle, S602 shell=True, S608 SQL strings, S324 weak hashes...
-- `bandit -r src/ -ll` as a CI job if you want bandit's full set, plus `semgrep --config
-  p/python` for taint-style findings.
+- `bandit -r src/ -ll` as a CI job if you want bandit's full set, plus
+  `opengrep scan --error --config <your-python-rules>` for taint-style findings
+  (`sota-devsecops` rules/05 §5.1 — the CLI is `scan`, there is no `ci` subcommand,
+  and prefer vendored or `git+`-cloned rulesets over a registry you do not control).
 - Suppressions (`# noqa: S...`, `# nosec`) require a justification comment; bare `# nosec`
   is itself a finding.
 

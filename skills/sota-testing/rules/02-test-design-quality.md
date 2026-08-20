@@ -303,10 +303,48 @@ default:
 - **Regex only where no parser exists** — a DSL, a log format, a config dialect, prose.
   Name which, in a comment, so the exception does not spread by imitation.
 - **Name the parser, or the rule gets ignored exactly where it is least convenient.**
-  AST is free in some ecosystems (Python `ast`, Ruby `Prism`, Go `go/ast`, Rust `syn`,
-  TS `typescript` compiler API / `ts-morph`, Java `JavaParser`, PHP `nikic/PHP-Parser`)
-  and an install away in others — and "no parser at hand" is the moment people reach for
-  regex. Decide the parser once, per language, at the same time you decide the guard.
+  "No parser at hand" is the moment people reach for regex, so decide this at the same
+  time as the guard. Take the first rung that carries your claim (tool names verified
+  2026-08-20; confirm current entry points at each project's own docs — they move):
+
+  1. **The language's own AST.** Python `ast`, Go `go/ast`, Rust `syn`, Ruby `Prism`,
+     JS/TS the `typescript` compiler API or `ts-morph`, Java `JavaParser`, PHP
+     `nikic/PHP-Parser`, C# Roslyn syntax trees.
+  2. **A semantic index, when the claim needs *types* or cross-file resolution** — which
+     is exactly the limit stated below, so this is the rung that answers it rather than
+     working around it. **CodeQL** builds a queryable database with names and types
+     resolved (v2.26.2 ships extractors for go, python, rust, java, cpp, csharp,
+     javascript, ruby, swift — plus yaml, xml, html and GitHub Actions, so config is not
+     an exception either). **SCIP/LSIF** indexes, or the language server itself, give
+     resolved cross-references without writing queries.
+  3. **A cross-language structural matcher, when no native parser is at hand.**
+     **Opengrep** matches on a parsed representation rather than text, covers 30+
+     languages, and has a **Generic** mode for inputs with no dedicated parser (ERB,
+     Jinja and similar). It is LGPL-2.1 and consortium-governed (Aikido, Amplify, Endor
+     Labs, Kodem, Orca), forked from Semgrep CE when features moved behind a commercial
+     licence — prefer it over the upstream for anything you need to keep running.
+     **ast-grep** and **tree-sitter** are the other route: real concrete syntax trees,
+     25+ official grammars and bindings for a dozen host languages.
+  4. **The toolchain's own analysis API, when the guard should run inside the existing
+     build** rather than as a separate job — `go/analysis` (Go), Roslyn analyzers (C#),
+     clang-tidy AST matchers (C/C++), ESLint rules over ESTree (JS/TS), RuboCop cops
+     (Ruby), PHPStan/Psalm rules (PHP), detekt (Kotlin). Slower to write, but it runs
+     where developers already look and fails in the same place as a compile error.
+  5. **The artifact or the runtime, when the claim is about what *ships* or what is
+     *live*** — and here source analysis is not merely weaker, it answers a different
+     question. Reflection over the loaded class, the deprecation annotation on the method
+     you actually call, the contents of the built wheel or image, `nm`/`objdump` on the
+     binary. A measured case: a JDK's `@Deprecated(since="18")` read off `Runtime.class`
+     by reflection settled in seconds what the published docs would not confirm.
+  6. **Regex — only where the input genuinely has no grammar**: prose, an ad-hoc log
+     format, a bespoke DSL. Note *which*, in a comment, so the exception does not spread
+     by imitation.
+
+  Two things this list exists to prevent. **Shell and config are not exceptions**: shell
+  has a real AST (`mvdan.cc/sh/v3/syntax` parses POSIX sh, bash and mksh and ships a
+  `Walk`), and YAML, HCL, JSON, Dockerfiles and SQL all have parsers — "it's just a
+  config file" is how a text guard gets in. And **rung 5 can be cheaper than rung 1**:
+  where a claim is about the built or running system, do not parse source at all.
 
 **The honest limit, which the guidance must state or it manufactures the false
 confidence the rest of this library exists to prevent: AST does not resolve types.** A

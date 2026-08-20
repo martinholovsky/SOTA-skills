@@ -199,6 +199,32 @@ what that costs the "re-read the docs" strategy: this document was re-read at tw
 consecutive release cuts and the heading survived both, because a reader checking
 *whether a convention is gated* looks at the rows, not at the count above them.
 
+**Not gated: BUILD and AUDIT halves must correspond (measured 2026-08-21, twice).**
+Invariant 2 checks a rules file *ends* with `## Audit checklist`; nothing checks the
+checklist matches the guidance above it. Both directions fail silently — a checklist item
+with no build rule marks a team down for following the library, and a build rule with no
+item is this library's most frequently rediscovered gap. Through the three filters:
+incident **yes**, silent **yes**, mechanically checkable **no** — and the third is a
+measurement, not an opinion:
+
+- **Attempt 1 — `§` anchors.** Only **14 of 1,802** checklist items (1%) cite a section
+  anchor at all. The proxy measured a formatting habit that does not exist, not the
+  property. Discarded.
+- **Attempt 2 — lexical overlap.** 95% of audit items share terms with their own file's
+  body; 60% of build sections have a footprint in their own checklist. Then the numbers
+  were **sampled before being quoted**, and the sample discredited them: `§2 HTTP method
+  semantics` reads as uncovered while the checklist says *"No GET/HEAD endpoint mutates
+  state"* — synonymy — and *"Retries idempotent-only, budget-bounded…"* reads as
+  ungrounded while being grounded in two **sibling** files. Both failure modes are
+  intrinsic: correspondence is semantic and often cross-file.
+
+So it is written as a convention in [CONTRIBUTING.md](../CONTRIBUTING.md) with its
+exception (advisory sections, and checks owned by a sibling skill) and left ungated. The
+useful residual, and the reason the numbers are recorded rather than discarded: **no
+evidence was found of the direction that would be worst** — an audit half systematically
+demanding what the build half never asked for. Every sampled instance of it was an
+artifact of the instrument.
+
 **Where invariant 17 stops, stated with an instance (2026-08-19, the v1.22.14 cut).**
 It asserts two things and no more: every stated count equals the script's own `[k/N]`,
 and `AGENTS.md`/`CONTRIBUTING.md` each enumerate 1..N with no gaps. It does **not**

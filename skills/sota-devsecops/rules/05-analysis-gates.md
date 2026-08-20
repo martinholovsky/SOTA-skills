@@ -4,30 +4,49 @@ Scope: the automated checks between "code written" and "code merged/shipped", an
 least as important — the mechanics that prevent those checks from being skipped, muted, or
 quietly turned green. A scanner you can bypass selects for people who bypass it.
 
-## 5.1 SAST: Semgrep + CodeQL
+## 5.1 SAST: Opengrep + CodeQL
 
 Two complementary layers; mature setups run both:
 
-- **Semgrep** — fast, diff-aware, rules-as-readable-code. Run on every PR with
-  `p/default`/`p/ci` plus language packs and **your own rules** (the highest-value Semgrep
-  rules encode *your* invariants: "never call raw SQL outside the repo layer", "all
-  handlers use authz decorator", "no `subprocess` with `shell=True`"). PR runs scan the
-  diff; full scans run on schedule (new rules apply to old code).
-- **CodeQL** — deep interprocedural taint tracking; catches what pattern-matching can't
-  (source→sink across files). Heavier: default-branch + PR for the languages it supports;
-  use `security-extended` query suite; budget for triage of the first full run.
+- **Opengrep** — fast, diff-aware, rules-as-readable-code, matching on a **parsed**
+  representation rather than text. Run on every PR with your language packs and **your
+  own rules** — the highest-value rules encode *your* invariants: "never call raw SQL
+  outside the repo layer", "all handlers use the authz decorator", "no `subprocess` with
+  `shell=True`". PR runs scan the diff; full scans run on schedule, because new rules
+  apply to old code.
+  It is the **LGPL-2.1 fork of Semgrep CE**, governed by a multi-vendor consortium, and
+  it restores cross-function taint analysis that CE gated commercially; the **rule format
+  is compatible**, so existing rules and community rulesets port unchanged
+  (`sota/rules/01` §2). Prefer it for anything you need to keep running. Semgrep CE
+  remains a drop-in alternative.
+- **CodeQL** — deep interprocedural taint tracking with **names and types resolved**;
+  catches what pattern-matching cannot (source→sink across files). Heavier:
+  default-branch + PR for the languages it supports; use the `security-extended` query
+  suite; budget for triage of the first full run.
 
 ```yaml
-# PR gate — diff-aware semgrep, blocking
-- run: semgrep ci --config p/ci --config .semgrep/   # exits non-zero on findings
-  env:
-    SEMGREP_BASELINE_REF: ${{ github.event.pull_request.base.sha }}
+# PR gate — diff-aware, blocking. Verified against Opengrep 1.27.1.
+- run: |
+    opengrep scan --error \
+      --config .semgrep/ \
+      --baseline-commit "${{ github.event.pull_request.base.sha }}"
 ```
 
+`--error` exits 1 on findings; `--baseline-commit` (env `SEMGREP_BASELINE_COMMIT`)
+restricts reporting to what the diff introduced. **There is no `opengrep ci` subcommand**
+— the CLI is `scan`/`test`/`validate`/`show`/`lsp`, so a workflow copied from `semgrep ci`
+will not run. `--config` accepts a directory, a URL, a `git+<url>` remote rule repo, or a
+Semgrep registry entry name; **vendor or `git+`-clone the community rulesets you depend on
+rather than resolving a registry you do not control** — that registry is operated by the
+vendor whose licence change caused the fork.
+
 Suppression discipline (applies to every tool in this file):
-- Inline suppressions (`# nosemgrep`, `lgtm[...]`, `#nosec`) require a reason on the same
-  line: `# nosemgrep: rule-id -- input is enum-validated above`. Bare suppressions fail
-  the build (semgrep `--disable-nosem` audits; a grep-based CI check works everywhere).
+- Inline suppressions (`# nosem`, `# nosemgrep`, `# noopengrep`, `lgtm[...]`, `#nosec`)
+  require a reason on the same line: `# nosemgrep: rule-id -- input is enum-validated
+  above`. Bare suppressions fail the build (`--disable-nosem` audits them; a grep-based
+  CI check works everywhere). Opengrep honours all three of its own tokens **and**
+  `.semgrepignore` files, so an existing suppression inventory carries over — which also
+  means porting the engine does **not** re-expose anything previously silenced. Audit it.
 - Audit the suppression inventory quarterly: count, age, clustering (one file with 30
   `#nosec` is a finding in itself).
 - New-code-only baselining is acceptable to get started (don't block on legacy debt), but
@@ -51,7 +70,7 @@ jobs:
 ```
 
 Tool selection note: SARIF upload + code-scanning alerts give one triage surface for
-Semgrep, CodeQL, and IaC scanners — use it rather than three dashboards, and make "no new
+Opengrep, CodeQL, and IaC scanners — use it rather than three dashboards, and make "no new
 code-scanning alerts" the required check where the platform supports it.
 
 ## 5.2 Secret scanning
@@ -304,7 +323,7 @@ Reference layout (each its own required check, all diff-aware, all fail-closed):
 
 ```
 PR opened ──► lint+unit (fast)            [required]
-          ──► semgrep diff scan            [required]
+          ──► opengrep diff scan           [required]
           ──► dependency review + license  [required]
           ──► secret scan (diff)           [required]
           ──► IaC scan (changed paths*)    [required, *with no-op fallback]
@@ -318,7 +337,7 @@ remove it. Diff-aware modes, caching, and tiering are how gates survive.
 
 ## Audit checklist
 
-- [ ] SAST: diff-aware Semgrep (org rules included) required on PRs; CodeQL (or equivalent deep SAST) on default branch; full scans scheduled
+- [ ] SAST: diff-aware Opengrep (org rules included) required on PRs; CodeQL (or equivalent deep SAST) on default branch; full scans scheduled
 - [ ] Every security gate ships a **negative control** — a committed known-bad it must reject on every run, and it is reachable as a **mode of the runner** (`--self-test`) rather than only as a fixture beside it, so a newly added check with no known-bad fails rather than passing unprobed (`sota-code-security` rules/12 §1b). No framework (SSDF, CRA, Scorecard, SLSA) requires this; a passing compliance check is evidence of process, not protection (§5.6, `sota-code-security` rules/12)
 - [ ] Every gate prints the **number of units it enumerated** and the build fails when that number drops — a refactor that moves code into a nested module, a second manifest, a submodule or a sidecar image silently shrinks the gate's scope while the negative control keeps passing (§5.6)
 - [ ] All inline suppressions (`nosemgrep`/`#nosec`/checkov skips) carry justifications; suppression inventory reviewed; baseline only shrinks
