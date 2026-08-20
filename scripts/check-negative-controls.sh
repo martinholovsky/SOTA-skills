@@ -191,8 +191,17 @@ probe 13 "scoreboard row with no sample size" "NO SAMPLE SIZE:"
 
 # 17 — a document that describes the checks, disagreeing with them. This is the
 # shape that shipped twice: AGENTS.md kept its old count while the script grew.
-( cd "$WT" && perl -pi -e 's/runs \*\*17 checks\*\*/runs **16 checks**/' AGENTS.md )
-probe 17 "a doc's invariant count disagrees with the script" "but check-invariants.sh has 17 checks"
+( cd "$WT" && perl -pi -e 's/runs \*\*18 checks\*\*/runs **17 checks**/' AGENTS.md )
+probe 17 "a doc's invariant count disagrees with the script" "but check-invariants.sh has 18 checks"
+
+# 18 — a `§` reference left dangling by a renumbered section. This is the split
+# hazard the check was built for: rename one heading and every citation of it
+# across every skill still reads as a valid pointer. The mutation targets a
+# section cited from ANOTHER skill on purpose — a same-file rename would be
+# caught by eye, a cross-skill one never is.
+( cd "$WT" && perl -pi -e 's/^## 1b\. Where the probe lives/## 1z. Where the probe lives/' \
+     skills/sota-code-security/rules/12-verifying-the-verifier.md )
+probe 18 "a section reference dangles after a renumber" "resolves nowhere"
 
 
 # =============================================================================
@@ -321,7 +330,7 @@ if [ "$failed" -ne 0 ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17 (12 of 17)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18 (13 of 18)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        11, 14      — diff-based: they compare against a merge base."

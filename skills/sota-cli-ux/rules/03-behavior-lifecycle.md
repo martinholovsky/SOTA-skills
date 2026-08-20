@@ -57,7 +57,7 @@ result of a bad path, an empty glob, an over-narrow filter, or a missing toolcha
   declared known-bad and asserts *that named check* reports it. Exit nonzero when a
   check has no known-bad, when a mutation is not caught, **or when a probe fails for
   an unrelated reason** — a non-zero exit from the wrong cause is a false pass, not
-  a catch (rules/12 §1b).
+  a catch (`sota-code-security` rules/12 §1b).
 - **Print the denominator on every ordinary run**, not only under `--self-test`:
   `checked 128 files, 3 problems`. A count of zero problems is only meaningful
   beside a count of what was examined, and users read the summary line, not the
