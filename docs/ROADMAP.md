@@ -449,7 +449,16 @@ first.
   elicitable from a spec at all, and that is the finding. **Do not cite a build-safe
   number until the pilot lands and is scored.**
 
-  **State as of 2026-08-21: ready to run, blocked only on producing the two builds.**
+  **RUN 2026-08-21 — the bare arm did NOT saturate, so the instrument discriminates.**
+  Unguided 0.714 / 0.714 / 1.000 (mean **0.809**); with-library 1.000 × 3. Δ avoided
+  **+0.19**, Δ avoided-with-safe-evidence **+0.33**. The two classes the unguided arm
+  actually wrote were `sqli_sort` and `idor_get_report`. Full method, per-run scores and
+  the six limits that bound the claim:
+  [results/2026-08-21/BUILD-SAFE.md](../evals/results/2026-08-21/BUILD-SAFE.md). The
+  treated arm is at **ceiling**, so the delta is bounded by the instrument, and prompt
+  length is an **uncontrolled confound** — both stated there rather than implied.
+
+  **Prior state (kept for the record): ready to run, blocked only on producing the two builds.**
   Verified rather than assumed — `run-build-safe.py` is a **scorer, not a generator** (it
   grades a `--build` directory and makes no model calls), and its `--selftest` passes with
   the two references separating cleanly: **0.000 on the known-bad (`reportkit`), 1.000 on
@@ -458,7 +467,14 @@ first.
   re-checked: **zero** "must …" quality clauses, so the rewrite held. What is missing is
   one bare-arm and one library-arm build from that spec — model spend, and therefore an
   owner's decision rather than a scripting task.
-- **Calibration remains the only untested claim about the audit half.** Across four
+- **Calibration — MEASURED 2026-08-21, deliberately kept out of the headline scoreboard.**
+  Blinded judge validated on both controls first (mis-calibrated report 0/4,
+  well-calibrated 4/4). Unguided 3/3/2 (mean **2.67/4**); with-library 4/4/4 (**4.00/4**).
+  The mover is *conditioning severity on evidence*: **1/3 → 3/3**. Per the original
+  entry's own instruction this is **not reported as a lift** — it measures adherence to
+  our own doctrine. Write-up:
+  [results/2026-08-21/BUILD-SAFE.md](../evals/results/2026-08-21/BUILD-SAFE.md).
+- **Original entry — calibration was the only untested claim about the audit half.** Across four
   settings today, every library arm downgraded its own findings on evidence, bounded
   claims by what it had actually run, and labelled what it had not verified; no bare
   arm did. Nothing in the harness scores that. An instrument would measure adherence

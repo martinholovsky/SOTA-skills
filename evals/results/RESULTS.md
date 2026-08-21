@@ -15,6 +15,8 @@ Same model, same task, library loaded vs. nothing.
 | **Completeness** (7 build tasks) | 0.59 | **0.98** | **+0.39** | 2 runs × 3, temp 0.7 | [MIRROR-VERIFICATION](2026-07-20/MIRROR-VERIFICATION.md) |
 | **Freshness** (32 current-2026 facts) | 0.44 | **0.97** | **+0.53** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
 | Routing (20 tasks) | 0.90 | **1.00** | **+0.10** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
+| **BUILD-safe** (7 defect classes the model must not *write*) | 0.81 | **1.00** | **+0.19** | 3×, temp 0.7 | [BUILD-SAFE](2026-08-21/BUILD-SAFE.md) |
+| BUILD-safe, *with positive evidence of the safe path* | 0.29 | **0.62** | **+0.33** | 3×, temp 0.7 | [BUILD-SAFE](2026-08-21/BUILD-SAFE.md) |
 | Silent-control detection (81 inert-control cases) | 0.91 | 0.93 | +0.00 | 3×, temp 0.7 | [SILENT-FAILURE](2026-07-20/SILENT-FAILURE.md) |
 | Audit **precision** (30 claims, 15 false) | 1.00 | 1.00 | +0.00 | 3×, temp 0.7 | [AUDIT-PROCESS](2026-07-20/AUDIT-PROCESS.md) |
 | Audit (14 hard snippets) | 1.00 | 1.00 | +0.00 | 1× | [BASELINE](2026-07-10/BASELINE.md) |
