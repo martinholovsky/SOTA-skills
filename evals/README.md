@@ -242,6 +242,26 @@ simulation is a faithful proxy for the real router flow
 
 ## Harness conventions (learned the hard way, 2026-07-20/21)
 
+### `temp 0` is not deterministic, and the untreated arm tells you the noise floor (2026-08-21)
+
+Running the completeness eval twice at `--samples 1 --temp 0.0`, changing only the
+router between them, the **`without` arm moved 0.60 → 0.57** — and that arm's prompt is
+`case["task"]` alone: it **cannot see** the router. So `temp 0` gives ≈**±0.03** of
+run-to-run variation here, and any single-sample delta below roughly 0.05 is unresolvable.
+
+Two consequences, both cheap:
+
+- **An arm that cannot see the treatment is a free negative control for your own
+  measurement.** Read it *before* interpreting the treated arm. On 2026-08-21 the treated
+  arm moved −0.02 and would have read as a small regression; the untreated arm had moved
+  further, in the same direction, and could not possibly have been affected. That is what
+  made the result interpretable instead of alarming.
+- **Never edit a file the runner reads live while a run is in flight.** `principle5()` is
+  read per prompt, so a mid-run edit silently measures some cases against the old text and
+  some against the new. This happened, was caught, and the run was discarded and redone
+  from a `git stash`ed clean tree.
+
+
 These are the repo-local form of `sota-code-security` rules/12 §2 — *the
 instrument that measures a control is itself a control*. That section was
 written on 2026-07-30 after the same class recurred: three new scorers needed

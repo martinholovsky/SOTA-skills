@@ -254,6 +254,11 @@ def main():
                     help="generations per arm; mean recall reported. >1 only varies at --temp>0")
     ap.add_argument("--temp", type=float, default=0.0,
                     help="build-model temperature; keep 0 for a deterministic single run")
+    ap.add_argument("--max-tokens", type=int, default=32000,
+                    help="build-model output cap. A cap only matters if it BINDS: "
+                         "32000 never bound claude-sonnet-4.6, but newer models are far "
+                         "more verbose, and a truncated artifact scores as a FLOOR rather "
+                         "than a measurement (sota-code-security rules/10 §2.7).")
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
     _assert_mirror_fresh()   # never measure a workflow that isn't shipped
@@ -276,7 +281,8 @@ def main():
                 print(f"  {c['id']:16s} {arm:8s} generating… (sample {s+1}/{a.samples})", flush=True)
                 # 32k: the self-audit with-arm emits substantially longer output;
                 # 16k truncated tests/logging off the end and scored them absent.
-                art = call(a.build_model, gen_prompt(c, with_lib), k, max_tokens=32000, temp=a.temp)
+                art = call(a.build_model, gen_prompt(c, with_lib), k,
+                           max_tokens=a.max_tokens, temp=a.temp)
                 verdict = judge(art, c["rubric"], a.judge_model, k)
                 last_present = [r["id"] for r in c["rubric"] if verdict.get(r["id"]) == "present"]
                 recalls.append(len(last_present) / len(c["rubric"]))
