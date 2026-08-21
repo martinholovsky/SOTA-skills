@@ -218,12 +218,24 @@ measurement, not an opinion:
   ungrounded while being grounded in two **sibling** files. Both failure modes are
   intrinsic: correspondence is semantic and often cross-file.
 
+- **Attempt 3 — read a sample, which is the only method that worked.** 20 top-level
+  build sections drawn on a fixed stride from a population of **1,773**, each read against
+  its own checklist and its siblings'. Result: **16 covered, 2 correctly exempt** (HATEOAS
+  and TDD are advisory — you cannot audit "did you practise TDD"), **2 real gaps**. So a
+  genuine-gap rate near **10%**, on n=20 — indicative, not precise, and stated that way.
+
+Both real gaps were fixed on discovery: `sota-c-cpp` rules/01 §7 *Error handling* had **no
+probe anywhere in the skill** (one incidental hit across seven files), and
+`sota-ml-engineering` advertised *train/serve skew* twice in its own description with
+**zero** checklist items on skew, point-in-time correctness or feature stores across all
+seven of its rules files.
+
 So it is written as a convention in [CONTRIBUTING.md](../CONTRIBUTING.md) with its
-exception (advisory sections, and checks owned by a sibling skill) and left ungated. The
-useful residual, and the reason the numbers are recorded rather than discarded: **no
-evidence was found of the direction that would be worst** — an audit half systematically
-demanding what the build half never asked for. Every sampled instance of it was an
-artifact of the instrument.
+exception (advisory sections, and checks owned by a sibling skill) and left ungated. Two
+things the sample settled that the mechanical attempts could not: the asymmetry is real
+but **modest and one-directional**, and **the feared direction did not appear at all** —
+not one sampled checklist item demanded something the build half never asked for. Every
+apparent instance of that was an artifact of the instrument.
 
 **Where invariant 17 stops, stated with an instance (2026-08-19, the v1.22.14 cut).**
 It asserts two things and no more: every stated count equals the script's own `[k/N]`,
