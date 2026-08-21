@@ -94,6 +94,12 @@ rules files that match the code in front of you. Never load all skills at once.
    did not test, check the thread first for whether it is already known, and
    never publish on someone's behalf without approval of the final text. Full
    procedure: `sota-docs-workflow` rules/03 §8.
+9. **Match the rigour to the stakes — and name the level you chose.** A spike, a
+   one-off script, a local experiment: build it, say in one line that it is a
+   prototype and what you left out, stop. Anything reachable by an untrusted caller
+   or touching money, credentials or another tenant's data gets the full treatment
+   including principle 5, whether or not the request said "quick"; if it is
+   genuinely ambiguous, ask in one line. An *unnamed* shortcut is not a prototype.
 
 ## Routing table
 

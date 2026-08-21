@@ -7,7 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Router operating principle 9 — match the rigour to the stakes, and name the level you
+  chose.** The one criticism from an outside assessment that survived checking: a search
+  for any proportionality rule found a single hit, in `sota-docs-workflow/rules/05`, which
+  a "quick script" task never loads. So a spike or one-off gets built and *labelled* as
+  one; anything reachable by an untrusted caller or touching money, credentials or another
+  tenant's data gets the full treatment including principle 5, *whether or not the request
+  said "quick"*. The load-bearing clause is the last: **an unnamed shortcut is not a
+  prototype** — proportionality is granted, silence is not.
+  **Re-baselined, because it sits inside the block `principle5()` extracts** (ROADMAP item
+  4's "trim and re-baseline together"): before **0.60 → 0.99 (+0.39)**, after **0.57 →
+  0.97 (+0.40)**. The before-run reproduces the published headline exactly. The `with`
+  arm's −0.02 is **not evidence of harm**, and the reason is the control: the `without`
+  arm never sees the router and moved **0.60 → 0.57** between two identical runs, so
+  `temp 0.0` is not deterministic and the treated arm's movement sits inside the band the
+  untreated arm demonstrated. Router now **500/500** lines.
+  [Full method and limits](evals/results/2026-08-21/PRINCIPLE-9-REBASELINE.md)
+
+### Fixed
+
+- **The build-safe scorer had no truncation awareness and graded a truncated build.** A
+  `claude-sonnet-5` run hit `finish_reason=length` at exactly 128,000/128,000 tokens;
+  including it produced **negative** deltas that were pure artifact, since absent
+  safe-path code in a truncated build is the part that was cut off. Drivers now write
+  `.build-meta.json` beside the build and `run-build-safe.py` **refuses** to score a
+  truncated one unless `--allow-truncated` is passed and the number is called a floor.
+  `sota-code-security` rules/10 §2.7 arriving in our own harness. Watched to fail both
+  ways; the selftest still separates 0.000/1.000.
+
 ### Changed
+
+- **On current flagship models the defect-avoidance gap is closed.** `claude-sonnet-5`
+  (2026-06) scores **+0.000** on `avoided` and **+0.024** on the strict measure — and its
+  *unguided* strict score (0.619) is exactly what `sonnet-4.6` scored **with** the
+  library. Four months of model progress absorbed the measured gap, so the result is
+  **historical, not current**, and is now labelled that way alongside the gpt-5.1 row.
 
 - **The pipeline rule generalises: the hazard is not `tail`, it is any filter chosen
   before you know what the output contains** (`sota-shell-scripting/rules/01` §3). A
@@ -20,8 +56,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   selectively, so the remedy is stated as the general one — **redirect first, filter the
   file afterwards**, because a saved file can be re-grepped once the first pattern proves
   wrong and a consumed pipe cannot. Second checklist item added.
-
-
 - **The defect-avoidance headline is now qualified by a second model — which does not
   replicate it.** On `openai/gpt-5.1` (the model this project already uses for cross-model
   de-risking) the **unguided** arm scores **1.000 × 3**: it does not write these defects

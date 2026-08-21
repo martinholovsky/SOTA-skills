@@ -69,6 +69,37 @@ models, one task. A second **task** is the remaining untested direction and is
 recorded in `docs/ROADMAP.md`; it needs a new instrument (three of the seven `fail`
 patterns are domain-specific) with its own validated references, not a re-run.
 
+## 1c. Current flagship models: the gap is closed
+
+`claude-sonnet-4.6` (2026-02) is four months old. Re-run on the current flagships:
+
+| model | arm | `avoided` | `+ safe evidence` |
+|---|---|--:|--:|
+| sonnet-4.6 (2026-02) | unguided → guided | 0.809 → **1.000** | 0.286 → **0.619** |
+| gpt-5.1 | unguided → guided | 1.000 → 1.000 | 0.429 → 0.524 |
+| **claude-sonnet-5** (2026-06) | unguided → guided | **1.000 → 1.000** | **0.619 → 0.642** |
+
+**sonnet-5 shows +0.000 on `avoided` and +0.024 on the strict measure** (unguided n=3,
+guided n=2 — see the exclusion below). Its *unguided* strict score, **0.619**, is exactly
+what sonnet-4.6 scored **with the library**. Four months of model progress absorbed the
+measured gap.
+
+So the defect-avoidance result is **historical, not current**: it describes what the
+library did for a model that wrote these defects, and current flagships do not.
+
+**One build was excluded, and the exclusion is the point.** sonnet-5 guided sample 3 hit
+`finish_reason=length` at exactly **128,000/128,000** tokens. Including it produced
+*negative* deltas (−0.048, −0.047) — pure artifact, because absent safe-path code in a
+truncated build is the part that was cut off, not a choice. `run-build-safe.py` had **no
+truncation awareness at all** and scored it without complaint; the drivers now write
+`.build-meta.json` beside the build and the scorer **refuses** a truncated one unless
+`--allow-truncated` is passed and the number is labelled a floor (`rules/10` §2.7,
+arriving in our own harness).
+
+Also measured while running these: the guided prompt makes sonnet-5 roughly **2.4×** more
+verbose (≈122k vs ≈50k tokens), and at a 64k cap the guided arm returned **empty
+completions** — all budget spent on reasoning, `finish_reason=length` with no content.
+
 ## 2. Calibration — does the report bound its claims by what was run?
 
 Recorded as *"the only untested claim about the audit half"*. It scores **reporting

@@ -17,6 +17,7 @@ Same model, same task, library loaded vs. nothing.
 | Routing (20 tasks) | 0.90 | **1.00** | **+0.10** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
 | **BUILD-safe** (7 defect classes the model must not *write*) — **sonnet-4.6** | 0.81 | **1.00** | **+0.19** | 3×, temp 0.7 | [BUILD-SAFE](2026-08-21/BUILD-SAFE.md) |
 | BUILD-safe — **gpt-5.1**: bare arm saturates, so **no headroom** | 1.00 | 1.00 | +0.00 | 3×, temp 0.7 | [BUILD-SAFE §1b](2026-08-21/BUILD-SAFE.md) |
+| BUILD-safe — **claude-sonnet-5** (current flagship): bare arm saturates | 1.00 | 1.00 | +0.00 | unguided 3×, guided 2× (one truncated build excluded), temp 0.7 | [BUILD-SAFE §1c](2026-08-21/BUILD-SAFE.md) |
 | BUILD-safe, *with positive evidence of the safe path* — sonnet-4.6 | 0.29 | **0.62** | **+0.33** | 3×, temp 0.7 | [BUILD-SAFE](2026-08-21/BUILD-SAFE.md) |
 | BUILD-safe, *with positive evidence* — gpt-5.1 (this measure does **not** saturate) | 0.43 | **0.52** | **+0.10** | 3×, temp 0.7 | [BUILD-SAFE §1b](2026-08-21/BUILD-SAFE.md) |
 | Silent-control detection (81 inert-control cases) | 0.91 | 0.93 | +0.00 | 3×, temp 0.7 | [SILENT-FAILURE](2026-07-20/SILENT-FAILURE.md) |
