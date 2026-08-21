@@ -448,6 +448,16 @@ first.
   power is untested: if the bare arm still scores 1.000, these classes may not be
   elicitable from a spec at all, and that is the finding. **Do not cite a build-safe
   number until the pilot lands and is scored.**
+
+  **State as of 2026-08-21: ready to run, blocked only on producing the two builds.**
+  Verified rather than assumed — `run-build-safe.py` is a **scorer, not a generator** (it
+  grades a `--build` directory and makes no model calls), and its `--selftest` passes with
+  the two references separating cleanly: **0.000 on the known-bad (`reportkit`), 1.000 on
+  the known-good (`reference-safe`)**. The case file's 49 lines are 42 comments and **7
+  real cases**, and `load_cases` exits rather than score an empty set. `SPEC.md`
+  re-checked: **zero** "must …" quality clauses, so the rewrite held. What is missing is
+  one bare-arm and one library-arm build from that spec — model spend, and therefore an
+  owner's decision rather than a scripting task.
 - **Calibration remains the only untested claim about the audit half.** Across four
   settings today, every library arm downgraded its own findings on evidence, bounded
   claims by what it had actually run, and labelled what it had not verified; no bare
