@@ -184,6 +184,7 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-08-20 | **Self-audit of the same day's own work** — "do we have gaps elsewhere?" | Four classes shipped 2026-08-20 were stated only where the incident happened, and were **unreachable from the skills that need them** | **adopted** | `sota-devsecops/rules/05` §5.6 + checklist (a negative control belongs in a `--self-test` **mode of the runner**, not only as a fixture beside it — that file is the canonical home for "every gate ships a known-bad" and a DevSecOps reader never loads `rules/12`), `sota-observability/rules/01` §5 (**"at completion" is load-bearing** — a mid-function line attests only that the line ran; site the claim where the value is consumed), `sota-testing/rules/06` §6.3 (**mutate and read the output, not the suite** — every other probe in that section ends in "run the tests", which cannot answer whether the report is truthful), and `sota-code-security/rules/12` §1b.1 (**a planned change is a legitimate source of a gate**). Verified absent in all four before writing · v1.24.0 |
 | 2026-08-20 | Operator question — "are there other bright ideas like this we should adopt?" | Three refinements of the same day's `--self-test`, which collapsed into one gate: **run it always**, **fail closed**, and **pin the exempt set** | **adopted** | `scripts/check-invariants.sh` invariant **19** + harness probe 19 (25 probes, 14 of 19). The third is the one with teeth: without a pin, "every check is probed or declared unprobeable" is satisfied by adding your new check number to the exempt list. Measured first — the structural pass costs **49 ms**, which is what makes "always" defensible. It caught **itself** on introduction. Also derived probe 17's mutation instead of pinning the invariant count, after that literal went stale twice in one day · v1.24.0 |
 | 2026-08-20 | Field brief — *a method hierarchy for authoring durable guards* (one session on a 38k-test Python codebase) | **Auditing and authoring are different activities**: the library states a method default for the search and none for the guard the search leaves behind | **adopted with one addition** | `sota-testing/rules/02` §2.10 + three checklist items, cross-referenced from `sota-code-security/rules/10`'s absence bullet; **formatter reflow** added as a fourth mutation-did-not-take cause in `sota-testing/rules/06` §6.3 and `sota-code-security/rules/12` §1. Both of the brief's "not a duplicate" citations verified **accurate** (rules/10:286-292 and rules/06:169), and the gap confirmed: all seven `AST` mentions in `skills/` are about auditing, RAG splitting, Python `match`, or a coincidental Cypher relationship name — **none about authoring**. My addition: **name the parser per language**, because "no parser at hand" is precisely when people reach for regex · v1.24.0 |
+| 2026-08-21 | Field brief — *a pipeline is an evidence hazard, not only an exit-status hazard* (three destroyed measurements in one session) | `pipefail` and `${PIPESTATUS[0]}` fix the **status**; nothing in the library said a pipe also destroys the **output**, and the two need different fixes | **adopted** | `sota-shell-scripting/rules/01` §3 + a checklist grep, cross-referenced from `sota/rules/01`'s evidence standard. All three of the brief's citations verified accurate (`rules/01`:47, `rules/01`:124, router `:197`), and the gap confirmed by two independent sweeps. **Reproduced before writing** — and the first reproduction was *wrong*, keeping the cause because it sat last; rebuilt pytest-shaped (cause at the top, summary last), `tail -12` destroyed the `AssertionError` while `1 failed, 38265 passed` survived · unreleased |
 
 ## Entries
 
@@ -1246,3 +1247,46 @@ file that has only §1–§7. References resolved: 1,363 → 1,368.
 
 **Measurement status:** the brief's 74 → 61 orphan-candidate figure is the reporter's,
 on their codebase, and is quoted as such. **No efficacy lift is claimed for the library.**
+
+### 2026-08-21 — the pipe keeps the number and throws away the evidence it is wrong
+
+`sota-shell-scripting` rules/01 §3 already covered the status half correctly, and the
+brief says so rather than claiming novelty: `$?` after a pipeline is the last stage's,
+`${pipestatus[1]}`/`${PIPESTATUS[0]}` are the fixes, and the preamble prescribes
+`set -euo pipefail`. All three citations checked and all three accurate.
+
+**What was genuinely absent is the second failure mode of the same construct.** Every
+existing line treats a pipeline as a hazard to the *exit status*. It is equally a hazard
+to the *output*, and `pipefail` does nothing for that half — a run can have a perfectly
+correct exit status and have thrown away the only copy of the diagnostic explaining it.
+Two independent sweeps found nothing on it; the one near-miss
+(`sota-cli-ux/SKILL.md`:57, `tool cmd > out.txt 2> err.txt`) is about testing a CLI's
+output contract, not about preserving your own measurement.
+
+**The asymmetry is the reason it deserves a rule rather than a tip.** `tail` is *selected*
+to keep the summary line. So the surviving output is the number, and the destroyed output
+is the traceback, the warnings and the stderr context — precisely the material that would
+tell you the number is not to be trusted. The line most likely to be quoted in a report is
+the line the truncation is designed to preserve. That is the `rules/10` silent-control
+shape (a result that looks identical whether or not the thing worked), reached from the
+harness side instead of the product side.
+
+**Reproduced before writing, and the first attempt was wrong.** A nine-line script with
+the `AssertionError` last "survived" `tail -3` — which would have supported the opposite
+conclusion. Rebuilt to the shape the brief actually describes (200 progress lines, cause
+at the top, summary last, as pytest prints): `tail -12` destroyed
+`AssertionError: expected 16, got 4` while `1 failed, 38265 passed` came through intact;
+redirected, both were present and the cause was one `grep` away with no re-run.
+
+**Adopted partly on first-hand evidence from the same session.** This session ran the
+negative-control harness through `| tail -N`, hit `FAIL: 1 of 24 mutations were not
+caught`, and could not tell *which* — so the four-minute harness was re-run twice more,
+each time with a different filter, to recover output that had already been produced. That
+is the brief's failure mode 1 in miniature, committed while adopting the rule against it.
+
+**Scope kept narrow, as the brief asked.** Not "never use `tail`" — watching a log or
+sampling a file is fine. The rule applies where output is **evidence for a claim**, and
+the tell is whether recovering it would mean re-running the job.
+
+**Measurement status:** adopted on reasoning, a verified reproduction, and first-hand
+recurrence. **No efficacy lift is claimed or measured.**

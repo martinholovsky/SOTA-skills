@@ -5,6 +5,29 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **A pipeline destroys output as well as status** (`sota-shell-scripting/rules/01` §3).
+  The library covered the status half correctly — `$?` after a pipeline is the last
+  stage's, `pipefail` and `${PIPESTATUS[0]}` are the fixes — and said nothing about the
+  second failure mode of the same construct: **`pipefail` does nothing to bring destroyed
+  output back**. For any command whose output you intend to *reason about*, redirect to a
+  file and read the file. The asymmetry is what makes it a rule rather than a tip:
+  **`tail` is selected to keep the summary line**, so a pipe preserves the number and
+  discards the traceback, warnings and stderr context — the material that would tell you
+  the number is wrong — and the surviving line is the one most likely to be quoted.
+  Reproduced before writing (and the *first* reproduction was wrong, keeping the cause
+  because it sat last): rebuilt pytest-shaped, `tail -12` destroyed
+  `AssertionError: expected 16, got 4` while `1 failed, 38265 passed` survived intact.
+  Corollaries: an **empty result and a discarded result are the same value**, and
+  unflushed output in a `timeout`-killed process leaves a file that is empty for a reason
+  unrelated to the result. Scope deliberately narrow — not "never use `tail`", but "not
+  for output that is evidence for a claim". Checklist grep added; cross-referenced from
+  `sota/rules/01`'s evidence standard, which now says an audit should keep the output that
+  produced its findings.
+
 ## [1.24.1] - 2026-08-21
 
 **The last two deferrals, closed with their audit halves.** Both ideas held over from the
