@@ -3,8 +3,6 @@
 A thin wrapper over the DB-API. Callers pass parameters; this module owns the
 SQL text so query shapes stay auditable in one place.
 """
-
-
 class Db:
     def __init__(self, conn):
         self._conn = conn
@@ -42,7 +40,7 @@ class Db:
             raise ValueError(f"unsupported sort column: {sort}")
         cur = self._conn.cursor()
         cur.execute(
-            f"SELECT id, title FROM reports WHERE owner_id = ? AND title LIKE ? ORDER BY {column} DESC",
+            f"SELECT id, title FROM reports WHERE owner_id = ? AND title LIKE ? ORDER BY \"{column}\" DESC",
             (owner_id, f"%{term}%"),
         )
         return cur.fetchall()
