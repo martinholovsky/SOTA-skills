@@ -449,6 +449,22 @@ first.
   elicitable from a spec at all, and that is the finding. **Do not cite a build-safe
   number until the pilot lands and is scored.**
 
+  **CROSS-MODEL 2026-08-21 — the headline does not replicate, and that qualifies it.**
+  On `openai/gpt-5.1` the *unguided* arm scores **1.000 × 3**: it does not write these
+  defects, so there is no headroom and Δ avoided is **+0.000** (sonnet-4.6: +0.191). The
+  stricter *with-positive-evidence* measure moves on both (+0.333 / +0.095) because
+  neither bare arm saturates there. Same law the breadth test found for completeness —
+  **the lead tracks the unguided baseline**, here not the domain but the model. README,
+  WHY-IT-WORKS and the scoreboard were all re-qualified the same day rather than left
+  implying generality.
+
+  **NEXT, and it is a new instrument not a re-run: a second TASK.** Three of the seven
+  `fail` patterns are domain-specific (`ORDER BY {sort}`, the quota-handler registration,
+  the role-revocation cache), so a second domain needs new patterns **plus its own
+  known-bad and known-good references validated to separate** before any number from it
+  counts. Deliberately not rushed: an unvalidated instrument produces numbers, not
+  measurements.
+
   **RUN 2026-08-21 — the bare arm did NOT saturate, so the instrument discriminates.**
   Unguided 0.714 / 0.714 / 1.000 (mean **0.809**); with-library 1.000 × 3. Δ avoided
   **+0.19**, Δ avoided-with-safe-evidence **+0.33**. The two classes the unguided arm

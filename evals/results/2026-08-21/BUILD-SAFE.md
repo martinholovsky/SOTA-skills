@@ -30,6 +30,45 @@ still scores 1.000, these classes may not be elicitable from a spec at all, and 
 is the finding."* It did not — 0.809 with one run at 1.000 — so **the SPEC rewrite
 restored discriminating power** and the instrument works.
 
+## 1b. Cross-model: the headline does NOT replicate — and that is the finding
+
+Run the same task and the same two arms on **`openai/gpt-5.1`**, the model this
+project already uses for cross-model de-risking:
+
+| model | arm | `avoided` | mean | `+ safe evidence` |
+|---|---|---|--:|--:|
+| claude-sonnet-4.6 | unguided | 0.714, 0.714, 1.000 | 0.809 | 0.286 |
+| claude-sonnet-4.6 | with library | 1.000 × 3 | **1.000** | 0.619 |
+| **gpt-5.1** | unguided | **1.000 × 3** | **1.000** | 0.429 |
+| **gpt-5.1** | with library | 1.000 × 3 | 1.000 | 0.524 |
+
+| | sonnet-4.6 | gpt-5.1 |
+|---|--:|--:|
+| Δ avoided | **+0.191** | **+0.000** |
+| Δ avoided + safe evidence | **+0.333** | **+0.095** |
+
+**gpt-5.1's unguided arm saturates.** It does not write these defects unaided, so
+there is **no headroom** and the maximum possible lift on `avoided` is zero. The
+`+0.19` is therefore **model-dependent and must not be quoted unqualified.**
+
+This is not a surprise so much as the same law this project already measured for
+completeness, arriving on a new axis: the five-domain breadth test concluded the
+lead **tracks the unguided baseline, not the domain**. Here it tracks the unguided
+baseline, not the model. Where a model already writes these classes correctly
+(gpt-5.1: 1.000), the library has nothing to add on avoidance; where it does not
+(sonnet-4.6: 0.809), it closes the gap completely.
+
+**The stricter measure moves on both**, because neither bare arm saturates there:
+0.286 → 0.619 on sonnet, 0.429 → 0.524 on gpt-5.1. "Did it avoid the defect" is
+saturable; "did it leave positive evidence of the safe path" is not, and is the
+measure that survives a stronger model.
+
+**What this costs the claim, stated plainly:** the honest headline is *"closes a
+defect-avoidance gap where one exists"* — not *"prevents these defects"*. Two
+models, one task. A second **task** is the remaining untested direction and is
+recorded in `docs/ROADMAP.md`; it needs a new instrument (three of the seven `fail`
+patterns are domain-specific) with its own validated references, not a re-run.
+
 ## 2. Calibration — does the report bound its claims by what was run?
 
 Recorded as *"the only untested claim about the audit half"*. It scores **reporting

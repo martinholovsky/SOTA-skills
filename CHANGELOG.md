@@ -5,6 +5,28 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **The defect-avoidance headline is now qualified by a second model — which does not
+  replicate it.** On `openai/gpt-5.1` (the model this project already uses for cross-model
+  de-risking) the **unguided** arm scores **1.000 × 3**: it does not write these defects
+  unaided, so there is no headroom and Δ avoided is **+0.000**, against **+0.191** on
+  `claude-sonnet-4.6`. The `+0.19` is **baseline-dependent and must not be quoted
+  unqualified** — README, `WHY-IT-WORKS.md`, the scoreboard and the write-up were all
+  re-qualified the same day rather than left implying generality.
+  This is the same law the five-domain breadth test already measured for completeness —
+  *the lead tracks the unguided baseline* — arriving on a new axis: there, not the domain;
+  here, not the model. **What survives on both models is the stricter measure**, because
+  neither bare arm saturates there: **+0.33** sonnet, **+0.10** gpt-5.1. So the defensible
+  claim is *"closes a defect-avoidance gap where one exists"*; *"prevents these defects"*
+  is not one this project makes.
+- **The guided arm's runner is now in the repo.** `run-build-safe-arms.py` only ever
+  covered the unguided arm — the guided one lived in a scratch file, so the published
+  number could not actually be reproduced from the repository. Committed as
+  `evals/run-build-safe-arms-guided.py`, with the raw per-run gpt-5.1 scores.
+
 ## [1.25.0] - 2026-08-21
 
 **A new axis, and two instruments that had to prove themselves first.** Every lift this

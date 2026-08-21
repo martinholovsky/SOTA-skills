@@ -109,7 +109,7 @@ library); clean, blind-judged, stable across samples ([results & method →](doc
 - **Completeness +0.39** — from a bare "build X" prompt, best-practice coverage goes ~59% → ~98% (7 tasks): the model stops silently dropping tests, rate limiting, structured logging, and TLS. Web search likely can't recover this (an agent won't search "should I add rate limiting"). **Not model-specific**: a different-family frontier model (`openai/gpt-5.1`) shows **+0.44** on the same tasks ([cross-model →](evals/results/2026-07-22/CROSS-MODEL.md)).
 - **Freshness +0.53** — current-2026 facts (RFCs, CVEs, EOLs) 0.44 → 0.97, where an unguided model is *confidently wrong*.
 - **Routing +0.10** — the right skills load for the task (0.90 → 1.00), even ones a keyword read misses; with the library, results barely move run-to-run.
-- **Defects avoided +0.19 — a different axis, and the newest result.** Every lift above measures what the model *puts into* code. This measures what it **doesn't**: given a spec that states operational pressure ("cache it", "must never 5xx", "keep the guard cheap") and never names a defect, does the model still write SQL injection, IDOR, an inert control? Unguided **0.81**, with the library **1.00** across 7 defect classes — and on the stricter measure that also demands *positive evidence of the safe path*, **0.29 → 0.62 (+0.33)**. Small pilot (3×, one model, treated arm at ceiling) — [method and its five limits →](evals/results/2026-08-21/BUILD-SAFE.md).
+- **Defects avoided +0.19 — a different axis, and the newest result.** Every lift above measures what the model *puts into* code. This measures what it **doesn't**: given a spec that states operational pressure ("cache it", "must never 5xx", "keep the guard cheap") and never names a defect, does the model still write SQL injection, IDOR, an inert control? On `claude-sonnet-4.6`: unguided **0.81** → with the library **1.00** across 7 defect classes; on the stricter measure that also demands *positive evidence of the safe path*, **0.29 → 0.62**. **It is baseline-dependent, and we tested that rather than assuming it**: on `openai/gpt-5.1` the unguided arm already scores **1.00**, so there is no gap to close and the lift is **+0.00** — while the stricter measure still moves (**0.43 → 0.52**). Same law the breadth test found for completeness: the lead tracks the **unguided baseline**, not the domain — and here, not the model. Honest headline: *closes a defect-avoidance gap where one exists*. Small pilot, 3×, two models, one task — [method and limits →](evals/results/2026-08-21/BUILD-SAFE.md).
 
 And not just vs. an unguided model — **head-to-head against the most popular
 guidance libraries on backend build tasks**, SOTA-skills leads on completeness
@@ -136,9 +136,11 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
 
 > **Finding them is the cheap half — and we can prove it.** Across seven instruments,
 > a frontier model recognises these classes unaided: audit lift **+0.00**, published
-> below rather than buried. The expensive half is not writing them in the first place,
-> and that is where the library moves the number: **0.81 → 1.00** on defects avoided
-> under a spec that never names one ([2026-08-21](evals/results/2026-08-21/BUILD-SAFE.md)).
+> below rather than buried. The expensive half is not writing them in the first place.
+> On a model that *does* write them, the library stops it: **0.81 → 1.00**. On one that
+> already doesn't (`gpt-5.1`, unguided 1.00) there is nothing to close — we ran that
+> second model and report the **+0.00** too
+> ([2026-08-21](evals/results/2026-08-21/BUILD-SAFE.md)).
 
 
 - **Controls that are inert** — a safeguard whose success and whose total failure look
