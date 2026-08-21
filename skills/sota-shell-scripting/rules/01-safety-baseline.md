@@ -123,6 +123,44 @@ calling it. `for x in "a b"; do cmd $x; done` and `${var:+--flag $var}` are wher
 bites hardest. Same family: `$?` after a pipeline is the **last** stage's status —
 `${pipestatus[1]}` in zsh, `${PIPESTATUS[0]}` in bash (rules/02 §4).
 
+**A pipeline is an evidence hazard as well as a status hazard, and `pipefail` only fixes
+the status.** For any command whose output you intend to *reason about* — a test run, a
+benchmark, a profile, a long analysis — **redirect to a file and read the file**:
+
+```bash
+cmd > out.txt 2>&1; echo "EXIT=$?"        # status preserved AND output preserved
+grep -nE 'passed|failed|Error' out.txt    # filter AFTER, as often as you like
+```
+
+`cmd 2>&1 | tail -12` keeps the summary and destroys the traceback, the warnings and the
+stderr context above the cut — which is **the material that tells you the summary is
+wrong**. That asymmetry is the whole hazard: `tail` is *selected* to keep the summary
+line, so the pipe preserves the number and discards the evidence that the number is not
+to be trusted, and the surviving line is the one most likely to be quoted. Reproduced on a
+pytest-shaped run (200 progress lines, cause at the top, summary last): piped through
+`tail -12` the `AssertionError` was gone while `1 failed, 38265 passed` survived;
+redirected, both were there and the cause was one `grep` away.
+
+The cost is not the pipe, it is that a consumed pipe **cannot be re-read** — recovering
+the output means re-running the job. A 36-minute suite re-run to retrieve output that had
+already been produced once is the reported case; a four-minute mutation harness re-run
+three times over, because each `| tail -N` answered a different question than the one
+asked, is the same failure in miniature.
+
+Two corollaries:
+- **An empty result and a discarded result are the same value.** A backgrounded
+  `... 2>&1 | tail -14` that produced a 22-byte file containing only `[exited with code 0]`
+  is indistinguishable from a run that measured nothing — and the exit status says
+  neither.
+- **Buffering turns this into a lie about the cause.** In long-running Python use
+  `print(..., flush=True)` (or `-u`): a process killed by `timeout` otherwise leaves a
+  file that is empty for a reason unrelated to the result.
+
+**Scope, deliberately narrow:** this is not "never use `tail`". Piping to `tail` to watch
+a log, sample a file or check a shape is fine and idiomatic. The rule applies where the
+output is **evidence for a claim**, and the tell is whether you would have to re-run the
+job to get it back.
+
 **Arrays are the portable answer.** They mean what they say in both shells; `${=var}` is
 a zsh-only escape hatch for a string you did not build.
 
@@ -272,6 +310,8 @@ files=(/data/*); count=${#files[@]}                               # with nullglo
 ```
 
 ## Audit checklist
+
+- [ ] **Measurements piped into `tail`/`head`.** `grep -rnE '(pytest|go test|cargo|bench|profile|timeout)[^|]*\| *(tail|head)' --include='*.sh' --include='*.yml' .` — and the same in any runbook or CI step whose output someone reads. Evidence commands redirect to a file; `pipefail` does not bring destroyed output back (§3).
 
 Run `shellcheck -S style` first; then hunt manually.
 

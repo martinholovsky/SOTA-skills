@@ -210,6 +210,13 @@ full evidence block for the report. Skill-local block formats are fine during
 a single-domain pass, but they must carry the effort field — §8's roadmap is
 sequenced by risk-reduction-per-effort and can't be built without it.
 
+**Keep the output that produced the finding.** A command whose result you will cite is
+evidence: redirect it to a file rather than piping it through `tail`/`head`, because a
+consumed pipe cannot be re-read and the truncation keeps the summary while discarding the
+context that would qualify it (`sota-shell-scripting` rules/01 §3). An audit that cannot
+reproduce its own quoted output without re-running the job has a weaker evidence chain
+than it appears to.
+
 ## 6. Decision-ledger review — audit the decisions, not just the code
 
 Code review finds defects in what was built. It cannot find the defect where the
