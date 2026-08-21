@@ -5,7 +5,23 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.24.1] - 2026-08-21
+
+**The last two deferrals, closed with their audit halves.** Both ideas held over from the
+2026-08-17 intake landed: event-sourcing **replay** preconditions (the `apply` step must
+be a pure function of state and event, non-deterministic answers captured *in* the event,
+outbound effects gated during replay) and **geospatial** index loss (`ST_DWithin` vs a
+non-indexable `ST_Distance`, and the `geography`/`geometry` units trap). Every claim was
+verified against a primary source *before* being written — Fowler's *Event Sourcing* for
+the first, the PostGIS documentation for the second — and where the source did not support
+the brief's framing, the rule was rewritten and the discrepancy recorded rather than
+smoothed over.
+
+Both shipped **with their audit checklist items in the same change**, which is the
+discipline the previous release wrote down after finding that a fan-out across nine skills
+had shipped the build half alone in seven of them.
+
+**Front door checked:** replay · Geospatial
 
 ### Added
 
@@ -4511,6 +4527,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.24.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.24.1
 [1.24.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.24.0
 [1.23.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.23.1
 [1.23.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.23.0
