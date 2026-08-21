@@ -5,7 +5,39 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.24.0] - 2026-08-21
+
+**Checks that check themselves, and a method for the guards you leave behind.** Invariant
+19 makes "every check has a known-bad" a property of the suite rather than of whoever last
+edited it — it runs on every invocation, pins the exempt set so the rule cannot be
+silenced by exempting your new check, and caught *itself* on introduction. Alongside it,
+a field brief turned into `sota-testing` rules/02 §2.10: **which method a durable guard is
+written in**, now a six-rung ladder for the common case where the language has no native
+AST — and the rung that resolves types, which is the honest limit AST cannot pass.
+
+Opengrep replaces Semgrep as the prescribed SAST engine, verified by running it rather
+than by renaming: **there is no `opengrep ci`**, so a workflow copied from `semgrep ci`
+does not run.
+
+And the library was measured against its own rule. Asked whether an audit half ever
+demands what the build half never asked for: four methods, three failed instruments, one
+answer — **it does not**, but ~4% of build sections lack an audit probe, and the worst
+cluster was **shipped that same morning by this session's own fan-out**.
+
+**Front door checked:** self-test · Opengrep · durable guard
+
+### Changed
+
+- **Docs refreshed for what this cycle actually shipped.** `docs/INDEX.md` gains rows for
+  the guard-authoring method ladder and for choosing a SAST engine (with the
+  **no `opengrep ci`** warning at the front door, since that is the detail a copied
+  workflow dies on). `docs/ROADMAP.md` item 13 re-measured — **cap watch is three files
+  now**, not two: `sota-docs-workflow/rules/01` 456, `sota-code-security/rules/12` **455**
+  (up from 426 as §1b, §1b.1 and the formatter-reflow trap landed), `sota-devsecops/rules/03`
+  451. Items 15 and 16 record the BUILD↔AUDIT measurement and the finding that beat it.
+  `AGENTS.md` back to **199** lines after invariant 19's row pushed it over its own
+  `<200` target — the `--self-test` paragraph is now partly redundant with 19 being a
+  numbered check, so it shrank rather than something being dropped.
 
 ### Fixed
 
@@ -4440,6 +4472,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.24.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.24.0
 [1.23.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.23.1
 [1.23.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.23.0
 [1.22.14]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.22.14
