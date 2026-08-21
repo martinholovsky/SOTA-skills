@@ -16,10 +16,14 @@ per-case data, and honest limitations are in the
 
 ## Measured lift over an unguided model
 
+**Each row names the model it was measured on.** A lift can be overtaken by model
+progress and then read as current when it is historical — that is exactly what happened
+to defect-avoidance between February and June 2026, and it is stated rather than hidden.
+
 | Dimension | What it tests | Clean lift |
 |---|---|---|
-| **Completeness** | best practices embedded from a bare "build X" prompt (7 tasks) | **+0.39** (0.59 → 0.98) |
-| **Freshness** | current 2026 facts (RFCs, CVEs, EOLs, versions, spec editions; 32) | **+0.50–0.53** (32-case; +0.65 on a 20-case run) |
+| **Completeness** | best practices embedded from a bare "build X" prompt (7 tasks) | **+0.39** (0.59 → 0.98) `sonnet-4.6` · **+0.44** `gpt-5.1` · **+0.38** (0.62 → 1.00) on **`sonnet-5`, the current flagship** — it did not expire |
+| **Freshness** | current 2026 facts (RFCs, CVEs, EOLs, versions, spec editions; 32) | **+0.50–0.53** (32-case; +0.65 on a 20-case run) — `sonnet-4.6` |
 | **Defects avoided** | security defects the model must not *write*, from a spec that never names one (7 classes) | **+0.19** (0.81 → 1.00) on `sonnet-4.6`; **+0.00** on `gpt-5.1`, whose bare arm already scores 1.00 |
 | Defects avoided — *with positive evidence of the safe path* | the stricter reading of the same 7 classes; **does not saturate on either model** | **+0.33** (0.29 → 0.62) sonnet · **+0.10** (0.43 → 0.52) gpt-5.1 |
 | Routing | which skill area applies to a task | +0.09 to +0.14 |
@@ -136,6 +140,39 @@ Completeness holds at **0.59 → 0.98 (+0.39)**, a two-run mean with the with-ar
 with-arm ±0.00; freshness at **0.44 → 0.97 (+0.53)**, with-arm ±0.00. The
 library's contribution isn't a lucky sample — it removes the unguided model's
 case-by-case unreliability ([multi-sample writeup](../evals/results/2026-07-13/MULTI-SAMPLE.md)).
+
+## The claims are dated, and one has already expired
+
+Every number above was measured on `claude-sonnet-4.6` (Feb 2026) or `gpt-5.1`. On
+2026-08-21 the **defect-avoidance** row was re-run on `claude-sonnet-5` (Jun 2026) and
+went to **+0.000** — the newer model simply does not write those defects unaided, and its
+*unguided* strict score equals what `sonnet-4.6` scored **with** the library. Four months
+of model progress absorbed that result entirely.
+
+That is the honest frame for everything here: **these lifts measure a gap between a model
+and a standard, and the model side moves.** Where a model is already strong, the library
+adds nothing measurable; where it is weak — older models, cheaper models, unusual tasks,
+the long tail where training data is thin — it closes the gap. That is a real value
+proposition and a narrower one than "makes your model better".
+
+**That question was then answered, and the answer is the good one.** Completeness *was*
+re-measured on `claude-sonnet-5` the same day: **0.62 → 1.00, +0.38** — unchanged within
+the harness's ±0.03 noise floor. The two results together draw a line worth having:
+
+- **Knowledge gaps close with model progress.** "Do not interpolate into `ORDER BY`" is a
+  fact about code; newer models have it, and the defect-avoidance lift went to zero.
+- **Salience gaps do not.** `sonnet-5` unguided still omits **tests in 7 of 7 tasks**,
+  transport in 5, rate limiting in 5 — the same blind spots as its predecessor. Adding
+  rate limiting to an endpoint nobody mentioned is not something the model *doesn't know*;
+  it is something it doesn't *think of* while doing something else.
+
+So the durable value here is not telling a model things it does not know. It is making
+cross-cutting concerns **salient at the moment of writing** — a failure that scales with
+task length and context pressure rather than with model weakness, which is consistent with
+this project's own root-cause finding in
+[WHY-COMPLETENESS-RESIDUAL.md](WHY-COMPLETENESS-RESIDUAL.md), where *adding* the missing
+rule made things worse and a short salient reminder fixed it.
+[Method and limits →](../evals/results/2026-08-21/COMPLETENESS-SONNET-5.md)
 
 ## Vs. competing libraries
 

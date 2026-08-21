@@ -9,6 +9,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Completeness re-measured on the current flagship — and it did *not* expire.**
+  `claude-sonnet-5` (Jun 2026): **0.62 → 1.00, +0.38**, against +0.39/+0.40 on
+  `claude-sonnet-4.6` — unchanged within the ±0.03 noise floor, judge held constant,
+  **zero truncation warnings** so it is a measurement and not a floor. This was the open
+  question left by defect-avoidance going to +0.000 on the same model pair.
+  **The pair explains itself, and the explanation is the valuable part.** Newer models
+  stopped *writing* known-bad patterns, but `sonnet-5` unguided still omits **tests in 7
+  of 7 tasks**, transport in 5, rate limiting in 5 — the same blind spots as its
+  predecessor. So: **knowledge gaps close with model progress; salience gaps do not.**
+  Adding rate limiting to an endpoint nobody mentioned is not something a model doesn't
+  know — it is something it doesn't think of while doing something else. That reframes the
+  durable value: not telling a model what it doesn't know, but making cross-cutting
+  concerns salient at the moment of writing — a failure that scales with task length and
+  context pressure rather than model weakness, consistent with this project's own
+  root-cause work. README, `WHY-IT-WORKS.md` and the scoreboard updated;
+  [method and limits](evals/results/2026-08-21/COMPLETENESS-SONNET-5.md).
+
+### Changed
+
+- **Every headline claim now names the model it was measured on.** A lift is a gap
+  between a model and a standard, and **the model side moves** — on 2026-08-21 the
+  defect-avoidance row went from **+0.19** on `claude-sonnet-4.6` to **+0.000** on
+  `claude-sonnet-5`, whose *unguided* strict score equals what `sonnet-4.6` scored **with**
+  the library. Four months of model progress absorbed the result. Until now every number
+  in `README.md` and `WHY-IT-WORKS.md` was model-unattributed and therefore read as
+  current. `WHY-IT-WORKS.md` gains a section stating the frame plainly — where a model is
+  already strong the library adds nothing measurable; where it is weak (older, cheaper,
+  unusual tasks, thin training data) it closes the gap — and records that **completeness,
+  freshness and routing have *not* been re-measured on a current flagship**, as an open
+  question rather than an assumption (ROADMAP item 17).
+- **`evals/run-completeness.py` gains `--max-tokens`.** The build call had `32000`
+  hardcoded. It never bound `claude-sonnet-4.6` (verified: zero truncation warnings across
+  both runs on 2026-08-21, so those numbers are measurements and not floors), but newer
+  models are far more verbose and a bound cap would silently turn the treated arm into a
+  floor — manufacturing exactly the erosion one would be testing for.
+
+### Added
+
+- **Two harness conventions from the re-baseline** (`evals/README.md`, ROADMAP item 18).
+  **`temp 0` is not deterministic**: the *untreated* arm — whose prompt is `case["task"]`
+  alone and which cannot see the router — moved **0.60 → 0.57** between two otherwise
+  identical runs, so the noise floor is ≈**±0.03** at n=1 and any single-sample delta below
+  ≈0.05 is unresolvable. Which gives the useful move: **an arm that cannot see the
+  treatment is a free negative control for your own measurement — read it before
+  interpreting the treated arm.** And: **never edit a file the runner reads live while a
+  run is in flight** — `principle5()` is read per prompt, so a mid-run edit measures some
+  cases against the old text and some against the new. That happened, was caught, and the
+  run was discarded and redone from a stashed clean tree.
+
+
 - **Router operating principle 9 — match the rigour to the stakes, and name the level you
   chose.** The one criticism from an outside assessment that survived checking: a search
   for any proportionality rule found a single hit, in `sota-docs-workflow/rules/05`, which

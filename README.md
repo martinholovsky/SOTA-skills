@@ -104,11 +104,15 @@ zero-downtime migrations, measure-first performance, API evolvability,
 per-language idioms, SLOs, test-suite health.
 
 **Measured, not asserted** — library vs. an *unguided model* (same model, no
-library); clean, blind-judged, stable across samples ([results & method →](docs/WHY-IT-WORKS.md)):
+library); clean, blind-judged, stable across samples ([results & method →](docs/WHY-IT-WORKS.md)).
+**Every number below names the model it was measured on**, because a lift can be
+overtaken by model progress and then reads as current when it is historical — that
+happened to the defect-avoidance row on 2026-08-21 and is stated there rather than
+quietly left standing:
 
-- **Completeness +0.39** — from a bare "build X" prompt, best-practice coverage goes ~59% → ~98% (7 tasks): the model stops silently dropping tests, rate limiting, structured logging, and TLS. Web search likely can't recover this (an agent won't search "should I add rate limiting"). **Not model-specific**: a different-family frontier model (`openai/gpt-5.1`) shows **+0.44** on the same tasks ([cross-model →](evals/results/2026-07-22/CROSS-MODEL.md)).
-- **Freshness +0.53** — current-2026 facts (RFCs, CVEs, EOLs) 0.44 → 0.97, where an unguided model is *confidently wrong*.
-- **Routing +0.10** — the right skills load for the task (0.90 → 1.00), even ones a keyword read misses; with the library, results barely move run-to-run.
+- **Completeness +0.39 — and it did *not* expire.** Re-measured 2026-08-21 on the current flagship `claude-sonnet-5`: **0.62 → 1.00, +0.38** — unchanged. From a bare "build X" prompt, best-practice coverage goes ~59% → ~98% (7 tasks): the model stops silently dropping tests, rate limiting, structured logging, and TLS. Web search likely can't recover this (an agent won't search "should I add rate limiting"). **Not model-specific, and not stale**: a different-family model (`openai/gpt-5.1`) shows **+0.44** on the same tasks ([cross-model →](evals/results/2026-07-22/CROSS-MODEL.md)), and `claude-sonnet-5` — four months newer than the model this was established on — still shows **+0.38** ([2026-08-21 →](evals/results/2026-08-21/COMPLETENESS-SONNET-5.md)). **Why this one lasted while defect-avoidance did not**: newer models stopped *writing* known-bad patterns, but `sonnet-5` unguided still omits **tests in 7 of 7 tasks**, transport in 5, rate limiting in 5. Knowledge gaps close with model progress; **salience gaps do not**.
+- **Freshness +0.53** — current-2026 facts (RFCs, CVEs, EOLs) 0.44 → 0.97, where an unguided model is *confidently wrong* (`claude-sonnet-4.6`).
+- **Routing +0.10** — the right skills load for the task (0.90 → 1.00), even ones a keyword read misses (`claude-sonnet-4.6`).
 - **Defects avoided +0.19 — a different axis, and the newest result.** Every lift above measures what the model *puts into* code. This measures what it **doesn't**: given a spec that states operational pressure ("cache it", "must never 5xx", "keep the guard cheap") and never names a defect, does the model still write SQL injection, IDOR, an inert control? On `claude-sonnet-4.6`: unguided **0.81** → with the library **1.00** across 7 defect classes; on the stricter measure that also demands *positive evidence of the safe path*, **0.29 → 0.62**. **It is baseline-dependent, and we tested that rather than assuming it**: on `openai/gpt-5.1` the unguided arm already scores **1.00**, so there is no gap to close and the lift is **+0.00** — while the stricter measure still moves (**0.43 → 0.52**). Same law the breadth test found for completeness: the lead tracks the **unguided baseline**, not the domain — and here, not the model. Honest headline: *closes a defect-avoidance gap where one exists*. Small pilot, 3×, two models, one task — [method and limits →](evals/results/2026-08-21/BUILD-SAFE.md).
 
 And not just vs. an unguided model — **head-to-head against the most popular
