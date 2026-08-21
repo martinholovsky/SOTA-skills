@@ -5,7 +5,28 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.25.0] - 2026-08-21
+
+**A new axis, and two instruments that had to prove themselves first.** Every lift this
+project had published measures what a model *puts into* code. This release adds the one
+that measures what it **leaves out**: from a spec that states operational pressure and
+never names a defect, an unguided model writes SQL injection and a missing ownership
+check — with the library it writes neither (**0.81 → 1.00**, and **0.29 → 0.62** on the
+stricter reading that also demands positive evidence of the safe path).
+
+That result is worth more than its size because of what sits beside it: the audit half of
+this library scores **+0.00** on these same classes, published across nine null rows. A
+frontier model already *finds* them. So the value was never detection — it is that the
+code arrives without the defect.
+
+**Calibration** was measured too, and is deliberately **not** reported as a lift: it
+measures adherence to this project's own reporting doctrine, and is kept off the headline
+scoreboard for that reason.
+
+Also: a pipeline destroys output as well as status — `pipefail` fixes only one of them —
+and both deferred intake ideas from 2026-08-17 landed with their audit halves.
+
+**Front door checked:** calibration · positive evidence of the safe path · pipefail
 
 ### Changed
 
@@ -24,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of a failed attempt is worth more intact than tidied.
 
 
-- **The front door now carries the defect-avoidance result, framed as the new axis it
+- **The front door now carries the defects avoided result, framed as the new axis it
   is.** Every previously published lift measures what the model *puts into* code;
   `README.md` and [WHY-IT-WORKS.md](docs/WHY-IT-WORKS.md) now carry the one that measures
   what it **leaves out** — **0.81 → 1.00** on seven defect classes under a spec that
@@ -4611,6 +4632,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.25.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.25.0
 [1.24.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.24.1
 [1.24.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.24.0
 [1.23.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.23.1
