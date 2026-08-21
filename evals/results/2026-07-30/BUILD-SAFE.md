@@ -1,5 +1,12 @@
 # BUILD-safe — the instrument is at ceiling, and the flaw is in my spec
 
+> **Superseded 2026-08-21 — the diagnosis below was right and the fix worked.**
+> The spec was rewritten to state features and facts rather than the property to
+> preserve, and on re-run the bare arm **no longer saturates** (0.809 mean, one run
+> at 1.000) while the with-library arm reaches 1.000 × 3. The instrument
+> discriminates. See [2026-08-21/BUILD-SAFE.md](../2026-08-21/BUILD-SAFE.md). This
+> page is kept unedited as the record of the failed first attempt.
+
 **Date:** 2026-07-30 · **Status: not a result. The instrument does not
 discriminate, because the task over-specifies.** No lift is claimed, and this row
 does **not** belong on the scoreboard as an eighth null.

@@ -89,9 +89,12 @@ findings with the adjudicator controlled at 4/4 (rows above). The audit arm is t
 **+0.00 across nine instruments and four designs**, and the strongest available form of
 the test is among them. **Do not build a tenth accuracy instrument** — recall and
 precision are both exhausted. Only a different *dependent variable* (time-to-find,
-report usability, reach for a non-expert) is untested, and calibration remains
-measurable but would measure adherence to our own doctrine, never to be reported as a
-lift.
+report usability, reach for a non-expert) is untested. **Calibration was measured on
+2026-08-21** — unguided 2.67/4, with-library 4.00/4, the mover being *conditioning
+severity on evidence* (1/3 → 3/3), judge validated on both controls first
+([BUILD-SAFE](2026-08-21/BUILD-SAFE.md)). It stays **off this scoreboard and is never
+reported as a lift**: it measures adherence to our own reporting doctrine, which is a far
+weaker claim than "finds more bugs".
 
 **Final (2026-07-30) — seven instruments, three designs, one answer: stop building
 audit-recall instruments.** After the procedure design also returned +0.00, the

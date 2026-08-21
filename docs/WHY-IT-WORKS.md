@@ -217,6 +217,15 @@ comparison to anyone else required.
 python3 evals/run-completeness.py     # completeness (build-tasks, blind judge)
 python3 evals/run-clean.py --cases evals/cases/freshness.jsonl   # freshness
 python3 evals/run-clean.py --cases evals/cases/router.jsonl      # routing
+
+# defects avoided — validate the scorer FIRST, then produce and score the two arms
+python3 evals/run-build-safe.py --selftest
+python3 evals/run-build-safe-arms.py u OUTDIR anthropic/claude-sonnet-4.6 32000
+python3 evals/run-build-safe.py --build OUTDIR
+
+# calibration — the judge is blinded and carries its own two controls
+python3 evals/run-calibration.py u REPORT.md anthropic/claude-sonnet-4.6 16000
+python3 evals/judge-calibration.py
 ```
 
 Set `OPENROUTER_API_KEY` (env or `.env`, never committed). See

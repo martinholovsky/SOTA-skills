@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Documentation caught up with the two evals, including a claim they falsified.**
+  `evals/results/RESULTS.md` said calibration *"remains measurable"* — it was measured on
+  2026-08-21, so it now says so, with the result and the standing rule that it is never
+  reported as a lift. `evals/README.md` documents both new instruments under **Cases**,
+  including the two facts a future reader needs before trusting either: build-safe's file
+  is **7 real cases inside 49 lines** (42 comments), and the calibration judge is
+  worthless unless its two controls separate first. `docs/INDEX.md` and
+  `WHY-IT-WORKS.md`'s *Reproduce it* block gained the new runners.
+- **The July "not a result" write-up now points forward.** `results/2026-07-30/BUILD-SAFE.md`
+  recorded a failed instrument (bare arm at ceiling, spec leaking the property to
+  preserve). Its diagnosis was right and the fix worked, so it carries a superseded
+  banner to the 2026-08-21 re-run — and is otherwise **left unedited**, because a record
+  of a failed attempt is worth more intact than tidied.
+
+
 - **The front door now carries the defect-avoidance result, framed as the new axis it
   is.** Every previously published lift measures what the model *puts into* code;
   `README.md` and [WHY-IT-WORKS.md](docs/WHY-IT-WORKS.md) now carry the one that measures
