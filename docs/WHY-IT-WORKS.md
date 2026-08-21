@@ -20,8 +20,8 @@ per-case data, and honest limitations are in the
 |---|---|---|
 | **Completeness** | best practices embedded from a bare "build X" prompt (7 tasks) | **+0.39** (0.59 → 0.98) |
 | **Freshness** | current 2026 facts (RFCs, CVEs, EOLs, versions, spec editions; 32) | **+0.50–0.53** (32-case; +0.65 on a 20-case run) |
-| **Defects avoided** | security defects the model must not *write*, from a spec that never names one (7 classes) | **+0.19** (0.81 → 1.00) |
-| Defects avoided — *with positive evidence of the safe path* | the stricter reading of the same 7 classes | **+0.33** (0.29 → 0.62) |
+| **Defects avoided** | security defects the model must not *write*, from a spec that never names one (7 classes) | **+0.19** (0.81 → 1.00) on `sonnet-4.6`; **+0.00** on `gpt-5.1`, whose bare arm already scores 1.00 |
+| Defects avoided — *with positive evidence of the safe path* | the stricter reading of the same 7 classes; **does not saturate on either model** | **+0.33** (0.29 → 0.62) sonnet · **+0.10** (0.43 → 0.52) gpt-5.1 |
 | Routing | which skill area applies to a task | +0.09 to +0.14 |
 | Audit | recognizing a textbook vulnerability | +0.00 |
 | Audit — **real repo, real CVEs** | recall *and* precision on 16 live BOLA sites (Harbor v2.5.1) | +0.00 / +0.00 |
@@ -66,10 +66,20 @@ most for *building* software are the two that are large:
   code arrives without the defect, which is the half no scanner and no review budget
   gives you back. That is the first direct evidence for it.
 
-  **Honest limits, because a small pilot deserves them out loud:** n=3; the treated arm
-  is at **ceiling** (1.000, zero variance), so the delta is bounded by the instrument and
-  cannot separate *"the library helped"* from *"these cases are easy once guided"*; one
-  producing model and one task; and **prompt length is an uncontrolled confound** — the
+  **The second model deflates the headline, and we ran it on purpose.** On
+  `openai/gpt-5.1` the *unguided* arm already scores **1.000** — it does not write these
+  defects, so there is no gap and the lift is **+0.00**. The `+0.19` is therefore
+  **baseline-dependent**, exactly as the five-domain breadth test found for completeness:
+  the lead tracks the unguided baseline, not the domain — and here, not the model. What
+  survives on both is the stricter measure, because neither bare arm saturates there
+  (**+0.33** sonnet, **+0.10** gpt-5.1). So the defensible claim is *"closes a
+  defect-avoidance gap where one exists"*, and "prevents these defects" is not one we make.
+
+  **Other limits, out loud:** n=3; the treated arm is at **ceiling** (1.000, zero
+  variance), so the delta is bounded by the instrument and cannot separate *"the library
+  helped"* from *"these cases are easy once guided"*; **one task** (a second needs a new
+  instrument — three of seven `fail` patterns are domain-specific); and **prompt length is
+  an uncontrolled confound** — the
   guided prompt is ~66k characters against ~4k, so some of the effect may be "more
   instruction to be careful" rather than this library's content. The competitor benchmark
   below controls for that; this pilot does not.
