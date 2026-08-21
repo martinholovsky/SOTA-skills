@@ -249,10 +249,11 @@ exceeds the per-skill 5,000-token cut:
 So after a compaction, a re-attached router keeps roughly its first half. **This is
 unverified in practice** — it is read off the documentation and a byte-count
 heuristic, not observed in a session, and the ordering inside each file decides what
-actually survives. It is recorded rather than acted on: the router is at **494/500**
-lines (re-counted 2026-08-20 with `grep -c ''`; this sentence previously read
-"500/500 with no slack", and the number has also read 491 — never trust it in prose,
-see [ROADMAP.md](ROADMAP.md) item 4), and the honest next step is to
+actually survives. It is recorded rather than acted on: the router is at **500/500**
+lines — full — as of 2026-08-22, principle 9 having taken the last of the headroom
+(re-count with `grep -c ''`; this sentence has read "500/500 with no slack", then 491,
+then 494, so it has been wrong more often than right — see
+[ROADMAP.md](ROADMAP.md) item 4), and the honest next step is to
 *watch* a compaction and see what is retained before reshaping anything around a
 number we have not measured.
 

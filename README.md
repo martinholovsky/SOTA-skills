@@ -810,6 +810,15 @@ Naming one (or the `sota` router) just makes the routing explicit. From there:
 4. If `profiles/<you>.md` exists, its stack choices are BUILD defaults and the
    AUDIT baseline (deviations get flagged).
 
+**It scales the rigour to the stakes, and names the level it chose.** A spike, a
+one-off script or a local experiment gets built and *labelled* as a prototype, with
+one line on what was left out — the full treatment is not applied to throwaway code.
+But anything reachable by an untrusted caller, or touching money, credentials or
+another tenant's data, gets it *whether or not the request said "quick"*. The
+load-bearing half is the labelling: **an unnamed shortcut is not a prototype**, so
+proportionality is something the library grants out loud rather than something it
+does silently (operating principle 9).
+
 ## Conventions
 
 - Every rules file ends with an **Audit checklist** (yes/no questions, often
