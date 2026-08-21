@@ -109,6 +109,7 @@ library); clean, blind-judged, stable across samples ([results & method →](doc
 - **Completeness +0.39** — from a bare "build X" prompt, best-practice coverage goes ~59% → ~98% (7 tasks): the model stops silently dropping tests, rate limiting, structured logging, and TLS. Web search likely can't recover this (an agent won't search "should I add rate limiting"). **Not model-specific**: a different-family frontier model (`openai/gpt-5.1`) shows **+0.44** on the same tasks ([cross-model →](evals/results/2026-07-22/CROSS-MODEL.md)).
 - **Freshness +0.53** — current-2026 facts (RFCs, CVEs, EOLs) 0.44 → 0.97, where an unguided model is *confidently wrong*.
 - **Routing +0.10** — the right skills load for the task (0.90 → 1.00), even ones a keyword read misses; with the library, results barely move run-to-run.
+- **Defects avoided +0.19 — a different axis, and the newest result.** Every lift above measures what the model *puts into* code. This measures what it **doesn't**: given a spec that states operational pressure ("cache it", "must never 5xx", "keep the guard cheap") and never names a defect, does the model still write SQL injection, IDOR, an inert control? Unguided **0.81**, with the library **1.00** across 7 defect classes — and on the stricter measure that also demands *positive evidence of the safe path*, **0.29 → 0.62 (+0.33)**. Small pilot (3×, one model, treated arm at ceiling) — [method and its five limits →](evals/results/2026-08-21/BUILD-SAFE.md).
 
 And not just vs. an unguided model — **head-to-head against the most popular
 guidance libraries on backend build tasks**, SOTA-skills leads on completeness
@@ -132,6 +133,13 @@ difficulty, not the domain — we measure it and say so.
 
 Ten classes of defect survive every linter, SAST rule, and CVE scanner, because in
 each one the code isn't *wrong*. The library hunts them as explicit passes:
+
+> **Finding them is the cheap half — and we can prove it.** Across seven instruments,
+> a frontier model recognises these classes unaided: audit lift **+0.00**, published
+> below rather than buried. The expensive half is not writing them in the first place,
+> and that is where the library moves the number: **0.81 → 1.00** on defects avoided
+> under a spec that never names one ([2026-08-21](evals/results/2026-08-21/BUILD-SAFE.md)).
+
 
 - **Controls that are inert** — a safeguard whose success and whose total failure look
   identical from outside: a swallowed enforcement exception, a ruleset that loads zero
@@ -266,9 +274,12 @@ There will be no tenth accuracy instrument: only a different *dependent variable
 The measurement discipline is the part that is hard to copy, so it is worth stating
 plainly. Every item below is in the repo, not a claim about it:
 
-- **Nulls are published, not buried.** Seven +0.00 rows sit on the
-  [scoreboard](evals/results/RESULTS.md) next to the +0.39 — including the four that
-  say the audit half of this library adds nothing a good model doesn't already do.
+- **Nulls are published, not buried.** **Nine** +0.00 rows sit on the
+  [scoreboard](evals/results/RESULTS.md) next to the +0.39 — including the ones that
+  say, in our own words, that the audit half of this library adds nothing a good model
+  doesn't already do. That null is *why* the defect-avoidance result above matters: we
+  went looking for value where our own measurements said there wasn't any, and reported
+  both. (This line read "seven" until 2026-08-21 — it was understating the count.)
 - **A lift was retracted.** An early +0.07 on inert-control detection did not
   reproduce when the sample grew from 15 to 49 cases. It was withdrawn and the
   retraction is documented rather than quietly dropped.
