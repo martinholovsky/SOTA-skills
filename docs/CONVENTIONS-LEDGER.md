@@ -218,11 +218,27 @@ measurement, not an opinion:
   ungrounded while being grounded in two **sibling** files. Both failure modes are
   intrinsic: correspondence is semantic and often cross-file.
 
-- **Attempt 3 — read a sample, which is the only method that worked.** 20 top-level
-  build sections drawn on a fixed stride from a population of **1,773**, each read against
-  its own checklist and its siblings'. Result: **16 covered, 2 correctly exempt** (HATEOAS
-  and TDD are advisory — you cannot audit "did you practise TDD"), **2 real gaps**. So a
-  genuine-gap rate near **10%**, on n=20 — indicative, not precise, and stated that way.
+- **Attempt 3 — read a sample, which is the only method that works.** 20 sections on a
+  fixed stride from a population of **1,773**: **16 covered, 2 correctly exempt** (HATEOAS
+  and TDD are advisory — you cannot audit "did you practise TDD"), **2 real gaps**.
+- **Attempt 4 — n=60, and the rate collapsed.** A second systematic sample, screened on
+  section-*body* terms against the file's own checklist **and its siblings'**, flagged 7.
+  All 7 read: **5 were covered** (the screen over-flags on synonymy), 1 correctly exempt
+  (a pure cross-reference section), **1 real gap**. Eleven `ok` calls were then read as a
+  false-negative check — including the seven weakest — and **every apparent gap dissolved
+  under correct checking**: one had been searched in the wrong file, one was covered by an
+  item phrased as `cast()` rather than "narrowing".
+  Pooled over the 80 sampled sections the confirmed rate is **~4%**, not the 10% n=20
+  suggested. The honest caveat: 18 of the 60 were read in full, the rest screened, and the
+  screen is known to err **both ways** — so 4% is a floor with a soft ceiling, not a
+  measurement.
+- **The finding that beat the percentage: gaps cluster by *file*, not by section**, and
+  the worst cluster was **self-inflicted the same day**. Ranking files by weak-screen
+  density put two `rules/02-design-api.md` files on top; reading the first showed the real
+  cause — the in-band-sentinel row added to **nine language skills that morning** had
+  shipped with an audit item in only **two** of them. Seven were fixed on discovery. The
+  lesson is procedural, not statistical: **a fan-out across N skills is N chances to ship
+  the build half alone**, and the author is the last person who will notice.
 
 Both real gaps were fixed on discovery: `sota-c-cpp` rules/01 §7 *Error handling* had **no
 probe anywhere in the skill** (one incidental hit across seven files), and

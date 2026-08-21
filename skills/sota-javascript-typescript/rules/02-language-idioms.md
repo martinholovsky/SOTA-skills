@@ -258,6 +258,10 @@ const truncate = (s: string, n: number) => [...seg.segment(s)].slice(0, n).map(x
 
 ## Audit checklist
 
+- [ ] In-band sentinels: `grep -rnE 'return -1' --include='*.ts' --include='*.js' src/` — a
+      `-1` that is **stored or passed** rather than tested on the next line. Remember `??`
+      does not rescue it (`-1 ?? x` is `-1`); only `null`/`undefined` trigger it.
+
 - [ ] `grep -rn "[^=!]==[^=]\|!=[^=]" --include="*.ts" src/` — loose equality (MEDIUM; eqeqeq lint).
 - [ ] `grep -rn "|| 0\||| ''\||| \[\]\||| {}" src/` and `\b(port|count|index|limit|offset|retries)\s*=.*||` — `||` where `??` is meant (MEDIUM, HIGH if money/ports).
 - [ ] `grep -rn "forEach(async" src/` — fire-and-forget async iteration (HIGH).

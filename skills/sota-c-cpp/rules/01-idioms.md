@@ -185,4 +185,9 @@ grep -rn 'std::expected\|absl::Status\|tl::expected' --include='*.cpp' --include
 
 # Broad idiom enforcement (the canonical config)
 clang-tidy --checks='cppcoreguidelines-*,modernize-*,bugprone-*' <files>
+
+# In-band sentinels (§7/§8) — absence encoded as a value
+grep -rnE 'return -1;' --include='*.c' --include='*.cpp' .      # producer: same constant from 2 branches?
+grep -rn 'atoi(\|atol(' --include='*.c' --include='*.cpp' .      # 0 on garbage == 0 on "0" (rules/04)
+grep -rnE 'char[[:space:]]+[a-z_]+[[:space:]]*=[[:space:]]*getchar' --include='*.c' .  # EOF in a char: breaks only where char is UNSIGNED
 ```

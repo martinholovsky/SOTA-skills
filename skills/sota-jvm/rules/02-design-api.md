@@ -118,4 +118,11 @@ grep -rn 'throws Exception' --include='*.java' .
 grep -rnE 'org\.springframework\.lang\.(Nullable|NonNull)' --include='*.java' --include='*.kt' .
 
 # Enforcement: Error Prone + NullAway, SpotBugs, detekt
+
+# In-band sentinels (§1a) — `-1` is not absence
+grep -rnE 'return -1;' --include='*.java' --include='*.kt' .    # producer; prefer OptionalInt / Integer + @Nullable
+grep -rnE '(int|long) [a-zA-Z]+ = .*\.(indexOf|lastIndexOf)\(' --include='*.java' .  # result STORED, not tested on the next line
+# Module/package structure (§6) — no probe existed before 2026-08-21
+grep -rn 'module-info.java' --include='*.java' . || echo 'no JPMS module descriptors'
+grep -rnE '^import .*\.(internal|impl)\.' --include='*.java' .   # reaching into another package's internals
 ```

@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Seven of the nine language rows added in the in-band-sentinel fan-out shipped with no
+  audit item** — `sota-golang`, `sota-rust` (partial), `sota-c-cpp`, `sota-jvm`,
+  `sota-javascript-typescript`, `sota-dotnet` and `sota-ruby`. Only Python and PHP had
+  one. Each now carries a language-specific probe built from the behaviour measured when
+  the row was written: producer greps for `return -1`, `strconv.Atoi` with a dropped
+  error, `unwrap_or(-1)` and `#[serde(default)]` on numeric fields, `atoi`, `EOF` stored
+  in a `char`, an `indexOf` result **stored rather than tested on the next line**,
+  `TryParse` with a discarded `bool`, and `.to_i` on untrusted input. `sota-jvm` §6
+  (module/package structure) had no probe either and gained one. Found by sampling the
+  library's own BUILD↔AUDIT correspondence — i.e. the fan-out committed, that morning,
+  precisely the failure the sampling exercise existed to look for.
+- **`sota-golang` rules/01's in-band-sentinel subsection was unnumbered**, so `§4a` did
+  not resolve; numbered to match the `1a`/`6a` pattern used in the sibling skills. Caught
+  by invariant 18, which is now three-for-three at catching this session's own citations.
+
 ### Added
 
 - **A parser ladder for languages without a native AST** (`sota-testing/rules/02` §2.10).

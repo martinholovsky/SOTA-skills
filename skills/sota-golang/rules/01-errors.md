@@ -108,7 +108,7 @@ Context errors: check `errors.Is(err, context.Canceled)` /
 `context.DeadlineExceeded` before counting a failure as a real one — a
 canceled request is not a dependency outage; don't page on it.
 
-### In-band sentinels — Go's are documented, yours are not
+### 4a. In-band sentinels — Go's are documented, yours are not
 
 Go's stdlib deliberately returns in-band sentinels and **documents them**:
 `strings.Index`/`LastIndex` return `-1` when not found (verified, go1.26.5). That is
@@ -272,6 +272,14 @@ see `rules/05`).
 ## Audit checklist
 
 Run from repo root; verify each hit manually.
+
+**In-band sentinels — a value standing in for absence** (§4a). Go's own `-1` from
+`strings.Index` is documented and fine when tested immediately; yours is not:
+
+```bash
+grep -rnE 'return -1$|return -1,' --include='*.go' .        # producer — prefer (T, bool) comma-ok
+grep -rnE ':?= .*strconv\.Atoi\(' --include='*.go' . | grep -v 'err'   # the 0 is in-band if err is dropped
+```
 
 ```bash
 # Discarded errors (also rely on errcheck via golangci-lint)
