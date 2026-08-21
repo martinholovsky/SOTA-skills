@@ -172,6 +172,24 @@ is a Type 1 decision — adopt only with replay/audit requirements and ops
 capacity for snapshotting, upcasting, and GDPR-compliant deletion (crypto-
 shredding), each of which must be designed before adoption.
 
+**Rule (the precondition replay quietly assumes):** rebuilding state means re-running the
+**apply** step over old events, so that step must be a **pure function of (state, event)**.
+Every non-deterministic input it touches — the wall clock, a random or UUID generator, a
+config lookup, a call to another service — makes the rebuilt state differ from the
+original, silently and without an error. The classic case is an external query: *"if I ask
+for an exchange rate on December 5th and replay that event on December 20th, I will need
+the exchange rate on Dec 5"* (Fowler, *Event Sourcing*). Two remedies, and you need both:
+**capture the answer in the event** (the rate, the generated id, the timestamp — resolved
+once, at command time), and **gate outbound effects during replay** so a rebuild does not
+re-send emails or re-charge cards. A gateway that cannot be switched into replay mode is a
+replay you can only run in a scratch environment, which is the same as not having one.
+
+**Rule:** the **event log is the durable record; commands are not.** A command is a
+*request* that may be rejected, deduplicated, or rewritten; the event is what actually
+happened. So the durability, retention and backup budget belongs to the event store, and a
+lost command is a retry while a lost event is unrecoverable state. If your design gives
+commands the stronger guarantee, the roles have been swapped.
+
 ## 7. Queues: DLQs, ordering, backpressure
 
 **Rule:** Every queue/subscription has: a max-retry policy with backoff, a
@@ -321,6 +339,16 @@ weekly:
 - "The clock is right" — clock skew between machines is unbounded for ordering purposes (§9); never compare timestamps from two machines to decide order or expiry of anything critical.
 
 ## Audit checklist
+
+- [ ] **Event sourcing: is replay actually runnable, or only theoretically?** Does the
+      `apply` step read a wall clock, a random/UUID generator, config, or another service?
+      Each one makes a rebuild differ from the original **silently** (§6). The values must
+      be resolved at command time and **captured in the event**.
+- [ ] Can outbound effects be **gated during replay** — a gateway with a replay mode? If
+      not, replay only runs in a scratch environment, which is not a rebuild capability
+      (§6).
+- [ ] Do **events** get the durability/retention/backup budget rather than commands? A
+      lost command is a retry; a lost event is unrecoverable state (§6).
 
 - Is the consistency model (linearizable vs eventual, staleness bound) written down per critical operation?
 - Is every message handler and retried endpoint provably idempotent? Is dedupe state committed atomically with the state change?

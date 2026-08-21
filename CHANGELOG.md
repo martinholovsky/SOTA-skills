@@ -5,6 +5,45 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Event-sourcing replay preconditions** (`sota-architecture/rules/03` §6). Replay
+  re-runs the **apply** step over old events, so that step must be a **pure function of
+  (state, event)** — every wall clock, RNG, config lookup or service call it touches makes
+  the rebuilt state differ from the original, silently and without an error. Verified
+  against a primary source before writing: Fowler's *Event Sourcing* states the
+  external-query case directly — *"if I ask for an exchange rate on December 5th and
+  replay that event on December 20th, I will need the exchange rate on Dec 5"* — and
+  prescribes gateways that can be disabled during replay. Two remedies, both required:
+  **capture the answer in the event**, and **gate outbound effects during replay** (a
+  gateway with no replay mode means replay only runs in a scratch environment, which is
+  not a rebuild capability). Plus the ownership rule: the **event log carries the
+  durability budget, not commands** — a lost command is a retry, a lost event is
+  unrecoverable state.
+- **Geospatial: the three ways the index is lost** (`sota-databases/rules/03`). Geometry
+  was one word in the GiST row and three distinct traps in practice, all verified against
+  the PostGIS documentation: `ST_DWithin` *"includes a bounding box comparison that makes
+  use of any indexes"* while **`ST_Distance` is explicitly non-indexable**, so a distance
+  in `WHERE` scans the table and returns the right answer; a hand-rolled haversine is the
+  same mistake wearing maths; and the `geography`/`geometry` choice is about **units and
+  extent** — `geography` is always metres and assumes EPSG:4326, `geometry` uses the
+  SRID's units (degrees for 4326, where Cartesian distance is meaningless), with
+  `geography`'s real costs being trigonometry and **fewer functions supporting it
+  natively**. Audit with `EXPLAIN`, not by reading the SQL.
+- Both landed **with their audit checklist items in the same change** — which is the
+  discipline ROADMAP item 16 exists to enforce, applied to the first change after it was
+  written.
+
+### Fixed
+
+- **An ADOPTION-LOG row said `deferred` for two days after the work shipped.** The
+  `sota-rust` `std::process::Command` gap was deferred 2026-08-18 and closed 2026-08-19 as
+  `rules/05` §9 (v1.22.11) — and nobody came back to the log. Verified before correcting:
+  the section exists at `rules/05:221` and its checklist carries six subprocess probes.
+  That is exactly what a landed-in pointer is for, so the row now carries one.
+
 ## [1.24.0] - 2026-08-21
 
 **Checks that check themselves, and a method for the guards you leave behind.** Invariant
