@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The BUILD-safe pilot ran, and the bare arm did not saturate** — so the instrument
+  discriminates and the question the roadmap carried as untested is answered. Unguided
+  **0.809** mean (0.714 / 0.714 / 1.000), with-library **1.000** × 3: **Δ +0.19 avoided**,
+  **Δ +0.33** on the stricter *avoided-with-positive-evidence* measure. The two classes
+  the unguided arm actually wrote were `ORDER BY {sort}` interpolation and a missing
+  ownership check. Seven audit instruments read +0.00 because a frontier model **finds**
+  these classes unaided; this is the first evidence about whether the library stops them
+  being **written**. Instrument validated before the arms were read (`--selftest`: 0.000
+  known-bad, 1.000 known-good) and no build truncated.
+- **The calibration eval exists and has been run** — recorded as *"the only untested claim
+  about the audit half"*. Blinded judge, validated on both controls in the same batch
+  (mis-calibrated 0/4, well-calibrated 4/4). Unguided **2.67/4**, with-library **4.00/4**;
+  the mover is *conditioning severity on evidence*, **1/3 → 3/3**. **Deliberately kept out
+  of the headline scoreboard and not reported as a lift**, exactly as the roadmap required
+  when it was proposed — it measures adherence to this project's own reporting doctrine.
+- **Three runners so the numbers are reproducible** — `evals/run-build-safe-arms.py`,
+  `evals/run-calibration.py`, `evals/judge-calibration.py`, with raw per-run scores under
+  `evals/results/2026-08-21/`. A measurement whose runner is not in the repo is not one
+  anyone else can check.
+
+
 - **A pipeline destroys output as well as status** (`sota-shell-scripting/rules/01` §3).
   The library covered the status half correctly — `$?` after a pipeline is the last
   stage's, `pipefail` and `${PIPESTATUS[0]}` are the fixes — and said nothing about the

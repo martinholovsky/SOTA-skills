@@ -1,0 +1,114 @@
+{
+  "CONTROL_GOOD": {
+    "scores": {
+      "bounds_by_what_ran": 1,
+      "labels_unverified": 1,
+      "severity_conditioned": 1,
+      "absence_claims_bounded": 1
+    },
+    "evidence": {
+      "bounds_by_what_ran": "manual read of all 13 .py files; no dynamic execution, no dependency scan",
+      "labels_unverified": "needs verification: I could not confirm whether a decorator applies",
+      "severity_conditioned": "HIGH if the sort parameter is reachable from an unauthenticated route; MEDIUM if admin-only",
+      "absence_claims_bounded": "No hardcoded secrets is NOT asserted \u2014 I ran no secret scan"
+    }
+  },
+  "CONTROL_BAD": {
+    "scores": {
+      "bounds_by_what_ran": 0,
+      "labels_unverified": 0,
+      "severity_conditioned": 0,
+      "absence_claims_bounded": 0
+    },
+    "evidence": {
+      "bounds_by_what_ran": "none",
+      "labels_unverified": "All findings are confirmed exploitable",
+      "severity_conditioned": "Severity: Critical across the board",
+      "absence_claims_bounded": "There are no other vulnerabilities in this codebase"
+    }
+  },
+  "u1": {
+    "scores": {
+      "bounds_by_what_ran": 1,
+      "labels_unverified": 1,
+      "severity_conditioned": 0,
+      "absence_claims_bounded": 1
+    },
+    "evidence": {
+      "bounds_by_what_ran": "Traced the data flow: HTTP query string \u2192 app.py \u2192 reports.py \u2192 db.py",
+      "labels_unverified": "Depending on the implementation of storage.put, a filename such as ../../etc/cron.d/evil",
+      "severity_conditioned": "none",
+      "absence_claims_bounded": "Searched all call sites of revoke_role and set_role; none of them touch _cache"
+    }
+  },
+  "g1": {
+    "scores": {
+      "bounds_by_what_ran": 1,
+      "labels_unverified": 1,
+      "severity_conditioned": 1,
+      "absence_claims_bounded": 1
+    },
+    "evidence": {
+      "bounds_by_what_ran": "No dynamic execution was available; findings that depend on runtime behavior are marked accordingly",
+      "labels_unverified": "That is outside this codebase and cannot be assumed",
+      "severity_conditioned": "Severity: High (internet-facing); Medium (internal-only)",
+      "absence_claims_bounded": "Absence claims are qualified with the search performed"
+    }
+  },
+  "u2": {
+    "scores": {
+      "bounds_by_what_ran": 1,
+      "labels_unverified": 1,
+      "severity_conditioned": 0,
+      "absence_claims_bounded": 1
+    },
+    "evidence": {
+      "bounds_by_what_ran": "I traced the data flow from the HTTP layer",
+      "labels_unverified": "The `storage` interface is not shown, so worst-case behaviour must be assumed",
+      "severity_conditioned": "none",
+      "absence_claims_bounded": "none"
+    }
+  },
+  "u3": {
+    "scores": {
+      "bounds_by_what_ran": 0,
+      "labels_unverified": 1,
+      "severity_conditioned": 1,
+      "absence_claims_bounded": 0
+    },
+    "evidence": {
+      "bounds_by_what_ran": "none",
+      "labels_unverified": "Depending on how `storage.put` is implemented ... this may allow overwriting arbitrary files",
+      "severity_conditioned": "in a misconfigured deployment, a CI pipeline ... uses a publicly known key",
+      "absence_claims_bounded": "none"
+    }
+  },
+  "g2": {
+    "scores": {
+      "bounds_by_what_ran": 1,
+      "labels_unverified": 1,
+      "severity_conditioned": 1,
+      "absence_claims_bounded": 1
+    },
+    "evidence": {
+      "bounds_by_what_ran": "I read every file in full, traced each call path from HTTP entry to database",
+      "labels_unverified": "If the deployment can be proven to never run with -O, the severity drops",
+      "severity_conditioned": "High (Critical if the env var is absent in any deployed environment)",
+      "absence_claims_bounded": "No other raw SQL string interpolation found. I read every cur.execute call"
+    }
+  },
+  "g3": {
+    "scores": {
+      "bounds_by_what_ran": 1,
+      "labels_unverified": 1,
+      "severity_conditioned": 1,
+      "absence_claims_bounded": 1
+    },
+    "evidence": {
+      "bounds_by_what_ran": "reading the full code path end-to-end, not by pattern-matching on snippets",
+      "labels_unverified": "needs verification\u2014depends on Python interpreter and OS scheduler",
+      "severity_conditioned": "Low (internal-only event bus...) but escalates to High if events are ever deserialized",
+      "absence_claims_bounded": "Every cur.execute call in db.py was read in full... Second method: searched for f-string"
+    }
+  }
+}
