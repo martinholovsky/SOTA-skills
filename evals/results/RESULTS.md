@@ -13,6 +13,7 @@ Same model, same task, library loaded vs. nothing.
 | Dimension | Without | With SOTA | Lift | Samples | Source |
 |---|---|---|---|---|---|
 | **Completeness** (7 build tasks) | 0.59 | **0.98** | **+0.39** | 2 runs × 3, temp 0.7 | [MIRROR-VERIFICATION](2026-07-20/MIRROR-VERIFICATION.md) |
+| **Completeness — `claude-sonnet-5`** (current flagship, 2026-06): **holds** | 0.62 | **1.00** | **+0.38** | 1×, temp 0.0 | [SONNET-5](2026-08-21/COMPLETENESS-SONNET-5.md) |
 | **Freshness** (32 current-2026 facts) | 0.44 | **0.97** | **+0.53** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
 | Routing (20 tasks) | 0.90 | **1.00** | **+0.10** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
 | **BUILD-safe** (7 defect classes the model must not *write*) — **sonnet-4.6** | 0.81 | **1.00** | **+0.19** | 3×, temp 0.7 | [BUILD-SAFE](2026-08-21/BUILD-SAFE.md) |

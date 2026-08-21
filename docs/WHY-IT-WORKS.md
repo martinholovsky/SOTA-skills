@@ -22,7 +22,7 @@ to defect-avoidance between February and June 2026, and it is stated rather than
 
 | Dimension | What it tests | Clean lift |
 |---|---|---|
-| **Completeness** | best practices embedded from a bare "build X" prompt (7 tasks) | **+0.39** (0.59 → 0.98) — `sonnet-4.6`; **+0.44** on `gpt-5.1` |
+| **Completeness** | best practices embedded from a bare "build X" prompt (7 tasks) | **+0.39** (0.59 → 0.98) `sonnet-4.6` · **+0.44** `gpt-5.1` · **+0.38** (0.62 → 1.00) on **`sonnet-5`, the current flagship** — it did not expire |
 | **Freshness** | current 2026 facts (RFCs, CVEs, EOLs, versions, spec editions; 32) | **+0.50–0.53** (32-case; +0.65 on a 20-case run) — `sonnet-4.6` |
 | **Defects avoided** | security defects the model must not *write*, from a spec that never names one (7 classes) | **+0.19** (0.81 → 1.00) on `sonnet-4.6`; **+0.00** on `gpt-5.1`, whose bare arm already scores 1.00 |
 | Defects avoided — *with positive evidence of the safe path* | the stricter reading of the same 7 classes; **does not saturate on either model** | **+0.33** (0.29 → 0.62) sonnet · **+0.10** (0.43 → 0.52) gpt-5.1 |
@@ -155,12 +155,24 @@ adds nothing measurable; where it is weak — older models, cheaper models, unus
 the long tail where training data is thin — it closes the gap. That is a real value
 proposition and a narrower one than "makes your model better".
 
-**What follows, stated as an open question rather than an assumption:** completeness has
-**not** been re-measured on a current flagship. It may have eroded the same way, or it may
-be durable because forgetting a cross-cutting concern is a different failure from writing
-a known-bad pattern. Assuming immunity would be exactly the unearned inference this
-library exists to prevent, so it is recorded in [ROADMAP.md](ROADMAP.md) as a measurement
-to run, not as a conclusion.
+**That question was then answered, and the answer is the good one.** Completeness *was*
+re-measured on `claude-sonnet-5` the same day: **0.62 → 1.00, +0.38** — unchanged within
+the harness's ±0.03 noise floor. The two results together draw a line worth having:
+
+- **Knowledge gaps close with model progress.** "Do not interpolate into `ORDER BY`" is a
+  fact about code; newer models have it, and the defect-avoidance lift went to zero.
+- **Salience gaps do not.** `sonnet-5` unguided still omits **tests in 7 of 7 tasks**,
+  transport in 5, rate limiting in 5 — the same blind spots as its predecessor. Adding
+  rate limiting to an endpoint nobody mentioned is not something the model *doesn't know*;
+  it is something it doesn't *think of* while doing something else.
+
+So the durable value here is not telling a model things it does not know. It is making
+cross-cutting concerns **salient at the moment of writing** — a failure that scales with
+task length and context pressure rather than with model weakness, which is consistent with
+this project's own root-cause finding in
+[WHY-COMPLETENESS-RESIDUAL.md](WHY-COMPLETENESS-RESIDUAL.md), where *adding* the missing
+rule made things worse and a short salient reminder fixed it.
+[Method and limits →](../evals/results/2026-08-21/COMPLETENESS-SONNET-5.md)
 
 ## Vs. competing libraries
 

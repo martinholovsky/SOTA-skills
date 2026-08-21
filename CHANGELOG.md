@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Completeness re-measured on the current flagship — and it did *not* expire.**
+  `claude-sonnet-5` (Jun 2026): **0.62 → 1.00, +0.38**, against +0.39/+0.40 on
+  `claude-sonnet-4.6` — unchanged within the ±0.03 noise floor, judge held constant,
+  **zero truncation warnings** so it is a measurement and not a floor. This was the open
+  question left by defect-avoidance going to +0.000 on the same model pair.
+  **The pair explains itself, and the explanation is the valuable part.** Newer models
+  stopped *writing* known-bad patterns, but `sonnet-5` unguided still omits **tests in 7
+  of 7 tasks**, transport in 5, rate limiting in 5 — the same blind spots as its
+  predecessor. So: **knowledge gaps close with model progress; salience gaps do not.**
+  Adding rate limiting to an endpoint nobody mentioned is not something a model doesn't
+  know — it is something it doesn't think of while doing something else. That reframes the
+  durable value: not telling a model what it doesn't know, but making cross-cutting
+  concerns salient at the moment of writing — a failure that scales with task length and
+  context pressure rather than model weakness, consistent with this project's own
+  root-cause work. README, `WHY-IT-WORKS.md` and the scoreboard updated;
+  [method and limits](evals/results/2026-08-21/COMPLETENESS-SONNET-5.md).
+
 ### Changed
 
 - **Every headline claim now names the model it was measured on.** A lift is a gap
