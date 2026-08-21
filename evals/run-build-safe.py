@@ -186,6 +186,8 @@ def main():
     ap.add_argument("--cases", default=CASES)
     ap.add_argument("--json")
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--allow-truncated", action="store_true",
+                    help="score a truncated build anyway; the result is a FLOOR")
     a = ap.parse_args()
     cases = load_cases(a.cases)
     from _elapsed import note_work   # duration baseline needs a denominator
@@ -194,6 +196,17 @@ def main():
         sys.exit(selftest(cases))
     if not a.build:
         ap.error("--build is required (or --selftest)")
+    meta_p = os.path.join(a.build, ".build-meta.json")
+    if os.path.exists(meta_p):
+        meta = json.load(open(meta_p, encoding="utf-8"))
+        if meta.get("TRUNCATED") and not a.allow_truncated:
+            sys.exit(
+                f"REFUSING to score {a.build}: the generation was TRUNCATED "
+                f"(finish_reason={meta.get('finish_reason')}, "
+                f"{meta.get('completion_tokens')}/{meta.get('max_tokens')} tokens). "
+                "Every 'avoided' here is a floor, not a measurement — absent safe-path "
+                "code may simply be the part that was cut off (rules/10 §2.7). Re-run "
+                "with a higher cap, or pass --allow-truncated and label the number a floor.")
     src, n_py, py = source_of(a.build)
     res = score(cases, src, py)
     print(f"build: {os.path.basename(os.path.abspath(a.build))}  ({n_py} .py files)")

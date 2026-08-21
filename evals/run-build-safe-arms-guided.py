@@ -50,6 +50,10 @@ outdir, model, mt = sys.argv[1], sys.argv[2], int(sys.argv[3])
 txt, tok, fin, trunc = d.call(model, prompt, d.key(), mt)
 n = d.write_files(txt, outdir)
 open(outdir + ".raw.txt", "w", encoding="utf-8").write(txt)
+# The scorer must be able to refuse a capped generation: a truncated build scores
+# as a FLOOR, not a measurement (`sota-code-security` rules/10 §2.7).
+json.dump({"TRUNCATED": trunc, "finish_reason": fin, "completion_tokens": tok,
+           "max_tokens": mt}, open(os.path.join(outdir, ".build-meta.json"), "w"))
 print(json.dumps({"files": n, "completion_tokens": tok, "finish_reason": fin,
                   "TRUNCATED": trunc, "prompt_chars": len(prompt),
                   "skills": [os.path.basename(s) for s in SKILLS],
