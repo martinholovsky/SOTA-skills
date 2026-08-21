@@ -100,9 +100,8 @@ unprobed invariants (5, 9, 11, 12, 14) need state a worktree lacks (a tag, a mer
 an mtime); the harness prints that reason, so what is *not* covered is printed rather than
 implied. **A probe asserts its own mutation landed** — they are hardcoded literals, and a
 stale one printed `NOT CAUGHT: INERT`, accusing a healthy gate.
-**Adding a check? Run `./scripts/check-invariants.sh --self-test`** — it **fails on any
-check neither probed nor declared unprobeable** (both sets derived from the harness), then
-runs it. Prose asking you to remember is what let invariant 18 ship probe-less.
+Adding a check? **Invariant 19 already enforces that it has a known-bad** — nothing to
+remember. `--self-test` runs the suite and then this harness.
 
 Separately, `scripts/check-freshness.sh` (run monthly by
 `.github/workflows/freshness.yml`) tracks the root `LAST-VERIFIED` stamp — the date

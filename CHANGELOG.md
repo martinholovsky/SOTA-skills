@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Docs refreshed for what this cycle actually shipped.** `docs/INDEX.md` gains rows for
+  the guard-authoring method ladder and for choosing a SAST engine (with the
+  **no `opengrep ci`** warning at the front door, since that is the detail a copied
+  workflow dies on). `docs/ROADMAP.md` item 13 re-measured — **cap watch is three files
+  now**, not two: `sota-docs-workflow/rules/01` 456, `sota-code-security/rules/12` **455**
+  (up from 426 as §1b, §1b.1 and the formatter-reflow trap landed), `sota-devsecops/rules/03`
+  451. Items 15 and 16 record the BUILD↔AUDIT measurement and the finding that beat it.
+  `AGENTS.md` back to **199** lines after invariant 19's row pushed it over its own
+  `<200` target — the `--self-test` paragraph is now partly redundant with 19 being a
+  numbered check, so it shrank rather than something being dropped.
+
 ### Fixed
 
 - **Seven of the nine language rows added in the in-band-sentinel fan-out shipped with no
