@@ -203,6 +203,14 @@ Rules:
 
 Run from repo root; verify each hit manually.
 
+**In-band sentinels** (§5a) — Ruby's search API returns `nil`, so these arrive from
+conversion and from hand-rolled returns:
+
+```bash
+grep -rnE '\.to_i\b|\.to_f\b' --include='*.rb' app/ lib/     # 0 on garbage, 12 on "12abc" — use Integer(s)
+grep -rnE 'return (-1|0)$' --include='*.rb' app/ lib/         # prefer nil, which is falsy and pattern-matchable
+```
+
 ```bash
 # Interpreter floor — EOL Ruby is HIGH
 cat .ruby-version 2>/dev/null; grep -n "^ruby" Gemfile 2>/dev/null

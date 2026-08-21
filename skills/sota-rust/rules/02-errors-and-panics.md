@@ -236,6 +236,10 @@ fn main() -> ExitCode {
 
 ## Audit checklist
 
+- [ ] Sentinel re-entry (§6a): `rg 'unwrap_or\(-?[0-9]+\)|unwrap_or_default\(\)' -t rust`
+      on numeric `Option`s, and `#[serde(default)]` on numeric fields — each discards the
+      absence the type system was carrying.
+
 - [ ] `rg '\.unwrap\(\)' -t rust -g '!*test*' -g '!benches/*' -g '!examples/*'`
       — every hit in production paths is a finding; severity scales with input
       reachability (attacker-reachable unwrap = High).

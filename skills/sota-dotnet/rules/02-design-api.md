@@ -100,4 +100,8 @@ grep -rnE 'throw ex;' --include='*.cs' .
 
 # Mutable collection exposed — LOW
 grep -rnE 'public (List|Dictionary|HashSet)<' --include='*.cs' . | head   # prefer IReadOnly* / encapsulate
+
+# In-band sentinels (§1a) — `int?` over a magic int; TryParse's bool is the signal
+grep -rnE 'return -1;' --include='*.cs' .                       # producer; prefer int?
+grep -rnE 'TryParse\([^)]*out var [a-z]+\);' --include='*.cs' .   # bool DISCARDED -> out is 0 on failure
 ```
