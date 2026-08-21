@@ -22,6 +22,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rather than working around it, and **rung 5 can be cheaper than rung 1**. Shell and
   config are explicitly not exceptions: `mvdan.cc/sh/v3/syntax` parses POSIX sh, bash and
   mksh with a `Walk`, and YAML/HCL/JSON/Dockerfile/SQL all have parsers.
+- **Two audit gaps found by sampling, and fixed.** `sota-c-cpp` rules/01 §7 *Error
+  handling: exceptions vs expected vs codes* is a full build section that had **no audit
+  probe anywhere in the skill** — one incidental hit across seven files. It now carries
+  greps for empty and swallow-all `catch` blocks, `bugprone-empty-catch` /
+  `bugprone-exception-escape` / `misc-throw-by-value-catch-by-reference`, ignored error
+  returns via `bugprone-unused-return-value` (aliased by `cert-err33-c`), and the question
+  a grep cannot ask — whether one error model is used across a boundary or three meet at
+  an ABI seam. `sota-ml-engineering` advertised **train/serve skew** twice in its own
+  description while **no checklist in any of its seven rules files** mentioned skew,
+  point-in-time correctness or feature stores; `rules/02` now audits all three, including
+  the case where no feature store exists ("we are careful" is not a mechanism).
 - **The BUILD↔AUDIT correspondence is now a stated convention** (`CONTRIBUTING.md`),
   in both directions and with its exception. Invariant 2 checks a checklist *exists*;
   nothing checked that it matches the guidance above it. An item with no build rule marks

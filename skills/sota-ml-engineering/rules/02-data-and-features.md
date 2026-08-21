@@ -83,6 +83,20 @@ cross_val_score(pipe, X_train, y_train, cv=TimeSeriesSplit())
 
 ## Audit checklist
 
+- [ ] **Train/serve skew**: is the transformation that produces a training feature the
+      *same code path* as the one serving it — a shared library or a feature store — or
+      two implementations that must be kept in step by hand? Two implementations is the
+      finding, whether or not they currently agree.
+- [ ] **Point-in-time correctness**: does every training label join features **as of** the
+      label's timestamp? A join that picks up feature values computed after the event
+      leaks the future into training and inflates offline metrics — it will not reproduce
+      in serving, which is how it is usually discovered.
+- [ ] If a **feature store** is in use: are offline and online stores written from one
+      pipeline, is freshness monitored per feature, and is a feature's serving default
+      (on a store miss) the same value training saw for a missing feature?
+- [ ] If one is **not** in use: what enforces the two answers above instead? "We are
+      careful" is not a mechanism (`rules/01` §3).
+
 ```bash
 # Preprocessing leakage — CRITICAL
 grep -rnE '\.fit(_transform)?\(' --include='*.py' . | grep -vE 'Pipeline|fit\(X_train|fit\(train'  # fit on full data?

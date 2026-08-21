@@ -172,6 +172,17 @@ grep -rn 'return std::move' --include='*.cpp' .          # pessimizes RVO
 grep -rn 'using namespace std;' --include='*.h' --include='*.hpp' .  # in headers: bad
 grep -rnE '#define [A-Z_]+\(' --include='*.h' .          # function-like macros → constexpr/inline
 
+# Error handling (§7) — the section had no probe at all until 2026-08-21
+grep -rnE 'catch[[:space:]]*\([^)]*\)[[:space:]]*\{[[:space:]]*\}' --include='*.cpp' .  # empty catch — HIGH
+grep -rn 'catch (...)' --include='*.cpp' .               # swallow-all: needs a rethrow or a logged reason
+clang-tidy --checks='bugprone-empty-catch,bugprone-exception-escape,misc-throw-by-value-catch-by-reference' <files>
+# Ignored error returns — the C half of §7, and the one nobody greps
+clang-tidy --checks='bugprone-unused-return-value,cert-err33-c' <files>   # cert-err33-c aliases the former
+grep -rn 'std::expected\|absl::Status\|tl::expected' --include='*.cpp' --include='*.hpp' . | head
+# ^ then ask the §7 question a grep cannot: is ONE error model used across a
+#   given boundary, or do exceptions, codes and expected<> meet at an ABI seam?
+#   Mixed models at a boundary is the finding, not any one of them.
+
 # Broad idiom enforcement (the canonical config)
 clang-tidy --checks='cppcoreguidelines-*,modernize-*,bugprone-*' <files>
 ```
