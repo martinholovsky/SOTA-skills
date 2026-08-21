@@ -138,6 +138,36 @@ parameterized). An ORM loop of `save()` calls for a bulk update is a MEDIUM
 finding: one `UPDATE ... WHERE id = ANY(...)` or `INSERT ... ON CONFLICT`
 replaces thousands of round trips.
 
+## Geospatial: the three ways the index is lost
+
+Geometry is one word in the GiST row above and three distinct traps in practice. All
+verified against the PostGIS documentation:
+
+- **Pick the type deliberately, and know its units.** `geometry` measures in the **SRID's**
+  units — for EPSG:4326 that is *degrees*, so a Cartesian distance over lat/long is
+  meaningless. `geography` always measures in **metres** and assumes EPSG:4326. PostGIS's
+  own guidance: geographically **compact** data (a city, a county) → `geometry` in a
+  projection that suits it; **globally dispersed** data → `geography`. The costs of
+  `geography` are real — spherical maths uses trigonometric functions rather than
+  Pythagoras, and **fewer functions support it natively**; casting to `geometry` buys
+  those functions back at the price of accuracy.
+- **`ST_DWithin`, not `ST_Distance`, in `WHERE`.** `ST_DWithin` "includes a bounding box
+  comparison that makes use of any indexes that are available"; `ST_Distance` is
+  explicitly **non-indexable**, so `WHERE ST_Distance(...) < r` computes a distance for
+  every row. Same answer, whole-table scan.
+- **A hand-rolled haversine in `WHERE` is the same mistake wearing maths.** Any expression
+  the planner cannot match to an index — haversine, a manual bounding box built from
+  `cos(lat)`, a distance computed in the `SELECT` and filtered in an outer query — is a
+  sequential scan. If you must express it yourself, express it as an **indexable
+  predicate** first (`ST_DWithin` or `&&` against an expanded box) and use the exact
+  distance only to refine the candidates.
+- Mixing SRIDs is an error, not a coercion: `geometry` operations require **both operands
+  in the same SRID**. Store the SRID you intend, and constrain it (`geometry(Point,4326)`)
+  rather than leaving the column untyped.
+
+**Audit it with `EXPLAIN`, not by reading the SQL** — every trap above produces correct
+results and a `Seq Scan`.
+
 ## Pagination
 
 ### Rule: Keyset (seek) pagination for anything that scrolls deep; OFFSET only for shallow, bounded UIs.
@@ -217,6 +247,14 @@ Same applies to running totals, gaps-and-islands, deduplication
   search.
 
 ## Audit checklist
+
+- [ ] Geospatial: `grep -rniE 'ST_Distance\\(|haversine|acos\\(sin\\(' --include='*.sql' --include='*.py' .`
+      — a distance in a `WHERE` clause is a sequential scan; the indexable form is
+      `ST_DWithin`. Confirm with `EXPLAIN`, since every one of these returns the *right
+      answer* while scanning the table.
+- [ ] Geospatial columns declare their SRID (`geometry(Point,4326)`), and the
+      geometry-vs-geography choice matches the data's extent — degrees-as-distance on a
+      `geometry` lat/long column is meaningless, not merely imprecise.
 
 - [ ] Slow-query capture exists (pg_stat_statements + auto_explain); tuning
       evidence is EXPLAIN (ANALYZE, BUFFERS), with estimate-vs-actual checked.
