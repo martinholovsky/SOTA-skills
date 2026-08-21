@@ -1288,5 +1288,16 @@ is the brief's failure mode 1 in miniature, committed while adopting the rule ag
 sampling a file is fine. The rule applies where output is **evidence for a claim**, and
 the tell is whether recovering it would mean re-running the job.
 
+**A fourth case, added by the reporter after the rule shipped (2026-08-21).** A `grep`
+filter hid a guard that had *fired*: `tool compare … | grep -E "baseline|current|LOST|GAINED"`
+discarded the line `!! GRAPH CHANGED: 245827 -> 245808 REACHING_DEF edges`, and the
+conclusion forming from what survived was that the guard was inert — a defect report about
+working code. This **generalises the rule** rather than adding an instance: the hazard is
+not `tail`, it is that **a filter written before you know what the output contains is a
+filter chosen to exclude the surprise**. `grep` is the more dangerous form precisely
+because it reads as *selective* rather than *lossy*. Folded into `rules/01` §3 with a
+second checklist item; the remedy is unchanged and now stated as the general one —
+**redirect first, filter the file afterwards**.
+
 **Measurement status:** adopted on reasoning, a verified reproduction, and first-hand
 recurrence. **No efficacy lift is claimed or measured.**

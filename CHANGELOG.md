@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **The pipeline rule generalises: the hazard is not `tail`, it is any filter chosen
+  before you know what the output contains** (`sota-shell-scripting/rules/01` §3). A
+  reported fourth case: `tool compare … | grep -E "baseline|current|LOST|GAINED"` silently
+  discarded `!! GRAPH CHANGED: 245827 -> 245808 …` — a guard that had **fired** — and the
+  conclusion forming from what survived was that the guard was *inert*, i.e. a defect
+  report about working code. **`grep` is the more dangerous form precisely because it
+  reads as selective rather than lossy**: the line you did not think to match is the one
+  worth reading. `head`, `tail`, `grep`, `awk`, `cut` and `jq` all destroy output
+  selectively, so the remedy is stated as the general one — **redirect first, filter the
+  file afterwards**, because a saved file can be re-grepped once the first pattern proves
+  wrong and a consumed pipe cannot. Second checklist item added.
+
+
 - **The defect-avoidance headline is now qualified by a second model — which does not
   replicate it.** On `openai/gpt-5.1` (the model this project already uses for cross-model
   de-risking) the **unguided** arm scores **1.000 × 3**: it does not write these defects

@@ -156,6 +156,21 @@ Two corollaries:
   `print(..., flush=True)` (or `-u`): a process killed by `timeout` otherwise leaves a
   file that is empty for a reason unrelated to the result.
 
+**And it is not only `tail` — a `grep` filter is worse, because it looks selective rather
+than lossy.** Reported case: a comparison tool was run as
+`tool compare … | grep -E "baseline|current|LOST|GAINED"`. The tool had correctly detected
+that its input changed between the two runs and printed
+`!! GRAPH CHANGED: 245827 -> 245808 REACHING_DEF edges`. That line matched none of the
+four alternatives, so it was discarded — and the conclusion being formed from what
+survived was that the guard was **inert**, i.e. a defect report about working code.
+
+The general form: **a filter written before you know what the output contains is a filter
+chosen to exclude the surprise.** `head`, `tail`, `grep`, `awk`, `cut` and `jq` all
+destroy output selectively, and the thing you did not think to match is exactly the thing
+worth reading. So **redirect first, filter the file afterwards** — a saved file can be
+re-grepped with a better pattern once the first one proves wrong; a consumed pipe cannot,
+and the second pattern costs a full re-run.
+
 **Scope, deliberately narrow:** this is not "never use `tail`". Piping to `tail` to watch
 a log, sample a file or check a shape is fine and idiomatic. The rule applies where the
 output is **evidence for a claim**, and the tell is whether you would have to re-run the
@@ -330,6 +345,7 @@ So the practical answer is `zsh -n` in CI for syntax, plus a **manual read for t
 splitting/joining class** — no widely-adopted static analyser catches
 `cmd $args` being one argument in zsh.
 
+- [ ] **Measurements piped into a filter — `tail`, `head`, *or* `grep`/`awk`/`jq`.** The `grep` form is the more dangerous one: it reads as selective rather than lossy, and the line it silently drops is the one you did not know to look for (§3).
 - [ ] `grep -rn '^#!/bin/sh' scripts/` then scan those files for `[[`, arrays, `local -`,
       `${var//`, `pipefail` → bashism-in-sh (SC3xxx series).
 - [ ] **`set -e` believed inside a suspended context**: `set -e`/`set -o errexit`
