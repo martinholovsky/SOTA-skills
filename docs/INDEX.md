@@ -48,6 +48,8 @@ trying to do**, not by file. (Kept in sync by hand; if a link rots, open an issu
 | See what the library does **not** lift (the honest +0.00s) | [AUDIT-PROCESS.md](../evals/results/2026-07-20/AUDIT-PROCESS.md) |
 | Understand why the **audit** half has no measured lift (**9 instruments, 4 designs** — closed 2026-08-14) | [UNSCOPED-AUDIT.md](../evals/results/2026-07-30/UNSCOPED-AUDIT.md) · [DEAD-PATH.md](../evals/results/2026-07-30/DEAD-PATH.md) |
 | See a prediction written down **before** the run that killed it | [PRE-REGISTRATION.md](../evals/results/2026-07-30/PRE-REGISTRATION.md) |
+| See whether the library stops defects being **written** (not just found) | [BUILD-SAFE 2026-08-21](../evals/results/2026-08-21/BUILD-SAFE.md) — 0.81 → 1.00 on seven classes, with its five limits stated |
+| Check how audit reports are scored for **calibration** (and why it is never reported as a lift) | [BUILD-SAFE 2026-08-21 §2](../evals/results/2026-08-21/BUILD-SAFE.md) · `evals/run-calibration.py` |
 | Read an eval that failed as an *instrument* rather than as a result | [BUILD-SAFE.md](../evals/results/2026-07-30/BUILD-SAFE.md) |
 | See the edges of the do-not-reimplement rule (§3.9.6), as worked cases | [`evals/cases/reimplement.jsonl`](../evals/cases/reimplement.jsonl) — documentation, never run |
 | Know what the audit hunts that a scanner can't (inert controls, **controls that block everything**, unreached dependencies, stale decisions, refutation, absence claims) | [README → What the audit hunts](../README.md#what-the-audit-hunts-that-a-scanner-cant) |

@@ -14,6 +14,27 @@ audit STRAT-HIGH-2).
 
 ## Cases
 
+- `cases/build-safe.jsonl` (7) + `cases/build-safe/` — **the only generative
+  instrument**: it scores what the model *writes*, not what it finds. `SPEC.md`
+  states the operational pressure that makes each unsafe shortcut attractive
+  ("cache it", "must never 5xx", "keep the guard cheap") and **never names a
+  defect**; scoring is avoidance of a `fail` pattern the model never sees. Two
+  references (`unscoped-audit/reportkit` must score 0/7, `build-safe/reference-safe`
+  7/7) are enforced by `run-build-safe.py --selftest` — run it before trusting any
+  number. Note the file is 49 lines of which 42 are comments: **7 real cases**, and
+  `load_cases` exits rather than score an empty set. The July 2026 attempt failed
+  because the spec leaked the property to preserve and the bare arm saturated; the
+  rewrite is what made it discriminate (`results/2026-07-30/BUILD-SAFE.md` →
+  `results/2026-08-21/BUILD-SAFE.md`).
+- **Calibration** (`run-calibration.py`, `judge-calibration.py`) — scores an audit
+  report's *reporting discipline*, never its recall: does it bound claims by what
+  was run, label unverified items, condition severity on evidence, and support any
+  absence claim with the search behind it. The judge is **blinded** and run with a
+  deliberately mis-calibrated and a deliberately well-calibrated control in the same
+  batch; if those two do not separate (0/4 and 4/4), the arms mean nothing and must
+  not be read. **Never report this as a lift** — it measures adherence to this
+  project's own doctrine, per `docs/ROADMAP.md`.
+
 - `cases/dead-path.jsonl` (4) + `cases/dead-path/` — **the only instrument here
   that scores a *procedure* rather than a recognition**, and the one design that
   might move the audit family off +0.00. Every other audit set asks "can the model
@@ -444,7 +465,10 @@ tasks — from a bare "build X" prompt the library embeds the tests/rate-limits/
 logging/transport a base model skips; the thesis, and the part web-search likely can't
 replace — predicted, not measured here), **freshness +0.50–0.53** (32-case set; base model
 *confidently wrong*, but a web-search agent would likely recover most of it — predicted, not measured here), **routing
-+0.09–0.14**, **audit +0.00** (even the 14 harder cases saturate). The lift is
++0.09–0.14**, **audit +0.00** (even the 14 harder cases saturate), and — the newest
+and a different axis — **defects avoided +0.19** (0.81 → 1.00 on seven classes the
+model must not *write*; +0.33 on the stricter reading that also demands positive
+evidence of the safe path). The lift is
 only "small" if you measure the easy dimensions. Run:
 `python3 evals/run-completeness.py`.
 
