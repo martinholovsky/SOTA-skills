@@ -7,7 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+### Changed
+
+- **The front door now carries the defect-avoidance result, framed as the new axis it
+  is.** Every previously published lift measures what the model *puts into* code;
+  `README.md` and [WHY-IT-WORKS.md](docs/WHY-IT-WORKS.md) now carry the one that measures
+  what it **leaves out** — **0.81 → 1.00** on seven defect classes under a spec that
+  states operational pressure and never names a defect, and **0.29 → 0.62** on the
+  stricter reading that also demands positive evidence of the safe path. The argument
+  attached to it is the one worth making: **the audit half of this library scores +0.00
+  on these same classes** — a frontier model already finds them — so the value was never
+  detection, it is that the code arrives without the defect. Both surfaces carry the
+  pilot's limits inline (n=3, treated arm at ceiling, single model, and prompt length as
+  an uncontrolled confound) rather than in a footnote.
+- **Calibration is on `WHY-IT-WORKS.md` and deliberately *not* sold as a lift** — stated
+  there in those words. It measures adherence to this project's own reporting doctrine,
+  and a project that scored its own house rules and called it efficacy would deserve the
+  scepticism. It is included so a reader deciding whether to trust audit output knows the
+  reports hedge where evidence is thin.
+
+### Fixed
+
+- **README understated its own nulls: "Seven +0.00 rows" when the scoreboard has nine.**
+  Corrected, with the old wording noted in place. This is the same shape as the
+  "seven instruments" drift found at the v1.22.9 cut — a count that moved while the prose
+  did not, and in the direction that makes the project look *less* honest than it is.
+
 
 - **The BUILD-safe pilot ran, and the bare arm did not saturate** — so the instrument
   discriminates and the question the roadmap carried as untested is answered. Unguided

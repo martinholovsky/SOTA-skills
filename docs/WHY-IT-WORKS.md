@@ -20,6 +20,8 @@ per-case data, and honest limitations are in the
 |---|---|---|
 | **Completeness** | best practices embedded from a bare "build X" prompt (7 tasks) | **+0.39** (0.59 → 0.98) |
 | **Freshness** | current 2026 facts (RFCs, CVEs, EOLs, versions, spec editions; 32) | **+0.50–0.53** (32-case; +0.65 on a 20-case run) |
+| **Defects avoided** | security defects the model must not *write*, from a spec that never names one (7 classes) | **+0.19** (0.81 → 1.00) |
+| Defects avoided — *with positive evidence of the safe path* | the stricter reading of the same 7 classes | **+0.33** (0.29 → 0.62) |
 | Routing | which skill area applies to a task | +0.09 to +0.14 |
 | Audit | recognizing a textbook vulnerability | +0.00 |
 | Audit — **real repo, real CVEs** | recall *and* precision on 16 live BOLA sites (Harbor v2.5.1) | +0.00 / +0.00 |
@@ -47,6 +49,43 @@ most for *building* software are the two that are large:
   paste-simulation artifact: seven **live** agents driven through the real router
   BUILD workflow scored **0.99 (6/7 perfect)**, matching the simulation (0.987 vs 0.988)
   ([live-agent validation](../evals/results/2026-07-13/LIVE-BUILD.md)).
+- **Defects avoided — the newest result, and the one that changes the argument.**
+  Every other lift here measures what a model *puts into* code. This measures what it
+  **leaves out**. The setup is deliberately adversarial to the library: a build spec
+  states the operational pressure that makes each unsafe shortcut attractive — *"cache
+  it"*, *"must never 5xx"*, *"keep the guard cheap"*, *"it may come back"* — and **never
+  names a defect**. Scoring is avoidance of a failure pattern the model never sees.
+  Unguided, the model writes them: `ORDER BY {sort}` interpolated straight into SQL, and
+  a report fetched with no ownership check. With the library: **1.000, three runs, zero
+  variance** (unguided **0.809**). On the stricter measure that also requires *positive
+  evidence of the safe path* — not merely the absence of the bad one — **0.29 → 0.62**.
+
+  Why this matters more than its size suggests: **the library's audit passes score +0.00
+  on these same classes.** A frontier model already *finds* them. Seven instruments say
+  so, and we publish that. So the value on offer was never detection — it is that the
+  code arrives without the defect, which is the half no scanner and no review budget
+  gives you back. That is the first direct evidence for it.
+
+  **Honest limits, because a small pilot deserves them out loud:** n=3; the treated arm
+  is at **ceiling** (1.000, zero variance), so the delta is bounded by the instrument and
+  cannot separate *"the library helped"* from *"these cases are easy once guided"*; one
+  producing model and one task; and **prompt length is an uncontrolled confound** — the
+  guided prompt is ~66k characters against ~4k, so some of the effect may be "more
+  instruction to be careful" rather than this library's content. The competitor benchmark
+  below controls for that; this pilot does not.
+  [Method, per-run scores, all six limits →](../evals/results/2026-08-21/BUILD-SAFE.md)
+
+- **Calibration — measured, and deliberately *not* sold as a lift.** With the library,
+  audit reports bound their claims by what was actually run, label unverified findings,
+  and condition severity on stated assumptions; unguided reports do it less often
+  (**2.67/4 → 4.00/4**, the mover being *conditioning severity on evidence*, 1/3 → 3/3).
+  We keep this **off the headline scoreboard on purpose**: it measures adherence to *our
+  own reporting doctrine*, which is a far weaker claim than "finds more bugs", and a
+  project that scored its own house rules and called it efficacy would deserve the
+  scepticism. It is here because a reader deciding whether to trust the audit output
+  should know the reports are hedged where the evidence is thin — not because it is a
+  selling point.
+
 - **Freshness — the base model is confidently wrong.** On current-2026 facts it
   doesn't merely lack knowledge, it *fabricates* plausible answers (in our 32-case
   set: inventing RFC 9334 for the Entity Attestation Token — it's 9711 — or
