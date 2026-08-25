@@ -10,6 +10,13 @@ row from the command shown in its writeup.
 
 Same model, same task, library loaded vs. nothing.
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="../../assets/lift-dark.svg">
+    <img alt="Measured lift with the library vs without, on two model generations. Completeness 0.59 to 0.98 (+0.39) on claude-sonnet-4.6 and 0.62 to 1.00 (+0.38) on claude-sonnet-5 — durable. Freshness 0.44 to 0.97 (+0.53) then 0.69 to 0.99 (+0.30) — eroding. Routing 0.90 to 1.00 (+0.10) then 0.87 to 0.99 (+0.13) — holds. Defects avoided 0.81 to 1.00 (+0.19) then 1.00 to 1.00 (+0.00) — expired." src="../../assets/lift-light.svg" width="100%">
+  </picture>
+</p>
+
 | Dimension | Without | With SOTA | Lift | Samples | Source |
 |---|---|---|---|---|---|
 | **Completeness** (7 build tasks) | 0.59 | **0.98** | **+0.39** | 2 runs × 3, temp 0.7 | [MIRROR-VERIFICATION](2026-07-20/MIRROR-VERIFICATION.md) |

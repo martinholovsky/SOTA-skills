@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 500" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" role="img" aria-label="Measured lift with the library vs without, on two model generations. Completeness: claude-sonnet-4.6 0.59 to 0.98, lift +0.39, claude-sonnet-5 0.62 to 1.00, lift +0.38; Freshness: claude-sonnet-4.6 0.44 to 0.97, lift +0.53, claude-sonnet-5 0.69 to 0.99, lift +0.30; Routing: claude-sonnet-4.6 0.90 to 1.00, lift +0.10, claude-sonnet-5 0.87 to 0.99, lift +0.13; Defects avoided: claude-sonnet-4.6 0.81 to 1.00, lift +0.19, claude-sonnet-5 1.00 to 1.00, lift +0.00. Completeness and routing hold across the generation, freshness erodes, defect-avoidance expires.">
+<rect x="0.5" y="0.5" width="819" height="499" rx="12" fill="#ffffff" stroke="#d0d7de"/>
+<text x="24" y="40" font-size="19" font-weight="700" fill="#1f2328">Does the library change the output — and is that still true?</text>
+<text x="24" y="62" font-size="12" fill="#656d76">Grey = the model alone. Green = what loading the library adds. Each dimension measured on two model generations.</text>
+<rect x="24" y="72" width="22" height="9" rx="2" fill="#8c959f"/>
+<text x="52" y="80" font-size="10.5" fill="#656d76">unguided</text>
+<rect x="116" y="72" width="22" height="9" rx="2" fill="#2fa45f"/>
+<text x="144" y="80" font-size="10.5" fill="#656d76">with SOTA-skills</text>
+<text x="24" y="96" font-size="13.5" font-weight="700" fill="#1f2328">Completeness</text>
+<text x="144.39999999999998" y="96" font-size="11" fill="#656d76">durable — a salience gap, and models do not close it</text>
+<text x="32" y="121" font-size="11.5" font-weight="400" fill="#656d76">claude-sonnet-4.6</text>
+<rect x="236" y="108" width="330" height="17" rx="3" fill="#eaeef2"/>
+<rect x="236" y="108" width="194.7" height="17" rx="3" fill="#8c959f"/>
+<rect x="430.7" y="108" width="128.7" height="17" rx="3" fill="#2fa45f"/>
+<text x="576" y="121" font-size="11.5" fill="#656d76">0.59 → 0.98</text>
+<text x="660" y="121" font-size="12.5" font-weight="700" fill="#2fa45f">+0.39</text>
+<text x="32" y="151" font-size="11.5" font-weight="600" fill="#1f2328">claude-sonnet-5</text>
+<rect x="236" y="138" width="330" height="17" rx="3" fill="#eaeef2"/>
+<rect x="236" y="138" width="204.6" height="17" rx="3" fill="#8c959f"/>
+<rect x="440.6" y="138" width="125.4" height="17" rx="3" fill="#2fa45f"/>
+<text x="576" y="151" font-size="11.5" fill="#656d76">0.62 → 1.00</text>
+<text x="660" y="151" font-size="12.5" font-weight="700" fill="#2fa45f">+0.38</text>
+<text x="24" y="196" font-size="13.5" font-weight="700" fill="#1f2328">Freshness</text>
+<text x="116.8" y="196" font-size="11" fill="#656d76">erodes — the cutoff advances into a fixed question set</text>
+<text x="32" y="221" font-size="11.5" font-weight="400" fill="#656d76">claude-sonnet-4.6</text>
+<rect x="236" y="208" width="330" height="17" rx="3" fill="#eaeef2"/>
+<rect x="236" y="208" width="145.2" height="17" rx="3" fill="#8c959f"/>
+<rect x="381.2" y="208" width="174.9" height="17" rx="3" fill="#2fa45f"/>
+<text x="576" y="221" font-size="11.5" fill="#656d76">0.44 → 0.97</text>
+<text x="660" y="221" font-size="12.5" font-weight="700" fill="#2fa45f">+0.53</text>
+<text x="32" y="251" font-size="11.5" font-weight="600" fill="#1f2328">claude-sonnet-5</text>
+<rect x="236" y="238" width="330" height="17" rx="3" fill="#eaeef2"/>
+<rect x="236" y="238" width="227.0" height="17" rx="3" fill="#8c959f"/>
+<rect x="463.0" y="238" width="99.7" height="17" rx="3" fill="#2fa45f"/>
+<text x="576" y="251" font-size="11.5" fill="#656d76">0.69 → 0.99</text>
+<text x="660" y="251" font-size="12.5" font-weight="700" fill="#2fa45f">+0.30</text>
+<text x="24" y="296" font-size="13.5" font-weight="700" fill="#1f2328">Routing</text>
+<text x="98.39999999999999" y="296" font-size="11" fill="#656d76">holds — unchanged within the set's one-case resolution</text>
+<text x="32" y="321" font-size="11.5" font-weight="400" fill="#656d76">claude-sonnet-4.6</text>
+<rect x="236" y="308" width="330" height="17" rx="3" fill="#eaeef2"/>
+<rect x="236" y="308" width="297.0" height="17" rx="3" fill="#8c959f"/>
+<rect x="533.0" y="308" width="33.0" height="17" rx="3" fill="#2fa45f"/>
+<text x="576" y="321" font-size="11.5" fill="#656d76">0.90 → 1.00</text>
+<text x="660" y="321" font-size="12.5" font-weight="700" fill="#2fa45f">+0.10</text>
+<text x="32" y="351" font-size="11.5" font-weight="600" fill="#1f2328">claude-sonnet-5</text>
+<rect x="236" y="338" width="330" height="17" rx="3" fill="#eaeef2"/>
+<rect x="236" y="338" width="286.1" height="17" rx="3" fill="#8c959f"/>
+<rect x="522.1" y="338" width="41.9" height="17" rx="3" fill="#2fa45f"/>
+<text x="576" y="351" font-size="11.5" fill="#656d76">0.87 → 0.99</text>
+<text x="660" y="351" font-size="12.5" font-weight="700" fill="#2fa45f">+0.13</text>
+<text x="24" y="396" font-size="13.5" font-weight="700" fill="#1f2328">Defects avoided</text>
+<text x="172.0" y="396" font-size="11" fill="#656d76">EXPIRED — the newer model no longer writes them unaided</text>
+<text x="32" y="421" font-size="11.5" font-weight="400" fill="#656d76">claude-sonnet-4.6</text>
+<rect x="236" y="408" width="330" height="17" rx="3" fill="#eaeef2"/>
+<rect x="236" y="408" width="267.3" height="17" rx="3" fill="#8c959f"/>
+<rect x="503.3" y="408" width="62.7" height="17" rx="3" fill="#2fa45f"/>
+<text x="576" y="421" font-size="11.5" fill="#656d76">0.81 → 1.00</text>
+<text x="660" y="421" font-size="12.5" font-weight="700" fill="#2fa45f">+0.19</text>
+<text x="32" y="451" font-size="11.5" font-weight="600" fill="#1f2328">claude-sonnet-5</text>
+<rect x="236" y="438" width="330" height="17" rx="3" fill="#eaeef2"/>
+<rect x="236" y="438" width="330.0" height="17" rx="3" fill="#8c959f"/>
+<text x="576" y="451" font-size="11.5" fill="#656d76">1.00 → 1.00</text>
+<text x="660" y="451" font-size="12.5" font-weight="700" fill="#bcc4cc">+0.00</text>
+<text x="24" y="484" font-size="10.5" fill="#656d76">Bars and deltas from unrounded means; labels rounded to 2dp · every number dated to the model it was measured on · data and method: evals/results/RESULTS.md</text>
+</svg>

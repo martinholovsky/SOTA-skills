@@ -344,6 +344,22 @@ before committing — a wrong-sized re-render is a silent regression in the
 README's layout. `social-preview.png` additionally needs a manual re-upload at
 GitHub **Settings → Social preview**; the repo file does not refresh it.
 
+**The three charts are different** — they are generated from a `.py` beside them,
+not screenshotted, and each writes both themes as SVG plus a 2× PNG (needs
+`rsvg-convert`; without it the SVGs still write and the script says so):
+
+```sh
+python3 assets/gen-benchmark-chart.py   # benchmark-{light,dark}.{svg,png}
+python3 assets/gen-breadth-chart.py     # breadth-{light,dark}.{svg,png}
+python3 assets/gen-lift-chart.py        # lift-{light,dark}.{svg,png}
+```
+
+The numbers are **hardcoded in each script**, mirrored by hand from
+`evals/results/RESULTS.md` — so a re-measured result means editing the `ROWS`/
+`GROUPS` table and re-running, in the same commit that updates the prose.
+Invariant 12 does **not** cover these (it pairs `*.html` with `*.png`), so nothing
+will catch a chart left stale — check them when you change a published number.
+
 ## Submitting a change
 
 1. Fork and branch (`git checkout -b improve-sota-databases-indexing`).
