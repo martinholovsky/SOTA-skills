@@ -23,7 +23,7 @@ to defect-avoidance between February and June 2026, and it is stated rather than
 | Dimension | What it tests | Clean lift |
 |---|---|---|
 | **Completeness** | best practices embedded from a bare "build X" prompt (7 tasks) | **+0.39** (0.59 → 0.98) `sonnet-4.6` · **+0.44** `gpt-5.1` · **+0.38** (0.62 → 1.00) on **`sonnet-5`, the current flagship** — it did not expire |
-| **Freshness** | current 2026 facts (RFCs, CVEs, EOLs, versions, spec editions; 32) | **+0.50–0.53** (32-case; +0.65 on a 20-case run) — `sonnet-4.6` · **+0.30** (0.69 → 0.99) on **`sonnet-5`** — it **erodes** as a fixed set ages into the cutoff, it does not expire |
+| **Freshness** | current 2026 facts (RFCs, CVEs, EOLs, versions, spec editions; 32) | **+0.50–0.53** (32-case; +0.65 on a 20-case run) — `sonnet-4.6` · **+0.30** (0.69 → 0.99) on **`sonnet-5`** with that same set once aged · **+0.67** (0.33 → 1.00) on a set **re-authored 2026-08-25** — the *set* ages, not the library |
 | **Defects avoided** | security defects the model must not *write*, from a spec that never names one (7 classes) | **+0.19** (0.81 → 1.00) on `sonnet-4.6`; **+0.00** on `gpt-5.1`, whose bare arm already scores 1.00 |
 | Defects avoided — *with positive evidence of the safe path* | the stricter reading of the same 7 classes; **does not saturate on either model** | **+0.33** (0.29 → 0.62) sonnet · **+0.10** (0.43 → 0.52) gpt-5.1 |
 | Routing | which skill area applies to a task | +0.09 to +0.14 · **+0.13** (0.87 → 0.99) on **`sonnet-5`** — unchanged within one case, **not** saturated |
@@ -33,7 +33,7 @@ to defect-avoidance between February and June 2026, and it is stated rather than
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="../assets/lift-dark.svg">
-    <img alt="Measured lift with the library vs without, on two model generations. Completeness 0.59 to 0.98 (+0.39) on claude-sonnet-4.6 and 0.62 to 1.00 (+0.38) on claude-sonnet-5 — durable. Freshness 0.44 to 0.97 (+0.53) then 0.69 to 0.99 (+0.30) — eroding. Routing 0.90 to 1.00 (+0.10) then 0.87 to 0.99 (+0.13) — holds. Defects avoided 0.81 to 1.00 (+0.19) then 1.00 to 1.00 (+0.00) — expired." src="../assets/lift-light.svg" width="100%">
+    <img alt="Measured lift with the library vs without. Completeness 0.59 to 0.98 (+0.39) on claude-sonnet-4.6 and 0.62 to 1.00 (+0.38) on claude-sonnet-5 — durable. Freshness 0.44 to 0.97 (+0.53) on a set authored July 2026, 0.69 to 0.99 (+0.30) on that same set once aged, and 0.33 to 1.00 (+0.67) on a set re-authored August 2026 — the question set ages, not the library. Routing 0.90 to 1.00 (+0.10) then 0.87 to 0.99 (+0.13) — holds. Defects avoided 0.81 to 1.00 (+0.19) then 1.00 to 1.00 (+0.00) — expired." src="../assets/lift-light.svg" width="100%">
   </picture>
 </p>
 
@@ -126,9 +126,14 @@ most for *building* software are the two that are large:
   32 cases read **0.69 → 0.99, +0.30**. The pre-registered prediction — that a training
   cutoff is a knowledge gap model progress *cannot* close — was **refuted**: eight facts
   moved inside the newer model's window. The with-arm *rose* (0.97 → 0.99), so this is
-  the **set ageing**, not the library. Freshness is therefore a third shape: it **erodes
-  toward a floor** rather than expiring, and a fixed question set will keep
-  under-reading it ([ITEM-20](../evals/results/2026-08-25/ITEM-20-FRESHNESS-ROUTING.md)).
+  the **set ageing**, not the library — **and that was then confirmed by construction**:
+  10 recent facts, each primary-source-verified and selected by a rule fixed before any
+  model ran, read **0.33 → 1.00, +0.67** on the same model the same day, with the with-arm
+  a zero-variance 1.00. Freshness is a *renewable* knowledge gap: the lift decays from the
+  date the questions were written, not toward zero, so long as someone keeps authoring —
+  which is what a maintained library is for
+  ([ITEM-20](../evals/results/2026-08-25/ITEM-20-FRESHNESS-ROUTING.md),
+  [ITEM-21](../evals/results/2026-08-25/ITEM-21-REFRESHED-FRESHNESS.md)).
 - **Audit +0.00 is reported, not hidden.** On isolated snippets a capable model
   already recognizes the vulnerability — even the 14 *harder* cases (subtle IDOR,
   SSRF allowlist bypass, TOCTOU, prototype pollution, multi-vuln) score 1.00 in

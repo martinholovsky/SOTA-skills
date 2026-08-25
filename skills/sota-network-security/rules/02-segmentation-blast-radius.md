@@ -94,8 +94,8 @@ owns the *posture*.)
 - No `0.0.0.0/0`/`::/0` ingress except 80/443 on the edge tier. Audit IPv6 `::/0` exactly like
   IPv4 — every IPv6 address is globally routable, no NAT safety blanket.
 - eBPF-based enforcement (Cilium host firewall, Tetragon for L7/syscall visibility) scales better
-  than iptables rule sprawl on busy nodes; Cilium 1.19 (verified current line, 2026) is the user's
-  CNI and can enforce host-level policy too.
+  than iptables rule sprawl on busy nodes; where Cilium is the CNI it can enforce host-level policy
+  too — verify the current stable line at the project's releases page rather than pinning one here.
 
 ## 6. Remote access: WireGuard vs ZTNA, bastion vs identity-aware proxy
 
