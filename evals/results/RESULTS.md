@@ -13,7 +13,7 @@ Same model, same task, library loaded vs. nothing.
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="../../assets/lift-dark.svg">
-    <img alt="Measured lift with the library vs without, on two model generations. Completeness 0.59 to 0.98 (+0.39) on claude-sonnet-4.6 and 0.62 to 1.00 (+0.38) on claude-sonnet-5 — durable. Freshness 0.44 to 0.97 (+0.53) then 0.69 to 0.99 (+0.30) — eroding. Routing 0.90 to 1.00 (+0.10) then 0.87 to 0.99 (+0.13) — holds. Defects avoided 0.81 to 1.00 (+0.19) then 1.00 to 1.00 (+0.00) — expired." src="../../assets/lift-light.svg" width="100%">
+    <img alt="Measured lift with the library vs without. Completeness 0.59 to 0.98 (+0.39) on claude-sonnet-4.6 and 0.62 to 1.00 (+0.38) on claude-sonnet-5 — durable. Freshness 0.44 to 0.97 (+0.53) on a set authored July 2026, 0.69 to 0.99 (+0.30) on that same set once aged, and 0.33 to 1.00 (+0.67) on a set re-authored August 2026 — the question set ages, not the library. Routing 0.90 to 1.00 (+0.10) then 0.87 to 0.99 (+0.13) — holds. Defects avoided 0.81 to 1.00 (+0.19) then 1.00 to 1.00 (+0.00) — expired." src="../../assets/lift-light.svg" width="100%">
   </picture>
 </p>
 
@@ -22,7 +22,8 @@ Same model, same task, library loaded vs. nothing.
 | **Completeness** (7 build tasks) | 0.59 | **0.98** | **+0.39** | 2 runs × 3, temp 0.7 | [MIRROR-VERIFICATION](2026-07-20/MIRROR-VERIFICATION.md) |
 | **Completeness — `claude-sonnet-5`** (current flagship, 2026-06): **holds** | 0.62 | **1.00** | **+0.38** | 1×, temp 0.0 | [SONNET-5](2026-08-21/COMPLETENESS-SONNET-5.md) |
 | **Freshness** (32 current-2026 facts) — `claude-sonnet-4.6` | 0.44 | **0.97** | **+0.53** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
-| **Freshness — `claude-sonnet-5`** (current flagship): **erodes, does not expire** | 0.69 | **0.99** | **+0.30** | 3×, temp 0.7 | [ITEM-20](2026-08-25/ITEM-20-FRESHNESS-ROUTING.md) |
+| **Freshness — `claude-sonnet-5`**, same set once **aged**: the set ages, not the library | 0.69 | **0.99** | **+0.30** | 3×, temp 0.7 | [ITEM-20](2026-08-25/ITEM-20-FRESHNESS-ROUTING.md) |
+| **Freshness — `claude-sonnet-5`, set RE-AUTHORED 2026-08-25** (10 recent facts): **the lift returns** | 0.33 | **1.00** | **+0.67** | 3×, temp 0.7 | [ITEM-21](2026-08-25/ITEM-21-REFRESHED-FRESHNESS.md) |
 | Routing (20 tasks) — `claude-sonnet-4.6` | 0.90 | **1.00** | **+0.10** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
 | Routing — **`claude-sonnet-5`** (current flagship): **holds**, unchanged within one case | 0.87 | **0.99** | **+0.13** | 3×, temp 0.7 | [ITEM-20](2026-08-25/ITEM-20-FRESHNESS-ROUTING.md) |
 | **BUILD-safe** (7 defect classes the model must not *write*) — **sonnet-4.6** | 0.81 | **1.00** | **+0.19** | 3×, temp 0.7 | [BUILD-SAFE](2026-08-21/BUILD-SAFE.md) |

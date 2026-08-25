@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **A refreshed freshness set — ROADMAP item 21 closed the same day it was opened, and it
+  settles item 20's open question.** `evals/cases/freshness-2026.jsonl` (10 cases, authored
+  2026-08-25 from facts whose primary source changed Sept 2025 – Aug 2026) reads
+  **0.33 → 1.00, +0.67** on `claude-sonnet-5` — *higher* than the original +0.53, measured
+  on the same model the same day as the aged set's +0.30. Predictions were again
+  **committed before the first API call** (`024abb9`); all held, neither falsifier fired.
+  - **This proves the item-20 explanation by construction.** The guidance did not improve
+    between two runs an hour apart; the questions got newer. A freshness lift is a function
+    of **when its questions were written**, and must be quoted with that date the way every
+    other number is quoted with its model. Freshness is a *renewable* knowledge gap — it
+    decays from the authoring date, not toward zero, so long as someone keeps authoring.
+  - **The selection rule is the load-bearing part** and lives in the case file's header:
+    recency + the library states the fact, **never model performance**. That shortcut was
+    available — 10 of the old 32 cases still discriminate — and picking those would
+    guarantee a large lift while measuring nothing.
+  - The with-library arm is a **zero-variance 1.00** across 3 samples, independently
+    corroborating the hand verification of all ten facts against ten primary sources. The
+    unguided arm fabricates with the right shape: **RFC 9840/9841** for the real 9990/9991,
+    Rust 1.87 for 1.96, Prometheus 3.5 for 3.8, both dates off by days.
+  - Limits published with it: 10 cases means **one case is 0.10**; two questions
+    (TypeScript 6.0/7.0) telegraph each other and inflate the *without* arm — against the
+    reported result, not for it; 4 of 10 were answerable unaided. The old 32-case set is
+    kept **unedited** as the continuity series.
+  - Chart, README, `docs/WHY-IT-WORKS.md`, `evals/README.md` and the scoreboard updated;
+    `assets/lift-*` regenerated with the third freshness bar.
+
+### Fixed
+
+- **A rot-prone version pin that had rotted, found while verifying facts for the set
+  above.** `sota-network-security` rules/02 claimed *"Cilium 1.19 (verified current line,
+  2026)"*; the GitHub API returns **v1.20.1, published 2026-08-18**. Fixed by **removing
+  the pin**, not bumping it — the repo's own policy is that skills never claim "the current
+  release is X.Y" precisely because it rots. The same line said Cilium *"is the user's
+  CNI"*, phrasing guidance as an assumption about the reader's setup, which the conventions
+  forbid; now generic. **No freshness case was authored on this fact** — a set must not
+  measure content written alongside it.
+- **A recurring false-positive report on an eval fixture, answered durably.** PR #249 /
+  issue #239 flagged `evals/cases/build-safe/reference-safe/db.py` as SQL injection. It is
+  not: `column` is a value from a hardcoded two-entry allowlist and any other `sort` raises,
+  so only two literals can reach the f-string — the allowlist-mapped-identifier pattern,
+  which is the *correct* control since an identifier cannot be a bound parameter. The file
+  is also the known-good fixture `run-build-safe.py --selftest` pins at **1.000**. Closed
+  with the evidence, and the reasoning is now a comment in the file so the next scanner pass
+  has it inline; `--selftest` re-run to confirm the comment did not perturb scoring.
+
 ### Changed
 
 - **Freshness and routing re-measured on the current flagship — ROADMAP item 20 closed,

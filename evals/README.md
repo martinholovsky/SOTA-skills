@@ -89,7 +89,18 @@ audit STRAT-HIGH-2).
   for the five-domain baseline analysis.
 - `cases/freshness.jsonl` (32) — a current-2026 fact question → the token a
   correct answer must contain. Every fact is present in the library and was
-  primary-source-verified.
+  primary-source-verified. **This set is ageing by design and now under-reads its own
+  claim**: 8 of its 32 facts moved inside `claude-sonnet-5`'s training window between
+  July and August 2026, dropping the measured lift +0.53 → +0.30 while the *with*-arm
+  rose. Kept unchanged as the continuity series — do not edit it, add to it.
+- `cases/freshness-2026.jsonl` (10) — the **refreshed** set, authored 2026-08-25 from
+  facts whose primary source changed Sept 2025 – Aug 2026. Reads **0.33 → 1.00, +0.67**
+  on the same model the same day ([ITEM-21](results/2026-08-25/ITEM-21-REFRESHED-FRESHNESS.md)),
+  which is what proved the +0.30 was the *instrument* ageing rather than the library.
+  **Its selection rule is the load-bearing part and is written into the file's header**:
+  cases were chosen by recency and by the library stating the fact — never by whether a
+  model got them wrong. That shortcut was available (10 of the old 32 still discriminate)
+  and picking those would guarantee a large lift while measuring nothing.
 - `cases/silent-failure.jsonl` (81) — a control that **looks enabled and does
   nothing** (inert scanner, fail-open policy, ruleset that loads zero rules,
   truncation before inspection, a test that passes against a no-op'd body …) →

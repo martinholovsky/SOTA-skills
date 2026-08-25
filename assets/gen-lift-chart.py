@@ -36,9 +36,10 @@ GROUPS = [
         ("claude-sonnet-4.6", 0.59, 0.98),
         ("claude-sonnet-5", 0.62, 1.00),
     ]),
-    ("Freshness", "erodes — the cutoff advances into a fixed question set", [
-        ("claude-sonnet-4.6", 0.44, 0.97),
-        ("claude-sonnet-5", 0.688, 0.990),
+    ("Freshness", "the SET ages, not the library — re-author it and the lift returns", [
+        ("claude-sonnet-4.6 · set authored Jul 2026", 0.44, 0.97),
+        ("claude-sonnet-5 · same, now-aged set", 0.688, 0.990),
+        ("claude-sonnet-5 · set re-authored Aug 2026", 0.333, 1.00),
     ]),
     ("Routing", "holds — unchanged within the set's one-case resolution", [
         ("claude-sonnet-4.6", 0.90, 1.00),
@@ -57,9 +58,15 @@ THEMES = {
                  track="#21262d", base="#545d68", lift="#3fb950", dead="#3d444d"),
 }
 
-W, H = 820, 500
-LABEL_X, BAR_X, BAR_MAX = 24, 236, 330
-FIRST_TOP, GROUP_H, ROW_H, BAR_H = 96, 100, 30, 17
+W = 820
+LABEL_X, BAR_X, BAR_MAX = 24, 300, 268
+FIRST_TOP, ROW_H, BAR_H, GROUP_GAP = 96, 30, 17, 34
+# group tops depend on row counts (freshness has three), so compute rather than stride
+GROUP_TOPS, _y = [], FIRST_TOP
+for _g in GROUPS:
+    GROUP_TOPS.append(_y)
+    _y += 12 + len(_g[2]) * ROW_H + GROUP_GAP
+H = _y - GROUP_GAP + 40
 FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"
 
 
@@ -70,8 +77,9 @@ def svg(theme_name):
                f"{dim}: " + ", ".join(
                    f"{m} {wo:.2f} to {wi:.2f}, lift {wi-wo:+.2f}" for m, wo, wi in rows)
                for dim, _, rows in GROUPS)
-           + ". Completeness and routing hold across the generation, freshness erodes, "
-             "defect-avoidance expires.")
+           + ". Completeness and routing hold across the model generation; defect-avoidance "
+             "expires; freshness falls only because its question set ages, and a re-authored "
+             "set restores the lift to +0.67.")
     out = [
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" '
         f'font-family="{FONT}" role="img" aria-label="{alt}">',
@@ -81,7 +89,7 @@ def svg(theme_name):
         f'fill="{t["ink"]}">Does the library change the output — and is that still true?</text>',
         f'<text x="{LABEL_X}" y="62" font-size="12" fill="{t["muted"]}">'
         f'Grey = the model alone. Green = what loading the library adds. '
-        f'Each dimension measured on two model generations.</text>',
+        f'Every row dated to the model — and, for freshness, to when its questions were written.</text>',
         # legend
         f'<rect x="{LABEL_X}" y="72" width="22" height="9" rx="2" fill="{t["base"]}"/>',
         f'<text x="{LABEL_X+28}" y="80" font-size="10.5" fill="{t["muted"]}">unguided</text>',
@@ -89,7 +97,7 @@ def svg(theme_name):
         f'<text x="{LABEL_X+120}" y="80" font-size="10.5" fill="{t["muted"]}">with SOTA-skills</text>',
     ]
     for gi, (dim, note, rows) in enumerate(GROUPS):
-        gtop = FIRST_TOP + gi * GROUP_H
+        gtop = GROUP_TOPS[gi]
         out.append(f'<text x="{LABEL_X}" y="{gtop}" font-size="13.5" font-weight="700" '
                    f'fill="{t["ink"]}">{dim}</text>')
         out.append(f'<text x="{LABEL_X + 9.2 * len(dim) + 10}" y="{gtop}" font-size="11" '
@@ -100,7 +108,7 @@ def svg(theme_name):
             w_lift = round(BAR_MAX * (wi - wo), 1)
             lift = wi - wo
             newest = ri == len(rows) - 1
-            out.append(f'<text x="{LABEL_X + 8}" y="{by + 13}" font-size="11.5" '
+            out.append(f'<text x="{LABEL_X + 8}" y="{by + 13}" font-size="10.8" '
                        f'font-weight="{"600" if newest else "400"}" '
                        f'fill="{t["ink"] if newest else t["muted"]}">{model}</text>')
             out.append(f'<rect x="{BAR_X}" y="{by}" width="{BAR_MAX}" height="{BAR_H}" '
