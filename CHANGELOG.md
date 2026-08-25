@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Freshness and routing re-measured on the current flagship — ROADMAP item 20 closed,
+  and a pre-registered prediction refuted.** `claude-sonnet-5`, `evals/run-clean.py`, the
+  same 3×/temp-0.7 protocol as the 2026-07 originals. Predictions were **committed before
+  the first API call** (`91ca8d9`), per operating principle 0.
+  - **Routing holds — and has *not* saturated.** 0.87 → 0.99, **+0.13** (was 0.90 → 1.00,
+    +0.10). Read as unchanged: 20 cases means one missed case is 0.05, and the whole move
+    is 0.03. Its falsifier (`lift ≤ 0.02`) did not trigger, unlike both neighbouring
+    routing/audit instruments which sit at +0.00. The unguided arm still misses the same
+    **rule-driven** routes a model generation later — testing, sandboxing, code-security,
+    web-frameworks.
+  - **Freshness erodes: +0.53 → +0.30 — and the reason is the instrument, not the
+    library.** The with-library arm *rose* (0.97 → 0.99); the **unguided** arm rose far
+    more (0.44 → 0.69). Case-level diff: **8 of the 32 facts moved inside `sonnet-5`'s
+    training window**, 1 newly missed, 10 still outside it. The prediction that "a training
+    cutoff is a knowledge gap model progress cannot close" is **refuted** — the cutoff
+    advances into a *fixed* set.
+  - **This produces a third claim-shape the knowledge/salience dichotomy missed.** Not
+    two outcomes but three: **expired** (defect-avoidance, +0.19 → +0.000 — a closable
+    knowledge gap), **durable** (completeness, +0.39 → +0.38 — a salience gap), and
+    **eroding** (freshness — a *renewable* knowledge gap that decays toward a floor as a
+    fixed question set ages, but never closes, because the world keeps producing facts).
+  - The one with-library miss was **run down rather than waved through**: `f02` (OWASP Top
+    10 2025 "Insecure Design") is `A06`, verified at run time against `owasp.org/Top10/2025/`,
+    and `sota-code-security/rules/09`:10 states it correctly — so neither a stale library
+    nor a bad key, but an in-context fact losing to a confident prior (it was A04 in 2021).
+  - New **ROADMAP item 21**: the freshness set is fixed and ageing, so it under-reads its
+    own claim by construction. Quote freshness as *a floor of +0.30 on an ageing set*.
+  - Full write-up, scorecard and limits:
+    [evals/results/2026-08-25/ITEM-20-FRESHNESS-ROUTING.md](evals/results/2026-08-25/ITEM-20-FRESHNESS-ROUTING.md);
+    pre-registration: [PREREGISTRATION.md](evals/results/2026-08-25/PREREGISTRATION.md).
+    Surfaces updated: `README.md`, `evals/README.md`, `evals/results/RESULTS.md`,
+    `docs/WHY-IT-WORKS.md`, `docs/ROADMAP.md` (items 17, 20, 21). Cost ~$0.77 against a
+    ~$0.77 estimate.
+
 ## [1.26.0] - 2026-08-22
 
 **Front door checked:** principle 9 · salience · truncation

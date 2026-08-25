@@ -484,8 +484,8 @@ Headline (clean, by dimension): **completeness +0.39** (0.60→0.99 over 7 build
 tasks — from a bare "build X" prompt the library embeds the tests/rate-limits/
 logging/transport a base model skips; the thesis, and the part web-search likely can't
 replace — predicted, not measured here), **freshness +0.50–0.53** (32-case set; base model
-*confidently wrong*, but a web-search agent would likely recover most of it — predicted, not measured here), **routing
-+0.09–0.14**, **audit +0.00** (even the 14 harder cases saturate), and — the newest
+*confidently wrong*, but a web-search agent would likely recover most of it — predicted, not measured here; **re-measured on `claude-sonnet-5` 2026-08-25 at +0.30 — it erodes as the fixed set ages into the cutoff**), **routing
++0.09–0.14** (**+0.13 on `claude-sonnet-5`, unchanged within one case**), **audit +0.00** (even the 14 harder cases saturate), and — the newest
 and a different axis — **defects avoided +0.19** (0.81 → 1.00 on seven classes the
 model must not *write*; +0.33 on the stricter reading that also demands positive
 evidence of the safe path). The lift is
@@ -498,6 +498,15 @@ lifts hold and the **with-library arm is near-zero variance** — completeness
 0.60→1.00 (+0.39, with-arm ±0.01 across-case sd, 6/7 cases perfectly steady),
 routing 0.90→1.00 (+0.10, ±0.00), freshness 0.44→0.97 (+0.53, ±0.00). The
 sampling wobble is all in the unguided arm; the library removes it.
+
+**Re-measured on a current flagship** (2026-08-25, `claude-sonnet-5`, same 3×/0.7
+protocol, [`results/2026-08-25/ITEM-20-FRESHNESS-ROUTING.md`](results/2026-08-25/ITEM-20-FRESHNESS-ROUTING.md)):
+routing **0.87→0.99 (+0.13)** — unchanged within the set's one-case resolution, and
+*not* saturated; freshness **0.69→0.99 (+0.30)** — the lift **eroded** because the
+model's cutoff advanced into a fixed case set (8 of the 32 facts moved inside it),
+not because the library aged: the with-arm *rose*, 0.97 → 0.99. **A fixed
+freshness set measures less lift every generation** — that is a property of the
+instrument, and re-authoring it with newer facts is the open follow-up.
 
 The completeness number is load-bearing on *how* the library is applied — an
 ablation: base model **0.60**; + rules pasted **~0.89** (first 4 tasks; the model

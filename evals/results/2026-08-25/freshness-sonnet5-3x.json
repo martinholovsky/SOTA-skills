@@ -1,0 +1,110 @@
+{
+ "_meta": {
+  "model": "anthropic/claude-sonnet-5",
+  "kind": "freshness",
+  "cases": 32,
+  "samples": 3,
+  "temp": 0.7,
+  "ablate": false
+ },
+ "without-library": {
+  "recall": 0.6875,
+  "recalls": [
+   0.6875,
+   0.71875,
+   0.65625
+  ],
+  "misses": {
+   "f01": "want ['9989']; got: 'rfc 9691'",
+   "f05": "want ['10008']; got: 'rfc 9722'",
+   "f09": "want ['stable', 'generally available', 'shipped', 'released', 'yes']; got: 'still in preview (not yet ga)'",
+   "f10": "want ['ztunnel']; got: 'spiffe/spire-based mutual tls via cilium service mesh/envoy'",
+   "f13": "want ['1.36']; got: '1.33'",
+   "f14": "want ['2.0']; got: '1'",
+   "f15": "want ['2025']; got: 'misra c:2023'",
+   "f16": "want ['draft']; got: 'published as an rfc (rfc 9745)'",
+   "f17": "want ['9967']; got: 'rfc 9825'",
+   "f28": "want ['1.35']; got: '1.34'",
+   "f29": "want ['1.32']; got: '1.29'"
+  },
+  "predictions": {
+   "f01": "RFC 9691",
+   "f02": "A06",
+   "f03": "Deprecated/being retired (sunset around March 2026)",
+   "f04": "RFC 7396",
+   "f05": "RFC 9722",
+   "f06": "15 characters",
+   "f07": "Deprecated (archived, no longer maintained)",
+   "f08": "Discontinued OCSP responders, moved to CRLs only",
+   "f09": "Still in preview (not yet GA)",
+   "f10": "SPIFFE/SPIRE-based mutual TLS via Cilium Service Mesh/Envoy",
+   "f11": "X25519MLKEM768",
+   "f12": "3.2.0",
+   "f13": "1.33",
+   "f14": "1",
+   "f15": "MISRA C:2023",
+   "f16": "Published as an RFC (RFC 9745)",
+   "f17": "RFC 9825",
+   "f18": "Maintenance mode; authors now focus on Centipede",
+   "f19": "Azure Cobalt 200",
+   "f20": "Rust 1.90",
+   "f21": "RFC 9457",
+   "f22": "RFC 9745",
+   "f23": "LTS",
+   "f24": "JDK 25",
+   "f25": "v3",
+   "f26": "PostgreSQL 18",
+   "f27": "RabbitMQ 4.0",
+   "f28": "1.34",
+   "f29": "1.29",
+   "f30": "RFC 9711",
+   "f31": "RFC 9700",
+   "f32": "11 September 2026"
+  }
+ },
+ "with-library": {
+  "recall": 0.9895833333333334,
+  "recalls": [
+   1.0,
+   1.0,
+   0.96875
+  ],
+  "misses": {
+   "f02": "want ['A06', 'a06']; got: 'a05'"
+  },
+  "predictions": {
+   "f01": "RFC 9989",
+   "f02": "A05",
+   "f03": "No \u2014 it's EOL/retired (read-only since March 2026)",
+   "f04": "RFC 7396",
+   "f05": "RFC 10008",
+   "f06": "15 characters",
+   "f07": "No \u2014 archived/deprecated",
+   "f08": "No \u2014 OCSP URLs dropped from certs May 2025, responders shut off Aug 2025; revocation is CRL-only now",
+   "f09": "Generally available (stable since July 2026)",
+   "f10": "ztunnel-based mTLS integration (Beta in 1.19, TCP-only)",
+   "f11": "X25519MLKEM768",
+   "f12": "3.2",
+   "f13": "v1.36",
+   "f14": "2.0.0",
+   "f15": "MISRA C:2025",
+   "f16": "Still an Internet-Draft",
+   "f17": "RFC 9967",
+   "f18": "Maintenance mode (bug fixes only) \u2014 authors moved to Centipede",
+   "f19": "Cobalt 200",
+   "f20": "Rust 1.90",
+   "f21": "RFC 9457",
+   "f22": "RFC 9745",
+   "f23": "LTS",
+   "f24": "JDK 25",
+   "f25": "v3",
+   "f26": "PostgreSQL 18",
+   "f27": "RabbitMQ 4.0",
+   "f28": "v1.35",
+   "f29": "1.32.2",
+   "f30": "RFC 9711",
+   "f31": "RFC 9700",
+   "f32": "11 September 2026"
+  }
+ }
+}
