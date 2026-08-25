@@ -10,12 +10,21 @@ row from the command shown in its writeup.
 
 Same model, same task, library loaded vs. nothing.
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="../../assets/lift-dark.svg">
+    <img alt="Measured lift with the library vs without, on two model generations. Completeness 0.59 to 0.98 (+0.39) on claude-sonnet-4.6 and 0.62 to 1.00 (+0.38) on claude-sonnet-5 — durable. Freshness 0.44 to 0.97 (+0.53) then 0.69 to 0.99 (+0.30) — eroding. Routing 0.90 to 1.00 (+0.10) then 0.87 to 0.99 (+0.13) — holds. Defects avoided 0.81 to 1.00 (+0.19) then 1.00 to 1.00 (+0.00) — expired." src="../../assets/lift-light.svg" width="100%">
+  </picture>
+</p>
+
 | Dimension | Without | With SOTA | Lift | Samples | Source |
 |---|---|---|---|---|---|
 | **Completeness** (7 build tasks) | 0.59 | **0.98** | **+0.39** | 2 runs × 3, temp 0.7 | [MIRROR-VERIFICATION](2026-07-20/MIRROR-VERIFICATION.md) |
 | **Completeness — `claude-sonnet-5`** (current flagship, 2026-06): **holds** | 0.62 | **1.00** | **+0.38** | 1×, temp 0.0 | [SONNET-5](2026-08-21/COMPLETENESS-SONNET-5.md) |
-| **Freshness** (32 current-2026 facts) | 0.44 | **0.97** | **+0.53** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
-| Routing (20 tasks) | 0.90 | **1.00** | **+0.10** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
+| **Freshness** (32 current-2026 facts) — `claude-sonnet-4.6` | 0.44 | **0.97** | **+0.53** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
+| **Freshness — `claude-sonnet-5`** (current flagship): **erodes, does not expire** | 0.69 | **0.99** | **+0.30** | 3×, temp 0.7 | [ITEM-20](2026-08-25/ITEM-20-FRESHNESS-ROUTING.md) |
+| Routing (20 tasks) — `claude-sonnet-4.6` | 0.90 | **1.00** | **+0.10** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
+| Routing — **`claude-sonnet-5`** (current flagship): **holds**, unchanged within one case | 0.87 | **0.99** | **+0.13** | 3×, temp 0.7 | [ITEM-20](2026-08-25/ITEM-20-FRESHNESS-ROUTING.md) |
 | **BUILD-safe** (7 defect classes the model must not *write*) — **sonnet-4.6** | 0.81 | **1.00** | **+0.19** | 3×, temp 0.7 | [BUILD-SAFE](2026-08-21/BUILD-SAFE.md) |
 | BUILD-safe — **gpt-5.1**: bare arm saturates, so **no headroom** | 1.00 | 1.00 | +0.00 | 3×, temp 0.7 | [BUILD-SAFE §1b](2026-08-21/BUILD-SAFE.md) |
 | BUILD-safe — **claude-sonnet-5** (current flagship): bare arm saturates | 1.00 | 1.00 | +0.00 | unguided 3×, guided 2× (one truncated build excluded), temp 0.7 | [BUILD-SAFE §1c](2026-08-21/BUILD-SAFE.md) |
@@ -142,7 +151,8 @@ lift**, and that is stated rather than implied. The only design that could move 
 the agentic large-repo audit — *since qualified: a synthetic fixture cannot do it
 (2026-08-03), only a real repo with real defects could*. The measured lift lives
 entirely in **BUILD**
-(completeness +0.39, freshness +0.53).
+(completeness +0.39, freshness +0.53; both re-measured on the current flagship
+2026-08-25 — completeness +0.38, freshness **+0.30 and eroding**, [ITEM-20](2026-08-25/ITEM-20-FRESHNESS-ROUTING.md)).
 
 **Retraction (2026-07-20).** This row first shipped as **0.92 → 0.99 (+0.07)**
 from a 15-case set. Growing the set to **49** — adding harder cases that broke the
@@ -313,7 +323,8 @@ phrasings outside this set (a prediction, not measured). No routing lift is clai
 ## The three-layer story
 
 SOTA **lifts an unguided model** where it matters (completeness +0.39, freshness
-+0.53); that lift **reproduces in a live agent** (0.99); and it **beats the most
++0.53 — on the current flagship +0.38 and +0.30 respectively, the freshness figure
+eroding as its fixed case set ages into the model's cutoff, [ITEM-20](2026-08-25/ITEM-20-FRESHNESS-ROUTING.md)); that lift **reproduces in a live agent** (0.99); and it **beats the most
 popular competing libraries** head-to-head **on tasks a base model gets incomplete**
 (production backend in any language, complex/security-sensitive frontend: ~+10 pts) —
 while honestly bounding it: on tasks the base model already handles well (simple UI,

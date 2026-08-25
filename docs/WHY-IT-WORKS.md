@@ -23,12 +23,26 @@ to defect-avoidance between February and June 2026, and it is stated rather than
 | Dimension | What it tests | Clean lift |
 |---|---|---|
 | **Completeness** | best practices embedded from a bare "build X" prompt (7 tasks) | **+0.39** (0.59 → 0.98) `sonnet-4.6` · **+0.44** `gpt-5.1` · **+0.38** (0.62 → 1.00) on **`sonnet-5`, the current flagship** — it did not expire |
-| **Freshness** | current 2026 facts (RFCs, CVEs, EOLs, versions, spec editions; 32) | **+0.50–0.53** (32-case; +0.65 on a 20-case run) — `sonnet-4.6` |
+| **Freshness** | current 2026 facts (RFCs, CVEs, EOLs, versions, spec editions; 32) | **+0.50–0.53** (32-case; +0.65 on a 20-case run) — `sonnet-4.6` · **+0.30** (0.69 → 0.99) on **`sonnet-5`** — it **erodes** as a fixed set ages into the cutoff, it does not expire |
 | **Defects avoided** | security defects the model must not *write*, from a spec that never names one (7 classes) | **+0.19** (0.81 → 1.00) on `sonnet-4.6`; **+0.00** on `gpt-5.1`, whose bare arm already scores 1.00 |
 | Defects avoided — *with positive evidence of the safe path* | the stricter reading of the same 7 classes; **does not saturate on either model** | **+0.33** (0.29 → 0.62) sonnet · **+0.10** (0.43 → 0.52) gpt-5.1 |
-| Routing | which skill area applies to a task | +0.09 to +0.14 |
+| Routing | which skill area applies to a task | +0.09 to +0.14 · **+0.13** (0.87 → 0.99) on **`sonnet-5`** — unchanged within one case, **not** saturated |
 | Audit | recognizing a textbook vulnerability | +0.00 |
 | Audit — **real repo, real CVEs** | recall *and* precision on 16 live BOLA sites (Harbor v2.5.1) | +0.00 / +0.00 |
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="../assets/lift-dark.svg">
+    <img alt="Measured lift with the library vs without, on two model generations. Completeness 0.59 to 0.98 (+0.39) on claude-sonnet-4.6 and 0.62 to 1.00 (+0.38) on claude-sonnet-5 — durable. Freshness 0.44 to 0.97 (+0.53) then 0.69 to 0.99 (+0.30) — eroding. Routing 0.90 to 1.00 (+0.10) then 0.87 to 0.99 (+0.13) — holds. Defects avoided 0.81 to 1.00 (+0.19) then 1.00 to 1.00 (+0.00) — expired." src="../assets/lift-light.svg" width="100%">
+  </picture>
+</p>
+
+**Read the chart as three shapes, not one number.** Completeness is flat across a
+model generation (a **salience** gap — the model knows the rule and omits it anyway).
+Defect-avoidance collapsed to zero (a **closable knowledge** gap — the newer model
+simply stopped writing those defects). Freshness shrank without closing (a
+**renewable knowledge** gap — the training cutoff advanced into a *fixed* question
+set, so the instrument under-reads its own claim as it ages). Routing held.
 
 The lift is only "small" if you measure the easy dimensions. The two that matter
 most for *building* software are the two that are large:
@@ -108,6 +122,13 @@ most for *building* software are the two that are large:
   ±0.03**). A web-search agent would *likely* recover much of this gap (searchable facts —
   predicted, not measured in this harness), so we report freshness as *plausibly*
   partly redundant for tool-using agents — stated plainly rather than inflated.
+  **Superseded in magnitude, not in kind (2026-08-25):** on `claude-sonnet-5` the same
+  32 cases read **0.69 → 0.99, +0.30**. The pre-registered prediction — that a training
+  cutoff is a knowledge gap model progress *cannot* close — was **refuted**: eight facts
+  moved inside the newer model's window. The with-arm *rose* (0.97 → 0.99), so this is
+  the **set ageing**, not the library. Freshness is therefore a third shape: it **erodes
+  toward a floor** rather than expiring, and a fixed question set will keep
+  under-reading it ([ITEM-20](../evals/results/2026-08-25/ITEM-20-FRESHNESS-ROUTING.md)).
 - **Audit +0.00 is reported, not hidden.** On isolated snippets a capable model
   already recognizes the vulnerability — even the 14 *harder* cases (subtle IDOR,
   SSRF allowlist bypass, TOCTOU, prototype pollution, multi-vuln) score 1.00 in
@@ -137,7 +158,9 @@ Completeness holds at **0.59 → 0.98 (+0.39)**, a two-run mean with the with-ar
 ±0.004 between runs (re-verified 2026-07-20/21 against the workflow that actually
 *ships*, after the eval's `BUILD_WORKFLOW` mirror was found drifted; see
 [MIRROR-VERIFICATION](../evals/results/2026-07-20/MIRROR-VERIFICATION.md)); and it is **not sonnet-specific — three model families from three labs all show a positive lift: `openai/gpt-5.1` +0.44 ([CROSS-MODEL](../evals/results/2026-07-22/CROSS-MODEL.md)) and `google/gemini-3.1-pro-preview` 0.38 → 0.96, **+0.58 at 3 samples/arm** ([CROSS-FAMILY-GEMINI](../evals/results/2026-08-13/CROSS-FAMILY-GEMINI.md))**. The lift tracks the *baseline*, not the lab: the weaker the unguided arm, the larger the gain. Routing sits at **0.90 → 1.00 (+0.10)**,
-with-arm ±0.00; freshness at **0.44 → 0.97 (+0.53)**, with-arm ±0.00. The
+with-arm ±0.00; freshness at **0.44 → 0.97 (+0.53)**, with-arm ±0.00 — both
+re-measured on `claude-sonnet-5` 2026-08-25 at **+0.13** and **+0.30**
+([ITEM-20](../evals/results/2026-08-25/ITEM-20-FRESHNESS-ROUTING.md)). The
 library's contribution isn't a lucky sample — it removes the unguided model's
 case-by-case unreliability ([multi-sample writeup](../evals/results/2026-07-13/MULTI-SAMPLE.md)).
 
