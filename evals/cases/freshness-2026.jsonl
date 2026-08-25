@@ -1,0 +1,33 @@
+# freshness-2026.jsonl — the REFRESHED freshness instrument (ROADMAP item 21, authored 2026-08-25)
+#
+# Why this file exists. `freshness.jsonl` (32 cases, authored ~July 2026) measured +0.53
+# on claude-sonnet-4.6 and +0.30 on claude-sonnet-5 — not because the library aged (its
+# with-arm ROSE, 0.97 -> 0.99) but because 8 of its 32 facts moved INSIDE the newer
+# model's training window. A fixed question set about current facts under-reads its own
+# claim every generation. See results/2026-08-25/ITEM-20-FRESHNESS-ROUTING.md.
+#
+# SELECTION RULE, fixed BEFORE any model was run — this is the load-bearing part.
+# Cases were chosen by three criteria, none of which is model performance:
+#   1. the fact is stated in the library with a specific, checkable marker (RFC number,
+#      version, edition, date, status);
+#   2. its primary source was published or last changed recently (Sept 2025 - Aug 2026);
+#   3. it is not already an answer in `freshness.jsonl`.
+# Picking cases BECAUSE a model got them wrong would guarantee a large lift and measure
+# nothing. That shortcut was available here (10 of the old 32 still discriminate) and was
+# deliberately NOT taken.
+#
+# EVERY fact below was verified against its primary source on 2026-08-25, at authoring
+# time, and the library was confirmed to state it. One candidate was DROPPED because the
+# library did not state it (PostgreSQL 18 as latest stable major), and one library claim
+# was found STALE during this pass (Cilium "1.19, current line") and fixed separately —
+# no case was authored on it, because a set must not measure content authored alongside it.
+{"id": "g01", "kind": "freshness", "question": "Which RFC number standardizes Compression Dictionary Transport (the dcb/dcz content encodings)?", "expect": ["9842"], "skill": ["skills/sota-performance/rules/04-io-network.md"]}
+{"id": "g02", "kind": "freshness", "question": "Which PostgreSQL major version was in beta as of August 2026? Answer with just the major version number.", "expect": ["19"], "skill": ["skills/sota-databases/rules/05-reliability-and-scale.md"]}
+{"id": "g03", "kind": "freshness", "question": "Which TypeScript major version is the Go-native port of the compiler? Answer with just the version.", "expect": ["7.0", "7"], "skill": ["skills/sota-javascript-typescript/rules/01-typescript-config-and-types.md"]}
+{"id": "g04", "kind": "freshness", "question": "Which TypeScript major version is the LAST release built on the original JavaScript codebase? Answer with just the version.", "expect": ["6.0", "6"], "skill": ["skills/sota-javascript-typescript/rules/01-typescript-config-and-types.md"]}
+{"id": "g05", "kind": "freshness", "question": "On what date does PHP 8.2 security support end?", "expect": ["31 dec 2026", "2026-12-31", "december 31, 2026", "31 december 2026", "dec 31, 2026"], "skill": ["skills/sota-php/rules/01-language-baseline.md"]}
+{"id": "g06", "kind": "freshness", "question": "In which Rust version did the assert_matches! macro stabilize?", "expect": ["1.96"], "skill": ["skills/sota-rust/rules/02-errors-and-panics.md"]}
+{"id": "g07", "kind": "freshness", "question": "Since what date must apps uploaded to App Store Connect be built with the iOS 26 SDK / Xcode 26?", "expect": ["april 28, 2026", "2026-04-28", "28 april 2026", "april 28"], "skill": ["skills/sota-mobile/rules/06-release-and-operations.md"]}
+{"id": "g08", "kind": "freshness", "question": "In which Prometheus version did native histograms become a stable feature?", "expect": ["3.8"], "skill": ["skills/sota-observability/rules/02-metrics.md"]}
+{"id": "g09", "kind": "freshness", "question": "Which RFC (published 2026) specifies DMARC Aggregate Reporting?", "expect": ["9990"], "skill": ["skills/sota-network-security/rules/06-dns-tls-pki.md"]}
+{"id": "g10", "kind": "freshness", "question": "Which RFC (published 2026) specifies DMARC Failure Reporting?", "expect": ["9991"], "skill": ["skills/sota-network-security/rules/06-dns-tls-pki.md"]}
