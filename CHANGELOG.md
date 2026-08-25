@@ -5,7 +5,9 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.27.0] - 2026-08-26
+
+**Front door checked:** selection bias · freshness set
 
 ### Added
 
@@ -17,7 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   bumps are grouped into one weekly PR. **The pin was deliberately NOT bumped**: v7.0.1
   is out, so Dependabot's first PR is the evidence the automation actually runs, and a
   config that watches nothing is indistinguishable from one that works
-  (`sota-code-security` rules/10). Tracked open as ROADMAP item 22 until a PR is seen.
+  (`sota-code-security` rules/10). **It fired within the hour** — PR #281 bumped the
+  pin to v7.0.1 with the SHA matching the real tag and the version comment correctly
+  rewritten, so both the automation and the pin convention are proven. It also
+  **immediately exposed a CI gap**: Dependabot branches are same-repo, so the
+  *Require denylist secret on trusted runs* step runs, but Dependabot's token is denied
+  repo secrets — so its PRs fail `Repository invariants`. The gate is right (invariant
+  3's authoritative scan really isn't running there); the fix is a Dependabot-scoped
+  `SOTA_DENYLIST` secret, and it is left as an open decision in ROADMAP item 22 rather
+  than resolved by weakening the step.
 - **`sota-llm-engineering` rules/01 §8 — selection bias in eval-set construction**, with
   its audit-checklist half in the same change. Distinct from the contamination bullet
   above it: that tunes the *prompt* against the set, this builds the *set* from outcomes.
@@ -4882,6 +4892,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.27.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.27.0
 [1.26.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.26.0
 [1.25.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.25.0
 [1.24.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.24.1
