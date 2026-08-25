@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Recorded a rejection: TOON as the skill-file format** — no library change, a decision
+  logged so it is not re-litigated. [TOON](https://github.com/toon-format/toon) sells token
+  savings against a **JSON** baseline; Markdown already does its one trick (hoist repeated
+  keys into a header row), so converting the largest table in the library — the router's
+  42-row routing table — measured **9,992 → 9,802 bytes, 1.9%**, and table rows are only
+  **3.1%** of the 63,885 instruction lines. Its retrieval benchmark is *data lookup*, which
+  does not transfer to imperatives, and a rewrite would break invariants 2, 4, 8, 10, 15 and
+  18 plus the negative-control probes. Full measurement, the byte-vs-token caveat, and the
+  revisit condition: [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md) 2026-08-25.
+
 ## [1.26.0] - 2026-08-22
 
 **Front door checked:** principle 9 · salience · truncation

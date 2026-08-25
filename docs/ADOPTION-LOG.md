@@ -186,6 +186,7 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-08-20 | Field brief — *a method hierarchy for authoring durable guards* (one session on a 38k-test Python codebase) | **Auditing and authoring are different activities**: the library states a method default for the search and none for the guard the search leaves behind | **adopted with one addition** | `sota-testing/rules/02` §2.10 + three checklist items, cross-referenced from `sota-code-security/rules/10`'s absence bullet; **formatter reflow** added as a fourth mutation-did-not-take cause in `sota-testing/rules/06` §6.3 and `sota-code-security/rules/12` §1. Both of the brief's "not a duplicate" citations verified **accurate** (rules/10:286-292 and rules/06:169), and the gap confirmed: all seven `AST` mentions in `skills/` are about auditing, RAG splitting, Python `match`, or a coincidental Cypher relationship name — **none about authoring**. My addition: **name the parser per language**, because "no parser at hand" is precisely when people reach for regex · v1.24.0 |
 | 2026-08-21 | Field brief — *a pipeline is an evidence hazard, not only an exit-status hazard* (three destroyed measurements in one session) | `pipefail` and `${PIPESTATUS[0]}` fix the **status**; nothing in the library said a pipe also destroys the **output**, and the two need different fixes | **adopted** | `sota-shell-scripting/rules/01` §3 + a checklist grep, cross-referenced from `sota/rules/01`'s evidence standard. All three of the brief's citations verified accurate (`rules/01`:47, `rules/01`:124, router `:197`), and the gap confirmed by two independent sweeps. **Reproduced before writing** — and the first reproduction was *wrong*, keeping the cause because it sat last; rebuilt pytest-shaped (cause at the top, summary last), `tail -12` destroyed the `AssertionError` while `1 failed, 38265 passed` survived · v1.25.0 |
 | 2026-08-21 | An outside assessment of this library, three criticisms | (1) AUDIT is *mostly performative* at +0.00; (2) high friction — Day Zero *halts*, and the rules force production rigour on a throwaway script; (3) completeness collapses if the model skips the self-audit | **one adopted, two rejected as false** | Checked each against the tree. **(1) conceded and already published** — README:138 and :281 say the audit half *"adds nothing a good model doesn't already do"*, in our own words, across nine instruments. **(2a) false** — the router says *"say it once … then get on with the task"* and *"Offer, never perform"*; no halt exists. **(2b) TRUE and the only one that lands** — a search for a proportionality rule found exactly one hit, in `sota-docs-workflow/rules/05`, which a quick-script task never loads. Now router **operating principle 9**, with a measured re-baseline. **(3) false** — the ablation reads base 0.60 → +rules 0.89 → +self-audit 0.93 → +principle 5 0.99, so dropping the self-audit leaves **+0.29**, not a collapse · v1.26.0 |
+| 2026-08-25 | Operator question — "would it help if we rewrite skills files to TOON format?" | [TOON](https://github.com/toon-format/toon) (Token-Oriented Object Notation) as the on-disk format for `skills/*/SKILL.md` and `skills/*/rules/*.md`, to cut context cost | **rejected: measured 1.9% on the best case** | — · TOON's baseline is **JSON**, and Markdown already does its one trick. Converted the router routing table (42 rows, the largest table in the library) to TOON tabular form: **9,992 → 9,802 bytes, 1.9%** — and table rows are **3.1%** of the library (1,955 of 63,885 lines across 300 instruction files), so library-wide that is ~0.06%. Measurement and the cost side in the entry below |
 
 ## Entries
 
@@ -1302,3 +1303,77 @@ second checklist item; the remedy is unchanged and now stated as the general one
 
 **Measurement status:** adopted on reasoning, a verified reproduction, and first-hand
 recurrence. **No efficacy lift is claimed or measured.**
+
+### 2026-08-25 — TOON as the skill-file format: 1.9% on the best case
+
+**The proposal.** Rewrite the library's instruction files from Markdown into
+[TOON](https://github.com/toon-format/toon), a compact serialization format marketed on
+token savings, to reduce what a task pays to load them.
+
+**What the source actually says**, fetched at evaluation time rather than recalled. TOON is
+"a compact, human-readable encoding of **the JSON data model** that minimizes tokens", and
+JSON is its baseline throughout: **42.6% fewer tokens than JSON** on its mixed-structure
+benchmark, **58.7% fewer than formatted JSON** on flat data — but **5.9% *more* than CSV**.
+Its own "when not to use it" list is explicit: *"structures are deeply nested or
+non-uniform"*, *"arrays are semi-uniform"*, *"data is purely tabular"* (CSV is smaller).
+Nothing in the README addresses prose, because prose is not in the JSON data model.
+
+**What the library is.** Across the 300 tracked instruction files (41 `SKILL.md` + 259
+`rules/*.md`, 63,885 lines): **1,955 table rows — 3.1%**. Everything else is headings
+(4,040), bullets and numbered imperatives (11,543), blank lines (10,032), fenced code, and
+sentences. Only **two** files anywhere have more than 40 table rows.
+
+**The measurement, on the best case available.** The router's routing table
+(`skills/sota/SKILL.md`, 42 rows — tied with `sota-threat-modeling/rules/02` as the largest
+table in the library) converted mechanically to TOON tabular form:
+
+```
+markdown  9,992 bytes
+toon      9,802 bytes   →  1.9%
+```
+
+That is the **ceiling**, on 3.1% of the content — library-wide roughly **0.06%**. The
+converter quoted every prose cell but did not escape embedded quotes; doing so correctly
+only makes the TOON larger, so the error is in the favourable direction.
+
+**Why 1.9% is a ceiling and not a starting point.** TOON's win over JSON *is* hoisting
+repeated keys into one header row and dropping per-record punctuation. **A Markdown table
+already does exactly that.** There is nothing left to reclaim — what remains in each cell is
+English, and TOON's encoding of a sentence is the sentence, in quotes. The 42.6% headline
+measures the distance from JSON to Markdown-grade density, which this library already has.
+
+**The retrieval benchmark does not transfer.** TOON's accuracy figure (**72.2% vs JSON's
+71.4%**, ±2.8, on 244 questions across 4 models) is *data retrieval* — "what is field X in
+record Y". These files are **imperatives**, not records. Our own measured lift is a
+**salience** lift (+0.38 completeness on `claude-sonnet-5`; the model knows the content and
+drops it under context pressure — [docs/WHY-COMPLETENESS-RESIDUAL.md](WHY-COMPLETENESS-RESIDUAL.md)).
+Salience comes from imperative prose carrying its reason and its exception — *do X because Y,
+except when Z*. A row has no column for the *because* or the *except*, and those are the
+parts that make a rule get applied. **This is reasoning, not a measurement** — see below.
+
+**The cost side, which is not small.** A format change breaks invariant 2
+(`## Audit checklist` as the last line), 8 (Markdown link resolution), 18 (every
+`§` reference), 10 and 15 (rules-index parsing in both directions), and 4
+(frontmatter) — plus negative-control probes built on hardcoded Markdown literals,
+plus `ROUTER_BUILD_SHA`, which aborts the evals on router drift. The Agent Skills guidance the 500-line cap derives from is Markdown by
+contract.
+
+**And the binding constraint is not tokens.** It is the **500-line** cap on skill files and
+the **1024-char** description cap — neither of which TOON moves, because it does not shorten
+prose by lines. The lever the router already names is the real one: **load fewer files**,
+because attention degrades with length and near-duplicate distractors (BUILD step 2).
+
+**Where the shape genuinely does fit — and still is not a win.** Audit findings
+(`file:line | rule | severity | effort | fix`) are a uniform record set, exactly TOON's
+sweet spot. But that is emitted *output*, not skill files, and it is already pipe-delimited
+— i.e. CSV, which TOON's own README says is smaller.
+
+**Measurement status.** The 1.9% is **bytes, not tokens** — no tokenizer was available in
+this environment, and the byte ratio is a proxy for a token claim. It is reported as such;
+the direction is not in doubt at this magnitude, but the figure is not a token count. The
+composition counts (3.1%, 63,885 lines, 300 files) are exact `grep -c` results over
+`git ls-files`. **No efficacy comparison was run** — the verdict is that the token win does
+not exist to justify the cost, *not* a measured finding that TOON degrades adherence. The
+salience argument above is reasoning from an already-measured mechanism, and would need
+`evals/run-completeness.py` to become a claim. **Revisit if** a tokenizer-based measurement
+on a real load ever shows materially more than the byte ratio predicts.
