@@ -227,6 +227,16 @@ Production is the only honest distribution. Build the loop:
   finding about the feature, not the eval.
 - **Eval-set overfit via retries:** harnesses that auto-retry until pass
   inflate scores. Retries are for transport errors only.
+- **Selection bias — building the set out of what the model got wrong.** Distinct
+  from contamination above: that one tunes the *prompt* against the set, this one
+  builds the *set* from outcomes. Run a model, keep the cases it failed, and the
+  gap you go on to report was guaranteed before either arm ran — you have measured
+  your selection. It is tempting precisely when an ageing set stops discriminating
+  and the still-failing cases are sitting right there. **Fix the selection rule
+  before any model runs, write it where the cases live, and let it reference only
+  properties of the case** — recency, domain, difficulty tier, provenance, whether
+  the fact is documented — never a score. The tell is an authoring order of
+  "run, then choose"; the fix is "choose, then run".
 
 ## Audit checklist
 
@@ -235,6 +245,10 @@ Production is the only honest distribution. Build the loop:
       no human gate → Critical.)
 - [ ] Golden set ≥20 cases, includes hard/edge/refusal cases, provenance
       tagged, not majority-synthetic after months in production.
+- [ ] Each case set states **how its cases were chosen**, and that rule cites
+      properties of the case rather than any model's score on it. (A set whose
+      cases were kept because a model failed them reports its own selection —
+      treat a missing or outcome-referencing rule as High.)
 - [ ] Cheapest-grader rule followed: assertions where assertable; judges only
       for genuinely graded qualities; rubrics decomposed into binary checks
       with quoted evidence.

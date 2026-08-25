@@ -145,7 +145,7 @@ difficulty, not the domain — we measure it and say so.
 Ten classes of defect survive every linter, SAST rule, and CVE scanner, because in
 each one the code isn't *wrong*. The library hunts them as explicit passes:
 
-> **Finding them is the cheap half — and we can prove it.** Across seven instruments,
+> **Finding them is the cheap half — and we can prove it.** Across nine instruments,
 > a frontier model recognises these classes unaided: audit lift **+0.00**, published
 > below rather than buried. The expensive half is not writing them in the first place.
 > On a model that *does* write them, the library stops it: **0.81 → 1.00**. On one that

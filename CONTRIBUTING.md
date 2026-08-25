@@ -325,6 +325,20 @@ Run the invariant checks any time:
 ./scripts/check-invariants.sh
 ```
 
+### Dependency updates
+
+`.github/dependabot.yml` watches **`github-actions` only**. There is no pip or npm
+manifest here — the library is Markdown and every script is stdlib-only Python or
+POSIX shell — so Actions is the single third-party supply-chain surface.
+
+Actions are pinned to **commit SHAs, not tags**, because a tag is mutable and a
+compromised upstream can move it (`sota-devsecops` rules/01). Dependabot handles SHA
+pins: it bumps the SHA and rewrites the trailing `# vX.Y.Z` comment. Keep that comment
+on every pin — it is the only thing that makes the SHA readable to a human.
+
+Minor and patch bumps are **grouped into one weekly PR** so the four required checks
+run once per batch rather than once per action.
+
 ### Rendered assets
 
 `assets/*.png` are **build outputs** of the `assets/*.html` next to them, and

@@ -9,6 +9,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Dependabot, scoped to the one supply-chain surface that exists.**
+  `.github/dependabot.yml` watches **`github-actions` only** — the library is Markdown
+  and every script is stdlib-only Python or POSIX shell, so there is no pip/npm manifest.
+  The five `actions/checkout` pins now carry a readable `# v7.0.0` comment beside the SHA
+  (pinned by SHA because a tag is mutable — `sota-devsecops` rules/01). Minor and patch
+  bumps are grouped into one weekly PR. **The pin was deliberately NOT bumped**: v7.0.1
+  is out, so Dependabot's first PR is the evidence the automation actually runs, and a
+  config that watches nothing is indistinguishable from one that works
+  (`sota-code-security` rules/10). Tracked open as ROADMAP item 22 until a PR is seen.
+- **`sota-llm-engineering` rules/01 §8 — selection bias in eval-set construction**, with
+  its audit-checklist half in the same change. Distinct from the contamination bullet
+  above it: that tunes the *prompt* against the set, this builds the *set* from outcomes.
+  Keep the cases a model failed and the gap you report was guaranteed before either arm
+  ran. Found by nearly doing it — 10 of the old 32 freshness cases still discriminated,
+  and reporting those alone would have produced a large number measuring nothing.
+
+### Fixed
+
+- **A stale README claim that understated our own evidence.** "Across seven instruments"
+  had read seven since the audit question closed at **nine instruments, four designs** on
+  2026-08-14 (`evals/results/RESULTS.md`). The same drift was caught once before at the
+  v1.22.9 cut — found again by re-reading prose at the cut, which is the only thing that
+  catches it. Remaining "seven instruments" strings are all correctly-dated historical
+  records and were **superseded, not edited**.
+- `docs/INDEX.md` now indexes the 2026-08-25 write-ups (freshness ageing, and routing on
+  a current model), which were reachable only from the scoreboard.
+
 - **A refreshed freshness set — ROADMAP item 21 closed the same day it was opened, and it
   settles item 20's open question.** `evals/cases/freshness-2026.jsonl` (10 cases, authored
   2026-08-25 from facts whose primary source changed Sept 2025 – Aug 2026) reads
