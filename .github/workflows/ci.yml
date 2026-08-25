@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # actions/checkout v7.0.0, pinned by commit SHA (sota-devsecops).
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
           # The build steps run repo scripts and never push.
           persist-credentials: false
@@ -73,7 +73,7 @@ jobs:
     name: Negative controls (the gate can fail)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
           persist-credentials: false
           # The harness creates a git worktree and runs the full gate inside it,
@@ -100,7 +100,7 @@ jobs:
     name: Shell lint (shellcheck)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
           persist-credentials: false
       - name: known-good/known-bad references (selftests)
@@ -130,7 +130,7 @@ jobs:
     name: Secret scan (gitleaks)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
           # Full history so gitleaks scans every commit, not just the checkout.
           fetch-depth: 0

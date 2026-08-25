@@ -49,6 +49,8 @@ trying to do**, not by file. (Kept in sync by hand; if a link rots, open an issu
 | See what the library does **not** lift (the honest +0.00s) | [AUDIT-PROCESS.md](../evals/results/2026-07-20/AUDIT-PROCESS.md) |
 | Understand why the **audit** half has no measured lift (**9 instruments, 4 designs** — closed 2026-08-14) | [UNSCOPED-AUDIT.md](../evals/results/2026-07-30/UNSCOPED-AUDIT.md) · [DEAD-PATH.md](../evals/results/2026-07-30/DEAD-PATH.md) |
 | See a prediction written down **before** the run that killed it | [PRE-REGISTRATION.md](../evals/results/2026-07-30/PRE-REGISTRATION.md) |
+| See why a **freshness** lift shrinks over time, and what restores it | [ITEM-20](../evals/results/2026-08-25/ITEM-20-FRESHNESS-ROUTING.md) (+0.53 → +0.30 as the set ages) · [ITEM-21](../evals/results/2026-08-25/ITEM-21-REFRESHED-FRESHNESS.md) (re-authored: **+0.67**) |
+| Check whether **routing** still helps on a current model | [ITEM-20](../evals/results/2026-08-25/ITEM-20-FRESHNESS-ROUTING.md) — 0.87 → 0.99, and *not* saturated |
 | See whether the library stops defects being **written** (not just found) | [BUILD-SAFE 2026-08-21](../evals/results/2026-08-21/BUILD-SAFE.md) — 0.81 → 1.00 on seven classes, with its five limits stated |
 | Check how audit reports are scored for **calibration** (and why it is never reported as a lift) | [BUILD-SAFE 2026-08-21 §2](../evals/results/2026-08-21/BUILD-SAFE.md) · `evals/run-calibration.py` |
 | Read an eval that failed as an *instrument* rather than as a result | [BUILD-SAFE.md](../evals/results/2026-07-30/BUILD-SAFE.md) |

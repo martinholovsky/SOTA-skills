@@ -187,6 +187,9 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-08-21 | Field brief — *a pipeline is an evidence hazard, not only an exit-status hazard* (three destroyed measurements in one session) | `pipefail` and `${PIPESTATUS[0]}` fix the **status**; nothing in the library said a pipe also destroys the **output**, and the two need different fixes | **adopted** | `sota-shell-scripting/rules/01` §3 + a checklist grep, cross-referenced from `sota/rules/01`'s evidence standard. All three of the brief's citations verified accurate (`rules/01`:47, `rules/01`:124, router `:197`), and the gap confirmed by two independent sweeps. **Reproduced before writing** — and the first reproduction was *wrong*, keeping the cause because it sat last; rebuilt pytest-shaped (cause at the top, summary last), `tail -12` destroyed the `AssertionError` while `1 failed, 38265 passed` survived · v1.25.0 |
 | 2026-08-21 | An outside assessment of this library, three criticisms | (1) AUDIT is *mostly performative* at +0.00; (2) high friction — Day Zero *halts*, and the rules force production rigour on a throwaway script; (3) completeness collapses if the model skips the self-audit | **one adopted, two rejected as false** | Checked each against the tree. **(1) conceded and already published** — README:138 and :281 say the audit half *"adds nothing a good model doesn't already do"*, in our own words, across nine instruments. **(2a) false** — the router says *"say it once … then get on with the task"* and *"Offer, never perform"*; no halt exists. **(2b) TRUE and the only one that lands** — a search for a proportionality rule found exactly one hit, in `sota-docs-workflow/rules/05`, which a quick-script task never loads. Now router **operating principle 9**, with a measured re-baseline. **(3) false** — the ablation reads base 0.60 → +rules 0.89 → +self-audit 0.93 → +principle 5 0.99, so dropping the self-audit leaves **+0.29**, not a collapse · v1.26.0 |
 | 2026-08-25 | Operator question — "would it help if we rewrite skills files to TOON format?" | [TOON](https://github.com/toon-format/toon) (Token-Oriented Object Notation) as the on-disk format for `skills/*/SKILL.md` and `skills/*/rules/*.md`, to cut context cost | **rejected: measured 1.9% on the best case** | — · TOON's baseline is **JSON**, and Markdown already does its one trick. Converted the router routing table (42 rows, the largest table in the library) to TOON tabular form: **9,992 → 9,802 bytes, 1.9%** — and table rows are **3.1%** of the library (1,955 of 63,885 lines across 300 instruction files), so library-wide that is ~0.06%. Measurement and the cost side in the entry below |
+| 2026-08-25 | [awesome-ai-plugins](https://github.com/hashgraph-online/awesome-ai-plugins) listing invitation, and the `plugin-scanner` run it triggered on this repo | Their scanner reported **8 findings on SOTA-skills**: 7 high + 1 low | **one adopted, seven rejected as false positives** | Reproduced locally with `plugin-scanner==2.0.1116` and checked every one rather than assuming. **Adopted: `DEPENDABOT_MISSING` (low) was correct** — `.github/dependabot.yml` added, scoped to `github-actions` (the only third-party surface: `actions/checkout`, SHA-pinned in 5 places). **Rejected: all 7 highs.** 3× `DANGEROUS_DYNAMIC_EXECUTION` match the word *eval* before a parenthesis in **docstring prose** (`grep -rn 'eval(' evals/*.py` → no matches; only `re.compile`); 4× `HARDCODED_SECRET` are the OpenAI `sk-` prefix inside ordinary English — *ri**sk-r**eduction*, *di**sk-m**anaged* — plus a snippet that *generates* a prefixed token and the deliberately-vulnerable audit fixture. Both regex bugs reported upstream on the PR · unreleased |
+| 2026-08-25 | Same scanner run — the *class* behind its false positives | A pattern-based control's false-positive rate is a property you must measure on your own corpus before trusting its verdict | **rejected: already covered** | `sota-detection-engineering/rules/04` §1 (*"Alert fatigue is the dominant failure"*, *"Precision over recall at the alert tier"*) and §2 (*"Tune by adding context, not by deleting detections"*) already own this class. The scanner episode is an **instance**, not a new class — recorded so it is not re-litigated as a gap · — |
+| 2026-08-25 | **This session's own eval work** (ROADMAP item 21) | Building an eval set out of the cases a model got wrong measures the selection, not the system | **adopted** | `sota-llm-engineering/rules/01` §8 + an audit checklist item. Distinct from the **contamination** bullet already there: that tunes the *prompt* against the set, this builds the *set* from outcomes. Found by nearly doing it — 10 of the old 32 freshness cases still discriminated and reporting those alone would have produced a large number measuring nothing · unreleased |
 
 ## Entries
 
@@ -1377,3 +1380,44 @@ not exist to justify the cost, *not* a measured finding that TOON degrades adher
 salience argument above is reasoning from an already-measured mechanism, and would need
 `evals/run-completeness.py` to become a claim. **Revisit if** a tokenizer-based measurement
 on a real load ever shows materially more than the byte ratio predicts.
+
+### 2026-08-25 — a listing invitation, a scanner, and seven false positives
+
+An external catalogue ([awesome-ai-plugins](https://github.com/hashgraph-online/awesome-ai-plugins),
+120 stars, Apache-2.0, actively merging outside contributions) invited a listing. The
+submission itself is one README line; the interesting part is what their CI did next.
+
+**Their `plugin-scanner` ran against this repo and failed on `high:7`.** Rather than
+argue for a waiver, the findings were **reproduced locally** at the same pinned version
+and worked through one at a time. Seven of eight were false positives, and two of the
+three patterns are upstream bugs that will hit other submissions:
+
+- **`DANGEROUS_DYNAMIC_EXECUTION` ×3** — the rule fires on *eval* followed by a
+  parenthesis, and matched **English prose in docstrings**: "the in-session eval (where
+  …", "The completeness eval (run-completeness.py)". Verified absent by two independent
+  greps: no `eval(`, and no `exec(`/`compile(`/`__import__(` anywhere — only
+  `re.compile`. Any project shipping an *evaluation* harness will trip this.
+- **`HARDCODED_SECRET` ×4** — the OpenAI `sk-` prefix matching inside ordinary words:
+  *ri**sk-r**eduction* (four times) and *di**sk-m**anaged*. A word boundary before
+  `sk-` clears them. The two content matches are intentional: a snippet teaching readers
+  to give generated keys an identifiable prefix, and the deliberately-vulnerable
+  `audit-hard.jsonl` fixture whose answer key literally includes `hardcoded-secret`.
+
+**The one accurate finding was adopted.** `DEPENDABOT_MISSING` was right, and
+`.github/dependabot.yml` now watches `github-actions` — the only third-party supply-chain
+surface here, since the library is Markdown and every script is stdlib-only.
+
+**The config was checked for inertness before being written**, because a Dependabot file
+watching nothing is exactly the shape `sota-code-security` rules/10 warns about: the repo
+pins `actions/checkout` at `9c091bb2…` = **v7.0.0**, while the latest release is
+**v7.0.1** (2026-07-20). So there is real work waiting, and **the pin was deliberately
+left un-bumped**: Dependabot's first PR is the evidence the automation actually runs.
+Bumping it by hand would have removed the only cheap proof available.
+
+**A local-vs-CI discrepancy worth recording.** The local run reported `high:8`, CI `high:7`.
+The difference is a gitignored `.env` in the working copy — never committed on any branch
+(`git log --all -- .env` is empty). A working-tree scan and a clone scan are not the same
+measurement, and reconciling the two is what confirmed there was no leak.
+
+**Measurement status:** no efficacy claim. The scanner analysis is a verified reading of
+eight findings, and the two regex bugs were reported upstream rather than worked around.

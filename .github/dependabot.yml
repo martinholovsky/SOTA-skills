@@ -1,0 +1,39 @@
+# Dependabot — keeps the ONE automation surface this repo has current.
+#
+# Scope is deliberately narrow. There are no application dependencies here: the
+# library is Markdown, and every script is stdlib-only Python or POSIX shell, so
+# there is no pip/npm manifest for Dependabot to watch. The single third-party
+# supply-chain surface is GitHub Actions — `actions/checkout`, SHA-pinned in five
+# places across ci.yml and freshness.yml.
+#
+# The pins are commit SHAs, not tags, because a tag is mutable and a compromised
+# upstream can move it (`sota-devsecops` rules/01). Dependabot understands SHA
+# pins: it bumps the SHA and rewrites the trailing `# vX.Y.Z` comment, so the pin
+# stays immutable while remaining readable. That comment is why the version is
+# written beside each pin rather than left implicit.
+#
+# Added 2026-08-25 after an external scanner flagged DEPENDABOT_MISSING — the one
+# accurate finding out of eight it reported (the other seven were false positives;
+# see docs/ADOPTION-LOG.md 2026-08-25).
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(ci)"
+    labels:
+      - "dependencies"
+    # Low ceiling on purpose: one action means a backlog here is a signal that
+    # something is wrong, not routine noise to be triaged away.
+    open-pull-requests-limit: 3
+    groups:
+      # One PR per week for routine bumps rather than one per action, so the
+      # required checks run once and the diff is reviewable in a single pass.
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
