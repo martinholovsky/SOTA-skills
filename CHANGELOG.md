@@ -7,7 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **The router gave back its headroom: BUILD/AUDIT detail moved into `skills/sota/rules/`,
+  loaded on demand.** `skills/sota/SKILL.md` went **500 → 484 lines** (16 spare, after
+  sitting at the cap since 2026-07-30) without losing an imperative. §BUILD 37 → 28 lines,
+  §AUDIT 63 → 54.
+  - **New `skills/sota/rules/02-build-workflow.md`** — the reasoning behind the four BUILD
+    steps: why loading lean is correctness rather than economy, why a plan item must be
+    checkable, why the self-audit gate runs LAST, and the two questions that catch inert
+    work.
+  - **Most of what left §AUDIT was duplication, not detail.** `rules/01` already carried
+    the severity model (§4), recon (§2), decision-ledger (§6), refutation (§7) and report
+    structure (§8); the router now points at them instead of restating them.
+  - **Measured first, not assumed.** A length sweep on `cases/router.jsonl`
+    (`claude-sonnet-5`, 3 samples, temp 0.7) found routing recall **flat at 1.000** with
+    the router padded to 902 and 1,302 lines and the routing table pushed 800 lines deeper
+    — while the untreated arm reproduced **0.867** exactly, as on 2026-08-25. So length was
+    never the thing to fear; **per-load cost is** — the router is **16,934 tokens**
+    (`count_tokens`, `claude-sonnet-5`), ~3.4× the ~5k guidance, paid by every task.
+    Offloading detail cuts that; raising the cap would have raised it.
+  - **A compression audit came back clean.** Of 51 concept anchors that ever existed in the
+    router, **49 are present today**; the two absent are a rewording of the same rule and
+    one superseded by a stronger rule whose substance moved to `rules/01` §5. Nothing was
+    quietly dropped to fit the cap.
+
 ### Added
+
+- **The coupling is now stated in four places, because it fails silently in three.**
+  Adding to §BUILD or §AUDIT usually means editing another file too: `rules/02` §5 tables
+  BUILD's four surfaces, new `rules/01` §10 tables AUDIT's two (and says plainly that
+  **nothing catches AUDIT divergence automatically**), the router's own two sections carry
+  a one-line warning, and `CONTRIBUTING.md` explains it for humans.
+- **`ROUTER_BUILD_SHA` guidance sharpened by having to follow it.** The rule first written
+  as "never the hash alone" was unfollowable when only prose moved. It now says: re-read
+  the mirror against the new §BUILD **clause by clause**, then state in the commit which
+  case it is — *an imperative changed* (re-sync first) or *only prose moved* (hash alone is
+  correct). Both of this change's two pin trips were resolved that way, verified.
 
 - **Seven rules from a field brief — a session that *used* the library reporting defects
   it did not prevent.** Each landed with its audit-checklist half in the same change.

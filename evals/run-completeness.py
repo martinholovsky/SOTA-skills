@@ -101,7 +101,7 @@ def load_cases():
 # longer shipped. Nothing failed; the eval just quietly measured the wrong thing.
 # So: pin the router section's hash. If the router changes, this aborts and forces a
 # decision — re-sync the mirror and update the hash, or consciously accept the drift.
-ROUTER_BUILD_SHA = "4d1a02c9c483a65b"
+ROUTER_BUILD_SHA = "0c85814f366fe860"
 
 
 def _assert_mirror_fresh():

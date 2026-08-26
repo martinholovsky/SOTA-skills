@@ -325,6 +325,29 @@ Run the invariant checks any time:
 ./scripts/check-invariants.sh
 ```
 
+### Changing the router's BUILD or AUDIT workflow
+
+The router (`skills/sota/SKILL.md`) is capped at **500 lines** and is read on every task,
+so both workflow sections hold **imperatives only**; the procedure and reasoning live in
+`skills/sota/rules/`. That split means a change usually lands in more than one file.
+
+**BUILD is mirrored in four places** and three of them fail silently — the table is in
+[`skills/sota/rules/02-build-workflow.md`](skills/sota/rules/02-build-workflow.md) §5.
+The one loud surface is `ROUTER_BUILD_SHA` in `evals/run-completeness.py`: it pins a hash
+over the router's §BUILD, so editing that section **aborts the completeness eval** until
+you deal with it. Never bump the hash without first re-reading `BUILD_WORKFLOW` against
+the new §BUILD clause by clause, then say in the commit which case it was — *an imperative
+changed* (re-sync the mirror first) or *only prose moved* (hash alone is correct).
+
+**AUDIT is mirrored in two** — the router's §AUDIT and
+[`rules/01-audit-methodology.md`](skills/sota/rules/01-audit-methodology.md) §10. There is
+**no hash pin over §AUDIT**, so nothing catches divergence automatically; a new pass needs
+a line in the router *and* a section in `rules/01`.
+
+Adding a `skills/sota/rules/NN` file also touches the router's **library map** (invariant
+15) and the README's file count (invariant 6) — and both gates read `git ls-files`, so
+`git add` the new file before believing either of them.
+
 ### Dependency updates
 
 `.github/dependabot.yml` watches **`github-actions` only**. There is no pip or npm
