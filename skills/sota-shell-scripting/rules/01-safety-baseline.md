@@ -96,6 +96,22 @@ fi
 Rule: treat `set -e` as a backstop, not error handling. Critical steps get explicit
 `|| { err "..."; exit 1; }` or status capture.
 
+**`$( )` strips every trailing newline — silently, and it breaks line-oriented
+composition.** The code *reads* as though the newline is there, because the helper that
+produced it emitted one; the newline is removed by the substitution, not by the helper.
+
+```bash
+body="$(printf 'a: 1\nb: 2\n')"     # body is "a: 1\nb: 2" — the trailing \n is GONE
+printf '%s%s\n' "$body" "c: 3"      # BAD  -> "a: 1", "b: 2c: 3"   (two fields glued)
+printf '%s\n%s\n' "$body" "c: 3"    # GOOD -> "a: 1", "b: 2", "c: 3"
+```
+
+This matters most where the bytes are **hashed, signed, or parsed by field**: a writer
+and a verifier that disagree about one byte each look correct in isolation. If the
+composed text feeds a digest, assert the round trip against a **committed known-answer
+vector**. Field-reported twice in one session, the second time by the author who had
+just fixed the first instance.
+
 ## 3. Quoting: quote every expansion (SC2086)
 
 Unquoted expansions undergo word splitting (on `$IFS`) **and** glob expansion. This is the
@@ -325,6 +341,11 @@ files=(/data/*); count=${#files[@]}                               # with nullglo
 ```
 
 ## Audit checklist
+
+- [ ] **Composed multi-line records**: `grep -rn '="\$(' --include='*.sh'` where the
+      result is concatenated with more lines — `$( )` dropped the trailing newline and
+      the boundary is gone. High where the bytes are hashed, signed or field-parsed;
+      confirm a known-answer vector exists and that writer and verifier agree byte-for-byte.
 
 - [ ] **Measurements piped into `tail`/`head`.** `grep -rnE '(pytest|go test|cargo|bench|profile|timeout)[^|]*\| *(tail|head)' --include='*.sh' --include='*.yml' .` — and the same in any runbook or CI step whose output someone reads. Evidence commands redirect to a file; `pipefail` does not bring destroyed output back (§3).
 

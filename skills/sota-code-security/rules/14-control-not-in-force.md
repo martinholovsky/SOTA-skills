@@ -169,6 +169,38 @@ single job turned out to set a workflow-wide env var that its own first step rej
 so it could never have passed — invisible for as long as nothing ran it (checked
 2026-08-16; GitHub's skipped-reports-Success behaviour is above).
 
+## 4a. A control keyed to a neighbouring setting instead of its own dependency
+
+A control gated on a **proxy** — "is the sibling feature enabled", "is the flag on",
+"does the config file exist" — is correct for exactly as long as the proxy and the real
+dependency are configured together. They are two facts, so one day they are set
+independently, and the control stops in silence.
+
+```bash
+# BAD — commit.gpgsign is a proxy for "signing is set up"
+if [[ "$(git config --get commit.gpgsign)" == "true" ]] && command -v gpg; then
+    sign_head            # what this actually needs is user.signingkey
+fi
+```
+
+Field-reported: a repository moved from per-commit signing to tag-only signing and set
+`commit.gpgsign=false`. The head signature **stopped being produced at the moment it
+became the only per-change attestation**, and the caller still logged success. The two
+settings had agreed for months; they diverged in one commit, three files away.
+
+The defect is a **coupling**, which is why neither a per-file review nor a per-gate probe
+finds it: the control's own site is unchanged and still reads correctly.
+
+- **Ask what the code actually needs to function, and test that.** Here: `user.signingkey`
+  (or attempt the signature and handle failure), not a sibling boolean.
+- **Then falsify the proxy specifically:** *if the proxy flipped and the dependency did
+  not, would anything observable differ?* "The control silently stops" means the predicate
+  is wrong.
+- **Report from live state, never from a hardcoded explanation.** That instance printed
+  "commit signing is not configured yet" — a reason that had been true when written and
+  referred to a closed question. A stale reason is worse than none: it stops the reader
+  looking.
+
 ## 5. A control parked in observe-only mode
 
 A control in audit / warn / dry-run / report-only mode is a *plan* to enforce,
@@ -188,6 +220,14 @@ was supposed to flip it. "Enabled" is not "enforcing", and no consumer of the
 dashboard can tell the difference.
 
 ## Audit checklist
+
+- [ ] **Proxy predicates**: for every `if` guarding a control, name the dependency the
+      body actually needs and confirm the predicate tests *that*. Grep the codebase for
+      the proxy setting — if it is read in more than one place for more than one purpose,
+      the two uses can be configured apart. High when the control is the only attestation
+      of something.
+- [ ] **Skip messages are derived from live state**, not string literals written when the
+      branch was added. A hardcoded reason cannot go stale loudly.
 
 - [ ] Does any **report or output** claim more than the run establishes — a count
       of things not examined, or a verification word (`verified`, `reachable`,

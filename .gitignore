@@ -9,6 +9,15 @@ profiles/*
 # SOTA_DENYLIST repository secret instead.
 .denylist.local
 
+# Local-only working notes — field reports, handoff briefs, scratch analyses.
+# These routinely name private repos, internal hosts and customer detail, and this
+# repository is PUBLIC. Added 2026-08-26 after FIELD-REPORT-*.local.md sat untracked
+# but NOT ignored while `git add -A` ran several times in the same session; it escaped
+# only because it was created afterwards. The convention is a `.local.` infix.
+*.local.md
+*.local.txt
+*.local.json
+
 # OS / editor cruft
 .DS_Store
 *.swp

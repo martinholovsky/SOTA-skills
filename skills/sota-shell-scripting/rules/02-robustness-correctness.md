@@ -139,6 +139,40 @@ cmd | while read -r line; do (( ++count )); done
 while IFS= read -r line; do (( ++count )); done < <(cmd)
 ```
 
+**Name the trade you just made: a process substitution's exit status is unreachable.**
+`$?` reflects the redirection, not the producer; `pipefail` does not apply and
+`inherit_errexit` does not help. A producer that fails yields **zero lines**, so the loop
+completes over an empty set and the function reports success — the vacuous-pass shape
+(`sota-code-security` rules/11), now silent. Measured: a `git rev-list` usage error exits
+**129**, the loop sees nothing, and a coverage check announces "nothing to check" and
+exits 0.
+
+Capture the status explicitly wherever *no output* and *the command failed* mean
+different things:
+
+```bash
+# GOOD — status captured; empty and failed are distinguished
+local out status=0
+out="$(git rev-list "$range" 2>&1)" || status=$?
+(( status == 0 )) || { printf 'rev-list failed: %s\n' "$out" >&2; return 2; }
+while IFS= read -r line; do [[ -n $line ]] && arr+=("$line"); done <<<"$out"
+```
+
+Two caveats on that remedy, because it is not free: `$( )` **strips trailing newlines**
+(rules/01 §2) — here `<<<` puts one back, but do not carry the pattern somewhere it
+matters — and it buffers the whole output in memory, which is wrong for an unbounded
+producer. Use bare `< <(cmd)` only where the producer cannot meaningfully fail, or where
+empty and failed are genuinely the same outcome. **Say which, in a comment.**
+
+**`head -1` over unordered output is a coin flip with one side visible in development.**
+Tools that emit *sets* promise no order — `git notes list`, `git for-each-ref` without
+`--sort`, `find`, `ls` on some filesystems, `kubectl get` without sorting. Code that
+takes "the" element is correct while exactly one exists and silently picks wrong
+afterwards. Sort by the field that defines *latest*/*best* and select explicitly, or fail
+when the count is not 1. **Test with two elements, never one** — a single-element fixture
+cannot tell correct selection from arbitrary selection. High when it selects a security
+control's input, where "stale" and "current" then read alike.
+
 ## 5. Portability: bash vs POSIX sh
 
 Decide per script and enforce with the shebang + `shellcheck -s sh`.
@@ -148,6 +182,14 @@ Decide per script and enforce with the shebang + `shellcheck -s sh`.
   to reuse positional params), `[ ]` not `[[ ]]`, no `pipefail` (run each stage to a temp
   file or use a fifo/status-file trick), `. file` not `source`, no `${var//}`, no
   `<<<`/`<( )`, `printf` always (dash `echo` interprets escapes).
+- `--` (end of options) is **not universal**. GNU coreutils accept it nearly everywhere;
+  BSD/macOS `chmod` does not — `chmod 700 -- dir` fails with `chmod: --: No such file or
+  directory`, which names the wrong thing and reads as a path bug. Adjacent calls mislead
+  further: `mkdir -p -- dir` succeeds on the same system (both verified on macOS
+  2026-08-26). Where the path is a literal you control, drop the `--`; where it is
+  untrusted, prefer `./"$path"` for a relative path — portable, and it defeats
+  leading-dash injection without depending on the flag. (`sota-golang` rules/05 already
+  hedges this as "where the tool supports it"; it was unreachable from a shell task.)
 - bash-targeted: use bash properly (arrays, `[[ ]]`, `mapfile`) — half-POSIX bash is the
   worst of both. But remember macOS = bash 3.2: no associative arrays, no `mapfile`, no
   `${var,,}`, no `inherit_errexit`. If macOS devs run the script, either stay 3.2-clean
@@ -288,6 +330,14 @@ mkdir -p -- "$dir"                       # not mkdir (fails if exists)
 grep -qxF "$line" "$file" || printf '%s\n' "$line" >> "$file"
 ```
 
+- **"Append" to a keyed store is an upsert.** Where the key comes from content or context
+  rather than from the record — a commit SHA, a request id, a date bucket — running twice
+  does not append twice, it **overwrites** (`git notes add -f`, `PUT`, `kubectl apply`).
+  If records are *linked* (hash chain, sequence numbers, prev-pointers) the overwrite
+  silently deletes the link target, and the corruption arrives from the ordinary act of
+  re-running. Detect an existing record for the same key **and** the same content and
+  return success without writing. **Test the second run, not just the first** — re-running
+  is the common path in any hook, retry or CI re-trigger.
 - **Atomic writes via mv**: never write a config/output file in place — a crash mid-write
   leaves a torn file that consumers read.
 
@@ -333,6 +383,15 @@ mapfile -d '' logs < <(find . -name '*.log' -print0)
       read clean while a check did not execute? Probe:
       `PATH=/usr/bin:/bin <script>` with a dependency removed, and confirm the run
       reports a SKIP rather than an `ok`. No script may auto-install a dependency.
+- [ ] **Process substitution with a fallible producer**: `grep -rn '< <(' --include='*.sh'`
+      — for each, can the producer fail? If yes and the status is not captured, a failure
+      is indistinguishable from an empty result. High when the loop's emptiness decides a
+      pass/fail verdict.
+- [ ] **Arbitrary selection**: `grep -rnE '\|\s*head -1|\| head -n ?1' --include='*.sh'`
+      over set-emitting commands with no `--sort`/`sort`. Confirm a two-element fixture
+      exists; a one-element test cannot fail.
+- [ ] **Second-run safety**: re-run the script on unchanged inputs and diff the store.
+      Any write keyed by commit/id/date must be an upsert that preserves linked records.
 - [ ] No `--help`: `grep -rLn -- '--help\|-h)' --include='*.sh'` → MEDIUM for any operator-facing script.
 - [ ] Unknown options silently ignored: `case` parse loops missing a `-*)` error arm.
 - [ ] SC2230 — `grep -rn 'which ' --include='*.sh'` → replace with `command -v`.
