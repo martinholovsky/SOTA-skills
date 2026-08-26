@@ -1,0 +1,73 @@
+{
+ "no-router": {
+  "recall": 0.8666666666666666,
+  "recalls": [
+   0.8583333333333332,
+   0.8583333333333332,
+   0.8833333333333332
+  ],
+  "lines": 0,
+  "prompt_tokens": 1367,
+  "misses": {
+   "r01": [
+    "sota-testing"
+   ],
+   "r02": [
+    "sota-sandboxing"
+   ],
+   "r07": [
+    "sota-code-security"
+   ],
+   "r09": [
+    "sota-web-frameworks"
+   ],
+   "r20": [
+    "sota-devsecops"
+   ]
+  }
+ },
+ "base": {
+  "recall": 1.0,
+  "recalls": [
+   1.0,
+   1.0,
+   1.0
+  ],
+  "lines": 501,
+  "prompt_tokens": 18302,
+  "misses": {}
+ },
+ "+400 after": {
+  "recall": 1.0,
+  "recalls": [
+   1.0,
+   1.0,
+   1.0
+  ],
+  "lines": 902,
+  "prompt_tokens": 29005,
+  "misses": {}
+ },
+ "+400 before": {
+  "recall": 1.0,
+  "recalls": [
+   1.0,
+   1.0,
+   1.0
+  ],
+  "lines": 902,
+  "prompt_tokens": 29005,
+  "misses": {}
+ },
+ "+800 before": {
+  "recall": 1.0,
+  "recalls": [
+   1.0,
+   1.0,
+   1.0
+  ],
+  "lines": 1302,
+  "prompt_tokens": 39772,
+  "misses": {}
+ }
+}

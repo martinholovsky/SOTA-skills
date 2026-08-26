@@ -5,34 +5,24 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.28.0] - 2026-08-26
 
-### Changed
-
-- **The router gave back its headroom: BUILD/AUDIT detail moved into `skills/sota/rules/`,
-  loaded on demand.** `skills/sota/SKILL.md` went **500 → 484 lines** (16 spare, after
-  sitting at the cap since 2026-07-30) without losing an imperative. §BUILD 37 → 28 lines,
-  §AUDIT 63 → 54.
-  - **New `skills/sota/rules/02-build-workflow.md`** — the reasoning behind the four BUILD
-    steps: why loading lean is correctness rather than economy, why a plan item must be
-    checkable, why the self-audit gate runs LAST, and the two questions that catch inert
-    work.
-  - **Most of what left §AUDIT was duplication, not detail.** `rules/01` already carried
-    the severity model (§4), recon (§2), decision-ledger (§6), refutation (§7) and report
-    structure (§8); the router now points at them instead of restating them.
-  - **Measured first, not assumed.** A length sweep on `cases/router.jsonl`
-    (`claude-sonnet-5`, 3 samples, temp 0.7) found routing recall **flat at 1.000** with
-    the router padded to 902 and 1,302 lines and the routing table pushed 800 lines deeper
-    — while the untreated arm reproduced **0.867** exactly, as on 2026-08-25. So length was
-    never the thing to fear; **per-load cost is** — the router is **16,934 tokens**
-    (`count_tokens`, `claude-sonnet-5`), ~3.4× the ~5k guidance, paid by every task.
-    Offloading detail cuts that; raising the cap would have raised it.
-  - **A compression audit came back clean.** Of 51 concept anchors that ever existed in the
-    router, **49 are present today**; the two absent are a rewording of the same rule and
-    one superseded by a stronger rule whose substance moved to `rules/01` §5. Nothing was
-    quietly dropped to fit the cap.
+**Front door checked:** process substitution · upsert
 
 ### Added
+
+- **`evals/run-router-length.py` — a new instrument, and the answer to a question the
+  500-line cap had been standing in for.** The cap is *our* invariant mirroring platform
+  guidance, **not** a loader limit: nothing truncates a skill at load. So the real question
+  was whether routing degrades as the router grows, and nobody had measured it. It does
+  not: recall stayed **flat at 1.000** at 501 / 902 / 1,302 lines (~40k prompt tokens) with
+  the routing table pushed 800 lines deeper, while the untreated arm reproduced **0.867** —
+  exactly the 2026-08-25 figure, and a free negative control since it cannot see the router.
+  Filler is signal-free by construction. **Two limits published with it**: the metric is
+  **at ceiling**, and inert filler tests length/depth but **not competition between real
+  rules** (now ROADMAP item 25, unmeasured).
+  [ROUTER-LENGTH](evals/results/2026-08-26/ROUTER-LENGTH.md).
+
 
 - **The coupling is now stated in four places, because it fails silently in three.**
   Adding to §BUILD or §AUDIT usually means editing another file too: `rules/02` §5 tables
@@ -74,14 +64,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     text — the router is at **500/500** and invariant 1 fails at 501, verified by watching
     it fail.
 
-### Fixed
-
-- **`*.local.md` and friends are now gitignored.** A field report naming a private
-  repository sat **untracked but not ignored** in a public repo while `git add -A` ran
-  several times in the same session; it escaped only because it was created afterwards.
-  Verified by the real test — `git add -A` now leaves it unstaged.
-
 ### Changed
+
+
+- **The router gave back its headroom: BUILD/AUDIT detail moved into `skills/sota/rules/`,
+  loaded on demand.** `skills/sota/SKILL.md` went **500 → 484 lines** (16 spare, after
+  sitting at the cap since 2026-07-30) without losing an imperative. §BUILD 37 → 28 lines,
+  §AUDIT 63 → 54.
+  - **New `skills/sota/rules/02-build-workflow.md`** — the reasoning behind the four BUILD
+    steps: why loading lean is correctness rather than economy, why a plan item must be
+    checkable, why the self-audit gate runs LAST, and the two questions that catch inert
+    work.
+  - **Most of what left §AUDIT was duplication, not detail.** `rules/01` already carried
+    the severity model (§4), recon (§2), decision-ledger (§6), refutation (§7) and report
+    structure (§8); the router now points at them instead of restating them.
+  - **Measured first, not assumed.** A length sweep on `cases/router.jsonl`
+    (`claude-sonnet-5`, 3 samples, temp 0.7) found routing recall **flat at 1.000** with
+    the router padded to 902 and 1,302 lines and the routing table pushed 800 lines deeper
+    — while the untreated arm reproduced **0.867** exactly, as on 2026-08-25. So length was
+    never the thing to fear; **per-load cost is** — the router is **16,934 tokens**
+    (`count_tokens`, `claude-sonnet-5`), ~3.4× the ~5k guidance, paid by every task.
+    Offloading detail cuts that; raising the cap would have raised it.
+  - **A compression audit came back clean.** Of 51 concept anchors that ever existed in the
+    router, **49 are present today**; the two absent are a rewording of the same rule and
+    one superseded by a stronger rule whose substance moved to `rules/01` §5. Nothing was
+    quietly dropped to fit the cap.
+
+
 
 - **`ROUTER_BUILD_SHA` re-synced** after the BUILD step 4 edit. The guard **aborted the
   eval, as designed**, and the mirror was updated with the new clause rather than the hash
@@ -89,6 +98,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the completeness treatment arm now carries one extra clause, so the next run is not
   strictly comparable to the +0.38 measured 2026-08-21.** Stated now rather than
   discovered later.
+
+### Fixed
+
+- **A documented token count that was 60% wrong.** `docs/CONTEXT-MANAGEMENT.md` carried the
+  router at *"~10,211 tokens — 2× the budget"*, from a chars/4 heuristic. Measured with
+  `POST /v1/messages/count_tokens`: **16,934** at 500 lines, **16,442** at 484 — **3.3×**.
+  OpenAI's `o200k_base` gives 10,995 for the same file, so the heuristic was calibrated on
+  the wrong tokenizer; Anthropic's is ~1.5–1.8× less efficient on this text. **Count, never
+  estimate** (ROADMAP item 27).
+- **Stale "the router is full" claims**, now that it is not: `AGENTS.md` (and `CLAUDE.md`,
+  its symlink), `docs/CONTEXT-MANAGEMENT.md`'s size table and two paragraphs, and ROADMAP
+  item 4 — which also claimed "2×" and is now the measured 3.3×. The dated
+  *"as of 2026-08-05"* blocks were **superseded, not edited**.
+- **Negative-control probe 6 made count-agnostic.** It hardcoded `300 files` from the README
+  hero, so adding `sota/rules/02` (300 → 301) made its mutation inert and CI reported
+  **PROBE BROKEN** — correctly blaming the probe, not the gate. Second occurrence (the first
+  was 298 → 300 on 2026-08-20). It now matches whatever numbers the README carries while
+  still asserting the mutation landed. Worth recording: it **passed locally at 25/25** first,
+  because the harness mutates a worktree at **HEAD** — a local pass on a probe whose literal
+  your working tree just changed is not evidence.
+
+
+- **`*.local.md` and friends are now gitignored.** A field report naming a private
+  repository sat **untracked but not ignored** in a public repo while `git add -A` ran
+  several times in the same session; it escaped only because it was created afterwards.
+  Verified by the real test — `git add -A` now leaves it unstaged.
 
 ## [1.27.0] - 2026-08-26
 
@@ -4977,6 +5012,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.28.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.28.0
 [1.27.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.27.0
 [1.26.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.26.0
 [1.25.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.25.0

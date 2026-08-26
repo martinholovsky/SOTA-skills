@@ -26,6 +26,7 @@ Same model, same task, library loaded vs. nothing.
 | **Freshness — `claude-sonnet-5`, set RE-AUTHORED 2026-08-25** (10 recent facts): **the lift returns** | 0.33 | **1.00** | **+0.67** | 3×, temp 0.7 | [ITEM-21](2026-08-25/ITEM-21-REFRESHED-FRESHNESS.md) |
 | Routing (20 tasks) — `claude-sonnet-4.6` | 0.90 | **1.00** | **+0.10** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
 | Routing — **`claude-sonnet-5`** (current flagship): **holds**, unchanged within one case | 0.87 | **0.99** | **+0.13** | 3×, temp 0.7 | [ITEM-20](2026-08-25/ITEM-20-FRESHNESS-ROUTING.md) |
+| Routing **robustness to router length** — 501 → 1,302 lines, table pushed 800 deeper | 0.87 | **1.00 at every length** | n/a — *not a lift* | 3×, temp 0.7 | [ROUTER-LENGTH](2026-08-26/ROUTER-LENGTH.md) |
 | **BUILD-safe** (7 defect classes the model must not *write*) — **sonnet-4.6** | 0.81 | **1.00** | **+0.19** | 3×, temp 0.7 | [BUILD-SAFE](2026-08-21/BUILD-SAFE.md) |
 | BUILD-safe — **gpt-5.1**: bare arm saturates, so **no headroom** | 1.00 | 1.00 | +0.00 | 3×, temp 0.7 | [BUILD-SAFE §1b](2026-08-21/BUILD-SAFE.md) |
 | BUILD-safe — **claude-sonnet-5** (current flagship): bare arm saturates | 1.00 | 1.00 | +0.00 | unguided 3×, guided 2× (one truncated build excluded), temp 0.7 | [BUILD-SAFE §1c](2026-08-21/BUILD-SAFE.md) |
