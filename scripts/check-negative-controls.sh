@@ -143,11 +143,15 @@ probe 1 "line budget (rules file over 500 lines)" "OVER 500"
 probe 2 "audit checklist missing from a rules file" "MISSING/NOT-LAST '## Audit checklist'"
 
 # 6 — count-bearing surfaces match the tree.
-# The literal here tracks the README's real count and goes stale on every file
-# add/split — which is exactly what the mutation-landed assertion is for: it
-# printed PROBE BROKEN on 2026-08-20 when rules/13 and rules/14 moved 298 -> 300,
-# instead of reporting a healthy invariant 6 as uncaught.
-( cd "$WT" && perl -0pi -e 's/\*\*41 skills \(300 files/**41 skills (999 files/' README.md )
+# The mutation is count-AGNOSTIC: it matches whatever numbers the README currently
+# carries and rewrites only the file count. A hardcoded literal here went stale twice
+# (298 -> 300 when rules/13 and rules/14 landed, 2026-08-20; 300 -> 301 when
+# sota/rules/02 landed, 2026-08-26), each time costing a red CI run that said PROBE
+# BROKEN. That assertion did its job both times — it never accused the healthy gate —
+# but the staleness added no signal invariant 6 doesn't already give, since a changed
+# count fails invariant 6 first. The regex still asserts it landed, so a change to the
+# hero SENTENCE (not its numbers) is still reported as a broken probe.
+( cd "$WT" && perl -0pi -e 's/\*\*(\d+) skills \(\d+ files/**$1 skills (999 files/' README.md )
 probe 6 "README file count drifted from the tree" "README hero file count"
 
 # 10 — a rules file its own SKILL.md never indexes.

@@ -369,6 +369,23 @@ Deliver in exactly this order:
 
 ---
 
+## 10. Changing the AUDIT workflow? Change both places
+
+The audit workflow lives in **two** surfaces and they drift independently:
+
+| Surface | What it holds |
+|---|---|
+| `skills/sota/SKILL.md` §AUDIT | the seven passes, one imperative each — read on every audit |
+| this file | the procedure, severity model, evidence standard, report template |
+
+The router's §AUDIT is deliberately terse because it is read every time; detail belongs
+here. So a new pass needs **a line there and a section here**, and a change to an existing
+pass needs both updated together — a step whose procedure contradicts §1-§9 is worse than
+no step, because the reader follows whichever they loaded.
+
+Unlike BUILD there is no hash pin over §AUDIT (`rules/02` §5), so **nothing catches this
+automatically** — the check is this section existing and being read.
+
 ## Audit checklist — quality gate on the audit itself
 
 **Coverage**
