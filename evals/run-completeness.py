@@ -101,7 +101,7 @@ def load_cases():
 # longer shipped. Nothing failed; the eval just quietly measured the wrong thing.
 # So: pin the router section's hash. If the router changes, this aborts and forces a
 # decision — re-sync the mirror and update the hash, or consciously accept the drift.
-ROUTER_BUILD_SHA = "71a9d78ea5e9e341"
+ROUTER_BUILD_SHA = "4d1a02c9c483a65b"
 
 
 def _assert_mirror_fresh():
@@ -137,7 +137,9 @@ BUILD_WORKFLOW = (
     "etc.) ADD it, or state explicitly why it is out of scope. For every control, "
     "safeguard, or check you added, also ask: if this were silently a no-op, would "
     "anything observable differ? If nothing would — no log, no metric, no failing "
-    "test — it is not done. Do not present incomplete code.\n\nTask: ")
+    "test — it is not done. If a control you added emits an artifact (a record, "
+    "ledger line, signature), read back the one this run produced rather than "
+    "re-reading the code that writes it. Do not present incomplete code.\n\nTask: ")
 
 
 def principle5():

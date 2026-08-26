@@ -5,6 +5,55 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Seven rules from a field brief — a session that *used* the library reporting defects
+  it did not prevent.** Each landed with its audit-checklist half in the same change.
+  Three of the brief's falsifiable claims were **reproduced on a real machine before
+  adoption**: `$( )` newline stripping, BSD `chmod --` rejection, and a `git rev-list`
+  usage error (exit 129) vanishing into a process substitution.
+  - `sota-shell-scripting` **rules/01 §2** — **`$( )` strips every trailing newline**,
+    silently, breaking line-oriented composition. Matters most where the bytes are hashed
+    or signed: a writer and a verifier that disagree about one byte each look correct
+    alone.
+  - `sota-shell-scripting` **rules/02 §4** — **the trade process substitution makes.** The
+    rule recommended `< <(cmd)` over a pipe and stopped; it never said the status is
+    unreachable, `pipefail` does not apply, and a failed producer yields zero lines so the
+    loop reports success over an empty set. **A rule in this library, followed literally,
+    produced a vacuous pass.** Also **§5** (`--` is not portable — BSD `chmod` rejects it
+    while `mkdir` accepts it, and the error names the wrong thing), **§4** (`head -1` over
+    unordered output — test with two elements, never one), and **§9** ("append" to a keyed
+    store is an **upsert**, which silently deletes the link target of a hash chain).
+  - `sota-code-security` **rules/14 §4a** — **a control keyed to a neighbouring setting
+    instead of its own dependency.** A *coupling* defect no per-file review or per-gate
+    probe can see, because the control's own site never changes.
+  - `sota-code-security` **rules/12 §2.1** — a fifth instrument failure mode: **a probe
+    that exercises a neighbouring property**. It explains how the other six survived a
+    green suite.
+  - **Router**: cross-cutting rule 17 now routes evidence-producing shell (attestations,
+    ledgers, gate records) to `sota-code-security` rules/10 + rules/12; BUILD step 4 adds
+    **read back the artifact this run produced**. Both paid for by compressing existing
+    text — the router is at **500/500** and invariant 1 fails at 501, verified by watching
+    it fail.
+
+### Fixed
+
+- **`*.local.md` and friends are now gitignored.** A field report naming a private
+  repository sat **untracked but not ignored** in a public repo while `git add -A` ran
+  several times in the same session; it escaped only because it was created afterwards.
+  Verified by the real test — `git add -A` now leaves it unstaged.
+
+### Changed
+
+- **`ROUTER_BUILD_SHA` re-synced** after the BUILD step 4 edit. The guard **aborted the
+  eval, as designed**, and the mirror was updated with the new clause rather than the hash
+  bumped alone — bumping alone is precisely the drift it exists to prevent. **Consequence:
+  the completeness treatment arm now carries one extra clause, so the next run is not
+  strictly comparable to the +0.38 measured 2026-08-21.** Stated now rather than
+  discovered later.
+
 ## [1.27.0] - 2026-08-26
 
 **Front door checked:** selection bias · freshness set

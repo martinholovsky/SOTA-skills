@@ -200,11 +200,12 @@ rules files that match the code in front of you. Never load all skills at once.
     `sota-ux-writing`; marketing/site/email content → `sota-copywriting`; technical docs → `sota-
     docs-workflow`. The component patterns the text lives in stay `sota-frontend-design`.
 17. **Shell scripts hide everywhere** — CI run blocks, Dockerfile RUN lines, Makefiles,
-    entrypoints, **and the one-liners you type to verify a claim**. That last one is
-    unlinted shell run against the system under test: when it is wrong it produces a false
-    finding *about the product*. A usage error (exit 2) from the callee is the tell. Audit
-    all of it with `sota-shell-scripting` — especially its rules/01 §3, which the task will
-    not route you to when the work does not look shell-shaped.
+    entrypoints, **and the one-liners you type to verify a claim**: unlinted shell run
+    against the system under test, which when wrong produces a false finding *about the
+    product* (a usage error, exit 2, from the callee is the tell). Audit it all with
+    `sota-shell-scripting`, especially rules/01 §3. And a script that **produces or
+    verifies evidence** (attestations, ledgers, gate records, audit trails) is a security
+    control written in shell: add `sota-code-security` rules/10 and rules/12.
 18. **Cryptography fans out — there is no single crypto skill (by design).** Algorithm choice,
     AEAD/nonce discipline, CSPRNG, in-code key handling, TLS client config, constant-time
     comparison, tamper-evident logs/audit ledgers (keyed hash chains, external anchoring,
@@ -281,15 +282,14 @@ act only on a yes, and treat a decline as decided.
    also ask the **falsification question**: *if this were silently a no-op,
    would anything observable differ?* If nothing would — no log, no metric, no
    test that fails — the control is not done (`sota-code-security` rules/10).
-   Doing this *last* is deliberate: a long build context
-   makes mid-context rules fade, so a final re-read is what catches the rate
-   limiting, transport, tests, and logging a model otherwise silently drops
-   (measured: this recovery is the bulk of the library's completeness lift,
-   `evals/run-completeness.py`). For a large build, run this as a **separate
-   pass over the diff** (a fresh, minimal context beats a long polluted one),
-   and push the few truly critical invariants into **deterministic gates** (a
-   lint/CI check that fails if an endpoint has no rate limiting or TLS) — don't
-   rely on attention for what a test can enforce.
+   **If the control emits an artifact, read back the one this run just produced**
+   — a record, ledger line or signature is wrong in the *output* long before it
+   looks wrong in the source. Doing this *last* is deliberate: a long context
+   makes mid-context rules fade, so the final re-read is what catches the rate
+   limiting, transport, tests and logging a model otherwise drops (measured: it
+   is the bulk of the completeness lift, `evals/run-completeness.py`). For a large
+   build run it as a **separate pass over the diff**, and push the few critical
+   invariants into **deterministic gates** — attention is not an enforcement mechanism.
 
 ## AUDIT mode — workflow
 
