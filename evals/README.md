@@ -144,6 +144,10 @@ audit STRAT-HIGH-2).
   the last recorded run predated the guard. `--help` would not have caught it: the crash
   was inside `main()`. **Watched to fail** on a reintroduction of that bug before being
   wired into CI. It does **not** prove a runner is correct, only that it starts.
+  It also **asserts every runner keeps its side effects behind `if __name__ == "__main__"`**
+  — a module-level script cannot be caught by the smoke check itself, because importing it
+  runs the whole thing and that looks identical to "reached its first network call". Two
+  runners were found in that state on 2026-08-27.
 - `cases/desc-routing-regressions.jsonl` — **regression cases, not a measurement set.**
   Each exists *because* a specific mis-route happened, which is the point of a regression
   case and exactly why it must never be averaged into the A/B in `desc-routing.jsonl`

@@ -70,6 +70,47 @@ def main():
     if not files:
         sys.exit(f"no eval runners found under {ROOT}/evals — refusing to report a pass.")
 
+    # Every runner must ALSO put its side effects behind `if __name__ == "__main__"`.
+    # The smoke check below cannot catch a module-level script: importing one runs the
+    # whole thing, which looks exactly like "reached its first network call" — that is
+    # how run-router-length.py passed while executing its sweep on import. Two runners
+    # were found like this (2026-08-27), so it is asserted rather than remembered.
+    import ast
+    unguarded = []
+    for f in files:
+        tree = ast.parse(open(f, encoding="utf-8").read())
+        if not any(isinstance(n, ast.If) and ast.unparse(n.test).startswith("__name__ ==")
+                   for n in tree.body):
+            unguarded.append(os.path.basename(f))
+    if unguarded:
+        sys.exit("FAIL: no `if __name__ == \"__main__\"` guard, so importing these runs "
+                 "them: " + ", ".join(unguarded))
+    print(f"  guard check: all {len(files)} runners keep side effects behind __main__\n")
+
+    # And every .env read must be existence-checked. This defect is INVISIBLE locally — a
+    # maintainer's tree has a .env, so the failing branch is only reachable on a machine
+    # without one — and it shipped twice (run-router-length.py, run-build-safe-arms.py),
+    # both caught by CI rather than by any local run. A static check costs nothing and does
+    # not depend on the runner being reached.
+    unguarded_env = []
+    for f in files:
+        tree = ast.parse(open(f, encoding="utf-8").read())
+        for fn in [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]:
+            src = ast.unparse(fn)
+            # Match on the FUNCTION, not the open() call: these build the path first
+            # (`p = os.path.join(..., ".env")`) and then call `open(p)`, so a check that
+            # looked for ".env" inside the open() call matched nothing and passed the
+            # broken tree as happily as the healthy one — caught by watching it fail.
+            reads = ".env" in src and any(
+                isinstance(c, ast.Call) and getattr(c.func, "id", "") == "open"
+                for c in ast.walk(fn))
+            if reads and "os.path.exists" not in src and "os.path.isfile" not in src:
+                unguarded_env.append(f"{os.path.basename(f)}:{fn.name}()")
+    if unguarded_env:
+        sys.exit("FAIL: .env opened with no existence check (raises on any machine without "
+                 "one, e.g. every CI runner): " + ", ".join(sorted(set(unguarded_env))))
+    print("  env check:   every .env read is existence-checked\n")
+
     dead, saved_argv = [], sys.argv
     print(f"Smoke test: can each eval runner reach its first network call? "
           f"({len(files)} runners, {a.timeout}s each)\n")
