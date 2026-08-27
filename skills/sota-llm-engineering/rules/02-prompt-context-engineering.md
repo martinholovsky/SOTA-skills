@@ -72,8 +72,13 @@ Budget by category, enforce in code:
 | Live input | Validated for length at the boundary; oversized input → explicit chunking/summarization strategy, never silent truncation. |
 
 - **Measure with the provider's token counter** (e.g. a `count_tokens`
-  endpoint). Never use another provider's tokenizer (tiktoken counts are
-  wrong for non-OpenAI models by 15–20%+).
+  endpoint). Never use another provider's tokenizer, and never a chars/4 rule of
+  thumb. The error is **not a rounding error**: on prose it runs 15–20%+, and on
+  **markdown- and code-dense text it is far worse** — one 42.8 KB instruction file
+  measured **16,934** tokens via Anthropic's `count_tokens` against **10,995** from
+  `o200k_base`, a **54%** under-count, and a chars/4 estimate in that project's own
+  docs was **60%** under (2026-08-26). A budget built on the wrong tokenizer is
+  wrong by half, in the direction that makes you think you have room.
 - **Exclude by default.** Every block in the prompt must answer "what eval
   case gets worse if I remove this?" If nothing — remove it. Prompt rot (§7)
   is mostly accretion of unfalsifiable additions.

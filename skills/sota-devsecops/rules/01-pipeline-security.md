@@ -276,6 +276,38 @@ name!), `github.event.pull_request.head.ref`, commit messages
 - Prefer fetching at use-time from a secrets manager via OIDC (Vault JWT auth, AWS Secrets
   Manager) over storing in GitHub at all — central audit + rotation.
 
+## 1.10a Bot PRs get no repository secrets — and a gate that needs one will fail
+
+Dependabot and Renovate open PRs on **same-repo branches**, so any workflow condition
+written as *"this is a trusted run"* — `github.event.pull_request.head.repo.full_name ==
+github.repository` — is **true** for them. But their token is denied **repository**
+secrets. A gate whose scanner depends on a secret therefore either fails on every bot PR,
+or, if the gate degrades quietly, **passes while scanning less than it claims**.
+
+Both outcomes are bad, and the second is worse. A required check that is permanently red
+trains people to bypass it; a check that silently drops to a reduced ruleset reports the
+same green either way (`sota-code-security` rules/10).
+
+Ordered by preference:
+
+1. **Give the bot its own copy.** GitHub keeps a **separate Dependabot secret store** —
+   populating the repository secret does not populate it. Verify by listing both; an empty
+   bot store is the usual root cause.
+2. **Make degradation loud where it matters.** If the scanner can run reduced, assert the
+   secret's presence on trusted runs and fail with a message naming what would be skipped
+   — an absent input must not look like a clean scan.
+3. **Do not special-case the bot.** `if: github.actor != 'dependabot[bot]'` turns a red
+   check green while removing the control precisely on the PRs that change your dependency
+   graph. It is the shape rules/10 exists to catch, dressed as a CI fix.
+
+**Value shape bites too.** A secret is one opaque string; the file it mirrors may not be.
+Copy the form the consumer *reads* (e.g. a pipe-joined regex), not the file's on-disk
+layout, or the secret is present and inert.
+
+**What the bot maintains, it maintains narrowly.** Dependabot rewrites the trailing
+`# vX.Y.Z` beside a SHA pin (§1.3) and nothing else — a version named in a nearby prose
+comment goes stale the moment a bump lands. Keep one source of truth per fact.
+
 ## 1.11 Prove the pipeline runs — before you trust anything it reports
 
 Every section above hardens a pipeline. None of them establishes that it has ever
@@ -302,6 +334,14 @@ limits) reports failure within seconds with no step logs and its reason only in 
 annotations. Both look like "CI exists" from the badge.
 
 ## Audit checklist
+
+- [ ] **Bot PRs are green for the right reason.** Open the newest Dependabot/Renovate PR:
+      does every required check pass, and does the secret-dependent one actually have its
+      secret? `gh secret list` and `gh secret list --app dependabot` are different stores —
+      an empty bot store with a populated repository store is the tell. A gate exempted for
+      `dependabot[bot]` is a finding, not a fix (High).
+- [ ] **No workflow condition treats "same-repo branch" as "has secrets."** Bot branches
+      satisfy `head.repo.full_name == github.repository` and still receive nothing.
 
 - [ ] **Has this pipeline ever executed?** Count non-skipped, non-refused runs. A
       skipped job reports Success and a platform-refused run fails in seconds with no
