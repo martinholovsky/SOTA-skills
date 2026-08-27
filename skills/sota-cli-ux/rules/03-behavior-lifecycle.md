@@ -197,7 +197,32 @@ result of a bad path, an empty glob, an over-narrow filter, or a missing toolcha
   names. Dynamic completion calls back into the binary: it must be fast (§1)
   and **never block on the network or prompt**; degrade to nothing on failure.
 
+## Rehearse a costly command before handing it to a human
+
+Before giving a person a command whose **failure** is expensive, run it where failure is
+free. Expensive means: limited attempts before lockout (card PINs, PUKs, 2FA), destructive,
+irreversible, rate-limited, paid, or requiring physical presence you cannot repeat cheaply.
+
+Find the substitution that exercises the same code path at zero cost — a file-based key
+instead of a hardware one, a dry-run flag, a throwaway target, `--help` parsed against the
+**installed** binary rather than remembered (and see `sota-code-security` rules/10 §2.15:
+a flag that parses is not a feature that works). Run it. *Then* hand over the real command.
+
+Field-reported: a YubiKey PIN allows **three** attempts before the applet blocks and needs a
+factory reset. A `cosign sign-blob` command composed from `--help` failed twice on flags
+deprecated in v3, each round-trip risking an attempt. Rehearsed against a throwaway
+file-based key — identical argument parsing and bundle-writing path, zero cost — it failed
+twice more for free, and the third form worked first time on the real device.
+
+**State the cost when you hand it over**: "this has three attempts before lockout" changes
+how carefully the person reads the line.
+
 ## Audit checklist
+
+- [ ] **Commands handed to a human are rehearsed where failure is free** when a failure
+      costs an attempt, money, or an irreversible change — and the cost is stated in the
+      handover. High wherever a lockout is possible: the recovery is often a factory reset
+      that destroys unrelated material.
 
 - [ ] `time tool --help` ≪ 500ms; no network I/O on `--help`/`--version` (verify: airplane-mode or strace/dtruss spot-check).
 - [ ] Re-running `init`/`create`/`apply` twice converges; second run no-ops or reports "already" without failing.

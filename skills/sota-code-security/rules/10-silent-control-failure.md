@@ -47,6 +47,36 @@ whose total failure produce identical logs, identical metrics, and identical
 responses is unfalsifiable, and unfalsifiable controls decay into no-ops without
 anyone noticing.
 
+**The falsification question does not catch every broken control, and the gap is
+specific.** It finds controls that are *inert*. It misses controls that are **correctly
+enforcing the wrong predicate** — there, something observable *does* differ (a refusal, a
+missing signature, an error), so the first question answers "yes" and the control is still
+wrong. Field-reported as four instances in a single session, by an author who had just
+documented the shape:
+
+| the check asked | the question that mattered |
+|---|---|
+| is `commit.gpgsign` true? | is a signing key configured? |
+| does the encoder round-trip? | does the writer produce what the verifier expects? |
+| does the `--sk` flag exist? | is `--sk` *implemented* in this binary? |
+| is there a TTY? | can a PIN be collected here? |
+
+Each substitutes an **observable proxy** for the **actual precondition**. The proxy is
+easier to test, correct when written, and drifts later — because the proxy and the
+precondition are configured by different people, in different files, at different times.
+So ask a second question of every control:
+
+> **The proxy question.** Is this the thing I actually depend on, or something that
+> currently agrees with it? Then: *who can change one without changing the other, and
+> would I find out?*
+
+If the answer to the second is "a different file, a different person, no signal", the
+predicate is a proxy and it will drift. Test the dependency itself. Where it genuinely
+cannot be tested directly, **record the substitution in a comment at the site, including
+the direction each error fails in** — the two directions are rarely symmetric: one instance
+above blocked legitimate work when strict, and would have spent one of three PIN attempts
+on a token that blocks at zero when loose. The class entry is `rules/14` §4a.
+
 Three follow-ups that make it concrete:
 
 - **What would I grep for at 3am** to prove this ran on request X?
@@ -245,6 +275,28 @@ are a control that **runs** and does nothing; those five are a control that is n
 **there** — and you find them by asking what ships, what fires, and what the output
 is entitled to say, not by reading the control's body.
 
+### 2.15 A flag that parses is not a feature that works
+
+`--help` is a claim about the **source tree**, not about **your binary**. Build-tag-gated
+features — Go `-tags`, Rust feature flags, `./configure` options, optional shared libraries
+— routinely leave the *interface* compiled in and the *implementation* stubbed. The flag
+parses, the docs list it, and it fails only when it reaches the hardware or library that is
+not there.
+
+Field-reported: Homebrew's `cosign` v3.1.2 lists `--sk` and `--slot` in `--help` because it
+is built without the `pivkey` tag. `cosign public-key --sk` returns
+`Error: opening piv token: unimplemented`. (`cosign piv-tool` is more honest and says
+"not built with piv-tool support", but `--sk` gives no warning until it meets real hardware.)
+Had a key-custody design been settled from `--help`, the discovery would have arrived
+against a release deadline with decisions already built on top.
+
+**Before a design depends on an optional capability, invoke it once against the real thing
+and keep the output.** The cheapest form is usually a read-only call — `public-key`,
+`--version`, a dry run — that still traverses the gated code path. Package managers are the
+usual source: distribution builds drop optional tags to avoid a CGO or driver dependency.
+Same family as the compiled-out `assert` in `rules/11` §4 — the interface survives the
+build, the behaviour does not.
+
 ## 3. Make degradation loud — one helper, deduped per cause
 
 When a control cannot do its job, exactly one mechanism reports it. Scattering
@@ -307,6 +359,14 @@ Design:
 ---
 
 ## Audit checklist
+
+- [ ] **The proxy question asked of every control's predicate** (§1): is the tested
+      condition the dependency itself, or something that currently agrees with it? Name who
+      can change one without the other. A proxy with no signal on divergence is a finding
+      even while it currently works.
+- [ ] **Every optional capability a design depends on was invoked once, not read from
+      `--help`** (§2.15). Build-tag-gated flags parse and stub out; keep the output of the
+      real call. High when the capability is the load-bearing half of a security control.
 
 - [ ] Anything that writes **outward** on a schedule (a GitOps write-back
       controller, a PR bot, a sync job) verified at the **destination** rather

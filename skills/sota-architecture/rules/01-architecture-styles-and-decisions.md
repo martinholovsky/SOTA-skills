@@ -101,6 +101,30 @@ process, and a superseded chain is legible without opening a file. Commit the
 ADR **in the PR that implements the decision** where one exists, so rationale
 and code land together; a pre-implementation decision lands on its own.
 
+## 4a. A control's cost profile must be checked against decisions already in force
+
+A new control that consumes a **scarce resource on every use** — a hardware touch, a human
+approval, an interactive prompt, a rate-limited or paid API call — can silently reintroduce
+the exact friction an earlier decision removed. Both artifacts are locally correct; the
+contradiction lives in the gap between them, and no test sees it.
+
+Field-reported: a repository decided, with the reasoning written into `CONTRIBUTING`, to
+stop signing every commit because the key sat on a touch-required token and the tap per
+commit blocked automated work. About an hour later, in the same session, a gate ledger was
+built whose `anchor` command signed its chain head with that same key — and anchoring was
+recommended after every push. Every gate passed, every test passed, and the user found it.
+
+**At the point of adding the control, write one line: *this costs X, Y times per Z*. Then
+grep the repo's own decision records (§4) for X.** If a decision already rejected X at that
+frequency, either the new control is wrong or the old decision needs revisiting — the two
+cannot both stand unexamined. The tell that you missed it is a user asking *"why am I being
+asked for this again?"*, which is late and expensive.
+
+This is a **coherence** failure, not a code defect, so it is invisible per-artifact and to
+per-file review. It is worst in agent-authored work: an agent can hold both decisions in
+one context and still miss the interaction, because attention is on the artifact being
+built, not on the policy it lands inside.
+
 ## 5. Practice evolutionary architecture with fitness functions
 
 **Rule:** Encode architectural qualities as automated, continuously-run checks
@@ -220,6 +244,11 @@ tied to a measurable symptom (incident class, lead-time drag, cost line).
 "Refactor someday" items without symptoms get deleted, not hoarded.
 
 ## Audit checklist
+
+- [ ] **Every control that spends a scarce resource per use states its cost profile**
+      (*what, how often*), and that frequency was checked against the ADRs and contributor
+      docs (§4). A control whose per-use cost contradicts a decision already in force is a
+      finding even though it works.
 
 - Is there a written rationale (ADR) for the current architecture style, with consequences and alternatives?
 - Could this system be a modular monolith? If it's microservices, can the team name the measured force that justified each extraction?
