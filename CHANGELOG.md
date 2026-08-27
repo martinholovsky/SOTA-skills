@@ -19,6 +19,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`evals/_elapsed.py` was flagged by the audit and is a **false positive** — a helper
   module whose only module-level statements are pure constants. Helper modules correctly
   have no guard.)
+- **A third `.env` defect, and now an assertion for the class.** `run-build-safe-arms.py`
+  opened `.env` unconditionally, so it raised `FileNotFoundError` on any machine without
+  one — CI caught it, as it had caught the same defect in `run-router-length.py` the day
+  before. **No local run can find these**: a maintainer's tree has a `.env`, so the failing
+  branch is only reachable where the file is absent. `smoke-runners.py` now asserts every
+  `.env` read is existence-checked.
+  - **That assertion was vacuous on its first draft and only watching it fail caught it.**
+    It matched `.env` inside the `open()` call, but these build the path first
+    (`p = os.path.join(..., ".env")`) and then call `open(p)` — so it found nothing and
+    passed the *broken* tree exactly as happily as the healthy one. Matching on the
+    enclosing function fixed it; it now fails naming `file:function()`.
 - **And made checkable, because the smoke test structurally cannot catch this class.**
   Importing a module-level script runs it, which looks identical to "reached its first
   network call" — exactly how `run-router-length.py` passed while executing its sweep on

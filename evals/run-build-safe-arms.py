@@ -15,11 +15,16 @@ SPEC = open(os.path.join(ROOT, "cases/build-safe/SPEC.md"), encoding="utf-8").re
 def key():
     k = os.environ.get("OPENROUTER_API_KEY")
     if k: return k
+    # Existence-checked: this opened .env unconditionally until 2026-08-27 and raised
+    # FileNotFoundError wherever the file is absent — every CI runner. Third instance of
+    # the same defect in this harness, and unreachable locally because a maintainer's
+    # tree has a .env.
     p = os.path.join(os.path.dirname(ROOT), ".env")
-    for ln in open(p, encoding="utf-8"):
-        if ln.strip().startswith("OPENROUTER_API_KEY="):
-            return ln.split("=", 1)[1].strip().strip("'\"")
-    sys.exit("OPENROUTER_API_KEY not found")
+    if os.path.exists(p):
+        for ln in open(p, encoding="utf-8"):
+            if ln.strip().startswith("OPENROUTER_API_KEY="):
+                return ln.split("=", 1)[1].strip().strip("'\"")
+    sys.exit("OPENROUTER_API_KEY not found in env or ./.env")
 
 FORMAT = ("\n\n---\nOUTPUT FORMAT (mandatory): emit the complete package as a series of "
           "fenced blocks, each preceded by a line of the exact form `FILE: <relative/path.py>`. "
