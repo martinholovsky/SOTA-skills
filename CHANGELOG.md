@@ -7,7 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+
+- **Six findings from the Interdict follow-up brief — including two the first intake
+  missed.** All verified absent with two sweeps each, and every one shipped with its
+  audit-checklist half.
+  - **`sota-code-security` rules/10 §1 — the proxy question**, beside the falsification
+    question. This is the strongest change of the set: the existing question finds controls
+    that are *inert*, and **cannot** find one that is **correctly enforcing the wrong
+    predicate** — there something observable *does* differ, so it answers "yes" while the
+    control is still wrong. Four instances in one session, by an author who had just
+    documented the shape: `commit.gpgsign` vs *is a key configured*; encoder round-trip vs
+    *does the writer emit what the verifier expects*; does `--sk` exist vs *is it
+    implemented*; is there a TTY vs *can a PIN be collected here*. Its discriminating half
+    is the second clause — **who can change one without the other, and would I find out?**
+  - **rules/10 §2.15 — a flag that parses is not a feature that works.** `--help` describes
+    the source tree, not your binary: build-tag-gated features leave the interface compiled
+    in and the implementation stubbed (Homebrew `cosign` v3.1.2 lists `--sk` and returns
+    `opening piv token: unimplemented`). Invoke an optional capability once before a design
+    depends on it.
+  - **`sota-architecture` rules/01 §4a** — a control's **cost profile** must be checked
+    against decisions already in force. A control that spends a scarce resource per use can
+    reintroduce the friction an earlier decision removed; both artifacts are locally correct
+    and the contradiction lives in the gap.
+  - **`sota-cli-ux` rules/03** — rehearse a costly command where failure is free before
+    handing it to a human, and state the cost. A YubiKey PIN blocks after **three** attempts.
+  - **`sota-shell-scripting` rules/04 §1a** — never batch a state-changing command with
+    exploratory reads; the reads then describe a state that no longer exists.
+  - **`sota-docs-workflow` rules/01 §11** — a durable note records an **invariant**, not an
+    observation. Applies directly to agent memory files.
+
+### Changed
+
+
+- **Recorded, not gated: invariant 18 checks that a `§` reference *resolves*, not that it
+  points at the right content.** A reference written today pointed at `rules/11` §5 when the
+  content is in §4, and the gate passed because §5 exists — the proxy shape, in our own gate,
+  on the day we adopted a rule about it. Not mechanically checkable ("is this the right
+  section?" is semantic); the mitigation is the new rules/10 §1 question, and the reference
+  was fixed by reading the heading.
+
 ### Fixed
+
 
 - **`RELEASING.md` step 4 taught the procedure that failed on 2026-08-27.** It showed
   `git checkout main && git pull` followed straight by `git tag` and `gh release create`,
@@ -23,6 +65,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `docs/CONVENTIONS-LEDGER.md` now record the **`.env` existence assertion** alongside the
   `__main__` one — including that the `.env` assertion was **vacuous on its first draft**
   and passed the broken tree until it was watched to fail.
+
+
+
+
+- **The 2026-08-26 intake was incomplete: that report was read to line 318 of 428.**
+  Findings 8 and 9 sat in an addendum below where the reading stopped and were never
+  assessed. Caught only because the follow-up cross-referenced "findings 1–9" and the count
+  disagreed. Both are now adopted. **Check a file's length before treating a page-at-a-time
+  read as complete.**
+- Cap watch (ROADMAP 13) **re-measured rather than remembered**: `sota-docs-workflow/rules/01`
+  **477**, `sota-code-security/rules/12` **476**, `sota/rules/01` **455**.
 
 ## [1.29.2] - 2026-08-27
 

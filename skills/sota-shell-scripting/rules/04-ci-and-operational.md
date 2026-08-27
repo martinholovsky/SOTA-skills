@@ -52,6 +52,29 @@ extra variables:
 **Beyond ~30 lines, move the step body to a committed script** (`ci/build.sh`): testable
 locally, lintable by ShellCheck directly, diffable, and immune to YAML quoting.
 
+## 1a. Never batch a state-changing command with exploratory reads
+
+Batching independent calls into one invocation is right for **reads** and wrong the moment
+one element mutates: the reads around it then describe a state that no longer exists, and
+re-running the batch repeats the mutation.
+
+```bash
+# BAD — three "checks", but the third destroys what the first just printed
+cosign public-key --sk                 # read the key
+ykman piv certificates export f9 -     # read the attestation cert
+cosign piv-tool generate-key           # <-- REGENERATES THE KEY
+```
+
+Field-reported exactly so: the recorded public key was stale within the same command.
+Harmless there because nothing had been signed with it — against a provisioned slot the
+same shape destroys a key in use.
+
+**Run mutations alone and read back in a separate call.** The tell is a verb:
+`generate`, `create`, `init`, `reset`, `rotate`, `delete`, `set-`, `apply`. If one appears
+in a batch, split it out. Note this cuts *against* the efficiency habit of grouping
+independent calls — the habit is correct and does not distinguish reads from writes, which
+is precisely why a mutation reads as "one more check".
+
 ## 1b. Separate a gate from the thing it gates with `&&`, never `;`
 
 The one-liner that runs a check and then does the irreversible thing is where the
@@ -185,6 +208,11 @@ exec > >(stdbuf -oL tee -a "$logfile") 2>&1
   mail spam: `*/5 * * * * /opt/job.sh >>/var/log/job.log 2>&1`.
 
 ## Audit checklist
+
+- [ ] **No compound invocation mixes reads with a mutation** (§1a). Grep batched commands
+      for `generate|create|init|reset|rotate|delete|set-|apply`; a mutation among reads
+      makes every reading around it stale and repeats on re-run. High on hardware, where
+      the mutation is usually irreversible.
 
 - [ ] **Gate-then-act joined by `;`**: `grep -rnE '\.(sh|py)[^&|]*; *(git (push|tag|commit)|kubectl|terraform apply|rm )' --include='*.sh' .` — a check whose exit status the next command ignores. Also flag `check | tail`/`| head` before an action: the pipe hides the producer's status.
 - [ ] Workflows: `grep -rn '\${{' .github/workflows/ | grep -i 'head_ref\|pull_request\.\(title\|body\)\|commits\|issue\.\(title\|body\)\|comment\.body'`

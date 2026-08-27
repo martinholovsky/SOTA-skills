@@ -431,7 +431,28 @@ the choice belongs in the repo's contributing docs either way:
 A pointer file that references tooling the reader doesn't have is worse than no
 pointer: it reads as a satisfied requirement.
 
+## §11 A durable note records an invariant, not an observation
+
+Anything written to outlive the session — a handover note, an `AGENTS.md` line, an agent's
+memory file — should record the **invariant**, not the **observation** it produced. Before
+writing one, ask: *what would have to change for this to become false, and is that likely?*
+If the answer is "an ordinary refactor", write the invariant instead.
+
+Field-reported: a note said an agent could neither sign *nor anchor* a ledger, because both
+needed a hardware token. True when written. An hour later the design split timestamping from
+signing and timestamping needed no hardware — so the note was wrong in the direction that
+makes an agent ask for help it does not need. The invariant was stable and would have
+survived: *"signing requires the hardware token; nothing else does."*
+
+**A wrong note is worse than a missing one, in both directions**: it can let an agent
+proceed where it should stop, and stop it where it could proceed. The second is quieter and
+therefore lives longer — and the notes that most need updating are the ones nobody re-reads.
+
 ## Audit checklist
+
+- [ ] **Durable notes state invariants, not observations** (§11). For each line meant to
+      outlive the session, name what would falsify it; if an ordinary refactor would, it
+      records an observation and should be rewritten as the invariant beneath it.
 
 - [ ] Baseline present for the repo's stage: README + LICENSE + CHANGELOG always; CONTRIBUTING/CODE_OF_CONDUCT/SECURITY/SUPPORT once public or contribution-accepting; runbooks once on-call — each with one canonical home (no duplicate copies across root/`.github`/`docs`).
 - [ ] `SECURITY.md` gives a private vulnerability-reporting channel (not "open an issue" — except on a *private* repo, where the collaborator-only tracker is acceptable and GitHub's private reporting cannot be enabled at all; the file must then name the switch to make on going public) and a supported-version policy; `LICENSE` is present and intentional (its absence = all-rights-reserved, blocking reuse).
