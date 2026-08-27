@@ -5,6 +5,41 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **A rule the library already had, that the task never reached — fixed as a routing
+  problem and measured.** `sota-llm-engineering/rules/02` §2 has always said "use the
+  provider's token counter, never another vendor's tokenizer", and a maintenance task
+  still got it wrong. Not a knowledge gap: **UNREACHABLE, not absent.** The skill
+  `description` — the only auto-loading text, and the entire classifier — carried
+  `token budget` but not `count`, `tokenizer` or `measure`; the routing-table row said
+  *"**Building** LLM features"*; cross-cutting rules 5 and 8 both said *"AI/LLM
+  **features**"*. All three fixed, plus new router **rule 21**, shaped as a sibling of
+  rule 17: **model facts hide in your own tooling** — measuring tokens, context or cost is
+  LLM engineering even when the surrounding task is repo maintenance.
+  **Proved rather than asserted**: a regression case picked `sota-docs-workflow` **3/3**
+  before the fix and `sota-llm-engineering` **3/3** after
+  ([write-up](evals/results/2026-08-27/ROUTING-REGRESSION-TOKEN-COUNT.md)).
+- **`run-desc-routing.py` could not execute at all, and had not since 2026-08-05.** An
+  ablation-assertion guard called `.splitlines()` on the list `catalogue()` returns,
+  raising `AttributeError` before the first API call. The guard landed in PR #223 — *an
+  instrument audit* — and the last recorded run of this eval predates it, so **a guard
+  added to prevent a fake null made the instrument unrunnable and nothing re-ran it to
+  notice** (`sota-code-security` rules/12). Fixed and watched in both directions: 9
+  descriptions differ normally; a neutered `XREF_RE` yields 0 and still aborts.
+
+### Changed
+
+- **`sota-llm-engineering` rules/01 §8 — regression cases are not measurement cases.** As
+  written, the selection-bias rule banned choosing eval cases by outcome full stop, which
+  on a plain reading forbids regression tests. Selection-by-outcome poisons a *measurement*
+  set and is the entire *point* of a *regression* one. The rule now draws that line, with a
+  checklist item, and regression cases live in `cases/desc-routing-regressions.jsonl`
+  behind a new `--cases` flag so they can never be averaged into the published A/B. Found
+  by the fix above tripping the rule written hours earlier.
+
 ## [1.28.1] - 2026-08-27
 
 **Front door checked:** Dependabot · tokenizer

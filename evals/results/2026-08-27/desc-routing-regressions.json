@@ -1,0 +1,42 @@
+{
+ "model": "anthropic/claude-sonnet-5",
+ "samples": 3,
+ "temp": 0.7,
+ "cases": {
+  "r1_token_count": {
+   "task": "How many tokens is this 484-line Markdown instruction file? I want to compare it against the recommended size budget before adding more to it.",
+   "expect": "sota-llm-engineering",
+   "distractor": "sota-docs-workflow",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-llm-engineering",
+      "sota-llm-engineering",
+      "sota-llm-engineering"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-llm-engineering",
+      "sota-docs-workflow",
+      "sota-docs-workflow"
+     ],
+     "correct": 0.3333333333333333,
+     "distractor": 0.6666666666666666
+    }
+   }
+  }
+ },
+ "summary": {
+  "with-xref": {
+   "correct": 1.0,
+   "distractor": 0.0
+  },
+  "without-xref": {
+   "correct": 0.3333333333333333,
+   "distractor": 0.6666666666666666
+  }
+ }
+}

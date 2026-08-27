@@ -120,13 +120,17 @@ def pick_from(txt, names):
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--cases", default=CASES,
+                    help="case file. The default is the MEASUREMENT set, whose A/B number "
+                         "is published. Regression cases live in a separate file and must "
+                         "never be averaged into it (sota-llm-engineering rules/01 §8).")
     ap.add_argument("--model", default="anthropic/claude-sonnet-4.6")
     ap.add_argument("--samples", type=int, default=1)
     ap.add_argument("--temp", type=float, default=0.0)
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
     key = load_env_key()
-    cases = [json.loads(l) for l in open(CASES, encoding="utf-8")
+    cases = [json.loads(l) for l in open(a.cases, encoding="utf-8")
              if l.strip() and not l.startswith("#")]
     from _elapsed import note_work   # duration baseline needs a denominator
     note_work(len(cases), "cases")
@@ -136,8 +140,14 @@ def main():
     # Assert the ablation TOOK (rules/12 §2.2). If no description matched XREF_RE the
     # two arms are byte-identical and this tool prints a fake +0.000 — a manufactured
     # null in a project that publishes real ones. Both sibling ablations already abort.
-    changed = sum(1 for a, b in zip(arms["with-xref"].splitlines(),
-                                    arms["without-xref"].splitlines()) if a != b)
+    # catalogue() returns a list of (name, description) tuples — NOT a string. This
+    # compared `.splitlines()` on a list from 2026-08-05 (PR #223) until 2026-08-27,
+    # which raised AttributeError before the first API call, so the runner could not
+    # execute at all. It went unnoticed because the last recorded run predates the
+    # guard: a guard added to stop a fake null instead stopped the instrument, and
+    # nothing re-ran it (`sota-code-security` rules/12 — watch the guard run).
+    changed = sum(1 for (_, d1), (_, d2) in zip(arms["with-xref"],
+                                                arms["without-xref"]) if d1 != d2)
     if changed == 0:
         sys.exit("ablation removed nothing: both arms are identical, so any result is a "
                  "fake null. Check XREF_RE against the current descriptions.")

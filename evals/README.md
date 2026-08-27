@@ -136,6 +136,17 @@ audit STRAT-HIGH-2).
 - `cases/desc-routing.jsonl` (10) — an adversarially-confusable task → the correct
   skill (`expect`) and the tempting wrong sibling (`distractor`). Scored by
   `run-desc-routing.py` as an A/B on the description cross-refs (result: +0.00).
+- `cases/desc-routing-regressions.jsonl` — **regression cases, not a measurement set.**
+  Each exists *because* a specific mis-route happened, which is the point of a regression
+  case and exactly why it must never be averaged into the A/B in `desc-routing.jsonl`
+  (`sota-llm-engineering` rules/01 §8). Run it explicitly:
+  `python3 evals/run-desc-routing.py --cases evals/cases/desc-routing-regressions.jsonl`.
+  First case pins 2026-08-27: a token-counting question routed to `sota-docs-workflow`
+  **3/3** before the fix and `sota-llm-engineering` **3/3** after
+  ([write-up](results/2026-08-27/ROUTING-REGRESSION-TOKEN-COUNT.md)). **Note the runner
+  could not execute at all** from 2026-08-05 to 2026-08-27 — an ablation guard called
+  `.splitlines()` on a list and raised before the first API call, unnoticed because the
+  last recorded run predates the guard.
 - **`run-router-length.py`** — reuses `cases/router.jsonl` to ask a different question:
   does routing degrade as `skills/sota/SKILL.md` grows? The 500-line cap is *our*
   invariant mirroring platform guidance, **not** a loader limit — nothing truncates a
