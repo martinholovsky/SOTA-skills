@@ -70,6 +70,23 @@ def main():
     if not files:
         sys.exit(f"no eval runners found under {ROOT}/evals — refusing to report a pass.")
 
+    # Every runner must ALSO put its side effects behind `if __name__ == "__main__"`.
+    # The smoke check below cannot catch a module-level script: importing one runs the
+    # whole thing, which looks exactly like "reached its first network call" — that is
+    # how run-router-length.py passed while executing its sweep on import. Two runners
+    # were found like this (2026-08-27), so it is asserted rather than remembered.
+    import ast
+    unguarded = []
+    for f in files:
+        tree = ast.parse(open(f, encoding="utf-8").read())
+        if not any(isinstance(n, ast.If) and ast.unparse(n.test).startswith("__name__ ==")
+                   for n in tree.body):
+            unguarded.append(os.path.basename(f))
+    if unguarded:
+        sys.exit("FAIL: no `if __name__ == \"__main__\"` guard, so importing these runs "
+                 "them: " + ", ".join(unguarded))
+    print(f"  guard check: all {len(files)} runners keep side effects behind __main__\n")
+
     dead, saved_argv = [], sys.argv
     print(f"Smoke test: can each eval runner reach its first network call? "
           f"({len(files)} runners, {a.timeout}s each)\n")

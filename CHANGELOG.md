@@ -5,6 +5,27 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.29.2] - 2026-08-27
+
+**Front door checked:** smoke
+
+### Fixed
+
+- **The `__main__` guard, everywhere — not just the one instance I noticed.** An AST audit
+  of every script found a **second** module-level runner:
+  `run-build-safe-arms-guided.py` read `skills/` on import, could `sys.exit` on a missing
+  marker, and **made a live API call** — so anything that introspected it ran the whole
+  guided arm. Now behind `main()`; verified inert on import and still usable as a CLI.
+  (`evals/_elapsed.py` was flagged by the audit and is a **false positive** — a helper
+  module whose only module-level statements are pure constants. Helper modules correctly
+  have no guard.)
+- **And made checkable, because the smoke test structurally cannot catch this class.**
+  Importing a module-level script runs it, which looks identical to "reached its first
+  network call" — exactly how `run-router-length.py` passed while executing its sweep on
+  import. `evals/smoke-runners.py` now asserts every runner keeps its side effects behind
+  `if __name__ == "__main__"`. **Watched both ways**: passes on the healthy tree (18/18),
+  and fails naming the file when a guard is removed.
+
 ## [1.29.1] - 2026-08-27
 
 **Front door checked:** selection rule · freshness set
@@ -5173,6 +5194,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.29.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.29.2
 [1.29.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.29.1
 [1.29.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.29.0
 [1.28.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.28.1
