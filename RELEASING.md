@@ -148,11 +148,31 @@ at almost every cut (it did again at v1.19.7); a human shell is unaffected.
 
 ## 4. Tag and publish (after the squash-merge)
 
+**Never put the tag or the release in the same command as the merge.** On 2026-08-27 one
+chained command ran `gh pr merge` → checkout → invariants → `git tag` → `gh release create`.
+The **merge failed** (CI red), the checkout succeeded, and everything downstream ran anyway:
+`v1.29.2` was tagged at the *previous* release's commit and published with **empty notes**.
+Invariant 5 caught the *result* ("tag ahead of VERSION"), not the act. Cleanup needed
+`gh release delete` plus `git push origin --delete vX.Y.Z`, and re-tagging needed
+`git tag -f -a` because **`git tag -d` is denied to the assistant**.
+
+So verify from the REMOTE state, in its own step, before tagging:
+
 ```sh
 git checkout main && git pull --ff-only
-git tag -a vX.Y.Z -m vX.Y.Z && git push origin vX.Y.Z
-# release notes = the [X.Y.Z] section of CHANGELOG.md
-gh release create vX.Y.Z --title vX.Y.Z --notes-file <notes>
+
+# GATE: does main actually carry the release? (all three must agree)
+v=$(cat VERSION)
+pj=$(python3 -c "import json;print(json.load(open('.claude-plugin/plugin.json'))['version'])")
+top=$(grep -m1 '^## \[' CHANGELOG.md | sed 's/## \[\([^]]*\)\].*/\1/')
+[ "$v" = "$pj" ] && [ "$v" = "$top" ] || { echo "main does not carry $v — do not tag"; exit 1; }
+
+./scripts/check-invariants.sh && git tag -a "v$v" -m "v$v" && git push origin "v$v"
+
+# release notes = the [X.Y.Z] section of CHANGELOG.md — check it is NOT EMPTY first:
+# an awk range over the wrong branch silently yields zero lines and publishes a blank release.
+awk '/^## \['"$v"'\]/{f=1} f&&/^## \[/&&!/'"$v"'/{exit} f' CHANGELOG.md > /tmp/notes.md
+[ "$(grep -c '' /tmp/notes.md)" -gt 5 ] && gh release create "v$v" --title "v$v" --notes-file /tmp/notes.md
 ```
 
 Plugin installs pick the release up because the `plugin.json` version bumped

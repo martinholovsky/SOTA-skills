@@ -148,6 +148,13 @@ audit STRAT-HIGH-2).
   — a module-level script cannot be caught by the smoke check itself, because importing it
   runs the whole thing and that looks identical to "reached its first network call". Two
   runners were found in that state on 2026-08-27.
+  And it asserts every `.env` read is **existence-checked** — that defect shipped twice
+  (`run-router-length.py`, `run-build-safe-arms.py`), each time invisible locally because a
+  maintainer's tree *has* a `.env`, so only a machine without one reaches the failing
+  branch. **The assertion was vacuous on its first draft**: it matched `.env` inside the
+  `open()` call, but these build the path first and call `open(p)`, so it detected nothing
+  and passed the broken tree as happily as the healthy one. Watching it fail is what caught
+  that; it now matches on the enclosing function and names `file:function()`.
 - `cases/desc-routing-regressions.jsonl` — **regression cases, not a measurement set.**
   Each exists *because* a specific mis-route happened, which is the point of a regression
   case and exactly why it must never be averaged into the A/B in `desc-routing.jsonl`
