@@ -35,7 +35,14 @@ recorded here so the number is not repeated.
 
 | Gate | Already failed? | Fails silently? | Mechanically checkable? | Verdict |
 |---|---|---|---|---|
-| **`evals/smoke-runners.py` — every eval runner can still start** (2026-08-27, CI) | **yes** — `run-desc-routing.py` raised before its first API call from 2026-08-05 to 2026-08-27 | **yes** — nothing reported it for three weeks; the last recorded run of that eval predated the guard that killed it | **yes** — patch the one network choke point, run each `main()`, any other exception is a dead runner | **earned a gate.** Watched to fail on a reintroduction of the exact bug before wiring in. **Ceiling stated**: it proves a runner can *start*, not that it is correct |
+| **`evals/smoke-runners.py` — every runner can start, is import-safe, and existence-checks `.env`** (2026-08-27, CI) | **yes** — `run-desc-routing.py` raised before its first API call from 2026-08-05 to 2026-08-27 | **yes** — nothing reported it for three weeks; the last recorded run of that eval predated the guard that killed it | **yes** — patch the one network choke point, run each `main()`, any other exception is a dead runner | **earned a gate.** Watched to fail on a reintroduction of the exact bug before wiring in. **Ceiling stated**: it proves a runner can *start*, not that it is correct |
+
+Two of its three assertions were added *because* the smoke check could not catch the class
+itself: importing a module-level script **runs** it, which reads as "reached the network".
+And the `.env` assertion was **vacuous on its first draft** — it matched `.env` inside the
+`open()` call while the code builds the path first, so it passed the broken tree exactly as
+happily as the healthy one. Watching it fail is the only reason that was caught, which is
+the ledger's own standing point: a gate nobody has seen fail is not yet a gate.
 
 It caught a defect on its **first CI run** — in code added the same day
 (`run-router-length.py` opened `.env` unconditionally, so it raised on any machine

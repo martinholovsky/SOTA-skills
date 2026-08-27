@@ -5,6 +5,25 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **`RELEASING.md` step 4 taught the procedure that failed on 2026-08-27.** It showed
+  `git checkout main && git pull` followed straight by `git tag` and `gh release create`,
+  with nothing verifying that `main` actually carried the release. Chained after a **failed**
+  merge, that tagged `v1.29.2` at the *previous* release's commit and published it with
+  **empty notes**; invariant 5 caught the result, not the act. Step 4 now carries a gate —
+  `VERSION == plugin.json == CHANGELOG top` before tagging, and a non-empty notes check
+  before publishing — plus the cleanup path (`gh release delete`,
+  `git push origin --delete`, and `git tag -f -a` because `git tag -d` is denied to the
+  assistant). **The documented snippet was run both ways before shipping**: it passes on a
+  released tree (32-line notes) and blocks on a mismatched one.
+- Docs caught up with the gate they describe: `evals/README.md`, ROADMAP 28 and
+  `docs/CONVENTIONS-LEDGER.md` now record the **`.env` existence assertion** alongside the
+  `__main__` one — including that the `.env` assertion was **vacuous on its first draft**
+  and passed the broken tree until it was watched to fail.
+
 ## [1.29.2] - 2026-08-27
 
 **Front door checked:** smoke
