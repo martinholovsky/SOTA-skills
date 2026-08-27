@@ -60,6 +60,35 @@ headroom. Be precise about the size of that win: the token saving is **16,934 �
 about 3%**. The point was headroom and the end of compress-on-every-addition, not context
 economy.
 
+## Follow-up, 2026-08-27 — real rules behave exactly like inert filler
+
+The limit stated above was that inert filler tests **length**, not **competition** between
+real rules. So the padding was rebuilt from genuine rules prose with every routing signal
+stripped (`sota-*` names and `rules/NN` references removed; the builder asserts no
+`sota-` survives, because padding that leaked a skill name would make any drop unreadable).
+
+| arm | lines | recall | vs base |
+|---|---|---|---|
+| no-router (control) | 0 | 0.853 | — |
+| base | 499 | **1.000** | — |
+| +400 **inert filler** | 900 | 0.992 | −0.008 |
+| +400 **real rules prose** | 904 | 0.992 | −0.008 |
+
+**Identical, and both inside the noise.** 20 cases means one case is 0.05; these deltas are
+0.008. So on the routing axis, 400 lines of genuine competing guidance is indistinguishable
+from 400 lines of filler *and* from no padding at all. Raw:
+[`../2026-08-27/router-length-real-rules.json`](../2026-08-27/router-length-real-rules.json).
+
+**This does not close ROADMAP 25.** Routing is a retrieval-ish task with the table in the
+prompt, and it is at ceiling. The question that matters is **rule application** under a long
+build — the completeness axis — and that remains unmeasured. Read this as: *the cheap axis
+shows nothing, which is weak evidence and not permission to grow the router.*
+
+**A near-miss worth recording.** This run overwrote the 5-arm artifact above, because the
+output path was hardcoded to a fixed date. Restored from git; the runner now writes a dated
+filename. The same edit also gave the script an `if __name__ == "__main__"` guard — its
+sweep had been running at *module level*, so merely importing it made live API calls.
+
 **A correction this run forced:** [CONTEXT-MANAGEMENT.md](../../../docs/CONTEXT-MANAGEMENT.md)
 had the router at *"~10,211 tokens — 2× the budget"*, a chars/4 heuristic. Measured, it is
 **16,442 — 3.3×**. The heuristic under-reported the router's context cost by ~60%.

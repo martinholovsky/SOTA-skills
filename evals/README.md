@@ -164,8 +164,11 @@ audit STRAT-HIGH-2).
   from *length*. Result 2026-08-26: **flat at 1.000** across 501/902/1,302 lines while
   the untreated arm reproduced **0.867**, the 2026-08-25 figure — a free negative control
   on the measurement. **Two limits published with it**: the metric is **at ceiling** (it
-  can only detect a drop, and only one ≥0.05), and inert filler tests length/depth but
-  **not competition between real rules** — that is ROADMAP item 25, still unmeasured
+  can only detect a drop, and only one ≥0.05), and inert filler tests length/depth, not
+  competition. **Competition was then tested on 2026-08-27** with padding rebuilt from
+  genuine rules prose (routing signal stripped, asserted): **0.992 vs base 1.000 —
+  identical to inert filler**, both inside the 0.05 resolution. The **completeness**
+  half of ROADMAP 25 remains unmeasured and is the one that matters
   ([ROUTER-LENGTH](results/2026-08-26/ROUTER-LENGTH.md)).
 
 Each line is one case with an `id` and an `expect` list (see `score.py` header

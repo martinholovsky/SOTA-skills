@@ -80,12 +80,38 @@ def filler(n):
         i += 1
     return "\n".join(ls[:n])
 
+def real_rules_padding(n):
+    """N lines of GENUINE rules prose, with every routing signal stripped.
+
+    Inert filler tests LENGTH. This tests COMPETITION: dense imperative guidance of
+    the kind that would actually be added to the router, competing for attention with
+    the routing table. Any `sota-*` name is removed so the padding cannot add or
+    remove routing signal — verified by the assertion below, because padding that
+    leaked a skill name would make a drop unreadable.
+    """
+    import re
+    out = []
+    for f in sorted(glob.glob(os.path.join(ROOT, "skills/sota-*/rules/*.md"))):
+        for line in open(f, encoding="utf-8"):
+            line = re.sub(r"`?sota-[a-z-]+`?", "the relevant skill", line)
+            line = re.sub(r"rules/\d+", "the rules file", line)
+            if line.strip():
+                out.append(line.rstrip("\n"))
+            if len(out) >= n:
+                break
+        if len(out) >= n:
+            break
+    body = "\n".join(out[:n])
+    assert "sota-" not in body, "padding leaked a skill name — it would confound the arm"
+    return "\n\n## Appendix — additional engineering guidance\n\n" + body
+
+
 TABLE = "## Routing table"
 XCUT_END = "## Day zero"
 def variant(name):
     if name == "base": return ROUTER
     n = 400 if "400" in name else 800
-    f = filler(n)
+    f = real_rules_padding(n) if "real" in name else filler(n)
     if "before" in name:
         i = ROUTER.index(TABLE); return ROUTER[:i] + f + "\n\n" + ROUTER[i:]
     i = ROUTER.index(XCUT_END);  return ROUTER[:i] + f + "\n\n" + ROUTER[i:]
@@ -121,25 +147,38 @@ def score(cases, preds):
         tot += r
     return tot / len(cases), miss
 
-cases = load_cases()
-print(f"cases={len(cases)}  model={MODEL}  samples={SAMPLES}  temp={TEMP}\n")
-results = {}
-for arm in ("no-router", "base", "+400 after", "+400 before", "+800 before"):
-    router = "" if arm == "no-router" else variant(arm)
-    lines = 0 if not router else router.count("\n") + 1
-    prompt = build_prompt(cases, router)
-    recs, last = [], {}
-    ptok = None
-    for _ in range(SAMPLES):
-        preds, ptok = call(prompt)
-        r, last = score(cases, preds); recs.append(r)
-    m = sum(recs) / len(recs)
-    results[arm] = {"recall": m, "recalls": recs, "lines": lines, "prompt_tokens": ptok, "misses": last}
-    print(f"{arm:14s} lines={lines:5d} ptok={ptok:7,}  recall={m:.3f}  "
-          f"[{'/'.join(f'{x:.2f}' for x in recs)}]  misses={sorted(last)}")
-json.dump(results, open(os.path.join(ROOT, "evals/results/2026-08-26/router-length.json"), "w"), indent=1)
-b = results["base"]["recall"]
-print("\nvs base:")
-for a, v in results.items():
-    if a in ("base", "no-router"): continue
-    print(f"  {a:14s} {v['recall']-b:+.3f}")
+def main():
+    """Run the sweep.
+
+    This block ran at MODULE level until 2026-08-27, so merely importing this file
+    executed the whole sweep and made live API calls — `evals/smoke-runners.py` tripped
+    it, and only its patched `urlopen` stopped real requests. A script with side effects
+    on import is a trap for every tool that introspects it.
+    """
+    cases = load_cases()
+    print(f"cases={len(cases)}  model={MODEL}  samples={SAMPLES}  temp={TEMP}\n")
+    results = {}
+    for arm in ("no-router", "base", "+400 before", "+400 real before"):
+        router = "" if arm == "no-router" else variant(arm)
+        lines = 0 if not router else router.count("\n") + 1
+        prompt = build_prompt(cases, router)
+        recs, last = [], {}
+        ptok = None
+        for _ in range(SAMPLES):
+            preds, ptok = call(prompt)
+            r, last = score(cases, preds); recs.append(r)
+        m = sum(recs) / len(recs)
+        results[arm] = {"recall": m, "recalls": recs, "lines": lines, "prompt_tokens": ptok, "misses": last}
+        print(f"{arm:14s} lines={lines:5d} ptok={ptok:7,}  recall={m:.3f}  "
+              f"[{'/'.join(f'{x:.2f}' for x in recs)}]  misses={sorted(last)}")
+    json.dump(results, open(os.path.join(ROOT, "evals/results/2026-08-27/router-length-real-rules.json"), "w"), indent=1)
+    b = results["base"]["recall"]
+    print("\nvs base:")
+    for a, v in results.items():
+        if a in ("base", "no-router"): continue
+        print(f"  {a:14s} {v['recall']-b:+.3f}")
+    return results
+
+
+if __name__ == "__main__":
+    main()

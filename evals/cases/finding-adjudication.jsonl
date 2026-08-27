@@ -10,6 +10,9 @@
 # mechanism, already-mitigated, and behaviour that is actually correct — so an arm
 # cannot win by pattern-matching one refutation shape.
 # `why` is the answer key (never prompted). `reason` tags the refutation class.
+#
+# SELECTION RULE — 15 genuine claims + 15 plausible-but-wrong ones, the wrong ones failing for six distinct reasons; the split is fixed by design, not by outcome.
+# MEASUREMENT set — a lift may be reported from it, so cases must never be selected by a model's score (`sota-llm-engineering` rules/01 §8).
 {"id": "fa01", "kind": "adjudication", "language": "python", "snippet": "q = \"SELECT * FROM users WHERE email = '\" + request.args[\"email\"] + \"'\"\nrows = db.execute(q)", "claim": "SQL injection (Critical): request.args['email'] is concatenated into the query.", "expect": ["UPHELD"], "why": "String concatenation of unvalidated request data straight into SQL. Real, Critical."}
 {"id": "fa02", "kind": "adjudication", "language": "python", "snippet": "def get_invoice(invoice_id: int, user):\n    inv = db.query(Invoice).filter(Invoice.id == invoice_id).first()\n    return inv.to_dict()", "claim": "IDOR (High): no ownership predicate — any authenticated caller reads any invoice.", "expect": ["UPHELD"], "why": "The query filters on id only; no tenant/owner predicate anywhere in the path. Real IDOR."}
 {"id": "fa03", "kind": "adjudication", "language": "go", "snippet": "func Auth(tok string) bool {\n\tok, err := verify(tok)\n\tif err != nil {\n\t\treturn true\n\t}\n\treturn ok\n}", "claim": "Fail-open authentication (Critical): a verification error returns true.", "expect": ["UPHELD"], "why": "The error branch returns true (authenticated). Real fail-open on the auth path."}

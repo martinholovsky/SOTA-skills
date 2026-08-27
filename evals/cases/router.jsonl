@@ -2,6 +2,9 @@
 # `expect` = must-load skills (recall-focused). Derived from the router's own
 # routing table + cross-cutting rules in skills/sota/SKILL.md. Extra loads are
 # not penalized as errors; a MISS of an expected skill is the real signal.
+#
+# SELECTION RULE — plain task prompts spanning the router's routing table, including tasks whose correct skill is not in the prompt's keywords. Chosen by coverage, never by outcome.
+# MEASUREMENT set — a lift may be reported from it, so cases must never be selected by a model's score (`sota-llm-engineering` rules/01 §8).
 {"id": "r01", "kind": "routing", "prompt": "Add a REST endpoint that accepts file uploads from users.", "expect": ["sota-api-design", "sota-code-security", "sota-testing"]}
 {"id": "r02", "kind": "routing", "prompt": "Review our Dockerfiles and Kubernetes manifests for security issues.", "expect": ["sota-kubernetes", "sota-sandboxing"]}
 {"id": "r03", "kind": "routing", "prompt": "Design a multi-tenant SaaS billing service.", "expect": ["sota-architecture", "sota-databases", "sota-api-design"]}

@@ -16,6 +16,9 @@
 # Most of the repo is deliberately CORRECT (parameterized queries, an ownership
 # check on delete, constant-time token compare, a proper admin guard on set_role)
 # so that flagging everything scores badly and false positives are countable.
+#
+# SELECTION RULE — defects planted across a repo with NO category vocabulary given to the auditor; chosen to span classes a scoped brief would have named.
+# MEASUREMENT set — a lift may be reported from it, so cases must never be selected by a model's score (`sota-llm-engineering` rules/01 §8).
 {"id": "sqli_sort", "group": "control", "class": "sql-injection", "files": ["db.py", "reports.py", "app.py"], "primary": ["db.py"], "note": "Db.search_reports interpolates `sort` into ORDER BY via f-string. app.search_reports passes request['query']['sort'] straight through ReportService.search, so it is attacker-controlled. Every other query in db.py is parameterized.", "must": ["sql injection", "order by", "f-string", "interpolat"]}
 {"id": "idor_get_report", "group": "control", "class": "idor", "files": ["reports.py", "app.py"], "primary": ["reports.py"], "note": "ReportService.get checks the report:read PERMISSION but never checks that the row's owner_id (or tenant_id) matches the actor, so any authenticated user reads any report by id. ReportService.delete does check ownership \u2014 the contrast is the tell.", "must": ["idor", "ownership", "owner_id", "object-level", "any user"]}
 {"id": "swallowed_webhook_verify", "group": "treatment", "class": "inert-control-swallowed-exception", "files": ["webhooks.py"], "primary": ["webhooks.py"], "note": "handle() calls verify() inside `try: ... except Exception: pass`, so a bad or absent signature is silently ignored and the event is applied anyway. verify() itself is correct \u2014 the control exists, is called, and does nothing.", "must": ["except exception", "swallow", "discard", "signature"]}

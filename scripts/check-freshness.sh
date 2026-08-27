@@ -80,6 +80,42 @@ if [ -n "$stray" ]; then
   printf '%s\n' "$stray" | sed 's/^/    /'
 fi
 
+# --- Freshness CASE SETS age too, and that is a different decay -------------
+# A fixed set of "current facts" measures LESS lift every model generation as its
+# questions age INSIDE the model's training cutoff — measured 2026-08-25: the same
+# 32-case set fell +0.53 -> +0.30 with the library UNCHANGED (its with-arm rose).
+# So the instrument needs re-authoring on a cadence, not just once.
+#
+# The window is BORROWED from the LAST-VERIFIED window above, not derived from decay
+# data: one before/after pair is not a decay rate, and guessing one would be inventing
+# a number (roadmap item 24). It WARNS rather than fails — an ageing set still measures
+# a real floor, and a perpetually-red job trains people to ignore it.
+newest_set=""
+newest_date=""
+while IFS= read -r f; do
+  d=$(sed -n 's/^#[[:space:]]*AUTHORED:[[:space:]]*\([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\).*/\1/p' "$f" | head -1)
+  [ -n "$d" ] || continue
+  if [ -z "$newest_date" ] || [ "$d" \> "$newest_date" ]; then newest_date="$d"; newest_set="$f"; fi
+done <<EOF
+$(git ls-files 'evals/cases/freshness*.jsonl')
+EOF
+
+if [ -z "$newest_date" ]; then
+  # Fail closed: no marker means this check silently verified nothing.
+  echo "error: no '# AUTHORED: YYYY-MM-DD' marker in any evals/cases/freshness*.jsonl" >&2
+  exit 1
+fi
+sy=${newest_date%%-*}; sm=${newest_date#*-}; sm=${sm%%-*}
+set_age=$(( (now_y * 12 + ${now_m#0}) - (sy * 12 + ${sm#0}) ))
+echo "  newest freshness case set: ${newest_set##*/} authored ${newest_date} (${set_age} months ago)"
+if [ "$set_age" -gt "$WINDOW" ]; then
+  echo
+  echo "WARNING: the newest freshness case set is ${set_age} months old (window ${WINDOW})."
+  echo "Its questions are ageing into the models' training cutoffs, so it now UNDER-reads"
+  echo "the freshness claim. Re-author it (roadmap item 21 is the worked example) and quote"
+  echo "the old number as a floor until you do."
+fi
+
 if [ "$age" -gt "$WINDOW" ]; then
   echo
   echo "STALE: last full-library verification sweep was ${age} months ago (window ${WINDOW})."

@@ -1,5 +1,9 @@
 # desc-routing-regressions.jsonl — REGRESSION cases, NOT a measurement set.
 #
+# SELECTION RULE — each case exists because a specific mis-route actually happened.
+# REGRESSION set, NOT a measurement set: selection-by-outcome is the POINT here and
+# would be a defect in a measurement set (`sota-llm-engineering` rules/01 §8).
+#
 # Each case exists because a specific mis-route actually happened. That is the whole
 # point of a regression case and it is exactly why these must never be averaged into
 # the A/B number in desc-routing.jsonl: selecting cases by outcome guarantees the
