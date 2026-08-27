@@ -7,7 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`evals/smoke-runners.py` + a CI step — a runner can be dead for weeks and nothing
+  reports it.** `run-desc-routing.py` raised before its first API call from 2026-08-05 to
+  2026-08-27, unnoticed because the guard that killed it landed *after* that eval's last
+  recorded run. `--help` would not have caught it — the crash was inside `main()`. So the
+  test patches `urllib.request.urlopen` (the one choke point every runner shares) and
+  treats *reaching the network* as success. **Watched to fail** on a reintroduction of the
+  exact bug before being wired in. It proves a runner can **start**, not that it is
+  correct — stated in the script and in ROADMAP 28 so the gate is not over-read.
+- **A routing gap should end as a test, not just a report** — the router's gap-reporting
+  section now says so: fix the *trigger* (the `description` is the only auto-loading text
+  and the whole classifier) and pin it with a regression case.
+
 ### Fixed
+
+- **Two defects in `run-build-safe-arms-guided.py`**: `sys.path.insert(0, "/tmp")` —
+  prepending a **world-writable** directory to the import path, in a repo that teaches
+  supply-chain hygiene, and vestigial since the script imports its sibling by absolute
+  path — and a raw `IndexError` instead of a usage message when run without arguments.
+  Found by the runner sweep; the other three `sys.path` uses in the tree are
+  `__file__`-relative and correct.
+- **`docs/CONTEXT-MANAGEMENT.md` was itself a casualty of the chars/4 heuristic.** It
+  claimed *"12 of 297 files exceed ~5,000 tokens"*; measured across all 301 files with
+  `count_tokens`, it is **132 of 301 — an 11× under-count**. *"Exactly one file breaches
+  the recommendation"* is **5 of 41** `SKILL.md` bodies. The Swift rules file it cites as
+  ~6,737 tokens is **10,116**. Corrected with the measurements, plus the density range
+  (~24–46 tokens/line) that is the actual argument a line cap cannot make. ROADMAP 27
+  closed.
 
 - **A rule the library already had, that the task never reached — fixed as a routing
   problem and measured.** `sota-llm-engineering/rules/02` §2 has always said "use the
