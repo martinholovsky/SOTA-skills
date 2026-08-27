@@ -85,6 +85,11 @@ jobs:
           # reason and the run aborts with no results.
           fetch-depth: 0
           fetch-tags: true
+      - name: Prove every eval runner can still start
+        # A runner that dies before its first API call is invisible: run-desc-routing.py
+        # was dead for three weeks because the guard that killed it landed AFTER the last
+        # recorded run. `--help` misses it — the crash is inside main().
+        run: python3 evals/smoke-runners.py --timeout 20
       - name: Prove check-invariants.sh and verify-setup.sh still reject known-bad input
         # The invariants job proves the gate PASSES on a good tree. Nothing proved
         # it can still FAIL — and "ok" from a working check is byte-identical to

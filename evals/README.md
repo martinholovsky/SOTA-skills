@@ -136,6 +136,14 @@ audit STRAT-HIGH-2).
 - `cases/desc-routing.jsonl` (10) — an adversarially-confusable task → the correct
   skill (`expect`) and the tempting wrong sibling (`distractor`). Scored by
   `run-desc-routing.py` as an A/B on the description cross-refs (result: +0.00).
+- **`smoke-runners.py`** — proves every runner can still **start**. `urllib.request.urlopen`
+  is patched to raise, each `main()` runs under an alarm, and "reached the network" is the
+  success signal; any other exception is a dead runner and fails the script. It exists
+  because `run-desc-routing.py` was dead 2026-08-05 → 2026-08-27 (an ablation guard called
+  `.splitlines()` on a list and raised *before* the first API call) and nothing noticed —
+  the last recorded run predated the guard. `--help` would not have caught it: the crash
+  was inside `main()`. **Watched to fail** on a reintroduction of that bug before being
+  wired into CI. It does **not** prove a runner is correct, only that it starts.
 - `cases/desc-routing-regressions.jsonl` — **regression cases, not a measurement set.**
   Each exists *because* a specific mis-route happened, which is the point of a regression
   case and exactly why it must never be averaged into the A/B in `desc-routing.jsonl`

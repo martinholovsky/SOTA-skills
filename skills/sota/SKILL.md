@@ -484,6 +484,11 @@ needless idiom vs an outage), never silently: name the rule you followed and why
 in a comment beside the code, or the next reader reverts it. Then report it —
 the fix is an explicit exception in whichever rule was too broad.
 
+**A routing gap should end as a test, not just a report.** If the right skill existed
+and the task never reached it, the fix is the *trigger* — the skill's `description` is the
+only auto-loading text and is the whole classifier — and the proof is a regression case in
+`evals/cases/desc-routing-regressions.jsonl`, which pins the mis-route so it cannot return.
+
 Report: `https://github.com/martinholovsky/SOTA-skills/issues/new/choose`
 (bad-guidance / skill-request templates). Anything dangerous or
 security-sensitive goes to a **private advisory** instead — see `SECURITY.md`.

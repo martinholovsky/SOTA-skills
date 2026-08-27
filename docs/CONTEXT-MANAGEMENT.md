@@ -150,16 +150,25 @@ lines predict tokens only as well as line length allows, and across this repo's
 | the **median** density | ~7,118 | **42% over** |
 | the densest observed density | ~15,870 | **3× over** |
 
-**12 of 297 files already exceed ~5,000 tokens, and 11 of them pass invariant 1
-comfortably** — `sota-mobile/rules/07-swift-language.md` is 254 lines, half the cap,
-and ~6,737 tokens. A line cap cannot see that.
+**132 of 301 files exceed 5,000 tokens** — every one of them passing invariant 1, most
+comfortably. `sota-mobile/rules/07-swift-language.md` is 254 lines, half the cap, and
+**10,116 tokens**. A line cap cannot see that: density ranges from ~24 to **46 tokens per
+line** across the tree, so two files at the same length differ ~2× in what they cost.
+
+> **Corrected 2026-08-27 — this paragraph was itself a casualty of the heuristic.** It
+> read *"12 of 297 files … and ~6,737 tokens"*, all chars/4-derived. Measured with
+> `count_tokens` across all 301 files: **132**, not 12 — an **11× under-count** — and that
+> Swift file is 10,116 tokens, not ~6,737. The file count was stale too (297 → 301). If a
+> claim about size was not produced by a tokenizer, assume it is wrong by half.
 
 Two things keep this from being urgent. The 5,000-token figure applies to the
 `SKILL.md` **body** (stage 2); for `rules/*.md`, which are stage-3 resources, the
 spec gives no number, only *"keep individual reference files focused — agents load
-these on demand, so smaller files mean less use of context."* And exactly **one**
-file breaches the recommendation where it actually applies: `skills/sota/SKILL.md`,
-the router, at **16,442 tokens — 3.3× the budget**, at 484/500 lines.
+these on demand, so smaller files mean less use of context."* And **5 of the 41**
+`SKILL.md` bodies breach the recommendation where it actually applies — led by
+`skills/sota/SKILL.md`, the router, at **16,831 tokens, 3.4× the budget**, at 498/500
+lines (measured 2026-08-27; it was 16,442 at 484 lines the day before, so this number
+moves with every router edit — re-measure, never carry it forward).
 
 > **Correction, 2026-08-26.** This paragraph read *"~10,211 tokens — 2×"* until it was
 > measured. That figure came from a chars/4 heuristic and **under-reported the router's

@@ -7,7 +7,6 @@ the test harder. principle 5 is read live with the same abort guards the
 completeness runner uses.
 """
 import os, sys, json, hashlib
-sys.path.insert(0, "/tmp")
 import importlib.util
 spec = importlib.util.spec_from_file_location("d", os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "run-build-safe-arms.py"))
@@ -46,6 +45,10 @@ BUILD_WORKFLOW = (
 prompt = (f"ALWAYS-APPLY OPERATING PRINCIPLE (from the router):\n\n{p5}\n\n"
           f"---\nApply the following engineering standards:\n\n{ctx}"
           f"{BUILD_WORKFLOW}{d.SPEC}{d.FORMAT}")
+if len(sys.argv) != 4:
+    sys.exit(f"usage: {os.path.basename(sys.argv[0])} OUTDIR MODEL MAX_TOKENS\n"
+             f"  e.g. {os.path.basename(sys.argv[0])} /tmp/g1 anthropic/claude-sonnet-5 32000\n"
+             f"  (the unguided arm is run-build-safe-arms.py)")
 outdir, model, mt = sys.argv[1], sys.argv[2], int(sys.argv[3])
 txt, tok, fin, trunc = d.call(model, prompt, d.key(), mt)
 n = d.write_files(txt, outdir)
