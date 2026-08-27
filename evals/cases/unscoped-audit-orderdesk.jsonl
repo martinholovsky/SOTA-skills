@@ -2,6 +2,9 @@
 # (experiment A). Same 8 planted defects, same `primary` files; `must`
 # adds the mechanism keywords the pre-registered rule requires, and every
 # case is group=control because all 8 are classic security classes.
+#
+# SELECTION RULE — the unscoped-audit rule applied to the orderdesk fixture.
+# MEASUREMENT set — a lift may be reported from it, so cases must never be selected by a model's score (`sota-llm-engineering` rules/01 §8).
 {"id": "p1_idor", "group": "control", "class": "idor", "primary": ["orders.py", "orders_service.py"], "must": ["idor", "ownership", "owner"], "note": "GET /orders/{id} delegates to OrderService.get_order, which fetches by primary key with NO ownership/tenant filter. The route has `user` but never scopes to it; the service looks like a generic data-access helper. Neither file alone shows the missing check."}
 {"id": "p2_mass_assignment", "group": "control", "class": "mass-assignment", "primary": ["models.py", "orders_service.py"], "must": ["mass assignment", "user_id", "amount_cents"], "note": "OrderUpdate (models.py) includes status, amount_cents, user_id; update_order (orders_service.py) applies every provided field via model_dump; the PATCH route (orders.py) is an ordinary authenticated user endpoint. A user can set price/status/owner. The danger is only visible by joining the model's field list to the service's blind apply."}
 {"id": "p3_sql_injection", "group": "control", "class": "sql-injection", "primary": ["search.py", "db.py"], "must": ["sql injection", "f-string", "interpolat"], "note": "search.py build_where interpolates keyword/status into a SQL string and calls db.raw_query, which (per db.py) executes verbatim with no binding. db.raw_query looks safe in isolation (documented for static developer SQL); search.py looks safe if you assume raw_query binds. The taint only appears across both."}

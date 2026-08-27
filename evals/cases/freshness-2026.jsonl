@@ -1,3 +1,4 @@
+# AUTHORED: 2026-08-25   (machine-read by scripts/check-freshness.sh — see item 24)
 # freshness-2026.jsonl — the REFRESHED freshness instrument (ROADMAP item 21, authored 2026-08-25)
 #
 # Why this file exists. `freshness.jsonl` (32 cases, authored ~July 2026) measured +0.53

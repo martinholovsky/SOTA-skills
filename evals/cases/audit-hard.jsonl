@@ -1,6 +1,9 @@
 # Harder audit golden set — multi-vuln + subtler cases meant to DISCRIMINATE
 # (the base audit.jsonl saturates at 13/13). `expect` = every category that
 # must be flagged; a partial catch (misses one of a multi-vuln) scores <1.
+#
+# SELECTION RULE — the by-class rule of audit.jsonl, deliberately harder — multi-vuln snippets and subtle classes (IDOR, SSRF, TOCTOU, ReDoS); chosen by class, not by outcome.
+# MEASUREMENT set — a lift may be reported from it, so cases must never be selected by a model's score (`sota-llm-engineering` rules/01 §8).
 {"id": "ah01", "kind": "audit", "language": "python", "snippet": "name=request.args['name']; rows=db.execute(\"SELECT * FROM u WHERE name='\"+name+\"'\"); return \"<h1>Hello \"+name+\"</h1>\"", "expect": ["sql-injection", "xss"]}
 {"id": "ah02", "kind": "audit", "language": "python", "snippet": "u = User(**request.get_json()); u.save()  # posted JSON may set is_admin=true", "expect": ["mass-assignment"]}
 {"id": "ah03", "kind": "audit", "language": "python", "snippet": "charge_card(request.json['amount_cents'])  # amount comes from the client", "expect": ["business-logic-flaw"]}

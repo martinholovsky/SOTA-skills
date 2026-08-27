@@ -3,11 +3,17 @@
 # is not wrong, it is INERT — a broken system and a working one look identical from
 # outside. Tests sota-code-security rules/10.
 #
-# 13 positive cases (one per hiding place) + 2 NEGATIVE controls (sf14/sf15) whose
+# 61 positive cases (35 enumerated mechanisms + 26 tagged `novel`, which rules/10 does
+# NOT enumerate) + 20 NEGATIVE controls whose
+# [count corrected 2026-08-27: this header still read "13 positive + 2 NEGATIVE", the
+#  retracted 15-case version, while the file held 81. evals/README.md had it right.]
 # expect is ["not-silent"]: the control fails loudly, so flagging it is the error.
 # The negatives exist because a model that answers "silent no-op" to everything
 # would otherwise score 1.00. Languages are mixed on purpose (the breadth run
 # showed domain/language effects are real).
+#
+# SELECTION RULE — one case per hiding place, plus negative controls that deliberately RESEMBLE a positive so shape-matching trips; chosen by mechanism, never by outcome.
+# MEASUREMENT set — a lift may be reported from it, so cases must never be selected by a model's score (`sota-llm-engineering` rules/01 §8).
 {"id": "sf01", "kind": "silent", "language": "python", "snippet": "class MalwareScanner:\n    def __init__(self, model_dir: Path):\n        # model_dir is populated by an init container at boot\n        self.enabled = model_dir.is_dir()\n        self.model_dir = model_dir\n\n    def scan(self, blob: bytes) -> list[str]:\n        if not self.enabled:\n            return []\n        return _predict(self.model_dir, blob)\n\n# startup: log.info('scanner ENABLED=%s', scanner.enabled)", "expect": ["weak-existence-check"], "reference": "Presence/enablement is decided by model_dir.is_dir() — an empty or partially-populated directory sets enabled=True, so scan() reports no findings while looking enabled. The check must assert on the loaded artifact, not the path."}
 {"id": "sf02", "kind": "silent", "language": "python", "snippet": "try:\n    import clamd\nexcept ImportError:\n    clamd = None\n\ndef scan_upload(data: bytes) -> dict:\n    if clamd is None:\n        return {\"clean\": True}\n    return clamd.ClamdUnixSocket().instream(io.BytesIO(data))\n\n# pyproject.toml: clamd is under [project.optional-dependencies].dev\n# Dockerfile: RUN pip install --no-cache-dir .", "expect": ["optional-dependency-degradation"], "reference": "clamd is an OPTIONAL dependency absent from the shipped image (it is a dev extra), so scan_upload returns {'clean': True} for every upload — the malware scan silently never runs and 'clean' is indistinguishable from a real clean scan."}
 {"id": "sf03", "kind": "silent", "language": "python", "snippet": "def load_waf(path: str) -> \"Waf\":\n    doc = yaml.safe_load(open(path)) or {}\n    rules = [compile_rule(r) for r in doc.get(\"rules\", [])]\n    log.info(\"WAF ENABLED with %d rules\", len(rules))\n    return Waf(rules)\n\nclass Waf:\n    def blocks(self, req) -> bool:\n        return any(r.match(req) for r in self.rules)\n\n# shipped config/waf.example.yaml contains only commented-out rules", "expect": ["empty-ruleset-loaded"], "reference": "A config with zero rules loads successfully and logs 'WAF ENABLED with 0 rules'; blocks() then returns False for everything. The shipped example config has only commented-out rules, so deploying it verbatim yields a WAF that blocks nothing."}

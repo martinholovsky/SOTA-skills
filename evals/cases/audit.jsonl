@@ -1,6 +1,9 @@
 # Audit golden set — does an audit (with the relevant skills loaded) flag the
 # planted vulnerability? `expect` = finding categories the agent MUST report.
 # Snippets are deliberately vulnerable, minimal, and unambiguous. `kind` audit.
+#
+# SELECTION RULE — one deliberately vulnerable snippet per common vulnerability class; cases are chosen by CLASS COVERAGE, never by whether a model missed them.
+# MEASUREMENT set — a lift may be reported from it, so cases must never be selected by a model's score (`sota-llm-engineering` rules/01 §8).
 {"id": "a01", "kind": "audit", "language": "python", "snippet": "cur.execute(\"SELECT * FROM users WHERE id = \" + request.args['id'])", "expect": ["sql-injection"]}
 {"id": "a02", "kind": "audit", "language": "javascript", "snippet": "child_process.exec('ping ' + req.query.host)", "expect": ["command-injection"]}
 {"id": "a03", "kind": "audit", "language": "python", "snippet": "stored = hashlib.md5(password.encode()).hexdigest()", "expect": ["weak-password-hashing"]}
