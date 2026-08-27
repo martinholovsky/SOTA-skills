@@ -33,10 +33,25 @@ MODEL = "anthropic/claude-sonnet-5"
 SAMPLES, TEMP = 3, 0.7
 
 def key():
-    for l in open(os.path.join(ROOT, ".env"), encoding="utf-8"):
-        if l.startswith("OPENROUTER_API_KEY="):
-            return l.split("=", 1)[1].strip().strip("'\"")
-    sys.exit("no key")
+    """Env var, then ./.env, then a clean exit — the same order as run-clean.py.
+
+    This opened .env unconditionally until 2026-08-27 and raised FileNotFoundError
+    wherever the file does not exist, which is every CI runner. smoke-runners.py
+    caught it on its first CI run; no local run could, because a maintainer's tree
+    has a .env.
+    """
+    k = os.environ.get("OPENROUTER_API_KEY")
+    if k:
+        return k
+    envp = os.path.join(ROOT, ".env")
+    if os.path.exists(envp):
+        for line in open(envp, encoding="utf-8"):
+            line = line.strip()
+            if line.startswith("OPENROUTER_API_KEY="):
+                return line.split("=", 1)[1].strip().strip("'\"")
+    sys.exit("OPENROUTER_API_KEY not found in env or ./.env")
+
+
 K = key()
 
 def load_cases():
