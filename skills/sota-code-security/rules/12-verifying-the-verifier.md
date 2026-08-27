@@ -202,7 +202,7 @@ passing unit test, and a status read through a pipe (`cmd | tail -1; echo $?` re
 `${PIPESTATUS[0]}` — are in `sota-shell-scripting` rules/01 §3, which nothing will
 route you to when the task does not look shell-shaped. That is exactly when it bites.
 
-### 2.1 Four failure modes specific to instruments
+### 2.1 Five failure modes specific to instruments
 
 - **Unbounded or unread scope.** rules/11 §2.2 turned inward: an instrument must
   report what it examined, *and someone must read it*. A scorer that printed
@@ -228,6 +228,20 @@ route you to when the task does not look shell-shaped. That is exactly when it b
   whatever it is handed. A mutation harness reporting **18/18 controls caught**
   while every run died before the test suite started — each non-zero exit read as
   "caught". Both look exactly like success.
+- **A probe that exercises a neighbouring property.** The probe works, the gate
+  fails on demand, and the green it produces covers code it never touched. Field-
+  reported: a gate whose known-bad corrupts a committed **canonical-encoding
+  vector** caught none of three defects living in the *composition*, the
+  *predicate* and the *write path*. The gate was not weak — it was **precise about
+  the wrong thing**, and its passing is what let the other defects survive review.
+  The tell is a probe that mutates a **fixture** rather than the artifact the
+  control produces at runtime: a fixture probe proves the validator reads, and
+  proves nothing about whether the writer still emits what the validator expects.
+  **State the traversed path in one line beside the probe** — *"exercises the
+  encoder; not the writer, the predicate, or the store"* — then ask what else is
+  claiming coverage from this gate's green. Where the control emits an artifact,
+  probe by corrupting **what the control just produced**, not a stored copy of what
+  it should have produced.
 
 ### 2.2 The bar
 
@@ -403,6 +417,13 @@ whose pathspec drifted.
 ---
 
 ## Audit checklist
+
+- [ ] **Every probe states the path it traverses**, and that statement is narrower than
+      the gate's reputation. For each green gate, name one code path it does *not*
+      exercise; if you cannot, the probe's scope has not been established.
+- [ ] **Probes on artifact-producing controls corrupt the produced artifact**, not a
+      committed fixture of it. A fixture-only probe survives a writer that has stopped
+      writing what the validator expects.
 
 - [ ] Any instrument that runs **over time** (watcher, poller, readiness or completion
       check): does it distinguish **not-yet** from **cannot-tell**, assert the terminal

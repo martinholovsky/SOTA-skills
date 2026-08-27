@@ -187,6 +187,9 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-08-21 | Field brief — *a pipeline is an evidence hazard, not only an exit-status hazard* (three destroyed measurements in one session) | `pipefail` and `${PIPESTATUS[0]}` fix the **status**; nothing in the library said a pipe also destroys the **output**, and the two need different fixes | **adopted** | `sota-shell-scripting/rules/01` §3 + a checklist grep, cross-referenced from `sota/rules/01`'s evidence standard. All three of the brief's citations verified accurate (`rules/01`:47, `rules/01`:124, router `:197`), and the gap confirmed by two independent sweeps. **Reproduced before writing** — and the first reproduction was *wrong*, keeping the cause because it sat last; rebuilt pytest-shaped (cause at the top, summary last), `tail -12` destroyed the `AssertionError` while `1 failed, 38265 passed` survived · v1.25.0 |
 | 2026-08-21 | An outside assessment of this library, three criticisms | (1) AUDIT is *mostly performative* at +0.00; (2) high friction — Day Zero *halts*, and the rules force production rigour on a throwaway script; (3) completeness collapses if the model skips the self-audit | **one adopted, two rejected as false** | Checked each against the tree. **(1) conceded and already published** — README:138 and :281 say the audit half *"adds nothing a good model doesn't already do"*, in our own words, across nine instruments. **(2a) false** — the router says *"say it once … then get on with the task"* and *"Offer, never perform"*; no halt exists. **(2b) TRUE and the only one that lands** — a search for a proportionality rule found exactly one hit, in `sota-docs-workflow/rules/05`, which a quick-script task never loads. Now router **operating principle 9**, with a measured re-baseline. **(3) false** — the ablation reads base 0.60 → +rules 0.89 → +self-audit 0.93 → +principle 5 0.99, so dropping the self-audit leaves **+0.29**, not a collapse · v1.26.0 |
 | 2026-08-25 | Operator question — "would it help if we rewrite skills files to TOON format?" | [TOON](https://github.com/toon-format/toon) (Token-Oriented Object Notation) as the on-disk format for `skills/*/SKILL.md` and `skills/*/rules/*.md`, to cut context cost | **rejected: measured 1.9% on the best case** | — · TOON's baseline is **JSON**, and Markdown already does its one trick. Converted the router routing table (42 rows, the largest table in the library) to TOON tabular form: **9,992 → 9,802 bytes, 1.9%** — and table rows are **3.1%** of the library (1,955 of 63,885 lines across 300 instruction files), so library-wide that is ~0.06%. Measurement and the cost side in the entry below |
+| 2026-08-26 | **Field brief from a session applying the library** — seven defects it did not prevent, one session building a gate-ledger script (Rust + bash) | Six gaps in `sota-shell-scripting` / `sota-code-security`, plus two routing changes. **Finding 2: a rule in this library, followed literally, produces a vacuous pass** | **all seven adopted, one narrowed, one correction added** | Three falsifiable claims **reproduced on this machine before adopting**: `$( )` newline stripping glues composed records; BSD `chmod 700 -- dir` fails with *"No such file or directory"* while `mkdir -p --` succeeds alongside it; and `git rev-list -3` exits **129** into a process substitution, yielding `count=0` and a "nothing to check" exit 0. Landed: `sota-shell-scripting/rules/01` §2 (newline stripping) and `rules/02` §4/§5/§9 (proc-sub status, `--` portability, unordered selection, keyed-store upsert); `sota-code-security/rules/14` §4a (proxy predicate) and `rules/12` §2.1 (probe scope, now **five** failure modes). Every one shipped with its audit-checklist half in the same change · v1.28.0 |
+| 2026-08-26 | Same brief — finding 3 (`--` is not portable) | Claimed as an unqualified gap | **adopted with a correction** | The hedge already existed — `sota-golang/rules/05`:91 says *"Use `--` end-of-options **where the tool supports it**"*. So the verdict is **UNREACHABLE, not absent**: correct guidance sitting in a skill a shell task never loads. Landed in `sota-shell-scripting/rules/02` §5 with the macOS reproduction and a pointer to the sibling · v1.28.0 |
+| 2026-08-26 | Same brief — **a correction the brief did not make** | Its remedy for finding 2 uses `out="$(cmd)"`, which is command substitution — and therefore **re-introduces finding 1** | **adopted with an addition** | The remedy survives only because `<<<` puts a trailing newline back, and it buffers the whole producer output in memory. Both caveats are now stated beside the GOOD example, so applying fix 2 cannot silently reintroduce bug 1. Found by reading the two findings against each other rather than in sequence · v1.28.0 |
 | 2026-08-25 | [awesome-ai-plugins](https://github.com/hashgraph-online/awesome-ai-plugins) listing invitation, and the `plugin-scanner` run it triggered on this repo | Their scanner reported **8 findings on SOTA-skills**: 7 high + 1 low | **one adopted, seven rejected as false positives** | Reproduced locally with `plugin-scanner==2.0.1116` and checked every one rather than assuming. **Adopted: `DEPENDABOT_MISSING` (low) was correct** — `.github/dependabot.yml` added, scoped to `github-actions` (the only third-party surface: `actions/checkout`, SHA-pinned in 5 places). **Rejected: all 7 highs.** 3× `DANGEROUS_DYNAMIC_EXECUTION` match the word *eval* before a parenthesis in **docstring prose** (`grep -rn 'eval(' evals/*.py` → no matches; only `re.compile`); 4× `HARDCODED_SECRET` are the OpenAI `sk-` prefix inside ordinary English — *ri**sk-r**eduction*, *di**sk-m**anaged* — plus a snippet that *generates* a prefixed token and the deliberately-vulnerable audit fixture. Both regex bugs reported upstream on the PR · v1.27.0 |
 | 2026-08-25 | Same scanner run — the *class* behind its false positives | A pattern-based control's false-positive rate is a property you must measure on your own corpus before trusting its verdict | **rejected: already covered** | `sota-detection-engineering/rules/04` §1 (*"Alert fatigue is the dominant failure"*, *"Precision over recall at the alert tier"*) and §2 (*"Tune by adding context, not by deleting detections"*) already own this class. The scanner episode is an **instance**, not a new class — recorded so it is not re-litigated as a gap · — |
 | 2026-08-25 | **This session's own eval work** (ROADMAP item 21) | Building an eval set out of the cases a model got wrong measures the selection, not the system | **adopted** | `sota-llm-engineering/rules/01` §8 + an audit checklist item. Distinct from the **contamination** bullet already there: that tunes the *prompt* against the set, this builds the *set* from outcomes. Found by nearly doing it — 10 of the old 32 freshness cases still discriminated and reporting those alone would have produced a large number measuring nothing · v1.27.0 |
@@ -1421,3 +1424,54 @@ measurement, and reconciling the two is what confirmed there was no leak.
 
 **Measurement status:** no efficacy claim. The scanner analysis is a verified reading of
 eight findings, and the two regex bugs were reported upstream rather than worked around.
+
+### 2026-08-26 — seven defects the library did not prevent
+
+A session that *used* the library reported seven defects in code written while the
+relevant skill was loaded. The brief's own framing is the useful part: **the check
+verified a neighbouring property, not the property that broke.** A gate validating an
+encoding while the defect is in the composition; a probe mutating a fixture the writer
+never touches; a control whose predicate reads a setting adjacent to its real dependency.
+
+**Reproduced before adopting**, because a brief's technical claims are claims:
+
+```
+$( ) stripping   -> "b: 2c: 3"                        composed record glued
+chmod 700 --     -> "chmod: --: No such file or directory"   (BSD /bin/chmod)
+mkdir -p --      -> succeeds on the same system        which is what disguises it
+git rev-list -3  -> exit 129, count=0, "nothing to check", exit 0
+```
+
+**Finding 2 is the one that matters most, and it is ours.** `rules/02` §4 recommended
+process substitution over a pipe — correctly, because a pipe loses variable updates — and
+stopped there. It never said that the trade swaps a *visible* bug for an *invisible* one:
+a process substitution's exit status is unreachable, `pipefail` does not apply, and a
+failed producer yields zero lines, so the loop reports success over an empty set. That is
+the vacuous-pass shape `rules/11` exists to find, arriving through a shell rule that
+recommends it.
+
+**Finding 5 is the highest-value class.** A control gated on `commit.gpgsign` — a proxy
+that agreed with the real dependency (`user.signingkey`) for months — stopped producing a
+signature at the exact moment that signature became the only per-change attestation, and
+still logged success with a *stale* explanation. It is a **coupling** defect: the
+control's own site never changed, so neither per-file review nor a per-gate probe can see
+it.
+
+**Finding 7 explains why the other six survived a green suite** — a probe licenses
+confidence only over the path it actually traverses, and this one exercised the encoder
+while the defects lived in the composition, the predicate and the write path.
+
+**Two constraints the reporter could not know, and how they were handled.** The router is
+at **500/500 lines** and invariant 1 fails at 501 — verified by adding a line and watching
+`OVER 500 (501 lines)` fail the build — so both routing additions were paid for by
+compressing existing text rather than appended. And editing router BUILD step 4 tripped
+`ROUTER_BUILD_SHA`: the completeness eval's hand-compressed mirror **aborted**, as
+designed. The mirror was re-synced with the new clause and the hash updated —
+re-hashing alone would have been the exact drift the guard exists to prevent.
+
+**Consequence to carry forward:** the completeness treatment arm now contains one extra
+clause, so the next run is **not strictly comparable** to the +0.38 measured on
+2026-08-21. Stated here rather than discovered later.
+
+**Measurement status:** adopted on reasoning plus three verified reproductions. **No
+efficacy lift is claimed** — nothing here has been measured against an eval.

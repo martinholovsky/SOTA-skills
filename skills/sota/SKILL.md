@@ -200,11 +200,12 @@ rules files that match the code in front of you. Never load all skills at once.
     `sota-ux-writing`; marketing/site/email content → `sota-copywriting`; technical docs → `sota-
     docs-workflow`. The component patterns the text lives in stay `sota-frontend-design`.
 17. **Shell scripts hide everywhere** — CI run blocks, Dockerfile RUN lines, Makefiles,
-    entrypoints, **and the one-liners you type to verify a claim**. That last one is
-    unlinted shell run against the system under test: when it is wrong it produces a false
-    finding *about the product*. A usage error (exit 2) from the callee is the tell. Audit
-    all of it with `sota-shell-scripting` — especially its rules/01 §3, which the task will
-    not route you to when the work does not look shell-shaped.
+    entrypoints, **and the one-liners you type to verify a claim**: unlinted shell run
+    against the system under test, which when wrong produces a false finding *about the
+    product* (a usage error, exit 2, from the callee is the tell). Audit it all with
+    `sota-shell-scripting`, especially rules/01 §3. And a script that **produces or
+    verifies evidence** (attestations, ledgers, gate records, audit trails) is a security
+    control written in shell: add `sota-code-security` rules/10 and rules/12.
 18. **Cryptography fans out — there is no single crypto skill (by design).** Algorithm choice,
     AEAD/nonce discipline, CSPRNG, in-code key handling, TLS client config, constant-time
     comparison, tamper-evident logs/audit ledgers (keyed hash chains, external anchoring,
@@ -255,109 +256,92 @@ act only on a yes, and treat a decline as decided.
 
 ## BUILD mode — workflow
 
+Reasoning and worked examples: `rules/02-build-workflow.md`. **Changing a step below?
+It is mirrored in four places — `rules/02` §5 lists them, and three fail silently.**
+
 1. Identify the domains the feature touches (table above) and the language(s).
-2. **Load lean.** Read each relevant skill's `SKILL.md` and, from its index,
-   open **only** the rules files that match the work (e.g. a websocket endpoint
-   → api-design rules/05, async rules/06, code-security rules/02). Loading
-   unrelated rules is not free: a long context of similar-looking guidance
-   *measurably reduces* how many rules the model actually applies (transformer
-   attention degrades with length and near-duplicate distractors). Lean is
-   correctness, not just economy.
-3. **Plan first, with the checks in the plan.** Before writing code, list a
-   short **requirements checklist for this task** — the top-10 non-negotiables
-   of each loaded skill + the **universal build non-negotiables** (operating
-   principle 5) that apply to any endpoint/handler. Make each item **concrete
-   and checkable** — a specific outcome you can mark done/not-done at step 4
-   ("rate-limit login to N/min per IP", not "add rate limiting"; "reject uploads
-   over N MB", not "validate uploads"); vague items ("handle errors", "make it
-   secure") don't survive to the plan. Named up front and verified at the end,
-   constraints are followed far better than when left implicit. Then implement
-   against that checklist; apply detailed rules as code demands.
-4. **Self-audit gate (do this LAST — do not present code until it passes).**
-   Re-read each loaded rules file's **Audit checklist** (every rules file ends
-   with one) *and* operating principle 5, and verify your diff satisfies every
-   item. For each unmet item, **implement it** or state why it's out of scope —
-   silence is not allowed. For every control, safeguard, or check in the diff,
-   also ask the **falsification question**: *if this were silently a no-op,
-   would anything observable differ?* If nothing would — no log, no metric, no
-   test that fails — the control is not done (`sota-code-security` rules/10).
-   Doing this *last* is deliberate: a long build context
-   makes mid-context rules fade, so a final re-read is what catches the rate
-   limiting, transport, tests, and logging a model otherwise silently drops
-   (measured: this recovery is the bulk of the library's completeness lift,
-   `evals/run-completeness.py`). For a large build, run this as a **separate
-   pass over the diff** (a fresh, minimal context beats a long polluted one),
-   and push the few truly critical invariants into **deterministic gates** (a
-   lint/CI check that fails if an endpoint has no rate limiting or TLS) — don't
-   rely on attention for what a test can enforce.
+2. **Load lean.** Read each relevant skill's `SKILL.md` and, from its index, open **only**
+   the rules files that match the work. Loading unrelated rules *measurably reduces* how
+   many rules the model applies — lean is correctness, not economy.
+3. **Plan first, with the checks in the plan.** Before writing code, list the task's
+   requirements as **concrete, checkable items** — a specific outcome you can mark
+   done/not-done ("rate-limit login to N/min per IP", not "add rate limiting") — covering
+   the top-10 non-negotiables of each loaded skill plus operating principle 5. Vague items
+   don't survive to step 4. Then implement against that list.
+4. **Self-audit gate (do this LAST — do not present code until it passes).** Re-read each
+   loaded rules file's **Audit checklist** *and* operating principle 5, and verify your
+   diff satisfies every item. For each unmet item, **implement it** or state why it is out
+   of scope — silence is not allowed. For every control, ask the **falsification
+   question**: *if this were silently a no-op, would anything observable differ?* If
+   nothing would — no log, no metric, no failing test — it is not done
+   (`sota-code-security` rules/10). **If the control emits an artifact, read back the one
+   this run just produced.** Doing this *last* is deliberate: a long context makes
+   mid-context rules fade, and the final re-read is what recovers the rate limiting,
+   transport, tests and logging a model otherwise drops — measured as the bulk of the
+   library's completeness lift (`evals/run-completeness.py`). For a large build, run it as
+   a separate pass over the diff, and push the few critical invariants into deterministic
+   gates (`rules/02` §3).
 
 ## AUDIT mode — workflow
 
-Process and reporting are governed by `rules/01-audit-methodology.md` — read it
-first for any full audit: scoping/rules-of-engagement, the verified tool
-matrix and triage discipline, the evidence standard, and the report template.
+Process and reporting are governed by `rules/01-audit-methodology.md` — read it first for
+any full audit: scoping and rules of engagement, the verified tool matrix and triage
+discipline, the **severity model** (§4), the **evidence standard** (§5) and the report
+template (§8). **Adding or changing a pass below? The procedure lives in `rules/01` —
+put the detail there and keep the step here to one imperative.**
 
-For a focused audit, load the matching skills and follow their AUDIT sections.
-For a **full project audit**, work in passes:
+For a focused audit, load the matching skills and follow their AUDIT sections. For a
+**full project audit**, work in passes:
 
-1. **Recon.** Inventory the repo: languages, frameworks, entry points (HTTP routes, queues, cron,
-   webhooks), data stores, CI config, Dockerfiles, IaC. This determines which skills apply; skip
-   skills with no matching surface.
+1. **Recon.** Inventory languages, frameworks, entry points (HTTP routes, queues, cron,
+   webhooks), data stores, CI config, Dockerfiles, IaC. This determines which skills
+   apply; skip skills with no matching surface. Full procedure: `rules/01` §2.
 2. **Threat model first.** `sota-threat-modeling` rules/06 (reconstruction): assets, trust
    boundaries, entry points. Its output prioritizes the rest.
-3. **Per-domain passes.** For each applicable skill, follow its AUDIT mode and audit checklists.
-   Suggested order: secrets sweep (fast, high yield) → code security (incl. rules/09 untrusted-
-   data ingestion) → language-specific (incl. shell scripts) → API → database → async/concurrency
-   → identity & access → sandboxing/devsecops → kubernetes platform → network security → cloud
-   infrastructure → privacy/compliance → architecture → testing suite health → performance →
-   observability → detection-engineering posture → frontend/a11y → LLM features, data pipelines,
-   mobile, CLI, docs as applicable. For an infrastructure/cluster audit the heavy hitters are
-   `sota-kubernetes`, `sota-network-security`, `sota-identity-access`, `sota-sandboxing`, and
+3. **Per-domain passes.** For each applicable skill, follow its AUDIT mode and audit
+   checklists. Suggested order: secrets sweep (fast, high yield) → code security (incl.
+   rules/09 untrusted-data ingestion) → language-specific (incl. shell scripts) → API →
+   database → async/concurrency → identity & access → sandboxing/devsecops → kubernetes
+   platform → network security → cloud infrastructure → privacy/compliance → architecture
+   → testing suite health → performance → observability → detection-engineering posture →
+   frontend/a11y → LLM features, data pipelines, mobile, CLI, docs as applicable. For an
+   infrastructure/cluster audit the heavy hitters are `sota-kubernetes`,
+   `sota-network-security`, `sota-identity-access`, `sota-sandboxing` and
    `sota-detection-engineering`.
-4. **Silent-control pass (always run it).** The per-domain passes ask "is the control there?" —
-   this one asks "does it *do* anything?". For every control they confirmed exists, apply `sota-
-   code-security` rules/10: swallowed enforcement exceptions, presence decided by `exists()`
-   rather than a loaded artifact, rulesets that load zero rules, truncation into an inspector or
-   out of a generator, attacker-triggerable early returns, config keys silently ignored, defaults
-   that differ between docs and code, degradation nothing logs, and controls whose tests still
-   pass when the body is replaced with a no-op. This class is invisible to the other passes — the
-   code isn't wrong, it's inert — and to pattern-based SAST for the same reason. **Sweep with
-   `rules/11` first** to find *where* to look: stage duration vs work claimed, every gate's
-   denominator (`0 checked, 0 failed, exit 0`), size-gated paths no fixture crosses, cache keys
-   narrower than the behaviour, one-sample parsers, `assert`-as-control.
-5. **Decision-ledger review.** Code passes find defects in what was built; they cannot find the
-   defect where the code faithfully implements a choice that **stopped being right** — a store
-   picked for scale that never arrived, a rewrite justified by a benchmark that no longer
-   reproduces, an expired constraint still shaping the design. Reconstruct the expensive-to-
-   reverse decisions (ADRs, design docs, CHANGELOG, the PRs that introduced each major component)
-   and classify each **JUSTIFIED / STALE / UNJUSTIFIED / UNVERIFIABLE**. Where a decision rests on
-   a number, **re-measure it this session** — a benchmark in a two-year-old ADR is a historical
-   claim, not a current fact. Full procedure: `rules/01-audit-methodology.md` §6.
-6. **Findings.** Emit every finding in the canonical cross-domain format (`file:line | rule |
-   severity | effort | fix`) — skill-local block formats are fine within a domain pass but must
-   carry an effort field so the roll-up can be sequenced — deduplicate across domains, and roll up
-   into the report structure from `rules/01-audit-methodology.md`: executive summary → scope &
-   methodology → findings by severity → remediation roadmap sequenced by risk-reduction-per-effort
-   → positive observations → appendix. Severity meanings:
-- **Critical** — exploitable now or data-loss risk; fix before anything else.
-- **High** — serious weakness or reliability hazard; fix this sprint.
-- **Medium** — deviation from SOTA with real but bounded impact.
-- **Low** — hygiene, polish, future-proofing.
-- **Info** — no direct risk: observations, tech-debt notes, future-proofing.
-7. **Refute before reporting.** Re-reading your own finding re-runs the reasoning that produced it
-   — it is the weakest check available. Every Critical/High gets an **independent pass prompted to
-   kill it** (a separate agent, or a fresh-context hostile read), working from the code at the
-   pinned commit rather than your write-up, defaulting to REFUTED when the evidence is ambiguous.
-   Use distinct lenses where a finding can fail more than one way — is the mechanism real, is it
-   reachable, is the stated impact inflated. Survivors ship; the rest are dropped or downgraded
-   **with the refutation recorded**, so the next auditor doesn't re-raise them. Absence claims
-   ("no X found") get a refuter too, and carry the heavier burden of principle 3. Full procedure
-   and failure modes: `rules/01-audit-methodology.md` §7.
+4. **Silent-control pass (always run it).** The per-domain passes ask "is the control
+   there?" — this one asks "does it *do* anything?". For every control they confirmed
+   exists, apply `sota-code-security` rules/10: the code isn't wrong, it's **inert**, which
+   is why this class is invisible both to the other passes and to pattern-based SAST.
+   **Sweep with `rules/11` first** to find *where* to look — stage duration vs work
+   claimed, every gate's denominator (`0 checked, 0 failed, exit 0`), size-gated paths no
+   fixture crosses, cache keys narrower than the behaviour, one-sample parsers,
+   `assert`-as-control.
+5. **Decision-ledger review.** Code passes find defects in what was built; they cannot
+   find the defect where the code faithfully implements a choice that **stopped being
+   right** — a store picked for scale that never arrived, an expired constraint still
+   shaping the design. Reconstruct the expensive-to-reverse decisions (ADRs, design docs,
+   CHANGELOG, the PRs behind each major component) and classify each **JUSTIFIED / STALE /
+   UNJUSTIFIED / UNVERIFIABLE**. Where a decision rests on a number, **re-measure it this
+   session**. Full procedure: `rules/01` §6.
+6. **Findings.** Emit every finding in the canonical cross-domain format (`file:line |
+   rule | severity | effort | fix`) — skill-local block formats are fine within a domain
+   pass but must carry an effort field so the roll-up can be sequenced — deduplicate across
+   domains, and roll up into the report structure from `rules/01` §8. **Severity
+   definitions: `rules/01` §4** (Critical / High / Medium / Low / Info).
+7. **Refute before reporting.** Re-reading your own finding re-runs the reasoning that
+   produced it — it is the weakest check available. Every Critical/High gets an
+   **independent pass prompted to kill it** (a separate agent, or a fresh-context hostile
+   read), working from the code at the pinned commit rather than your write-up, defaulting
+   to REFUTED when the evidence is ambiguous. Survivors ship; the rest are dropped or
+   downgraded **with the refutation recorded**, so the next auditor doesn't re-raise them.
+   Absence claims ("no X found") get a refuter too, and carry the heavier burden of
+   principle 3. Full procedure and failure modes: `rules/01` §7.
 
 ## Library map (rules files per skill)
 
-- **sota/rules**: 01 audit methodology (process, tool matrix, evidence standard, report template —
-  read first for any full audit)
+- **sota/rules**: 01 audit methodology (process, tool matrix, severity model, evidence standard,
+  report template — read first for any full audit), 02 build workflow (the reasoning behind the
+  four BUILD steps, and the four surfaces a BUILD change must be mirrored into)
 - **sota-architecture/rules**: 01 styles & decisions, 02 domain modeling, 03 distributed systems &
   events, 04 resilience, 05 scalability & state, 06 cloud-native config & delivery, 07 anti-
   patterns catalog, 08 NATS JetStream messaging

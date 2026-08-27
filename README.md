@@ -26,7 +26,7 @@ survives a long context instead of fading into it. That's why it beats a bigger 
 instead of becoming one. Native on Claude Code; works with Gemini CLI, Codex, and any
 agent that reads `AGENTS.md`.
 
-Under the hood: **41 skills (300 files, ~64k lines)** of state-of-the-art 2026
+Under the hood: **41 skills (301 files, ~64k lines)** of state-of-the-art 2026
 practice, each **instruction** file under 500 lines so only the matching rules load —
 the cap applies to `skills/**` alone, never to README/CHANGELOG/`docs/` — every fast-moving
 claim web-verified against a primary source.
@@ -152,7 +152,7 @@ difficulty, not the domain — we measure it and say so.
 
 ### What the audit hunts that a scanner can't
 
-Ten classes of defect survive every linter, SAST rule, and CVE scanner, because in
+Eleven classes of defect survive every linter, SAST rule, and CVE scanner, because in
 each one the code isn't *wrong*. The library hunts them as explicit passes:
 
 > **Finding them is the cheap half — and we can prove it.** Across nine instruments,
@@ -273,6 +273,14 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   falsify: a narrow search and a true absence produce identical output. Any absence
   claim needs a widened search **plus a second independent method**, with the search
   stated. ([methodology §5, §7](skills/sota/rules/01-audit-methodology.md))
+- **Controls keyed to a neighbouring setting** — the predicate reads a *proxy* that agrees
+  with the real dependency right up until someone configures the two apart, three files
+  away. A **coupling** defect: the control's own site never changes, so neither per-file
+  review nor a per-gate probe can see it — the signature is a control that silently stops
+  at the moment it starts mattering. Field-reported 2026-08-26 with two shell shapes that
+  fail the same way: a **process substitution** whose producer failed (its exit status is
+  unreachable, so zero lines reads as success) and an "append" to a keyed store that is
+  really an **upsert**, silently deleting the link target of a hash chain on the second run.
 
 **Where this is *not* backed by a number:** the measured lift is in BUILD
 (completeness, freshness). **Nine audit instruments across four designs all sit at

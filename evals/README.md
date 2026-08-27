@@ -136,6 +136,18 @@ audit STRAT-HIGH-2).
 - `cases/desc-routing.jsonl` (10) — an adversarially-confusable task → the correct
   skill (`expect`) and the tempting wrong sibling (`distractor`). Scored by
   `run-desc-routing.py` as an A/B on the description cross-refs (result: +0.00).
+- **`run-router-length.py`** — reuses `cases/router.jsonl` to ask a different question:
+  does routing degrade as `skills/sota/SKILL.md` grows? The 500-line cap is *our*
+  invariant mirroring platform guidance, **not** a loader limit — nothing truncates a
+  skill at load — so the cap was standing in for an effect nobody had measured. Arms pad
+  the router with **signal-free filler** (no skill name, no `sota` string; verify that
+  before trusting a run) inserted before or after the routing table, isolating *depth*
+  from *length*. Result 2026-08-26: **flat at 1.000** across 501/902/1,302 lines while
+  the untreated arm reproduced **0.867**, the 2026-08-25 figure — a free negative control
+  on the measurement. **Two limits published with it**: the metric is **at ceiling** (it
+  can only detect a drop, and only one ≥0.05), and inert filler tests length/depth but
+  **not competition between real rules** — that is ROADMAP item 25, still unmeasured
+  ([ROUTER-LENGTH](results/2026-08-26/ROUTER-LENGTH.md)).
 
 Each line is one case with an `id` and an `expect` list (see `score.py` header
 for the schema). Add cases freely; keep `expect` to unambiguous must-haves.
