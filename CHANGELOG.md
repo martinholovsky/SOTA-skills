@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`sota-devsecops` rules/01 §1.10a — bot PRs get no repository secrets, and a gate that
+  needs one will fail.** Dependabot and Renovate branch **inside** the repo, so any
+  "trusted run" condition (`head.repo.full_name == github.repository`) is true for them
+  while their token is denied repository secrets. The gate then either goes permanently red
+  — training people to bypass a required check — or degrades quietly and reports the same
+  green while scanning less than it claims. Ordered fixes, with **"do not special-case the
+  bot"** stated as the anti-pattern: it turns the check green by removing the control on
+  exactly the PRs that change the dependency graph. Two sub-traps included: a secret must
+  carry the **form its consumer reads** (a pipe-joined regex, not the file's on-disk
+  layout), and **what the bot maintains, it maintains narrowly** — it rewrites the trailing
+  `# vX.Y.Z` beside a SHA pin and nothing else. Both halves shipped: rule + two audit items.
+
+### Changed
+
+- **`sota-llm-engineering` rules/02 — the tokenizer-error magnitude was understated.** The
+  rule already said "measure with the provider's token counter, never another provider's
+  tokenizer", and put the error at **15–20%+**. Measured on markdown-dense text it is
+  **54%** — 16,934 tokens via Anthropic's `count_tokens` against 10,995 from `o200k_base`
+  for the same 42.8 KB file — and a chars/4 estimate in this repo's own docs was **60%**
+  under. Corrected in place with the measurement. Worth recording plainly: **the library
+  already carried this rule and this session violated it anyway**, first by using tiktoken
+  for a Claude budget and then by *rejecting* the correct figure with a sanity check
+  calibrated on the wrong tokenizer.
+
 ### Fixed
 
 - **Dependabot PRs can now pass CI — by giving Dependabot the secret, not by exempting it.**
