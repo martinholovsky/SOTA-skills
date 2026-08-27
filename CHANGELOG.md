@@ -5,7 +5,20 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.29.0] - 2026-08-27
+
+**Front door checked:** smoke · routing gap
+
+### Fixed
+
+- **A stale count in the ledger that no gate reads.** `docs/CONVENTIONS-LEDGER.md` said
+  *"Already enforced as invariants | 17"*; the script reports **19**. Invariant 17 checks
+  the tables in `AGENTS.md` and `CONTRIBUTING.md`, not this one — so the ledger of what is
+  enforced had drifted from what is enforced, for the **second** time (its own §
+  records the first). Corrected, and the new gate recorded against the three filters,
+  which is the ledger's whole job.
+- `AGENTS.md` now says its CI job runs **both** `check-negative-controls.sh` and
+  `evals/smoke-runners.py`, rather than implying the job is the harness alone.
 
 ### Added
 
@@ -5123,6 +5136,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.29.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.29.0
 [1.28.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.28.1
 [1.28.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.28.0
 [1.27.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.27.0
