@@ -281,6 +281,11 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   fail the same way: a **process substitution** whose producer failed (its exit status is
   unreachable, so zero lines reads as success) and an "append" to a keyed store that is
   really an **upsert**, silently deleting the link target of a hash chain on the second run.
+  The audit for this class is **the proxy question**, which the usual falsification question
+  cannot answer: *is this the thing I actually depend on, or something that currently agrees
+  with it — and who can change one without the other, and would I find out?* A control that
+  is **correctly enforcing the wrong predicate** is not inert, so "would anything observable
+  differ?" answers *yes* while the control is still wrong.
 
 **Where this is *not* backed by a number:** the measured lift is in BUILD
 (completeness, freshness). **Nine audit instruments across four designs all sit at
