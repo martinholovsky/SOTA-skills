@@ -238,6 +238,16 @@ Production is the only honest distribution. Build the loop:
   the fact is documented — never a score. The tell is an authoring order of
   "run, then choose"; the fix is "choose, then run".
 
+  **Measurement sets and regression cases are different, and only one is poisoned by
+  this.** A *measurement* set answers "how big is the gap" — selecting its cases by
+  outcome guarantees the answer, so the rule above is absolute there. A *regression*
+  case answers "has this specific defect come back", and it exists **because** something
+  failed once; that is its whole purpose, the same as a known-bad in a negative-control
+  harness. Keep them in separate files or tag them, never average a regression case into
+  a reported lift, and say which kind a new case is when you add it. The failure mode is
+  the quiet merge: yesterday's regression cases silently become today's benchmark, and
+  the score rises because the set remembers what the model got wrong.
+
 ## Audit checklist
 
 - [ ] Every shipped LLM feature has an eval suite in the repo, runnable by one
@@ -249,6 +259,9 @@ Production is the only honest distribution. Build the loop:
       properties of the case rather than any model's score on it. (A set whose
       cases were kept because a model failed them reports its own selection —
       treat a missing or outcome-referencing rule as High.)
+- [ ] **Regression cases are separated from measurement cases** — different file or an
+      explicit tag — and no reported lift averages the two. A regression case may be
+      added because something failed; a measurement case may not.
 - [ ] Cheapest-grader rule followed: assertions where assertable; judges only
       for genuinely graded qualities; rubrics decomposed into binary checks
       with quoted evidence.

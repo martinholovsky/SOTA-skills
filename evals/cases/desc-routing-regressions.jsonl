@@ -1,0 +1,15 @@
+# desc-routing-regressions.jsonl — REGRESSION cases, NOT a measurement set.
+#
+# Each case exists because a specific mis-route actually happened. That is the whole
+# point of a regression case and it is exactly why these must never be averaged into
+# the A/B number in desc-routing.jsonl: selecting cases by outcome guarantees the
+# result, so a measurement set may not contain them (sota-llm-engineering rules/01 §8).
+# Run explicitly:  python3 evals/run-desc-routing.py --cases evals/cases/desc-routing-regressions.jsonl
+#
+# r1_token_count — 2026-08-26. A maintenance session asked "how many tokens is this
+# Markdown file?", never loaded sota-llm-engineering, and used another vendor's
+# tokenizer — a 54% under-count on that file. The rule ("use the provider's token
+# counter") was already in rules/02 §2; it was UNREACHABLE, not absent. Fixed by adding
+# `counting tokens`/`tokenizer` to the skill description (the auto-load classifier) and
+# router cross-cutting rule 21. This case pins that fix.
+{"id": "r1_token_count", "task": "How many tokens is this 484-line Markdown instruction file? I want to compare it against the recommended size budget before adding more to it.", "expect": "sota-llm-engineering", "distractor": "sota-docs-workflow"}

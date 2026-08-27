@@ -119,7 +119,7 @@ rules files that match the code in front of you. Never load all skills at once.
 | `sota-web-frameworks` | React/Next.js and Vue/Nuxt engineering — Server Components & Server Actions, the RSC/client trust boundary, Next caching (`use cache`/PPR/ISR), Nitro server routes, hydration correctness, SSR state serialization, and framework-specific security & CVEs |
 | `sota-observability` | Logging, metrics, tracing (OpenTelemetry), SLOs/error budgets, alerting, health checks, dashboards, debugging production, "can we answer why is this slow?" |
 | `sota-testing` | Test strategy (pyramid/trophy), unit vs integration boundaries, test design/smells, mocks/fakes/test data, contract testing, e2e, property-based/fuzzing/mutation testing, flaky tests, coverage policy |
-| `sota-llm-engineering` | Building LLM features — evals, prompt/context engineering, structured output, RAG, agents/tool design, MCP, model selection/routing, latency/cost engineering, LLM observability |
+| `sota-llm-engineering` | Building LLM features — evals, prompt/context engineering, structured output, RAG, agents/tool design, MCP, model selection/routing, latency/cost engineering, LLM observability — **and any question about a model's tokens, context window, pricing or limits**, including measuring your own files |
 | `sota-ml-engineering` | Production ML/MLOps (classical/predictive, *not* LLM apps) — training→serving→monitoring lifecycle, feature stores & registries, data leakage & train/serve skew, evaluation (ML Test Score, slices), deployment (canary/shadow/rollback), drift monitoring (PSI/KS) & retraining, ML security/governance (poisoning, MITRE ATLAS, NIST AI RMF) |
 | `sota-cloud-infrastructure` | Cloud accounts/landing zones, cloud IAM, VPC/subnet/DNS/CDN setup, compute selection (serverless vs containers vs K8s), object storage, FinOps/cost, RTO/RPO and disaster recovery |
 | `sota-kubernetes` | Kubernetes platform security & ops — RBAC & escalation paths, admission control (PSA/Kyverno/Gatekeeper/VAP, Audit→Enforce), GitOps controllers (Argo CD/Flux, AppProject scoping), operators/CRDs/webhooks, control plane & etcd encryption, Helm supply chain, multi-tenancy, cluster lifecycle, K8s audit logging; self-hosted (Talos/k3s) and managed |
@@ -230,6 +230,15 @@ rules files that match the code in front of you. Never load all skills at once.
     observability` rules/05 (degradation must be visible), and `sota-devsecops` rules/04 (does the
     shipped artifact contain what the control needs at runtime?). Not for controls that are simply
     *missing* — that's the owning domain skill's audit checklist.
+
+21. **Model facts hide in your own tooling** — the same shape as rule 17. Any question
+    about a model's **tokens, context window, pricing or limits** is `sota-llm-engineering`
+    (rules/02 §2 for counting, rules/05 for cost), *including* measuring your own files,
+    prompts or docs, and even when the surrounding task is repo maintenance and nothing
+    looks like an LLM feature. The tell is reaching for a chars/4 estimate or another
+    vendor's tokenizer instead of the provider's `count_tokens`: measured 2026-08-26, that
+    shortcut under-counts Claude by **54%** on markdown-dense text — in the direction that
+    makes you think you have room.
 
 ## Day zero — a repo this library has not been applied to yet
 
