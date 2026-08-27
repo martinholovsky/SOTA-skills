@@ -5,6 +5,26 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Dependabot PRs can now pass CI — by giving Dependabot the secret, not by exempting it.**
+  Its branches are same-repo, so CI's *"Require denylist secret on trusted runs"* step
+  applies, but Dependabot's token is denied **repository** secrets — so `SOTA_DENYLIST` read
+  empty and `Repository invariants` failed. The gate was **right**: on such a run invariant
+  3's authoritative denylist scan genuinely is not running. Fixed by adding the secret to the
+  separate **Dependabot** store (which was empty), never by exempting `dependabot[bot]` —
+  that would have re-introduced exactly the silent degradation the step was built to catch.
+  Verified by re-running PR #281 rather than assuming: invariant 3 passes with the secret
+  injected. `CONTRIBUTING.md` records the value shape (**pipe-joined ERE**, matching how
+  `check-invariants.sh` consumes the env var) and that a Dependabot PR opened before a
+  release also trips invariant 5 until `gh pr update-branch`.
+- **A prose comment Dependabot does not maintain.** `ci.yml` named `actions/checkout v7.0.0`
+  in a comment above the first pin; Dependabot rewrites the trailing `# vX.Y.Z` on each
+  `uses:` line and not that one, so it went stale the moment the v7.0.1 bump merged. Fixed by
+  **not naming a version there at all** — one source of truth per fact.
+
 ## [1.28.0] - 2026-08-26
 
 **Front door checked:** process substitution · upsert

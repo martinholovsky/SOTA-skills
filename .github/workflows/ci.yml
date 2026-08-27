@@ -19,7 +19,10 @@ jobs:
     name: Repository invariants
     runs-on: ubuntu-latest
     steps:
-      # actions/checkout v7.0.0, pinned by commit SHA (sota-devsecops).
+      # actions/checkout, pinned by commit SHA (sota-devsecops rules/01). The version
+      # lives in the trailing comment on each `uses:` line — Dependabot rewrites those
+      # and NOT this one, so naming a version here just goes stale (it read v7.0.0 for
+      # one commit after the v7.0.1 bump landed, 2026-08-27).
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           # The build steps run repo scripts and never push.

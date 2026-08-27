@@ -362,6 +362,23 @@ on every pin — it is the only thing that makes the SHA readable to a human.
 Minor and patch bumps are **grouped into one weekly PR** so the four required checks
 run once per batch rather than once per action.
 
+**Dependabot PRs need `SOTA_DENYLIST` in the *Dependabot* secret store, not just the
+repository one.** They run on same-repo branches, so CI's *"Require denylist secret on
+trusted runs"* step applies to them — but Dependabot's token is denied repository secrets,
+so the secret reads empty and `Repository invariants` fails. That gate is **correct**: on
+such a run invariant 3's authoritative denylist scan genuinely is not running. The fix is
+to give Dependabot its own copy, never to exempt `dependabot[bot]`:
+
+```sh
+grep -vE '^[[:space:]]*(#|$)' .denylist.local | paste -sd'|' - \
+  | gh secret set SOTA_DENYLIST --app dependabot
+```
+
+Note the value is the **pipe-joined ERE**, matching how `check-invariants.sh` consumes the
+env var — `.denylist.local` is one pattern per line and the script joins it at read time.
+A Dependabot PR opened before a release will also fail invariant 5 (`tag ahead of
+VERSION`); `gh pr update-branch <n>` fixes that.
+
 ### Rendered assets
 
 `assets/*.png` are **build outputs** of the `assets/*.html` next to them, and
