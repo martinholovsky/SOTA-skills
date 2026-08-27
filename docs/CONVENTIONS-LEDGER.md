@@ -25,11 +25,22 @@ item).
 | Raw entries | 49 |
 | Duplicates (the invariant list appears in both `AGENTS.md` and `CONTRIBUTING.md`) | 8 |
 | **Distinct conventions** | **41** |
-| Already enforced as invariants | 17 (11 when this ledger was derived) |
+| Already enforced as invariants | **19** (17 when that row was last corrected, 11 when this ledger was derived) |
 
 An earlier estimate of "~122" came from a loose regex that matched any bold line or
 any line containing *must/never/always*. It was an over-count by ~3×, and is
 recorded here so the number is not repeated.
+
+## Gates added since the ledger was derived
+
+| Gate | Already failed? | Fails silently? | Mechanically checkable? | Verdict |
+|---|---|---|---|---|
+| **`evals/smoke-runners.py` — every eval runner can still start** (2026-08-27, CI) | **yes** — `run-desc-routing.py` raised before its first API call from 2026-08-05 to 2026-08-27 | **yes** — nothing reported it for three weeks; the last recorded run of that eval predated the guard that killed it | **yes** — patch the one network choke point, run each `main()`, any other exception is a dead runner | **earned a gate.** Watched to fail on a reintroduction of the exact bug before wiring in. **Ceiling stated**: it proves a runner can *start*, not that it is correct |
+
+It caught a defect on its **first CI run** — in code added the same day
+(`run-router-length.py` opened `.env` unconditionally, so it raised on any machine
+without one). No local run could have found that: a maintainer's tree has a `.env`, so
+the failing branch is only reachable where the file is absent.
 
 ## The three filters
 

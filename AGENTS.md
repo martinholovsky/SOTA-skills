@@ -86,8 +86,8 @@ into `skills/sota/rules/`, ending compress-on-every-addition: **detail belongs i
 The gates enumerate via `git ls-files`, so an **unstaged new file is invisible** to
 them — `git add` before believing a count.
 
-**`scripts/check-negative-controls.sh` proves our gates can still fail.** CI runs it as
-its own job, over **two** subjects: `check-invariants.sh` (part A) and `verify-setup.sh`
+**`scripts/check-negative-controls.sh` proves our gates can still fail.** Its CI job runs
+it plus `evals/smoke-runners.py`, over **two** subjects: `check-invariants.sh` (part A) and `verify-setup.sh`
 (part B). Each probe injects a known-bad and requires *the intended check* to be the one
 that complains — a non-zero exit for any other reason is a **FALSE PASS**, not a catch.
 Part A mutates a good tree in a disposable git worktree; part B is inverted, building a
