@@ -5,6 +5,26 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **The CHANGELOG said ROADMAP 23 and 24 were closed; the ROADMAP still listed them as
+  open.** Both were genuinely done in v1.29.1 — re-verified before closing the rows (20/20
+  case sets state a selection rule; `check-freshness.sh` warns on an aged set and fails
+  closed without a marker) — but the roadmap rows were never updated. A doc-vs-doc
+  inconsistency in the two places that describe the same backlog.
+- **Stale live counts in ROADMAP item 1**: "13 stars, 2 forks" was checked 2026-08-19; the
+  API now returns **17 stars, 3 forks**. Re-checked rather than carried forward.
+- **The "Start here next session" stamp read *as of 2026-08-20*** while its rows had been
+  updated as recently as 2026-08-27. Restamped, and the provenance sentence replaced with
+  one that does not claim a single re-count date. It now names **what is actually open**
+  (1, 5, 12, 25, 26) so the next session does not scan 28 rows to find five — the rest are
+  closed or recorded lessons whose "first move" is a habit, not work.
+- The ledger's standing prediction — *the next gate comes from an incident, not from
+  re-reading docs* — has now **held three times**: `evals/smoke-runners.py` came from a
+  runner that had been dead for three weeks.
+
 ## [1.29.3] - 2026-08-27
 
 **Front door checked:** proxy question · invariant
