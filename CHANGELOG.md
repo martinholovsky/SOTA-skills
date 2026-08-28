@@ -5,6 +5,22 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **The deferred spanchain row now carries a trigger ledger.** Its revisit condition — *a
+  second implementation shows the same design* — had nowhere to accumulate evidence, so
+  every check re-derived the same search from scratch (this one swept 74 later intake rows
+  to produce three lines). The ledger records what has been checked and how it scored:
+  **1 shipped instance, 1 near-miss** (the Interdict gate-ledger, where the same failure
+  mode arrived accidentally and a human caught it before it shipped) **and 1 refusal**
+  (exempting `dependabot[bot]` would have been this exact design; the cause was fixed
+  instead). **Trigger not met.** Also recorded: the *generic* half is owned twice over,
+  and the *specific* half — encode a known gap as a marker inside the structure so the
+  verdict stays green — is absent, which is what a second instance would buy. **A deferred
+  item with a trigger and no evidence ledger is re-litigated from zero every time.**
+
 ## [1.29.4] - 2026-08-28
 
 **Front door checked:** ADOPTION-LOG · roadmap
