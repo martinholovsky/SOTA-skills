@@ -6,27 +6,37 @@ release. The 2026-07-01 cycle is fully executed and kept below as history.
 
 ## Start here next session *(as of 2026-08-28)*
 
-Everything actionable, ordered. Each line says what it is, why it is not done, and the
-first move. **The written-conventions backlog is empty** — invariant 14 closed the last
-gateable candidate — so nothing below comes from re-reading docs. That prediction has now
-held three times: the v1.21.1 candidates came from incidents, the three additions of
-2026-08-11 came from **reading an outside implementation's own failure notes**, and
-`evals/smoke-runners.py` (2026-08-27) came from an incident too — a runner dead for three
-weeks that no doc could have predicted.
-Item 11 is the near-exception that shows the shape rather than breaking it: it *was*
-found by re-reading docs, at the v1.22.14 cut — and it is **not gateable**, so it earns
-a ledger row and a habit, not a check.
+**Read this table, then stop reading.** Everything below it is provenance and history.
 
-Numbers here are re-counted at each cut, never carried forward — the stamp above goes
-stale within a day, which is the case for re-reading this at every cut rather than trusting
-it. Last re-count 2026-08-28 — star/forks re-read live (**17/3**, unchanged from
-2026-08-27), item 1's listing status, the open list below, and the deferred-row
-pointer. Cap watch last re-counted 2026-08-27.
+### Actionable next-session priorities
 
-**Genuinely open right now: 1** (not a code task), **5** (scheduled ~2027-01-08), **12**
-(conditional), **25** (the completeness half — the expensive one) and **26** (deliberately
-unbuilt). Everything else is either closed or a recorded lesson whose "first move" is a
-habit, not work — read those for the habit, not the backlog.
+Ordered by what a session can actually move. **Nothing here is urgent, and that is the
+finding** — there is no queued work waiting on a keyboard.
+
+| P | Item | What a session would do first | Cost | Blocked on |
+|---|---|---|---|---|
+| **1** | **Use the library on real work and write a field brief** (not a roadmap row) | Build or audit something real with `sota-*` loaded, then report every defect it did *not* prevent | a session | nothing — this is the highest-yield input available |
+| **2** | **Item 1 — distribution** | Write the salience piece (why completeness holds at **+0.38** while defect-avoidance expired) or record a before/after audit demo | hours of writing | needs a person, not a gate |
+| **3** | **Item 25 — completeness half of real-rules-vs-filler** | Re-baseline the treatment arm first (it changed 2026-08-26), *then* ~14 builds | ~14 builds at 40–122k tokens | cost, and the re-baseline |
+| — | **Item 5 — 6-month accuracy sweep** | Nothing yet: `LAST-VERIFIED` reads 2026-07-08, due **~2027-01-08** | a full sweep | the calendar |
+| — | **Items 12 and 26** | Nothing: both are *conditional*, and neither trigger is met (12 needs a sixth verification file in `sota-code-security` — there are **5**; 26 needs an eval that consumes `§AUDIT` — none does) | — | a trigger |
+| — | **The deferred row in [ADOPTION-LOG.md](ADOPTION-LOG.md)** | Nothing: checked 2026-08-28, **1 shipped instance, 1 near-miss, 1 refusal** — read its trigger ledger rather than re-searching | — | a second implementation |
+
+**Why priority 1 is a session, not a task.** Field briefs from sessions that *used* the
+library have the highest adoption rate of any intake source in the ledger: the 2026-08-26
+brief landed **7 of 7**, its follow-up **4 of 4** (one narrowed). Both found defects that no
+amount of re-reading the library could have surfaced, because the failure was a rule that
+was present, correct, and never reached. Commissioned research and doc re-reads land far
+fewer, and the written-conventions backlog is empty.
+
+### How this list is maintained
+
+Numbers here are re-counted at each cut, never carried forward — the stamp above goes stale
+within a day, which is the case for re-reading this at every cut rather than trusting it.
+Last re-count 2026-08-28: star/forks re-read live (**17/3**, flat since 2026-08-27), the
+router re-counted at **498/500** (row 12 had said 500/500 — full), item 1's listing status,
+the open list, and the deferred-row pointer. **Restamping a header is not enough when the
+section was refreshed in parts — say which parts.**
 
 **This table is not the whole backlog.** Open work also sits in
 [ADOPTION-LOG.md](ADOPTION-LOG.md) as rows marked **deferred** — an idea judged real but
@@ -35,6 +45,27 @@ an integrity verdict left routinely red for operational reasons; revisit when a 
 implementation shows the same design). Answering "what is open?" means
 `grep -c '\*\*deferred' docs/ADOPTION-LOG.md` as well as reading this table — a list
 assembled from one file reads as complete and is not.
+
+
+### What the backlog's shape says about where work comes from
+
+**The written-conventions backlog is empty** — invariant 14 closed the last gateable
+candidate — so nothing above comes from re-reading docs. That prediction has now held
+three times: the v1.21.1 candidates came from incidents, the three additions of 2026-08-11
+came from **reading an outside implementation's own failure notes**, and
+`evals/smoke-runners.py` (2026-08-27) came from an incident too — a runner dead for three
+weeks that no doc could have predicted. Item 11 is the near-exception that shows the shape
+rather than breaking it: it *was* found by re-reading docs, at the v1.22.14 cut — and it is
+**not gateable**, so it earns a ledger row and a habit, not a check.
+
+### The full item ledger
+
+All 28 items, ordered by number, not priority. **Only 5 are open** — 1, 5, 12, 25, 26, as
+listed above; the rest are closed or are recorded lessons kept for the lesson rather than
+the work. (A count of "closed" rows resists grepping: a case-insensitive match on *done*
+scores row 12's "**NOT** done" as closed. Count the open ones, they are few.) Use the
+priorities table to decide what to do; use this one to find out why something was or was
+not done.
 
 | # | Item | Why not done | First move |
 |---|---|---|---|
@@ -49,7 +80,7 @@ assembled from one file reads as complete and is not.
 | 9 | **Pre-push stage — DONE 2026-08-19.** The repo now practises what it prescribes | The narrow case held up: invariants **11 and 14 are diff-based** and at pre-commit time the change is only *staged*, so they have nothing to read and pass by skipping. Pre-push is the first local moment a commit exists | Nothing. `default_install_hook_types: [pre-commit, pre-push]` makes a plain `pre-commit install` create both hooks; every hook now states its `stages` **explicitly**, because a hook with no `stages:` key runs at *every* configured stage (measured) — which is exactly the doubling this item warned about. `verify-setup.sh` check 9a now reports PASS on this repo |
 | 10 | **Two suggestions from the 2026-08-18 brief were declined, on purpose** | Recorded so they are not re-litigated | **(a)** Moving BUILD step 4's gate advice earlier: its last position is where the measured completeness lift is attributed, and the router is now **full at 500/500**, so it would displace a line rather than reflow. Revisit only with a measurement. **(b)** The hook-versus-typed-instruction note: **done** as documentation (README, always-on routing), stated as mechanism rather than as a measured effect |
 | 11 | **Invariant 17 sees counts, not meaning — first instance found 2026-08-19 at the v1.22.14 cut** | `AGENTS.md`'s invariant 14 row read "a declared term resolves in **neither** `README.md`/`docs/INDEX.md` **nor** the release's own entry" — an OR across all three — while `scripts/check-invariants.sh:842` requires (README **or** INDEX) and `:848` requires the release's own entry, an AND. `CONTRIBUTING.md` item 14 was already correct, so two documents describing one gate disagreed **in logic while agreeing in count**, which is exactly what invariant 17 cannot see: it asserts every stated count equals N and that `AGENTS.md`/`CONTRIBUTING.md` enumerate 1..N with no gaps, nothing more (read at `check-invariants.sh:1027`+) | **Nothing to build.** Applying the three filters ([CONVENTIONS-LEDGER](CONVENTIONS-LEDGER.md)): incident **yes** (once), silent **yes**, mechanically checkable **no** — comparing the semantics of two prose restatements written at deliberately different granularities is the judgement class the ledger argues against gating. The remedy is the habit that caught it: re-read the prose *beside the script* at each cut. Recorded so it is not re-litigated as a gate proposal |
-| 12 | **A skill-level split of `sota-code-security` (vulnerability classes vs control verification) — considered 2026-08-20, NOT done** | The operator proposed splitting the skill, first on a build/audit axis. **Build/audit is the wrong axis for this library**: invariant 2 requires every one of the 259 `rules/*.md` to end with `## Audit checklist`, so the audit half is welded to the build half by a gate, and an audit-only injection file would need the build half's facts to be usable. The defensible seam is **rules/01–09 (vulnerability classes) vs 10–14 (control verification)**, now 5 files and ~1,500 lines. Not done because it does not solve the cap (invariant 1 is **per file** — `git ls-files 'skills/*/*.md' 'skills/*/rules/*.md'`, so a split skill carries the same files at the same sizes) and it costs router lines: `skills/sota/SKILL.md` is at **500/500 — full**, and a new skill needs a routing-table row, a library-map entry and probably a cross-cutting rule | **Only if `sota-code-security` grows a sixth verification file**, and then trim the router in the same change (item 4). Recorded so the build/audit framing is not re-proposed |
+| 12 | **A skill-level split of `sota-code-security` (vulnerability classes vs control verification) — considered 2026-08-20, NOT done** | The operator proposed splitting the skill, first on a build/audit axis. **Build/audit is the wrong axis for this library**: invariant 2 requires every one of the 259 `rules/*.md` to end with `## Audit checklist`, so the audit half is welded to the build half by a gate, and an audit-only injection file would need the build half's facts to be usable. The defensible seam is **rules/01–09 (vulnerability classes) vs 10–14 (control verification)**, now 5 files and ~1,500 lines. Not done because it does not solve the cap (invariant 1 is **per file** — `git ls-files 'skills/*/*.md' 'skills/*/rules/*.md'`, so a split skill carries the same files at the same sizes) and it costs router lines: `skills/sota/SKILL.md` is at **498/500** (re-counted 2026-08-28 — two lines of slack, not zero as this row said until then), and a new skill needs a routing-table row, a library-map entry and probably a cross-cutting rule | **Only if `sota-code-security` grows a sixth verification file**, and then trim the router in the same change (item 4). Recorded so the build/audit framing is not re-proposed |
 | 13 | **Cap watch — re-measured 2026-08-27** | `sota-docs-workflow/rules/01` **477**, `sota-code-security/rules/12` **476**, `sota/rules/01` **455**, `sota-devsecops/rules/03` **451**. The router is **498/500** (it was full for four weeks until BUILD/AUDIT detail moved to `skills/sota/rules/` on 2026-08-26). `sota-docs-workflow/rules/01` gained §11 today and is the tightest rules file | **Split reactively at a seam the file already has, not preemptively.** A file near the cap is only a problem when the next addition has nowhere to go; `sota-code-security/rules/10` absorbed two findings today and is still comfortable. When a split happens, build the gate first (item 16's lesson) — invariant 18 exists because a renumber breaks `§` references silently |
 | 14 | **DONE 2026-08-20 — the repo now practises `sota-code-security` rules/12 §1b.** `./scripts/check-invariants.sh --self-test` | Structural pass (~1 s): every check must be either probed by `check-negative-controls.sh` or listed in that script's own *NOT COVERED* block. Both sets are **derived from the harness**, not restated, so there is no second list to drift. It then execs the harness. Watched to fail on two mutations — a deleted `probe 13` ("check 13 has no known-bad") and a probe added for the declared-unprobeable check 5 ("both probed and declared unprobeable") — with the clean tree passing at `18 checks: 13 probed, 5 declared unprobeable, 0 unaccounted` | **Nothing.** Two design choices to keep: the probe **count** stays ungated (a static count of call sites under-reads, 13 vs an actual 24), and mutations keep asserting they landed |
 | 15 | **BUILD↔AUDIT correspondence — measured 2026-08-21, ~4% and NOT gated** | Four attempts: `§`-anchors (1% of items cite one — measured a convention that does not exist), lexical overlap (defeated by synonymy and cross-file grounding), a shell sampler (mangled its own alternation), and finally **read a sample**. n=20 said 10%; n=60 said ~2%; pooled n=80 gives **~4% confirmed**. Recorded as a **floor with a soft ceiling** — 18 of 60 read in full, the rest screened, and the screen errs both ways | **Do not re-attempt a mechanical version** — the ledger records why. If the number is ever wanted tighter, the method is reading, not scripting: ~40 more sections. The *actionable* output was never the percentage (see item 16) |
