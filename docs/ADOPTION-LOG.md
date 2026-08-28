@@ -133,7 +133,7 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-08-11 | spanchain README, "Replay validates Span Chain's integrity, not your agent's behavior" | A record-and-replay (cassette) harness re-executes nothing: it tests pipeline determinism, and as a CI quality gate it stays green through a prompt rewrite, a model swap or a retrieval change | **adopted** | `sota-llm-engineering/rules/01` §5 + checklist · v1.22.4 |
 | 2026-08-11 | spanchain — six findings checked against our tree first | Unkeyed chain forgeable by a DB-write attacker; tail truncation invisible; unhashed projection columns; canonical preimage required; in-memory ingest buffer loses records with no gap (integrity ≠ completeness); offline verification | **rejected: already ours** | — `sota-code-security/rules/04` §8, six for six, arrived at independently: `:217` unkeyed, `:224` tail truncation, `:241` unhashed projection columns, `:244` canonical preimage, `:265` integrity ≠ completeness, `:279` off-system verification |
 | 2026-08-11 | spanchain — pre-GF-703 telemetry inside `Repo.transaction`; GF-827 conditional terminal write; append-only store holding personal data; EU AI Act Art. 12 | Post-commit notification, compare-and-set instead of check-then-write, erasure from immutable stores, AI Act record-keeping | **rejected: already covered** | — `sota-ruby/rules/05:82`, `sota-databases/rules/05:175`, `sota-architecture/rules/02:127`; `sota-async-concurrency/rules/02` §"Check-then-act / TOCTOU"; `sota-privacy-compliance/rules/03:125`; `sota-code-security/rules/04:214` |
-| 2026-08-11 | spanchain — dead-letter drops deliberately break `verify_ledger` ("a deliberate audit signal") | An integrity verdict that is routinely red for operational reasons trains operators to ignore it; a known gap should be a signed in-chain marker, not a hole | **deferred** | revisit if a second implementation shows the same design — one project's trade-off is not yet a rule |
+| 2026-08-11 | spanchain — dead-letter drops deliberately break `verify_ledger` ("a deliberate audit signal") | An integrity verdict that is routinely red for operational reasons trains operators to ignore it; a known gap should be a signed in-chain marker, not a hole | **deferred** | revisit if a second implementation shows the same design — one project's trade-off is not yet a rule. **Evidence checked 2026-08-28: still 1 shipped instance** — see the trigger ledger under the 2026-08-11 section below; check that before re-deriving the search |
 | 2026-08-13 | Internal coverage audit — business-logic defect class ([COVERAGE-BUSINESS-LOGIC-2026-08-13](COVERAGE-BUSINESS-LOGIC-2026-08-13.md)) | Route the class by its own name: "business logic", "checkout", "refund", "state machine" appeared in **zero** of 41 SKILL.md descriptions, and "workflow" only in the CI/SOC/docs senses — descriptions are the only auto-loaded classifier | **adopted** | `sota-code-security` description, 998→1014 of 1024 · v1.22.4 |
 | 2026-08-13 | Same audit — first draft | Add a BUILD rule + probe for WSTG-BUSL-07 "defenses against application misuse" | **rejected: already covered** | — covered under three other names: `sota-api-design/rules/07:211` (API6 flow throttles, explicitly not generic rate limiting), `sota-code-security/rules/07-data-exposure.md:96-99`+`:230` (security events + alerting on anomalies), `rules/02-authentication.md:213` (escalating friction), `sota-mobile/rules/04:94-99` (non-human client decision table). Residual is naming, not coverage |
 | 2026-08-13 | Same audit — first draft | Add payment-specific money hazards for WSTG-BUSL-10 (currency, rounding, negative amounts, insufficient funds) | **rejected: already covered** | — `js-ts/rules/02:183,191,244`, `sota-databases/rules/01:232`, `sota-api-design/rules/01:285,302-303`, `sota-code-security/rules/06:183-197,218,226`, `rules/03:82,91`, and currency specifically at `rules/01-input-injection.md:28` ("currency matches account") |
@@ -897,6 +897,27 @@ not in it. Only the narrative is.
 
 **Measurement status:** adopted on reasoning. **No efficacy lift is claimed or measured.
 Do not cite one.**
+
+#### Trigger ledger for the deferred row *(a deferred trigger needs somewhere to accumulate)*
+
+The deferred item is the *design*: a known operational gap left as a hole, so an integrity
+verdict runs routinely red. The trigger is **a second implementation that ships it**. This
+list exists so the next check is a read rather than the same search again — it was
+re-derived from scratch on 2026-08-28, across 74 later intake rows, to produce these three
+lines.
+
+| checked | candidate | counts? |
+|---|---|---|
+| 2026-08-28 | **Interdict gate-ledger** (2026-08-26 brief, finding A): `chain` treats an unsigned head as failure, while the same repo had already rejected a hardware tap per commit — the steady state is a verdict red for an operational reason | **No — near-miss.** Same failure mode arriving *accidentally*, caught by a human before shipping (*"no, pls change it"*). Recorded as the cost-profile lesson in `sota-architecture` rules/01 §4a. Second occurrence of the mechanism, not a second implementation |
+| 2026-08-28 | **This repo's Dependabot gate** (ROADMAP 22): `Repository invariants` failed on bot PRs for a purely operational reason | **No — counter-example.** Exempting `dependabot[bot]` *would* have been this exact design; the cause was fixed instead (its own secret store) |
+| 2026-08-28 | Scanner false-positive class (2026-08-25) | **No** — already rejected as covered by `sota-detection-engineering/rules/04` §1 |
+
+**Status: 1 shipped instance, 1 near-miss, 1 refusal — trigger NOT met.** Coverage as of
+this check: the *generic* half is owned twice over (rules/04 §1 alert fatigue; `sota-
+observability/rules/06` — *"broken telemetry that the team trusts is worse than a known
+gap"*). The *specific* half — encode the known gap as a marker inside the structure, so the
+verdict stays green and the gap stays auditable — is **absent**, confirmed by two
+differently-worded sweeps of `skills/`. That is what a second instance would buy.
 
 ### 2026-08-17 — system-design-notes (liquidslr), three adopted, two deferred, four rejected
 
