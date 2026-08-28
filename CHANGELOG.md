@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   star/forks were re-read live on 2026-08-28 (**17/3**, flat since the 27th) while the cap
   watch still dates to the 27th. A single stamp over a section refreshed in parts is the
   same defect in a smaller box.
-- **The deferred spanchain row now carries a trigger ledger.** Its revisit condition — *a
+- **The deferred spanchain row in `docs/ADOPTION-LOG.md` now carries a trigger ledger.** Its revisit condition — *a
   second implementation shows the same design* — had nowhere to accumulate evidence, so
   every check re-derived the same search from scratch (this one swept 74 later intake rows
   to produce three lines). The ledger records what has been checked and how it scored:
