@@ -5,11 +5,33 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.29.5] - 2026-08-28
+
+**Front door checked:** sota-architecture · ADOPTION-LOG
+
+### Added
+
+- **`sota-architecture` rules/01 §4b — a deferral is a standing question, so give it
+  somewhere to accumulate answers.** A decision record that defers an idea behind a
+  trigger ("revisit if a second implementation shows this") must also say where evidence
+  toward that trigger accrues and who reads it. Otherwise the deferral is not revisited —
+  it is *re-derived from scratch* by whoever next asks, at full cost, with no memory of
+  the last answer: near-misses and deliberate refusals are both evidence about the class,
+  and both are lost by default. The rule also covers a **deliberately-unfixed state kept
+  as evidence** (a known-bad left in place to prove a control fires, a pin left stale so
+  an automated bump proves the automation runs) — a good technique that carries an
+  experiment's obligation, because **an experiment with no scheduled read-back is
+  indistinguishable from a note**. Ships with its audit half in the same change: list the
+  deferred entries, ask when each was last evaluated and what was found.
 
 ### Changed
 
-- **The deferred spanchain row now carries a trigger ledger.** Its revisit condition — *a
+- **The "Start here" stamp restamped again — and this time it names what was *not*
+  re-read.** The previous fix set one date over a mixed section; the honest version says
+  star/forks were re-read live on 2026-08-28 (**17/3**, flat since the 27th) while the cap
+  watch still dates to the 27th. A single stamp over a section refreshed in parts is the
+  same defect in a smaller box.
+- **The deferred spanchain row in `docs/ADOPTION-LOG.md` now carries a trigger ledger.** Its revisit condition — *a
   second implementation shows the same design* — had nowhere to accumulate evidence, so
   every check re-derived the same search from scratch (this one swept 74 later intake rows
   to produce three lines). The ledger records what has been checked and how it scored:
