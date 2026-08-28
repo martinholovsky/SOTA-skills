@@ -5,6 +5,27 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **The ROADMAP's "Start here" section now opens with an actionable priorities table.**
+  It previously opened with twelve lines about where gate candidates come from — true,
+  useful, and not what someone starting a session needs first. Provenance and the
+  backlog-shape argument moved below the table under their own headings. The honest
+  headline is that **nothing is urgent**: priority 1 is *use the library on real work and
+  write a field brief*, because briefs from sessions that used it landed **7 of 7** and
+  **4 of 4** while the written-conventions backlog is empty.
+- **Live router count corrected in two places: 498/500, not 500/500 or 484/500.** ROADMAP
+  row 12's "no slack" reasoning and `AGENTS.md` both carried a stale figure; AGENTS.md's
+  own warning that this number has been wrong is now at **five** times. The two other
+  stale copies (roadmap lines ~440 and ~714) were deliberately left: they sit inside the
+  section relabelled as history in v1.29.4, which is what that relabelling was for.
+- **A "closed rows" count was caught before shipping.** A case-insensitive grep for *done*
+  scored row 12's "**NOT** done" as closed and produced 17. The ledger heading now states
+  the count that is actually verifiable — **5 open** — and says why the other direction
+  resists grepping.
+
 ## [1.29.5] - 2026-08-28
 
 **Front door checked:** sota-architecture · ADOPTION-LOG
