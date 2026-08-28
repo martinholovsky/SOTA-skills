@@ -125,6 +125,45 @@ per-file review. It is worst in agent-authored work: an agent can hold both deci
 one context and still miss the interaction, because attention is on the artifact being
 built, not on the policy it lands inside.
 
+## 4b. A deferral is a standing question — give it somewhere to accumulate answers
+
+**Rule:** When a decision record defers an idea behind a condition ("revisit if…",
+"reconsider when we see…", "not yet — wait for a second case"), the record must also say
+**where the evidence toward that condition accrues, and who reads it**. A trigger with no
+evidence store is not a decision that will be revisited; it is a decision that will be
+re-derived from scratch by whoever next asks, at full cost, with no memory of the last
+answer.
+
+**Rationale:** The deferral itself is usually right — one instance is a trade-off, not a
+pattern, and generalising from it produces rules that fit one project. What fails is the
+return path. The evidence arrives incrementally, months apart, in places the record does
+not watch; each near-miss is recognised, judged not-quite-enough, and forgotten. The next
+person repeats the whole search to reach the same verdict, so the deferral never converges
+either way. Cost is asymmetric and invisible: writing the trigger takes a sentence, and
+answering it can take a full sweep of everything logged since.
+
+**What the record must carry**, next to the trigger:
+
+- **The trigger in falsifiable terms.** "A second implementation *ships* this design" is
+  checkable; "if it becomes a problem" is not, and cannot ever be closed.
+- **A running list of candidates checked, with dates and verdicts** — including the ones
+  that *did not* count. A near-miss and a deliberate refusal are both evidence about the
+  class, and both are lost by default.
+- **What the trigger would buy.** If part of the idea is already covered elsewhere, say
+  which part, so a future instance is judged on the remainder rather than re-argued whole.
+
+**The same rule covers a deliberately-unfixed state kept as evidence** — a known-bad left
+in place to prove a control fires, a pin left stale so an automated bump proves the
+automation runs. That is a good technique and an experiment, so it carries an experiment's
+obligation: write down where the result will show up and who looks. **An experiment with
+no scheduled read-back is indistinguishable from a note**, and it decays the same way —
+the state resolves, nobody returns, and the record still describes the world before the
+answer arrived. Reviewers reading it then act on a question that is already closed.
+
+**Smell:** a decisions log where several entries say "revisit when…" and none of them has
+ever been revisited. Check the dates: if the oldest trigger predates the last two people
+who joined, the log is recording intent, not process.
+
 ## 5. Practice evolutionary architecture with fitness functions
 
 **Rule:** Encode architectural qualities as automated, continuously-run checks
@@ -244,6 +283,14 @@ tied to a measurable symptom (incident class, lead-time drag, cost line).
 "Refactor someday" items without symptoms get deleted, not hoarded.
 
 ## Audit checklist
+
+- [ ] **Every deferral with a "revisit if…" trigger names where the evidence accrues and
+      who reads it** (§4b), and the trigger is stated so that some observation could close
+      it. Probe: list every deferred entry, then ask when each was last checked and what
+      was found — a trigger nobody has evaluated since it was written, or one no evidence
+      could ever satisfy, is a finding. Same probe for a known-bad deliberately left in
+      place as proof a control fires: if no one can say where the result appears, it is a
+      note, not an experiment.
 
 - [ ] **Every control that spends a scarce resource per use states its cost profile**
       (*what, how often*), and that frequency was checked against the ADRs and contributor
