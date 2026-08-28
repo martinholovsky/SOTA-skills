@@ -26,9 +26,17 @@ it. Last re-count 2026-08-27 (cap watch, star/fork counts, and the open list bel
 unbuilt). Everything else is either closed or a recorded lesson whose "first move" is a
 habit, not work — read those for the habit, not the backlog.
 
+**This table is not the whole backlog.** Open work also sits in
+[ADOPTION-LOG.md](ADOPTION-LOG.md) as rows marked **deferred** — an idea judged real but
+held for a trigger, which the roadmap never learns about. One is live today (2026-08-11,
+an integrity verdict left routinely red for operational reasons; revisit when a second
+implementation shows the same design). Answering "what is open?" means
+`grep -c '\*\*deferred' docs/ADOPTION-LOG.md` as well as reading this table — a list
+assembled from one file reads as complete and is not.
+
 | # | Item | Why not done | First move |
 |---|---|---|---|
-| 1 | **Distribution / adoption** — still the bottleneck, though less flat than it looked (**17 stars, 3 forks**, re-checked live via `gh api` on 2026-08-27 — up from 13/2 on 2026-08-19) | Not a code task; needs a person, not a gate | Publish the salience write-up; a before/after audit demo |
+| 1 | **Distribution / adoption** — still the bottleneck, though less flat than it looked (**17 stars, 3 forks**, re-checked live via `gh api` on 2026-08-27 — up from 13/2 on 2026-08-19) | Not a code task; needs a person, not a gate | **First external channel landed 2026-08-26**: the [awesome-ai-plugins](https://github.com/hashgraph-online/awesome-ai-plugins) listing PR (their #155) is **merged**, so the library is now catalogued somewhere other than this repo. Next: publish the salience write-up; a before/after audit demo |
 | 2 | **Real-repo audit eval — CLOSED 2026-08-14.** Recall *and* precision both measured, both +0.00 | Recall 15/16 = 15/16; precision **1.00 = 1.00** over 59 blinded findings, adjudicator controlled at 4/4; severity mix indistinguishable. Nine instruments, zero lifts | Nothing. Do **not** build a tenth audit-recall or audit-precision instrument. If the audit claim is ever revisited, it needs a different *dependent variable* (time-to-find, report usability, or defects found by a non-expert), not another accuracy metric |
 | 3 | **Competitor comparison — content-only re-run DONE 2026-08-14/15, claim holds. As-deployed REJECTED 2026-08-16** | Re-run at the pinned SHAs with the same build model: SOTA 98.7 / ECC 84.9 / cursorrules 80.0 / claude-skills 77.0 / unguided 58.2, 17 wins / 4 ties / 0 losses of 21, unguided arm reproducing to 0.2 points as the drift control. **As-deployed is rejected, not deferred:** it measures corpus size and a retrieval path we have already found saturated, not guidance quality — reasoning below the table | Nothing. Do not re-open without a new argument that answers the corpus-size confound |
 | 4 | **Router trim — RESOLVED 2026-08-26 by offloading, not trimming. And the "2×" was wrong: it is 3.3×** | The cap was never protecting routing quality — **measured**: recall stayed **flat at 1.000** with the router padded to 902 and 1,302 lines and the routing table pushed 800 lines deeper, while the untreated arm reproduced 0.867 exactly ([ROUTER-LENGTH](../evals/results/2026-08-26/ROUTER-LENGTH.md)). What *is* real is per-load cost: `count_tokens` gives **16,442 tokens** at 484 lines, **3.3×** the ~5k guidance — this table said ~10,211 (2×) from a chars/4 heuristic that under-read it by ~60% | **Nothing on the cap.** BUILD/AUDIT detail now lives in `skills/sota/rules/` and loads on demand (PR #284): 500 → 484 lines, ending compress-on-every-addition. Be honest about the size of that win — the token saving is 16,934 → 16,442, **~3%**; the win was **headroom**, not context economy. Next addition goes to `rules/`, not the router. Two caveats on the sweep, published with it: the metric is **at ceiling** (it can only detect a drop) and the filler is **inert**, so it tested length/depth and *not* competition between real rules |
@@ -224,7 +232,7 @@ is a hard cap and a different reason entirely; v1.21.1 split the inert-control f
 into `rules/10`/`11`/`12` when the first two reached 493 and 495. Splitting for the cap
 is fine; splitting to help a reader navigate is still not.
 
-## Open tasks — next-session pick-up *(as of 2026-08-05)*
+## The v1.22.0 cycle — closed *(written 2026-08-05, kept for the mechanism)*
 
 **The v1.22.0 cycle — activation, and gates that prove they can fail.** Two threads
 closed and one opened:

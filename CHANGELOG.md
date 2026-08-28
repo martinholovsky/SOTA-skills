@@ -5,7 +5,9 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.29.4] - 2026-08-28
+
+**Front door checked:** ADOPTION-LOG · roadmap
 
 ### Fixed
 
@@ -24,6 +26,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The ledger's standing prediction — *the next gate comes from an incident, not from
   re-reading docs* — has now **held three times**: `evals/smoke-runners.py` came from a
   runner that had been dead for three weeks.
+- **Two resolved experiments were still recorded as pending, and the answer to "what is
+  open?" was assembled from one file.** The listing PR at
+  [awesome-ai-plugins](https://github.com/hashgraph-online/awesome-ai-plugins) **merged
+  2026-08-26** — the first time this library is catalogued outside its own repo, and the
+  only concrete movement ROADMAP item 1 has ever had. The `actions/checkout` pin left
+  un-bumped *on purpose* (v1.27.0, as the cheapest available proof that Dependabot runs)
+  drew **#281**, merged 2026-08-27; every workflow now reads `v7.0.1`, confirmed current
+  against `repos/actions/checkout/releases/latest`. Both outcomes are now in the ledger
+  row and its write-up. **An experiment with no scheduled read-back is indistinguishable
+  from a note** — when something is left un-fixed as evidence, say where the result lands
+  and who reads it.
+- **The ROADMAP is not the whole backlog, and it now says so.** Open work also sits in
+  `docs/ADOPTION-LOG.md` as **deferred** rows — an idea judged real but held for a trigger
+  — which the roadmap never learns about; one is live (`grep -c '**deferred'` → 1). A
+  backlog assembled from a single file reads as complete and is not.
+- **The stale-header fix of v1.29.4's predecessor had a sibling one screen down.**
+  `## Open tasks — next-session pick-up *(as of 2026-08-05)*` was a **closed** v1.22.0
+  cycle write-up wearing a live-backlog heading; relabelled as history. Fixing one
+  instance of a defect without grepping for its siblings is the fourth recurrence of that
+  habit recorded in this repo — the grep costs seconds and is not optional.
 
 ## [1.29.3] - 2026-08-27
 
