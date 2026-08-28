@@ -1441,6 +1441,9 @@ measurement, and reconciling the two is what confirmed there was no leak.
 eight findings, and the two regex bugs were reported upstream rather than worked around.
 
 **Outcome, recorded 2026-08-28 — both open loops closed, and one of them was a prediction.**
+(Merge dates below are **UTC**, as `gh pr view --json mergedAt` reports them: #155 at
+`13:34Z` reads as the 26th anywhere west of UTC+11, but #281 at `07:57Z` flips to the 26th
+west of UTC−8. A bare date is a claim with a hidden timezone in it.)
 The listing PR (their #155) **merged 2026-08-26**: the library is now catalogued outside
 this repo for the first time, which is the only concrete movement ROADMAP item 1 has had.
 And the pin left un-bumped on purpose paid out — Dependabot opened **#281** on 2026-08-25
