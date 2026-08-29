@@ -5,6 +5,41 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **ROADMAP item 29 opened — verification discipline for agent-produced findings.** Intake
+  from two Anthropic primary sources read on 2026-08-29: the `/security-review` prompt,
+  extracted from the CLI (the 2.0.76 JS bundle *and* the live 2.1.251 native binary — one
+  line differs across 10.5k characters, so the extraction is current), and
+  `anthropics/defending-code-reference-harness` (Apache-2.0). v1.30.0 took the *content*
+  classes; what neither library states is how a finding **earns the right to ship**. Five
+  parts, each checked against `skills/` by grep before being called a gap: a **numeric
+  confidence gate** (the review drops anything under 8/10; we have the refutation pass and
+  no threshold); a **restricted refuter** (its filter sub-tasks may not run commands or
+  write files, and the harness's grader works in *"a fresh container the find agent hasn't
+  touched"* where *"the only thing that crosses over … is the proof of concept"* — `rules/03`
+  §4 says *fresh context* and never bounds what crosses); **N-of-N reproduction** for a
+  stochastic finding (3/3, against **zero** coverage here, beside item 18's own ±0.03 noise
+  floor); **partition before you fan out**, or parallel agents converge on one bug; and the
+  **multi-wave yield curve**, where a flat finding count across waves means the waves were
+  not independent. Deferred, not written: this is prose, and CONVENTIONS-LEDGER filter 1
+  reads *not yet* for three of the five.
+- **Seven intake rows added to `docs/ADOPTION-LOG.md`**, including four ideas **rejected as
+  already covered** with citations. One rejection is worth more than its verdict: the
+  harness is an **independent implementation of `sota-sandboxing` rules/05 §7**, shipped the
+  same day — it ingests a repository it did not author, builds and executes it, and isolates
+  exactly where §7 says to. Also recorded: two of `/security-review`'s own exclusions
+  contradict this library deliberately (*"including user-controlled content in AI system
+  prompts is not a vulnerability"*; *"memory safety issues … are impossible in rust"*) and
+  must not be adopted — its exclusion list is a PR-noise policy, not a security taxonomy.
+- **The ROADMAP "Start here" section restamped to 2026-08-29, naming what was re-read**
+  (star/forks live via `gh` — 17/3, flat; router at 499/500; the v1.30.0 release; row 13's
+  cap watch) **and what was not** (item 1's listing status, the deferred-row pointer). The
+  "nothing is queued" line is now false and was corrected rather than left: item 29 is one
+  session of writing.
+
 ## [1.30.0] - 2026-08-29
 
 **Front door checked:** audit-findings · sota-code-security · sota-sandboxing
