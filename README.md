@@ -26,7 +26,7 @@ survives a long context instead of fading into it. That's why it beats a bigger 
 instead of becoming one. Native on Claude Code; works with Gemini CLI, Codex, and any
 agent that reads `AGENTS.md`.
 
-Under the hood: **41 skills (301 files, ~64k lines)** of state-of-the-art 2026
+Under the hood: **41 skills (302 files, ~65k lines)** of state-of-the-art 2026
 practice, each **instruction** file under 500 lines so only the matching rules load —
 the cap applies to `skills/**` alone, never to README/CHANGELOG/`docs/` — every fast-moving
 claim web-verified against a primary source.
@@ -268,11 +268,36 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
 - **Findings that don't survive contact** — every Critical/High gets an independent pass
   *prompted to kill it*, working from the code rather than the write-up and defaulting
   to REFUTED when the evidence is ambiguous. Refutations are recorded, so the next
-  auditor doesn't re-raise them.
+  auditor doesn't re-raise them — and **swept before they're dropped**, because the
+  refuted pattern routinely closes somewhere the audit's scope didn't cover. A severity
+  also has to **name its chain** (reach → primitive → boundary crossing → channel), and
+  on a diff it is rated against the code the change *replaced*: filing a High against a
+  hardening fix teaches authors that hardening attracts findings.
+  ([findings §1, §4](skills/sota/rules/03-audit-findings.md))
+- **A control that works, on some of the sites it's credited with** — not inert, not
+  missing: a real containment check guarding one channel of five, a `disable_tools=True`
+  passed at 2 call sites of 6, a path guard on 9 target walks of 61. Every signal is a
+  working control's signal, because on the guarded subset it is one. The audit move is a
+  **census** — enumerate the protected *operation*, mark each call site, report the ratio —
+  and the API fix is that a parameter selecting a trust boundary **defaults to the closed
+  side**. ([code-security rules/14 §6](skills/sota-code-security/rules/14-control-not-in-force.md))
+- **Security prose the code no longer keeps** — "containment is applied at every target
+  walk" (it was 9 of 61); "no function-calling, no shell — this RCE mechanism is NOT
+  APPLICABLE" (tools were on by default). Each had been true when written. Most such
+  claims are universally quantified and therefore falsifiable **by counting**, and a
+  wrong *NOT APPLICABLE* is the worst case: it cancels the next reader's own
+  investigation. ([code-security rules/14 §7](skills/sota-code-security/rules/14-control-not-in-force.md))
+- **Your own tool, ingesting somebody else's repository** — scanners, SAST wrappers,
+  review bots and agentic analysers run on a maintainer's machine with that identity's
+  credentials, and the target is the attacker. Four legs, usually owned by four people:
+  staging that dereferences symlinks out of the tree, "static" analysis that evaluates
+  target-controlled build metadata, an LLM step spawned with tools live and the parent's
+  `cwd`, and egress left on by default.
+  ([sandboxing rules/05 §7](skills/sota-sandboxing/rules/05-ai-agent-sandboxing.md))
 - **Absence claims** — "no hardcoded secrets remain" is the one finding nobody can
   falsify: a narrow search and a true absence produce identical output. Any absence
   claim needs a widened search **plus a second independent method**, with the search
-  stated. ([methodology §5, §7](skills/sota/rules/01-audit-methodology.md))
+  stated. ([findings §2, §4](skills/sota/rules/03-audit-findings.md))
 - **Controls keyed to a neighbouring setting** — the predicate reads a *proxy* that agrees
   with the real dependency right up until someone configures the two apart, three files
   away. A **coupling** defect: the control's own site never changes, so neither per-file
@@ -793,7 +818,8 @@ skills/
   sota/                          # master router — start here
     SKILL.md                     # routing, operating principles, workflows
     rules/
-      01-audit-methodology.md    # how to audit: tooling, evidence, reporting
+      01-audit-methodology.md    # how to run an audit: scoping, tooling, triage
+      03-audit-findings.md       # severity, evidence, refutation, reporting
   sota-<domain>/
     SKILL.md                     # when to use, BUILD/AUDIT workflows,
                                  # severity conventions, rules index, top-10
@@ -814,8 +840,12 @@ Every skill works in two modes:
 Two cross-cutting pieces live outside the domain skills:
 
 - `skills/sota/rules/01-audit-methodology.md` — how to run an audit: scoping,
-  a verified static-analysis tool matrix, the evidence standard, and the report
-  template (executive summary → findings → roadmap by risk-reduction-per-effort).
+  a verified static-analysis tool matrix, triage discipline, and audit hygiene.
+- `skills/sota/rules/03-audit-findings.md` — what happens to what it finds: the
+  severity model (a Critical/High must name its exploit chain leg by leg), the
+  evidence standard, the decision-ledger pass, adversarial refutation, and the
+  report template (executive summary → findings → roadmap by
+  risk-reduction-per-effort).
 - `profiles/` — per-user stack profiles: the default in BUILD mode, the
   expected baseline in AUDIT mode — keeping the library generic and shareable.
 
@@ -835,8 +865,9 @@ Naming one (or the `sota` router) just makes the routing explicit. From there:
    recon → threat model → per-domain passes → **silent-control pass** (does each
    control confirmed to exist actually *do* anything?) → **decision-ledger review**
    → findings → **refute before reporting**. Scoping, evidence standard, severity
-   model and report structure come from `sota/rules/01-audit-methodology.md`; the
-   report ends in a roadmap sequenced by risk-reduction-per-effort.
+   model and report structure come from `sota/rules/03-audit-findings.md` (scoping
+   and tooling from `rules/01`); the report ends in a roadmap sequenced by
+   risk-reduction-per-effort.
 4. If `profiles/<you>.md` exists, its stack choices are BUILD defaults and the
    AUDIT baseline (deviations get flagged).
 

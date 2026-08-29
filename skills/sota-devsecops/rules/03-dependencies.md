@@ -330,7 +330,7 @@ two of the projects below have been renamed under their old URLs.
 A grep is not proof, and neither is a tool's silence. The finding is not "X looks unused";
 it is **"X was removed and the real build, lint/vet, and full test suite still passed."**
 
-1. **Copy the repo to a scratch directory.** The audit is read-only (`sota/rules/01` §9) —
+1. **Copy the repo to a scratch directory.** The audit is read-only (`sota/rules/01` §4) —
    never mutate the tree under audit.
 2. **Remove the declaration and regenerate the lockfile.** Manifest edit alone leaves the
    package resolvable.
@@ -429,7 +429,7 @@ gh api "repos/<owner>/<repo>/contributors?per_page=1" --include | grep -i '^link
 
 ### 3.9.7 "Unused" is an absence claim
 
-It carries the heavier burden of router principle 3 and `sota/rules/01` §5: before writing
+It carries the heavier burden of router principle 3 and `sota/rules/03` §2: before writing
 *unused*, search twice by **different methods** and state both. A static tool plus the
 §3.9.3 deletion proof is a valid pair. Two greps are not a pair — and given §3.9.1's
 dynamic-loading trap, a code-only search is structurally incapable of settling it.

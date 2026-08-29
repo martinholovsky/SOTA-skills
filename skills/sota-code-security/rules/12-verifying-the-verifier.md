@@ -32,7 +32,7 @@ impossible or self-announcing over making it detectable.
 Related: the inert-control catalog → rules/10; the codebase-scale sweep →
 rules/11; vacuous tests in general, mutation testing, and watching a security
 test fail → `sota-testing` rules/02, rules/06 and rules/09; the audit-level
-evidence and refutation standard → `sota/rules/01` §5 and §7.
+evidence and refutation standard → `sota/rules/03` §2 and §4.
 
 ---
 

@@ -55,7 +55,9 @@ trying to do**, not by file. (Kept in sync by hand; if a link rots, open an issu
 | Check how audit reports are scored for **calibration** (and why it is never reported as a lift) | [BUILD-SAFE 2026-08-21 §2](../evals/results/2026-08-21/BUILD-SAFE.md) · `evals/run-calibration.py` |
 | Read an eval that failed as an *instrument* rather than as a result | [BUILD-SAFE.md](../evals/results/2026-07-30/BUILD-SAFE.md) |
 | See the edges of the do-not-reimplement rule (§3.9.6), as worked cases | [`evals/cases/reimplement.jsonl`](../evals/cases/reimplement.jsonl) — documentation, never run |
-| Know what the audit hunts that a scanner can't (inert controls, **controls that block everything**, unreached dependencies, stale decisions, refutation, absence claims) | [README → What the audit hunts](../README.md#what-the-audit-hunts-that-a-scanner-cant) |
+| Know what the audit hunts that a scanner can't (inert controls, **controls that block everything**, **a working control applied to part of its population**, **security prose the code doesn't keep**, unreached dependencies, stale decisions, refutation, absence claims) | [README → What the audit hunts](../README.md#what-the-audit-hunts-that-a-scanner-cant) |
+| Rate a finding: severity, **chain closure**, the diff baseline, evidence, refutation, the report template | [`sota/rules/03-audit-findings.md`](../skills/sota/rules/03-audit-findings.md) (scoping, tooling and hygiene stay in [`rules/01`](../skills/sota/rules/01-audit-methodology.md)) |
+| Harden a tool that **ingests repositories it did not author** (scanner, SAST wrapper, review bot, agentic analyser) | [`sota-sandboxing` rules/05 §7](../skills/sota-sandboxing/rules/05-ai-agent-sandboxing.md) |
 | Read the retraction + the retired anchoring hypothesis | [SILENT-FAILURE.md](../evals/results/2026-07-20/SILENT-FAILURE.md) |
 
 ## Contribute / operate the repo

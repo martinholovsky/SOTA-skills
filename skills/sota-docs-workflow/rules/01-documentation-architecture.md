@@ -194,7 +194,7 @@ target, **works here / doesn't, and what each gap blocks**.
   reports "no container runtime" on a machine running podman; a check for
   `LICENSE` misses `LICENSE-MPL`. A single-name probe returns a false absence
   that then gets acted on — the audit-side statement of the same rule is
-  `sota/rules/01-audit-methodology.md` ("a narrow search and a true absence
+  `sota/rules/03-audit-findings.md` ("a narrow search and a true absence
   produce identical output").
 - **Every "unavailable" line names what it blocks**, so the reader learns the
   consequence without discovering it through a ten-minute failed build.

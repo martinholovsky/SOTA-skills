@@ -85,7 +85,7 @@ rules files that match the code in front of you. Never load all skills at once.
    primary source: re-read the tool output, or re-run the command. Your earlier
    prose in this session is not a primary source; summaries silently drop the
    case that contradicts them and raw output does not. Full adversarial
-   procedure for audit findings: AUDIT step 7 and `rules/01` §7.
+   procedure for audit findings: AUDIT step 7 and `rules/03` §4.
 8. **Publishing under someone else's name raises the bar.** A claim to the
    person who asked costs one reader's trust and is cheap to retract. A claim
    published as them — a PR review comment, an issue, a commit message, a
@@ -189,7 +189,8 @@ rules files that match the code in front of you. Never load all skills at once.
     threat-modeling`.
 13. **Ingesting untrusted/attacker-authored data** (feeds, scraping, uploads, webhooks, RAG
     corpora, hostile parsers) → `sota-code-security` rules/09, with `sota-sandboxing` rules/04 for
-    parser isolation.
+    parser isolation. A tool ingesting whole **repositories** (scanner, SAST wrapper, review bot,
+    agentic analyser) adds `sota-sandboxing` rules/05 §7 — staging, build execution, egress.
 14. **Data: OLTP vs analytics.** App databases → `sota-databases`; pipelines, streaming,
     warehouse/lakehouse → `sota-data-engineering`; anything touching personal data → add `sota-
     privacy-compliance`.
@@ -293,11 +294,10 @@ It is mirrored in four places — `rules/02` §5 lists them, and three fail sile
 
 ## AUDIT mode — workflow
 
-Process and reporting are governed by `rules/01-audit-methodology.md` — read it first for
-any full audit: scoping and rules of engagement, the verified tool matrix and triage
-discipline, the **severity model** (§4), the **evidence standard** (§5) and the report
-template (§8). **Adding or changing a pass below? The procedure lives in `rules/01` —
-put the detail there and keep the step here to one imperative.**
+Procedure lives in two rules files, read together for any full audit: `rules/01-audit-methodology.md`
+(scoping, the verified tool matrix, triage, hygiene) and `rules/03-audit-findings.md` (severity —
+chain closure, the diff baseline — evidence, the decision ledger, refutation, the report template).
+**A new pass needs a line in this router and a section in the rules file that owns it, never here.**
 
 For a focused audit, load the matching skills and follow their AUDIT sections. For a
 **full project audit**, work in passes:
@@ -318,39 +318,40 @@ For a focused audit, load the matching skills and follow their AUDIT sections. F
    `sota-network-security`, `sota-identity-access`, `sota-sandboxing` and
    `sota-detection-engineering`.
 4. **Silent-control pass (always run it).** The per-domain passes ask "is the control
-   there?" — this one asks "does it *do* anything?". For every control they confirmed
-   exists, apply `sota-code-security` rules/10: the code isn't wrong, it's **inert**, which
-   is why this class is invisible both to the other passes and to pattern-based SAST.
-   **Sweep with `rules/11` first** to find *where* to look — stage duration vs work
-   claimed, every gate's denominator (`0 checked, 0 failed, exit 0`), size-gated paths no
-   fixture crosses, cache keys narrower than the behaviour, one-sample parsers,
-   `assert`-as-control.
+   there?" — this one asks "does it *do* anything?", then "does it cover **every** site it
+   is credited with?". Apply `sota-code-security` rules/10 (inert controls — invisible to
+   the other passes and to SAST), sweeping with `rules/11` first to find *where* to look:
+   stage duration vs work claimed, every gate's denominator (`0 checked, 0 failed, exit 0`),
+   size-gated paths no fixture crosses, cache keys narrower than the behaviour, one-sample
+   parsers, `assert`-as-control. Then **count**: `sota-code-security` rules/14 §6 censuses
+   what a *working* mitigation guards (9 of 61 is the finding), §7 falsifies the prose.
 5. **Decision-ledger review.** Code passes find defects in what was built; they cannot
    find the defect where the code faithfully implements a choice that **stopped being
    right** — a store picked for scale that never arrived, an expired constraint still
    shaping the design. Reconstruct the expensive-to-reverse decisions (ADRs, design docs,
    CHANGELOG, the PRs behind each major component) and classify each **JUSTIFIED / STALE /
    UNJUSTIFIED / UNVERIFIABLE**. Where a decision rests on a number, **re-measure it this
-   session**. Full procedure: `rules/01` §6.
+   session**. Full procedure: `rules/03` §3.
 6. **Findings.** Emit every finding in the canonical cross-domain format (`file:line |
-   rule | severity | effort | fix`) — skill-local block formats are fine within a domain
-   pass but must carry an effort field so the roll-up can be sequenced — deduplicate across
-   domains, and roll up into the report structure from `rules/01` §8. **Severity
-   definitions: `rules/01` §4** (Critical / High / Medium / Low / Info).
+   rule | severity | effort | fix`) — skill-local formats are fine within a domain pass but
+   must carry an effort field so the roll-up can be sequenced — deduplicate across domains,
+   and roll up into the report structure from `rules/03` §5. **Severity: `rules/03` §1** —
+   a Critical/High names its chain, and a diff is rated against the code it replaced.
 7. **Refute before reporting.** Re-reading your own finding re-runs the reasoning that
    produced it — it is the weakest check available. Every Critical/High gets an
    **independent pass prompted to kill it** (a separate agent, or a fresh-context hostile
    read), working from the code at the pinned commit rather than your write-up, defaulting
    to REFUTED when the evidence is ambiguous. Survivors ship; the rest are dropped or
-   downgraded **with the refutation recorded**, so the next auditor doesn't re-raise them.
-   Absence claims ("no X found") get a refuter too, and carry the heavier burden of
-   principle 3. Full procedure and failure modes: `rules/01` §7.
+   downgraded **with the refutation recorded** — and **swept first**: the refuted pattern
+   routinely closes somewhere else, and that sweep is where the report's strongest finding
+   comes from. Absence claims ("no X found") get a refuter too, and carry the heavier
+   burden of principle 3. Full procedure and failure modes: `rules/03` §4.
 
 ## Library map (rules files per skill)
 
-- **sota/rules**: 01 audit methodology (process, tool matrix, severity model, evidence standard,
-  report template — read first for any full audit), 02 build workflow (the reasoning behind the
-  four BUILD steps, and the four surfaces a BUILD change must be mirrored into)
+- **sota/rules**: 01 audit methodology (scoping, tool matrix, triage, hygiene), 02 build workflow
+  (the four BUILD steps, and the four surfaces a BUILD change must be mirrored into), 03 audit
+  findings (severity & chain closure, evidence, decision ledger, refutation, report template)
 - **sota-architecture/rules**: 01 styles & decisions, 02 domain modeling, 03 distributed systems &
   events, 04 resilience, 05 scalability & state, 06 cloud-native config & delivery, 07 anti-
   patterns catalog, 08 NATS JetStream messaging
