@@ -226,6 +226,17 @@ Patterns that earn their cost:
   doesn't). Cap revision rounds.
 - **Cheap-model subagents under an expensive orchestrator** for mechanical
   legwork (rules/05 §1 routing applies per-agent).
+- **Partition before you fan out.** N agents pointed at one target with one
+  instruction do not give you N chances — they give you **one chance N times**,
+  because they converge on whatever is most salient. The pattern that works
+  spends a cheap **recon pass proposing the partition first** ("here are N
+  distinct input-parsing subsystems worth attacking separately"), then hands each
+  agent one partition; Anthropic's defending-code reference harness does exactly
+  this, *"so that parallel find agents explore different areas instead of
+  converging on the same bug."* Skip it and the fan-out multiplies cost while
+  duplicating coverage — and the duplication is **invisible in the output**,
+  because N agents reporting the same finding reads as corroboration rather than
+  as N-1 wasted agents.
 
 Anti-patterns (findings): role-play committees ("PM-agent talks to
 Dev-agent") replicating org charts instead of isolating contexts; depth>1
@@ -237,6 +248,9 @@ budget bounds the sum of its children).
 
 ## Audit checklist
 
+- [ ] Parallel fan-out is **partitioned before it is launched** (a recon pass
+      assigns each agent a distinct area), and duplicate findings across agents are
+      counted as wasted work rather than read as corroboration (§7).
 - [ ] Escalation ladder respected: no agent where a workflow's eval scores
       match; no multi-agent without measured single-agent failure; the four
       §1 gates documented for every agent in the system.

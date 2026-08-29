@@ -67,7 +67,7 @@ into **every** session, where the platform's guidance is *"target under 200 line
 long always-loaded files reduce adherence. Ungated, and a different constraint from
 invariant 1. Keep it under 200: detail goes to `CONTRIBUTING.md` behind a pointer.
 
-**Every file-list-driven check reports its denominator** (`ok (257 rules files)`) and
+**Every file-list-driven check reports its denominator** (`ok (261 rules files)`) and
 **fails closed on an empty scope** — `0 checked, 0 failed, exit 0` is the signature of a
 gate that verifies nothing (`sota-code-security` rules/11 §2.2). Added 2026-07-30 after
 checks 2 and 10 printed `ok` over *zero* files; 4 and 8 were only retrofitted

@@ -5,40 +5,91 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.30.1] - 2026-08-29
+
+**Front door checked:** audit-findings · sota-llm-engineering
+
+ROADMAP item 29 opened and closed the same day. Five rules borrowed from two Anthropic
+primary sources — the `/security-review` prompt extracted from the CLI (verified current by
+diffing the 2.0.76 JS bundle against the live 2.1.251 native binary: one line differs across
+10.5k characters) and `anthropics/defending-code-reference-harness` (Apache-2.0, every quote
+checked against the raw README). Each was grep-checked against `skills/` before being called
+a gap; verdicts and citations in [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md). They land in
+`skills/sota/rules/03-audit-findings.md`, `skills/sota/rules/01-audit-methodology.md` and
+`skills/sota-llm-engineering/rules/04-agents-tools.md`.
+
+### Added
+
+- **`sota/rules/03` §4a — bound what the refuter gets, and make its verdict a number.**
+  The refutation pass existed; nothing said what the refuter is *given*. Three conditions,
+  all cheap. **Give it less than the finder had** — no execution, no writes — because a
+  refuter holding the finder's tools re-runs the finder's investigation and arrives where it
+  arrived. **Bound what crosses to a single artifact**: fresh context is not enough on its
+  own, since handing over your write-up hands over its framing; ship the proof of concept,
+  the failing command, the `file:line`, and nothing else — and where no artifact can be
+  produced, that is the result, because a finding with nothing to hand over is one you have
+  not reproduced. **Score the verdict, do not narrate it**: require a number against a
+  threshold fixed *before* the findings are seen and stated in the methodology, since a
+  paragraph of hedging is a judgement you then re-judge, which is the anchoring the pass
+  exists to escape.
+- **`sota/rules/03` §2 — a reproduction you ran once is a coincidence you have not ruled
+  out.** Where the evidence is a *behaviour* rather than a line of code — a crash, a race, a
+  timing bypass, a fuzzer hit, anything an agent or a sampled model produced — reproduce it
+  **N of N** and report both numbers. `1/1` and `3/3` are typeset identically in a report
+  and mean entirely different things. This binds the library's own instruments: a criterion
+  that flips run to run at temperature 0-ish cannot be settled by a single run, so a
+  one-shot measurement quoted as a result is an unstated `1/1`.
+- **`sota-llm-engineering` rules/04 §7 — partition before you fan out.** N agents pointed at
+  one target with one instruction do not give N chances, they give **one chance N times**,
+  because they converge on whatever is most salient. Spend a cheap recon pass proposing the
+  partition first, then give each agent one. The reason this survives review is the half
+  that is easy to miss: the duplication is **invisible in the output**, because N agents
+  reporting the same finding reads as corroboration rather than as N−1 wasted agents.
 
 ### Changed
 
-- **ROADMAP item 29 opened — verification discipline for agent-produced findings.** Intake
-  from two Anthropic primary sources read on 2026-08-29: the `/security-review` prompt,
-  extracted from the CLI (the 2.0.76 JS bundle *and* the live 2.1.251 native binary — one
-  line differs across 10.5k characters, so the extraction is current), and
-  `anthropics/defending-code-reference-harness` (Apache-2.0). v1.30.0 took the *content*
-  classes; what neither library states is how a finding **earns the right to ship**. Five
-  parts, each checked against `skills/` by grep before being called a gap: a **numeric
-  confidence gate** (the review drops anything under 8/10; we have the refutation pass and
-  no threshold); a **restricted refuter** (its filter sub-tasks may not run commands or
-  write files, and the harness's grader works in *"a fresh container the find agent hasn't
-  touched"* where *"the only thing that crosses over … is the proof of concept"* — `rules/03`
-  §4 says *fresh context* and never bounds what crosses); **N-of-N reproduction** for a
-  stochastic finding (3/3, against **zero** coverage here, beside item 18's own ±0.03 noise
-  floor); **partition before you fan out**, or parallel agents converge on one bug; and the
-  **multi-wave yield curve**, where a flat finding count across waves means the waves were
-  not independent. Deferred, not written: this is prose, and CONVENTIONS-LEDGER filter 1
-  reads *not yet* for three of the five.
-- **Seven intake rows added to `docs/ADOPTION-LOG.md`**, including four ideas **rejected as
-  already covered** with citations. One rejection is worth more than its verdict: the
-  harness is an **independent implementation of `sota-sandboxing` rules/05 §7**, shipped the
-  same day — it ingests a repository it did not author, builds and executes it, and isolates
-  exactly where §7 says to. Also recorded: two of `/security-review`'s own exclusions
+- **`sota/rules/01` §4 — a fix is verified when a fresh search cannot get around it**, not
+  when the reported input stops working. The re-audit loop already existed and said only
+  *re-run the same tools*; it now requires re-pointing the original hunt at the patched code
+  with no knowledge of the fix, because a patch that closes one input and leaves the class
+  open passes every narrower check.
+- **`sota/rules/01` §4 — read the yield curve across waves.** Repeat audits should show the
+  finding **count fall while difficulty rises**. A count that stays flat wave after wave is
+  a statement about the audit, not the code: the waves were not independent. Carry the
+  previous wave's findings in as an explicit exclusion, and treat a wave that returns the
+  previous wave's list as a failed wave.
+- **Audit-checklist items for all five**, in the three files they landed in.
+- **Thirteen intake rows in `docs/ADOPTION-LOG.md`** across this release and the last: six
+  now marked **adopted** with their landing sites, and four **rejected as already covered**
+  with citations (threat-model-scoped scanning → router §AUDIT step 2; gVisor + API-only
+  egress → `sota-sandboxing` rules/05 R2.1/R4.1; ASAN → `sota-c-cpp` rules/02; proving a
+  pipeline on a known-vulnerable reference target → `sota-code-security` rules/12 §2.2). One
+  rejection carries more than its verdict: the defending-code harness is an **independent
+  implementation of `sota-sandboxing` rules/05 §7**, shipped the same day — it ingests a
+  repository it did not author, builds and executes it, and isolates exactly where §7 says
+  to. Also recorded so they are never adopted: two of `/security-review`'s own exclusions
   contradict this library deliberately (*"including user-controlled content in AI system
-  prompts is not a vulnerability"*; *"memory safety issues … are impossible in rust"*) and
-  must not be adopted — its exclusion list is a PR-noise policy, not a security taxonomy.
-- **The ROADMAP "Start here" section restamped to 2026-08-29, naming what was re-read**
-  (star/forks live via `gh` — 17/3, flat; router at 499/500; the v1.30.0 release; row 13's
-  cap watch) **and what was not** (item 1's listing status, the deferred-row pointer). The
-  "nothing is queued" line is now false and was corrected rather than left: item 29 is one
-  session of writing.
+  prompts is not a vulnerability"*; *"memory safety issues … are impossible in rust"*). Its
+  exclusion list is a PR-noise policy, not a security taxonomy.
+- **ROADMAP "Start here" restamped twice in one day and both stamps name what was re-read**
+  — star/forks live via `gh` (**17/3**, flat), the router at **499/500**, the release, row
+  13's cap watch — and what was **not** (item 1's listing status, the deferred-row pointer).
+  The "one piece of queued writing" line, added when item 29 opened, was corrected when it
+  closed rather than left standing.
+- **`docs/CONTEXT-MANAGEMENT.md`'s token figures stamped rather than scaled.** The tree has
+  moved since they were measured (302 skill files, a 499-line router), and no tokenizer was
+  reachable this session — so they are marked as a **2026-08-27 floor** with a re-measure
+  instruction, rather than adjusted by estimate. That file's own rule is *do not estimate
+  skill sizes; count them*, and quietly scaling them would have broken it.
+
+### Notes
+
+- **None of the five is measured**, and the ROADMAP row says so: they are borrowed from two
+  tools Anthropic ships, not validated here. Deliberately **not gated** — all five are
+  judgement conventions, and a threshold a repo cannot mechanically check is prose by
+  definition ([docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md)).
+- The invariants earned their keep on the way in: check 18 caught a `rules/12 §7` citation
+  that should have been §2.2.
 
 ## [1.30.0] - 2026-08-29
 
@@ -5510,6 +5561,10 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.30.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.30.1
+[1.30.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.30.0
+[1.29.5]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.29.5
+[1.29.4]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.29.4
 [1.29.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.29.3
 [1.29.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.29.2
 [1.29.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.29.1

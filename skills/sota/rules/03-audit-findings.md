@@ -110,6 +110,19 @@ Two asymmetries the evidence standard has to carry:
   section too, where an inert control praised as a strength is the worst
   possible reporting error.
 
+**A reproduction you ran once is a coincidence you have not ruled out.** Where the
+evidence is a *behaviour* rather than a line of code — a crash, a race, a
+timing-dependent bypass, a fuzzer hit, or anything an agent or a sampled model
+produced — reproduce it **N of N** and report both numbers. Anthropic's
+defending-code reference harness sets the reference point: its find agents run
+the instrumented binary *"until a given input produces a crash 3 out of 3
+times"*, and until then it is not a crash. The threshold matters less than having
+one, because `1/1` and `3/3` are typeset identically in a report and mean
+entirely different things. This binds your own instruments too: a criterion that
+flips run to run at temperature 0-ish (`sota-llm-engineering` rules/01) cannot be
+settled by a single run, so a one-shot measurement quoted as a result is an
+unstated `1/1`.
+
 The library's short finding format (`file:line | rule | severity | effort | fix`)
 is the working format during passes; expand each surviving finding into the
 full evidence block for the report. Skill-local block formats are fine during
@@ -231,6 +244,46 @@ The pass:
    finding-shaped claim with the heavier burden of `SKILL.md` principle 3. Give
    absence claims a refuter whose job is to find one counter-example.
 
+### 4a. Bound what the refuter gets, and make its verdict a number
+
+Step 2 says *prompt it to kill the finding*. Three conditions decide whether that
+prompt does anything, and all three are cheap.
+
+**Give the refuter less than the finder had.** A refuter holding the finder's
+tools re-runs the finder's investigation and arrives where it arrived. Take the
+tools away: it reads code and reasons, it does not execute, write files, or
+re-derive the reproduction. Anthropic's `/security-review` says this to its own
+filter sub-tasks — *"you do not need to run commands to reproduce the
+vulnerability, just read the code to determine if it is a real vulnerability. Do
+not use the bash tool or write to any files."* It is the cheaper half of the
+discipline, because a refuter that cannot re-run anything has to engage with the
+claim exactly as written.
+
+**Bound what crosses to a single artifact.** Fresh context is not enough on its
+own: hand over your write-up and the refuter inherits its framing; hand over your
+session and it inherits your dead ends. The strong form ships **only the
+reproducible artifact** — the proof of concept, the failing command, the
+`file:line` — and nothing else. Anthropic's defending-code reference harness
+states it precisely: its grader reproduces each crash *"in a fresh container that
+the find agent hasn't touched"*, and *"the only thing that crosses over from the
+find agent to the grader is the proof of concept it produced."* Where no artifact
+can be produced, that is itself the result: a finding with nothing to hand over
+is a finding you have not reproduced (§2).
+
+**Score the verdict; do not narrate it.** A refuter that returns prose returns a
+judgement you then re-judge, which is the anchoring the pass exists to escape.
+Require a number — `/security-review` scores confidence 1–10 and **drops
+everything below 8** — and fix the bar *before* you see the findings. The
+threshold is a policy about what the report is for, so state it in the
+methodology (`rules/01` §1): a pre-merge gate that must not cry wolf sits high; a
+one-off deep audit, where a missed Critical is the expensive error, sits lower
+and ships the near-misses marked "needs verification" rather than dropping them
+silently. Either way the cut is reviewable, which a paragraph of hedging is not.
+
+A number is not a fact. It is a forcing function that makes disagreement visible,
+and like every other number in this file it is a claim about a process you must
+have watched work (`sota-code-security` rules/12 §2.2).
+
 Scale it to stakes: every Critical/High gets refuted, always. Mediums get a pass
 when the audit is high-stakes or the finding drives an expensive fix. Skip it for
 Low/Info hygiene items — the overhead outruns the value.
@@ -299,6 +352,14 @@ Deliver in exactly this order:
       or a fresh-context hostile read prompted to *kill* the finding, working
       from the code and not from your write-up, with survivors kept and
       refutations recorded (§4)?
+- [ ] Did each refuter get **less than the finder** — no execution, no writes —
+      and did **only the artifact** cross over (the PoC, the failing command, the
+      `file:line`), rather than your write-up or your session (§4a)?
+- [ ] Does each refutation carry a **number** against a threshold fixed *before* the
+      findings were seen, with the threshold stated in the methodology (§4a)?
+- [ ] Is every finding whose evidence is a **behaviour** (crash, race, timing,
+      agent- or model-produced) reproduced **N of N**, with both numbers reported
+      rather than an unstated `1/1` (§2)?
 - [ ] Every **refuted or downgraded** finding **swept** across the repository for
       the same pattern before it was dropped, with the sweep and its denominator
       recorded beside the refutation (§4)?
