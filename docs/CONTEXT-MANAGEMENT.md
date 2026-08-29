@@ -170,6 +170,14 @@ these on demand, so smaller files mean less use of context."* And **5 of the 41*
 lines (measured 2026-08-27; it was 16,442 at 484 lines the day before, so this number
 moves with every router edit — re-measure, never carry it forward).
 
+> **Not re-measured since, and the tree has moved.** As of 2026-08-29 the library holds
+> **302** skill files rather than 301 (`sota/rules/03` was split out of `rules/01` in
+> v1.30.0), the router is **499** lines, and v1.30.1 added sections to three `rules/*.md`.
+> Every token figure above therefore dates to **2026-08-27** and is a **floor**, not a
+> current reading. They were left un-updated rather than scaled on purpose: this file's own
+> rule is *do not estimate skill sizes; count them*, and no tokenizer was reachable in the
+> session that moved the tree. Re-measure with `count_tokens` at the next sweep.
+
 > **Correction, 2026-08-26.** This paragraph read *"~10,211 tokens — 2×"* until it was
 > measured. That figure came from a chars/4 heuristic and **under-reported the router's
 > context cost by ~60%**; `POST /v1/messages/count_tokens` returns **16,934** for the

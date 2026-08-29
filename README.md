@@ -272,8 +272,19 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   refuted pattern routinely closes somewhere the audit's scope didn't cover. A severity
   also has to **name its chain** (reach → primitive → boundary crossing → channel), and
   on a diff it is rated against the code the change *replaced*: filing a High against a
-  hardening fix teaches authors that hardening attracts findings.
-  ([findings §1, §4](skills/sota/rules/03-audit-findings.md))
+  hardening fix teaches authors that hardening attracts findings. The refuter also gets
+  **less than the finder had** — no execution, no writes — with **only the artifact**
+  crossing over (the PoC, the failing command, the `file:line`), never your write-up; and
+  it returns a **number against a threshold fixed before the findings were seen**, because
+  a paragraph of hedging is a judgement you then re-judge.
+  ([findings §1, §4, §4a](skills/sota/rules/03-audit-findings.md))
+- **A result you saw once** — where the evidence is a *behaviour* (a crash, a race, a
+  timing bypass, anything an agent or a sampled model produced), it is reproduced **N of
+  N** and both numbers are reported: `1/1` and `3/3` are typeset identically and mean
+  different things. On a repeat audit the **yield curve** is read too — count falling while
+  difficulty rises. A flat count wave after wave is a statement about the audit, not the
+  code. ([findings §2](skills/sota/rules/03-audit-findings.md),
+  [methodology §4](skills/sota/rules/01-audit-methodology.md))
 - **A control that works, on some of the sites it's credited with** — not inert, not
   missing: a real containment check guarding one channel of five, a `disable_tools=True`
   passed at 2 call sites of 6, a path guard on 9 target walks of 61. Every signal is a

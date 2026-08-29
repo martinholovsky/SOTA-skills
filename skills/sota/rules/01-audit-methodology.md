@@ -153,7 +153,24 @@ Budget explicit manual passes for the classes SAST is structurally blind to:
 - **Re-audit loop**: after remediation, re-run the same tools at the new
   commit and re-execute the relevant skill checklists against the changed
   code — confirm fixes, catch regressions, and check that fixes did not
-  introduce new findings. State this loop in the roadmap.
+  introduce new findings. State this loop in the roadmap. **A fix is verified
+  when a fresh search cannot get around it, not when the reported input stops
+  working**: re-point the original hunt at the patched code with no knowledge of
+  the fix. Anthropic's defending-code reference harness makes this its fourth
+  patch gate — the code builds, the proof of concept no longer fires, the test
+  suite passes, *and* *"a fresh find agent can't find a way around the fix."* A
+  patch that closes one input and leaves the class open passes all three of the
+  narrower checks.
+- **Read the yield curve across waves.** Repeated audits of one codebase should
+  show the finding **count fall while the difficulty rises** — earlier findings
+  are fixed, so later passes have to reach deeper; the harness reports the same
+  shape (*"the number of findings will likely go down, but the complexity will
+  likely also go up"*). A count that stays flat wave after wave is a statement
+  about the audit, not about the code: the waves were not independent — same
+  prompt, same salient files, nothing carried over. Carry the already-reported
+  findings into the next wave as an explicit exclusion so it is steered past them
+  instead of re-deriving them, and treat a wave that returns the previous wave's
+  list as a failed wave.
 
 ---
 
@@ -219,4 +236,9 @@ one covers coverage, tooling and hygiene. Both run.
 **Hygiene**
 - [ ] Audit was read-only; nothing in the target mutated without explicit
       instruction?
-- [ ] Re-audit loop defined for verifying remediation?
+- [ ] Re-audit loop defined for verifying remediation — and does it verify each fix
+      by **re-pointing the original hunt at the patched code**, rather than only
+      confirming the reported input stopped working (§4)?
+- [ ] On a repeat audit, was the **yield curve** read — count falling while
+      difficulty rises — and were the previous wave's findings carried in as an
+      explicit exclusion so the waves are independent (§4)?

@@ -56,6 +56,10 @@ trying to do**, not by file. (Kept in sync by hand; if a link rots, open an issu
 | Read an eval that failed as an *instrument* rather than as a result | [BUILD-SAFE.md](../evals/results/2026-07-30/BUILD-SAFE.md) |
 | See the edges of the do-not-reimplement rule (§3.9.6), as worked cases | [`evals/cases/reimplement.jsonl`](../evals/cases/reimplement.jsonl) — documentation, never run |
 | Know what the audit hunts that a scanner can't (inert controls, **controls that block everything**, **a working control applied to part of its population**, **security prose the code doesn't keep**, unreached dependencies, stale decisions, refutation, absence claims) | [README → What the audit hunts](../README.md#what-the-audit-hunts-that-a-scanner-cant) |
+| Set up a refutation that actually refutes — a **restricted refuter**, only the artifact crossing over, a **numeric confidence threshold** fixed in advance | [`sota/rules/03` §4a](../skills/sota/rules/03-audit-findings.md) |
+| Report a **behavioural** finding (crash, race, agent-produced) — the N-of-N reproduction rule | [`sota/rules/03` §2](../skills/sota/rules/03-audit-findings.md) |
+| Verify a **fix**, and read a repeat audit's **yield curve** across waves | [`sota/rules/01` §4](../skills/sota/rules/01-audit-methodology.md) |
+| Fan out parallel agents without them **converging on the same finding** | [`sota-llm-engineering` rules/04 §7](../skills/sota-llm-engineering/rules/04-agents-tools.md) |
 | Rate a finding: severity, **chain closure**, the diff baseline, evidence, refutation, the report template | [`sota/rules/03-audit-findings.md`](../skills/sota/rules/03-audit-findings.md) (scoping, tooling and hygiene stay in [`rules/01`](../skills/sota/rules/01-audit-methodology.md)) |
 | Harden a tool that **ingests repositories it did not author** (scanner, SAST wrapper, review bot, agentic analyser) | [`sota-sandboxing` rules/05 §7](../skills/sota-sandboxing/rules/05-ai-agent-sandboxing.md) |
 | Read the retraction + the retired anchoring hypothesis | [SILENT-FAILURE.md](../evals/results/2026-07-20/SILENT-FAILURE.md) |
