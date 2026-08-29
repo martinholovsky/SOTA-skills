@@ -15,6 +15,11 @@ what reaches production, what fires, and what the output is entitled to say.
 too), `rules/11` for the codebase-scale sweep, and `rules/12` before quoting any
 number a control or an instrument produced.
 
+§6 and §7 are a third case again, and the one the other two cannot reach: the
+control is present *and* effective, on some of the sites it is credited with,
+beside a document asserting all of them. Nothing is inert and nothing is missing,
+so both halves above answer "fine" — only a count settles it.
+
 ## 1. Unearned claims in reporting output — the numbers and the words
 
 A tool that **prints numbers as literals** instead of deriving them from what it
@@ -151,7 +156,7 @@ goes *green*, not pending. Read job conclusions, never the merge button.
 
 State the sample when reporting either: "no non-skipped run in the last N" is a
 bounded observation, not "never". A single-name search compounds this — see
-`sota/rules/01-audit-methodology.md` on absence claims.
+`sota/rules/03-audit-findings.md` on absence claims.
 
 The same shape one layer down, in the dependency graph rather than the control
 plane: a declared dependency, registered module, or plugin that is wired in and
@@ -219,6 +224,122 @@ controller and edge control, then ask how long it has held that value and what
 was supposed to flip it. "Enabled" is not "enforcing", and no consumer of the
 dashboard can tell the difference.
 
+## 6. A real control applied to part of its population
+
+Everything above is a control that achieves nothing. This one **works** — it
+runs, it rejects, it has a passing test — and it covers a *subset* of the sites
+it is believed to cover. Every signal is the signal of a working control,
+because on the guarded subset it is one. The falsification question (`rules/10`
+§1) answers "yes, something would differ", and the control is still wrong.
+
+Three field instances, one repository, one afternoon:
+
+| The mitigation | Where it ran | Where it did not |
+|---|---|---|
+| an `escapes_target()` containment check | the file-**listing** channel | the four channels in the same function that read file **bodies** and ship them to a third-party LLM |
+| a `disable_tools=True` argument | 2 call sites (structured-JSON prompts) | 4 call sites carrying attacker-authored source |
+| a path-containment helper | 9 target walks | the other 52 |
+
+The pattern is not random: **the guarded member is the one the author was looking
+at when the bug was filed.** A fix applied at the site of the report is a fix
+applied at one site, and the report closes.
+
+The audit move is a **census, not a search**. Do not grep for the control and
+confirm it exists — grep for the *operation the control protects* (the read, the
+spawn, the walk, the write, the deserialize), enumerate every call site, and mark
+each one guarded or unguarded. Report the ratio. `9 of 61` is a finding; "path
+containment is applied" is not a claim anyone can check. Where the population is
+large, sort by *how the unguarded ones differ* — in all three cases above the
+unguarded sites were the ones handling the richer, more attacker-influenced data,
+because those were added later.
+
+This is `rules/12` §3's "verify per target, not once" pointed the other way:
+there the population belongs to a **guard** and you inject a defect per member;
+here it belongs to a **mitigation**, and the tests pass for the honest reason
+that they exercise the guarded member. Neither pass finds the other's version.
+
+### 6a. The opt-in-secure default — the API shape that guarantees §6
+
+When the safe behaviour is a parameter and that parameter's default is the
+**unsafe** value, §6 is not a risk, it is a schedule: every call site added from
+now on starts unguarded, and coverage can only decay as the codebase grows.
+
+```python
+# BAD — safety must be remembered at every call site, forever, by everyone
+def run_agent(prompt, disable_tools=False): ...
+run_agent(p)                       # tools live; reads as ordinary, reviews as fine
+
+# GOOD — the capability must be requested, and each grant is one greppable line
+def run_agent(prompt, *, tools=NO_TOOLS): ...
+run_agent(p)                       # no tools
+run_agent(p, tools=Tools(read=ROOT))   # auditable: `grep -c 'tools='`
+```
+
+Rule: **a parameter that selects a trust boundary defaults to the closed side**,
+and the open side is passed explicitly and keyword-only. The property worth
+preserving is not "the default is safe" — it is that *the count of privileged
+call sites is a `grep -c` away*, which is what makes §6's census cheap enough to
+actually run.
+
+AUDIT, in this order: (1) read the **default in the signature**, never the
+docstring or the config sample; (2) count call sites passing the safe value
+against the total; (3) ask which of those two numbers the security documentation
+asserts (§7). A safe default passed explicitly at 6 of 6 sites is fine. An unsafe
+default passed at 2 of 6 is the finding, and the four are its evidence.
+
+Two adjacent shapes, same fix: a constructor whose hardening argument is
+positional and easy to drop, and a wrapper that re-exports a dangerous callee
+with the callee's own permissive defaults intact.
+
+## 7. The claim the code does not keep — falsify the quantifier
+
+§1 is about numbers a **tool prints at runtime**. This is about sentences a
+**human wrote**: a threat model, a `security_model.md`, a module docstring, an
+ADR's consequences section, a README's security paragraph. Nothing executes
+them, no gate reads them, and they are exactly what an operator plans around —
+including the operator's decision *not to look*.
+
+They are also the cheapest findings available, because most are universally
+quantified and therefore falsifiable **by counting**:
+
+| The prose said | The count was |
+|---|---|
+| "path containment is applied at every target walk" | 9 of 61 |
+| "no function-calling, no shell, no subprocess — this RCE mechanism is NOT APPLICABLE" | tools enabled by default; a shell command executed on the host in the reproduction |
+| "the container has no access to the operator's home directory, credentials, or `.env`" | nothing in the staging code enforced it |
+
+Every one had been **true when written**. That is the class: a security claim is
+a snapshot, the code moves, and nothing in the repository couples them.
+
+**The pass** — twenty minutes on most repositories:
+
+1. Grep the security prose for universal quantifiers: `every`, `all`, `always`,
+   `never`, `no `, `none`, `only`, `cannot`, `not applicable`, `by design`,
+   `guaranteed`. Include module and class docstrings, which are where the
+   strongest claims hide and where no reviewer looks.
+2. Rewrite each hit as a claim **with a denominator**: "containment runs at N of
+   the M target walks".
+3. Get N and M from the code — this is §6's census.
+4. Report N ≠ M as a finding **against the document**, with the severity set by
+   what an operator would do differently if they believed it.
+
+A **"NOT APPLICABLE" verdict on a real mechanism is the highest-impact form** and
+deserves its own sweep: it does not merely mislead, it *cancels the reader's own
+investigation*, which is why such a claim can survive years of review by people
+who would have caught the code.
+
+Fix the document and the code in the same change. Fixing only the code leaves the
+next reader trusting a sentence that is true today by coincidence; fixing only the
+document trades a wrong claim for an admitted gap and is still an improvement, so
+do it even when the code fix is out of scope. Where the claim carries real weight,
+make it **executable** — a test named for the sentence, asserting the census — and
+the prose can no longer drift alone (`rules/12` §1).
+
+These land in the audit's decision ledger (`sota/rules/03` §3), and the
+classification is worth getting right: a sentence that **was never true** of the
+code as shipped is UNJUSTIFIED; one that was true and was overtaken is STALE.
+Either way it carries a severity and appears in the findings, not in prose.
+
 ## Audit checklist
 
 - [ ] **Proxy predicates**: for every `if` guarding a control, name the dependency the
@@ -249,5 +370,16 @@ dashboard can tell the difference.
 - [ ] Is any control parked in **audit / warn / dry-run / report-only** mode, and
       is that a recorded decision with an owner and a date rather than a default
       nobody revisited (§5)?
+- [ ] For every mitigation confirmed to exist, has a **census** been run — the
+      protected *operation* enumerated (not the control), every call site marked
+      guarded or unguarded, and the **ratio reported** (§6)? "It is applied" is not
+      a checkable claim.
+- [ ] Does any security-relevant parameter **default to the unsafe value**, so the
+      safe one must be remembered at every call site? Read the signature, not the
+      docstring, and count the sites that pass it (§6a).
+- [ ] Have the **universal claims in the security prose** — threat model, module
+      docstrings, ADRs, README — each been rewritten with a denominator and
+      counted against the code, with any `NOT APPLICABLE` verdict on a real
+      mechanism swept first (§7)?
 - [ ] For each of the above: **if this were a no-op, would anything observable
       differ** — a log, a metric, a failing test (`rules/10` §1)?

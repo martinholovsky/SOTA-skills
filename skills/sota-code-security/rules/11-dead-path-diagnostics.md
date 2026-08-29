@@ -246,7 +246,7 @@ Label every finding exactly one of:
 - **LATENT** — mechanism verified in the code; verified **not** to have fired,
   and you say how you checked. Report it; do not inflate it to ACTIVE.
 - **REFUTED** — you suspected it and the evidence says no. **Report these too**:
-  a refuted suspicion stops the next auditor re-raising it (`sota/rules/01` §7).
+  a refuted suspicion stops the next auditor re-raising it (`sota/rules/03` §4).
 
 **Not findings** (disqualifiers):
 

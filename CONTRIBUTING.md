@@ -339,10 +339,12 @@ you deal with it. Never bump the hash without first re-reading `BUILD_WORKFLOW` 
 the new §BUILD clause by clause, then say in the commit which case it was — *an imperative
 changed* (re-sync the mirror first) or *only prose moved* (hash alone is correct).
 
-**AUDIT is mirrored in two** — the router's §AUDIT and
-[`rules/01-audit-methodology.md`](skills/sota/rules/01-audit-methodology.md) §10. There is
-**no hash pin over §AUDIT**, so nothing catches divergence automatically; a new pass needs
-a line in the router *and* a section in `rules/01`.
+**AUDIT is mirrored in three** — the router's §AUDIT,
+[`rules/01-audit-methodology.md`](skills/sota/rules/01-audit-methodology.md) §5 (which owns
+running the audit) and [`rules/03-audit-findings.md`](skills/sota/rules/03-audit-findings.md)
+(severity, evidence, refutation, reporting). There is **no hash pin over §AUDIT**, so nothing
+catches divergence automatically; a new pass needs a line in the router *and* a section in
+whichever rules file owns it.
 
 Adding a `skills/sota/rules/NN` file also touches the router's **library map** (invariant
 15) and the README's file count (invariant 6) — and both gates read `git ls-files`, so

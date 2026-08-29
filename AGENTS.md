@@ -79,10 +79,10 @@ denominator, skip rather than guess.
 *Adding a `rules/NN` file?* Invariant 10 checks its own `SKILL.md` indexes it and
 **invariant 15** checks the router's library map lists it, both directions — that
 map went unchecked long enough for `rules/11` to sit unlisted for two releases.
-`skills/sota/SKILL.md` is at **498/500** (re-counted 2026-08-28), since 2026-08-26 when BUILD/AUDIT detail moved
-into `skills/sota/rules/`, ending compress-on-every-addition: **detail belongs in
-`rules/`, imperatives in the router.** This number has been wrong **five** times, so
-**re-count with `grep -c ''` rather than trust this sentence**. Router edits also move `ROUTER_BUILD_SHA`, which aborts the evals on drift.
+`skills/sota/SKILL.md` is at **499/500** (re-counted 2026-08-29); `rules/01` split into 01 (process) +
+03 (findings) on 2026-08-29, the same move as 2026-08-26's BUILD/AUDIT offload: **detail belongs in
+`rules/`, imperatives in the router.** This count has been wrong **five** times — **re-count with `grep -c ''`**.
+Editing the router's **BUILD section** moves `ROUTER_BUILD_SHA` and aborts the evals; AUDIT does not.
 The gates enumerate via `git ls-files`, so an **unstaged new file is invisible** to
 them — `git add` before believing a count.
 

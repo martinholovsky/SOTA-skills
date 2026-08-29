@@ -5,9 +5,104 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.30.0] - 2026-08-29
+
+**Front door checked:** audit-findings · sota-code-security · sota-sandboxing
+
+Intake from **two audits of one third-party project run side by side** — a full-repo audit
+using this library, and Claude Code's diff-scoped `security-review`. Seven classes adopted,
+six rejected as already covered, with citations, in
+[docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md). The two runs are **not comparable
+instruments** — one full-repo, one diff-scoped — so nothing here is a scoreboard; what
+transferred was the reasoning moves.
+
+### Added
+
+- **`sota-code-security` rules/14 §6 — a real control applied to part of its population.**
+  Not inert (`rules/10`) and not missing (the rest of `rules/14`): it **works**, on some of
+  the sites it is credited with. A containment check guarding the file *listing* and not the
+  four channels twelve lines away that read file *bodies*; `disable_tools=True` at 2 call
+  sites of 6; a path guard on 9 target walks of 61. Every signal is a working control's
+  signal, because on the guarded subset it is one — so the falsification question answers
+  "yes, something would differ" and the control is still wrong. The guarded member is
+  reliably **the one the author was looking at when the bug was filed**. The audit move is a
+  **census, not a search**: enumerate the protected *operation*, mark every call site
+  guarded or unguarded, report the ratio. `9 of 61` is a finding; "containment is applied"
+  is not a claim anyone can check.
+- **`rules/14` §6a — the opt-in-secure default, the API shape that guarantees §6.** When the
+  safe value is a parameter default that is *unsafe*, partial application is not a risk but a
+  schedule: every call site added from now on starts unguarded. A parameter selecting a trust
+  boundary **defaults to the closed side**, keyword-only. The property worth preserving is
+  not "the default is safe" but that *the count of privileged call sites is a `grep -c`
+  away* — which is what makes the census cheap enough to actually run. Audit in order: read
+  the **default in the signature** (never the docstring), count the sites that pass it, then
+  ask which of the two numbers the security documentation asserts.
+- **`rules/14` §7 — the claim the code does not keep: falsify the quantifier.** §1 owns
+  numbers a *tool prints at runtime*; this owns sentences a *human wrote* — threat models,
+  `security_model.md`, module docstrings, ADRs. Nothing executes them, no gate reads them,
+  and they are what an operator plans around, including the decision **not to look**. Most
+  are universally quantified and therefore falsifiable by counting: "applied at every target
+  walk" (9 of 61); "no function-calling, no shell, no subprocess — this RCE mechanism is NOT
+  APPLICABLE" (tools on by default, a shell command executed on the host in the
+  reproduction); a docstring promising no access to `.env` that the staging code never
+  enforced. Each had been **true when written**. A wrong `NOT APPLICABLE` is the
+  highest-impact form — it does not merely mislead, it *cancels the reader's own
+  investigation*, which is how one survives years of review by people who would have caught
+  the code.
+- **`sota-sandboxing` rules/05 §7 — when your tool ingests other people's repositories.** A
+  routing gap: `rules/05` owned *model output*, `sota-code-security` rules/09 owned
+  *parsers*, `sota-devsecops` rules/03 owned *your own dependencies* — nothing owned the
+  composition that every scanner, SAST wrapper, review bot and agentic analyser is. Four
+  legs, typically owned by four different people: staging that **dereferences symlinks** out
+  of the target tree (`copytree(..., symlinks=False)` is the default); "static" analysis that
+  **evaluates target-controlled build metadata** (`build.rs`, proc macros, `setup.py`, npm
+  lifecycle scripts, Gradle, `make`); an **LLM step spawned tools-live** with the parent's
+  `cwd` and environment; and **egress on by default**, because a container with no
+  `--network` flag has full outbound access. Written as *verify it for your exact command and
+  flags* rather than a per-tool verdict table. Reachable from routing rule 13.
+- **`sota/rules/03-audit-findings.md` — a new rules file, split out of `rules/01`.** `rules/01`
+  had reached 455 of its 500 lines with new severity and refutation content to land, so it
+  split at a seam it already had: **`rules/01` runs the audit** (scoping, the verified tool
+  matrix, triage, hygiene), **`rules/03` governs the deliverable** (severity, evidence, the
+  decision ledger, refutation, the report template). Sections 4–8 of the old file are §1–§5
+  of the new one, in the same order, and the new file's header states the shift for prose
+  written before it. This exercised the repo's own reactive-split policy: invariant 18 caught
+  **5** broken `§` references in four files before anything shipped, and the fail-open case it
+  *cannot* catch — a `sota/rules/01 §5` reference silently resolving against another skill's
+  own `rules/01` §5 — was swept by hand.
 
 ### Changed
+
+- **Severity now requires a named chain (`rules/03` §1 hard rule 3).** A severity is a claim
+  about a chain, and a chain has legs: input **reaches** the code, something **acts** on it,
+  the effect **crosses a trust boundary**, and where exfiltration is the impact a **channel**
+  carries it out. Each leg is pointed at code or the finding is downgraded — the diff-scoped
+  review killed its own candidate on three independent legs (no Swift toolchain in the image;
+  `go build ./...` runs no generator, test or `main`; staging lands in a `0700` directory the
+  operator already owns). A missing leg does not make a finding smaller, it makes it a
+  *different* finding. The inverse is the higher-yield half: when every leg coexists in one
+  path, that is what the report leads with. Also added as a fourth **chain-closure** lens to
+  the refutation pass (§4), where the previous *reachability* lens asked only whether input
+  arrives.
+- **On a diff, rate against the code the change replaced (`rules/03` §1 hard rule 4).** A
+  hardening change that closes three exposures and leaves a fourth is not a High — the High
+  was the state before it. *"Filing a High here would be filing a High against the fix"* is
+  not a conservative error: it teaches authors that hardening attracts findings, which is how
+  the next mitigation does not get written. The residual gap is still reported, at its own
+  severity, against the codebase rather than against the diff.
+- **A refuted finding is a template — sweep before you drop it (`rules/03` §4 step 5).** The
+  refutation hands you the pattern *and* the leg that was missing; both are reusable across
+  the whole repository, not just the audited scope. The evidence is direct: the diff-scoped
+  review found the only finding it shipped by sweeping outward from its own refuted
+  candidate, landing on an unchanged module where the analysis step compiles the target and
+  runs its build scripts with no network isolation — and the full-repo audit, with strictly
+  more scope, **missed it**. A refutation with no sweep closes a class on one instance.
+- **Router AUDIT step 4 now asks a second question.** After "does the control *do* anything?"
+  it asks "does it cover **every** site it is credited with?", routing to `rules/14` §6's
+  census and §7's prose check. Steps 5–7 and operating principle 7 re-point at `rules/03`.
+  The router is **499/500**; `ROUTER_BUILD_SHA` is unchanged, since the split touched AUDIT
+  and the library map only.
+- **The ROADMAP's "Start here" section now opens with an actionable priorities table.**
 
 - **The ROADMAP's "Start here" section now opens with an actionable priorities table.**
   It previously opened with twelve lines about where gate candidates come from — true,

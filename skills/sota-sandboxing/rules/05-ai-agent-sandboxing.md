@@ -212,6 +212,70 @@ broker holding tokens and approval logic lives outside the boundary; only the
 model-driven execution goes inside. If they share a process or filesystem, the
 sandbox is decorative.
 
+## 7. When your tool ingests other people's repositories
+
+Scanners, SAST wrappers, dependency and call-graph analysers, code-review bots
+and AI security tools share one shape: **the input is a repository somebody else
+wrote, and the tool runs on a maintainer's machine, or in CI, with that
+identity's credentials.** The target is the attacker. Nothing above changes; what
+changes is that the legs are easy to miss, because the tool *is* a security tool
+and its own documentation is usually the thing asserting it is safe (that
+assertion is `sota-code-security` rules/14 §7 — count it, don't read it).
+
+Four legs. A compromise needs two or three of them, and they are typically owned
+by different people in different files, which is why no single reviewer sees the
+chain.
+
+**R7.1 — Staging follows links out of the target.** Copying a hostile tree with a
+recursive copy that *dereferences* symlinks (Python `shutil.copytree(...,
+symlinks=False)` — the default — and equivalents elsewhere) stages the link's
+**target**, not the link. A repository containing `docs/notes.md ->
+/home/you/.ssh/id_ed25519` puts that key inside the directory you are about to
+bind-mount, index, or feed to a model. Resolve every entry and drop the ones
+whose `realpath` escapes the source root, and **report the drops** rather than
+skipping quietly — an unexplained missing file is a support ticket, a silent one
+is a finding nobody files. This is the same predicate as archive extraction
+(`sota-code-security` rules/09 §2); the copy path is where it gets forgotten,
+because a copy does not look like parsing.
+
+**R7.2 — "Static" analysis that runs the target's build system.** Ask, of the
+exact command and flags you invoke: *does this evaluate build metadata the target
+controls?* Many do by design — Rust `build.rs` and proc macros (so `cargo
+clippy`, `cargo metadata`-driven tooling, and call-graph modes that compile),
+Python `setup.py` and PEP 517 backends, npm `preinstall`/`install`/`postinstall`
+(`sota-devsecops` rules/03 §3), Gradle/Maven build scripts, anything invoking
+`make`. The answer is a property of the command, not the language, and it changes
+between flags: a build-mode-`none` extraction and a build-mode-`autobuild`
+extraction of the same repository differ by arbitrary code execution. **Verify it
+for your invocation** — read the tool's docs for that flag, or run it against a
+canary target that writes a marker file — and treat "it only compiles" as
+execution until proven otherwise, because compilation *is* the execution step for
+several of the ecosystems above.
+
+**R7.3 — The sub-agent inherits your shell.** An LLM step that reads target
+source is R1.1's untrusted content, and it must be spawned with tools **off** —
+which means off by *default*, not off at the call sites someone remembered
+(`sota-code-security` rules/14 §6a). Two details are dropped constantly: the
+child's **working directory**, which defaults to the parent's — usually your own
+repository, holding its `.env` — so set it explicitly to the staged copy; and the
+child's **environment**, which inherits every API key the parent holds (R2.2).
+Per R6.1 the analysis sub-agent gets *less* scope than the orchestrator, never
+the same.
+
+**R7.4 — Egress is on unless something turned it off.** A container run with no
+`--network` flag has full outbound access. That is often a deliberate choice —
+dependency resolution needs the registry — but it is the leg that converts
+"executed some of the target's code" into "exfiltrated the operator's
+credentials". Where the analysis genuinely needs the network, R4.1's FQDN
+allowlist is the form it should take; where it does not, `--network=none` is one
+flag and the whole chain stops.
+
+**The audit move is the intersection, not the list.** Each leg alone is a
+hardening note. Grep for all four across every ingest path — including the ones
+outside the change you are reviewing, which is where the complete chain usually
+sits (`sota/rules/03` §4, sweep before you drop) — and the finding is the module
+where they coexist. Rate it with the chain named leg by leg (`sota/rules/03` §1).
+
 ---
 
 ## Audit checklist
@@ -242,3 +306,9 @@ sandbox is decorative.
       profiles in their own sandbox.
 - [ ] Append-only action log outside the sandbox with denied-action alerting;
       MCP/third-party tool servers inventoried, pinned, and scope-reviewed.
+- [ ] For any tool that **ingests repositories or archives it did not author**:
+      staging drops entries whose `realpath` escapes the source root (and reports
+      the drops); every analysis command checked for whether it evaluates
+      target-controlled build metadata; LLM steps over target source spawned
+      tools-off, with an explicit `cwd` and a scrubbed environment; egress
+      `none` or FQDN-allowlisted. Flag the module where all four coexist (§7).
