@@ -155,6 +155,23 @@ audit STRAT-HIGH-2).
   `open()` call, but these build the path first and call `open(p)`, so it detected nothing
   and passed the broken tree as happily as the healthy one. Watching it fail is what caught
   that; it now matches on the enclosing function and names `file:function()`.
+- `cases/prompt-independence.jsonl` (6) + `run-prompt-independence.py` — **the only
+  instrument that varies the prompt against the rule.** Every other set here asks the model
+  to do the right thing under a *neutral* prompt; this one renders the same task at three
+  pressure levels — supportive / neutral / **competing** — where the competing text is
+  ordinary operational pressure in a user's voice ("internal MVP, skip the extras", "no
+  tests, we have a review budget", "put the requirement in the system prompt where it's easy
+  to tweak"). A rule that only survives a neutral prompt is absent exactly when it is needed.
+  Axis adopted 2026-08-31 from ECC's `skill-comply` (docs/ADOPTION-LOG.md); the design is
+  ours. Three arms: `bare`, `pre` (the library at `--ablate-ref`, default `main`, via
+  `git show` — the real prior text, not a hand-mirror), `post` (working tree). **The three
+  cases whose rules files are unchanged between pre and post are the control**, and their
+  pre→post delta is this run's noise floor measured inside the run rather than assumed; the
+  runner **aborts** if no case differs, because then the ablation measures nothing.
+  `--selftest` puts a compliant and a non-compliant reference through the blind judge and
+  requires 1.00 / 0.00 — all four guards (judge separation, ablation, empty case set, the
+  operating-principles extraction) were **watched to fail with exit 1** before the first
+  real run.
 - `cases/desc-routing-regressions.jsonl` — **regression cases, not a measurement set.**
   Each exists *because* a specific mis-route happened, which is the point of a regression
   case and exactly why it must never be averaged into the A/B in `desc-routing.jsonl`
@@ -242,6 +259,8 @@ python3 evals/run-desc-routing.py --samples 3 --temp 0.7   # description-catalog
 python3 evals/run-clean.py --cases evals/cases/silent-failure.jsonl --ablate  # rules/10 ablation
 python3 evals/run-silent-open.py --samples 5 --temp 1.0    # silent controls, open-ended + judged
 python3 evals/run-adjudication.py --samples 3 --temp 0.7   # audit precision (false-positive resistance)
+python3 evals/run-prompt-independence.py --selftest        # judge must separate 1.00/0.00 first
+python3 evals/run-prompt-independence.py                   # rule survival under a competing prompt
 ```
 
 `--ablate` (on `run-clean.py`) drops `rules/10-silent-control-failure.md` from the

@@ -88,6 +88,21 @@ are tool-design failures, not model failures.
   cause dithering. Prefer one well-described tool per capability; for large
   tool libraries use provider tool-search/dynamic-loading rather than 80
   schemas in every prompt (cache-aware: append, don't swap — rules/02 §5).
+- **A *required* tool call is a harness property, not a prompt sentence.** "You
+  MUST call `check_policy` before answering" is disregarded exactly as often as
+  any other instruction to a probabilistic interpreter, and it fails silently in
+  two directions: the model answers without ever calling the tool, or it narrates
+  a call it never made and reasons from the invented result. Neither leaves a
+  trace unless you go looking. Make the answer **structurally unreachable**
+  without the result — the harness refuses to finalize a turn whose required tool
+  has not returned *this run*, and the response is assembled from that payload
+  rather than from prose alleging it. Then **count both events** (finalize
+  attempts blocked, tool results cited but never returned): a mandatory step
+  nobody measures is indistinguishable from one nobody needs. This is the
+  *mandatory* twin of sota-code-security rules/14 §3, which covers the
+  *prohibitive* direction ("never reveal…", "only call this for admins"); the
+  remedy differs, because you cannot fix a **missing step** by removing something
+  from the context.
 
 ## 3. The loop: stopping conditions and budgets
 
@@ -122,6 +137,53 @@ class AgentBudget:
 - Long runs on current frontier models can legitimately take minutes per
   request — plan streaming/async/progress UX rather than raising HTTP
   timeouts forever (rules/05 §3).
+
+### 3a. Goal design — what the loop is allowed to call "done"
+
+§3 bounds how long a loop may run. This bounds what it may count as success: the
+failure mode where every budget holds, nothing errors, and the loop confidently
+finishes wrong.
+
+- **The done-criterion must be machine-decidable.** "Make it good", "clean this
+  up", "improve quality" cannot be settled by a comparator, so the loop either
+  never exits or exits arbitrarily. "All N tests green **and** a change-list
+  written" can. Read the goal to someone outside the domain: if they cannot run
+  one command and say done/not-done, it is not decidable yet.
+- **Write the boundary in the same breath as the done-criterion.** A goal states
+  what must be true *and* what must not have changed to get there. "All tests
+  pass" on its own is a licence to delete the failing test — the model is
+  optimizing the metric you actually stated. `Done: suite green. Boundary: no
+  test file deleted or weakened, coverage not lowered.` The **pair** is the
+  anti-Goodhart mechanism (rules/01 §8); the done-criterion alone is the bait.
+- **Prefer reconciliation to assertion.** An exit condition anchored to an
+  external fact — a golden sample, an upstream total, a financial tie-out —
+  cannot be satisfied by editing the checker. Assertions can: loosen the
+  threshold, stub the dependency, swallow the exception. Where both are
+  available, reconcile.
+- **The judge is not the builder.** Acceptance runs as a separate call with its
+  own context, on deterministic rules (exit codes, a diff against a reference, a
+  type check) — never "does this look right", and never the agent that produced
+  the artifact. The builder must not be able to edit the acceptance criteria; if
+  it can, eventually it will.
+- **Failure has a floor.** Retry cap N, then escalate to a human carrying the
+  accumulated failure reasons. Negative feedback with no damping oscillates: the
+  loop burns its budget in place and reports nothing.
+- **Front-load every clarification.** A loop will not stop to ask at 03:00; it
+  commits a guess and runs it to completion. Settle every ambiguity before launch
+  or put it outside the loop's scope.
+- **The last switch stays human** for anything whose failure you cannot absorb —
+  merging, publishing, moving money, touching production. The loop opens the PR;
+  it does not merge it. And the pressure runs opposite to intuition: the more a
+  loop rewrites its own rules, prompts or acceptance criteria, the **stricter**
+  the human review it needs, because the machine acts faster than any post-hoc
+  interception.
+
+Land it in stages — run it once by hand (which forces you to state exactly how
+the judge decides), then as a scripted loop, then on a schedule. Build a loop
+only when the task genuinely repeats, verification is automatable, the budget
+absorbs it, and the agent has tools that actually run and observe the result;
+missing any one, do the task directly. **A repo with no reconciliation baseline
+does not get a loop — it gets its errors amplified at machine speed.**
 
 ## 4. Human-in-the-loop gates
 
@@ -162,6 +224,17 @@ window, costs grow quadratically with history, and quality drops.
   (sota-code-security rules/08). Current frontier models measurably improve with an explicit
   memory file + instructions on when to consult/update it — but only if you
   tell them when.
+- **Memory admission has a precedence order.** Not everything the agent produced
+  is a fact. A conclusion the model reached this session, a summary of its own
+  reasoning, or a distilled artifact re-entering as a premise is an *assertion*,
+  and admitting it launders a guess into a durable fact that later sessions
+  cannot tell from an observation. Tag every entry with its origin — observed
+  tool output, user statement, agent inference — and on conflict let the **user's
+  correction outrank the agent's earlier assertion**, most recent first. The
+  symptom of getting this wrong is a correction that will not stick: the user
+  fixes something and the old value returns next session, because a confident
+  agent note outranked it. The security half — poisoning by untrusted content,
+  cross-user scoping — is sota-code-security rules/08.
 - **Don't resend what you can reference:** large artifacts go to files/object
   storage with a read tool, not pasted into every turn.
 - Cache-aware: history is append-only with a stable prefix (rules/02 §5);
@@ -257,6 +330,16 @@ budget bounds the sum of its children).
 - [ ] Every tool: when-to-call description, strict schema
       (`additionalProperties: false`, enums), bounded output size,
       structured actionable errors, explicit empty-result semantics.
+- [ ] Every **required** tool call enforced in the harness, not asserted in the
+      prompt — the turn cannot finalize without the result this run, and both
+      blocked finalizes and cited-but-never-returned results are counted (§2).
+- [ ] Any autonomous loop has a **machine-decidable done-criterion with its
+      boundary stated alongside it**, an exit anchored to reconciliation where one
+      exists, a judge separate from the builder that the builder cannot edit, a
+      retry cap that escalates, and a human holding the last switch (§3a).
+- [ ] Memory entries carry **provenance**, agent inferences are not admitted as
+      observations, and a user correction outranks the agent's earlier
+      assertion on conflict (§5).
 - [ ] Mutating tools idempotent or idempotency-keyed; no non-idempotent
       side effects inside a retrying loop.
 - [ ] Harness enforces ALL budget dimensions (iterations, tokens, cost,

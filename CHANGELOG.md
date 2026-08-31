@@ -5,6 +5,145 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.31.0] - 2026-09-01
+
+**Front door checked:** prompt-independence · agents-tools · audit-findings · sota-llm-engineering
+
+A second-pass intake of [affaan-m/ecc](https://github.com/affaan-m/ecc) (MIT, read whole at
+`a104765`) — already a pinned competitor in `evals/cases/competitors.json`, where it scored
+0.87 to our 0.99 in July. This pass asked the other question: not "does it beat us" but "what
+does it know that we don't". Roughly 6 of its 286 skill files carried value; nine adoptions,
+three rejections and one deferral are in [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md) with the
+grep that checked each against `skills/` first.
+
+**The new rules are measured, not asserted.** The intake produced behavioural claims about
+what a model does under pressure, so it also produced the instrument to test them —
+`evals/run-prompt-independence.py`, the first here that varies the *prompt* against the rule.
+Under a **competing** prompt the library reads **0.491 → 1.000, +0.509** (6 cases × 3 samples,
+temp 0.7; the with-library arm was perfect in **18 of 18** runs, sd 0.000), and the three cases
+the new rules touch move **+0.426** pre→post against **+0.074** of sampling noise measured on
+three byte-identical control cases in the same run
+([PROMPT-INDEPENDENCE](evals/results/2026-08-31/PROMPT-INDEPENDENCE.md)).
+
+Rules changed, in full: `skills/sota-llm-engineering/rules/04-agents-tools.md`,
+`skills/sota/rules/01-audit-methodology.md`, `skills/sota/rules/02-build-workflow.md`,
+`skills/sota/rules/03-audit-findings.md` and
+`skills/sota-code-security/rules/14-control-not-in-force.md`. The router is **untouched** —
+its §BUILD section in particular, so `ROUTER_BUILD_SHA` does not move and the completeness
+eval's mirror is unaffected.
+
+### Added
+
+- **`sota-llm-engineering` rules/04 §2 — a *required* tool call is a harness property, not a
+  prompt sentence.** "You MUST call `check_policy` before answering" is disregarded as readily
+  as any other instruction to a probabilistic interpreter, and it fails silently in two
+  directions: the model answers without calling, or it **narrates a call it never made** and
+  reasons from the invented result. Make the answer structurally unreachable without the
+  result — the harness refuses to finalize a turn whose required tool has not returned this
+  run — and count both the blocked finalizes and the results cited but never returned.
+  `sota-code-security` rules/14 §3 already owned the **prohibitive** direction ("never
+  reveal…", "only call this for admins"); this is the **mandatory** twin, and the remedy
+  differs because you cannot fix a missing step by removing something from the context. Under
+  the competing prompt *"put the policy requirement in the system prompt where a non-engineer
+  can tweak it"*, the unguided and pre-change arms both score **0.00** and the post arm
+  **1.00, 3/3**.
+- **`sota-llm-engineering` rules/04 §3a — goal design for autonomous loops.** §3 bounds how
+  long a loop may run; this bounds what it may call *done* — the failure where every budget
+  holds and the loop confidently finishes wrong. The done-criterion must be machine-decidable,
+  and **its boundary is written in the same breath**: "all tests pass" alone is a licence to
+  delete the failing test, because the model is optimizing the metric you actually stated.
+  With it: prefer **reconciliation over assertion** (an assertion can be loosened, a diff
+  against an external reference cannot), the judge is not the builder and the builder cannot
+  edit the acceptance criteria, a retry cap escalates to a human, clarification is
+  front-loaded because a loop will not stop to ask at 03:00, and the last switch stays human.
+- **`sota-llm-engineering` rules/04 §5 — memory admission precedence.** Not everything the
+  agent produced is a fact. Tag each entry's origin — observed tool output, user statement,
+  agent inference — and on conflict let the **user's correction outrank the agent's earlier
+  assertion**. The symptom of getting this wrong is a correction that will not stick. rules/08
+  already covered memory *poisoning*; this is the correctness half.
+- **`sota/rules/02` §4 — ask for a fact to produce, not a judgment to make.** "Did you handle
+  the error paths?" is answered from the same context that wrote them, and the answer is yes.
+  "Paste every `except` in the diff and name what each one re-raises" cannot be answered
+  without going and looking, and the going and looking is what changes the output.
+- **`sota/rules/01` §3 — collect deterministically, then judge.** Enumeration is a script's
+  job and must print its denominator; judgment runs over the *complete* set. Inverting them is
+  how an audit acquires a confident blind spot, and the miss is invisible, because a finding
+  list looks identical whether the census behind it was 12 of 12 or 12 of 61.
+- **`sota/rules/03` §3 — a verdict's reason must be self-contained and decision-enabling.**
+  "unchanged", "superseded", "overlaps with X", "looks fine" carry no information and quietly
+  re-open the decision they were meant to close. Worked table for all four ledger verdicts.
+- **`sota/rules/03` §5 — the executive-summary posture is capped by the worst blocker
+  standing**, not averaged: no summary reads better than "not ready" while an unfixed Critical,
+  a missing authorization check, a non-idempotent payment path or an unrecoverable migration is
+  in the list. Its companion, **"evidence not obtained — and what it would change"**, is the
+  ask-shaped half of the exclusions list.
+- **`evals/run-prompt-independence.py` + `cases/prompt-independence.jsonl` (6)** — the first
+  instrument here that varies the prompt against the rule, at three pressure levels
+  (supportive / neutral / **competing**) across three arms, where `pre` is read with `git show`
+  from `--ablate-ref` rather than hand-mirrored. Cases whose rules files are unchanged act as
+  an in-run control that measures the sampling noise instead of assuming it. All four guards —
+  judge separation, the ablation assertion, the empty case set, the operating-principles
+  extraction — were **watched to fail with exit 1** before the first scored run.
+- **`profiles/example.md.template` — eight fields the template never asked for.** Found by two
+  independent methods that produced **disjoint** answers: mapping all 40 domain skills against
+  the template's 8 sections (design system, migrations/seeding/test data, testing conventions,
+  API conventions, LLM/AI features) and reading which headings a real in-use profile had grown
+  beyond it (stack mapping, data classification, internal names never in public output,
+  detection posture). Either method alone would have reported about half the gap.
+
+### Changed
+
+- **`sota-code-security` rules/14 §3** now names the mandatory direction and points at
+  `sota-llm-engineering` rules/04 §2, including the failure it does not itself cover — a model
+  narrating a tool call it never made.
+- **[docs/ROADMAP.md](docs/ROADMAP.md)** — items 30 and 31 added; the ledger header's "All 28
+  items" corrected to 31 (it was already stale by one before this cut, because item 29 had been
+  added without updating it).
+
+### Fixed — stale claims found by the release cut
+
+The cut is the highest-yield moment to re-read prose, and it found four things no gate
+could catch:
+
+- **`docs/WHY-IT-WORKS.md` still said "Seven instruments"** for the audit family's +0.00
+  while `README.md` and `evals/results/RESULTS.md` have said **nine** since 2026-08-14.
+  The file was missed in that sweep and had been **understating our own evidence** for
+  two weeks — the same shape as the v1.22.9 README fix.
+- **`AGENTS.md` said "19 invariants + 5 more inside the eval runners."** The
+  conventions-ledger table had already grown to **8** before this release and is **9**
+  with the ablation assertion added below. Corrected to 9.
+- **`docs/ROADMAP.md`'s ledger header said "All 28 items"** while item 29 existed — it was
+  already stale by one *before* this cut, because 29 was added without touching the header.
+- **`README.md` and `docs/WHY-IT-WORKS.md` both called defect-avoidance "the newest
+  result."** It has not been since 2026-08-21 and certainly is not now; the phrase moved to
+  the axis that is actually newest.
+
+A fifth was left deliberately: a `docs/ROADMAP.md` entry states "7 of 12 runners declare
+a denominator" inside a **CLOSED 2026-08-03** block. That is a dated record, so it is
+**superseded with an as-of** (19 runners now) rather than edited — editing history to
+match the present is how a ledger stops being evidence.
+
+### Added — one enforced convention
+
+- **An ablation arm must actually differ from its baseline.**
+  `run-prompt-independence.py` diffs each case's `pre` and `post` bundles and **aborts**
+  when none differ, because otherwise the ablation arm is the treatment wearing a
+  different label and reports a delta of zero as a result. Cases that *do* match are kept
+  and read as the run's sampling-noise control rather than dropped —
+  [CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md).
+
+### Retracted
+
+- **Roadmap item 31, opened and withdrawn the same day.** The new instrument's first run
+  produced an apparent gap — case `pi05` reading 0.67 in all three arms, suggesting operating
+  principles 5(c) and 9 both failed under an explicit "no tests" instruction — and it was
+  written up as an open item on the strength of **one sample at temperature 0**. The
+  confirmation run at three samples scores the with-library arm **1.00, 3/3**. The same run
+  corrected a second number: run 1's control ablation of **+0.000** was a temperature-0
+  artifact, and the instrument's real sampling noise is **+0.074**. `sota/rules/03` §2 — *a
+  reproduction you ran once is a coincidence you have not ruled out* — caught the project's own
+  eval within hours.
+
 ## [1.30.1] - 2026-08-29
 
 **Front door checked:** audit-findings · sota-llm-engineering
@@ -5561,6 +5700,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.31.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.31.0
 [1.30.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.30.1
 [1.30.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.30.0
 [1.29.5]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.29.5

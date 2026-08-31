@@ -36,11 +36,109 @@ Everything below is a **fictional example** — replace it with your own.
 - **GitHub Actions** CI: actions pinned by SHA, least-privilege token, OIDC over
   stored keys. → `sota-devsecops`.
 
+## Stack mapping — what the library's neutral examples are here
+
+The skills name products only as neutral examples ("e.g. PostgreSQL", "Prometheus /
+Loki / Jaeger"). Write the translation once and the guidance applies verbatim
+everywhere instead of being re-explained per task. One line each:
+
+| The skills say | You run |
+|---|---|
+| Prometheus / Loki / Jaeger | *your metrics / logs / tracing backends* |
+| PostgreSQL | *your primary store* |
+| Vault | *your secrets backend* |
+
 ## Observability stack
 
-`sota-observability` is principle-first. Record what your "Prometheus / Loki /
-Jaeger" map to in your stack and apply the rules verbatim; the guidance is
-backend-agnostic. Default to OpenTelemetry for instrumentation.
+`sota-observability` is principle-first — apply the rules verbatim against the
+mapping above; the guidance is backend-agnostic. Default to OpenTelemetry.
+
+- **Log fields** every line carries: `timestamp, level, service, trace_id,
+  user_id` (name yours) and the correlation header you propagate
+  (e.g. `X-Request-ID` / W3C `traceparent`). Unstated, each service invents its own.
+- **SLOs / budgets** worth stating as defaults: API p99 latency, error budget,
+  and any frontend budget (e.g. LCP < 2.5s) → `sota-performance`.
+
+## Design system & frontend conventions
+
+Delete if this profile has no UI. Without these an agent invents a palette, a type
+scale and a spacing rhythm afresh in every component. → `sota-frontend-design`,
+`sota-web-frameworks`, `sota-ux-writing`.
+
+- **UI framework / component policy**: e.g. Tailwind + headless primitives; prefer
+  the shared `Base*` components over new one-offs.
+- **Tokens**: color space and palette source, type scale, spacing scale, radii,
+  icon set, dark-mode support. Point at the token file rather than restating it.
+- **Accessibility target**: e.g. WCAG 2.2 AA, and whether it is enforced in CI.
+- **Render strategy**: SSR / SSG / ISR default, and where client-only is allowed.
+- **Voice & terminology**: sentence case, no exclamation marks, the two or three
+  product nouns that must always be spelled one way → `sota-ux-writing`.
+
+## Migrations, seeding & test data
+
+→ `sota-databases` rules/02. The generic rules cover *how* to migrate safely; only
+you know what this project permits.
+
+- **Migration tool and location**: e.g. Alembic in `db/migrations/`, or hand-written
+  SQL applied by CI.
+- **Schema change policy**: e.g. additive-only in one release, destructive changes
+  split across two (expand → migrate → contract); who may approve a breaking change.
+- **Seeding**: how a fresh environment gets baseline rows.
+- **Test data**: generated (factory/faker) vs a fixed dataset — and the standing rule
+  that production data is never copied into a lower environment.
+
+## Testing conventions
+
+→ `sota-testing`. State the shape, not a percentage.
+
+- **Frameworks and layout**: e.g. pytest + Vitest; tests co-located / in `tests/`.
+- **Suite shape and what CI blocks on**: which layers must pass before merge.
+- **Integration policy**: real dependencies (Testcontainers-style) vs mocks, and
+  where each is allowed.
+- **Coverage philosophy**: prefer a **ratchet** (fail only if coverage drops) or a
+  diff-coverage rule over a global percentage target — `sota-testing` rules/07 §7.2
+  explains why a flat "80%" manufactures assertion-light tests on easy code.
+- **Flaky-test policy**: quarantined, or fixed within N days?
+
+## API conventions
+
+Delete if this profile ships no API. → `sota-api-design`.
+
+- **Versioning**: URL (`/api/v1/`) vs header, and the deprecation window.
+- **Error format**: e.g. RFC 9457 `application/problem+json` — pick one and keep it.
+- **Pagination**: cursor or offset, and the default/max page size.
+- **Idempotency**: which methods require an `Idempotency-Key`, and where keys are stored.
+
+## LLM / AI features
+
+Delete if this profile ships none. → `sota-llm-engineering`, plus
+`sota-code-security` rules/08 for anything model-reachable.
+
+- **Provider and default model**, and who may change it.
+- **Eval gate**: does a prompt or model change require an eval run before merge?
+- **Agent surface**: which tools a model may reach, and which actions stay behind a
+  human gate.
+- **Data policy**: what may go into a prompt or a trace, and retention.
+
+## Data classification
+
+The tiers your severity ratings assume, so a finding can be rated without asking.
+→ `sota-privacy-compliance`, `sota-code-security` rules/07.
+
+- e.g. **public** / **internal** / **confidential** / **regulated (PII, payment,
+  health)** — with one concrete example per tier from your own data.
+- Which tiers may leave the primary region, appear in logs, or reach a third party.
+
+## Internal names — never in public output
+
+Names that must not appear in anything the agent writes for the outside world:
+commits, PR text, issues, published docs, advisories, or generated examples.
+
+- e.g. internal service codenames, customer names, cluster or host names, internal
+  hostnames and ticket prefixes — **including their abbreviations**, which are what
+  actually leak.
+- Enforce it mechanically as well as here: a denylist checked in CI beats a rule
+  nobody greps. Keep the list itself out of the public repo.
 
 ## Security conventions
 
@@ -50,6 +148,9 @@ backend-agnostic. Default to OpenTelemetry for instrumentation.
 - **Identity/auth**: OIDC IdP; map groups → app roles explicitly; short-lived
   tokens; passkeys/WebAuthn preferred. → `sota-identity-access`.
 - **Commits**: signed, conventional commits; protected branches.
+- **Detection posture** (optional): where security telemetry lands, which detections
+  exist, and who is on call for them — so an audit can ask "would we *see* this?"
+  rather than only "is it prevented?" → `sota-detection-engineering`.
 
 ## Licensing & jurisdiction
 

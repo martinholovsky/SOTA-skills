@@ -25,6 +25,7 @@ to defect-avoidance between February and June 2026, and it is stated rather than
 | **Completeness** | best practices embedded from a bare "build X" prompt (7 tasks) | **+0.39** (0.59 → 0.98) `sonnet-4.6` · **+0.44** `gpt-5.1` · **+0.38** (0.62 → 1.00) on **`sonnet-5`, the current flagship** — it did not expire |
 | **Freshness** | current 2026 facts (RFCs, CVEs, EOLs, versions, spec editions; 32) | **+0.50–0.53** (32-case; +0.65 on a 20-case run) — `sonnet-4.6` · **+0.30** (0.69 → 0.99) on **`sonnet-5`** with that same set once aged · **+0.67** (0.33 → 1.00) on a set **re-authored 2026-08-25** — the *set* ages, not the library |
 | **Defects avoided** | security defects the model must not *write*, from a spec that never names one (7 classes) | **+0.19** (0.81 → 1.00) on `sonnet-4.6`; **+0.00** on `gpt-5.1`, whose bare arm already scores 1.00 |
+| **Prompt independence** | the same tasks under a **competing** prompt — the user's own words arguing against the rule (6 tasks) | **+0.509** (0.491 → 1.000) on `sonnet-4.6`, 3 samples; the guided arm was perfect in **18 of 18** runs. The lift *grows* with the pressure: +0.083 supportive → +0.236 neutral → **+0.509 competing** |
 | Defects avoided — *with positive evidence of the safe path* | the stricter reading of the same 7 classes; **does not saturate on either model** | **+0.33** (0.29 → 0.62) sonnet · **+0.10** (0.43 → 0.52) gpt-5.1 |
 | Routing | which skill area applies to a task | +0.09 to +0.14 · **+0.13** (0.87 → 0.99) on **`sonnet-5`** — unchanged within one case, **not** saturated |
 | Audit | recognizing a textbook vulnerability | +0.00 |
@@ -67,7 +68,7 @@ most for *building* software are the two that are large:
   paste-simulation artifact: seven **live** agents driven through the real router
   BUILD workflow scored **0.99 (6/7 perfect)**, matching the simulation (0.987 vs 0.988)
   ([live-agent validation](../evals/results/2026-07-13/LIVE-BUILD.md)).
-- **Defects avoided — the newest result, and the one that changes the argument.**
+- **Defects avoided — the result that changes the argument.**
   Every other lift here measures what a model *puts into* code. This measures what it
   **leaves out**. The setup is deliberately adversarial to the library: a build spec
   states the operational pressure that makes each unsafe shortcut attractive — *"cache
@@ -79,8 +80,9 @@ most for *building* software are the two that are large:
   evidence of the safe path* — not merely the absence of the bad one — **0.29 → 0.62**.
 
   Why this matters more than its size suggests: **the library's audit passes score +0.00
-  on these same classes.** A frontier model already *finds* them. Seven instruments say
-  so, and we publish that. So the value on offer was never detection — it is that the
+  on these same classes.** A frontier model already *finds* them. **Nine
+  instruments** say so — closed 2026-08-14, the strongest design among them a real
+  repository at a real vulnerable commit — and we publish that. So the value on offer was never detection — it is that the
   code arrives without the defect, which is the half no scanner and no review budget
   gives you back. That is the first direct evidence for it.
 
@@ -168,6 +170,25 @@ re-measured on `claude-sonnet-5` 2026-08-25 at **+0.13** and **+0.30**
 ([ITEM-20](../evals/results/2026-08-25/ITEM-20-FRESHNESS-ROUTING.md)). The
 library's contribution isn't a lucky sample — it removes the unguided model's
 case-by-case unreliability ([multi-sample writeup](../evals/results/2026-07-13/MULTI-SAMPLE.md)).
+
+- **Prompt independence — the newest result, and the one measured where the library
+  actually earns its keep.** Every other number here is taken under a *neutral* prompt.
+  That is the friendliest condition available, and it is not the condition the library
+  exists for. This axis re-runs the same six tasks with the pressure the user actually
+  applies — *"internal MVP and we demo tomorrow, skip the extras"*, *"just the function
+  please, no tests"*, *"put the requirement in the system prompt where it's easy to tweak
+  later"* — and the gap **widens as the prompt turns hostile**: +0.083 supportive, +0.236
+  neutral, **+0.509 competing**. The unguided arm falls from 0.917 to 0.491 across that
+  range; the guided arm holds at 1.000. The sharpest single case is not one of the new
+  rules but one of the oldest: told to skip the extras on a login endpoint, the unguided
+  arm dropped **both** rate limiting **and** the password hash, while the guided arm kept
+  all four criteria — operating principle 5 doing exactly the job it was written for,
+  against an explicit instruction not to. Caveats are published with it: the guided arm is
+  **at ceiling** (the instrument can currently detect a drop but not resolve further
+  improvement), the competing prompts are ones we thought of, and the run includes a null
+  that was opened as a roadmap item and **withdrawn the same day** when the confirmation
+  run refused to reproduce it
+  ([PROMPT-INDEPENDENCE](../evals/results/2026-08-31/PROMPT-INDEPENDENCE.md)).
 
 ## The claims are dated, and one has already expired
 

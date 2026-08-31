@@ -92,6 +92,7 @@ the ledger of what is enforced had itself drifted from what is enforced.)
 | **A 200 with empty content is not success** (added 2026-08-14) | every runner that calls a model: empty completion → retry → fail loudly with `finish_reason`; `finish_reason == "length"` warns, because a truncated artifact is a floor not a measurement |
 | **A judge verdict must match the rubric it was asked about** (2026-08-16) | `run-completeness.judge()`, shared by all four judge-driven instruments: aborts on missing/extra ids or values outside present/absent, and normalises case — a well-formed reply of the wrong shape used to score 0.00 in silence |
 | **Pin what you compare against** (2026-08-16) | `run-competitors.py` compares each clone's `git rev-parse HEAD` to the manifest SHA and refuses on mismatch; the artifact records models, manifest path and resolved SHAs |
+| **An ablation arm must actually differ from its baseline** (2026-09-01) | `run-prompt-independence.py` diffs each case's `pre` and `post` bundles and **aborts** when none differ — otherwise the ablation arm is a duplicate of the treatment wearing a different label, and reports a delta of zero as a result. Cases that *do* match are kept and read as the run's sampling-noise control instead of being dropped |
 | **A probe must assert its own mutation landed** (2026-08-16) | `check-negative-controls.sh probe()`: a stale hardcoded literal used to make the harness report the *gate* inert |
 
 ### Judgment — correctly ungateable (≈18)

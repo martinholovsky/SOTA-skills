@@ -123,6 +123,18 @@ in-context data and the output, that is the finding — regardless of how
 carefully the instruction is worded. (Class added 2026-07-24 from the
 training-knowledge-vault lesson on attention leakage; see docs/ADOPTION-LOG.md.)
 
+**The mandatory direction is a different bug with a different fix.** Everything
+above is *prohibitive* — an instruction meant to stop something. Its mirror is an
+instruction meant to *require* something: "you MUST call `check_policy` before
+answering", "always retrieve before you summarize". Deleting that sentence changes
+nothing either, but you cannot repair it by removing material from the context —
+there is nothing to remove; a step is missing. The control has to be moved into the
+harness so the answer is unreachable without the result, and the skip has to be
+counted. Same falsification question, opposite remedy: `sota-llm-engineering`
+rules/04 §2. Watch for the second silent failure it brings, which §1 above does not
+cover — the model *narrating* a tool call it never made and reasoning from the
+invented result.
+
 ## 4. A control that never executes
 
 One step earlier than "runs but does nothing": a gate whose **trigger condition

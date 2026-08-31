@@ -36,6 +36,17 @@ lessons-log — its own best structural idea, applied to ourselves.
 - **Convergent ≠ adopted.** When an external repo independently arrives at
   something we already do, record it as `rejected: already ours` — it is
   validation, not a change. Do not manufacture a diff to "adopt" it.
+- **Two independent sources before a principle goes cross-cutting.** An idea that
+  earns a place in one domain skill needs only to be right there. Promoting it to
+  a *cross-cutting* home — an operating principle in the router, a clause in
+  `sota/rules/*`, an addition to the universal non-negotiables — costs every task
+  in the library some attention, and that cost is paid whether or not the task is
+  the one the idea was about. So the bar is evidence from **two independent
+  sources**: two skills where the same principle recurs, or one external source
+  plus a defect of ours it explains. One source, however well argued, lands in the
+  narrowest home that fits and waits for the second. (Adopted 2026-08-31 from
+  ECC's `rules-distill`, which applies the same 2+ bar to promoting a principle
+  out of a skill into a rule file.)
 
 ## Log
 
@@ -1546,3 +1557,182 @@ clause, so the next run is **not strictly comparable** to the +0.38 measured on
 
 **Measurement status:** adopted on reasoning plus three verified reproductions. **No
 efficacy lift is claimed** — nothing here has been measured against an eval.
+
+### 2026-08-31 — ECC, second pass: the mandatory twin, the loop's boundary, and a token heuristic we had already measured
+
+[affaan-m/ecc](https://github.com/affaan-m/ecc) ("Everything Claude Code", MIT) read
+whole at **`a104765`** — 68 agents, 286 skills, 94 commands, hooks, cross-harness
+adapters. Not a first encounter: the repo is a pinned competitor in
+`evals/cases/competitors.json` at `ed38744`, where it scored **0.87 to our 0.99** on
+the completeness tasks (2026-07-14). This pass asked the other question — not "does it
+beat us", but "what does it know that we don't". It is a breadth library where we are a
+depth one; ~6 of 286 skill files carried the value, which is itself the finding about
+where to look in a large catalogue.
+
+**Adopted with a correction — a *required* tool call stated only in the prompt.**
+ECC's `agent-architecture-audit` asks "can the model skip a required tool and still
+answer?" and prescribes code-gating. My first read called this an uncovered gap; it is
+not, quite. `rules/14` §3 already owns *instructions standing in for controls*, and
+names tool gating explicitly. But every example there is **prohibitive** — "never
+reveal", "only call this for admins" — and its remedy is *remove the material from the
+context*, which cannot repair a **missing step**. The mandatory direction is a distinct
+bug with a distinct fix (the harness refuses to finalize without the result; the skip
+gets counted) and brings a second silent failure §3 does not cover: the model narrating
+a call it never made and reasoning from the invented result. Landed as
+`sota-llm-engineering` rules/04 §2 with a pointer from `sota-code-security` rules/14 §3.
+Recorded as a correction rather than an adoption because the source's framing — "a gap"
+— would have had us restate rules/14 in a second place.
+
+**Adopted — the done-criterion and its boundary are written together.** From
+`loop-design-check`, the strongest file in the repo. "All tests pass" as a loop's exit
+condition is a licence to delete the failing test; the antibody is stating the boundary
+("no test file deleted or weakened") in the same breath as the goal. With it: prefer
+**reconciliation over assertion** for an exit condition (an assertion can be loosened, a
+diff against an external reference cannot), the judge is not the builder and the builder
+cannot edit the acceptance criteria, a retry cap escalates to a human, and clarification
+is front-loaded because a loop will not stop to ask at 03:00 — it commits a guess and
+runs it to completion. We had Goodhart (rules/01 §8) and "grading your own homework"
+(rules/01 §3) separately; nothing assembled the loop-design version. Landed as
+`sota-llm-engineering` rules/04 §3a. Its lineage claims (Wiener's two-level feedback;
+two named blog posts) were **not** verified and are not reproduced — the mechanism
+stands on its own.
+
+**Adopted — memory admission precedence.** `agent-architecture-audit` Q7: can the
+agent's own monologue become persistent memory? `sota-code-security` rules/08 already
+covers memory *poisoning* (gate writes, provenance-tag, user-scope) — verified present
+at `rules/08:87–91`, so the security half was ours. The correctness half was not: an
+agent's own inference admitted as an observation, and no precedence rule when a user's
+correction meets an earlier agent assertion. The symptom is a correction that will not
+stick. Landed as `sota-llm-engineering` rules/04 §5.
+
+**Adopted — ask for a fact to produce, not a judgment to make.** From `gateguard`,
+whose thesis is that "are you sure?" always returns yes but "list every file that
+imports this module" forces a Grep, and the *investigation* is what changes the output.
+Our BUILD step 4 is self-evaluation in form; the falsification question was already
+close. Landed as `sota/rules/02` §4 as a third question: write each gate item as an
+artifact you must return, not a yes/no about your own work. **Their headline number is
+not adopted and is not cited** — "+2.25 points" is two tasks, LLM-judged, n=1 each.
+Supporting evidence for the framing came from the source contradicting itself: ECC
+ships `gateguard` ("LLM self-evaluation doesn't work, experimentally verified") *and*
+`agent-self-evaluation` (the agent rates its own output 1–5 on five axes).
+
+**Adopted — collect deterministically, then judge.** `rules-distill` names the pattern
+we use unnamed: scripts enumerate exhaustively, then the model judges over the complete
+set. Inverting them is how an audit acquires a confident blind spot, and the miss is
+invisible because a finding list looks identical whether the census was 12 of 12 or 12
+of 61. Landed as `sota/rules/01` §3. The same file's **2+ sources** bar for promoting a
+principle out of a skill is adopted as an intake rule above.
+
+**Adopted — a verdict's reason must be self-contained.** `skill-stocktake` bans
+"unchanged" as a reason and requires a Retire to name what covers the need instead. We
+had the specific case (`rejected: already covered` must cite file:line); this
+generalises it to every verdict we record, with a worked table. Landed as `sota/rules/03`
+§3.
+
+**Adopted — the summary posture is capped by the worst blocker standing.**
+`production-audit` caps a numeric score at 69 while authz is missing or a payment
+webhook is non-idempotent, and at 84 while CI is red or the critical path is untested.
+We publish prose posture rather than a score, so the cap is expressed in words: no
+executive summary reads better than "not ready" with an unfixed Critical in the list.
+Its companion — **"evidence not obtained: what would change confidence"** as a named
+section — is the ask-shaped half of our exclusions list. Both landed in `sota/rules/03`
+§5.
+
+**Rejected: contradicted by our own measurement — the token heuristics.**
+`context-budget` estimates with `words × 1.3` and `chars / 4`; `token-budget-advisor`
+builds a four-level depth menu on the same arithmetic and advertises "~85–90% accuracy
+(±15%)" for a method with no tokenizer in it. This is precisely the shortcut measured at
+a **54% under-count** against Anthropic's `count_tokens`
+(`sota-llm-engineering` rules/02 §2, lines 74–79) — and under-counting in the direction
+that makes you think you have room. Kept here as the field example that rule now has.
+
+**Rejected: contradicts existing rules — the AGENTS.md hard numbers.** "80%+ coverage
+required" is the global percentage target `sota-testing` rules/07 §7.2 argues against by
+name ("80% chosen-by-committee says nothing — the *which* 20% is everything"); "always create new objects, never mutate" as a CRITICAL cross-language rule is
+wrong in the Rust, Go and C++ hot paths our language skills cover.
+
+**Rejected as a mechanism, kept as a known-bad — the per-agent "Prompt Defense
+Baseline".** A fixed six-line anti-injection preamble is pasted into all 68 agent files.
+It is a prompt-level defence against a prompt-level threat: `rules/14` §3 is exactly the
+class, and the boilerplate is a textbook instance of a control that looks like
+enforcement across 68 files and enforces nothing.
+
+**Deferred — per-skill run telemetry.** `scripts/lib/skill-evolution/health.js` records
+run outcomes to JSONL, computes a rolling success rate, and flags a skill as `declining`
+past a threshold. It addresses a real problem of ours (the library has no telemetry and
+learns nothing from use unless someone reports it). Deferred, not rejected: it needs run
+outcomes we do not collect, and any implementation must stay local-only and opt-in —
+this library ships no network. **Revisit if** a local `--record` flag on the eval runners
+would produce the same signal without a new collection surface.
+
+**Noted, no action — domain coverage they have and we do not**: agent payment protocols
+(x402), DeFi/AMM security, prediction-market oracles, on-device foundation models,
+homelab networking, netmiko/Cisco automation, healthcare EMR/CDSS. Out of scope by
+design. The two worth watching are **on-device/edge model deployment** (we touch it only
+in `sota-mobile` rules/03) and agent-to-agent payment authorization.
+
+**Measured, not asserted.** Items 1, 2 and 5 above are behavioural claims about what a model
+does under pressure, so they were put to a new instrument rather than reasoned about:
+`evals/run-prompt-independence.py`, built for this intake from ECC's `skill-comply`. Under a
+**competing** prompt (6 cases × 3 samples, temp 0.7) the library reads **0.491 → 1.000,
++0.509**, with the with-library arm perfect in **18 of 18** runs; the three cases these new
+rules touch move **+0.426** pre→post against **+0.074** of sampling noise measured on three
+byte-identical control cases in the same run. Full method, both runs, and a null that was
+opened and withdrawn the same day:
+[PROMPT-INDEPENDENCE](../evals/results/2026-08-31/PROMPT-INDEPENDENCE.md).
+
+### 2026-08-31 — a stack-specific prompt template, and the eight fields our profile never asked for
+
+A user-supplied "Enhanced Prompt Engineering Template & Context Management" brief (dated
+2025-04-02, written for a Nuxt / FastAPI / SurrealDB / Kubernetes app) offered as intake.
+
+**Rejected as skill content: already ours, and structurally not a skill.** All 21 of its
+sections map onto existing skills — §8 API design → `sota-api-design`, §12 → `sota-privacy-
+compliance`, §13–14 → `sota-observability`, §16 → `sota-api-design` rules/05, §17 →
+`sota-api-design` rules/01, §19 → `sota-code-security`, §20 → `sota-testing`, §21 →
+`sota-devsecops`. It adds no engineering knowledge. It is also a **stack profile** by
+construction: it names a concrete stack and a location, which `CONTRIBUTING.md` forbids in
+`skills/` and which operating principle 4 already routes to `profiles/<you>.md`.
+
+**Rejected, and now double-sourced: the global coverage target.** "Coverage: Target [e.g.
+80%]" is what `sota-testing` rules/07 §7.2 argues against by name. This is the **second
+independent source in one day** to state it — ECC's `AGENTS.md` says "80%+ coverage
+required". Two sources converging on the same bad practice is evidence the rule needs
+stating more loudly, not evidence to soften it; the new **Testing conventions** profile
+section now states the ratchet alternative at the point where a reader would otherwise
+write "80%".
+
+**Rejected: the always-pasted brief.** "Reference this brief at the beginning of your
+prompts", 21 sections including pasted code snippets, is the opposite of the measured
+load-lean finding (`sota/rules/02` §1 — a long context of similar-looking guidance
+*measurably reduces* how many rules the model applies), and §6's pasted signatures rot
+silently against the code (`sota-llm-engineering` rules/04 §5, don't resend what you can
+reference). **A profile is consulted; a brief is pasted** — that distinction is the design
+difference and ours is on the right side of it.
+
+**Adopted: what it exposed in `profiles/example.md.template`.** The useful question was not
+"adopt this" but "does our profile ask for what this asks for?" It did not. Two independent
+methods were run and **they disagreed, which is the finding**:
+
+- *Derived* — every one of the 40 domain skills mapped against the template's 8 sections,
+  looking for skills with no field carrying their project-specific choices. Produced:
+  design/frontend, migrations & test data, testing, API conventions, LLM/AI.
+- *Observed* — the section headings a real in-use profile had grown beyond the template.
+  Produced: stack mapping, data classification, internal names, detection posture.
+
+The two lists do not overlap at all. Derivation found what the *library* needs told; use
+found what a *person* reached for and had to invent. Either method alone would have
+reported roughly half the gap, and the derived half remains the weaker evidence because
+nothing has yet used it. Eight fields landed: **Stack mapping** (generalising a line that
+existed only inside Observability), **Design system & frontend conventions**, **Migrations,
+seeding & test data**, **Testing conventions**, **API conventions**, **LLM / AI features**,
+**Data classification**, **Internal names — never in public output** (which is this repo's
+own leak lesson written down as a profile field, pointing at the CI denylist that enforces
+it), plus **SLO/budget** and **detection-posture** lines folded into existing sections
+rather than given their own. Template 76 → 172 lines; every new section says "delete if it
+does not apply", because a template nobody finishes is worse than a short one.
+
+Considered and not added: a docs/release-workflow section (commit convention is already
+under Security conventions, and branching is visible in the repo) and per-skill sections for
+mobile, ML, confidential computing and CLI — all conditional enough that the `Projects`
+table already covers them.

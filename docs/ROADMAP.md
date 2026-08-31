@@ -4,15 +4,17 @@ Priorities set by the **2026-07-10 audit**
 ([AUDIT-2026-07-10.md](AUDIT-2026-07-10.md)). Ordered; revisit after each
 release. The 2026-07-01 cycle is fully executed and kept below as history.
 
-## Start here next session *(as of 2026-08-29, second pass)*
+## Start here next session *(as of 2026-08-31)*
 
 **Read this table, then stop reading.** Everything below it is provenance and history.
 
 ### Actionable next-session priorities
 
-Ordered by what a session can actually move. **Nothing here is urgent, and nothing is
-queued**: item 29 was opened and written in the same day (v1.30.1), so the
-written-conventions backlog is empty again — which is the standing finding, not a gap.
+Ordered by what a session can actually move. **Nothing here is urgent, and nothing is queued.** Item 31
+was opened and **withdrawn the same day**: the new prompt-independence instrument produced an
+apparent gap at one sample and its own confirmation run killed it (v1.31.0). Worth reading as
+a worked example — the backlog stayed empty because the N-of-N rule fired, not because nobody
+looked.
 
 | P | Item | What a session would do first | Cost | Blocked on |
 |---|---|---|---|---|
@@ -34,7 +36,7 @@ fewer, and the written-conventions backlog is empty.
 
 Numbers here are re-counted at each cut, never carried forward — the stamp above goes stale
 within a day, which is the case for re-reading this at every cut rather than trusting it.
-Last re-count 2026-08-29, and this names what was re-read: star/forks live via `gh`
+Last re-count **2026-08-31**, and this names what was re-read: the item ledger count (**28 → 31** — it was already stale by one *before* this cut, because item 29 was added without updating the header, which is the exact rot this sentence exists to catch), the open count (**still 5**, since item 31 opened and withdrew inside the cut), and the two new items. **Not** re-read this pass: star/forks, the router line count, item 1's listing status. Previously, 2026-08-29: star/forks live via `gh`
 (**17/3**, flat since 2026-08-27), the router re-counted at **499/500**, the latest release
 (**v1.30.0**), and row 13's cap watch. **Not** re-read this pass: item 1's listing status
 and the deferred-row pointer, both last checked 2026-08-28. **Restamping a header is not enough when the
@@ -62,8 +64,8 @@ rather than breaking it: it *was* found by re-reading docs, at the v1.22.14 cut 
 
 ### The full item ledger
 
-All 28 items, ordered by number, not priority. **Only 5 are open** — 1, 5, 12, 25, 26, as
-listed above; the rest are closed or are recorded lessons kept for the lesson rather than
+All 31 items, ordered by number, not priority. **Only 5 are open** — 1, 5, 12, 25, 26, as
+listed above (31 was opened and withdrawn within this same cut); the rest are closed or are recorded lessons kept for the lesson rather than
 the work. (A count of "closed" rows resists grepping: a case-insensitive match on *done*
 scores row 12's "**NOT** done" as closed. Count the open ones, they are few.) Use the
 priorities table to decide what to do; use this one to find out why something was or was
@@ -99,6 +101,8 @@ not done.
 | 26 | **`§AUDIT` has no drift guard, unlike `§BUILD`** | `ROUTER_BUILD_SHA` pins the router's BUILD section and **aborts the eval** when it moves — that guard caught two edits on 2026-08-26 alone. AUDIT has no equivalent: its procedure lives in `sota/rules/01`, and the router's seven passes can contradict it silently. `rules/01` §10 states the coupling, but a stated rule is not a gate | **Not built, deliberately** — a pin only works where something *reads* the pinned text, and no eval consumes §AUDIT the way `run-completeness.py` consumes §BUILD. A gate with nothing behind it is decoration (`rules/12`). Revisit if an audit eval ever pastes §AUDIT |
 | 29 | **Verification discipline for agent-produced findings — CLOSED 2026-08-29, opened and written the same day** | Intake from two Anthropic primary sources: the `/security-review` prompt extracted from the CLI (verified current by diffing the 2.0.76 JS bundle against the live 2.1.251 native binary — one line differs in 10.5k chars) and [`anthropics/defending-code-reference-harness`](https://github.com/anthropics/defending-code-reference-harness) (Apache-2.0, every quote checked against the raw README). Five parts, each grep-checked against `skills/` before being called a gap, all five now written: **(a)** a numeric confidence gate and **(b)** a refuter given *less than the finder* with **only the artifact** crossing over → `sota/rules/03` **§4a**; **(c)** N-of-N reproduction for a behavioural finding → `rules/03` §2; **(d)** partition before you fan out, because N unpartitioned agents give one chance N times and the duplication reads as corroboration → `sota-llm-engineering/rules/04` §7; **(e)** the multi-wave yield curve, where a flat count means the waves were not independent → `sota/rules/01` §4, alongside the sharpening that a fix is verified when **a fresh search** cannot get around it | **Deliberately not gated**, per [CONVENTIONS-LEDGER.md](CONVENTIONS-LEDGER.md): all five are judgement conventions, and a threshold a repo cannot mechanically check is prose by definition. The open question this leaves is **whether any of it works** — none of the five is measured, and the honest read is that they are borrowed from two tools Anthropic ships rather than validated here. If an audit eval is ever built, (a) and (c) are the two with an obvious measurable form. The gate earned its keep on the way in: it caught a `rules/12 §7` citation that should have been §2.2 |
 | 28 | **A runner can be dead for weeks and nothing reports it — gated 2026-08-27, for two distinct failures** | `run-desc-routing.py` raised before its first API call for three weeks. `evals/smoke-runners.py` now runs in CI and was **watched to fail** on a reintroduction of that bug. It also asserts every runner keeps side effects behind `__main__`, and that every `.env` read is **existence-checked** (that one shipped twice and is unreachable locally — a maintainer's tree has a `.env`; the assertion itself was **vacuous on first draft** and only watching it fail caught that): **the smoke check cannot catch a module-level script itself**, because importing one runs it and that reads as "reached the network" — which is exactly how `run-router-length.py` passed while executing its sweep on import. Two runners were in that state | **Know the ceiling.** It proves a runner can *start* and is import-safe; it does **not** prove the numbers are right — the per-runner selftests and `check-negative-controls.sh` do that. Three runners are still doing local work at the alarm and count as "alive", which is honest but weaker than reaching the network |
+| 30 | **ECC second-pass intake, and the first instrument that varies the prompt against the rule — CLOSED 2026-08-31** | [affaan-m/ecc](https://github.com/affaan-m/ecc) read whole at `a104765` (MIT; already a pinned competitor at `ed38744`, where it scored 0.87 to our 0.99). ~6 of 286 skill files carried value. Nine adoptions, three rejections, one deferral — all in [ADOPTION-LOG.md](ADOPTION-LOG.md). The rules: a **required** tool call enforced in the harness rather than asserted in the prompt (`sota-llm-engineering/rules/04` §2 — the *mandatory* twin of `sota-code-security/rules/14` §3, recorded as a correction because my first read called it an uncovered gap and it is not); a loop's **done-criterion written with its boundary** plus reconciliation-over-assertion and a judge the builder cannot edit (rules/04 **§3a**); **memory admission precedence** (rules/04 §5); **ask for a fact, not a judgment** (`sota/rules/02` §4); **collect deterministically, then judge** (`sota/rules/01` §3); a **self-contained verdict reason** and a **blocker-capped summary posture** (`sota/rules/03` §3, §5) | **Measured, not asserted** — `evals/run-prompt-independence.py`, built for this intake. Library lift **+0.083 supportive → +0.236 neutral → +0.431 competing** at one sample; the confirmation run (competing, 3×, temp 0.7) reads **0.491 → 1.000, +0.509**, with the with-library arm perfect in **18 of 18** runs (sd 0.000). The three treated cases move **+0.426** pre→post against a measured sampling noise of **+0.074** on the three byte-identical controls — a ~6× ratio ([PROMPT-INDEPENDENCE](../evals/results/2026-08-31/PROMPT-INDEPENDENCE.md)). All four guards were watched to fail with exit 1 before the first scored run |
+| 31 | **WITHDRAWN the same day — a null that did not reproduce** | Item 30's instrument produced an apparent gap on its first run: case `pi05`, under *"just the function please — no tests"*, read **0.67 in all three arms**, suggesting principle 5(c) and principle 9 (*"an unnamed shortcut is not a prototype"*) both failed under pressure. It was written up here as an open item on the strength of **one sample at temperature 0**. The confirmation run at `--samples 3 --temp 0.7` scores the with-library arm **1.00, 3/3**, and the item is withdrawn | **Kept as a row rather than deleted**, because the lesson is the process, not the finding: `sota/rules/03` §2 (*a reproduction you ran once is a coincidence you have not ruled out*) caught this project's own eval within hours, and it was the pre-registered confirmation run — not a re-read — that killed it. The same run corrected a second number: run 1's control ablation of **+0.000** was a temperature-0 artifact, and the instrument's real sampling noise is **+0.074** |
 | 27 | **Estimated token counts — CLOSED 2026-08-27. Swept, and the docs were worse than expected** | All 301 skill files measured with `count_tokens`. `docs/CONTEXT-MANAGEMENT.md` claimed *"12 of 297 files exceed ~5,000 tokens"* — the real figure is **132 of 301, an 11× under-count** — and *"exactly one file breaches the recommendation"* is **5 of 41** `SKILL.md` bodies. Both were chars/4-derived, the same heuristic that under-read the router by 60% | **Nothing outstanding.** Corrected in place with the measurements and a note saying why. Standing rule, now in `sota-llm-engineering` rules/02: **if a size claim was not produced by a tokenizer, assume it is wrong by half.** Density across the tree runs ~24–46 tokens/line, so two files of equal length differ ~2× in cost — which is the argument the line cap cannot make |
 **Why the as-deployed competitor comparison is rejected (2026-08-16), not deferred.**
 Checked against the pinned clones rather than from memory: **ECC ships 889 `SKILL.md`
@@ -599,7 +603,7 @@ first.
   run to a git-ignored `evals/results/durations.tsv` and the next run of the same
   runner prints the delta, flagging a swing of ≥ 5×. §2.1's tell is a *comparison*,
   so printing alone never sufficed. Denominators matter as much as the seconds
-  ("12s over 7 cases", not "12s"): **7 of 12 runners declare one**, the rest record
+  ("12s over 7 cases", not "12s"): **7 of 12 runners declare one** *(as of 2026-08-03; there are **19** runners as of 2026-09-01, so re-count before quoting this)*, the rest record
   `-` and are labelled weak evidence rather than silently compared. The ledger is
   machine-local by design — a duration is only comparable on the same machine and
   network. **The CI half needed nothing**: the GitHub API already exposes

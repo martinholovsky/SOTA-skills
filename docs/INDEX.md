@@ -53,6 +53,7 @@ trying to do**, not by file. (Kept in sync by hand; if a link rots, open an issu
 | Check whether **routing** still helps on a current model | [ITEM-20](../evals/results/2026-08-25/ITEM-20-FRESHNESS-ROUTING.md) — 0.87 → 0.99, and *not* saturated |
 | See whether the library stops defects being **written** (not just found) | [BUILD-SAFE 2026-08-21](../evals/results/2026-08-21/BUILD-SAFE.md) — 0.81 → 1.00 on seven classes, with its five limits stated |
 | Check how audit reports are scored for **calibration** (and why it is never reported as a lift) | [BUILD-SAFE 2026-08-21 §2](../evals/results/2026-08-21/BUILD-SAFE.md) · `evals/run-calibration.py` |
+| Check whether a rule survives a prompt that argues **against** it (prompt-independence) | [`evals/run-prompt-independence.py`](../evals/run-prompt-independence.py) — same task at supportive / neutral / **competing** pressure, three arms |
 | Read an eval that failed as an *instrument* rather than as a result | [BUILD-SAFE.md](../evals/results/2026-07-30/BUILD-SAFE.md) |
 | See the edges of the do-not-reimplement rule (§3.9.6), as worked cases | [`evals/cases/reimplement.jsonl`](../evals/cases/reimplement.jsonl) — documentation, never run |
 | Know what the audit hunts that a scanner can't (inert controls, **controls that block everything**, **a working control applied to part of its population**, **security prose the code doesn't keep**, unreached dependencies, stale decisions, refutation, absence claims) | [README → What the audit hunts](../README.md#what-the-audit-hunts-that-a-scanner-cant) |
