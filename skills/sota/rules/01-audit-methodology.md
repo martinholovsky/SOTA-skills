@@ -117,6 +117,23 @@ command line (needed for §4 reproducibility).
   `# nosemgrep`, `nolint`, audit-ignore files and the like — each one is
   either justified (note it) or a hidden finding.
 
+### Collect deterministically, then judge
+
+Keep the two halves apart, in this order. **Enumeration is a script's job**: it must be
+exhaustive over a scope you can state, and it must print its denominator (`261 rules
+files`, `47 handlers`, `12 workflows`) so the number is auditable. **Judgment is the
+model's job**, and it runs over the *complete* collected set, not over whatever the
+search happened to surface.
+
+Inverting them is the standard way an audit acquires a confident blind spot. A judgment
+pass over a sampled or grep-shaped set inherits the sample's gaps and reports with the
+same confidence as one that saw everything — and the miss is invisible in the output,
+because a finding list looks identical whether the census behind it was 12 of 12 or 12
+of 61. The corollary for the write-up: a **count** is a claim about the denominator, so
+"9 of 61 call sites are guarded" is a finding, while "several call sites are unguarded"
+is an impression (`sota-code-security` rules/14 §6–§7). Where the enumeration cannot be
+scripted, say so and bound the claim to what you did read.
+
 ### Manual review — what tools cannot see
 
 Budget explicit manual passes for the classes SAST is structurally blind to:

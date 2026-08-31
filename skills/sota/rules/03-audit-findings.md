@@ -167,6 +167,27 @@ discoverable rationale is itself a finding.
 - **UNVERIFIABLE** — no rationale survives and none can be reconstructed. Record
   it rather than guessing.
 
+**The reason must be self-contained and decision-enabling.** A verdict is read
+later, by someone who does not have your session — most often to decide whether to
+reopen the question. A reason that only makes sense next to the thing it judged is
+a verdict with no audit trail, and it quietly re-opens the decision anyway, because
+the next reader cannot tell what was checked. Ban the four reasons that carry no
+information: *"unchanged"*, *"superseded"*, *"overlaps with X"*, *"looks fine"*.
+Restate the evidence every time, even when the verdict is unchanged from last pass.
+
+| Verdict | Not this | This |
+|---|---|---|
+| JUSTIFIED | "Still fine." | "Postgres over the queue: the 8k msg/s that justified a broker still has not arrived — peak measured 240/s this session (`bench/throughput.py`, 2026-08-31). Holds." |
+| STALE | "Outdated." | "Sharding by `tenant_id`: justified by a 40-tenant forecast; 3 tenants after two years, one holds 96% of rows, so the shard key now concentrates rather than spreads. Reversal is large — see roadmap item 4." |
+| UNJUSTIFIED | "Bad call." | "ADR-007 cites a 3× benchmark for the rewrite; the benchmark script compares release-vs-debug builds (`bench/run.sh:12`), so it measures build flags, not the rewrite. Re-run like-for-like: 1.04×." |
+| UNVERIFIABLE | "No docs." | "No ADR, no PR body, original author gone. Would be settled by the load figures behind the 2024 capacity plan, if anyone still has them." |
+
+The same bar applies to any verdict this library asks you to record — a refuted
+finding (§4), an intake decision in `docs/ADOPTION-LOG.md`, a triage dismissal
+(`rules/01` §3). "Already covered" without a `file:line` is the same empty verdict
+wearing different clothes.
+
+
 **Re-measure anything a decision rests on.** When the justification is a number —
 a benchmark, a latency or throughput target, a recall/false-positive rate, "X is
 faster than Y", "this doesn't scale" — **re-run it this session** and report the
@@ -305,10 +326,25 @@ Deliver in exactly this order:
 1. **Executive summary** — overall posture in plain language, counts by
    severity, the top 3–5 risks and what they mean for the business. A
    non-engineer must be able to read only this section and make decisions.
+   **The posture is capped by the worst thing standing**, not averaged over the
+   findings: no summary may read better than *"not ready"* while an unfixed
+   Critical, a missing authorization check on sensitive data, a non-idempotent
+   payment or fulfilment path, or an unrecoverable migration is in the list — and
+   none may read better than *"ready with caveats"* while CI is red or the
+   crown-jewel path was never exercised end to end. A single blocker outranks
+   twenty clean domains; the executive summary is the one place where averaging
+   is a lie, because it is the only section most readers will finish.
 2. **Scope & methodology** — repos and commit hash, what was and was not
    covered (with the recorded exclusions from `rules/01` §1), standards asserted
    against, tools run with exact versions and commands, audit date. This
-   makes the audit reproducible and bounds its claims.
+   makes the audit reproducible and bounds its claims. Close it with **evidence
+   not obtained** — the specific artifact that was unavailable and *what it would
+   change*: "no production logs, so the rate limiter's effect at real traffic is
+   unverified — a day of 429 counts would settle finding H-3 either way." An
+   exclusion says what you skipped; this says what the reader can go get to move
+   a verdict. It is also the honest home for every claim that had to be softened:
+   an unobtainable check named here is bounded, the same check left unmentioned
+   reads as one that passed.
 3. **Decision ledger** — the §3 table: each significant decision →
    JUSTIFIED / STALE / UNJUSTIFIED / UNVERIFIABLE, with the recorded rationale
    and the evidence you re-checked. Omit the section only if the repo has no
@@ -337,6 +373,14 @@ Deliver in exactly this order:
       minimal evidence, standard mapping, concrete impact, diff-level
       remediation, and effort estimate?
 - [ ] Borderline severities state the deciding assumption explicitly?
+- [ ] Every recorded verdict — ledger entry, refutation, triage dismissal — is
+      **self-contained and decision-enabling**, restating the evidence rather than
+      saying "unchanged" / "superseded" / "already covered" (§3)?
+- [ ] Executive-summary posture **capped by the worst blocker standing**, not
+      averaged, and no better than "ready with caveats" on a red CI or an
+      unexercised crown-jewel path (§5)?
+- [ ] Scope & methodology ends with **evidence not obtained** — what was
+      unavailable and which verdict it would move (§5)?
 - [ ] Uncertain findings marked "needs verification", not asserted?
 - [ ] **Every Critical/High names its chain** — reach, primitive, boundary
       crossing, and (where exfiltration is the impact) channel — each leg

@@ -92,7 +92,7 @@ it plus `evals/smoke-runners.py`, over **two** subjects: `check-invariants.sh` (
 that complains — a non-zero exit for any other reason is a **FALSE PASS**, not a catch.
 Part A mutates a good tree in a disposable git worktree; part B is inverted, building a
 fully-configured fake machine (`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and
-removing one thing per probe. **25 probes** (re-run 2026-08-20: `PASS: 25/25`; wrong twice
+removing one thing per probe. **25 probes** (re-run 2026-09-01: `PASS: 25/25`; wrong twice
 before, and deliberately **not** gated — a static count of call sites under-reads, so only
 running it is authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16,
 17, 18, 19** — 14 of 19 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. The five
@@ -173,7 +173,7 @@ the setting. The pre-commit hook scans each commit locally.
   a session *applying* the library, and an unlicensed source whose ideas can be
   taken but whose text cannot, both land here on the same terms
 - [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md) — which of this repo's
-  conventions are **enforced** (19 invariants + 5 more inside the eval runners) and
+  conventions are **enforced** (19 invariants + 9 more inside the eval runners) and
   which are prose, with the three filters a convention must pass to earn a gate
   (has it already failed · does it fail silently · is it mechanically checkable).
   Read it before proposing a new gate — it argues against gating the ~18 judgment

@@ -47,7 +47,7 @@ beats a long polluted one — the same reason the gate exists at all.
 that fails when an endpoint has no rate limiting or no TLS does not depend on attention.
 Attention is not an enforcement mechanism; a test is.
 
-## 4. The two questions that catch inert work
+## 4. The questions that catch inert work
 
 - **The falsification question** — *if this control were silently a no-op, would anything
   observable differ?* No log, no metric, no failing test means the control is not done
@@ -56,6 +56,18 @@ Attention is not an enforcement mechanism; a test is.
   record, a ledger line, a signature — it is wrong in the *output* long before it looks
   wrong in the source. Re-reading the code that writes it re-runs the reasoning that
   produced it, which is the weakest check available.
+- **Ask for a fact to produce, not a judgment to make.** "Did you handle the error
+  paths?" is answered from the same context that wrote them, and the answer is yes.
+  "Paste every `except` in the diff and name what each one re-raises" cannot be answered
+  without going and looking, and it is the *going and looking* that changes the output —
+  the checked item comes back with the file:line attached rather than a verdict. So write
+  each gate item as an artifact you must return: the grep and its hit count, the command
+  and its exit code, the specific line that implements the requirement. A checklist of
+  yes/no questions grades itself and passes; the same checklist phrased as evidence to
+  produce cannot be satisfied without doing the work. This is why step 4 says *re-read*
+  the checklist rather than *confirm* it, and why an item's denominator matters
+  (`sota-code-security` rules/11 §2.2): "0 checked, 0 failed" is a pass shaped exactly
+  like a real one.
 
 ## 5. Changing BUILD? Change these too
 
@@ -93,3 +105,5 @@ was measured against a workflow that no longer shipped).
 - [ ] The router's §BUILD still states every imperative; only reasoning lives here. An
       agent that never opens this file must still build correctly.
 - [ ] Any new step is checkable at step 4 — it states an outcome, not an intention.
+- [ ] Every gate item is phrased as **evidence to produce** (a grep, a command, a
+      file:line), not a yes/no question about your own work (§4).
