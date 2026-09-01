@@ -271,8 +271,8 @@ It is mirrored in four places — `rules/02` §5 lists them, and three fail sile
 
 1. Identify the domains the feature touches (table above) and the language(s).
 2. **Load lean.** Read each relevant skill's `SKILL.md` and, from its index, open **only**
-   the rules files that match the work. Loading unrelated rules *measurably reduces* how
-   many rules the model applies — lean is correctness, not economy.
+   the rules files that match the work. Lean costs less and measures no worse; the
+   degradation this step once claimed is **not supported** — `rules/02` §1.
 3. **Plan first, with the checks in the plan.** Before writing code, list the task's
    requirements as **concrete, checkable items** — a specific outcome you can mark
    done/not-done ("rate-limit login to N/min per IP", not "add rate limiting") — covering

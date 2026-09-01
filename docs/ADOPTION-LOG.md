@@ -1702,13 +1702,24 @@ stating more loudly, not evidence to soften it; the new **Testing conventions** 
 section now states the ratchet alternative at the point where a reader would otherwise
 write "80%".
 
-**Rejected: the always-pasted brief.** "Reference this brief at the beginning of your
-prompts", 21 sections including pasted code snippets, is the opposite of the measured
-load-lean finding (`sota/rules/02` §1 — a long context of similar-looking guidance
-*measurably reduces* how many rules the model applies), and §6's pasted signatures rot
-silently against the code (`sota-llm-engineering` rules/04 §5, don't resend what you can
-reference). **A profile is consulted; a brief is pasted** — that distinction is the design
-difference and ours is on the right side of it.
+**Rejected: the always-pasted brief** — *and one of the two grounds I gave has since been
+withdrawn.* "Reference this brief at the beginning of your prompts", 21 sections including
+pasted code snippets, was rejected on (a) the "measured load-lean finding" in `sota/rules/02`
+§1 and (b) §6's pasted signatures rotting silently against the code.
+
+**Ground (a) does not survive.** It was never measured, and when it was measured **the same
+day** — 400 lines of genuine competing guidance added to the completeness arm — it read
+**−0.01**
+([COMPLETENESS-PADDING](../evals/results/2026-09-01/COMPLETENESS-PADDING.md)). The claim is
+withdrawn from `rules/02` §1 and from the router, and it is withdrawn from here too: citing a
+number to justify a rejection and then refuting the number hours later is precisely the shape
+this log exists to make visible.
+
+**The rejection still stands on ground (b), which is unaffected**: pasted signatures drift
+from the code with nothing to catch it (`sota-llm-engineering` rules/04 §5, don't resend what
+you can reference), and a 21-section brief re-pasted every turn is a maintenance burden whose
+staleness is invisible. **A profile is consulted; a brief is pasted** — that distinction is
+the design difference, and it is an argument about *freshness*, not about attention.
 
 **Adopted: what it exposed in `profiles/example.md.template`.** The useful question was not
 "adopt this" but "does our profile ask for what this asks for?" It did not. Two independent

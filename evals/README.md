@@ -155,6 +155,17 @@ audit STRAT-HIGH-2).
   `open()` call, but these build the path first and call `open(p)`, so it detected nothing
   and passed the broken tree as happily as the healthy one. Watching it fail is what caught
   that; it now matches on the enclosing function and names `file:function()`.
+- **`run-completeness.py --pad-rules N`** — the **completeness half of ROADMAP 25**, added
+  2026-09-01. The routing half asked whether real competing guidance degrades *retrieval* and
+  read null (0.992 vs 1.000, 2026-08-27); this asks whether it degrades **rule application**,
+  which is the question `sota/rules/02` §1 has been asserting an answer to ("loading unrelated
+  rules files *measurably reduces* how many rules the model applies") without a number behind
+  it. The flag adds a **third arm** whose rules context carries N extra lines of genuine rules
+  prose drawn from skills the case does **not** load, with every routing signal stripped and
+  asserted gone — so the arm cannot differ by retrieval, only by attention. It reuses the
+  existing prompt builder, judge and rubrics rather than forking a fifth mirror of the BUILD
+  workflow. Guards: it refuses a short padding corpus, refuses if a skill name leaked, and
+  refuses if the padding drew from the case's own files. **Result 2026-09-01: −0.01** (with 1.00 → with+pad 0.99, six of seven cases unchanged). The null refutes the claim the flag was built to test, and both `rules/02` §1 and the router's BUILD step 2 were corrected rather than left standing — the router edit was prose-only, so `ROUTER_BUILD_SHA` moved after a clause-by-clause re-read confirmed `BUILD_WORKFLOW` was unaffected. Read the null as *lean-plus-gate is robust*, not *context is free*: the padded arm ran with the step-4 self-audit active, and nobody has run it with the gate off (ROADMAP 32).
 - `cases/prompt-independence.jsonl` (6) + `run-prompt-independence.py` — **the only
   instrument that varies the prompt against the rule.** Every other set here asks the model
   to do the right thing under a *neutral* prompt; this one renders the same task at three
@@ -261,6 +272,7 @@ python3 evals/run-silent-open.py --samples 5 --temp 1.0    # silent controls, op
 python3 evals/run-adjudication.py --samples 3 --temp 0.7   # audit precision (false-positive resistance)
 python3 evals/run-prompt-independence.py --selftest        # judge must separate 1.00/0.00 first
 python3 evals/run-prompt-independence.py                   # rule survival under a competing prompt
+python3 evals/run-completeness.py --pad-rules 400          # ROADMAP 25: does competing guidance cost rule APPLICATION?
 ```
 
 `--ablate` (on `run-clean.py`) drops `rules/10-silent-control-failure.md` from the

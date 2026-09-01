@@ -7,17 +7,35 @@ skipped, or when you are changing the workflow itself.
 
 **If you change anything here, see §5 — three other places may need the same change.**
 
-## 1. Why "load lean" is correctness, not economy
+## 1. Why "load lean" — and what it is *not* worth claiming
 
-Reading unrelated rules files is not free. A long context of similar-looking guidance
-*measurably reduces* how many rules the model applies: transformer attention degrades
-with length, and near-duplicate distractors compete with the rule that matters. Loading
-five relevant rules files beats loading twenty, and the difference shows up as dropped
-cross-cutting concerns rather than as a visible error.
+Load lean: read each skill's index and open only the rules files that match the work.
 
-This is the same effect [WHY-COMPLETENESS-RESIDUAL](../../../docs/WHY-COMPLETENESS-RESIDUAL.md)
-documents: the residual is a **salience** problem, not a coverage gap. Adding the missing
-rule made it worse; a short, salient reminder fixed it.
+**Corrected 2026-09-01, against our own measurement.** This section used to say that a long
+context of similar-looking guidance *"measurably reduces how many rules the model applies"*.
+That was never measured, and when it finally was, it did not hold: adding **400 lines of
+genuine, unrelated rules prose** to the with-library arm of the completeness eval moved the
+mean from 1.00 to **0.99 — a delta of −0.01**, with six of seven cases unchanged
+([COMPLETENESS-PADDING](../../../evals/results/2026-09-01/COMPLETENESS-PADDING.md)). The
+claim had been generalised from a different experiment
+([WHY-COMPLETENESS-RESIDUAL](../../../docs/WHY-COMPLETENESS-RESIDUAL.md)), where adding a
+**relevant** rule to a checklist made application *worse* and a short reminder fixed it. That
+result stands; the generalisation from it to "any extra context costs applied rules" does not.
+
+So the honest case for lean is narrower, and still sufficient:
+
+- **It costs nothing to follow.** Fewer tokens, faster, cheaper, and measured no worse.
+- **The self-audit gate appears to absorb the effect.** The padded arm ran *with* step 4
+  active, which is precisely the countermeasure — so read the null as "lean plus a terminal
+  re-read is robust to competing context", not as "context length is free". Nobody has
+  measured padding with the gate **off**; that is
+  [ROADMAP](../../../docs/ROADMAP.md) item 32, and until it is run this section states the
+  weaker of the two readings on purpose.
+- **The salience mechanism is still real** — it is what step 4 exists for. What is not
+  established is that *irrelevant* context triggers it.
+
+**Do not restore the old sentence** without a run that shows a drop. A number this project
+asserts is a number it must be able to produce.
 
 ## 2. Why the plan comes before the code, and must be concrete
 
@@ -34,9 +52,20 @@ A checkable item states an outcome with a number or a subject:
 ## 3. Why the self-audit gate runs LAST
 
 A long build context makes mid-context rules fade. The final re-read is what recovers the
-rate limiting, transport, tests and logging that a model otherwise drops silently —
-**measured: this recovery is the bulk of the library's completeness lift**
-(`evals/run-completeness.py`; 0.62 → 1.00 on `claude-sonnet-5`, 2026-08-21).
+rate limiting, transport, tests and logging that a model otherwise drops silently.
+
+**What the ablation actually shows** (`evals/run-completeness.py`, `sonnet-4.6`,
+2026-07-13): base **0.60** → +rules **0.89** → +this self-audit **0.93** → +principle 5
+**0.99**. So the rules carry the largest single step (+0.29), and the last two — the
+terminal re-read and the short cross-cutting reminder — close **0.10 of the 0.11 that
+remained**. Both readings matter: loading the rules is what puts the knowledge in reach,
+and re-reading last is what gets the peripheral items actually written.
+
+*Corrected 2026-09-01.* This paragraph previously said the re-read was "the bulk of the
+library's completeness lift" and cited the 0.62 → 1.00 `sonnet-5` run. That run has **two
+arms**, so it measures the whole library and cannot apportion credit to any component —
+and the ablation that can, above, does not support the claim. A number cited for something
+it cannot show is the same defect as a number that is wrong.
 
 Doing it first, or continuously, does not work: at that point there is no diff to audit.
 

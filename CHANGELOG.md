@@ -5,6 +5,83 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.31.1] - 2026-09-01
+
+**Front door checked:** WHY-SALIENCE-LASTS · COMPLETENESS-PADDING
+
+**Patch, not minor**, by [RELEASING.md](RELEASING.md)'s test — a reader gains nothing *new to
+run* that is a new surface. Everything here lives inside surfaces that already exist: a CI
+invariant (8, 9 and 11 each shipped in a patch), rule-text corrections, a doc, and a flag on
+an existing runner.
+
+Closing the open roadmap items. Two closed, one opened, and **both closures came from
+re-testing a claim rather than re-reading it** — which is the through-line of this change.
+
+### Added
+
+- **Invariant 20 — the router's `§AUDIT` is hash-pinned** (`ROUTER_AUDIT_SHA`), closing
+  ROADMAP 26. `§BUILD` has been pinned since v1.15.0 and has caught drift twice; `§AUDIT`
+  had nothing, and `sota/rules/01` §5 said so outright — *"nothing catches this
+  automatically"*. **The reason the gate was parked was false when re-read**: the row said no
+  eval consumes §AUDIT, but `run-repo-audit.py:89` returns `f"{router}\n\n{rules}"` — the
+  whole router, §AUDIT included. An audit eval had been measuring against an unpinned §AUDIT
+  for as long as it has existed. The pin lives in `check-invariants.sh` rather than in a
+  runner because that runner pastes verbatim and cannot drift; the drift that matters is
+  **router-vs-rules**, since §AUDIT's seven passes have their procedure in `sota/rules/01`
+  and `rules/03`. Probed in `check-negative-controls.sh` (**26/26**, 15 of 20 invariants
+  covered). Invariant 19 demanded the probe the moment the check appeared, and invariant 17
+  then named all six documents whose counts had to move.
+- **`run-completeness.py --pad-rules N`** — a third arm carrying N lines of genuine rules
+  prose from skills the case does *not* load, routing signal stripped and asserted gone.
+  Closes the completeness half of ROADMAP 25. Reuses the existing prompt builder, judge and
+  rubrics rather than forking a fifth mirror of the BUILD workflow.
+- **[docs/WHY-SALIENCE-LASTS.md](docs/WHY-SALIENCE-LASTS.md)** — why defect avoidance
+  expired in four months while completeness did not: a knowledge gap closes with model
+  progress, a salience gap does not. States the prediction and what would falsify it (a
+  model whose *unguided* completeness arm scores ~1.00). Advances ROADMAP 1's writable half;
+  publishing it externally remains the human half.
+
+### Fixed — three claims this library was making that it could not support
+
+- **`sota/rules/02` §1 and the router's BUILD step 2 both said a long context of
+  similar-looking guidance "*measurably reduces* how many rules the model applies."** It had
+  never been measured. Measured now: adding **400 lines** of genuine unrelated rules prose to
+  the with-library arm moved the mean **1.00 → 0.99, −0.01**, six of seven cases unchanged
+  ([COMPLETENESS-PADDING](evals/results/2026-09-01/COMPLETENESS-PADDING.md)). The claim was
+  generalised from [WHY-COMPLETENESS-RESIDUAL](docs/WHY-COMPLETENESS-RESIDUAL.md), where
+  adding a **relevant** rule made application worse — that result stands; the leap to "any
+  extra context costs applied rules" does not. Both surfaces corrected. The router edit was
+  **prose-only**: `BUILD_WORKFLOW` was re-read clause by clause and contains no load-lean
+  clause, so `ROUTER_BUILD_SHA` was bumped alone, per `rules/02` §5.
+- **`sota/rules/02` §3 credited the terminal re-read with "the bulk of the library's
+  completeness lift"**, citing the 0.62 → 1.00 `sonnet-5` run. That run has **two arms**, so
+  it measures the whole library and cannot apportion credit to any component. The ablation
+  that can — base 0.60 → +rules 0.89 → +self-audit 0.93 → +principle 5 0.99 — shows the rules
+  carrying the largest step. A number cited for something it cannot show is the same defect
+  as a number that is wrong.
+- **A rejection in [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md) rested on the first of
+  those.** The always-pasted-brief rejection cited the load-lean finding; that ground is
+  withdrawn and the entry says so. The rejection stands on its second ground (pasted
+  signatures drift from the code), which is an argument about freshness, not attention.
+
+### Fixed — stale counts
+
+`sota/rules/01` §5 said nothing pins §AUDIT (invariant 20 now does); ROADMAP item 12 said
+259 rules files (**261**) and a 498-line router (**499**); `CONVENTIONS-LEDGER` headed a
+nine-row table "(8)" and quoted 25 probes (**26**). All re-counted from the tree.
+
+### Changed
+
+- **ROADMAP: 25 and 26 closed, 32 opened, open count 5 → 4.** Item 32 is what 25 surfaced on
+  the way out and is deliberately *not* folded into it: the padded arm ran with the step-4
+  self-audit **active**, so −0.01 supports "lean plus a terminal re-read is robust to
+  competing context" and says nothing about context length alone. Running the same padding
+  with the gate off is the experiment that separates them.
+- **Items 5 and 12 remain open and were not touched**, because their triggers are genuinely
+  unmet: the accuracy sweep is due ~2027-01-08 (`LAST-VERIFIED` reads 2026-07-08), and item
+  12 needs a sixth verification file in `sota-code-security` where there are five. Both were
+  re-validated against the tree rather than assumed.
+
 ## [1.31.0] - 2026-09-01
 
 **Front door checked:** prompt-independence · agents-tools · audit-findings · sota-llm-engineering
@@ -5700,6 +5777,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.31.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.31.1
 [1.31.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.31.0
 [1.30.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.30.1
 [1.30.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.30.0

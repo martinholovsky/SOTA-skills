@@ -162,7 +162,7 @@ scope() {  # <count> <noun> — returns 1 on an empty scope; prints nothing on s
 # CHANGELOG, docs/, evals/, AGENTS.md, these scripts -- is prose or code read by
 # people, deliberately uncapped since 2026-07-15; navigability there comes from a
 # table of contents and docs/INDEX.md, not a line ceiling.
-echo "[1/19] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
+echo "[1/20] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
 over=0
 seen1=0
 while IFS= read -r f; do
@@ -179,7 +179,7 @@ scope "$seen1" "skill files" || over=1
 if [ "$over" -eq 0 ]; then echo "    ok ($seen1 skill files)"; else fail=1; fi
 
 # --- 2. Audit checklist ends every rules file ------------------------------
-echo "[2/19] Every skills/*/rules/*.md ends with an '## Audit checklist'"
+echo "[2/20] Every skills/*/rules/*.md ends with an '## Audit checklist'"
 missing=0
 seen2=0
 while IFS= read -r f; do
@@ -210,7 +210,7 @@ if [ "$missing" -eq 0 ]; then echo "    ok ($seen2 rules files)"; else fail=1; f
 # .denylist.local (git-ignored, one ERE per line, '#' comments). When neither
 # exists (e.g. an external fork's PR), only the generic phrases are checked —
 # the maintainer's pre-commit hook and this repo's CI carry the full list.
-echo "[3/19] No internal-name leaks"
+echo "[3/20] No internal-name leaks"
 DENY='the user runs|the user operates'
 if [ -n "${SOTA_DENYLIST:-}" ]; then
   DENY="$DENY|$SOTA_DENYLIST"
@@ -252,7 +252,7 @@ fi
 # Code, Codex, ...) skip any skill that exceeds it. Count Unicode characters
 # (descriptions use em-dashes: 1 char, 3 bytes) via python3, parsing both
 # folded block scalars (`>-`) and plain single-line descriptions.
-echo "[4/19] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
+echo "[4/20] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
 if command -v python3 >/dev/null 2>&1; then
   if desc_out=$(python3 - "$MAX_DESC" <<'PY'
 import sys, glob, re
@@ -342,7 +342,7 @@ fi
 # One version, four places: VERSION, plugin.json, the CHANGELOG's top entry,
 # and (after the release lands) the newest v* tag. Drift here shipped a main
 # briefly claiming 1.8.0 with 1.9.0 content (2026-07-03) — hence a hard check.
-echo "[5/19] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
+echo "[5/20] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
 v5=0
 ver=$(tr -d '[:space:]' < VERSION)
 # Strict X.Y.Z: rejects interior malformations (1..2, 1.2, 1.2.3.4) the old
@@ -376,7 +376,7 @@ if [ "$v5" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # rot on surfaces nobody recounts (the social preview said "30 skills" for
 # three releases). Recount from the tree and compare every tracked surface;
 # RELEASING.md lists the same surfaces for manual release edits.
-echo "[6/19] Count-bearing surfaces match the tree"
+echo "[6/20] Count-bearing surfaces match the tree"
 v6=0
 ck() { # ck <found> <expected> <surface>
   [ "$1" = "$2" ] || { note "$3: says '${1:-<not found>}', tree says '$2'"; v6=1; }
@@ -422,7 +422,7 @@ if [ "$v6" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # library-map entry must name a real skill dir. Catches the drift the
 # 2026-07-10 audit found: sota-confidential-computing was added to the table
 # but missing from the map for a full release.
-echo "[7/19] Router lists every skill (routing table + library map)"
+echo "[7/20] Router lists every skill (routing table + library map)"
 v7=0
 seen7=0
 router=skills/sota/SKILL.md
@@ -450,7 +450,7 @@ if [ "$v7" -eq 0 ]; then echo "    ok ($seen7 domain skills)"; else fail=1; fi
 # with no rot-catching upside. Fenced AND inline code are stripped so link-shaped
 # examples (in ``` fences or `backticks`) are not scanned. Idea from vault-doctor
 # (training-knowledge-vault); see docs/ADOPTION-LOG.md.
-echo "[8/19] Internal Markdown links resolve (*.md targets)"
+echo "[8/20] Internal Markdown links resolve (*.md targets)"
 if command -v python3 >/dev/null 2>&1; then
   if link_out=$(python3 - <<'PY'
 import os, re, sys
@@ -503,7 +503,7 @@ fi
 # previous release (2026-07-28) and both sat on main until a human noticed
 # during the release cut. Fence-aware, like check 2: a CHANGELOG entry may
 # legitimately quote '## [Unreleased]' inside a code fence.
-echo "[9/19] CHANGELOG has at most one [Unreleased], and it is the top entry"
+echo "[9/20] CHANGELOG has at most one [Unreleased], and it is the top entry"
 v9=0
 changelogs="CHANGELOG.md $(git ls-files 'docs/CHANGELOG-archive*.md' | tr '\n' ' ')"
 for cl in $changelogs; do
@@ -549,7 +549,7 @@ if [ "$v9" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # to ourselves. All 255 rules files passed when this landed, so it is a
 # regression gate, not a repair; it was watched to fail on an injected file
 # and on a renamed reference before being trusted.
-echo "[10/19] Every skills/*/rules/*.md is referenced by its own SKILL.md"
+echo "[10/20] Every skills/*/rules/*.md is referenced by its own SKILL.md"
 v10=0
 seen10=0
 while IFS= read -r rf; do
@@ -592,7 +592,7 @@ if [ "$v10" -eq 0 ]; then echo "    ok ($seen10 rules files indexed)"; else fail
 # This is the first DIFF-based invariant; every other check reads the whole tree.
 # With no merge base it skips with a note rather than guessing, like checks 4/8.
 SWEEP_MIN_SKILL_FILES=20
-echo "[11/19] LAST-VERIFIED moves only with a sweep (batched diff, or declared in CHANGELOG)"
+echo "[11/20] LAST-VERIFIED moves only with a sweep (batched diff, or declared in CHANGELOG)"
 v11=0
 base=""
 for ref in origin/main main; do
@@ -665,7 +665,7 @@ if [ "$v11" -ne 0 ]; then fail=1; fi
 #
 # HISTORY-based, like check 11's diff: with no commit history for a pair it skips
 # with a note rather than guessing, because a shallow clone must not read as a pass.
-echo "[12/19] Rendered assets: each assets/*.png is no older than its *.html"
+echo "[12/20] Rendered assets: each assets/*.png is no older than its *.html"
 v12=0
 seen12=0
 checked12=0
@@ -738,7 +738,7 @@ if [ "$v12" -ne 0 ]; then fail=1; fi
 # column and checks that column in every data row beneath it. So it also fails when
 # the column is RENAMED or dropped (0 tables -> SCOPE EMPTY), which is the drift a
 # hardcoded column index would sail straight past.
-echo "[13/19] Every scoreboard row declares its sample size"
+echo "[13/20] Every scoreboard row declares its sample size"
 v13=0
 BOARD="evals/results/RESULTS.md"
 if [ ! -f "$BOARD" ]; then
@@ -808,7 +808,7 @@ if [ "$v13" -ne 0 ]; then fail=1; fi
 # docs/INDEX.md (the front door is real), AND in that release's own CHANGELOG section
 # (you cannot pass by declaring a filler word that was never part of the release).
 # A missing line on a release commit fails closed.
-echo "[14/19] A release declares its front-door terms, and they resolve"
+echo "[14/20] A release declares its front-door terms, and they resolve"
 v14=0
 base14=""
 for ref in origin/main main; do
@@ -880,7 +880,7 @@ if [ "$v14" -ne 0 ]; then fail=1; fi
 # (v1.19.8 → v1.21.0) with all fourteen checks green. Both directions matter: a
 # file absent from the map is invisible to a router-driven load, and a map entry
 # for a file that no longer exists sends the model after nothing.
-echo "[15/19] Router library map lists every rules file (both directions)"
+echo "[15/20] Router library map lists every rules file (both directions)"
 v15=0
 if command -v python3 >/dev/null 2>&1; then
   map_out=$(python3 - <<'MAPPY'
@@ -953,7 +953,7 @@ if [ "$v15" -ne 0 ]; then fail=1; fi
 # actually in a user's settings.json. The README's is the one a reader copies by
 # hand, so a stale block is the version that spreads. Silent by construction —
 # nothing executes the README.
-echo "[16/19] README's documented hook == install.sh's HOOK_CMD"
+echo "[16/20] README's documented hook == install.sh's HOOK_CMD"
 v16=0
 if command -v python3 >/dev/null 2>&1; then
   hook_out=$(python3 - <<'HOOKPY'
@@ -1040,7 +1040,7 @@ if [ "$v16" -ne 0 ]; then fail=1; fi
 #   - a correction note that QUOTES the old wording ("(14) — invariants 1–14") is
 #     history, not a claim. Counts inside double quotes are ignored, which is the
 #     same supersede-don't-edit rule the CHANGELOG follows.
-echo "[17/19] Docs describing the invariants agree with the scripts"
+echo "[17/20] Docs describing the invariants agree with the scripts"
 v17=0
 if command -v python3 >/dev/null 2>&1; then
   doc_out=$(python3 - <<'DOCPY'
@@ -1191,7 +1191,7 @@ if [ "$v17" -ne 0 ]; then fail=1; fi
 # every skill named on the line and against the containing skill, and any hit
 # passes. A gate that flags correct prose gets disabled, which leaves you worse
 # off than no gate (docs/CONVENTIONS-LEDGER.md).
-echo "[18/19] Section references (§N) resolve to a real section"
+echo "[18/20] Section references (§N) resolve to a real section"
 v18=0
 if command -v python3 >/dev/null 2>&1; then
   ref_out=$(python3 scripts/lib/check-section-refs.py 2>&1) || v18=1
@@ -1224,7 +1224,7 @@ if [ "$v18" -ne 0 ]; then fail=1; fi
 # remember to run is a convention. Invariant 18 was added WITHOUT a probe in the
 # very commit that introduced it, which is what this exists to make impossible.
 EXPECTED_UNPROBED="5 9 11 12 14"
-echo "[19/19] Every check has a known-bad, or a pinned reason it cannot"
+echo "[19/20] Every check has a known-bad, or a pinned reason it cannot"
 v19=0
 if command -v python3 >/dev/null 2>&1; then
   st_out=$(python3 - "$0" "$(dirname "$0")/check-negative-controls.sh" "$EXPECTED_UNPROBED" <<'STPY'
@@ -1294,11 +1294,50 @@ fi
 # Fail CLOSED: a suite that cannot verify its own coverage prints no PASS line.
 if [ "$v19" -ne 0 ]; then fail=1; fi
 
+# --- 20. The router's §AUDIT is pinned, the way §BUILD is -------------------------
+#
+# ROADMAP item 26, closed 2026-09-01. §BUILD has had a hash pin since v1.15.0
+# (`ROUTER_BUILD_SHA` in run-completeness.py) and it has caught real drift twice.
+# §AUDIT had none, and `sota/rules/01` §5 said so in as many words: "nothing catches
+# this automatically — the check is this section existing and being read."
+#
+# The item was parked on "no eval consumes §AUDIT the way run-completeness consumes
+# §BUILD". That reason was FALSE by the time it was re-read: `run-repo-audit.py:89`
+# returns `f"{router}\n\n{rules}"` — the WHOLE router, §AUDIT included. So an audit
+# eval has been measuring against §AUDIT unpinned.
+#
+# The pin lives here rather than in a runner because the drift that matters is not
+# eval-vs-router (run-repo-audit pastes verbatim and cannot drift) but
+# router-vs-rules: §AUDIT states seven passes whose procedure lives in
+# `sota/rules/01` and `rules/03`, and a pass that contradicts the file it points at
+# is worse than no pass, because the reader follows whichever they loaded.
+# Bumping this hash is the forcing function to re-read both.
+ROUTER_AUDIT_SHA="01e31a36d15b53b7"
+echo "[20/20] Router §AUDIT is pinned (bump only after re-reading sota/rules/01 §5 + rules/03)"
+v20=0
+audit_sec=$(awk '/^## AUDIT mode — workflow/{f=1} f&&/^## Library map/{exit} f' skills/sota/SKILL.md)
+if [ -z "$audit_sec" ]; then
+  note "router §AUDIT section not found — the markers moved, so this pin verifies nothing"
+  v20=1
+else
+  got=$(printf '%s' "$audit_sec" | sed -e 's/[[:space:]]*$//' | python3 -c \
+        'import hashlib,sys; print(hashlib.sha256(sys.stdin.read().strip().encode()).hexdigest()[:16])')
+  if [ "$got" != "$ROUTER_AUDIT_SHA" ]; then
+    note "AUDIT DRIFT: router §AUDIT is $got, pinned to $ROUTER_AUDIT_SHA."
+    note "  §AUDIT changed. Before bumping the pin, re-read sota/rules/01 §5 and confirm"
+    note "  that rules/01 and rules/03 still say what the new §AUDIT says they say."
+    note "  Then set ROUTER_AUDIT_SHA=$got in this script, in the same commit."
+    v20=1
+  fi
+  scope 1 "pinned router section" || v20=1
+fi
+if [ "$v20" -ne 0 ]; then fail=1; fi
+
 # --- Result ---------------------------------------------------------------
 echo
 if [ "$fail" -ne 0 ]; then
   echo "FAIL: repository invariants violated (see above)."
   exit 1
 fi
-printf 'PASS: all repository invariants satisfied (19 checks over %s skill files / %s rules files, %ss).\n' \
+printf 'PASS: all repository invariants satisfied (20 checks over %s skill files / %s rules files, %ss).\n' \
   "${seen1:-?}" "${seen2:-?}" "$((SECONDS - START_SECONDS))"

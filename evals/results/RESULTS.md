@@ -32,6 +32,7 @@ Same model, same task, library loaded vs. nothing.
 | BUILD-safe — **claude-sonnet-5** (current flagship): bare arm saturates | 1.00 | 1.00 | +0.00 | unguided 3×, guided 2× (one truncated build excluded), temp 0.7 | [BUILD-SAFE §1c](2026-08-21/BUILD-SAFE.md) |
 | BUILD-safe, *with positive evidence of the safe path* — sonnet-4.6 | 0.29 | **0.62** | **+0.33** | 3×, temp 0.7 | [BUILD-SAFE](2026-08-21/BUILD-SAFE.md) |
 | BUILD-safe, *with positive evidence* — gpt-5.1 (this measure does **not** saturate) | 0.43 | **0.52** | **+0.10** | 3×, temp 0.7 | [BUILD-SAFE §1b](2026-08-21/BUILD-SAFE.md) |
+| **Competing guidance vs rule application** — 400 lines of genuine unrelated rules prose added to the with-arm | with 1.00 | **with+pad 0.99** | **−0.01** — *a null, and it refutes a claim we were making* | 1×, temp 0.0 (7 tasks × 3 arms) | [COMPLETENESS-PADDING](2026-09-01/COMPLETENESS-PADDING.md) |
 | **Prompt independence** — same 6 tasks under a **competing** prompt ("internal MVP, skip the extras", "no tests") | 0.491 | **1.000** | **+0.509** | 3×, temp 0.7 (18 runs/arm; with-arm sd 0.000) | [PROMPT-INDEPENDENCE](2026-08-31/PROMPT-INDEPENDENCE.md) |
 | Prompt independence — the same tasks at *neutral* pressure, for contrast: the library helps **least** where every other number here is measured | 0.764 | **1.000** | +0.236 | 1×, temp 0.0 | [PROMPT-INDEPENDENCE](2026-08-31/PROMPT-INDEPENDENCE.md) |
 | Silent-control detection (81 inert-control cases) | 0.91 | 0.93 | +0.00 | 3×, temp 0.7 | [SILENT-FAILURE](2026-07-20/SILENT-FAILURE.md) |

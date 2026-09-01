@@ -226,6 +226,14 @@ probe 18 "a section reference dangles after a renumber" "resolves nowhere"
      scripts/check-negative-controls.sh )
 probe 19 "a check is exempted rather than probed" "GREW by"
 
+# 20 — §AUDIT drifting away from the rules files that hold its procedure. The pin is
+# the forcing function to re-read sota/rules/01 §5; mutate the section and the pin must
+# be the thing that complains. Mutating a HEADING would also trip invariant 18, so the
+# edit is inside a pass's prose where only the hash can see it.
+( cd "$WT" && perl -pi -e 's/^1\. \*\*Recon\.\*\* Inventory/1. **Recon.** Enumerate/' \
+     skills/sota/SKILL.md )
+probe 20 "router §AUDIT changed without the pin being re-read" "AUDIT DRIFT"
+
 
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
@@ -353,7 +361,7 @@ if [ "$failed" -ne 0 ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18, 19 (14 of 19)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18, 19, 20 (15 of 20)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        11, 14      — diff-based: they compare against a merge base."

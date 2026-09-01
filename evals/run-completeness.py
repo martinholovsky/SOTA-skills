@@ -101,7 +101,7 @@ def load_cases():
 # longer shipped. Nothing failed; the eval just quietly measured the wrong thing.
 # So: pin the router section's hash. If the router changes, this aborts and forces a
 # decision — re-sync the mirror and update the hash, or consciously accept the drift.
-ROUTER_BUILD_SHA = "0c85814f366fe860"
+ROUTER_BUILD_SHA = "a92b0177acadec05"
 
 
 def _assert_mirror_fresh():
@@ -167,9 +167,52 @@ def principle5():
     return p5
 
 
-def gen_prompt(case, with_lib):
+def rules_padding(n, exclude):
+    """N lines of GENUINE rules prose from skills the case does NOT load.
+
+    ROADMAP item 25, completeness half. The routing half asked whether real competing
+    guidance degrades *retrieval* and read null (0.992 vs 1.000, 2026-08-27). This asks
+    the question that actually matters: does it degrade **rule application** in a long
+    build? `sota/rules/02` s1 asserts that loading unrelated rules files "measurably
+    reduces how many rules the model applies" -- an assertion this project has never put
+    a number on. Padding is drawn from OTHER skills so it is genuinely irrelevant to the
+    task, and every routing signal is stripped so the arm cannot differ by retrieval.
+    """
+    import glob, re
+    out, used = [], []
+    excl = {os.path.abspath(os.path.join(ROOT, e)) for e in exclude}
+    for f in sorted(glob.glob(os.path.join(ROOT, "skills/sota-*/rules/*.md"))):
+        if os.path.abspath(f) in excl:
+            continue
+        used.append(os.path.relpath(f, ROOT))
+        for line in open(f, encoding="utf-8"):
+            line = re.sub(r"`?sota-[a-z-]+`?", "the relevant skill", line)
+            line = re.sub(r"rules/\d+", "the rules file", line)
+            if line.strip():
+                out.append(line.rstrip("\n"))
+            if len(out) >= n:
+                break
+        if len(out) >= n:
+            break
+    if len(out) < n:
+        sys.exit(f"rules_padding: only {len(out)} lines available for n={n} -- refusing to "
+                 f"run a short padding arm, which would under-state any effect.")
+    body = "\n".join(out[:n])
+    # A leaked skill name would let the padded arm differ by ROUTING rather than by
+    # attention, which is the confound this whole arm exists to avoid.
+    if "sota-" in body:
+        sys.exit("rules_padding: padding leaked a skill name -- it would confound the arm.")
+    for e in exclude:
+        if os.path.relpath(os.path.join(ROOT, e), ROOT) in used:
+            sys.exit(f"rules_padding: padding included the case's own file {e}.")
+    return "\n\n---\nAdditional engineering standards (also loaded):\n\n" + body
+
+
+def gen_prompt(case, with_lib, pad=0):
     if with_lib:
         ctx = "\n\n".join(open(os.path.join(ROOT, s), encoding="utf-8").read() for s in case["skills"])
+        if pad:
+            ctx += rules_padding(pad, case["skills"])
         p5 = principle5()
         return (f"ALWAYS-APPLY OPERATING PRINCIPLE (from the router):\n\n{p5}\n\n"
                 f"---\nApply the following engineering standards:\n\n{ctx}{BUILD_WORKFLOW}{case['task']}")
@@ -261,6 +304,11 @@ def main():
                          "32000 never bound claude-sonnet-4.6, but newer models are far "
                          "more verbose, and a truncated artifact scores as a FLOOR rather "
                          "than a measurement (sota-code-security rules/10 §2.7).")
+    ap.add_argument("--pad-rules", type=int, default=0,
+                    help="ROADMAP 25: add a third arm whose rules context carries N extra "
+                         "lines of genuine rules prose from skills the case does NOT load "
+                         "(routing signal stripped). Tests whether competing guidance "
+                         "degrades rule APPLICATION, which the routing half could not.")
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
     _assert_mirror_fresh()   # never measure a workflow that isn't shipped
@@ -273,17 +321,18 @@ def main():
     note_work(len(cases), "cases")
     print(f"build={a.build_model}  judge={a.judge_model}  cases={len(cases)}  "
           f"samples={a.samples}  temp={a.temp}  (clean API, blind judge)\n")
-    results, tot_wo, tot_wl = {}, 0.0, 0.0
+    results, tot_wo, tot_wl, tot_wp = {}, 0.0, 0.0, 0.0
     for c in cases:
         row = {"rubric_n": len(c["rubric"]), "arms": {}}
-        for with_lib in (False, True):
-            arm = "with" if with_lib else "without"
+        arms = [(False, 0), (True, 0)] + ([(True, a.pad_rules)] if a.pad_rules else [])
+        for with_lib, pad in arms:
+            arm = ("with+pad" if pad else "with") if with_lib else "without"
             recalls, last_present, last_art = [], [], ""
             for s in range(a.samples):
                 print(f"  {c['id']:16s} {arm:8s} generating… (sample {s+1}/{a.samples})", flush=True)
                 # 32k: the self-audit with-arm emits substantially longer output;
                 # 16k truncated tests/logging off the end and scored them absent.
-                art = call(a.build_model, gen_prompt(c, with_lib), k,
+                art = call(a.build_model, gen_prompt(c, with_lib, pad), k,
                            max_tokens=a.max_tokens, temp=a.temp)
                 verdict = judge(art, c["rubric"], a.judge_model, k)
                 last_present = [r["id"] for r in c["rubric"] if verdict.get(r["id"]) == "present"]
@@ -300,17 +349,29 @@ def main():
         tot_wo += wo
         tot_wl += wl
         results[c["id"]] = row
-        print(f"{c['id']:16s} without={wo:.2f}  with={wl:.2f}  lift={wl-wo:+.2f}   "
+        pad_txt = ""
+        if "with+pad" in row["arms"]:
+            wp = row["arms"]["with+pad"]["recall"]
+            tot_wp += wp
+            pad_txt = f"  with+pad={wp:.2f}  pad-delta={wp-wl:+.2f}"
+        print(f"{c['id']:16s} without={wo:.2f}  with={wl:.2f}  lift={wl-wo:+.2f}{pad_txt}   "
               f"without-missing: {', '.join(row['arms']['without']['missing']) or '-'}")
     n = len(cases)
     print(f"\nMEAN completeness  without={tot_wo/n:.2f}  with={tot_wl/n:.2f}  "
           f"LIFT={((tot_wl-tot_wo)/n):+.2f}")
+    if a.pad_rules:
+        # The question ROADMAP 25 asks: does competing guidance cost rule APPLICATION?
+        # A negative pad-delta is the load-lean thesis showing up as a number; ~0.00 says
+        # the thesis is unsupported at this padding size, which is equally publishable.
+        print(f"MEAN with+pad={tot_wp/n:.2f}  PAD-DELTA={((tot_wp-tot_wl)/n):+.2f}  "
+              f"({a.pad_rules} lines of unrelated real rules prose added to the with-arm)")
     if a.out:
         # Provenance (found missing 2026-08-16): the flagship artifact stored only case
         # results — no build/judge model, samples, temp, or the router SHA the whole
         # comparison is pinned to. A number nobody can attribute is not evidence.
         out_obj = {"_meta": {"build_model": a.build_model, "judge_model": a.judge_model,
                              "samples": a.samples, "temp": a.temp,
+                             "pad_rules": a.pad_rules,
                              "router_build_sha": ROUTER_BUILD_SHA},
                    **scrub_secrets(results)}
         json.dump(out_obj, open(a.out, "w"), indent=1)
