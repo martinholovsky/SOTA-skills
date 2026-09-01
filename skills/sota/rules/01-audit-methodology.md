@@ -209,8 +209,14 @@ follows whichever they loaded. The split itself is a drift risk: a pass about *r
 reporting* a finding belongs in `rules/03`, one about *running* the audit belongs here, and
 a section added to the wrong file is found by nobody looking for it.
 
-Unlike BUILD there is no hash pin over §AUDIT (`rules/02` §5), so **nothing catches this
-automatically** — the check is this section existing and being read.
+§AUDIT **is** hash-pinned, as of 2026-09-01 — invariant 20 in `scripts/check-invariants.sh`
+holds `ROUTER_AUDIT_SHA`, and the build fails when the section moves. The pin does not know
+whether the two rules files still agree; it only guarantees that **someone had to come and
+look**, because bumping it is a deliberate edit in the same commit. So the sequence is:
+change §AUDIT, re-read this section and `rules/03`, fix whichever half is now wrong, then set
+the new hash. (Before that date this paragraph read *"nothing catches this automatically"*,
+and it was true — the gate was parked on a trigger that had already been met without anyone
+noticing: `run-repo-audit.py` pastes the whole router, §AUDIT included.)
 
 ## Audit checklist — quality gate on running the audit
 

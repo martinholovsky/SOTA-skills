@@ -262,6 +262,19 @@ are marked "needs verification", never asserted.
     fail". **What it does not check**: the probe *count* (a static count of call sites
     reads 13 against an actual 25), or whether a probe's assertion is meaningful —
     only that one exists.
+20. **the router's `§AUDIT` changes without its pin being re-read**: `§BUILD` has
+    been hash-pinned since v1.15.0 (`ROUTER_BUILD_SHA` in `run-completeness.py`) and has
+    caught real drift twice; `§AUDIT` had no equivalent, and `sota/rules/01` §5 said so
+    outright — *"nothing catches this automatically"*. The item was parked on "no eval
+    consumes §AUDIT", which was **false when re-read**: `run-repo-audit.py` pastes the
+    whole router, §AUDIT included. The pin lives in `check-invariants.sh` rather than a
+    runner because the drift that matters is not eval-vs-router (that runner pastes
+    verbatim and cannot drift) but **router-vs-rules**: §AUDIT states seven passes whose
+    procedure lives in `sota/rules/01` and `rules/03`, and a pass that contradicts the
+    file it points at is worse than no pass, because the reader follows whichever they
+    loaded. To change §AUDIT: make the edit, re-read `rules/01` §5 and `rules/03`, then
+    set the new `ROUTER_AUDIT_SHA` in the same commit. Added 2026-09-01 (ROADMAP 26).
+
 17. **a document that describes the checks disagrees with them**: any stated count
     of invariants/checks that isn't the number `check-invariants.sh` prints, or a
     restatement of the negative-control coverage lists that isn't what
@@ -288,7 +301,7 @@ as a FALSE PASS, because a harness that accepts any failure reports full coverag
 testing nothing.
 
 Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 3, 4, 6,
-7, 8, 10, 13, 15, 16, 17, 18, 19 — 14 of 19; the harness prints the list and why the rest are
+7, 8, 10, 13, 15, 16, 17, 18, 19, 20 — 15 of 20; the harness prints the list and why the rest are
 not covered, so read its output rather than this sentence). Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
 fully-configured fake one — `CLAUDE_CONFIG_DIR` pointed at a temp home, a throwaway git
 repo, and a stub `gh` on `PATH` so run history is decidable — and each probe removes one

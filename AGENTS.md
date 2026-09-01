@@ -26,7 +26,7 @@ enforcement is on). Every change goes through a pull request:
 
 ## Invariants (enforced in pre-commit and CI)
 
-`scripts/check-invariants.sh` runs **19 checks** and fails the build on any of them. One
+`scripts/check-invariants.sh` runs **20 checks** and fails the build on any of them. One
 line each below. The *rationale* — and the real incident behind every one — lives in the
 script's own header, at the point of use, and the practical "what this means for your
 PR" version is in [CONTRIBUTING.md](CONTRIBUTING.md#the-invariants-enforced).
@@ -52,15 +52,15 @@ PR" version is in [CONTRIBUTING.md](CONTRIBUTING.md#the-invariants-enforced).
 | 17 | a document that **describes** the checks disagrees with them — a stated count that isn't the script's, or a restated negative-control coverage list that isn't the harness's. Counts inside `"quotes"` are read as history, not claims |
 | 18 | a **`§` section reference** resolves nowhere — invariant 8 reads only `[text](file.md)` links, so ~1,300 prose references went unchecked and broke silently on any renumber or split |
 | 19 | a **check has no known-bad** and no pinned reason it cannot — and the exempt set may not *grow*, since silencing the coverage check by exempting your new check is a one-line move. Runs on every invocation (~50 ms), not behind a flag |
+| 20 | the router's **§AUDIT** section changes without its pin being re-read — §BUILD has been pinned since v1.15.0 and caught drift twice; §AUDIT had nothing, and `run-repo-audit.py` pastes the whole router. Bumping the pin is the forcing function to re-read `sota/rules/01` §5 |
 
 **Only instruction files are capped** — a file is capped iff an agent loads it *as
 instructions*: `skills/*/SKILL.md` and `skills/*/rules/*.md`, nothing else. README,
-CHANGELOG, `docs/`, `evals/`, this file and every script are **uncapped**,
-deliberately (decided 2026-07-15) — navigability there comes from a table of contents
-and [docs/INDEX.md](docs/INDEX.md), not a ceiling. **A line-cap claim anywhere that
-does not say *skill files* is stale — fix it.** The 500 matches the Agent Skills
-guidance (*"keep `SKILL.md` under 500 lines; move detailed reference material to
-separate files"*), and `rules/*.md` are exactly those separate files.
+CHANGELOG, `docs/`, `evals/`, this file and every script are **uncapped**, deliberately
+(2026-07-15) — navigability there comes from [docs/INDEX.md](docs/INDEX.md), not a
+ceiling. **A line-cap claim anywhere that does not say *skill files* is stale — fix
+it.** The 500 matches the Agent Skills guidance (*"keep `SKILL.md` under 500 lines; move
+detailed reference material to separate files"*) — `rules/*.md` are those files.
 
 **This file is the exception.** `CLAUDE.md` and `GEMINI.md` symlink here, so it loads
 into **every** session, where the platform's guidance is *"target under 200 lines"* —
@@ -92,10 +92,10 @@ it plus `evals/smoke-runners.py`, over **two** subjects: `check-invariants.sh` (
 that complains — a non-zero exit for any other reason is a **FALSE PASS**, not a catch.
 Part A mutates a good tree in a disposable git worktree; part B is inverted, building a
 fully-configured fake machine (`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and
-removing one thing per probe. **25 probes** (re-run 2026-09-01: `PASS: 25/25`; wrong twice
+removing one thing per probe. **26 probes** (re-run 2026-09-01: `PASS: 26/26`; wrong twice
 before, and deliberately **not** gated — a static count of call sites under-reads, so only
 running it is authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16,
-17, 18, 19** — 14 of 19 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. The five
+17, 18, 19, 20** — 15 of 20 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. The five
 unprobed invariants (5, 9, 11, 12, 14) need state a worktree lacks (a tag, a merge base,
 an mtime); the harness prints that reason, so what is *not* covered is printed rather than
 implied. **A probe asserts its own mutation landed** — they are hardcoded literals, and a
@@ -173,7 +173,7 @@ the setting. The pre-commit hook scans each commit locally.
   a session *applying* the library, and an unlicensed source whose ideas can be
   taken but whose text cannot, both land here on the same terms
 - [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md) — which of this repo's
-  conventions are **enforced** (19 invariants + 9 more inside the eval runners) and
+  conventions are **enforced** (20 invariants + 9 more inside the eval runners) and
   which are prose, with the three filters a convention must pass to earn a gate
   (has it already failed · does it fail silently · is it mechanically checkable).
   Read it before proposing a new gate — it argues against gating the ~18 judgment
