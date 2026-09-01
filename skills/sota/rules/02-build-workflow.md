@@ -28,7 +28,9 @@ So the honest case for lean is narrower, and still sufficient:
 - **The self-audit gate appears to absorb the effect.** The padded arm ran *with* step 4
   active, which is precisely the countermeasure — so read the null as "lean plus a terminal
   re-read is robust to competing context", not as "context length is free". Nobody has
-  measured padding without the gate.
+  measured padding with the gate **off**; that is
+  [ROADMAP](../../../docs/ROADMAP.md) item 32, and until it is run this section states the
+  weaker of the two readings on purpose.
 - **The salience mechanism is still real** — it is what step 4 exists for. What is not
   established is that *irrelevant* context triggers it.
 

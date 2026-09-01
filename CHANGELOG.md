@@ -5,7 +5,14 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.31.1] - 2026-09-01
+
+**Front door checked:** WHY-SALIENCE-LASTS · COMPLETENESS-PADDING
+
+**Patch, not minor**, by [RELEASING.md](RELEASING.md)'s test — a reader gains nothing *new to
+run* that is a new surface. Everything here lives inside surfaces that already exist: a CI
+invariant (8, 9 and 11 each shipped in a patch), rule-text corrections, a doc, and a flag on
+an existing runner.
 
 Closing the open roadmap items. Two closed, one opened, and **both closures came from
 re-testing a claim rather than re-reading it** — which is the through-line of this change.
@@ -5770,6 +5777,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.31.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.31.1
 [1.31.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.31.0
 [1.30.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.30.1
 [1.30.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.30.0
