@@ -279,6 +279,34 @@ Rules:
 - Certificates, DNS, and domain expiry are synthetic checks too — classic
   "no symptom until total outage" causes with perfect lead time.
 
+## 8a. Test writes and production writes must not share a sink
+
+§8 tags synthetic *probe* traffic so it is excludable from SLIs. The same requirement
+holds one layer down and is met far less often: **telemetry a test run can write must be
+distinguishable from telemetry production writes, at the point of collection.**
+
+- Either a **separate sink** — a distinct directory, table, index, bucket prefix or
+  dataset chosen by config — or a **stamped marker on every record** (`env: test`, the
+  provider identity, the run id). Prefer the separate sink; a marker only helps a reader
+  who already knows to filter on it.
+- **Never a naming convention.** One filename pattern for both, told apart by "test runs
+  happen to have a round row count", is not a filter — it is post-hoc archaeology,
+  available only to someone who already suspects the problem. The same goes for filtering
+  on a *value*: excluding rows by duration or size infers the population from the data
+  instead of recording it.
+- The stamp goes on at **write** time, in the emitting code. A field the reader adds can
+  only classify what the reader already understands, which is the case that was never in
+  doubt.
+- **Check the ordering, not just the presence, of the stamp.** In this library's own eval
+  harness the runner recorded its denominator *before* branching into `--selftest`, so a
+  self-test row and a measurement row were byte-identical apart from the elapsed time —
+  the marker existed and was written on the wrong side of the branch (2026-09-02).
+- Git-ignoring or gitignoring a local sink is not isolation: it keeps the file out of the
+  repo, not the test rows out of the aggregate.
+- The reader-side obligation — every aggregate over a shared sink states its exclusion
+  filter, and an unexplained jump in n is contamination rather than power — is
+  `sota-code-security` rules/11 §2.7.
+
 ## Audit checklist
 
 - [ ] Liveness, readiness, startup probes distinct; liveness contains NO
@@ -296,6 +324,9 @@ Rules:
       imported.
 - [ ] Continuous profiling running with version tags; on-demand capture
       path documented; off-CPU/lock profiling available where supported.
+- [ ] No sink receives both test-suite and production telemetry without a write-time
+      marker or a separate destination; any analysis over a shared sink states its
+      exclusion filter (§8a).
 - [ ] Error tracker captures all runtimes incl. frontend with sourcemaps;
       release+environment on every event; trace_id linked; PII scrubbed.
 - [ ] Issue grouping healthy (no message-interpolation shatter); triage

@@ -222,6 +222,20 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   count moves when the input does.
   ([rules/11](skills/sota-code-security/rules/11-dead-path-diagnostics.md),
   [rules/13](skills/sota-code-security/rules/13-context-dependent-silence.md))
+- **A field that is always empty, and the seam nobody could have diffed.** A
+  **defaulted read** — `.get(key, default)` on a dict you did not construct — turns a
+  key-name disagreement into a plausible constant, and when the producer is a *model*
+  choosing field names from a distribution there is no change event to test against:
+  the prompt and the reader can both be correct while the response uses a synonym. The
+  only sound detector is at runtime — diff the keys the model returned against the keys
+  anything consumed, and log the ones nothing read.
+  ([rules/13](skills/sota-code-security/rules/13-context-dependent-silence.md))
+- **A measurement whose rows came from somewhere else.** When tests and production
+  write to one **shared sink**, every aggregate over it merges two populations — and
+  the danger is not the false positive but the *destroyed true finding*, because the
+  contaminated number carries the larger n and so reads as the more rigorous one.
+  ([rules/11](skills/sota-code-security/rules/11-dead-path-diagnostics.md),
+  [rules/05](skills/sota-observability/rules/05-operational-readiness.md))
 - **Your own scorer, gate or benchmark doing none of the above** — a whole file
   turns the lens around: anything whose output decides whether something
   is *OK* is a control too. A broken feature produces a complaint; a broken
@@ -374,6 +388,10 @@ plainly. Every item below is in the repo, not a claim about it:
   12.3s over 7 cases | previous 380.0s — 30.9x faster]` — because "finished far faster
   than the work allows" is a *comparison*, and a duration without its denominator says
   nothing. A swing over 5× is flagged for a human; nothing is gated on time.
+  That ledger was itself a **shared sink** until 2026-09-02 — `--selftest` runs and
+  aborts landed in it in the same shape as measurements (**46 of 60 rows**), which
+  had quietly disarmed the comparison for the most-run runner. Runs now mark
+  completion, and only a completed run can be a baseline.
 - **The library is applied to itself, and it finds things.** Its own
   dead-path rules caught this repo's CI gates passing over **zero files** — green,
   exit 0, examining nothing — and the fix was verified by re-running the mutation.

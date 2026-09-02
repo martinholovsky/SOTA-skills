@@ -403,14 +403,38 @@ that measures the library. So:
   changed, not the speed"*.
   - **A duration without a denominator is the same defect in time form.** "12s" says
     nothing; "12s over 7 cases" does. Runners call `note_work(len(cases), "cases")`;
-    **7 of 12 do** — the other five have no single `cases = load…` line to hook, and
-    their rows record `-` and print `[no denominator — bare seconds, weak evidence]`
-    rather than being quietly compared. Add the call when you next touch one.
+    **12 of 13 do** (recounted 2026-09-02 — the claim here read "7 of 12" for a
+    while). `judge-live-build.py` is the exception: it has no single `cases = load…`
+    line to hook, so its rows record `-` and print `[no denominator — bare seconds,
+    weak evidence]` rather than being quietly compared.
+  - **A run that did not do the work is not a baseline — mark it, don't guess it.**
+    Every invocation appends, deliberately: a fast exit on an empty corpus is exactly
+    the case worth timing. But `--selftest` runs, usage errors and aborts then sit in
+    the same file, in the same shape, as measurements. Replaying the live ledger on
+    2026-09-02 found **46 of 60 rows were sub-10s aborts (77%)**, and **3 of the 14
+    real runs had been compared against one** — `run-completeness` printed
+    `previous 0.1s — 6340.0x slower <-- CHECK THIS` on its first genuine measurement,
+    and the next real run would have read `previous 0.0s (no usable ratio)` against an
+    abort logged 92 seconds after a good 3651.8s run. The diagnostic was inert for the
+    repo's most-run runner. The cause was `run-build-safe.py` calling `note_work()`
+    *before* its `--selftest` branch, so the runner's own scorer test recorded
+    `n=7 cases` exactly like a measurement.
+    So: **runners call `note_complete()` after `main()` returns**, the ledger carries a
+    6th `ok`/`partial` column, `_previous()` returns only `ok` rows, and the printed
+    line **states its own exclusion filter** (`[2 partial run(s) skipped to find it]`).
+    A partial run is recorded and reported but never compared. `smoke-runners.py`
+    gates the marker — a runner that registers `report_on_exit` without
+    `note_complete()` fails the suite. Legacy 5-column rows have no marker and are
+    never baselines, so the first run of each label after this change reads
+    `no completed baseline yet`. Filtering by duration instead would have been the
+    naming-convention filter that `sota-observability` rules/05 §8a forbids.
   - Corpus sizes differing between runs are compared **per case**, and the line says
     `(per case)` so the basis is never ambiguous.
   - **The ledger is git-ignored, and that is correctness, not convenience**: a
     duration is only comparable on the same machine and network, so committing one
-    would invite exactly the cross-machine comparison it cannot support.
+    would invite exactly the cross-machine comparison it cannot support. Git-ignored
+    is not the same as isolated, though — it was still one sink shared by tests and
+    measurements, which is how the contamination above survived.
   - **Printed, never gated**, and it **fails open on every path** — a missing,
     unreadable or corrupt ledger, or an unwritable location, must never break a run.
     All three were tested by breaking them.
