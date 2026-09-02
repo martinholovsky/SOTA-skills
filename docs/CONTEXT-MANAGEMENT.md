@@ -178,6 +178,23 @@ moves with every router edit — re-measure, never carry it forward).
 > rule is *do not estimate skill sizes; count them*, and no tokenizer was reachable in the
 > session that moved the tree. Re-measure with `count_tokens` at the next sweep.
 
+> **Re-measured 2026-09-02, and the router's own figure is superseded.** The 108-line
+> library map moved out of the router into `sota/rules/04-library-map.md`, so the router
+> is **399 lines / 13,415 tokens** — down from **500 lines / 16,997 tokens** (both counted
+> this session with `POST /v1/messages/count_tokens`, `claude-sonnet-5`, the same model as
+> the 2026-08-26/27 figures). That is **−3,582 tokens, −21.1%**, on *every* session that
+> loads the router. Two honest caveats. The map did not vanish: `rules/04` is **4,445
+> tokens**, so a session that *does* consult it pays **+863** versus before (the file
+> carries a header and an audit checklist the bare map did not) — the win is that most
+> sessions never open it, because `rules/02` step 2 sends them to the skill's own index
+> instead. And **compare this to the previous offload before concluding it generalises**:
+> the 2026-08-26 BUILD/AUDIT move saved 16,934 → 16,442, about **3%**, and was honestly
+> reported as buying *headroom, not context economy*. This one is seven times that,
+> because a lookup table is denser than prose and is the part nobody reads inline. The
+> router still breaches the 5,000-token recommendation at **2.7×** — offloading narrowed
+> the gap, it did not close it. Only the router was re-counted; the other four breaching
+> `SKILL.md` bodies still date to 2026-08-27.
+
 > **Correction, 2026-08-26.** This paragraph read *"~10,211 tokens — 2×"* until it was
 > measured. That figure came from a chars/4 heuristic and **under-reported the router's
 > context cost by ~60%**; `POST /v1/messages/count_tokens` returns **16,934** for the

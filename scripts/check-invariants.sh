@@ -422,20 +422,31 @@ if [ "$v6" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # library-map entry must name a real skill dir. Catches the drift the
 # 2026-07-10 audit found: sota-confidential-computing was added to the table
 # but missing from the map for a full release.
+#
+# TWO FILES since the map was offloaded out of the router: the routing table is
+# still the router's (it is the classifier and stays where the model reads it),
+# the map is `sota/rules/04`. Both paths are asserted to exist before anything is
+# checked — a moved file would otherwise make every grep miss and report all 40
+# skills as absent, which is loud, or make the reverse loop read nothing, which
+# is not.
 echo "[7/20] Router lists every skill (routing table + library map)"
 v7=0
 seen7=0
 router=skills/sota/SKILL.md
+libmap=skills/sota/rules/04-library-map.md
+for f in "$router" "$libmap"; do
+  [ -f "$f" ] || { note "MISSING: $f — this check cannot verify anything"; v7=1; }
+done
 bt='`'
 for d in skills/sota-*/; do
   name=$(basename "$d")
   seen7=$((seen7 + 1))
   grep -qE "^\| ${bt}${name}${bt} " "$router" || { note "routing table missing: $name"; v7=1; }
-  grep -qF "**${name}/rules**" "$router" || { note "library map missing: $name"; v7=1; }
+  grep -qF "**${name}/rules**" "$libmap" || { note "library map missing: $name"; v7=1; }
 done
 while IFS= read -r name; do
   [ -d "skills/$name" ] || { note "library map names a non-existent skill: $name"; v7=1; }
-done < <(grep -oE '\*\*sota-[a-z-]+/rules\*\*' "$router" | sed 's/\*\*//g; s#/rules##')
+done < <(grep -oE '\*\*sota-[a-z-]+/rules\*\*' "$libmap" | sed 's/\*\*//g; s#/rules##')
 scope "$seen7" "domain skills" || v7=1
 if [ "$v7" -eq 0 ]; then echo "    ok ($seen7 domain skills)"; else fail=1; fi
 
@@ -885,7 +896,7 @@ v15=0
 if command -v python3 >/dev/null 2>&1; then
   map_out=$(python3 - <<'MAPPY'
 import os, re, glob, sys
-router = "skills/sota/SKILL.md"
+router = "skills/sota/rules/04-library-map.md"   # the map moved out of the router
 try:
     lines = open(router, encoding="utf-8").read().splitlines()
 except OSError as e:
