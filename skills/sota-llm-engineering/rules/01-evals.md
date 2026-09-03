@@ -209,6 +209,18 @@ Production is the only honest distribution. Build the loop:
 
 ## 8. Metric pitfalls
 
+- **Prove the instrument can *see* the change before you run it.** An eval whose
+  treated arm never reads the thing you modified returns `+0.00` — and that null is
+  **structural, not a result**, while looking exactly like a real one. Before spending,
+  name the file the treatment lives in and show the runner reads it (`grep` the path in
+  the runner; diff the two arms' prompts). Field-reported 2026-09-03: a router change was
+  nearly measured with a runner that builds its catalogue from each skill's *frontmatter
+  description* and never loads the router body — its `+0.00` would have been indistinguishable
+  from the real `+0.000` the correct runner later produced. The runner's own docstring said
+  which of the two it measured; nobody had read it. **A null is only evidence when the arm
+  that produced it could have moved.** The inverse of the same fact is useful on purpose: an
+  arm that *cannot* see the treatment is a free negative control for the measurement itself
+  (§5) — the difference is entirely whether you chose it deliberately.
 - **Contamination:** never tune prompts against the eval set you gate on.
   Maintain a dev set for iteration and a held-out set for gating; refresh
   the held-out set periodically from production. Public benchmark numbers
@@ -249,6 +261,10 @@ Production is the only honest distribution. Build the loop:
   the score rises because the set remembers what the model got wrong.
 
 ## Audit checklist
+
+- [ ] Before any A/B is run, the treated arm is **shown to read the thing that changed**
+      (the runner's source names the path) — a null from an arm blind to the treatment is
+      structural, not a result (§8).
 
 - [ ] Every shipped LLM feature has an eval suite in the repo, runnable by one
       documented command. (Absent → High; absent on consequential output with

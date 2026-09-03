@@ -5,6 +5,66 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.32.1] - 2026-09-03
+
+**Front door checked:** GONE · blind to the treatment
+
+**Patch** — both changes are `§§` inside rules files that already exist; nothing new to run.
+Two open items closed, one from a standing brief and one from this session's own near-miss.
+
+### Added
+
+- **`sota-code-security` rules/12 §2.2a — the fourth watcher state, `GONE`.** §2.2a already
+  carried DONE / NOT-DONE / UNKNOWN; the missing row is **the target no longer exists** — a
+  job reaped, a pod GC'd, a file rotated away — which is **terminal and knowable, not
+  unknown**. Collapsing it into UNKNOWN trades a false success for a false alarm and the
+  watch never ends. Distinguish them at the source (**a `NotFound` is not a transport
+  error**) and, when the target is gone, fail over to its **parent** — the CronJob's
+  `lastSuccessfulTime`, the deployment, the directory — which outlives the instance and
+  carries the outcome. **`GONE` is the row people delete while fixing the other bug**:
+  field-reported, a rewrite made fail-closed replaced an explicit "no longer exists" branch
+  with the unknown-counter, which then reported *"cannot read for 20min — probe is blind"*
+  about a job that had simply been garbage-collected while the API answered in the same
+  second. The blindness signal worked exactly as designed and was still wrong, because the
+  state model was missing a row.
+  - Corrects the status of the 2026-08-16b brief in the ledger: it was recorded as
+    unapplied, but §2.2a had carried its substance since. **Only the fourth state was
+    missing** — and the probe that found that (`grep -rn GONE`) is why the narrow gap was
+    visible at all.
+- **`sota-llm-engineering` rules/01 §8 — prove the instrument can see the change before you
+  run it.** An eval whose treated arm never reads the modified file returns `+0.00`, and
+  **that null is structural, not a result** — an arm **blind to the treatment** cannot
+  produce a finding, and its `+0.00` looks exactly like a real one. Name the
+  file the treatment lives in and show the runner reads it before spending. From this
+  session's own near-miss: a **router-body** change was nearly measured with a runner that
+  builds its catalogue from frontmatter `description`s and never loads the body; its
+  `+0.00` would have been indistinguishable from the real `±0.000` the correct runner then
+  produced. Distinct from the convention already in `evals/README.md` — *an arm that cannot
+  see the treatment is a free negative control* — which is the same fact used
+  **deliberately**; the difference is entirely whether you chose it.
+
+### Changed
+
+- **ROADMAP re-counted from the tree (row 13, item 12, and the maintenance stamp).** The
+  **router is no longer the library's tightest file** — offloading its library map took it
+  499 → **398** — and `sota-code-security/rules/12` inherits the cap watch at **494/500**,
+  six lines of slack, with its reactive-split seam already visible (probing a control §1–1b
+  · judging an instrument §2 · the guard that is an instance of what it guards §3). Prior
+  counts kept as history rather than edited.
+
+### Verified, and reported as a null
+
+- **Swept `scripts/` and `evals/` for the shape this session kept hitting** — a failure path
+  swallowed so that success and failure look identical. 63 candidate sites by two
+  independent methods (`|| true` in shell, broad `except` in Python); every hit inspected.
+  **No new defects.** `install.sh`'s three `setup_* || true` calls are deliberate and each
+  function reports its own failure (2026-07-10 audit Q-MED-4), and `_elapsed.py`'s five
+  broad excepts are the documented fail-open of a module that states it *"reports, it never
+  decides"* and is not a measuring instrument. The one real instance was fixed in v1.32.0
+  (`check-negative-controls.sh`). Recorded because a null from a search someone else would
+  otherwise repeat is worth as much as a finding — and because an unstated absence claim is
+  indistinguishable from a search never run.
+
 ## [1.32.0] - 2026-09-03
 
 **Front door checked:** library map · NOMATCH
