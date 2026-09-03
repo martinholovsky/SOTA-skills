@@ -290,13 +290,25 @@ lost with no signal at all. Both directions are live defects:
 | fail **closed by aborting** | the watch dies | none: looks like "still waiting" |
 
 A binary done/not-done cannot express "I could not tell", so either resolution is wrong
-some of the time. Use three states:
+some of the time. Use **four** states:
 
 - **DONE** — only on a positively validated terminal signal. **Assert the success
   condition, never its negation**: validate the value is digits, then `[ "$n" -ge 1 ]`.
   Never `[ "$n" != "0" ]` — *every* error string satisfies it (verified: `""`, `error`,
   `null` and a usage message all compare `!= "0"`).
 - **NOT DONE** — keep waiting.
+- **GONE** — the target no longer exists: a job reaped after completion, a pod GC'd, a
+  file rotated away. **Terminal and knowable, not unknown.** Collapsing it into UNKNOWN
+  trades a false success for a false alarm and the watch never ends. Distinguish the two
+  **at the source** — a `NotFound` is not a transport error — and when the target is gone,
+  **fail over to its parent** (the CronJob's `lastSuccessfulTime`, the deployment, the
+  directory), which outlives the instance and carries the outcome.
+  **GONE is the state people delete while fixing the other bug**: field-reported, a first
+  attempt had an explicit "no longer exists" branch, and rewriting it fail-closed replaced
+  that branch with the unknown-counter — which then reported *"cannot read for 20min —
+  probe is blind"* about a job that had simply been garbage-collected, while the API was
+  reachable in the same second. The blindness signal worked exactly as designed and was
+  still wrong, because the state model was missing a row.
 - **UNKNOWN** — the read itself failed. Keep waiting, but **count consecutive unknowns**
   and emit blindness as its own event past a threshold. "I have not been able to observe
   this for N minutes" is a different fact from "not yet", and only one of them means the
@@ -431,7 +443,8 @@ whose pathspec drifted.
       writing what the validator expects.
 
 - [ ] Any instrument that runs **over time** (watcher, poller, readiness or completion
-      check): does it distinguish **not-yet** from **cannot-tell**, assert the terminal
+      check): does it distinguish **not-yet** from **cannot-tell** *and from
+      **target-gone*** (a `NotFound` is not a transport error), assert the terminal
       condition positively rather than as `!= 0`, bound the unknown state so persistent
       blindness is reported, and print an **independent** signal beside its verdict
       (§2.2a)?

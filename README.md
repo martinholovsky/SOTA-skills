@@ -238,6 +238,13 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   no-match: empty output, exit 1. The sweep you read as *"nothing is stale"* may never
   have executed.
   ([rules/01 §3a](skills/sota-shell-scripting/rules/01-safety-baseline.md))
+- **A watcher that cannot say "the thing I was watching is gone".** Done/not-done cannot
+  express *"I could not tell"*, and once you add that you find you also need **GONE** —
+  terminal and knowable, not unknown. Collapse it and the watch either invents a success
+  or never ends. It is the row people delete while fixing the other bug: one rewrite
+  replaced an explicit "no longer exists" branch with a blindness counter, which then
+  reported *"cannot read for 20min"* about a job that had simply been garbage-collected.
+  ([rules/12 §2.2a](skills/sota-code-security/rules/12-verifying-the-verifier.md))
 - **A measurement whose rows came from somewhere else.** When tests and production
   write to one **shared sink**, every aggregate over it merges two populations — and
   the danger is not the false positive but the *destroyed true finding*, because the
