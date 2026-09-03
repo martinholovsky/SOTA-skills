@@ -125,6 +125,7 @@ def main():
 
 
 if __name__ == "__main__":
-    from _elapsed import report_on_exit
+    from _elapsed import note_complete, report_on_exit
     report_on_exit("judge-live-build")
     main()
+    note_complete()   # main() returned: a measurement, not an abort

@@ -198,9 +198,26 @@ category = data.get("category", "other")                    # silently launders 
   truncations bypass the schema.
 - **Repair loop, bounded:** on validation failure, one retry feeding back
   the validator errors ("your output failed: <errors>; emit corrected JSON
-  only"). On second failure: reject into an explicit error path / fallback /
-  human queue. Unbounded repair loops are a cost bug; silent `except: pass`
-  defaults are a correctness bug (High).
+  only"). On second failure: an explicit error path / fallback / human queue.
+  Unbounded repair loops are a cost bug; silent `except: pass` defaults are a
+  correctness bug (High).
+- **Whole-document rejection is a recall control — rate it as one.** When a
+  document fails on one field (a synonym for an enum arm, `id` where the schema
+  said `name`), rejecting it does not yield a better document; it yields an
+  absent one, and each repair attempt bills. Where the producer is a model *you*
+  invoked and the extraction is the only copy, prefer salvaging the valid
+  remainder and **recording what was dropped** — a per-field reject counter and
+  the offending value, not a discarded document. This does not extend to an
+  untrusted caller: at a trust boundary, unknown or unparseable fields are still
+  reject (`sota-code-security` rules/09 §4). The distinction is who authored the
+  document, not how the parse failed.
+- **When a field goes constant, the seam is here, not in the reader.** An empty
+  or zero column across a large row count usually means the consumer reads a key
+  the model never emits — `sota-code-security` rules/13 §4a, whose runtime
+  detector (log the returned keys nothing consumed) is what closes it.
+  Constrained decoding above is the structural fix; instructing the format in
+  the prompt demonstrably is not, and §1's inline-the-schema rule does not help
+  here — it was already satisfied in every reported case.
 - **Check `stop_reason` before parsing.** `max_tokens` → truncated JSON
   (raise the cap, don't repair-loop it); `refusal` → no schema guarantee
   (handle explicitly). Code that indexes `content[0]` unconditionally
@@ -261,6 +278,11 @@ category = data.get("category", "other")                    # silently launders 
 - [ ] All machine-consumed output schema-constrained (structured output API
       or strict tool schema), client-validated, bounded repair then explicit
       reject; no regex/substring JSON harvesting.
+- [ ] Whole-document rejection over one bad field is treated as a **recall**
+      decision — valid remainder salvaged and the drop recorded — for
+      model-authored documents, and never relaxed at a trust boundary (§6);
+      no field read out of a model response with a default that is
+      indistinguishable from absence (`sota-code-security` rules/13 §4a).
 - [ ] `stop_reason`/refusal/truncation handled before parsing; no
       unconditional `content[0]` access; `max_tokens` set explicitly at every
       structured-output call site, and `output_tokens < max_tokens` asserted.

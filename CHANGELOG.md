@@ -5,6 +5,82 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.31.2] - 2026-09-02
+
+**Front door checked:** defaulted read · shared sink
+
+**Patch, not minor**, by [RELEASING.md](RELEASING.md)'s test — a reader gains nothing *new
+to run*. Four new `§§` inside rules files that already exist, a harness fix, and one more
+static check inside a smoke runner that already ran.
+
+Two classes from a field brief by a session that *used* the library on a Python service
+calling LLMs for structured verdicts. Both were checked against this repo before being
+written up, and **one of them was found here** — so the rule ships with two independent
+instances rather than one report.
+
+### Added
+
+- **`sota-code-security` rules/13 §4a — the defaulted read, and the seam whose producer is
+  a model.** §4 already owned "the seam nobody declared", but framed as **layout** drift
+  (file name, column order, separator, units) with a deterministic producer, and its build
+  rule — *run the consumer on that producer's real output* — presupposes a change event.
+  Neither holds when the producer samples field names from a distribution. `.get(k,
+  default)` on a dict you did not construct converts a detectable disagreement into a
+  plausible constant: reported instances stored `0.0` in 168 rows and `""` in 221 of 232,
+  for weeks, with nothing raising. **No static check closes this seam** — the prompt naming
+  a field and the code reading it can both be correct — so the sound detector is runtime:
+  diff the keys the response carried against the keys anything consumed and log what
+  nothing read. Distinguished from the tolerant-reader rule (`sota-api-design` rules/02 §3,
+  which stays correct — the addition is that it ignore *audibly*) and from
+  `deny_unknown_fields` at a trust boundary (`rules/09` §4, which rejects).
+- **`sota-code-security` rules/11 §2.7 — provenance of the rows, not just the count.** §2.2
+  asks a *gate* how many items it examined; this asks an *analysis* where its rows came
+  from. A sink both tests and production write is two populations to everything except the
+  tools reading it. **The generalisable half is the direction nobody teaches:**
+  contamination is discussed as manufacturing false positives, and the reported case where
+  it *destroyed a true finding* was the dangerous one — 8.5% across a shared directory
+  against ~100% on real runs — because the contaminated aggregate carried the larger n.
+  A false positive dies in review; a finding withdrawn on contaminated evidence leaves no
+  retraction to grep for and no red build.
+- **`sota-observability` rules/05 §8a — test writes and production writes must not share a
+  sink.** The build half. §8 already tagged synthetic *probe* traffic for SLI purity; this
+  is the same requirement one layer down, where it is met far less often. Separate sink or
+  a write-time stamp — **never a naming convention**, and never a filter inferred from a
+  *value* (duration, row count), which infers the population from the data instead of
+  recording it.
+- **`sota-llm-engineering` rules/02 §6 — whole-document rejection is a recall control.**
+  Amends the bullet **of ours that caused the reported defect**: *"reject into an explicit
+  error path"* lost three whole documents to one enum synonym at ~$0.05 a repair attempt.
+  Salvage the valid remainder and record the drop *for a model you invoked*; still reject at
+  a trust boundary. Plus the missing path from symptom to remedy — a constant column now
+  points at rules/13 §4a and at constrained decoding.
+
+### Fixed
+
+- **`evals/results/durations.tsv` was this repo's own shared sink**, found by checking the
+  brief's prediction against our harness. Replaying the live ledger: **46 of 60 rows were
+  sub-10s aborts (77%)**, and **3 of the 14 real runs had been compared against one** —
+  `run-completeness` printed `previous 0.1s — 6340.0x slower <-- CHECK THIS` on its first
+  genuine measurement, and the next real run would have read `previous 0.0s (no usable
+  ratio)` against an abort logged 92 seconds after a good 3651.8s run. **`rules/11` §2.1,
+  the diagnostic that ledger exists to implement, was inert for the most-run runner in the
+  repo.** The cause was one line of ordering: `run-build-safe.py` called
+  `note_work(len(cases))` *before* its `--selftest` branch, so the runner's own scorer test
+  recorded `n=7 cases` in exactly a measurement's shape. Fix follows §8a rather than
+  guessing from duration: `note_complete()` after `main()` returns, an `ok`/`partial` sixth
+  column, `_previous()` returning only completed rows, partial runs recorded and reported
+  but never compared, and every printed line **stating its own exclusion filter**
+  (`[2 partial run(s) skipped to find it]`). Legacy 5-column rows are never baselines, so
+  the first run of each label after this reads `no completed baseline yet`.
+- **`smoke-runners.py` gates the marker** — a runner registering `report_on_exit` without
+  `note_complete()` fails the suite (`3 checks, all with denominators`; watched to fail by
+  stripping the call from `run-clean.py`, which named the right file and exited 1).
+- **`run-router-length.py` no longer overwrites a past-dated result file.** Its output path
+  was hardcoded to `evals/results/2026-08-27/`, so every re-run silently destroyed the
+  record a re-run should be compared against. Now date-stamped, like every other runner.
+- **`evals/README.md` said `7 of 12` runners call `note_work`**; recounted, it is **12 of
+  13**. Stale since the count last moved.
+
 ## [1.31.1] - 2026-09-01
 
 **Front door checked:** WHY-SALIENCE-LASTS · COMPLETENESS-PADDING

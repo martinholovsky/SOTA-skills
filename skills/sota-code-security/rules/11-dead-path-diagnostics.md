@@ -187,6 +187,45 @@ empty-but-well-formed artifact while exiting 0.
 an absolute assertion instead of a relative one, and it belongs in CI rather than
 in an audit.
 
+### 2.7 Provenance of the rows, not just the count
+
+§2.2 asks a **gate** how many items it examined. This asks an **analysis** where its rows
+came from — the same arithmetic one level up, and the worse failure, because the
+contaminated number looks like the better one.
+
+A sink that both the test suite and the real system write, with the same name in the same
+place, is one population to every tool that reads it and two populations in fact.
+
+Two instances, both 2026-09-02. Field-reported: of 226 log files in one directory, **215
+were test fixtures**, identifiable only afterwards by a uniform verdict count and a
+`[test-provider]` string — every aggregate over it was ~90% test data. And in this
+library's own harness, where `evals/results/durations.tsv` received `--selftest` runs,
+usage errors and real measurements alike: **46 of 60 rows were sub-10s aborts (77%)**, and
+**3 of the 14 real runs had been compared against one**. The runner printed
+`previous 0.1s — 6340.0x slower <-- CHECK THIS` on its first genuine measurement, and the
+next real run would have read `previous 0.0s (no usable ratio)` against an abort logged 92
+seconds after a good 3651.8s run — so §2.1, the diagnostic that ledger exists to
+implement, was inert for the most-run runner in the repo. The cause was one line of
+ordering: `note_work(len(cases))` ran *before* the `--selftest` branch, so the runner's own
+scorer test recorded the same denominator as a measurement.
+
+**The third field case is why this is a diagnostic and not a hygiene note.**
+Contamination is taught as a source of false positives. There it *destroyed a true
+finding* — a rate read 8.5% across the shared directory against ~100% on real runs — and
+it argued more persuasively in that direction, because the contaminated aggregate carried
+the larger n. "5,000 samples" outranks "149" in review, and the 149 were the real ones. A
+false positive dies in review; a finding withdrawn on contaminated evidence leaves nothing
+behind at all — no retraction to grep for, no red build, no second look.
+
+Rule for BUILD: the writer stamps, not the reader — `sota-observability` rules/05 §8a.
+Rule for AUDIT: every number reported from a shared sink states its **exclusion filter and
+the count on both sides of it** (`149 of 5,000 after excluding test-provider runs`); a bare
+n from a shared sink is not a measurement. And treat an **unexplained** jump in n when you
+widen the source as contamination, not power — widening one shard to all shards
+legitimately multiplies n, so the test is whether you can name where the new rows came
+from. If you cannot, you did not widen the sample; you merged two populations. §2.3 reads
+the same arithmetic from the other end.
+
 ## 3. Five classes rules/10 does not cover
 
 Moved to [`rules/13`](13-context-dependent-silence.md) — scale-dependent silence,
@@ -348,6 +387,9 @@ unvalidated instrument is not yet a finding.
 - [ ] External-interface parsers validated against the **declared schema** and a
       real sample from the installed version, not one observed response; numeric
       parsing rejects trailing garbage (`rules/13` §3)?
+- [ ] Every aggregate drawn from a sink that **anything but production writes to**
+      states its exclusion filter and the count on both sides of it, and no finding was
+      withdrawn on a number whose n grew unexplained (§2.7)?
 - [ ] **No security, authz, bounds, or data-integrity check implemented as an
       `assert`**, and the deployment's flags (`-O`, `NDEBUG`, `PYTHONOPTIMIZE`,
       missing `-ea`) checked against any assert on a control path (§4)?

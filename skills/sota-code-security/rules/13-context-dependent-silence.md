@@ -138,6 +138,61 @@ the seam is broken. Rule for AUDIT: for every artifact handed between stages,
 name its layout, its writer and its reader — where no schema pins them, the pair
 is a finding awaiting its first change.
 
+## 4a. The defaulted read — and the seam whose producer is a model
+
+§4's seam has a fixed producer: change it, run the consumer on its real output, done.
+That build rule dissolves when the producer is a **model**. There is no change event to
+run the consumer after — the field name is sampled from a distribution on every call, so
+the same code is right on one response and silent on the next, and neither side has a
+version to pin.
+
+What makes it silent either way is the **defaulted read**. `d.get(k, default)` against a
+dict you did not construct converts a detectable disagreement into a plausible constant:
+the consumer names one key, the producer emits another, nothing raises. A `KeyError`
+would have surfaced it in minutes; the default runs for weeks. Field-reported
+2026-09-02, four instances in one service — a recorder reading `confidence` where the
+producer wrote `final_confidence` (168 rows stored `0.0`), and a store reading
+`verdict.get("reasoning", "")` where the model answered `reason` (221 of 232 rows
+recorded an empty explanation, in the phase that most needed one).
+
+```python
+# BAD — an absent key and a legitimate zero are the same value
+row.confidence = result.get("confidence", 0.0)
+
+# GOOD — the absent case is distinguishable from the default
+raw = result.get("confidence", _MISSING)
+if raw is _MISSING:
+    log.warning("verdict_key_absent", expected="confidence", got=sorted(result))
+    raw = 0.0
+```
+
+- **Reading a key you did not write, with a default, is a silent-failure site.** Prefer
+  `d[k]` and let it raise. Where a default is genuinely right, absence must be
+  **distinguishable from the default value** — a sentinel, a counter, a log line. The
+  write-side twin — a literal `[]` or `""` emitted because the upstream dict never
+  carried the value — is `rules/10` §2.3, the same finding one function earlier.
+- **Where the producer is a model, no static check closes the seam.** The prompt naming
+  a field and the code reading that field can both be correct while the model answers
+  with a synonym: no diff, no version bump, no producer test that fails. The sound
+  detector is **runtime** — diff the keys the response carried against the keys anything
+  consumed, and log every returned key nothing read. **An ignored key is the signal**; it
+  is the only artifact of the disagreement that exists on both sides.
+- This is the mirror of the tolerant-reader rule (`sota-api-design` rules/02 §3):
+  ignoring unknown fields stays correct for evolvability, and what is added here is that
+  it ignores them **audibly**. It is a different question from `deny_unknown_fields` at a
+  trust boundary (`rules/09` §4), which rejects because the producer is hostile; here the
+  producer is one you invoked.
+- The structural fix is upstream, not here: constrain the decoding
+  (`sota-llm-engineering` rules/02 §6). **A prompt is not an enforcement boundary** — in
+  every reported case the schema was inlined in the prompt, so rules/02 §1's
+  self-contained-prompt rule was already satisfied and did not help.
+
+Rule for BUILD: for every dict you read but did not construct, index it or make absence
+visible; where the writer is a model, emit the unconsumed-key diff. Rule for AUDIT: grep
+`.get(` for a second argument, and for each hit ask who writes that key and whether
+anything would say so if nobody did. A **constant column** over a large row count — all
+`0.0`, all `""`, all `[]` — is the same finding arriving from the data side.
+
 ## 5. Location-dependent silence — correct here, empty there
 
 A filter whose predicate can match something in the **ambient environment** rather
@@ -184,6 +239,10 @@ collection rather than an error. Two defences, and you want both:
       spelling (§3)?
 - [ ] **The seam**: where two components each satisfy their own contract, is the
       contract *between* them declared anywhere, and does anything test it (§4)?
+- [ ] **The defaulted read**: does any consumer read a key it did not write via
+      `.get(k, default)`, so an absent key and the default value render identically —
+      and where the writer is a **model**, does anything log the returned keys nothing
+      consumed (§4a)?
 - [ ] **Location**: does the control depend on an environment fact — a default
       `char` signedness, a filesystem's case behaviour, a locale, a mounted
       path — that differs between where it was tested and where it runs (§5)?

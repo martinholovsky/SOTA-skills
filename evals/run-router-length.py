@@ -26,7 +26,7 @@ competition between real rules. Write-up: results/2026-08-26/ROUTER-LENGTH.md
 
 Usage: python3 evals/run-router-length.py
 """
-import glob, json, os, sys, urllib.request
+import glob, json, os, sys, time, urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL = "anthropic/claude-sonnet-5"
@@ -171,7 +171,15 @@ def main():
         results[arm] = {"recall": m, "recalls": recs, "lines": lines, "prompt_tokens": ptok, "misses": last}
         print(f"{arm:14s} lines={lines:5d} ptok={ptok:7,}  recall={m:.3f}  "
               f"[{'/'.join(f'{x:.2f}' for x in recs)}]  misses={sorted(last)}")
-    json.dump(results, open(os.path.join(ROOT, "evals/results/2026-08-27/router-length-real-rules.json"), "w"), indent=1)
+    # Date-stamped, not pinned to the day this sweep first ran: a hardcoded past date
+    # means every re-run silently OVERWRITES the record it should be compared against
+    # (`sota-code-security` rules/11 §2.7) — a result file is telemetry too, and this
+    # one overwrote the very baseline a re-run should be compared against.
+    out = os.path.join(ROOT, "evals/results", time.strftime("%Y-%m-%d"),
+                       "router-length-real-rules.json")
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    json.dump(results, open(out, "w", encoding="utf-8"), indent=1)
+    print(f"saved {out}")
     b = results["base"]["recall"]
     print("\nvs base:")
     for a, v in results.items():

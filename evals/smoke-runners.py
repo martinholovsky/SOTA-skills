@@ -111,6 +111,29 @@ def main():
                  "one, e.g. every CI runner): " + ", ".join(sorted(set(unguarded_env))))
     print("  env check:   every .env read is existence-checked\n")
 
+    # And every runner that RECORDS a duration must also MARK the run complete. Without
+    # the mark, `--selftest` runs, usage errors and aborts land in results/durations.tsv
+    # in the same shape as measurements — 46 of 60 rows were aborts when this was
+    # measured (2026-09-02), and 3 of 14 real runs had been compared against one. The
+    # marker is `note_complete()` after `main()` returns; a runner that registers
+    # `report_on_exit` without it silently re-opens the shared sink, which disarms the
+    # §2.1 comparison this ledger exists for (`sota-code-security` rules/11 §2.7,
+    # `sota-observability` rules/05 §8a).
+    unmarked = []
+    for f in files:
+        tree = ast.parse(open(f, encoding="utf-8").read())
+        for blk in [n for n in tree.body if isinstance(n, ast.If)
+                    and ast.unparse(n.test).startswith("__name__ ==")]:
+            names = [getattr(c.func, "id", "") for c in ast.walk(blk) if isinstance(c, ast.Call)]
+            if "report_on_exit" in names and "note_complete" not in names:
+                unmarked.append(os.path.basename(f))
+    if unmarked:
+        sys.exit("FAIL: records a duration but never calls note_complete(), so an aborted "
+                 "run is indistinguishable from a measurement in results/durations.tsv: "
+                 + ", ".join(sorted(set(unmarked))))
+    marked = sum(1 for f in files if "report_on_exit" in open(f, encoding="utf-8").read())
+    print(f"  ledger check: all {marked} duration-recording runners mark completion\n")
+
     dead, saved_argv = [], sys.argv
     print(f"Smoke test: can each eval runner reach its first network call? "
           f"({len(files)} runners, {a.timeout}s each)\n")
