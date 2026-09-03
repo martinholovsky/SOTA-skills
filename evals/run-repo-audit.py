@@ -86,6 +86,15 @@ def library_context():
                  f"arm that contains no library.")
     rules = "\n\n".join(open(f, encoding="utf-8").read() for f in files)
     router = open(os.path.join(ROOT, "skills/sota/SKILL.md"), encoding="utf-8").read()
+    # NOTE (2026-09-02): the router's 108-line library map moved to sota/rules/04, which
+    # this function does not glob — so the with-library arm's prompt lost ~3.6k tokens of
+    # LOOKUP TABLE relative to every run recorded before that date. Deliberately not
+    # re-added: the map indexes rules files this prompt never supplies (only
+    # sota-code-security/rules/* is pasted), so it was pointing at content that was not
+    # there. Recorded rather than left silent because shrinking the TREATMENT arm without
+    # saying so is how a harness measures something other than what it claims
+    # (`sota-code-security` rules/11 §2.7). Re-baseline before comparing a new run to the
+    # nine instruments that closed this axis at +0.00.
     return f"{router}\n\n{rules}"
 
 

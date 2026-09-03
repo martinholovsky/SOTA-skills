@@ -159,9 +159,11 @@ probe 6 "README file count drifted from the tree" "README hero file count"
     && git add -A >/dev/null 2>&1 )
 probe 10 "rules file not referenced by its own SKILL.md" "not referenced in"
 
-# 15 — the router's library map omits a rules file that exists.
-( cd "$WT" && perl -0pi -e 's/10 silent control failure, 11 dead-path diagnostics, /10 silent control failure, /' skills/sota/SKILL.md )
-probe 15 "router library map omits an existing rules file" "map missing:"
+# 15 — the library map omits a rules file that exists. The map moved out of the router
+# into sota/rules/04 (2026-09-02); this probe moved with it, which is the point of a
+# probe asserting its own mutation landed rather than trusting a hardcoded literal.
+( cd "$WT" && perl -0pi -e 's/10 silent control failure, 11 dead-path diagnostics, /10 silent control failure, /' skills/sota/rules/04-library-map.md )
+probe 15 "library map omits an existing rules file" "map missing:"
 
 # 16 — README documents a hook install.sh does not write (the 2026-08-05 defect).
 ( cd "$WT" && perl -0pi -e 's/\(3\) ROUTE BEFORE YOU ACT/(3) route whenever/' README.md )

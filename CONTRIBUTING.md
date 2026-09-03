@@ -170,7 +170,7 @@ are marked "needs verification", never asserted.
    (checked only against dropping below it), so the image needs no per-release
    re-render.
 7. **router drift**: every domain skill must appear in the router's routing
-   table AND its library map (both in `skills/sota/SKILL.md`) — adding a skill
+   table (`skills/sota/SKILL.md`) AND its library map (`skills/sota/rules/04-library-map.md`) — adding a skill
    means updating both.
 8. **link rot**: every relative Markdown link to a `*.md` target (in any
    tracked `*.md`) must resolve — a moved or renamed file can't leave a dead
@@ -359,7 +359,7 @@ running the audit) and [`rules/03-audit-findings.md`](skills/sota/rules/03-audit
 catches divergence automatically; a new pass needs a line in the router *and* a section in
 whichever rules file owns it.
 
-Adding a `skills/sota/rules/NN` file also touches the router's **library map** (invariant
+Adding a `skills/sota/rules/NN` file also touches the **library map** in `skills/sota/rules/04` (invariant
 15) and the README's file count (invariant 6) — and both gates read `git ls-files`, so
 `git add` the new file before believing either of them.
 

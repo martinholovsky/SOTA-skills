@@ -197,8 +197,9 @@ skills.
       (the social-preview pill + README alt are "N+" floors — touch them
       only when deliberately raising the floor, which also means
       re-rendering the PNG)
-- [ ] New skills appear in the README table and the router's routing table +
-      library map
+- [ ] New skills appear in the README table, the router's routing table
+      (`skills/sota/SKILL.md`) and the library map (`skills/sota/rules/04-library-map.md`
+      — offloaded out of the router 2026-09-02; invariant 7 reads both files)
 - [ ] **Front-door grep done (§2b)** — every capability this release added has a
       mention in README/`docs/INDEX.md`, and anything unbacked by a measured number
       says so. Then record it: **invariant 14 fails the build** unless the new

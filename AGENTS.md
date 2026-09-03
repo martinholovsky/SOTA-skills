@@ -39,7 +39,7 @@ PR" version is in [CONTRIBUTING.md](CONTRIBUTING.md#the-invariants-enforced).
 | 4 | a `SKILL.md` `description` exceeds **1024 chars** (spec cap — loaders silently skip it), is unquoted YAML containing `: `, or either `name`/`description` contains an **XML tag**; also a reserved word (`anthropic`, `claude`) in `name` |
 | 5 | `VERSION`, `plugin.json` and the CHANGELOG top entry disagree, or a tag is ahead of `VERSION` |
 | 6 | a count-bearing surface drifts from a recount of `skills/` (the social-preview pill and README alt are **"N+" floors**) |
-| 7 | a skill is missing from the router's routing table **or** its library map |
+| 7 | a skill is missing from the router's routing table (`skills/sota/SKILL.md`) **or** the library map (`skills/sota/rules/04`) — two files since the map was offloaded |
 | 8 | a relative Markdown link to a `*.md` target doesn't resolve |
 | 9 | `CHANGELOG.md` carries more than one `## [Unreleased]`, or it isn't the top entry |
 | 10 | a `rules/*.md` isn't referenced by its own `SKILL.md` — written, capped, checklist-ed, and never loaded |
@@ -47,7 +47,7 @@ PR" version is in [CONTRIBUTING.md](CONTRIBUTING.md#the-invariants-enforced).
 | 12 | an `assets/*.png` is older than the `*.html` it renders — the README embeds the *image*, never the source, so an un-rendered fix reaches nobody. Escape: `[no-render]` in the commit subject |
 | 13 | a scoreboard row in `evals/results/RESULTS.md` leaves its `Samples` cell empty |
 | 14 | a **release** (VERSION changed) carries no `**Front door checked:**` line in its CHANGELOG section, or a declared term is missing from `README.md`/`docs/INDEX.md` **or** from the release's own entry |
-| 15 | the router's **library map** omits a `rules/NN` file that exists, or names one that doesn't — checks 7 and 10 both miss this, and `rules/11` went unlisted for two releases |
+| 15 | the **library map** (`skills/sota/rules/04`, offloaded out of the router) omits a `rules/NN` file that exists, or names one that doesn't — checks 7 and 10 both miss this, and `rules/11` went unlisted for two releases |
 | 16 | the hook `README.md` **documents** differs from the one `install.sh` **writes** (`HOOK_CMD`) — the README's is what a reader copies by hand, so a stale block is the version that spreads |
 | 17 | a document that **describes** the checks disagrees with them — a stated count that isn't the script's, or a restated negative-control coverage list that isn't the harness's. Counts inside `"quotes"` are read as history, not claims |
 | 18 | a **`§` section reference** resolves nowhere — invariant 8 reads only `[text](file.md)` links, so ~1,300 prose references went unchecked and broke silently on any renumber or split |
@@ -77,11 +77,11 @@ carries the three rules the lesson produced: watch it fail first, print your
 denominator, skip rather than guess.
 
 *Adding a `rules/NN` file?* Invariant 10 checks its own `SKILL.md` indexes it and
-**invariant 15** checks the router's library map lists it, both directions — that
-map went unchecked long enough for `rules/11` to sit unlisted for two releases.
-`skills/sota/SKILL.md` is at **499/500** (re-counted 2026-08-29); `rules/01` split into 01 (process) +
-03 (findings) on 2026-08-29, the same move as 2026-08-26's BUILD/AUDIT offload: **detail belongs in
-`rules/`, imperatives in the router.** This count has been wrong **five** times — **re-count with `grep -c ''`**.
+**invariant 15** checks the library map (`skills/sota/rules/04`) lists it, both directions.
+`skills/sota/SKILL.md` is at **398/500** (re-counted 2026-09-02, after its 108-line library map
+moved to `rules/04` — the third such offload after 2026-08-26's BUILD/AUDIT and 2026-08-29's
+`rules/01` split: **detail belongs in `rules/`, imperatives in the router**). This count has
+been wrong **five** times — **re-count with `grep -c ''`**.
 Editing the router's **BUILD section** moves `ROUTER_BUILD_SHA` and aborts the evals; AUDIT does not.
 The gates enumerate via `git ls-files`, so an **unstaged new file is invisible** to
 them — `git add` before believing a count.
