@@ -314,6 +314,36 @@ frontier model on these pairs. The cross-refs are kept anyway — zero runtime c
 harmless, and plausibly useful for weaker/smaller models or genuinely ambiguous
 phrasings outside this set (a prediction, not measured). No routing lift is claimed.
 
+## 6. Router refactor regression — does offloading the library map cost routing? (±0.000)
+
+The router's 108-line **library map** moved to `sota/rules/04-library-map.md`, taking
+`skills/sota/SKILL.md` from 499 to 398 lines and **16,997 → 13,415 tokens** (−21.1%
+per load; `count_tokens`, `claude-sonnet-5`). This checks the accuracy side.
+[`run-clean.py --cases router.jsonl`](../run-clean.py) run twice against trees
+differing **only** in the router — `main` in a `git worktree`, so both existed at once.
+Pre-registered before either arm ran.
+
+| arm | recall BEFORE | recall AFTER | Δ | Samples |
+|---|---|---|---|---|
+| **with-library** (treatment) | **1.000** | **1.000** | **+0.000** | 3 × 20 cases, temp 0.7, per config |
+| without-library (control — never reads the router) | 0.900 | 0.900 | +0.000 | 3 × 20 cases, temp 0.7, per config |
+
+**The pre-registered falsification condition — a recall drop — did not trigger**: zero
+misses across 120 case-samples. Three caveats, all in
+[ROUTER-MAP-OFFLOAD.md](2026-09-03/ROUTER-MAP-OFFLOAD.md): recall is **at ceiling** so
+this can only detect a drop; the control's Δ=0.000 is **not** a measured noise floor
+(its identical per-sample triple looked like provider caching until checked — its
+predictions do differ, in 1 of 20 cases); and the treatment arm's predictions churn in
+**11 of 20** cases, so the favourable `Δprecision=+0.037` is **not reportable** at n=3,
+consistent with the golden set's own header (*extra loads are not penalized; a MISS is
+the real signal*). Evidence of **no detected degradation**, not of no change.
+
+**Instrument correction worth keeping.** The PR first proposed
+[`run-desc-routing.py`](../run-desc-routing.py) (§5). That runner reads only frontmatter
+`description`s and **never the router body** — the arm could not have seen the
+treatment, so its `+0.00` would have been structural. Caught by reading the runner
+before spending; the fake null would have looked identical to this real one.
+
 ## Not yet measured (open)
 
 - **Competitor breadth — DONE (5 domains).** The lead tracks the unguided baseline,
