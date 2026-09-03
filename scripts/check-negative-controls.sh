@@ -46,7 +46,26 @@ GATE=scripts/check-invariants.sh
 [ -f "$GATE" ] || { echo "FAIL: $GATE not found"; exit 1; }
 
 WT=$(mktemp -d)/wt
-cleanup() { git worktree remove --force "$WT" >/dev/null 2>&1 || true; rm -rf "$(dirname "$WT")"; }
+# REPORTED, NEVER GATED. This runs on EXIT, so a non-zero here would overwrite the
+# harness's real exit code — and the whole point of this script is that a non-zero for
+# any reason other than the intended check is a FALSE PASS. Same stance as
+# `evals/_elapsed.py`: it reports, it never decides. Also `docs/CONVENTIONS-LEDGER.md` —
+# a flaky gate gets disabled and leaves you worse off than no gate.
+#
+# The `|| true` here used to swallow the failure while `rm -rf` deleted the directory
+# anyway, which orphans the worktree REGISTRATION: `git worktree list` then shows a
+# `prunable` entry forever, and success and failure of this cleanup were
+# indistinguishable — `sota-code-security` rules/10 §2.4, in the one script whose job is
+# proving that failures surface. Found 2026-09-03 with two orphans already registered
+# (concurrent runs against one repo are the likely trigger). `git gc` does prune them,
+# but only at `gc.worktreePruneExpire`, which defaults to 3 months — that grace is why
+# this went unnoticed, not why it was fine.
+cleanup() {
+  git worktree remove --force "$WT" >/dev/null 2>&1 \
+    || echo "  warn: could not remove worktree $WT — pruning its registration" >&2
+  rm -rf "$(dirname "$WT")"
+  git worktree prune                 # the rm above orphans the registration otherwise
+}
 trap cleanup EXIT
 
 echo "Negative controls for $GATE"
