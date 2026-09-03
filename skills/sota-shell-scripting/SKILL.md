@@ -81,7 +81,7 @@ Finding format:
 
 | File | Covers |
 |---|---|
-| [rules/01-safety-baseline.md](rules/01-safety-baseline.md) | Shebang discipline, `set -euo pipefail` and its real limitations, quoting & word-splitting bug catalog, arrays, IFS, traps & mktemp cleanup, `[[ ]]`, printf, local/readonly, globbing pitfalls, never parse ls |
+| [rules/01-safety-baseline.md](rules/01-safety-baseline.md) | Shebang discipline, `set -euo pipefail` and its real limitations, quoting & word-splitting bug catalog, **zsh-vs-bash deviations that bite pasted commands (joining, `pipestatus`, and `NOMATCH` — an unquoted glob in a flag value aborts the command and fakes a clean sweep)**, arrays, IFS, traps & mktemp cleanup, `[[ ]]`, printf, local/readonly, globbing pitfalls, never parse ls |
 | [rules/02-robustness-correctness.md](rules/02-robustness-correctness.md) | Argument parsing (getopts/while-case, --help/--version), input validation, POSIX vs bash portability, stderr/exit-code discipline, PIPESTATUS, command -v, network timeouts & retries, flock & background jobs, idempotency & atomic writes, safe filename handling |
 | [rules/03-security.md](rules/03-security.md) | eval/injection, secrets discipline (argv/env/set -x), PATH hygiene, sudo discipline, curl\|bash both directions, temp-file races, umask, ShellCheck+shfmt in CI |
 | [rules/04-ci-and-operational.md](rules/04-ci-and-operational.md) | GitHub Actions shell pitfalls (`${{ }}` injection, multiline run, quoting in YAML), container entrypoints (exec, PID 1, privilege drop), Makefile shell gotchas, long-running script logging |

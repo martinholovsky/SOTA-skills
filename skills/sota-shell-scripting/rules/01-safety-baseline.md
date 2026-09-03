@@ -224,6 +224,61 @@ curl -H $auth_header ...     # header with space splits into garbage args
   the *right-hand side* of `==`/`=~` deliberately: unquoted RHS is a pattern, quoted is
   literal), and arithmetic `$(( ))`.
 
+## 3a. zsh is not bash — the deviations that bite *pasted* commands
+
+Committed scripts are immune: every one carries a `#!/usr/bin/env bash` shebang, so bash
+runs them whatever your login shell is. The exposure is **interactive, pasted, and
+agent-issued commands** — including the audit checklists in this library, which are
+written to be pasted, and **macOS's interactive shell is zsh**. Check the operator's shell
+rather than assuming; then treat the table below as live.
+
+| | bash | zsh | how it fails |
+|---|---|---|---|
+| unquoted `$var` with spaces | splits into words | **joins** into one argument (§3) | **loudly** — a usage error, exit 2, from the callee |
+| `$?` after a pipeline | last stage (`${PIPESTATUS[0]}` for the first) | same, but `${pipestatus[1]}` (§3) | **quietly** — a wrong status, read as truth |
+| unquoted glob in a flag value | passed through **literally**, command runs | `NOMATCH` **aborts the command** | **silently** — and it fakes a clean result |
+
+**The third is the dangerous one: a failed glob means the command never runs at all.**
+zsh's `NOMATCH` is on by default, so a glob matching nothing is a hard error rather than a
+literal word. Verified on zsh 5.9 / bash 5.3.15 / Darwin 25.6.0:
+
+```zsh
+grep -rn --include=*.md TODO .     # zsh: "no matches found: --include=*.md" — grep NEVER RAN
+                                   # bash: works, because the word is passed through
+grep -rn --include='*.md' TODO .   # correct in both
+```
+
+**Why it earns a rule of its own: with `2>/dev/null` it is byte-identical to a real
+no-match.** That redirect is the standard idiom for hiding `Permission denied` noise in a
+recursive search, and it also hides the one line that would have told you:
+
+```zsh
+out=$(grep -rn --include=*.md   hello . 2>/dev/null)   # BROKEN:  stdout empty, exit 1
+out=$(grep -rn --include='*.md' ABSENT . 2>/dev/null)  # GENUINE: stdout empty, exit 1
+```
+
+Same stdout, same exit code. **An audit sweep written this way cannot distinguish "the
+codebase is clean" from "my search never executed"** — a false-clean produced by the tool
+these checklists are pasted into, which is `sota-code-security` rules/12's
+verifying-the-verifier failure arriving through the shell.
+
+Rules:
+
+- **Quote every glob you intend the *callee* to interpret** — `--include`, `--exclude`,
+  `find -name`, `rsync --filter`, and any flag taking a pattern as its value. This is the
+  opposite of §3's advice for filenames: there you quote so *your* shell does not split;
+  here you quote so your shell does not *expand* at all.
+- **`setopt nonomatch` is the wrong fix.** It changes global shell behaviour to hide a
+  quoting bug and would mask genuine typos in real filename globs.
+- **Positive-control any sweep whose output you will read as an absence** (rules/04): run
+  it once against a pattern you know is present, and see the hit. A sweep that has never
+  been shown capable of producing a hit is not evidence of a clean tree — the same
+  known-good/known-bad discipline `sota-code-security` rules/11 §7 asks of any instrument.
+- Do not rely on the exit status reaching you. Measured: whether the *rest* of the command
+  list still runs depends on the failing command — `grep --include=*.md x . ; echo hi`
+  prints `hi`, while the same glob passed to a **builtin** (`echo`, `true`) aborts the
+  whole list, so the follow-up never runs either. Either way the intended command did not.
+
 ## 4. Arrays for command building (SC2089/SC2090/SC2086)
 
 ```bash
@@ -339,6 +394,12 @@ done
 count=$(find /data -mindepth 1 -maxdepth 1 -printf '.' | wc -c)   # GNU; or a glob-into-array
 files=(/data/*); count=${#files[@]}                               # with nullglob
 ```
+
+- [ ] Any command **pasted into an interactive shell** that passes a glob as a flag value
+      (`--include`, `--exclude`, `-name`) has it **quoted** — unquoted, zsh's `NOMATCH`
+      aborts the command and, under `2>/dev/null`, the result is indistinguishable from a
+      genuine no-match (§3a). Every sweep read as an *absence* has been positive-controlled
+      against a pattern known to be present.
 
 ## Audit checklist
 

@@ -230,6 +230,14 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   only sound detector is at runtime — diff the keys the model returned against the keys
   anything consumed, and log the ones nothing read.
   ([rules/13](skills/sota-code-security/rules/13-context-dependent-silence.md))
+- **A search that never ran, reported as a clean tree.** In zsh — macOS's interactive
+  shell, and the one these checklists get pasted into — an unquoted glob in a flag value
+  (`grep --include=*.md`) trips the default `NOMATCH` and **aborts the command**, where
+  bash would pass the word through and run it. Add the `2>/dev/null` everyone uses to
+  hide `Permission denied` noise and the broken probe is byte-identical to a real
+  no-match: empty output, exit 1. The sweep you read as *"nothing is stale"* may never
+  have executed.
+  ([rules/01 §3a](skills/sota-shell-scripting/rules/01-safety-baseline.md))
 - **A measurement whose rows came from somewhere else.** When tests and production
   write to one **shared sink**, every aggregate over it merges two populations — and
   the danger is not the false positive but the *destroyed true finding*, because the
@@ -849,7 +857,11 @@ skills/
     SKILL.md                     # routing, operating principles, workflows
     rules/
       01-audit-methodology.md    # how to run an audit: scoping, tooling, triage
+      02-build-workflow.md       # the four BUILD steps and where they are mirrored
       03-audit-findings.md       # severity, evidence, refutation, reporting
+      04-library-map.md          # the library map — which rules/NN holds what.
+                                 # Offloaded out of the router 2026-09-02:
+                                 # 16,997 -> 13,415 tokens per load, measured
   sota-<domain>/
     SKILL.md                     # when to use, BUILD/AUDIT workflows,
                                  # severity conventions, rules index, top-10

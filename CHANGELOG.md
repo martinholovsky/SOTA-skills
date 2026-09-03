@@ -5,6 +5,80 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.32.0] - 2026-09-03
+
+**Front door checked:** library map · NOMATCH
+
+**Minor**, by [RELEASING.md](RELEASING.md)'s test — `skills/sota/rules/04-library-map.md`
+is a new surface a reader can load, the same reason the `rules/03` split made v1.30.0 a
+minor. Also carries two changes merged after v1.31.2 without a version of their own.
+
+### Added
+
+- **`sota-shell-scripting` rules/01 §3a — zsh is not bash, and the third deviation is
+  silent.** From a field brief by a session whose documentation-staleness sweep returned
+  "no matches found" four times and read as *nothing is stale*. zsh's `NOMATCH` is on by
+  default, so an **unquoted glob in a flag value** (`grep --include=*.md`) aborts the
+  command; bash passes the same word through literally and runs it. The reason it earns a
+  rule rather than a footnote: with the `2>/dev/null` customarily used to hide
+  `Permission denied` noise, the broken probe is **byte-identical to a genuine
+  no-match** — empty stdout, exit 1 — so **an audit sweep cannot distinguish "the tree is
+  clean" from "my search never ran"**. That is `sota-code-security` rules/12's
+  verifying-the-verifier failure arriving through the shell these checklists are pasted
+  into. §3a gathers it with the two deviations rules/01 already covered (word-splitting
+  joins, `${pipestatus[1]}`) into one table, since they share a delivery vector:
+  committed scripts are immune — all 11 `scripts/*.sh` carry a bash shebang — and the
+  exposure is interactive, pasted and agent-issued commands on a machine whose login
+  shell is zsh.
+  - Numbered **3a** rather than renumbering: 49 `§` references point into rules/01 and
+    four external files cite `§3` by name, the router among them.
+  - All four of the brief's measured commands were **reproduced** (zsh 5.9 / bash 5.3.15 /
+    Darwin 25.6.0) before the text was written, and both of its side-claims verified —
+    the bash shebangs above, and **0** unquoted globs in flag values anywhere in
+    `skills/`, so the practice was already modelled and only the rule was missing.
+  - **Beyond the brief:** whether the *rest* of the command list survives depends on the
+    callee — an external command continues (`exit=1` reaches you), a **builtin** aborts
+    the whole list, so the follow-up never runs either. Either way the intended command
+    did not.
+  - Cross-referenced from `sota-code-security` rules/12 §2 as a fourth tell that the
+    harness is the bug — and the only one of the four with no usage error to notice.
+  - Deliberately **not** a shellcheck rule: shellcheck sees `sh`/`bash` scripts, which are
+    immune here, so the lint could never fire. Adding one would have created the
+    appearance of a gate that cannot fail — the exact class the brief is about.
+
+### Changed
+
+- **The router's library map moved to `skills/sota/rules/04-library-map.md`** (#308),
+  taking `skills/sota/SKILL.md` from 499 to 398 lines and **16,997 → 13,415 tokens**,
+  **−21.1% per load** — measured with `count_tokens` on `claude-sonnet-5`, the model the
+  existing figures use. Seven times the ~3% the 2026-08-26 BUILD/AUDIT offload bought: a
+  lookup table is denser than prose and is the part nobody reads inline. Honest caveats:
+  a session that *does* open `rules/04` pays **+863** tokens versus before, and the router
+  still breaches the ~5k recommendation at **2.7×**.
+  - **Routing was pre-registered, then measured: ±0.000.** `run-clean.py --cases
+    router.jsonl`, twice, against trees differing only in the router — with-library recall
+    **1.000 → 1.000**, zero misses across 120 case-samples
+    ([ROUTER-MAP-OFFLOAD.md](evals/results/2026-09-03/ROUTER-MAP-OFFLOAD.md)). Recall is
+    at ceiling, so this is evidence of *no detected degradation*, not of no change.
+  - The PR first named `run-desc-routing.py`, which **cannot see the router body** — its
+    `+0.00` would have been structural. Caught by reading the runner before spending.
+  - Invariants 7 and 15 moved with the map (7 now reads two files and asserts both exist;
+    15 failed *closed* on the missing file first), and negative-control probe 15 with them.
+
+### Fixed
+
+- **`check-negative-controls.sh` no longer swallows its own cleanup failure** (#309). The
+  disposable-worktree cleanup ran `git worktree remove --force … || true` and then
+  `rm -rf`'d the directory regardless, so a failed removal left an orphaned **registration**
+  — `git worktree list` showing `prunable` forever — with nothing reporting it. Success
+  and failure of that cleanup were indistinguishable (`sota-code-security` rules/10 §2.4)
+  in the one script whose job is proving that failures surface. Found with two orphans
+  already registered. Now warns to stderr and prunes; the exit code is deliberately
+  untouched, since this runs on `EXIT` and a non-zero there would overwrite the harness's
+  real status. `git gc` does clear these, but only at the 3-month
+  `gc.worktreePruneExpire` default — that grace is why it went unnoticed, not why it was
+  fine.
+
 ## [1.31.2] - 2026-09-02
 
 **Front door checked:** defaulted read · shared sink
