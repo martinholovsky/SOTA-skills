@@ -414,6 +414,13 @@ plainly. Every item below is in the repo, not a claim about it:
   `179 commits scanned`, and nobody read it. In a shallow clone it scans **1 of
   179**, prints `no leaks found`, and exits 0 — a green scan over 0.5% of history,
   with one CI setting the only thing preventing it. CI now asserts the scope.
+  Two more, both 2026-09-04. **Two releases had shipped and were never tagged** — a
+  CHANGELOG entry, a version bump, a merge, and no tag: unreachable by `git tag`, and
+  invisible because the one version gate checked only that a tag is never *ahead* of
+  `VERSION`. And an eval runner had been a **dead runner** for six days — its ablation
+  target moved to another file in a split, so its guard refused every run. The guard was
+  right; what failed is that the smoke harness rendered it as a bland `ok`, the same
+  string it prints for a runner that merely wants arguments.
 
 The point is not that every number is flattering. It is that you can tell which ones
 are load-bearing, because the ones that aren't are labelled.

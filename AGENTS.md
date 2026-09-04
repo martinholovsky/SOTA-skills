@@ -26,7 +26,7 @@ enforcement is on). Every change goes through a pull request:
 
 ## Invariants (enforced in pre-commit and CI)
 
-`scripts/check-invariants.sh` runs **20 checks** and fails the build on any of them. One
+`scripts/check-invariants.sh` runs **21 checks** and fails the build on any of them. One
 line each below. The *rationale* — and the real incident behind every one — lives in the
 script's own header, at the point of use, and the practical "what this means for your
 PR" version is in [CONTRIBUTING.md](CONTRIBUTING.md#the-invariants-enforced).
@@ -53,6 +53,7 @@ PR" version is in [CONTRIBUTING.md](CONTRIBUTING.md#the-invariants-enforced).
 | 18 | a **`§` section reference** resolves nowhere — invariant 8 reads only `[text](file.md)` links, so ~1,300 prose references went unchecked and broke silently on any renumber or split |
 | 19 | a **check has no known-bad** and no pinned reason it cannot — and the exempt set may not *grow*, since silencing the coverage check by exempting your new check is a one-line move. Runs on every invocation (~50 ms), not behind a flag |
 | 20 | the router's **§AUDIT** section changes without its pin being re-read — §BUILD has been pinned since v1.15.0 and caught drift twice; §AUDIT had nothing, and `run-repo-audit.py` pastes the whole router. Bumping the pin is the forcing function to re-read `sota/rules/01` §5 |
+| 21 | a **CHANGELOG version below the top entry has no git tag** — invariant 5 checks a tag is never *ahead* of VERSION; nothing checked the other way, and v1.30.0 and v1.31.2 both shipped untagged and unreachable. The top entry is exempt: it is tagged after the merge |
 
 **Only instruction files are capped** — a file is capped iff an agent loads it *as
 instructions*: `skills/*/SKILL.md` and `skills/*/rules/*.md`, nothing else. README,
@@ -78,13 +79,11 @@ denominator, skip rather than guess.
 
 *Adding a `rules/NN` file?* Invariant 10 checks its own `SKILL.md` indexes it and
 **invariant 15** checks the library map (`skills/sota/rules/04`) lists it, both directions.
-`skills/sota/SKILL.md` is at **398/500** (re-counted 2026-09-02, after its 108-line library map
-moved to `rules/04` — the third such offload after 2026-08-26's BUILD/AUDIT and 2026-08-29's
-`rules/01` split: **detail belongs in `rules/`, imperatives in the router**). This count has
-been wrong **five** times — **re-count with `grep -c ''`**.
+`skills/sota/SKILL.md` is at **398/500** (re-counted 2026-09-02, after its library map moved to
+`rules/04` — the third offload, after BUILD/AUDIT and the `rules/01` split: **detail belongs in
+`rules/`, imperatives in the router**). Wrong **five** times — **re-count with `grep -c ''`**.
 Editing the router's **BUILD section** moves `ROUTER_BUILD_SHA` and aborts the evals; AUDIT does not.
-The gates enumerate via `git ls-files`, so an **unstaged new file is invisible** to
-them — `git add` before believing a count.
+The gates enumerate via `git ls-files`, so an **unstaged new file is invisible** — `git add` first.
 
 **`scripts/check-negative-controls.sh` proves our gates can still fail.** Its CI job runs
 it plus `evals/smoke-runners.py`, over **two** subjects: `check-invariants.sh` (part A) and `verify-setup.sh`
@@ -92,13 +91,14 @@ it plus `evals/smoke-runners.py`, over **two** subjects: `check-invariants.sh` (
 that complains — a non-zero exit for any other reason is a **FALSE PASS**, not a catch.
 Part A mutates a good tree in a disposable git worktree; part B is inverted, building a
 fully-configured fake machine (`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and
-removing one thing per probe. **26 probes** (re-run 2026-09-01: `PASS: 26/26`; wrong twice
+removing one thing per probe. **27 probes** (re-run 2026-09-04: `PASS: 27/27`; wrong twice
 before, and deliberately **not** gated — a static count of call sites under-reads, so only
 running it is authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16,
-17, 18, 19, 20** — 15 of 20 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. The five
+17, 18, 19, 20, 21** — 16 of 21 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. The five
 unprobed invariants (5, 9, 11, 12, 14) need state a worktree lacks (a tag, a merge base,
 an mtime); the harness prints that reason, so what is *not* covered is printed rather than
-implied. **A probe asserts its own mutation landed** — they are hardcoded literals, and a
+implied. Probe **21** was a FALSE PASS on its first draft (it tripped invariant 5 instead),
+and the harness refused to credit the catch — the point of asserting the *intended* check. **A probe asserts its own mutation landed** — they are hardcoded literals, and a
 stale one printed `NOT CAUGHT: INERT`, accusing a healthy gate.
 Adding a check? **Invariant 19 already enforces that it has a known-bad** — nothing to
 remember. `--self-test` runs the suite and then this harness.
@@ -173,7 +173,7 @@ the setting. The pre-commit hook scans each commit locally.
   a session *applying* the library, and an unlicensed source whose ideas can be
   taken but whose text cannot, both land here on the same terms
 - [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md) — which of this repo's
-  conventions are **enforced** (20 invariants + 9 more inside the eval runners) and
+  conventions are **enforced** (21 invariants + 9 more inside the eval runners) and
   which are prose, with the three filters a convention must pass to earn a gate
   (has it already failed · does it fail silently · is it mechanically checkable).
   Read it before proposing a new gate — it argues against gating the ~18 judgment

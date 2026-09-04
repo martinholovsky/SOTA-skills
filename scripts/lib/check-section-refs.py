@@ -49,10 +49,19 @@ def index(path):
 
 
 def main():
-    files = subprocess.run(['git', 'ls-files', 'skills/*/*.md', 'skills/*/rules/*.md'],
+    # Skill prose AND the tooling, which cites rules by § just as often. The tooling was
+    # unscanned until 2026-09-04, and a `rules/10 §2.12` in check-invariants.sh's own header
+    # had already rotted there — the citation justifying why a convention became a gate.
+    # `:(glob)` because a plain git pathspec matches across `/` — `evals/*.md` dragged in
+    # every dated write-up under evals/results/, which are superseded-not-edited history and
+    # must not be gated. Scope is the LIVE tooling: runners, scripts, and the eval README.
+    files = subprocess.run(['git', 'ls-files',
+                            ':(glob)skills/*/*.md', ':(glob)skills/*/rules/*.md',
+                            ':(glob)evals/*.py', 'evals/README.md',
+                            ':(glob)scripts/*.sh', ':(glob)scripts/lib/*.py'],
                            capture_output=True, text=True, check=True).stdout.split()
     if not files:
-        print('no skill files found — pathspec drift?')
+        print('no files found — pathspec drift?')
         print('SCOPE 0')
         return 1
 
@@ -74,7 +83,11 @@ def main():
 
     findings, resolved = [], 0
     for f in files:
-        own = f.split('/')[1]
+        # Outside skills/ there is no containing skill, so there is no implicit target: a
+        # bare `rules/NN §X` in a script is genuinely ambiguous and is SKIPPED rather than
+        # guessed at. Fail open, exactly as section resolution already does — a gate that
+        # false-positives on correct prose gets disabled (docs/CONVENTIONS-LEDGER.md).
+        own = f.split('/')[1] if f.startswith('skills/') else None
         lines = open(f, encoding='utf-8').read().split('\n')
         fenced = False
         for i, line in enumerate(lines, 1):
@@ -86,7 +99,9 @@ def main():
             # a reference may wrap across a line break; carry the previous tail
             prev = lines[i - 2][-80:] if i >= 2 else ''
             joined, off = prev + ' ' + line, len(prev) + 1
-            skills_here = [m.group(1) for m in SKILL.finditer(joined)] + [own]
+            skills_here = [m.group(1) for m in SKILL.finditer(joined)]
+            if own:
+                skills_here.append(own)
             rules_here = [(m.start(), m.end(), m.group(1) or m.group(2), m.group(1) is None)
                           for m in RULES.finditer(joined)]
             for m in SEC.finditer(joined):
@@ -114,7 +129,7 @@ def main():
                         # An explicit `rules/NN` that exists under NO skill named on
                         # the line and not under the containing skill is unambiguously
                         # broken — flag it even though section resolution is fail-open.
-                        if not hit:
+                        if not hit and skills_here:
                             dangling.add(nn)
                 if dangling:
                     findings.append(
