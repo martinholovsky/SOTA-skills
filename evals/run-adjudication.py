@@ -14,9 +14,9 @@ pattern-matching a single refutation shape.
 
 Arms:
   without-library       — the task only
-  with-library          — + sota/rules/01-audit-methodology.md (which contains
-                          §6 "Adversarial verification") + the router principles
-  with-library-ablated  — the same MINUS §6, isolating the refutation section
+  with-library          — + sota/rules/01-audit-methodology.md and rules/03-audit-findings.md
+                          (which contains "Adversarial verification") + the router principles
+  with-library-ablated  — the same MINUS that section, isolating refutation
 
 Reported metrics: overall accuracy, plus SPECIFICITY (share of the 15 false
 claims correctly refuted) and SENSITIVITY (share of the 15 real ones upheld).
@@ -67,9 +67,21 @@ FRAMING = (
 )
 
 
+# The ablated section lives in rules/03, not rules/01. `sota/rules/01` SPLIT on 2026-08-29
+# (v1.30.0) into 01 (running the audit) + 03 (judging what it found), and the refutation
+# content went with 03 — so this runner read a file that no longer contained its target and
+# its guard aborted every ablated run. It was dead from 2026-08-29 until 2026-09-04, and
+# `smoke-runners.py` could not see it: that harness treats SystemExit as "a guard fired or
+# it needs args — alive", which is indistinguishable from a guard that fires ALWAYS. Found
+# only when invariant 18 was widened to scan `evals/`, by the stale `§6` in this docstring.
+# The methodology arm still carries BOTH files, which is what the with-library arm means.
+METHODOLOGY_FILES = ("skills/sota/rules/01-audit-methodology.md",
+                     "skills/sota/rules/03-audit-findings.md")
+
+
 def library_context(ablate=False):
-    meth = open(os.path.join(ROOT, "skills/sota/rules/01-audit-methodology.md"),
-                encoding="utf-8").read()
+    meth = "\n\n".join(open(os.path.join(ROOT, f), encoding="utf-8").read()
+                        for f in METHODOLOGY_FILES)
     if ablate:
         i, j = _section_bounds(meth, SEC_ABLATE_TITLE, SEC_NEXT_TITLE)
         if i < 0 or j < 0 or j <= i:

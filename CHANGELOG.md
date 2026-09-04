@@ -5,6 +5,69 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.32.2] - 2026-09-04
+
+**Front door checked:** never tagged · dead runner
+
+**Patch** — a CI invariant on its own has shipped in a patch three times (8, 9, 11); the
+rest is a scope widening and two defect fixes.
+
+Everything here was found by asking *"what does this session's own work suggest nothing is
+checking?"* — not by re-reading the library.
+
+### Added
+
+- **Invariant 21 — every CHANGELOG version below the top entry has a git tag.** Invariant 5
+  checks a tag is never *ahead* of `VERSION`; **nothing checked the other direction, and it
+  had already failed twice.** `v1.30.0` (2026-08-29) and `v1.31.2` (2026-09-02) each had a
+  CHANGELOG section, a `VERSION` bump and a merge to `main` — and no tag and no release.
+  A version that ships in the CHANGELOG and is **never tagged** is unreachable: `git tag -l`
+  skips it and its notes live only in a file nobody clones for that. Both have now been
+  tagged at the commits where `VERSION` became them (`915df64c`, `02cb41e2`) and published.
+  - The **top entry is exempt** — the tag is pushed *after* the squash-merge
+    ([RELEASING.md](RELEASING.md) §4 forbids chaining them), so on a release PR the current
+    version legitimately has no tag yet.
+  - **Skips with a note** on a checkout with no tags at all (shallow CI clones do not fetch
+    them) rather than failing every version at once: a gate that cannot see its evidence
+    must say so, not invent a verdict.
+  - Probed, and **the probe was wrong first**: it inserted the untagged version *above* the
+    top entry, so invariant 5 complained instead and the harness reported **FALSE PASS**
+    rather than crediting the catch. That is the harness's entire purpose. **27 probes**,
+    16 of 21 invariants covered.
+
+### Changed
+
+- **Invariant 18 now scans the tooling, not just skill prose.** `§` references in `evals/`
+  and `scripts/` were never checked — **27 of them live there, and one had already rotted**:
+  `check-invariants.sh` cited `sota-code-security` rules/10 §2.12 for the argument that a
+  documented convention must become a gate, and that content had moved to `rules/14` §3.
+  The citation carrying the weight was the one that broke.
+  - Scope is the **live tooling** (runners, scripts, `evals/README.md`) and deliberately
+    **not** `evals/results/**`, which is superseded-not-edited history.
+  - Two corrections while widening. A git pathspec **matches across `/`**, so `evals/*.md`
+    dragged in every dated write-up — fixed with `:(glob)`. And outside `skills/` there is
+    no containing skill, so a bare `rules/NN §X` is **skipped rather than guessed**: fail
+    open, because a gate that false-positives on correct prose gets disabled
+    ([CONVENTIONS-LEDGER](docs/CONVENTIONS-LEDGER.md)).
+
+### Fixed
+
+- **`run-adjudication.py` was a dead runner, and had been for six days.** Its ablation
+  target ("Adversarial verification") moved to `sota/rules/03-audit-findings.md` when
+  `rules/01` split in v1.30.0, while the runner still read `rules/01` — so its guard
+  aborted every ablated run. **The guard was right**: it refused rather than returning an
+  unablated corpus and reporting a fake `+0.00`. Now reads both files; ablation verified
+  live (6,649 chars removed, section title gone). Found by the widened invariant 18, via
+  the stale `§6` in its own docstring.
+- **`smoke-runners.py` prints why a runner exited.** It rendered every `SystemExit` as
+  `ok    (guard fired or usage printed)` — the same string for "needs arguments" and for
+  "this guard fires on every run", which is how the dead runner above stayed invisible
+  through a harness built to find dead runners. It still cannot *fail* on one (a usage exit
+  is legitimate), so the least it can do is show what the guard said.
+- **ROADMAP, AGENTS.md, CONTRIBUTING.md and CONVENTIONS-LEDGER** re-counted to 21 checks /
+  27 probes; `check-invariants.sh`'s own summary line said `20 checks` and is not scanned by
+  invariant 17, so it was corrected by hand.
+
 ## [1.32.1] - 2026-09-03
 
 **Front door checked:** GONE · blind to the treatment

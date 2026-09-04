@@ -275,6 +275,17 @@ are marked "needs verification", never asserted.
     loaded. To change §AUDIT: make the edit, re-read `rules/01` §5 and `rules/03`, then
     set the new `ROUTER_AUDIT_SHA` in the same commit. Added 2026-09-01 (ROADMAP 26).
 
+21. **a CHANGELOG version below the top entry has no git tag**: invariant 5 checks that a
+    tag is never *ahead* of `VERSION`. Nothing checked the other direction, and it failed
+    twice before anyone asked — **v1.30.0** and **v1.31.2** each had a CHANGELOG section, a
+    `VERSION` bump and a merge to `main`, with no tag and no release. A version that ships
+    in the CHANGELOG and never gets tagged is unreachable: `git tag -l` skips it and the
+    notes live only in a file nobody clones for that. **The top entry is exempt** — the tag
+    is pushed *after* the squash-merge ([RELEASING.md](RELEASING.md) §4 forbids chaining
+    them), so on a release PR the current version legitimately has no tag yet. The check
+    **skips with a note** when the checkout has no tags at all (shallow CI clones do not
+    fetch them) rather than failing every version at once.
+
 17. **a document that describes the checks disagrees with them**: any stated count
     of invariants/checks that isn't the number `check-invariants.sh` prints, or a
     restatement of the negative-control coverage lists that isn't what
@@ -301,7 +312,7 @@ as a FALSE PASS, because a harness that accepts any failure reports full coverag
 testing nothing.
 
 Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 3, 4, 6,
-7, 8, 10, 13, 15, 16, 17, 18, 19, 20 — 15 of 20; the harness prints the list and why the rest are
+7, 8, 10, 13, 15, 16, 17, 18, 19, 20, 21 — 16 of 21; the harness prints the list and why the rest are
 not covered, so read its output rather than this sentence). Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
 fully-configured fake one — `CLAUDE_CONFIG_DIR` pointed at a temp home, a throwaway git
 repo, and a stub `gh` on `PATH` so run history is decidable — and each probe removes one

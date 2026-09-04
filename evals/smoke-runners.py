@@ -15,7 +15,10 @@ HOW. `urllib.request.urlopen` is the single choke point every runner shares; it 
 to raise, and each `main()` is run under an alarm. Outcomes:
 
   reached the network   -> healthy (the interesting case)
-  SystemExit            -> a guard fired or it needs args; alive, so not a failure here
+  SystemExit            -> a guard fired or it needs args; alive, so not a failure here.
+                           THE MESSAGE IS PRINTED: a guard that fires always and one that
+                           fires for want of args are the same exception, and rendering
+                           both as a bare "ok" hid a dead runner for six days.
   alarm                 -> still doing local work after N seconds; alive
   any other exception   -> DEAD, and this script fails
 
@@ -153,8 +156,15 @@ def main():
             verdict = "ok    (reached its first network call)"
         except _Alarm:
             verdict = f"ok    (alive; still working locally after {a.timeout}s)"
-        except SystemExit:
-            verdict = "ok    (guard fired or usage printed)"
+        except SystemExit as e:
+            # PRINT THE MESSAGE. A guard that fires because the runner needs args and one
+            # that fires on EVERY run are both SystemExit, and this line used to render
+            # them identically as "ok". run-adjudication.py was dead from 2026-08-29 to
+            # 2026-09-04 behind exactly that "ok" — its ablation target had moved to
+            # another file. This harness still cannot FAIL on it (a usage exit is
+            # legitimate), so the least it can do is show what the guard said.
+            msg = str(e).splitlines()[0][:60] if str(e).strip() else "usage/args"
+            verdict = f"ok    (exited: {msg})"
         except BaseException as e:              # noqa: BLE001 — any other failure is the finding
             verdict = f"DEAD  {type(e).__name__}: {str(e).splitlines()[0][:70]}"
             dead.append(base)

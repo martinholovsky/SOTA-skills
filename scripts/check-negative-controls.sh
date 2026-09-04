@@ -255,6 +255,16 @@ probe 19 "a check is exempted rather than probed" "GREW by"
      skills/sota/SKILL.md )
 probe 20 "router §AUDIT changed without the pin being re-read" "AUDIT DRIFT"
 
+# 21 — a CHANGELOG version that shipped and never got a tag. Inserted BELOW the top
+# entry on purpose: the top one is legitimately untagged on a release PR, so a probe
+# that mutated it would prove nothing. The worktree shares the repo's .git, so
+# `git tag -l` sees the real tags there and the check does not skip.
+# Insert before the SECOND '## [' — i.e. BELOW the top entry. A first draft inserted before
+# the FIRST one, which made 9.9.9 the top entry; invariant 5 then complained about the top
+# entry instead, and the harness correctly reported FALSE PASS rather than crediting the catch.
+( cd "$WT" && perl -0pi -e 's/(\n## \[[0-9])/++$n==2 ? "\n## [9.9.9] - 2026-01-01\n\nA version that shipped without a tag.\n$1" : $1/ge' CHANGELOG.md )
+probe 21 "a CHANGELOG version was never tagged" "NO TAG for CHANGELOG version"
+
 
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
@@ -382,7 +392,7 @@ if [ "$failed" -ne 0 ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18, 19, 20 (15 of 20)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18, 19, 20, 21 (16 of 21)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        11, 14      — diff-based: they compare against a merge base."
