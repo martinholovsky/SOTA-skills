@@ -208,14 +208,20 @@ def rules_padding(n, exclude):
     return "\n\n---\nAdditional engineering standards (also loaded):\n\n" + body
 
 
-def gen_prompt(case, with_lib, pad=0):
+def gen_prompt(case, with_lib, pad=0, gate=True):
+    """ROADMAP 32: `gate=False` drops BUILD_WORKFLOW -- the four-step build workflow whose
+    step 4 is the terminal self-audit re-read. Item 25 padded an arm that ALSO ran step 4,
+    so its -0.01 says "lean plus a terminal re-read is robust to competing context" and
+    nothing about context length alone. Separating them needs an arm with the padding and
+    without the gate."""
     if with_lib:
         ctx = "\n\n".join(open(os.path.join(ROOT, s), encoding="utf-8").read() for s in case["skills"])
         if pad:
             ctx += rules_padding(pad, case["skills"])
         p5 = principle5()
+        workflow = BUILD_WORKFLOW if gate else "\n\n"
         return (f"ALWAYS-APPLY OPERATING PRINCIPLE (from the router):\n\n{p5}\n\n"
-                f"---\nApply the following engineering standards:\n\n{ctx}{BUILD_WORKFLOW}{case['task']}")
+                f"---\nApply the following engineering standards:\n\n{ctx}{workflow}{case['task']}")
     return case["task"]
 
 
@@ -309,9 +315,31 @@ def main():
                          "lines of genuine rules prose from skills the case does NOT load "
                          "(routing signal stripped). Tests whether competing guidance "
                          "degrades rule APPLICATION, which the routing half could not.")
+    ap.add_argument("--no-gate-arm", action="store_true",
+                    help="ROADMAP 32: add a fourth arm carrying --pad-rules padding but with "
+                         "BUILD_WORKFLOW (and therefore its step-4 self-audit) REMOVED. Item 25 "
+                         "measured lean-plus-gate and read it as lean; this separates them. "
+                         "Requires --pad-rules, and asserts the ablation actually changed the "
+                         "prompt before spending anything.")
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
     _assert_mirror_fresh()   # never measure a workflow that isn't shipped
+    if a.no_gate_arm:
+        # `evals/README.md`: guards ABORT rather than warn, and a scripted edit is
+        # asserted to have landed. run-prompt-independence.py refuses when no case's
+        # bundle differs between arms; the same bar applies here, because an ablation
+        # that did not take is a duplicate arm wearing a different label and reports
+        # its delta of zero as a result (`sota-llm-engineering` rules/01 section 8).
+        if not a.pad_rules:
+            sys.exit("FAIL: --no-gate-arm without --pad-rules measures the gate alone, not "
+                     "the gate against competing context. ROADMAP 32 asks the second question; "
+                     "pass --pad-rules N.")
+        _probe = load_cases()[0]
+        if gen_prompt(_probe, True, a.pad_rules, True) == gen_prompt(_probe, True, a.pad_rules, False):
+            sys.exit("FAIL: the no-gate arm's prompt is identical to the gated arm's -- the "
+                     "BUILD_WORKFLOW ablation did not take, so this run would measure nothing.")
+        print("ablation asserted: BUILD_WORKFLOW removed from the pad-nogate arm "
+              f"({len(BUILD_WORKFLOW)} chars).\n")
     if a.samples > 1 and a.temp == 0.0:
         print("note: --samples>1 at --temp 0 gives identical deterministic runs; "
               "use --temp 0.7 for real variance.\n")
@@ -321,18 +349,22 @@ def main():
     note_work(len(cases), "cases")
     print(f"build={a.build_model}  judge={a.judge_model}  cases={len(cases)}  "
           f"samples={a.samples}  temp={a.temp}  (clean API, blind judge)\n")
-    results, tot_wo, tot_wl, tot_wp = {}, 0.0, 0.0, 0.0
+    results, tot_wo, tot_wl, tot_wp, tot_ng = {}, 0.0, 0.0, 0.0, 0.0
     for c in cases:
         row = {"rubric_n": len(c["rubric"]), "arms": {}}
-        arms = [(False, 0), (True, 0)] + ([(True, a.pad_rules)] if a.pad_rules else [])
-        for with_lib, pad in arms:
+        arms = [(False, 0, True), (True, 0, True)] + ([(True, a.pad_rules, True)] if a.pad_rules else [])
+        if a.no_gate_arm:
+            arms.append((True, a.pad_rules, False))
+        for with_lib, pad, gate in arms:
             arm = ("with+pad" if pad else "with") if with_lib else "without"
+            if not gate:
+                arm = "pad-nogate"
             recalls, last_present, last_art = [], [], ""
             for s in range(a.samples):
                 print(f"  {c['id']:16s} {arm:8s} generating… (sample {s+1}/{a.samples})", flush=True)
                 # 32k: the self-audit with-arm emits substantially longer output;
                 # 16k truncated tests/logging off the end and scored them absent.
-                art = call(a.build_model, gen_prompt(c, with_lib, pad), k,
+                art = call(a.build_model, gen_prompt(c, with_lib, pad, gate), k,
                            max_tokens=a.max_tokens, temp=a.temp)
                 verdict = judge(art, c["rubric"], a.judge_model, k)
                 last_present = [r["id"] for r in c["rubric"] if verdict.get(r["id"]) == "present"]
@@ -350,6 +382,8 @@ def main():
         tot_wl += wl
         results[c["id"]] = row
         pad_txt = ""
+        if "pad-nogate" in row["arms"]:
+            tot_ng += row["arms"]["pad-nogate"]["recall"]
         if "with+pad" in row["arms"]:
             wp = row["arms"]["with+pad"]["recall"]
             tot_wp += wp
@@ -365,6 +399,14 @@ def main():
         # the thesis is unsupported at this padding size, which is equally publishable.
         print(f"MEAN with+pad={tot_wp/n:.2f}  PAD-DELTA={((tot_wp-tot_wl)/n):+.2f}  "
               f"({a.pad_rules} lines of unrelated real rules prose added to the with-arm)")
+    if a.no_gate_arm:
+        # ROADMAP 32's actual question. GATE-ABSORPTION is what the padded-and-gated arm
+        # recovers that the padded-and-ungated one does not: a POSITIVE number is step 4
+        # doing its job under competing context. A ~0.00 says the gate is not what absorbed
+        # the padding, and item 25's -0.01 was a statement about context length after all.
+        print(f"MEAN pad-nogate={tot_ng/n:.2f}  "
+              f"NOGATE-DELTA={((tot_ng-tot_wl)/n):+.2f} (vs unpadded+gated)  "
+              f"GATE-ABSORPTION={((tot_wp-tot_ng)/n):+.2f} (padded: gated minus ungated)")
     if a.out:
         # Provenance (found missing 2026-08-16): the flagship artifact stored only case
         # results — no build/judge model, samples, temp, or the router SHA the whole
@@ -372,6 +414,7 @@ def main():
         out_obj = {"_meta": {"build_model": a.build_model, "judge_model": a.judge_model,
                              "samples": a.samples, "temp": a.temp,
                              "pad_rules": a.pad_rules,
+                             "no_gate_arm": a.no_gate_arm,
                              "router_build_sha": ROUTER_BUILD_SHA},
                    **scrub_secrets(results)}
         json.dump(out_obj, open(a.out, "w"), indent=1)

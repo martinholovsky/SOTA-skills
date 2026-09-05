@@ -5,6 +5,106 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.33.0] - 2026-09-06
+
+**Front door checked:** invariant 23 · link reference · GATE-ABSORPTION
+
+**Minor** — the release notes give a reader something new to run
+([RELEASING.md](RELEASING.md) "Minor or patch?" — *"ask whether a
+reader of the release notes gains something new to run"*): a fourth completeness arm with its own
+reported metric, answering a question the harness previously could not ask.
+
+Everything here came from **re-testing every open roadmap item's trigger instead of the
+item**, which is the lesson the 2026-09-01 closures taught. It paid out three more
+times in a single reading of one table — two rows asked for work already done, and one
+declared a flag that did not exist.
+
+### Added
+
+- **Invariant 23 — every CHANGELOG version heading has its own link reference.** Sibling
+  of invariant 21, failing independently of it: 21 asks whether a shipped version has a
+  git *tag*, nothing asked whether it has a *ref*, and **four consecutive releases**
+  (1.31.2, 1.32.0, 1.32.1, 1.32.2) shipped without one. Found by hand at the v1.32.3 cut
+  and backfilled there; now gated.
+  - **Why it was silent.** A `## [1.32.0]` heading with no `[1.32.0]:` reference is *not*
+    a broken link — Markdown renders it as literal text, brackets and all. No error, no
+    404, nothing to click. Invariant 8 cannot see it either: 8 resolves `[text](file.md)`
+    inline links to files on disk, and this is a reference-style link to an external URL.
+  - **It compares sets, never counts.** At the moment it was written, all three CHANGELOG
+    files' heading and ref counts matched *exactly* — a count check would have been just
+    as green with two versions swapped.
+  - **Both directions.** An orphan ref (one whose `## [X.Y.Z]` heading lives in another
+    file) is what archiving produces when a section moves without its ref: one edit, two
+    defects, no count change. [RELEASING.md](RELEASING.md) §1 requires them to move
+    together, and now something checks it.
+  - It also requires each ref to end in `/releases/tag/v<its own version>`, since all
+    **75** already follow that single form, so a deviation is a typo rather than a style.
+  - **Watched to fail on all four shapes** before being wired in — a missing ref, an
+    orphan ref, a ref pointing at the previous release's tag, and the same defect inside
+    `docs/CHANGELOG-archive.md` rather than the root file. Probe 23 added: **29 probes,
+    18 of 23 invariants covered.**
+
+- **`run-completeness.py --no-gate-arm` — a fourth arm that drops `BUILD_WORKFLOW`.**
+  ROADMAP 32 asks a question the harness could not previously pose. Item 25 padded the
+  with-library arm with 400 lines of competing guidance and read **−0.01** — but that arm
+  *also* ran step 4, the terminal self-audit re-read whose entire job is recovering the
+  cross-cutting concerns a model drops under a long, dense task. So −0.01 supports *"lean
+  **plus a terminal re-read** is robust to competing context"* and says nothing about
+  context length alone.
+  - The new arm carries the padding **without** the gate, and the runner reports
+    **`GATE-ABSORPTION`** = `mean(with+pad) − mean(pad-nogate)`: what the terminal re-read
+    recovers under competing context.
+  - **Two guards, both watched to fail.** It refuses `--no-gate-arm` without
+    `--pad-rules` (that would measure the gate alone, not the gate against competing
+    context), and refuses if the ablation leaves the prompt byte-identical to the gated
+    arm — the house rule that *an ablation arm must actually differ from its baseline*,
+    already enforced in `run-prompt-independence.py`. The second probe **did not land its
+    own mutation on the first attempt** and reported a false pass; the assertion under
+    test is what caught it.
+  - **Not run.** The prediction is pre-registered with numbers, a falsification condition
+    and four ways the experiment could measure nothing, in
+    [evals/results/2026-09-06/PRE-REGISTRATION.md](evals/results/2026-09-06/PRE-REGISTRATION.md).
+    The 28 build + 28 judge calls are live spend and are the operator's to authorise.
+
+- **Three rows in [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md)** for
+  invariants **20, 21 and 23** — each with its incident, its silence argument, the
+  mechanical-checkability case, and **what the gate does not check**. Written from
+  `check-invariants.sh` rather than from the CHANGELOG.
+
+### Fixed
+
+- **The CONVENTIONS-LEDGER's gate tables had skipped invariants 20 and 21.** 22's row
+  landed 2026-09-05 and theirs did not exist. This is the **fourth** time that file has
+  drifted from the checks it describes, and invariant 17 cannot catch it — 17 checks
+  stated counts and 1..N enumerations in `AGENTS.md`/`CONTRIBUTING.md`, not whether the
+  ledger's *tables* are complete. Deliberately left as a habit rather than a gate, on the
+  ledger's own three filters: "is this table complete" is not mechanically checkable
+  without first deciding what counts as a row.
+
+- **Three stale roadmap triggers, corrected in place.**
+  - **Item 1** asked for a salience piece **written five days earlier** —
+    [docs/WHY-SALIENCE-LASTS.md](docs/WHY-SALIENCE-LASTS.md), 2026-09-01, and linked from
+    both `README.md` and `docs/INDEX.md`. What is actually left of item 1 is the demo and
+    the listing channels.
+  - **Item 32** said *"nothing — the flag exists"*. `--pad-rules` existed; the
+    `BUILD_WORKFLOW` ablation did not, and had to be written before the item could move.
+  - **Item 12** carried a rules-file count of 261 against a tree with **262**.
+  - Re-tested and genuinely **not** met: item 5 (`check-freshness.sh` — `LAST-VERIFIED`
+    2026-07-08, due ~2027-01-08), item 12's sixth-verification-file trigger (**5** in the
+    tree: `rules/10`–`14`), and the deferred spanchain row, whose own entry says to read
+    its trigger ledger rather than re-derive the search.
+
+- **A memory-link `[[wiki-link]]` in `docs/ADOPTION-LOG.md`** that resolved nowhere for a
+  reader. A repo-wide sweep confirms it was the only one — every other `[[` in the tree is
+  bash, TOML or a regex character class.
+
+### Changed
+
+- **ROADMAP items 33 and 34 closed the day after they were opened**, and the priorities
+  table now leads with what is actually blocked: item 32 needs only the spend, and item 1
+  needs a person. The table's own preamble now says the table is the thing most likely to
+  be stale, because nothing gates prose.
+
 ## [1.32.3] - 2026-09-05
 
 **Front door checked:** empty comparand · mutate the expectation · fan-out · the scoped gate is not the gate · invariant 22
@@ -6191,6 +6291,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.33.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.33.0
 [1.32.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.32.3
 [1.32.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.32.2
 [1.32.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.32.1
