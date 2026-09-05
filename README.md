@@ -985,7 +985,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). The short version: keep skills generic,
 verify fast-moving claims against primary sources, keep **skill** files
 (`skills/**`) ≤ 500 lines — that cap keeps incremental rule loading working and
 does not apply to README/CHANGELOG/`docs/`, which are read by humans — and end
-each rules file with an audit checklist. Twenty-two invariants enforce this in
+each rules file with an audit checklist. Twenty-three invariants enforce this in
 `scripts/check-invariants.sh` (pre-commit + CI), covering line caps, checklist
 placement, description limits, version and count drift, router completeness,
 internal link resolution, every rules file being reachable from its skill's index,
@@ -994,8 +994,8 @@ with a sweep, a rendered `assets/*.png` never being older than the `*.html` it
 comes from, every scoreboard row declaring its sample size, a release
 declaring the **front door** terms its new capabilities landed on, every
 `§` reference resolving, every check having a known-bad, every shipped
-CHANGELOG version carrying a git tag, and no audit-checklist bullet being
-stranded inside a code fence — plus gitleaks
+CHANGELOG version carrying a git tag and its own link reference, and no
+audit-checklist bullet being stranded inside a code fence — plus gitleaks
 (full-history scan in CI; per-commit via the pre-commit hook). Ideas taken from outside the repo are recorded with a
 verdict and reason in [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md), so a
 rejection isn't re-litigated. Security issues and conduct:

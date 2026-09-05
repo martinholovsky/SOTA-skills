@@ -26,7 +26,7 @@ enforcement is on). Every change goes through a pull request:
 
 ## Invariants (enforced in pre-commit and CI)
 
-`scripts/check-invariants.sh` runs **22 checks** and fails the build on any of them. One
+`scripts/check-invariants.sh` runs **23 checks** and fails the build on any of them. One
 line each below. The *rationale* — and the real incident behind every one — lives in the
 script's own header, at the point of use, and the practical "what this means for your
 PR" version is in [CONTRIBUTING.md](CONTRIBUTING.md#the-invariants-enforced).
@@ -55,6 +55,7 @@ PR" version is in [CONTRIBUTING.md](CONTRIBUTING.md#the-invariants-enforced).
 | 20 | the router's **§AUDIT** section changes without its pin being re-read — §BUILD has been pinned since v1.15.0 and caught drift twice; §AUDIT had nothing, and `run-repo-audit.py` pastes the whole router. Bumping the pin is the forcing function to re-read `sota/rules/01` §5 |
 | 21 | a **CHANGELOG version below the top entry has no git tag** — invariant 5 checks a tag is never *ahead* of VERSION; nothing checked the other way, and v1.30.0 and v1.31.2 both shipped untagged and unreachable. The top entry is exempt: it is tagged after the merge |
 | 22 | a **`- [ ]` checklist bullet is stranded inside a code fence** in a skill file — it renders as sample output, so no auditor reads it. Two landed in `sota-code-security` rules/11 §2.2 in PR #226 and sat there three weeks; invariant 2 tracks fence state but only for the *heading*, and the line count never changed |
+| 23 | a **CHANGELOG version heading has no `[X.Y.Z]:` link reference**, an **orphan ref** whose heading lives in another file, or a ref pointing at the wrong tag — sibling of 21, failing independently of it. A heading with no ref is not a broken link: Markdown renders it as literal text, so invariant 8 never sees it. Four consecutive releases shipped that way. Compares **sets per file**, never counts |
 
 **Only instruction files are capped** — a file is capped iff an agent loads it *as
 instructions*: `skills/*/SKILL.md` and `skills/*/rules/*.md`, nothing else. README,
@@ -92,10 +93,10 @@ it plus `evals/smoke-runners.py`, over **two** subjects: `check-invariants.sh` (
 that complains — a non-zero exit for any other reason is a **FALSE PASS**, not a catch.
 Part A mutates a good tree in a disposable git worktree; part B is inverted, building a
 fully-configured fake machine (`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and
-removing one thing per probe. **28 probes** (re-run 2026-09-05: `PASS: 28/28`; wrong twice
+removing one thing per probe. **29 probes** (re-run 2026-09-06: `PASS: 29/29`; wrong twice
 before, and deliberately **not** gated — a static count of call sites under-reads, so only
 running it is authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16,
-17, 18, 19, 20, 21, 22** — 17 of 22 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. The five
+17, 18, 19, 20, 21, 22, 23** — 18 of 23 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. The five
 unprobed invariants (5, 9, 11, 12, 14) need state a worktree lacks (a tag, a merge base,
 an mtime); the harness prints that reason, so what is *not* covered is printed rather than
 implied. Probe **21** was a FALSE PASS on its first draft (it tripped invariant 5 instead),
@@ -174,7 +175,7 @@ the setting. The pre-commit hook scans each commit locally.
   a session *applying* the library, and an unlicensed source whose ideas can be
   taken but whose text cannot, both land here on the same terms
 - [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md) — which of this repo's
-  conventions are **enforced** (22 invariants + 9 more inside the eval runners) and
+  conventions are **enforced** (23 invariants + 9 more inside the eval runners) and
   which are prose, with the three filters a convention must pass to earn a gate
   (has it already failed · does it fail silently · is it mechanically checkable).
   Read it before proposing a new gate — it argues against gating the ~18 judgment

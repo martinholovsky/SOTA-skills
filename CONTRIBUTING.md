@@ -296,6 +296,19 @@ are marked "needs verification", never asserted.
     count did not move. Prose files (README, `docs/`) are out of scope — they show
     checklist syntax in samples legitimately.
 
+23. **a CHANGELOG version heading has no link reference**, an **orphan ref** whose
+    heading lives in another file, or a ref pointing at the wrong tag. Sibling of
+    invariant 21 — that one asks whether a shipped version has a git *tag*, this asks
+    whether it has a *ref*, and the two fail independently. Four consecutive releases
+    (1.31.2 → 1.32.2) shipped with no ref, found by hand at the v1.32.3 cut. A
+    `## [1.32.0]` heading with no `[1.32.0]:` ref is **not a broken link** — Markdown
+    renders it as literal text, so invariant 8 (which resolves `[text](file.md)` inline
+    links) never sees it. It compares **sets per file**, never counts: when it was
+    written all three files' heading and ref counts matched exactly, and a count check
+    would have been just as green with two versions swapped. Per file because
+    [RELEASING.md](RELEASING.md) §1 requires a heading and its ref to move together
+    when a release is archived.
+
 17. **a document that describes the checks disagrees with them**: any stated count
     of invariants/checks that isn't the number `check-invariants.sh` prints, or a
     restatement of the negative-control coverage lists that isn't what
@@ -322,7 +335,7 @@ as a FALSE PASS, because a harness that accepts any failure reports full coverag
 testing nothing.
 
 Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 3, 4, 6,
-7, 8, 10, 13, 15, 16, 17, 18, 19, 20, 21, 22 — 17 of 22; the harness prints the list and why the rest are
+7, 8, 10, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23 — 18 of 23; the harness prints the list and why the rest are
 not covered, so read its output rather than this sentence). Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
 fully-configured fake one — `CLAUDE_CONFIG_DIR` pointed at a temp home, a throwaway git
 repo, and a stub `gh` on `PATH` so run history is decidable — and each probe removes one

@@ -275,6 +275,14 @@ probe 21 "a CHANGELOG version was never tagged" "NO TAG for CHANGELOG version"
      skills/sota-code-security/rules/11-dead-path-diagnostics.md )
 probe 22 "checklist bullet stranded inside a code fence" "CHECKLIST BULLET INSIDE A CODE FENCE"
 
+# 23 — a CHANGELOG version heading whose link ref was never added. This is the real
+# defect verbatim: 1.31.2, 1.32.0, 1.32.1 and 1.32.2 all shipped this way and were
+# found by hand at the v1.32.3 cut. Targets a version BELOW the top entry and touches
+# only the reference block, so no heading moves and invariants 5, 9 and 21 stay quiet —
+# the (b) assertion would report a FALSE PASS otherwise.
+( cd "$WT" && perl -0pi -e 's/^\[1\.32\.0\]: .*\n//m' CHANGELOG.md )
+probe 23 "a CHANGELOG version heading has no link ref" "NO LINK REF for CHANGELOG version"
+
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
 # =============================================================================
@@ -401,7 +409,7 @@ if [ "$failed" -ne 0 ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18, 19, 20, 21, 22 (17 of 22)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23 (18 of 23)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        11, 14      — diff-based: they compare against a merge base."
