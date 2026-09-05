@@ -297,6 +297,49 @@ legitimately shrinks the tree then costs one deliberate baseline update. Contain
 is good engineering. Containment without repointing the scanner is just a smaller
 blind spot.
 
+### The scoped gate is not the gate — reproduce the invocation, not an equivalent
+
+Everything above is about the *pipeline's* scope drifting away from the code. This
+is the inverse, and it is what makes people report "all gates clean" before they
+push: the code is in scope, the gate sees it, and the **human's local re-run uses
+a different invocation** and therefore answers a different question.
+
+Reproduced here at mypy 2.3.1, same tool, same tree, same moment — the error lives
+in a file the developer did not change:
+
+```
+$ mypy src/pkg/                                      # what you type to "check it"
+src/pkg/b.py:2: error: Incompatible return value type ...        exit=1
+$ mypy --ignore-missing-imports --no-error-summary \
+       --follow-imports=silent src/pkg/a.py          # what the pre-commit hook runs
+                                                                 exit=0
+```
+
+It runs both ways. Field-reported 2026-09-05 in the opposite direction: a
+whole-package run printed `Success: no issues found in 378 source files` while the
+hook's changed-file invocation returned three genuine errors (a narrowed `Optional`
+reassigned). **Neither verdict is authoritative for the other.** At least three
+independent levers produce the divergence, and you rarely know which one you are
+looking at: **file selection** (with `--follow-imports=silent`, errors in modules
+outside the named set are followed but suppressed), **flags** (`--ignore-missing-imports`
+turns absent third-party stubs into `Any`, and inference changes with them), and a
+**stale incremental cache** (`.mypy_cache`) on the run that looked clean.
+
+The same trap sits under `ruff`/`eslint` (config discovery depends on the invocation
+directory), `pytest` (markers, `-p` plugins, `--import-mode`, `-k` selection), and
+every tool whose answer is a function of flags *plus* file selection.
+
+**The rule.** To verify a gate locally, reproduce **its exact invocation** — flags and
+file selection — read out of the hook or workflow config, not a convenient equivalent.
+Better, run the hook manager itself: `pre-commit run --all-files`, `act`, the CI script.
+Where a tool's answer depends on its file selection, say so at the gate definition so
+the next person does not re-derive it. And read **each gate's exit code on its own**: an
+`&&` chain reports only the last command's status, a trailing `echo` makes the shell's
+status 0 whatever the tool did, and a pipe reports the last stage
+(`sota-shell-scripting` rules/01 §3). A locally clean run of "the same" linter is not
+evidence the gate is clean — it is evidence that a different question has a different
+answer.
+
 ## 5.7 Test discipline — no flaky-mute culture
 
 Flaky tests are a security topic: a suite people retry-until-green will also be retried
@@ -336,6 +379,11 @@ Latency budget matters: every gate over ~10 minutes generates organizational pre
 remove it. Diff-aware modes, caching, and tiering are how gates survive.
 
 ## Audit checklist
+
+- [ ] **Is every "gates are clean" claim backed by the gate's own invocation?**
+      A local whole-package run of the same tool answers a different question than the
+      hook's flags-plus-file-selection run — verified both ways at mypy 2.3.1 (§5.6).
+      Prefer `pre-commit run --all-files` / `act` / the CI script over re-typing the tool.
 
 - [ ] SAST: diff-aware Opengrep (org rules included) required on PRs; CodeQL (or equivalent deep SAST) on default branch; full scans scheduled
 - [ ] Every security gate ships a **negative control** — a committed known-bad it must reject on every run, and it is reachable as a **mode of the runner** (`--self-test`) rather than only as a fixture beside it, so a newly added check with no known-bad fails rather than passing unprobed (`sota-code-security` rules/12 §1b). No framework (SSDF, CRA, Scorecard, SLSA) requires this; a passing compliance check is evidence of process, not protection (§5.6, `sota-code-security` rules/12)

@@ -5,6 +5,147 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.32.3] - 2026-09-05
+
+**Front door checked:** empty comparand · mutate the expectation · fan-out · the scoped gate is not the gate · invariant 22
+
+**Patch** — rule text inside surfaces that already exist, plus one CI invariant on
+its own (which has shipped in a patch four times now: 8, 9, 11, 21). Nothing new to run.
+
+A field brief from one engineering session on a static-analysis pipeline, filed under
+the bad-guidance/skill-request template. Six of its seven items landed; the seventh was
+already covered and is recorded as a generalization rather than a new section. Every
+duplicate claim was checked against the file it named, and the one falsifiable
+third-party claim was **reproduced before adoption** — which is where its stated
+mechanism turned out to be wrong.
+
+### Added
+
+- **`sota-code-security` rules/10 §2.16 — the aggregate that masks the detection.** A
+  positive control summed every list field on an analysis result and asserted the total
+  was non-zero. The result type mixes the engine's *derived inputs* with its *findings*,
+  and preprocessing populates the inputs on any real graph — so the assertion stays green
+  whether or not detection works. Measured across 11 languages: `breaks` empty on **all
+  nine** cells where that engine was registered as controlled, and **12 of 35 controls
+  green on a result containing zero detections**. The discriminating question is *which
+  attribute would be empty if the detector were deleted but its preprocessing left
+  intact?* — assert on that one.
+  - Neither neighbour catches it. `rules/11` §2.2 is the **denominator**, and here the
+    denominator was healthy; `rules/12` §2.1's "instrument that cannot fail" is a scorer
+    returning a plausible number whatever it is handed, and this one *could* fail, just
+    never for the reason it existed.
+  - **The second-order half is the more valuable one**: when the honest assertion turns
+    green cells red with no evidence of a regression, that manufactures a red build out of
+    a *measurement gap*. Assert on what the engine does produce and give the empty field
+    its own test recording the measured fact, so it has an owner.
+  - Home moved from the brief's `rules/11`: the line budget decided it (`rules/11` reached
+    499/500 with it, leaving no room for the checklist bullet the section needs).
+
+- **`sota-code-security` rules/11 §2.2a — the empty comparand.** §2.2 asks how many items
+  a check *examined*; this asks how many were in the set it *compared against*. A
+  differential oracle computes `lost = baseline - current`, so an empty baseline makes
+  `lost` empty for **every** possible input, forever — while the run examines a full,
+  healthy current set and reports a large, truthful denominator. Four of twelve committed
+  reference sets were in that state. §2.2's remedy provably does not fire: **the zero is
+  on the other operand**.
+  - Genuinely absent — **two independent concept sweeps** across all of `skills/` returned
+    **0 hits**.
+  - Beyond the brief: the check must assert the reference **loaded**, not merely that it
+    is non-empty — a baseline file that failed to parse yields the same empty set through
+    a different door. And `gained` keeps working when the baseline is empty, which is why
+    the file keeps earning its place while half the oracle is dead.
+  - Applied where this repo would meet it: `sota-testing` rules/06 §6.3's
+    mutation-survivor baseline is exactly this shape.
+
+- **`sota-testing` rules/06 §6.3 — mutate the EXPECTATION, not the code.** A fourth
+  mutation probe, and the cheapest: leave the SUT and the fixture alone and point one
+  assertion at a plausible **wrong expected value**. Still passing means the assertion is
+  keyed to something true that is not evidence. Three controls asserted an engine found
+  the `system` call planted in a fixture; re-pointed at `popen`, two failed correctly and
+  one passed.
+  - **The fan-out corollary is the sharpest part** and had no equivalent anywhere
+    (`grep -rn 'fan-out' skills/` → 0 hits): the engine groups sinks and emits one record
+    per *name in the group*, so the sink name is not evidence about the code and an
+    assertion keyed on it is satisfied by two names the target never mentions. An
+    assertion keyed on a value the producer fans out **can never discriminate** — look for
+    that before weakening the test.
+  - Distinct from `rules/12` §1 (mutates the control), §2.1 (probe mutates a *fixture*
+    rather than the runtime artifact), and `sota-testing` rules/02 §2.7's tautological
+    test (expected value *computed* by the same logic — here it is a literal and the
+    **key** is what fails). Home moved from the brief's first preference: `rules/12` was
+    at 494/500 and could not hold a section, so it carries a three-line pointer instead.
+
+- **`sota-devsecops` rules/05 §5.6 — the scoped gate is not the gate.** The inverse of
+  everything already in §5.6: there the gate's scope drifts *away* from code that still
+  exists; here the code is fully in scope, the gate sees it, and the **human's local
+  re-run uses a different invocation** — which is what makes people report "all gates
+  clean" before pushing. Reproduce the gate's *exact* invocation (flags and file
+  selection) out of the hook or workflow config, or better, run the hook manager itself.
+
+- **`sota-testing` rules/02 §2.7 — the universally-named test over one item.** A test
+  called `test_every_tracked_phase_is_also_reported` looping a single-element literal.
+  `sota-code-security` rules/14 §7 falsifies this shape in *prose*; here it is worse,
+  because the test executes and passes, so it reads as the enforcement of the claim its
+  name makes. Read the loop, not the name.
+
+- **Invariant 22 — no `- [ ]` checklist bullet stranded inside a code fence** (skill files
+  only). Found while checking one of the brief's duplicate claims, in the file that
+  teaches this class: PR #226 (2026-08-16) inserted two audit-checklist bullets at the
+  wrong offset, into the fenced example in `sota-code-security` rules/11 §2.2. They
+  rendered as gate output for three weeks and never reached the checklist an auditor
+  reads — and one of them was the item nearest to the empty-comparand class the same brief
+  proposed.
+  - **Nothing was close enough to catch it.** Invariant 2 already tracks fence state, but
+    only to stop a fenced *heading* satisfying "ends with an Audit checklist"; invariant 10
+    checks a rules file is *indexed*, not that its contents reached anyone; the line count
+    never moved and the diff line is indistinguishable from another line of the sample.
+  - All three [CONVENTIONS-LEDGER](docs/CONVENTIONS-LEDGER.md) filters pass. **Watched to
+    fail** on a re-injection of the original defect and to pass once fixed, before being
+    wired in. Sweep found exactly **2 instances across 303 skill files** — both from that
+    one commit. **28 probes**, 17 of 22 invariants covered.
+  - Scope stops at skill files: prose files legitimately show checklist syntax in samples.
+
+### Changed
+
+- **`sota-code-security` rules/12 §2.1 — the blind-spot sentence now covers scans, not just
+  probes.** It already said *"state the traversed path in one line beside the probe"*; it
+  now reads *"beside the probe — or beside the scan"* and carries a second worked example:
+  *"reads the first positional arg, so keyword callers are invisible"*. That is the brief's
+  observation (b), recorded in [ADOPTION-LOG](docs/ADOPTION-LOG.md) as **adopted as a
+  generalization** rather than as a new section — plain `adopted` would have implied a
+  section that does not exist, and `rejected: already covered` would have lost a reusable
+  tell that this repo's own AST invariants are exposed to.
+
+### Fixed
+
+- **Two audit-checklist bullets restored to the checklist** in `sota-code-security`
+  rules/11 — the defect invariant 22 now gates. Neither had ever appeared in the `## Audit
+  checklist` an auditor reads.
+
+- **Two stale front-door claims, both invisible to the gates that exist.**
+  - `README.md` said *"Fourteen invariants enforce this"* while the script ran 21.
+    **Invariant 17 could not see it**: it matches digits, and this count was spelled as a
+    word. Now "Twenty-two", with the coverage list extended to name `§`-reference
+    resolution, the known-bad requirement, CHANGELOG tagging and invariant 22.
+  - `docs/INDEX.md` still said invariant 18's *"scope is `skills/` only"* after **v1.32.2
+    widened it** to the live tooling (`evals/*.py`, `evals/README.md`, `scripts/*.sh`,
+    `scripts/lib/*.py`) — the release that widened it did not update the front door that
+    described it.
+
+### Corrected
+
+- **The brief's mypy mechanism, corrected before adoption.** It states that
+  `--follow-imports=silent` on a changed-file subset *"infers differently"* from a
+  whole-package run. Reproduced here at **mypy 2.3.1** on a minimal package, both
+  invocations against one tree at one moment: `mypy src/pkg/` → **exit 1**;
+  `mypy --ignore-missing-imports --no-error-summary --follow-imports=silent src/pkg/a.py`
+  → **exit 0**. What reproduces is **error suppression for modules outside the named file
+  set**, and in the *opposite* direction to the one the brief reports. The rule therefore
+  ships **direction-agnostic** — neither verdict is authoritative for the other — and names
+  three independent levers (file selection, flags, a stale `.mypy_cache`) rather than
+  asserting a single mypy inference claim we could not isolate. This is why the item is
+  logged as **adopted with a correction**.
+
 ## [1.32.2] - 2026-09-04
 
 **Front door checked:** never tagged · dead runner
@@ -6050,6 +6191,11 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.32.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.32.3
+[1.32.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.32.2
+[1.32.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.32.1
+[1.32.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.32.0
+[1.31.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.31.2
 [1.31.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.31.1
 [1.31.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.31.0
 [1.30.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.30.1

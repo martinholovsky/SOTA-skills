@@ -173,6 +173,34 @@ hours):
   and the one that looks least like an environment problem). Force the path live and
   assert the mutation's runtime effect before trusting a green run.
   `sota-code-security` rules/10.
+- **As an assertion probe — mutate the EXPECTATION, not the code.** The cheapest
+  probe of the four, and it catches a defect none of the others can: leave the SUT
+  and the fixture alone, and point one assertion at a **wrong-but-plausible expected
+  value**. If it still passes, the assertion is keyed to something that is true but
+  is not evidence. Field-reported 2026-09-05 — three controls asserted an engine
+  found the dangerous call planted in a fixture, and the fixture calls `system`; the
+  expected value was changed to `popen`, which the fixture never calls:
+
+  ```text
+  control A (dependency analysis) -> FAILED, naming what it did find    ok
+  control B (permission analysis) -> FAILED, naming what it did find    ok
+  control C (spec-gap analysis)   -> PASSED                             <-- defect
+  ```
+
+  Root cause, and the **corollary worth internalising**: the engine groups sinks
+  (`["system", "exec", "popen"]`), matches a function calling *any* of them, then
+  emits one record for *every name in the group*. The sink name in that output is
+  therefore not evidence about the code, and any assertion keyed on it is satisfied
+  by two names the target never mentions. **An assertion keyed on a value the
+  producer fans out — emits for a whole category rather than the matched member —
+  can never discriminate.** When a probe like this passes, look for fan-out in the
+  producer before weakening the test; the fix is to re-key onto the field that does
+  discriminate (here, the exact function the record is attributed to).
+
+  Distinct from a tautological test (`rules/02` §2.7), where the expected value is
+  *computed* by the same logic: here it is a literal, and the **key** is what fails.
+  Run it for every assertion that claims to check *what* was found, not merely
+  *that* something was found. One edit, one run, no production change.
 
 ```text
 # What a survivor means (PIT/Stryker-style report line)
@@ -200,7 +228,9 @@ calculate_interest.py:41  mutated `<` -> `<=`   SURVIVED
   **pin the mutation engine version** next to the baseline (engines change their
   operator sets between releases; a baseline compared across versions attributes
   tool churn to your code, and re-baselining is then a deliberate step in the
-  upgrade), and **let only the tool write it** — a hand-edited baseline is a live
+  upgrade), **assert the baseline is non-empty and loaded** before reading a green
+  run as a pass (`sota-code-security` rules/11 §2.2a — an empty baseline makes the
+  "new survivors" set empty for every input), and **let only the tool write it** — a hand-edited baseline is a live
   survivor marked dead, the same manufactured safety as an assertion-free test
   (rules/02 §2.7).
 - Trend per-module mutation score on risk-critical code; a *drop* is the
@@ -262,6 +292,12 @@ into the CI test suite.
 - [ ] Mutation score gamed? Tests asserting incidental internals near
       mutation-config thresholds, blanket mutant suppressions without reasons
       → High.
+- [ ] **Assertions that check *what* was found probed by mutating the EXPECTATION**
+      to a plausible wrong value (§6.3)? One that still passes is keyed to something
+      true-but-not-evidence → High; check the producer for **fan-out** (a value emitted
+      for a whole category rather than the matched member) before weakening the test.
+- [ ] If a survivor baseline/manifest gates CI: is it asserted **non-empty and loaded**
+      (`sota-code-security` rules/11 §2.2a) → an empty baseline passes on every input.
 - [ ] If a survivor baseline/manifest gates CI: is the mutation engine version
       pinned beside it, and is the file tool-generated? Unpinned engine → Low
       (diff attributes tool churn to code); hand-edited entries (check

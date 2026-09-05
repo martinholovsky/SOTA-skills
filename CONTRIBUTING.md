@@ -286,6 +286,16 @@ are marked "needs verification", never asserted.
     **skips with a note** when the checkout has no tags at all (shallow CI clones do not
     fetch them) rather than failing every version at once.
 
+22. **a `- [ ]` checklist bullet is stranded inside a code fence** (skill files only):
+    it renders as part of a code sample, so the item never reaches the auditor who
+    reads the `## Audit checklist`. Two of them landed in `sota-code-security`
+    rules/11 §2.2 in PR #226 and rendered as example gate output for three weeks.
+    Nothing was close enough to catch it: invariant 2 tracks fence state, but only to
+    stop a fenced *heading* satisfying "ends with an Audit checklist"; invariant 10
+    checks a rules file is indexed, not that its contents reached anyone; and the line
+    count did not move. Prose files (README, `docs/`) are out of scope — they show
+    checklist syntax in samples legitimately.
+
 17. **a document that describes the checks disagrees with them**: any stated count
     of invariants/checks that isn't the number `check-invariants.sh` prints, or a
     restatement of the negative-control coverage lists that isn't what
@@ -312,7 +322,7 @@ as a FALSE PASS, because a harness that accepts any failure reports full coverag
 testing nothing.
 
 Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 3, 4, 6,
-7, 8, 10, 13, 15, 16, 17, 18, 19, 20, 21 — 16 of 21; the harness prints the list and why the rest are
+7, 8, 10, 13, 15, 16, 17, 18, 19, 20, 21, 22 — 17 of 22; the harness prints the list and why the rest are
 not covered, so read its output rather than this sentence). Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
 fully-configured fake one — `CLAUDE_CONFIG_DIR` pointed at a temp home, a throwaway git
 repo, and a stub `gh` on `PATH` so run history is decidable — and each probe removes one

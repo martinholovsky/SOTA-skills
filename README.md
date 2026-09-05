@@ -26,7 +26,7 @@ survives a long context instead of fading into it. That's why it beats a bigger 
 instead of becoming one. Native on Claude Code; works with Gemini CLI, Codex, and any
 agent that reads `AGENTS.md`.
 
-Under the hood: **41 skills (303 files, ~65k lines)** of state-of-the-art 2026
+Under the hood: **41 skills (303 files, ~66k lines)** of state-of-the-art 2026
 practice, each **instruction** file under 500 lines so only the matching rules load —
 the cap applies to `skills/**` alone, never to README/CHANGELOG/`docs/` — every fast-moving
 claim web-verified against a primary source.
@@ -985,14 +985,17 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). The short version: keep skills generic,
 verify fast-moving claims against primary sources, keep **skill** files
 (`skills/**`) ≤ 500 lines — that cap keeps incremental rule loading working and
 does not apply to README/CHANGELOG/`docs/`, which are read by humans — and end
-each rules file with an audit checklist. Fourteen invariants enforce this in
+each rules file with an audit checklist. Twenty-two invariants enforce this in
 `scripts/check-invariants.sh` (pre-commit + CI), covering line caps, checklist
 placement, description limits, version and count drift, router completeness,
 internal link resolution, every rules file being reachable from its skill's index,
 a single `[Unreleased]` CHANGELOG entry, the `LAST-VERIFIED` stamp moving only
 with a sweep, a rendered `assets/*.png` never being older than the `*.html` it
-comes from, every scoreboard row declaring its sample size, and a release
-declaring the **front door** terms its new capabilities landed on — plus gitleaks
+comes from, every scoreboard row declaring its sample size, a release
+declaring the **front door** terms its new capabilities landed on, every
+`§` reference resolving, every check having a known-bad, every shipped
+CHANGELOG version carrying a git tag, and no audit-checklist bullet being
+stranded inside a code fence — plus gitleaks
 (full-history scan in CI; per-commit via the pre-commit hook). Ideas taken from outside the repo are recorded with a
 verdict and reason in [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md), so a
 rejection isn't re-litigated. Security issues and conduct:

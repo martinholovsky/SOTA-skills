@@ -266,6 +266,15 @@ probe 20 "router §AUDIT changed without the pin being re-read" "AUDIT DRIFT"
 probe 21 "a CHANGELOG version was never tagged" "NO TAG for CHANGELOG version"
 
 
+# 22 — a checklist bullet stranded inside a code fence. The real defect (PR #226,
+# found 2026-09-05) put two of them in THIS file's §2.2 example output, where they
+# rendered as gate output for three weeks. The mutation reproduces that exactly:
+# one bullet inserted into the fenced sample, flush-left, where a diff reader's eye
+# reads it as another line of the example.
+( cd "$WT" && perl -pi -e "s{^(\[2/10\] Every skills/\*/rules/\*\.md ends with an .## Audit checklist.\n)}{\$1- [ ] a checklist bullet nobody will read\n}" \
+     skills/sota-code-security/rules/11-dead-path-diagnostics.md )
+probe 22 "checklist bullet stranded inside a code fence" "CHECKLIST BULLET INSIDE A CODE FENCE"
+
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
 # =============================================================================
@@ -392,7 +401,7 @@ if [ "$failed" -ne 0 ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18, 19, 20, 21 (16 of 21)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18, 19, 20, 21, 22 (17 of 22)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        11, 14      — diff-based: they compare against a merge base."

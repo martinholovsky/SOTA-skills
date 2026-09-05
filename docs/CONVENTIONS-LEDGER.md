@@ -36,6 +36,7 @@ recorded here so the number is not repeated.
 | Gate | Already failed? | Fails silently? | Mechanically checkable? | Verdict |
 |---|---|---|---|---|
 | **`evals/smoke-runners.py` — every runner can start, is import-safe, and existence-checks `.env`** (2026-08-27, CI) | **yes** — `run-desc-routing.py` raised before its first API call from 2026-08-05 to 2026-08-27 | **yes** — nothing reported it for three weeks; the last recorded run of that eval predated the guard that killed it | **yes** — patch the one network choke point, run each `main()`, any other exception is a dead runner | **earned a gate.** Watched to fail on a reintroduction of the exact bug before wiring in. **Ceiling stated**: it proves a runner can *start*, not that it is correct |
+| **No `- [ ]` checklist bullet is stranded inside a code fence in a skill file** (2026-09-05, invariant 22) | **yes** — PR #226 (2026-08-16) inserted two audit-checklist bullets at the wrong offset, inside the fenced example in `sota-code-security` rules/11 §2.2; they rendered as gate output for three weeks and never reached the checklist an auditor reads | **yes** — the line count does not change, the diff line is indistinguishable from another line of the sample, and Markdown renders it as one. Invariant 2 already tracks fence state but only to stop a fenced *heading* satisfying "ends with an Audit checklist"; invariant 10 checks a rules file is indexed, not that its contents reached anyone | **yes** — the same fence toggle check 2 already uses, plus a `- [ ]` match; found exactly 2 instances across 303 skill files | **earned a gate.** Watched to fail on a re-injection of the original defect and to pass once fixed, before being wired in. **Scope stops at skill files**: prose files legitimately show checklist syntax inside samples |
 
 Two of its three assertions were added *because* the smoke check could not catch the class
 itself: importing a module-level script **runs** it, which reads as "reached the network".
@@ -65,7 +66,7 @@ A convention earns a gate only if it passes **all three**:
 
 ## The ledger
 
-### Enforced (21) — invariants 1–21
+### Enforced (22) — invariants 1–22
 
 Skill-file line cap · audit-checklist placement · internal-name denylist · description cap ·
 version lockstep · count surfaces · router completeness · link resolution ·
@@ -75,7 +76,9 @@ pairing · rendered asset no older than its source · scoreboard rows declare th
 lists every `rules/NN` file, both directions** · **the hook `README.md` documents equals the
 one `install.sh` writes** · **a document describing the checks agrees with them** ·
 **every `§` section reference resolves** · **every check has a known-bad, and the
-exempt set is pinned**.
+exempt set is pinned** · **the router's §AUDIT is pinned** · **every CHANGELOG version
+below the top entry is tagged** · **no `- [ ]` checklist bullet is stranded inside a
+code fence in a skill file**.
 Each is in `scripts/check-invariants.sh` and documented in
 `AGENTS.md`. (Corrected 2026-08-19: this section read "(14) — invariants 1–14" and named
 only thirteen, while 15 and 16 were already gated and described in the table below —

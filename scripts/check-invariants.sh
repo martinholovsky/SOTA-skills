@@ -162,7 +162,7 @@ scope() {  # <count> <noun> — returns 1 on an empty scope; prints nothing on s
 # CHANGELOG, docs/, evals/, AGENTS.md, these scripts -- is prose or code read by
 # people, deliberately uncapped since 2026-07-15; navigability there comes from a
 # table of contents and docs/INDEX.md, not a line ceiling.
-echo "[1/21] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
+echo "[1/22] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
 over=0
 seen1=0
 while IFS= read -r f; do
@@ -179,7 +179,7 @@ scope "$seen1" "skill files" || over=1
 if [ "$over" -eq 0 ]; then echo "    ok ($seen1 skill files)"; else fail=1; fi
 
 # --- 2. Audit checklist ends every rules file ------------------------------
-echo "[2/21] Every skills/*/rules/*.md ends with an '## Audit checklist'"
+echo "[2/22] Every skills/*/rules/*.md ends with an '## Audit checklist'"
 missing=0
 seen2=0
 while IFS= read -r f; do
@@ -210,7 +210,7 @@ if [ "$missing" -eq 0 ]; then echo "    ok ($seen2 rules files)"; else fail=1; f
 # .denylist.local (git-ignored, one ERE per line, '#' comments). When neither
 # exists (e.g. an external fork's PR), only the generic phrases are checked —
 # the maintainer's pre-commit hook and this repo's CI carry the full list.
-echo "[3/21] No internal-name leaks"
+echo "[3/22] No internal-name leaks"
 DENY='the user runs|the user operates'
 if [ -n "${SOTA_DENYLIST:-}" ]; then
   DENY="$DENY|$SOTA_DENYLIST"
@@ -252,7 +252,7 @@ fi
 # Code, Codex, ...) skip any skill that exceeds it. Count Unicode characters
 # (descriptions use em-dashes: 1 char, 3 bytes) via python3, parsing both
 # folded block scalars (`>-`) and plain single-line descriptions.
-echo "[4/21] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
+echo "[4/22] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
 if command -v python3 >/dev/null 2>&1; then
   if desc_out=$(python3 - "$MAX_DESC" <<'PY'
 import sys, glob, re
@@ -342,7 +342,7 @@ fi
 # One version, four places: VERSION, plugin.json, the CHANGELOG's top entry,
 # and (after the release lands) the newest v* tag. Drift here shipped a main
 # briefly claiming 1.8.0 with 1.9.0 content (2026-07-03) — hence a hard check.
-echo "[5/21] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
+echo "[5/22] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
 v5=0
 ver=$(tr -d '[:space:]' < VERSION)
 # Strict X.Y.Z: rejects interior malformations (1..2, 1.2, 1.2.3.4) the old
@@ -376,7 +376,7 @@ if [ "$v5" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # rot on surfaces nobody recounts (the social preview said "30 skills" for
 # three releases). Recount from the tree and compare every tracked surface;
 # RELEASING.md lists the same surfaces for manual release edits.
-echo "[6/21] Count-bearing surfaces match the tree"
+echo "[6/22] Count-bearing surfaces match the tree"
 v6=0
 ck() { # ck <found> <expected> <surface>
   [ "$1" = "$2" ] || { note "$3: says '${1:-<not found>}', tree says '$2'"; v6=1; }
@@ -429,7 +429,7 @@ if [ "$v6" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # checked — a moved file would otherwise make every grep miss and report all 40
 # skills as absent, which is loud, or make the reverse loop read nothing, which
 # is not.
-echo "[7/21] Router lists every skill (routing table + library map)"
+echo "[7/22] Router lists every skill (routing table + library map)"
 v7=0
 seen7=0
 router=skills/sota/SKILL.md
@@ -461,7 +461,7 @@ if [ "$v7" -eq 0 ]; then echo "    ok ($seen7 domain skills)"; else fail=1; fi
 # with no rot-catching upside. Fenced AND inline code are stripped so link-shaped
 # examples (in ``` fences or `backticks`) are not scanned. Idea from vault-doctor
 # (training-knowledge-vault); see docs/ADOPTION-LOG.md.
-echo "[8/21] Internal Markdown links resolve (*.md targets)"
+echo "[8/22] Internal Markdown links resolve (*.md targets)"
 if command -v python3 >/dev/null 2>&1; then
   if link_out=$(python3 - <<'PY'
 import os, re, sys
@@ -514,7 +514,7 @@ fi
 # previous release (2026-07-28) and both sat on main until a human noticed
 # during the release cut. Fence-aware, like check 2: a CHANGELOG entry may
 # legitimately quote '## [Unreleased]' inside a code fence.
-echo "[9/21] CHANGELOG has at most one [Unreleased], and it is the top entry"
+echo "[9/22] CHANGELOG has at most one [Unreleased], and it is the top entry"
 v9=0
 changelogs="CHANGELOG.md $(git ls-files 'docs/CHANGELOG-archive*.md' | tr '\n' ' ')"
 for cl in $changelogs; do
@@ -560,7 +560,7 @@ if [ "$v9" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # to ourselves. All 255 rules files passed when this landed, so it is a
 # regression gate, not a repair; it was watched to fail on an injected file
 # and on a renamed reference before being trusted.
-echo "[10/21] Every skills/*/rules/*.md is referenced by its own SKILL.md"
+echo "[10/22] Every skills/*/rules/*.md is referenced by its own SKILL.md"
 v10=0
 seen10=0
 while IFS= read -r rf; do
@@ -606,7 +606,7 @@ if [ "$v10" -eq 0 ]; then echo "    ok ($seen10 rules files indexed)"; else fail
 # This is the first DIFF-based invariant; every other check reads the whole tree.
 # With no merge base it skips with a note rather than guessing, like checks 4/8.
 SWEEP_MIN_SKILL_FILES=20
-echo "[11/21] LAST-VERIFIED moves only with a sweep (batched diff, or declared in CHANGELOG)"
+echo "[11/22] LAST-VERIFIED moves only with a sweep (batched diff, or declared in CHANGELOG)"
 v11=0
 base=""
 for ref in origin/main main; do
@@ -679,7 +679,7 @@ if [ "$v11" -ne 0 ]; then fail=1; fi
 #
 # HISTORY-based, like check 11's diff: with no commit history for a pair it skips
 # with a note rather than guessing, because a shallow clone must not read as a pass.
-echo "[12/21] Rendered assets: each assets/*.png is no older than its *.html"
+echo "[12/22] Rendered assets: each assets/*.png is no older than its *.html"
 v12=0
 seen12=0
 checked12=0
@@ -752,7 +752,7 @@ if [ "$v12" -ne 0 ]; then fail=1; fi
 # column and checks that column in every data row beneath it. So it also fails when
 # the column is RENAMED or dropped (0 tables -> SCOPE EMPTY), which is the drift a
 # hardcoded column index would sail straight past.
-echo "[13/21] Every scoreboard row declares its sample size"
+echo "[13/22] Every scoreboard row declares its sample size"
 v13=0
 BOARD="evals/results/RESULTS.md"
 if [ ! -f "$BOARD" ]; then
@@ -822,7 +822,7 @@ if [ "$v13" -ne 0 ]; then fail=1; fi
 # docs/INDEX.md (the front door is real), AND in that release's own CHANGELOG section
 # (you cannot pass by declaring a filler word that was never part of the release).
 # A missing line on a release commit fails closed.
-echo "[14/21] A release declares its front-door terms, and they resolve"
+echo "[14/22] A release declares its front-door terms, and they resolve"
 v14=0
 base14=""
 for ref in origin/main main; do
@@ -894,7 +894,7 @@ if [ "$v14" -ne 0 ]; then fail=1; fi
 # (v1.19.8 → v1.21.0) with all fourteen checks green. Both directions matter: a
 # file absent from the map is invisible to a router-driven load, and a map entry
 # for a file that no longer exists sends the model after nothing.
-echo "[15/21] Router library map lists every rules file (both directions)"
+echo "[15/22] Router library map lists every rules file (both directions)"
 v15=0
 if command -v python3 >/dev/null 2>&1; then
   map_out=$(python3 - <<'MAPPY'
@@ -967,7 +967,7 @@ if [ "$v15" -ne 0 ]; then fail=1; fi
 # actually in a user's settings.json. The README's is the one a reader copies by
 # hand, so a stale block is the version that spreads. Silent by construction —
 # nothing executes the README.
-echo "[16/21] README's documented hook == install.sh's HOOK_CMD"
+echo "[16/22] README's documented hook == install.sh's HOOK_CMD"
 v16=0
 if command -v python3 >/dev/null 2>&1; then
   hook_out=$(python3 - <<'HOOKPY'
@@ -1054,7 +1054,7 @@ if [ "$v16" -ne 0 ]; then fail=1; fi
 #   - a correction note that QUOTES the old wording ("(14) — invariants 1–14") is
 #     history, not a claim. Counts inside double quotes are ignored, which is the
 #     same supersede-don't-edit rule the CHANGELOG follows.
-echo "[17/21] Docs describing the invariants agree with the scripts"
+echo "[17/22] Docs describing the invariants agree with the scripts"
 v17=0
 if command -v python3 >/dev/null 2>&1; then
   doc_out=$(python3 - <<'DOCPY'
@@ -1205,7 +1205,7 @@ if [ "$v17" -ne 0 ]; then fail=1; fi
 # every skill named on the line and against the containing skill, and any hit
 # passes. A gate that flags correct prose gets disabled, which leaves you worse
 # off than no gate (docs/CONVENTIONS-LEDGER.md).
-echo "[18/21] Section references (§N) resolve to a real section"
+echo "[18/22] Section references (§N) resolve to a real section"
 v18=0
 if command -v python3 >/dev/null 2>&1; then
   ref_out=$(python3 scripts/lib/check-section-refs.py 2>&1) || v18=1
@@ -1238,7 +1238,7 @@ if [ "$v18" -ne 0 ]; then fail=1; fi
 # remember to run is a convention. Invariant 18 was added WITHOUT a probe in the
 # very commit that introduced it, which is what this exists to make impossible.
 EXPECTED_UNPROBED="5 9 11 12 14"
-echo "[19/21] Every check has a known-bad, or a pinned reason it cannot"
+echo "[19/22] Every check has a known-bad, or a pinned reason it cannot"
 v19=0
 if command -v python3 >/dev/null 2>&1; then
   st_out=$(python3 - "$0" "$(dirname "$0")/check-negative-controls.sh" "$EXPECTED_UNPROBED" <<'STPY'
@@ -1327,7 +1327,7 @@ if [ "$v19" -ne 0 ]; then fail=1; fi
 # is worse than no pass, because the reader follows whichever they loaded.
 # Bumping this hash is the forcing function to re-read both.
 ROUTER_AUDIT_SHA="01e31a36d15b53b7"
-echo "[20/21] Router §AUDIT is pinned (bump only after re-reading sota/rules/01 §5 + rules/03)"
+echo "[20/22] Router §AUDIT is pinned (bump only after re-reading sota/rules/01 §5 + rules/03)"
 v20=0
 audit_sec=$(awk '/^## AUDIT mode — workflow/{f=1} f&&/^## Library map/{exit} f' skills/sota/SKILL.md)
 if [ -z "$audit_sec" ]; then
@@ -1365,7 +1365,7 @@ if [ "$v20" -ne 0 ]; then fail=1; fi
 # Tags are not fetched by default in a shallow CI checkout, so this SKIPS with a
 # note when the repo has no tags at all rather than failing every version at once:
 # a gate that cannot see its evidence must say so, not invent a verdict.
-echo "[21/21] Every CHANGELOG version below the top one is tagged"
+echo "[21/22] Every CHANGELOG version below the top one is tagged"
 v21=0
 seen21=0
 if [ -z "$(git tag -l 'v*' 2>/dev/null)" ]; then
@@ -1391,11 +1391,63 @@ EOF21
 fi
 if [ "$v21" -ne 0 ]; then fail=1; fi
 
+# --- 22. No checklist bullet stranded inside a code fence -------------------
+#
+# Found 2026-09-05 while evaluating a field brief, in the file that teaches this
+# class. PR #226 (2026-08-16) inserted two audit-checklist bullets at the wrong
+# offset: they landed INSIDE the fenced block in `sota-code-security` rules/11
+# §2.2, wedged between two lines of example gate output. For three weeks they
+# rendered as part of a code sample, and both were absent from the checklist an
+# auditor actually reads -- one of them ("every collection a suite iterates has a
+# non-empty assertion") being the item nearest a class the same brief proposed.
+#
+# NOTHING CAUGHT IT, and the near misses are the point. Invariant 2 checks only
+# that '## Audit checklist' is a file's last h2 -- it already tracks fence state,
+# so it would reject a HEADING inside a fence, and says nothing about the bullets
+# under it. Invariant 10 checks a rules file is indexed, not that its contents
+# reached the reader. The line count did not change; the render did.
+#
+# The mutation is invisible in exactly the way this repo's own library defines as
+# the hunting ground (rules/11 §1): the failure state -- a checklist item nobody
+# will ever read -- is typographically identical in the diff to a legitimate
+# example line, and Markdown renders it as one.
+#
+# SCOPE is skill files only. Prose files (README, docs/) legitimately show
+# checklist syntax inside samples; skill files are instructions an agent reads,
+# and a '- [ ]' there is a claim about what gets audited.
+echo "[22/22] No '- [ ]' checklist bullet stranded inside a code fence"
+v22=0
+seen22=0
+while IFS= read -r f; do
+  [ -f "$f" ] || { note "SKIPPED (tracked but missing from worktree): $f"; continue; }
+  seen22=$((seen22 + 1))
+  # Same fence tracking as check 2: ``` or ~~~ toggles, and the fence line
+  # itself is never a bullet. Leading whitespace is stripped first -- the
+  # stranded bullets were flush-left, but an indented one renders identically.
+  hits=$(awk '
+    { line = $0; sub(/^[ \t]+/, "", line) }
+    line ~ /^(```|~~~)/ { fence = !fence; next }
+    fence && line ~ /^- \[[ xX]\]/ { printf "%d: %.70s\n", NR, line }
+  ' "$f")
+  if [ -n "$hits" ]; then
+    note "CHECKLIST BULLET INSIDE A CODE FENCE: $f"
+    while IFS= read -r h; do note "  $h"; done <<EOF22
+$hits
+EOF22
+    note "  It renders as sample output, so no auditor ever reads it. Move it to"
+    note "  the '## Audit checklist' section, or make it plainly part of the example."
+    v22=1
+  fi
+done < <(git ls-files 'skills/*/*.md' 'skills/*/rules/*.md')
+scope "$seen22" "skill files" || v22=1
+if [ "$v22" -eq 0 ]; then echo "    ok ($seen22 skill files)"; fi
+if [ "$v22" -ne 0 ]; then fail=1; fi
+
 # --- Result ---------------------------------------------------------------
 echo
 if [ "$fail" -ne 0 ]; then
   echo "FAIL: repository invariants violated (see above)."
   exit 1
 fi
-printf 'PASS: all repository invariants satisfied (21 checks over %s skill files / %s rules files, %ss).\n' \
+printf 'PASS: all repository invariants satisfied (22 checks over %s skill files / %s rules files, %ss).\n' \
   "${seen1:-?}" "${seen2:-?}" "$((SECONDS - START_SECONDS))"
