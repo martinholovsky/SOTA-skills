@@ -143,6 +143,11 @@ Layer the automation; none of it replaces the regression tests above.
 
 ## Audit checklist
 
+- [ ] **Every positive control in the suite asserts on the field that carries the
+      detection**, not an aggregate over the whole result object
+      (`sota-code-security` rules/10 §2.16) — a result type that mixes derived inputs
+      with findings stays non-empty while detection is zero.
+
 - [ ] Do security-critical paths (authn/authz, crypto, input parsing, money/quota,
       tenancy, untrusted data) have negative security tests, at a higher coverage
       bar (~90%) than the suite norm? Gaps treated as findings?

@@ -297,6 +297,60 @@ usual source: distribution builds drop optional tags to avoid a CGO or driver de
 Same family as the compiled-out `assert` in `rules/11` §4 — the interface survives the
 build, the behaviour does not.
 
+### 2.16 The aggregate that masks the detection
+
+§1's question, asked of a *field* rather than a control. A positive control
+asserted that an analysis engine had "fired" by summing every list on its result
+object:
+
+```python
+def _result_size(result) -> int:
+    return sum(len(v) for v in vars(result).values() if isinstance(v, list))
+
+assert _result_size(result) > 0          # "the engine fired"
+```
+
+The result type carries **both halves of the analysis** — what the engine derived
+in order to reason, and what it concluded:
+
+```python
+@dataclass
+class Result:
+    assumptions:  list[Assumption]    # INPUT: derived to reason over
+    enforcements: list[Enforcement]   # INPUT
+    chains:       list[DependencyChain]
+    breaks:       list[Break]         # <-- the DETECTION. This is the finding.
+```
+
+The inputs outnumber the outputs and outlive them: preprocessing populates
+`assumptions` on any real graph, so the aggregate is non-empty whether or not
+detection works. Field-reported 2026-09-05, measured across 11 languages:
+`breaks` was empty on **all nine** cells where this engine was registered as
+having a positive control, a sibling engine had zero `violations` on three of its
+ten, and **12 of 35 controls were green on a result containing no detections** —
+and would have stayed green if detection stopped entirely.
+
+Two neighbouring diagnostics miss it. `rules/11` §2.2 is about the *denominator*,
+and here the denominator was healthy: the engines ran over a real graph and
+returned rows. `rules/12` §2.1's "instrument that cannot fail" is about a scorer
+returning a plausible number whatever it is handed; this instrument *could* fail,
+just never for the reason it existed. The distinct defect is that **the assertion
+aggregates over a heterogeneous result in which the inputs outnumber and outlive
+the outputs.**
+
+**The discriminating question.** *Which attribute would be empty if the detector
+were deleted but its preprocessing left intact?* Assert on that one. An aggregate
+over a result mixing derived inputs with findings is not a positive control; it
+is a liveness check for the input stage.
+
+**And do not simply tighten it.** When the honest assertion turns green cells red
+with no evidence of a regression — nothing had ever measured `breaks` — that
+manufactures a red build out of a measurement gap. Assert semantically on what
+the engine *does* produce, and give the empty field **its own test recording the
+measured fact**, so it has an owner and gets tightened the day the field becomes
+non-empty. `rules/11` §2.6's metamorphic relation is the tool for that second
+half.
+
 ## 3. Make degradation loud — one helper, deduped per cause
 
 When a control cannot do its job, exactly one mechanism reports it. Scattering
@@ -364,6 +418,10 @@ Design:
       condition the dependency itself, or something that currently agrees with it? Name who
       can change one without the other. A proxy with no signal on divergence is a finding
       even while it currently works.
+- [ ] **Every "it produced something" assertion names the field that carries the
+      detection** (§2.16): which attribute would be empty if the detector were deleted
+      but its preprocessing left intact? An aggregate over a result mixing derived
+      inputs with findings is a liveness check for the input stage, not a control.
 - [ ] **Every optional capability a design depends on was invoked once, not read from
       `--help`** (§2.15). Build-tag-gated flags parse and stub out; keep the output of the
       real call. High when the capability is the load-bearing half of a security control.

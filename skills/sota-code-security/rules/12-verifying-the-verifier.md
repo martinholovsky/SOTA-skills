@@ -64,6 +64,10 @@ Two traps that make step 3 lie:
   **Assert the mutation's runtime effect** — make the no-op print or raise once —
   before trusting a "zero failures" result.
 
+A **third probe** costs one edit: leave code and fixture alone and point the
+assertion at a plausible **wrong expected value** — still passing means it is keyed
+to something true that is not evidence (`sota-testing` rules/06 §6.3).
+
 Then build the **structural** test that catches the class: assert the loaded rule
 count is non-zero, assert every reference-config key resolves, assert the
 documented default equals the parsed default, assert the control's telemetry is
@@ -242,9 +246,9 @@ tree is clean"* may never have run: `sota-shell-scripting` rules/01 §3a.
   The tell is a probe that mutates a **fixture** rather than the artifact the
   control produces at runtime: a fixture probe proves the validator reads, and
   proves nothing about whether the writer still emits what the validator expects.
-  **State the traversed path in one line beside the probe** — *"exercises the
-  encoder; not the writer, the predicate, or the store"* — then ask what else is
-  claiming coverage from this gate's green. Where the control emits an artifact,
+  **State the traversed path beside the probe — or beside the scan** — *"exercises
+  the encoder, not the writer"*; *"reads the first positional arg, so keyword callers
+  are invisible"* — then ask what else claims coverage from this gate's green. Where the control emits an artifact,
   probe by corrupting **what the control just produced**, not a stored copy of what
   it should have produced.
 

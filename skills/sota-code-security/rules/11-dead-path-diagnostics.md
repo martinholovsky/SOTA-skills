@@ -77,13 +77,6 @@ enumerated skill files via `git ls-files 'skills/*/rules/*.md'`; renaming the
 ```
 # BEFORE — pathspec mutated to match nothing:
 [2/10] Every skills/*/rules/*.md ends with an '## Audit checklist'
-- [ ] **Environment-dependent predicates**: any filter tested against an absolute
-      path, hostname, username, env var or locale — `grep -rn "\.parts\|os.environ\|
-      gethostname" ` near a comprehension. Run the suite from a `mktemp -d` clone, not
-      the working tree; on macOS that path resolves under `/private`, which is exactly
-      the component such filters tend to exclude.
-- [ ] **Every collection a suite iterates has a non-empty assertion** — without one an
-      empty parameter set reports SKIPPED and the suite passes vacuously.
     ok
 [10/10] Every skills/*/rules/*.md is referenced by its own SKILL.md
     ok
@@ -128,6 +121,44 @@ parse-error offset is uninterpretable without the document length.** "Failed at
 char 3,023" argues *against* truncation while you assume 4,096 tokens yield
 12–16k characters, and *for* it the moment you learn 3,023 was the last
 character — so log the size beside the offset. Class and fix: rules/10 §2.7.
+
+### 2.2a The empty comparand — the zero on the other operand
+
+§2.2 asks how many items the check **examined**. This asks how many were in the
+set it **compared against**, and the two fail independently. A differential
+oracle — a regression snapshot, a golden file, an approval set, a "no new
+findings vs. baseline" gate — computes its verdict from a *reference*, and when
+that reference is empty the verdict is a constant:
+
+```python
+lost   = baseline - current    # findings we used to produce and no longer do
+gained = current - baseline
+return 1 if lost else 0        # non-zero on any regression
+```
+
+`lost` is drawn **from the baseline**. With an empty `baseline`, `lost` is empty
+for every possible `current` — the check returns the pass value on every input,
+forever, while examining a full, healthy current set and reporting a large,
+*truthful* denominator. §2.2's remedy does not fire here, because nothing about
+the scope is wrong. Field-reported 2026-09-05: **4 of 12** committed reference
+sets were in this state, legitimately — the analysis genuinely finds nothing on
+those targets, and the files are kept because a *gain* is still informative.
+
+That is also why nobody notices: `gained` keeps working when the baseline is
+empty, so the file still earns its place in the tree while half the oracle is
+dead.
+
+**The rule.** Any differential, regression or equivalence check must assert that
+its reference set is non-empty **and that it loaded** — a baseline file that
+failed to parse yields the same empty set through a different door — before its
+result is readable as a pass, and must fail closed otherwise. Where an empty
+reference is a legitimate recorded state, require an explicit, greppable opt-out
+flag: the flag is how a human records that they know, and an exit code is not.
+
+Where to look: golden-file tests with an empty golden, approval suites
+(`sota-testing` rules/06 §6.4) whose approved set was never populated, gates
+seeded from a baseline run that itself failed, and any `set(old) - set(new)`
+regression check.
 
 ### 2.3 Cross-scale delta
 
@@ -367,6 +398,10 @@ unvalidated instrument is not yet a finding.
       flagged, with the measured seconds and input size (§2.1)?
 - [ ] **Every gate reports its denominator** (`ok (N items)`), and an unexpected
       **zero scope fails closed** — no `0 checked, 0 failed, exit 0` anywhere (§2.2)?
+- [ ] Every **differential, regression or equivalence check asserts its reference set
+      is non-empty and loaded** before its result reads as a pass (§2.2a) — an empty
+      baseline makes `baseline - current` empty for every input, forever; a legitimate
+      empty reference carries a greppable opt-out flag, never a silent exit code?
 - [ ] Every **generated** result checked against the cap that bounded it before
       parsing (`output_tokens == max_tokens`, rows == `LIMIT`), and parse-error
       offsets logged beside the document size (§2.2)?
@@ -405,5 +440,12 @@ unvalidated instrument is not yet a finding.
       output** — not by each side's own tests (`rules/13` §4)?
 - [ ] Every script CI, a hook or a runbook references **actually executed this
       pass**, the silent ones recorded as dead until proven otherwise (§6)?
+- [ ] **Environment-dependent predicates**: any filter tested against an absolute
+      path, hostname, username, env var or locale — `grep -rn "\.parts\|os.environ\|
+      gethostname" ` near a comprehension. Run the suite from a `mktemp -d` clone, not
+      the working tree; on macOS that path resolves under `/private`, which is exactly
+      the component such filters tend to exclude.
+- [ ] **Every collection a suite iterates has a non-empty assertion** — without one an
+      empty parameter set reports SKIPPED and the suite passes vacuously.
 - [ ] The tools that produced these findings held to the same standard —
       mutation probe, instrument bar, guard recursion (§7 → **rules/12**)?

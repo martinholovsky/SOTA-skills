@@ -205,6 +205,14 @@ Name the smell in audit findings; each has a standard fix.
 - **Tautological test** (Critical): expected value computed by the same logic
   as the SUT (`assert sut.f(x) == helper_that_reimplements_f(x)`), or
   asserting a mock returns what you stubbed it to return. Verifies nothing.
+- **Universally-named test over one item** (High): the name quantifies —
+  `test_every_tracked_phase_is_also_reported` — and the loop iterates a
+  single-element literal. `sota-code-security` rules/14 §7 falsifies this shape in
+  *prose*; here it is worse, because the test **executes and passes**, so it reads
+  as the enforcement of the claim its name makes. Third sighting of the shape in one
+  codebase (2026-09-05). Read the **loop**, not the name; then either derive the
+  collection from the source of truth or rename the test to what it actually covers.
+  A green test is not exempt from the quantifier check.
 - **Mockery / excessive mocking** (High): more lines configuring doubles than
   asserting outcomes; asserting interactions with internals. Fix via 2.1 and
   `rules/03` boundary discipline.
@@ -370,6 +378,8 @@ More precise *and* more sensitive, not a trade.
 - [ ] Does any structural sweep get reported as a **verdict** rather than a candidate
       list? AST does not resolve types, so a name collision reads as live — a false
       negative (§2.10).
+- [ ] Any test whose **name quantifies universally** (`every`, `all`, `no_`) looping a
+      one- or two-element literal → High (§2.7): it passes, so it reads as enforcement.
 - [ ] Assertion-free tests? Mechanical sweep: list test functions lacking any
       assert/expect/require/verify token → Critical each.
 - [ ] Can flagship tests fail? Invert one assertion or `return` early in the
