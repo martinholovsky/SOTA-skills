@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Invariant 24 — `AGENTS.md` stays under its own 200-line cap, and keeps its symlinks.**
+  That file says *"keep it under 200"* because `CLAUDE.md` and `GEMINI.md` symlink to it,
+  so it loads into **every** session — and it had broken its own rule **twice in two
+  days** (201, then 202), each time from adding an invariant's own table row, each time
+  caught only because someone ran `awk` by hand.
+  - **ROADMAP 35 asked for a decision before a check, and that was the right order:
+    gating a *target* is a category error.** It is a **cap** — the file already stated it
+    as an imperative with a named escape (move detail to `CONTRIBUTING.md` behind a
+    pointer), which is exactly invariant 1's shape. What changed was the sentence calling
+    it *"ungated, and a different constraint from invariant 1"*, not the number.
+  - **It checks the premise, not just the arithmetic.** The 200 only *matters* while the
+    symlinks make the file load every session, so the gate asserts `CLAUDE.md`/`GEMINI.md`
+    are still mode `120000` and still point at `AGENTS.md` — `sota-code-security` rules/10
+    §1's **proxy question**, aimed at one of our own gates. A cap enforced on a file
+    nobody loads passes forever while its reason has quietly gone.
+  - Watched to fail on four shapes: exactly 200, 202, a copy in place of a symlink, and a
+    symlink re-pointed elsewhere. Then it **caught its own author on the first run** —
+    adding rows 24 and 25 to the invariant table took the file to 201.
+
+- **Invariant 25 — undocumented eval flags may not grow.** A **ratchet**, not a rule.
+  `--no-gate-arm` shipped in v1.33.0 documented in the root README's index and in the
+  runner's `--help`, and **not** in `evals/README.md` — the file a person opens to learn
+  what an instrument measures. Invariant 14 cannot catch that: it accepts a declared term
+  in `README.md` **or** `docs/INDEX.md`, and either satisfies it.
+  - **Two designs were rejected, and both were in ROADMAP 36's own text.** The strict form
+    (*every flag is documented*) was **measured first**: it opens red on **27** pre-existing
+    (file, flag) pairs, nearly all generic plumbing — `--json`, `--report`, `--build-model`,
+    `--judge-model`. A gate that opens red on 27 things it does not care about is one
+    someone disables, which [CONVENTIONS-LEDGER](docs/CONVENTIONS-LEDGER.md) calls strictly
+    worse than no gate. The "cheaper alternative" — adding `evals/README.md` to invariant
+    14's resolution set — would have made 14 **looser**, since a third accepted location
+    weakens it; it would have damaged the gate it was meant to reinforce.
+  - **It fails closed on an empty scan.** A drifted regex would otherwise find zero flags,
+    compare 0 against the pin, and pass on every possible input — the defect
+    `sota-code-security` rules/11 **§2.2a** describes, which this repo added four days ago,
+    applied here to its own newest gate.
+  - Watched to fail on three shapes: a newly added undocumented flag, a *slack* ratchet (a
+    flag documented without lowering the pin), and the empty scan. **32 probes, 20 of 25.**
+
 ### Fixed
 
 - **The negative-control harness could accuse a healthy gate.** CI reported probe 4 as a
