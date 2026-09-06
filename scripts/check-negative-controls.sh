@@ -297,6 +297,28 @@ probe 22 "checklist bullet stranded inside a code fence" "CHECKLIST BULLET INSID
 ( cd "$WT" && perl -0pi -e 's/^\[1\.32\.0\]: .*\n//m' CHANGELOG.md )
 probe 23 "a CHANGELOG version heading has no link ref" "NO LINK REF for CHANGELOG version"
 
+# 24 — AGENTS.md over its own 200-line target. The real defect twice over: 201 on
+# 2026-09-05 and 202 on 2026-09-06, each time from adding an invariant's table row,
+# each time caught only by a hand-run `awk`. Appends to a file no other check reads
+# for length, so nothing else can complain first.
+( cd "$WT" && printf 'padding to breach the always-loaded cap\n' >> AGENTS.md )
+probe 24 "AGENTS.md over its own 200-line target" "it must stay UNDER 200"
+
+# 24b — the cap's PREMISE, not its arithmetic (rules/10 §1's proxy question). The
+# 200 only matters because CLAUDE.md/GEMINI.md symlink here and the file therefore
+# loads every session. Replace the symlink with a copy and the cap still passes while
+# guarding something nobody loads. Uses python3 for the unlink+copy so the mutation is
+# a single, assertable step.
+( cd "$WT" && python3 -c "import os,shutil; os.remove('CLAUDE.md'); shutil.copy('AGENTS.md','CLAUDE.md')" \
+    && git add CLAUDE.md >/dev/null 2>&1 )
+probe 24b "CLAUDE.md is a copy, not a symlink to AGENTS.md" "not a symlink (120000)"
+
+# 25 — a newly added eval flag that never reaches evals/README.md. This is
+# --no-gate-arm's own defect, replayed: it shipped in v1.33.0 documented in the root
+# README and in --help, and not in the harness's front door.
+( cd "$WT" && perl -pi -e 's/^(    ap\.add_argument\("--out", default=None\))/    ap.add_argument("--brand-new-undocumented", action="store_true")\n$1/' evals/run-completeness.py )
+probe 25 "a new eval flag is undocumented in evals/README.md" "undocumented eval flags rose to"
+
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
 # =============================================================================
@@ -437,7 +459,7 @@ if [ "$failed" -ne 0 ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23 (18 of 23)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 (20 of 25)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        11, 14      — diff-based: they compare against a merge base."

@@ -309,6 +309,30 @@ are marked "needs verification", never asserted.
     [RELEASING.md](RELEASING.md) §1 requires a heading and its ref to move together
     when a release is archived.
 
+24. **`AGENTS.md` reaches 200 lines, or `CLAUDE.md`/`GEMINI.md` stop being symlinks to
+    it.** That file loads into *every* session in this repo — the platform's guidance is
+    "target under 200 lines", and long always-loaded files reduce adherence. It is a
+    **cap, not a target** (settled 2026-09-06, because gating a "target" is a category
+    error): the file already states it as an imperative with a named escape — move detail
+    to this file behind a pointer — which is the same shape invariant 1 has. It had
+    already been breached twice, at 201 and 202, each time by adding an invariant's own
+    table row, and each time found only because someone ran `awk` by hand. The symlinks
+    are checked too, because the cap only *means* anything while they point here: a cap
+    enforced on a file nobody loads passes forever while the constraint it stands for has
+    quietly stopped applying.
+
+25. **The number of eval CLI flags undocumented in `evals/README.md` rises.** A
+    **ratchet**, not a rule. `--no-gate-arm` shipped in v1.33.0 documented in the root
+    README's index and in the runner's `--help`, but not in the harness's own front door.
+    A strict "every flag is documented" rule was measured first and rejected: it opens red
+    on **27** pre-existing generic flags (`--json`, `--report`, `--build-model`), and a
+    gate that opens red on things it does not care about is one someone disables — which
+    [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md) calls strictly worse than no
+    gate. So the count may not *rise*: a documented flag is free, an undocumented one
+    fails, and lowering the pin is a deliberate visible edit. It **fails closed if the
+    scan finds no flags at all** — otherwise a drifted regex would make it pass on every
+    possible input, which is the defect `sota-code-security` rules/11 §2.2a describes.
+
 17. **a document that describes the checks disagrees with them**: any stated count
     of invariants/checks that isn't the number `check-invariants.sh` prints, or a
     restatement of the negative-control coverage lists that isn't what
@@ -335,7 +359,7 @@ as a FALSE PASS, because a harness that accepts any failure reports full coverag
 testing nothing.
 
 Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 3, 4, 6,
-7, 8, 10, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23 — 18 of 23; the harness prints the list and why the rest are
+7, 8, 10, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 — 20 of 25; the harness prints the list and why the rest are
 not covered, so read its output rather than this sentence). Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
 fully-configured fake one — `CLAUDE_CONFIG_DIR` pointed at a temp home, a throwaway git
 repo, and a stub `gh` on `PATH` so run history is decidable — and each probe removes one
