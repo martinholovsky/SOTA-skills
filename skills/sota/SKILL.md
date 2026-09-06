@@ -15,7 +15,7 @@ description: >-
 
 # SOTA Engineering Skills — Master Router
 
-A library of 40 domain skills, each with a `SKILL.md` entry point and a `rules/`
+A library of 41 domain skills, each with a `SKILL.md` entry point and a `rules/`
 folder of focused rule files (each under 500 lines). Each skill works in two
 modes:
 
@@ -108,6 +108,7 @@ rules files that match the code in front of you. Never load all skills at once.
 | `sota-architecture` | System design, service boundaries, monolith vs microservices, DDD, event-driven design, sagas/outbox, reconciliation against a third party that holds authoritative state, resilience (timeouts/retries/circuit breakers), scalability, multi-tenancy, 12-factor/cloud-native, architectural anti-patterns |
 | `sota-code-security` | Writing or reviewing code that touches untrusted input, authn/authz, sessions/JWT/OAuth, crypto, XSS/CSRF/CORS, file uploads, deserialization, error/log hygiene, LLM/agent app security, silent control failure (a safeguard that looks enabled and does nothing) |
 | `sota-threat-modeling` | Designing a new system/feature with security in mind, drawing trust boundaries and DFDs, STRIDE/LINDDUN, risk rating, reconstructing a threat model from an existing codebase |
+| `sota-skill-security` | Installing, authoring, reviewing or auditing anything an **agent loads as instructions** — skills, plugins, rulesets, `AGENTS.md`/`CLAUDE.md`/`.cursorrules`: provenance and pinning, review-before-install, the instruction trust boundary (a PR that edits an agent file changes what your agent does), precedence and shadowing between overlapping skills, capability minimisation, and guidance that is confidently wrong |
 | `sota-secrets-management` | API keys, passwords, tokens, signing/TLS/SSH keys, .env files, Vault/cloud secret managers, workload identity (OIDC), secret rotation, leak detection and remediation |
 | `sota-sandboxing` | Isolation of untrusted code or input, least privilege, seccomp/Landlock/capabilities, container/K8s hardening, microVMs, WASM sandboxes, subprocess hygiene, sandboxing AI-agent code execution |
 | `sota-performance` | Latency, throughput, profiling, memory usage, caching (incl. stampede protection), I/O and network efficiency, Core Web Vitals, performance regression in CI |

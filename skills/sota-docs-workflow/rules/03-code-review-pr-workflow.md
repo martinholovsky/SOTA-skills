@@ -133,6 +133,51 @@ Out of scope: unfreezing flow cleanup → #901.
 - Each PR in a stack must stand alone: green CI, coherent description, no
   forward references that make it unreviewable without reading the whole stack.
 
+## §5a The change surface is a design decision, not a side effect
+
+§1 says keep PRs small. This is the harder half: **what belongs in the diff at all.**
+Agents are unusually good at producing code and unusually bad at bounding what they
+touched, so this is where an otherwise correct change becomes unreviewable.
+
+**Do not change unrelated files.** A drive-by reformat, an import reorder, a "while I
+was here" rename — each is defensible alone and collectively they destroy the diff.
+The reviewer can no longer see the change, only the noise around it, and `git blame`
+on those lines now points at your unrelated PR forever. If a cleanup is worth doing,
+it is worth its own PR; if it is not worth its own PR, it is not worth burying in
+this one.
+
+**Generated files have a policy, and the policy is stated.** Lockfiles, generated
+clients, compiled assets, snapshots: either they are committed (and regenerated in a
+separate commit, so a review can skip them) or they are not committed at all. What
+must not happen is a diff where hand-written and generated lines are interleaved and
+the reviewer cannot tell which is which. Say which in `CONTRIBUTING.md`, and keep the
+regeneration in its own commit even inside one PR.
+
+**Decompose by reviewability, not by size.** A 600-line PR that is one mechanical
+rename plus one 20-line behaviour change is *two* PRs — and the behaviour change is
+the one that needs eyes. The test is not "how many lines" but "can a reviewer hold
+the intent of this diff in their head at once". Common seams: mechanical vs
+semantic; refactor vs behaviour; interface vs implementation; migration vs the code
+that uses it.
+
+**Sequence migrations so each commit is deployable.** Expand, migrate, contract — a
+PR that adds a column and starts writing to it is safe; one that also drops the old
+column is not, because a rollback of the code without a rollback of the data leaves
+production reading a field that no longer exists. Same rule for API deprecations
+(`rules/02` §2) and for anything with a consumer you do not control.
+
+**Revert or fix forward — decide by blast radius, not by pride.** If the change is
+live and wrong, revert first and diagnose after: a revert is a known-good state and a
+fix-forward is a hypothesis. Fix forward when the revert is *itself* risky (a
+migration has run, a revert would re-break a dependent change). Either way the
+decision is recorded — a revert with no explanation reads as a mistake by whoever
+reverted.
+
+**Preserve archaeology.** Keep mechanical moves separate from edits so `git log
+--follow` and `git blame` still work; where a tool supports it, record the
+move-only commit so future bisects step over it rather than into it. A `git bisect`
+that lands on a 4,000-line reformat has cost more than the reformat saved.
+
 ## §6 Automation does the robot work
 
 - **Lint, formatting, type errors, import order, coverage thresholds, secret
@@ -201,6 +246,16 @@ and never the author. Conduct and evidence are separate axes — a politely word
 claim that turns out to be false still burns the credibility.
 
 ## Audit checklist
+
+- [ ] **Does the diff contain anything the PR title does not describe?** Drive-by
+      reformats, import reorders, opportunistic renames — each defensible alone, together they
+      make the change invisible and misattribute `git blame` (§5a).
+- [ ] **Is there a stated policy for generated files**, and are generated and hand-written
+      lines in separate commits rather than interleaved (§5a)?
+- [ ] **Was the PR decomposed by reviewability** — mechanical split from semantic, migration
+      from the code that uses it — rather than by line count (§5a)?
+- [ ] **Is every commit in a migration sequence independently deployable and rollback-safe**
+      (expand → migrate → contract), so a code rollback does not strand the data (§5a)?
 
 - [ ] Anything published to a **third party under someone else's name** (PR
       comment, issue, commit message, upstream post) verified by **execution not

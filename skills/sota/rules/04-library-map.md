@@ -33,6 +33,8 @@ exist. `sota-code-security/rules/11` sat unlisted for two releases before 15 exi
   security, 09 untrusted-data ingestion, 10 silent control failure, 11 dead-path diagnostics, 12
   verifying the verifier, 13 context-dependent silence, 14 the control that is not in force,
   15 instruments & guards
+- **sota-skill-security/rules**: 01 provenance & installation, 02 trust boundary & capability,
+  03 authoring & auditing skills
 - **sota-threat-modeling/rules**: 01 methodologies, 02 decomposition, 03 threat catalogs, 04 risk
   rating & treatment, 05 outputs & operationalization, 06 audit reconstruction
 - **sota-secrets-management/rules**: 01 lifecycle & workload identity, 02 storage backends, 03

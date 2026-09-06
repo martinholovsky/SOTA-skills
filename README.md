@@ -3,7 +3,7 @@
 <p align="center">
   <a href="https://github.com/martinholovsky/SOTA-skills/releases"><img src="https://img.shields.io/github/v/release/martinholovsky/SOTA-skills?color=2fa45f&label=release" alt="Latest release"></a>
   <a href="https://github.com/martinholovsky/SOTA-skills/actions/workflows/ci.yml"><img src="https://github.com/martinholovsky/SOTA-skills/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
-  <img src="https://img.shields.io/badge/skills-41-2fa45f" alt="41 skills">
+  <img src="https://img.shields.io/badge/skills-42-2fa45f" alt="41 skills">
   <img src="https://img.shields.io/badge/modes-BUILD%20%2B%20AUDIT-2fa45f" alt="BUILD + AUDIT">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-CC%20BY%204.0-blue" alt="License: CC BY 4.0"></a>
 </p>
@@ -26,7 +26,7 @@ survives a long context instead of fading into it. That's why it beats a bigger 
 instead of becoming one. Native on Claude Code; works with Gemini CLI, Codex, and any
 agent that reads `AGENTS.md`.
 
-Under the hood: **41 skills (305 files, ~66k lines)** of state-of-the-art 2026
+Under the hood: **42 skills (309 files, ~66k lines)** of state-of-the-art 2026
 practice, each **instruction** file under 500 lines so only the matching rules load —
 the cap applies to `skills/**` alone, never to README/CHANGELOG/`docs/` — every fast-moving
 claim web-verified against a primary source.
@@ -433,6 +433,7 @@ are load-bearing, because the ones that aren't are labelled.
 | `sota-architecture` | Styles & ADRs, DDD, distributed systems, resilience, scalability, cloud-native, anti-patterns |
 | `sota-code-security` | Injection, authn/authz, crypto, web security, resource safety, data exposure, LLM appsec |
 | `sota-threat-modeling` | STRIDE/LINDDUN, DFDs & trust boundaries, threat catalogs, risk rating, model reconstruction |
+| `sota-skill-security` | The supply chain of things that tell an agent what to do: provenance & pinning, review-before-install, the instruction trust boundary, precedence & shadowing, capability minimisation |
 | `sota-secrets-management` | Lifecycle & workload identity, storage backends, app patterns, leak detection, credential types |
 | `sota-sandboxing` | Isolation boundaries, seccomp/Landlock/capabilities, containers/microVMs, parsers, AI-agent sandboxing |
 | `sota-performance` | Measure-first methodology, algorithms, memory, I/O & network, caching, Web Vitals |
