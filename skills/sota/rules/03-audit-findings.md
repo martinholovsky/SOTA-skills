@@ -303,7 +303,7 @@ silently. Either way the cut is reviewable, which a paragraph of hedging is not.
 
 A number is not a fact. It is a forcing function that makes disagreement visible,
 and like every other number in this file it is a claim about a process you must
-have watched work (`sota-code-security` rules/12 §2.2).
+have watched work (`sota-code-security` rules/15 §2.2).
 
 Scale it to stakes: every Critical/High gets refuted, always. Mediums get a pass
 when the audit is high-stakes or the finding drives an expensive fix. Skip it for

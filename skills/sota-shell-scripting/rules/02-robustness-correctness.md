@@ -78,7 +78,7 @@ Validate before acting, fail with a message naming the bad value:
   **Assert the condition you want, not its negation.** `!= "0"` is satisfied by `""`,
   `error`, `null`, and every usage message a broken invocation prints — verified. For a
   check that runs repeatedly until something completes, "cannot tell" must stay distinct
-  from "not yet": `sota-code-security` rules/12 §2.2a.
+  from "not yet": `sota-code-security` rules/15 §2.2a.
 - Required environment variables: check up front, all at once, not at first use:
 
 ```bash

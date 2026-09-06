@@ -206,7 +206,7 @@ rules files that match the code in front of you. Never load all skills at once.
     product* (a usage error, exit 2, from the callee is the tell). Audit it all with
     `sota-shell-scripting`, especially rules/01 §3. And a script that **produces or
     verifies evidence** (attestations, ledgers, gate records, audit trails) is a security
-    control written in shell: add `sota-code-security` rules/10 and rules/12.
+    control written in shell: add `sota-code-security` rules/10, rules/12 and rules/15.
 18. **Cryptography fans out — there is no single crypto skill (by design).** Algorithm choice,
     AEAD/nonce discipline, CSPRNG, in-code key handling, TLS client config, constant-time
     comparison, tamper-evident logs/audit ledgers (keyed hash chains, external anchoring,

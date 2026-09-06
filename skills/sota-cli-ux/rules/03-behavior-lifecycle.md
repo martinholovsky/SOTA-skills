@@ -49,7 +49,7 @@ shell completions, versioning the CLI surface.
 A linter, a health checker, a scanner, a policy gate, a `doctor` command — anything
 whose output is a **verdict** rather than an artifact — is an instrument, and an
 instrument that cannot fail returns a plausible verdict on whatever it is handed
-(`sota-code-security` rules/12 §2). From the outside a user cannot tell: *"0
+(`sota-code-security` rules/15 §2). From the outside a user cannot tell: *"0
 problems found"* and *"0 checks ran"* print the same, and the second is the ordinary
 result of a bad path, an empty glob, an over-narrow filter, or a missing toolchain.
 

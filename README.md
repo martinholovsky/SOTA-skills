@@ -26,7 +26,7 @@ survives a long context instead of fading into it. That's why it beats a bigger 
 instead of becoming one. Native on Claude Code; works with Gemini CLI, Codex, and any
 agent that reads `AGENTS.md`.
 
-Under the hood: **41 skills (303 files, ~66k lines)** of state-of-the-art 2026
+Under the hood: **41 skills (305 files, ~66k lines)** of state-of-the-art 2026
 practice, each **instruction** file under 500 lines so only the matching rules load —
 the cap applies to `skills/**` alone, never to README/CHANGELOG/`docs/` — every fast-moving
 claim web-verified against a primary source.
@@ -244,7 +244,7 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   or never ends. It is the row people delete while fixing the other bug: one rewrite
   replaced an explicit "no longer exists" branch with a blindness counter, which then
   reported *"cannot read for 20min"* about a job that had simply been garbage-collected.
-  ([rules/12 §2.2a](skills/sota-code-security/rules/12-verifying-the-verifier.md))
+  ([rules/15 §2.2a](skills/sota-code-security/rules/15-instruments-and-guards.md))
 - **A measurement whose rows came from somewhere else.** When tests and production
   write to one **shared sink**, every aggregate over it merges two populations — and
   the danger is not the false positive but the *destroyed true finding*, because the
@@ -273,7 +273,7 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   refactor into a nested module, a second manifest or a sidecar image moves code out of
   a gate's scope with no diff to the workflow file, so watch the number of units each
   gate **enumerated** and treat a drop as a failure.
-  ([rules/12](skills/sota-code-security/rules/12-verifying-the-verifier.md),
+  ([rules/15](skills/sota-code-security/rules/15-instruments-and-guards.md),
   [devsecops rules/05](skills/sota-devsecops/rules/05-analysis-gates.md))
 - **Absence encoded as a value** — the **in-band sentinel**: a number whose domain
   includes an "absent/unknown/error" marker (`-1`, `0`, `""`, `9999-12-31`). It type-checks and no

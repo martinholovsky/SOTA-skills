@@ -5,6 +5,99 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.34.0] - 2026-09-06
+
+**Front door checked:** rules/15 · rules/09 · unconsumable · termination message
+
+**Minor** — two new rules files are surfaces a reader can load and cite. Everything in
+them already existed or arrived with this release; nothing was invented to fill them.
+
+A field brief from a live container-pipeline incident — six proposals, all six landed,
+**two of them in a different form than proposed** because reading the neighbouring text
+showed the proposal was aimed at the wrong file or would have loosened an existing gate.
+
+### Added
+
+- **`sota-code-security/rules/15-instruments-and-guards.md`** — `rules/12` split at the
+  seam its own subtitle named (*"the mutation probe, **and** the things that do the
+  checking"*). `rules/12` keeps proving a **specific control** works (§1, §1a, §1b) at
+  **211** lines; `rules/15` takes **your instrument is a control** (§2) and **the guard
+  that is an instance of what it guards** (§3) at **355**. Section numbers are unchanged
+  across the move, so a citation that named a section still names the same content.
+
+- **`sota-devsecops/rules/09-gates-that-hold.md`** — `rules/05` §5.6 had reached **284**
+  lines, over half that file, and took two more subsections in this release. The scanners
+  stay in `rules/05` (**226**); whether any of it actually *gates* is now its own file
+  (**343**), with the five subsections numbered §1–§5 for the first time.
+
+- **A gate only gates if failing it makes the artifact unconsumable** (`rules/09` §3). If
+  the build publishes to an identifier a deploy watcher can already consume, the gates
+  after that publish decide only whether the artifact is *annotated*. The deploy then
+  fails at the consumer with a **verification** error whose cause is three steps upstream
+  in a different subsystem — so a vulnerability failure reliably sends the operator to the
+  signing path. Build to a candidate, promote after the last gate, and make the candidate
+  **structurally unable to match the watcher's allow-pattern**: *"it is a different
+  string"* is not a control. Includes the state-advance trap that makes it
+  self-amplifying — a "last built commit" marker behind the failing gate never advances,
+  so the scheduler republishes forever.
+
+- **A verdict that lives only in a garbage-collected log does not exist** (`rules/09` §4).
+  A step that separates *policy violation* from *infrastructure error* and `echo`s the
+  distinction has produced a diagnostic with the lifetime of a pod; what survives is
+  `Error (exit code 1)`. **Corrected against the Kubernetes docs before landing:** the
+  brief cites the 4096-byte kubelet cap on a **termination message**, but the total across
+  containers is **12KiB divided equally** — a 12-container pod gets **1024 bytes each**, and
+  CI pods have init containers and sidecars. Budget from the container count. `FallbackToLogsOnError`
+  (2048 bytes or 80 lines, whichever is smaller) is named as the cheaper option when you
+  do not control the step's script.
+
+- **A step copied between sibling pipelines rebinds to names the destination may not
+  declare** (`sota-devsecops/rules/01` §1.11a). Late-bound references resolve at
+  submission, not by the parser, so a copied block passes YAML validation, schema
+  validation, lint and pre-commit while being unrunnable. §1.11 proves a pipeline has
+  *ever* run; this is the case where N siblings exist and only one was proven.
+
+- **A consumer at the end of a pipe succeeds on empty input**
+  (`sota-shell-scripting/rules/01`). `pipefail` fixes the status; this is about the value
+  you keep. A guard hashing a failed `skopeo inspect` got `e3b0c44…` — the hash of
+  nothing — non-empty, well-formed, never equal to a real digest, so it refused **every**
+  publish. Carries the brief's own warning: **do not pattern-match the fix**, because the
+  same guard with no pipe is correct as written and a grep sweep would "fix" it.
+
+### Changed
+
+- **`sota-code-security/rules/15` §2.2 — a classifier's "everything else" branch must be
+  proven reachable.** Landed as an extension rather than the new section the brief
+  proposed: §2.2 already required a negative control for anything that classifies. What
+  was genuinely missing is *order* and *default* — **test the definitive signal first**
+  (an infrastructure error is conclusive; a finding-shaped pattern is a heuristic), and
+  **default the unknown case to the safe classification**, because *"I could not tell"*
+  must never render as *"it was your code"*.
+
+- **`sota-code-security/rules/11` §2.1 — a rate over a window longer than the phenomenon.**
+  Also landed as a cross-reference rather than a new rule: `sota-observability` rules/02 §4
+  already says averages hide what matters. The gap was **reachability** — that rule is
+  about *designing* a metric, and nothing routes a debugger to it. ~4.2 errors/s over an
+  hour concealed 14,977 in one minute, and a correct fix was retracted on the strength of
+  the mean. The per-event cost is the discriminator: **12 µs and 12 s are different
+  mechanisms with identical counts.**
+
+### Fixed
+
+- **`README.md` had a link whose text and target disagreed** — it read `rules/15 §2.2a`
+  and pointed at `12-verifying-the-verifier.md`. Invariant 8 checks a link *resolves*, not
+  that it resolves to what the text claims, so it passed.
+
+### What the split cost, measured
+
+Recorded because *"can we split reliably?"* was the question, and the answer has a number.
+**16 `§` references needed repointing; invariant 18 caught 10** — the other **6 resolved
+fail-open** against a co-named skill, exactly the residual documented after the
+`sota/rules/01` split. Worse, **22 bare `rules/12` pointers carry no section at all**, so
+no gate can see them; each was walked by hand and decided on meaning (probe half vs
+instrument half), and 15 of them moved. The gate makes the split *safe*; it does not make
+it *automatic*.
+
 ## [1.33.1] - 2026-09-06
 
 **Front door checked:** invariant 24 · invariant 25 · ratchet
@@ -6408,6 +6501,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.34.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.34.0
 [1.33.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.33.1
 [1.33.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.33.0
 [1.32.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.32.3

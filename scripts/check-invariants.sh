@@ -626,7 +626,7 @@ else
   # edit demanded an escape — and the first such change (2026-07-31, moving the rule
   # into the file) satisfied it reflexively by naming LAST-VERIFIED in the CHANGELOG
   # even though the stamp never moved. A gate that fires on non-events trains people
-  # to wave it through, which is how it becomes decorative (rules/12 §2).
+  # to wave it through, which is how it becomes decorative (rules/15 §2).
   stamp_now=$(grep -v '^[[:space:]]*#' LAST-VERIFIED 2>/dev/null | tr -d '[:space:]' || true)
   stamp_was=$(git show "$base":LAST-VERIFIED 2>/dev/null | grep -v '^[[:space:]]*#' | tr -d '[:space:]' || true)
   if printf '%s\n' "$changed" | grep -qx 'LAST-VERIFIED' && [ "$stamp_now" != "$stamp_was" ]; then
@@ -1196,12 +1196,12 @@ if [ "$v17" -ne 0 ]; then fail=1; fi
 # refs that resolved to the wrong skill's rules/NN).
 #
 # Two conventions it had to learn the hard way, both found by reading the
-# findings instead of trusting the count (`sota-code-security` rules/12 §2.2):
+# findings instead of trusting the count (`sota-code-security` rules/15 §2.2):
 #   - a heading may number itself `## 3.` OR `## §3 ` — missing the second form
 #     read one whole file as unnumbered and hid 102 valid references;
 #   - `§N.M` means a `### N.M` heading in SOME files and "item M of the ordered
 #     list in §N" in others. Both are legitimate; a checker that knows only the
-#     first flags nine correct references. That is rules/12 §2.1's "generalised
+#     first flags nine correct references. That is rules/15 §2.1's "generalised
 #     from one sample", committed by this check's own first draft.
 # It is deliberately FAIL-OPEN on ambiguity — a bare `rules/NN` is tried against
 # every skill named on the line and against the containing skill, and any hit

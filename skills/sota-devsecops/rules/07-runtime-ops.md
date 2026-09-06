@@ -250,7 +250,7 @@ create an unaudited one permanently:
   mis-designed — fix the gate, don't normalize the bypass.
 - Audit both failure modes: no break-glass defined (gates will be dismantled under
   pressure) and break-glass that is just "the admins bypass protection routinely"
-  (rules/05 §5.6 — that's not break-glass, that's no glass).
+  (`rules/09` §1 — that's not break-glass, that's no glass).
 
 ## 7.6 Closing the loop
 

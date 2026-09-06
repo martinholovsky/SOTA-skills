@@ -233,7 +233,7 @@ records: hash-chained audit logs, compliance trails (EU AI Act Art. 12, FINRA
   first record looks like a legitimate start. Carry the previous segment's head
   hash into the first record of the next, and have the verifier carry its
   running hash **across** the boundary instead of resetting at it — the defect
-  is usually in the verifier, not the writer, which makes it a `rules/12` §3
+  is usually in the verifier, not the writer, which makes it a `rules/15` §3
   guard-shaped bug rather than a crypto bug. Deletion has three geometries and a
   chain walk covers only two: interior record (caught by the `prev_hash`
   mismatch), interior segment (caught **only** with boundary continuity), tail

@@ -139,6 +139,33 @@ calling it. `for x in "a b"; do cmd $x; done` and `${var:+--flag $var}` are wher
 bites hardest. Same family: `$?` after a pipeline is the **last** stage's status —
 `${pipestatus[1]}` in zsh, `${PIPESTATUS[0]}` in bash (rules/02 §4).
 
+**A consumer at the end of a pipe usually succeeds on empty input, and its output looks
+like a real answer.** `pipefail` fixes the *status*; this is about the **value you keep**.
+A registry guard meant to refuse overwriting a published tag:
+
+```bash
+EXIST=$(skopeo inspect --raw "docker://host/repo:tag" 2>/dev/null | sha256sum | cut -d' ' -f1 || true)
+[ -n "$EXIST" ] && [ "$EXIST" != "$DIGEST" ] && refuse
+```
+
+On a **missing** tag the inspect fails, `sha256sum` reads empty stdin, and `EXIST` becomes
+`e3b0c44298fc…b855` — the hash of nothing. Non-empty, well-formed, and never equal to a
+real digest, so the guard refused **every** publish. Hashers, `wc`, `sort`, `base64` and
+`jq -r //empty` all manufacture a plausible result from nothing, which is why `[ -n "$var" ]`
+after such a pipeline tests almost nothing.
+
+**Test the precondition separately from the transformation:**
+
+```bash
+if producer >/dev/null 2>&1; then value=$(producer | transform); else value=""; fi
+```
+
+**Do not pattern-match the fix.** The same guard written with `--format '{{.Digest}}'` and
+**no pipe** genuinely yields an empty string, so *its* `[ -n "$var" ]` is correct. A grep
+sweep for the shape would "fix" working code; checking which form each site uses is the
+work. The differential-oracle version of the same defect — a comparand that is empty rather
+than a value that is fake — is `sota-code-security` rules/11 §2.2a.
+
 **A pipeline is an evidence hazard as well as a status hazard, and `pipefail` only fixes
 the status.** For any command whose output you intend to *reason about* — a test run, a
 benchmark, a profile, a long analysis — **redirect to a file and read the file**:
@@ -259,8 +286,8 @@ out=$(grep -rn --include='*.md' ABSENT . 2>/dev/null)  # GENUINE: stdout empty, 
 
 Same stdout, same exit code. **An audit sweep written this way cannot distinguish "the
 codebase is clean" from "my search never executed"** — a false-clean produced by the tool
-these checklists are pasted into, which is `sota-code-security` rules/12's
-verifying-the-verifier failure arriving through the shell.
+these checklists are pasted into — `sota-code-security` rules/15's instrument
+failure arriving through the shell.
 
 Rules:
 
@@ -402,6 +429,11 @@ files=(/data/*); count=${#files[@]}                               # with nullglo
       against a pattern known to be present.
 
 ## Audit checklist
+
+- [ ] **Any `var=$(producer | consumer)` whose emptiness is then tested?** Hashers, `wc`,
+      `sort`, `base64` and `jq -r //empty` succeed on empty stdin and return a well-formed value,
+      so `[ -n "$var" ]` passes on a failed producer. Test the producer separately — and check each
+      site's actual form before sweeping, because the no-pipe spelling is correct as written (§3).
 
 - [ ] **Composed multi-line records**: `grep -rn '="\$(' --include='*.sh'` where the
       result is concatenated with more lines — `$( )` dropped the trailing newline and

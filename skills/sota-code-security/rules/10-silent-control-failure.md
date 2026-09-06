@@ -28,7 +28,7 @@ Sweep with rules/11 to decide *where* to apply this file.
 Related: fail-open authorization → rules/03 §"authz bypass patterns"; integer
 truncation → rules/06; prompt-as-control and the LLM threat model → rules/08
 §1–2 (`rules/14` §3 here frames it as a silent-control class); the mutation probe and the
-instrument/guard pass → rules/12; test vacuity and mutation testing in general →
+instrument/guard pass → rules/15; test vacuity and mutation testing in general →
 `sota-testing` rules/06 and rules/09; degradation telemetry →
 `sota-observability` rules/05; build/runtime artifact drift → `sota-devsecops`
 rules/04.
@@ -332,7 +332,7 @@ and would have stayed green if detection stopped entirely.
 
 Two neighbouring diagnostics miss it. `rules/11` §2.2 is about the *denominator*,
 and here the denominator was healthy: the engines ran over a real graph and
-returned rows. `rules/12` §2.1's "instrument that cannot fail" is about a scorer
+returned rows. `rules/15` §2.1's "instrument that cannot fail" is about a scorer
 returning a plausible number whatever it is handed; this instrument *could* fail,
 just never for the reason it existed. The distinct defect is that **the assertion
 aggregates over a heterogeneous result in which the inputs outnumber and outlive
@@ -474,7 +474,7 @@ Design:
       binary), not only the source checkout? Startup asserts its own required
       artifacts?
 - [ ] Mutation probe run on security-critical paths, and the instrument or guard
-      that reported the result validated in turn — the whole of rules/12?
+      that reported the result validated in turn — the whole of rules/12 and rules/15?
 - [ ] One shared degraded-control helper, deduped per cause, emitting log +
       gauge + health state — not per-request warnings?
 - [ ] Findings state what looks enabled, why it is inert, and a concrete

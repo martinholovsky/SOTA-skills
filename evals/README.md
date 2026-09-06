@@ -363,7 +363,7 @@ Two consequences, both cheap:
   from a `git stash`ed clean tree.
 
 
-These are the repo-local form of `sota-code-security` rules/12 §2 — *the
+These are the repo-local form of `sota-code-security` rules/15 §2 — *the
 instrument that measures a control is itself a control*. That section was
 written on 2026-07-30 after the same class recurred: three new scorers needed
 eight corrections between them, one of them scanning a vendored virtualenv and
@@ -509,7 +509,7 @@ of them were **mine, in the harness I had just written**.
   agent's own account.** Grep each artifact for skill names, `rules/NN` citations and
   distinctive library vocabulary. Self-report is a hypothesis; the citation is the
   evidence.
-- **The contamination detector is an instrument too** (rules/12 §2). Ours produced a
+- **The contamination detector is an instrument too** (rules/15 §2). Ours produced a
   **false positive** — one occurrence of "blast radius", plus the scratchpad path
   matching `sota-[a-z]+` — and then, after an over-eager fix, a **false negative on a
   known-contaminated report**, because stripping every slash-containing token also
