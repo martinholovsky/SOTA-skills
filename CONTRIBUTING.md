@@ -140,7 +140,7 @@ are marked "needs verification", never asserted.
    **A green check 3 means "no match", which is not the same as "clean".** On
    2026-08-11 a sweep found a project name in two tracked docs that the check had
    passed over for a month, because the name was simply not in the list — the
-   guard's predicate did not cover its own target (`sota-code-security/rules/12`
+   guard's predicate did not cover its own target (`sota-code-security/rules/15`
    §3, in our own machinery). When your set of private names changes, the list is
    what has to change; the check will not discover the gap for you.
 

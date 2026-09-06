@@ -137,7 +137,7 @@ def main():
     names = [os.path.basename(d) for d in glob.glob(os.path.join(ROOT, "skills/sota-*"))
              if os.path.isdir(d)]
     arms = {"with-xref": catalogue(False), "without-xref": catalogue(True)}
-    # Assert the ablation TOOK (rules/12 §2.2). If no description matched XREF_RE the
+    # Assert the ablation TOOK (rules/15 §2.2). If no description matched XREF_RE the
     # two arms are byte-identical and this tool prints a fake +0.000 — a manufactured
     # null in a project that publishes real ones. Both sibling ablations already abort.
     # catalogue() returns a list of (name, description) tuples — NOT a string. This

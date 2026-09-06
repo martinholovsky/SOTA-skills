@@ -333,7 +333,51 @@ was **skipped** reports Success, and a run the platform **refused** (billing, sp
 limits) reports failure within seconds with no step logs and its reason only in the
 annotations. Both look like "CI exists" from the badge.
 
+## 1.11a Copying a step between sibling pipelines rebinds it to names the destination may not declare
+
+§1.11 establishes that a pipeline has *ever* executed. This is the case where **N sibling
+pipelines** exist, one is edited by copying a block from another, and the copied block
+references a name only the *source* declares.
+
+**Late-bound references are resolved by the orchestrator, not by the parser.** `${{ }}` /
+`{{ }}` expressions, template outputs, job and step IDs, matrix keys, secret and variable
+names — all bind at submission or run time. So a copied block passes YAML validation,
+schema validation, lint and pre-commit while being **unrunnable**, and near-identical
+pipelines are exactly where the same concept is most likely to carry a different name.
+
+Field-reported: three sibling build templates. Two expose a `check-changes` output named
+`should-build`; the third names the same concept `has-changes`. A task copied from the
+first into the third carried `should-build`. YAML parsed, the schema validated, kustomize
+built, yamllint passed, the pre-commit hook passed. It resolved only at submission, where
+the orchestrator rejected the **entire** spec:
+
+```
+invalid spec: templates.build-pipeline.tasks.promote failed to resolve
+{{tasks.check-changes.outputs.parameters.should-build}}
+```
+
+It would have failed **every** build of that service, and was caught only because each of
+the three was given its own forced verification run instead of one shared *"the pattern is
+identical"* assumption.
+
+**After copying a block between pipelines, diff the identifiers it references against what
+the destination actually declares.** The mechanical check is cheap: for every conditional
+and every interpolated output, assert the referenced name appears in the producing step's
+declared outputs *in that file*.
+
+**Then execute each target once.** N pipelines edited from one template is N things to
+prove, not one — *"same pattern, therefore same result"* is precisely the assumption
+identifier drift defeats. For a scheduled pipeline the first real execution may be hours
+away and unattended, which is also why a gate step copied across services must carry its
+durable verdict everywhere (`rules/09` §4), not just where it was first fixed.
+
 ## Audit checklist
+
+- [ ] **Does every late-bound reference resolve against a name that pipeline itself
+      declares?** `${{ }}`/`{{ }}` expressions, template outputs, step IDs, matrix keys — they bind
+      at submission, so lint and schema validation pass on an unrunnable spec. After copying a step
+      between sibling pipelines, **each destination has been executed once**, not just the source
+      (§1.11a).
 
 - [ ] **Bot PRs are green for the right reason.** Open the newest Dependabot/Renovate PR:
       does every required check pass, and does the secret-dependent one actually have its

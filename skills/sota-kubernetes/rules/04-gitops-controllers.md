@@ -135,7 +135,7 @@ publishes advisories — track its controllers' CVEs.
 §1–§6 cover what the controller may do *inward*: git → cluster. A controller that
 also writes **outward** — an image-update controller, a PR bot, config sync
 committing rendered manifests back — is an instrument reporting on itself, so
-`sota-code-security` rules/12 §2 applies to it in full. Its log describes the
+`sota-code-security` rules/15 §2 applies to it in full. Its log describes the
 update it *decided* to make, not the write landing.
 
 **R7.1 — Verify at the remote, never from the controller's own counters.**

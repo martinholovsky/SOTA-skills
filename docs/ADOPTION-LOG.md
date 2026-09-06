@@ -63,6 +63,9 @@ lessons-log — its own best structural idea, applied to ourselves.
 > | `rules/10` §2.13 | `rules/14` §4 (a control that never executes) |
 > | `rules/10` §2.14 | `rules/14` §5 (parked in observe-only mode) |
 > | `rules/11` §3.1–3.5 | `rules/13` §1–§5 (context-dependent silence) |
+> | `rules/12` §2, §2.1–2.4 | `rules/15` §2… (instruments) — 2026-09-06 |
+> | `rules/12` §3 | `rules/15` §3 (the guard that is an instance of what it guards) |
+> | `sota-devsecops` `rules/05` §5.6 | `sota-devsecops` `rules/09` §1–§5 (gates that hold) |
 >
 > Invariant 18 keeps *live* `§` references honest, but its scope is `skills/` only —
 > which is why this note exists rather than a gate.

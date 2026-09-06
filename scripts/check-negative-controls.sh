@@ -9,8 +9,9 @@
 # So does a check whose pathspec drifted, whose predicate stopped matching, or
 # that was quietly disabled. Those states are typographically identical, and this
 # repo's own library calls that an inert control: `sota-code-security` rules/12 §1
-# (mutation-probe every control), §2.2 (an instrument needs a known-bad it must
-# reject and a known-good it must pass), and `sota-devsecops` rules/05 §5.6, which
+# mutation-probes every control. `sota-code-security` rules/15 §2.2 requires that an
+# instrument carry a known-bad it must reject and a known-good it must pass.
+# `sota-devsecops` rules/09 §1, which
 # says outright that no mainstream framework requires evidence a gate CAN fail.
 # We required that of everyone else and did not do it here. This closes that.
 #
@@ -19,7 +20,7 @@
 #   (a) a non-zero exit, and
 #   (b) the EXPECTED check to be the one that complained.
 # (b) is not pedantry. A harness that accepts any non-zero exit reports "18/18
-# controls caught" while every run dies before the thing under test (rules/12
+# controls caught" while every run dies before the thing under test (rules/15
 # §2.1, "the instrument that cannot fail"). A mutation caught for the wrong reason
 # is a FALSE PASS and is reported as one.
 #
@@ -30,7 +31,7 @@
 # ASSERT THE MUTATION TOOK. The copy is a git worktree at HEAD, so it would carry
 # the COMMITTED gate, not the one being edited. The working-tree gate is copied in
 # and byte-compared, because "the code you changed may not be the code that ran"
-# is the trap rules/12 §2.2 names explicitly.
+# is the trap rules/15 §2.2 names explicitly.
 #
 # Scope: invariants 1, 2, 6, 10 and 15 — the five with a cheap, unambiguous
 # known-bad. The others are diff-, history- or release-shaped and need a fixture

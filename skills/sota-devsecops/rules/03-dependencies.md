@@ -53,7 +53,7 @@ jobs:
           comment-summary-in-pr: on-failure
 ```
 
-- This must be a **required check** (rules/05 §5.6) or it's advisory noise.
+- This must be a **required check** (`rules/09` §1) or it's advisory noise.
 - Complement with OSV/grype full scans on schedule (§3.6) — the PR gate only sees diffs.
 - For ecosystems GitHub doesn't cover well, run `osv-scanner --lockfile` diff against the
   base branch in the PR workflow.

@@ -31,7 +31,8 @@ exist. `sota-code-security/rules/11` sat unlisted for two releases before 15 exi
 - **sota-code-security/rules**: 01 input & injection, 02 authentication, 03 authorization, 04
   cryptography, 05 web security, 06 memory & resource safety, 07 data exposure, 08 LLM/AI
   security, 09 untrusted-data ingestion, 10 silent control failure, 11 dead-path diagnostics, 12
-  verifying the verifier, 13 context-dependent silence, 14 the control that is not in force
+  verifying the verifier, 13 context-dependent silence, 14 the control that is not in force,
+  15 instruments & guards
 - **sota-threat-modeling/rules**: 01 methodologies, 02 decomposition, 03 threat catalogs, 04 risk
   rating & treatment, 05 outputs & operationalization, 06 audit reconstruction
 - **sota-secrets-management/rules**: 01 lifecycle & workload identity, 02 storage backends, 03
@@ -47,7 +48,7 @@ exist. `sota-code-security/rules/11` sat unlisted for two releases before 15 exi
   protocols, 05 realtime/websockets/SSE, 06 webhooks, 07 security & operations
 - **sota-devsecops/rules**: 01 pipeline security, 02 provenance & signing, 03 dependencies (incl.
   §3.9 declared-but-not-reached), 04 build & containers, 05 analysis gates, 06 IaC & deployment,
-  07 runtime & ops, 08 registry security
+  07 runtime & ops, 08 registry security, 09 gates that hold
 - **sota-databases/rules**: 01 choosing & modeling, 02 schema & migrations, 03 queries & indexes,
   04 transactions & concurrency, 05 reliability & scale, 06 security & compliance, 07 vector & AI,
   08 SurrealDB & multi-model

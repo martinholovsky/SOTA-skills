@@ -149,7 +149,7 @@ noise that hides the next twenty.
 correctness — it is the inert-control signature. Print the denominator (rows
 compared on *each* side, and the period covered), fail closed when either side
 reads zero, and prove it can fire by seeding a known break. Diagnostics:
-`sota-code-security` rules/11 §2.2 and rules/12.
+`sota-code-security` rules/11 §2.2 and rules/15.
 
 ## 6. Event-driven architecture: events are facts
 

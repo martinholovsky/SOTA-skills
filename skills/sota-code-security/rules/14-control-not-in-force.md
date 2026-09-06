@@ -12,7 +12,7 @@ control's body. Nothing here is: the body may be perfect. You find these by aski
 what reaches production, what fires, and what the output is entitled to say.
 
 **Read with `rules/10`** (the falsification question in its §1 governs this file
-too), `rules/11` for the codebase-scale sweep, and `rules/12` before quoting any
+too), `rules/11` for the codebase-scale sweep, and `rules/15` before quoting any
 number a control or an instrument produced.
 
 §6 and §7 are a third case again, and the one the other two cannot reach: the
@@ -65,7 +65,7 @@ Two traps: hedging every message containing "tainted" leaves the identical claim
 phrased "reachable from input", so match the claim's *shape*, not a keyword; and
 "TLS certificate not verified" describes the *analysed code's* defect and is
 correct English, so read the sentence before counting it — a regex classifier
-over-counts badly here (rules/12 §2.2). A third instance, reported by someone writing a
+over-counts badly here (rules/15 §2.2). A third instance, reported by someone writing a
 test for this very paragraph: the test **failed on its own explanatory comment**, which
 quoted the log line it was hunting for. Matching the *words* rather than the *emission*
 is precisely the error above, committed while building the detector for it — which is
@@ -265,7 +265,7 @@ large, sort by *how the unguarded ones differ* — in all three cases above the
 unguarded sites were the ones handling the richer, more attacker-influenced data,
 because those were added later.
 
-This is `rules/12` §3's "verify per target, not once" pointed the other way:
+This is `rules/15` §3's "verify per target, not once" pointed the other way:
 there the population belongs to a **guard** and you inject a defect per member;
 here it belongs to a **mitigation**, and the tests pass for the honest reason
 that they exercise the guarded member. Neither pass finds the other's version.

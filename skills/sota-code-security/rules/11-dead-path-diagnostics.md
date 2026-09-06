@@ -10,7 +10,7 @@ Use it in AUDIT as the sweep that decides *where* to apply rules/10, and in BUIL
 as the set of properties that make a stage falsifiable before you ship it.
 
 Related: inert controls (the catalog) → rules/10; **proving a control works, and
-validating the instrument or guard that reported it → rules/12**; fail-open authz
+validating the instrument or guard that reported it → rules/15**; fail-open authz
 → rules/03; truncation before inspection → rules/10 §2.7; mutation testing and
 watching a test fail → `sota-testing` rules/06 and rules/09; degradation telemetry →
 `sota-observability` rules/05; scale and cost → `sota-performance` rules/01;
@@ -62,6 +62,26 @@ Two refinements:
   the work.
 - **Duration that collapses after a change** is a regression signal. A scanner
   that got 30× faster and found the same number of issues did not get faster.
+
+**And the same arithmetic applied to your own reasoning: a rate computed over a window
+longer than the phenomenon describes the window, not the phenomenon.** `sota-observability`
+rules/02 §4 says averages hide what matters when you *design* a metric; this is the version
+that bites when you are *debugging*, and nothing routes you there. Field-reported
+2026-09-05: an importer's failures averaged **~4.2/s over an hour**, which was used to argue
+"steady per-call failure, not an expired-context spin" — and on that basis a correct fix was
+**retracted**. Per minute:
+
+```
+20:51..21:26   2-3 errors per minute
+21:27          14,977 errors in ONE minute   (~250/s)
+```
+
+The hourly mean was arithmetically true and qualitatively backwards. Before reasoning from
+a rate, look at the distribution at a resolution **finer than the event you are
+hypothesising about** — a burst and a trickle produce the same mean. And where the data
+carries a per-event cost, read that too: each of those failures recorded a duration of
+**11–12 µs**, the signature of a cancelled context returning before any I/O. **12 µs and
+12 s are different mechanisms with identical counts.**
 
 ### 2.2 Scope of the check — print the denominator
 
@@ -385,8 +405,8 @@ environment change (auth switched on) kills them all at once.
 Every diagnostic above is run *by* something — a script, a gate, a scorer, a
 grep. Each of those is a control by the definition in §1, and the sweep is not
 finished until they have been held to the same standard: **rules/12** carries the
-mutation probe, the bar an instrument must clear before its number is quoted, and
-the guard that is an instance of what it guards. A finding produced by an
+mutation probe; **rules/15** carries the bar an instrument must clear before its
+number is quoted, and the guard that is an instance of what it guards. A finding produced by an
 unvalidated instrument is not yet a finding.
 
 ---
@@ -405,6 +425,9 @@ unvalidated instrument is not yet a finding.
 - [ ] Every **generated** result checked against the cap that bounded it before
       parsing (`output_tokens == max_tokens`, rows == `LIMIT`), and parse-error
       offsets logged beside the document size (§2.2)?
+- [ ] Any **rate or average used in an argument** re-read at a resolution finer than the
+      event it is about, and its per-event cost inspected — a burst and a trickle share a mean,
+      and 12 µs vs 12 s are different mechanisms with identical counts (§2.1)?
 - [ ] Cross-scale delta run on at least the stages that gate on size: output
       that does not grow with input investigated (§2.3)?
 - [ ] No stage on a data path is **silent** — start/finish with counts (§2.4)?
@@ -448,4 +471,4 @@ unvalidated instrument is not yet a finding.
 - [ ] **Every collection a suite iterates has a non-empty assertion** — without one an
       empty parameter set reports SKIPPED and the suite passes vacuously.
 - [ ] The tools that produced these findings held to the same standard —
-      mutation probe, instrument bar, guard recursion (§7 → **rules/12**)?
+      mutation probe (**rules/12**), instrument bar and guard recursion (**rules/15**) (§7)?
