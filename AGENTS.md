@@ -26,7 +26,7 @@ enforcement is on). Every change goes through a pull request:
 
 ## Invariants (enforced in pre-commit and CI)
 
-`scripts/check-invariants.sh` runs **23 checks** and fails the build on any of them. One
+`scripts/check-invariants.sh` runs **25 checks** and fails the build on any of them. One
 line each below. The *rationale* — and the real incident behind every one — lives in the
 script's own header, at the point of use, and the practical "what this means for your
 PR" version is in [CONTRIBUTING.md](CONTRIBUTING.md#the-invariants-enforced).
@@ -56,6 +56,8 @@ PR" version is in [CONTRIBUTING.md](CONTRIBUTING.md#the-invariants-enforced).
 | 21 | a **CHANGELOG version below the top entry has no git tag** — invariant 5 checks a tag is never *ahead* of VERSION; nothing checked the other way, and v1.30.0 and v1.31.2 both shipped untagged and unreachable. The top entry is exempt: it is tagged after the merge |
 | 22 | a **`- [ ]` checklist bullet is stranded inside a code fence** in a skill file — it renders as sample output, so no auditor reads it. Two landed in `sota-code-security` rules/11 §2.2 in PR #226 and sat there three weeks; invariant 2 tracks fence state but only for the *heading*, and the line count never changed |
 | 23 | a **CHANGELOG version heading has no `[X.Y.Z]:` link reference**, an **orphan ref** whose heading lives in another file, or a ref pointing at the wrong tag — sibling of 21, failing independently of it. A heading with no ref is not a broken link: Markdown renders it as literal text, so invariant 8 never sees it. Four consecutive releases shipped that way. Compares **sets per file**, never counts |
+| 24 | **this file** reaches 200 lines, or `CLAUDE.md`/`GEMINI.md` stop being symlinks to it — it loads into *every* session, which is the whole reason for the cap, and that reason depends on the symlinks. A **cap, not a target** (settled 2026-09-06); it had already been breached twice, at 201 and 202, each time by adding an invariant's own table row |
+| 25 | the number of **eval CLI flags undocumented in `evals/README.md`** rises above the pin. A ratchet, not a rule: `--no-gate-arm` shipped documented in the README index and in `--help` but not in the harness's own front door, while 27 pre-existing generic flags (`--json`, `--build-model`) would make a strict rule open red and get it disabled. Fails closed if the scan finds **no** flags |
 
 **Only instruction files are capped** — a file is capped iff an agent loads it *as instructions*:
 `skills/*/SKILL.md` and `skills/*/rules/*.md`, nothing else. README, CHANGELOG, `docs/`, `evals/`,
@@ -86,16 +88,15 @@ BUILD/AUDIT, the `rules/01` split, then the library map to `rules/04`: **detail 
 Editing the router's **BUILD section** moves `ROUTER_BUILD_SHA` and aborts the evals; AUDIT does not.
 The gates enumerate via `git ls-files`, so an **unstaged new file is invisible** — `git add` first.
 
-**`scripts/check-negative-controls.sh` proves our gates can still fail.** Its CI job runs
-it plus `evals/smoke-runners.py`, over **two** subjects: `check-invariants.sh` (part A) and `verify-setup.sh`
-(part B). Each probe injects a known-bad and requires *the intended check* to be the one
-that complains — a non-zero exit for any other reason is a **FALSE PASS**, not a catch.
-Part A mutates a good tree in a disposable git worktree; part B is inverted, building a
-fully-configured fake machine (`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and
-removing one thing per probe. **29 probes** (re-run 2026-09-06: `PASS: 29/29`; wrong twice
+**`scripts/check-negative-controls.sh` proves our gates can still fail.** Its CI job runs it
+plus `evals/smoke-runners.py`, over **two** subjects: `check-invariants.sh` (part A) and
+`verify-setup.sh` (part B). Each probe injects a known-bad and requires *the intended check* to
+complain — a non-zero exit for any other reason is a **FALSE PASS**, not a catch. Part A mutates
+a good tree in a disposable git worktree; part B is inverted, building a fully-configured fake
+machine (`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **32 probes** (re-run 2026-09-06: `PASS: 32/32`; wrong twice
 before, and deliberately **not** gated — a static count of call sites under-reads, so only
 running it is authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18, 19,
-20, 21, 22, 23** — 18 of 23 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. The five
+20, 21, 22, 23, 24, 25** — 20 of 25 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. The five
 unprobed invariants (5, 9, 11, 12, 14) need state a worktree lacks (a tag, a merge base, an
 mtime); the harness prints that reason, so what is *not* covered is printed rather than implied.
 **A probe asserts its own mutation landed** (a stale literal once printed `NOT CAUGHT: INERT`,
@@ -110,8 +111,8 @@ only after such a sweep; the run goes red past the **6-month** window. Per-file
 line-1 markers are retired. Sweep runbook and eval harness:
 [docs/MAINTENANCE.md](docs/MAINTENANCE.md) and [evals/](evals/).
 
-Secrets are scanned by **gitleaks** (`.gitleaks.toml`, which disables only the
-noisy entropy-based `generic-api-key` rule so the security skills' intentional
+Secrets are scanned by **gitleaks** (`.gitleaks.toml` disables only the noisy
+entropy-based `generic-api-key` rule, so the security skills' intentional
 secret-shaped examples don't false-positive). CI scans the **full git history**
 (`gitleaks git` on a `fetch-depth: 0` checkout), not just the working tree, and
 **asserts that scope**: a shallow checkout scans 1 commit, reports "no leaks
@@ -157,8 +158,8 @@ the setting. The pre-commit hook scans each commit locally.
   substring; assert a scripted edit landed; pin anything hand-mirrored from the
   library). Read it before changing anything under `evals/` — four harness changes in
   one day silently measured nothing while still printing plausible numbers
-- **The read-only setup check, in two halves** — `init-gates.sh` sets a repo up;
-  these check the result, because "configured" and "working" render identically.
+- **The read-only setup check, in two halves** — `init-gates.sh` sets a repo up; these
+  check the result, because "configured" and "working" render identically.
   `scripts/verify-setup.sh` does the mechanical half (skills reachable, hook
   installed vs merely configured, licence under any name, whether CI has ever
   *executed* and ever *rejected* — `--runs N` widens that sample);
@@ -173,7 +174,7 @@ the setting. The pre-commit hook scans each commit locally.
   a session *applying* the library, and an unlicensed source whose ideas can be
   taken but whose text cannot, both land here on the same terms
 - [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md) — which of this repo's
-  conventions are **enforced** (23 invariants + 9 more inside the eval runners) and
+  conventions are **enforced** (25 invariants + 9 more inside the eval runners) and
   which are prose, with the three filters a convention must pass to earn a gate
   (has it already failed · does it fail silently · is it mechanically checkable).
   Read it before proposing a new gate — it argues against gating the ~18 judgment
@@ -183,10 +184,9 @@ the setting. The pre-commit hook scans each commit locally.
   version- and count-bearing surface (README, router, manifests, social
   preview)
 - [docs/MAINTENANCE.md](docs/MAINTENANCE.md) — accuracy sweep runbook + eval harness
-- [docs/WHY-IT-WORKS.md](docs/WHY-IT-WORKS.md) — the measured-efficacy case
-  (lift **vs. an unguided model**, plus a scoped head-to-head vs. named competing
-  libraries) + the design
-  benefits; keep its numbers in sync with the eval results when they change
+- [docs/WHY-IT-WORKS.md](docs/WHY-IT-WORKS.md) — the measured-efficacy case (lift **vs.
+  an unguided model**, plus a scoped head-to-head vs. named competing libraries) + the
+  design benefits; keep its numbers in sync with the eval results when they change
 - [docs/WHY-COMPLETENESS-RESIDUAL.md](docs/WHY-COMPLETENESS-RESIDUAL.md) — why a
   with-library build still drops a cross-cutting rule now and then (a salience /
   context-length attention effect, **not** a coverage gap) + the counter-design
