@@ -96,6 +96,17 @@ not deploy rollback — is your primary mitigation lever.
 §6), degradation switches (rules/04 §5), and migration cutovers (rules/01 §8).
 Test both states of every active flag in CI for critical paths.
 
+**Rule:** A progressive rollout means **two versions of the application are running at
+once**, so both flag states must be compatible with the schema *as it is right now* —
+not with the schema either version was written against. The flag rule and the migration
+rule interact and neither is sufficient alone: expand/contract makes the *schema* safe
+for two readers (`sota-databases` rules/02), and the flag makes the *behaviour*
+switchable, but nothing checks that the off-state still works after the contract step
+has run. Order it: expand → deploy both-compatible code → roll the flag → **remove the
+flag** → contract. Contracting while a flag can still route traffic to the old path is
+the version-skew outage, and it presents as "the rollback made it worse" because the
+rollback target no longer matches the data.
+
 ## 7. Delivery pipeline and environments
 
 **Rule:** Trunk-based development with small PRs; every merge produces a
@@ -186,6 +197,11 @@ the app: dropping a span must never block or crash request serving (bounded
 buffers, drop-and-count).
 
 ## Audit checklist
+
+- [ ] For any flag rolled out across a schema change: is the **contract step ordered after
+      flag removal**, and does the off-state still work against the current schema? Two app
+      versions run during a rollout, and contracting while the old path is still reachable is
+      the version-skew outage that presents as "the rollback made it worse" (§6).
 
 - Is exactly one immutable, digest-pinned artifact built per commit and promoted across environments? Any `latest` tags or per-env rebuilds?
 - Is all environment-varying config injected at runtime, schema-validated at startup with fail-fast? Any `if env == "prod"` branches?

@@ -5,6 +5,95 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.35.0] - 2026-09-07
+
+**Front door checked:** sota-skill-security · trust boundary · change surface · GATE-ABSORPTION
+
+**Minor** — a new skill (42), and a new eval instrument. A new skill is sufficient for a
+minor and always has been.
+
+Two external assessments proposed ~13 additions. **Four landed. Five were refuted by
+measurement or by reading the tree — including the reframing I proposed myself.**
+
+### Added
+
+- **`sota-skill-security`** — the supply chain of things that tell an agent what to do.
+  The one item both assessments got right and the only gap that survived two concept
+  sweeps at zero hits. A skill is executable influence: it does not run in the
+  interpreter, it runs in the model, and **a malicious dependency has to be invoked while
+  a malicious skill only has to be loaded**. Three rules files: provenance and
+  installation (pin it, review the *closure* not the entry point, a description change is
+  a behaviour change); the trust boundary and capability (**anything a PR can edit is
+  inside it** — instructions from an untrusted repo are data, not orders); authoring and
+  auditing (a skill is a control, and *confidently wrong* is the dangerous failure).
+  - **It caught its own author on the first gate run.** The initial description was
+    **1308 characters against the 1024 cap** — a skill that would have been installed,
+    correct, and silently never loaded, which is exactly what its own `rules/03` §1 warns
+    about. Trimmed to 984.
+
+- **`evals/run-routing-recall.py` + 10 gold-set cases** — routing **recall and precision**
+  over a set, where `run-desc-routing.py` only scores a pick-one decision. `--selftest`
+  carries five scorer references including the discriminating one (a *pick-everything*
+  answer must lose precision, or the runner adds nothing over top-1) and was watched to
+  fail on a mutated scorer. Guards abort on an empty catalogue, an empty case file, and
+  **a gold set naming a skill that does not exist** — which would cap recall below 1.0
+  forever and read as a routing failure rather than a case-authoring bug.
+
+- **`sota-docs-workflow/rules/03` §5a — the change surface is a design decision.** No
+  drive-by reformats (they destroy the diff *and* misattribute `git blame` permanently), a
+  stated generated-file policy with generated lines in their own commit, decomposition
+  **by reviewability rather than line count**, migrations sequenced so every commit is
+  rollback-safe, revert-vs-fix-forward by blast radius, and keeping mechanical moves
+  separate so `git bisect` does not land on a 4,000-line reformat.
+
+- **`sota-architecture/rules/06` §6 — flag rollout meets version skew.** A progressive
+  rollout means two app versions run at once, so the **contract step must be ordered after
+  flag removal**. Contracting while the old path is still reachable is the outage that
+  presents as *"the rollback made it worse"*.
+
+- **Superpowers added to the competitor manifest** at pinned SHA `b36e0829` — named by
+  both assessments as the methodological competitor, and the one repo our head-to-head
+  instrument was not pointed at. Licence (MIT) and all four file paths read from the
+  GitHub API, not from the assessment, with a caveat recorded in the manifest that it is
+  process guidance measured by a domain-practice yardstick.
+
+### Measured
+
+- **Routing recall 0.975, precision 0.569, over-selected in 8 of 10 cases**
+  ([ROUTING-RECALL](evals/results/2026-09-06/ROUTING-RECALL.md)). **This refutes the
+  reframing it was built to test.** Both assessments called MCP security, agent
+  engineering and browser verification missing skills; I argued they were *unreachable*
+  rather than absent; the second assessment adopted that and built a framework on it.
+  All three shapes route at **recall 1.00**. The knowledge is found every time. Against
+  gold sets **transcribed from the router's own composition rules**, precision is 0.45 —
+  the model loads roughly twice what the router says to load — while two single-skill
+  controls score 1.00/1.00.
+
+- **ROADMAP 32 closed as measured-and-underpowered**
+  ([GATE-ABSORPTION](evals/results/2026-09-06/GATE-ABSORPTION.md)). `with` 1.00,
+  `with+pad` 0.97, `pad-nogate` 0.93 → **GATE-ABSORPTION +0.04**. The registered H1
+  needed ≥ +0.05, so **H1 is refuted by my own rule**; H0's null band was ±0.03, so H0 is
+  unsupported too. The result lands in the dead zone between the two bands: underpowered,
+  not null. The registered ceiling risk did not materialise, and item 25 replicated
+  (−0.01 → −0.03).
+
+### Rejected, with the evidence
+
+- **MCP security, agent engineering and browser verification as new skills** — refuted by
+  the routing measurement above.
+- **A `routing contract` YAML in skill frontmatter** — would be **inert**. Frontmatter is
+  two fields and only the description auto-loads; `covers:`/`requires:` would be read by
+  nothing while looking exactly like a routing system, and invariant 4 would pass it. The
+  router already carries **21 hand-written composition rules**.
+- **Incident response** — `sota-detection-engineering/rules/06` and
+  `sota-privacy-compliance/rules/06` both exist and the router routes to them by name.
+- **Scala/Elixir/IDP depth** — `README.md` already declares these out of scope.
+- **Flag lifecycle — my own recommendation, and it was wrong.** I reported `flag
+  debt|flag lifecycle` at 0 files and proposed adding it; `rules/06` §6 already requires
+  an owner, an **expiry ticket at creation**, removal within weeks, and names the 2^N
+  stale-flag anti-pattern. I searched for the words, not the concept — the same mistake I
+  had just corrected in someone else.
+
 ## [1.34.0] - 2026-09-06
 
 **Front door checked:** rules/15 · rules/09 · unconsumable · termination message
@@ -6501,6 +6590,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.35.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.35.0
 [1.34.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.34.0
 [1.33.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.33.1
 [1.33.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.33.0

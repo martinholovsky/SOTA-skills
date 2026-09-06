@@ -84,6 +84,22 @@ inconvenient result:
   case's own files. It does not guarantee the padding is *contradictory*, only
   unrelated — so this measures dilution, not conflict, and the write-up must say so.
 
+## Model choice, fixed before the run (2026-09-06)
+
+**`anthropic/claude-sonnet-4.6` build / `anthropic/claude-opus-4.8` judge — the runner's
+defaults, and exactly what item 25 used** (read back from
+`results/2026-09-01/completeness-padding.json`'s `_meta`). This experiment exists to remove
+a confound *in item 25's number*, so running a different model would re-introduce one.
+
+**A correction to this document, made before any spend:** the arms table above cites the
+`with` arm at 1.00 "on `sonnet-5`". Item 25's run — the one `with+pad` reproduces — was on
+**sonnet-4.6**, which also scored `with` = 1.00. The registered thresholds are all
+*within-run* differences (`GATE-ABSORPTION` = mean(with+pad) − mean(pad-nogate)), so they
+are unaffected by which model is used; only the comparability to item 25 is, and that is
+what fixes the choice. Recorded here rather than silently corrected, because a
+pre-registration edited after results is worthless and one edited before them is only
+worth what its timestamp says.
+
 ## Cost and status
 
 7 cases × 4 arms = **28 build calls + 28 judge calls**, on top of the 21 the three-arm
