@@ -68,7 +68,8 @@ part that failed.
 active** — the terminal re-read that exists precisely to recover dropped cross-cutting
 concerns. So the defensible claim is *"lean plus a terminal re-read is robust to 400 lines of
 competing context"*, not *"context length is free"*. Nobody has run padding with the gate
-**off**, and that is the experiment that would separate the two.
+**off**, and that is the experiment that would separate the two — see the 2026-09-06 update
+below: the arm for it now exists and is pre-registered, still unrun.
 
 ## Limits
 
@@ -89,3 +90,10 @@ indistinguishable from inert filler on routing (2026-08-27), and costs −0.01 o
 application (this run). What remains open is a *different* question the run surfaced — the
 same padding with the self-audit gate disabled — recorded as its own item rather than folded
 into a closed one.
+
+> **Update 2026-09-06 — the instrument for that follow-up now exists.** `--no-gate-arm` adds
+> a fourth arm carrying this same padding with `BUILD_WORKFLOW` removed, reporting
+> `GATE-ABSORPTION`. **It has not been run**, and the prediction is pre-registered with a
+> falsification condition before any spend:
+> [../2026-09-06/PRE-REGISTRATION.md](../2026-09-06/PRE-REGISTRATION.md). The −0.01 above is
+> unaffected and stands as published — the follow-up is a different question, not a re-run.

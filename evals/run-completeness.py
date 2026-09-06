@@ -18,6 +18,11 @@ Method (clean, raw OpenRouter API — no sota config anywhere):
     rules context unless principle 5 re-surfaces them — a salience/context-rot
     effect (docs/WHY-IT-WORKS.md), not a coverage gap. The without arm gets
     nothing.
+  - Optional arms: --pad-rules N adds a third arm carrying N lines of unrelated
+    rules prose (ROADMAP 25), and --no-gate-arm adds a fourth carrying that same
+    padding with the BUILD self-audit REMOVED (ROADMAP 32) -- the two together
+    separate "lean context" from "lean context plus a terminal re-read", which
+    item 25's -0.01 could not. See results/2026-09-06/PRE-REGISTRATION.md.
   - Judge: a DIFFERENT model, BLIND to which arm produced the artifact, scores
     each artifact against the case's fixed rubric of universal best practices
     (present/absent per criterion). Completeness = present / total.
