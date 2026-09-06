@@ -165,7 +165,20 @@ audit STRAT-HIGH-2).
   asserted gone — so the arm cannot differ by retrieval, only by attention. It reuses the
   existing prompt builder, judge and rubrics rather than forking a fifth mirror of the BUILD
   workflow. Guards: it refuses a short padding corpus, refuses if a skill name leaked, and
-  refuses if the padding drew from the case's own files. **Result 2026-09-01: −0.01** (with 1.00 → with+pad 0.99, six of seven cases unchanged). The null refutes the claim the flag was built to test, and both `rules/02` §1 and the router's BUILD step 2 were corrected rather than left standing — the router edit was prose-only, so `ROUTER_BUILD_SHA` moved after a clause-by-clause re-read confirmed `BUILD_WORKFLOW` was unaffected. Read the null as *lean-plus-gate is robust*, not *context is free*: the padded arm ran with the step-4 self-audit active, and nobody has run it with the gate off (ROADMAP 32).
+  refuses if the padding drew from the case's own files. **Result 2026-09-01: −0.01** (with 1.00 → with+pad 0.99, six of seven cases unchanged). The null refutes the claim the flag was built to test, and both `rules/02` §1 and the router's BUILD step 2 were corrected rather than left standing — the router edit was prose-only, so `ROUTER_BUILD_SHA` moved after a clause-by-clause re-read confirmed `BUILD_WORKFLOW` was unaffected. Read the null as *lean-plus-gate is robust*, not *context is free*: the padded arm ran with the step-4 self-audit active. **The arm that turns the gate off now exists** — `--no-gate-arm`, below — but has not been run; its prediction is pre-registered.
+- **`run-completeness.py --pad-rules N --no-gate-arm`** — the **fourth arm**, added 2026-09-06
+  for ROADMAP 32. `--pad-rules` alone leaves `BUILD_WORKFLOW` in the padded arm, so its −0.01
+  measures *lean plus the terminal self-audit*, not lean. This drops `BUILD_WORKFLOW` from a
+  padded arm and reports **`GATE-ABSORPTION` = mean(with+pad) − mean(pad-nogate)**: what step 4
+  recovers under competing context. Guards, both watched to fail: it **refuses `--no-gate-arm`
+  without `--pad-rules`** (that measures the gate alone, not the gate against competing context),
+  and **refuses if the ablation leaves the prompt byte-identical** to the gated arm — the same bar
+  `run-prompt-independence.py` applies, because an ablation that did not take is a duplicate arm
+  wearing a different label and reports its delta of zero as a result. **Not yet run**: the
+  prediction, a falsification condition and four ways it could measure nothing (including a
+  ceiling effect that would make it *uninformative* rather than null) are pre-registered in
+  [results/2026-09-06/PRE-REGISTRATION.md](results/2026-09-06/PRE-REGISTRATION.md). 28 build +
+  28 judge calls.
 - `cases/prompt-independence.jsonl` (6) + `run-prompt-independence.py` — **the only
   instrument that varies the prompt against the rule.** Every other set here asks the model
   to do the right thing under a *neutral* prompt; this one renders the same task at three
@@ -273,6 +286,7 @@ python3 evals/run-adjudication.py --samples 3 --temp 0.7   # audit precision (fa
 python3 evals/run-prompt-independence.py --selftest        # judge must separate 1.00/0.00 first
 python3 evals/run-prompt-independence.py                   # rule survival under a competing prompt
 python3 evals/run-completeness.py --pad-rules 400          # ROADMAP 25: does competing guidance cost rule APPLICATION?
+python3 evals/run-completeness.py --pad-rules 400 --no-gate-arm  # ROADMAP 32: is it the GATE that absorbs the padding?
 ```
 
 `--ablate` (on `run-clean.py`) drops `rules/10-silent-control-failure.md` from the

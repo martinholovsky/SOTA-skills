@@ -5,6 +5,52 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **The negative-control harness could accuse a healthy gate.** CI reported probe 4 as a
+  **FALSE PASS** on 2026-09-06 while the probe's *own* diagnostic line printed the expected
+  string — `got: OVER 1024 (1661 chars): skills/sota-golang/SKILL.md` — read out of the
+  same variable the verdict had just tested. Both cannot be true of the same content, so
+  the fault was in the comparison, not the gate.
+  - The verdict was `printf '%s\n' "$GATE_OUT" | grep -qF -- "$want"`. `grep -q` exits the
+    instant it matches, which is the shape `check-invariants.sh`'s own header warns about
+    (*"never `grep -m 1`/`head` on a pipe in here"*) and the likeliest cause under
+    `pipefail` — but **the precise signal is not established and is not claimed**: it
+    appeared only on the CI runner, the same commit passed **29/29** on macOS bash 3.2, and
+    a 400 KB synthetic reproduction would not trigger it locally.
+  - **The fix does not depend on knowing which.** Both verdicts now match in pure bash with
+    no pipe, no subprocess and no grep dialect, so they can only fail on content. Part B's
+    assertion is **anchored** (the expected text must appear on a `FAIL` line, not merely
+    somewhere after one), so it iterates lines via a here-doc rather than flattening to a
+    glob — a flat glob would have accepted a match on a different line, which loosens a
+    probe instead of fixing it. Both matchers were then shown to accept a correct
+    expectation *and reject a wrong one*.
+  - The lesson is the uncomfortable one: **this is the harness that exists to prove our
+    gates can fail, and it was itself capable of reporting a wrong answer** — the exact
+    class `sota-code-security` rules/12 §2 puts on the instrument. It had run green 6 times
+    before this.
+
+- **`AGENTS.md` was 201 lines against its own "keep it under 200" rule** — it symlinks to
+  `CLAUDE.md`/`GEMINI.md` and loads into every session, which is why the rule exists. It
+  crossed the line twice in two days (invariant 22's table row, then invariant 23's) and
+  nothing reported it either time. Reflowed to **199**; the rule now names the command to
+  re-check with. Recorded as **ROADMAP 35**, because a target nothing checks is the shape
+  this repo gates — the open question is whether 200 is a cap or a target.
+- **`AGENTS.md`'s denominator example read `ok (261 rules files)`** against a tree with
+  **262**. It is sample output in the one paragraph that tells you to print your
+  denominator.
+- **`evals/README.md` never got `--no-gate-arm`.** It shipped in v1.33.0 documented in the
+  root README's index and in the runner's `--help`, but not in the harness's own front
+  door — and that file's ROADMAP-25 entry still closed with *"nobody has run it with the
+  gate off"*. Invariant 14 resolves front-door terms against `README.md`/`docs/INDEX.md`
+  only, so it could not catch this. Recorded as **ROADMAP 36**.
+- The runner's docstring now names all four arms, and
+  [COMPLETENESS-PADDING](evals/results/2026-09-01/COMPLETENESS-PADDING.md) carries a dated
+  update pointing at the pre-registration — **superseded, not edited**: its −0.01 stands as
+  published, and its "nobody has run it with the gate off" is still true.
+
 ## [1.33.0] - 2026-09-06
 
 **Front door checked:** invariant 23 · link reference · GATE-ABSORPTION

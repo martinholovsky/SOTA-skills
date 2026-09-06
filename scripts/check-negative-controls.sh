@@ -140,7 +140,21 @@ probe() {  # <id> <name> <expected substring>   — mutation already applied
   if [ "$GATE_RC" -eq 0 ]; then
     echo "  [$id] $name — NOT CAUGHT: the gate still passed. This check is INERT."
     failed=$((failed + 1))
-  elif printf '%s\n' "$GATE_OUT" | grep -qF -- "$want"; then
+  # NO PIPE. This was `printf ... | grep -qF -- "$want"`, and on 2026-09-06 it
+  # reported probe 4 as a FALSE PASS while its own diagnostic line below printed the
+  # expected string out of the SAME variable -- a self-contradiction that can only come
+  # from the pipeline, not the content. It reproduced only on the CI runner (ubuntu,
+  # bash 5, GNU grep); 29/29 passed on macOS bash 3.2 in the same commit, and a 400 KB
+  # synthetic case would not reproduce it locally, so the precise signal is NOT
+  # established. `grep -q` exits the moment it matches, which is the shape
+  # check-invariants.sh's own header warns about ("never grep -m 1/head on a pipe in
+  # here") and the likeliest cause under `pipefail`.
+  #
+  # The fix does not depend on knowing which: a bash glob match has no pipe, no
+  # subprocess and no grep dialect, so the comparison can no longer fail for any reason
+  # other than the content. AN INSTRUMENT THAT CAN ACCUSE A HEALTHY GATE IS WORSE THAN
+  # NO INSTRUMENT -- this harness exists to find exactly that, in everything but itself.
+  elif case "$GATE_OUT" in (*"$want"*) true ;; (*) false ;; esac; then
     echo "  [$id] $name — caught"
     caught=$((caught + 1))
   else
@@ -354,6 +368,16 @@ else
   exit 1
 fi
 
+vs_out_has_fail() {  # a FAIL line that ALSO contains $1 — same line, no pipe (see part A)
+  local needle="$1" line
+  while IFS= read -r line; do
+    case "$line" in (FAIL*"$needle"*) return 0 ;; esac
+  done <<VSEOF
+$VS_OUT
+VSEOF
+  return 1
+}
+
 vs_probe() {  # <name> <expected check label>  — fixture already broken by caller
   local name="$1" want="$2"
   tested=$((tested + 1))
@@ -361,7 +385,11 @@ vs_probe() {  # <name> <expected check label>  — fixture already broken by cal
   if [ "$VS_RC" -eq 0 ]; then
     echo "  [vs] $name — NOT CAUGHT: verify-setup still exited 0. This check is INERT."
     failed=$((failed + 1))
-  elif printf '%s\n' "$VS_OUT" | grep -q "^FAIL.*${want}"; then
+  # Same de-piping as part A, but this assertion is ANCHORED -- the want must appear on
+  # a FAIL line, not merely somewhere after one. A flat glob over the whole buffer would
+  # have accepted a match on a different line, which loosens the probe rather than fixing
+  # it; iterating lines keeps `grep "^FAIL.*want"` semantics exactly, with no pipe.
+  elif vs_out_has_fail "$want"; then
     echo "  [vs] $name — caught"
     caught=$((caught + 1))
   else

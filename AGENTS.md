@@ -57,32 +57,31 @@ PR" version is in [CONTRIBUTING.md](CONTRIBUTING.md#the-invariants-enforced).
 | 22 | a **`- [ ]` checklist bullet is stranded inside a code fence** in a skill file — it renders as sample output, so no auditor reads it. Two landed in `sota-code-security` rules/11 §2.2 in PR #226 and sat there three weeks; invariant 2 tracks fence state but only for the *heading*, and the line count never changed |
 | 23 | a **CHANGELOG version heading has no `[X.Y.Z]:` link reference**, an **orphan ref** whose heading lives in another file, or a ref pointing at the wrong tag — sibling of 21, failing independently of it. A heading with no ref is not a broken link: Markdown renders it as literal text, so invariant 8 never sees it. Four consecutive releases shipped that way. Compares **sets per file**, never counts |
 
-**Only instruction files are capped** — a file is capped iff an agent loads it *as
-instructions*: `skills/*/SKILL.md` and `skills/*/rules/*.md`, nothing else. README,
-CHANGELOG, `docs/`, `evals/`, this file and every script are **uncapped**, deliberately
-(2026-07-15) — navigability there comes from [docs/INDEX.md](docs/INDEX.md), not a
-ceiling. **A line-cap claim anywhere that does not say *skill files* is stale — fix
-it.** The 500 matches the Agent Skills guidance (*"keep `SKILL.md` under 500 lines; move
-detailed reference material to separate files"*) — `rules/*.md` are those files.
+**Only instruction files are capped** — a file is capped iff an agent loads it *as instructions*:
+`skills/*/SKILL.md` and `skills/*/rules/*.md`, nothing else. README, CHANGELOG, `docs/`, `evals/`,
+this file and every script are **uncapped**, deliberately (2026-07-15) — navigability there comes
+from [docs/INDEX.md](docs/INDEX.md), not a ceiling. **A line-cap claim anywhere that does not say
+*skill files* is stale — fix it.** The 500 matches the Agent Skills guidance (*"keep `SKILL.md`
+under 500 lines; move detailed reference material to separate files"*) — `rules/*.md` are those.
 
-**This file is the exception.** `CLAUDE.md` and `GEMINI.md` symlink here, so it loads
-into **every** session, where the platform's guidance is *"target under 200 lines"* —
-long always-loaded files reduce adherence. Ungated, and a different constraint from
-invariant 1. Keep it under 200: detail goes to `CONTRIBUTING.md` behind a pointer.
+**This file is the exception.** `CLAUDE.md` and `GEMINI.md` symlink here, so it loads into
+**every** session, where the platform's guidance is *"target under 200 lines"* — long
+always-loaded files reduce adherence. Ungated, and a different constraint from invariant 1.
+Keep it under 200 (**re-check with `awk 'END{print NR}'` each cut** — two additions in two days
+took it to 202): detail goes to `CONTRIBUTING.md` behind a pointer.
 
-**Every file-list-driven check reports its denominator** (`ok (261 rules files)`) and
-**fails closed on an empty scope** — `0 checked, 0 failed, exit 0` is the signature of a
-gate that verifies nothing (`sota-code-security` rules/11 §2.2). Added 2026-07-30 after
-checks 2 and 10 printed `ok` over *zero* files; 4 and 8 were only retrofitted
-2026-08-16, so this very sentence was false for a while in the one file that states the
-rule. If you add a check that is a promise you must keep, and the script's header
-carries the three rules the lesson produced: watch it fail first, print your
-denominator, skip rather than guess.
+**Every file-list-driven check reports its denominator** (`ok (262 rules files)`) and
+**fails closed on an empty scope** — `0 checked, 0 failed, exit 0` is the signature of a gate
+that verifies nothing (`sota-code-security` rules/11 §2.2). Added 2026-07-30 after checks 2 and
+10 printed `ok` over *zero* files; 4 and 8 were only retrofitted 2026-08-16, so this very
+sentence was false for a while in the one file that states the rule. The script's header carries
+the three rules the lesson produced: **watch it fail first, print your denominator, skip rather
+than guess.**
 
 *Adding a `rules/NN` file?* Invariant 10 checks its own `SKILL.md` indexes it and
 **invariant 15** checks the library map (`skills/sota/rules/04`) lists it, both directions.
-`skills/sota/SKILL.md` is at **398/500** (re-counted 2026-09-02, after its library map moved to
-`rules/04` — the third offload, after BUILD/AUDIT and the `rules/01` split: **detail belongs in
+`skills/sota/SKILL.md` is at **398/500** (re-verified 2026-09-06; three offloads got it there —
+BUILD/AUDIT, the `rules/01` split, then the library map to `rules/04`: **detail belongs in
 `rules/`, imperatives in the router**). Wrong **five** times — **re-count with `grep -c ''`**.
 Editing the router's **BUILD section** moves `ROUTER_BUILD_SHA` and aborts the evals; AUDIT does not.
 The gates enumerate via `git ls-files`, so an **unstaged new file is invisible** — `git add` first.
@@ -95,15 +94,14 @@ Part A mutates a good tree in a disposable git worktree; part B is inverted, bui
 fully-configured fake machine (`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and
 removing one thing per probe. **29 probes** (re-run 2026-09-06: `PASS: 29/29`; wrong twice
 before, and deliberately **not** gated — a static count of call sites under-reads, so only
-running it is authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16,
-17, 18, 19, 20, 21, 22, 23** — 18 of 23 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. The five
-unprobed invariants (5, 9, 11, 12, 14) need state a worktree lacks (a tag, a merge base,
-an mtime); the harness prints that reason, so what is *not* covered is printed rather than
-implied. Probe **21** was a FALSE PASS on its first draft (it tripped invariant 5 instead),
-and the harness refused to credit the catch — the point of asserting the *intended* check. **A probe asserts its own mutation landed** — they are hardcoded literals, and a
-stale one printed `NOT CAUGHT: INERT`, accusing a healthy gate.
-Adding a check? **Invariant 19 already enforces that it has a known-bad** — nothing to
-remember. `--self-test` runs the suite and then this harness.
+running it is authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18, 19,
+20, 21, 22, 23** — 18 of 23 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. The five
+unprobed invariants (5, 9, 11, 12, 14) need state a worktree lacks (a tag, a merge base, an
+mtime); the harness prints that reason, so what is *not* covered is printed rather than implied.
+**A probe asserts its own mutation landed** (a stale literal once printed `NOT CAUGHT: INERT`,
+accusing a healthy gate) and a catch for the wrong reason is refused — probe 21 was a FALSE PASS
+on its first draft. Adding a check? **Invariant 19 already enforces that it has a known-bad.**
+`--self-test` runs the suite and then this harness.
 
 Separately, `scripts/check-freshness.sh` (run monthly by
 `.github/workflows/freshness.yml`) tracks the root `LAST-VERIFIED` stamp — the date
