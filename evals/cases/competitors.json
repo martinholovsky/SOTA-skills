@@ -1,45 +1,59 @@
 {
-  "_note": "Competitor content manifest for run-competitors.py. Content is NOT vendored here (it is third-party); clone each repo at the pinned SHA into a --competitors-dir and the harness concatenates the listed files into that competitor's guidance bundle. Files chosen 2026-07-14 as each repo's best-matching content for building a secure Python/FastAPI backend feature (the completeness tasks), at a token budget comparable to a SOTA per-case arm. Licenses permit reuse (MIT / CC0); attribute in any published result.",
-  "competitors": {
-    "ECC": {
-      "repo": "affaan-m/ECC",
-      "sha": "ed387446052dfbc6b52de149406b70efa65edc59",
-      "license": "MIT",
-      "stars_approx": 230000,
-      "files": [
-        "the-security-guide.md",
-        "agents/fastapi-reviewer.md",
-        "agents/python-reviewer.md",
-        "agents/security-reviewer.md"
-      ]
-    },
-    "claude-skills": {
-      "repo": "alirezarezvani/claude-skills",
-      "sha": "84dc5a4f6ab93df5195805010572d7d0f874dadb",
-      "license": "MIT",
-      "stars_approx": 22600,
-      "files": [
-        "standards/security/security-standards.md",
-        "engineering/security-guidance/skills/security-guidance/SKILL.md",
-        "engineering/strict-api/SKILL.md",
-        "engineering/skills/api-design-reviewer/SKILL.md"
-      ]
-    },
-    "awesome-cursorrules": {
-      "repo": "PatrickJS/awesome-cursorrules",
-      "sha": "b044f956f021b6e8877f16781bcfc466a6a120e9",
-      "license": "CC0-1.0",
-      "stars_approx": 40300,
-      "files": [
-        "rules/fastapi.mdc",
-        "rules/fastapi-production-architecture-cursorrules-prompt-file.mdc",
-        "rules/python.mdc",
-        "rules/python-312-fastapi-best-practices-cursorrules-prom.mdc",
-        "rules/python-cursorrules-prompt-file-best-practices.mdc",
-        "rules/python-fastapi-best-practices-cursorrules-prompt-f.mdc",
-        "rules/python-fastapi-scalable-api-cursorrules-prompt-fil.mdc",
-        "rules/security-devsecops-ssdls-appsec.mdc"
-      ]
-    }
+ "_note": "Competitor content manifest for run-competitors.py. Content is NOT vendored here (it is third-party); clone each repo at the pinned SHA into a --competitors-dir and the harness concatenates the listed files into that competitor's guidance bundle. Files chosen 2026-07-14 as each repo's best-matching content for building a secure Python/FastAPI backend feature (the completeness tasks), at a token budget comparable to a SOTA per-case arm. Licenses permit reuse (MIT / CC0); attribute in any published result.",
+ "competitors": {
+  "ECC": {
+   "repo": "affaan-m/ECC",
+   "sha": "ed387446052dfbc6b52de149406b70efa65edc59",
+   "license": "MIT",
+   "stars_approx": 230000,
+   "files": [
+    "the-security-guide.md",
+    "agents/fastapi-reviewer.md",
+    "agents/python-reviewer.md",
+    "agents/security-reviewer.md"
+   ]
+  },
+  "claude-skills": {
+   "repo": "alirezarezvani/claude-skills",
+   "sha": "84dc5a4f6ab93df5195805010572d7d0f874dadb",
+   "license": "MIT",
+   "stars_approx": 22600,
+   "files": [
+    "standards/security/security-standards.md",
+    "engineering/security-guidance/skills/security-guidance/SKILL.md",
+    "engineering/strict-api/SKILL.md",
+    "engineering/skills/api-design-reviewer/SKILL.md"
+   ]
+  },
+  "awesome-cursorrules": {
+   "repo": "PatrickJS/awesome-cursorrules",
+   "sha": "b044f956f021b6e8877f16781bcfc466a6a120e9",
+   "license": "CC0-1.0",
+   "stars_approx": 40300,
+   "files": [
+    "rules/fastapi.mdc",
+    "rules/fastapi-production-architecture-cursorrules-prompt-file.mdc",
+    "rules/python.mdc",
+    "rules/python-312-fastapi-best-practices-cursorrules-prom.mdc",
+    "rules/python-cursorrules-prompt-file-best-practices.mdc",
+    "rules/python-fastapi-best-practices-cursorrules-prompt-f.mdc",
+    "rules/python-fastapi-scalable-api-cursorrules-prompt-fil.mdc",
+    "rules/security-devsecops-ssdls-appsec.mdc"
+   ]
+  },
+  "Superpowers": {
+   "repo": "obra/superpowers",
+   "sha": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+   "license": "MIT",
+   "stars_approx": 282000,
+   "_added": "2026-09-06. Named by two external assessments as the methodological competitor \u2014 'a complete agentic software-development methodology, not merely a best-practices library'. We had a head-to-head instrument pointed at three other repos and not at this one, which is the comparison the assessments actually rest on. Repo, license (MIT) and SHA read from the GitHub API 2026-09-06, not from the assessment.",
+   "_caveat": "DIFFERENT SHAPE, so read the result carefully. Superpowers is process/methodology guidance (TDD loop, systematic debugging, verification-before-completion); the completeness cases score whether a built artifact embeds domain best practices. A low score here is evidence about fit to THIS measure, not about the project \u2014 say so in any published number.",
+   "files": [
+    "skills/test-driven-development/SKILL.md",
+    "skills/test-driven-development/writing-good-tests.md",
+    "skills/verification-before-completion/SKILL.md",
+    "skills/systematic-debugging/SKILL.md"
+   ]
   }
+ }
 }

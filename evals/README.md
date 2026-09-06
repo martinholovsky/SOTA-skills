@@ -166,6 +166,27 @@ audit STRAT-HIGH-2).
   existing prompt builder, judge and rubrics rather than forking a fifth mirror of the BUILD
   workflow. Guards: it refuses a short padding corpus, refuses if a skill name leaked, and
   refuses if the padding drew from the case's own files. **Result 2026-09-01: −0.01** (with 1.00 → with+pad 0.99, six of seven cases unchanged). The null refutes the claim the flag was built to test, and both `rules/02` §1 and the router's BUILD step 2 were corrected rather than left standing — the router edit was prose-only, so `ROUTER_BUILD_SHA` moved after a clause-by-clause re-read confirmed `BUILD_WORKFLOW` was unaffected. Read the null as *lean-plus-gate is robust*, not *context is free*: the padded arm ran with the step-4 self-audit active. **The arm that turns the gate off now exists** — `--no-gate-arm`, below — but has not been run; its prediction is pre-registered.
+- **`cases/routing-recall.jsonl` (10) + `run-routing-recall.py`** — **routing recall and
+  precision over a gold SET**, added 2026-09-06. `run-desc-routing.py` scores a pick-ONE
+  decision (one `expect`, one distractor); this one asks for *every* skill a task needs and
+  scores `recall = |picked ∩ gold| / |gold|` and `precision = |picked ∩ gold| / |picked|`,
+  exposing the two failure modes a top-1 metric cannot see: **under-selection** and
+  **over-selection**. Objective scoring, no judge. Flags: `--selftest` (five scorer
+  references that must separate — including the discriminating one, that *pick-everything*
+  must lose precision, or the runner adds nothing over top-1), `--model`, `--samples`,
+  `--temp`, `--cases`, `--out`.
+  - **Gold sets are transcribed from the router's own cross-cutting rules** wherever one
+    states a composition, so the eval asks whether the *descriptions* deliver what the
+    *router body* promises — two surfaces nothing else checks for agreement. Cases without
+    a stated composition are marked `derived` and carry their reasoning inline.
+  - Guards: an empty catalogue aborts, an empty case file aborts, and **a gold set naming
+    a skill that does not exist aborts** — otherwise recall could never reach 1.0 and the
+    shortfall would read as a routing failure rather than a case-authoring bug.
+  - **Result 2026-09-06: recall 0.975, precision 0.569, over-selected in 8 of 10 cases**
+    ([ROUTING-RECALL](results/2026-09-06/ROUTING-RECALL.md)). It **refutes** the
+    "knowledge is unreachable" hypothesis it was built to test — the three shapes two
+    external assessments called missing skills all route at recall 1.00.
+
 - **`run-completeness.py --pad-rules N --no-gate-arm`** — the **fourth arm**, added 2026-09-06
   for ROADMAP 32. `--pad-rules` alone leaves `BUILD_WORKFLOW` in the padded arm, so its −0.01
   measures *lean plus the terminal self-audit*, not lean. This drops `BUILD_WORKFLOW` from a
