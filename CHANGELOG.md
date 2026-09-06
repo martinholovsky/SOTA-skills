@@ -5,7 +5,17 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.33.1] - 2026-09-06
+
+**Front door checked:** invariant 24 · invariant 25 · ratchet
+
+**Patch** — two CI invariants and doc corrections, all inside surfaces that already
+exist. A CI invariant on its own has shipped in a patch four times (8, 9, 11, 21), and a
+reader of these notes gains nothing new to run.
+
+Both invariants came from items opened the previous day, and in both the work was
+**deciding what the check should be** rather than writing it — each item's own proposed
+design turned out to be wrong.
 
 ### Added
 
@@ -47,6 +57,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     applied here to its own newest gate.
   - Watched to fail on three shapes: a newly added undocumented flag, a *slack* ratchet (a
     flag documented without lowering the pin), and the empty scan. **32 probes, 20 of 25.**
+  - **It then caught its own author, in a way worth recording.** "Documented" means the
+    flag string appears *somewhere* in `evals/README.md` — so writing `--some-flag` inside
+    a sentence explaining that it is undocumented satisfies it. The first draft of that
+    file's new contributor section listed five example flags, and the ratchet reported the
+    count falling **27 → 10**: seventeen flags banked as documented on the strength of a
+    sentence saying they were not. `sota-testing` rules/06 **§6.3** — an assertion keyed on
+    something that is true but is not evidence. **The slack direction failing is what
+    surfaced it**, which is the argument for gating both directions of a ratchet. The
+    limitation is now stated beside the check (`rules/12` §2.1, *state the traversed path
+    beside the probe — or beside the scan*).
+
+- **`evals/README.md` now tells a contributor what invariant 25 expects**, in *Extending* —
+  a flag added to a runner has to end up in that file, and *why* it is a ratchet rather
+  than a rule. The gate exists to push documentation into that file, so that file had to
+  say so.
+
+- **A harness convention for the FALSE PASS above**, in *Harness conventions*: a verdict
+  computed through a pipe can contradict the buffer it read, reading that contradiction
+  localises the fault to the comparison, and de-piping an **anchored** assertion into a
+  flat glob loosens it rather than fixing it.
 
 ### Fixed
 
@@ -6378,6 +6408,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.33.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.33.1
 [1.33.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.33.0
 [1.32.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.32.3
 [1.32.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.32.2

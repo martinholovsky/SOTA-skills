@@ -1611,6 +1611,16 @@ if [ "$v24" -eq 0 ]; then echo "    ok (${n24:-?} lines, CLAUDE.md + GEMINI.md s
 # a deliberate visible edit. Same stance as EXPECTED_UNPROBED and the same shape as
 # `sota-devsecops` rules/05 section 5.6's "fail when the enumerated count drops".
 #
+# WHAT THIS DOES NOT CHECK, stated here so the green is not read as more than it is:
+# "documented" means the flag string appears SOMEWHERE in evals/README.md. Writing
+# `--some-flag` inside a sentence explaining that it is undocumented satisfies it. That
+# happened on 2026-09-06, to this check's own author, in the paragraph of evals/README.md
+# that explains this ratchet -- listing five example flags took the undocumented count
+# from 27 to 10 and would have banked seventeen of them as documented on the strength of
+# a sentence saying they were not. `sota-testing` rules/06 section 6.3: an assertion keyed
+# on something that is true but is not evidence. The slack direction failing is what
+# surfaced it, which is the argument for gating BOTH directions of a ratchet.
+#
 # FAIL CLOSED ON AN EMPTY SCAN. This is a differential check, so it has the defect
 # `sota-code-security` rules/11 section 2.2a describes: if the regex drifts and
 # finds NO flags, undocumented becomes 0, 0 <= 27, and it passes green forever

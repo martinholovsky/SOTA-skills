@@ -463,6 +463,28 @@ that measures the library. So:
   (2026-07-30). Restrict to product code; treat tests, tools and vendored
   environments as out of scope unless they are the thing under test.
 
+### A verdict computed through a pipe can contradict the buffer it read (2026-09-06)
+
+`check-negative-controls.sh` reported a probe as a **FALSE PASS** while the probe's own
+diagnostic line — three lines later, out of **the same variable** — printed the string
+the verdict had just failed to find. Two statements about one buffer cannot both be true,
+so the fault was in the *comparison*, not the gate and not the content. **Read that
+contradiction before forming any hypothesis**: it localises the bug and, here, it is what
+stopped a working check being "fixed".
+
+The verdict was `printf '%s\n' "$buf" | grep -qF -- "$want"`. `grep -q` exits the instant
+it matches — the shape `check-invariants.sh`'s own header warns about. The signal was
+never established (CI-only; 29/29 on macOS in the same commit; a 400 KB synthetic case
+would not reproduce it), and **the fix did not require establishing it**: match in pure
+bash, `case "$buf" in (*"$want"*)`, with no pipe, no subprocess and no grep dialect, so
+it can fail only on content.
+
+**The trap inside the fix.** The other matcher was *anchored* (`grep "^FAIL.*$want"`).
+Flattening it to a glob over the whole buffer would have matched on a **different line** —
+loosening a probe rather than fixing it, which is the failure this harness exists to
+prevent. Iterate lines through a here-doc instead, and **after changing any matcher, show
+it accepts a correct expectation *and rejects a wrong one*.**
+
 ### Live-agent A/B runs (learned 2026-07-30)
 
 Driving real sub-agents instead of API calls introduces failure modes the
@@ -655,6 +677,30 @@ Artifact: `results/2026-07-13/completeness-7case-p5.json`.
   explicit go. The +0.00 prior stands until a run says otherwise.
 
 ## Extending
+
+**Adding a CLI flag to a runner? This file is where it has to end up.** `--no-gate-arm`
+shipped in v1.33.0 documented in the root README's index and in `--help`, and not here —
+the file a person opens to learn what an instrument *measures*. **Invariant 25** now
+ratchets that: the count of eval flags absent from this README may not rise. Documenting
+the new flag is the cheap fix; the alternative is a deliberate, visible edit to
+`MAX_UNDOC` in `scripts/check-invariants.sh`.
+
+It is a **ratchet, not a rule**, on purpose. **27** flags are already undocumented here —
+model selectors, output-format switches, timeouts and the like — and a strict "every flag
+is documented" gate would have opened red on all of them. A gate that opens red on things
+it does not care about is one somebody disables
+([CONVENTIONS-LEDGER](../docs/CONVENTIONS-LEDGER.md)). So the bar is *don't make it
+worse*, and the judgement of which flags matter stays with you: **the ones that change
+what the instrument measures**. Documenting an old one and lowering the pin is welcome.
+
+*Naming the flags in that paragraph is exactly what you must not do.* The check is a
+substring match, so writing `--some-flag` **anywhere** in this file marks it documented —
+including inside a sentence explaining that it is not. The first draft of this very
+section listed five of them and the ratchet promptly reported the undocumented count
+falling 27 → 10, which would have banked seventeen flags as documented on the strength of
+a sentence saying they weren't. That is `sota-testing` rules/06 §6.3's shape — an
+assertion keyed on something that is true but is not evidence — and the gate catching its
+own author is the reason the slack direction fails too.
 
 Add a new case kind by giving each case an `id` and an `expect` list — `score.py`
 is generic over the expected/predicted set comparison. Highest-value next set
