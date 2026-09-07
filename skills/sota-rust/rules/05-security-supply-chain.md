@@ -70,7 +70,7 @@ unknown-git = "deny"          # git deps pinned by rev only, allowlisted
   names (`--with-metadata` fixes the latter); `cargo +nightly udeps` needs
   nightly and documents false *negatives*. Neither settles it alone: prove a
   candidate by removing it in a scratch copy and running the real build, clippy,
-  and full suite — `sota-devsecops` rules/03 §3.9.
+  and full suite — `sota-devsecops` rules/10.
 
 ## 3. Integer overflow — release mode wraps
 
@@ -281,7 +281,7 @@ Pair the deadline with `.kill_on_drop(true)` (measured: the child is gone 600 ms
 after the handle drops) or kill and `wait()` explicitly. In sync code the
 long-standing option is the `wait-timeout` crate — mature rather than active (last
 release 2025-02, still 0.2.x, ~50M recent downloads), so check its upstream health
-before adopting it (`sota-devsecops` rules/03 §3.9.5); otherwise use a supervisor
+before adopting it (`sota-devsecops` rules/10 §5); otherwise use a supervisor
 thread you actually join. Never abandon a thread parked in `wait()`. Killing the
 direct child does not signal its *group*: for that, spawn it into its own group
 with `process_group(0)` (Unix, stable since **1.64**) and signal the group.

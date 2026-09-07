@@ -238,7 +238,7 @@ different answer and a **known direction of error**. Stored data outlives its la
 reader, so the corpus systematically over-reports use and the substitute is biased
 toward keep-it. The shape recurs: commit count standing in for maintenance, a
 dependency's presence in a manifest standing in for it being reached (`sota-devsecops`
-rules/03 §3.9), a dashboard existing standing in for someone opening it.
+rules/10), a dashboard existing standing in for someone opening it.
 
 Rules:
 - **Edge access logs are a required telemetry stream**, not an optional one, wherever

@@ -565,7 +565,7 @@ if [ "$v9" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # skill-level twin of the problem invariant 7 solved one level up (a skill
 # missing from the router) and of the front-door gap RELEASING.md §2b covers
 # (a capability with no README mention): the artifact exists, nothing errors,
-# and it is unreachable. Same class as `sota-devsecops` rules/03 §3.9, applied
+# and it is unreachable. Same class as `sota-devsecops` rules/10, applied
 # to ourselves. All 255 rules files passed when this landed, so it is a
 # regression gate, not a repair; it was watched to fail on an injected file
 # and on a renamed reference before being trusted.

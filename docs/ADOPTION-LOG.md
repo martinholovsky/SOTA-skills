@@ -66,9 +66,14 @@ lessons-log — its own best structural idea, applied to ourselves.
 > | `rules/12` §2, §2.1–2.4 | `rules/15` §2… (instruments) — 2026-09-06 |
 > | `rules/12` §3 | `rules/15` §3 (the guard that is an instance of what it guards) |
 > | `sota-devsecops` `rules/05` §5.6 | `sota-devsecops` `rules/09` §1–§5 (gates that hold) |
+> | `sota-devsecops` `rules/03` §3.9, §3.9.1–3.9.7 | `sota-devsecops` `rules/10` (the file), §1–§7 — 2026-09-07 |
 >
-> Invariant 18 keeps *live* `§` references honest, but its scope is `skills/` only —
-> which is why this note exists rather than a gate.
+> Invariant 18 keeps *live* `§` references honest, but its scope is `skills/*/*.md`,
+> `skills/*/rules/*.md`, `evals/*.py`, `evals/README.md`, `scripts/*.sh` and
+> `scripts/lib/*.py` (widened 2026-09-04; this sentence said "`skills/` only" until
+> 2026-09-07, which was the check's *original* scope, not its current one). It still does
+> not read `docs/`, `evals/cases/*.jsonl`, `README.md` or `CHANGELOG.md` — which is why
+> this note exists rather than a gate.
 
 
 | Date | Source | Idea | Verdict | Landed in |

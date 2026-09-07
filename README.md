@@ -26,7 +26,7 @@ survives a long context instead of fading into it. That's why it beats a bigger 
 instead of becoming one. Native on Claude Code; works with Gemini CLI, Codex, and any
 agent that reads `AGENTS.md`.
 
-Under the hood: **42 skills (309 files, ~67k lines)** of state-of-the-art 2026
+Under the hood: **42 skills (310 files, ~67k lines)** of state-of-the-art 2026
 practice, each **instruction** file under 500 lines so only the matching rules load —
 the cap applies to `skills/**` alone, never to README/CHANGELOG/`docs/` — every fast-moving
 claim web-verified against a primary source.
@@ -301,11 +301,12 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   only where the author happened to be thinking about it.
   ([architecture rules/02 §8a](skills/sota-architecture/rules/02-domain-modeling-and-boundaries.md),
   with a per-language row measured on each toolchain)
-- **Dependencies declared but never reached** — packages, modules, and plugins wired in
-  and inert. Proven by *deleting* them in a scratch copy and running the real build,
-  lint, and full suite, with exit codes and before/after transitive counts reported —
-  a grep is not proof.
-  ([rules/03 §3.9](skills/sota-devsecops/rules/03-dependencies.md))
+- **Dependencies declared but never reached** — the **inert-dependency sweep**: packages,
+  modules, and plugins wired in and inert, installed and pinned and scanned and never
+  *run*. Proven by *deleting* them in a scratch copy and running the real build, lint, and
+  full suite, with exit codes and before/after transitive counts reported:
+  **a grep is not proof**, and no tool's silence is either.
+  ([rules/10](skills/sota-devsecops/rules/10-inert-dependencies.md))
 - **Decisions that stopped being right** — the datastore picked for scale that never
   arrived, the rewrite justified by a benchmark that no longer reproduces. Every
   expensive-to-reverse decision is classified **JUSTIFIED / STALE / UNJUSTIFIED /

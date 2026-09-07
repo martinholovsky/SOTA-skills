@@ -40,8 +40,8 @@ audit STRAT-HIGH-2).
   might move the audit family off +0.00. Every other audit set asks "can the model
   spot this?" and the answer is already yes without the library. This one asks
   whether the model **mutates the control, deletes the dependency, and runs the
-  real build** — what `sota-code-security` rules/11 and `sota-devsecops` rules/03
-  §3.9 require. The fixture is built so a careful static read gets **half the items
+  real build** — what `sota-code-security` rules/11 and `sota-devsecops` rules/10
+  require. The fixture is built so a careful static read gets **half the items
   wrong**: two look like the opposite of what they are, and one is a REFUTED case
   that punishes flagging everything. Scored deterministically by
   `run-dead-path.py` — no judge, no API key, no network — on two axes, verdict
@@ -56,14 +56,14 @@ audit STRAT-HIGH-2).
   ([DEAD-PATH](results/2026-07-30/DEAD-PATH.md)).
 - `cases/reimplement.jsonl` (10) + `run-reimplement.py` — **documentation, not a
   measured instrument.** Never run against a live agent; no number from it may be
-  cited. It encodes the conflict between `sota-devsecops` rules/03 **§3.9.4**
-  (a poor leverage ratio is a replace-in-house candidate) and **§3.9.6 bucket C**
+  cited. It encodes the conflict between `sota-devsecops` rules/10 **§4**
+  (a poor leverage ratio is a replace-in-house candidate) and **rules/10 §6 bucket C**
   (which overrides that for crypto/enumerated families and for anything whose output
   is persisted and must stay comparable). Five disqualified cases each have a ratio
   that screams REPLACE, and five legitimate cases each *resemble* a disqualified one,
   so ratio-only and refuse-everything both score exactly **0.500** — verified by a
   three-arm selftest in CI. Kept because building it did the useful work: it exposed a
-  real ambiguity in §3.9.6 (a request signer is a "protocol", so the clause forbade
+  real ambiguity in rules/10 §6 (a request signer is a "protocol", so the clause forbade
   something reasonable), now fixed there with the loud-vs-silent distinction. Seven
   audit instruments already read +0.00 and [ROADMAP](../docs/ROADMAP.md) says not to
   build an eighth.

@@ -283,8 +283,12 @@ exceeds the per-skill 5,000-token cut:
 | File | ~tokens |
 |---|---|
 | `skills/sota/SKILL.md` (the router) | ~10,200 |
-| `sota-devsecops/rules/03-dependencies.md` | ~7,300 |
 | `sota-docs-workflow/rules/01-documentation-architecture.md` | ~7,200 |
+
+`sota-devsecops/rules/03-dependencies.md` left this table on 2026-09-07: splitting its
+§3.9 out to `rules/10` took it to ~4,850 by the same `bytes/4` method, and the new file to
+~3,450 — both under the cut. Splitting for the line cap moved this number too, which is the
+only reason the row is worth mentioning rather than silently deleting.
 
 So after a compaction, a re-attached router keeps roughly its first half. **This is
 unverified in practice** — it is read off the documentation and a byte-count

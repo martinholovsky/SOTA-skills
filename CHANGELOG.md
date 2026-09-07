@@ -5,6 +5,72 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.36.0] - 2026-09-07
+
+**Front door checked:** declared but never reached · inert-dependency sweep · a grep is not proof
+
+**Minor** — one new rules file, no new guidance. `sota-devsecops` rules/03 §3.9 becomes
+`rules/10`, because the previous release let the line cap decide where two rules lived.
+
+This closes ROADMAP item 42, opened at the v1.35.2 cut hours earlier. The trigger was
+explicit: v1.35.2 put `03-dependencies.md` at **487/500**, and the cap — not the argument —
+chose two placements in it. A file that decides your content twice is done absorbing.
+
+### Changed
+
+- **`sota-devsecops` rules/03 §3.9 → `rules/10-inert-dependencies.md`.** The
+  declared-but-not-reached sweep — reachability from a real entrypoint rather than import
+  presence, the per-ecosystem tools and each one's blind spot, deletion-as-proof, the
+  leverage ratio, upstream health from a live primary source, the four-bucket
+  classification, and why "unused" is an absence claim for which **a grep is not proof** —
+  is now its own file. Same content;
+  the subsections renumbered §3.9.1–§3.9.7 → §1–§7, matching the `rules/05` §5.6 → `rules/09`
+  precedent (a single section with named subsections becomes a file numbered from 1).
+  **rules/03 487 → 316, rules/10 179.** Both are back under half the cap.
+- **The front door names the sweep.** `README.md`'s class list called it "dependencies
+  declared but never reached" and linked `rules/03`; it now says **inert-dependency sweep**
+  and links the file that holds it.
+
+### Fixed
+
+- **Two defects the reference sweep turned up that no gate could see.** A repointed line in
+  `evals/README.md` left `rules/03` dangling on the line above its replacement — found by
+  reading the result, not by running the checker. And `sota-sandboxing` rules/05 carried a
+  pre-existing `sota-devsecops` rules/03 **§3** that resolved nowhere (there is no `## 3`;
+  install-time execution is §3.4) — invariant 18 is deliberately fail-open, so it had never
+  complained.
+- **`docs/ADOPTION-LOG.md` described invariant 18's scope wrongly.** It said the check reads
+  "`skills/` only", which was its *original* scope; it was widened on 2026-09-04 and now also
+  reads `evals/*.py`, `evals/README.md`, `scripts/*.sh` and `scripts/lib/*.py` — which is how
+  this split's broken reference in `scripts/check-invariants.sh`'s own header was caught. The
+  sentence now states the real scope **and** what is still outside it (`docs/`,
+  `evals/cases/*.jsonl`, `README.md`, `CHANGELOG.md`), since that is the part the note exists
+  to cover.
+
+### Notes
+
+- **The reference cost, measured for the third time.** Invariant 18 reported **16 findings**
+  on the first run after the move — **14 of them pre-existing references across 11 files**,
+  including two eval runners and `check-invariants.sh`'s own header comment; the other two
+  were in the new file's own header. **Six further files were repointed by hand and the gate
+  never reported one of them**: five are outside its scope (`README.md`, `docs/INDEX.md`,
+  `docs/MAINTENANCE.md`, `evals/cases/reimplement.jsonl`, `evals/cases/dead-path.jsonl`) and
+  one — `skills/sota/rules/04-library-map.md` — is *inside* it and resolved **fail-open**,
+  because the citation read `03 §3.9` without the `rules/` prefix the checker keys on. The
+  hand-walk remains the majority of the work on any split.
+- **One reference correctly did not move.** `sota-mobile` rules/04 cites "rules/03 §3.9" —
+  that skill's *own* token-lifecycle section. It resolved cleanly and was left alone; a
+  blanket find-and-replace on `rules/03 §3.9` would have broken it. This is the fail-open
+  case the last two splits also hit, and it is the argument for reading every hit rather
+  than trusting the gate's silence *or* a regex.
+- **History is not repointed.** `CHANGELOG.md`, `evals/results/` and the dated
+  `docs/ADOPTION-LOG.md` rows keep their `§3.9` pointers — they record where an idea landed
+  at that release. The translation map in the adoption log gains a row instead.
+- **`docs/CONTEXT-MANAGEMENT.md` lost a row.** `03-dependencies.md` was listed as exceeding
+  the per-skill 5,000-token compaction cut at ~7,300; by the same `bytes/4` method it is now
+  ~4,850 and `rules/10` ~3,450, both under it. Splitting for the *line* cap moved the *token*
+  number too.
+
 ## [1.35.2] - 2026-09-07
 
 **Front door checked:** unwatchable · bespoke watcher · Minimal Version Selection
@@ -6716,6 +6782,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.36.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.36.0
 [1.35.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.35.2
 [1.35.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.35.1
 [1.35.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.35.0

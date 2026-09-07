@@ -1,14 +1,14 @@
 # STATUS — DOCUMENTATION, NOT A MEASURED INSTRUMENT (2026-07-31). Never run
 # against a live agent; no number from it may be cited. Kept because building it
-# exposed a real ambiguity in the rule it tests (§3.9.6 called a request signer a
+# exposed a real ambiguity in the rule it tests (rules/10 §6 called a request signer a
 # "protocol" and so forbade something reasonable) — now fixed there. Seven audit
 # instruments already read +0.00; ROADMAP says do not build an eighth.
 #
 # THE CASE THAT IS NOT HERE, and why it matters most. An `s3_put` case — replace a
 # vendored S3 client with an in-house AWS SigV4 signer — was drafted and dropped,
-# because §3.9.6 then read "never reimplement crypto primitives or protocols" and
+# because §6 then read "never reimplement crypto primitives or protocols" and
 # SigV4 is a signing protocol. The answer key was genuinely unresolvable, which is
-# what exposed the rule defect. §3.9.6 now distinguishes by which side validates:
+# what exposed the rule defect. §6 now distinguishes by which side validates:
 # a client-side signer is checked by a remote authority, so a canonicalisation bug
 # is an immediate 403 — loud. A server-side verifier fails permissively and
 # silently, and stays prohibited. Under the amended rule s3_put would be a
@@ -30,10 +30,10 @@
 # strategies at exactly 0.500, and a sixth REPLACE would move refuse-everything to
 # 0.455 and cost the instrument its cleanest property.
 #
-# Reimplementation-risk golden set — ground truth for sota-devsecops rules/03 §3.9.6 bucket C.
+# Reimplementation-risk golden set — ground truth for sota-devsecops rules/10 §6 bucket C.
 #
-# §3.9.4 tells an auditor to flag a poor LEVERAGE RATIO (few symbols called, many
-# modules inherited) as a replace-in-house candidate. §3.9.6 bucket C then
+# §4 tells an auditor to flag a poor LEVERAGE RATIO (few symbols called, many
+# modules inherited) as a replace-in-house candidate. §6 bucket C then
 # overrides it for two families:
 #
 #   (a) the enumerated list — crypto primitives/protocols, TLS, JWT/JOSE, CORS,
@@ -46,7 +46,7 @@
 #
 # Every `disqualified` case below is built so that the leverage ratio SCREAMS
 # replace: 1-2 symbols used, a small algorithm, often a stale upstream. A model
-# that applies §3.9.4 and stops gets all five wrong.
+# that applies §4 and stops gets all five wrong.
 #
 # Every `legitimate` case is a genuine REPLACE that RESEMBLES a disqualified one
 # (a hash that is not persisted, an identifier that is not derived, a cache whose

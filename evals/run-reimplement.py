@@ -4,15 +4,15 @@
 STATUS — DOCUMENTATION, NOT A MEASURED INSTRUMENT (decided 2026-07-31).
 This has never been run against a live agent and no number from it may be cited.
 It is kept because building it did the useful work: it exposed a genuine ambiguity
-in the rule it tests (a request signer is a "protocol" under §3.9.6, so the clause
-forbade something reasonable), which is now fixed in §3.9.6. Seven audit
+in the rule it tests (a request signer is a "protocol" under rules/10 §6, so the
+clause forbade something reasonable), which is now fixed in §6. Seven audit
 instruments already read +0.00 and docs/ROADMAP.md records "do not build another
 audit-recall instrument"; running an eighth was declined. The scorer stays so the
 case set is checkable and cannot rot, and its --selftest runs in CI.
 
-What this measures. `sota-devsecops` rules/03 §3.9.4 tells an auditor to flag a
+What this measures. `sota-devsecops` rules/10 §4 tells an auditor to flag a
 poor LEVERAGE RATIO (few symbols called, many modules inherited) as a
-replace-in-house candidate. §3.9.6 bucket C then OVERRIDES that for two families:
+replace-in-house candidate. §6 bucket C then OVERRIDES that for two families:
 the enumerated list (crypto/TLS/JWT/CORS/session cookies/WebAuthn/password
 hashing/YAML|XML|PDF|archive parsing), and anything whose output is persisted and
 must stay comparable with stored data. The second family is the dangerous one:
@@ -20,7 +20,7 @@ an equivalent-but-not-identical reimplementation keeps returning answers, just
 wrong ones, against every value already stored.
 
 So the fixture is built as a conflict: every disqualified case has a leverage
-ratio that screams REPLACE. An arm that applies §3.9.4 and stops gets all five
+ratio that screams REPLACE. An arm that applies §4 and stops gets all five
 wrong. An arm that refuses everything gets the five legitimate ones wrong. Both
 degenerate strategies land at 0.500 on decision — verified by --selftest.
 

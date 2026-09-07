@@ -174,7 +174,7 @@ The same shape one layer down, in the dependency graph rather than the control
 plane: a declared dependency, registered module, or plugin that is wired in and
 never reached — including the case where its symbol *is* referenced, but only on
 a branch the live code path cannot produce. That sweep, with deletion-as-proof,
-is `sota-devsecops` rules/03 §3.9.
+is `sota-devsecops` rules/10.
 
 **Three states, not two.** Skipped and failed are the ones people check; the third is
 **created but never started** — the platform refused the run (billing, a spending

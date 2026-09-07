@@ -83,7 +83,7 @@ trying to do**, not by file. (Kept in sync by hand; if a link rots, open an issu
 | Understand **why some lifts expire and others don't** (knowledge vs salience) | [WHY-SALIENCE-LASTS.md](WHY-SALIENCE-LASTS.md) — the prediction, and what would falsify it |
 | Check whether a rule survives a prompt that argues **against** it (prompt-independence) | [`evals/run-prompt-independence.py`](../evals/run-prompt-independence.py) — same task at supportive / neutral / **competing** pressure, three arms |
 | Read an eval that failed as an *instrument* rather than as a result | [BUILD-SAFE.md](../evals/results/2026-07-30/BUILD-SAFE.md) |
-| See the edges of the do-not-reimplement rule (§3.9.6), as worked cases | [`evals/cases/reimplement.jsonl`](../evals/cases/reimplement.jsonl) — documentation, never run |
+| See the edges of the do-not-reimplement rule (`sota-devsecops` rules/10 §6), as worked cases | [`evals/cases/reimplement.jsonl`](../evals/cases/reimplement.jsonl) — documentation, never run |
 | Know what the audit hunts that a scanner can't (inert controls, **controls that block everything**, **a working control applied to part of its population**, **security prose the code doesn't keep**, unreached dependencies, stale decisions, refutation, absence claims) | [README → What the audit hunts](../README.md#what-the-audit-hunts-that-a-scanner-cant) |
 | Set up a refutation that actually refutes — a **restricted refuter**, only the artifact crossing over, a **numeric confidence threshold** fixed in advance | [`sota/rules/03` §4a](../skills/sota/rules/03-audit-findings.md) |
 | Report a **behavioural** finding (crash, race, agent-produced) — the N-of-N reproduction rule | [`sota/rules/03` §2](../skills/sota/rules/03-audit-findings.md) |

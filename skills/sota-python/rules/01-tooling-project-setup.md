@@ -242,7 +242,7 @@ images by digest for reproducible rebuilds in regulated environments.
   (imported but only a transitive dep), DEP005 (stdlib shadowed). Treat its output as
   candidates — `importlib`/entry-point/plugin loads read as unused — and prove each by
   removing it in a scratch copy and running the real build and full suite
-  (`sota-devsecops` rules/03 §3.9).
+  (`sota-devsecops` rules/10).
 
 ## Audit checklist
 

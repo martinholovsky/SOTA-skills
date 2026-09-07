@@ -4,7 +4,7 @@
 # RECOGNIZE a defect. All four audit instruments that score recognition sit at
 # +0.00 (see results/RESULTS.md): a frontier model handed the code and the
 # question is already at ceiling. This set measures whether the model DOES THE
-# PROCEDURE that sota-code-security rules/11 and sota-devsecops rules/03 §3.9
+# PROCEDURE that sota-code-security rules/11 and sota-devsecops rules/10
 # require — mutate the control, delete the dependency, run the real build — and
 # it is built so that reasoning without running gets HALF THE ITEMS WRONG.
 #
