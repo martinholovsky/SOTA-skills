@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.35.2] - 2026-09-07
 
-**Front door checked:** unwatchable · bespoke watcher · floor, not a ceiling
+**Front door checked:** unwatchable · bespoke watcher · Minimal Version Selection
 
 **Patch** — a field brief on pinning, landed in full. Four proposals adopted, two of them
 corrected on reproduction, and one of the brief's supporting premises refuted outright.
