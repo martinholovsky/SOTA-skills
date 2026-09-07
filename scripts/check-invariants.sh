@@ -399,6 +399,13 @@ n_domains=$((n_skills - 1))   # every skill except the router
 
 ck "$(sed -n 's/.*badge\/skills-\([0-9]*\)-.*/\1/p' README.md | head -n 1)" \
    "$n_skills" "README badge"
+# The badge's ALT text as well as its number. They drifted apart on 2026-09-07: the
+# shields URL read 42 while `alt="41 skills"` sat beside it, because a count bump had
+# updated the machine-readable half and not the human-readable one. The alt is what a
+# screen reader announces and what survives when the image 404s, so a stale alt is the
+# half a person actually receives.
+ck "$(sed -n 's/.*badge\/skills-[0-9]*-[^>]*alt="\([0-9]*\) skills".*/\1/p' README.md | head -n 1)" \
+   "$n_skills" "README badge alt text"
 hero=$(grep -m 1 -E '[0-9]+ skills \([0-9]+ files, ~[0-9]+k lines\)' README.md || true)
 ck "$(printf '%s' "$hero" | grep -oE '[0-9]+ skills \(' | grep -oE '[0-9]+' || true)" \
    "$n_skills" "README hero skill count"

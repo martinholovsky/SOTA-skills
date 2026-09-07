@@ -350,7 +350,7 @@ For a focused audit, load the matching skills and follow their AUDIT sections. F
 
 ## Library map (rules files per skill)
 
-Which `rules/NN` file holds what, for all 40 skills: **[rules/04-library-map.md](rules/04-library-map.md)**.
+Which `rules/NN` file holds what, for all 41 skills: **[rules/04-library-map.md](rules/04-library-map.md)**.
 Read it when you know the domain but not the file. When you are already opening a skill's
 `SKILL.md` (BUILD step 2), use that skill's own index instead — it carries the "read this
 when…" guidance the map drops.
