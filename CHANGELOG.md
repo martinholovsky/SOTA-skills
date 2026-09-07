@@ -5,6 +5,47 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.35.1] - 2026-09-07
+
+**Front door checked:** badge alt text · over-selection · conflict rate
+
+**Patch** — two stale claims, one check extended, and four roadmap items opened. Nothing
+new to run.
+
+The post-release sweep after v1.35.0. It has found something at every cut this session,
+and this time both findings were counts that a gate was *almost* watching.
+
+### Fixed
+
+- **The README badge alt text was stale.** Its number said 42 while its `alt` text said 41. A count bump had
+  updated the machine-readable half and not the human-readable one. **Invariant 6 checked
+  only the number** — so the half a screen reader announces, and the half that survives
+  when the image 404s, was the stale one. The check now reads both, watched to fail on
+  the real defect before being wired in.
+- **The router's library-map pointer said "for all 40 skills"** while its own opening line
+  said 41 and the map lists 41. Nothing checks a count stated in prose beside a link.
+
+### Opened
+
+- **ROADMAP 38 — over-selection is measured but its cost is not.** Routing precision is
+  0.569 (0.45 against gold sets transcribed from the router's own rules), but ROADMAP 25
+  measured a padded context at −0.01 and item 32 at −0.03. On current evidence this is a
+  **token, latency and money** cost rather than a quality one. **The next step is
+  arithmetic, not an eval** — price the over-selected sets with `count_tokens`, never
+  chars/4. If it is a few thousand tokens per task it is a router note, not a project.
+- **ROADMAP 39 — conflict rate has never been measured.** The only one of the four
+  routing failure modes with a real incident behind it: two rules in this library
+  contradicted each other in a live build, which is why the router carries a
+  conflict-resolution clause. Needs a judge, so pre-register first.
+- **ROADMAP 40 — the Superpowers head-to-head is staged but not run.** Both external
+  assessments rest their verdict on that comparison and we have never made it.
+- **ROADMAP 41 — invariant 25's ratchet cannot see a whole new undocumented runner.**
+  Demonstrated twice now: `run-routing-recall.py` shipped with six flags and the
+  undocumented count did not move, because every one of its flag names already appeared
+  in `evals/README.md` from other runners. The honest fix is per-(file, flag)
+  documentation; whether that is worth more than the blind spot is the open question, and
+  the limitation is already stated beside the check.
+
 ## [1.35.0] - 2026-09-07
 
 **Front door checked:** sota-skill-security · trust boundary · change surface · GATE-ABSORPTION
@@ -6590,6 +6631,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.35.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.35.1
 [1.35.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.35.0
 [1.34.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.34.0
 [1.33.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.33.1
