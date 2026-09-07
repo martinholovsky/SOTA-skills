@@ -5,10 +5,130 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.36.1] - 2026-09-08
 
-**Docs only** — no rule text, no new surface, no version bump. A post-release sweep of the
-prose that no gate reads, run against the tree rather than against itself.
+**Front door checked:** never persist raw · agent session transcript · constant time is a property of the emitted code
+
+**Patch** — rule text inside existing surfaces, one verifier check, and the docs sweep that
+was sitting in `[Unreleased]`. Two intakes from independent sources converged on one
+subject: **what an agent's own tooling does to the controls the rest of the library
+assumes**.
+
+Sources: a field brief from a session that used this library on another repository and had
+an incident there, and an operator-requested review of
+[trailofbits/skills](https://github.com/trailofbits/skills) (83 skills). That repo is
+**CC-BY-SA-4.0** — share-alike, incompatible with this library's CC BY 4.0 — so it was
+mined for **idea classes only, with no text reuse**; the licence was read from the API
+before anything was planned. Full evaluation of both, with what was rejected and why:
+[docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md).
+
+### Added
+
+- **`sota-secrets-management` rules/03 §2.1 — never persist raw.** Redacting types need
+  producer control, so for text whose producer you do **not** own — a swept corpus, shell
+  history, a crash dump, an **agent session transcript** — the guidance silently degraded to
+  shape-scrubbing, and shape-scrubbing is an enumeration. Field evidence: a shape-redaction
+  fix **defeated by its own regression test on the first run** (a GitLab PAT, a Slack webhook
+  URL), then a key that is bare 64-character hex with **no prefix to match at all**. The rule
+  is to persist a digest plus a structural skeleton — leak-proof by construction rather than
+  by list — and it states the shape channel as a real if narrow disclosure instead of
+  claiming zero leak.
+- **`sota-secrets-management` rules/04 §7 — agent session transcripts are a credential
+  store.** Verified observation: a harness loaded a repo's `.env` under a header claiming
+  *"project instructions, checked into the codebase"* when it was untracked, gitignored and
+  mode `600` — every clause falsified with a command — putting four live keys verbatim into
+  `~/.claude/projects/**/*.jsonl`. Inventory the path, scope the scan before running it,
+  treat any tool that sweeps it as a secret-processing tool, and note that **a tool whose
+  input path is outside the repo has a surface that changes with no commit to the repo**.
+  Carries its own calibration: owner-only to owner-only on one machine is an expanded
+  surface, **not** a disclosure, and not on its own a reason to rotate.
+- **`sota-devsecops` rules/01 §1.5a — AI coding agents are CI actors holding your token.**
+  Zero prior coverage. Triggers a non-collaborator can fire; following the value rather than
+  the syntax; tool allowlists judged by what their members *compose* into (`echo "$(env)"`);
+  sandbox and auto-approve flags read as the control they are; agents invoked two `uses:`
+  levels down spending the caller's token.
+- **`sota-code-security` rules/04 §6.1 — constant time is a property of the emitted code.**
+  The library had the *wiping* half (`memset` is dead-store-eliminated, hence `explicit_bzero`)
+  and never generalised it. Secret-dependent `/` and `%` lower to variable-latency
+  instructions, and "I made the divisor constant so it strength-reduces" is an optimiser
+  courtesy that varies by compiler, target and level — `-Os`/`-Oz` both betray it and ship.
+  Read the disassembly across the matrix you ship; verify a hand-written multiply-shift over
+  the whole input domain, since an off-by-a-power-of-two reciprocal agrees for millions of
+  inputs before it diverges.
+- **`sota-code-security` rules/15 §2.2 — a scanner's default configuration can exclude its
+  most valuable detector.** Distinct from a threshold *you* chose being too coarse
+  (`sota-devsecops` rules/09 §6): here you chose nothing and the silence is the vendor's.
+  Print the effective configuration beside the verdict and name the families that did not run.
+
+### Fixed
+
+- **A rule of ours was unsafe at a sink it did not name.** `sota-devsecops` rules/01 §1.5
+  taught `env:` indirection as *the* fix for expression injection. That is right for a
+  **shell** sink. For a sink that consumes the value as **instructions** — an AI-agent
+  prompt, a template engine, an `eval` — reachability is unchanged and the `${{ }}` that
+  reviewers and `zizmor`/`actionlint` key on is *gone*, so the dangerous configuration now
+  reads as clean YAML. §1.5 now names the sink class its defence neutralises. Found by the
+  external review, which is the first time an outside source has identified a rule of ours
+  that *causes* a miss.
+- **`verify-setup.sh` check 1 printed a number with nothing to compare it against.** It
+  counted installed `sota*` skills and passed. On this machine it read **41** while the
+  checkout held **42** — `sota-skill-security`, added in v1.35.0, had no symlink — and the
+  run said PASS. `install.sh` does link every skill and *is* the updater, but **a `git pull`
+  updates existing symlinks and can create none**, and nothing invokes the verifier, so an
+  incomplete install has no symptom: a missing skill looks like the model simply not
+  choosing it. Check 1 now computes the source-side denominator and reports **PARTIAL** with
+  the missing names. Watched to fail before being trusted: armed it reports the missing
+  skill, neutered it returns to **PASS while printing "(source offers 3)"** — the number on
+  screen, unread, which is `sota-code-security` rules/11 §2.2 committed by this repo's own
+  verifier.
+- **`install.sh` — and therefore `update.sh` — now runs the verifier itself.** Pointing at it
+  in the closing banner was not enough: nothing invoked it, so nobody ran it. Every install
+  and every update now ends with `verify-setup.sh --reach-only` (new flag: section A only),
+  because *"linked 42 skills"* is what the installer **did** and reachability is what the
+  agent **gets**. It is **read-only and never fatal** — a non-zero verifier must not abort a
+  successful link run — and `--no-verify` opts out. **The first draft of that check was
+  itself inert where it mattered most**: it resolved the source tree from `$REPO_ROOT`, so
+  run from a user's own project there was no `./skills`, the denominator stayed 0, the
+  comparison silently did not happen and the row still said PASS — location-dependent
+  silence (`sota-code-security` rules/11), committed by the fix written for it. It now
+  resolves the library from the script's own path, verified from inside and outside the
+  checkout. Scoped to section A on purpose: the
+  repo-context, gate and CI sections describe whichever directory the installer was invoked
+  from, and a report that is routinely red for irrelevant reasons is a report people learn to
+  skip ([docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md)). Watched both ways:
+  `--reach-only` exits 1 on a broken install and 0 on a good one.
+
+### Changed
+
+- **`scripts/check-negative-controls.sh`: 32 → 33 probes**, all caught. The new one needed a
+  new assertion shape: check 1's incomplete-install branch reports **PARTIAL**, and
+  `verify-setup` exits on `n_fail` alone, so the existing `vs_probe` — which demands a
+  non-zero exit — would have read a working branch as INERT. `vs_probe_partial` asserts the
+  row instead of the exit code, and still refuses a catch for the wrong reason.
+
+### Notes
+
+- **Three claims in the incoming brief did not survive reproduction**, and all three were
+  read-truncation or sweep faults rather than reasoning errors: it described a two-tier list
+  that has three items (it had read to line 60 of a list that continues), it reported that
+  *nobody* covers agent transcripts when the file it proposed already said "AI tool
+  transcripts" one clause deep, and it concluded the installed tree is a build artifact when
+  it is 41 symlinks into this repo. The proposals were sound; the sentences around them were
+  not — the same pattern as the v1.35.2 brief.
+- **An install that is 41 of 42 is a coverage claim's denominator**, and it silently weakened
+  the brief's own sweep: the one skill with no symlink was `sota-skill-security`, which owns
+  the instruction trust boundary — the exact mechanism of its own transcript finding.
+- **Deferred with triggers written down**, both from the external review: misuse-resistant
+  API design as a producer-side control (the idea exists 11 times in the library as a
+  *consumer*-side heuristic and, on a file-level sweep, not in `sota-api-design` at all), and
+  triage discipline for an *incoming* vulnerability report (our coordinated-disclosure
+  coverage is the obligation, not the triage).
+
+
+### Also in this release — the post-release docs sweep
+
+Run before the intakes above: a pass over the prose that no gate reads, checked against the
+tree rather than against itself.
 
 ### Fixed
 
@@ -6844,6 +6964,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.36.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.36.1
 [1.36.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.36.0
 [1.35.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.35.2
 [1.35.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.35.1

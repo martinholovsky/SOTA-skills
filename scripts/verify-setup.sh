@@ -28,11 +28,19 @@
 set -euo pipefail
 
 RUN_SAMPLE=60
+# --reach-only: section A only. install.sh runs this after every install/update,
+# where the repo-context and gate sections would report on whatever directory the
+# installer happened to be invoked from — noise that trains people to ignore the
+# whole report (docs/CONVENTIONS-LEDGER.md on gates that get disabled).
+REACH_ONLY=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --runs) RUN_SAMPLE="${2:?--runs needs a number}"; shift 2 ;;
+    --reach-only) REACH_ONLY=1; shift ;;
     -h|--help)
-      echo "usage: verify-setup.sh [--runs N]   # N = CI runs to sample for check 10 (default 60)"
+      echo "usage: verify-setup.sh [--runs N] [--reach-only]"
+      echo "  --runs N       CI runs to sample for check 10 (default 60)"
+      echo "  --reach-only   section A only: is the library actually reaching this machine?"
       exit 0 ;;
     *) echo "unknown argument: $1 (try --help)" >&2; exit 2 ;;
   esac
@@ -83,14 +91,49 @@ for d in $skill_dirs; do
 $(find -L "$d" -maxdepth 3 -type d -name 'sota' -o -maxdepth 3 -type d -name 'sota-*' 2>/dev/null || true)
 EOF
 done
+# The denominator: what the checkout actually offers. Without it, "$n_sota
+# skills" is a number with nothing to compare against.
+#
+# Resolve the library from THIS SCRIPT's own path, never from $REPO_ROOT. The
+# first draft used $REPO_ROOT and was therefore inert in the place it matters
+# most: run from a user's own project there is no ./skills, n_src stayed 0, the
+# comparison silently did not happen and the row still said PASS. A check whose
+# scope depends on the caller's cwd is the location-dependent silence in
+# `sota-code-security` rules/11 — committed here by the fix for it.
+LIB_ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd) || LIB_ROOT=""
+n_src=0
+missing_names=""
+if [ -n "$LIB_ROOT" ] && [ -d "$LIB_ROOT/skills" ]; then
+  for s in "$LIB_ROOT"/skills/*/; do
+    [ -d "$s" ] || continue
+    n_src=$((n_src + 1))
+    nm="$(basename "$s")"
+    found=0
+    for d in $skill_dirs; do
+      if [ -e "$d/$nm" ] || [ -L "$d/$nm" ]; then found=1; break; fi
+    done
+    [ "$found" -eq 1 ] || missing_names="${missing_names:+$missing_names, }$nm"
+  done
+fi
+
 if [ -z "$skill_dirs" ]; then
   row "FAIL" "1. sota skills reachable" "no skills dir found (looked in $CLAUDE_HOME/skills, .claude/skills, $CLAUDE_HOME/plugins)"
 elif [ "$n_sota" -eq 0 ]; then
   row "FAIL" "1. sota skills reachable" "skills dir(s) exist but contain no sota* skill:$skill_dirs"
 elif [ "$router_seen" -eq 0 ]; then
   row "PARTIAL" "1. sota skills reachable" "$n_sota sota* skills, but the 'sota' ROUTER is not among them — routing is what loads the rest"
+elif [ "$n_src" -gt 0 ] && [ "$n_sota" -lt "$n_src" ]; then
+  # A count with nothing to compare it against is not a check (rules/11 §2.2).
+  # This one printed "41 sota* skills" and PASSED while the tree held 42: a
+  # `git pull` updates every EXISTING symlink and can create none, so a newly
+  # added skill stays uninstalled and silent. A missing skill has no symptom —
+  # it looks like the model simply not choosing it.
+  row "PARTIAL" "1. sota skills reachable" \
+    "$n_sota sota* skills installed but $n_src in $LIB_ROOT/skills — $missing_names missing; re-run scripts/install.sh (a git pull cannot create a link)"
 else
-  row "PASS" "1. sota skills reachable" "$n_sota sota* skills incl. the router, in:$skill_dirs"
+  src_note=""
+  [ "$n_src" -gt 0 ] && src_note=" (source offers $n_src)"
+  row "PASS" "1. sota skills reachable" "$n_sota sota* skills incl. the router, in:$skill_dirs$src_note"
 fi
 
 # Always-on routing is THREE layers; report which of them are actually present.
@@ -129,6 +172,13 @@ else
 fi
 
 # --- B. Is this repo's own context in place? ------------------------------
+if [ "$REACH_ONLY" -eq 1 ]; then
+  printf '\n%s\n' "PASS $n_pass · FAIL $n_fail · PARTIAL $n_partial"
+  echo "Library reach only. Full check (repo context, gates, CI): scripts/verify-setup.sh"
+  rc=0; [ "$n_fail" -eq 0 ] || rc=1
+  exit "$rc"
+fi
+
 section "B. Repo context"
 
 agent_file=""

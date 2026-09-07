@@ -61,6 +61,9 @@ creds from the same secret layer as the app.
 3. **Never log:** full request/response headers, full connection strings/URLs (strip userinfo:
    `postgres://user:****@host/db`), decoded JWT payloads with embedded secrets, full env, full
    config objects.
+4. **Never persist raw** — the tier the three above cannot reach, for text whose producer
+   you do not control (§2.1).
+
 
 ```python
 # BAD — leaks the whole DSN (with password) on every connection failure
@@ -85,6 +88,54 @@ def scrub(_, __, event):
 
 The processor is the *backstop*, not the plan — redacting types and disciplined log statements
 come first; the processor catches the third-party library that logs a request object.
+
+### 2.1 Text you did not produce: persist a digest and a skeleton, never the datum
+
+Tiers 1–3 assume you own the producer. You cannot wrap someone else's bytes in a
+`SecretStr`, so when the thing being stored is **arbitrary text from a source you do not
+control** — a swept corpus, shell history, a crash dump, a scraped page, an agent
+transcript (`rules/04` §7), a diff from an untrusted branch — the guidance silently
+degrades to tier 2 alone. **Tier 2 is an enumeration, and enumerations lose.**
+
+Field-reported, with the run that killed it: a shape-redaction fix reusing an existing
+`sk-…`/`AKIA…`/`ghp_…` matcher was **defeated by its own regression test on the first
+run**, by a GitLab PAT (`glpat-…`) and a Slack webhook URL. Five weeks later the same
+corpus acquired four more live keys, one of them a **bare 64-character hex string with no
+prefix at all** — a value no prefix rule can ever match, and one that a generic
+"long random-looking string" rule cannot separate from a hash, a UUID or a minified bundle.
+
+So do not persist the datum. Persist what diagnosis actually needs:
+
+```python
+_MAX_LINE = 160
+KEEP = set(" \t|&;()<>{}[]$\"'`\\=/-.:@#*?!~+,")   # this grammar's punctuation, nothing else
+
+def safe_line(line: str) -> dict[str, str]:
+    """The only representation of a swept line this tool ever writes down."""
+    return {
+        "sha256": hashlib.sha256(line.encode("utf-8", "replace")).hexdigest()[:16],
+        "length": str(len(line)),
+        "shape": "".join(c if c in KEEP else "x" for c in line[:_MAX_LINE]),
+    }
+```
+
+The digest correlates the same line across two runs and lets a human grep their *own*
+source for it; the length bounds complexity; the shape preserves the structure a diagnosis
+needs while every run of payload characters collapses to `x`. **It is leak-proof by
+construction rather than by list** — it never has to know what a secret looks like, so no
+unenumerated format defeats it. That is the same reasoning the library applies to
+structural controls elsewhere, moved one step earlier: to the decision to persist at all.
+
+Scope it honestly, in the rule and in review:
+
+- This is for data kept to **diagnose or correlate**, never for data you must read back. If
+  you need the value, you need a secret store, not this.
+- **The shape channel is a real, if narrow, disclosure.** For shell it is punctuation; for
+  another grammar pick the analogous skeleton and *say what it keeps*. Do not describe it
+  as zero-leak.
+- Truncation is a second, independent bound — set it deliberately, not by accident.
+- **stdout is a persistence surface too.** A console that prints what the file redacts is
+  the same leak with a worse retention policy.
 
 **Error messages & exceptions:** exceptions traverse trust boundaries — API error bodies, error
 trackers, support tickets. Never embed a credential in an exception message
@@ -244,6 +295,11 @@ Every credential answers: who uses it, for which actions, on which resources, un
 - [ ] Redacting wrapper types in use; logger-level scrubbing for secret key names and token
       shapes; connection strings/URLs logged without userinfo; no full-header, full-env, or
       full-config logging.
+- [ ] **Text whose producer you do not control is never persisted raw (§2.1)** — a swept
+      corpus, shell history, crash dump, scraped page or agent transcript is stored as a
+      digest plus a structural skeleton, with the shape channel's disclosure stated and
+      stdout covered by the same rule; shape/prefix redaction alone is not accepted as the
+      control, because it is an enumeration
 - [ ] Exceptions and error-tracker payloads carry no secret values; PII/data scrubbers
       configured; debug pages and Spring actuator env/heapdump endpoints disabled or
       authenticated in prod.

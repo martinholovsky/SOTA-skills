@@ -93,7 +93,7 @@ plus `evals/smoke-runners.py`, over **two** subjects: `check-invariants.sh` (par
 `verify-setup.sh` (part B). Each probe injects a known-bad and requires *the intended check* to
 complain — a non-zero exit for any other reason is a **FALSE PASS**, not a catch. Part A mutates
 a good tree in a disposable git worktree; part B is inverted, building a fully-configured fake
-machine (`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **32 probes** (re-run 2026-09-07: `PASS: 32/32`; wrong twice
+machine (`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **33 probes** (re-run 2026-09-08: `PASS: 33/33`; wrong twice
 before, and deliberately **not** gated — a static count of call sites under-reads, so only
 running it is authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18, 19,
 20, 21, 22, 23, 24, 25** — 20 of 25 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. The five
@@ -158,11 +158,11 @@ the setting. The pre-commit hook scans each commit locally.
   substring; assert a scripted edit landed; pin anything hand-mirrored from the
   library). Read it before changing anything under `evals/` — four harness changes in
   one day silently measured nothing while still printing plausible numbers
-- **The read-only setup check, in two halves** — `init-gates.sh` sets a repo up; these
-  check the result, because "configured" and "working" render identically.
-  `scripts/verify-setup.sh` does the mechanical half (skills reachable, hook
-  installed vs merely configured, licence under any name, whether CI has ever
-  *executed* and ever *rejected* — `--runs N` widens that sample);
+- **The read-only setup check, in two halves** — `init-gates.sh` sets a repo up; these check
+  the result, because "configured" and "working" render identically. `scripts/verify-setup.sh`
+  does the mechanical half (skills reachable **vs the checkout's own count**, hook installed vs
+  merely configured, licence under any name, whether CI ever *executed* and ever *rejected*;
+  `--runs N` widens that sample, `--reach-only` is the subset `install.sh` runs every run);
   [docs/VERIFY-SETUP.md](docs/VERIFY-SETUP.md) is the paste-in prompt for the half
   a script cannot do — whether the agent file's content is meaningful and whether
   its claims are still *true*

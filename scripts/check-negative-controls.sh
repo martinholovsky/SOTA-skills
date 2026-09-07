@@ -346,6 +346,16 @@ build_fixture() {  # a machine+repo where every check passes
   mkdir -p "$VS/home/skills" "$VS/home/profiles" "$VS/bin" "$VS/repo/.github/workflows"
   # library reach: the router plus a couple of domain skills
   mkdir -p "$VS/home/skills/sota" "$VS/home/skills/sota-testing" "$VS/home/skills/sota-golang"
+  # …and the SOURCE side, which is what makes the installed count a denominator
+  # rather than a lone number (verify-setup check 1). verify-setup resolves the
+  # library from ITS OWN path, not the cwd, so the fixture has to carry a copy of
+  # the script for that resolution to land inside the fixture. Copy, then assert
+  # the copy is identical — a stale fixture copy would test yesterday's script.
+  mkdir -p "$VS/repo/skills/sota" "$VS/repo/skills/sota-testing" "$VS/repo/skills/sota-golang"
+  mkdir -p "$VS/repo/scripts"
+  cp "$REPO/scripts/verify-setup.sh" "$VS/repo/scripts/verify-setup.sh"
+  cmp -s "$REPO/scripts/verify-setup.sh" "$VS/repo/scripts/verify-setup.sh" \
+    || { echo "fixture copy of verify-setup.sh differs from the original — aborting"; exit 1; }
   # always-on routing: both layers
   printf 'routing: consult the sota router.\n' > "$VS/home/CLAUDE.md"
   printf '{"hooks":{"UserPromptSubmit":[{"hooks":[{"command":"echo sota"}]}]}}\n' > "$VS/home/settings.json"
@@ -374,8 +384,11 @@ GH
 
 run_vs() {  # sets VS_OUT / VS_RC
   VS_RC=0
+  # Run the fixture's copy, so the script's self-relative library lookup resolves
+  # inside the fixture rather than against this repo (which would make every probe
+  # compare the fixture's 3 skills against the real tree's 42).
   VS_OUT=$( cd "$VS/repo" && CLAUDE_CONFIG_DIR="$VS/home" PATH="$VS/bin:$PATH" \
-            bash "$REPO/scripts/verify-setup.sh" 2>&1 ) || VS_RC=$?
+            bash "$VS/repo/scripts/verify-setup.sh" 2>&1 ) || VS_RC=$?
 }
 
 build_fixture
@@ -423,7 +436,39 @@ vs_probe() {  # <name> <expected check label>  — fixture already broken by cal
   build_fixture
 }
 
+vs_out_has_partial() {  # a PARTIAL line that ALSO contains $1 — same line, no pipe
+  local want="$1" line
+  while IFS= read -r line; do
+    case "$line" in PARTIAL*) case "$line" in *"$want"*) return 0 ;; esac ;; esac
+  done <<VSEOF
+$VS_OUT
+VSEOF
+  return 1
+}
+
+vs_probe_partial() {  # <name> <expected check label> — for branches that report
+  # PARTIAL rather than FAIL. verify-setup exits on n_fail alone, so a PARTIAL run
+  # exits 0 and vs_probe (which demands non-zero) would read it as INERT. Assert the
+  # row instead of the exit code — and still refuse a catch for the wrong reason.
+  local name="$1" want="$2"
+  tested=$((tested + 1))
+  run_vs
+  if vs_out_has_partial "$want"; then
+    echo "  [vs] $name — caught (PARTIAL)"
+    caught=$((caught + 1))
+  else
+    echo "  [vs] $name — NOT CAUGHT: no PARTIAL row for '${want}'. This branch is INERT."
+    printf '%s\n' "$VS_OUT" | grep -E '^(FAIL|PARTIAL)' | head -2 | sed 's/^/        got: /'
+    failed=$((failed + 1))
+  fi
+  build_fixture
+}
+
 rm -rf "$VS/home/skills";                       vs_probe "no skills installed"            "1. sota skills reachable"
+# A `git pull` updates every existing symlink and can create none, so a newly added
+# skill stays uninstalled while the count still looks plausible. Observed on a real
+# machine at 41 of 42.
+rm -rf "$VS/home/skills/sota-golang";           vs_probe_partial "installed count below the source count" "1. sota skills reachable"
 rm -f "$VS/home/settings.json" "$VS/home/CLAUDE.md"; vs_probe "no routing directive or hook"  "2. always-on routing"
 ln -sf /nonexistent/x.md "$VS/home/profiles/dangling.md"; vs_probe "dangling profile symlink" "3. stack profile"
 rm -f "$VS/repo/AGENTS.md";                     vs_probe "no agent file"                  "4. agent file present"

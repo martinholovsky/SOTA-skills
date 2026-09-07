@@ -181,6 +181,16 @@ name!), `github.event.pull_request.head.ref`, commit messages
   run: echo "PR title: $PR_TITLE"
 ```
 
+**The indirection is a *shell* defence — name the sink before calling it fixed.** Moving the
+value into `env:` stops the expression being expanded into *script text*, which is the whole
+threat when the sink is a shell. It does nothing about **reachability**: the value still
+arrives, and a sink that consumes it as *instructions* rather than as a shell word is exactly
+as exposed as before. An AI-agent prompt (§1.5a), a template engine, an `eval`, an LLM
+tool-call argument, a config parser that honours directives — all such sinks. Worse, the
+dangerous line now contains no `${{ }}`, so the YAML reads clean and the linters below have
+nothing to flag. Say which sink the defence neutralises; where the sink *interprets* the
+value, the fix is not to route attacker-controlled text into it at all.
+
 - In `actions/github-script`, same rule: pass via `env` and read `process.env`, or use
   the provided `context` object — never template untrusted strings into the JS body.
 - `github.head_ref` in cache keys, artifact names, or `docker tag` arguments also needs
@@ -189,6 +199,37 @@ name!), `github.event.pull_request.head.ref`, commit messages
   over `.github/workflows/`.
 - Severity: injection reachable from a fork PR/issue into a secrets-bearing job = Critical;
   into a no-secret read-only job = Medium (still grants runner exec + token).
+
+### 1.5a AI coding agents are CI actors holding your token
+
+A step that invokes a coding agent (Claude Code Action, Gemini CLI, Codex, an inference
+action) takes **instructions** from whatever text it is handed and then acts with the job's
+token, network and filesystem. Audit it as a trust boundary, not as a build step. Nothing
+else in this file covers it, and the ordinary Actions checks do not: the dangerous
+configuration is usually valid YAML with no expression in it.
+
+- **Enumerate the triggers a non-collaborator can fire**, not the ones you had in mind:
+  `pull_request_target`, `issue_comment`, `issues`, `discussion_comment`, `workflow_run`.
+  "It only runs for maintainers" describes intent, not the trigger — opening an issue is not
+  a permission.
+- **Follow the value, not the syntax.** The common miss is the `env:` intermediary above: no
+  `${{ }}` appears anywhere near the prompt and the agent still receives attacker text. Trace
+  every input the agent can read — prompt fields, files it is pointed at, the diff itself —
+  back to whether an outsider can write it.
+- **A tool allowlist shrinks the surface; it does not close it.** Any member that can run a
+  command can substitute one (`echo "$(env)"` exfiltrates), and any member that writes a file
+  a later step executes escalates. Judge an allowlist by what its members *compose* into, not
+  by their names.
+- **Read the sandbox and approval flags as the security control they are.** Anything shaped
+  like "full access", `Bash(*)`, or an auto-approve/`--yolo` switch removes the boundary the
+  rest of the review assumes is there. A wildcard in a user allowlist does the same.
+- **Follow `uses:` into composite actions and reusable workflows.** An agent invoked two
+  levels down is invisible in the caller's YAML, and it is the caller's token it spends.
+- Severity: attacker-controlled text reaching an agent in a job that holds secrets or write
+  permissions = **Critical**; in a read-only, no-secret job = **Medium** (it still buys
+  runner execution and the default token). The instruction trust boundary itself is
+  `sota-skill-security` rules/02; prompt-injection mechanics are `sota-code-security`
+  rules/08.
 
 ## 1.6 Runner trust
 
@@ -373,6 +414,12 @@ durable verdict everywhere (`rules/09` §4), not just where it was first fixed.
 
 ## Audit checklist
 
+- [ ] **Does any workflow hand attacker-writable text to an AI coding agent (§1.5a)?** Trace
+      the value, not the syntax — an `env:` intermediary leaves no `${{ }}` near the prompt
+      and the agent still receives it. Check the triggers a non-collaborator can fire, the
+      sandbox/approval flags, wildcards in user allowlists, and agents invoked through
+      `uses:` two levels down. The `env:` fix in §1.5 is a *shell* defence and does not apply
+      to a sink that interprets the value.
 - [ ] **Does every late-bound reference resolve against a name that pipeline itself
       declares?** `${{ }}`/`{{ }}` expressions, template outputs, step IDs, matrix keys — they bind
       at submission, so lint and schema validation pass on an unrunnable spec. After copying a step

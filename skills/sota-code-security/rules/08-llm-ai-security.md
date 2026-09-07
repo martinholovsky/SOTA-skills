@@ -276,7 +276,11 @@ def test_indirect_injection_cannot_trigger_tools(agent, payload):
     alert on token-consumption anomalies.
 - Log prompts/completions for forensics, but apply rules/07 hygiene — context
   windows routinely contain PII and secrets; redact before storage, scope
-  retention.
+  retention. **This rule is about your application logging its own calls. The
+  developer's coding-agent transcript is a separate surface with a separate
+  owner** — `~/.claude/projects/**/*.jsonl` and its equivalents hold whatever the
+  harness loaded, including files it read on its own initiative:
+  `sota-secrets-management` rules/04 §7.
 
 ## 6. Audit grep starters
 
