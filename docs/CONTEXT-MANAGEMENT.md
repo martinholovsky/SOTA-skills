@@ -63,8 +63,8 @@ decision for each. **Nothing here is a guess; where a number is a heuristic it s
 | no XML tags in `name`/`description` | **hard** | fixed 2026-08-02 | nothing — gated (inv. 4) |
 | no reserved words (`anthropic`, `claude`) in `name` | **hard** | fine | nothing — gated (inv. 4) |
 | `description` + `when_to_use` ≤ 1,536 in the listing | **hard** truncation | 1024, no `when_to_use` | nothing — 512 spare |
-| `SKILL.md` < 500 lines | recommendation | router at **484/500** (2026-08-26) | nothing — gated (inv. 1); 16 lines of slack since BUILD/AUDIT detail moved to `rules/` |
-| `SKILL.md` body < 5,000 tokens | recommendation | router **16,442** — **3.3×** (measured 2026-08-26) | **accept, don't restructure** — but see the correction below |
+| `SKILL.md` < 500 lines | recommendation | router at **399/500** (re-counted 2026-09-07) | nothing — gated (inv. 1); **101 lines of slack** since BUILD/AUDIT detail *and* the library map moved to `rules/` |
+| `SKILL.md` body < 5,000 tokens | recommendation | router **13,415** — **2.7×** (measured 2026-09-02 with `count_tokens`, not re-measured since) | **accept, don't restructure** — but see the correction below |
 | `rules/*.md` length | **no budget** — stage-3 resources | 162 over 200 lines | nothing — **long is correct by design**; the spec says move detail *into* these |
 | TOC for reference files > 100 lines | recommendation | 242 without one | **skip** — tested, no retrieval benefit at 4× our longest file |
 | first 5,000 tokens kept on compaction re-attach | **hard** truncation | router loses ~half | **accept** — a later invocation reloads it in full |
@@ -84,7 +84,7 @@ guide with references" pattern. Three reasons not to, in order of weight:
    three sources agree there is no hard size cap.
 
 Revisit only when the router must **grow**. *(Superseded 2026-08-26: growth no longer
-forces a trim — the router is at 484/500 and detail now goes to `skills/sota/rules/`.)*
+forces a trim — the router is at 399/500 and detail now goes to `skills/sota/rules/`.)*
 
 ## Do long rules files need a table of contents? Tested — no (pilot, 2026-08-02)
 
@@ -293,9 +293,9 @@ only reason the row is worth mentioning rather than silently deleting.
 So after a compaction, a re-attached router keeps roughly its first half. **This is
 unverified in practice** — it is read off the documentation and a byte-count
 heuristic, not observed in a session, and the ordering inside each file decides what
-actually survives. It is recorded rather than acted on: the router is at **484/500**
-lines as of 2026-08-26 (re-count with `grep -c ''`; this sentence has read "500/500 with
-no slack", then 491, then 494, then 500, so it has been wrong more often than right — see
+actually survives. It is recorded rather than acted on: the router is at **399/500**
+lines as of 2026-09-07 (re-count with `grep -c ''`; this sentence has read "500/500 with
+no slack", then 491, 494, 500 and 484, so it has been wrong far more often than right — see
 [ROADMAP.md](ROADMAP.md) item 4), and the honest next step is to
 *watch* a compaction and see what is retained before reshaping anything around a
 number we have not measured.

@@ -5,6 +5,68 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+**Docs only** — no rule text, no new surface, no version bump. A post-release sweep of the
+prose that no gate reads, run against the tree rather than against itself.
+
+### Fixed
+
+- **The roadmap's summary table contradicted its own ledger.** `docs/ROADMAP.md` carries a
+  "Start here next session" priorities table above the full item ledger. Item 12's
+  *priorities row* said its trigger was unmet — "it needs a sixth verification file in
+  `sota-code-security` and there are **5**" — while the *ledger row*, a few hundred lines
+  below in the same file, had said since 2026-09-06 that `rules/15` is the sixth and the
+  trigger **fired**. Re-counted from the tree: `rules/10`–`15`, **6 files, 2,171 lines**. The
+  summary is the half people read and the half nothing regenerates, so it is the half that
+  drifts.
+- **Four counts were stale, every replacement measured.** `skills/sota/SKILL.md` **398 → 399**
+  (`grep -c ''`; `AGENTS.md` says this figure has now been wrong six times, so the count is in
+  the sentence beside the instruction to re-count it). `rules/*.md` **261 → 268**. Invariant
+  1's enumeration **305 → 310 files**. Item 12's verification cluster **5 files / ~1,500 lines
+  → 6 / 2,171**.
+- **`docs/CONTEXT-MANAGEMENT.md` reported the router at 484/500 in three places.** It is
+  **399/500** — 101 lines of slack, not 16 — and its token cell said 16,442 / 3.3× where the
+  measured post-offload figure is **13,415 / 2.7×** (`count_tokens`, `claude-sonnet-5`,
+  2026-09-02). The file's own supersede block already carried the right numbers; the cells a
+  reader hits *first* carried the old ones. Dated measurements inside the supersede blocks
+  were left exactly as written.
+- **The roadmap's priorities table had two rows numbered 3**, and its "as of" date was a week
+  behind its contents.
+
+### Changed
+
+- **`RELEASING.md` §2b now lists four ways the `Front door checked:` line bites, not two.**
+  Both new ones were hit at the v1.35.2 cut and both were read out of the check rather than
+  guessed: invariant 14 parses the line with `tr '·,;' '\n'`, so **a comma inside a term
+  splits it** (`floor, not a ceiling` declared as two terms — both happened to resolve, so it
+  *passed* while the declaration did not say what it meant; the tell is a `N terms declared`
+  count higher than the number of `·` typed); and the match is `grep -qiF`, which is
+  **line-scoped**, so **a term wrapped across two lines in `README.md` does not match** even
+  though the prose reads fine. That one bit twice in a row.
+- **The field-brief adoption rate is now counted rather than recalled.** The roadmap's
+  argument for priority 1 cited two briefs; counted from the release entries, the last five
+  landed **27 of 28** — 2026-08-26 **7 of 7**, its follow-up **4 of 4**, v1.32.3 **6 of 7**,
+  v1.34.0 **6 of 6**, v1.35.2 **4 of 4**. The row also now records what to *ask* a brief for,
+  which has sharpened twice: the rules of ours that caused the defect, and its
+  already-covered reports — a rule earning its place is invisible from inside the repo.
+- **`docs/INDEX.md` gained two rows** for capabilities that shipped in v1.35.2 and v1.36.0
+  with no index entry: auditing what a repo carries but never runs (`sota-devsecops`
+  rules/10), and pinning a version nothing can watch (rules/03 §3.7.1 + rules/09 §6).
+- **Cap watch re-measured (roadmap item 13).** Every number from `grep -c ''`:
+  `sota-shell-scripting/rules/01` **490** is now the tightest file in the library and the next
+  reactive-split candidate; then `sota-code-security/rules/10` **484**,
+  `sota-docs-workflow/rules/01` **477**, `sota-code-security/rules/11` **474**. The row's
+  opening list still carried `rules/12` at **498**, a pre-split number its own narrative
+  contradicted two sentences later.
+
+### Notes
+
+- **`scripts/check-negative-controls.sh` re-run today: `PASS: 32/32`**, and its printed
+  coverage list matches the one restated in `AGENTS.md` (invariants 1, 2, 3, 4, 6, 7, 8, 10,
+  13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 — 20 of 25; the five unprobed need state a
+  worktree lacks). The claim is dated to the run, not carried forward.
+
 ## [1.36.0] - 2026-09-07
 
 **Front door checked:** declared but never reached · inert-dependency sweep · a grep is not proof
