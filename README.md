@@ -26,7 +26,7 @@ survives a long context instead of fading into it. That's why it beats a bigger 
 instead of becoming one. Native on Claude Code; works with Gemini CLI, Codex, and any
 agent that reads `AGENTS.md`.
 
-Under the hood: **42 skills (309 files, ~66k lines)** of state-of-the-art 2026
+Under the hood: **42 skills (309 files, ~67k lines)** of state-of-the-art 2026
 practice, each **instruction** file under 500 lines so only the matching rules load —
 the cap applies to `skills/**` alone, never to README/CHANGELOG/`docs/` — every fast-moving
 claim web-verified against a primary source.
@@ -186,6 +186,21 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   ([rules/10](skills/sota-code-security/rules/10-silent-control-failure.md),
   [rules/14](skills/sota-code-security/rules/14-control-not-in-force.md),
   [kubernetes rules/04 §7](skills/sota-kubernetes/rules/04-gitops-controllers.md))
+- **Pins nothing watches, and watchers that can never report** — a version embedded in a
+  build-tool invocation (`RUN xcaddy build v2.11.4 --with plugin@v0.1.0`, a Bazel arg, a
+  `go install tool@version`) is **unwatchable** by construction: Renovate sees a `RUN`
+  line, and Dependabot has no regex manager at all — so pinning it converts an unreviewed
+  drift into an unreviewed freeze, and both states are silent. The usual answer is a
+  **bespoke watcher**, which then inherits the publishing conventions of whatever it
+  watches: one querying `releases/latest` takes a permanent 404 from a project that ships
+  git tags and no releases, skips that entry every run forever, and leaves a list that
+  still reads as complete. Same family, one layer down: in Go `require` is a
+  **floor, not a ceiling** — under Minimal Version Selection the graph's highest
+  requirement wins, so "we pinned it" is simply false for anything another module
+  also requires.
+  ([devsecops rules/03](skills/sota-devsecops/rules/03-dependencies.md),
+  [rules/09](skills/sota-devsecops/rules/09-gates-that-hold.md),
+  [golang rules/07](skills/sota-golang/rules/07-tooling-ci.md))
 - **Controls that block everything** — the mirror image, and the one every other pass
   here looks past. An *enforcement* control (cap, quota, filter, allowlist, sandbox
   policy) can be tightened until it refuses the legitimate case too, and it passes the

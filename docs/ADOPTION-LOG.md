@@ -1787,3 +1787,118 @@ Considered and not added: a docs/release-workflow section (commit convention is 
 under Security conventions, and branching is visible in the repo) and per-skill sections for
 mobile, ML, confidential computing and CLI — all conditional enough that the `Projects`
 table already covers them.
+
+### 2026-09-07 — pinning as a freshness decision, and the watcher you had to write yourself
+
+Source: a field brief from a session that used the library to pin and deploy a Caddy-based
+API gateway (Coraza WAF + rate limiting) on self-hosted Kubernetes. Fifth brief of this
+shape; the predecessor landed as v1.34.0. Four proposals, **all four adopted — two of them
+`adopted with a correction`**, because two supporting claims did not survive reproduction.
+
+**Verified before adopting, per this log's own rule.** Every "0 hits" claim was re-run and
+then the candidate home file was *read*, not grepped: `sota-devsecops` rules/03 §3.1 and
+§3.7 in full, rules/09, `sota-golang` rules/07 §4 and rules/05 §8, `sota-code-security`
+rules/15 §2–§2.2a. Three of the brief's own falsifiable claims were reproduced against
+primary sources rather than accepted: MVS semantics at go.dev/ref/mod, Renovate
+`customManagers` and the Dependabot options reference, and the GitHub API behaviour for a
+tag-only repo.
+
+**Adopted #1 — a pin nothing can see is a freeze, not a pin.** `sota-devsecops` rules/03
+**§3.7.1** (new). §3.7 audited only the *absence* of update automation and assumed
+Renovate/Dependabot as the mechanism; nothing addressed a version string the bot cannot
+parse — `xcaddy build v2.11.4 --with plugin@v0.1.0` in a `RUN` line, and the same shape in
+Bazel/Make args, `go install tool@version`, and `pip install x==y` inside a Dockerfile.
+Pinning converts an unreviewed drift into an unreviewed freeze and **both states are
+silent**. `customManager|regexManager` returned **0 hits across all 42 skills**, so the
+supported fix was unstated as well as the problem. Confirmed against primary sources
+2026-09-07: `customManagers` is the current Renovate option and takes an explicit
+`datasourceTemplate`; Dependabot's ecosystems are manifest-shaped and it has **no**
+regex-manager equivalent (it reads a Dockerfile's `FROM`, not its `RUN` args). Nearest
+prior coverage, none of which closes it: rules/01 (keep Actions pins fresh with Renovate —
+right obligation, but only where a bot can see the pin), rules/03 §3.8 (vendored code rots
+invisibly to manifest-reading scanners — same shape, different mechanism), and
+`sota-architecture` rules/01 §4 (an experiment with no scheduled read-back). Worth noting
+the library already audited the *opposite* direction of the identical construct —
+`sota-golang` rules/07 flags floating `go install foo@latest` as MEDIUM — so it covered the
+unpinned half and not the frozen half.
+
+**Adopted #2, with a correction — a bespoke version watcher inherits the publishing
+conventions of what it watches.** `sota-devsecops` rules/09 **§6** (new), deliberately
+*not* rules/03: this is inert-control material and rules/03 had 49 lines of headroom.
+
+Both of the brief's failure modes are real and neither was stated: a watcher querying
+`GET /repos/<o>/<r>/releases/latest` gets a 404 from a tag-only project and skips that
+entry silently forever, and a "more than one minor behind" threshold reported **OK** for the
+`v2.11.4 → v2.11.5` patch that was the entire reason the pin existed. Reproduced against
+the live API 2026-09-07: `mholt/caddy-ratelimit` has **0** releases, the single tag `v0.1.0`,
+and `releases/latest` answers `404 Not Found` — which also confirms rules/03 §3.9.5's
+"recent `pushed_at`, no release in two years" rule firing exactly as written (`pushed_at`
+2026-06-12).
+
+This is the **unreachable-not-absent** shape. `sota-code-security` rules/15 §2.2a already
+carries a substantial treatment of instruments that run over time — the four-state
+DONE/NOT-DONE/GONE/UNKNOWN model, the blindness counter, cross-checking against an
+independent signal — and §2.2's known-bad/known-good references would have caught the 404
+entry. But it lives in a different skill, and someone writing a version watcher loads
+`sota-devsecops`. So §6 states the version-watching instance and **points at rules/15
+§2.2a** rather than restating it; the threshold axis is the genuinely new half.
+
+*The correction:* the brief's supporting caveat was that `sort -V` might be missing from the
+watcher's container. Measured the same day rather than repeated: the *inversion* is real
+(`sort` ranks `v2.9.1` above `v2.11.4`; `sort -V` gets it right), but **BusyBox 1.37.0 in
+`alpine:latest` does support `-V`** — it is simply absent from the terse usage line. So the
+rule ships as *verify the comparator in the image it runs in*, with the measurement stated
+in both directions, rather than as *alpine lacks it*.
+
+**Adopted #3, with a correction — in Go, `require` is a FLOOR, not a ceiling.**
+`sota-golang` rules/07 **§4**, with a pointer from rules/03 §3.7.1. `minimal version
+selection|MVS` returned **0 hits across all 42 skills**, confirmed by reading: §4 covered
+the `go`/`toolchain`/`tool` directives and mentioned `replace` only as "temporary at best",
+and rules/05 §8 cited `proxy.golang.org` for sumdb verification alone. Verified at
+go.dev/ref/mod: MVS tracks "the highest required version of each module" and required
+versions "are minimum versions and may be increased automatically", so a `require` cannot
+cap a non-leaf dependency.
+
+*The correction:* the brief said "to actually cap, you need `replace` **or** `exclude`". The
+reference says an excluded version's requirement is *redirected to the next higher version* —
+`exclude` moves selection **up**, so it cannot cap either. Shipping the sentence as written
+would have taught a wrong remedy. **Only `replace` caps**, and that is what §4 now says. The
+floor half is kept, because it is the half that makes the rule useful: raising a `require` is
+the correct way to force a CVE fix, and it goes inert once upstream requires it anyway.
+
+**Adopted #4, with its own premise corrected — pin while the pin is still a no-op.**
+Folded into rules/03 **§3.7.1** rather than given its own subsection, on the 500-line cap
+(see below). The idea: pin when the pinned version is already what resolves, so the pin is
+provably inert and no later regression can be blamed on it; prove it with an SBOM diff;
+never pin and upgrade in one change; and read the version from the resolver that will
+actually run (`proxy.golang.org/<module>/@latest`) rather than GitHub `releases/latest`,
+which answers a different question.
+
+*The premise that failed:* the brief called this "the same reasoning as one-variable-at-a-time
+elsewhere in the library". It is not — `one variable at a time|change one thing|confound|two
+changes at once|isolate the change` returns **0 hits across all 42 skills**. The reasoning it
+appealed to does not exist here, which made the proposal slightly *larger* than advertised,
+not smaller. Stated explicitly in §3.7.1 rather than cited.
+
+**Rejected: already ours — three, reported by the brief as signal rather than proposals.**
+`sota-devsecops` rules/03 §3.9.5 (`03-dependencies.md:389-391`, the recent-push/stale-release
+rule) fired verbatim in the field; `sota-code-security` rules/15 §2.1
+(`15-instruments-and-guards.md:96-108`, a probe that exercises a neighbouring property)
+covers the `curl -H "Host:"` case, where the header does not set TLS SNI so a `000` measured
+handshake rejection rather than the service; and router principle 3 (a negative claim needs
+more proof) is what caught all three of the brief's own probes, each of which failed *toward*
+a false negative. No change to any of the three. The SNI case is offered in the brief as a
+candidate transport-layer example for §2.1, whose examples are all artifact-shaped — not
+taken here, because §2.1 is already at the length where an added example costs more than it
+teaches.
+
+**Landed:** `sota-devsecops/rules/03` §3.7.1, `sota-devsecops/rules/09` §6, and
+`sota-golang/rules/07` §4, each with its audit-checklist half in the same change · v1.35.2
+
+**A note the cap forced.** `03-dependencies.md` was at 451/500 and is now **487**. That
+decided two placements in this change — the watcher rule went to rules/09 (343 → 394) and
+Proposal 4 lost its own subsection — and it is the second consecutive session in which the
+cap, not the argument, chose where text lives. The offload is §3.9 (the inert-dependency
+sweep, ~167 lines), and it is deliberately **not** bundled here: 42 references to `§3.9`
+exist outside the file, and mixing a split with an adoption makes both harder to review.
+Opened as a roadmap item.

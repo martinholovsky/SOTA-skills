@@ -251,6 +251,41 @@ Renovate itself is a powerful bot: it needs PR-write only — review which app/t
 runs as and whether automerge bypasses required checks (it must not; automerge should
 use the platform merge with required checks intact).
 
+### 3.7.1 Landing a pin: name its watcher, and pin while it is still a no-op
+
+Everything above assumes the version sits where a bot parses it. A version embedded in a
+**build-tool invocation** is pinned and unwatchable by construction — no manifest exists,
+and the bot sees a `RUN` line:
+
+```dockerfile
+RUN xcaddy build v2.11.4 --with github.com/example/caddy-plugin@v0.1.0
+```
+
+Same shape in Bazel/Make args, `go install tool@version`, `pip install x==y` in a
+Dockerfile. Unpinned it drifts to latest on every rebuild; pinned it is frozen forever.
+**Both states are silent** — only one of them sounds finished.
+
+- **Every pin names the mechanism that will tell you it is stale**, and "Renovate" counts
+  only once you confirm the bot parses *that file and that line*. `customManagers` (a regex
+  over arbitrary files plus an explicit `datasourceTemplate`) teaches it a non-manifest pin;
+  **Dependabot has no equivalent** — its ecosystems are manifest-shaped, so it reads a
+  Dockerfile's `FROM` and not its `RUN` args (options reference, verified 2026-09-07). With
+  no bot that can see it the pin needs a watcher, and a watcher is an instrument (`rules/09` §6).
+- Otherwise **accept the freeze in writing**: an owner and a review date beside the pin —
+  unwritten, it decays like an experiment with no scheduled read-back (`sota-architecture`
+  rules/01 §4).
+- **Pin while the pinned version is already what resolves.** The pin is then provably inert
+  — determinism at zero behaviour change — so no later regression can be blamed on it; an
+  SBOM diff (§3.5) showing the artifact component-for-component identical is the receipt.
+  **Never pin and upgrade in one change**: that regression has two candidate causes and no
+  build separates them.
+- Read the version you are pinning to from **the resolver that will actually run**, and cite
+  it — for Go modules `proxy.golang.org/<module>/@latest`, where `require` is a floor rather
+  than a cap (`sota-golang` rules/07 §4). GitHub's `releases/latest` answers a different
+  question and 404s outright for a repo publishing tags and no releases (`rules/09` §6).
+- Audit: a pin outside anything the repo's update automation parses, with no watcher and no
+  written acceptance = **Medium**; **High** if the frozen component faces the internet.
+
 ## 3.8 Vendoring tradeoffs
 
 Vendoring (committing dependency source) is occasionally right, mostly wrong:
@@ -443,6 +478,7 @@ dynamic-loading trap, a code-only search is structurally incapable of settling i
 - [ ] SBOM (CycloneDX/SPDX) generated per artifact from lockfile + image, attached to the digest, queryable centrally
 - [ ] Scanning: PR diff gate + scheduled scans of deployed digests; triage uses reachability/KEV/EPSS **and the advisory's own affected-platform/affected-configuration text** (§3.6); decisions recorded as VEX; ignores have owner + expiry; SLAs enforced
 - [ ] Renovate/Dependabot active with cooldown (`minimumReleaseAge`), grouping, automerge restricted to dev/patch with green required checks; Actions + Docker digests auto-pinned
+- [ ] **Every pin has a named staleness mechanism (§3.7.1)** — the bot confirmed to parse *that* file/line, or a watcher, or a written acceptance of the freeze with an owner and a review date; pins landed while still a no-op, never bundled with an upgrade
 - [ ] Vendored deps (if any) are scanner-visible, auto-refreshed, and unpatched (or patches tracked upstream)
 - [ ] **Inert-dependency sweep run (§3.9)**: every direct dependency, registered module, and plugin traced to a real entrypoint — not just to an import — with the impossible-path and dynamic-loading traps checked in both directions
 - [ ] Each "unreached" claim **proven by deletion** in a scratch copy: real build + lint/vet + full suite, with commands, exit codes, before/after transitive counts, and which suites ran — and the deletion asserted to have taken effect
