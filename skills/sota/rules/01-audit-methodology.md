@@ -65,7 +65,7 @@ You cannot audit what you have not mapped. Enumerate:
   signing/provenance setup. Record which declared dependencies, registered
   modules, and plugins are actually **reached from an entrypoint** — the
   declared-but-inert ones are a finding CVE scanning structurally cannot see
-  (`sota-devsecops` rules/03 §3.9).
+  (`sota-devsecops` rules/10).
 - **Deploy & runtime config**: Dockerfiles/Containerfiles, K8s manifests and
   Helm charts, Terraform/IaC, network policies, GitOps definitions.
 

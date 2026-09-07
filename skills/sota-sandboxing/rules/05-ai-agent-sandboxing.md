@@ -243,7 +243,7 @@ exact command and flags you invoke: *does this evaluate build metadata the targe
 controls?* Many do by design — Rust `build.rs` and proc macros (so `cargo
 clippy`, `cargo metadata`-driven tooling, and call-graph modes that compile),
 Python `setup.py` and PEP 517 backends, npm `preinstall`/`install`/`postinstall`
-(`sota-devsecops` rules/03 §3), Gradle/Maven build scripts, anything invoking
+(`sota-devsecops` rules/03 §3.4), Gradle/Maven build scripts, anything invoking
 `make`. The answer is a property of the command, not the language, and it changes
 between flags: a build-mode-`none` extraction and a build-mode-`autobuild`
 extraction of the same repository differ by arbitrary code execution. **Verify it

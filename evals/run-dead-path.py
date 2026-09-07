@@ -4,7 +4,7 @@
 Every other audit instrument in evals/ scores RECOGNITION and returns +0.00,
 because a frontier model handed the code and the question is already at ceiling.
 This one scores the PROCEDURE that sota-code-security rules/11 and
-sota-devsecops rules/03 §3.9 require: mutate the control, delete the dependency,
+sota-devsecops rules/10 require: mutate the control, delete the dependency,
 run the real build. The fixture (cases/dead-path/) is built so that a static
 read gets half the items wrong, so the two arms separate on behaviour rather
 than knowledge.

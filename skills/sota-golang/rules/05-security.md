@@ -288,7 +288,7 @@ cfg := &tls.Config{MinVersion: tls.VersionTLS12} // TLS13 for internal-only
   — but its graph includes tests of reachable packages (`-vendor` excludes tests
   *of dependencies*; your own test-only deps still read as reached). A tool's
   silence is not proof — the sweep, the deletion proof, and the leverage-ratio
-  and upstream-health checks are `sota-devsecops` rules/03 §3.9.
+  and upstream-health checks are `sota-devsecops` rules/10.
 - `go mod tidy` enforced in CI (`git diff --exit-code go.mod go.sum` after).
 - Pin tool versions via 1.24 `tool` directives in go.mod (`rules/07`) so the
   linter/codegen supply chain is hash-verified too.
