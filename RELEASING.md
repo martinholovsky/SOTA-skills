@@ -111,9 +111,21 @@ Every term must appear in `README.md` or `docs/INDEX.md` **and** in that release
 CHANGELOG entry, so a filler word cannot buy a pass.
 
 **The match is literal (`grep -F`) and the front-door line is excluded from the entry
-search**, so a term cannot satisfy itself. Two ways this bites at cut time, both seen on
-real cuts: declaring `negative control` when the entry writes `negative-control`
-(hyphenation counts), and declaring a word that only appears in the declaration line.
+search**, so a term cannot satisfy itself. **Four** ways this bites at cut time, all seen on
+real cuts:
+
+1. declaring `negative control` when the entry writes `negative-control` — hyphenation counts;
+2. declaring a word that only appears in the declaration line;
+3. **a comma inside a term splits it.** The parser is `tr '·,;' '\n'`, so
+   `floor, not a ceiling` is declared as *two* terms. Both halves happened to resolve at
+   v1.35.2, so it **passed** while the declaration did not say what it meant — the tell is a
+   `N terms declared` count higher than the number of `·` separators you typed. Pick
+   comma-free terms;
+4. **`grep -F` is line-scoped, so a term broken across a line wrap does not match.** Twice at
+   v1.35.2: `floor, not a ceiling` and `a grep is not proof` were both present in `README.md`
+   and both wrapped mid-phrase. The prose reads fine and the gate is right. Rewrap the
+   README, or pick a shorter term.
+
 Check a candidate before you commit to it:
 
 ```sh

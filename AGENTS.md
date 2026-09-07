@@ -82,9 +82,9 @@ than guess.**
 
 *Adding a `rules/NN` file?* Invariant 10 checks its own `SKILL.md` indexes it and
 **invariant 15** checks the library map (`skills/sota/rules/04`) lists it, both directions.
-`skills/sota/SKILL.md` is at **398/500** (re-verified 2026-09-06; three offloads got it there —
+`skills/sota/SKILL.md` is at **399/500** (re-counted 2026-09-07; three offloads got it there —
 BUILD/AUDIT, the `rules/01` split, then the library map to `rules/04`: **detail belongs in
-`rules/`, imperatives in the router**). Wrong **five** times — **re-count with `grep -c ''`**.
+`rules/`, imperatives in the router**). Wrong **six** times — **re-count with `grep -c ''`**.
 Editing the router's **BUILD section** moves `ROUTER_BUILD_SHA` and aborts the evals; AUDIT does not.
 The gates enumerate via `git ls-files`, so an **unstaged new file is invisible** — `git add` first.
 
@@ -93,7 +93,7 @@ plus `evals/smoke-runners.py`, over **two** subjects: `check-invariants.sh` (par
 `verify-setup.sh` (part B). Each probe injects a known-bad and requires *the intended check* to
 complain — a non-zero exit for any other reason is a **FALSE PASS**, not a catch. Part A mutates
 a good tree in a disposable git worktree; part B is inverted, building a fully-configured fake
-machine (`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **32 probes** (re-run 2026-09-06: `PASS: 32/32`; wrong twice
+machine (`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **32 probes** (re-run 2026-09-07: `PASS: 32/32`; wrong twice
 before, and deliberately **not** gated — a static count of call sites under-reads, so only
 running it is authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18, 19,
 20, 21, 22, 23, 24, 25** — 20 of 25 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. The five
