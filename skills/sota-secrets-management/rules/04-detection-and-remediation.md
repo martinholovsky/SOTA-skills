@@ -146,8 +146,9 @@ Severity-of-response calibration:
 
 **Leaks outside git** follow the same runbook with a different purge step: secrets pasted into
 CI logs (purge/expire the log retention), chat (delete + rotate; assume exported), issue
-trackers, error trackers (scrub events via API), AI tool transcripts, and pastebins (report for
-takedown). The rotate-first rule is identical — purging is best-effort everywhere; rotation is
+trackers, error trackers (scrub events via API), AI tool transcripts (§7 — the developer's own
+agent-session files, which are a standing credential store rather than only a post-leak
+location), and pastebins (report for takedown). The rotate-first rule is identical — purging is best-effort everywhere; rotation is
 the only reliable mitigation.
 
 ## 4. Git history hygiene
@@ -237,12 +238,57 @@ grep -rn 'gitleaks:allow\|nosec\|trufflehog:ignore' .
 
 Triage every hit per SKILL.md severity table; redact values in the report (prefix + length).
 
+## 7. Agent session transcripts are a credential store
+
+Coding-agent harnesses persist the full model context to disk — Claude Code writes
+`~/.claude/projects/<project>/<session>.jsonl`, and every comparable tool has an
+equivalent. **Assume that file holds every secret the agent was ever shown**, including
+files the harness loaded on its own initiative rather than because the repo asked it to.
+
+Field-reported 2026-09-07 and verified clause by clause: a harness loaded a repo's `.env`
+into context under a header reading *"project instructions, checked into the codebase"*.
+`git ls-files --error-unmatch .env` errored (untracked); `git check-ignore -v .env` named
+the `.gitignore` line that excludes it; no `@`-import of it existed in the agent file; the
+mode was `600`. **Every clause of that label was false**, and four live API keys were then
+sitting verbatim, one line each, in the transcript. A harness's account of *why* it read a
+file is a claim, not evidence — check it the way you would any other
+(`sota-skill-security` rules/02 §2).
+
+- **Inventory the path.** It belongs on the same list as `.env`, shell history, IDE
+  settings and CI variables. It is missing from most checklists because it is newer than
+  they are, not because it is safe.
+- **Scope the scan before you run it.** A scanner pointed at that directory returns every
+  secret the agent has seen across *every* project, not only this one — that is a triage
+  budget, not a finding count. Run it with `--redact` (§1) so the scan output is not a
+  third copy of the value.
+- **Any tool that reads it is a secret-processing tool.** Sweeping transcripts as an input
+  corpus — a linter, an analytics script, a differential oracle — puts that tool under
+  `rules/03` §2.1: persist a digest and a skeleton, never the line.
+- **A tool whose input path lies outside the repo has an attack surface that changes with
+  no commit to the repo.** Nothing in the diff tells you the corpus gained four live keys
+  overnight. Re-establish what the location holds before each run; it is not a fixed
+  property of the tool's design.
+- **Calibrate before escalating.** Owner-only file → owner-only file on one machine is an
+  **expanded local surface, not a disclosure**, and not on its own a reason to rotate. The
+  same incident arc that produced this finding had already ordered one unnecessary rotation
+  by reading a scanner's *rule names* instead of its *values*. Read the values; then §3 if
+  they are real.
+
+Audit: a repo tool that reads an agent-transcript directory and writes any part of a line
+verbatim = **High**; the same tool emitting digests and skeletons = no finding. A secret
+inventory that does not name the transcript path = **Medium**.
+
 ## Audit checklist
 
 - [ ] gitleaks (or equivalent) pre-commit hook in `.pre-commit-config.yaml` and documented in
       dev setup; custom rules cover internal token prefixes.
 - [ ] Blocking CI secret-scan on every PR; scheduled full-history scan; built images scanned;
       scanner output redacted.
+- [ ] **The agent-session transcript directory is on the secret inventory (§7)** — scanned
+      with scope decided in advance and `--redact` on, and every repo tool that reads it
+      treated as a secret-processing tool (`rules/03` §2.1). Severity calibrated on the
+      values, not on a scanner's rule names: owner-only to owner-only on one machine is an
+      expanded surface, not a disclosure.
 - [ ] GitHub push protection / server-side pre-receive scanning enabled org-wide.
 - [ ] Allowlists narrow (path/fingerprint), justified, and reviewed; all inline
       `gitleaks:allow` suppressions audited.

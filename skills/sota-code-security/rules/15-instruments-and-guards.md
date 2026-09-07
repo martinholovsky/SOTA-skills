@@ -146,6 +146,16 @@ answer on purpose.** Before its output is quoted anywhere:
 - **Validate on inputs where failure is possible.** "No false positives on three
   clean libraries" establishes nothing if none of them contains the construct the
   control keys on: it could not have failed. Pick inputs that *can* fail.
+- **Read what your scanner's default configuration excludes, before quoting a clean run.**
+  A tool can ship a default severity threshold that is silent about its most valuable
+  detector. Field-reported: a constant-time analyser reports division and weak RNG by
+  default and keeps its *warning* tier — secret-dependent branches, early-exit comparison,
+  secret-indexed table lookups, variable-time encoding — switched off, so a default run says
+  least about early-exit MAC comparison, which is the most common real timing bug there is
+  (Lucky Thirteen). This is **not** the threshold *you* chose being too coarse
+  (`sota-devsecops` rules/09 §6): you chose nothing, and the silence is the vendor's. Print
+  the tool's effective configuration alongside its verdict and name the detector families
+  that did not run.
 - **When a wrapper reports an empty reason, go one layer down.** A CLI that
   swallows its child's log turns a named, fixable cause into "produced no
   output". The answer is usually one command deeper, not one hypothesis further.

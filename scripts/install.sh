@@ -29,6 +29,7 @@
 #   scripts/install.sh --copy          # copy instead of symlink (pin a snapshot)
 #   scripts/install.sh --routing       # also set up always-on routing (force)
 #   scripts/install.sh --no-routing    # skip the routing offer
+#   scripts/install.sh --no-verify     # skip the reachability check that ends every run
 #   scripts/install.sh --yes           # assume the recommended answer to prompts
 #   scripts/install.sh --color=WHEN    # always | never | auto (default; --no-color = never)
 #   scripts/install.sh --help
@@ -47,6 +48,11 @@ readonly SKILLS_SRC="$REPO/skills"
 
 TARGET="$HOME/.claude/skills"
 DO_UPDATE=0
+# Every run ends by asking the verifier whether the install actually took.
+# "Linked 42 skills" is what this script DID; reachability is what the agent GETS,
+# and the two diverged silently once already (a pull adds no symlink, so a release
+# that adds a skill leaves a puller short with no symptom).
+DO_VERIFY=1
 DO_VERSION=0
 USE_COPY=0
 DO_ROUTING=-1   # -1 = ask/auto, 0 = skip, 1 = force
@@ -483,6 +489,7 @@ while [ $# -gt 0 ]; do
     --copy)       USE_COPY=1 ;;
     --project)    shift; [ $# -gt 0 ] || die "--project needs a directory"; TARGET="$1/.claude/skills" ;;
     --routing)    DO_ROUTING=1 ;;
+    --no-verify)  DO_VERIFY=0 ;;
     --no-routing) DO_ROUTING=0 ;;
     --yes|-y)     ASSUME_YES=1 ;;
     --color)      shift; [ $# -gt 0 ] || die "--color needs always|never|auto"; COLOR_MODE="$1" ;;
@@ -606,3 +613,20 @@ printf '    "%s/scripts/install.sh"   %s# …re-link to pick up any new skills%s
   "$REPO" "$C_DIM" "$C_RESET"
 printf '  %sOr in one step:%s  %s"%s/scripts/update.sh"%s\n' \
   "$C_DIM" "$C_RESET" "$C_CYAN" "$REPO" "$C_RESET"
+# Nothing here runs the verifier, and a pull that adds a skill creates no link —
+# so "installed" and "complete" look identical until something compares the two.
+printf '  %sFull check (repo context, gates, CI):%s  %s"%s/scripts/verify-setup.sh"%s\n' \
+  "$C_DIM" "$C_RESET" "$C_CYAN" "$REPO" "$C_RESET"
+
+# --- did it actually take? ---------------------------------------------------
+# Read-only, section A only, and NEVER fatal: this reports on the install, it does
+# not gate it. A non-zero verifier must not abort a successful link run, and
+# `set -e` would do exactly that without the guard.
+if [ "$DO_VERIFY" -eq 1 ] && [ -x "$REPO/scripts/verify-setup.sh" ]; then
+  section '🔎' 'Reachability'
+  vrc=0
+  "$REPO/scripts/verify-setup.sh" --reach-only || vrc=$?
+  if [ "$vrc" -ne 0 ]; then
+    warn "verify-setup reported a problem above — the link step succeeded, the reach did not"
+  fi
+fi

@@ -190,6 +190,34 @@ if hmac.compare_digest(hashlib.sha256(token.encode()).digest(),
                        hashlib.sha256(stored.encode()).digest()): ...
 ```
 
+### 6.1 Constant time is a property of the emitted code, not of the source
+
+The compiler decides whether your fix survives. That is already the accepted rule for
+*wiping* — plain `memset` is dead-store-eliminated, which is why `explicit_bzero` /
+`sodium_memzero` / `SecureZeroMemory` exist (`sota-c-cpp` rules/04 §4) — and the same
+reasoning governs every other constant-time construct, where it is far less widely applied:
+
+- **Secret-dependent `/` and `%` lower to a variable-latency instruction** (x86-64 `IDIV`,
+  arm64 `SDIV`) whose timing depends on the operands. The KyberSlash class is exactly this,
+  and no amount of source-level care removes it.
+- **"I made the divisor a constant so it strength-reduces" is a hope, not a fix.** Whether
+  the optimiser turns a constant division into a multiply-shift varies by compiler, target
+  *and* optimisation level. Field-reported: one such fix still emitted a real divide at
+  **every** level on one target, and at `-Os`/`-Oz` on two others — and `-Os`/`-Oz` are
+  levels shipped binaries commonly use.
+- **So read the disassembly, across the matrix you actually ship** — each target
+  architecture and each optimisation level, built with the toolchain that builds your
+  product rather than whichever cross-compiler was convenient. **A clean result proves one
+  configuration constant-time, never the code.**
+- If you hand-write the multiply-shift, **check it against the original expression over the
+  whole input domain**, not over samples: an off-by-a-power-of-two reciprocal agrees for
+  millions of inputs before it diverges — the exhaustive-domain case in `sota-testing`
+  rules/06.
+- Static inspection of emitted code and **statistical timing measurement of the running
+  binary are two different instruments** answering two different questions, and neither sees
+  cache or other microarchitectural channels. Say which one you ran, and do not let one
+  stand in for the other (`rules/15` §2).
+
 ## 7. Signing & signed artifacts
 
 - Signed URLs / signed cookies / license blobs: HMAC-SHA-256 over a
@@ -318,6 +346,10 @@ createCipheriv\(.*, *(['"]).{1,16}\1  (short/static key/nonce)
 
 ## Audit checklist
 
+- [ ] **Was every constant-time claim checked in the emitted code (§6.1)**, across the
+      architectures and optimisation levels actually shipped — including `-Os`/`-Oz` — rather
+      than read off the source? Any secret-dependent `/` or `%` located, and a hand-written
+      multiply-shift replacement verified over the whole input domain rather than samples?
 - [ ] Are all symmetric encryptions AEAD (GCM/ChaCha20-Poly1305 family), with no ECB/unauthenticated-CBC/custom modes anywhere?
 - [ ] Is nonce generation per-key safe (counter or XChaCha/SIV for random), never hardcoded or derived from predictable values?
 - [ ] Is AAD used to bind ciphertexts to their context?

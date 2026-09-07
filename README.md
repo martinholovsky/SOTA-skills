@@ -201,6 +201,24 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   ([devsecops rules/03](skills/sota-devsecops/rules/03-dependencies.md),
   [rules/09](skills/sota-devsecops/rules/09-gates-that-hold.md),
   [golang rules/07](skills/sota-golang/rules/07-tooling-ci.md))
+- **The agent's own tooling as an attack surface** — three surfaces the ordinary checks miss.
+  A coding agent invoked in CI is a **CI actor holding your token**: it takes instructions
+  from whatever text it is handed, and the usual `env:` fix for expression injection is a
+  *shell* defence that does nothing for a sink which interprets the value — it just removes
+  the `${{ }}` reviewers grep for. The developer's **agent session transcript** is a
+  credential store nobody inventories, holding whatever the harness loaded, including files
+  it read on its own initiative and mislabelled. And any tool that sweeps such text must
+  **never persist raw**: store a digest plus a structural skeleton, because shape-based
+  redaction is an enumeration and a bare 64-character hex key has no shape to match.
+  ([devsecops rules/01 §1.5a](skills/sota-devsecops/rules/01-pipeline-security.md),
+  [secrets rules/04 §7](skills/sota-secrets-management/rules/04-detection-and-remediation.md),
+  [secrets rules/03 §2.1](skills/sota-secrets-management/rules/03-application-patterns.md))
+- **Controls the compiler removed** — a safeguard that is correct in the source and absent
+  from the binary. Wiping is the known case (`memset` is dead-store-eliminated); the same
+  applies to constant-time arithmetic, where strength reduction is an optimiser courtesy, so
+  **constant time is a property of the emitted code**, verified across every architecture and
+  optimisation level you ship — `-Os` and `-Oz` included.
+  ([code-security rules/04 §6.1](skills/sota-code-security/rules/04-cryptography.md))
 - **Controls that block everything** — the mirror image, and the one every other pass
   here looks past. An *enforcement* control (cap, quota, filter, allowlist, sandbox
   policy) can be tightened until it refuses the legitimate case too, and it passes the
@@ -803,7 +821,13 @@ run is *skipped* is a gate on paper.
 
 ```sh
 /path/to/SOTA-skills/scripts/verify-setup.sh     # read-only; --runs N widens the CI sample
+/path/to/SOTA-skills/scripts/verify-setup.sh --reach-only   # section A only: is the library reaching this machine?
 ```
+
+`install.sh` (and therefore `update.sh`) runs the `--reach-only` half itself at the end
+of every run, because *"linked 42 skills"* is what the installer **did** and reachability
+is what the agent **gets** — and the two diverge silently, since a `git pull` updates
+every existing symlink and can create none. Pass `--no-verify` to skip it.
 
 It reports skills reachability, the routing hook, the profile symlink, a licence
 under *any* name, which gates exist, whether a hook is **installed** rather than

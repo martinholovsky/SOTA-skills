@@ -1907,3 +1907,133 @@ cap, not the argument, chose where text lives. The offload is §3.9 (the inert-d
 sweep, ~167 lines), and it is deliberately **not** bundled here: 42 references to `§3.9`
 exist outside the file, and mixing a split with an adoption makes both harder to review.
 Opened as a roadmap item.
+
+### 2026-09-08 — the agent's own tooling as an attack surface, from two independent sources
+
+Two intakes landed together because they turned out to be the same subject approached from
+opposite ends: a **field brief** from a session that used this library on an unrelated
+repository and then had an incident there, and a **review of [trailofbits/skills](https://github.com/trailofbits/skills)**
+(83 skills, 7.0k stars, requested by the operator). Neither knew about the other; both are
+about what an *agent's own tooling* does to controls the rest of the library assumes.
+
+**Licence, checked before anything was planned.** `trailofbits/skills` is **CC-BY-SA-4.0**
+(read from the GitHub API, not the README). Share-alike is **incompatible with this
+library's CC BY 4.0** for text reuse, so this intake takes **idea classes only** — no
+wording, no examples, no tables carried over. Same rule as the unlicensed-source cases
+above, reached by a different route: there the text could not be taken because nothing
+granted it, here because taking it would relicense us.
+
+#### From the field brief — both proposals adopted, both reframed
+
+**Adopted with a correction — never-persist-raw** (`sota-secrets-management` rules/03
+**§2.1**). The brief's argument is right and was absent: redacting types need producer
+control, so for **text whose producer you do not own** — a swept corpus, shell history, a
+crash dump, an agent transcript — the guidance silently degrades to shape-scrubbing alone,
+and shape-scrubbing is an enumeration. Its evidence is the strongest kind: a shape-redaction
+fix that **its own regression test defeated on the first run** (a GitLab PAT and a Slack
+webhook URL), and later a Vast.ai key that is **bare 64-character hex with no prefix at
+all** — unmatchable by any prefix rule, and inseparable by a generic entropy rule from a
+hash, a UUID or a minified bundle. The rule now says: persist a digest plus a structural
+skeleton, and it states the shape channel as a real if narrow disclosure rather than
+claiming zero leak.
+
+*The correction:* the brief described the library as having **two** tiers and asked for its
+rule to be inserted "as item 3". The list has **three** — item 3 is already a *never log*
+category rule (full env, full headers, connection strings). They had read lines 56–60 and
+the list continues past them. The new tier is item 4 with its own subsection, and the
+argument is stronger for it: item 3 is *also* an enumeration, just of categories rather
+than shapes.
+
+**Adopted with a correction — the agent session transcript is a credential store**
+(`sota-secrets-management` rules/04 **§7**). Verified observation, not inference: a harness
+loaded a repo's `.env` into context under a header claiming *"project instructions, checked
+into the codebase"*, and each clause was falsified with a command — untracked
+(`git ls-files --error-unmatch`), gitignored (`git check-ignore -v`), no `@`-import, mode
+`600`. Four live keys then sat verbatim in `~/.claude/projects/**/*.jsonl`. The rule covers
+what no checklist carries: inventory the path, scope the scan before running it, treat any
+tool that reads the directory as a secret-processing tool, and note that **a tool whose
+input path is outside the repo has a surface that changes with no commit to the repo**. It
+also carries the brief's own severity discipline — owner-only to owner-only on one machine
+is an expanded surface, **not** a disclosure — because the same arc had already ordered one
+unnecessary rotation by reading a scanner's rule *names* instead of its *values*.
+
+*The correction:* the brief reported that **nobody** covers this, from a `grep -li
+transcript` that returned five files. `rules/04`:149 — **the very file it proposed** —
+already said "AI tool transcripts", in the leaks-outside-git runbook. Its own sweep missed a
+hit in its own target, which is the sandbox-filtered-recursion fault the brief itself
+documents in its §5, biting a third time in one session. So this shipped as *extend the
+existing clause* (which now points at §7) rather than as a new orphan section — the
+`UNREACHABLE, not absent` shape once more, here at one clause's distance rather than one
+skill's.
+
+**Two further corrections to the brief's framing**, recorded because they change how the
+next one should be read. Its §1 concluded the installed tree is "a build artifact" with an
+upstream repo somewhere; `~/.claude/skills/` is in fact **41 symlinks into this repo**, so
+it was reading live current files — better for the proposal than it claimed. But one
+directory has **no symlink**: `sota-skill-security`, added in v1.35.0 the same day. Its
+41-directory sweep therefore ran with the single most relevant sibling excluded — the skill
+that owns *anything an agent loads as instructions*, which is precisely the mechanism of its
+own P2. **An install that is 41 of 42 symlinks is a coverage claim's denominator, and
+nothing reported it.**
+
+#### From trailofbits/skills — one defect of ours, three additions
+
+**The finding: a rule of ours is unsafe at a sink it does not name.** `sota-devsecops`
+rules/01 §1.5 teaches `env:` indirection as *the* fix for expression injection. That is
+correct for a **shell** sink — the value stops being script text. It is not a fix for a sink
+that consumes the value as **instructions**: an AI-agent prompt, a template engine, an
+`eval`, an LLM tool-call argument. Reachability is unchanged, and the `${{ }}` that
+reviewers and `zizmor`/`actionlint` key on is *gone*, so the dangerous configuration now
+reads as clean YAML. §1.5 now names the sink class its defence neutralises. This is the
+highest-value shape in the ledger — an external source identifying a rule of ours that
+*causes* the miss — and it arrived from a repo review rather than a field brief.
+
+**Adopted: AI coding agents are CI actors holding your token** (`sota-devsecops` rules/01
+**§1.5a**). Zero coverage, confirmed by reading after a corrected sweep: triggers a
+non-collaborator can fire, following the value rather than the syntax, tool allowlists
+judged by what their members *compose* into rather than by name (`echo "$(env)"`), sandbox
+and auto-approve flags read as the control they are, and agents invoked two `uses:` levels
+down spending the caller's token.
+
+**Adopted: constant time is a property of the emitted code** (`sota-code-security` rules/04
+**§6.1**). The library already had the *wiping* half — `memset` is dead-store-eliminated, so
+`explicit_bzero` exists (`sota-c-cpp` rules/04 §4) — and never generalised it. Secret-
+dependent `/` and `%` lower to variable-latency instructions; "I made the divisor constant
+so it strength-reduces" is a hope, since that is an optimiser courtesy that varies by
+compiler, target and level, and `-Os`/`-Oz` are both the levels that betray it and the
+levels shipped binaries use. So: read the disassembly across the matrix you ship, and verify
+a hand-written multiply-shift over the **whole input domain** — an off-by-a-power-of-two
+reciprocal agrees for millions of inputs before it diverges.
+
+**Adopted: a scanner's default configuration can exclude its most valuable detector**
+(`sota-code-security` rules/15 §2.2). Distinct from the threshold *you* chose being too
+coarse (`sota-devsecops` rules/09 §6, landed 2026-09-07): here you chose nothing and the
+silence is the vendor's — a default run that is quiet about early-exit MAC comparison, the
+most common real timing bug. Print the effective configuration beside the verdict and name
+the detector families that did not run.
+
+**Rejected: already ours.** Their `variant-analysis`, `fp-check` and `second-opinion` are
+our `sota/rules/01` §4 re-audit sweep, `rules/03` §4 refutation, and the independent-refuter
+rule respectively. `supply-chain-risk-auditor` is `sota-devsecops` rules/03. `insecure-defaults`
+is covered by the no-fallback-secret rule (`sota-secrets-management` rules/03 §1).
+
+**Deferred, with the trigger written down** — two classes that survived a coverage check but
+need a read this intake did not have room for:
+
+- **`sharp-edges` — misuse-resistant API design as a control you *own*.** Their framing
+  ("the pit of success"; secure use is the path of least resistance) exists in our library
+  **11 times as a consumer-side heuristic** — *choose* a misuse-resistant library — and, on
+  a file-level sweep, **not in `sota-api-design` at all**. Revisit condition: read
+  `sota-api-design` rules/01 and rules/07 in full and confirm the producer-side rule is
+  genuinely absent before writing it. Do not adopt their rationalisation table's text.
+- **`vulnerability-triage-brocards` — triaging an *incoming* report.** Our coverage of
+  coordinated disclosure is the *obligation* (`sota-security-compliance` rules/03 and
+  rules/04 under SSDF and the CRA); the triage discipline for a report someone else sent you
+  — a CVE claim, a bug-bounty submission, a finding from an agentic discovery pipeline —
+  was not found. Revisit condition: confirm against `sota-security-compliance` rules/04 that
+  the CRA's reporting obligations do not already carry it.
+
+**Landed:** `sota-secrets-management/rules/03` §2.1 and `rules/04` §7,
+`sota-devsecops/rules/01` §1.5 and §1.5a, `sota-code-security/rules/04` §6.1 and
+`rules/15` §2.2, with cross-references from `sota-code-security/rules/08` and
+`sota-skill-security/rules/02`, each with its audit-checklist half in the same change · v1.36.1

@@ -7,7 +7,12 @@ different questions — run both:
 ```sh
 /path/to/SOTA-skills/scripts/verify-setup.sh          # deterministic half
 /path/to/SOTA-skills/scripts/verify-setup.sh --runs 200   # widen the CI-history sample
+/path/to/SOTA-skills/scripts/verify-setup.sh --reach-only # section A only (what install.sh runs)
 ```
+
+`install.sh`/`update.sh` end every run with `--reach-only`, so the *library reach* half is
+checked whether or not anyone remembers to. The repo-context, gate and CI sections are not:
+they describe whichever directory you are standing in, so they stay a deliberate manual run.
 
 **`scripts/verify-setup.sh`** does everything mechanical and does it identically
 every time: are the skills reachable, is the routing hook installed, does the

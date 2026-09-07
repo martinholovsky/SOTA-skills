@@ -129,8 +129,8 @@ discovered secret in full in your report** — redact to first 4 chars + length.
 |---|---|
 | `rules/01-lifecycle-and-workload-identity.md` | Generating secrets (entropy/length), setting rotation/expiry/revocation policy, replacing static secrets with OIDC federation, SPIFFE/SPIRE, cloud IAM roles, GitHub Actions OIDC |
 | `rules/02-storage-backends.md` | Choosing where a secret lives: Vault/OpenBao, AWS/GCP/Azure secret managers, SOPS+age, sealed-secrets/external-secrets in Kubernetes, env vars vs file mounts, in-memory handling and zeroization |
-| `rules/03-application-patterns.md` | Writing app code that consumes secrets: config layering, runtime injection, caching/TTL, keeping secrets out of code/VCS/logs/errors/URLs/argv/crash dumps, per-env separation, least-privilege scoping, access audit logging |
-| `rules/04-detection-and-remediation.md` | Setting up gitleaks/trufflehog, pre-commit hooks, CI gates; responding to a leak (rotate-first, purge history, assume compromised); honeytokens; running an AUDIT sweep |
+| `rules/03-application-patterns.md` | Writing app code that consumes secrets: config layering, runtime injection, caching/TTL, keeping secrets out of code/VCS/logs/errors/URLs/argv/crash dumps, per-env separation, least-privilege scoping, access audit logging; **never-persist-raw (§2.1)** — text whose producer you do not control is stored as a digest plus a structural skeleton, because shape redaction is an enumeration |
+| `rules/04-detection-and-remediation.md` | Setting up gitleaks/trufflehog, pre-commit hooks, CI gates; responding to a leak (rotate-first, purge history, assume compromised); honeytokens; running an AUDIT sweep; **agent session transcripts as a credential store (§7)** — inventorying and scoping the scan of `~/.claude/projects/**`, and why a tool that sweeps it is a secret-processing tool |
 | `rules/05-credential-types.md` | Handling a specific credential class: DB creds, API keys, signing keys, TLS private keys, SSH keys, JWT secrets and kid rotation, data keys vs KMS envelope encryption, .env discipline |
 
 ## Top-10 non-negotiables

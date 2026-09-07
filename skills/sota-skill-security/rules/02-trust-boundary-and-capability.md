@@ -34,6 +34,14 @@ The sharpest form of this rule:
 
 Which puts several ordinary things inside the boundary:
 
+- **A file the harness decided to load, and the label it gave itself.** The boundary
+  is what actually reached the context, not what the header says reached it. Observed
+  2026-09-07: a harness presented a repo's `.env` as *"project instructions, checked
+  into the codebase"* when it was untracked, gitignored and mode `600` — every clause
+  false, and four live keys were in the session file as a result
+  (`sota-secrets-management` rules/04 §7). Read the block headers your agent is given
+  and verify the provenance claim in them; a wrong one is both a trust-boundary fact
+  and a credential-location fact.
 - **A repository you cloned to review.** Opening a codebase to read it should not
   mean adopting its agent file. Reviewing an untrusted PR that touches `AGENTS.md`,
   `CLAUDE.md`, `.cursorrules` or a `skills/` directory is a **privileged operation**
