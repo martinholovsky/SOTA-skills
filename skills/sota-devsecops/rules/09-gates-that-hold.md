@@ -319,6 +319,50 @@ status 0 whatever the tool did, and a pipe reports the last stage
 evidence the gate is clean — it is evidence that a different question has a different
 answer.
 
+## 6. A bespoke watcher inherits the publishing conventions of what it watches
+
+Some things you pin cannot be seen by an update bot at all (`rules/03` §3.7.1), so you
+write the watcher yourself. It is then an instrument and fails the way instruments fail
+(`sota-code-security` rules/15 §2) — with one twist that makes it worse: **silence is a
+watcher's normal state**, so an entry that can *never* report is indistinguishable from an
+entry with nothing to report. Two field-reported failures, both producing a green that
+meant nothing:
+
+- **The source may not publish in the form you query.** A watcher asking
+  `GET /repos/<owner>/<repo>/releases/latest` gets a **404** from a project that publishes
+  git tags and zero GitHub releases — the entry is skipped silently, every run, forever,
+  while the list still reads as complete. That is worse than the entry being absent, because
+  completeness is what stops anyone looking. Reproduced 2026-09-07: `mholt/caddy-ratelimit`
+  has **0** releases and the single tag `v0.1.0`, and `releases/latest` answers
+  `404 Not Found`. Fall back to `/tags` filtered to semver, and do the ordering yourself.
+- **The threshold may be coarser than the event class you pinned for.** Alerting only at
+  "more than one minor behind" is reasonable for images rebuilt on a schedule and wrong for
+  a *pinned*, internet-facing TLS terminator, where `v2.11.4 → v2.11.5` is precisely the
+  event the pin exists to catch. It reported **OK**. Derive the threshold from the event
+  class you are pinning against; never inherit a default and discover the class later.
+
+**Audit a watcher on four axes**, all cheap, all answerable before you trust a run:
+
+1. **Does the source publish in the form I query?** Ask once per entry and read the answer
+   per entry — an aggregate "N checked" hides the entries that can never answer.
+2. **Is my threshold finer than the event class I care about?** A patch-level pin needs a
+   patch-level threshold, or the watcher excludes its own reason for existing.
+3. **Can I make it fire on demand?** A watcher with no forced-alarm path has never been
+   observed working (§2; `sota-code-security` rules/15 §2.2 — never trust a number from an
+   instrument you have not watched produce a *wrong* answer on purpose).
+4. **Does the comparator behave in the environment the watcher runs in, not in my shell?**
+   Version comparison is the classic: a lexical sort ranks `v2.9.1` above `v2.11.4` and
+   inverts every verdict (verified 2026-09-07 — `sort` returns `v2.9.1`, `sort -V` returns
+   `v2.11.4`), and `-V` is not in POSIX. Check it *in the image*: measured the same day,
+   BusyBox 1.37.0 in `alpine:latest` does support `-V` — the assumption was wrong in the
+   safe direction that time, which is exactly why it is worth one command rather than a
+   guess. A shell-less base has no `sort` at all.
+
+An entry that has never reported anything is `sota-code-security` rules/15 §2.2a's
+four-state problem in a slower loop: **UNKNOWN** rendered as **NOT DONE**, indefinitely.
+Count the runs in which an entry produced no comparison at all, and alert on that count —
+"I have not been able to read this for six weeks" is a different fact from "up to date".
+
 ## Audit checklist
 
 - [ ] **Does failing a gate make the artifact unconsumable, or merely unannotated?** For each
@@ -338,6 +382,13 @@ answer.
       A local whole-package run of the same tool answers a different question than the
       hook's flags-plus-file-selection run — verified both ways at mypy 2.3.1 (§3, §4).
       Prefer `pre-commit run --all-files` / `act` / the CI script over re-typing the tool.
+
+- [ ] **Can each entry in a hand-rolled watcher report at all?** (§6) Per entry, not in
+      aggregate: the source publishes in the form queried (a tag-only repo 404s
+      `releases/latest` forever), the threshold is finer than the event class the pin exists
+      for, the alarm can be forced on demand, and the version comparator was verified **in
+      the image it runs in** — a lexical sort inverts `v2.9.1` vs `v2.11.4`. Runs where an
+      entry produced no comparison are counted and alerted on, not read as "up to date".
 
 - [ ] Every security gate ships a **negative control** — a committed known-bad it must reject on every run, and it is reachable as a **mode of the runner** (`--self-test`) rather than only as a fixture beside it, so a newly added check with no known-bad fails rather than passing unprobed (`sota-code-security` rules/12 §1b). No framework (SSDF, CRA, Scorecard, SLSA) requires this; a passing compliance check is evidence of process, not protection (`sota-code-security` rules/12)
 - [ ] Every gate prints the **number of units it enumerated** and the build fails when that number drops — a refactor that moves code into a nested module, a second manifest, a submodule or a sidecar image silently shrinks the gate's scope while the negative control keeps passing (§3, §4)

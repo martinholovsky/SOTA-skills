@@ -221,6 +221,23 @@ tool (             // 1.24+: tool dependencies, versioned & sum-verified
 - `replace` directives in committed go.mod: temporary at best, document an
   expiry; they don't apply to downstream consumers of a library (so a library
   relying on `replace` is broken for users — HIGH).
+- **`require` is a floor, not a ceiling.** Under Minimal Version Selection the
+  build uses the **highest** version required anywhere in the module graph, and a
+  `require` line states a *minimum* — "required versions in go.mod files are
+  minimum versions and may be increased automatically" (go.dev/ref/mod). So
+  `require foo v1.2.3` — or a build-tool flag that becomes one, such as an
+  `xcaddy --with foo@v1.2.3` — **cannot cap** `foo`: if anything else in the graph
+  requires v1.5.0, you build v1.5.0 while your file reads v1.2.3. It is an exact
+  pin only for a **leaf** dependency nothing else requires. Only `replace` caps:
+  `exclude` drops a specific version and redirects that requirement to the *next
+  higher* one, so it cannot hold a module back either.
+- Used deliberately, the floor is the right tool for a CVE fix — requiring the
+  fixed version raises what gets selected without capping anything, and goes inert
+  once upstream requires it anyway. But **say which you mean**: "we pinned it"
+  reads as a ceiling to almost every reviewer, and for a transitive dependency it
+  is not one. Verify what was actually built with `go list -m <module>` (or
+  `go version -m ./bin/app`, §5) — never the `require` line you wrote. Same trap
+  from the supply-chain side: `sota-devsecops` rules/03 §3.7.1.
 
 ## 5. Reproducible builds & release
 
@@ -255,6 +272,7 @@ grep -rn 'tools.go' . 2>/dev/null         # legacy pattern — migrate (LOW)
 grep -rn 'go install .*@latest' .github/ Makefile* 2>/dev/null   # floating tools — MEDIUM
 git ls-files | grep 'go.work$' && echo 'go.work committed — check intent'
 grep -E '^replace' go.mod
+go list -m <module>                       # the SELECTED version — `require` is a floor, not a cap (§4)
 
 # Test quality
 grep -rln 'func Test' --include='*_test.go' . | wc -l
@@ -276,6 +294,7 @@ govulncheck ./...
 ```
 
 Severity guide: no `-race`/govulncheck in CI HIGH; library shipping `replace`
-HIGH; EOL toolchain MEDIUM; floating tool versions MEDIUM; sleep-synced or
+HIGH; EOL toolchain MEDIUM; floating tool versions MEDIUM; a `require`
+cited as a version *cap* for a non-leaf dependency MEDIUM (it is a floor — §4); sleep-synced or
 order-dependent tests MEDIUM; missing table tests / `t.Parallel` / golden
 review discipline LOW.
