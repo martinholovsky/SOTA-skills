@@ -290,6 +290,14 @@ exceeds the per-skill 5,000-token cut:
 ~3,450 — both under the cut. Splitting for the line cap moved this number too, which is the
 only reason the row is worth mentioning rather than silently deleting.
 
+**The list is illustrative, not exhaustive, and only the `SKILL.md` row is a finding.** The
+5,000-token figure is a **stage-2** budget — it applies to a `SKILL.md` *body*, which is what
+compaction re-attaches. `rules/*.md` are stage-3 resources the spec gives no budget at all, so
+several of them sit above 5,000 by design and are not listed: measured 2026-09-08,
+`sota/rules/03` ~7,400, `sota-code-security/rules/14` ~7,100 and `rules/11` ~7,000, all
+`bytes/4`. Listing them would imply a ceiling this file explicitly says does not exist. Read
+the row above as *"the router is the one to watch"*, not as a census.
+
 So after a compaction, a re-attached router keeps roughly its first half. **This is
 unverified in practice** — it is read off the documentation and a byte-count
 heuristic, not observed in a session, and the ordering inside each file decides what

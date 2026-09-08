@@ -5,6 +5,45 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+**Docs only** — a post-release sweep after five releases in one day, every replacement number
+measured rather than scaled.
+
+### Fixed
+
+- **The priorities table pointed at an item closed earlier the same day.** Priority 3 was
+  *"item 38 — price over-selection in tokens"*, which v1.37.0 closed with a measured figure.
+  It now points at **item 45**. This is the **third** instance of the same
+  summary-drifts-from-its-ledger shape in one session (item 12 on 2026-09-07, item 32's
+  follow-up this morning, item 38 now) — the pattern is not a coincidence, it is what a
+  hand-maintained summary over a ledger does under active work.
+- **`evals/README.md` said the GATE-ABSORPTION arm was "Not yet run".** It ran on
+  2026-09-06/07 and read **+0.04** against a registered +0.05 threshold and a ±0.03 null band
+  — underpowered, not answered. The entry now says so and points at the write-up, and notes
+  that the ROADMAP 43 follow-up needs its **own** pre-registration, since reporting it against
+  the original threshold would not be one.
+- **Roadmap header claims:** *"as of 2026-09-07"* → 2026-09-08, and *"All 44 items"* → 45.
+- **Cap watch re-measured after five splits.** `sota-shell-scripting/rules/01` has left the
+  list entirely — 498 → 366 → 502 → **343**, split twice in one day. The row now carries the
+  two lessons both splits produced: *pick the seam from the citations, not the headings* (the
+  seam the row itself once proposed was 114 lines against 384, while counting external
+  references broke **zero** of them), and *a file that hits the cap twice in a day was two
+  files*. Watch next: `sota-code-security/rules/10` at 484 and `rules/11` at 474.
+- **The field-brief tally is now counted, not carried.** Six briefs landed **31 of 32** from
+  the release entries (7/7 · 4/4 · 6/7 · 6/6 · 4/4 · 4/4), plus both 2026-09-08 intakes in
+  full.
+
+### Changed
+
+- **`docs/CONTEXT-MANAGEMENT.md`'s token table now says what it is not.** The 5,000-token
+  figure is a **stage-2** budget for a `SKILL.md` body — what compaction re-attaches — while
+  `rules/*.md` are stage-3 resources the spec gives no budget at all. Several rules files sit
+  above 5,000 by design and are deliberately absent from the list (`sota/rules/03` ~7,400,
+  `sota-code-security/rules/14` ~7,100, `rules/11` ~7,000, all `bytes/4`, measured
+  2026-09-08). Listing them would imply a ceiling the same file explicitly denies. It reads
+  as *"the router is the one to watch"*, not as a census.
+
 ## [1.38.0] - 2026-09-08
 
 **Front door checked:** name what the OK is about · silently excludes · ad-hoc command

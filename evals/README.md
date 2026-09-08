@@ -195,11 +195,15 @@ audit STRAT-HIGH-2).
   without `--pad-rules`** (that measures the gate alone, not the gate against competing context),
   and **refuses if the ablation leaves the prompt byte-identical** to the gated arm — the same bar
   `run-prompt-independence.py` applies, because an ablation that did not take is a duplicate arm
-  wearing a different label and reports its delta of zero as a result. **Not yet run**: the
-  prediction, a falsification condition and four ways it could measure nothing (including a
-  ceiling effect that would make it *uninformative* rather than null) are pre-registered in
-  [results/2026-09-06/PRE-REGISTRATION.md](results/2026-09-06/PRE-REGISTRATION.md). 28 build +
-  28 judge calls.
+  wearing a different label and reports its delta of zero as a result. The prediction, a
+  falsification condition and four ways it could measure nothing (including a ceiling effect
+  that would make it *uninformative* rather than null) were pre-registered in
+  [results/2026-09-06/PRE-REGISTRATION.md](results/2026-09-06/PRE-REGISTRATION.md) and
+  committed before any spend. **Run 2026-09-06/07** — `GATE-ABSORPTION` = **+0.04** against a
+  registered threshold of +0.05 and a ±0.03 null band, i.e. **underpowered, not answered**
+  ([GATE-ABSORPTION](results/2026-09-06/GATE-ABSORPTION.md)). The follow-up at n≥3, temp 0.7
+  is ROADMAP 43 and needs its **own** pre-registration — reporting it against the original
+  threshold would not be one. 28 build + 28 judge calls per arm-set.
 - `cases/prompt-independence.jsonl` (6) + `run-prompt-independence.py` — **the only
   instrument that varies the prompt against the rule.** Every other set here asks the model
   to do the right thing under a *neutral* prompt; this one renders the same task at three
