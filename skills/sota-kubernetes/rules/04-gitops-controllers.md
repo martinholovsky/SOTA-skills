@@ -172,8 +172,35 @@ reporting on it was a signal about intent. Freshness is the only observable that
 degrades when an outbound write stops — the same distinction `sota-code-security`
 rules/04 §8 draws between integrity and completeness for audit ledgers.
 
+## 7a. What you wrote is not what lands — verify a rendered object by rendering
+
+An overlay, a transformer or a templating layer sits between the file you edited and the
+object the controller applies, and **the field you wrote can be overridden without a
+warning**. The common one: a manifest declares `namespace: monitoring`, the kustomization
+sets `namespace: argo-workflows`, and the object lands in the second. The tell is a
+diagnostic that reads like a *different* failure — `kubectl get <kind> -n monitoring`
+returns nothing, which reads as **"it was never applied"** rather than **"you are looking in
+the wrong place"**, and the next hour goes into re-applying something that already exists.
+
+- **Render, then grep the render** — `kustomize build .`, `helm template`, the controller's
+  own diff/preview — and confirm the field's *final* value before you use it to look
+  something up. Same discipline as reproducing a gate's exact invocation
+  (`sota-devsecops` rules/09 §5): what you believe you ran and what ran are two questions.
+- **Ask the cluster where the object actually is** (`kubectl get <kind> -A`) before
+  concluding it is absent. An empty namespaced query is an absence claim, and it carries the
+  burden of one (`sota/rules/03` §2).
+- **Deleting a GitOps-managed object means removing it from the rendered set**, not deleting
+  its file. The controller prunes what it no longer renders, so dropping the reference
+  converges the cluster immediately and the file tidy-up can follow under normal review.
+  Useful when file deletion is blocked; it also means an object can be *functionally* gone
+  while its manifest is still in the repository.
+
 ## Audit checklist
 
+- [ ] **Is any conclusion drawn from a field an overlay can override?** (§7a) Namespace,
+      name prefixes, labels and images are transformer-owned — render (`kustomize build`,
+      `helm template`) and grep the render before treating an empty namespaced lookup as
+      "not applied"; `kubectl get <kind> -A` before any absence claim.
 - [ ] GitOps is the only write path to prod (no routine human `kubectl apply`); GitOps repos have branch protection + required review + signed commits?
 - [ ] Controller runs least-privilege where possible; RBAC *to* Argo CD/Flux resources (Applications/AppProjects/Kustomizations) is restricted; self-management/bootstrap under extra review?
 - [ ] No AppProject with `clusterResourceWhitelist: [{group:'*',kind:'*'}]` (or it's justified + tightly access-controlled)? (`kubectl get appprojects -A -o yaml | grep -A3 clusterResourceWhitelist`)

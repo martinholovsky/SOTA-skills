@@ -2037,3 +2037,90 @@ need a read this intake did not have room for:
 `sota-devsecops/rules/01` §1.5 and §1.5a, `sota-code-security/rules/04` §6.1 and
 `rules/15` §2.2, with cross-references from `sota-code-security/rules/08` and
 `sota-skill-security/rules/02`, each with its audit-checklist half in the same change · v1.36.1
+
+### 2026-09-08 — the early stage's green light, and deleting a fallback safely
+
+Sixth field brief in this series, from removing an orphaned CI CronJob and repairing the
+monitoring gap that had hidden it (self-hosted Kubernetes, Argo Workflows, VictoriaMetrics).
+**All four proposals adopted**, plus the minor it offered without one. It also opens by
+confirming the previous intake's verdict from the outside: pointing its watcher proposal at
+`sota-code-security` rules/15 §2.2a rather than restating it was right, *and the reason it
+missed that section is the reason the note gives — it lives in a skill that workflow never
+loads*. That is the **UNREACHABLE** diagnosis being confirmed by the person it was made about.
+
+**Every 0-hit check reproduced**, run with an array and a positive control (285 files
+matching a string known to be present) rather than an unquoted expansion — the discipline
+`sota-shell-scripting` rules/01 §3 got sharpened for the day before.
+
+**Adopted #1 — the stage that reports success is not the stage that failed**
+(`sota-code-security` rules/14 **§4b**, sibling to §4). §4 is a control whose *trigger never
+fires*; this is a control that ran, failed, and said so in a field nobody read while a
+different field on the same screen read as success. `total active targets: 144 /
+workflow-controller targets: 1` reads as working; the next line was `health=down`. **The
+earliest stage's signal is the one that looks like a summary**, because it is a count and it
+renders first — and the split generalises well past metrics: enumerate-vs-process,
+connect-vs-authenticate, resolve-vs-fetch, schedule-vs-execute, register-vs-invoke. Its
+corollary earned its own bullet: **repairing an inert control needs an output delta, not a
+green light** — three affirmative signals were green while nothing was collected, and only
+`0 → 54` series separated repaired from broken. Cross-referenced *against*
+`sota-observability` rules/05 §7a rather than merged with it: §7a is the case where the right
+instrument does not exist and a proxy answers a neighbouring question; here every instrument
+existed and was correct, and the reader stopped at the first affirmative one.
+
+**Adopted #2 — the sharpest of the four, because it corrects a rule shipped the day before**
+(`sota-devsecops` rules/10 **§3a**, plus a clause in §6 bucket A). `rules/10` — created
+2026-09-07 — proves a candidate unreached and deletes it on that evidence. Sufficient for a
+dependency, whose job is to be *called*. **Not** sufficient for anything whose job was to be
+*available*: **unreached is exactly what a healthy fallback looks like**, so the deletion
+proof returns the same green for "safely obsolete" and for "the safety net nobody has needed
+yet". The field case decided on a different question entirely — the orphaned cache was
+deletable only because the registry mirror that replaced it was 3.3 hours old, inside its
+24-hour refresh window; **had it been stale the correct action was the opposite one**, and
+the "dead" cache was the only thing between a stale advisory DB and a green scan gate. The
+rule now demands the successor be named and measured this session, or the finding is KEEP.
+Note the brief also spotted that `successor` appeared in `rules/10` only for naming a
+maintained fork (§6 bucket D) — a good read of our own text.
+
+**Adopted #3 — two config traps that make a correct-looking observability change collect
+nothing**, split across the two files that own the mechanics. **A port declaration does not
+state the protocol spoken on it** (`sota-observability` rules/02 §7): a container advertising
+`metrics:9090` says nothing about TLS, and scraping HTTP where HTTPS is served returns
+`400 Client sent an HTTP request to an HTTPS server`, which reads as a broken exporter. Probe
+both ways first; where the certificate is self-signed by the component's own issuer no CA
+bundle can verify it, so skip verification *explicitly and with the reason written beside the
+flag*. And **what you wrote is not what lands** (`sota-kubernetes` rules/04 §7a): a
+transformer can override the `namespace:` in your manifest, after which a namespaced lookup
+returns nothing — which reads as *"never applied"*, not *"wrong place"*. Render and grep the
+render; `kubectl get <kind> -A` before any absence claim.
+
+**Adopted #4 — an N-of-N correlation across the whole population is still not a mechanism**
+(`sota/rules/03` §2, placed immediately before the existing N-of-N material). This is the
+placement that matters: §2 already says *"a reproduction you ran once is a coincidence you
+have not ruled out"* and asks for N-of-N, so a reader could reasonably carry that authority
+across to a *correlation* — where it does not hold. Repeating an **observation** N times
+bounds noise; observing that N members **share a property** bounds nothing, because you have
+not touched the thing that would implement it. 8 of 8 working scrape objects sat in one
+namespace and the only one elsewhere collected nothing — a perfect correlation, and the
+inference from it was wrong; one query against the collector's target list refuted it. Named
+as the population-level twin of `sota-code-security` rules/15 §2.1 ("generalised from one
+sample"), which is how the brief framed it.
+
+**Adopted — the minor, offered without a proposal.** GitOps prune-by-omission: the functional
+deletion of a managed object is removing it from the *rendered set*, not deleting its files.
+Landed as the third bullet of `sota-kubernetes` rules/04 §7a, because it belongs with "what
+you wrote is not what lands" — and it carries a corollary the brief did not draw: an object
+can be **functionally gone while its manifest is still in the repository**, which is a
+false-negative for anyone auditing by file.
+
+**Evidence strength, recorded as the brief itself framed it** — this is why the log has a
+verdict column rather than a checkmark. #2 rests on **one case that turned out fine**, which
+is weaker than an incident: the reasoning is general, the failure was not observed. #4 is a
+**near-miss caught before acting**, not a defect that shipped. #1 and #3 come from a single
+monitoring stack; the *shape* of #1 generalises to any discovery-then-collect pipeline, the
+specifics of #3 are Kubernetes-flavoured and are placed in the Kubernetes and observability
+skills accordingly rather than promoted anywhere cross-cutting. **None of the four met the
+two-independent-sources bar for a cross-cutting home, and none was given one.**
+
+**Landed:** `sota-code-security/rules/14` §4b, `sota-devsecops/rules/10` §3a + §6 bucket A,
+`sota-observability/rules/02` §7, `sota-kubernetes/rules/04` §7a, `sota/rules/03` §2 — each
+with its audit-checklist half in the same change · v1.36.3

@@ -219,6 +219,25 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   **constant time is a property of the emitted code**, verified across every architecture and
   optimisation level you ship — `-Os` and `-Oz` included.
   ([code-security rules/04 §6.1](skills/sota-code-security/rules/04-cryptography.md))
+- **A green light from the wrong stage.** A pipeline with more than one stage has more than
+  one success signal, and the earliest is the one that looks like a summary — it is a count
+  and it renders first. A metrics collector reporting `1 target` had matched a selector and
+  gathered nothing for days; the very next field read `health=down`.
+  **Discovery is not collection**, and the same split is enumerate-vs-process,
+  connect-vs-authenticate, resolve-vs-fetch, schedule-vs-execute. Accept the downstream
+  artefact — the series, the row, the record — never the pipeline's own readiness. And prove
+  a repair with an **output delta**, not a green light: in that case three affirmative
+  signals were already green while nothing was collected, and only `0 → 54 series` told the
+  two states apart.
+  ([rules/14 §4b](skills/sota-code-security/rules/14-control-not-in-force.md))
+- **A safety net deleted because nobody had needed it yet.** The deletion proof for a
+  dependency is *remove it and the build still passes*. For anything whose job was to be
+  **available** rather than called, that proof returns the same green either way, because
+  being unreached is what a **healthy fallback** looks like. A cache, mirror, warm standby or
+  break-glass path needs a second piece of evidence — the successor named, and measured
+  working *now*. Field case: the replacement mirror was 3.3 hours fresh, so the deletion was
+  right; had it been stale the correct action was the opposite one.
+  ([rules/10 §3a](skills/sota-devsecops/rules/10-inert-dependencies.md))
 - **Controls that block everything** — the mirror image, and the one every other pass
   here looks past. An *enforcement* control (cap, quota, filter, allowlist, sandbox
   policy) can be tightened until it refuses the legitimate case too, and it passes the

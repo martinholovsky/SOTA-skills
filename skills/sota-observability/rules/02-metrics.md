@@ -281,9 +281,23 @@ Rules:
   rose at 14:02" into "the 14:00 deploy did it".
 - Instrument the telemetry itself: scrape failures, exporter queue drops,
   remote-write errors. Silent telemetry loss looks identical to "all good".
+- **Accept a new scrape target on the series arriving, never on discovery.** A target
+  list showing `1 target` means a selector matched; read the per-target `health` and
+  `lastError` beside it, then confirm the series exists
+  (`sota-code-security` rules/14 §4b). **A port declaration does not state the protocol
+  spoken on it**: a container advertising `metrics:9090` says nothing about TLS, and
+  scraping HTTP where HTTPS is served returns `400 Client sent an HTTP request to an
+  HTTPS server` — an error easily read as a broken exporter. `curl` the endpoint both
+  ways before writing the scrape config. Where the certificate is self-signed by the
+  component's own issuer, no CA bundle can verify it and mounting one is theatre; skip
+  verification explicitly and **write the reason next to the flag**, so a later reader
+  can tell a considered exception from a copied one.
 
 ## Audit checklist
 
+- [ ] New scrape targets accepted on **series arriving**, not on discovery: per-target
+      `health`/`lastError` read, endpoint probed for scheme (HTTP vs TLS) before the config
+      was written, and any skipped certificate verification carries its reason inline (§7).
 - [ ] RED metrics exist per service and per route (rate, errors with a
       defined error definition, duration as histogram).
 - [ ] USE metrics exist for every owned bounded resource: DB/HTTP connection

@@ -5,6 +5,78 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.36.3] - 2026-09-08
+
+**Front door checked:** discovery is not collection · output delta · healthy fallback
+
+**Patch** — rule text inside existing surfaces. The sixth field brief in this series, from
+removing an orphaned CI CronJob and repairing the monitoring gap that had hidden it. **All
+four proposals adopted**, plus the minor it offered without one. Full evaluation, including
+how strong each item's evidence actually is:
+[docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md).
+
+### Added
+
+- **`sota-code-security` rules/14 §4b — the stage that reports success is not the stage that
+  failed.** §4 covers a control whose *trigger never fires*. This is one layer on: the control
+  ran, failed, and said so — in a field nobody read, while a different field on the same
+  screen read as success. `workflow-controller targets: 1` reads as working; the next line was
+  `health=down`. **The earliest stage's signal is the one that looks like a summary**, because
+  it is a count and it renders first. **Discovery is not collection**, and the same split is
+  enumerate-vs-process, connect-vs-authenticate, resolve-vs-fetch, schedule-vs-execute,
+  register-vs-invoke: accept the downstream artefact, never the pipeline's own readiness. Its
+  corollary gets its own bullet — **repairing an inert control needs an output delta, not a
+  green light**: three affirmative signals were green while nothing was collected, and only
+  `0 → 54` series told repaired from broken.
+- **`sota-devsecops` rules/10 §3a — "unreached" proves nothing about a fallback**, plus a
+  clause in §6 bucket A. This one **corrects a rule shipped the day before**. `rules/10` proves
+  a candidate unreached and deletes it on that evidence — sufficient for a dependency, whose
+  job is to be *called*, and not for anything whose job was to be *available*. Being unreached
+  is what a **healthy fallback** looks like, so the proof returns the same green for "safely
+  obsolete" and for "the safety net nobody has needed yet". The field case turned on a
+  different question entirely: the orphaned cache was deletable only because the mirror that
+  replaced it was 3.3 hours old, inside its refresh window — **had it been stale the correct
+  action was the opposite one**. A DELETE candidate that was redundancy now needs the successor
+  named and measured this session, or it is KEEP.
+- **`sota-observability` rules/02 §7 — a port declaration does not state the protocol spoken on
+  it.** A container advertising `metrics:9090` says nothing about TLS; scraping HTTP where
+  HTTPS is served returns `400 Client sent an HTTP request to an HTTPS server`, which reads as
+  a broken exporter. Probe both ways before writing the scrape config, accept the target on the
+  series arriving rather than on discovery, and where the certificate is self-signed by the
+  component's own issuer say so beside the flag that skips verification — no CA bundle can
+  verify it and mounting one is theatre.
+- **`sota-kubernetes` rules/04 §7a — what you wrote is not what lands.** A transformer can
+  override the `namespace:` in your manifest; the namespaced lookup then returns nothing, which
+  reads as *"never applied"* rather than *"wrong place"*. Render and grep the render; run
+  `kubectl get <kind> -A` before any absence claim. Includes the brief's un-proposed minor —
+  **GitOps prune-by-omission**: functional deletion is removing an object from the rendered
+  set, not deleting its files, which also means an object can be gone from the cluster while
+  its manifest is still in the repo.
+- **`sota/rules/03` §2 — a correlation across the whole population is still not a mechanism**,
+  placed immediately *before* the existing N-of-N material, which is the point. §2 already asks
+  for N-of-N reproduction, so a reader could carry that authority across to a *correlation*,
+  where it does not hold: repeating an **observation** bounds noise, while observing that N
+  members **share a property** bounds nothing. 8 of 8 working scrape objects sat in one
+  namespace and the only one elsewhere collected nothing — a perfect correlation whose
+  inference was wrong, refuted by one query against the collector's target list.
+
+### Notes
+
+- **Evidence strength is recorded per item rather than flattened.** #2 rests on one case that
+  turned out fine, which is weaker than an incident. #4 is a near-miss caught before acting.
+  #1 and #3 come from a single monitoring stack — the *shape* of #1 generalises to any
+  discovery-then-collect pipeline, the specifics of #3 are Kubernetes-flavoured and were placed
+  in the Kubernetes and observability skills rather than promoted. **None met the
+  two-independent-sources bar for a cross-cutting home, and none was given one.**
+- **Invariant 18 caught a stale reference in this very change**: a new paragraph cited
+  `rules/03` §3.9.5, which moved into `rules/10` as §5 in v1.36.0 — the day before. The gate
+  reported it before the first commit.
+- **The brief confirms the previous intake's verdict from the outside.** It opens by agreeing
+  that pointing its watcher proposal at `sota-code-security` rules/15 §2.2a rather than
+  restating it was right, *and* that the reason it missed that section is the reason the note
+  gave: it lives in a skill that workflow never loads. That is the UNREACHABLE diagnosis being
+  confirmed by the person it was made about.
+
 ## [1.36.2] - 2026-09-08
 
 **Front door checked:** searched nothing · separator-specific · routing gap
@@ -7020,6 +7092,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.36.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.36.3
 [1.36.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.36.2
 [1.36.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.36.1
 [1.36.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.36.0
