@@ -26,7 +26,7 @@ survives a long context instead of fading into it. That's why it beats a bigger 
 instead of becoming one. Native on Claude Code; works with Gemini CLI, Codex, and any
 agent that reads `AGENTS.md`.
 
-Under the hood: **42 skills (310 files, ~67k lines)** of state-of-the-art 2026
+Under the hood: **42 skills (311 files, ~67k lines)** of state-of-the-art 2026
 practice, each **instruction** file under 500 lines so only the matching rules load —
 the cap applies to `skills/**` alone, never to README/CHANGELOG/`docs/` — every fast-moving
 claim web-verified against a primary source.
@@ -150,6 +150,17 @@ language *and* complex/security-sensitive frontend (~+10 pts) — and **ties** w
 base model is already near-complete (simple UI, templated infra). The lead tracks task
 difficulty, not the domain — we measure it and say so.
 [Full breadth result, consolidated table, method & honest limits →](evals/results/RESULTS.md)
+
+**And a result we will not dress up.** Two outside assessments named
+[`obra/superpowers`](https://github.com/obra/superpowers) as the methodological competitor,
+so we ran it (2026-09-08, pinned SHA, 7 cases): SOTA **0.987**, unguided **0.637**,
+Superpowers **0.599**. That is **−0.04 versus no guidance at all**, against a ±0.03 noise
+floor — so on this rubric the two are indistinguishable, and the honest reading is about the
+instrument, not the project. Superpowers is *process* guidance; these cases score a *built
+artifact's* domain coverage. A low score is evidence about **fit to this measure**. It shows
+the two libraries are not substitutes; it does not settle whether a methodology beats a
+corpus, and we have no instrument that would.
+[Method and limits →](evals/results/2026-09-08/SUPERPOWERS-HEAD-TO-HEAD.md)
 
 ### What the audit hunts that a scanner can't
 

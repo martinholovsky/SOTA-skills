@@ -228,6 +228,30 @@ One consolidated view — every competitor's standing in a single table. Scores 
 | [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | ~23k | 81% | 82% | −17 pts | 0 / 1 / 6 |
 | unguided model | — | 58% | 65% | −40 pts | — |
 
+### 3a. Superpowers — a different shape, measured separately on purpose (2026-09-08)
+
+**Deliberately not a row in the table above**: it is a separate run
+(build `claude-sonnet-4.6`, judge `claude-opus-4.8`, **1 sample/arm/case, temp 0.0**,
+7 cases) whose own unguided arm read **0.637**, not the 58% above — merging them would
+imply a comparability this does not have.
+
+| arm | completeness | vs SOTA | vs unguided |
+|---|---:|---:|---:|
+| SOTA-skills | **0.987** | — | +0.35 |
+| unguided | 0.637 | −0.35 | — |
+| [obra/superpowers](https://github.com/obra/superpowers) @ `b36e0829` (~282k ★) | 0.599 | −0.39 | **−0.04** |
+
+**Read the caveat before quoting the number.** Superpowers is *process* guidance (TDD loop,
+systematic debugging, verification-before-completion); these cases score whether a **built
+artifact** embeds domain best practices. **A low score here is evidence about fit to this
+measure, not about that project.** The honest headline is the unflattering one: on this
+measure Superpowers is **indistinguishable from no guidance at all** (−0.04 against a
+measured ±0.03 noise floor at n=1) — which reports our instrument's blind spot as much as
+anything else. It settles that the two are not substitutes and are not measured by the same
+yardstick; it does **not** adjudicate the assessments' actual claim, that a methodology is a
+more complete offering than a corpus. Full write-up and limits:
+[SUPERPOWERS-HEAD-TO-HEAD](2026-09-08/SUPERPOWERS-HEAD-TO-HEAD.md).
+
 **Re-run 2026-08-14/15 — the ranking and the gap are stable.** Same build model (verified unchanged since the original commit), same pinned competitor SHAs: SOTA **98.7%**, ECC 84.9%, awesome-cursorrules 80.0%, claude-skills 77.0%, unguided **58.2%** — and SOTA again **won 17, tied 4, lost 0** of 21 head-to-head cases. The unguided arm reproducing to 0.2 points is the control that says the harness did not drift. Competitor moves of 2–4 points are **not** claimed as regressions (n=1 per arm). [COMPETITOR-RERUN](2026-08-14/COMPETITOR-RERUN.md).
 
 ¹ **This library's record against SOTA-skills**, across the 7 build tasks (how many
@@ -304,6 +328,22 @@ skill and the tempting sibling), 3× temp 0.7, objective name-match scoring.
 |---|---|---|---|
 | with cross-refs | 0.80 | **0.00** | [desc-routing-3sample.json](2026-07-13/desc-routing-3sample.json) |
 | without cross-refs | 0.80 | **0.00** | |
+
+**The regression set is a separate instrument and must not be averaged in here**
+(`evals/cases/desc-routing-regressions.jsonl`; selection-by-outcome is its point). Run
+2026-09-08, `claude-sonnet-5`, **3 samples per case per arm, temp 0.0, 2 cases**: after a
+one-keyword fix both cases read **1.00 in both arms**, distractor-pick 0.000. The run's value
+was not the score — it caught `r1_token_count` **regressed** to the wrong skill 3/3, live for
+a day since v1.35.0 added a description that claims r1's *noun* while the correct skill claims
+its *question*
+([ROUTING-REGRESSION-SET](2026-09-08/ROUTING-REGRESSION-SET.md), ROADMAP 44).
+
+**Over-selection has now been priced** (ROADMAP 38, 2026-09-08): counted with
+`count_tokens` over the 2026-09-06 routing run, over-selected skills cost a **mean 10,738
+tokens per task, +109%** on the `SKILL.md` load — a cost in tokens and latency, not in
+measured quality (padded context read −0.01 and −0.03). Samples: arithmetic over one measured
+10-case run, no new sampling
+([OVER-SELECTION-COST](2026-09-08/OVER-SELECTION-COST.md)).
 
 **Honest +0.00.** The model **never** routed to the warned-against sibling in
 *either* arm (distractor-pick 0.00 across all 10 cases × 3 samples, perfectly
