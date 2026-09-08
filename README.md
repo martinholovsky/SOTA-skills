@@ -269,8 +269,14 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   bash would pass the word through and run it. Add the `2>/dev/null` everyone uses to
   hide `Permission denied` noise and the broken probe is byte-identical to a real
   no-match: empty output, exit 1. The sweep you read as *"nothing is stale"* may never
-  have executed.
-  ([rules/01 §3a](skills/sota-shell-scripting/rules/01-safety-baseline.md))
+  have executed. **A second route reaches the same false-clean**: in zsh an unquoted
+  expansion does not word-split, so `files=$(git ls-files '*.md'); grep -l X $files`
+  passes the whole newline-joined list as **one impossible filename** and it
+  **searched nothing** — and the remedy is **separator-specific**, since the `${=var}` fix
+  for a space-separated flag string is itself wrong for a file list. Found the hard way in this
+  repo, where the rule was already written and the skill was never loaded: a **routing
+  gap**, fixed in the trigger rather than the text.
+  ([rules/01 §3 and §3a](skills/sota-shell-scripting/rules/01-safety-baseline.md))
 - **A watcher that cannot say "the thing I was watching is gone".** Done/not-done cannot
   express *"I could not tell"*, and once you add that you find you also need **GONE** —
   terminal and knowable, not unknown. Collapse it and the watch either invents a success

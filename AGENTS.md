@@ -82,7 +82,7 @@ than guess.**
 
 *Adding a `rules/NN` file?* Invariant 10 checks its own `SKILL.md` indexes it and
 **invariant 15** checks the library map (`skills/sota/rules/04`) lists it, both directions.
-`skills/sota/SKILL.md` is at **399/500** (re-counted 2026-09-07; three offloads got it there —
+`skills/sota/SKILL.md` is at **400/500** (re-counted 2026-09-08; three offloads got it there —
 BUILD/AUDIT, the `rules/01` split, then the library map to `rules/04`: **detail belongs in
 `rules/`, imperatives in the router**). Wrong **six** times — **re-count with `grep -c ''`**.
 Editing the router's **BUILD section** moves `ROUTER_BUILD_SHA` and aborts the evals; AUDIT does not.
