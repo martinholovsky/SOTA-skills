@@ -5,6 +5,27 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+**Docs only** — two drifts in `docs/ROADMAP.md`, both introduced by this week's own releases,
+and both the summary-drifts-from-its-ledger shape the same file carried for item 12 until
+2026-09-07.
+
+### Fixed
+
+- **The priorities table pointed at work with no ledger row.** Priority 4 cited *"item 32's
+  follow-up"*; item 32 is closed, and the follow-up existed only in that one cell. It is now
+  **item 43**, with its own row carrying the part a summary cell cannot: that this is a **new
+  experiment needing its own pre-registration**, not a re-run, and that **reporting it against
+  item 32's original threshold would be invalid** — a threshold chosen after seeing +0.04 is
+  not a pre-registration. The open count moves 7 → 8.
+- **The cap-watch row was a day stale, in a week where three files moved.** It still read
+  `sota-shell-scripting/rules/01` **490** (now **498**) and `sota/rules/03` **428** (now
+  **447**), and omitted `sota-devsecops/rules/01` at **450**, which v1.36.1 made the fifth
+  largest file in the library. Every number re-measured with `grep -c ''` this session, and
+  the row now says the thing that matters more than the numbers: **a row of line counts goes
+  stale within a day of active work, so re-measure it rather than reading it.**
+
 ## [1.36.3] - 2026-09-08
 
 **Front door checked:** discovery is not collection · output delta · healthy fallback
