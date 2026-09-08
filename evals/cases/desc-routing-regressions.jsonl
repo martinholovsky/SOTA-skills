@@ -17,3 +17,15 @@
 # `counting tokens`/`tokenizer` to the skill description (the auto-load classifier) and
 # router cross-cutting rule 21. This case pins that fix.
 {"id": "r1_token_count", "task": "How many tokens is this 484-line Markdown instruction file? I want to compare it against the recommended size budget before adding more to it.", "expect": "sota-llm-engineering", "distractor": "sota-docs-workflow"}
+#
+# r2_absence_sweep — 2026-09-08. A maintenance session ran `grep -lEi "$p" $L` with
+# `L=$(ls …)` in zsh, where an unquoted expansion does NOT word-split — so the whole
+# newline-joined list went as ONE filename, the sweep searched nothing, and the empty
+# result was read as a coverage answer. Twice, and reported. rules/01 §3 and §3a already
+# carried the deviation, the exit-2 tell, the NOMATCH case and the positive-control
+# remedy; the skill was simply never LOADED, because the description named shell
+# ARTEFACTS (scripts, CI, entrypoints) and this was an ad-hoc command typed to check a
+# claim. UNREACHABLE, not absent — the same shape as r1. Fixed by naming the ACT in the
+# description (ad-hoc sweeps, one-liners, believing an absence) and repointing router
+# rule 17 from §3 to §3a, the section that owns pasted and agent-issued commands. Pins it.
+{"id": "r2_absence_sweep", "task": "Before I write this rule I want to be sure it isn't already covered. Run a grep across the markdown files for a few phrasings and tell me whether any of them appear — if it comes back empty I'll treat the topic as absent.", "expect": "sota-shell-scripting", "distractor": "sota-docs-workflow"}

@@ -131,7 +131,15 @@ cmd $args           # zsh: ONE argument "gate check --json" — usually a usage 
 cmd ${=args}        # explicit split — three arguments
 argv=(gate check --json); cmd $argv   # better: an array, correct in both shells
 cmd ${3:+--flag $3}  # zsh: passes "--flag /path" as one argument
+
+files=$(git ls-files '*.md')          # a NEWLINE-separated list — the shape audit sweeps build
+grep -l PATTERN $files                # zsh: ONE impossible filename; searches NOTHING, exit 2
+files=("${(@f)$(git ls-files '*.md')}")   # right: split on NEWLINES only
 ```
+
+**The remedy is separator-specific.** `${=var}` above is right for a space-separated flag
+string and *wrong* for a file list — it splits spaces too, so `a b.md` becomes two missing
+paths (measured: 1 hit where 2 were due). Use `${(@f)…}` for anything `$(…)` produced.
 
 The failure mode is what makes this expensive: the callee reports a **usage error
 (exit 2)**, which reads as a bug in the tool being tested rather than in the harness
@@ -261,7 +269,7 @@ rather than assuming; then treat the table below as live.
 
 | | bash | zsh | how it fails |
 |---|---|---|---|
-| unquoted `$var` with spaces | splits into words | **joins** into one argument (§3) | **loudly** — a usage error, exit 2, from the callee |
+| unquoted `$var` with spaces **or newlines** — incl. any `$(…)` file list | splits into words | **joins** into one argument (§3) | **loudly** — a usage error, exit 2, from the callee — but a *file-list* command then searches **nothing**, and empty output reads as a clean tree |
 | `$?` after a pipeline | last stage (`${PIPESTATUS[0]}` for the first) | same, but `${pipestatus[1]}` (§3) | **quietly** — a wrong status, read as truth |
 | unquoted glob in a flag value | passed through **literally**, command runs | `NOMATCH` **aborts the command** | **silently** — and it fakes a clean result |
 

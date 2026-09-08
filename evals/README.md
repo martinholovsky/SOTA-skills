@@ -228,6 +228,13 @@ audit STRAT-HIGH-2).
   could not execute at all** from 2026-08-05 to 2026-08-27 — an ablation guard called
   `.splitlines()` on a list and raised before the first API call, unnoticed because the
   last recorded run predates the guard.
+  **Second case, `r2_absence_sweep`, added 2026-09-08 and NOT YET RUN** — it pins the fix
+  for a session that grepped with an unquoted `$L` in zsh (no word-splitting, so the whole
+  file list went as one argument), searched nothing, and read the empty result as coverage.
+  `sota-shell-scripting` rules/01 §3/§3a already held the rule; the description named shell
+  *artefacts* and never the ad-hoc command, so the skill was never loaded. The before/after
+  number is deliberately absent rather than assumed: it costs live calls and has not been
+  authorised.
 - **`run-router-length.py`** — reuses `cases/router.jsonl` to ask a different question:
   does routing degrade as `skills/sota/SKILL.md` grows? The 500-line cap is *our*
   invariant mirroring platform guidance, **not** a loader limit — nothing truncates a

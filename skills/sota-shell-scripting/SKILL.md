@@ -1,7 +1,7 @@
 ---
 name: sota-shell-scripting
 description: >-
-  State-of-the-art shell scripting (bash-focused, defensive) for writing and auditing shell scripts, CI scripts, init/deploy scripts, container entrypoints, and Makefile recipes. Use when the task involves creating, modifying, reviewing, or hardening any shell code — trigger keywords: bash, shell script, sh, zsh, shellcheck, shfmt, CI script, Makefile shell, entrypoint script, set -euo pipefail, dotfiles, install script, cron job, wrapper script.
+  State-of-the-art shell scripting (bash-focused, defensive) for writing and auditing shell scripts, CI scripts, init/deploy scripts, container entrypoints, and Makefile recipes — and, just as much, for the ad-hoc commands you run yourself: a grep/find/rg sweep whose result you are about to report, a one-liner pasted from a checklist, a pipeline whose exit status or empty output you are about to believe. Use when creating, modifying, reviewing or hardening shell code, AND before trusting any conclusion a shell command produced — especially an ABSENCE ("no matches", "nothing found", "0 results"), which a quoting bug produces identically. Trigger keywords: bash, shell script, sh, zsh, shellcheck, shfmt, CI script, Makefile shell, entrypoint script, set -euo pipefail, dotfiles, install script, cron job, wrapper script, one-liner, command line, grep sweep, search the codebase, verify a claim, no matches found, empty output, exit status, word splitting, glob.
 ---
 
 # SOTA Shell Scripting

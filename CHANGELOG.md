@@ -5,6 +5,62 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.36.2] - 2026-09-08
+
+**Front door checked:** searched nothing · separator-specific · routing gap
+
+**Patch** — a **routing gap** closed in the trigger, not the text. The rule that would have
+prevented a defect in this repo was already written, in the right file, with the right
+remedy. It never fired, because nothing loaded the skill.
+
+### Fixed
+
+- **`sota-shell-scripting`'s description named shell *artefacts* and never the *act*.** It
+  listed scripts, CI blocks, entrypoints and Makefile recipes — so it did not fire for the
+  thing that actually goes wrong most often: an **ad-hoc command you type to check a claim**.
+  A maintenance session ran `grep -lEi "$p" $L` with `L=$(ls …)` in zsh, where an unquoted
+  expansion does **not** word-split; the whole newline-joined list went as one impossible
+  filename, the sweep **searched nothing**, and the empty result was read as a coverage
+  answer. Twice, and reported. `rules/01` §3 and §3a already carried the deviation (verified
+  against the zsh Options manual), the exit-2 tell, the `NOMATCH` case *and* the
+  positive-control remedy. **UNREACHABLE, not absent** — the same shape as the token-counting
+  mis-route of 2026-08-27, and fixed the same way: the description now names the act, the
+  absence (`"no matches"`, `"nothing found"`, `"0 results"`), and the moment — *before
+  trusting any conclusion a shell command produced*.
+- **Router cross-cutting rule 17 pointed at the wrong section.** It says shell hides "in the
+  one-liners you type to verify a claim" and then sent the reader to `rules/01` §3. **§3a** is
+  the section for *pasted and agent-issued commands*, which is exactly that case. Repointed,
+  and its parenthetical no longer implies the failure is always loud: a failed glob is silent
+  and fakes a clean result.
+- **A regression case pins it**: `r2_absence_sweep` in
+  `evals/cases/desc-routing-regressions.jsonl`. **Not yet run** — the before/after number
+  costs live calls and has not been authorised, so it is recorded as absent rather than
+  assumed.
+
+### Changed
+
+- **`rules/01` §3 now shows the shape that actually bites an audit sweep.** Every example in
+  it was a space-separated *flag string*; the shape a sweep builds is a **newline**-separated
+  file list from `$(…)`. Both fail by joining, but the file-list case fails by searching
+  nothing while looking like a clean tree. **The remedy is separator-specific and this is the
+  trap inside the trap**: `${=var}` — §3's own fix for the flag-string case — is *wrong* for a
+  file list, because it splits on spaces too. Measured on this machine: with one filename
+  containing a space, `${=files}` returned **1 hit where 2 were due** and warned about two
+  paths that do not exist; `${(@f)…}` returned both. §3a's table row now carries the same
+  distinction.
+
+### Notes
+
+- **This is the second time a rule of ours was present, correct and unreached**, and both were
+  fixed in the classifier rather than the prose. The generalisable part is in
+  [docs/INDEX.md](docs/INDEX.md): *fix the trigger, and pin it with a regression case* — a
+  description that enumerates artefacts will not fire on an activity, and most of what an
+  agent does to *check* something is an activity.
+- **`sota-shell-scripting/rules/01` is now at 498/500.** Roadmap item 13 no longer lists it as
+  a watch item: it is **the split**, and the next addition must offload first. The seam is
+  already in its own headings — §1–§2 (shebang, `set -e` semantics) vs §3–§3a (quoting and the
+  zsh deviations), which is also the half other skills cite.
+
 ## [1.36.1] - 2026-09-08
 
 **Front door checked:** never persist raw · agent session transcript · constant time is a property of the emitted code
@@ -6964,6 +7020,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.36.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.36.2
 [1.36.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.36.1
 [1.36.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.36.0
 [1.35.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.35.2
