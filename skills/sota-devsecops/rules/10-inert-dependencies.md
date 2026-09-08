@@ -88,6 +88,32 @@ no-op'd control rather than a removed package):
   proof is a bounded claim ("removable without breaking `go build` and `go test ./...`"),
   not "unused".
 
+### 3a. If the thing was a *fallback*, "unreached" is not evidence at all
+
+§3 proves a candidate is unreached and deletes it on that evidence. That is sufficient for a
+**dependency**, whose job is to be called. It is not sufficient for anything whose job was to
+be *available*: a cache, a mirror, a warm standby, a secondary feed, a retry path, a
+break-glass credential. **Unreached is exactly what a healthy fallback looks like**, so the
+§3 proof returns the same green for "safely obsolete" and for "the safety net nobody has
+needed yet".
+
+For those, the deletion needs a second, different piece of evidence: **what replaced it, and
+a measurement showing the replacement is working right now.**
+
+Field case: an orphaned CronJob maintained a vulnerability-database cache that no build had
+mounted for four days — unreached, proven, the claim appearing exactly once in the repo, in
+its own producer. The reason it was unreached is that builds had moved to a registry mirror,
+so the question that actually decided the deletion was *"is the mirror current?"* It was: the
+manifest annotation read a creation time **3.3 hours old**, inside the tool's 24-hour refresh
+window. **Had it been stale the correct action was the opposite** — repair the mirror — and
+the "dead" cache was the only thing between a stale advisory database and a green scan gate.
+
+So: when a DELETE candidate is redundancy, name the successor and cite a freshness or health
+measurement taken **this session** (§5's discipline — dates, from a primary source, fetched
+now — applied to the replacement rather than to the upstream). No successor and no measurement means the finding is
+not DELETE — it is **KEEP, pending an owner's decision**, because you have established
+absence of use and nothing about absence of need.
+
 ## 4. Leverage ratio — what you use vs what you inherit
 
 For each *live* dependency, count the API surface you actually call against the transitive
@@ -133,7 +159,9 @@ gh api "repos/<owner>/<repo>/contributors?per_page=1" --include | grep -i '^link
 ## 6. Classify every finding into exactly one bucket
 
 - **A. DELETE** — unreached, with the §3 proof attached (commands, exit codes,
-  before/after counts). Effort: trivial.
+  before/after counts). **If the candidate was redundancy — a cache, mirror, standby,
+  secondary feed or break-glass path — §3 alone does not qualify it**: name the successor
+  and cite a health measurement taken this session (§3a), or classify it C. Effort: trivial.
 - **B. REPLACE IN-HOUSE** — reached, but small, well-specified, non-security-critical, and
   a poor leverage ratio. Give a line-count estimate *and* name the owner afterwards: the
   real cost is maintaining it forever, not writing it once.
@@ -172,6 +200,9 @@ dynamic-loading trap, a code-only search is structurally incapable of settling i
 ## Audit checklist
 
 - [ ] **Inert-dependency sweep run**: every direct dependency, registered module, and plugin traced to a real entrypoint — not just to an import — with the impossible-path and dynamic-loading traps checked in both directions (§1)
+- [ ] **Was any DELETE candidate redundancy?** (§3a) A cache, mirror, standby, secondary feed
+      or break-glass path is *supposed* to be unreached, so §3's proof does not qualify it —
+      the successor is named and its health measured this session, or the finding is KEEP.
 - [ ] Each "unreached" claim **proven by deletion** in a scratch copy: real build + lint/vet + full suite, with commands, exit codes, before/after transitive counts, and which suites ran — and the deletion asserted to have taken effect (§3)
 - [ ] Leverage ratio computed for live deps (symbols called vs transitive modules inherited); <5-symbols/>10-modules candidates flagged with both numbers (§4)
 - [ ] Upstream health fetched **this session** from a primary source (`gh api repos/<o>/<r>` → `archived`, `pushed_at`, contributor count; `full_name` read back for silent renames), reported as dates not adjectives (§5)

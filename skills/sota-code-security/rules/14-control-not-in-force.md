@@ -218,6 +218,46 @@ finds it: the control's own site is unchanged and still reads correctly.
   referred to a closed question. A stale reason is worse than none: it stops the reader
   looking.
 
+## 4b. The stage that reports success is not the stage that failed
+
+§4 is a control whose trigger never fires. This is one layer further on: the control **did**
+run, it **failed**, it **said so** — in a field nobody read, while a *different* field on the
+same screen read as success.
+
+A pipeline with more than one stage has more than one success signal, and they are not
+interchangeable. **The earliest stage's signal is the one that looks like a summary**, because
+it is a count and it renders first. Field-reported, from a metrics collector that had gathered
+nothing for days:
+
+```
+total active targets: 144
+workflow-controller targets: 1     <- reads as "it is working"
+health=down   lastError: unexpected status code ... 400
+```
+
+*One target found* means only that a selector matched. **Discovery is not collection**; the
+same split exists as enumerate-vs-process, connect-vs-authenticate, resolve-vs-fetch,
+schedule-vs-execute, and register-vs-invoke. The acceptance test is always the **downstream
+artefact** — the row, the series, the file, the record — never the pipeline's own readiness.
+
+- **Name the stage your evidence came from, in the sentence that reports it.** "The exporter
+  is up" and "the series exists" are different claims with different blast radii.
+- **Read the per-item status, not the population count.** Wherever a system exposes both, the
+  count is a discovery statistic and the status is the outcome: `health` and `lastError` on a
+  scrape target, per-partition lag rather than consumer-group membership, per-file results
+  rather than files-enumerated.
+- **Repairing an inert control needs an output delta, not a green light.** This is the natural
+  pair to *make a green check able to go red* (§1, `sota-testing` rules/09): when you fix one,
+  prove it by what it now **produces**. In the same field case three affirmative signals lined
+  up while nothing was collected — the object synced, the GitOps controller reported `Healthy`,
+  the target was discovered — and the only check that distinguished repaired from
+  still-broken was **0 → 54 series, `up=1`**. Quote the before and after numbers; a
+  post-fix green that was also green while broken is not evidence.
+
+Distinguish this from `sota-observability` rules/05 §7a, which is the case where the right
+instrument does not exist and a proxy answers a neighbouring question. Here every instrument
+existed and was correct — the reader stopped at the first affirmative one.
+
 ## 5. A control parked in observe-only mode
 
 A control in audit / warn / dry-run / report-only mode is a *plan* to enforce,
@@ -354,6 +394,11 @@ Either way it carries a severity and appears in the findings, not in prose.
 
 ## Audit checklist
 
+- [ ] **Which stage did the green come from?** (§4b) In any discovery-then-collect pipeline,
+      confirm the evidence is the downstream artefact (the series, row, file, record) and not
+      the earlier stage's count; read per-item `health`/`lastError` beside the population
+      total. A repair is proved by an **output delta**, quoted before and after — a post-fix
+      green that was also green while broken is not evidence.
 - [ ] **Proxy predicates**: for every `if` guarding a control, name the dependency the
       body actually needs and confirm the predicate tests *that*. Grep the codebase for
       the proxy setting — if it is read in more than one place for more than one purpose,

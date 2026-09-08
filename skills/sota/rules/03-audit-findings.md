@@ -110,6 +110,22 @@ Two asymmetries the evidence standard has to carry:
   section too, where an inert control praised as a strength is the worst
   possible reporting error.
 
+**A correlation across the whole population is still not a mechanism** — and a *complete*
+one is the most persuasive version of the mistake, because it looks like the N-of-N evidence
+above rather than like a guess. Repeating an **observation** N of N times bounds noise;
+observing that N of N **members share a property** bounds nothing, because you have not
+touched the thing that would have to implement it. Field-reported: 8 of 8 working scrape
+objects lived in one namespace and the only one elsewhere collected nothing — a perfect
+correlation across the entire population, and the inference drawn from it
+("cross-namespace scraping does not work here") was **wrong**. One query against the
+collector's own target list refuted it: that target was discovered normally and the real
+cause was the URL scheme. The correlation was an artifact of where a previous author had put
+files. **Name the component that would have to implement the mechanism and ask it directly**
+— the selector, the config, the target list, the resolver. That check is usually one command,
+and the correlation is precisely what stops you looking for it. Reported as a near-miss,
+caught before acting: judge it accordingly, and note that the sibling failure —
+generalising from a *single* sample — is `sota-code-security` rules/15 §2.1.
+
 **A reproduction you ran once is a coincidence you have not ruled out.** Where the
 evidence is a *behaviour* rather than a line of code — a crash, a race, a
 timing-dependent bypass, a fuzzer hit, or anything an agent or a sampled model
@@ -369,6 +385,9 @@ Deliver in exactly this order:
 ## Audit checklist — quality gate on the findings and the report
 
 **Finding quality**
+- [ ] No inference rests on a **correlation alone**, however complete — the component that
+      would have to implement the mechanism was queried directly (§2).
+- [ ] Every finding has title, severity+justification, file:line@commit,**Finding quality**
 - [ ] Every finding has title, severity+justification, file:line@commit,
       minimal evidence, standard mapping, concrete impact, diff-level
       remediation, and effort estimate?
