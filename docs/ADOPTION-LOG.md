@@ -2205,3 +2205,59 @@ own anchor, which is the class of bug that only re-reading the file catches.
 `sota-code-security` rules/13 §6 and rules/14 §8, `sota-testing` rules/04 §4.8 and rules/07
 §7.7–§7.8, `sota-devsecops` rules/07 §7.7, `sota-detection-engineering` rules/01 §8 — each
 with its audit-checklist half in the same change · v1.38.0
+
+### 2026-09-09 — the InterdictOps field report in full, and one of its claims corrected
+
+The full report behind the 2026-09-08 summary that landed in v1.38.0
+(`FIELD-REPORT-INTERDICT-2026-09-08.local.md`, untracked by the same convention as its
+predecessor — the repo is public, the product it describes is not). **Most of it was already
+landed from the summary**; this entry records the four remainders and the one claim that did
+not survive measurement.
+
+**Adopted — router operating principle 3, and this is the one that matters.** The principle
+already said a negative claim needs *"a second independent method"*. The report shows why
+that is necessary and not sufficient: **both its methods were `grep -r`**, so both agreed on
+zero and both were wrong, because `-r` does not follow symlinks met during traversal and
+`~/.claude/skills/` is 42 of them. *"Independent" has to mean a different **failure mode**,
+not a different phrasing.* The remedy is a **positive control in the same invocation** — a
+term you have already seen there. This is a correction to an existing cross-cutting principle
+that could otherwise license the wrong move ("I used two methods, so I am safe"), which is a
+different and lower bar than promoting a new principle, so the two-independent-sources rule
+does not block it.
+
+**Adopted — three sharpenings the summary did not carry.** Build output is the trap for the
+blast-radius rule (`target/`, `node_modules/`, `.venv/`, `vendor/` reach tens of gigabytes and
+are exactly what a naive recursive copy takes — redirect output instead of copying), and **a
+full disk is not a clean failure**: on a VM-backed runtime the guest disk is a sparse file on
+the host's, so host exhaustion surfaces inside the VM as I/O errors that corrupt the
+filesystem and image store, minutes later, in an unrelated command. For detections: **enforce
+the citation** the way a runbook link is enforced, since optional provenance is absent by the
+time anyone needs it; and **record what the rule cannot see** — the same paper that supplied
+the technique described a wrapper variant evading all three of its own signals, and writing
+that down is what stops the rule being credited with coverage it lacks.
+
+**Corrected — "prefer `rg`, which follows symlinks by default".** It does not. Measured
+2026-09-08 on a tree with four matches (plain, hidden, gitignored, behind a symlinked
+directory): **`rg` defaults found 1**, the environment's `grep` found 3, and only
+`rg --hidden --no-ignore --follow` found 4. Recommending ripgrep as the fix would have made
+the under-report *worse*. The library text already says this correctly (rules/06 §2) because
+it was measured before being written rather than accepted from the report — the same
+discipline this log asks of every intake, applied to an intake that was right about everything
+else.
+
+**Placement differences, recorded so the reporter can see the reasoning.** Two of the four
+went somewhere other than proposed: the blast-radius rule to `sota-shell-scripting`
+**rules/06** rather than rules/03, because rules/06 was created in the same release for
+exactly this class (the commands you type rather than commit) and rules/03 is about *secrets
+and injection* in scripts; and the reverted-by-a-neighbour shape to `sota-code-security`
+**rules/14** rather than rules/10, because rules/10 had **16 lines of headroom** and putting
+it there would have let the line cap choose the placement — which this library has now watched
+happen twice.
+
+**Not proposed, and agreed:** no new skill, no change to the detection content (its
+benign-baseline guidance was followed and the rule measured 0 false positives across 4,487
+binaries in three distributions), and no change to the `.local.md` convention.
+
+**Landed:** `sota/SKILL.md` principle 3, `sota-shell-scripting/rules/06` §3,
+`sota-detection-engineering/rules/01` §8 — each with its audit-checklist half in the same
+change · unreleased

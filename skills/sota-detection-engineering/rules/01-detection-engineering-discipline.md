@@ -204,6 +204,14 @@ have passed every test, because the test corpus is the demo.
   that keeps the mechanism and changes every one of the author's choices; if the rule stops
   firing, it was keyed on scaffolding (`sota-code-security` rules/15 §2.1 — a probe that
   exercises a neighbouring property).
+- **Enforce the citation the way a runbook link is enforced** — a rule with no source field
+  does not load. Provenance that is optional is provenance that is absent by the time anyone
+  needs it.
+- **Record what the detection *cannot* see, beside what it catches.** Sources usually tell
+  you: the same paper that supplied the technique described a wrapper variant producing a
+  structurally ordinary binary that evades all three of its own signals. Writing that down is
+  what stops the rule being credited with coverage it does not have — the counting discipline
+  in `sota-code-security` rules/14 §6, applied before anyone asks.
 - **Re-read the source when the rule misbehaves.** "It worked in the paper" and "it works
   here" are claims about different corpora; §2's benign baseline is what turns the second
   into a number.
@@ -213,7 +221,9 @@ have passed every test, because the test corpus is the demo.
 - [ ] **Does every derived detection record its source, and separate the attack's mechanism
       from the author's instrumentation?** (§8) Filenames, markers, ports and banners are
       usually the demonstrator's choices; a rule keyed on them detects the demo. Test with a
-      variant that keeps the mechanism and changes all of them.
+      variant that keeps the mechanism and changes all of them. Is the source field
+      **enforced** (a rule without one does not load), and is **what the rule cannot see**
+      recorded beside what it catches?
 ## Audit checklist
 
 - [ ] Are detections in version control, with PR review and CI tests, or edited
