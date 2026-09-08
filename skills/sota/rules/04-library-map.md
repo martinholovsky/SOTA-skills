@@ -104,7 +104,8 @@ exist. `sota-code-security/rules/11` sat unlisted for two releases before 15 exi
   lifecycle, 04 distribution & docs
 - **sota-shell-scripting/rules**: 01 safety baseline (shebang, `set -e`, quoting, zsh deviations),
   02 robustness & correctness, 03 security, 04 CI & operational scripts, 05 constructs & cleanup
-  (arrays, IFS, traps/mktemp, tests, globbing — split out of 01 in v1.36.4)
+  (arrays, IFS, traps/mktemp, tests, globbing), 06 ad-hoc commands (zsh deviations,
+  searcher exclusions, blast radius — split out of 01 in v1.38.0)
 - **sota-docs-workflow/rules**: 01 documentation architecture, 02 API reference & changelogs, 03
   code review & PR workflow, 04 commits/branches/ releases, 05 spec-driven development
 - **sota-ux-writing/rules**: 01 voice/tone & plain language, 02 microcopy & components, 03 errors

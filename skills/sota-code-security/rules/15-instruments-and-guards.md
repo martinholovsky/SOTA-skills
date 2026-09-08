@@ -62,7 +62,7 @@ route you to when the task does not look shell-shaped. That is exactly when it b
 fires.** In zsh an unquoted glob in a flag value (`grep --include=*.md`) aborts the
 command under the default `NOMATCH`, and with the customary `2>/dev/null` that is
 byte-identical to a genuine no-match — empty output, exit 1. The sweep you read as *"the
-tree is clean"* may never have run: `sota-shell-scripting` rules/01 §3a.
+tree is clean"* may never have run: `sota-shell-scripting` rules/06 §1.
 
 ### 2.1 Five failure modes specific to instruments
 

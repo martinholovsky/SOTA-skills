@@ -188,6 +188,40 @@ queued-for is an anti-pattern. Modern default:
   "needs staging" tests are really "needs a real DB/broker", which
   containers give you per-CI-job.
 
+## 4.8 A harness that could not start looks exactly like one that found nothing
+
+Whenever the subject under test runs somewhere else — a container, a VM, a subprocess, a
+remote worker — there are two ways to get an empty result, and the assertion cannot tell
+them apart. *"No vulnerability reproduced"* and *"the runtime refused to start a container"*
+produce the same red or green, and **the first is a scientific conclusion about the target**
+while the second is a broken bench.
+
+Field-reported: after a `prune`/`fstrim` corrupted a container runtime
+(`sota-devsecops` rules/07 §7.7), an exploit-validation file went from 3 passed to 1 passed
+/ 2 failed with a missing-envelope error. Nothing in the failure said *the container never
+ran*; it read as the target not being exploitable.
+
+- **Assert liveness before the assertion, and fail on it separately and loudly.** "The
+  runtime produced a result at all" is a different question from "the result is X", and it
+  must have its own failure message. A fixture that starts one throwaway container and
+  asserts it emitted a known marker is enough, and it runs once per session.
+- **Empty is not a result.** An empty output file, an empty stdout, a zero-length report is
+  a **failed measurement until proven otherwise** — assert the artefact is non-empty *and*
+  contains the summary line you expect before reading anything into it. (The pipe version of
+  this — a filter destroying the evidence — is `sota-shell-scripting` rules/01 §3.)
+- **Name the subject in the message.** *"exploit not reproduced"* is a claim about the
+  target; *"no envelope returned — harness did not start"* is a claim about the bench. The
+  general form is `sota/rules/03` §2: when a check reports, say what it is reporting about.
+- Distinguish this from a *flaky* dependency. Flakiness is intermittent and the retry is the
+  usual answer; this is a bench that is uniformly broken while still looking healthy from
+  outside, and retrying it produces the same confident wrong answer every time.
+
+## Audit checklist
+
+- [ ] **Does every out-of-process test assert liveness separately from its result?** (§4.8) A
+      harness that could not start and one that ran and found nothing produce the same output,
+      and only the second is a conclusion about the target. Empty artefacts are failed
+      measurements until proven otherwise.
 ## Audit checklist
 
 - [ ] Do integration tests run the real engine? Grep test config for

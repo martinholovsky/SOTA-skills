@@ -124,7 +124,7 @@ files=(/data/*); count=${#files[@]}                               # with nullglo
 - [ ] Any command **pasted into an interactive shell** that passes a glob as a flag value
       (`--include`, `--exclude`, `-name`) has it **quoted** — unquoted, zsh's `NOMATCH`
       aborts the command and, under `2>/dev/null`, the result is indistinguishable from a
-      genuine no-match (`rules/01` §3a). Every sweep read as an *absence* has been positive-controlled
+      genuine no-match (`rules/06` §1). Every sweep read as an *absence* has been positive-controlled
       against a pattern known to be present.
 
 ## Audit checklist

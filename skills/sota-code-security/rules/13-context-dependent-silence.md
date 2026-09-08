@@ -226,6 +226,36 @@ collection rather than an error. Two defences, and you want both:
   fixtures found; this suite would vacuously pass"` is what turns silence into a
   failure — in the reported case it was the *only* reason the bug surfaced.
 
+## 6. An empty result that never names the store it queried
+
+§5 is one machine answering differently from another. This is one *process* answering
+differently from another, in the same tree, because a writer and its readers were each given
+their own default path — and the wrong answer is the well-formed, legitimate one.
+
+Field-reported: **6,491 advisories live in one SQLite file, and every default reader opened a
+different one** whose table had zero rows. Proven by executing the same call against both:
+`lookup_advisories_for_package("Go", "github.com/cri-o/cri-o")` returned **13** and **0**. It
+was silent because `[]` is a *correct* answer meaning "this package has no known advisories",
+and it reached that state honestly — 25 CLI options defaulted one way, and the single ingest
+command that **writes** the data defaulted the other.
+
+- **An empty result from a store must carry the store's identity and inventory.** *"0 rows"*
+  is not a finding; *"0 rows in `/path/db.sqlite`, which holds 0 advisories total"* is, and
+  it names its own bug. The general form is `sota/rules/03` §2 — say what the answer is
+  about.
+- **A default path repeated in N places is one design decision expressed N times.** Audit
+  writers and readers *together*, not each against itself: the defect is invisible in either
+  half. `grep` the default and count distinct values; more than one is the finding.
+- **Ask what a healthy store looks like and assert that on startup.** A lookup layer that
+  cannot say "I am pointed at a store with N rows" cannot distinguish an empty answer from
+  an empty database, and neither can anyone reading its output.
+
+## Audit checklist
+
+- [ ] **Does every empty result name the store it queried?** (§6) "0 rows" without the store's
+      path and inventory is not a finding. Where a writer and its readers each carry a default
+      path, audit them *together* — one design decision expressed N times, and the defect is
+      invisible in either half alone.
 ## Audit checklist
 
 - [ ] **Scale**: does any control's behaviour change with input size — a
