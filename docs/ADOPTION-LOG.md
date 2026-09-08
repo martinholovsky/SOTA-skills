@@ -2124,3 +2124,84 @@ two-independent-sources bar for a cross-cutting home, and none was given one.**
 **Landed:** `sota-code-security/rules/14` §4b, `sota-devsecops/rules/10` §3a + §6 bucket A,
 `sota-observability/rules/02` §7, `sota-kubernetes/rules/04` §7a, `sota/rules/03` §2 — each
 with its audit-checklist half in the same change · v1.36.3
+
+### 2026-09-08 — a status can be true of the wrong subject, and the commands you type to check
+
+Two intakes, landed together because they are the same failure at two altitudes: a
+**proposal** from a static-analysis repo (six false OKs in one session, each measured), and a
+**field report** from a detection-engineering session (three items and a sharpening). Both
+are about statements that are *correct* and still mislead.
+
+**Adopted — the general rule** (`sota/rules/03` §2). The evidence standard already says to
+validate a claim against a primary source. This adds: **validate what the claim is ABOUT.**
+Every one of the six instances was literally true — *"exit 0"* of the wrapper, *"no
+advisories"* of the database that was opened, *"the harness returned no result"* of a
+container that never started, *"38,861 passed"* of the tree fifty minutes earlier. 0 hits for
+`name the subject|what the OK is about`, confirmed with a live control. This is not the
+semipredicate problem: the value is unambiguous and the **subject** has quietly shifted, so a
+reader cannot detect it by looking harder at the number.
+
+**Adopted — the six instances, placed by mechanism rather than kept together:**
+`sota-shell-scripting` rules/01 **§2a** (a background job's completion signal is about the
+launcher — measured at 17 seconds into a 41-minute run, and the two shell-level rules we had
+are both about *your* shell, not the orchestration layer that reads the result);
+`sota-code-security` rules/13 **§6** (an empty result that never names its store — 6,491
+advisories in one SQLite file and every default reader opening another, proven by the same
+call returning **13** and **0**); `sota-testing` rules/04 **§4.8** (a harness that could not
+start is indistinguishable from one that found nothing, and only the second is a conclusion
+about the target); `sota-testing` rules/07 **§7.7** and **§7.8** (a long run is scoped to the
+revision it started from, and *when a ratchet fires the fix is never to re-record it* — the
+failure message offers exactly the action that destroys the signal); `sota-devsecops`
+rules/07 **§7.7** (prune/`fstrim` on a shared runtime is a change needing a restart and a
+smoke test, plus enumerate foreign-owned resources first).
+
+**Adopted — the field report's three, and its sharpening:** `sota-shell-scripting` rules/06
+**§3** (an ad-hoc command can *destroy* what it was checking — 40 GB copied into a container
+on a host at 99%, cascading into a corrupted runtime and ~64 GB of lost images; we covered
+ad-hoc commands producing false findings and never producing damage);
+`sota-detection-engineering` **§8** (provenance, and **separating the attack's mechanism from
+the author's instrumentation** — a rule keyed on a paper's `.payload` name and printed marker
+detects the demo; 0 hits across all 8 files for `provenance|cite|arxiv|demo|scaffold`, control
+live); `sota-code-security` rules/14 **§8** (a *real* control reverted by a neighbouring
+automated step into a state that is legitimate in another phase — "timestamped only" is
+correct between releases, so only `--require-signature` separated them). It went to rules/14
+rather than rules/10 because **rules/10 had 16 lines of headroom** and cramming it there
+would have been the cap choosing the placement again.
+
+**The sharpening was measured rather than accepted, and it got sharper.** The report proposed
+strengthening "verify absences" to "control the search with a term known to exist, **in the
+same invocation**", and warned that `grep -r` is wrong for trees containing symlinks. Both
+hold, with precision the report did not have:
+
+- `-r` skips symlinked directories **met during traversal**; `-R` follows them; a symlink
+  passed *as the argument* is followed by both. So it is the **nested** case.
+- **Tool choice is not the fix.** On one tree with four matches: `rg` defaults found **1**,
+  the environment's `grep` found **3**, explicit flags found **4**. Swapping to ripgrep would
+  have made the under-report *worse*.
+- **The `grep` in that environment was a shell function** running `ugrep -G --ignore-files
+  --hidden -I --exclude-dir=.git …`, except that any `-z`/`-Z` argument was routed to
+  `command grep` — **BSD grep**, where `-z` means null-data rather than *search archives*. So
+  `grep --version` and `command grep --version` named different programs and one flag decided
+  which ran. Read from the wrapper's definition, not inferred.
+
+That is why the rule shipped as **name your searcher, its flags and its exclusions in the
+same sentence as the count**, with a capability note (ugrep's `--bool`, verified working;
+`rg`'s speed and gitignore defaults; `ast-grep` for constructs regex cannot see) rather than
+a recommendation to install anything.
+
+**Rejected — "check whether ugrep is installed" in `verify-setup.sh`.** A presence check is
+the wrong shape: the library requires no searcher, and a check that is routinely N/A for a
+non-problem is the kind people learn to skip. The idea nonetheless passes all three of
+[CONVENTIONS-LEDGER](CONVENTIONS-LEDGER.md)'s filters — it has already failed twice this
+week, it fails silently, and it is mechanically checkable — so it is **ROADMAP 45** as a
+*behavioural* probe to be decided, not dismissed.
+
+**Found while landing this, in our own text:** the v1.36.3 checklist edit to `sota/rules/03`
+had merged two lines into `…file:line@commit,**Finding quality**` and duplicated the bullet
+below it. It shipped. Repaired here — a scripted insert whose replacement text contained its
+own anchor, which is the class of bug that only re-reading the file catches.
+
+**Landed:** `sota/rules/03` §2, `sota-shell-scripting` rules/01 §2a + new **rules/06**,
+`sota-code-security` rules/13 §6 and rules/14 §8, `sota-testing` rules/04 §4.8 and rules/07
+§7.7–§7.8, `sota-devsecops` rules/07 §7.7, `sota-detection-engineering` rules/01 §8 — each
+with its audit-checklist half in the same change · v1.38.0

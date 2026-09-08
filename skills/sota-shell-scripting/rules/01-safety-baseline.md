@@ -1,10 +1,12 @@
 # 01 — Safety Baseline
 
-The shebang, the preamble, and quoting — what every bash script gets before any logic, plus
-the zsh deviations that bite commands you paste or type. The constructs built on top of this
-(arrays, IFS, traps and `mktemp` cleanup, test/printf, globbing) moved to
-[rules/05](05-constructs-and-cleanup.md) at v1.36.4; §3 and §3a kept their numbers, so every
-existing citation of them still resolves.
+The shebang, the preamble, and quoting — what every bash script gets before any logic. Two
+neighbours were split off as this file filled, both times leaving §3 (quoting) in place
+because it is the most-cited section here: the constructs built on top of quoting — arrays,
+IFS, traps and `mktemp` cleanup, test/printf, globbing — are
+[rules/05](05-constructs-and-cleanup.md), and the commands you *type* rather than commit,
+including the zsh deviations that bite them, are
+[rules/06](06-ad-hoc-commands.md).
 
 ## 1. Shebang discipline
 
@@ -115,6 +117,35 @@ and a verifier that disagree about one byte each look correct in isolation. If t
 composed text feeds a digest, assert the round trip against a **committed known-answer
 vector**. Field-reported twice in one session, the second time by the author who had
 just fixed the first instance.
+
+## 2a. A background job's completion signal is about the launcher
+
+§2 is about `set -e` inside your shell. This is one layer up, where an agent, a CI step or a
+task runner reads *"finished, exit 0"* and believes it describes the work.
+
+```bash
+nohup sh -c 'pytest … > out.txt 2>&1; echo "EXIT=$?" >> out.txt' &
+```
+
+Field-reported: the orchestration layer reported **"completed (exit code 0)"** about
+**17 seconds** into a 41-minute run (measured with `ps -o etime` on the pytest process at
+that moment) — the exit status of `nohup` *detaching*, which is a real and successful event.
+It repeated on a second run and on a waiter loop. On the run that mattered the file said
+`EXIT=1`: a test had failed.
+
+Note the two shell-level rules do not cover this. `$?`-after-a-pipeline and
+`cmd; echo` (§2, §3) are about *your* shell's status; here the shell was fine and the
+**reader was a different process**, told about a different subject.
+
+- **Wait on an artefact the job writes, never on the launcher's status.** `until grep -q
+  '^EXIT=' out.txt; do sleep 5; done`, then read the file. A sentinel the job appends *last*
+  is the only thing that means "the job is done".
+- **Never report a background job's outcome from the notification.** Report the sentinel, and
+  quote it.
+- **`pgrep -f 'pattern'` matches the watching shell's own command line**, so a wait loop
+  containing the pattern matches itself and never exits. Match the process you mean, exclude
+  `$$`, or watch the artefact — which you should be doing anyway.
+- The general form, for any status: `sota/rules/03` §2 — name what the OK is about.
 
 ## 3. Quoting: quote every expansion (SC2086)
 
@@ -263,61 +294,6 @@ curl -H $auth_header ...     # header with space splits into garbage args
   the *right-hand side* of `==`/`=~` deliberately: unquoted RHS is a pattern, quoted is
   literal), and arithmetic `$(( ))`.
 
-## 3a. zsh is not bash — the deviations that bite *pasted* commands
-
-Committed scripts are immune: every one carries a `#!/usr/bin/env bash` shebang, so bash
-runs them whatever your login shell is. The exposure is **interactive, pasted, and
-agent-issued commands** — including the audit checklists in this library, which are
-written to be pasted, and **macOS's interactive shell is zsh**. Check the operator's shell
-rather than assuming; then treat the table below as live.
-
-| | bash | zsh | how it fails |
-|---|---|---|---|
-| unquoted `$var` with spaces **or newlines** — incl. any `$(…)` file list | splits into words | **joins** into one argument (§3) | **loudly** — a usage error, exit 2, from the callee — but a *file-list* command then searches **nothing**, and empty output reads as a clean tree |
-| `$?` after a pipeline | last stage (`${PIPESTATUS[0]}` for the first) | same, but `${pipestatus[1]}` (§3) | **quietly** — a wrong status, read as truth |
-| unquoted glob in a flag value | passed through **literally**, command runs | `NOMATCH` **aborts the command** | **silently** — and it fakes a clean result |
-
-**The third is the dangerous one: a failed glob means the command never runs at all.**
-zsh's `NOMATCH` is on by default, so a glob matching nothing is a hard error rather than a
-literal word. Verified on zsh 5.9 / bash 5.3.15 / Darwin 25.6.0:
-
-```zsh
-grep -rn --include=*.md TODO .     # zsh: "no matches found: --include=*.md" — grep NEVER RAN
-                                   # bash: works, because the word is passed through
-grep -rn --include='*.md' TODO .   # correct in both
-```
-
-**Why it earns a rule of its own: with `2>/dev/null` it is byte-identical to a real
-no-match.** That redirect is the standard idiom for hiding `Permission denied` noise in a
-recursive search, and it also hides the one line that would have told you:
-
-```zsh
-out=$(grep -rn --include=*.md   hello . 2>/dev/null)   # BROKEN:  stdout empty, exit 1
-out=$(grep -rn --include='*.md' ABSENT . 2>/dev/null)  # GENUINE: stdout empty, exit 1
-```
-
-Same stdout, same exit code. **An audit sweep written this way cannot distinguish "the
-codebase is clean" from "my search never executed"** — a false-clean produced by the tool
-these checklists are pasted into — `sota-code-security` rules/15's instrument
-failure arriving through the shell.
-
-Rules:
-
-- **Quote every glob you intend the *callee* to interpret** — `--include`, `--exclude`,
-  `find -name`, `rsync --filter`, and any flag taking a pattern as its value. This is the
-  opposite of §3's advice for filenames: there you quote so *your* shell does not split;
-  here you quote so your shell does not *expand* at all.
-- **`setopt nonomatch` is the wrong fix.** It changes global shell behaviour to hide a
-  quoting bug and would mask genuine typos in real filename globs.
-- **Positive-control any sweep whose output you will read as an absence** (rules/04): run
-  it once against a pattern you know is present, and see the hit. A sweep that has never
-  been shown capable of producing a hit is not evidence of a clean tree — the same
-  known-good/known-bad discipline `sota-code-security` rules/11 §7 asks of any instrument.
-- Do not rely on the exit status reaching you. Measured: whether the *rest* of the command
-  list still runs depends on the failing command — `grep --include=*.md x . ; echo hi`
-  prints `hi`, while the same glob passed to a **builtin** (`echo`, `true`) aborts the
-  whole list, so the follow-up never runs either. Either way the intended command did not.
-
 ## Audit checklist
 
 - [ ] **Any `var=$(producer | consumer)` whose emptiness is then tested?** Hashers, `wc`,
@@ -350,7 +326,10 @@ splitting/joining class** — no widely-adopted static analyser catches
 `cmd $args` being one argument in zsh.
 
 - [ ] **Measurements piped into a filter — `tail`, `head`, *or* `grep`/`awk`/`jq`.** The `grep` form is the more dangerous one: it reads as selective rather than lossy, and the line it silently drops is the one you did not know to look for (§3).
-- [ ] `grep -rn '^#!/bin/sh' scripts/` then scan those files for `[[`, arrays, `local -`,
+- [ ] **Background jobs: is any outcome read from the launcher's status?** (§2a) The
+      completion signal describes `nohup`/the runner detaching; wait on a sentinel the job
+      writes last, and quote it.
+- [ ] `grep -rn '^#!/bin/sh' scripts/`- [ ] `grep -rn '^#!/bin/sh' scripts/` then scan those files for `[[`, arrays, `local -`,
       `${var//`, `pipefail` → bashism-in-sh (SC3xxx series).
 - [ ] **`set -e` believed inside a suspended context**: `set -e`/`set -o errexit`
       re-armed inside a function called from a condition, or `$-` inspected to prove
@@ -360,11 +339,5 @@ splitting/joining class** — no widely-adopted static analyser catches
 - [ ] SC2086 (unquoted expansion) — treat every instance in a destructive command
       (`rm`, `mv`, `cp`, `chmod`, `chown`, `ssh`, `kill`) as HIGH.
 - [ ] SC2155 — `grep -rn 'local [a-zA-Z_]*=\$(' --include='*.sh'` (masked exit status).
-- [ ] **zsh joining bugs** (the inverse of SC2086, and unlinted): in any zsh script or
-      snippet, `grep -nE '\$\{[a-zA-Z_]+:\+[^}]*\$' -e '[a-z] \$[a-zA-Z_]+$'` for
-      `${var:+--flag $var}` and bare `cmd $args`. Each passes **one** argument in zsh
-      where bash passes several. Confirm by running it: `printf "[%s]" $args` prints one
-      bracket group, `${=args}` prints several. Symptom to recognise in a bug report — a
-      **usage error (exit 2) from the callee**, which looks like the tool is broken.
 - [ ] `set -e` false confidence: grep for `if .*&&\|if [a-z_]*;` over functions with
       critical side effects; check `$(...)` in assignments without `inherit_errexit`.

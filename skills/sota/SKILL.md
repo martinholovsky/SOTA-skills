@@ -206,7 +206,7 @@ rules files that match the code in front of you. Never load all skills at once.
     against the system under test, which when wrong produces a false finding *about the
     product* (a usage error, exit 2, from the callee is the tell — but a failed glob is
     **silent** and fakes a clean result). Audit it all with `sota-shell-scripting`
-    rules/01 §3 and **§3a**, which is the section for pasted and agent-issued commands. And a script that **produces or
+    rules/01 §3 and **rules/06**, the file for pasted and agent-issued commands. And a script that **produces or
     verifies evidence** (attestations, ledgers, gate records, audit trails) is a security
     control written in shell: add `sota-code-security` rules/10, rules/12 and rules/15.
 18. **Cryptography fans out — there is no single crypto skill (by design).** Algorithm choice,

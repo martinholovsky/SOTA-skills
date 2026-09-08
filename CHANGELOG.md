@@ -5,6 +5,86 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.38.0] - 2026-09-08
+
+**Front door checked:** name what the OK is about · silently excludes · ad-hoc command
+
+**Minor** — one new rules file, one general rule that the rest hang off, and nine placements.
+Two intakes landed together because they are the same failure at two altitudes: statements
+that are **correct** and still mislead.
+
+### Added
+
+- **`sota/rules/03` §2 — a status can be TRUE and still be about the wrong subject.** The
+  evidence standard already says validate a claim against a primary source; this adds
+  **validate what the claim is ABOUT**. Field-reported, six in one session, every one
+  literally true: *"exit code 0"* was the **wrapper's** (and arrived 17 seconds into a
+  41-minute run); *"no advisories for this package"* was true of **the database that was
+  opened**; *"the harness returned no result"* was true of **a container that never
+  started**; *"38,861 passed"* was true of **the tree fifty minutes earlier**. Not the
+  semipredicate problem — the value is unambiguous and the *subject* shifted, so looking
+  harder at the number cannot find it. **When a check reports OK, name what the OK is about.**
+- **`sota-shell-scripting/rules/06-ad-hoc-commands.md`** — the commands nobody commits. Split
+  out of `rules/01`, which hit the cap **twice in one day** (498 → 366 after the constructs
+  split, back to 502 as this intake landed, now **343**). Both seams chosen by citation count,
+  and both times **§3 stayed put** — 6 external references against 2 for everything that
+  moved. *A file that hits the cap twice in a day was two files.*
+- **`sota-shell-scripting` rules/01 §2a** — a background job's completion signal is about the
+  **launcher**. The two shell rules we had (`$?` after a pipeline, `cmd; echo`) are about
+  *your* shell; here the shell was fine and a different process was told about a different
+  subject. Wait on a sentinel the job writes last.
+- **`sota-code-security` rules/13 §6** — an empty result that never names its store. 6,491
+  advisories in one SQLite file, every default reader opening another, proven by the same call
+  returning **13** and **0**. Silent because `[]` is a legitimate answer.
+- **`sota-code-security` rules/14 §8** — a *real* control reverted by a neighbouring automated
+  step into a state legitimate in another phase. "Timestamped only" is correct between
+  releases, so only `--require-signature` separated healthy from destroyed.
+- **`sota-testing` rules/04 §4.8** — a harness that could not start is indistinguishable from
+  one that ran and found nothing, and only the second is a conclusion about the target.
+- **`sota-testing` rules/07 §7.7 / §7.8** — a long run is scoped to the revision it started
+  from; and **when a ratchet fires, the fix is never to re-record it** — the failure message
+  offers exactly the action that destroys the signal.
+- **`sota-devsecops` rules/07 §7.7** — prune/`fstrim` on a shared runtime is a change needing
+  a restart and a smoke test, with foreign-owned resources enumerated first.
+- **`sota-detection-engineering` rules/01 §8** — provenance, and **separating the attack's
+  mechanism from the author's instrumentation**: a rule keyed on a paper's demo filename and
+  printed marker detects the demo. 0 hits across all 8 files for
+  `provenance|cite|arxiv|demo|scaffold`, control live.
+
+### Changed
+
+- **The absence rule got sharper, and the sharpening is not "switch tools".** Measured on one
+  tree holding four matches: `rg` defaults found **1**, the environment's `grep` found **3**,
+  explicit flags found **4** — so preferring ripgrep would have made the under-report *worse*.
+  `-r` skips symlinked directories met **during traversal** where `-R` follows them. And the
+  `grep` in that environment was a shell **function** running `ugrep -G --ignore-files --hidden
+  -I …`, except `-z`/`-Z`, which it routed to **BSD grep** where `-z` means null-data — two
+  programs answering to one name, with a flag deciding which. So the rule is: **name your
+  searcher, its flags and its exclusions in the same sentence as the count**, and control a
+  sweep with a known-present term **in the same invocation**. Every searcher
+  **silently excludes** something; which something differs by tool. A capability note (ugrep
+  `--bool`, verified; ripgrep's speed and gitignore defaults; `ast-grep` for constructs) rather
+  than an instruction to install anything.
+- **An ad-hoc command can destroy what it was checking** (rules/06 §3). We covered such
+  commands producing false findings and never producing *damage*: a check copied 40 GB into a
+  container on a host at 99%, corrupting the runtime and costing ~64 GB of images. The check
+  never ran.
+
+### Fixed
+
+- **A defect of ours, shipped in v1.36.3 and found while landing this.** A scripted checklist
+  insert whose replacement text contained its own anchor merged two lines into
+  `…file:line@commit,**Finding quality**` and duplicated the bullet under it, in
+  `sota/rules/03`. No gate could see it; only re-reading the file could.
+
+### Notes
+
+- **"Check whether ugrep is installed" was rejected as a `verify-setup` check** — a presence
+  check is the wrong shape, since the library requires no searcher and a check that is
+  routinely N/A gets skipped. It passes all three of the conventions ledger's filters though,
+  so it is **ROADMAP 45**, to be decided as a *behavioural* probe rather than dismissed.
+- Open roadmap items **7 → 8** (45 opened).
+
 ## [1.37.0] - 2026-09-08
 
 **Front door checked:** fit to this measure · the secure use has to be the easy one · over-selection
@@ -7188,6 +7268,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.38.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.38.0
 [1.37.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.37.0
 [1.36.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.36.3
 [1.36.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.36.2

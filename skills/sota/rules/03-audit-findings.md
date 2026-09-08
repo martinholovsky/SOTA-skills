@@ -103,6 +103,18 @@ Two asymmetries the evidence standard has to carry:
   independent method** (grep *and* AST/call-graph *and* a dynamic or mutation
   probe). Then state the search performed, so the reader can judge its reach.
   An unqualified absence claim is the one finding-type nobody can falsify.
+- **A status can be TRUE and still be about the wrong subject.** The evidence standard
+  above catches *wrong* answers. This one is not wrong: the value is correct, unambiguous,
+  and describes **a different subject than the reader assumes** — so no amount of care
+  applied to the number detects it. Field-reported, six in one session, every one literally
+  true: *"exit code 0"* was the **wrapper's**, not the job's; *"no advisories for this
+  package"* was true of **the database that was opened**, not of the package; *"the harness
+  returned no result"* was true of **a container that never started**, not of the target;
+  *"38,861 passed"* was true of **the tree fifty minutes ago**, not as committed. **When a
+  check reports OK, name what the OK is about. If the subject is implied rather than
+  stated, the check has not reported anything.** In practice that is one clause: *the
+  series arrived* rather than *the exporter is up*; *0 rows in `<path>`* rather than *no
+  advisories*; *green at `<sha>`* rather than *green*.
 - **"The control is present" is not "the control works."** Evidence for a
   positive observation must show *effect*, not existence — the log line it
   emitted, the request it rejected, the test that fails when it's disabled.
@@ -387,7 +399,9 @@ Deliver in exactly this order:
 **Finding quality**
 - [ ] No inference rests on a **correlation alone**, however complete — the component that
       would have to implement the mechanism was queried directly (§2).
-- [ ] Every finding has title, severity+justification, file:line@commit,**Finding quality**
+- [ ] **Does every reported OK name its subject?** (§2) "exit 0", "no results", "green",
+      "up" — say what each is *about*: the job not the launcher, the store's path not just a
+      row count, the revision not just the suite.
 - [ ] Every finding has title, severity+justification, file:line@commit,
       minimal evidence, standard mapping, concrete impact, diff-level
       remediation, and effort estimate?

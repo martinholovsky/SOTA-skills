@@ -26,7 +26,7 @@ survives a long context instead of fading into it. That's why it beats a bigger 
 instead of becoming one. Native on Claude Code; works with Gemini CLI, Codex, and any
 agent that reads `AGENTS.md`.
 
-Under the hood: **42 skills (311 files, ~67k lines)** of state-of-the-art 2026
+Under the hood: **42 skills (312 files, ~67k lines)** of state-of-the-art 2026
 practice, each **instruction** file under 500 lines so only the matching rules load —
 the cap applies to `skills/**` alone, never to README/CHANGELOG/`docs/` — every fast-moving
 claim web-verified against a primary source.
@@ -249,6 +249,23 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   working *now*. Field case: the replacement mirror was 3.3 hours fresh, so the deletion was
   right; had it been stale the correct action was the opposite one.
   ([rules/10 §3a](skills/sota-devsecops/rules/10-inert-dependencies.md))
+- **A status that is true, about the wrong subject.** Not a wrong answer — a correct one
+  describing something other than what the reader assumed, which no amount of care applied to
+  the value can catch. Field-reported, six in one session, every one literally true: *"exit
+  code 0"* was the **wrapper's** and arrived 17 seconds into a 41-minute run; *"no advisories
+  for this package"* was true of **the database that was opened**, which had zero rows;
+  *"the harness returned no result"* was true of **a container that never started**, and the
+  alternative reading was a conclusion about the target; *"38,861 passed"* was true of **the
+  tree fifty minutes earlier**. The rule is one clause long: when a check reports OK,
+  **name what the OK is about.**
+  ([sota/rules/03 §2](skills/sota/rules/03-audit-findings.md))
+- **The ad-hoc command you typed to check something.** Unlinted, unreviewed, run against the
+  system under test — and it can report a false absence *or* destroy what it was inspecting. A sweep
+  reads as clean because the searcher **silently excludes** things: measured on one tree with
+  four matches, `rg` defaults found 1, a `grep` that turned out to be a wrapper function found
+  3, explicit flags found 4. And a verification command that copied 40 GB into a container
+  filled the host and corrupted the runtime — the check never ran.
+  ([rules/06](skills/sota-shell-scripting/rules/06-ad-hoc-commands.md))
 - **Controls that block everything** — the mirror image, and the one every other pass
   here looks past. An *enforcement* control (cap, quota, filter, allowlist, sandbox
   policy) can be tightened until it refuses the legitimate case too, and it passes the

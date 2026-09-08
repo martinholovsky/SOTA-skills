@@ -263,6 +263,39 @@ Track: gate latency, exception/suppression counts and ages, time-to-remediate by
 rollback drill recency, restore test results. Those five trends are the honest health
 dashboard of everything in this skill.
 
+## 7.7 Cleanup on a shared runtime is a change, not housekeeping
+
+`prune`, `fstrim` and their friends read as tidying and are treated as safe by default. They
+are neither: they mutate state that other things hold open, and the damage surfaces later,
+somewhere else, wearing a different failure's clothes.
+
+Field-reported: `podman image prune -a` + `volume prune` + `fstrim` on a dev VM corrupted the
+container runtime's overlay storage. Every `podman run` then failed with `input/output
+error` **on a VM with 62 GB free inside** — and the runtime went on looking healthy, because
+images still pulled and `podman ps` still reported running containers fine. Only something
+needing a *new* container failed. Downstream, a test file went from 3 passed to 1 passed /
+2 failed, and **a harness that cannot start is indistinguishable from a harness that ran and
+found nothing** — the second reading being a conclusion about the target
+(`sota-testing` rules/04 §4.8).
+
+- **Treat prune/trim as a change requiring a restart and a post-change smoke test**, not as
+  maintenance. Restart the runtime, then start one throwaway container and assert it
+  produced output. "Still running" is not "still able to start".
+- **Enumerate foreign-owned resources before pruning shared infrastructure.** A `container
+  prune` removes *another project's* stopped database container, which moves its anonymous
+  volume into the dangling set for the next `volume prune` to delete. The check that makes
+  it safe is listing dangling volumes and confirming **none are named** — a named volume is
+  one somebody chose to keep.
+- **On a machine you share with other work, prune is a coordination problem.** The blast
+  radius is every project on the host, and nothing in the command says so.
+- The capacity side of the same coin — *check headroom before a command that writes at
+  scale* — is `sota-shell-scripting` rules/06 §3.
+
+## Audit checklist
+
+- [ ] **Is prune/trim on a shared runtime treated as a change?** (§7.7) Restart plus a
+      post-change smoke test that *starts* something, foreign-owned resources enumerated
+      first, and dangling volumes confirmed unnamed before deletion.
 ## Audit checklist
 
 - [ ] Admission enforces (not audits) image verification in prod: exact signer identity + issuer, provenance attestation required, registry allowlist, tag→digest mutation, `failurePolicy: Fail`, all Pod-paths covered; Kyverno policies on the CEL v1 types (ClusterPolicy deprecated since 1.17, removal planned v1.20)

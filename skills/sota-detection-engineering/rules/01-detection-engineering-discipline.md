@@ -181,6 +181,39 @@ validation (purple teaming, BAS) feeding the hypothesis backlog.
   / excessive-agency threats; detecting them at runtime (and ATLAS coverage) is
   yours.
 
+## 8. Provenance: where the detection came from, and what in the source was scaffolding
+
+A detection derived from a paper, a vendor write-up, a conference talk or another team's rule
+arrives with two things mixed together: the **mechanism** of the attack, and the
+**instrumentation** its author used to demonstrate it. Keying on the second is the easy
+mistake, and it produces a rule that fires perfectly in the lab and never in production.
+
+Field-reported: a paper said, in its own limitations section, that its `.payload` filename and printed marker were
+*demo scaffolding*. A rule keyed on those **detects the demo, not the attack** — and it would
+have passed every test, because the test corpus is the demo.
+
+- **Record the source on the rule**, in the rule: citation, version or SHA, and the date you
+  read it. A detection whose origin is folk memory cannot be re-checked when the source is
+  corrected, retracted, or turns out to describe a different variant.
+- **Separate mechanism from instrumentation before writing anything.** Ask of every literal
+  you are about to match: *would the attacker need this, or did the author choose it?*
+  Filenames, marker strings, ports, user-agents, sleep durations and output banners are
+  usually the author's. The syscall sequence, the API misuse, the ordering constraint, the
+  privilege transition are usually the mechanism.
+- **A rule that cannot fail on the demo corpus has not been tested.** Pair it with a variant
+  that keeps the mechanism and changes every one of the author's choices; if the rule stops
+  firing, it was keyed on scaffolding (`sota-code-security` rules/15 §2.1 — a probe that
+  exercises a neighbouring property).
+- **Re-read the source when the rule misbehaves.** "It worked in the paper" and "it works
+  here" are claims about different corpora; §2's benign baseline is what turns the second
+  into a number.
+
+## Audit checklist
+
+- [ ] **Does every derived detection record its source, and separate the attack's mechanism
+      from the author's instrumentation?** (§8) Filenames, markers, ports and banners are
+      usually the demonstrator's choices; a rule keyed on them detects the demo. Test with a
+      variant that keeps the mechanism and changes all of them.
 ## Audit checklist
 
 - [ ] Are detections in version control, with PR review and CI tests, or edited

@@ -193,6 +193,52 @@ A red main/merge-queue is a site incident for the team's delivery:
   quarantine size, skip count, coverage ratchet position. Suites stay
   healthy by inspection, not by hope.
 
+## 7.7 A long run's result is scoped to the revision it started from
+
+A suite that takes forty minutes reports on the tree **as it was when it started**, and the
+number carries no hint of that. Field-reported: a lane reported **38,861 passed, EXIT=0** —
+true of a working tree that predated a later commit by ~50 minutes. Arithmetic predicted
+38,862, and the missing one was exactly the test that commit added.
+
+- **Record the revision beside the number**, always: `git rev-parse HEAD` at start, printed
+  in the same line as the result. "Green" is not a fact about your branch; "green at `<sha>`"
+  is (`sota/rules/03` §2).
+- **Reconcile the count against the diff.** An unexplained ±1 is a signal, not noise — the
+  case above was only visible because the delta was *attributed* rather than accepted. Off
+  by one in the other direction is a test that silently stopped being collected, which
+  presents identically.
+- **A background job's completion notification is about the launcher, not the job**
+  (`sota-shell-scripting` rules/01 §2a). Wait on an artefact the job itself writes.
+
+## 7.8 When a ratchet fires, the fix is never to re-record the ratchet
+
+A ratchet exists to make a number only move one way. Its failure message almost always
+offers the re-record command, which is the one action that destroys the signal — and it is
+offered at exactly the moment the ratchet is doing its job.
+
+Field-reported: a skip-site ratchet correctly caught a newly added `pytest.skip`. Re-recording
+was offered and would have been wrong; reading the flagged code showed the branch was
+**unreachable** — the parameter it skipped is not in the map it parametrizes over — so the
+fix was deleting dead code. *An inert branch, shipped inside a guard written during an
+inert-control audit.*
+
+- **Read the flagged site before touching the baseline.** Re-record only after establishing
+  that the new value is correct, and say why in the commit that moves it.
+- **A ratchet compares against its own stored state, never against prose.** So a count
+  quoted in a doc drifts freely while the suite stays green: field-reported, a matrix figure
+  quoted as 209 where the function returns 207, and a CWE count stated as 41 in two places
+  and 43 in another, the derived truth being 43. **Derive the number in a test whose failure
+  message names every place that quotes it** — then the prose is inside the ratchet instead
+  of beside it.
+
+## Audit checklist
+
+- [ ] **Is every long-run result recorded with the revision it started from?** (§7.7) — and is
+      an unexplained ±1 in the test count investigated rather than accepted?
+- [ ] **When a ratchet fires, was the flagged site read before the baseline moved?** (§7.8)
+      Re-recording destroys the signal and the failure message offers it. Counts quoted in
+      prose sit outside every ratchet — derive them in a test whose failure names each place
+      that quotes them.
 ## Audit checklist
 
 - [ ] Is there a written flaky-test policy with quarantine + expiry? No

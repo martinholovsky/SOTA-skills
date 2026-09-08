@@ -392,6 +392,29 @@ classification is worth getting right: a sentence that **was never true** of the
 code as shipped is UNJUSTIFIED; one that was true and was overtaken is STALE.
 Either way it carries a severity and appears in the findings, not in prose.
 
+## 8. A real control, reverted by a neighbour, into a legitimate-looking state
+
+Everything above is a control that never worked. This is one that **did**, and was then
+silently undone by an unrelated automated step — landing in a state that is *correct* in
+other circumstances, so nothing looks wrong.
+
+Field-reported: an artefact was genuinely signed. A later `make ci` re-anchored over it, and
+the chain then reported **"timestamped only"** — which is exactly the right report *between
+releases*, and therefore indistinguishable from the healthy case. Nothing errored, no status
+was false, and the signature was gone. Only asking a question the benign state cannot pass
+— `--require-signature` — separated them.
+
+- **Ask which neighbouring process can write what your control wrote.** Re-anchoring,
+  re-generation, formatting, a `--fix` mode, a scheduled re-index: enumerate the writers of
+  the artefact, not just its readers.
+- **A status that is legitimate in one phase is not evidence in another.** "Timestamped
+  only" is healthy between releases and a defect at release. A check that does not know
+  which phase it is in cannot tell you which it found.
+- **The test is a predicate the benign state fails.** Not "does the chain verify" but "does
+  it verify *with a signature*". §1's falsification question, aimed at the *pass*: what
+  benign condition produces this same OK? If a real defect maps to it, the status is an
+  unhandled case, not a pass.
+
 ## Audit checklist
 
 - [ ] **Which stage did the green come from?** (§4b) In any discovery-then-collect pipeline,
