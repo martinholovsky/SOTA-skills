@@ -34,6 +34,28 @@ measured rather than scaled.
   the release entries (7/7 · 4/4 · 6/7 · 6/6 · 4/4 · 4/4), plus both 2026-09-08 intakes in
   full.
 
+### Added
+
+- **Router operating principle 3 — "independent" means a different failure mode, not a
+  different phrasing.** The principle already asked for a second independent method before
+  asserting an absence. Field-reported: two searches of the same tree agreed on **zero** and
+  both were wrong, because both were `grep -r` over a directory of symlinks, which `-r` does
+  not follow. A second method that shares the first's failure mode is one method. The only
+  check that works is a **positive control in the same invocation** — search for something you
+  have already seen there, and if the control returns nothing the instrument is broken and the
+  absence is not evidence.
+- **`sota-shell-scripting` rules/06 §3 — build output is the trap.** `target/`,
+  `node_modules/`, `.venv/`, `vendor/`, `build/`, `dist/` reach tens of gigabytes and are what
+  a naive recursive copy takes; redirect the tool's output instead of copying. And **a full
+  disk is not a clean failure**: on a VM-backed container runtime the guest disk is a sparse
+  file on the host's, so exhausting the host surfaces *inside* the VM as I/O errors that can
+  corrupt the filesystem and image store — minutes later, in an unrelated command.
+- **`sota-detection-engineering` rules/01 §8 — enforce the citation, and record the blind
+  spot.** A source field that is optional is absent by the time anyone needs it, so enforce it
+  the way a runbook link is enforced. And **record what the detection cannot see**: the same
+  paper that supplied one technique also described a wrapper variant evading all three of its
+  own signals. Writing that down is what stops a rule being credited with coverage it lacks.
+
 ### Changed
 
 - **`docs/CONTEXT-MANAGEMENT.md`'s token table now says what it is not.** The 5,000-token

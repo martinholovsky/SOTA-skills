@@ -153,6 +153,15 @@ export, a bulk archive, a recursive `cp`/`rsync`, anything with `--output` on a 
   to a path you chose. A check that cannot write to its subject cannot corrupt it.
 - **Bound it before running it** — `du -sh` the thing you are about to copy. "It is only the
   repo" is a guess about size, and the number is one command away.
+- **Build output is the trap, and it is never in your mental model of the repo.** `target/`,
+  `node_modules/`, `.venv/`, `vendor/`, `build/` and `dist/` reach tens of gigabytes and are
+  exactly what a naive recursive copy takes. Exclude them, or better, do not copy: point the
+  tool's output elsewhere (`CARGO_TARGET_DIR=/build`, `--target-dir`, `-o`) and leave the
+  source read-only.
+- **A full disk is not a clean failure.** On a VM-backed container runtime the guest's disk is
+  a sparse file on the host's, so exhausting the host surfaces *inside* the VM as I/O errors
+  and can corrupt the filesystem and image store — minutes later, in an unrelated command,
+  long after the one that caused it.
 - Cleanup on a shared runtime is not housekeeping: see `sota-devsecops` rules/07 §7.7.
 
 ## Audit checklist
@@ -163,7 +172,8 @@ export, a bulk archive, a recursive `cp`/`rsync`, anything with `--output` on a 
       known-present term **in the same invocation**.
 - [ ] **Ad-hoc commands that write at scale** (§3): headroom checked (`df -h` on the target
       *and* the runtime's own filesystem), source mounted read-only, output outside the source
-      tree, size bounded with `du -sh` before the copy.
+      tree, size bounded with `du -sh` before the copy, and build output (`target/`,
+      `node_modules/`, `.venv/`, `vendor/`) excluded or redirected rather than copied.
 - [ ] **zsh joining bugs** (the inverse of SC2086, and unlinted): in any zsh script or
       snippet, `grep -nE '\$\{[a-zA-Z_]+:\+[^}]*\$' -e '[a-z] \$[a-zA-Z_]+$'` for
       `${var:+--flag $var}` and bare `cmd $args`. Each passes **one** argument in zsh

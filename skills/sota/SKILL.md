@@ -58,7 +58,13 @@ rules files that match the code in front of you. Never load all skills at once.
    proof than a positive one**: "no instances of X" and "I only looked one way"
    are indistinguishable from the outside, so before asserting absence, widen
    the search and use a second independent method — and state the search you
-   actually ran.
+   actually ran. **"Independent" means a different failure mode, not a different
+   phrasing.** Field-reported: two searches of the same tree agreed on zero and
+   both were wrong, because both were `grep -r` over a directory of symlinks,
+   which `-r` does not follow. The only check that works is a **positive
+   control** — search for something you have already seen there, in the same
+   invocation; if the control returns nothing, the instrument is broken and the
+   absence is not evidence (`sota-shell-scripting` rules/06 §2).
 4. **Stack profile.** If the repo or `~/.claude` contains a `profiles/*.md`
    stack profile (preferred stores, auth provider, license policy, platform
    conventions), its choices are the defaults for BUILD mode and the expected
