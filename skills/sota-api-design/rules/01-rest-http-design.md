@@ -290,6 +290,17 @@ GET /operations/op_01HZX9               HTTP/1.1 200 OK
   `null` deletes).
 - Request size limit, response compression (`gzip`/`br`), and a per-request timeout
   budget exist on every endpoint (details: rules/07).
+- **The secure use has to be the easy one — your API's ergonomics are a control you own.**
+  If a caller must read the docs, remember a rule, or pass an extra argument to be safe, the
+  interface has moved your security into their discipline. Two shapes recur and both are
+  audited elsewhere in the library, listed here because this is where they are *designed*:
+  a parameter selecting a trust boundary whose default is the **unsafe** value — make the
+  closed side the default and the open side explicit and keyword-only, which also makes
+  every privileged call site a `grep -c`
+  (`sota-code-security` rules/14 §6a) — and letting a **caller or the payload choose the
+  security-critical algorithm**, the `alg` pattern, where the fix is a server-side allowlist
+  rather than a documented warning (`sota-code-security` rules/02). "It is documented" is
+  not a mitigation; neither is "no one would do that".
 
 ## Audit checklist
 

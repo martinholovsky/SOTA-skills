@@ -228,13 +228,18 @@ audit STRAT-HIGH-2).
   could not execute at all** from 2026-08-05 to 2026-08-27 — an ablation guard called
   `.splitlines()` on a list and raised before the first API call, unnoticed because the
   last recorded run predates the guard.
-  **Second case, `r2_absence_sweep`, added 2026-09-08 and NOT YET RUN** — it pins the fix
-  for a session that grepped with an unquoted `$L` in zsh (no word-splitting, so the whole
-  file list went as one argument), searched nothing, and read the empty result as coverage.
-  `sota-shell-scripting` rules/01 §3/§3a already held the rule; the description named shell
-  *artefacts* and never the ad-hoc command, so the skill was never loaded. The before/after
-  number is deliberately absent rather than assumed: it costs live calls and has not been
-  authorised.
+  **Second case, `r2_absence_sweep`** — pins the v1.36.2 fix for a session that grepped with
+  an unquoted `$L` in zsh (no word-splitting, so the whole file list went as one argument),
+  searched nothing, and read the empty result as coverage. **Run 2026-09-08: 3/3 to
+  `sota-shell-scripting` in both arms.** Note what that does *not* show — both arms score
+  1.00, so the case says nothing about cross-references; the fix was to the **description**,
+  which both arms carry. It has no measured pre-fix arm.
+  **That run is also the set's best argument for existing:** it found `r1_token_count` had
+  **regressed** — inverted to `sota-skill-security` 3/3 in the without-xref arm, because a
+  skill added in v1.35.0 contains "instruction file" twice and neither "token" nor "budget",
+  so the classifier matched r1's noun over its question. Live for a day, invisible to every
+  invariant, fixed with one keyword and re-run to 1.00/1.00
+  ([write-up](results/2026-09-08/ROUTING-REGRESSION-SET.md), ROADMAP 44).
 - **`run-router-length.py`** — reuses `cases/router.jsonl` to ask a different question:
   does routing degrade as `skills/sota/SKILL.md` grows? The 500-line cap is *our*
   invariant mirroring platform guidance, **not** a loader limit — nothing truncates a

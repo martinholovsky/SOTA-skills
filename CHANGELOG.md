@@ -5,11 +5,86 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.37.0] - 2026-09-08
 
-**Docs only** — two drifts in `docs/ROADMAP.md`, both introduced by this week's own releases,
-and both the summary-drifts-from-its-ledger shape the same file carried for item 12 until
-2026-09-07.
+**Front door checked:** fit to this measure · the secure use has to be the easy one · over-selection
+
+**Minor** — one new rules file, and three open roadmap items answered by *running* them
+rather than by reasoning about them. Two of the three answers are unflattering, and are
+published that way.
+
+### Added
+
+- **`sota-shell-scripting/rules/05-constructs-and-cleanup.md`** — arrays, IFS, `trap`/`mktemp`
+  cleanup, test constructs/printf, and globbing, split out of `rules/01` (**498 → 366**, new
+  file **141**). **The seam was chosen from the citations, not the headings.** The roadmap had
+  proposed §1–§2 vs §3–§3a; measured, that is 114 lines against 384. Counting instead what
+  other skills actually cite — **4 external references at §3/§3a and zero at §4–§8** — put the
+  cut after §3a, so **§3 and §3a never moved and no external reference broke**. The hand-walk
+  still earned its keep: a bare `§2` inside the moved text meant `rules/01` §2 (SC2155) and had
+  begun resolving to the new file's own §2. Invariant 18 passed it, because it resolves
+  *somewhere* — the fail-open residual, third split running.
+
+### Fixed
+
+- **A skill added in v1.35.0 had been stealing a neighbour's routing for a day.** Running the
+  regression set for only its second time, `r1_token_count` had inverted from
+  `sota-llm-engineering` **3/3** to `sota-skill-security` **3/3**. Cause, read from the two
+  descriptions: `sota-skill-security` contains *"instruction file"* twice and neither *"token"*
+  nor *"budget"*, so the classifier matched r1's **noun** over its **question**. Fixed with one
+  keyword on the side that owns the question (`instruction file size` → `sota-llm-engineering`,
+  998 → 1021 chars); re-run **1.00 in both arms, both cases**. Opened as **ROADMAP 44**:
+  invariants 4, 7 and 15 check a description exists, is short enough and is indexed, and
+  **none checks whether it takes traffic from a neighbour**.
+- **`sota-api-design` rules/01 §13 — the secure use has to be the easy one.** From the
+  Trail of Bits `sharp-edges` deferral, adjudicated by reading both candidate files in full.
+  **Rejected as new material** — the substance is already in `sota-code-security` rules/14 §6a
+  (a parameter selecting a trust boundary defaults to the closed side) and rules/02 (`alg`
+  pinning). **Adopted as a pointer**, because the gap was reachability: someone designing an
+  API opens `sota-api-design`, not the audit skill. Three lines, both citations, no restatement.
+
+### Measured
+
+- **ROADMAP 38 — over-selection priced, and it is not "a router note".** Counted with
+  `POST /v1/messages/count_tokens` over the 2026-09-06 routing run: **mean 10,738 extra tokens
+  per task, +109%** on the `SKILL.md` load (median 11,838, max 20,071; pooled 98,673 gold vs
+  107,375 over-selected). The item's registered rule was *"a few thousand tokens → a router
+  note"*; this is an order of magnitude past it. But padded context measured **−0.01** and
+  **−0.03**, so it is a **token, latency and money** cost, **not** a quality one. Both
+  single-skill controls over-select exactly zero — the cost is entirely in multi-domain tasks.
+  A floor, not the bill: `SKILL.md` only. No currency figure, deliberately.
+  ([OVER-SELECTION-COST](evals/results/2026-09-08/OVER-SELECTION-COST.md))
+- **ROADMAP 40 — the Superpowers head-to-head, run at last, and we are not calling it a win.**
+  `obra/superpowers` @ pinned `b36e0829`, 7 cases, n=1, temp 0: SOTA **0.987**, unguided
+  **0.637**, Superpowers **0.599** — **−0.39 vs SOTA, −0.04 vs unguided**. Against this repo's
+  measured **±0.03** noise floor at n=1 that second number is **no measurable difference from
+  no guidance at all**, and the honest reading is about our instrument: Superpowers is *process*
+  guidance, these cases score a *built artifact's* domain coverage, so a low score is evidence
+  about **fit to this measure**. It settles that the two are not substitutes; it does **not**
+  settle the claim the outside assessments actually made — that a methodology beats a corpus —
+  which would need an instrument we do not have, and building one to score a competitor is not
+  a neutral act. Recorded as its own block in `RESULTS.md` rather than a row in the ranked
+  table, because its unguided arm reads 0.637 where that table's reads 58% and merging them
+  would imply a comparability this does not have.
+  ([SUPERPOWERS-HEAD-TO-HEAD](evals/results/2026-09-08/SUPERPOWERS-HEAD-TO-HEAD.md))
+
+### Notes
+
+- **Two of the three runs answered against interest.** Over-selection is larger than the
+  "router note" threshold that would have let it be dismissed; the head-to-head returns a
+  number we cannot honestly publish as a win. Both are in the scoreboard.
+- Open roadmap items **8 → 7** (38 and 40 closed by running them, 44 opened by the run that
+  closed 38's sibling). Item 40 vacated priority 2; **44 takes it** — and it is a *decision*
+  first, not a build: routing costs live calls, so a per-PR gate would be the expensive kind
+  that gets disabled.
+- **`sota-shell-scripting/rules/01` is no longer the tightest file** — 366 after the split.
+
+
+### Also in this release — the roadmap ledger repair
+
+Landed before the work above: two drifts in `docs/ROADMAP.md`, both introduced by this week's
+own releases, and both the summary-drifts-from-its-ledger shape the same file carried for
+item 12 until 2026-09-07.
 
 ### Fixed
 
@@ -7113,6 +7188,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.37.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.37.0
 [1.36.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.36.3
 [1.36.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.36.2
 [1.36.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.36.1

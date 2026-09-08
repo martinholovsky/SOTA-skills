@@ -257,6 +257,20 @@ rate limiting, transport/TLS, tests, structured logging — dropped endpoint aft
 endpoint (even the ~230k-star `affaan-m/ECC` omits rate limiting on 3 of 7 tasks).
 That is exactly what SOTA's operating principle 5 + the matched rules exist to close.
 
+**The fourth comparison, and the one that argues against a simple ranking.**
+[`obra/superpowers`](https://github.com/obra/superpowers) (~282k ★) was named by two outside
+assessments as *the* methodological competitor, and was run on 2026-09-08 at a pinned SHA:
+SOTA **0.987**, unguided **0.637**, Superpowers **0.599** — a separate run, so its own
+unguided arm is 0.637 rather than the 58% above, and the two must not be merged into one
+table. **We are not publishing that as a win.** Superpowers is *process* guidance and this
+rubric scores a *built artifact's* domain coverage, so on this measure it comes out
+**indistinguishable from no guidance at all** (−0.04 against a ±0.03 noise floor at n=1) —
+which says our instrument cannot see what that project does, at least as much as it says
+anything about the project. It settles that the two are not substitutes; it does not settle
+whether a methodology beats a corpus, which is the claim actually being made and which we
+have no instrument for
+([write-up](../evals/results/2026-09-08/SUPERPOWERS-HEAD-TO-HEAD.md)).
+
 **Where the lead holds — it tracks task difficulty, not the domain.** A five-domain
 breadth run ([BREADTH.md](../evals/results/2026-07-13/BREADTH.md)) shows SOTA-skills
 leads every competitor by ~10 points wherever the base model's default is
