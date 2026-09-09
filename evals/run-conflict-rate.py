@@ -214,7 +214,7 @@ def calibrate(model, key, temp):
                  "  pair, so every verdict below is uninterpretable. No rate is printed —\n"
                  "  reporting one anyway is how a broken instrument becomes a published\n"
                  "  number (`sota-code-security` rules/15 section 7).")
-    print("  ok — separated.\n")
+    print("  ok — separated.\n", flush=True)
     return {"positive": len(pos), "negative": len(neg)}
 
 
@@ -303,7 +303,8 @@ def main():
                  "Raise --max-chars only if you have checked the model's real window."
                  % (a.max_chars, "\n  ".join(oversize)))
 
-    print(f"judge={a.judge_model}  pairs={len(pairs)}  samples={a.samples}  temp={a.temp}")
+    print(f"judge={a.judge_model}  pairs={len(pairs)}  samples={a.samples}  temp={a.temp}",
+          flush=True)
     print(f"corpus: {len(corpora)} skills, {sum(len(v) for v in corpora.values()):,} chars")
     if skipped:
         print(f"excluded (single-skill, no pair to conflict): {', '.join(skipped)}")
@@ -328,8 +329,11 @@ def main():
         n_conflicted += 1 if hit else 0
         rows.append({"case": cid, "a": x, "b": y, "per_sample": per_sample,
                      "any": hit, "conflicts": found})
+        # flush: python buffers stdout when it is not a TTY, so a background run of a
+        # 45-minute job showed a ZERO-BYTE log and looked hung. Same reason
+        # run-completeness.py flushes its per-sample lines.
         print(f"  {cid:26s} {x:24s} {y:24s} per-sample={per_sample}"
-              f"{'  <-- CONFLICT REPORTED' if hit else ''}")
+              f"{'  <-- CONFLICT REPORTED' if hit else ''}", flush=True)
 
     rate = n_conflicted / len(pairs)
     print(f"\nCONFLICT RATE (judge-reported, ANY sample) = {n_conflicted}/{len(pairs)} "
