@@ -54,6 +54,20 @@ More samples at temp 0.7 (n ≥ 3), which is what this repo's own convention alr
 single-sample temp-0 result cannot substitute for. **That is a new experiment and needs its
 own pre-registration** — the numbers above stay as published either way.
 
+## Superseded 2026-09-10 — the follow-up ran, and one claim above does not survive
+
+The n≥3 / temp-0.7 experiment this write-up called for was pre-registered and run:
+[../2026-09-09/GATE-ABSORPTION-N3.md](../2026-09-09/GATE-ABSORPTION-N3.md). **H1 is
+confirmed** — `GATE-ABSORPTION` **+0.062**, SE 0.019, 95% CI **[+0.024, +0.099]**, against
+the same **+0.05** threshold registered here and deliberately never moved.
+
+Everything above stands as published, with one exception that is corrected there rather
+than edited here: **"Item 25 replicates" no longer holds at that power.** This run's
+`with+pad` cost −0.03; at n=3 / temp 0.7 PAD-DELTA is **+0.01**, so with the gate on, 400
+lines of competing rules prose cost nothing measurable. The −0.03 above was one
+noise-floor wide and is exactly the kind of number this project's own conventions say not
+to quote — including when it is convenient, as it was here.
+
 ## Status
 
 **ROADMAP 32 is closed as measured-and-underpowered, not as answered.** The confound item

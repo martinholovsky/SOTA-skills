@@ -240,7 +240,11 @@ audit STRAT-HIGH-2).
   for ROADMAP 32. `--pad-rules` alone leaves `BUILD_WORKFLOW` in the padded arm, so its −0.01
   measures *lean plus the terminal self-audit*, not lean. This drops `BUILD_WORKFLOW` from a
   padded arm and reports **`GATE-ABSORPTION` = mean(with+pad) − mean(pad-nogate)**: what step 4
-  recovers under competing context. Guards, both watched to fail: it **refuses `--no-gate-arm`
+  recovers under competing context. **Run twice**: n=1/temp 0 read **+0.04** (2026-09-06,
+  underpowered — inside neither the registered H1 nor H0 band), and n=3/temp 0.7 read
+  **+0.062**, SE 0.019, 95% CI **[+0.024, +0.099]** (2026-09-10,
+  [write-up](results/2026-09-09/GATE-ABSORPTION-N3.md)) — the first CI here excluding zero
+  on BUILD step 4. Guards, both watched to fail: it **refuses `--no-gate-arm`
   without `--pad-rules`** (that measures the gate alone, not the gate against competing context),
   and **refuses if the ablation leaves the prompt byte-identical** to the gated arm — the same bar
   `run-prompt-independence.py` applies, because an ablation that did not take is a duplicate arm
