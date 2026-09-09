@@ -337,6 +337,32 @@ MUT
 git add docs/ROADMAP.md >/dev/null 2>&1 )
 probe 26 "priorities table cites an item that is not open" "priorities table points at item"
 
+# 27 — a deferral marker with no revisit condition. Mutates the whole CELL, not a
+# prefix of it: a first attempt replaced only the opening words, the rest of the cell
+# still carried "revisit", and the probe reported a catch that never happened. Asserts
+# the cell actually changed before running, per rules/11 §2.5.
+( cd "$WT" && python3 - <<'MUT'
+import re, pathlib
+p = pathlib.Path("docs/ADOPTION-LOG.md"); lines = p.read_text().splitlines()
+i = next(i for i, l in enumerate(lines)
+         if re.search(r'(?:^|\|)\s*(?:-\s+)?\*\*DEFERRED\s+—', l) and '|' in l)
+cells = lines[i].split('|')
+j = next(j for j, c in enumerate(cells) if 'DEFERRED' in c)
+assert 'revisit' in cells[j] or 'once' in cells[j], "fixture drift: cell had no trigger to remove"
+cells[j] = " **DEFERRED — parked** "
+lines[i] = '|'.join(cells)
+p.write_text("\n".join(lines) + "\n")
+MUT
+git add docs/ADOPTION-LOG.md >/dev/null 2>&1 )
+probe 27 "a deferral with no revisit trigger" "names no revisit trigger"
+
+# 28 — an eval case set that never says how its cases were chosen. This is
+# prompt-independence.jsonl's own defect replayed: the rule lived in the results doc
+# and not in the case file, in the set backing the +0.509 headline.
+( cd "$WT" && perl -pi -e 's/SELECTION RULE/how it was built/ if $. < 40' evals/cases/desc-routing-regressions.jsonl \
+    && git add evals/cases/desc-routing-regressions.jsonl >/dev/null 2>&1 )
+probe 28 "an eval case set declares no SELECTION RULE" "no 'SELECTION RULE' comment"
+
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
 # =============================================================================
@@ -522,7 +548,7 @@ if [ "$failed" -ne 0 ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26 (21 of 26)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28 (23 of 28)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        11, 14      — diff-based: they compare against a merge base."

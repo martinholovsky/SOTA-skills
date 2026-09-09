@@ -339,7 +339,11 @@ For a focused audit, load the matching skills and follow their AUDIT sections. F
    shaping the design. Reconstruct the expensive-to-reverse decisions (ADRs, design docs,
    CHANGELOG, the PRs behind each major component) and classify each **JUSTIFIED / STALE /
    UNJUSTIFIED / UNVERIFIABLE**. Where a decision rests on a number, **re-measure it this
-   session**. Full procedure: `rules/03` §3.
+   session**. Full procedure: `rules/03` §3. **Then ask where else the team's knowledge
+   lives** — an agent's private memory store, an IDE's notes, a chat log. Anything in
+   there that is a *fact about the repository* with no home in the repository is a
+   finding: invisible to review, absent from a fresh clone, gone when the store is
+   cleared. It is an absence claim and the naive search for it lies — `rules/01` §4a.
 6. **Findings.** Emit every finding in the canonical cross-domain format (`file:line |
    rule | severity | effort | fix`) — skill-local formats are fine within a domain pass but
    must carry an effort field so the roll-up can be sequenced — deduplicate across domains,

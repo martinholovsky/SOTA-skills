@@ -71,7 +71,7 @@ A convention earns a gate only if it passes **all three**:
 
 ## The ledger
 
-### Enforced (26) — invariants 1–26
+### Enforced (28) — invariants 1–28
 
 Skill-file line cap · audit-checklist placement · internal-name denylist · description cap ·
 version lockstep · count surfaces · router completeness · link resolution ·

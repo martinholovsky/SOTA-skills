@@ -191,6 +191,46 @@ Budget explicit manual passes for the classes SAST is structurally blind to:
 
 ---
 
+## 4a. Knowledge that lives only in an agent's memory
+
+An assistant working a repository over months accumulates a private store — Claude Code's
+`~/.claude/projects/<repo>/memory/`, an IDE's workspace notes, a chat history someone greps.
+It is genuinely useful and some of it *must* stay there: facts about the machine (which
+binary `grep` really is, which commands the harness refuses), account state, and anything a
+public repo's own denylist would reject. **The audit question is narrower: is anything in
+there a fact about the repository that the repository does not have?**
+
+That fact is invisible to review, absent from a fresh clone, missing on a second machine, and
+gone when the store is cleared — and nobody discovers this until the one person or session
+that held it is not there. Known gaps, open items, why a decision was made, a measured
+number, a deferral: if the only copy is in an agent's memory, the repo has a hole shaped
+exactly like the thing everyone assumes is written down.
+
+**How to run it**
+
+1. **Enumerate the store** and classify each entry: *environment* (stays), *behavioural
+   correction to the agent* (stays), or *repository fact* (must exist in the repo).
+2. For every repository fact, **find its home**: an item ledger, a decision record, a results
+   file, a changelog entry. Not "is it mentioned somewhere" — *which file owns it*.
+3. **Report the ones with no home as findings**, and fix them by moving the fact into the
+   repo, leaving the memory entry as a pointer.
+
+**This is an absence claim, so it carries §3's burden — and the naive form of it lies.**
+Measured on a 50-file store against a 16-million-character corpus: a literal scan of 148
+distinct measured claims flagged **11** as memory-only, and **every one that was checked
+turned out to be in the repo under different wording** — "10 of 32" was written there as *"10
+of the old 32 freshness cases"*. A numeral is the worst possible search key for this, because
+prose paraphrases numerals freely. Use a **distinctive neighbouring phrase** as the second
+method (`signed-char`, `plugin-scanner`, `per-case progress`), run a positive control in the
+same invocation, and read the hits rather than the count
+(`sota-shell-scripting` rules/06 §2).
+
+**The durable fix is a convention, not a sweep.** Memory should *cite* the repo, never
+restate it — "landed v1.36.2", "ROADMAP 44" — so a stale note reads as a pointer to re-check
+rather than a competing claim. Restated status drifts; that is the same failure the summary
+table has (`rules/03` §2), one layer further out, and it is the reason this pass exists at
+all rather than being a one-off cleanup.
+
 ## 5. Changing the AUDIT workflow? Change all three places
 
 The audit workflow lives in **three** surfaces and they drift independently:
