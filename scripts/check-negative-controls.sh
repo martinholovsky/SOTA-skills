@@ -391,9 +391,14 @@ probe 28 "an eval case set declares no SELECTION RULE" "no 'SELECTION RULE' comm
 #     into every later probe. This resets to the ORIGINAL sha, captured before any.
 WT_ORIG=$(git -C "$WT" rev-parse HEAD)
 wt_commit() {  # <message> — commit whatever the caller staged/changed
+  # --no-verify is REQUIRED, not a shortcut: this repo installs check-invariants.sh as a
+  # pre-commit hook, and every mutation below is deliberately invariant-breaking. Without
+  # it the hook rejects the commit, wt_commit aborts, and all three diff-based probes
+  # plus the whole of part B never run — which is exactly what happened on the first
+  # draft, loudly, because the abort is FATAL rather than a warning.
   ( cd "$WT" && git add -A >/dev/null 2>&1 \
       && git -c user.email=probe@invalid -c user.name="negative control" \
-             commit -q -m "$1" ) \
+             commit -q --no-verify -m "$1" ) \
     || { echo "FATAL: probe commit failed — the diff-based probes below would be inert."; exit 1; }
 }
 probe_committed() {  # <id> <name> <expected substring>  — commit already made
