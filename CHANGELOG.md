@@ -36,6 +36,24 @@ measured rather than scaled.
 
 ### Added
 
+- **Invariants 27 and 28, and an AUDIT pass for knowledge that lives only in an agent's
+  memory.** Same shape as 26, two files further out. **27** — an `ADOPTION-LOG` deferral must
+  name its revisit trigger: the log's own rule said so in prose, and prose drifted (the
+  roadmap said *"the deferred row"*, singular, while three existed and one had resolved the
+  day before **in a different entry**). Deferrals now carry `**DEFERRED —` plus the
+  condition. **28** — every `evals/cases/*.jsonl` must declare a `SELECTION RULE`: the
+  convention held at 20 sets, then two were added and one skipped it —
+  `prompt-independence.jsonl`, whose rule lived in its results doc and not in the case file,
+  in the set backing the **+0.509** headline. Both watched to fail on asserted mutations, and
+  both probed.
+- **`sota/rules/01` §4a + router AUDIT pass 5 — knowledge that lives only in an agent's
+  memory.** An assistant's private store is genuinely useful and some of it *must* stay
+  private (which binary `grep` really is, which commands the harness refuses, anything a
+  public repo's denylist would reject). The audit question is narrower: **is anything in
+  there a fact about the repository that the repository does not have?** If so it is
+  invisible to review, absent from a fresh clone, and gone when the store is cleared. The
+  §AUDIT hash pin fired and forced a re-read of `rules/01` §5 before it was bumped, which is
+  what that pin is for.
 - **Invariant 26 — the roadmap's open set must agree with itself.** The answer to a drift that
   happened **three times in one session**: the priorities table pointing at work its own ledger
   had already closed (items 12, 32's follow-up, and 38). The root cause was not carelessness —
@@ -76,6 +94,13 @@ measured rather than scaled.
 
 ### Changed
 
+- **The memory store was audited against the repo, and the naive method lies.** 148 distinct
+  measured claims across 50 files, checked against a 16.4M-character corpus: a literal scan
+  flagged **11** as memory-only and **every one checked was in the repo under different
+  wording** — "10 of 32" is written there as *"10 of the old 32 freshness cases"*. Verdict:
+  **zero memory-only repository facts**, but only a second method with a different failure
+  mode (search a distinctive neighbouring phrase, not the numeral) establishes that. The
+  method is now part of §4a, because the check is worthless without it.
 - **`docs/CONTEXT-MANAGEMENT.md`'s token table now says what it is not.** The 5,000-token
   figure is a **stage-2** budget for a `SKILL.md` body — what compaction re-attaches — while
   `rules/*.md` are stage-3 resources the spec gives no budget at all. Several rules files sit

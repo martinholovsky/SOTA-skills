@@ -348,6 +348,23 @@ are marked "needs verification", never asserted.
     open set, since "0 items agree with each other" is the signature of a check that
     verifies nothing.
 
+27. **An `ADOPTION-LOG` deferral names no revisit trigger.** The log's own rule already
+    said a deferral carries the condition to revisit — in prose, and prose drifted: on
+    2026-09-09 the roadmap said *"the deferred row"*, singular, while three existed and one
+    had been resolved the day before **in a different entry**, so the log stated two
+    statuses for one item. A deferral now carries `**DEFERRED —` plus its condition, and
+    this asserts the condition is there. It reads the marker's **own cell**, not the row: a
+    first draft checked the whole line and passed a table row because "revisit" appeared in
+    an unrelated cell — a catch for the wrong reason, which is a false pass.
+
+28. **An `evals/cases/*.jsonl` declares no `SELECTION RULE`.** Building a case set out of
+    the cases a model got wrong measures the selection, not the system
+    (`sota-llm-engineering` rules/01 §8). The convention was established deliberately and
+    held at 20 sets; two were added afterwards and one skipped it —
+    `prompt-independence.jsonl`, whose rule existed in its results doc but not in the case
+    file, which is where the convention puts it and where a reader opening the set looks.
+    That set backs the **+0.509** prompt-independence headline.
+
 17. **a document that describes the checks disagrees with them**: any stated count
     of invariants/checks that isn't the number `check-invariants.sh` prints, or a
     restatement of the negative-control coverage lists that isn't what
@@ -374,7 +391,7 @@ as a FALSE PASS, because a harness that accepts any failure reports full coverag
 testing nothing.
 
 Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 3, 4, 6,
-7, 8, 10, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26 — 21 of 26; the harness prints the list and why the rest are
+7, 8, 10, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28 — 23 of 28; the harness prints the list and why the rest are
 not covered, so read its output rather than this sentence). Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
 fully-configured fake one — `CLAUDE_CONFIG_DIR` pointed at a temp home, a throwaway git
 repo, and a stub `gh` on `PATH` so run history is decidable — and each probe removes one

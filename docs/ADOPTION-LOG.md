@@ -14,7 +14,14 @@ lessons-log — its own best structural idea, applied to ourselves.
 ## How this log works
 
 - **States:** `adopted` · `rejected` · `deferred` · `superseded` · **`adopted with a
-  correction`**. Every entry ends in one of these — nothing stays `open` here; if it
+  correction`**. **A deferral carries a machine-readable marker so its status is checkable:
+  write `**DEFERRED —` followed by the revisit condition on the same line, and when it
+  resolves change that marker in place rather than recording the outcome only in a later
+  entry.** Invariant 27 asserts every `**DEFERRED —` marker names a trigger, and that
+  nothing else in the repo calls an item deferred that this log no longer marks. Added
+  2026-09-09 after the roadmap said *"the deferred row"*, singular, while three existed and
+  one had been resolved the day before in a different entry — the same restated-status drift
+  invariant 26 exists for. Every entry ends in one of these — nothing stays `open` here; if it
   needs more thought it is `deferred` with the condition to revisit. The fifth was added
   2026-08-16 for a real case: a proposal whose *substance* was right but whose *wording*
   would have licensed the opposite behaviour. Recording it as plain `adopted` would have
@@ -152,7 +159,7 @@ lessons-log — its own best structural idea, applied to ourselves.
 | 2026-08-11 | spanchain README, "Replay validates Span Chain's integrity, not your agent's behavior" | A record-and-replay (cassette) harness re-executes nothing: it tests pipeline determinism, and as a CI quality gate it stays green through a prompt rewrite, a model swap or a retrieval change | **adopted** | `sota-llm-engineering/rules/01` §5 + checklist · v1.22.4 |
 | 2026-08-11 | spanchain — six findings checked against our tree first | Unkeyed chain forgeable by a DB-write attacker; tail truncation invisible; unhashed projection columns; canonical preimage required; in-memory ingest buffer loses records with no gap (integrity ≠ completeness); offline verification | **rejected: already ours** | — `sota-code-security/rules/04` §8, six for six, arrived at independently: `:217` unkeyed, `:224` tail truncation, `:241` unhashed projection columns, `:244` canonical preimage, `:265` integrity ≠ completeness, `:279` off-system verification |
 | 2026-08-11 | spanchain — pre-GF-703 telemetry inside `Repo.transaction`; GF-827 conditional terminal write; append-only store holding personal data; EU AI Act Art. 12 | Post-commit notification, compare-and-set instead of check-then-write, erasure from immutable stores, AI Act record-keeping | **rejected: already covered** | — `sota-ruby/rules/05:82`, `sota-databases/rules/05:175`, `sota-architecture/rules/02:127`; `sota-async-concurrency/rules/02` §"Check-then-act / TOCTOU"; `sota-privacy-compliance/rules/03:125`; `sota-code-security/rules/04:214` |
-| 2026-08-11 | spanchain — dead-letter drops deliberately break `verify_ledger` ("a deliberate audit signal") | An integrity verdict that is routinely red for operational reasons trains operators to ignore it; a known gap should be a signed in-chain marker, not a hole | **deferred** | revisit if a second implementation shows the same design — one project's trade-off is not yet a rule. **Evidence checked 2026-08-28: still 1 shipped instance** — see the trigger ledger under the 2026-08-11 section below; check that before re-deriving the search |
+| 2026-08-11 | spanchain — dead-letter drops deliberately break `verify_ledger` ("a deliberate audit signal") | An integrity verdict that is routinely red for operational reasons trains operators to ignore it; a known gap should be a signed in-chain marker, not a hole | **DEFERRED — revisit if a second implementation shows the same design — one project's trade-off is not yet a rule. **Evidence checked 2026-08-28: still 1 shipped instance** — see the trigger ledger under the 2026-08-11 section below; check that before re-deriving the search |
 | 2026-08-13 | Internal coverage audit — business-logic defect class ([COVERAGE-BUSINESS-LOGIC-2026-08-13](COVERAGE-BUSINESS-LOGIC-2026-08-13.md)) | Route the class by its own name: "business logic", "checkout", "refund", "state machine" appeared in **zero** of 41 SKILL.md descriptions, and "workflow" only in the CI/SOC/docs senses — descriptions are the only auto-loaded classifier | **adopted** | `sota-code-security` description, 998→1014 of 1024 · v1.22.4 |
 | 2026-08-13 | Same audit — first draft | Add a BUILD rule + probe for WSTG-BUSL-07 "defenses against application misuse" | **rejected: already covered** | — covered under three other names: `sota-api-design/rules/07:211` (API6 flow throttles, explicitly not generic rate limiting), `sota-code-security/rules/07-data-exposure.md:96-99`+`:230` (security events + alerting on anomalies), `rules/02-authentication.md:213` (escalating friction), `sota-mobile/rules/04:94-99` (non-human client decision table). Residual is naming, not coverage |
 | 2026-08-13 | Same audit — first draft | Add payment-specific money hazards for WSTG-BUSL-10 (currency, rounding, negative amounts, insufficient funds) | **rejected: already covered** | — `js-ts/rules/02:183,191,244`, `sota-databases/rules/01:232`, `sota-api-design/rules/01:285,302-303`, `sota-code-security/rules/06:183-197,218,226`, `rules/03:82,91`, and currency specifically at `rules/01-input-injection.md:28` ("currency matches account") |
@@ -2020,13 +2027,19 @@ is covered by the no-fallback-secret rule (`sota-secrets-management` rules/03 §
 **Deferred, with the trigger written down** — two classes that survived a coverage check but
 need a read this intake did not have room for:
 
+- **RESOLVED 2026-09-09 (was deferred): `sharp-edges` — misuse-resistant API design as a
+  control you *own*.** The trigger was met and read: `sota-code-security` rules/14 §6a and
+  rules/02 already hold the substance, so it is **rejected as new material and adopted as a
+  pointer** in `sota-api-design` rules/01 §13, where an API is designed. Original reasoning
+  kept below.
 - **`sharp-edges` — misuse-resistant API design as a control you *own*.** Their framing
   ("the pit of success"; secure use is the path of least resistance) exists in our library
   **11 times as a consumer-side heuristic** — *choose* a misuse-resistant library — and, on
   a file-level sweep, **not in `sota-api-design` at all**. Revisit condition: read
   `sota-api-design` rules/01 and rules/07 in full and confirm the producer-side rule is
   genuinely absent before writing it. Do not adopt their rationalisation table's text.
-- **`vulnerability-triage-brocards` — triaging an *incoming* report.** Our coverage of
+- **DEFERRED — revisit once `sota-security-compliance` rules/04 has been read in full:
+  `vulnerability-triage-brocards` — triaging an *incoming* report.** Our coverage of
   coordinated disclosure is the *obligation* (`sota-security-compliance` rules/03 and
   rules/04 under SSDF and the CRA); the triage discipline for a report someone else sent you
   — a CVE claim, a bug-bounty submission, a finding from an agentic discovery pipeline —
