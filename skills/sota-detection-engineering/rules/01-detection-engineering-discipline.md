@@ -218,14 +218,6 @@ have passed every test, because the test corpus is the demo.
 
 ## Audit checklist
 
-- [ ] **Does every derived detection record its source, and separate the attack's mechanism
-      from the author's instrumentation?** (§8) Filenames, markers, ports and banners are
-      usually the demonstrator's choices; a rule keyed on them detects the demo. Test with a
-      variant that keeps the mechanism and changes all of them. Is the source field
-      **enforced** (a rule without one does not load), and is **what the rule cannot see**
-      recorded beside what it catches?
-## Audit checklist
-
 - [ ] Are detections in version control, with PR review and CI tests, or edited
       directly in the SIEM console?
 - [ ] Does each detection carry required metadata (ATT&CK ID, owner, severity,
@@ -247,3 +239,10 @@ have passed every test, because the test corpus is the demo.
 - [ ] Hunt query for stale detections: in the rule repo, list detections whose
       last meaningful edit predates the last ATT&CK version bump and that target
       systems still in the asset inventory.
+- [ ] **Does every derived detection record its source, and separate the attack's mechanism
+      from the author's instrumentation?** (§8) Filenames, markers, ports and banners are
+      usually the demonstrator's choices; a rule keyed on them detects the demo. Test with a
+      variant that keeps the mechanism and changes all of them. Is the source field
+      **enforced** (a rule without one does not load), and is **what the rule cannot see**
+      recorded beside what it catches?
+

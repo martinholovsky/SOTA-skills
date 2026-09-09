@@ -34,7 +34,7 @@ PR" version is in [CONTRIBUTING.md](CONTRIBUTING.md#the-invariants-enforced).
 | # | The build fails when… |
 |---|---|
 | 1 | a **skill** file (`skills/*/SKILL.md`, `skills/*/rules/*.md`) exceeds **500 lines** |
-| 2 | a `skills/*/rules/*.md` doesn't end with `## Audit checklist` |
+| 2 | a `skills/*/rules/*.md` doesn't end with `## Audit checklist`, **or carries more than one** — the last-heading test passes on a duplicate, and five files shipped that way with six stranded bullets in the block a reader has already scrolled past |
 | 3 | an internal-name denylist hits (the library must stay generic) |
 | 4 | a `SKILL.md` `description` exceeds **1024 chars** (spec cap — loaders silently skip it), is unquoted YAML containing `: `, or either `name`/`description` contains an **XML tag**; also a reserved word (`anthropic`, `claude`) in `name` |
 | 5 | `VERSION`, `plugin.json` and the CHANGELOG top entry disagree, or a tag is ahead of `VERSION` |

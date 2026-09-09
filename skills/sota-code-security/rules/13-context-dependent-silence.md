@@ -252,12 +252,6 @@ command that **writes** the data defaulted the other.
 
 ## Audit checklist
 
-- [ ] **Does every empty result name the store it queried?** (§6) "0 rows" without the store's
-      path and inventory is not a finding. Where a writer and its readers each carry a default
-      path, audit them *together* — one design decision expressed N times, and the defect is
-      invisible in either half alone.
-## Audit checklist
-
 - [ ] **Scale**: does any control's behaviour change with input size — a
       size-gated path, a chunked branch, a timeout, a pagination limit — and does
       a fixture actually cross that threshold (§1)?
@@ -278,3 +272,8 @@ command that **writes** the data defaulted the other.
       path — that differs between where it was tested and where it runs (§5)?
 - [ ] For every one found: is the **condition** written into a regression test,
       rather than the instance being patched (all sections)?
+- [ ] **Does every empty result name the store it queried?** (§6) "0 rows" without the store's
+      path and inventory is not a finding. Where a writer and its readers each carry a default
+      path, audit them *together* — one design decision expressed N times, and the defect is
+      invisible in either half alone.
+

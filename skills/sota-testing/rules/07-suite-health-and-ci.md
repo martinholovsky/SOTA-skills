@@ -233,14 +233,6 @@ inert-control audit.*
 
 ## Audit checklist
 
-- [ ] **Is every long-run result recorded with the revision it started from?** (§7.7) — and is
-      an unexplained ±1 in the test count investigated rather than accepted?
-- [ ] **When a ratchet fires, was the flagged site read before the baseline moved?** (§7.8)
-      Re-recording destroys the signal and the failure message offers it. Counts quoted in
-      prose sit outside every ratchet — derive them in a test whose failure names each place
-      that quotes them.
-## Audit checklist
-
 - [ ] Is there a written flaky-test policy with quarantine + expiry? No
       policy and visible retry-to-green culture → High.
 - [ ] Blanket retries? Grep CI/test config:
@@ -281,3 +273,10 @@ inert-control audit.*
 - [ ] Nightly jobs owned? Long-running suites whose failures nobody triages
       (check last 10 nightly failures for follow-up) → Medium (dead letter
       queue).
+- [ ] **Is every long-run result recorded with the revision it started from?** (§7.7) — and is
+      an unexplained ±1 in the test count investigated rather than accepted?
+- [ ] **When a ratchet fires, was the flagged site read before the baseline moved?** (§7.8)
+      Re-recording destroys the signal and the failure message offers it. Counts quoted in
+      prose sit outside every ratchet — derive them in a test whose failure names each place
+      that quotes them.
+
