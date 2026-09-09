@@ -539,7 +539,11 @@ run_vs() {  # sets VS_OUT / VS_RC
   # Run the fixture's copy, so the script's self-relative library lookup resolves
   # inside the fixture rather than against this repo (which would make every probe
   # compare the fixture's 3 skills against the real tree's 42).
+  # SOTA_SEARCHERS pinned to one searcher so section F is deterministic across
+  # machines (whether rg or ugrep happens to be installed must not change a probe's
+  # result), and so a probe can swap in a blind one.
   VS_OUT=$( cd "$VS/repo" && CLAUDE_CONFIG_DIR="$VS/home" PATH="$VS/bin:$PATH" \
+            SOTA_SEARCHERS="${VS_SEARCHERS:-grep}" \
             bash "$VS/repo/scripts/verify-setup.sh" 2>&1 ) || VS_RC=$?
 }
 
@@ -646,6 +650,16 @@ exit 0
 GH
 chmod +x "$VS/bin/gh";                          vs_probe "CI history is all-skipped"      "10a. CI has executed"
 
+# Section F's ONE failing branch: the positive control. Every other row there is INFO
+# by design — `rg` skipping .gitignore'd files is a feature, not a defect — so the only
+# thing that can be wrong is a searcher that finds nothing at all, which makes every
+# absence it reports worthless (`sota-shell-scripting` rules/06 §2). A stub that always
+# exits 1 is exactly that instrument.
+printf '#!/bin/sh\nexit 1\n' > "$VS/bin/blindgrep"; chmod +x "$VS/bin/blindgrep"
+VS_SEARCHERS=blindgrep
+vs_probe "a searcher that cannot even find the control" "13. searcher: blindgrep"
+VS_SEARCHERS=""
+
 # --- result ---------------------------------------------------------------
 echo
 if [ "$tested" -eq 0 ]; then
@@ -661,5 +675,5 @@ echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        12          — mtime-based: needs a rendered asset older than its source."
-echo "      verify-setup.sh: checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. Checks 5"
+echo "      verify-setup.sh: checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13. Checks 5"
 echo "      and 11 are judgement (N/A by design) and 10b/12 need a different fixture."

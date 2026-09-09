@@ -97,7 +97,7 @@ a good tree in a disposable worktree; part B is inverted, building a fully-confi
 (`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **PROBE_COUNT probes**
 (deliberately **not** gated — a static count of call sites under-reads, so only running it is
 authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-24, 25, 26, 27, 28, 29** — 26 of 29 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a.
+24, 25, 26, 27, 28, 29** — 26 of 29 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13.
 Only **5, 9, 12** are unprobed, needing a tag or an mtime, and the harness prints that reason. *A
 diff-based check is not unprobeable*: 11 and 14 were exempt on that false ground until a probe
 **committed** its mutation (2026-09-09). **A probe asserts its own mutation landed** (a stale
@@ -158,14 +158,14 @@ the setting. The pre-commit hook scans each commit locally.
   substring; assert a scripted edit landed; pin anything hand-mirrored from the
   library). Read it before changing anything under `evals/` — four harness changes in
   one day silently measured nothing while still printing plausible numbers
-- **The read-only setup check, in two halves** — `init-gates.sh` sets a repo up; these check
-  the result, because "configured" and "working" render identically. `scripts/verify-setup.sh`
-  does the mechanical half (skills reachable **vs the checkout's own count**, hook installed vs
-  merely configured, licence under any name, whether CI ever *executed* and ever *rejected*;
-  `--runs N` widens that sample, `--reach-only` is the subset `install.sh` runs every run);
-  [docs/VERIFY-SETUP.md](docs/VERIFY-SETUP.md) is the paste-in prompt for the half
-  a script cannot do — whether the agent file's content is meaningful and whether
-  its claims are still *true*
+- **The read-only setup check, in two halves** — `init-gates.sh` sets a repo up; these check the
+  result, because "configured" and "working" render identically. `scripts/verify-setup.sh` does the
+  mechanical half (skills reachable **vs the checkout's own count**, hook installed vs merely
+  configured, licence under any name, whether CI ever *executed* and ever *rejected*, and **§F: what
+  your searcher silently skips** — behavioural, INFO-only, the positive control the one thing that
+  can fail; `--runs N` widens the CI sample, `--reach-only` is what `install.sh` runs);
+  [docs/VERIFY-SETUP.md](docs/VERIFY-SETUP.md) is the paste-in prompt for the half a script cannot
+  do — whether the agent file's content is meaningful and whether its claims are still *true*
 - [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md) — the **external-idea intake
   ledger**: every idea from an outside repo, paper or review, with a verdict and
   reason (adopted / adopted-with-a-correction / rejected / deferred / superseded).

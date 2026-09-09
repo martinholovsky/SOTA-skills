@@ -415,7 +415,7 @@ unprobeable: 11, 14 and 29 read a merge base, and the probe for them *commits* i
 mutation on the worktree's detached HEAD, then rewinds to the sha it captured first. Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
 fully-configured fake one — `CLAUDE_CONFIG_DIR` pointed at a temp home, a throwaway git
 repo, and a stub `gh` on `PATH` so run history is decidable — and each probe removes one
-thing (checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a). What is *not* covered is printed rather
+thing (checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13). What is *not* covered is printed rather
 than implied. Not in pre-commit: it runs a whole gate per mutation.
 
 **Adding a check? Run `./scripts/check-invariants.sh --self-test`.** Its structural pass
