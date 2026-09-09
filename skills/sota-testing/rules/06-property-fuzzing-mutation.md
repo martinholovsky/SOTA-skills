@@ -78,6 +78,24 @@ def test_sort_invariants(xs):
 - **Failures must be reproducible**: keep the framework's failure database /
   printed seed; add each shrunk counterexample as a permanent example test
   (regression pin) — don't rely on the generator refinding it.
+- **A pass is per-seed.** The bullet above pins a seed so a *failure* stays
+  reproducible; this one is the other direction, and the two are easy to
+  conflate: **pin the seed to reproduce a failure, vary the seed to earn a
+  pass.** One seed is a sample of size one — a generator is a distribution, not
+  a suite — so before acting on a green (promoting a check to blocking, closing
+  a defect, removing an `xfail`) run several seeds. This is a rule about
+  *decision points*, not the inner loop: it does not raise the ~100-case budget
+  below, it says which greens you are allowed to believe.
+- **Expect a cleared oracle to surface a different class, not nothing.** While a
+  loud defect is firing it generates noise that quieter ones are
+  indistinguishable from, so fixing it does not empty the queue — it changes
+  what the queue contains. Field-reported: after both known halves of an
+  ordering defect were fixed, a differential fuzzer's strict mode passed 2,000
+  cases on the first seed to hand; three more seeds put two failures back, and
+  the survivors were a class the old noise had hidden, in the **opposite
+  direction** from every defect the tool was built to find. That is the
+  instrument working. File it as new work — folding it into "the original defect
+  is closed" loses both the finding and the reason the tool earned its place.
 - **Budget runtime**: default ~100 cases per property in the PR suite; crank
   iterations in a nightly job, not in everyone's inner loop.
 - Shrinking is why you use a framework instead of a `for` loop over
@@ -281,6 +299,10 @@ into the CI test suite.
       density; heavy filtering → Medium (space not actually explored).
 - [ ] Are shrunk counterexamples pinned as example tests / failure DB
       committed or cached in CI? No → Low–Medium (regressions can resurface).
+- [ ] Was any **green** acted on from a single seed — a property promoted to
+      blocking, a defect closed, an `xfail` removed — with no record of a
+      multi-seed run behind it? One seed is a sample of size one → Medium
+      (the decision rests on an unmeasured distribution).
 - [ ] Anything parsing untrusted bytes WITHOUT a fuzz target? List parsers/
       deserializers reachable from user input; no fuzz target → High for
       native/unsafe code, Medium elsewhere.
