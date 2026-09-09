@@ -130,11 +130,15 @@ use. One line *in* the file being edited would likely have outperformed all thre
 The rest of the judgment list has no single point of use — *verify every claim* applies
 everywhere, which is precisely why it cannot be relocated and must stay a principle.
 
-### Gated after this ledger was derived (2)
+### Gated after this ledger was derived (4)
 
 | Candidate | Incident? | Silent? | Checkable? | Verdict |
 |---|---|---|---|---|
 | A rendered `assets/*.png` is never older than its `*.html` | **yes** — PR #173 (2026-08-01) fixed a stale line-cap claim in `how-it-works.html` and did not re-render the PNG; `main` served the old claim all day | **yes** — nobody reads the HTML, and the PNG looks fine, it just says the old thing | **yes** — commit times from `git log -1`, no rendering required | **gated same day** as invariant 12 |
+
+| **The roadmap's open set agrees with itself** | **yes, three times in one session** (2026-09-07/08) — the priorities table pointed at item 12 whose ledger row said the opposite, then at a follow-up with no ledger row at all, then at item 38 hours after a release closed it | **yes** — a stale priority row renders exactly like a live one, and it is the row people read *instead of* the ledger | **yes** — the stated count, the header's open list, the rows marked `**OPEN` and the table's `**Item N**` citations are all parseable | **GATED 2026-09-09 as invariant 26.** The design move is what made it checkable: **status lives in one place** (the ledger row's marker) and everything else is *derived*, so the check asserts a derivation rather than judging prose. It found a **fourth** live defect on its first run — the header listed 8 open where 5 rows carried the marker |
+| **An `ADOPTION-LOG` deferral names its revisit trigger** | **yes** — the log's own rule said so in prose since 2026-07-24; on 2026-09-09 the roadmap said *"the deferred row"*, singular, while three existed and one had resolved the day before **in a different entry**, so the log held two statuses for one item | **yes** — a deferral with no trigger reads exactly like one with a trigger nobody has met | **yes** — once a deferral carries a `**DEFERRED —` marker, the trigger's presence in that marker's own cell is parseable | **GATED 2026-09-09 as invariant 27.** Reads the marker's **own cell**, not the row: a first draft checked the whole line and passed a table row because "revisit" sat in an unrelated cell — a catch for the wrong reason, which is a false pass |
+| **Every eval case set declares how its cases were chosen** | **yes** — the convention was established deliberately (ROADMAP 23/24) and held at 20 sets; two were added afterwards and one skipped it, `prompt-independence.jsonl`, whose rule lived in its results doc and not in the case file — and that set backs the **+0.509** headline | **yes** — a set with no stated selection rule runs and scores identically to one with it; selecting by outcome guarantees the number | **yes** — one `grep` per file for the declared header | **GATED 2026-09-09 as invariant 28.** The fix was a placement, not a rationale: the rule existed, in the wrong file |
 
 This one is the ledger's most useful entry, because **it was not on the list.**
 The ledger was derived by matching the repo's convention format across the five

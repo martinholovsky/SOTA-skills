@@ -94,6 +94,13 @@ measured rather than scaled.
 
 ### Changed
 
+- **`docs/CONVENTIONS-LEDGER.md` now describes invariants 26–28, not just counts them.**
+  Invariant 17 gates the *count* in that file's heading, and the count was right while the
+  substance was missing — the ledger's whole purpose is the audit trail of what earned a gate,
+  and three had been added without a row. Each is recorded against the same three filters
+  (has it already failed · is it silent · is it mechanically checkable). Its
+  *"Gated after this ledger was derived"* heading also said **(2)** over **one** row; now (4)
+  with four.
 - **The memory store was audited against the repo, and the naive method lies.** 148 distinct
   measured claims across 50 files, checked against a 16.4M-character corpus: a literal scan
   flagged **11** as memory-only and **every one checked was in the repo under different
