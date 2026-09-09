@@ -425,7 +425,14 @@ fi
 section "F. Searcher behaviour (what an absence from this machine is worth)"
 
 sf_dir=""
-sf_cleanup() { [ -n "$sf_dir" ] && rm -rf "$sf_dir"; }
+# `return 0` is load-bearing. As `{ [ -n "$sf_dir" ] && rm -rf "$sf_dir"; }` this returns
+# 1 whenever sf_dir is empty — which it deliberately is once the fixture has been removed
+# — and **a bash EXIT trap's status becomes the script's exit status**. So a machine with
+# every check passing exited 1. It went unnoticed for one run because the checks were read
+# through `| grep`, and `$?` after a pipeline is the last stage's (`sota-shell-scripting`
+# rules/01 §3). The negative-control harness caught it on the very next run, as a
+# known-good fixture that stopped passing.
+sf_cleanup() { [ -n "$sf_dir" ] && rm -rf "$sf_dir"; return 0; }
 trap sf_cleanup EXIT INT TERM
 
 if ! sf_dir=$(mktemp -d 2>/dev/null); then
