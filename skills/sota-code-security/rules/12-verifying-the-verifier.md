@@ -192,6 +192,68 @@ first draft had not modelled, one of which made it flag *correct* references (`r
 ambiguity**: where a reference could plausibly resolve more than one way, accept it. A
 gate that flags correct work gets switched off, which leaves you worse off than no gate.
 
+## 1c. The control that was correct, and then edited
+
+§1 probes a control that is **wrong**, §1a one that blocks **everything**, `rules/14`
+a control **not in force**. All three ask a correctness question about a control
+somebody else wrote. None of them asks the integrity question: *this control is
+correct today — who can change it?*
+
+**Detection is bounded by the integrity of the detector.** A control that a rewrite can
+delete provides exactly as much protection as the write permissions on its own source
+file, whatever its logic says.
+
+Field-reported. A policy gate protected two artifacts it had enumerated — its decision
+engine and its rule pack — staging both read-only outside the writable tree and recording
+both in an integrity manifest. It was correct about both, and short by one: **the gate's
+own module was an editable install**, so the import resolved *inside* the directory the
+gate permitted writes to. Replacing that module with a no-op allowed every subsequent
+call. The write was permitted by every rule pack tested, **including the fail-closed
+one** — because that pack constrained shell commands, and the write arrived through an
+editor tool the pack did not model.
+
+Three things that generalises to:
+
+- **Derive the protected set from what the decision depends on, not from what was
+  obvious when the manifest was written.** The artifact most often missing from a
+  control's own integrity list is the code doing the protecting. Enumerating inputs and
+  policy files while omitting the evaluator is the normal shape of this, not an unusual
+  one.
+- **Manifesting the verifier is worth doing and is not sufficient.** Whoever rewrites the
+  entry module deletes the verification call *in the same edit*, so a manifest checked by
+  the thing being manifested closes tampering with every module except the one that
+  matters most. The fix has to be **location**: execute the control from a copy the
+  constrained principal cannot write to, with the manifest and detection as the layer
+  that catches the rest.
+- **Enumerate the writers by capability, not by the mechanism you modelled.** A policy
+  that constrains shell commands does not constrain a file-writing tool, an editor
+  integration, a language server, or a package manager doing an editable reinstall. Ask
+  which *principals* can write the path, then which tools each of them has —
+  `sota-skill-security` rules/02 §2 makes the same argument for instruction files, and
+  this is the executable case of it.
+
+**Not the same as `rules/14` §8.** There, a *benign* neighbouring process overwrites what
+a control produced, and the fix is a predicate the innocent state fails. Here the actor is
+the principal the control constrains, the target is the control's own code, and no
+predicate on the output helps — the output is whatever the replacement chooses to say.
+
+### 1c.1 Some residuals are protocol-level, and the obvious fix costs more than it buys
+
+Where **"allow" is expressed as silence**, a control replaced by a no-op is byte-identical
+to a permitted call. Nothing downstream can tell them apart, and a `|| deny` wrapper does
+not fire — that wrapper exists for a *crash*, and this is not a crash.
+
+The tempting fix is to make silence anomalous by emitting an explicit allow. Price it
+first: an explicit allow can **override a separate permission layer** that was relying on
+the same silence, trading a real defence for a tamper signal. That is a worse trade than
+the residual.
+
+So: **price a fix against the layer it disables.** Writing the residual down — as a named
+test that documents what would not be detected, and an entry in whatever ledger records
+accepted risk — and leaving it open can be the correct call. What is not correct is
+leaving it undescribed, because the next reader cannot distinguish an accepted residual
+from an oversight (`rules/15` §2).
+
 ## Audit checklist
 
 - [ ] **Mutation probe run on security-critical paths** — control body replaced
@@ -209,3 +271,14 @@ gate that flags correct work gets switched off, which leaves you worse off than 
 - [ ] Structural tests added alongside the instance test — non-zero loaded rule
       count, every reference-config key resolving, documented default equal to
       parsed default, control telemetry actually emitted (§1)?
+- [ ] Is the control's **own executable or source** on the list of things something
+      protects, and is that list derived from what the decision **depends on** rather
+      than from what was obvious when it was written (§1c)?
+- [ ] Can the principal the control constrains **write to the control's own code**, by
+      any tool — including tools the control does not model (an editor integration, a
+      package manager, an editable reinstall), not just the mechanism its policy
+      describes (§1c)?
+- [ ] If the control were replaced by a **no-op**, could anything downstream tell? Where
+      "allow" is silence the answer is **no** — say so explicitly, and record the
+      residual rather than reaching for an explicit-allow signal that may override a
+      separate permission layer (§1c.1).
