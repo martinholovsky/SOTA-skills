@@ -51,6 +51,12 @@ audit STRAT-HIGH-2).
   and the under-count would carry no signal that it was one. `--judge-model` selects the
   judge and **must have a large context** for that reason — pairs reach roughly 150k
   tokens, and a model whose window is smaller will not fail loudly, it will read less.
+  **`--verify <artifact>`** post-processes a saved run and is where the *quotable* number
+  comes from: it reports which quoted sentences do **not** exist in the file the judge
+  named — a fabrication, which kills that conflict with no judgement needed — and prints
+  the survivors for the hand read the pre-registration requires. Whitespace is normalised
+  (the judge re-wraps prose); wording is not, because a quote that differs in wording *is*
+  a fabrication. The judge-reported rate is never the headline; the verified one is.
 - **The BUILD-safe arms** (`run-build-safe-arms.py` unguided, `run-build-safe-arms-guided.py`
   guided) — the two live-model arms that feed `run-build-safe.py`'s scorer. The guided one
   loads **only the BUILD-facing rules files** a router-following builder would open and

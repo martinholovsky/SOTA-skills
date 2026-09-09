@@ -45,6 +45,7 @@ import glob
 import itertools
 import json
 import os
+import pathlib
 import re
 import sys
 import urllib.request
@@ -218,6 +219,63 @@ def calibrate(model, key, temp):
     return {"positive": len(pos), "negative": len(neg)}
 
 
+def verify_quotes(artifact):
+    """Post-process a run: does each quoted sentence ACTUALLY EXIST in the file named?
+
+    The pre-registration reserves the verdict — is this really a contradiction? — for a
+    hand read, and that stays true. This does only the mechanical half, which needs no
+    judgement and which a person is worst at: a judge that quotes a sentence not present
+    in the file it names has **fabricated** it, and that conflict dies there.
+
+    Whitespace is normalised before comparing, because the judge re-wraps prose and a
+    line break is not a fabrication. Nothing else is normalised: a quote that differs in
+    wording IS a fabrication, which is the point.
+    """
+    import re as _re
+    d = json.loads(pathlib.Path(artifact).read_text(encoding="utf-8"))
+    norm = lambda t: _re.sub(r"\s+", " ", t).strip().lower()
+    cache = {}
+
+    def body(rel):
+        if rel not in cache:
+            f = pathlib.Path(ROOT) / rel
+            cache[rel] = norm(f.read_text(encoding="utf-8")) if f.exists() else None
+        return cache[rel]
+
+    total = fabricated = survives = 0
+    for r in d.get("rows", []):
+        for c in r.get("conflicts", []):
+            total += 1
+            bad = []
+            for side in ("a", "b"):
+                f, q = c.get(f"file_{side}"), c.get(f"quote_{side}")
+                if not f or not q:
+                    bad.append(f"side {side}: missing file/quote"); continue
+                b = body(f)
+                if b is None:
+                    bad.append(f"side {side}: {f} does not exist in the tree"); continue
+                if norm(q) not in b:
+                    bad.append(f"side {side}: quote not found in {f}")
+            if bad:
+                fabricated += 1
+                print(f"FABRICATED   {r['case']}  {r['a']} + {r['b']}")
+                for x in bad:
+                    print(f"               {x}")
+            else:
+                survives += 1
+                print(f"HAND-READ    {r['case']}  {r['a']} + {r['b']}")
+                print(f"   A {c['file_a']}: {c['quote_a'][:170]}")
+                print(f"   B {c['file_b']}: {c['quote_b'][:170]}")
+                print(f"   why: {c.get('why', '')[:200]}")
+            print()
+    print(f"conflicts reported: {total}   quotes fabricated: {fabricated}   "
+          f"survive to a hand read: {survives}")
+    if total == 0:
+        print("NOTE: zero reported conflicts is a RESULT only if that run's judge "
+              "calibration passed — check its log for 'ok — separated.'")
+    return 0
+
+
 def selftest():
     """The parser and the pair expansion are controls too: watch them get it WRONG."""
     bad = 0
@@ -266,8 +324,14 @@ def main():
                     help="abort if a pair's corpus exceeds this, rather than let the "
                          "provider truncate it silently")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--verify", metavar="ARTIFACT",
+                    help="post-process a saved run: report which quoted sentences do not "
+                         "exist in the file the judge named (a fabrication), and print the "
+                         "rest for the hand read the pre-registration requires")
     a = ap.parse_args()
 
+    if a.verify:
+        return verify_quotes(a.verify)
     if a.selftest:
         selftest()
         return 0
