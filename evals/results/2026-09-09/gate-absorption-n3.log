@@ -1,0 +1,129 @@
+ablation asserted: BUILD_WORKFLOW removed from the pad-nogate arm (1058 chars).
+
+build=anthropic/claude-sonnet-4.6  judge=anthropic/claude-opus-4.8  cases=7  samples=3  temp=0.7  (clean API, blind judge)
+
+  c1_ticket_api    without  generating… (sample 1/3)
+  c1_ticket_api    without  generating… (sample 2/3)
+  c1_ticket_api    without  generating… (sample 3/3)
+  c1_ticket_api    without  recall=0.67  (min 0.67 max 0.67 n=3)  len=15699
+  c1_ticket_api    with     generating… (sample 1/3)
+  c1_ticket_api    with     generating… (sample 2/3)
+  c1_ticket_api    with     generating… (sample 3/3)
+  c1_ticket_api    with     recall=0.94  (min 0.92 max 1.00 n=3)  len=33674
+  c1_ticket_api    with+pad generating… (sample 1/3)
+  c1_ticket_api    with+pad generating… (sample 2/3)
+  c1_ticket_api    with+pad generating… (sample 3/3)
+  c1_ticket_api    with+pad recall=1.00  (min 1.00 max 1.00 n=3)  len=56509
+  c1_ticket_api    pad-nogate generating… (sample 1/3)
+  c1_ticket_api    pad-nogate generating… (sample 2/3)
+  c1_ticket_api    pad-nogate generating… (sample 3/3)
+  c1_ticket_api    pad-nogate recall=0.94  (min 0.92 max 1.00 n=3)  len=45742
+c1_ticket_api    without=0.67  with=0.94  lift=+0.28  with+pad=1.00  pad-delta=+0.06   without-missing: ratelimit, logging, transport, tests
+  c2_upload        without  generating… (sample 1/3)
+  c2_upload        without  generating… (sample 2/3)
+  c2_upload        without  generating… (sample 3/3)
+  c2_upload        without  recall=0.48  (min 0.45 max 0.55 n=3)  len=16125
+  c2_upload        with     generating… (sample 1/3)
+  c2_upload        with     generating… (sample 2/3)
+  c2_upload        with     generating… (sample 3/3)
+  c2_upload        with     recall=1.00  (min 1.00 max 1.00 n=3)  len=47875
+  c2_upload        with+pad generating… (sample 1/3)
+  c2_upload        with+pad generating… (sample 2/3)
+  c2_upload        with+pad generating… (sample 3/3)
+  c2_upload        with+pad recall=1.00  (min 1.00 max 1.00 n=3)  len=48912
+  c2_upload        pad-nogate generating… (sample 1/3)
+  c2_upload        pad-nogate generating… (sample 2/3)
+  c2_upload        pad-nogate generating… (sample 3/3)
+  c2_upload        pad-nogate recall=0.94  (min 0.91 max 1.00 n=3)  len=30108
+c2_upload        without=0.48  with=1.00  lift=+0.52  with+pad=1.00  pad-delta=+0.00   without-missing: storage, imagebomb, ratelimit, logging, errhygiene, tests
+  c3_emailjob      without  generating… (sample 1/3)
+  c3_emailjob      without  generating… (sample 2/3)
+  c3_emailjob      without  generating… (sample 3/3)
+  c3_emailjob      without  recall=0.76  (min 0.73 max 0.82 n=3)  len=24366
+  c3_emailjob      with     generating… (sample 1/3)
+  c3_emailjob      with     generating… (sample 2/3)
+  c3_emailjob      with     generating… (sample 3/3)
+  c3_emailjob      with     recall=0.97  (min 0.91 max 1.00 n=3)  len=61402
+  c3_emailjob      with+pad generating… (sample 1/3)
+  c3_emailjob      with+pad generating… (sample 2/3)
+  c3_emailjob      with+pad generating… (sample 3/3)
+  c3_emailjob      with+pad recall=1.00  (min 1.00 max 1.00 n=3)  len=47762
+  c3_emailjob      pad-nogate generating… (sample 1/3)
+  c3_emailjob      pad-nogate generating… (sample 2/3)
+  c3_emailjob      pad-nogate generating… (sample 3/3)
+  c3_emailjob      pad-nogate recall=0.85  (min 0.73 max 0.91 n=3)  len=50026
+c3_emailjob      without=0.76  with=0.97  lift=+0.21  with+pad=1.00  pad-delta=+0.03   without-missing: idempotency, ratelimit, tests
+  c4_login         without  generating… (sample 1/3)
+  c4_login         without  generating… (sample 2/3)
+  c4_login         without  generating… (sample 3/3)
+  c4_login         without  recall=0.50  (min 0.50 max 0.50 n=3)  len=10603
+  c4_login         with     generating… (sample 1/3)
+  c4_login         with     generating… (sample 2/3)
+  c4_login         with     generating… (sample 3/3)
+  c4_login         with     recall=0.93  (min 0.80 max 1.00 n=3)  len=33052
+  c4_login         with+pad generating… (sample 1/3)
+  c4_login         with+pad generating… (sample 2/3)
+  c4_login         with+pad generating… (sample 3/3)
+  c4_login         with+pad recall=0.97  (min 0.90 max 1.00 n=3)  len=39869
+  c4_login         pad-nogate generating… (sample 1/3)
+  c4_login         pad-nogate generating… (sample 2/3)
+  c4_login         pad-nogate generating… (sample 3/3)
+  c4_login         pad-nogate recall=0.87  (min 0.70 max 1.00 n=3)  len=24033
+c4_login         without=0.50  with=0.93  lift=+0.43  with+pad=0.97  pad-delta=+0.03   without-missing: bruteforce, nopwlog, transport, csrf, tests
+  c5_search        without  generating… (sample 1/3)
+  c5_search        without  generating… (sample 2/3)
+  c5_search        without  generating… (sample 3/3)
+  c5_search        without  recall=0.60  (min 0.60 max 0.60 n=3)  len=16891
+  c5_search        with     generating… (sample 1/3)
+  c5_search        with     generating… (sample 2/3)
+  c5_search        with     generating… (sample 3/3)
+  c5_search        with     recall=1.00  (min 1.00 max 1.00 n=3)  len=61090
+  c5_search        with+pad generating… (sample 1/3)
+  c5_search        with+pad generating… (sample 2/3)
+  c5_search        with+pad generating… (sample 3/3)
+  c5_search        with+pad recall=1.00  (min 1.00 max 1.00 n=3)  len=52997
+  c5_search        pad-nogate generating… (sample 1/3)
+  c5_search        pad-nogate generating… (sample 2/3)
+  c5_search        pad-nogate generating… (sample 3/3)
+  c5_search        pad-nogate recall=1.00  (min 1.00 max 1.00 n=3)  len=51577
+c5_search        without=0.60  with=1.00  lift=+0.40  with+pad=1.00  pad-delta=+0.00   without-missing: ratelimit, logging, transport, tests
+  c6_webhook       without  generating… (sample 1/3)
+  c6_webhook       without  generating… (sample 2/3)
+  c6_webhook       without  generating… (sample 3/3)
+  c6_webhook       without  recall=0.47  (min 0.40 max 0.60 n=3)  len=19862
+  c6_webhook       with     generating… (sample 1/3)
+  c6_webhook       with     generating… (sample 2/3)
+  c6_webhook       with     generating… (sample 3/3)
+  c6_webhook       with     recall=1.00  (min 1.00 max 1.00 n=3)  len=50979
+  c6_webhook       with+pad generating… (sample 1/3)
+  c6_webhook       with+pad generating… (sample 2/3)
+  c6_webhook       with+pad generating… (sample 3/3)
+  c6_webhook       with+pad recall=1.00  (min 1.00 max 1.00 n=3)  len=40723
+  c6_webhook       pad-nogate generating… (sample 1/3)
+  c6_webhook       pad-nogate generating… (sample 2/3)
+  c6_webhook       pad-nogate generating… (sample 3/3)
+  c6_webhook       pad-nogate recall=0.97  (min 0.90 max 1.00 n=3)  len=38499
+c6_webhook       without=0.47  with=1.00  lift=+0.53  with+pad=1.00  pad-delta=+0.00   without-missing: sizelimit, ratelimit, transport, tests
+  c7_pwreset       without  generating… (sample 1/3)
+  c7_pwreset       without  generating… (sample 2/3)
+  c7_pwreset       without  generating… (sample 3/3)
+  c7_pwreset       without  recall=0.70  (min 0.64 max 0.82 n=3)  len=28285
+  c7_pwreset       with     generating… (sample 1/3)
+  c7_pwreset       with     generating… (sample 2/3)
+  c7_pwreset       with     generating… (sample 3/3)
+  c7_pwreset       with     recall=1.00  (min 1.00 max 1.00 n=3)  len=47854
+  c7_pwreset       with+pad generating… (sample 1/3)
+  c7_pwreset       with+pad generating… (sample 2/3)
+  c7_pwreset       with+pad generating… (sample 3/3)
+  c7_pwreset       with+pad recall=0.97  (min 0.91 max 1.00 n=3)  len=54655
+  c7_pwreset       pad-nogate generating… (sample 1/3)
+  c7_pwreset       pad-nogate generating… (sample 2/3)
+  c7_pwreset       pad-nogate generating… (sample 3/3)
+  c7_pwreset       pad-nogate recall=0.94  (min 0.91 max 1.00 n=3)  len=30708
+c7_pwreset       without=0.70  with=1.00  lift=+0.30  with+pad=0.97  pad-delta=-0.03   without-missing: transport, sessioninvalidate
+
+MEAN completeness  without=0.60  with=0.98  LIFT=+0.38
+MEAN with+pad=0.99  PAD-DELTA=+0.01  (400 lines of unrelated real rules prose added to the with-arm)
+MEAN pad-nogate=0.93  NOGATE-DELTA=-0.05 (vs unpadded+gated)  GATE-ABSORPTION=+0.06 (padded: gated minus ungated)
+saved evals/results/2026-09-09/completeness-gate-absorption-n3.json
+[run-completeness elapsed 13843.5s over 7 cases | previous 4866.8s — 2.8x slower (total)]

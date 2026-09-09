@@ -47,6 +47,7 @@ Same model, same task, library loaded vs. nothing.
 | **Real-repo audit — recall** — Harbor v2.5.1, 16 real BOLA sites, live agents | 15/16 | 15/16 | +0.00 | 1 clean per arm (2 of 4 discarded for contamination) | [REAL-REPO-AUDIT](2026-08-13/REAL-REPO-AUDIT.md) |
 | **Real-repo audit — precision** — 59 findings, blinded 3-way adjudication vs the code | 1.00 | 1.00 | +0.00 | 29 + 30 findings, 1 report per arm; adjudicator passed a 4/4 known-answer control | [REAL-REPO-AUDIT](2026-08-13/REAL-REPO-AUDIT.md) |
 | **Conflict rate between loaded skills** — `claude-sonnet-5`, a **CEILING** (full corpus of both skills; a session loads lean). Not a lift: there is no "without" arm — a conflict needs two skills | n/a | **0.176 verified** (judge-reported 0.353) | n/a | 17 pairs × 3, temp 0.0; judge separated a planted contradiction (1) from a benign pair (0) in the same batch; 3 of 11 reported conflicts had **fabricated quotes** | [CONFLICT-RATE](2026-09-09/CONFLICT-RATE.md) |
+| **GATE-ABSORPTION** — what BUILD step 4's terminal self-audit recovers **under competing context** (400 lines of unrelated rules prose). Not a library lift: both arms carry the library | 0.929 `pad-nogate` | **0.991** `with+pad` | **+0.062** | 7 tasks × 4 arms × 3, temp 0.7; SE 0.019, **95% CI [+0.024, +0.099]**; 6 of 7 cases positive, none negative | [GATE-ABSORPTION-N3](2026-09-09/GATE-ABSORPTION-N3.md) |
 
 **Completeness re-verified against the workflow that actually ships (2026-07-20).**
 `run-completeness.py`'s `BUILD_WORKFLOW` is a hand-compressed **mirror** of router
