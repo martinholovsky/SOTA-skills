@@ -435,22 +435,30 @@ else
   # BUILT rather than written literally: a searcher that indexes this script must not
   # be able to match the file it is about to be tested with.
   sf_needle="zq$(printf 'x')7needle$(printf 'x')kv"
-  mkdir -p "$sf_dir/real" "$sf_dir/gitignored" "$sf_dir/.hidden"
-  printf '%s\n' "$sf_needle" > "$sf_dir/plain.txt"
-  printf '%s\n' "$sf_needle" > "$sf_dir/real/behind-a-symlink.txt"
-  printf '%s\n' "$sf_needle" > "$sf_dir/gitignored/ignored.txt"
-  printf '%s\n' "$sf_needle" > "$sf_dir/.hidden/hidden.txt"
-  ln -s real "$sf_dir/linked" 2>/dev/null || true
-  printf 'gitignored/\n' > "$sf_dir/.gitignore"
+  # THE SYMLINK TARGET MUST LIVE OUTSIDE THE SEARCHED ROOT. The first draft put it in
+  # $sf_dir/real and symlinked $sf_dir/linked -> real, inside the same root — so every
+  # searcher found it by walking `real/` directly and the symlink row PASSED for tools
+  # that skip symlinks entirely. A vacuous assertion (`sota-testing` rules/06 §6.3):
+  # true, and not evidence. Caught by measuring the row by hand against
+  # `sota-shell-scripting` rules/06 §2 an hour after this check shipped green.
+  mkdir -p "$sf_dir/outside" "$sf_dir/scan/gitignored" "$sf_dir/scan/.hidden"
+  printf '%s\n' "$sf_needle" > "$sf_dir/outside/behind-a-symlink.txt"
+  printf '%s\n' "$sf_needle" > "$sf_dir/scan/plain.txt"
+  printf '%s\n' "$sf_needle" > "$sf_dir/scan/gitignored/ignored.txt"
+  printf '%s\n' "$sf_needle" > "$sf_dir/scan/.hidden/hidden.txt"
+  ln -s ../outside "$sf_dir/scan/linked" 2>/dev/null || true
+  printf 'gitignored/\n' > "$sf_dir/scan/.gitignore"
   # A real repo, because rg's ignore handling only engages inside one.
-  ( cd "$sf_dir" && git init -q . >/dev/null 2>&1 ) || true
+  ( cd "$sf_dir/scan" && git init -q . >/dev/null 2>&1 ) || true
 
   # Assert the fixture is what the report will claim it is. A fixture that silently
   # failed to build (no symlink support, no git) would make every searcher look
   # equally blind and the row would blame the tool.
   sf_broken=""
-  [ -L "$sf_dir/linked" ] || sf_broken="$sf_broken symlink"
-  [ -d "$sf_dir/.git" ]   || sf_broken="$sf_broken git-repo"
+  [ -L "$sf_dir/scan/linked" ] || sf_broken="$sf_broken symlink"
+  [ -d "$sf_dir/scan/.git" ]   || sf_broken="$sf_broken git-repo"
+  # And the target must be reachable ONLY through the link, or the row is vacuous.
+  if [ -e "$sf_dir/scan/outside" ]; then sf_broken="$sf_broken target-also-inside-root"; fi
 
   sf_searchers="${SOTA_SEARCHERS:-grep rg ugrep}"
   sf_any=0
@@ -462,8 +470,8 @@ else
     # already. No other flags: adding -R or --hidden would measure the fix, not the
     # default.
     case "$sf_cmd" in
-      grep) sf_hits=$("$sf_cmd" -rl "$sf_needle" "$sf_dir" 2>/dev/null || true) ;;
-      *)    sf_hits=$( ( cd "$sf_dir" && "$sf_cmd" -l "$sf_needle" . 2>/dev/null ) || true ) ;;
+      grep) sf_hits=$( ( cd "$sf_dir/scan" && "$sf_cmd" -rl "$sf_needle" . 2>/dev/null ) || true ) ;;
+      *)    sf_hits=$( ( cd "$sf_dir/scan" && "$sf_cmd" -l "$sf_needle" . 2>/dev/null ) || true ) ;;
     esac
     sf_missed=""
     for sf_want in plain.txt behind-a-symlink.txt ignored.txt hidden.txt; do
@@ -481,7 +489,7 @@ else
         row "PASS" "$sf_label" "sees all four: plain, symlinked dir, gitignored, hidden" ;;
       (*)
         sf_names=$(printf '%s' "$sf_missed" \
-          | sed 's/ behind-a-symlink.txt/ a symlinked dir (-R, --follow)/; s/ ignored.txt/ .gitignore'"'"'d files (--no-ignore)/; s/ hidden.txt/ dot-directories (--hidden)/')
+          | sed 's/ behind-a-symlink.txt/ a symlinked dir (ugrep -R, rg --follow, find -L; BSD grep follows neither)/; s/ ignored.txt/ .gitignore'"'"'d files (--no-ignore)/; s/ hidden.txt/ dot-directories (--hidden)/')
         row "INFO" "$sf_label" "silently skips:${sf_names} — an absence here needs a second method" ;;
     esac
   done

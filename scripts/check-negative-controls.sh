@@ -444,8 +444,12 @@ probe_committed() {  # <id> <name> <expected substring>  — commit already made
       skills/sota-golang/SKILL.md \
     && printf '99.0.0\n' > VERSION )
 wt_commit "probe: a release that rewrites a skill description"
+# The expected string is a SENTENCE THE CHECK PRINTS, not its [29/29] heading. The first
+# draft asserted "declares no routing check", which is the heading's wording reversed and
+# appears nowhere in the diagnostic — the probe read FALSE PASS while the gate was
+# working perfectly. Assert on output, never on a label you wrote from memory.
 probe_committed 29 "a release changes a description and declares no routing check" \
-  "declares no routing check"
+  "this release changes the routing surface"
 
 # 29b — the escape hatch has to be TRUE, not merely present. Same release, this time
 # WITH a **Routing checked:** line that resolves to a file which exists and has
@@ -454,7 +458,7 @@ probe_committed 29 "a release changes a description and declares no routing chec
 ( cd "$WT" && perl -pi -e 's/^(description: )/$1Probe rewrite of the routing surface. / if $. < 10' \
       skills/sota-golang/SKILL.md \
     && printf '99.0.0\n' > VERSION \
-    && perl -0777 -pi -e 's/^## \[/## [99.0.0] - 2099-01-01\n\n**Routing checked:** README.md\n\n## [/ if $. == 0' \
+    && perl -0777 -pi -e 's/^## \[/## [99.0.0] - 2099-01-01\n\n**Routing checked:** VERSION\n\n## [/m' \
       CHANGELOG.md )
 wt_commit "probe: a release declaring a routing check that resolves nowhere"
 probe_committed 29b "a routing declaration that resolves to an unrelated file" \

@@ -26,6 +26,31 @@ audit STRAT-HIGH-2).
   because the spec leaked the property to preserve and the bare arm saturated; the
   rewrite is what made it discriminate (`results/2026-07-30/BUILD-SAFE.md` →
   `results/2026-08-21/BUILD-SAFE.md`).
+- **`run-conflict-rate.py`** — ROADMAP 39, and **v2 of `run-routing-recall.py`**, which
+  named this and left it out because it needs a judge. v1 asks whether the descriptions
+  deliver the composition the router promises; this asks whether two skills loaded
+  *together* give **contradictory** prescriptions. It is the one failure mode with a real
+  incident behind it — a liveness-probe rule against a no-`await` `async def` rule, in a
+  live build, which is why the router carries a conflict-resolution clause at all.
+  Composition comes from `routing-recall.jsonl`'s gold sets (**no routing call**, so a
+  routing error cannot contaminate a conflict number) and each case expands into every
+  unordered pair of its skills; single-skill cases contribute none and are printed as
+  excluded. The judge sees both skills' **full** corpus — `SKILL.md` plus every
+  `rules/*.md`, labelled by path so a quoted conflict can be checked by hand — which
+  makes the number a **ceiling**, not the lived rate: a real session loads lean, so a low
+  number is strong and a high one is not yet a claim about practice.
+  **The judge is a control.** Two synthetic pairs run in the same batch — one with a
+  planted head-on contradiction that must report ≥ 1, one benign that must report 0. If
+  they do not separate the run is **VOID and prints no rate**, because a judge that
+  answers "no conflicts" to everything produces exactly the number this project would
+  like. Both branches were watched to fail. `parse_conflicts` returns `None`, never `[]`,
+  on an unparseable verdict and the runner aborts on it — a broken judge and a clean
+  library must not be the same number, and `--selftest` asserts precisely that.
+  `--max-chars` aborts when a pair's corpus would be truncated (the largest is ~397k
+  characters): a truncated corpus cannot contain the contradiction it was truncated past,
+  and the under-count would carry no signal that it was one. `--judge-model` selects the
+  judge and **must have a large context** for that reason — pairs reach roughly 150k
+  tokens, and a model whose window is smaller will not fail loudly, it will read less.
 - **The BUILD-safe arms** (`run-build-safe-arms.py` unguided, `run-build-safe-arms-guided.py`
   guided) — the two live-model arms that feed `run-build-safe.py`'s scorer. The guided one
   loads **only the BUILD-facing rules files** a router-following builder would open and
@@ -740,7 +765,7 @@ ratchets that: the count of eval flags absent from this README may not rise. Doc
 the new flag is the cheap fix; the alternative is a deliberate, visible edit to
 `MAX_UNDOC` in `scripts/check-invariants.sh`.
 
-It is a **ratchet, not a rule**, on purpose. **27** flags are already undocumented here —
+It is a **ratchet, not a rule**, on purpose. **21** flags are already undocumented here —
 model selectors, output-format switches, timeouts and the like — and a strict "every flag
 is documented" gate would have opened red on all of them. A gate that opens red on things
 it does not care about is one somebody disables

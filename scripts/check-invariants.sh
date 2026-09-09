@@ -120,7 +120,10 @@ START_SECONDS=$SECONDS
 MAX_LINES=500
 MAX_DESC=1024
 MAX_AGENTS=200          # AGENTS.md loads every session; check 24. A CAP, not a target.
-MAX_UNDOC=27            # check 25's ratchet: undocumented eval (file, flag) pairs.
+MAX_UNDOC=21            # check 25's ratchet: undocumented eval (file, flag) pairs.
+                        # 27 -> 21 on 2026-09-09: documenting `--judge-model` for
+                        # run-conflict-rate.py documented it for the three runners
+                        # that already carried it, and the SLACK direction fails too.
 fail=0
 # --- --self-test: the suite, then the harness that watches it fail ----------
 # `sota-code-security` rules/12 §1b: the negative control belongs INSIDE the tool.
@@ -1931,14 +1934,31 @@ elif ! command -v python3 >/dev/null 2>&1; then
   note "SKIPPED (python3 not found; CI always has it)"
   echo "    ok (skipped)"
 else
-  ver29=$(tr -d '[:space:]' < VERSION)
-  sec29=$(awk -v v="## [$ver29]" 'index($0,v)==1{f=1;print;next} f&&/^## \[/{exit} f{print}' CHANGELOG.md)
-  # shellcheck disable=SC2016
-  routed_out=$(printf '%s' "$sec29" | python3 - "$base29" <<'ROUTEPY'
+  # THE SECTION IS READ BY PYTHON, NOT PIPED IN. The first draft did
+  # `printf '%s' "$sec29" | python3 - "$base29" <<'ROUTEPY'`, where the heredoc and the
+  # pipe both claim stdin: the heredoc wins, python reads its own SCRIPT, and
+  # `sys.stdin.read()` returns "". The declaration was therefore ALWAYS empty, so the
+  # escape hatch could never fire and a correct release would have been failed. Probe 29
+  # passed on that build (it asserts the no-declaration branch, which was the only
+  # reachable one); probe 29b is what caught it, which is the argument for probing both
+  # sides of an escape hatch and not just the failure it is meant to produce.
+  routed_out=$(python3 - "$base29" <<'ROUTEPY'
 import pathlib, re, subprocess, sys
 
 base = sys.argv[1]
-section = sys.stdin.read()
+
+# Read the release's own CHANGELOG section here rather than accepting it on stdin: this
+# script arrives on stdin itself, so anything piped alongside it is discarded silently.
+ver = pathlib.Path("VERSION").read_text(encoding="utf-8").strip()
+section, in_sec = [], False
+for line in pathlib.Path("CHANGELOG.md").read_text(encoding="utf-8").splitlines():
+    if line.startswith(f"## [{ver}]"):
+        in_sec = True
+    elif in_sec and line.startswith("## ["):
+        break
+    if in_sec:
+        section.append(line)
+section = "\n".join(section)
 
 FM = re.compile(r'\A---\r?\n(.*?)\r?\n---', re.S)
 

@@ -1,0 +1,317 @@
+{
+ "model": "anthropic/claude-sonnet-5",
+ "samples": 3,
+ "temp": 0.7,
+ "cases": {
+  "v1_login_sqli": {
+   "task": "Our login handler builds its query by concatenating the submitted email into a SQL string. Review the handler and tell me what an attacker can do with it and how to fix it.",
+   "expect": "sota-code-security",
+   "distractor": "sota-databases",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "v2_jwt_verify": {
+   "task": "Review how this service validates JWTs from our identity provider: it decodes the token, reads the claims, and trusts the `alg` header. What is wrong and what should it do instead?",
+   "expect": "sota-code-security",
+   "distractor": "sota-identity-access",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "v3_upload_path": {
+   "task": "Users upload avatars and we save them under a directory derived from the client-supplied filename. Find the problems with this and tell me how to accept uploads safely.",
+   "expect": "sota-code-security",
+   "distractor": "sota-api-design",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "v4_pickle_cache": {
+   "task": "This worker deserializes cached job payloads with pickle. The cache is populated by another internal service. Is that a problem, and what would you change?",
+   "expect": "sota-code-security",
+   "distractor": "sota-python",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "v5_error_leak": {
+   "task": "Our 500 handler returns the exception message and stack trace to the caller, and we log the full request body including headers. Review both for what they expose.",
+   "expect": "sota-code-security",
+   "distractor": "sota-observability",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "v6_feed_ingest": {
+   "task": "We pull third-party RSS feeds and render the item bodies in our web UI. Walk through what an attacker who controls a feed can do to us and how to ingest it safely.",
+   "expect": "sota-code-security",
+   "distractor": "sota-data-engineering",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "c1_inert_gate": {
+   "task": "Our CI has a step that greps the diff for hardcoded secrets and it has never once failed. I want to know whether it is actually checking anything or has been silently passing over an empty file list.",
+   "expect": "sota-code-security",
+   "distractor": "sota-devsecops",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-shell-scripting"
+     ],
+     "correct": 0.6666666666666666,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-shell-scripting",
+      "sota-shell-scripting",
+      "sota-shell-scripting"
+     ],
+     "correct": 0.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "c2_authz_noop": {
+   "task": "There is a permission decorator on every admin route. I want to establish whether it actually denies anything at runtime, or whether it would look identical if it were a no-op.",
+   "expect": "sota-code-security",
+   "distractor": "sota-testing",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "c3_empty_comparand": {
+   "task": "A script compares the current vulnerability list against a baseline file and reports new findings. The baseline is generated by an earlier stage. Work out under what conditions this reports 'no new findings' while checking nothing.",
+   "expect": "sota-code-security",
+   "distractor": "sota-shell-scripting",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-shell-scripting",
+      "sota-shell-scripting",
+      "sota-shell-scripting"
+     ],
+     "correct": 0.0,
+     "distractor": 1.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-shell-scripting",
+      "sota-shell-scripting",
+      "sota-shell-scripting"
+     ],
+     "correct": 0.0,
+     "distractor": 1.0
+    }
+   }
+  },
+  "c4_rate_limit_effect": {
+   "task": "We have a rate limiter configured on the login endpoint. Rather than reading its config again, I want to know what observable difference there would be if it were doing nothing, and how to establish which of those two worlds we are in.",
+   "expect": "sota-code-security",
+   "distractor": "sota-performance",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "c5_audit_ledger": {
+   "task": "A shell script writes our tamper-evident deployment audit trail. I need to assess whether the evidence it produces could be forged or silently dropped without anyone noticing.",
+   "expect": "sota-code-security",
+   "distractor": "sota-shell-scripting",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-shell-scripting",
+      "sota-shell-scripting",
+      "sota-shell-scripting"
+     ],
+     "correct": 0.0,
+     "distractor": 1.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-shell-scripting",
+      "sota-shell-scripting",
+      "sota-shell-scripting"
+     ],
+     "correct": 0.0,
+     "distractor": 1.0
+    }
+   }
+  },
+  "c6_coverage_census": {
+   "task": "The team says input validation is applied on every endpoint. I want to count how many endpoints the validation actually guards versus how many exist, and find the ones the claim skips.",
+   "expect": "sota-code-security",
+   "distractor": "sota-api-design",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  }
+ },
+ "summary": {
+  "with-xref": {
+   "correct": 0.8055555555555556,
+   "distractor": 0.16666666666666666
+  },
+  "without-xref": {
+   "correct": 0.75,
+   "distractor": 0.16666666666666666
+  }
+ }
+}

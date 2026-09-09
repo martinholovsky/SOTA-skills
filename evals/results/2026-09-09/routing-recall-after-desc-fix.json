@@ -1,0 +1,153 @@
+{
+ "_meta": {
+  "model": "anthropic/claude-sonnet-5",
+  "samples": 3,
+  "temp": 0.7,
+  "catalogue_size": 41,
+  "cases": 10
+ },
+ "summary": {
+  "recall": 0.975,
+  "precision": 0.8255555555555556,
+  "under_selected_cases": 1,
+  "over_selected_cases": 6
+ },
+ "cases": {
+  "mcp_server_audit": {
+   "task": "Audit the MCP server we expose to third-party agents: tool descriptions, the authorization boundary on each tool, and what a malicious server in the same session could do.",
+   "expect": [
+    "sota-code-security",
+    "sota-sandboxing",
+    "sota-threat-modeling"
+   ],
+   "gold_source": "derived",
+   "recall": 1.0,
+   "precision": 0.7,
+   "missing": [],
+   "extra": [
+    "sota-llm-engineering"
+   ]
+  },
+  "k8s_cluster_audit": {
+   "task": "Do a security audit of our Kubernetes cluster: RBAC and escalation paths, admission control, what a compromised pod can reach, and whether workloads are isolated from each other.",
+   "expect": [
+    "sota-kubernetes",
+    "sota-network-security",
+    "sota-sandboxing"
+   ],
+   "gold_source": "router",
+   "recall": 1.0,
+   "precision": 0.9166666666666666,
+   "missing": [],
+   "extra": [
+    "sota-threat-modeling"
+   ]
+  },
+  "next_security_review": {
+   "task": "Security-review our Next.js app: the Server Action boundary, what leaks from server to client components, hydration, and the CSS/accessibility regressions the last redesign introduced.",
+   "expect": [
+    "sota-frontend-design",
+    "sota-web-frameworks",
+    "sota-javascript-typescript",
+    "sota-performance"
+   ],
+   "gold_source": "router",
+   "recall": 0.75,
+   "precision": 0.75,
+   "missing": [
+    "sota-performance"
+   ],
+   "extra": [
+    "sota-code-security"
+   ]
+  },
+  "untrusted_feed_ingest": {
+   "task": "We ingest third-party RSS feeds and user-uploaded archives and parse them server-side. Harden that path.",
+   "expect": [
+    "sota-code-security",
+    "sota-sandboxing"
+   ],
+   "gold_source": "router",
+   "recall": 1.0,
+   "precision": 0.7777777777777778,
+   "missing": [],
+   "extra": [
+    "sota-threat-modeling"
+   ]
+  },
+  "evidence_shell_script": {
+   "task": "Review deploy-attest.sh, the script that writes our build attestation ledger and verifies it before release.",
+   "expect": [
+    "sota-shell-scripting",
+    "sota-code-security"
+   ],
+   "gold_source": "router",
+   "recall": 1.0,
+   "precision": 0.6666666666666666,
+   "missing": [],
+   "extra": [
+    "sota-devsecops"
+   ]
+  },
+  "crypto_key_rotation": {
+   "task": "We need to rotate the signing keys for our API tokens without downtime, and move them out of environment variables.",
+   "expect": [
+    "sota-code-security",
+    "sota-secrets-management"
+   ],
+   "gold_source": "router",
+   "recall": 1.0,
+   "precision": 0.7777777777777778,
+   "missing": [],
+   "extra": []
+  },
+  "agent_subagent_delegation": {
+   "task": "Our coding agent spawns subagents that sometimes duplicate each other's work and occasionally run shell commands we did not intend. Fix the delegation and tool-permission design.",
+   "expect": [
+    "sota-llm-engineering",
+    "sota-sandboxing"
+   ],
+   "gold_source": "derived",
+   "recall": 1.0,
+   "precision": 0.6666666666666666,
+   "missing": [],
+   "extra": [
+    "sota-code-security"
+   ]
+  },
+  "browser_verification": {
+   "task": "Before we ship, verify in a real browser that the checkout flow works end to end and that nothing regressed visually or in accessibility.",
+   "expect": [
+    "sota-testing",
+    "sota-frontend-design"
+   ],
+   "gold_source": "derived",
+   "recall": 1.0,
+   "precision": 1.0,
+   "missing": [],
+   "extra": []
+  },
+  "single_go_error_control": {
+   "task": "Rewrite this Go function's error handling to wrap with %w and stop swallowing the sentinel.",
+   "expect": [
+    "sota-golang"
+   ],
+   "gold_source": "control",
+   "recall": 1.0,
+   "precision": 1.0,
+   "missing": [],
+   "extra": []
+  },
+  "single_ux_copy_control": {
+   "task": "Reword the error message shown when a password reset link has expired.",
+   "expect": [
+    "sota-ux-writing"
+   ],
+   "gold_source": "control",
+   "recall": 1.0,
+   "precision": 1.0,
+   "missing": [],
+   "extra": []
+  }
+ }
+}

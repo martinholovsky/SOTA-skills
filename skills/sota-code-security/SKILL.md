@@ -1,20 +1,20 @@
 ---
 name: sota-code-security
 description: >-
-  State-of-the-art secure coding and security auditing rules (2026 baseline).
-  Use whenever BUILDING or modifying code that crosses a trust boundary —
-  endpoints, handlers, auth/login/signup, sessions, JWT/OAuth, file uploads,
-  payments, multi-tenant features, crypto/secrets handling, parsers, CLI/exec
-  wrappers, LLM agents or tool-calling — AND whenever AUDITING code for
-  security (security review, pentest-prep, vulnerability hunt, threat model,
-  hardening, OWASP, CWE, secrets leak, "is this code safe"). Trigger keywords:
-  secure, security, vulnerability, exploit, harden, audit, authn, authz,
-  authentication, authorization, crypto, TLS, sanitize, validate, injection,
-  SQLi, XSS, CSRF, SSRF, IDOR, JWT, OAuth, PKCE, passkey, argon2, CSP, CORS,
-  upload, rate limit, prompt injection, tool-call security, data ingestion,
-  feed, parser, file upload, archive, zip bomb, decompression bomb, webhook,
-  scraping, RAG corpus, deserialization, polyglot, silent failure, fail-open,
-  no-op control, vacuous test, business logic.
+  Secure coding and security auditing rules (2026 baseline). Use whenever
+  BUILDING or modifying code that crosses a trust boundary — endpoints,
+  handlers, auth/login/signup, sessions, JWT/OAuth, file uploads, payments,
+  multi-tenant features, crypto/secrets handling, parsers, CLI/exec wrappers,
+  LLM agents or tool-calling — AND whenever AUDITING code for security
+  (security review, vulnerability hunt, hardening, OWASP, CWE, secrets leak,
+  "is this code safe") — AND whenever a control is already PRESENT and the
+  question is whether it enforces anything (a gate that never fails, an empty
+  comparand), even when that control lives in a shell script, a CI step or a
+  config file. Trigger keywords: secure, security, vulnerability, audit, authn,
+  authz, authentication, authorization, crypto, TLS, sanitize, validate,
+  injection, SQLi, XSS, CSRF, SSRF, IDOR, JWT, OAuth, upload, rate limit,
+  prompt injection, feed, parser, decompression bomb, webhook, deserialization,
+  silent failure, fail-open, no-op control, business logic.
 ---
 
 # SOTA Code Security

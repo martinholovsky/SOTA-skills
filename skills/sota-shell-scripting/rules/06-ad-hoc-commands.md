@@ -65,21 +65,35 @@ Rules:
 ## 2. The sweep that never ran, part two: `grep -r` and symlinked directories
 
 §1 is about a *quoting* bug stopping the command. This is the command running fine and
-**traversing less than you think**. Measured on ugrep 7.8.4 / macOS, and it is POSIX
-behaviour rather than a quirk:
+**traversing less than you think**.
 
-| form | a symlinked dir **given as the argument** | a symlinked dir **met during traversal** |
+**`-r` vs `-R` is not one rule — it depends on which `grep` you have.** Re-measured
+2026-09-09 on macOS against a target reachable **only** through the link (the first
+measurement of this table put the target inside the searched root as well, so every row
+found it by walking the real directory and the distinction was invisible — a vacuous
+fixture, `sota-testing` rules/06 §6.3):
+
+| binary | symlinked dir **as the argument** | symlinked dir **met in traversal** |
 |---|---|---|
-| `grep -r` | followed | **skipped, silently** |
-| `grep -R` | followed | followed |
+| ugrep 7.8.4 `-r` | followed | **skipped, silently** |
+| ugrep 7.8.4 `-R` | followed | followed |
+| **BSD grep 2.6.0** (macOS `/usr/bin/grep`) **`-r` and `-R` alike** | **skipped** — unless the argument carries a **trailing slash** (`linked/`) | **skipped, silently** |
+| `rg` (defaults) | followed | **skipped** — `--follow` follows |
 
 ```text
-tree/direct.md:NEEDLE          # grep -r  — found 1 of 2
-tree/sub/linked/hidden.md:…    # grep -R  — found 2 of 2
+scan/plain.md          scan/linked -> ../outside   outside/target.md holds the needle
+ugrep      -r → 1 of 2      -R → 2 of 2
+/usr/bin/grep -r → 1 of 2   -R → 1 of 2      (find -L finds both; the file IS readable)
+rg            → 1 of 2      --follow → 2 of 2
 ```
 
-So **`grep -r` over any tree that may contain symlinked directories under-reports, and the
-under-report is an empty or short result that reads as a clean answer.** It bites hardest
+**So on macOS's default grep, `-R` is not the fix**, and advice that says "use `-R`" is
+GNU/ugrep advice wearing a generic name. Verify on the binary in front of you, with a
+positive control that the file is readable through the link at all — otherwise a
+permission error and a skipped symlink are the same empty result.
+
+So **a recursive search over any tree that may contain symlinked directories under-reports,
+and the under-report is an empty or short result that reads as a clean answer.** It bites hardest
 where the tree is *made* of links: a skills or plugin directory installed by symlink, a
 monorepo with linked packages, `node_modules` with workspace links, a dotfiles checkout.
 Use `-R` when you mean "follow", and say which you used when you report a count.
@@ -167,9 +181,10 @@ export, a bulk archive, a recursive `cp`/`rsync`, anything with `--output` on a 
 ## Audit checklist
 
 - [ ] **Sweeps: is the searcher's traversal and exclusion set stated with the count?** (§2)
-      `-r` skips symlinked dirs met in traversal where `-R` follows; `rg` skips gitignored and
-      hidden by default; `type grep` may reveal a wrapper. Control the sweep with a
-      known-present term **in the same invocation**.
+      `-r` skips symlinked dirs met in traversal and `-R` follows **only on ugrep/GNU** —
+      on BSD grep (macOS `/usr/bin/grep`) neither does; `rg` skips gitignored and hidden by
+      default; `type grep` may reveal a wrapper. Control the sweep with a known-present term
+      **in the same invocation**.
 - [ ] **Ad-hoc commands that write at scale** (§3): headroom checked (`df -h` on the target
       *and* the runtime's own filesystem), source mounted read-only, output outside the source
       tree, size bounded with `du -sh` before the copy, and build output (`target/`,
