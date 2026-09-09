@@ -7,8 +7,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-**Docs only** — a post-release sweep after five releases in one day, every replacement number
-measured rather than scaled.
+**The open roadmap set worked end to end (2026-09-09): 8 open → 4.** Three items were parked
+on a *decision*, and taking each one changed the answer the row had proposed. A fourth was
+parked on a *measurement*, and the measurement reads negative.
+
+### Added
+
+- **Invariant 29 — a release that changes a skill `description` declares a routing check**
+  (ROADMAP 44). A description is the entire auto-load classifier, so adding or editing one
+  competes for every neighbour's traffic: `sota-skill-security` (v1.35.0) took
+  `r1_token_count` from `sota-llm-engineering` 3/3 to 0/3 and was live for a day with
+  invariants 4, 7 and 15 all green. **Not a CI gate on the routing run** — routing costs
+  live calls, and a gate expensive enough to be disabled is worse than none. It gates the
+  **declaration**, as invariant 14 does for the front door: it fires only on a release whose
+  extracted `(name, description)` **map** differs from the merge base's, and the
+  `**Routing checked:**` line must name an artifact that exists *and* mentions
+  `desc-routing-regressions`. `RELEASING.md` gains §2c. Comparing the map rather than the
+  diff is deliberate — a folded block, a rename and a deletion all change routing without
+  touching a line beginning `description:`.
+- **`scripts/verify-setup.sh` section F — what this machine's searcher silently excludes**
+  (ROADMAP 45). Behavioural, not a presence check: a four-match fixture under `$TMPDIR`
+  (plain, behind a symlinked dir, `.gitignore`'d, hidden) and one row per searcher naming
+  what it skipped. Every row is **INFO** — `rg` skipping ignored files is a feature — and
+  exactly one branch can FAIL: the **positive control**, because a searcher that cannot find
+  the plain file makes every absence it reports worthless. `SOTA_SEARCHERS` selects what is
+  probed. The script's read-only claim is amended rather than quietly broken.
+- **`evals/run-conflict-rate.py`** (ROADMAP 39) — v2 of `run-routing-recall.py`, which named
+  this and left it out because it needs a judge. Gold-set compositions, pairwise expansion,
+  both skills' full corpus labelled by path, a judge calibrated **in the same batch** against
+  a planted contradiction and a benign pair (VOID and no rate printed if they do not
+  separate), and four guards each watched to fail.
+
+### Changed
+
+- **Invariant 25 gained a runner half** (ROADMAP 41). The row proposed per-(file, flag)
+  documentation; that was **rejected** — `evals/README.md` is organised by the question each
+  instrument measures, not by runner, and it would reopen the red-on-27 problem one level
+  down. The unit that actually goes missing is the **runner**, so every `evals/*.py` must be
+  named in `evals/README.md`, boundary-anchored. It opened red on two live misses,
+  `run-unscoped-audit.py` and `run-build-safe-arms-guided.py`, then caught
+  `run-conflict-rate.py` the same day. `MAX_UNDOC` 27 → **21**.
+- **`sota-code-security`'s description now claims the control-verification question**
+  (ROADMAP 12), against the artifact: *"even when that control lives in a shell script, a CI
+  step or a config file"*. Measured: the verification half of a 12-case set routed at
+  **0.500** against **1.000** for the vulnerability half, with all three misses unanimous and
+  all naming a script. The clause moved it to **0.611** at no cost to the other half, and
+  the **set** metric shows `sota-code-security` is never omitted — so **no skill split**.
+- **Negative-control coverage 23 of 28 → 26 of 29.** Invariants 11 and 14 were exempt as
+  *"diff-based: they compare against a merge base"*. That reason was **false** — a worktree
+  lacks a **commit**, not a merge base — and writing check 29's probe produced the mechanism
+  that closes them. `EXPECTED_UNPROBED` shrinks from `5 9 11 12 14` to `5 9 12`.
+
+### Fixed
+
+- **Check 29's escape hatch could never fire**, found by its own probe 29b on the first
+  build: the CHANGELOG section was piped to `python3 -` while the script arrived on the same
+  stdin via a heredoc, so the declaration was always empty and a *correct* release would have
+  been failed. Probe 29 passed on that build, because the no-declaration branch was the only
+  reachable one — the argument for probing **both** sides of an escape hatch.
+- **Section F's first fixture was vacuous**: its behind-a-symlink file also sat inside the
+  searched root, so searchers that never follow a symlink passed the row. The target now
+  lives outside the scanned root.
+- **`sota-shell-scripting` rules/06 §2 was wrong about `grep -R`.** Measured against a target
+  reachable only through the link, with a positive control that the file is readable that way
+  and `find -L` as a second method: **BSD grep 2.6.0** (macOS `/usr/bin/grep`) follows a
+  symlinked dir met in traversal with **neither** `-r` nor `-R`, and follows one named as the
+  argument only with a trailing slash. The old table had been measured through ugrep and
+  generalised to "grep". Now named per binary, checklist included.
+- **`verify-setup.sh` exited 1 on a machine where every check passed** — section F's EXIT
+  trap ended in a failing test, and a bash EXIT trap's status becomes the script's. It
+  survived one run because the output was read through a pipe. Caught by part B of the
+  negative-control harness as a known-good fixture that had stopped passing.
+- **`docs/CONVENTIONS-LEDGER.md`'s enforced list said 28 and enumerated 25** — invariants 26,
+  27 and 28 were gated, described in its own table, and missing from the list above it.
+  Invariant 17 reads the stated *count*, which was right both times.
+
+### Notes
+
+- **Two pre-registered runs stopped on `HTTP 402 Payment Required`** and neither partial is
+  reported as a number: the conflict rate at 10 of 17 pairs, GATE-ABSORPTION at 8 of 28
+  arm-cells. Items **39 and 43 stay open, blocked on account credit and nothing else**; both
+  registrations stand unchanged, so a re-run needs no new one.
+  See [RUNS-BLOCKED-ON-CREDIT.md](evals/results/2026-09-09/RUNS-BLOCKED-ON-CREDIT.md).
+
+**Docs only (earlier entry)** — a post-release sweep after five releases in one day, every
+replacement number measured rather than scaled.
 
 ### Fixed
 
