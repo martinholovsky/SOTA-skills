@@ -1,0 +1,41 @@
+ablation asserted: BUILD_WORKFLOW removed from the pad-nogate arm (1058 chars).
+
+build=anthropic/claude-sonnet-4.6  judge=anthropic/claude-opus-4.8  cases=7  samples=3  temp=0.7  (clean API, blind judge)
+
+  c1_ticket_api    without  generating… (sample 1/3)
+  c1_ticket_api    without  generating… (sample 2/3)
+  c1_ticket_api    without  generating… (sample 3/3)
+  c1_ticket_api    without  recall=0.67  (min 0.67 max 0.67 n=3)  len=16235
+  c1_ticket_api    with     generating… (sample 1/3)
+  c1_ticket_api    with     generating… (sample 2/3)
+  c1_ticket_api    with     generating… (sample 3/3)
+  c1_ticket_api    with     recall=0.94  (min 0.83 max 1.00 n=3)  len=44899
+  c1_ticket_api    with+pad generating… (sample 1/3)
+  c1_ticket_api    with+pad generating… (sample 2/3)
+  c1_ticket_api    with+pad generating… (sample 3/3)
+  c1_ticket_api    with+pad recall=1.00  (min 1.00 max 1.00 n=3)  len=47599
+  c1_ticket_api    pad-nogate generating… (sample 1/3)
+  c1_ticket_api    pad-nogate generating… (sample 2/3)
+  c1_ticket_api    pad-nogate generating… (sample 3/3)
+  c1_ticket_api    pad-nogate recall=0.97  (min 0.92 max 1.00 n=3)  len=36283
+c1_ticket_api    without=0.67  with=0.94  lift=+0.28  with+pad=1.00  pad-delta=+0.06   without-missing: ratelimit, logging, transport, tests
+  c2_upload        without  generating… (sample 1/3)
+  c2_upload        without  generating… (sample 2/3)
+  c2_upload        without  generating… (sample 3/3)
+  c2_upload        without  recall=0.58  (min 0.55 max 0.64 n=3)  len=18315
+  c2_upload        with     generating… (sample 1/3)
+  c2_upload        with     generating… (sample 2/3)
+  c2_upload        with     generating… (sample 3/3)
+  c2_upload        with     recall=0.97  (min 0.91 max 1.00 n=3)  len=40526
+  c2_upload        with+pad generating… (sample 1/3)
+  c2_upload        with+pad generating… (sample 2/3)
+  c2_upload        with+pad generating… (sample 3/3)
+  c2_upload        with+pad recall=0.97  (min 0.91 max 1.00 n=3)  len=32605
+  c2_upload        pad-nogate generating… (sample 1/3)
+  c2_upload        pad-nogate generating… (sample 2/3)
+  c2_upload        pad-nogate generating… (sample 3/3)
+  c2_upload        pad-nogate recall=0.88  (min 0.82 max 0.91 n=3)  len=27835
+c2_upload        without=0.58  with=0.97  lift=+0.39  with+pad=0.97  pad-delta=+0.00   without-missing: storage, imagebomb, reencode, ratelimit, tests
+  c3_emailjob      without  generating… (sample 1/3)
+  c3_emailjob      without  generating… (sample 2/3)
+  c3_emailjob      without  generating… (sample 3/3)

@@ -26,6 +26,49 @@ audit STRAT-HIGH-2).
   because the spec leaked the property to preserve and the bare arm saturated; the
   rewrite is what made it discriminate (`results/2026-07-30/BUILD-SAFE.md` →
   `results/2026-08-21/BUILD-SAFE.md`).
+- **`run-conflict-rate.py`** — ROADMAP 39, and **v2 of `run-routing-recall.py`**, which
+  named this and left it out because it needs a judge. v1 asks whether the descriptions
+  deliver the composition the router promises; this asks whether two skills loaded
+  *together* give **contradictory** prescriptions. It is the one failure mode with a real
+  incident behind it — a liveness-probe rule against a no-`await` `async def` rule, in a
+  live build, which is why the router carries a conflict-resolution clause at all.
+  Composition comes from `routing-recall.jsonl`'s gold sets (**no routing call**, so a
+  routing error cannot contaminate a conflict number) and each case expands into every
+  unordered pair of its skills; single-skill cases contribute none and are printed as
+  excluded. The judge sees both skills' **full** corpus — `SKILL.md` plus every
+  `rules/*.md`, labelled by path so a quoted conflict can be checked by hand — which
+  makes the number a **ceiling**, not the lived rate: a real session loads lean, so a low
+  number is strong and a high one is not yet a claim about practice.
+  **The judge is a control.** Two synthetic pairs run in the same batch — one with a
+  planted head-on contradiction that must report ≥ 1, one benign that must report 0. If
+  they do not separate the run is **VOID and prints no rate**, because a judge that
+  answers "no conflicts" to everything produces exactly the number this project would
+  like. Both branches were watched to fail. `parse_conflicts` returns `None`, never `[]`,
+  on an unparseable verdict and the runner aborts on it — a broken judge and a clean
+  library must not be the same number, and `--selftest` asserts precisely that.
+  `--max-chars` aborts when a pair's corpus would be truncated (the largest is ~397k
+  characters): a truncated corpus cannot contain the contradiction it was truncated past,
+  and the under-count would carry no signal that it was one. `--judge-model` selects the
+  judge and **must have a large context** for that reason — pairs reach roughly 150k
+  tokens, and a model whose window is smaller will not fail loudly, it will read less.
+- **The BUILD-safe arms** (`run-build-safe-arms.py` unguided, `run-build-safe-arms-guided.py`
+  guided) — the two live-model arms that feed `run-build-safe.py`'s scorer. The guided one
+  loads **only the BUILD-facing rules files** a router-following builder would open and
+  deliberately excludes the audit-side ones (`rules/10`, `11`, `13`, `14`), which makes the
+  test harder rather than easier: the arm is not allowed to consult the files that name the
+  very defects it is being scored on avoiding. It reads operating principle 5 live, under the
+  same drift guards as the completeness runner, so a router edit aborts the arm instead of
+  silently measuring a stale mirror. Both arms write an artifact for the scorer; neither
+  scores anything itself.
+- **`run-unscoped-audit.py`** — the **adjudicator** for `cases/unscoped-audit.jsonl`, not a
+  runner of it. A planted defect counts as FOUND only when the report names the *mechanism*
+  (from the case's `must` list) **and** points at one of its `primary` files; the rule was
+  fixed in `results/2026-07-30/PRE-REGISTRATION.md` before any agent ran, because either
+  signal alone is worthless — the file without the mechanism is "looked at it", the mechanism
+  without the file is unlocated. It also emits a **CONTAMINATION** verdict, since the
+  2026-07-30 live runs showed "bare" sub-agents inheriting a global instruction to consult
+  this library and loading it anyway; self-report is not evidence, library citations in the
+  text are. `--selftest` locks the adjudicator before you trust a number from it.
 - **Calibration** (`run-calibration.py`, `judge-calibration.py`) — scores an audit
   report's *reporting discipline*, never its recall: does it bound claims by what
   was run, label unverified items, condition severity on evidence, and support any
@@ -722,7 +765,7 @@ ratchets that: the count of eval flags absent from this README may not rise. Doc
 the new flag is the cheap fix; the alternative is a deliberate, visible edit to
 `MAX_UNDOC` in `scripts/check-invariants.sh`.
 
-It is a **ratchet, not a rule**, on purpose. **27** flags are already undocumented here —
+It is a **ratchet, not a rule**, on purpose. **21** flags are already undocumented here —
 model selectors, output-format switches, timeouts and the like — and a strict "every flag
 is documented" gate would have opened red on all of them. A gate that opens red on things
 it does not care about is one somebody disables

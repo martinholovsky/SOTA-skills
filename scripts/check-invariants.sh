@@ -120,7 +120,10 @@ START_SECONDS=$SECONDS
 MAX_LINES=500
 MAX_DESC=1024
 MAX_AGENTS=200          # AGENTS.md loads every session; check 24. A CAP, not a target.
-MAX_UNDOC=27            # check 25's ratchet: undocumented eval (file, flag) pairs.
+MAX_UNDOC=21            # check 25's ratchet: undocumented eval (file, flag) pairs.
+                        # 27 -> 21 on 2026-09-09: documenting `--judge-model` for
+                        # run-conflict-rate.py documented it for the three runners
+                        # that already carried it, and the SLACK direction fails too.
 fail=0
 # --- --self-test: the suite, then the harness that watches it fail ----------
 # `sota-code-security` rules/12 §1b: the negative control belongs INSIDE the tool.
@@ -164,7 +167,7 @@ scope() {  # <count> <noun> — returns 1 on an empty scope; prints nothing on s
 # CHANGELOG, docs/, evals/, AGENTS.md, these scripts -- is prose or code read by
 # people, deliberately uncapped since 2026-07-15; navigability there comes from a
 # table of contents and docs/INDEX.md, not a line ceiling.
-echo "[1/28] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
+echo "[1/29] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
 over=0
 seen1=0
 while IFS= read -r f; do
@@ -181,7 +184,7 @@ scope "$seen1" "skill files" || over=1
 if [ "$over" -eq 0 ]; then echo "    ok ($seen1 skill files)"; else fail=1; fi
 
 # --- 2. Audit checklist ends every rules file ------------------------------
-echo "[2/28] Every skills/*/rules/*.md ends with an '## Audit checklist'"
+echo "[2/29] Every skills/*/rules/*.md ends with an '## Audit checklist'"
 missing=0
 seen2=0
 while IFS= read -r f; do
@@ -212,7 +215,7 @@ if [ "$missing" -eq 0 ]; then echo "    ok ($seen2 rules files)"; else fail=1; f
 # .denylist.local (git-ignored, one ERE per line, '#' comments). When neither
 # exists (e.g. an external fork's PR), only the generic phrases are checked —
 # the maintainer's pre-commit hook and this repo's CI carry the full list.
-echo "[3/28] No internal-name leaks"
+echo "[3/29] No internal-name leaks"
 DENY='the user runs|the user operates'
 if [ -n "${SOTA_DENYLIST:-}" ]; then
   DENY="$DENY|$SOTA_DENYLIST"
@@ -254,7 +257,7 @@ fi
 # Code, Codex, ...) skip any skill that exceeds it. Count Unicode characters
 # (descriptions use em-dashes: 1 char, 3 bytes) via python3, parsing both
 # folded block scalars (`>-`) and plain single-line descriptions.
-echo "[4/28] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
+echo "[4/29] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
 if command -v python3 >/dev/null 2>&1; then
   if desc_out=$(python3 - "$MAX_DESC" <<'PY'
 import sys, glob, re
@@ -344,7 +347,7 @@ fi
 # One version, four places: VERSION, plugin.json, the CHANGELOG's top entry,
 # and (after the release lands) the newest v* tag. Drift here shipped a main
 # briefly claiming 1.8.0 with 1.9.0 content (2026-07-03) — hence a hard check.
-echo "[5/28] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
+echo "[5/29] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
 v5=0
 ver=$(tr -d '[:space:]' < VERSION)
 # Strict X.Y.Z: rejects interior malformations (1..2, 1.2, 1.2.3.4) the old
@@ -378,7 +381,7 @@ if [ "$v5" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # rot on surfaces nobody recounts (the social preview said "30 skills" for
 # three releases). Recount from the tree and compare every tracked surface;
 # RELEASING.md lists the same surfaces for manual release edits.
-echo "[6/28] Count-bearing surfaces match the tree"
+echo "[6/29] Count-bearing surfaces match the tree"
 v6=0
 ck() { # ck <found> <expected> <surface>
   [ "$1" = "$2" ] || { note "$3: says '${1:-<not found>}', tree says '$2'"; v6=1; }
@@ -438,7 +441,7 @@ if [ "$v6" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # checked — a moved file would otherwise make every grep miss and report all 40
 # skills as absent, which is loud, or make the reverse loop read nothing, which
 # is not.
-echo "[7/28] Router lists every skill (routing table + library map)"
+echo "[7/29] Router lists every skill (routing table + library map)"
 v7=0
 seen7=0
 router=skills/sota/SKILL.md
@@ -470,7 +473,7 @@ if [ "$v7" -eq 0 ]; then echo "    ok ($seen7 domain skills)"; else fail=1; fi
 # with no rot-catching upside. Fenced AND inline code are stripped so link-shaped
 # examples (in ``` fences or `backticks`) are not scanned. Idea from vault-doctor
 # (training-knowledge-vault); see docs/ADOPTION-LOG.md.
-echo "[8/28] Internal Markdown links resolve (*.md targets)"
+echo "[8/29] Internal Markdown links resolve (*.md targets)"
 if command -v python3 >/dev/null 2>&1; then
   if link_out=$(python3 - <<'PY'
 import os, re, sys
@@ -523,7 +526,7 @@ fi
 # previous release (2026-07-28) and both sat on main until a human noticed
 # during the release cut. Fence-aware, like check 2: a CHANGELOG entry may
 # legitimately quote '## [Unreleased]' inside a code fence.
-echo "[9/28] CHANGELOG has at most one [Unreleased], and it is the top entry"
+echo "[9/29] CHANGELOG has at most one [Unreleased], and it is the top entry"
 v9=0
 changelogs="CHANGELOG.md $(git ls-files 'docs/CHANGELOG-archive*.md' | tr '\n' ' ')"
 for cl in $changelogs; do
@@ -569,7 +572,7 @@ if [ "$v9" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # to ourselves. All 255 rules files passed when this landed, so it is a
 # regression gate, not a repair; it was watched to fail on an injected file
 # and on a renamed reference before being trusted.
-echo "[10/28] Every skills/*/rules/*.md is referenced by its own SKILL.md"
+echo "[10/29] Every skills/*/rules/*.md is referenced by its own SKILL.md"
 v10=0
 seen10=0
 while IFS= read -r rf; do
@@ -615,7 +618,7 @@ if [ "$v10" -eq 0 ]; then echo "    ok ($seen10 rules files indexed)"; else fail
 # This is the first DIFF-based invariant; every other check reads the whole tree.
 # With no merge base it skips with a note rather than guessing, like checks 4/8.
 SWEEP_MIN_SKILL_FILES=20
-echo "[11/28] LAST-VERIFIED moves only with a sweep (batched diff, or declared in CHANGELOG)"
+echo "[11/29] LAST-VERIFIED moves only with a sweep (batched diff, or declared in CHANGELOG)"
 v11=0
 base=""
 for ref in origin/main main; do
@@ -688,7 +691,7 @@ if [ "$v11" -ne 0 ]; then fail=1; fi
 #
 # HISTORY-based, like check 11's diff: with no commit history for a pair it skips
 # with a note rather than guessing, because a shallow clone must not read as a pass.
-echo "[12/28] Rendered assets: each assets/*.png is no older than its *.html"
+echo "[12/29] Rendered assets: each assets/*.png is no older than its *.html"
 v12=0
 seen12=0
 checked12=0
@@ -761,7 +764,7 @@ if [ "$v12" -ne 0 ]; then fail=1; fi
 # column and checks that column in every data row beneath it. So it also fails when
 # the column is RENAMED or dropped (0 tables -> SCOPE EMPTY), which is the drift a
 # hardcoded column index would sail straight past.
-echo "[13/28] Every scoreboard row declares its sample size"
+echo "[13/29] Every scoreboard row declares its sample size"
 v13=0
 BOARD="evals/results/RESULTS.md"
 if [ ! -f "$BOARD" ]; then
@@ -831,7 +834,7 @@ if [ "$v13" -ne 0 ]; then fail=1; fi
 # docs/INDEX.md (the front door is real), AND in that release's own CHANGELOG section
 # (you cannot pass by declaring a filler word that was never part of the release).
 # A missing line on a release commit fails closed.
-echo "[14/28] A release declares its front-door terms, and they resolve"
+echo "[14/29] A release declares its front-door terms, and they resolve"
 v14=0
 base14=""
 for ref in origin/main main; do
@@ -903,7 +906,7 @@ if [ "$v14" -ne 0 ]; then fail=1; fi
 # (v1.19.8 → v1.21.0) with all fourteen checks green. Both directions matter: a
 # file absent from the map is invisible to a router-driven load, and a map entry
 # for a file that no longer exists sends the model after nothing.
-echo "[15/28] Router library map lists every rules file (both directions)"
+echo "[15/29] Router library map lists every rules file (both directions)"
 v15=0
 if command -v python3 >/dev/null 2>&1; then
   map_out=$(python3 - <<'MAPPY'
@@ -976,7 +979,7 @@ if [ "$v15" -ne 0 ]; then fail=1; fi
 # actually in a user's settings.json. The README's is the one a reader copies by
 # hand, so a stale block is the version that spreads. Silent by construction —
 # nothing executes the README.
-echo "[16/28] README's documented hook == install.sh's HOOK_CMD"
+echo "[16/29] README's documented hook == install.sh's HOOK_CMD"
 v16=0
 if command -v python3 >/dev/null 2>&1; then
   hook_out=$(python3 - <<'HOOKPY'
@@ -1063,7 +1066,7 @@ if [ "$v16" -ne 0 ]; then fail=1; fi
 #   - a correction note that QUOTES the old wording ("(14) — invariants 1–14") is
 #     history, not a claim. Counts inside double quotes are ignored, which is the
 #     same supersede-don't-edit rule the CHANGELOG follows.
-echo "[17/28] Docs describing the invariants agree with the scripts"
+echo "[17/29] Docs describing the invariants agree with the scripts"
 v17=0
 if command -v python3 >/dev/null 2>&1; then
   doc_out=$(python3 - <<'DOCPY'
@@ -1214,7 +1217,7 @@ if [ "$v17" -ne 0 ]; then fail=1; fi
 # every skill named on the line and against the containing skill, and any hit
 # passes. A gate that flags correct prose gets disabled, which leaves you worse
 # off than no gate (docs/CONVENTIONS-LEDGER.md).
-echo "[18/28] Section references (§N) resolve to a real section"
+echo "[18/29] Section references (§N) resolve to a real section"
 v18=0
 if command -v python3 >/dev/null 2>&1; then
   ref_out=$(python3 scripts/lib/check-section-refs.py 2>&1) || v18=1
@@ -1246,8 +1249,14 @@ if [ "$v18" -ne 0 ]; then fail=1; fi
 # Runs on every invocation (~50 ms), not behind --self-test: a check you have to
 # remember to run is a convention. Invariant 18 was added WITHOUT a probe in the
 # very commit that introduced it, which is what this exists to make impossible.
-EXPECTED_UNPROBED="5 9 11 12 14"
-echo "[19/28] Every check has a known-bad, or a pinned reason it cannot"
+#
+# The pin SHRANK on 2026-09-09, from "5 9 11 12 14" to "5 9 12". 11 and 14 were
+# exempted as "diff-based: they compare against a merge base" — true, and not a reason:
+# a disposable worktree can COMMIT. Writing check 29's probe (also diff-based) produced
+# the mechanism, so the two stale exemptions had to go with it. A reason that stops
+# being true is the same defect every check here is about, aimed at this list.
+EXPECTED_UNPROBED="5 9 12"
+echo "[19/29] Every check has a known-bad, or a pinned reason it cannot"
 v19=0
 if command -v python3 >/dev/null 2>&1; then
   st_out=$(python3 - "$0" "$(dirname "$0")/check-negative-controls.sh" "$EXPECTED_UNPROBED" <<'STPY'
@@ -1266,7 +1275,7 @@ if len(totals) != 1:
 N = totals.pop()
 checks = set(range(1, N + 1))
 
-probed = {int(m) for m in re.findall(r'^probe (\d+) ', neg, re.M)}
+probed = {int(m) for m in re.findall(r'^probe(?:_committed)? (\d+) ', neg, re.M)}
 tail = neg.split("NOT COVERED", 1)
 declared = set()
 if len(tail) == 2:
@@ -1336,7 +1345,7 @@ if [ "$v19" -ne 0 ]; then fail=1; fi
 # is worse than no pass, because the reader follows whichever they loaded.
 # Bumping this hash is the forcing function to re-read both.
 ROUTER_AUDIT_SHA="a0bcc43c182e67ea"
-echo "[20/28] Router §AUDIT is pinned (bump only after re-reading sota/rules/01 §5 + rules/03)"
+echo "[20/29] Router §AUDIT is pinned (bump only after re-reading sota/rules/01 §5 + rules/03)"
 v20=0
 audit_sec=$(awk '/^## AUDIT mode — workflow/{f=1} f&&/^## Library map/{exit} f' skills/sota/SKILL.md)
 if [ -z "$audit_sec" ]; then
@@ -1374,7 +1383,7 @@ if [ "$v20" -ne 0 ]; then fail=1; fi
 # Tags are not fetched by default in a shallow CI checkout, so this SKIPS with a
 # note when the repo has no tags at all rather than failing every version at once:
 # a gate that cannot see its evidence must say so, not invent a verdict.
-echo "[21/28] Every CHANGELOG version below the top one is tagged"
+echo "[21/29] Every CHANGELOG version below the top one is tagged"
 v21=0
 seen21=0
 if [ -z "$(git tag -l 'v*' 2>/dev/null)" ]; then
@@ -1424,7 +1433,7 @@ if [ "$v21" -ne 0 ]; then fail=1; fi
 # SCOPE is skill files only. Prose files (README, docs/) legitimately show
 # checklist syntax inside samples; skill files are instructions an agent reads,
 # and a '- [ ]' there is a claim about what gets audited.
-echo "[22/28] No '- [ ]' checklist bullet stranded inside a code fence"
+echo "[22/29] No '- [ ]' checklist bullet stranded inside a code fence"
 v22=0
 seen22=0
 while IFS= read -r f; do
@@ -1482,7 +1491,7 @@ if [ "$v22" -ne 0 ]; then fail=1; fi
 # style: the ref for X.Y.Z must end in `/releases/tag/vX.Y.Z`. A ref pointing at
 # the PREVIOUS release's tag is the copy-paste this catches, and it is invisible
 # until someone clicks it.
-echo "[23/28] Every CHANGELOG version heading has its own link reference"
+echo "[23/29] Every CHANGELOG version heading has its own link reference"
 v23=0
 seen23=0
 for f in CHANGELOG.md docs/CHANGELOG-archive.md docs/CHANGELOG-archive-2.md; do
@@ -1557,7 +1566,7 @@ if [ "$v23" -ne 0 ]; then fail=1; fi
 # on the symlinks. A cap enforced on a file nobody loads would pass forever while
 # the constraint it stands for had quietly stopped applying. So the symlinks are
 # asserted too -- mode 120000 in the index, pointing at AGENTS.md.
-echo "[24/28] AGENTS.md is under its own ${MAX_AGENTS}-line target, and is what loads"
+echo "[24/29] AGENTS.md is under its own ${MAX_AGENTS}-line target, and is what loads"
 v24=0
 if [ ! -f AGENTS.md ]; then
   note "AGENTS.md is missing — the file this whole check exists for"
@@ -1632,7 +1641,29 @@ if [ "$v24" -eq 0 ]; then echo "    ok (${n24:-?} lines, CLAUDE.md + GEMINI.md s
 # `sota-code-security` rules/11 section 2.2a describes: if the regex drifts and
 # finds NO flags, undocumented becomes 0, 0 <= 27, and it passes green forever
 # while measuring nothing. The comparand and the denominator are both asserted.
-echo "[25/28] Undocumented eval flags have not increased (ratchet at ${MAX_UNDOC})"
+#
+# SECOND HALF, ROADMAP 41 (2026-09-09): THE RATCHET CANNOT SEE A WHOLE NEW RUNNER.
+# Demonstrated twice. "Documented" is a substring match, so a runner whose flag names
+# already appear here from OTHER runners moves the undocumented count by zero:
+# `run-routing-recall.py` shipped with six flags (`--selftest`, `--out`, `--model`, ...)
+# and every one of them was already in the file. The unit that goes missing is the
+# RUNNER, not the (file, flag) pair.
+#
+# THE FIX ROADMAP 41 PROPOSED IS NOT THE ONE TAKEN. Per-(file, flag) documentation was
+# rejected: evals/README.md is organised by the QUESTION each instrument measures, not
+# by runner, so per-runner flag sections are structure it does not have; it would reopen
+# the same red-on-27 problem one level down; and "which flag deserves a mention in which
+# runner's section" is the same judgement call the paragraph above already refuses to
+# mechanise. What IS mechanical, at the granularity the defect actually occurred at, is
+# PRESENCE OF THE RUNNER: every evals/*.py must be named in evals/README.md. No ratchet
+# and no pin -- it opened red on exactly TWO files when written (run-unscoped-audit.py,
+# run-build-safe-arms-guided.py), both real instruments, both fixed in the same change.
+# A gate that opens red on two things it does care about is the case CONVENTIONS-LEDGER
+# argues FOR; the 27-flag one was the case against.
+#
+# The match is boundary-anchored, not a bare substring: `run-build-safe.py` must not be
+# credited to a README that only mentions `run-build-safe-arms.py`.
+echo "[25/29] Eval runners documented, undocumented flags not increased (ratchet at ${MAX_UNDOC})"
 v25=0
 if command -v python3 >/dev/null 2>&1; then
   if flag_out=$(python3 - "$MAX_UNDOC" <<'PY'
@@ -1644,12 +1675,31 @@ except OSError as e:
     print(f"cannot read evals/README.md: {e}"); print("SCOPE 0"); sys.exit(1)
 scanned = 0
 undoc = []
-for f in sorted(glob.glob("evals/*.py")):
+runners = sorted(glob.glob("evals/*.py"))
+for f in runners:
     src = pathlib.Path(f).read_text(encoding="utf-8")
     for flag in sorted(set(re.findall(r'add_argument\(\s*["\'](--[a-z0-9-]+)["\']', src))):
         scanned += 1
         if flag not in readme:
             undoc.append(f"{f} {flag}")
+
+# ROADMAP 41: the runner itself, at the granularity the defect occurred at.
+# Boundary-anchored so run-build-safe.py is not credited to a mention of
+# run-build-safe-arms.py.
+unnamed = [f for f in runners
+           if not re.search(r'(?<![A-Za-z0-9_.\-])%s(?![A-Za-z0-9_])'
+                            % re.escape(f.split("/")[-1]), readme)]
+if not runners:
+    print("no evals/*.py found at all — the scan pattern drifted, and an empty scan")
+    print("makes both halves of this check pass for every possible input.")
+    print("SCOPE 0"); sys.exit(1)
+if unnamed:
+    print(f"{len(unnamed)} eval runner(s) are not named in evals/README.md — the file a")
+    print("reader opens to find out what an instrument measures. Describe what it")
+    print("measures there (a bare filename in a list is not a description):")
+    for u in unnamed:
+        print(f"  {u}")
+    print(f"SCOPE {scanned}"); print(f"RUNNERS {len(runners)}"); sys.exit(1)
 # rules/11 section 2.2a + section 2.2: the comparand and the denominator both.
 if scanned == 0:
     print("no add_argument flags found in evals/*.py at all — the scan pattern drifted,")
@@ -1661,22 +1711,24 @@ if len(undoc) > cap:
     print("what an instrument measures — or lower/raise MAX_UNDOC deliberately:")
     for u in undoc:
         print(f"  {u}")
-    print(f"SCOPE {scanned}"); sys.exit(1)
+    print(f"SCOPE {scanned}"); print(f"RUNNERS {len(runners)}"); sys.exit(1)
 if len(undoc) < cap:
     print(f"undocumented eval flags fell to {len(undoc)} — lower MAX_UNDOC to {len(undoc)}")
     print("so the ratchet keeps its grip (a slack ratchet is not a ratchet).")
-    print(f"SCOPE {scanned}"); sys.exit(1)
+    print(f"SCOPE {scanned}"); print(f"RUNNERS {len(runners)}"); sys.exit(1)
 print(f"SCOPE {scanned}")
+print(f"RUNNERS {len(runners)}")
 PY
   ); then :; else v25=1; fi
   n25=$(printf '%s\n' "$flag_out" | sed -n 's/^SCOPE //p')
+  nr25=$(printf '%s\n' "$flag_out" | sed -n 's/^RUNNERS //p')
   while IFS= read -r l; do
-    case "$l" in SCOPE\ *|'') ;; *) note "$l" ;; esac
+    case "$l" in SCOPE\ *|RUNNERS\ *|'') ;; *) note "$l" ;; esac
   done <<EOF25
 $flag_out
 EOF25
   scope "${n25:-0}" "eval CLI flags" || v25=1
-  if [ "$v25" -eq 0 ]; then echo "    ok (${n25:-0} flags scanned, ${MAX_UNDOC} undocumented — unchanged)"; fi
+  if [ "$v25" -eq 0 ]; then echo "    ok (${nr25:-0} runners named, ${n25:-0} flags scanned, ${MAX_UNDOC} undocumented — unchanged)"; fi
 else
   note "SKIPPED (python3 not found; CI always has it)"
   echo "    ok (skipped)"
@@ -1696,7 +1748,7 @@ if [ "$v25" -ne 0 ]; then fail=1; fi
 # else is derived. This asserts the derivation, which is the only part a
 # machine can check — the ordering and the "what to do first" prose stay
 # human, which is why the table exists at all.
-echo "[26/28] Roadmap: open count, open list and priorities table agree"
+echo "[26/29] Roadmap: open count, open list and priorities table agree"
 v26=0
 if command -v python3 >/dev/null 2>&1; then
   rm_out=$(python3 - "docs/ROADMAP.md" <<'RMPY'
@@ -1767,7 +1819,7 @@ if [ "$v26" -ne 0 ]; then fail=1; fi
 # singular, while three existed and one had been resolved the day before in a
 # different entry. Same restated-status shape as invariant 26, one file over.
 # So a deferral carries a marker, and the marker carries its trigger.
-echo "[27/28] Every ADOPTION-LOG deferral names its revisit trigger"
+echo "[27/29] Every ADOPTION-LOG deferral names its revisit trigger"
 v27=0
 if command -v python3 >/dev/null 2>&1; then
   df_out=$(python3 - "docs/ADOPTION-LOG.md" <<'DFPY'
@@ -1820,7 +1872,7 @@ if [ "$v27" -ne 0 ]; then fail=1; fi
 # is where a reader opening the set looks. Selecting cases by outcome is the
 # defect this guards (`sota-llm-engineering` rules/01 §8): a set built from what
 # a model got wrong measures the selection, not the system.
-echo "[28/28] Every evals/cases/*.jsonl declares a SELECTION RULE"
+echo "[28/29] Every evals/cases/*.jsonl declares a SELECTION RULE"
 v28=0
 n28=0; bad28=""
 for f in evals/cases/*.jsonl; do
@@ -1833,11 +1885,196 @@ scope "$n28" "eval case sets" || v28=1
 if [ "$v28" -eq 0 ]; then echo "    ok ($n28 case sets, each declaring how its cases were chosen)"; fi
 if [ "$v28" -ne 0 ]; then fail=1; fi
 
+# --- 29. A release that changes the routing surface says it re-ran routing ---
+# ROADMAP 44. A skill added in v1.35.0 silently took a neighbour's traffic and was
+# live for a day. `sota-skill-security` contains "instruction file" twice and neither
+# "token" nor "budget", so the description classifier matched the NOUN in
+# `r1_token_count` over its QUESTION and the case inverted from
+# sota-llm-engineering 3/3 to sota-skill-security 3/3. Found only because someone
+# ran the regression set for the second time ever.
+#
+# NOTHING COULD SEE IT. Invariant 4 checks a description exists and is under the cap,
+# 7 that the skill is in the routing table, 15 that it is in the library map. All three
+# passed. A description is the ENTIRE auto-load classifier, and adding one competes with
+# every existing one for traffic -- a change to the shared surface, dressed as an
+# addition to a private one.
+#
+# WHY THIS IS NOT A CI GATE ON THE RUN ITSELF: routing costs live API calls, and
+# docs/CONVENTIONS-LEDGER.md's standing argument is that a gate expensive enough to be
+# disabled is worse than none. So this gates the DECLARATION, exactly as invariant 14
+# gates the front-door check and invariant 11 gates the sweep -- an escape hatch that
+# is a statement which must be TRUE, not a checkbox.
+#
+# It fires only when BOTH hold: this is a release commit (VERSION changed against the
+# merge base, the same detection invariant 14 uses) AND the extracted (name, description)
+# map differs from the merge base's. Comparing the extracted MAP, not the diff, is
+# deliberate: a description can be a folded block, so `+description:` in a diff misses
+# an edit to its second line, and a renamed or deleted skill changes routing without
+# touching any surviving description at all.
+#
+# The declaration names an artifact, and the artifact is checked: it must exist and
+# must mention the regression case set, so declaring an unrelated file fails. The run
+# is cheap -- 2 cases x 3 samples x 2 arms is about 12 calls -- which is what makes a
+# release-time trigger the right price for a defect that shipped for a day.
+echo "[29/29] A release changing skill descriptions declares a routing check"
+v29=0
+base29=""
+for ref in origin/main main; do
+  if git rev-parse --verify -q "$ref" >/dev/null 2>&1; then
+    base29=$(git merge-base HEAD "$ref" 2>/dev/null || true)
+    [ -n "$base29" ] && break
+  fi
+done
+if [ -z "$base29" ] || [ "$base29" = "$(git rev-parse HEAD)" ]; then
+  note "SKIPPED (no merge base to diff against, or nothing ahead of it)"
+  echo "    ok (skipped)"
+elif ! git diff --name-only "$base29"...HEAD | grep -qx 'VERSION'; then
+  echo "    ok (not a release commit — VERSION unchanged)"
+elif ! command -v python3 >/dev/null 2>&1; then
+  note "SKIPPED (python3 not found; CI always has it)"
+  echo "    ok (skipped)"
+else
+  # THE SECTION IS READ BY PYTHON, NOT PIPED IN. The first draft did
+  # `printf '%s' "$sec29" | python3 - "$base29" <<'ROUTEPY'`, where the heredoc and the
+  # pipe both claim stdin: the heredoc wins, python reads its own SCRIPT, and
+  # `sys.stdin.read()` returns "". The declaration was therefore ALWAYS empty, so the
+  # escape hatch could never fire and a correct release would have been failed. Probe 29
+  # passed on that build (it asserts the no-declaration branch, which was the only
+  # reachable one); probe 29b is what caught it, which is the argument for probing both
+  # sides of an escape hatch and not just the failure it is meant to produce.
+  routed_out=$(python3 - "$base29" <<'ROUTEPY'
+import pathlib, re, subprocess, sys
+
+base = sys.argv[1]
+
+# Read the release's own CHANGELOG section here rather than accepting it on stdin: this
+# script arrives on stdin itself, so anything piped alongside it is discarded silently.
+ver = pathlib.Path("VERSION").read_text(encoding="utf-8").strip()
+section, in_sec = [], False
+for line in pathlib.Path("CHANGELOG.md").read_text(encoding="utf-8").splitlines():
+    if line.startswith(f"## [{ver}]"):
+        in_sec = True
+    elif in_sec and line.startswith("## ["):
+        break
+    if in_sec:
+        section.append(line)
+section = "\n".join(section)
+
+FM = re.compile(r'\A---\r?\n(.*?)\r?\n---', re.S)
+
+
+def descs(read):
+    """{skill dir: (name, description)} — extracted, never diffed. Handles an inline
+    scalar and a folded/literal block; an unparseable frontmatter is recorded as a
+    distinct sentinel rather than dropped, so a file that BECOMES unparseable counts
+    as a change instead of silently matching."""
+    out = {}
+    for path in sorted(pathlib.Path("skills").glob("*/SKILL.md")):
+        raw = read(str(path))
+        if raw is None:
+            continue
+        m = FM.match(raw)
+        if not m:
+            out[path.parent.name] = ("<unparseable frontmatter>", "")
+            continue
+        fm, name, desc, mode = m.group(1), "", [], None
+        for line in fm.splitlines():
+            k = re.match(r'^(name|description):\s*(.*)$', line)
+            if k:
+                mode = k.group(1)
+                val = k.group(2).strip()
+                if mode == "name":
+                    name = val
+                elif val in (">", ">-", "|", "|-", ""):
+                    desc = []
+                else:
+                    desc = [val]; mode = None
+                continue
+            if mode == "description" and (line.startswith(" ") or line.startswith("\t")):
+                desc.append(line.strip())
+            elif line and not line[0].isspace():
+                mode = None
+        out[path.parent.name] = (name, " ".join(desc).strip())
+    return out
+
+
+def at_base(p):
+    try:
+        return subprocess.check_output(["git", "show", f"{base}:{p}"],
+                                       stderr=subprocess.DEVNULL).decode("utf-8")
+    except subprocess.CalledProcessError:
+        return None
+
+
+def on_disk(p):
+    try:
+        return pathlib.Path(p).read_text(encoding="utf-8")
+    except OSError:
+        return None
+
+
+now, then = descs(on_disk), descs(at_base)
+if not now:
+    print("no skills/*/SKILL.md found at all — the scan drifted, and an empty scan makes")
+    print("this check pass for every possible release.")
+    print("SCOPE 0"); sys.exit(1)
+
+changed = sorted(set(now) ^ set(then)) + sorted(
+    k for k in set(now) & set(then) if now[k] != then[k])
+print(f"SCOPE {len(now)}")
+if not changed:
+    print(f"    ok (release, {len(now)} descriptions unchanged since the merge base)")
+    sys.exit(0)
+
+decl = ""
+for line in section.splitlines():
+    if re.match(r'^\*\*Routing checked:\*\*', line, re.I):
+        decl = line
+        break
+if not decl:
+    print("this release changes the routing surface — the description classifier —")
+    print("for: " + ", ".join(changed))
+    print("A description is the whole auto-load classifier, so adding or editing one")
+    print("competes for every neighbour's traffic (ROADMAP 44). Run the regression set:")
+    print("  python3 evals/run-desc-routing.py --samples 3 \\")
+    print("      --cases evals/cases/desc-routing-regressions.jsonl")
+    print("then add to this release's CHANGELOG section (RELEASING.md §2c):")
+    print("  **Routing checked:** evals/results/<date>/<write-up>.md")
+    sys.exit(1)
+
+target = re.sub(r'^\*\*Routing checked:\*\*', '', decl, flags=re.I)
+target = target.strip().strip('`* .')
+if not target:
+    print("**Routing checked:** names no artifact")
+    sys.exit(1)
+art = pathlib.Path(target)
+if not art.exists():
+    print(f"**Routing checked:** names {target}, which does not exist in the tree")
+    sys.exit(1)
+body = art.read_text(encoding="utf-8", errors="replace")
+if "desc-routing-regressions" not in body:
+    print(f"{target} exists but never mentions desc-routing-regressions — a declaration")
+    print("that resolves to an unrelated file is not evidence the routing set was run.")
+    sys.exit(1)
+print(f"    ok (release, {len(changed)} description(s) changed, routing checked in {target})")
+ROUTEPY
+  ) || v29=1
+  n29=$(printf '%s\n' "$routed_out" | sed -n 's/^SCOPE //p')
+  while IFS= read -r l; do
+    case "$l" in SCOPE\ *|'    ok ('*|'') ;; *) note "$l" ;; esac
+  done <<EOF29
+$routed_out
+EOF29
+  scope "${n29:-0}" "skill descriptions" || v29=1
+  if [ "$v29" -eq 0 ]; then printf '%s\n' "$routed_out" | grep '^    ok ('; fi
+fi
+if [ "$v29" -ne 0 ]; then fail=1; fi
+
 # --- Result ---------------------------------------------------------------
 echo
 if [ "$fail" -ne 0 ]; then
   echo "FAIL: repository invariants violated (see above)."
   exit 1
 fi
-printf 'PASS: all repository invariants satisfied (28 checks over %s skill files / %s rules files, %ss).\n' \
+printf 'PASS: all repository invariants satisfied (29 checks over %s skill files / %s rules files, %ss).\n' \
   "${seen1:-?}" "${seen2:-?}" "$((SECONDS - START_SECONDS))"

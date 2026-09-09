@@ -19,7 +19,18 @@ every time: are the skills reachable, is the routing hook installed, does the
 profile symlink resolve, is there a licence under *any* name, which gate
 mechanisms exist, is a hook actually **installed** rather than merely configured,
 and — from real run conclusions — has CI ever *executed* and ever *rejected*
-anything. It is strictly read-only and exits 1 if any check FAILs.
+anything. Its section F adds one thing about the **machine** rather than the repo:
+**what this box's default searcher silently skips** (check 13). Every searcher excludes
+something quietly — a symlinked directory, a `.gitignore`'d path, a dot-directory — and the
+failure mode is a *clean absence*, which is exactly the answer a sweep was hoping to prove.
+So it runs a four-match fixture under `$TMPDIR` and names the exclusions as **INFO**;
+nothing fails for them, because `rg` skipping ignored files is a feature. The one thing
+that *can* fail there is the **positive control**: a searcher that cannot find the plain
+file is broken, and its absences are not evidence. Set `SOTA_SEARCHERS` to choose which
+commands it probes.
+
+It is read-only with respect to your repo and configuration (section F's fixture lives in
+`$TMPDIR` and is removed) and exits 1 if any check FAILs.
 
 **The prompt below** does the half a script cannot: whether the agent file's
 content is *meaningful* (check 4), whether its factual claims are still *true*
@@ -130,8 +141,9 @@ check for `docker` misses podman, `LICENSE` misses `LICENSE-MPL`,
 
 ## Output
 
-A table: check | PASS / FAIL / PARTIAL / UNVERIFIED / N/A | evidence observed.
-PARTIAL and N/A each require a one-line reason. UNVERIFIED must state what
+A table: check | PASS / FAIL / PARTIAL / UNVERIFIED / INFO / N/A | evidence observed.
+PARTIAL and N/A each require a one-line reason. INFO is the script's own (section F);
+it is an observation about this machine, never a grade. UNVERIFIED must state what
 prevented verification and your sample size where relevant.
 Then a short ordered list of what to fix — described, not done — each marked
 [local] or [upstream] per check 12.

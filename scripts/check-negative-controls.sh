@@ -320,6 +320,16 @@ probe 24b "CLAUDE.md is a copy, not a symlink to AGENTS.md" "not a symlink (1200
 ( cd "$WT" && perl -pi -e 's/^(    ap\.add_argument\("--out", default=None\))/    ap.add_argument("--brand-new-undocumented", action="store_true")\n$1/' evals/run-completeness.py )
 probe 25 "a new eval flag is undocumented in evals/README.md" "undocumented eval flags rose to"
 
+# 25b — ROADMAP 41's half: a whole new RUNNER that never reaches evals/README.md.
+# The flag probe above cannot catch this and that is the point: the runner it replays
+# (run-routing-recall.py) shipped six flags whose names were already in the file from
+# other runners, so the undocumented count did not move by one. Named `.py` under
+# evals/ because that is the scan's own denominator; the string is chosen so no
+# substring of it appears in the README.
+( cd "$WT" && printf '#!/usr/bin/env python3\n"""probe."""\n' > evals/run-zzz-probe-unnamed.py )
+probe 25b "a whole new eval runner is not named in evals/README.md" "are not named in evals/README.md"
+rm -f "$WT/evals/run-zzz-probe-unnamed.py"
+
 # 26 — the drift that actually happened, three times in one session: the priorities
 # table left pointing at an item its own ledger had closed. Mutate the TABLE, not the
 # ledger, so the probe exercises the arm that failed in the field rather than the
@@ -362,6 +372,114 @@ probe 27 "a deferral with no revisit trigger" "names no revisit trigger"
 ( cd "$WT" && perl -pi -e 's/SELECTION RULE/how it was built/ if $. < 40' evals/cases/desc-routing-regressions.jsonl \
     && git add evals/cases/desc-routing-regressions.jsonl >/dev/null 2>&1 )
 probe 28 "an eval case set declares no SELECTION RULE" "no 'SELECTION RULE' comment"
+
+# --- probes for a DIFF-BASED check --------------------------------------------
+# Checks 11, 14 and 29 read `git diff <merge-base>...HEAD`, so a mutation in the
+# working tree is invisible to them: they see a clean HEAD and correctly report "not
+# a release commit". 11 and 14 sat unprobed for that reason, declared as "needs state
+# a worktree lacks" — and that reason was WRONG, which is why writing 29's probe had
+# to close them too. A worktree does not lack a merge base; it lacks a COMMIT, and
+# this harness can make one, on a detached HEAD that nothing references and `cleanup`
+# throws away with the worktree. EXPECTED_UNPROBED drops 11 and 14 in the same change
+# (invariant 19 fails on a pin that still exempts a check now probed).
+#
+# It needs its own probe function for two reasons, and neither is a relaxation:
+#   - `probe`'s mutation-took assertion is `git status --porcelain` non-empty, which a
+#     committed mutation clears. This asserts HEAD MOVED and that the commit touched
+#     files — strictly more than a dirty tree.
+#   - `restore`'s `git reset --hard HEAD` would preserve the probe commit, leaking it
+#     into every later probe. This resets to the ORIGINAL sha, captured before any.
+WT_ORIG=$(git -C "$WT" rev-parse HEAD)
+wt_commit() {  # <message> — commit whatever the caller staged/changed
+  # --no-verify is REQUIRED, not a shortcut: this repo installs check-invariants.sh as a
+  # pre-commit hook, and every mutation below is deliberately invariant-breaking. Without
+  # it the hook rejects the commit, wt_commit aborts, and all three diff-based probes
+  # plus the whole of part B never run — which is exactly what happened on the first
+  # draft, loudly, because the abort is FATAL rather than a warning.
+  ( cd "$WT" && git add -A >/dev/null 2>&1 \
+      && git -c user.email=probe@invalid -c user.name="negative control" \
+             commit -q --no-verify -m "$1" ) \
+    || { echo "FATAL: probe commit failed — the diff-based probes below would be inert."; exit 1; }
+}
+probe_committed() {  # <id> <name> <expected substring>  — commit already made
+  local id="$1" name="$2" want="$3"
+  tested=$((tested + 1))
+  local head; head=$(git -C "$WT" rev-parse HEAD)
+  if [ "$head" = "$WT_ORIG" ] || [ -z "$(git -C "$WT" diff --name-only "$WT_ORIG" "$head")" ]; then
+    echo "  [$id] $name — PROBE BROKEN: no commit landed on top of the worktree HEAD."
+    echo "        This is a defect in the probe, not evidence about the gate."
+    failed=$((failed + 1))
+  else
+    run_gate
+    if [ "$GATE_RC" -eq 0 ]; then
+      echo "  [$id] $name — NOT CAUGHT: the gate still passed. This check is INERT."
+      failed=$((failed + 1))
+    elif case "$GATE_OUT" in (*"$want"*) true ;; (*) false ;; esac; then
+      echo "  [$id] $name — caught"
+      caught=$((caught + 1))
+    else
+      echo "  [$id] $name — FALSE PASS: gate failed, but not for this reason."
+      echo "        expected to see: $want"
+      printf '%s\n' "$GATE_OUT" | grep -E '^ +[A-Z]' | head -3 | sed 's/^ */        got: /'
+      failed=$((failed + 1))
+    fi
+  fi
+  ( cd "$WT" && git reset -q --hard "$WT_ORIG" && git clean -fdq ) >/dev/null 2>&1 \
+    || { echo "FATAL: could not rewind the probe worktree to $WT_ORIG."; exit 1; }
+  cp "$REPO/$GATE" "$WT/$GATE"
+  cmp -s "$REPO/$GATE" "$WT/$GATE" || { echo "FAIL: gate copy did not survive rewind"; exit 1; }
+}
+
+# 29 — a release that edits a skill description and declares no routing check. This
+# is v1.35.0's own defect replayed: sota-skill-security shipped a description carrying
+# "instruction file" twice, took r1_token_count's traffic from sota-llm-engineering
+# 3/3 → 0/3, and was live for a day with invariants 4, 7 and 15 all green.
+#
+# Bumping VERSION also trips the other release-time checks (5 on the manifests, 14 on
+# the front door, 21/23 on the CHANGELOG). That is collateral, not a false pass: the
+# assertion is check 29's own sentence, which appears only if check 29 fired. A probe
+# whose mutation trips one gate and is asserted against another is the FALSE PASS this
+# harness refuses, and this is not that.
+( cd "$WT" && perl -pi -e 's/^(description: )/$1Probe rewrite of the routing surface. / if $. < 10' \
+      skills/sota-golang/SKILL.md \
+    && printf '99.0.0\n' > VERSION )
+wt_commit "probe: a release that rewrites a skill description"
+# The expected string is a SENTENCE THE CHECK PRINTS, not its [29/29] heading. The first
+# draft asserted "declares no routing check", which is the heading's wording reversed and
+# appears nowhere in the diagnostic — the probe read FALSE PASS while the gate was
+# working perfectly. Assert on output, never on a label you wrote from memory.
+probe_committed 29 "a release changes a description and declares no routing check" \
+  "this release changes the routing surface"
+
+# 29b — the escape hatch has to be TRUE, not merely present. Same release, this time
+# WITH a **Routing checked:** line that resolves to a file which exists and has
+# nothing to do with routing. Invariant 11's escapes are declarations-that-must-hold;
+# so is this one, and a declaration nobody resolves is a checkbox.
+( cd "$WT" && perl -pi -e 's/^(description: )/$1Probe rewrite of the routing surface. / if $. < 10' \
+      skills/sota-golang/SKILL.md \
+    && printf '99.0.0\n' > VERSION \
+    && perl -0777 -pi -e 's/^## \[/## [99.0.0] - 2099-01-01\n\n**Routing checked:** VERSION\n\n## [/m' \
+      CHANGELOG.md )
+wt_commit "probe: a release declaring a routing check that resolves nowhere"
+probe_committed 29b "a routing declaration that resolves to an unrelated file" \
+  "never mentions desc-routing-regressions"
+
+# 11 — LAST-VERIFIED moved by an ordinary edit. The stamp records a FULL
+# re-verification of the library against primary sources; the 2026-07-08 sweep touched
+# 100 skill files. Both escapes must be absent for this to fire: the diff is one file,
+# not sweep-shaped, and the CHANGELOG says nothing about the stamp.
+( cd "$WT" && printf '2099-12-31\n' > LAST-VERIFIED )
+wt_commit "probe: move the freshness stamp with no sweep behind it"
+probe_committed 11 "LAST-VERIFIED moved without a sweep" \
+  "LAST-VERIFIED changed, but this diff touches only"
+
+# 14 — a release that declares no front-door terms. Its own defect replayed: at the
+# v1.19.7 cut, five capabilities had shipped across three releases with zero mentions
+# anywhere a reader looks.
+( cd "$WT" && printf '99.0.0\n' > VERSION )
+wt_commit "probe: a release with no front-door declaration"
+probe_committed 14 "a release declares no front-door check" \
+  "declares no front-door check"
 
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
@@ -430,7 +548,11 @@ run_vs() {  # sets VS_OUT / VS_RC
   # Run the fixture's copy, so the script's self-relative library lookup resolves
   # inside the fixture rather than against this repo (which would make every probe
   # compare the fixture's 3 skills against the real tree's 42).
+  # SOTA_SEARCHERS pinned to one searcher so section F is deterministic across
+  # machines (whether rg or ugrep happens to be installed must not change a probe's
+  # result), and so a probe can swap in a blind one.
   VS_OUT=$( cd "$VS/repo" && CLAUDE_CONFIG_DIR="$VS/home" PATH="$VS/bin:$PATH" \
+            SOTA_SEARCHERS="${VS_SEARCHERS:-grep}" \
             bash "$VS/repo/scripts/verify-setup.sh" 2>&1 ) || VS_RC=$?
 }
 
@@ -537,6 +659,16 @@ exit 0
 GH
 chmod +x "$VS/bin/gh";                          vs_probe "CI history is all-skipped"      "10a. CI has executed"
 
+# Section F's ONE failing branch: the positive control. Every other row there is INFO
+# by design — `rg` skipping .gitignore'd files is a feature, not a defect — so the only
+# thing that can be wrong is a searcher that finds nothing at all, which makes every
+# absence it reports worthless (`sota-shell-scripting` rules/06 §2). A stub that always
+# exits 1 is exactly that instrument.
+printf '#!/bin/sh\nexit 1\n' > "$VS/bin/blindgrep"; chmod +x "$VS/bin/blindgrep"
+VS_SEARCHERS=blindgrep
+vs_probe "a searcher that cannot even find the control" "13. searcher: blindgrep"
+VS_SEARCHERS=""
+
 # --- result ---------------------------------------------------------------
 echo
 if [ "$tested" -eq 0 ]; then
@@ -548,10 +680,9 @@ if [ "$failed" -ne 0 ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28 (23 of 28)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29 (26 of 29)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
-echo "        11, 14      — diff-based: they compare against a merge base."
 echo "        12          — mtime-based: needs a rendered asset older than its source."
-echo "      verify-setup.sh: checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. Checks 5"
+echo "      verify-setup.sh: checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13. Checks 5"
 echo "      and 11 are judgement (N/A by design) and 10b/12 need a different fixture."

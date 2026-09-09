@@ -1,0 +1,21 @@
+judge=anthropic/claude-sonnet-5  pairs=17  samples=3  temp=0.0
+corpus: 13 skills, 1,495,563 chars
+excluded (single-skill, no pair to conflict): single_go_error_control, single_ux_copy_control
+
+calibration (the judge is a control — watch it separate before trusting it):
+  planted contradiction -> 1 conflict(s)   (needs >= 1)
+  benign pair           -> 0 conflict(s)   (needs == 0)
+  ok — separated.
+
+  mcp_server_audit           sota-code-security       sota-sandboxing          per-sample=[0, 0, 0]
+  mcp_server_audit           sota-code-security       sota-threat-modeling     per-sample=[0, 0, 0]
+  mcp_server_audit           sota-sandboxing          sota-threat-modeling     per-sample=[0, 0, 0]
+  k8s_cluster_audit          sota-kubernetes          sota-network-security    per-sample=[0, 0, 1]  <-- CONFLICT REPORTED
+  k8s_cluster_audit          sota-kubernetes          sota-sandboxing          per-sample=[0, 0, 0]
+  k8s_cluster_audit          sota-network-security    sota-sandboxing          per-sample=[1, 1, 1]  <-- CONFLICT REPORTED
+  next_security_review       sota-frontend-design     sota-javascript-typescript per-sample=[0, 2, 0]  <-- CONFLICT REPORTED
+  next_security_review       sota-frontend-design     sota-performance         per-sample=[1, 0, 0]  <-- CONFLICT REPORTED
+  next_security_review       sota-frontend-design     sota-web-frameworks      per-sample=[0, 0, 0]
+  next_security_review       sota-javascript-typescript sota-performance         per-sample=[0, 0, 0]
+judge call failed after 4 tries: <HTTPError 402: 'Payment Required'>
+A run that silently skipped a pair would under-report the conflict rate, so this aborts rather than continuing.

@@ -7,9 +7,12 @@
 # .pre-commit-config.yaml with no installed hook is a file, not a control; a CI
 # workflow whose every run is "skipped" is a gate on paper.
 #
-# STRICTLY READ-ONLY. It creates, modifies and deletes nothing — run it on a repo
-# you do not trust yet. Every check reports what it OBSERVED; anything it could
-# not actually run is UNVERIFIED with the reason, never a pass.
+# READ-ONLY WITH RESPECT TO THE REPO AND YOUR CONFIGURATION. It creates, modifies and
+# deletes nothing in either — run it on a repo you do not trust yet. The one exception
+# is section F, which builds a throwaway fixture under $TMPDIR and removes it: a
+# BEHAVIOURAL probe cannot be run against nothing. Every check reports what it
+# OBSERVED; anything it could not actually run is UNVERIFIED with the reason, never a
+# pass.
 #
 # WHAT STAYS IN THE PROMPT (docs/VERIFY-SETUP.md), because a script cannot do it:
 #   - check 4's content judgement: does the agent file carry real build/test
@@ -41,6 +44,9 @@ while [ $# -gt 0 ]; do
       echo "usage: verify-setup.sh [--runs N] [--reach-only]"
       echo "  --runs N       CI runs to sample for check 10 (default 60)"
       echo "  --reach-only   section A only: is the library actually reaching this machine?"
+      echo
+      echo "env: SOTA_SEARCHERS   space-separated searchers for section F"
+      echo "                      (default: grep rg ugrep)"
       exit 0 ;;
     *) echo "unknown argument: $1 (try --help)" >&2; exit 2 ;;
   esac
@@ -54,7 +60,7 @@ cd "$REPO_ROOT"
 
 CLAUDE_HOME="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 
-n_pass=0; n_fail=0; n_partial=0; n_unver=0; n_na=0
+n_pass=0; n_fail=0; n_partial=0; n_unver=0; n_na=0; n_info=0
 
 row() {  # <status> <check> <evidence>
   case "$1" in
@@ -63,6 +69,7 @@ row() {  # <status> <check> <evidence>
     PARTIAL)    n_partial=$((n_partial + 1)) ;;
     UNVERIFIED) n_unver=$((n_unver + 1)) ;;
     N/A)        n_na=$((n_na + 1)) ;;
+    INFO)       n_info=$((n_info + 1)) ;;
   esac
   printf '%-11s %-34s %s\n' "$1" "$2" "$3"
 }
@@ -382,8 +389,127 @@ else
   row "N/A" "12. remote" "not a git repository"
 fi
 
+# --- F. What does this machine's searcher silently exclude? ----------------
+# ROADMAP 45. Every conclusion an agent reaches by searching a tree rests on the
+# searcher's defaults, and every searcher excludes something QUIETLY. Measured on one
+# 4-match fixture: `rg` at its defaults found 1, this environment's `grep` found 3,
+# explicit flags found 4 — and that `grep` was a shell FUNCTION wrapping ugrep, except
+# for `-z`/`-Z`, which it routed to BSD grep instead. The failure mode is the worst
+# available: a clean absence, which is exactly the answer you were hoping to prove.
+#
+# THE PROPOSAL WAS "CHECK WHETHER ugrep IS INSTALLED" AND THAT IS THE WRONG SHAPE. The
+# library requires no particular searcher, so a presence check is N/A for a non-problem
+# — the kind of row people learn to skip, which docs/CONVENTIONS-LEDGER.md argues is
+# worse than no row. What is worth reporting is BEHAVIOUR: given a tree with a match in
+# each of the four places a default commonly skips, which ones does your searcher see?
+#
+# IS THE OPERATOR'S TOOLBOX IN THIS SCRIPT'S REMIT? Yes, decided 2026-09-09. Section A
+# already reads $CLAUDE_HOME — this script's subject was never only the repo, it is
+# "will this setup actually work here". A verification tool that reports a false
+# absence is a setup defect, and it is the one defect on this list that corrupts every
+# other answer an agent gives afterwards.
+#
+# INFO, NOT A GRADE. There is no correct answer: `rg` skipping .gitignore'd files is a
+# feature. So the exclusions are named and nothing fails for them. Exactly one thing
+# CAN fail — the POSITIVE CONTROL. A searcher that cannot find the plain file is not
+# excluding anything, it is broken, and per `sota-shell-scripting` rules/06 §2 an
+# absence from a broken instrument is not evidence. That is also the seam the negative
+# control uses: SOTA_SEARCHERS names the commands to probe.
+#
+# WHAT THIS UNDER-REPORTS, stated so the green is not read as more than it is. This
+# script runs under bash, so `grep` here resolves to the BINARY. An interactive shell
+# can have `grep` as a FUNCTION or alias over something else entirely — that is not
+# hypothetical, it is how the 4-match measurement above was produced — and this probe
+# cannot see it. A row saying `grep` sees all four means the binary does. If your shell
+# wraps it, run this section's fixture from that shell too.
+section "F. Searcher behaviour (what an absence from this machine is worth)"
+
+sf_dir=""
+# `return 0` is load-bearing. As `{ [ -n "$sf_dir" ] && rm -rf "$sf_dir"; }` this returns
+# 1 whenever sf_dir is empty — which it deliberately is once the fixture has been removed
+# — and **a bash EXIT trap's status becomes the script's exit status**. So a machine with
+# every check passing exited 1. It went unnoticed for one run because the checks were read
+# through `| grep`, and `$?` after a pipeline is the last stage's (`sota-shell-scripting`
+# rules/01 §3). The negative-control harness caught it on the very next run, as a
+# known-good fixture that stopped passing.
+sf_cleanup() { [ -n "$sf_dir" ] && rm -rf "$sf_dir"; return 0; }
+trap sf_cleanup EXIT INT TERM
+
+if ! sf_dir=$(mktemp -d 2>/dev/null); then
+  row "UNVERIFIED" "13. searcher exclusions" "could not create a fixture under \$TMPDIR"
+else
+  # The needle is a nonsense string so it cannot collide with anything real, and it is
+  # BUILT rather than written literally: a searcher that indexes this script must not
+  # be able to match the file it is about to be tested with.
+  sf_needle="zq$(printf 'x')7needle$(printf 'x')kv"
+  # THE SYMLINK TARGET MUST LIVE OUTSIDE THE SEARCHED ROOT. The first draft put it in
+  # $sf_dir/real and symlinked $sf_dir/linked -> real, inside the same root — so every
+  # searcher found it by walking `real/` directly and the symlink row PASSED for tools
+  # that skip symlinks entirely. A vacuous assertion (`sota-testing` rules/06 §6.3):
+  # true, and not evidence. Caught by measuring the row by hand against
+  # `sota-shell-scripting` rules/06 §2 an hour after this check shipped green.
+  mkdir -p "$sf_dir/outside" "$sf_dir/scan/gitignored" "$sf_dir/scan/.hidden"
+  printf '%s\n' "$sf_needle" > "$sf_dir/outside/behind-a-symlink.txt"
+  printf '%s\n' "$sf_needle" > "$sf_dir/scan/plain.txt"
+  printf '%s\n' "$sf_needle" > "$sf_dir/scan/gitignored/ignored.txt"
+  printf '%s\n' "$sf_needle" > "$sf_dir/scan/.hidden/hidden.txt"
+  ln -s ../outside "$sf_dir/scan/linked" 2>/dev/null || true
+  printf 'gitignored/\n' > "$sf_dir/scan/.gitignore"
+  # A real repo, because rg's ignore handling only engages inside one.
+  ( cd "$sf_dir/scan" && git init -q . >/dev/null 2>&1 ) || true
+
+  # Assert the fixture is what the report will claim it is. A fixture that silently
+  # failed to build (no symlink support, no git) would make every searcher look
+  # equally blind and the row would blame the tool.
+  sf_broken=""
+  [ -L "$sf_dir/scan/linked" ] || sf_broken="$sf_broken symlink"
+  [ -d "$sf_dir/scan/.git" ]   || sf_broken="$sf_broken git-repo"
+  # And the target must be reachable ONLY through the link, or the row is vacuous.
+  if [ -e "$sf_dir/scan/outside" ]; then sf_broken="$sf_broken target-also-inside-root"; fi
+
+  sf_searchers="${SOTA_SEARCHERS:-grep rg ugrep}"
+  sf_any=0
+  for sf_cmd in $sf_searchers; do
+    command -v "$sf_cmd" >/dev/null 2>&1 || continue
+    sf_any=1
+    # Defaults only — the whole question is what the command you would actually type
+    # excludes. -r for grep because a bare grep does not recurse; rg/ugrep recurse
+    # already. No other flags: adding -R or --hidden would measure the fix, not the
+    # default.
+    case "$sf_cmd" in
+      grep) sf_hits=$( ( cd "$sf_dir/scan" && "$sf_cmd" -rl "$sf_needle" . 2>/dev/null ) || true ) ;;
+      *)    sf_hits=$( ( cd "$sf_dir/scan" && "$sf_cmd" -l "$sf_needle" . 2>/dev/null ) || true ) ;;
+    esac
+    sf_missed=""
+    for sf_want in plain.txt behind-a-symlink.txt ignored.txt hidden.txt; do
+      case "$sf_hits" in
+        (*"$sf_want"*) ;;
+        (*) sf_missed="$sf_missed $sf_want" ;;
+      esac
+    done
+    sf_label="13. searcher: $sf_cmd"
+    case "$sf_missed" in
+      (*plain.txt*)
+        # The positive control. Nothing else in this section can fail.
+        row "FAIL" "$sf_label" "found NOTHING in the plain file — this searcher's absences are not evidence" ;;
+      ("")
+        row "PASS" "$sf_label" "sees all four: plain, symlinked dir, gitignored, hidden" ;;
+      (*)
+        sf_names=$(printf '%s' "$sf_missed" \
+          | sed 's/ behind-a-symlink.txt/ a symlinked dir (ugrep -R, rg --follow, find -L; BSD grep follows neither)/; s/ ignored.txt/ .gitignore'"'"'d files (--no-ignore)/; s/ hidden.txt/ dot-directories (--hidden)/')
+        row "INFO" "$sf_label" "silently skips:${sf_names} — an absence here needs a second method" ;;
+    esac
+  done
+  if [ "$sf_any" -eq 0 ]; then
+    row "UNVERIFIED" "13. searcher exclusions" "none of '$sf_searchers' is on PATH"
+  elif [ -n "$sf_broken" ]; then
+    row "UNVERIFIED" "13. fixture completeness" "could not build:$sf_broken — rows above under-report exclusions"
+  fi
+  sf_cleanup; sf_dir=""
+fi
+
 # --- Result ---------------------------------------------------------------
-printf '\n%s\n' "PASS $n_pass · FAIL $n_fail · PARTIAL $n_partial · UNVERIFIED $n_unver · N/A $n_na"
+printf '\n%s\n' "PASS $n_pass · FAIL $n_fail · PARTIAL $n_partial · UNVERIFIED $n_unver · INFO $n_info · N/A $n_na"
 if [ "$n_unver" -gt 0 ]; then
   echo "UNVERIFIED is not a soft PASS: nobody watched those work. Treat them as unknown."
 fi

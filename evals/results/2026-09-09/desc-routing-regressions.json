@@ -1,0 +1,67 @@
+{
+ "model": "anthropic/claude-sonnet-5",
+ "samples": 3,
+ "temp": 0.0,
+ "cases": {
+  "r1_token_count": {
+   "task": "How many tokens is this 484-line Markdown instruction file? I want to compare it against the recommended size budget before adding more to it.",
+   "expect": "sota-llm-engineering",
+   "distractor": "sota-docs-workflow",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-llm-engineering",
+      "sota-llm-engineering",
+      "sota-llm-engineering"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-llm-engineering",
+      "sota-llm-engineering",
+      "sota-llm-engineering"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "r2_absence_sweep": {
+   "task": "Before I write this rule I want to be sure it isn't already covered. Run a grep across the markdown files for a few phrasings and tell me whether any of them appear \u2014 if it comes back empty I'll treat the topic as absent.",
+   "expect": "sota-shell-scripting",
+   "distractor": "sota-docs-workflow",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-shell-scripting",
+      "sota-shell-scripting",
+      "sota-shell-scripting"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-shell-scripting",
+      "sota-shell-scripting",
+      "sota-shell-scripting"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  }
+ },
+ "summary": {
+  "with-xref": {
+   "correct": 1.0,
+   "distractor": 0.0
+  },
+  "without-xref": {
+   "correct": 1.0,
+   "distractor": 0.0
+  }
+ }
+}
