@@ -89,17 +89,48 @@ So the residual gap supports **"a top-1 metric cannot adjudicate a task the rout
 routes to two skills"**, not **"one description cannot carry two jobs"**. That is not an
 argument for a split.
 
+## The follow-up, run the same day — and it closes the item
+
+The registered follow-up was: re-run the `c3`/`c5` class through
+`evals/run-routing-recall.py`, whose **set** metric can express "both skills", and split
+only if `sota-code-security` is **omitted** there.
+
+No new case was written for it, deliberately — writing one *because* `c3` and `c5` failed
+would be selection by outcome. `routing-recall.jsonl` already carries
+**`evidence_shell_script`**, selected long before today by that set's own rule (wherever
+the router states a composition, that IS the gold set) and citing rule 17 in its `why`
+field: *"Review deploy-attest.sh, the script that writes our build attestation ledger and
+verifies it before release"*, gold `["sota-shell-scripting", "sota-code-security"]`.
+
+`run-routing-recall.py --samples 3 --temp 0.7`, `sonnet-5`, same day, after the
+description fix (`routing-recall-after-desc-fix.json`):
+
+| case | recall | precision | missing |
+|---|---|---|---|
+| **`evidence_shell_script`** | **1.00** | 0.67 | **—** |
+| whole set (10 cases) | **0.975** | 0.826 | 1 case under-selected (`next_security_review`, `sota-performance`) |
+
+**`sota-code-security` is not omitted.** Asked for a set, the classifier loads both skills
+on exactly the task shape that `c3` and `c5` "failed" top-1. The registered condition for
+a split reads **negative**.
+
+Set-level recall of **0.975** also matches the reading from before this session's
+description edit, so trimming ten keywords to make room for the claiming clause cost the
+composition metric nothing.
+
 ## What ships, and what item 12 becomes
 
 - **Shipped:** the description fix. +0.111 on the verification half, 0.000 cost on the
   vulnerability half, measured both ways.
-- **Item 12 stays OPEN**, with a trigger that is now measured rather than asserted:
-  re-run `c3` and `c5` through `evals/run-routing-recall.py`, whose **set** metric can
-  express "both skills". **Split only if the set metric shows `sota-code-security`
-  omitted** — that would be the description failing to claim a job it owns. If the set
-  metric loads both, the top-1 residual was an artefact of the instrument and item 12
-  closes.
+- **Item 12 CLOSES.** Its replacement trigger was measured and reads negative: the top-1
+  gap is real, the set metric shows it is an artefact of forcing one answer onto a
+  two-skill task, and `sota-code-security` is never omitted from the composition. There is
+  no routing argument for a skill-level split.
 - The count-based trigger is dead either way. It fired, twice, and was never the reason.
+  What replaced it is a **measurement that can come back positive later**: re-run
+  `skill-split-code-security.jsonl` if the verification half ever drops below the
+  vulnerability half *in the set metric*, which is the form that would actually mean the
+  description had stopped claiming a job it owns.
 
 ## What this does not establish
 
