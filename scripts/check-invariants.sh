@@ -1632,7 +1632,29 @@ if [ "$v24" -eq 0 ]; then echo "    ok (${n24:-?} lines, CLAUDE.md + GEMINI.md s
 # `sota-code-security` rules/11 section 2.2a describes: if the regex drifts and
 # finds NO flags, undocumented becomes 0, 0 <= 27, and it passes green forever
 # while measuring nothing. The comparand and the denominator are both asserted.
-echo "[25/28] Undocumented eval flags have not increased (ratchet at ${MAX_UNDOC})"
+#
+# SECOND HALF, ROADMAP 41 (2026-09-09): THE RATCHET CANNOT SEE A WHOLE NEW RUNNER.
+# Demonstrated twice. "Documented" is a substring match, so a runner whose flag names
+# already appear here from OTHER runners moves the undocumented count by zero:
+# `run-routing-recall.py` shipped with six flags (`--selftest`, `--out`, `--model`, ...)
+# and every one of them was already in the file. The unit that goes missing is the
+# RUNNER, not the (file, flag) pair.
+#
+# THE FIX ROADMAP 41 PROPOSED IS NOT THE ONE TAKEN. Per-(file, flag) documentation was
+# rejected: evals/README.md is organised by the QUESTION each instrument measures, not
+# by runner, so per-runner flag sections are structure it does not have; it would reopen
+# the same red-on-27 problem one level down; and "which flag deserves a mention in which
+# runner's section" is the same judgement call the paragraph above already refuses to
+# mechanise. What IS mechanical, at the granularity the defect actually occurred at, is
+# PRESENCE OF THE RUNNER: every evals/*.py must be named in evals/README.md. No ratchet
+# and no pin -- it opened red on exactly TWO files when written (run-unscoped-audit.py,
+# run-build-safe-arms-guided.py), both real instruments, both fixed in the same change.
+# A gate that opens red on two things it does care about is the case CONVENTIONS-LEDGER
+# argues FOR; the 27-flag one was the case against.
+#
+# The match is boundary-anchored, not a bare substring: `run-build-safe.py` must not be
+# credited to a README that only mentions `run-build-safe-arms.py`.
+echo "[25/28] Eval runners documented, undocumented flags not increased (ratchet at ${MAX_UNDOC})"
 v25=0
 if command -v python3 >/dev/null 2>&1; then
   if flag_out=$(python3 - "$MAX_UNDOC" <<'PY'
@@ -1644,12 +1666,31 @@ except OSError as e:
     print(f"cannot read evals/README.md: {e}"); print("SCOPE 0"); sys.exit(1)
 scanned = 0
 undoc = []
-for f in sorted(glob.glob("evals/*.py")):
+runners = sorted(glob.glob("evals/*.py"))
+for f in runners:
     src = pathlib.Path(f).read_text(encoding="utf-8")
     for flag in sorted(set(re.findall(r'add_argument\(\s*["\'](--[a-z0-9-]+)["\']', src))):
         scanned += 1
         if flag not in readme:
             undoc.append(f"{f} {flag}")
+
+# ROADMAP 41: the runner itself, at the granularity the defect occurred at.
+# Boundary-anchored so run-build-safe.py is not credited to a mention of
+# run-build-safe-arms.py.
+unnamed = [f for f in runners
+           if not re.search(r'(?<![A-Za-z0-9_.\-])%s(?![A-Za-z0-9_])'
+                            % re.escape(f.split("/")[-1]), readme)]
+if not runners:
+    print("no evals/*.py found at all — the scan pattern drifted, and an empty scan")
+    print("makes both halves of this check pass for every possible input.")
+    print("SCOPE 0"); sys.exit(1)
+if unnamed:
+    print(f"{len(unnamed)} eval runner(s) are not named in evals/README.md — the file a")
+    print("reader opens to find out what an instrument measures. Describe what it")
+    print("measures there (a bare filename in a list is not a description):")
+    for u in unnamed:
+        print(f"  {u}")
+    print(f"SCOPE {scanned}"); print(f"RUNNERS {len(runners)}"); sys.exit(1)
 # rules/11 section 2.2a + section 2.2: the comparand and the denominator both.
 if scanned == 0:
     print("no add_argument flags found in evals/*.py at all — the scan pattern drifted,")
@@ -1661,22 +1702,24 @@ if len(undoc) > cap:
     print("what an instrument measures — or lower/raise MAX_UNDOC deliberately:")
     for u in undoc:
         print(f"  {u}")
-    print(f"SCOPE {scanned}"); sys.exit(1)
+    print(f"SCOPE {scanned}"); print(f"RUNNERS {len(runners)}"); sys.exit(1)
 if len(undoc) < cap:
     print(f"undocumented eval flags fell to {len(undoc)} — lower MAX_UNDOC to {len(undoc)}")
     print("so the ratchet keeps its grip (a slack ratchet is not a ratchet).")
-    print(f"SCOPE {scanned}"); sys.exit(1)
+    print(f"SCOPE {scanned}"); print(f"RUNNERS {len(runners)}"); sys.exit(1)
 print(f"SCOPE {scanned}")
+print(f"RUNNERS {len(runners)}")
 PY
   ); then :; else v25=1; fi
   n25=$(printf '%s\n' "$flag_out" | sed -n 's/^SCOPE //p')
+  nr25=$(printf '%s\n' "$flag_out" | sed -n 's/^RUNNERS //p')
   while IFS= read -r l; do
-    case "$l" in SCOPE\ *|'') ;; *) note "$l" ;; esac
+    case "$l" in SCOPE\ *|RUNNERS\ *|'') ;; *) note "$l" ;; esac
   done <<EOF25
 $flag_out
 EOF25
   scope "${n25:-0}" "eval CLI flags" || v25=1
-  if [ "$v25" -eq 0 ]; then echo "    ok (${n25:-0} flags scanned, ${MAX_UNDOC} undocumented — unchanged)"; fi
+  if [ "$v25" -eq 0 ]; then echo "    ok (${nr25:-0} runners named, ${n25:-0} flags scanned, ${MAX_UNDOC} undocumented — unchanged)"; fi
 else
   note "SKIPPED (python3 not found; CI always has it)"
   echo "    ok (skipped)"

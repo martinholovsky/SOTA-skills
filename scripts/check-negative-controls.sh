@@ -320,6 +320,16 @@ probe 24b "CLAUDE.md is a copy, not a symlink to AGENTS.md" "not a symlink (1200
 ( cd "$WT" && perl -pi -e 's/^(    ap\.add_argument\("--out", default=None\))/    ap.add_argument("--brand-new-undocumented", action="store_true")\n$1/' evals/run-completeness.py )
 probe 25 "a new eval flag is undocumented in evals/README.md" "undocumented eval flags rose to"
 
+# 25b — ROADMAP 41's half: a whole new RUNNER that never reaches evals/README.md.
+# The flag probe above cannot catch this and that is the point: the runner it replays
+# (run-routing-recall.py) shipped six flags whose names were already in the file from
+# other runners, so the undocumented count did not move by one. Named `.py` under
+# evals/ because that is the scan's own denominator; the string is chosen so no
+# substring of it appears in the README.
+( cd "$WT" && printf '#!/usr/bin/env python3\n"""probe."""\n' > evals/run-zzz-probe-unnamed.py )
+probe 25b "a whole new eval runner is not named in evals/README.md" "are not named in evals/README.md"
+rm -f "$WT/evals/run-zzz-probe-unnamed.py"
+
 # 26 — the drift that actually happened, three times in one session: the priorities
 # table left pointing at an item its own ledger had closed. Mutate the TABLE, not the
 # ledger, so the probe exercises the arm that failed in the field rather than the

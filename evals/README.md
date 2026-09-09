@@ -26,6 +26,24 @@ audit STRAT-HIGH-2).
   because the spec leaked the property to preserve and the bare arm saturated; the
   rewrite is what made it discriminate (`results/2026-07-30/BUILD-SAFE.md` →
   `results/2026-08-21/BUILD-SAFE.md`).
+- **The BUILD-safe arms** (`run-build-safe-arms.py` unguided, `run-build-safe-arms-guided.py`
+  guided) — the two live-model arms that feed `run-build-safe.py`'s scorer. The guided one
+  loads **only the BUILD-facing rules files** a router-following builder would open and
+  deliberately excludes the audit-side ones (`rules/10`, `11`, `13`, `14`), which makes the
+  test harder rather than easier: the arm is not allowed to consult the files that name the
+  very defects it is being scored on avoiding. It reads operating principle 5 live, under the
+  same drift guards as the completeness runner, so a router edit aborts the arm instead of
+  silently measuring a stale mirror. Both arms write an artifact for the scorer; neither
+  scores anything itself.
+- **`run-unscoped-audit.py`** — the **adjudicator** for `cases/unscoped-audit.jsonl`, not a
+  runner of it. A planted defect counts as FOUND only when the report names the *mechanism*
+  (from the case's `must` list) **and** points at one of its `primary` files; the rule was
+  fixed in `results/2026-07-30/PRE-REGISTRATION.md` before any agent ran, because either
+  signal alone is worthless — the file without the mechanism is "looked at it", the mechanism
+  without the file is unlocated. It also emits a **CONTAMINATION** verdict, since the
+  2026-07-30 live runs showed "bare" sub-agents inheriting a global instruction to consult
+  this library and loading it anyway; self-report is not evidence, library citations in the
+  text are. `--selftest` locks the adjudicator before you trust a number from it.
 - **Calibration** (`run-calibration.py`, `judge-calibration.py`) — scores an audit
   report's *reporting discipline*, never its recall: does it bound claims by what
   was run, label unverified items, condition severity on evidence, and support any
