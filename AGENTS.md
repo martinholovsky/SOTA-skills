@@ -26,7 +26,7 @@ enforcement is on). Every change goes through a pull request:
 
 ## Invariants (enforced in pre-commit and CI)
 
-`scripts/check-invariants.sh` runs **25 checks** and fails the build on any of them. One
+`scripts/check-invariants.sh` runs **26 checks** and fails the build on any of them. One
 line each below. The *rationale* — and the real incident behind every one — lives in the
 script's own header, at the point of use, and the practical "what this means for your
 PR" version is in [CONTRIBUTING.md](CONTRIBUTING.md#the-invariants-enforced).
@@ -58,6 +58,7 @@ PR" version is in [CONTRIBUTING.md](CONTRIBUTING.md#the-invariants-enforced).
 | 23 | a **CHANGELOG version heading has no `[X.Y.Z]:` link reference**, an **orphan ref** whose heading lives in another file, or a ref pointing at the wrong tag — sibling of 21, failing independently of it. A heading with no ref is not a broken link: Markdown renders it as literal text, so invariant 8 never sees it. Four consecutive releases shipped that way. Compares **sets per file**, never counts |
 | 24 | **this file** reaches 200 lines, or `CLAUDE.md`/`GEMINI.md` stop being symlinks to it — it loads into *every* session, which is the whole reason for the cap, and that reason depends on the symlinks. A **cap, not a target** (settled 2026-09-06); it had already been breached twice, at 201 and 202, each time by adding an invariant's own table row |
 | 25 | the number of **eval CLI flags undocumented in `evals/README.md`** rises above the pin. A ratchet, not a rule: `--no-gate-arm` shipped documented in the README index and in `--help` but not in the harness's own front door, while 27 pre-existing generic flags (`--json`, `--build-model`) would make a strict rule open red and get it disabled. Fails closed if the scan finds **no** flags |
+| 26 | the roadmap's **open set disagrees with itself** — the stated count, the header's open list, the ledger rows marked `**OPEN`, or an item cited in the priorities table that is not open. Status lives in **one** place (the row marker); the rest is derived. Three drifts in one session, plus a fourth live when the check was written (header said 8, rows said 5) |
 
 **Only instruction files are capped** — a file is capped iff an agent loads it *as instructions*:
 `skills/*/SKILL.md` and `skills/*/rules/*.md`, nothing else. README, CHANGELOG, `docs/`, `evals/`,
@@ -66,11 +67,10 @@ from [docs/INDEX.md](docs/INDEX.md), not a ceiling. **A line-cap claim anywhere 
 *skill files* is stale — fix it.** The 500 matches the Agent Skills guidance (*"keep `SKILL.md`
 under 500 lines; move detailed reference material to separate files"*) — `rules/*.md` are those.
 
-**This file is the exception.** `CLAUDE.md` and `GEMINI.md` symlink here, so it loads into
-**every** session, where the platform's guidance is *"target under 200 lines"* — long
-always-loaded files reduce adherence. Ungated, and a different constraint from invariant 1.
-Keep it under 200 (**re-check with `awk 'END{print NR}'` each cut** — two additions in two days
-took it to 202): detail goes to `CONTRIBUTING.md` behind a pointer.
+**This file is the exception.** `CLAUDE.md`/`GEMINI.md` symlink here, so it loads into **every**
+session, where the guidance is *"target under 200 lines"* — long always-loaded files reduce
+adherence. A different constraint from invariant 1; keep it under 200 (**re-check with
+`awk 'END{print NR}'` each cut**, breached three times now), detail to `CONTRIBUTING.md`.
 
 **Every file-list-driven check reports its denominator** (`ok (262 rules files)`) and
 **fails closed on an empty scope** — `0 checked, 0 failed, exit 0` is the signature of a gate
@@ -93,10 +93,10 @@ plus `evals/smoke-runners.py`, over **two** subjects: `check-invariants.sh` (par
 `verify-setup.sh` (part B). Each probe injects a known-bad and requires *the intended check* to
 complain — a non-zero exit for any other reason is a **FALSE PASS**, not a catch. Part A mutates
 a good tree in a disposable git worktree; part B is inverted, building a fully-configured fake
-machine (`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **33 probes** (re-run 2026-09-08: `PASS: 33/33`; wrong twice
+machine (`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **34 probes** (re-run 2026-09-09: `PASS: 34/34`; wrong twice
 before, and deliberately **not** gated — a static count of call sites under-reads, so only
 running it is authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18, 19,
-20, 21, 22, 23, 24, 25** — 20 of 25 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. The five
+20, 21, 22, 23, 24, 25, 26** — 21 of 26 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. The five
 unprobed invariants (5, 9, 11, 12, 14) need state a worktree lacks (a tag, a merge base, an
 mtime); the harness prints that reason, so what is *not* covered is printed rather than implied.
 **A probe asserts its own mutation landed** (a stale literal once printed `NOT CAUGHT: INERT`,
@@ -174,7 +174,7 @@ the setting. The pre-commit hook scans each commit locally.
   a session *applying* the library, and an unlicensed source whose ideas can be
   taken but whose text cannot, both land here on the same terms
 - [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md) — which of this repo's
-  conventions are **enforced** (25 invariants + 9 more inside the eval runners) and
+  conventions are **enforced** (26 invariants + 9 more inside the eval runners) and
   which are prose, with the three filters a convention must pass to earn a gate
   (has it already failed · does it fail silently · is it mechanically checkable).
   Read it before proposing a new gate — it argues against gating the ~18 judgment

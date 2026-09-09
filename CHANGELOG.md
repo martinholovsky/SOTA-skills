@@ -36,6 +36,24 @@ measured rather than scaled.
 
 ### Added
 
+- **Invariant 26 — the roadmap's open set must agree with itself.** The answer to a drift that
+  happened **three times in one session**: the priorities table pointing at work its own ledger
+  had already closed (items 12, 32's follow-up, and 38). The root cause was not carelessness —
+  **status was written in three places and only one was a fact.** The `**OPEN` marker on a
+  ledger row is now the single source of truth; the header's open list and the priorities table
+  are derived, and the invariant asserts the derivation: the stated count equals the listed
+  numbers, the listed numbers equal the rows marked `**OPEN`, and every `**Item N**` cited in
+  the priorities table is one of them. Fails closed on an empty open set. It found a **fourth**
+  live inconsistency the moment it was written — the header listed 8 open where only 5 rows
+  carried the marker, because items 1, 5 and 12 predated the convention; those rows are
+  normalised here. Each of the three assertions was watched to fail independently before the
+  check was trusted, and the known-bad probe replays the drift that actually happened (a
+  priorities row pointing at a non-open item), not the easiest one to break.
+- **The priorities table now says what it is.** *A view, not a record* — it keeps ordering,
+  what a session would do first, and cost, which no machine can check, and it may **cite** an
+  item without ever restating whether that item is open. The generalisable rule: a summary may
+  order, prioritise and explain, but must not restate a fact the detail already carries; a
+  citation is checkable and a paraphrase is not.
 - **Router operating principle 3 — "independent" means a different failure mode, not a
   different phrasing.** The principle already asked for a second independent method before
   asserting an absence. Field-reported: two searches of the same tree agreed on **zero** and

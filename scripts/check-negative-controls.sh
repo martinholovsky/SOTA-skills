@@ -320,6 +320,23 @@ probe 24b "CLAUDE.md is a copy, not a symlink to AGENTS.md" "not a symlink (1200
 ( cd "$WT" && perl -pi -e 's/^(    ap\.add_argument\("--out", default=None\))/    ap.add_argument("--brand-new-undocumented", action="store_true")\n$1/' evals/run-completeness.py )
 probe 25 "a new eval flag is undocumented in evals/README.md" "undocumented eval flags rose to"
 
+# 26 — the drift that actually happened, three times in one session: the priorities
+# table left pointing at an item its own ledger had closed. Mutate the TABLE, not the
+# ledger, so the probe exercises the arm that failed in the field rather than the
+# easiest one to break (an off-by-one in the header would also fire, on a different
+# arm). Uses the highest ledger number + 1, which is guaranteed absent from the open
+# list and from every row, so the probe cannot accidentally name a real open item.
+( cd "$WT" && python3 - <<'MUT'
+import re, pathlib
+p = pathlib.Path("docs/ROADMAP.md"); t = p.read_text()
+nums = [int(x) for x in re.findall(r'(?m)^\|\s*(\d+)\s*\|', t)]
+ghost = max(nums) + 1
+t = re.sub(r'(?m)^(\| \*\*1\*\* \| )\*\*', r'\g<1>**Item %d — ' % ghost, t, count=1)
+p.write_text(t)
+MUT
+git add docs/ROADMAP.md >/dev/null 2>&1 )
+probe 26 "priorities table cites an item that is not open" "priorities table points at item"
+
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
 # =============================================================================
@@ -505,7 +522,7 @@ if [ "$failed" -ne 0 ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 (20 of 25)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26 (21 of 26)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        11, 14      — diff-based: they compare against a merge base."
