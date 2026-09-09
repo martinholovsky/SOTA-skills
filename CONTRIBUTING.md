@@ -125,7 +125,11 @@ are marked "needs verification", never asserted.
    CHANGELOG, `docs/`, `evals/`, scripts) is uncapped prose or code, decided
    2026-07-15;
 2. any `skills/*/rules/*.md` that doesn't **end** with an
-   **`## Audit checklist`** (it must be the file's last `## ` heading);
+   **`## Audit checklist`** (it must be the file's last `## ` heading), or that
+   carries **more than one** — appending a section's bullets under a fresh
+   heading rather than into the existing checklist passes the last-heading test
+   and strands them where a reader has already stopped. Five files shipped that
+   way, six bullets in total, all fixed 2026-09-09;
 3. any **internal/private reference** leaking into tracked files (the private
    pattern list is intentionally not in the repo; PRs from forks run the
    generic checks and the maintainer's CI runs the full list);
