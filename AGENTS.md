@@ -26,7 +26,7 @@ enforcement is on). Every change goes through a pull request:
 
 ## Invariants (enforced in pre-commit and CI)
 
-`scripts/check-invariants.sh` runs **28 checks** and fails the build on any of them. One
+`scripts/check-invariants.sh` runs **29 checks** and fails the build on any of them. One
 line each below. The *rationale* — and the real incident behind every one — lives in the
 script's own header, at the point of use, and the practical "what this means for your
 PR" version is in [CONTRIBUTING.md](CONTRIBUTING.md#the-invariants-enforced).
@@ -61,54 +61,54 @@ PR" version is in [CONTRIBUTING.md](CONTRIBUTING.md#the-invariants-enforced).
 | 26 | the roadmap's **open set disagrees with itself** — the stated count, the header's open list, the ledger rows marked `**OPEN`, or an item cited in the priorities table that is not open. Status lives in **one** place (the row marker); the rest is derived. Three drifts in one session, plus a fourth live when the check was written (header said 8, rows said 5) |
 | 27 | an **ADOPTION-LOG deferral names no revisit trigger** — its own rule said every deferral carries a revisit condition, in prose, and prose drifted: the roadmap said *"the deferred row"*, singular, while three existed and one had resolved the day before elsewhere. The marker's **own cell** is checked, not the row: a first draft passed a row because "revisit" sat in a different cell |
 | 28 | an **`evals/cases/*.jsonl` declares no `SELECTION RULE`** — building a set from the cases a model got wrong measures the selection, not the system. Held at 20 sets, then two were added and one skipped it: `prompt-independence.jsonl`, whose rule lived in the results doc and not in the case file, in the set backing the **+0.509** headline |
+| 29 | a **release changes a skill `description` and declares no routing check** — a description is the entire auto-load classifier, so adding one competes for every neighbour's traffic: `sota-skill-security` (v1.35.0) took `r1_token_count` from `sota-llm-engineering` 3/3 to 0/3 and was live for a day with invariants 4, 7 and 15 all green. Fires only on a release whose extracted description **map** differs from the merge base's; the escape is a `**Routing checked:**` line naming an artifact that must exist and mention the regression set |
 
 **Only instruction files are capped** — a file is capped iff an agent loads it *as instructions*:
-`skills/*/SKILL.md` and `skills/*/rules/*.md`, nothing else. README, CHANGELOG, `docs/`, `evals/`,
-this file and every script are **uncapped**, deliberately (2026-07-15) — navigability there comes
-from [docs/INDEX.md](docs/INDEX.md), not a ceiling. **A line-cap claim anywhere that does not say
+`skills/*/SKILL.md` and `skills/*/rules/*.md`, nothing else. README, CHANGELOG, `docs/`, `evals/`
+and every script are **uncapped**, deliberately (2026-07-15) — navigability there comes from
+[docs/INDEX.md](docs/INDEX.md), not a ceiling. **A line-cap claim anywhere that does not say
 *skill files* is stale — fix it.** The 500 matches the Agent Skills guidance (*"keep `SKILL.md`
 under 500 lines; move detailed reference material to separate files"*) — `rules/*.md` are those.
-
-**This file is the exception.** `CLAUDE.md`/`GEMINI.md` symlink here, so it loads into **every**
+**This file is the exception**: `CLAUDE.md`/`GEMINI.md` symlink here, so it loads into **every**
 session, where the guidance is *"target under 200 lines"* — long always-loaded files reduce
-adherence. A different constraint from invariant 1; keep it under 200 (**re-check with
-`awk 'END{print NR}'` each cut**, breached three times now), detail to `CONTRIBUTING.md`.
+adherence. Keep it under 200 (**re-check with `awk 'END{print NR}'` each cut**, breached four
+times now, every time by adding an invariant's own row), detail to `CONTRIBUTING.md`.
 
-**Every file-list-driven check reports its denominator** (`ok (262 rules files)`) and
-**fails closed on an empty scope** — `0 checked, 0 failed, exit 0` is the signature of a gate
-that verifies nothing (`sota-code-security` rules/11 §2.2). Added 2026-07-30 after checks 2 and
-10 printed `ok` over *zero* files; 4 and 8 were retrofitted only on 2026-08-16, so this sentence
-was itself false for a while. The three rules the lesson produced are in the script's header:
-**watch it fail first, print your denominator, skip rather than guess.**
+**Every file-list-driven check reports its denominator** (`ok (262 rules files)`) and **fails
+closed on an empty scope** — `0 checked, 0 failed, exit 0` is the signature of a gate that
+verifies nothing (`sota-code-security` rules/11 §2.2). Added 2026-07-30 after checks 2 and 10
+printed `ok` over *zero* files; 4 and 8 were retrofitted only on 2026-08-16, so this sentence was
+itself false for a while. The script's header carries the three rules it produced: **watch it
+fail first, print your denominator, skip rather than guess.**
 
-*Adding a `rules/NN` file?* Invariant 10 checks its `SKILL.md` indexes it, **invariant 15**
-that the library map (`skills/sota/rules/04`) lists it — both directions.
-`skills/sota/SKILL.md` is at **410/500** (re-counted 2026-09-09; three offloads got it there —
-BUILD/AUDIT, the `rules/01` split, then the library map to `rules/04`: **detail belongs in
-`rules/`, imperatives in the router**). Wrong **six** times — **re-count with `grep -c ''`**.
-Editing the router's **BUILD section** moves `ROUTER_BUILD_SHA` and aborts the evals; AUDIT does not.
-The gates enumerate via `git ls-files`, so an **unstaged new file is invisible** — `git add` first.
+*Adding a `rules/NN` file?* Invariant 10 checks its `SKILL.md` indexes it, **invariant 15** that
+the library map (`skills/sota/rules/04`) lists it — both directions. `skills/sota/SKILL.md` is at
+**410/500** (re-counted 2026-09-09; three offloads got it there — **detail belongs in `rules/`,
+imperatives in the router**). Wrong **six** times — **re-count with `grep -c ''`**. Editing the
+router's **BUILD section** moves `ROUTER_BUILD_SHA` and aborts the evals; AUDIT does not. The
+gates enumerate via `git ls-files`, so an **unstaged new file is invisible** — `git add` first.
 
-**`scripts/check-negative-controls.sh` proves our gates can still fail.** Its CI job runs it
-plus `evals/smoke-runners.py` over **two** subjects — `check-invariants.sh` (part A) and
+**`scripts/check-negative-controls.sh` proves our gates can still fail.** Its CI job runs it plus
+`evals/smoke-runners.py` over **two** subjects — `check-invariants.sh` (part A) and
 `verify-setup.sh` (part B). Each probe injects a known-bad and requires *the intended check* to
 complain; any other non-zero exit is a **FALSE PASS**. **It reads the COMMITTED tree**
 (`git worktree add HEAD`) — commit first, or you test a new script against old docs. Part A mutates
 a good tree in a disposable worktree; part B is inverted, building a fully-configured fake machine
-(`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **36 probes** (re-run 2026-09-09: `PASS: 36/36`; wrong twice before, and deliberately **not** gated — a static count of call sites under-reads, so only running it is authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 13, 15, 16, 17, 18, 19,
-20, 21, 22, 23, 24, 25, 26, 27, 28** — 23 of 28 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a. The five unprobed
-invariants (5, 9, 11, 12, 14) need state a worktree lacks (a tag, a merge base, an mtime); the
-harness prints that reason, so what is *not* covered is printed rather than implied.
-**A probe asserts its own mutation landed** (a stale literal once printed `NOT CAUGHT: INERT`,
-accusing a healthy gate) and a catch for the wrong reason is refused — probe 21 was a FALSE PASS
-on its first draft. Adding a check? **Invariant 19 already enforces that it has a known-bad.**
-`--self-test` runs the suite and then this harness.
+(`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **PROBE_COUNT probes**
+(deliberately **not** gated — a static count of call sites under-reads, so only running it is
+authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
+24, 25, 26, 27, 28, 29** — 26 of 29 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a.
+Only **5, 9, 12** are unprobed, needing a tag or an mtime, and the harness prints that reason. *A
+diff-based check is not unprobeable*: 11 and 14 were exempt on that false ground until a probe
+**committed** its mutation (2026-09-09). **A probe asserts its own mutation landed** (a stale
+literal once printed `NOT CAUGHT: INERT`, accusing a healthy gate) and a catch for the wrong
+reason is refused — probe 21 was a FALSE PASS on its first draft. Adding a check? **Invariant 19
+already enforces that it has a known-bad.** `--self-test` runs the suite and then this harness.
 
-Separately, `scripts/check-freshness.sh` (run monthly by
-`.github/workflows/freshness.yml`) tracks the root `LAST-VERIFIED` stamp — the date
-of the last full-library re-verification sweep against primary sources. Update it
-only after such a sweep; the run goes red past the **6-month** window. Per-file
-line-1 markers are retired. Sweep runbook and eval harness:
+Separately, `scripts/check-freshness.sh` (run monthly by `.github/workflows/freshness.yml`)
+tracks the root `LAST-VERIFIED` stamp — the date of the last full-library re-verification sweep
+against primary sources. Update it only after such a sweep; the run goes red past the **6-month**
+window. Per-file line-1 markers are retired. Sweep runbook and eval harness:
 [docs/MAINTENANCE.md](docs/MAINTENANCE.md) and [evals/](evals/).
 
 Secrets are scanned by **gitleaks** (`.gitleaks.toml` disables only the noisy
@@ -174,7 +174,7 @@ the setting. The pre-commit hook scans each commit locally.
   a session *applying* the library, and an unlicensed source whose ideas can be
   taken but whose text cannot, both land here on the same terms
 - [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md) — which of this repo's
-  conventions are **enforced** (28 invariants + 9 more inside the eval runners) and
+  conventions are **enforced** (29 invariants + 9 more inside the eval runners) and
   which are prose, with the three filters a convention must pass to earn a gate
   (has it already failed · does it fail silently · is it mechanically checkable).
   Read it before proposing a new gate — it argues against gating the ~18 judgment

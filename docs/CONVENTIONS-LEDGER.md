@@ -71,7 +71,7 @@ A convention earns a gate only if it passes **all three**:
 
 ## The ledger
 
-### Enforced (28) — invariants 1–28
+### Enforced (29) — invariants 1–29
 
 Skill-file line cap · audit-checklist placement · internal-name denylist · description cap ·
 version lockstep · count surfaces · router completeness · link resolution ·
@@ -85,11 +85,18 @@ exempt set is pinned** · **the router's §AUDIT is pinned** · **every CHANGELO
 below the top entry is tagged** · **no `- [ ]` checklist bullet is stranded inside a
 code fence in a skill file** · **every CHANGELOG version heading has its own
 link reference** · **`AGENTS.md` stays under its own 200-line cap and keeps its
-symlinks** · **undocumented eval flags do not grow**.
+symlinks** · **eval runners are named in `evals/README.md` and undocumented eval flags
+do not grow** · **the roadmap's open set agrees with itself** · **every ADOPTION-LOG
+deferral names its revisit trigger** · **every eval case set declares a SELECTION RULE** ·
+**a release changing a skill description declares a routing check**.
 Each is in `scripts/check-invariants.sh` and documented in
 `AGENTS.md`. (Corrected 2026-08-19: this section read "(14) — invariants 1–14" and named
 only thirteen, while 15 and 16 were already gated and described in the table below —
-the ledger of what is enforced had itself drifted from what is enforced.)
+the ledger of what is enforced had itself drifted from what is enforced. **It drifted the
+same way again and was corrected on 2026-09-09**: the heading said 28 while the list
+stopped at 25, so 26, 27 and 28 were gated, described in the table below, and absent from
+the enumeration above it. Invariant 17 reads the stated *count*, not the list, which is
+exactly the blind spot that let it recur — the count was right both times.)
 
 ### Enforced in code, outside the invariant script (9)
 

@@ -365,6 +365,24 @@ are marked "needs verification", never asserted.
     file, which is where the convention puts it and where a reader opening the set looks.
     That set backs the **+0.509** prompt-independence headline.
 
+29. **A release changes a skill `description` and declares no routing check.** A
+    description is the entire auto-load classifier, so adding or editing one competes for
+    every neighbouring skill's traffic — a change to a shared surface dressed as an
+    addition to a private one. `sota-skill-security` shipped in v1.35.0 carrying
+    *"instruction file"* twice and neither *"token"* nor *"budget"*, and took the
+    `r1_token_count` regression case from `sota-llm-engineering` 3/3 to 0/3. It was live
+    for a day; invariants 4, 7 and 15 were all green throughout. This fires **only on a
+    release** whose extracted `(name, description)` map differs from the merge base's —
+    never on an ordinary PR, because routing costs live API calls. The escape is a
+    `**Routing checked:**` line in that release's CHANGELOG section naming an artifact
+    that must exist **and** mention `desc-routing-regressions`, so a declaration
+    resolving to an unrelated file fails. Run it with:
+
+    ```sh
+    python3 evals/run-desc-routing.py --samples 3 \
+        --cases evals/cases/desc-routing-regressions.jsonl
+    ```
+
 17. **a document that describes the checks disagrees with them**: any stated count
     of invariants/checks that isn't the number `check-invariants.sh` prints, or a
     restatement of the negative-control coverage lists that isn't what
@@ -391,8 +409,10 @@ as a FALSE PASS, because a harness that accepts any failure reports full coverag
 testing nothing.
 
 Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 3, 4, 6,
-7, 8, 10, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28 — 23 of 28; the harness prints the list and why the rest are
-not covered, so read its output rather than this sentence). Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
+7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29 — 26 of 29; the harness prints the list and why the rest are
+not covered, so read its output rather than this sentence). A **diff-based** check is not
+unprobeable: 11, 14 and 29 read a merge base, and the probe for them *commits* its
+mutation on the worktree's detached HEAD, then rewinds to the sha it captured first. Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
 fully-configured fake one — `CLAUDE_CONFIG_DIR` pointed at a temp home, a throwaway git
 repo, and a stub `gh` on `PATH` so run history is decidable — and each probe removes one
 thing (checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a). What is *not* covered is printed rather

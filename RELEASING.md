@@ -145,6 +145,43 @@ number rather than letting the reader assume, and re-read the long-lived prose w
 you are there (that cut found "keep every file ≤ 500 lines" in both README and
 CONTRIBUTING, a cap that has been skill-files-only since PR #100).
 
+## 2c. Routing surface (only when a `description` changes) — gated by invariant 29
+
+A skill's `description` is the **entire** auto-load classifier: it is the only text a
+loader reads before deciding whether to open the skill at all. So adding a skill, or
+editing one description, silently competes for every neighbouring skill's traffic.
+
+That is not hypothetical either. `sota-skill-security` shipped in **v1.35.0** carrying
+*"instruction file"* twice and neither *"token"* nor *"budget"*. The regression case
+`r1_token_count` — *"how many tokens is this 484-line Markdown instruction file?"* —
+inverted from `sota-llm-engineering` **3/3** to `sota-skill-security` **3/3**: the
+classifier matched the question's **noun** over its **question**. It was live for a day,
+and invariants 4, 7 and 15 (description exists, is under the cap, is indexed and mapped)
+were green the whole time. It was found only because someone ran the regression set for
+the second time ever.
+
+So when a release adds a skill or edits any `description`:
+
+```sh
+python3 evals/run-desc-routing.py --samples 3 \
+    --cases evals/cases/desc-routing-regressions.jsonl
+```
+
+It is about **12 live calls** — 2 cases × 3 samples × 2 arms — which is why this is a
+release-time step and *not* a CI gate. A gate expensive enough to be disabled is worse
+than none ([docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md)), so what CI checks
+is the **declaration**, exactly as invariant 14 checks the front-door one:
+
+    **Routing checked:** evals/results/<date>/<write-up>.md
+
+The named artifact must exist **and** mention `desc-routing-regressions`, so a line
+resolving to an unrelated file fails rather than passing as a checkbox. A case that moves
+is a finding: fix the description on the side that owns the *question*, then add the case
+to `evals/cases/desc-routing-regressions.jsonl` if it is not already there. Invariant 29
+compares the extracted `(name, description)` **map** against the merge base, not the
+diff — a folded description block, a rename and a deletion all change routing without
+touching a line that starts `description:`.
+
 ## 3. Land the PR
 
 ```sh
@@ -217,4 +254,8 @@ skills.
       says so. Then record it: **invariant 14 fails the build** unless the new
       CHANGELOG section carries `**Front door checked:** term · term` and every term
       resolves
+- [ ] **Routing regression run (§2c)** — only if this release adds a skill or edits any
+      `description`. **Invariant 29 fails the build** unless the new CHANGELOG section
+      carries `**Routing checked:** <artifact>` and that artifact exists and mentions
+      `desc-routing-regressions`
 - [ ] GitHub Settings social-preview re-upload — only if the PNG changed
