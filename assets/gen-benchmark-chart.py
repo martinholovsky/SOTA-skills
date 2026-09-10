@@ -16,11 +16,20 @@ import os
 import shutil
 import subprocess
 
+# The last two rows come from a SEPARATE run (2026-09-08) and are marked "‡".
+# They are shown as a PAIR on purpose: obra/superpowers scored 60% against an
+# unguided arm of 64% *in its own run*, i.e. BELOW no guidance. Plotting its 60%
+# beside this chart's 58% unguided — a different run's baseline — would read as
+# "beat the baseline" and invert the actual finding. Same 7 cases, same rubric,
+# same blind opus-4.8 judge, n=1 temp 0 throughout; the shared SOTA arm reproduces
+# at 0.987 across both runs, which is why they sit on one chart at all.
 ROWS = [
     ("SOTA-skills", 99, "sota"),
     ("affaan-m/ECC", 87, "comp"),
     ("PatrickJS/awesome-cursorrules", 83, "comp"),
     ("alirezarezvani/claude-skills", 81, "comp"),
+    ("unguided model, same run \u2021", 64, "base"),
+    ("obra/superpowers \u2021", 60, "comp"),
     ("unguided model", 58, "base"),
 ]
 
@@ -31,7 +40,7 @@ THEMES = {
                  track="#21262d", sota="#3fb950", comp="#768390", base="#545d68"),
 }
 
-W, H = 720, 340
+W, H = 720, 456
 LABEL_X, BAR_X, BAR_MAX = 24, 250, 410
 FIRST_TOP, ROW_H, BAR_H = 84, 46, 20
 FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"
@@ -45,7 +54,9 @@ def svg(theme_name):
         f'font-family="{FONT}" role="img" '
         f'aria-label="Best-practice completeness by library: SOTA-skills 99%, '
         f'affaan-m/ECC 87%, PatrickJS/awesome-cursorrules 83%, '
-        f'alirezarezvani/claude-skills 81%, unguided model 58%.">',
+        f'alirezarezvani/claude-skills 81%, unguided model (same run as superpowers) '
+        f'64%, obra/superpowers 60%, unguided model 58%. Superpowers scored BELOW the '
+        f'unguided arm of its own run.">',
         f'<rect x="0.5" y="0.5" width="{W-1}" height="{H-1}" rx="12" '
         f'fill="{t["surface"]}" stroke="{t["border"]}"/>',
         f'<text x="{LABEL_X}" y="40" font-size="19" font-weight="700" '
@@ -67,9 +78,12 @@ def svg(theme_name):
                    f'rx="4" fill="{fill[kind]}"/>')
         out.append(f'<text x="{BAR_X + w + 8}" y="{by+15}" font-size="13" '
                    f'font-weight="{weight}" fill="{t["ink"]}">{pct}%</text>')
-    out.append(f'<text x="{LABEL_X}" y="323" font-size="10.5" fill="{t["muted"]}">'
+    out.append(f'<text x="{LABEL_X}" y="{H-31}" font-size="10.5" fill="{t["muted"]}">'
                f'SOTA-skills wins or ties all 21 head-to-head cases (loses none) · '
                f'data: evals/results/RESULTS.md</text>')
+    out.append(f'<text x="{LABEL_X}" y="{H-14}" font-size="10.5" fill="{t["muted"]}">'
+               f'\u2021 separate run, 2026-09-08 \u2014 superpowers scored BELOW the unguided '
+               f'arm of that same run (\u22120.04, at a \u00b10.03 noise floor)</text>')
     out.append('</svg>')
     return "\n".join(out) + "\n"
 
