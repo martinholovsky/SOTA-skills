@@ -198,9 +198,28 @@ backgrounded loop outlives the command that started it — often the whole sessi
 pattern, so it matches itself forever. §1 frames that cost as *a burned timeout*. The
 larger cost is that it never stops **spawning**.
 
-**Field-reported, measured.** A day of such loops left **≈10,700 orphaned `/bin/sh`**
-alive. At failure `ps -A | wc -l` read **11,463** against a `kern.maxprocperuid` of
-**11,136** — the per-user table was full.
+**How big it gets, measured — and read the attribution note.** At failure on the machine
+below, `ps -A | wc -l` read **11,463** against a `kern.maxprocperuid` of **11,136**: the
+per-user table was full, with **≈10,700 `/bin/sh`** in it.
+
+**Correction (2026-09-10): those figures are the *signature*, not evidence for this
+section's cause.** When this section was first written the numbers were attributed to
+backgrounded wait loops, which had indeed been running that hour — but parentage had not
+been checked, and the section said so. It was checked afterwards, and the `/bin/sh`
+processes belonged to a **self-recursive `PATH` shim** (`rules/03` §3a); deleting one file
+took the count to **691**. The tell was in the evidence all along: a `zsh` wait loop spawns
+`zsh`, `sleep` and `pgrep` — never **10,700 `/bin/sh`**.
+
+**Two unrelated causes produce this identical signature** — an unbounded backgrounded loop
+(this section) and a wrapper that shadows a command it calls (`rules/03` §3a) — and **only a
+parentage check distinguishes them**: `ps -axo pid=,ppid=,command=`, grouped by ppid.
+Sequential PIDs with one child each is a recursion; many children under one parent is a pool
+or a loop. Fixing the wrong one leaves the machine exactly as exposed, so **do not pick
+between them from whichever you happen to have been doing that hour.**
+
+The mechanism and the remedies below are unchanged and independently sound: an unbounded
+backgrounded wait *is* a real way to fill the process table, whether or not it was this
+incident's cause.
 
 **Recognise the signature, because it is not the one you expect:**
 
@@ -231,8 +250,9 @@ alive. At failure `ps -A | wc -l` read **11,463** against a `kern.maxprocperuid`
   cannot match itself.
 - **Check headroom for the resource you are about to spend**, exactly as §3 asks for
   `df -h`: `ps -A | wc -l` against `sysctl -n kern.maxprocperuid` (macOS) or `ulimit -u`.
-  A loop that ticks every 60s for a day is 1,440 spawns *if each one exits*; the failure
-  above is what happens when they do not.
+  A loop that ticks every 60s for a day is 1,440 spawns *if each one exits* — and a
+  leaked-process count that climbs while you watch it is the cheapest early warning
+  there is, because at the ceiling you can no longer run the command that would tell you.
 
 Blast radius is not only disk (§3). It is whatever finite resource the command consumes
 without anyone counting — and the process table is the one whose exhaustion disables the
@@ -322,7 +342,10 @@ measurement. "330 PRs" is a claim whose evidence has been thrown away, and "30" 
       iterations, and does anything make it stop other than a `pgrep` that matches the
       loop's own argv? Grep for the shape — `grep -nE '(while|until).*(true|pgrep|ps ).*&\s*$'`
       — and for polling of work a harness already reports. Headroom for the resource
-      being spent is checked (`ps -A | wc -l` vs `ulimit -u`), not just `df -h`.
+      being spent is checked (`ps -A | wc -l` vs `ulimit -u`), not just `df -h`. If the
+      table is already full, **establish parentage before assigning blame** — a
+      self-recursive wrapper (`rules/03` §3a) produces the same signature, and only
+      `ps -axo pid=,ppid=,command=` tells the two apart.
 - [ ] **Counts taken from a listing tool** (§5): does the command carry a `--limit`/
       `per_page`/`--max-items`, or rely on the tool's **default** page (30 for `gh`, 100 for
       most REST)? A total must come from a server-side count (`total_count`) or a paginated
