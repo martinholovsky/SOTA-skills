@@ -16,22 +16,32 @@ import os
 import shutil
 import subprocess
 
-# The last two rows come from a SEPARATE run (2026-09-08) and are marked "‡".
-# They are shown as a PAIR on purpose: obra/superpowers scored 60% against an
-# unguided arm of 64% *in its own run*, i.e. BELOW no guidance. Plotting its 60%
-# beside this chart's 58% unguided — a different run's baseline — would read as
-# "beat the baseline" and invert the actual finding. Same 7 cases, same rubric,
-# same blind opus-4.8 judge, n=1 temp 0 throughout; the shared SOTA arm reproduces
-# at 0.987 across both runs, which is why they sit on one chart at all.
+# ONE baseline row, shown as a BAND, not two rows.
+#
+# An earlier version drew two "unguided model" bars (58% and 64%) because the
+# competitor benchmark and the superpowers head-to-head are separate runs whose
+# unguided arms differ -- temp-0 is not deterministic. It was accurate and it read
+# as a bug: a reader's first reaction was "why two baselines with two numbers?".
+# Confusion is a real cost, and explaining it in a footnote does not undo it.
+#
+# So the baseline is a single row spanning 58-64%, drawn as a solid bar to 58 with a
+# lighter extension to 64. That is honest about the spread AND makes the point the
+# two rows existed to make: obra/superpowers at 60% lands INSIDE the band, so it is
+# not distinguishable from no guidance at all. Nothing is claimed that the runs
+# cannot support, and there is only one baseline on the chart.
+#
+# Star counts are live-fetched context, not a metric: they say these are the POPULAR
+# libraries. SOTA-skills deliberately carries none -- comparing our own star count
+# here would be a different (and irrelevant) claim. Fetched 2026-09-10; stars rot,
+# so the footer dates them.
 ROWS = [
-    ("SOTA-skills", 99, "sota"),
-    ("affaan-m/ECC", 87, "comp"),
-    ("PatrickJS/awesome-cursorrules", 83, "comp"),
-    ("alirezarezvani/claude-skills", 81, "comp"),
-    ("unguided model, same run \u2021", 64, "base"),
-    ("obra/superpowers \u2021", 60, "comp"),
-    ("unguided model", 58, "base"),
+    ("SOTA-skills",                        99, "sota", ""),
+    ("affaan-m/ECC",                       87, "comp", "255k"),
+    ("PatrickJS/awesome-cursorrules",      83, "comp", "41k"),
+    ("alirezarezvani/claude-skills",       81, "comp", "26k"),
+    ("obra/superpowers",                   60, "comp", "284k"),
 ]
+BASE_LO, BASE_HI = 58, 64          # unguided, across the two runs
 
 THEMES = {
     "light": dict(surface="#ffffff", border="#d0d7de", ink="#1f2328", muted="#656d76",
@@ -40,8 +50,8 @@ THEMES = {
                  track="#21262d", sota="#3fb950", comp="#768390", base="#545d68"),
 }
 
-W, H = 720, 456
-LABEL_X, BAR_X, BAR_MAX = 24, 250, 410
+W, H = 760, 420
+LABEL_X, BAR_X, BAR_MAX = 24, 300, 350
 FIRST_TOP, ROW_H, BAR_H = 84, 46, 20
 FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"
 
@@ -53,10 +63,10 @@ def svg(theme_name):
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" '
         f'font-family="{FONT}" role="img" '
         f'aria-label="Best-practice completeness by library: SOTA-skills 99%, '
-        f'affaan-m/ECC 87%, PatrickJS/awesome-cursorrules 83%, '
-        f'alirezarezvani/claude-skills 81%, unguided model (same run as superpowers) '
-        f'64%, obra/superpowers 60%, unguided model 58%. Superpowers scored BELOW the '
-        f'unguided arm of its own run.">',
+        f'affaan-m/ECC 87% (255k stars), PatrickJS/awesome-cursorrules 83% (41k stars), '
+        f'alirezarezvani/claude-skills 81% (26k stars), obra/superpowers 60% (284k stars), '
+        f'and an unguided model at 58 to 64 percent across the two runs. Superpowers falls '
+        f'inside the unguided band, so it is not distinguishable from no guidance.">',
         f'<rect x="0.5" y="0.5" width="{W-1}" height="{H-1}" rx="12" '
         f'fill="{t["surface"]}" stroke="{t["border"]}"/>',
         f'<text x="{LABEL_X}" y="40" font-size="19" font-weight="700" '
@@ -65,25 +75,40 @@ def svg(theme_name):
         f'% of a fixed best-practice rubric implemented — blind-judged, 7 build '
         f'tasks, content-only. Higher is better.</text>',
     ]
-    for i, (name, pct, kind) in enumerate(ROWS):
+    def row(i, name, stars, pct, kind, band_hi=None):
         top = FIRST_TOP + i * ROW_H
         by = top + 13
         w = round(BAR_MAX * pct / 100, 1)
         weight = "700" if kind == "sota" else "400"
         out.append(f'<text x="{LABEL_X}" y="{by+15}" font-size="12.5" '
                    f'font-weight="{weight}" fill="{t["ink"]}">{name}</text>')
+        if stars:
+            out.append(f'<text x="{BAR_X - 10}" y="{by+15}" font-size="11" '
+                       f'text-anchor="end" fill="{t["muted"]}">{stars}\u2605</text>')
         out.append(f'<rect x="{BAR_X}" y="{by}" width="{BAR_MAX}" height="{BAR_H}" '
                    f'rx="4" fill="{t["track"]}"/>')
+        if band_hi is not None:
+            # the lighter extension: the same baseline measured in the other run
+            wh = round(BAR_MAX * band_hi / 100, 1)
+            out.append(f'<rect x="{BAR_X}" y="{by}" width="{wh}" height="{BAR_H}" '
+                       f'rx="4" fill="{t["base"]}" opacity="0.62"/>')
         out.append(f'<rect x="{BAR_X}" y="{by}" width="{w}" height="{BAR_H}" '
                    f'rx="4" fill="{fill[kind]}"/>')
-        out.append(f'<text x="{BAR_X + w + 8}" y="{by+15}" font-size="13" '
-                   f'font-weight="{weight}" fill="{t["ink"]}">{pct}%</text>')
+        label = f"{pct}%" if band_hi is None else f"{pct}\u2013{band_hi}%"
+        x = BAR_X + (w if band_hi is None else round(BAR_MAX * band_hi / 100, 1)) + 8
+        out.append(f'<text x="{x}" y="{by+15}" font-size="13" '
+                   f'font-weight="{weight}" fill="{t["ink"]}">{label}</text>')
+
+    for i, (name, pct, kind, stars) in enumerate(ROWS):
+        row(i, name, stars, pct, kind)
+    row(len(ROWS), "unguided model", "", BASE_LO, "base", BASE_HI)
+
     out.append(f'<text x="{LABEL_X}" y="{H-31}" font-size="10.5" fill="{t["muted"]}">'
                f'SOTA-skills wins or ties all 21 head-to-head cases (loses none) · '
                f'data: evals/results/RESULTS.md</text>')
     out.append(f'<text x="{LABEL_X}" y="{H-14}" font-size="10.5" fill="{t["muted"]}">'
-               f'\u2021 separate run, 2026-09-08 \u2014 superpowers scored BELOW the unguided '
-               f'arm of that same run (\u22120.04, at a \u00b10.03 noise floor)</text>')
+               f'unguided band = the same arm measured in two runs (58% 2026-07-14, 64% 2026-09-08); '
+               f'superpowers falls inside it \u00b7 stars fetched 2026-09-10</text>')
     out.append('</svg>')
     return "\n".join(out) + "\n"
 
