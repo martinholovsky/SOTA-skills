@@ -245,6 +245,13 @@ probe 13 "scoreboard row with no sample size" "NO SAMPLE SIZE:"
 ( cd "$WT" && perl -pi -e 's/runs \*\*(\d+) checks\*\*/"runs **" . ($1 - 1) . " checks**"/e' AGENTS.md )
 probe 17 "a doc's invariant count disagrees with the script" "but check-invariants.sh has"
 
+# 17b — the same claim SPELLED OUT, in README.md. Both halves of this probe are the
+# defect that actually shipped: README was not in the checked set at all, and its count
+# was in words, so neither the file nor the form could be seen. It read "Twenty-five
+# invariants" against a script with 29 for at least four releases.
+( cd "$WT" && perl -pi -e 's/\*\*\d+ invariants\*\* enforce this/Twenty-five invariants enforce this/' README.md )
+probe 17b "a spelled-out invariant count in README disagrees with the script" "(= 25) but check-invariants.sh has"
+
 # 18 — a `§` reference left dangling by a renumbered section. This is the split
 # hazard the check was built for: rename one heading and every citation of it
 # across every skill still reads as a valid pointer. The mutation targets a

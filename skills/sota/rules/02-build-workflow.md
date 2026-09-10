@@ -25,17 +25,22 @@ result stands; the generalisation from it to "any extra context costs applied ru
 So the honest case for lean is narrower, and still sufficient:
 
 - **It costs nothing to follow.** Fewer tokens, faster, cheaper, and measured no worse.
-- **The self-audit gate appears to absorb the effect.** The padded arm ran *with* step 4
-  active, which is precisely the countermeasure — so read the null as "lean plus a terminal
-  re-read is robust to competing context", not as "context length is free". Nobody has
-  measured padding with the gate **off**; that is
-  [ROADMAP](../../../docs/ROADMAP.md) item 32, and until it is run this section states the
-  weaker of the two readings on purpose.
+- **The self-audit gate absorbs the effect — measured 2026-09-10, no longer a conjecture.**
+  The padded arm ran *with* step 4 active, which is precisely the countermeasure. Turning it
+  off under the same padding costs **−0.05**, and the gate recovers **+0.062** (SE 0.019,
+  95% CI **[+0.024, +0.099]**, 7 tasks × 3 samples, temp 0.7 —
+  [GATE-ABSORPTION-N3](../../../evals/results/2026-09-09/GATE-ABSORPTION-N3.md)). So the
+  correct reading of the null is **"lean plus a terminal re-read is robust to competing
+  context"**, and *not* "context length is free": the padding is free only while step 4 is
+  there to absorb it. At that higher power the gated padded arm reads **+0.01**, so even
+  −0.01/−0.03 overstated the cost of padding *with* the gate on.
 - **The salience mechanism is still real** — it is what step 4 exists for. What is not
   established is that *irrelevant* context triggers it.
 
 **Do not restore the old sentence** without a run that shows a drop. A number this project
-asserts is a number it must be able to produce.
+asserts is a number it must be able to produce — and note which sentence the measurement
+licensed: *"drop step 4 and competing context costs you"* is supported; *"any extra context
+costs applied rules"* still is not.
 
 ## 2. Why the plan comes before the code, and must be concrete
 

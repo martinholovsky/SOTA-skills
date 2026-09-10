@@ -1072,8 +1072,17 @@ if command -v python3 >/dev/null 2>&1; then
   doc_out=$(python3 - <<'DOCPY'
 import re, sys, pathlib
 
-DOCS = ["AGENTS.md", "CONTRIBUTING.md",
+# README.md added 2026-09-10. It is the FRONT DOOR and it was the one document
+# describing the gates that nothing validated: it read "Twenty-five invariants"
+# while the script had 29, across at least four releases. Both halves of that
+# failure are covered now — the file is in scope, and WORD-form counts are read as
+# well as digits, since spelling the number out was what hid it.
+DOCS = ["AGENTS.md", "CONTRIBUTING.md", "README.md",
         "docs/CONVENTIONS-LEDGER.md", "docs/MAINTENANCE.md"]
+
+WORDNUM = {"twenty": 20, "thirty": 30, "forty": 40,
+           "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+           "six": 6, "seven": 7, "eight": 8, "nine": 9}
 
 def norm(s):
     s = s.replace("*", "").replace("`", "")
@@ -1110,6 +1119,10 @@ bad = 0
 claims = 0
 
 # --- every stated count must be N -------------------------------------------
+WORD_PAT = re.compile(
+    r'\b(twenty|thirty|forty)(?:[- ](one|two|three|four|five|six|seven|eight|nine))?'
+    r'\s+(?:checks|invariants)\b', re.I)
+
 COUNT_PATS = [
     # \b before the digits, or "Invariant 10 checks" matches the trailing "0"
     # and reports a phantom "0 checks" — it did, before the boundary was added.
@@ -1130,6 +1143,15 @@ for f in DOCS:
                     bad += 1
                     print("%s:%d says %r but check-invariants.sh has %d checks"
                           % (f, ln, m.group(0).strip(), N))
+        # A count spelled out in words is still a count. "Twenty-five invariants"
+        # sat in README.md against a script with 29 and no pattern above could see it.
+        for m in WORD_PAT.finditer(line):
+            claims += 1
+            val = WORDNUM[m.group(1).lower()] + (WORDNUM[m.group(2).lower()] if m.group(2) else 0)
+            if val != N:
+                bad += 1
+                print("%s:%d says %r (= %d) but check-invariants.sh has %d checks"
+                      % (f, ln, m.group(0).strip(), val, N))
 
 # --- the per-invariant descriptions must enumerate all N ---------------------
 # The stated count and the actual list can drift apart: update "runs 18 checks"

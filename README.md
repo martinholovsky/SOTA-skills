@@ -456,6 +456,18 @@ for. The audit half is justified by gap analysis and by real defects it found in
 repo — **not by a measured lift**, and it is reported that way rather than implied.
 There will be no tenth accuracy instrument: only a different *dependent variable*
 (time-to-find, report usability, reach for a non-expert) is still untested.
+**Two numbers landed 2026-09-10, both pre-registered before any call.** The router's
+**terminal self-audit** (BUILD step 4) is no longer only a mechanism: under 400 lines of
+competing rules prose, removing it costs **−0.05**, and it recovers **+0.062** — SE 0.019,
+**95% CI [+0.024, +0.099]**, the first interval here excluding zero on that step
+([GATE-ABSORPTION](evals/results/2026-09-09/GATE-ABSORPTION-N3.md)). And the **conflict
+rate** between two skills loaded together — the one failure mode with a real incident
+behind it — measured **0.176 verified** against 0.353 judge-reported, which **refuted** our
+own prior that conflicts are rare. The gap between those two numbers is the story: 3 of 11
+reported conflicts quoted sentences that were **not in the files named**, and the judge
+could not see the router, which is where conflict resolution lives
+([CONFLICT-RATE](evals/results/2026-09-09/CONFLICT-RATE.md)).
+
 [Every null, the retraction, and the pre-registered predictions that were wrong →](evals/results/RESULTS.md)
 
 ### How the numbers are kept honest
@@ -885,7 +897,14 @@ every existing symlink and can create none. Pass `--no-verify` to skip it.
 It reports skills reachability, the routing hook, the profile symlink, a licence
 under *any* name, which gates exist, whether a hook is **installed** rather than
 merely configured, and — from real run conclusions — whether CI has ever
-*executed* and ever *rejected* anything. It changes nothing and exits 1 on any
+*executed* and ever *rejected* anything. Its **section F** adds one fact about the
+*machine* rather than the repo: **what your default searcher silently skips**. Every
+searcher excludes something quietly — a symlinked directory, a `.gitignore`'d path, a
+dot-directory — and the failure mode is a *clean absence*, which is exactly the answer
+a sweep was hoping to prove. It runs a four-match fixture under `$TMPDIR` and names the
+exclusions as **INFO**; nothing fails for them, because `rg` skipping ignored files is a
+feature. The one thing that *can* fail is the **positive control** — a searcher that
+cannot find the plain file is broken, and its absences are not evidence. It changes nothing and exits 1 on any
 FAIL. Anything it could not observe is marked **UNVERIFIED**, never passed: on
 this repo the reject-history check reads UNVERIFIED at the default sample and
 turns up a real rejection at `--runs 200`, which is why the sample size is
@@ -1079,17 +1098,23 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). The short version: keep skills generic,
 verify fast-moving claims against primary sources, keep **skill** files
 (`skills/**`) ≤ 500 lines — that cap keeps incremental rule loading working and
 does not apply to README/CHANGELOG/`docs/`, which are read by humans — and end
-each rules file with an audit checklist. Twenty-five invariants enforce this in
-`scripts/check-invariants.sh` (pre-commit + CI), covering line caps, checklist
-placement, description limits, version and count drift, router completeness,
+each rules file with an audit checklist — **exactly one**, since appending a
+section's bullets under a fresh heading strands them where a reader has already
+stopped. **29 invariants** enforce this in `scripts/check-invariants.sh`
+(pre-commit + CI), covering line caps, checklist placement *and uniqueness*,
+description limits, version and count drift, router completeness,
 internal link resolution, every rules file being reachable from its skill's index,
 a single `[Unreleased]` CHANGELOG entry, the `LAST-VERIFIED` stamp moving only
 with a sweep, a rendered `assets/*.png` never being older than the `*.html` it
 comes from, every scoreboard row declaring its sample size, a release
-declaring the **front door** terms its new capabilities landed on, every
-`§` reference resolving, every check having a known-bad, every shipped
-CHANGELOG version carrying a git tag and its own link reference, and no
-audit-checklist bullet being stranded inside a code fence — plus gitleaks
+declaring the **front door** terms its new capabilities landed on, **a release
+that edits a skill `description` declaring a routing check** — a description is
+the whole auto-load classifier, so changing one competes for every neighbour's
+traffic — every `§` reference resolving, every check having a known-bad, every
+shipped CHANGELOG version carrying a git tag and its own link reference, every
+eval runner being named in the harness's own README, the roadmap's open set
+agreeing with itself, every eval case set declaring how its cases were chosen,
+and no audit-checklist bullet being stranded inside a code fence — plus gitleaks
 (full-history scan in CI; per-commit via the pre-commit hook). Ideas taken from outside the repo are recorded with a
 verdict and reason in [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md), so a
 rejection isn't re-litigated. Security issues and conduct:
