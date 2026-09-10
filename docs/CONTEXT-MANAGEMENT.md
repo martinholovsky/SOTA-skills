@@ -27,8 +27,15 @@ LLMs don't apply every loaded rule equally. Two effects work against you:
 
 Fight the attention shape; don't out-muscle it with volume.
 
-1. **Load lean** — open only the rules files that match the task. Extra
-   look-alike guidance *measurably lowers* compliance. (Router BUILD step 2.)
+1. **Load lean** — open only the rules files that match the task. **Corrected
+   2026-09-10:** this used to say extra look-alike guidance *measurably lowers*
+   compliance, which contradicted the router's own step 2 (*"measures no worse;
+   the degradation this step once claimed is not supported"*) and was the older,
+   unsupported claim. What **is** measured: 400 lines of unrelated rules prose
+   cost **+0.01** (nothing) with step 4 active, and **−0.05** with it removed.
+   Lean is worth doing because it costs less, not because extra context degrades
+   you — *unless you also drop the self-audit*. (Router BUILD step 2;
+   [GATE-ABSORPTION-N3](../evals/results/2026-09-09/GATE-ABSORPTION-N3.md).)
 2. **Plan with the checks named up front** — list the non-negotiables before
    coding, so they're a tracked artifact at the strong start of context. (BUILD step 3.)
 3. **Self-audit LAST** — a terminal re-read of each rules file's Audit checklist

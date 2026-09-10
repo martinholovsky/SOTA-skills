@@ -1,0 +1,308 @@
+{
+ "_meta": {
+  "judge_model": "anthropic/claude-sonnet-5",
+  "samples": 3,
+  "temp": 0.0,
+  "cases": "evals/cases/routing-recall.jsonl",
+  "pairs": 17,
+  "excluded_single_skill": [
+   "single_go_error_control",
+   "single_ux_copy_control"
+  ],
+  "calibration": {
+   "positive": 1,
+   "negative": 0
+  }
+ },
+ "rate_judge_reported": 0.35294117647058826,
+ "pairs_with_conflict": 6,
+ "rows": [
+  {
+   "case": "mcp_server_audit",
+   "a": "sota-code-security",
+   "b": "sota-sandboxing",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "mcp_server_audit",
+   "a": "sota-code-security",
+   "b": "sota-threat-modeling",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "mcp_server_audit",
+   "a": "sota-sandboxing",
+   "b": "sota-threat-modeling",
+   "per_sample": [
+    0,
+    2,
+    0
+   ],
+   "any": true,
+   "conflicts": [
+    {
+     "file_a": "skills/sota-sandboxing/SKILL.md",
+     "quote_a": "Critical** \u2014 untrusted code or fully attacker-reachable parsing with no effective boundary, or a boundary trivially bypassed by present config (`--privileged`, docker.sock mounted, secrets/metadata reachable from inside, language-jail-only sandbox, agent with full lethal trifecta and no gating).",
+     "file_b": "skills/sota-threat-modeling/SKILL.md",
+     "quote_b": "Critical | Remotely exploitable now, by an unauthenticated or low-priv actor, leading to full compromise of a key asset (RCE, auth bypass, mass data exfil). Fix before anything else ships.",
+     "why": "Rating the same MCP finding (e.g. a tool with excessive agency/lethal-trifecta exposure reachable only by an authenticated caller) as Critical under A's criteria while B's criteria would bar the Critical label unless an unauthenticated or low-priv actor can reach it means the two mandatory severity conventions assign different, incompatible labels to the identical finding."
+    },
+    {
+     "file_a": "skills/sota-sandboxing/SKILL.md",
+     "quote_a": "Where: <file:line | resource | runtime evidence>\nThreat class: <untrusted code | untrusted input | multi-tenant | agent>\nGap: <which rule (file \u00a7rule) is violated and how>\nImpact: <what the attacker holds when this is exploited>\nFix: <concrete change \u2014 config snippet or pattern reference>",
+     "file_b": "skills/sota-threat-modeling/SKILL.md",
+     "quote_b": "Location: path/to/file.py:123 (and IaC/config refs)\nThreat: <actor> can <action> via <vector> because <missing/weak control>,\n        impacting <asset> (<C/I/A/privacy impact>).\nEvidence: code excerpt or config line proving the gap.\nRecommendation: specific control + where it goes; map to requirement ID.\nResidual risk if accepted: one sentence.",
+     "why": "Both files declare their own field set as the mandatory, exception-free structure for every finding in the audit, so writing findings that strictly satisfy A's schema (Where/Threat class/Gap/Impact/Fix, no Evidence/Recommendation/Residual-risk fields required) does not satisfy B's binding schema (Location/Threat/Evidence/Recommendation/Residual risk), and vice versa."
+    }
+   ]
+  },
+  {
+   "case": "k8s_cluster_audit",
+   "a": "sota-kubernetes",
+   "b": "sota-network-security",
+   "per_sample": [
+    0,
+    1,
+    0
+   ],
+   "any": true,
+   "conflicts": [
+    {
+     "file_a": "skills/sota-kubernetes/SKILL.md",
+     "quote_a": "no default-deny NetworkPolicy (requirement-level; depth \u2192 network-security)",
+     "file_b": "skills/sota-network-security/SKILL.md",
+     "quote_b": "\"Default-deny\" that actually allows all intra-cluster traffic; no egress control (free C2/exfil path); flat L2/L3 network with no segmentation",
+     "why": "Rating a missing/ineffective namespace default-deny NetworkPolicy as Medium (per sota-kubernetes' severity table) while the same finding must be rated High (per sota-network-security's severity table) means an auditor cannot assign a severity that satisfies both skills' explicit severity conventions for this exact finding."
+    }
+   ]
+  },
+  {
+   "case": "k8s_cluster_audit",
+   "a": "sota-kubernetes",
+   "b": "sota-sandboxing",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "k8s_cluster_audit",
+   "a": "sota-network-security",
+   "b": "sota-sandboxing",
+   "per_sample": [
+    1,
+    1,
+    1
+   ],
+   "any": true,
+   "conflicts": [
+    {
+     "file_a": "skills/sota-network-security/rules/01-zero-trust-architecture.md",
+     "quote_a": "The network policy then references *identity* (label/SA/SPIFFE ID), not a CIDR that any new workload could land inside.",
+     "file_b": "skills/sota-sandboxing/rules/03-containers-microvms.md",
+     "quote_b": "- to: [{ ipBlock: { cidr: 10.0.5.0/24 } }]   # only the approved backend",
+     "why": "Following sota-sandboxing's recommended NetworkPolicy pattern (allowing an internal backend by bare CIDR) would violate sota-network-security's mandate that internal/east-west allow rules reference workload identity (label/SA/SPIFFE) rather than a CIDR block."
+    },
+    {
+     "file_a": "skills/sota-network-security/SKILL.md",
+     "quote_a": "Every allow is explicit, justified in a comment, and references identity (workload identity, label selector, SG/service account) \u2014 never a bare CIDR or `world` entity.",
+     "file_b": "skills/sota-sandboxing/rules/03-containers-microvms.md",
+     "quote_b": "- to: [{ ipBlock: { cidr: 10.0.5.0/24 } }]   # only the approved backend",
+     "why": "Implementing sota-sandboxing's recommended egress-allowlist NetworkPolicy (a bare CIDR block) would violate sota-network-security's explicit non-negotiable that internal allow rules must reference identity (label/SA/SG) and never a bare CIDR."
+    },
+    {
+     "file_a": "skills/sota-network-security/rules/01-zero-trust-architecture.md",
+     "quote_a": "The network policy then references *identity* (label/SA/SPIFFE ID), not a CIDR that any new workload could land inside.",
+     "file_b": "skills/sota-sandboxing/rules/03-containers-microvms.md",
+     "quote_b": "- to: [{ ipBlock: { cidr: 10.0.5.0/24 } }]   # only the approved backend",
+     "why": "sota-network-security requires internal/east-west NetworkPolicy allows to reference workload identity (label/SA) rather than a bare CIDR, while sota-sandboxing's reference default-deny NetworkPolicy template allows the backend by ipBlock CIDR, so implementing the sandboxing template as-is violates the network-security mandate against CIDR-based internal trust."
+    }
+   ]
+  },
+  {
+   "case": "next_security_review",
+   "a": "sota-frontend-design",
+   "b": "sota-javascript-typescript",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "next_security_review",
+   "a": "sota-frontend-design",
+   "b": "sota-performance",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "next_security_review",
+   "a": "sota-frontend-design",
+   "b": "sota-web-frameworks",
+   "per_sample": [
+    0,
+    1,
+    2
+   ],
+   "any": true,
+   "conflicts": [
+    {
+     "file_a": "skills/sota-frontend-design/rules/03-design-systems-components.md",
+     "quote_a": "**Spread the rest**: forward `...rest` to the underlying DOM node, merge (don't clobber) `className`/style, and forward `ref`. A component that swallows `data-testid`, `aria-*`, or event handlers is broken.",
+     "file_b": "skills/sota-web-frameworks/rules/02-react.md",
+     "quote_b": "**Spreading unknown props** (`<div {...userControlledObject}>`) can inject `dangerouslySetInnerHTML` or event handlers \u2014 never spread attacker-influenced objects onto DOM elements.",
+     "why": "Unconditionally forwarding all rest props onto the underlying DOM node (as the component-API rule requires, with no security carve-out) would violate the security rule against ever spreading attacker-influenced/user-controlled objects onto DOM elements."
+    },
+    {
+     "file_a": "skills/sota-frontend-design/rules/03-design-systems-components.md",
+     "quote_a": "**Spread the rest**: forward `...rest` to the underlying DOM node, merge (don't clobber) `className`/`style`, and forward `ref`. A component that swallows `data-testid`, `aria-*`, or event handlers is broken.",
+     "file_b": "skills/sota-web-frameworks/rules/02-react.md",
+     "quote_b": "**Spreading unknown props** (`<div {...userControlledObject}>`) can inject `dangerouslySetInnerHTML` or event handlers \u2014 never spread attacker-influenced objects onto DOM elements.",
+     "why": "Unconditionally forwarding all rest props onto the underlying DOM node (as the component-API rule requires) is exactly the pattern the security rule forbids when any of those props originate from user/server data crossing the boundary, so a component built to the letter of one rule violates the other whenever props include untrusted data."
+    },
+    {
+     "file_a": "skills/sota-frontend-design/SKILL.md",
+     "quote_a": "[SEVERITY] <domain>: <one-line problem>\n  Where: <file:line or component/page>\n  Rule: <rules/NN \u00a7section> (+ WCAG SC number if a11y)\n  Impact: <who is affected and how>\n  Fix: <concrete change, ideally token/pattern-level>\n  Effort: trivial | small | medium | large",
+     "file_b": "skills/sota-web-frameworks/SKILL.md",
+     "quote_b": "file:line | rule violated (rules/NN \u00a7S) | severity | effort | fix",
+     "why": "Both skills mandate a specific, different required output template for reporting audit findings on the same combined review, so a single finding list cannot be formatted to satisfy both prescribed 'Finding format' structures simultaneously."
+    }
+   ]
+  },
+  {
+   "case": "next_security_review",
+   "a": "sota-javascript-typescript",
+   "b": "sota-performance",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "next_security_review",
+   "a": "sota-javascript-typescript",
+   "b": "sota-web-frameworks",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "next_security_review",
+   "a": "sota-performance",
+   "b": "sota-web-frameworks",
+   "per_sample": [
+    1,
+    0,
+    0
+   ],
+   "any": true,
+   "conflicts": [
+    {
+     "file_a": "skills/sota-performance/rules/05-caching.md",
+     "quote_a": "Any authz-sensitive or per-user/per-tenant response cached in a shared layer (Redis, CDN, shared in-process map) must carry the user/tenant \u2014 and role/scope where the value varies by it \u2014 in the cache key.",
+     "file_b": "skills/sota-web-frameworks/rules/06-ssr-hydration.md",
+     "quote_b": "Personalized (auth/cookie-dependent) responses must be `Cache-Control: private` (browser only) or uncached \u2014 never `public`/`s-maxage` at a shared CDN.",
+     "why": "Following A would permit caching a personalized/authz-sensitive Server Action or SSR response at a shared CDN as long as the cache key includes the user/tenant identity, while B categorically forbids caching any personalized response at a shared CDN regardless of key design."
+    }
+   ]
+  },
+  {
+   "case": "untrusted_feed_ingest",
+   "a": "sota-code-security",
+   "b": "sota-sandboxing",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "evidence_shell_script",
+   "a": "sota-code-security",
+   "b": "sota-shell-scripting",
+   "per_sample": [
+    0,
+    0,
+    1
+   ],
+   "any": true,
+   "conflicts": [
+    {
+     "file_a": "skills/sota-code-security/rules/10-silent-control-failure.md",
+     "quote_a": "An optional dependency backing a security control is not optional. Import it unconditionally, or make the missing case a startup error.",
+     "file_b": "skills/sota-shell-scripting/rules/02-robustness-correctness.md",
+     "quote_b": "run the rest, **SKIP that check with a named note** \u2014 `SKIPPED: python3 not found (CI enforces this check)` \u2014 and make the skip visible in the summary",
+     "why": "For deploy-attest.sh's ledger-verification step, if the tool needed to compute/verify the attestation hash/signature (e.g. sha256sum/openssl/gpg) is missing, Skill A requires treating that as a hard startup error (since it backs a security control), while Skill B classifies it as 'one check inside a larger run' that should be skipped-with-a-note while the rest of the script (and release) proceeds \u2014 the two cannot both be followed for the same missing dependency."
+    }
+   ]
+  },
+  {
+   "case": "crypto_key_rotation",
+   "a": "sota-code-security",
+   "b": "sota-secrets-management",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "agent_subagent_delegation",
+   "a": "sota-llm-engineering",
+   "b": "sota-sandboxing",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "browser_verification",
+   "a": "sota-frontend-design",
+   "b": "sota-testing",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  }
+ ]
+}

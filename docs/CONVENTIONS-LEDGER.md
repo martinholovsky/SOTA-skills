@@ -79,7 +79,7 @@ single `[Unreleased]` · rules-file indexed by its SKILL.md · `LAST-VERIFIED` s
 pairing · rendered asset no older than its source · scoreboard rows declare their sample size ·
 **a release declares its front-door terms and they resolve** · **the router's library map
 lists every `rules/NN` file, both directions** · **the hook `README.md` documents equals the
-one `install.sh` writes** · **a document describing the checks agrees with them** ·
+one `install.sh` writes** · **a document describing the checks agrees with them** (README included; word-form counts too) ·
 **every `§` section reference resolves** · **every check has a known-bad, and the
 exempt set is pinned** · **the router's §AUDIT is pinned** · **every CHANGELOG version
 below the top entry is tagged** · **no `- [ ]` checklist bullet is stranded inside a

@@ -51,6 +51,12 @@ audit STRAT-HIGH-2).
   and the under-count would carry no signal that it was one. `--judge-model` selects the
   judge and **must have a large context** for that reason — pairs reach roughly 150k
   tokens, and a model whose window is smaller will not fail loudly, it will read less.
+  **`--verify <artifact>`** post-processes a saved run and is where the *quotable* number
+  comes from: it reports which quoted sentences do **not** exist in the file the judge
+  named — a fabrication, which kills that conflict with no judgement needed — and prints
+  the survivors for the hand read the pre-registration requires. Whitespace is normalised
+  (the judge re-wraps prose); wording is not, because a quote that differs in wording *is*
+  a fabrication. The judge-reported rate is never the headline; the verified one is.
 - **The BUILD-safe arms** (`run-build-safe-arms.py` unguided, `run-build-safe-arms-guided.py`
   guided) — the two live-model arms that feed `run-build-safe.py`'s scorer. The guided one
   loads **only the BUILD-facing rules files** a router-following builder would open and
@@ -234,7 +240,11 @@ audit STRAT-HIGH-2).
   for ROADMAP 32. `--pad-rules` alone leaves `BUILD_WORKFLOW` in the padded arm, so its −0.01
   measures *lean plus the terminal self-audit*, not lean. This drops `BUILD_WORKFLOW` from a
   padded arm and reports **`GATE-ABSORPTION` = mean(with+pad) − mean(pad-nogate)**: what step 4
-  recovers under competing context. Guards, both watched to fail: it **refuses `--no-gate-arm`
+  recovers under competing context. **Run twice**: n=1/temp 0 read **+0.04** (2026-09-06,
+  underpowered — inside neither the registered H1 nor H0 band), and n=3/temp 0.7 read
+  **+0.062**, SE 0.019, 95% CI **[+0.024, +0.099]** (2026-09-10,
+  [write-up](results/2026-09-09/GATE-ABSORPTION-N3.md)) — the first CI here excluding zero
+  on BUILD step 4. Guards, both watched to fail: it **refuses `--no-gate-arm`
   without `--pad-rules`** (that measures the gate alone, not the gate against competing context),
   and **refuses if the ablation leaves the prompt byte-identical** to the gated arm — the same bar
   `run-prompt-independence.py` applies, because an ablation that did not take is a duplicate arm

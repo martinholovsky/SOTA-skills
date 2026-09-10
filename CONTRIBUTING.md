@@ -391,8 +391,13 @@ are marked "needs verification", never asserted.
     of invariants/checks that isn't the number `check-invariants.sh` prints, or a
     restatement of the negative-control coverage lists that isn't what
     `check-negative-controls.sh` prints. Practical effect: if you add a check,
-    the count in `AGENTS.md`, `CONTRIBUTING.md`, `docs/CONVENTIONS-LEDGER.md` and
-    `docs/MAINTENANCE.md` must move with it. Added 2026-08-19 after this file
+    the count in `AGENTS.md`, `CONTRIBUTING.md`, `README.md`,
+    `docs/CONVENTIONS-LEDGER.md` and `docs/MAINTENANCE.md` must move with it —
+    **and a count spelled out in words counts**. `README.md` joined that list on
+    2026-09-10, when it turned out to be the one document describing the gates
+    that nothing validated: it read *"Twenty-five invariants"* against a script
+    with 29, across at least four releases, and neither the file nor the word
+    form was in scope. Added 2026-08-19 after this file
     understated part A's coverage by six invariants and the ledger headed its
     enforced section "(14)" while 16 were gated. A number inside `"quotes"` is
     treated as a quotation of old wording, not as a claim — that is how a

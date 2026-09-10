@@ -97,3 +97,12 @@ into a closed one.
 > falsification condition before any spend:
 > [../2026-09-06/PRE-REGISTRATION.md](../2026-09-06/PRE-REGISTRATION.md). The −0.01 above is
 > unaffected and stands as published — the follow-up is a different question, not a re-run.
+
+> **Update 2026-09-10 — it has now been run, twice.** n=1/temp 0 gave **+0.04**
+> ([../2026-09-06/GATE-ABSORPTION.md](../2026-09-06/GATE-ABSORPTION.md), underpowered);
+> n=3/temp 0.7 gave **+0.062**, 95% CI **[+0.024, +0.099]**
+> ([../2026-09-09/GATE-ABSORPTION-N3.md](../2026-09-09/GATE-ABSORPTION-N3.md)), confirming
+> H1. The **−0.01 above still stands as published.** Note for anyone citing it: at the
+> higher-powered run the padded-and-gated arm reads **+0.01**, so the "competing context
+> costs a little even with the gate" reading of −0.01 is **not** supported — the honest
+> statement is that with the gate on, this much padding costs nothing measurable.
