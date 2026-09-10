@@ -70,8 +70,8 @@ decision for each. **Nothing here is a guess; where a number is a heuristic it s
 | no XML tags in `name`/`description` | **hard** | fixed 2026-08-02 | nothing — gated (inv. 4) |
 | no reserved words (`anthropic`, `claude`) in `name` | **hard** | fine | nothing — gated (inv. 4) |
 | `description` + `when_to_use` ≤ 1,536 in the listing | **hard** truncation | 1024, no `when_to_use` | nothing — 512 spare |
-| `SKILL.md` < 500 lines | recommendation | router at **399/500** (re-counted 2026-09-07) | nothing — gated (inv. 1); **101 lines of slack** since BUILD/AUDIT detail *and* the library map moved to `rules/` |
-| `SKILL.md` body < 5,000 tokens | recommendation | router **13,415** — **2.7×** (measured 2026-09-02 with `count_tokens`, not re-measured since) | **accept, don't restructure** — but see the correction below |
+| `SKILL.md` < 500 lines | recommendation | router at **410/500** (re-counted 2026-09-10; this cell read 399 until then) | nothing — gated (inv. 1); **90 lines of slack** since BUILD/AUDIT detail *and* the library map moved to `rules/` |
+| `SKILL.md` body < 5,000 tokens | recommendation | **STALE — do not quote.** Last real measurement **13,415** (**2.7×**) with `count_tokens` on 2026-09-02, when the router was 399 lines; it is **410** now, so the true figure is higher and unknown | **accept, don't restructure** — but see the correction below. Re-measure with `count_tokens` before citing: no estimate is admissible here (chars/4 under-reads Claude by ~54%) |
 | `rules/*.md` length | **no budget** — stage-3 resources | 162 over 200 lines | nothing — **long is correct by design**; the spec says move detail *into* these |
 | TOC for reference files > 100 lines | recommendation | 242 without one | **skip** — tested, no retrieval benefit at 4× our longest file |
 | first 5,000 tokens kept on compaction re-attach | **hard** truncation | router loses ~half | **accept** — a later invocation reloads it in full |
