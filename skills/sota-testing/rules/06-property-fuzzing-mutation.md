@@ -191,6 +191,25 @@ hours):
   and the one that looks least like an environment problem). Force the path live and
   assert the mutation's runtime effect before trusting a green run.
   `sota-code-security` rules/10.
+- **Apply and revert with FILE EDITS, not a shell command pair — the revert is part
+  of the technique, not cleanup.** This probe deliberately puts a real defect into
+  production source, so an `inject && run && revert` one-liner has an unguarded
+  failure mode: anything that kills the shell **between the second and third step**
+  leaves a permissive no-op on disk in a security control — precisely the defect the
+  probe exists to detect. Field-reported 2026-09-10: the shell died mid-sequence with
+  `fork failed: resource temporarily unavailable` (an exhausted process table,
+  `sota-shell-scripting` rules/06 §4), and the mutated file stayed mutated. **The
+  repair path was blocked too** — `git checkout --` was denied by policy and `cp` from
+  a backup also needed a fork — so the edit had to be undone with a file-edit tool,
+  which needs no process. Assume the cheap repair may be unavailable.
+- **A wrapper reporting on that shell will call it a pass.** The failure surfaced as a
+  bare `Exit code 1`, with the real cause only in the error text; piped, it reads as
+  "mutation applied, suite run, mutation reverted" (`sota-shell-scripting` rules/06
+  §1 — `cmd; echo` makes the shell's status the `echo`'s). So **verify the revert
+  against the source of truth**, never against the exit status: `git status --short
+  <file>` empty, or grep the marker to 0. Give every mutation a greppable marker
+  (`# MUTATION-<id>`) so that check is one command and cannot be fooled by a
+  formatter reflow.
 - **As an assertion probe — mutate the EXPECTATION, not the code.** The cheapest
   probe of the four, and it catches a defect none of the others can: leave the SUT
   and the fixture alone, and point one assertion at a **wrong-but-plausible expected
@@ -288,6 +307,13 @@ against SLOs with observability in place. See `sota-observability` and
 into the CI test suite.
 
 ## Audit checklist
+
+- [ ] **Mutation probes: is the revert verified, not assumed?** (§6.3) Any hand-mutation
+      of production source must be applied and undone by **file edit**, not by an
+      `inject && run && revert` shell chain that strands the defect if the shell dies
+      mid-sequence. Check the working tree (`git status --short`) or grep a
+      `# MUTATION-<id>` marker to 0 — never the exit status, which a wrapper reports as
+      a clean pass.
 
 - [ ] Do parser/serializer/codec modules have roundtrip properties? Grep for
       both a PBT import (`hypothesis|fast-check|proptest|quickcheck|jqwik`)

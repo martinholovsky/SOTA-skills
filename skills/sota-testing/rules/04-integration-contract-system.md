@@ -205,6 +205,16 @@ ran*; it read as the target not being exploitable.
   runtime produced a result at all" is a different question from "the result is X", and it
   must have its own failure message. A fixture that starts one throwaway container and
   asserts it emitted a known marker is enough, and it runs once per session.
+- **A green run that ran FEWER TESTS is the same failure wearing the safest possible
+  colour.** §4.8's other bullets describe a bench that produces nothing; this one produces
+  a pass. Where tests skip themselves when a dependency is absent — the standard
+  `skipif(not docker_available)` shape — a stopped container runtime does not fail them, it
+  **removes** them: field-reported 2026-09-10, a stopped machine turned exactly 30 tests
+  into skips while the suite reported **0 failed**. The only moving number was the skip
+  count (30 → 60). So **assert the count, not just the colour**: pin an expected number of
+  collected/executed tests for any lane with environment-gated skips, or fail the lane when
+  skips exceed a recorded baseline. (`rules/07` §7.6 treats a *drifting* skip count as slow
+  rot; this is the acute version, and it is invisible in one run.)
 - **Empty is not a result.** An empty output file, an empty stdout, a zero-length report is
   a **failed measurement until proven otherwise** — assert the artefact is non-empty *and*
   contains the summary line you expect before reading anything into it. (The pipe version of
@@ -217,6 +227,11 @@ ran*; it read as the target not being exploitable.
   outside, and retrying it produces the same confident wrong answer every time.
 
 ## Audit checklist
+
+- [ ] **Does any lane skip tests when a dependency is missing, and does anything notice?**
+      (§4.8) A stopped container runtime converts tests to skips, not failures — the run is
+      green and 30 tests never ran. Pin an expected collected count, or baseline the skip
+      count and fail on an increase.
 
 - [ ] Do integration tests run the real engine? Grep test config for
       lookalikes: `:memory:|sqlite|H2|fakeredis|embedded` standing in for a

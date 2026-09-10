@@ -148,7 +148,29 @@ a suite that can't run parallel is telling you it has shared state.
   instances. "Reset the singleton between tests" is a workaround; injectable
   construction is the fix.
 - Verify continuously: run shuffled AND parallel in CI (`rules/02` §2.5).
-  Failures unique to parallel runs are isolation bugs, never "just rerun".
+  Failures unique to parallel runs **within one suite invocation** are isolation
+  bugs, never "just rerun".
+- **Two independent runs are a different case, with the opposite answer — and the
+  bullet above will point you the wrong way if you read it unscoped.** Everything in
+  §7.4 is about workers *inside one invocation*, which share a codebase and are
+  yours to isolate. Two whole suites against one shared database, broker or container
+  runtime contend on state **neither run owns**, so the resulting failures are
+  artifacts, and re-running the failing subset in isolation is the correct diagnosis
+  rather than the forbidden one. This is increasingly common: CI plus a local run,
+  a teammate on the same shared instance, or **two agent sessions on one machine**.
+  Field-reported 2026-09-10 — a lane read 38,833 passed / **12 failed** / 60 skipped
+  against a baseline of 38,875 / 0 / 30; a second session was running the same repo's
+  suite unfiltered against the same container, clearing the graph underneath it. All
+  256 tests in the three failing files then passed in isolation, and the clean re-run
+  read 38,890 / 0 / 30.
+- **Establish that yours is the only run touching the shared services before believing
+  any failure — by parentage, not by process name**, since both runs match the same
+  name and the same command line: `ps -Ao pid=,ppid=,command=`, then check which ppid
+  each belongs to. (Same instrument, same reason, as `sota-shell-scripting` rules/06
+  §4 and `rules/03` §3a.) **A skip count that moved is the tell**: skips doubling
+  alongside the failures says the *environment* changed, not the code — a service the
+  suite conditionally needs went away. Compare failures *and* skips against the
+  baseline, never failures alone.
 
 ## 7.5 CI sharding and pipeline shape
 
@@ -231,7 +253,63 @@ inert-control audit.*
   message names every place that quotes it** — then the prose is inside the ratchet instead
   of beside it.
 
+## 7.9 A threshold measured on one population, asserted over a pooled one
+
+§7.8 covers what to do when a ratchet fires. This is the case where it fires for a
+reason that **is not a regression at all**: the threshold was measured on the data
+available at the time, and is then asserted over whatever the denominator later
+contains. Add a legitimate new data source — a new corpus, language, tenant, region,
+customer — and the control goes red with **no code change**, naming a regression that
+did not happen.
+
+Field-reported 2026-09-10. A recall control required a pre-LLM gate to reject ≥ 1.5%
+of adjudicated false positives; the floor was measured at 3.9% on a 205-row,
+JavaScript-derived corpus. A campaign against a Go target then contributed 491 false
+positives and 0 rejections:
+
+| population | rejected / FPs | share |
+|---|--:|--:|
+| tar-4.4.13 | 9/120 | 7.5% |
+| axios-0.21.0 | 3/99 | 3.0% |
+| handlebars-4.1.2 | 5/291 | 1.7% |
+| markdown-it-12.3.1 | 0/202 | 0.0% |
+| **a Go target** | **0/491** | **0.0%** |
+| pooled | 17/1203 | **1.4%** ← fired |
+| same corpus, minus the new population | 17/712 | **2.4%** ← passes |
+
+Nothing was inert; the rules were authored from JavaScript category errors and simply
+do not fire on Go. **No source line changed** — the gate module had been untouched for
+eight days.
+
+- **When such a control fires, decompose the denominator before believing its message.**
+  The failure text said *"a family has probably gone inert"* — and dilution is the one
+  cause a pooled metric **cannot** distinguish from the cause its author imagined. A
+  failure message is a hypothesis written before the failure, not a diagnosis.
+- **Assert per population, not over a pool**, wherever populations can differ in kind:
+  `max(share) >= floor` over populations above a minimum sample size (≥ 50 here). That
+  still fails when the property dies *everywhere* — which is what "has gone inert"
+  means — and cannot fail merely because data was added. Prove both directions with a
+  mutation (`rules/06` §6.3): break one population and watch it stay green, break all of them and
+  watch it go red.
+- **Lowering the floor is re-recording a ratchet** (§7.8). If the honest answer is that
+  the property does not hold on the new population, that is a finding about **scope**,
+  not a smaller number — and it belongs in the control's name.
+- **State the population a threshold was measured on next to the constant, in code.** A
+  floor whose provenance lives only in a commit message will be lowered by whoever
+  meets it next, because nothing on the line tells them what it meant.
+
 ## Audit checklist
+
+- [ ] **Suite failures: was yours the only run touching the shared services?** (§7.4)
+      Two independent runs against one DB/broker/container produce failures that are
+      artifacts, and the parallel-isolation rule does **not** apply to them. Check
+      parentage (`ps -Ao pid=,ppid=,command=`), not process name, and compare the
+      **skip** count against the baseline as well as the failure count — doubled skips
+      mean the environment moved.
+- [ ] **Pooled thresholds** (§7.9): does any floor, budget or ratchet assert over a
+      denominator that can gain new populations (a language, corpus, tenant, region)?
+      If so it can fire with no code change. Assert per population above a minimum
+      sample size, and record next to the constant which population it was measured on.
 
 - [ ] Is there a written flaky-test policy with quarantine + expiry? No
       policy and visible retry-to-green culture → High.
