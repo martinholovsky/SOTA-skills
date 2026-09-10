@@ -176,6 +176,14 @@ probe 1 "line budget (rules file over 500 lines)" "OVER 500"
 ( cd "$WT" && perl -0pi -e 's/^## Audit checklist$/## Not A Checklist/m' "$target" )
 probe 2 "audit checklist missing from a rules file" "MISSING/NOT-LAST '## Audit checklist'"
 
+# 2b — a SECOND '## Audit checklist' in the same file. The last-heading test above
+# passes on this, and five files shipped that way with six stranded bullets between
+# them: the earlier block renders where a reader has already stopped. Same class as
+# probe 22, and invisible to the line count for the same reason.
+( cd "$WT" && perl -0777 -pi -e 's/## Audit checklist/## Audit checklist\n\n- [ ] stranded\n\n## Audit checklist/' \
+    skills/sota-devsecops/rules/07-runtime-ops.md )
+probe 2b "a rules file carries two '## Audit checklist' headings" "DUPLICATE '## Audit checklist'"
+
 # 6 — count-bearing surfaces match the tree.
 # The mutation is count-AGNOSTIC: it matches whatever numbers the README currently
 # carries and rewrites only the file count. A hardcoded literal here went stale twice

@@ -73,7 +73,7 @@ A convention earns a gate only if it passes **all three**:
 
 ### Enforced (29) — invariants 1–29
 
-Skill-file line cap · audit-checklist placement · internal-name denylist · description cap ·
+Skill-file line cap · audit-checklist placement **and uniqueness** · internal-name denylist · description cap ·
 version lockstep · count surfaces · router completeness · link resolution ·
 single `[Unreleased]` · rules-file indexed by its SKILL.md · `LAST-VERIFIED` sweep
 pairing · rendered asset no older than its source · scoreboard rows declare their sample size ·

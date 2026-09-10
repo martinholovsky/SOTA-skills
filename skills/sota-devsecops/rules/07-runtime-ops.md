@@ -293,11 +293,6 @@ found nothing** — the second reading being a conclusion about the target
 
 ## Audit checklist
 
-- [ ] **Is prune/trim on a shared runtime treated as a change?** (§7.7) Restart plus a
-      post-change smoke test that *starts* something, foreign-owned resources enumerated
-      first, and dangling volumes confirmed unnamed before deletion.
-## Audit checklist
-
 - [ ] Admission enforces (not audits) image verification in prod: exact signer identity + issuer, provenance attestation required, registry allowlist, tag→digest mutation, `failurePolicy: Fail`, all Pod-paths covered; Kyverno policies on the CEL v1 types (ClusterPolicy deprecated since 1.17, removal planned v1.20)
 - [ ] Baseline workload policies enforced: PSA restricted-equivalent, no `:latest`, non-root, resource limits, attribution labels
 - [ ] Policies in git, GitOps-deployed, with CI-tested deny cases; exceptions are scoped, owned, time-bound, PR-reviewed, and inventoried
@@ -307,3 +302,7 @@ found nothing** — the second reading being a conclusion about the target
 - [ ] Backup inventory covers state/registry/git/secrets/keys; restores tested on schedule against RPO/RTO; backups immutable, in a separate trust domain, not deletable by prod-compromising credentials
 - [ ] Break-glass documented per gate, alarmed on use, time-bound, post-reviewed, reconciled to git; routine admin bypass absent
 - [ ] Feedback loop metrics tracked: gate latency, exception age/count, remediation SLAs, rollback drill and restore test recency
+- [ ] **Is prune/trim on a shared runtime treated as a change?** (§7.7) Restart plus a
+      post-change smoke test that *starts* something, foreign-owned resources enumerated
+      first, and dangling volumes confirmed unnamed before deletion.
+

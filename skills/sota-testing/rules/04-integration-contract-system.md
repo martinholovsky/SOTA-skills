@@ -218,12 +218,6 @@ ran*; it read as the target not being exploitable.
 
 ## Audit checklist
 
-- [ ] **Does every out-of-process test assert liveness separately from its result?** (§4.8) A
-      harness that could not start and one that ran and found nothing produce the same output,
-      and only the second is a conclusion about the target. Empty artefacts are failed
-      measurements until proven otherwise.
-## Audit checklist
-
 - [ ] Do integration tests run the real engine? Grep test config for
       lookalikes: `:memory:|sqlite|H2|fakeredis|embedded` standing in for a
       different prod engine → High.
@@ -256,3 +250,8 @@ ran*; it read as the target not being exploitable.
       sleeps? Grep `sleep` in queue/e2e test paths → High.
 - [ ] Shared staging as the only integration venue, hand-maintained data →
       Medium, recommend ephemeral envs or containerized deps.
+- [ ] **Does every out-of-process test assert liveness separately from its result?** (§4.8) A
+      harness that could not start and one that ran and found nothing produce the same output,
+      and only the second is a conclusion about the target. Empty artefacts are failed
+      measurements until proven otherwise.
+

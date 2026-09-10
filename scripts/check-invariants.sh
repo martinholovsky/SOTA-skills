@@ -183,8 +183,21 @@ done < <(git ls-files 'skills/*/*.md' 'skills/*/rules/*.md')
 scope "$seen1" "skill files" || over=1
 if [ "$over" -eq 0 ]; then echo "    ok ($seen1 skill files)"; else fail=1; fi
 
-# --- 2. Audit checklist ends every rules file ------------------------------
-echo "[2/29] Every skills/*/rules/*.md ends with an '## Audit checklist'"
+# --- 2. Audit checklist ends every rules file, exactly once -----------------
+#
+# SECOND HALF added 2026-09-09: EXACTLY ONE. The "last heading" test below passes
+# happily on a file with TWO '## Audit checklist' sections, and five files had
+# exactly that -- `sota-code-security` rules/13, `sota-detection-engineering`
+# rules/01, `sota-devsecops` rules/07, `sota-testing` rules/04 and rules/07 --
+# carrying six stranded bullets between them. Same authoring slip in all five:
+# whoever appended a section added its checklist bullets under a FRESH heading
+# instead of into the existing one.
+#
+# It is the same defect class as invariant 22 (a checklist bullet stranded inside
+# a code fence): the bullets exist, render, and sit where nobody reads them,
+# because the file appears to have already ended. Nothing about the line count or
+# the last-heading test changes, which is why it survived five times.
+echo "[2/29] Every skills/*/rules/*.md ends with exactly one '## Audit checklist'"
 missing=0
 seen2=0
 while IFS= read -r f; do
@@ -200,9 +213,17 @@ while IFS= read -r f; do
     '## Audit checklist'*) ;;
     *) note "MISSING/NOT-LAST '## Audit checklist': $f"; missing=1 ;;
   esac
+  # Fence-aware too: a second heading inside a fence is sample output, not a
+  # section, and must not be counted against the file.
+  n_ck=$(awk '/^(```|~~~)/{fence=!fence} !fence && /^## Audit checklist/{n++} END{print n+0}' "$f")
+  if [ "$n_ck" -gt 1 ]; then
+    note "DUPLICATE '## Audit checklist' ($n_ck) in $f — the earlier block's bullets"
+    note "  render where a reader has already stopped. Merge them into the last one."
+    missing=1
+  fi
 done < <(git ls-files 'skills/*/rules/*.md')
 scope "$seen2" "rules files" || missing=1
-if [ "$missing" -eq 0 ]; then echo "    ok ($seen2 rules files)"; else fail=1; fi
+if [ "$missing" -eq 0 ]; then echo "    ok ($seen2 rules files, one checklist each)"; else fail=1; fi
 
 # --- 3. No internal/private references -------------------------------------
 # Keep the library generic and shareable. Two pattern sets:
