@@ -5,7 +5,7 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.39.0] - 2026-09-10
 
 **The open roadmap set worked end to end (2026-09-09): 8 open → 4.** Three items were parked
 on a *decision*, and taking each one changed the answer the row had proposed. A fourth was
@@ -82,6 +82,27 @@ parked on a *measurement*, and the measurement reads negative.
   27 and 28 were gated, described in its own table, and missing from the list above it.
   Invariant 17 reads the stated *count*, which was right both times.
 
+### Measured
+
+- **GATE-ABSORPTION = +0.062** (SE 0.019, **95% CI [+0.024, +0.099]**, 7 tasks × 4 arms × 3
+  samples, temp 0.7) — **ROADMAP 43, H1 confirmed.** Under 400 lines of competing rules
+  prose, removing the router's terminal self-audit costs **−0.05**; the gate recovers
+  +0.062. The **first confidence interval in this repo excluding zero on BUILD step 4**,
+  measured against a **+0.05 threshold registered before any call** and deliberately not
+  moved toward the +0.04 item 32 had already seen. The registered ±0.02 noise band was
+  *checked*, not assumed — observed SE 0.019 — while the within-arm per-sample spread is
+  0.071 mean / 0.300 worst, which is why n=1 could not resolve this.
+  **One prior claim did not survive:** item 32's *"item 25 replicates"* rested on a
+  PAD-DELTA of −0.03; at this power it is **+0.01**, so with the gate on, this much
+  competing prose costs nothing measurable. Superseded in place, never edited.
+- **Conflict rate 0.176 verified** (0.353 judge-reported, 17 pairs × 3 samples) —
+  **ROADMAP 39**, the first measurement of the one failure mode with a real incident
+  behind it. **H1 (conflicts are rare) is refuted**: it required ≤ 0.10. `--verify` killed
+  **3 of 11** reported conflicts as fabricated quotes — sentences absent from the files
+  named — and the hand read killed two more, both because the judge sees a *pair of skills*
+  and not the router, which is where conflict resolution lives. It is a **ceiling**: the
+  judge saw every rules file of both skills where a session loads lean.
+
 ### Notes
 
 - **Two pre-registered runs stopped on `HTTP 402 Payment Required`** and neither partial is
@@ -89,6 +110,25 @@ parked on a *measurement*, and the measurement reads negative.
   arm-cells. Items **39 and 43 stay open, blocked on account credit and nothing else**; both
   registrations stand unchanged, so a re-run needs no new one.
   See [RUNS-BLOCKED-ON-CREDIT.md](evals/results/2026-09-09/RUNS-BLOCKED-ON-CREDIT.md).
+  **Both were re-run on 2026-09-10 once credit was restored** and both produced their
+  registered numbers, above.
+- **Invariant 17 now reads `README.md`, and counts spelled out in words.** README was the
+  one document describing the gates that nothing validated — it said *"Twenty-five
+  invariants"* against a script with 29, across at least four releases. Neither the file
+  nor the word form was in scope; both are now, each watched to fail.
+- **Invariant 2 now requires exactly one `## Audit checklist`.** Five rules files carried
+  two, stranding six audit bullets in a block a reader has already scrolled past. The
+  last-heading test passed on every one of them.
+- **`sota-shell-scripting` rules/06 §2 corrected**: BSD grep 2.6.0 (macOS `/usr/bin/grep`)
+  follows a symlinked directory met in traversal with **neither** `-r` nor `-R`. The table
+  had been measured through ugrep and generalised to "grep". Re-measured against a target
+  reachable only through the link, with a positive control and `find -L` as a second method.
+- **The Superpowers head-to-head is now in the front-door chart**, plotted with the
+  unguided arm of *its own* run so the −0.04 cannot read as a win.
+
+**Front door checked:** GATE-ABSORPTION · conflict rate · searcher
+
+**Routing checked:** evals/results/2026-09-09/ROUTING-REGRESSION-RUN.md
 
 **Docs only (earlier entry)** — a post-release sweep after five releases in one day, every
 replacement number measured rather than scaled.
@@ -7462,6 +7502,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.39.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.39.0
 [1.38.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.38.0
 [1.37.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.37.0
 [1.36.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.36.3
