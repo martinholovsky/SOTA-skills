@@ -238,6 +238,75 @@ Blast radius is not only disk (§3). It is whatever finite resource the command 
 without anyone counting — and the process table is the one whose exhaustion disables the
 tools you would use to recover.
 
+## 5. The listing tool answered your question about *one page*
+
+§2 is a searcher that traverses less than you think. This is a lister that returns less
+than you think — and it is worse, because the shortfall is **policy, not a bug**: the tool
+did exactly what it was asked, exited `0`, and wrote nothing to stderr.
+
+Measured 2026-09-10 against a repository with 330 merged pull requests:
+
+```text
+gh pr list --state merged --json number | wc -l        →   30    ← no flag: a DEFAULT cap
+gh pr list --state merged --limit 20 ...               →   20    ← the cap you typed
+gh pr list --state merged --limit 1000 ...             →  330    ← the population
+exit status 0, stderr empty, in all three
+```
+
+The no-flag answer is off by an order of magnitude. Nothing in the output distinguishes
+"there are 30" from "here are the first 30 of 330", and `wc -l` turns either into a number
+that looks like a measurement. The same default sits under `gh issue list`, `gh run list`,
+`aws ... --max-items`, `kubectl get --chunk-size`, `docker ps -n`, and every REST `GET`
+that pages at 30 or 100 — **a client library that iterates pages for you is the exception,
+not the rule, and `curl` never does.**
+
+Two distinct ways to get this wrong, and the second is the one that repeats:
+
+- **The cap you never set.** You reach for a lister to *look* at recent items, the default
+  page is the right size for looking, and later the same command gets used to *count*.
+- **The cap you set yourself, for a different question.** `--limit 20` was correct when the
+  question was "show me the recent ones". It silently became the answer when the question
+  changed to "how many are there" — the flag is still in the scrollback, and the number it
+  produced looks like a finding. Read the flags in your own command before quoting its
+  output as a total.
+
+**A count and a sample need different commands.** When the number is the deliverable, ask
+the API for the number rather than for the rows, or make the tool prove it reached the end:
+
+```bash
+# GOOD — the server counts; no page size can shorten a total
+gh api -X GET search/issues --raw-field q='repo:OWNER/REPO is:pr is:merged' -q .total_count
+
+# GOOD — page until short, and say so; --paginate exists precisely for this.
+# NOTE the predicate: `state=closed` is merged AND closed-unmerged. Filter, don't assume.
+gh api --paginate '/repos/OWNER/REPO/pulls?state=closed&per_page=100' \
+  -q '.[] | select(.merged_at != null) | .number' | wc -l
+
+# CONTROL — a cap you can see: if the count equals the limit exactly, assume truncation
+n=$(gh pr list --state merged --limit 100 --json number -q '.[].number' | wc -l)
+[ "$n" -eq 100 ] && echo "AT THE CAP — this is a page, not a total" >&2
+```
+
+**Then check the two methods against each other — and read the disagreement.** Writing
+this section, the server count said **330** and the paginated read said **339**. The
+pagination was right; the *predicate* was wrong — `state=closed` includes the 9 PRs that
+were closed without merging, so the fixed command had quietly started answering a different
+question than the one it replaced. A second method exists to have a **different failure
+mode** (`sota-code-security` rules/11 §7), and the whole return on that is the moment the
+two numbers differ. Had they agreed, nothing would have been learned; had I run only the
+fixed one, `339` would have shipped as the merged total. Reconcile the gap to a named cause
+(`330 + 9 unmerged = 339`) before reporting either number — an unexplained delta between two
+methods is a finding, not a rounding difference.
+
+That last line generalises past `gh`: **a result whose size equals a round number you or the
+tool chose is a page until proven otherwise.** 30, 50, 100, 1000. It costs one comparison
+and it is the only signal the tool gives you, because it does not give one.
+
+The reporting rule follows §2's: **say which bound produced the number.** "330 merged PRs
+(`--limit 1000`, no truncation — the run returned fewer rows than the cap)" is a
+measurement. "330 PRs" is a claim whose evidence has been thrown away, and "30" was too.
+
+
 ## Audit checklist
 
 - [ ] **Sweeps: is the searcher's traversal and exclusion set stated with the count?** (§2)
@@ -254,6 +323,13 @@ tools you would use to recover.
       loop's own argv? Grep for the shape — `grep -nE '(while|until).*(true|pgrep|ps ).*&\s*$'`
       — and for polling of work a harness already reports. Headroom for the resource
       being spent is checked (`ps -A | wc -l` vs `ulimit -u`), not just `df -h`.
+- [ ] **Counts taken from a listing tool** (§5): does the command carry a `--limit`/
+      `per_page`/`--max-items`, or rely on the tool's **default** page (30 for `gh`, 100 for
+      most REST)? A total must come from a server-side count (`total_count`) or a paginated
+      read (`gh api --paginate`), never from the first page. Treat a result whose size equals
+      the cap exactly as truncated, and quote the bound alongside the number. Where a second
+      method was run, is the delta between the two reconciled to a named cause — or was the
+      un-truncated command also given a **different predicate** (`state=closed` vs merged)?
 - [ ] **zsh joining bugs** (the inverse of SC2086, and unlinted): in any zsh script or
       snippet, `grep -nE '\$\{[a-zA-Z_]+:\+[^}]*\$' -e '[a-z] \$[a-zA-Z_]+$'` for
       `${var:+--flag $var}` and bare `cmd $args`. Each passes **one** argument in zsh
