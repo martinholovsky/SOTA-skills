@@ -20,9 +20,11 @@
 #   --skills-dir DIR   where the skills live (default: ~/.claude/skills if present,
 #                      else the skills/ dir of this checkout)
 #   --output FILE      AGENTS.md to write/update (default: ./AGENTS.md)
-#   --siblings         also create CLAUDE.md / GEMINI.md POINTERS beside it, if
-#                      and only if they do not already exist. Neither duplicates
-#                      a byte: AGENTS.md stays the single source of truth.
+#   --siblings         also create a CLAUDE.md POINTER beside it, if and only if it
+#                      does not already exist. It duplicates no byte: AGENTS.md stays
+#                      the single source of truth.
+#   --legacy-gemini    also handle GEMINI.md. Off by default: Antigravity CLI, which
+#                      replaces Gemini CLI, reads AGENTS.md natively.
 #
 set -euo pipefail
 
@@ -35,6 +37,7 @@ OUTPUT="AGENTS.md"
 SKILLS_DIR=""
 DRY_RUN=0
 SIBLINGS=0
+LEGACY_GEMINI=0
 
 log()  { printf '  %s\n' "$*"; }
 die()  { printf 'error: %s\n' "$*" >&2; exit 1; }
@@ -46,6 +49,7 @@ while [ $# -gt 0 ]; do
     --output)     shift; [ $# -gt 0 ] || die "--output needs a path"; OUTPUT="$1" ;;
     --dry-run)    DRY_RUN=1 ;;
     --siblings)   SIBLINGS=1 ;;
+    --legacy-gemini) LEGACY_GEMINI=1 ;;
     -h|--help)    usage 0 ;;
     *)            die "unknown argument: $1 (try --help)" ;;
   esac
@@ -180,13 +184,25 @@ fi
 # NOTHING, which presents as the model getting worse rather than as a missing
 # file. Neither sibling gets a COPY: AGENTS.md stays the single source of truth.
 #
-# BOTH tools have a native import, and each is given the form ITS OWN docs show:
 #   CLAUDE.md -> `@AGENTS.md`     (code.claude.com/docs/en/memory, AGENTS.md section;
 #                                  that page recommends it OVER a symlink, and notes a
 #                                  symlink on Windows needs Administrator/Developer Mode)
-#   GEMINI.md -> `@./AGENTS.md`   (gemini-cli docs/cli/gemini-md.md + reference/memport.md;
-#                                  every documented example is `./`- or `../`-prefixed)
+#   GEMINI.md -> `@./AGENTS.md`   LEGACY ONLY -- see below. Gemini CLI does support the
+#                                  import (docs/cli/gemini-md.md, reference/memport.md;
+#                                  its examples are all `./`-prefixed).
 # Both processors ignore `@` inside code spans/fences, so a backticked path is inert.
+#
+# GEMINI.md IS NOT THE DEFAULT ANY MORE, and this is measured rather than read:
+# Gemini CLI is being retired in favour of ANTIGRAVITY CLI, which stopped serving
+# free/Pro/Ultra individuals on 2026-06-18. Verified on this machine 2026-09-10:
+# `gemini -p ...` on 0.59.0 exits with
+#   IneligibleTierError: This client is no longer supported for Gemini Code Assist
+#   for individuals ... migrate to the Antigravity suite
+# and Antigravity's own bundled docs (antigravity-cli/builtin/skills/agy-customizations/
+# docs/rules.md) say it discovers "Directory-Based Rules (`GEMINI.md` / `AGENTS.md`)" --
+# so the successor reads AGENTS.md NATIVELY and needs no pointer at all. GEMINI.md is
+# therefore reported as OPTIONAL/legacy (paid-API and enterprise users still on the old
+# CLI), never as something missing.
 #
 # CORRECTED 2026-09-10: an earlier draft of this block asserted Gemini CLI had no
 # import directive and gave it prose instead. That was WRONG -- the claim rested on
@@ -244,9 +260,13 @@ sibling_report() {  # <path> <import-line> <tool> <verify-cmd>
 sib_dir="$(dirname -- "$OUTPUT")"
 sib_base="$(basename -- "$OUTPUT")"
 sibling_report "$sib_dir/CLAUDE.md" "@$sib_base"   "Claude Code" "/context (under Memory files)"
-sibling_report "$sib_dir/GEMINI.md" "@./$sib_base" "Gemini CLI"  "/memory show"
-log "Gemini alternative, no pointer file needed: set context.fileName in .gemini/settings.json"
-log "  to [\"$sib_base\", \"GEMINI.md\"] — it accepts a list of context filenames."
+if [ "$LEGACY_GEMINI" -eq 1 ]; then
+  sibling_report "$sib_dir/GEMINI.md" "@./$sib_base" "Gemini CLI (legacy)" "/memory show"
+else
+  log "skipped   GEMINI.md — Antigravity CLI (Gemini CLI's successor) reads $sib_base"
+  log "          natively, so no pointer is needed. Pass --legacy-gemini if you are an"
+  log "          enterprise/paid-API user still on the old Gemini CLI."
+fi
 
 # -L: the default layout symlinks skill dirs (install.sh), which plain -type d
 # would not count — a successful run used to report "0 skills indexed".
