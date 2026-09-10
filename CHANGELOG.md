@@ -5,6 +5,88 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+**Three field briefs and a session self-intake.** Everything here is a rules addition or a
+correction inside an existing surface — no new skill, no new invariant — so by the measured
+minor-vs-patch rule this is **patch** material.
+
+### Added
+
+- **`sota-shell-scripting/rules/06` §4 — a backgrounded wait loop exhausts the process
+  table** (#342). Blast radius as the library stated it was **entirely disk**; this is the
+  resource whose exhaustion disables the tools you would use to recover, including `ps`,
+  `killall` and `echo` in a fresh shell. Two of our own rules came one predicate short: §1
+  had the `pgrep -f` self-match but framed the cost as a *burned timeout*, not unbounded
+  spawning.
+- **`sota-shell-scripting/rules/06` §5 — a listing tool's page is not a population** (#343).
+  Measured on a repo with 330 merged PRs: `gh pr list` with **no flag** returns **30**, a
+  *default* cap, exiting 0 with empty stderr. The two ways to get it wrong are the cap you
+  never set and the cap you set for a different question. Includes the cap-equality control
+  (a result whose size equals the limit is a page) and the reconciliation rule — the
+  server-side count read 330 and a `--paginate` read 339, because the corrected command had
+  silently changed **predicate** (`state=closed` includes closed-unmerged).
+- **`sota-shell-scripting/rules/03` §3a — the wrapper that shadows what it calls** (#344).
+  §3 was written entirely from the attacker's side; the mirror is a directory *you* control
+  holding a file *you* wrote that shadows a command *your own file* calls. Three namespaces,
+  **two failure modes**: a `PATH` shim has no bound at all and fills the process table,
+  while a shell-function override is one process that bash lets **segfault** (`FUNCNEST`
+  unset by default) and zsh stops cleanly at 700. The bounded form is the one you try first,
+  which is why it misleads.
+- **`sota-testing/rules/06` §6.3 — the revert is part of the mutation probe** (#345). An
+  `inject && run && revert` chain strands a permissive no-op in a security control if the
+  shell dies between the second and third step, and the wrapper reports it as a clean pass.
+  Verify the revert against the source of truth, never the exit status.
+- **`sota-testing/rules/07` §7.9 — a threshold measured on one population, asserted over a
+  pooled one** (#345). A floor fires with **no code change** when the denominator gains a
+  new corpus, language or tenant. Dilution is the one cause a pooled metric cannot
+  distinguish from the cause its author imagined.
+- **`sota-testing/rules/04` §4.8 — the green run that quietly ran fewer tests** (#345). A
+  stopped container runtime turns tests into **skips**, not failures: 30 tests vanished at
+  **0 failed**, and the only moving number was a count.
+
+### Changed
+
+- **`sota-testing/rules/07` §7.4 now states its scope** (#345). *"Failures unique to parallel
+  runs are isolation bugs, never just rerun"* is right for workers inside one invocation and
+  the **opposite** of right for two independent suites sharing one database — where
+  re-running the failing subset in isolation is the correct diagnosis. The rule was pointing
+  the wrong way for the adjacent case.
+- **Benchmark chart reworked** (#340) — one banded `unguided model` baseline row instead of
+  two rows with different numbers, plus GitHub star counts for each compared library.
+- **`docs/ADOPTION-LOG.md`** gains four rows; **all four** are marked `· unreleased` and need
+  the version at cut time (`grep -ni '· \[\?unreleased' docs/ADOPTION-LOG.md` — RELEASING.md
+  step).
+
+### Fixed
+
+- **`rules/06` §4's field figures were attributed to the wrong cause** (#344). Parentage was
+  unmeasured when §4 shipped — the entry said so — and once measured it pointed at a
+  self-recursive `PATH` shim, not at the backgrounded wait loops also running that hour;
+  deleting one file took the process count from 11,143 to 691. **The tell was inside the
+  published number**: a `zsh` wait loop spawns `zsh`, `sleep` and `pgrep`, never 10,700
+  `/bin/sh`. §4's mechanism and remedies are unchanged and independently sound; its figures
+  are now labelled the process-table-exhaustion **signature**, with both causes
+  cross-referenced and the checklist asking for parentage before blame.
+- **A stale `· v1.41.0` marker in `docs/ADOPTION-LOG.md`** (#343) naming a tag that does not
+  exist. Because it named a concrete version rather than `unreleased`, the release
+  checklist's own `grep '· unreleased'` returned **0** and would never have corrected it.
+- **The `sota-shell-scripting` rules index** (#343, #344) had never picked up §4, and
+  `sota-testing`'s had not picked up the new sections.
+- **A fail-open `§6.3` reference** in `sota-testing/rules/07`, caught by invariant 18 during
+  the edit — the section lives in `rules/06`.
+
+### Documentation
+
+- **`docs/INDEX.md`** gains six rows for the new capabilities — no invariant catches a
+  *missing* feature, only a wrong number.
+- **`docs/ROADMAP.md`**: item **48** opened (routing treated as done-for-the-session rather
+  than per task shape — observed twice, both times a rule that existed and was never
+  loaded); the field-brief tally corrected from *six briefs, 31 of 32* to **nine briefs, 37
+  of 38**; open set 4 → **5**.
+- **`evals/results/2026-09-08/SUPERPOWERS-HEAD-TO-HEAD.md`** (#341) records the five-mode
+  audit confirming the low completeness score is **not** a defect on our side.
+
 ## [1.40.0] - 2026-09-10
 
 **Cross-tool agent instructions.** A field tip about alternating Codex and Claude Code over
