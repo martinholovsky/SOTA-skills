@@ -395,7 +395,11 @@ design out on day zero:
      a backticked `` `@path` `` stays literal. **The trap is an import that
      resolves outside the repo** (e.g. `@~/.claude/…`): the first session asks
      to approve it, and **declining disables it permanently without asking
-     again** — the file is present, the content never loads.
+     again** — the file is present, the content never loads. Gemini CLI has the
+     same mechanism (`@./AGENTS.md`; its own examples are all `./`-prefixed) and
+     also takes a **list** of context filenames in settings, which needs no
+     pointer file at all. **Check each tool's own docs for the form** — assuming
+     one tool's syntax works in another is how you ship a file that loads nothing.
   2. **A symlink** — exact, and two failure modes. Git records a symlink as
      such, and where `core.symlinks` is false (set automatically at clone time
      on filesystems that can't represent one) symlinks are "checked out as small

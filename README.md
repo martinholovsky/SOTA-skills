@@ -940,25 +940,38 @@ others; `--skills-dir`/`--output` override the defaults. Claude Code keeps using
 the native Skills install above. This repo itself follows the standard:
 [`AGENTS.md`](AGENTS.md) is canonical; `CLAUDE.md`/`GEMINI.md` are symlinks.
 
-**`--siblings` — one source of truth without symlinks.** Different tools read
-different filenames, so a repo carrying only `AGENTS.md` leaves Claude Code and
-Gemini CLI reading nothing, which looks like the model getting worse. Add
-`--siblings` and the script writes **pointers** beside it — never copies, and
-**never over an existing file**:
+**Different tools read different filenames**, so a repo carrying only `AGENTS.md`
+leaves Claude Code and Gemini CLI reading **nothing** — which presents as the model
+getting worse, not as a missing file. Every run therefore **reports** the state of
+the two sibling entry points, and `--siblings` writes them when they are absent:
 
 ```sh
 /path/to/SOTA-skills/scripts/gen-agents-md.sh --siblings
-# creates ./CLAUDE.md  ->  @AGENTS.md            (native import, expanded at launch)
-# creates ./GEMINI.md  ->  See [AGENTS.md](…).   (a readable one-line pointer)
+# ./CLAUDE.md  ->  @AGENTS.md      (Claude Code's native import)
+# ./GEMINI.md  ->  @./AGENTS.md    (Gemini CLI's native import)
 ```
 
-The two differ on purpose. `@AGENTS.md` is Claude Code's documented import and
-its docs prefer it to a symlink — which matters most **on Windows, where creating
-a symlink needs Administrator or Developer Mode**, so `ln -s AGENTS.md CLAUDE.md`
-is not portable. Gemini CLI documents *no* import directive for `GEMINI.md`, so
-it gets prose instead; `@AGENTS.md` there would sit as literal text and load
-nothing. **Then confirm it loaded** rather than assuming: `/context` in Claude
-Code (under *Memory files*), `/memory show` in Gemini CLI.
+Neither is a copy — `AGENTS.md` stays the single source of truth — and each uses
+the form **its own** docs show. The import is preferred to `ln -s AGENTS.md
+CLAUDE.md` because **on Windows creating a symlink needs Administrator or
+Developer Mode**, so a symlink is not portable.
+
+**An existing `CLAUDE.md`/`GEMINI.md` is never touched — but it is never silently
+accepted either.** The script inspects it and says what to change, because a file
+that never mentions `AGENTS.md` is a file that will not work with this library:
+
+| what it finds | what it says |
+|---|---|
+| absent | `MISSING` + the exact line to add (or writes it with `--siblings`) |
+| already imports/links `AGENTS.md` | `ok`, left alone |
+| your own content, no mention of it | `ACTION` — add `@AGENTS.md` as the first line; **your file is not modified** |
+| only the bare text `AGENTS.md` | `ACTION` — a symlink checked out as a plain file (`core.symlinks=false`, or Windows without Developer Mode); it instructs nothing |
+| a dangling symlink | `ACTION` — repoint it |
+
+For Gemini there is a route with no pointer file at all: set `context.fileName` in
+`.gemini/settings.json` to `["AGENTS.md", "GEMINI.md"]` — it accepts a list. And
+whichever you choose, **confirm it loaded** rather than assuming: `/context` in
+Claude Code (under *Memory files*), `/memory show` in Gemini CLI.
 
 ### Status line (optional)
 

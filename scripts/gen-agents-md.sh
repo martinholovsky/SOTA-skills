@@ -173,46 +173,80 @@ else
   { printf '\n'; cat "$block_file"; } >> "$OUTPUT"
 fi
 
-# --- optional sibling pointers ----------------------------------------------
+# --- sibling entry points: report always, create only on request ------------
 #
-# Claude Code reads CLAUDE.md, not AGENTS.md; Gemini CLI reads GEMINI.md. Neither
-# gets a COPY here -- AGENTS.md stays the single source of truth and these files
-# only point at it.
+# Claude Code reads CLAUDE.md, Gemini CLI reads GEMINI.md; neither reads
+# AGENTS.md by default. So a repo carrying only AGENTS.md leaves both reading
+# NOTHING, which presents as the model getting worse rather than as a missing
+# file. Neither sibling gets a COPY: AGENTS.md stays the single source of truth.
 #
-# THE TWO POINTERS ARE DELIBERATELY DIFFERENT, and the difference is verified,
-# not symmetrical-looking guesswork:
+# BOTH tools have a native import, and each is given the form ITS OWN docs show:
+#   CLAUDE.md -> `@AGENTS.md`     (code.claude.com/docs/en/memory, AGENTS.md section;
+#                                  that page recommends it OVER a symlink, and notes a
+#                                  symlink on Windows needs Administrator/Developer Mode)
+#   GEMINI.md -> `@./AGENTS.md`   (gemini-cli docs/cli/gemini-md.md + reference/memport.md;
+#                                  every documented example is `./`- or `../`-prefixed)
+# Both processors ignore `@` inside code spans/fences, so a backticked path is inert.
 #
-#   CLAUDE.md -> `@AGENTS.md`. A native import: Claude Code expands it into
-#   context at launch. Its own docs recommend this over a symlink, and note that
-#   creating a symlink on Windows needs Administrator or Developer Mode -- which
-#   is why this is the portable answer rather than `ln -s`.
+# CORRECTED 2026-09-10: an earlier draft of this block asserted Gemini CLI had no
+# import directive and gave it prose instead. That was WRONG -- the claim rested on
+# two docs that happen not to mention it, and `docs/reference/memport.md` is a whole
+# page about it. An absence needs a second method with a different failure mode; two
+# shallow reads of the same doc set is not that.
 #
-#   GEMINI.md -> a one-line Markdown pointer, NOT `@AGENTS.md`. Gemini CLI's
-#   memory documentation describes no import directive for GEMINI.md, and its
-#   settings reference describes `@` as a reference "in the prompt". Writing
-#   `@AGENTS.md` there would most likely sit as literal text: file present,
-#   instructions never loaded -- the silent non-load `sota-docs-workflow`
-#   rules/01 section 10 warns about. Checked 2026-09-10; if Gemini adds an import
-#   directive, this is the line to change.
-#
-# NEVER OVERWRITE. An existing CLAUDE.md/GEMINI.md is somebody's content, and a
-# pointer clobbering it would delete the instructions it was meant to deliver.
-write_sibling() {  # <path> <body>
-  if [ -e "$1" ] || [ -L "$1" ]; then
-    log "kept $1 as-is (already exists — not overwritten)"
+# NEVER OVERWRITE, and never silently accept either. An existing file is somebody's
+# content -- clobbering it would delete the instructions this is meant to deliver --
+# but a file that never mentions AGENTS.md is a file that does not work with this
+# library, so it is reported as ACTION NEEDED with the exact line to add.
+sibling_report() {  # <path> <import-line> <tool> <verify-cmd>
+  local f="$1" line="$2" tool="$3" verify="$4" base
+  base="$(basename -- "$OUTPUT")"
+
+  if [ ! -e "$f" ] && [ ! -L "$f" ]; then
+    if [ "$SIBLINGS" -eq 1 ]; then
+      printf '%s\n' "$line" > "$f"
+      log "created $f — pointer only ($line), no duplicated content"
+    else
+      log "MISSING  $f — $tool reads it, not $base. Add a file containing: $line"
+      log "         (or re-run with --siblings to have it written for you)"
+    fi
     return 0
   fi
-  printf '%s\n' "$2" > "$1"
-  log "created $1 — pointer only, no duplicated content"
+
+  # It exists. Decide whether it already reaches AGENTS.md, and never write.
+  if [ -L "$f" ]; then
+    if [ -e "$f" ]; then
+      log "ok       $f is a symlink and resolves — leaving it alone"
+    else
+      log "ACTION   $f is a DANGLING symlink — $tool reads nothing. Repoint it at $base"
+    fi
+    return 0
+  fi
+
+  # The core.symlinks=false / Windows checkout: a plain file whose entire content
+  # is the link text. It looks like a pointer and instructs nothing.
+  if [ "$(tr -d '[:space:]' < "$f")" = "$base" ]; then
+    log "ACTION   $f contains only the bare text '$base' — that is a symlink checked out"
+    log "         as a plain file (core.symlinks=false, or Windows without Developer Mode)."
+    log "         $tool reads it as literal text and follows nothing. Replace with: $line"
+    return 0
+  fi
+
+  if grep -qF -- "$base" "$f"; then
+    log "ok       $f already references $base — leaving it alone"
+  else
+    log "ACTION   $f exists and never mentions $base, so $tool will not see the SOTA"
+    log "         routing block. NOT modified. Add this as its FIRST line:  $line"
+  fi
+  log "         verify what actually loaded: $verify"
 }
 
-if [ "$SIBLINGS" -eq 1 ]; then
-  out_dir="$(dirname -- "$OUTPUT")"
-  out_base="$(basename -- "$OUTPUT")"
-  write_sibling "$out_dir/CLAUDE.md" "@$out_base"
-  write_sibling "$out_dir/GEMINI.md" "See [$out_base]($out_base) — the single source of truth for this repo's agent instructions."
-  log "verify they LOADED, do not assume: Claude Code \`/context\` (under Memory files), Gemini CLI \`/memory show\`"
-fi
+sib_dir="$(dirname -- "$OUTPUT")"
+sib_base="$(basename -- "$OUTPUT")"
+sibling_report "$sib_dir/CLAUDE.md" "@$sib_base"   "Claude Code" "/context (under Memory files)"
+sibling_report "$sib_dir/GEMINI.md" "@./$sib_base" "Gemini CLI"  "/memory show"
+log "Gemini alternative, no pointer file needed: set context.fileName in .gemini/settings.json"
+log "  to [\"$sib_base\", \"GEMINI.md\"] — it accepts a list of context filenames."
 
 # -L: the default layout symlinks skill dirs (install.sh), which plain -type d
 # would not count — a successful run used to report "0 skills indexed".
