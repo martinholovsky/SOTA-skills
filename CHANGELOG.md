@@ -5,6 +5,70 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.40.0] - 2026-09-10
+
+**Cross-tool agent instructions.** A field tip about alternating Codex and Claude Code over
+one project turned into a freshness correction that inverted its own conclusion twice — both
+times because a claim was checked instead of assumed.
+
+### Added
+
+- **`gen-agents-md.sh --siblings`** — writes a `CLAUDE.md` **pointer** (`@AGENTS.md`) beside
+  the generated `AGENTS.md`. Not a copy: `AGENTS.md` stays the single source of truth. The
+  native import is preferred to `ln -s AGENTS.md CLAUDE.md` because **creating a symlink on
+  Windows needs Administrator or Developer Mode**, so a symlink is not portable.
+- **Sibling reporting, unconditional** (no flag needed, because a report writes nothing).
+  Every run says what state the sibling entry points are in, and **never modifies an existing
+  file**: `MISSING` with the exact line to add · `ok` when it already reaches `AGENTS.md` ·
+  `ACTION` when it holds your own content and never mentions it · `ACTION` when it holds only
+  the bare text `AGENTS.md` (a symlink checked out as a plain file — `core.symlinks=false`,
+  or Windows without Developer Mode — which instructs nothing) · `ACTION` on a dangling
+  symlink. Each branch tested, including that a user's first line survives.
+- **`docs/VERIFY-SETUP.md` check 4a — "did it actually LOAD?"** Presence is not loading:
+  `/context` under *Memory files* in Claude Code, `/memory show` in Gemini CLI, and the
+  `InstructionsLoaded` hook where a log is wanted. Names the three silent non-load paths.
+- **`sota-docs-workflow/rules/01` §10** gains the native import as option 1, the Windows
+  symlink-privilege failure mode, and the trap that an **external `@` import declined once
+  stays disabled and never asks again**.
+
+### Changed
+
+- **`GEMINI.md` is now opt-in behind `--legacy-gemini`, and Claude Code is the only
+  mainstream tool still needing a pointer.** Measured on a real machine 2026-09-10: Gemini
+  CLI 0.59.0 headless exits `IneligibleTierError: This client is no longer supported for
+  Gemini Code Assist for individuals … migrate to the Antigravity suite`, so the 2026-06-18
+  retirement is **in force**. Antigravity's own bundled docs say it discovers
+  *"Directory-Based Rules (`GEMINI.md` / `AGENTS.md`)"* — the successor reads **`AGENTS.md`
+  natively**. Tool lists in `README.md` and `rules/01` §7 now name **Antigravity CLI** with a
+  one-line EOL note, which is what this repo's no-rot-pins policy requires.
+
+### Fixed
+
+- **`docs/CONTEXT-MANAGEMENT.md` carried two stale cells** against its own instruction three
+  lines below them (*"re-measure, never carry it forward"*): the router read **399/500** and
+  is **410**, and its token figure was measured when it was 399. The line count is corrected;
+  the token cell is marked **STALE — do not quote** rather than estimated, because
+  `count_tokens` was unavailable and a chars/4 estimate under-reads Claude by ~54%.
+
+### Notes
+
+- **A claim of mine was refuted mid-change and is recorded as such.** I asserted Gemini CLI
+  had no import directive for `GEMINI.md`. Wrong — `gemini-cli` `docs/reference/memport.md`
+  is an entire page about `@file.md` imports, and `docs/cli/gemini-md.md` documents a
+  `context.fileName` **list** accepting `AGENTS.md`. The bad claim came from reading two docs
+  that happen not to mention it: **an absence needs a second method with a different failure
+  mode**, and two shallow reads of one doc set is not that. Committed while editing the file
+  that describes exactly this error.
+- **No invariant can see a tool going away.** All 29 gates and 43 probes were green while the
+  tool lists named a CLI that had stopped serving individuals three months earlier. Only a
+  person noticing, or a run failing, catches that class.
+- Confirmed while checking: the Agent Skills spec's `description` cap really is **1024
+  characters**, so invariant 4 and its attribution are correct. The 500-line cap's sibling is
+  a **token** budget (body < 5,000 recommended) — there is **no byte/file-size limit** in the
+  spec or in Claude Code's docs.
+
+**Front door checked:** Antigravity CLI · siblings · did it actually LOAD
+
 ## [1.39.0] - 2026-09-10
 
 **The open roadmap set worked end to end (2026-09-09): 8 open → 4.** Three items were parked
@@ -7502,6 +7566,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.40.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.0
 [1.39.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.39.0
 [1.38.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.38.0
 [1.37.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.37.0
