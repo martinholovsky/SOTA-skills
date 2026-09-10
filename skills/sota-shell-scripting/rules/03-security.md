@@ -90,6 +90,67 @@ unset IFS CDPATH ENV BASH_ENV GLOBIGNORE LD_PRELOAD LD_LIBRARY_PATH
 - Never execute relative commands from a CWD you don't control; never `source` files
   writable by less-privileged users.
 
+### 3a. The wrapper that shadows what it calls
+
+§3 above is the attacker's version: a directory *they* control, early in `PATH`, shadowing
+a command *you* call. The mirror is not adversarial and is far easier to ship by accident:
+**a directory you control, holding a file you wrote, that shadows a command your own file
+calls.**
+
+**Rule: inside an interceptor, never invoke a name the interceptor's own namespace can
+resolve back to itself.**
+
+Three namespaces, one bug — but **two different failure modes**, and the difference decides
+whether you find out safely (all measured 2026-09-10 on macOS):
+
+| namespace | recursion bound | what you see |
+|---|---|---|
+| **`PATH` shims** — a dir of fake/wrapping executables placed first on `PATH` (test harnesses, compiler caches, CI interceptors) | **none of any kind** | each level is a new **process**: the per-user process table fills, and every tool fails at once, *including the ones you need to diagnose it* (`rules/06` §4) |
+| **shell function overrides** — `curl() { … curl "$@"; }` in a profile; the inner `curl` resolves to the function again | bash: `FUNCNEST`, **unset by default** → `f(){ f; }; f` exits **139 (SIGSEGV)**. zsh: `FUNCNEST` defaults to **700** → clean `maximum nested function level reached`, exit 1 | one process, dying as a crash or an error |
+| **aliases and `LD_PRELOAD`** | none | same shape as the shim: a new process per level |
+
+**The trap in that table is that the middle row is the one you will try first.** A function
+override blows up immediately and locally, which reads as "the shell protects me from this
+mistake". It does not: the same mistake in a `PATH` shim has no bound at all, takes the
+whole machine's process table, and `bash`'s own protection for the case that *is* bounded is
+**off unless you set it**.
+
+**Safe forms:**
+
+- use only **builtins** and parameter expansion inside the wrapper — prefix strip, `case`,
+  `test` — and call nothing external at all;
+- or call the real binary by **absolute path**, resolved once when the wrapper is generated,
+  never by bare name;
+- or drop the shim directory from `PATH` for the inner call:
+  `PATH=$ORIG_PATH command sed …`;
+- in shell functions use `command foo` / `builtin foo`, never bare `foo` (verified:
+  `echo(){ builtin echo "WRAPPED: $*"; }` terminates and prints once).
+
+**The review question, which is what makes this checkable:** *for every command this wrapper
+invokes, is that name also present in the directory the wrapper lives in — or in any
+namespace this wrapper installs into?*
+
+**Two diagnostic notes, because this failure fights back.**
+
+`pkill` cannot win a race against a live respawner — field-measured counts went **429 →
+1,276 while killing**. Killing the children of an active spawner is theatre. Group by parent
+(`ps -axo ppid=,comm=`) and neutralise *that*. **Sequential PIDs with one child each is the
+signature of a recursion**; a pool is one parent with many children.
+
+And **do not accept blame for a system-level symptom before checking parentage.** In the
+incident above, many backgrounded wait loops had been started in the same hour, so that
+story fit — and was written up as fact — before any `ps` showed a parent. The processes were
+`/bin/sh` running the shim; the wait loops would have been `zsh`, `sleep` and `pgrep`. One
+`ps -axo pid=,ppid=,command=` separates them. **A plausible culprit you already have in mind
+is exactly when to demand the evidence, not when to skip it** — and note that the evidence
+here was already in hand and misread: `/bin/sh` was never consistent with a `zsh` wait loop.
+
+**Generating a wrapper from a template has two escaping layers.** The warning comment written
+to prevent a repeat of this bug contained `${a#@}`; the template was rendered with Python's
+`str.format`, which reads `{a#@}` as a format field and raises `KeyError: 'a#@'` (verified —
+it fails identically inside a `#` comment, because the outer layer has no idea what a shell
+comment is). Double the braces or use a templating step that does not scan comments.
+
 ## 4. sudo discipline
 
 - Scripts should not contain blanket `sudo`. If elevation is needed, either (a) require
@@ -187,6 +248,17 @@ shell linting.
 - shfmt settings belong in `.editorconfig` so editor, hook, and CI agree.
 
 ## Audit checklist
+
+- [ ] **Interceptor recursion** (§3a): does any wrapper, shim, alias or shell-function
+      override invoke a command name that its **own namespace shadows**? For each wrapper,
+      list the commands it calls and check each against the wrapper's own directory.
+- [ ] If a wrapper must call out, does it use an **absolute path** resolved at generation
+      time, a `PATH` with the shim directory removed, or `command`/`builtin` in a function —
+      never a bare name? Note the function form is bounded (bash `FUNCNEST`, **unset by
+      default** → SIGSEGV; zsh 700) while the `PATH`-shim form is **not bounded at all**.
+- [ ] For scripts generated from templates: does the outer templating layer treat **comments**
+      as literal text? A `${a#@}` inside a `#` comment still raises `KeyError` under Python
+      `str.format`.
 
 - [ ] `grep -rn 'eval ' --include='*.sh'` → every hit CRITICAL until proven constant-input
       (SC2294 hints at array-eval misuse).
