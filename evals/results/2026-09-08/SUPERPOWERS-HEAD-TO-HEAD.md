@@ -28,6 +28,44 @@ Deltas: Superpowers **−0.39 vs SOTA**, **−0.04 vs unguided**.
 
 ## Read this before quoting any of it
 
+## Audited 2026-09-10: is the low score OUR bug? No — and here is the check
+
+A number this shape, about someone else's project, on a public README, deserves an audit
+rather than a defence. Five ways it could have been our defect, each checked:
+
+| failure mode | finding |
+|---|---|
+| the arm got the wrong or unpinned content | the runner **refuses to run** unless the clone's `HEAD` matches the pinned SHA — a guard added 2026-08-16 after every earlier competitor number turned out to rest on an unverified clone |
+| the arm got nothing, or a fragment | the bundle is **30,394 bytes** over four files. Not starved |
+| we picked unrepresentative files | **see below — this is the decisive one** |
+| the judge knew which arm it was scoring | the judge receives `(artifact, rubric)` only; no arm label, no library name |
+| the interpretation was invented afterwards | the manifest's `_caveat` was written **2026-09-06, two days before the run**, and says exactly what the result turned out to be |
+
+**On file selection — the repo has no domain content to omit.** At the pinned SHA,
+`skills/` holds **14** skills: `brainstorming`, `dispatching-parallel-agents`,
+`executing-plans`, `finishing-a-development-branch`, `receiving-code-review`,
+`requesting-code-review`, `subagent-driven-development`, `systematic-debugging`,
+`test-driven-development`, `using-git-worktrees`, `using-superpowers`,
+`verification-before-completion`, `writing-plans`, `writing-skills`.
+
+**Not one is about domain best practice** — no security, API design, rate limiting,
+transport or logging skill exists in the repo. So there is no file we left out that could
+have raised this score, and the four we did take (TDD, writing good tests, verification,
+systematic debugging) are the four most likely to help on a "build X well" task. The
+selection was, if anything, generous.
+
+The contrast with the highest-scoring competitor makes the mechanism plain: **ECC's four
+files include `the-security-guide.md` and three reviewer agents; Superpowers' four are a
+TDD loop and a debugging method.** The rubric scores whether the built artifact carries
+rate limiting, transport hardening, tests and structured logging. One library contains
+that material; the other is not trying to.
+
+**What this changes in how the number is stated.** "Scored below an unguided model" was
+never supportable — −0.04 sits inside a measured ±0.03 noise floor at n=1. The supportable
+claim is **"indistinguishable from no guidance on this rubric"**, and the README chart
+states it that way: a single unguided band of 58–64% with Superpowers inside it, rather
+than two baseline bars implying it lost to one of them.
+
 **The manifest's caveat is the point, not a disclaimer.** Superpowers is *process and
 methodology* guidance — a TDD loop, systematic debugging, verification before completion.
 These cases score whether a **built artifact embeds domain best practices**: is the endpoint
