@@ -140,7 +140,7 @@ guidance libraries on backend build tasks**, SOTA-skills leads on completeness
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/benchmark-dark.svg">
-    <img alt="Best-practice completeness on backend build tasks by library: SOTA-skills 99%, affaan-m/ECC 87%, PatrickJS/awesome-cursorrules 83%, alirezarezvani/claude-skills 81%, then from a separate 2026-09-08 run marked with a double dagger: unguided model 64% and obra/superpowers 60% — superpowers scored below the unguided arm of its own run — and unguided model 58% from the earlier run." src="assets/benchmark-light.svg" width="100%">
+    <img alt="Best-practice completeness on backend build tasks by library: SOTA-skills 99%, affaan-m/ECC 87% with 255k GitHub stars, PatrickJS/awesome-cursorrules 83% with 41k stars, alirezarezvani/claude-skills 81% with 26k stars, obra/superpowers 60% with 284k stars, and an unguided model at 58 to 64 percent across the two runs. Superpowers falls inside the unguided band, so on this rubric it is not distinguishable from no guidance." src="assets/benchmark-light.svg" width="100%">
   </picture>
 </p>
 
@@ -153,10 +153,11 @@ difficulty, not the domain — we measure it and say so.
 
 **And a result we will not dress up.** Two outside assessments named
 [`obra/superpowers`](https://github.com/obra/superpowers) as the methodological competitor,
-so we ran it (2026-09-08, pinned SHA, 7 cases) — it is the pair marked **‡** in the chart
-above: SOTA **0.987**, unguided **0.637**, Superpowers **0.599**. Its own run's unguided arm
-is plotted beside it deliberately, because the earlier run's 58% baseline is a *different*
-run and pairing 60% against that would invert the finding. That is **−0.04 versus no guidance at all**, against a ±0.03 noise
+so we ran it (2026-09-08, pinned SHA, 7 cases): SOTA **0.987**, unguided **0.637**,
+Superpowers **0.599**. In the chart above it sits at 60% against an unguided **band of
+58–64%** — the same arm measured in the two runs, since temp-0 is not deterministic — so it
+lands *inside* the baseline rather than above it. The band is one row on purpose: an earlier
+version drew two "unguided model" bars and, though accurate, it read as a bug. That is **−0.04 versus no guidance at all**, against a ±0.03 noise
 floor — so on this rubric the two are indistinguishable, and the honest reading is about the
 instrument, not the project. Superpowers is *process* guidance; these cases score a *built
 artifact's* domain coverage. A low score is evidence about **fit to this measure**. It shows
