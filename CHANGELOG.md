@@ -5,7 +5,10 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.40.1] - 2026-09-10
+
+**Front door checked:** process table · asserted over a pool · the revert · parentage
+
 
 **Three field briefs and a session self-intake.** Everything here is a rules addition or a
 correction inside an existing surface — no new skill, no new invariant — so by the measured
@@ -37,8 +40,8 @@ minor-vs-patch rule this is **patch** material.
   `inject && run && revert` chain strands a permissive no-op in a security control if the
   shell dies between the second and third step, and the wrapper reports it as a clean pass.
   Verify the revert against the source of truth, never the exit status.
-- **`sota-testing/rules/07` §7.9 — a threshold measured on one population, asserted over a
-  pooled one** (#345). A floor fires with **no code change** when the denominator gains a
+- **`sota-testing/rules/07` §7.9 — a threshold measured on one population and then
+  asserted over a pool** (#345). A floor fires with **no code change** when the denominator gains a
   new corpus, language or tenant. Dilution is the one cause a pooled metric cannot
   distinguish from the cause its author imagined.
 - **`sota-testing/rules/04` §4.8 — the green run that quietly ran fewer tests** (#345). A
@@ -78,8 +81,11 @@ minor-vs-patch rule this is **patch** material.
 
 ### Documentation
 
-- **`docs/INDEX.md`** gains six rows for the new capabilities — no invariant catches a
-  *missing* feature, only a wrong number.
+- **`README.md`** — the *ad-hoc command* class now carries the listing-cap count and the
+  **process table** (two causes, one signature, separated only by **parentage**), and the
+  *your own scorer or benchmark* class carries the pooled-threshold failure and **the revert**
+  half of a mutation probe. `docs/INDEX.md` gains six rows. No invariant catches a *missing*
+  feature, only a wrong number, which is why this is a manual pass every cut.
 - **`docs/ROADMAP.md`**: item **48** opened (routing treated as done-for-the-session rather
   than per task shape — observed twice, both times a rule that existed and was never
   loaded); the field-brief tally corrected from *six briefs, 31 of 32* to **nine briefs, 37
@@ -7648,6 +7654,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.40.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.1
 [1.40.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.0
 [1.39.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.39.0
 [1.38.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.38.0

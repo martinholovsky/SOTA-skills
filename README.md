@@ -267,8 +267,16 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   reads as clean because the searcher **silently excludes** things: measured on one tree with
   four matches, `rg` defaults found 1, a `grep` that turned out to be a wrapper function found
   3, explicit flags found 4. And a verification command that copied 40 GB into a container
-  filled the host and corrupted the runtime — the check never ran.
-  ([rules/06](skills/sota-shell-scripting/rules/06-ad-hoc-commands.md))
+  filled the host and corrupted the runtime — the check never ran. A **count** taken from a
+  listing tool has the same shape without any bug at all: `gh pr list` answers with the
+  first **30** of 330, exit 0 and empty stderr, because a default page size is policy rather
+  than a defect — so a result whose size equals the cap is a page until proven otherwise.
+  Blast radius is not only disk, either: an unbounded backgrounded loop, or **a wrapper that
+  invokes a command its own directory shadows**, fills the per-user process table, and every
+  tool fails at once *including the ones you would use to diagnose it*. Two unrelated causes
+  produce that one signature and only **parentage** separates them.
+  ([rules/06](skills/sota-shell-scripting/rules/06-ad-hoc-commands.md),
+  [rules/03 §3a](skills/sota-shell-scripting/rules/03-security.md))
 - **Controls that block everything** — the mirror image, and the one every other pass
   here looks past. An *enforcement* control (cap, quota, filter, allowlist, sandbox
   policy) can be tightened until it refuses the legitimate case too, and it passes the
@@ -349,6 +357,14 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   answer on purpose. The sharpest case is a **guard that is an instance of what it
   guards** — a coverage test whose scope is narrower than the population *and* whose
   predicate the defect satisfies, so it passes on exactly what it exists to catch.
+  An instrument also fails by going **red for a reason that is not a regression**: a floor
+  measured on one population and **asserted over a pool** fires with no code change once the
+  denominator gains a new corpus, language or tenant — and dilution is the one cause a
+  pooled metric cannot distinguish from the cause its author imagined. And the probe that
+  proves a test can fail has a second half nobody writes down: hand-mutating a control to a
+  no-op puts a real defect into production source, so **the revert is part of the
+  technique** — verify it against the working tree, never against an exit status a wrapper
+  will report as a clean pass.
   The remedy every mature discipline reached independently — the proof test, the
   clinical positive control, aviation built-in test, adversary emulation — is one
   move: a **negative control**, a committed known-bad the gate must reject on every
