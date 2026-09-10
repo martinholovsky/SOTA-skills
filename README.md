@@ -23,7 +23,7 @@ logging, and TLS ([see every number →](evals/results/RESULTS.md)).
 It works by being a **loop, not a prompt dump**: route in only the rules a task needs,
 re-state them every turn, and re-check them *last* before shipping — so the guidance
 survives a long context instead of fading into it. That's why it beats a bigger prompt
-instead of becoming one. Native on Claude Code; works with Gemini CLI, Codex, and any
+instead of becoming one. Native on Claude Code; works with Antigravity CLI, Codex, and any
 agent that reads `AGENTS.md`.
 
 Under the hood: **42 skills (312 files, ~67k lines)** of state-of-the-art 2026
@@ -925,7 +925,7 @@ it's opt-in.
 
 The skill *content* is plain Markdown — any model reads it. To route a non-Claude
 agent through the library, generate an `AGENTS.md` (the cross-tool open standard
-read by Codex, Cursor, Copilot, Gemini CLI, Windsurf, Zed, and more):
+read by Codex, Cursor, Copilot, Antigravity CLI, Windsurf, Zed, and more):
 
 ```sh
 cd /path/to/your/project
@@ -939,6 +939,44 @@ demand (no rule text is duplicated). Idempotent via a managed block, like the
 others; `--skills-dir`/`--output` override the defaults. Claude Code keeps using
 the native Skills install above. This repo itself follows the standard:
 [`AGENTS.md`](AGENTS.md) is canonical; `CLAUDE.md`/`GEMINI.md` are symlinks.
+
+**Different tools read different filenames**, so a repo carrying only `AGENTS.md`
+leaves **Claude Code** reading **nothing** — which presents as the model
+getting worse, not as a missing file. Every run therefore **reports** the state of
+the two sibling entry points, and `--siblings` writes them when they are absent:
+
+```sh
+/path/to/SOTA-skills/scripts/gen-agents-md.sh --siblings
+# ./CLAUDE.md  ->  @AGENTS.md      (Claude Code's native import)
+```
+
+It is not a copy — `AGENTS.md` stays the single source of truth — and the import is
+preferred to `ln -s AGENTS.md CLAUDE.md` because **on Windows creating a symlink
+needs Administrator or Developer Mode**, so a symlink is not portable.
+
+**Claude Code is the only mainstream tool that still needs a pointer.**
+`GEMINI.md` is opt-in behind `--legacy-gemini`, because **Antigravity CLI —
+which replaces Gemini CLI, retired for individuals on 2026-06-18 — reads
+`AGENTS.md` natively.** (Measured 2026-09-10: Gemini CLI 0.59.0 now exits with
+`IneligibleTierError … migrate to the Antigravity suite`, and Antigravity's own
+bundled docs list *"Directory-Based Rules (`GEMINI.md` / `AGENTS.md`)"*.)
+
+**An existing `CLAUDE.md`/`GEMINI.md` is never touched — but it is never silently
+accepted either.** The script inspects it and says what to change, because a file
+that never mentions `AGENTS.md` is a file that will not work with this library:
+
+| what it finds | what it says |
+|---|---|
+| absent | `MISSING` + the exact line to add (or writes it with `--siblings`) |
+| already imports/links `AGENTS.md` | `ok`, left alone |
+| your own content, no mention of it | `ACTION` — add `@AGENTS.md` as the first line; **your file is not modified** |
+| only the bare text `AGENTS.md` | `ACTION` — a symlink checked out as a plain file (`core.symlinks=false`, or Windows without Developer Mode); it instructs nothing |
+| a dangling symlink | `ACTION` — repoint it |
+
+For Gemini there is a route with no pointer file at all: set `context.fileName` in
+`.gemini/settings.json` to `["AGENTS.md", "GEMINI.md"]` — it accepts a list. And
+whichever you choose, **confirm it loaded** rather than assuming: `/context` in
+Claude Code (under *Memory files*), `/memory show` in Gemini CLI.
 
 ### Status line (optional)
 

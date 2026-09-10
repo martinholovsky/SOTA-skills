@@ -86,8 +86,23 @@ check for `docker` misses podman, `LICENSE` misses `LICENSE-MPL`,
    commands, (b) deviations from the language default, (c) traps. A file that
    only restates generic best practice, or that points at tooling a fresh
    contributor would not have, is a FAIL with the reason.
-   If `CLAUDE.md` is a symlink, check it resolves; if it is a one-line pointer
-   to `AGENTS.md`, that is fine and preferred.
+   If `CLAUDE.md` is a symlink, check it resolves; a one-line pointer to
+   `AGENTS.md`, or a native `@AGENTS.md` import, is fine.
+4a. **Did it actually LOAD?** Presence is not loading, and this is the one check
+   here that answers it directly: run `/context` and list what appears under
+   **Memory files**. A file in the repo that is missing from that list is a file
+   Claude cannot see — the most common cause of "the agent suddenly got worse".
+   Three specific ways it happens, all silent:
+   - the repo carries `AGENTS.md` only, and **Claude Code does not read
+     `AGENTS.md`** — it reads `CLAUDE.md`;
+   - a `CLAUDE.md` symlink checked out as a plain text file containing the
+     literal string `AGENTS.md` (`core.symlinks=false`, or Windows without
+     Developer Mode, where creating the link needs elevation);
+   - an `@…` import resolving **outside** the working directory whose approval
+     was declined once — it stays disabled and never prompts again.
+   Where a hook is available, log it rather than eyeballing it: the
+   `InstructionsLoaded` hook records which instruction files loaded, when, and
+   why. Report PASS only with the list, not with "the file is there".
 5. Verify the agent file is TRUE, in two passes:
    5a. Every build/test/lint command it names exists (Makefile target, script in
        package.json, task in pyproject/justfile). Name the file:line of each.

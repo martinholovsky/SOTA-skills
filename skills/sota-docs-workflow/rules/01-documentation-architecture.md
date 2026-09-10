@@ -211,9 +211,11 @@ Docs are now read by agents as well as humans. Same content, two consumers.
 - **AGENTS.md** is the open, Markdown-only convention for repo-level agent
   instructions (agents.md; 60k+ open-source projects; stewarded by the Agentic
   AI Foundation under the Linux Foundation; read by Codex CLI, Cursor, Copilot,
-  Gemini CLI, and 20+ other tools as of mid-2026). **CLAUDE.md** is Claude
-  Code's native equivalent — Claude Code reads CLAUDE.md, not AGENTS.md, hence
-  the advice that follows. Maintain one canonical file; if a tool needs the
+  **Antigravity CLI**, and 20+ other tools as of late 2026 — Antigravity, which
+  **replaces Gemini CLI** (retired for individuals 2026-06-18), discovers
+  `GEMINI.md`/`AGENTS.md` per directory, so `AGENTS.md` alone is enough for it).
+  **CLAUDE.md** is Claude Code's native equivalent — Claude Code reads CLAUDE.md,
+  **not** AGENTS.md, so it is the one mainstream tool still needing a pointer. Maintain one canonical file; if a tool needs the
   other name, symlink or include rather than fork the content.
 - **Keep agent docs minimal and high-signal.** Evidence as of 2026: bloated or
   auto-generated context files often *reduce* agent performance and raise cost;
@@ -387,23 +389,41 @@ design out on day zero:
   teammate has.
 - **Forking the file per tool.** Keep one canonical `AGENTS.md` (§7) and pick
   how the other names reach it, knowing the trade of each:
-  1. **A one-line pointer file** — `CLAUDE.md` containing
-     `See [AGENTS.md](AGENTS.md).` and nothing else. Platform-independent, no
-     build step, and it cannot silently degrade; the cost is one hop the agent
-     must follow. Observed in the wild on large cross-platform projects, and the
-     safest default.
-  2. **A symlink** — exact, but know the failure mode: git records a symlink as
+  1. **A native import**, where the tool has one — Claude Code expands
+     `@AGENTS.md` in `CLAUDE.md` into context at launch, so it costs no hop and
+     leaves room for tool-specific rules *below* the import. Its own docs
+     recommend this over a symlink. Verified limits: max **four** hops, relative
+     paths resolve against the importing file, and parsing skips code spans, so
+     a backticked `` `@path` `` stays literal. **The trap is an import that
+     resolves outside the repo** (e.g. `@~/.claude/…`): the first session asks
+     to approve it, and **declining disables it permanently without asking
+     again** — the file is present, the content never loads. Gemini CLI has the
+     same mechanism (`@./AGENTS.md`; its own examples are all `./`-prefixed) and
+     also takes a **list** of context filenames in settings, which needs no
+     pointer file at all. **Check each tool's own docs for the form** — assuming
+     one tool's syntax works in another is how you ship a file that loads nothing.
+  2. **A symlink** — exact, and two failure modes. Git records a symlink as
      such, and where `core.symlinks` is false (set automatically at clone time
-     on filesystems that can't represent one) symlinks are, in git's words,
-     "checked out as small plain files that contain the link text"
-     (`git help config`). The agent then reads the bare string `AGENTS.md` as
-     the entire file and follows no instructions at all — a silent failure, not
-     a visible one.
-  3. **CI-generated duplicates** from the canonical file, failing the build on
+     on filesystems that can't represent one) symlinks are "checked out as small
+     plain files that contain the link text" (`git help config`): the agent then
+     reads the bare string `AGENTS.md` as the whole file and follows nothing. And
+     on **Windows, creating one needs Administrator or Developer Mode**, so a
+     repo that depends on it is a repo some contributors cannot set up.
+  3. **A one-line pointer file** — `CLAUDE.md` containing
+     `See [AGENTS.md](AGENTS.md).` Platform-independent and it cannot silently
+     degrade, at the cost of a hop the agent must choose to follow.
+  4. **CI-generated duplicates** from the canonical file, failing the build on
      drift. Exact and platform-independent, at the cost of a job to maintain.
 
   Anything else — hand-maintained copies — drifts, and the copy that goes stale
-  is the one your teammate's tool reads.
+  is the one your teammate's tool reads. A one-time importer that *copies*
+  instructions between tools (Claude Code's `/import`) is a migration, not a
+  link: it does not re-sync when the original changes.
+- **Whichever you pick, confirm it LOADED — presence is not loading.** Ask the
+  tool what it actually read (Claude Code: `/context`, under *Memory files*),
+  and where a hook can log it, log it (`InstructionsLoaded`). This is the §7
+  agent-doc case of the rule the rest of this library keeps hitting: a file in
+  the repo is not a file in the context.
 
 **Bootstrap the invariants as checks, not prose.** Anything the repo must never
 regress — no secret in a commit, every internal link resolving, a required file
