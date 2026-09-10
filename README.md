@@ -940,6 +940,26 @@ others; `--skills-dir`/`--output` override the defaults. Claude Code keeps using
 the native Skills install above. This repo itself follows the standard:
 [`AGENTS.md`](AGENTS.md) is canonical; `CLAUDE.md`/`GEMINI.md` are symlinks.
 
+**`--siblings` — one source of truth without symlinks.** Different tools read
+different filenames, so a repo carrying only `AGENTS.md` leaves Claude Code and
+Gemini CLI reading nothing, which looks like the model getting worse. Add
+`--siblings` and the script writes **pointers** beside it — never copies, and
+**never over an existing file**:
+
+```sh
+/path/to/SOTA-skills/scripts/gen-agents-md.sh --siblings
+# creates ./CLAUDE.md  ->  @AGENTS.md            (native import, expanded at launch)
+# creates ./GEMINI.md  ->  See [AGENTS.md](…).   (a readable one-line pointer)
+```
+
+The two differ on purpose. `@AGENTS.md` is Claude Code's documented import and
+its docs prefer it to a symlink — which matters most **on Windows, where creating
+a symlink needs Administrator or Developer Mode**, so `ln -s AGENTS.md CLAUDE.md`
+is not portable. Gemini CLI documents *no* import directive for `GEMINI.md`, so
+it gets prose instead; `@AGENTS.md` there would sit as literal text and load
+nothing. **Then confirm it loaded** rather than assuming: `/context` in Claude
+Code (under *Memory files*), `/memory show` in Gemini CLI.
+
 ### Status line (optional)
 
 `scripts/statusline.sh` is a Claude Code status line that shows **which skills

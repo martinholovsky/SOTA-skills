@@ -15,10 +15,14 @@
 #
 # Usage:
 #   scripts/gen-agents-md.sh [--skills-dir DIR] [--output FILE] [--dry-run]
+#                            [--siblings]
 #
 #   --skills-dir DIR   where the skills live (default: ~/.claude/skills if present,
 #                      else the skills/ dir of this checkout)
 #   --output FILE      AGENTS.md to write/update (default: ./AGENTS.md)
+#   --siblings         also create CLAUDE.md / GEMINI.md POINTERS beside it, if
+#                      and only if they do not already exist. Neither duplicates
+#                      a byte: AGENTS.md stays the single source of truth.
 #
 set -euo pipefail
 
@@ -30,6 +34,7 @@ readonly END_MARK="<!-- <<< sota-skills <<< -->"
 OUTPUT="AGENTS.md"
 SKILLS_DIR=""
 DRY_RUN=0
+SIBLINGS=0
 
 log()  { printf '  %s\n' "$*"; }
 die()  { printf 'error: %s\n' "$*" >&2; exit 1; }
@@ -40,6 +45,7 @@ while [ $# -gt 0 ]; do
     --skills-dir) shift; [ $# -gt 0 ] || die "--skills-dir needs a path"; SKILLS_DIR="$1" ;;
     --output)     shift; [ $# -gt 0 ] || die "--output needs a path"; OUTPUT="$1" ;;
     --dry-run)    DRY_RUN=1 ;;
+    --siblings)   SIBLINGS=1 ;;
     -h|--help)    usage 0 ;;
     *)            die "unknown argument: $1 (try --help)" ;;
   esac
@@ -165,6 +171,47 @@ elif grep -qF "$BEGIN_MARK" "$OUTPUT" || grep -qF "$END_MARK" "$OUTPUT"; then
 else
   cp "$OUTPUT" "$OUTPUT.bak"
   { printf '\n'; cat "$block_file"; } >> "$OUTPUT"
+fi
+
+# --- optional sibling pointers ----------------------------------------------
+#
+# Claude Code reads CLAUDE.md, not AGENTS.md; Gemini CLI reads GEMINI.md. Neither
+# gets a COPY here -- AGENTS.md stays the single source of truth and these files
+# only point at it.
+#
+# THE TWO POINTERS ARE DELIBERATELY DIFFERENT, and the difference is verified,
+# not symmetrical-looking guesswork:
+#
+#   CLAUDE.md -> `@AGENTS.md`. A native import: Claude Code expands it into
+#   context at launch. Its own docs recommend this over a symlink, and note that
+#   creating a symlink on Windows needs Administrator or Developer Mode -- which
+#   is why this is the portable answer rather than `ln -s`.
+#
+#   GEMINI.md -> a one-line Markdown pointer, NOT `@AGENTS.md`. Gemini CLI's
+#   memory documentation describes no import directive for GEMINI.md, and its
+#   settings reference describes `@` as a reference "in the prompt". Writing
+#   `@AGENTS.md` there would most likely sit as literal text: file present,
+#   instructions never loaded -- the silent non-load `sota-docs-workflow`
+#   rules/01 section 10 warns about. Checked 2026-09-10; if Gemini adds an import
+#   directive, this is the line to change.
+#
+# NEVER OVERWRITE. An existing CLAUDE.md/GEMINI.md is somebody's content, and a
+# pointer clobbering it would delete the instructions it was meant to deliver.
+write_sibling() {  # <path> <body>
+  if [ -e "$1" ] || [ -L "$1" ]; then
+    log "kept $1 as-is (already exists — not overwritten)"
+    return 0
+  fi
+  printf '%s\n' "$2" > "$1"
+  log "created $1 — pointer only, no duplicated content"
+}
+
+if [ "$SIBLINGS" -eq 1 ]; then
+  out_dir="$(dirname -- "$OUTPUT")"
+  out_base="$(basename -- "$OUTPUT")"
+  write_sibling "$out_dir/CLAUDE.md" "@$out_base"
+  write_sibling "$out_dir/GEMINI.md" "See [$out_base]($out_base) — the single source of truth for this repo's agent instructions."
+  log "verify they LOADED, do not assume: Claude Code \`/context\` (under Memory files), Gemini CLI \`/memory show\`"
 fi
 
 # -L: the default layout symlinks skill dirs (install.sh), which plain -type d
