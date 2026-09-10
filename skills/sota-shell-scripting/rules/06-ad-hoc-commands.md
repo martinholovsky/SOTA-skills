@@ -178,6 +178,66 @@ export, a bulk archive, a recursive `cp`/`rsync`, anything with `--output` on a 
   long after the one that caused it.
 - Cleanup on a shared runtime is not housekeeping: see `sota-devsecops` rules/07 §7.7.
 
+## 4. The loop you left running exhausts the process table — and takes cleanup with it
+
+§3 is about a command that writes too much. This is the same idea aimed at a resource
+nobody budgets: **processes**. It is the more dangerous of the two, because running out
+of disk still lets you run `rm`, and running out of processes does not let you run
+anything at all.
+
+**The shape.** A wait loop, backgrounded, with no bound on its iterations:
+
+```bash
+# WRONG — nothing here ever stops, and each tick spawns
+while ! pgrep -f "run-eval.py" >/dev/null; do sleep 60; done &
+```
+
+Every iteration forks (`pgrep`, `grep`, `ps`, the subshells in a `$(…)`), and a
+backgrounded loop outlives the command that started it — often the whole session. §1's
+`pgrep -f` self-match is what makes it never stop: the loop's own argv contains the
+pattern, so it matches itself forever. §1 frames that cost as *a burned timeout*. The
+larger cost is that it never stops **spawning**.
+
+**Field-reported, measured.** A day of such loops left **≈10,700 orphaned `/bin/sh`**
+alive. At failure `ps -A | wc -l` read **11,463** against a `kern.maxprocperuid` of
+**11,136** — the per-user table was full.
+
+**Recognise the signature, because it is not the one you expect:**
+
+- It does **not** degrade gradually. It hits a ceiling and *every* tool fails at once.
+- The error is `fork failed: resource temporarily unavailable`, and it appears in the
+  agent's shell and the operator's interactive shell **simultaneously** — which reads
+  like the machine broke, not like a script did something.
+- **The cleanup tools are inside the blast radius.** `ps -o ppid`, `killall`, `pkill`,
+  even `echo` in a fresh shell, all need to fork. So does the diagnosis: you cannot
+  learn which process leaked because listing parents requires a process.
+- `kill` being a **shell builtin does not rescue you** if each command runs in a newly
+  spawned shell — that spawn is the thing failing, before any builtin executes.
+- What is left is a GUI process manager (already running, kills internally) or a
+  reboot. Plan for that before you background anything.
+
+**So:**
+
+- **Do not poll work that something else already reports.** Where a harness, CI or job
+  runner notifies on completion, waiting for that notification costs nothing; a polling
+  loop costs a process per tick and buys the same answer later.
+- **Never background an unbounded wait.** Before writing any repeating loop, ask what
+  makes it *stop* — and if the answer is a `pgrep` on a pattern the loop's own argv
+  contains, the answer is **nothing** (§1).
+- **Bound the iterations, not just the sleep**: `for i in $(seq 1 60)`, never a bare
+  `while true` / `until`. A loop that gives up is a loop that cannot leak forever.
+- **Keep it in the foreground** so it dies with the command that started it, and **watch
+  an artifact rather than a process** — `until grep -q DONE run.log` forks less and
+  cannot match itself.
+- **Check headroom for the resource you are about to spend**, exactly as §3 asks for
+  `df -h`: `ps -A | wc -l` against `sysctl -n kern.maxprocperuid` (macOS) or `ulimit -u`.
+  A loop that ticks every 60s for a day is 1,440 spawns *if each one exits*; the failure
+  above is what happens when they do not.
+
+Blast radius is not only disk (§3). It is whatever finite resource the command consumes
+without anyone counting — and the process table is the one whose exhaustion disables the
+tools you would use to recover.
+
 ## Audit checklist
 
 - [ ] **Sweeps: is the searcher's traversal and exclusion set stated with the count?** (§2)
@@ -189,6 +249,11 @@ export, a bulk archive, a recursive `cp`/`rsync`, anything with `--output` on a 
       *and* the runtime's own filesystem), source mounted read-only, output outside the source
       tree, size bounded with `du -sh` before the copy, and build output (`target/`,
       `node_modules/`, `.venv/`, `vendor/`) excluded or redirected rather than copied.
+- [ ] **Backgrounded wait loops** (§4): does any `&`-ed loop lack a bound on its
+      iterations, and does anything make it stop other than a `pgrep` that matches the
+      loop's own argv? Grep for the shape — `grep -nE '(while|until).*(true|pgrep|ps ).*&\s*$'`
+      — and for polling of work a harness already reports. Headroom for the resource
+      being spent is checked (`ps -A | wc -l` vs `ulimit -u`), not just `df -h`.
 - [ ] **zsh joining bugs** (the inverse of SC2086, and unlinted): in any zsh script or
       snippet, `grep -nE '\$\{[a-zA-Z_]+:\+[^}]*\$' -e '[a-z] \$[a-zA-Z_]+$'` for
       `${var:+--flag $var}` and bare `cmd $args`. Each passes **one** argument in zsh
