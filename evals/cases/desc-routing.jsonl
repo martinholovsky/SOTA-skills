@@ -3,6 +3,18 @@
 # that carries a "Not for … — use …" cross-ref) but the correct pick is `expect`.
 # Metric of interest: does the cross-ref reduce distractor-picks? See run-desc-routing.py.
 #
+# CORRECTION 2026-09-11 — q7_pod_hardening: expect was `sota-kubernetes`, which is wrong by
+# TWO independent standards inside this library, neither of them a model score: the router's
+# rule 9 ("pod/container/workload isolation mechanics -> sota-sandboxing") and
+# sota-kubernetes' OWN description ("NOT pod-level securityContext/seccomp (sota-sandboxing)").
+# The task is literally securityContext/runAsNonRoot/capabilities on pods. expect is now
+# sota-sandboxing and sota-kubernetes becomes the distractor, which is what the case was
+# always testing. Found while running the ROADMAP 53 keyword ablation, where this was the
+# ONLY case that moved — so note the provenance honestly: the defect surfaced from a result,
+# and the justification for fixing it is the two standards above, not the result.
+# Consequence for the published §5 xref number: the DELTA is unaffected (both arms carried
+# the same label), but the absolute correct-rate it reported as 0.80 was understated.
+#
 # SELECTION RULE — adversarially-confusable tasks: each names the correct skill and the tempting wrong sibling that shares surface keywords. Chosen by confusability, never by a model's score.
 # MEASUREMENT set — a lift may be reported from it, so cases must never be selected by a model's score (`sota-llm-engineering` rules/01 §8).
 {"id": "q1_react_ui", "task": "Build a Next.js dashboard page using React server components that fetches data and renders a sortable table, handling hydration and client/server data fetching correctly.", "expect": "sota-web-frameworks", "distractor": "sota-api-design"}
@@ -11,7 +23,7 @@
 {"id": "q4_data_race", "task": "Under concurrency we're hitting intermittent data races and an occasional deadlock between two goroutines sharing a map. Fix the synchronization.", "expect": "sota-async-concurrency", "distractor": "sota-performance"}
 {"id": "q5_code_vuln_review", "task": "Review this Python request handler at the code level for injection, XSS, and insecure deserialization vulnerabilities.", "expect": "sota-code-security", "distractor": "sota-threat-modeling"}
 {"id": "q6_appcode_audit", "task": "Audit our application's source code for exploitable vulnerabilities like SQL injection and SSRF in the request-handling functions.", "expect": "sota-code-security", "distractor": "sota-devsecops"}
-{"id": "q7_pod_hardening", "task": "Harden our Kubernetes workloads: set securityContext runAsNonRoot, drop Linux capabilities, and enforce a read-only root filesystem on the pods.", "expect": "sota-kubernetes", "distractor": "sota-devsecops"}
+{"id": "q7_pod_hardening", "task": "Harden our Kubernetes workloads: set securityContext runAsNonRoot, drop Linux capabilities, and enforce a read-only root filesystem on the pods.", "expect": "sota-sandboxing", "distractor": "sota-kubernetes"}
 {"id": "q8_bash_review", "task": "Review this Bash deployment script for unquoted variable expansions, command injection, and unsafe use of eval.", "expect": "sota-shell-scripting", "distractor": "sota-cli-ux"}
 {"id": "q9_etl_pipeline", "task": "Design an ETL pipeline that ingests Kafka event streams, transforms them, and loads them into our analytics warehouse with schema evolution.", "expect": "sota-data-engineering", "distractor": "sota-databases"}
 {"id": "q10_ui_microcopy", "task": "Write the button labels, empty-state text, and inline validation error messages for our checkout UI.", "expect": "sota-ux-writing", "distractor": "sota-docs-workflow"}

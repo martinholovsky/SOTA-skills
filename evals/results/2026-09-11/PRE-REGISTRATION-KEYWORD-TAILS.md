@@ -81,3 +81,58 @@ trustworthy** — report that instead of the delta.
 ## Status
 
 Not yet run. Live spend on the operator's account, authorised 2026-09-11.
+
+---
+
+## Amendment, written 2026-09-11 AFTER runs 1 and 2 and BEFORE run 3
+
+Runs 1 and 2 executed as registered (60 calls each) and produced **identical** results:
+`with-keywords 0.800 / without-keywords 0.900`, **Δ = −0.100**, distractor-pick 0.000 in
+every arm. Run 1's artifact was lost to a `KeyError` in a *reporting* line that still
+hardcoded the xref arm names — all 60 calls had already been paid for. Run 2 reproduced it
+byte-for-byte after the fix.
+
+**The registered threshold was crossed (Δ ≤ −0.05, "the tails actively hurt"), and it must
+not be reported that way**, for three reasons found by looking at the per-case data rather
+than the summary:
+
+1. **The 95% CI includes zero.** SD 0.316, SE 0.100, CI **[−0.296, +0.096]**. **One case of
+   ten moved**, completely (3/3 in both arms). Nine were identical.
+2. **That case was mislabelled.** `q7_pod_hardening` expected `sota-kubernetes` for a task
+   that is literally *"set securityContext runAsNonRoot, drop Linux capabilities, read-only
+   root filesystem on the pods"*. The router's **rule 9** sends pod/container isolation
+   mechanics to `sota-sandboxing`, and `sota-kubernetes`'s own description says **"NOT
+   pod-level securityContext/seccomp (sota-sandboxing)"**. The `with-keywords` arm answered
+   `sota-sandboxing` 3/3 — **correct by the library's own rules** — and was scored wrong.
+   Corrected, the same runs read **+0.100** in favour of keeping the tails.
+3. **The ablation was impure.** `Trigger keywords:` is not the end of every description: **2
+   of 39** (`sota-kubernetes`, `sota-devsecops`) carry their negative cross-reference *after*
+   the keyword list, so stripping to end-of-string removed **two features** and measured
+   their sum. `sota-kubernetes` is exactly the skill in the case that moved, so the entire
+   observed effect is attributable to losing an **exclusion clause**, not a keyword list.
+
+So the honest reading of runs 1 and 2 is **not** "−0.100, the tails hurt". It is: *the
+instrument had a mislabelled case and an impure ablation, and both landed on the single case
+that produced the whole effect.* The number measures the defects.
+
+### What changed before run 3, and why each is legitimate
+
+- **`strip_keywords()` preserves any exclusion clause** while removing the keyword list, so
+  the ablation isolates one feature. Removed text: 12,227 chars (was 12,456).
+- **`q7_pod_hardening` relabelled** to `expect: sota-sandboxing`, `distractor:
+  sota-kubernetes`. Justified by the two standards above — the router rule and the skill's
+  own description — **not** by the outcome. Provenance recorded in the case file: the defect
+  surfaced *from* a result, and that is stated rather than hidden.
+
+### Thresholds for run 3 — unchanged, and deliberately not moved toward what was seen
+
+Null band **±0.03**, decision at **±0.05**, primary metric mean correct-rate, Δ = with −
+without. Same 10 cases, 3 samples, temp 0.7, `claude-sonnet-4.6`.
+
+**Revised prediction:** still a **null**, and now more confident — the one case that moved is
+explained by a feature the ablation no longer touches. If run 3 shows a null, the answer to
+ROADMAP 53 is that the tails buy no measurable *matching* value, which is a finding about
+matching only and says nothing about the budget question, per limit 1 above.
+
+**All three runs will be reported**, including the two whose number is being set aside, and
+the reason for setting it aside is written above before run 3 was started.
