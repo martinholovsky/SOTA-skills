@@ -2058,9 +2058,11 @@ need a read this intake did not have room for:
   yet?" is undecided — the file's own line *"a clock that depends on someone happening to
   notice is already blown"* names the failure and stops one step short of the process that
   prevents it. Confirmed absent from rules/03 (SSDF) as well, whose four practice groups
-  cover *having* a disclosure process, not running one. **Tracked as ROADMAP item 50** rather
-  than written here, so it does not become the thing this log exists to prevent — an idea
-  judged real and then quietly untracked. **Licence note that constrains the writing:** the
+  cover *having* a disclosure process, not running one. Opened as **ROADMAP item 50** and **written the same
+  day** as `sota-security-compliance` rules/04 **§3a**, with its audit-checklist half and the
+  `SKILL.md` front-door row; item 50 is closed. It was tracked before it was written
+  precisely so it could not become the thing this log exists to prevent — an idea judged
+  real and then quietly untracked. **Licence note that constrains the writing:** the
   source is CC-BY-SA-4.0, so idea classes only — and in the event none is needed, since the
   gap above was derived from reading our own rules/04, not theirs. Original reasoning kept
   below.
