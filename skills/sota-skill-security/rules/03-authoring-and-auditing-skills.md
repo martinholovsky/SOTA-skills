@@ -19,12 +19,58 @@ decides to load it. Three consequences that authors get wrong:
 - **Numbered imperatives in the body are obeyed; subordinate clauses are not.** A
   requirement buried mid-sentence in a paragraph is a requirement that does not
   survive a long context. Put load-bearing rules where they read as instructions.
-- **Caps are real and silent.** Where a platform caps the description length,
-  exceeding it can make the loader skip the skill entirely — a skill that is
-  installed, correct, and never loads. Check the cap; do not assume truncation.
+- **Caps are real and silent, and they are enforced in two different shapes.** A
+  platform over its description limit may **skip** the skill (installed, correct,
+  never loads) or **silently shorten** the description (it loads, but the matcher
+  only ever saw the surviving prefix). They look nothing alike from the inside and
+  need different checks — a skip is found by asking *did it load at all?*, a
+  truncation by comparing the text the model was given against the text on disk.
+  Find out which your platform does; assume neither.
+- **Order the description so the part you cannot afford to lose is first.** This is
+  free, and it is the only mitigation that works before you know which shape applies:
+  if the platform truncates, the tail goes, so a description that opens with the
+  capability keeps its trigger even when shortened, while one that back-loads its
+  vocabulary loses exactly the words it was matching on — and the symptom is
+  indistinguishable from a badly-written description.
+- **Where the listing budget is shared across everything installed, your matching
+  degrades because of someone else's skills.** A per-skill cap is yours to respect; a
+  *global* budget across every installed plugin and marketplace is a commons, and a
+  bloated neighbour silently costs you trigger words you wrote correctly. Two
+  consequences: audit the aggregate, not just each file (each one under the cap says
+  nothing about the total), and treat "it stopped triggering and we changed nothing"
+  as a *corpus* symptom rather than a bug in the skill that stopped firing.
 
 **Changing a description is changing behaviour** (`rules/01` §2). Version it with
 the same care as a rule.
+
+## 1a. Prove the description separately from the body — and be willing to delete
+
+A skill that does not fire and a skill that fires and gives bad guidance are different
+defects with different fixes, and they are routinely diagnosed as each other. Separate
+them with **two runs of the same task**: once letting the model route to the skill on its
+own, once invoking it **by name** so the content is guaranteed present.
+
+| by name | model-routed | what is actually broken |
+|---|---|---|
+| works | fails | the **description**. Do not touch the body |
+| fails | fails | the **body**. Do not touch the description |
+| ≈ no-skill baseline | ≈ no-skill baseline | the skill may not be earning its context |
+| worse than baseline | worse than baseline | it contains something actively misleading — **cut it** |
+
+The last two rows are the ones nobody runs, because they are the ones that can end with
+deleting your own work. Keep a **no-skill arm** in the comparison for exactly that reason:
+it is the only arm that can tell you a skill has stopped being worth its tokens, and base
+models improve underneath you, so a skill that genuinely helped can decay into noise
+without a word of it changing (`rules/02` §2 on freshness is the same clock seen from the
+content side). Re-run it after a model upgrade, not only after a skill edit.
+
+**And if a rule must apply every time, routing is the wrong mechanism.** Description
+matching is probabilistic by construction: it is a classifier, and classifiers have a
+false-negative rate. That is acceptable for *depth you would like the model to have* and
+unacceptable for a control that is load-bearing — anything security-, safety- or
+compliance-relevant. Those belong in something that cannot decline to fire: a hook, a
+CI gate, a validation step in the pipeline. A requirement documented in a skill and
+enforced by nothing is enforced by the model's mood on the day.
 
 ## 2. A skill is a control — and the dangerous failure is confidence
 
@@ -107,6 +153,10 @@ Report findings as `file:line | rule | severity | effort | fix`, and rate severi
 
 ## Audit checklist
 
+- [ ] **Cap enforcement identified** (§1): does this platform skip an over-cap skill or silently shorten it? Compare the description the model was actually given against the file on disk — and where the listing budget is global, audit the **aggregate** across everything installed, not each file against its own cap
+- [ ] **Capability first in every description** (§1) so a truncation costs the least-load-bearing words, never the trigger vocabulary
+- [ ] **Description and body diagnosed separately** (§1a): the same task run model-routed and invoked by name, against a **no-skill baseline** — and the baseline re-run after a model upgrade, since a skill that once helped can decay into noise with none of its text changing
+- [ ] **No load-bearing requirement left to routing** (§1a): anything security-, safety- or compliance-relevant is enforced by a hook or a gate that cannot decline to fire, not by a description that matches most of the time
 - [ ] **Every skill's description written as a trigger classifier** (§1) — conditions,
       real task vocabulary, and a **negative boundary** where a tempting sibling
       exists — and checked against the platform's length cap, since exceeding it can

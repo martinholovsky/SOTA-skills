@@ -2246,6 +2246,96 @@ own anchor, which is the class of bug that only re-reading the file catches.
 §7.7–§7.8, `sota-devsecops` rules/07 §7.7, `sota-detection-engineering` rules/01 §8 — each
 with its audit-checklist half in the same change · v1.38.0
 
+### 2026-09-11 — MadAppGang/magus, a Claude Code plugin marketplace: two adopted, one deferred, one item opened, the rest already ours
+
+Reviewed at the operator's request. **Licence checked first, from the GitHub API rather than
+the README: MIT** — permissive, so unlike the CC-BY-SA-4.0 intakes above there is no
+text-reuse constraint. None was needed anyway; both adoptions are written from our own
+measurements. Source: [MadAppGang/magus](https://github.com/MadAppGang/magus), 15 plugins,
+416 markdown files, `skills/skill-authoring/` the directly-comparable artifact.
+
+**Provenance caveat, checked rather than assumed.** Its strongest claims cite evidence the
+repository does not publish: `benches/skill-index/` (the "IDX-1" measurement behind *"say
+read this file, never invoke this skill"*) does not exist, and neither do
+`scripts/skill-budget-check.ts` nor `scripts/dev-skill-inventory.ts` — two of the three
+commands its own *"Before reporting done"* block tells a reader to run. Not gitignored;
+absent. That does not make the guidance wrong, and much of it is very good, but it means the
+measured claims cannot be reproduced from what ships — so they are recorded below as
+**unverified**, never asserted. Its README is also heavy unsubstantiated marketing
+("$2.3M in value", "zero rollbacks"); ignored, and a reminder of `sota-copywriting`'s
+claim-substantiation rule.
+
+**Adopted — a description length cap is enforced in one of two shapes, and they need
+different checks.** `sota-skill-security` rules/03 §1 said *"exceeding it can make the loader
+skip the skill entirely… do not assume truncation"* — correct as far as it goes, and it
+frames **skip** as the failure while warning against assuming the other one. magus argues
+Claude Code does the opposite: it **silently shortens** descriptions, so the skill loads and
+the matcher only ever saw the surviving prefix. We now name both shapes, say they are
+indistinguishable from the inside, and give the check for each (a skip is *did it load at
+all?*; a truncation is *compare the text the model got against the file*). Two corollaries
+came with it and are the practically useful part: **order the description capability-first**,
+because that is free and works before you know which shape applies, and — where the listing
+budget is **global across everything installed** — *your* matching degrades because of
+*someone else's* bloat, which makes "it stopped triggering and we changed nothing" a corpus
+symptom rather than a bug in the skill that went quiet.
+
+**Adopted — prove the description separately from the body, and keep the arm that tells you
+to delete.** New `rules/03` §1a. Run the same task twice, model-routed and invoked **by
+name**: named works / routed fails is the *description*; both fail is the *body*. We had the
+two instruments (`run-desc-routing.py`, `run-completeness.py`) and had never written the
+diagnostic down, so the two defects stayed easy to mistake for each other. The half worth
+more than the diagnostic is the **no-skill baseline** kept in the comparison: it is the only
+arm that can say a skill has stopped earning its tokens, and *"worse than baseline → cut
+it"* is a disposal rule this library has never had — in four months it has never removed
+guidance on evidence. It also lands on a clock we already believe in: base models improve
+underneath a skill, which is [measured-claims-expire](ROADMAP.md) seen from the content side
+rather than the number side.
+
+**Adopted in the same section — routing is the wrong mechanism for a requirement.** *"If a
+workflow genuinely requires 100% invocation, use a hook or a validation gate."* One sentence,
+and it is the general rule behind a choice **ROADMAP 48** is currently parked on (whether
+the per-task-shape re-route belongs in the router body or the re-injection hook). Description
+matching is a classifier and classifiers have a false-negative rate; that is fine for depth
+and not fine for anything security-, safety- or compliance-relevant.
+
+**Opened as ROADMAP 52, not adopted — the budget arithmetic is about us.** magus states the
+listing budget as `context_tokens × 4 × fraction (default 0.01)`, verified against Claude Code
+**2.1.223**. This machine runs **2.1.268** and the CLI is bundled inside another application
+where the binary could not be located, so **the formula is unverified here**. What we did
+measure is ours: **37,330 characters** across 42 descriptions, **40 of 42** carrying a
+`Trigger keywords:` tail at roughly the last 35% of the text, and — observed directly, not
+inferred — those descriptions arriving **complete** in a 1M-context session (two tails
+compared byte-for-byte against disk). If the formula holds, 1M gives a 40,000-char budget we
+fit with ~7% headroom and 200k gives 8,000, where we are **4.7× over** and the trigger
+vocabulary is the first thing cut. That is too consequential to adopt on an unreproduced
+claim and too consequential to drop.
+
+**DEFERRED — revisit when `sota-code-security` rules/10 is split or a second instance
+appears: the over-firing control.** magus's search-redirect hook documents a failure mode we
+cover only in one direction. Ours is the inert control that looks enabled and does nothing
+(rules/10). Its mirror is a control that fires **too broadly**, degrades the outcome it was
+meant to protect, and *appears to work the whole time* — their reviewers' point that a
+blanket grep-deny enforces worse behaviour, because ripgrep genuinely beats an index for a
+literal you can already spell. Real, and not placed today on purpose: rules/10 is at
+**484/500** and putting it there would let the line cap choose the placement, which this
+library has already watched happen twice.
+
+**Rejected — already covered, with the citation each time.** Most of its
+`references/routing-eval.md` is practice we measure already: *run every prompt at least three
+times, triggering is stochastic* (our noise-floor work — a null at n=1 is not a null);
+*record model and harness, re-run after an upgrade* (`sota-skill-security` rules/02 §2, and
+the whole measured-claims-expire result); *judges sharing an input share its defects, so
+convergence is not corroboration* (router operating principle 3, which says independence must
+mean a different **failure mode**); *periodically re-run the no-skill condition* (adopted
+above only because we lacked the **disposal** half, not the observation). Also rejected: its
+**250-character description ceiling**. It is coherent inside their architecture — per-plugin
+routers with most skills hidden — and incoherent in ours, where 42 listed descriptions *are*
+the classifier and there is no hidden tier to demote into. Adopting the number without the
+architecture would delete trigger vocabulary and call it discipline.
+
+**Landed:** `sota-skill-security/rules/03` §1 and new §1a, four audit-checklist bullets, and
+the `SKILL.md` rules-index row · ROADMAP 52 opened · one deferral with its trigger.
+
 ### 2026-09-09 — the InterdictOps field report in full, and one of its claims corrected
 
 The full report behind the 2026-09-08 summary that landed in v1.38.0

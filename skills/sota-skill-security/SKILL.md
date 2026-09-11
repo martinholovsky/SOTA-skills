@@ -93,7 +93,7 @@ Use when reviewing an installed skill set, a repo's agent files, or your own lib
 |---|---|
 | `rules/01-provenance-and-installation.md` | Deciding whether to install, and on what terms: identity and licence of the publisher, pinning vs tracking a branch, review-before-install and the *closure* you must review, diffing an update, and taking an inventory of everything that actually loads |
 | `rules/02-trust-boundary-and-capability.md` | Working out what a loaded skill can reach and who can change it: the instruction trust boundary (including repos you only meant to read), capability minimisation for skills carrying scripts or fetched resources, precedence and shadowing between overlapping skills, and revocation |
-| `rules/03-authoring-and-auditing-skills.md` | Writing a skill others will install, or auditing one: honest descriptions as the auto-load classifier, stating your own limits, guidance that is confidently wrong, and why a skill is a control that must be verifiable |
+| `rules/03-authoring-and-auditing-skills.md` | Writing a skill others will install, or auditing one: honest descriptions as the auto-load classifier, **which shape the length cap takes (skip vs silent truncation) and the shared listing budget a neighbour can eat**, **diagnosing the description separately from the body — including the no-skill arm that tells you to delete (§1a)**, stating your own limits, guidance that is confidently wrong, and why a skill is a control that must be verifiable |
 
 ## Top-10 non-negotiables
 
