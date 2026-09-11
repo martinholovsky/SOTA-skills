@@ -1,0 +1,48 @@
+  ablation 'keywords': 39 description(s) differ, 12227 characters removed
+model=anthropic/claude-sonnet-4.6  cases=10  samples=3  temp=0.7  arms=['with-keywords', 'without-keywords']  (clean API, objective name-match scoring)
+
+  q1_react_ui          with-keywords  correct=1.00 distractor=0.00 picks=['sota-web-frameworks', 'sota-web-frameworks', 'sota-web-frameworks']
+  q1_react_ui          without-keywords correct=1.00 distractor=0.00 picks=['sota-web-frameworks', 'sota-web-frameworks', 'sota-web-frameworks']
+  q2_sigma_detection   with-keywords  correct=1.00 distractor=0.00 picks=['sota-detection-engineering', 'sota-detection-engineering', 'sota-detection-engineering']
+  q2_sigma_detection   without-keywords correct=1.00 distractor=0.00 picks=['sota-detection-engineering', 'sota-detection-engineering', 'sota-detection-engineering']
+  q3_latency_opt       with-keywords  correct=1.00 distractor=0.00 picks=['sota-performance', 'sota-performance', 'sota-performance']
+  q3_latency_opt       without-keywords correct=1.00 distractor=0.00 picks=['sota-performance', 'sota-performance', 'sota-performance']
+  q4_data_race         with-keywords  correct=0.00 distractor=0.00 picks=['sota-golang', 'sota-golang', 'sota-golang']
+  q4_data_race         without-keywords correct=0.00 distractor=0.00 picks=['sota-golang', 'sota-golang', 'sota-golang']
+  q5_code_vuln_review  with-keywords  correct=1.00 distractor=0.00 picks=['sota-code-security', 'sota-code-security', 'sota-code-security']
+  q5_code_vuln_review  without-keywords correct=1.00 distractor=0.00 picks=['sota-code-security', 'sota-code-security', 'sota-code-security']
+  q6_appcode_audit     with-keywords  correct=1.00 distractor=0.00 picks=['sota-code-security', 'sota-code-security', 'sota-code-security']
+  q6_appcode_audit     without-keywords correct=1.00 distractor=0.00 picks=['sota-code-security', 'sota-code-security', 'sota-code-security']
+  q7_pod_hardening     with-keywords  correct=1.00 distractor=0.00 picks=['sota-sandboxing', 'sota-sandboxing', 'sota-sandboxing']
+  q7_pod_hardening     without-keywords correct=1.00 distractor=0.00 picks=['sota-sandboxing', 'sota-sandboxing', 'sota-sandboxing']
+  q8_bash_review       with-keywords  correct=1.00 distractor=0.00 picks=['sota-shell-scripting', 'sota-shell-scripting', 'sota-shell-scripting']
+  q8_bash_review       without-keywords correct=1.00 distractor=0.00 picks=['sota-shell-scripting', 'sota-shell-scripting', 'sota-shell-scripting']
+  q9_etl_pipeline      with-keywords  correct=1.00 distractor=0.00 picks=['sota-data-engineering', 'sota-data-engineering', 'sota-data-engineering']
+  q9_etl_pipeline      without-keywords correct=1.00 distractor=0.00 picks=['sota-data-engineering', 'sota-data-engineering', 'sota-data-engineering']
+Traceback (most recent call last):
+  File "/Users/martinholovsky/Github/SOTA-skills/evals/run-desc-routing.py", line 232, in <module>
+    main()
+    ~~~~^^
+  File "/Users/martinholovsky/Github/SOTA-skills/evals/run-desc-routing.py", line 201, in main
+    picks = [pick_from(call(a.model, key, build_prompt(items, c["task"]), a.temp), names)
+                       ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/martinholovsky/Github/SOTA-skills/evals/run-desc-routing.py", line 123, in call
+    with urllib.request.urlopen(req, timeout=180) as r:
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 187, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 493, in open
+    response = meth(req, response)
+  File "/usr/local/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 602, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "/usr/local/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 531, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/usr/local/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 464, in _call_chain
+    result = func(*args)
+  File "/usr/local/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 611, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 402: Payment Required
+[run-desc-routing PARTIAL — elapsed 90.0s over 10 cases | partial run — not compared, and not a baseline for the next run]

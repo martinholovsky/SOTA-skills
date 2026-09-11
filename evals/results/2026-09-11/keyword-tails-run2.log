@@ -1,0 +1,32 @@
+  ablation 'keywords': 39 description(s) differ, 12456 characters removed
+model=anthropic/claude-sonnet-4.6  cases=10  samples=3  temp=0.7  arms=['with-keywords', 'without-keywords']  (clean API, objective name-match scoring)
+
+  q1_react_ui          with-keywords  correct=1.00 distractor=0.00 picks=['sota-web-frameworks', 'sota-web-frameworks', 'sota-web-frameworks']
+  q1_react_ui          without-keywords correct=1.00 distractor=0.00 picks=['sota-web-frameworks', 'sota-web-frameworks', 'sota-web-frameworks']
+  q2_sigma_detection   with-keywords  correct=1.00 distractor=0.00 picks=['sota-detection-engineering', 'sota-detection-engineering', 'sota-detection-engineering']
+  q2_sigma_detection   without-keywords correct=1.00 distractor=0.00 picks=['sota-detection-engineering', 'sota-detection-engineering', 'sota-detection-engineering']
+  q3_latency_opt       with-keywords  correct=1.00 distractor=0.00 picks=['sota-performance', 'sota-performance', 'sota-performance']
+  q3_latency_opt       without-keywords correct=1.00 distractor=0.00 picks=['sota-performance', 'sota-performance', 'sota-performance']
+  q4_data_race         with-keywords  correct=0.00 distractor=0.00 picks=['sota-golang', 'sota-golang', 'sota-golang']
+  q4_data_race         without-keywords correct=0.00 distractor=0.00 picks=['sota-golang', 'sota-golang', 'sota-golang']
+  q5_code_vuln_review  with-keywords  correct=1.00 distractor=0.00 picks=['sota-code-security', 'sota-code-security', 'sota-code-security']
+  q5_code_vuln_review  without-keywords correct=1.00 distractor=0.00 picks=['sota-code-security', 'sota-code-security', 'sota-code-security']
+  q6_appcode_audit     with-keywords  correct=1.00 distractor=0.00 picks=['sota-code-security', 'sota-code-security', 'sota-code-security']
+  q6_appcode_audit     without-keywords correct=1.00 distractor=0.00 picks=['sota-code-security', 'sota-code-security', 'sota-code-security']
+  q7_pod_hardening     with-keywords  correct=0.00 distractor=0.00 picks=['sota-sandboxing', 'sota-sandboxing', 'sota-sandboxing']
+  q7_pod_hardening     without-keywords correct=1.00 distractor=0.00 picks=['sota-kubernetes', 'sota-kubernetes', 'sota-kubernetes']
+  q8_bash_review       with-keywords  correct=1.00 distractor=0.00 picks=['sota-shell-scripting', 'sota-shell-scripting', 'sota-shell-scripting']
+  q8_bash_review       without-keywords correct=1.00 distractor=0.00 picks=['sota-shell-scripting', 'sota-shell-scripting', 'sota-shell-scripting']
+  q9_etl_pipeline      with-keywords  correct=1.00 distractor=0.00 picks=['sota-data-engineering', 'sota-data-engineering', 'sota-data-engineering']
+  q9_etl_pipeline      without-keywords correct=1.00 distractor=0.00 picks=['sota-data-engineering', 'sota-data-engineering', 'sota-data-engineering']
+  q10_ui_microcopy     with-keywords  correct=1.00 distractor=0.00 picks=['sota-ux-writing', 'sota-ux-writing', 'sota-ux-writing']
+  q10_ui_microcopy     without-keywords correct=1.00 distractor=0.00 picks=['sota-ux-writing', 'sota-ux-writing', 'sota-ux-writing']
+
+SUMMARY
+  with-keywords  correct=0.800  distractor-pick=0.000
+  without-keywords correct=0.900  distractor-pick=0.000
+
+  Δ correct           (with − without) = -0.100
+  Δ distractor-pick   (with − without) = +0.000   (negative = the keywords text helps)
+saved evals/results/2026-09-11/keyword-tails.json
+[run-desc-routing elapsed 84.0s over 10 cases | previous 44.4s — 2.6x faster (per case)  [1 partial run(s) skipped to find it]]
