@@ -712,7 +712,10 @@ hook being present makes it read "installed".
 Claude Code reserves a per-turn character budget for the skill listing and computes it as
 `(context tokens x 4) x skillListingBudgetFraction`, where the fraction **defaults to
 0.01**. On a 200k-context model that is **8,000 characters** for *every* skill you have
-installed, from every source. This library's 42 descriptions need about **38,240**.
+installed, from every source. This library's 42 descriptions are about **38,240** of it —
+and the budget is shared, so what matters is your machine's total. On the machine this was
+found on, the engine counted **65 skills / 47,324 characters** against an 8,000 budget: our
+42 plus 23 built-in skills that are compiled into the binary and invisible to any script.
 
 Over budget, entries are **ranked by recent usage** and the ones that do not fit are
 rendered as a bare `- name` with **no description at all** — so they carry no trigger
@@ -723,6 +726,11 @@ which is a discovery ratchet — invisible because unused, unused because invisi
 *Measured 2026-09-11 by reading the shipped `claude` binary (2.1.268), not inferred from
 behaviour, and confirmed live: roughly 20 of these 42 skills were listed name-only in the
 session that found it.*
+
+**Claude Code does notice — and tells nobody.** Forcing the condition and reading the log it
+wrote gives `[WARN] Skill listing over budget: 65 skills, 47324 chars > 8000 budget —
+descriptions will be truncated.` That line goes to `~/.claude/debug/` and appears nowhere
+else, which is exactly why a whole session can run on a crippled listing unnoticed.
 
 **Why it still works anyway, and what actually breaks.** The `sota` router is used every
 session, so it ranks near the top and keeps its description — and a name-only skill is
@@ -748,6 +756,17 @@ To set it by hand instead, in `~/.claude/settings.json`:
 Be aware of what you are buying: the listing is sent **every turn**, so this reserves ~7% of
 the context window for it. `skillListingMaxDescChars` (default 1536) is a separate per-skill
 cap — no description here exceeds it, so it does not apply.
+
+**Plugin users get told, because a plugin cannot fix this itself.** Verified against the
+2.1.268 binary: the settings precedence is
+`["userSettings","projectSettings","localSettings","flagSettings","policySettings"]` — there
+is **no plugin scope** — and a plugin contributes skills, hooks, agents, commands and MCP
+servers only. So the plugin ships a `SessionStart` hook
+(`scripts/plugin-budget-check.sh`) that measures your installed descriptions, compares them
+against the budget, and **says so with the numbers and the exact setting** when they do not
+fit. It does not write your settings: that reserves a share of every context window, so it is
+your call. It speaks once per (size, fraction) pair — silent once fixed, and audible again if
+you install more skills.
 
 **To check your own install:** `scripts/verify-setup.sh` reports it as check **1b**, with the
 arithmetic (`descriptions total N chars vs an M-char budget…`). By hand: look at the skill
