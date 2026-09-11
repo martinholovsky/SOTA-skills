@@ -25,7 +25,7 @@ item).
 | Raw entries | 49 |
 | Duplicates (the invariant list appears in both `AGENTS.md` and `CONTRIBUTING.md`) | 8 |
 | **Distinct conventions** | **41** |
-| Already enforced as invariants | **20** (19 before 2026-09-01, 17 when that row was last corrected, 11 when this ledger was derived) |
+| Already enforced as invariants | **20 as of 2026-09-01**, and a **floor** since: invariants 21–29 landed afterwards and this extraction has **not been recomposed** against them, so some are already covered here and uncounted. Re-derive before quoting it (19 before 2026-09-01, 17 when that row was last corrected, 11 when this ledger was derived). Note the denominator: this counts **20 of the 41 conventions extracted from the five agent-facing docs**, never the total number of invariants, which is 29 |
 
 An earlier estimate of "~122" came from a loose regex that matched any bold line or
 any line containing *must/never/always*. It was an over-count by ~3×, and is

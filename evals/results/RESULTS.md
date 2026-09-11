@@ -315,7 +315,8 @@ Does a rule loaded early stop being applied as the session grows?
 First run: **no decay at moderate scale** — an ~18.6K-token (~72 KB) guidance block held after 30
 unrelated turns. This *bounds* the problem but doesn't find the breaking point (the
 filler is too small to dilute the anchor); scaling the test up needs a top-up.
-*(roadmap item 5, still open.)*
+*(roadmap **item 49**, still open — cited as *item 5* until 2026-09-11, a number that has
+meant the 6-month accuracy sweep since the ledger was renumbered.)*
 
 ## 5. Description-based routing — do the negative cross-refs help? (A/B, +0.00)
 
@@ -393,10 +394,14 @@ before spending; the fake null would have looked identical to this real one.
 - **Competitor breadth — DONE (5 domains).** The lead tracks the unguided baseline,
   not the domain (table above; [BREADTH.md](2026-07-13/BREADTH.md)). Data pipelines /
   mobile / CLI remain untested, but the baseline-driven pattern is established.
-- **As-deployed competitor comparison** — each library with its own method (not
-  content-only). SOTA-skills' self-audit is *off* in this run, so an as-deployed
-  run would *plausibly* favor SOTA-skills — but that is a prediction, **not
-  measured** (a competitor's own method could help it too).
+- ~~**As-deployed competitor comparison**~~ — **REJECTED 2026-08-16, not open**, and
+  moved off this list on 2026-09-11 because a rejected-with-reason idea sitting under a
+  heading that says *open* is how it gets re-litigated. Checked against the pinned clones:
+  two of the three competitors deploy through *exactly our own mechanism* (ECC ships 889
+  `SKILL.md` files with a `.claude-plugin/marketplace.json`, claude-skills 777), so
+  "as deployed" is not three mechanisms — it is our mechanism over a corpus 20× ours, which
+  measures **corpus size** and a **retrieval path already measured as saturated** (§5 reads
+  +0.00). Full reasoning: [ROADMAP item 3](../../docs/ROADMAP.md).
 - **Full-7 multi-sample** of the competitor arms (only the 3 tightest done).
 
 ## The three-layer story

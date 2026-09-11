@@ -85,6 +85,27 @@ allow), and selects by pod labels, namespace labels, or `ipBlock`. Limits to kno
 - `ipBlock` matches pod IPs too — be careful that a broad `ipBlock` doesn't unintentionally re-open
   intra-cluster paths.
 
+**R3a — where the "never a bare CIDR" non-negotiable does and does not bind.** This skill's
+non-negotiable 3 says every allow references identity, never a bare CIDR. Read literally against
+vanilla NetworkPolicy it is unsatisfiable for **external** destinations, because the list above is
+exhaustive: there is no identity selector for anything outside the cluster, so `ipBlock` is the only
+expressible form. Scope it explicitly, in both directions:
+
+- **In-cluster peer → identity, no exception.** `podSelector`/`namespaceSelector`, never the pod
+  CIDR. Pod IPs are ephemeral and reused, so a CIDR grants whatever occupies the range next — the
+  allow widens with no change to the manifest, and nothing reports it.
+- **Out-of-cluster peer → `ipBlock` is a documented exception, not a default.** Name the destination
+  and the reason in a comment, keep the prefix to what the peer actually needs (a `/32` for one
+  host, not the VPC `/16`), and treat it as a standing argument to move that policy to a CNI that
+  *can* express identity — Cilium `toFQDNs` for named services, `toEntities` for cluster/host
+  classes (§4, §5). Auditing it is a two-step: an `ipBlock` whose CIDR overlaps the pod or service
+  range is the in-cluster case wearing the exception's clothes, and is a finding.
+
+Recorded 2026-09-11 from a measured cross-skill conflict: `sota-sandboxing` rules/03 R3.4 shipped a
+reference egress policy using `ipBlock` for an in-cluster backend, which this file's absolute
+forbade and which was the weaker pattern anyway. Both sides were fixed — the example now selects by
+identity, and the absolute now says where it binds.
+
 For the user's Cilium cluster, prefer **CiliumNetworkPolicy** for anything needing identity-based,
 L7, FQDN, or cluster-wide policy; keep plain NetworkPolicy for portable baselines.
 
@@ -212,6 +233,11 @@ audit cross-cluster policies for `world`/wildcard exactly as single-cluster.
       policy constraining *which* names resolve?
 - [ ] Is egress FQDN-allowlisted for sensitive namespaces, not open to `0.0.0.0/0`?
 - [ ] Is `169.254.0.0/16` (metadata) blocked from pod egress?
+- [ ] Every `ipBlock` justified: `grep -n 'ipBlock' -r policies/` and for each hit ask which side
+      of §3's R3a it is on — an **in-cluster** peer written as a CIDR is a finding (recycled pod
+      IPs re-point it silently), and an external one needs the destination, the reason, and a
+      prefix no wider than the peer. A CIDR overlapping the pod/service range is in-cluster
+      regardless of what the comment claims
 - [ ] Are sensitive services (secrets/DB/registry/admin) selected by identity and reachable only
       from declared callers? Prove with Hubble + a probe.
 - [ ] Is there a cluster-scoped default-deny baseline (BANP/ANP if stable, else

@@ -90,4 +90,12 @@ wrong reason", or re-labelling a `distractor` pick as acceptable.
 
 ## Status
 
-Not yet run. Live spend on the operator's account, authorised 2026-09-09.
+~~Not yet run. Live spend on the operator's account, authorised 2026-09-09.~~
+
+**Superseded 2026-09-09 — the run happened**, the same day this was written. Results in
+[SKILL-SPLIT-ROUTING.md](SKILL-SPLIT-ROUTING.md); artifacts `skill-split-routing.json`
+(before) and `skill-split-routing-after-fix.json` (after), both in this directory; ROADMAP
+item 12 closed on it. **Everything above this line is unchanged and was committed before any
+call** — the strikethrough is the only edit, because a registration whose own status still
+reads *"not yet run"* beside its own results is how a finished run gets paid for twice, or a
+stale status gets quoted as a gap.

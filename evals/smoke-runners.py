@@ -63,6 +63,24 @@ def main():
     os.chdir(ROOT)
     sys.path.insert(0, os.path.join(ROOT, "evals"))
     urllib.request.urlopen = lambda *x, **k: (_ for _ in ()).throw(_Reached())
+
+    # Push every runner PAST its credential check (ROADMAP 51, 2026-09-11).
+    # Until this line, the gate's reachable depth was bounded by whatever each runner
+    # checked FIRST: main() typically calls key() before it loads its cases, so on a
+    # machine with no OPENROUTER_API_KEY the runner exited at the key check — and a
+    # SystemExit is scored "alive" here, correctly, since a usage exit is legitimate.
+    # run-prompt-independence.py was dead for two days behind exactly that "ok": it could
+    # not parse its own case file (a `#` SELECTION RULE header invariant 28 required), and
+    # every CI run stayed green because CI has no key. The defect was only reachable on a
+    # maintainer's machine — the same asymmetry as the .env checks above, inverted.
+    #
+    # A DUMMY is used rather than a real key, and it overrides one deliberately:
+    #   - the gate then measures the same depth everywhere, CI and laptop alike;
+    #   - every key() reads os.environ first (checked across all 21 runners), so this wins;
+    #   - it is SAFER than a real key, not riskier. urlopen is stubbed above and no runner
+    #     uses requests/httpx/http.client, but if one ever reaches the wire by a path this
+    #     stub misses, a fake credential spends nothing and authenticates nowhere.
+    os.environ["OPENROUTER_API_KEY"] = "smoke-runners-dummy-not-a-real-credential"
     signal.signal(signal.SIGALRM, lambda *x: (_ for _ in ()).throw(_Alarm()))
 
     files = sorted(glob.glob(os.path.join(ROOT, "evals/run-*.py"))

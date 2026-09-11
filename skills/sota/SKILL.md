@@ -24,6 +24,10 @@ modes:
   canonical format below (it supersedes any per-skill variant):
   `file:line | rule violated | severity (Critical/High/Medium/Low/Info) |
   effort (trivial/small/medium/large) | fix`.
+  **Severity resolves the same way:** `rules/03` §1 is the floor. A skill's own
+  Critical/High/Medium/Low table may refine it *within that skill's domain* and must
+  say that it is doing so; an unscoped per-skill table does not outrank the model, and
+  a cross-domain roll-up is always rated on it.
 
 Read only what the task needs: first the relevant skill's `SKILL.md` (it has its
 own index of `rules/` files with "read this when..." guidance), then only the

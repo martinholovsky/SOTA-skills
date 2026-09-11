@@ -211,12 +211,27 @@ spec:
   egress:
   - to: [{ namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: kube-system } } }]
     ports: [{ protocol: UDP, port: 53 }, { protocol: TCP, port: 53 }]
-  - to: [{ ipBlock: { cidr: 10.0.5.0/24 } }]   # only the approved backend
+  # IN-CLUSTER destination: select it by IDENTITY, never by its pod CIDR. Pod IPs are
+  # recycled, so a CIDR silently re-points at whatever lands there next.
+  - to: [{ namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: backend } },
+           podSelector: { matchLabels: { app: approved-backend } } }]
     ports: [{ protocol: TCP, port: 443 }]
 ```
 A cluster with no NetworkPolicies = flat network = any pod compromise reaches every
 service. DNS egress should also be policy-constrained (DNS exfil channel); CNIs like
 Cilium can enforce FQDN-level egress (`toFQDNs`) — prefer that for external allowlists.
+
+**Why the in-cluster peer is a selector and not `ipBlock: { cidr: 10.0.5.0/24 }`, which
+this example used until 2026-09-11.** `sota-network-security` requires every allow to
+reference identity and **never a bare CIDR** (its non-negotiable 3, rules/02). Inside the
+cluster that rule is satisfiable and a CIDR is strictly worse: pod IPs are ephemeral and
+reused, so the policy grants whatever occupies the range later — the allowlist widens
+without the manifest changing. **Outside the cluster it is not satisfiable**: vanilla
+NetworkPolicy has no identity selector for an external destination, so `ipBlock` is the
+only expressible form and is a **documented exception, not a default** — name the
+destination and the reason in a comment, keep the prefix as tight as the peer actually
+requires, and prefer a CNI that can express identity there (Cilium `toFQDNs`/`toEntities`)
+over widening the CIDR. The exception is scoped in `sota-network-security` rules/03 §3.
 
 **R3.5 — Node & scheduling isolation:** untrusted workloads on dedicated node pools
 (taints/tolerations + nodeSelector); no hostPath volumes (writable hostPath ≈ node
@@ -266,6 +281,9 @@ is good for security but plan checkpointing/image capture for incident response
       exceptions enumerated with owners.
 - [ ] `automountServiceAccountToken: false` by default; RBAC reviewed for
       escalation verbs (`pods/exec`, secrets, create pods, escalate/bind/impersonate).
+- [ ] Every IN-cluster egress peer selected by identity (`podSelector`/`namespaceSelector`),
+      not by a pod CIDR — `grep -n 'ipBlock' policies/` and, for each hit, require either an
+      out-of-cluster destination or a rewrite; a recycled pod IP re-points the allow silently
 - [ ] Default-deny NetworkPolicy ingress+egress in every namespace; DNS and
       metadata-endpoint egress explicitly constrained; FQDN egress allowlists for
       external calls where CNI supports it.

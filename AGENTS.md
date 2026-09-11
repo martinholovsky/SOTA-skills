@@ -74,7 +74,7 @@ session, where the guidance is *"target under 200 lines"* — long always-loaded
 adherence. Keep it under 200 (**re-check with `awk 'END{print NR}'` each cut**, breached four
 times now, every time by adding an invariant's own row), detail to `CONTRIBUTING.md`.
 
-**Every file-list-driven check reports its denominator** (`ok (262 rules files)`) and **fails
+**Every file-list-driven check reports its denominator** (`ok (270 rules files)`) and **fails
 closed on an empty scope** — `0 checked, 0 failed, exit 0` is the signature of a gate that
 verifies nothing (`sota-code-security` rules/11 §2.2). Added 2026-07-30 after checks 2 and 10
 printed `ok` over *zero* files; 4 and 8 were retrofitted only on 2026-08-16, so this sentence was
@@ -94,7 +94,7 @@ gates enumerate via `git ls-files`, so an **unstaged new file is invisible** —
 complain; any other non-zero exit is a **FALSE PASS**. **It reads the COMMITTED tree**
 (`git worktree add HEAD`) — commit first, or you test a new script against old docs. Part A mutates
 a good tree in a disposable worktree; part B is inverted, building a fully-configured fake machine
-(`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **43 probes** (re-run 2026-09-09: `PASS: 43/43`)
+(`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **44 probes** (re-run 2026-09-11: `PASS: 44/44`; it said 43 from a 2026-09-09 run)
 (deliberately **not** gated — a static count of call sites under-reads, so only running it is
 authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
 24, 25, 26, 27, 28, 29** — 26 of 29 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13.

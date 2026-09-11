@@ -72,7 +72,7 @@ content, switch to compound components.
 
 API rules:
 
-- **Spread the rest**: forward `...rest` to the underlying DOM node, merge (don't clobber) `className`/`style`, and forward `ref`. A component that swallows `data-testid`, `aria-*`, or event handlers is broken.
+- **Spread the rest**: forward `...rest` to the underlying DOM node, merge (don't clobber) `className`/`style`, and forward `ref`. A component that swallows `data-testid`, `aria-*`, or event handlers is broken. **Exception, and it is not optional: `...rest` is the caller's leftover *props*, never a bag of untrusted data.** The moment a call site spreads something attacker-influenced — `<Card {...JSON.parse(body)}>`, an API object, parsed query params — this same forwarding hands `dangerouslySetInnerHTML` and `on*` handlers straight to the DOM node. Forward a rest object that reached you from a trusted call site; where it did not, allowlist the keys at that boundary (`sota-web-frameworks` rules/02 §5, *"never spread attacker-influenced objects onto DOM elements"* — the narrower security rule wins in its domain, and this line used to state no exception at all).
 - Variants as a closed set (`variant="primary" | "secondary" | "ghost"`, `size="sm" | "md" | "lg"`), styled via data attributes (`data-variant="primary"`) or a variant utility (CVA-style) — not className string math.
 - No boolean prop pairs that can contradict (`primary` + `secondary`); one enum.
 - An `asChild`/`render` escape hatch (Radix pattern) so a Button can render as `<a>` or a router Link without prop forwarding gymnastics.
@@ -250,6 +250,7 @@ button/
 - [ ] One styling strategy; theming surface is documented custom properties (no consumer reaching into internal classes); no arbitrary-value utilities or `@apply` sprawl
 - [ ] A11y enforced by the system: required label props on unlabeled-prone primitives, APG behavior baked in, contrast guaranteed at token layer per theme
 - [ ] Component APIs: rest props spread + className/style merged + ref forwarded; closed variant enums; `asChild`/render escape hatch on interactive primitives
+- [ ] No component spreads a rest object that originated in untrusted data (`{...JSON.parse(…)}`, an API response, parsed query params) onto a DOM node — grep the call sites, not the component: the spread that injects `dangerouslySetInnerHTML` or an `on*` handler is written where the props are *built* (`sota-web-frameworks` rules/02 §5)
 - [ ] Stateful components implement value/defaultValue/onChange (and open/defaultOpen/onOpenChange); no mode-switching warnings in console
 - [ ] 9-state contract complete per interactive component; data views implement loading/error/empty/partial/ideal
 - [ ] Buttons in async flows: width-stable loading, double-submit guarded, `aria-busy`

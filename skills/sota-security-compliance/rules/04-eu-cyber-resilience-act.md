@@ -86,6 +86,63 @@ depends on someone happening to notice is already blown. These clocks sit alongs
 NIS2 (24h/72h) and DORA (4h/24h/72h) covered in `sota-privacy-compliance` rules/04
 §6 — build one incident pipeline that satisfies the strictest applicable clock.
 
+## 3a. Triaging a report someone else sent you — what actually starts the clock
+
+§2 gives you an **intake** (CVD policy, `security.txt`, a portal) and §3 gives you the
+**outbound** clocks. The decision in between — is this real, is it ours, is it exploitable —
+is the part with no obligation attached and the part the clocks depend on, because Article
+14 runs from **awareness** and an untriaged report is precisely the state where "are we
+aware?" is undecided. §3's warning that *"a clock that depends on someone happening to
+notice is already blown"* applies to your own inbox, not just to telemetry.
+
+The standards that own this are **ISO/IEC 30111:2019** (vulnerability *handling* — the
+internal process: investigate, verify, prioritize, remediate) paired with **ISO/IEC
+29147:2018** (vulnerability *disclosure* — the external interface to finders and users).
+30111 is the one most teams have never read; it is the process behind the mailbox 29147
+tells you to publish. *Both are under revision as ISO/IEC AWI 29147 / AWI 30111 — confirm
+the current edition before citing one in an assessment.*
+
+**R3a — write down when your clock starts, then triage against a fixed order.**
+
+1. **Acknowledge on a stated SLA.** 29147 expects a responsive interface; silence is what
+   turns a coordinated report into a public one.
+2. **Reproduce before you rate.** A report is a *claim*. Rating from the reporter's summary
+   is how a fabricated finding acquires a CVSS score and a deadline.
+3. **Check that the cited code exists.** The 2026-specific step, and the cheapest: a
+   machine-generated report is internally consistent, formatted like expertise, and may
+   reference functions, files or call paths that are not in your tree. curl has published a
+   worked example of exactly this shape. Grep the identifiers the report names *before*
+   reading its argument — if they do not exist, you are done, and you learned it in a minute
+   rather than an afternoon.
+4. **Scope it: ours, a dependency, or documented behaviour?** A vulnerable dependency that
+   your build does not reach is a **VEX** statement (§2) and an upstream conversation, not a
+   product vulnerability and not an Article 14 report. Intended behaviour that surprises the
+   reporter is a documentation fix.
+5. **Rate it on `sota/rules/03` §1** — impact × exploitability in context — not on the
+   reporter's claimed severity and not on CVSS alone (§1 there: CVSS may inform a rating; it
+   is never the rating).
+6. **Decide the clock explicitly and record the decision either way**, with its timestamp:
+   does this meet "actively exploited vulnerability" or "severe incident" under §3? A
+   recorded *no* is what makes a later *yes* defensible; an unrecorded no is
+   indistinguishable from never having looked.
+7. **Close the loop with the reporter**, including on reject. The reporter is the control
+   that finds your next one.
+
+**Triage capacity is a security property, not a nicety.** Inbound reports now arrive at
+machine speed while triage stays human-speed, and the failure mode is not a wrong decision —
+it is a queue nobody reads, which looks exactly like having no reports. curl, which has
+handled well over a thousand reports, paused intake entirely for a month in July 2026 to
+recover maintainer capacity; treat that as evidence that the queue is a resource to be
+budgeted, and note that pausing intake does **not** pause a regulatory clock.
+
+**The one lever you have on inbound quality is publishing what a usable report contains.**
+Put it next to the intake address, and make the bar concrete rather than polite: a
+human-written first paragraph saying what breaks and what that leads to; a **self-contained
+reproducer** the team can build and run; the affected versions, with the earliest found by
+bisecting; ideally a patch; and a reporter who stays reachable. That list is Daniel
+Stenberg's, published from curl's intake in June 2026, and it doubles as your triage rubric
+— a report missing the reproducer is not yet a finding, whoever or whatever wrote it.
+
 ## 4. Conformity & the harmonized-standards route
 
 - **CE marking** signals CRA conformity. **Presumption of conformity** flows from
@@ -124,6 +181,10 @@ teeth and deadlines. Reuse, don't rebuild:
 - [ ] **SBOM generated in CI/CD** (SPDX/CycloneDX), current per release, producible on request; VEX used to scope exploitability
 - [ ] Secure-by-default config verified: no default credentials, hardened defaults, minimal attack surface, authenticated/encrypted comms and updates
 - [ ] **Coordinated Vulnerability Disclosure** intake published (security.txt / portal) with a documented handling process
+- [ ] The handling process is **written and ordered**, not just claimed: acknowledge SLA → reproduce → confirm the cited code exists → scope (ours / dependency-VEX / documented behaviour) → rate on `sota/rules/03` §1 → clock decision → reporter closed out (ISO/IEC 30111:2019 is the standard for this half; 29147:2018 for the interface)
+- [ ] **When awareness begins is defined in writing** and a clock decision is recorded for every report **including the rejects**, with a timestamp — an unrecorded "not reportable" is indistinguishable from never having looked, and Article 14's 24h runs from awareness
+- [ ] Triage capacity is budgeted and the queue's age is visible: an unread backlog is indistinguishable from having no reports, and pausing intake does not pause the clock
+- [ ] The intake page states what a usable report must contain (human-written summary, self-contained reproducer, affected + earliest versions, ideally a patch) — the only lever on inbound quality, and the rubric triage then applies
 - [ ] **Signed update channel** and a maintained branch covering the support period (default ≥ 5 years / expected use time); security updates delivered without delay, free, separable
 - [ ] Article 14 reporting pipeline built and rehearsed: detection → 24h early warning / 72h notification to CSIRT + ENISA; final reports (14 days / 1 month) covered; unified with NIS2/DORA clocks where applicable
 - [ ] Conformity route chosen for the tier (self-assessment vs notified body / certification scheme); CE-marking obligations understood

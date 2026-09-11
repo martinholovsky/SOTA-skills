@@ -142,7 +142,7 @@ and sponsors read them.
 | [rules/01-control-frameworks-as-code.md](rules/01-control-frameworks-as-code.md) | Starting any compliance work; choosing NIST CSF 2.0 as a spine; building the control → mechanism → evidence crosswalk; deciding what to reuse from other sota-* skills vs. build; encoding controls as policy-as-code and CI gates |
 | [rules/02-nist-800-53-171-cmmc-fedramp.md](rules/02-nist-800-53-171-cmmc-fedramp.md) | Handling CUI / selling to US government or defense; scoping an authorization boundary or CUI enclave; picking a 800-53 baseline; FIPS-validated crypto; CMMC level and phase-in; FedRAMP / FedRAMP 20x |
 | [rules/03-ssdf-secure-sdlc.md](rules/03-ssdf-secure-sdlc.md) | Standing up or auditing a secure SDLC; mapping SSDF (SP 800-218) PO/PS/PW/RV practices to your pipeline; federal secure-software self-attestation; AI/model development (SP 800-218A) |
-| [rules/04-eu-cyber-resilience-act.md](rules/04-eu-cyber-resilience-act.md) | Placing a product with digital elements on the EU market; SBOM, secure-by-default, no-known-exploitable-vulns; the CVD policy and signed update channel; the 24h/72h ENISA reporting clocks; CRA timeline & conformity |
+| [rules/04-eu-cyber-resilience-act.md](rules/04-eu-cyber-resilience-act.md) | Placing a product with digital elements on the EU market; SBOM, secure-by-default, no-known-exploitable-vulns; the CVD policy and signed update channel; **triaging an inbound report** (§3a — what starts the awareness clock, ISO/IEC 30111/29147, and checking the cited code exists); the 24h/72h ENISA reporting clocks; CRA timeline & conformity |
 | [rules/05-iec-62443-ot-ics.md](rules/05-iec-62443-ot-ics.md) | Building or auditing OT/ICS/IIoT/embedded/industrial products; zones & conduits segmentation; Security Levels (SL-T/C/A) and the 7 Foundational Requirements; 62443-4-1 vs SSDF; 62443 as a CRA conformity route |
 
 ## Top 10 non-negotiables
@@ -171,7 +171,9 @@ and sponsors read them.
 7. **SBOM, CVD, and a signed update channel are architecture.** For any product
    under the CRA/62443, generate an SBOM in CI, publish a coordinated-vulnerability-
    disclosure intake, and sign updates over a maintained channel — designed in, not
-   bolted on at audit time.
+   bolted on at audit time. **An intake is only half of it**: the reporting clock runs
+   from *awareness*, so the triage that decides whether a report is real, ours and
+   exploitable is on the critical path and needs a written order (rules/04 §3a).
 8. **Secure-SDLC practices are gates, not intentions.** SSDF PW/PS practices —
    threat modeling, SAST/DAST, provenance, protected repos, signing — are CI checks
    that fail the build. A signed attestation whose practices aren't enforced is
