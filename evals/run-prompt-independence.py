@@ -97,7 +97,14 @@ def load_cases(path):
     with open(path, encoding="utf-8") as f:
         for ln in f:
             ln = ln.strip()
-            if not ln:
+            # Skip blanks AND `#` header lines. Every one of the 23 files in evals/cases/
+            # opens with a `#` banner and, since invariant 28 (2026-09-09), each must also
+            # declare its SELECTION RULE there — which is what killed this runner: it was
+            # the only loader in evals/ that did not skip `#`, so adding the required
+            # header to prompt-independence.jsonl made json.loads() raise on line 1.
+            # Invisible in CI, because key() runs first and a missing OPENROUTER_API_KEY
+            # exits before this point, which smoke-runners.py scores as "alive".
+            if not ln or ln.startswith("#"):
                 continue
             d = json.loads(ln)
             if "_comment" in d:
