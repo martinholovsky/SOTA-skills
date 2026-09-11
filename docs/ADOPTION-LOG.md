@@ -2246,6 +2246,93 @@ own anchor, which is the class of bug that only re-reading the file catches.
 §7.7–§7.8, `sota-devsecops` rules/07 §7.7, `sota-detection-engineering` rules/01 §8 — each
 with its audit-checklist half in the same change · v1.38.0
 
+### 2026-09-12 — InterdictOps field report (2026-09-11): seven of seven, one corrected
+
+`FIELD-REPORT-INTERDICT-2026-09-11.local.md`, untracked by the same convention as its three
+predecessors — this repo is public, the product it describes is not. A session building
+changed-path gate selection and a hash-chained evidence ledger, which produced **six harness
+errors and zero product defects**, and noticed that the six were one class.
+
+**Every coverage claim was re-verified here before adopting**, with `git grep` over the
+tracked tree rather than the reporter's `rg --follow` over symlinks — a different failure
+mode, which is what operating principle 3 asks for — and a positive control in the same
+sweep. All held except one, corrected below.
+
+**Adopted — `sota-code-security` rules/15 §2.1, a sixth failure mode, and the one that
+matters.** The five there describe instruments that are *durably* wrong (generalised from one
+sample, cannot fail, exercises a neighbouring property). None described **the temporal
+asymmetry**: during verification the harness is almost always *newer* than the subject, so the
+prior belongs on it — and rarely lands there, because a harness fault and a real finding
+arrive through the same channel, a red result. The load-bearing half is the tell: **not that
+the result is red, but that it is implausible.** Two of the six produced a *red self-test on
+correct code*, the most expensive false signal available when the artifact under construction
+is a control whose own failure mode is silence. Heading renamed Five → Six (checked: the
+phrase appears nowhere else).
+
+**Adopted — `sota-shell-scripting` rules/06 §2a: `rg -r` is `--replace`.** Verified absent (0
+hits for `rg -r`; the single `--replace` hit is `git filter-repo` in
+`sota-secrets-management`). It is the `grep -r` symlink trap **inverted**, which is why the
+reflex survives: `grep -r` fabricates a false *absence*, `rg -r` fabricates false *content* —
+real lines, real paths, every match rewritten to the next argument, exit 0. The reporter hit
+it twice in one session **after writing it into their own rules file**, which is the evidence
+for §2.1's "budget for noticing an implausible result, not for remembering the trap".
+
+**Adopted — rules/05 §3a: sourcing a script to test one function relocates it.** `BASH_SOURCE`
+appeared **zero** times across all 41 skills. Both obvious moves fail and the *second* is
+silent: sourcing a copy puts `BASH_SOURCE` in the scratchpad, the script's own
+`cd -- "$REPO_ROOT"` moves you out of the repository, and every `git` call in every function
+then fails — emitting a correct, well-written diagnostic about healthy code. Recommended fix
+is in the script (`[[ ${BASH_SOURCE[0]} == "$0" ]] && main "$@"`), not the test.
+
+**Adopted with a correction — rules/04: killing a backgrounded build orphans its children.**
+The report said "nothing in a shell/ops context". **Not quite**: `rules/05` §3 already carries
+`trap 'trap - TERM; kill -TERM -- -$$'`. But that is the *inside-the-script* frame — a script
+forwarding a signal to its own group — and the reporter's case is an operator killing a
+background job from outside, which is a different reach even though it is the same mechanism.
+Recorded as **present but unreachable**, and the new text cross-references rules/05 rather
+than restating it. The consequence is the adoptable part: an orphaned compiler contends for
+`target/` and **the next run's failure is attributed to the change under test**.
+
+**Adopted — rules/12 §1: the commonest cause of "the mutation did not take".** The bullet
+listed editable installs, copied trees, stale bytecode, cached images and formatter reflow —
+all environmental. The commonest cause for anyone scripting a mutation is that **the
+substitution matched nothing** (a regex that misses, a `sed` delimiter colliding with the
+pattern). Its fix is also *stronger* than the existing one and is now given first: assert the
+pattern is present **before** writing, which fails at mutation time rather than at
+interpretation time.
+
+**Adopted — router principle 7.** It said "your earlier prose in this session is not a primary
+source". It now adds: **neither is a verbatim copy of a file injected into context earlier in
+it.** A quoted file reads as primary evidence in a way a summary does not, which is what makes
+it the easier mistake. Note for future edits: principle 7 sits **inside** `principle5()`'s live
+extraction in `run-completeness.py`, so this text flows into the completeness treatment arm by
+design.
+
+**Adopted — both "marginal" items in rules/03 §7, and one is not marginal.** §7's example
+prescribes `shfmt -d -i 2 -ci .`; in a 4-space repo, with `-w` usually nearby, a contributor
+copying it verbatim **reformats every shell file in the tree**. The rule now says to reproduce
+the gate's own invocation and marks the example as an example. The second item supplies the
+missing *reason* for `--severity=style`: SC2006 is classed style and catches backticks inside
+an unquoted heredoc, where they are live command substitution in help text.
+
+**Recorded, not adopted as a rule — the checklist-over-narrative observation (report §7).**
+rules/15 §2.1's fixture-vs-runtime-artifact bullet found a real latent defect in a
+security control that had been green since it was written: a ledger self-test that hashed a
+committed vector and **never called the encoder that writes records**, so reordering two
+`printf`s would have left every check green while every new record diverged from the vector
+pinning it. The detail worth keeping: that repo's own `AGENTS.md` *already warned* the gate was
+"precise about the wrong thing", accurately, and had been read many times. It took applying the
+rule as a **procedure** to convert the warning into a found defect. That is evidence for the
+audit-checklist form over the narrative form, and it is why the checklist half of every
+adoption above was written in the same change.
+
+**Not proposed, and agreed:** no new skill, no change to the `grep -r` symlink material, no
+routing-table change — router rule 17 fired correctly and is what found the ledger defect.
+
+**Landed:** `sota-code-security/rules/15` §2.1 + `rules/12` §1, `sota-shell-scripting/rules/03`
+§7, `rules/04`, `rules/05` §3a, `rules/06` §2a, router principle 7, each with its
+audit-checklist half and its `SKILL.md` index row in the same change · unreleased
+
 ### 2026-09-11 — MadAppGang/magus, a Claude Code plugin marketplace: two adopted, one deferred, one item opened, the rest already ours
 
 Reviewed at the operator's request. **Licence checked first, from the GitHub API rather than

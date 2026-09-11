@@ -231,8 +231,24 @@ shell linting.
 # CI job (any system) — fail the build on findings
 - run: |
     shellcheck --severity=style --external-sources $(git ls-files '*.sh' '*.bash')
-    shfmt -d -i 2 -ci .
+    shfmt -d -i 2 -ci .          # -i 2 is an EXAMPLE — see below, it is yours to set
 ```
+
+**Read the project's own invocation before you run either tool locally.** The flags are not
+a detail of the tool, they are a property of the repository, and the line above is an
+example. `-i 2` in a repo that indents shell with **4** spaces does not merely produce a
+false failure: `shfmt` is usually run with `-w` somewhere nearby, so a contributor who
+copies this verbatim **reformats every shell file in the tree**. Field-measured the milder
+way round: `shfmt -d` reported a diff on correct code because the repo's gate actually runs
+`shfmt --diff --indent 4 --case-indent`, and the diff read as *"my new code is
+misformatted"* rather than *"I invoked the linter differently from CI"* — the harness being
+newer than the subject (`sota-code-security` rules/15 §2.1, sixth bullet). Reproduce the
+gate's command; do not re-derive it.
+
+**And `--severity=style` is not fussiness — a style finding can be a live defect.** SC2006
+("use `$(...)` instead of backticks") is classed *style*, and it has flagged backticks
+written inside an unquoted `cat <<USAGE` heredoc, where they are **live command
+substitution in help text** rather than literal characters. `--severity=error` ships that.
 
 - Also lint scripts *embedded* elsewhere: Dockerfile `RUN` blocks (hadolint integrates
   ShellCheck), GitHub Actions `run:` blocks (actionlint embeds ShellCheck), Makefile
@@ -248,6 +264,12 @@ shell linting.
 - shfmt settings belong in `.editorconfig` so editor, hook, and CI agree.
 
 ## Audit checklist
+
+- [ ] **Linters invoked with the project's own flags**, read from the gate/CI definition
+      rather than from an example (§7) — a mismatched `shfmt -i` is a false failure at best
+      and, with `-w` nearby, a whole-tree reformat at worst
+- [ ] **ShellCheck run at `--severity=style`**, not `error` (§7): SC2006 is *style* and catches
+      backticks inside an unquoted heredoc, which are live command substitution
 
 - [ ] **Interceptor recursion** (§3a): does any wrapper, shim, alias or shell-function
       override invoke a command name that its **own namespace shadows**? For each wrapper,

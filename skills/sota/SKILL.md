@@ -93,9 +93,13 @@ rules files that match the code in front of you. Never load all skills at once.
    own write-up re-runs the reasoning that produced it — the weakest check
    available. Before a claim reaches anything user-visible, go back to the
    primary source: re-read the tool output, or re-run the command. Your earlier
-   prose in this session is not a primary source; summaries silently drop the
-   case that contradicts them and raw output does not. Full adversarial
-   procedure for audit findings: AUDIT step 7 and `rules/03` §4.
+   prose in this session is not a primary source — **and neither is a verbatim
+   copy of a file injected into context earlier in it.** A quoted file reads as
+   primary evidence in a way a summary does not, which is exactly what makes it
+   the easier mistake: it may predate an edit made since. Re-read the path before
+   asserting or editing against its contents. Summaries silently drop the case
+   that contradicts them and raw output does not. Full adversarial procedure for
+   audit findings: AUDIT step 7 and `rules/03` §4.
 8. **Publishing under someone else's name raises the bar.** A claim to the
    person who asked costs one reader's trust and is cheap to retract. A claim
    published as them — a PR review comment, an issue, a commit message, a

@@ -64,7 +64,7 @@ command under the default `NOMATCH`, and with the customary `2>/dev/null` that i
 byte-identical to a genuine no-match — empty output, exit 1. The sweep you read as *"the
 tree is clean"* may never have run: `sota-shell-scripting` rules/06 §1.
 
-### 2.1 Five failure modes specific to instruments
+### 2.1 Six failure modes specific to instruments
 
 - **Unbounded or unread scope.** rules/11 §2.2 turned inward: an instrument must
   report what it examined, *and someone must read it*. A scorer that printed
@@ -104,6 +104,29 @@ tree is clean"* may never have run: `sota-shell-scripting` rules/06 §1.
   are invisible"* — then ask what else claims coverage from this gate's green. Where the control emits an artifact,
   probe by corrupting **what the control just produced**, not a stored copy of what
   it should have produced.
+
+- **The instrument you wrote ninety seconds ago.** The five above describe instruments
+  that are *durably* wrong. This one is a **temporal asymmetry**: during verification the
+  harness is almost always **newer** than the thing it tests — a one-off mutation loop, a
+  sourced copy of the script, a pipeline typed to read one exit code — while the subject
+  has been green for weeks. The prior belongs on the harness, and it rarely lands there,
+  because a harness fault and a real finding arrive through the same channel: a red
+  result. Field-measured over one session: **six harness errors, six outputs that read as
+  findings about the subject, four acted on** before being caught.
+
+  **The tell is not that the result is red — it is that the result is implausible.** Red is
+  the expected state during verification; *"that cannot be true"* is the signal. A self-test
+  reporting a scan found zero entries in a tree you listed three entries from; a formatter
+  objecting to indentation that matches every other file in the repo. Two of that session's
+  six produced a **red self-test on correct code**, which is the most expensive false signal
+  available when the thing being built is a control whose own failure mode is silence.
+
+  So: **before reporting a verification result as a finding, re-derive it a second way with
+  a different failure mode**, and where the harness mutates text, assert the mutation took
+  (`rules/12` §1). Budget for *noticing an implausible result*, not for remembering the
+  individual traps — the same reporter had written one of these traps into their own rules
+  file after hitting it, and hit it again three hours later, because the reflex comes from
+  muscle memory that a note does not reach.
 
 ### 2.2 The bar
 
@@ -320,6 +343,8 @@ whose pathspec drifted.
 ---
 
 ## Audit checklist
+
+- [ ] **When a freshly-written check disagrees with long-green code, was the check suspected first?** (§2.1) The harness is the newer artifact. Look for an *implausible* result rather than merely a red one, and re-derive it a second way with a different failure mode before it is reported as a finding
 
 - [ ] **Every probe states the path it traverses**, and that statement is narrower than
       the gate's reputation. For each green gate, name one code path it does *not*

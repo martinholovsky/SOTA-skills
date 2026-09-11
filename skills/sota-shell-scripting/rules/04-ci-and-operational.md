@@ -207,7 +207,36 @@ exec > >(stdbuf -oL tee -a "$logfile") 2>&1
   in-script (rules/03 §3); redirect both streams to a log or you get silent failures /
   mail spam: `*/5 * * * * /opt/job.sh >>/var/log/job.log 2>&1`.
 
+## Killing a backgrounded build orphans its children
+
+A backgrounded build is a process **tree**. `kill <pid>` reaps the shell you started and
+leaves the compiler running:
+
+```
+kill 92354                 # the runner shell — returns instantly, looks done
+# still running:
+#   97262  cargo test --tests --manifest-path … --target-dir …/llvm-cov-target
+#   97082  cargo-llvm-cov llvm-cov --workspace --all-features …
+#    8676  …/debug/deps/integration-…            <- from an EARLIER run
+```
+
+Why it matters beyond tidiness: restart now and two builds contend for one `target/`, and
+**the second run's failure gets attributed to the change you are testing**. That is the same
+misattribution as `sota-code-security` rules/15 §2.1's sixth mode, arriving through the
+environment instead of the harness.
+
+Kill the **group**, having started it in its own: `setsid cmd &` then `kill -- -"$pgid"`.
+(`rules/05` §3 shows the inside-the-script half — `trap 'trap - TERM; kill -TERM -- -$$'`
+forwards a signal to your own group; this is the same mechanism applied from outside.)
+Otherwise sweep by pattern — and **verify the sweep before restarting**, because `pkill -f`
+matches the sweeping shell's own argv (`rules/01` §3) and a survivor is invisible until it
+corrupts the next run.
+
 ## Audit checklist
+
+- [ ] **Background builds are killed by process group, not by pid**, and the sweep is
+      verified before a restart — an orphaned compiler contends for `target/` and the next
+      run's failure then reads as a defect in the change under test
 
 - [ ] **No compound invocation mixes reads with a mutation** (§1a). Grep batched commands
       for `generate|create|init|reset|rotate|delete|set-|apply`; a mutation among reads
