@@ -365,6 +365,85 @@ setup_update_reminder() {
   rm -f "$tmp"
 }
 
+# Claude Code reserves a per-turn CHARACTER budget for the skill listing and sizes it
+# as `(contextTokens x 4) x skillListingBudgetFraction`, fraction defaulting to 0.01 —
+# so 8,000 characters on a 200k-context model, for every skill from every source. Read
+# out of the shipped binary (2.1.268) on 2026-09-11, not inferred: over budget, entries
+# are RANKED by recent usage and the ones that do not fit render as a bare `- name` with
+# NO description at all. That is the whole trigger classifier gone, while the skill stays
+# installed, correct and invocable-by-name. This library's descriptions need ~38k, so on
+# the default fraction most of them arrive with no trigger text — measured live, ~20 of
+# 42 were name-only in the session that found this.
+#
+# So this is not a tuning nicety, it is whether the skills can be selected at all. It is
+# still OFFERED and never imposed: it writes to the user's GLOBAL settings and reserves a
+# slice of every context window, which is their call, not ours.
+setup_listing_budget() {
+  local s="$HOME/.claude/settings.json" tmp need frac cur
+  command -v jq >/dev/null 2>&1 || { warn "jq not found — skipping skill-listing budget"; return; }
+  [ -d "$TARGET" ] || return 0
+
+  # Measure, never assume: sum the real descriptions of what is actually linked, plus
+  # each entry's "- name: " overhead, the way the listing itself counts them.
+  # Cross-checked against an independent implementation before being trusted: the first
+  # draft read 17,402 against a real 38,283 because `/^---/ { next }` fires on line 1 and
+  # skipped the per-file bookkeeping entirely — an under-report with no symptom. This one
+  # reads 38,507 vs 38,283 (+0.58%, the `>-` block indicator and folded-scalar join
+  # spacing), and errs HIGH, which is the safe direction when sizing a budget.
+  need="$(awk '
+    FNR == 1 {
+      if (seen) total += len + nlen + 6
+      seen = 1; len = 0; fm = 0; ind = 0
+      n = FILENAME; sub(/\/SKILL\.md$/, "", n); sub(/.*\//, "", n); nlen = length(n)
+    }
+    /^---[[:space:]]*$/ { fm = !fm; next }
+    fm && /^description:/ {
+      ind = 1; sub(/^description:[[:space:]]*/, ""); gsub(/^[[:space:]]+|[[:space:]]+$/, "")
+      len += length($0); next
+    }
+    fm && ind && /^[[:space:]]/ {
+      gsub(/^[[:space:]]+|[[:space:]]+$/, ""); len += length($0) + 1; next
+    }
+    fm { ind = 0 }
+    END { total += len + nlen + 6; print total + 0 }
+  ' "$TARGET"/*/SKILL.md 2>/dev/null)"
+  [ -n "${need:-}" ] && [ "$need" -gt 0 ] 2>/dev/null || return 0
+  # `find -L`, not `find`: an install links each skill as a SYMLINK into the checkout,
+  # and find does not follow those without -L. The first draft printed "0 skills" on
+  # every real install while the awk glob above (globs do follow) read 38,507.
+
+  # Size against a 200k context — the documented fallback and the common case. A
+  # fraction that fits there also fits a larger window, because the budget scales with
+  # it. +25% headroom for bundled and plugin skills we cannot enumerate from here.
+  frac="$(jq -n --argjson n "$need" '(($n * 1.25) / 800000 * 100 | ceil) / 100 | if . < 0.02 then 0.02 elif . > 0.10 then 0.10 else . end')"
+  cur="$(jq -r '.skillListingBudgetFraction // empty' "$s" 2>/dev/null || true)"
+  if [ -n "$cur" ] && jq -n --argjson a "$cur" --argjson b "$frac" -e '$a >= $b' >/dev/null 2>&1; then
+    log "skillListingBudgetFraction already $cur (needs ~$frac) — leaving it alone"; return
+  fi
+
+  printf '  %s%s %s%s\n' "$C_DIM" "$G_INFO" \
+    "$(printf '%s skills need ~%s chars of listing; the default budget is 8,000 on a 200k context' \
+       "$(find -L "$TARGET" -maxdepth 2 -name SKILL.md 2>/dev/null | wc -l | tr -d ' ')" "$need")" "$C_RESET"
+  ask_yn "Set skillListingBudgetFraction=$frac so every skill keeps its description (reserves ~$frac of each context window, every turn)?" y || {
+    log "left unset — expect skills beyond the first few to be listed name-only"; return; }
+
+  tmp="$(mktemp)"; track "$tmp"
+  if [ -e "$s" ]; then
+    backup "$s"
+    if jq --argjson f "$frac" '.skillListingBudgetFraction = $f' "$s" >"$tmp" 2>/dev/null; then
+      cat "$tmp" >"$s"   # cat (not mv) so a symlinked settings.json keeps its link
+      ok "set skillListingBudgetFraction=$frac in ~/.claude/settings.json"
+    else
+      warn "could not parse $s as JSON — left unchanged"
+    fi
+  else
+    mkdir -p "$(dirname "$s")"
+    jq -n --argjson f "$frac" '{skillListingBudgetFraction: $f}' >"$s"
+    ok "created ~/.claude/settings.json with skillListingBudgetFraction=$frac"
+  fi
+  rm -f "$tmp"
+}
+
 setup_hook() {
   local s="$HOME/.claude/settings.json" tmp
   if ! command -v jq >/dev/null 2>&1; then
@@ -603,6 +682,11 @@ if [ "$TARGET" = "$HOME/.claude/skills" ] && [ "$USE_COPY" -eq 0 ]; then
 fi
 
 maybe_setup_routing
+# Independent of the routing opt-in on purpose: the listing budget matters MORE when
+# always-on routing is declined, because that is exactly when per-skill auto-selection
+# is the only path and a name-only entry has nothing to match on.
+section '📏' 'Skill listing budget'
+setup_listing_budget || true
 maybe_setup_precommit
 
 section '✅' 'Done'

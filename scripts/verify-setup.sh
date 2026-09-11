@@ -178,6 +178,53 @@ else
   row "N/A" "3. stack profile" "none present — optional; the skills' own defaults apply"
 fi
 
+# --- 1b. Do the descriptions actually REACH the classifier? ----------------
+#
+# Check 1 answers "is the skill installed". This answers the question one layer
+# further in, which has a different answer: Claude Code reserves a per-turn
+# CHARACTER budget for the skill listing, `(contextTokens x 4) x
+# skillListingBudgetFraction` with the fraction defaulting to 0.01 — 8,000 chars
+# on a 200k-context model, shared across every skill from every source. Read out
+# of the shipped 2.1.268 binary on 2026-09-11: over budget, entries are RANKED by
+# recent usage and the ones that do not fit render as a bare `- name` with NO
+# description. The skill is installed, correct, invocable by name, and carries no
+# trigger text at all — so check 1 says PASS and auto-selection is dead.
+#
+# INFO-only and never fatal: the real budget depends on the model's context window
+# at runtime, which this script cannot know, and the user may have set the fraction
+# deliberately. It reports the arithmetic and lets the operator judge.
+listing_need=0
+for d in $skill_dirs; do
+  n="$(find -L "$d" -maxdepth 3 -name SKILL.md 2>/dev/null | wc -l | tr -d ' ')"
+  [ "${n:-0}" -gt 0 ] || continue
+  # shellcheck disable=SC2016  # awk program, not a shell expansion
+  add="$(find -L "$d" -maxdepth 3 -name SKILL.md -exec awk '
+    FNR == 1 {
+      if (seen) total += len + nlen + 6
+      seen = 1; len = 0; fm = 0; ind = 0
+      nm = FILENAME; sub(/\/SKILL\.md$/, "", nm); sub(/.*\//, "", nm); nlen = length(nm)
+    }
+    /^---[[:space:]]*$/ { fm = !fm; next }
+    fm && /^description:/ { ind = 1; sub(/^description:[[:space:]]*/, ""); gsub(/^[[:space:]]+|[[:space:]]+$/, ""); len += length($0); next }
+    fm && ind && /^[[:space:]]/ { gsub(/^[[:space:]]+|[[:space:]]+$/, ""); len += length($0) + 1; next }
+    fm { ind = 0 }
+    END { total += len + nlen + 6; print total + 0 }
+  ' {} + 2>/dev/null)"
+  listing_need=$((listing_need + ${add:-0}))
+done
+cfg_frac="$(jq -r '.skillListingBudgetFraction // empty' "$CLAUDE_HOME/settings.json" 2>/dev/null || true)"
+eff_frac="${cfg_frac:-0.01}"
+budget_200k="$(awk -v f="$eff_frac" 'BEGIN { printf "%d", 200000 * 4 * f }')"
+if [ "$listing_need" -eq 0 ]; then
+  row "INFO" "1b. listing budget" "no SKILL.md descriptions found to measure — nothing to report"
+elif [ "$listing_need" -le "$budget_200k" ]; then
+  row "PASS" "1b. listing budget" \
+    "descriptions total ${listing_need} chars, within the ${budget_200k}-char budget at a 200k context (fraction ${eff_frac})"
+else
+  row "INFO" "1b. listing budget" \
+    "descriptions total ${listing_need} chars vs a ${budget_200k}-char budget at a 200k context (fraction ${eff_frac}) — over by $((listing_need - budget_200k)); the lowest-USED skills will be listed name-only, with no trigger text. Raise skillListingBudgetFraction (scripts/install.sh offers this) or disable skills you do not use"
+fi
+
 # --- B. Is this repo's own context in place? ------------------------------
 if [ "$REACH_ONLY" -eq 1 ]; then
   printf '\n%s\n' "PASS $n_pass · FAIL $n_fail · PARTIAL $n_partial"
