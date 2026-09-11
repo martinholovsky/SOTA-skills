@@ -5,6 +5,91 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.40.2] - 2026-09-11
+
+**Front door checked:** vulnerability report · listing budget · no-skill · severity rubric · ipBlock
+
+
+**A backlog session: three measured conflicts repaired, a dead instrument found, and one
+external intake.** No new skill, no new script, nothing new to run — every change lives
+inside a surface that already existed, so by the measured rule in
+[RELEASING.md](RELEASING.md) this is a patch.
+
+### Fixed — the instrument behind the +0.509 headline could not start
+
+`evals/run-prompt-independence.py` crashed loading its own case file. Its `load_cases`
+skipped blank lines and `_comment` objects but not `#` lines, and it was the only loader in
+`evals/` that did not — while all 23 case files open with a `#` banner. Invariant 28
+(2026-09-09) then required every case set to declare a `SELECTION RULE`, the header was
+added as `#` comments, and `json.loads()` raised on line 1 from that commit onward. **A gate
+added for one purpose broke an instrument.**
+
+CI never saw it: `main()` calls `key()` before `load_cases()`, so with no
+`OPENROUTER_API_KEY` the runner exits at the credential check, and `smoke-runners.py` scores
+a `SystemExit` as *alive* — correctly, since a usage exit is legitimate. The published
+**+0.509** is unaffected (that run was 2026-08-31, nine days before the break); what was
+lost was the ability to re-run it. Fixed and asserted to load exactly the 6 cases the
+headline is stated over, with the empty-set guard re-checked so the repair did not loosen
+an assertion.
+
+`smoke-runners.py` now injects a **dummy** credential so the gate reaches the same depth on
+CI as on a maintainer's machine — safer than a real key, since `urlopen` is stubbed, no
+runner uses `requests`/`httpx`/`http.client`, and a fake spends nothing. Watched to fail
+under CI conditions before being trusted.
+
+### Fixed — the three cross-skill conflicts the 2026-09-09 measurement confirmed
+
+- **NetworkPolicy egress, repaired on both sides.** `sota-sandboxing` rules/03 R3.4 selected
+  an in-cluster backend with `ipBlock`; pod IPs are recycled, so a CIDR grants whatever
+  lands in the range next. It now selects by identity (validated as parsing to a single
+  AND-ed peer). `sota-network-security`'s *"never a bare CIDR"* said nothing about scope and
+  is unsatisfiable for destinations **outside** a cluster, where vanilla NetworkPolicy has
+  no identity selector; rules/03 §3 R3a now scopes it — identity in-cluster with no
+  exception, `ipBlock` outside as a documented exception carrying its reason.
+- **Severity precedence.** The router resolved the finding *format* against per-skill
+  variants and said nothing about severity, while four skills ship their own rubric. The
+  cross-domain model is now the floor; a per-skill **severity rubric** may refine it inside
+  that skill's domain and must say so. Cheaper than the roadmap predicted — the natural home
+  is the router header, outside both eval pins, verified by running all three guards.
+- **Prop spreading.** `sota-frontend-design`'s unconditional *"spread the rest"* now states
+  the exception, with its audit half aimed at the call sites where the injecting spread is
+  actually written.
+
+### Added — rules inside existing skills
+
+- **`sota-security-compliance` rules/04 §3a — triaging a vulnerability report someone else
+  sent you.** The skill had the CVD intake obligation and the outbound Article 14 clocks and
+  nothing for the decision between them, which is on the critical path because the clock
+  runs from *awareness*. Anchored on ISO/IEC 30111:2019 and 29147:2018, both read at source.
+  Includes the 2026-specific step — confirm the code a report cites actually exists.
+- **`sota-skill-security` rules/03 §1 and §1a.** A description length cap is enforced either
+  by skipping the skill or by silently truncating it, and they need different checks; where
+  the **listing budget** is shared across everything installed, a neighbour's bloat eats
+  trigger words you wrote correctly. §1a separates a description defect from a body defect
+  (run it model-routed and by name), keeps a **no-skill** arm, and says to delete guidance
+  that no longer beats it.
+
+### Changed — documentation corrected against the tree
+
+Four trailing records that outlived their work: the roadmap's own *"what is open?"* command
+returned **0** against a real 2 after the marker convention changed under it; a rejected
+competitor comparison sat under a heading saying *open*; a pre-registration read *"not yet
+run"* beside its own results; and a blocked-runs note still said two items stayed open.
+`AGENTS.md`'s probe count (43 → **44**) and denominator example (262 → **270** rules files)
+re-measured. The conventions ledger's *"20 enforced"* row is now dated and marked a floor,
+since invariants 21–29 landed after it and it has not been recomposed.
+
+### Intake
+
+**MadAppGang/magus** (MIT, checked from the API first): two adopted into
+`sota-skill-security`, one deferred with a trigger, and **ROADMAP 52** opened — our 42
+descriptions total 37,330 characters, and whether that reaches the model intact depends on a
+budget formula we could not verify on the version we run. Rejected its 250-character ceiling
+with reasons, and recorded that its own cited evidence is not published.
+
+Roadmap: **46, 50 and 51 closed**; **49, 50, 51 and 52 opened**; open set **6** — 1, 5, 47,
+48, 49, 52.
+
 ## [1.40.1] - 2026-09-10
 
 **Front door checked:** process table · asserted over a pool · the revert · parentage
@@ -7654,6 +7739,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.40.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.2
 [1.40.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.1
 [1.40.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.0
 [1.39.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.39.0
