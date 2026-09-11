@@ -731,20 +731,28 @@ why always-on routing below is the recommended path and not a nicety: it is the 
 What is genuinely lost is *direct* auto-selection of a domain skill when the router has not
 fired, which is most likely for the skills you have never used.
 
-**The fix is one setting.** In `~/.claude/settings.json`:
+**`scripts/install.sh` offers to fix this**, on install and on `--update`, in the same
+shape as everything else it touches: it **measures** your actually-installed descriptions
+rather than assuming a number, sizes the fraction against a 200k context (a fraction that
+fits there also fits a larger window) with headroom for skills from other sources, asks
+before writing, backs the file up, and writes *through* a symlink so dotfiles stay in
+charge. It never lowers a value you already set. On this library's 42 skills that works out
+to about **0.07**.
+
+To set it by hand instead, in `~/.claude/settings.json`:
 
 ```json
-{ "skillListingBudgetFraction": 0.05 }
+{ "skillListingBudgetFraction": 0.07 }
 ```
 
-That gives 40,000 characters at a 200k context, enough for all 42. Be aware of what you are
-buying: the listing is sent **every turn**, so this reserves 5% of the context window for
-it. `skillListingMaxDescChars` (default 1536) is a separate per-skill cap — no description
-here exceeds it, so it does not apply.
+Be aware of what you are buying: the listing is sent **every turn**, so this reserves ~7% of
+the context window for it. `skillListingMaxDescChars` (default 1536) is a separate per-skill
+cap — no description here exceeds it, so it does not apply.
 
-**How to check your own install:** look at the skill list Claude is given and count entries
-that are a bare name with no text after the colon. Any such skill is installed, correct, and
-unreachable except by name.
+**To check your own install:** `scripts/verify-setup.sh` reports it as check **1b**, with the
+arithmetic (`descriptions total N chars vs an M-char budget…`). By hand: look at the skill
+list Claude is given and count entries that are a bare name with no text after the colon.
+Any such skill is installed, correct, and unreachable except by name.
 
 ### Always-on routing (recommended)
 
