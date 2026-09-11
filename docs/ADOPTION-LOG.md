@@ -2046,8 +2046,25 @@ need a read this intake did not have room for:
   a file-level sweep, **not in `sota-api-design` at all**. Revisit condition: read
   `sota-api-design` rules/01 and rules/07 in full and confirm the producer-side rule is
   genuinely absent before writing it. Do not adopt their rationalisation table's text.
-- **DEFERRED — revisit once `sota-security-compliance` rules/04 has been read in full:
-  `vulnerability-triage-brocards` — triaging an *incoming* report.** Our coverage of
+- **RESOLVED 2026-09-11 (was deferred): `vulnerability-triage-brocards` — triaging an
+  *incoming* report. The trigger was executed and the gap is REAL.** rules/04 was read in
+  full (131 lines, all five sections and the checklist). It carries the CVD **obligation** —
+  *"a published intake (`security.txt`, a disclosure address/portal) and a documented
+  handling process"* under Annex I Part II — and the **outbound** Article 14 clocks (24h
+  early warning / 72h notification / 14-day and 1-month finals). It does **not** carry the
+  discipline in between: how to decide whether an inbound claim is real, reproducible,
+  in-scope and exploitable. That is not a cosmetic hole, because Article 14's clock runs from
+  **awareness**, and an unresolved inbound report is exactly the state where "are we aware
+  yet?" is undecided — the file's own line *"a clock that depends on someone happening to
+  notice is already blown"* names the failure and stops one step short of the process that
+  prevents it. Confirmed absent from rules/03 (SSDF) as well, whose four practice groups
+  cover *having* a disclosure process, not running one. **Tracked as ROADMAP item 50** rather
+  than written here, so it does not become the thing this log exists to prevent — an idea
+  judged real and then quietly untracked. **Licence note that constrains the writing:** the
+  source is CC-BY-SA-4.0, so idea classes only — and in the event none is needed, since the
+  gap above was derived from reading our own rules/04, not theirs. Original reasoning kept
+  below.
+- **`vulnerability-triage-brocards` — triaging an *incoming* report.** Our coverage of
   coordinated disclosure is the *obligation* (`sota-security-compliance` rules/03 and
   rules/04 under SSDF and the CRA); the triage discipline for a report someone else sent you
   — a CVE claim, a bug-bounty submission, a finding from an agentic discovery pipeline —
