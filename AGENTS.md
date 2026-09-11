@@ -74,7 +74,7 @@ session, where the guidance is *"target under 200 lines"* — long always-loaded
 adherence. Keep it under 200 (**re-check with `awk 'END{print NR}'` each cut**, breached four
 times now, every time by adding an invariant's own row), detail to `CONTRIBUTING.md`.
 
-**Every file-list-driven check reports its denominator** (`ok (262 rules files)`) and **fails
+**Every file-list-driven check reports its denominator** (`ok (270 rules files)`) and **fails
 closed on an empty scope** — `0 checked, 0 failed, exit 0` is the signature of a gate that
 verifies nothing (`sota-code-security` rules/11 §2.2). Added 2026-07-30 after checks 2 and 10
 printed `ok` over *zero* files; 4 and 8 were retrofitted only on 2026-08-16, so this sentence was

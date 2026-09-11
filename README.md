@@ -91,7 +91,8 @@ Findings name the control they violate — not just "this looks wrong":
 - **Privacy & compliance** — GDPR, CCPA/CPRA, HIPAA, PCI DSS 4.x, SOC 2,
   ISO 27001, EU AI Act, NIS2, DORA
 - **Government & regulated** — NIST CSF 2.0, 800-53, 800-171/CMMC, FedRAMP,
-  EU Cyber Resilience Act, IEC 62443
+  EU Cyber Resilience Act, IEC 62443, ISO/IEC 29147 & 30111 (vulnerability
+  disclosure *and* the handling process behind it)
 - **Threats, detection & AI/ML** — STRIDE, LINDDUN, MITRE ATT&CK & ATLAS,
   NIST 800-61, NIST AI RMF
 - **Frontend, mobile & testing** — WCAG 2.2 AA, Core Web Vitals, OWASP MASVS & WSTG
@@ -101,7 +102,13 @@ regulation writes down: cancellation & backpressure, retries with jitter,
 circuit breakers, outbox/saga, double-entry ledgers and the reconciliation
 that proves an integration is *complete* rather than merely correct,
 zero-downtime migrations, measure-first performance, API evolvability,
-per-language idioms, SLOs, test-suite health.
+per-language idioms, SLOs, test-suite health — and the ones that only show up
+once something is already running: triaging a **vulnerability report** a stranger
+sent you (reproduce before you rate it, check the cited code even exists, and
+decide the regulatory clock explicitly, because it starts at *awareness*), and
+why a skill can stop triggering with nothing about it changed (a length cap is
+enforced either by skipping or by silent truncation, and a shared **listing budget**
+means a neighbour's bloat eats the trigger words you wrote).
 
 **Measured, not asserted** — library vs. an *unguided model* (same model, no
 library); clean, blind-judged, stable across samples ([results & method →](docs/WHY-IT-WORKS.md)).

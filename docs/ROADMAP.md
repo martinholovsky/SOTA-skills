@@ -29,9 +29,10 @@ one drifted three times in a single session (items 12, 32's follow-up, and 38).
 | P | Item | What a session would do first | Cost | Blocked on |
 |---|---|---|---|---|
 | **1** | **Use the library on real work and write a field brief** (not a roadmap row) | Build or audit something real with `sota-*` loaded, then report every defect it did *not* prevent | a session | nothing — this is the highest-yield input available |
-| **2** | **Item 49 — multi-turn decay at a scale that can dilute the anchor** | Author filler turns until they outweigh the ~18.6K-token anchor (30 turns ≈ 3.2K today), *then* spend on depths. Not the flag: `--depths` past 30 is already refused by a guard | authoring, then a run | nothing |
-| **3** | **Item 47 — the conflict rate at lean loading** | Settle two things before spending: how a lean load is defined, and whether the judge sees the router. **Decide, then pre-register** | a judge-driven eval | a decision |
-| **4** | **Item 1 — distribution** | Record a before/after audit demo, or work the listing channels. Nothing here is an agent task | hours of a person's time | needs a person, not a gate |
+| **2** | **Item 52 — does our description corpus reach the model intact?** | Read the listing-budget mechanism out of the shipped CLI rather than re-deriving it; only then decide whether 37,330 chars across 42 descriptions is a problem, and A/B the keyword tails | a read, then ~12 live calls | nothing |
+| **3** | **Item 49 — multi-turn decay at a scale that can dilute the anchor** | Author filler turns until they outweigh the ~18.6K-token anchor (30 turns ≈ 3.2K today), *then* spend on depths. Not the flag: `--depths` past 30 is already refused by a guard | authoring, then a run | nothing |
+| **4** | **Item 47 — the conflict rate at lean loading** | Settle two things before spending: how a lean load is defined, and whether the judge sees the router. **Decide, then pre-register** | a judge-driven eval | a decision |
+| **5** | **Item 1 — distribution** | Record a before/after audit demo, or work the listing channels. Nothing here is an agent task | hours of a person's time | needs a person, not a gate |
 | — | **Item 5 — 6-month accuracy sweep** | Nothing yet. **Trigger re-tested 2026-09-06** via `check-freshness.sh`: `LAST-VERIFIED` reads 2026-07-08, due **~2027-01-08** | a full sweep | the calendar |
 | — | **Item 48 — routing treated as done-for-the-session** | Nothing yet, deliberately: two observations, and the item says a **third** should raise it. Read its first move before acting — the cheap surface is the re-injection hook, not the router body, which is at 410/500 and pinned. |
 | — | **The deferred rows in [ADOPTION-LOG.md](ADOPTION-LOG.md)** | Nothing: read their own trigger ledgers rather than re-searching | — | a second implementation |
@@ -58,7 +59,7 @@ fewer, and the written-conventions backlog is empty.
 
 ### How this list is maintained
 
-**Last re-count 2026-09-10**, after three field briefs landed: **4 open → 5** (item 48 opened; nothing closed).
+**Last re-count 2026-09-11**, after a session that worked the whole READY/decision backlog: **5 open → 6** (46, 50 and 51 closed; 49, 50, 51 and 52 opened, 50 and 51 closing the same day they were opened). What that session found that no row predicted, all of it from **running** something rather than reading it: a **dead eval runner** behind the +0.509 headline, invisible to CI because the smoke gate could not see past a credential check (51); the roadmap's own *"what is open?"* command returning **0** against a real 2 after a marker convention changed under it; a decay question that had cited a **retired item number** for two months; and — from the magus intake — the first look anyone here has taken at the **aggregate** size of our description corpus (52). Two roadmap rows turned out to rest on false premises when tested: item 46's *"it touches the pinned §AUDIT"* (it does not) and DECAY.md's *"the harness is ready for it"* (the flag is; the filler is not). Previously **2026-09-10**, after three field briefs landed: **4 open → 5** (item 48 opened; nothing closed).
 Items 41, 44 and 45 were the three parked on a *decision*, and taking each decision changed
 the answer the row proposed — 41's per-(file, flag) fix was rejected for a per-**runner**
 one, 44 became a release-time declaration rather than a CI gate, 45 became a behavioural

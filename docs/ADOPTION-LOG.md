@@ -2060,7 +2060,7 @@ need a read this intake did not have room for:
   prevents it. Confirmed absent from rules/03 (SSDF) as well, whose four practice groups
   cover *having* a disclosure process, not running one. Opened as **ROADMAP item 50** and **written the same
   day** as `sota-security-compliance` rules/04 **§3a**, with its audit-checklist half and the
-  `SKILL.md` front-door row; item 50 is closed. It was tracked before it was written
+  `SKILL.md` front-door row; item 50 is closed · v1.40.2 It was tracked before it was written
   precisely so it could not become the thing this log exists to prevent — an idea judged
   real and then quietly untracked. **Licence note that constrains the writing:** the
   source is CC-BY-SA-4.0, so idea classes only — and in the event none is needed, since the
@@ -2334,7 +2334,7 @@ the classifier and there is no hidden tier to demote into. Adopting the number w
 architecture would delete trigger vocabulary and call it discipline.
 
 **Landed:** `sota-skill-security/rules/03` §1 and new §1a, four audit-checklist bullets, and
-the `SKILL.md` rules-index row · ROADMAP 52 opened · one deferral with its trigger.
+the `SKILL.md` rules-index row · ROADMAP 52 opened · one deferral with its trigger · v1.40.2
 
 ### 2026-09-09 — the InterdictOps field report in full, and one of its claims corrected
 
