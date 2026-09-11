@@ -57,7 +57,12 @@ ingress/egress controls, PKI/DNS posture, remote access).
    detail; identity-aware access (rules/01) frames everything.
 3. **Default-deny in both directions, always.** Ingress *and* egress deny by default, per namespace
    and per zone. Every allow is explicit, justified in a comment, and references identity (workload
-   identity, label selector, SG/service account) — never a bare CIDR or `world` entity.
+   identity, label selector, SG/service account) — never a bare CIDR or `world` entity **wherever the
+   policy language can express identity**. Where it genuinely cannot — vanilla NetworkPolicy has no
+   identity selector for a destination *outside* the cluster — a tight `ipBlock` is a **documented
+   exception, not a default**: name the destination and the reason, and prefer a CNI that can
+   (rules/03 §3). Inside the cluster there is no exception: pod IPs are recycled, so a CIDR there
+   silently re-points the allow.
 4. **Encrypt every hop that crosses a trust boundary.** No plaintext credentials, JWTs, or DB
    traffic on the pod/internal network — mTLS via mesh or TLS terminated close to the workload.
 5. **State the failure mode and the blast radius** of what you propose. "If this pod is popped, it

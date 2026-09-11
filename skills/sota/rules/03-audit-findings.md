@@ -36,7 +36,7 @@ internal, data sensitivity, existing mitigations) decides the final level.
 - **Info** — no direct risk: observations, tech-debt notes, future-proofing,
   positive-pattern caveats.
 
-Two hard rules:
+Five hard rules (this list said *"two"* while carrying four until 2026-09-11):
 
 1. **Borderline ratings state the deciding assumption explicitly** — "High
    if this endpoint is internet-facing; Medium if internal-only" — and ask
@@ -71,6 +71,21 @@ Two hard rules:
    severity, with the improvement stated. Where the change is a pure regression,
    this rule costs nothing — the baseline comparison makes that case stronger,
    not weaker.
+
+5. **This model outranks a per-skill severity table unless that table says it is
+   narrower.** At least four skills ship their own Critical/High/Medium/Low rubric
+   (`sota-sandboxing`, `sota-threat-modeling`, `sota-kubernetes`,
+   `sota-network-security`). They exist to be domain-specific and are useful; what
+   was missing until 2026-09-11 is which one wins. The router resolved the finding
+   **format** ("supersedes any per-skill variant") from the start and said nothing
+   equivalent for **severity** — an asymmetry visible in the text with no judgement
+   needed, and confirmed as one of three real conflicts by the 2026-09-09 conflict-rate
+   measurement (ROADMAP 46). The resolution: §1 is the floor for every finding and for
+   any cross-domain roll-up; a skill's table may **refine** it inside that skill's
+   domain and must **say so**, the way `sota-kubernetes` marks a row
+   *"(requirement-level; depth → network-security)"*. An unscoped table that simply
+   rates the same class differently is the conflict, not a refinement — and where two
+   scoped tables still disagree, rate on §1 and name both in the finding.
 
 ## 2. Evidence standard — no finding without it
 
