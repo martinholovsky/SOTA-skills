@@ -197,6 +197,18 @@ audit STRAT-HIGH-2).
   — a module-level script cannot be caught by the smoke check itself, because importing it
   runs the whole thing and that looks identical to "reached its first network call". Two
   runners were found in that state on 2026-08-27.
+  **It injects a dummy `OPENROUTER_API_KEY` (2026-09-11, ROADMAP 51), and that is load-bearing.**
+  Without it the gate's reachable depth is bounded by whatever each runner checks *first*:
+  `main()` usually calls `key()` before it loads cases, so with no credential the runner exits
+  at the key check — scored `ok (exited: …)`, correctly, since a usage exit is legitimate.
+  `run-prompt-independence.py` was dead for two days behind exactly that "ok" (it could not
+  parse its own case file after invariant 28 required a `#` SELECTION RULE header, and it was
+  the only loader in `evals/` that did not skip `#`), and **every CI run stayed green because
+  CI has no key** — the mirror image of the `.env` asymmetry below. The dummy overrides a real
+  key on purpose so the gate measures the same depth on CI and on a laptop, and it is *safer*
+  than a real one: `urlopen` is stubbed, no runner uses `requests`/`httpx`/`http.client`, and a
+  fake credential spends nothing if one ever reaches the wire another way. **Watched to fail**:
+  with the loader defect reintroduced and no key present, the gate reports `DEAD` and exits 1.
   And it asserts every `.env` read is **existence-checked** — that defect shipped twice
   (`run-router-length.py`, `run-build-safe-arms.py`), each time invisible locally because a
   maintainer's tree *has* a `.env`, so only a machine without one reaches the failing
