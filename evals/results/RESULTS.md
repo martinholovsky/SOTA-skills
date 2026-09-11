@@ -315,7 +315,8 @@ Does a rule loaded early stop being applied as the session grows?
 First run: **no decay at moderate scale** — an ~18.6K-token (~72 KB) guidance block held after 30
 unrelated turns. This *bounds* the problem but doesn't find the breaking point (the
 filler is too small to dilute the anchor); scaling the test up needs a top-up.
-*(roadmap item 5, still open.)*
+*(roadmap **item 49**, still open — cited as *item 5* until 2026-09-11, a number that has
+meant the 6-month accuracy sweep since the ledger was renumbered.)*
 
 ## 5. Description-based routing — do the negative cross-refs help? (A/B, +0.00)
 

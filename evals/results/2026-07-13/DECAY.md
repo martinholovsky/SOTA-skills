@@ -48,6 +48,20 @@ distractors hurt more (per [WHY-COMPLETENESS-RESIDUAL.md](../../../docs/WHY-COMP
 That needs a larger token budget; the harness is ready for it. Roadmap item 5 stays
 open. Raw data: `decay-c6.json`.
 
+---
+
+**Renumbered 2026-09-11 — this is now [ROADMAP item 49](../../../docs/ROADMAP.md).** Both
+"item 5" references above were correct when written and are left as written; the ledger was
+renumbered afterwards and *item 5* has meant the **6-month accuracy sweep** ever since, so
+the pointer aimed at a calendar item nobody would connect to decay. Two corrections to the
+paragraph above, from re-reading `run-decay.py` rather than this file: *"the harness is ready
+for it"* is the **flag** half only — `--depths` past 30 is **refused** by a guard added
+2026-08-16 (*"only 30 filler turns exist; the run would report a depth it never reached"*,
+watched to fail at 60 and to pass at 30 on 2026-09-11), not silently capped. The blocking
+half is the **filler corpus**: 30 turns is 13,001 chars ≈ 3.2K tokens against an ~18.6K-token
+anchor, so it is smaller than the thing it is meant to dilute — which is the likeliest reason
+this run found no decay at all.
+
 ## What the harness gives us
 
 A reusable multi-turn decay probe (`run-decay.py`) with the three arms above,

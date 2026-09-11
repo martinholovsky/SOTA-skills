@@ -345,7 +345,10 @@ already loaded when the window is summarized.
   sessions are safe here) but does **not** find the breaking point: the ~3.2K tokens of
   filler is small next to the guidance, so it can't dilute it. A real decay test
   needs much larger intervening context (or a smaller anchor); the harness takes
-  `--depths` and a bigger filler to scale up. Logged as roadmap item 5, still open
+  `--depths` and a bigger filler to scale up — and the filler is the blocking half, since
+  `--depths` past 30 is refused by a guard, not silently capped. Logged as **roadmap item
+  49**, still open (it cited *item 5* until 2026-09-11, which has meant the 6-month accuracy
+  sweep since the ledger was renumbered)
   ([`evals/results/2026-07-13/DECAY.md`](../evals/results/2026-07-13/DECAY.md)).
 
 ## See also
