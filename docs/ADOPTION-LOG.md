@@ -2246,7 +2246,69 @@ own anchor, which is the class of bug that only re-reading the file catches.
 §7.7–§7.8, `sota-devsecops` rules/07 §7.7, `sota-detection-engineering` rules/01 §8 — each
 with its audit-checklist half in the same change · v1.38.0
 
-### 2026-09-12 — InterdictOps field report (2026-09-11): seven of seven, one corrected
+### 2026-09-12 — InterdictOps field report II: a retraction of report I, and three new findings
+
+`FIELD-REPORT-INTERDICT-2026-09-12.local.md`, same session as report I, filed as a separate
+document **specifically because report I was already being implemented** — which it was, in
+an open PR, when this arrived. That is the right call and worth naming: an addendum appended
+to a document someone is working from does not reach them.
+
+**RETRACTION, and it landed in time.** Report I's *"invoke a linter with the project's own
+flags"* proposal was **wrong**, and the reporter found it themselves. `sota-devsecops`
+rules/09 §5 — *"The scoped gate is not the gate — reproduce the invocation, not an
+equivalent"* — already states it better, with a reproduced mypy example and the three levers
+that produce divergence. Verified here before acting. The clause had already been written
+into `sota-shell-scripting` rules/03 §7 and was **removed**, replaced by a one-line
+cross-reference to the skill that owns it. Two homes for one rule is how they drift.
+
+**The reviewer's share of that mistake, recorded because it is the more useful half.** This
+library's intake procedure says to verify a claimed gap before adopting, and it was verified
+— *within the file the report named*. What was never asked is **which skill owns the topic**.
+A keyword search for the reporter's phrasing ("project's own flags") returns nothing from a
+library that covers the idea thoroughly under different words. **A negative claim about the
+library needs the same positive control as a negative claim about a codebase**: identify the
+owning skill and read its section headings before concluding nothing covers it. Report I was
+scrupulous about this for the codebase (`rg --follow`, positive control, because
+`~/.claude/skills` is 42 symlinks) and failed at it for the library; so did the review.
+
+**Adopted — `sota-code-security` rules/15 §3a: the guard that correctly declines, and says
+nothing.** Verified absent (rules/10 catalogues *inert* controls; rules/11 covers paths never
+reached; nothing covers a branch that is reached and mute). A stray editor `.swp` file made
+one conjunct of a three-clause guard false, so a clean 23-of-23 gate run wrote **no evidence
+record and printed nothing** — in a ledger whose whole purpose is telling a gated commit from
+a `--no-verify` push. **The fixes are opposites**: an inert control must start enforcing,
+this one must keep refusing and start explaining. Review tell: a multi-clause `if` with no
+`else`.
+
+**Adopted — `sota-devsecops` rules/09 §4: a warning on a *passing* run needs its transport
+verified.** §4 was about failure diagnostics dying with an ephemeral executor; this is the
+worse case, because **every wrapper that suppresses output suppresses it on success**, and a
+warning is by definition emitted on a run that otherwise passed. Verified here against the
+installed **pre-commit 4.6.0** rather than the report's word:
+`pre_commit/commands/run.py:217` reads `if verbose or hook.verbose or retcode or
+files_modified:`, so a seventeen-minute twenty-three-gate run reaches the terminal as the
+word `Passed`. The constructive half is kept: the problem was found by a **durable
+artifact** (a ledger query), which is an argument *for* §4's thesis.
+
+**Adopted — `sota-shell-scripting` rules/06 §2b: an empty command substitution removes the
+filter.** Verified absent. `ps -p "$(pgrep …)"` with no match expands to `ps -p ""`, which
+ignores the filter and prints **every process**, exit 0. Quoted correctly, so not SC2086.
+It is the mirror of §2/§2a's distrust-an-absence material — **an implausibly large result is
+the same tell as a suspiciously clean zero** — and is placed beside them for that reason.
+
+**Cap pressure, recorded rather than absorbed.** The natural home for the declining-guard
+rule was `rules/10`, at **484 of 500 lines**. Putting it there would have let the line cap
+choose the shape of the writing, which this library has now watched happen twice, so it went
+to `rules/15` §3 (guards) instead. That is the **second** class queued behind a rules/10
+split — the over-firing control deferred on 2026-09-11 is the first. Opened as **ROADMAP 55**.
+
+**Report I's other four proposals stand unchanged** and are recorded in the entry below.
+
+**Landed:** `sota-code-security/rules/15` §3a, `sota-devsecops/rules/09` §4,
+`sota-shell-scripting/rules/06` §2b, and the rules/03 §7 retraction — each with its
+audit-checklist half and index rows in the same change · v1.40.4
+
+### 2026-09-12 — InterdictOps field report (2026-09-11): six adopted, one corrected, one later retracted
 
 `FIELD-REPORT-INTERDICT-2026-09-11.local.md`, untracked by the same convention as its three
 predecessors — this repo is public, the product it describes is not. A session building
@@ -2308,7 +2370,9 @@ it the easier mistake. Note for future edits: principle 7 sits **inside** `princ
 extraction in `run-completeness.py`, so this text flows into the completeness treatment arm by
 design.
 
-**Adopted — both "marginal" items in rules/03 §7, and one is not marginal.** §7's example
+**Adopted, then RETRACTED the same day — the first of the two "marginal" rules/03 §7 items.** (See the report II entry above: `sota-devsecops` rules/09 §5 already owns it, and the clause was removed.) The second item stands.
+
+**Superseded text, kept for the reasoning:** §7's example
 prescribes `shfmt -d -i 2 -ci .`; in a 4-space repo, with `-w` usually nearby, a contributor
 copying it verbatim **reformats every shell file in the tree**. The rule now says to reproduce
 the gate's own invocation and marks the example as an example. The second item supplies the
@@ -2331,7 +2395,7 @@ routing-table change — router rule 17 fired correctly and is what found the le
 
 **Landed:** `sota-code-security/rules/15` §2.1 + `rules/12` §1, `sota-shell-scripting/rules/03`
 §7, `rules/04`, `rules/05` §3a, `rules/06` §2a, router principle 7, each with its
-audit-checklist half and its `SKILL.md` index row in the same change · unreleased
+audit-checklist half and its `SKILL.md` index row in the same change · v1.40.4
 
 ### 2026-09-11 — MadAppGang/magus, a Claude Code plugin marketplace: two adopted, one deferred, one item opened, the rest already ours
 

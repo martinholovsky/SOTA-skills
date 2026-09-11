@@ -180,6 +180,37 @@ rules/15 §2.1, sixth
 bullet). Writing this trap into a personal rules file did **not** prevent the second
 occurrence; noticing the implausible output did.
 
+## 2b. An empty command substitution removes the filter rather than matching nothing
+
+§2 and §2a are about distrusting a suspiciously *empty* result. This is the same discipline
+pointed the other way — at an implausibly *full* one:
+
+```zsh
+ps -axo pid=,etime= -p "$(pgrep -f 'bash ./scripts/ci-local.sh' | head -1)"
+```
+
+`pgrep` matched nothing, the substitution expanded to `""`, and `ps -p ""` **ignored the
+filter and printed every process on the machine** — several hundred lines, exit status 0.
+The question asked was *"is this one process alive?"*; the question answered was *"what is
+running on this computer?"*
+
+Note what it is **not**: the expansion was quoted, so this is not SC2086, and there is no
+pipeline status involved. **An empty value does not mean "no filter" to a human and almost
+always does to the tool** — the same for `kill`, `find -name`, `docker ps -f`,
+`git log --author`, and essentially every `--filter`-shaped flag.
+
+Guard the substitution rather than the command:
+
+```bash
+pid="$(pgrep -f 'bash ./scripts/ci-local.sh' | head -1)"
+[[ -n ${pid} ]] || { printf 'no matching process\n' >&2; return 1; }
+ps -axo pid=,etime= -p "${pid}"
+```
+
+The tell is the same one §2a teaches: the **result was implausible** long before it was
+wrong. Treat a result far *larger* than expected exactly as you treat a suspiciously clean
+zero (`sota-code-security` rules/15 §2.1).
+
 ## 3. An ad-hoc command can destroy the thing it was checking
 
 The failure modes above are about *wrong answers*. A verification command can also do
@@ -359,6 +390,10 @@ measurement. "330 PRs" is a claim whose evidence has been thrown away, and "30" 
 
 
 ## Audit checklist
+
+- [ ] **Command substitutions that supply a filter are guarded for empty** (§2b) — an
+      empty value removes the filter (`ps -p ""` lists every process, exit 0); an
+      implausibly LARGE result is the tell, the mirror of a suspiciously clean zero
 
 - [ ] **No `rg -r` used to mean "recursive"** (§2a) — it is `--replace`, it rewrites every
       match to the next argument and exits 0, so the output is false *content* rather than a

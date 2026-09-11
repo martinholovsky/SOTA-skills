@@ -342,7 +342,45 @@ whose pathspec drifted.
 
 ---
 
+## 3a. The guard that correctly declines, and says nothing
+
+§3 is a guard that cannot fail. This one works *exactly as designed* — and that is what
+hides it. A control with several legitimate reasons to **decline** to act, expressed as one
+boolean chain, discards which reason applied:
+
+```bash
+if ((self_test == 0)) && ((${#selected[@]} == ${#GATES[@]})) && [[ -z "$(git status --porcelain)" ]]; then
+    record_evidence …          # and no else branch anywhere
+fi
+```
+
+Field-measured: a stray `.swp` file left by an unrelated editor session made the third
+conjunct false, so a clean **23-of-23** gate run wrote **no evidence record and printed
+nothing**. In a ledger whose entire purpose is distinguishing a gated commit from a
+`--no-verify` push, "no record" is the failure state — reached silently, by a control that
+was right to refuse, because the gates genuinely had not run against the committed tree.
+
+**This is not the inert control of `rules/10`, and the fixes are opposites.** An inert
+control must start *enforcing*; this one must keep refusing and start *explaining*. Nor is
+it `rules/11`'s dead path: the branch is reached, it simply says nothing on the way through.
+
+**The rule.** When a guard has more than one legitimate reason to decline, **compute the
+reason and emit it** — never imply it from a conjunction. The review tell is a multi-clause
+`if` guarding an action with **no `else`**: the code states when it acts and never states
+why it did not. The fix is mechanical — set a `reason` variable in each branch, print it,
+leave the refusal itself unchanged.
+
+**Why it survives review:** there is no wrong behaviour to spot. There is only an absence of
+output, in the branch nobody exercises on purpose. The author of the code above had written
+the comment *"a failure to record must not fail the run, but it must not be silent either"*
+two hours earlier, in the same change — true of the inner call failing, false of the outer
+condition being false.
+
 ## Audit checklist
+
+- [ ] **Every multi-clause guard states why it declined** (§3a) — grep for an `if` with
+      several conjuncts and no `else`; a correct refusal that prints nothing is
+      indistinguishable from the control never having run
 
 - [ ] **When a freshly-written check disagrees with long-green code, was the check suspected first?** (§2.1) The harness is the newer artifact. Look for an *implausible* result rather than merely a red one, and re-derive it a second way with a different failure mode before it is reported as a finding
 
