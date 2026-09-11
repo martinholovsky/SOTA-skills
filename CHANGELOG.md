@@ -5,6 +5,66 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.40.3] - 2026-09-11
+
+**Front door checked:** skillListingBudgetFraction · listing budget · name-only · discovery ratchet
+
+
+**Most of this library's descriptions were never reaching the model, and now the installer
+fixes it.** Everything here lives inside surfaces that already existed — a step inside
+`install.sh`, a check inside `verify-setup.sh`, a corrected rule — so this is a patch.
+
+### The finding (ROADMAP 52)
+
+Settled by reading the shipped `claude` binary (2.1.268), not by inference. Claude Code
+reserves a per-turn **listing budget** of
+`Math.max(1, Math.floor((contextTokens ?? 200000) * 4 * skillListingBudgetFraction))`, the
+fraction defaulting to **0.01** — 8,000 characters at a 200k context, shared across every
+installed skill. This library's 42 descriptions need **38,240**.
+
+Over budget it does **not** shorten descriptions. Entries are **ranked** and the ones that
+do not fit render as a bare `- name` with no description at all — all-or-nothing per skill.
+The ranking is `usageCount * max(0.5 ** (daysSinceLastUse / 7), 0.1)`, so a never-used skill
+scores **0 and is dropped first**: a **discovery ratchet**, invisible because unused and
+unused because invisible. Confirmed live — roughly 20 of 42 skills were listed **name-only**
+in the session that found it.
+
+A separate per-skill cap (`skillListingMaxDescChars`, default 1536) *does* tail-slice, but
+no description here exceeds it. The tool's own warning text calls both "truncation", which
+is how the two get conflated.
+
+**Why the library still worked:** the router is used every session so it ranks top and keeps
+its description, and a name-only skill stays invocable **by name** — which is exactly what
+the router's routing table does. Always-on routing is the mitigation, not a nicety. What was
+lost is *direct* auto-selection when the router has not fired.
+
+### Added
+
+- **`scripts/install.sh` offers to set the fraction**, on install and on `--update`. It
+  measures the descriptions actually linked rather than assuming a number, sizes against a
+  200k context with headroom, asks first, backs up, and writes *through* a symlink. It never
+  lowers a value you already set. Works out to ~0.07 here.
+- **`scripts/verify-setup.sh` check 1b** reports the arithmetic, INFO-only — check 1 answers
+  *is it installed*, 1b answers whether the description reaches the classifier.
+- **`docs/VERIFY-SETUP.md`** gains the prompt step a script cannot do: count the entries in
+  *your own* listing that have no description. The script sees the corpus on disk; only the
+  agent sees what arrived.
+
+### Fixed
+
+- **`sota-skill-security` rules/03 §1 corrected.** It shipped in v1.40.2 saying a cap is
+  enforced by *skip or shorten*; the third shape — drop the description, keep the name — is
+  the one that matters, because it is invisible from every direction the other two are found
+  from. Added: where a ranking decides who keeps a description, the ranking is the real
+  classifier.
+- **The router's context-budget guidance was wrong.** It said "each rules file is 200–310
+  lines"; re-measured over all 270, the real spread is **77–497, median 237**, and half the
+  files fall outside the stated range. Sizing 2–5 files by that range could be off by 5x.
+
+Roadmap: **52 closed**, **53 opened** (should the corpus be smaller — the keyword tails are
+~13k of 38,240 chars, and size now decides how many entries keep a description at all). Open
+set **6** — 1, 5, 47, 48, 49, 53.
+
 ## [1.40.2] - 2026-09-11
 
 **Front door checked:** vulnerability report · listing budget · no-skill · severity rubric · ipBlock
@@ -7739,6 +7799,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.40.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.3
 [1.40.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.2
 [1.40.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.1
 [1.40.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.0

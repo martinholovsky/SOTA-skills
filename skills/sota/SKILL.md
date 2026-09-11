@@ -372,10 +372,12 @@ when…" guidance the map drops.
 
 ## Context budget discipline
 
-Each rules file is 200–310 lines. A typical focused task needs 2–5 rules files;
-a full audit pass should load one skill at a time, finish its findings, then
-move on. If context is tight, prefer the skill's top-10 non-negotiables plus
-the single most relevant rules file.
+Rules files run **77–497 lines, median 237** (re-measured over all 270 on
+2026-09-11; this said "200–310", a range half of them fall outside). So budget by
+the file you are actually opening, not by an average: 2–5 files is a typical
+focused task and can be 400 lines or 2,000. A full audit pass should load one
+skill at a time, finish its findings, then move on. If context is tight, prefer
+the skill's top-10 non-negotiables plus the single most relevant rules file.
 
 ## When this library is wrong or missing something
 
