@@ -61,13 +61,27 @@ Two traps that make step 3 lie:
   was disabled for an *unrelated* reason (rules/10 §2.2) — the real path never
   ran. Force the dependency present (monkeypatch the availability check) so the
   control is actually exercised.
-- **The mutation did not take.** Editable installs, copied/rsync'd trees, stale
-  bytecode, and cached images mean the original code may still be running — as does a
-  **formatter reflow**, where a multi-line revert silently matches nothing because
-  `ruff format`/`black`/`prettier` folded the target onto one line. That last one is
-  not an environment fault, which is why it survives the environmental checklist.
-  **Assert the mutation's runtime effect** — make the no-op print or raise once —
-  before trusting a "zero failures" result.
+- **The mutation did not take.** Commonest cause first, because it is not an environment
+  fault at all: **the substitution matched nothing.** A regex that does not match, a `sed`
+  delimiter colliding with a character in the pattern (`s|…|…|` against a pattern
+  containing `|`), an edit tool that no-ops. Then the environmental ones — editable
+  installs, copied/rsync'd trees, stale bytecode, cached images — and a **formatter
+  reflow**, where a multi-line revert silently matches nothing because
+  `ruff format`/`black`/`prettier` folded the target onto one line.
+
+  Two fixes, and the cheaper one is stronger. **Assert the pattern is present before you
+  write**, which fails at *mutation* time:
+
+  ```python
+  assert old in text, f"mutation {n} did not match -- harness bug, not a result"
+  ```
+
+  and **assert the mutation's runtime effect** — make the no-op print or raise once —
+  which fails at *interpretation* time. Field-measured: a three-mutation harness where one
+  `sed` died loudly on a delimiter collision and another matched nothing in silence; the
+  silent one made the self-test **pass**, and was read for half a minute as a real gap in
+  the control being built. Only the loud sibling made the harness suspect at all
+  (`rules/15` §2.1, sixth bullet — the harness is the newer artifact).
 
 A **third probe** costs one edit: leave code and fixture alone and point the
 assertion at a plausible **wrong expected value** — still passing means it is keyed

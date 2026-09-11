@@ -64,7 +64,7 @@ command under the default `NOMATCH`, and with the customary `2>/dev/null` that i
 byte-identical to a genuine no-match — empty output, exit 1. The sweep you read as *"the
 tree is clean"* may never have run: `sota-shell-scripting` rules/06 §1.
 
-### 2.1 Five failure modes specific to instruments
+### 2.1 Six failure modes specific to instruments
 
 - **Unbounded or unread scope.** rules/11 §2.2 turned inward: an instrument must
   report what it examined, *and someone must read it*. A scorer that printed
@@ -104,6 +104,29 @@ tree is clean"* may never have run: `sota-shell-scripting` rules/06 §1.
   are invisible"* — then ask what else claims coverage from this gate's green. Where the control emits an artifact,
   probe by corrupting **what the control just produced**, not a stored copy of what
   it should have produced.
+
+- **The instrument you wrote ninety seconds ago.** The five above describe instruments
+  that are *durably* wrong. This one is a **temporal asymmetry**: during verification the
+  harness is almost always **newer** than the thing it tests — a one-off mutation loop, a
+  sourced copy of the script, a pipeline typed to read one exit code — while the subject
+  has been green for weeks. The prior belongs on the harness, and it rarely lands there,
+  because a harness fault and a real finding arrive through the same channel: a red
+  result. Field-measured over one session: **six harness errors, six outputs that read as
+  findings about the subject, four acted on** before being caught.
+
+  **The tell is not that the result is red — it is that the result is implausible.** Red is
+  the expected state during verification; *"that cannot be true"* is the signal. A self-test
+  reporting a scan found zero entries in a tree you listed three entries from; a formatter
+  objecting to indentation that matches every other file in the repo. Two of that session's
+  six produced a **red self-test on correct code**, which is the most expensive false signal
+  available when the thing being built is a control whose own failure mode is silence.
+
+  So: **before reporting a verification result as a finding, re-derive it a second way with
+  a different failure mode**, and where the harness mutates text, assert the mutation took
+  (`rules/12` §1). Budget for *noticing an implausible result*, not for remembering the
+  individual traps — the same reporter had written one of these traps into their own rules
+  file after hitting it, and hit it again three hours later, because the reflex comes from
+  muscle memory that a note does not reach.
 
 ### 2.2 The bar
 
@@ -319,7 +342,47 @@ whose pathspec drifted.
 
 ---
 
+## 3a. The guard that correctly declines, and says nothing
+
+§3 is a guard that cannot fail. This one works *exactly as designed* — and that is what
+hides it. A control with several legitimate reasons to **decline** to act, expressed as one
+boolean chain, discards which reason applied:
+
+```bash
+if ((self_test == 0)) && ((${#selected[@]} == ${#GATES[@]})) && [[ -z "$(git status --porcelain)" ]]; then
+    record_evidence …          # and no else branch anywhere
+fi
+```
+
+Field-measured: a stray `.swp` file left by an unrelated editor session made the third
+conjunct false, so a clean **23-of-23** gate run wrote **no evidence record and printed
+nothing**. In a ledger whose entire purpose is distinguishing a gated commit from a
+`--no-verify` push, "no record" is the failure state — reached silently, by a control that
+was right to refuse, because the gates genuinely had not run against the committed tree.
+
+**This is not the inert control of `rules/10`, and the fixes are opposites.** An inert
+control must start *enforcing*; this one must keep refusing and start *explaining*. Nor is
+it `rules/11`'s dead path: the branch is reached, it simply says nothing on the way through.
+
+**The rule.** When a guard has more than one legitimate reason to decline, **compute the
+reason and emit it** — never imply it from a conjunction. The review tell is a multi-clause
+`if` guarding an action with **no `else`**: the code states when it acts and never states
+why it did not. The fix is mechanical — set a `reason` variable in each branch, print it,
+leave the refusal itself unchanged.
+
+**Why it survives review:** there is no wrong behaviour to spot. There is only an absence of
+output, in the branch nobody exercises on purpose. The author of the code above had written
+the comment *"a failure to record must not fail the run, but it must not be silent either"*
+two hours earlier, in the same change — true of the inner call failing, false of the outer
+condition being false.
+
 ## Audit checklist
+
+- [ ] **Every multi-clause guard states why it declined** (§3a) — grep for an `if` with
+      several conjuncts and no `else`; a correct refusal that prints nothing is
+      indistinguishable from the control never having run
+
+- [ ] **When a freshly-written check disagrees with long-green code, was the check suspected first?** (§2.1) The harness is the newer artifact. Look for an *implausible* result rather than merely a red one, and re-derive it a second way with a different failure mode before it is reported as a finding
 
 - [ ] **Every probe states the path it traverses**, and that statement is narrower than
       the gate's reputation. For each green gate, name one code path it does *not*

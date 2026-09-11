@@ -5,6 +5,80 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.40.4] - 2026-09-12
+
+**Front door checked:** implausible · BASH_SOURCE · correctly refuses · passing hook
+
+
+**Two field reports from one session, the second retracting part of the first — which
+arrived while the first was being implemented, and landed in time.** Plus the answer to
+ROADMAP 53 and the plugin listing-budget work. All of it lives inside existing surfaces, so
+this is a patch.
+
+### The headline: `sota-code-security` rules/15 §2.1 gains a sixth failure mode
+
+The five there describe instruments that are *durably* wrong. None described the **temporal
+asymmetry**: during verification the harness is almost always **newer** than the thing it
+tests, so the prior belongs on it — and rarely lands there, because a harness fault and a
+real finding arrive through the same channel, a red result. Field-measured over one session:
+**seven harness errors, seven outputs that read as findings about the subject, four acted on**
+before being caught.
+
+The load-bearing half is the tell: **not that the result is red, but that it is
+implausible.** Red is expected during verification; *"that cannot be true"* is the signal —
+a scan reporting zero entries in a tree you just listed, a formatter objecting to indentation
+that matches every other file, a process query returning the whole machine.
+
+### Added
+
+- **`sota-shell-scripting` rules/06 §2a — `rg -r` is `--replace`, not recursive.** The
+  `grep -r` symlink trap inverted: that one fabricates a false *absence*, this one fabricates
+  false **content** — every match rewritten to the next argument, exit 0. The reporter hit it
+  twice in one session *after* writing it into their own notes.
+- **`rules/06` §2b — an empty command substitution removes the filter.** `ps -p "$(pgrep …)"`
+  with no match becomes `ps -p ""`, which lists **every process**, exit 0. Quoted correctly,
+  so no linter flags it. An implausibly *large* result is the same tell as a suspiciously
+  clean zero.
+- **`rules/05` §3a — sourcing a script to test one function relocates it.** `BASH_SOURCE`
+  appeared **zero** times across all 41 skills. The silent variant is the dangerous one: the
+  script `cd`s itself out of the repo and every `git` call fails while emitting a correct
+  diagnostic about healthy code.
+- **`rules/04` — killing a backgrounded build orphans the compiler**, and the next run's
+  contention over `target/` then reads as a defect in the change under test.
+- **`sota-code-security` rules/15 §3a — the guard that correctly refuses and says nothing.**
+  A stray `.swp` file falsified one conjunct of a three-clause guard, so a clean 23-of-23
+  gate run wrote no evidence record **and printed nothing**. Not an inert control and not a
+  dead path: the branch is reached and mute, and the fixes are opposites — an inert control
+  must start enforcing, this one must keep refusing and start explaining.
+- **`sota-devsecops` rules/09 §4 — a warning on a *passing* run needs its transport
+  verified.** Every wrapper that suppresses output suppresses it on success. Verified against
+  the installed pre-commit **4.6.0**: `run.py:217` emits only
+  `if verbose or hook.verbose or retcode or files_modified`. It discards a
+  passing hook's output entirely, so a seventeen-minute twenty-three-gate run
+  arrives as the single word `Passed`.
+- **`rules/12` §1** — the commonest cause of "the mutation did not take" (a substitution that
+  matched nothing) now leads the list, with the stronger fix: assert the pattern is present
+  *before* writing, which fails at mutation time.
+- **Router principle 7** — a verbatim file copy injected into context earlier in the session
+  is not a primary source either.
+
+### Fixed
+
+- **A rule adopted from report I was retracted the same day, by its own author.**
+  `sota-devsecops` rules/09 §5 already owned "reproduce the gate's exact invocation". The
+  duplicate clause was removed from `sota-shell-scripting` rules/03 §7 and replaced with a
+  cross-reference. Recorded with the reviewer's share: the gap was verified *inside the file
+  the report named*, and nobody asked which skill **owns** the topic — a negative claim about
+  the library needs the same positive control as one about a codebase.
+
+### Also
+
+ROADMAP **53 answered** (the `Trigger keywords:` tails buy no measurable matching value:
+Δ +0.000, 0 of 10 cases moved — recommendation is still to keep them, because cutting them
+does not fix the budget and the setting does), **54 closed** (the plugin now reports the
+listing budget it cannot set), **55 opened** (`rules/10` is at 484/500 with two classes
+queued behind a split). Open set **7** — 1, 5, 47, 48, 49, 53, 55.
+
 ## [1.40.3] - 2026-09-11
 
 **Front door checked:** skillListingBudgetFraction · listing budget · name-only · discovery ratchet
@@ -7799,6 +7873,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.40.4]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.4
 [1.40.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.3
 [1.40.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.2
 [1.40.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.1

@@ -231,8 +231,20 @@ shell linting.
 # CI job (any system) — fail the build on findings
 - run: |
     shellcheck --severity=style --external-sources $(git ls-files '*.sh' '*.bash')
-    shfmt -d -i 2 -ci .
+    shfmt -d -i 2 -ci .          # -i 2 is an EXAMPLE — indent width is the repo's to set
 ```
+
+**Verifying a gate locally is a different question, and another skill owns it:**
+`sota-devsecops` rules/09 §5 — *reproduce the gate's exact invocation, not an equivalent*.
+Worth the jump from here, because the shell-shaped version of that mistake is expensive:
+`-i 2` above is an example, and in a repo that indents shell with **4** spaces a contributor
+who copies it verbatim does not just get a false failure — `shfmt` is usually run with `-w`
+somewhere nearby, so it **reformats every shell file in the tree**.
+
+**And `--severity=style` is not fussiness — a style finding can be a live defect.** SC2006
+("use `$(...)` instead of backticks") is classed *style*, and it has flagged backticks
+written inside an unquoted `cat <<USAGE` heredoc, where they are **live command
+substitution in help text** rather than literal characters. `--severity=error` ships that.
 
 - Also lint scripts *embedded* elsewhere: Dockerfile `RUN` blocks (hadolint integrates
   ShellCheck), GitHub Actions `run:` blocks (actionlint embeds ShellCheck), Makefile
@@ -248,6 +260,12 @@ shell linting.
 - shfmt settings belong in `.editorconfig` so editor, hook, and CI agree.
 
 ## Audit checklist
+
+- [ ] **Linters invoked the way the gate invokes them** — flags and file selection read out
+      of the hook/CI config (`sota-devsecops` rules/09 §5, which owns this); a mismatched
+      `shfmt -i` is a false failure at best and, with `-w` nearby, a whole-tree reformat
+- [ ] **ShellCheck run at `--severity=style`**, not `error` (§7): SC2006 is *style* and catches
+      backticks inside an unquoted heredoc, which are live command substitution
 
 - [ ] **Interceptor recursion** (§3a): does any wrapper, shim, alias or shell-function
       override invoke a command name that its **own namespace shadows**? For each wrapper,

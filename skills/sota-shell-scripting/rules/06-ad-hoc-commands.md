@@ -149,6 +149,68 @@ follow a value into a helper (`sota-code-security` rules/15 §2.1). Use whicheve
 installed — and **report the tool, its flags and its exclusions in the same sentence as the
 count.**
 
+## 2a. `rg -r` is `--replace`, not "recursive" — the same trap inverted
+
+§2's `grep -r` fabricates a false **absence**. Its twin fabricates false **content**, and
+the reflex that produces it is the same muscle memory:
+
+```
+rg -rn --no-heading "events_dropped|queue_len" crates/
+```
+
+`rg` is recursive by default, so `-r` is free to mean `--replace`, and it consumes the next
+argument as the replacement template. Every matching line prints with the match **rewritten**,
+and it exits **0**. Field-measured: that command printed source reading `pub n: u64` and
+`let mut n = 0_u64` — which reads exactly like a field that has been renamed. Three hours
+later, in the same session, it happened again and produced a document containing the phrase
+*"shared n test suite"*.
+
+| | what it does | what the output looks like |
+|---|---|---|
+| `grep -r` over a symlinked dir | silently skips it | "no matches" — a clean absence |
+| `rg -r PATTERN PATH` | rewrites every match to `PATTERN` | real lines, real paths, wrong content, exit 0 |
+
+The absence at least *looks* like nothing. This one looks like evidence, and it is the
+shape you then quote into a finding or a commit message.
+
+**Fix:** `-n` alone for line numbers; `--replace` spelled out when you actually mean it. And
+**`cat` one hit before building an argument on a surprising search result** — the tell here
+was never the exit code, it was that the content was implausible (`sota-code-security`
+rules/15 §2.1, sixth
+bullet). Writing this trap into a personal rules file did **not** prevent the second
+occurrence; noticing the implausible output did.
+
+## 2b. An empty command substitution removes the filter rather than matching nothing
+
+§2 and §2a are about distrusting a suspiciously *empty* result. This is the same discipline
+pointed the other way — at an implausibly *full* one:
+
+```zsh
+ps -axo pid=,etime= -p "$(pgrep -f 'bash ./scripts/ci-local.sh' | head -1)"
+```
+
+`pgrep` matched nothing, the substitution expanded to `""`, and `ps -p ""` **ignored the
+filter and printed every process on the machine** — several hundred lines, exit status 0.
+The question asked was *"is this one process alive?"*; the question answered was *"what is
+running on this computer?"*
+
+Note what it is **not**: the expansion was quoted, so this is not SC2086, and there is no
+pipeline status involved. **An empty value does not mean "no filter" to a human and almost
+always does to the tool** — the same for `kill`, `find -name`, `docker ps -f`,
+`git log --author`, and essentially every `--filter`-shaped flag.
+
+Guard the substitution rather than the command:
+
+```bash
+pid="$(pgrep -f 'bash ./scripts/ci-local.sh' | head -1)"
+[[ -n ${pid} ]] || { printf 'no matching process\n' >&2; return 1; }
+ps -axo pid=,etime= -p "${pid}"
+```
+
+The tell is the same one §2a teaches: the **result was implausible** long before it was
+wrong. Treat a result far *larger* than expected exactly as you treat a suspiciously clean
+zero (`sota-code-security` rules/15 §2.1).
+
 ## 3. An ad-hoc command can destroy the thing it was checking
 
 The failure modes above are about *wrong answers*. A verification command can also do
@@ -328,6 +390,15 @@ measurement. "330 PRs" is a claim whose evidence has been thrown away, and "30" 
 
 
 ## Audit checklist
+
+- [ ] **Command substitutions that supply a filter are guarded for empty** (§2b) — an
+      empty value removes the filter (`ps -p ""` lists every process, exit 0); an
+      implausibly LARGE result is the tell, the mirror of a suspiciously clean zero
+
+- [ ] **No `rg -r` used to mean "recursive"** (§2a) — it is `--replace`, it rewrites every
+      match to the next argument and exits 0, so the output is false *content* rather than a
+      false absence. `grep -rn 'rg -r' ` your own scripts and scrollback before quoting a
+      surprising search result
 
 - [ ] **Sweeps: is the searcher's traversal and exclusion set stated with the count?** (§2)
       `-r` skips symlinked dirs met in traversal and `-R` follows **only on ugrep/GNU** —

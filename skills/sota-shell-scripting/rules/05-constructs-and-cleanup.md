@@ -74,6 +74,45 @@ trap 'trap - TERM; kill -TERM -- -$$' INT TERM   # forward to process group, the
   templates — `mktemp -d "${TMPDIR:-/tmp}/myscript.XXXXXX"` is portable enough; plain
   `mktemp -d` works on both modern GNU and macOS.
 
+## 3a. Sourcing a script to test one function relocates the script
+
+"Run one function from a large script" is how shell gets tested at all, and both obvious
+moves fail — the second one **silently**:
+
+```bash
+# attempt 1 — strip the entry point and eval the rest
+eval "$(sed '$d' scripts/ci-local.sh)"
+#   -> BASH_SOURCE[0]: unbound variable
+#   the script derives REPO_ROOT from BASH_SOURCE, which eval never sets
+
+# attempt 2 — strip it into a temp file and source THAT
+sed '$d' scripts/ci-local.sh > /tmp/lib.sh && source /tmp/lib.sh
+#   -> no error at all. REPO_ROOT is now /tmp, because BASH_SOURCE points at the COPY,
+#      and the script's own `cd -- "$REPO_ROOT"` has moved you out of the repository
+```
+
+Attempt 2 is the dangerous one: it succeeds. Every `git` call in every function under test
+then fails, and the harness emits a **correct, well-written diagnostic about healthy code** —
+field-measured as `the compiled-in scan found 0 path(s); it has stopped working`, from a scan
+that was fine. That is `sota-code-security` rules/15 §2.1's sixth failure mode: the harness is
+newer than the subject, so it owns the prior.
+
+**The better fix is in the script, not the test.** Guard the entry point so the file can be
+sourced as a library:
+
+```bash
+[[ ${BASH_SOURCE[0]} == "$0" ]] && main "$@"
+```
+
+Failing that, source the copy and `cd` back before calling anything:
+
+```bash
+bash -c 'source "$SCRATCH/lib.sh"; cd "$REAL_REPO_ROOT"; the_function_under_test'
+```
+
+Any script that resolves its own root from `BASH_SOURCE`/`$0` — which is the correct way to
+do it — carries this hazard for anyone who sources it.
+
 ## 4. Test constructs, printf, declarations
 
 - `[[ ]]` over `[ ]` in bash: no word splitting of unquoted vars, `&&`/`||` inside,
@@ -128,6 +167,10 @@ files=(/data/*); count=${#files[@]}                               # with nullglo
       against a pattern known to be present.
 
 ## Audit checklist
+
+- [ ] **Scripts that resolve their own root guard their entry point** (§3a) —
+      `[[ ${BASH_SOURCE[0]} == "$0" ]] && main "$@"` — so a caller can source them to test one
+      function without the script `cd`-ing itself somewhere else and failing every `git` call
 
 - [ ] SC2046 (unquoted `$(...)`), SC2068 (unquoted `$@`/array), SC2048 (`$*`).
 - [ ] SC2012/SC2045 — `grep -rn 'in \$(ls\|ls .*| *wc\|ls .*| *grep' --include='*.sh'`

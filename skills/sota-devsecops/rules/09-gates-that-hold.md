@@ -276,6 +276,32 @@ routinely copy-pasted across per-service pipelines, and fixing one leaves the re
 it hands the operator the guesswork the step already resolved. Point the alert at the
 durable verdict and give the exact command that prints it.
 
+**A warning on a *passing* run needs its transport verified, not just its existence.**
+Everything above is about failure diagnostics dying with an ephemeral executor. The
+systematically worse case is the opposite: **every wrapper that suppresses output suppresses
+it on success** — and a warning is by definition emitted on a run that otherwise passed, so
+warnings are the class of message most likely to be structurally unreachable, on the one
+outcome nobody investigates afterwards.
+
+Verified against the installed **pre-commit 4.6.0**, not from documentation:
+`pre_commit/commands/run.py` emits a hook's output only when
+
+```python
+if verbose or hook.verbose or retcode or files_modified:
+```
+
+so a seventeen-minute, twenty-three-gate run reaches the terminal as the single word
+`Passed`, and a warning written inside it cannot arrive. Remedy there is `verbose: true` on
+that hook. The same shape elsewhere: a GitHub Actions `::group::` collapses output out of a
+skimmer's view, a `@`-prefixed Makefile recipe hides the command, `| tail` keeps the summary
+and drops the warning above it.
+
+Ask **"what does this look like on a green run, to someone not looking?"** Where no path
+exists, the warning must become a **durable artifact** — a file, a record, a check a later
+command performs — rather than a line of stdout. Field-measured: the problem above was found
+by exactly that, a ledger query reporting `1 of 2 commit(s) in HEAD~2..HEAD carry a gate
+record`, after the stdout warning had been invisible.
+
 ## 5. The scoped gate is not the gate — reproduce the invocation, not an equivalent
 
 Everything above is about the *pipeline's* scope drifting away from the code. This
@@ -364,6 +390,10 @@ Count the runs in which an entry produced no comparison at all, and alert on tha
 "I have not been able to read this for six weeks" is a different fact from "up to date".
 
 ## Audit checklist
+
+- [ ] **Warnings emitted on a PASSING run have a verified path to a human** (§4) — the
+      wrapper's success-path output handling checked, not assumed (pre-commit discards it
+      unless the hook sets `verbose: true`); otherwise the warning is a durable artifact
 
 - [ ] **Does failing a gate make the artifact unconsumable, or merely unannotated?** For each
       pipeline, confirm the *consumable* identifier is published only after every gate: the
