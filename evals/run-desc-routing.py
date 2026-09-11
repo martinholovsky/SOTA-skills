@@ -25,6 +25,16 @@ CASES = os.path.join(ROOT, "evals/cases/desc-routing.jsonl")
 # Strips exactly the added cross-ref sentence(s): each starts "Not for " and, by
 # construction, contains no internal period, so this removes one sentence cleanly.
 XREF_RE = re.compile(r"\s*Not for [^.]*\.")
+# ROADMAP 53 (2026-09-11). The second ablation: the trailing `Trigger keywords: …`
+# list, which 40 of 42 descriptions carry and which is 12,693 of 37,330 characters
+# (34%). It became worth measuring when ROADMAP 52 established that the listing
+# budget drops WHOLE descriptions once the corpus is over it — so a tail is a cost
+# paid by every OTHER skill in the set, not only by the one carrying it.
+# Anchored to end-of-string: the list is always last, and a non-greedy match would
+# stop at the first period inside the keyword list itself.
+KEYWORDS_RE = re.compile(r"\s*(?:Trigger keywords?|Triggers)\s*[:\u2014\u2013-]\s*.*$",
+                         re.IGNORECASE | re.DOTALL)
+ABLATIONS = {"xref": XREF_RE, "keywords": KEYWORDS_RE}
 
 
 def load_env_key():
@@ -60,14 +70,14 @@ def parse_desc(path):
     return name, " ".join(x for x in out if x)
 
 
-def catalogue(strip_xref):
+def catalogue(strip, rx=XREF_RE):
     items = []
     for d in sorted(glob.glob(os.path.join(ROOT, "skills/sota-*"))):
         if not os.path.isdir(d):
             continue
         name, desc = parse_desc(os.path.join(d, "SKILL.md"))
-        if strip_xref:
-            desc = XREF_RE.sub("", desc).strip()
+        if strip:
+            desc = rx.sub("", desc).strip()
         items.append((name, desc))
     if not items:                       # empty catalogue => both arms identical => fake +0.00
         sys.exit(f"skill catalogue is EMPTY (globbed skills/sota-* under {ROOT}). "
@@ -128,6 +138,11 @@ def main():
     ap.add_argument("--samples", type=int, default=1)
     ap.add_argument("--temp", type=float, default=0.0)
     ap.add_argument("--out", default=None)
+    ap.add_argument("--ablate", choices=sorted(ABLATIONS), default="xref",
+                    help="which description feature to strip in the second arm. "
+                         "'xref' is the published default and what every historical "
+                         "run measured; 'keywords' is ROADMAP 53's trailing "
+                         "`Trigger keywords:` list.")
     a = ap.parse_args()
     key = load_env_key()
     cases = [json.loads(l) for l in open(a.cases, encoding="utf-8")
@@ -136,7 +151,9 @@ def main():
     note_work(len(cases), "cases")
     names = [os.path.basename(d) for d in glob.glob(os.path.join(ROOT, "skills/sota-*"))
              if os.path.isdir(d)]
-    arms = {"with-xref": catalogue(False), "without-xref": catalogue(True)}
+    rx = ABLATIONS[a.ablate]
+    arms = {f"with-{a.ablate}": catalogue(False),
+            f"without-{a.ablate}": catalogue(True, rx)}
     # Assert the ablation TOOK (rules/15 §2.2). If no description matched XREF_RE the
     # two arms are byte-identical and this tool prints a fake +0.000 — a manufactured
     # null in a project that publishes real ones. Both sibling ablations already abort.
@@ -146,12 +163,15 @@ def main():
     # execute at all. It went unnoticed because the last recorded run predates the
     # guard: a guard added to stop a fake null instead stopped the instrument, and
     # nothing re-ran it (`sota-code-security` rules/12 — watch the guard run).
-    changed = sum(1 for (_, d1), (_, d2) in zip(arms["with-xref"],
-                                                arms["without-xref"]) if d1 != d2)
+    a_full, a_strip = arms[f"with-{a.ablate}"], arms[f"without-{a.ablate}"]
+    changed = sum(1 for (_, d1), (_, d2) in zip(a_full, a_strip) if d1 != d2)
+    removed = sum(len(d1) for _, d1 in a_full) - sum(len(d2) for _, d2 in a_strip)
     if changed == 0:
-        sys.exit("ablation removed nothing: both arms are identical, so any result is a "
-                 "fake null. Check XREF_RE against the current descriptions.")
-    print(f"  ablation: {changed} description line(s) differ between arms")
+        sys.exit(f"ablation '{a.ablate}' removed nothing: both arms are identical, so any "
+                 f"result is a fake null. Check the regex against the current descriptions.")
+    # Report the SIZE too, not just the count: a regex that clips one word off 40
+    # descriptions also passes `changed > 0` while ablating essentially nothing.
+    print(f"  ablation '{a.ablate}': {changed} description(s) differ, {removed} characters removed")
     print(f"model={a.model}  cases={len(cases)}  samples={a.samples}  temp={a.temp}  "
           f"arms={list(arms)}  (clean API, objective name-match scoring)\n")
     result = {"model": a.model, "samples": a.samples, "temp": a.temp, "cases": {}}
