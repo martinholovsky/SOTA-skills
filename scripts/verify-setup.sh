@@ -143,41 +143,6 @@ else
   row "PASS" "1. sota skills reachable" "$n_sota sota* skills incl. the router, in:$skill_dirs$src_note"
 fi
 
-# Always-on routing is THREE layers; report which of them are actually present.
-directive=0; hook=0
-[ -f "$CLAUDE_HOME/CLAUDE.md" ] && grep -qi 'sota' "$CLAUDE_HOME/CLAUDE.md" 2>/dev/null && directive=1
-if [ -f "$CLAUDE_HOME/settings.json" ]; then
-  # Substring test, not a JSON parse: the hook may be a shell one-liner, a script
-  # path, or a wrapper, and any of those is a working injection.
-  if tr -d '\n' < "$CLAUDE_HOME/settings.json" | grep -qi 'UserPromptSubmit' \
-     && grep -qi 'sota' "$CLAUDE_HOME/settings.json"; then
-    hook=1
-  fi
-fi
-if [ "$directive" -eq 1 ] && [ "$hook" -eq 1 ]; then
-  row "PASS" "2. always-on routing" "CLAUDE.md directive + UserPromptSubmit hook mentioning sota"
-elif [ "$directive" -eq 1 ]; then
-  row "PARTIAL" "2. always-on routing" "CLAUDE.md directive only — routing depends on the model reading it, not on per-prompt injection"
-elif [ "$hook" -eq 1 ]; then
-  row "PARTIAL" "2. always-on routing" "UserPromptSubmit hook only — no global directive in $CLAUDE_HOME/CLAUDE.md"
-else
-  row "FAIL" "2. always-on routing" "neither a sota directive in CLAUDE.md nor a UserPromptSubmit hook — routing depends on how each prompt is phrased"
-fi
-
-# Profile: report the FILENAME only. Its contents are the user's stack.
-prof_found=0; prof_dangling=""
-for p in "$CLAUDE_HOME"/profiles/*.md; do
-  [ -e "$p" ] || [ -L "$p" ] || continue
-  if [ -e "$p" ]; then prof_found=$((prof_found + 1)); else prof_dangling="$prof_dangling $(basename "$p")"; fi
-done
-if [ -n "$prof_dangling" ]; then
-  row "FAIL" "3. stack profile" "dangling symlink(s):$prof_dangling"
-elif [ "$prof_found" -gt 0 ]; then
-  row "PASS" "3. stack profile" "$prof_found profile(s) resolve in $CLAUDE_HOME/profiles (names not read)"
-else
-  row "N/A" "3. stack profile" "none present — optional; the skills' own defaults apply"
-fi
-
 # --- 1b. Do the descriptions actually REACH the classifier? ----------------
 #
 # Check 1 answers "is the skill installed". This answers the question one layer
@@ -223,6 +188,41 @@ elif [ "$listing_need" -le "$budget_200k" ]; then
 else
   row "INFO" "1b. listing budget" \
     "descriptions total ${listing_need} chars vs a ${budget_200k}-char budget at a 200k context (fraction ${eff_frac}) — over by $((listing_need - budget_200k)); the lowest-USED skills will be listed name-only, with no trigger text. Raise skillListingBudgetFraction (scripts/install.sh offers this) or disable skills you do not use"
+fi
+
+# Always-on routing is THREE layers; report which of them are actually present.
+directive=0; hook=0
+[ -f "$CLAUDE_HOME/CLAUDE.md" ] && grep -qi 'sota' "$CLAUDE_HOME/CLAUDE.md" 2>/dev/null && directive=1
+if [ -f "$CLAUDE_HOME/settings.json" ]; then
+  # Substring test, not a JSON parse: the hook may be a shell one-liner, a script
+  # path, or a wrapper, and any of those is a working injection.
+  if tr -d '\n' < "$CLAUDE_HOME/settings.json" | grep -qi 'UserPromptSubmit' \
+     && grep -qi 'sota' "$CLAUDE_HOME/settings.json"; then
+    hook=1
+  fi
+fi
+if [ "$directive" -eq 1 ] && [ "$hook" -eq 1 ]; then
+  row "PASS" "2. always-on routing" "CLAUDE.md directive + UserPromptSubmit hook mentioning sota"
+elif [ "$directive" -eq 1 ]; then
+  row "PARTIAL" "2. always-on routing" "CLAUDE.md directive only — routing depends on the model reading it, not on per-prompt injection"
+elif [ "$hook" -eq 1 ]; then
+  row "PARTIAL" "2. always-on routing" "UserPromptSubmit hook only — no global directive in $CLAUDE_HOME/CLAUDE.md"
+else
+  row "FAIL" "2. always-on routing" "neither a sota directive in CLAUDE.md nor a UserPromptSubmit hook — routing depends on how each prompt is phrased"
+fi
+
+# Profile: report the FILENAME only. Its contents are the user's stack.
+prof_found=0; prof_dangling=""
+for p in "$CLAUDE_HOME"/profiles/*.md; do
+  [ -e "$p" ] || [ -L "$p" ] || continue
+  if [ -e "$p" ]; then prof_found=$((prof_found + 1)); else prof_dangling="$prof_dangling $(basename "$p")"; fi
+done
+if [ -n "$prof_dangling" ]; then
+  row "FAIL" "3. stack profile" "dangling symlink(s):$prof_dangling"
+elif [ "$prof_found" -gt 0 ]; then
+  row "PASS" "3. stack profile" "$prof_found profile(s) resolve in $CLAUDE_HOME/profiles (names not read)"
+else
+  row "N/A" "3. stack profile" "none present — optional; the skills' own defaults apply"
 fi
 
 # --- B. Is this repo's own context in place? ------------------------------
