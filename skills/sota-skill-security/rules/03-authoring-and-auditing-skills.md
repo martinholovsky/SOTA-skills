@@ -19,19 +19,36 @@ decides to load it. Three consequences that authors get wrong:
 - **Numbered imperatives in the body are obeyed; subordinate clauses are not.** A
   requirement buried mid-sentence in a paragraph is a requirement that does not
   survive a long context. Put load-bearing rules where they read as instructions.
-- **Caps are real and silent, and they are enforced in two different shapes.** A
-  platform over its description limit may **skip** the skill (installed, correct,
-  never loads) or **silently shorten** the description (it loads, but the matcher
-  only ever saw the surviving prefix). They look nothing alike from the inside and
-  need different checks — a skip is found by asking *did it load at all?*, a
-  truncation by comparing the text the model was given against the text on disk.
-  Find out which your platform does; assume neither.
-- **Order the description so the part you cannot afford to lose is first.** This is
-  free, and it is the only mitigation that works before you know which shape applies:
-  if the platform truncates, the tail goes, so a description that opens with the
-  capability keeps its trigger even when shortened, while one that back-loads its
-  vocabulary loses exactly the words it was matching on — and the symptom is
-  indistinguishable from a badly-written description.
+- **Caps are real and silent, and there are at least three enforcement shapes.** Over
+  the limit, a platform may **skip** the skill (installed, correct, never loads),
+  **shorten** the description (it loads, but the matcher only saw the surviving
+  prefix), or **drop the description and keep the name** — the skill is still listed
+  and still invocable *by name*, while having no trigger text at all. The third is the
+  one to check for first, because it is invisible from every direction the other two
+  are found from: the skill is present, its file is correct, its length is under the
+  per-skill cap, and it simply cannot be auto-selected. Measured 2026-09-11 by reading
+  the shipped Claude Code binary (2.1.268) rather than inferring from behaviour: over a
+  **global listing budget**, entries are ranked and the ones that do not fit render as
+  a bare `- name`, while a *separate* per-skill cap tail-slices anything longer than it.
+  Two different mechanisms, two different symptoms, one word ("truncation") used for
+  both in the tool's own warning text.
+- **Find out how the losers are chosen, because it is usually not first-come.** Where a
+  ranking decides who keeps a description, the ranking is the real classifier. Claude
+  Code ranks by **recent usage** — `usageCount × 0.5^(days/7)`, floored — so a skill
+  that has **never been used scores zero and is dropped first**. That is a **discovery
+  ratchet**: the skill cannot be selected because it has no trigger text, and it has no
+  trigger text because it has never been selected. A skill set can therefore work
+  perfectly for its author, whose usage history keeps the entries they already know
+  alive, and be largely invisible to a new installer — and no test either of them runs
+  will show it, because the files are identical.
+- **Order the description so the part you cannot afford to lose is first** — free, and
+  the right default, but know what it does and does not buy. It protects you against
+  *shortening* (the tail goes, so a capability-first description keeps its trigger). It
+  buys **nothing** against the drop-the-whole-description shape, where ordering is
+  irrelevant because nothing survives. Against that one the only lever is **total
+  size**: fewer characters across the whole corpus means more entries keep a
+  description at all, which makes a trailing keyword list a cost paid by *every other
+  skill you ship*, not just by itself.
 - **Where the listing budget is shared across everything installed, your matching
   degrades because of someone else's skills.** A per-skill cap is yours to respect; a
   *global* budget across every installed plugin and marketplace is a commons, and a
@@ -153,7 +170,8 @@ Report findings as `file:line | rule | severity | effort | fix`, and rate severi
 
 ## Audit checklist
 
-- [ ] **Cap enforcement identified** (§1): does this platform skip an over-cap skill or silently shorten it? Compare the description the model was actually given against the file on disk — and where the listing budget is global, audit the **aggregate** across everything installed, not each file against its own cap
+- [ ] **Cap enforcement identified** (§1): does this platform **skip** an over-cap skill, **shorten** its description, or **drop the description and keep the name**? Read the listing the model was actually given and look for entries that are a bare name — a skill with no trigger text cannot be auto-selected, and every file-level check still passes. Where the budget is global, audit the **aggregate** across everything installed, not each file against its own cap
+- [ ] **If a ranking decides who keeps a description, the ranking is audited too** (§1) — a usage-weighted one means a never-used skill is dropped first, so the set works for its author and is invisible to a new installer, with identical files on both machines
 - [ ] **Capability first in every description** (§1) so a truncation costs the least-load-bearing words, never the trigger vocabulary
 - [ ] **Description and body diagnosed separately** (§1a): the same task run model-routed and invoked by name, against a **no-skill baseline** — and the baseline re-run after a model upgrade, since a skill that once helped can decay into noise with none of its text changing
 - [ ] **No load-bearing requirement left to routing** (§1a): anything security-, safety- or compliance-relevant is enforced by a hook or a gate that cannot decline to fire, not by a description that matches most of the time

@@ -707,6 +707,45 @@ writes `.git/hooks/<type>` at install time, so a config that *gains* a
 a declared stage with no hook file — which check 9 cannot see, because a different
 hook being present makes it read "installed".
 
+### The skill listing budget — raise it, or most of these descriptions never reach the model
+
+Claude Code reserves a per-turn character budget for the skill listing and computes it as
+`(context tokens x 4) x skillListingBudgetFraction`, where the fraction **defaults to
+0.01**. On a 200k-context model that is **8,000 characters** for *every* skill you have
+installed, from every source. This library's 42 descriptions need about **38,240**.
+
+Over budget, entries are **ranked by recent usage** and the ones that do not fit are
+rendered as a bare `- name` with **no description at all** — so they carry no trigger
+vocabulary and cannot be auto-selected on what they do. It is not a tail-trim: it is
+all-or-nothing per skill. A skill you have **never used ranks zero and is dropped first**,
+which is a discovery ratchet — invisible because unused, unused because invisible.
+
+*Measured 2026-09-11 by reading the shipped `claude` binary (2.1.268), not inferred from
+behaviour, and confirmed live: roughly 20 of these 42 skills were listed name-only in the
+session that found it.*
+
+**Why it still works anyway, and what actually breaks.** The `sota` router is used every
+session, so it ranks near the top and keeps its description — and a name-only skill is
+still **invocable by name**, which is exactly what the router's routing table does. That is
+why always-on routing below is the recommended path and not a nicety: it is the mitigation.
+What is genuinely lost is *direct* auto-selection of a domain skill when the router has not
+fired, which is most likely for the skills you have never used.
+
+**The fix is one setting.** In `~/.claude/settings.json`:
+
+```json
+{ "skillListingBudgetFraction": 0.05 }
+```
+
+That gives 40,000 characters at a 200k context, enough for all 42. Be aware of what you are
+buying: the listing is sent **every turn**, so this reserves 5% of the context window for
+it. `skillListingMaxDescChars` (default 1536) is a separate per-skill cap — no description
+here exceeds it, so it does not apply.
+
+**How to check your own install:** look at the skill list Claude is given and count entries
+that are a bare name with no text after the colon. Any such skill is installed, correct, and
+unreachable except by name.
+
 ### Always-on routing (recommended)
 
 Skill descriptions are matched per prompt, so routing is opt-in and depends on
