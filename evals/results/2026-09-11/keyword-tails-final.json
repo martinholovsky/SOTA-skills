@@ -1,0 +1,123 @@
+{
+ "note": "ROADMAP 53 combined: run 3 (9 cases) + q10 completion, identical settings",
+ "cases": {
+  "q1_react_ui": {
+   "with-keywords": {
+    "correct": 1.0,
+    "distractor": 0.0
+   },
+   "without-keywords": {
+    "correct": 1.0,
+    "distractor": 0.0
+   }
+  },
+  "q2_sigma_detection": {
+   "with-keywords": {
+    "correct": 1.0,
+    "distractor": 0.0
+   },
+   "without-keywords": {
+    "correct": 1.0,
+    "distractor": 0.0
+   }
+  },
+  "q3_latency_opt": {
+   "with-keywords": {
+    "correct": 1.0,
+    "distractor": 0.0
+   },
+   "without-keywords": {
+    "correct": 1.0,
+    "distractor": 0.0
+   }
+  },
+  "q4_data_race": {
+   "with-keywords": {
+    "correct": 0.0,
+    "distractor": 0.0
+   },
+   "without-keywords": {
+    "correct": 0.0,
+    "distractor": 0.0
+   }
+  },
+  "q5_code_vuln_review": {
+   "with-keywords": {
+    "correct": 1.0,
+    "distractor": 0.0
+   },
+   "without-keywords": {
+    "correct": 1.0,
+    "distractor": 0.0
+   }
+  },
+  "q6_appcode_audit": {
+   "with-keywords": {
+    "correct": 1.0,
+    "distractor": 0.0
+   },
+   "without-keywords": {
+    "correct": 1.0,
+    "distractor": 0.0
+   }
+  },
+  "q7_pod_hardening": {
+   "with-keywords": {
+    "correct": 1.0,
+    "distractor": 0.0
+   },
+   "without-keywords": {
+    "correct": 1.0,
+    "distractor": 0.0
+   }
+  },
+  "q8_bash_review": {
+   "with-keywords": {
+    "correct": 1.0,
+    "distractor": 0.0
+   },
+   "without-keywords": {
+    "correct": 1.0,
+    "distractor": 0.0
+   }
+  },
+  "q9_etl_pipeline": {
+   "with-keywords": {
+    "correct": 1.0,
+    "distractor": 0.0
+   },
+   "without-keywords": {
+    "correct": 1.0,
+    "distractor": 0.0
+   }
+  },
+  "q10_ui_microcopy": {
+   "with-keywords": {
+    "correct": 1.0,
+    "distractor": 0.0
+   },
+   "without-keywords": {
+    "correct": 1.0,
+    "distractor": 0.0
+   }
+  }
+ },
+ "summary": {
+  "with-keywords": {
+   "correct": 0.9,
+   "distractor": 0.0
+  },
+  "without-keywords": {
+   "correct": 0.9,
+   "distractor": 0.0
+  }
+ },
+ "delta_correct": 0.0,
+ "sd": 0.0,
+ "se": 0.0,
+ "n_cases": 10,
+ "samples": 3,
+ "temp": 0.7,
+ "model": "anthropic/claude-sonnet-4.6",
+ "ablation": "keywords"
+}

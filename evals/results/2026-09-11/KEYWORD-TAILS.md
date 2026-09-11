@@ -5,7 +5,33 @@
 **pre-registered** in [PRE-REGISTRATION-KEYWORD-TAILS.md](PRE-REGISTRATION-KEYWORD-TAILS.md),
 committed before any call, and **amended before run 3** with the reason written down first.
 
-## Status: NOT ANSWERED. Three runs, 180 paid calls, and no quotable number.
+## Status: ANSWERED — **Δ = +0.000**, a clean null, on the registered 10 cases
+
+`with-keywords 0.900 / without-keywords 0.900`, distractor-pick **0.000** in both arms,
+**0 of 10 cases moved**, SD 0.000. Inside the pre-registered **±0.03** null band, and the
+pre-registered **prediction of a null was correct**.
+
+**The tails buy no measurable matching value.** Not one of 60 calls across ten
+independently-authored, adversarially-confusable tasks picked a different skill when 12,227
+characters of `Trigger keywords:` were removed from the catalogue.
+
+**State the detection limit rather than claiming zero.** SD 0.000 means this instrument could
+not separate the arms *at all*, not that the effect is provably nil: with **0 of 10** cases
+moving, the rule of three puts the 95% upper bound on the per-case flip rate at roughly
+**3/10 ≈ 0.26**. A larger or differently-chosen set could still find something this one cannot.
+
+### How the 10 were assembled, stated plainly
+
+Run 3 completed **9 of 10** before `HTTP 402`. The registered denominator was finished on
+2026-09-11 by re-running **only `q10_ui_microcopy`** at identical settings (1 case × 3 samples
+× 2 arms = 6 calls) and splicing it in. That is completing a fixed denominator, not choosing
+between values: the cases are independent prompts, the settings are byte-identical, and the
+case was registered before any of this. `q10` read **1.00/1.00**, the same as it had in runs 1
+and 2 — which is why it was deliberately *not* imputed earlier even though the value was
+predictable. Combined artifact:
+[`keyword-tails-final.json`](keyword-tails-final.json).
+
+## The road there: three runs, 186 paid calls, and two defects in the instrument
 
 That is the honest headline, and the runs were still worth their money: they found **two
 defects in the instrument**, both of which had been silently shaping the result.
@@ -56,9 +82,28 @@ is the instrument working.**
 
 ## Where that leaves ROADMAP 53
 
-**Open, with a provisional direction and a cheap finish.** The registered prediction was a
-null; nine of ten cases are consistent with it on a corrected instrument. One case and a
-top-up separate this from an answer.
+**The matching half is answered and closed: Δ = +0.000.** What remains is a *decision*, not a
+measurement, and it belongs to a human — the registration said so before the number existed.
+
+**The two halves now say different things, and both are true:**
+
+| half | answer | basis |
+|---|---|---|
+| Do the tails help *matching*? | **No measurable effect** (Δ +0.000, 0/10 moved) | this eval |
+| Do they *cost* anything? | **12,227 of 37,330 chars — 33% of the corpus** | arithmetic, no calls |
+
+Under ROADMAP 52's mechanism the cost is not paid by the skill carrying the tail: over budget,
+whole descriptions are dropped by usage rank, so a tail pushes *some other* skill's entire
+description out of the listing. Cutting the tails would take the corpus to ~25k and let far
+more entries keep a description at a default budget.
+
+**The argument against cutting is not about matching.** A keyword list can earn its place as
+documentation, as a drafting aid, or against a future model that weights it differently — and
+this measured one model, one day, ten cases. That trade is the operator's call.
+
+**If they are cut, it is a routing change**: it edits 40 `description` fields, which is the
+entire auto-load classifier, so invariant 29 applies and the release must declare a routing
+check against `desc-routing-regressions.jsonl`.
 
 **And the deterministic half needs no model calls at all**, so it stands regardless: the
 tails are **12,227 of 37,330 characters (33%)** of the description corpus, and ROADMAP 52
@@ -77,3 +122,15 @@ worth asking — and it is not what this eval measures.
   reported as `0.80` when one of the ten "misses" was the model being right.
 - `run-desc-routing.py` — arm names no longer hardcoded in the reporting line (run 1 paid for
   60 calls and lost its artifact to it), and `--ablate keywords` preserves exclusion clauses.
+
+## One bounded observation, recorded and not acted on
+
+`q4_data_race` reads **0.00 in both arms**: the model answers `sota-golang` 3/3 for *"data
+races and an occasional deadlock between two goroutines"*, while the case expects
+`sota-async-concurrency` and names `sota-performance` as the distractor. Both skills
+legitimately apply — the router's cross-cutting rule 1 says language skills *stack on* domain
+skills — so this is a forced single pick between two defensible answers, not obviously a
+mislabelling like `q7` was. It is identical in both arms and therefore cannot affect this
+delta. Left alone deliberately: having just corrected one case after it produced an
+inconvenient result, changing a second on weaker grounds is how a case set drifts toward the
+answers its maintainer expects.
