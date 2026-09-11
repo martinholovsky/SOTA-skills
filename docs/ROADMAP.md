@@ -84,12 +84,22 @@ and the deferred-row pointer, both last checked 2026-08-28. **Restamping a heade
 section was refreshed in parts — say which parts.**
 
 **This table is not the whole backlog.** Open work also sits in
-[ADOPTION-LOG.md](ADOPTION-LOG.md) as rows marked **deferred** — an idea judged real but
-held for a trigger, which the roadmap never learns about. One is live today (2026-08-11,
-an integrity verdict left routinely red for operational reasons; revisit when a second
-implementation shows the same design). Answering "what is open?" means
-`grep -c '\*\*deferred' docs/ADOPTION-LOG.md` as well as reading this table — a list
-assembled from one file reads as complete and is not.
+[ADOPTION-LOG.md](ADOPTION-LOG.md) as entries marked **`**DEFERRED —`** — an idea judged
+real but held for a trigger, which the roadmap never learns about. **Two are live today**
+(2026-08-11, an integrity verdict left routinely red for operational reasons, revisit when
+a second implementation shows the same design; and the `vulnerability-triage-brocards`
+entry, whose trigger is a read a session can perform). Answering "what is open?" means
+counting those as well as reading this table — a list assembled from one file reads as
+complete and is not.
+
+**Count them with the gate, not by hand.** `scripts/check-invariants.sh` prints the number
+in check 27 (`ok (N deferral(s), each naming a trigger)`), which is the same regex the
+marker convention is enforced by, so it cannot drift from it. This paragraph used to hand
+out `grep -c '\*\*deferred'` instead — **lowercase**, which stopped matching when invariant
+27 fixed the marker as uppercase `**DEFERRED —` on 2026-09-09. Measured 2026-09-11: that
+command returned **0** against a real **2**, so the instruction for finding the rest of the
+backlog reported that there was none — a clean absence, in the one place a reader goes to
+ask what is left.
 
 
 ### What the backlog's shape says about where work comes from

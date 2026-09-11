@@ -1,5 +1,13 @@
 # Two pre-registered runs stopped mid-flight: `HTTP 402 Payment Required`
 
+> **Both runs were resumed and both items are now CLOSED** (noted 2026-09-11). ROADMAP 39
+> completed 2026-09-09 ([CONFLICT-RATE.md](CONFLICT-RATE.md), `conflict-rate.json`) and
+> ROADMAP 43 completed 2026-09-10 ([GATE-ABSORPTION-N3.md](GATE-ABSORPTION-N3.md),
+> `completeness-gate-absorption-n3.json`) — both artifacts sit in this directory. The
+> incident record below is left exactly as written; only this line and the closing one were
+> added, because the file's own last sentence said the two items *stay open* and that
+> sentence outlived the runs by two days.
+
 **2026-09-09.** The OpenRouter account ran out of credit part-way through both long runs.
 Neither produced its registered number, and **neither partial is a result**. This file
 exists so the gap is recorded rather than discovered later as a missing artifact.
@@ -44,7 +52,9 @@ from this log would be:
 - the judge-reported number, which the registration says is not the quotable one.
 
 The completed rows are in the log for whoever re-runs it, and the seven pairs that never
-ran are named there by their absence. **`ROADMAP 39` and `ROADMAP 43` both stay OPEN.**
+ran are named there by their absence.
+~~**`ROADMAP 39` and `ROADMAP 43` both stay OPEN.**~~ — true when written; **both
+closed** on the re-runs above (39 on 2026-09-09, 43 on 2026-09-10).
 
 ## To resume
 
