@@ -71,6 +71,18 @@ check for `docker` misses podman, `LICENSE` misses `LICENSE-MPL`,
 1. List the sota-* skills you can actually load right now, and count them.
    Compare against `ls -d ~/.claude/skills/sota*/ | wc -l` (or the plugin's
    skills dir). PASS = the counts agree and the `sota` router is among them.
+1b. **Count the skills listed with NO description.** Look at your own skill
+   listing and count entries that are a bare name with nothing after the colon.
+   This is the one thing the script cannot do and you can: it measures the
+   descriptions *on disk*, while only you can see what actually **arrived**.
+   Claude Code reserves a per-turn character budget for the listing
+   (`(contextTokens x 4) x skillListingBudgetFraction`, fraction default 0.01 —
+   8,000 chars at a 200k context, shared across every installed skill) and, over
+   budget, **drops whole descriptions** rather than shortening them, choosing the
+   losers by *recent usage*. A skill with no description is installed, correct,
+   invocable by name, and cannot be auto-selected on what it does. Report the
+   count and the names. Non-zero is a finding even when check 1 says PASS —
+   they answer different questions.
 2. Always-on routing: does `~/.claude/CLAUDE.md` contain a sota routing
    directive, and does `~/.claude/settings.json` define a `UserPromptSubmit`
    hook whose command mentions sota? PASS = both. If only the CLAUDE.md

@@ -160,7 +160,7 @@ the setting. The pre-commit hook scans each commit locally.
   one day silently measured nothing while still printing plausible numbers
 - **The read-only setup check, in two halves** — `init-gates.sh` sets a repo up; these check the
   result, because "configured" and "working" render identically. `scripts/verify-setup.sh` does the
-  mechanical half (skills reachable **vs the checkout's own count**, hook installed vs merely
+  mechanical half (skills reachable **vs the checkout's own count**, whether their descriptions fit the listing budget or arrive name-only, hook installed vs merely
   configured, licence under any name, whether CI ever *executed* and ever *rejected*, and **§F: what
   your searcher silently skips** — behavioural, INFO-only, the positive control the one thing that
   can fail; `--runs N` widens the CI sample, `--reach-only` is what `install.sh` runs);
