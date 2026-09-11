@@ -332,6 +332,36 @@ skill and the tempting sibling), 3× temp 0.7, objective name-match scoring.
 | with cross-refs | 0.80 | **0.00** | [desc-routing-3sample.json](2026-07-13/desc-routing-3sample.json) |
 | without cross-refs | 0.80 | **0.00** | |
 
+### 5a. The trailing `Trigger keywords:` lists — A/B, **+0.000** (ROADMAP 53)
+
+Same instrument, second ablation: strip the `Trigger keywords:` tail that 40 of 42
+descriptions carry (**12,227 of 37,330 characters, 33% of the corpus**) and see whether
+routing moves. Pre-registered with the null band, the decision thresholds and a predicted
+null, all committed before any call
+([PRE-REGISTRATION](2026-09-11/PRE-REGISTRATION-KEYWORD-TAILS.md) ·
+[write-up](2026-09-11/KEYWORD-TAILS.md)).
+
+| arm | correct | distractor-pick | Samples |
+|---|---|---|---|
+| with keyword tails | 0.900 | 0.000 | 10 cases × 3, temp 0.7, `claude-sonnet-4.6` |
+| without keyword tails | 0.900 | 0.000 | 10 cases × 3, temp 0.7, `claude-sonnet-4.6` |
+
+**Δ = +0.000, and 0 of 10 cases moved** — not one of 60 calls picked a different skill.
+Detection limit stated rather than hidden: 0/10 puts the rule-of-three 95% upper bound on the
+per-case flip rate at ~**0.26**, so this bounds the effect, it does not prove it nil.
+
+**What it cost to get a trustworthy null: 186 paid calls and two instrument defects.** The
+first two runs read **−0.100** and crossed the registered "the tails actively hurt" threshold.
+Both were artefacts: the single case driving it (`q7_pod_hardening`) was **mislabelled**
+against the router's own rule 9, *and* the ablation was **impure** for that very skill
+(`sota-kubernetes` keeps its cross-reference after the keyword list, so the strip removed two
+features). Corrected, the effect vanished entirely. The number had been measuring the
+instrument.
+
+**This says nothing about the listing budget.** The runner hands the model the whole catalogue,
+so it measures matching *given the text is present* — whereas §52's mechanism drops whole
+descriptions before the model ever sees them. The two halves are independent and both stand.
+
 **The regression set is a separate instrument and must not be averaged in here**
 (`evals/cases/desc-routing-regressions.jsonl`; selection-by-outcome is its point). Run
 2026-09-08, `claude-sonnet-5`, **3 samples per case per arm, temp 0.0, 2 cases**: after a

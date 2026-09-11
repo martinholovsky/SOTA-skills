@@ -1,0 +1,43 @@
+{
+ "model": "anthropic/claude-sonnet-4.6",
+ "samples": 3,
+ "temp": 0.7,
+ "cases": {
+  "q10_ui_microcopy": {
+   "task": "Write the button labels, empty-state text, and inline validation error messages for our checkout UI.",
+   "expect": "sota-ux-writing",
+   "distractor": "sota-docs-workflow",
+   "arms": {
+    "with-keywords": {
+     "picks": [
+      "sota-ux-writing",
+      "sota-ux-writing",
+      "sota-ux-writing"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-keywords": {
+     "picks": [
+      "sota-ux-writing",
+      "sota-ux-writing",
+      "sota-ux-writing"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  }
+ },
+ "summary": {
+  "with-keywords": {
+   "correct": 1.0,
+   "distractor": 0.0
+  },
+  "without-keywords": {
+   "correct": 1.0,
+   "distractor": 0.0
+  }
+ },
+ "ablation": "keywords"
+}
