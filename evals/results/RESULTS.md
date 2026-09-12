@@ -27,6 +27,8 @@ Same model, same task, library loaded vs. nothing.
 | Routing (20 tasks) — `claude-sonnet-4.6` | 0.90 | **1.00** | **+0.10** | 3×, temp 0.7 | [MULTI-SAMPLE](2026-07-13/MULTI-SAMPLE.md) |
 | Routing — **`claude-sonnet-5`** (current flagship): **holds**, unchanged within one case | 0.87 | **0.99** | **+0.13** | 3×, temp 0.7 | [ITEM-20](2026-08-25/ITEM-20-FRESHNESS-ROUTING.md) |
 | Routing **robustness to router length** — 501 → 1,302 lines, table pushed 800 deeper | 0.87 | **1.00 at every length** | n/a — *not a lift* | 3×, temp 0.7 | [ROUTER-LENGTH](2026-08-26/ROUTER-LENGTH.md) |
+| **ROUTING-SHIFT** — does a session that has settled into one task keep routing the *next*, differently-shaped question correctly? Not a library lift: both arms are with-library | shifted **0.500** | fresh **0.750** | **+0.250** — one case of four | 4 cases × 2 arms × 3, temp 0.7 | [ROUTING-SHIFT](2026-09-12/ROUTING-SHIFT.md) |
+| ROUTING-SHIFT **after** the `sota-devsecops` description fix — both arms rise one case; the gap is unchanged | shifted **0.750** | fresh **1.000** | **+0.250** | 4 cases × 2 arms × 3, temp 0.7 | [ROUTING-FIX-DEVSECOPS](2026-09-12/ROUTING-FIX-DEVSECOPS.md) |
 | **BUILD-safe** (7 defect classes the model must not *write*) — **sonnet-4.6** | 0.81 | **1.00** | **+0.19** | 3×, temp 0.7 | [BUILD-SAFE](2026-08-21/BUILD-SAFE.md) |
 | BUILD-safe — **gpt-5.1**: bare arm saturates, so **no headroom** | 1.00 | 1.00 | +0.00 | 3×, temp 0.7 | [BUILD-SAFE §1b](2026-08-21/BUILD-SAFE.md) |
 | BUILD-safe — **claude-sonnet-5** (current flagship): bare arm saturates | 1.00 | 1.00 | +0.00 | unguided 3×, guided 2× (one truncated build excluded), temp 0.7 | [BUILD-SAFE §1c](2026-08-21/BUILD-SAFE.md) |

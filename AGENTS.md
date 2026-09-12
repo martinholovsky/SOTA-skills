@@ -83,7 +83,7 @@ fail first, print your denominator, skip rather than guess.**
 
 *Adding a `rules/NN` file?* Invariant 10 checks its `SKILL.md` indexes it, **invariant 15** that
 the library map (`skills/sota/rules/04`) lists it — both directions. `skills/sota/SKILL.md` is at
-**410/500** (re-counted 2026-09-09; three offloads got it there — **detail belongs in `rules/`,
+**420/500** (re-counted 2026-09-12, wrong a SEVENTH time; offloads got it there — **detail belongs in `rules/`,
 imperatives in the router**). Wrong **six** times — **re-count with `grep -c ''`**. Editing the
 router's **BUILD section** moves `ROUTER_BUILD_SHA` and aborts the evals; AUDIT does not. The
 gates enumerate via `git ls-files`, so an **unstaged new file is invisible** — `git add` first.
@@ -94,7 +94,7 @@ gates enumerate via `git ls-files`, so an **unstaged new file is invisible** —
 complain; any other non-zero exit is a **FALSE PASS**. **It reads the COMMITTED tree**
 (`git worktree add HEAD`) — commit first, or you test a new script against old docs. Part A mutates
 a good tree in a disposable worktree; part B is inverted, building a fully-configured fake machine
-(`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **44 probes** (re-run 2026-09-11: `PASS: 44/44`; it said 43 from a 2026-09-09 run)
+(`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **44 probes** (re-run 2026-09-12: `PASS: 44/44`; it said 43 from a 2026-09-09 run)
 (deliberately **not** gated — a static count of call sites under-reads, so only running it is
 authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
 24, 25, 26, 27, 28, 29** — 26 of 29 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13.

@@ -341,6 +341,43 @@ docs**: three of them on 2026-08-16 from a scoped audit of the instruments thems
 Anyone auditing "what does this repo actually enforce?" by reading `check-invariants.sh`
 alone would undercount by a third.
 
+## Known looseness in an enforced gate — invariant 11's escape hatch (2026-09-12)
+
+Recorded here rather than as a roadmap row, because the roadmap's actionable set is
+deliberately empty and this is a design question, not a task anyone must do next.
+
+**Invariant 11** — *`LAST-VERIFIED` moves only alongside a sweep* — has two legitimate
+escapes, and the second is implemented as a bare substring match over the diff's added
+CHANGELOG lines:
+
+```sh
+git diff "$base"...HEAD -- CHANGELOG.md | grep -q '^+.*LAST-VERIFIED' && declared=1
+```
+
+So **any added CHANGELOG line that merely mentions the stamp excuses a stamp move for the
+entire diff** — including a line that mentions it in order to say no sweep is due. That is
+not hypothetical: it happened here. A changelog entry explaining that the accuracy sweep is
+*not* yet due contained the token, and `check-negative-controls.sh` immediately reported
+probe 11 as **INERT** (43/44). Rewording to "the root verification stamp" restored 44/44.
+
+**Why it is narrow.** The whole block is reached only when the stamp actually changed, so
+in ordinary operation mentioning the token costs nothing. The exposure is one shape: a PR
+that moves the stamp *and* happens to discuss it in prose gets waved through.
+
+**Why it is not fixed here.** Every tightening trades one failure for another. Requiring a
+fixed declaration phrase makes the hatch precise but adds a magic string a contributor must
+know. Requiring a sweep-shaped diff collapses escape (b) into escape (a) and removes the
+rolling-sweep path `docs/MAINTENANCE.md` explicitly allows. Against the three filters:
+**has it already failed?** yes, once, caught by the harness within a minute. **Does it fail
+silently?** no — that is the mitigating fact, and the reason this is a note rather than a
+change. **Is it mechanically checkable?** yes. It sits one filter short of earning a fix,
+and this ledger's own argument is that a gate changed without an incident behind it is how
+gates become flaky.
+
+**The transferable shape:** an escape hatch matched by substring is wider than its intent,
+and the way you find out is a negative-control harness that tells you the gate went quiet.
+A gate with an escape needs a known-bad for **the escape**, not only for the failure.
+
 ## What this does not claim
 
 No convention outside the two candidates was found to be both failure-prone and
