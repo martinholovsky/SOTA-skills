@@ -22,7 +22,7 @@ moving, the rule of three puts the 95% upper bound on the per-case flip rate at 
 
 ### How the 10 were assembled, stated plainly
 
-Run 3 completed **9 of 10** before `HTTP 402`. The registered denominator was finished on
+Run 3 completed **9 of 10** before a provider-side `HTTP 402`. The registered denominator was finished on
 2026-09-11 by re-running **only `q10_ui_microcopy`** at identical settings (1 case × 3 samples
 × 2 arms = 6 calls) and splicing it in. That is completing a fixed denominator, not choosing
 between values: the cases are independent prompts, the settings are byte-identical, and the
@@ -40,7 +40,7 @@ defects in the instrument**, both of which had been silently shaping the result.
 |---|---|---|
 | 1 | as registered | `with 0.800 / without 0.900`, **Δ −0.100** — artifact lost to a `KeyError` in a *reporting* line after all 60 calls were paid |
 | 2 | reporting fixed | **identical**: `0.800 / 0.900`, Δ −0.100, artifact written |
-| 3 | ablation purified + one case relabelled | **aborted at 9 of 10 cases — HTTP 402, out of credit** |
+| 3 | ablation purified + one case relabelled | **aborted at 9 of 10 cases — `HTTP 402` from the provider (see the correction below: *not* exhausted credit)** |
 
 ## Why runs 1 and 2 are set aside rather than published
 
@@ -73,8 +73,8 @@ and `q7` relabelled, **0 of the 9 completed cases moved** — every pair identic
 `q7`, now `1.00/1.00` with `sota-sandboxing` picked 3/3 in both arms.
 
 **That is not the registered number and is not quoted as one.** The registration fixed the
-denominator at 10 cases; `q10_ui_microcopy` never ran because the account hit `HTTP 402`
-mid-run. Quoting a rate over a denominator chosen by when the money ran out is exactly what
+denominator at 10 cases; `q10_ui_microcopy` never ran because the provider returned
+`HTTP 402` mid-run. Quoting a rate over a denominator chosen by when the money ran out is exactly what
 [RUNS-BLOCKED-ON-CREDIT](../2026-09-09/RUNS-BLOCKED-ON-CREDIT.md) refused to do on
 2026-09-09, and `q10` read `1.00/1.00` in runs 1 and 2 — so imputing it would mean picking
 the value that confirms the prediction. **The guard aborted rather than dividing by 9, which
@@ -134,3 +134,27 @@ mislabelling like `q7` was. It is identical in both arms and therefore cannot af
 delta. Left alone deliberately: having just corrected one case after it produced an
 inconvenient result, changing a second on weaker grounds is how a case set drifts toward the
 answers its maintainer expects.
+
+## Correction (2026-09-12): the 402 was not exhausted credit
+
+**Written up wrongly first, and the repo had already warned about exactly this.** Run 3's
+abort was recorded as *"out of credit"*. The operator confirms there was sufficient balance
+at the time, so the `HTTP 402` was a **provider-side fault**. Checked afterwards against
+`GET /api/v1/key`, asserting the status before reading any field: **HTTP 200**, key `limit:
+null` — uncapped — and authentication healthy.
+
+`evals/DESIGN-real-repo-audit.md` already carries the warning, from an earlier incident where
+a credit check parsed an auth failure into *"remaining: $0.00"*: **"A reader would have
+concluded 'out of credit' and topped up an account that was never the problem."** That is
+precisely what this write-up did — inferring a cause from an error code rather than reading
+the balance — and it is the same shape as attributing a symptom to the most available
+explanation instead of checking parentage.
+
+**What does not change:** the guard behaviour, which is the only thing the run's abort was
+ever evidence for. It refused to divide by 9 and it was right to. **What does change:** the
+attributed cause, and the conclusion drawn from it — a 402 is a *transport* failure until
+the balance is read, and the remedy for a provider fault is a retry, not a top-up.
+
+**Not re-verified here:** the separate `RUNS-BLOCKED-ON-CREDIT.md` incident of 2026-09-09,
+which attributes two other aborts to exhausted credit. That is a different run on a different
+day and this correction says nothing about it; it is flagged rather than silently amended.

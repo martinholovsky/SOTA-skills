@@ -39,6 +39,14 @@ audit STRAT-HIGH-2).
   `rules/*.md`, labelled by path so a quoted conflict can be checked by hand — which
   makes the number a **ceiling**, not the lived rate: a real session loads lean, so a low
   number is strong and a high one is not yet a claim about practice.
+  **`--lean` measures the other end of that bracket** (ROADMAP 47): the judge sees each
+  skill's `SKILL.md` **only** — 8% of the full corpus — which is the **floor** of what
+  BUILD step 2 loads. Deliberately the floor rather than "SKILL.md plus the rules files
+  the index names for this task", because choosing those files is the *measurer's*
+  judgement and the measurer holds the hypothesis. Floor and ceiling bracket the lived
+  rate with nobody's judgement in between; **neither arm is the lived rate itself**, and
+  the two are only comparable when run on the same tree — the published 0.176 predates the
+  repairs of the conflicts it found.
   **The judge is a control.** Two synthetic pairs run in the same batch — one with a
   planted head-on contradiction that must report ≥ 1, one benign that must report 0. If
   they do not separate the run is **VOID and prints no rate**, because a judge that
