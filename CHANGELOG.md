@@ -5,7 +5,34 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.41.1] - 2026-09-13
+
+**Front door checked:** saturated measure · AACR-Bench · near chance
+
+**We were wrong in our own documentation for four months, and this release says so.** A
+patch: one new rule section inside an existing file, plus corrections to published claims.
+
+### `sota-llm-engineering/rules/01` §8a — a saturated measure is a fact about the instrument
+
+New rule, and it is this repository's own mistake generalised. **When both arms score at the
+ceiling you have learned nothing about the treatment** — 1.00 with and 1.00 without means
+*this instrument cannot tell these conditions apart*, which is a claim about your eval, not
+about your system.
+
+The failure is expensive because it **closes the question**: read 1.00/1.00 as *solved*, stop
+measuring, publish it, and write down an instruction not to build another instrument — and
+the belief is now self-sealing, because the only thing that could overturn it is forbidden.
+
+What the rule asks for: report the **absolute score before the delta**; register a control
+arm at **≥0.95 as a void condition**, not a null; make **chance a known constant** by
+balancing classes rather than inheriting a base rate; and **prefer an instrument you did not
+build** once yours stop discriminating, because you authored the fixture, the rubric and the
+difficulty. The tell to watch for in your own writing is the phrase *"both arms scored
+perfectly, so…"* — whatever follows that comma is usually a claim the data cannot carry.
+
+Confirmed absent before it was written: `saturat*` appeared **nowhere** in the skill that
+owns eval design, across two vocabulary sweeps with a positive control.
+
 
 ### A correction to our own published position: "do not build a tenth instrument" was wrong
 
@@ -8198,6 +8225,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.41.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.41.1
 [1.41.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.41.0
 [1.40.7]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.7
 [1.40.6]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.6

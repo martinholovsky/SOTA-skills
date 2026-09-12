@@ -260,8 +260,51 @@ Production is the only honest distribution. Build the loop:
   the quiet merge: yesterday's regression cases silently become today's benchmark, and
   the score rises because the set remembers what the model got wrong.
 
+### 8a. A saturated measure is a fact about the instrument, not about the system
+
+**When both arms score at the ceiling, you have learned nothing about the treatment.** A
+result of 1.00 with the treatment and 1.00 without is routinely written up as *"no headroom
+— the capability is solved"*, and that is a different claim from what was measured, which is
+*"this instrument cannot tell these two conditions apart"*. The second claim is about your
+eval. Only the first is about your system, and the data does not support it.
+
+The failure is expensive because it **closes the question**. A team that reads 1.00/1.00 as
+*solved* stops measuring, publishes the conclusion, and writes down an instruction not to
+build another instrument — at which point the belief is self-sealing, because the only thing
+that could overturn it is the thing now forbidden.
+
+**Field-measured.** A library of engineering guidance closed its audit-accuracy axis at
++0.00 across **nine** instruments, the precision one reading **1.00 in both arms**, and
+recorded *"do not build a tenth — recall and precision are both exhausted."* A tenth was
+built on an **external, independently-annotated** benchmark. The lift replicated (a
+registered null, so the headline survived), but both arms landed **near chance** on a set
+balanced so chance was exactly 0.500. Precision had never been perfect; the in-house
+instruments had been too easy to discriminate, and "exhausted" was wrong for four months.
+
+What to do instead:
+
+1. **Report the absolute score before the delta.** A delta between two ceilings is not a
+   small effect, it is an unmeasured one. State the ceiling and the floor of your scale and
+   where both arms sit on it.
+2. **Treat ≥0.95 in the control arm as a void condition**, registered in advance, exactly as
+   you would register a threshold. The run does not produce a null; it produces *nothing*,
+   and it should say so itself.
+3. **Make chance a known constant.** Balance the classes by construction so a constant
+   answer scores exactly 0.5, rather than inheriting whatever base rate the source data
+   happens to have — a 70/30 set hands a lazy strategy 0.70 and flatters it.
+4. **Prefer an instrument you did not build** once your own saturate. You authored the
+   fixture, the rubric and the difficulty; an externally annotated set removes all three
+   degrees of freedom at once, and disagreement with it is a finding rather than an
+   embarrassment.
+5. **Reach for a harder dependent variable** only after checking the easy one is not simply
+   mis-scaled — time-to-find, calibration, or performance on the cases experts disagree on.
+
+**The tell to watch for in your own write-ups:** the phrase *"both arms scored perfectly,
+so…"*. Whatever follows that comma is almost always a claim the measurement cannot carry.
+
 ## Audit checklist
 
+- [ ] **No axis closed on a saturating measure** — the absolute score is reported before the delta, a control arm at ≥0.95 is a registered **void** condition rather than a null, chance is a known constant (classes balanced by construction), and an **externally annotated** instrument is preferred once the in-house ones stop discriminating (§8a)?
 - [ ] Before any A/B is run, the treated arm is **shown to read the thing that changed**
       (the runner's source names the path) — a null from an arm blind to the treatment is
       structural, not a result (§8).
