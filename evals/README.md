@@ -425,6 +425,14 @@ grows? Arms: anchor / reminder (the `UserPromptSubmit`-hook analog) / control. F
 run: **no decay at moderate scale** (guidance held over 30 unrelated turns; anchor
 1.00, control 0.40) — bounds the problem but needs a bigger intervening context to
 find the breaking point.
+**`--lean-anchor` is how that breaking point becomes reachable** (ROADMAP 49), and it
+shrinks the anchor rather than growing the filler. Measured first: the full anchor is
+**83,958** characters against **12,997** of filler — **0.15:1**, so the first run could
+not have detected decay whatever it found, and reaching even 3:1 by authoring needs
+~580 more filler pairs. Anchoring on **principle 5 alone** (3,155 chars) flips it to
+**4.12:1** with the filler that already exists. It also asks the better question:
+principle 5 is what a routed session carries before it opens any rules file, and is the
+component this project credits with most of the completeness lift.
 
 **Description-catalogue routing A/B** (`run-desc-routing.py`,
 `cases/desc-routing.jsonl`, `results/2026-07-13/desc-routing-3sample.json`): measures
