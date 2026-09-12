@@ -73,14 +73,23 @@ def load_env_key():
     sys.exit("OPENROUTER_API_KEY not found in env or ./.env")
 
 
-def skill_corpus(skill):
-    """Everything an agent could have loaded for this skill, labelled by file.
+def skill_corpus(skill, lean=False):
+    """What an agent loaded for this skill, labelled by file.
 
     Labelled because an unattributed quote cannot be verified by hand afterwards, and
     every conflict this prints is meant to be checked against the file before it counts.
+
+    `lean=True` is ROADMAP 47 (the v3 this file's docstring promised): only `SKILL.md`,
+    which is the FLOOR of what BUILD step 2 loads — a lean session opens the skill's
+    SKILL.md and then only the rules files matching the work. The floor is used rather
+    than "SKILL.md plus the index-matched rules files" deliberately: deciding which rules
+    files a given task would open is the measurer's judgement, and injecting it puts the
+    person holding the hypothesis inside the instrument. Floor here plus the existing
+    full-corpus ceiling BRACKETS the lived rate without anyone's judgement in between.
     """
     files = [os.path.join(ROOT, "skills", skill, "SKILL.md")]
-    files += sorted(glob.glob(os.path.join(ROOT, "skills", skill, "rules", "*.md")))
+    if not lean:
+        files += sorted(glob.glob(os.path.join(ROOT, "skills", skill, "rules", "*.md")))
     files = [f for f in files if os.path.exists(f)]
     if not files:
         sys.exit(f"skill {skill!r} has no SKILL.md or rules/*.md under {ROOT}/skills — "
@@ -323,6 +332,10 @@ def main():
     ap.add_argument("--max-chars", type=int, default=DEFAULT_MAX_CHARS,
                     help="abort if a pair's corpus exceeds this, rather than let the "
                          "provider truncate it silently")
+    ap.add_argument("--lean", action="store_true",
+                    help="ROADMAP 47: give the judge only each skill's SKILL.md — the FLOOR of "
+                         "what BUILD step 2 loads. Default is the full corpus, which is the "
+                         "CEILING already published as 0.176. The two bracket the lived rate.")
     ap.add_argument("--out", default=None)
     ap.add_argument("--verify", metavar="ARTIFACT",
                     help="post-process a saved run: report which quoted sentences do not "
@@ -353,7 +366,7 @@ def main():
     corpora = {}
     for _, _, x, y in pairs:
         for s in (x, y):
-            corpora.setdefault(s, skill_corpus(s))
+            corpora.setdefault(s, skill_corpus(s, lean=a.lean))
 
     oversize = []
     for cid, _, x, y in pairs:

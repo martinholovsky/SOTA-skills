@@ -332,6 +332,29 @@ skill and the tempting sibling), 3× temp 0.7, objective name-match scoring.
 | with cross-refs | 0.80 | **0.00** | [desc-routing-3sample.json](2026-07-13/desc-routing-3sample.json) |
 | without cross-refs | 0.80 | **0.00** | |
 
+### 5b. Conflict rate at LEAN loading — the floor (ROADMAP 47)
+
+ROADMAP 39 measured a **ceiling** by handing the judge every `rules/*.md` of both skills.
+This measures the **floor**: `SKILL.md` only, which is what BUILD step 2 opens before any
+rules file. Both arms run on the **same tree on the same day** — the point of the design.
+
+| arm | corpus | judge-reported | hand-verified | Samples |
+|---|---|---|---|---|
+| full | 1,546,535 chars | 0.471 (8/17) | not computed | 17 pairs × 3, temp 0.0, `claude-sonnet-5` |
+| **lean** | **147,116 (9.5%)** | **0.176 (3/17)** | **0.000** | 17 pairs × 3, temp 0.0, `claude-sonnet-5` |
+
+**Loading lean cuts the judge-reported conflict rate 63%, and the lean floor hand-verifies
+to zero** — all six reported conflicts refute, five of them in the two classes the judge
+cannot resolve because it is blind to the router (finding format, severity precedence).
+
+**The lived rate is between the arms and neither arm is it.** A real lean session opens
+*some* rules files; this one opened none.
+
+**Do not read the full arm as a before/after against ROADMAP 39's 0.353.** The corpus grew
+50k characters in between, partly from rules added to those same skills hours earlier, so
+repairs, new content and judge noise are confounded there. The same-tree comparison above is
+immune to all three.
+
 ### 5a. The trailing `Trigger keywords:` lists — A/B, **+0.000** (ROADMAP 53)
 
 Same instrument, second ablation: strip the `Trigger keywords:` tail that 40 of 42

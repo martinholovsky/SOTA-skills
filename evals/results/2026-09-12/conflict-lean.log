@@ -1,0 +1,32 @@
+judge=anthropic/claude-sonnet-5  pairs=17  samples=3  temp=0.0
+corpus: 13 skills, 147,116 chars
+excluded (single-skill, no pair to conflict): single_go_error_control, single_ux_copy_control
+
+calibration (the judge is a control — watch it separate before trusting it):
+  planted contradiction -> 1 conflict(s)   (needs >= 1)
+  benign pair           -> 0 conflict(s)   (needs == 0)
+  ok — separated.
+
+  mcp_server_audit           sota-code-security       sota-sandboxing          per-sample=[0, 0, 0]
+  mcp_server_audit           sota-code-security       sota-threat-modeling     per-sample=[0, 0, 0]
+  mcp_server_audit           sota-sandboxing          sota-threat-modeling     per-sample=[0, 0, 0]
+  k8s_cluster_audit          sota-kubernetes          sota-network-security    per-sample=[0, 0, 1]  <-- CONFLICT REPORTED
+  k8s_cluster_audit          sota-kubernetes          sota-sandboxing          per-sample=[1, 1, 2]  <-- CONFLICT REPORTED
+  k8s_cluster_audit          sota-network-security    sota-sandboxing          per-sample=[0, 0, 0]
+  next_security_review       sota-frontend-design     sota-javascript-typescript per-sample=[0, 0, 0]
+  next_security_review       sota-frontend-design     sota-performance         per-sample=[0, 0, 0]
+  next_security_review       sota-frontend-design     sota-web-frameworks      per-sample=[0, 0, 0]
+  next_security_review       sota-javascript-typescript sota-performance         per-sample=[0, 0, 0]
+  next_security_review       sota-javascript-typescript sota-web-frameworks      per-sample=[0, 0, 0]
+  next_security_review       sota-performance         sota-web-frameworks      per-sample=[0, 0, 0]
+  untrusted_feed_ingest      sota-code-security       sota-sandboxing          per-sample=[0, 0, 0]
+  evidence_shell_script      sota-code-security       sota-shell-scripting     per-sample=[0, 0, 2]  <-- CONFLICT REPORTED
+  crypto_key_rotation        sota-code-security       sota-secrets-management  per-sample=[0, 0, 0]
+  agent_subagent_delegation  sota-llm-engineering     sota-sandboxing          per-sample=[0, 0, 0]
+  browser_verification       sota-frontend-design     sota-testing             per-sample=[0, 0, 0]
+
+CONFLICT RATE (judge-reported, ANY sample) = 3/17 = 0.176   over 17 pairs, 3 samples each
+This is a CEILING: the judge saw every rules file of both skills, while a real
+session loads lean. It is also UNVERIFIED — every reported conflict must be
+read against the two files by hand before it counts (router principle 7).
+saved evals/results/2026-09-12/conflict-rate-lean.json
