@@ -60,6 +60,53 @@ non-answer into a complete one. It is one case, one model, n=1 per cell — but 
 the surface ROADMAP 48 chose on separate evidence, which is worth noting rather than
 over-claiming.
 
+## CORRECTION (2026-09-12, same day): finding 3 was wrong, and the truth is better
+
+`run-decay.py` now retains artifacts instead of only their length (the instrument gap this
+run exposed). The K=0 anchor cell was re-run a **third** time — 0.00 again, `artifact_len`
+1,138 — and the response is now readable. **It is not a non-answer. It is a clarifying
+question**, quoted in full at the top:
+
+> *Before I build, one clarifying question that affects security scope:* **is rate limiting /
+> abuse control handled at a gateway in front of this service, or does it need to live in
+> this endpoint?** … *I'll build the full treatment either way (this is network-reachable,
+> touches money, and processes untrusted caller data) — I just need to know whether to
+> include an in-process rate limiter or document the gateway assumption.*
+
+It then **lists every other decision correctly** — TLS enforced with HSTS, HMAC-SHA256
+signature verification, idempotency keyed on the provider event ID, structured logging with
+no secrets or PII, tests — and stops, waiting for the answer.
+
+**That is the library working, not failing.** Operating principle 2 says stop and ask on
+security-relevant decisions; principle 9 says ask in one line when it is genuinely ambiguous;
+principle 5 says if a non-negotiable is handled elsewhere, *say so rather than silently
+omitting it*. A money-touching, network-reachable endpoint taking untrusted caller input is
+the exact case those rules describe. **The guidance made the model pause, correctly, and the
+rubric scored the pause as ten missing requirements.**
+
+The other two arms confirm it rather than contradicting it:
+
+| arm | what it did | recall |
+|---|---|---|
+| control (no guidance) | built immediately — nothing told it to pause | 0.40 |
+| **anchor** | **asked one question, stated every other decision** | **0.00** |
+| reminder | the reminder says *"review your code **before finishing**"*, which presupposes finishing — so it built and **documented the gateway assumption inline** | 0.90 |
+
+Both anchor and reminder are correct library behaviour. The rubric can only see one of them.
+
+### So the real findings are
+
+1. **No decay** — anchor@K12 = anchor@K30 = 0.80, unchanged.
+2. **The K=0 result is a measurement artefact, not a behaviour.** `run-decay.py` scores the
+   *presence of implementation* and cannot distinguish **"correctly paused to ask"** from
+   **"omitted the requirement"**. Any completeness-style rubric has this hole; this one was
+   caught only because a cell scored an implausible 0.00 three times and the artifact was
+   finally retained.
+3. **What was published here hours earlier — that guidance adjacent to a task suppresses the
+   task — was wrong**, and is retracted above rather than edited away. The hypothesis was
+   plausible, it was labelled unverified at the time, and it survived exactly as long as it
+   took to read the evidence the runner had been discarding.
+
 ## What this does not establish
 
 1. **n=1 per cell, one case, one model, one day.** The K=0 effect is reproduced; nothing

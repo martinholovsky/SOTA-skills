@@ -217,9 +217,19 @@ def main():
             verdict = _rc.judge(art, case["rubric"], a.judge_model, k)
             present = [r["id"] for r in case["rubric"] if verdict.get(r["id"]) == "present"]
             recall = len(present) / len(case["rubric"])
+            # Retain the artifact, not just its length (ROADMAP 49, 2026-09-12). The K=0
+            # anchor cell scored 0.00 twice with a ~1.2k response while its own K=12/K=30
+            # builds ran 17-23k. Whether that is a refusal, a conversational reply to the
+            # guidance, or a truncation could not be told apart, because this dict kept
+            # `artifact_len` and threw the text away — an instrument that records the
+            # symptom and discards the evidence. Bounded at 8k so a 25k build does not
+            # dominate the file; the short ones that need reading are kept whole.
+            CAP = 8000
             results[arm][d] = {"recall": recall, "present": present,
                                "missing": [r["id"] for r in case["rubric"] if r["id"] not in present],
-                               "artifact_len": len(art), "msgs": turns}
+                               "artifact_len": len(art), "msgs": turns,
+                               "artifact": art[:CAP],
+                               "artifact_truncated": len(art) > CAP}
             print(f"  {arm:9s} depth={d:>2d} recall={recall:.2f}  missing: {', '.join(results[arm][d]['missing']) or '-'}", flush=True)
             if a.out:
                 json.dump({"task": a.task, "depths": depths, "results": results}, open(a.out, "w"), indent=1)
