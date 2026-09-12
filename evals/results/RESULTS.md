@@ -112,8 +112,20 @@ v2.5.1, 16 real BOLA sites, live agents — and it returned the same answer on b
 dependent variables: recall **15/16 = 15/16**, precision **1.00 = 1.00** over 59 blinded
 findings with the adjudicator controlled at 4/4 (rows above). The audit arm is therefore
 **+0.00 across nine instruments and four designs**, and the strongest available form of
-the test is among them. **Do not build a tenth accuracy instrument** — recall and
-precision are both exhausted. Only a different *dependent variable* (time-to-find,
+the test is among them. ~~**Do not build a tenth accuracy instrument** — recall and
+precision are both exhausted.~~
+
+> **Superseded 2026-09-12 on its reasoning, and half of it was wrong.** A tenth instrument
+> *was* built — [COMMENT-TRIAGE](2026-09-12/COMMENT-TRIAGE.md), on the external, Apache-2.0
+> **AACR-Bench** — and building it was right. The **lift** conclusion survives intact: it
+> read a registered **null** too, which is now ten instruments agreeing. What does **not**
+> survive is the word *exhausted*. That rested on precision reading **1.00 in both arms**,
+> which was taken as "precision is perfect, there is no headroom". On an instrument that
+> discriminates, both arms sit **near chance** (0.517 / 0.542 against a constructed 0.500).
+> **1.00/1.00 did not mean perfect — it meant the instrument could not tell.** The correct
+> standing instruction is therefore the opposite of the struck sentence: *do not close an
+> axis on a saturating measure*; a both-arms-perfect reading is a warning about the
+> instrument, not a result about the system. Only a different *dependent variable* (time-to-find,
 report usability, reach for a non-expert) is untested. **Calibration was measured on
 2026-08-21** — unguided 2.67/4, with-library 4.00/4, the mover being *conditioning
 severity on evidence* (1/3 → 3/3), judge validated on both controls first

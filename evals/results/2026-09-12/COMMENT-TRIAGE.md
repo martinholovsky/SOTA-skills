@@ -76,8 +76,15 @@ that justifies the default does not obviously transfer.
 What it does establish is that the instruction has a **measurable price**, which the rule
 does not currently state: on a balanced set it trades ~0.18 of true-finding recall for
 ~0.23 of false-finding rejection. Whether that is a good trade depends on a base rate and a
-cost asymmetry that the rule leaves unstated. **Left as an open question rather than a rule
-change — one model, one day, 40 of 2,145 records is not enough to re-tune a rule on.**
+cost asymmetry that the rule leaves unstated.
+
+**CLOSED 2026-09-12 by operator decision — `rules/03` §4 stands unchanged.** The measured
+price is recorded here as a known property of the rule, not as a pending action. The
+evidence does not support re-tuning it: one model, one day, 40 of 2,145 records, and on a
+**different task** from the one §4 governs — §4 is about findings *you* produced, where an
+over-eager auditor wasting a team's time is the failure the default exists to prevent.
+**Do not reopen this from the number alone.** It would take a measurement on the actual
+task §4 governs, at a scale this one did not reach, to justify changing the instruction.
 
 ## What this cannot establish
 

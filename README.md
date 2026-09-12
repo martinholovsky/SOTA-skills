@@ -196,6 +196,14 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
 > already doesn't (`gpt-5.1`, unguided 1.00) there is nothing to close — we ran that
 > second model and report the **+0.00** too
 > ([2026-08-21](evals/results/2026-08-21/BUILD-SAFE.md)).
+>
+> **Qualified 2026-09-12, against ourselves.** "Recognises these classes unaided" was
+> measured on instruments that scored **1.00 in both arms** — which is what a measure looks
+> like when it cannot tell the arms apart. On an external one that can
+> ([AACR-Bench](evals/results/2026-09-12/COMMENT-TRIAGE.md)), judging whether a real review
+> comment is correct puts a frontier model **near chance** in both arms. The audit lift is
+> still +0.00, now across ten instruments; what is *not* supported is the stronger reading
+> that finding these things is easy.
 
 
 - **Controls that are inert** — a safeguard whose success and whose total failure look
