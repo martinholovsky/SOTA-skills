@@ -227,7 +227,7 @@ category = data.get("category", "other")                    # silently launders 
   hits it silently — the call returns a fragment, not an error. Where the
   provider reports usage, also assert `output_tokens < max_tokens`: a wrapper
   that drops `stop_reason` leaves that arithmetic as your only tell
-  (`sota-code-security/rules/10` §2.7, `rules/11` §2.2).
+  (`sota-code-security/rules/16` §2.7, `rules/11` §2.2).
 - **Schema design for models:** flat-ish, every field `description`-annotated,
   enums for closed sets, `additionalProperties: false`, no clever recursion.
   Include an escape hatch field (`"unsure": true` / `"other"` enum arm) so

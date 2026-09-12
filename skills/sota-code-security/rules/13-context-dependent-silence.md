@@ -170,7 +170,7 @@ if raw is _MISSING:
   `d[k]` and let it raise. Where a default is genuinely right, absence must be
   **distinguishable from the default value** — a sentinel, a counter, a log line. The
   write-side twin — a literal `[]` or `""` emitted because the upstream dict never
-  carried the value — is `rules/10` §2.3, the same finding one function earlier.
+  carried the value — is `rules/16` §2.3, the same finding one function earlier.
 - **Where the producer is a model, no static check closes the seam.** The prompt naming
   a field and the code reading that field can both be correct while the model answers
   with a synonym: no diff, no version bump, no producer test that fails. The sound
