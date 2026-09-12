@@ -1,0 +1,277 @@
+{
+ "_meta": {
+  "judge_model": "anthropic/claude-sonnet-5",
+  "samples": 3,
+  "temp": 0.0,
+  "cases": "evals/cases/routing-recall.jsonl",
+  "pairs": 17,
+  "excluded_single_skill": [
+   "single_go_error_control",
+   "single_ux_copy_control"
+  ],
+  "calibration": {
+   "positive": 1,
+   "negative": 0
+  }
+ },
+ "rate_judge_reported": 0.17647058823529413,
+ "pairs_with_conflict": 3,
+ "rows": [
+  {
+   "case": "mcp_server_audit",
+   "a": "sota-code-security",
+   "b": "sota-sandboxing",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "mcp_server_audit",
+   "a": "sota-code-security",
+   "b": "sota-threat-modeling",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "mcp_server_audit",
+   "a": "sota-sandboxing",
+   "b": "sota-threat-modeling",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "k8s_cluster_audit",
+   "a": "sota-kubernetes",
+   "b": "sota-network-security",
+   "per_sample": [
+    0,
+    0,
+    1
+   ],
+   "any": true,
+   "conflicts": [
+    {
+     "file_a": "skills/sota-kubernetes/SKILL.md",
+     "quote_a": "no default-deny NetworkPolicy (requirement-level; depth \u2192 network-security)",
+     "file_b": "skills/sota-network-security/SKILL.md",
+     "quote_b": "no egress control (free C2/exfil path); flat L2/L3 network with no segmentation",
+     "why": "For the same finding (absence of a default-deny NetworkPolicy, which means no egress control and no segmentation), skill A's severity table mandates rating it Medium while skill B's severity table mandates rating the same absence of egress control/segmentation as High, so the audit report cannot satisfy both severity prescriptions at once."
+    }
+   ]
+  },
+  {
+   "case": "k8s_cluster_audit",
+   "a": "sota-kubernetes",
+   "b": "sota-sandboxing",
+   "per_sample": [
+    1,
+    1,
+    2
+   ],
+   "any": true,
+   "conflicts": [
+    {
+     "file_a": "skills/sota-kubernetes/SKILL.md",
+     "quote_a": "```\nfile:line | rule | severity | effort | fix\n```",
+     "file_b": "skills/sota-sandboxing/SKILL.md",
+     "quote_b": "```\n[SEV] <one-line title>\nWhere: <file:line | resource | runtime evidence>\nThreat class: <untrusted code | untrusted input | multi-tenant | agent>\nGap: <which rule (file \u00a7rule) is violated and how>\nImpact: <what the attacker holds when this is exploited>\nFix: <concrete change \u2014 config snippet or pattern reference>\n```",
+     "why": "For findings that fall in the overlapping territory of pod/workload isolation within the cluster audit (e.g., 'what a compromised pod can reach', tenancy boundaries), Skill A mandates a single-line pipe-delimited finding format while Skill B mandates a multi-field labeled block format, so a single finding cannot simultaneously satisfy both required report structures."
+    },
+    {
+     "file_a": "skills/sota-kubernetes/SKILL.md",
+     "quote_a": "no default-deny NetworkPolicy (requirement-level; depth \u2192 network-security)",
+     "file_b": "skills/sota-sandboxing/SKILL.md",
+     "quote_b": "**High** \u2014 boundary below the floor for the threat class; a key layer missing or fail-open (no seccomp on untrusted code, root user + writable rootfs, flat network with no policies, shared sandbox across tenants).",
+     "why": "Rating the same finding (absence of default-deny NetworkPolicy / flat network isolation between workloads) as Medium per A's severity table and as High per B's severity table produces conflicting required outputs for the same audit finding."
+    },
+    {
+     "file_a": "skills/sota-kubernetes/SKILL.md",
+     "quote_a": "Violations are at minimum **High** in AUDIT mode and must never be introduced in BUILD mode",
+     "file_b": "skills/sota-sandboxing/SKILL.md",
+     "quote_b": "**Medium** \u2014 boundary correct but a defense-in-depth layer absent or weak (default seccomp where custom is warranted, missing pids/memory limits, broad RBAC, no runtime detection, missing `--` in argv).",
+     "why": "Rating the same wildcard/broad RBAC finding as at-minimum High per A's non-negotiable #3 while also rating it as Medium per B's severity table would require assigning two different, incompatible severities to the identical RBAC finding in the single audit report."
+    },
+    {
+     "file_a": "skills/sota-kubernetes/SKILL.md",
+     "quote_a": "**Medium** | Weakens defense in depth or detection | PSA not enforced (only `warn`/`audit`); `automountServiceAccountToken` defaulted on for non-API pods; no default-deny NetworkPolicy (requirement-level; depth \u2192 network-security); audit policy missing or `None`/Metadata-only for Secret access; aggregated ClusterRole accreting verbs; no PDB on critical workloads |",
+     "file_b": "skills/sota-sandboxing/SKILL.md",
+     "quote_b": "**High** \u2014 boundary below the floor for the threat class; a key layer missing or fail-open (no seccomp on untrusted code, root user + writable rootfs, flat network with no policies, shared sandbox across tenants).",
+     "why": "Classifying a flat network with no NetworkPolicy as Medium severity per A's table while B's convention requires the same finding (flat network with no policies, i.e. boundary below floor for multi-tenant isolation) be rated High creates two mandated severities for one finding in the same report."
+    }
+   ]
+  },
+  {
+   "case": "k8s_cluster_audit",
+   "a": "sota-network-security",
+   "b": "sota-sandboxing",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "next_security_review",
+   "a": "sota-frontend-design",
+   "b": "sota-javascript-typescript",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "next_security_review",
+   "a": "sota-frontend-design",
+   "b": "sota-performance",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "next_security_review",
+   "a": "sota-frontend-design",
+   "b": "sota-web-frameworks",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "next_security_review",
+   "a": "sota-javascript-typescript",
+   "b": "sota-performance",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "next_security_review",
+   "a": "sota-javascript-typescript",
+   "b": "sota-web-frameworks",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "next_security_review",
+   "a": "sota-performance",
+   "b": "sota-web-frameworks",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "untrusted_feed_ingest",
+   "a": "sota-code-security",
+   "b": "sota-sandboxing",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "evidence_shell_script",
+   "a": "sota-code-security",
+   "b": "sota-shell-scripting",
+   "per_sample": [
+    0,
+    0,
+    2
+   ],
+   "any": true,
+   "conflicts": [
+    {
+     "file_a": "skills/sota-code-security/SKILL.md",
+     "quote_a": "Assert on real loaded artifacts (not `exists()`), fail closed *and* loudly, never truncate what you are about to inspect or parse, and make degradation a distinct, metered state.",
+     "file_b": "skills/sota-shell-scripting/SKILL.md",
+     "quote_b": "Make it idempotent and interrupt-safe**: `mktemp` + `trap` cleanup, atomic writes via `mv`, check-before-create, `flock` if concurrent runs are possible.",
+     "why": "For the ledger-write/verify logic in deploy-attest.sh, B prescribes a plain existence check (check-before-create) as the correct idempotency/interrupt-safety control, while A classifies exactly this kind of existence check as a 'weak existence check' / no-op verification that must instead assert on the real loaded artifact content \u2014 you cannot use `exists()`-style gating to satisfy B while also treating it as insufficient per A for the same check."
+    },
+    {
+     "file_a": "skills/sota-code-security/SKILL.md",
+     "quote_a": "CWE: CWE-<id> (<name>)         (omit only if genuinely unmapped)",
+     "file_b": "skills/sota-shell-scripting/SKILL.md",
+     "quote_b": "Effort: trivial | small | medium | large",
+     "why": "A finding on deploy-attest.sh that is simultaneously a security defect (e.g. a no-op signature check) and a shell defect must be written up in A's mandated CWE/Source-Sink/Exploit-scenario template and, per B, in the Evidence/Impact/Effort template with a different severity table, and a single finding write-up cannot conform to both prescribed, incompatible formats at once."
+    }
+   ]
+  },
+  {
+   "case": "crypto_key_rotation",
+   "a": "sota-code-security",
+   "b": "sota-secrets-management",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "agent_subagent_delegation",
+   "a": "sota-llm-engineering",
+   "b": "sota-sandboxing",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "browser_verification",
+   "a": "sota-frontend-design",
+   "b": "sota-testing",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  }
+ ]
+}

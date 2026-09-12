@@ -20,3 +20,13 @@ calibration (the judge is a control — watch it separate before trusting it):
   next_security_review       sota-javascript-typescript sota-web-frameworks      per-sample=[0, 0, 0]
   next_security_review       sota-performance         sota-web-frameworks      per-sample=[0, 0, 0]
   untrusted_feed_ingest      sota-code-security       sota-sandboxing          per-sample=[0, 0, 0]
+  evidence_shell_script      sota-code-security       sota-shell-scripting     per-sample=[0, 0, 2]  <-- CONFLICT REPORTED
+  crypto_key_rotation        sota-code-security       sota-secrets-management  per-sample=[0, 0, 0]
+  agent_subagent_delegation  sota-llm-engineering     sota-sandboxing          per-sample=[0, 0, 0]
+  browser_verification       sota-frontend-design     sota-testing             per-sample=[0, 0, 0]
+
+CONFLICT RATE (judge-reported, ANY sample) = 3/17 = 0.176   over 17 pairs, 3 samples each
+This is a CEILING: the judge saw every rules file of both skills, while a real
+session loads lean. It is also UNVERIFIED — every reported conflict must be
+read against the two files by hand before it counts (router principle 7).
+saved evals/results/2026-09-12/conflict-rate-lean.json
