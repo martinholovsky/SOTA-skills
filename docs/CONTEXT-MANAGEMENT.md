@@ -264,10 +264,27 @@ and the other ~40 KB is dead weight until it fires. Three things went wrong:
 
 So treat activation as **defense 0**: the cheapest thing in this document is
 making sure the description matches the situation, because everything else is
-conditional on it. It is also the least measurable — the repo's one adjacent
-instrument, the `desc-routing` eval, reads **+0.00 (saturated)** and cannot
-distinguish two descriptions. Changes here are reasoned, not measured, and are
-labelled that way in the CHANGELOG.
+conditional on it.
+
+**Superseded 2026-09-12 — activation is now measurable, and this paragraph used to
+say it was not.** The claim above was that the repo's one adjacent instrument, the
+`desc-routing` eval, reads +0.00 (saturated) and cannot distinguish two
+descriptions, so changes here are reasoned rather than measured. The first half is
+still true of *that* set; the conclusion is not. Two instruments do distinguish
+descriptions:
+
+- **`cases/desc-routing-regressions.jsonl`** — selected by outcome on purpose, which
+  is why it discriminates where the 10-case set saturates. The `sota-devsecops`
+  edit moved it **0.667 → 1.000**.
+- **`run-routing-shift.py`** — its fresh arm moved **0.750 → 1.000** on the same edit.
+
+And the effect is not small or slow: a **single token** moved an unrelated case 3/3
+to the wrong skill. An intermediate phrasing of that same edit carried a second
+occurrence of the word *"gate"*, which pulled an attestation-script question away
+from `sota-code-security` in **both** arms; deleting two words restored it. So a
+description edit is a change to the whole classifier and is measured like one —
+invariant 29 requires a declared routing check on any release that changes one.
+See [ROUTING-FIX-DEVSECOPS](../evals/results/2026-09-12/ROUTING-FIX-DEVSECOPS.md).
 
 ## A platform behaviour the six defenses do not cover (recorded 2026-08-02)
 

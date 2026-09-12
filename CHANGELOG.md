@@ -5,9 +5,43 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.40.7] - 2026-09-12
+
+**Front door checked:** ROUTING-SHIFT · ROUTING-FIX-DEVSECOPS · re-route
 
 **Routing checked:** evals/results/2026-09-12/ROUTING-FIX-DEVSECOPS.md
+
+**The roadmap is worked out.** One routing defect fixed and measured, the backlog closed to
+an empty actionable set, and a documentation sweep that retired a claim this library was
+making about itself. No new skill, script, command or hook — a patch.
+
+### Documentation sweep — one claim retired, one count wrong a seventh time
+
+**`docs/CONTEXT-MANAGEMENT.md` said activation was the least measurable thing in the
+document, and that is no longer true.** It claimed the `desc-routing` eval reads +0.00
+(saturated) and cannot distinguish two descriptions, so activation changes are "reasoned,
+not measured". The first half still holds for that 10-case set; the conclusion does not.
+The regression set moved **0.667 → 1.000** on this release's description edit and the
+ROUTING-SHIFT fresh arm moved **0.750 → 1.000**. Superseded in place rather than edited
+away, per the repo's rule for dated prose.
+
+**`AGENTS.md` said the router was at 410/500 lines; it is at 420** — wrong a **seventh**
+time, in the very file that warns it has been wrong six times and says to re-count with
+`grep -c ''`. The lesson is holding up badly: a number that must be re-measured by hand
+after every edit is not a convention, it is a pending defect.
+
+Also indexed: **ROUTING-SHIFT** and **ROUTING-FIX-DEVSECOPS** now reach `docs/INDEX.md`
+and the `evals/results/RESULTS.md` scoreboard, where previously they existed only as a
+roadmap row — the same "measured but unreachable" shape the index exists to prevent. The
+INDEX row for the **re-route** hook clause now carries the measured number instead of only
+describing the mechanism.
+
+**A gate hole found by the harness, recorded not fixed.** Invariant 11's escape hatch is a
+bare substring match over added CHANGELOG lines, so prose that merely *mentions* the
+verification stamp excuses a stamp move for the whole diff — which this release's own
+changelog did, and `check-negative-controls.sh` caught within a minute by reporting probe 11
+**INERT**. The looseness and the argument against each available fix are written up in
+[docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md).
 
 ### Roadmap: item 1 closed permanently, item 5 made dormant — the actionable set is empty
 
@@ -8059,6 +8093,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.40.7]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.7
 [1.40.6]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.6
 [1.40.5]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.5
 [1.40.4]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.4
