@@ -95,7 +95,8 @@ not ready to ship:
 1. **Title** — concise statement of what is wrong.
 2. **Severity** + one-line justification (impact × likelihood, per §1).
 3. **Location** — `file:line` at the pinned commit (or manifest key, route,
-   workflow step). Exact, clickable, reproducible.
+   workflow step). Exact, clickable, reproducible — and *verified* to resolve
+   there before shipping, which is a mechanical pass of its own (`rules/01` §4b).
 4. **Evidence** — the minimal code/config snippet or triaged tool output
    that proves the issue. Minimal: enough to verify, no page-long dumps.
 5. **Standard mapping** — CWE id; OWASP Top 10 / API Top 10 / ASVS item;
