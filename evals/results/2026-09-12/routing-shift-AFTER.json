@@ -1,0 +1,100 @@
+{
+ "model": "anthropic/claude-sonnet-4.6",
+ "samples": 3,
+ "temp": 0.7,
+ "cases": {
+  "s1_docs_to_shell": {
+   "task": "I need to verify a claim before I write it down: I ran `grep -r \"retry_backoff\" ~/.config/service/` across a tree of symlinked config directories and got no matches, so I'm going to document that the setting is unused. Check my reasoning before I commit that sentence.",
+   "expect": "sota-shell-scripting",
+   "arms": {
+    "fresh": {
+     "picks": [
+      "sota-shell-scripting",
+      "sota-shell-scripting",
+      "sota-shell-scripting"
+     ],
+     "correct": 1.0
+    },
+    "shifted": {
+     "picks": [
+      "sota-shell-scripting",
+      "sota-shell-scripting",
+      "sota-shell-scripting"
+     ],
+     "correct": 1.0
+    }
+   }
+  },
+  "s2_docs_to_testsuite": {
+   "task": "Our CI just went green but I do not trust it. The suite reports '0 failed' and finished in 4 seconds when it normally takes six minutes. Work out what that means before I merge.",
+   "expect": "sota-testing",
+   "arms": {
+    "fresh": {
+     "picks": [
+      "sota-testing",
+      "sota-testing",
+      "sota-testing"
+     ],
+     "correct": 1.0
+    },
+    "shifted": {
+     "picks": [
+      "sota-testing",
+      "sota-testing",
+      "sota-testing"
+     ],
+     "correct": 1.0
+    }
+   }
+  },
+  "s3_shell_to_gates": {
+   "task": "The pre-commit hook passes locally but the same check fails in CI on the identical commit. I want to know which one is telling the truth before I change any code.",
+   "expect": "sota-devsecops",
+   "arms": {
+    "fresh": {
+     "picks": [
+      "sota-devsecops",
+      "sota-devsecops",
+      "sota-devsecops"
+     ],
+     "correct": 1.0
+    },
+    "shifted": {
+     "picks": [
+      "sota-devsecops",
+      "sota-devsecops",
+      "sota-devsecops"
+     ],
+     "correct": 1.0
+    }
+   }
+  },
+  "s4_build_to_evidence": {
+   "task": "Separate question about our release tooling: our attestation script writes a signed record after every gate run, and its self-test has been green since it was written. I want to know whether that self-test actually proves anything.",
+   "expect": "sota-code-security",
+   "arms": {
+    "fresh": {
+     "picks": [
+      "sota-devsecops",
+      "sota-devsecops",
+      "sota-devsecops"
+     ],
+     "correct": 0.0
+    },
+    "shifted": {
+     "picks": [
+      "sota-devsecops",
+      "sota-devsecops",
+      "sota-devsecops"
+     ],
+     "correct": 0.0
+    }
+   }
+  }
+ },
+ "summary": {
+  "fresh": 0.75,
+  "shifted": 0.75,
+  "routing_shift": 0.0
+ }
+}

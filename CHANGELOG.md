@@ -5,6 +5,30 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+**Routing checked:** evals/results/2026-09-12/ROUTING-FIX-DEVSECOPS.md
+
+### `sota-devsecops` description — the trigger defect item 48 found, fixed
+
+Item 48's measurement found that *"the pre-commit hook passes locally but the same check fails
+in CI"* routed to `sota-shell-scripting` **3/3 from a cold start** and never reached
+`sota-devsecops`, whose `rules/09` §5 owns exactly that topic. The description now names the
+case (*"and a pre-commit hook that passes locally but fails in CI"*) and carries the keywords
+*pre-commit, local vs CI* — 915 → 995 of 1024 characters.
+
+Measured on three instruments: the regression set **0.667 → 1.000**, the 10-case set
+**0.900 → 0.900** with `q8_bash_review` still `sota-shell-scripting` 3/3, and
+`run-routing-shift.py`'s fresh arm **0.750 → 1.000**.
+
+**The routing check caught a regression on the way.** The first phrasing read *"a pre-commit
+hook **or gate**"*, which fixed the target case and **broke** a `sota-code-security` case whose
+prompt contains *"after every gate run"* — it moved to `sota-devsecops` 3/3 in **both** arms.
+Deleting two words restored it. **One token moved a case 3/3**, and **neither `desc-routing`
+set saw it**: that case lives only in `routing-shift.jsonl`, so a check limited to the set
+invariant 29 names would have shipped it — the v1.35.0 pattern precisely. Run every routing
+instrument you have, not only the declared one.
+
 ## [1.40.6] - 2026-09-12
 
 **Front door checked:** sixteen shapes · no build at all · rules/16
