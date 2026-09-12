@@ -102,6 +102,25 @@
     ],
     "artifact_len": 16905,
     "msgs": 27
+   },
+   "30": {
+    "recall": 0.8,
+    "present": [
+     "sigverify",
+     "constanttime",
+     "validation",
+     "ratelimit",
+     "logging",
+     "errhygiene",
+     "transport",
+     "tests"
+    ],
+    "missing": [
+     "idempotency",
+     "sizelimit"
+    ],
+    "artifact_len": 22599,
+    "msgs": 63
    }
   }
  }
