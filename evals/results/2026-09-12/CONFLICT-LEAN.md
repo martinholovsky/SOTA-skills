@@ -9,11 +9,14 @@ committed before any call · artifact `conflict-rate-lean.json`, log `conflict-l
 
 | arm | corpus | judge-reported | **hand-verified** |
 |---|---|---|---|
-| full (2026-09-09, **pre-fix**) | 1,496,659 chars | 0.353 | **0.176** |
-| **lean (2026-09-12, post-fix)** | **147,116 chars (9.8%)** | **0.176** | **0.000** |
+| full — **same tree, same day** | 1,546,535 chars | **0.471** (8/17) | not computed (see below) |
+| **lean — same tree, same day** | **147,116 (9.5%)** | **0.176** (3/17) | **0.000** |
+| *full, 2026-09-09, pre-fix (historical)* | *1,496,659* | *0.353* | *0.176* |
 
-**Judge-reported halved; verified went to zero.** Not one of the six conflicts reported
-across three pairs survives reading the quotes against the files.
+**The attributable result is the first two rows: loading lean cuts the judge-reported
+conflict rate by 63% (0.471 → 0.176), and not one of the three lean-reported pairs survives
+hand-verification.** Both arms ran on the same tree on the same day, which is exactly what
+the registration required and why the comparison holds.
 
 The pre-registered prediction — *"the lean floor is near zero"* — is **confirmed on the
 verified number**. Registered threshold for being wrong was ≥ 0.10.
@@ -54,8 +57,17 @@ that the next conflict measurement needed.
 
 1. **It is a floor, not the lived rate.** A real lean session opens *some* rules files; this
    opened none. The lived rate sits between 0.000 and the ceiling.
-2. **The two arms differ on two axes**, which is why the registration required both on the
-   same tree: lean-vs-full **and** pre-fix-vs-post-fix (the 0.353/0.176 ceiling predates
-   v1.40.2's repair of the three conflicts it found). **The full arm is running now**; until
-   it lands, the halving of the judge-reported rate cannot be attributed to leanness alone.
+2. **The full arm is NOT a clean before/after against 2026-09-09**, and must not be read as
+   one. Its judge-reported rate went **up**, 0.353 → 0.471, despite three conflicts having
+   been repaired — because the corpus also **grew**, 1,496,659 → 1,546,535 characters, and
+   part of that growth is rules added to these very skills *the same day* (`rules/15` §3a,
+   `rules/06` §2a/§2b, `rules/09` §4). More surface gives a judge more apparent
+   contradictions to report. Repairs (−), new content (+) and judge noise are confounded in
+   that pair of numbers, and no attribution is offered. **The same-tree lean-vs-full
+   comparison is unaffected by all three**, which is the whole reason the registration
+   demanded it.
+3. **The full arm's verified rate was not computed.** Eight flagged pairs would each need
+   their quotes read against both files; that is real work and is not done, so it is left
+   blank rather than estimated. For scale only, and explicitly **not a measurement**: at the
+   2026-09-09 ceiling the verified rate was half the judge-reported one.
 3. **17 pairs, one model, one day**, and the judge is blind to the router by design.

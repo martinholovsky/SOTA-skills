@@ -1,0 +1,302 @@
+{
+ "_meta": {
+  "judge_model": "anthropic/claude-sonnet-5",
+  "samples": 3,
+  "temp": 0.0,
+  "cases": "evals/cases/routing-recall.jsonl",
+  "pairs": 17,
+  "excluded_single_skill": [
+   "single_go_error_control",
+   "single_ux_copy_control"
+  ],
+  "calibration": {
+   "positive": 1,
+   "negative": 0
+  }
+ },
+ "rate_judge_reported": 0.4117647058823529,
+ "pairs_with_conflict": 7,
+ "rows": [
+  {
+   "case": "mcp_server_audit",
+   "a": "sota-code-security",
+   "b": "sota-sandboxing",
+   "per_sample": [
+    0,
+    2,
+    0
+   ],
+   "any": true,
+   "conflicts": [
+    {
+     "file_a": "skills/sota-code-security/rules/08-llm-ai-security.md",
+     "quote_a": "Run tools with the user's identity and scopes, not a god-mode service account: pass the user's token/context through; an agent serving user A must be physically unable to read user B's data (tenant scoping at the data layer, rules/03 \u00a75).",
+     "file_b": "skills/sota-sandboxing/rules/05-ai-agent-sandboxing.md",
+     "quote_b": "Per-agent, per-task least privilege: each agent gets its own identity (service account / token) scoped to the task's resources, short-lived (minutes/hours), read-only by default.",
+     "why": "Auditing the tool-execution identity requires checking that the MCP server forwards the calling user's own token (per A) at the same point where B requires the agent to authenticate with its own separate service-account/token rather than the user's, so the same call site cannot satisfy both prescriptions as general defaults."
+    },
+    {
+     "file_a": "skills/sota-code-security/rules/07-data-exposure.md",
+     "quote_a": "Never log: passwords (including failed attempts \u2014 typo'd passwords are near-passwords), session IDs, JWTs/API keys/refresh tokens, full card numbers/CVV, private keys, OTPs, password-reset links, Authorization/Cookie headers, full request bodies of auth endpoints.",
+     "file_b": "skills/sota-sandboxing/rules/05-ai-agent-sandboxing.md",
+     "quote_b": "Log every action attribution-grade: tool name, full arguments, decision (allowed/denied/approved-by), sandbox ID, session/user, result hash \u2014 to an append-only store outside the sandbox.",
+     "why": "Following B's mandate to record the full, unredacted arguments of every tool invocation would necessarily capture any credential/token/secret passed as a tool argument, directly violating A's blanket 'never log' list for those same value types."
+    }
+   ]
+  },
+  {
+   "case": "mcp_server_audit",
+   "a": "sota-code-security",
+   "b": "sota-threat-modeling",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "mcp_server_audit",
+   "a": "sota-sandboxing",
+   "b": "sota-threat-modeling",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "k8s_cluster_audit",
+   "a": "sota-kubernetes",
+   "b": "sota-network-security",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "k8s_cluster_audit",
+   "a": "sota-kubernetes",
+   "b": "sota-sandboxing",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "k8s_cluster_audit",
+   "a": "sota-network-security",
+   "b": "sota-sandboxing",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "next_security_review",
+   "a": "sota-frontend-design",
+   "b": "sota-javascript-typescript",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "next_security_review",
+   "a": "sota-frontend-design",
+   "b": "sota-performance",
+   "per_sample": [
+    0,
+    1,
+    0
+   ],
+   "any": true,
+   "conflicts": [
+    {
+     "file_a": "skills/sota-frontend-design/rules/01-typography-and-color.md",
+     "quote_a": "Persist explicit choice; apply before first paint (inline script or server hint) to avoid theme flash.",
+     "file_b": "skills/sota-performance/rules/06-frontend-web.md",
+     "quote_b": "`<script defer/type=module>` \u2014 no sync scripts in `<head>`; third-party tags async or via a tag manager loaded post-LCP, or `web worker`-ized (Partytown) when feasible.",
+     "why": "Preventing theme-flash by running an inline script before first paint requires a blocking/sync script tag in <head>, which the performance rule's blanket 'no sync scripts in head' prohibits without carving out an exception for theme-init scripts."
+    }
+   ]
+  },
+  {
+   "case": "next_security_review",
+   "a": "sota-frontend-design",
+   "b": "sota-web-frameworks",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "next_security_review",
+   "a": "sota-javascript-typescript",
+   "b": "sota-performance",
+   "per_sample": [
+    1,
+    0,
+    0
+   ],
+   "any": true,
+   "conflicts": [
+    {
+     "file_a": "skills/sota-javascript-typescript/SKILL.md",
+     "quote_a": "**MEDIUM** \u2014 weakened posture or latent defect: missing strict tsconfig flags, no graceful shutdown, missing CSP/timeouts, `||` vs `??` on falsy-valid values, index keys on mutable lists, unbounded caches, missing supply-chain controls.",
+     "file_b": "skills/sota-performance/rules/03-memory.md",
+     "quote_b": "Grep for caches/maps/registries with insertion but no eviction, TTL, or removal path \u2192 leak by construction (High if keyed by user/request data).",
+     "why": "Rating an unbounded in-process cache (e.g. a module-level Map memoizing Server Action results) as MEDIUM per skill A's severity convention would violate skill B's explicit requirement to rate the same pattern HIGH (or Critical per its SKILL.md table) when auditing the same code."
+    }
+   ]
+  },
+  {
+   "case": "next_security_review",
+   "a": "sota-javascript-typescript",
+   "b": "sota-web-frameworks",
+   "per_sample": [
+    2,
+    0,
+    0
+   ],
+   "any": true,
+   "conflicts": [
+    {
+     "file_a": "skills/sota-javascript-typescript/rules/05-security.md",
+     "quote_a": "Unsanitized user/db content = CRITICAL (stored XSS).",
+     "file_b": "skills/sota-web-frameworks/rules/02-react.md",
+     "quote_b": "// BAD \u2014 HIGH: stored/reflected XSS",
+     "why": "Both skills grade the identical finding (unsanitized user/DB content passed to dangerouslySetInnerHTML/v-html) but mandate different severity labels (CRITICAL vs HIGH), so a single audit report cannot satisfy both severity prescriptions for the same finding."
+    },
+    {
+     "file_a": "skills/sota-javascript-typescript/SKILL.md",
+     "quote_a": "**Finding format:**\n```\n[SEVERITY] Title (CWE-xxx if security)\nFile: path/to/file.ts:42\nIssue: what is wrong, in one or two sentences\nEvidence: the offending snippet\nImpact: what an attacker/user/operator experiences\nFix: concrete change (code if short)\n```",
+     "file_b": "skills/sota-web-frameworks/SKILL.md",
+     "quote_b": "### Finding format\n\n```\nfile:line | rule violated (rules/NN \u00a7S) | severity | effort | fix\n```",
+     "why": "Both skills prescribe a mandatory, mutually incompatible report format (multi-line block with Issue/Evidence/Impact/Fix vs single-line pipe-delimited row) for writing up the same security-review findings on this task."
+    }
+   ]
+  },
+  {
+   "case": "next_security_review",
+   "a": "sota-performance",
+   "b": "sota-web-frameworks",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "untrusted_feed_ingest",
+   "a": "sota-code-security",
+   "b": "sota-sandboxing",
+   "per_sample": [
+    0,
+    0,
+    1
+   ],
+   "any": true,
+   "conflicts": [
+    {
+     "file_a": "skills/sota-code-security/rules/09-untrusted-data-ingestion.md",
+     "quote_a": "with z.open(info) as src, open(dest, \"wb\") as out:",
+     "file_b": "skills/sota-sandboxing/rules/04-process-app-sandboxing.md",
+     "quote_b": "strict seccomp allowlist (compute-only: read/write/mmap/brk/futex/exit; no openat, no socket, no exec)",
+     "why": "Code-security's mandated archive-extraction pattern requires the sandboxed worker to open a new destination file per zip entry (openat) while writing extracted bytes to disk, but sandboxing's mandated worker pattern for parsing exactly this class of untrusted-format data forbids openat entirely and requires the worker to write only through a single pre-opened output FD, so a worker cannot comply with both prescriptions at once."
+    }
+   ]
+  },
+  {
+   "case": "evidence_shell_script",
+   "a": "sota-code-security",
+   "b": "sota-shell-scripting",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "crypto_key_rotation",
+   "a": "sota-code-security",
+   "b": "sota-secrets-management",
+   "per_sample": [
+    1,
+    0,
+    0
+   ],
+   "any": true,
+   "conflicts": [
+    {
+     "file_a": "skills/sota-code-security/rules/04-cryptography.md",
+     "quote_a": "never escrow signing or authentication keys \u2014 a second copy destroys non-repudiation.",
+     "file_b": "skills/sota-secrets-management/rules/02-storage-backends.md",
+     "quote_b": "take encrypted Raft/storage snapshots on a schedule, ship them off-box, and DR-restore-drill them \u2014 an unrecoverable secrets store is a total outage and the place every dynamic credential dies",
+     "why": "Storing the rotating API-token signing key in Vault (as secrets-management prescribes) while also taking scheduled off-box encrypted snapshots of that Vault storage necessarily creates an escrowed second copy of the signing key, which sota-code-security explicitly forbids for signing/authentication keys."
+    }
+   ]
+  },
+  {
+   "case": "agent_subagent_delegation",
+   "a": "sota-llm-engineering",
+   "b": "sota-sandboxing",
+   "per_sample": [
+    0,
+    0,
+    0
+   ],
+   "any": false,
+   "conflicts": []
+  },
+  {
+   "case": "browser_verification",
+   "a": "sota-frontend-design",
+   "b": "sota-testing",
+   "per_sample": [
+    1,
+    0,
+    1
+   ],
+   "any": true,
+   "conflicts": [
+    {
+     "file_a": "skills/sota-frontend-design/rules/03-design-systems-components.md",
+     "quote_a": "Stories are test fixtures: run axe (a11y addon) and visual regression (Chromatic/Playwright screenshots) against them in CI. A state without a story is a state without a test.",
+     "file_b": "skills/sota-testing/rules/05-e2e-and-ui.md",
+     "quote_b": "Cap the count. A thousand screenshot tests with a 2% false-positive rate is 20 human reviews per run; teams go blind and click approve. A handful of layout-critical pages/components, or a managed diff service with good triage, or don't.",
+     "why": "Skill A mandates a visual-regression screenshot test in CI for every one of the 9 states of every component (plus kitchen-sink/RTL/dark/reduced-motion variants), which produces exactly the large, unreviewable screenshot-test volume that Skill B says must be capped to a handful or avoided because it causes reviewers to rubber-stamp diffs blindly."
+    },
+    {
+     "file_a": "skills/sota-frontend-design/SKILL.md",
+     "quote_a": "Runtime verification where possible (Playwright/browser): keyboard-only task completion, 320px reflow, 200% zoom, both themes, reduced-motion emulation, axe scan.",
+     "file_b": "skills/sota-testing/rules/05-e2e-and-ui.md",
+     "quote_b": "Edge cases live below. E2E does one happy path + at most the one or two failure paths users actually hit (declined card, wrong password). Validation matrices, permission combinations, boundary values: API/integration layer.",
+     "why": "Following A's instruction to run Playwright browser checks for reflow, zoom, theme, and reduced-motion variants on the checkout flow would add multiple non-critical-path browser test scenarios, which B prohibits by requiring e2e to stay to one happy path plus at most two failure paths with edge/variant coverage pushed to lower layers."
+    }
+   ]
+  }
+ ]
+}

@@ -5,6 +5,77 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.40.5] - 2026-09-12
+
+**Front door checked:** lean loading · conflict rate · re-route
+
+
+**Three open roadmap items moved, two closed, and one correction to a cause this project
+had already warned itself about.** All inside existing surfaces — a patch.
+
+### ROADMAP 47 — closed. The conflict rate at **lean loading** is 0.000 verified
+
+ROADMAP 39 measured a ceiling by giving the judge every `rules/*.md` of both skills. This
+measures the floor — `SKILL.md` only, what BUILD step 2 opens before any rules file — with
+**both arms on the same tree on the same day**, which is the design's whole point.
+
+| arm | corpus | judge-reported | hand-verified |
+|---|---|---|---|
+| full | 1,546,535 chars | 0.471 | not computed |
+| **lean** | **147,116 (9.5%)** | **0.176** | **0.000** |
+
+**Loading lean cuts the judge-reported conflict rate 63%**, and all six lean-reported
+conflicts refute on reading the quotes against the files — five of them in the two classes
+the judge cannot resolve because it is blind to the router by design.
+
+Both decisions the item was parked on were settled with reasons rather than deferred again:
+lean means `SKILL.md` only, because choosing index-matched rules files is the *measurer's*
+judgement and the measurer holds the hypothesis; and the judge stays blind to the router,
+because "does the resolution work?" is a different question.
+
+*Not established, and said so:* the lived rate (it sits between the arms), and the full
+arm's verified rate, which needs eight pairs hand-read and is left blank rather than
+estimated. The full arm is also **not** a before/after against 0.353 — the corpus grew 50k
+characters in between, partly from rules added the same day.
+
+### ROADMAP 48 — the re-route clause shipped
+
+Its trigger fired: a third and fourth observation, both in one pair of field reports. The
+fix went into the **re-injection hook**, the only surface that fires *after* a session has
+changed shape — *"Routing is per task SHAPE, not per session"*. Verified against a live
+install that an existing hook is detected stale by exact text, so `update.sh` offers the new
+wording. The item stays open for its measurement half.
+
+### ROADMAP 49 — the blocker was the wrong one
+
+Measured: anchor 83,958 chars against 12,997 of filler, 0.15:1. Diluting by authoring needs
+~580 filler pairs — a dead end, and why the item sat since July. The item's own alternative,
+a deliberately smaller anchor, was never priced: a lean anchor flips the ratio to ~3:1 using
+existing filler, for one flag, and measures the more honest question. First move revised.
+
+### ROADMAP 53 — closed: keep the trigger-keyword tails
+
+The measured null is deliberately not the reason. Cutting doesn't fix what it was proposed
+to fix (8 of 42 descriptions kept at the default, 12 without, 42 with the setting); the null
+is loose (~0.26 per-case bound) against a change to all 40 descriptions; and 59% of the
+tails' terms appear nowhere else.
+
+### Fixed
+
+- **A cause corrected.** The `HTTP 402` that stopped a run was written up as exhausted
+  credit; the balance was fine and it was a provider fault (`/api/v1/key` → 200, `limit:
+  null`). `evals/DESIGN-real-repo-audit.md` already carried the warning — *"a reader would
+  have concluded 'out of credit' and topped up an account that was never the problem"* — and
+  the write-up did exactly that. The separate 2026-09-09 incident is flagged as **not**
+  re-verified rather than silently amended.
+
+### Added
+
+`--lean` on `run-conflict-rate.py` (the v3 its own docstring promised), documented in
+`evals/README.md` after invariant 25 rejected the first commit for leaving it undocumented.
+
+Open set **5** — 1, 5, 48, 49, 55.
+
 ## [1.40.4] - 2026-09-12
 
 **Front door checked:** implausible · BASH_SOURCE · correctly refuses · passing hook
@@ -7873,6 +7944,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.40.5]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.5
 [1.40.4]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.4
 [1.40.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.3
 [1.40.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.2
