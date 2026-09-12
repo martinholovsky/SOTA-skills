@@ -193,6 +193,22 @@ audit STRAT-HIGH-2).
 - `cases/desc-routing.jsonl` (10) — an adversarially-confusable task → the correct
   skill (`expect`) and the tempting wrong sibling (`distractor`). Scored by
   `run-desc-routing.py` as an A/B on the description cross-refs (result: +0.00).
+- **`run-routing-shift.py`** — ROADMAP 48. Does a session that has settled into one task
+  shape still route correctly when the work **changes** shape? Two arms over the same
+  shape-B prompt and the same catalogue: **fresh** (the prompt alone — what
+  `run-desc-routing.py` already measures, and the ceiling) and **shifted** (the same prompt
+  preceded by real turns of shape-A work). The only difference is the conversation in front
+  of the question, so a gap is attributable to it. **ROUTING-SHIFT = fresh − shifted**,
+  objective name-match scoring, no judge. Cases in `cases/routing-shift.jsonl` are derived
+  one-to-one from **four real observed mis-routes** recorded in ROADMAP 48, not invented.
+  **Two things it does not do, both stated in the runner itself:** an eval has no Skill tool,
+  so it measures which skill the model *says* applies — a proxy, the same one
+  `run-desc-routing` publishes on; and the fresh arm already scores ~0.90 elsewhere, so the
+  detectable range is narrow and **the fresh arm must be read before the delta** or a
+  ceiling artefact will read as a null. It asserts its own arms differ before spending, and
+  reuses `run-desc-routing`'s catalogue and scorer by import rather than by copy — two
+  implementations of "what the catalogue looks like" is how two evals silently stop being
+  comparable.
 - **`smoke-runners.py`** — proves every runner can still **start**. `urllib.request.urlopen`
   is patched to raise, each `main()` runs under an alarm, and "reached the network" is the
   success signal; any other exception is a dead runner and fails the script. It exists

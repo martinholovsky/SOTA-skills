@@ -1,0 +1,20 @@
+model=anthropic/claude-sonnet-4.6  cases=4  samples=3  temp=0.7  catalogue=41 skills
+  ablation: the shifted arm carries 4 extra message(s) of prior work
+
+  s1_docs_to_shell       fresh    correct=1.00  picks=['sota-shell-scripting', 'sota-shell-scripting', 'sota-shell-scripting']
+  s1_docs_to_shell       shifted  correct=1.00  picks=['sota-shell-scripting', 'sota-shell-scripting', 'sota-shell-scripting']
+  s2_docs_to_testsuite   fresh    correct=1.00  picks=['sota-testing', 'sota-testing', 'sota-testing']
+  s2_docs_to_testsuite   shifted  correct=1.00  picks=['sota-testing', 'sota-testing', 'sota-testing']
+  s3_shell_to_gates      fresh    correct=0.00  picks=['sota-shell-scripting', 'sota-shell-scripting', 'sota-shell-scripting']
+  s3_shell_to_gates      shifted  correct=0.00  picks=['sota-shell-scripting', 'sota-shell-scripting', 'sota-shell-scripting']
+  s4_build_to_evidence   fresh    correct=1.00  picks=['sota-code-security', 'sota-code-security', 'sota-code-security']
+  s4_build_to_evidence   shifted  correct=0.00  picks=['sota-shell-scripting', 'sota-shell-scripting', 'sota-shell-scripting']
+
+SUMMARY
+  fresh    correct=0.750
+  shifted  correct=0.500
+
+  ROUTING-SHIFT (fresh − shifted) = +0.250
+  Read the FRESH arm first: if it is not clearly above the floor, a small delta is a ceiling artefact, not a null.
+  This measures which skill the model SAYS applies — a proxy for loading one.
+saved evals/results/2026-09-12/routing-shift.json
