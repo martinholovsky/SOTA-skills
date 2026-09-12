@@ -830,7 +830,7 @@ re-injects it on every prompt. `install.sh --routing` writes exactly this, and
   "hooks": {
     "UserPromptSubmit": [
       { "hooks": [ { "type": "command",
-        "command": "echo 'sota standing rules (every answer): (1) VALIDATE — check any claim about code, system state, config, versions or facts against a primary source before asserting it, and label anything unverified. (2) KEEP DOCS CURRENT — update affected docs in the same change. (3) ROUTE BEFORE YOU ACT — if the turn touches code, a diff, a config or a build/CI file, invoke the sota skill FIRST and apply the matching sota-* skills. Reading a file counts. If you have already read code this session without routing, route now. Treat ~/.claude/profiles as the stack baseline; stop and ask on security-relevant choices.'" } ] }
+        "command": "echo 'sota standing rules (every answer): (1) VALIDATE — check any claim about code, system state, config, versions or facts against a primary source before asserting it, and label anything unverified. (2) KEEP DOCS CURRENT — update affected docs in the same change. (3) ROUTE BEFORE YOU ACT — if the turn touches code, a diff, a config or a build/CI file, invoke the sota skill FIRST and apply the matching sota-* skills. Reading a file counts. If you have already read code this session without routing, route now. Routing is per task SHAPE, not per session: if the work has changed shape since you last routed — different layer or language, or from building to verifying — route again. Treat ~/.claude/profiles as the stack baseline; stop and ask on security-relevant choices.'" } ] }
     ]
   }
 }
