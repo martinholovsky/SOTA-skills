@@ -1801,9 +1801,13 @@ try:
 except OSError as e:
     print("cannot read: %s" % e); print("SCOPE 0"); sys.exit(1)
 
-m = re.search(r'\*\*Only (\d+) are open\*\*\s*[—-]\s*([0-9,\s]+)', t)
+# "are" / "is": the count reached 1 on 2026-09-12 and the plural-only pattern
+# stopped matching, which this check reports as a MISSING header rather than as
+# a grammar mismatch — a confusing failure for a correct document. Widened, not
+# loosened: the count and the list are still both required.
+m = re.search(r'\*\*Only (\d+) (?:are|is) open\*\*\s*[—-]\s*([0-9,\s]+)', t)
 if not m:
-    print("no '**Only N are open** — a, b, c' header found in docs/ROADMAP.md")
+    print("no '**Only N are/is open** — a, b, c' header found in docs/ROADMAP.md")
     print("SCOPE 0"); sys.exit(1)
 stated = int(m.group(1))
 listed = {int(x) for x in re.findall(r'\d+', m.group(2))}

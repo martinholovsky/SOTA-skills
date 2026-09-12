@@ -9,6 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Routing checked:** evals/results/2026-09-12/ROUTING-FIX-DEVSECOPS.md
 
+### Roadmap: item 1 closed permanently, item 5 made dormant — the actionable set is empty
+
+**Item 1 (distribution) is closed by operator decision, not by completion.** The work it
+tracked is real and partly done — the awesome-ai-plugins listing merged 2026-08-26, the
+salience write-up shipped 2026-09-01 — but what remained is a person's hours and nothing an
+agent can move. It sat at or near the top of the priorities table for seven weeks without
+once being actionable. A row no session can act on is a recurring reminder, not a backlog
+item. Closed as **won't track**; it must not be reopened or replaced.
+
+**Item 5 (the 6-month accuracy sweep) stays open but is dormant until 2027-01-08** and is not
+to be surfaced before then. Nothing needs to track it: `.github/workflows/freshness.yml` runs
+`check-freshness.sh` at 06:00 UTC on the 1st monthly, and that script exits 1 once
+the root verification stamp (2026-07-08) passes its six-month window — so the first red run is
+**2027-02-01**, unprompted. Verified by reading both files, not assumed.
+
+Of 55 items, 54 are closed and the 55th is asleep behind a cron.
+
+### Invariant 26 accepts a singular open count
+
+The open count reached **1** and the header pattern matched only `**Only N are open**`, so a
+correct document failed as *"no header found"* — a misleading diagnostic for a grammar
+mismatch. The pattern now accepts `is` as well. **Widened, not loosened**: the count and the
+list are both still required, and all three failure arms were watched to fail before the
+change shipped — a header count disagreeing with its list, a header naming an item no row
+marks open, and a ledger row marked open that the header omits.
+
+One of those checks initially *passed*, which was **the probe's fault, not the gate's**: the
+mutation targeted `| 2 | **CLOSED` while the row actually reads `| 2 | **Real-repo audit eval
+— CLOSED`, so nothing was mutated and an inert probe reported a healthy gate as silent. Re-run
+with the mutation asserted, it failed correctly. The repo's own rule — a probe asserts its own
+mutation landed — earned itself again.
+
 ### `sota-devsecops` description — the trigger defect item 48 found, fixed
 
 Item 48's measurement found that *"the pre-commit hook passes locally but the same check fails
