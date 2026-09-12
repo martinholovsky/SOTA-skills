@@ -5,6 +5,42 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### A correction to our own published position: "do not build a tenth instrument" was wrong
+
+We had written, in three places, that audit recall and precision were **exhausted at nine
+instruments** and that a tenth should not be built. A tenth was built this session
+([COMMENT-TRIAGE](evals/results/2026-09-12/COMMENT-TRIAGE.md), on the external Apache-2.0
+AACR-Bench), and building it was right.
+
+**The lift conclusion survives** — it read a registered null too, so ten instruments now
+agree on +0.00. **The word "exhausted" does not.** It rested on precision reading **1.00 in
+both arms**, taken to mean "perfect, no headroom". On an instrument that discriminates, both
+arms sit **near chance** (0.517 / 0.542 against a constructed 0.500). **1.00/1.00 never meant
+perfect — it meant the instrument could not tell.**
+
+Superseded rather than edited away, per the rule for dated prose:
+`evals/results/RESULTS.md`, `docs/WHY-IT-WORKS.md` (whose "accuracy, on every instrument
+built so far, is saturated in both arms" is now false), and
+`evals/DESIGN-real-repo-audit.md`. The README's front-door claim that a frontier model
+"recognises these classes unaided" is **qualified against ourselves**: still +0.00 on lift,
+but the stronger reading — that finding these things is easy — is not supported by a measure
+that can actually discriminate.
+
+**The standing instruction is now the opposite of the struck sentence: never close an axis
+on a saturating measure.** Both arms scoring perfectly is a fact about the instrument.
+
+### Open threads closed by operator decision — the actionable set is empty
+
+- **`rules/03` §4's *"default to REFUTED when ambiguous"*** — the measured price is recorded
+  as a known property; the **rule stands unchanged**. One model, one day, 40 of 2,145
+  records, on a *different task* from the one §4 governs, is not grounds to re-tune it.
+- **Invariant 11's substring escape hatch** — accepted as a known limitation. The
+  negative-control harness detects it immediately, which is how it was found.
+- Together with the roadmap (54 of 55 closed, item 5 dormant behind a cron until 2027),
+  **nothing in this repository is waiting on a decision.**
+
 ## [1.41.0] - 2026-09-12
 
 **Front door checked:** AACR-Bench · position drift · partition

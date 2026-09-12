@@ -10,9 +10,18 @@ anticipated. Read the outcome, not the plan:
 This file is kept for its **method** — subject selection, the precondition that killed
 the previous candidate, and the blinding scheme — all of which held up and are reusable.
 Its forward-looking sentences ("nothing measured yet", "needs an explicit go") are
-historical. **Do not build a tenth accuracy instrument**: audit recall and precision are
+historical. ~~**Do not build a tenth accuracy instrument**: audit recall and precision are
 both closed at nine instruments across four designs, and only a different *dependent
-variable* (time-to-find, report usability, reach for a non-expert) remains untested.
+variable* (time-to-find, report usability, reach for a non-expert) remains untested.~~
+
+**Superseded 2026-09-12 — a tenth was built, and it should have been.**
+[COMMENT-TRIAGE](results/2026-09-12/COMMENT-TRIAGE.md) uses the external, Apache-2.0
+**AACR-Bench** rather than a fixture of ours. The *lift* held (a registered null, ten
+instruments now), but "closed" was the wrong word: our nine all read **1.00 in both arms**,
+and that is what a measure looks like when it **cannot discriminate**, not when the system
+is perfect. The tenth is not saturated — both arms are near chance. The reusable instruction
+is **"an instrument that scores both arms perfectly has told you about itself"**, not "stop
+measuring".
 
 ## Why this existed
 

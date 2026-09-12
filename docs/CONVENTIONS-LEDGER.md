@@ -364,7 +364,10 @@ probe 11 as **INERT** (43/44). Rewording to "the root verification stamp" restor
 in ordinary operation mentioning the token costs nothing. The exposure is one shape: a PR
 that moves the stamp *and* happens to discuss it in prose gets waved through.
 
-**Why it is not fixed here.** Every tightening trades one failure for another. Requiring a
+**CLOSED 2026-09-12 by operator decision — the hatch stays as it is.** What follows is the
+reasoning, kept because it is the argument against each alternative, not a pending task.
+
+**Why it is not fixed.** Every tightening trades one failure for another. Requiring a
 fixed declaration phrase makes the hatch precise but adds a magic string a contributor must
 know. Requiring a sweep-shaped diff collapses escape (b) into escape (a) and removes the
 rolling-sweep path `docs/MAINTENANCE.md` explicitly allows. Against the three filters:
@@ -372,7 +375,9 @@ rolling-sweep path `docs/MAINTENANCE.md` explicitly allows. Against the three fi
 silently?** no — that is the mitigating fact, and the reason this is a note rather than a
 change. **Is it mechanically checkable?** yes. It sits one filter short of earning a fix,
 and this ledger's own argument is that a gate changed without an incident behind it is how
-gates become flaky.
+gates become flaky. **Accepted as a known limitation**: the mitigation is that the harness
+detects it immediately — write a CHANGELOG line naming the stamp and probe 11 reports the
+check INERT on the next run, which is how this was found in the first place.
 
 **The transferable shape:** an escape hatch matched by substring is wider than its intent,
 and the way you find out is a negative-control harness that tells you the gate went quiet.

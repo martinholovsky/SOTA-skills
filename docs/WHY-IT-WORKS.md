@@ -164,6 +164,16 @@ most for *building* software are the two that are large:
   same findings. Accuracy, on every instrument built so far, is saturated in both
   arms.
 
+  **Superseded 2026-09-12.** That last sentence is no longer true, and its
+  replacement matters more than the correction. A tenth instrument —
+  [COMMENT-TRIAGE](../evals/results/2026-09-12/COMMENT-TRIAGE.md), built on the
+  external **AACR-Bench** — is **not** saturated: both arms land near chance
+  (0.517 / 0.542, where the set is balanced so chance is exactly 0.500). The
+  +0.00 reading survives, now across ten instruments. The *explanation* does not:
+  saturation was a property of our instruments, not evidence that audit accuracy
+  had no headroom. Read plainly, we never had evidence of audit precision — we
+  had a measure too easy to discriminate.
+
 Robustness: every value dimension is now run **multi-sample** (`--samples 3
 --temp 0.7`), and the pattern is consistent — **the with-library arm has
 near-zero variance while the unguided arm both scores lower and wobbles.**
