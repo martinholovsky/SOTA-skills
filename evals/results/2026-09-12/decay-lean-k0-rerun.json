@@ -1,0 +1,69 @@
+{
+ "task": "c6_webhook",
+ "depths": [
+  0
+ ],
+ "results": {
+  "control": {
+   "0": {
+    "recall": 0.4,
+    "present": [
+     "sigverify",
+     "constanttime",
+     "validation",
+     "logging"
+    ],
+    "missing": [
+     "idempotency",
+     "sizelimit",
+     "ratelimit",
+     "errhygiene",
+     "transport",
+     "tests"
+    ],
+    "artifact_len": 14240,
+    "msgs": 1
+   }
+  },
+  "anchor": {
+   "0": {
+    "recall": 0.0,
+    "present": [],
+    "missing": [
+     "sigverify",
+     "constanttime",
+     "idempotency",
+     "validation",
+     "sizelimit",
+     "ratelimit",
+     "logging",
+     "errhygiene",
+     "transport",
+     "tests"
+    ],
+    "artifact_len": 1171,
+    "msgs": 3
+   }
+  },
+  "reminder": {
+   "0": {
+    "recall": 1.0,
+    "present": [
+     "sigverify",
+     "constanttime",
+     "idempotency",
+     "validation",
+     "sizelimit",
+     "ratelimit",
+     "logging",
+     "errhygiene",
+     "transport",
+     "tests"
+    ],
+    "missing": [],
+    "artifact_len": 28597,
+    "msgs": 3
+   }
+  }
+ }
+}
