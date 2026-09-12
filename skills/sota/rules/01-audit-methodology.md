@@ -42,6 +42,43 @@ Agree these before reading a single line of code:
   files, a service owned by another team) is written down, not silently
   skipped.
 
+## 1a. A changeset too large to hold at once — partition it, don't skim it
+
+The authoring side of this is covered elsewhere (`sota-docs-workflow` rules/03: keep
+PRs small, because large ones converge on "LGTM"). This is the **reviewer's** half,
+which is the one you need when the large PR exists anyway and is yours to review.
+
+**The failure mode is silent and it is not laziness.** Given more changed files than
+fit comfortably in one pass, a reviewer — human or model — does not announce that it
+ran out of room. It reviews some files carefully, skims others, and produces a report
+whose *shape* is identical to a complete one. Nothing in the output says "I covered 9
+of 23 files". Reported at scale by Alibaba's Open Code Review (Apache-2.0) as the
+first of three failure modes of language-driven review, and it matches this library's
+own measured **completeness residual** — a cross-cutting requirement quietly dropped
+as context fills (`docs/WHY-COMPLETENESS-RESIDUAL.md`).
+
+So do not let the model decide coverage. Decide it deterministically, before review:
+
+1. **Enumerate the units first, mechanically.** `git diff --name-only <base>...<head>`
+   is the denominator. Write it down. Every file is either reviewed, or explicitly
+   excluded with a reason (§1's *record exclusions*) — never neither.
+2. **Bundle related files into one unit.** Files that must be read together to be
+   judged go together: a handler and its test, a migration and the model it alters,
+   the four locale files that must stay in sync, an interface and its implementations.
+   A bundle is the unit whose *internal consistency* is the thing being checked, and
+   splitting one across passes is how a mismatch survives review.
+3. **Give each bundle its own pass with fresh context.** Isolated context per bundle
+   is what keeps pass 9 as sharp as pass 1; it also parallelises, but that is a
+   side benefit, not the reason.
+4. **Report the denominator with the findings.** "23 files changed, 23 reviewed in 7
+   bundles, 2 excluded (generated, vendored)" is part of the result. A findings list
+   with no coverage statement is indistinguishable from a partial one — the same
+   fail-closed discipline the gates in this repo apply to their own file counts.
+
+**Partitioning is not the same as sampling.** A sample is a defensible answer to
+"what is the state of this codebase"; it is never a defensible answer to "is this
+change safe to merge", where the unreviewed file is exactly where the defect is.
+
 ## 2. Inventory & recon — build the map before judging
 
 You cannot audit what you have not mapped. Enumerate:
@@ -231,6 +268,53 @@ rather than a competing claim. Restated status drifts; that is the same failure 
 table has (`rules/03` §2), one layer further out, and it is the reason this pass exists at
 all rather than being a one-off cleanup.
 
+## 4b. Resolve every citation before you ship it — position drift
+
+`rules/03` §2 requires each finding's location to be "exact, clickable, reproducible".
+That states the requirement and checks nothing, which is this library's most common
+gap shape: the rule is written, the probe is missing. Here is the probe.
+
+**Position drift is a finding that is right about the defect and wrong about where it
+is.** The mechanism is ordinary: line numbers read off a diff hunk rather than the
+file, a quote paraphrased from memory after the file scrolled out of context, a
+`file:line` carried forward while the surrounding analysis moved on, or a path that is
+correct in one module and repeated for its near-identical sibling. Alibaba's Open Code
+Review (Apache-2.0) reports it from two years of production review as one of three
+dominant failure modes; this repo has its own version, which is why **invariant 18**
+exists — roughly 1,300 prose `§` references that broke silently on a renumber, and 20
+more caught during a single rules-file split.
+
+**It is dangerous because it degrades trust rather than triggering an error.** A
+report whose citations do not resolve looks exactly like one whose citations do. The
+reader who cannot find the code usually assumes they are looking in the wrong place;
+if they do apply the fix, they apply it to whatever is at that line now.
+
+Before any finding ships — and **before the adversarial pass of `rules/03` §4, not
+after** — resolve every citation mechanically:
+
+- [ ] **Re-read the file at the pinned commit.** Not your notes, not the diff, not
+      the snippet you already quoted. Restating from your own earlier output re-runs
+      the reasoning that produced the error (`SKILL.md` principle 7).
+- [ ] **The quoted evidence appears at the cited line, byte-identical.** A paraphrase
+      that "means the same thing" is a failed check: it means the quote was
+      reconstructed, and a reconstructed quote is not evidence.
+- [ ] **Diff line numbers were converted.** Hunk-relative and file-absolute numbers
+      differ by the hunk offset, and the mistake is invisible because the result is
+      still a plausible line in a real file.
+- [ ] **The path is the one you read**, not its sibling — check the full path, not the
+      basename. `src/auth/session.go` and `src/authz/session.go` both exist.
+
+A citation that does not resolve **fails the finding, it does not soften it**. Fix the
+location or drop the finding; never ship it with an approximate one. The cost
+asymmetry is the whole argument for putting this first: this check is mechanical and
+takes seconds, the refutation pass in `rules/03` §4 is expensive, and a finding that
+cannot even be located does not deserve a refuter's attention.
+
+**Run it as a real check, not an intention.** Verify it can fail before you trust a
+clean result — point it at a citation you have deliberately broken and watch it
+complain (`sota-code-security` rules/11 §7). A verification pass that has never
+produced a failure is not evidence that the citations are right.
+
 ## 5. Changing the AUDIT workflow? Change all three places
 
 The audit workflow lives in **three** surfaces and they drift independently:
@@ -295,6 +379,16 @@ one covers coverage, tooling and hygiene. Both run.
 - [ ] **Universal claims in the security prose falsified by counting** — threat
       model, `security_model.md`, module docstrings, ADRs (`sota-code-security`
       rules/14 §7)?
+
+**Coverage and citations**
+- [ ] For a changeset too large for one pass: units **enumerated mechanically**
+      first, related files **bundled** so each bundle is judged whole, every file
+      either reviewed or explicitly excluded, and the **denominator reported**
+      alongside the findings (§1a)?
+- [ ] Every finding's `file:line` **resolved against the file at the pinned
+      commit**, with the quoted evidence byte-identical, diff-relative numbers
+      converted, and the full path checked against its siblings — run *before*
+      the adversarial pass, and watched to fail at least once (§4b)?
 
 **Hygiene**
 - [ ] Audit was read-only; nothing in the target mutated without explicit

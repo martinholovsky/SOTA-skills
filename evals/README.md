@@ -193,6 +193,26 @@ audit STRAT-HIGH-2).
 - `cases/desc-routing.jsonl` (10) — an adversarially-confusable task → the correct
   skill (`expect`) and the tempting wrong sibling (`distractor`). Scored by
   `run-desc-routing.py` as an A/B on the description cross-refs (result: +0.00).
+- **`run-comment-triage.py`** — can a reviewer tell a **real** review comment from a
+  **wrong** one? Built on an adopted external instrument, **AACR-Bench** (Alibaba Aone,
+  Apache-2.0): 2,145 expert-labelled comments over 200 PRs, 50 repositories and 10
+  languages. **Why it exists:** this library's own audit-precision instruments *saturate*
+  (30 claims, 1.00 in both arms), so the audit-accuracy axis was closed for want of a
+  measure that could discriminate — not because precision had been demonstrated. Two arms
+  over the same case and the same frozen code context: **bare** (judging prompt alone) vs
+  **with** (the prompt plus `sota/rules/03` §2 and §4). Objective scoring — the model emits
+  `VERDICT: REAL` / `VERDICT: NOT_REAL`, and anything else is a **parse failure that is
+  counted, never dropped**. The set is **balanced 20/20 by construction**, so chance is
+  exactly 0.500 and the source set's 70/30 base rate cannot flatter an arm.
+  **The registered trap is the interesting part:** `rules/03` §4 says *default to REFUTED
+  when ambiguous*, which can raise accuracy purely by making the model more skeptical — a
+  bias shift, not better discrimination. So **per-class recall is a primary output**, and a
+  lift is only claimable if the with-arm does not lose more than 0.05 of label-1 recall;
+  the runner prints that reading itself. The guidance block is **extracted from the shipped
+  rules file at run time, never mirrored** — if the headings move it aborts rather than
+  measuring an empty arm. Flags: `--samples`, `--temp`, `--model`, `--limit` (pilot runs,
+  kept label-balanced so the metric keeps its chance line), `--out`. Pre-registration:
+  [PRE-REGISTRATION-COMMENT-TRIAGE](results/2026-09-12/PRE-REGISTRATION-COMMENT-TRIAGE.md).
 - **`run-routing-shift.py`** — ROADMAP 48. Does a session that has settled into one task
   shape still route correctly when the work **changes** shape? Two arms over the same
   shape-B prompt and the same catalogue: **fresh** (the prompt alone — what

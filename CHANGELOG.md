@@ -5,6 +5,75 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.41.0] - 2026-09-12
+
+**Front door checked:** AACR-Bench · position drift · partition
+
+**An external intake, and the first non-saturating look at a claim we had closed.** Three
+ideas adopted from [alibaba/open-code-review](https://github.com/alibaba/open-code-review)
+(Apache-2.0, licence checked before planning). Minor: `run-comment-triage.py` is a new
+runnable surface.
+
+### Two rules — `sota/rules/01` §4b and §1a
+
+**§4b — position drift.** A finding that is right about the defect and wrong about where it
+is. `rules/03` §2 already *required* the location be "exact, clickable, reproducible" and
+nothing *checked* it — this library's most common gap shape, a stated rule with no probe.
+Absence confirmed with two independent vocabulary sweeps and a positive control, not one
+grep. Placed **before** the adversarial pass on a cost argument: the check takes seconds,
+refutation is expensive, and a finding that cannot be located does not deserve a refuter.
+Corroborated from our own history — **invariant 18** exists because ~1,300 prose `§`
+references drifted silently here, with 20 more caught during a single rules-file split.
+
+**§1a — partition an oversized changeset, don't skim it.** We covered only the authoring
+half (keep PRs small); the reviewer's half was missing. Enumerate units mechanically,
+bundle files that must be judged together, give each bundle fresh context, and **report the
+denominator** — a findings list with no coverage statement is indistinguishable from a
+partial one. The sharp edge is ours, not theirs: **partition is not sampling**, because
+"is this change safe to merge" has no defensible sample.
+
+### A new instrument, because ours saturate — and a registered null
+
+`evals/run-comment-triage.py` + `evals/cases/comment-triage.jsonl`, built on **AACR-Bench**
+(Alibaba Aone, Apache-2.0): 2,145 expert-labelled review comments over 200 PRs, 50
+repositories, 10 languages.
+
+**Why.** Our audit-precision measure was 30 claims scoring **1.00 in both arms**, and the
+audit axis was closed at +0.00 across nine instruments. A measure that saturates has not
+shown the treatment does nothing — it has shown it cannot tell.
+
+**Result, pre-registered and committed before the run existed:**
+
+| arm | accuracy | recall REAL | recall NOT_REAL |
+|---|---|---|---|
+| bare | 0.517 | 0.500 | 0.533 |
+| with `rules/03` §2+§4 | 0.542 | 0.317 | 0.767 |
+
+**+0.025 is a registered NULL**, and the registered trap fired underneath it: the
+pre-registration forbade claiming a lift if label-1 recall fell more than 0.05, and it fell
+**0.183**. The guidance produces a **threshold shift** — +0.234 on rejecting wrong comments,
+−0.183 on accepting right ones — which is a more skeptical reviewer, not a better one.
+
+**Writing that trap down in advance is the whole point.** Accuracy alone read "+0.025, a
+small positive"; on the source set's real 70/30 mix the same behaviour would have printed as
+a loss. Three headline numbers from one run, decided by choices made before it.
+
+**The instrument did its job:** neither arm saturated — both are **near chance** on a set
+where chance is exactly 0.500 by construction. Set against the 1.00/1.00 it replaces, the
+honest restatement is that we never had evidence of audit precision, only a measure too easy
+to discriminate. Zero parse failures in 240 calls.
+
+Also recorded: their **deterministic path-scoped rule matching** is adopted *in principle,
+not in mechanism* — Claude Code owns skill activation, so we cannot bind rules to paths, but
+their critique of language-driven selection is independently confirmed by our own
+measurement the same day, where a single token moved an unrelated case 3/3. Their
+"reflection module" is **rejected: already covered** by `rules/03` §4.
+
+Validating the source corrected it: the repo README presents AACR-Bench as "1,505 annotated
+ground-truth issues", implying defect detection; the dataset's own card says it is a
+comment-*triage* set. Their benchmark figures are vendor self-reported and not reproduced
+here.
+
 ## [1.40.7] - 2026-09-12
 
 **Front door checked:** ROUTING-SHIFT · ROUTING-FIX-DEVSECOPS · re-route
@@ -8093,6 +8162,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.41.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.41.0
 [1.40.7]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.7
 [1.40.6]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.6
 [1.40.5]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.5
