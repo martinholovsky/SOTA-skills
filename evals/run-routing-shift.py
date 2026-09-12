@@ -36,6 +36,8 @@ import json
 import os
 import statistics
 import sys
+import time
+import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CASES = os.path.join(ROOT, "evals/cases/routing-shift.jsonl")
@@ -47,6 +49,31 @@ _spec = importlib.util.spec_from_file_location(
     "_dr", os.path.join(ROOT, "evals/run-desc-routing.py"))
 _dr = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_dr)
+
+
+def call(model, key, msgs, temp, tries=4):
+    """Multi-turn sibling of run-desc-routing's `call`.
+
+    Not reused by import: that one takes a prompt STRING and wraps it in a single user
+    message, so handing it a message list produced `HTTP 400 Bad Request` — caught on the
+    first run here. Everything else (catalogue, prompt text, scoring) is still imported;
+    only the transport differs, because only the transport had to.
+    """
+    body = json.dumps({"model": model, "messages": msgs, "temperature": temp}).encode()
+    for attempt in range(tries):
+        try:
+            req = urllib.request.Request(
+                "https://openrouter.ai/api/v1/chat/completions", data=body,
+                headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=180) as r:
+                d = json.load(r)
+            return d["choices"][0]["message"]["content"] or ""
+        except Exception as e:
+            if attempt == tries - 1:
+                sys.exit(f"model call failed after {tries} tries: {e!r}\n"
+                         f"A run that skipped a case would divide by a denominator chosen by "
+                         f"when the failure happened, so this aborts instead.")
+            time.sleep(3 * (attempt + 1))
 
 
 def load_cases(path):
@@ -106,7 +133,7 @@ def main():
         for arm, shifted in (("fresh", False), ("shifted", True)):
             picks = []
             for _ in range(a.samples):
-                txt = _dr.call(a.model, key, messages(c, items, shifted), a.temp)
+                txt = call(a.model, key, messages(c, items, shifted), a.temp)
                 picks.append(_dr.pick_from(txt, names))
             hit = statistics.mean(1.0 if p == c["expect"] else 0.0 for p in picks)
             agg[arm].append(hit)

@@ -29,3 +29,4 @@
 # description (ad-hoc sweeps, one-liners, believing an absence) and repointing router
 # rule 17 from §3 to §3a, the section that owns pasted and agent-issued commands. Pins it.
 {"id": "r2_absence_sweep", "task": "Before I write this rule I want to be sure it isn't already covered. Run a grep across the markdown files for a few phrasings and tell me whether any of them appear — if it comes back empty I'll treat the topic as absent.", "expect": "sota-shell-scripting", "distractor": "sota-docs-workflow"}
+{"id": "r3_local_vs_ci_gate", "task": "The pre-commit hook passes locally but the same check fails in CI on the identical commit. I want to know which one is telling the truth before I change any code.", "expect": "sota-devsecops", "distractor": "sota-shell-scripting"}
