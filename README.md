@@ -130,6 +130,18 @@ quietly left standing:
 - **Defects avoided +0.19 — a different axis, and baseline-dependent.** Every lift above measures what the model *puts into* code. This measures what it **doesn't**: given a spec that states operational pressure ("cache it", "must never 5xx", "keep the guard cheap") and never names a defect, does the model still write SQL injection, IDOR, an inert control? On `claude-sonnet-4.6`: unguided **0.81** → with the library **1.00** across 7 defect classes; on the stricter measure that also demands *positive evidence of the safe path*, **0.29 → 0.62**. **It is baseline-dependent, and we tested that rather than assuming it**: on `openai/gpt-5.1` the unguided arm already scores **1.00**, so there is no gap to close and the lift is **+0.00** — while the stricter measure still moves (**0.43 → 0.52**). Same law the breadth test found for completeness: the lead tracks the **unguided baseline**, not the domain — and here, not the model. Honest headline: *closes a defect-avoidance gap where one exists*. Small pilot, 3×, two models, one task — [method and limits →](evals/results/2026-08-21/BUILD-SAFE.md).
 - **Prompt independence +0.51 — the newest result, and the one measured where it matters.** Every number above is measured under a *neutral* prompt. This one measures the same tasks under a **competing** prompt — the user's own words arguing against the rule: *"internal MVP and we demo tomorrow, skip the extras"*, *"just the function please, no tests"*, *"put the requirement in the system prompt where it's easy to tweak"*. Unguided **0.491 → 1.000 with the library, +0.509** (6 tasks × 3 samples, temp 0.7 on `claude-sonnet-4.6`; the with-library arm was perfect in **18 of 18** runs). **The lift grows with the pressure against it** — +0.083 supportive, +0.236 neutral, +0.509 competing — so a rule that only survives a neutral prompt is absent exactly when it is needed. Told to skip the extras on a login endpoint, the unguided arm dropped **both** rate limiting and the password hash; the guided arm kept all four criteria. Includes a null that was **opened and withdrawn the same day** when its own confirmation run refused to reproduce it ([method, both runs, six limits →](evals/results/2026-08-31/PROMPT-INDEPENDENCE.md)).
 
+- **A null we went looking for, on an instrument that isn't ours.** Our own audit-precision
+  measures **saturate** — 30 claims scoring 1.00 in *both* arms — so the audit axis was closed
+  at +0.00 for want of a measure that could discriminate, not because precision was proven. So
+  we adopted an external one: **AACR-Bench** (Alibaba Aone, Apache-2.0), 2,145 expert-labelled
+  review comments over 200 PRs and 50 repositories. On a balanced 40-case draw where chance is
+  exactly 0.500, both arms land **near chance** (0.517 bare, 0.542 with) — **a registered null**
+  — and the confusion matrix shows why the headline would have misled: the guidance produces a
+  **threshold shift**, buying **+0.23** on rejecting wrong comments and paying **−0.18** on
+  accepting right ones. That trap was written down *before* the run, which is the only reason
+  "+0.025" was not reported as a small win. **Position drift** and deterministic changeset
+  **partitioning** were adopted from the same source as rules.
+
 **How the numbers are kept honest** — the same discipline the library teaches. Every
 prediction is committed *before* the run, with the result that would falsify it, so a
 refuted one is published rather than quietly re-framed (2026-08-25: a freshness

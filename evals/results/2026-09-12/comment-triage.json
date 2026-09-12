@@ -1,0 +1,946 @@
+{
+  "model": "anthropic/claude-sonnet-4.6",
+  "samples": 3,
+  "temp": 0.7,
+  "n_cases": 40,
+  "cases": {
+    "bad_11": {
+      "label": 0,
+      "lang": "Python",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 1.0
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 1.0
+        }
+      }
+    },
+    "good_08": {
+      "label": 1,
+      "lang": "C#",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            true,
+            true,
+            true
+          ],
+          "correct": 1.0
+        },
+        "with": {
+          "verdicts": [
+            true,
+            true,
+            true
+          ],
+          "correct": 1.0
+        }
+      }
+    },
+    "bad_06": {
+      "label": 0,
+      "lang": "TypeScript",
+      "is_ai": false,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 1.0
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 1.0
+        }
+      }
+    },
+    "bad_05": {
+      "label": 0,
+      "lang": "PHP",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 1.0
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 1.0
+        }
+      }
+    },
+    "good_04": {
+      "label": 1,
+      "lang": "Go",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            true,
+            false,
+            false
+          ],
+          "correct": 0.3333333333333333
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 0.0
+        }
+      }
+    },
+    "bad_20": {
+      "label": 0,
+      "lang": "C",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            true,
+            false,
+            true
+          ],
+          "correct": 0.3333333333333333
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 1.0
+        }
+      }
+    },
+    "bad_19": {
+      "label": 0,
+      "lang": "Go",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            true,
+            true,
+            true
+          ],
+          "correct": 0.0
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 1.0
+        }
+      }
+    },
+    "good_09": {
+      "label": 1,
+      "lang": "TypeScript",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            true,
+            true,
+            true
+          ],
+          "correct": 1.0
+        },
+        "with": {
+          "verdicts": [
+            true,
+            true,
+            true
+          ],
+          "correct": 1.0
+        }
+      }
+    },
+    "good_07": {
+      "label": 1,
+      "lang": "C",
+      "is_ai": false,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            true,
+            false,
+            false
+          ],
+          "correct": 0.3333333333333333
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 0.0
+        }
+      }
+    },
+    "bad_14": {
+      "label": 0,
+      "lang": "Go",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            false,
+            true,
+            true
+          ],
+          "correct": 0.3333333333333333
+        },
+        "with": {
+          "verdicts": [
+            false,
+            true,
+            true
+          ],
+          "correct": 0.3333333333333333
+        }
+      }
+    },
+    "bad_03": {
+      "label": 0,
+      "lang": "C++",
+      "is_ai": false,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 1.0
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 1.0
+        }
+      }
+    },
+    "bad_07": {
+      "label": 0,
+      "lang": "TypeScript",
+      "is_ai": false,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 1.0
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 1.0
+        }
+      }
+    },
+    "bad_12": {
+      "label": 0,
+      "lang": "C++",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            true,
+            true,
+            true
+          ],
+          "correct": 0.0
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 1.0
+        }
+      }
+    },
+    "bad_01": {
+      "label": 0,
+      "lang": "TypeScript",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 1.0
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 1.0
+        }
+      }
+    },
+    "bad_08": {
+      "label": 0,
+      "lang": "C",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            true,
+            true,
+            true
+          ],
+          "correct": 0.0
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 1.0
+        }
+      }
+    },
+    "good_11": {
+      "label": 1,
+      "lang": "C#",
+      "is_ai": false,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 0.0
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 0.0
+        }
+      }
+    },
+    "bad_02": {
+      "label": 0,
+      "lang": "C++",
+      "is_ai": false,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            true,
+            true,
+            false
+          ],
+          "correct": 0.3333333333333333
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 1.0
+        }
+      }
+    },
+    "good_17": {
+      "label": 1,
+      "lang": "C",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            false,
+            false,
+            true
+          ],
+          "correct": 0.3333333333333333
+        },
+        "with": {
+          "verdicts": [
+            false,
+            true,
+            false
+          ],
+          "correct": 0.3333333333333333
+        }
+      }
+    },
+    "good_15": {
+      "label": 1,
+      "lang": "Go",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            true,
+            true,
+            true
+          ],
+          "correct": 1.0
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 0.0
+        }
+      }
+    },
+    "bad_18": {
+      "label": 0,
+      "lang": "Java",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            true,
+            true,
+            true
+          ],
+          "correct": 0.0
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            true
+          ],
+          "correct": 0.6666666666666666
+        }
+      }
+    },
+    "bad_17": {
+      "label": 0,
+      "lang": "C++",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            true,
+            true,
+            false
+          ],
+          "correct": 0.3333333333333333
+        },
+        "with": {
+          "verdicts": [
+            true,
+            false,
+            false
+          ],
+          "correct": 0.6666666666666666
+        }
+      }
+    },
+    "bad_13": {
+      "label": 0,
+      "lang": "TypeScript",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 1.0
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 1.0
+        }
+      }
+    },
+    "good_10": {
+      "label": 1,
+      "lang": "Java",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 0.0
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 0.0
+        }
+      }
+    },
+    "good_13": {
+      "label": 1,
+      "lang": "TypeScript",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            true,
+            true,
+            true
+          ],
+          "correct": 1.0
+        },
+        "with": {
+          "verdicts": [
+            true,
+            true,
+            true
+          ],
+          "correct": 1.0
+        }
+      }
+    },
+    "good_02": {
+      "label": 1,
+      "lang": "Rust",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            true,
+            true,
+            true
+          ],
+          "correct": 1.0
+        },
+        "with": {
+          "verdicts": [
+            true,
+            true,
+            false
+          ],
+          "correct": 0.6666666666666666
+        }
+      }
+    },
+    "good_12": {
+      "label": 1,
+      "lang": "Go",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 0.0
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 0.0
+        }
+      }
+    },
+    "good_05": {
+      "label": 1,
+      "lang": "Go",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 0.0
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 0.0
+        }
+      }
+    },
+    "good_19": {
+      "label": 1,
+      "lang": "Rust",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 0.0
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 0.0
+        }
+      }
+    },
+    "good_14": {
+      "label": 1,
+      "lang": "TypeScript",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            true,
+            true,
+            true
+          ],
+          "correct": 1.0
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            true
+          ],
+          "correct": 0.3333333333333333
+        }
+      }
+    },
+    "good_20": {
+      "label": 1,
+      "lang": "C",
+      "is_ai": false,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 0.0
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 0.0
+        }
+      }
+    },
+    "bad_15": {
+      "label": 0,
+      "lang": "C",
+      "is_ai": false,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            true,
+            true,
+            true
+          ],
+          "correct": 0.0
+        },
+        "with": {
+          "verdicts": [
+            true,
+            true,
+            true
+          ],
+          "correct": 0.0
+        }
+      }
+    },
+    "bad_09": {
+      "label": 0,
+      "lang": "C++",
+      "is_ai": false,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 1.0
+        },
+        "with": {
+          "verdicts": [
+            true,
+            false,
+            false
+          ],
+          "correct": 0.6666666666666666
+        }
+      }
+    },
+    "bad_04": {
+      "label": 0,
+      "lang": "Go",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 1.0
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 1.0
+        }
+      }
+    },
+    "good_01": {
+      "label": 1,
+      "lang": "JavaScript",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            true,
+            true,
+            true
+          ],
+          "correct": 1.0
+        },
+        "with": {
+          "verdicts": [
+            true,
+            true,
+            true
+          ],
+          "correct": 1.0
+        }
+      }
+    },
+    "good_06": {
+      "label": 1,
+      "lang": "Go",
+      "is_ai": false,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 0.0
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 0.0
+        }
+      }
+    },
+    "good_18": {
+      "label": 1,
+      "lang": "TypeScript",
+      "is_ai": false,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            true,
+            true,
+            true
+          ],
+          "correct": 1.0
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 0.0
+        }
+      }
+    },
+    "good_16": {
+      "label": 1,
+      "lang": "C++",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            true,
+            true,
+            true
+          ],
+          "correct": 1.0
+        },
+        "with": {
+          "verdicts": [
+            true,
+            true,
+            true
+          ],
+          "correct": 1.0
+        }
+      }
+    },
+    "bad_16": {
+      "label": 0,
+      "lang": "Go",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            true,
+            false,
+            true
+          ],
+          "correct": 0.3333333333333333
+        },
+        "with": {
+          "verdicts": [
+            true,
+            true,
+            true
+          ],
+          "correct": 0.0
+        }
+      }
+    },
+    "good_03": {
+      "label": 1,
+      "lang": "Go",
+      "is_ai": false,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 0.0
+        },
+        "with": {
+          "verdicts": [
+            false,
+            false,
+            false
+          ],
+          "correct": 0.0
+        }
+      }
+    },
+    "bad_10": {
+      "label": 0,
+      "lang": "C",
+      "is_ai": true,
+      "arms": {
+        "bare": {
+          "verdicts": [
+            true,
+            true,
+            true
+          ],
+          "correct": 0.0
+        },
+        "with": {
+          "verdicts": [
+            true,
+            true,
+            true
+          ],
+          "correct": 0.0
+        }
+      }
+    }
+  },
+  "parse_failures": {
+    "bare": 0,
+    "with": 0
+  },
+  "summary": {
+    "bare": {
+      "accuracy": 0.517,
+      "recall_real": 0.5,
+      "recall_not_real": 0.533
+    },
+    "with": {
+      "accuracy": 0.542,
+      "recall_real": 0.317,
+      "recall_not_real": 0.767
+    },
+    "delta_accuracy": 0.025,
+    "delta_recall_real": -0.183
+  }
+}
