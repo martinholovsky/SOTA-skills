@@ -21,7 +21,7 @@ item. Closed as **won't track**; it must not be reopened or replaced.
 **Item 5 (the 6-month accuracy sweep) stays open but is dormant until 2027-01-08** and is not
 to be surfaced before then. Nothing needs to track it: `.github/workflows/freshness.yml` runs
 `check-freshness.sh` at 06:00 UTC on the 1st monthly, and that script exits 1 once
-`LAST-VERIFIED` (2026-07-08) passes its six-month window — so the first red run is
+the root verification stamp (2026-07-08) passes its six-month window — so the first red run is
 **2027-02-01**, unprompted. Verified by reading both files, not assumed.
 
 Of 55 items, 54 are closed and the 55th is asleep behind a cron.
