@@ -5,6 +5,65 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.40.6] - 2026-09-12
+
+**Front door checked:** sixteen shapes · no build at all · rules/16
+
+
+**Three open items worked to the end of what they could honestly reach.** A rules file split,
+a measurement that found something nobody registered, and a design that corrected a false
+claim in its own roadmap row. No new skill, script, command or hook — a patch.
+
+### `sota-code-security/rules/16` — the catalogue, split out of `rules/10`
+
+`rules/10` was at 484 of 500 lines with two classes queued behind it. §2 — the catalogue of
+**sixteen shapes** a control takes when it is present, looks enabled and enforces nothing —
+now lives in **`rules/16-where-no-ops-hide.md`**. `rules/10` keeps the *method* at 230 lines.
+
+The seam was chosen by **inbound citations**, not by line count: §2 was 54% of the file and
+~70% of its references. The more expensive seam was taken deliberately (~44 rewrites against
+~18) because catalogues are what grow and both queued classes are §2-shaped. **Section
+numbers are unchanged across the move**, so every citation became a pure path substitution —
+`rules/10 §2.7` is `rules/16 §2.7`.
+
+Invariant 18 fired three times during the split and none of it was reachable by the regex:
+it crashed on the new file until `git add`, then caught **20 bare `§2.x` pointers** in `.py`,
+`.sh` and `SKILL.md` that resolved only because they sat *inside* the file being split, then
+a same-file reference whose heading is a range.
+
+### ROADMAP 49 — decay measured, and an anomaly reproduced
+
+The 2026-07-14 run could not have detected decay at any depth: the anchor was 83,958
+characters against 12,997 of filler, **0.15:1**. Its recorded fix — author more filler —
+prices at ~580 additional pairs. Anchoring on principle 5 alone flips that to **4.12:1** for
+the cost of one flag.
+
+Result: **no decay** between K=12 and K=30 (0.80 at both), with the lean anchor holding a
++0.40 gap over control, so the registered floor-effect void condition did not trigger.
+
+And the finding nobody registered, reproduced across two independent runs: at **K=0** the
+anchor arm returns ~1.2k characters and scores **0.00** — **no build at all** — where its
+own K=12/K=30 builds run 17–23k, and the same anchor plus *one reminder line* on the task
+turn returns ~25k and scores 0.80–1.00. Depth *helped*. **The mechanism is not claimed**:
+the runner stores only response lengths, so the 1.2k reply cannot be read, and that gap is
+recorded as the blocker rather than papered over.
+
+### ROADMAP 48 — designed, and a claim in its own row corrected
+
+The row asserted that the harness for the measurement already existed. It does not —
+`run-desc-routing.py` is single-turn and `run-decay.py` scores a build, not a routing choice.
+The full design is recorded with two risks registered first: a narrow detectable range above
+an already-0.90 fresh arm, and the fact that an eval has no Skill tool, so it measures what
+the model *says* applies.
+
+### Changed
+
+`AGENTS.md`'s denominator example embedded a live count and had gone stale four times
+(261 → 262 → 270 → 271). It is now `ok (N rules files)` — the number carried no meaning in an
+illustration of an output format.
+
+Open set **4** — 1, 5, 48, 49.
+
 ## [1.40.5] - 2026-09-12
 
 **Front door checked:** lean loading · conflict rate · re-route
@@ -7944,6 +8003,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.40.6]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.6
 [1.40.5]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.5
 [1.40.4]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.4
 [1.40.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.3
