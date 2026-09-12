@@ -7,6 +7,15 @@ and the one planted business-logic defect in the cross-file set (`p6`,
 **unguided** arm on both models. Nothing below claims the library detects
 business-logic flaws better than an unguided model. It does not measure anything.
 
+> **Read the count as of 2026-08-13.** It is ten instruments now, still +0.00 on lift — but
+> the phrase "every instrument" carried an implication that has since been corrected: the
+> instruments of that date scored **1.00 in both arms**, which is what a measure looks like
+> when it cannot discriminate, not evidence that accuracy had no headroom
+> ([COMMENT-TRIAGE](../evals/results/2026-09-12/COMMENT-TRIAGE.md), where both arms land
+> near chance). The conclusion of *this* document — that it makes no detection claim — is
+> unaffected.
+
+
 ## Falsification criterion, fixed before the audit began
 
 > If every WSTG-BUSL sub-test and API6:2023 maps to a library location scoring
