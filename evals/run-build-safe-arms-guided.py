@@ -64,7 +64,7 @@ def main():
     n = d.write_files(txt, outdir)
     open(outdir + ".raw.txt", "w", encoding="utf-8").write(txt)
     # The scorer must be able to refuse a capped generation: a truncated build scores
-    # as a FLOOR, not a measurement (`sota-code-security` rules/10 §2.7).
+    # as a FLOOR, not a measurement (`sota-code-security` rules/10 `sota-code-security` rules/16 §2.7).
     json.dump({"TRUNCATED": trunc, "finish_reason": fin, "completion_tokens": tok,
                "max_tokens": mt}, open(os.path.join(outdir, ".build-meta.json"), "w"))
     print(json.dumps({"files": n, "completion_tokens": tok, "finish_reason": fin,

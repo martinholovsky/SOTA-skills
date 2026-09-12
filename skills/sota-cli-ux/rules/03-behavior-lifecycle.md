@@ -205,7 +205,7 @@ irreversible, rate-limited, paid, or requiring physical presence you cannot repe
 
 Find the substitution that exercises the same code path at zero cost — a file-based key
 instead of a hardware one, a dry-run flag, a throwaway target, `--help` parsed against the
-**installed** binary rather than remembered (and see `sota-code-security` rules/10 §2.15:
+**installed** binary rather than remembered (and see `sota-code-security` rules/16 §2.15:
 a flag that parses is not a feature that works). Run it. *Then* hand over the real command.
 
 Field-reported: a YubiKey PIN allows **three** attempts before the applet blocks and needs a

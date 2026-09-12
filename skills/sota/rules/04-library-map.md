@@ -32,7 +32,7 @@ exist. `sota-code-security/rules/11` sat unlisted for two releases before 15 exi
   cryptography, 05 web security, 06 memory & resource safety, 07 data exposure, 08 LLM/AI
   security, 09 untrusted-data ingestion, 10 silent control failure, 11 dead-path diagnostics, 12
   verifying the verifier, 13 context-dependent silence, 14 the control that is not in force,
-  15 instruments & guards
+  15 instruments & guards, 16 where silent no-ops hide (the catalogue split out of 10)
 - **sota-skill-security/rules**: 01 provenance & installation, 02 trust boundary & capability,
   03 authoring & auditing skills
 - **sota-threat-modeling/rules**: 01 methodologies, 02 decomposition, 03 threat catalogs, 04 risk

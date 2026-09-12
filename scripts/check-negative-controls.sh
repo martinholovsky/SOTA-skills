@@ -9,7 +9,7 @@
 # So does a check whose pathspec drifted, whose predicate stopped matching, or
 # that was quietly disabled. Those states are typographically identical, and this
 # repo's own library calls that an inert control: `sota-code-security` rules/12 §1
-# mutation-probes every control. `sota-code-security` rules/15 §2.2 requires that an
+# mutation-probes every control. `sota-code-security` rules/15 `sota-code-security` rules/16 §2.2 requires that an
 # instrument carry a known-bad it must reject and a known-good it must pass.
 # `sota-devsecops` rules/09 §1, which
 # says outright that no mainstream framework requires evidence a gate CAN fail.
@@ -21,7 +21,7 @@
 #   (b) the EXPECTED check to be the one that complained.
 # (b) is not pedantry. A harness that accepts any non-zero exit reports "18/18
 # controls caught" while every run dies before the thing under test (rules/15
-# §2.1, "the instrument that cannot fail"). A mutation caught for the wrong reason
+# `sota-code-security` rules/16 §2.1, "the instrument that cannot fail"). A mutation caught for the wrong reason
 # is a FALSE PASS and is reported as one.
 #
 # POSITIVE CONTROL FIRST. The unmutated copy must exit 0. If it does not, the
@@ -31,7 +31,7 @@
 # ASSERT THE MUTATION TOOK. The copy is a git worktree at HEAD, so it would carry
 # the COMMITTED gate, not the one being edited. The working-tree gate is copied in
 # and byte-compared, because "the code you changed may not be the code that ran"
-# is the trap rules/15 §2.2 names explicitly.
+# is the trap rules/15 `sota-code-security` rules/16 §2.2 names explicitly.
 #
 # Scope: invariants 1, 2, 6, 10 and 15 — the five with a cheap, unambiguous
 # known-bad. The others are diff-, history- or release-shaped and need a fixture
@@ -56,7 +56,7 @@ WT=$(mktemp -d)/wt
 # The `|| true` here used to swallow the failure while `rm -rf` deleted the directory
 # anyway, which orphans the worktree REGISTRATION: `git worktree list` then shows a
 # `prunable` entry forever, and success and failure of this cleanup were
-# indistinguishable — `sota-code-security` rules/10 §2.4, in the one script whose job is
+# indistinguishable — `sota-code-security` rules/10 `sota-code-security` rules/16 §2.4, in the one script whose job is
 # proving that failures surface. Found 2026-09-03 with two orphans already registered
 # (concurrent runs against one repo are the likely trigger). `git gc` does prune them,
 # but only at `gc.worktreePruneExpire`, which defaults to 3 months — that grace is why
@@ -297,7 +297,7 @@ probe 21 "a CHANGELOG version was never tagged" "NO TAG for CHANGELOG version"
 
 
 # 22 — a checklist bullet stranded inside a code fence. The real defect (PR #226,
-# found 2026-09-05) put two of them in THIS file's §2.2 example output, where they
+# found 2026-09-05) put two of them in THIS file's `sota-code-security` rules/16 §2.2 example output, where they
 # rendered as gate output for three weeks. The mutation reproduces that exactly:
 # one bullet inserted into the fenced sample, flush-left, where a diff reader's eye
 # reads it as another line of the example.
@@ -365,7 +365,7 @@ probe 26 "priorities table cites an item that is not open" "priorities table poi
 # 27 — a deferral marker with no revisit condition. Mutates the whole CELL, not a
 # prefix of it: a first attempt replaced only the opening words, the rest of the cell
 # still carried "revisit", and the probe reported a catch that never happened. Asserts
-# the cell actually changed before running, per rules/11 §2.5.
+# the cell actually changed before running, per rules/11 `sota-code-security` rules/16 §2.5.
 ( cd "$WT" && python3 - <<'MUT'
 import re, pathlib
 p = pathlib.Path("docs/ADOPTION-LOG.md"); lines = p.read_text().splitlines()
@@ -677,7 +677,7 @@ chmod +x "$VS/bin/gh";                          vs_probe "CI history is all-skip
 # Section F's ONE failing branch: the positive control. Every other row there is INFO
 # by design — `rg` skipping .gitignore'd files is a feature, not a defect — so the only
 # thing that can be wrong is a searcher that finds nothing at all, which makes every
-# absence it reports worthless (`sota-shell-scripting` rules/06 §2). A stub that always
+# absence it reports worthless (`sota-shell-scripting` rules/06 `sota-code-security` rules/16 §2). A stub that always
 # exits 1 is exactly that instrument.
 printf '#!/bin/sh\nexit 1\n' > "$VS/bin/blindgrep"; chmod +x "$VS/bin/blindgrep"
 VS_SEARCHERS=blindgrep

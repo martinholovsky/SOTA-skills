@@ -314,7 +314,7 @@ def main():
                     help="build-model output cap. A cap only matters if it BINDS: "
                          "32000 never bound claude-sonnet-4.6, but newer models are far "
                          "more verbose, and a truncated artifact scores as a FLOOR rather "
-                         "than a measurement (sota-code-security rules/10 §2.7).")
+                         "than a measurement (sota-code-security rules/10 `sota-code-security` rules/16 §2.7).")
     ap.add_argument("--pad-rules", type=int, default=0,
                     help="ROADMAP 25: add a third arm whose rules context carries N extra "
                          "lines of genuine rules prose from skills the case does NOT load "

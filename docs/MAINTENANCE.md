@@ -55,7 +55,7 @@ fix what has drifted. Do it as a **rolling** pass (a few skills a month) or a
 
 **Named high-rot targets** (check these even in a rolling pass):
 
-- **`sota-devsecops` rules/10 §2 — the dependency-reachability tool table.**
+- **`sota-devsecops` rules/16 §2 — the dependency-reachability tool table.**
   Eight third-party projects, each row asserting that tool's *documented* blind
   spot; all verified live 2026-07-30. Highest-rot item in the library by
   construction, and it demonstrated its own failure mode on the day it landed: two

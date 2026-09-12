@@ -1,13 +1,13 @@
 # 14 — The Control That Is Not In Force
 
-`rules/10` §2.1–2.9 catalogue a control that **runs** and achieves nothing — a
+`rules/16` §2.1–2.9 catalogue a control that **runs** and achieves nothing — a
 weak existence check, a swallowed exception, a truncated input, an ignored config
 key. This file is the other half: the control is not inert, it is **not there** —
 not in the shipped artifact, not in code at all, never triggered, or running in a
 mode that cannot refuse. Plus the failure that hides all of them: a report that
 claims more than ran.
 
-The distinction matters for where you look. `rules/10` §2.1–2.9 are found by reading the
+The distinction matters for where you look. `rules/16` §2.1–2.9 are found by reading the
 control's body. Nothing here is: the body may be perfect. You find these by asking
 what reaches production, what fires, and what the output is entitled to say.
 
@@ -86,7 +86,7 @@ Rules:
   source tree. A CI job that only tests the checkout will never see this class.
 - Startup asserts its own completeness: the component verifies its required
   artifacts are present and non-empty and refuses to start otherwise
-  (`rules/10` §2.1).
+  (`rules/16` §2.1).
   This converts a silent production no-op into a loud deploy failure.
 
 ## 3. A natural-language instruction standing in for an enforced control

@@ -58,7 +58,7 @@ for a **security control**:
 Two traps that make step 3 lie:
 
 - **Masked by a missing dependency.** The assertion passes because the feature
-  was disabled for an *unrelated* reason (rules/10 §2.2) — the real path never
+  was disabled for an *unrelated* reason (rules/16 §2.2) — the real path never
   ran. Force the dependency present (monkeypatch the availability check) so the
   control is actually exercised.
 - **The mutation did not take.** Commonest cause first, because it is not an environment

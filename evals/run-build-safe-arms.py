@@ -5,7 +5,7 @@ Conventions taken from run-build-safe.py's docstring and evals/README:
   - the arm is NEVER encoded in the directory name (agents self-assign from labels)
   - the unguided arm carries an explicit override of any standing instruction
   - truncation is checked, not hoped for: a capped generation that is then parsed
-    is `sota-code-security` rules/10 §2.7, and would make the score a floor
+    is `sota-code-security` rules/10 `sota-code-security` rules/16 §2.7, and would make the score a floor
 """
 import json, os, re, sys, time, urllib.request, hashlib
 
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     n = write_files(txt, outdir)
     open(outdir + ".raw.txt", "w", encoding="utf-8").write(txt)
     # The scorer must be able to refuse a capped generation: a truncated build
-    # scores as a FLOOR, not a measurement (`sota-code-security` rules/10 §2.7).
+    # scores as a FLOOR, not a measurement (`sota-code-security` rules/10 `sota-code-security` rules/16 §2.7).
     json.dump({"TRUNCATED": trunc, "finish_reason": fin, "completion_tokens": tok,
                "max_tokens": mt}, open(os.path.join(outdir, ".build-meta.json"), "w"))
     print(json.dumps({"files": n, "completion_tokens": tok, "finish_reason": fin,

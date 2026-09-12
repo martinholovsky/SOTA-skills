@@ -111,11 +111,29 @@ REMINDER = ("\n\n(Reminder: apply the engineering guidance established at the st
             "of this session — review your code against it before finishing.)")
 
 
-def guidance_text(case):
+def guidance_text(case, lean_anchor=False):
+    """The guidance established at turn 1.
+
+    ROADMAP 49. The first run found no decay and could not have found any: the anchor is
+    83,958 characters and the filler 12,997, a ratio of **0.15:1**, so there was never
+    enough intervening context to dilute it. Getting to even 3:1 by authoring filler needs
+    roughly 580 more pairs — a dead end, and why this sat from July.
+
+    `lean_anchor=True` shrinks the anchor instead, which is the item's own other option and
+    the one nobody had priced: **principle 5 alone**, 3,155 characters, flipping the ratio
+    to **4.12:1** with the filler that already exists. Verified before the flag was written.
+
+    It is also the more honest question. Principle 5 is what a routed session carries before
+    it opens any rules file, and it is the component this project credits with the bulk of
+    the completeness lift — so "does it survive thirty turns of unrelated talk?" is worth
+    more than the same question about an 84k anchor nobody actually loads.
+    """
+    head = ("For everything you build in this session, apply the following "
+            "engineering guidance and do not present incomplete code:\n\n")
+    if lean_anchor:
+        return head + _rc.principle5()
     ctx = "\n\n".join(open(os.path.join(ROOT, s), encoding="utf-8").read() for s in case["skills"])
-    return (f"For everything you build in this session, apply the following "
-            f"engineering guidance and do not present incomplete code:\n\n"
-            f"{_rc.principle5()}\n\n{ctx}")
+    return (head + f"{_rc.principle5()}\n\n{ctx}")
 
 
 def chat(model, messages, k, max_tokens=32000, temp=0.0):
@@ -144,10 +162,10 @@ def chat(model, messages, k, max_tokens=32000, temp=0.0):
     raise last
 
 
-def build_messages(case, arm, depth):
+def build_messages(case, arm, depth, lean_anchor=False):
     msgs = []
     if arm in ("anchor", "reminder"):
-        msgs.append({"role": "user", "content": guidance_text(case)})
+        msgs.append({"role": "user", "content": guidance_text(case, lean_anchor)})
         msgs.append({"role": "assistant",
                      "content": "Understood. I'll apply that engineering guidance to everything I build this session."})
     for u, a in FILLER[:depth]:
@@ -164,6 +182,11 @@ def main():
     ap.add_argument("--depths", default="0,12,30")
     ap.add_argument("--build-model", default="anthropic/claude-sonnet-4.6")
     ap.add_argument("--judge-model", default="anthropic/claude-opus-4.8")
+    ap.add_argument("--lean-anchor", action="store_true",
+                    help="ROADMAP 49: anchor on principle 5 alone (3,155 chars) instead of the "
+                         "case's rules files (83,958). Flips filler:anchor from 0.15:1 to 4.12:1 "
+                         "so the filler can actually dilute, and asks the question about the text "
+                         "a routed session really carries.")
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
     k = _rc.key()
@@ -187,7 +210,7 @@ def main():
     for arm in arms:
         results[arm] = {}
         for d in depths:
-            msgs = build_messages(case, arm, d)
+            msgs = build_messages(case, arm, d, a.lean_anchor)
             turns = len(msgs)
             print(f"  {arm:9s} depth={d:>2d} ({turns} msgs) generating…", flush=True)
             art = chat(a.build_model, msgs, k)

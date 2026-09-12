@@ -1,0 +1,31 @@
+task=c6_webhook  arms=['control', 'anchor', 'reminder']  depths=[0, 12, 30]  build=anthropic/claude-sonnet-4.6  judge=anthropic/claude-opus-4.8  (multi-turn decay, blind judge)
+
+  control   depth= 0 (1 msgs) generating…
+  control   depth= 0 recall=0.50  missing: idempotency, sizelimit, ratelimit, transport, tests
+  control   depth=12 (25 msgs) generating…
+  control   depth=12 recall=0.40  missing: idempotency, sizelimit, ratelimit, logging, transport, tests
+  control   depth=30 (61 msgs) generating…
+  control   depth=30 recall=0.40  missing: idempotency, sizelimit, ratelimit, logging, transport, tests
+  anchor    depth= 0 (3 msgs) generating…
+  anchor    depth= 0 recall=0.00  missing: sigverify, constanttime, idempotency, validation, sizelimit, ratelimit, logging, errhygiene, transport, tests
+  anchor    depth=12 (27 msgs) generating…
+  anchor    depth=12 recall=0.80  missing: idempotency, sizelimit
+  anchor    depth=30 (63 msgs) generating…
+  anchor    depth=30 recall=0.80  missing: idempotency, sizelimit
+  reminder  depth= 0 (3 msgs) generating…
+  reminder  depth= 0 recall=0.80  missing: idempotency, sizelimit
+  reminder  depth=12 (27 msgs) generating…
+  reminder  depth=12 recall=0.80  missing: idempotency, sizelimit
+  reminder  depth=30 (63 msgs) generating…
+  reminder  depth=30 recall=0.80  missing: idempotency, sizelimit
+
+recall by arm × filler-depth (turns of unrelated context after the guidance):
+  arm       K=0  K=12  K=30
+  control   0.50  0.40  0.40
+  anchor    0.00  0.80  0.80
+  reminder  0.80  0.80  0.80
+
+DECAY (anchor K0→K30): 0.00 → 0.80  (+0.80)
+REMINDER RECOVERY at K30: anchor 0.80 → reminder 0.80  (+0.00)
+saved evals/results/2026-09-12/decay-lean-anchor.json
+[run-decay elapsed 516.3s over 9 arm-depth runs | no completed baseline yet — 1 partial run(s) excluded; this run becomes it]

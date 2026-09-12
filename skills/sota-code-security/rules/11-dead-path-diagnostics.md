@@ -11,7 +11,7 @@ as the set of properties that make a stage falsifiable before you ship it.
 
 Related: inert controls (the catalog) → rules/10; **proving a control works, and
 validating the instrument or guard that reported it → rules/15**; fail-open authz
-→ rules/03; truncation before inspection → rules/10 §2.7; mutation testing and
+→ rules/03; truncation before inspection → rules/16 §2.7; mutation testing and
 watching a test fail → `sota-testing` rules/06 and rules/09; degradation telemetry →
 `sota-observability` rules/05; scale and cost → `sota-performance` rules/01;
 shell/CI exit-code masking → `sota-shell-scripting` rules/01.
@@ -136,11 +136,11 @@ buffer) and treat equality as truncated until shown otherwise. Field-reported
 and reproduced 2026-08-19: a recon call left `max_tokens` unset, inherited a
 4096 default, and a 4,843-character JSON fragment reached `json.loads` as a
 plain string — no exception from the provider, no flag, and a swallowing
-`except` (rules/10 §2.4) then published it as an empty profile. Corollary: **a
+`except` (rules/16 §2.4) then published it as an empty profile. Corollary: **a
 parse-error offset is uninterpretable without the document length.** "Failed at
 char 3,023" argues *against* truncation while you assume 4,096 tokens yield
 12–16k characters, and *for* it the moment you learn 3,023 was the last
-character — so log the size beside the offset. Class and fix: rules/10 §2.7.
+character — so log the size beside the offset. Class and fix: rules/16 §2.7.
 
 ### 2.2a The empty comparand — the zero on the other operand
 
@@ -367,7 +367,7 @@ control switched off. Say so in the finding rather than shipping the fix blind.
    input? Happy-path-only tests are how vacuous controls survive review
    (`sota-testing` rules/09).
 3. **Error handling on the main data path** — every catch/except between input
-   and output (rules/10 §2.4).
+   and output (rules/16 §2.4).
 4. **Fallback, retry, degrade, and "continue anyway" branches** — verify the
    fallback *actually engages*. A log line saying it will is not proof that it does.
 5. **Shell and CI glue**: pipelines without `pipefail` mask a non-final failure;
@@ -376,7 +376,7 @@ control switched off. Say so in the finding rather than shipping the fix blind.
 6. **Caches, tags, fingerprints** (`rules/13` §2).
 7. **Feature flags and config**: is the value **read** *and also* **applied**? A
    config field that parses, validates, and is never plumbed to the code path it
-   names is a silent no-op — distinct from rules/10 §2.5, where the flag *is*
+   names is a silent no-op — distinct from rules/16 §2.5, where the flag *is*
    applied, just more broadly than its name claims. Trace one flag end-to-end
    from file to the branch it is supposed to control.
 8. **In-band sentinels on a compared value** — a number whose domain includes an
