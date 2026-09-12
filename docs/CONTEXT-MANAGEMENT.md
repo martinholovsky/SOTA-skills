@@ -351,6 +351,25 @@ already loaded when the window is summarized.
   sweep since the ledger was renumbered)
   ([`evals/results/2026-07-13/DECAY.md`](../evals/results/2026-07-13/DECAY.md)).
 
+## Re-routing is per task shape, not per session (2026-09-12)
+
+The re-injection hook carries one clause the router cannot: **route again when the work
+changes shape.** A numbered imperative inside the router body cannot fix *"the router was
+never re-read"* — the hook is the only surface that fires after a session has already moved
+on from its opening frame.
+
+Observed four times before it was written, across three discovery modes and never as a
+trigger defect — the description matched, the rule existed, and it simply was not loaded:
+a session typing zsh one-liners while auditing with three shell rules unloaded; a
+documentation session that became campaign execution without re-routing; a shell-work
+session that never opened `sota-devsecops` and filed a duplicate-rule proposal as a result;
+and the review of that proposal, which verified the gap inside the file the report named and
+never asked which skill owned the topic.
+
+**Not yet measured.** The honest instrument is whether a long session that changes task
+shape mid-run loads the second skill at all — a routing eval, on a harness that already
+exists, needing live spend and its own pre-registration (ROADMAP 48).
+
 ## See also
 
 - [README → Always-on routing](../README.md#always-on-routing-recommended) — set up all six layers
