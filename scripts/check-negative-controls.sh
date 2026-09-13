@@ -496,6 +496,30 @@ wt_commit "probe: a release with no front-door declaration"
 probe_committed 14 "a release declares no front-door check" \
   "declares no front-door check"
 
+# 30 — a declared count that disagrees with the list it counts. The real defect:
+# README.md said "Eleven classes of defect" above a list of 26, correct when written
+# and fifteen behind seventeen days later. The mutation edits the NUMBER, leaving the
+# list alone, which is exactly how the defect arises in practice (someone adds a
+# bullet and never touches the sentence above it).
+( cd "$WT" && perl -pi -e 's/^Twenty-nine classes of defect/Eleven classes of defect/' README.md )
+probe 30 "a declared count disagrees with the list it counts" \
+  "match(es) of"
+
+# 30b — THE OTHER DIRECTION, and the one that actually happens: the list grows and
+# the sentence is left behind. Mutating the number proves the comparison runs;
+# mutating the LIST proves it is anchored to the list rather than to a literal.
+# A probe that only ever edits one side cannot tell those apart.
+( cd "$WT" && perl -0777 -pi -e 's/(\n- \*\*Controls that are inert\*\*)/\n- **A probe-injected extra class** that nothing counted.$1/' README.md )
+probe 30b "the list grew and the count stayed behind" \
+  "match(es) of"
+
+# 30c — the gate must FAIL CLOSED when it finds no markers at all. Deleting every
+# marker is the cheapest way to silence this check, so it must be the loudest
+# failure, not a quiet ok over an empty scan (rules/11 2.2 aimed at ourselves).
+( cd "$WT" && perl -pi -e 's/^<!-- count-check:.*-->\n//' README.md docs/ROADMAP.md )
+probe 30c "every count-check marker deleted — the gate must not report ok" \
+  "SCOPE EMPTY"
+
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
 # =============================================================================
@@ -695,7 +719,7 @@ if [ "$failed" -ne 0 ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29 (26 of 29)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30 (27 of 30)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        12          — mtime-based: needs a rendered asset older than its source."

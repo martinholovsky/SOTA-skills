@@ -387,6 +387,32 @@ are marked "needs verification", never asserted.
         --cases evals/cases/desc-routing-regressions.jsonl
     ```
 
+30. **A count stated in prose disagrees with the list it counts.** Found at the v1.41.2
+    cut: `README.md` opened its audit section with *"Eleven classes of defect"* above a
+    list of **26**. It was correct when written (2026-08-27, confirmed by counting the
+    list at that commit) and fifteen behind seventeen days later — and every neighbouring
+    gate had the wrong predicate for it: invariant 6 counts the `skills/` tree, 17 counts
+    claims about the *scripts*, 26 counts the roadmap's open set. A count whose
+    denominator is a **list in the same document** had nothing.
+
+    It is **opt-in, and that was a measurement rather than a preference**: a sweep for
+    `<number-word> <plural-noun>` over the front-door docs returns ~200 hits, nearly all
+    historical prose in CHANGELOG and ADOPTION-LOG entries that must never change. A
+    strict auto-detecting rule would open red and be disabled, which is worse than none
+    ([docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md)). So declare the pairing
+    next to the claim, where it travels with the prose:
+
+    ```markdown
+    <!-- count-check: ^- \*\* -->
+    Twenty-nine classes of defect survive every linter, ...
+    ```
+
+    The marker names the pattern; the claim is the next non-empty line; the scope runs
+    from the marker to the next Markdown heading. Digits and number-words both parse. The
+    stated number is never trusted — only compared. **Recount, then restate:** the first
+    correction written for the README defect was itself stale within the hour, because the
+    same change added three more classes. Fails closed if the scan finds no markers.
+
 17. **a document that describes the checks disagrees with them**: any stated count
     of invariants/checks that isn't the number `check-invariants.sh` prints, or a
     restatement of the negative-control coverage lists that isn't what
@@ -418,7 +444,7 @@ as a FALSE PASS, because a harness that accepts any failure reports full coverag
 testing nothing.
 
 Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 3, 4, 6,
-7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29 — 26 of 29; the harness prints the list and why the rest are
+7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30 — 27 of 30; the harness prints the list and why the rest are
 not covered, so read its output rather than this sentence). A **diff-based** check is not
 unprobeable: 11, 14 and 29 read a merge base, and the probe for them *commits* its
 mutation on the worktree's detached HEAD, then rewinds to the sha it captured first. Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a

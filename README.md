@@ -186,6 +186,7 @@ corpus, and we have no instrument that would.
 
 ### What the audit hunts that a scanner can't
 
+<!-- count-check: ^- \*\* -->
 Twenty-nine classes of defect survive every linter, SAST rule, and CVE scanner, because in
 each one the code isn't *wrong*. The library hunts them as explicit passes
 (this said "Eleven" for seventeen days — correct when written on 2026-08-27 and **fifteen
@@ -1284,7 +1285,7 @@ verify fast-moving claims against primary sources, keep **skill** files
 does not apply to README/CHANGELOG/`docs/`, which are read by humans — and end
 each rules file with an audit checklist — **exactly one**, since appending a
 section's bullets under a fresh heading strands them where a reader has already
-stopped. **29 invariants** enforce this in `scripts/check-invariants.sh`
+stopped. **30 invariants** enforce this in `scripts/check-invariants.sh`
 (pre-commit + CI), covering line caps, checklist placement *and uniqueness*,
 description limits, version and count drift, router completeness,
 internal link resolution, every rules file being reachable from its skill's index,
