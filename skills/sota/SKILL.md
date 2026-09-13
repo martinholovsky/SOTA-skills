@@ -49,7 +49,14 @@ rules files that match the code in front of you. Never load all skills at once.
 1. **Freshness first.** The library's version/spec/regulation facts were
    web-verified as of the last refresh (see README). Never trust them — or
    training data — for anything version- or CVE-sensitive at use time:
-   re-verify current releases and advisories before pinning or recommending.
+   re-verify current releases and advisories before pinning or recommending —
+   **and equally when you are merely *measuring* a third party's artifact**,
+   which does not feel like a version decision and is where this rule is
+   skipped. **Record the end-of-life date beside the version**, every time. A
+   version can be recalled fluently and with no felt uncertainty; an EOL date
+   effectively cannot, so requiring it forces the lookup that "check this is
+   current" does not. A version with no EOL date beside it has not been looked
+   up. Detail, and what to do with a lapsed one: `sota-devsecops` rules/03 §3.9.
 2. **Stop-and-ask on security-relevant decisions.** When a choice materially
    affects security posture (authn/z model, crypto primitive, trust boundary,
    secrets handling, network exposure), present the options with a
@@ -68,7 +75,12 @@ rules files that match the code in front of you. Never load all skills at once.
    which `-r` does not follow. The only check that works is a **positive
    control** — search for something you have already seen there, in the same
    invocation; if the control returns nothing, the instrument is broken and the
-   absence is not evidence (`sota-shell-scripting` rules/06 §2).
+   absence is not evidence (`sota-shell-scripting` rules/06 §2). Where a
+   control is unavailable because nothing is yet known to be in the target,
+   print a **denominator** instead — bytes, members, total rows — beside the
+   zero. **And weigh who benefits from the source**: a claim sourced to a party
+   that sells the remedy is a hypothesis, not a measurement
+   (`sota/rules/03` §2).
 4. **Stack profile.** If the repo or `~/.claude` contains a `profiles/*.md`
    stack profile (preferred stores, auth provider, license policy, platform
    conventions), its choices are the defaults for BUILD mode and the expected

@@ -157,6 +157,35 @@ legitimately shrinks the tree then costs one deliberate baseline update. Contain
 is good engineering. Containment without repointing the scanner is just a smaller
 blind spot.
 
+### 2a. A gate that stops at the artifact cannot see a defect that starts at load
+
+§2's blind spot is *lateral* — code moved out from under a gate's path expression. This
+one is **depth**, and no scope count reveals it: every gate ran over every file and the
+whole class of defect lives past the last line any of them executes.
+
+Formatters, linters, type checkers and most SAST stop at the **compiled artifact**. A
+loader, a verifier, a dynamic linker, a runtime capability check, a policy engine and a
+kernel all run *after* it. Field-reported: four gates — `fmt`, `clippy` and two
+domain-specific lint passes — were green on an eBPF object that the kernel verifier then
+refused to load, because the defect was a stack-budget overrun measured at load time
+(`sota-rust` rules/07 §1a). Nothing was misconfigured; the artifact was simply the end of
+their reach. The same boundary sits under a container that builds and crashes on start, a
+WASM module that compiles and fails instantiation, a plugin that links and fails its
+capability check, a Terraform plan that renders and is refused by admission.
+
+- **Name every gate's terminal artifact**, and ask what happens to it next. If the answer
+  is "something loads, verifies or admits it", that step is unprobed.
+- **One gate per pipeline must execute the artifact on a representative target** — load
+  it, start it, instantiate it, `--dry-run` it against the real admission controller.
+  Where the target is expensive or exotic (a specific kernel, a device), it is still the
+  only gate with reach, so its cost is the price of the class, not a reason to drop it.
+- **Green from the artifact-level gates is not evidence about load**, and should not be
+  quoted as if it were. This is `sota-code-security` rules/15's *"state the traversed
+  path beside the probe"* applied to a whole pipeline: say where the gates stop.
+- The mirror-image trap is a gate whose reach is bounded by what the **subject** checks
+  first — a runner that exits at a credential check in CI never reaches the code under
+  test. Injecting a **dummy** credential makes CI and a laptop measure the same depth.
+
 ## 3. A gate only gates if failing it makes the artifact unconsumable
 
 Everything above is about a gate being **skipped**. This is the case where the gate
@@ -395,6 +424,13 @@ Count the runs in which an entry produced no comparison at all, and alert on tha
       wrapper's success-path output handling checked, not assumed (pre-commit discards it
       unless the hook sets `verbose: true`); otherwise the warning is a durable artifact
 
+- [ ] **Where do the gates stop, and what runs after?** (§2a) Name each gate's terminal
+      artifact. If a loader, verifier, dynamic linker, capability check, admission
+      controller or kernel runs after it, at least one gate must **execute** the artifact
+      on a representative target — otherwise that whole depth is unprobed while every gate
+      is green. Conversely, a gate whose subject exits early (a credential check in CI)
+      reaches nothing past that point: inject a **dummy** credential so CI and a developer
+      machine measure the same depth.
 - [ ] **Does failing a gate make the artifact unconsumable, or merely unannotated?** For each
       pipeline, confirm the *consumable* identifier is published only after every gate: the
       pre-gate identifier **provably fails the deploy watcher's allow-pattern**, promotion is a

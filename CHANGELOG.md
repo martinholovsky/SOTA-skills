@@ -5,6 +5,48 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Field report III (InterdictOps, 2026-09-13) — six proposals adopted, one reported as evidence
+
+An intake pass over a field report from a session that **used** the library. Its value is in
+the framing: for four of its eight failures the relevant rule was already in context and was
+broken anyway, so those four are evidence about *rule shape* rather than coverage. Every
+falsifiable external claim was reproduced against a primary source before anything was
+adopted — see [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md) for the full verdicts and the
+placement reasoning.
+
+- **`sota/SKILL.md` principle 1 + `sota-devsecops/rules/03` §3.9 — record the EOL date beside
+  any third-party version.** The mechanism, not another instruction to be careful: a version
+  number can be recalled with no felt uncertainty, so rules that trigger on doubt cannot fire;
+  an EOL date cannot be recalled, so requiring the column forces the lookup. A row past its
+  EOL is **removed, not corrected** — an unsupported branch can answer the opposite of the
+  current one. Reproduced: 7 of 7 rows in the report's matrix, 5 stale, via `endoflife.date`.
+- **`sota-rust/rules/07` §1a — on a constrained target, a style lint's premise may be false.**
+  A real gap; the skill had nothing on eBPF, `no_std`, embedded or WASM. Worked case: a
+  warn-by-default clippy lint suggesting an owned argument spent 52 bytes of a **512-byte**
+  BPF stack (`MAX_BPF_STACK`, verified in `include/linux/filter.h`) and the program stopped
+  loading. Carries the linguistic tell — *"mechanical", "trivial", "style only"* license
+  skipping the analysis that would justify them.
+- **`sota-devsecops/rules/09` §2a — a gate that stops at the artifact cannot see a defect that
+  starts at load.** §2 covered the lateral blind spot; this is **depth**. Four gates green on
+  an object the kernel verifier refused. Name each gate's terminal artifact and ask what runs
+  after it.
+- **`sota-shell-scripting/rules/06` §2 — print a denominator where a positive control is
+  unavailable.** Bytes, members, total files, in the same invocation. Closes the case a
+  positive control cannot reach: an extraction or fetch into a blob you have never opened.
+- **`sota-shell-scripting/rules/06` §5a — the selector picked a different member than the
+  question named.** Sibling to §5: that one returns *less of the right population*, this one
+  returns *all of a neighbouring one* — nothing truncated, exit 0, no rule broken.
+- **`sota-code-security/rules/15` §2.1 — a suspiciously clean result from a fresh instrument.**
+  The inverse of the existing tell: the file trained the reader on *red* and *implausible*
+  results, and a perfect correlation reads as strong evidence instead of as a warning.
+- **`sota/SKILL.md` principle 3 + `sota/rules/03` §2 — weigh who benefits from the source.**
+  No coverage previously. Sources converging on the conclusion that sells their product are
+  one hypothesis held by several interested parties, not corroboration.
+
+Also: README hero line count 68k → 69k (invariant 6).
+
 ## [1.41.1] - 2026-09-13
 
 **Front door checked:** saturated measure · AACR-Bench · near chance

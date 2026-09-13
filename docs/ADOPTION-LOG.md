@@ -2548,3 +2548,99 @@ binaries in three distributions), and no change to the `.local.md` convention.
 **Landed:** `sota/SKILL.md` principle 3, `sota-shell-scripting/rules/06` §3,
 `sota-detection-engineering/rules/01` §8 — each with its audit-checklist half in the same
 change · v1.39.0
+
+### 2026-09-13 — InterdictOps field report III: six adopted, one sharpened into two, one reported as evidence only
+
+`FIELD-REPORT-INTERDICT-2026-09-13.local.md` — one session on a private cross-platform EDR
+(Linux eBPF sensor, CO-RE across two kernels, a supported-platform matrix). Eight failures,
+seven proposals. **Its framing is what makes it unusually useful: for four of the eight, the
+relevant rule was already in context and was broken anyway** — so those four are evidence
+about *rule shape*, not about coverage, and the report says so, including that its author's
+own instinct ("add a clause telling me to check") is the thing that already failed.
+
+**Every falsifiable external claim reproduced, 2026-09-13.** Seven of seven distro rows from
+`endoflife.date` (Alpine 3.20 EOL **2026-04-01** vs current 3.24; openSUSE Leap 15.6 EOL
+**2026-04-30** vs 16.0; Ubuntu 26.04 LTS; Debian 13; RHEL 10; kernel 6.17 superseded).
+`MAX_BPF_STACK 512` at `include/linux/filter.h:100` and the verbatim verifier string
+`"combined stack size of %d calls is %d. Too large"` at `kernel/bpf/verifier.c:5401`.
+`clippy::needless-borrows-for-generic-args` present, **style group, warn-by-default**, in the
+installed clippy 0.1.97. IPE present at tag `v6.12` and absent at `v6.11`, which is what makes
+the report's `ipe`-in-a-6.1-config tell load-bearing. Not reproduced, and labelled as such in
+the text: the Alpine 3.20-vs-3.24 `CONFIG_BPF_LSM` flip (needs both images) and every
+event internal to the private repo.
+
+**Adopted, with two placement corrections.**
+
+- **The EOL date as the forcing function** (proposal 1) → `sota/SKILL.md` principle 1 plus
+  `sota-devsecops` rules/03 **§3.9**. The strongest item in the report and the only failure a
+  *user* had to catch three separate times. Its mechanism generalises past versions: **demand
+  a second value that cannot be produced from plausibility.** A recalled version number
+  arrives with no felt uncertainty, so every rule triggering on doubt is structurally unable
+  to fire; an EOL date cannot be recalled, so requiring the column forces the lookup. Adopted
+  with the reporter's corollary intact — a lapsed row is **removed, not corrected**, because
+  an EOL branch can answer the *opposite* of the current one rather than a staler version of
+  it (measured: 5 of 7 rows stale in one pass).
+- **The denominator where a positive control is unavailable** (proposal 2) →
+  `sota-shell-scripting` rules/06 §2, **not** `sota-code-security` rules/15 as proposed. The
+  general idea is already ours in three shapes — a gate printing its denominator (rules/11
+  §2.2), an empty store result carrying its inventory (rules/13 §6), and *control the search
+  in the same invocation* (rules/06 §2). **What was genuinely missing is the reporter's own
+  argument**: a positive control needs a term you already know is present, so it is
+  unavailable for an **extraction or fetch into a blob you have never opened** — which is
+  where five of their six instances lived. It is a generalisation of rules/06 §2's existing
+  paragraph, so it went there rather than starting a fourth home.
+- **A style lint's premise on a constrained target** (proposal 3) → `sota-rust` rules/07
+  **§1a**. A real gap: `sota-rust` had nothing on eBPF, `no_std`, embedded or WASM. Adopted
+  with the linguistic tell the report identified, which is the transferable half — *"mechanical",
+  "trivial", "just a rename", "style only"* are classifications that license skipping analysis
+  and are applied **before** the analysis that would justify them.
+- **The gate that stops at the artifact** (proposal 3, second half) → `sota-devsecops`
+  rules/09 **§2a**, a new section. §2 covered the *lateral* blind spot (code moved out from
+  under a path expression) and nothing covered **depth**: four gates green on an object the
+  kernel verifier then refused. Folded in the mirror-image trap already known here — a gate
+  whose reach is bounded by what the *subject* checks first, fixed with a dummy credential.
+- **Population-selector drift** (proposal 4) → `sota-shell-scripting` rules/06 **§5a**, a
+  sibling to §5 rather than the rules/13-or-11 the report offered. Placement reasoning, since
+  it was a close call: all three instances are ad-hoc shell commands, and §5 is already *"the
+  listing tool answered your question about one page"*. The distinction earning a section is
+  that §5 returns **less of the right population** while this returns **all of a neighbouring
+  one** — nothing truncated, exit 0, no rule broken. Distinct from `sota-observability`
+  rules/05 §7a (no instrument exists, a proxy substitutes) and from rules/14 §4 (every
+  instrument correct, the reader stopped at the first affirmative one); cross-referenced both.
+- **The suspiciously clean result** (proposal 5b) → `sota-code-security` rules/15 §2.1. A true
+  sharpening: the existing text trains the reader on *red* and *implausible* results, and this
+  is the **inverse** — a perfect correlation, 15 for 15, that reads as strong evidence. Kept
+  the reporter's own distinction that a denominator would *not* have caught it; different
+  failure, different control, and collapsing them would weaken both.
+- **Commercially-interested sources** (proposal 6) → `sota/SKILL.md` principle 3 plus
+  `sota/rules/03` §2. **Zero coverage across three concept sweeps** — the only adjacent text
+  is `sota-copywriting` rules/04, which is the opposite direction (disclosing *your own*
+  material connection under the FTC guides). Framed structurally rather than tonally:
+  independent sources converging is evidence; sources converging on the conclusion that sells
+  their product is **one hypothesis held by several interested parties**.
+
+**Reported as evidence, no change made (proposal 7, and the reporter proposed none).** A
+pipeline written for *display* (`| tail -30`) had a status `echo` appended as an afterthought,
+so the construct was never classified as "the status path" and the exit-code rule did not
+attach. This is a **fourth** data point for a claim the library already makes — *a warning
+about a reflex does not disable the reflex* — in a different tool, from someone with the text
+in context. Recorded because the aggregate is the argument: if this library ever weighs
+"add another warning" against "change the default construct", four independent reproductions
+say the warning is not the lever.
+
+**A correction to the report's targeting, which cost nothing here but would have elsewhere.**
+Two proposals named `sota-code-security` rules/03; that file is **authorization**. The text
+quoted alongside them (*"a negative claim needs more proof than a positive one"*) is
+`sota/SKILL.md` principle 3, and the evidence standard is `sota/rules/03` §2. The two `rules/03`
+are different files in different skills. Checked against the library rather than the named
+path — the procedure this log has been burned by twice.
+
+**Housekeeping, flagged rather than fixed.** `sota-shell-scripting` rules/06 is now at
+**500/500** and is the next split candidate; do it by the **citation seam** (where its § refs
+cluster), never by heading count. No new skill, no `description` change, so the routing
+classifier is untouched.
+
+**Landed:** `sota/SKILL.md` principles 1 and 3 · `sota/rules/03` §2 ·
+`sota-devsecops/rules/03` §3.9 and `rules/09` §2a · `sota-rust/rules/07` §1a ·
+`sota-shell-scripting/rules/06` §2 and §5a · `sota-code-security/rules/15` §2.1 — each with
+its audit-checklist half in the same change.

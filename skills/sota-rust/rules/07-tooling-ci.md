@@ -47,6 +47,51 @@ await_holding_lock = "deny"
 - Run clippy on the same pinned toolchain as the build (lint sets drift across
   versions).
 
+### 1a. On a constrained target, a style lint's *premise* may be false
+
+Clippy's advice is near-universally correct because it is written against the
+assumptions of a hosted target: an 8 MB stack, an allocator, a real `std`. In an
+**eBPF program, an embedded or `no_std` crate, a WASM module, a kernel module or an
+interrupt handler**, one of those assumptions is gone, and a lint that encodes it
+silently spends a resource the compiler will not warn you about.
+
+Worked case. `clippy::needless_borrows_for_generic_args` (style, warn-by-default —
+*"taking a reference that is going to be automatically dereferenced"*, verified in
+clippy 0.1.97) fired on a map `insert(&key, &now, 0)` inside a BPF program and
+suggested the owned form. `insert` takes `impl Borrow<K>`, so the owned call
+monomorphises to `Borrow<K> for K` and copies the 52-byte key onto the stack. A BPF
+program gets **512 bytes for the whole call chain** — `MAX_BPF_STACK` in the kernel's
+`include/linux/filter.h` — of which a helper already held 344. The program stopped
+loading:
+
+```text
+combined stack size of 2 calls is 544. Too large
+```
+
+(that string is emitted by the kernel verifier, `kernel/bpf/verifier.c`.)
+
+Rules:
+
+- **Before taking a lint suggestion in such a crate, name the resource it spends.**
+  `Copy` means "cheap to copy" *on an 8 MB stack*; it says nothing about a 512-byte
+  one. The same applies to lints that suggest an owned value, an iterator adaptor, a
+  `format!`, or anything that inlines a larger frame.
+- **Do not let the word "mechanical" stand in for the analysis.** *"Mechanical",
+  "trivial", "just a rename", "style only"* are classifications that license skipping
+  evaluation, and they are applied **before** the evaluation that would justify them.
+  Treat them as a prompt to check, not as a conclusion — this is the linguistic tell
+  that a decision was made without being made.
+- **Prefer removing the lint's premise over silencing it.** Dropping `Copy` from an
+  oversized key type stops the lint firing *and* stops the next contributor
+  reintroducing the copy — better than `#[allow]`, which only silences this site. But
+  do not then claim the type *enforces* what it merely discourages.
+- **Set the policy at the crate, not the call site.** A constrained crate's
+  `[lints.clippy]` should `allow` the specific hosted-assumption lints with a reason
+  naming the constraint, so the rest of the group keeps working.
+- **Only a gate that loads or runs the artifact can catch this** — `fmt`, `clippy`
+  and lint passes all stop at the compiled object and were green on the broken one.
+  `sota-devsecops` rules/09 §2a.
+
 ## 2. rustfmt — zero-config by default
 
 - `cargo fmt --check` in CI. Default style; a `rustfmt.toml` should contain
@@ -225,6 +270,14 @@ gate (rules/06). Cache with `Swatinem/rust-cache`; pin action SHAs (rules/05).
       — blanket crate-level allows without reasons = Low each, pattern = Medium.
 - [ ] CI runs clippy with `-D warnings` on `--all-targets --all-features`;
       source does NOT hardcode `#![deny(warnings)]`.
+- [ ] **Constrained crates (eBPF, `no_std`, embedded, WASM, kernel) — is any lint
+      suggestion taken on a false premise?** (§1a) For each accepted style fix in such a
+      crate, name the resource it spends (stack frame, allocation, code size); hosted-
+      assumption lints are `allow`ed at the crate with a reason naming the constraint.
+      A change described as "mechanical" in one of these crates is unreviewed, not safe.
+- [ ] **Does any gate load or run the artifact?** (§1a) `fmt`, `clippy` and lint passes
+      all stop at the compiled object; a crate whose failures appear at load or verify
+      time is ungated until one gate executes it on the real target.
 - [ ] `cargo fmt --check` green and in CI; `rustfmt.toml` deviations are
       deliberate and few.
 - [ ] Tests: nextest in CI + separate doctest step; per-test timeout

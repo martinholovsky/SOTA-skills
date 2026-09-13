@@ -112,6 +112,36 @@ printf 'control=%s  hits=%s\n' \
 A control of **0** means the sweep is broken and the `hits=0` beside it means nothing. This
 is `sota-code-security` rules/15 §2.2's known-good, at one-liner scale.
 
+**Where you have nothing to control *with*, print a denominator instead.** A positive control
+needs a term you already know is present, so it is unavailable exactly where this fails most:
+an **extraction** or a **fetch** into a blob you have never opened. Field-reported, six empty
+results in one session each read as a fact about the subject — `cpio -i` listed 0 files from
+an RPM (it cannot read zstd payloads), `tar -tzf` found 0 members in a valid 39.8 MB archive,
+a fetch returned an empty page (an anti-bot challenge), `apt-cache depends` printed nothing
+(wrong query shape). Every one was the reader failing, and every one rendered as `0`.
+
+The fix is mechanical and needs no prior knowledge of the target: make each extraction,
+fetch or search emit **what it got** beside **what it found**, in the same invocation.
+
+```bash
+# BAD  — a fact about the subject, or a broken reader. Indistinguishable.
+rpm2archive -n "$RPM" | tar -xO ./boot/config-* | grep -c CONFIG_BPF_LSM
+
+# GOOD — the denominator localises the failure in one step
+printf 'ARCHIVE_BYTES:%s  MEMBERS:%s  CONFIG_LINES:%s\n' \
+  "$(stat -f%z "$TGZ")" "$(tar -tzf "$TGZ" | wc -l)" "$(grep -c '^CONFIG' "$CFG")"
+```
+
+`CONFIG_LINES:0` alone is a finding about the kernel. `CONFIG_LINES:0` beside
+`ARCHIVE_BYTES:39802880 MEMBERS:0` is a finding about your `tar` invocation. Same rule for a
+store rather than a file — an empty result carries the store's identity *and* its inventory:
+`sota-code-security` rules/13 §6.
+
+**And where a command *reports* what it did, read the result instead.** `cargo clean`
+printed `Removed 740751 files, 75.8GiB total` — specific and authoritative — while `df`
+showed nothing freed, a snapshot still holding the blocks. Two instruments caught it by
+luck, not by design.
+
 **Every searcher has silent-exclusion defaults, and they differ — so the fix is naming them,
 not switching tool.** Measured on one tree holding four matches (plain, hidden, gitignored,
 behind a symlinked dir):
@@ -388,6 +418,34 @@ The reporting rule follows §2's: **say which bound produced the number.** "330 
 (`--limit 1000`, no truncation — the run returned fewer rows than the cap)" is a
 measurement. "330 PRs" is a claim whose evidence has been thrown away, and "30" was too.
 
+## 5a. The selector picked a different member than the question named
+
+§5 is a command that returned **less** of the right population. This is one that returned
+**all** of a neighbouring one — harder to see, because nothing is truncated, nothing is
+silent and no rule was broken: the selector was reasonable, ran correctly, and answered a
+question one step to the left of the one you asked. Field-reported, three in one session:
+
+| the question | the selector typed | what it actually returns |
+|---|---|---|
+| "the kernel this release ships" | `sort -V \| tail -1` over the repo | the newest available — here a **backports** kernel, 6.12 for a 6.1 release |
+| "how much disk will this free" | `du -sh target` / the tool's own summary | apparent size / logical bytes deleted — **not** blocks returned to the filesystem |
+| "how much is reclaimable" | `podman system df` | images not backing a *running* container, with shared layers double-counted down the ancestry chain |
+
+`sort -V | tail -1` is the obvious way to get "the latest" and it is simply not "the
+default". Each of the three is the correct answer to a question nobody asked.
+
+- **Name the population member before you write the selector.** *Newest, largest, first,
+  default, reclaimable, installed* are six different members and at most one is your
+  question. Written down first, the selector is checkable against something.
+- **The tell is a value that cannot belong to the thing you asked about.** The Debian probe
+  returned a `CONFIG_LSM` string containing `ipe` — IPE merged in **Linux 6.12** (verified:
+  `security/ipe/ipe.c` present at tag `v6.12`, absent at `v6.11`), so it cannot appear in a
+  6.1 config. The row was refuted by its own output before it was written. Read one full
+  record from any selection before building an argument on the aggregate.
+- **Three numbers that disagree are three questions, not a discrepancy to average.** None
+  of `du`, the tool's own report and `df` is wrong; ask which the decision depends on. The
+  general form — a correct instrument answering the neighbouring question — is
+  `sota-observability` rules/05 §7a.
 
 ## Audit checklist
 
@@ -405,6 +463,16 @@ measurement. "330 PRs" is a claim whose evidence has been thrown away, and "30" 
       on BSD grep (macOS `/usr/bin/grep`) neither does; `rg` skips gitignored and hidden by
       default; `type grep` may reveal a wrapper. Control the sweep with a known-present term
       **in the same invocation**.
+- [ ] **Every extraction or fetch printed a denominator** (§2) — bytes retrieved, members
+      listed, total files — in the **same invocation** as the result read from it. `LINES:0`
+      alone is a fact about the subject; `LINES:0` beside `MEMBERS:0 BYTES:39802880`
+      localises it to the reader. Required wherever a positive control is unavailable
+      because nothing is known to be present in the target yet.
+- [ ] **Does the selector name the population member the question does?** (§5a) — *newest*
+      is not *default* (`sort -V | tail -1` returns a backports kernel), *apparent size* is
+      not *blocks freed*, *not backing a running container* is not *reclaimable*. Nothing is
+      truncated and the exit status is 0, so the only tell is a value that cannot belong to
+      the subject; read one full record before trusting the aggregate.
 - [ ] **Ad-hoc commands that write at scale** (§3): headroom checked (`df -h` on the target
       *and* the runtime's own filesystem), source mounted read-only, output outside the source
       tree, size bounded with `du -sh` before the copy, and build output (`target/`,
