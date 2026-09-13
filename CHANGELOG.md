@@ -62,8 +62,9 @@ negative-control harness caught it on the very next run. The probe appended exac
 to breach a 200-line cap — which breaches only from 199. At 169 the same mutation stopped
 breaching anything, invariant 24 correctly passed, and the probe reported `NOT CAUGHT: INERT`.
 
-This is the inverse-coupling shape the library already names: **a control whose strength
-decays as the thing it guards improves**, with no red build at the moment of decay. Nothing
+This is a shape the library did **not** name until this change — verified by sweep with a
+positive control, not assumed: **a control whose strength decays as the thing it guards
+improves**, with no red build at the moment of decay. Nothing
 was wrong with the gate, and nothing was wrong on the day the probe was written. The probe now
 measures the file and pads to the cap from wherever it is, printing both numbers.
 
@@ -79,6 +80,30 @@ library"* — checked with a positive control and two sweeps, it was not
 because it sat in the report's *"what worked"* section rather than among its proposals:
 **a report's non-proposal sections make claims about the library too, and they arrive
 without the framing that triggers a check.**
+
+### `sota-shell-scripting/rules/05` §3b — in-place edit on a symlink
+
+Two idioms treated as interchangeable, differing **exactly on the dangerous axis**. Measured
+2026-09-13 on macOS (`/usr/bin/sed`, BSD; perl v5.34.1), editing a symlink:
+
+| idiom | result | exit |
+|---|---|---|
+| `sed -i '' 's/…/…/' link` | refuses — `in-place editing only works for regular files` | **1** |
+| `perl -pi -e 's/…/…/' link` | **silently replaces the link with a regular file** | **0** |
+
+In the `perl` case the target is never modified, so the two paths diverge silently. GNU `sed`
+was not installed where this was measured and is **not** asserted either way.
+
+It earns a rule because the idiom that does this is the one reached for to edit many files at
+once, and a tracked symlink is just another path in that list. Field-reported the same day:
+`git ls-files '*.md' | xargs perl -pi -e …`, run to hand-test a probe, converted this
+repository's own `CLAUDE.md` and `GEMINI.md` into regular files, and `git add -A` staged the
+type change before it was noticed. **`git status` reports this as `T`, not `M`.**
+
+Worth recording alongside it: **invariant 24b, which exists to catch exactly that symlink
+breakage, read the index (`git cat-file -p :CLAUDE.md`) while the damage sat in the
+worktree** — so it reported ok on a correct copy. A control that reads a different copy than
+the one you changed cannot see the change.
 
 **What the gate cannot see, written down rather than discovered later:** the scope is
 positional, so prose between the list and the next heading that contains the pattern counts as

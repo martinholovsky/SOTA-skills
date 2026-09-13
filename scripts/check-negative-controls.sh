@@ -322,10 +322,11 @@ probe 23 "a CHANGELOG version heading has no link ref" "NO LINK REF for CHANGELO
 # ONE line, which breached the cap only while AGENTS.md sat at 199. Offloading the
 # invariants table took the file to 169 and the same mutation stopped breaching
 # anything -- the gate correctly passed, and the probe reported NOT CAUGHT. That is
-# the inverse-coupling shape the library names: a control whose strength decays as
-# the thing it guards gets healthier, silently, with no red build at the moment of
-# decay. Pad to the cap from wherever the file actually is, so the probe's strength
-# no longer depends on the file's slack.
+# the decay rules/12 1d describes -- a probe whose strength IS the subject's slack, so
+# improving the subject disarms it, with no red build at the moment of decay. The rule
+# was added in this same change; a sweep with a positive control confirmed the library
+# did not already cover it. Pad to the cap from wherever the file actually is, and clamp,
+# so the probe's strength no longer depends on the file's slack.
 ( cd "$WT" && python3 -c "
 import sys
 n = sum(1 for _ in open('AGENTS.md'))

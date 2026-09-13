@@ -336,7 +336,11 @@ because the same change added three more classes below):
   reads as a fact about the subject when `tar` simply could not open the archive. And the
   **selector** can name a different population member than the question did: `sort -V | tail -1`
   is the *newest*, not the *default*, and returned a backports kernel for a release that ships
-  another one — nothing truncated, exit 0, no rule broken.
+  another one — nothing truncated, exit 0, no rule broken. And a sweep that **writes** can
+  destroy what it inspects in a way `git status` shows as one character: `perl -pi` across a
+  path list **silently replaces a symlink with a regular file** (exit 0, target untouched),
+  where BSD `sed -i` refuses outright — measured, after that exact one-liner converted this
+  repository's own tracked symlinks.
   ([rules/06](skills/sota-shell-scripting/rules/06-ad-hoc-commands.md),
   [rules/03 §3a](skills/sota-shell-scripting/rules/03-security.md))
 - **Controls that block everything** — the mirror image, and the one every other pass
@@ -427,6 +431,13 @@ because the same change added three more classes below):
   no-op puts a real defect into production source, so **the revert is part of the
   technique** — verify it against the working tree, never against an exit status a wrapper
   will report as a clean pass.
+  **A known-bad also rots without anyone touching it**, and in the direction nobody
+  watches: a mutation pinned to a *delta* — append one line, add one file — breaches a
+  threshold only from the subject's current slack, so improving the subject disarms the
+  probe. Measured here: shrinking an always-loaded file from 199 lines to 169 silently
+  made the probe guarding its 200-line cap inert, and **every standard safeguard passed**
+  — the literal matched, the mutation took, the tree was dirty. Pin the mutation to the
+  threshold, and re-run the known-bads after a refactor, not only after a check changes.
   The remedy every mature discipline reached independently — the proof test, the
   clinical positive control, aviation built-in test, adversary emulation — is one
   move: a **negative control**, a committed known-bad the gate must reject on every
