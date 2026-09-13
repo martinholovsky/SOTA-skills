@@ -439,6 +439,19 @@ are marked "needs verification", never asserted.
     Write the verdict, what you checked, and what you could not. It is the record, not the
     judgement, that is gated — the same shape as invariants 14 and 29.
 
+    **What to do before you write that entry:** run the pass in
+    [`skills/sota/rules/03-audit-findings.md`](skills/sota/rules/03-audit-findings.md) §4 on
+    your own rule — state it as a falsifiable claim and try to **refute** it, from the files
+    rather than from your draft. That procedure exists for audit findings, and nothing
+    pointed it at rule text, which is why this line is here: writing a rule does not *feel*
+    like producing a finding, so the habit does not transfer on its own. It is what found
+    eleven defects in `sota-code-security/rules/12` §1d — an over-generalisation refuted by
+    four probes in the harness the rule itself cited, an unmeasured comparative claim, and a
+    `§` reference that **resolved cleanly while its target grounded the opposite prior**.
+    Invariant 18 proves a reference points somewhere real; it can never prove the target
+    supports the sentence citing it. Nothing here can. Neither can invariant 31 — it forces
+    this entry to exist, not to be honest.
+
 17. **a document that describes the checks disagrees with them**: any stated count
     of invariants/checks that isn't the number `check-invariants.sh` prints, or a
     restatement of the negative-control coverage lists that isn't what
