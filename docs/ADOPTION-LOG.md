@@ -2880,3 +2880,45 @@ files in this repo — and the always-loaded copy is the one that is **not** gat
 
 **Landed:** `sota-devsecops/rules/09` §2b · `sota-devsecops/rules/03` §3.6a — each with its
 audit-checklist half · unreleased
+
+
+### 2026-09-13 — the last four lessons out of the operator's global file, each re-verified
+
+The remaining four from that audit — the ones an earlier pass had wrongly counted as already
+covered. **That miscount is the first thing worth recording**: a loose pattern sweep reported
+15 of 19 rules duplicated, and opening the hits showed four were false positives (the
+"JS-rendered" hit was a passing *example* inside our own text; "hard links" matched an
+unrelated `fs.protected_hardlinks` sysctl; five "cannot distinguish" hits were all other
+subjects). **Counting grep hits is not checking coverage** — the same lesson this log recorded
+on 2026-09-12, arriving through a different door.
+
+Each was re-verified rather than taken on the operator's word:
+
+- **`sota/rules/01` §3 — an empty page is a fact about your fetcher.** Reproduced live:
+  `evals.mitre.org/results/enterprise` → HTTP 200, 3,150 bytes, **2 words** of visible text;
+  the API behind it → 1.85 MB, **124,872 words**. The remedy (look one level down for `/api/`,
+  `__NEXT_DATA__`, a sitemap) is what turns a four-pass "unreachable" into a source.
+- **`sota-llm-engineering/rules/01` §8a — a completeness rubric cannot tell "correctly
+  declined" from "omitted".** Verified against **our own retained artifact**
+  (`evals/results/2026-09-12/`): a guided arm scored **0.00 on ten items** for asking a
+  security-relevant clarifying question its guidance prescribes. Carries the harder half — an
+  eval storing only `artifact_len` cannot diagnose its own anomaly, so retain the artifact.
+- **`sota-shell-scripting/rules/05` §3c — a hard link does not survive an atomic rename.**
+  Executed: same inode, then `mktemp`+`mv` leaves the link holding **v1** while the file reads
+  **v2**, no error and no broken link; `ln` on a directory refuses outright. Strictly worse
+  than a symlink, whose failure is loud. Sits beside §3b, the same family.
+- **`sota-devsecops/rules/03` §3.6b — a scanner built against an older toolchain fails as
+  noise.** Mechanism verified in a container: an older toolchain meeting newer-declaring source
+  emits a message that **names the version skew**, not the project. The specific
+  stdlib-path symptom stays labelled field-reported rather than asserted.
+
+**And the intake reproduced a trap it was intaking.** Checking whether the rubric finding
+existed here, `rg -ril "clarifying question"` rewrote every match to the literal `il` — `-r` is
+`--replace` — so the output showed our own eval artifact reading *"one il that affects security
+scope"*. Files were fine; the command lied. Caught because the result was **implausible**, which
+is the fifth instance this session of the claim that a warning about a reflex does not disable
+the reflex, and the fourth recorded occurrence of this exact flag.
+
+**Landed:** `sota/rules/01` §3 · `sota-llm-engineering/rules/01` §8a ·
+`sota-shell-scripting/rules/05` §3c · `sota-devsecops/rules/03` §3.6b — each with its
+audit-checklist half · unreleased

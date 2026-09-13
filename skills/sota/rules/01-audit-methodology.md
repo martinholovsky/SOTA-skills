@@ -191,6 +191,35 @@ Budget explicit manual passes for the classes SAST is structurally blind to:
   (`sota-code-security` rules/10) over the controls the earlier passes
   confirmed exist.
 
+### An empty page is a fact about your fetcher, not about the source
+
+A client-rendered site returns **HTTP 200 with no content** to a plain fetcher, and that is
+indistinguishable from a page that genuinely says nothing. The failure presents as *"the
+source is empty"* — a finding about the **content** — when it is a finding about the
+**instrument**.
+
+Measured 2026-09-13 on a source four separate research passes had written off as unreachable:
+
+```console
+GET evals.mitre.org/results/enterprise   → HTTP 200,   3,150 bytes,       2 words of text
+GET evals.mitre.org/api/adversaries/     → HTTP 200, 1,854,829 bytes, 124,872 words
+```
+
+**The fix is usually one level down, and frequently unauthenticated.** Before concluding a
+source is gated or empty, look for the API feeding the page: an `/api/` path, a
+`__NEXT_DATA__` or `window.__INITIAL_STATE__` blob in the HTML, a sitemap, or an `.json`
+sibling of the route. Where none exists, browser automation renders it; where even that
+fails, an archive's capture of a retired **API endpoint** often survives when the archived
+HTML is only a redirect stub.
+
+- **Treat a body under a few hundred words from a documentation or data site as a broken
+  instrument**, not a short page. Print the byte count and the visible-word count beside any
+  claim you draw from a fetch — the denominator rule (`sota-shell-scripting` rules/06 §2)
+  applied to retrieval.
+- **"The page was empty" is never evidence the fact does not exist.** Say which retrieval
+  method failed. An absence sourced to one fetcher carries the burden in `rules/03` §2, and
+  a second method with the *same* failure mode is not a second method.
+
 ## 4. Audit hygiene
 
 - **Reproducible**: pin the commit; record exact tool versions and full
@@ -343,6 +372,12 @@ and it was true — the gate was parked on a trigger that had already been met w
 noticing: `run-repo-audit.py` pastes the whole router, §AUDIT included.)
 
 ## Audit checklist — quality gate on running the audit
+
+- [ ] **Any source written off as empty or unreachable?** (§3) A client-rendered page returns
+      **200 with almost no text** — measured, 2 words of visible text where the API behind it
+      returned 124,872. Look for the `/api/` path, a `__NEXT_DATA__`/`__INITIAL_STATE__` blob
+      or a sitemap before concluding a source says nothing, and print bytes plus visible-word
+      count beside any claim drawn from a fetch.
 
 Finding quality and report structure are checked by `rules/03`'s checklist; this
 one covers coverage, tooling and hygiene. Both run.

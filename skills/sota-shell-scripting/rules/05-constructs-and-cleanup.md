@@ -154,6 +154,36 @@ bearing, and a sweep is exactly what destroys them.** Field-reported the same da
 tracked `CLAUDE.md` and `GEMINI.md` into regular files, and `git add -A` staged the type
 change before anyone noticed.
 
+## 3c. A hard link does not survive the way tools actually update files
+
+§3b is an in-place edit destroying a **symlink**. This is the mirror: reaching for a **hard**
+link to avoid that, and getting a failure mode that is strictly worse because nothing breaks.
+
+Measured 2026-09-13:
+
+```console
+$ ln real.txt hard.txt      # same inode: 51720584 51720584, contents agree
+$ printf 'v2\n' > .tmp && mv -f .tmp real.txt      # how an atomic writer updates
+$ cat real.txt; cat hard.txt
+v2
+v1                          # inodes now 51720587 vs 51720584
+$ ln somedir somedir2
+ln: somedir: Is a directory
+```
+
+**Nothing errors and no link is broken** — `hard.txt` is simply a stale file that looks
+correct. Compare a symlink, whose failure mode is loud and obvious.
+
+- **Almost nothing edits a file in place.** git never does; nor does any "atomic write"
+  (`mktemp` + `mv`), which is most config-writing tools, most editors, and most formatters.
+  Each one writes a new inode and renames over the old name, and every hard link to the old
+  inode silently keeps the old content.
+- **You cannot hard-link a directory at all**, so any design that links *directories* into
+  place is out before you start — a symlink to a directory also picks up new files inside it
+  for free, which a per-file link can never do.
+- **Prefer the symlink and accept its loud failure.** "Broken link" is an error message;
+  "stale content that looks correct" is a bug report six weeks later.
+
 ## 4. Test constructs, printf, declarations
 
 - `[[ ]]` over `[ ]` in bash: no word splitting of unquoted vars, `&&`/`||` inside,
@@ -209,6 +239,10 @@ files=(/data/*); count=${#files[@]}                               # with nullglo
 
 ## Audit checklist
 
+- [ ] **Any hard link used to keep two paths in sync?** (§3c) It survives nothing that
+      writes-and-renames — git, `mktemp`+`mv`, most editors and formatters — and the stale
+      copy is a valid file with no broken link and no error. Directories cannot be hard-linked
+      at all. Prefer a symlink: its failure is loud.
 - [ ] **Any in-place sweep (`perl -pi`, `sed -i`) over a path list that could contain a
       symlink?** (§3b) Measured: **GNU sed, BusyBox sed and `perl -pi` all replace the link
       with a regular file at exit 0**, target untouched, the two copies then diverging. Only

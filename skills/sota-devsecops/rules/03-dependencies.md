@@ -212,6 +212,33 @@ ignore:
   and a regression test reproducing the vuln (§3.8); or replace the dependency. Record the
   chosen mitigation as VEX and set a re-check date — never just ignore-with-expiry.
 
+### 3.6b A scanner built against an older toolchain fails as noise, not as a finding
+
+§3.6a is two tools answering different questions. This is **one** tool whose own build has
+gone stale against the toolchain it is analysing — and the output looks like a catastrophic
+finding about your project.
+
+After a routine toolchain upgrade (often dragged in as a dependency of an unrelated
+`brew`/`apt` install), a vulnerability scanner compiled against the previous version emits a
+wall of parse errors from **standard-library sources** and exits non-zero. None of it is
+about your code.
+
+The mechanism, verified 2026-09-13 in a container: a toolchain meeting source that declares a
+newer version fails with a message that **names the version skew**, not the project —
+`go: go.mod requires go >= 1.23 (running go 1.21.13)`. Field-reported in the scanner case, the
+errors read `method must have no type parameters` and `file requires newer Go version`, with
+paths pointing into the toolchain's own tree.
+
+- **Two tells, and both are in the output**: the file paths are the *toolchain's* rather than
+  yours, and at least one message names a version. A genuine finding cites your module.
+- **Rebuild the tool against the current toolchain**, then **invoke it by absolute path**. A
+  package-manager copy earlier in `PATH` will shadow the one you just built — `command -v`
+  after a short-circuiting `PATH` prepend (`command -v x || export PATH=…`) still resolves the
+  old one. Which binary ran is `rules/09` §2b.
+- **Do not record this as a scan result in either direction.** It is neither a clean run nor a
+  finding; the scan did not happen. A CI step that treats non-zero as "vulnerabilities found"
+  will report a policy failure (`rules/09` §4 on classifying your own failures).
+
 ### 3.6a A clean run from one scanner is not coverage for another's question
 
 §3.6's triage assumes findings to triage. This is the inverse: **two tools that both "check
@@ -384,6 +411,11 @@ So require a second value that **cannot** be produced from plausibility:
 - [ ] Dependency-review gate on PRs, required, failing on high severity + license denylist
 - [ ] No `--extra-index-url` public/private mixing; npm internals scoped; GOPRIVATE set; internal names reserved publicly; fetches go through a caching proxy with audit log
 - [ ] Install scripts disabled by default in CI (`--ignore-scripts`/pnpm allowlist); new-dependency review covers install hooks, obfuscation, maintainer churn
+- [ ] **Did a scanner fail with errors naming the toolchain's own paths?** (§3.6b) That is a
+      stale tool build after a toolchain upgrade, not a finding — the tells are toolchain
+      paths and a message naming a version. Rebuild it, invoke by absolute path (a
+      package-manager copy earlier in `PATH` shadows it), and record the scan as **not run**
+      rather than as clean or as failing
 - [ ] **Is any "no vulnerabilities" claim resting on one scanner?** (§3.6a) A reachability
       tool (`govulncheck`) and a version-range tool (SCA/Dependabot) answer different
       questions — measured 1 advisory vs 19 alerts on one tree. State the question beside the

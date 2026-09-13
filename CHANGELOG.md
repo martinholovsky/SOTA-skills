@@ -146,6 +146,30 @@ broken — with a margin of **one line** from day one, which the rule now says.
 **Standing change:** a rule authored *and* adopted in the same session is the highest-risk
 change in a PR, not the safest.
 
+### The remaining four lessons out of that file, each re-verified
+
+The four an earlier pass had wrongly counted as covered. **The miscount is the first finding:**
+a loose pattern sweep said 15 of 19 rules were duplicated; opening the hits showed four were
+false positives — the "JS-rendered" hit was a passing *example* inside our own text, "hard
+links" matched an unrelated `fs.protected_hardlinks` sysctl. **Counting grep hits is not
+checking coverage.**
+
+- **`sota/rules/01` §3 — an empty page is a fact about your fetcher, not the source.**
+  Reproduced live: a client-rendered page returned **200 with 2 words** of visible text while
+  the API behind it returned **1.85 MB / 124,872 words**. Look one level down (`/api/`,
+  `__NEXT_DATA__`, a sitemap) before calling a source unreachable.
+- **`sota-llm-engineering/rules/01` §8a — a completeness rubric cannot tell "correctly
+  declined" from "omitted".** Verified against our own retained artifact: a guided arm scored
+  **0.00 on ten items** for asking a clarifying question its guidance prescribes. If the arm
+  that should be better scores catastrophically worse, suspect the scoring — and retain the
+  artifact, because an eval storing only `artifact_len` cannot diagnose its own anomaly.
+- **`sota-shell-scripting/rules/05` §3c — a hard link does not survive an atomic rename.**
+  Executed: same inode, then `mktemp`+`mv` leaves the link on **v1** while the file reads
+  **v2**, no error, no broken link. Strictly worse than a symlink, whose failure is loud.
+- **`sota-devsecops/rules/03` §3.6b — a scanner built against an older toolchain fails as
+  noise, not as a finding.** Mechanism verified in a container; the tells are toolchain-owned
+  paths and a message naming a version. Record the scan as **not run**, not as clean.
+
 ### Two lessons taken out of an operator's global agent file
 
 An audit of the operator's own always-loaded `~/.claude/CLAUDE.md`, prompted by asking what in
