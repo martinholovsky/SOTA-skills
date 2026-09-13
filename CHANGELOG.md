@@ -151,13 +151,23 @@ change in a PR, not the safest.
 Two idioms treated as interchangeable, differing **exactly on the dangerous axis**. Measured
 2026-09-13 on macOS (`/usr/bin/sed`, BSD; perl v5.34.1), editing a symlink:
 
-| idiom | result | exit |
+| implementation | `-i` on a symlink | exit |
 |---|---|---|
-| `sed -i '' 's/…/…/' link` | refuses — `in-place editing only works for regular files` | **1** |
-| `perl -pi -e 's/…/…/' link` | **silently replaces the link with a regular file** | **0** |
+| **BSD sed** (macOS `/usr/bin/sed`) | refuses — `in-place editing only works for regular files` | **1** |
+| **GNU sed 4.9** (Debian) | **silently replaces the link with a regular file** | **0** |
+| **BusyBox sed 1.37.0** (Alpine) | **silently replaces the link with a regular file** | **0** |
+| **perl -pi** (5.34.1) | **silently replaces the link with a regular file** | **0** |
+| GNU sed `-i --follow-symlinks` | edits the **target**, link preserved | 0 |
 
-In the `perl` case the target is never modified, so the two paths diverge silently. GNU `sed`
-was not installed where this was measured and is **not** asserted either way.
+In every silent case the target is never modified, so the two paths diverge without a word.
+
+**Corrected 2026-09-13, after GNU and BusyBox were measured in containers.** The first
+version of this rule had GNU `sed` marked *not verified* and drew the contrast as
+*perl converts, sed refuses* — which made `sed -i` look like the safe idiom. It is not.
+**`sed -i` is safe only on BSD**, and the split runs the wrong way: a macOS developer sees
+the refusal, concludes the idiom is safe, and ships a script that destroys symlinks silently
+in CI. The rule now says never to rely on the refusal, and to enumerate regular files
+(`git ls-files -s | awk '$1=="100644"'`) instead. `--follow-symlinks` is GNU-only.
 
 It earns a rule because the idiom that does this is the one reached for to edit many files at
 once, and a tracked symlink is just another path in that list. Field-reported the same day:

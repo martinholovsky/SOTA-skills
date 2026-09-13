@@ -2754,3 +2754,34 @@ proves a ledger line exists, never that the reasoning in it is sound, and never 
 is correct. It makes the intake unskippable; it does not make it good.
 
 **Landed:** invariant 31 + probes 31/31b + `probe_committed_green` · unreleased
+
+
+### 2026-09-13 — `rules/05` §3b corrected: `sed -i` is safe only on BSD
+
+The rule shipped hours earlier said *`perl -pi` converts a symlink, BSD `sed -i` refuses*,
+with GNU `sed` explicitly marked **not verified** because it was not installed on the machine
+where the measurement was taken. The operator asked for it to be verified. It was, in
+throwaway containers:
+
+| implementation | `-i` on a symlink | exit |
+|---|---|---|
+| BSD sed (macOS) | refuses | 1 |
+| **GNU sed 4.9** (Debian) | **silently converts** | **0** |
+| **BusyBox sed 1.37.0** (Alpine) | **silently converts** | **0** |
+| perl -pi 5.34.1 | silently converts | 0 |
+
+**The unverified row was carrying the rule's advice.** With GNU unknown, the contrast read as
+*perl is dangerous, sed is safe* — and the text said so, calling BSD's refusal "a feature".
+With GNU and BusyBox measured, the real finding is a **platform split that runs the wrong
+way**: the safe behaviour exists only on the machine a developer tests on, and CI has the
+dangerous one. A rule that told you to prefer `sed -i` would have made that worse.
+
+**The lesson is about the label, not the tool.** Marking a row *"not verified"* is honest and
+it does **not** make the surrounding advice safe — the advice was already resting on the
+unmeasured cell. When an unverified value would change the recommendation, it is not a caveat,
+it is a blocker: measure it or do not give the recommendation. Containers made this a
+two-minute check that was skipped because the local box lacked the binary.
+
+**Landed:** `sota-shell-scripting/rules/05` §3b rewritten with all four implementations, its
+audit-checklist half, plus README, `docs/INDEX.md` and the CHANGELOG entry that carried the
+refuted contrast · unreleased
