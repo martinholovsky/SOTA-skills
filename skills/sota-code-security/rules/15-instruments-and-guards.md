@@ -128,6 +128,18 @@ tree is clean"* may never have run: `sota-shell-scripting` rules/06 §1.
   file after hitting it, and hit it again three hours later, because the reflex comes from
   muscle memory that a note does not reach.
 
+  **The inverse tell, and the one this rule keeps missing: a *suspiciously clean* result.**
+  Everything above trains on red and implausible. A fresh instrument also fails by returning
+  something **too good** — a perfect correlation, a round number, a total with no exceptions
+  — and that lands as *strong evidence* rather than as a warning, which is exactly why it
+  survives. Field-reported: an extractor written ninety seconds earlier reported a threshold
+  correlating **15 for 15** with the observed failures. The clean table was the artifact: its
+  regex required `= (` on one line, so three wrapped cases were scored arity 0, and the real
+  boundary was "three or more fails, two passes" — nearly published as "any tuple fails".
+  Note that a denominator would *not* have caught this one; the instrument read every case it
+  was given and mis-scored them. **Re-derive two rows by hand** before a clean result from a
+  new instrument becomes a claim, and be most suspicious where the correlation is perfect.
+
 ### 2.2 The bar
 
 **Never trust a number from an instrument you have not watched produce a *wrong*
@@ -383,6 +395,10 @@ condition being false.
       indistinguishable from the control never having run
 
 - [ ] **When a freshly-written check disagrees with long-green code, was the check suspected first?** (§2.1) The harness is the newer artifact. Look for an *implausible* result rather than merely a red one, and re-derive it a second way with a different failure mode before it is reported as a finding
+- [ ] **…and when it *agrees* suspiciously well?** (§2.1) A perfect correlation, a round
+      number or a total with no exceptions from an instrument written this session is
+      evidence about the instrument first. Two rows re-derived **by hand** before the result
+      is quoted — a denominator does not catch this one
 
 - [ ] **Every probe states the path it traverses**, and that statement is narrower than
       the gate's reputation. For each green gate, name one code path it does *not*

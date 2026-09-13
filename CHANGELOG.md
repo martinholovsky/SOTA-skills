@@ -5,6 +5,71 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.41.2] - 2026-09-13
+
+**Front door checked:** EOL date · denominator · selector · constrained · sells the remedy
+
+### Field report III (InterdictOps, 2026-09-13) — six proposals adopted, one reported as evidence
+
+An intake pass over a field report from a session that **used** the library. Its value is in
+the framing: for four of its eight failures the relevant rule was already in context and was
+broken anyway, so those four are evidence about *rule shape* rather than coverage. Every
+falsifiable external claim was reproduced against a primary source before anything was
+adopted — see [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md) for the full verdicts and the
+placement reasoning.
+
+- **`sota/SKILL.md` principle 1 + `sota-devsecops/rules/03` §3.9 — record the EOL date beside
+  any third-party version.** The mechanism, not another instruction to be careful: a version
+  number can be recalled with no felt uncertainty, so rules that trigger on doubt cannot fire;
+  an EOL date cannot be recalled, so requiring the column forces the lookup. A row past its
+  EOL is **removed, not corrected** — an unsupported branch can answer the opposite of the
+  current one. Reproduced: 7 of 7 rows in the report's matrix, 5 stale, via `endoflife.date`.
+- **`sota-rust/rules/07` §1a — on a constrained target, a style lint's premise may be false.**
+  A real gap; the skill had nothing on eBPF, `no_std`, embedded or WASM. Worked case: a
+  warn-by-default clippy lint suggesting an owned argument spent 52 bytes of a **512-byte**
+  BPF stack (`MAX_BPF_STACK`, verified in `include/linux/filter.h`) and the program stopped
+  loading. Carries the linguistic tell — *"mechanical", "trivial", "style only"* license
+  skipping the analysis that would justify them.
+- **`sota-devsecops/rules/09` §2a — a gate that stops at the artifact cannot see a defect that
+  starts at load.** §2 covered the lateral blind spot; this is **depth**. Four gates green on
+  an object the kernel verifier refused. Name each gate's terminal artifact and ask what runs
+  after it.
+- **`sota-shell-scripting/rules/06` §2 — print a denominator where a positive control is
+  unavailable.** Bytes, members, total files, in the same invocation. Closes the case a
+  positive control cannot reach: an extraction or fetch into a blob you have never opened.
+- **`sota-shell-scripting/rules/06` §5a — the selector picked a different member than the
+  question named.** Sibling to §5: that one returns *less of the right population*, this one
+  returns *all of a neighbouring one* — nothing truncated, exit 0, no rule broken.
+- **`sota-code-security/rules/15` §2.1 — a suspiciously clean result from a fresh instrument.**
+  The inverse of the existing tell: the file trained the reader on *red* and *implausible*
+  results, and a perfect correlation reads as strong evidence instead of as a warning.
+- **`sota/SKILL.md` principle 3 + `sota/rules/03` §2 — weigh a source that sells the remedy.**
+  No coverage previously. Sources converging on the conclusion that sells their own product
+  are one hypothesis held by several interested parties, not corroboration.
+
+### The stale-claim sweep the cut is for — four counts, none of them gated
+
+Every number below was **correct when written** and went stale silently. None is reachable
+by an invariant: invariant 6 counts the `skills/` tree, invariant 17 counts claims about the
+*scripts*, and a count whose denominator is a **list in the same document** has no gate.
+
+- **`README.md` said "Eleven classes of defect"** above a list of **26** — correct on
+  2026-08-27 (verified by counting the list at that commit), fifteen behind seventeen days
+  later. Now **twenty-nine**, after this release adds three. The first correction written was
+  itself stale within the hour, which is recorded in the line: recount, *then* restate.
+- **`AGENTS.md` said the router was 420/500**; it was **432**. The same sentence also
+  contradicted itself — "wrong a SEVENTH time" beside "Wrong **six** times".
+- **The router's context budget said rules files run 77–497 over 270**; **271** files, max
+  **500**. True on 2026-09-11, false on 2026-09-12 when `rules/16` landed.
+- **`docs/ROADMAP.md` said "All 55 items"** the moment a 56th was added.
+
+**ROADMAP item 56 opened:** gate a spelled-out count against the list it counts. It passes
+this repo's three filters (has it failed · silently · mechanically checkable) and is a row
+rather than a commit because invariant 19 demands a known-bad probe and `AGENTS.md` sits at
+**199/200** with no room for a 30th invariant's table row.
+
+Also: README hero line count 68k → 69k (invariant 6).
+
 ## [1.41.1] - 2026-09-13
 
 **Front door checked:** saturated measure · AACR-Bench · near chance
@@ -8225,6 +8290,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.41.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.41.2
 [1.41.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.41.1
 [1.41.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.41.0
 [1.40.7]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.40.7

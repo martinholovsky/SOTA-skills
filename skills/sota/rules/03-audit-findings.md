@@ -180,6 +180,21 @@ context that would qualify it (`sota-shell-scripting` rules/01 §3). An audit th
 reproduce its own quoted output without re-running the job has a weaker evidence chain
 than it appears to.
 
+**Weigh who benefits from the source.** Security claims arrive disproportionately from
+parties that sell the remedy — vendor blogs, product whitepapers, a sponsored benchmark —
+and such a source is not disqualified by that, it is *unblinded* by it. The tell is
+structural rather than tonal: independent sources converging is evidence; **sources
+converging on the conclusion that sells their own product is one hypothesis held by
+several interested parties.** Field-reported: the two sources establishing that LSM-based
+hooks resist a bypass that syscall hooks do not were both vendors of LSM-based sensors.
+
+- **Name the interest in the finding itself**, not in your own head — the row outlives the
+  reasoning that produced it, and the next reader inherits the claim without the caveat.
+- **Prefer a test you run yourself.** Where the claim is about observable behaviour, the
+  vendor's conclusion is a hypothesis with an experiment attached to it for free.
+- **Where the test is pending, label it a design argument, not a measurement** — and give
+  it a severity that reflects an unverified premise (§1: state the deciding assumption).
+
 ## 3. Decision-ledger review — audit the decisions, not just the code
 
 Code review finds defects in what was built. It cannot find the defect where the
@@ -418,6 +433,10 @@ Deliver in exactly this order:
 - [ ] **Does every reported OK name its subject?** (§2) "exit 0", "no results", "green",
       "up" — say what each is *about*: the job not the launcher, the store's path not just a
       row count, the revision not just the suite.
+- [ ] **Does any finding rest on a source that sells the remedy?** (§2) If so, is the
+      interest stated in the row, and is the claim labelled a design argument rather than a
+      measurement until someone runs the test? Several interested sources agreeing is one
+      hypothesis, not corroboration.
 - [ ] Every finding has title, severity+justification, file:line@commit,
       minimal evidence, standard mapping, concrete impact, diff-level
       remediation, and effort estimate?

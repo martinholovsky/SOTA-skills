@@ -302,6 +302,41 @@ Vendoring (committing dependency source) is occasionally right, mostly wrong:
 - Middle path that usually wins: pull-through proxy with retention (§3.3) — registry-
   outage resilience without the rot.
 
+## 3.9 The EOL date is what forces the lookup — platform and base-image matrices
+
+§3.7 keeps *dependencies* current. This is the layer under them — base images, OS
+releases, distributions, runtimes, the rows of a "supported platforms" table — where the
+version is chosen once, written into a matrix, and never re-read. The router's principle 1
+states the rule; this is why it takes the shape it does.
+
+**A recalled version number carries no felt uncertainty.** It arrives subjectively
+identical to a looked-up one — no hedge, no "I think" — so every rule that triggers on
+doubt is structurally unable to fire, and "re-verify before recommending" does not reach
+it. Worse, the framing is usually wrong too: pulling `alpine:3.20` to *test* something
+reads as picking a fixture, not as a version decision, so the freshness rule is not even
+consulted.
+
+So require a second value that **cannot** be produced from plausibility:
+
+- **Every versioned third-party row carries its EOL date.** A version with no EOL beside
+  it has not been looked up — that is the whole mechanism, and it is checkable by eye in
+  review. `endoflife.date`'s API covers most OS, distro, runtime and database cycles in
+  one request; cross-check anything load-bearing against the vendor's own page.
+- **A row whose EOL has passed is removed from the matrix, not corrected.** Testing an
+  unsupported branch does not produce a slightly-stale answer, it produces an answer about
+  a different system. Field-reported: Alpine **3.20** (EOL 2026-04-01) reports
+  `# CONFIG_BPF_LSM is not set` where the current branch reports `CONFIG_BPF_LSM=y` — the
+  stale row did not understate the current release, it said the opposite, turning "needs
+  one boot parameter" into "cannot run without a custom kernel".
+- **Sweep the whole table in one pass, not the row you were corrected on.** The same
+  session fixed the Alpine row, wrote the lesson into the document, and left an openSUSE
+  Leap **15.6** row (EOL 2026-04-30) that was stale for identical reasons one line down.
+  The lesson had been encoded as a fact about Alpine rather than a procedure about
+  versions. Re-running the lookup across all rows revealed **five of seven** stale at once;
+  it is cheap and total, and nothing but the missing column was ever demanding it.
+- **Give the matrix an expiry.** A platform table is a decision with a review date
+  (§3.7.1's discipline for a pin): the nearest EOL in the table *is* that date.
+
 ## Audit checklist
 
 - [ ] Lockfiles committed for every manifest; CI/Docker builds use frozen/hash-verified installs; no `npm install`/bare `pip install` in CI
@@ -314,3 +349,4 @@ Vendoring (committing dependency source) is occasionally right, mostly wrong:
 - [ ] **Every pin has a named staleness mechanism (§3.7.1)** — the bot confirmed to parse *that* file/line, or a watcher, or a written acceptance of the freeze with an owner and a review date; pins landed while still a no-op, never bundled with an upgrade
 - [ ] Vendored deps (if any) are scanner-visible, auto-refreshed, and unpatched (or patches tracked upstream)
 - [ ] **Inert-dependency sweep run** — declared-but-not-reached dependencies, modules and plugins, proven by deletion rather than by a tool's silence: [rules/10](10-inert-dependencies.md), a full pass with its own checklist
+- [ ] **Every versioned third-party row carries an EOL date (§3.9)** — base images, OS/distro releases, runtimes, supported-platform matrices. A version with no EOL beside it has not been looked up, and a row past its EOL is **removed**, not corrected: an unsupported branch can answer the *opposite* of the current one, not merely a staler version of it. When one row is found stale, re-run the lookup across **all** rows in the same pass
