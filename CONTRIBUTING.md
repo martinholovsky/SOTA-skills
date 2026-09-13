@@ -413,6 +413,32 @@ are marked "needs verification", never asserted.
     correction written for the README defect was itself stale within the hour, because the
     same change added three more classes. Fails closed if the scan finds no markers.
 
+31. **A new rule section ships with no entry in the intake ledger.** Diff-based, and it
+    closes a gap found by auditing this repository's own gates: all thirty other checks
+    assert structure, consistency or a declaration, and **none of them looks at whether a
+    rule is true**. That is not fixable in general — "is this claim correct" is semantic,
+    and a fuzzy gate gets disabled, leaving you worse off than the prose it replaced
+    ([docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md)).
+
+    So it gates what *is* mechanical: whether the rule went through review at all.
+    `docs/ADOPTION-LOG.md` is where an idea's verdict and reasoning are recorded. An
+    **external** proposal always lands there; a rule its author both *found and adopted*
+    never does, and that is precisely the path that skips scrutiny.
+    `sota-code-security/rules/12` §1d was authored and adopted in one session, shipped on
+    30 green checks, and an adversarial read then returned **eleven** defects — including
+    a `§` reference that resolved cleanly (invariant 18 green) while its target grounded
+    the opposite prior.
+
+    **A moved heading is not a new rule.** This repo splits rules files regularly and a
+    split re-adds every heading it carries, so a heading that existed in *any*
+    `skills/*/rules/*.md` at the merge base is exempt. Without that the check would fire
+    on every split, open red, and be disabled. There is deliberately **no manual escape
+    hatch** — the exemption removes the only large false-positive class, and an escape
+    nobody can trip is a checkbox.
+
+    Write the verdict, what you checked, and what you could not. It is the record, not the
+    judgement, that is gated — the same shape as invariants 14 and 29.
+
 17. **a document that describes the checks disagrees with them**: any stated count
     of invariants/checks that isn't the number `check-invariants.sh` prints, or a
     restatement of the negative-control coverage lists that isn't what
@@ -444,7 +470,7 @@ as a FALSE PASS, because a harness that accepts any failure reports full coverag
 testing nothing.
 
 Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 3, 4, 6,
-7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30 — 27 of 30; the harness prints the list and why the rest are
+7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 — 28 of 31; the harness prints the list and why the rest are
 not covered, so read its output rather than this sentence). A **diff-based** check is not
 unprobeable: 11, 14 and 29 read a merge base, and the probe for them *commits* its
 mutation on the worktree's detached HEAD, then rewinds to the sha it captured first. Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a

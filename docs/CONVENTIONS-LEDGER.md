@@ -71,10 +71,10 @@ A convention earns a gate only if it passes **all three**:
 
 ## The ledger
 
-### Enforced — invariants 1–30
+### Enforced — invariants 1–31
 
 <!-- count-check: · +1 -->
-**30 conventions** are gated, one per invariant, in the order the checks run:
+**31 conventions** are gated, one per invariant, in the order the checks run:
 
 Skill-file line cap · audit-checklist placement **and uniqueness** · internal-name denylist · description cap ·
 version lockstep · count surfaces · router completeness · link resolution ·
@@ -91,7 +91,7 @@ link reference** · **`AGENTS.md` stays under its own 200-line cap and keeps its
 symlinks** · **eval runners are named in `evals/README.md` and undocumented eval flags
 do not grow** · **the roadmap's open set agrees with itself** · **every ADOPTION-LOG
 deferral names its revisit trigger** · **every eval case set declares a SELECTION RULE** ·
-**a release changing a skill description declares a routing check** · **a count stated in prose agrees with the list it counts**.
+**a release changing a skill description declares a routing check** · **a count stated in prose agrees with the list it counts** · **new rule text ships with a line in the intake ledger**.
 Each is in `scripts/check-invariants.sh` and documented in
 [docs/INVARIANTS.md](INVARIANTS.md). (Corrected 2026-08-19: this section read "(14) — invariants 1–14" and named
 only thirteen, while 15 and 16 were already gated and described in the table below —

@@ -461,6 +461,38 @@ probe_committed() {  # <id> <name> <expected substring>  — commit already made
   cmp -s "$REPO/$GATE" "$WT/$GATE" || { echo "FAIL: gate copy did not survive rewind"; exit 1; }
 }
 
+probe_committed_green() {  # <id> <name> <expected ok-substring> — commit already made
+  # The inverse of probe_committed: for an EXEMPTION, the gate must stay green. A bare
+  # "exit 0" is too weak — a check that SKIPPED is also green, so the pass would prove
+  # nothing (probe 29b's lesson: an escape that can never fire is a checkbox). Assert
+  # the exempting check's own ok-line, which only appears if it ran and exempted.
+  local id="$1" name="$2" want="$3"
+  tested=$((tested + 1))
+  local head; head=$(git -C "$WT" rev-parse HEAD)
+  if [ "$head" = "$WT_ORIG" ] || [ -z "$(git -C "$WT" diff --name-only "$WT_ORIG" "$head")" ]; then
+    echo "  [$id] $name — PROBE BROKEN: no commit landed on top of the worktree HEAD."
+    failed=$((failed + 1))
+  else
+    run_gate
+    if [ "$GATE_RC" -ne 0 ]; then
+      echo "  [$id] $name — EXEMPTION DID NOT HOLD: the gate failed on a change it must allow."
+      printf '%s\n' "$GATE_OUT" | grep -E '^ +[A-Z]' | head -3 | sed 's/^ */        got: /'
+      failed=$((failed + 1))
+    elif case "$GATE_OUT" in (*"$want"*) true ;; (*) false ;; esac; then
+      echo "  [$id] $name — caught"
+      caught=$((caught + 1))
+    else
+      echo "  [$id] $name — FALSE PASS: green, but the exempting check never said so."
+      echo "        expected to see: $want"
+      failed=$((failed + 1))
+    fi
+  fi
+  ( cd "$WT" && git reset -q --hard "$WT_ORIG" && git clean -fdq ) >/dev/null 2>&1 \
+    || { echo "FATAL: could not rewind the probe worktree to $WT_ORIG."; exit 1; }
+  cp "$REPO/$GATE" "$WT/$GATE"
+  cmp -s "$REPO/$GATE" "$WT/$GATE" || { echo "FAIL: gate copy did not survive rewind"; exit 1; }
+}
+
 # 29 — a release that edits a skill description and declares no routing check. This
 # is v1.35.0's own defect replayed: sota-skill-security shipped a description carrying
 # "instruction file" twice, took r1_token_count's traffic from sota-llm-engineering
@@ -551,6 +583,36 @@ probe 30b "the list grew and the count stayed behind" \
     | tr '\n' '\0' | xargs -0 perl -pi -e 's/^<!-- count-check:.*-->\n//' )
 probe 30c "every count-check marker deleted — the gate must not report ok" \
   "SCOPE EMPTY"
+
+# 31 — new rule text with no line in the intake ledger. The gap it closes was found
+# by auditing this repo's own gates: all 30 other checks assert structure or a
+# declaration, and none looks at whether a rule is TRUE. `rules/12` 1d was authored
+# and adopted in one session, shipped on 30 green checks, and an adversarial read
+# then returned eleven defects. This gates the record, not the judgement.
+( cd "$WT" && perl -0pi -e 's/^## Audit checklist/## 99. A section that never went through intake\n\nPlaceholder guidance.\n\n## Audit checklist/m' \
+      skills/sota-rust/rules/06-performance.md )
+wt_commit "probe: a new rule section with no ledger entry"
+probe_committed 31 "a new rule section ships with no ADOPTION-LOG entry" \
+  "no docs/ADOPTION-LOG.md entry in the same change"
+
+# 31b — THE EXEMPTION HAS TO HOLD, not merely exist. This repo splits rules files
+# regularly and a split re-adds every heading it carries; if a moved heading counted
+# as new, the check would fire on every split, open red and be disabled. So: put a
+# heading that ALREADY EXISTS in rules/ at the merge base into a different rules file,
+# touch no ledger, and require the gate to stay green AND to say it exempted it.
+# Copying rather than moving is deliberate — a real move renumbers sections and would
+# trip check 18 on the references, making this a catch for the wrong reason.
+( cd "$WT" && python3 -c "
+import pathlib, re
+src = pathlib.Path('skills/sota-rust/rules/06-performance.md')
+dst = pathlib.Path('skills/sota-rust/rules/02-errors-and-panics.md')
+head = re.search(r'(?m)^## (?!Audit checklist).+\$', src.read_text()).group(0)
+d = dst.read_text()
+dst.write_text(d.replace('## Audit checklist', head + chr(10)*2 + 'Relocated verbatim, not new guidance.' + chr(10)*2 + '## Audit checklist', 1))
+" )
+wt_commit "probe: a heading that already exists in rules/ appears in another file"
+probe_committed_green 31b "a relocated heading is not new guidance — the gate must stay green" \
+  "no new sections"
 
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
@@ -751,7 +813,7 @@ if [ "$failed" -ne 0 ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30 (27 of 30)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 (28 of 31)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        12          — mtime-based: needs a rendered asset older than its source."

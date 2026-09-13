@@ -1296,7 +1296,7 @@ verify fast-moving claims against primary sources, keep **skill** files
 does not apply to README/CHANGELOG/`docs/`, which are read by humans — and end
 each rules file with an audit checklist — **exactly one**, since appending a
 section's bullets under a fresh heading strands them where a reader has already
-stopped. **30 invariants** enforce this in `scripts/check-invariants.sh`
+stopped. **31 invariants** enforce this in `scripts/check-invariants.sh`
 (pre-commit + CI), covering line caps, checklist placement *and uniqueness*,
 description limits, version and count drift, router completeness,
 internal link resolution, every rules file being reachable from its skill's index,
