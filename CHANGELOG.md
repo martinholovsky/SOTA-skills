@@ -146,6 +146,24 @@ broken — with a margin of **one line** from day one, which the rule now says.
 **Standing change:** a rule authored *and* adopted in the same session is the highest-risk
 change in a PR, not the safest.
 
+### `verify-setup.sh` reads better on a terminal, and identically to a machine
+
+Colour and a status symbol per row (`✔ PASS`, `✘ FAIL`, `▲ PART`, `? UNVR`, `ℹ INFO`,
+`· N/A`), dimmed evidence so the status and label carry the scan, bold section headers, and
+summary counts where a zero `FAIL` is grey rather than red — a clean run has no red in it.
+New `--no-color`; `NO_COLOR` and `TERM=dumb` already honoured.
+
+**The TTY gate is load-bearing, not polish.** `check-negative-controls.sh` part B asserts on
+lines that *start with* the status word — `case "$line" in (FAIL*"$needle"*)` — and **twelve
+probes depend on it**. Those probes capture output through `$( )`, so stdout is not a TTY and
+the plain branch runs. Decorating unconditionally would have turned all twelve into silent
+FALSE PASSes: a gate that looks fine and checks nothing. Verified by diffing the piped output
+before and after — identical but for the §F change below.
+
+**§F deduplicated.** A 90-character remedy was repeated on every searcher row, pushing the
+part that actually *differs* between them — which exclusions each one has — off the right of
+an 80-column terminal. The remedy now prints once beneath the block.
+
 ### The remaining four lessons out of that file, each re-verified
 
 The four an earlier pass had wrongly counted as covered. **The miscount is the first finding:**

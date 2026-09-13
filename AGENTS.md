@@ -136,7 +136,8 @@ the setting. The pre-commit hook scans each commit locally.
   mechanical half (skills reachable **vs the checkout's own count**, whether their descriptions fit the listing budget or arrive name-only, hook installed vs merely
   configured, licence under any name, whether CI ever *executed* and ever *rejected*, and **§F: what
   your searcher silently skips** — behavioural, INFO-only, the positive control the one thing that
-  can fail; `--runs N` widens the CI sample, `--reach-only` is what `install.sh` runs);
+  can fail; `--runs N` widens the CI sample, `--reach-only` is what `install.sh` runs, `--no-color` forces the
+  plain rows that part B's probes match on);
   [docs/VERIFY-SETUP.md](docs/VERIFY-SETUP.md) is the paste-in prompt for the half a script cannot
   do — whether the agent file's content is meaningful and whether its claims are still *true*
 - [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md) — the **external-idea intake

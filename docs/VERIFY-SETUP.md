@@ -8,11 +8,19 @@ different questions — run both:
 /path/to/SOTA-skills/scripts/verify-setup.sh          # deterministic half
 /path/to/SOTA-skills/scripts/verify-setup.sh --runs 200   # widen the CI-history sample
 /path/to/SOTA-skills/scripts/verify-setup.sh --reach-only # section A only (what install.sh runs)
+/path/to/SOTA-skills/scripts/verify-setup.sh --no-color  # plain output (also: NO_COLOR=1, TERM=dumb)
 ```
 
 `install.sh`/`update.sh` end every run with `--reach-only`, so the *library reach* half is
 checked whether or not anyone remembers to. The repo-context, gate and CI sections are not:
 they describe whichever directory you are standing in, so they stay a deliberate manual run.
+
+**Output is two-mode and the plain mode is a contract.** On a TTY the rows carry colour and a
+status symbol (`✔ PASS`, `✘ FAIL`, `▲ PART`, `? UNVR`, `ℹ INFO`, `· N/A`). Anywhere else —
+piped, redirected, `NO_COLOR`, `TERM=dumb`, `--no-color` — every line is the plain
+`STATUS  check  evidence` it has always been, starting at column 0. That is not cosmetic:
+`check-negative-controls.sh` part B asserts on lines beginning `FAIL`, and twelve probes
+depend on those bytes.
 
 **`scripts/verify-setup.sh`** does everything mechanical and does it identically
 every time: are the skills reachable, is the routing hook installed, does the

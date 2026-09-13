@@ -69,6 +69,35 @@ set -x
   values (base64, URL-encoded). Don't `base64` a secret into logs.
 - Storage/rotation strategy → `sota-secrets-management`.
 
+### 2a. An assignment prefix does not reach a process substitution
+
+The idiom for keeping a secret out of `ps` is to pass it in the environment rather than in
+argv. It has a hole exactly where a helper produces the secret, and the failure is silent —
+the helper runs, the command succeeds, and the value it needed was never set.
+
+The shell sets up `<(helper)` **before** running the command, and an assignment prefix
+applies only to *that command's* environment. So the helper is not a child of the command
+carrying the variable:
+
+```console
+$ MY_VAR=secret cat <(./show-my-var)     # MY_VAR=UNSET   <- the helper never sees it
+$ MY_VAR=secret ./show-my-var            # MY_VAR=secret  <- control: prefixes do work
+$ ( export MY_VAR=secret; ./show-my-var )  # MY_VAR=secret
+```
+
+Measured 2026-09-13 in **bash and zsh alike** — the control line is what makes the first
+result evidence rather than a broken helper. It bites hardest when the variable *is the whole
+point*: `VAR=token curl --data @<(build-body)` sends a body built without the token, and
+`curl` still exits 0.
+
+- **Export in a subshell and redirect to a file**, or use a pipe — both put the helper in the
+  environment's scope: `( export TOKEN=…; build-body ) > body.json`.
+- **Do not reach for `env VAR=… cmd`** as the fix: it puts the value back into `env`'s own
+  argv, which is the exposure the idiom existed to avoid.
+- **A helper that silently produced an unauthenticated result is the failure mode** — have it
+  fail loudly on a missing variable (`: "${TOKEN:?TOKEN not set}"`) rather than emit a body
+  without it.
+
 ## 3. PATH hygiene and privileged scripts
 
 Any script running as root (cron, sudo, init, setuid wrappers' children) must not trust
@@ -260,6 +289,11 @@ substitution in help text** rather than literal characters. `--severity=error` s
 - shfmt settings belong in `.editorconfig` so editor, hook, and CI agree.
 
 ## Audit checklist
+
+- [ ] **Any secret passed as an assignment prefix to a command using `<(…)`?** (§2a) The
+      prefix does not reach the process substitution — measured in bash and zsh — so the
+      helper runs without it and the command still exits 0. Export in a subshell or use a
+      pipe; never `env VAR=… cmd`, which returns the value to argv.
 
 - [ ] **Linters invoked the way the gate invokes them** — flags and file selection read out
       of the hook/CI config (`sota-devsecops` rules/09 §5, which owns this); a mismatched

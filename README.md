@@ -1047,6 +1047,7 @@ run is *skipped* is a gate on paper.
 ```sh
 /path/to/SOTA-skills/scripts/verify-setup.sh     # read-only; --runs N widens the CI sample
 /path/to/SOTA-skills/scripts/verify-setup.sh --reach-only   # section A only: is the library reaching this machine?
+/path/to/SOTA-skills/scripts/verify-setup.sh --no-color     # plain rows; also honours NO_COLOR and TERM=dumb
 ```
 
 `install.sh` (and therefore `update.sh`) runs the `--reach-only` half itself at the end
