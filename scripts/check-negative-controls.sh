@@ -317,7 +317,22 @@ probe 23 "a CHANGELOG version heading has no link ref" "NO LINK REF for CHANGELO
 # 2026-09-05 and 202 on 2026-09-06, each time from adding an invariant's table row,
 # each time caught only by a hand-run `awk`. Appends to a file no other check reads
 # for length, so nothing else can complain first.
-( cd "$WT" && printf 'padding to breach the always-loaded cap\n' >> AGENTS.md )
+#
+# THIS PROBE WENT INERT ON 2026-09-13 AND THE HARNESS CAUGHT IT. It appended exactly
+# ONE line, which breached the cap only while AGENTS.md sat at 199. Offloading the
+# invariants table took the file to 169 and the same mutation stopped breaching
+# anything -- the gate correctly passed, and the probe reported NOT CAUGHT. That is
+# the inverse-coupling shape the library names: a control whose strength decays as
+# the thing it guards gets healthier, silently, with no red build at the moment of
+# decay. Pad to the cap from wherever the file actually is, so the probe's strength
+# no longer depends on the file's slack.
+( cd "$WT" && python3 -c "
+import sys
+n = sum(1 for _ in open('AGENTS.md'))
+need = 200 - n + 1
+sys.stderr.write('probe 24: AGENTS.md is %d lines; padding %d to breach 200\\n' % (n, need))
+open('AGENTS.md','a').write('padding to breach the always-loaded cap\\n' * max(need, 1))
+" )
 probe 24 "AGENTS.md over its own 200-line target" "it must stay UNDER 200"
 
 # 24b — the cap's PREMISE, not its arithmetic (rules/10 §1's proxy question). The
