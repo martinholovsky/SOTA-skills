@@ -206,6 +206,45 @@ first draft had not modelled, one of which made it flag *correct* references (`r
 ambiguity**: where a reference could plausibly resolve more than one way, accept it. A
 gate that flags correct work gets switched off, which leaves you worse off than no gate.
 
+## 1d. The probe that still applies, and no longer bites
+
+§1b's staleness case is a known-bad whose **literal has drifted**: the mutation no longer
+matches, nothing changes, and the standard guard — *assert the mutation took* — catches it.
+This is the harder sibling, and that guard is blind to it: **the mutation applies cleanly,
+the tree really does change, and the result still does not cross the threshold**, because
+the subject improved underneath it.
+
+Measured 2026-09-13 in this library's own harness. A probe for a **200-line cap** on an
+always-loaded agent file appended exactly **one line**. That breaches from 199 and from
+nowhere else. Refactoring the file to 169 lines — a deliberate improvement, removing the
+reason the cap kept being breached — left the same mutation applying perfectly and breaching
+nothing. The gate correctly passed; the probe reported `NOT CAUGHT: INERT`, which reads as an
+accusation against a healthy gate (§1b's third bullet) and was in fact a report about itself.
+
+Three things make this worth its own name:
+
+- **The improvement and the disarming were the same edit.** No review step separates them,
+  because there is nothing to notice: the diff improves a file and touches no probe.
+- **Every standard safeguard passes.** The literal matched. The mutation took. The tree was
+  dirty. Only *running* the harness against the changed subject reveals it.
+- **It is a decay, not a break** — the probe gets weaker as the codebase gets healthier, so
+  the suites most diligently improved are the ones whose probes rot first.
+
+Rules:
+
+- **Pin a mutation to the threshold, not to a delta.** Measure the subject at probe time and
+  compute what it takes to cross the line from wherever it is, then print both numbers so a
+  later reader sees what the probe actually did:
+  `n=$(count subject); need=$((LIMIT - n + 1))`.
+- **Every probe against a numeric threshold has this shape** — a line or file count, a size,
+  a duration, a coverage percentage, a rate limit, a quota, a timeout. Audit them as a class
+  rather than waiting for each to decay.
+- **Re-run the known-bads after a refactor, not only after a change to a check.** A refactor
+  can disarm a probe as easily as it can break a gate, and only one of those is loud.
+- **A probe reporting `NOT CAUGHT` is a claim about the probe until proven otherwise** — the
+  prior belongs on the newer artifact (`rules/15` §2.1), and after a refactor the *probe's
+  assumptions* are what just changed, even though its text did not.
+
 ## 1c. The control that was correct, and then edited
 
 §1 probes a control that is **wrong**, §1a one that blocks **everything**, `rules/14`
@@ -269,6 +308,13 @@ leaving it undescribed, because the next reader cannot distinguish an accepted r
 from an oversight (`rules/15` §2).
 
 ## Audit checklist
+
+- [ ] **Does any probe mutate by a fixed delta against a numeric threshold?** (§1d) A
+      known-bad that adds one line, one file or one millisecond breaches only from the
+      subject's *current* slack, and decays silently the moment the subject improves — the
+      mutation still applies, the tree still changes, and *assert the mutation took* passes.
+      Pin the mutation to the threshold (measure, then compute the crossing) and print both
+      numbers. Re-run the known-bads after any refactor, not only after a check changes.
 
 - [ ] **Mutation probe run on security-critical paths** — control body replaced
       with the permissive no-op, with the dependency forced present and the

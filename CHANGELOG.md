@@ -56,6 +56,31 @@ behind** (the direction that actually happens), and every marker deleted — whi
   invariant 26 cannot see, since 26 reads only the open set) and `docs/WHY-IT-WORKS.md`
   *"Fourteen invariants"* — **sixteen behind**, because that file was in no gate's doc set.
 
+### A probe went inert because the thing it guards got healthier
+
+Restructuring `AGENTS.md` from 199 lines to 169 **silently disarmed probe 24**, and the
+negative-control harness caught it on the very next run. The probe appended exactly one line
+to breach a 200-line cap — which breaches only from 199. At 169 the same mutation stopped
+breaching anything, invariant 24 correctly passed, and the probe reported `NOT CAUGHT: INERT`.
+
+This is the inverse-coupling shape the library already names: **a control whose strength
+decays as the thing it guards improves**, with no red build at the moment of decay. Nothing
+was wrong with the gate, and nothing was wrong on the day the probe was written. The probe now
+measures the file and pads to the cap from wherever it is, printing both numbers.
+
+Worth stating plainly because it cuts against intuition: **the health improvement and the
+control weakening were the same edit**, and only a harness that re-derives its own mutations
+each run can see that.
+
+Landed as a rule: **`sota-code-security/rules/12` §1d**, the blind sibling of §1b's drifted
+literal. §1b's case is caught by *assert the mutation took*; this one passes that guard,
+because the mutation really does apply. Field report III called this class *"already in the
+library"* — checked with a positive control and two sweeps, it was not
+([docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md)). It was accepted unverified during the intake
+because it sat in the report's *"what worked"* section rather than among its proposals:
+**a report's non-proposal sections make claims about the library too, and they arrive
+without the framing that triggers a check.**
+
 **What the gate cannot see, written down rather than discovered later:** the scope is
 positional, so prose between the list and the next heading that contains the pattern counts as
 an item. Not hypothetical — it happened while landing this check, in a sentence *describing*

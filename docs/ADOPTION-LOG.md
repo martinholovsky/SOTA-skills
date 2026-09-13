@@ -2644,3 +2644,34 @@ classifier is untouched.
 `sota-devsecops/rules/03` §3.9 and `rules/09` §2a · `sota-rust/rules/07` §1a ·
 `sota-shell-scripting/rules/06` §2 and §5a · `sota-code-security/rules/15` §2.1 — each with
 its audit-checklist half in the same change.
+
+
+### 2026-09-13 — a claim from field report III, checked late and found false
+
+Report III's §8 ("What worked") described a known-bad that **decayed silently as the codebase
+improved** — the probe depended on a suppression existing, and the suppression became
+unnecessary — and said of it: *"That failure mode … is already in the library."*
+
+**It was not.** Verified 2026-09-13 with a positive control (`known-bad` returns 9 hits in
+`sota-code-security` rules/12, so the instrument works) across two vocabulary sweeps and then
+by reading the headings of the skill that would own it. The closest coverage, **rules/12 §1b**,
+is the *drifted literal*: a known-bad that no longer matches, which the standard guard —
+*assert the mutation took* — catches by design. The decay case is its blind sibling: the
+mutation applies cleanly, the tree really changes, that guard passes, and the result still does
+not cross the threshold.
+
+**What makes the correction cheap to justify is that the class then happened here, in this
+session, while the report was being implemented.** Offloading the invariants table took
+`AGENTS.md` from 199 lines to 169 and silently disarmed probe 24, which appended exactly one
+line to breach a 200-line cap. The improvement and the disarming were the **same edit**. Landed
+as **rules/12 §1d** with its audit-checklist half.
+
+**The reviewer's share, which is the reusable part.** During the intake I accepted §8 as
+"already ours" without checking, because §8 was labelled *what worked* rather than a proposal —
+so it never entered the verification path the seven numbered proposals went through. **A report's
+non-proposal sections make claims about the library too, and they arrive without the framing
+that triggers a check.** Same shape as the 2026-09-12 lesson one entry up, one level further
+out: there I verified the gap in the file the reporter named instead of the library; here I did
+not verify at all, because the sentence was not shaped like a request.
+
+**Landed:** `sota-code-security/rules/12` §1d · v1.41.3
