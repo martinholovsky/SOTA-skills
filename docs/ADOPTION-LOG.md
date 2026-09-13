@@ -2961,5 +2961,18 @@ defaults=1 follow=2; got defaults=1 follow=2"* (the message drifted from the com
 both read the same variables), and the first version of claim 8 tested a simplified command
 the rule never made.
 
+**First CI run, and the denominator was the finding — not the exit status.** Both jobs
+reported success while executing **8 of 11** on Linux and **9 of 11** on macOS: neither runner
+ships `ugrep` or `ripgrep`, so the two claims about the searchers this library *recommends*
+skipped on both and had still only ever run on one laptop. Green and hollow, in the gate built
+to prevent exactly that. Closed by installing them on the Linux leg (apt; brew on the macOS
+runner costs minutes and that leg already carries the BSD rows that justify it).
+
+**What the two runners did confirm, cell by cell, which is the whole argument for scope (b):**
+`sed -i` on a symlink — **GNU converts silently at exit 0**, **BSD refuses at exit 1 with the
+link intact**; `grep -r` on a symlinked dir — **GNU skips in traversal and follows an
+argument**, **BSD skips both and follows an argument only with a trailing slash**. Each runner
+proves its own half; neither could have proved the other's.
+
 **Landed:** `scripts/check-claims.sh` (11 claims, 2 runners) · a `claims` CI job ·
 `CONTRIBUTING.md` convention · `sota-shell-scripting/rules/06` §2b **corrected** · unreleased

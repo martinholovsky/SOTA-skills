@@ -122,6 +122,15 @@ jobs:
           persist-credentials: false
           # git log --author="" is one of the claims; it needs real history to count.
           fetch-depth: 0
+      - name: Install the searchers whose behaviour skills/ makes claims about
+        # WITHOUT THIS THE JOB IS GREEN AND HOLLOW. Neither runner ships ugrep or
+        # ripgrep, so claims 5 and 7 skipped on both and the matrix verified 8 of 11
+        # -- true, and not what the job appears to say. The library RECOMMENDS these
+        # tools and states their symlink behaviour, so that behaviour has to be
+        # checked somewhere. apt only: brew on the macOS runner costs minutes, and
+        # the macOS leg already carries the BSD rows that are its reason to exist.
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ugrep ripgrep zsh
       - name: Re-run the executable claims the skills make about tool behaviour
         # 218 claims across skills/ say "measured"; a few dozen are executable in a
         # temp dir in milliseconds, and those can rot silently when a tool changes.
