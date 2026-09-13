@@ -2840,3 +2840,43 @@ meta-guidance" to something the repo now acts on.
 **Landed:** `sota-rust/rules/07` §1b · `sota-code-security/rules/15` §2a ·
 `sota-devsecops/rules/03` §3.9 extended · `CONTRIBUTING.md` authoring principle — each with its
 audit-checklist half where it has one · unreleased
+
+
+### 2026-09-13 — two lessons taken out of an operator's global agent file, before thinning it
+
+Not an external report and not a field brief: an audit of the **operator's own
+`~/.claude/CLAUDE.md`**, prompted by asking what in it might conflict with this library or
+cause it to be skipped. Measured: **366 of 411 lines (89%)** duplicate library content, and
+**15 of 19** rules tested are already in `skills/`. Two were not, and they are taken here
+**before** anything is removed from that file — an idea that lives in one person's always-loaded
+config is invisible to everyone else, and deleting it without intake loses it.
+
+- **`sota-devsecops/rules/09` §2b — which binary, and over what.** A third axis of gate reach
+  beside §2 (scope drifted sideways) and §2a (reach stops at the artifact): the **identity**
+  of the tool that produced the verdict, and the **extent** it was pointed at. Both invisible
+  in a green tick, neither leaving a diff. Two measured halves — a Homebrew `cargo` shadowing
+  a rustup shim so `cargo fmt --check` exited 0 while ignoring every nightly-only config key,
+  and `--manifest-path` narrowing coverage so local passed what CI rejected.
+- **`sota-devsecops/rules/03` §3.6a — a clean run from one scanner is not coverage for
+  another's question.** `govulncheck` 1 advisory vs Dependabot 19 alerts on the same tree,
+  neither wrong: reachability-of-a-symbol versus version-in-the-graph. The library had the
+  **triage** half (§3.6, prioritise reachable findings) and not the inverse — that a clean
+  scan from one tool silently substitutes its question for the other's. Includes the
+  second-order finding: merging a bot's bump is not closing the advisory it cites.
+
+**One live divergence found and NOT resolved here, deliberately.** The operator's file and
+`sota-shell-scripting` rules/06 §2 both carry a `grep -r`/`-R` symlink table, and they
+disagree: the global one has two columns (*ugrep `-r` skips, `-R` follows*), while the
+library later refined it to **symlinked dir as the argument** versus **met in traversal** —
+where ugrep `-r` *follows* an argument and skips only what it meets while walking. Following
+the older table, a sweep whose **root** is a symlink behaves opposite to expectation. Flagged
+to the operator rather than silently picking a reading, because one of the two measurements
+should be re-run rather than deferred to.
+
+**The general point, which is why this is in the ledger at all:** *"two homes for one rule is
+how they drift"* (recorded here 2026-09-12) applies to an operator's config as much as to two
+files in this repo — and the always-loaded copy is the one that is **not** gated by invariants
+18, 22, 30 or 31, not measured, and not updated when the library learns something.
+
+**Landed:** `sota-devsecops/rules/09` §2b · `sota-devsecops/rules/03` §3.6a — each with its
+audit-checklist half · unreleased

@@ -212,6 +212,34 @@ ignore:
   and a regression test reproducing the vuln (§3.8); or replace the dependency. Record the
   chosen mitigation as VEX and set a re-check date — never just ignore-with-expiry.
 
+### 3.6a A clean run from one scanner is not coverage for another's question
+
+§3.6's triage assumes findings to triage. This is the inverse: **two tools that both "check
+dependencies" answer different questions, and the quiet one is not the reassuring one.**
+
+Field-measured on one repository: `govulncheck ./...` reported **1** advisory and exited 0
+while Dependabot reported **19** open alerts on the same tree. Neither was wrong.
+
+| tool | the question it answers | what a clean run rules out |
+|---|---|---|
+| `govulncheck` | is a vulnerable **symbol reachable** from this code? (vuln DB + call graph) | reachable, *known-to-that-DB* vulnerabilities |
+| Dependabot / SCA | is a vulnerable **version** in the dependency graph? (advisory DB + version ranges) | nothing about reachability |
+
+So **a clean reachability scan is not evidence that dependencies are current**, and a clean
+version scan is not evidence that anything exploitable is absent. Quoting either as "no
+vulnerabilities" silently substitutes one question for the other — `sota-code-security`
+rules/15 §2, where the instrument is fine and the claim is not.
+
+- **Name the question beside the verdict.** *"govulncheck: no reachable vulnerable symbols"*
+  is a finding; *"the scan was clean"* is not.
+- **Reconcile a disagreement to a named cause before reporting either number.** In that case
+  16 of the 19 were already closed and **three grpc advisories were not** — visible only to
+  the version-range tool.
+- **Merging a bot's bump is not closing the advisory it cites.** The same PR targeted 1.82.1
+  while one advisory needed 1.82.2 and two needed 1.83.1. Check each alert's
+  `first_patched_version` against the **resolved** graph (`go list -m all`, the lockfile),
+  not against the PR title.
+
 ## 3.7 Renovate / Dependabot strategy
 
 Unmanaged: drift until a CVE forces a terrifying 40-major-version jump. Unthrottled: you
@@ -356,6 +384,11 @@ So require a second value that **cannot** be produced from plausibility:
 - [ ] Dependency-review gate on PRs, required, failing on high severity + license denylist
 - [ ] No `--extra-index-url` public/private mixing; npm internals scoped; GOPRIVATE set; internal names reserved publicly; fetches go through a caching proxy with audit log
 - [ ] Install scripts disabled by default in CI (`--ignore-scripts`/pnpm allowlist); new-dependency review covers install hooks, obfuscation, maintainer churn
+- [ ] **Is any "no vulnerabilities" claim resting on one scanner?** (§3.6a) A reachability
+      tool (`govulncheck`) and a version-range tool (SCA/Dependabot) answer different
+      questions — measured 1 advisory vs 19 alerts on one tree. State the question beside the
+      verdict, reconcile any disagreement to a named cause, and check each alert's
+      `first_patched_version` against the **resolved** graph rather than a bump's PR title
 - [ ] SBOM (CycloneDX/SPDX) generated per artifact from lockfile + image, attached to the digest, queryable centrally
 - [ ] Scanning: PR diff gate + scheduled scans of deployed digests; triage uses reachability/KEV/EPSS **and the advisory's own affected-platform/affected-configuration text** (§3.6); decisions recorded as VEX; ignores have owner + expiry; SLAs enforced
 - [ ] Renovate/Dependabot active with cooldown (`minimumReleaseAge`), grouping, automerge restricted to dev/patch with green required checks; Actions + Docker digests auto-pinned

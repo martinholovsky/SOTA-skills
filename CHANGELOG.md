@@ -146,6 +146,29 @@ broken — with a margin of **one line** from day one, which the rule now says.
 **Standing change:** a rule authored *and* adopted in the same session is the highest-risk
 change in a PR, not the safest.
 
+### Two lessons taken out of an operator's global agent file
+
+An audit of the operator's own always-loaded `~/.claude/CLAUDE.md`, prompted by asking what in
+it might conflict with this library or cause it to be skipped. **366 of 411 lines (89%)
+duplicate library content; 15 of 19 rules tested were already in `skills/`.** Two were not,
+and they are taken **before** anything is removed from that file — an idea living only in one
+person's config is invisible to everyone else, and deleting it without intake loses it.
+
+- **`sota-devsecops/rules/09` §2b — which binary, and over what.** A third axis of gate reach
+  beside §2 (scope drifted sideways) and §2a (reach stops at the artifact). A Homebrew `cargo`
+  shadowing a rustup shim made `cargo fmt --check` **exit 0 while ignoring every nightly-only
+  key** in `rustfmt.toml`; separately `--manifest-path` narrowed coverage so local passed what
+  CI rejected. A check's exit code says it ran, never what it ran *over*.
+- **`sota-devsecops/rules/03` §3.6a — a clean run from one scanner is not coverage for
+  another's question.** `govulncheck` 1 advisory vs Dependabot 19 alerts on the same tree,
+  neither wrong: reachability-of-a-symbol versus version-in-the-graph. The library had the
+  triage half and not the inverse.
+
+**One divergence found and deliberately left open:** that file and `sota-shell-scripting`
+rules/06 §2 both carry a `grep -r`/`-R` symlink table and they **disagree** — the library's
+later refinement distinguishes a symlinked dir *as the argument* from one *met in traversal*.
+Flagged rather than silently resolved; one of the two measurements should be re-run.
+
 ### Field report II (InterdictOps) — reasoning that survived a passing test
 
 Report I was about **instruments**; this one is about **reasoning that survived contact with a
