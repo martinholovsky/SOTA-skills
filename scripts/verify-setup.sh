@@ -40,6 +40,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --runs) RUN_SAMPLE="${2:?--runs needs a number}"; shift 2 ;;
     --reach-only) REACH_ONLY=1; shift ;;
+    --no-color|--no-colour) VS_NO_COLOR=1; shift ;;
     -h|--help)
       echo "usage: verify-setup.sh [--runs N] [--reach-only]"
       echo "  --runs N       CI runs to sample for check 10 (default 60)"
@@ -62,6 +63,42 @@ CLAUDE_HOME="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 
 n_pass=0; n_fail=0; n_partial=0; n_unver=0; n_na=0; n_info=0
 
+# --- Presentation -----------------------------------------------------------
+# COLOUR AND SYMBOLS ARE TTY-ONLY, AND THAT IS LOAD-BEARING, NOT DECORATION.
+# `check-negative-controls.sh` part B asserts on lines that START with the status
+# word: `case "$line" in (FAIL*"$needle"*)`. Twelve probes depend on it. Because
+# those probes capture output through `$( )`, stdout is not a TTY there, so the
+# plain branch below runs and the bytes they match are unchanged. Decorating
+# unconditionally would turn all twelve into FALSE PASS silently.
+# sota-cli-ux rules/02 §2: pipe-safe by default, honour NO_COLOR and TERM=dumb.
+USE_COLOR=0
+if [ -t 1 ] && [ -z "${NO_COLOR:-}" ] && [ "${TERM:-}" != "dumb" ] && [ "${VS_NO_COLOR:-0}" != "1" ]; then
+  USE_COLOR=1
+fi
+
+if [ "$USE_COLOR" = 1 ]; then
+  C_RESET=$'\033[0m'; C_DIM=$'\033[2m'; C_BOLD=$'\033[1m'
+  C_GREEN=$'\033[32m'; C_RED=$'\033[31m'; C_YELLOW=$'\033[33m'
+  C_BLUE=$'\033[34m'; C_GREY=$'\033[90m'
+else
+  C_RESET=''; C_DIM=''; C_BOLD=''
+  C_GREEN=''; C_RED=''; C_YELLOW=''; C_BLUE=''; C_GREY=''
+fi
+
+# <status> -> "<colour><symbol> STATUS<reset>", or the bare word when plain.
+decorate() {
+  [ "$USE_COLOR" = 1 ] || { printf '%s' "$1"; return; }
+  case "$1" in
+    PASS)       printf '%s' "${C_GREEN}✔ PASS${C_RESET}" ;;
+    FAIL)       printf '%s' "${C_RED}${C_BOLD}✘ FAIL${C_RESET}" ;;
+    PARTIAL)    printf '%s' "${C_YELLOW}▲ PART${C_RESET}" ;;
+    UNVERIFIED) printf '%s' "${C_YELLOW}? UNVR${C_RESET}" ;;
+    INFO)       printf '%s' "${C_BLUE}ℹ INFO${C_RESET}" ;;
+    "N/A")      printf '%s' "${C_GREY}· N/A ${C_RESET}" ;;
+    *)          printf '%s' "$1" ;;
+  esac
+}
+
 row() {  # <status> <check> <evidence>
   case "$1" in
     PASS)       n_pass=$((n_pass + 1)) ;;
@@ -71,10 +108,22 @@ row() {  # <status> <check> <evidence>
     N/A)        n_na=$((n_na + 1)) ;;
     INFO)       n_info=$((n_info + 1)) ;;
   esac
-  printf '%-11s %-34s %s\n' "$1" "$2" "$3"
+  if [ "$USE_COLOR" = 1 ]; then
+    # The status cell is a fixed 6 visible columns, so the label column still
+    # aligns; %-11s cannot be used on a string carrying escapes.
+    printf '%s  %-34s %s%s%s\n' "$(decorate "$1")" "$2" "$C_DIM" "$3" "$C_RESET"
+  else
+    printf '%-11s %-34s %s\n' "$1" "$2" "$3"
+  fi
 }
 
-section() { printf '\n== %s\n' "$1"; }
+section() {
+  if [ "$USE_COLOR" = 1 ]; then
+    printf '\n%s== %s%s\n' "$C_BOLD" "$1" "$C_RESET"
+  else
+    printf '\n== %s\n' "$1"
+  fi
+}
 
 echo "SOTA setup verification (read-only) — $REPO_ROOT"
 
@@ -542,11 +591,20 @@ else
       ("")
         row "PASS" "$sf_label" "sees all four: plain, symlinked dir, gitignored, hidden" ;;
       (*)
+        # The REMEDY for each exclusion is printed once below the block, not on every
+        # row: repeating a 90-character parenthetical per searcher pushed the thing
+        # that differs between them (WHICH exclusions) off the right of the terminal.
         sf_names=$(printf '%s' "$sf_missed" \
-          | sed 's/ behind-a-symlink.txt/ a symlinked dir (ugrep -R, rg --follow, find -L; BSD grep follows neither)/; s/ ignored.txt/ .gitignore'"'"'d files (--no-ignore)/; s/ hidden.txt/ dot-directories (--hidden)/')
-        row "INFO" "$sf_label" "silently skips:${sf_names} — an absence here needs a second method" ;;
+          | sed 's/ behind-a-symlink.txt/ a symlinked dir/; s/ ignored.txt/ .gitignore'"'"'d files/; s/ hidden.txt/ dot-directories/')
+        sf_saw_exclusions=1
+        row "INFO" "$sf_label" "silently skips:${sf_names}" ;;
     esac
   done
+  if [ "${sf_saw_exclusions:-0}" -eq 1 ]; then
+    printf '%s            an absence from a searcher above is not evidence — reach past each\n' "$C_DIM"
+    printf '            exclusion with: a symlinked dir → ugrep -R, rg --follow, find -L (BSD\n'
+    printf '            grep follows neither) · .gitignore → rg --no-ignore · dotfiles → --hidden%s\n' "$C_RESET"
+  fi
   if [ "$sf_any" -eq 0 ]; then
     row "UNVERIFIED" "13. searcher exclusions" "none of '$sf_searchers' is on PATH"
   elif [ -n "$sf_broken" ]; then
@@ -556,7 +614,17 @@ else
 fi
 
 # --- Result ---------------------------------------------------------------
-printf '\n%s\n' "PASS $n_pass · FAIL $n_fail · PARTIAL $n_partial · UNVERIFIED $n_unver · INFO $n_info · N/A $n_na"
+if [ "$USE_COLOR" = 1 ]; then
+  # Zero counts are dimmed so the eye lands on what actually happened; FAIL is red
+  # only when it is non-zero, so a clean run has no red in it at all.
+  _c() { if [ "$2" -gt 0 ]; then printf '%s%s %s%s' "$1" "$3" "$2" "$C_RESET"; else printf '%s%s %s%s' "$C_GREY" "$3" "$2" "$C_RESET"; fi; }
+  printf '\n%s · %s · %s · %s · %s · %s\n' \
+    "$(_c "$C_GREEN" "$n_pass" PASS)" "$(_c "$C_RED" "$n_fail" FAIL)" \
+    "$(_c "$C_YELLOW" "$n_partial" PARTIAL)" "$(_c "$C_YELLOW" "$n_unver" UNVERIFIED)" \
+    "$(_c "$C_BLUE" "$n_info" INFO)" "$(_c "$C_GREY" "$n_na" 'N/A')"
+else
+  printf '\n%s\n' "PASS $n_pass · FAIL $n_fail · PARTIAL $n_partial · UNVERIFIED $n_unver · INFO $n_info · N/A $n_na"
+fi
 if [ "$n_unver" -gt 0 ]; then
   echo "UNVERIFIED is not a soft PASS: nobody watched those work. Treat them as unknown."
 fi
