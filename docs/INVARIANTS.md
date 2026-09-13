@@ -1,0 +1,44 @@
+# The invariants — what fails the build, and the incident behind each one
+
+`scripts/check-invariants.sh` runs the checks below and fails the build on any of them, in
+pre-commit and in CI. This table was **offloaded out of [AGENTS.md](../AGENTS.md) on
+2026-09-13**, because AGENTS.md loads into *every* session under a 200-line cap and each new
+invariant cost it a row — it had been breached five times, every time by exactly that. The
+cap now constrains the always-loaded file, and this reference grows freely.
+
+One line each. The full *rationale* lives at the point of use in the script's own header;
+the practical "what this means for your PR" version is in
+[CONTRIBUTING.md](../CONTRIBUTING.md#the-invariants-enforced).
+
+| # | The build fails when… |
+|---|---|
+| 1 | a **skill** file (`skills/*/SKILL.md`, `skills/*/rules/*.md`) exceeds **500 lines** |
+| 2 | a `skills/*/rules/*.md` doesn't end with `## Audit checklist`, **or carries more than one** — the last-heading test passes on a duplicate, and five files shipped that way with six stranded bullets in the block a reader has already scrolled past |
+| 3 | an internal-name denylist hits (the library must stay generic) |
+| 4 | a `SKILL.md` `description` exceeds **1024 chars** (spec cap — loaders silently skip it), is unquoted YAML containing `: `, or either `name`/`description` contains an **XML tag**; also a reserved word (`anthropic`, `claude`) in `name` |
+| 5 | `VERSION`, `plugin.json` and the CHANGELOG top entry disagree, or a tag is ahead of `VERSION` |
+| 6 | a count-bearing surface drifts from a recount of `skills/` (the social-preview pill and README alt are **"N+" floors**) |
+| 7 | a skill is missing from the router's routing table (`skills/sota/SKILL.md`) **or** the library map (`skills/sota/rules/04`) — two files since the map was offloaded |
+| 8 | a relative Markdown link to a `*.md` target doesn't resolve |
+| 9 | `CHANGELOG.md` carries more than one `## [Unreleased]`, or it isn't the top entry |
+| 10 | a `rules/*.md` isn't referenced by its own `SKILL.md` — written, capped, checklist-ed, and never loaded |
+| 11 | `LAST-VERIFIED` moves without a sweep. Escapes: a sweep-shaped diff (≥ 20 skill files) or naming it in the CHANGELOG. The only **diff-based** check; skips with a note when there's no merge base |
+| 12 | an `assets/*.png` is older than the `*.html` it renders — the README embeds the *image*, never the source, so an un-rendered fix reaches nobody. Escape: `[no-render]` in the commit subject |
+| 13 | a scoreboard row in `evals/results/RESULTS.md` leaves its `Samples` cell empty |
+| 14 | a **release** (VERSION changed) carries no `**Front door checked:**` line in its CHANGELOG section, or a declared term is missing from `README.md`/`docs/INDEX.md` **or** from the release's own entry |
+| 15 | the **library map** (`skills/sota/rules/04`, offloaded out of the router) omits a `rules/NN` file that exists, or names one that doesn't — checks 7 and 10 both miss this, and `rules/11` went unlisted for two releases |
+| 16 | the hook `README.md` **documents** differs from the one `install.sh` **writes** (`HOOK_CMD`) — the README's is what a reader copies by hand, so a stale block is the version that spreads |
+| 17 | a document that **describes** the checks disagrees with them — a stated count that isn't the script's, or a restated negative-control coverage list that isn't the harness's. Counts inside `"quotes"` are read as history, not claims. **`README.md` joined the checked set 2026-09-10**, and counts spelled out in *words* are read too: it said "Twenty-five invariants" against a script with 29 for four releases, and neither the file nor the form was in scope |
+| 18 | a **`§` section reference** resolves nowhere — invariant 8 reads only `[text](file.md)` links, so ~1,300 prose references went unchecked and broke silently on any renumber or split |
+| 19 | a **check has no known-bad** and no pinned reason it cannot — and the exempt set may not *grow*, since silencing the coverage check by exempting your new check is a one-line move. Runs on every invocation (~50 ms), not behind a flag |
+| 20 | the router's **§AUDIT** section changes without its pin being re-read — §BUILD has been pinned since v1.15.0 and caught drift twice; §AUDIT had nothing, and `run-repo-audit.py` pastes the whole router. Bumping the pin is the forcing function to re-read `sota/rules/01` §5 |
+| 21 | a **CHANGELOG version below the top entry has no git tag** — invariant 5 checks a tag is never *ahead* of VERSION; nothing checked the other way, and v1.30.0 and v1.31.2 both shipped untagged and unreachable. The top entry is exempt: it is tagged after the merge |
+| 22 | a **`- [ ]` checklist bullet is stranded inside a code fence** in a skill file — it renders as sample output, so no auditor reads it. Two landed in `sota-code-security` rules/11 §2.2 in PR #226 and sat there three weeks; invariant 2 tracks fence state but only for the *heading*, and the line count never changed |
+| 23 | a **CHANGELOG version heading has no `[X.Y.Z]:` link reference**, an **orphan ref** whose heading lives in another file, or a ref pointing at the wrong tag — sibling of 21, failing independently of it. A heading with no ref is not a broken link: Markdown renders it as literal text, so invariant 8 never sees it. Four consecutive releases shipped that way. Compares **sets per file**, never counts |
+| 24 | **this file** reaches 200 lines, or `CLAUDE.md`/`GEMINI.md` stop being symlinks to it — it loads into *every* session, which is the whole reason for the cap, and that reason depends on the symlinks. A **cap, not a target** (settled 2026-09-06); it had already been breached twice, at 201 and 202, each time by adding an invariant's own table row |
+| 25 | the number of **eval CLI flags undocumented in `evals/README.md`** rises above the pin. A ratchet, not a rule: `--no-gate-arm` shipped documented in the README index and in `--help` but not in the harness's own front door, while 27 pre-existing generic flags (`--json`, `--build-model`) would make a strict rule open red and get it disabled. Fails closed if the scan finds **no** flags |
+| 26 | the roadmap's **open set disagrees with itself** — the stated count, the header's open list, the ledger rows marked `**OPEN`, or an item cited in the priorities table that is not open. Status lives in **one** place (the row marker); the rest is derived. Three drifts in one session, plus a fourth live when the check was written (header said 8, rows said 5) |
+| 27 | an **ADOPTION-LOG deferral names no revisit trigger** — its own rule said every deferral carries a revisit condition, in prose, and prose drifted: the roadmap said *"the deferred row"*, singular, while three existed and one had resolved the day before elsewhere. The marker's **own cell** is checked, not the row: a first draft passed a row because "revisit" sat in a different cell |
+| 28 | an **`evals/cases/*.jsonl` declares no `SELECTION RULE`** — building a set from the cases a model got wrong measures the selection, not the system. Held at 20 sets, then two were added and one skipped it: `prompt-independence.jsonl`, whose rule lived in the results doc and not in the case file, in the set backing the **+0.509** headline |
+| 29 | a **release changes a skill `description` and declares no routing check** — a description is the entire auto-load classifier, so adding one competes for every neighbour's traffic: `sota-skill-security` (v1.35.0) took `r1_token_count` from `sota-llm-engineering` 3/3 to 0/3 and was live for a day with invariants 4, 7 and 15 all green. Fires only on a release whose extracted description **map** differs from the merge base's; the escape is a `**Routing checked:**` line naming an artifact that must exist and mention the regression set |
+| 30 | a **count stated in prose disagrees with the list it counts** — declared with a `<!-- count-check: PATTERN -->` marker above the claim, which counts matches from the marker to the next heading. `README.md` said *"Eleven classes of defect"* over a list of **26**: correct when written 2026-08-27, fifteen behind seventeen days later, and unreachable by every neighbouring gate (6 counts the `skills/` tree, 17 counts claims about the *scripts*, 26 counts the roadmap's open set). Opt-in by measurement, not by taste — a sweep for `<number-word> <plural-noun>` returns ~200 hits across `docs/`, nearly all historical prose, and a gate that opens red gets disabled |

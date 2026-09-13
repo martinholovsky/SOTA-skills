@@ -172,6 +172,9 @@ that decide whether its output means anything:
   out of sync with the check reports `NOT CAUGHT` and accuses a healthy check.
 - **Report the denominator**: checks probed over checks registered. The gap is the
   interesting number, and it is invisible in a pass/fail line.
+- **Assert the mutation crossed the threshold**, not merely that the tree changed — the
+  bullet above answers only the second question, and a probe can keep applying cleanly while
+  it stops biting (§1d).
 
 Two things a self-test does **not** establish, and both belong in its output rather
 than in a reader's assumption: checks whose known-bad needs state it cannot
@@ -268,7 +271,72 @@ accepted risk — and leaving it open can be the correct call. What is not corre
 leaving it undescribed, because the next reader cannot distinguish an accepted residual
 from an oversight (`rules/15` §2).
 
+## 1d. The probe that still applies, and no longer bites
+
+§1b's *assert the mutation took* answers one question: **did the tree change?** It is a
+tree-dirty test and nothing more. So it catches a known-bad whose **literal has drifted** —
+the mutation stops matching, nothing changes, the guard fires. It is blind to the sibling
+case: **the mutation applies cleanly, the tree really does change, and the result still does
+not cross the threshold**, because the subject improved underneath it.
+
+Measured 2026-09-13 in this library's own harness. A probe for a **200-line cap** on an
+always-loaded file appended exactly **one line** — effective when written, because the file
+sat at 199, and fitted to that momentary state with a margin of one. Refactoring the file to
+169 lines, a deliberate improvement that removed the reason the cap kept being breached, left
+the same mutation applying perfectly and breaching nothing. The gate correctly passed; the
+harness reported `NOT CAUGHT`.
+
+Two things make it worth naming. **The improvement and the disarming were the same edit** —
+no review step separates them, because the diff improves a file and touches no probe. And
+**it is a decay, not a break**: the probe gets weaker as the subject gets healthier, in the
+one direction nobody is watching.
+
+**Which probes have this shape, precisely.** Not "anything with a numeric threshold" — the
+deciding property is a **fixed delta smaller than the threshold it must cross**, so that the
+probe's strength *is* the subject's current slack. Three constructions in the same harness
+are structurally immune, and two of them are the fix:
+
+- **Overshoot the threshold outright.** A cap probe that appends 600 lines against a
+  500-line cap breaches from any starting size.
+- **Write an absolute value**, not a delta — set the count to 999, the date to 2099.
+- **Pin the threshold to the subject** so slack is zero by construction. A ratchet that fails
+  when the measured value falls *below* its pin ("a slack ratchet is not a ratchet") can
+  never accumulate the slack this failure needs.
+
+Otherwise, **pin the mutation to the threshold**: measure the subject at probe time, compute
+what it takes to cross from wherever it is, clamp, and print both numbers so a later reader
+sees what the probe did.
+
+```sh
+n=$(awk 'END{print NR}' "$f"); need=$(( LIMIT - n + 1 ))
+[ "$need" -lt 1 ] && need=1      # subject already in breach: still mutate, or the
+                                 # probe reports PROBE BROKEN on a genuine violation
+```
+
+- **Re-run the known-bads after a refactor**, not only after a change to a check. A refactor
+  can disarm a probe as easily as it can break a gate, and only one of those is loud.
+- **`NOT CAUGHT` is ambiguous, not an accusation in either direction.** It means *the gate
+  passed on a mutated tree*, which is equally consistent with an inert gate — the thing this
+  harness exists to find — and a decayed probe. Separate them by asking whether the mutation
+  **crossed the threshold**, not merely whether the tree changed; the standard guard answers
+  only the second question. `rules/15` §2.1 puts the prior on the newer artifact; this is the
+  case where the *older* artifact's **assumptions** are what just changed, so the same
+  suspicion applies for a different reason.
+- **This is the mirror of `sota-devsecops` rules/09 §2.** There a refactor moves code out
+  from under a **gate** while the known-bad stays valid; here a refactor disarms the **probe**
+  while the gate stays valid. Both are invisible in the diff, and both take the same remedy:
+  have the check print the number it enumerated, and fail when that number moves.
+
 ## Audit checklist
+
+- [ ] **Does any probe mutate by a fixed delta *smaller than the cap it must cross*?** (§1d)
+      That, not "a numeric threshold", is the shape that decays: the probe's strength is the
+      subject's current slack, so improving the subject disarms it while the mutation still
+      applies, the tree still changes, and *assert the mutation took* passes. Equality and
+      ratchet comparisons are immune (no slack exists); caps and budgets are not. Fix by
+      overshooting the cap, writing an absolute value, pinning the threshold to the subject,
+      or computing the crossing at probe time — and re-run the known-bads after a
+      **refactor**, not only after a check changes.
 
 - [ ] **Mutation probe run on security-critical paths** — control body replaced
       with the permissive no-op, with the dependency forced present and the

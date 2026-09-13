@@ -5,6 +5,140 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Invariant 30 — a declared count must agree with the list it counts
+
+Closes ROADMAP item 56, and removes the constraint that had blocked it for exactly one day.
+
+**`AGENTS.md` restructured first, because it was the blocker.** The 29-row invariants table
+moved to **[docs/INVARIANTS.md](docs/INVARIANTS.md)**. `AGENTS.md` loads into *every* session
+under a 200-line cap and sat at **199**; every new invariant cost it a row, and the cap had
+been breached five times, each time on exactly that. Now **169**, and the reference grows
+freely. Nothing was dropped — the table moved whole, and `AGENTS.md` keeps the operational
+half a session actually needs.
+
+Invariant 17's enumeration assertion was pointed at `AGENTS.md` and *followed the table*. It
+reported the empty list loudly on the first run after the move, which is the check working;
+it now reads `docs/INVARIANTS.md`, and `docs/WHY-IT-WORKS.md` joined its doc set too.
+
+**The gate is opt-in, and that was a measurement rather than a preference.** A sweep for
+`<number-word> <plural-noun>` across the front-door docs returns ~200 hits, nearly all
+historical prose in CHANGELOG and ADOPTION-LOG entries that must never change. A strict
+auto-detecting rule would open red and be disabled, which is worse than none. So the pairing
+is declared next to the claim, where it travels with the prose:
+
+```markdown
+Twenty-nine classes of defect survive every linter, ...
+```
+
+The marker names the pattern, the claim is the next non-empty line, and the scope runs to the
+next heading. Occurrences are counted, not matching lines, so a separated inline list works
+with a `+1` offset. Three markers ship: the README's audit classes, the roadmap's item total,
+and the conventions ledger's enforced list.
+
+**Probes 30/30b/30c** cover the number edited down, **the list grown with the sentence left
+behind** (the direction that actually happens), and every marker deleted — which must report
+`SCOPE EMPTY`, not `ok`. 27 of 30 checks are now probed.
+
+### Three things this found while being built
+
+- **The first parser was written against the one sample in front of it.** It read
+  `Twenty-nine` correctly by luck and read `Eleven classes` as a single unparseable token, so
+  it caught the real historical defect with the **wrong diagnostic**. Probe 30 asserts on the
+  comparison's own wording and would have reported `NOT CAUGHT` — which is how it surfaced.
+  This is `sota-code-security` rules/15 §2.1 aimed at this repository's own gate.
+- **The conventions ledger had drifted a third time** — heading 30, list 29 — the exact
+  recurrence its own correction note describes, and the note explains why: invariant 17 reads
+  the stated count and never the list. It is now gated.
+- **Two more live stale counts**, both fixed: `docs/ROADMAP.md` *"Of 55 items"* (a sentence
+  invariant 26 cannot see, since 26 reads only the open set) and `docs/WHY-IT-WORKS.md`
+  *"Fourteen invariants"* — **sixteen behind**, because that file was in no gate's doc set.
+
+### A probe went inert because the thing it guards got healthier
+
+Restructuring `AGENTS.md` from 199 lines to 169 **silently disarmed probe 24**, and the
+negative-control harness caught it on the very next run. The probe appended exactly one line
+to breach a 200-line cap — which breaches only from 199. At 169 the same mutation stopped
+breaching anything, invariant 24 correctly passed, and the probe reported `NOT CAUGHT: INERT`.
+
+This is a shape the library did **not** name until this change — verified by sweep with a
+positive control, not assumed: **a control whose strength decays as the thing it guards
+improves**, with no red build at the moment of decay. Nothing
+was wrong with the gate, and nothing was wrong on the day the probe was written. The probe now
+measures the file and pads to the cap from wherever it is, printing both numbers.
+
+Worth stating plainly because it cuts against intuition: **the health improvement and the
+control weakening were the same edit**, and only a harness that re-derives its own mutations
+each run can see that.
+
+Landed as a rule: **`sota-code-security/rules/12` §1d**, the blind sibling of §1b's drifted
+literal. §1b's case is caught by *assert the mutation took*; this one passes that guard,
+because the mutation really does apply. Field report III called this class *"already in the
+library"* — checked with a positive control and two sweeps, it was not
+([docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md)). It was accepted unverified during the intake
+because it sat in the report's *"what worked"* section rather than among its proposals:
+**a report's non-proposal sections make claims about the library too, and they arrive
+without the framing that triggers a check.**
+
+### The rule we wrote for ourselves went through the intake it had skipped
+
+`rules/12` §1d was authored here and was about to ship on green gates. An independent
+adversarial pass — prompted to kill it, defaulting to REFUTED — returned **11 findings**, and
+**all 30 invariants were green on all 11**. The gates check structure: the line cap, a
+checklist present, `§` references resolving. **Nothing here checks whether a rule is true.**
+
+Three of the findings are worth naming beyond this release:
+
+- **Invariant 18 proves a `§` reference *resolves*; it can never prove the target says what
+  the citing sentence claims.** §1d cited `rules/15` §2.1 for a prior that §2.1 grounds the
+  opposite way — on *recency of authorship*, where this case has the probe as the **older**
+  artifact. Green check, wrong claim.
+- **A default that inverted an existing tool's semantics.** *"`NOT CAUGHT` is a claim about
+  the probe until proven otherwise"* would have taught readers to dismiss inert gates — the
+  failure that string exists to reveal. Now a disambiguation, resolved by asking whether the
+  mutation crossed the threshold.
+- **A self-contradiction shipped across two files in one branch** — the probe comment and this
+  CHANGELOG called the class *"the shape the library already names"* while
+  [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md), in the same branch, correctly said it did not.
+
+The load-bearing claim survived: `AGENTS.md` was **exactly 199 lines** at the commit that
+introduced probe 24, so it was effective at birth and genuinely decayed rather than being born
+broken — with a margin of **one line** from day one, which the rule now says.
+
+**Standing change:** a rule authored *and* adopted in the same session is the highest-risk
+change in a PR, not the safest.
+
+### `sota-shell-scripting/rules/05` §3b — in-place edit on a symlink
+
+Two idioms treated as interchangeable, differing **exactly on the dangerous axis**. Measured
+2026-09-13 on macOS (`/usr/bin/sed`, BSD; perl v5.34.1), editing a symlink:
+
+| idiom | result | exit |
+|---|---|---|
+| `sed -i '' 's/…/…/' link` | refuses — `in-place editing only works for regular files` | **1** |
+| `perl -pi -e 's/…/…/' link` | **silently replaces the link with a regular file** | **0** |
+
+In the `perl` case the target is never modified, so the two paths diverge silently. GNU `sed`
+was not installed where this was measured and is **not** asserted either way.
+
+It earns a rule because the idiom that does this is the one reached for to edit many files at
+once, and a tracked symlink is just another path in that list. Field-reported the same day:
+`git ls-files '*.md' | xargs perl -pi -e …`, run to hand-test a probe, converted this
+repository's own `CLAUDE.md` and `GEMINI.md` into regular files, and `git add -A` staged the
+type change before it was noticed. **`git status` reports this as `T`, not `M`.**
+
+Worth recording alongside it: **invariant 24b, which exists to catch exactly that symlink
+breakage, read the index (`git cat-file -p :CLAUDE.md`) while the damage sat in the
+worktree** — so it reported ok on a correct copy. A control that reads a different copy than
+the one you changed cannot see the change.
+
+**What the gate cannot see, written down rather than discovered later:** the scope is
+positional, so prose between the list and the next heading that contains the pattern counts as
+an item. Not hypothetical — it happened while landing this check, in a sentence *describing*
+the marker, where writing the literal separator added a phantom entry to the list the sentence
+was about.
+
 ## [1.41.2] - 2026-09-13
 
 **Front door checked:** EOL date · denominator · selector · constrained · sells the remedy

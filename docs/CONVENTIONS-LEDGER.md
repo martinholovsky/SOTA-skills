@@ -71,7 +71,10 @@ A convention earns a gate only if it passes **all three**:
 
 ## The ledger
 
-### Enforced (29) — invariants 1–29
+### Enforced — invariants 1–30
+
+<!-- count-check: · +1 -->
+**30 conventions** are gated, one per invariant, in the order the checks run:
 
 Skill-file line cap · audit-checklist placement **and uniqueness** · internal-name denylist · description cap ·
 version lockstep · count surfaces · router completeness · link resolution ·
@@ -88,15 +91,15 @@ link reference** · **`AGENTS.md` stays under its own 200-line cap and keeps its
 symlinks** · **eval runners are named in `evals/README.md` and undocumented eval flags
 do not grow** · **the roadmap's open set agrees with itself** · **every ADOPTION-LOG
 deferral names its revisit trigger** · **every eval case set declares a SELECTION RULE** ·
-**a release changing a skill description declares a routing check**.
+**a release changing a skill description declares a routing check** · **a count stated in prose agrees with the list it counts**.
 Each is in `scripts/check-invariants.sh` and documented in
-`AGENTS.md`. (Corrected 2026-08-19: this section read "(14) — invariants 1–14" and named
+[docs/INVARIANTS.md](INVARIANTS.md). (Corrected 2026-08-19: this section read "(14) — invariants 1–14" and named
 only thirteen, while 15 and 16 were already gated and described in the table below —
 the ledger of what is enforced had itself drifted from what is enforced. **It drifted the
 same way again and was corrected on 2026-09-09**: the heading said 28 while the list
 stopped at 25, so 26, 27 and 28 were gated, described in the table below, and absent from
 the enumeration above it. Invariant 17 reads the stated *count*, not the list, which is
-exactly the blind spot that let it recur — the count was right both times.)
+exactly the blind spot that let it recur — the count was right both times. **Third recurrence 2026-09-13**: the heading said 30 and the list held 29. It is now gated by **invariant 30**, whose marker above counts the list's separators and adds one — the count is no longer restated anywhere a human maintains it.)
 
 ### Enforced in code, outside the invariant script (9)
 

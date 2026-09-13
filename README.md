@@ -186,6 +186,7 @@ corpus, and we have no instrument that would.
 
 ### What the audit hunts that a scanner can't
 
+<!-- count-check: ^- \*\* -->
 Twenty-nine classes of defect survive every linter, SAST rule, and CVE scanner, because in
 each one the code isn't *wrong*. The library hunts them as explicit passes
 (this said "Eleven" for seventeen days — correct when written on 2026-08-27 and **fifteen
@@ -335,7 +336,11 @@ because the same change added three more classes below):
   reads as a fact about the subject when `tar` simply could not open the archive. And the
   **selector** can name a different population member than the question did: `sort -V | tail -1`
   is the *newest*, not the *default*, and returned a backports kernel for a release that ships
-  another one — nothing truncated, exit 0, no rule broken.
+  another one — nothing truncated, exit 0, no rule broken. And a sweep that **writes** can
+  destroy what it inspects in a way `git status` shows as one character: `perl -pi` across a
+  path list **silently replaces a symlink with a regular file** (exit 0, target untouched),
+  where BSD `sed -i` refuses outright — measured, after that exact one-liner converted this
+  repository's own tracked symlinks.
   ([rules/06](skills/sota-shell-scripting/rules/06-ad-hoc-commands.md),
   [rules/03 §3a](skills/sota-shell-scripting/rules/03-security.md))
 - **Controls that block everything** — the mirror image, and the one every other pass
@@ -426,6 +431,13 @@ because the same change added three more classes below):
   no-op puts a real defect into production source, so **the revert is part of the
   technique** — verify it against the working tree, never against an exit status a wrapper
   will report as a clean pass.
+  **A known-bad also rots without anyone touching it**, and in the direction nobody
+  watches: a mutation pinned to a *delta* — append one line, add one file — breaches a
+  threshold only from the subject's current slack, so improving the subject disarms the
+  probe. Measured here: shrinking an always-loaded file from 199 lines to 169 silently
+  made the probe guarding its 200-line cap inert, and **every standard safeguard passed**
+  — the literal matched, the mutation took, the tree was dirty. Pin the mutation to the
+  threshold, and re-run the known-bads after a refactor, not only after a check changes.
   The remedy every mature discipline reached independently — the proof test, the
   clinical positive control, aviation built-in test, adversary emulation — is one
   move: a **negative control**, a committed known-bad the gate must reject on every
@@ -1284,7 +1296,7 @@ verify fast-moving claims against primary sources, keep **skill** files
 does not apply to README/CHANGELOG/`docs/`, which are read by humans — and end
 each rules file with an audit checklist — **exactly one**, since appending a
 section's bullets under a fresh heading strands them where a reader has already
-stopped. **29 invariants** enforce this in `scripts/check-invariants.sh`
+stopped. **30 invariants** enforce this in `scripts/check-invariants.sh`
 (pre-commit + CI), covering line caps, checklist placement *and uniqueness*,
 description limits, version and count drift, router completeness,
 internal link resolution, every rules file being reachable from its skill's index,

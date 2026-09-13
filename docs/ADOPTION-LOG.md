@@ -2644,3 +2644,77 @@ classifier is untouched.
 `sota-devsecops/rules/03` §3.9 and `rules/09` §2a · `sota-rust/rules/07` §1a ·
 `sota-shell-scripting/rules/06` §2 and §5a · `sota-code-security/rules/15` §2.1 — each with
 its audit-checklist half in the same change.
+
+
+### 2026-09-13 — a claim from field report III, checked late and found false
+
+Report III's §8 ("What worked") described a known-bad that **decayed silently as the codebase
+improved** — the probe depended on a suppression existing, and the suppression became
+unnecessary — and said of it: *"That failure mode … is already in the library."*
+
+**It was not.** Verified 2026-09-13 with a positive control (`known-bad` returns 9 hits in
+`sota-code-security` rules/12, so the instrument works) across two vocabulary sweeps and then
+by reading the headings of the skill that would own it. The closest coverage, **rules/12 §1b**,
+is the *drifted literal*: a known-bad that no longer matches, which the standard guard —
+*assert the mutation took* — catches by design. The decay case is its blind sibling: the
+mutation applies cleanly, the tree really changes, that guard passes, and the result still does
+not cross the threshold.
+
+**What makes the correction cheap to justify is that the class then happened here, in this
+session, while the report was being implemented.** Offloading the invariants table took
+`AGENTS.md` from 199 lines to 169 and silently disarmed probe 24, which appended exactly one
+line to breach a 200-line cap. The improvement and the disarming were the **same edit**. Landed
+as **rules/12 §1d** with its audit-checklist half.
+
+**The reviewer's share, which is the reusable part.** During the intake I accepted §8 as
+"already ours" without checking, because §8 was labelled *what worked* rather than a proposal —
+so it never entered the verification path the seven numbered proposals went through. **A report's
+non-proposal sections make claims about the library too, and they arrive without the framing
+that triggers a check.** Same shape as the 2026-09-12 lesson one entry up, one level further
+out: there I verified the gap in the file the reporter named instead of the library; here I did
+not verify at all, because the sentence was not shaped like a request.
+
+**Landed:** `sota-code-security/rules/12` §1d · v1.41.3
+
+
+### 2026-09-13 — a rule this repository wrote for itself, put through the intake it had skipped
+
+`sota-code-security` rules/12 §1d was authored here, from a live incident in this session, and
+was about to ship on green gates. An independent adversarial pass — prompted to **kill** it,
+defaulting to REFUTED, citing file:line — returned **11 findings**. Recorded because the
+*procedure* gap is the finding, not the rule.
+
+**All 30 invariants were green on all 11 defects.** They check structure: the line cap, a
+checklist present, `§` references resolving. **Nothing in this repository checks whether a
+rule is true**, which is exactly why an external proposal goes through this ledger — and a
+self-authored one never enters it.
+
+Five classes, each worth reusing:
+
+- **Over-generalised from the single case in hand.** *"Every probe against a numeric threshold
+  has this shape"* was refuted by four probes in the harness the rule itself cites; the
+  deciding property is a delta **smaller than the threshold**. Two of those counterexamples
+  became the rule's own named remedies, so the attack improved it rather than only trimming it.
+- **Unmeasured rhetoric asserted as fact** — deleted under operating principle 0.
+- **A citation that resolves but does not support the sentence citing it.** `rules/15` §2.1
+  grounds its prior on *recency of authorship*; this case inverts that. **Invariant 18 proves a
+  `§` reference resolves and can never prove the target says what the citing sentence claims** —
+  worth stating plainly, because the green check invites the opposite conclusion.
+- **A default that inverted an existing tool's semantics**, which would have taught readers to
+  dismiss the very failure the tool exists to reveal.
+- **A self-contradiction shipped across two files in one branch**: the probe comment and the
+  CHANGELOG called the class *"the shape the library already names"* while this ledger, in the
+  same branch, correctly recorded that it did not.
+
+**What survived, and it is the load-bearing half:** the decay framing itself. `AGENTS.md` was
+**exactly 199 lines** at the commit that introduced probe 24, so the probe was effective at
+birth and genuinely decayed — refuting the alternative that it was born broken. The reviewer
+added a sharpening the rule now carries: its margin was **one line** from day one, so it was
+never robust, only fitted to the subject's momentary state.
+
+**Standing change:** a rule authored *and* adopted in the same session is the highest-risk
+change in a PR, not the safest, and gets the adversarial pass the AUDIT workflow already
+prescribes for findings.
+
+**Landed:** `sota-code-security/rules/12` §1d rewritten · §1b gains a fourth bullet so §1d is
+reachable at the point of need · `sota-shell-scripting/rules/05` §3b · unreleased

@@ -167,7 +167,7 @@ scope() {  # <count> <noun> — returns 1 on an empty scope; prints nothing on s
 # CHANGELOG, docs/, evals/, AGENTS.md, these scripts -- is prose or code read by
 # people, deliberately uncapped since 2026-07-15; navigability there comes from a
 # table of contents and docs/INDEX.md, not a line ceiling.
-echo "[1/29] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
+echo "[1/30] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
 over=0
 seen1=0
 while IFS= read -r f; do
@@ -197,7 +197,7 @@ if [ "$over" -eq 0 ]; then echo "    ok ($seen1 skill files)"; else fail=1; fi
 # a code fence): the bullets exist, render, and sit where nobody reads them,
 # because the file appears to have already ended. Nothing about the line count or
 # the last-heading test changes, which is why it survived five times.
-echo "[2/29] Every skills/*/rules/*.md ends with exactly one '## Audit checklist'"
+echo "[2/30] Every skills/*/rules/*.md ends with exactly one '## Audit checklist'"
 missing=0
 seen2=0
 while IFS= read -r f; do
@@ -236,7 +236,7 @@ if [ "$missing" -eq 0 ]; then echo "    ok ($seen2 rules files, one checklist ea
 # .denylist.local (git-ignored, one ERE per line, '#' comments). When neither
 # exists (e.g. an external fork's PR), only the generic phrases are checked —
 # the maintainer's pre-commit hook and this repo's CI carry the full list.
-echo "[3/29] No internal-name leaks"
+echo "[3/30] No internal-name leaks"
 DENY='the user runs|the user operates'
 if [ -n "${SOTA_DENYLIST:-}" ]; then
   DENY="$DENY|$SOTA_DENYLIST"
@@ -278,7 +278,7 @@ fi
 # Code, Codex, ...) skip any skill that exceeds it. Count Unicode characters
 # (descriptions use em-dashes: 1 char, 3 bytes) via python3, parsing both
 # folded block scalars (`>-`) and plain single-line descriptions.
-echo "[4/29] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
+echo "[4/30] Every skills/*/SKILL.md description <= ${MAX_DESC} characters"
 if command -v python3 >/dev/null 2>&1; then
   if desc_out=$(python3 - "$MAX_DESC" <<'PY'
 import sys, glob, re
@@ -368,7 +368,7 @@ fi
 # One version, four places: VERSION, plugin.json, the CHANGELOG's top entry,
 # and (after the release lands) the newest v* tag. Drift here shipped a main
 # briefly claiming 1.8.0 with 1.9.0 content (2026-07-03) — hence a hard check.
-echo "[5/29] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
+echo "[5/30] Version lockstep (VERSION == plugin.json == CHANGELOG top; tag not ahead)"
 v5=0
 ver=$(tr -d '[:space:]' < VERSION)
 # Strict X.Y.Z: rejects interior malformations (1..2, 1.2, 1.2.3.4) the old
@@ -402,7 +402,7 @@ if [ "$v5" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # rot on surfaces nobody recounts (the social preview said "30 skills" for
 # three releases). Recount from the tree and compare every tracked surface;
 # RELEASING.md lists the same surfaces for manual release edits.
-echo "[6/29] Count-bearing surfaces match the tree"
+echo "[6/30] Count-bearing surfaces match the tree"
 v6=0
 ck() { # ck <found> <expected> <surface>
   [ "$1" = "$2" ] || { note "$3: says '${1:-<not found>}', tree says '$2'"; v6=1; }
@@ -462,7 +462,7 @@ if [ "$v6" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # checked — a moved file would otherwise make every grep miss and report all 40
 # skills as absent, which is loud, or make the reverse loop read nothing, which
 # is not.
-echo "[7/29] Router lists every skill (routing table + library map)"
+echo "[7/30] Router lists every skill (routing table + library map)"
 v7=0
 seen7=0
 router=skills/sota/SKILL.md
@@ -494,7 +494,7 @@ if [ "$v7" -eq 0 ]; then echo "    ok ($seen7 domain skills)"; else fail=1; fi
 # with no rot-catching upside. Fenced AND inline code are stripped so link-shaped
 # examples (in ``` fences or `backticks`) are not scanned. Idea from vault-doctor
 # (training-knowledge-vault); see docs/ADOPTION-LOG.md.
-echo "[8/29] Internal Markdown links resolve (*.md targets)"
+echo "[8/30] Internal Markdown links resolve (*.md targets)"
 if command -v python3 >/dev/null 2>&1; then
   if link_out=$(python3 - <<'PY'
 import os, re, sys
@@ -547,7 +547,7 @@ fi
 # previous release (2026-07-28) and both sat on main until a human noticed
 # during the release cut. Fence-aware, like check 2: a CHANGELOG entry may
 # legitimately quote '## [Unreleased]' inside a code fence.
-echo "[9/29] CHANGELOG has at most one [Unreleased], and it is the top entry"
+echo "[9/30] CHANGELOG has at most one [Unreleased], and it is the top entry"
 v9=0
 changelogs="CHANGELOG.md $(git ls-files 'docs/CHANGELOG-archive*.md' | tr '\n' ' ')"
 for cl in $changelogs; do
@@ -593,7 +593,7 @@ if [ "$v9" -eq 0 ]; then echo "    ok"; else fail=1; fi
 # to ourselves. All 255 rules files passed when this landed, so it is a
 # regression gate, not a repair; it was watched to fail on an injected file
 # and on a renamed reference before being trusted.
-echo "[10/29] Every skills/*/rules/*.md is referenced by its own SKILL.md"
+echo "[10/30] Every skills/*/rules/*.md is referenced by its own SKILL.md"
 v10=0
 seen10=0
 while IFS= read -r rf; do
@@ -639,7 +639,7 @@ if [ "$v10" -eq 0 ]; then echo "    ok ($seen10 rules files indexed)"; else fail
 # This is the first DIFF-based invariant; every other check reads the whole tree.
 # With no merge base it skips with a note rather than guessing, like checks 4/8.
 SWEEP_MIN_SKILL_FILES=20
-echo "[11/29] LAST-VERIFIED moves only with a sweep (batched diff, or declared in CHANGELOG)"
+echo "[11/30] LAST-VERIFIED moves only with a sweep (batched diff, or declared in CHANGELOG)"
 v11=0
 base=""
 for ref in origin/main main; do
@@ -712,7 +712,7 @@ if [ "$v11" -ne 0 ]; then fail=1; fi
 #
 # HISTORY-based, like check 11's diff: with no commit history for a pair it skips
 # with a note rather than guessing, because a shallow clone must not read as a pass.
-echo "[12/29] Rendered assets: each assets/*.png is no older than its *.html"
+echo "[12/30] Rendered assets: each assets/*.png is no older than its *.html"
 v12=0
 seen12=0
 checked12=0
@@ -785,7 +785,7 @@ if [ "$v12" -ne 0 ]; then fail=1; fi
 # column and checks that column in every data row beneath it. So it also fails when
 # the column is RENAMED or dropped (0 tables -> SCOPE EMPTY), which is the drift a
 # hardcoded column index would sail straight past.
-echo "[13/29] Every scoreboard row declares its sample size"
+echo "[13/30] Every scoreboard row declares its sample size"
 v13=0
 BOARD="evals/results/RESULTS.md"
 if [ ! -f "$BOARD" ]; then
@@ -855,7 +855,7 @@ if [ "$v13" -ne 0 ]; then fail=1; fi
 # docs/INDEX.md (the front door is real), AND in that release's own CHANGELOG section
 # (you cannot pass by declaring a filler word that was never part of the release).
 # A missing line on a release commit fails closed.
-echo "[14/29] A release declares its front-door terms, and they resolve"
+echo "[14/30] A release declares its front-door terms, and they resolve"
 v14=0
 base14=""
 for ref in origin/main main; do
@@ -927,7 +927,7 @@ if [ "$v14" -ne 0 ]; then fail=1; fi
 # (v1.19.8 → v1.21.0) with all fourteen checks green. Both directions matter: a
 # file absent from the map is invisible to a router-driven load, and a map entry
 # for a file that no longer exists sends the model after nothing.
-echo "[15/29] Router library map lists every rules file (both directions)"
+echo "[15/30] Router library map lists every rules file (both directions)"
 v15=0
 if command -v python3 >/dev/null 2>&1; then
   map_out=$(python3 - <<'MAPPY'
@@ -1000,7 +1000,7 @@ if [ "$v15" -ne 0 ]; then fail=1; fi
 # actually in a user's settings.json. The README's is the one a reader copies by
 # hand, so a stale block is the version that spreads. Silent by construction —
 # nothing executes the README.
-echo "[16/29] README's documented hook == install.sh's HOOK_CMD"
+echo "[16/30] README's documented hook == install.sh's HOOK_CMD"
 v16=0
 if command -v python3 >/dev/null 2>&1; then
   hook_out=$(python3 - <<'HOOKPY'
@@ -1087,7 +1087,7 @@ if [ "$v16" -ne 0 ]; then fail=1; fi
 #   - a correction note that QUOTES the old wording ("(14) — invariants 1–14") is
 #     history, not a claim. Counts inside double quotes are ignored, which is the
 #     same supersede-don't-edit rule the CHANGELOG follows.
-echo "[17/29] Docs describing the invariants agree with the scripts"
+echo "[17/30] Docs describing the invariants agree with the scripts"
 v17=0
 if command -v python3 >/dev/null 2>&1; then
   doc_out=$(python3 - <<'DOCPY'
@@ -1099,7 +1099,8 @@ import re, sys, pathlib
 # failure are covered now — the file is in scope, and WORD-form counts are read as
 # well as digits, since spelling the number out was what hid it.
 DOCS = ["AGENTS.md", "CONTRIBUTING.md", "README.md",
-        "docs/CONVENTIONS-LEDGER.md", "docs/MAINTENANCE.md"]
+        "docs/CONVENTIONS-LEDGER.md", "docs/MAINTENANCE.md",
+        "docs/INVARIANTS.md", "docs/WHY-IT-WORKS.md"]
 
 WORDNUM = {"twenty": 20, "thirty": 30, "forty": 40,
            "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
@@ -1176,9 +1177,17 @@ for f in DOCS:
 
 # --- the per-invariant descriptions must enumerate all N ---------------------
 # The stated count and the actual list can drift apart: update "runs 18 checks"
-# and forget the table row, and every count claim still agrees. AGENTS.md carries
-# one table row per invariant; CONTRIBUTING.md carries one numbered item.
-ENUMS = [("AGENTS.md", re.compile(r'^\| (\d+) \| ', re.M), "invariant table rows"),
+# and forget the table row, and every count claim still agrees. docs/INVARIANTS.md
+# carries one table row per invariant; CONTRIBUTING.md carries one numbered item.
+#
+# The table lived in AGENTS.md until 2026-09-13, when it was offloaded so that
+# adding an invariant stops costing a line of the always-loaded 200-line budget
+# (it had breached the cap five times, every time on an invariant's own row).
+# THIS LINE IS THE REASON THE REFACTOR WAS SAFE: the enumeration assertion follows
+# the table rather than the filename, and moving the table without moving it here
+# would have left check 17 reading an empty list -- which it reported, loudly, on
+# the first run after the move.
+ENUMS = [("docs/INVARIANTS.md", re.compile(r'^\| (\d+) \| ', re.M), "invariant table rows"),
          ("CONTRIBUTING.md", re.compile(r'^(\d+)\. ', re.M), "numbered invariant items")]
 for f, pat, label in ENUMS:
     try:
@@ -1260,7 +1269,7 @@ if [ "$v17" -ne 0 ]; then fail=1; fi
 # every skill named on the line and against the containing skill, and any hit
 # passes. A gate that flags correct prose gets disabled, which leaves you worse
 # off than no gate (docs/CONVENTIONS-LEDGER.md).
-echo "[18/29] Section references (§N) resolve to a real section"
+echo "[18/30] Section references (§N) resolve to a real section"
 v18=0
 if command -v python3 >/dev/null 2>&1; then
   ref_out=$(python3 scripts/lib/check-section-refs.py 2>&1) || v18=1
@@ -1299,7 +1308,7 @@ if [ "$v18" -ne 0 ]; then fail=1; fi
 # the mechanism, so the two stale exemptions had to go with it. A reason that stops
 # being true is the same defect every check here is about, aimed at this list.
 EXPECTED_UNPROBED="5 9 12"
-echo "[19/29] Every check has a known-bad, or a pinned reason it cannot"
+echo "[19/30] Every check has a known-bad, or a pinned reason it cannot"
 v19=0
 if command -v python3 >/dev/null 2>&1; then
   st_out=$(python3 - "$0" "$(dirname "$0")/check-negative-controls.sh" "$EXPECTED_UNPROBED" <<'STPY'
@@ -1388,7 +1397,7 @@ if [ "$v19" -ne 0 ]; then fail=1; fi
 # is worse than no pass, because the reader follows whichever they loaded.
 # Bumping this hash is the forcing function to re-read both.
 ROUTER_AUDIT_SHA="a0bcc43c182e67ea"
-echo "[20/29] Router §AUDIT is pinned (bump only after re-reading sota/rules/01 §5 + rules/03)"
+echo "[20/30] Router §AUDIT is pinned (bump only after re-reading sota/rules/01 §5 + rules/03)"
 v20=0
 audit_sec=$(awk '/^## AUDIT mode — workflow/{f=1} f&&/^## Library map/{exit} f' skills/sota/SKILL.md)
 if [ -z "$audit_sec" ]; then
@@ -1426,7 +1435,7 @@ if [ "$v20" -ne 0 ]; then fail=1; fi
 # Tags are not fetched by default in a shallow CI checkout, so this SKIPS with a
 # note when the repo has no tags at all rather than failing every version at once:
 # a gate that cannot see its evidence must say so, not invent a verdict.
-echo "[21/29] Every CHANGELOG version below the top one is tagged"
+echo "[21/30] Every CHANGELOG version below the top one is tagged"
 v21=0
 seen21=0
 if [ -z "$(git tag -l 'v*' 2>/dev/null)" ]; then
@@ -1476,7 +1485,7 @@ if [ "$v21" -ne 0 ]; then fail=1; fi
 # SCOPE is skill files only. Prose files (README, docs/) legitimately show
 # checklist syntax inside samples; skill files are instructions an agent reads,
 # and a '- [ ]' there is a claim about what gets audited.
-echo "[22/29] No '- [ ]' checklist bullet stranded inside a code fence"
+echo "[22/30] No '- [ ]' checklist bullet stranded inside a code fence"
 v22=0
 seen22=0
 while IFS= read -r f; do
@@ -1534,7 +1543,7 @@ if [ "$v22" -ne 0 ]; then fail=1; fi
 # style: the ref for X.Y.Z must end in `/releases/tag/vX.Y.Z`. A ref pointing at
 # the PREVIOUS release's tag is the copy-paste this catches, and it is invisible
 # until someone clicks it.
-echo "[23/29] Every CHANGELOG version heading has its own link reference"
+echo "[23/30] Every CHANGELOG version heading has its own link reference"
 v23=0
 seen23=0
 for f in CHANGELOG.md docs/CHANGELOG-archive.md docs/CHANGELOG-archive-2.md; do
@@ -1609,7 +1618,7 @@ if [ "$v23" -ne 0 ]; then fail=1; fi
 # on the symlinks. A cap enforced on a file nobody loads would pass forever while
 # the constraint it stands for had quietly stopped applying. So the symlinks are
 # asserted too -- mode 120000 in the index, pointing at AGENTS.md.
-echo "[24/29] AGENTS.md is under its own ${MAX_AGENTS}-line target, and is what loads"
+echo "[24/30] AGENTS.md is under its own ${MAX_AGENTS}-line target, and is what loads"
 v24=0
 if [ ! -f AGENTS.md ]; then
   note "AGENTS.md is missing — the file this whole check exists for"
@@ -1706,7 +1715,7 @@ if [ "$v24" -eq 0 ]; then echo "    ok (${n24:-?} lines, CLAUDE.md + GEMINI.md s
 #
 # The match is boundary-anchored, not a bare substring: `run-build-safe.py` must not be
 # credited to a README that only mentions `run-build-safe-arms.py`.
-echo "[25/29] Eval runners documented, undocumented flags not increased (ratchet at ${MAX_UNDOC})"
+echo "[25/30] Eval runners documented, undocumented flags not increased (ratchet at ${MAX_UNDOC})"
 v25=0
 if command -v python3 >/dev/null 2>&1; then
   if flag_out=$(python3 - "$MAX_UNDOC" <<'PY'
@@ -1791,7 +1800,7 @@ if [ "$v25" -ne 0 ]; then fail=1; fi
 # else is derived. This asserts the derivation, which is the only part a
 # machine can check — the ordering and the "what to do first" prose stay
 # human, which is why the table exists at all.
-echo "[26/29] Roadmap: open count, open list and priorities table agree"
+echo "[26/30] Roadmap: open count, open list and priorities table agree"
 v26=0
 if command -v python3 >/dev/null 2>&1; then
   rm_out=$(python3 - "docs/ROADMAP.md" <<'RMPY'
@@ -1866,7 +1875,7 @@ if [ "$v26" -ne 0 ]; then fail=1; fi
 # singular, while three existed and one had been resolved the day before in a
 # different entry. Same restated-status shape as invariant 26, one file over.
 # So a deferral carries a marker, and the marker carries its trigger.
-echo "[27/29] Every ADOPTION-LOG deferral names its revisit trigger"
+echo "[27/30] Every ADOPTION-LOG deferral names its revisit trigger"
 v27=0
 if command -v python3 >/dev/null 2>&1; then
   df_out=$(python3 - "docs/ADOPTION-LOG.md" <<'DFPY'
@@ -1919,7 +1928,7 @@ if [ "$v27" -ne 0 ]; then fail=1; fi
 # is where a reader opening the set looks. Selecting cases by outcome is the
 # defect this guards (`sota-llm-engineering` rules/01 §8): a set built from what
 # a model got wrong measures the selection, not the system.
-echo "[28/29] Every evals/cases/*.jsonl declares a SELECTION RULE"
+echo "[28/30] Every evals/cases/*.jsonl declares a SELECTION RULE"
 v28=0
 n28=0; bad28=""
 for f in evals/cases/*.jsonl; do
@@ -1963,7 +1972,7 @@ if [ "$v28" -ne 0 ]; then fail=1; fi
 # must mention the regression case set, so declaring an unrelated file fails. The run
 # is cheap -- 2 cases x 3 samples x 2 arms is about 12 calls -- which is what makes a
 # release-time trigger the right price for a defect that shipped for a day.
-echo "[29/29] A release changing skill descriptions declares a routing check"
+echo "[29/30] A release changing skill descriptions declares a routing check"
 v29=0
 base29=""
 for ref in origin/main main; do
@@ -2117,11 +2126,175 @@ EOF29
 fi
 if [ "$v29" -ne 0 ]; then fail=1; fi
 
+# --- 30. A spelled-out count agrees with the list it counts ----------------
+# The class this closes, found at the v1.41.2 cut: README.md opened its audit
+# section with "Eleven classes of defect survive every linter" above a list of
+# **26**. Correct when written (2026-08-27, confirmed by counting the list at
+# that commit) and fifteen behind seventeen days later. THREE gates sat next to
+# it and none had the predicate: invariant 6 counts the skills/ tree, 17 counts
+# claims about the SCRIPTS, 26 counts the roadmap's open set. A count whose
+# denominator is a LIST IN THE SAME DOCUMENT had nothing.
+#
+# Two more live instances the same sweep found: docs/ROADMAP.md "Of 55 items"
+# (56), docs/WHY-IT-WORKS.md "Fourteen invariants" (29).
+#
+# WHY OPT-IN, and not a sweep. Measured before building, per the ledger's own
+# advice: a regex for <number-word> <plural-noun> over the front-door docs and
+# docs/ returns ~200 hits, nearly all historical prose in CHANGELOG and
+# ADOPTION-LOG entries that must NOT change. A strict auto-detecting rule opens
+# red and gets disabled, which is worse than none (docs/CONVENTIONS-LEDGER.md).
+# So the pairing is DECLARED, next to the claim, where it travels with the prose
+# rather than living in a registry someone must remember to extend:
+#
+#     <!-- count-check: ^- \*\* -->
+#     Twenty-nine classes of defect survive every linter, ...
+#
+# The marker names the pattern; the claim is the next non-empty line; the scope
+# runs from the marker to the next Markdown heading. Counting the list is the
+# whole point -- the stated number is never trusted, only compared.
+#
+# WHAT THIS CANNOT SEE, written down rather than discovered later: the scope is
+# positional, so ANY prose between the list and the next heading that contains the
+# pattern is counted as an item. That is not hypothetical -- it happened while this
+# check was being landed, in a sentence DESCRIBING the marker: writing the literal
+# separator inside a correction note added a phantom entry to the very list the
+# note was about. Keep the scope tight, and refer to a separator by name rather
+# than by character in any prose that shares a section with it.
+#
+# Fails closed on an empty scan (zero markers), the repo's standing rule: a
+# gate that examines nothing must not report ok.
+echo "[30/30] A declared count agrees with the list it counts"
+v30=0
+if command -v python3 >/dev/null 2>&1; then
+  cnt_out=$(python3 - <<'CNTPY'
+import re, sys, pathlib, subprocess
+
+WORD = {"zero":0,"one":1,"two":2,"three":3,"four":4,"five":5,"six":6,"seven":7,
+        "eight":8,"nine":9,"ten":10,"eleven":11,"twelve":12,"thirteen":13,
+        "fourteen":14,"fifteen":15,"sixteen":16,"seventeen":17,"eighteen":18,
+        "nineteen":19,"twenty":20,"thirty":30,"forty":40,"fifty":50,"sixty":60,
+        "seventy":70,"eighty":80,"ninety":90}
+
+def to_int(tok):
+    tok = tok.strip().lower().replace("‑", "-")
+    if tok.isdigit():
+        return int(tok)
+    parts = re.split(r"[- ]", tok)
+    if len(parts) == 2 and parts[0] in WORD and parts[1] in WORD:
+        return WORD[parts[0]] + WORD[parts[1]]
+    return WORD.get(tok)
+
+# Tokenise, then try an adjacent PAIR before each single token, so "twenty-nine"
+# parses as 29 and "eleven classes" parses as 11 rather than failing. The first
+# draft used one greedy regex ("[A-Za-z]+(?:[- ][A-Za-z]+)?") written against the
+# sample in front of it: it read "Twenty-nine" correctly by luck and read "Eleven
+# classes" as a single unparseable token, so the real historical defect was caught
+# with the WRONG diagnostic ("no number in the claim line"). Probe 30 asserts on the
+# comparison's own wording and would have reported NOT CAUGHT -- which is how this
+# was found. rules/15 2.1, applied to this file.
+TOK = re.compile(r"[A-Za-z]+|\d+")
+
+def first_number(line):
+    toks = TOK.findall(line)
+    for i, tok in enumerate(toks):
+        if i + 1 < len(toks):
+            v = to_int(tok + "-" + toks[i + 1])
+            if v is not None:
+                return v
+        v = to_int(tok)
+        if v is not None:
+            return v
+    return None
+# An optional trailing "+N" offset exists for ONE real shape: an inline list whose
+# items are SEPARATED rather than prefixed, where k separators mean k+1 items.
+# docs/CONVENTIONS-LEDGER.md is that shape, and it is not a hypothetical -- its own
+# text records the same drift there THREE times (heading right, list short), because
+# invariant 17 reads the stated count and never the list.
+MARK = re.compile(r"^<!--\s*count-check:\s*(.+?)\s*(?:\+(\d+)\s*)?-->\s*$")
+HEAD = re.compile(r"^#{1,6}\s")
+
+try:
+    files = subprocess.run(["git", "ls-files", "*.md"], capture_output=True,
+                           text=True, check=True).stdout.split()
+except Exception as e:
+    print("cannot list files: %s" % e); print("SCOPE 0"); sys.exit(1)
+
+checked = bad = 0
+for f in files:
+    try:
+        lines = pathlib.Path(f).read_text(encoding="utf-8").split("\n")
+    except OSError:
+        continue
+    fence = False
+    for i, line in enumerate(lines):
+        # A marker inside a ``` fence is DOCUMENTATION of the marker, not a marker --
+        # the same distinction invariant 22 draws for checklist bullets. Found by this
+        # check failing on the CHANGELOG entry that announced it, where the worked
+        # example in a ```markdown block was read as a live declaration over an empty
+        # list. A gate that cannot tell its own documentation from its own input would
+        # make every doc that explains it unwritable.
+        if line.lstrip().startswith("```"):
+            fence = not fence
+            continue
+        if fence:
+            continue
+        m = MARK.match(line)
+        if not m:
+            continue
+        checked += 1
+        try:
+            pat = re.compile(m.group(1))
+        except re.error as e:
+            print("%s:%d bad count-check regex %r: %s" % (f, i + 1, m.group(1), e))
+            bad = 1
+            continue
+        # the claim is the next non-empty line
+        claim = next((l for l in lines[i + 1:] if l.strip()), "")
+        stated = first_number(claim)
+        if stated is None:
+            print("%s:%d count-check marker, but no number in the claim line: %s"
+                  % (f, i + 1, claim.strip()[:70]))
+            bad = 1
+            continue
+        # scope: marker -> next heading. Count OCCURRENCES, not matching lines:
+        # an anchored pattern like "^- \*\*" matches at most once per line either
+        # way, but a separator pattern needs every hit on the line.
+        offset = int(m.group(2)) if m.group(2) else 0
+        actual = offset
+        for l in lines[i + 1:]:
+            if HEAD.match(l):
+                break
+            actual += len(pat.findall(l))
+        if stated != actual:
+            print("%s:%d says %d but the list below it has %d match(es) of %r"
+                  % (f, i + 1, stated, actual, m.group(1)))
+            print("     claim: %s" % claim.strip()[:78])
+            print("     recount, then restate -- never carry the number across an edit")
+            bad = 1
+
+print("SCOPE %d" % checked)
+sys.exit(1 if bad else 0)
+CNTPY
+  ) || v30=1
+  n30=$(printf '%s\n' "$cnt_out" | sed -n 's/^SCOPE //p')
+  while IFS= read -r l; do
+    case "$l" in SCOPE\ *|'') ;; *) note "$l" ;; esac
+  done <<EOF30
+$cnt_out
+EOF30
+  scope "${n30:-0}" "declared count-check markers" || v30=1
+  if [ "$v30" -eq 0 ]; then echo "    ok ($n30 declared counts, each matching its list)"; fi
+else
+  note "python3 not available — count-check not verified"
+  v30=1
+fi
+if [ "$v30" -ne 0 ]; then fail=1; fi
+
 # --- Result ---------------------------------------------------------------
 echo
 if [ "$fail" -ne 0 ]; then
   echo "FAIL: repository invariants violated (see above)."
   exit 1
 fi
-printf 'PASS: all repository invariants satisfied (29 checks over %s skill files / %s rules files, %ss).\n' \
+printf 'PASS: all repository invariants satisfied (30 checks over %s skill files / %s rules files, %ss).\n' \
   "${seen1:-?}" "${seen2:-?}" "$((SECONDS - START_SECONDS))"

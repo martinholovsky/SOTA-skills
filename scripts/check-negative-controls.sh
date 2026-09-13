@@ -317,7 +317,23 @@ probe 23 "a CHANGELOG version heading has no link ref" "NO LINK REF for CHANGELO
 # 2026-09-05 and 202 on 2026-09-06, each time from adding an invariant's table row,
 # each time caught only by a hand-run `awk`. Appends to a file no other check reads
 # for length, so nothing else can complain first.
-( cd "$WT" && printf 'padding to breach the always-loaded cap\n' >> AGENTS.md )
+#
+# THIS PROBE WENT INERT ON 2026-09-13 AND THE HARNESS CAUGHT IT. It appended exactly
+# ONE line, which breached the cap only while AGENTS.md sat at 199. Offloading the
+# invariants table took the file to 169 and the same mutation stopped breaching
+# anything -- the gate correctly passed, and the probe reported NOT CAUGHT. That is
+# the decay rules/12 1d describes -- a probe whose strength IS the subject's slack, so
+# improving the subject disarms it, with no red build at the moment of decay. The rule
+# was added in this same change; a sweep with a positive control confirmed the library
+# did not already cover it. Pad to the cap from wherever the file actually is, and clamp,
+# so the probe's strength no longer depends on the file's slack.
+( cd "$WT" && python3 -c "
+import sys
+n = sum(1 for _ in open('AGENTS.md'))
+need = 200 - n + 1
+sys.stderr.write('probe 24: AGENTS.md is %d lines; padding %d to breach 200\\n' % (n, need))
+open('AGENTS.md','a').write('padding to breach the always-loaded cap\\n' * max(need, 1))
+" )
 probe 24 "AGENTS.md over its own 200-line target" "it must stay UNDER 200"
 
 # 24b — the cap's PREMISE, not its arithmetic (rules/10 §1's proxy question). The
@@ -495,6 +511,46 @@ probe_committed 11 "LAST-VERIFIED moved without a sweep" \
 wt_commit "probe: a release with no front-door declaration"
 probe_committed 14 "a release declares no front-door check" \
   "declares no front-door check"
+
+# 30 — a declared count that disagrees with the list it counts. The real defect:
+# README.md said "Eleven classes of defect" above a list of 26, correct when written
+# and fifteen behind seventeen days later. The mutation edits the NUMBER, leaving the
+# list alone, which is exactly how the defect arises in practice (someone adds a
+# bullet and never touches the sentence above it).
+( cd "$WT" && perl -pi -e 's/^Twenty-nine classes of defect/Eleven classes of defect/' README.md )
+probe 30 "a declared count disagrees with the list it counts" \
+  "match(es) of"
+
+# 30b — THE OTHER DIRECTION, and the one that actually happens: the list grows and
+# the sentence is left behind. Mutating the number proves the comparison runs;
+# mutating the LIST proves it is anchored to the list rather than to a literal.
+# A probe that only ever edits one side cannot tell those apart.
+( cd "$WT" && perl -0777 -pi -e 's/(\n- \*\*Controls that are inert\*\*)/\n- **A probe-injected extra class** that nothing counted.$1/' README.md )
+probe 30b "the list grew and the count stayed behind" \
+  "match(es) of"
+
+# 30c — the gate must FAIL CLOSED when it finds no markers at all. Deleting every
+# marker is the cheapest way to silence this check, so it must be the loudest
+# failure, not a quiet ok over an empty scan (rules/11 2.2 aimed at ourselves).
+#
+# THE FILE LIST WAS HARDCODED AND WENT STALE THE SAME DAY. The first draft deleted
+# markers from README.md and docs/ROADMAP.md; a third marker was then added to
+# docs/CONVENTIONS-LEDGER.md, one survived, the scope was never empty, and the probe
+# reported NOT CAUGHT against a healthy gate. Note that "assert the mutation took"
+# passed throughout -- two files really were edited. Same family as 1d's decay: the
+# probe's ASSUMPTION changed while its text stayed correct. Enumerate the population
+# the way the gate does, so the probe cannot fall behind it.
+# REGULAR FILES ONLY (mode 100644). `perl -pi` REPLACES a symlink with a regular
+# file, and CLAUDE.md/GEMINI.md are symlinks to AGENTS.md — so a naive `git ls-files
+# '*.md'` sweep converts them, which is the very defect invariant 24b exists to catch.
+# The probe would then trip 24b as well as 30, and a catch for the wrong reason is the
+# FALSE PASS this harness refuses. Verified while writing this: the same one-liner run
+# by hand in the real checkout turned both symlinks into files
+# (`sota-shell-scripting` rules/06 §3 — an ad-hoc command destroying what it inspects).
+( cd "$WT" && git ls-files -s '*.md' | awk '$1=="100644"{print $4}' \
+    | tr '\n' '\0' | xargs -0 perl -pi -e 's/^<!-- count-check:.*-->\n//' )
+probe 30c "every count-check marker deleted — the gate must not report ok" \
+  "SCOPE EMPTY"
 
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
@@ -695,7 +751,7 @@ if [ "$failed" -ne 0 ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29 (26 of 29)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30 (27 of 30)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        12          — mtime-based: needs a rendered asset older than its source."
