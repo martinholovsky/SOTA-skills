@@ -2718,3 +2718,39 @@ prescribes for findings.
 
 **Landed:** `sota-code-security/rules/12` §1d rewritten · §1b gains a fourth bullet so §1d is
 reachable at the point of need · `sota-shell-scripting/rules/05` §3b · unreleased
+
+
+### 2026-09-13 — the gap the last entry named, closed as invariant 31
+
+The entry above recorded a procedure gap: **all 30 checks asserted structure, consistency or a
+declaration, and none looked at whether a rule is true.** It then stated a "standing change" in
+prose — *a rule authored and adopted in the same session gets the adversarial pass* — and
+stopped there.
+
+**That is the failure this repository has a rule against.** `sota-code-security` rules/14 §3 is
+*a natural-language instruction standing in for an enforced control*, and it is the reason
+invariant 11 exists. The standing change lived at one line of `docs/ADOPTION-LOG.md` and
+nothing read it. Verified before acting: a sweep of `scripts/` for it returned nothing.
+
+**What is and is not gateable, decided rather than assumed.** *"Is this rule true"* is
+semantic, and the ledger's own argument applies — a fuzzy gate produces false positives, gets
+disabled, and leaves you worse off than the prose. So the general form was **rejected**, and
+the mechanical part gated instead: whether the rule reached the ledger at all. An external
+proposal always does; a self-authored one never does.
+
+Against this ledger's three filters: **has it failed** (yes — §1d, eleven defects on green
+gates), **does it fail silently** (yes, completely), **is it mechanically checkable** (yes,
+diff-based like 11/14/29).
+
+**The exemption is the part that decides whether it survives.** This repo splits rules files
+regularly and a split re-adds every heading it carries. A heading that existed in any rules
+file at the merge base is therefore exempt — without it the check fires on every split, opens
+red, and gets disabled. Probed both ways: **31** fails on new text, **31b** requires the
+exemption to *hold* and to say so. 31b needed a new helper, because a bare green proves
+nothing when a skipped check is also green.
+
+**What it does not do, stated so nobody reads more into a green tick than it carries:** it
+proves a ledger line exists, never that the reasoning in it is sound, and never that the rule
+is correct. It makes the intake unskippable; it does not make it good.
+
+**Landed:** invariant 31 + probes 31/31b + `probe_committed_green` · unreleased

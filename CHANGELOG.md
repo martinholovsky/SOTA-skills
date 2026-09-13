@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Invariant 31 — new rule sections ship with an entry in the intake ledger
+
+This closes a gap found by auditing this repository's own gates, and the honest statement of
+it is blunt: **all thirty other checks assert structure, consistency or a declaration, and
+none of them looks at whether a rule is true.** That is not fixable in general — *"is this
+claim correct"* is semantic, and a fuzzy gate gets disabled, leaving you worse off than the
+prose it replaced ([docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md)).
+
+So it gates the part that **is** mechanical: whether the rule went through review at all.
+`docs/ADOPTION-LOG.md` is where an idea's verdict and reasoning are recorded. An **external**
+proposal always lands there. A rule its author both *found and adopted* never does — and that
+is precisely the path that skips scrutiny. `sota-code-security/rules/12` §1d was authored and
+adopted in one session, shipped on **30 green checks**, and an adversarial read then returned
+**eleven** defects, including a `§` reference that resolved cleanly — invariant 18 green —
+while its target grounded the opposite prior.
+
+It gates the record, not the judgement: the same shape as invariants 14 and 29.
+
+**A moved heading is not a new rule.** This repo splits rules files regularly and a split
+re-adds every heading it carries, so a heading that existed in *any* `skills/*/rules/*.md` at
+the merge base is exempt. Without that the check would fire on every split, open red, and be
+disabled — the exact failure the ledger warns about. There is deliberately **no manual escape
+hatch**: the exemption removes the only large false-positive class, and an escape nobody can
+trip is a checkbox.
+
+**Probes 31 and 31b** — a new section with no ledger entry (must fail), and a relocated
+heading with no ledger entry (**must stay green, and say so**). The second needed a new
+harness helper, `probe_committed_green`: a bare `exit 0` would have proved nothing, because a
+check that *skipped* is also green, so it asserts the exempting check's own ok-line. 28 of 31
+checks are now probed.
+
+Verified by hand in all three directions before the probes were written: new section without a
+ledger entry **fails** with the right diagnostic; the same section with one **passes**; a
+relocated heading is **exempt**.
+
 ### Invariant 30 — a declared count must agree with the list it counts
 
 Closes ROADMAP item 56, and removes the constraint that had blocked it for exactly one day.

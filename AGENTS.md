@@ -26,7 +26,7 @@ enforcement is on). Every change goes through a pull request:
 
 ## Invariants (enforced in pre-commit and CI)
 
-`scripts/check-invariants.sh` runs **30 checks** and fails the build on any of them. One line
+`scripts/check-invariants.sh` runs **31 checks** and fails the build on any of them. One line
 each — with the real incident behind every one — in **[docs/INVARIANTS.md](docs/INVARIANTS.md)**,
 offloaded out of this file on 2026-09-13 because each new invariant cost a line of the
 always-loaded budget and had breached the cap five times. Read it before changing a gate. The
@@ -70,7 +70,7 @@ a good tree in a disposable worktree; part B is inverted, building a fully-confi
 (`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **44 probes** (re-run 2026-09-13: `PASS: 44/44`; it said 43 from a 2026-09-09 run)
 (deliberately **not** gated — a static count of call sites under-reads, so only running it is
 authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-24, 25, 26, 27, 28, 29, 30** — 27 of 30 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13.
+24, 25, 26, 27, 28, 29, 30, 31** — 28 of 31 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13.
 Only **5, 9, 12** are unprobed, needing a tag or an mtime, and the harness prints that reason. *A
 diff-based check is not unprobeable*: 11 and 14 were exempt on that false ground until a probe
 **committed** its mutation (2026-09-09). **A probe asserts its own mutation landed** (a stale
@@ -147,7 +147,7 @@ the setting. The pre-commit hook scans each commit locally.
   a session *applying* the library, and an unlicensed source whose ideas can be
   taken but whose text cannot, both land here on the same terms
 - [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md) — which of this repo's
-  conventions are **enforced** (30 invariants + 9 more inside the eval runners) and
+  conventions are **enforced** (31 invariants + 9 more inside the eval runners) and
   which are prose, with the three filters a convention must pass to earn a gate
   (has it already failed · does it fail silently · is it mechanically checkable).
   Read it before proposing a new gate — it argues against gating the ~18 judgment
