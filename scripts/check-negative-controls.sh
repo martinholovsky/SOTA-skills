@@ -627,8 +627,12 @@ d = dst.read_text()
 dst.write_text(d.replace('## Audit checklist', head + chr(10)*2 + 'Relocated verbatim, not new guidance.' + chr(10)*2 + '## Audit checklist', 1))
 " )
 wt_commit "probe: a heading that already exists in rules/ appears in another file"
+# Assert on the RELOCATED count, not "no new sections" — the latter only appears when the
+# WHOLE branch adds no real section, so the probe went FALSE PASS the moment a surrounding
+# commit added one while the exemption worked perfectly. Fourth instance this session of a
+# probe pinned to the surrounding branch rather than its own mutation (rules/12 1d).
 probe_committed_green 31b "a relocated heading is not new guidance — the gate must stay green" \
-  "no new sections"
+  "1 relocated"
 
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
