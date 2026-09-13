@@ -29,7 +29,6 @@ auto-detecting rule would open red and be disabled, which is worse than none. So
 is declared next to the claim, where it travels with the prose:
 
 ```markdown
-<!-- count-check: ^- \*\* -->
 Twenty-nine classes of defect survive every linter, ...
 ```
 

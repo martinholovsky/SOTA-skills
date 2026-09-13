@@ -531,7 +531,23 @@ probe 30b "the list grew and the count stayed behind" \
 # 30c — the gate must FAIL CLOSED when it finds no markers at all. Deleting every
 # marker is the cheapest way to silence this check, so it must be the loudest
 # failure, not a quiet ok over an empty scan (rules/11 2.2 aimed at ourselves).
-( cd "$WT" && perl -pi -e 's/^<!-- count-check:.*-->\n//' README.md docs/ROADMAP.md )
+#
+# THE FILE LIST WAS HARDCODED AND WENT STALE THE SAME DAY. The first draft deleted
+# markers from README.md and docs/ROADMAP.md; a third marker was then added to
+# docs/CONVENTIONS-LEDGER.md, one survived, the scope was never empty, and the probe
+# reported NOT CAUGHT against a healthy gate. Note that "assert the mutation took"
+# passed throughout -- two files really were edited. Same family as 1d's decay: the
+# probe's ASSUMPTION changed while its text stayed correct. Enumerate the population
+# the way the gate does, so the probe cannot fall behind it.
+# REGULAR FILES ONLY (mode 100644). `perl -pi` REPLACES a symlink with a regular
+# file, and CLAUDE.md/GEMINI.md are symlinks to AGENTS.md — so a naive `git ls-files
+# '*.md'` sweep converts them, which is the very defect invariant 24b exists to catch.
+# The probe would then trip 24b as well as 30, and a catch for the wrong reason is the
+# FALSE PASS this harness refuses. Verified while writing this: the same one-liner run
+# by hand in the real checkout turned both symlinks into files
+# (`sota-shell-scripting` rules/06 §3 — an ad-hoc command destroying what it inspects).
+( cd "$WT" && git ls-files -s '*.md' | awk '$1=="100644"{print $4}' \
+    | tr '\n' '\0' | xargs -0 perl -pi -e 's/^<!-- count-check:.*-->\n//' )
 probe 30c "every count-check marker deleted — the gate must not report ok" \
   "SCOPE EMPTY"
 
