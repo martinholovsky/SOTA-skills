@@ -186,8 +186,12 @@ corpus, and we have no instrument that would.
 
 ### What the audit hunts that a scanner can't
 
-Eleven classes of defect survive every linter, SAST rule, and CVE scanner, because in
-each one the code isn't *wrong*. The library hunts them as explicit passes:
+Twenty-nine classes of defect survive every linter, SAST rule, and CVE scanner, because in
+each one the code isn't *wrong*. The library hunts them as explicit passes
+(this said "Eleven" for seventeen days — correct when written on 2026-08-27 and **fifteen
+classes** behind by the time anyone recounted at the v1.41.2 cut. Recount the list, never
+restate this number: the first correction written here was itself stale within the hour,
+because the same change added three more classes below):
 
 > **Finding them is the cheap half — and we can prove it.** Across nine instruments,
 > a frontier model recognises these classes unaided: audit lift **+0.00**, published
@@ -260,6 +264,29 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   **constant time is a property of the emitted code**, verified across every architecture and
   optimisation level you ship — `-Os` and `-Oz` included.
   ([code-security rules/04 §6.1](skills/sota-code-security/rules/04-cryptography.md))
+- **A defect that starts where the gates stop.** Formatters, linters and most SAST end at the
+  **compiled artifact**; a loader, verifier, dynamic linker, capability check or admission
+  controller runs after it, and that whole depth is unprobed while every gate is green. Four
+  gates passed an eBPF object the kernel then refused to load, because a warn-by-default style
+  lint had suggested an owned argument that spent 52 bytes of a **512-byte** stack — on a
+  constrained target a lint's *premise* can be false, and the word "mechanical" is a
+  classification applied **before** the analysis that would justify it.
+  ([devsecops rules/09 §2a](skills/sota-devsecops/rules/09-gates-that-hold.md),
+  [rust rules/07 §1a](skills/sota-rust/rules/07-tooling-ci.md))
+- **A version recalled instead of looked up.** Not a stale pin — a *measurement* of someone
+  else's artifact, which never feels like a version decision. A recalled release number
+  arrives with no felt uncertainty, so every rule that triggers on doubt is structurally
+  unable to fire. The fix is a fact that cannot be recalled: record the **EOL date** beside
+  the version. A row past its EOL is removed, not corrected — an unsupported branch can answer
+  the *opposite* of the current one, not merely a staler version of it.
+  ([devsecops rules/03 §3.9](skills/sota-devsecops/rules/03-dependencies.md))
+- **A finding sourced to whoever sells the remedy.** Security claims arrive
+  disproportionately from vendors of the fix, and such a source is not disqualified by that —
+  it is *unblinded* by it. Independent sources converging is evidence; sources converging on
+  the conclusion that sells their own product is one hypothesis held by several interested
+  parties. Name the interest in the finding, prefer a test you run yourself, and label it a
+  design argument rather than a measurement until someone runs it.
+  ([sota/rules/03 §2](skills/sota/rules/03-audit-findings.md))
 - **A green light from the wrong stage.** A pipeline with more than one stage has more than
   one success signal, and the earliest is the one that looks like a summary — it is a count
   and it renders first. A metrics collector reporting `1 target` had matched a selector and
@@ -302,6 +329,13 @@ each one the code isn't *wrong*. The library hunts them as explicit passes:
   invokes a command its own directory shadows**, fills the per-user process table, and every
   tool fails at once *including the ones you would use to diagnose it*. Two unrelated causes
   produce that one signature and only **parentage** separates them.
+  Two more shapes where the command is *correct*: an extraction or fetch into a blob you have
+  never opened cannot be positive-controlled at all, because nothing is yet known to be in it —
+  so it must print a **denominator** (bytes, members, total files) beside the zero, or `0`
+  reads as a fact about the subject when `tar` simply could not open the archive. And the
+  **selector** can name a different population member than the question did: `sort -V | tail -1`
+  is the *newest*, not the *default*, and returned a backports kernel for a release that ships
+  another one — nothing truncated, exit 0, no rule broken.
   ([rules/06](skills/sota-shell-scripting/rules/06-ad-hoc-commands.md),
   [rules/03 §3a](skills/sota-shell-scripting/rules/03-security.md))
 - **Controls that block everything** — the mirror image, and the one every other pass
