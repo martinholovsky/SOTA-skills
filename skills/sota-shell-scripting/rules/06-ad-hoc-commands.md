@@ -75,8 +75,8 @@ fixture, `sota-testing` rules/06 §6.3):
 
 | binary | symlinked dir **as the argument** | symlinked dir **met in traversal** |
 |---|---|---|
-| ugrep 7.8.4 `-r` | followed | **skipped, silently** |
-| ugrep 7.8.4 `-R` | followed | followed |
+| ugrep 7.8.4 **and** GNU grep 3.11, `-r` | followed | **skipped, silently** |
+| ugrep 7.8.4 **and** GNU grep 3.11, `-R` | followed | followed |
 | **BSD grep 2.6.0** (macOS `/usr/bin/grep`) **`-r` and `-R` alike** | **skipped** — unless the argument carries a **trailing slash** (`linked/`) | **skipped, silently** |
 | `rg` (defaults) | followed | **skipped** — `--follow` follows |
 
@@ -87,10 +87,10 @@ ugrep      -r → 1 of 2      -R → 2 of 2
 rg            → 1 of 2      --follow → 2 of 2
 ```
 
-**So on macOS's default grep, `-R` is not the fix**, and advice that says "use `-R`" is
-GNU/ugrep advice wearing a generic name. Verify on the binary in front of you, with a
-positive control that the file is readable through the link at all — otherwise a
-permission error and a skipped symlink are the same empty result.
+**So on macOS's default grep, `-R` is not the fix**, and "use `-R`" is GNU/ugrep advice wearing
+a generic name. Re-measured 2026-09-13, GNU grep 3.11 matched ugrep cell for cell — the split is
+**BSD versus everyone else**. Verify on the binary in front of you, with a positive control that
+the file is readable through the link — else a permission error and a skipped symlink look alike.
 
 So **a recursive search over any tree that may contain symlinked directories under-reports,
 and the under-report is an empty or short result that reads as a clean answer.** It bites hardest
@@ -113,8 +113,8 @@ A control of **0** means the sweep is broken and the `hits=0` beside it means no
 is `sota-code-security` rules/15 §2.2's known-good, at one-liner scale.
 
 **Where you have nothing to control *with*, print a denominator instead.** A positive control
-needs a term you already know is present, so it is unavailable exactly where this fails most:
-an **extraction** or a **fetch** into a blob you have never opened. Field-reported, six empty
+needs a term you already know is present — unavailable exactly where this fails most: an
+**extraction** or **fetch** into a blob you have never opened. Field-reported, six empty
 results in one session each read as a fact about the subject — `cpio -i` listed 0 files from
 an RPM (it cannot read zstd payloads), `tar -tzf` found 0 members in a valid 39.8 MB archive,
 a fetch returned an empty page (an anti-bot challenge), `apt-cache depends` printed nothing
