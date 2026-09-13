@@ -286,6 +286,36 @@ else
   fi
 fi
 
+# --- 11. An assignment prefix does not reach a process substitution ---------
+# sota-shell-scripting rules/03 §2a. Executable and deterministic, so the
+# convention in CONTRIBUTING.md says the check ships with the rule.
+d=$(fresh procsub)
+cat > "$d/h.sh" <<'HELPER'
+#!/bin/sh
+printf 'MY_VAR=%s\n' "${MY_VAR:-UNSET}"
+HELPER
+chmod +x "$d/h.sh"
+for sh in bash zsh; do
+  if ! command -v "$sh" >/dev/null 2>&1; then
+    skip "11-$sh" "assignment prefix vs process substitution" "$sh not installed"
+    continue
+  fi
+  # CONTROL FIRST: a prefix must reach a PLAIN command, or the helper is broken and
+  # the UNSET below would be meaningless.
+  ctl=$(cd "$d" && "$sh" -c 'unset MY_VAR; MY_VAR=secret ./h.sh' 2>/dev/null)
+  sub=$(cd "$d" && "$sh" -c 'unset MY_VAR; MY_VAR=secret cat <(./h.sh)' 2>/dev/null)
+  if [ "$ctl" != "MY_VAR=secret" ]; then
+    skip "11-$sh" "assignment prefix vs process substitution" \
+      "positive control failed: prefix did not reach a plain command (got '$ctl')"
+  elif [ "$sub" = "MY_VAR=UNSET" ]; then
+    pass "11-$sh" "$sh: a prefix reaches a plain command but NOT <(…)"
+  else
+    fail "11-$sh" "a prefix does not reach a process substitution" \
+      "sota-shell-scripting rules/03 §2a" \
+      "expected MY_VAR=UNSET inside <(…); got '$sub' (control was '$ctl')"
+  fi
+done
+
 # --- Result ----------------------------------------------------------------
 echo
 if [ "$ran" -eq 0 ]; then

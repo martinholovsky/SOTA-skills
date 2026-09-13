@@ -2976,3 +2976,33 @@ proves its own half; neither could have proved the other's.
 
 **Landed:** `scripts/check-claims.sh` (11 claims, 2 runners) · a `claims` CI job ·
 `CONTRIBUTING.md` convention · `sota-shell-scripting/rules/06` §2b **corrected** · unreleased
+
+
+### 2026-09-13 — the nineteenth rule, found by refusing to delete on a tally
+
+Thinning the operator's global `CLAUDE.md` meant deleting 19 shell rules on the grounds that
+the library now covered them. **Verifying each one individually rather than trusting the
+running tally found that 18 did and one did not**: *an assignment prefix does not reach a
+process substitution.* Two concept sweeps with a positive control confirmed it was absent —
+and it is a **secrets** rule, so deleting it would have removed the only copy of a live
+security caveat.
+
+**My first reproduction refuted the claim, and my test was the thing that was broken.**
+`MY_VAR=secret bash -c 'cat <(./h)'` printed the value, apparently contradicting the rule —
+because the prefix was on the *wrapper* shell, whose environment children inherit. A second
+malformed test used a bare `VAR=x;` assignment that is never exported. Tested faithfully,
+**with a control line proving a prefix does reach a plain command**, the rule holds exactly
+as written, in bash and zsh alike. Without that control the `UNSET` would have been
+indistinguishable from a broken helper.
+
+Landed as `sota-shell-scripting` rules/03 **§2a**, with the executable check shipped
+alongside it (claim 11 in `scripts/check-claims.sh`, both shells) — the convention added
+hours earlier, applied to its first new rule.
+
+**The reusable part is the deletion discipline.** A tally is not a verification: "15 of 19
+covered" was wrong twice in this exercise, first by four (loose pattern matching) and then by
+one (a rule nobody had checked individually). **Before deleting the last copy of anything,
+resolve each item to the section that replaces it** — the check costs a minute and the
+failure is silent and permanent.
+
+**Landed:** `sota-shell-scripting/rules/03` §2a + `scripts/check-claims.sh` claim 11 · unreleased
