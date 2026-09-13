@@ -53,9 +53,12 @@ fail first, print your denominator, skip rather than guess.**
 
 *Adding a `rules/NN` file?* Invariant 10 checks its `SKILL.md` indexes it, **invariant 15** that
 the library map (`skills/sota/rules/04`) lists it — both directions. `skills/sota/SKILL.md` is at
-**432/500** (re-counted 2026-09-13, wrong an **EIGHTH** time — this sentence's own halves had drifted, one
-saying seventh and one six. **Never restate it; `grep -c ''`.** Offloads got it down: **detail belongs in
-`rules/`, imperatives in the router**). Editing the router's **BUILD section** moves `ROUTER_BUILD_SHA` and aborts the evals; AUDIT does not. The
+**under 500 — `grep -c '' skills/sota/SKILL.md` before you assume headroom.** The number used to be
+written here and was wrong **nine times**, including twice in one day and once in this very sentence,
+whose two halves disagreed with each other. It is deleted rather than corrected: a figure that rots on
+every edit, in a file loaded into every session, with a one-command source of truth, is pure liability.
+**Detail belongs in `rules/`, imperatives in the router.**
+Editing the router's **BUILD section** moves `ROUTER_BUILD_SHA` and aborts the evals; AUDIT does not. The
 gates enumerate via `git ls-files`, so an **unstaged new file is invisible** — `git add` first.
 
 **`scripts/check-negative-controls.sh` proves our gates can still fail.** Its CI job runs it plus

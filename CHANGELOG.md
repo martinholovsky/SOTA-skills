@@ -81,6 +81,34 @@ because it sat in the report's *"what worked"* section rather than among its pro
 **a report's non-proposal sections make claims about the library too, and they arrive
 without the framing that triggers a check.**
 
+### The rule we wrote for ourselves went through the intake it had skipped
+
+`rules/12` §1d was authored here and was about to ship on green gates. An independent
+adversarial pass — prompted to kill it, defaulting to REFUTED — returned **11 findings**, and
+**all 30 invariants were green on all 11**. The gates check structure: the line cap, a
+checklist present, `§` references resolving. **Nothing here checks whether a rule is true.**
+
+Three of the findings are worth naming beyond this release:
+
+- **Invariant 18 proves a `§` reference *resolves*; it can never prove the target says what
+  the citing sentence claims.** §1d cited `rules/15` §2.1 for a prior that §2.1 grounds the
+  opposite way — on *recency of authorship*, where this case has the probe as the **older**
+  artifact. Green check, wrong claim.
+- **A default that inverted an existing tool's semantics.** *"`NOT CAUGHT` is a claim about
+  the probe until proven otherwise"* would have taught readers to dismiss inert gates — the
+  failure that string exists to reveal. Now a disambiguation, resolved by asking whether the
+  mutation crossed the threshold.
+- **A self-contradiction shipped across two files in one branch** — the probe comment and this
+  CHANGELOG called the class *"the shape the library already names"* while
+  [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md), in the same branch, correctly said it did not.
+
+The load-bearing claim survived: `AGENTS.md` was **exactly 199 lines** at the commit that
+introduced probe 24, so it was effective at birth and genuinely decayed rather than being born
+broken — with a margin of **one line** from day one, which the rule now says.
+
+**Standing change:** a rule authored *and* adopted in the same session is the highest-risk
+change in a PR, not the safest.
+
 ### `sota-shell-scripting/rules/05` §3b — in-place edit on a symlink
 
 Two idioms treated as interchangeable, differing **exactly on the dangerous axis**. Measured
