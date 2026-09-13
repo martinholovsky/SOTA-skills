@@ -115,6 +115,35 @@ file:line | rule violated | severity | effort | fix
 Borderline severities should state the deciding assumption; unconfirmed findings
 are marked "needs verification", never asserted.
 
+## When a rule keeps being broken, change the construct — not the warning
+
+A rule that readers break *after reading it* does not need stronger wording. Adding a second
+warning is the intervention the evidence says does not work, and this repository has the
+evidence:
+
+- The `rg -r` / `--replace` confusion recurred **three times in one session**, the third time
+  with the note about it in context. `sota-code-security` rules/15 §2.1 records the
+  conclusion — *the reflex comes from muscle memory that a note does not reach.*
+- The `cmd; echo "EXIT=$?"` trap (the trailing `echo` makes the shell's status 0 whatever
+  `cmd` did) was broken by two different people on the same day, both of whom had the rule in
+  front of them. What fixed it was not a reminder but a **different construct**:
+  `cmd > log 2>&1; st=$?; tail log; exit "$st"` — one edit, and the next genuine failure was
+  reported as a failure.
+
+So, when writing guidance here:
+
+- **Lead with the safe construct and mention the trap second.** A reader copies the first
+  code block. If the safe form is the one they copy, the warning becomes a explanation rather
+  than a defence.
+- **Prefer a rule that changes what you type over one that asks you to remember.** "Redirect
+  to a file and check `$?`" beats "be careful with pipelines"; "enumerate mode `100644`"
+  beats "watch out for symlinks".
+- **Where neither is possible, budget for *noticing* rather than remembering** — name the
+  tell (an implausible result, a suspiciously round number, output that contradicts the file
+  you are about to open) instead of restating the rule.
+- **Count the recurrences before adding words.** A third statement of a rule that has already
+  failed twice is evidence the format is wrong, not that the reader was careless.
+
 ## The invariants (enforced)
 
 `scripts/check-invariants.sh` runs in pre-commit and CI and fails the build on the list

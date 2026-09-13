@@ -92,6 +92,39 @@ Rules:
   and lint passes all stop at the compiled object and were green on the broken one.
   `sota-devsecops` rules/09 §2a.
 
+### 1b. Source shape is not a proxy for compiled behaviour
+
+§1a is a *lint's* premise being false on a constrained target. This is **your own reasoning's**
+premise being false, and it is the harder one because nothing fires.
+
+Rust makes source structure feel like it maps onto machine behaviour — ownership, scopes and
+struct layout usually do. At `opt-level=3` with LTO they need not, and on a target where the
+limit is checked at **load** time there is no compile error to correct you.
+
+Measured on rustc 1.97.1: a plain helper called once from a function disappears entirely at
+`opt-level=3` — the symbol is absent from the emitted assembly, while an `#[inline(never)]`
+neighbour in the same file still shows three call sites (the control that proves the absence
+is real, not a search artefact).
+
+```console
+$ rustc -C opt-level=0 --emit asm t.rs && grep -c fill t.s   # 2  — the boundary exists
+$ rustc -C opt-level=3 --emit asm t.rs && grep -c fill t.s   # 0  — it does not
+```
+
+Field-reported consequence: a helper was extracted from an eBPF program specifically so each
+transport would own one large stack local instead of two, and that reasoning was written into
+a commit message as fact. The verifier's own numbers before and after were **identical** —
+`stack depth 136+0+344+0` both times. The refactor was sound; the justification was fiction.
+
+- **A claim about memory layout cites a measurement from the toolchain that enforces the
+  limit** — the verifier's report, `-Zprint-type-sizes`, a linker map, `--emit asm`. Write it
+  as *"measured X on Y"* or do not write it.
+- **Extracting a function does not create a scope the optimiser must honour.** If you need
+  two lifetimes not to overlap, you need something the compiler cannot inline through — a
+  separate program, an explicit `#[inline(never)]`, or a different data flow.
+- **The numbers to compare are before and after on the same toolchain**, not one reading and
+  an argument. `sota-code-security` rules/15 §2a: a *pass* is not a number.
+
 ## 2. rustfmt — zero-config by default
 
 - `cargo fmt --check` in CI. Default style; a `rustfmt.toml` should contain
@@ -275,6 +308,11 @@ gate (rules/06). Cache with `Swatinem/rust-cache`; pin action SHAs (rules/05).
       crate, name the resource it spends (stack frame, allocation, code size); hosted-
       assumption lints are `allow`ed at the crate with a reason naming the constraint.
       A change described as "mechanical" in one of these crates is unreviewed, not safe.
+- [ ] **Any claim about stack, size or layout that cites the SOURCE rather than a
+      measurement?** (§1b) At `opt-level=3` with LTO a plain helper's boundary does not exist
+      in the artefact — measured, a single-call helper vanishes entirely — so "I extracted it
+      so the locals would not overlap" is not evidence. Cite the enforcing toolchain's own
+      number, before and after.
 - [ ] **Does any gate load or run the artifact?** (§1a) `fmt`, `clippy` and lint passes
       all stop at the compiled object; a crate whose failures appear at load or verify
       time is ungated until one gate executes it on the real target.

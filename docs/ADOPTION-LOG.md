@@ -2785,3 +2785,58 @@ two-minute check that was skipped because the local box lacked the binary.
 **Landed:** `sota-shell-scripting/rules/05` §3b rewritten with all four implementations, its
 audit-checklist half, plus README, `docs/INDEX.md` and the CHANGELOG entry that carried the
 refuted contrast · unreleased
+
+
+### 2026-09-13 — InterdictOps field report II: three adopted, one corrected in adoption, one deliberately not a rule
+
+`FIELD-REPORT-INTERDICT-2026-09-13-II.local.md`, same session as report I, filed separately
+because the two are **different in kind** — and the distinction is the report's own and worth
+keeping. Report I's findings were about **instruments**: readers returning empty, searches
+answering a neighbouring question, stale versions, each fixed by a denominator or a control.
+These four are about **reasoning that survived contact with a passing test**: the tool worked,
+the output was read correctly, and the conclusion was still wrong.
+
+**Every falsifiable claim reproduced before adoption.**
+
+- **§3 reproduced exactly, to the NVR.** `podman run almalinux:8` → `kernel-headers-4.18.0-553.162.1.el8_10`,
+  6160-line header, `BPF_MAP_TYPE_RINGBUF=1`, `BPF_PROG_TYPE_LSM=1`,
+  `BPF_MAP_TYPE_PERF_EVENT_ARRAY=6` — same numbers the report published. A kernel numbered
+  **4.18 carrying upstream 5.7/5.8 features**.
+- **§1's inlining mechanism confirmed generally**, rustc 1.97.1, with a control: a plain
+  single-call helper is absent from the assembly at `opt-level=3` (grep count 0, versus 2 at
+  `-O0`), while an `#[inline(never)]` neighbour still shows three call sites — so the absence
+  is real rather than a search artefact.
+- **§2 confirmed and CORRECTED** — see below.
+
+**§2 adopted with a correction, and the correction makes the rule cheaper to follow.** The
+report says a verifier prints its stack depth *"only when it rejects"*, so the remedy is to
+**induce the failure**. Reading `kernel/bpf/verifier.c`: the rejection path does emit
+`combined stack size of %d calls is %d. Too large`, but a **successful** load emits
+`stack depth max %d` from `print_verification_stats()`, gated behind `BPF_LOG_STATS` in the
+caller-supplied `log_level` (uapi `bpf.h`). **The margin exists on the happy path; you have to
+ask for it.** Shipped as `rules/15` §2a with "look for the verbose/stats mode first, induce the
+failure only where none exists" — the report's principle, a better remedy. Its generalisation
+to linters, validators and admission controllers is untouched and is why this was the
+highest-reach item.
+
+**§4 proposes no rule, and that was accepted as stated.** It argues that a rule broken by
+people who have read it needs a **changed construct, not a stronger warning**, and offers its
+own worked example. Landed in `CONTRIBUTING.md` rather than a rules file, because it is
+guidance about **how this library is written** — skills are for people building software.
+
+**A premise correction, small and the same shape as report I's.** §4 says *"the library
+already says this, in its `rg -r` note"*. The `rg -r` note is in the **operator's global
+`CLAUDE.md`**, not in `skills/`. The library states the same lesson in `rules/15` §2.1 (*"the
+reflex comes from muscle memory that a note does not reach"*). The proposal is unaffected —
+but it is twice now that a report has located one of our rules in the wrong file, which is
+worth the reporter knowing.
+
+**Independent corroboration this reviewer can add.** §4a's exit-code trap was hit **twice more
+on our side the same day**: a `; echo "EXIT=$?"` that made a failed push's wrapper report
+success, and a `gh pr checks --watch` that returned `exit 0` while all four checks were still
+pending. Five data points across two parties moves §4 from "medium-high, but it is
+meta-guidance" to something the repo now acts on.
+
+**Landed:** `sota-rust/rules/07` §1b · `sota-code-security/rules/15` §2a ·
+`sota-devsecops/rules/03` §3.9 extended · `CONTRIBUTING.md` authoring principle — each with its
+audit-checklist half where it has one · unreleased

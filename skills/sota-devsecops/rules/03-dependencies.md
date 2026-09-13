@@ -334,6 +334,19 @@ So require a second value that **cannot** be produced from plausibility:
   The lesson had been encoded as a fact about Alpine rather than a procedure about
   versions. Re-running the lookup across all rows revealed **five of seven** stale at once;
   it is cheap and total, and nothing but the missing column was ever demanding it.
+- **Compare capabilities, not version numbers — and state the assumption if you must.**
+  *"Version ≥ X implies feature X"* is true only where the distribution tracks upstream. It
+  is **false for exactly the enterprise distributions that backport**, which are also the
+  ones with the largest deployed base — not a coincidence, since they backport *because* the
+  base is large and conservative. Reproduced 2026-09-13 in a container: AlmaLinux 8 ships
+  `kernel-headers-4.18.0-553.162.1.el8_10`, and that 4.18 header declares
+  `BPF_MAP_TYPE_RINGBUF` (upstream 5.8) and `BPF_PROG_TYPE_LSM` (upstream 5.7). A version
+  comparison excludes it; a capability probe includes it. Field-reported cost: RHEL 8 was
+  written into a shipped support matrix as **excluded**, and the claim had to be retracted.
+- **A method applied across a population needs its domain of validity written down.** The
+  rule was not wrong — its *scope* was never stated, so it was applied uniformly to members
+  that do not satisfy its premise. Name the assumption and name which members violate it;
+  the member where a method fails is disproportionately the one that matters commercially.
 - **Give the matrix an expiry.** A platform table is a decision with a review date
   (§3.7.1's discipline for a pin): the nearest EOL in the table *is* that date.
 
@@ -349,4 +362,9 @@ So require a second value that **cannot** be produced from plausibility:
 - [ ] **Every pin has a named staleness mechanism (§3.7.1)** — the bot confirmed to parse *that* file/line, or a watcher, or a written acceptance of the freeze with an owner and a review date; pins landed while still a no-op, never bundled with an upgrade
 - [ ] Vendored deps (if any) are scanner-visible, auto-refreshed, and unpatched (or patches tracked upstream)
 - [ ] **Inert-dependency sweep run** — declared-but-not-reached dependencies, modules and plugins, proven by deletion rather than by a tool's silence: [rules/10](10-inert-dependencies.md), a full pass with its own checklist
+- [ ] **Does any support-matrix row infer a capability from a version number? (§3.9)** That
+      holds only where the distro tracks upstream and is **false for backporting enterprise
+      distributions** — measured: an AlmaLinux 8 `4.18` header declares BPF features from
+      upstream 5.7/5.8. Probe the capability, say which you measured, and write down the
+      assumption the method rests on plus the members that violate it
 - [ ] **Every versioned third-party row carries an EOL date (§3.9)** — base images, OS/distro releases, runtimes, supported-platform matrices. A version with no EOL beside it has not been looked up, and a row past its EOL is **removed**, not corrected: an unsupported branch can answer the *opposite* of the current one, not merely a staler version of it. When one row is found stale, re-run the lookup across **all** rows in the same pass

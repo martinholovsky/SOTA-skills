@@ -146,6 +146,39 @@ broken — with a margin of **one line** from day one, which the rule now says.
 **Standing change:** a rule authored *and* adopted in the same session is the highest-risk
 change in a PR, not the safest.
 
+### Field report II (InterdictOps) — reasoning that survived a passing test
+
+Report I was about **instruments**; this one is about **reasoning that survived contact with a
+passing test** — the tool worked, the output was read correctly, and the conclusion was still
+wrong. Three proposals adopted, one deliberately left as no-rule. Every falsifiable claim
+reproduced first ([docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md)).
+
+- **`sota-code-security/rules/15` §2a — the instrument that speaks only on failure.** A
+  verifier, linter, validator, type checker or admission controller reports **one bit**. *"It
+  fits"* and *"it fits with four bytes to spare"* are byte-identical, so a green run cannot
+  support a claim about headroom or about a change that stayed within a limit.
+  **Adopted with a correction that makes it cheaper:** the report said to *induce the
+  failure*; reading `kernel/bpf/verifier.c` shows a successful load **does** emit
+  `stack depth max D`, gated behind `BPF_LOG_STATS` in the caller's `log_level`. The margin is
+  on the happy path — you have to ask for it. Look for the verbose/stats mode first; induce the
+  failure only where none exists.
+- **`sota-rust/rules/07` §1b — source shape is not a proxy for compiled behaviour.** Measured
+  on rustc 1.97.1 with a control: a plain single-call helper is **absent** from the assembly at
+  `opt-level=3` (grep 0, versus 2 at `-O0`) while an `#[inline(never)]` neighbour still shows
+  three call sites. So "I extracted a helper so the locals would not overlap" is not evidence —
+  field-reported, the verifier's numbers were identical before and after such a refactor.
+- **`sota-devsecops/rules/03` §3.9 — compare capabilities, not version numbers.**
+  *Version ≥ X implies feature X* holds only where the distro tracks upstream and is **false
+  for backporting enterprise distributions**, which have the largest install bases — they
+  backport *because* of that. Reproduced exactly: AlmaLinux 8's
+  `kernel-headers-4.18.0-553.162.1.el8_10` declares `BPF_MAP_TYPE_RINGBUF` (upstream 5.8) and
+  `BPF_PROG_TYPE_LSM` (upstream 5.7). Cost in the field: a support matrix shipped with RHEL 8
+  wrongly excluded, then retracted.
+- **`CONTRIBUTING.md` — when a rule keeps being broken, change the construct, not the
+  warning.** The report proposed **no rule** and that was accepted as stated; it is guidance
+  about how this library is written, so it is not in a skill. Five data points across two
+  parties now, including two from this session's own work.
+
 ### `sota-shell-scripting/rules/05` §3b — in-place edit on a symlink
 
 Two idioms treated as interchangeable, differing **exactly on the dangerous axis**. Measured
