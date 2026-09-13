@@ -2974,7 +2974,7 @@ link intact**; `grep -r` on a symlinked dir — **GNU skips in traversal and fol
 argument**, **BSD skips both and follows an argument only with a trailing slash**. Each runner
 proves its own half; neither could have proved the other's.
 
-**Landed:** `scripts/check-claims.sh` (11 claims, 2 runners) · a `claims` CI job ·
+**Landed:** `scripts/check-claims.sh` (11 claims at the time, 2 runners; it grows — run it for the count) · a `claims` CI job ·
 `CONTRIBUTING.md` convention · `sota-shell-scripting/rules/06` §2b **corrected** · unreleased
 
 
