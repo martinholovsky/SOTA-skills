@@ -484,6 +484,10 @@ probe_committed_green() {  # <id> <name> <expected ok-substring> — commit alre
     else
       echo "  [$id] $name — FALSE PASS: green, but the exempting check never said so."
       echo "        expected to see: $want"
+      # SHOW WHAT IT ACTUALLY SAID. The first version printed only the expectation,
+      # which makes a FALSE PASS undiagnosable -- the one state where you most need the
+      # observed value. rules/11 2.2: report the denominator, not just the verdict.
+      printf '%s\n' "$GATE_OUT" | grep -E '^\[3[01]/|^    ok \(' | tail -4 | sed 's/^ */        got: /'
       failed=$((failed + 1))
     fi
   fi
