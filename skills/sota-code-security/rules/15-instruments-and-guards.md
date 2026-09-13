@@ -279,6 +279,36 @@ took, a log the harness emitted. This binds CI jobs that report their own status
 vendors self-attesting to a control, and any model asked to grade its own output
 (`sota-llm-engineering` rules/01 on judges; `rules/08` §1 on same-class checkers).
 
+## 2a. The instrument that speaks only on failure
+
+§2's failures are instruments that report the **wrong** thing. This one reports **one bit**,
+correctly, and the bit is read as though it carried a margin.
+
+A verifier, linter, type checker, schema validator, admission controller or policy engine
+tells you it **rejected** and why. On acceptance it says nothing — so *"it fits"* and *"it
+fits with four bytes to spare"* produce byte-identical output. A green run therefore cannot
+support a claim about **headroom, proximity to a limit, or the effect of a change that stayed
+within it**. Field-reported: a refactor was declared stack-neutral on the strength of a
+19-of-19 green gate; the gate could not have said otherwise either way.
+
+The asymmetry is invisible because success looks like every other success, and it bites
+hardest exactly where the limit is the design constraint.
+
+- **Look for the verbose or stats mode before doing anything clever** — the margin is often
+  already computed and merely not printed. Verified in the Linux BPF verifier: the rejection
+  path emits `combined stack size of N calls is D. Too large`, while a *successful* load emits
+  `stack depth max D` from `print_verification_stats()` — gated behind `BPF_LOG_STATS` in the
+  caller-supplied `log_level`. The number exists on the happy path; you have to ask. Same
+  shape as a compiler's `-fstack-usage`, a linker map, `EXPLAIN` over a plan that already ran.
+- **Where no such mode exists, induce the failure** — shrink the budget, inflate the input,
+  or read the number from an environment where the thing already fails. That is the only
+  remaining way to turn one bit into a measurement.
+- **Say which you did.** "Passed" is not a margin; "passed, and the verifier reported 344 of
+  512 with stats on" is. A claim about headroom with no number behind it is `sota/rules/03`
+  §2's missing evidence, in the one place it reads as diligence.
+- **A pass/fail control cannot detect drift toward its own limit.** Budget consumption needs
+  its own reported value or its own gate — otherwise the first signal is the day it breaks.
+
 ## 3. The guard that is an instance of what it guards
 
 The least intuitive shape in this whole family, and the highest-yield: **the
@@ -389,6 +419,13 @@ two hours earlier, in the same change — true of the inner call failing, false 
 condition being false.
 
 ## Audit checklist
+
+- [ ] **Is any claim about headroom or "no effect" resting on a PASS?** (§2a) A verifier,
+      linter, validator or admission controller reports one bit: *"it fits"* and *"it fits
+      barely"* are byte-identical. Check for a stats/verbose mode that already computes the
+      margin (the BPF verifier prints it behind `BPF_LOG_STATS`; compilers have
+      `-fstack-usage`); where none exists, **induce the failure** to get a number. Quote the
+      number, not the green.
 
 - [ ] **Every multi-clause guard states why it declined** (§3a) — grep for an `if` with
       several conjuncts and no `else`; a correct refusal that prints nothing is

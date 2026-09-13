@@ -337,10 +337,12 @@ because the same change added three more classes below):
   **selector** can name a different population member than the question did: `sort -V | tail -1`
   is the *newest*, not the *default*, and returned a backports kernel for a release that ships
   another one — nothing truncated, exit 0, no rule broken. And a sweep that **writes** can
-  destroy what it inspects in a way `git status` shows as one character: `perl -pi` across a
-  path list **silently replaces a symlink with a regular file** (exit 0, target untouched),
-  where BSD `sed -i` refuses outright — measured, after that exact one-liner converted this
-  repository's own tracked symlinks.
+  destroy what it inspects in a way `git status` shows as one character: an in-place sweep
+  (`perl -pi`, `sed -i`) across a path list **silently replaces a symlink with a regular
+  file** — exit 0, target untouched. Measured across four implementations, and the danger is
+  the **platform split**: only **BSD** sed refuses, so a macOS developer sees the safe
+  behaviour and CI (GNU, BusyBox) does not. That one-liner converted this repository's own
+  tracked symlinks.
   ([rules/06](skills/sota-shell-scripting/rules/06-ad-hoc-commands.md),
   [rules/03 §3a](skills/sota-shell-scripting/rules/03-security.md))
 - **Controls that block everything** — the mirror image, and the one every other pass
@@ -1297,7 +1299,8 @@ does not apply to README/CHANGELOG/`docs/`, which are read by humans — and end
 each rules file with an audit checklist — **exactly one**, since appending a
 section's bullets under a fresh heading strands them where a reader has already
 stopped. **31 invariants** enforce this in `scripts/check-invariants.sh`
-(pre-commit + CI), covering line caps, checklist placement *and uniqueness*,
+(pre-commit + CI — the one-line-each table with the incident behind each one is
+[docs/INVARIANTS.md](docs/INVARIANTS.md)), covering line caps, checklist placement *and uniqueness*,
 description limits, version and count drift, router completeness,
 internal link resolution, every rules file being reachable from its skill's index,
 a single `[Unreleased]` CHANGELOG entry, the `LAST-VERIFIED` stamp moving only

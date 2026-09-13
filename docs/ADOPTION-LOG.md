@@ -2754,3 +2754,225 @@ proves a ledger line exists, never that the reasoning in it is sound, and never 
 is correct. It makes the intake unskippable; it does not make it good.
 
 **Landed:** invariant 31 + probes 31/31b + `probe_committed_green` · unreleased
+
+
+### 2026-09-13 — `rules/05` §3b corrected: `sed -i` is safe only on BSD
+
+The rule shipped hours earlier said *`perl -pi` converts a symlink, BSD `sed -i` refuses*,
+with GNU `sed` explicitly marked **not verified** because it was not installed on the machine
+where the measurement was taken. The operator asked for it to be verified. It was, in
+throwaway containers:
+
+| implementation | `-i` on a symlink | exit |
+|---|---|---|
+| BSD sed (macOS) | refuses | 1 |
+| **GNU sed 4.9** (Debian) | **silently converts** | **0** |
+| **BusyBox sed 1.37.0** (Alpine) | **silently converts** | **0** |
+| perl -pi 5.34.1 | silently converts | 0 |
+
+**The unverified row was carrying the rule's advice.** With GNU unknown, the contrast read as
+*perl is dangerous, sed is safe* — and the text said so, calling BSD's refusal "a feature".
+With GNU and BusyBox measured, the real finding is a **platform split that runs the wrong
+way**: the safe behaviour exists only on the machine a developer tests on, and CI has the
+dangerous one. A rule that told you to prefer `sed -i` would have made that worse.
+
+**The lesson is about the label, not the tool.** Marking a row *"not verified"* is honest and
+it does **not** make the surrounding advice safe — the advice was already resting on the
+unmeasured cell. When an unverified value would change the recommendation, it is not a caveat,
+it is a blocker: measure it or do not give the recommendation. Containers made this a
+two-minute check that was skipped because the local box lacked the binary.
+
+**Landed:** `sota-shell-scripting/rules/05` §3b rewritten with all four implementations, its
+audit-checklist half, plus README, `docs/INDEX.md` and the CHANGELOG entry that carried the
+refuted contrast · unreleased
+
+
+### 2026-09-13 — InterdictOps field report II: three adopted, one corrected in adoption, one deliberately not a rule
+
+`FIELD-REPORT-INTERDICT-2026-09-13-II.local.md`, same session as report I, filed separately
+because the two are **different in kind** — and the distinction is the report's own and worth
+keeping. Report I's findings were about **instruments**: readers returning empty, searches
+answering a neighbouring question, stale versions, each fixed by a denominator or a control.
+These four are about **reasoning that survived contact with a passing test**: the tool worked,
+the output was read correctly, and the conclusion was still wrong.
+
+**Every falsifiable claim reproduced before adoption.**
+
+- **§3 reproduced exactly, to the NVR.** `podman run almalinux:8` → `kernel-headers-4.18.0-553.162.1.el8_10`,
+  6160-line header, `BPF_MAP_TYPE_RINGBUF=1`, `BPF_PROG_TYPE_LSM=1`,
+  `BPF_MAP_TYPE_PERF_EVENT_ARRAY=6` — same numbers the report published. A kernel numbered
+  **4.18 carrying upstream 5.7/5.8 features**.
+- **§1's inlining mechanism confirmed generally**, rustc 1.97.1, with a control: a plain
+  single-call helper is absent from the assembly at `opt-level=3` (grep count 0, versus 2 at
+  `-O0`), while an `#[inline(never)]` neighbour still shows three call sites — so the absence
+  is real rather than a search artefact.
+- **§2 confirmed and CORRECTED** — see below.
+
+**§2 adopted with a correction, and the correction makes the rule cheaper to follow.** The
+report says a verifier prints its stack depth *"only when it rejects"*, so the remedy is to
+**induce the failure**. Reading `kernel/bpf/verifier.c`: the rejection path does emit
+`combined stack size of %d calls is %d. Too large`, but a **successful** load emits
+`stack depth max %d` from `print_verification_stats()`, gated behind `BPF_LOG_STATS` in the
+caller-supplied `log_level` (uapi `bpf.h`). **The margin exists on the happy path; you have to
+ask for it.** Shipped as `rules/15` §2a with "look for the verbose/stats mode first, induce the
+failure only where none exists" — the report's principle, a better remedy. Its generalisation
+to linters, validators and admission controllers is untouched and is why this was the
+highest-reach item.
+
+**§4 proposes no rule, and that was accepted as stated.** It argues that a rule broken by
+people who have read it needs a **changed construct, not a stronger warning**, and offers its
+own worked example. Landed in `CONTRIBUTING.md` rather than a rules file, because it is
+guidance about **how this library is written** — skills are for people building software.
+
+**A premise correction, small and the same shape as report I's.** §4 says *"the library
+already says this, in its `rg -r` note"*. The `rg -r` note is in the **operator's global
+`CLAUDE.md`**, not in `skills/`. The library states the same lesson in `rules/15` §2.1 (*"the
+reflex comes from muscle memory that a note does not reach"*). The proposal is unaffected —
+but it is twice now that a report has located one of our rules in the wrong file, which is
+worth the reporter knowing.
+
+**Independent corroboration this reviewer can add.** §4a's exit-code trap was hit **twice more
+on our side the same day**: a `; echo "EXIT=$?"` that made a failed push's wrapper report
+success, and a `gh pr checks --watch` that returned `exit 0` while all four checks were still
+pending. Five data points across two parties moves §4 from "medium-high, but it is
+meta-guidance" to something the repo now acts on.
+
+**Landed:** `sota-rust/rules/07` §1b · `sota-code-security/rules/15` §2a ·
+`sota-devsecops/rules/03` §3.9 extended · `CONTRIBUTING.md` authoring principle — each with its
+audit-checklist half where it has one · unreleased
+
+
+### 2026-09-13 — two lessons taken out of an operator's global agent file, before thinning it
+
+Not an external report and not a field brief: an audit of the **operator's own
+`~/.claude/CLAUDE.md`**, prompted by asking what in it might conflict with this library or
+cause it to be skipped. Measured: **366 of 411 lines (89%)** duplicate library content, and
+**15 of 19** rules tested are already in `skills/`. Two were not, and they are taken here
+**before** anything is removed from that file — an idea that lives in one person's always-loaded
+config is invisible to everyone else, and deleting it without intake loses it.
+
+- **`sota-devsecops/rules/09` §2b — which binary, and over what.** A third axis of gate reach
+  beside §2 (scope drifted sideways) and §2a (reach stops at the artifact): the **identity**
+  of the tool that produced the verdict, and the **extent** it was pointed at. Both invisible
+  in a green tick, neither leaving a diff. Two measured halves — a Homebrew `cargo` shadowing
+  a rustup shim so `cargo fmt --check` exited 0 while ignoring every nightly-only config key,
+  and `--manifest-path` narrowing coverage so local passed what CI rejected.
+- **`sota-devsecops/rules/03` §3.6a — a clean run from one scanner is not coverage for
+  another's question.** `govulncheck` 1 advisory vs Dependabot 19 alerts on the same tree,
+  neither wrong: reachability-of-a-symbol versus version-in-the-graph. The library had the
+  **triage** half (§3.6, prioritise reachable findings) and not the inverse — that a clean
+  scan from one tool silently substitutes its question for the other's. Includes the
+  second-order finding: merging a bot's bump is not closing the advisory it cites.
+
+**One live divergence found and NOT resolved here, deliberately.** The operator's file and
+`sota-shell-scripting` rules/06 §2 both carry a `grep -r`/`-R` symlink table, and they
+disagree: the global one has two columns (*ugrep `-r` skips, `-R` follows*), while the
+library later refined it to **symlinked dir as the argument** versus **met in traversal** —
+where ugrep `-r` *follows* an argument and skips only what it meets while walking. Following
+the older table, a sweep whose **root** is a symlink behaves opposite to expectation. Flagged
+to the operator rather than silently picking a reading, because one of the two measurements
+should be re-run rather than deferred to.
+
+**The general point, which is why this is in the ledger at all:** *"two homes for one rule is
+how they drift"* (recorded here 2026-09-12) applies to an operator's config as much as to two
+files in this repo — and the always-loaded copy is the one that is **not** gated by invariants
+18, 22, 30 or 31, not measured, and not updated when the library learns something.
+
+**Landed:** `sota-devsecops/rules/09` §2b · `sota-devsecops/rules/03` §3.6a — each with its
+audit-checklist half · unreleased
+
+
+### 2026-09-13 — the last four lessons out of the operator's global file, each re-verified
+
+The remaining four from that audit — the ones an earlier pass had wrongly counted as already
+covered. **That miscount is the first thing worth recording**: a loose pattern sweep reported
+15 of 19 rules duplicated, and opening the hits showed four were false positives (the
+"JS-rendered" hit was a passing *example* inside our own text; "hard links" matched an
+unrelated `fs.protected_hardlinks` sysctl; five "cannot distinguish" hits were all other
+subjects). **Counting grep hits is not checking coverage** — the same lesson this log recorded
+on 2026-09-12, arriving through a different door.
+
+Each was re-verified rather than taken on the operator's word:
+
+- **`sota/rules/01` §3 — an empty page is a fact about your fetcher.** Reproduced live:
+  `evals.mitre.org/results/enterprise` → HTTP 200, 3,150 bytes, **2 words** of visible text;
+  the API behind it → 1.85 MB, **124,872 words**. The remedy (look one level down for `/api/`,
+  `__NEXT_DATA__`, a sitemap) is what turns a four-pass "unreachable" into a source.
+- **`sota-llm-engineering/rules/01` §8a — a completeness rubric cannot tell "correctly
+  declined" from "omitted".** Verified against **our own retained artifact**
+  (`evals/results/2026-09-12/`): a guided arm scored **0.00 on ten items** for asking a
+  security-relevant clarifying question its guidance prescribes. Carries the harder half — an
+  eval storing only `artifact_len` cannot diagnose its own anomaly, so retain the artifact.
+- **`sota-shell-scripting/rules/05` §3c — a hard link does not survive an atomic rename.**
+  Executed: same inode, then `mktemp`+`mv` leaves the link holding **v1** while the file reads
+  **v2**, no error and no broken link; `ln` on a directory refuses outright. Strictly worse
+  than a symlink, whose failure is loud. Sits beside §3b, the same family.
+- **`sota-devsecops/rules/03` §3.6b — a scanner built against an older toolchain fails as
+  noise.** Mechanism verified in a container: an older toolchain meeting newer-declaring source
+  emits a message that **names the version skew**, not the project. The specific
+  stdlib-path symptom stays labelled field-reported rather than asserted.
+
+**And the intake reproduced a trap it was intaking.** Checking whether the rubric finding
+existed here, `rg -ril "clarifying question"` rewrote every match to the literal `il` — `-r` is
+`--replace` — so the output showed our own eval artifact reading *"one il that affects security
+scope"*. Files were fine; the command lied. Caught because the result was **implausible**, which
+is the fifth instance this session of the claim that a warning about a reflex does not disable
+the reflex, and the fourth recorded occurrence of this exact flag.
+
+**Landed:** `sota/rules/01` §3 · `sota-llm-engineering/rules/01` §8a ·
+`sota-shell-scripting/rules/05` §3c · `sota-devsecops/rules/03` §3.6b — each with its
+audit-checklist half · unreleased
+
+
+### 2026-09-13 — executable claims get re-run in CI, and the harness refuted a shipped rule on its first run
+
+Operator question: several of this session's findings were only visible when something was
+*run* — should the library test all of its claims, and require it of every intake?
+
+**"All" was the wrong scope and saying so was the useful part.** 218 claims across 92 skill
+files say *measured*; most are **not executable** — network reads of third-party sites, runs
+costing live API calls, facts about a kernel. Worse, some are values that **change by
+design**: asserting today's `endoflife.date` rows would make CI red on a *correct* world, and
+a flaky gate gets disabled, leaving you worse off than the prose. So the gate covers
+**deterministic and platform-split** claims only.
+
+**Platform-split is why CI runs it on Linux *and* macOS.** BSD `sed` refuses a symlink where
+GNU converts it; BSD `grep` skips a symlinked dir that GNU and ugrep follow. A single runner
+can only confirm its own half — and the unseen half is exactly where the guidance was wrong
+(`rules/05` §3b shipped saying *"`sed -i` refuses"*, true only on BSD).
+
+**It earned its keep immediately: claim 8 failed on the first run, and the RULE was wrong.**
+`rules/06` §2b claimed `ps -p ""` *"ignores the filter and prints every process, exit 0"*.
+Measured on BSD `ps` **and** procps-ng 4.0.4: **both reject it, exit 1.** The implausibly
+large result the rule describes is real but comes from `-a`/`-x` overriding `-p`, which
+happens with a perfectly valid pid (944 of 944 here). The class survives in a sharper form,
+now measured and in the rule: an empty value makes a **pattern** flag match everything
+(`git log --author=""` → 373 of 373, `grep -e ""` → 3 of 3) and an **identifier** flag reject
+it or match nothing. That distinction is more useful than the original and would not have been
+found by reading.
+
+**The convention, in `CONTRIBUTING.md`:** every intaken claim records *how* it was verified;
+executable-and-deterministic ones ship the check; and — the part that has actually bitten —
+**when an unverified value would change the recommendation, it is a blocker, not a caveat.**
+
+**Two defects in the harness itself, both found by watching it fail rather than reading it:**
+a hardcoded expectation in a failure message printed the self-contradictory *"expected
+defaults=1 follow=2; got defaults=1 follow=2"* (the message drifted from the comparison — now
+both read the same variables), and the first version of claim 8 tested a simplified command
+the rule never made.
+
+**First CI run, and the denominator was the finding — not the exit status.** Both jobs
+reported success while executing **8 of 11** on Linux and **9 of 11** on macOS: neither runner
+ships `ugrep` or `ripgrep`, so the two claims about the searchers this library *recommends*
+skipped on both and had still only ever run on one laptop. Green and hollow, in the gate built
+to prevent exactly that. Closed by installing them on the Linux leg (apt; brew on the macOS
+runner costs minutes and that leg already carries the BSD rows that justify it).
+
+**What the two runners did confirm, cell by cell, which is the whole argument for scope (b):**
+`sed -i` on a symlink — **GNU converts silently at exit 0**, **BSD refuses at exit 1 with the
+link intact**; `grep -r` on a symlinked dir — **GNU skips in traversal and follows an
+argument**, **BSD skips both and follows an argument only with a trailing slash**. Each runner
+proves its own half; neither could have proved the other's.
+
+**Landed:** `scripts/check-claims.sh` (11 claims, 2 runners) · a `claims` CI job ·
+`CONTRIBUTING.md` convention · `sota-shell-scripting/rules/06` §2b **corrected** · unreleased

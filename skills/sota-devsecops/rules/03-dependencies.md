@@ -212,6 +212,61 @@ ignore:
   and a regression test reproducing the vuln (§3.8); or replace the dependency. Record the
   chosen mitigation as VEX and set a re-check date — never just ignore-with-expiry.
 
+### 3.6b A scanner built against an older toolchain fails as noise, not as a finding
+
+§3.6a is two tools answering different questions. This is **one** tool whose own build has
+gone stale against the toolchain it is analysing — and the output looks like a catastrophic
+finding about your project.
+
+After a routine toolchain upgrade (often dragged in as a dependency of an unrelated
+`brew`/`apt` install), a vulnerability scanner compiled against the previous version emits a
+wall of parse errors from **standard-library sources** and exits non-zero. None of it is
+about your code.
+
+The mechanism, verified 2026-09-13 in a container: a toolchain meeting source that declares a
+newer version fails with a message that **names the version skew**, not the project —
+`go: go.mod requires go >= 1.23 (running go 1.21.13)`. Field-reported in the scanner case, the
+errors read `method must have no type parameters` and `file requires newer Go version`, with
+paths pointing into the toolchain's own tree.
+
+- **Two tells, and both are in the output**: the file paths are the *toolchain's* rather than
+  yours, and at least one message names a version. A genuine finding cites your module.
+- **Rebuild the tool against the current toolchain**, then **invoke it by absolute path**. A
+  package-manager copy earlier in `PATH` will shadow the one you just built — `command -v`
+  after a short-circuiting `PATH` prepend (`command -v x || export PATH=…`) still resolves the
+  old one. Which binary ran is `rules/09` §2b.
+- **Do not record this as a scan result in either direction.** It is neither a clean run nor a
+  finding; the scan did not happen. A CI step that treats non-zero as "vulnerabilities found"
+  will report a policy failure (`rules/09` §4 on classifying your own failures).
+
+### 3.6a A clean run from one scanner is not coverage for another's question
+
+§3.6's triage assumes findings to triage. This is the inverse: **two tools that both "check
+dependencies" answer different questions, and the quiet one is not the reassuring one.**
+
+Field-measured on one repository: `govulncheck ./...` reported **1** advisory and exited 0
+while Dependabot reported **19** open alerts on the same tree. Neither was wrong.
+
+| tool | the question it answers | what a clean run rules out |
+|---|---|---|
+| `govulncheck` | is a vulnerable **symbol reachable** from this code? (vuln DB + call graph) | reachable, *known-to-that-DB* vulnerabilities |
+| Dependabot / SCA | is a vulnerable **version** in the dependency graph? (advisory DB + version ranges) | nothing about reachability |
+
+So **a clean reachability scan is not evidence that dependencies are current**, and a clean
+version scan is not evidence that anything exploitable is absent. Quoting either as "no
+vulnerabilities" silently substitutes one question for the other — `sota-code-security`
+rules/15 §2, where the instrument is fine and the claim is not.
+
+- **Name the question beside the verdict.** *"govulncheck: no reachable vulnerable symbols"*
+  is a finding; *"the scan was clean"* is not.
+- **Reconcile a disagreement to a named cause before reporting either number.** In that case
+  16 of the 19 were already closed and **three grpc advisories were not** — visible only to
+  the version-range tool.
+- **Merging a bot's bump is not closing the advisory it cites.** The same PR targeted 1.82.1
+  while one advisory needed 1.82.2 and two needed 1.83.1. Check each alert's
+  `first_patched_version` against the **resolved** graph (`go list -m all`, the lockfile),
+  not against the PR title.
+
 ## 3.7 Renovate / Dependabot strategy
 
 Unmanaged: drift until a CVE forces a terrifying 40-major-version jump. Unthrottled: you
@@ -334,6 +389,19 @@ So require a second value that **cannot** be produced from plausibility:
   The lesson had been encoded as a fact about Alpine rather than a procedure about
   versions. Re-running the lookup across all rows revealed **five of seven** stale at once;
   it is cheap and total, and nothing but the missing column was ever demanding it.
+- **Compare capabilities, not version numbers — and state the assumption if you must.**
+  *"Version ≥ X implies feature X"* is true only where the distribution tracks upstream. It
+  is **false for exactly the enterprise distributions that backport**, which are also the
+  ones with the largest deployed base — not a coincidence, since they backport *because* the
+  base is large and conservative. Reproduced 2026-09-13 in a container: AlmaLinux 8 ships
+  `kernel-headers-4.18.0-553.162.1.el8_10`, and that 4.18 header declares
+  `BPF_MAP_TYPE_RINGBUF` (upstream 5.8) and `BPF_PROG_TYPE_LSM` (upstream 5.7). A version
+  comparison excludes it; a capability probe includes it. Field-reported cost: RHEL 8 was
+  written into a shipped support matrix as **excluded**, and the claim had to be retracted.
+- **A method applied across a population needs its domain of validity written down.** The
+  rule was not wrong — its *scope* was never stated, so it was applied uniformly to members
+  that do not satisfy its premise. Name the assumption and name which members violate it;
+  the member where a method fails is disproportionately the one that matters commercially.
 - **Give the matrix an expiry.** A platform table is a decision with a review date
   (§3.7.1's discipline for a pin): the nearest EOL in the table *is* that date.
 
@@ -343,10 +411,25 @@ So require a second value that **cannot** be produced from plausibility:
 - [ ] Dependency-review gate on PRs, required, failing on high severity + license denylist
 - [ ] No `--extra-index-url` public/private mixing; npm internals scoped; GOPRIVATE set; internal names reserved publicly; fetches go through a caching proxy with audit log
 - [ ] Install scripts disabled by default in CI (`--ignore-scripts`/pnpm allowlist); new-dependency review covers install hooks, obfuscation, maintainer churn
+- [ ] **Did a scanner fail with errors naming the toolchain's own paths?** (§3.6b) That is a
+      stale tool build after a toolchain upgrade, not a finding — the tells are toolchain
+      paths and a message naming a version. Rebuild it, invoke by absolute path (a
+      package-manager copy earlier in `PATH` shadows it), and record the scan as **not run**
+      rather than as clean or as failing
+- [ ] **Is any "no vulnerabilities" claim resting on one scanner?** (§3.6a) A reachability
+      tool (`govulncheck`) and a version-range tool (SCA/Dependabot) answer different
+      questions — measured 1 advisory vs 19 alerts on one tree. State the question beside the
+      verdict, reconcile any disagreement to a named cause, and check each alert's
+      `first_patched_version` against the **resolved** graph rather than a bump's PR title
 - [ ] SBOM (CycloneDX/SPDX) generated per artifact from lockfile + image, attached to the digest, queryable centrally
 - [ ] Scanning: PR diff gate + scheduled scans of deployed digests; triage uses reachability/KEV/EPSS **and the advisory's own affected-platform/affected-configuration text** (§3.6); decisions recorded as VEX; ignores have owner + expiry; SLAs enforced
 - [ ] Renovate/Dependabot active with cooldown (`minimumReleaseAge`), grouping, automerge restricted to dev/patch with green required checks; Actions + Docker digests auto-pinned
 - [ ] **Every pin has a named staleness mechanism (§3.7.1)** — the bot confirmed to parse *that* file/line, or a watcher, or a written acceptance of the freeze with an owner and a review date; pins landed while still a no-op, never bundled with an upgrade
 - [ ] Vendored deps (if any) are scanner-visible, auto-refreshed, and unpatched (or patches tracked upstream)
 - [ ] **Inert-dependency sweep run** — declared-but-not-reached dependencies, modules and plugins, proven by deletion rather than by a tool's silence: [rules/10](10-inert-dependencies.md), a full pass with its own checklist
+- [ ] **Does any support-matrix row infer a capability from a version number? (§3.9)** That
+      holds only where the distro tracks upstream and is **false for backporting enterprise
+      distributions** — measured: an AlmaLinux 8 `4.18` header declares BPF features from
+      upstream 5.7/5.8. Probe the capability, say which you measured, and write down the
+      assumption the method rests on plus the members that violate it
 - [ ] **Every versioned third-party row carries an EOL date (§3.9)** — base images, OS/distro releases, runtimes, supported-platform matrices. A version with no EOL beside it has not been looked up, and a row past its EOL is **removed**, not corrected: an unsupported branch can answer the *opposite* of the current one, not merely a staler version of it. When one row is found stale, re-run the lookup across **all** rows in the same pass

@@ -49,7 +49,9 @@ Closes ROADMAP item 56, and removes the constraint that had blocked it for exact
 **`AGENTS.md` restructured first, because it was the blocker.** The 29-row invariants table
 moved to **[docs/INVARIANTS.md](docs/INVARIANTS.md)**. `AGENTS.md` loads into *every* session
 under a 200-line cap and sat at **199**; every new invariant cost it a row, and the cap had
-been breached five times, each time on exactly that. Now **169**, and the reference grows
+been breached by exactly that — twice landing at 201 and 202, and hitting 200 twice more
+while editing this session (a breach never lands, so the total is not recoverable from git).
+Now **169**, and the reference grows
 freely. Nothing was dropped — the table moved whole, and `AGENTS.md` keeps the operational
 half a session actually needs.
 
@@ -144,18 +146,108 @@ broken — with a margin of **one line** from day one, which the rule now says.
 **Standing change:** a rule authored *and* adopted in the same session is the highest-risk
 change in a PR, not the safest.
 
+### The remaining four lessons out of that file, each re-verified
+
+The four an earlier pass had wrongly counted as covered. **The miscount is the first finding:**
+a loose pattern sweep said 15 of 19 rules were duplicated; opening the hits showed four were
+false positives — the "JS-rendered" hit was a passing *example* inside our own text, "hard
+links" matched an unrelated `fs.protected_hardlinks` sysctl. **Counting grep hits is not
+checking coverage.**
+
+- **`sota/rules/01` §3 — an empty page is a fact about your fetcher, not the source.**
+  Reproduced live: a client-rendered page returned **200 with 2 words** of visible text while
+  the API behind it returned **1.85 MB / 124,872 words**. Look one level down (`/api/`,
+  `__NEXT_DATA__`, a sitemap) before calling a source unreachable.
+- **`sota-llm-engineering/rules/01` §8a — a completeness rubric cannot tell "correctly
+  declined" from "omitted".** Verified against our own retained artifact: a guided arm scored
+  **0.00 on ten items** for asking a clarifying question its guidance prescribes. If the arm
+  that should be better scores catastrophically worse, suspect the scoring — and retain the
+  artifact, because an eval storing only `artifact_len` cannot diagnose its own anomaly.
+- **`sota-shell-scripting/rules/05` §3c — a hard link does not survive an atomic rename.**
+  Executed: same inode, then `mktemp`+`mv` leaves the link on **v1** while the file reads
+  **v2**, no error, no broken link. Strictly worse than a symlink, whose failure is loud.
+- **`sota-devsecops/rules/03` §3.6b — a scanner built against an older toolchain fails as
+  noise, not as a finding.** Mechanism verified in a container; the tells are toolchain-owned
+  paths and a message naming a version. Record the scan as **not run**, not as clean.
+
+### Two lessons taken out of an operator's global agent file
+
+An audit of the operator's own always-loaded `~/.claude/CLAUDE.md`, prompted by asking what in
+it might conflict with this library or cause it to be skipped. **366 of 411 lines (89%)
+duplicate library content; 15 of 19 rules tested were already in `skills/`.** Two were not,
+and they are taken **before** anything is removed from that file — an idea living only in one
+person's config is invisible to everyone else, and deleting it without intake loses it.
+
+- **`sota-devsecops/rules/09` §2b — which binary, and over what.** A third axis of gate reach
+  beside §2 (scope drifted sideways) and §2a (reach stops at the artifact). A Homebrew `cargo`
+  shadowing a rustup shim made `cargo fmt --check` **exit 0 while ignoring every nightly-only
+  key** in `rustfmt.toml`; separately `--manifest-path` narrowed coverage so local passed what
+  CI rejected. A check's exit code says it ran, never what it ran *over*.
+- **`sota-devsecops/rules/03` §3.6a — a clean run from one scanner is not coverage for
+  another's question.** `govulncheck` 1 advisory vs Dependabot 19 alerts on the same tree,
+  neither wrong: reachability-of-a-symbol versus version-in-the-graph. The library had the
+  triage half and not the inverse.
+
+**One divergence found and deliberately left open:** that file and `sota-shell-scripting`
+rules/06 §2 both carry a `grep -r`/`-R` symlink table and they **disagree** — the library's
+later refinement distinguishes a symlinked dir *as the argument* from one *met in traversal*.
+Flagged rather than silently resolved; one of the two measurements should be re-run.
+
+### Field report II (InterdictOps) — reasoning that survived a passing test
+
+Report I was about **instruments**; this one is about **reasoning that survived contact with a
+passing test** — the tool worked, the output was read correctly, and the conclusion was still
+wrong. Three proposals adopted, one deliberately left as no-rule. Every falsifiable claim
+reproduced first ([docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md)).
+
+- **`sota-code-security/rules/15` §2a — the instrument that speaks only on failure.** A
+  verifier, linter, validator, type checker or admission controller reports **one bit**. *"It
+  fits"* and *"it fits with four bytes to spare"* are byte-identical, so a green run cannot
+  support a claim about headroom or about a change that stayed within a limit.
+  **Adopted with a correction that makes it cheaper:** the report said to *induce the
+  failure*; reading `kernel/bpf/verifier.c` shows a successful load **does** emit
+  `stack depth max D`, gated behind `BPF_LOG_STATS` in the caller's `log_level`. The margin is
+  on the happy path — you have to ask for it. Look for the verbose/stats mode first; induce the
+  failure only where none exists.
+- **`sota-rust/rules/07` §1b — source shape is not a proxy for compiled behaviour.** Measured
+  on rustc 1.97.1 with a control: a plain single-call helper is **absent** from the assembly at
+  `opt-level=3` (grep 0, versus 2 at `-O0`) while an `#[inline(never)]` neighbour still shows
+  three call sites. So "I extracted a helper so the locals would not overlap" is not evidence —
+  field-reported, the verifier's numbers were identical before and after such a refactor.
+- **`sota-devsecops/rules/03` §3.9 — compare capabilities, not version numbers.**
+  *Version ≥ X implies feature X* holds only where the distro tracks upstream and is **false
+  for backporting enterprise distributions**, which have the largest install bases — they
+  backport *because* of that. Reproduced exactly: AlmaLinux 8's
+  `kernel-headers-4.18.0-553.162.1.el8_10` declares `BPF_MAP_TYPE_RINGBUF` (upstream 5.8) and
+  `BPF_PROG_TYPE_LSM` (upstream 5.7). Cost in the field: a support matrix shipped with RHEL 8
+  wrongly excluded, then retracted.
+- **`CONTRIBUTING.md` — when a rule keeps being broken, change the construct, not the
+  warning.** The report proposed **no rule** and that was accepted as stated; it is guidance
+  about how this library is written, so it is not in a skill. Five data points across two
+  parties now, including two from this session's own work.
+
 ### `sota-shell-scripting/rules/05` §3b — in-place edit on a symlink
 
 Two idioms treated as interchangeable, differing **exactly on the dangerous axis**. Measured
 2026-09-13 on macOS (`/usr/bin/sed`, BSD; perl v5.34.1), editing a symlink:
 
-| idiom | result | exit |
+| implementation | `-i` on a symlink | exit |
 |---|---|---|
-| `sed -i '' 's/…/…/' link` | refuses — `in-place editing only works for regular files` | **1** |
-| `perl -pi -e 's/…/…/' link` | **silently replaces the link with a regular file** | **0** |
+| **BSD sed** (macOS `/usr/bin/sed`) | refuses — `in-place editing only works for regular files` | **1** |
+| **GNU sed 4.9** (Debian) | **silently replaces the link with a regular file** | **0** |
+| **BusyBox sed 1.37.0** (Alpine) | **silently replaces the link with a regular file** | **0** |
+| **perl -pi** (5.34.1) | **silently replaces the link with a regular file** | **0** |
+| GNU sed `-i --follow-symlinks` | edits the **target**, link preserved | 0 |
 
-In the `perl` case the target is never modified, so the two paths diverge silently. GNU `sed`
-was not installed where this was measured and is **not** asserted either way.
+In every silent case the target is never modified, so the two paths diverge without a word.
+
+**Corrected 2026-09-13, after GNU and BusyBox were measured in containers.** The first
+version of this rule had GNU `sed` marked *not verified* and drew the contrast as
+*perl converts, sed refuses* — which made `sed -i` look like the safe idiom. It is not.
+**`sed -i` is safe only on BSD**, and the split runs the wrong way: a macOS developer sees
+the refusal, concludes the idiom is safe, and ships a script that destroys symlinks silently
+in CI. The rule now says never to rely on the refusal, and to enumerate regular files
+(`git ls-files -s | awk '$1=="100644"'`) instead. `--follow-symlinks` is GNU-only.
 
 It earns a rule because the idiom that does this is the one reached for to edit many files at
 once, and a tracked symlink is just another path in that list. Field-reported the same day:

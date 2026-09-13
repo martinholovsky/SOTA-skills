@@ -2362,7 +2362,7 @@ for line in git("ls-tree", "-r", "--name-only", base).split("\n"):
             if re.match(r"^#{2,3} ", l):
                 old_headings.add(l.strip())
 
-added = []
+added, relocated = [], 0
 for p in rules:
     diff = git("diff", "--unified=0", f"{base}...HEAD", "--", p)
     for l in diff.split("\n"):
@@ -2374,15 +2374,21 @@ for p in rules:
         if head.startswith("## Audit checklist"):
             continue          # structural, and check 2 already owns it
         if head in old_headings:
-            continue          # moved, not new
+            relocated += 1    # moved, not new
+            continue
         added.append((p, head))
+
+# REPORT WHAT WAS EXEMPTED, not only what was caught. Without this a relocated heading
+# and no heading at all produce the SAME line, so the exemption is unobservable and a
+# probe asserting it held has nothing stable to read. rules/11 2.2, turned on ourselves.
+exempt = ", %d relocated" % relocated if relocated else ""
 
 print("SCOPE %d" % len(rules))
 if not added:
-    print("    ok (%d rules file(s) changed, no new sections)" % len(rules))
+    print("    ok (%d rules file(s) changed, no new sections%s)" % (len(rules), exempt))
     sys.exit(0)
 if touched_ledger:
-    print("    ok (%d new rule section(s), ADOPTION-LOG updated)" % len(added))
+    print("    ok (%d new rule section(s)%s, ADOPTION-LOG updated)" % (len(added), exempt))
     sys.exit(0)
 print("new rule section(s) with no docs/ADOPTION-LOG.md entry in the same change:")
 for p, head in added[:6]:

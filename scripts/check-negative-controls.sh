@@ -484,6 +484,10 @@ probe_committed_green() {  # <id> <name> <expected ok-substring> — commit alre
     else
       echo "  [$id] $name — FALSE PASS: green, but the exempting check never said so."
       echo "        expected to see: $want"
+      # SHOW WHAT IT ACTUALLY SAID. The first version printed only the expectation,
+      # which makes a FALSE PASS undiagnosable -- the one state where you most need the
+      # observed value. rules/11 2.2: report the denominator, not just the verdict.
+      printf '%s\n' "$GATE_OUT" | grep -E '^\[3[01]/|^    ok \(' | tail -4 | sed 's/^ */        got: /'
       failed=$((failed + 1))
     fi
   fi
@@ -623,8 +627,12 @@ d = dst.read_text()
 dst.write_text(d.replace('## Audit checklist', head + chr(10)*2 + 'Relocated verbatim, not new guidance.' + chr(10)*2 + '## Audit checklist', 1))
 " )
 wt_commit "probe: a heading that already exists in rules/ appears in another file"
+# Assert on the RELOCATED count, not "no new sections" — the latter only appears when the
+# WHOLE branch adds no real section, so the probe went FALSE PASS the moment a surrounding
+# commit added one while the exemption worked perfectly. Fourth instance this session of a
+# probe pinned to the surrounding branch rather than its own mutation (rules/12 1d).
 probe_committed_green 31b "a relocated heading is not new guidance — the gate must stay green" \
-  "no new sections"
+  "1 relocated"
 
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh

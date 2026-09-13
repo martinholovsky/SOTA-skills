@@ -302,7 +302,45 @@ What to do instead:
 **The tell to watch for in your own write-ups:** the phrase *"both arms scored perfectly,
 so…"*. Whatever follows that comma is almost always a claim the measurement cannot carry.
 
+## 8a. A completeness rubric cannot tell "correctly declined" from "omitted"
+
+§8's pitfalls are about the *metric*. This is about the **rubric's blind spot**, and it is
+the one that produces a confident wrong conclusion rather than a noisy one.
+
+A rubric that scores *"did the output contain requirement 1..N"* assigns the same score —
+zero — to an answer that **omitted** the requirements and to one that **correctly refused to
+proceed** without an answer it needed. The two are opposite behaviours and the instrument
+cannot see the difference.
+
+Measured in this library's own harness (`evals/results/2026-09-12/`): a guided arm scored
+**0.00 against a ten-item rubric** while an unguided control scored 0.40. Reading the
+retained artifact, the guided response was a **clarifying question about a
+security-relevant ambiguity** — exactly what its guidance prescribes — followed by a table
+committing to every other requirement. The rubric scored the pause as ten omissions. A
+published claim rested on that 0.00 for several hours.
+
+- **If the arm that should be better scores catastrophically worse, suspect the scoring
+  first.** A large negative on the treated arm is far more often an instrument blind spot
+  than a real regression; a real regression is usually small and noisy.
+- **Retain the artifact, bounded if it must be.** That run stored only `artifact_len`, so a
+  cell scoring 0.00 three times with a ~1.2k response could not be diagnosed at all and a
+  plausible-but-wrong mechanism stood until the text was kept. **An eval that records a
+  symptom and discards the evidence guarantees the explanation will be a guess.**
+- **Score the refusal explicitly** where declining is legitimate behaviour: add a rubric item
+  for *"asked rather than assumed, and said what it would do either way"*, or the instrument
+  punishes the behaviour the system was built to produce.
+- **This is not specific to LLM evals.** Any completeness checklist over an artifact that may
+  legitimately be incomplete — a partial migration, a spike, a deliberate deferral — has the
+  same hole.
+
 ## Audit checklist
+
+- [ ] **Can the rubric distinguish "correctly declined" from "omitted"?** (§8a) A
+      completeness rubric scores both at zero — measured here, a guided arm scored **0.00**
+      for asking a security-relevant clarifying question its own guidance prescribed. If the
+      arm that should be better scores catastrophically worse, suspect the scoring first;
+      retain the artifact (bounded) so the cell can be diagnosed at all; and add an explicit
+      item for declining where declining is legitimate.
 
 - [ ] **No axis closed on a saturating measure** — the absolute score is reported before the delta, a control arm at ≥0.95 is a registered **void** condition rather than a null, chance is a known constant (classes balanced by construction), and an **externally annotated** instrument is preferred once the in-house ones stop discriminating (§8a)?
 - [ ] Before any A/B is run, the treated arm is **shown to read the thing that changed**

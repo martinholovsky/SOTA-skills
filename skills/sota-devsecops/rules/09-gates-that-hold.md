@@ -186,6 +186,38 @@ capability check, a Terraform plan that renders and is refused by admission.
   first — a runner that exits at a credential check in CI never reaches the code under
   test. Injecting a **dummy** credential makes CI and a laptop measure the same depth.
 
+### 2b. The gate ran — but which binary, and over what?
+
+§2 is a gate whose **scope** drifted sideways; §2a is one whose **reach** stops at the
+artifact. This is the third axis and the cheapest to get wrong: **the identity of the tool
+that produced the verdict, and the extent it was pointed at.** Both are invisible in a green
+tick, and neither leaves a diff.
+
+**Which binary.** `PATH` order decides which `cargo`, `python` or `node` actually ran, and a
+version manager's shim loses to anything earlier. Field-measured: a Homebrew `cargo` at
+`/usr/local/bin` shadowed the rustup shim while `rustup show active-toolchain` still correctly
+reported the pinned nightly — **the pin was fine and the binary was wrong.** The two failure
+modes are not equally visible: a nightly-only `-Z` flag died loudly, but **`cargo fmt --check`
+exited 0 while silently ignoring every nightly-only key in `rustfmt.toml`**, printing
+`Warning: can't set imports_granularity …` and then reporting success. A green format check
+from the wrong binary is the kind of green nobody looks at again.
+
+**Over what.** A scoping flag narrows coverage without changing the verdict's shape.
+Field-measured: `cargo fmt --check --manifest-path kernel/Cargo.toml` exited 0 on a tree that
+`cargo fmt --check` from the repo root reported two diffs on, because the narrower manifest
+excluded the workspace member holding most of the code. CI rejected what local had passed.
+
+- **Print the binary and the version in the same invocation as the verdict** — `command -v
+  cargo`, `cargo --version` — rather than trusting the version manager's idea of what is
+  active. For a pinned toolchain the ground truth is `rustup run <channel> cargo --version`,
+  which execs the real binary and is immune to shadowing; `rustup show active-toolchain`
+  reports the *pin*, which is never the thing that breaks.
+- **Prefer the project's own check script to an ad-hoc invocation** — it encodes the intended
+  scope. Where you must go ad-hoc, establish coverage: count the files, or change one
+  deliberately and confirm the check goes red.
+- **A check's exit code tells you it ran, never what it ran over.** Treat "passed locally,
+  failed in CI" as a scope or binary question first, and a code question second.
+
 ## 3. A gate only gates if failing it makes the artifact unconsumable
 
 Everything above is about a gate being **skipped**. This is the case where the gate
@@ -424,6 +456,12 @@ Count the runs in which an entry produced no comparison at all, and alert on tha
       wrapper's success-path output handling checked, not assumed (pre-commit discards it
       unless the hook sets `verbose: true`); otherwise the warning is a durable artifact
 
+- [ ] **Does each gate print the binary and the scope that produced its verdict?** (§2b)
+      `PATH` order decides which toolchain ran — a shadowing binary made `cargo fmt --check`
+      exit 0 while ignoring every nightly-only config key — and a scoping flag
+      (`--manifest-path`, a path arg, an ignore file) narrows coverage without changing how
+      the green looks. `command -v` + `--version` beside the result; for a pin, compare
+      against `rustup run <channel> …`, not `rustup show active-toolchain`.
 - [ ] **Where do the gates stop, and what runs after?** (§2a) Name each gate's terminal
       artifact. If a loader, verifier, dynamic linker, capability check, admission
       controller or kernel runs after it, at least one gate must **execute** the artifact

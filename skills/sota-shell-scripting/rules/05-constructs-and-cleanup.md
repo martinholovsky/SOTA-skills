@@ -113,41 +113,76 @@ bash -c 'source "$SCRATCH/lib.sh"; cd "$REAL_REPO_ROOT"; the_function_under_test
 Any script that resolves its own root from `BASH_SOURCE`/`$0` — which is the correct way to
 do it — carries this hazard for anyone who sources it.
 
-## 3b. In-place edit on a symlink — one idiom refuses, the other converts it
+## 3b. In-place edit on a symlink — and why `sed -i` is the trap, not the fix
 
 `sed -i` and `perl -pi` are treated as interchangeable spellings of "edit this file in
-place". They are not, and they differ **exactly on the dangerous axis**: neither edits
-through a symlink, but only one of them says so.
+place". They are not — and the difference is **per implementation, not per tool**, which is
+the part that bites: the safe behaviour exists only on the platform you develop on.
 
-Measured 2026-09-13 on macOS (`/usr/bin/sed`, BSD; perl v5.34.1), editing a symlink that
-points at a regular file:
+Measured 2026-09-13, editing a symlink that points at a regular file:
 
-| idiom | result | exit | the link afterwards |
+| implementation | `-i` on a symlink | exit | the link afterwards |
 |---|---|---|---|
-| `sed -i '' 's/…/…/' link` | refuses: `in-place editing only works for regular files` | **1** | still a symlink, unchanged |
-| `perl -pi -e 's/…/…/' link` | **silently replaces the link with a regular file** | **0** | gone — a regular file holding the edited text |
+| **BSD sed** (macOS `/usr/bin/sed`) | refuses: `in-place editing only works for regular files` | **1** | intact |
+| **GNU sed 4.9** (Debian) | **silently replaces the link with a regular file** | **0** | gone |
+| **BusyBox sed 1.37.0** (Alpine) | **silently replaces the link with a regular file** | **0** | gone |
+| **perl -pi** (5.34.1) | **silently replaces the link with a regular file** | **0** | gone |
+| GNU sed `-i --follow-symlinks` | edits the **target**, link preserved | 0 | intact |
 
-In the `perl` case the **target is never modified**, so the two paths silently diverge: the
-link's former target still holds the old content, and what used to be a view of it is now an
-independent copy. Nothing is printed and the exit status is success.
+In every silent case the **target is never modified**, so the two paths diverge without a
+word: the former target still holds the old content, and what was a view of it is now an
+independent copy.
 
-GNU `sed` was **not** installed where this was measured, so its behaviour here is
-unverified — check it rather than assuming it matches either row.
+**The dangerous shape is the platform split, and it runs the wrong way.** A developer on
+macOS types `sed -i`, sees it refuse on a symlink, and concludes the idiom is safe. The same
+script in CI — Debian, Alpine, any Linux image — destroys the link silently and exits 0. The
+machine where you *test* the safety is the only machine that has it.
+
+- **Do not rely on `sed -i` refusing.** That is BSD behaviour, not `sed` behaviour. The only
+  portable assumption is that an in-place edit **replaces** a symlink.
+- **Enumerate regular files when you sweep**, rather than paths:
+  `git ls-files -s '*.md' | awk '$1=="100644"{print $4}'` — mode `120000` is a symlink.
+  `find . -type f` excludes them for the same reason; `find . -type l` finds them.
+- **`--follow-symlinks` is GNU-only**, so a script that needs it is a script that has just
+  become non-portable — say so in a comment rather than discovering it on a BSD runner.
+- **`git status` shows this as `T` (typechange), not `M`** — one character apart in a list
+  you are skimming, and the only signal you get.
 
 Why it is worth a rule rather than a footnote: **a repository's symlinks are usually load
-bearing, and a sweep is exactly what destroys them.** The idiom that does this is the one
-people reach for to edit many files at once — `git ls-files '*.md' | xargs perl -pi -e …` —
-and a tracked symlink is just another path in that list. Field-reported the same day: that
-one-liner, run to test something, converted two tracked `*.md` symlinks into regular files,
-and `git add -A` staged the type change before anyone noticed.
+bearing, and a sweep is exactly what destroys them.** Field-reported the same day:
+`git ls-files '*.md' | xargs perl -pi -e …`, run to hand-test a probe, converted a repo's
+tracked `CLAUDE.md` and `GEMINI.md` into regular files, and `git add -A` staged the type
+change before anyone noticed.
 
-- **Enumerate regular files when you sweep**, not paths:
-  `git ls-files -s '*.md' | awk '$1=="100644"{print $4}'` — mode `120000` is a symlink.
-  `find . -type f` excludes symlinks for the same reason; `find . -type l` finds them.
-- **Prefer the idiom that fails loudly.** Where both are available and the edit is scripted
-  over a tree you do not fully control, BSD `sed -i` refusing is a feature.
-- **`git status` shows this as `T` (typechange), not `M`** — an easy character to skim past
-  in a long list, and the only signal you get.
+## 3c. A hard link does not survive the way tools actually update files
+
+§3b is an in-place edit destroying a **symlink**. This is the mirror: reaching for a **hard**
+link to avoid that, and getting a failure mode that is strictly worse because nothing breaks.
+
+Measured 2026-09-13:
+
+```console
+$ ln real.txt hard.txt      # same inode: 51720584 51720584, contents agree
+$ printf 'v2\n' > .tmp && mv -f .tmp real.txt      # how an atomic writer updates
+$ cat real.txt; cat hard.txt
+v2
+v1                          # inodes now 51720587 vs 51720584
+$ ln somedir somedir2
+ln: somedir: Is a directory
+```
+
+**Nothing errors and no link is broken** — `hard.txt` is simply a stale file that looks
+correct. Compare a symlink, whose failure mode is loud and obvious.
+
+- **Almost nothing edits a file in place.** git never does; nor does any "atomic write"
+  (`mktemp` + `mv`), which is most config-writing tools, most editors, and most formatters.
+  Each one writes a new inode and renames over the old name, and every hard link to the old
+  inode silently keeps the old content.
+- **You cannot hard-link a directory at all**, so any design that links *directories* into
+  place is out before you start — a symlink to a directory also picks up new files inside it
+  for free, which a per-file link can never do.
+- **Prefer the symlink and accept its loud failure.** "Broken link" is an error message;
+  "stale content that looks correct" is a bug report six weeks later.
 
 ## 4. Test constructs, printf, declarations
 
@@ -204,11 +239,17 @@ files=(/data/*); count=${#files[@]}                               # with nullglo
 
 ## Audit checklist
 
+- [ ] **Any hard link used to keep two paths in sync?** (§3c) It survives nothing that
+      writes-and-renames — git, `mktemp`+`mv`, most editors and formatters — and the stale
+      copy is a valid file with no broken link and no error. Directories cannot be hard-linked
+      at all. Prefer a symlink: its failure is loud.
 - [ ] **Any in-place sweep (`perl -pi`, `sed -i`) over a path list that could contain a
-      symlink?** (§3b) `perl -pi` replaces the link with a regular file, exit 0, target
-      untouched and the two copies silently diverge; BSD `sed -i` refuses with exit 1.
-      Enumerate regular files instead — `git ls-files -s | awk '$1=="100644"{print $4}'`,
-      or `find -type f` — and remember `git status` reports this as `T`, not `M`.
+      symlink?** (§3b) Measured: **GNU sed, BusyBox sed and `perl -pi` all replace the link
+      with a regular file at exit 0**, target untouched, the two copies then diverging. Only
+      **BSD** sed refuses — so a macOS developer sees the safe behaviour and CI does not.
+      Never rely on the refusal; enumerate regular files instead
+      (`git ls-files -s | awk '$1=="100644"{print $4}'`, or `find -type f`), and remember
+      `git status` reports this as `T`, not `M`.
 
 - [ ] **Scripts that resolve their own root guard their entry point** (§3a) —
       `[[ ${BASH_SOURCE[0]} == "$0" ]] && main "$@"` — so a caller can source them to test one
