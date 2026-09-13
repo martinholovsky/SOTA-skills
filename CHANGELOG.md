@@ -5,6 +5,63 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Invariant 30 — a declared count must agree with the list it counts
+
+Closes ROADMAP item 56, and removes the constraint that had blocked it for exactly one day.
+
+**`AGENTS.md` restructured first, because it was the blocker.** The 29-row invariants table
+moved to **[docs/INVARIANTS.md](docs/INVARIANTS.md)**. `AGENTS.md` loads into *every* session
+under a 200-line cap and sat at **199**; every new invariant cost it a row, and the cap had
+been breached five times, each time on exactly that. Now **169**, and the reference grows
+freely. Nothing was dropped — the table moved whole, and `AGENTS.md` keeps the operational
+half a session actually needs.
+
+Invariant 17's enumeration assertion was pointed at `AGENTS.md` and *followed the table*. It
+reported the empty list loudly on the first run after the move, which is the check working;
+it now reads `docs/INVARIANTS.md`, and `docs/WHY-IT-WORKS.md` joined its doc set too.
+
+**The gate is opt-in, and that was a measurement rather than a preference.** A sweep for
+`<number-word> <plural-noun>` across the front-door docs returns ~200 hits, nearly all
+historical prose in CHANGELOG and ADOPTION-LOG entries that must never change. A strict
+auto-detecting rule would open red and be disabled, which is worse than none. So the pairing
+is declared next to the claim, where it travels with the prose:
+
+```markdown
+<!-- count-check: ^- \*\* -->
+Twenty-nine classes of defect survive every linter, ...
+```
+
+The marker names the pattern, the claim is the next non-empty line, and the scope runs to the
+next heading. Occurrences are counted, not matching lines, so a separated inline list works
+with a `+1` offset. Three markers ship: the README's audit classes, the roadmap's item total,
+and the conventions ledger's enforced list.
+
+**Probes 30/30b/30c** cover the number edited down, **the list grown with the sentence left
+behind** (the direction that actually happens), and every marker deleted — which must report
+`SCOPE EMPTY`, not `ok`. 27 of 30 checks are now probed.
+
+### Three things this found while being built
+
+- **The first parser was written against the one sample in front of it.** It read
+  `Twenty-nine` correctly by luck and read `Eleven classes` as a single unparseable token, so
+  it caught the real historical defect with the **wrong diagnostic**. Probe 30 asserts on the
+  comparison's own wording and would have reported `NOT CAUGHT` — which is how it surfaced.
+  This is `sota-code-security` rules/15 §2.1 aimed at this repository's own gate.
+- **The conventions ledger had drifted a third time** — heading 30, list 29 — the exact
+  recurrence its own correction note describes, and the note explains why: invariant 17 reads
+  the stated count and never the list. It is now gated.
+- **Two more live stale counts**, both fixed: `docs/ROADMAP.md` *"Of 55 items"* (a sentence
+  invariant 26 cannot see, since 26 reads only the open set) and `docs/WHY-IT-WORKS.md`
+  *"Fourteen invariants"* — **sixteen behind**, because that file was in no gate's doc set.
+
+**What the gate cannot see, written down rather than discovered later:** the scope is
+positional, so prose between the list and the next heading that contains the pattern counts as
+an item. Not hypothetical — it happened while landing this check, in a sentence *describing*
+the marker, where writing the literal separator added a phantom entry to the list the sentence
+was about.
+
 ## [1.41.2] - 2026-09-13
 
 **Front door checked:** EOL date · denominator · selector · constrained · sells the remedy

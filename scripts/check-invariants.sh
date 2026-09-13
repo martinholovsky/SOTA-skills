@@ -2153,6 +2153,14 @@ if [ "$v29" -ne 0 ]; then fail=1; fi
 # runs from the marker to the next Markdown heading. Counting the list is the
 # whole point -- the stated number is never trusted, only compared.
 #
+# WHAT THIS CANNOT SEE, written down rather than discovered later: the scope is
+# positional, so ANY prose between the list and the next heading that contains the
+# pattern is counted as an item. That is not hypothetical -- it happened while this
+# check was being landed, in a sentence DESCRIBING the marker: writing the literal
+# separator inside a correction note added a phantom entry to the very list the
+# note was about. Keep the scope tight, and refer to a separator by name rather
+# than by character in any prose that shares a section with it.
+#
 # Fails closed on an empty scan (zero markers), the repo's standing rule: a
 # gate that examines nothing must not report ok.
 echo "[30/30] A declared count agrees with the list it counts"
@@ -2197,7 +2205,12 @@ def first_number(line):
         if v is not None:
             return v
     return None
-MARK = re.compile(r"^<!--\s*count-check:\s*(.+?)\s*-->\s*$")
+# An optional trailing "+N" offset exists for ONE real shape: an inline list whose
+# items are SEPARATED rather than prefixed, where k separators mean k+1 items.
+# docs/CONVENTIONS-LEDGER.md is that shape, and it is not a hypothetical -- its own
+# text records the same drift there THREE times (heading right, list short), because
+# invariant 17 reads the stated count and never the list.
+MARK = re.compile(r"^<!--\s*count-check:\s*(.+?)\s*(?:\+(\d+)\s*)?-->\s*$")
 HEAD = re.compile(r"^#{1,6}\s")
 
 try:
@@ -2212,7 +2225,19 @@ for f in files:
         lines = pathlib.Path(f).read_text(encoding="utf-8").split("\n")
     except OSError:
         continue
+    fence = False
     for i, line in enumerate(lines):
+        # A marker inside a ``` fence is DOCUMENTATION of the marker, not a marker --
+        # the same distinction invariant 22 draws for checklist bullets. Found by this
+        # check failing on the CHANGELOG entry that announced it, where the worked
+        # example in a ```markdown block was read as a live declaration over an empty
+        # list. A gate that cannot tell its own documentation from its own input would
+        # make every doc that explains it unwritable.
+        if line.lstrip().startswith("```"):
+            fence = not fence
+            continue
+        if fence:
+            continue
         m = MARK.match(line)
         if not m:
             continue
@@ -2231,13 +2256,15 @@ for f in files:
                   % (f, i + 1, claim.strip()[:70]))
             bad = 1
             continue
-        # scope: marker -> next heading
-        actual = 0
+        # scope: marker -> next heading. Count OCCURRENCES, not matching lines:
+        # an anchored pattern like "^- \*\*" matches at most once per line either
+        # way, but a separator pattern needs every hit on the line.
+        offset = int(m.group(2)) if m.group(2) else 0
+        actual = offset
         for l in lines[i + 1:]:
             if HEAD.match(l):
                 break
-            if pat.search(l):
-                actual += 1
+            actual += len(pat.findall(l))
         if stated != actual:
             print("%s:%d says %d but the list below it has %d match(es) of %r"
                   % (f, i + 1, stated, actual, m.group(1)))
