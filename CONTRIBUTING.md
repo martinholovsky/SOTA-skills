@@ -117,7 +117,11 @@ are marked "needs verification", never asserted.
 
 ## The invariants (enforced)
 
-`scripts/check-invariants.sh` runs in pre-commit and CI and fails the build on:
+`scripts/check-invariants.sh` runs in pre-commit and CI and fails the build on the list
+below. The **one-line-each table**, with the real incident behind every check, is
+[docs/INVARIANTS.md](docs/INVARIANTS.md) — offloaded out of `AGENTS.md` on 2026-09-13 so
+that adding an invariant stops costing a line of the always-loaded budget. This section is
+the "what it means for your PR" version; that table is the index.
 
 1. any **skill** Markdown (`skills/*/SKILL.md` or `skills/*/rules/*.md`) over
    **500 lines** — **only instruction files are capped**: a file is capped iff an

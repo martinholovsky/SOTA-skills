@@ -3,7 +3,7 @@
 `scripts/check-invariants.sh` runs the checks below and fails the build on any of them, in
 pre-commit and in CI. This table was **offloaded out of [AGENTS.md](../AGENTS.md) on
 2026-09-13**, because AGENTS.md loads into *every* session under a 200-line cap and each new
-invariant cost it a row — it had been breached five times, every time by exactly that. The
+invariant cost it a row — and every breach of it was exactly that. The
 cap now constrains the always-loaded file, and this reference grows freely.
 
 One line each. The full *rationale* lives at the point of use in the script's own header;

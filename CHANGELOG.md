@@ -49,7 +49,9 @@ Closes ROADMAP item 56, and removes the constraint that had blocked it for exact
 **`AGENTS.md` restructured first, because it was the blocker.** The 29-row invariants table
 moved to **[docs/INVARIANTS.md](docs/INVARIANTS.md)**. `AGENTS.md` loads into *every* session
 under a 200-line cap and sat at **199**; every new invariant cost it a row, and the cap had
-been breached five times, each time on exactly that. Now **169**, and the reference grows
+been breached by exactly that — twice landing at 201 and 202, and hitting 200 twice more
+while editing this session (a breach never lands, so the total is not recoverable from git).
+Now **169**, and the reference grows
 freely. Nothing was dropped — the table moved whole, and `AGENTS.md` keeps the operational
 half a session actually needs.
 

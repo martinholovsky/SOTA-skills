@@ -29,7 +29,7 @@ enforcement is on). Every change goes through a pull request:
 `scripts/check-invariants.sh` runs **31 checks** and fails the build on any of them. One line
 each — with the real incident behind every one — in **[docs/INVARIANTS.md](docs/INVARIANTS.md)**,
 offloaded out of this file on 2026-09-13 because each new invariant cost a line of the
-always-loaded budget and had breached the cap five times. Read it before changing a gate. The
+always-loaded budget and the cap had been breached by an invariant's own table row — twice landing at 201 and 202, and hitting exactly 200 twice more while editing this session. **The precise total is not recoverable from git**, because the gate catches a breach pre-commit so it never lands; what is recoverable is that every one was a table row. Read it before changing a gate. The
 full *rationale* lives at the point of use in the script's own header; the practical "what this
 means for your PR" version is in [CONTRIBUTING.md](CONTRIBUTING.md#the-invariants-enforced).
 
@@ -41,8 +41,8 @@ and every script are **uncapped**, deliberately (2026-07-15) — navigability th
 under 500 lines; move detailed reference material to separate files"*) — `rules/*.md` are those.
 **This file is the exception**: `CLAUDE.md`/`GEMINI.md` symlink here, so it loads into **every**
 session, where the guidance is *"target under 200 lines"* — long always-loaded files reduce
-adherence. Keep it under 200 (**re-check with `awk 'END{print NR}'` each cut**, breached four
-times now, every time by adding an invariant's own row), detail to `CONTRIBUTING.md`.
+adherence. Keep it under 200 (**re-check with `awk 'END{print NR}'` each cut** — breached only ever by an invariant's
+own table row, which is why that table now lives in `docs/INVARIANTS.md`), detail to `CONTRIBUTING.md`.
 
 **Every file-list-driven check reports its denominator** (`ok (N rules files)`) and **fails
 closed on an empty scope** — `0 checked, 0 failed, exit 0` is the signature of a gate that
@@ -67,7 +67,7 @@ gates enumerate via `git ls-files`, so an **unstaged new file is invisible** —
 complain; any other non-zero exit is a **FALSE PASS**. **It reads the COMMITTED tree**
 (`git worktree add HEAD`) — commit first, or you test a new script against old docs. Part A mutates
 a good tree in a disposable worktree; part B is inverted, building a fully-configured fake machine
-(`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **44 probes** (re-run 2026-09-13: `PASS: 44/44`; it said 43 from a 2026-09-09 run)
+(`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **49 probes** (re-run 2026-09-13 after invariants 30 and 31: `PASS: 49/49`; it said 44, and 43 before that)
 (deliberately **not** gated — a static count of call sites under-reads, so only running it is
 authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
 24, 25, 26, 27, 28, 29, 30, 31** — 28 of 31 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13.
