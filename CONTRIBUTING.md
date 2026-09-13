@@ -115,6 +115,41 @@ file:line | rule violated | severity | effort | fix
 Borderline severities should state the deciding assumption; unconfirmed findings
 are marked "needs verification", never asserted.
 
+## Every intaken claim records how it was verified — and ships the check if it can
+
+A rule that rests on a measurement is only as good as the measurement, and a measurement
+nobody re-runs rots silently. So:
+
+**1. Record how you verified it.** In the `docs/ADOPTION-LOG.md` entry, per claim: the
+command or source, and the result. *"Reproduced in a container: `kernel-headers-4.18.0-553…`
+declares `BPF_MAP_TYPE_RINGBUF`"* is a record. *"Verified"* is not.
+
+**2. If the claim is executable and deterministic, ship the check** in
+[`scripts/check-claims.sh`](scripts/check-claims.sh), naming the rule it backs. It runs on
+**Linux and macOS** in CI, because several of these claims are *platform splits* and a single
+runner can only confirm its own half.
+
+**3. If it is not executable, say so in the rule** — and be precise about which part is
+unmeasured. This is the rule that has actually bitten: `rules/05` §3b shipped with GNU `sed`
+marked *not verified* because it was absent locally, and **the unverified cell was carrying
+the recommendation**. Measuring it inverted the advice. So:
+
+> **When an unverified value would change the recommendation, it is a blocker, not a
+> caveat.** Measure it, or give no recommendation.
+
+A container usually settles it in two minutes — distro behaviour, package contents, a tool's
+exit code on an edge case. Check for a runtime (`podman machine list`, `docker info`) before
+writing "not verified".
+
+**What is deliberately NOT tested**, and why the gate is scoped rather than universal: 218
+claims across 92 skill files say "measured", and most are not executable — network reads of
+third-party sites, runs costing live API calls, facts about a kernel. Asserting a value that
+**changes by design** (the `endoflife.date` rows behind `sota-devsecops` rules/03 §3.9) would
+make CI red on a correct world, and a flaky gate gets disabled, leaving you worse off than
+the prose ([docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md)). The harness therefore
+covers deterministic and platform-split claims only, **skips loudly** when a binary is
+absent, and **fails when zero claims execute**.
+
 ## When a rule keeps being broken, change the construct — not the warning
 
 A rule that readers break *after reading it* does not need stronger wording. Adding a second

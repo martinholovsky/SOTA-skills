@@ -2922,3 +2922,44 @@ the reflex, and the fourth recorded occurrence of this exact flag.
 **Landed:** `sota/rules/01` §3 · `sota-llm-engineering/rules/01` §8a ·
 `sota-shell-scripting/rules/05` §3c · `sota-devsecops/rules/03` §3.6b — each with its
 audit-checklist half · unreleased
+
+
+### 2026-09-13 — executable claims get re-run in CI, and the harness refuted a shipped rule on its first run
+
+Operator question: several of this session's findings were only visible when something was
+*run* — should the library test all of its claims, and require it of every intake?
+
+**"All" was the wrong scope and saying so was the useful part.** 218 claims across 92 skill
+files say *measured*; most are **not executable** — network reads of third-party sites, runs
+costing live API calls, facts about a kernel. Worse, some are values that **change by
+design**: asserting today's `endoflife.date` rows would make CI red on a *correct* world, and
+a flaky gate gets disabled, leaving you worse off than the prose. So the gate covers
+**deterministic and platform-split** claims only.
+
+**Platform-split is why CI runs it on Linux *and* macOS.** BSD `sed` refuses a symlink where
+GNU converts it; BSD `grep` skips a symlinked dir that GNU and ugrep follow. A single runner
+can only confirm its own half — and the unseen half is exactly where the guidance was wrong
+(`rules/05` §3b shipped saying *"`sed -i` refuses"*, true only on BSD).
+
+**It earned its keep immediately: claim 8 failed on the first run, and the RULE was wrong.**
+`rules/06` §2b claimed `ps -p ""` *"ignores the filter and prints every process, exit 0"*.
+Measured on BSD `ps` **and** procps-ng 4.0.4: **both reject it, exit 1.** The implausibly
+large result the rule describes is real but comes from `-a`/`-x` overriding `-p`, which
+happens with a perfectly valid pid (944 of 944 here). The class survives in a sharper form,
+now measured and in the rule: an empty value makes a **pattern** flag match everything
+(`git log --author=""` → 373 of 373, `grep -e ""` → 3 of 3) and an **identifier** flag reject
+it or match nothing. That distinction is more useful than the original and would not have been
+found by reading.
+
+**The convention, in `CONTRIBUTING.md`:** every intaken claim records *how* it was verified;
+executable-and-deterministic ones ship the check; and — the part that has actually bitten —
+**when an unverified value would change the recommendation, it is a blocker, not a caveat.**
+
+**Two defects in the harness itself, both found by watching it fail rather than reading it:**
+a hardcoded expectation in a failure message printed the self-contradictory *"expected
+defaults=1 follow=2; got defaults=1 follow=2"* (the message drifted from the comparison — now
+both read the same variables), and the first version of claim 8 tested a simplified command
+the rule never made.
+
+**Landed:** `scripts/check-claims.sh` (11 claims, 2 runners) · a `claims` CI job ·
+`CONTRIBUTING.md` convention · `sota-shell-scripting/rules/06` §2b **corrected** · unreleased

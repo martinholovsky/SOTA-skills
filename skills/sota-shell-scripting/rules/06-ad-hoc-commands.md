@@ -212,34 +212,37 @@ occurrence; noticing the implausible output did.
 
 ## 2b. An empty command substitution removes the filter rather than matching nothing
 
-§2 and §2a are about distrusting a suspiciously *empty* result. This is the same discipline
-pointed the other way — at an implausibly *full* one:
-
-```zsh
-ps -axo pid=,etime= -p "$(pgrep -f 'bash ./scripts/ci-local.sh' | head -1)"
-```
-
-`pgrep` matched nothing, the substitution expanded to `""`, and `ps -p ""` **ignored the
-filter and printed every process on the machine** — several hundred lines, exit status 0.
-The question asked was *"is this one process alive?"*; the question answered was *"what is
-running on this computer?"*
-
-Note what it is **not**: the expansion was quoted, so this is not SC2086, and there is no
-pipeline status involved. **An empty value does not mean "no filter" to a human and almost
-always does to the tool** — the same for `kill`, `find -name`, `docker ps -f`,
-`git log --author`, and essentially every `--filter`-shaped flag.
-
-Guard the substitution rather than the command:
+§2 and §2a distrust a suspiciously *empty* result. This points the same discipline at an
+implausibly *full* one:
 
 ```bash
-pid="$(pgrep -f 'bash ./scripts/ci-local.sh' | head -1)"
-[[ -n ${pid} ]] || { printf 'no matching process\n' >&2; return 1; }
-ps -axo pid=,etime= -p "${pid}"
+git log --author="$(get_author)" --oneline | wc -l     # 373 of 373 commits, exit 0
 ```
 
-The tell is the same one §2a teaches: the **result was implausible** long before it was
-wrong. Treat a result far *larger* than expected exactly as you treat a suspiciously clean
-zero (`sota-code-security` rules/15 §2.1).
+The substitution expanded to `""` and the filter **matched everything**: asked *"what did this
+person commit?"*, answered *"what is in this repo?"* Quoted, so this is not SC2086.
+
+**Which flags do this, measured 2026-09-13 — the split is the useful part:**
+
+| the flag filters by… | an empty value | measured |
+|---|---|---|
+| **pattern / substring** | **matches everything** | `git log --author=""` and `--grep=""` 373 of 373 · `grep -e ""` 3 of 3 |
+| **identifier** | rejected, or matches nothing | `ps -p ""` exit **1** on BSD *and* procps-ng 4.0.4 · `find -name ""` 0 hits, exit 0 |
+
+So a `--filter`-shaped flag is dangerous when it filters by *pattern*, merely useless when it
+filters by *id*. (Separately: `ps -axo … -p "$pid"` lists **every** process even for a valid
+pid — `-a`/`-x` override `-p` — so an implausibly large result there is the flags.)
+
+Guard the substitution, not the command:
+
+```bash
+author="$(get_author)"
+[[ -n ${author} ]] || { printf 'no author resolved\n' >&2; return 1; }
+git log --author="${author}" --oneline
+```
+
+The tell is §2a's: the **result was implausible** before it was wrong — treat one far
+*larger* than expected exactly as a clean zero (`sota-code-security` rules/15 §2.1).
 
 ## 3. An ad-hoc command can destroy the thing it was checking
 
@@ -420,10 +423,9 @@ measurement. "330 PRs" is a claim whose evidence has been thrown away, and "30" 
 
 ## 5a. The selector picked a different member than the question named
 
-§5 is a command that returned **less** of the right population. This is one that returned
-**all** of a neighbouring one — harder to see, because nothing is truncated, nothing is
-silent and no rule was broken: the selector was reasonable, ran correctly, and answered a
-question one step to the left of the one you asked. Field-reported, three in one session:
+§5 returned **less** of the right population. This returns **all** of a neighbouring one —
+harder to see: nothing truncated, nothing silent, no rule broken. The selector was reasonable
+and answered a question one step to the left of the one asked. Three in one session:
 
 | the question | the selector typed | what it actually returns |
 |---|---|---|
@@ -434,24 +436,22 @@ question one step to the left of the one you asked. Field-reported, three in one
 `sort -V | tail -1` is the obvious way to get "the latest" and it is simply not "the
 default". Each of the three is the correct answer to a question nobody asked.
 
-- **Name the population member before you write the selector.** *Newest, largest, first,
-  default, reclaimable, installed* are six different members and at most one is your
-  question. Written down first, the selector is checkable against something.
+- **Name the population member before writing the selector.** *Newest, largest, first,
+  default, reclaimable, installed* are six members and at most one is your question.
 - **The tell is a value that cannot belong to the thing you asked about.** The Debian probe
   returned a `CONFIG_LSM` string containing `ipe` — IPE merged in **Linux 6.12** (verified:
   `security/ipe/ipe.c` present at tag `v6.12`, absent at `v6.11`), so it cannot appear in a
   6.1 config. The row was refuted by its own output before it was written. Read one full
   record from any selection before building an argument on the aggregate.
-- **Three numbers that disagree are three questions, not a discrepancy to average.** None
-  of `du`, the tool's own report and `df` is wrong; ask which the decision depends on. The
-  general form — a correct instrument answering the neighbouring question — is
+- **Three numbers that disagree are three questions, not a discrepancy to average.** None of
+  `du`, the tool's report and `df` is wrong; ask which the decision needs. General form:
   `sota-observability` rules/05 §7a.
 
 ## Audit checklist
 
-- [ ] **Command substitutions that supply a filter are guarded for empty** (§2b) — an
-      empty value removes the filter (`ps -p ""` lists every process, exit 0); an
-      implausibly LARGE result is the tell, the mirror of a suspiciously clean zero
+- [ ] **Command substitutions that supply a filter are guarded for empty** (§2b) — an empty
+      value makes a **pattern** flag match everything (`git log --author=""` returned 373 of
+      373); an identifier flag rejects it instead. An implausibly LARGE result is the tell
 
 - [ ] **No `rg -r` used to mean "recursive"** (§2a) — it is `--replace`, it rewrites every
       match to the next argument and exits 0, so the output is false *content* rather than a
