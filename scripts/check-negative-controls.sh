@@ -589,8 +589,20 @@ probe 30c "every count-check marker deleted — the gate must not report ok" \
 # declaration, and none looks at whether a rule is TRUE. `rules/12` 1d was authored
 # and adopted in one session, shipped on 30 green checks, and an adversarial read
 # then returned eleven defects. This gates the record, not the judgement.
+#
+# THE MUTATION ALSO REVERTS THE LEDGER, and that is load-bearing. Check 31 asks a
+# question about the WHOLE branch diff, so on any branch that legitimately touches
+# docs/ADOPTION-LOG.md the probe's new section is correctly excused and this probe
+# goes inert. That is not hypothetical: it passed locally at a commit before this
+# branch's own ledger entry landed, then CI -- running after it landed -- reported
+# NOT CAUGHT. Restoring the ledger to its merge-base content makes the probe's result
+# independent of whatever else the surrounding branch happens to change. Third
+# mechanism in the same family as probes 24 and 30c: the probe's ASSUMPTION drifted
+# while its text stayed correct (rules/12 1d).
 ( cd "$WT" && perl -0pi -e 's/^## Audit checklist/## 99. A section that never went through intake\n\nPlaceholder guidance.\n\n## Audit checklist/m' \
-      skills/sota-rust/rules/06-performance.md )
+      skills/sota-rust/rules/06-performance.md \
+    && b=$(for r in origin/main main; do git merge-base HEAD "$r" 2>/dev/null && break; done) \
+    && [ -n "$b" ] && git show "$b:docs/ADOPTION-LOG.md" > docs/ADOPTION-LOG.md )
 wt_commit "probe: a new rule section with no ledger entry"
 probe_committed 31 "a new rule section ships with no ADOPTION-LOG entry" \
   "no docs/ADOPTION-LOG.md entry in the same change"

@@ -2395,7 +2395,12 @@ print("section without rewriting its heading if it is a relocation.")
 sys.exit(1)
 INTPY
   ) || v31=1
-  n31=$(printf '%s\n' "$intake_out" | sed -n 's/^SCOPE //p')
+  # NO `scope` GUARD HERE, deliberately. Every other file-list check fails closed on an
+  # empty scope, because examining zero files means the pathspec drifted. Here zero rules
+  # files changed is the NORMAL case -- most PRs touch no rule text at all -- so a scope
+  # guard would fail every ordinary PR. Same reasoning as check 14's "not a release
+  # commit". The SCOPE line is printed for the reader, not consumed; shellcheck flagged
+  # the unused variable that used to hold it (SC2034) and it is gone rather than silenced.
   while IFS= read -r l; do
     case "$l" in SCOPE\ *|'    ok ('*|'') ;; *) note "$l" ;; esac
   done <<EOF31
