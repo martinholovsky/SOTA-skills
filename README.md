@@ -1289,12 +1289,17 @@ security-sensitive guidance goes to a [private advisory](SECURITY.md) instead.
 The assistant will usually flag these itself: the router tells it to surface a
 one-line note when the library lets you down, rather than papering over it.
 
-**Sending more than a one-liner?** [docs/FIELD-REPORT-PROMPT.md](docs/FIELD-REPORT-PROMPT.md)
-is a paste-in prompt for the *end* of a working session in your own project: it asks that
-session to write up where the guidance failed, in the shape this library can act on. A field
-report carries a **reproducer** rather than a citation, which is why it is the highest-yield
-input here — and the prompt front-loads the four checks that decide whether a report is
-actionable, each one a mistake that has actually been made during intake.
+**Sending more than a one-liner?** Run **`/sota-report`** at the *end* of a working session
+in your own project. It asks that session to write up where the guidance failed, in the shape
+this library can act on, to a gitignored `FIELD-REPORT-*.local.md` — a field report carries a
+**reproducer** rather than a citation, which is why it is the highest-yield input here. The
+prompt front-loads the four checks that decide whether a report is actionable, each one a
+mistake actually made during intake.
+
+`scripts/install.sh` (and therefore `scripts/update.sh`) installs it into
+`~/.claude/commands/`. The reasoning behind each check, and what happens to a report after it
+arrives, is in [docs/FIELD-REPORT-PROMPT.md](docs/FIELD-REPORT-PROMPT.md); the prompt itself
+lives in [commands/sota-report.md](commands/sota-report.md) and nowhere else.
 
 If it saved you time, a ⭐ helps other engineers find it.
 

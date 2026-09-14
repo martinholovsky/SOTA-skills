@@ -681,6 +681,43 @@ if [ "$TARGET" = "$HOME/.claude/skills" ] && [ "$USE_COPY" -eq 0 ]; then
   fi
 fi
 
+# --- slash commands -----------------------------------------------------------
+# The library learns nothing from use unless a session that used it reports back
+# (README, "Found a gap?"). `/sota-report` is that ask, shipped where it is reachable
+# from ANY project rather than only from this repo — a prompt you have to go and find
+# is a prompt nobody runs at the end of a long session.
+#
+# User-level (~/.claude/commands) on purpose, never project-level: the report is written
+# in the OTHER project, about work done there. Symlinked like the skills, so `--update`
+# refreshes the text; `--copy` snapshots it for the same reason it snapshots skills.
+setup_commands() {
+  # $HOME/.claude, matching every other config write in this script. NOT derived from
+  # $TARGET: --project moves the SKILLS to a repo, and a report command belongs to the
+  # person, not the checkout. (CLAUDE_HOME does not exist here — using it wrote to
+  # /commands, caught before it shipped.)
+  local src="$REPO/commands" cmd_dir="$HOME/.claude/commands" n=0
+  [ -d "$src" ] || return 0
+  mkdir -p "$cmd_dir" 2>/dev/null || { warn "could not create $cmd_dir — skipping commands"; return 0; }
+  for f in "$src"/*.md; do
+    [ -e "$f" ] || continue
+    local dest
+    dest="$cmd_dir/$(basename "$f")"
+    # A real file here is either a hand-edit or an older --copy install. Back it up
+    # rather than clobbering: it is in the user's config dir, not ours.
+    if [ -e "$dest" ] && [ ! -L "$dest" ]; then
+      if [ "$USE_COPY" -eq 1 ]; then backup "$dest"; else
+        backup "$dest"; rm -f "$dest"
+      fi
+    fi
+    if [ "$USE_COPY" -eq 1 ]; then cp -f "$f" "$dest"; else ln -sfn "$f" "$dest"; fi
+    n=$((n + 1))
+  done
+  [ "$n" -gt 0 ] && ok "slash command(s) installed: $(cd "$src" && printf '/%s ' *.md | sed 's/\.md//g')— in $cmd_dir"
+  return 0
+}
+section '💬' 'Slash commands'
+setup_commands || true
+
 maybe_setup_routing
 # Independent of the routing opt-in on purpose: the listing budget matters MORE when
 # always-on routing is declined, because that is exactly when per-skill auto-selection

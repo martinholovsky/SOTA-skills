@@ -146,6 +146,32 @@ broken — with a margin of **one line** from day one, which the rule now says.
 **Standing change:** a rule authored *and* adopted in the same session is the highest-risk
 change in a PR, not the safest.
 
+### `/sota-report` — the field-report ask, shipped where it is reachable
+
+The library has no telemetry and learns nothing from use unless the session that used it says
+so. That ask now ships as a slash command rather than a doc you have to go and find:
+**`/sota-report`**, run at the *end* of a working session in the project that hit the problems.
+
+- **`commands/sota-report.md`** is the single source of the prompt text; installed by
+  `scripts/install.sh` (and therefore `update.sh`) into `~/.claude/commands/`, symlinked so an
+  update refreshes it, snapshotted under `--copy` like the skills.
+- **User-level, never project-level, on purpose** — the report is written in the *other*
+  project, about work done there, so it belongs to the person rather than a checkout. It is
+  therefore not derived from `--project`'s target either.
+- **[docs/FIELD-REPORT-PROMPT.md](docs/FIELD-REPORT-PROMPT.md) no longer repeats the prompt.**
+  It holds the reasoning — why each of the four checks exists, with the intake failure each
+  one prevents — and points at the command. Two homes for one rule is how they drift.
+
+The four checks it front-loads are each a real intake failure, not a hypothetical: searching
+in the wrong vocabulary against a working instrument; proposing a rule for a file that does
+not own the topic; reporting "refuted" from a harness that reaches nothing; and asserting a
+mechanism from one artifact.
+
+**A bug caught before it shipped:** the installer function first used `$CLAUDE_HOME`, which
+does not exist in `install.sh` — it would have expanded to empty and written to `/commands`.
+Found by checking that every variable used was defined, then dry-run against a throwaway
+`HOME`.
+
 ### Field report III — a principle corrected, and a mechanism its reporter refuted
 
 Four proposals about **epistemics under correction pressure**, and the most valuable item was
