@@ -135,6 +135,35 @@ control that refuses everything — and it is precisely the arm the deny-only ha
 drops. The same gap applies to a WAF ruleset, an egress allowlist, an input
 validator, an admission policy, and a rate limiter keyed too narrowly.
 
+### 1a.1 A failed reproduction is an absence claim, and needs the same two arms
+
+§1a asks a *control* for an allow arm as well as a deny arm. The same requirement applies to
+an **experiment**, and nothing points it there — which is why it is skipped.
+
+*"It did not reproduce"* is a negative claim. It therefore already falls under the heavier
+burden `sota/SKILL.md` principle 3 puts on any absence — but it **does not feel like a
+search**, so the rule never fires. A refutation is reported as a result, not as a
+not-found, and passes unchallenged in a way "no instances of X" would not.
+
+Field-reported, and the reporter published the failure: a mechanism was reported to a
+reviewer as **REFUTED, twice, confidently**, from two harnesses that could not have produced
+any other outcome — the client short-circuited before sending the command under test, and
+the transport had no retry layer to exercise. The effect was not absent; **the instrument
+reached nothing**. What separated the third attempt from the first two was not insight, it
+was a control arm: identical code with the doubling switched off, proving the harness could
+produce *an* outcome at all. With it, the mechanism reproduced on the first run.
+
+- **An experiment that returns a null needs an arm that returns a non-null**, through the
+  same code path, before the null is reportable. Without it, *"the effect is absent"* and
+  *"my harness reaches nothing"* are the same output.
+- **State the falsifier before running** — then a null is a result rather than a mood.
+- **The cheap tell: a null that arrives instantly and identically on both runs.** A real
+  refutation usually costs something — a different error, a partial result, a changed
+  timing. Two byte-identical clean exits are more often a harness that never engaged.
+- **Say which arm you ran when you report a refutation.** A refutation with no control arm
+  should be labelled *"did not reproduce here"*, never *"refuted"* — the first is about your
+  instrument, the second about the world.
+
 ## 1b. Where the probe lives decides whether it survives
 
 §1 and §1a describe probes as things you *run*. In any suite that keeps them they
@@ -346,6 +375,12 @@ n=$(awk 'END{print NR}' "$f"); need=$(( LIMIT - n + 1 ))
       self-test, each probe asserts the **named** check caught it rather than
       accepting any non-zero exit, skips print their reason, and the run reports
       checks-probed over checks-registered (§1b)?
+- [ ] **Any reported refutation — does the experiment have a control arm?** (§1a.1) *"It did
+      not reproduce"* is an absence claim under principle 3's heavier burden, but it does not
+      feel like a search so the rule never fires. Without an arm that returns a **non-null**
+      through the same path, "the effect is absent" and "my harness reaches nothing" are the
+      same output. Tell: a null arriving **instantly and identically on both runs**. Label it
+      *"did not reproduce here"*, never *"refuted"*.
 - [ ] Every **enforcement** control (cap, quota, filter, allowlist, sandbox
       policy) carries an **allow arm** as well as a deny arm — a representative
       legitimate case completing *through* the control, not against the bare

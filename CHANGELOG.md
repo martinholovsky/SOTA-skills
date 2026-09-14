@@ -146,6 +146,105 @@ broken — with a margin of **one line** from day one, which the rule now says.
 **Standing change:** a rule authored *and* adopted in the same session is the highest-risk
 change in a PR, not the safest.
 
+### `/sota-report` — the field-report ask, shipped where it is reachable
+
+The library has no telemetry and learns nothing from use unless the session that used it says
+so. That ask now ships as a slash command rather than a doc you have to go and find:
+**`/sota-report`**, run at the *end* of a working session in the project that hit the problems.
+
+- **`commands/sota-report.md`** is the single source of the prompt text; installed by
+  `scripts/install.sh` (and therefore `update.sh`) into `~/.claude/commands/`, symlinked so an
+  update refreshes it, snapshotted under `--copy` like the skills.
+- **User-level, never project-level, on purpose** — the report is written in the *other*
+  project, about work done there, so it belongs to the person rather than a checkout. It is
+  therefore not derived from `--project`'s target either.
+- **[docs/FIELD-REPORT-PROMPT.md](docs/FIELD-REPORT-PROMPT.md) no longer repeats the prompt.**
+  It holds the reasoning — why each of the four checks exists, with the intake failure each
+  one prevents — and points at the command. Two homes for one rule is how they drift.
+
+**Reports from anyone but the maintainer.** A new
+[field report issue template](.github/ISSUE_TEMPLATE/3-field-report.yml) gives the library its
+only channel from people who use it. Its fields are what intake actually needs — what
+happened, the mechanism, **whether the rule was already loaded** (the highest-value field),
+what caught it, the proposed rule, and a self-graded confidence.
+
+**The command prints an extract and is forbidden from posting it.** Not discouraged —
+forbidden: print and stop, no `gh issue create`, no API call. This repository is public and
+issues are indexed, cached and mirrored; per this repo's own `.gitignore`, field reports
+*"routinely name private repos, internal hosts and customer detail"*. The extract drops
+transcripts, appendices and real paths — most of the disclosure risk lives there, and it is
+the part a maintainer who cannot run your repo needs least. **The gap between "I generalised
+it" and "a human confirmed it is safe" is where a leak lives**, and no genericisation pass by
+the model that just wrote the private detail closes it.
+
+**`verify-setup.sh` check 1c — the report command is reachable.** An install where the skills
+reach the machine but the command does not is a library that keeps working and can no longer
+be told when it is wrong. Four states, not two: a live symlink (PASS), absent or dangling
+(FAIL), a `--copy` snapshot that will not update (PARTIAL), and a file that is not ours, left
+alone. Two negative-control probes cover it — absent, and **dangling**, which is a separate
+branch because `-e` follows a symlink.
+
+**A dead branch caught by feeding it the input, not by reading it.** The first draft tested
+`[ ! -e ]` before `[ -L ]`, so a dangling link took the "not installed" path and the
+dangling-specific message was unreachable — it reported the wrong cause for a link that
+exists and points nowhere (`sota-code-security` rules/15 §2.2: prove every branch reachable).
+
+The four checks it front-loads are each a real intake failure, not a hypothetical: searching
+in the wrong vocabulary against a working instrument; proposing a rule for a file that does
+not own the topic; reporting "refuted" from a harness that reaches nothing; and asserting a
+mechanism from one artifact.
+
+**A bug caught before it shipped:** the installer function first used `$CLAUDE_HOME`, which
+does not exist in `install.sh` — it would have expanded to empty and written to `/commands`.
+Found by checking that every variable used was defined, then dry-run against a throwaway
+`HOME`.
+
+### Field report III — a principle corrected, and a mechanism its reporter refuted
+
+Four proposals about **epistemics under correction pressure**, and the most valuable item was
+not one of them. See [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md) for the full verdicts.
+
+- **Operating principle 3 corrected.** It said *"'independent' means a different failure mode,
+  **not a different phrasing**"* — right for its original case (two `grep -r` runs over a
+  symlink farm are not two methods) and wrong as the last word on absence. The reporter
+  declared a gap after searching *"one instance | a single observation"* **with a working
+  positive control**, while the corpus says *"one sample"* in six files including a named
+  failure mode. It now carries their formulation: **a control proves the instrument works; it
+  does not prove the query asks the corpus's question.**
+- **Operating principle 0 — a retraction is a claim and carries the same burden.** A wrong
+  claim gets challenged; a wrong retraction sounds like humility and is waved through —
+  **nobody audits a confession.** Field-reported: a *correct* statement withdrawn with the
+  falsifying evidence on screen, then re-corrected. **The moment after being corrected is the
+  highest-risk moment in a session**, and every other rule pointed only at the original claim.
+- **`sota-shell-scripting/rules/01` §2b — a non-zero exit is evidence about one attempt, not
+  about the world.** A push reported `[remote rejected] … is at 8a93e40` where `8a93e40` was
+  the commit it was sending; the branch was fine. Every reflexive remedy — re-push, `--force`,
+  `reset --hard` — is destructive to a branch that is fine. **The mechanism is labelled
+  unverified**: the reporter tried twice to reproduce it, stated the falsifier first, and
+  failed both times, because git's local transport has no retry — the environment could not
+  reach the defect.
+- **§2a extended** — a live task's output file is a *buffer*: short, truncated and complete are
+  the same bytes. Plus: do not write to a resource a live task owns, and print a denominator
+  when a task-log grep returns zero.
+- **`rules/15` §2.1 third bullet** — a claim stated at a coarser grain than its evidence. The
+  two existing members are about a *thing you built* generalising; this one is about a
+  **sentence**.
+- **`rules/12` §1a.1 — a failed reproduction is an absence claim, and needs the same two
+  arms.** §1a already demanded an allow arm beside a deny arm for a *control*; nothing pointed
+  it at an *experiment*. The new half is the reporting consequence: *"it did not reproduce"*
+  carries principle 3's heavier burden but **does not feel like a search**, so the rule never
+  fires — and a refutation passes unchallenged in a way *"no instances of X"* would not. Tell:
+  **a null arriving instantly and identically on both runs**. Label it *"did not reproduce
+  here"*, never *"refuted"*.
+
+**Correction to the entry above, same day.** `rules/01` §2b shipped saying §2's mechanism was
+*not established*. The reporter then reproduced it with a control arm (alpine 3.22, git
+2.49.1, real `git-receive-pack --stateless-rpc`, POST delivered twice): control exits 0 and
+advances the ref, test exits non-zero **while the write lands**, quoting the value just
+written. §2b now records that, **as field-reported rather than measured here**. The wider
+generalisation stays plausible and unproven — one protocol is not the class — and the rule
+depends on neither.
+
 ### `verify-setup.sh` reads better on a terminal, and identically to a machine
 
 Colour and a status symbol per row (`✔ PASS`, `✘ FAIL`, `▲ PART`, `? UNVR`, `ℹ INFO`,

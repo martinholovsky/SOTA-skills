@@ -1289,6 +1289,26 @@ security-sensitive guidance goes to a [private advisory](SECURITY.md) instead.
 The assistant will usually flag these itself: the router tells it to surface a
 one-line note when the library lets you down, rather than papering over it.
 
+**Sending more than a one-liner?** Run **`/sota-report`** at the *end* of a working session
+in your own project. It asks that session to write up where the guidance failed, in the shape
+this library can act on, to a gitignored `FIELD-REPORT-*.local.md` — a field report carries a
+**reproducer** rather than a citation, which is why it is the highest-yield input here. The
+prompt front-loads the four checks that decide whether a report is actionable, each one a
+mistake actually made during intake.
+
+It writes a **gitignored** `FIELD-REPORT-*.local.md` and then prints a short, generalised
+**extract** for publishing — finding, mechanism, whether the rule was already loaded, what
+caught it, proposed rule. **It never posts anything**: this repo is public and issues cannot
+be un-published, so a human reads the extract and submits it via the
+[field report template](https://github.com/martinholovsky/SOTA-skills/issues/new?template=3-field-report.yml).
+That template is how the library hears from anyone but its maintainer.
+
+`scripts/install.sh` (and therefore `scripts/update.sh`) installs the command into
+`~/.claude/commands/`; `verify-setup.sh` check **1c** reports whether it is actually
+reachable. The reasoning behind each check is in
+[docs/FIELD-REPORT-PROMPT.md](docs/FIELD-REPORT-PROMPT.md); the prompt itself lives in
+[commands/sota-report.md](commands/sota-report.md) and nowhere else.
+
 If it saved you time, a ⭐ helps other engineers find it.
 
 ## Contributing

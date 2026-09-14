@@ -3006,3 +3006,88 @@ resolve each item to the section that replaces it** — the check costs a minute
 failure is silent and permanent.
 
 **Landed:** `sota-shell-scripting/rules/03` §2a + `scripts/check-claims.sh` claim 11 · unreleased
+
+
+### 2026-09-14 — InterdictOps report III: a principle corrected, and a reporter who refuted their own mechanism
+
+`FIELD-REPORT-INTERDICT-2026-09-14.local.md`. Four proposals about **epistemics under
+correction pressure** rather than tooling — which is why a library heavy on *"your instrument
+is a control"* did not catch them.
+
+**The highest-value item was not one of the four.** Reviewing the report's coverage method
+surfaced that it searched *"one instance | a single observation"* — with a positive control
+returning four files, so the instrument was sound — while the corpus says **"one sample"** in
+six files, including a *named failure mode* at `rules/15` §2.1. Working instrument, wrong
+vocabulary, false absence.
+
+That lands as a **correction to operating principle 3**, not a new rule, and the distinction
+matters: principle 3 said *"'independent' means a different failure mode, **not a different
+phrasing**"* — written to stop two `grep -r` runs over a symlink farm counting as two methods,
+and correct for that. But it is the one place a reader goes to check an absence, and it read
+as *phrasing does not matter*. It now carries the reporter's formulation: **a control proves
+the instrument works; it does not prove the query asks the corpus's question.** Correcting a
+shipped principle that points the wrong way in an adjacent case clears a lower bar than
+promoting a new rule — the same verdict shape as 2026-09-09.
+
+**The reporter refuted their own mechanism, and the report is better for it.** §2 originally
+asserted that a push rejection quoted the value it had itself just written because an
+idempotent retry failed its precondition. Asked for the reproduction, they built it, stated
+the falsifier first, and **failed twice** — the old-value comes from the server's
+advertisement rather than `refs/remotes/`, and the client short-circuits when the remote
+already equals the target. Both harnesses used git's **local** transport, which has no HTTP
+layer and therefore no retry: *the environment could not reach the defect*, which is
+`sota-code-security` rules/10 arriving at their own experiment.
+
+So the **mechanism is labelled unverified in the rule**, and the wide generalisation — any
+idempotent retry can report failure about its own success — is recorded as **plausible and
+unproven**. What shipped is the observation alone: a command exited non-zero while its write
+had landed. That licenses *"read the resource back before acting on a failed mutation"*
+without needing the mechanism, and is a **smaller claim with wider reach** than the one first
+offered.
+
+**Placements, two of which moved.** §1 (the retraction bar) went to **operating principle 0**,
+not `sota/rules/03` as proposed: *"a retraction is a claim"* is governed by *validate every
+claim*, applies in every mode rather than only to audit findings — and `rules/03` had four
+lines of slack, which must not be what decides a home. §2 and §4 went to
+`sota-shell-scripting/rules/01` as **§2b** and an extension of **§2a**, siblings of "a
+background job's completion signal is about the launcher": §2a is a status about the wrong
+*subject*, §2b a status about the right subject at the wrong *scope*. §3 became the **third
+bullet** of `rules/15` §2.1, beside the two existing members, with a cross-reference from
+`rules/13` §3 — its distinction is that both existing members are about a *thing you built*
+generalising, and this one is about a **sentence**.
+
+**Checked and found NOT drifted:** `sota-testing` rules/07:232 and `sota-shell-scripting`
+rules/01 §2a both cover the background-job complement — but the former is a *pointer* to the
+latter, which is the library working correctly rather than two homes for one rule.
+
+**§5, added after the first four, and it explains the other four.** *A failed reproduction is
+an absence claim.* `rules/12` §1a already demands an **allow arm** beside a deny arm for any
+control, and already states the governing line — *"an arm like that exercises the environment
+and passes whether or not the control exists at all."* Nothing pointed that requirement at an
+**experiment**, which is why it was skipped. Filed as **§1a.1**, an extension, on the
+reporter's own recommendation — and their coverage check this time used the corpus's
+vocabulary (`allow arm` → 2, `negative control` → 4, `known-good` → 8, all reproduced here),
+which was §3's lesson applied one item later.
+
+The genuinely new half is the **reporting** consequence: *"it did not reproduce"* is a
+negative claim under principle 3's heavier burden, but **it does not feel like a search**, so
+the rule never fires — a refutation is offered as a result rather than as a not-found and
+passes unchallenged in a way *"no instances of X"* would not. The tell is cheap: **a null that
+arrives instantly and identically on both runs**; a real refutation usually costs something.
+Principle 3 now points at it, since that is the rule that should have fired.
+
+**And §2's mechanism is no longer unverified — which made something we shipped hours earlier
+wrong.** The reporter built a third harness (alpine 3.22, git 2.49.1) with a real
+`git-receive-pack --stateless-rpc` behind a minimal smart-HTTP server, POST delivered twice,
+**and a control arm** (`DOUBLE=0`). Control: exit 0, ref advances, no quote. Test: exit
+non-zero, **the write lands**, the error quotes the value just written and names the stale
+old-value as expected — all four predicates of the field signature. `sota-shell-scripting`
+rules/01 §2b said *"the mechanism is NOT established"*; it now records the reproduction,
+attributed and dated, **as field-reported rather than measured here** — the harness lives in
+the reporter's scratchpad and was not rebuilt on this side. The wider generalisation stays
+**plausible and not established**: one protocol reproduced is not the class, and the rule
+depends on none of it.
+
+**Landed:** `sota/SKILL.md` principles 0 and 3 · `sota-shell-scripting/rules/01` §2a extended
+and §2b · `sota-code-security/rules/15` §2.1 third bullet · `rules/12` §1a.1 · `rules/13` §3
+cross-reference · unreleased

@@ -670,6 +670,13 @@ build_fixture() {  # a machine+repo where every check passes
   cp "$REPO/scripts/verify-setup.sh" "$VS/repo/scripts/verify-setup.sh"
   cmp -s "$REPO/scripts/verify-setup.sh" "$VS/repo/scripts/verify-setup.sh" \
     || { echo "fixture copy of verify-setup.sh differs from the original — aborting"; exit 1; }
+  # the report command (check 1c). A real file in the fixture would only reach the
+  # PARTIAL branch, so link it — the fixture must PASS every check before any probe
+  # breaks one, or the positive control is the thing that fails.
+  mkdir -p "$VS/home/commands" "$VS/repo/commands"
+  printf -- '---\ndescription: x\n---\nWrite a SOTA-skills field report for this session.\n' \
+    > "$VS/repo/commands/sota-report.md"
+  ln -sfn "$VS/repo/commands/sota-report.md" "$VS/home/commands/sota-report.md"
   # always-on routing: both layers
   printf 'routing: consult the sota router.\n' > "$VS/home/CLAUDE.md"
   printf '{"hooks":{"UserPromptSubmit":[{"hooks":[{"command":"echo sota"}]}]}}\n' > "$VS/home/settings.json"
@@ -787,6 +794,11 @@ rm -rf "$VS/home/skills";                       vs_probe "no skills installed"  
 # skill stays uninstalled while the count still looks plausible. Observed on a real
 # machine at 41 of 42.
 rm -rf "$VS/home/skills/sota-golang";           vs_probe_partial "installed count below the source count" "1. sota skills reachable"
+rm -f "$VS/home/commands/sota-report.md";       vs_probe "report command not installed"    "1c. report command installed"
+# The dangling case is a SEPARATE branch: `-e` follows a symlink, so `[ ! -e ]` is true
+# for a dangling link and the first draft's dangling branch was unreachable dead code.
+ln -sfn /nonexistent/sota-report.md "$VS/home/commands/sota-report.md"
+vs_probe "report command is a dangling symlink" "1c. report command installed"
 rm -f "$VS/home/settings.json" "$VS/home/CLAUDE.md"; vs_probe "no routing directive or hook"  "2. always-on routing"
 ln -sf /nonexistent/x.md "$VS/home/profiles/dangling.md"; vs_probe "dangling profile symlink" "3. stack profile"
 rm -f "$VS/repo/AGENTS.md";                     vs_probe "no agent file"                  "4. agent file present"
@@ -837,5 +849,5 @@ echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        12          — mtime-based: needs a rendered asset older than its source."
-echo "      verify-setup.sh: checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13. Checks 5"
+echo "      verify-setup.sh: checks 1, 1c, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13. Checks 5"
 echo "      and 11 are judgement (N/A by design) and 10b/12 need a different fixture."

@@ -70,7 +70,7 @@ a good tree in a disposable worktree; part B is inverted, building a fully-confi
 (`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **49 probes** (re-run 2026-09-13 after invariants 30 and 31: `PASS: 49/49`; it said 44, and 43 before that)
 (deliberately **not** gated — a static count of call sites under-reads, so only running it is
 authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-24, 25, 26, 27, 28, 29, 30, 31** — 28 of 31 — and verify-setup checks 1, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13.
+24, 25, 26, 27, 28, 29, 30, 31** — 28 of 31 — and verify-setup checks 1, 1c, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13.
 Only **5, 9, 12** are unprobed, needing a tag or an mtime, and the harness prints that reason. *A
 diff-based check is not unprobeable*: 11 and 14 were exempt on that false ground until a probe
 **committed** its mutation (2026-09-09). **A probe asserts its own mutation landed** (a stale

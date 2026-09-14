@@ -145,7 +145,65 @@ Note the two shell-level rules do not cover this. `$?`-after-a-pipeline and
 - **`pgrep -f 'pattern'` matches the watching shell's own command line**, so a wait loop
   containing the pattern matches itself and never exits. Match the process you mean, exclude
   `$$`, or watch the artefact — which you should be doing anyway.
+- **And do not read the artefact early.** A live output file is a **buffer**: short,
+  truncated and complete are the same bytes, so *"it produced nothing"* and *"it has not
+  got there yet"* are indistinguishable. Field-reported: a gate task's short log was
+  declared dead — *"silently failed, no output, HEAD never moved"* — while it was still
+  running; it went on to produce full output, commit and push. **A background task is
+  finished when the harness says so and at no other time.**
+- **Do not write to a resource a live task owns** — its worktree, branch or output
+  directory. One writer per worktree. In that case the operator committed on top of the
+  task believed dead, and the still-live task then recorded a ledger entry for the *new*
+  commit while pushing only as far as the old one; untangling it cost more than the work
+  it interrupted.
+- **Grepping a task log for a pass line and getting zero needs a denominator in the same
+  invocation** — total lines, and total lines of the kind you searched for. The same
+  operator later grepped a finished 28-line log for `PASS ebpf_load`, got zero, and nearly
+  reported the gate as never having run; **zero `PASS` lines anywhere in the file** showed
+  the log never held the table at all, and the gate had in fact *failed* — which was the
+  real finding. `rules/06` §2.
 - The general form, for any status: `sota/rules/03` §2 — name what the OK is about.
+
+## 2b. A non-zero exit is evidence about one attempt, not about the world
+
+§2a is a status about the wrong *subject*. This is a status about the right subject and the
+wrong *scope*: the command failed, and the write it was making had already landed.
+
+Field-reported. A `git push` returned:
+
+```text
+! [remote rejected] main -> main (cannot lock ref 'refs/heads/main':
+  is at 8a93e406d96b but expected bfd516b8c489...)
+PUSH_EXIT=1
+```
+
+`8a93e406d96b` **is the commit that push was sending.** A `git fetch` immediately after
+showed `185e511..8a93e40` — the branch was exactly where it should be. The error text names
+the **success** as the obstacle, which is why it reads so convincingly as a rejection.
+
+**Why this is worse than an ordinary gotcha:** every reflexive remedy for a rejected push —
+re-push, `--force`, `reset --hard`, "let me clean this up" — is **destructive to a branch
+that is fine**. The failure mode converts a non-event into data loss through a
+well-intentioned fix.
+
+- **Before acting on a failed mutation, ask the system whether it happened.** For a push:
+  `git fetch && git rev-list --left-right --count origin/main...HEAD`. For anything else,
+  read the resource back. This costs one command and is unconditional — you do not need to
+  know *why* the exit was non-zero.
+- **The tell is an error quoting your own intended value as the current state.** `is at
+  <the thing you were writing>` is a success report wearing a failure's clothes.
+- **The mechanism, field-reported with both arms** (alpine 3.22, git 2.49.1; reproduced by
+  the reporter, not rebuilt here). A minimal smart-HTTP server running real
+  `git-receive-pack --stateless-rpc`, with the POST delivered twice: the control arm (single
+  delivery) exits 0 and advances the ref; the test arm exits non-zero, **the write lands**,
+  and the error quotes the value just written while naming the stale old-value as expected.
+  All four predicates of the field signature hold. Two earlier attempts had *failed* to
+  reproduce it — both used git's **local** transport, which has no HTTP layer and so no
+  retry, and neither had a control arm (`sota-code-security` rules/12 §1a). The wider generalisation — *any
+  protocol with an idempotent retry can report failure about its own success* (at-least-once
+  delivery, conditional writes, state locks, idempotency-keyed payment APIs) — remains
+  **plausible and not established**: one protocol was reproduced, not the class. **The rule
+  above depends on none of it.**
 
 ## 3. Quoting: quote every expansion (SC2086)
 

@@ -15,6 +15,12 @@ different questions — run both:
 checked whether or not anyone remembers to. The repo-context, gate and CI sections are not:
 they describe whichever directory you are standing in, so they stay a deliberate manual run.
 
+**Check 1c — the report command.** `/sota-report` is how this library finds out it is wrong;
+an install where the skills reach the machine but the command does not is one that keeps
+working and can no longer be told anything. 1c distinguishes four states, not two: a live
+symlink (**PASS**), absent or dangling (**FAIL**), a `--copy` snapshot that will not update
+(**PARTIAL**), and a file that is not ours, which is left alone.
+
 **Output is two-mode and the plain mode is a contract.** On a TTY the rows carry colour and a
 status symbol (`✔ PASS`, `✘ FAIL`, `▲ PART`, `? UNVR`, `ℹ INFO`, `· N/A`). Anywhere else —
 piped, redirected, `NO_COLOR`, `TERM=dumb`, `--no-color` — every line is the plain
