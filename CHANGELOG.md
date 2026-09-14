@@ -65,6 +65,26 @@ reading the script*. Part A also reads the **committed** tree, so that run never
 widened invariant 18 scope at all. It was discarded and re-run against the commit rather than
 cited; the tell was the summary contradicting the probe two lines above it.
 
+**Corrected 2026-09-14, same day, by measuring the mechanism that paragraph asserts.** The
+edit was made with `perl -pi`, which does **not** edit in place: it writes a new file and
+renames it over the old one, so the running `bash` keeps the **original inode** open and never
+sees the change. Differential, one variable:
+
+    cat > script   inode UNCHANGED   the running script printed "EDITED LINE!!"
+    perl -pi       inode CHANGED     the running script printed "ORIGINAL LINE"
+
+So the claim above is wrong in a way that matters: the run was **not** incoherent. It executed
+the entire original script start to finish, and its `52/52` was a real verdict on the old
+script. The stale coverage line is the *expected* output, not a symptom. What actually
+disqualified it stands and is the second sentence: part A reads the **committed** tree, which
+did not yet carry the widened invariant 18 scope — so it never tested the one change most
+likely to break a probe. Discarding it was right; the reason given was not.
+
+Left standing rather than rewritten, because a changelog entry is a record. The general form
+is the same write-new-and-rename this library already documents for symlinks and hard links
+(`sota-shell-scripting` rules/05 §3b/§3c), with a third consequence: **an in-place editor is
+invisible to a program already running from that file.**
+
 **Invariant 18's scope gained `commands/*.md`**, because these files ship to machines where
 the reader has no checkout to resolve a citation against. It earned its place on the first
 run: a `§2b` in this command's own first draft resolved nowhere, while the `§5` beside it

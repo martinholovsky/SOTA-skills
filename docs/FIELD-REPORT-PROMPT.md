@@ -87,6 +87,17 @@ Every one is a failure that has actually happened during intake, not a hypotheti
 | **C — control arm on a refutation** | "refuted" reported from a harness that reaches nothing | 2026-09-14: two confident refutations from harnesses that could not produce any outcome. The third attempt added a control arm and the mechanism reproduced immediately |
 | **D — claim granularity** | a mechanism asserted from one artifact | 2026-09-14: "truncated in place" written into two tracked documents from timestamps alone. True by luck; the first grep had surfaced evidence for the opposite reading |
 
+## Known gap: the plugin install's version stamp is unverified
+
+`/sota-report` resolves the version it stamps by reading `VERSION` next to the installed
+library. **Only the symlink install has been exercised** — `readlink ~/.claude/skills/sota`
+→ repo → `cat …/VERSION`, verified on a real machine at the v1.42.0 cut. The `--copy` and
+**plugin** paths are written but untested: no plugin-only install was available. The prompt
+tells the model to look under `~/.claude/plugins` and to write `unknown` rather than guess,
+so the failure mode is a missing stamp and not a wrong one — but a wrong stamp is exactly
+what triage trusts, so this is the first thing to check if a plugin user's report arrives
+with an implausible version. **Unblocking it needs a plugin-only install to test against.**
+
 ## A report from an old version is still evidence
 
 Reports arrive from whatever version the reporter had. **Do not reject one for being stale,
