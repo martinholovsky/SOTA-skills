@@ -146,6 +146,37 @@ broken — with a margin of **one line** from day one, which the rule now says.
 **Standing change:** a rule authored *and* adopted in the same session is the highest-risk
 change in a PR, not the safest.
 
+### Field report III — a principle corrected, and a mechanism its reporter refuted
+
+Four proposals about **epistemics under correction pressure**, and the most valuable item was
+not one of them. See [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md) for the full verdicts.
+
+- **Operating principle 3 corrected.** It said *"'independent' means a different failure mode,
+  **not a different phrasing**"* — right for its original case (two `grep -r` runs over a
+  symlink farm are not two methods) and wrong as the last word on absence. The reporter
+  declared a gap after searching *"one instance | a single observation"* **with a working
+  positive control**, while the corpus says *"one sample"* in six files including a named
+  failure mode. It now carries their formulation: **a control proves the instrument works; it
+  does not prove the query asks the corpus's question.**
+- **Operating principle 0 — a retraction is a claim and carries the same burden.** A wrong
+  claim gets challenged; a wrong retraction sounds like humility and is waved through —
+  **nobody audits a confession.** Field-reported: a *correct* statement withdrawn with the
+  falsifying evidence on screen, then re-corrected. **The moment after being corrected is the
+  highest-risk moment in a session**, and every other rule pointed only at the original claim.
+- **`sota-shell-scripting/rules/01` §2b — a non-zero exit is evidence about one attempt, not
+  about the world.** A push reported `[remote rejected] … is at 8a93e40` where `8a93e40` was
+  the commit it was sending; the branch was fine. Every reflexive remedy — re-push, `--force`,
+  `reset --hard` — is destructive to a branch that is fine. **The mechanism is labelled
+  unverified**: the reporter tried twice to reproduce it, stated the falsifier first, and
+  failed both times, because git's local transport has no retry — the environment could not
+  reach the defect.
+- **§2a extended** — a live task's output file is a *buffer*: short, truncated and complete are
+  the same bytes. Plus: do not write to a resource a live task owns, and print a denominator
+  when a task-log grep returns zero.
+- **`rules/15` §2.1 third bullet** — a claim stated at a coarser grain than its evidence. The
+  two existing members are about a *thing you built* generalising; this one is about a
+  **sentence**.
+
 ### `verify-setup.sh` reads better on a terminal, and identically to a machine
 
 Colour and a status symbol per row (`✔ PASS`, `✘ FAIL`, `▲ PART`, `? UNVR`, `ℹ INFO`,

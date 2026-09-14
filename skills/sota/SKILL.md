@@ -41,6 +41,18 @@ rules files that match the code in front of you. Never load all skills at once.
    docs/release notes/advisories fetched at use time (for versions, specs,
    CVEs, tool capabilities), or a reproduced behavior (for bugs). Training
    data, plausibility, and "the rules file says so" do not validate anything.
+   **A retraction is a claim and carries the same burden.** Withdrawing a
+   statement needs the primary source that falsifies it, exactly as asserting it
+   did; *"I was probably wrong"* is not a finding, and it costs the reader a true
+   statement. A wrong claim gets challenged because it asserts something; a wrong
+   retraction sounds like humility and is waved through — **nobody audits a
+   confession**. Three tells of over-correcting: it arrives within a message or
+   two of an *unrelated* correction; it withdraws something you have evidence on
+   screen for; it is a general loss of confidence rather than a named false
+   proposition and what falsifies it. **The moment after being corrected is the
+   highest-risk moment in a session** — the next claim needs *more* evidence, in
+   **both** directions. Conceding everything is not the opposite of
+   overconfidence; it is overconfidence about your own unreliability.
    What cannot be validated is either omitted or explicitly marked
    "needs verification" — never asserted. **Before measuring, state what result
    would falsify the claim.** If no obtainable result could, the experiment is
@@ -75,7 +87,15 @@ rules files that match the code in front of you. Never load all skills at once.
    which `-r` does not follow. The only check that works is a **positive
    control** — search for something you have already seen there, in the same
    invocation; if the control returns nothing, the instrument is broken and the
-   absence is not evidence (`sota-shell-scripting` rules/06 §2). Where a
+   absence is not evidence (`sota-shell-scripting` rules/06 §2).
+   **A control proves the instrument works; it does not prove the query asks the
+   corpus's question.** Varying the phrasing is not a second *method*, but it is
+   a separate check you still owe: field-reported 2026-09-14, a gap was declared
+   after searching *"one instance | a single observation"* with a control
+   returning four files, while the corpus says **"one sample"** in six — a named
+   failure mode among them. Working instrument, wrong vocabulary, false absence.
+   Before asserting a gap, name the term the corpus itself would use — read a
+   neighbouring section's headings — and search that. Where a
    control is unavailable because nothing is yet known to be in the target,
    print a **denominator** instead — bytes, members, total rows — beside the
    zero. **And weigh who benefits from the source**: a claim sourced to a party

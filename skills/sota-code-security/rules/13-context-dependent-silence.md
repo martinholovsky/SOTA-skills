@@ -80,6 +80,9 @@ carry the **trust context**, or a lower-trust build can poison a release).
 
 ## 3. Format assumption generalised from one sample
 
+The same error made about a **sentence** rather than a parser — a mechanism asserted from
+one artifact — is `rules/15` §2.1's third bullet.
+
 A parser built against one observed sample of an external interface, where a
 sibling field, a newer version, or an edge case has another shape. Indexing into
 external JSON/CSV (`x[0]`, chained `.get().get()`), assumed column counts, a

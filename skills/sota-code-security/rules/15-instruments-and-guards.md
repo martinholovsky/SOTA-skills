@@ -81,6 +81,22 @@ tree is clean"* may never have run: `sota-shell-scripting` rules/06 §1.
   helper; a slice-detector that could not tell "scan a prefix" from "scan in
   chunks". Every one punished code **better** than the sample it was written
   against.
+- **A claim stated at a coarser grain than its evidence.** The two above are about a
+  *thing you built* generalising — an instrument, a parser. This one is about a
+  **sentence**. One artifact licenses *"this happened once"*; a sentence containing
+  *always, every, in place, by design, is truncated* asserts a **mechanism**, and a
+  mechanism is established by reading the code that implements it. Field-reported: a log
+  missing an expected failure, plus timestamps, was written up in two tracked documents as
+  *"truncated in place"*. It happened to be true — `>` not `>>` — but the first grep had
+  surfaced a `BACKUP_DIR` that a reader could equally have taken as proof logs are
+  retained. **Right answer, wrong process, and nothing corrects that.** Reading the code
+  also showed the claim wrong in *scope*: truncation fires only for gates that run, so the
+  path selector accidentally protects the ones it skips. Trigger: **before a quantifier or
+  a present-tense mechanism verb reaches a document, name the line you read.** If the
+  answer is "I inferred it from an artifact", downgrade the sentence to the instance or go
+  and read it — the difference between `>` and `>>` is the whole claim. Corollary: **a
+  plausible mechanism found on the first grep is a hypothesis**, and a search that returns
+  a satisfying explanation is exactly where you stop looking.
 - **Errors run both ways, and only one direction gets investigated.** The same
   instrument that penalises a good implementation can excuse a real defect —
   flat text matching once credited an unprotected read path with the ownership

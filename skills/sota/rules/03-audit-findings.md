@@ -180,20 +180,14 @@ context that would qualify it (`sota-shell-scripting` rules/01 §3). An audit th
 reproduce its own quoted output without re-running the job has a weaker evidence chain
 than it appears to.
 
-**Weigh who benefits from the source.** Security claims arrive disproportionately from
-parties that sell the remedy — vendor blogs, product whitepapers, a sponsored benchmark —
-and such a source is not disqualified by that, it is *unblinded* by it. The tell is
-structural rather than tonal: independent sources converging is evidence; **sources
-converging on the conclusion that sells their own product is one hypothesis held by
-several interested parties.** Field-reported: the two sources establishing that LSM-based
-hooks resist a bypass that syscall hooks do not were both vendors of LSM-based sensors.
-
-- **Name the interest in the finding itself**, not in your own head — the row outlives the
-  reasoning that produced it, and the next reader inherits the claim without the caveat.
-- **Prefer a test you run yourself.** Where the claim is about observable behaviour, the
-  vendor's conclusion is a hypothesis with an experiment attached to it for free.
-- **Where the test is pending, label it a design argument, not a measurement** — and give
-  it a severity that reflects an unverified premise (§1: state the deciding assumption).
+**Weigh who benefits from the source.** A claim from a party that sells the remedy is not
+disqualified by that — it is *unblinded* by it, and the tell is structural, not tonal:
+independent sources converging is evidence, **sources converging on the conclusion that
+sells their product is one hypothesis held by several interested parties**. Field-reported:
+both sources establishing that LSM hooks resist a bypass syscall hooks do not were vendors
+of LSM-based sensors. **Name the interest in the finding itself** (the row outlives the
+reasoning); prefer a test you run yourself; and where the test is pending, label it a
+**design argument, not a measurement**, with a severity reflecting the unverified premise.
 
 ## 3. Decision-ledger review — audit the decisions, not just the code
 
