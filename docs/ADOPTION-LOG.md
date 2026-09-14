@@ -3253,3 +3253,49 @@ taken on its internal merits; the other three wait for someone to actually need 
 
 **Landed:** `sota-shell-scripting/rules/07` (new) · its `SKILL.md` index and description ·
 `sota/rules/04` library map · `sota-c-cpp/SKILL.md` Purpose · `evals/cases/desc-routing-regressions.jsonl`
+
+### 2026-09-14, same session — the PowerShell *routing* claim was refuted by measurement, including our own version of it
+
+The entry above adopted PowerShell partly on a routing argument: **0 of 42 descriptions named
+it**. That number is correct and it is **not** evidence of a routing gap. Measured against the
+pre-change tree ([POWERSHELL-ROUTING](../evals/results/2026-09-14/POWERSHELL-ROUTING.md)):
+
+| phrasing | before | after |
+|---|---|---|
+| "PowerShell **script**" + `$ErrorActionPreference` + CI | **1.00** | 1.00 |
+| ".ps1", "deploy step", terraform/docker — no "script"/"shell" | **1.00** | 1.00 |
+| "**pwsh** automation", "**injection** risk" | **0.00** | **1.00** |
+
+Two of three phrasings never needed the fix. The catalogue already routed them from "shell
+scripting … CI scripts … entrypoint script". **The absent string was not an absent
+capability** — [[measure-before-you-agree]] in its exact documented shape: *a grep answers
+"does this string appear", never "is this idea covered".* We made that error while correcting
+an audit that made the same one, one step earlier in the same chain.
+
+**The first regression case was therefore invalid and was discarded.**
+`r4_powershell_windows_ci` was written from the grep and pinned nothing — 1.00 in both arms,
+before and after — inside a set whose SELECTION RULE says a mis-route "actually happened". It
+is replaced by `r4_pwsh_injection`, an observed 0.00 → 1.00. A regression case that cannot
+fail is the same defect class as a gate that cannot fail.
+
+**What survives, restated honestly:** the *content* gap justified the work and was never in
+question (0 files taught PowerShell). The *routing* gap is real but narrow — it needs a task
+that names PowerShell without shell/script vocabulary **and** carries a competing signal.
+Neither the audit nor our first pass had located it.
+
+**Two probe defects surfaced by this branch, both fixed, both the same class as 11c above:**
+
+- **Probe 28 went INERT.** It mutated `SELECTION RULE` only `if $. < 40` while the gate greps
+  the whole file, so one prose mention of the token further down re-satisfied it. Pinned to
+  the subject's *shape*. Now mutates every occurrence.
+- **Probe 14b reported EXEMPTION DID NOT HOLD against a passing invariant 14.** It builds a
+  synthetic *release* on top of whatever branch is under test; on a branch that edits a skill
+  description, **invariant 29 correctly fires** and a green probe requires the whole gate
+  green. The probe now declares a routing check in its own fixture, so 14 is the only thing it
+  tests. Reproduced by hand in a worktree — invariant 14 printed `ok (1 terms declared, all
+  resolve)` the entire time.
+
+**Deliberately not done: invariant 28 was left alone.** Its `grep -qi` over the whole file is
+wider than its intent, the same shape as invariant 11's hatch. But the incident here was in
+the **probe**, and the probe is fixed; changing a gate with no incident behind it is what this
+ledger argues turns gates flaky. Recorded so the looseness is known, not forgotten.

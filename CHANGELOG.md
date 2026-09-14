@@ -27,9 +27,16 @@ reasoning and the two rejections: [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md).
   - A first draft of the GitHub Actions section was **wrong and caught before shipping** —
     the built-in `pwsh` shell prepends fail-fast and appends `exit $LASTEXITCODE`; it is
     opting out with a custom `shell:` string that removes them, the inverse of the draft.
-- **Routing.** The description now names PowerShell, `pwsh`, `.ps1` and Windows CI (1008 of
-  1024 chars), and the fix is pinned as `r4_powershell_windows_ci` in
-  `evals/cases/desc-routing-regressions.jsonl` — a routing gap ends as a test, not a report.
+- **Routing — and the claimed gap did not reproduce.** The audit said PowerShell had no
+  description match; grepping confirmed the *string* was absent from all 42 descriptions, and
+  that was taken as a routing gap. Measured against the pre-change tree, **it is not one**: a
+  Windows CI PowerShell task already routed to `sota-shell-scripting` 3 of 3, from "shell
+  scripting … CI scripts … entrypoint script" alone. The first regression case written here
+  pinned nothing (1.00 in both arms) and was **discarded**. The real gap is narrower and was
+  found by probing harder phrasings: a task naming `pwsh` with a *competing* signal
+  ("injection") went to `sota-code-security` 3 of 3 **before** and `sota-shell-scripting` 3 of
+  3 **after** — now pinned as `r4_pwsh_injection`.
+  **Routing checked:** evals/results/2026-09-14/POWERSHELL-ROUTING.md
 - **`sota-c-cpp` states its embedded boundary.** It already carries MISRA C:2025 and
   freestanding builds, so it *half*-owned embedded work — worse than not owning it, because a
   C++ RTOS driver got language-layer advice with no statement of what was missing. Its Purpose
