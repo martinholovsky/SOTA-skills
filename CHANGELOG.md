@@ -162,6 +162,21 @@ so. That ask now ships as a slash command rather than a doc you have to go and f
   It holds the reasoning — why each of the four checks exists, with the intake failure each
   one prevents — and points at the command. Two homes for one rule is how they drift.
 
+**Reports from anyone but the maintainer.** A new
+[field report issue template](.github/ISSUE_TEMPLATE/3-field-report.yml) gives the library its
+only channel from people who use it. Its fields are what intake actually needs — what
+happened, the mechanism, **whether the rule was already loaded** (the highest-value field),
+what caught it, the proposed rule, and a self-graded confidence.
+
+**The command prints an extract and is forbidden from posting it.** Not discouraged —
+forbidden: print and stop, no `gh issue create`, no API call. This repository is public and
+issues are indexed, cached and mirrored; per this repo's own `.gitignore`, field reports
+*"routinely name private repos, internal hosts and customer detail"*. The extract drops
+transcripts, appendices and real paths — most of the disclosure risk lives there, and it is
+the part a maintainer who cannot run your repo needs least. **The gap between "I generalised
+it" and "a human confirmed it is safe" is where a leak lives**, and no genericisation pass by
+the model that just wrote the private detail closes it.
+
 **`verify-setup.sh` check 1c — the report command is reachable.** An install where the skills
 reach the machine but the command does not is a library that keeps working and can no longer
 be told when it is wrong. Four states, not two: a live symlink (PASS), absent or dangling

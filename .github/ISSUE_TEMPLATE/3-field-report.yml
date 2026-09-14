@@ -1,0 +1,123 @@
+name: Field report (a session that used the library)
+description: >-
+  You applied the sota-* skills to real work and something in the guidance
+  failed, was missing, was wrong, or was right and did not fire. This is the
+  highest-yield input this project gets.
+title: "[field-report] "
+labels: ["field-report"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        **Before you paste anything: this repository is public and issues are
+        indexed, cached and mirrored. They cannot be truly deleted.**
+
+
+        Field reports are written from real sessions and routinely contain
+        private repo names, internal hosts, file paths and customer detail —
+        which is why the local file this comes from is gitignored. **Do not
+        paste the report itself.** Paste the *extract*: the finding, the
+        mechanism, and the proposed rule, with names generalised ("an eBPF
+        sensor", "a payments service"). Leave transcripts and appendices out —
+        they carry most of the risk and are the least useful part here.
+
+
+        **Anything security-sensitive** — insecure guidance, an understated
+        severity, or a real credential you found — goes to the
+        [private advisory form](https://github.com/martinholovsky/SOTA-skills/security/advisories/new),
+        never here. See [SECURITY.md](../blob/main/SECURITY.md).
+
+
+        Running `/sota-report` at the end of your session produces both the
+        private file and this extract. You do not need it to file — a single
+        well-evidenced finding is worth more than a long report.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: >-
+        The concrete sequence, with the command, error or diff. Generalise
+        names as you go.
+      placeholder: >-
+        A gate passed on an artifact that then failed to load. fmt, lint and two
+        domain checks were all green; only the check that executes on the target
+        caught it.
+    validations:
+      required: true
+  - type: textarea
+    id: mechanism
+    attributes:
+      label: Why it happened — the mechanism
+      description: >-
+        Not the emotion. "I was careless" is not a mechanism; "every gate stops
+        at the compiled artifact and the defect appears at load" is. If you are
+        inferring the mechanism from one artifact rather than from the code that
+        implements it, say so — that distinction is itself one of our rules.
+    validations:
+      required: true
+  - type: textarea
+    id: rule-in-context
+    attributes:
+      label: Was the relevant rule already loaded?
+      description: >-
+        **The single most valuable field here.** A rule you had in context and
+        broke anyway is evidence about rule *shape* — placement, wording,
+        salience — and changes how the library is written rather than what it
+        contains. If a rule of ours, followed literally, produced the defect,
+        say that: it outranks everything else on this form.
+      placeholder: >-
+        Yes — sota-devsecops rules/09 was loaded. It reads as being about CI
+        scope, so I never applied it to a local gate.
+    validations:
+      required: true
+  - type: textarea
+    id: what-caught-it
+    attributes:
+      label: What caught it
+      description: >-
+        The control, the gate, the reviewer — or "nothing; a human noticed".
+        We need to know which mechanisms pay for themselves, and "nothing" is a
+        real and useful answer.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed change — target skill, and the rule as you would write it
+      description: >-
+        Name the skill that should OWN this and, if you can, the rules file.
+        Before saying "nothing covers it", search the installed skills for the
+        words *the library* would use rather than yours, and run a positive
+        control in the same command (search a term you know is there). A working
+        instrument with the wrong vocabulary produces a false gap — that has
+        happened here.
+      placeholder: >-
+        sota-devsecops rules/09 — "a gate that stops at the artifact cannot see a
+        defect that starts at load; name each gate's terminal artifact and ask
+        what runs after it."
+    validations:
+      required: true
+  - type: input
+    id: confidence
+    attributes:
+      label: Confidence, and what would falsify it
+      description: >-
+        Grade your own evidence — "one case", "reproduced twice", "a near-miss I
+        caught before acting". A report that grades itself honestly is easier to
+        act on, not harder.
+      placeholder: Reproduced twice on two kernels; falsified if a gate that stops at the artifact catches it.
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmations
+      options:
+        - label: >-
+            I have read the text above as written and it contains no private
+            repo or host names, customer data, credentials, or internal paths.
+          required: true
+        - label: >-
+            This is not security-sensitive (otherwise I will use the private
+            advisory form instead).
+          required: true

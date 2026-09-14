@@ -84,6 +84,37 @@ is established by reading the code that implements it — never by an artifact, 
 - Praise. I cannot act on it.
 - Padding to reach a count. Two real findings beat six thin ones; say if there is only one.
 
+## Then offer a publishable extract — but do not publish it
+
+The file above is **private by default** and stays that way. After writing it, print (do not
+write to disk, do not post) a short **extract** suitable for a public issue:
+
+    What happened            generalised: "an eBPF sensor", not the real name
+    Why — the mechanism
+    Was the rule already loaded?     the highest-value field
+    What caught it
+    Proposed change          target skill, and the rule as you would write it
+    Confidence + falsifier
+
+**Rules for the extract, and they are not negotiable:**
+
+- **Leave out transcripts, appendices, logs and real paths.** They carry most of the
+  disclosure risk and are the least useful part to a maintainer who cannot run your repo.
+- **Generalise every name** — repo, host, service, customer, branch, internal tool.
+- 30–60 lines. If it is longer, you are pasting the report rather than extracting from it.
+- **Never post it yourself.** No `gh issue create`, no API call, no browser. Print it and
+  stop. The gap between "I generalised it" and "a human confirmed it is safe to publish" is
+  where a leak lives, and a public issue is indexed and cached before anyone notices.
+
+Then tell the operator both paths, and let them choose:
+
+    Submit it:  https://github.com/martinholovsky/SOTA-skills/issues/new?template=3-field-report.yml
+    Or, if you maintain the library and prefer a file, keep the .local.md and skip the issue.
+
+If anything in the finding is **security-sensitive** — insecure guidance, an understated
+severity, a real credential — say so and point at the private advisory form instead of the
+issue tracker: https://github.com/martinholovsky/SOTA-skills/security/advisories/new
+
 ## Finally
 
 If nothing failed this session, say that instead of inventing material — a clean session is

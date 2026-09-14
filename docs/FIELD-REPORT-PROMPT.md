@@ -39,6 +39,34 @@ session worth writing up.
 reasoning, that file holds the thing that ships. If you want to read it before installing, or
 paste it into a tool that has no slash commands, open that file.
 
+## Two ways a report reaches the library
+
+`/sota-report` always writes a **private** `FIELD-REPORT-*.local.md`, then prints a short
+**extract** — finding, mechanism, whether the rule was already loaded, what caught it,
+proposed rule, confidence. It never posts anything.
+
+- **Maintaining the library?** Keep the file. An issue is friction you do not need; the
+  ledger entry is the record that matters.
+- **Using the library on your own work?** Submit the extract via the
+  [field report template](https://github.com/martinholovsky/SOTA-skills/issues/new?template=3-field-report.yml).
+  This is how the library hears from anyone but its maintainer, and it has no other channel.
+
+**The extract is not the report, and that is deliberate.** This repository is public and
+issues are indexed, cached and mirrored — they cannot be truly deleted. Field reports are
+written from real sessions and, per this repo's own `.gitignore`, *"routinely name private
+repos, internal hosts and customer detail"*. The extract drops transcripts, appendices and
+real paths: most of the disclosure risk lives there, and it is the part a maintainer who
+cannot run your repo needs least.
+
+**The command is forbidden from posting.** Not "discouraged" — the prompt says print and
+stop. The gap between *"I generalised it"* and *"a human confirmed it is safe to publish"* is
+where a leak lives, and no genericisation pass by the model that just wrote 400 lines of
+private detail closes it. A human reads the extract, then submits it.
+
+Anything security-sensitive goes to the
+[private advisory form](https://github.com/martinholovsky/SOTA-skills/security/advisories/new),
+never to an issue — see [SECURITY.md](../SECURITY.md).
+
 ---
 
 ## Why each check is in there
