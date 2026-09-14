@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — invariant 11's escape hatch must now declare, not merely mention
+
+Escape (b) matched a bare substring, so **any** added CHANGELOG line containing the stamp's
+name excused a stamp move for the whole diff. Worse, it disarmed the negative control even
+when the stamp had not moved: a PR whose CHANGELOG merely mentioned the token made probe 11
+report the check **INERT**, so the check went unverified exactly when someone was writing
+about it. That happened twice in three days — the second time in this very PR, whose README
+bullet named the stamp in passing.
+
+The escape now requires the added CHANGELOG line to name **both** the token and the stamp's
+new value: a declaration that must be true, matching the design every other escape in
+`check-invariants.sh` already states. It adds no magic string (a sweep entry names its date
+anyway) and keeps the rolling-pass path intact — the two objections recorded in
+[docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md), which is corrected here: its claim
+that "in ordinary operation mentioning the token costs nothing" was false, and its "Why it is
+narrow" paragraph understated the exposure.
+
+Two probes, because a gate with a declared escape needs a known-bad for **the escape**:
+**11b** (a mention that declares no date must be caught) and **11c** (a real rolling-pass
+declaration must still pass, so the tightening has not collapsed escape (b) into (a)). The
+comparison is made with a shell `case` rather than a trailing `grep -q`, which under
+`pipefail` SIGPIPEs its own upstream — the defect behind invariant 14's five-month
+false rejection. Harness: **55 probes**.
+
 ### Fixed — an external audit's two real hits, plus the one it got backwards
 
 An unsolicited third-party audit report was taken as field-brief intake and re-derived

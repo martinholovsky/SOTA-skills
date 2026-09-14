@@ -633,9 +633,25 @@ if [ "$v10" -eq 0 ]; then echo "    ok ($seen10 rules files indexed)"; else fail
 # ROLLING pass:
 #   (a) the diff is sweep-shaped — the 2026-07-08 sweep touched 100 skill files
 #       (31 skills, 65 findings), so the floor sits far below a real one;
-#   (b) the CHANGELOG diff names LAST-VERIFIED — which the runbook already
-#       requires ("note the sweep in the CHANGELOG"), and which is how a rolling
-#       pass declares its completion.
+#   (b) the CHANGELOG diff DECLARES the new stamp — an added line naming both
+#       LAST-VERIFIED and the date the stamp now carries. The runbook already
+#       requires this ("note the sweep in the CHANGELOG"), and it is how a
+#       rolling pass declares its completion.
+#
+# Escape (b) required only the TOKEN until 2026-09-14, and a bare substring is
+# wider than its intent: ANY added CHANGELOG line containing "LAST-VERIFIED"
+# excused a stamp move for the whole diff — including a line written to say no
+# sweep is due. Worse, it disarmed the negative control even when the stamp had
+# NOT moved: a PR whose CHANGELOG merely mentioned the token made probe 11 report
+# this check INERT, so the check went unverified exactly when someone was writing
+# about it. That happened twice (2026-09-12, 2026-09-14), the second time in a PR
+# that never touched the stamp at all.
+#
+# Requiring the DATE is what turns the mention into a declaration that must be
+# TRUE — the design the header below states for every escape in this file. It
+# also answers both objections recorded in docs/CONVENTIONS-LEDGER.md: it adds no
+# magic string a contributor must memorise (a sweep entry names its date anyway),
+# and it keeps the rolling-pass path that collapsing (b) into (a) would remove.
 # This is the first DIFF-based invariant; every other check reads the whole tree.
 # With no merge base it skips with a note rather than guessing, like checks 4/8.
 SWEEP_MIN_SKILL_FILES=20
@@ -663,15 +679,23 @@ else
   if printf '%s\n' "$changed" | grep -qx 'LAST-VERIFIED' && [ "$stamp_now" != "$stamp_was" ]; then
     n_skill=$(printf '%s\n' "$changed" | grep -c '^skills/.*\.md$' || true)
     declared=0
-    git diff "$base"...HEAD -- CHANGELOG.md | grep -q '^+.*LAST-VERIFIED' && declared=1
+    # Decide with `case`, not a trailing `grep -q`: under `set -o pipefail` a -q
+    # exits early, SIGPIPEs the upstream greps, and 141 becomes the verdict — the
+    # defect that made invariant 14 reject correct work for five months.
+    declared_lines=$(git diff "$base"...HEAD -- CHANGELOG.md | grep '^+' | grep 'LAST-VERIFIED' || true)
+    if [ -n "$stamp_now" ]; then
+      case "$declared_lines" in (*"$stamp_now"*) declared=1 ;; esac
+    fi
     if [ "$n_skill" -ge "$SWEEP_MIN_SKILL_FILES" ]; then
       echo "    ok (LAST-VERIFIED moved with $n_skill skill files — sweep-shaped)"
     elif [ "$declared" -eq 1 ]; then
       echo "    ok (LAST-VERIFIED moved and declared in the CHANGELOG)"
     else
       note "LAST-VERIFIED changed, but this diff touches only $n_skill skill file(s)"
-      note "and the CHANGELOG does not mention LAST-VERIFIED. The stamp records a"
-      note "FULL re-verification pass (the 2026-07-08 sweep touched 100 skill files)."
+      note "and no added CHANGELOG line declares it: the declaration must name BOTH"
+      note "LAST-VERIFIED and the new stamp value ($stamp_now) on one line. A bare"
+      note "mention of the token is not a declaration. The stamp records a FULL"
+      note "re-verification pass (the 2026-07-08 sweep touched 100 skill files)."
       note "If this really completes a rolling pass, say so in the CHANGELOG entry;"
       note "otherwise revert the stamp — an ordinary edit must not move it."
       v11=1

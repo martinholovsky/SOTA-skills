@@ -78,7 +78,9 @@ exactly this shape, reproducible from the CHANGELOG entries.
 **After a full pass:** set `LAST-VERIFIED` to today (`date +%F`), note the
 sweep in the CHANGELOG, and open a PR. **Invariant 11 enforces that pairing** —
 the stamp may only move in a diff that is sweep-shaped (≥ 20 skill files) or that
-names `LAST-VERIFIED` in the CHANGELOG. A rolling pass takes the second escape. Do **not** add per-file markers — that
+carries a CHANGELOG line naming **both** `LAST-VERIFIED` and the stamp's new date
+(e.g. *"rolling accuracy pass complete; LAST-VERIFIED moved to 2026-09-14"*). A bare
+mention of the token is not a declaration. A rolling pass takes the second escape. Do **not** add per-file markers — that
 convention is retired.
 
 ## 3. Measuring efficacy (the eval harness)

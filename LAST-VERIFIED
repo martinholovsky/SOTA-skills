@@ -5,6 +5,7 @@
 # DO NOT BUMP THIS ON AN ORDINARY EDIT, even one that verified its own claims.
 # Doing so asserts a sweep that never happened, in the one file whose whole job is
 # to be true. Runbook: docs/MAINTENANCE.md §2. Enforced by invariant 11, which
-# requires a sweep-shaped diff (>=20 skill files) or a CHANGELOG entry naming
-# LAST-VERIFIED.
+# requires a sweep-shaped diff (>=20 skill files) or a CHANGELOG line naming BOTH
+# LAST-VERIFIED and the stamp's new date. A bare mention of the token is not a
+# declaration and no longer excuses a move.
 2026-07-08
