@@ -3094,6 +3094,17 @@ cross-reference · v1.42.0
 
 ## 2026-09-14 — An external adversarial audit: 2 of 5 technical claims landed, and every line number was invented
 
+> **Correction, 2026-09-14 (same day, closure pass):** *"every line number was invented"* is
+> an overstatement and is retracted. Re-checked at closure: the report's citation of
+> `evals/run-desc-routing.py:3–22` **resolves correctly** — those lines are the docstring
+> describing the descriptions-only A/B, which is exactly what it cited them for. Of the
+> anchors verified during the session that one was right and the rest were wrong, and **not
+> every anchor was verified**. The accurate claim is *"nearly every anchor checked was
+> wrong, including one past end of file and one whose target says something else"* — which
+> still supports treating the report as leads rather than findings, and does not support the
+> absolute. Recorded rather than edited away: the overstatement also reached two commit
+> messages (`b127d03`, `32094b9`), which are immutable.
+
 **Source:** an unsolicited third-party audit report of the library (model-generated, vendor
 unstated in the artifact), covering factual errors, routing coverage, over-claims and
 contradictions. Read it as **field-brief intake**, not as a verdict: it opened **3 of 271**
@@ -3247,7 +3258,8 @@ router's sense and the audience overlap is small. Recorded so it is not re-litig
 
 **The caveat that belongs on all four: demand is unevidenced.** Nobody hit a PowerShell task
 and found nothing — a model-generated audit imagined fifteen tasks. That is the weakest source
-shape this project has data on (it opened 12 of 313 files and invented every line number),
+shape this project has data on (it opened 12 of 313 files, and nearly every citation anchor
+checked was wrong — see the correction at the head of this entry),
 against field briefs from sessions that *used* the library landing 56 of 60. PowerShell was
 taken on its internal merits; the other three wait for someone to actually need them.
 
