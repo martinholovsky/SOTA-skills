@@ -5,6 +5,43 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed — an external audit's two real hits, plus the one it got backwards
+
+An unsolicited third-party audit report was taken as field-brief intake and re-derived
+claim by claim. Two of its five technical claims landed, two were refuted against primary
+sources, and one was right in its conclusion and wrong in its mechanism. Full ledger,
+including the four rejections with the source that killed each:
+[docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md).
+
+- **`sota-devsecops` rules/03 §3.1 — a frozen-install command that fails open on a *missing*
+  lockfile.** Measured on Poetry 2.4.3, not read off a doc page: a desynced `poetry.lock`
+  exits 1, but with **no lock at all** `poetry install --no-root` resolves fresh, installs,
+  writes a lock and exits **0** — the section's own BAD pattern at a green build. The cell is
+  now `poetry check --lock && poetry install --no-root`, and a new bullet generalises the
+  question to every cell in that column: *what does it do when the lockfile is absent rather
+  than wrong?*
+- **`sota-devsecops` rules/03 §3.1 — the Go row.** `go.mod` pins and `go.sum` authenticates;
+  `-mod=readonly` has been the **default since Go 1.16**, so prescribing it implied a control
+  that is already on, and `go mod verify` checks only the local download cache. The row now
+  names the control that earns its place (CI failing on a dirty `go mod tidy` diff). The
+  broader claim that Go builds are *not* frozen is refuted in the ledger — MVS is
+  deterministic by specification.
+- **pnpm guidance was two majors stale, at two sites** — `sota-devsecops` rules/03 §3.4 and
+  `sota-javascript-typescript` rules/05, the second of which the report never opened.
+  `onlyBuiltDependencies` was **removed in pnpm v11** and replaced by `allowBuilds`; both
+  sites now also carry `strictDepBuilds` (default `true` since v10.3.0), the half that exits
+  non-zero instead of warning.
+- **`sota-code-security` rules/04 §6 — a claim stated above its evidence.** "recovers secrets
+  byte-by-byte" is the worst case of a timing side channel, not its guarantee. Rewritten to
+  the strength the primary sources support (Python's *"designed to prevent timing analysis"*
+  and its types/lengths caveat; libsodium's *"the goal is to mitigate side-channel attacks"*)
+  while keeping the fix unconditional — principle 3 applied to our own prose.
+- **README** asserted "every fast-moving claim web-verified against a primary source" with no
+  date attached, and the pnpm miss is the counterexample. Now qualified by the `LAST-VERIFIED`
+  stamp and pointed at operating principle 1.
+
 ## [1.42.0] - 2026-09-14
 
 **Front door checked:** sota-resume · sota-close · sota-report · check-claims.sh · invariant 30

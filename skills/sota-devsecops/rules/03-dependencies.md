@@ -14,12 +14,31 @@ not the code you shipped, and yesterday's green build can be today's compromised
 | Ecosystem | Lockfile | Frozen install (CI) |
 |---|---|---|
 | npm/pnpm/yarn | package-lock.json / pnpm-lock.yaml / yarn.lock | `npm ci` / `pnpm install --frozen-lockfile` / `yarn install --immutable` |
-| Python | uv.lock / poetry.lock / requirements.txt **with hashes** | `uv sync --locked` / `poetry install --no-root` (lock checked) / `pip install --require-hashes -r requirements.txt` |
-| Go | go.sum (+GONOSUMCHECK never set) | `go mod verify`; `GOFLAGS=-mod=readonly` |
+| Python | uv.lock / poetry.lock / requirements.txt **with hashes** | `uv sync --locked` / `poetry check --lock && poetry install --no-root` / `pip install --require-hashes -r requirements.txt` |
+| Go | go.mod (pins) + go.sum (authenticates); +GONOSUMCHECK never set | `go mod verify`; CI fails on a dirty `go mod tidy` diff |
 | Rust | Cargo.lock (commit it for libs too) | `cargo build --locked` |
 | Ruby | Gemfile.lock | `bundle install --frozen` / `BUNDLE_FROZEN=true` |
 | Docker | digest pins (rules/04 §4.3) | `FROM image@sha256:...` |
 
+- **A frozen-install command can fail closed on a *stale* lock and open on a *missing* one.**
+  Measured 2026-09-14 on Poetry 2.4.3: with `poetry.lock` desynced from `pyproject.toml`,
+  `poetry install --no-root` exits **1** (`pyproject.toml changed significantly since
+  poetry.lock was last generated`) — the check works. With **no lock file at all** the same
+  command resolves fresh, installs, writes a lock and exits **0** — this section's own BAD
+  pattern, at a green build. `poetry check --lock` exits 1 in *both* cases, which is why it
+  goes first. Ask of every cell in this column: *what does it do when the lockfile is
+  absent rather than wrong?*
+- **Go has no lock file, by design — and is frozen anyway.** The [modules
+  reference](https://go.dev/ref/mod#minimal-version-selection) is explicit: *"Unlike other
+  dependency management systems, the build list is not saved in a 'lock' file … MVS is
+  deterministic, and the build list doesn't change when new versions of dependencies are
+  released."* `go.mod` pins, `go.sum` authenticates. So `-mod=readonly` is not the control it
+  looks like — build commands have behaved that way **by default since Go 1.16** ("report an
+  error if a module requirement or checksum needs to be added or updated"); setting it
+  explicitly only guards against an inherited `-mod=mod` or a stray `vendor/`. `go mod verify`
+  is narrower still: it checks the **local download cache** was not modified after download,
+  not that the graph matches the repo. The control that earns its place is failing CI on a
+  dirty `go mod tidy` diff (`sota-golang` rules/07 §4).
 - BAD: `pip install -r requirements.txt` with bare `package>=1.2` lines in CI. BAD:
   `npm install` in CI (mutates the lockfile silently). BAD: a `Dockerfile` that
   `pip install`s unpinned packages even though the repo has a lockfile.
@@ -103,8 +122,15 @@ Review *new* dependencies (human + automated) for:
 - **Install-time execution**: npm `preinstall`/`install`/`postinstall`, Python `setup.py`
   arbitrary code. Most npm malware fires at install. Mitigation:
   `npm ci --ignore-scripts` in CI plus an explicit allowlist step for the few packages
-  that genuinely need scripts (e.g., rebuild native deps deliberately); pnpm does this by
-  default via `onlyBuiltDependencies`.
+  that genuinely need scripts (e.g., rebuild native deps deliberately); pnpm blocks
+  dependency build scripts by default and takes an explicit allowlist — `allowBuilds`
+  (a map of matchers to `true`/`false`). **`onlyBuiltDependencies` was removed in pnpm
+  v11**, along with `onlyBuiltDependenciesFile`, `neverBuiltDependencies`,
+  `ignoredBuiltDependencies` and `ignoreDepScripts`; latest stable is the v12 line
+  (verify at [pnpm settings/build](https://pnpm.io/settings/build)). Keep
+  `strictDepBuilds` on — default `true` since v10.3.0, it *"will exit with a non-zero exit
+  code if any dependencies have unreviewed build scripts"*, which is the half that fails
+  the build rather than warning. `dangerouslyAllowAllBuilds: true` reverts all of it.
 - **Name proximity** to a popular package (`lodahs`, `python-dateutil` vs `dateutil`),
   starjacking (README/links pointing at an unrelated popular repo).
 - **Slopsquatting** (OWASP "Secure Coding with AI"): AI coding assistants routinely

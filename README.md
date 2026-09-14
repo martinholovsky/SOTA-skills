@@ -29,7 +29,10 @@ agent that reads `AGENTS.md`.
 Under the hood: **42 skills (313 files, ~69k lines)** of state-of-the-art 2026
 practice, each **instruction** file under 500 lines so only the matching rules load —
 the cap applies to `skills/**` alone, never to README/CHANGELOG/`docs/` — every fast-moving
-claim web-verified against a primary source.
+claim web-verified against a primary source **as of the last full sweep** (the root
+`LAST-VERIFIED` stamp). Between sweeps an upstream can still move under a claim, so the
+router's own operating principle 1 stands: re-verify anything version- or CVE-sensitive at
+use time.
 
 Two commands to install:
 

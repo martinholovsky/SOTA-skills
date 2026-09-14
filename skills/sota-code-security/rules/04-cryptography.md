@@ -176,8 +176,17 @@ ssl_session_tickets off;              # or rotate ticket keys — static keys br
 - Any comparison where one side is secret (MACs, tokens, API keys, OTP codes,
   signatures) must be constant-time: `hmac.compare_digest`,
   `crypto.timingSafeEqual`, `subtle.ConstantTimeCompare`, `MessageDigest.isEqual`.
-- `==`/`memcmp`/`String.equals` short-circuit on first mismatch → remote timing
-  oracle that recovers secrets byte-by-byte.
+- `==`/`memcmp`/`String.equals` short-circuit on first mismatch → a timing side
+  channel. Treat it as a defect wherever an attacker can submit candidates, but state
+  the claim at the strength the evidence supports: byte-by-byte recovery is the
+  *worst case*, and whether it is reachable depends on the protocol, network noise,
+  attacker position and query volume. The primary sources are careful here and so
+  should you be: Python's `compare_digest` is *"designed to prevent timing analysis by
+  avoiding content-based short circuiting behaviour"* and still notes that *"a timing
+  attack could theoretically reveal information about the types and lengths"* of the
+  operands; libsodium says of `sodium_memcmp` that *"the goal is to mitigate
+  side-channel attacks."* So: fix it unconditionally — the fix is one call — but in a
+  finding, do not promise an exploit you have not demonstrated (principle 3).
 - Don't branch on secret data or index arrays by secret values in hot crypto
   paths; in app code, the rule reduces to: use the library comparator, and
   compare hashes of variable-length secrets to avoid length leaks.
