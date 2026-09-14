@@ -162,6 +162,18 @@ so. That ask now ships as a slash command rather than a doc you have to go and f
   It holds the reasoning — why each of the four checks exists, with the intake failure each
   one prevents — and points at the command. Two homes for one rule is how they drift.
 
+**`verify-setup.sh` check 1c — the report command is reachable.** An install where the skills
+reach the machine but the command does not is a library that keeps working and can no longer
+be told when it is wrong. Four states, not two: a live symlink (PASS), absent or dangling
+(FAIL), a `--copy` snapshot that will not update (PARTIAL), and a file that is not ours, left
+alone. Two negative-control probes cover it — absent, and **dangling**, which is a separate
+branch because `-e` follows a symlink.
+
+**A dead branch caught by feeding it the input, not by reading it.** The first draft tested
+`[ ! -e ]` before `[ -L ]`, so a dangling link took the "not installed" path and the
+dangling-specific message was unreachable — it reported the wrong cause for a link that
+exists and points nowhere (`sota-code-security` rules/15 §2.2: prove every branch reachable).
+
 The four checks it front-loads are each a real intake failure, not a hypothetical: searching
 in the wrong vocabulary against a working instrument; proposing a rule for a file that does
 not own the topic; reporting "refuted" from a harness that reaches nothing; and asserting a

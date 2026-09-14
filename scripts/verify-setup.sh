@@ -241,6 +241,41 @@ fi
 
 # Always-on routing is THREE layers; report which of them are actually present.
 directive=0; hook=0
+# --- 1c. the report command is reachable ------------------------------------
+# The library has NO TELEMETRY: it learns nothing from use unless a session that
+# used it reports back, and `/sota-report` is that ask. An install where the
+# skills reach the machine but the command does not is a library that can still
+# be wrong and can no longer be told so — which is invisible, because everything
+# it does do keeps working.
+#
+# Presence AND target, not presence alone: a stale copy from an older --copy
+# install is a real file with old text, and reads identically to a live link
+# ("configured" vs "working", the whole point of this script).
+cmd_file="$CLAUDE_HOME/commands/sota-report.md"
+# -L IS TESTED FIRST, and the order is the whole check. `-e` FOLLOWS a symlink, so
+# `[ ! -e ]` is true for a dangling one — the first draft put it first and the
+# dangling branch was unreachable dead code, reporting "not installed" for a link
+# that exists and points nowhere. Caught by feeding it a dangling link rather than
+# by reading it (`sota-code-security` rules/15 §2.2: prove every branch reachable).
+if [ -L "$cmd_file" ]; then
+  cmd_tgt="$(readlink "$cmd_file")"
+  if [ -e "$cmd_file" ]; then
+    row "PASS" "1c. report command installed" "/sota-report -> ${cmd_tgt} (symlink; --update refreshes it)"
+  else
+    row "FAIL" "1c. report command installed" \
+      "/sota-report is a DANGLING symlink -> ${cmd_tgt} — the repo moved; re-run scripts/install.sh"
+  fi
+elif [ ! -e "$cmd_file" ]; then
+  row "FAIL" "1c. report command installed" \
+    "no $cmd_file — run scripts/install.sh; without it the library cannot be told when it is wrong"
+elif grep -q 'SOTA-skills field report' "$cmd_file" 2>/dev/null; then
+  row "PARTIAL" "1c. report command installed" \
+    "/sota-report is a real file, not a link — a --copy snapshot that will NOT update; re-run install.sh"
+else
+  row "PARTIAL" "1c. report command installed" \
+    "$cmd_file exists but does not look like ours — hand-edited or another tool's; left alone"
+fi
+
 [ -f "$CLAUDE_HOME/CLAUDE.md" ] && grep -qi 'sota' "$CLAUDE_HOME/CLAUDE.md" 2>/dev/null && directive=1
 if [ -f "$CLAUDE_HOME/settings.json" ]; then
   # Substring test, not a JSON parse: the hook may be a shell one-liner, a script
