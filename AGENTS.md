@@ -70,7 +70,7 @@ a good tree in a disposable worktree; part B is inverted, building a fully-confi
 (`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **49 probes** (re-run 2026-09-13 after invariants 30 and 31: `PASS: 49/49`; it said 44, and 43 before that)
 (deliberately **not** gated — a static count of call sites under-reads, so only running it is
 authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-24, 25, 26, 27, 28, 29, 30, 31** — 28 of 31 — and verify-setup checks 1, 1c, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13.
+24, 25, 26, 27, 28, 29, 30, 31** — 28 of 31 — and verify-setup checks 1, 1c, 1d, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13.
 Only **5, 9, 12** are unprobed, needing a tag or an mtime, and the harness prints that reason. *A
 diff-based check is not unprobeable*: 11 and 14 were exempt on that false ground until a probe
 **committed** its mutation (2026-09-09). **A probe asserts its own mutation landed** (a stale
@@ -133,7 +133,8 @@ the setting. The pre-commit hook scans each commit locally.
   one day silently measured nothing while still printing plausible numbers
 - **The read-only setup check, in two halves** — `init-gates.sh` sets a repo up; these check the
   result, because "configured" and "working" render identically. `scripts/verify-setup.sh` does the
-  mechanical half (skills reachable **vs the checkout's own count**, whether their descriptions fit the listing budget or arrive name-only, hook installed vs merely
+  mechanical half (skills **and slash commands** reachable **vs the checkout's own count** — a `git pull` refreshes
+  existing links and creates none, so a newly added one stays silently uninstalled, whether their descriptions fit the listing budget or arrive name-only, hook installed vs merely
   configured, licence under any name, whether CI ever *executed* and ever *rejected*, and **§F: what
   your searcher silently skips** — behavioural, INFO-only, the positive control the one thing that
   can fail; `--runs N` widens the CI sample, `--reach-only` is what `install.sh` runs, `--no-color` forces the

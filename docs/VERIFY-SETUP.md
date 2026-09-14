@@ -21,6 +21,14 @@ working and can no longer be told anything. 1c distinguishes four states, not tw
 symlink (**PASS**), absent or dangling (**FAIL**), a `--copy` snapshot that will not update
 (**PARTIAL**), and a file that is not ours, which is left alone.
 
+**Check 1d — the other commands.** 1c proves the one command whose absence is expensive; 1d is
+check 1's *denominator* applied to `commands/`, comparing what is installed against what the
+checkout ships. A `git pull` refreshes every existing symlink and creates none, so a command
+added upstream stays uninstalled and silent — the same failure that made check 1 grow a
+denominator after it printed "41 skills" over a tree of 42. **PARTIAL**, not FAIL: a missing
+workflow command costs a workflow. It goes **INFO** when no `commands/` directory resolves,
+rather than passing over an empty scope.
+
 **Output is two-mode and the plain mode is a contract.** On a TTY the rows carry colour and a
 status symbol (`✔ PASS`, `✘ FAIL`, `▲ PART`, `? UNVR`, `ℹ INFO`, `· N/A`). Anywhere else —
 piped, redirected, `NO_COLOR`, `TERM=dumb`, `--no-color` — every line is the plain

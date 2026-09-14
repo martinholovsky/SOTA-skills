@@ -276,6 +276,40 @@ else
     "$cmd_file exists but does not look like ours — hand-edited or another tool's; left alone"
 fi
 
+# --- 1d. every command the checkout ships is installed ----------------------
+# 1c proves ONE command, the one whose absence costs the library its only feedback
+# channel. This is check 1's denominator idea applied to commands/: compare what is
+# installed against what the checkout OFFERS. `git pull` refreshes every existing
+# symlink and creates none, so a command added upstream stays uninstalled and
+# silent — the identical failure that made check 1 grow a denominator after it
+# printed "41 skills" over a tree of 42. PARTIAL, not FAIL: a missing workflow
+# command costs a workflow; a missing /sota-report is the row above.
+n_cmd_src=0; missing_cmds=""
+if [ -n "$LIB_ROOT" ] && [ -d "$LIB_ROOT/commands" ]; then
+  for c in "$LIB_ROOT"/commands/*.md; do
+    [ -e "$c" ] || continue
+    n_cmd_src=$((n_cmd_src + 1))
+    cnm="$(basename "$c")"
+    # -e follows the link, so a DANGLING link counts as missing here. That is
+    # deliberate and it is why 1c exists separately: only that row distinguishes
+    # "absent" from "points nowhere", and only for the command worth the words.
+    [ -e "$CLAUDE_HOME/commands/$cnm" ] \
+      || missing_cmds="${missing_cmds:+$missing_cmds, }/${cnm%.md}"
+  done
+fi
+if [ "$n_cmd_src" -eq 0 ]; then
+  # Fails closed on an empty scope: 0 offered, 0 missing, PASS is the signature of
+  # a check that verified nothing.
+  row "INFO" "1d. commands match the checkout" \
+    "no commands/ found under ${LIB_ROOT:-<unresolved>} — nothing to compare against"
+elif [ -n "$missing_cmds" ]; then
+  row "PARTIAL" "1d. commands match the checkout" \
+    "$n_cmd_src offered, missing: $missing_cmds — re-run scripts/install.sh (a git pull cannot create a link)"
+else
+  row "PASS" "1d. commands match the checkout" \
+    "all $n_cmd_src installed in $CLAUDE_HOME/commands"
+fi
+
 [ -f "$CLAUDE_HOME/CLAUDE.md" ] && grep -qi 'sota' "$CLAUDE_HOME/CLAUDE.md" 2>/dev/null && directive=1
 if [ -f "$CLAUDE_HOME/settings.json" ]; then
   # Substring test, not a JSON parse: the hook may be a shell one-liner, a script

@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### `/sota-close` and `/sota-resume` — the two ends of a session, and a denominator for commands
+
+Two more slash commands, installed by `scripts/install.sh` exactly like the first (the
+installer already globbed `commands/*.md`, so it took no installer change — verified against a
+throwaway `HOME`: `slash command(s) installed: /sota-close /sota-report /sota-resume`).
+
+`/sota-resume` is the opening move: sweep every tracker, checkbox and `TODO|FIXME` marker,
+classify what is actually actionable, show the table, then execute what the operator agrees to
+— one item at a time, against the project's own CI entry point rather than an assumed one. Its
+inventory step is written around the fact that **a clean "nothing found" is the answer the
+operator was hoping for, which is exactly when to distrust it**: a `grep -r` over a symlinked
+tree, an `rg -r` that is really `--replace`, and a lister capping at 30 rows all return a
+confident zero at exit 0. It asks for a positive control in the same invocation and a
+denominator beside the count. Its largest class in practice is **already done and never ticked
+off**, where the fix is a doc correction and not code.
+
+`/sota-report` tells the **library** what went wrong. `/sota-close` closes the **session**
+down: retract first, record open items where a new session will trip over them, update the
+docs and agent files the session made false, re-derive every number from its source, state
+what is not done and what is blocked on whom, then commit the evidence and confirm the push
+landed.
+
+Two things in it are load-bearing and are stated in the prompt rather than assumed:
+
+- **The order.** Steps 2–6 all *write*. Anything retraction misses is propagated by them into
+  a doc, a commit message or a hand-off, where the next session reads it as established.
+- **A summary is not a source.** By the end of a session the context has usually been
+  compacted, so "what happened" would be reconstructed from the assistant's own earlier prose
+  about the work — the weakest check available (router principle 7). Every step is executed
+  against an artifact instead: `git diff`, `git log -S`, the file on disk, the command re-run.
+
+It also splits **delete vs supersede**, which is where this pass usually goes wrong: delete a
+line that states *current state* (a caveat beside a wrong line leaves both readings live and
+the reader picks one); supersede a line that is a *record* (a changelog entry, a measurement,
+a ledger verdict), because editing a record destroys the trail showing the number moved.
+
+**verify-setup check 1d — commands match the checkout.** Check 1c proves one command, the one
+whose absence costs this library its only feedback channel. 1d is check 1's *denominator* idea
+applied to `commands/`: installed versus what the checkout ships. A `git pull` refreshes every
+existing symlink and creates none, so a command added upstream stays uninstalled and silent —
+the identical failure that made check 1 grow a denominator after it printed "41 skills" over a
+tree of 42. It reported `PARTIAL … missing: /sota-close` on the author's own machine before
+the link was made, `PASS … all 2 installed` after, and `all 3 installed` once `/sota-resume`
+joined — the count is read from the checkout, so it needs no maintenance. PARTIAL rather than FAIL: a missing
+workflow command costs a workflow. Probed (`a shipped command is not installed`), which needed
+the fixture to ship **two** commands — with one, 1c and 1d break on the same removal and 1d's
+probe cannot distinguish itself from 1c's.
+
+**Invariant 18's scope gained `commands/*.md`**, because these files ship to machines where
+the reader has no checkout to resolve a citation against. It earned its place on the first
+run: a `§2b` in this command's own first draft resolved nowhere, while the `§5` beside it
+**passed for the wrong reason** — the fail-open resolver tries the containing file, and the
+command has a `## 5.` section of its own. Both citations now name the skill explicitly.
+
 ### Invariant 31 — new rule sections ship with an entry in the intake ledger
 
 This closes a gap found by auditing this repository's own gates, and the honest statement of

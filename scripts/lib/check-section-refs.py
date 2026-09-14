@@ -52,13 +52,17 @@ def main():
     # Skill prose AND the tooling, which cites rules by § just as often. The tooling was
     # unscanned until 2026-09-04, and a `rules/10 §2.12` in check-invariants.sh's own header
     # had already rotted there — the citation justifying why a convention became a gate.
+    # `commands/*.md` joined 2026-09-14 with /sota-close, the first command to cite sections:
+    # these files are INSTRUCTIONS shipped to other people's machines, where a citation that
+    # resolves nowhere cannot be checked by the reader against a checkout they do not have.
     # `:(glob)` because a plain git pathspec matches across `/` — `evals/*.md` dragged in
     # every dated write-up under evals/results/, which are superseded-not-edited history and
     # must not be gated. Scope is the LIVE tooling: runners, scripts, and the eval README.
     files = subprocess.run(['git', 'ls-files',
                             ':(glob)skills/*/*.md', ':(glob)skills/*/rules/*.md',
                             ':(glob)evals/*.py', 'evals/README.md',
-                            ':(glob)scripts/*.sh', ':(glob)scripts/lib/*.py'],
+                            ':(glob)scripts/*.sh', ':(glob)scripts/lib/*.py',
+                            ':(glob)commands/*.md'],
                            capture_output=True, text=True, check=True).stdout.split()
     if not files:
         print('no files found — pathspec drift?')

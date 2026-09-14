@@ -34,6 +34,13 @@ of a working session in the project that hit the problems:
 Anything you add after the command is passed through, so you can point it at the part of the
 session worth writing up.
 
+**Its sibling is [`/sota-close`](../commands/sota-close.md)**, which runs at the same moment
+and points the other way: `/sota-report` tells the *library* what went wrong, `/sota-close`
+closes the *session* down — retract, hand off, re-derive, commit. Running both at the end of a
+session is the intended shape, and neither needs the other.
+[`/sota-resume`](../commands/sota-resume.md) is the third: it opens a session by finding the
+open work, where `/sota-close` ended one by recording it.
+
 **The prompt text lives in one place — [`commands/sota-report.md`](../commands/sota-report.md)
 — and is not repeated here.** Two homes for one rule is how they drift; this file holds the
 reasoning, that file holds the thing that ships. If you want to read it before installing, or
