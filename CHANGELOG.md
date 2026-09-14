@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — `sota-shell-scripting` covers PowerShell, and `sota-c-cpp` says where it stops
+
+An external audit reported four domains with no owning skill. Re-derived here with a positive
+control on the sweep, they were four different things, and only one earned a rules file. Full
+reasoning and the two rejections: [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md).
+
+- **`sota-shell-scripting/rules/07-powershell.md`** (new, 248 lines). This skill's premise is
+  that shell hides in CI blocks, entrypoints and Makefile recipes; on a Windows runner that is
+  PowerShell, and **0 of 42 skill descriptions named it**, so the skill silently stopped
+  applying. Covers the missing `set -euo pipefail` (and why the obvious replacement is inert),
+  three disagreeing status variables, `pwsh -File` vs `-Command`, GitHub Actions shell
+  defaults, `Invoke-Expression`, execution policy, versions with EOL dates, and
+  PSScriptAnalyzer. Every claim is from Microsoft Learn or GitHub's docs.
+  - The headline rule is one you would not write from recall:
+    `$PSNativeCommandUseErrorActionPreference` defaults to **`$false`**, so
+    `$ErrorActionPreference = 'Stop'` does nothing for a failed `git`, `docker` or
+    `terraform`. A control that is present and inert.
+  - A first draft of the GitHub Actions section was **wrong and caught before shipping** —
+    the built-in `pwsh` shell prepends fail-fast and appends `exit $LASTEXITCODE`; it is
+    opting out with a custom `shell:` string that removes them, the inverse of the draft.
+- **Routing — and the claimed gap did not reproduce.** The audit said PowerShell had no
+  description match; grepping confirmed the *string* was absent from all 42 descriptions, and
+  that was taken as a routing gap. Measured against the pre-change tree, **it is not one**: a
+  Windows CI PowerShell task already routed to `sota-shell-scripting` 3 of 3, from "shell
+  scripting … CI scripts … entrypoint script" alone. The first regression case written here
+  pinned nothing (1.00 in both arms) and was **discarded**. The real gap is narrower and was
+  found by probing harder phrasings: a task naming `pwsh` with a *competing* signal
+  ("injection") went to `sota-code-security` 3 of 3 **before** and `sota-shell-scripting` 3 of
+  3 **after** — now pinned as `r4_pwsh_injection`.
+  **Routing checked:** evals/results/2026-09-14/POWERSHELL-ROUTING.md
+- **`sota-c-cpp` states its embedded boundary.** It already carries MISRA C:2025 and
+  freestanding builds, so it *half*-owned embedded work — worse than not owning it, because a
+  C++ RTOS driver got language-layer advice with no statement of what was missing. Its Purpose
+  section now names what no skill here covers: ISRs and reentrancy, DMA coherency, MMIO and
+  `volatile`, RTOS scheduling and priority inversion, WCET, linker scripts.
+- **Not done, deliberately:** CUDA/GPU is deferred with a revisit trigger; compiler/JIT
+  construction is rejected (consuming a JIT is already covered in four language skills).
+
+
 ### Changed — invariant 11's escape hatch must now declare, not merely mention
 
 Escape (b) matched a bare substring, so **any** added CHANGELOG line containing the stamp's

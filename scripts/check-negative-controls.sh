@@ -400,7 +400,11 @@ probe 27 "a deferral with no revisit trigger" "names no revisit trigger"
 # 28 — an eval case set that never says how its cases were chosen. This is
 # prompt-independence.jsonl's own defect replayed: the rule lived in the results doc
 # and not in the case file, in the set backing the +0.509 headline.
-( cd "$WT" && perl -pi -e 's/SELECTION RULE/how it was built/ if $. < 40' evals/cases/desc-routing-regressions.jsonl \
+# The `if $. < 40` this used to carry pinned the mutation to the subject's SHAPE: the gate
+# greps the WHOLE file, so one prose mention of the token below line 40 re-satisfied it and
+# this probe reported INERT while the gate was fine. Observed 2026-09-14 when a case comment
+# said "selection rule" in passing. Mutate every occurrence; let the gate's own scope decide.
+( cd "$WT" && perl -pi -e 's/SELECTION RULE/how it was built/g' evals/cases/desc-routing-regressions.jsonl \
     && git add evals/cases/desc-routing-regressions.jsonl >/dev/null 2>&1 )
 probe 28 "an eval case set declares no SELECTION RULE" "no 'SELECTION RULE' comment"
 
@@ -625,8 +629,14 @@ old_ver = lines[start].split('[', 1)[1].split(']', 1)[0]
 # The whole top section is replaced, so a real declaration cannot survive and
 # contribute extra terms. "Kubernetes" is a term that genuinely appears on the front
 # door; it is placed FIRST in the body, which is the position that triggered the bug.
+# A green probe must leave the WHOLE gate green, and this one builds a synthetic RELEASE on
+# top of whatever branch is under test. On a branch that edits a skill description invariant
+# 29 then fires — correctly — and the probe reports EXEMPTION DID NOT HOLD against invariant
+# 14, which passed. Observed 2026-09-14 on the branch that added rules/07. Declaring the
+# routing check here keeps 29 satisfied so 14 is the only thing this fixture tests.
 body = ['## [%s] - 2099-12-31' % ver, '',
         '**Front door checked:** Kubernetes', '',
+        '**Routing checked:** evals/cases/desc-routing-regressions.jsonl', '',
         'Kubernetes is named here, first, and on the front door.', '']
 body += ['padding line with no heading link checkbox or number'] * 3000
 body += ['']

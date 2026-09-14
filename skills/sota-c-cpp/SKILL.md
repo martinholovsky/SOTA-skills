@@ -41,6 +41,18 @@ Two consumers, one source of truth:
   checklists, classify by severity, report in the finding format below. Memory-
   safety and UB findings are presumed exploitable until proven otherwise.
 
+**What this skill covers about embedded work, and what it does not.** It carries the
+safety-critical *coding* standards — MISRA C:2025 / C++:2023 and SEI CERT (`rules/04`),
+freestanding builds with exceptions disabled (`rules/01` §7), banned APIs and hardened
+build flags — so a firmware codebase gets real coverage of the language layer. It does
+**not** cover the systems layer that makes embedded work its own discipline: interrupt
+service routines and reentrancy, DMA buffer coherency, memory-mapped I/O and `volatile`
+semantics against a peripheral, RTOS task scheduling and priority inversion, WCET and
+timing analysis, or linker scripts and startup code. No skill in this library owns those
+today. Say so when the task reaches them rather than generalising from the desktop rules —
+guidance that sounds authoritative outside its scope is the failure `sota-skill-security`
+exists to catch.
+
 ## BUILD mode
 
 1. Before writing, read the rules files relevant to the task (see index). A
