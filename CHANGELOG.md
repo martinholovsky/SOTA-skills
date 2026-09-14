@@ -5,7 +5,9 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.42.0] - 2026-09-14
+
+**Front door checked:** sota-resume · sota-close · sota-report · check-claims.sh · invariant 30
 
 ### `/sota-close` and `/sota-resume` — the two ends of a session, and a denominator for commands
 
@@ -68,6 +70,73 @@ the reader has no checkout to resolve a citation against. It earned its place on
 run: a `§2b` in this command's own first draft resolved nowhere, while the `§5` beside it
 **passed for the wrong reason** — the fail-open resolver tries the containing file, and the
 command has a `## 5.` section of its own. Both citations now name the skill explicitly.
+
+### Invariant 14 could reject a correct release, and did — a pipefail SIGPIPE
+
+Found by this cut, on this release. Invariant 14 verifies every declared front-door term
+appears in the release's own CHANGELOG entry. The per-term test was
+`printf | grep -v | grep -qiF`, and **`grep -q` exits on its first match and closes the
+pipe** — so the upstream `grep -v` dies of `SIGPIPE` (141), and `set -o pipefail` makes that
+the pipeline's status. Four of five declared terms were reported *"absent from the release's
+own entry"* while sitting in the entry's first heading.
+
+**It is position- and size-dependent**, which is why it survived every release since v1.19.7.
+The race only exists while `grep -v` is still writing when `grep -q` exits — so it needs a
+section larger than the pipe buffer, and a term near the top. `invariant 30`, 130 lines
+further down, passed in the same run. Falsifier stated before measuring, both halves held: at
+20,000 lines the early term fails and the late one passes; at three lines both pass, because
+the whole input fits in the buffer. Padding this entry to 3,498 lines made **all five** fail,
+including the one that had just passed.
+
+**It fails closed** — no bad release was ever waved through. That is not as reassuring as it
+sounds: it blocks a *correct* release, and the quickest way back to green is to delete the
+term from the declaration, which silently weakens the gate this check exists to be.
+
+Fixed by matching with a bash built-in — `[[ $sec_body != *"$t"* ]]` under `nocasematch`,
+the same substring test `grep -iF` performed, with no pipeline to carry a status. The entry
+minus its declaration line is computed once instead of re-piped per term.
+
+**Probe 14b**, the direction probe 14 cannot see. Probe 14 proves a *missing* declaration
+fails; nothing proved a *valid* one passes. It pads the top section past the pipe buffer,
+leaves the terms at the top, and asserts invariant 14's own `ok (N terms declared, all
+resolve)` line — a bare exit 0 would pass on a check that merely skipped. Verified as a
+differential on identical input: the pre-fix code reports all five terms absent, the fixed
+code reports `ok (5 terms declared, all resolve)`. It pads the existing section rather than
+adding a `## [99.0.0]` heading, which would push the real top version below it — untagged
+until the merge — and fail invariant 21 for an unrelated reason. `PASS: 53/53` on the committed
+tree, both positive controls first, with probes 14 and 14b catching in opposite directions.
+
+### `scripts/check-claims.sh` — the claims the advice rests on, re-run every CI run
+
+**This gate shipped without release notes and is being written up at the cut that found it.**
+It landed in #373 with 305 lines of harness and a two-OS CI job, and the CHANGELOG got three
+sections about the *intakes* that arrived alongside it and none about the gate — a capability
+invisible in the release notes and, until now, absent from `README.md` and `docs/INDEX.md`
+too. That is the exact class the front-door check in [RELEASING.md](RELEASING.md) §2b exists
+to catch, and it caught it.
+
+**What it does.** `skills/` is full of sentences claiming something was measured — the word
+alone appears on ~200 lines, and the count moves by a dozen depending on which searcher and
+flags you ask with, which is its own argument for executing the claims rather than counting
+them. A few dozen are executable in a temp directory in milliseconds, and those are the ones
+that rot silently when a tool changes. The harness re-runs **13** of them on **Linux and
+macOS** every CI run — both legs, because several are *platform splits* and one runner can
+only ever confirm its own half.
+
+**Scope is deliberate and narrow**: deterministic and platform-split only. Not network claims
+(an `endoflife.date` row changes by design, so asserting it makes CI red on a correct world)
+and not claims costing live API calls. A missing binary **skips with a reason**; **zero claims
+executed fails**, because `0 run, 0 failed, exit 0` is the signature of a gate that verifies
+nothing. The Linux leg installs `ugrep`, `ripgrep` and `zsh` first — without that, claims 5
+and 7 skipped on *both* runners and the matrix verified 8 of 11 while appearing to verify all
+of them.
+
+**It refuted one of its own rules on the first run.** The library said an empty value in a
+filter removes the filter rather than matching nothing — true, and the rule generalised it to
+every `--filter`-shaped flag. Claim 8b measured the other half: `ps -p ""` is **rejected**
+(non-zero exit, no rows), it does not list every process. A **pattern** filter drops an empty
+value and widens; an **identifier** filter refuses it. `sota-shell-scripting` rules/06 §2b was
+corrected to say which is which — a rule made narrower by the instrument built to check it.
 
 ### Invariant 31 — new rule sections ship with an entry in the intake ledger
 
@@ -8754,6 +8823,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.42.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.42.0
 [1.41.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.41.2
 [1.41.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.41.1
 [1.41.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.41.0
