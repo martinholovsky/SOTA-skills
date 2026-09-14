@@ -9,6 +9,26 @@ have no telemetry: it learns nothing from use unless a session like this one say
 need is not a summary of what you built — it is the places the guidance failed, was absent,
 was wrong, or was right and did not fire.
 
+## First, record which version produced this
+
+The evidence is bound to the version that produced it, so the report opens with:
+
+    SOTA-skills version : <from the VERSION file next to the installed library>
+    Install type        : symlink / --copy snapshot / plugin / unknown
+    Date                : <today>
+
+Resolve it without guessing: `readlink ~/.claude/skills/sota` gives the repo path for a
+symlink install — `cat <that>/../../VERSION`. For a plugin install look under
+`~/.claude/plugins`. **If you cannot resolve it, write `unknown` and say why.** A wrong
+version stamp is worse than none: it is the field a maintainer trusts to decide whether your
+finding still applies.
+
+**Do not update the library and re-run this.** The session already happened under the
+installed version; updating changes the skills but cannot re-run the work, so you would
+produce a report about old behaviour stamped with a new version. Report against what you
+actually used. Being months behind is fine — most of the library does not move, and triage
+is one `git log` on the file you cite.
+
 ## Write the file, don't print it
 
 `FIELD-REPORT-<PROJECT>-<YYYY-MM-DD>.local.md` in the repo root. The `.local.md` suffix is
@@ -106,10 +126,32 @@ write to disk, do not post) a short **extract** suitable for a public issue:
   stop. The gap between "I generalised it" and "a human confirmed it is safe to publish" is
   where a leak lives, and a public issue is indexed and cached before anyone notices.
 
-Then tell the operator both paths, and let them choose:
+**Write the extract to `FIELD-REPORT-<PROJECT>-<DATE>-EXTRACT.local.md`** — also gitignored by
+the same `*.local.md` rule — so the operator can read the exact bytes before anything is sent,
+and so the submit command can reference a file rather than a paste buffer.
 
-    Submit it:  https://github.com/martinholovsky/SOTA-skills/issues/new?template=3-field-report.yml
-    Or, if you maintain the library and prefer a file, keep the .local.md and skip the issue.
+Then print both paths and stop:
+
+    Read it first:  FIELD-REPORT-<PROJECT>-<DATE>-EXTRACT.local.md
+    Submit it:      gh issue create --repo martinholovsky/SOTA-skills \
+                      --title "[field-report] <one line>" \
+                      --body-file FIELD-REPORT-<PROJECT>-<DATE>-EXTRACT.local.md \
+                      --label field-report
+    No gh?          https://github.com/martinholovsky/SOTA-skills/issues/new?template=3-field-report.yml
+
+**Do not run that command.** Print it. The operator reads the file, then runs it if they are
+satisfied there is nothing private in it.
+
+**Only if the operator says they want to submit**, and only then, two best-effort checks —
+both silent on failure, neither blocking:
+
+- **Version delta.** If the library's git repo is reachable locally, compare the installed
+  VERSION against the newest tag and add one line to the extract: *"reported against 1.38.2;
+  latest at time of filing 1.41.2"*. Never fetch on the report itself — this library makes no
+  network request unless a human asked for one.
+- **Duplicate search.** `gh issue list --repo martinholovsky/SOTA-skills --search "<key
+  phrase>" --state all --limit 5`. If something matches, show it and ask whether to comment on
+  that issue instead of opening a new one.
 
 If anything in the finding is **security-sensitive** — insecure guidance, an understated
 severity, a real credential — say so and point at the private advisory form instead of the

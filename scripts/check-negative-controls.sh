@@ -677,6 +677,12 @@ build_fixture() {  # a machine+repo where every check passes
   printf -- '---\ndescription: x\n---\nWrite a SOTA-skills field report for this session.\n' \
     > "$VS/repo/commands/sota-report.md"
   ln -sfn "$VS/repo/commands/sota-report.md" "$VS/home/commands/sota-report.md"
+  # A SECOND command, so check 1d has a denominator greater than one: with a single
+  # command offered, 1d and 1c would be broken by the same removal and 1d's probe
+  # could never distinguish itself from 1c's.
+  printf -- '---\ndescription: y\n---\nEnd-of-session closure pass.\n' \
+    > "$VS/repo/commands/sota-close.md"
+  ln -sfn "$VS/repo/commands/sota-close.md" "$VS/home/commands/sota-close.md"
   # always-on routing: both layers
   printf 'routing: consult the sota router.\n' > "$VS/home/CLAUDE.md"
   printf '{"hooks":{"UserPromptSubmit":[{"hooks":[{"command":"echo sota"}]}]}}\n' > "$VS/home/settings.json"
@@ -799,6 +805,11 @@ rm -f "$VS/home/commands/sota-report.md";       vs_probe "report command not ins
 # for a dangling link and the first draft's dangling branch was unreachable dead code.
 ln -sfn /nonexistent/sota-report.md "$VS/home/commands/sota-report.md"
 vs_probe "report command is a dangling symlink" "1c. report command installed"
+# 1d is the denominator row: a command the checkout SHIPS that never reached the
+# machine. Removing a command other than sota-report is what separates it from 1c —
+# the same `git pull` creates no link for a new command, exactly as for a new skill.
+rm -f "$VS/home/commands/sota-close.md"
+vs_probe_partial "a shipped command is not installed" "1d. commands match the checkout"
 rm -f "$VS/home/settings.json" "$VS/home/CLAUDE.md"; vs_probe "no routing directive or hook"  "2. always-on routing"
 ln -sf /nonexistent/x.md "$VS/home/profiles/dangling.md"; vs_probe "dangling profile symlink" "3. stack profile"
 rm -f "$VS/repo/AGENTS.md";                     vs_probe "no agent file"                  "4. agent file present"
@@ -849,5 +860,5 @@ echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        12          — mtime-based: needs a rendered asset older than its source."
-echo "      verify-setup.sh: checks 1, 1c, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13. Checks 5"
+echo "      verify-setup.sh: checks 1, 1c, 1d, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13. Checks 5"
 echo "      and 11 are judgement (N/A by design) and 10b/12 need a different fixture."

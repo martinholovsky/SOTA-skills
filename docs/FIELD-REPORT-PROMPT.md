@@ -34,6 +34,13 @@ of a working session in the project that hit the problems:
 Anything you add after the command is passed through, so you can point it at the part of the
 session worth writing up.
 
+**Its sibling is [`/sota-close`](../commands/sota-close.md)**, which runs at the same moment
+and points the other way: `/sota-report` tells the *library* what went wrong, `/sota-close`
+closes the *session* down — retract, hand off, re-derive, commit. Running both at the end of a
+session is the intended shape, and neither needs the other.
+[`/sota-resume`](../commands/sota-resume.md) is the third: it opens a session by finding the
+open work, where `/sota-close` ended one by recording it.
+
 **The prompt text lives in one place — [`commands/sota-report.md`](../commands/sota-report.md)
 — and is not repeated here.** Two homes for one rule is how they drift; this file holds the
 reasoning, that file holds the thing that ships. If you want to read it before installing, or
@@ -79,6 +86,44 @@ Every one is a failure that has actually happened during intake, not a hypotheti
 | **B — name the owning skill** | a rule adopted into the wrong file, or a duplicate | 2026-09-12: verified an absence *inside the file the report named*; the topic was owned, better, elsewhere. Had to be removed and replaced with a pointer |
 | **C — control arm on a refutation** | "refuted" reported from a harness that reaches nothing | 2026-09-14: two confident refutations from harnesses that could not produce any outcome. The third attempt added a control arm and the mechanism reproduced immediately |
 | **D — claim granularity** | a mechanism asserted from one artifact | 2026-09-14: "truncated in place" written into two tracked documents from timestamps alone. True by luck; the first grep had surfaced evidence for the opposite reading |
+
+## A report from an old version is still evidence
+
+Reports arrive from whatever version the reporter had. **Do not reject one for being stale,
+and never ask the reporter to update and resubmit** — the session happened under the installed
+version, updating cannot re-run the work, and a fresh stamp on old behaviour is worse than an
+honest old one. The channel is the scarce thing: a stale report costs one `git log`, a report
+never sent costs everything in it.
+
+**Most of the library does not move.** Measured 2026-09-14 over a genuine month
+(`v1.22.5`, 2026-08-14 → `HEAD`): **93 of 271 rules files changed — 66% untouched.** A
+month-old report is more often than not about text that still ships verbatim.
+
+**The triage is one command**, because the extract names the file it is about:
+
+```sh
+git log --oneline v<their-version>..HEAD -- skills/<the-file-they-cited>
+```
+
+Empty output means the text is unchanged, the finding applies as written, and version age
+stops being a question.
+
+When it *did* change, three outcomes — and all three are worth a ledger line:
+
+| what changed | verdict |
+|---|---|
+| the change already fixed it | **close, and record it** — this is the only signal the library gets that a fix actually reached a user |
+| changed for unrelated reasons, the defect survives in new words | **adopt, restated** against current text; the mechanism outlived the wording |
+| the section was removed or replaced | **historical** — close with a pointer, but log it: "reported after it was fixed" says whether fixes land |
+
+**Classify by finding type, not by age.** Version-sensitivity varies more than recency does,
+and the template's fields already tell you which you have:
+
+- *"A rule I had in context and broke anyway"* — nearly version-independent. It is about
+  placement and salience, which survive rewording. A year-old one is still good.
+- *"A rule of yours caused the defect"* — low sensitivity; mechanisms outlive edits.
+- *A coverage gap* — medium. Check the skill that would **own** it, not only the cited file.
+- *A stale version or CVE claim* — high. Recheck against latest first; most likely fixed.
 
 ## After the report arrives
 

@@ -71,7 +71,7 @@ More install options: [Installation](#installation) · more prompts: [Using it](
 - [Standards & practices baked in](#standards--practices-baked-in) · [What the audit hunts that a scanner can't](#what-the-audit-hunts-that-a-scanner-cant) · [How the numbers are kept honest](#how-the-numbers-are-kept-honest)
 - [Skills](#skills) · [Coverage & non-goals](#coverage--non-goals)
 - [Installation](#installation) · [Always-on routing](#always-on-routing-recommended) · [Updating](#updating)
-- [Using it](#using-it)
+- [Using it](#using-it) — [slash commands](#slash-commands)
 - [Optional setup & integrations](#optional-setup--integrations) — [badge](#badge), [gates](#enforcing-the-gates), [other agents](#other-ai-agents-codex-copilot-gemini-), [status line](#status-line-optional), [plugin extras](#optional-extras-for-plugin-users)
 - [Structure](#structure) · [How it works](#how-it-works) · [Conventions](#conventions)
 - [Found a gap? Tell us](#found-a-gap-tell-us--its-the-only-signal-we-get) · [Contributing](#contributing) · [License](#license)
@@ -1000,6 +1000,37 @@ skill, *scope* to one rule file, or *stack* an exact combo.
   findings by severity → roadmap by risk-reduction-per-effort → positive notes.
 - **Re-verify version-sensitive facts** — web-check before pinning any version.
 
+### Slash commands
+
+`scripts/install.sh` (and therefore `scripts/update.sh`) links every file in
+[`commands/`](commands/) into `~/.claude/commands/`, so they work in **any** project, not just
+this one. `verify-setup.sh` check **1d** compares what is installed against what the checkout
+ships — a `git pull` refreshes existing links and creates none, so a newly added command stays
+silently uninstalled until you re-run the installer.
+
+| Command | Run it when | What it does |
+|---|---|---|
+| **`/sota-report`** | at the **end** of a session, in your own project | Writes a gitignored field report on where the guidance failed, was absent, wrong, or right and did not fire — stamped with the version that produced it. Then writes a short generalised extract and prints a `gh issue create` line. It never posts anything. |
+| **`/sota-resume`** | at the **start** of a session, or when picking a project back up | Finds the open work: sweeps every tracker, checkbox and `TODO` marker with a **controlled** search (a clean "nothing found" is exactly the answer a skipped symlink tree, a `--replace` flag or a 30-row default page produces), classifies it — ready · needs a decision · deliberately deferred · not an item · **already done and never ticked off** — shows you the table, then executes what you agree to, one item at a time, against the project's own CI entry point. |
+| **`/sota-close`** | at the **end** of a session, before you walk away | The closure pass: **retract first** (every claim that proved wrong, corrected *everywhere it reached*), record open items where the next session will actually trip over them, update the docs and agent files the session made false, **re-derive every number from its source**, state plainly what is not done and what is blocked on whom, then commit the evidence and confirm the push landed. |
+
+`/sota-resume` and `/sota-close` are the two ends of the same session: one picks the open work
+up, the other puts it down where the next session will find it. Neither needs the other to have
+run — most projects scatter their open work across files written by people who are not here.
+
+All three take free-text arguments to steer them (`/sota-close focus on the migration branch`).
+They are prompts, not scripts: the text is in `commands/*.md` and nowhere else, so you can read
+exactly what your session is being told to do before you run it.
+
+**Why `/sota-close` is a command rather than a habit.** The end of a session is when the
+context has usually been compacted at least once, so "what happened" is reconstructed from
+your assistant's own earlier prose about the work rather than from the work — the weakest
+check available. Everything the command asks for is executed against an artifact instead: `git
+diff`, `git log -S`, the file on disk, the command run again. The ordering is load-bearing
+too — retraction comes first because every later step *writes*, and anything still wrong gets
+propagated into a doc, a commit message or a hand-off where the next session reads it as
+established.
+
 ## Optional setup & integrations
 
 Beyond the skills themselves — all opt-in, none required to use the library.
@@ -1296,16 +1327,23 @@ this library can act on, to a gitignored `FIELD-REPORT-*.local.md` — a field r
 prompt front-loads the four checks that decide whether a report is actionable, each one a
 mistake actually made during intake.
 
-It writes a **gitignored** `FIELD-REPORT-*.local.md` and then prints a short, generalised
-**extract** for publishing — finding, mechanism, whether the rule was already loaded, what
+It stamps the report with **the version that produced it** (report against what you actually
+used — never update and re-run, since that puts a fresh stamp on old behaviour), writes a
+**gitignored** `FIELD-REPORT-*.local.md`, and writes a short, generalised **extract** for
+publishing — finding, mechanism, whether the rule was already loaded, what
 caught it, proposed rule. **It never posts anything**: this repo is public and issues cannot
-be un-published, so a human reads the extract and submits it via the
-[field report template](https://github.com/martinholovsky/SOTA-skills/issues/new?template=3-field-report.yml).
-That template is how the library hears from anyone but its maintainer.
+be un-published, so it prints a ready `gh issue create --body-file …` line and stops. You read
+the file, then run it — or use the
+[field report template](https://github.com/martinholovsky/SOTA-skills/issues/new?template=3-field-report.yml)
+if you have no `gh`. That template is how the library hears from anyone but its maintainer.
+
+**An old version is not a reason not to report.** Measured over a month, 66% of rules files
+were untouched — a stale report is usually about text that still ships, and triage is one
+`git log` on the file it cites ([docs/FIELD-REPORT-PROMPT.md](docs/FIELD-REPORT-PROMPT.md)).
 
 `scripts/install.sh` (and therefore `scripts/update.sh`) installs the command into
-`~/.claude/commands/`; `verify-setup.sh` check **1c** reports whether it is actually
-reachable. The reasoning behind each check is in
+`~/.claude/commands/` alongside [the others](#slash-commands); `verify-setup.sh` check **1c**
+reports whether it is actually reachable. The reasoning behind each check is in
 [docs/FIELD-REPORT-PROMPT.md](docs/FIELD-REPORT-PROMPT.md); the prompt itself lives in
 [commands/sota-report.md](commands/sota-report.md) and nowhere else.
 
