@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — three rules from a session's own failures, and one that deliberately stays out
+
+Intake from a session *applying* the library. One of the three was **licensed by an existing
+rule**, which is a worse finding than a gap. Reasoning: [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md).
+
+- **`sota/SKILL.md` principle 0 — a doc page states intent; only running it reports
+  behaviour.** The taxonomy routed "what does this command do when the input is missing" to
+  the documentation, because it reads as a *tool capability*. Measured: Poetry's own page says
+  a desynced lock produces a "Warning" while the tool exits **1**, and a mechanism published
+  from that summary had to be retracted. If the tool installs in two minutes, run it — both
+  the failing and the passing case.
+- **`sota/SKILL.md` routing-gap paragraph — watch the regression case fail FIRST.** It
+  required a case as proof but never that the case be observed failing on the pre-change tree.
+  A case written to pin a PowerShell routing gap scored 1.00 in both arms before *and* after.
+  **An absent string is not an absent capability**: a model routes on meaning, so grep cannot
+  answer reachability. Same doctrine as every gate here.
+- **`sota-shell-scripting/rules/01` audit checklist — a VERDICT read through a pipe.** The
+  build rule existed in three places and the audit half in none; its neighbours cover
+  *measurements* piped into a filter and background launchers, not the pass/fail case that
+  gets reported to a human. Carries the structural fix rather than another warning.
+
+**Not added, deliberately:** a fourth copy of the exit-status rule. It fired twice in one
+session *with* three copies present — a warning about a reflex does not disable the reflex.
+Nor is it gateable: `shellcheck -S style` already flags the `$?` form (SC2181) in committed
+shell and finds nothing, because both failures were in **ad-hoc commands that are never
+committed**. A repo gate's reach stops at the tree. Before proposing a gate, ask where the
+defect *lives*.
+
+
 ### Added — `sota-shell-scripting` covers PowerShell, and `sota-c-cpp` says where it stops
 
 An external audit reported four domains with no owning skill. Re-derived here with a positive
