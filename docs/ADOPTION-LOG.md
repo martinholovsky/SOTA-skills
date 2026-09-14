@@ -3186,3 +3186,70 @@ measurement carried the result.
 **Landed:** `sota-devsecops/rules/03` §3.1 (Python + Go rows, two new bullets) and §3.4 (pnpm) ·
 `sota-javascript-typescript/rules/05` (pnpm, second site) ·
 `sota-code-security/rules/04` §6 · `README.md`
+
+## 2026-09-14 — Four routing silences from the external audit: one taken as scope, one as an honest boundary, one deferred, one rejected
+
+Continues the intake above. The audit's §2 claimed four domains with no owning skill. All
+four were re-derived here rather than accepted, with a positive control on the sweep
+(`goroutine` → 16 files) so a zero means absence and not a broken instrument.
+
+**What the sweep actually found**, which is more differentiated than the report's "no named
+owner" for all four:
+
+| claim | measured | verdict |
+|---|---|---|
+| PowerShell | **0 of 42 descriptions** name it; 4 incidental files, none teaching it | **adopted as scope** |
+| CUDA / GPU | one incidental sentence in `sota-performance/rules/02` ("GPU kernel launches") | **deferred** |
+| embedded / RTOS | `sota-c-cpp` already carries MISRA C:2025 and freestanding builds — **half-owned** | **boundary stated** |
+| compiler / JIT | 33 files, all about *consuming* a JIT (OPcache, JVM warmup, YJIT) | **rejected** |
+
+**Adopted — PowerShell, as scope rather than a new skill.** `sota-shell-scripting`'s own
+premise is that shell hides in CI blocks, entrypoints and Makefile recipes; on a Windows
+runner that is PowerShell, and the skill silently stopped applying. That is a hole inside a
+skill we already ship, so the argument does not depend on who raised it. New `rules/07`
+(248 lines), the description extended within the 1024-char cap, and the fix pinned as
+`r4_powershell_windows_ci` — because the router says a routing gap ends as a **test**, not a
+report.
+
+Every claim in the file is from Microsoft Learn, and the research **changed the guidance
+twice**, which is the argument for doing it rather than writing from recall:
+
+- The headline defect is not the one you would guess. `$ErrorActionPreference = 'Stop'` reads
+  as the `set -e` equivalent and **is not**: `$PSNativeCommandUseErrorActionPreference`
+  defaults to **`$false`**, so a failed `git`/`docker`/`terraform` does not stop the script.
+  A control that is present and inert — `sota-code-security` rules/10, arrived at from the
+  primary docs rather than from the pattern.
+- **A first draft of §4 was wrong and got caught before it shipped.** GitHub Actions runs
+  `pwsh -command ". '{0}'"`, and Microsoft documents `-Command` as deriving the exit code from
+  whether *the last command* set `$?` — so the draft rule was "a pwsh step's verdict comes from
+  its last statement." GitHub's own docs then showed it prepends `$ErrorActionPreference =
+  'stop'` and appends `if ((Test-Path -LiteralPath variable:\LASTEXITCODE)) { exit
+  $LASTEXITCODE }` for the **built-in** shell keywords. The real rule is the inverse of the
+  draft: the built-in shell is safe and a custom `shell:` string silently removes both. One
+  more fetch separated a useful rule from a confidently wrong one.
+
+**Boundary stated, not built — embedded/RTOS.** Half-ownership is worse than none: a C++ RTOS
+driver routes to `sota-c-cpp` today and gets language-layer advice with no statement of what
+is missing. Its Purpose section now says what it covers (MISRA, CERT, freestanding, banned
+APIs, hardened flags) and what no skill here owns — ISRs and reentrancy, DMA coherency, MMIO
+and `volatile` against a peripheral, RTOS scheduling and priority inversion, WCET, linker
+scripts. Cost: one paragraph. It converts a silent mis-route into a stated limit.
+
+**Deferred — CUDA / GPU engineering. Revisit trigger: a field brief from a session that
+actually hit GPU work, or a second independent request.** It is a real discipline (occupancy,
+coalescing, warp divergence, host/device sync) and we have one incidental sentence, but doing
+it badly is worse than not doing it, and its freshness cost is high against a stamp that
+sweeps twice a year.
+
+**Rejected — compiler / JIT construction.** Consuming a JIT is already covered correctly in
+four language skills. Building a compiler is not "an application, service, or codebase" in the
+router's sense and the audience overlap is small. Recorded so it is not re-litigated.
+
+**The caveat that belongs on all four: demand is unevidenced.** Nobody hit a PowerShell task
+and found nothing — a model-generated audit imagined fifteen tasks. That is the weakest source
+shape this project has data on (it opened 12 of 313 files and invented every line number),
+against field briefs from sessions that *used* the library landing 56 of 60. PowerShell was
+taken on its internal merits; the other three wait for someone to actually need them.
+
+**Landed:** `sota-shell-scripting/rules/07` (new) · its `SKILL.md` index and description ·
+`sota/rules/04` library map · `sota-c-cpp/SKILL.md` Purpose · `evals/cases/desc-routing-regressions.jsonl`
