@@ -548,6 +548,43 @@ wt_commit "probe: a release with no front-door declaration"
 probe_committed 14 "a release declares no front-door check" \
   "declares no front-door check"
 
+# 14b — THE DIRECTION PROBE 14 CANNOT SEE, and the regression that blocked v1.42.0.
+# Probe 14 proves a MISSING declaration fails. Nothing proved a VALID one passes, and
+# invariant 14 could reject a correct release from v1.19.7 until 2026-09-14: its
+# per-term test was `printf | grep -v | grep -qiF`, and `grep -q` exits on its first
+# match and closes the pipe, so the upstream `grep -v` dies of SIGPIPE (141) and
+# `set -o pipefail` makes THAT the pipeline's status. It fires only when the term
+# appears early enough that grep -q exits while grep -v is still writing — i.e. on a
+# section larger than the pipe buffer. So this fixture must make the section BIG while
+# leaving the declared terms at the TOP: a small section passes either way and proves
+# nothing, which is how this survived every release until one entry grew to 497 lines.
+#
+# It pads the EXISTING top section rather than adding a `## [99.0.0]` heading, because
+# a new top heading would push the real top version below it — untagged until the merge
+# — and invariant 21 would fail the gate for a reason that has nothing to do with 14.
+# Filler is deliberately inert: no headings, no links, no checkboxes, no digits.
+( cd "$WT" && python3 - <<'PADPY'
+import re
+src = open('CHANGELOG.md').read().split('\n')
+out, seen, done = [], False, False
+for line in src:
+    if line.startswith('## ['):
+        if not seen:
+            seen = True
+        elif not done:
+            out += ['padding line that carries no heading, link, checkbox or number'] * 3000
+            out.append('')
+            done = True
+    out.append(line)
+if not done:                      # top section is the only one: pad at the end
+    out += ['padding line that carries no heading, link, checkbox or number'] * 3000
+open('CHANGELOG.md', 'w').write('\n'.join(out))
+PADPY
+)
+wt_commit "probe: a valid front-door declaration in a section past the pipe buffer"
+probe_committed_green 14b "a valid front-door declaration must PASS in a large entry" \
+  "terms declared, all resolve"
+
 # 30 — a declared count that disagrees with the list it counts. The real defect:
 # README.md said "Eleven classes of defect" above a list of 26, correct when written
 # and fifteen behind seventeen days later. The mutation edits the NUMBER, leaving the

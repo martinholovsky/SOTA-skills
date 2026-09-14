@@ -898,22 +898,45 @@ else
     terms=$(printf '%s\n' "$decl" | sed 's/.*\*\*[Ff]ront door checked:\*\*//' \
       | tr '·,;' '\n' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/^[`*]*//; s/[`*.]*$//' \
       | grep -v '^$' || true)
+    # The entry MINUS the declaration line, computed ONCE and matched with a bash
+    # built-in rather than re-piped per term. The pipeline this replaces
+    # (`printf | grep -v | grep -qiF`) was POSITION-DEPENDENT and reported a false
+    # FAILURE: `grep -q` exits on its first match and closes the pipe, the upstream
+    # `grep -v` dies of SIGPIPE (141), and `set -o pipefail` makes that the
+    # pipeline's status. It only bites when the term appears early enough that
+    # `grep -q` exits while `grep -v` is still writing -- i.e. only on a section
+    # larger than the pipe buffer, which is why it survived every release until
+    # v1.42.0, whose 497-line entry carried its terms in the FIRST heading. Four
+    # terms read "absent from the release's own entry" while a fifth, 130 lines
+    # further down, passed. Falsifier stated before measuring and both halves held:
+    # at 20,000 lines the early term fails and the late one passes; at three lines
+    # both pass, because the whole input fits in the buffer.
+    #
+    # It failed CLOSED, so no bad release was ever waved through -- it blocked a
+    # correct one, which is worse than it sounds: the quickest way to a green build
+    # is to delete the term from the declaration, and that silently weakens the gate
+    # this check exists to be.
+    sec_body=$(printf '%s\n' "$sec" | grep -v '\*\*[Ff]ront door checked:\*\*' || true)
     n_terms=0
+    shopt -s nocasematch
     while IFS= read -r t; do
       [ -n "$t" ] || continue
       n_terms=$((n_terms + 1))
+      # Reading FILES, not a pipeline: no early close, so -q is safe here.
       if ! grep -qiF -- "$t" README.md docs/INDEX.md 2>/dev/null; then
         note "NO FRONT DOOR: \"$t\" appears in neither README.md nor docs/INDEX.md"
         v14=1
       fi
       # Guard against declaring a word that was never part of this release.
-      if ! printf '%s\n' "$sec" | grep -v '\*\*[Ff]ront door checked:\*\*' | grep -qiF -- "$t"; then
+      # Substring match, exactly what `grep -iF` did -- not a looser glob.
+      if [[ $sec_body != *"$t"* ]]; then
         note "NOT IN THIS RELEASE: \"$t\" is declared but absent from the release's own entry"
         v14=1
       fi
     done <<EOF
 $terms
 EOF
+    shopt -u nocasematch
     scope "$n_terms" "declared front-door terms" || v14=1
     if [ "$v14" -eq 0 ]; then echo "    ok ($n_terms terms declared, all resolve)"; fi
   fi
