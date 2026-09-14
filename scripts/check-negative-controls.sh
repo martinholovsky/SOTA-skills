@@ -540,6 +540,38 @@ wt_commit "probe: move the freshness stamp with no sweep behind it"
 probe_committed 11 "LAST-VERIFIED moved without a sweep" \
   "LAST-VERIFIED changed, but this diff touches only"
 
+# 11b — THE ESCAPE, not the failure. Escape (b) was a bare substring match until
+# 2026-09-14, so any added CHANGELOG line containing the token excused a stamp move —
+# and, because the harness runs the gate against a diff, a line like this one made
+# probe 11 above report the check INERT even in a PR that never moved the stamp. It
+# happened twice. A gate with a declared escape needs a known-bad for THE ESCAPE
+# (docs/CONVENTIONS-LEDGER.md: "an escape hatch matched by substring is wider than its
+# intent"), which is what this is: the token is present, the declaration is not.
+( cd "$WT" && printf '2099-12-31\n' > LAST-VERIFIED \
+    && perl -0777 -pi -e 's/^(## \[[^\n]*\n)/$1\n- Nothing to re-verify: the LAST-VERIFIED sweep is not due yet.\n/m' \
+      CHANGELOG.md )
+wt_commit "probe: a CHANGELOG that mentions the stamp without declaring it"
+probe_committed 11b "a CHANGELOG mention of LAST-VERIFIED that declares no date" \
+  "the declaration must name BOTH"
+
+# 11c — the other side of the same hatch: a REAL rolling-pass declaration must still be
+# allowed through, or the tightening above has quietly collapsed escape (b) into escape
+# (a) and removed the rolling path docs/MAINTENANCE.md allows. probe_committed_green
+# asserts the exempting check's own ok-line, so a gate that passes for some unrelated
+# reason cannot score here.
+#
+# The mutation must add its line INSIDE the existing top section, not as a new
+# "## [Unreleased]" heading: a second one trips the duplicate-heading check, and a green
+# probe needs the WHOLE gate green. The first draft did exactly that and read EXEMPTION
+# DID NOT HOLD while check 11 was printing its ok-line — a probe defect wearing a gate
+# defect's error message.
+( cd "$WT" && printf '2099-12-31\n' > LAST-VERIFIED \
+    && perl -0777 -pi -e 's/^(## \[[^\n]*\n)/$1\n- Rolling accuracy pass complete; LAST-VERIFIED moved to 2099-12-31.\n/m' \
+      CHANGELOG.md )
+wt_commit "probe: a rolling pass that declares its new stamp properly"
+probe_committed_green 11c "a declaration naming the new stamp is accepted" \
+  "LAST-VERIFIED moved and declared in the CHANGELOG"
+
 # 14 — a release that declares no front-door terms. Its own defect replayed: at the
 # v1.19.7 cut, five capabilities had shipped across three releases with zero mentions
 # anywhere a reader looks.

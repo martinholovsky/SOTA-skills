@@ -22,7 +22,7 @@ the practical "what this means for your PR" version is in
 | 8 | a relative Markdown link to a `*.md` target doesn't resolve |
 | 9 | `CHANGELOG.md` carries more than one `## [Unreleased]`, or it isn't the top entry |
 | 10 | a `rules/*.md` isn't referenced by its own `SKILL.md` — written, capped, checklist-ed, and never loaded |
-| 11 | `LAST-VERIFIED` moves without a sweep. Escapes: a sweep-shaped diff (≥ 20 skill files) or naming it in the CHANGELOG. The only **diff-based** check; skips with a note when there's no merge base |
+| 11 | `LAST-VERIFIED` moves without a sweep. Escapes: a sweep-shaped diff (≥ 20 skill files), or a CHANGELOG line naming **both** the token and the stamp's new date — a bare mention is not a declaration (tightened 2026-09-14, after a mention twice disarmed probe 11). The only **diff-based** check; skips with a note when there's no merge base |
 | 12 | an `assets/*.png` is older than the `*.html` it renders — the README embeds the *image*, never the source, so an un-rendered fix reaches nobody. Escape: `[no-render]` in the commit subject |
 | 13 | a scoreboard row in `evals/results/RESULTS.md` leaves its `Samples` cell empty |
 | 14 | a **release** (VERSION changed) carries no `**Front door checked:**` line in its CHANGELOG section, or a declared term is missing from `README.md`/`docs/INDEX.md` **or** from the release's own entry |

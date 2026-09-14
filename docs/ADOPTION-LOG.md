@@ -3091,3 +3091,98 @@ depends on none of it.
 **Landed:** `sota/SKILL.md` principles 0 and 3 · `sota-shell-scripting/rules/01` §2a extended
 and §2b · `sota-code-security/rules/15` §2.1 third bullet · `rules/12` §1a.1 · `rules/13` §3
 cross-reference · v1.42.0
+
+## 2026-09-14 — An external adversarial audit: 2 of 5 technical claims landed, and every line number was invented
+
+**Source:** an unsolicited third-party audit report of the library (model-generated, vendor
+unstated in the artifact), covering factual errors, routing coverage, over-claims and
+contradictions. Read it as **field-brief intake**, not as a verdict: it opened **3 of 271**
+rules files and 12 files total, and said so honestly in its own "what I could not check".
+
+**The headline is a calibration finding about the report itself.** Every count it asserted
+was exact — 271 rules files, 42 skills, 313 files, 21 eval runners, 31 invariants, and the
+`v1.41.2` tag it named does exist. Every *line number* was wrong. The routing table it
+quoted four rows from sits at `skills/sota/SKILL.md:152–196`; it cited 219–261, and its four
+row citations (227/247/249/255) land in cross-cutting-rules prose. The dependency claims live
+at `rules/03:17,18,107,338`; cited as 205/206/256/352. One citation ran **past end of file**:
+`sota-kubernetes/rules/04-gitops-controllers.md` is 214 lines, cited 199–282. One said
+something the target does not say: `CONVENTIONS-LEDGER:193–194` was offered as evidence of
+"incorrect attempts to bump the verification stamp" and is actually the Samples-column /
+invariant-13 passage about a retracted `+0.07`. The pattern is not invention — the quoted
+*strings* are real and were plainly read — it is **real content with fabricated coordinates**,
+which for a report whose format is `file:line` makes most findings unverifiable without
+redoing the work. Treat an unanchored audit as a set of leads; re-derive each anchor.
+
+**Adopted (4).**
+
+1. **`poetry install` fails open on a *missing* lock** — `rules/03` §3.1. The report's stated
+   mechanism was wrong (it blamed `--no-root`, which was never the claimed check) but its
+   conclusion was right. Measured here on Poetry 2.4.3 in a scratch venv rather than read off
+   a doc page: a **desynced** lock exits **1**, so the cell's "(lock checked)" was correct for
+   staleness; **no lock at all** resolves fresh, installs, writes a lock and exits **0** — this
+   section's own BAD pattern at a green build. `poetry check --lock` exits 1 in both cases and
+   now goes first. Generalised into the bullet as the question to ask of every cell in that
+   column: *what does it do when the lockfile is absent rather than wrong?*
+2. **pnpm guidance was two majors stale, in two files** — `rules/03` §3.4 *and*
+   `sota-javascript-typescript/rules/05` §, which the report never opened. `onlyBuiltDependencies`
+   was **removed in v11** (replaced by `allowBuilds`), and the current line is v12. The report
+   said "deprecated in newer pnpm 10", which is the right direction and the wrong specifics.
+   Both sites now also carry `strictDepBuilds` (default `true` since v10.3.0) — the half that
+   exits non-zero rather than warning. **This is the [field-brief intake] rule firing again:
+   verify a claimed gap against the LIBRARY, not the file the report named.**
+3. **The Go row overstated `go.sum` and `-mod=readonly`** — a *sub*-point of a finding that is
+   otherwise refuted (below). `go.mod` pins and `go.sum` authenticates; `-mod=readonly` has been
+   the default since **Go 1.16**, so prescribing it implies a control that is already on, and
+   `go mod verify` checks only the local download cache. The row now names the control that
+   earns its place: CI failing on a dirty `go mod tidy` diff.
+4. **The timing-oracle claim was stated unconditionally** — `sota-code-security/rules/04` §6.
+   "recovers secrets byte-by-byte" is the worst case, not the guarantee. Rewritten to the
+   strength the primary sources support (Python's *"designed to prevent timing analysis"* plus
+   its types/lengths caveat; libsodium's *"the goal is to mitigate side-channel attacks"*),
+   while keeping the fix unconditional. This is principle 3 applied to our own prose.
+
+Plus one over-claim: **README** asserted "every fast-moving claim web-verified against a
+primary source" with no date attached, and the pnpm miss is the counterexample. Now qualified
+by the `LAST-VERIFIED` stamp, pointing at operating principle 1.
+
+**Rejected (4), with the primary source that killed each — do not re-litigate.**
+
+- *"Go is presented as frozen when the prescription only checks integrity"* — **refuted.**
+  [go.dev/ref/mod](https://go.dev/ref/mod#minimal-version-selection): *"MVS is deterministic,
+  and the build list doesn't change when new versions of dependencies are released."* A
+  committed `go.mod` + `go.sum` **is** a frozen build; the proposed remedy (vendoring, or a CI
+  diff of `go list -m all`) is ceremony. Confirmed against the local toolchain (go1.27.1):
+  `go help build` — *"the go command acts as if `-mod=readonly` were set."*
+- *"The Go row contradicts its own 'require is a floor, not a cap' prose"* — **refuted, a
+  misread.** That line (`rules/03:338`, not 352) is about reading the version you are pinning
+  **to** from `proxy.golang.org/<module>/@latest`. It makes no claim about build determinism.
+- *"Native desktop Swift has no owner"* — **refuted.** `sota-mobile`'s **frontmatter
+  description** — the actual auto-load classifier, and the only text `run-desc-routing.py`
+  reads — says "Swift as a language … **in any target** including server-side Swift". The
+  report read the terser router *table* row while claiming a descriptions-only method.
+- *"'The durable value is cross-cutting correctness' is broader than the evidence"* —
+  **refuted as characterised.** `WHY-IT-WORKS:234` (not 250–253) says the durable value "is
+  making cross-cutting concerns **salient at the moment of writing**", directly after the
+  measured omissions (tests 7/7, transport 5, rate limiting 5) and directly before a "Method
+  and limits →" link. The paraphrase dropped the mechanism and the limits.
+
+Also not adopted: its **10 "routing collisions"**, which are the router's cross-cutting rules
+1/2/6/9 working as designed — the report concedes this and scores them as defects anyway; and
+its **"+0.10 routing vs 0.80 descriptions-only" contradiction**, since `RESULTS.md:336` already
+names §5 as "the path a skill **auto-loader** uses … distinct from the router table §1
+measures", and that 0.80 is over 10 *adversarially-confusable* cases against 20 ordinary ones.
+Different populations, already stated. The summary row label could carry the distinction; that
+is a labelling nit, not a contradiction.
+
+**A lesson this session owes its own rules, and it is not the report's.** The first pass of
+this intake reported that `poetry install` *warns* on a desynced lock — read off a doc page's
+summary, published as mechanism, and **wrong**. Running it took two minutes and inverted the
+finding. That is `sota-shell-scripting`'s standing rule (suspect the harness, run the thing)
+and the [in-place-edit] retraction of 2026-09-14 in the same shape, one day apart: **a
+documentation page describes intent; only execution reports behaviour.** The correction also
+surfaced the zsh `${PIPESTATUS[0]}` trap live — it printed empty, and only a second raw-exit
+measurement carried the result.
+
+**Landed:** `sota-devsecops/rules/03` §3.1 (Python + Go rows, two new bullets) and §3.4 (pnpm) ·
+`sota-javascript-typescript/rules/05` (pnpm, second site) ·
+`sota-code-security/rules/04` §6 · `README.md`

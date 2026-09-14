@@ -386,6 +386,39 @@ check INERT on the next run, which is how this was found in the first place.
 and the way you find out is a negative-control harness that tells you the gate went quiet.
 A gate with an escape needs a known-bad for **the escape**, not only for the failure.
 
+**REOPENED AND FIXED 2026-09-14 — and one claim above is false.** The paragraph beginning
+"Why it is narrow" says the exposure is "one shape: a PR that moves the stamp *and* happens
+to discuss it in prose", and that "in ordinary operation mentioning the token costs nothing."
+Both are wrong, and it took a PR that **never touched the stamp** to show it. A CHANGELOG
+bullet naming `LAST-VERIFIED` in passing — written to explain a README edit — excused the
+harness's synthetic stamp move, and probe 11 reported the check **INERT**. So the real
+exposure is wider than recorded: *any* PR whose CHANGELOG mentions the token loses its
+negative control on invariant 11, whether or not the stamp moves. The gate still printed
+`ok`; only the harness noticed.
+
+Against the three filters, the picture changed: **has it already failed?** now twice, in
+three days, the second time in ordinary content work by someone who had *read this very
+paragraph* hours earlier and was reassured by it. That is the argument the first incident
+could not make — the mitigation on offer ("the harness catches it immediately") is real but
+costs a full CI cycle and a red build each time, and the documented reassurance was itself
+causing the mistake.
+
+**What was done, and why it is not either alternative rejected above.** Escape (b) now
+requires the added CHANGELOG line to name **both** the token and the stamp's *new value* —
+a declaration that must be TRUE, which is the design this repo's other escapes already
+state. It adds **no magic string** a contributor must memorise: a sweep entry names its
+date anyway ("LAST-VERIFIED moved to 2026-09-14"). And it does **not** collapse (b) into
+(a): the rolling-pass path `docs/MAINTENANCE.md` allows survives intact, and probe **11c**
+now proves it survives by requiring a real declaration to pass. Probe **11b** is the
+known-bad for the escape this section asked for. The gate change is decided with a shell
+`case` rather than a trailing `grep -q`, which under `pipefail` would SIGPIPE its own
+upstream — the defect that made invariant 14 reject correct work for five months.
+
+**The lesson that generalises past this hatch:** a limitation accepted in writing becomes a
+licence. "Mentioning the token costs nothing" was accurate about the *gate* and wrong about
+the *control*, and a reader cannot tell those apart from prose. When you accept a known
+limitation, state what it costs the **negative control**, not only what it costs the check.
+
 ## What this does not claim
 
 No convention outside the two candidates was found to be both failure-prone and

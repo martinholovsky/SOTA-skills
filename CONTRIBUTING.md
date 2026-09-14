@@ -266,8 +266,9 @@ the "what it means for your PR" version; that table is the index.
 11. **`LAST-VERIFIED` moves only with a sweep**: the stamp is the date of the last
     *full* re-verification pass, not a recency marker. Practical effect: don't touch
     it on an ordinary edit, even one that verified its own facts. If you really did
-    complete a pass, either the diff is sweep-shaped (≥ 20 skill files) or you name
-    `LAST-VERIFIED` in the CHANGELOG entry.
+    complete a pass, either the diff is sweep-shaped (≥ 20 skill files) or a CHANGELOG
+    line names **both** `LAST-VERIFIED` and the stamp's new date — writing the token
+    alone is a mention, not a declaration, and stopped excusing a move on 2026-09-14.
 12. **rendered assets are current**: every `assets/*.png` must be committed no
     earlier than the `assets/*.html` it renders. Practical effect: edit the HTML,
     re-render the PNG, commit **both together** (see
