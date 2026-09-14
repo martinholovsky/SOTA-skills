@@ -1296,12 +1296,19 @@ this library can act on, to a gitignored `FIELD-REPORT-*.local.md` — a field r
 prompt front-loads the four checks that decide whether a report is actionable, each one a
 mistake actually made during intake.
 
-It writes a **gitignored** `FIELD-REPORT-*.local.md` and then prints a short, generalised
-**extract** for publishing — finding, mechanism, whether the rule was already loaded, what
+It stamps the report with **the version that produced it** (report against what you actually
+used — never update and re-run, since that puts a fresh stamp on old behaviour), writes a
+**gitignored** `FIELD-REPORT-*.local.md`, and writes a short, generalised **extract** for
+publishing — finding, mechanism, whether the rule was already loaded, what
 caught it, proposed rule. **It never posts anything**: this repo is public and issues cannot
-be un-published, so a human reads the extract and submits it via the
-[field report template](https://github.com/martinholovsky/SOTA-skills/issues/new?template=3-field-report.yml).
-That template is how the library hears from anyone but its maintainer.
+be un-published, so it prints a ready `gh issue create --body-file …` line and stops. You read
+the file, then run it — or use the
+[field report template](https://github.com/martinholovsky/SOTA-skills/issues/new?template=3-field-report.yml)
+if you have no `gh`. That template is how the library hears from anyone but its maintainer.
+
+**An old version is not a reason not to report.** Measured over a month, 66% of rules files
+were untouched — a stale report is usually about text that still ships, and triage is one
+`git log` on the file it cites ([docs/FIELD-REPORT-PROMPT.md](docs/FIELD-REPORT-PROMPT.md)).
 
 `scripts/install.sh` (and therefore `scripts/update.sh`) installs the command into
 `~/.claude/commands/`; `verify-setup.sh` check **1c** reports whether it is actually

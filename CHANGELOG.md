@@ -162,6 +162,30 @@ so. That ask now ships as a slash command rather than a doc you have to go and f
   It holds the reasoning — why each of the four checks exists, with the intake failure each
   one prevents — and points at the command. Two homes for one rule is how they drift.
 
+**The report is stamped with the version that produced it, and an old version is not a reason
+not to send one.** The evidence is bound to the version that made it — so `/sota-report`
+records the installed VERSION and install type, and explicitly **does not offer to update and
+re-run**: the session already happened under the old skills, updating cannot re-run the work,
+and a fresh stamp on old behaviour is worse than an honest old one, because the stamp is what
+triage trusts.
+
+Triage does not need the reporter to be current. Measured 2026-09-14 over a genuine month
+(`v1.22.5` → `HEAD`): **93 of 271 rules files changed — 66% untouched**, so a month-old report
+is usually about text that still ships verbatim. The check is one command —
+`git log --oneline v<theirs>..HEAD -- <the file they cited>` — and an empty result means the
+finding applies as written. Where the text *did* change, all three outcomes earn a ledger
+line, including "already fixed": that is the only signal this library gets that a fix reached
+a user. Full triage guidance, including why finding *type* predicts version-sensitivity better
+than age does, in [docs/FIELD-REPORT-PROMPT.md](docs/FIELD-REPORT-PROMPT.md).
+
+**The extract is a file, and the submit command is printed, not run.** It is written to
+`FIELD-REPORT-*-EXTRACT.local.md` (gitignored by the same rule) so you can read the exact bytes
+before anything leaves the machine, and the command prints a ready
+`gh issue create --body-file …` line plus the template URL for anyone without `gh`. Two
+best-effort checks run **only if you say you want to submit** — a version-delta note and a
+duplicate search — both silent on failure, neither blocking, and never on the report itself:
+this library makes no network request unless a human asked for one.
+
 **Reports from anyone but the maintainer.** A new
 [field report issue template](.github/ISSUE_TEMPLATE/3-field-report.yml) gives the library its
 only channel from people who use it. Its fields are what intake actually needs — what

@@ -31,6 +31,22 @@ body:
         Running `/sota-report` at the end of your session produces both the
         private file and this extract. You do not need it to file — a single
         well-evidenced finding is worth more than a long report.
+  - type: input
+    id: version
+    attributes:
+      label: Which version produced this
+      description: >-
+        From the VERSION file next to your installed library (`readlink
+        ~/.claude/skills/sota` finds it for a symlink install), plus how it is
+        installed. **Report against what you actually used — do not update first
+        and re-run.** The session happened under the installed version; updating
+        cannot re-run the work, so a fresh stamp on old behaviour would be
+        misleading. **Being months behind is fine**: most of the library does not
+        change, and checking whether your finding still applies is one `git log`
+        on the file you cite. Write `unknown` rather than guessing.
+      placeholder: 1.38.2, symlink install
+    validations:
+      required: true
   - type: textarea
     id: what-happened
     attributes:
