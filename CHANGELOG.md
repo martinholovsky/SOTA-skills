@@ -103,7 +103,8 @@ resolve)` line — a bare exit 0 would pass on a check that merely skipped. Veri
 differential on identical input: the pre-fix code reports all five terms absent, the fixed
 code reports `ok (5 terms declared, all resolve)`. It pads the existing section rather than
 adding a `## [99.0.0]` heading, which would push the real top version below it — untagged
-until the merge — and fail invariant 21 for an unrelated reason.
+until the merge — and fail invariant 21 for an unrelated reason. `PASS: 53/53` on the committed
+tree, both positive controls first, with probes 14 and 14b catching in opposite directions.
 
 ### `scripts/check-claims.sh` — the claims the advice rests on, re-run every CI run
 
