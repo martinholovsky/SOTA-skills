@@ -548,7 +548,7 @@ probe_committed 11 "LAST-VERIFIED moved without a sweep" \
 # (docs/CONVENTIONS-LEDGER.md: "an escape hatch matched by substring is wider than its
 # intent"), which is what this is: the token is present, the declaration is not.
 ( cd "$WT" && printf '2099-12-31\n' > LAST-VERIFIED \
-    && perl -0777 -pi -e 's/^(## \[)/## [Unreleased]\n\n- Nothing to re-verify: the LAST-VERIFIED sweep is not due yet.\n\n$1/m' \
+    && perl -0777 -pi -e 's/^(## \[[^\n]*\n)/$1\n- Nothing to re-verify: the LAST-VERIFIED sweep is not due yet.\n/m' \
       CHANGELOG.md )
 wt_commit "probe: a CHANGELOG that mentions the stamp without declaring it"
 probe_committed 11b "a CHANGELOG mention of LAST-VERIFIED that declares no date" \
@@ -559,8 +559,14 @@ probe_committed 11b "a CHANGELOG mention of LAST-VERIFIED that declares no date"
 # (a) and removed the rolling path docs/MAINTENANCE.md allows. probe_committed_green
 # asserts the exempting check's own ok-line, so a gate that passes for some unrelated
 # reason cannot score here.
+#
+# The mutation must add its line INSIDE the existing top section, not as a new
+# "## [Unreleased]" heading: a second one trips the duplicate-heading check, and a green
+# probe needs the WHOLE gate green. The first draft did exactly that and read EXEMPTION
+# DID NOT HOLD while check 11 was printing its ok-line — a probe defect wearing a gate
+# defect's error message.
 ( cd "$WT" && printf '2099-12-31\n' > LAST-VERIFIED \
-    && perl -0777 -pi -e 's/^(## \[)/## [Unreleased]\n\n- Rolling accuracy pass complete; LAST-VERIFIED moved to 2099-12-31.\n\n$1/m' \
+    && perl -0777 -pi -e 's/^(## \[[^\n]*\n)/$1\n- Rolling accuracy pass complete; LAST-VERIFIED moved to 2099-12-31.\n/m' \
       CHANGELOG.md )
 wt_commit "probe: a rolling pass that declares its new stamp properly"
 probe_committed_green 11c "a declaration naming the new stamp is accepted" \
