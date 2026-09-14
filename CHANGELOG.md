@@ -39,8 +39,8 @@ including the four rejections with the source that killed each:
   and its types/lengths caveat; libsodium's *"the goal is to mitigate side-channel attacks"*)
   while keeping the fix unconditional — principle 3 applied to our own prose.
 - **README** asserted "every fast-moving claim web-verified against a primary source" with no
-  date attached, and the pnpm miss is the counterexample. Now qualified by the `LAST-VERIFIED`
-  stamp and pointed at operating principle 1.
+  date attached, and the pnpm miss is the counterexample. Now qualified by the root
+  verification stamp and pointed at operating principle 1.
 
 ## [1.42.0] - 2026-09-14
 
