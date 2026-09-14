@@ -176,6 +176,21 @@ not one of them. See [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md) for the full v
 - **`rules/15` §2.1 third bullet** — a claim stated at a coarser grain than its evidence. The
   two existing members are about a *thing you built* generalising; this one is about a
   **sentence**.
+- **`rules/12` §1a.1 — a failed reproduction is an absence claim, and needs the same two
+  arms.** §1a already demanded an allow arm beside a deny arm for a *control*; nothing pointed
+  it at an *experiment*. The new half is the reporting consequence: *"it did not reproduce"*
+  carries principle 3's heavier burden but **does not feel like a search**, so the rule never
+  fires — and a refutation passes unchallenged in a way *"no instances of X"* would not. Tell:
+  **a null arriving instantly and identically on both runs**. Label it *"did not reproduce
+  here"*, never *"refuted"*.
+
+**Correction to the entry above, same day.** `rules/01` §2b shipped saying §2's mechanism was
+*not established*. The reporter then reproduced it with a control arm (alpine 3.22, git
+2.49.1, real `git-receive-pack --stateless-rpc`, POST delivered twice): control exits 0 and
+advances the ref, test exits non-zero **while the write lands**, quoting the value just
+written. §2b now records that, **as field-reported rather than measured here**. The wider
+generalisation stays plausible and unproven — one protocol is not the class — and the rule
+depends on neither.
 
 ### `verify-setup.sh` reads better on a terminal, and identically to a machine
 

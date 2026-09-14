@@ -95,7 +95,9 @@ rules files that match the code in front of you. Never load all skills at once.
    returning four files, while the corpus says **"one sample"** in six — a named
    failure mode among them. Working instrument, wrong vocabulary, false absence.
    Before asserting a gap, name the term the corpus itself would use — read a
-   neighbouring section's headings — and search that. Where a
+   neighbouring section's headings — and search that. **And a failed reproduction is
+   an absence claim too** — it carries this same burden and almost never gets it,
+   because it does not feel like a search (`sota-code-security` rules/12 §1a.1). Where a
    control is unavailable because nothing is yet known to be in the target,
    print a **denominator** instead — bytes, members, total rows — beside the
    zero. **And weigh who benefits from the source**: a claim sourced to a party

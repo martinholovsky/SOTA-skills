@@ -192,13 +192,18 @@ well-intentioned fix.
   know *why* the exit was non-zero.
 - **The tell is an error quoting your own intended value as the current state.** `is at
   <the thing you were writing>` is a success report wearing a failure's clothes.
-- **The mechanism here is NOT established.** The reporter's account — an idempotent retry
-  failing its precondition against its own first write — could not be reproduced in two
-  attempts, both of which used git's *local* transport, which has no HTTP layer and so no
-  retry: the environment could not reach the defect (`sota-code-security` rules/10). The
-  wider generalisation — *any protocol with an idempotent retry can report failure about its
-  own success* (at-least-once delivery, conditional writes, state locks, idempotency-keyed
-  payment APIs) — is **plausible and unproven**. The rule above does not depend on it.
+- **The mechanism, field-reported with both arms** (alpine 3.22, git 2.49.1; reproduced by
+  the reporter, not rebuilt here). A minimal smart-HTTP server running real
+  `git-receive-pack --stateless-rpc`, with the POST delivered twice: the control arm (single
+  delivery) exits 0 and advances the ref; the test arm exits non-zero, **the write lands**,
+  and the error quotes the value just written while naming the stale old-value as expected.
+  All four predicates of the field signature hold. Two earlier attempts had *failed* to
+  reproduce it — both used git's **local** transport, which has no HTTP layer and so no
+  retry, and neither had a control arm (`sota-code-security` rules/12 §1a). The wider generalisation — *any
+  protocol with an idempotent retry can report failure about its own success* (at-least-once
+  delivery, conditional writes, state locks, idempotency-keyed payment APIs) — remains
+  **plausible and not established**: one protocol was reproduced, not the class. **The rule
+  above depends on none of it.**
 
 ## 3. Quoting: quote every expansion (SC2086)
 

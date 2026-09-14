@@ -3060,6 +3060,34 @@ generalising, and this one is about a **sentence**.
 rules/01 §2a both cover the background-job complement — but the former is a *pointer* to the
 latter, which is the library working correctly rather than two homes for one rule.
 
+**§5, added after the first four, and it explains the other four.** *A failed reproduction is
+an absence claim.* `rules/12` §1a already demands an **allow arm** beside a deny arm for any
+control, and already states the governing line — *"an arm like that exercises the environment
+and passes whether or not the control exists at all."* Nothing pointed that requirement at an
+**experiment**, which is why it was skipped. Filed as **§1a.1**, an extension, on the
+reporter's own recommendation — and their coverage check this time used the corpus's
+vocabulary (`allow arm` → 2, `negative control` → 4, `known-good` → 8, all reproduced here),
+which was §3's lesson applied one item later.
+
+The genuinely new half is the **reporting** consequence: *"it did not reproduce"* is a
+negative claim under principle 3's heavier burden, but **it does not feel like a search**, so
+the rule never fires — a refutation is offered as a result rather than as a not-found and
+passes unchallenged in a way *"no instances of X"* would not. The tell is cheap: **a null that
+arrives instantly and identically on both runs**; a real refutation usually costs something.
+Principle 3 now points at it, since that is the rule that should have fired.
+
+**And §2's mechanism is no longer unverified — which made something we shipped hours earlier
+wrong.** The reporter built a third harness (alpine 3.22, git 2.49.1) with a real
+`git-receive-pack --stateless-rpc` behind a minimal smart-HTTP server, POST delivered twice,
+**and a control arm** (`DOUBLE=0`). Control: exit 0, ref advances, no quote. Test: exit
+non-zero, **the write lands**, the error quotes the value just written and names the stale
+old-value as expected — all four predicates of the field signature. `sota-shell-scripting`
+rules/01 §2b said *"the mechanism is NOT established"*; it now records the reproduction,
+attributed and dated, **as field-reported rather than measured here** — the harness lives in
+the reporter's scratchpad and was not rebuilt on this side. The wider generalisation stays
+**plausible and not established**: one protocol reproduced is not the class, and the rule
+depends on none of it.
+
 **Landed:** `sota/SKILL.md` principles 0 and 3 · `sota-shell-scripting/rules/01` §2a extended
-and §2b · `sota-code-security/rules/15` §2.1 third bullet · `rules/13` §3 cross-reference ·
-unreleased
+and §2b · `sota-code-security/rules/15` §2.1 third bullet · `rules/12` §1a.1 · `rules/13` §3
+cross-reference · unreleased
