@@ -1373,7 +1373,15 @@ shipped CHANGELOG version carrying a git tag and its own link reference, every
 eval runner being named in the harness's own README, the roadmap's open set
 agreeing with itself, every eval case set declaring how its cases were chosen,
 and no audit-checklist bullet being stranded inside a code fence — plus gitleaks
-(full-history scan in CI; per-commit via the pre-commit hook). Ideas taken from outside the repo are recorded with a
+(full-history scan in CI; per-commit via the pre-commit hook).
+
+Separately, [`scripts/check-claims.sh`](scripts/check-claims.sh) re-runs the library's
+**executable claims** — the ones a rule's advice actually rests on — on **both Linux and
+macOS** every CI run, because several are *platform splits* and one runner can only confirm
+its own half. A measurement nobody re-runs rots silently, and it rots in the direction of the
+recommendation: `sota-shell-scripting` rules/05 §3b shipped with GNU `sed` marked *not
+verified* because the binary was absent locally, and measuring it **inverted the advice**.
+The harness refuted one of its own on its first run. Ideas taken from outside the repo are recorded with a
 verdict and reason in [docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md), so a
 rejection isn't re-litigated. Security issues and conduct:
 [SECURITY.md](SECURITY.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).

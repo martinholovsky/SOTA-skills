@@ -2717,7 +2717,7 @@ change in a PR, not the safest, and gets the adversarial pass the AUDIT workflow
 prescribes for findings.
 
 **Landed:** `sota-code-security/rules/12` §1d rewritten · §1b gains a fourth bullet so §1d is
-reachable at the point of need · `sota-shell-scripting/rules/05` §3b · unreleased
+reachable at the point of need · `sota-shell-scripting/rules/05` §3b · v1.42.0
 
 
 ### 2026-09-13 — the gap the last entry named, closed as invariant 31
@@ -2753,7 +2753,7 @@ nothing when a skipped check is also green.
 proves a ledger line exists, never that the reasoning in it is sound, and never that the rule
 is correct. It makes the intake unskippable; it does not make it good.
 
-**Landed:** invariant 31 + probes 31/31b + `probe_committed_green` · unreleased
+**Landed:** invariant 31 + probes 31/31b + `probe_committed_green` · v1.42.0
 
 
 ### 2026-09-13 — `rules/05` §3b corrected: `sed -i` is safe only on BSD
@@ -2784,7 +2784,7 @@ two-minute check that was skipped because the local box lacked the binary.
 
 **Landed:** `sota-shell-scripting/rules/05` §3b rewritten with all four implementations, its
 audit-checklist half, plus README, `docs/INDEX.md` and the CHANGELOG entry that carried the
-refuted contrast · unreleased
+refuted contrast · v1.42.0
 
 
 ### 2026-09-13 — InterdictOps field report II: three adopted, one corrected in adoption, one deliberately not a rule
@@ -2839,7 +2839,7 @@ meta-guidance" to something the repo now acts on.
 
 **Landed:** `sota-rust/rules/07` §1b · `sota-code-security/rules/15` §2a ·
 `sota-devsecops/rules/03` §3.9 extended · `CONTRIBUTING.md` authoring principle — each with its
-audit-checklist half where it has one · unreleased
+audit-checklist half where it has one · v1.42.0
 
 
 ### 2026-09-13 — two lessons taken out of an operator's global agent file, before thinning it
@@ -2879,7 +2879,7 @@ files in this repo — and the always-loaded copy is the one that is **not** gat
 18, 22, 30 or 31, not measured, and not updated when the library learns something.
 
 **Landed:** `sota-devsecops/rules/09` §2b · `sota-devsecops/rules/03` §3.6a — each with its
-audit-checklist half · unreleased
+audit-checklist half · v1.42.0
 
 
 ### 2026-09-13 — the last four lessons out of the operator's global file, each re-verified
@@ -2921,7 +2921,7 @@ the reflex, and the fourth recorded occurrence of this exact flag.
 
 **Landed:** `sota/rules/01` §3 · `sota-llm-engineering/rules/01` §8a ·
 `sota-shell-scripting/rules/05` §3c · `sota-devsecops/rules/03` §3.6b — each with its
-audit-checklist half · unreleased
+audit-checklist half · v1.42.0
 
 
 ### 2026-09-13 — executable claims get re-run in CI, and the harness refuted a shipped rule on its first run
@@ -2975,7 +2975,7 @@ argument**, **BSD skips both and follows an argument only with a trailing slash*
 proves its own half; neither could have proved the other's.
 
 **Landed:** `scripts/check-claims.sh` (11 claims at the time, 2 runners; it grows — run it for the count) · a `claims` CI job ·
-`CONTRIBUTING.md` convention · `sota-shell-scripting/rules/06` §2b **corrected** · unreleased
+`CONTRIBUTING.md` convention · `sota-shell-scripting/rules/06` §2b **corrected** · v1.42.0
 
 
 ### 2026-09-13 — the nineteenth rule, found by refusing to delete on a tally
@@ -3005,7 +3005,7 @@ one (a rule nobody had checked individually). **Before deleting the last copy of
 resolve each item to the section that replaces it** — the check costs a minute and the
 failure is silent and permanent.
 
-**Landed:** `sota-shell-scripting/rules/03` §2a + `scripts/check-claims.sh` claim 11 · unreleased
+**Landed:** `sota-shell-scripting/rules/03` §2a + `scripts/check-claims.sh` claim 11 · v1.42.0
 
 
 ### 2026-09-14 — InterdictOps report III: a principle corrected, and a reporter who refuted their own mechanism
@@ -3090,4 +3090,4 @@ depends on none of it.
 
 **Landed:** `sota/SKILL.md` principles 0 and 3 · `sota-shell-scripting/rules/01` §2a extended
 and §2b · `sota-code-security/rules/15` §2.1 third bullet · `rules/12` §1a.1 · `rules/13` §3
-cross-reference · unreleased
+cross-reference · v1.42.0

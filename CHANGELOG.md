@@ -5,7 +5,9 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.42.0] - 2026-09-14
+
+**Front door checked:** sota-resume · sota-close · sota-report · check-claims.sh · invariant 30
 
 ### `/sota-close` and `/sota-resume` — the two ends of a session, and a denominator for commands
 
@@ -68,6 +70,38 @@ the reader has no checkout to resolve a citation against. It earned its place on
 run: a `§2b` in this command's own first draft resolved nowhere, while the `§5` beside it
 **passed for the wrong reason** — the fail-open resolver tries the containing file, and the
 command has a `## 5.` section of its own. Both citations now name the skill explicitly.
+
+### `scripts/check-claims.sh` — the claims the advice rests on, re-run every CI run
+
+**This gate shipped without release notes and is being written up at the cut that found it.**
+It landed in #373 with 305 lines of harness and a two-OS CI job, and the CHANGELOG got three
+sections about the *intakes* that arrived alongside it and none about the gate — a capability
+invisible in the release notes and, until now, absent from `README.md` and `docs/INDEX.md`
+too. That is the exact class the front-door check in [RELEASING.md](RELEASING.md) §2b exists
+to catch, and it caught it.
+
+**What it does.** `skills/` is full of sentences claiming something was measured — the word
+alone appears on ~200 lines, and the count moves by a dozen depending on which searcher and
+flags you ask with, which is its own argument for executing the claims rather than counting
+them. A few dozen are executable in a temp directory in milliseconds, and those are the ones
+that rot silently when a tool changes. The harness re-runs **13** of them on **Linux and
+macOS** every CI run — both legs, because several are *platform splits* and one runner can
+only ever confirm its own half.
+
+**Scope is deliberate and narrow**: deterministic and platform-split only. Not network claims
+(an `endoflife.date` row changes by design, so asserting it makes CI red on a correct world)
+and not claims costing live API calls. A missing binary **skips with a reason**; **zero claims
+executed fails**, because `0 run, 0 failed, exit 0` is the signature of a gate that verifies
+nothing. The Linux leg installs `ugrep`, `ripgrep` and `zsh` first — without that, claims 5
+and 7 skipped on *both* runners and the matrix verified 8 of 11 while appearing to verify all
+of them.
+
+**It refuted one of its own rules on the first run.** The library said an empty value in a
+filter removes the filter rather than matching nothing — true, and the rule generalised it to
+every `--filter`-shaped flag. Claim 8b measured the other half: `ps -p ""` is **rejected**
+(non-zero exit, no rows), it does not list every process. A **pattern** filter drops an empty
+value and widens; an **identifier** filter refuses it. `sota-shell-scripting` rules/06 §2b was
+corrected to say which is which — a rule made narrower by the instrument built to check it.
 
 ### Invariant 31 — new rule sections ship with an entry in the intake ledger
 
@@ -8754,6 +8788,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.42.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.42.0
 [1.41.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.41.2
 [1.41.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.41.1
 [1.41.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.41.0
