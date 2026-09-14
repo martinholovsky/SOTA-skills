@@ -384,6 +384,20 @@ splitting/joining class** — no widely-adopted static analyser catches
 `cmd $args` being one argument in zsh.
 
 - [ ] **Measurements piped into a filter — `tail`, `head`, *or* `grep`/`awk`/`jq`.** The `grep` form is the more dangerous one: it reads as selective rather than lossy, and the line it silently drops is the one you did not know to look for (§3).
+- [ ] **Is a VERDICT — pass/fail, not a measurement — read through a pipe or taken from a
+      multi-command block?** (§3) The adjacent items above cover *measurements* piped into a
+      filter and background launchers; this is the pass/fail case, and it is the one that gets
+      reported to a human. A pipeline's `$?` is the **last stage's**; a block's is the **last
+      command's**. So `check.sh | tail -2` and `check.sh` followed by `gh pr checks` both
+      yield a status describing something other than the check — and a green reads as a
+      verdict while being silent about the real one. Field-measured 2026-09-14: both forms
+      reported exit 0 over a failing gate in one session, twice.
+      **The structural fix, not another warning:** the verdict-bearing command runs **alone
+      and unpiped**, its status is captured on the very next line (`rc=$?`), and any filtering
+      is a *separate* invocation afterwards. In committed shell `shellcheck -S style` flags the
+      `$?` form (SC2181); in an **ad-hoc command nothing does**, which is where it happens
+      (`rules/06` §1). In zsh the producer's status is `${pipestatus[1]}` — `${PIPESTATUS[0]}`
+      reads as empty, which is itself a silent wrong answer.
 - [ ] **Background jobs: is any outcome read from the launcher's status?** (§2a) The
       completion signal describes `nohup`/the runner detaching; wait on a sentinel the job
       writes last, and quote it.

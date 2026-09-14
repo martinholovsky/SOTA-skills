@@ -3299,3 +3299,53 @@ Neither the audit nor our first pass had located it.
 wider than its intent, the same shape as invariant 11's hatch. But the incident here was in
 the **probe**, and the probe is fixed; changing a gate with no incident behind it is what this
 ledger argues turns gates flaky. Recorded so the looseness is known, not forgotten.
+
+## 2026-09-14 — Three rules from the session's own failures, and the one that must NOT become a rule
+
+Intake from a session *applying* the library, which this ledger takes on the same terms as an
+external source. Three of this session's own mistakes were checked against the library before
+being written up — one of them turned out to be **licensed by a rule**, which is a worse
+finding than a gap.
+
+**1. Principle 0 sent a behaviour question to the documentation.** Its taxonomy reads
+"official docs … (for versions, specs, CVEs, **tool capabilities**), or a reproduced behavior
+(for **bugs**)". *"What does `poetry install` do when the lock is missing?"* is a behaviour
+question that reads as a tool capability, so the rule pointed at the docs — and Poetry's page
+says a desynced lock produces a "Warning" while the tool exits **1**. A mechanism published
+from that summary had to be retracted mid-session. Principle 0 now carries the distinction: a
+doc page states intent, only running it reports behaviour, and a two-minute install settles
+it. The nearest prior coverage — `sota-code-security` rules/12 §1, "assert the documented
+default equals the parsed default" — is about structural tests for your *own* control's
+config, not about citing a vendor doc as evidence of runtime behaviour.
+
+**2. The routing-gap instruction never said to watch the case fail first.** It required a
+regression case as proof but not that the case be *observed failing* on the pre-change tree.
+Result, measured the same day: a case written to pin a PowerShell "routing gap" scored 1.00 in
+both arms before *and* after, pinning nothing, because **an absent string is not an absent
+capability** — a model routes on meaning and grep cannot answer reachability. The repo's own
+doctrine ("watch it fail first, print your denominator, skip rather than guess") lived in
+`check-invariants.sh`'s header and had never been applied to routing cases.
+
+**3. `sota-shell-scripting` rules/01's checklist had no item for a VERDICT read through a
+pipe.** The audit half of a build rule stated in three places. Its neighbours cover
+*measurements* piped into a filter and background launchers; the pass/fail case — the one
+reported to a human — was missing. Added with the structural fix rather than another warning:
+the verdict-bearing command runs alone and unpiped, status captured on the next line,
+filtering as a separate invocation.
+
+**And the one that is deliberately NOT a new rule.** The same exit-status defect fired twice
+in this session while the *rule* existed in three places (`sota-devsecops` rules/09 §5,
+`sota-shell-scripting` rules/06's table, and the operator's own always-loaded agent file). A
+fourth copy is the anti-pattern, not the fix — the library's own line applies: *a warning
+about a reflex does not disable the reflex.* What was missing was the **audit half** (item 3)
+and a mechanical habit, which belongs in the operator's memory, not here.
+
+**Nor is it gateable, and the reason generalises.** `shellcheck -S style` already runs in CI
+and SC2181 flags the `$?` form in committed shell — it reports nothing because there is
+nothing to find. Both failures were in **ad-hoc commands that are never committed**. A repo
+gate's reach stops at the tree; a defect that lives only in a transcript is outside every
+gate in this repo by construction. That is the useful generalisation: before proposing a gate,
+ask where the defect *lives*, not just whether it is mechanically checkable.
+
+**Landed:** `sota/SKILL.md` principle 0 and the routing-gap paragraph ·
+`sota-shell-scripting/rules/01` audit checklist

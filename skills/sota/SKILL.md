@@ -41,6 +41,13 @@ rules files that match the code in front of you. Never load all skills at once.
    docs/release notes/advisories fetched at use time (for versions, specs,
    CVEs, tool capabilities), or a reproduced behavior (for bugs). Training
    data, plausibility, and "the rules file says so" do not validate anything.
+   **A doc page states intent; only running it reports behaviour.** "What does
+   this command do when the input is missing/stale/hostile" is a *behaviour*
+   question even though it reads like a tool capability, and the vendor's page
+   can be stale or simply wrong: measured 2026-09-14, Poetry's own docs say a
+   desynced lock produces a "Warning" while the tool exits **1**, and a mechanism
+   published from that summary had to be retracted. If a command is installable
+   in two minutes, run it — both the failing and the passing case.
    **A retraction is a claim and carries the same burden.** Withdrawing a
    statement needs the primary source that falsifies it, exactly as asserting it
    did; *"I was probably wrong"* is not a finding, and it costs the reader a true
@@ -446,6 +453,13 @@ the fix is an explicit exception in whichever rule was too broad.
 and the task never reached it, the fix is the *trigger* — the skill's `description` is the
 only auto-loading text and is the whole classifier — and the proof is a regression case in
 `evals/cases/desc-routing-regressions.jsonl`, which pins the mis-route so it cannot return.
+**Run that case against the PRE-change tree and watch it fail first.** A case that passes in
+both arms pins nothing, and an absent *string* is not an absent *capability* — a model routes
+on meaning, so grep cannot tell you whether a task is reachable. Measured 2026-09-14: a
+PowerShell task claimed to be a routing gap already routed correctly with **0 of 42
+descriptions naming PowerShell**, and the case written to pin the "fix" scored 1.00 before
+*and* after. Same doctrine as every gate here — watch it fail first, or you have added a
+control that cannot fail.
 
 Report: `https://github.com/martinholovsky/SOTA-skills/issues/new/choose`
 (bad-guidance / skill-request templates). Anything dangerous or
