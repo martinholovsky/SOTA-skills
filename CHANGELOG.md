@@ -65,6 +65,26 @@ reading the script*. Part A also reads the **committed** tree, so that run never
 widened invariant 18 scope at all. It was discarded and re-run against the commit rather than
 cited; the tell was the summary contradicting the probe two lines above it.
 
+**Corrected 2026-09-14, same day, by measuring the mechanism that paragraph asserts.** The
+edit was made with `perl -pi`, which does **not** edit in place: it writes a new file and
+renames it over the old one, so the running `bash` keeps the **original inode** open and never
+sees the change. Differential, one variable:
+
+    cat > script   inode UNCHANGED   the running script printed "EDITED LINE!!"
+    perl -pi       inode CHANGED     the running script printed "ORIGINAL LINE"
+
+So the claim above is wrong in a way that matters: the run was **not** incoherent. It executed
+the entire original script start to finish, and its `52/52` was a real verdict on the old
+script. The stale coverage line is the *expected* output, not a symptom. What actually
+disqualified it stands and is the second sentence: part A reads the **committed** tree, which
+did not yet carry the widened invariant 18 scope — so it never tested the one change most
+likely to break a probe. Discarding it was right; the reason given was not.
+
+Left standing rather than rewritten, because a changelog entry is a record. The general form
+is the same write-new-and-rename this library already documents for symlinks and hard links
+(`sota-shell-scripting` rules/05 §3b/§3c), with a third consequence: **an in-place editor is
+invisible to a program already running from that file.**
+
 **Invariant 18's scope gained `commands/*.md`**, because these files ship to machines where
 the reader has no checkout to resolve a citation against. It earned its place on the first
 run: a `§2b` in this command's own first draft resolved nowhere, while the `§5` beside it
@@ -95,6 +115,25 @@ term from the declaration, which silently weakens the gate this check exists to 
 Fixed by matching with a bash built-in — `[[ $sec_body != *"$t"* ]]` under `nocasematch`,
 the same substring test `grep -iF` performed, with no pipeline to carry a status. The entry
 minus its declaration line is computed once instead of re-piped per term.
+
+**Probe 14b — and it shipped broken, caught by CI on the very next PR.** Its first draft only
+padded the CHANGELOG, and passed locally purely because it ran on the release branch, where
+`VERSION` already differed from the merge base. On any other branch invariant 14 reports *"not
+a release commit"* and never runs, so the probe went green on a check that had **skipped** —
+precisely the false pass `probe_committed_green` exists to refuse, and it refused it:
+`FALSE PASS: green, but the exempting check never said so`. The fixture now builds its own
+release (VERSION, `plugin.json` and the top CHANGELOG section together) so invariant 14 fires
+wherever it runs. **A local green on a diff-based check is one tree at one moment**
+(`sota-code-security` rules/12 §1d); the probe written to guard a defect was itself an
+instance of the class the same release documented.
+
+Two more defects in that fixture, both caught by running it rather than reading it: it renamed
+only the `[1.42.0]: ` label and left the URL pointing at the old tag (invariant 23: *"does not
+point at /releases/tag/v99.0.0"*), and a first dry run reported the gate skipping because the
+fixture commit had been rejected by the pre-commit hook and never landed — the gate was reading
+an uncommitted tree. Re-verified as a differential under the fixed fixture: the pre-fix code
+says `NOT IN THIS RELEASE: "Kubernetes"`, the fixed code says `ok (1 terms declared, all
+resolve)`.
 
 **Probe 14b**, the direction probe 14 cannot see. Probe 14 proves a *missing* declaration
 fails; nothing proved a *valid* one passes. It pads the top section past the pipe buffer,

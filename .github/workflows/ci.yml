@@ -139,6 +139,12 @@ jobs:
         # not claims costing live API calls. A missing binary SKIPS with a reason;
         # zero claims executed FAILS. docs/CONVENTIONS-LEDGER.md on why this is
         # scoped rather than universal.
+        # NOT REPRODUCED 2026-09-14 at the v1.42.0 cut. The method behind 218 is not
+        # recorded, and re-deriving gave 188 (`grep -rioE "\bmeasured\b"`) and 197
+        # (`grep -roE "measured|Measured"`), positive control 6. The figure is left
+        # as the dated record it is rather than swapped for another unsourced number
+        # -- but do not carry it into new prose. If you restate it, state the
+        # command too; that is the whole reason this note exists.
         run: ./scripts/check-claims.sh
 
   shellcheck:

@@ -556,30 +556,62 @@ probe_committed 14 "a release declares no front-door check" \
 # `set -o pipefail` makes THAT the pipeline's status. It fires only when the term
 # appears early enough that grep -q exits while grep -v is still writing — i.e. on a
 # section larger than the pipe buffer. So this fixture must make the section BIG while
-# leaving the declared terms at the TOP: a small section passes either way and proves
+# leaving the declared term at the TOP: a small section passes either way and proves
 # nothing, which is how this survived every release until one entry grew to 497 lines.
 #
-# It pads the EXISTING top section rather than adding a `## [99.0.0]` heading, because
-# a new top heading would push the real top version below it — untagged until the merge
-# — and invariant 21 would fail the gate for a reason that has nothing to do with 14.
-# Filler is deliberately inert: no headings, no links, no checkboxes, no digits.
-( cd "$WT" && python3 - <<'PADPY'
+# IT MUST BUILD ITS OWN RELEASE. The first draft only padded the CHANGELOG, and passed
+# locally on the release branch purely because VERSION already differed from the merge
+# base there. On any other branch invariant 14 reports "not a release commit" and never
+# runs — the probe then goes green on a check that SKIPPED, which is exactly the
+# FALSE PASS probe_committed_green exists to refuse. CI caught it on the very next PR.
+# `sota-code-security` rules/12 §1d: a probe's assumption drifts while its text stays
+# correct, and a local green on a diff-based check is one tree at one moment.
+#
+# It RENAMES the top section rather than adding one: a new `## [99.0.0]` heading would
+# push the real top version below it, and on a release branch that version is untagged
+# until the merge, so invariant 21 would fail the gate for an unrelated reason.
+( cd "$WT" && python3 - <<'MK14B'
 import re
-src = open('CHANGELOG.md').read().split('\n')
-out, seen, done = [], False, False
-for line in src:
-    if line.startswith('## ['):
-        if not seen:
-            seen = True
-        elif not done:
-            out += ['padding line that carries no heading, link, checkbox or number'] * 3000
-            out.append('')
-            done = True
-    out.append(line)
-if not done:                      # top section is the only one: pad at the end
-    out += ['padding line that carries no heading, link, checkbox or number'] * 3000
-open('CHANGELOG.md', 'w').write('\n'.join(out))
-PADPY
+
+ver = '99.0.0'
+open('VERSION', 'w').write(ver + '\n')
+
+# Invariant 5 wants VERSION == plugin.json == CHANGELOG top, or the gate fails on
+# lockstep before invariant 14 is ever reached.
+pj = open('.claude-plugin/plugin.json').read()
+pj = re.sub(r'"version":\s*"[^"]*"', '"version": "%s"' % ver, pj, count=1)
+open('.claude-plugin/plugin.json', 'w').write(pj)
+
+lines = open('CHANGELOG.md').read().split('\n')
+start = next(i for i, l in enumerate(lines) if l.startswith('## ['))
+try:
+    end = next(i for i in range(start + 1, len(lines)) if lines[i].startswith('## ['))
+except StopIteration:
+    end = len(lines)
+old_ver = lines[start].split('[', 1)[1].split(']', 1)[0]
+
+# The whole top section is replaced, so a real declaration cannot survive and
+# contribute extra terms. "Kubernetes" is a term that genuinely appears on the front
+# door; it is placed FIRST in the body, which is the position that triggered the bug.
+body = ['## [%s] - 2099-12-31' % ver, '',
+        '**Front door checked:** Kubernetes', '',
+        'Kubernetes is named here, first, and on the front door.', '']
+body += ['padding line with no heading link checkbox or number'] * 3000
+body += ['']
+lines[start:end] = body
+text = '\n'.join(lines)
+
+# Invariant 23: the heading needs its own link reference. Rename the old one if there
+# was one (there is not, when the top entry was [Unreleased]) and append otherwise.
+# The WHOLE ref line is rewritten, not just its label: invariant 23 checks the ref's
+# TARGET too, and swapping only the `[1.42.0]: ` prefix left it pointing at
+# /releases/tag/v1.42.0 — caught by invariant 23 on this fixture's first dry run.
+newref = '[%s]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v%s' % (ver, ver)
+text, n = re.subn(r'^\[%s\]:.*$' % re.escape(old_ver), newref, text, count=1, flags=re.M)
+if not n:                          # top entry was [Unreleased]: it had no ref
+    text = text.rstrip('\n') + '\n' + newref + '\n'
+open('CHANGELOG.md', 'w').write(text)
+MK14B
 )
 wt_commit "probe: a valid front-door declaration in a section past the pipe buffer"
 probe_committed_green 14b "a valid front-door declaration must PASS in a large entry" \
