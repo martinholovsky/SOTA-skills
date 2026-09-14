@@ -116,6 +116,25 @@ Fixed by matching with a bash built-in — `[[ $sec_body != *"$t"* ]]` under `no
 the same substring test `grep -iF` performed, with no pipeline to carry a status. The entry
 minus its declaration line is computed once instead of re-piped per term.
 
+**Probe 14b — and it shipped broken, caught by CI on the very next PR.** Its first draft only
+padded the CHANGELOG, and passed locally purely because it ran on the release branch, where
+`VERSION` already differed from the merge base. On any other branch invariant 14 reports *"not
+a release commit"* and never runs, so the probe went green on a check that had **skipped** —
+precisely the false pass `probe_committed_green` exists to refuse, and it refused it:
+`FALSE PASS: green, but the exempting check never said so`. The fixture now builds its own
+release (VERSION, `plugin.json` and the top CHANGELOG section together) so invariant 14 fires
+wherever it runs. **A local green on a diff-based check is one tree at one moment**
+(`sota-code-security` rules/12 §1d); the probe written to guard a defect was itself an
+instance of the class the same release documented.
+
+Two more defects in that fixture, both caught by running it rather than reading it: it renamed
+only the `[1.42.0]: ` label and left the URL pointing at the old tag (invariant 23: *"does not
+point at /releases/tag/v99.0.0"*), and a first dry run reported the gate skipping because the
+fixture commit had been rejected by the pre-commit hook and never landed — the gate was reading
+an uncommitted tree. Re-verified as a differential under the fixed fixture: the pre-fix code
+says `NOT IN THIS RELEASE: "Kubernetes"`, the fixed code says `ok (1 terms declared, all
+resolve)`.
+
 **Probe 14b**, the direction probe 14 cannot see. Probe 14 proves a *missing* declaration
 fails; nothing proved a *valid* one passes. It pads the top section past the pipe buffer,
 leaves the terms at the top, and asserts invariant 14's own `ok (N terms declared, all
