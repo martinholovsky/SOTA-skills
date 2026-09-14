@@ -53,7 +53,15 @@ the link was made, `PASS … all 2 installed` after, and `all 3 installed` once 
 joined — the count is read from the checkout, so it needs no maintenance. PARTIAL rather than FAIL: a missing
 workflow command costs a workflow. Probed (`a shipped command is not installed`), which needed
 the fixture to ship **two** commands — with one, 1c and 1d break on the same removal and 1d's
-probe cannot distinguish itself from 1c's.
+probe cannot distinguish itself from 1c's. `PASS: 52/52` on the committed tree, with `1d` in the harness's own printed
+coverage list.
+
+**A run whose script was edited mid-flight is not evidence.** The first harness run reported
+`52/52` and the new probe caught — but its printed coverage line said `1, 1c, 2, …`, omitting
+the check it had just probed, because the coverage line was edited *while bash was still
+reading the script*. Part A also reads the **committed** tree, so that run never tested the
+widened invariant 18 scope at all. It was discarded and re-run against the commit rather than
+cited; the tell was the summary contradicting the probe two lines above it.
 
 **Invariant 18's scope gained `commands/*.md`**, because these files ship to machines where
 the reader has no checkout to resolve a citation against. It earned its place on the first
