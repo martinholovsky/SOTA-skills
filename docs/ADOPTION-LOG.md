@@ -3587,3 +3587,42 @@ was *process* vs domain — is one case and does not license a rule change). `so
 and found it shimmed to `ugrep --ignore-files`, which honours `.gitignore` — every gitignored
 path would have been silently outside a 5,663-file inventory. The positive-control rule paid
 for itself; worth knowing which mechanisms do.
+
+## 2026-09-15 — `rg --no-ignore` is a decoy, not a fix (operator's own measurement)
+
+Source: the operator's always-loaded agent file, which had accumulated a measured `rg` trap
+locally. That file's own standing instruction is that traps belong in the library rather than
+in it, so this is intake from the same session that produced the finding.
+
+**The claim.** `rules/06`'s searcher-exclusion table already showed `rg` defaults finding
+**1 of 4** and `rg --hidden --no-ignore --follow` finding **4 of 4**. What it did not say is
+that **`--no-ignore` alone does not rescue hidden directories** — and that it is the flag
+people reach for, because it sounds like "stop excluding things".
+
+**Reproduced here**, four arms on one fixture (hidden dir, gitignored file, plain file):
+
+```
+rg -l PAT .                   -> 1 match   (1 file searched)
+rg -l --no-ignore PAT .       -> 2 matches (2 files searched)  <- MORE files, still no .claude/
+rg -l --hidden PAT .          -> 2 matches (21 files searched) <- finds the hidden one
+rg -l --hidden --no-ignore .  -> 3 matches                     <- all of them
+```
+
+The operator's own figures on a real repo: **1042 files vs 404** under `--no-ignore` while
+missing the same matches; `--hidden` takes 404 → 576 files and 2 → 4 matching files.
+
+**Why it is worth a row rather than a footnote.** The failure is *confidence-increasing*: the
+run that misses the matches searches strictly more files than the default, so the operator
+comes away more sure of the absence. Same family as `grep -r` over symlinks. The concrete
+casualty named in the report is an agent-rules tree — `rg PAT .` never enters `.claude/`,
+`.github/` or `.githooks/`, which is precisely where an audit of agent instructions would
+look.
+
+**Landed:** `sota-shell-scripting/rules/06` §2 table (one row) plus a short paragraph.
+
+**Structural note, recorded because it will block the next contributor.** `rules/06` is now
+at **499 of 500 lines** — one line of headroom, immediately after being split earlier the
+same day (§3/§4 → `rules/08`). The §2 family is the file's centre of gravity and keeps
+growing because it is where search traps land. **The next addition needs a second split, not
+a squeeze**, and the seam should again be chosen by citation weight rather than heading
+tidiness.
