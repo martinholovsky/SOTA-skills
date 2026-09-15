@@ -31,6 +31,26 @@ claim reproduced here before a verdict; reasoning and the two corrections in
   key returned "no leaks found" and would have refuted a true finding. When a secret gate fails
   while history is clean, triage **by file** before reading any diff.
 
+### Changed — `/sota-resume` asks for a decision the same way in both places it asks
+
+The command told the agent to present options, trade-offs, a recommendation and its reasoning
+in **rule 5** (the mid-execution pause) but not in **rule 2's `NEEDS A DECISION` row**, which
+said only *"State the question and your recommendation."* — and **rule 3**, the stop where the
+operator actually confirms the list, said nothing about it at all. An agent following the
+letter of rule 2 could hand over a bare recommendation, with no alternatives and no reasoning,
+and still be compliant. That is the *first* decision point of a session and the one most
+"pick one of these" moments land on, so the weaker wording governed the more common case.
+
+- **`commands/sota-resume.md` rule 2** — the `NEEDS A DECISION` row now asks for the question,
+  two or three options, and the recommendation *with its reasoning*, naming rule 5 as the form
+  rather than restating it.
+- **`commands/sota-resume.md` rule 3** — states that decision-shaped items arrive in that form
+  at the confirmation stop, and that they are batched into that one interruption.
+
+Deliberately **not** a third copy of rule 5's paragraph: this repo's own measured failure mode
+is that a rule already stated three times still goes unfollowed, so a fourth restatement is the
+anti-pattern. Both sites point at rule 5 instead.
+
 ### Fixed
 
 - **`/sota-report` told you to write the report into the target repo's root**, justifying it
