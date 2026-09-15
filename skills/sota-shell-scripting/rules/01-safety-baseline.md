@@ -144,7 +144,13 @@ Note the two shell-level rules do not cover this. `$?`-after-a-pipeline and
   quote it.
 - **`pgrep -f 'pattern'` matches the watching shell's own command line**, so a wait loop
   containing the pattern matches itself and never exits. Match the process you mean, exclude
-  `$$`, or watch the artefact — which you should be doing anyway.
+  `$$`, or watch the artefact — which you should be doing anyway. **Platform-scoped, and the
+  scope is the trap**: measured 2026-09-16 as a differential, the identical loop on
+  **procps-ng 4.0.6 (Linux) never exits**, while on **BSD `pgrep` (macOS) it exits
+  immediately** — with a positive control confirming macOS `pgrep -f` does find a *separate*
+  carrier process. So a macOS operator who tests this concludes the trap is imaginary and
+  ships the loop into Linux CI. Same shape as `-r` over symlinked dirs, which this file
+  already states per binary.
 - **And do not read the artefact early.** A live output file is a **buffer**: short,
   truncated and complete are the same bytes, so *"it produced nothing"* and *"it has not
   got there yet"* are indistinguishable. Field-reported: a gate task's short log was
@@ -239,6 +245,33 @@ The failure mode is what makes this expensive: the callee reports a **usage erro
 calling it. `for x in "a b"; do cmd $x; done` and `${var:+--flag $var}` are where it
 bites hardest. Same family: `$?` after a pipeline is the **last** stage's status —
 `${pipestatus[1]}` in zsh, `${PIPESTATUS[0]}` in bash (rules/02 §4).
+
+**The status-discarding pipe is usually in the scaffolding, not the payload.** `cmd | tail`,
+`cmd | head`, `cmd | grep -q` are typed to shorten output or make a decision; the exit status
+is collateral, and nobody audits collateral. **The mechanical tell is `&&` after a pipeline** —
+if anything is chained onto a piped command, the chain is running on the *formatter's* status:
+
+```console
+$ (exit 1) | tail -1; echo "status=$?"
+status=0
+$ (exit 1) | tail -1 && echo "this runs"
+this runs
+```
+
+Field-reported twice in one session, an hour apart, in separately composed commands:
+`make ci 2>&1 | tail -10 && git push origin main` pushed while the gate was **red**, and the
+push triggered a second concurrent gate run that collided with the first over a shared test
+binary (`Text file busy`). The visible symptom was a conformance test failing to observe an
+event it had caused — indistinguishable from a product race, in a suite that already carried
+four undiagnosed intermittent failures. **The tell that it was the harness and not the product
+was duration: 1599s against ~757s for identical code minutes earlier.**
+
+**Commands you write to *manage* the work get the same scrutiny as commands you write to *do*
+it.** Wait loops, output formatting, status chaining and cleanup are where a shell trap
+survives an otherwise careful session — not because the rules are unknown, but because the
+reflex fires on *"am I about to believe this result?"*, and scaffolding never feels like a
+result. A `pgrep` waiter and a `| tail &&` chain both passed unexamined in one session by an
+operator who had read both rules that morning. Graded as one observation with two instances.
 
 **A consumer at the end of a pipe usually succeeds on empty input, and its output looks
 like a real answer.** `pipefail` fixes the *status*; this is about the **value you keep**.
@@ -354,6 +387,15 @@ curl -H $auth_header ...     # header with space splits into garbage args
 
 ## Audit checklist
 
+- [ ] **Is anything chained onto a pipeline with `&&`?** (§3) The chain runs on the
+      *formatter's* exit status, not the work's — `make ci | tail -10 && git push` pushes
+      while the gate is red. Audit the scaffolding, not just the payload: `| tail`, `| head`,
+      `| grep -q`, wait loops and cleanup are typed to manage the work, so the
+      "am I about to believe this?" reflex never fires on them. Grep the shape:
+      `grep -nE '\|[^|]+&&' ` over scripts and CI run blocks.
+- [ ] **Does any `pgrep -f` waiter match the watcher's own argv?** (§3) It never exits — **on
+      Linux**. Measured as a differential: procps-ng never exits, BSD/macOS exits immediately,
+      so a green local test on macOS proves nothing about the Linux CI that will run it.
 - [ ] **Any `var=$(producer | consumer)` whose emptiness is then tested?** Hashers, `wc`,
       `sort`, `base64` and `jq -r //empty` succeed on empty stdin and return a well-formed value,
       so `[ -n "$var" ]` passes on a failed producer. Test the producer separately — and check each
