@@ -140,8 +140,8 @@ Run from repo root; verify each hit manually.
 
 ```bash
 # Lockfile discipline
-ls Gemfile.lock 2>/dev/null || echo "NO LOCKFILE (app = MEDIUM)"
-grep -c "CHECKSUMS" Gemfile.lock 2>/dev/null || echo "no checksums section (LOW, easy win)"
+ls Gemfile.lock 2>/dev/null | grep -q . || echo "NO LOCKFILE (app = MEDIUM)"
+grep -c "CHECKSUMS" Gemfile.lock || echo "no checksums section (LOW, easy win)"   # stderr kept: no file != no match
 grep -rn "BUNDLE_FROZEN\|--frozen\|frozen.*true" .github/ .gitlab-ci.yml Gemfile 2>/dev/null | head -3
 
 # Mutable git sources — MEDIUM

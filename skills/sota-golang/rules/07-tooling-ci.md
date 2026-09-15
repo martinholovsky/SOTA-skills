@@ -254,7 +254,7 @@ tool (             // 1.24+: tool dependencies, versioned & sum-verified
 ```bash
 # CI gates present? Inspect workflow files
 grep -rnE '(go test|race|govulncheck|golangci-lint|staticcheck|gofumpt)' .github/workflows/ Makefile* 2>/dev/null
-grep -rn 'test -race' .github/ Makefile* 2>/dev/null || echo 'NO RACE IN CI — HIGH'
+grep -rn 'test -race' . --include='*.yml' --include='*.yaml' --include='Makefile*' || echo 'NO RACE IN CI — HIGH'
 
 # Lint config exists and is curated (not empty, not enable-all)
 ls .golangci.yml .golangci.yaml 2>/dev/null

@@ -693,7 +693,7 @@ probe 30b "the list grew and the count stayed behind" \
 # The probe would then trip 24b as well as 30, and a catch for the wrong reason is the
 # FALSE PASS this harness refuses. Verified while writing this: the same one-liner run
 # by hand in the real checkout turned both symlinks into files
-# (`sota-shell-scripting` rules/06 §3 — an ad-hoc command destroying what it inspects).
+# (`sota-shell-scripting` rules/08 §3 — an ad-hoc command destroying what it inspects).
 ( cd "$WT" && git ls-files -s '*.md' | awk '$1=="100644"{print $4}' \
     | tr '\n' '\0' | xargs -0 perl -pi -e 's/^<!-- count-check:.*-->\n//' )
 probe 30c "every count-check marker deleted — the gate must not report ok" \
@@ -729,6 +729,15 @@ probe_committed 31 "a new rule section ships with no ADOPTION-LOG entry" \
 # touch no ledger, and require the gate to stay green AND to say it exempted it.
 # Copying rather than moving is deliberate — a real move renumbers sections and would
 # trip check 18 on the references, making this a catch for the wrong reason.
+# Baseline FIRST: the surrounding branch may already relocate headings (a rules-file
+# split does exactly that), so the expected count is baseline+1, never a literal. This
+# is the FIFTH instance of a probe pinned to the surrounding branch rather than to its
+# own mutation -- the previous fix replaced "no new sections" with the literal "1
+# relocated", which held only until a branch relocated something of its own.
+run_gate
+relo_before=$(printf '%s\n' "$GATE_OUT" | sed -n 's/.*, \([0-9]\+\) relocated.*/\1/p' | head -1)
+[ -n "$relo_before" ] || relo_before=0
+
 ( cd "$WT" && python3 -c "
 import pathlib, re
 src = pathlib.Path('skills/sota-rust/rules/06-performance.md')
@@ -743,7 +752,7 @@ wt_commit "probe: a heading that already exists in rules/ appears in another fil
 # commit added one while the exemption worked perfectly. Fourth instance this session of a
 # probe pinned to the surrounding branch rather than its own mutation (rules/12 1d).
 probe_committed_green 31b "a relocated heading is not new guidance — the gate must stay green" \
-  "1 relocated"
+  "$((relo_before + 1)) relocated"
 
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh

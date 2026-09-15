@@ -67,7 +67,7 @@ lives in `sota-testing`.
 ```bash
 # TFM/SDK pinned? settings centralized?
 grep -rnE '<TargetFramework' **/*.csproj 2>/dev/null | head
-ls global.json Directory.Build.props Directory.Packages.props 2>/dev/null || echo "no central build config"
+ls global.json Directory.Build.props Directory.Packages.props 2>/dev/null | grep -q . || echo "no central build config"
 
 # Nullable + warnings-as-errors + analyzers?
 grep -rniE 'TreatWarningsAsErrors|<Nullable>|EnableNETAnalyzers|AnalysisLevel' **/*.csproj Directory.Build.props 2>/dev/null \

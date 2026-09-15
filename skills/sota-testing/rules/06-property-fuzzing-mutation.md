@@ -198,7 +198,7 @@ hours):
   leaves a permissive no-op on disk in a security control — precisely the defect the
   probe exists to detect. Field-reported 2026-09-10: the shell died mid-sequence with
   `fork failed: resource temporarily unavailable` (an exhausted process table,
-  `sota-shell-scripting` rules/06 §4), and the mutated file stayed mutated. **The
+  `sota-shell-scripting` rules/08 §4), and the mutated file stayed mutated. **The
   repair path was blocked too** — `git checkout --` was denied by policy and `cp` from
   a backup also needed a fork — so the edit had to be undone with a file-edit tool,
   which needs no process. Assume the cheap repair may be unavailable.

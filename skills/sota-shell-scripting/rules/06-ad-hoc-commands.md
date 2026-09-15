@@ -4,7 +4,8 @@ Scope: the commands nobody commits — a sweep, a probe, a one-liner pasted from
 checklist, a quick container copy. They are unlinted, unreviewed, and run against the
 system under test, so when they go wrong they produce a false finding **about the
 product**, or damage the thing they were inspecting. Split out of `rules/01` at v1.38.0 —
-its zsh, sweep and blast-radius sections became §1, §2 and §3 here. Quoting itself stays in
+its zsh, sweep and blast-radius sections became §1, §2 and §3 here. The blast-radius and
+process-table sections moved on to `rules/08` at v1.43.0, keeping their numbers. Quoting itself stays in
 `rules/01` §3, which this file assumes you have read.
 
 ## 1. zsh is not bash — the deviations that bite *pasted* commands
@@ -210,6 +211,28 @@ rules/15 §2.1, sixth
 bullet). Writing this trap into a personal rules file did **not** prevent the second
 occurrence; noticing the implausible output did.
 
+**A second tell, mechanical rather than judgemental.** `-rn` parses as `-r n`, so the
+`-n` you typed is eaten as the replacement template and never applied. The output comes
+back as `path:content` when you asked for `path:LINE:content` — **if you typed `-n` and
+the line numbers are missing, the content has been rewritten.** Verified on ripgrep 15.2.0,
+both arms, exit 0 each time:
+
+```console
+$ rg -n  'Missing .*gate for' .     $ rg -rn 'Missing .*gate for' .
+./b.py:1:beta Missing auth gate...  ./b.py:beta n deletion
+./a.py:1:alpha Missing auth gate... ./a.py:alpha n deletion
+```
+
+This matters because the plausibility tell is weakest exactly where you need it: an
+unfamiliar tree, a language you do not write, a rewritten line that is merely odd rather
+than absurd. The line-number test needs no knowledge of the file at all.
+
+**Three independent reporters have now hit this with the rule installed, two with it
+loaded in context.** That is the calibration: the lever is not stating it more loudly.
+A reporter who had written the trap into their own rules file hit it again three hours
+later; another read this section's one-line index entry and hit it fourteen tool calls
+afterwards. Prefer a mechanical tell you can apply to output you already have.
+
 ## 2b. An empty command substitution removes the filter rather than matching nothing
 
 §2 and §2a distrust a suspiciously *empty* result. This points the same discipline at an
@@ -244,114 +267,82 @@ git log --author="${author}" --oneline
 The tell is §2a's: the **result was implausible** before it was wrong — treat one far
 *larger* than expected exactly as a clean zero (`sota-code-security` rules/15 §2.1).
 
-## 3. An ad-hoc command can destroy the thing it was checking
+## 2c. A search pattern that begins with `-` is parsed as a flag
 
-The failure modes above are about *wrong answers*. A verification command can also do
-**damage**, and nothing about "I am only checking something" bounds its blast radius.
-Field-reported: a command whose entire purpose was to check a claim copied a 40 GB build
-directory into a container on a host already at 99% full, which corrupted the container
-runtime's storage and cost ~64 GB of images. The check was never run.
+§2a rewrites your output and §2b widens your filter. This one **destroys the query** and
+hands back a clean zero. A pattern is *data*, but the tool sees argv:
 
-Before an ad-hoc command that **writes at scale** — a container copy or build, an image
-export, a bulk archive, a recursive `cp`/`rsync`, anything with `--output` on a big tree:
-
-- **Look at headroom first** (`df -h` on the target filesystem, and on the runtime's own
-  storage, which is often a different one). A verification step is not exempt from capacity
-  planning; it is just unbudgeted.
-- **Prefer read-only**: mount the source `:ro`, and send output **outside the source tree**
-  to a path you chose. A check that cannot write to its subject cannot corrupt it.
-- **Bound it before running it** — `du -sh` the thing you are about to copy. "It is only the
-  repo" is a guess about size, and the number is one command away.
-- **Build output is the trap, and it is never in your mental model of the repo.** `target/`,
-  `node_modules/`, `.venv/`, `vendor/`, `build/` and `dist/` reach tens of gigabytes and are
-  exactly what a naive recursive copy takes. Exclude them, or better, do not copy: point the
-  tool's output elsewhere (`CARGO_TARGET_DIR=/build`, `--target-dir`, `-o`) and leave the
-  source read-only.
-- **A full disk is not a clean failure.** On a VM-backed container runtime the guest's disk is
-  a sparse file on the host's, so exhausting the host surfaces *inside* the VM as I/O errors
-  and can corrupt the filesystem and image store — minutes later, in an unrelated command,
-  long after the one that caused it.
-- Cleanup on a shared runtime is not housekeeping: see `sota-devsecops` rules/07 §7.7.
-
-## 4. The loop you left running exhausts the process table — and takes cleanup with it
-
-§3 is about a command that writes too much. This is the same idea aimed at a resource
-nobody budgets: **processes**. It is the more dangerous of the two, because running out
-of disk still lets you run `rm`, and running out of processes does not let you run
-anything at all.
-
-**The shape.** A wait loop, backgrounded, with no bound on its iterations:
-
-```bash
-# WRONG — nothing here ever stops, and each tick spawns
-while ! pgrep -f "run-eval.py" >/dev/null; do sleep 60; done &
+```console
+$ rg -c -F '- [ ]' . 2>/dev/null ; echo "exit=$?"
+exit=2                                  # no output at all
+$ rg -c -F '- [ ]' . 2>&1 | head -1
+rg: unrecognized flag -                 # the evidence 2>/dev/null destroyed
+$ rg -c -F -e '- [ ]' .
+./t.md:2                                # the real answer
 ```
 
-Every iteration forks (`pgrep`, `grep`, `ps`, the subshells in a `$(…)`), and a
-backgrounded loop outlives the command that started it — often the whole session. §1's
-`pgrep -f` self-match is what makes it never stop: the loop's own argv contains the
-pattern, so it matches itself forever. §1 frames that cost as *a burned timeout*. The
-larger cost is that it never stops **spawning**.
+Field-reported: a tracker sweep reported **zero** unchecked boxes against a real **65**,
+and the session nearly opened by announcing an empty backlog.
 
-**How big it gets, measured — and read the attribution note.** At failure on the machine
-below, `ps -A | wc -l` read **11,463** against a `kern.maxprocperuid` of **11,136**: the
-per-user table was full, with **≈10,700 `/bin/sh`** in it.
+**Put the pattern after `-e`, or the argument list after `--`, whenever the pattern is
+data** — not only when you notice it starts with a dash. You will not always notice: the
+same trap bit a `printf` while its victim was building the fixture to demonstrate it.
 
-**Correction (2026-09-10): those figures are the *signature*, not evidence for this
-section's cause.** When this section was first written the numbers were attributed to
-backgrounded wait loops, which had indeed been running that hour — but parentage had not
-been checked, and the section said so. It was checked afterwards, and the `/bin/sh`
-processes belonged to a **self-recursive `PATH` shim** (`rules/03` §3a); deleting one file
-took the count to **691**. The tell was in the evidence all along: a `zsh` wait loop spawns
-`zsh`, `sleep` and `pgrep` — never **10,700 `/bin/sh`**.
+**And it is shell-dependent, which is why "I tested it" is not an answer.** The identical
+command is correct in one shell and broken in another — measured on one machine:
 
-**Two unrelated causes produce this identical signature** — an unbounded backgrounded loop
-(this section) and a wrapper that shadows a command it calls (`rules/03` §3a) — and **only a
-parentage check distinguishes them**: `ps -axo pid=,ppid=,command=`, grouped by ppid.
-Sequential PIDs with one child each is a recursion; many children under one parent is a pool
-or a loop. Fixing the wrong one leaves the machine exactly as exposed, so **do not pick
-between them from whichever you happen to have been doing that hour.**
+| | `printf "- [ ] box\n"` | exit |
+|---|---|---|
+| bash 5.3 builtin | `invalid option` | 2 |
+| zsh 5.9 builtin | prints correctly | 0 |
+| `/usr/bin/printf` (BSD) | `illegal option` | 1 |
+| `/bin/sh` | `invalid option` | 2 |
 
-The mechanism and the remedies below are unchanged and independently sound: an unbounded
-backgrounded wait *is* a real way to fill the process table, whether or not it was this
-incident's cause.
+A contributor who checks this in zsh concludes the trap is imaginary. Three different
+exit codes across four implementations, and only one of them is success.
 
-**Recognise the signature, because it is not the one you expect:**
+**The combination never to write** is a `-`-leading pattern **+** `2>/dev/null` **+**
+`$?` read after a pipe: the first manufactures the wrong answer, the second hides the
+reason, and the third certifies it (`rules/01` §3 for why `$?` after a pipeline is the
+last stage's status).
 
-- It does **not** degrade gradually. It hits a ceiling and *every* tool fails at once.
-- The error is `fork failed: resource temporarily unavailable`, and it appears in the
-  agent's shell and the operator's interactive shell **simultaneously** — which reads
-  like the machine broke, not like a script did something.
-- **The cleanup tools are inside the blast radius.** `ps -o ppid`, `killall`, `pkill`,
-  even `echo` in a fresh shell, all need to fork. So does the diagnosis: you cannot
-  learn which process leaked because listing parents requires a process.
-- `kill` being a **shell builtin does not rescue you** if each command runs in a newly
-  spawned shell — that spawn is the thing failing, before any builtin executes.
-- What is left is a GUI process manager (already running, kills internally) or a
-  reboot. Plan for that before you background anything.
+## 2d. `cmd 2>/dev/null || echo "missing X"` reports your broken sweep as their defect
 
-**So:**
+The `||` arm is meant to mean *"the pattern was absent."* It fires on **every** non-zero
+exit, and `2>/dev/null` has already destroyed the evidence of which one. `grep` exits `1`
+for no-match and `2` for an unreadable or missing path — `||` cannot tell them apart:
 
-- **Do not poll work that something else already reports.** Where a harness, CI or job
-  runner notifies on completion, waiting for that notification costs nothing; a polling
-  loop costs a process per tick and buys the same answer later.
-- **Never background an unbounded wait.** Before writing any repeating loop, ask what
-  makes it *stop* — and if the answer is a `pgrep` on a pattern the loop's own argv
-  contains, the answer is **nothing** (§1).
-- **Bound the iterations, not just the sleep**: `for i in $(seq 1 60)`, never a bare
-  `while true` / `until`. A loop that gives up is a loop that cannot leak forever.
-- **Keep it in the foreground** so it dies with the command that started it, and **watch
-  an artifact rather than a process** — `until grep -q DONE run.log` forks less and
-  cannot match itself.
-- **Check headroom for the resource you are about to spend**, exactly as §3 asks for
-  `df -h`: `ps -A | wc -l` against `sysctl -n kern.maxprocperuid` (macOS) or `ulimit -u`.
-  A loop that ticks every 60s for a day is 1,440 spawns *if each one exits* — and a
-  leaked-process count that climbs while you watch it is the cheapest early warning
-  there is, because at the ceiling you can no longer run the command that would tell you.
+```console
+# one path in the list does not exist
+$ grep -rnE 'Werror|/WX' CMakeLists.txt cmake/ Makefile_absent 2>/dev/null || echo "no -Werror"
+CMakeLists.txt:1:add_compile_options(-Werror)
+no -Werror          <- it printed the match AND the verdict that contradicts it
 
-Blast radius is not only disk (§3). It is whatever finite resource the command consumes
-without anyone counting — and the process table is the one whose exhaustion disables the
-tools you would use to recover.
+$ grep -rnE 'Werror' CMakeLists.txt Makefile_absent >/dev/null 2>&1 ; echo $?   # 2, path missing
+$ grep -rnE 'ZZZ'    CMakeLists.txt                 >/dev/null 2>&1 ; echo $?   # 1, truly absent
+```
+
+The failure is **directional**: it manufactures findings rather than hiding them, so an
+auditor sees plausible output and files it against someone's codebase. In zsh an unquoted
+`Makefile*` that matches nothing raises NOMATCH and aborts the whole command, so neither
+the `grep` nor the `|| echo` runs and the item silently yields nothing at all (§1).
+
+**Never suppress stderr on a sweep whose *absence* you intend to report.** Branch on the
+exit code you actually mean, and print the captured stderr beside the verdict:
+
+```sh
+err=$(grep -rnE "$pat" $paths 2>&1 >/dev/null); rc=$?
+case $rc in
+  0) echo "FOUND" ;;
+  1) echo "ABSENT" ;;
+  *) echo "SWEEP FAILED (rc=$rc): $err" ;;   # never the same branch as ABSENT
+esac
+```
+
+This library shipped the broken form in **11 files** of its own audit checklists until
+v1.43.0 — found by a reporter, not by any gate. A checklist line is a control, and a
+control that cannot distinguish "clean" from "did not run" is the silent-control-failure
+shape (`sota-code-security` rules/10).
 
 ## 5. The listing tool answered your question about *one page*
 
@@ -458,6 +449,17 @@ default". Each of the three is the correct answer to a question nobody asked.
       false absence. `grep -rn 'rg -r' ` your own scripts and scrollback before quoting a
       surprising search result
 
+- [ ] **Is any search pattern passed as a bare argument when it could begin with `-`?** (§2c)
+      It is parsed as a flag, the error goes to stderr, and you get a clean zero. Use `-e
+      PATTERN` or `--` whenever the pattern is *data*. The unforgivable combination is
+      `-`-leading pattern + `2>/dev/null` + `$?` after a pipe. Shell-dependent: the same
+      `printf` succeeds in zsh and fails in bash, so one green run proves nothing.
+- [ ] **Does any check report an absence through `|| echo` with stderr suppressed?** (§2d)
+      `cmd 2>/dev/null || echo "missing X"` fires on *every* non-zero exit — grep's `2`
+      (unreadable path) is indistinguishable from `1` (absent) once stderr is gone, and it
+      manufactures findings about someone else's code. Branch on the exit code and print the
+      captured stderr. Sweep your own checklists for the shape: `grep -rn '2>/dev/null ||'`.
+
 - [ ] **Sweeps: is the searcher's traversal and exclusion set stated with the count?** (§2)
       `-r` skips symlinked dirs met in traversal and `-R` follows **only on ugrep/GNU** —
       on BSD grep (macOS `/usr/bin/grep`) neither does; `rg` skips gitignored and hidden by
@@ -473,18 +475,6 @@ default". Each of the three is the correct answer to a question nobody asked.
       not *blocks freed*, *not backing a running container* is not *reclaimable*. Nothing is
       truncated and the exit status is 0, so the only tell is a value that cannot belong to
       the subject; read one full record before trusting the aggregate.
-- [ ] **Ad-hoc commands that write at scale** (§3): headroom checked (`df -h` on the target
-      *and* the runtime's own filesystem), source mounted read-only, output outside the source
-      tree, size bounded with `du -sh` before the copy, and build output (`target/`,
-      `node_modules/`, `.venv/`, `vendor/`) excluded or redirected rather than copied.
-- [ ] **Backgrounded wait loops** (§4): does any `&`-ed loop lack a bound on its
-      iterations, and does anything make it stop other than a `pgrep` that matches the
-      loop's own argv? Grep for the shape — `grep -nE '(while|until).*(true|pgrep|ps ).*&\s*$'`
-      — and for polling of work a harness already reports. Headroom for the resource
-      being spent is checked (`ps -A | wc -l` vs `ulimit -u`), not just `df -h`. If the
-      table is already full, **establish parentage before assigning blame** — a
-      self-recursive wrapper (`rules/03` §3a) produces the same signature, and only
-      `ps -axo pid=,ppid=,command=` tells the two apart.
 - [ ] **Counts taken from a listing tool** (§5): does the command carry a `--limit`/
       `per_page`/`--max-items`, or rely on the tool's **default** page (30 for `gh`, 100 for
       most REST)? A total must come from a server-side count (`total_count`) or a paginated

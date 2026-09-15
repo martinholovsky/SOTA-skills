@@ -134,7 +134,7 @@ whether you find out safely (all measured 2026-09-10 on macOS):
 
 | namespace | recursion bound | what you see |
 |---|---|---|
-| **`PATH` shims** — a dir of fake/wrapping executables placed first on `PATH` (test harnesses, compiler caches, CI interceptors) | **none of any kind** | each level is a new **process**: the per-user process table fills, and every tool fails at once, *including the ones you need to diagnose it* (`rules/06` §4) |
+| **`PATH` shims** — a dir of fake/wrapping executables placed first on `PATH` (test harnesses, compiler caches, CI interceptors) | **none of any kind** | each level is a new **process**: the per-user process table fills, and every tool fails at once, *including the ones you need to diagnose it* (`rules/08` §4) |
 | **shell function overrides** — `curl() { … curl "$@"; }` in a profile; the inner `curl` resolves to the function again | bash: `FUNCNEST`, **unset by default** → `f(){ f; }; f` exits **139 (SIGSEGV)**. zsh: `FUNCNEST` defaults to **700** → clean `maximum nested function level reached`, exit 1 | one process, dying as a crash or an error |
 | **aliases and `LD_PRELOAD`** | none | same shape as the shim: a new process per level |
 

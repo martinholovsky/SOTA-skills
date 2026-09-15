@@ -138,7 +138,7 @@ grep -n '"scripts"' composer.json               # review script contents
 grep -n 'allow-plugins' composer.json           # explicit allowlist?
 
 # Static analysis presence + ratchet health
-ls phpstan*.neon* psalm*.xml* 2>/dev/null || echo "NO STATIC ANALYSIS CONFIG (MEDIUM)"
+ls phpstan*.neon* psalm*.xml* 2>/dev/null | grep -q . || echo "NO STATIC ANALYSIS CONFIG (MEDIUM)"
 grep -n 'level' phpstan*.neon* 2>/dev/null
 wc -l phpstan-baseline.neon 2>/dev/null         # compare against last audit: shrinking?
 git log --oneline -5 -- phpstan-baseline.neon 2>/dev/null
