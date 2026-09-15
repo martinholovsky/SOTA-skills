@@ -122,7 +122,10 @@ had it."*
 three-dot `git diff main...pr`, which for `diff` is defined as exactly that.
 Forge UIs ("Files changed") and `gh pr diff` show the merge-base diff, so a
 local two-dot result that disagrees with the web view is *your* query, not a
-stale page. Measured 2026-09-15 on a branch four commits behind its base, which
+stale page — verified 2026-09-15 on a public PR **42 commits behind its base**,
+where `gh pr diff`, the `pulls/:n/files` endpoint behind "Files changed", and a
+three-dot compare all returned the same **11** files while the two-dot direction
+returned **33**. Measured the same day on a branch four commits behind its base, which
 is the trap at full strength: two-dot reported **15 files and 742 deletions**,
 three-dot and the forge's compare API both reported **zero files changed**. The
 branch had changed nothing.

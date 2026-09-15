@@ -3382,8 +3382,13 @@ after the fork renders as a deletion on the branch's side.
 control arm: two-dot shows `-lib = "2.0.1"`, merge-base and three-dot show only the real
 change. Then the discriminating case, which the report did not run — a branch four commits
 behind its base: local two-dot reported **15 files, 742 deletions**; three-dot and GitHub's
-compare API (which backs "Files changed" and `gh pr diff`) both reported **zero files
-changed**. The branch had changed nothing.
+compare API both reported **zero files changed**. The branch had changed nothing.
+
+That left one claim resting on inference — that `gh pr diff` and the "Files changed" tab use
+merge-base semantics — so it was measured directly rather than shipped: on a public PR **42
+commits behind its base**, `gh pr diff --name-only`, the `pulls/:n/files` endpoint and a
+three-dot compare each returned **11** files while the opposite direction returned **33**. The
+rule states what was measured, not what the endpoint is documented to do.
 
 **Coverage claim checked against the library, not the named file.** Positive control
 (`--replace`) returned 3 files, so the instrument worked. The report's terms (`two-dot`,
