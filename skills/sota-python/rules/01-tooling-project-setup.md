@@ -268,7 +268,7 @@ grep -n "requires-python" pyproject.toml
 grep -rln "match \|type [A-Z].* = \|def .*\[T" --include="*.py" src/ | head  # 3.12 syntax w/ old floor?
 
 # Layout
-ls src/ 2>/dev/null || echo "flat layout"                  # flat layout in a library [LOW]
+ls -d src/ 2>/dev/null | grep -q . || echo "flat layout"                  # flat layout in a library [LOW]
 find src -name py.typed | head -1                          # annotated lib without py.typed [MEDIUM]
 
 # Ruff coverage

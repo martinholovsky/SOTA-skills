@@ -693,7 +693,7 @@ probe 30b "the list grew and the count stayed behind" \
 # The probe would then trip 24b as well as 30, and a catch for the wrong reason is the
 # FALSE PASS this harness refuses. Verified while writing this: the same one-liner run
 # by hand in the real checkout turned both symlinks into files
-# (`sota-shell-scripting` rules/06 §3 — an ad-hoc command destroying what it inspects).
+# (`sota-shell-scripting` rules/08 §3 — an ad-hoc command destroying what it inspects).
 ( cd "$WT" && git ls-files -s '*.md' | awk '$1=="100644"{print $4}' \
     | tr '\n' '\0' | xargs -0 perl -pi -e 's/^<!-- count-check:.*-->\n//' )
 probe 30c "every count-check marker deleted — the gate must not report ok" \

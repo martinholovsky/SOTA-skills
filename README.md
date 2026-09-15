@@ -26,7 +26,7 @@ survives a long context instead of fading into it. That's why it beats a bigger 
 instead of becoming one. Native on Claude Code; works with Antigravity CLI, Codex, and any
 agent that reads `AGENTS.md`.
 
-Under the hood: **42 skills (314 files, ~70k lines)** of state-of-the-art 2026
+Under the hood: **42 skills (315 files, ~70k lines)** of state-of-the-art 2026
 practice, each **instruction** file under 500 lines so only the matching rules load —
 the cap applies to `skills/**` alone, never to README/CHANGELOG/`docs/` — every fast-moving
 claim web-verified against a primary source **as of the last full sweep** (the root
@@ -69,12 +69,24 @@ stack comes from your profile or the skills' defaults (naming one is optional):
 
 More install options: [Installation](#installation) · more prompts: [Using it](#using-it).
 
+**Three slash commands bracket a working session** — `scripts/install.sh` links them into
+`~/.claude/commands/`, so they work in **any** project, not just this one:
+
+| | When | What it does |
+|---|---|---|
+| **`/sota-resume`** | **start** of a session | Finds the open work — every tracker, checkbox and `TODO` marker, swept with a **controlled** search — classifies it (ready · needs a decision · deferred · not an item · **already done and never ticked off**), shows you the table, then executes what you agree to against the project's own CI. |
+| **`/sota-close`** | **end** of a session | The closure pass: **retract first**, record open items where the next session will trip over them, update what the session made false, **re-derive every number from its source**, say what is not done and blocked on whom, then commit the evidence. |
+| **`/sota-report`** | **end** of a session | Writes a gitignored field report on where the guidance failed, was absent, was wrong — or was right and did not fire. Prints a `gh issue create` line; it never posts anything itself. |
+
+They take free-text arguments (`/sota-close focus on the migration branch`). Full detail:
+[slash commands](#slash-commands).
+
 ## Contents
 
 - [Standards & practices baked in](#standards--practices-baked-in) · [What the audit hunts that a scanner can't](#what-the-audit-hunts-that-a-scanner-cant) · [How the numbers are kept honest](#how-the-numbers-are-kept-honest)
 - [Skills](#skills) · [Coverage & non-goals](#coverage--non-goals)
 - [Installation](#installation) · [Always-on routing](#always-on-routing-recommended) · [Updating](#updating)
-- [Using it](#using-it) — [slash commands](#slash-commands)
+- [Using it](#using-it) — [slash commands](#slash-commands) (`/sota-resume` · `/sota-close` · `/sota-report`)
 - [Optional setup & integrations](#optional-setup--integrations) — [badge](#badge), [gates](#enforcing-the-gates), [other agents](#other-ai-agents-codex-copilot-gemini-), [status line](#status-line-optional), [plugin extras](#optional-extras-for-plugin-users)
 - [Structure](#structure) · [How it works](#how-it-works) · [Conventions](#conventions)
 - [Found a gap? Tell us](#found-a-gap-tell-us--its-the-only-signal-we-get) · [Contributing](#contributing) · [License](#license)

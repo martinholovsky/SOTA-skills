@@ -232,6 +232,32 @@ A stage that got dramatically faster while reporting the same result is a
 regression signal, not a win, until you can say what work was removed. Full class
 and the evidence bar: `sota-code-security` rules/11 §2.1.
 
+**And the inverse: a duration that is suspiciously *slow* indicts the measurement before
+it indicts the subject.** "Suspiciously fast" impugns the work; "suspiciously slow" usually
+impugns your harness — and it is the more dangerous direction, because *"the suite got 6x
+slower"* is a far more exciting finding than *"I measured it wrong"*, which is exactly why
+it gets written down first.
+
+Before recording a slowdown against a recorded baseline, establish that the two runs are
+**comparable**: scheduling priority, machine load, and whether the run was backgrounded at
+all. **A job launched into the background may be niced by whatever launched it** — measured
+on one agent harness, backgrounded jobs ran at `nice 5` while the foreground shell in the
+same invocation was `nice 0`, under a load average of 5.9–8.6. An unprivileged user cannot
+renice back down, so the measurement cannot be rescued in place; it has to be re-run in the
+foreground.
+
+```sh
+ps -o pid=,nice=,stat= -p "$PID"     # SN / RN in the state column is the tell
+```
+
+Field-reported: a test lane at 2% after twelve minutes extrapolated to a 6x regression
+against a ~38-minute baseline, and the false claim was written to a durable project-memory
+file before anyone checked the process. The baseline had been measured in the foreground.
+**A wall-clock number from a backgrounded run is not comparable to one from a foreground
+run** — and note the asymmetry with §3 item 5 ("pin the environment"): that rule is framed
+for a deliberate benchmark with a harness, and this case is someone running a test suite
+and glancing at the clock, which is where it does not think to apply.
+
 ## 10. Performance regression testing in CI
 
 Performance regressions ship silently; functional tests pass at any speed.
@@ -260,6 +286,12 @@ job, never compare absolute times across runner generations.
 
 ## Audit checklist
 
+- [ ] **Any recorded slowdown compared like-for-like before it was believed?** (§9a) A
+      duration that is suspiciously *slow* indicts the measurement first — scheduling
+      priority, machine load, foreground vs backgrounded (`ps -o nice=,stat=`; a
+      backgrounded job may carry a nice penalty you cannot undo as a normal user). A
+      regression written down from a non-comparable run is a false finding about the
+      subject, and it reads as a much better finding than the truth.
 - [ ] Is there any profiling/tracing data, or is all perf discussion folklore?
       No data on a "slow" system → first finding: add RED metrics + profiler.
 - [ ] Are SLOs/budgets defined in percentiles? Any dashboards showing averages

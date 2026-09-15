@@ -58,7 +58,7 @@ lives in `sota-testing`.
 
 ```bash
 # Wrapper pinned? LTS targeted?
-ls mvnw gradlew 2>/dev/null || echo "no build wrapper (version not pinned)"
+ls mvnw gradlew 2>/dev/null | grep -q . || echo "no build wrapper (version not pinned)"
 grep -rnE 'release|sourceCompatibility|targetCompatibility|languageVersion' pom.xml build.gradle* 2>/dev/null
 
 # Dependency CVE scan + locking in CI?
@@ -69,7 +69,7 @@ grep -rnE 'version ranges|\[.*,.*\)|latest\.release|\+' build.gradle* 2>/dev/nul
 
 # Static analysis configured?
 grep -rniE 'errorprone|nullaway|spotbugs|findsecbugs|pmd|detekt|ktlint|spotless' \
-  pom.xml build.gradle* .github/ 2>/dev/null || echo "no static analysis configured"
+  . --include='pom.xml' --include='build.gradle*' --include='*.yml' || echo "no static analysis configured"
 
 # Coverage gate + JUnit5/Testcontainers?
 grep -rniE 'jacoco|junit-jupiter|testcontainers' pom.xml build.gradle* 2>/dev/null

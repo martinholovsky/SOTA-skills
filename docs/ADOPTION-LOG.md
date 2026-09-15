@@ -3482,3 +3482,108 @@ session on one repo with unusually good gates; recorded as observational, not as
 bypassing CI (correctly judged a property of one repo's workflow config). Reviewing this
 section is worth the time — on past reports it is where the reporter's judgement is
 best-calibrated, and here it needed no overturning.
+
+## 2026-09-15 — Two more field reports: the library's own checklists were manufacturing findings
+
+Two independent reports at v1.42.1 — one from a static-analysis pipeline, one from a systems
+project. Four proposals, all four adopted, every falsifiable claim reproduced here first. The
+sharpest is **finding 3**: the defect was in *our* text, shipped in nine skills, and no gate
+could see it.
+
+### 1. `rg -rn` silently drops the line numbers you asked for — **adopted**
+
+**Third independent occurrence**, all with `rules/06` §2a installed and two with it loaded in
+context. §2a's existing tell is *"the content was implausible"*, which requires judging
+unfamiliar code — weakest exactly when you need it. The reporter proposed a mechanical
+replacement and it reproduced here on the same ripgrep 15.2.0: `-rn` parses as `-r n`, so the
+`-n` is eaten as the replacement template and the output comes back `path:content` instead of
+`path:LINE:content`. **If you typed `-n` and the line numbers are missing, the content has
+been rewritten** — checkable with no knowledge of the file.
+
+The calibration line matters as much as the tell: three reporters, rule installed each time.
+The lever is not stating it louder. Recorded in §2a so the next proposal to "make it bolder"
+has something to read.
+
+### 2. "Suspiciously slow" indicts the measurement — **adopted**
+
+`sota-performance` rules/01 §9a covered *"is any stage suspiciously **fast**?"* — one
+direction only. The reporter extrapolated a 6x test-suite regression from a backgrounded run
+and **wrote it to a durable memory file** before discovering the cause: backgrounded jobs on
+that harness carry `nice 5` while the foreground shell is `nice 0`, under load 5.9–8.6.
+
+**Coverage verified with a control**, and with vocabulary the report did not try: `nice` hits
+2 files, both false positives (*"nice backstop"*, *"Nice — your first deploy"*); `renice`,
+`scheduling priority`, `noisy neighbo` → 0. §9a read in full rather than grepped — genuinely
+one-directional. One correction to the report's own numbers: its control `suspiciously fast`
+is **1** file exactly, not 2 (`suspiciously` in any form is 4); the conclusion is unaffected.
+
+**The asymmetry worth keeping:** §3 item 5 already says "pin the environment", and it does
+not reach this case because it is framed for a deliberate benchmark. This reporter was
+running a suite and glancing at a clock.
+
+### 3. Our own audit checklists shipped a finding-manufacturing idiom — **adopted, 13 sites fixed**
+
+**The library was the source of the defect.** `cmd … 2>/dev/null || echo "missing X"` was
+shipped in the audit checklists of **nine skills**. The `||` arm is meant to mean *"the
+pattern was absent"*; it fires on **every** non-zero exit, and `2>/dev/null` has already
+destroyed the evidence of which. Reproduced with a control arm:
+
+```
+grep -rnE 'Werror|/WX' CMakeLists.txt cmake/ Makefile_absent 2>/dev/null || echo "no -Werror"
+  CMakeLists.txt:1:add_compile_options(-Werror)      <- the match
+  no -Werror                                          <- and the verdict contradicting it
+exit 2 = unreadable/missing path · exit 1 = genuinely absent · `||` cannot tell them apart
+```
+
+`ls a b c 2>/dev/null || echo "missing"` has the identical bug and was also shipped — `ls`
+prints what it found *and* exits non-zero. **The failure is directional: it manufactures
+findings about someone else's codebase**, which an auditor then files.
+
+**Fixed at every site** (13 lines across `sota-c-cpp`, `sota-dotnet`, `sota-golang`,
+`sota-jvm`, `sota-php`, `sota-python`, `sota-ruby`): `grep` sweeps now use a single root with
+`--include` globs, so no missing-path branch exists; `ls` checks pipe to `grep -q .`, so the
+verdict fires only when nothing was found. Both replacements verified in **both** directions.
+Three surviving `2>/dev/null ||` instances are legitimate and were left: a documented
+best-effort write to `/dev/termination-log`, and a `pip-audit` fallback chain.
+
+**Why no gate caught it:** a checklist line is a control, and nothing in this repo executes
+the shell inside a fenced block. That is a genuine gap, recorded rather than papered over.
+
+### 4. A search pattern beginning with `-` is parsed as a flag — **adopted as §2c**
+
+`rg -c -F '- [ ]' . 2>/dev/null` reported nothing where there were 65 matches; the pattern was
+consumed as a flag, `rg: unrecognized flag -` went to the suppressed stderr, and `$?` after a
+pipeline reported the last stage. Reproduced exactly (exit 2, empty output; `-e` returns the
+real answer).
+
+**Strengthened beyond the report with a differential it did not run.** The report's `printf`
+instance did not reproduce on first attempt, which looked like a refutation. It is
+**shell-dependent**: bash 5.3 builtin `invalid option` exit 2 · zsh 5.9 builtin **succeeds**
+exit 0 · `/usr/bin/printf` `illegal option` exit 1 · `/bin/sh` exit 2. A contributor who
+tests this in zsh concludes the trap is imaginary — which is why the rule now carries the
+table rather than a single example.
+
+### Structural consequence: `rules/06` was at exactly 500 lines
+
+All four proposals target it, and it had **zero** headroom. Split at the seam its *citations*
+name, not its headings: the §2 family carries **25** citations (§2 15, §2b 6, §2a 4) against
+§5's 10 and §3+§4's 8 — so §3 and §4 (blast radius, process-table exhaustion) moved to a new
+**`rules/08-ad-hoc-side-effects.md`**, keeping their section numbers. Coherent on theme too:
+`rules/06` is now *"the check returned the wrong answer"*, `rules/08` is *"the check did
+damage"*. Invariant 18 caught **7** references broken by the move, including three inside the
+moved file itself and one in `check-negative-controls.sh`; invariants 10 and 15 caught the
+missing index and library-map rows. Historical CHANGELOG and ADOPTION-LOG citations were left
+alone — they are records, correct when written.
+
+### Considered by the reporters and NOT proposed — all upheld
+
+A `sota-resume` / `sota-devsecops` scope conflict (the router's narrower-wins rule already
+resolves it; the residue — that the tie-break is phrased for two *domain* skills while this
+was *process* vs domain — is one case and does not license a rule change). `sota-resume`'s
+"ALREADY DONE is usually the largest class" being false on one unusually disciplined repo
+("usually", n=1). And making the `rg -r` warning louder, which §2a's own history refutes.
+
+**One success recorded with no change proposed:** a reporter ran `type grep` at session start
+and found it shimmed to `ugrep --ignore-files`, which honours `.gitignore` — every gitignored
+path would have been silently outside a 5,663-file inventory. The positive-control rule paid
+for itself; worth knowing which mechanisms do.

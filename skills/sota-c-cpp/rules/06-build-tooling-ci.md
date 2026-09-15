@@ -86,11 +86,11 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
 
 ```bash
 # Warnings-as-errors and standard pinned?
-grep -rnE 'Werror|/WX' CMakeLists.txt cmake/ Makefile* 2>/dev/null || echo "no -Werror"
+grep -rnE 'Werror|/WX' . --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' || echo "no -Werror"
 grep -rnE 'CXX_STANDARD|cxx_std_|std=c\+\+' CMakeLists.txt 2>/dev/null
 
 # clang-tidy / clang-format / cppcheck configs present?
-ls .clang-tidy .clang-format 2>/dev/null || echo "missing lint/format config"
+ls .clang-tidy .clang-format 2>/dev/null | grep -q . || echo "missing lint/format config"
 test -f compile_commands.json || grep -rn EXPORT_COMPILE_COMMANDS CMakeLists.txt
 
 # Sanitizer & fuzzing jobs in CI?
@@ -98,7 +98,7 @@ grep -rniE 'fsanitize|asan|ubsan|tsan|libfuzzer|oss-fuzz|scan-build' .github/ ci
   || echo "no sanitizer/fuzz job found — HIGH for input-parsing code"
 
 # Dependency manager + lockfile?
-ls vcpkg.json conan.lock conanfile.* 2>/dev/null || echo "no pinned dependency manifest/lockfile"
+ls vcpkg.json conan.lock conanfile.* 2>/dev/null | grep -q . || echo "no pinned dependency manifest/lockfile"
 grep -rni 'FetchContent\|ExternalProject\|git submodule' CMakeLists.txt .gitmodules 2>/dev/null  # verify pinning
 
 # Global (non-target) CMake anti-patterns — LOW/MEDIUM

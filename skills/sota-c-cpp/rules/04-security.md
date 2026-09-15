@@ -135,7 +135,7 @@ grep -rn 'memcmp' --include='*.cpp' . | grep -iE 'mac|hmac|token|secret|sig|dige
 
 # Hardening flags present? — HIGH if missing on network/setuid binary
 grep -rnE '_FORTIFY_SOURCE|stack-protector|relro|cf-protection|_GLIBCXX_ASSERTIONS|fPIE' \
-  CMakeLists.txt cmake/ Makefile* 2>/dev/null || echo "no hardening flags found"
+  . --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' || echo "no hardening flags found"
 
 # Static + safety-standard analysis
 clang-tidy --checks='cert-*,bugprone-*,clang-analyzer-security.*' <files>

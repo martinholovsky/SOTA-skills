@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — our own audit checklists were manufacturing findings about other people's code
+
+Nine skills shipped `cmd … 2>/dev/null || echo "missing X"` in their audit checklists. The
+`||` arm is meant to mean *"the pattern was absent"*. It fires on **every** non-zero exit,
+and `2>/dev/null` has already destroyed the evidence of which one — `grep` exits `1` for
+no-match and `2` for an unreadable path. In one arm the line printed the match it had just
+found **and** "missing X" on the next line. `ls a b c 2>/dev/null || echo …` has the same
+bug. The failure is *directional*: it invents findings rather than hiding them, so an
+auditor sees plausible output and files it.
+
+**13 sites fixed** across `sota-c-cpp`, `sota-dotnet`, `sota-golang`, `sota-jvm`, `sota-php`,
+`sota-python` and `sota-ruby` — `grep` sweeps now use one root with `--include` globs so no
+missing-path branch exists, and `ls` checks pipe to `grep -q .` so the verdict fires only on
+a genuine absence. Both replacements verified in both directions. Reported from the field;
+no gate in this repo could see it, because nothing executes the shell inside a fenced block.
+
+### Added
+
+- **`sota-shell-scripting` rules/06 §2c — a search pattern beginning with `-` is a flag.**
+  `rg -c -F '- [ ]' . 2>/dev/null` reported nothing against a real 65 matches: pattern eaten
+  as a flag, `unrecognized flag` on the suppressed stderr, `$?` taken after a pipe. Use
+  `-e PATTERN` or `--` whenever the pattern is data. Carries a measured shell differential —
+  the same `printf` **succeeds in zsh 5.9 and fails in bash 5.3**, with three different exit
+  codes across four implementations, so one green run proves nothing.
+- **`sota-shell-scripting` rules/06 §2d** — the checklist idiom above, written up as a rule
+  with the exit-code branch that replaces it.
+- **`sota-shell-scripting` rules/06 §2a — a mechanical tell for `rg -rn`.** `-rn` parses as
+  `-r n`, so the `-n` is eaten and output returns as `path:content` rather than
+  `path:LINE:content`. **Typed `-n` and the line numbers are missing? The content was
+  rewritten.** The prior tell required judging unfamiliar code. Third independent occurrence
+  with the rule installed — recorded, because the lever is not stating it more loudly.
+- **`sota-performance` rules/01 §9a — a suspiciously *slow* duration indicts the
+  measurement.** §9a covered only "suspiciously fast". A reporter extrapolated a 6x suite
+  regression from a backgrounded run and wrote it to a durable memory file; backgrounded jobs
+  on that harness carry `nice 5` against the foreground shell's `nice 0`. Ships with its
+  audit half.
+- **`sota-shell-scripting` rules/08-ad-hoc-side-effects.md** — `rules/06` hit its 500-line
+  cap, so §3 (blast radius) and §4 (process-table exhaustion) moved to a new file, **keeping
+  their section numbers**. Seam chosen by citation weight, not headings: the §2 family
+  carries 25 citations against §3+§4's 8. `rules/06` is now "the check returned the wrong
+  answer"; `rules/08` is "the check did damage".
+
+### Changed
+
+- **README surfaces the three slash commands at the top.** `/sota-resume`, `/sota-close` and
+  `/sota-report` were documented at line 1016 of 1401 — past where most readers stop. They
+  are the parts used most often, so they now appear with the install instructions and are
+  named in the table of contents.
+
+
 ### Added — a git range that invents security regressions, and a scanner that reads what git hides
 
 Intake from a session *applying* the library on a private security product. Every falsifiable

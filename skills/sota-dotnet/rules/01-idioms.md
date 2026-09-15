@@ -69,7 +69,7 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
 # Null-forgiving overuse — MEDIUM (defeats NRT)
 grep -rnE '[A-Za-z0-9_)\]]\!\.' --include='*.cs' . | grep -v '!=' | head    # x!.Member
 # Is NRT even enabled?
-grep -rniE '<Nullable>\s*enable' *.csproj Directory.Build.props 2>/dev/null || echo "NRT not enabled — HIGH"
+grep -rniE '<Nullable>\s*enable' . --include='*.csproj' --include='Directory.Build.props' || echo "NRT not enabled — HIGH"
 
 # Swallowed exceptions / throw ex — MEDIUM
 grep -rnzoE 'catch\s*\([^)]*\)\s*\{\s*\}' --include='*.cs' .

@@ -289,7 +289,7 @@ found nothing** — the second reading being a conclusion about the target
 - **On a machine you share with other work, prune is a coordination problem.** The blast
   radius is every project on the host, and nothing in the command says so.
 - The capacity side of the same coin — *check headroom before a command that writes at
-  scale* — is `sota-shell-scripting` rules/06 §3.
+  scale* — is `sota-shell-scripting` rules/08 §3.
 
 ## Audit checklist
 
