@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`sota-shell-scripting` rules/01 §3 — scaffolding gets the same scrutiny as the payload.**
+  A piped exit status let a red gate run a `git push`: `make ci | tail -10 && git push` chains
+  on the *formatter's* status. **The mechanical tell is `&&` after a pipeline.** The push
+  started a second concurrent gate run whose collision looked exactly like a product race —
+  the tell it was the harness was duration, 1599s vs ~757s for identical code. Wait loops,
+  output formatting and cleanup are where a trap survives a careful session, because the
+  "am I about to believe this?" reflex never fires on a command that merely orchestrates.
+  Ships with its audit half.
+- **`sota-shell-scripting` rules/01 — the `pgrep -f` self-match rule was stated universally
+  and is platform-scoped** (a fix, kept here beside its sibling). Measured as a differential:
+  the identical waiter **never exits on procps-ng 4.0.6 (Linux)** and **exits immediately on
+  BSD `pgrep` (macOS)**, with a positive control confirming macOS `pgrep -f` does find a
+  separate carrier. A macOS operator testing the trap concludes it is imaginary and ships the
+  loop into Linux CI. Now stated per platform, like `-r` over symlinked dirs.
+
 - **`sota-shell-scripting` rules/06 §2 — `rg --no-ignore` is a decoy.** The table already
   showed `rg` defaults finding 1 of 4 and the full flag set finding 4 of 4; it did not say
   that **`--no-ignore` alone leaves every hidden directory excluded** while searching

@@ -3626,3 +3626,60 @@ same day (§3/§4 → `rules/08`). The §2 family is the file's centre of gravit
 growing because it is where search traps land. **The next addition needs a second split, not
 a squeeze**, and the seam should again be chosen by citation weight rather than heading
 tidiness.
+
+## 2026-09-16 — Findings 5 & 6: scaffolding is a distinct blind spot, and one of our own rules was platform-blind
+
+Source: two further findings appended to the 2026-09-15 static-analysis report. Both are
+**"rule in context, broken anyway"** — the category rejected as a text change earlier the same
+day. These are adopted, and the difference is the reason.
+
+### Why these are adopted where the earlier one was rejected
+
+The EDR report's finding 2 proposed a sentence about *prose vs commands* and its own author
+graded it medium — it restated principle 0 in a file already loaded and unapplied. **These two
+carry a mechanical tell instead of an exhortation**: *"the tell is `&&` after a pipeline"* is
+checkable against text you already have, and greppable. That is the same property that made
+the `rg -rn` line-number tell worth adopting while "state it louder" was not.
+
+They also **narrow the hypothesis usefully**, as the reporter argues: the reflex fires on
+commands *whose output you will believe*, and not on commands that merely **orchestrate**.
+That is testable and more actionable than "prose vs commands". Graded, as the reporter asks,
+as **one observation with two instances**, not two findings.
+
+### 5. A piped exit status let a red gate run a push — **adopted**
+
+`make ci 2>&1 | tail -10 && git push origin main`. The gate failed; the push ran, because a
+pipeline's status is the last stage's. Reproduced: `(exit 1) | tail -1; echo $?` → `0`, and
+`&&` fires. The push then started a *second* concurrent gate run that collided with the first
+over a shared test binary (`Text file busy`), and the visible symptom was a kernel conformance
+test failing to observe an event it had caused — **indistinguishable from a product race**, in
+a suite already carrying four undiagnosed intermittent failures. The tell was **duration:
+1599s against ~757s for identical code minutes earlier.** Had the reporter re-run to green and
+moved on, a fifth phantom flake would have joined the four.
+
+Landed in `rules/01` §3 beside the existing `PIPESTATUS` material — which stated the mechanism
+correctly and was, by the reporter's account, read that same turn.
+
+### 6. A `pgrep -f` waiter that matched its own argv — **adopted, and it corrected OUR rule**
+
+The reporter's waiter never exited. `rules/01:145` already said so. **But our rule stated it
+universally, and it is platform-scoped** — found while reproducing, not from the report:
+
+```
+Linux, procps-ng 4.0.6 : loop Terminated by timeout  -> self-matched, never exits
+macOS, BSD pgrep       : loop exited after 0 iterations -> no self-match
+```
+
+Positive control on macOS confirms `pgrep -f` *does* find a separate carrier process, so the
+macOS negative is about the **watcher**, not a broken instrument. **A macOS operator who tests
+this concludes the trap is imaginary and ships the loop into Linux CI** — the same shape as
+the `printf` leading-dash differential adopted hours earlier, and as `-r` over symlinked dirs,
+which this file already states per binary. The rule now names both.
+
+**Method note worth keeping.** The first three reproduction attempts were **confounded by my
+own orphaned process** — a malformed `cat >` waiting on stdin, whose argv carried the pattern
+and made a healthy loop look like it self-matched. `ps -axo pid=,ppid=,command=` localised it
+(*parentage before blame*, `rules/03` §3a). The confound was the entire effect: after killing
+the orphan, the same arm exited cleanly. **A reproduction that confirms the rule you expect is
+exactly when to check what else is in the process table** — and the orphan was itself
+scaffolding, which is the finding.
