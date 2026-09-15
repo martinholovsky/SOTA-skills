@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`sota-shell-scripting` rules/06 §2 — `rg --no-ignore` is a decoy.** The table already
+  showed `rg` defaults finding 1 of 4 and the full flag set finding 4 of 4; it did not say
+  that **`--no-ignore` alone leaves every hidden directory excluded** while searching
+  strictly *more* files (measured: 1042 vs 404 on one repo, same matches missed). The failure
+  is confidence-increasing — the run that misses the matches looks like the thorough one.
+  `rg PAT .` never enters `.claude/`, `.github/` or `.githooks/`; only `--hidden` does.
+
+
 ### Fixed — our own audit checklists were manufacturing findings about other people's code
 
 Nine skills shipped `cmd … 2>/dev/null || echo "missing X"` in their audit checklists. The

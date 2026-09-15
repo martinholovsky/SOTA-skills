@@ -151,7 +151,15 @@ behind a symlinked dir):
 |---|---|---|
 | `rg` (defaults) | **1 of 4** | gitignored, hidden, and symlinked-dir contents |
 | `grep -R` (see below) | 3 of 4 | the gitignored file |
+| `rg --no-ignore` alone | **2 of 4** | **still every hidden dir** — and it searched *more* files |
 | `rg --hidden --no-ignore --follow` | **4 of 4** | — |
+
+**`--no-ignore` is the trap inside the trap.** It is the flag that *sounds* like "stop
+excluding things", so it is the one reached for — and it does not touch hidden directories
+at all. Because it searches strictly more files than the default (measured on one repo:
+**1042 vs 404**), the run reads as the more thorough one while missing the same matches. An
+agent-rules tree is exactly what this hides: `rg PAT .` never enters `.claude/`, `.github/`
+or `.githooks/`. Only `--hidden` reaches them (404 → 576 files, 2 → 4 matching files).
 
 **And check what your `grep` actually is** (`type grep`): agent and IDE environments
 routinely alias it. In one measured case it was a shell *function* running `ugrep -G
