@@ -5,6 +5,41 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added — a git range that invents security regressions, and a scanner that reads what git hides
+
+Intake from a session *applying* the library on a private security product. Every falsifiable
+claim reproduced here before a verdict; reasoning and the two corrections in
+[docs/ADOPTION-LOG.md](docs/ADOPTION-LOG.md).
+
+- **`sota-docs-workflow` rules/03 §3a — `git diff main..pr` is not what the PR changes.**
+  Two-dot **diff** compares tips, so everything `main` gained after the fork renders as a
+  deletion on the branch's side. The error is *directional*: it only ever invents regressions,
+  and in a lockfile an invented regression reads as a supply-chain attack. Field-reported: a
+  reviewer concluded a PR downgraded a TLS library past the previous day's advisory fix, wrote
+  it into a commit message and drafted a PR comment; the PR did not touch that dependency.
+  Measured here on a branch four commits behind its base — two-dot reported **15 files and 742
+  deletions**, three-dot and the forge's compare API reported **zero**. The rule carries the
+  reason the habit survives, which the report did not state: `git log main..feature` is
+  *correct* and `git diff main..feature` is not, so the same token means different things per
+  subcommand. Ships with its audit half.
+- **`sota-secrets-management` rules/04 — a working-tree scan is not limited to tracked files.**
+  `gitleaks dir` and directory scanners generally do not read `.gitignore`, so an untracked
+  artifact invisible to `git status` is still in scope for the gate. Verified on gitleaks
+  8.30.1 with a positive control, *after* a first attempt using the canonical AWS documentation
+  key returned "no leaks found" and would have refuted a true finding. When a secret gate fails
+  while history is clean, triage **by file** before reading any diff.
+
+### Fixed
+
+- **`/sota-report` told you to write the report into the target repo's root**, justifying it
+  with a fact about *this* repo (`.local.md` is gitignored here). Followed literally during a
+  gate run it dirties the tree and feeds an unreviewed file to a secret scanner — which is what
+  happened. It now says to write outside the tree unless both the ignore status
+  (`git check-ignore -v`, which also reads `.git/info/exclude`) and the absence of a
+  directory scanner have been checked.
+
 ## [1.42.1] - 2026-09-14
 
 **Front door checked:** PowerShell · pwsh

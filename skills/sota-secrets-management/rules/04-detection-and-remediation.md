@@ -75,6 +75,17 @@ at non-git surfaces: S3 buckets, container images, CI logs exports — secrets l
 - Scanners miss: secrets in *binary* files, novel formats without rules, encrypted blobs with
   weak keys, and anything entropy-shaped below thresholds. The manual grep pass in SKILL.md
   AUDIT mode exists for this reason.
+- **A working-tree scan is not limited to tracked files, and does not read `.gitignore`.**
+  `gitleaks dir` (and directory scanners generally) treat the path as a plain directory, so an
+  untracked artifact — a log, an editor backup, a crash dump, a tool's scratch output — is in
+  scope for the gate while being **invisible to `git status`**. Verified 2026-09-15 on gitleaks
+  8.30.1 with both arms: the same planted credential in a *visible* untracked file and in a
+  **gitignored** one both reported `leaks found: 1`, with `git status --porcelain` empty
+  throughout. **When a secret gate fails while the history pass is clean, list the findings by
+  file before you read any diff** — the answer is often a file that was never yours, and the
+  first instinct, suspecting the commit, burns the most time. Field-reported: 22 hits, all
+  `generic-api-key` false positives on `key=value` shapes in one daemon log dump, left in the
+  tree by tooling.
 
 ### Adopting scanning on a legacy repo (baseline workflow)
 
@@ -284,6 +295,10 @@ inventory that does not name the transcript path = **Medium**.
       dev setup; custom rules cover internal token prefixes.
 - [ ] Blocking CI secret-scan on every PR; scheduled full-history scan; built images scanned;
       scanner output redacted.
+- [ ] **A red working-tree scan against a clean history pass was triaged by file, not by
+      diff.** Directory scanners do not honour `.gitignore`, so an untracked artifact
+      `git status` never shows is still in scope — confirm whether the finding is even in a
+      file the repo owns before treating it as a leak, and before treating it as noise.
 - [ ] **The agent-session transcript directory is on the secret inventory (§7)** — scanned
       with scope decided in advance and `--redact` on, and every repo tool that reads it
       treated as a secret-processing tool (`rules/03` §2.1). Severity calibrated on the

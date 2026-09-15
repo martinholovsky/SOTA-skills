@@ -31,10 +31,22 @@ is one `git log` on the file you cite.
 
 ## Write the file, don't print it
 
-`FIELD-REPORT-<PROJECT>-<YYYY-MM-DD>.local.md` in the repo root. The `.local.md` suffix is
-gitignored in SOTA-skills because that repo is public and yours may not be. Genericise as you
-write: no company names, internal service names, private hostnames, or customer data.
-Products appear only as neutral examples ("a Postgres instance", "an eBPF sensor").
+`FIELD-REPORT-<PROJECT>-<YYYY-MM-DD>.local.md`. Genericise as you write: no company names,
+internal service names, private hostnames, or customer data. Products appear only as neutral
+examples ("a Postgres instance", "an eBPF sensor").
+
+**Where to put it: outside the target repo's working tree, unless you have checked two things
+there.** `.local.md` is gitignored *in SOTA-skills*; that is a fact about that repo, and it
+does not travel with this instruction. In the repo you are reporting on, check (1) that the
+pattern is actually ignored — `git check-ignore -v <file>` answers it, exit 0 naming the rule
+that matched and exit 1 with no output when nothing does, and it reads `.git/info/exclude` as
+well as `.gitignore`, which is where agent scaffolding usually lives — and (2) that no
+**working-directory** scanner runs over the tree, because a directory scanner does not read
+`.gitignore` at all (`sota-secrets-management` rules/04, verified on gitleaks 8.30.1). Writing
+the report into the root of a repo mid-session otherwise dirties the tree and feeds an
+unreviewed file to a secret gate, which then fails on your own report. When in doubt write it
+outside and move it in afterwards — that is what a field session actually did on 2026-09-15,
+after this instruction's literal form cost it a red gate.
 
 ## What is worth reporting, in descending order of value
 
