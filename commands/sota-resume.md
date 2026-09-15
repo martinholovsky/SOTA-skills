@@ -46,7 +46,7 @@ report the **denominator** — how many files you actually scanned — beside th
 | Class | What it means |
 |---|---|
 | **READY** | Unambiguous, self-contained, finishable now. |
-| **NEEDS A DECISION** | Depends on a choice only the operator can make — naming, scope, priority, cost, anything security-, privacy- or money-relevant. State the question and your recommendation. |
+| **NEEDS A DECISION** | Depends on a choice only the operator can make — naming, scope, priority, cost, anything security-, privacy- or money-relevant. State the question, **two or three options**, and **your recommendation with its reasoning** — rule 5's form, which applies here too. A bare recommendation is not a decision handed over. |
 | **DELIBERATELY DEFERRED** | The doc gives a reason to wait. Leave it, and say what the reason was. If the deferral names **no revisit trigger**, that is a finding: a deferral with no condition attached is a silent drop wearing a tracker row. |
 | **NOT AN ITEM** | Template checkboxes, worked examples, a `- [ ]` inside a code fence (it renders as sample output and no one was ever meant to tick it), completed rows still phrased as open. Say so rather than "doing" them. |
 | **ALREADY DONE** | Implemented, tracker never updated. The fix is a **doc correction, not code**. |
@@ -67,6 +67,12 @@ READY **and** small — where small means: inside one file or one obvious unit, 
 schema, dependency or security posture touched, and verification already exists for it. Say
 you are taking the exception and which bar it met, then carry on. An exception invoked without
 naming its bar swallows the rule.
+
+**Hand every NEEDS A DECISION item over in rule 5's form**: the question, two or three options
+with what each costs and forecloses, and your recommendation **with its reasoning**. Batch them
+into this one interruption rather than asking serially — that is what this stop is for. Without
+the alternatives beside it the operator is ratifying a choice you already made rather than
+making one, and a recommendation whose reasoning went unsaid is the one that gets re-argued.
 
 ## 4. Execute — one at a time, smallest blast radius first
 
