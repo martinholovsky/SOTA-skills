@@ -3361,3 +3361,124 @@ ask where the defect *lives*, not just whether it is mechanically checkable.
 
 **Landed:** `sota/SKILL.md` principle 0 and the routing-gap paragraph ·
 `sota-shell-scripting/rules/01` audit checklist
+
+## 2026-09-15 — EDR field report: a git range that invents security regressions, a scanner that reads what git hides
+
+Source: a field report from a session *applying* the library on a private security product
+(kernel sensor + backend, Rust) at v1.42.1. Three findings plus a "what worked" census. Every
+falsifiable claim was reproduced here before a verdict — two survived, one was adopted with a
+correction to the report's own reasoning, and one proposal was rejected on the library's own
+stated grounds.
+
+### 1. `git diff main..pr` is not what the PR changes — **adopted**
+
+**What the source says.** Triaging a bot-opened dependency PR, the reporter ran
+`git diff main..pr-branch` on a lockfile, read a TLS library as being downgraded past the
+previous day's advisory fix, wrote that into a commit message and drafted a PR comment. The
+PR did not touch that dependency. `A..B` compares two *tips*, so everything `main` gained
+after the fork renders as a deletion on the branch's side.
+
+**Verified here, not taken on trust.** Reproduced in an isolated repo (git 2.55.0) with the
+control arm: two-dot shows `-lib = "2.0.1"`, merge-base and three-dot show only the real
+change. Then the discriminating case, which the report did not run — a branch four commits
+behind its base: local two-dot reported **15 files, 742 deletions**; three-dot and GitHub's
+compare API both reported **zero files changed**. The branch had changed nothing.
+
+That left one claim resting on inference — that `gh pr diff` and the "Files changed" tab use
+merge-base semantics — so it was measured directly rather than shipped: on a public PR **42
+commits behind its base**, `gh pr diff --name-only`, the `pulls/:n/files` endpoint and a
+three-dot compare each returned **11** files while the opposite direction returned **33**. The
+rule states what was measured, not what the endpoint is documented to do.
+
+**Coverage claim checked against the library, not the named file.** Positive control
+(`--replace`) returned 3 files, so the instrument worked. The report's terms (`two-dot`,
+`three-dot`, `tip-to-tip`, `what a PR changes`) return 0; vocabulary it did not try
+(`origin/main..`, `diff baseline`) returns hits that were **opened rather than grepped** —
+`sota-secrets-management` rules/04:48 uses `--log-opts="origin/main.."` and
+`sota-shell-scripting` rules/01:190 uses three-dot `rev-list`, neither about diff semantics.
+The owner file had **zero** `git diff` guidance in 275 lines. Genuine gap.
+
+**Added beyond the proposal: why the habit survives.** The same token means different things
+to different subcommands — `git log main..feature` is *correct* (commits in feature, not
+main) while `git diff main..feature` compares tips. Verified both. The report proposed only
+"two-dot is wrong", which contradicts the reader's working experience of `log` and
+`rev-list`; without the asymmetry the rule reads as false and gets discarded. This is also
+why `origin/main..` appears *correctly* elsewhere in our own library as a log range.
+
+**Landed:** `sota-docs-workflow/rules/03` new **§3a**, plus the **audit half** — a checklist
+item asking which range produced any "removes/downgrades/reverts" claim. The audit half is
+the shape this library most often ships without.
+
+### 2. Prose bypasses validate-before-assert — **rejected as a text change; recorded as evidence**
+
+**What the source says.** Two false dependency claims minutes apart, both in explanatory
+prose rather than in a tool call, the second contradicting a table the reporter had printed
+themselves one paragraph earlier. Proposal: one sentence in `sota/SKILL.md` principle 0
+naming the prose case — *"the claims that escape validation are the ones that felt like
+narration."*
+
+**Verdict: rejected, and the reporter half-argued the rejection themselves** — they graded it
+*medium* confidence that the wording helps, noting it is "one more sentence in a file I had
+already loaded and did not apply." That is the whole case. Principles 0 and 7 already cover
+this, and principle 0 already names the mechanism the reporter identified (*"the moment after
+being corrected is the highest-risk moment in a session"*) — both failures landed in exactly
+that window. A rule that was **loaded and broken** is an adherence failure, not a coverage
+gap, and this library's own recorded anti-pattern is answering one with another copy of the
+text. The 2026-09-14 entry above rejected an identical shape for identical reasons.
+
+**The cost is not zero, which is the other half of the reasoning.** `sota/SKILL.md` is the
+only file loaded in *every* session; it sits at 470 of 500 lines, and its measured cost is
+tokens-per-load, not line count. Spending that budget on a sentence its own author doubts is
+the worst available trade.
+
+**The occurrences are accepted as evidence** and are not in doubt — both refuted by registry
+metadata fetched in-session. Treat the two as **one correlated observation** (same session,
+same topic, minutes apart), as the report itself asks.
+
+### 3. A working-tree secret scan does not honour `.gitignore` — **adopted with a correction**
+
+**What the source says.** A gate went red on secret scanning: history pass clean over 328
+commits, working-directory pass 22 hits, all in one untracked **gitignored** log dump left in
+the repo root by tooling, all false positives on `key=value` shapes, with `git status` clean
+throughout. `gitleaks dir` treats the path as a plain directory.
+
+**Verified — and the first attempt refuted a true finding.** Planting the canonical AWS
+documentation key returned "no leaks found", because gitleaks allowlists it. With a positive
+control the result inverted: the same planted credential (`glpat-` shape) in a *visible*
+untracked file and in a **gitignored** one both returned `leaks found: 1`, `git status
+--porcelain` empty throughout, on gitleaks 8.30.1. An unverified absence would have thrown
+away a correct report — the failure mode `sota/SKILL.md` principle 3 exists for.
+
+**The correction.** The report states that in the target repo `*.local.md` "is not ignored".
+**False** — `git check-ignore -v` names `.git/info/exclude:10`, so it *is* ignored, via the
+mechanism agent scaffolding conventionally uses rather than the tracked `.gitignore`. The
+load-bearing half of the finding is untouched and is the half worth keeping: **ignore status
+is irrelevant, because a directory scanner never consults it.** The correction matters
+because the report's framing invites the wrong fix (add an ignore rule), which would not have
+prevented the red gate.
+
+**Landed:** `sota-secrets-management/rules/04` scanner hygiene + an audit-checklist item
+(triage a red working-tree scan **by file** before reading any diff — the reported session
+lost its first ten minutes suspecting the commit); and `commands/sota-report.md`, whose own
+instruction said to write the report into the repo root and justified it with a fact about
+**SOTA-skills**. That is a self-inflicted defect in our own tooling: the caveat "yours may
+not be" was already in the text and changed nothing about the instruction.
+
+### 4. "What worked" — **recorded, no change proposed**
+
+A 5–0 split: every code-level error was caught by a mechanical control (a derived-number test
+that caught a stale metric *and then* a hand-maintained enumeration the author did not know
+existed; a docs-contract test; `clippy -D warnings`; the secret gate; mutation probes that
+each reddened a *different* test). No prose-level error was caught by anything. Consistent
+with this library's own position that a control ending in an exit code is worth more than a
+paragraph — and it is the strongest available argument for the negative-control harness. One
+session on one repo with unusually good gates; recorded as observational, not as a lift.
+
+### Considered by the reporter and NOT proposed — reviewed, all three upheld
+
+`rg -E` is `--encoding` (correctly withheld: it fails **loudly** with a usage error, and
+`rules/06`'s value is that every entry is a *silent* failure); `str.replace` no-ops
+(correctly identified as already covered, and as a second instance of finding 2); bot PRs
+bypassing CI (correctly judged a property of one repo's workflow config). Reviewing this
+section is worth the time — on past reports it is where the reporter's judgement is
+best-calibrated, and here it needed no overturning.

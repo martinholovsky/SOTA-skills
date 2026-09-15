@@ -95,6 +95,52 @@ Out of scope: unfreezing flow cleanup → #901.
   author seems confident." If you didn't understand it, say so — that's a
   finding about the PR, usually.
 
+## §3a `git diff main..pr` is not what the PR changes
+
+Two-dot **diff** compares two *tips*. If the branch forked before `main` gained a
+commit, everything `main` gained since renders as a **deletion on the branch's
+side** — so the form nearly everyone types systematically *invents* regressions.
+It never hides one: the error is directional, always in the alarming direction.
+In a lockfile or a dependency manifest an invented regression reads as a
+supply-chain attack, which is exactly the finding a reviewer will escalate
+fastest and check least.
+
+**Why the habit survives: the same token means different things to different
+subcommands.** This is the trap, not carelessness —
+
+```
+git log  main..feature   # commits in feature, not in main   <- CORRECT
+git diff main..feature   # compare the two tips              <- NOT the PR's changes
+```
+
+`A..B` is right where people learn it (`log`, `rev-list`, and as a `--log-opts`
+range for a history scanner) and wrong in `diff`. Both succeed, both print
+well-formed output, and nothing distinguishes *"B removed this"* from *"B never
+had it."*
+
+**Use the merge base**: `git diff $(git merge-base main pr)..pr`, or the
+three-dot `git diff main...pr`, which for `diff` is defined as exactly that.
+Forge UIs ("Files changed") and `gh pr diff` show the merge-base diff, so a
+local two-dot result that disagrees with the web view is *your* query, not a
+stale page — verified 2026-09-15 on a public PR **42 commits behind its base**,
+where `gh pr diff`, the `pulls/:n/files` endpoint behind "Files changed", and a
+three-dot compare all returned the same **11** files while the two-dot direction
+returned **33**. Measured the same day on a branch four commits behind its base, which
+is the trap at full strength: two-dot reported **15 files and 742 deletions**,
+three-dot and the forge's compare API both reported **zero files changed**. The
+branch had changed nothing.
+
+**Before reporting that a PR removes, downgrades or reverts anything, re-run it
+against the merge base.** The tell is that the "removed" content is something
+*you recently added to `main`* — which is also why this fires hardest right
+after a security bump, when the stakes of the false claim are highest. Field-
+reported 2026-09-15: a reviewer read a two-dot lockfile diff as a TLS library
+being downgraded past the previous day's advisory fix, wrote that into a commit
+message and drafted a PR comment saying so. The PR did not touch that dependency
+at all. Nothing caught it; a merge check surfaced the real diff by accident.
+Under §8 that claim was one step from being published under the maintainer's
+name.
+
 ## §4 Author behavior
 
 - **Self-review first.** Read your own diff in the review UI before requesting
@@ -262,6 +308,14 @@ claim that turns out to be false still burns the credibility.
       inference**, with untested parts named, the thread checked for a duplicate,
       the claim restated from tool output rather than your own summary, and the
       final text approved by the person whose account sends it (§8)?
+
+- [ ] **Any claim that a PR removes, downgrades or reverts something — re-run
+      against the merge base before it is reported** (§3a). The audit question is
+      not "is the finding alarming" but "which range produced it": a two-dot
+      `git diff main..pr` renders everything `main` gained since the fork as a
+      deletion on the PR's side. Check whether the "removed" content is something
+      recently added to `main`, and whether the local result matches the forge's
+      "Files changed" — a disagreement there means the query is wrong, not the page.
 
 - [ ] Median merged-PR size is small (≲400 substantive lines); large PRs are exceptions with stated justification or a reviewing map.
 - [ ] PRs are one logical change; refactors land separately from behavior changes.
