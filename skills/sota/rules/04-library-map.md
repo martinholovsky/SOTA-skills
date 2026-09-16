@@ -51,7 +51,8 @@ exist. `sota-code-security/rules/11` sat unlisted for two releases before 15 exi
 - **sota-devsecops/rules**: 01 pipeline security, 02 provenance & signing, 03 dependencies,
   04 build & containers, 05 analysis gates, 06 IaC & deployment, 07 runtime & ops,
   08 registry security, 09 gates that hold, 10 declared-but-not-reached (the inert-dependency
-  sweep, split out of 03 in v1.36.0)
+  sweep, split out of 03 in v1.36.0), 11 after the gate fails (durable verdicts, reproducing the
+  gate's invocation, preserving a red run's log — split out of 09 in v1.42.3)
 - **sota-databases/rules**: 01 choosing & modeling, 02 schema & migrations, 03 queries & indexes,
   04 transactions & concurrency, 05 reliability & scale, 06 security & compliance, 07 vector & AI,
   08 SurrealDB & multi-model

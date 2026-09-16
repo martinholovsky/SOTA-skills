@@ -3965,3 +3965,47 @@ gate is worth; the converse is that a **red** gate's log is truncated by the nex
 without archiving it the cause is unrecoverable. That is what made this incident attributable
 rather than a fifth phantom flake. Not actioned here — it belongs beside rules/09's existing
 material and deserves its own read of that file.
+
+## 2026-09-16 — The red gate's log, and a correction the reporter shipped after we did
+
+Two items from the same source: the 2026-09-16 EDR report's closing aside, and an update the
+static-analysis reporter made to a finding we had **already landed**.
+
+### 1. Re-running a failed check destroys the evidence — **adopted as `rules/11` §4a**
+
+`sota-devsecops` rules/09 §4 already required a gate that *classifies* its own failure to
+publish that verdict durably, because the executor is reaped. **This is the harder case: the
+gate did not know why it failed.** The line that explained the incident —
+`cp: cannot create regular file '/tmp/<bin>': Text file busy` — is incidental output nobody
+designed as a diagnostic, and the natural next action, running it again, is what deletes it.
+
+The visible symptom was a kernel conformance test failing to observe an event it had caused:
+**indistinguishable from a product race**, in a suite already tracking four unexplained
+intermittent failures. Re-running to green would have added a fifth. **A flake you cannot
+explain is often not a flake — it is an unread log**, and a "known intermittent" list built
+that way is a list of runs whose evidence was overwritten.
+
+**Structural:** `rules/09` was at **498 of 500**. Split at the seam the content itself draws —
+§1–§3 ask *does the gate fail, and does failing matter*; §4–§6 ask *can anyone find out why* —
+so the evidence half moved to **`rules/11-after-the-gate-fails.md`**, keeping section numbers.
+Invariant 18 caught **12** references broken by the move, including four inside the moved and
+remaining files themselves; invariants 10, 15 and 6 caught the missing index row, library-map
+row and file count. Every one was repointed and re-checked, not assumed.
+
+### 2. "6x slower" was **1.41x** — the reporter corrected it after we shipped
+
+`sota-performance` rules/01 §9a landed on 2026-09-15 carrying that report's figure: a lane at
+2% after twelve minutes extrapolated to a **6x** regression. **The run finished at 3190s =
+53m10s — 1.41x.** The reporter updated the report and, to their credit, says the update is the
+more useful half.
+
+**Two errors were stacked, and the one we shipped as the lesson was the smaller.** The nice
+penalty is real and worth ~41%. The 6x came from somewhere else entirely: **arithmetic on a
+progress percentage**. A test runner's early progress is dominated by collection and
+front-loaded heavy cases, so it is not linear and multiplying it out means nothing.
+
+§9a now leads with that, because it generalises further than the harness detail: *a percentage
+that moves non-uniformly is a progress indicator, not a clock, and the first 2% of a suite is
+its least representative slice.* Recorded as a **correction to shipped text**, not a new
+finding — and as evidence for keeping the "date every number to its source" discipline, since
+the number that needed revising was one we had already published.
