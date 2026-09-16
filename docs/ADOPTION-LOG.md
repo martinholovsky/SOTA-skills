@@ -3723,8 +3723,9 @@ a ```console transcript, and a gate that fired on that would make the section un
 
 Left open deliberately. "Is this claim correct" is semantic, and this ledger's own argument is
 that a fuzzy gate gets disabled and leaves you worse off. What *is* tractable is the executable
-slice: `scripts/check-claims.sh` runs **13** claims as real commands, and invariant 32 now
-covers one recurring shell idiom. **Invariant 31 gates the record, not the truth** — that
+slice: `scripts/check-claims.sh` runs the library's executable claims as real commands — run
+it for the count, which is deliberately written nowhere because it grows — and invariant 32 now
+covers one recurring shell idiom. **That slice was widened the same day** (see the next entry). **Invariant 31 gates the record, not the truth** — that
 remains the honest description, and the residual is named in `docs/WHY-COMPLETENESS-RESIDUAL.md`
 terms rather than papered over with a gate that cannot fail.
 
@@ -3751,3 +3752,42 @@ days.
 extracting YAML scalars reliably is more machinery than two blocks justify), and `evals/`
 Python is unlinted beyond the scorer tests. A row that says "thin, and here is why" is the
 point of the gate.
+
+## 2026-09-16 — Widening the executable-claims slice, and two defects it found in itself
+
+Follow-on to the gate audit: gap 3 ("nothing checks whether a rule is true") is not closeable
+in general, but its **executable slice** is, so the slice was widened from the filesystem and
+quoting traps it already covered to **every silently-false-answer claim landed on 2026-09-15/16**.
+
+**The selection rule**, stated so the set cannot quietly become "whatever was easy": a claim
+earns a test if getting it wrong **changes a conclusion someone acts on**. Not "interesting" —
+*load-bearing*. Nine added, each naming the rule it backs:
+
+| # | claim | backs | why it is load-bearing |
+|---|---|---|---|
+| 12 | `rg -rn` parses as `-r n`; content rewritten, line number gone | rules/06 §2a | fabricates false *content* |
+| 13 | a pattern beginning with `-` is parsed as a flag | rules/06 §2c | clean zero, reason on suppressed stderr |
+| 14 | `\|\| echo` fires on grep's exit 2 as well as 1 | rules/06 §2d | manufactures findings about other people's code |
+| 15 | `pgrep -f` self-match is **platform-split** | rules/01 §3 | a macOS-green test ships a never-exiting loop into Linux CI |
+| 16 | a pipeline's status is the last stage's | rules/01 §3 | let a red gate run `git push` |
+| 17 | leading-dash `printf`: bash rejects, zsh accepts | rules/06 §2c | a contributor testing in zsh concludes the trap is imaginary |
+| 18 | `--no-ignore` does not reach a hidden dir | rules/06 §2 | searches *more* files while missing the same matches |
+| 19 | two-dot `git diff` renders main's commits as deletions | `sota-docs-workflow` rules/03 §3a | invents a supply-chain regression |
+| 20 | a directory secret scan ignores `.gitignore` | `sota-secrets-management` rules/04 | a gate fires on a file `git status` never shows |
+
+**Two defects found by watching it fail, both in the new tests rather than the rules.**
+
+1. **Claim 16 failed on its first run** (`rc=1`, not 0) — and the rule was right. This harness
+   runs under `set -uo pipefail`, where a pipeline's status *is* the leftmost failing command's,
+   so the test measured **the harness's own options** rather than a default shell. It now runs
+   the arm in `bash -c`. The instrument was the confound, which is the same shape as the claim
+   it was testing (`sota-code-security` rules/15: your instrument is a control).
+2. **Claim 20 skipped on a failed positive control** — the fixture was `glpat-` plus twenty
+   `A`s, too entropy-poor for the rule to fire, so it was **inert**. The control caught it,
+   exactly as it caught the allowlisted AWS documentation key the day before. The fixture is
+   now assembled from `/dev/urandom` at runtime, which also keeps a credential-shaped literal
+   out of the repo.
+
+Both were caught because the harness was run and read, not because it was written carefully.
+**Measured after the fixes: 22 run, 0 skipped, 0 failed on macOS** — up from 11 run / 2 skipped.
+The count stays out of the prose deliberately; run the script.

@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — the executable-claims slice widened to every silently-false-answer trap
+
+`scripts/check-claims.sh` re-runs the claims a rule's advice actually rests on. It covered
+filesystem and quoting traps; it now covers **every claim landed on 2026-09-15/16 whose failure
+mode is a plausible wrong answer** — `rg -rn` rewriting content, a leading-dash pattern parsed
+as a flag, `|| echo` firing on grep's exit 2, the `pgrep -f` **platform split**, a pipeline's
+status being the last stage's, leading-dash `printf` differing between bash and zsh,
+`--no-ignore` not reaching hidden dirs, two-dot `git diff` inventing a regression, and a
+directory secret scan ignoring `.gitignore`. Each names the rule it backs, so a failure points
+at the sentence to re-measure.
+
+**The selection rule is stated in the ledger** so the set cannot drift into "whatever was
+easy": a claim earns a test if getting it wrong changes a conclusion someone acts on.
+
+**Watching it fail found two defects in the new tests themselves** — claim 16 reported the
+rule broken because the harness runs under `set -uo pipefail`, so it was measuring its own
+shell options rather than a default shell; and claim 20's fixture was entropy-poor enough to
+be inert, caught by its positive control. Measured after the fixes: **22 run, 0 skipped, 0
+failed** on macOS, up from 11 run / 2 skipped. The count is deliberately not written into prose.
+
+
 ### Added — two gates from auditing our own control surface
 
 - **Invariant 32 — no absence reported through a stderr-suppressed `|| echo`.**
