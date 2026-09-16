@@ -750,7 +750,39 @@ will catch a chart left stale — check them when you change a published number.
       invisible to every reader while looking done in the diff — which is
       exactly what happened to `how-it-works` in #173 (see
       [rendered assets](#rendered-assets) for the render command).
+- [ ] **Changed what a rule tells the model to *do*?** (an imperative, an exception, a
+      severity, a threshold, a new non-negotiable, the router's workflow) — add a treated
+      case and run the pre-vs-post ablation, then put the delta in the PR body. Every gate
+      here is structural: an external audit found **19 wrong statements with all 33
+      invariants green**. See [when a prose change warrants a run](#measuring-a-prose-change-against-the-previous-version).
 - [ ] `pre-commit` / `scripts/check-invariants.sh` passes.
+
+## Measuring a prose change against the previous version
+
+**The invariants cannot tell you whether a rule is *true* or whether your edit made it
+worse.** They check structure — caps, references, counts. On 2026-09-15 an external audit
+found nineteen wrong statements in a released version and every one of the 33 checks was
+green. That is by design: "is this claim correct" is semantic, and a fuzzy gate gets disabled
+([CONVENTIONS-LEDGER](docs/CONVENTIONS-LEDGER.md)).
+
+What is measurable is **behaviour against the same library before your change**.
+`evals/run-prompt-independence.py` builds a `pre` arm by reading your rules files at
+`--ablate-ref` (default `main`) with `git show <ref>:<path>` — the real prior text, not a
+mirror that drifts — and a `post` arm from your working tree, then renders each case at three
+pressure levels including one that argues *against* the rule.
+
+**It is per-change by design.** Its treated cases are one per rules file the originating
+branch changed, so it is not a standing net: if no case loads a file your branch touched, it
+**exits `FAIL`** rather than reporting a number. That message means you forgot to add a case,
+not that the change is safe.
+
+**This is a convention, not a gate**, and deliberately so: it needs an API key and costs
+about a hundred model calls, and a gate that cannot run in CI is one people disable. The
+judgement of when it is worth it — and the cases it does *not* cover, such as a correction
+that makes a false statement true, which you verify against the primary source instead — is
+in **[docs/PROSE-REGRESSION.md](docs/PROSE-REGRESSION.md)**. Read it before deciding to skip
+the run; deciding not to measure is a fine answer, and it should be a decision rather than an
+omission.
 
 ## Adding a whole new skill
 

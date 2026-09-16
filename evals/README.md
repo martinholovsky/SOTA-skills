@@ -431,6 +431,8 @@ python3 evals/run-silent-open.py --samples 5 --temp 1.0    # silent controls, op
 python3 evals/run-adjudication.py --samples 3 --temp 0.7   # audit precision (false-positive resistance)
 python3 evals/run-prompt-independence.py --selftest        # judge must separate 1.00/0.00 first
 python3 evals/run-prompt-independence.py                   # rule survival under a competing prompt
+#   ^ also the pre-vs-post ablation for YOUR branch: --ablate-ref REF reads the prior text
+#     with `git show`. WHEN a prose change is worth this: ../docs/PROSE-REGRESSION.md
 python3 evals/run-completeness.py --pad-rules 400          # ROADMAP 25: does competing guidance cost rule APPLICATION?
 python3 evals/run-completeness.py --pad-rules 400 --no-gate-arm  # ROADMAP 32: is it the GATE that absorbs the padding?
 ```
