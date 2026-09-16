@@ -250,9 +250,21 @@ foreground.
 ps -o pid=,nice=,stat= -p "$PID"     # SN / RN in the state column is the tell
 ```
 
-Field-reported: a test lane at 2% after twelve minutes extrapolated to a 6x regression
-against a ~38-minute baseline, and the false claim was written to a durable project-memory
-file before anyone checked the process. The baseline had been measured in the foreground.
+Field-reported, and **corrected by the reporter when the run finished — the correction is the
+more useful half**. A test lane sitting at 2% after twelve minutes was extrapolated to a **6x**
+regression against a ~38-minute baseline, and that false claim was written to a durable
+project-memory file before anyone checked the process. The lane actually finished in 3190s =
+53m10s: **1.41x, not 6x.** Two errors were stacked, and the bigger one was not the nice
+penalty:
+
+1. **Arithmetic on a progress percentage is not a measurement.** A test runner's early
+   progress is dominated by collection and front-loaded heavy cases, so it is **not linear**
+   and multiplying it out means nothing. This produced the 6x.
+2. The run *was* also genuinely niced — a real effect worth the remaining ~41%.
+
+**So check the shape of your instrument before you extrapolate from it**: a percentage that
+moves non-uniformly is a progress *indicator*, not a clock, and the first 2% of a suite is the
+least representative slice of it. The baseline had been measured in the foreground.
 **A wall-clock number from a backgrounded run is not comparable to one from a foreground
 run** — and note the asymmetry with §3 item 5 ("pin the environment"): that rule is framed
 for a deliberate benchmark with a harness, and this case is someone running a test suite

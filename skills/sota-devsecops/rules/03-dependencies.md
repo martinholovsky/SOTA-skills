@@ -263,7 +263,7 @@ paths pointing into the toolchain's own tree.
   old one. Which binary ran is `rules/09` §2b.
 - **Do not record this as a scan result in either direction.** It is neither a clean run nor a
   finding; the scan did not happen. A CI step that treats non-zero as "vulnerabilities found"
-  will report a policy failure (`rules/09` §4 on classifying your own failures).
+  will report a policy failure (`rules/11` §4 on classifying your own failures).
 
 ### 3.6a A clean run from one scanner is not coverage for another's question
 
@@ -351,7 +351,7 @@ Dockerfile. Unpinned it drifts to latest on every rebuild; pinned it is frozen f
   over arbitrary files plus an explicit `datasourceTemplate`) teaches it a non-manifest pin;
   **Dependabot has no equivalent** — its ecosystems are manifest-shaped, so it reads a
   Dockerfile's `FROM` and not its `RUN` args (options reference, verified 2026-09-07). With
-  no bot that can see it the pin needs a watcher, and a watcher is an instrument (`rules/09` §6).
+  no bot that can see it the pin needs a watcher, and a watcher is an instrument (`rules/11` §6).
 - Otherwise **accept the freeze in writing**: an owner and a review date beside the pin —
   unwritten, it decays like an experiment with no scheduled read-back (`sota-architecture`
   rules/01 §4).
@@ -363,7 +363,7 @@ Dockerfile. Unpinned it drifts to latest on every rebuild; pinned it is frozen f
 - Read the version you are pinning to from **the resolver that will actually run**, and cite
   it — for Go modules `proxy.golang.org/<module>/@latest`, where `require` is a floor rather
   than a cap (`sota-golang` rules/07 §4). GitHub's `releases/latest` answers a different
-  question and 404s outright for a repo publishing tags and no releases (`rules/09` §6).
+  question and 404s outright for a repo publishing tags and no releases (`rules/11` §6).
 - Audit: a pin outside anything the repo's update automation parses, with no watcher and no
   written acceptance = **Medium**; **High** if the frozen component faces the internet.
 

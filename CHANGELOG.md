@@ -7,7 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`sota-devsecops` rules/11 §4a — re-running a failed check destroys the evidence of why it
+  failed.** rules/09 §4 covers a verdict the gate *composed*; this is the case where it did
+  not know, and the explaining line is incidental output the re-run deletes. Archive before
+  re-running, per-run paths not a fixed one, stderr folded in, duration beside the verdict —
+  and **a flake you cannot explain is often an unread log**. `rules/09` was at 498/500, so the
+  evidence half (§4–§6) split to **`rules/11-after-the-gate-fails.md`** keeping section
+  numbers; invariant 18 caught 12 broken references.
+
 ### Fixed
+
+- **`sota-performance` rules/01 §9a — the "6x regression" was 1.41x.** The reporter updated
+  the field report after the run finished (3190s), and the correction changes the lesson: the
+  nice penalty is real but worth only ~41%. The 6x came from **arithmetic on a progress
+  percentage**, which is dominated by collection and front-loaded cases and is not linear.
+  §9a now leads with that, because it generalises further than the harness detail.
 
 - **Seven references to versions that never existed.** `rules/08`'s header and four other
   sites said the ad-hoc-side-effects split shipped in `v1.43.0`; it shipped in **v1.42.2** —

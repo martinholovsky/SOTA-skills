@@ -410,7 +410,7 @@ declared outputs *in that file*.
 prove, not one — *"same pattern, therefore same result"* is precisely the assumption
 identifier drift defeats. For a scheduled pipeline the first real execution may be hours
 away and unattended, which is also why a gate step copied across services must carry its
-durable verdict everywhere (`rules/09` §4), not just where it was first fixed.
+durable verdict everywhere (`rules/11` §4), not just where it was first fixed.
 
 ## Audit checklist
 
