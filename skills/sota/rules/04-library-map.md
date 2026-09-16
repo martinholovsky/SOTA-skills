@@ -109,7 +109,7 @@ exist. `sota-code-security/rules/11` sat unlisted for two releases before 15 exi
   of 01 in v1.38.0), 07 PowerShell (`pwsh` CI steps, deploy scripts, entrypoints: the missing
   `set -euo pipefail`, disagreeing status variables, GitHub Actions shell defaults, execution
   policy, PSScriptAnalyzer), 08 ad-hoc side effects (blast radius, process-table exhaustion —
-  split out of 06 in v1.43.0)
+  split out of 06 in v1.42.2)
 - **sota-docs-workflow/rules**: 01 documentation architecture, 02 API reference & changelogs, 03
   code review & PR workflow, 04 commits/branches/ releases, 05 spec-driven development
 - **sota-ux-writing/rules**: 01 voice/tone & plain language, 02 microcopy & components, 03 errors

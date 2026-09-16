@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Seven references to versions that never existed.** `rules/08`'s header and four other
+  sites said the ad-hoc-side-effects split shipped in `v1.43.0`; it shipped in **v1.42.2** —
+  the version was written into the prose when the file was created, guessing the next cut
+  would be a minor, and the cut was a patch. Sweeping every `v1.X.Y` in tracked markdown
+  against `git tag -l` found two older instances of the same shape: `rules/05` claimed
+  `v1.36.4` (really **v1.37.0**) and an ADOPTION-LOG row claimed `v1.41.3` (really
+  **v1.42.0**). Caught by an external field report, not by any gate.
+
 - **`sota-kubernetes` rules/02 — the default-bindings claim is now verified, not inherited.**
   It shipped in v1.42.2 on the external audit's say-so because the fetch of the RBAC page came
   back truncated and the fetcher answered from recall. Re-fetched with a browser, reading the
