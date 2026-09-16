@@ -100,7 +100,11 @@ easy": a claim earns a test if getting it wrong changes a conclusion someone act
 rule broken because the harness runs under `set -uo pipefail`, so it was measuring its own
 shell options rather than a default shell; and claim 20's fixture was entropy-poor enough to
 be inert, caught by its positive control. Measured after the fixes: **22 run, 0 skipped, 0
-failed** on macOS, up from 11 run / 2 skipped. The count is deliberately not written into prose.
+failed** on a macOS host that has ugrep, ripgrep, zsh and gitleaks installed, up from 11 run /
+2 skipped. **The run count is a property of the toolchain, not the platform** — CI's macOS
+runner reports 15 run / 7 skipped and ubuntu 21 run / 1 skipped, because a missing binary
+SKIPS with a printed reason rather than passing silently. Read the denominator, not the
+headline; the count is deliberately not written into prose.
 
 
 ### Added — two gates from auditing our own control surface
