@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`sota-rust` rules/04 — the Tokio cancellation-safety classification was wrong in both
+  directions.** `Notify::notified` was listed as cancel-safe and `Mutex::lock` was called
+  safe; Tokio lists **both as not cancel-safe**, along with `RwLock::read`/`write` and
+  `Semaphore::acquire`. The cancel-safe `watch` method is **`changed()`**, not `recv()`.
+  Replaced with the per-operation table transcribed from the `select!` docs, **split by
+  Tokio's own two reasons**: partial-I/O loses *bytes* and desynchronises a stream, while the
+  lock/semaphore/notify row loses only a *place in a fairness queue* — nothing is corrupted.
+  The audit half now rates them differently and states that reporting a fairness-queue
+  cancellation as data loss is a **false finding**. Dated and marked per-version.
+
+
 ### Fixed — an external audit of v1.42.1: 18 findings verified against primary sources, 18 fixed
 
 Every finding was re-verified before acting; **10 of 10 spot-checked citations resolve to

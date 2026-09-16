@@ -107,12 +107,29 @@ loop {
 }
 ```
 
-- Know your cancel-safe primitives (safe to drop and retry: `recv()` on tokio
-  mpsc/broadcast/watch, `Notified`, `accept()`, `read()`/`read_buf`) vs
-  cancel-unsafe (`write_all` — partial write, `Mutex::lock` is safe but work
-  after acquiring may not be, anything that buffers internally, multi-await
-  sequences with intermediate state). Tokio docs label each — check before
-  putting it in `select!`.
+- **Know your cancel-safe primitives — copy the list, do not reason about it.**
+  Tokio classifies each operation itself, and two of the ones people most often
+  assume are safe are *not*. Transcribed from the `select!` docs
+  ([cancellation safety](https://docs.rs/tokio/latest/tokio/macro.select.html#cancellation-safety),
+  read 2026-09-16; it is a per-version list, so re-read it for your pinned tokio):
+
+  | | operation |
+  |---|---|
+  | **cancel-safe** | `mpsc::Receiver::recv`, `mpsc::UnboundedReceiver::recv`, `broadcast::Receiver::recv`, **`watch::Receiver::changed`**, `TcpListener::accept`, `UnixListener::accept`, `signal::unix::Signal::recv`, `AsyncReadExt::read` / `read_buf`, `AsyncWriteExt::write` / `write_buf`, `StreamExt::next` (tokio-stream or futures) |
+  | **NOT safe — partial I/O, data is lost** | `AsyncReadExt::read_exact`, `read_to_end`, `read_to_string`, `AsyncWriteExt::write_all` |
+  | **NOT safe — you lose your place in a fairness queue** | **`Mutex::lock`**, `RwLock::read`, `RwLock::write`, `Semaphore::acquire`, **`Notify::notified`** |
+
+  **The two unsafe rows fail differently and the difference decides the fix.** The
+  first row loses *bytes*: half a frame is gone and the stream is desynchronised,
+  so the repair is to keep the future alive across iterations (`tokio::pin!`,
+  above) or to read into a buffer you own. The second row loses *progress*:
+  nothing is corrupted and no memory is unsound — the docs' wording is that these
+  *"use a queue for fairness and cancellation makes you lose your place in the
+  queue"* — so the symptom is starvation of a task that keeps getting cancelled
+  and re-queued, not a torn value. Do not report the second row as data loss.
+
+  On `watch`: the cancel-safe method is **`changed()`**, not `recv()` — a detail
+  worth stating because the sibling channels *do* use `recv()`.
 - State mutations spanning an await are torn by cancellation. Either make the
   critical section await-free, or use a **drop guard** to restore/complete
   invariants:
@@ -271,7 +288,13 @@ tokio::select! {
       observability gap.
 - [ ] `select!` loops: any branch future recreated per-iteration that buffers
       internally (reads, `write_all`, custom combinators) → cancellation data
-      loss = High. Check each `select!` arm against cancel-safety docs.
+      loss = High. Check each `select!` arm against the cancel-safety table above —
+      and **rate the two unsafe rows differently**: partial-I/O (`read_exact`,
+      `write_all`) loses bytes and desynchronises a stream = High; a fairness-queue
+      operation (`Mutex::lock`, `Semaphore::acquire`, `Notify::notified`) loses only
+      its place in the queue = starvation risk, **not** data loss, so reporting it
+      as corruption is a false finding. `Notified` and `Mutex::lock` are the two most
+      often assumed safe; both are on Tokio's unsafe list.
 - [ ] Locks: clippy `await_holding_lock`, `await_holding_refcell_ref`;
       `rg 'tokio::sync::Mutex' -t rust` — verify each actually needs
       hold-across-await, else downgrade to std/parking_lot.
