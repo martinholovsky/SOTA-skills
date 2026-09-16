@@ -3888,3 +3888,37 @@ class as invariant 32's idiom.
 
 The table is dated and marked per-version, because the classification is a property of the
 tokio release, not of async Rust.
+
+## 2026-09-16 — F2's second half, settled with a browser after WebFetch fell back to recall
+
+The external-audit intake recorded F2 as verified on its **first** half only: anonymous
+requests get `system:anonymous` + `system:unauthenticated`, quoted exactly. Its **second**
+half — that Kubernetes binds `system:public-info-viewer` to *both* groups by default, which is
+what makes "bound to a broad group" unable to carry Critical on its own — came back from a
+**truncated page**, where the fetcher said so and answered from recall instead. That was
+recorded as unconfirmed and the claim shipped anyway on the audit's say-so.
+
+**Re-fetched with Playwright**, reading the default-bindings table out of the DOM rather than
+asking a model to summarise it:
+
+| role | binding, verbatim |
+|---|---|
+| `system:basic-user` | `system:authenticated` group — *"Prior to v1.14, this role was also bound to system:unauthenticated by default."* |
+| `system:discovery` | `system:authenticated` group — same v1.14 note |
+| `system:public-info-viewer` | ***"system:authenticated and system:unauthenticated groups"*** — *"Introduced in Kubernetes v1.14."* |
+
+**The claim holds.** And the recall fallback had a **factual error in it**: it listed
+`system:discovery` as bound to both groups, which has been false since v1.14. Shipping on that
+summary would have put a wrong default into a severity judgement.
+
+**Landed:** `sota-kubernetes/rules/02` — the binding is now quoted rather than paraphrased, and
+a new bullet carries the **v1.14 boundary**, which inverts the check on an old cluster: before
+v1.14 `basic-user` and `discovery` *were* bound to `system:unauthenticated`, so on a pre-1.14
+cluster that is the shipped default and on a current one it is a finding. Version numbers as
+semantic boundaries are exactly the permitted use under this repo's no-rot-prone-pins rule.
+
+**Method, now a standing instruction:** when a fetch returns empty, truncated, or a summary
+that contradicts its own quotes, **escalate to the browser tools on the same URL** rather than
+routing around it to a mirror. Two instances this session — this one, and EUR-Lex returning
+empty twice, where the mirror used instead produced a conclusion contradicting the paragraph it
+had just quoted.

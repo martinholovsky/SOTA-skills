@@ -75,11 +75,19 @@ automation SA. `impersonate` on `groups` for `system:masters` is an instant Crit
   ([K8s authentication](https://kubernetes.io/docs/reference/access-authn-authz/authentication/),
   verified 2026-09-16).
 - **Rate the verbs and resources, not the group name.** Kubernetes itself binds
-  `system:public-info-viewer` to both groups by default, so "bound to a broad group" cannot
-  be Critical on its own — that would flag the shipped defaults. Critical is a *broad grant*
-  to a broad group: write/exec/secrets-read, or wildcard verbs on wildcard resources.
-  Compare against the default bindings (`kubectl get clusterrolebinding -o wide`) before
-  filing.
+  `system:public-info-viewer` to *"system:authenticated and system:unauthenticated groups"*
+  by default, so "bound to a broad group" cannot be Critical on its own — that would flag the
+  shipped defaults. Critical is a *broad grant* to a broad group: write/exec/secrets-read, or
+  wildcard verbs on wildcard resources. Compare against the default bindings
+  (`kubectl get clusterrolebinding -o wide`) before filing.
+- **Know which defaults changed at v1.14**, because an old cluster inverts this check.
+  `system:public-info-viewer` was *introduced* in v1.14; before it existed,
+  **`system:basic-user` and `system:discovery` were themselves bound to
+  `system:unauthenticated`** and were unbound from it at that release. So on a pre-1.14
+  cluster those two bindings are the shipped default, and on a current one they are a finding.
+  Read the table rather than recalling it — a summary of this page got `system:discovery`
+  wrong in exactly this way (default bindings table, verified 2026-09-16:
+  [K8s RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)).
 
 ### 2.4 Aggregated ClusterRoles
 ClusterRoles with `aggregationRule` automatically absorb the rules of any ClusterRole

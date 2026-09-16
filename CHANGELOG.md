@@ -5,6 +5,21 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **`sota-kubernetes` rules/02 — the default-bindings claim is now verified, not inherited.**
+  It shipped in v1.42.2 on the external audit's say-so because the fetch of the RBAC page came
+  back truncated and the fetcher answered from recall. Re-fetched with a browser, reading the
+  table out of the DOM: `system:public-info-viewer` is bound to *"system:authenticated and
+  system:unauthenticated groups"*. **The claim holds — and the recall fallback contained a
+  factual error**, listing `system:discovery` as bound to both groups, which has been false
+  since v1.14. A new bullet carries that **v1.14 boundary**, because it inverts the check on an
+  old cluster: before v1.14 `basic-user` and `discovery` *were* bound to
+  `system:unauthenticated`.
+
+
 ## [1.42.2] - 2026-09-16
 
 **Front door checked:** PROSE-REGRESSION · Coverage by area · findings about other people's code
