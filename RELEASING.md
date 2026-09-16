@@ -187,7 +187,7 @@ touching a line that starts `description:`.
 ```sh
 ./scripts/check-invariants.sh        # same checks as CI
 git checkout -b <branch> && git commit && git push
-# open the PR; all four required checks green → squash-merge
+# open the PR; every required check green → squash-merge
 ```
 
 **Branch naming:** avoid dots. The assistant's permission rule `Bash(git checkout *.*)`
