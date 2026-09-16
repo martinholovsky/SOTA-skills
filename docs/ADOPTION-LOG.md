@@ -2674,7 +2674,7 @@ that triggers a check.** Same shape as the 2026-09-12 lesson one entry up, one l
 out: there I verified the gap in the file the reporter named instead of the library; here I did
 not verify at all, because the sentence was not shaped like a request.
 
-**Landed:** `sota-code-security/rules/12` §1d · v1.41.3
+**Landed:** `sota-code-security/rules/12` §1d · v1.42.0
 
 
 ### 2026-09-13 — a rule this repository wrote for itself, put through the intake it had skipped
@@ -3922,3 +3922,46 @@ that contradicts its own quotes, **escalate to the browser tools on the same URL
 routing around it to a mirror. Two instances this session — this one, and EUR-Lex returning
 empty twice, where the mirror used instead produced a conclusion contradicting the paragraph it
 had just quoted.
+
+## 2026-09-16 — EDR report II: the finding was already landed, the *version it cited* was not
+
+Source: `FIELD-REPORT-EDR-2026-09-16`, the successor to the 2026-09-15 EDR report. Its stated
+finding — a status-discarding pipe in scaffolding (`| tail && git push` after a red gate) and a
+self-matching `pgrep -f` waiter — **was already intaken and shipped** when the same material
+reached this session as a direct paste: `sota-shell-scripting` rules/01 §3 carries the
+scaffolding paragraph and the `&&`-after-a-pipeline tell, and rules/08 §4 covers the waiter.
+The report explicitly proposes nothing for the second instance on the grounds that restating it
+*"would make the library worse"*, which is the right call and is upheld.
+
+**What the report caught that we did not: a version that never existed.** Its header notes the
+installed tree *"contains `rules/08`, whose header says it split out at v1.43.0"*. There is no
+v1.43.0. The split shipped in **v1.42.2**. The sequence is the defect: the version was written
+into the prose when the file was created, **guessing** the next cut would be a minor; at the
+cut it was correctly determined to be a *patch*, and nothing went back for the
+forward-references. A reader following that pointer looks for a release that does not exist.
+
+**Swept, not spot-fixed — and the sweep found two older ones.** Comparing every `v1.X.Y` in
+tracked markdown against `git tag -l`:
+
+| reference | claimed | actually shipped in |
+|---|---|---|
+| `rules/08` header, `rules/06` ×2, library map, INVARIANTS.md | `v1.43.0` | **v1.42.2** (5 sites, this session's) |
+| `sota-shell-scripting/rules/05` header — split out of `rules/01` | `v1.36.4` | **v1.37.0** (pre-existing) |
+| ADOPTION-LOG — `sota-code-security/rules/12` §1d landed | `v1.41.3` | **v1.42.0** (pre-existing) |
+
+Both older ones are the same shape: a version written before the cut decided it.
+
+**Gateable, and measured before proposing.** The naive predicate — every `vX.Y.Z` in prose must
+be a tag — is **not viable**: 35 distinct unresolved strings, nearly all legitimate
+third-party versions (Harbor `v2.5.1`, `actions/checkout` `v7.0.1`). That gate opens red and
+gets disabled. Narrowed to **our own `v1.*` namespace** it resolves to 4 distinct strings: the
+two real defects above and `v1.2.3`/`v1.2.4`, unambiguous placeholder image tags in devsecops
+examples. So a gate is viable *if* those placeholders move out of the `v1.*` namespace first —
+**recorded as a measured proposal, not built**, because it needs that cleanup and the decision
+is the maintainer's.
+
+**The aside the report offers is also kept:** `sota-devsecops` rules/09 covers what a *green*
+gate is worth; the converse is that a **red** gate's log is truncated by the next run, so
+without archiving it the cause is unrecoverable. That is what made this incident attributable
+rather than a fifth phantom flake. Not actioned here — it belongs beside rules/09's existing
+material and deserves its own read of that file.

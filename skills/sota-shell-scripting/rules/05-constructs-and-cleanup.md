@@ -1,7 +1,7 @@
 # 05 — Constructs & Cleanup: arrays, IFS, traps, tests, globbing
 
 Scope: the constructs a script is assembled from, and the way each of them fails. Split out
-of `rules/01` at v1.36.4, which keeps the safety baseline — shebang, `set -e` semantics,
+of `rules/01` at v1.37.0, which keeps the safety baseline — shebang, `set -e` semantics,
 quoting, and the zsh deviations that bite pasted commands. Quoting is `rules/01` §3; this
 file is what you reach for once the expansion itself is correct.
 

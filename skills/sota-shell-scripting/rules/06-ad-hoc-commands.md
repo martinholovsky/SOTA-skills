@@ -5,7 +5,7 @@ checklist, a quick container copy. They are unlinted, unreviewed, and run agains
 system under test, so when they go wrong they produce a false finding **about the
 product**, or damage the thing they were inspecting. Split out of `rules/01` at v1.38.0 —
 its zsh, sweep and blast-radius sections became §1, §2 and §3 here. The blast-radius and
-process-table sections moved on to `rules/08` at v1.43.0, keeping their numbers. Quoting itself stays in
+process-table sections moved on to `rules/08` at v1.42.2, keeping their numbers. Quoting itself stays in
 `rules/01` §3, which this file assumes you have read.
 
 ## 1. zsh is not bash — the deviations that bite *pasted* commands
@@ -348,7 +348,7 @@ esac
 ```
 
 This library shipped the broken form in **11 files** of its own audit checklists until
-v1.43.0 — found by a reporter, not by any gate. A checklist line is a control, and a
+v1.42.2 — found by a reporter, not by any gate. A checklist line is a control, and a
 control that cannot distinguish "clean" from "did not run" is the silent-control-failure
 shape (`sota-code-security` rules/10).
 

@@ -3,7 +3,7 @@
 Scope: the sibling of `rules/06`. That file is about a verification command returning the
 **wrong answer**; this one is about a verification command with **side effects** — it
 destroys what it was inspecting, or exhausts a resource nobody budgets. Split out of
-`rules/06` at v1.43.0 when that file reached its 500-line cap; §3 and §4 keep their
+`rules/06` at v1.42.2 when that file reached its 500-line cap; §3 and §4 keep their
 numbers so every existing citation still names the right section. `rules/06` §2's
 discipline — state the traversal, print the denominator, control the sweep — is assumed.
 
