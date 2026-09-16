@@ -28,6 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Two more surfaces stopped stating how many CI checks are required.**
+  `CONTRIBUTING.md` and `RELEASING.md` both said *"four required checks"*, which went false
+  the moment the executable-claims jobs were made required (now six). Same de-rot as
+  `AGENTS.md`: the count is not written down anywhere, because it has now rotted twice.
 - **`AGENTS.md` no longer states how many CI checks are required.** That number rotted
   exactly once already — a job was added and never made a required check — so it now points
   at `gh api …/branches/main/protection` instead of carrying a literal.

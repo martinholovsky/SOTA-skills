@@ -674,7 +674,7 @@ compromised upstream can move it (`sota-devsecops` rules/01). Dependabot handles
 pins: it bumps the SHA and rewrites the trailing `# vX.Y.Z` comment. Keep that comment
 on every pin — it is the only thing that makes the SHA readable to a human.
 
-Minor and patch bumps are **grouped into one weekly PR** so the four required checks
+Minor and patch bumps are **grouped into one weekly PR** so the required checks
 run once per batch rather than once per action.
 
 **Dependabot PRs need `SOTA_DENYLIST` in the *Dependabot* secret store, not just the
