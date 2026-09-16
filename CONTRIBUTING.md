@@ -622,6 +622,32 @@ CI scans the full git history, the pre-commit hook scans each commit.
     for an area that no longer exists — which is how a table rots into decoration after a
     rename. Adding an area? Add its row in the same PR and say what gates it.
 
+34. **A version this repo claims for itself does not exist.** A rules-file header says
+    which release a section moved in — and that line is written *when the file is edited*,
+    which is **before the cut decides whether the release is a minor or a patch**. Guess
+    minor, ship patch, and the prose points at a release that never existed.
+
+    It happened **four times, twice in one session**: `v1.43.0` (really v1.42.2, across five
+    sites), `v1.36.4` (really v1.37.0), `v1.41.3` (really v1.42.0), and `v1.42.3` (still
+    unreleased). The fourth was written **three hours after the third was fixed**, by the same
+    author, in a commit whose own message named the mechanism. That is the argument for a gate
+    rather than another paragraph.
+
+    **The scope was measured before the check was written.** *Every* `vX.Y.Z` must be a tag is
+    unshippable — 35 distinct unresolved strings, nearly all legitimate third-party versions
+    (`actions/checkout` v7.0.1, Harbor v2.5.1) — and it would open red and be disabled.
+    Narrowing to our own `v1.*` namespace still catches placeholder image tags and module
+    specs, and rewriting six unrelated rules files to suit a gate is letting the gate drive
+    the content. What separates them is **grammar**: our own claims read *at* / *in* / *since*
+    / *until* / the ledger's *·* before the version; `app:v1.2.3` and `require foo v1.2.3`
+    never do.
+
+    `CHANGELOG.md` and `docs/ADOPTION-LOG.md` are **exempt** — a record quotes the wrong
+    version *while correcting it*, and gating them would make the correction unwritable.
+
+    **When it fires, do not invent a number.** Write `· unreleased` and let the release cut
+    fill it in; `RELEASING.md` step 1 already sweeps for that marker.
+
 ## Local setup
 
 ```sh
@@ -761,7 +787,7 @@ will catch a chart left stale — check them when you change a published number.
 
 **The invariants cannot tell you whether a rule is *true* or whether your edit made it
 worse.** They check structure — caps, references, counts. On 2026-09-15 an external audit
-found nineteen wrong statements in a released version and every one of the 33 checks was
+found nineteen wrong statements in a released version and every one of the 34 checks was
 green. That is by design: "is this claim correct" is semantic, and a fuzzy gate gets disabled
 ([CONVENTIONS-LEDGER](docs/CONVENTIONS-LEDGER.md)).
 

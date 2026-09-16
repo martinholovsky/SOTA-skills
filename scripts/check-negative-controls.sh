@@ -821,6 +821,34 @@ p.write_text(t.replace(anchor, row + anchor, 1))
 probe 33b "the coverage table declares an area that does not exist" \
   "ORPHAN ROW"
 
+# 34 — a version this repo claims for itself must exist. TWO probes, because the check's
+# whole design is its SCOPE: it must catch a claim-shaped reference and stay silent on a
+# placeholder image tag, which is what made "every vX.Y.Z must be a tag" unshippable.
+( cd "$WT" && python3 -c "
+import pathlib
+p = pathlib.Path('skills/sota-golang/rules/07-tooling-ci.md')
+t = p.read_text()
+head = t.index(chr(10) + '## ')
+p.write_text(t[:head] + chr(10) + chr(10) + 'Split out of rules/06 at v1.99.9.' + chr(10) + t[head:])
+" )
+probe 34 "prose claims a version of this library that was never tagged" \
+  "which is not a tag"
+
+# 34b — a placeholder image tag in the SAME namespace must NOT be flagged. Without this
+# the scope is a checkbox: a gate that also fires on `app:v1.2.3` would be reverted, and
+# the reason it is shippable is exactly that it does not (probe 29b's lesson).
+( cd "$WT" && python3 -c "
+import pathlib
+p = pathlib.Path('skills/sota-golang/rules/07-tooling-ci.md')
+t = p.read_text()
+head = t.index(chr(10) + '## ')
+demo = chr(10) + chr(10) + 'Pull the image ghcr.io/myorg/app:v1.98.7 and require foo v1.98.7.' + chr(10)
+p.write_text(t[:head] + demo + t[head:])
+" )
+wt_commit "probe: a placeholder image tag in the v1.* namespace"
+probe_committed_green 34b "a placeholder image tag is not a self-version claim" \
+  "every self-claimed version resolves"
+
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
 # =============================================================================

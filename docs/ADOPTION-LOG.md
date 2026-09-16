@@ -4009,3 +4009,49 @@ that moves non-uniformly is a progress indicator, not a clock, and the first 2% 
 its least representative slice.* Recorded as a **correction to shipped text**, not a new
 finding — and as evidence for keeping the "date every number to its source" discipline, since
 the number that needed revising was one we had already published.
+
+## 2026-09-16 — Invariant 34, because I reintroduced the bug I had just fixed
+
+**This entry exists because a warning did not disable a reflex, and the evidence is my own.**
+Earlier today I swept seven references to versions that never existed and wrote a commit
+message naming the mechanism: *"the version was written into the prose when the file was
+created, guessing the next cut would be a minor."* **Three hours later I did it again** — the
+`rules/09` split wrote `v1.42.3` into three live files, and v1.42.3 does not exist.
+
+| claimed | reality | when |
+|---|---|---|
+| `v1.43.0` × 5 sites | shipped in **v1.42.2** | this session |
+| `v1.36.4` | **v1.37.0** | pre-existing |
+| `v1.41.3` | **v1.42.0** | pre-existing |
+| `v1.42.3` × 3 sites | **still unreleased** | this session, *after* fixing the above |
+
+Four occurrences, two of them hours apart by the same author with the mechanism written down
+in between. Against this ledger's three filters that is not a close call: it has already
+failed (repeatedly), it fails silently (a version reads as authoritative; nothing resolves it),
+and it is mechanically checkable.
+
+### The scope was the design work, and it was measured before the check was written
+
+- **"Every `vX.Y.Z` must be a tag"** — *rejected by measurement*. 35 distinct unresolved
+  strings, nearly all legitimate third-party versions (`actions/checkout` v7.0.1, Harbor
+  v2.5.1). That gate opens red and gets disabled, which is this file's own standing argument.
+- **"Our own `v1.*` namespace"** — closer, but still fires on placeholder image tags and module
+  specs (`ghcr.io/myorg/app:v1.2.3`, `require foo v1.2.3`) across six unrelated rules files.
+  **Rewriting those to suit a gate is letting the gate drive the content**, so that was
+  rejected too.
+- **Grammar** — adopted. Our own claims read *at* / *in* / *since* / *until* / the ledger's *·*
+  before the version. A placeholder never does. Measured on this tree: **49 claim-shaped
+  references, 0 unresolved**, with the instrument's own positive control being that non-zero
+  hit count.
+
+`CHANGELOG.md` and `docs/ADOPTION-LOG.md` are **exempt**: a record *quotes* a wrong version
+while correcting it — as the table above does — and gating them would make the correction
+unwritable. Same distinction checks 22, 31 and 32 draw.
+
+**Two probes**, because the scope *is* the check: 34 asserts it catches a claim-shaped
+reference, 34b that it stays silent on a placeholder image tag in the same namespace. Without
+34b the scope is a checkbox nobody has shown to work.
+
+**The fix when it fires is never to invent a number.** Write `· unreleased`; `RELEASING.md`
+step 1 already sweeps for that marker. The three live sites were corrected that way rather
+than by guessing again.

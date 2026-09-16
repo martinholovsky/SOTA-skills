@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Invariant 34 — a version this repo claims for itself must exist.** A rules-file header
+  naming the release a section moved in is written *before the cut decides minor vs patch*;
+  guess minor, ship patch, and the prose points at a release that never existed. **Four
+  occurrences, two of them three hours apart in one session** — the second written *after* the
+  first was fixed, in a commit naming the mechanism. Scope measured before building: *every*
+  `vX.Y.Z` is unshippable (35 unresolved, nearly all third-party), and the `v1.*` namespace
+  still catches placeholder image tags — what separates ours is **grammar** (*at*/*in*/*·*
+  before the version). 49 claim-shaped refs, 0 unresolved. Records are exempt; two probes, the
+  second proving it stays silent on `app:v1.2.3`.
+
 - **`sota-devsecops` rules/11 §4a — re-running a failed check destroys the evidence of why it
   failed.** rules/09 §4 covers a verdict the gate *composed*; this is the case where it did
   not know, and the explaining line is incidental output the re-run deletes. Archive before
