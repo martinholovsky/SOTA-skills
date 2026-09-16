@@ -1387,8 +1387,22 @@ traffic — every `§` reference resolving, every check having a known-bad, ever
 shipped CHANGELOG version carrying a git tag and its own link reference, every
 eval runner being named in the harness's own README, the roadmap's open set
 agreeing with itself, every eval case set declaring how its cases were chosen,
-and no audit-checklist bullet being stranded inside a code fence — plus gitleaks
+no audit-checklist bullet being stranded inside a code fence, **no absence reported
+through a stderr-suppressed `|| echo`** — `cmd 2>/dev/null || echo "missing X"` fires on
+*every* non-zero exit, so it **manufactures findings about other people's code**, and it
+shipped in nine of these skills until a field report caught it — and **every top-level area
+declaring which gates cover it**, because enforcement density is uneven and an ungated area
+looks exactly like a covered one (the *Coverage by area* table in
+[docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md)) — plus gitleaks
 (full-history scan in CI; per-commit via the pre-commit hook).
+
+**What the invariants deliberately do not check is whether a rule is *true*.** They are
+structural; an external audit found 19 wrong statements with all of them green. The
+measurable slice is behaviour against the library *before* your change —
+`evals/run-prompt-independence.py` builds its comparison arm from `git show <ref>:<path>`, so
+it reads the real prior text rather than a mirror that drifts. When a prose edit is worth that
+run, and the four shapes that are not:
+[docs/PROSE-REGRESSION.md](docs/PROSE-REGRESSION.md).
 
 Separately, [`scripts/check-claims.sh`](scripts/check-claims.sh) re-runs the library's
 **executable claims** — the ones a rule's advice actually rests on — on **both Linux and
