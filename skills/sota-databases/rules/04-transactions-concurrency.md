@@ -208,8 +208,16 @@ The blocking query is the bug more often than the blocked one — look for
   transaction. **Breaks anything session-stateful:** session-level advisory
   locks, `SET` (use `SET LOCAL`), session prepared statements (need PgBouncer
   ≥1.21 + `max_prepared_statements`, or disable driver-level preparing),
-  LISTEN/NOTIFY, temp tables, cursors WITH HOLD. Audit any of these used with
+  `LISTEN`, session-lifetime temp tables, cursors WITH HOLD. Audit any of these used with
   transaction pooling: HIGH.
+- **Three distinctions PgBouncer's own matrix draws that a blanket finding gets wrong**
+  (verified 2026-09-16, [feature matrix](https://www.pgbouncer.org/features.html)):
+  `LISTEN` is *Never* supported in transaction mode but **`NOTIFY` is supported**;
+  `PRESERVE/DELETE ROWS` temp tables are *Never* supported but **`ON COMMIT DROP` temp
+  tables are**; and *protocol-level* prepared plans (what your driver does) are the ones
+  `max_prepared_statements` rescues — SQL-level `PREPARE`/`DEALLOCATE` is session state and
+  stays unsupported at any version. Condition the finding on the actual operation and the
+  pool configuration, or you will report working code as broken.
 - **statement:** breaks multi-statement transactions entirely; niche.
 
 Settings that matter: `default_pool_size` (per user+db!), `max_client_conn`,

@@ -55,13 +55,22 @@ most for *building* software are the two that are large:
   library — the router's short universal non-negotiables (operating principle 5),
   the matched rules, and the **BUILD self-audit** (check the diff against each
   audit checklist and fill every gap) — coverage reaches **~99% across 7 tasks**
-  (6 of 7 perfect). **The self-audit is now separately measured**, not just
-  asserted: removing it while leaving 400 lines of unrelated competing rules
-  prose in context costs **−0.05**, and the gate recovers **+0.062**
+  (6 of 7 perfect). **The build-process reminder is now separately
+  measured** — and that is the honest name for the treatment, because the
+  ablation removes the *whole* `BUILD_WORKFLOW` block (`gate=False` sets it to
+  an empty string), which also carries "apply the non-negotiables
+  unconditionally", the plan-first instruction and "do not present incomplete
+  code". **The number therefore does not isolate step 4.** Isolating the
+  terminal self-audit needs an arm that keeps the other three steps and drops
+  only the final re-read; that arm has not been run. What is measured:
+  removing the block while leaving 400 lines of unrelated competing rules
+  prose in context costs **−0.05**, and restoring it recovers **+0.062**
   (SE 0.019, 95% CI **[+0.024, +0.099]**, 7 tasks × 3 samples, temp 0.7 —
   [GATE-ABSORPTION-N3](../evals/results/2026-09-09/GATE-ABSORPTION-N3.md)).
-  That is the first confidence interval here excluding zero on BUILD step 4, and
-  it was measured against a threshold registered **before** the run. What occasionally still slips is a *single* low-salience
+  That is the first confidence interval here excluding zero for the reminder
+  bundle, and it was measured against a threshold registered **before** the run.
+  Externally reported 2026-09-15 and accepted: the earlier wording sold a
+  bundled intervention as an isolated step-4 effect. What occasionally still slips is a *single* low-salience
   cross-cutting item, and it's a **finite-constraint-budget** effect, not a
   coverage gap: the guidance was in context with a checklist item, but a long,
   dense rules context makes some items fade (a measured attention effect — see

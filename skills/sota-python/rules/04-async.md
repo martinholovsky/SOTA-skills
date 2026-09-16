@@ -36,10 +36,17 @@ asyncio.create_task(send_email(user))
 # Acceptable when truly detached work is required — keep a strong ref + done callback
 _background: set[asyncio.Task[None]] = set()
 
+def _reap(t: asyncio.Task[None]) -> None:
+    _background.discard(t)
+    if t.cancelled():
+        return
+    if (exc := t.exception()) is not None:        # NEVER just discard: an unobserved
+        log.exception("detached task failed", exc_info=exc)   # exception is a silent failure
+
 def spawn(coro: Coroutine[None, None, None]) -> None:
     t = asyncio.create_task(coro)
     _background.add(t)
-    t.add_done_callback(_background.discard)
+    t.add_done_callback(_reap)   # strong ref fixes LIFETIME; this fixes ERROR VISIBILITY
 ```
 
 Better: don't fire-and-forget. Put background work in a long-lived TaskGroup owned by the app
@@ -142,9 +149,15 @@ async with aclosing(stream_rows()) as rows:
   rules/01 mandates a checker. Enable `-W error::RuntimeWarning` in tests.
 - **`async def` that never awaits** — either it shouldn't be async (caller pays scheduling
   cost, pretends concurrency) or it's missing the await.
-- **Blocking ORM in async views:** Django sync ORM call inside `async def` view, or
-  SQLAlchemy sync `Session` in FastAPI async path — works in dev, serializes all traffic in
-  prod. Django: use `await Model.objects.aget(...)` / `sync_to_async`; FastAPI: see rules/07.
+- **Blocking ORM in async views — and the two frameworks fail *differently*:**
+  **Django raises**, it does not silently serialize. A sync ORM call from a thread with a
+  running event loop gets `SynchronousOnlyOperation`; it only blocks instead if someone set
+  `DJANGO_ALLOW_ASYNC_UNSAFE`, which the docs warn risks data loss
+  ([Django async safety](https://docs.djangoproject.com/en/5.2/topics/async/), verified
+  2026-09-16). So "works in dev, dies in prod" is the wrong symptom to hunt for in Django —
+  hunt for the exception, or for the env var that disabled the guard. A sync SQLAlchemy
+  `Session` on a FastAPI async path **does** block silently, because nothing is watching.
+  Django: `await Model.objects.aget(...)` / `sync_to_async`; FastAPI: see rules/07.
 - **Lock-free check-then-act across awaits:** state can change at every `await`. Guard
   multi-step invariants with `asyncio.Lock`, or design single-writer.
 - **`time.monotonic` vs loop time** for timing inside coroutines; never `time.time()` deltas.

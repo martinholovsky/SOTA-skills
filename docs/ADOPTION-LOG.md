@@ -3791,3 +3791,64 @@ earns a test if getting it wrong **changes a conclusion someone acts on**. Not "
 Both were caught because the harness was run and read, not because it was written carefully.
 **Measured after the fixes: 22 run, 0 skipped, 0 failed on macOS** — up from 11 run / 2 skipped.
 The count stays out of the prose deliberately; run the script.
+
+## 2026-09-16 — External audit of v1.42.1: 18 findings verified, 18 fixed
+
+Source: a commissioned adversarial audit against the v1.42.1 zip, dated 2026-09-15. Verified
+against **current main**, not the audited tree.
+
+### The citation check first, because the last external audit failed it
+
+The 2026-09-14 external audit had **every line number invented**. This one does not: **10 of
+10 spot-checked citations resolve to real text at the cited lines**, and the two locally
+reproducible findings (F1's greps, F12's arithmetic) reproduce exactly. That difference is
+why this one was worked through in full rather than sampled.
+
+### Verified by primary source or execution, then fixed
+
+| # | finding | how it was settled |
+|---|---|---|
+| F1 | Next.js audit greps find nothing | **Reproduced**: BRE parens are literal → exit 1; the `(?!…)` command errors. Corrected commands verified on the same fixture |
+| F2 | anonymous-auth "bridge" to `system:authenticated` | K8s docs: anonymous gets `system:anonymous` + `system:unauthenticated`; `system:authenticated` only on success |
+| F4 | `updateTag` allowed in Route Handlers | Next.js docs: *"can **only** be called from within Server Actions"*, with an explicit throw example |
+| F5 | "functions and class instances can't cross" | React: `Date`, `Map`, `Set`, promises, JSX and **Server Functions** are serializable |
+| F6 | `ipBlock` matches pod IPs (Cilium-scoped file) | Cilium: *"CIDR-based selectors do not match in-cluster entities"* by default |
+| F7 | PgBouncer "breaks LISTEN/NOTIFY, temp tables" | Feature matrix: `LISTEN` Never but **`NOTIFY` Yes**; `ON COMMIT DROP` temp tables **Yes** |
+| F8 | Django "works in dev, serializes in prod" | Django **raises `SynchronousOnlyOperation`**; blocking needs `DJANGO_ALLOW_ASYNC_UNSAFE` |
+| F9 | CRA routes presented as a categorical split | Art. 32(1) offers Module A; 32(2) triggers only where standards are *"not applied or applied only in part"* |
+| F10 | standalone link text cited as 2.4.4 | 2.4.4 (A) permits link text **plus programmatically determined context**; standalone is 2.4.9 (AAA) |
+| F11 | dotenv "wins over the platform" | **Executed** on dotenv 17.4.2: default `config()` leaves an already-set var alone |
+| F12 | "54% under-count" | Under-count is **35%**; 54% is the inverse direction |
+| F13 | "wrong for four months" | 2026-08-14 → 2026-09-12 = **29 days** |
+| C1 | "never hold a lock across an await" | Contradicts `sota-rust` rules/04, which prescribes `tokio::sync::Mutex` for exactly that case |
+| C2 | detached-task example | Its callback only discards from a set; never observes the exception the sibling skill requires |
+| C3 | freshness policy says "never state current version" | `sota-php`'s **description** said "8.5 current" |
+| R2 | DMARC ownership invisible to routing | Description had **0** mentions of SPF/DKIM/DMARC/email; body names DMARC 12× |
+| G1 | no embedded/RTOS owner | The file already says *"No skill in this library owns those today"* — in the body, after loading |
+| O1 | self-audit sold as separately measured | `workflow = BUILD_WORKFLOW if gate else "\\n\\n"` drops **all four** steps |
+
+**Two fetch failures worth recording, both caught by reading rather than trusting.** The
+EUR-Lex page returned empty twice — *a fact about the fetcher, not the source*
+(`sota/rules/01` §3) — so F9 was settled from two mirrors of the Article 32 text. And the
+first of those mirrors produced a "Key Findings" conclusion that **contradicted the verbatim
+paragraph it had just quoted**; the quote was right and the summary was backwards, which is
+principle 7 in miniature. A second source confirmed the quote.
+
+### Why the description fixes were compressions and not splits
+
+Asked directly. **Splitting relieves the 500-line *file* cap and does not relieve the 1024-char
+*description* cap**, because splitting a description means adding a skill — and the shared
+listing budget is already ~**38,240 chars against an 8,000 default** (README). Over budget,
+skills render name-only and cannot be auto-selected at all, so a 43rd skill degrades the other
+42. `sota-c-cpp` and `sota-network-security` therefore paid for their new terms by dropping
+duplicates (`MISRA`, `CERT C`, `memory safety` each appeared twice in one string;
+`WireGuard` and `169.254.169.254` likewise). A dedicated embedded/RTOS skill remains the
+*full* fix for G1 and is a separate project; what shipped is the audit's own stated interim.
+
+### Not fixed here
+
+F3 (Tokio cancellation-safety classification) is left for a follow-up: the correction needs
+the per-operation table copied from the Tokio `select!` docs rather than a one-line edit, and
+getting it half-right is worse than the current wording. O2–O5, R1 and G2 are design and
+scope arguments rather than factual errors; they are recorded, not actioned, and O2's missing
+arm is already conceded in the runner's own docstring.

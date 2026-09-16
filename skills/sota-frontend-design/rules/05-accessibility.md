@@ -160,8 +160,15 @@ These are the ones audits now fail on because checklists predate them:
 
 ## 5c. Content accessibility: links, language, structure
 
-- Link text stands alone: "View billing settings", never "click here"/"learn more" ×7 (2.4.4;
-  SR users pull a links list out of context). Same visible text → same destination (3.2.4).
+- Link text stands alone: "View billing settings", never "click here"/"learn more" ×7. SR
+  users pull a links list out of context, so this is a **house rule worth keeping** — but
+  cite it correctly: **2.4.4 (Level A) is satisfied by the link text *plus its
+  programmatically determined context***, and the WCAG understanding doc gives a contextual
+  "Read more" as a *passing* example. Standalone-by-itself is **2.4.9 Link Purpose (Link
+  Only), Level AAA**. Report a contextual "learn more" as a deviation from this library's
+  stricter preference, or against 2.4.9 — not as a 2.4.4 failure, and test the actual
+  accessible context first ([W3C 2.4.4](https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-in-context.html),
+  verified 2026-09-16). Same visible text → same destination (3.2.4).
 - `lang` on `<html>` (3.1.1) and on inline foreign-language spans (3.1.2) — wrong lang makes SR
   pronounce gibberish and breaks hyphenation.
 - Data tables: `<caption>`, `<th scope="col|row">`; complex tables get `headers`/`id`; layout

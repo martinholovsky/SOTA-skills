@@ -67,9 +67,19 @@ automation SA. `impersonate` on `groups` for `system:masters` is an instant Crit
 ### 2.3 ClusterRoleBinding to `cluster-admin` (or to broad subjects)
 - A ClusterRoleBinding of the built-in `cluster-admin` ClusterRole to a **ServiceAccount**
   means owning that pod owns the cluster. Critical.
-- Binding *any* role to the group **`system:authenticated`** grants it to every
-  authenticated principal (including, if anonymous-auth is on, the bridge to anonymous);
-  to **`system:unauthenticated`** grants it to the world. Both Critical.
+- Binding a role to the group **`system:authenticated`** grants it to every authenticated
+  principal; to **`system:unauthenticated`** grants it to unauthenticated callers. **There
+  is no bridge between them**: an anonymous request gets the username `system:anonymous` and
+  the group `system:unauthenticated`, and `system:authenticated` is assigned only when
+  authentication *succeeds*
+  ([K8s authentication](https://kubernetes.io/docs/reference/access-authn-authz/authentication/),
+  verified 2026-09-16).
+- **Rate the verbs and resources, not the group name.** Kubernetes itself binds
+  `system:public-info-viewer` to both groups by default, so "bound to a broad group" cannot
+  be Critical on its own — that would flag the shipped defaults. Critical is a *broad grant*
+  to a broad group: write/exec/secrets-read, or wildcard verbs on wildcard resources.
+  Compare against the default bindings (`kubectl get clusterrolebinding -o wide`) before
+  filing.
 
 ### 2.4 Aggregated ClusterRoles
 ClusterRoles with `aggregationRule` automatically absorb the rules of any ClusterRole

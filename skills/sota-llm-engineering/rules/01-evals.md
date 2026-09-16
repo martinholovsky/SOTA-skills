@@ -279,7 +279,10 @@ recorded *"do not build a tenth — recall and precision are both exhausted."* A
 built on an **external, independently-annotated** benchmark. The lift replicated (a
 registered null, so the headline survived), but both arms landed **near chance** on a set
 balanced so chance was exactly 0.500. Precision had never been perfect; the in-house
-instruments had been too easy to discriminate, and "exhausted" was wrong for four months.
+instruments had been too easy to discriminate, and "exhausted" was wrong for **29 days** —
+from the axis being declared closed on 2026-08-14 to the external benchmark on 2026-09-12.
+(An earlier draft said "four months"; no cited instrument supports that interval, and a
+dated span is checkable where a vague one is not.)
 
 What to do instead:
 

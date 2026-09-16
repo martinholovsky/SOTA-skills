@@ -119,8 +119,12 @@ Fix: concrete minimal change (primitive, bound, timeout value, scope).
    with extra steps. Choose a capacity and a full-policy (block, drop, shed).
 3. **Never block the event loop.** No sync I/O, sync crypto, or CPU loops on
    the loop thread — offload to a worker pool.
-4. **Never hold a lock across an await point.** It serializes the system at
-   best and deadlocks it at worst.
+4. **Never hold a *blocking* lock across an await point.** It serializes the system at
+   best and deadlocks it at worst. The **stated exception**: when exclusive access genuinely
+   must span an await — a protocol exchange on one connection, say — use the runtime's
+   *async-aware* mutex (`tokio::sync::Mutex`, `asyncio.Lock`) and accept the serialization
+   you are buying. `sota-rust` rules/04 prescribes exactly that case; without this exception
+   the two skills contradict each other on the same code.
 5. **Every await has a timeout policy.** External calls get explicit deadlines;
    internal ones inherit a scope deadline. "Forever" is a decision, not a
    default.
