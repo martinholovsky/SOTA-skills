@@ -575,6 +575,53 @@ CI scans the full git history, the pre-commit hook scans each commit.
 
 [skills-spec]: https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview
 
+32. **An absence reported through a stderr-suppressed `|| echo`.** `cmd … 2>/dev/null ||
+    echo "missing X"` reads as *"the pattern was absent"*. It fires on **every** non-zero
+    exit, and the `2>/dev/null` has already destroyed the evidence of which one: `grep`
+    exits `1` for no-match and `2` for an unreadable or missing path. With one missing
+    path in the list, the line prints the match it just found **and** the verdict that
+    contradicts it.
+
+    The failure is **directional** — it manufactures findings about *other people's*
+    code rather than hiding them, so an auditor sees plausible output and files it. This
+    shipped in the audit checklists of **nine skills** (13 sites) and was found by a field
+    report, not by any gate.
+
+    **Scope is prescriptive fences only** (```` ```sh ````/```` ```bash ````) in
+    `skills/**` and `commands/**`. A ```` ```console ```` transcript is *documentation* —
+    `sota-shell-scripting` rules/06 §2d demonstrates the broken form inside one, and a gate
+    that fired on that would make the section unwritable (the same distinction checks 22
+    and 31 draw). `|| true` is excluded: a best-effort write to a read-only path is the
+    documented correct use.
+
+    **Why not shellcheck**, measured before building it: `shellcheck -S style` exits **0**
+    on the exact broken line — it is a semantic defect, not a syntax or quoting one. And
+    extracting all 161 fenced `sh`/`bash` blocks and running `shellcheck -S error` yields
+    **19** complaints, nearly all artifacts of a *fragment* (`local` outside a function,
+    half a loop shown for illustration). A gate that opens red gets disabled, so this one
+    is deliberately narrow.
+
+33. **A top-level area is tracked but absent from the coverage table.** Enforcement
+    density is uneven across this tree, and unevenness is **invisible**: an area with no
+    gates looks exactly like a covered one from the outside. Measured 2026-09-16 —
+    `skills/**` (70,200 lines) carries roughly twenty of the checks above, while
+    `commands/**`, 494 lines of instructions an agent *executes every session*, carried
+    **two**. Nobody had decided that; the directory was added on 2026-09-14 and nothing
+    asked the question.
+
+    **It is a declaration, not a ratio, on purpose.** An invariants-per-KLOC floor is
+    arbitrary — the right number for a two-file asset directory is not the right number
+    for 70k lines of instructions — and a threshold nobody can defend gets tuned until it
+    passes. So the gate requires every top-level area to appear in the **Coverage by area**
+    table in [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md) with the gates that
+    cover it, **or a stated reason it is thin**. Same shape as 19, 27 and 28: it forces a
+    decision when an area is added and does not pretend to know the right amount of
+    coverage.
+
+    Checked in **both directions**, like 15: an undeclared area fails, and so does a row
+    for an area that no longer exists — which is how a table rots into decoration after a
+    rename. Adding an area? Add its row in the same PR and say what gates it.
+
 ## Local setup
 
 ```sh

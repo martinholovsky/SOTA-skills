@@ -754,6 +754,73 @@ wt_commit "probe: a heading that already exists in rules/ appears in another fil
 probe_committed_green 31b "a relocated heading is not new guidance — the gate must stay green" \
   "$((relo_before + 1)) relocated"
 
+# 32 — the absence-reporting idiom. TWO probes, because this check must tell its own
+# DOCUMENTATION from its input: sota-shell-scripting rules/06 2d demonstrates the broken
+# form inside a console transcript, and a gate that fired on that would make the section
+# unwritable. 32 asserts it CATCHES a prescriptive bash occurrence; 32b asserts it stays
+# SILENT on the demonstrative console one. Without 32b the exemption is a checkbox that
+# can never be shown to work (probe 29b's lesson).
+# No literal backticks in this file: they are command substitution inside "..." and broke
+# the parse once. The fence markers are built with chr(96).
+( cd "$WT" && python3 -c "
+import pathlib
+fence = chr(96)*3 + 'bash'
+p = pathlib.Path('skills/sota-golang/rules/07-tooling-ci.md')
+t = p.read_text()
+i = t.index(chr(10) + fence + chr(10))
+j = t.index(chr(10), i + len(fence) + 1) + 1
+bad = 'ls go.mod go.sum 2>/dev/null || echo ' + chr(34) + 'no module files' + chr(34)
+p.write_text(t[:j] + bad + chr(10) + t[j:])
+" )
+probe 32 "an absence reported through a stderr-suppressed '|| echo'" \
+  "2>/dev/null || echo"
+
+# 32b — the SAME string inside a console transcript must NOT be flagged.
+( cd "$WT" && python3 -c "
+import pathlib
+open_f = chr(96)*3 + 'console'
+close_f = chr(96)*3
+p = pathlib.Path('skills/sota-golang/rules/07-tooling-ci.md')
+t = p.read_text()
+demo = (chr(10) + open_f + chr(10) +
+        chr(36) + ' ls a b 2>/dev/null || echo ' + chr(34) + 'missing' + chr(34) + chr(10) +
+        close_f + chr(10))
+i = t.index(chr(10) + '## ')
+p.write_text(t[:i] + demo + t[i:])
+" )
+wt_commit "probe: the broken idiom shown inside a console transcript"
+probe_committed_green 32b "the idiom inside a console transcript is documentation, not input" \
+  "instruction files"
+
+# 33 — the coverage table has to be complete in BOTH directions, like check 15.
+# 33 removes a declared area's row (a tracked area goes undeclared); 33b adds a row for
+# an area that does not exist (the way a table rots into decoration once a directory is
+# renamed). Mutating the TABLE rather than creating a directory is deliberate: a new
+# empty directory is invisible to `git ls-files`, so that mutation would be inert.
+( cd "$WT" && python3 -c "
+import pathlib, re
+p = pathlib.Path('docs/CONVENTIONS-LEDGER.md')
+t = p.read_text()
+t2 = re.sub(r'^\| .commands/. \|.*$' + chr(10), '', t, count=1, flags=re.M)
+assert t2 != t, 'probe stale: no commands/ row to remove'
+p.write_text(t2)
+" )
+probe 33 "a tracked area is absent from the coverage table" \
+  "UNDECLARED AREA"
+
+# 33b — the orphan direction.
+( cd "$WT" && python3 -c "
+import pathlib
+p = pathlib.Path('docs/CONVENTIONS-LEDGER.md')
+t = p.read_text()
+anchor = '| ' + chr(96) + 'hooks/' + chr(96) + ' |'
+assert anchor in t, 'probe stale: no hooks/ row to anchor on'
+row = '| ' + chr(96) + 'no-such-area/' + chr(96) + ' | nothing | nothing | probe |' + chr(10)
+p.write_text(t.replace(anchor, row + anchor, 1))
+" )
+probe 33b "the coverage table declares an area that does not exist" \
+  "ORPHAN ROW"
+
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
 # =============================================================================

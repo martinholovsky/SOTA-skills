@@ -3683,3 +3683,71 @@ and made a healthy loop look like it self-matched. `ps -axo pid=,ppid=,command=`
 the orphan, the same arm exited cleanly. **A reproduction that confirms the rule you expect is
 exactly when to check what else is in the process table** — and the orphan was itself
 scaffolding, which is the finding.
+
+## 2026-09-16 — Closing the gate gaps the posture audit found: invariants 32 and 33
+
+Source: an audit of this repo's own control surface, prompted by the 2026-09-15 field reports.
+Four gaps were named; two are closed here as gates, one is closed as a settings change the
+repo cannot make for itself, and one is **not closeable and is stated as such**.
+
+### Gap 1 — two CI jobs could not block a merge — **handed to the operator**
+
+`Executable claims (ubuntu-latest)` and `(macos-latest)` run on every PR and were **not
+required status checks**: the claims could stop holding and the PR would still merge. This is
+the 2026-08-05 incident repeating (that one: `Negative controls` and `Shell lint` ran and could
+not block). The API call is a repository-settings write and was refused to the agent, so it is
+handed over with the exact command. **`AGENTS.md` no longer states the number** — it rotted
+precisely because a job was added and never made required, so it now points at
+`gh api … /branches/main/protection` instead.
+
+### Gap 2 — the guidance's shell was linted by nothing — **closed as invariant 32**
+
+`cmd … 2>/dev/null || echo "missing X"` shipped in the audit checklists of nine skills. The
+gate flags it inside **prescriptive** fences only.
+
+**The design changed under measurement, twice.** The first plan was "shellcheck every fenced
+block", on the stated assumption that it would have caught the 13 sites. **It would not** —
+`shellcheck -S style` exits **0** on the exact line, because the defect is semantic, not
+syntactic. That claim was published in the audit summary and is **retracted here**. The second
+measurement killed the general form too: extracting all 161 `sh`/`bash` blocks and running
+`shellcheck -S error` yields **19** complaints, nearly all artifacts of a *fragment* (`local`
+outside a function, half a loop shown for illustration). A gate that opens red gets disabled
+(rules/12 §2), so the gate that shipped is narrow and targeted.
+
+**Known-good / known-bad, both measured before writing the check:** 0 hits on today's tree,
+**13** on `81b437a~1` — exactly the sites fixed in #386. Two probes, because the check must
+tell its own documentation from its input: `rules/06` §2d *demonstrates* the broken form inside
+a ```console transcript, and a gate that fired on that would make the section unwritable.
+
+### Gap 3 — "nothing checks whether a rule is true" — **not closeable; scope stated**
+
+Left open deliberately. "Is this claim correct" is semantic, and this ledger's own argument is
+that a fuzzy gate gets disabled and leaves you worse off. What *is* tractable is the executable
+slice: `scripts/check-claims.sh` runs **13** claims as real commands, and invariant 32 now
+covers one recurring shell idiom. **Invariant 31 gates the record, not the truth** — that
+remains the honest description, and the residual is named in `docs/WHY-COMPLETENESS-RESIDUAL.md`
+terms rather than papered over with a gate that cannot fail.
+
+### Gap 4 — uneven enforcement density — **closed as invariant 33, a declaration**
+
+`skills/**` (70,200 lines) carries ~20 of the checks; `commands/**` — 494 lines of instructions
+an agent **executes every session** — carried two, and nobody had decided that.
+
+**A ratio was considered and rejected.** An invariants-per-KLOC floor is arbitrary: the right
+number for a two-file asset directory is not the right number for 70k lines of instructions,
+and a threshold nobody can defend gets tuned until it passes. Invariant 33 instead requires
+every top-level area to appear in a **Coverage by area** table with the gates that cover it
+**or a stated reason it is thin** — the same declaration shape as 19 (known-bad or pinned
+reason), 27 (deferral names a trigger) and 28 (case set declares its selection rule).
+
+**Why it earns a gate**, against this ledger's three filters: it has already failed
+(`commands/` arrived 2026-09-14 under-covered); it fails silently (an ungated area is
+indistinguishable from a covered one); it is mechanically checkable (enumerate, compare). And
+the rate says it recurs — **ten areas in the repo's first three months**, about one per ten
+days.
+
+**The table states two gaps rather than hiding them:** `.github/` `run:` blocks are unlinted
+(shellcheck reaches `*.sh` only — the same class 32 closes for skills, not gated because
+extracting YAML scalars reliably is more machinery than two blocks justify), and `evals/`
+Python is unlinted beyond the scorer tests. A row that says "thin, and here is why" is the
+point of the gate.

@@ -71,7 +71,7 @@ A convention earns a gate only if it passes **all three**:
 
 ## The ledger
 
-### Enforced — invariants 1–31
+### Enforced — invariants 1–33
 
 <!-- count-check: · +1 -->
 **31 conventions** are gated, one per invariant, in the order the checks run:
@@ -312,6 +312,39 @@ different granularities is the judgement class this ledger exists to argue again
 gating, and it is the same residual `CONTRIBUTING.md` item 17 already states for row 12
 versus item 12. The remedy stays a habit: read the prose beside the script at each cut,
 which is how this one surfaced.
+
+## Coverage by area — what gates each part of the tree (invariant 33)
+
+**Why this table exists.** Enforcement density is uneven, and unevenness is invisible: an area
+with no gates looks exactly like a covered one from the outside. Measured 2026-09-16 —
+`skills/**` (70,200 lines) carries ~20 of 33 invariants, while `commands/**` (494 lines of
+instructions an agent *executes every session*) carried **two**, and nobody had decided that.
+
+**Why a declaration and not a ratio.** A numeric invariants-per-KLOC floor is arbitrary — the
+right number for a 500-line asset directory is not the right number for 70k lines of
+instructions, and a threshold nobody can defend gets tuned until it passes. So this gates the
+thing that is mechanical and non-arbitrary: **every top-level area appears here, with the gates
+that cover it or a stated reason none do.** Same shape as invariant 19 (every check declares a
+known-bad or a pinned reason), 27 (every deferral names a trigger) and 28 (every case set
+declares its selection rule). It forces a decision when an area is added; it does not pretend
+to know the right amount of coverage.
+
+**Why it is worth a gate at all.** Ten areas appeared in the repo's first three months — about
+one per ten days — and the newest, `commands/` (2026-09-14), is the one that arrived
+under-covered. This will recur.
+
+| area | what it holds | gated by | if thin, why that is accepted |
+|---|---|---|---|
+| `skills/` | the library itself — instructions an agent loads | 1, 2, 3, 4, 7, 8, 10, 15, 18, 22, 30, 31, 32 | — |
+| `commands/` | slash commands — instructions an agent executes | 3, 8, 18, 30, 32 | **thin by measurement, not by choice.** No line cap (they are not loaded every session) and no audit-checklist rule (they are procedures, not rule files). Revisit if a command grows past ~200 lines or starts carrying rule text |
+| `scripts/` | the gates themselves, plus install/verify | shellcheck `-S style` (CI), 17, 19, and `check-negative-controls.sh` part A/B | — |
+| `evals/` | measurement harness and case sets | `evals/test_scoring.py` (pre-commit + CI), 13, 25, 28, plus 9 conventions inside the runners | Python is unlinted beyond the scorer tests; accepted because the runners are not shipped to users and a wrong number fails 13/25/28 |
+| `docs/` | prose: ledgers, indexes, runbooks | 8, 17, 21, 23, 26, 27, 30, 31 | uncapped deliberately (2026-07-15) — navigability comes from `docs/INDEX.md` |
+| `assets/` | rendered PNGs and their HTML sources | 12 (PNG no older than its HTML) | 2 files; a render check is the only failure mode that has occurred |
+| `.github/` | CI workflows | shellcheck reaches `*.sh` only, **not `run:` blocks** | **a real gap, stated rather than closed**: an unlinted `run:` block is the same class invariant 32 closes for skills. Not gated yet because extracting `run:` YAML scalars reliably is more machinery than the two blocks justify |
+| `hooks/` | the re-injection hook | shellcheck (tracked `*.sh`) | one file |
+| `profiles/` | `example.md.template` only; real profiles are git-ignored | 3 (internal-name leak) | by design — a real profile must never be committed |
+| `.claude-plugin/` | the plugin manifest | 5 (version lockstep) | one JSON file, and its version is the thing that rots |
 
 ## Findings
 

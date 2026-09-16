@@ -21,12 +21,15 @@ enforcement is on). Every change goes through a pull request:
    pre-push re-runs the invariants, the first moment the **diff-based** ones
    (11, 14) have a commit to read
 3. push the branch and open a PR
-4. all four required checks must pass, then squash-merge — invariants, secret scan,
-   shell lint, and the negative-control harness that proves the gates can still fail
+4. **every** required check must pass, then squash-merge — invariants, secret scan, shell
+   lint, executable claims, and the negative-control harness that proves the gates can
+   still fail. The count is deliberately not written here: it rotted once when a job was
+   added and never made required, so read it from
+   `gh api repos/OWNER/REPO/branches/main/protection --jq '.required_status_checks.contexts'`
 
 ## Invariants (enforced in pre-commit and CI)
 
-`scripts/check-invariants.sh` runs **31 checks** and fails the build on any of them. One line
+`scripts/check-invariants.sh` runs **33 checks** and fails the build on any of them. One line
 each — with the real incident behind every one — in **[docs/INVARIANTS.md](docs/INVARIANTS.md)**,
 offloaded out of this file on 2026-09-13 because each new invariant cost a line of the
 always-loaded budget and the cap had been breached by an invariant's own table row — twice landing at 201 and 202, and hitting exactly 200 twice more while editing this session. **The precise total is not recoverable from git**, because the gate catches a breach pre-commit so it never lands; what is recoverable is that every one was a table row. Read it before changing a gate. The
@@ -149,7 +152,7 @@ the setting. The pre-commit hook scans each commit locally.
   a session *applying* the library, and an unlicensed source whose ideas can be
   taken but whose text cannot, both land here on the same terms
 - [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md) — which of this repo's
-  conventions are **enforced** (31 invariants + 9 more inside the eval runners) and
+  conventions are **enforced** (33 invariants + 9 more inside the eval runners) and
   which are prose, with the three filters a convention must pass to earn a gate
   (has it already failed · does it fail silently · is it mechanically checkable).
   Read it before proposing a new gate — it argues against gating the ~18 judgment

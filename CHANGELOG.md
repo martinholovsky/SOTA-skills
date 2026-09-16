@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — two gates from auditing our own control surface
+
+- **Invariant 32 — no absence reported through a stderr-suppressed `|| echo`.**
+  `cmd … 2>/dev/null || echo "missing X"` shipped in the audit checklists of nine skills; the
+  `||` fires on *every* non-zero exit and the redirect destroyed the reason. Flagged inside
+  prescriptive ```sh/```bash fences in `skills/**` and `commands/**`; ```console transcripts
+  and `|| true` are exempt. **Measured before building: `shellcheck -S style` exits 0 on the
+  exact line** (semantic, not syntactic), and linting all 161 fenced blocks yields 19
+  fragment-artifact errors — a gate that opens red gets disabled, so this one is narrow.
+  Known-good/known-bad: 0 hits today, **13** on the pre-fix tree. Two probes, the second
+  proving it stays silent on the section that *documents* the anti-pattern.
+- **Invariant 33 — every top-level area declares what gates it.** Enforcement density is
+  uneven and unevenness is invisible: `skills/**` (70,200 lines) carries ~20 checks while
+  `commands/**` — instructions an agent executes every session — carried two, undecided.
+  A **declaration, not a ratio**: an invariants-per-KLOC floor is arbitrary and gets tuned
+  until it passes, so every area must appear in a new **Coverage by area** table with its
+  gates or a stated reason it is thin. Both directions, like 15. Ten areas appeared in the
+  repo's first three months, so this recurs.
+
+### Changed
+
+- **`AGENTS.md` no longer states how many CI checks are required.** That number rotted
+  exactly once already — a job was added and never made a required check — so it now points
+  at `gh api …/branches/main/protection` instead of carrying a literal.
+
+
 ### Added
 
 - **`sota-shell-scripting` rules/01 §3 — scaffolding gets the same scrutiny as the payload.**
