@@ -3789,8 +3789,16 @@ earns a test if getting it wrong **changes a conclusion someone acts on**. Not "
    out of the repo.
 
 Both were caught because the harness was run and read, not because it was written carefully.
-**Measured after the fixes: 22 run, 0 skipped, 0 failed on macOS** — up from 11 run / 2 skipped.
-The count stays out of the prose deliberately; run the script.
+**Measured after the fixes: 22 run, 0 skipped, 0 failed** — up from 11 run / 2 skipped — on a
+macOS host carrying ugrep, ripgrep, zsh and gitleaks.
+
+**Scope corrected the same day, during closure.** "On macOS" was the wrong attribution: the
+run count tracks the **toolchain, not the platform**. The same commit on CI reports **15 run /
+7 skipped** on its macOS runner and **21 run / 1 skipped** on ubuntu, because a missing binary
+skips with a printed reason instead of passing silently — which is the harness behaving
+correctly. A reader checking CI against "22 on macOS" would have concluded the record was
+wrong. The count stays out of the prose deliberately; run the script and read its
+denominator.
 
 ## 2026-09-16 — External audit of v1.42.1: 18 findings verified, 18 fixed
 
