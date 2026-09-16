@@ -2,7 +2,7 @@
 
 Scope: the sibling of `rules/09`. That file asks whether a gate *can* fail and whether failing
 it *matters*; this one starts one step later — the gate went red, and someone has to find out
-why. Split out of `rules/09` at v1.42.3 when that file reached its 500-line cap; §4, §5 and §6
+why. Split out of `rules/09` (· unreleased — the cut fills this in) when that file reached its 500-line cap; §4, §5 and §6
 keep their numbers so every existing citation still names the right section.
 
 **The unifying property:** a failure's cause lives in output that is *more perishable than the

@@ -37,7 +37,7 @@ permissions and provenance → `rules/01` and `rules/02`.
 ---
 
 
-**§4, §5 and §6 moved to [`rules/11`](11-after-the-gate-fails.md) at v1.42.3** when this file
+**§4, §5 and §6 moved to [`rules/11`](11-after-the-gate-fails.md)** (· unreleased) when this file
 reached its cap — that half asks what happens *after* a gate goes red (a verdict that outlives
 the executor, reproducing the gate's own invocation, a bespoke watcher's blind spots, and
 preserving a failed run's log before re-running it destroys the cause). They keep their section

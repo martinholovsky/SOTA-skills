@@ -71,7 +71,7 @@ A convention earns a gate only if it passes **all three**:
 
 ## The ledger
 
-### Enforced — invariants 1–33
+### Enforced — invariants 1–34
 
 <!-- count-check: · +1 -->
 **31 conventions** are gated, one per invariant, in the order the checks run:
@@ -317,7 +317,7 @@ which is how this one surfaced.
 
 **Why this table exists.** Enforcement density is uneven, and unevenness is invisible: an area
 with no gates looks exactly like a covered one from the outside. Measured 2026-09-16 —
-`skills/**` (70,200 lines) carries ~20 of 33 invariants, while `commands/**` (494 lines of
+`skills/**` (70,200 lines) carries ~20 of 34 invariants, while `commands/**` (494 lines of
 instructions an agent *executes every session*) carried **two**, and nobody had decided that.
 
 **Why a declaration and not a ratio.** A numeric invariants-per-KLOC floor is arbitrary — the
