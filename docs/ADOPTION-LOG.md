@@ -3852,3 +3852,31 @@ the per-operation table copied from the Tokio `select!` docs rather than a one-l
 getting it half-right is worse than the current wording. O2–O5, R1 and G2 are design and
 scope arguments rather than factual errors; they are recorded, not actioned, and O2's missing
 arm is already conceded in the runner's own docstring.
+
+## 2026-09-16 — F3 closed: the Tokio cancellation-safety table, copied rather than paraphrased
+
+Deferred from the external-audit intake above because it needed the per-operation list, not a
+one-line edit. Transcribed from the `select!` docs
+([cancellation safety](https://docs.rs/tokio/latest/tokio/macro.select.html#cancellation-safety),
+read 2026-09-16).
+
+**Three errors in one bullet, and the two that matter are inversions**, not omissions:
+
+- **`Notify::notified` was listed as cancel-safe.** Tokio lists it as **not** safe.
+- **"`Mutex::lock` is safe"** — Tokio lists `Mutex::lock`, `RwLock::read`, `RwLock::write`
+  and `Semaphore::acquire` as **not** safe.
+- **`recv()` was attributed to `watch`.** The cancel-safe `watch` method is **`changed()`**;
+  the sibling channels use `recv()`, which is exactly why the slip is easy.
+
+**The repair is not just the list — it is the two *reasons*.** Tokio gives separate causes,
+and the audit was right that collapsing them mislabels the severity. Partial-I/O
+(`read_exact`, `read_to_end`, `read_to_string`, `write_all`) loses **bytes** and
+desynchronises a stream. The lock/semaphore/notify row loses only **progress**: the docs say
+these *"use a queue for fairness and cancellation makes you lose your place in the queue"* —
+nothing is corrupted. So the audit checklist now rates them differently and says plainly that
+**reporting a fairness-queue cancellation as data loss is a false finding**. A rule that
+over-rates a severity manufactures work in someone else's repo, which is the same failure
+class as invariant 32's idiom.
+
+The table is dated and marked per-version, because the classification is a property of the
+tokio release, not of async Rust.
