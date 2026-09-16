@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — a stated convention for measuring a rule change against the previous version
+
+The invariants are structural: an external audit found **19 wrong statements with all 33
+checks green**. `evals/run-prompt-independence.py` already builds a `pre` arm from your rules
+files at `--ablate-ref` (via `git show`, so it is the real prior text rather than a mirror
+that drifts) and a `post` arm from the working tree — but nothing said *when* a contributor
+should reach for it.
+
+- **[docs/PROSE-REGRESSION.md](docs/PROSE-REGRESSION.md)** — the decision: what the ablation
+  compares, why it is **per-change by design** (its treated cases are one per rules file the
+  originating branch changed, so it exits `FAIL` rather than reporting a number when no case
+  loads a file you touched — that means you forgot a case, not that the change is safe), when
+  a prose edit warrants a run and the four shapes that do **not**, the cost (54 build + 54
+  judge calls at defaults), and how to read a treated delta against the controls' noise floor.
+- **`CONTRIBUTING.md`** — a PR-checklist line and a short section pointing at it. Deliberately
+  a **convention, not a gate**: it needs an API key and ~100 model calls, and a gate that
+  cannot run in CI is one people disable.
+
+
 ### Fixed
 
 - **`sota-rust` rules/04 — the Tokio cancellation-safety classification was wrong in both

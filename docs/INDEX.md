@@ -141,6 +141,7 @@ trying to do**, not by file. (Kept in sync by hand; if a link rots, open an issu
 | Check how audit reports are scored for **calibration** (and why it is never reported as a lift) | [BUILD-SAFE 2026-08-21 §2](../evals/results/2026-08-21/BUILD-SAFE.md) · `evals/run-calibration.py` |
 | See a measurement that **refuted one of this library's own claims** | [COMPLETENESS-PADDING.md](../evals/results/2026-09-01/COMPLETENESS-PADDING.md) — 400 lines of competing guidance cost **−0.01**, so the "load lean or lose applied rules" claim was withdrawn |
 | Understand **why some lifts expire and others don't** (knowledge vs salience) | [WHY-SALIENCE-LASTS.md](WHY-SALIENCE-LASTS.md) — the prediction, and what would falsify it |
+| **Decide whether your rule edit needs measuring at all**, and what the pre-vs-post ablation can and cannot tell you — the invariants are structural, so an external audit found **19 wrong statements with all 33 green** | [docs/PROSE-REGRESSION.md](PROSE-REGRESSION.md) |
 | Check whether a rule survives a prompt that argues **against** it (prompt-independence) | [`evals/run-prompt-independence.py`](../evals/run-prompt-independence.py) — same task at supportive / neutral / **competing** pressure, three arms |
 | Read an eval that failed as an *instrument* rather than as a result | [BUILD-SAFE.md](../evals/results/2026-07-30/BUILD-SAFE.md) |
 | See the edges of the do-not-reimplement rule (`sota-devsecops` rules/10 §6), as worked cases | [`evals/cases/reimplement.jsonl`](../evals/cases/reimplement.jsonl) — documentation, never run |
