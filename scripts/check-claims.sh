@@ -497,8 +497,11 @@ d=$(fresh twodot)
 if [ ! -d "$d/.git" ]; then
   skip 19 "two-dot diff invents a regression" "git init failed in the sandbox"
 else
-  two=$(cd "$d" && git diff main..feature -- lock.toml 2>/dev/null | grep -c '^-lib' || true)
-  three=$(cd "$d" && git diff main...feature -- lock.toml 2>/dev/null | grep -c '^-lib' || true)
+  # No `|| true` here: `A && B || C` is SC2015 and CI's shellcheck is stricter than the
+  # one that passed locally. grep -c prints 0 and exits 1 when there is no match, and the
+  # substitution captures stdout either way -- the status is never read.
+  two=$(cd "$d" && git diff main..feature -- lock.toml 2>/dev/null | grep -c '^-lib')
+  three=$(cd "$d" && git diff main...feature -- lock.toml 2>/dev/null | grep -c '^-lib')
   if [ "$two" -ge 1 ] && [ "$three" -eq 0 ]; then
     pass 19 "two-dot renders main's security bump as a deletion; three-dot does not"
   else
