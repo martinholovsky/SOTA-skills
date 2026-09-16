@@ -11,9 +11,9 @@ description: >-
   proxy). Triggers — network security, zero trust, ZTNA, microsegmentation,
   east-west traffic, lateral movement, NetworkPolicy, default-deny, Cilium,
   Hubble, service mesh, mTLS, Istio, Linkerd, SPIFFE, ingress, egress, WAF,
-  CRS, Coraza, egress gateway, FQDN allowlist, IMDS, 169.254.169.254, DNS
-  firewall, DNSSEC, DoH, TLS 1.3, ACME, step-ca, private CA, WireGuard,
-  bastion, identity-aware proxy, DDoS, segmentation audit. Owns SECURITY posture on
+  CRS, Coraza, egress gateway, FQDN allowlist, IMDS, DNS firewall, DNSSEC,
+  DoH, TLS 1.3, ACME, step-ca, private CA, bastion, identity-aware proxy,
+  DDoS, email spoofing, SPF, DKIM, DMARC. Owns SECURITY posture on
   top of cloud network setup (sota-cloud-infrastructure owns VPC/subnet/DNS
   setup).
 ---

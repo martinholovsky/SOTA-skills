@@ -82,8 +82,16 @@ egress:
 allow), and selects by pod labels, namespace labels, or `ipBlock`. Limits to know:
 - **No L7** (no HTTP path/method), **no FQDN** (only IPs/CIDRs in `ipBlock`), **no explicit deny**
   (no priority/deny — you express deny by *not* allowing), **no cluster-scoped** baseline.
-- `ipBlock` matches pod IPs too — be careful that a broad `ipBlock` doesn't unintentionally re-open
-  intra-cluster paths.
+- `ipBlock` and in-cluster IPs — **state which implementation you mean, the default is
+  opposite between them.** Under upstream `NetworkPolicy` a broad `ipBlock` can re-open
+  intra-cluster paths, because pod IPs fall inside the CIDR. Under **Cilium — which this
+  file's examples assume** — *"CIDR-based selectors do not match in-cluster entities (pods or
+  nodes)"* by default, and matching pods that way needs `--policy-cidr-match-mode=pods`
+  (which allocates an identity per matching pod, so it is not free)
+  ([Cilium L3 policy](https://docs.cilium.io/en/stable/security/policy/layer3/), verified
+  2026-09-16). So the same manifest has two different blast radii depending on the CNI:
+  check the mode before filing either the finding or the all-clear, and prefer identity
+  selectors for pod-to-pod policy as §below advises.
 
 **R3a — where the "never a bare CIDR" non-negotiable does and does not bind.** This skill's
 non-negotiable 3 says every allow references identity, never a bare CIDR. Read literally against

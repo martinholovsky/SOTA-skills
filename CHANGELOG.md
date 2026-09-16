@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — an external audit of v1.42.1: 18 findings verified against primary sources, 18 fixed
+
+Every finding was re-verified before acting; **10 of 10 spot-checked citations resolve to
+real text**, unlike the previous external audit where every line number was invented.
+
+- **`sota-web-frameworks` rules/03 — two audit commands found nothing.** `grep -rln 'export
+  async function (GET|POST|…)'` uses BRE, where the parens are *literal*, and the
+  `process.env.(?!NEXT_PUBLIC_)` command asks POSIX ERE for negative lookahead. Reproduced
+  (exit 1 / syntax error); corrected commands verified on the same fixture. Also: **`updateTag`
+  is Server-Actions-only** and throws in a Route Handler, and React **does** serialize `Date`,
+  `Map`, `Set`, promises and Server Functions.
+- **`sota-kubernetes` rules/02 — there is no anonymous→`system:authenticated` bridge.**
+  Anonymous requests get `system:anonymous` + `system:unauthenticated`. Severity now rests on
+  the verbs and resources, since Kubernetes itself binds `system:public-info-viewer` to both
+  groups by default.
+- **`sota-databases` rules/04 — PgBouncer's matrix draws three distinctions we collapsed**:
+  `LISTEN` is unsupported in transaction mode but **`NOTIFY` is supported**; `ON COMMIT DROP`
+  temp tables work; protocol-level prepared plans are what `max_prepared_statements` rescues,
+  not SQL `PREPARE`.
+- **`sota-python` rules/04 — Django *raises*, it does not silently serialize.**
+  `SynchronousOnlyOperation` is the default; blocking requires `DJANGO_ALLOW_ASYNC_UNSAFE`.
+- **`sota-network-security` rules/03 — `ipBlock` and in-cluster IPs differ by CNI.** Cilium
+  excludes pods and nodes from CIDR selectors by default; upstream NetworkPolicy does not.
+- **`sota-security-compliance` rules/04 — the CRA conformity split is conditional.** Module A
+  stays available to class I where harmonised standards are *fully* applied (Art. 32(1)–(2)).
+- **`sota-frontend-design` rules/05 — standalone link text is 2.4.9 (AAA), not 2.4.4 (A).**
+  2.4.4 is satisfied by link text plus programmatically determined context.
+- **`sota-secrets-management` rules/05 — dotenv does not override a set variable.** Measured
+  on 17.4.2; the real risk is a stray file *supplying* a variable nobody reviewed.
+- **`sota-llm-engineering` — two numbers.** The tokenizer gap is **35% below** (54% is the
+  inverse direction), and "wrong for four months" was **29 days**.
+- **Two contradictions between skills.** The "never hold a lock across an await" absolute now
+  states its async-mutex exception, which `sota-rust` already prescribed; the Python
+  detached-task example now observes its exception instead of only discarding the task.
+- **Two routing surfaces.** `sota-network-security` advertises SPF/DKIM/DMARC (its body owns
+  them; its description did not), and `sota-c-cpp` declares the embedded *systems* layer it
+  does not own — both paid for by dropping duplicate triggers, because the shared skill
+  listing budget makes a new skill the expensive option.
+- **`docs/WHY-IT-WORKS.md` — the self-audit was not separately measured.** `gate=False`
+  removes the entire `BUILD_WORKFLOW`, so +0.062 measures the reminder bundle, not step 4.
+  Isolating the terminal re-read needs an arm that has not been run.
+
+
 ### Added — the executable-claims slice widened to every silently-false-answer trap
 
 `scripts/check-claims.sh` re-runs the claims a rule's advice actually rests on. It covered

@@ -210,7 +210,11 @@ del dek  # drop plaintext DEK immediately; zeroize where the runtime allows
   dev-only dependency), so a stray file can't silently override prod config.
 
 ```js
-// BAD — dotenv unconditionally; a forgotten .env on a prod host wins over the platform
+// BAD — dotenv unconditionally. NOT because the file beats the platform: it does not.
+// Measured on dotenv 17.4.2 — default config() leaves an already-set variable alone, and
+// only config({ override: true }) lets the file win. The real risk is the opposite shape:
+// a stray .env SUPPLIES a variable the platform forgot to set, so a value nobody reviewed
+// becomes the effective config and looks like it came from the platform.
 require("dotenv").config();
 
 // GOOD — dev-only, explicit, and never overriding real environment

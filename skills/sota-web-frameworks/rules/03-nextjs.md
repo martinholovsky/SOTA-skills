@@ -20,8 +20,15 @@ server, can be `async`, and can touch the database, filesystem, and secrets dire
 - **Keep secrets and data access server-side.** Mark server-only modules with
   `import 'server-only'` so importing them from a Client Component is a *build error*.
   Only server code should read `process.env` secrets.
-- Functions and class instances can't cross the boundary; React throws. That's a
-  feature — it stops you leaking server closures to the client.
+- **Most** functions and class instances can't cross the boundary; React throws. That's a
+  feature — it stops you leaking server closures to the client. Know the exceptions before
+  you report one as a violation: React's serializable list **does** include `Date`, `Map`,
+  `Set`, `TypedArray`, `ArrayBuffer`, promises, JSX elements, and **functions that are
+  Server Functions** (`'use server'`). What is not serializable is a function *not* exported
+  from a client-marked module or marked `'use server'`, a class, an instance of any
+  non-built-in class, a null-prototype object, and a non-global symbol
+  ([React: serializable types](https://react.dev/reference/rsc/use-client), verified
+  2026-09-16). The minimal-DTO advice below stands on its own security merits.
 
 ## 2. Server Actions — public endpoints with ergonomic syntax
 
@@ -92,9 +99,13 @@ The caching model changed materially; stale mental models cause both bugs and le
   part of the key** (correct) but caching a *component that renders per-user data
   without keying on the user* leaks across users (MEDIUM–HIGH). Variants:
   `use cache: private` for per-user.
-- **Invalidation:** `revalidateTag`/`revalidatePath` (and `updateTag` with Cache
-  Components) from a Server Action or Route Handler. **ISR** (route `revalidate`) still
-  works.
+- **Invalidation, and the allowed context differs per API:** `revalidateTag` and
+  `revalidatePath` work from a Server Action **or** a Route Handler. **`updateTag` is
+  Server-Actions-only** — calling it from a Route Handler *throws*
+  (`updateTag can only be called from within a Server Action`), so reach for
+  `revalidateTag` there. This is an invocation-context rule, not a caching-style
+  preference ([Next.js: updateTag](https://nextjs.org/docs/app/api-reference/functions/updateTag),
+  verified 2026-09-16). **ISR** (route `revalidate`) still works.
 - **Security rule:** never cache a personalized page at a shared cache. If a route
   reads the session/cookies, it must be dynamic or explicitly `private`. Cache
   poisoning has been a repeated Next CVE class (below) — CDNs also drop `Vary`, so
@@ -135,13 +146,19 @@ grep -E '"(react|react-dom|react-server-dom-webpack|next)"' package.json
 
 # Server Actions / Route Handlers — each must authn+authz+validate
 grep -rn "'use server'" --include='*.ts' --include='*.tsx' app lib
-grep -rln 'export async function (GET|POST|PUT|DELETE|PATCH)' app  # route.ts handlers
+grep -rlnE 'export async function (GET|POST|PUT|DELETE|PATCH)' app  # -E: without it the
+                                                                    # parens are LITERAL in BRE
+                                                                    # and this silently finds 0
 
 # Authz only in middleware/layout? (finding)
 ls middleware.* proxy.* 2>/dev/null; grep -rn 'getServerSession\|auth()\|requireUser' app | head
 
 # Server->client data exposure: whole objects as props, env on client
-grep -rnE 'process\.env\.(?!NEXT_PUBLIC_)' --include='*.tsx' app components | grep -i client
+# NO negative lookahead: POSIX ERE has none, so `(?!...)` is a syntax error or a literal.
+# List the env reads, then exclude the public prefix with a second pass.
+grep -rnE 'process\.env\.[A-Z0-9_]+' --include='*.tsx' app components | grep -v 'NEXT_PUBLIC_'
+# NB this is a CANDIDATE list, not an absence proof: it greps text, not the Client Component
+# module graph. A server module imported by a client one is invisible to it.
 grep -rn "import 'server-only'\|import \"server-only\"" app lib   # want: present in data layer
 
 # next/image SSRF precondition

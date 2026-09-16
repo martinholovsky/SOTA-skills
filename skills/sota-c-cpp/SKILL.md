@@ -8,11 +8,13 @@ description: >-
   MISRA, integer/buffer/format-string, injection), concurrency (C/C++ memory
   model, atomics, data races), build/tooling/CI (CMake, clang-tidy, cppcheck,
   ASan/UBSan/TSan, vcpkg/Conan, supply chain), and performance. Trigger keywords
-  - C, C++, cpp, RAII, smart pointer, unique_ptr, shared_ptr, undefined
-  behavior, UB, buffer overflow, use-after-free, double-free, sanitizer, ASan,
-  UBSan, TSan, valgrind, CMake, clang-tidy, clang-format, cppcheck, MISRA, CERT
+  - C, C++, RAII, smart pointer, unique_ptr, shared_ptr, undefined
+  behavior, UB, buffer overflow, use-after-free, sanitizer, ASan,
+  UBSan, TSan, valgrind, CMake, clang-tidy, cppcheck, MISRA, CERT
   C, memory safety, std::thread, atomics, std::move. Use for BOTH building
-  C/C++ libraries/systems and reviewing or auditing them.
+  C/C++ libraries/systems and reviewing or auditing them. Owns firmware's LANGUAGE
+  layer; does NOT own its SYSTEMS layer — ISRs, DMA coherency, MMIO, RTOS
+  scheduling, priority inversion, WCET, linker scripts — unowned library-wide.
 ---
 
 # SOTA C & C++ (2026)

@@ -149,9 +149,17 @@ Stenberg's, published from curl's intake in June 2026, and it doubles as your tr
   **harmonized standards** being drafted by CEN/CENELEC under a Commission
   standardization request (a horizontal **EN 40000** series for all digital
   products, plus vertical/OT tracks).
-- **Conformity routes:** internal control (Module A self-assessment) for default
-  products; **third-party assessment via a notified body** or an **EU cybersecurity
-  certification scheme** for important/critical classes.
+- **Conformity routes — the split is conditional, not categorical.** Article 32(1) makes
+  the **internal control procedure (Module A)** available, and 32(2) sends a **class I**
+  important product to the stricter routes (module B+C, or module H) only *"where the
+  manufacturer has not applied or has applied only in part"* harmonised standards, common
+  specifications or a qualifying certification scheme at assurance level at least
+  `substantial` — or where none exist. **Fully apply them and Module A remains open to class
+  I.** Article 32(5) also provides a distinct route for products qualifying as free and
+  open-source software. Critical products are the genuinely stricter case. Verified
+  2026-09-16 against the Article 32 text; check which harmonised standards actually exist at
+  your date of use, because "fully applied" is doing the work in that sentence.
+  ([Regulation (EU) 2024/2847, Art. 32](https://eur-lex.europa.eu/eli/reg/2024/2847/oj/eng))
 - **ISA/IEC 62443 and NIST frameworks** are widely expected to *inform* the
   harmonized standards and are common industry mappings — CEN/CENELEC is adapting
   **EN IEC 62443-4-1 / 4-2** as the OT/industrial route (rules/05). **But being a
