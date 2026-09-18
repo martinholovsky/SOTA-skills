@@ -1,5 +1,5 @@
 ---
-description: The heavy audit — a hostile review of a whole repository by someone who will inherit it: the threat model reconstructed from the code and a control-presence matrix built against it, then code, history, decisions, results and forward plan, fanned out across independent agents, every load-bearing claim re-measured this session, every serious finding handed to a refuter that is not you. Expensive; run it at a milestone, an inheritance or a go/no-go, not routinely.
+description: The heavy audit — a hostile review of a whole repository by someone who will inherit it: the threat model reconstructed from the code and a control-presence matrix built against it, then code, history, decisions, results and forward plan, fanned out across independent agents, load-bearing claims re-measured this session or labelled unverified, every serious finding handed to a refuter that is not you. Expensive; run it at a milestone, an inheritance or a go/no-go, not routinely.
 ---
 
 A hostile review of this repository by someone who will inherit it and distrusts every prior
@@ -20,8 +20,10 @@ point me back at the cheap command.
 1. **Independence.** `/sota-audit` refutes its own findings from the context that produced
    them, which still holds the reasoning that produced them. Here every serious finding goes to
    an agent that did not find it, prompted to kill it.
-2. **Scale.** A repository too large to hold at once is partitioned across agents rather than
-   skimmed by one (`sota` router `rules/01` §1a).
+2. **Scale.** `/sota-audit` also partitions a scope too large to hold at once, but it does so
+   *within one context*, finishing each partition before the next — so the last partition is
+   read by a context already full of the first. Here the partitions go to **separate agents**,
+   each starting clean (`sota` router `rules/01` §1a).
 3. **Decisions re-measured, not just reconstructed.** Where a past decision rests on a number,
    that number is produced again *this session*, including in environments that are slow or
    awkward to stand up.
@@ -29,7 +31,7 @@ point me back at the cheap command.
    actually found.
 5. **A reconstructed threat model.** `/sota-audit` checks the code against rules that already
    exist; it never asks what this system is *worth attacking for*. That reconstruction is a
-   timeboxed pass of its own, and it is the next section, because its output decides what
+   timeboxed pass of its own, run ahead of the lenses because its output decides what
    everything after it weights.
 
 ## Ground rules
@@ -65,11 +67,6 @@ area here.
 
 **Record which domains you skipped and why.** A domain with no matching surface is a legitimate
 skip. A domain nobody opened is a hole in the audit and is reported as one.
-
-Run the router's silent-control pass over every control the domain passes confirm exists — a
-control that is present and inert is invisible to all four lenses below
-(`sota-code-security` rules/10 §1, and `rules/14` §6 for the one that guards part of its
-population).
 
 ## Reconstruct the threat model first — its output prioritises everything below
 
@@ -115,9 +112,17 @@ Three things decide whether that matrix is worth anything:
   *plus* every path touching a top asset, and put that rule in the report. A matrix built from
   an unstated sample is a claim about the sample wearing the whole system's clothes.
 
+**Then falsify the Present rows** — this is the router's silent-control pass, and the matrix is
+what tells it where to look. A control is marked Present because you *found* it, which is not
+the same as it doing anything. Ask of each: if this were silently a no-op, would anything
+observable differ? No log, no metric, no failing test means it is not a control
+(`sota-code-security` rules/10 §1). Then ask whether it covers its whole population or only the
+paths you happened to sample (`sota-code-security` rules/14 §6).
+
 Rate what falls out of this in **deployment context** rather than in the abstract
 (`sota-threat-modeling` rules/04 §3), and hand the reconstructed model back as the team's new
-baseline. For most projects it outlives every finding in the report.
+baseline — `sota-threat-modeling` rules/06 §1 calls that the audit's lasting value, and for a
+team that has never had one drawn it usually is.
 
 ## The four lenses — cover all, weight by what this project actually is
 
@@ -148,8 +153,9 @@ baseline. For most projects it outlives every finding in the report.
 ## Orchestration
 
 **If this harness offers multi-agent orchestration, use it**; if it does not, run the lenses
-sequentially in fresh contexts and say which you did, because the independence below is the
-thing being bought and a single context cannot provide it.
+sequentially and start a **fresh context for the refutation pass** — say which of the two you
+did. Independence is the thing being bought here, and a context that already holds the finding
+cannot supply it.
 
 Fan independent auditors across the four lenses, sub-splitting a large lens by subsystem. Then
 run an **adversarial verification pass**: every non-trivial finding, and every "this decision
