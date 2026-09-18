@@ -48,6 +48,11 @@ answers (`sota-code-security` rules/11 §2.2).
 Then say what the chosen scope *excludes*, and do not quietly widen it later. A scope that
 grew mid-pass makes every count in the report unreconcilable.
 
+**If what I pick is larger than you can hold at once, partition it and say how** — by
+subsystem, by entry point, by directory — and finish each partition before opening the next.
+Skimming a large scope returns a clean result for the same reason the wrong scope does, and
+nothing in the output distinguishes the two (`sota` router `rules/01` §1a).
+
 ## 2. Route from the surfaces, not from what happened to be loaded
 
 **This is the step that decides whether the audit can find anything at all.** A session that
@@ -115,7 +120,26 @@ result is usually an empty value that removed a filter rather than one that matc
 everything (`sota-shell-scripting` rules/06 §2b), and a result whose size equals a round
 number you or the tool chose is a page, not a total (`sota-shell-scripting` rules/06 §5).
 
-## 5. Ask — batched, once, in decision form
+## 5. Audit the decisions, not just the code
+
+Everything above asks whether the code meets the rules. None of it can see the defect where
+the code **faithfully implements a choice that stopped being right** — a store picked for a
+scale that never arrived, a constraint that has expired, a benchmark that justified a design
+and no longer reproduces. No rule is violated, so no checklist fires.
+
+Reconstruct the decisions that are expensive to reverse — ADRs, design docs, the CHANGELOG,
+the PRs behind each major component — and classify each **JUSTIFIED · STALE · UNJUSTIFIED ·
+UNVERIFIABLE**. Where a decision rests on a number, **re-measure it this session**: a number
+carried forward from the commit that introduced it is the claim itself, not evidence for it.
+Full procedure — `sota` router `rules/03` §3.
+
+**Then ask where else this project's knowledge lives.** An agent's private memory store, an
+IDE's notes, a chat log. Anything there that is a *fact about the repository* with no home in
+the repository is a finding: invisible to review, absent from a fresh clone, gone when the
+store is cleared. It is an absence claim, and the naive search for it lies — `sota` router
+`rules/01` §4a.
+
+## 6. Ask — batched, once, in decision form
 
 Ask when the answer changes the finding: an intended trade-off you cannot distinguish from an
 oversight, a convention that contradicts a library default, a severity that turns on whether
@@ -129,7 +153,7 @@ decision handed over. **Batch them into one interruption** and keep auditing eve
 does not depend on the answer. Do not ask what the tree already answers — that is a read, not
 a question.
 
-## 6. Report
+## 7. Report
 
 One table, canonical format, deduplicated across domains:
 
@@ -153,7 +177,15 @@ than your own write-up, default to REFUTED where the evidence is ambiguous, and 
 pattern elsewhere either way** — a refuted finding routinely closes somewhere else, and that
 sweep is where the strongest finding usually comes from (`sota` router `rules/03` §4).
 
-## 7. Fix what I agree to
+**Say in the report that this was the weaker form of that pass, because it is.** The standard
+is an *independent* refuter — a separate agent or a fresh context, prompted to kill the finding
+and handed the code rather than your write-up, with what it receives bounded and its verdict
+returned as a number (`sota` router `rules/03` §4a). One context refuting itself still holds
+the reasoning that produced the finding. Where a Critical or High is load-bearing, escalate to
+[`/sota-deep-audit`](sota-deep-audit.md), which fans that refutation out; short of that, name
+which findings got only a self-refutation.
+
+## 8. Fix what I agree to
 
 Nothing is edited before I pick the set. Then, one finding at a time, smallest blast radius
 first:

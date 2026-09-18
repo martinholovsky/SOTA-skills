@@ -27,6 +27,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   was needed — `install.sh` and `verify-setup.sh` check **1d** both glob `commands/*.md`, so
   the new command installs and is checked for reachability on the next `install.sh` run.
 
+- **`/sota-deep-audit` — the escalation, and the four things `/sota-audit` structurally cannot
+  do.** Measured against the router's own seven-step AUDIT workflow rather than by impression:
+  `/sota-audit` as first written covered steps 1, 3, 4 and 6, **omitted step 5 entirely**
+  (decision-ledger review — all four `decision` hits in the file were about asking the operator
+  a question) and **weakened step 7** to self-refutation. Three of those gaps were missing
+  passes rather than missing horsepower and were closed in place: the decision ledger with
+  re-measurement, the "where else does this project's knowledge live" question
+  (`sota` router `rules/01` §4a), and partitioning a scope too large to hold at once (§1a).
+  The two that genuinely need scale — **an independent refuter** and **a forward look at the
+  plan** — became this command. Adapted from a private command that had been in use since July;
+  three things changed before it could ship in a cross-harness public library: the `ultracode`
+  first line became harness-neutral ("if this harness offers multi-agent orchestration, use it;
+  if not, run the lenses in fresh contexts and say which"), the cost is stated up front with the
+  plan and fan-out split shown **before** anything is spent, and the two written artifacts
+  became opt-in — the same call already made for `/sota-audit`, since most repos it runs in are
+  not yours to leave files in. It cites `rules/03` §1/§3/§4/§4a rather than restating them.
+
 - **Invariant 34 — a version this repo claims for itself must exist.** A rules-file header
   naming the release a section moved in is written *before the cut decides minor vs patch*;
   guess minor, ship patch, and the prose points at a release that never existed. **Four

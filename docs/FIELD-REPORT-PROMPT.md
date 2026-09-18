@@ -42,7 +42,9 @@ session is the intended shape, and neither needs the other.
 open work, where `/sota-close` ended one by recording it. The fourth,
 [`/sota-audit`](../commands/sota-audit.md), asks the question in between — whether the rules
 that own this surface were applied to what the session actually built. It feeds this one: a
-rule it finds missing, wrong or absent is exactly what a field report is for.
+rule it finds missing, wrong or absent is exactly what a field report is for. Its escalation,
+[`/sota-deep-audit`](../commands/sota-deep-audit.md), is the same question asked with
+independence and scale behind it, and feeds this one the same way.
 
 **The prompt text lives in one place — [`commands/sota-report.md`](../commands/sota-report.md)
 — and is not repeated here.** Two homes for one rule is how they drift; this file holds the

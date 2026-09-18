@@ -4010,6 +4010,53 @@ its least representative slice.* Recorded as a **correction to shipped text**, n
 finding — and as evidence for keeping the "date every number to its source" discipline, since
 the number that needed revising was one we had already published.
 
+## 2026-09-18 — a private audit command, and the gap analysis that justified taking it
+
+**The intake is my own command, which this log treats on the same terms as an external one.**
+`deep-audit` had been sitting untracked in `~/.claude/commands/` since July — used, never
+reviewed, never gated. The question that surfaced it was the right one to ask of any candidate:
+*is there something it finds that the thing we just shipped cannot?*
+
+**The answer was measured, not asserted.** Against the router's own seven-step AUDIT workflow:
+
+| router AUDIT step | `/sota-audit` as written | `deep-audit` |
+|---|---|---|
+| 1 recon | ✓ | ✓ |
+| 2 threat model first | absent | partial (lens 3) |
+| 3 per-domain passes | ✓ item-by-item | ✓ |
+| 4 silent-control pass | ✓ | ✓ |
+| **5 decision ledger** | **absent** | ✓ with re-measurement |
+| 6 findings | ✓ | ✓ |
+| **7 refute** | **weakened to self-refutation** | ✓ separate agent |
+
+Step 5 was not thin, it was **zero**: every `decision` hit in `commands/sota-audit.md` was about
+asking the operator a question or updating a ledger row after a fix. A term census would have
+reported four hits and looked like coverage — `grep` answers *does this string appear*, never
+*is this idea covered*, so the hits were read rather than counted.
+
+**The split that decided the packaging.** Two of the four gaps are *scale* problems and two are
+*missing passes*. Missing passes get fixed in place — the decision ledger, `rules/01` §4a's
+"where else does this project's knowledge live", and §1a's partition-don't-skim all landed in
+`/sota-audit`. Only **independence** (a refuter that is not the context that produced the
+finding) and **a forward look at the plan** actually need the heavy command, and that is now the
+whole justification for its cost, stated in the command itself so a reader can decline it.
+
+**Adopted with three corrections, none cosmetic.**
+
+- **`ultracode` as the first body line** — a harness-specific keyword for opting into
+  multi-agent orchestration. This library is cross-harness (`AGENTS.md` is symlinked for other
+  tools), and *keep it generic* is a standing convention. Replaced with a capability test.
+- **Unannounced cost.** It fans out across many agents and is installed at user level, so it is
+  reachable from every project. It now states the cost up front and shows the plan and split
+  **before** spending anything.
+- **Unasked repo writes.** It wrote a dated report and a roadmap patch by default. That is the
+  same call already settled against for `/sota-audit`: most repositories a command runs in are
+  not the author's to leave artifacts in. Both artifacts are opt-in.
+
+Rule text was not copied across either: the command cites `sota` router `rules/03` §1, §3, §4
+and §4a rather than restating them, which is what keeps `commands/` out of the "carrying rule
+text" half of its coverage-table trigger (`docs/CONVENTIONS-LEDGER.md`).
+
 ## 2026-09-16 — Invariant 34, because I reintroduced the bug I had just fixed
 
 **This entry exists because a warning did not disable a reflex, and the evidence is my own.**
