@@ -106,11 +106,13 @@ exist. `sota-code-security/rules/11` sat unlisted for two releases before 15 exi
 - **sota-shell-scripting/rules**: 01 safety baseline (shebang, `set -e`, quoting, zsh deviations),
   02 robustness & correctness, 03 security, 04 CI & operational scripts, 05 constructs & cleanup
   (arrays, IFS, traps/mktemp, tests, globbing), 06 ad-hoc commands (zsh deviations,
-  searcher exclusions, patterns parsed as flags, stderr-suppressed absence checks — split out
-  of 01 in v1.38.0), 07 PowerShell (`pwsh` CI steps, deploy scripts, entrypoints: the missing
+  searcher exclusions, patterns parsed as flags, stderr-suppressed absence checks, a hardcoded
+  verdict label, non-portable word-boundary escapes — split out of 01 in v1.38.0), 07 PowerShell (`pwsh` CI steps, deploy scripts, entrypoints: the missing
   `set -euo pipefail`, disagreeing status variables, GitHub Actions shell defaults, execution
   policy, PSScriptAnalyzer), 08 ad-hoc side effects (blast radius, process-table exhaustion —
-  split out of 06 in v1.42.2)
+  split out of 06 in v1.42.2),
+  09 listing & selection (a lister's default page read as a population, a selector answering a
+  neighbouring question — split out of 06 · unreleased)
 - **sota-docs-workflow/rules**: 01 documentation architecture, 02 API reference & changelogs, 03
   code review & PR workflow, 04 commits/branches/ releases, 05 spec-driven development
 - **sota-ux-writing/rules**: 01 voice/tone & plain language, 02 microcopy & components, 03 errors

@@ -99,14 +99,14 @@ pass exists to compensate for.
 - **Two derivations that disagree are a finding, not rounding.** Reconcile to a named cause
   before reporting either number — and note that the fix for one can silently change the
   population the other counted. (Measured here: 330 vs 339 merged PRs reconciled to a wrong
-  predicate, `state=closed` including closed-unmerged — `sota-shell-scripting` rules/06 §5.)
+  predicate, `state=closed` including closed-unmerged — `sota-shell-scripting` rules/09 §5.)
 - **Every absence needs a positive control in the same invocation** — search for something you
   have already seen in that scope. If the control comes back empty, the instrument is broken
   and the absence is worth nothing. "Independent" means a different failure mode, not a
   different phrasing: two searches of a symlink tree agreed on zero and both were wrong
   (`sota-shell-scripting` rules/06 §2).
 - **Two tells worth a second look.** A result whose size equals a round number you or the tool
-  chose is a page, not a total (`sota-shell-scripting` rules/06 §5). An implausibly *large*
+  chose is a page, not a total (`sota-shell-scripting` rules/09 §5). An implausibly *large*
   result is usually an empty value that removed a filter rather than matching nothing
   (`sota-shell-scripting` rules/06 §2b).
 

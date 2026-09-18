@@ -6,6 +6,16 @@ references it actually resolved. Exits non-zero on any finding.
 
 Why this exists: invariant 8 resolves Markdown links; a `§` reference is prose,
 so nothing checked ~1,300 of them. See the header comment in check-invariants.sh.
+
+THE SILENT CASE THIS CANNOT SEE. A bare `§N` with no skill or rules file named on the
+line falls back to the CONTAINING file, so a shorthand can resolve *successfully, to the
+wrong document* -- and that reads as correct in both directions. Observed 2026-09-18: a
+command file citing a bare shorthand for another skill's rules file resolved instead to
+that command's own same-numbered heading, and only the neighbouring shorthand failing
+made anyone re-read it. The
+fallback is deliberate and fail-open (a gate that false-positives on correct prose gets
+disabled), so this is stated rather than fixed: when a file both cites a shorthand and
+carries a heading of the same number, the reference is unverified, not verified.
 """
 import collections, glob, re, subprocess, sys
 

@@ -163,6 +163,18 @@ legitimately shrinks the tree then costs one deliberate baseline update. Contain
 is good engineering. Containment without repointing the scanner is just a smaller
 blind spot.
 
+**A fixture that simulates a *release* inherits every release-time check.** A negative
+control builds a known-bad to prove one gate fires. When that fixture has to look like a
+release -- bumping a version, rewriting a changelog heading -- it also satisfies, or breaks,
+every *other* check that only runs on a release. Those checks then fire correctly, and the
+harness reports their findings as a failure of the gate under test. Seen twice on the same
+probe: first a routing check, then a version check whose exemption covers exactly one
+untagged version, so the moment the fixture bumped that version every legitimate
+current-version claim in the tree became a claim about an untagged one. **Neutralise each
+release-time check inside the fixture, and say in a comment which ones and why** -- otherwise
+the next one added is misattributed the same way, and the misattribution points at an
+innocent gate.
+
 ### 2a. A gate that stops at the artifact cannot see a defect that starts at load
 
 §2's blind spot is *lateral* — code moved out from under a gate's path expression. This

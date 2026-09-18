@@ -2599,7 +2599,7 @@ event internal to the private repo.
   under a path expression) and nothing covered **depth**: four gates green on an object the
   kernel verifier then refused. Folded in the mirror-image trap already known here — a gate
   whose reach is bounded by what the *subject* checks first, fixed with a dummy credential.
-- **Population-selector drift** (proposal 4) → `sota-shell-scripting` rules/06 **§5a**, a
+- **Population-selector drift** (proposal 4) → `sota-shell-scripting` rules/09 **§5a**, a
   sibling to §5 rather than the rules/13-or-11 the report offered. Placement reasoning, since
   it was a close call: all three instances are ad-hoc shell commands, and §5 is already *"the
   listing tool answered your question about one page"*. The distinction earning a section is
@@ -4009,6 +4009,57 @@ that moves non-uniformly is a progress indicator, not a clock, and the first 2% 
 its least representative slice.* Recorded as a **correction to shipped text**, not a new
 finding — and as evidence for keeping the "date every number to its source" discipline, since
 the number that needed revising was one we had already published.
+
+## 2026-09-18 — a field report from the session that wrote the commands, and the three of seven it earned
+
+**Intake shape: a session reporting on itself.** The session that built `/sota-audit` and
+`/sota-deep-audit` filed a field report against its own work. Seven findings; the report
+**declines to propose a change for four of them**, and that restraint is the reason the other
+three are worth taking.
+
+| finding | verdict |
+|---|---|
+| a verdict label typed beside the command that refutes it | **adopted** → `rules/06` §2e |
+| a word-boundary escape that is a property of the machine | **adopted** → `rules/06` §2f |
+| a release-simulating fixture inheriting other release gates | **adopted** → `sota-devsecops` rules/09 §2 |
+| a `§` shorthand resolving to the wrong document | **adopted, as a stated limit** in the checker's header, not a gate |
+| a pipeline masking a verdict's exit status | rejected — covered in three places and loaded at the time |
+| gating an unassigned variable in a fence | **rejected by measurement** — 131 uses across 19 files, nearly all legitimate placeholders |
+| a rule for hostile-re-reading your own new text | rejected — semantic, and invariant 31 exists because a fuzzy truth gate gets disabled |
+
+### §2e — the unconditional twin of §2d
+
+§2d covers `cmd 2>/dev/null || echo "missing X"` and its worked example already annotates the
+symptom: *"it printed the match AND the verdict that contradicts it"*. What was missing is the
+form with no condition at all — `cmd; echo "^ 0 = ..."` — which is **strictly worse**, because
+§2d's fires only on a non-zero exit and this one fires always. Four instances in one session,
+each contradicted by the output directly beneath it; the costly one asserted a rule was absent
+from the library one line above output proving it was present.
+
+### §2f — and the question that falsified two drafts of it
+
+First written as *"git grep is a third engine"*, then as *"`\b` is a GNU extension, not
+POSIX"*. **Both were wrong about the axis**, and the operator's question — *from which version
+does this behave this way?* — is what exposed it. There is no version: three older gits match
+`\b` and the newest does not. The differential (three libcs, four git versions, control
+passing in every row) and `nm -u` on the binary show `git grep` calls the **platform's** regex,
+so the dialect belongs to the machine. The GNU and BSD word-boundary forms are mutually
+exclusive, so neither is portable. **Recorded because the retraction is the useful part**: two
+plausible mechanisms were published before the measurement, and the measurement cost one
+command per row.
+
+### The split that paid for the space
+
+`rules/06` was at **498 of 500**. §5 and §5a — a lister returning a page as a population, and
+a selector answering a neighbouring question — moved to **`rules/09`**, keeping their numbers,
+as `rules/08` did before them. That freed 106 lines for §2e and §2f.
+
+**The split's own hazard fired immediately**, which is the argument for doing it with the gate
+running: two bare `§2` refs inside the moved text had been resolving to their containing file,
+and invariant 18 flagged them the moment they landed in a file with no §2. A third citation —
+`rules/06 §4`, pointing at a section that moved to `rules/08` two releases ago — is **invisible
+to invariant 18** because the `§` sits on a different line from the file name, so it fails
+open. Found by hand-reading every sectionless pointer; corrected to `rules/08` §4.
 
 ## 2026-09-18 — four defects a session produced, and what only two of them earned
 

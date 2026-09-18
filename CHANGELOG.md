@@ -5,6 +5,60 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`sota-shell-scripting` rules/06 §2e — a label that states the verdict is not evidence of
+  the verdict.** §2d already covered the *conditional* twin (`cmd 2>/dev/null || echo "missing
+  X"`) and its worked example even names the symptom — *"it printed the match AND the verdict
+  that contradicts it"*. What was missing is the form with **no condition at all**, `cmd; echo
+  "^ 0 = ..."`, which is **strictly worse**: §2d's fires only on a non-zero exit, this one fires
+  always and survives any output. Four instances in one session, each contradicted by the output
+  directly beneath it; the costly one asserted that a rule was **absent from the library** one
+  line above output proving it was present. Sited as `sota-code-security` rules/14 §1 applied to
+  your own scrollback — derive the verdict from the variable the command produced, and treat a
+  line opening `^`, `(` or `<-` as the tell.
+
+- **`sota-shell-scripting` rules/06 §2f — a word-boundary escape is a property of the machine,
+  not of the tool.** Two earlier drafts of this rule were **wrong about the axis** — *"git grep
+  is a third engine"*, then *"`\b` is a GNU extension, not POSIX"* — and the question *from
+  which version does this behave this way?* is what exposed it. **There is no version**: git
+  2.39.5, 2.45.4 and 2.47.3 all match `\b`; 2.55.0 does not. `nm -u` on the binary shows
+  `_regcomp` **imported**, so `git grep` uses the platform's regex, and the GNU (`\b`, `\<`)
+  and BSD (`[[:<:]]`) forms are **mutually exclusive** — neither is portable, and failing is a
+  silent `0` with exit 1. Measured across three libcs with the control passing in every row.
+  Cost two false absences in one session, each caught only because a second, differently-shaped
+  measurement disagreed.
+
+- **`sota-shell-scripting` rules/09 — listing and selection, split out of rules/06.** That file
+  was at **498 of 500**. §5 (a lister's default page read as a population) and §5a (a selector
+  answering a neighbouring question) moved out **keeping their numbers**, as rules/08 did before
+  them, freeing 106 lines. The split's own hazard fired immediately: two bare `§2` references
+  inside the moved text had been resolving to their containing file, and invariant 18 caught
+  both the moment they landed in a file with no §2.
+
+- **`sota-devsecops` rules/09 §2 — a fixture that simulates a *release* inherits every
+  release-time check.** Those checks then fire correctly and the harness misattributes them to
+  the gate under test. Second instance on the same probe — a routing check, then a version check
+  whose exemption covers exactly one untagged version. Generalised from the incident that turned
+  the v1.43.0 release PR red.
+
+### Fixed
+
+- **A dangling citation invariant 18 cannot see.** `sota-testing` rules/07 cited
+  `sota-shell-scripting` rules/06 §4 — a section that moved to rules/08 two releases ago. The
+  gate fails open on it because the `§` sits on a **different line** from the file name, so the
+  80-character carried tail never binds them. Found by hand-reading all nine sectionless
+  pointers during the split, not by any check. Corrected to rules/08 §4.
+
+- **`scripts/lib/check-section-refs.py` now states the case it cannot see.** A bare `§N` with no
+  skill named on the line falls back to the *containing* file, so a shorthand can resolve
+  **successfully, to the wrong document**, and read as correct in both directions. The fallback
+  is deliberately fail-open — a gate that false-positives on correct prose gets disabled — so
+  this is documented rather than gated: when a file both cites a shorthand and carries a heading
+  of that number, the reference is unverified, not verified.
+
 ## [1.43.0] - 2026-09-18
 
 **Front door checked:** /sota-audit · /sota-deep-audit · control-presence matrix · independent refuter
