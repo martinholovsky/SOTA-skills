@@ -611,10 +611,29 @@ probe_committed 14 "a release declares no front-door check" \
 # push the real top version below it, and on a release branch that version is untagged
 # until the merge, so invariant 21 would fail the gate for an unrelated reason.
 ( cd "$WT" && python3 - <<'MK14B'
-import re
+import re, subprocess
 
 ver = '99.0.0'
+# INVARIANT 34 MUST BE NEUTRALISED TOO -- the same lesson as the invariant-29 note below,
+# found by the first release cut after 34 landed (v1.43.0). 34 exempts exactly one untagged
+# version: the one in VERSION, because at cut time the tag does not exist yet. So the moment
+# this fixture bumps VERSION, every legitimate "· v<current>" claim the cut just wrote into
+# the tree becomes a claim about an untagged version, 34 fires CORRECTLY, and the gate rejects
+# a change 14b must allow -- which the probe then reports against invariant 14. The fixture,
+# not the invariant, is what is unrealistic. Rewriting those claims to the synthetic version
+# removes them from 34's scope entirely (its pattern matches only `v1.*`).
+old_release = open('VERSION').read().strip()
 open('VERSION', 'w').write(ver + '\n')
+claim = re.compile(r'((?:\bat|\bin|\bsince|\buntil|\bshipped in|·)\s+)v' + re.escape(old_release) + r'\b')
+for f in subprocess.run(['git', 'ls-files', '*.md'],
+                        capture_output=True, text=True).stdout.split():
+    try:
+        s = open(f, encoding='utf-8').read()
+    except OSError:
+        continue
+    swapped = claim.sub(r'\1v' + ver, s)
+    if swapped != s:
+        open(f, 'w', encoding='utf-8').write(swapped)
 
 # Invariant 5 wants VERSION == plugin.json == CHANGELOG top, or the gate fails on
 # lockstep before invariant 14 is ever reached.
