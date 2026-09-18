@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`/sota-audit` — a fourth slash command: audit a codebase against the library.** The
+  existing three bracket a session (`/sota-resume` opens, `/sota-close` and `/sota-report`
+  close); nothing asked the middle question — *were the rules that own this surface actually
+  applied?* It is a **conformance** audit, not a defect hunt, so its dominant finding is a rule
+  with real surface area that was never applied, and behind it a control that is present and
+  enforces nothing. Three design points, each answering a failure this library has already
+  measured: **the scope is agreed first**, with a denominator printed beside every candidate,
+  because the wrong scope returns *clean* rather than an error; **routing is rebuilt from the
+  surfaces in the tree**, never from whatever happened to be loaded, since a session that never
+  routed looks perfectly compliant against nothing, and the coverage table names the domains
+  **nobody opened**; and the checklists are walked **item by item** (met · not met · not
+  applicable, with the reason) because self-audit fails toward false negatives — the reasoning
+  that produced the code is still loaded and will agree with itself. Findings stop for a
+  decision before anything is edited; questions are batched in the two-or-three-options form
+  with a recommendation. Report in the session, no file written unless asked. No script change
+  was needed — `install.sh` and `verify-setup.sh` check **1d** both glob `commands/*.md`, so
+  the new command installs and is checked for reachability on the next `install.sh` run.
+
 - **Invariant 34 — a version this repo claims for itself must exist.** A rules-file header
   naming the release a section moved in is written *before the cut decides minor vs patch*;
   guess minor, ship patch, and the prose points at a release that never existed. **Four

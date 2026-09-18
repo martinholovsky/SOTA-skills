@@ -69,13 +69,14 @@ stack comes from your profile or the skills' defaults (naming one is optional):
 
 More install options: [Installation](#installation) · more prompts: [Using it](#using-it).
 
-**Three slash commands bracket a working session** — `scripts/install.sh` links them into
+**Four slash commands bracket a working session** — `scripts/install.sh` links them into
 `~/.claude/commands/`, so they work in **any** project, not just this one:
 
 | | When | What it does |
 |---|---|---|
 | **`/sota-resume`** | **start** of a session | Finds the open work — every tracker, checkbox and `TODO` marker, swept with a **controlled** search — classifies it (ready · needs a decision · deferred · not an item · **already done and never ticked off**), shows you the table, then executes what you agree to against the project's own CI. |
 | **`/sota-close`** | **end** of a session | The closure pass: **retract first**, record open items where the next session will trip over them, update what the session made false, **re-derive every number from its source**, say what is not done and blocked on whom, then commit the evidence. |
+| **`/sota-audit`** | **work finished**, or a codebase you did not write | Audits what is in front of you against the library: agrees the scope first, maps every surface to its owning skill and **says which domains nobody opened**, walks each Audit checklist item by item, then fixes what you agree to. |
 | **`/sota-report`** | **end** of a session | Writes a gitignored field report on where the guidance failed, was absent, was wrong — or was right and did not fire. Prints a `gh issue create` line; it never posts anything itself. |
 
 They take free-text arguments (`/sota-close focus on the migration branch`). Full detail:
@@ -86,7 +87,7 @@ They take free-text arguments (`/sota-close focus on the migration branch`). Ful
 - [Standards & practices baked in](#standards--practices-baked-in) · [What the audit hunts that a scanner can't](#what-the-audit-hunts-that-a-scanner-cant) · [How the numbers are kept honest](#how-the-numbers-are-kept-honest)
 - [Skills](#skills) · [Coverage & non-goals](#coverage--non-goals)
 - [Installation](#installation) · [Always-on routing](#always-on-routing-recommended) · [Updating](#updating)
-- [Using it](#using-it) — [slash commands](#slash-commands) (`/sota-resume` · `/sota-close` · `/sota-report`)
+- [Using it](#using-it) — [slash commands](#slash-commands) (`/sota-resume` · `/sota-audit` · `/sota-close` · `/sota-report`)
 - [Optional setup & integrations](#optional-setup--integrations) — [badge](#badge), [gates](#enforcing-the-gates), [other agents](#other-ai-agents-codex-copilot-gemini-), [status line](#status-line-optional), [plugin extras](#optional-extras-for-plugin-users)
 - [Structure](#structure) · [How it works](#how-it-works) · [Conventions](#conventions)
 - [Found a gap? Tell us](#found-a-gap-tell-us--its-the-only-signal-we-get) · [Contributing](#contributing) · [License](#license)
@@ -1027,13 +1028,14 @@ silently uninstalled until you re-run the installer.
 |---|---|---|
 | **`/sota-report`** | at the **end** of a session, in your own project | Writes a gitignored field report on where the guidance failed, was absent, wrong, or right and did not fire — stamped with the version that produced it. Then writes a short generalised extract and prints a `gh issue create` line. It never posts anything. |
 | **`/sota-resume`** | at the **start** of a session, or when picking a project back up | Finds the open work: sweeps every tracker, checkbox and `TODO` marker with a **controlled** search (a clean "nothing found" is exactly the answer a skipped symlink tree, a `--replace` flag or a 30-row default page produces), classifies it — ready · needs a decision · deliberately deferred · not an item · **already done and never ticked off** — shows you the table, then executes what you agree to, one item at a time, against the project's own CI entry point. |
+| **`/sota-audit`** | when a piece of work is **finished**, or on arriving in a codebase you did not write | Audits the code against the library rather than for defects in general, so the dominant finding is **a rule that owns real surface area and was never applied** — and behind it, a control that is present and enforces nothing. Agrees the scope first (every candidate printed with its denominator, because the wrong scope returns *clean* rather than an error), routes from the surfaces in the tree rather than from whatever happened to be loaded, prints a coverage table naming the domains **nobody opened**, walks each rules file's Audit checklist item by item (met · not met · not applicable, with the reason), asks the questions that need a decision in one batch, then fixes what you agree to against the project's own CI. |
 | **`/sota-close`** | at the **end** of a session, before you walk away | The closure pass: **retract first** (every claim that proved wrong, corrected *everywhere it reached*), record open items where the next session will actually trip over them, update the docs and agent files the session made false, **re-derive every number from its source**, state plainly what is not done and what is blocked on whom, then commit the evidence and confirm the push landed. |
 
 `/sota-resume` and `/sota-close` are the two ends of the same session: one picks the open work
 up, the other puts it down where the next session will find it. Neither needs the other to have
 run — most projects scatter their open work across files written by people who are not here.
 
-All three take free-text arguments to steer them (`/sota-close focus on the migration branch`).
+All four take free-text arguments to steer them (`/sota-close focus on the migration branch`).
 They are prompts, not scripts: the text is in `commands/*.md` and nowhere else, so you can read
 exactly what your session is being told to do before you run it.
 
