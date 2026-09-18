@@ -6,7 +6,7 @@ system under test, so when they go wrong they produce a false finding **about th
 product**, or damage the thing they were inspecting. Split out of `rules/01` at v1.38.0 —
 its zsh, sweep and blast-radius sections became §1, §2 and §3 here. The blast-radius and
 process-table sections moved on to `rules/08` at v1.42.2, keeping their numbers,
-and the listing and selection sections (§5, §5a) to `rules/09` (· unreleased) the same
+and the listing and selection sections (§5, §5a) to `rules/09` (· v1.43.1) the same
 way. Quoting itself stays in
 `rules/01` §3, which this file assumes you have read.
 
