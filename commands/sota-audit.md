@@ -82,6 +82,7 @@ table, then print a coverage table before reading a single rules file:
 skip and says so in the table; a domain nobody opened is a hole in the audit and must be
 reported as one, not omitted.
 
+<!-- count-check: ^- \*\* -->
 Three things join the standard beside the skills:
 
 - **The stack profile.** `~/.claude/profiles/*.md`, if one exists, is the expected baseline
@@ -177,6 +178,7 @@ that makes it one, and a diff is rated against the code it replaced, not against
 A finding you could not confirm is marked **needs verification**; it is never asserted and
 never dropped. Borderline severities state the deciding assumption.
 
+<!-- count-check: ^- \*\* -->
 Then three things a findings table cannot carry, and which are the point of this command:
 
 - **Coverage** — the table from step 2, as it ended: what was audited, what was skipped, why.

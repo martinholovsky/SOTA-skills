@@ -65,6 +65,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   decided), and **sample honestly with the rule stated**. Lens 3 now consumes the matrix
   instead of duplicating it, and the DFD plus matrix join deliverable A.
 
+- **The negative-control harness now checks its own coverage claim against the run.** It
+  printed `COVERED: … (28 of 31)` while carrying probes for 32, 33 and 34; invariant 17
+  *requires* `AGENTS.md` and `CONTRIBUTING.md` to restate that line, so one stale literal
+  reached both front doors and then **rejected the correct correction** (`sota-code-security`
+  rules/14 §1 — a control asserting a number it has not earned). The literal is kept on
+  purpose: invariant 17 parses it from the file and invariant 19 reads the per-id reasons
+  beneath it, and **deleting it broke both, measured**. A static replacement is not available
+  either — grepping the call sites under-reads, **27 against a true 31**, because the
+  diff-based probes are nested inside functions, which is why `AGENTS.md` already said only
+  running it is authoritative. What was missing was the comparison, so the harness now derives
+  the covered set from the probes that actually ran and **fails when its own COVERED line
+  disagrees**. **Its first real run was a false alarm, and that is the useful part**: it
+  reported `probes ran for 27 invariants, but the COVERED line declares 31` — against a
+  *correct* declaration. Probes reach the gate through three functions, not one, and only
+  `probe()` had been instrumented; the diff-based checks go through `probe_committed()` and
+  `probe_committed_green()`. So the control I wrote to stop a number being asserted rather
+  than counted was itself counting only a third of the evidence — the same defect, one level
+  in. All three entry points now record. The comparison logic was unit-tested in both
+  directions (silent at 31 vs 31, fires at 28 vs 31) *before* that run, which is exactly why
+  the failure was legible as a miscount rather than read as real drift.
+
+- **Four spelled-out counts in the new commands are now declared to invariant 30.** *"Four
+  things, and only these four justify the cost"* drifted to five inside the session that wrote
+  it — invariant 30's exact shape, on a gate that already scans every tracked `*.md` including
+  `commands/`. It was simply never declared. No new machinery; four `<!-- count-check: … -->`
+  markers.
+
 ### Fixed
 
 - **"instructions an agent executes every session" was wrong in four live places.** A command

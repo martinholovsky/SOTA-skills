@@ -106,6 +106,7 @@ fi
 tested=0
 caught=0
 failed=0
+PROBED_IDS=''   # invariants this run actually exercised; see the self-check at the end
 
 # `git checkout -- .` + `git clean -fd` is NOT enough: git clean leaves files that
 # have been `git add`-ed, so probe 10's staged file leaked into probe 15, which
@@ -126,6 +127,7 @@ restore() {
 probe() {  # <id> <name> <expected substring>   — mutation already applied
   local id="$1" name="$2" want="$3"
   tested=$((tested + 1))
+  PROBED_IDS="$PROBED_IDS ${id%%[a-z]*}"
   # ASSERT THE MUTATION TOOK (added 2026-08-16). Every mutation below is a hardcoded
   # literal — a count, a phrase, a path. When one goes stale the edit is a silent
   # no-op, the gate correctly passes, and this harness then reports "NOT CAUGHT:
@@ -439,6 +441,7 @@ wt_commit() {  # <message> — commit whatever the caller staged/changed
 probe_committed() {  # <id> <name> <expected substring>  — commit already made
   local id="$1" name="$2" want="$3"
   tested=$((tested + 1))
+  PROBED_IDS="$PROBED_IDS ${id%%[a-z]*}"
   local head; head=$(git -C "$WT" rev-parse HEAD)
   if [ "$head" = "$WT_ORIG" ] || [ -z "$(git -C "$WT" diff --name-only "$WT_ORIG" "$head")" ]; then
     echo "  [$id] $name — PROBE BROKEN: no commit landed on top of the worktree HEAD."
@@ -472,6 +475,7 @@ probe_committed_green() {  # <id> <name> <expected ok-substring> — commit alre
   # the exempting check's own ok-line, which only appears if it ran and exempted.
   local id="$1" name="$2" want="$3"
   tested=$((tested + 1))
+  PROBED_IDS="$PROBED_IDS ${id%%[a-z]*}"
   local head; head=$(git -C "$WT" rev-parse HEAD)
   if [ "$head" = "$WT_ORIG" ] || [ -z "$(git -C "$WT" diff --name-only "$WT_ORIG" "$head")" ]; then
     echo "  [$id] $name — PROBE BROKEN: no commit landed on top of the worktree HEAD."
@@ -1068,6 +1072,30 @@ if [ "$tested" -eq 0 ]; then
 fi
 if [ "$failed" -ne 0 ]; then
   printf 'FAIL: %d of %d mutations were not caught by the check they target.\n' "$failed" "$tested"
+  exit 1
+fi
+# --- the declaration must match what just ran ------------------------------
+# The COVERED line below stays a literal on purpose: invariant 17 parses it out of this
+# file, and invariant 19 reads the per-id reasons underneath it. What was missing is
+# anything comparing that declaration to reality. So it drifted -- 32, 33 and 34 had
+# probes while it still read "28 of 31" -- invariant 17 mirrored the stale value into
+# AGENTS.md and CONTRIBUTING.md, and it then REJECTED the correct update.
+#
+# A STATIC count cannot close this: grepping the call sites under-reads, measured 27
+# against a true 31, because the diff-based probes are nested inside functions. Only a
+# run knows, and this is the moment it knows. A control that asserts its own coverage
+# rather than counting it is sota-code-security rules/14 §1.
+derived=$(printf '%s' "$PROBED_IDS" | tr ' ' '\n' | sort -un | grep -c .)
+declared=$(sed -n 's/.*COVERED:.*(\([0-9][0-9]*\) of [0-9][0-9]*).*/\1/p' "$0" | head -1)
+if [ -z "$declared" ]; then
+  echo "FAIL: cannot find this harness's own COVERED declaration to check against."
+  exit 1
+fi
+if [ "$derived" -ne "$declared" ]; then
+  printf 'FAIL: probes ran for %d invariants, but the COVERED line declares %d.\n' \
+    "$derived" "$declared"
+  echo "      Invariant 17 mirrors that line into AGENTS.md and CONTRIBUTING.md, so a"
+  echo "      stale declaration reaches both front doors. Update COVERED in $0."
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"

@@ -14,6 +14,7 @@ split before you fan anything out**, so I can stop it if the scope is wrong.
 
 ## What this adds that `/sota-audit` structurally cannot
 
+<!-- count-check: ^[0-9]+\. \*\* -->
 Five things, and only these five justify the cost. If none of them is what I need, say so and
 point me back at the cheap command.
 
@@ -99,6 +100,7 @@ cut short (`sota-threat-modeling` rules/06 §1).
    Absent, and the artifact that would settle it for Unverifiable
    (`sota-threat-modeling` rules/06 §2).
 
+<!-- count-check: ^- \*\* -->
 Three things decide whether that matrix is worth anything:
 
 - **Partial is the most important state.** One authorization-checked endpoint proves the team
