@@ -4,7 +4,7 @@ Scope: the commands that *enumerate* rather than search — a lister, a selector
 "which one is latest". `rules/06` §2 is a searcher that traverses less than you think;
 these are tools that return less than you think, or all of a population one step to the
 left of the one you asked about. Both exit `0` with an empty stderr, which is why they
-reach a report as measurements. Split out of `rules/06` (· unreleased) when that file
+reach a report as measurements. Split out of `rules/06` (· v1.43.1) when that file
 reached its 500-line cap, **keeping their section numbers** so existing citations resolve
 — the same move `rules/08` made before it.
 
