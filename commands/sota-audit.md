@@ -132,7 +132,7 @@ in that scope; if the control returns nothing, the instrument is broken and the 
 worth nothing (`sota-shell-scripting` rules/06 §2). Two more tells: an implausibly *large*
 result is usually an empty value that removed a filter rather than one that matched
 everything (`sota-shell-scripting` rules/06 §2b), and a result whose size equals a round
-number you or the tool chose is a page, not a total (`sota-shell-scripting` rules/06 §5).
+number you or the tool chose is a page, not a total (`sota-shell-scripting` rules/09 §5).
 
 ## 5. Audit the decisions, not just the code
 

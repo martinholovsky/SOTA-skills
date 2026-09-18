@@ -166,7 +166,7 @@ a suite that can't run parallel is telling you it has shared state.
 - **Establish that yours is the only run touching the shared services before believing
   any failure — by parentage, not by process name**, since both runs match the same
   name and the same command line: `ps -Ao pid=,ppid=,command=`, then check which ppid
-  each belongs to. (Same instrument, same reason, as `sota-shell-scripting` rules/06
+  each belongs to. (Same instrument, same reason, as `sota-shell-scripting` rules/08
   §4 and `rules/03` §3a.) **A skip count that moved is the tell**: skips doubling
   alongside the failures says the *environment* changed, not the code — a service the
   suite conditionally needs went away. Compare failures *and* skips against the

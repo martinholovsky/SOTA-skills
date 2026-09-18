@@ -5,7 +5,9 @@ checklist, a quick container copy. They are unlinted, unreviewed, and run agains
 system under test, so when they go wrong they produce a false finding **about the
 product**, or damage the thing they were inspecting. Split out of `rules/01` at v1.38.0 —
 its zsh, sweep and blast-radius sections became §1, §2 and §3 here. The blast-radius and
-process-table sections moved on to `rules/08` at v1.42.2, keeping their numbers. Quoting itself stays in
+process-table sections moved on to `rules/08` at v1.42.2, keeping their numbers,
+and the listing and selection sections (§5, §5a) to `rules/09` (· unreleased) the same
+way. Quoting itself stays in
 `rules/01` §3, which this file assumes you have read.
 
 ## 1. zsh is not bash — the deviations that bite *pasted* commands
@@ -352,99 +354,64 @@ v1.42.2 — found by a reporter, not by any gate. A checklist line is a control,
 control that cannot distinguish "clean" from "did not run" is the silent-control-failure
 shape (`sota-code-security` rules/10).
 
-## 5. The listing tool answered your question about *one page*
+## 2e. A label that states the verdict is not evidence of the verdict
 
-§2 is a searcher that traverses less than you think. This is a lister that returns less
-than you think — and it is worse, because the shortfall is **policy, not a bug**: the tool
-did exactly what it was asked, exited `0`, and wrote nothing to stderr.
-
-Measured 2026-09-10 against a repository with 330 merged pull requests:
-
-```text
-gh pr list --state merged --json number | wc -l        →   30    ← no flag: a DEFAULT cap
-gh pr list --state merged --limit 20 ...               →   20    ← the cap you typed
-gh pr list --state merged --limit 1000 ...             →  330    ← the population
-exit status 0, stderr empty, in all three
-```
-
-The no-flag answer is off by an order of magnitude. Nothing in the output distinguishes
-"there are 30" from "here are the first 30 of 330", and `wc -l` turns either into a number
-that looks like a measurement. The same default sits under `gh issue list`, `gh run list`,
-`aws ... --max-items`, `kubectl get --chunk-size`, `docker ps -n`, and every REST `GET`
-that pages at 30 or 100 — **a client library that iterates pages for you is the exception,
-not the rule, and `curl` never does.**
-
-Two distinct ways to get this wrong, and the second is the one that repeats:
-
-- **The cap you never set.** You reach for a lister to *look* at recent items, the default
-  page is the right size for looking, and later the same command gets used to *count*.
-- **The cap you set yourself, for a different question.** `--limit 20` was correct when the
-  question was "show me the recent ones". It silently became the answer when the question
-  changed to "how many are there" — the flag is still in the scrollback, and the number it
-  produced looks like a finding. Read the flags in your own command before quoting its
-  output as a total.
-
-**A count and a sample need different commands.** When the number is the deliverable, ask
-the API for the number rather than for the rows, or make the tool prove it reached the end:
+§2d's `|| echo` fires on any non-zero exit. This is its **unconditional** twin, and it is
+worse, because it fires always:
 
 ```bash
-# GOOD — the server counts; no page size can shorten a total
-gh api -X GET search/issues --raw-field q='repo:OWNER/REPO is:pr is:merged' -q .total_count
-
-# GOOD — page until short, and say so; --paginate exists precisely for this.
-# NOTE the predicate: `state=closed` is merged AND closed-unmerged. Filter, don't assume.
-gh api --paginate '/repos/OWNER/REPO/pulls?state=closed&per_page=100' \
-  -q '.[] | select(.merged_at != null) | .number' | wc -l
-
-# CONTROL — a cap you can see: if the count equals the limit exactly, assume truncation
-n=$(gh pr list --state merged --limit 100 --json number -q '.[].number' | wc -l)
-[ "$n" -eq 100 ] && echo "AT THE CAP — this is a page, not a total" >&2
+ps -axo pid=,command= | grep -c "[m]y-job"; echo "^ 0 = nothing running"   # printed 1
 ```
 
-**Then check the two methods against each other — and read the disagreement.** Writing
-this section, the server count said **330** and the paginated read said **339**. The
-pagination was right; the *predicate* was wrong — `state=closed` includes the 9 PRs that
-were closed without merging, so the fixed command had quietly started answering a different
-question than the one it replaced. A second method exists to have a **different failure
-mode** (`sota-code-security` rules/11 §7), and the whole return on that is the moment the
-two numbers differ. Had they agreed, nothing would have been learned; had I run only the
-fixed one, `339` would have shipped as the merged total. Reconcile the gap to a named cause
-(`330 + 9 unmerged = 339`) before reporting either number — an unexplained delta between two
-methods is a finding, not a rounding difference.
+The label is typed **before** the command runs, so it records what you expected rather than
+what happened — and it renders in the same block as the real output, where prediction and
+measurement are typographically identical on re-reading. `;` cannot propagate a
+contradiction, and a literal string cannot be falsified by the line above it.
 
-That last line generalises past `gh`: **a result whose size equals a round number you or the
-tool chose is a page until proven otherwise.** 30, 50, 100, 1000. It costs one comparison
-and it is the only signal the tool gives you, because it does not give one.
+Measured 2026-09-18: four instances in one session, each contradicted by the output directly
+beneath it. The costly one asserted a rule was **absent from a corpus** one line above output
+proving it was present — the next step would have been adding a rule that already existed.
 
-The reporting rule follows §2's: **say which bound produced the number.** "330 merged PRs
-(`--limit 1000`, no truncation — the run returned fewer rows than the cap)" is a
-measurement. "330 PRs" is a claim whose evidence has been thrown away, and "30" was too.
+**Print the value, not your reading of it.** Where a verdict is genuinely needed, derive it
+from the same variable the command produced:
 
-## 5a. The selector picked a different member than the question named
+```bash
+n=$(ps -axo command= | grep -c "[m]y-job")
+[ "$n" -eq 0 ] && echo "none running" || echo "$n still running"
+```
 
-§5 returned **less** of the right population. This returns **all** of a neighbouring one —
-harder to see: nothing truncated, nothing silent, no rule broken. The selector was reasonable
-and answered a question one step to the left of the one asked. Three in one session:
+That is `sota-code-security` rules/14 §1 applied to your own scrollback: a claim is sited in
+the **consumer**, derived from the value it actually received. **The tell on review** is a
+line beginning `^`, `(` or `<-` that asserts a *state* rather than naming a *quantity*. Read
+the output above it before believing it — including your own.
 
-| the question | the selector typed | what it actually returns |
-|---|---|---|
-| "the kernel this release ships" | `sort -V \| tail -1` over the repo | the newest available — here a **backports** kernel, 6.12 for a 6.1 release |
-| "how much disk will this free" | `du -sh target` / the tool's own summary | apparent size / logical bytes deleted — **not** blocks returned to the filesystem |
-| "how much is reclaimable" | `podman system df` | images not backing a *running* container, with shared layers double-counted down the ancestry chain |
+## 2f. A word-boundary escape is a property of the machine, not of the tool
 
-`sort -V | tail -1` is the obvious way to get "the latest" and it is simply not "the
-default". Each of the three is the correct answer to a question nobody asked.
+`\b` and `\<` are not portable, and failing them is **silent**: no match, exit 1,
+indistinguishable from a true absence. `git grep` calls the platform's system regex — `nm -u`
+on the binary shows `_regcomp` **imported**, with only git's own `_git_regcomp` wrapper
+defined — so the same pattern, the same git and the same repository answer differently on
+different machines.
 
-- **Name the population member before writing the selector.** *Newest, largest, first,
-  default, reclaimable, installed* are six members and at most one is your question.
-- **The tell is a value that cannot belong to the thing you asked about.** The Debian probe
-  returned a `CONFIG_LSM` string containing `ipe` — IPE merged in **Linux 6.12** (verified:
-  `security/ipe/ipe.c` present at tag `v6.12`, absent at `v6.11`), so it cannot appear in a
-  6.1 config. The row was refuted by its own output before it was written. Read one full
-  record from any selection before building an argument on the aggregate.
-- **Three numbers that disagree are three questions, not a discrepancy to average.** None of
-  `du`, the tool's report and `df` is wrong; ask which the decision needs. General form:
-  `sota-observability` rules/05 §7a.
+Measured 2026-09-18 over a file containing `53`, control (`53` alone) matching in every row:
+
+| platform | git | `\b` / `\<` | `[[:<:]]` |
+|---|---|---|---|
+| macOS, system BSD regex | 2.55.0 | **no match** | matches |
+| Debian, glibc | 2.39.5 and 2.47.3 | matches | **no match** |
+| Alpine, musl | 2.45.4 | matches | — |
+
+**There is no version to pin** — three older gits match `\b` and the newest does not. The GNU
+and BSD forms are **mutually exclusive**, so neither is portable. Use `-P` where PCRE is
+compiled in, or drop the boundary and filter afterwards.
+
+This cost two false absences in one session: a count search over an agent file that plainly
+contained the number, and a reference sweep that reported zero while five references existed.
+Both were caught only because a second, differently-shaped measurement disagreed. **Run §2's
+positive control on the search itself** — §2 states that control under a heading about
+symlinked directories, where it reads as advice about traversal rather than about every
+search, and that placement is why it was skipped here.
+
 
 ## Audit checklist
 
@@ -468,6 +435,15 @@ default". Each of the three is the correct answer to a question nobody asked.
       manufactures findings about someone else's code. Branch on the exit code and print the
       captured stderr. Sweep your own checklists for the shape: `grep -rn '2>/dev/null ||'`.
 
+- [ ] **Does any command carry a hardcoded label asserting its own result?** (§2e) — a
+      trailing `; echo "^ 0 = ..."` is a prediction typed before the run, and `;` cannot
+      propagate a contradiction. Sweep your own scripts and scrollback for `; *echo` beside
+      a counting command; print the value and derive any verdict from the variable the
+      command produced
+- [ ] **Does any search rely on `\b` or `\<`?** (§2f) — absent from BSD/macOS regex, and
+      `git grep` inherits the platform's, so the same pattern silently returns zero on one
+      machine and matches on another. There is no version to pin. Use `-P`, the POSIX
+      bracket form, or no boundary at all — and control the search
 - [ ] **Sweeps: is the searcher's traversal and exclusion set stated with the count?** (§2)
       `-r` skips symlinked dirs met in traversal and `-R` follows **only on ugrep/GNU** —
       on BSD grep (macOS `/usr/bin/grep`) neither does; `rg` skips gitignored and hidden by
@@ -478,18 +454,6 @@ default". Each of the three is the correct answer to a question nobody asked.
       alone is a fact about the subject; `LINES:0` beside `MEMBERS:0 BYTES:39802880`
       localises it to the reader. Required wherever a positive control is unavailable
       because nothing is known to be present in the target yet.
-- [ ] **Does the selector name the population member the question does?** (§5a) — *newest*
-      is not *default* (`sort -V | tail -1` returns a backports kernel), *apparent size* is
-      not *blocks freed*, *not backing a running container* is not *reclaimable*. Nothing is
-      truncated and the exit status is 0, so the only tell is a value that cannot belong to
-      the subject; read one full record before trusting the aggregate.
-- [ ] **Counts taken from a listing tool** (§5): does the command carry a `--limit`/
-      `per_page`/`--max-items`, or rely on the tool's **default** page (30 for `gh`, 100 for
-      most REST)? A total must come from a server-side count (`total_count`) or a paginated
-      read (`gh api --paginate`), never from the first page. Treat a result whose size equals
-      the cap exactly as truncated, and quote the bound alongside the number. Where a second
-      method was run, is the delta between the two reconciled to a named cause — or was the
-      un-truncated command also given a **different predicate** (`state=closed` vs merged)?
 - [ ] **zsh joining bugs** (the inverse of SC2086, and unlinted): in any zsh script or
       snippet, `grep -nE '\$\{[a-zA-Z_]+:\+[^}]*\$' -e '[a-z] \$[a-zA-Z_]+$'` for
       `${var:+--flag $var}` and bare `cmd $args`. Each passes **one** argument in zsh

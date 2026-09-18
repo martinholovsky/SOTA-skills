@@ -32,7 +32,7 @@ it.** Four failure modes produce a confident zero, and none of them prints an er
   (`sota-shell-scripting` rules/06 §2a).
 - **The lister answered about one page.** `gh issue list` and friends cap at 30 by default,
   exit 0, empty stderr. A result whose size equals a round number you or the tool chose is a
-  page until proven otherwise (`sota-shell-scripting` rules/06 §5).
+  page until proven otherwise (`sota-shell-scripting` rules/09 §5).
 - **The query asked your question, not the project's.** `grep` answers "does this string
   appear", never "is this idea covered". A project that writes "parked" will not match "TODO".
 
