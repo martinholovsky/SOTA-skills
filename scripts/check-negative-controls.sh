@@ -1071,7 +1071,7 @@ if [ "$failed" -ne 0 ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 (28 of 31)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34 (31 of 34)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        12          — mtime-based: needs a rendered asset older than its source."
