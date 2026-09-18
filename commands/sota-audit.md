@@ -33,11 +33,24 @@ Scope decides the answer, and the wrong scope does not error — it returns **cl
 Enumerate the candidates that actually exist here, size each one, and stop:
 
 ```sh
-git status --porcelain | wc -l                       # uncommitted work
-git merge-base HEAD origin/HEAD                      # base of this branch, if it resolves
-git diff --name-only "$BASE" | wc -l                 # this branch vs that base
-git ls-files | wc -l                                 # the whole repo
+git status --porcelain | wc -l                  # uncommitted work
+git ls-files | wc -l                            # the whole repo
+
+# Resolve the base into a variable and GUARD IT before using it. Keep stderr:
+# git says why it failed, and that reason is the thing you report.
+BASE="$(git merge-base HEAD origin/HEAD)"
+if [ -n "$BASE" ]; then
+  git diff --name-only "$BASE" | wc -l          # this branch vs its base
+else
+  printf 'base did not resolve — ask which branch to compare against\n' >&2
+fi
 ```
+
+**That guard is the whole lesson of this step, so it is written out rather than assumed.**
+Unguarded, `git diff --name-only "$BASE"` with `$BASE` unset and stderr dropped prints **`0`,
+exit `0`** — a clean denominator for a branch carrying five commits, offered to me as a scope I
+might pick. An empty comparand does not fail, it silently answers a different question
+(`sota-shell-scripting` rules/06 §2b).
 
 Offer only what you could size, plus any subtree this session actually touched. If a command
 failed, name it and say why rather than dropping the option silently — an absent scope and an
