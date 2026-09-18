@@ -44,6 +44,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   became opt-in — the same call already made for `/sota-audit`, since most repos it runs in are
   not yours to leave files in. It cites `rules/03` §1/§3/§4/§4a rather than restating them.
 
+- **`/sota-deep-audit` reconstructs the threat model, and it runs *first*.** The gap was
+  visible in the comparison that produced the command and was reported rather than quietly
+  left: router AUDIT **step 2** was absent from `/sota-audit` and only partial here, living
+  inside the security lens where it could not do its job — a finding rated without trust
+  boundaries is rated in a vacuum. It is now a timeboxed pass of its own ahead of the lenses
+  (`sota-threat-modeling` rules/06 §1): collect and **record what you were not given**;
+  extract entry points, stores, actors and the trust boundaries the system *actually* has
+  from the code rather than the docs (`rules/02` §5, §7, §8) and output the reconstructed
+  DFD; write down the implied assumptions and **test each against the code that makes it
+  true** — no evidence is a broken assumption, and these are usually the Criticals; run the
+  component catalogs including the LLM/agent one (`rules/03` §8); then build the
+  **control-presence matrix** — Present · Partial · Absent · N/A · Unverifiable, each with
+  the evidence its state demands, the *searches* recorded for every Absent (`rules/06` §2).
+  Three things make that matrix worth having: **Partial is the most important state** (one
+  checked endpoint proves the pattern is known; the seventeen unchecked ones are the
+  finding, and remediation is adoption rather than invention), **check the negative space**
+  (exclusion lists, skip-auth decorators, `count = 0`, disabled tests with *security* in the
+  name — a disabled control is a stronger finding than one never built, because someone
+  decided), and **sample honestly with the rule stated**. Lens 3 now consumes the matrix
+  instead of duplicating it, and the DFD plus matrix join deliverable A.
+
+### Fixed
+
+- **"instructions an agent executes every session" was wrong in four live places.** A command
+  executes **on invocation**, not every session — the claim justifying invariant 33's urgency
+  described a mechanism the library does not have, and last week's coverage-table row was
+  edited to say the opposite, leaving the row contradicting the prose three lines above it.
+  Corrected in `CONTRIBUTING.md`, `docs/CONVENTIONS-LEDGER.md`, `docs/INVARIANTS.md` and
+  `check-invariants.sh`'s own header. **The two copies in `CHANGELOG.md` and
+  `docs/ADOPTION-LOG.md` are deliberately left**: those are records of what was believed at
+  the time, and editing a record destroys the trail. The 494-line figure and its 2026-09-16
+  date are untouched — the measurement was right, the mechanism sentence around it was not.
+
+- **`install.sh`'s command block still described a directory holding one file.** Its header
+  explained why `/sota-report` ships user-level and never mentioned that the loop installs
+  every command in `commands/` — five of them now. It names the set, and which check covers
+  which (1c by name, 1d by denominator).
+
 - **Invariant 34 — a version this repo claims for itself must exist.** A rules-file header
   naming the release a section moved in is written *before the cut decides minor vs patch*;
   guess minor, ship patch, and the prose points at a release that never existed. **Four

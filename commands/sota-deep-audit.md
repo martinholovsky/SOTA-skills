@@ -1,5 +1,5 @@
 ---
-description: The heavy audit — a hostile review of a whole repository by someone who will inherit it: code, history, decisions, results and forward plan, fanned out across independent agents, every load-bearing claim re-measured this session, every serious finding handed to a refuter that is not you. Expensive; run it at a milestone, an inheritance or a go/no-go, not routinely.
+description: The heavy audit — a hostile review of a whole repository by someone who will inherit it: the threat model reconstructed from the code and a control-presence matrix built against it, then code, history, decisions, results and forward plan, fanned out across independent agents, every load-bearing claim re-measured this session, every serious finding handed to a refuter that is not you. Expensive; run it at a milestone, an inheritance or a go/no-go, not routinely.
 ---
 
 A hostile review of this repository by someone who will inherit it and distrusts every prior
@@ -14,7 +14,7 @@ split before you fan anything out**, so I can stop it if the scope is wrong.
 
 ## What this adds that `/sota-audit` structurally cannot
 
-Four things, and only these four justify the cost. If none of them is what I need, say so and
+Five things, and only these five justify the cost. If none of them is what I need, say so and
 point me back at the cheap command.
 
 1. **Independence.** `/sota-audit` refutes its own findings from the context that produced
@@ -27,6 +27,10 @@ point me back at the cheap command.
    awkward to stand up.
 4. **A forward look.** Whether the current plan is still the right one, given what the audit
    actually found.
+5. **A reconstructed threat model.** `/sota-audit` checks the code against rules that already
+   exist; it never asks what this system is *worth attacking for*. That reconstruction is a
+   timeboxed pass of its own, and it is the next section, because its output decides what
+   everything after it weights.
 
 ## Ground rules
 
@@ -67,6 +71,54 @@ control that is present and inert is invisible to all four lenses below
 (`sota-code-security` rules/10 §1, and `rules/14` §6 for the one that guards part of its
 population).
 
+## Reconstruct the threat model first — its output prioritises everything below
+
+This comes **before** the lenses, not inside lens 3, because a finding rated without trust
+boundaries is rated in a vacuum (router AUDIT step 2). Timebox each phase and say which you
+cut short (`sota-threat-modeling` rules/06 §1).
+
+1. **Collect, and record what you were not given.** Repos, lockfiles, IaC, CI configs,
+   container and cluster manifests, any existing architecture or threat-model docs,
+   `.env.example`, OpenAPI/proto specs. **Surface you could not audit goes in the report as
+   un-auditable** — never silently dropped.
+2. **Extract the system model from the code, not from the docs** — entry points by mechanism,
+   stores and assets, the actor and privilege table, and the trust boundaries the system
+   *actually* has rather than the ones it claims (`sota-threat-modeling` rules/02 §5, §7, §8).
+   **Output the reconstructed DFD.** It is deliverable one even if nothing else is found: most
+   teams have never seen their real attack surface drawn.
+3. **Write down the implied assumptions**, from auth middleware, IaC structure, old ADRs,
+   comments. *Services trust the gateway's headers. That bucket is private. Only the worker
+   reaches the queue.* Each one becomes a test target.
+4. **Run the component catalogs** against everything step 2 found — web frontend, API, data
+   tier, queue, upload pipeline, CI/CD, mobile, cloud and IAM (`sota-threat-modeling`
+   rules/03). An LLM or agent surface is not an exception to this: it has its own catalog
+   (`sota-threat-modeling` rules/03 §8).
+5. **Test every assumption from step 3 against the code or config that makes it true.** No
+   evidence is not *probably fine* — it is a broken assumption, and these are usually the
+   Criticals.
+6. **Build the control-presence matrix**, one row per component × catalog item, each marked
+   **Present · Partial · Absent · N/A · Unverifiable** and carrying the evidence its state
+   demands: `file:line` for Present, *both* sides for Partial, **the searches you ran** for
+   Absent, and the artifact that would settle it for Unverifiable
+   (`sota-threat-modeling` rules/06 §2).
+
+Three things decide whether that matrix is worth anything:
+
+- **Partial is the most important state.** One authorization-checked endpoint proves the team
+  knows the pattern; the seventeen unchecked ones are the finding — and they tell you the
+  remediation is *adoption*, not invention.
+- **Check the negative space.** Middleware exclusion lists, `TODO: auth`, skip-auth decorators,
+  `count = 0` and commented-out IaC blocks, disabled tests with *security* in the name,
+  allowlist files. **A disabled control is a stronger finding than one never built** — someone
+  decided.
+- **Sample honestly and state the rule.** On a repetitive surface, sample a declared fraction
+  *plus* every path touching a top asset, and put that rule in the report. A matrix built from
+  an unstated sample is a claim about the sample wearing the whole system's clothes.
+
+Rate what falls out of this in **deployment context** rather than in the abstract
+(`sota-threat-modeling` rules/04 §3), and hand the reconstructed model back as the team's new
+baseline. For most projects it outlives every finding in the report.
+
 ## The four lenses — cover all, weight by what this project actually is
 
 1. **Correctness, decisions and results.** Reconstruct the load-bearing decisions from the
@@ -81,10 +133,13 @@ population).
    missing coverage, leaky abstractions, and violations of the project's *own* stated
    invariants and conventions. Distinguish a real defect from a style preference. Driven by
    the routed language and domain skills.
-3. **Security posture.** The system's attack surface and failure modes: input handling,
-   injection and abuse paths, resource exhaustion, secrets handling, dependency and supply
-   chain, fail-open versus fail-closed. Scope to what is authorised and defensive. Each
-   routed skill's Audit checklist is the completeness gate — walked item by item, not skimmed.
+3. **Security posture.** Driven by the matrix above: every **Absent** and **Partial** row
+   becomes a threat sentence, rated in deployment context, ranked
+   (`sota-threat-modeling` rules/06 §3). Then the code-level surface the matrix does not
+   reach — input handling, injection and abuse paths, resource exhaustion, secrets handling,
+   dependency and supply chain, fail-open versus fail-closed. Scope to what is authorised and
+   defensive. Each routed skill's Audit checklist is the completeness gate, walked item by
+   item, not skimmed.
 4. **Strategy and forward plan.** Is the current plan sound given what you found? Which levers
    are exhausted or dead ends, and is the plan still chasing them? Which promising directions
    were never explored? Where do the stated priorities diverge from where the real risk and
@@ -118,7 +173,8 @@ Report in the session by default. **Write files only if I ask for them** — mos
 this runs in are not yours to leave artifacts in. When I do ask, two:
 
 **A. A dated audit report** at this project's docs location. Executive summary and health
-verdict · the decision ledger with each verdict and its re-checked evidence · findings by lens
+verdict · **the reconstructed DFD and the control-presence matrix**, with the sampling rule
+stated · the decision ledger with each verdict and its re-checked evidence · findings by lens
 in the canonical format `file:line | rule | severity | effort | fix`, severity resolved on
 `sota` router `rules/03` §1, noting which domain skill each came from · domain coverage, including
 what was skipped and why · reproduction status, including what stayed UNVERIFIED · unexplored

@@ -605,7 +605,7 @@ CI scans the full git history, the pre-commit hook scans each commit.
     density is uneven across this tree, and unevenness is **invisible**: an area with no
     gates looks exactly like a covered one from the outside. Measured 2026-09-16 —
     `skills/**` (70,200 lines) carries roughly twenty of the checks above, while
-    `commands/**`, 494 lines of instructions an agent *executes every session*, carried
+    `commands/**`, then 494 lines of instructions an agent executes on invocation, in any project on the machine, carried
     **two**. Nobody had decided that; the directory was added on 2026-09-14 and nothing
     asked the question.
 

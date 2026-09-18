@@ -318,7 +318,7 @@ which is how this one surfaced.
 **Why this table exists.** Enforcement density is uneven, and unevenness is invisible: an area
 with no gates looks exactly like a covered one from the outside. Measured 2026-09-16 —
 `skills/**` (70,200 lines) carries ~20 of 34 invariants, while `commands/**` (494 lines of
-instructions an agent *executes every session*) carried **two**, and nobody had decided that.
+instructions an agent executes on invocation, in any project on the machine) carried **two**, and nobody had decided that.
 
 **Why a declaration and not a ratio.** A numeric invariants-per-KLOC floor is arbitrary — the
 right number for a 500-line asset directory is not the right number for 70k lines of
