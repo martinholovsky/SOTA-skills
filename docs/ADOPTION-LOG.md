@@ -4010,6 +4010,123 @@ its least representative slice.* Recorded as a **correction to shipped text**, n
 finding — and as evidence for keeping the "date every number to its source" discipline, since
 the number that needed revising was one we had already published.
 
+## 2026-09-18 — four defects a session produced, and what only two of them earned
+
+**The session that built `/sota-audit` and `/sota-deep-audit` produced four defects of its
+own.** That is the intake: not an outside report, but the thing this log exists to catch —
+ideas arriving from a session that *used* the library. Each was put through this file's three
+filters (has it already failed · does it fail silently · is it mechanically checkable), and
+**two of the four earned a change. The other two are adherence, and a rule for them would make
+the library worse.**
+
+| defect | failed? | silent? | mechanically checkable? | verdict |
+|---|---|---|---|---|
+| a fence used `$BASE` and never assigned it | yes | yes — `0`, exit `0` | **no** | **rejected by measurement** |
+| a spelled count drifted (*four things* → five) | yes | yes | **yes — the gate already exists** | adopted: declare it |
+| wrong internal pointers, a claim outrunning its source | yes | yes | no — semantic | no change |
+| the harness under-reported its own coverage | yes | yes | **yes, at run time** | adopted: self-check |
+
+### Rejected by measurement: gating an unassigned variable in a fence
+
+The defect was real — `/sota-audit` shipped a scope fence whose `$BASE` was printed and never
+captured, giving `0, exit 0`, a clean denominator for a branch with five commits. The obvious
+gate is "a prescriptive `sh`/`bash` fence may not use a variable it never assigns". **Measured
+before proposing it: 131 uses across 19 files**, and the sample is `$DIGEST`, `$MSG`, `$PID`,
+`$f` — reader-supplied placeholders, which is the normal idiom of a documentation snippet.
+A gate that opens red gets disabled, so this one is rejected on the same ground as two of
+invariant 34's candidate designs. The fix stays where it belongs: `sota-shell-scripting`
+rules/06 §2b already covers the class, and the shipped fence now demonstrates the guard.
+
+### Adopted, using a gate that already existed
+
+The *four things → five things* drift is invariant 30's exact shape, and invariant 30 scans
+every tracked `*.md`, which includes `commands/`. It was never declared, so nothing watched it.
+Four counts in the two new commands now carry `<!-- count-check: … -->` markers. **No new
+machinery** — the gap was a missing declaration, not a missing gate.
+
+### Adopted: a control that asserted its own coverage instead of counting it
+
+`check-negative-controls.sh` printed `COVERED: … (28 of 31)` while it had probes for 32, 33 and
+34. Invariant 17 *requires* `AGENTS.md` and `CONTRIBUTING.md` to restate that line, so one
+stale literal reached both front doors and then **rejected the correct correction** when the
+measured number (61 probes, 31 of 34) was written in. That is `sota-code-security` rules/14 §1.
+
+**The literal was kept, deliberately.** Invariant 17 parses it out of the file and invariant 19
+reads the per-id reasons under it; deleting it broke both, measured. And a *static* check cannot
+replace it — grepping the call sites under-reads, **27 against a true 31**, because the
+diff-based probes are nested inside functions. That is why `AGENTS.md` already said only running
+it is authoritative. What was missing was anything comparing the declaration to the run, so the
+harness now derives the covered set from the probes that actually executed and **fails if its
+own COVERED line disagrees**. The control exists at the only moment the truth does.
+
+**Its first run was a false alarm, and the lesson is worth more than the fix.** It reported
+`probes ran for 27 invariants, but the COVERED line declares 31` — against a declaration that
+was right. Probes reach the gate through **three** functions and only `probe()` had been
+instrumented, so the diff-based checks (11, 14, 29, 31, routed through `probe_committed()` and
+`probe_committed_green()`) were invisible to it. **27 is the same number a static grep of the
+call sites produced**, for the same reason. A control written to stop a number being asserted
+rather than counted was itself counting a third of the evidence: `rules/14` §6, a real control
+applied to part of its population, committed inside the fix for `rules/14` §1. The comparison
+had been unit-tested both ways beforehand, which is the only reason the failure read as a
+miscount instead of as real drift.
+
+### Not adopted: a rule for the two adherence failures
+
+A wrong claim landing in four places is `/sota-close` step 1 ("find where the claim went"). The
+hostile-re-read defects — a pointer saying *"the next section"* after two sections were inserted,
+a claim quietly upgrading the rule it cited — are semantic, and invariant 31 exists precisely
+because a fuzzy truth gate gets disabled. Both rules are already written. **A further copy is the
+anti-pattern**, and the same conclusion was reached for the two slips made while verifying this
+session: a pipeline masking a verdict's exit status, and `ps -axo … -p "$pid"` listing every
+process, are covered verbatim in `sota-shell-scripting` rules/06 §1 and §2b.
+
+## 2026-09-18 — a private audit command, and the gap analysis that justified taking it
+
+**The intake is my own command, which this log treats on the same terms as an external one.**
+`deep-audit` had been sitting untracked in `~/.claude/commands/` since July — used, never
+reviewed, never gated. The question that surfaced it was the right one to ask of any candidate:
+*is there something it finds that the thing we just shipped cannot?*
+
+**The answer was measured, not asserted.** Against the router's own seven-step AUDIT workflow:
+
+| router AUDIT step | `/sota-audit` as written | `deep-audit` |
+|---|---|---|
+| 1 recon | ✓ | ✓ |
+| 2 threat model first | absent | partial (lens 3) |
+| 3 per-domain passes | ✓ item-by-item | ✓ |
+| 4 silent-control pass | ✓ | ✓ |
+| **5 decision ledger** | **absent** | ✓ with re-measurement |
+| 6 findings | ✓ | ✓ |
+| **7 refute** | **weakened to self-refutation** | ✓ separate agent |
+
+Step 5 was not thin, it was **zero**: every `decision` hit in `commands/sota-audit.md` was about
+asking the operator a question or updating a ledger row after a fix. A term census would have
+reported four hits and looked like coverage — `grep` answers *does this string appear*, never
+*is this idea covered*, so the hits were read rather than counted.
+
+**The split that decided the packaging.** Two of the four gaps are *scale* problems and two are
+*missing passes*. Missing passes get fixed in place — the decision ledger, `rules/01` §4a's
+"where else does this project's knowledge live", and §1a's partition-don't-skim all landed in
+`/sota-audit`. Only **independence** (a refuter that is not the context that produced the
+finding) and **a forward look at the plan** actually need the heavy command, and that is now the
+whole justification for its cost, stated in the command itself so a reader can decline it.
+
+**Adopted with three corrections, none cosmetic.**
+
+- **`ultracode` as the first body line** — a harness-specific keyword for opting into
+  multi-agent orchestration. This library is cross-harness (`AGENTS.md` is symlinked for other
+  tools), and *keep it generic* is a standing convention. Replaced with a capability test.
+- **Unannounced cost.** It fans out across many agents and is installed at user level, so it is
+  reachable from every project. It now states the cost up front and shows the plan and split
+  **before** spending anything.
+- **Unasked repo writes.** It wrote a dated report and a roadmap patch by default. That is the
+  same call already settled against for `/sota-audit`: most repositories a command runs in are
+  not the author's to leave artifacts in. Both artifacts are opt-in.
+
+Rule text was not copied across either: the command cites `sota` router `rules/03` §1, §3, §4
+and §4a rather than restating them, which is what keeps `commands/` out of the "carrying rule
+text" half of its coverage-table trigger (`docs/CONVENTIONS-LEDGER.md`).
+
 ## 2026-09-16 — Invariant 34, because I reintroduced the bug I had just fixed
 
 **This entry exists because a warning did not disable a reflex, and the evidence is my own.**

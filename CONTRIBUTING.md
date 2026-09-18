@@ -552,7 +552,7 @@ as a FALSE PASS, because a harness that accepts any failure reports full coverag
 testing nothing.
 
 Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 3, 4, 6,
-7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 — 28 of 31; the harness prints the list and why the rest are
+7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34 — 31 of 34; the harness prints the list and why the rest are
 not covered, so read its output rather than this sentence). A **diff-based** check is not
 unprobeable: 11, 14 and 29 read a merge base, and the probe for them *commits* its
 mutation on the worktree's detached HEAD, then rewinds to the sha it captured first. Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
@@ -605,7 +605,7 @@ CI scans the full git history, the pre-commit hook scans each commit.
     density is uneven across this tree, and unevenness is **invisible**: an area with no
     gates looks exactly like a covered one from the outside. Measured 2026-09-16 —
     `skills/**` (70,200 lines) carries roughly twenty of the checks above, while
-    `commands/**`, 494 lines of instructions an agent *executes every session*, carried
+    `commands/**`, then 494 lines of instructions an agent executes on invocation, in any project on the machine, carried
     **two**. Nobody had decided that; the directory was added on 2026-09-14 and nothing
     asked the question.
 

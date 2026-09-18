@@ -69,13 +69,16 @@ stack comes from your profile or the skills' defaults (naming one is optional):
 
 More install options: [Installation](#installation) · more prompts: [Using it](#using-it).
 
-**Three slash commands bracket a working session** — `scripts/install.sh` links them into
-`~/.claude/commands/`, so they work in **any** project, not just this one:
+**Five slash commands ship with the library** — four bracket a working session, the fifth is
+the heavy escalation. `scripts/install.sh` links them into `~/.claude/commands/`, so they work
+in **any** project, not just this one:
 
 | | When | What it does |
 |---|---|---|
 | **`/sota-resume`** | **start** of a session | Finds the open work — every tracker, checkbox and `TODO` marker, swept with a **controlled** search — classifies it (ready · needs a decision · deferred · not an item · **already done and never ticked off**), shows you the table, then executes what you agree to against the project's own CI. |
 | **`/sota-close`** | **end** of a session | The closure pass: **retract first**, record open items where the next session will trip over them, update what the session made false, **re-derive every number from its source**, say what is not done and blocked on whom, then commit the evidence. |
+| **`/sota-audit`** | **work finished**, or a codebase you did not write | Audits what is in front of you against the library: agrees the scope first, maps every surface to its owning skill and **says which domains nobody opened**, walks each Audit checklist item by item, then fixes what you agree to. |
+| **`/sota-deep-audit`** | a **milestone**, an inheritance, a go/no-go | The heavy pass, and **expensive**: **reconstructs the threat model from the code** — entry points, trust boundaries, a control-presence matrix — then fans the audit across independent agents, re-measures the numbers past decisions rest on, and hands every serious finding to a refuter that did not find it. |
 | **`/sota-report`** | **end** of a session | Writes a gitignored field report on where the guidance failed, was absent, was wrong — or was right and did not fire. Prints a `gh issue create` line; it never posts anything itself. |
 
 They take free-text arguments (`/sota-close focus on the migration branch`). Full detail:
@@ -86,7 +89,7 @@ They take free-text arguments (`/sota-close focus on the migration branch`). Ful
 - [Standards & practices baked in](#standards--practices-baked-in) · [What the audit hunts that a scanner can't](#what-the-audit-hunts-that-a-scanner-cant) · [How the numbers are kept honest](#how-the-numbers-are-kept-honest)
 - [Skills](#skills) · [Coverage & non-goals](#coverage--non-goals)
 - [Installation](#installation) · [Always-on routing](#always-on-routing-recommended) · [Updating](#updating)
-- [Using it](#using-it) — [slash commands](#slash-commands) (`/sota-resume` · `/sota-close` · `/sota-report`)
+- [Using it](#using-it) — [slash commands](#slash-commands) (`/sota-resume` · `/sota-audit` · `/sota-deep-audit` · `/sota-close` · `/sota-report`)
 - [Optional setup & integrations](#optional-setup--integrations) — [badge](#badge), [gates](#enforcing-the-gates), [other agents](#other-ai-agents-codex-copilot-gemini-), [status line](#status-line-optional), [plugin extras](#optional-extras-for-plugin-users)
 - [Structure](#structure) · [How it works](#how-it-works) · [Conventions](#conventions)
 - [Found a gap? Tell us](#found-a-gap-tell-us--its-the-only-signal-we-get) · [Contributing](#contributing) · [License](#license)
@@ -1027,15 +1030,34 @@ silently uninstalled until you re-run the installer.
 |---|---|---|
 | **`/sota-report`** | at the **end** of a session, in your own project | Writes a gitignored field report on where the guidance failed, was absent, wrong, or right and did not fire — stamped with the version that produced it. Then writes a short generalised extract and prints a `gh issue create` line. It never posts anything. |
 | **`/sota-resume`** | at the **start** of a session, or when picking a project back up | Finds the open work: sweeps every tracker, checkbox and `TODO` marker with a **controlled** search (a clean "nothing found" is exactly the answer a skipped symlink tree, a `--replace` flag or a 30-row default page produces), classifies it — ready · needs a decision · deliberately deferred · not an item · **already done and never ticked off** — shows you the table, then executes what you agree to, one item at a time, against the project's own CI entry point. |
+| **`/sota-audit`** | when a piece of work is **finished**, or on arriving in a codebase you did not write | Audits the code against the library rather than for defects in general, so the dominant finding is **a rule that owns real surface area and was never applied** — and behind it, a control that is present and enforces nothing. Agrees the scope first (every candidate printed with its denominator, because the wrong scope returns *clean* rather than an error), routes from the surfaces in the tree rather than from whatever happened to be loaded, prints a coverage table naming the domains **nobody opened**, walks each rules file's Audit checklist item by item (met · not met · not applicable, with the reason), asks the questions that need a decision in one batch, then fixes what you agree to against the project's own CI. |
+| **`/sota-deep-audit`** | at a **milestone**, on **inheriting** a codebase, or before a go/no-go | The heavy pass, and the one to reach for deliberately rather than by default. It buys four things `/sota-audit` structurally cannot: **independence** (every serious finding goes to an agent that did not find it, working from the code rather than the finder's write-up), **scale** (a repo too large to hold at once is partitioned across agents rather than skimmed by one), **decisions re-measured rather than reconstructed** (where a past choice rests on a number, that number is produced again this session), **a forward look** at whether the plan is still right, and **a threat model reconstructed from the code** (below). Four lenses — decisions & results · code and architecture · security posture · strategy. It states the plan and the fan-out split before spending anything, and writes files only if you ask. |
 | **`/sota-close`** | at the **end** of a session, before you walk away | The closure pass: **retract first** (every claim that proved wrong, corrected *everywhere it reached*), record open items where the next session will actually trip over them, update the docs and agent files the session made false, **re-derive every number from its source**, state plainly what is not done and what is blocked on whom, then commit the evidence and confirm the push landed. |
 
 `/sota-resume` and `/sota-close` are the two ends of the same session: one picks the open work
 up, the other puts it down where the next session will find it. Neither needs the other to have
 run — most projects scatter their open work across files written by people who are not here.
 
-All three take free-text arguments to steer them (`/sota-close focus on the migration branch`).
+All five take free-text arguments to steer them (`/sota-close focus on the migration branch`).
 They are prompts, not scripts: the text is in `commands/*.md` and nowhere else, so you can read
 exactly what your session is being told to do before you run it.
+
+**Why the threat model runs first in `/sota-deep-audit`.** `/sota-audit` checks code against
+rules that already exist; it never asks what this system is *worth attacking for*. Reconstructing
+that is a pass of its own, and it goes **before** the lenses rather than inside the security one,
+because a finding rated without trust boundaries is rated in a vacuum. It extracts entry points,
+stores, actors and the boundaries the system *actually* has from the code rather than the docs,
+then writes down the assumptions that implies — *services trust the gateway's headers*, *that
+bucket is private* — and **tests each against the code that makes it true**. No evidence is not
+"probably fine"; it is a broken assumption, and those are usually the Criticals. What comes out is
+a **control-presence matrix**: Present · Partial · Absent · N/A · Unverifiable, each carrying the
+evidence its state demands — `file:line` for Present, both sides for Partial, and **the searches
+you ran** for Absent, so a reviewer can re-run them. **Partial is the most important state.** One
+authorization-checked endpoint proves the team knows the pattern; the seventeen unchecked ones are
+the finding, and they tell you the remediation is adoption rather than invention. The pass also
+reads the **negative space** — exclusion lists, skip-auth decorators, `count = 0`, disabled tests
+with *security* in the name — because a control someone switched off is a stronger finding than one
+never built. Full procedure: [`sota-threat-modeling`](skills/sota-threat-modeling/) rules/06.
 
 **Why `/sota-close` is a command rather than a habit.** The end of a session is when the
 context has usually been compacted at least once, so "what happened" is reconstructed from

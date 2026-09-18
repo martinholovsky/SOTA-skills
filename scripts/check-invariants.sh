@@ -2543,7 +2543,7 @@ if [ "$v32" -ne 0 ]; then fail=1; fi
 # THE GAP (measured 2026-09-16). Enforcement density is uneven and unevenness is
 # INVISIBLE: an area with no gates looks exactly like a covered one from outside.
 # `skills/**` (70,200 lines) carries ~20 of the checks above; `commands/**` -- 494
-# lines of instructions an agent EXECUTES EVERY SESSION -- carried two, and nobody
+# lines of instructions an agent EXECUTES ON INVOCATION, in any project -- carried two, and nobody
 # had decided that. It was added 2026-09-14 and nothing asked the question.
 #
 # WHY A DECLARATION AND NOT A RATIO. An invariants-per-KLOC floor is arbitrary: the

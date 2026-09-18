@@ -682,10 +682,14 @@ if [ "$TARGET" = "$HOME/.claude/skills" ] && [ "$USE_COPY" -eq 0 ]; then
 fi
 
 # --- slash commands -----------------------------------------------------------
-# The library learns nothing from use unless a session that used it reports back
-# (README, "Found a gap?"). `/sota-report` is that ask, shipped where it is reachable
-# from ANY project rather than only from this repo — a prompt you have to go and find
-# is a prompt nobody runs at the end of a long session.
+# Every file in commands/ is installed, not just one: the set brackets a working session
+# (/sota-resume opens, /sota-close and /sota-report close it), plus /sota-audit and its
+# escalation /sota-deep-audit. `/sota-report` is the load-bearing one for the library
+# itself — it learns nothing from use unless a session that used it reports back (README,
+# "Found a gap?"), which is why verify-setup checks it by name (1c) and the rest by
+# denominator (1d). All of them ship where they are reachable from ANY project rather than
+# only from this repo: a prompt you have to go and find is a prompt nobody runs at the end
+# of a long session.
 #
 # User-level (~/.claude/commands) on purpose, never project-level: the report is written
 # in the OTHER project, about work done there. Symlinked like the skills, so `--update`

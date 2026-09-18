@@ -9,6 +9,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`/sota-audit` — a fourth slash command: audit a codebase against the library.** The
+  existing three bracket a session (`/sota-resume` opens, `/sota-close` and `/sota-report`
+  close); nothing asked the middle question — *were the rules that own this surface actually
+  applied?* It is a **conformance** audit, not a defect hunt, so its dominant finding is a rule
+  with real surface area that was never applied, and behind it a control that is present and
+  enforces nothing. Three design points, each answering a failure this library has already
+  measured: **the scope is agreed first**, with a denominator printed beside every candidate,
+  because the wrong scope returns *clean* rather than an error; **routing is rebuilt from the
+  surfaces in the tree**, never from whatever happened to be loaded, since a session that never
+  routed looks perfectly compliant against nothing, and the coverage table names the domains
+  **nobody opened**; and the checklists are walked **item by item** (met · not met · not
+  applicable, with the reason) because self-audit fails toward false negatives — the reasoning
+  that produced the code is still loaded and will agree with itself. Findings stop for a
+  decision before anything is edited; questions are batched in the two-or-three-options form
+  with a recommendation. Report in the session, no file written unless asked. No script change
+  was needed — `install.sh` and `verify-setup.sh` check **1d** both glob `commands/*.md`, so
+  the new command installs and is checked for reachability on the next `install.sh` run.
+
+- **`/sota-deep-audit` — the escalation, and the four things `/sota-audit` structurally cannot
+  do.** Measured against the router's own seven-step AUDIT workflow rather than by impression:
+  `/sota-audit` as first written covered steps 1, 3, 4 and 6, **omitted step 5 entirely**
+  (decision-ledger review — all four `decision` hits in the file were about asking the operator
+  a question) and **weakened step 7** to self-refutation. Three of those gaps were missing
+  passes rather than missing horsepower and were closed in place: the decision ledger with
+  re-measurement, the "where else does this project's knowledge live" question
+  (`sota` router `rules/01` §4a), and partitioning a scope too large to hold at once (§1a).
+  The two that genuinely need scale — **an independent refuter** and **a forward look at the
+  plan** — became this command. Adapted from a private command that had been in use since July;
+  three things changed before it could ship in a cross-harness public library: the `ultracode`
+  first line became harness-neutral ("if this harness offers multi-agent orchestration, use it;
+  if not, run the lenses in fresh contexts and say which"), the cost is stated up front with the
+  plan and fan-out split shown **before** anything is spent, and the two written artifacts
+  became opt-in — the same call already made for `/sota-audit`, since most repos it runs in are
+  not yours to leave files in. It cites `rules/03` §1/§3/§4/§4a rather than restating them.
+
+- **`/sota-deep-audit` reconstructs the threat model, and it runs *first*.** The gap was
+  visible in the comparison that produced the command and was reported rather than quietly
+  left: router AUDIT **step 2** was absent from `/sota-audit` and only partial here, living
+  inside the security lens where it could not do its job — a finding rated without trust
+  boundaries is rated in a vacuum. It is now a timeboxed pass of its own ahead of the lenses
+  (`sota-threat-modeling` rules/06 §1): collect and **record what you were not given**;
+  extract entry points, stores, actors and the trust boundaries the system *actually* has
+  from the code rather than the docs (`rules/02` §5, §7, §8) and output the reconstructed
+  DFD; write down the implied assumptions and **test each against the code that makes it
+  true** — no evidence is a broken assumption, and these are usually the Criticals; run the
+  component catalogs including the LLM/agent one (`rules/03` §8); then build the
+  **control-presence matrix** — Present · Partial · Absent · N/A · Unverifiable, each with
+  the evidence its state demands, the *searches* recorded for every Absent (`rules/06` §2).
+  Three things make that matrix worth having: **Partial is the most important state** (one
+  checked endpoint proves the pattern is known; the seventeen unchecked ones are the
+  finding, and remediation is adoption rather than invention), **check the negative space**
+  (exclusion lists, skip-auth decorators, `count = 0`, disabled tests with *security* in the
+  name — a disabled control is a stronger finding than one never built, because someone
+  decided), and **sample honestly with the rule stated**. Lens 3 now consumes the matrix
+  instead of duplicating it, and the DFD plus matrix join deliverable A.
+
+- **The negative-control harness now checks its own coverage claim against the run.** It
+  printed `COVERED: … (28 of 31)` while carrying probes for 32, 33 and 34; invariant 17
+  *requires* `AGENTS.md` and `CONTRIBUTING.md` to restate that line, so one stale literal
+  reached both front doors and then **rejected the correct correction** (`sota-code-security`
+  rules/14 §1 — a control asserting a number it has not earned). The literal is kept on
+  purpose: invariant 17 parses it from the file and invariant 19 reads the per-id reasons
+  beneath it, and **deleting it broke both, measured**. A static replacement is not available
+  either — grepping the call sites under-reads, **27 against a true 31**, because the
+  diff-based probes are nested inside functions, which is why `AGENTS.md` already said only
+  running it is authoritative. What was missing was the comparison, so the harness now derives
+  the covered set from the probes that actually ran and **fails when its own COVERED line
+  disagrees**. **Its first real run was a false alarm, and that is the useful part**: it
+  reported `probes ran for 27 invariants, but the COVERED line declares 31` — against a
+  *correct* declaration. Probes reach the gate through three functions, not one, and only
+  `probe()` had been instrumented; the diff-based checks go through `probe_committed()` and
+  `probe_committed_green()`. So the control I wrote to stop a number being asserted rather
+  than counted was itself counting only a third of the evidence — the same defect, one level
+  in. All three entry points now record. The comparison logic was unit-tested in both
+  directions (silent at 31 vs 31, fires at 28 vs 31) *before* that run, which is exactly why
+  the failure was legible as a miscount rather than read as real drift.
+
+- **Four spelled-out counts in the new commands are now declared to invariant 30.** *"Four
+  things, and only these four justify the cost"* drifted to five inside the session that wrote
+  it — invariant 30's exact shape, on a gate that already scans every tracked `*.md` including
+  `commands/`. It was simply never declared. No new machinery; four `<!-- count-check: … -->`
+  markers.
+
+### Fixed
+
+- **"instructions an agent executes every session" was wrong in four live places.** A command
+  executes **on invocation**, not every session — the claim justifying invariant 33's urgency
+  described a mechanism the library does not have, and last week's coverage-table row was
+  edited to say the opposite, leaving the row contradicting the prose three lines above it.
+  Corrected in `CONTRIBUTING.md`, `docs/CONVENTIONS-LEDGER.md`, `docs/INVARIANTS.md` and
+  `check-invariants.sh`'s own header. **The two copies in `CHANGELOG.md` and
+  `docs/ADOPTION-LOG.md` are deliberately left**: those are records of what was believed at
+  the time, and editing a record destroys the trail. The 494-line figure and its 2026-09-16
+  date are untouched — the measurement was right, the mechanism sentence around it was not.
+
+- **`install.sh`'s command block still described a directory holding one file.** Its header
+  explained why `/sota-report` ships user-level and never mentioned that the loop installs
+  every command in `commands/` — five of them now. It names the set, and which check covers
+  which (1c by name, 1d by denominator).
+
 - **Invariant 34 — a version this repo claims for itself must exist.** A rules-file header
   naming the release a section moved in is written *before the cut decides minor vs patch*;
   guess minor, ship patch, and the prose points at a release that never existed. **Four

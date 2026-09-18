@@ -318,7 +318,7 @@ which is how this one surfaced.
 **Why this table exists.** Enforcement density is uneven, and unevenness is invisible: an area
 with no gates looks exactly like a covered one from the outside. Measured 2026-09-16 —
 `skills/**` (70,200 lines) carries ~20 of 34 invariants, while `commands/**` (494 lines of
-instructions an agent *executes every session*) carried **two**, and nobody had decided that.
+instructions an agent executes on invocation, in any project on the machine) carried **two**, and nobody had decided that.
 
 **Why a declaration and not a ratio.** A numeric invariants-per-KLOC floor is arbitrary — the
 right number for a 500-line asset directory is not the right number for 70k lines of
@@ -336,7 +336,7 @@ under-covered. This will recur.
 | area | what it holds | gated by | if thin, why that is accepted |
 |---|---|---|---|
 | `skills/` | the library itself — instructions an agent loads | 1, 2, 3, 4, 7, 8, 10, 15, 18, 22, 30, 31, 32 | — |
-| `commands/` | slash commands — instructions an agent executes | 3, 8, 18, 30, 32 | **thin by measurement, not by choice.** No line cap (they are not loaded every session) and no audit-checklist rule (they are procedures, not rule files). Revisit if a command grows past ~200 lines or starts carrying rule text |
+| `commands/` | slash commands — instructions an agent executes | 3, 8, 18, 30, 32 | **thin by measurement, not by choice.** No line cap (they load on invocation, not every session) and no audit-checklist rule (they are procedures, not rule files). **The ~200-line half of that trigger fired** when `/sota-audit` reached 214 adding the decision-ledger pass: still no cap, because the skill cap's reason — loaded every session — does not apply to a command. The live half is *carrying rule text*, and the answer to it is that commands cite `rules/NN §X` rather than restate, which invariant 18 already gates |
 | `scripts/` | the gates themselves, plus install/verify | shellcheck `-S style` (CI), 17, 19, and `check-negative-controls.sh` part A/B | — |
 | `evals/` | measurement harness and case sets | `evals/test_scoring.py` (pre-commit + CI), 13, 25, 28, plus 9 conventions inside the runners | Python is unlinted beyond the scorer tests; accepted because the runners are not shipped to users and a wrong number fails 13/25/28 |
 | `docs/` | prose: ledgers, indexes, runbooks | 8, 17, 21, 23, 26, 27, 30, 31 | uncapped deliberately (2026-07-15) — navigability comes from `docs/INDEX.md` |
