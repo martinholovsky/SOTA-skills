@@ -614,6 +614,25 @@ probe_committed 14 "a release declares no front-door check" \
 import re, subprocess
 
 ver = '99.0.0'
+
+# AND IT MUST BUILD ITS OWN TAG STATE, not merely its own release heading. The
+# claim-rewrite below is what stops invariant 34 firing on the cut's own "· v<current>"
+# claims -- but on an ordinary PR that rewrite is INERT, because v<VERSION> is already
+# tagged and 34 passes whether or not we rewrite. So the regression it guards (the blocked
+# v1.43.0 cut) is invisible to every non-release CI run and would return unnoticed until
+# the next real cut -- the same class as the header note above: a probe whose assumption
+# holds only on the branch it was written on. Put the tree into the state a cut produces
+# -- a current version with NO tag, and one claim about it -- before bumping to `ver`.
+# Measured 2026-09-19 as a differential: without the rewrite below this fails invariant 34
+# with "claims v1.97.0, which is not a tag and is not the current VERSION"; with it, green.
+cut = '1.97.0'                     # untagged by construction, and inside 34's `v1.*` scope
+assert subprocess.run(['git', 'rev-parse', '-q', '--verify', 'refs/tags/v' + cut],
+                      capture_output=True).returncode != 0, \
+    'v%s must not be a tag, or this fixture stops exercising the rewrite' % cut
+open('VERSION', 'w').write(cut + '\n')
+with open('docs/MAINTENANCE.md', 'a', encoding='utf-8') as fh:
+    fh.write('\nNegative-control fixture line, rewritten by probe 14b (\u00b7 v%s).\n' % cut)
+
 # INVARIANT 34 MUST BE NEUTRALISED TOO -- the same lesson as the invariant-29 note below,
 # found by the first release cut after 34 landed (v1.43.0). 34 exempts exactly one untagged
 # version: the one in VERSION, because at cut time the tag does not exist yet. So the moment
