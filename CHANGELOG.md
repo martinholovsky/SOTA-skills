@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Probe 14b builds its own tag state, so finding 5's fix is exercised on every PR.** The
+  fixture neutralises invariant 34 (shipped v1.43.1, after 34 blocked the correct v1.43.0 cut)
+  by rewriting the cut's `· v<current>` claims to the synthetic version. That rewrite was
+  **inert on any non-release commit**: there `v<VERSION>` is already tagged, so 34 passes
+  whether or not the fixture rewrites, and deleting the fix changed nothing. The regression was
+  therefore invisible to every CI run between releases and would have resurfaced at the next
+  cut — a release-time gate unexercised by non-release runs (`sota-devsecops` rules/09 §2a).
+  The fixture now writes an untagged `1.97.0` into `VERSION`, plus one claim about it, before
+  bumping to the synthetic version, and asserts first that no such tag exists. Measured as a
+  differential 2026-09-19: with the claim-rewrite removed the probe reports `EXEMPTION DID NOT
+  HOLD` and `FAIL: 1 of 61`; with it restored, `PASS: 61/61`. Probe count unchanged.
+
 - **`sota-shell-scripting` rules/06 §2f states its mechanism at the width it was measured.**
   Shipped in v1.43.1 asserting *"`git grep` calls the platform's system regex"* as a general
   fact. The **behaviour** is measured on four builds and stands; the **mechanism** was verified
