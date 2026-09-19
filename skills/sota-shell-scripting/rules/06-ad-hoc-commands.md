@@ -388,10 +388,16 @@ the output above it before believing it — including your own.
 ## 2f. A word-boundary escape is a property of the machine, not of the tool
 
 `\b` and `\<` are not portable, and failing them is **silent**: no match, exit 1,
-indistinguishable from a true absence. `git grep` calls the platform's system regex — `nm -u`
-on the binary shows `_regcomp` **imported**, with only git's own `_git_regcomp` wrapper
-defined — so the same pattern, the same git and the same repository answer differently on
-different machines.
+indistinguishable from a true absence. The same pattern, the same git and the same repository
+**answer differently on different machines** — that part is measured below, on four builds.
+
+The *mechanism* is verified on one of them and is stated at that width: on the macOS build,
+`nm -u` shows `_regcomp` **imported** with only git's own `_git_regcomp` wrapper defined, so
+that git inherits the platform's regex rather than carrying its own. Do not assume the same
+linkage elsewhere — the equivalent check on an Alpine build returned neither an imported nor a
+defined `regcomp` while `nm -D` still listed 252 symbols, which is a fact about that
+instrument, not about the binary. **You do not need the mechanism to act on this**: the
+behaviour is the rule, and the control below is what makes it visible.
 
 Measured 2026-09-18 over a file containing `53`, control (`53` alone) matching in every row:
 

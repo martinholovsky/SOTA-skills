@@ -5,6 +5,20 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **`sota-shell-scripting` rules/06 §2f states its mechanism at the width it was measured.**
+  Shipped in v1.43.1 asserting *"`git grep` calls the platform's system regex"* as a general
+  fact. The **behaviour** is measured on four builds and stands; the **mechanism** was verified
+  on exactly one — `nm -u` on the macOS binary. The equivalent check on an Alpine build returned
+  neither an imported nor a defined `regcomp` while `nm -D` still listed 252 symbols, which is a
+  fact about that instrument rather than about the binary, so it settles nothing in either
+  direction. The sentence now says which build it was read from and warns against assuming the
+  same linkage elsewhere. The rule's advice is unchanged, because the behaviour is what you act
+  on — a mechanism asserted wider than its evidence is the defect §2f itself is about.
+
 ## [1.43.1] - 2026-09-18
 
 **Front door checked:** word-boundary · verdict · listing and selection
