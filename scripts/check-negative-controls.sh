@@ -539,6 +539,25 @@ wt_commit "probe: a release declaring a routing check that resolves nowhere"
 probe_committed 29b "a routing declaration that resolves to an unrelated file" \
   "never mentions desc-routing-regressions"
 
+# 29c — THE THIRD WAY THE SAME HATCH FAILS: a declaration that resolves, mentions the
+# regression set, and is STALE. Until 2026-09-20 check 29 stopped at existence, so a
+# release could satisfy it by naming a months-old run: the classifier it measured was a
+# different one, and nobody re-ran it. Reported-but-never-read, in gate form.
+#
+# The fixture points at a REAL past artifact rather than a synthetic one, which is what
+# makes it strict: evals/results/2026-09-09/ROUTING-REGRESSION-RUN.md exists and mentions
+# desc-routing-regressions twice, so it clears every predicate check 29 had BEFORE this
+# one. The probe can therefore only score on the date comparison -- a catch for the wrong
+# reason is impossible here by construction, rather than by assertion.
+( cd "$WT" && perl -pi -e 's/^(description: )/$1Probe rewrite of the routing surface. / if $. < 10' \
+      skills/sota-golang/SKILL.md \
+    && printf '99.0.0\n' > VERSION \
+    && perl -0777 -pi -e 's/^## \[/## [99.0.0] - 2099-01-01\n\n**Routing checked:** evals\/results\/2026-09-09\/ROUTING-REGRESSION-RUN.md\n\n## [/m' \
+      CHANGELOG.md )
+wt_commit "probe: a release declaring a routing check that predates the change"
+probe_committed 29c "a routing declaration older than the description it covers" \
+  "predates the change it claims to"
+
 # 11 — LAST-VERIFIED moved by an ordinary edit. The stamp records a FULL
 # re-verification of the library against primary sources; the 2026-07-08 sweep touched
 # 100 skill files. Both escapes must be absent for this to fire: the diff is one file,
