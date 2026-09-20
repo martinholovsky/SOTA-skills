@@ -22,6 +22,13 @@
 #   evals/results/<date>/routing-baseline.json   the run itself
 #   evals/ROUTING-BASELINE                       a one-line stamp CI can read
 #
+# WHICH SET. The default is the 10-case adversarially-confusable golden set
+# (desc-routing.jsonl), because drift is what this watches and that set is built to
+# discriminate. The 4-case desc-routing-regressions.jsonl is the *pinned mis-route* set
+# invariant 29 asks a release to run; it sits at 1.00/1.00, so it can only ever report a
+# DROP -- useful as an alarm, useless as a measurement, since a saturating instrument
+# proves it cannot tell rather than that nothing changed. Run either with --cases.
+#
 # Usage: scripts/routing-baseline.sh [--samples N] [--model M] [--cases FILE]
 #
 # Portable to macOS bash 3.2.
@@ -29,7 +36,7 @@ set -euo pipefail
 
 SAMPLES=3
 MODEL="anthropic/claude-sonnet-4.6"
-CASES="evals/cases/desc-routing-regressions.jsonl"
+CASES="evals/cases/desc-routing.jsonl"
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -68,15 +75,28 @@ python3 evals/run-desc-routing.py \
 # The score is READ BACK from the artifact the run just wrote, not carried in a shell
 # variable from before it: reading back is what proves the file on disk says what the
 # run reported (sota-code-security rules/15 — read back the artifact this run produced).
-SCORE=$(python3 - "$OUT" <<'PY'
+SCORE=$(python3 - "$OUT" <<'SCOREPY'
 import json, sys
+# The number lives under summary[<arm>], not at the top level. The first draft guessed
+# top-level keys, found none, and wrote the literal string "unparsed" into the stamp -- a
+# stamp recording the READER failing rather than the thing measured. Read back what the run
+# actually wrote (sota-code-security rules/15), and fail loudly rather than stamping a word.
 d = json.load(open(sys.argv[1]))
-for k in ("score", "mean", "accuracy", "recall"):
-    if isinstance(d, dict) and k in d:
-        print(d[k]); break
+summ = d.get("summary")
+if not isinstance(summ, dict) or not summ:
+    sys.exit("routing-baseline: no 'summary' in %s" % sys.argv[1])
+arm = "with-xref" if "with-xref" in summ else sorted(summ)[0]
+v = summ[arm]
+if not isinstance(v, dict):
+    print(v)
+    raise SystemExit
+for k in ("correct", "score", "accuracy", "recall"):
+    if k in v:
+        print("%.3f" % float(v[k]))
+        break
 else:
-    print("unparsed")
-PY
+    sys.exit("routing-baseline: no score key in summary[%r]: %s" % (arm, sorted(v)))
+SCOREPY
 )
 
 PREV=""
