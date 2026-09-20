@@ -17,7 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `evals/results/<date>/routing-baseline.json` and stamps `evals/ROUTING-BASELINE`.
   `scripts/check-freshness.sh` reads that stamp against a **3-month** window (vs 6 for
   content — model releases, not fact rot, are what age it) and the monthly job goes red when
-  it lapses. **No API key is stored in this repo or in CI**: the run is local and CI only
+  it lapses. It defaults to the **10-case adversarially-confusable golden set**
+  (`desc-routing.jsonl`), not the 4-case pinned-regression set invariant 29 asks a release to
+  run: the latter sits at 1.00/1.00, so it can only report a drop — an alarm, not a
+  measurement. **First baseline, 2026-09-20: `correct=0.900`** (sonnet-4.6, 3 samples).
+  The one non-perfect case is `q4_data_race`, which picks `sota-golang` 3/3 where the set
+  expects `sota-async-concurrency` — stable, not flaky, and notably *not* the distractor. **No API key is stored in this repo or in CI**: the run is local and CI only
   compares a date. It reports rather than gates, because a model-scored eval is
   non-deterministic and a flaky gate gets disabled.
 
