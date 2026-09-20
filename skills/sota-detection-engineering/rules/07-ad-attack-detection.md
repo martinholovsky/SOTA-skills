@@ -142,6 +142,35 @@ detect (ESC1-style): certificate request on an auth-EKU template where the
   auto-enrollment. **Enrich** with the template name and EKU. See
   `sota-identity-access` rules/07 §3 for which templates are dangerous (ESC1/ESC4/ESC6/ESC8).
 
+### Forged SAML tokens ("Golden SAML") — T1606.002
+
+An attacker holding the federation server's **token-signing private key** mints valid
+assertions for any user, with any claims and lifetime. Every AD detection above watches
+*authentication*; this one never authenticates. MFA, lockout and password policy are all
+bypassed, and the assertion verifies, so nothing at the service provider is anomalous in
+isolation. **The finding exists only in the join between two logs.**
+
+- **Signature**: a federated sign-in at the SP/cloud that is cryptographically valid and has
+  **no matching token-issuance event at the IdP**. The IdP never issued it, so it never
+  logged one.
+- **Telemetry prerequisite**: AD FS auditing raised above the default
+  (`Set-AdfsProperties -AuditLevel`) plus the **Audit Application Generated** advanced audit
+  policy, shipped off the federation server — and the SP/cloud sign-in logs, which usually
+  live in a different system from the IdP's events. If those two are not in one place, this
+  detection cannot be written at all, which is the common reason it is missing.
+- **Logic sketch**: for each federated sign-in, look for a corresponding issuance event on
+  the IdP inside the correlation window; AD FS ties a request's events together with an
+  **Activity ID** (GUID). Sign-in present, IdP event absent → candidate forgery.
+- **Corroborators** (each weak alone, strong together): token lifetimes outside what the IdP
+  is configured to issue; claims the IdP does not emit; one token presented to several SPs;
+  sign-ins for accounts that never sign in interactively.
+- **Watch the key and the trust, not just the tokens**: export or read of the signing
+  certificate's private key, and **creation or modification of a federation trust** — adding
+  an attacker-controlled trust is the other half of T1606.002 and needs no key theft.
+- **After a suspected compromise**, rotating the token-signing certificate **once is not
+  enough**: the previous certificate stays valid and the forged tokens keep working. Rotate
+  twice in succession (build-side: `sota-identity-access` rules/01 §7).
+
 ### NTLM relay & forced authentication — T1187
 
 ```
@@ -235,6 +264,7 @@ an untested Kerberoasting rule is a hope, not a detection.
 
 ## Audit checklist
 
+- [ ] Can you **join** SP/cloud federated sign-ins against IdP token-issuance events, and does anything fire when a valid sign-in has no matching IdP event (Golden SAML, T1606.002)? If the two logs are not in one system, this detection does not exist.
 - [ ] Are DC **Advanced Audit Policy** subcategories enabled (Kerberos AS + Service Ticket ops, Credential Validation, Logon, **Directory Service Changes with SACLs on tier-0 objects**) and **DC Security logs shipped centrally** (not triaged on the DC)?
 - [ ] Is **NTLM audit (event 8004)** and **CA issuance auditing (4886/4887)** enabled where NTLM/ADCS are in scope?
 - [ ] Is there a **Kerberoasting** detection on **RC4 (0x17) 4769** with SPN fan-out, and is it meaningful (are service accounts AES-hardened so RC4 is anomalous)?

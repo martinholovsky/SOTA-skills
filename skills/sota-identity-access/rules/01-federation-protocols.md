@@ -175,6 +175,19 @@ OIDC. When you run or consume SAML, the failure modes are signature-handling bug
 - **IdP-initiated SSO risks**: no `InResponseTo` binding → login CSRF and assertion
   replay. Prefer SP-initiated flows; if IdP-initiated is required, enforce single-use
   assertion IDs, tight `NotOnOrAfter`, audience restriction, and RelayState validation.
+- **Golden SAML — forging tokens with a stolen signing key (ATT&CK T1606.002)**: every
+  defense above protects the *assertion*; this defeats all of them at once. An attacker
+  holding the IdP's **token-signing private key** mints valid assertions for any user, with
+  any claims and any lifetime, so **MFA, password policy and account lockout are all
+  bypassed** — the federation server never authenticates anyone and logs nothing, while the
+  SP receives a correctly signed token. Seen in the SolarWinds compromise (APT29) and
+  automated by public tooling (AADInternals). Defenses: keep the signing key
+  **non-exportable in an HSM/TPM**; treat the federation server as **Tier 0** and administer
+  it only from privileged access workstations; minimise which SPs trust the IdP; and on
+  suspected compromise **rotate the token-signing certificate twice in succession** — a
+  single rotation leaves the previous certificate valid and every forged token still working.
+  Detecting it is a *join between two logs* and lives in `sota-detection-engineering`
+  rules/07; the hybrid/Entra blast radius is rules/07 §5 here.
 - Always enforce: `Destination`/`Recipient` checks, `AudienceRestriction`, assertion
   replay cache, signed metadata, and a rotation plan for IdP signing certs.
 
@@ -209,6 +222,8 @@ New integrations: do not adopt WS-Fed; migrate existing ones to OIDC.
 - [ ] Does the RP fetch keys from `jwks_uri` and rotate by `kid` (re-fetch on unknown kid), with a sane JWKS cache TTL?
 - [ ] Are high-value/regulated clients on PAR + DPoP/mTLS (FAPI 2.0) rather than bare bearer tokens?
 - [ ] For SAML RPs: is a signature required and validated over the consumed assertion, with XSW and comment-injection defenses, audience restriction, replay cache, and extra-assertion rejection?
+- [ ] Does the RP send a `state` parameter, bind it to the session, and verify it on the callback **before** exchanging the code? CSRF on the authorization response is not covered by PKCE; the rule lives in `sota-code-security` rules/02 §4, and this checklist is where an SSO audit looks for it.
+- [ ] Is the IdP's token-signing key non-exportable (HSM/TPM), the federation server Tier 0, and is there a **rotate-twice** runbook for suspected key compromise (Golden SAML, T1606.002)?
 - [ ] Is IdP-initiated SAML avoided or hardened (single-use IDs, tight NotOnOrAfter, RelayState validation)?
 - [ ] Is the SCIM endpoint authenticated/authorized per-tenant, with DELETE/`active=false` actually terminating authentication?
 - [ ] Is any WS-Federation usage documented as legacy with a migration plan to OIDC?

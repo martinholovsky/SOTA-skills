@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Golden SAML gets mechanics, defenses and a detection — it was named once, as a label.**
+  `sota-identity-access` rules/01 §7 gains the attack class (ATT&CK **T1606.002**): a stolen
+  token-signing key mints assertions for any user with any claims and lifetime, so MFA,
+  lockout and password policy are all bypassed while the IdP logs no authentication. Defenses
+  are non-exportable HSM/TPM keys, a Tier 0 federation server, minimised SP trust, and
+  **rotating the signing certificate twice** — one rotation leaves the old certificate valid
+  and every forged token working. `sota-detection-engineering` rules/07 gains the detection,
+  which is a **join between two logs**: a federated sign-in that verifies and has no matching
+  token-issuance event at the IdP. That skill previously held **zero** SAML content.
+- **`evals/cases/desc-routing-sso.jsonl`** — five SSO routing cases, because
+  `sota-identity-access` was the expected pick in **0 of 84** cases across the three existing
+  routing sets while being the only skill carrying federation content. Kept separate from
+  `desc-routing.jsonl` so the pinned baseline's denominator does not move.
+
 - **`scripts/routing-baseline.sh` — a recurring routing measurement, run locally.** Routing
   is the entry point: a task that does not reach a skill gets none of its content, and it is
   the one measurement that can regress with **no diff in this repo**, because the classifier
@@ -27,6 +41,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   non-deterministic and a flaky gate gets disabled.
 
 ### Fixed
+
+- **`sota-identity-access` rules/01's Audit checklist now asks about `state`.** An auditor
+  correctly routed to the identity skill for "audit our SSO" walked a twelve-item checklist
+  that never mentioned CSRF on the authorization response — the rule exists, in
+  `sota-code-security` rules/02 §4, reachable only if that skill was also loaded. AUDIT mode
+  walks checklists, so the omission was the reachable path failing, not the content.
 
 - **Invariant 29 now requires the routing artifact to be CURRENT, not merely to exist.** A
   release could satisfy the gate by naming a months-old run: the declaration resolved, the

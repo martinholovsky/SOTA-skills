@@ -1,0 +1,24 @@
+# SSO / federation routing set — does an SSO task reach the skill that holds the answer?
+#
+# SELECTION RULE. Written 2026-09-20 after a coverage audit found that `sota-identity-access`
+# is the expected pick in ZERO of the 84 cases across desc-routing, routing-recall and
+# router.jsonl, while it is the only skill carrying OIDC/SAML/federation content. The set is
+# NOT a sample of anything: each case is one of the SSO attack classes an operator asked
+# about (aud validation, open redirect, login CSRF, implicit flow, PKCE downgrade, SAML
+# signature/XML flaws, Golden SAML, replay), kept only where the OWNING SKILL IS
+# UNAMBIGUOUS BY THE LIBRARY'S OWN TEXT — the standard used to correct q7_pod_hardening,
+# not a model score. Each case names the line that decides it.
+#
+# DELIBERATELY EXCLUDED, because ownership is genuinely contested and a "wrong" pick would
+# not be a routing defect: RP-side ID-token claim validation. `sota-identity-access`
+# rules/01 §3 is titled "Required claim validation at the RP", while router cross-cutting
+# rule 10 sends app-level JWT-validation code to `sota-code-security` rules/02-03. That
+# overlap is a finding about the boundary, not a case.
+#
+# Kept SEPARATE from desc-routing.jsonl on purpose: that set is the pinned baseline
+# (correct=0.900 on 2026-09-20) and adding cases would change its denominator.
+{"id": "sso1_oauth_login_csrf", "task": "Our web app finishes an OAuth login at a /callback route. Make sure an attacker cannot feed their own authorization response into a victim's session, and that the callback verifies everything it should before exchanging the code.", "expect": "sota-code-security", "distractor": "sota-identity-access"}
+{"id": "sso2_idp_client_config", "task": "Review our identity provider's client registration for the web app: which grant types and response types should be allowed, and how strictly should redirect URIs be matched?", "expect": "sota-identity-access", "distractor": "sota-code-security"}
+{"id": "sso3_pkce_downgrade", "task": "Our identity provider supports PKCE but does not require it, and some clients still send code_challenge_method=plain. Assess the exposure and decide what to enforce at the provider.", "expect": "sota-identity-access", "distractor": "sota-code-security"}
+{"id": "sso4_saml_assertion_trust", "task": "We consume SAML assertions from a partner identity provider. Harden the response handling against signature wrapping, extra assertions, and replay of a captured assertion.", "expect": "sota-identity-access", "distractor": "sota-code-security"}
+{"id": "sso5_forged_saml_detection", "task": "Assume an attacker has stolen the token-signing key from our federation server and is minting valid SAML tokens for arbitrary users. What telemetry would reveal it, and what detection rules should we write?", "expect": "sota-detection-engineering", "distractor": "sota-identity-access"}

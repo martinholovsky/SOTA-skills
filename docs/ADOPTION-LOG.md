@@ -4010,6 +4010,44 @@ its least representative slice.* Recorded as a **correction to shipped text**, n
 finding — and as evidence for keeping the "date every number to its source" discipline, since
 the number that needed revising was one we had already published.
 
+## 2026-09-20 — an SSO coverage question, and the routing measurement that refuted the framing
+
+**Intake shape: an operator question about coverage.** Asked what the library held on SSO
+attack classes (`aud` logic errors, open redirect, login CSRF, `response_type=token`,
+`code_challenge_method=plain`, SAML crypto/XML flaws, Golden SAML, replay), a read of the
+files found seven of eight covered, often deeper than asked. The follow-up question — *are
+you sure it will be reached?* — is what produced the work.
+
+| finding | verdict |
+|---|---|
+| Golden SAML named once library-wide, as a risk label, with no mechanics, defenses or detection | **adopted** → `sota-identity-access` rules/01 §7 + `sota-detection-engineering` rules/07 |
+| `sota-identity-access` rules/01's Audit checklist has no `state`/CSRF item, so an SSO audit walking it is never prompted for the one control that lives in another skill | **adopted** → checklist item pointing at `sota-code-security` rules/02 §4 |
+| SSO routing was untested — `sota-identity-access` was the expected pick in **0 of 84** cases | **adopted as a case set**, `evals/cases/desc-routing-sso.jsonl` |
+| "SSO content may be unreachable" | **REFUTED BY MEASUREMENT** — 5/5 cases route correctly, 3/3 samples each, `correct=1.000` |
+| adding SAML/federation triggers to `sota-detection-engineering`'s description | **rejected** — the measurement shows it already routes 3/3 without them; an absent string is not an absent capability, and the churn would compete for `sota-identity-access`'s traffic |
+| RP-side ID-token claim validation as a routing case | **excluded, recorded as a boundary finding** — rules/01 §3 is titled "at the RP" while router rule 10 sends app-level JWT validation to `sota-code-security` rules/02-03. Contested ownership is not a routing defect |
+
+### The result that mattered, and why it changes the shape of the fix
+
+`sso5_forged_saml_detection` routes to `sota-detection-engineering` **3/3 — a skill that
+held zero SAML content**. Routing delivered the task correctly and the destination was
+empty. That separates a **routing** gap from a **content** gap, which the original framing
+had conflated, and it decided the fix: add content, touch no description. The same
+correction the PowerShell case recorded on 2026-09-14 (a claimed routing gap that already
+routed at 0 of 42 descriptions naming the term), arrived at independently and by the same
+instrument.
+
+### What was verified rather than recalled
+
+T1606.002 *Forge Web Credentials: SAML Tokens*, its SolarWinds/APT29 and AADInternals
+procedure examples, and the **rotate-the-signing-certificate-twice** mitigation come from the
+ATT&CK page, fetched at time of writing. The AD FS auditing knobs
+(`Set-AdfsProperties -AuditLevel`, the *Audit Application Generated* policy, Activity-ID
+correlation) come from Microsoft's own AD FS auditing documentation. A recalled claim that
+**event IDs 1200/1202 are "token issuance" was wrong** — 1202 is *validated a new credential*
+— so the detection is written by its *shape* (a valid sign-in with no matching IdP event)
+rather than around event IDs that vary by AD FS version.
+
 ## 2026-09-18 — a field report from the session that wrote the commands, and the three of seven it earned
 
 **Intake shape: a session reporting on itself.** The session that built `/sota-audit` and
