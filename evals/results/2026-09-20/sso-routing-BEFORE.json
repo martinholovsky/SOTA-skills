@@ -1,0 +1,143 @@
+{
+ "model": "anthropic/claude-sonnet-4.6",
+ "samples": 3,
+ "temp": 0.0,
+ "cases": {
+  "sso1_oauth_login_csrf": {
+   "task": "Our web app finishes an OAuth login at a /callback route. Make sure an attacker cannot feed their own authorization response into a victim's session, and that the callback verifies everything it should before exchanging the code.",
+   "expect": "sota-code-security",
+   "distractor": "sota-identity-access",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-code-security",
+      "sota-code-security",
+      "sota-code-security"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "sso2_idp_client_config": {
+   "task": "Review our identity provider's client registration for the web app: which grant types and response types should be allowed, and how strictly should redirect URIs be matched?",
+   "expect": "sota-identity-access",
+   "distractor": "sota-code-security",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-identity-access",
+      "sota-identity-access",
+      "sota-identity-access"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-identity-access",
+      "sota-identity-access",
+      "sota-identity-access"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "sso3_pkce_downgrade": {
+   "task": "Our identity provider supports PKCE but does not require it, and some clients still send code_challenge_method=plain. Assess the exposure and decide what to enforce at the provider.",
+   "expect": "sota-identity-access",
+   "distractor": "sota-code-security",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-identity-access",
+      "sota-identity-access",
+      "sota-identity-access"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-identity-access",
+      "sota-identity-access",
+      "sota-identity-access"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "sso4_saml_assertion_trust": {
+   "task": "We consume SAML assertions from a partner identity provider. Harden the response handling against signature wrapping, extra assertions, and replay of a captured assertion.",
+   "expect": "sota-identity-access",
+   "distractor": "sota-code-security",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-identity-access",
+      "sota-identity-access",
+      "sota-identity-access"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-identity-access",
+      "sota-identity-access",
+      "sota-identity-access"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "sso5_forged_saml_detection": {
+   "task": "Assume an attacker has stolen the token-signing key from our federation server and is minting valid SAML tokens for arbitrary users. What telemetry would reveal it, and what detection rules should we write?",
+   "expect": "sota-detection-engineering",
+   "distractor": "sota-identity-access",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-detection-engineering",
+      "sota-detection-engineering",
+      "sota-detection-engineering"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-detection-engineering",
+      "sota-detection-engineering",
+      "sota-detection-engineering"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  }
+ },
+ "summary": {
+  "with-xref": {
+   "correct": 1.0,
+   "distractor": 0.0
+  },
+  "without-xref": {
+   "correct": 1.0,
+   "distractor": 0.0
+  }
+ },
+ "ablation": "xref"
+}
