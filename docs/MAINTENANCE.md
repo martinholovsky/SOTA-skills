@@ -19,6 +19,28 @@ faster). `.github/workflows/freshness.yml` runs it monthly (report-only, does
 not block PRs). A red freshness report means: **due for a sweep** — run the
 procedure below, then bump `LAST-VERIFIED`.
 
+The same monthly job also reads **`evals/ROUTING-BASELINE`** against a shorter
+**3-month** window. Routing is the library's entry point — a task that does not reach a
+skill gets none of its content — and it is the only measurement that can regress with
+**no diff in this repo**, because the classifier is a model ranking 42 competing
+descriptions: when the model changes, the ranking can change while every invariant stays
+green. Invariant 29 fires only on a release whose own description map moved, so model
+drift is unwatched by construction.
+
+**The measurement is deliberately local and deliberately not a gate.** This repo is
+public and holds no API key; a scheduled Actions run would need `OPENROUTER_API_KEY` as a
+repository secret, so CI compares a date and nothing else. Refresh it with:
+
+```
+scripts/routing-baseline.sh            # needs OPENROUTER_API_KEY in env or ./.env
+```
+
+It writes `evals/results/<date>/routing-baseline.json` and stamps
+`evals/ROUTING-BASELINE` with `DATE SCORE MODEL CASES`. A drop against the previous line
+is the signal to read — it is not enforced, because a model-scored eval is
+non-deterministic and [CONVENTIONS-LEDGER](CONVENTIONS-LEDGER.md) is explicit that a
+flaky gate gets disabled, which is worse than none.
+
 The window is 6 months, not shorter, on purpose: a too-short window is
 perpetually red and trains everyone to ignore it (the same failure the
 retired per-file-marker backlog had). 6 months catches real drift while

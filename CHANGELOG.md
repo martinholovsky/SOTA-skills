@@ -7,7 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`scripts/routing-baseline.sh` — a recurring routing measurement, run locally.** Routing
+  is the entry point: a task that does not reach a skill gets none of its content, and it is
+  the one measurement that can regress with **no diff in this repo**, because the classifier
+  is a model ranking 42 competing descriptions. Invariant 29 fires only when *we* change a
+  description, so model drift was unwatched. The script writes
+  `evals/results/<date>/routing-baseline.json` and stamps `evals/ROUTING-BASELINE`.
+  `scripts/check-freshness.sh` reads that stamp against a **3-month** window (vs 6 for
+  content — model releases, not fact rot, are what age it) and the monthly job goes red when
+  it lapses. **No API key is stored in this repo or in CI**: the run is local and CI only
+  compares a date. It reports rather than gates, because a model-scored eval is
+  non-deterministic and a flaky gate gets disabled.
+
 ### Fixed
+
+- **Invariant 29 now requires the routing artifact to be CURRENT, not merely to exist.** A
+  release could satisfy the gate by naming a months-old run: the declaration resolved, the
+  gate went green, and the classifier was never re-measured — a control checked for
+  existence rather than currency. The declared artifact must now be dated on or after the
+  day the descriptions last changed, read from its `evals/results/<date>/` path (the
+  convention all five past declarations already used). Day granularity, and the limits are
+  written into the check. New **probe 29c** points at a real past artifact that clears every
+  pre-existing predicate, so it can only score on the date comparison.
 
 - **Probe 14b builds its own tag state, so finding 5's fix is exercised on every PR.** The
   fixture neutralises invariant 34 (shipped v1.43.1, after 34 blocked the correct v1.43.0 cut)

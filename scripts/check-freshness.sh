@@ -29,9 +29,12 @@ set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
 WINDOW=6
+RWINDOW=3
+routing_stale=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --window-months) shift; WINDOW="${1:?--window-months needs a number}" ;;
+    --routing-window-months) shift; RWINDOW="${1:?--routing-window-months needs a number}" ;;
     --list-unstamped) ;; # accepted for compatibility with older callers; no-op
     *) printf 'error: unknown argument: %s\n' "$1" >&2; exit 2 ;;
   esac
@@ -116,9 +119,51 @@ if [ "$set_age" -gt "$WINDOW" ]; then
   echo "the old number as a floor until you do."
 fi
 
+# --- The ROUTING baseline ages on a different clock, and nothing else watches it ---
+# Routing is the library's entry point: a task that does not reach a skill gets none of
+# its content. It is also the only measurement that can regress with NO diff here, because
+# the classifier is a MODEL ranking 42 competing descriptions — when the model changes the
+# ranking can change and every invariant stays green. Invariant 29 fires only on a release
+# whose own description map moved, so model drift is unwatched by construction.
+#
+# THE MEASUREMENT IS LOCAL AND STAYS LOCAL. This repo is public and holds no API key; a
+# scheduled Actions run would need OPENROUTER_API_KEY as a repository secret. So CI checks
+# only that a maintainer ran it recently — a date comparison, needing no credential — while
+# scripts/routing-baseline.sh does the run. The window is SHORTER than the content window
+# above (3 vs 6 months) because the decay driver is model releases, not fact rot.
+#
+# Fails rather than warns: a stamp nobody must refresh is a stamp nobody refreshes, and
+# this job is monthly, so it never blocks a PR.
+if [ ! -f evals/ROUTING-BASELINE ]; then
+  echo
+  echo "MISSING: evals/ROUTING-BASELINE — no routing measurement has ever been stamped."
+  echo "Run: scripts/routing-baseline.sh   (local; needs OPENROUTER_API_KEY in env or ./.env)"
+  routing_stale=1
+else
+  rstamp=$(grep -v '^[[:space:]]*#' evals/ROUTING-BASELINE | head -1 | awk '{print $1}')
+  case "$rstamp" in
+    [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;;
+    *) echo "error: evals/ROUTING-BASELINE must start with YYYY-MM-DD, got: '$rstamp'" >&2; exit 1 ;;
+  esac
+  ry=${rstamp%%-*}; rm_=${rstamp#*-}; rm_=${rm_%%-*}
+  r_age=$(( (now_y * 12 + ${now_m#0}) - (ry * 12 + ${rm_#0}) ))
+  echo "  routing baseline: ${rstamp}  (${r_age} months ago, window ${RWINDOW})"
+  if [ "$r_age" -gt "$RWINDOW" ]; then
+    echo
+    echo "STALE: the routing baseline is ${r_age} months old (window ${RWINDOW})."
+    echo "The description classifier may have re-ranked under a newer model with no diff"
+    echo "in this repo. Re-run locally: scripts/routing-baseline.sh"
+    routing_stale=1
+  fi
+fi
+
 if [ "$age" -gt "$WINDOW" ]; then
   echo
   echo "STALE: last full-library verification sweep was ${age} months ago (window ${WINDOW})."
   echo "Run a re-verification sweep against primary sources, apply fixes, then update LAST-VERIFIED."
+  exit 1
+fi
+
+if [ "$routing_stale" -ne 0 ]; then
   exit 1
 fi

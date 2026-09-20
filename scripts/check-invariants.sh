@@ -2159,6 +2159,47 @@ if "desc-routing-regressions" not in body:
     print(f"{target} exists but never mentions desc-routing-regressions — a declaration")
     print("that resolves to an unrelated file is not evidence the routing set was run.")
     sys.exit(1)
+
+# THE ARTIFACT MUST POST-DATE THE WORK. Until 2026-09-20 this check stopped at "the file
+# exists and mentions the regression set", so a release could satisfy it by pointing at a
+# months-old result -- the declaration resolves, the gate is green, and nobody re-ran the
+# classifier. That is the reported-but-never-read shape (sota-code-security rules/14):
+# a control whose output is checked for existence rather than for currency.
+#
+# The anchor is the newest commit in THIS release that touched a skills/*/SKILL.md, so the
+# rule reads "you ran the routing set after you last changed a description". Falling back
+# to the merge-base date keeps it from rejecting a correct release when the descriptions
+# arrived as uncommitted working-tree edits.
+#
+# WHAT THIS CANNOT SEE, written down rather than discovered later: the granularity is one
+# DAY, so a run and a later description edit on the same date both pass; and the date comes
+# from the artifact's PATH, which is the convention every declaration has used (5 of 5 at
+# the time of writing) but is not itself enforced elsewhere.
+mdate = re.search(r'(\d{4}-\d{2}-\d{2})', target)
+if not mdate:
+    print(f"{target} carries no YYYY-MM-DD in its path, so its currency cannot be checked.")
+    print("Put the run under evals/results/<date>/ as every other declaration does.")
+    sys.exit(1)
+
+
+def _newest(args):
+    try:
+        out = subprocess.check_output(args, stderr=subprocess.DEVNULL).decode()
+    except subprocess.CalledProcessError:
+        return ""
+    return out.splitlines()[0].strip() if out.strip() else ""
+
+
+anchor = _newest(["git", "log", "-1", "--format=%ad", "--date=short",
+                  f"{base}..HEAD", "--", "skills/*/SKILL.md"]) \
+    or _newest(["git", "show", "-s", "--format=%ad", "--date=short", base])
+if anchor and mdate.group(1) < anchor:
+    print(f"**Routing checked:** names {target}, dated {mdate.group(1)}, but this release's")
+    print(f"descriptions last changed on {anchor}. The run predates the change it claims to")
+    print("cover, so it is evidence about an older classifier. Re-run the regression set:")
+    print("  python3 evals/run-desc-routing.py --samples 3 \\")
+    print("      --cases evals/cases/desc-routing-regressions.jsonl")
+    sys.exit(1)
 print(f"    ok (release, {len(changed)} description(s) changed, routing checked in {target})")
 ROUTEPY
   ) || v29=1

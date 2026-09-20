@@ -256,6 +256,9 @@ skills.
       resolves
 - [ ] **Routing regression run (§2c)** — only if this release adds a skill or edits any
       `description`. **Invariant 29 fails the build** unless the new CHANGELOG section
-      carries `**Routing checked:** <artifact>` and that artifact exists and mentions
-      `desc-routing-regressions`
+      carries `**Routing checked:** <artifact>`, that artifact exists, mentions
+      `desc-routing-regressions`, and **is dated on or after the day the descriptions last
+      changed** — its `evals/results/<date>/` path is what carries the date. A run from
+      before the edit measured a different classifier, which is the hole the existence-only
+      check left open until 2026-09-20
 - [ ] GitHub Settings social-preview re-upload — only if the PNG changed
