@@ -667,6 +667,16 @@
       "targets": []
     },
     {
+      "from": "sota-jvm",
+      "to": "sota-code-security",
+      "weight": 5,
+      "targets": [
+        "rules/04",
+        "rules/10",
+        "rules/11 \u00a74"
+      ]
+    },
+    {
       "from": "sota-kubernetes",
       "to": "sota-identity-access",
       "weight": 5,
@@ -785,15 +795,6 @@
       ]
     },
     {
-      "from": "sota-jvm",
-      "to": "sota-code-security",
-      "weight": 4,
-      "targets": [
-        "rules/04",
-        "rules/11 \u00a74"
-      ]
-    },
-    {
       "from": "sota-llm-engineering",
       "to": "sota-privacy-compliance",
       "weight": 4,
@@ -850,6 +851,15 @@
       "to": "sota-threat-modeling",
       "weight": 4,
       "targets": []
+    },
+    {
+      "from": "sota-python",
+      "to": "sota-code-security",
+      "weight": 4,
+      "targets": [
+        "rules/04",
+        "rules/13 \u00a73"
+      ]
     },
     {
       "from": "sota-security-compliance",
@@ -1174,6 +1184,15 @@
       "to": "sota-testing",
       "weight": 2,
       "targets": []
+    },
+    {
+      "from": "sota-c-cpp",
+      "to": "sota-architecture",
+      "weight": 2,
+      "targets": [
+        "rules/02",
+        "rules/02 \u00a78a"
+      ]
     },
     {
       "from": "sota-c-cpp",
@@ -1579,11 +1598,9 @@
     },
     {
       "from": "sota-c-cpp",
-      "to": "sota-architecture",
+      "to": "sota-api-design",
       "weight": 1,
-      "targets": [
-        "rules/02 \u00a78a"
-      ]
+      "targets": []
     },
     {
       "from": "sota-c-cpp",
@@ -2145,14 +2162,6 @@
       "weight": 1,
       "targets": [
         "rules/01"
-      ]
-    },
-    {
-      "from": "sota-python",
-      "to": "sota-code-security",
-      "weight": 1,
-      "targets": [
-        "rules/13 \u00a73"
       ]
     },
     {
