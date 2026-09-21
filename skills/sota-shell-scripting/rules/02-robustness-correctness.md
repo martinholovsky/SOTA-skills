@@ -103,6 +103,41 @@ die() { err "$@"; exit 1; }
 - Never `exit` from inside a function where the caller might want to continue — `return`
   a status and let the top level decide; `exit` in sourced files kills the caller's shell.
 
+### 3a. `$?` describes the *immediately* preceding command, and everything overwrites it
+
+`$?` is not a record of "the last thing that mattered" — it is overwritten by **every**
+command, including the ones that do not look like commands. Capture it on the very next
+line or not at all:
+
+```bash
+cmd > out.log 2>&1; rc=$?          # correct: nothing between cmd and the capture
+cmd > out.log 2>&1
+echo "checking..."; rc=$?          # WRONG: rc is the echo's 0, and cmd's status is gone
+```
+
+Measured (bash 5.3.15): an intervening `echo` gives **0** where the command exited **7**; so
+does a bare `[ -n "x" ]`. The failure is silent and the variable is named `rc`, so it reads
+as a status forever after.
+
+**The trap inside the trap — the habit that fixes one bug causes this one.** SC2155
+(*"Declare and assign separately to avoid masking return values"*) is correct for command
+substitution, where `local out=$(cmd)` hides `cmd`'s status behind `local`'s. Applying that
+same split to a `$?` capture **breaks** it, because the declaration is itself a command:
+
+```bash
+local rc=$?                        # 7  — $? expands BEFORE local runs
+local rc; rc=$?                    # 0  — the `local rc;` statement reset $?
+```
+
+Same mechanism (`local` has its own exit status), opposite remedy. Measured 2026-09-21 on
+**bash 5.3.15, zsh, dash and sh** — all four agree, so this is the rule and not a dialect
+quirk. Declare on a separate *earlier* line if you want both: `local rc; cmd; rc=$?`.
+
+**Prefer the forms that never read `$?`.** `if cmd; then`, `cmd || die "…"`, and
+`if ! cmd; then` test the status directly and cannot be clobbered. Reach for `$?` only when
+you need to *keep* the number — to report it, to re-raise it with `exit "$rc"`, or to branch
+on several values.
+
 ## 4. Pipelines: pipefail awareness and PIPESTATUS
 
 - `set -o pipefail` makes the pipeline status the rightmost nonzero status. Two follow-ups:
@@ -383,6 +418,14 @@ mapfile -d '' logs < <(find . -name '*.log' -print0)
       read clean while a check did not execute? Probe:
       `PATH=/usr/bin:/bin <script>` with a dependency removed, and confirm the run
       reports a SKIP rather than an `ok`. No script may auto-install a dependency.
+- [ ] **`$?` read anywhere other than immediately after the command it describes** (§3a):
+      `grep -rnB2 '=\$?' --include='*.sh' .` — a **locator, not a verdict**: it hits every
+      capture including the correct ones, so read the two lines above each — if any
+      command sits between, the captured status is *that* command's. The bash mirror of the
+      PowerShell probe in `rules/07`. Two shapes to flag specifically: a capture after a
+      diagnostic `echo`, and **`local rc; rc=$?`**, where the declaration itself resets `$?`
+      (measured 0 vs 7 on bash/zsh/dash/sh — and it is the SC2155 "declare separately" habit
+      applied where it does not belong). Silent, and the variable is still named `rc`.
 - [ ] **Process substitution with a fallible producer**: `grep -rn '< <(' --include='*.sh'`
       — for each, can the producer fail? If yes and the status is not captured, a failure
       is indistinguishable from an empty result. High when the loop's emptiness decides a

@@ -4599,3 +4599,38 @@ the **addons are a separate list**, `misra.py` alone holding **132** rule functi
 the Python set, the cluster-sweep is the session the row budgets for it, and half a sweep is
 worse than none. Recorded in [LANGUAGE-TIER.md](LANGUAGE-TIER.md) so the next session starts
 past the step that has now failed twice.
+
+## 2026-09-21 — `$?` volatility: the bash half of a rule PowerShell already had
+
+**Operator intake, mid-session.** I had put the "capture `rc=$?` on the very next line"
+constraint into a private memory file; the operator's correction was that it is not a fact
+about me, it is **a rule for building and auditing shell scripts**. Reverted from memory,
+written here.
+
+**Checking where it belonged found the asymmetry.** `sota-shell-scripting/rules/07`
+(PowerShell) already carries it as both a rule (*"`if ($?)` after anything other than the
+immediately preceding native command"*) **and** an audit probe (*"Is `$?` read anywhere other
+than immediately after the command it describes?"*). The **bash** half had neither — only a
+passing mention inside an unrelated `rules/01` checklist item. Same class as the
+`sota-rust` subprocess gap: the rule exists for one language and not its neighbour.
+
+**Landed in** `rules/02` **§3a** + an audit checklist probe mirroring the PowerShell one.
+
+**The measured part, which is counter-intuitive and is why this is worth a section.** The
+habit that fixes the neighbouring bug causes this one:
+
+| form | captured status |
+|---|---|
+| `local rc=$?` | **7** — `$?` expands before `local` runs |
+| `local rc; rc=$?` | **0** — the `local rc;` declaration is itself a command |
+
+SC2155 (*"Declare and assign separately to avoid masking return values"*, quoted from
+shellcheck's own output) is **correct for command substitution**, where `local out=$(cmd)`
+hides `cmd`'s status. Applying the same split to a `$?` capture **breaks** it. Same mechanism
+— `local` has an exit status — opposite remedy. Measured 2026-09-21 on **bash 5.3.15, zsh,
+dash and sh**: all four agree, so it is the rule rather than a dialect quirk. Also measured:
+an intervening `echo` gives 0, and so does a bare `[ -n "x" ]`.
+
+**The probe is labelled a locator, not a verdict** — it hits correct captures too, and the
+fixtures showed that, so the item tells the auditor to read the two lines above each hit
+rather than treating a hit as a finding.
