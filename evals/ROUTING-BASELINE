@@ -1,4 +1,4 @@
 # Last LOCAL routing baseline. Written by scripts/routing-baseline.sh.
 # CI never runs the measurement (no API key in this repo); it only checks this
 # date is recent — scripts/check-freshness.sh. Format: DATE SCORE MODEL CASES
-2026-09-20 0.900 anthropic/claude-sonnet-4.6 evals/cases/desc-routing.jsonl
+2026-09-21 1.000 anthropic/claude-sonnet-4.6 evals/cases/desc-routing.jsonl

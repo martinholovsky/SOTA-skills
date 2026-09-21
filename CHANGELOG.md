@@ -63,6 +63,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`q4_data_race` tested a confusion it was not built for.** The task read "two
+  goroutines sharing a map", and a Go-specific race is exactly what the router's
+  cross-cutting rule 1 says should **stack** — `sota-golang` for the mechanism,
+  `sota-async-concurrency` for the model — so a single-pick case cannot express the right
+  answer. Measured: the model picked `sota-golang` **3/3 with distractor-pick 0.00**, never
+  falling for the async-vs-performance confusion the case exists to test; a language signal
+  pulled it out of the designed pair entirely. The task is now language-neutral and
+  `expect` is unchanged, because the expectation was never in doubt. Routing baseline
+  **0.900 → 1.000** (sonnet-4.6, 3 samples, 2026-09-21), q4 now 3/3 on
+  `sota-async-concurrency`. **The set is now saturated**, so like the 4-case regression set
+  it can report a drop but cannot measure a gain — it is an alarm, not a yardstick.
+
 - **Three skill-map pages rendered but could not be read.** Layout is a correctness concern
   for a diagram, and each defect was found by rendering the page and looking at it — not by
   the XML check, which passed throughout. (1) Page 2 drew 63 bipartite edges between two

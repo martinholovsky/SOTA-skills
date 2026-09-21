@@ -3,6 +3,16 @@
 # that carries a "Not for … — use …" cross-ref) but the correct pick is `expect`.
 # Metric of interest: does the cross-ref reduce distractor-picks? See run-desc-routing.py.
 #
+# CORRECTION 2026-09-20 — q4_data_race: the TASK was wrong, not the expectation. It read
+# "two goroutines sharing a map", and a Go-specific race is a task the router's own
+# cross-cutting rule 1 says should STACK (`sota-golang` for the mechanism, this skill for
+# the model) — so a single-pick case cannot express the right answer. Measured: the model
+# picked `sota-golang` 3/3 with distractor-pick 0.00, i.e. it never fell for the confusion
+# the case was built to test; it was pulled out of the pair entirely by a language signal
+# the case did not intend. The task is now language-neutral and keeps the same
+# expect/distractor pair, so it tests the async-concurrency-vs-performance confusion it was
+# written for. The expectation was never in doubt; `expect` is unchanged.
+#
 # CORRECTION 2026-09-11 — q7_pod_hardening: expect was `sota-kubernetes`, which is wrong by
 # TWO independent standards inside this library, neither of them a model score: the router's
 # rule 9 ("pod/container/workload isolation mechanics -> sota-sandboxing") and
@@ -20,7 +30,7 @@
 {"id": "q1_react_ui", "task": "Build a Next.js dashboard page using React server components that fetches data and renders a sortable table, handling hydration and client/server data fetching correctly.", "expect": "sota-web-frameworks", "distractor": "sota-api-design"}
 {"id": "q2_sigma_detection", "task": "Write a Sigma detection rule that flags lateral movement via anomalous Kerberos TGS requests in Windows security logs, and map it to MITRE ATT&CK.", "expect": "sota-detection-engineering", "distractor": "sota-observability"}
 {"id": "q3_latency_opt", "task": "Our checkout endpoint's p99 latency is 1.2s under load. Profile it, find the bottleneck, and optimize throughput.", "expect": "sota-performance", "distractor": "sota-async-concurrency"}
-{"id": "q4_data_race", "task": "Under concurrency we're hitting intermittent data races and an occasional deadlock between two goroutines sharing a map. Fix the synchronization.", "expect": "sota-async-concurrency", "distractor": "sota-performance"}
+{"id": "q4_data_race", "task": "Under load we see intermittent data races and an occasional deadlock between two worker threads updating a shared in-memory cache, and throughput collapses while it happens. Fix the synchronization.", "expect": "sota-async-concurrency", "distractor": "sota-performance"}
 {"id": "q5_code_vuln_review", "task": "Review this Python request handler at the code level for injection, XSS, and insecure deserialization vulnerabilities.", "expect": "sota-code-security", "distractor": "sota-threat-modeling"}
 {"id": "q6_appcode_audit", "task": "Audit our application's source code for exploitable vulnerabilities like SQL injection and SSRF in the request-handling functions.", "expect": "sota-code-security", "distractor": "sota-devsecops"}
 {"id": "q7_pod_hardening", "task": "Harden our Kubernetes workloads: set securityContext runAsNonRoot, drop Linux capabilities, and enforce a read-only root filesystem on the pods.", "expect": "sota-sandboxing", "distractor": "sota-kubernetes"}
