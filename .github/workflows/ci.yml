@@ -45,6 +45,20 @@ jobs:
             echo "::error::SOTA_DENYLIST secret is empty on a trusted run — check 3 would degrade to generic-only. Restore the secret."
             exit 1
           fi
+      # The concept matrix is a GENERATOR, and generators in scripts/ are hand-run by
+      # convention -- which is exactly how one rots unnoticed. Two things are asserted
+      # here, neither of which a human remembering to run it would provide:
+      #   1. it still EXECUTES (the dead-runner class, ROADMAP 28);
+      #   2. classification coverage has not REGRESSED. Skills gain checklist items
+      #      constantly; each unclassified item is a hole in the matcher vocabulary, so
+      #      coverage drifts down silently and the candidate list goes stale while still
+      #      printing plausible rows.
+      # Ratchet at 0.65 against a measured floor of 67.3% (js/ts, 2026-09-21). Watched to
+      # fail at 0.68 and pass at 0.65 before being wired in. Raise it when coverage rises;
+      # never lower it to make a red run green -- fix the vocabulary instead.
+      - name: Concept matrix executes, and coverage has not regressed
+        run: python3 scripts/gen-concept-matrix.py --min-coverage 0.65
+
       - name: Check invariants
         # SOTA_DENYLIST (repository secret) carries the private internal-name
         # patterns for check 3; fork PRs don't receive it and fall back to the
