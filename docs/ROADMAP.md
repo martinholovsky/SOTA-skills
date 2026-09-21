@@ -35,9 +35,10 @@ one drifted three times in a single session (items 12, 32's follow-up, and 38).
 
 **The actionable set was empty from 2026-09-12 until 2026-09-21**, when building the
 section×language matrix (page 5 of the skill map) surfaced two language-tier items: **57**
-(API/design missing in five language skills) and **58** (jvm/.NET 3–4× thinner than their
-peers). Both are recorded in [LANGUAGE-TIER.md](LANGUAGE-TIER.md); 58 is a *decision* before
-it is work. Neither is urgent, and neither displaces the row above.
+(API/design missing in five language skills) and **58** (jvm/.NET depth). Both are recorded in
+[LANGUAGE-TIER.md](LANGUAGE-TIER.md). **58's opening framing — "3–4× thinner" — was refuted by
+measurement the next day**; read the ledger row, not this line, for what survives. 58 is a
+*decision* before it is work. Neither is urgent, and neither displaces the row above.
 
 Of 58 items, 55 are closed. Item 5 (the accuracy sweep) is **dormant until 2027-01-08** with
 a monthly cron that turns red on **2027-02-01** by itself. Item 1 (distribution) was **closed

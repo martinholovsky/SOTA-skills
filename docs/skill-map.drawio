@@ -898,8 +898,8 @@
         <mxCell id="mtfiles8" value="5" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="1294" y="682" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m_note2" value="Two asymmetries that do NOT track a language difference, and are therefore worth a decision rather than an explanation:&lt;br&gt;· API / design has its own file in rust, go, jvm and .NET, and is sparse elsewhere (3–9 mentions in python, js/ts, php, ruby, c/c++).&lt;br&gt;· jvm (619 lines, covering BOTH Java and Kotlin) and .NET (564) are 3–4x thinner than go (2128), rust (2057) and python (1986)." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
-          <mxGeometry x="40" y="736" width="900" height="120" as="geometry"/>
+        <mxCell id="m_note2" value="ONE asymmetry here does not track a language difference: API / design has its own file in rust, go, jvm and .NET and is sparse elsewhere (3–9 mentions in python, js/ts, php, ruby, c/c++). That is ROADMAP 57.&lt;br&gt;&lt;br&gt;RETRACTED 2026-09-21 — this note previously read &quot;jvm and .NET are 3–4x thinner&quot;. True of line count, false of what line count stood in for: per 100 rules-lines they carry the HIGHEST audit-item density in the library (.NET 10.6, jvm 10.5) and rust, the second-largest skill, is lowest at 4.6. The bounded deficit is worked examples. Caveat: the checkbox and shell-block checklist formats are not comparable, so this read is within-format." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="40" y="736" width="900" height="150" as="geometry"/>
         </mxCell>
       </root>
     </mxGraphModel>

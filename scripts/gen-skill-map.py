@@ -107,6 +107,31 @@ LANG_TOPICS = {
 INLINE = {("php", "Concurrency"): "01 §6"}
 
 
+def audit_items(lang):
+    """Actionable items in a language skill's Audit checklists. Counted format-aware because
+    the BODY format is not gated -- only the heading is (invariant 2) -- and three forms are
+    in use: tickable `- [ ]`, fenced shell block, and prose+commands. A `- [ ]`-only count
+    returned 0 for seven of nine skills on 2026-09-21, which is how the split was found.
+
+    The two forms are NOT comparable: a checkbox item can bundle several commands while a
+    fence counts per line. Use this to compare within a format, never across."""
+    box = cmd = lines = 0
+    for f in sorted((ROOT / ("skills/sota-%s/rules" % lang)).glob("*.md")):
+        t = f.read_text(encoding="utf-8")
+        lines += len(t.splitlines())
+        m = re.search(r'(?ms)^## Audit checklist\s*(.*)\Z', t)
+        if not m:
+            continue
+        box += len(re.findall(r'^\s*- \[ \] ', m.group(1), re.M))
+        infence = False
+        for ln in m.group(1).splitlines():
+            if ln.strip().startswith("```"):
+                infence = not infence
+            elif infence and ln.strip() and not ln.strip().startswith("#"):
+                cmd += 1
+    return box + cmd, lines
+
+
 def skill_family(name):
     for fam, fill, stroke, members in FAMILIES:
         if name in members:
@@ -549,17 +574,20 @@ def page_matrix(lang_files):
                           BOX + "fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;",
                           x0 + j * cw, y, cw - 6, rh - 6))
         y += rh
+    dens = {l: (audit_items(l)[0] / lang_files[l][0] * 100) for l in LANGS}
     c.append(cell("m_note2",
-                  "Two asymmetries that do NOT track a language difference, and are "
-                  "therefore worth a decision rather than an explanation:\n"
-                  "· API / design has its own file in rust, go, jvm and .NET, and is "
-                  "sparse elsewhere (3–9 mentions in python, js/ts, php, ruby, c/c++).\n"
-                  "· jvm (%d lines, covering BOTH Java and Kotlin) and .NET (%d) are 3–4x "
-                  "thinner than go (%d), rust (%d) and python (%d)."
-                  % (lang_files["jvm"][0], lang_files["dotnet"][0],
-                     lang_files["golang"][0], lang_files["rust"][0],
-                     lang_files["python"][0]),
-                  NOTE, 40, y + 20, 900, 120))
+                  "ONE asymmetry here does not track a language difference: API / design has "
+                  "its own file in rust, go, jvm and .NET and is sparse elsewhere (3–9 "
+                  "mentions in python, js/ts, php, ruby, c/c++). That is ROADMAP 57.\n\n"
+                  "RETRACTED 2026-09-21 — this note previously read \"jvm and .NET are 3–4x "
+                  "thinner\". True of line count, false of what line count stood in for: per "
+                  "100 rules-lines they carry the HIGHEST audit-item density in the library "
+                  "(.NET %.1f, jvm %.1f) and rust, the second-largest skill, is lowest at "
+                  "%.1f. The bounded deficit is worked examples. Caveat: the checkbox and "
+                  "shell-block checklist formats are not comparable, so this read is "
+                  "within-format."
+                  % (dens["dotnet"], dens["jvm"], dens["rust"]),
+                  NOTE, 40, y + 20, 900, 150))
     return page("p5", "5 · Section x language", c, 1500, y + 180)
 
 
