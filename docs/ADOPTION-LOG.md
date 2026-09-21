@@ -4010,6 +4010,59 @@ its least representative slice.* Recorded as a **correction to shipped text**, n
 finding — and as evidence for keeping the "date every number to its source" discipline, since
 the number that needed revising was one we had already published.
 
+## 2026-09-21 — the language tier measured, and a "3–4× thinner" claim of my own that did not survive it
+
+**Intake shape: a session auditing the library's own structure**, continuing the SSO thread
+below. Building the section×language matrix raised the question of whether the nine language
+skills should be aligned. Four measurements, and the third **refuted a claim this log had
+recorded the day before**.
+
+| finding | verdict |
+|---|---|
+| `SKILL.md` structure across all 9 language skills | **no gap** — all nine carry Purpose · BUILD · AUDIT · Rules index · Top-10, each with exactly 10 items. `sota-javascript-typescript` is uniformly *compressed* (70 lines), not incomplete |
+| API / design absent in python, js/ts, php, ruby, c/c++ | **stands** — ROADMAP 57. Fits as sections in existing files (210–307 lines of headroom each), so no new files, no library-map churn, no description change, no routing impact |
+| "jvm and .NET are 3–4× thinner" | **REFUTED AS FRAMED** — see below. ROADMAP 58 corrected rather than closed |
+| the audit-checklist **body** format | **three forms** across nine skills, unrecorded until now |
+| renaming rules files to a consistent scheme | **rejected on cost** — 390 citations name the descriptive filename (`rules/NN-name.md`) against 2,945 using the number alone |
+
+### The refutation: line count was measuring the wrong thing
+
+Measured on actionable audit items and worked examples per 100 rules-lines:
+
+| skill | rules lines | audit items | items/100 | examples/100 |
+|---|---|---|---|---|
+| dotnet | 564 | 60 | **10.6** | 1.1 |
+| jvm | 619 | 65 | **10.5** | 1.0 |
+| ruby | 1053 | 85 | 8.1 | 1.3 |
+| c/c++ | 910 | 72 | 7.9 | 1.4 |
+| php | 1118 | 85 | 7.6 | 2.7 |
+| python | 1986 | 138 | 6.9 | 3.3 |
+| golang | 2128 | 140 | 6.6 | 2.9 |
+| js/ts | 1729 | 104 | 6.0 | 3.8 |
+| rust | 2057 | 94 | 4.6 | 1.8 |
+
+**jvm and .NET carry the highest audit-item density in the library.** They are not
+audit-poor; they are the densest per line. The bounded, specific deficit is **worked
+examples** — 1.0 and 1.1 per 100 lines against 2.7–3.8 for php, golang, python and js/ts.
+"3–4× thinner" was true of line count and false of everything line count was standing in for.
+
+**Two honesty notes on the instrument, both recorded rather than smoothed over.** The first
+count returned **0 checklist items for seven of nine skills** while invariant 2 guarantees
+every rules file has an `## Audit checklist` — the regex assumed one format. That artifact is
+what exposed finding four. And the two formats are **not comparable on this metric**: a
+`- [ ]` item can bundle several commands while a fenced block counts per line, so the
+jvm/.NET-vs-peers comparison is sound (all shell-block) and rust's last place is not evidence
+of anything.
+
+### The audit-checklist format split, and why it is not cosmetic
+
+Three forms: tickable `- [ ]` (rust, js/ts), fenced shell block (python, jvm, .NET, c/c++,
+php), prose-plus-commands (golang, ruby). Invariant 2 gates the *heading*; nothing gates the
+body. AUDIT mode instructs the model to "verify your diff satisfies every item" — a checkbox
+list is enumerable and a prose block is not, so the split has a functional consequence and is
+not a style preference. **Not resolved here**: unifying it is a rewrite of seven skills and
+needs a decision, not a side effect.
+
 ## 2026-09-20 — an SSO coverage question, and the routing measurement that refuted the framing
 
 **Intake shape: an operator question about coverage.** Asked what the library held on SSO
