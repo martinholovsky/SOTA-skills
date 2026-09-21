@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **First external-guide gap-check: `sota-python` against Bandit's own test registry** — five
+  gaps found and closed. **Denominator: 75 tests**, read from Bandit 1.9.4's
+  `plugins_by_id` + `blacklist_by_id` rather than its docs page, which returned ~50 with
+  B3xx/B4xx missing and B324 misfiled. 20 of 29 concept clusters were already covered.
+  - **`rules/01` §7a — "What 3.13 REMOVED: the PEP 594 cliff".** ~20 stdlib modules
+    (`telnetlib`, `cgi`, `crypt`, `smtpd`, `pipes`, `asynchat`…) **removed in 3.13**; the
+    PEP's own `Python-Version: 3.11` header is the *deprecation* version, which is the detail
+    that gets misread. Fails as an ImportError at runtime, in the least-tested paths.
+  - **`rules/05` §6a — crypto is `sota-code-security` rules/04**, a delegation router rule 18
+    already specifies and the skill never made; plus the Python-specific `from Crypto…`
+    ambiguity and `usedforsecurity=False`.
+  - **`rules/05` §4a** temp files — `mktemp` is *"Deprecated since version 2.3"* with the
+    TOCTOU reason quoted; `mkstemp` guarantees owner-only perms and no creation race. **No
+    octal mode is claimed, because the docs state none.**
+  - **`rules/05` §6b** remote-host trust — paramiko's default is `RejectPolicy` (**safe**), so
+    the rule is "do not opt out via `AutoAddPolicy`", not "fix the default".
+  - **`rules/05` §8a** debug consoles — scoped down on review, since Django `DEBUG=False` was
+    already covered; what was missing is the mechanism. Werkzeug's PIN is quoted as *"not
+    meant to entirely secure the debugger"*, so it is called friction rather than a control.
+
+  Rejected as out of scope: snmp, httpoxy, bind-0.0.0.0, trojansource. **Two grep-flagged
+  "gaps" were destroyed by opening the files** (exec/eval and XXE are both covered), and all
+  eight shipped checklist greps were run against known-bad and known-good fixtures.
+
 - **`sota-python` rules/03 §13 — "Public API surface — what you are promising"**, the first
   of ROADMAP 57's five language sections and the reference the other four copy in shape. The
   gap was measured, not assumed: `__all__`, `__slots__` and `keyword-only` each returned
