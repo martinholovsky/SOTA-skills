@@ -4472,3 +4472,50 @@ reference, 34b that it stays silent on a placeholder image tag in the same names
 **The fix when it fires is never to invent a number.** Write `· unreleased`; `RELEASING.md`
 step 1 already sweeps for that marker. The three live sites were corrected that way rather
 than by guessing again.
+
+## 2026-09-21 — field report, cross-platform EDR agent: three findings, one of which found a defect in our own snippet
+
+Source: a session that **used** the library at v1.43.1 (symlink install) to ship a telemetry
+feature on a Rust + eBPF endpoint sensor. Filed as `*.local.md`, git-ignored. Highest-yield
+intake shape, per the priorities table. **Every falsifiable claim was reproduced here before
+any verdict** — the reporter's own numbers, and our own text.
+
+| idea | verdict | landed in |
+|---|---|---|
+| rules/06 is unreachable by subject routing, because the task is never *about* checking | **adopted** | router BUILD step 2 (standing load) + `sota/rules/02` §1a (the reasoning, the cost, and a falsifier) |
+| an evidence grade does not propagate from a premise to a conclusion drawn in the same breath | **adopted** | `sota/rules/03` §2, plus the §2 checklist item |
+| the exit-status rule does not name the agent harness as a consumer | **adopted with a correction** | `sota-shell-scripting/rules/01` §2a + §3 snippet + checklist. **Placement corrected**: the report filed it under §3, which is *Quoting*; the exit-status material is §2/§2a, and §2a already owned the harness-as-consumer idea for background jobs |
+| §2f's positive control is filed under a symlink heading and gets skipped | **adopted** — it had predicted this, and it recurred | `sota-shell-scripting/rules/06` §2 heading + the control paragraph + §2f's closing |
+| a new rule about benchmarking on a controlled host | **rejected — already covered**, and the reporter reached the same verdict unprompted | `sota-performance/rules/01` covers warmup and multiple samples; one exotic case (VM uptime) is not a library gap |
+| an eBPF skill | **rejected** — one session, and the reporter argued against it himself |
+
+**What we reproduced, rather than took on trust.**
+
+- **The word-boundary failure, on this machine**: `git grep -cE '\b(TODO|FIXME|XXX|HACK)\b'`
+  over the tracked tree returns **0 files**; the same sweep without `\b` returns **58**.
+  git 2.55.0, Darwin 25.6.0 — matching `rules/06` §2f's measured row exactly.
+- **§2f is at `rules/06:388`**, as cited.
+- **The duplicate check that mattered.** Finding 3 reads as a naming gap; opening the file
+  showed `rules/01` §2a *already* covers the harness consumer for background jobs, with the
+  same field-reported *"completed (exit code 0)"*. So it is an adoption **with a correction**,
+  not a new rule — and checking that claim is what surfaced the defect below.
+
+**The defect this intake found in our own text.** `rules/01`'s recommended snippet read
+
+    cmd > out.txt 2>&1; echo "EXIT=$?"        # status preserved AND output preserved
+
+and **"status preserved" is false of the compound's own status**, which is the `echo`'s. The
+library was recommending, in a comment, the exact shape the reporter broke and §2a warns
+about elsewhere in the same file. Corrected to capture (`rc=$?`) and re-raise (`exit "$rc"`),
+with the distinction stated: *recorded in a log* is not *returned to a caller*. **Evaluating
+someone else's claim of a duplicate forced the closest read of our own page, and that is
+where the finding was** — the fourth time this ledger records that pattern.
+
+**The cost we accepted, stated plainly.** The router edit moves `ROUTER_BUILD_SHA`
+(`a92b0177acadec05` → `273a969bbe2994e4`). The mirror was re-read clause by clause first: the
+change lands in BUILD steps 1–2, which `BUILD_WORKFLOW` does not model (the eval pastes the
+skills, so routing and file selection are short-circuited), so the hash was bumped **alone**,
+no re-sync — recorded at the pin. The treatment arm is therefore unchanged and the published
++0.39 is not invalidated, but **it has not been re-run against the current router**, because
+this repo holds no API key. The standing load is justified by a mechanism and not by a
+number, and `rules/02` §1a carries the falsifier that would take it back out.

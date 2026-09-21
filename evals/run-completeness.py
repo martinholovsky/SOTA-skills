@@ -106,7 +106,20 @@ def load_cases():
 # longer shipped. Nothing failed; the eval just quietly measured the wrong thing.
 # So: pin the router section's hash. If the router changes, this aborts and forces a
 # decision — re-sync the mirror and update the hash, or consciously accept the drift.
-ROUTER_BUILD_SHA = "a92b0177acadec05"
+# 2026-09-21 -> 273a969bbe2994e4. An IMPERATIVE changed (router BUILD step 2 gained a
+# standing load of `sota-shell-scripting` rules/06), and the mirror below was re-read
+# clause by clause against the new section before the bump, per rules/02 §5:
+#   router step 1 (identify domains)  -> not mirrored; the eval PASTES the skills, so
+#                                        routing is short-circuited by construction
+#   router step 2 (load lean, + 06)   -> not mirrored, same reason: it selects FILES
+#   router step 3 (plan first)        -> mirror clause (2), unchanged
+#   router step 4 (self-audit gate)   -> mirror clause (3), unchanged
+# So the change lands entirely in the two steps BUILD_WORKFLOW does not model, and the
+# mirror is still accurate: hash bumped alone, no re-sync. NOTE: the treatment arm is
+# unchanged by this edit, so the published +0.39 is NOT invalidated by it -- but it has
+# also not been re-run here (this repo holds no API key). Re-run before citing it as
+# measured against the current router.
+ROUTER_BUILD_SHA = "273a969bbe2994e4"
 
 
 def _assert_mirror_fresh():

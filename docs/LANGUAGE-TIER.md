@@ -53,9 +53,9 @@ topic appearing in both is not duplication — check the content before assuming
 
 Two items, both tracked in [ROADMAP.md](ROADMAP.md). Neither is urgent.
 
-### Item 57 — API / design is missing in five languages
+### Item 57 — API / design is missing in four languages
 
-Dedicated file in **rust, go, jvm, .NET**. Absent in **python, js/ts, php, ruby, c/c++**,
+Dedicated file in **rust, go, jvm, .NET**. Absent in **js/ts, php, ruby, c/c++**,
 and thin where adjacent rules touch it (3–9 keyword mentions; JS/TS has "Functions and
 modules over classes", Ruby has "Data vs Struct", and that is close to all of it).
 
@@ -65,13 +65,13 @@ these languages does:
 
 | | what the missing section would own |
 |---|---|
-| python | `__all__`, keyword-only parameters, `__slots__`, deprecation via `warnings`, what a leading underscore does and does not promise |
+| ~~python~~ | **CLOSED 2026-09-21 (#416)** — `rules/03` §13 *Public API surface*: `__all__`, keyword-only parameters, `__slots__` as directional, `@deprecated` (PEP 702), what a leading underscore does not promise |
 | js/ts | the `exports` map, type-level public surface vs runtime, `default` vs named, what a breaking type change is |
 | php | `final` and `readonly` as API decisions, interface vs abstract, BC breaks under semver |
 | ruby | gem semver, `private_constant`, refinements, what `respond_to?` promises callers |
 | c/c++ | ABI stability, header hygiene, `pimpl`, what is safe to change in a released header |
 
-**First move:** write one section for the language you are already in, not five at once.
+**First move:** write one section for the language you are already in, not four at once.
 Each needs an `## Audit checklist` item and an ADOPTION-LOG row (invariant 31), and each
 lands in the existing idioms file unless it pushes it past 500 lines.
 

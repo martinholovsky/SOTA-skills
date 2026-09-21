@@ -137,6 +137,14 @@ Two asymmetries the evidence standard has to carry:
   See `sota-code-security` rules/10; this applies to §5's positive-observations
   section too, where an inert control praised as a strength is the worst
   possible reporting error.
+- **An evidence grade propagates to what is built on it.** Marking an input *inferred* or
+  *needs verification* does not license an unhedged conclusion drawn from it in the same
+  breath — the hedge stays on the premise and the reader takes the conclusion. **A
+  conclusion carries the weakest grade among its inputs**, and two destinations make that
+  expensive because there it stops being yours: an **instruction file** and a **change to a
+  control**. Field-reported 2026-09-21: a gate's cost, *"inferred from the residual"*, was
+  committed to an agent file and used to move a CI gate — then killed by a differential
+  (same tests: **1073s long-uptime VM, 99s restarted, 97s older kernel** — it was uptime).
 
 **A correlation across the whole population is still not a mechanism** — and a *complete*
 one is the most persuasive version of the mistake, because it looks like the N-of-N evidence
@@ -443,7 +451,8 @@ Deliver in exactly this order:
       unexercised crown-jewel path (§5)?
 - [ ] Scope & methodology ends with **evidence not obtained** — what was
       unavailable and which verdict it would move (§5)?
-- [ ] Uncertain findings marked "needs verification", not asserted?
+- [ ] Uncertain findings marked "needs verification", not asserted — **and no conclusion
+      drawn from one written into an instruction file or used to change a control?** (§2)
 - [ ] **Every Critical/High names its chain** — reach, primitive, boundary
       crossing, and (where exfiltration is the impact) channel — each leg
       pointed at code rather than assumed (§1)?
