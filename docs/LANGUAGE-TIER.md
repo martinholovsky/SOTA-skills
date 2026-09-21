@@ -147,6 +147,57 @@ measurement**, and unifying is a rewrite of seven skills, so it is **DEFERRED** 
 ADOPTION-LOG with an explicit trigger: a measurement showing the format changes audit
 behaviour, or a third instance of a reader unable to enumerate a checklist.
 
+## Depth: the external-guide gap-check (ROADMAP 59)
+
+Coverage inside this tier is checked against an **external, enumerable, tool-backed list** —
+the method already used for Go (OWASP Go-SCP) and Rust (ANSSI). Two are done:
+
+| language | denominator | source | result |
+|---|---|---|---|
+| python | **75 tests** | Bandit 1.9.4 `plugins_by_id` + `blacklist_by_id` | 5 gaps closed |
+| golang | **61 checks** | gosec 2.29.0 `rulelist.go` (39) + `analyzerslist.go` (22) | 4 gaps closed |
+
+Remaining: **rust, c-cpp, jvm, javascript-typescript, dotnet, php, ruby**. Candidate
+denominators — ruby/Brakeman, js-ts/eslint-plugin-security, c-cpp/cppcheck (installed
+locally), rust/clippy + ANSSI. **jvm and .NET have no queryable local tool**, which may itself
+be the finding rather than a reason to skip them.
+
+### The step that failed both times: the denominator
+
+**Derive it twice, from independent sources, and reconcile before sweeping.** A single source
+was wrong in both languages, and both times the error hid the interesting half:
+
+- **Bandit's docs page** returned ~50 tests with B3xx/B4xx missing and B324 misfiled. The
+  tool's own registry gave 75.
+- **gosec** took four attempts: `strings` on the binary said 61 and was *dismissed as false
+  positives*; the docs index gave 7; a summarised fetch 38; a local parse of `rulelist.go` 39.
+  The truth is **two registries** — `rulelist.go` (39) plus `analyzers/analyzerslist.go` (22)
+  — and the half missing from the single-file answer contained every taint-analysis check and
+  the entire modern HTTP set, **which is where the gaps were**. The skill under audit is what
+  exposed it, by citing rule IDs the denominator did not contain.
+
+An *incomplete* denominator causes missed gaps, never false ones — so a sweep is still worth
+running — but it cannot support a claim of completeness.
+
+### The two rules that stop false findings
+
+- **Open the file for every zero.** Grep answers "does this string appear", never "is this
+  idea covered". In Python, 2 of 8 candidate gaps died on reading (`exec`/`eval` and XXE are
+  both covered; the counts were regex artifacts) and a third was scoped down because Django's
+  `DEBUG=False` was already there.
+- **Run every shipped checklist grep against a known-bad AND a known-good fixture.** A check
+  that could never fire shipped twice — `grep -Lq` (where `-q` suppresses the output `-L`
+  exists to produce) and a `[^,]+` that cannot span the second comma of a three-argument call.
+  Neither was caught by review.
+
+### An open question this raised
+
+**Temp-file/permission hygiene and host-key verification were gaps in *both* Python and Go.**
+If that repeats in Ruby and PHP, the right fix is probably a class stated once in
+`sota-code-security` with per-language *detectors*, not the same section written nine times —
+the split this library already uses for in-band sentinels. Decide it before the fourth
+language, not after the ninth.
+
 ## Template — adding a new language skill
 
 Copy the spine, not another language's file list. Sections marked **conditional** are
