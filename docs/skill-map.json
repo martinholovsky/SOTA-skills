@@ -1404,6 +1404,14 @@
       ]
     },
     {
+      "from": "sota-python",
+      "to": "sota-architecture",
+      "weight": 2,
+      "targets": [
+        "rules/02 \u00a78a"
+      ]
+    },
+    {
       "from": "sota-ruby",
       "to": "sota-code-security",
       "weight": 2,
@@ -2130,14 +2138,6 @@
       "to": "sota-testing",
       "weight": 1,
       "targets": []
-    },
-    {
-      "from": "sota-python",
-      "to": "sota-architecture",
-      "weight": 1,
-      "targets": [
-        "rules/02 \u00a78a"
-      ]
     },
     {
       "from": "sota-python",

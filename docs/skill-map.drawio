@@ -320,7 +320,7 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="note" value="Page 3 — how the skills reference each other, aggregated to families.&lt;br&gt;&lt;br&gt;297 distinct skill-to-skill edges / 895 mentions in the tree. Drawing all of them is a hairball at 38 nodes, so the graph is aggregated: an arrow is the TOTAL weight of every reference from one family to another, and the number inside a family is references within it.&lt;br&gt;&lt;br&gt;This is the layer a routing measurement does not cover: routing gets you to the right skill, this is which skill defers to which. Every individual edge, with its rules/NN and § targets, is in docs/skill-map.json." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="note" value="Page 3 — how the skills reference each other, aggregated to families.&lt;br&gt;&lt;br&gt;297 distinct skill-to-skill edges / 896 mentions in the tree. Drawing all of them is a hairball at 38 nodes, so the graph is aggregated: an arrow is the TOTAL weight of every reference from one family to another, and the number inside a family is references within it.&lt;br&gt;&lt;br&gt;This is the layer a routing measurement does not cover: routing gets you to the right skill, this is which skill defers to which. Every individual edge, with its rules/NN and § targets, is in docs/skill-map.json." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
           <mxGeometry x="40" y="20" width="720" height="170" as="geometry"/>
         </mxCell>
         <mxCell id="f_Security_core" value="Security core&lt;br&gt;11 skills · 223 internal refs" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;verticalAlign=middle;" vertex="1" parent="1">
@@ -371,10 +371,10 @@
         <mxCell id="fe20" value="27" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=1;" edge="1" parent="1" source="f_Security_core" target="f_Quality">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="fe21" value="33" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=1;" edge="1" parent="1" source="f_Languages" target="f_Platform___delivery">
+        <mxCell id="fe21" value="34" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=1;" edge="1" parent="1" source="f_Product_surface" target="f_Security_core">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="fe22" value="34" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=1;" edge="1" parent="1" source="f_Product_surface" target="f_Security_core">
+        <mxCell id="fe22" value="34" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=1;" edge="1" parent="1" source="f_Languages" target="f_Platform___delivery">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="fe23" value="45" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=2;" edge="1" parent="1" source="f_Data___AI" target="f_Security_core">
@@ -523,7 +523,7 @@
         <mxCell id="m0_3" value="01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="754" y="264" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m0_4" value="03" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="m0_4" value="03" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="862" y="264" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="m0_5" value="02" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
@@ -553,7 +553,7 @@
         <mxCell id="m1_3" value="02" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="754" y="298" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m1_4" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="m1_4" value="03" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="862" y="298" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="m1_5" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
@@ -853,7 +853,7 @@
         <mxCell id="mtlines3" value="619" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="754" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines4" value="1986" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines4" value="2072" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="862" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="mtlines5" value="1729" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">

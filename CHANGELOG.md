@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`sota-python` rules/03 §13 — "Public API surface — what you are promising"**, the first
+  of ROADMAP 57's five language sections and the reference the other four copy in shape. The
+  gap was measured, not assumed: `__all__`, `__slots__` and `keyword-only` each returned
+  **0 hits across all seven `sota-python` rules files**. Covers what `__all__` does and does
+  not do (it is the `import *` list and the documented surface, **not** privacy — the usual
+  accident being a re-exported import), that a leading underscore promises nothing to the
+  interpreter, keyword-only parameters as a promise about *names* rather than *order*,
+  `__slots__` as a **directional** commitment (adding it to a released class breaks, removing
+  it does not), and deprecating with `warnings.deprecated` rather than a docstring so type
+  checkers flag call sites too. Gated at **Python 3.13+** with `typing_extensions` named for
+  older floors — PEP 702 is *Status: Final, Python-Version: 3.13* and the stdlib docs carry
+  *"Added in version 3.13"*, both fetched at time of writing. Ships with its own audit
+  checklist block, tested against a fixture before landing: the first draft used `grep -Lq`,
+  where `-q` suppresses the output `-L` exists to produce.
+
 - **[`docs/LANGUAGE-TIER.md`](docs/LANGUAGE-TIER.md) — what the nine language skills share,
   what they deliberately do not, and a template for adding one.** The spine is idioms,
   security, performance, tooling/CI, testing and concurrency; the divergence tracks language
