@@ -2467,8 +2467,12 @@ fit with ~7% headroom and 200k gives 8,000, where we are **4.7× over** and the 
 vocabulary is the first thing cut. That is too consequential to adopt on an unreproduced
 claim and too consequential to drop.
 
-**DEFERRED — revisit when `sota-code-security` rules/10 is split or a second instance
-appears: the over-firing control.** magus's search-redirect hook documents a failure mode we
+**ADOPTED 2026-09-21 as `sota-code-security` rules/10 §5 + two checklist items — the
+over-firing control.** *The trigger fired and nobody came back.* It was parked on
+*"rules/10 is at **484/500** and putting it there would let the line cap choose the
+placement"*; ROADMAP 55 split the file on **2026-09-12**, taking it to **230/500**, and
+the deferral sat unread for nine days with its stated blocker false. Found by a
+`/sota-resume` pass re-testing each deferral's TRIGGER rather than its subject.** magus's search-redirect hook documents a failure mode we
 cover only in one direction. Ours is the inert control that looks enabled and does nothing
 (rules/10). Its mirror is a control that fires **too broadly**, degrades the outcome it was
 meant to protect, and *appears to work the whole time* — their reviewers' point that a
@@ -4519,3 +4523,26 @@ no re-sync — recorded at the pin. The treatment arm is therefore unchanged and
 +0.39 is not invalidated, but **it has not been re-run against the current router**, because
 this repo holds no API key. The standing load is justified by a mechanism and not by a
 number, and `rules/02` §1a carries the falsifier that would take it back out.
+
+## 2026-09-21 — the over-firing control: a deferral whose blocker had been false for nine days
+
+**Adopted** as `sota-code-security` rules/10 **§5** + two checklist items. The idea is the
+mirror of the file's whole subject: rules/10 covers a control with **too little** effect, and
+this is a control with **too much** — one that fires on cases it was never meant to catch,
+degrades the outcome it exists to protect, and looks like it is working throughout, because
+*the thing that happens is what success looks like*. The metric asymmetry is the core of it:
+firing count goes **up** as an over-firing control gets worse.
+
+**Why this is a `/sota-resume` finding rather than a fresh intake.** The row was deferred on
+2026-09-11 with an explicit, checkable trigger — *"revisit when `sota-code-security` rules/10
+is split"* — and an explicit blocker: *"rules/10 is at **484/500** and putting it there would
+let the line cap choose the placement"*. **ROADMAP 55 split the file on 2026-09-12**, taking
+rules/10 to **230/500**. The trigger fired the next day and nobody came back for nine days.
+Nothing reports this: invariant 27 asserts a deferral *names* a trigger, never that the
+trigger is still unmet. Re-testing each deferral's **trigger** rather than its subject is
+what surfaced it — the same lesson this ledger recorded on 2026-09-06 for three stale
+roadmap triggers, now repeated one layer down.
+
+Written from the mechanism rather than from the source's wording; the reviewers' original
+observation (a blanket deny on a search *tool* enforces a worse substitute than a deny on the
+unsafe *behaviour*) survives as the worked shape, in our own words.
