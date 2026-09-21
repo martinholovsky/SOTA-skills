@@ -108,7 +108,7 @@ comparable on this metric. A `- [ ]` item can bundle several commands; a fenced 
 per line. The jvm/.NET-vs-peers comparison is within-format and sound; rust's last place is
 not evidence of anything.
 
-**Recommendation: close as (c).** Splitting `sota-jvm` is rejected — it adds a skill, moves
+**CLOSED 2026-09-21 as (c)** — the depth is correct and the framing was wrong. Splitting `sota-jvm` is rejected — it adds a skill, moves
 the description classifier and competes for every neighbour's traffic, to fix a deficit the
 measurement says is not there. Worked examples for jvm/.NET remain optional polish.
 
@@ -141,10 +141,11 @@ Invariant 2 gates the *heading*; nothing gates the body, and three forms exist:
 | fenced shell block | python, jvm, .NET, c/c++, php |
 | prose + commands | golang, ruby |
 
-This is **not cosmetic**. AUDIT mode tells the model to "verify your diff satisfies every
-item" — a checkbox list is enumerable, a prose block is not. Unifying it is a rewrite of
-seven skills and needs its own decision; it is recorded here so it is not absorbed silently
-into other work.
+AUDIT mode tells the model to "verify your diff satisfies every item" — a checkbox list is
+enumerable, a prose block is not. **That is an inference from the wording, not a
+measurement**, and unifying is a rewrite of seven skills, so it is **DEFERRED** in the
+ADOPTION-LOG with an explicit trigger: a measurement showing the format changes audit
+behaviour, or a third instance of a reader unable to enumerate a checklist.
 
 ## Template — adding a new language skill
 

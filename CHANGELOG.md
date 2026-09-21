@@ -83,6 +83,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **ROADMAP 58 closed by the measurement it asked for.** Opened 2026-09-20 as "jvm and .NET
+  are 3–4x thinner"; refuted 2026-09-21 by the depth metric it requested, and closed as
+  **(c) the depth is correct and the framing was wrong**. Splitting `sota-jvm` is rejected on
+  the record. Worked examples for jvm/.NET are deliberately **not** a row — optional polish
+  nobody must act on becomes a recurring reminder, the reason item 1 was retired. Open items
+  3 → 2 (5 dormant, 57 actionable).
+- **The audit-checklist body format is deferred with a trigger, not actioned.** Three forms
+  across nine skills while invariant 2 gates only the heading. The case for unifying — AUDIT
+  mode asks the model to satisfy "every item" and only the tickable form is enumerable — is
+  **an inference from the wording, not a measurement**, and unifying is a rewrite of seven
+  skills. Revisit trigger: a measurement showing the format changes audit behaviour, or a
+  third instance of a reader unable to enumerate a checklist.
+
 - **ROADMAP 58's own framing was refuted by measurement, one day after it was written.** The
   row opened with "jvm and .NET are 3–4x thinner than their peers", which was true of line
   count and false of what line count stood in for. Measured per 100 rules-lines, **.NET (10.6)
