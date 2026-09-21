@@ -57,6 +57,23 @@ lives in `sota-testing`.
 ## Audit checklist
 
 ```bash
+# What has been SILENCED? -- the analyser's escape hatch (ROADMAP 60)
+# javac: @SuppressWarnings is CATEGORY-SCOPED. Measured on JDK 21.0.12: a method
+# annotated @SuppressWarnings("unchecked") still emitted BOTH [rawtypes] warnings
+# while the unchecked one vanished. So read the ARGUMENT, never just the annotation.
+grep -rn '@SuppressWarnings' --include='*.java' --include='*.kt' src/
+grep -rn '@SuppressWarnings("all")\|@SuppressWarnings({"all"' --include='*.java' src/   # HIGH: silences every category
+# SpotBugs: edu.umd.cs.findbugs.annotations.SuppressFBWarnings (needs the
+# spotbugs-annotations artifact on the classpath, so its presence is also a dependency fact)
+grep -rn 'SuppressFBWarnings' --include='*.java' --include='*.kt' src/
+grep -rn 'NOSONAR\|CHECKSTYLE:OFF\|noinspection' --include='*.java' --include='*.kt' src/
+# ...and the BULK forms, which no per-site grep above will find:
+grep -rn 'excludeFilterFile\|<exclude>\|baseline' pom.xml build.gradle* 2>/dev/null
+find . -name 'spotbugs-exclude*.xml' -o -name 'checkstyle-suppressions.xml' 2>/dev/null
+# Each hit needs a written reason. A suppression with no justification is the finding,
+# not the warning it hides -- a silenced analyser is how a green gate stops meaning
+# anything (`sota-code-security` rules/10).
+
 # Wrapper pinned? LTS targeted?
 ls mvnw gradlew 2>/dev/null | grep -q . || echo "no build wrapper (version not pinned)"
 grep -rnE 'release|sourceCompatibility|targetCompatibility|languageVersion' pom.xml build.gradle* 2>/dev/null

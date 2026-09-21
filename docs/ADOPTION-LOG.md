@@ -4678,3 +4678,48 @@ gate stops meaning anything — `sota-code-security` rules/10's subject, one lay
 this wording appear", never "is this idea covered"; every run prints a per-skill denominator;
 `--show-unmatched` lists what the vocabulary could not classify, because an item this file
 cannot classify is a hole in the file, not evidence about the skill.
+
+## 2026-09-22 — ROADMAP 60 closed: the analyser's escape hatch, in jvm, .NET and c/c++
+
+The gap the concept matrix found on 2026-09-21, closed. One checklist block per skill, in each
+tooling/CI file. **The row demanded the syntax be verified rather than recalled** — three
+mechanisms, three spellings, and a wrong one ships a probe that can never fire. It was, and
+two of the verifications changed what shipped:
+
+| skill | how the syntax was established |
+|---|---|
+| jvm | **Run.** JDK 21.0.12 in a container (no local JRE — `javac` on this host is a stub that errors with "Unable to locate a Java Runtime") |
+| .NET | **Microsoft's own in-source-suppression docs** — no local `dotnet` |
+| c/c++ | **Run.** cppcheck 2.21.0 locally; clang-tidy's forms from the LLVM docs (no local binary) |
+
+**Two measured facts that a recalled rule would have missed.**
+
+- **`@SuppressWarnings` is category-scoped, and the differential proves it.** A method
+  annotated `@SuppressWarnings("unchecked")` still emitted **both** `[rawtypes]` warnings while
+  the `unchecked` one vanished; the unannotated method emitted all three. So an auditor must
+  read the *argument*, not the annotation — and `@SuppressWarnings("all")` is its own finding.
+- **A `// cppcheck-suppress` comment is inert unless `--inline-suppr` is passed.** Measured:
+  without the flag both planted warnings still fired. With it, `memleak` was suppressed and
+  `nullPointerOutOfMemory` was **not**, because the comment must sit on the line before the
+  line the warning is *reported* on, which is not always the line you expect. So the probe
+  checks the **flag** before it reads the comments — a whole tree of suppression comments can
+  be decoration.
+
+**The bulk forms are the half a per-site grep never finds**, and each skill probes them: SpotBugs
+`excludeFilterFile` and Checkstyle suppression XML; `GlobalSuppressions.cs`, `<NoWarn>` in a
+`Directory.Build.props` that covers a whole solution, and `.editorconfig`
+`dotnet_diagnostic.*.severity = none`; cppcheck `--suppressions-list` and
+`#pragma GCC diagnostic ignored`. **Microsoft's own word for the bulk case is "baselining"**
+(*"Suppressing all current violations is sometimes referred to as baselining"*), and a large
+`GlobalSuppressions.cs` with uniform timestamps is its signature — the analyser's verdict on
+that code was never read by anyone.
+
+**Every shipped grep was run against known-bad and known-good fixtures, and one was broken.**
+`NOLINT(NEXTLINE|BEGIN)?[^(]` matched 1 of 2 blanket forms: a bare `// NOLINT` at **end of
+line** has no character after it, so `[^(]` cannot match. Corrected to `([^(]|$)`, retested at
+2 of 2, and confirmed still to discriminate — on a file with one scoped `NOLINT(check)` and one
+bare `NOLINT` it matches only the bare one. **This is exactly the failure the roadmap row
+predicted**, caught by the fixture rather than by review.
+
+**Confirmed by the instrument, not by assertion:** `gen-concept-matrix.py` now reports
+`suppressing a linter / type check` as present in **9 of 9**.
