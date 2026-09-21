@@ -4546,3 +4546,46 @@ roadmap triggers, now repeated one layer down.
 Written from the mechanism rather than from the source's wording; the reviewers' original
 observation (a blanket deny on a search *tool* enforces a worse substitute than a deny on the
 unsafe *behaviour*) survives as the worked shape, in our own words.
+
+## 2026-09-21 — ROADMAP 57, second of five: the c/c++ public-surface section, and 59's denominator banked
+
+**The gap was measured, not assumed, and the measurement nearly said the opposite.** Across
+the 8 files of `sota-c-cpp`, `pimpl`, `header hygiene`, `include-what-you-use`,
+`inline namespace`, `visibility`, `soname` and `forward declar` each returned **0 files**
+(positive control: `RAII`, 4 files). **`ABI` returned 7 files** — non-zero, which under this
+method means open them rather than assume. All seven are incidental: error codes *at* an ABI
+boundary (`rules/01` §7), SIMD alignment (`rules/03`), a `--addon=cert` invocation, and a
+severity table. **Nothing covered ABI as an API-design constraint**, which is the one C/C++
+adds that no other language in this tier has.
+
+**Landed in** `sota-c-cpp/rules/01` **§9** + five checklist probes. Scoped to the C/C++
+*mechanism*, with the shared design rules left to `sota-architecture` rules/02 and
+`sota-api-design`, per §57's own instruction:
+
+- the **source-compatible-but-ABI-breaking table** — adding a data member (even `private`),
+  adding the first virtual, reordering members, changing a default argument, changing an
+  `inline` body. The through-line is that the *loud* case (a changed signature → changed
+  mangled name → link error) is the safe one, and every silent case is a layout change;
+- **`pimpl`** with the trap that bites everyone who tries it: `~Widget() = default` **in the
+  header** instantiates `unique_ptr`'s deleter against an incomplete `Impl` and fails to
+  compile, so the destructor and moves must be declared there and defined in the `.cpp`;
+- **stdlib types in exported signatures.** Fetched rather than recalled: libstdc++ has had
+  **two ABIs since GCC 5.1**, selected by `_GLIBCXX_USE_CXX11_ABI`, and mixing them surfaces
+  as *"undefined references to symbols that involve types in the `std::__cxx11` namespace or
+  the tag `[abi:cxx11]`"* — quoted from GCC's own dual-ABI page;
+- **header hygiene** — forward-declare, no file-scope `using namespace`, guards,
+  `-fvisibility=hidden` by default, macros have no namespace.
+
+**Every shipped grep was run against a known-bad and a known-good header first, and one
+failed.** The stdlib-type probe originally included `unique_ptr|shared_ptr` and therefore
+flagged **this section's own recommended `pimpl` header** — a check that fires on the
+guidance beside it. Narrowed to the container types, retested: 2 hits on the bad header, 0 on
+the good. A `grep -rLn` was also corrected to `grep -rL` (`-n` is meaningless with `-L`).
+
+**ROADMAP 59, same session, deliberately NOT swept.** Its denominator was derived twice and
+reconciled — cppcheck **2.21.0**, `--errorlist` unique ids = **342**, the same dump grouped by
+severity = **342** with buckets summing exactly — and the gosec two-registry lesson repeats:
+the **addons are a separate list**, `misra.py` alone holding **132** rule functions. At 4.5×
+the Python set, the cluster-sweep is the session the row budgets for it, and half a sweep is
+worse than none. Recorded in [LANGUAGE-TIER.md](LANGUAGE-TIER.md) so the next session starts
+past the step that has now failed twice.

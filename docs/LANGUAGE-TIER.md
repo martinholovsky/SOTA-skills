@@ -53,9 +53,9 @@ topic appearing in both is not duplication — check the content before assuming
 
 Two items, both tracked in [ROADMAP.md](ROADMAP.md). Neither is urgent.
 
-### Item 57 — API / design is missing in four languages
+### Item 57 — API / design is missing in three languages
 
-Dedicated file in **rust, go, jvm, .NET**. Absent in **js/ts, php, ruby, c/c++**,
+Dedicated file in **rust, go, jvm, .NET**. Absent in **js/ts, php, ruby**,
 and thin where adjacent rules touch it (3–9 keyword mentions; JS/TS has "Functions and
 modules over classes", Ruby has "Data vs Struct", and that is close to all of it).
 
@@ -69,9 +69,9 @@ these languages does:
 | js/ts | the `exports` map, type-level public surface vs runtime, `default` vs named, what a breaking type change is |
 | php | `final` and `readonly` as API decisions, interface vs abstract, BC breaks under semver |
 | ruby | gem semver, `private_constant`, refinements, what `respond_to?` promises callers |
-| c/c++ | ABI stability, header hygiene, `pimpl`, what is safe to change in a released header |
+| ~~c/c++~~ | **CLOSED 2026-09-21** — `rules/01` §9 *Designing a public surface*: the source-compatible-but-ABI-breaking table (added member, first virtual, reorder, default argument, inline body), `pimpl` with the incomplete-type destructor trap, stdlib types in exported signatures (libstdc++'s two ABIs since **GCC 5.1**, `_GLIBCXX_USE_CXX11_ABI`, verified against GCC's docs), and header hygiene |
 
-**First move:** write one section for the language you are already in, not four at once.
+**First move:** write one section for the language you are already in, not three at once.
 Each needs an `## Audit checklist` item and an ADOPTION-LOG row (invariant 31), and each
 lands in the existing idioms file unless it pushes it past 500 lines.
 
@@ -158,9 +158,26 @@ the method already used for Go (OWASP Go-SCP) and Rust (ANSSI). Two are done:
 | golang | **61 checks** | gosec 2.29.0 `rulelist.go` (39) + `analyzerslist.go` (22) | 4 gaps closed |
 
 Remaining: **rust, c-cpp, jvm, javascript-typescript, dotnet, php, ruby**. Candidate
-denominators — ruby/Brakeman, js-ts/eslint-plugin-security, c-cpp/cppcheck (installed
-locally), rust/clippy + ANSSI. **jvm and .NET have no queryable local tool**, which may itself
-be the finding rather than a reason to skip them.
+denominators — ruby/Brakeman, js-ts/eslint-plugin-security, rust/clippy + ANSSI.
+**jvm and .NET have no queryable local tool**, which may itself be the finding rather than a
+reason to skip them.
+
+**c-cpp's denominator is already derived and reconciled — 2026-09-21, so the next session on
+this language starts past the step that failed twice.** cppcheck **2.21.0**:
+
+| derivation | method | answer |
+|---|---|---|
+| A | `cppcheck --errorlist` → unique `id="…"` | **342** |
+| B | the same dump grouped by `severity=` | **342** — warning 110, style 95, error 93, portability 20, performance 19, information 5 |
+
+The two agree exactly, and the severity buckets sum to the total, which is what makes this a
+reconciliation rather than one number counted twice. **And the gosec two-registry lesson
+repeats**: cppcheck's **addons are a separate list** the `--errorlist` dump does not contain —
+`misra.py` alone carries **132** `misra_N_M` rule functions, plus `threadsafety.py`,
+`y2038.py`, `naming.py` and `findcasts.py`. A denominator of 342 is the *built-in* checks
+only; MISRA is a second registry this skill already delegates to by name. **342 is 4.5× the
+Python set**, so budget the cluster-sweep accordingly — that size is the reason the sweep was
+not attempted in the same session that derived the number.
 
 ### The step that failed both times: the denominator
 

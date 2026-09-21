@@ -149,6 +149,75 @@ rather than its value.
   the pointer's type. Use bounded string functions (`snprintf`, `strlcpy` where
   available); see `rules/04` for the banned list.
 
+## 9. Designing a public surface — what a released header promises
+
+The shared design rules (what belongs in a public API at all, deprecation policy, semver)
+are `sota-architecture` rules/02 and `sota-api-design`. **This section is the C/C++
+mechanism**: here the compiled *layout* is part of the contract, so a change that is source-
+compatible can still break every caller — and unlike a signature change, which fails loudly
+at link time, a layout change frequently links fine and corrupts memory at run time.
+
+**What a header change costs, by kind:**
+
+| change | source-compatible | ABI-compatible | how it fails |
+|---|---|---|---|
+| add a data member (even `private`) | yes | **no** | caller's `sizeof`/offsets are stale — silent corruption |
+| add the *first* virtual function | yes | **no** | adds a vptr; every offset moves |
+| add a virtual to a class others derive from | yes | **no** | vtable slots shift under the derived class |
+| reorder members | yes | **no** | silent: offsets change, names do not |
+| change a function's parameters or `const` | no | no | **loud** — the mangled name changes, link error |
+| change a default argument | yes | **no** | the default is compiled into the *caller*; old callers keep the old value |
+| change an `inline` body | yes | **no** | the old body is already inlined into callers |
+| add a new non-virtual, non-inline function | yes | yes | safe |
+
+**The rule that falls out of the table: a released class is frozen unless you hid its
+layout.** That is what `pimpl` buys — the public class holds one owning pointer and nothing
+else, so members can be added to the implementation struct forever without moving anything a
+caller measured:
+
+```cpp
+// widget.hpp — layout frozen: one pointer, whatever the implementation grows into
+class Widget {
+public:
+    Widget(); ~Widget();                       // defined in the .cpp: Impl is incomplete here
+    Widget(Widget&&) noexcept;                 // = default in the HEADER would need Impl
+    Widget& operator=(Widget&&) noexcept;
+    void draw() const;
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
+```
+
+The destructor and move operations must be **declared** here and **defined** in the `.cpp`
+where `Impl` is complete; `= default` in the header instantiates `unique_ptr`'s deleter
+against an incomplete type and fails to compile. Costs: one indirection and one allocation
+per object, so it buys stability on a *library boundary*, not on a hot internal type.
+
+**A standard-library type in an exported signature exports your toolchain with it.**
+`std::string`, `std::vector` and friends have no standardised layout, so both sides must be
+built with the same implementation *and* the same configuration. Verified against GCC's own
+documentation: libstdc++ introduced a second ABI in **GCC 5.1**, selected by
+`_GLIBCXX_USE_CXX11_ABI`, and mixing the two surfaces as *"undefined references to symbols
+that involve types in the `std::__cxx11` namespace or the tag `[abi:cxx11]`"*. For a boundary
+you do not control both sides of, pass primitives, pointers and POD structs — or an
+`extern "C"` layer.
+
+**Header hygiene** — what a header drags in is part of its cost:
+
+- **Include what you use, and forward-declare what you only refer to.** A declaration needs
+  only `class Widget;`; a definition needs the header. Pulling in a heavy header for a
+  reference or pointer multiplies build time across every translation unit.
+- **Never `using namespace` at file scope in a header.** It is inherited by every file that
+  includes it, and it changes overload resolution in code that never asked for it.
+- **`#pragma once` or include guards on every header** — `#pragma once` is universally
+  supported by current compilers but is not in the standard; guards are the portable form.
+- **Default to hidden.** Compile with `-fvisibility=hidden` and export deliberately through
+  one macro. A smaller exported set means fewer accidental promises, faster loads and a
+  smaller ABI surface to keep stable.
+- **Macros are not namespaced.** A macro in a public header has no scope and no owner; if one
+  is unavoidable, prefix it with the library name.
+
 ## Audit checklist
 
 ```bash
@@ -189,5 +258,26 @@ clang-tidy --checks='cppcoreguidelines-*,modernize-*,bugprone-*' <files>
 # In-band sentinels (§7/§8) — absence encoded as a value
 grep -rnE 'return -1;' --include='*.c' --include='*.cpp' .      # producer: same constant from 2 branches?
 grep -rn 'atoi(\|atol(' --include='*.c' --include='*.cpp' .      # 0 on garbage == 0 on "0" (rules/04)
+
+# Public surface / ABI (§9) — layout is part of a released header's contract
+git diff <last-release-tag>..HEAD -- '*.h' '*.hpp' | grep -nE '^\+[^+]' 
+# ^ THE question, which no linter asks: does any + line add a data member, add a
+#   virtual, reorder members, or change a default argument? Each is source-compatible
+#   and ABI-BREAKING, and only the signature change fails loudly at link time.
+grep -rnE '=[[:space:]]*[A-Za-z0-9_"'"'"'{(-]+[[:space:]]*\)' --include='*.h' --include='*.hpp' . | head
+# ^ default arguments in public headers — the value is baked into each CALLER
+grep -rnE '\b(std::(string|vector|map|list|deque|set))\b' --include='*.h' --include='*.hpp' .
+# ^ stdlib types in an EXPORTED signature tie both sides to one toolchain+config;
+#   libstdc++ has had two since GCC 5.1 (_GLIBCXX_USE_CXX11_ABI, std::__cxx11 /
+#   [abi:cxx11] undefined references are the tell). Fine internally; a promise at a
+#   boundary you do not build both sides of. unique_ptr/shared_ptr are deliberately
+#   NOT in the pattern: a unique_ptr<Impl> member is what pimpl above prescribes,
+#   so including them would flag this file's own recommendation (tested, it did).
+grep -rn 'using namespace' --include='*.h' --include='*.hpp' .   # inherited by every includer
+grep -rL  '#pragma once\|#ifndef' --include='*.h' --include='*.hpp' .  # -L = files NOT matching
+grep -rn 'fvisibility' --include='CMakeLists.txt' --include='*.cmake' . || \
+  echo "no -fvisibility=hidden: everything is exported by default — a larger ABI surface than intended"
+# ^ the `||` prints on a FAILED SEARCH too (rules/06 §2d): confirm the grep ran
+#   before reading the message as a finding.
 grep -rnE 'char[[:space:]]+[a-z_]+[[:space:]]*=[[:space:]]*getchar' --include='*.c' .  # EOF in a char: breaks only where char is UNSIGNED
 ```
