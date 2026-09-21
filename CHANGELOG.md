@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Gap-check 2 of 9: `sota-golang` against gosec 2.29.0** — four gaps closed. **The
+  denominator was wrong three times before it was right**: the docs index gave 7, a summarised
+  source fetch 38, a local parse of `rules/rulelist.go` 39 — and the skill's own citation of
+  G113/G115/G118/G408 revealed that **gosec keeps two registries**, `rulelist.go` (39) plus
+  `analyzers/analyzerslist.go` (22) = **61**, reconciling exactly with a `strings` extraction
+  I had dismissed as implausible. A denominator from `rulelist.go` alone omits every
+  taint-analysis check and the entire modern HTTP set — which is where the gaps were.
+  - **`rules/04` §4a cookies** — `SetCookie` had **0 hits** in the skill and `HttpOnly`/
+    `SameSite` none at all; adds the attribute set, the `__Host-` prefix, and why a CSRF token
+    deliberately is not `HttpOnly`.
+  - **`rules/04` §4b redirects** — open redirect (`//evil.com` is not a path) *and* the
+    client-side bug: `http.Client` re-sends `Authorization` across a redirect to another host.
+  - **`rules/05` §4a** temp files and permission modes; **§4b** `ssh.InsecureIgnoreHostKey`
+    and `encoding/gob` on untrusted input.
+  - The skill's note calling G113/G118/G408 "rules" is corrected to **analyzers**, with both
+    registry sizes stated so the next reader does not repeat the mistake.
+
+  Crypto clusters were **rejected as already delegated** — Go states the hand-off to
+  `sota-code-security` rules/04 that this same session had to *add* to `sota-python`.
+
 - **First external-guide gap-check: `sota-python` against Bandit's own test registry** — five
   gaps found and closed. **Denominator: 75 tests**, read from Bandit 1.9.4's
   `plugins_by_id` + `blacklist_by_id` rather than its docs page, which returned ~50 with

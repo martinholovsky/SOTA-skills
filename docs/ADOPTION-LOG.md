@@ -4010,6 +4010,53 @@ its least representative slice.* Recorded as a **correction to shipped text**, n
 finding — and as evidence for keeping the "date every number to its source" discipline, since
 the number that needed revising was one we had already published.
 
+## 2026-09-21 — gap-check 2 of 9: sota-golang against gosec, and a denominator that was wrong three times
+
+**The denominator took four attempts, and the library corrected me.** For the record, because
+the failure mode is the point:
+
+| source | answer | what was wrong |
+|---|---|---|
+| `strings` on the gosec binary | **61 IDs** | dismissed as containing false positives — **it was right** |
+| official docs rules index | 7 | my fetcher read only the sidebar |
+| `rules/rulelist.go` @ v2.29.0, summarised by fetch | 38 | dropped G601 |
+| `rules/rulelist.go` @ v2.29.0, **curl + parsed locally** | 39 | correct, but **only half the registry** |
+
+The resolution came from the skill under audit: `sota-golang` cites **G113, G115, G118,
+G408**, none of which are in `rulelist.go`. That is because **gosec keeps two registries** —
+`rules/rulelist.go` (39) and `analyzers/analyzerslist.go` (22), the SSA/taint-based checks.
+**39 + 22 = 61, reconciling exactly with the binary extraction I had rejected as implausible.**
+
+A denominator taken from `rulelist.go` alone silently omits every taint-analysis check
+(G701–G710) and the whole modern HTTP set (G119–G124) — which is where the real gaps were.
+
+### Adopted
+
+| gap | gosec | landed |
+|---|---|---|
+| cookie security attributes — `SetCookie` 0 hits, `HttpOnly`/`SameSite` 0 across the skill | G124 | `rules/04` §4a |
+| open redirect, and **client-side header propagation across a redirect to another host** | G710 G119 | `rules/04` §4b |
+| temp files + file/directory permission modes | G303 G301 G302 G306 G307 | `rules/05` §4a |
+| `ssh.InsecureIgnoreHostKey`, and `encoding/gob` on untrusted input | G106 G408 G709 | `rules/05` §4b |
+| the skill's own note called G113/G118/G408 "rules" | — | corrected to **analyzers**, with both registry sizes stated |
+
+**Rejected**: crypto clusters (G401/G405/G501–G507, G407) — already delegated at `rules/05`:215
+*"algorithm choice and parameters are owned by sota-code-security 04"*, which is the
+delegation this same session had to **add** to `sota-python`. Go was already right.
+Also rejected: G102 bind-all (infra), G116 trojan-source (language-agnostic), G504 net/http/cgi
+(legacy), G707 SMTP injection (niche).
+
+### A shipped check that could never fire
+
+The first permission grep was
+`(WriteFile|Mkdir(All)?|Chmod)\([^,]+, *0o?…` — `[^,]+` cannot span the **second** comma, so
+it could not match a three-argument `os.WriteFile(p, b, 0o644)` at all. Caught by running it
+against a fixture, not by review. The replacement flags a mode where either the group or
+other digit is non-zero, verified to flag `0o644/0o755/0o640/0o660` and pass `0o600/0o700`.
+
+**Invariant 6 then caught the README hero line count** (70k → 71k) on the same change, which
+is the count-bearing-surface gate doing exactly its job.
+
 ## 2026-09-21 — the first external-guide gap-check: sota-python against Bandit's own test registry
 
 **Intake shape: a gap-check against an external authoritative enumeration**, the method this

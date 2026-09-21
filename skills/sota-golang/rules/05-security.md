@@ -177,6 +177,44 @@ n := int32(req.Length)
 - Durations: `time.Duration(n) * time.Second` where `n` is attacker-supplied
   can overflow int64 — bound first.
 
+## 4a. Temp files, directories and permissions
+
+`os.CreateTemp`/`os.MkdirTemp` create with safe modes and an unpredictable suffix. A
+hand-built path does neither.
+
+- **Never construct a temp path yourself** (`"/tmp/" + name`, `filepath.Join(os.TempDir(),
+  fixedName)`). It is predictable and world-writable — an attacker wins the race by placing
+  a symlink there first (gosec G303).
+- **`os.WriteFile`, `os.Mkdir` and `os.Chmod` take the mode you pass and no more thought.**
+  `0o644` on a token file and `0o755` on a key directory are the common defaults that leak to
+  every local account. Secrets get `0o600`, their directories `0o700` (G301/G302/G306/G307).
+- **The mode is a request, not a guarantee** — the process `umask` masks it. `0o666` with a
+  `002` umask lands at `0o664`. Set the mode you mean and verify with `os.Stat` where it
+  matters.
+
+```go
+// BAD — predictable name, then permissions widened after the secret is on disk
+p := filepath.Join(os.TempDir(), "app-token")
+os.WriteFile(p, tok, 0o644)
+
+// GOOD — unpredictable, owner-only, created before anything is written
+f, err := os.CreateTemp("", "app-token-*")   // 0o600
+defer os.Remove(f.Name())
+```
+
+## 4b. SSH host keys and untrusted deserialization
+
+- **`ssh.InsecureIgnoreHostKey()` disables host verification entirely** (gosec G106). The
+  first connection is the one worth intercepting, so trust-on-first-use with no pinning is a
+  standing MITM window. Use `knownhosts.New()` and fail closed. `ssh.PublicKeyCallback`
+  misuse has its own analyzer (G408) because a callback that returns a permission set built
+  from mutable state can be walked into an auth bypass.
+- **`encoding/gob` on untrusted input is not safe** (G709). It constructs arbitrary
+  registered types and is a decode-side attack surface; it is a wire format for services that
+  already trust each other. Use JSON with a fixed struct for anything crossing a trust
+  boundary, and bound the reader — `io.LimitReader` — because a decoder will happily allocate
+  what the header claims.
+
 ## 6. Cryptographic practices: CSPRNG & TLS
 
 ### Randomness — `crypto/rand`, never `math/rand`
@@ -323,8 +361,10 @@ grep -rn '"http://' --include='*.go' . | grep -v 'localhost\|127.0.0.1\|test'
 # Integer conversion — gosec G115
 grep -rnE '\b(int8|int16|int32|uint8|uint16|uint32|uint64|uintptr)\(' --include='*.go' . | grep -vE '(_test|const)'
 gosec -include=G115,G118,G201,G202,G204,G304,G401,G402 ./...
-# gosec 2.24+ adds G113 (request smuggling via conflicting headers),
-# G118 (ctx-propagation goroutine leaks), G408 (SSH PublicKeyCallback bypass)
+# G113/G115/G118/G408 are ANALYZERS, not rules: gosec keeps two registries
+# (rules/rulelist.go = 39, analyzers/analyzerslist.go = 22, 61 total at v2.29.0).
+# A denominator taken from rulelist.go alone silently omits every taint-analysis
+# check (G701-G710) and the modern HTTP ones (G119-G124).
 
 # CSPRNG misuse — HIGH (security-bearing randomness from a PRNG)
 grep -rn 'math/rand' --include='*.go' .                 # any import: verify each call site is non-secret
@@ -348,6 +388,15 @@ go mod tidy && git diff --exit-code go.mod go.sum
 
 # Secrets in repo
 grep -rnE '(api[_-]?key|secret|password|token)\s*[:=]\s*"[A-Za-z0-9+/_-]{16,}"' --include='*.go' .
+
+# --- Temp files and permissions (§4a) ---
+grep -rnE 'os\.TempDir\(\)|"/tmp/' --include='*.go' . | grep -v _test      # predictable path [HIGH]
+# mode where either the group or other digit is non-zero (0600/0700 pass, 0644/0755/0640 flag)
+grep -rnE '(WriteFile|MkdirAll|Mkdir|Chmod)\(.*0o?[0-7]([1-7][0-7]|[0-7][1-7])\)' --include='*.go' .
+
+# --- Host keys and deserialization (§4b) ---
+grep -rn 'InsecureIgnoreHostKey' --include='*.go' .                        # MITM [HIGH]
+grep -rn 'encoding/gob' --include='*.go' . | grep -v _test                 # decode-side surface [MEDIUM]
 ```
 
 Severity guide: string-built SQL / `sh -c` with input / InsecureSkipVerify /

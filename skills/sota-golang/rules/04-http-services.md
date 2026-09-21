@@ -191,6 +191,56 @@ func (w *statusWriter) WriteHeader(c int) { w.status = c; w.ResponseWriter.Write
   (`func(w, r) error` → `http.Handler`) so the error mapper from
   `rules/01 §7` is the single response-shaping point.
 
+## 4a. Cookies: the attributes are the security, not the value
+
+`http.SetCookie` writes exactly what you give it and defaults to nothing. A session cookie
+with no attributes is sent over plaintext, readable from JavaScript, and attached to
+cross-site requests.
+
+```go
+// BAD — three missing attributes, none of them reported by anything at runtime
+http.SetCookie(w, &http.Cookie{Name: "session", Value: tok, Path: "/"})
+
+// GOOD
+http.SetCookie(w, &http.Cookie{
+    Name: "session", Value: tok, Path: "/",
+    Secure:   true,                    // TLS only
+    HttpOnly: true,                    // not reachable from document.cookie
+    SameSite: http.SameSiteLaxMode,    // Strict where the flow allows it
+    MaxAge:   int(8 * time.Hour / time.Second),
+})
+```
+
+- **`SameSite` unset is not the same as `SameSiteDefaultMode`** — set it explicitly and pick
+  `Strict` unless a cross-site entry flow (OAuth callback, payment return) needs `Lax`.
+  `SameSiteNoneMode` requires `Secure` or browsers drop the cookie.
+- **`__Host-` prefix** when the cookie is origin-scoped: browsers then enforce `Secure`, a
+  `/` path, and no `Domain`, so a subdomain cannot overwrite it.
+- Session identifiers get `HttpOnly`; a CSRF token the page must read does not — that split
+  is deliberate, not an oversight to fix.
+
+## 4b. Redirects: two different bugs
+
+**Open redirect (the server's).** A `Location` built from user input turns your domain into a
+credible phishing launchpad. Validate against an allowlist of paths, or parse and require
+`u.Host == ""` — a leading `//evil.com` is a protocol-relative URL, not a path.
+
+**Header propagation on the client's.** `http.Client` follows redirects by default and
+**re-sends your headers to the new host**. A redirect to an attacker-controlled origin then
+receives the `Authorization` header. Go's default `CheckRedirect` stops after 10 hops but
+does not strip credentials across hosts.
+
+```go
+// GOOD — do not carry credentials across an origin change
+client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+    if req.URL.Host != via[0].URL.Host {
+        req.Header.Del("Authorization")
+        req.Header.Del("Cookie")
+    }
+    return nil
+}
+```
+
 ## 5. Structured logging with slog
 
 `log/slog` (1.21+) is the standard. `fmt.Println`/`log.Printf` in services is
@@ -281,6 +331,12 @@ grep -rn -A4 'http.ResponseWriter$' --include='*.go' . | grep 'struct'
 # Tooling
 golangci-lint run --enable-only bodyclose,noctx,gosec ./...   # noctx: requests without ctx
 go vet ./...
+
+# --- Cookies and redirects (§4a, §4b) ---
+grep -rn 'SetCookie' --include='*.go' . | grep -v _test          # then read each for Secure/HttpOnly/SameSite [HIGH]
+grep -rnE 'http\.Cookie\{' -A6 --include='*.go' . | grep -L 'HttpOnly' 2>/dev/null
+grep -rnE 'Redirect\(|Location.*r\.(URL|Form|Header)' --include='*.go' .   # open redirect [HIGH]
+grep -rn 'CheckRedirect' --include='*.go' .                      # absent = headers cross origins [MEDIUM]
 ```
 
 Severity guide: no server timeouts internet-facing HIGH; default client in
