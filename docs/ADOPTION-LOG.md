@@ -4010,6 +4010,61 @@ its least representative slice.* Recorded as a **correction to shipped text**, n
 finding — and as evidence for keeping the "date every number to its source" discipline, since
 the number that needed revising was one we had already published.
 
+## 2026-09-21 — the first external-guide gap-check: sota-python against Bandit's own test registry
+
+**Intake shape: a gap-check against an external authoritative enumeration**, the method this
+library already used for Go (OWASP Go-SCP) and Rust (ANSSI). **Denominator: 75 tests**, read
+from Bandit 1.9.4's own registry (`plugins_by_id` + `blacklist_by_id`) rather than its docs
+page — **the docs page returned ~50 tests with B3xx/B4xx missing entirely and B324 misfiled
+under B2xx**, so the published list would have produced a wrong denominator in both
+directions.
+
+Swept as 29 concept clusters over all 8 `sota-python` files (2,210 lines). **20 of 29 clusters
+already covered**, several thoroughly — `rules/05` alone carries deserialization bans,
+subprocess argv, SQL parameterisation, path traversal, zip/tar slip, randomness, XML/SSRF and
+a dedicated §7a on `assert` under `-O`.
+
+| gap | bandit | verdict |
+|---|---|---|
+| PEP 594 removals — no coverage of the 3.13 stdlib cliff | B312 B401 | **adopted** → `rules/01` §7a |
+| no crypto delegation pointer, despite router rule 18 | B304 B305 B413 | **adopted** → `rules/05` §6a |
+| temp-file creation and permissions | B103 B108 B306 | **adopted** → `rules/05` §4a |
+| paramiko host-key policy | B601 B507 | **adopted** → `rules/05` §6b |
+| debug console mechanism (Django settings already covered) | B201 | **adopted, scoped down** → `rules/05` §8a |
+| snmp · httpoxy · bind 0.0.0.0 · trojansource | B508 B509 B412 B104 B613 | **rejected** — too narrow, CGI-era, infra-owned, or language-agnostic |
+
+### The method's own two false positives, which is why the rule exists
+
+Grep flagged **exec/eval** (1 hit) and **XXE** (1 hit) as gaps. Opening the files killed
+both: §1 is "Deserialization & code execution bans", and §7 names `defusedxml` *and*
+`lxml.etree.XMLParser(resolve_entities=False, no_network=True)`. The counts were regex
+artifacts. **Grep answers "does this string appear", never "is this idea covered"** — and a
+third finding was scoped down the same way, because Django's `DEBUG=False` turned out to be
+covered already at `rules/07` §2, leaving only the mechanism uncovered.
+
+### What was verified rather than recalled
+
+- **PEP 594 is Final; its `Python-Version: 3.11` header is the DEPRECATION version and the
+  removals landed in 3.13** — the distinction that gets misread, and the reason the section
+  states both.
+- `tempfile.mktemp` is *"Deprecated since version 2.3"* with the TOCTOU reason quoted from
+  the stdlib docs; `mkstemp` guarantees owner-only permissions and no creation race given
+  `O_EXCL`. **The docs do not state an octal mode, so the rule does not claim `0o600`.**
+- **paramiko's default is `RejectPolicy` — safe.** The defect is opting *out* via
+  `AutoAddPolicy`, so the rule is written as "do not opt out", not "fix the default".
+- Werkzeug's debugger executes arbitrary code with `evalex`, **is PIN-protected by default**,
+  and its own docs call the PIN *"not meant to entirely secure the debugger"* — so the rule
+  calls it friction, not a control, rather than claiming unauthenticated RCE.
+
+**All eight shipped checklist greps were run against a known-bad and a known-good fixture**
+before landing: each fired on the bad file and none on the good one, with `mkstemp` and
+`usedforsecurity=False` correctly excluded.
+
+**Meta-finding worth keeping: the most valuable result was not a security finding.** Bandit's
+`telnetlib` test surfaced the PEP 594 cliff, which is an upgrade hazard, not a vulnerability.
+An external enumeration finds things its own category does not describe — which is the
+argument for running this against the other eight languages.
+
 ## 2026-09-21 — ROADMAP 57, first of five: the Python public-API section
 
 **Adopted** → `sota-python` rules/03 §13 "Public API surface — what you are promising", the

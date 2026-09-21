@@ -193,6 +193,33 @@ checks (`pre-commit run --all-files`) — local hooks are convenience, not enfor
 - **3.14 — `compression.zstd`** (PEP 784): stdlib Zstandard, also wired into
   `tarfile`/`zipfile`/`shutil`. Drops the third-party `zstandard` dep on a 3.14+ floor.
 
+## 7a. What 3.13 REMOVED — the PEP 594 cliff
+
+§7 is what you gain by raising the floor. This is what breaks, and it is the half that turns
+a routine bump into an outage. **PEP 594 (Status: Final) deprecated ~20 stdlib modules in
+3.11 and CPython removed them in 3.13** — the PEP's own `Python-Version: 3.11` header is the
+*deprecation* version, not the removal one, which is the detail that gets misread.
+
+Removed in 3.13: `telnetlib`, `cgi`, `cgitb`, `crypt`, `nntplib`, `smtpd`, `pipes`,
+`asynchat`, `asyncore`, `imghdr`, `sndhdr`, `sunau`, `aifc`, `audioop`, `chunk`, `uu`,
+`xdrlib`, `mailcap`, `msilib`, `nis`, `spwd`, `ossaudiodev`.
+
+**The failure mode is an ImportError at runtime, not at install time**, and it lands in the
+paths least covered by tests — a `cgi.parse_header()` in a legacy upload handler, `crypt` in
+an old auth shim, `pipes.quote` in a deploy script, `smtpd` in a test fixture. A dependency
+you do not control can also import one; the traceback then names *their* module, not yours.
+
+```bash
+# BEFORE bumping the floor to 3.13 — grep first, and include your venv, not just src/
+grep -rnE '\b(import|from)\s+(telnetlib|cgi|cgitb|crypt|nntplib|smtpd|pipes|asynchat|asyncore|imghdr|sndhdr|sunau|aifc|audioop|chunk|uu|xdrlib|mailcap|msilib|nis|spwd|ossaudiodev)\b' \
+  --include='*.py' . 
+```
+
+Two of these have security weight beyond the bump and are called out again in rules/05:
+`telnetlib` (plaintext credentials) and `crypt` (weak, platform-dependent hashing). Their
+replacements are not drop-in — `cgi.parse_header` has no stdlib successor, and `crypt` users
+want a password-hashing library, not another stdlib module.
+
 ## 8. Free-threading awareness (3.13t/3.14t)
 
 Free-threaded CPython (PEP 703, no GIL) is **officially supported since 3.14** (PEP 779) —
@@ -277,4 +304,8 @@ grep -n "select" pyproject.toml                            # B/S/ASYNC missing f
 
 # Hygiene
 git ls-files | grep -E "\.venv/|__pycache__|\.pyc$"        # committed artifacts [LOW]
+
+# --- PEP 594 removals before a 3.13 floor bump (§7a) [HIGH — ImportError at runtime] ---
+grep -rnE '\b(import|from)\s+(telnetlib|cgi|cgitb|crypt|nntplib|smtpd|pipes|asynchat|asyncore|imghdr|sndhdr|sunau|aifc|audioop|chunk|uu|xdrlib|mailcap|msilib|nis|spwd|ossaudiodev)\b' \
+  --include='*.py' .
 ```

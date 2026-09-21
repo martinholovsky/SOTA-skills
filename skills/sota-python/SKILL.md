@@ -98,11 +98,11 @@ information, not omission).
 
 | File | Read this when... |
 |---|---|
-| `rules/01-tooling-project-setup.md` | starting/scaffolding a project; reviewing pyproject/uv/ruff/CI setup; choosing type checker; questions about uv lockfiles, PEP 723 scripts, src/ layout, 3.12–3.14 features, free-threading |
+| `rules/01-tooling-project-setup.md` | starting/scaffolding a project; reviewing pyproject/uv/ruff/CI setup; choosing type checker; questions about uv lockfiles, PEP 723 scripts, src/ layout, 3.12–3.14 features, free-threading; **what 3.13 REMOVED (PEP 594)** before a floor bump |
 | `rules/02-typing-correctness.md` | annotating APIs; choosing TypedDict vs dataclass vs pydantic; Protocol vs ABC; generics/`Self`/`ParamSpec`; Any leaks; **in-band sentinels (`-1` for absent) — the defect `int \| None` exists to prevent, invisible to the type checker**; `assert_never` exhaustiveness; where runtime validation belongs |
 | `rules/03-idioms-pitfalls.md` | any general Python code; mutable defaults, closures, comprehensions, context managers, pathlib, EAFP, dataclass/enum patterns, itertools/functools; designing exceptions; logging setup; **the public API surface** (`__all__`, keyword-only parameters, `__slots__`, deprecation) |
 | `rules/04-async.md` | any `async def` in sight: TaskGroup vs gather, blocking-the-loop, fire-and-forget, timeouts/cancellation, async generators, anyio, sync-ORM-in-async bugs |
-| `rules/05-security.md` | auditing for vulnerabilities; handling untrusted input; subprocess/SQL/paths/archives/secrets; pickle/eval/yaml; SSRF/XML; dependency auditing and supply chain |
+| `rules/05-security.md` | auditing for vulnerabilities; handling untrusted input; subprocess/SQL/paths/archives/secrets; pickle/eval/yaml; SSRF/XML; dependency auditing and supply chain; temp-file and permission hygiene; where crypto is owned; remote-host trust; debug consoles in production |
 | `rules/06-performance.md` | anything slow: profiling tool choice, hot-loop suspects, numpy/polars vectorization, functools caching caveats, threads vs processes vs asyncio, lazy imports/startup |
 | `rules/07-frameworks-testing.md` | FastAPI (DI, boundary models, sync-in-async), Django (N+1, select_related, migrations), pytest (fixtures, parametrize, independence, hypothesis). **Test *strategy* — suite shape, TDD, doubles, test data, flake policy — lives in `sota-testing`; load it for any build that writes logic. This file owns Python runner mechanics only.** |
 

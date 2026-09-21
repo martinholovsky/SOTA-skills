@@ -91,6 +91,33 @@ def safe_join(base: Path, user_path: str) -> Path:
   acceptable (usually not for upload dirs: check `os.path.realpath` containment after write,
   or `O_NOFOLLOW`).
 
+## 4a. Temporary files: the name is not the file
+
+`tempfile.mktemp()` returns a *name* and creates nothing. **Deprecated since Python 2.3**,
+and the stdlib says why: *"By the time you get around to doing anything with the file name it
+returns, someone else may have beaten you to the punch."* That is a TOCTOU window in a
+world-writable directory — the attacker wins it by creating a symlink at that path first.
+
+- **Use `mkstemp()` / `NamedTemporaryFile()`.** The docs guarantee the file is *"readable and
+  writable only by the creating user ID"*, not executable by anyone, and that *"there are no
+  race conditions in the file's creation"* given a working `os.O_EXCL`.
+- **A hardcoded `/tmp/...` path is the same bug without the API call**, and it is the more
+  common one — predictable, world-writable, and often written before anything checks it.
+  Honour `TMPDIR` by letting `tempfile` choose.
+- **Widening permissions after the fact undoes the guarantee.** `os.chmod(path, 0o777)` on a
+  secrets file, or a service `umask(0)`, hands the file to every local account.
+
+```python
+# BAD — name now, file later; and the mode is set after content is written
+path = tempfile.mktemp(suffix=".key")
+open(path, "w").write(secret); os.chmod(path, 0o644)
+
+# GOOD — created atomically, owner-only from the first byte
+fd, path = tempfile.mkstemp(suffix=".key")
+with os.fdopen(fd, "w") as fh:
+    fh.write(secret)
+```
+
 ## 5. Archive extraction (zip/tar slip)
 
 Malicious archives contain members named `../../home/user/.bashrc`, absolute paths, links,
@@ -136,6 +163,37 @@ code  = f"{secrets.randbelow(1_000_000):06d}"
   pin an internal CA bundle instead.
 - `hashlib.md5/sha1` only for non-security checksums — and mark it:
   `hashlib.md5(data, usedforsecurity=False)`.
+
+## 6a. Cryptography: this skill does not own it
+
+§6 covers *randomness*. Algorithm and protocol choice — AEAD selection, nonce discipline,
+key derivation, constant-time comparison, crypto agility, post-quantum migration — is
+**`sota-code-security` rules/04**, deliberately, because those decisions are identical across
+languages and drift badly when restated per runtime. Load it before designing anything
+cryptographic; this section is only the Python-specific part.
+
+- **Use PyCA `cryptography`** for general-purpose work; it is the library the ecosystem
+  standardises on. `pycryptodome` exists as an API-compatible successor to the long-dead
+  `pycrypto` import path — if you find `from Crypto...` in a codebase, establish which of the
+  two is actually installed before changing anything, because the import name is the same.
+- **`hashlib` is not a password API.** `md5`/`sha1` for *security* purposes are flagged
+  (bandit B303/B324); for a non-security digest pass `usedforsecurity=False` so the intent is
+  in the code rather than in a reviewer's head. Password hashing wants argon2/bcrypt/scrypt,
+  not a bare hash — the choice itself is `sota-code-security` rules/04.
+- **`crypt` was removed in 3.13** (PEP 594, rules/01 §7a). Code still importing it is both
+  broken on a modern floor and using weak, platform-dependent hashing.
+
+## 6b. Remote host trust: verify, or you are trusting DNS
+
+- **`paramiko`'s default is safe** — `SSHClient` uses `RejectPolicy`, which raises on an
+  unknown host key. The defect is opting *out*:
+  `set_missing_host_key_policy(AutoAddPolicy())` stores and saves any key it is offered, so
+  the first connection — the one an attacker most wants to intercept — is unauthenticated.
+  `WarningPolicy` is the same hole with a log line. Load known-hosts
+  (`client.load_system_host_keys()`) and keep the default.
+- **`telnetlib` was removed in 3.13** and was plaintext credentials before that.
+- TLS verification lives in §7; the same principle applies to both: an unverified peer is an
+  unauthenticated peer, whatever the transport.
 
 ## 7. XML & SSRF quickies
 
@@ -188,6 +246,23 @@ both. So any validation, authorization, or bounds check written as an `assert`
 - **Header/CRLF injection:** never place raw user input into HTTP headers, email headers
   (`email.message` does folding — still validate), or redis/SMTP protocol lines; reject
   `\r`/`\n` in any value destined for a protocol line.
+
+## 8a. Debug consoles and error pages in production
+
+Django's `DEBUG=False` is already a settings rule (rules/07 §2). This is the mechanism, and
+it generalises past Django.
+
+- **Werkzeug's interactive debugger executes arbitrary Python** in any traceback frame when
+  `evalex` is on — which is what Flask's `debug=True` turns on. Its own documentation is
+  unusually blunt: *"The debugger must never be used on production machines. We cannot stress
+  this enough."* It is PIN-protected by default, and the same docs say the PIN is *"not meant
+  to entirely secure the debugger"* — treat it as friction, not a control.
+- **"Production means anything that is not development, and anything that is publicly
+  accessible"** — including a staging box with a public DNS name.
+- **The non-executing half still leaks.** A debug error page prints settings, environment and
+  often connection strings; an unauthenticated `/metrics` or a profiler endpoint does the same
+  more quietly. The control is that debug state is read from the environment and defaults to
+  *off*, never a literal in source that someone must remember to flip.
 
 ## 9. Dependency & supply-chain hygiene
 
@@ -276,4 +351,19 @@ grep -rn "webbrowser.open" --include="*.py" src/                               #
 # Supply chain
 grep -rn "git+http" pyproject.toml uv.lock 2>/dev/null | grep -v "@[0-9a-f]\{40\}"
 grep -rn "nosec\|noqa: S" --include="*.py" src/                               # justified suppressions?
+
+# --- Temp files and permissions (§4a) ---
+grep -rn "mktemp(" --include="*.py" src/                              # TOCTOU [HIGH]
+grep -rnE '"/tmp/|'"'"'/tmp/' --include="*.py" src/                   # predictable path [MEDIUM]
+grep -rnE 'chmod\(.*0o(6|7)[0-7][0-7]|umask\(0\)' --include="*.py" src/  # widened perms [HIGH if secrets]
+
+# --- Crypto (§6a) — choice itself is sota-code-security rules/04 ---
+grep -rnE '\bmd5\(|\bsha1\(' --include="*.py" src/ | grep -v usedforsecurity   # [MEDIUM]
+grep -rn "from Crypto" --include="*.py" src/                          # pycrypto vs pycryptodome [MEDIUM]
+
+# --- Remote host trust (§6b) ---
+grep -rnE 'AutoAddPolicy|WarningPolicy' --include="*.py" src/         # host key not verified [HIGH]
+
+# --- Debug consoles (§8a) ---
+grep -rnE 'debug\s*=\s*True|DEBUG\s*=\s*True' --include="*.py" src/  # literal, not env [HIGH in prod path]
 ```
