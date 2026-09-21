@@ -8,11 +8,20 @@ this repo exists to gate against. So the map is DERIVED: every node and edge is 
 of the tree at generation time, every extracted skill name is validated against the real
 skills/ directory listing, and the run prints its denominators so a drop is visible.
 
-Four pages:
+Five pages:
   1. Router -> skills, grouped by family (the routing table in skills/sota/SKILL.md).
-  2. The 21 cross-cutting routing rules, as a bipartite rule -> skill map.
-  3. The MEASURED cross-skill reference graph, thresholded (default: weight >= 3).
+  2. The 21 cross-cutting routing rules and the skills each one names.
+  3. The MEASURED cross-skill reference graph, aggregated to families.
   4. A worked slice: what an SSO task actually traverses.
+  5. Section x language: which topics each language skill gives its own rules file.
+
+LAYOUT IS A CORRECTNESS CONCERN HERE, not decoration. Three of these pages were first
+drawn in forms that RENDER but cannot be READ: 63 bipartite edges collapsed into one
+orthogonal trunk running through the skill boxes; 110 edges over 38 nodes made a hairball;
+and a 2x3 grid put the router above the top row so every edge to a lower family crossed
+the boxes above it. The fixes are structural -- text instead of edges, aggregate to
+families, one row instead of a grid -- and each was found by rendering the page and
+looking at it, which no XML check can do.
 
 Usage: python3 scripts/gen-skill-map.py [--min-weight N] [--out PATH] [--json PATH]
 """
@@ -46,6 +55,63 @@ FAMILIES = [
         "sota-javascript-typescript", "sota-dotnet", "sota-php", "sota-ruby",
         "sota-shell-scripting"]),
 ]
+
+
+# --- page 5: section x language ------------------------------------------------
+# Hand-declared like FAMILIES, and gated the same way: every rules file of every language
+# skill must appear below, or the run aborts. A file added without a topic would otherwise
+# vanish from the matrix silently, which is the exact failure this map exists to avoid.
+LANGS = ["rust", "golang", "c-cpp", "jvm", "python", "javascript-typescript",
+         "dotnet", "php", "ruby"]
+LANG_LABEL = {"javascript-typescript": "js/ts", "c-cpp": "c/c++", "dotnet": ".NET",
+              "golang": "go", "python": "python", "rust": "rust", "jvm": "jvm",
+              "php": "php", "ruby": "ruby"}
+TOPIC_ORDER = ["Idioms / baseline", "API / design", "Errors", "Typing", "Concurrency",
+               "Memory / UB", "Security", "Web / HTTP", "Performance",
+               "Tooling / CI / supply chain", "Testing"]
+# file number -> topics it carries. A number in two topics means one file covers both.
+LANG_TOPICS = {
+    "rust": {"01": ["Idioms / baseline", "API / design"], "02": ["Errors"],
+             "03": ["Memory / UB"], "04": ["Concurrency"], "05": ["Security"],
+             "06": ["Performance"],
+             "07": ["Tooling / CI / supply chain", "Testing"]},
+    "golang": {"01": ["Errors"], "02": ["Idioms / baseline", "API / design"],
+               "03": ["Concurrency"], "04": ["Web / HTTP"], "05": ["Security"],
+               "06": ["Performance"],
+               "07": ["Tooling / CI / supply chain", "Testing"]},
+    "c-cpp": {"01": ["Idioms / baseline"], "02": ["Memory / UB"], "03": ["Memory / UB"],
+              "04": ["Security"], "05": ["Concurrency"],
+              "06": ["Tooling / CI / supply chain", "Testing"], "07": ["Performance"]},
+    "jvm": {"01": ["Idioms / baseline"], "02": ["API / design"], "03": ["Concurrency"],
+            "04": ["Security"], "05": ["Performance"],
+            "06": ["Tooling / CI / supply chain", "Testing"]},
+    "python": {"01": ["Tooling / CI / supply chain"], "02": ["Typing"],
+               "03": ["Idioms / baseline"], "04": ["Concurrency"], "05": ["Security"],
+               "06": ["Performance"], "07": ["Testing"]},
+    "javascript-typescript": {"01": ["Typing"], "02": ["Idioms / baseline"],
+                              "03": ["Concurrency"], "04": ["Web / HTTP"],
+                              "05": ["Security"], "06": ["Performance"],
+                              "07": ["Testing", "Tooling / CI / supply chain"]},
+    "dotnet": {"01": ["Idioms / baseline"], "02": ["API / design"],
+               "03": ["Concurrency"], "04": ["Security"], "05": ["Performance"],
+               "06": ["Tooling / CI / supply chain", "Testing"]},
+    "php": {"01": ["Idioms / baseline", "Concurrency"], "02": ["Security"],
+            "03": ["Security"], "04": ["Security", "Web / HTTP"],
+            "05": ["Tooling / CI / supply chain", "Testing"], "06": ["Performance"]},
+    "ruby": {"01": ["Idioms / baseline"], "02": ["Security"], "03": ["Web / HTTP"],
+             "04": ["Tooling / CI / supply chain", "Testing"],
+             "05": ["Concurrency", "Performance"]},
+}
+# A topic carried by a file that also carries another is marked shared; a topic present
+# only as a section inside a broader file is marked inline. Both are read off the tree.
+INLINE = {("php", "Concurrency"): "01 §6"}
+
+
+def skill_family(name):
+    for fam, fill, stroke, members in FAMILIES:
+        if name in members:
+            return fam, fill, stroke
+    return "?", "#ffffff", "#9e9e9e"
 
 
 def tracked(pattern):
@@ -99,7 +165,10 @@ def main():
         end = rule_pos[i + 1][1] if i + 1 < len(rule_pos) else len(xc)
         named = sorted({n for n in re.findall(r'sota-[a-z0-9-]+', xc[start:end])
                         if n in domain})
-        rules.append((num, " ".join(title.split())[:58], named))
+        t = " ".join(title.split())
+        if len(t) > 64:                      # cut at a word boundary, not mid-word:
+            t = t[:64].rsplit(" ", 1)[0] + "…"   # "...crypto skill (b" was the tell
+        rules.append((num, t, named))
 
     # ---- measured cross-skill edges ----------------------------------------
     edges = collections.Counter()
@@ -122,8 +191,25 @@ def main():
     for (a, b), n in edges.items():
         indeg[b] += n
 
+    # Per-language stats, and the fail-closed check that every rules file is classified.
+    lang_files = {}
+    for lang in LANGS:
+        paths = [f for f in files if f.startswith("skills/sota-%s/rules/" % lang)]
+        nums = sorted(pathlib.Path(f).name.split("-")[0] for f in paths)
+        declared = sorted(LANG_TOPICS[lang])
+        if nums != declared:
+            sys.exit("gen-skill-map: LANG_TOPICS[%r] does not match the tree.\n"
+                     "  on disk: %s\n  declared: %s" % (lang, nums, declared))
+        total = sum(len((ROOT / f).read_text(encoding="utf-8").splitlines()) for f in paths)
+        lang_files[lang] = (total, len(paths))
+    unknown = {t for l in LANG_TOPICS.values() for ts in l.values() for t in ts
+               } - set(TOPIC_ORDER)
+    if unknown:
+        sys.exit("gen-skill-map: topics not in TOPIC_ORDER: %s" % sorted(unknown))
+
     pages = [page_router(), page_rules(rules),
-             page_graph(edges, indeg, args.min_weight), page_slice()]
+             page_graph(edges, indeg, args.min_weight), page_slice(),
+             page_matrix(lang_files)]
     xml = ('<mxfile host="gen-skill-map.py" type="device">\n'
            + "\n".join(pages) + "\n</mxfile>\n")
     (ROOT / args.out).write_text(xml, encoding="utf-8")
@@ -144,6 +230,9 @@ def main():
     print("cross-skill edges   : %d distinct, %d mentions"
           % (len(edges), sum(edges.values())))
     print("drawn on page 3     : %d (weight >= %d)" % (len(shown), args.min_weight))
+    print("language skills      : %d, %d rules files, %d lines"
+          % (len(LANGS), sum(v[1] for v in lang_files.values()),
+             sum(v[0] for v in lang_files.values())))
     print("wrote %s and %s" % (args.out, args.json))
 
 
@@ -157,7 +246,18 @@ def esc(s):
     XML attribute is malformed XML: the first attempt did exactly that, the file stopped
     parsing, and draw.io answered with a bare 'Export failed' naming no line or reason.
     Escaping it means the XML parser hands draw.io '<br>', which html=1 then renders."""
-    return html.escape(str(s), quote=True).replace("\n", "&lt;br&gt;")
+    # Backticks are stripped, not escaped: draw.io's renderer treats them as MATH
+    # delimiters, so `state` came out italic and `sota-shell-scripting` rendered as
+    # "sota - shell - script in g" -- garbled algebra in a diagram about skills.
+    return html.escape(str(s).replace("`", ""), quote=True).replace("\n", "&lt;br&gt;")
+
+
+def slug(name):
+    """Cell IDs are XML ATTRIBUTES and cell() escapes only the value, not the id. A family
+    name like 'Platform & delivery' therefore emitted id="f_Platform & delivery", which is
+    malformed XML -- and draw.io rendered it anyway, so "it opens" did not catch it. The
+    XML parse did. Keep ids to a safe token set."""
+    return re.sub(r'[^A-Za-z0-9_]', '_', name)
 
 
 def cell(cid, value, style, x, y, w, h, parent="1"):
@@ -205,104 +305,140 @@ def page_router():
               "competing descriptions.\n\n"
               "Measured 2026-09-20: correct=0.900 on the 10-case golden set, 1.000 on "
               "the 5-case SSO set.",
-              NOTE, 40, 30, 520, 150)]
+              NOTE, 40, 30, 620, 170)]
     c.append(cell("router",
                   "sota  (router)\nrouting table · 21 cross-cutting rules\n"
                   "BUILD mode · AUDIT mode",
                   BOX + "fillColor=#000000;fontColor=#ffffff;strokeColor=#000000;"
                         "fontStyle=1;fontSize=13;",
-                  700, 60, 320, 90))
-    # Two columns. The row advances by the TALLER of its two groups, not by whichever was
-    # drawn last: Security core has 11 members and its right-hand neighbour has 5, so
-    # advancing by the last one overlapped the next row on top of it. Caught by rendering
-    # the page and looking at it, which is the only check that sees a collision.
-    x, y, row_max = 40, 230, 0
+                  1050, 120, 340, 100))
+    # ONE ROW, not a 2x3 grid. In a grid the router sits above the top row, so every
+    # edge to a lower family must cross the family boxes above it -- rendered, six edges
+    # ran straight down THROUGH Security core and Platform & delivery. A single row means
+    # each edge reaches its own column and crosses nothing. Straight edges, because
+    # orthogonal routing would re-introduce a shared horizontal channel.
+    x, y, gap = 40, 320, 390
     for fi, (fname, fill, stroke, members) in enumerate(FAMILIES):
         gh = 40 + 28 * len(members)
-        row_max = max(row_max, gh)
         gid = "fam%d" % fi
         c.append(cell(gid, "%s  (%d)" % (fname, len(members)),
                       "swimlane;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;"
                       "startSize=26;fillColor=%s;strokeColor=%s;" % (fill, stroke),
-                      x, y, 380, gh))
+                      x + fi * gap, y, 370, gh))
         for mi, m in enumerate(members):
             c.append(cell("%s_%d" % (gid, mi), m.replace("sota-", ""),
                           BOX + "fillColor=#ffffff;strokeColor=%s;" % stroke,
-                          10, 30 + 28 * mi, 360, 22, parent=gid))
-        c.append(edge("e_%s" % gid, "router", gid, "", "strokeColor=#666666;"))
-        if fi % 2 == 0:
-            x = 480
-        else:
-            x, y, row_max = 40, y + row_max + 40, 0
-    return page("p1", "1 · Router to skills", c, 1700, 1700)
+                          10, 30 + 28 * mi, 350, 22, parent=gid))
+        # Pin the endpoints: leave the router's bottom, arrive at the family's TOP edge.
+        # Unpinned, draw.io picks the nearest side, so the two outermost edges attached to
+        # a SIDE and clipped the corner of the box next door.
+        c.append(edge("e_%s" % gid, "router", gid, "",
+                      "edgeStyle=none;strokeColor=#888888;endArrow=blockThin;"
+                      "exitX=0.5;exitY=1;exitDx=0;exitDy=0;"
+                      "entryX=0.5;entryY=0;entryDx=0;entryDy=0;"))
+    return page("p1", "1 · Router to skills", c, 2420, 760)
 
 
 def page_rules(rules):
+    """No edges. 63 links between two tight columns all share one orthogonal channel and
+    route THROUGH the skill boxes -- rendered, it was a single vertical trunk and you could
+    not tell which rule reached which skill. The information is 'rule N names X, Y, Z', so
+    the readable form is the row itself."""
     c = [cell("note",
               "Page 2 — the 21 cross-cutting routing rules, verbatim from "
               "skills/sota/SKILL.md.\n\n"
-              "These are the explicit hand-offs: which skill wins when two look "
-              "plausible (rule 9 splits infra four ways; rule 10 separates identity "
-              "infrastructure from app-level login; rule 18 fans cryptography out "
-              "because there is deliberately no crypto skill).\n\n"
-              "An edge is drawn only where the rule NAMES the skill.",
-              NOTE, 40, 20, 600, 150)]
-    targets = sorted({s for _, _, names in rules for s in names})
-    for i, t in enumerate(targets):
-        c.append(cell("t_%s" % t, t.replace("sota-", ""),
-                      BOX + "fillColor=#dae8fc;strokeColor=#6c8ebf;",
-                      1120, 200 + 40 * i, 250, 26))
-    for i, (num, title, names) in enumerate(rules):
-        rid = "r%d" % num
-        c.append(cell(rid, "%d. %s" % (num, title),
+              "These are the explicit hand-offs: which skill wins when two look plausible. "
+              "The right column lists exactly the skills each rule NAMES — drawn as text "
+              "rather than as edges, because 63 edges between two columns render as one "
+              "unreadable trunk.",
+              NOTE, 40, 20, 700, 120)]
+    y = 180
+    c.append(cell("hdr_r", "rule",
+                  BOX + "fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;", 40, y, 470, 26))
+    c.append(cell("hdr_s", "skills it names",
+                  BOX + "fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;", 520, y, 640, 26))
+    y += 34
+    for num, title, names in rules:
+        h = 30
+        c.append(cell("r%d" % num, "%d. %s" % (num, title),
                       BOX + "fillColor=#fff2cc;strokeColor=#d6b656;align=left;"
-                            "spacingLeft=8;",
-                      60, 200 + 40 * i, 450, 30))
-        for t in names:
-            c.append(edge("e_%s_%s" % (rid, t), rid, "t_%s" % t, "",
-                          "strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;"))
-    return page("p2", "2 · Cross-cutting rules", c, 1550, 1150)
+                            "spacingLeft=8;", 40, y, 470, h))
+        label = " · ".join(n.replace("sota-", "") for n in names) or "—"
+        c.append(cell("rs%d" % num, label,
+                      BOX + "fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;"
+                            "spacingLeft=8;", 520, y, 640, h))
+        y += h + 6
+    return page("p2", "2 · Cross-cutting rules", c, 1250, y + 60)
 
 
 def page_graph(edges, indeg, minw):
-    shown = {k: v for k, v in edges.items() if v >= minw}
-    nodes = sorted({n for k in shown for n in k})
+    """Aggregated to families, not drawn as 110 skill-to-skill edges. At 38 nodes the
+    detailed graph is a hairball: orthogonal routing threads edges behind boxes and no
+    individual link is traceable. Six family nodes carry the same structure legibly, and
+    the detail that a reader actually wants -- which skills are hubs, which single links
+    are strongest -- is exact text beside it rather than a shape to squint at."""
+    fam_edges = collections.Counter()
+    for (a, b), w in edges.items():
+        fa, fb = skill_family(a)[0], skill_family(b)[0]
+        if fa != fb:
+            fam_edges[(fa, fb)] += w
+    internal = collections.Counter()
+    for (a, b), w in edges.items():
+        fa, fb = skill_family(a)[0], skill_family(b)[0]
+        if fa == fb:
+            internal[fa] += w
+
     c = [cell("note",
-              "Page 3 — the MEASURED cross-skill reference graph: every place one "
-              "skill's files name another skill.\n\n"
-              "%d distinct edges / %d mentions in the tree; %d drawn here at "
-              "weight >= %d. Ring is inbound weight — the centre is what everything "
-              "else defers to. Edge thickness is weight.\n\n"
-              "This is the layer a routing measurement does NOT cover: reaching the "
-              "right skill is page 1, but whether the rule you need is in THIS file or "
-              "one it defers to is here. Full data, including rules/NN and § targets, "
-              "in docs/skill-map.json."
-              % (len(edges), sum(edges.values()), len(shown), minw),
-              NOTE, 30, 20, 660, 170)]
-    ranked = sorted(nodes, key=lambda n: -indeg[n])
-    hub, inner, outer = ranked[:1], ranked[1:9], ranked[9:]
-    cx, cy = 850, 780
+              "Page 3 — how the skills reference each other, aggregated to families.\n\n"
+              "%d distinct skill-to-skill edges / %d mentions in the tree. Drawing all of "
+              "them is a hairball at 38 nodes, so the graph is aggregated: an arrow is the "
+              "TOTAL weight of every reference from one family to another, and the number "
+              "inside a family is references within it.\n\n"
+              "This is the layer a routing measurement does not cover: routing gets you to "
+              "the right skill, this is which skill defers to which. Every individual edge, "
+              "with its rules/NN and § targets, is in docs/skill-map.json."
+              % (len(edges), sum(edges.values())),
+              NOTE, 40, 20, 720, 170)]
+
+    import math as _m
+    names = [f[0] for f in FAMILIES]
+    cx, cy, R = 660, 720, 380
     pos = {}
-    for n in hub:
-        pos[n] = (cx - 90, cy - 20)
-    for i, n in enumerate(inner):
-        a = 2 * math.pi * i / max(1, len(inner))
-        pos[n] = (cx + 300 * math.cos(a) - 90, cy + 240 * math.sin(a) - 20)
-    for i, n in enumerate(outer):
-        a = 2 * math.pi * i / max(1, len(outer))
-        pos[n] = (cx + 640 * math.cos(a) - 90, cy + 540 * math.sin(a) - 20)
-    for n in nodes:
-        x, y = pos[n]
-        top = n in hub
-        c.append(cell("g_%s" % n, "%s\n%d inbound" % (n.replace("sota-", ""), indeg[n]),
-                      BOX + ("fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;"
-                             if top else "fillColor=#ffffff;strokeColor=#9e9e9e;"),
-                      int(x), int(y), 180, 40))
-    for i, ((a, b), w) in enumerate(sorted(shown.items(), key=lambda kv: kv[1])):
-        c.append(edge("ge%d" % i, "g_%s" % a, "g_%s" % b, "",
-                      "strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;"
-                      "strokeWidth=%d;" % min(5, 1 + w // 6)))
-    return page("p3", "3 · Cross-skill references (measured)", c, 1800, 1600)
+    for i, fam in enumerate(names):
+        a = 2 * _m.pi * i / len(names) - _m.pi / 2
+        pos[fam] = (cx + R * _m.cos(a) - 110, cy + R * _m.sin(a) - 45)
+    for fam, fill, stroke, members in FAMILIES:
+        x, y = pos[fam]
+        c.append(cell("f_%s" % slug(fam), "%s\n%d skills · %d internal refs"
+                      % (fam, len(members), internal[fam]),
+                      BOX + "fillColor=%s;strokeColor=%s;fontStyle=1;verticalAlign=middle;"
+                      % (fill, stroke), int(x), int(y), 220, 90))
+    # straight edges: orthogonal routing is what put lines behind the boxes
+    for i, ((fa, fb), w) in enumerate(sorted(fam_edges.items(), key=lambda kv: kv[1])):
+        if w < 10:
+            continue
+        c.append(edge("fe%d" % i, "f_%s" % slug(fa), "f_%s" % slug(fb), str(w),
+                      "edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;"
+                      "fontSize=10;labelBackgroundColor=#ffffff;"
+                      "strokeWidth=%d;" % min(6, 1 + w // 40)))
+
+    hubs = sorted(indeg.items(), key=lambda kv: -kv[1])[:10]
+    c.append(cell("panel_h",
+                  "MOST REFERENCED (inbound weight)\n\n"
+                  + "\n".join("%-26s %d" % (k.replace("sota-", ""), v) for k, v in hubs),
+                  BOX + "fillColor=#ffffff;strokeColor=#b85450;align=left;spacingLeft=10;"
+                        "verticalAlign=top;spacingTop=8;fontFamily=Courier New;fontSize=11;",
+                  1180, 200, 330, 240))
+    top = sorted(edges.items(), key=lambda kv: -kv[1])[:12]
+    c.append(cell("panel_e",
+                  "STRONGEST SINGLE LINKS\n\n"
+                  + "\n".join("%-22s -> %-22s %d"
+                               % (a.replace("sota-", ""), b.replace("sota-", ""), w)
+                               for (a, b), w in top),
+                  BOX + "fillColor=#ffffff;strokeColor=#6c8ebf;align=left;spacingLeft=10;"
+                        "verticalAlign=top;spacingTop=8;fontFamily=Courier New;fontSize=11;",
+                  1180, 470, 330, 280))
+    return page("p3", "3 · Cross-skill references (measured)", c, 1600, 1200)
 
 
 def page_slice():
@@ -351,10 +487,80 @@ def page_slice():
              ("s_det", "s_gap", ""), ("s_cs", "s_gap", "")]
     # slide the two labels that leave the router apart; they collided at the midpoint
     offsets = {("s_router", "s_ia"): "-0.45", ("s_router", "s_cs"): "0.45"}
+    # The four section edges leave ONE node for four stacked boxes. Orthogonal routing
+    # gives them a shared vertical channel that runs straight through §5 and §7 -- the
+    # "links go through other items" failure. Straight edges fan out instead.
+    fan = {("s_ia", "s_ia3"), ("s_ia", "s_ia4"), ("s_ia", "s_ia5"), ("s_ia", "s_ia7")}
     for i, (a, b, lbl) in enumerate(links):
-        c.append(edge("se%d" % i, a, b, lbl, "strokeColor=#666666;",
-                      lx=offsets.get((a, b))))
+        st = ("edgeStyle=none;strokeColor=#82b366;endArrow=blockThin;"
+              if (a, b) in fan else "strokeColor=#666666;")
+        c.append(edge("se%d" % i, a, b, lbl, st, lx=offsets.get((a, b))))
     return page("p4", "4 · Worked slice: an SSO task", c, 1650, 800)
+
+
+def page_matrix(lang_files):
+    """Section x language. A grid, because that is what a comparison of 11 topics across 9
+    languages IS -- drawing it as nodes and edges would be the page-2 mistake again."""
+    c = [cell("note",
+              "Page 5 — section x language. Which topics each language skill gives its own "
+              "rules file.\n\n"
+              "SOLID = a file of its own. LIGHT = shares a file with another topic, or is a "
+              "section inside a broader file (the cell says which). BLANK = no dedicated "
+              "treatment.\n\n"
+              "Four sections are universal — idioms, security, performance, tooling. The "
+              "variation is not arbitrary: Errors gets a file only where the error MODEL is "
+              "distinctive (Rust, Go); Typing only in the gradual-typing pair; Memory/UB "
+              "only where memory is manual. `sota-shell-scripting` is excluded — 9 files "
+              "with a different spine, grouped with languages but not a peer.",
+              NOTE, 40, 20, 900, 180)]
+    x0, y0, cw, rh, lw = 430, 230, 108, 34, 380
+    for j, lang in enumerate(LANGS):
+        c.append(cell("mh%d" % j, LANG_LABEL[lang],
+                      BOX + "fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;fontSize=11;",
+                      x0 + j * cw, y0, cw - 6, rh - 6))
+    for i, topic in enumerate(TOPIC_ORDER):
+        y = y0 + (i + 1) * rh
+        c.append(cell("mr%d" % i, topic,
+                      BOX + "fillColor=#f5f5f5;strokeColor=#999999;align=left;"
+                            "spacingLeft=10;fontStyle=1;fontSize=11;", 40, y, lw, rh - 6))
+        for j, lang in enumerate(LANGS):
+            nums = sorted(n for n, tops in LANG_TOPICS[lang].items() if topic in tops)
+            if not nums:
+                style = BOX + "fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;"
+                label = ""
+            else:
+                shared = any(len(LANG_TOPICS[lang][n]) > 1 for n in nums)
+                inline = INLINE.get((lang, topic))
+                label = inline or ", ".join(nums)
+                fam_fill = "#d5e8d4" if not (shared or inline) else "#eaf5e9"
+                fam_stroke = "#82b366" if not (shared or inline) else "#a9cfa5"
+                style = (BOX + "fillColor=%s;strokeColor=%s;fontSize=10;"
+                         % (fam_fill, fam_stroke))
+            c.append(cell("m%d_%d" % (i, j), label, style,
+                          x0 + j * cw, y, cw - 6, rh - 6))
+    y = y0 + (len(TOPIC_ORDER) + 1) * rh + 10
+    for lbl, key in (("rules-file lines", "lines"), ("files", "files")):
+        c.append(cell("mt_%s" % key, lbl,
+                      BOX + "fillColor=#ffffff;strokeColor=#999999;align=left;"
+                            "spacingLeft=10;fontSize=11;", 40, y, lw, rh - 6))
+        for j, lang in enumerate(LANGS):
+            n = lang_files[lang][0] if key == "lines" else lang_files[lang][1]
+            c.append(cell("mt%s%d" % (key, j), str(n),
+                          BOX + "fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;",
+                          x0 + j * cw, y, cw - 6, rh - 6))
+        y += rh
+    c.append(cell("m_note2",
+                  "Two asymmetries that do NOT track a language difference, and are "
+                  "therefore worth a decision rather than an explanation:\n"
+                  "· API / design has its own file in rust, go, jvm and .NET, and is "
+                  "sparse elsewhere (3–9 mentions in python, js/ts, php, ruby, c/c++).\n"
+                  "· jvm (%d lines, covering BOTH Java and Kotlin) and .NET (%d) are 3–4x "
+                  "thinner than go (%d), rust (%d) and python (%d)."
+                  % (lang_files["jvm"][0], lang_files["dotnet"][0],
+                     lang_files["golang"][0], lang_files["rust"][0],
+                     lang_files["python"][0]),
+                  NOTE, 40, y + 20, 900, 120))
+    return page("p5", "5 · Section x language", c, 1500, y + 180)
 
 
 if __name__ == "__main__":
