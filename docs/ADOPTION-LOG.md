@@ -4010,6 +4010,39 @@ its least representative slice.* Recorded as a **correction to shipped text**, n
 finding — and as evidence for keeping the "date every number to its source" discipline, since
 the number that needed revising was one we had already published.
 
+## 2026-09-21 — ROADMAP 57, first of five: the Python public-API section
+
+**Adopted** → `sota-python` rules/03 §13 "Public API surface — what you are promising", the
+reference section for item 57. The gap was measured rather than assumed: before this,
+`__all__`, `__slots__` and `keyword-only` each returned **0 hits across all seven
+`sota-python` rules files**, and `deprecat` returned 2 incidental mentions.
+
+Scope is Python *mechanism*, with the shared design rules left to `sota-architecture`:
+
+- **`__all__` controls exactly one thing and it is not privacy** — the `import *` name list
+  and the documented surface. The usual accident is re-exporting an import
+  (`from .internal import Session`) into a module with no `__all__`.
+- **A leading underscore promises nothing to the interpreter**; only `__name` in a class body
+  is mechanically different, and name mangling exists to avoid subclass collisions, not to
+  prevent access.
+- **Keyword-only parameters are an API decision** — a positional parameter is a promise about
+  *order* you can never change.
+- **`__slots__` is directional**: adding it to a released class is breaking, removing it is
+  not. Subclasses without their own `__slots__` regain a `__dict__` and the saving is gone.
+- **Deprecate with a decorator, not a docstring** — `warnings.deprecated` warns at runtime
+  *and* makes type checkers flag call sites.
+
+**Two facts fetched rather than recalled**, both from primary sources at time of writing:
+PEP 702 is **Status: Final, Python-Version: 3.13**, and `warnings.deprecated` carries
+*"Added in version 3.13"* in the stdlib docs — so the rule is gated at 3.13+ with
+`typing_extensions` named for older floors, which matters because this skill sets no hard
+floor and tells the reader to match the project's.
+
+**The checklist block was tested before shipping.** Its first draft used `grep -Lq`, where
+`-q` suppresses the output `-L` exists to produce — a check that silently reports nothing.
+Rewritten as `grep -q … || echo`, run against a fixture with one compliant and one
+non-compliant module, and watched to name exactly the non-compliant one.
+
 ## 2026-09-21 — item 58 closed by the measurement it asked for, and the checklist-format split deferred
 
 **Item 58 closed as (c).** The row opened with "jvm and .NET are 3–4× thinner than their

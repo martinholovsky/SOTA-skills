@@ -252,6 +252,73 @@ except StorageError:
 - `round()` is banker's rounding; money math uses `Decimal` with explicit quantize.
 - Don't mutate a list/dict while iterating it — iterate a copy or build a new one.
 
+## 13. Public API surface — what you are promising
+
+Everything above is about code that works. This is about code other people import, where the
+cost of a change is paid by someone who cannot see your reasoning. The shared design rules
+live in `sota-architecture`; what follows is the Python-specific mechanism.
+
+**`__all__` controls exactly one thing, and it is not privacy.** It is the name list for
+`from mod import *`, and it is what documentation tooling reads as the public surface. It
+does **not** stop anyone importing `mod._helper`, and it does not affect `dir()`. Define it
+in every module that is part of a package's public API; a module without it has no stated
+surface, so every name in it is arguably public — including your imports, which is the usual
+accident (`from .internal import Session` re-exports `Session` from your module).
+
+**A leading underscore is a convention with one enforced exception.** `_name` promises
+nothing to the interpreter — it is a signal to readers and a default filter in tooling. Only
+`__name` inside a class body is mechanically different, and that is name mangling to
+`_Class__name`, which exists to avoid subclass collisions and not to prevent access. Do not
+describe either as private in a docstring; describe the support promise instead.
+
+```python
+# GOOD — the surface is stated, and re-exported names are deliberate
+__all__ = ["Client", "ClientError"]
+
+from ._transport import Session     # NOT in __all__, but still importable as mod.Session
+```
+
+**Keyword-only parameters are an API decision, not a style one.** A positional parameter is a
+promise about *order* that you can never change; a keyword-only one is a promise about a
+*name*. Put `*` before anything optional, anything boolean, and anything you might reorder —
+which in practice is most options.
+
+```python
+# BAD  — retry and timeout are now positionally frozen forever
+def fetch(url, timeout, retry): ...
+
+# GOOD — order is free to change; call sites read at the point of use
+def fetch(url, *, timeout: float = 5.0, retry: int = 3): ...
+```
+
+A boolean positional argument is the special case worth calling out: `render(doc, True)` is
+unreadable at the call site and unchangeable at the definition.
+
+**`__slots__` is a public commitment, and the direction matters.** It removes the per-instance
+`__dict__`, so consumers can no longer set arbitrary attributes on your objects. **Adding it
+to a released class is a breaking change; removing it is not.** Subclasses need their own
+`__slots__` or they regain a `__dict__` and the saving is gone, and `__weakref__` must be
+listed explicitly if anything takes weak references. Use it for high-cardinality value
+objects, not for everything.
+
+**Deprecate with a decorator, not a docstring.** `warnings.deprecated` (**Python 3.13+**,
+PEP 702 — Final) warns at runtime *and* makes type checkers flag call sites, which is the half
+a docstring cannot do. Below 3.13 the same decorator is in `typing_extensions`. Emit
+`DeprecationWarning` and keep the old name working for at least one minor release; a
+deprecation that removes in the same release is a break with extra steps.
+
+```python
+from warnings import deprecated          # 3.13+; typing_extensions.deprecated before that
+
+@deprecated("Use Client.fetch() instead; removed in 3.0")
+def get(url: str) -> Response: ...
+```
+
+**`DeprecationWarning` is hidden by default** outside `__main__`, so the warning your users
+need is the one they will not see. Make your own test suite fail on it
+(`filterwarnings = ["error::DeprecationWarning"]` in pytest config) or you will ship past your
+own deprecations without noticing.
+
 ## Audit checklist
 
 ```bash
@@ -287,4 +354,23 @@ grep -rn "\.pop(0)" --include="*.py" src/                                     # 
 
 # groupby without sort (manual review)
 grep -rn "groupby(" --include="*.py" src/
+
+# --- Public API surface (§13) ---
+# Package modules with no stated surface [MEDIUM for a library, INFO for an app]
+find src -name '*.py' -not -name '__init__.py' -not -path '*/tests/*' -print0 |
+  while IFS= read -r -d '' f; do
+    grep -q '__all__' "$f" || echo "no __all__: $f"
+  done
+
+# Boolean/optional parameters frozen positionally — no `*` in the signature [MEDIUM]
+grep -rnE 'def [a-z_]+\([^*)]*(flag|force|strict|verbose|dry_run)[^)]*\)' --include="*.py" src/
+
+# Deprecation by docstring only — invisible to type checkers and to runtime [MEDIUM]
+grep -rn -i 'deprecated' --include="*.py" src/ | grep -v '@deprecated' | grep -v 'DeprecationWarning'
+
+# Does the suite fail on its own DeprecationWarnings? [MEDIUM if absent]
+grep -rn 'error::DeprecationWarning' pyproject.toml setup.cfg pytest.ini tox.ini 2>/dev/null
+
+# __slots__ added to a class that subclasses something unslotted — no saving [INFO]
+grep -rn -B3 '__slots__' --include="*.py" src/ | grep 'class .*('
 ```
