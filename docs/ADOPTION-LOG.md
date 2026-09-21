@@ -4582,6 +4582,16 @@ flagged **this section's own recommended `pimpl` header** — a check that fires
 guidance beside it. Narrowed to the container types, retested: 2 hits on the bad header, 0 on
 the good. A `grep -rLn` was also corrected to `grep -rL` (`-n` is meaningless with `-L`).
 
+**A hostile re-read of the section found a defect in it, after it was written and adopted.**
+The ABI table's signature row said a changed signature fails **loudly**, because the mangled
+name changes. True of C++ — and **false at exactly the boundary this section recommends**:
+`extern "C"` has no mangling, so a changed C signature still resolves, links clean, and hands
+the old caller's arguments to the new function. The one remedy offered for the stdlib-ABI
+problem was the one place the safety net is absent, and the section did not say so. Now a
+table row of its own plus a paragraph: version a C boundary by hand, `_v2` rather than an
+edit. **Every invariant was green before and after** — nothing in this repo checks whether a
+rule is *true*, which is why a rule gets a second adversarial read after adoption, not before.
+
 **ROADMAP 59, same session, deliberately NOT swept.** Its denominator was derived twice and
 reconciled — cppcheck **2.21.0**, `--errorlist` unique ids = **342**, the same dump grouped by
 severity = **342** with buckets summing exactly — and the gosec two-registry lesson repeats:

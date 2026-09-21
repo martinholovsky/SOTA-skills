@@ -165,7 +165,8 @@ at link time, a layout change frequently links fine and corrupts memory at run t
 | add the *first* virtual function | yes | **no** | adds a vptr; every offset moves |
 | add a virtual to a class others derive from | yes | **no** | vtable slots shift under the derived class |
 | reorder members | yes | **no** | silent: offsets change, names do not |
-| change a function's parameters or `const` | no | no | **loud** — the mangled name changes, link error |
+| change a C++ function's parameters or `const` | no | no | **loud** — the mangled name changes, link error |
+| change an `extern "C"` function's parameters | no | **no** | **silent** — C has no mangling, the symbol still resolves |
 | change a default argument | yes | **no** | the default is compiled into the *caller*; old callers keep the old value |
 | change an `inline` body | yes | **no** | the old body is already inlined into callers |
 | add a new non-virtual, non-inline function | yes | yes | safe |
@@ -202,6 +203,15 @@ documentation: libstdc++ introduced a second ABI in **GCC 5.1**, selected by
 that involve types in the `std::__cxx11` namespace or the tag `[abi:cxx11]`"*. For a boundary
 you do not control both sides of, pass primitives, pointers and POD structs — or an
 `extern "C"` layer.
+
+**Note what that layer costs, because it is the one remedy here that removes a safety
+net.** C++ encodes parameter types in the mangled name, so a changed C++ signature cannot
+link against an old caller — the toolchain catches it for you. **C has no mangling**:
+change an `extern "C"` function's parameters and the symbol still resolves, the program
+links clean, and the old caller passes the old arguments to the new function. That
+boundary is stable precisely because nothing checks it, so version it by hand — add a
+`_v2` entry point rather than editing an existing one, and never quietly change what an
+existing parameter means.
 
 **Header hygiene** — what a header drags in is part of its cost:
 
