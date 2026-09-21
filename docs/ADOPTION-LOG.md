@@ -4010,6 +4010,29 @@ its least representative slice.* Recorded as a **correction to shipped text**, n
 finding — and as evidence for keeping the "date every number to its source" discipline, since
 the number that needed revising was one we had already published.
 
+## 2026-09-21 — item 58 closed by the measurement it asked for, and the checklist-format split deferred
+
+**Item 58 closed as (c).** The row opened with "jvm and .NET are 3–4× thinner than their
+peers" and the measurement it asked for refuted its own framing: per 100 rules-lines .NET
+(10.6) and jvm (10.5) carry the highest actionable-audit-item density in the library and
+rust, the second-largest skill, is lowest at 4.6. Splitting `sota-jvm` is **rejected on the
+record** — it adds a skill and moves the description classifier to fix a deficit that is not
+there. Worked examples for jvm/.NET (1.0–1.1 per 100 lines against 2.7–3.8 at the top) are
+**deliberately not a row**: optional polish that nobody must act on is a recurring reminder,
+which is the reason item 1 was retired.
+
+**DEFERRED — the audit-checklist body format. Revisit trigger: a measurement showing the
+format changes audit behaviour, or a third instance of a reader being unable to enumerate a
+checklist.** Three forms are in use — tickable `- [ ]` (rust, js/ts), fenced shell block
+(python, jvm, .NET, c/c++, php), prose+commands (golang, ruby) — and invariant 2 gates only
+the heading. The argument for unifying is that AUDIT mode instructs the model to "verify your
+diff satisfies every item", and only the tickable form is enumerable.
+
+**That argument is an inference from reading AUDIT mode's wording, not a measurement**, which
+is exactly why this is deferred rather than actioned: unifying is a rewrite of seven skills,
+and this library's own rule is that a change of that size needs a number behind it. Recorded
+here so the next session finds the reasoning instead of rediscovering the split.
+
 ## 2026-09-21 — the language tier measured, and a "3–4× thinner" claim of my own that did not survive it
 
 **Intake shape: a session auditing the library's own structure**, continuing the SSO thread
