@@ -40,7 +40,7 @@ section×language matrix (page 5 of the skill map) surfaced two language-tier it
 measurement it asked for, and the depth is correct as it stands. **59 opened 2026-09-21**:
 the external-guide gap-check, 2 of 9 languages done. Neither is urgent, and neither displaces the row above.
 
-Of 58 items, 55 are closed. Item 5 (the accuracy sweep) is **dormant until 2027-01-08** with
+Of 59 items, 56 are closed. Item 5 (the accuracy sweep) is **dormant until 2027-01-08** with
 a monthly cron that turns red on **2027-02-01** by itself. Item 1 (distribution) was **closed
 permanently on 2026-09-12 by operator decision** — the work is real but it is a person's, and
 a row no session can act on is a reminder, not a backlog item. **Do not re-derive either of

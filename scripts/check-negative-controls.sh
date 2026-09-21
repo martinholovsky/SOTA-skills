@@ -380,6 +380,24 @@ MUT
 git add docs/ROADMAP.md >/dev/null 2>&1 )
 probe 26 "priorities table cites an item that is not open" "priorities table points at item"
 
+# 26b — the TOTALS arm, added 2026-09-21 with the assertion it exercises. The field
+# instance was "Of 58 items, 55 are closed" against a 59-row ledger: a sentence in a
+# different section from the gated header line, so it drifted on its own and no gate
+# had the predicate. The mutation is DERIVED from the ledger (row count + 1) rather
+# than hardcoded, so it cannot go stale the way the literals above can -- it is wrong
+# by construction for any ledger size, which is the property a count probe needs.
+( cd "$WT" && python3 - <<'MUT'
+import re, pathlib
+p = pathlib.Path("docs/ROADMAP.md"); t = p.read_text()
+rows = len({int(x) for x in re.findall(r'(?m)^\|\s*(\d+)\s*\|\s*\*\*', t)})
+t = re.sub(r'Of \d+ items, (\d+) (are|is) closed',
+           lambda m: 'Of %d items, %s %s closed' % (rows + 1, m.group(1), m.group(2)),
+           t, count=1)
+p.write_text(t)
+MUT
+git add docs/ROADMAP.md >/dev/null 2>&1 )
+probe 26b "roadmap total disagrees with the ledger row count" "but the ledger has"
+
 # 27 — a deferral marker with no revisit condition. Mutates the whole CELL, not a
 # prefix of it: a first attempt replaced only the opening words, the rest of the cell
 # still carried "revisit", and the probe reported a catch that never happened. Asserts
