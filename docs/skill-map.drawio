@@ -1,975 +1,399 @@
 <mxfile host="gen-skill-map.py" type="device">
   <diagram id="p1" name="1 · Router to skills">
-    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1700" math="0" shadow="0">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2420" pageHeight="760" math="0" shadow="0">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="note" value="Page 1 — the router reaches a skill by its DESCRIPTION.&lt;br&gt;&lt;br&gt;Only the frontmatter `description` auto-loads; it is the entire trigger classifier, and the router BODY is inert until the Skill tool fires. So these edges are not links — they are a classifier choosing among 41 competing descriptions.&lt;br&gt;&lt;br&gt;Measured 2026-09-20: correct=0.900 on the 10-case golden set, 1.000 on the 5-case SSO set." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
-          <mxGeometry x="40" y="30" width="520" height="150" as="geometry"/>
+        <mxCell id="note" value="Page 1 — the router reaches a skill by its DESCRIPTION.&lt;br&gt;&lt;br&gt;Only the frontmatter description auto-loads; it is the entire trigger classifier, and the router BODY is inert until the Skill tool fires. So these edges are not links — they are a classifier choosing among 41 competing descriptions.&lt;br&gt;&lt;br&gt;Measured 2026-09-20: correct=0.900 on the 10-case golden set, 1.000 on the 5-case SSO set." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="40" y="30" width="620" height="170" as="geometry"/>
         </mxCell>
         <mxCell id="router" value="sota  (router)&lt;br&gt;routing table · 21 cross-cutting rules&lt;br&gt;BUILD mode · AUDIT mode" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#000000;fontColor=#ffffff;strokeColor=#000000;fontStyle=1;fontSize=13;" vertex="1" parent="1">
-          <mxGeometry x="700" y="60" width="320" height="90" as="geometry"/>
+          <mxGeometry x="1050" y="120" width="340" height="100" as="geometry"/>
         </mxCell>
         <mxCell id="fam0" value="Security core  (11)" style="swimlane;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;startSize=26;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
-          <mxGeometry x="40" y="230" width="380" height="348" as="geometry"/>
+          <mxGeometry x="40" y="320" width="370" height="348" as="geometry"/>
         </mxCell>
         <mxCell id="fam0_0" value="code-security" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="fam0">
-          <mxGeometry x="10" y="30" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="30" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam0_1" value="threat-modeling" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="fam0">
-          <mxGeometry x="10" y="58" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="58" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam0_2" value="skill-security" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="fam0">
-          <mxGeometry x="10" y="86" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="86" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam0_3" value="secrets-management" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="fam0">
-          <mxGeometry x="10" y="114" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="114" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam0_4" value="sandboxing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="fam0">
-          <mxGeometry x="10" y="142" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="142" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam0_5" value="confidential-computing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="fam0">
-          <mxGeometry x="10" y="170" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="170" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam0_6" value="detection-engineering" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="fam0">
-          <mxGeometry x="10" y="198" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="198" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam0_7" value="network-security" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="fam0">
-          <mxGeometry x="10" y="226" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="226" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam0_8" value="identity-access" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="fam0">
-          <mxGeometry x="10" y="254" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="254" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam0_9" value="security-compliance" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="fam0">
-          <mxGeometry x="10" y="282" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="282" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam0_10" value="privacy-compliance" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="fam0">
-          <mxGeometry x="10" y="310" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="310" width="350" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="e_fam0" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#666666;" edge="1" parent="1" source="router" target="fam0">
+        <mxCell id="e_fam0" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;strokeColor=#888888;endArrow=blockThin;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="router" target="fam0">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="fam1" value="Platform &amp; delivery  (5)" style="swimlane;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;startSize=26;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="480" y="230" width="380" height="180" as="geometry"/>
+          <mxGeometry x="430" y="320" width="370" height="180" as="geometry"/>
         </mxCell>
         <mxCell id="fam1_0" value="cloud-infrastructure" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="fam1">
-          <mxGeometry x="10" y="30" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="30" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam1_1" value="kubernetes" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="fam1">
-          <mxGeometry x="10" y="58" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="58" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam1_2" value="devsecops" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="fam1">
-          <mxGeometry x="10" y="86" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="86" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam1_3" value="observability" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="fam1">
-          <mxGeometry x="10" y="114" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="114" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam1_4" value="architecture" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="fam1">
-          <mxGeometry x="10" y="142" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="142" width="350" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="e_fam1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#666666;" edge="1" parent="1" source="router" target="fam1">
+        <mxCell id="e_fam1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;strokeColor=#888888;endArrow=blockThin;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="router" target="fam1">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="fam2" value="Data &amp; AI  (4)" style="swimlane;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;startSize=26;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
-          <mxGeometry x="40" y="618" width="380" height="152" as="geometry"/>
+          <mxGeometry x="820" y="320" width="370" height="152" as="geometry"/>
         </mxCell>
         <mxCell id="fam2_0" value="databases" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="fam2">
-          <mxGeometry x="10" y="30" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="30" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam2_1" value="data-engineering" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="fam2">
-          <mxGeometry x="10" y="58" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="58" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam2_2" value="ml-engineering" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="fam2">
-          <mxGeometry x="10" y="86" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="86" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam2_3" value="llm-engineering" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="fam2">
-          <mxGeometry x="10" y="114" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="114" width="350" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="e_fam2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#666666;" edge="1" parent="1" source="router" target="fam2">
+        <mxCell id="e_fam2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;strokeColor=#888888;endArrow=blockThin;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="router" target="fam2">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="fam3" value="Product surface  (8)" style="swimlane;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;startSize=26;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
-          <mxGeometry x="480" y="618" width="380" height="264" as="geometry"/>
+          <mxGeometry x="1210" y="320" width="370" height="264" as="geometry"/>
         </mxCell>
         <mxCell id="fam3_0" value="api-design" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="fam3">
-          <mxGeometry x="10" y="30" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="30" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam3_1" value="frontend-design" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="fam3">
-          <mxGeometry x="10" y="58" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="58" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam3_2" value="web-frameworks" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="fam3">
-          <mxGeometry x="10" y="86" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="86" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam3_3" value="ux-writing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="fam3">
-          <mxGeometry x="10" y="114" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="114" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam3_4" value="copywriting" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="fam3">
-          <mxGeometry x="10" y="142" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="142" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam3_5" value="cli-ux" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="fam3">
-          <mxGeometry x="10" y="170" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="170" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam3_6" value="mobile" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="fam3">
-          <mxGeometry x="10" y="198" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="198" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam3_7" value="docs-workflow" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="fam3">
-          <mxGeometry x="10" y="226" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="226" width="350" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="e_fam3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#666666;" edge="1" parent="1" source="router" target="fam3">
+        <mxCell id="e_fam3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;strokeColor=#888888;endArrow=blockThin;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="router" target="fam3">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="fam4" value="Quality  (3)" style="swimlane;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;startSize=26;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
-          <mxGeometry x="40" y="922" width="380" height="124" as="geometry"/>
+          <mxGeometry x="1600" y="320" width="370" height="124" as="geometry"/>
         </mxCell>
         <mxCell id="fam4_0" value="testing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="fam4">
-          <mxGeometry x="10" y="30" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="30" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam4_1" value="performance" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="fam4">
-          <mxGeometry x="10" y="58" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="58" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam4_2" value="async-concurrency" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="fam4">
-          <mxGeometry x="10" y="86" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="86" width="350" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="e_fam4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#666666;" edge="1" parent="1" source="router" target="fam4">
+        <mxCell id="e_fam4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;strokeColor=#888888;endArrow=blockThin;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="router" target="fam4">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="fam5" value="Languages  (10)" style="swimlane;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;startSize=26;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
-          <mxGeometry x="480" y="922" width="380" height="320" as="geometry"/>
+          <mxGeometry x="1990" y="320" width="370" height="320" as="geometry"/>
         </mxCell>
         <mxCell id="fam5_0" value="rust" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="fam5">
-          <mxGeometry x="10" y="30" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="30" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam5_1" value="golang" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="fam5">
-          <mxGeometry x="10" y="58" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="58" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam5_2" value="c-cpp" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="fam5">
-          <mxGeometry x="10" y="86" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="86" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam5_3" value="jvm" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="fam5">
-          <mxGeometry x="10" y="114" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="114" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam5_4" value="python" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="fam5">
-          <mxGeometry x="10" y="142" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="142" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam5_5" value="javascript-typescript" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="fam5">
-          <mxGeometry x="10" y="170" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="170" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam5_6" value="dotnet" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="fam5">
-          <mxGeometry x="10" y="198" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="198" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam5_7" value="php" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="fam5">
-          <mxGeometry x="10" y="226" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="226" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam5_8" value="ruby" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="fam5">
-          <mxGeometry x="10" y="254" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="254" width="350" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="fam5_9" value="shell-scripting" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="fam5">
-          <mxGeometry x="10" y="282" width="360" height="22" as="geometry"/>
+          <mxGeometry x="10" y="282" width="350" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="e_fam5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#666666;" edge="1" parent="1" source="router" target="fam5">
+        <mxCell id="e_fam5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;strokeColor=#888888;endArrow=blockThin;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="router" target="fam5">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
   <diagram id="p2" name="2 · Cross-cutting rules">
-    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1550" pageHeight="1150" math="0" shadow="0">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1250" pageHeight="1030" math="0" shadow="0">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="note" value="Page 2 — the 21 cross-cutting routing rules, verbatim from skills/sota/SKILL.md.&lt;br&gt;&lt;br&gt;These are the explicit hand-offs: which skill wins when two look plausible (rule 9 splits infra four ways; rule 10 separates identity infrastructure from app-level login; rule 18 fans cryptography out because there is deliberately no crypto skill).&lt;br&gt;&lt;br&gt;An edge is drawn only where the rule NAMES the skill." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
-          <mxGeometry x="40" y="20" width="600" height="150" as="geometry"/>
+        <mxCell id="note" value="Page 2 — the 21 cross-cutting routing rules, verbatim from skills/sota/SKILL.md.&lt;br&gt;&lt;br&gt;These are the explicit hand-offs: which skill wins when two look plausible. The right column lists exactly the skills each rule NAMES — drawn as text rather than as edges, because 63 edges between two columns render as one unreadable trunk." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="700" height="120" as="geometry"/>
         </mxCell>
-        <mxCell id="t_sota-api-design" value="api-design" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="200" width="250" height="26" as="geometry"/>
+        <mxCell id="hdr_r" value="rule" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="180" width="470" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="t_sota-async-concurrency" value="async-concurrency" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="240" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-cloud-infrastructure" value="cloud-infrastructure" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="280" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-code-security" value="code-security" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="320" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-confidential-computing" value="confidential-computing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="360" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-copywriting" value="copywriting" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="400" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-data-engineering" value="data-engineering" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="440" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-databases" value="databases" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="480" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-detection-engineering" value="detection-engineering" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="520" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-devsecops" value="devsecops" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="560" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-docs-workflow" value="docs-workflow" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="600" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-frontend-design" value="frontend-design" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="640" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-golang" value="golang" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="680" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-identity-access" value="identity-access" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="720" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-javascript-typescript" value="javascript-typescript" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="760" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-kubernetes" value="kubernetes" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="800" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-llm-engineering" value="llm-engineering" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="840" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-network-security" value="network-security" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="880" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-observability" value="observability" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="920" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-performance" value="performance" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="960" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-privacy-compliance" value="privacy-compliance" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="1000" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-sandboxing" value="sandboxing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="1040" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-secrets-management" value="secrets-management" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="1080" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-security-compliance" value="security-compliance" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="1120" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-shell-scripting" value="shell-scripting" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="1160" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-testing" value="testing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="1200" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-threat-modeling" value="threat-modeling" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="1240" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-ux-writing" value="ux-writing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="1280" width="250" height="26" as="geometry"/>
-        </mxCell>
-        <mxCell id="t_sota-web-frameworks" value="web-frameworks" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="1320" width="250" height="26" as="geometry"/>
+        <mxCell id="hdr_s" value="skills it names" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="520" y="180" width="640" height="26" as="geometry"/>
         </mxCell>
         <mxCell id="r1" value="1. Language skills stack on domain skills." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="60" y="200" width="450" height="30" as="geometry"/>
+          <mxGeometry x="40" y="214" width="470" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="e_r1_sota-api-design" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r1" target="t_sota-api-design">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r1_sota-code-security" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r1" target="t_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r1_sota-golang" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r1" target="t_sota-golang">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="rs1" value="api-design · code-security · golang" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="520" y="214" width="640" height="30" as="geometry"/>
         </mxCell>
         <mxCell id="r2" value="2. Security tasks usually need three skills." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="60" y="240" width="450" height="30" as="geometry"/>
+          <mxGeometry x="40" y="250" width="470" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="e_r2_sota-code-security" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r2" target="t_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r2_sota-devsecops" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r2" target="t_sota-devsecops">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r2_sota-sandboxing" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r2" target="t_sota-sandboxing">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r2_sota-secrets-management" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r2" target="t_sota-secrets-management">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r2_sota-threat-modeling" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r2" target="t_sota-threat-modeling">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="rs2" value="code-security · devsecops · sandboxing · secrets-management · threat-modeling" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="520" y="250" width="640" height="30" as="geometry"/>
         </mxCell>
         <mxCell id="r3" value="3. Performance complaints about queries" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="60" y="280" width="450" height="30" as="geometry"/>
+          <mxGeometry x="40" y="286" width="470" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="e_r3_sota-databases" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r3" target="t_sota-databases">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r3_sota-performance" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r3" target="t_sota-performance">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="rs3" value="databases · performance" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="520" y="286" width="640" height="30" as="geometry"/>
         </mxCell>
         <mxCell id="r4" value="4. Anything realtime" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="60" y="320" width="450" height="30" as="geometry"/>
+          <mxGeometry x="40" y="322" width="470" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="e_r4_sota-api-design" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r4" target="t_sota-api-design">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r4_sota-async-concurrency" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r4" target="t_sota-async-concurrency">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="rs4" value="api-design · async-concurrency" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="520" y="322" width="640" height="30" as="geometry"/>
         </mxCell>
         <mxCell id="r5" value="5. AI/LLM features" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="60" y="360" width="450" height="30" as="geometry"/>
+          <mxGeometry x="40" y="358" width="470" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="e_r5_sota-code-security" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r5" target="t_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r5_sota-databases" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r5" target="t_sota-databases">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r5_sota-sandboxing" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r5" target="t_sota-sandboxing">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="rs5" value="code-security · databases · sandboxing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="520" y="358" width="640" height="30" as="geometry"/>
         </mxCell>
         <mxCell id="r6" value="6. Frontend work" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="60" y="400" width="450" height="30" as="geometry"/>
+          <mxGeometry x="40" y="394" width="470" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="e_r6_sota-frontend-design" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r6" target="t_sota-frontend-design">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r6_sota-javascript-typescript" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r6" target="t_sota-javascript-typescript">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r6_sota-performance" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r6" target="t_sota-performance">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r6_sota-web-frameworks" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r6" target="t_sota-web-frameworks">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="rs6" value="frontend-design · javascript-typescript · performance · web-frameworks" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="520" y="394" width="640" height="30" as="geometry"/>
         </mxCell>
         <mxCell id="r7" value="7. Tests accompany everything." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="60" y="440" width="450" height="30" as="geometry"/>
+          <mxGeometry x="40" y="430" width="470" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="e_r7_sota-testing" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r7" target="t_sota-testing">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="rs7" value="testing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="520" y="430" width="640" height="30" as="geometry"/>
         </mxCell>
         <mxCell id="r8" value="8. LLM features split three ways." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="60" y="480" width="450" height="30" as="geometry"/>
+          <mxGeometry x="40" y="466" width="470" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="e_r8_sota-code-security" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r8" target="t_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r8_sota-llm-engineering" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r8" target="t_sota-llm-engineering">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r8_sota-privacy-compliance" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r8" target="t_sota-privacy-compliance">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r8_sota-sandboxing" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r8" target="t_sota-sandboxing">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="rs8" value="code-security · llm-engineering · privacy-compliance · sandboxing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="520" y="466" width="640" height="30" as="geometry"/>
         </mxCell>
         <mxCell id="r9" value="9. Infra layers split four ways." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="60" y="520" width="450" height="30" as="geometry"/>
+          <mxGeometry x="40" y="502" width="470" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="e_r9_sota-cloud-infrastructure" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r9" target="t_sota-cloud-infrastructure">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r9_sota-devsecops" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r9" target="t_sota-devsecops">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r9_sota-kubernetes" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r9" target="t_sota-kubernetes">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r9_sota-network-security" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r9" target="t_sota-network-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r9_sota-sandboxing" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r9" target="t_sota-sandboxing">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="rs9" value="cloud-infrastructure · devsecops · kubernetes · network-security · sandboxing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="520" y="502" width="640" height="30" as="geometry"/>
         </mxCell>
         <mxCell id="r10" value="10. Identity is its own layer." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="60" y="560" width="450" height="30" as="geometry"/>
+          <mxGeometry x="40" y="538" width="470" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="e_r10_sota-code-security" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r10" target="t_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r10_sota-identity-access" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r10" target="t_sota-identity-access">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r10_sota-secrets-management" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r10" target="t_sota-secrets-management">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="rs10" value="code-security · identity-access · secrets-management" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="520" y="538" width="640" height="30" as="geometry"/>
         </mxCell>
         <mxCell id="r11" value="11. Network: setup vs security." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="60" y="600" width="450" height="30" as="geometry"/>
+          <mxGeometry x="40" y="574" width="470" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="e_r11_sota-cloud-infrastructure" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r11" target="t_sota-cloud-infrastructure">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r11_sota-network-security" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r11" target="t_sota-network-security">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="rs11" value="cloud-infrastructure · network-security" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="520" y="574" width="640" height="30" as="geometry"/>
         </mxCell>
         <mxCell id="r12" value="12. Prevention vs detection." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="60" y="640" width="450" height="30" as="geometry"/>
+          <mxGeometry x="40" y="610" width="470" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="e_r12_sota-detection-engineering" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r12" target="t_sota-detection-engineering">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r12_sota-observability" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r12" target="t_sota-observability">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r12_sota-threat-modeling" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r12" target="t_sota-threat-modeling">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="rs12" value="detection-engineering · observability · threat-modeling" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="520" y="610" width="640" height="30" as="geometry"/>
         </mxCell>
         <mxCell id="r13" value="13. Ingesting untrusted/attacker-authored data" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="60" y="680" width="450" height="30" as="geometry"/>
+          <mxGeometry x="40" y="646" width="470" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="e_r13_sota-code-security" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r13" target="t_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r13_sota-sandboxing" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r13" target="t_sota-sandboxing">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="rs13" value="code-security · sandboxing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="520" y="646" width="640" height="30" as="geometry"/>
         </mxCell>
         <mxCell id="r14" value="14. Data: OLTP vs analytics." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="60" y="720" width="450" height="30" as="geometry"/>
+          <mxGeometry x="40" y="682" width="470" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="e_r14_sota-data-engineering" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r14" target="t_sota-data-engineering">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r14_sota-databases" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r14" target="t_sota-databases">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r14_sota-privacy-compliance" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r14" target="t_sota-privacy-compliance">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="rs14" value="data-engineering · databases · privacy-compliance" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="520" y="682" width="640" height="30" as="geometry"/>
         </mxCell>
         <mxCell id="r15" value="15. Any handling of user/personal data" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="60" y="760" width="450" height="30" as="geometry"/>
+          <mxGeometry x="40" y="718" width="470" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="e_r15_sota-privacy-compliance" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r15" target="t_sota-privacy-compliance">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="rs15" value="privacy-compliance" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="520" y="718" width="640" height="30" as="geometry"/>
         </mxCell>
         <mxCell id="r16" value="16. User-facing words split three ways." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="60" y="800" width="450" height="30" as="geometry"/>
+          <mxGeometry x="40" y="754" width="470" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="e_r16_sota-copywriting" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r16" target="t_sota-copywriting">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r16_sota-docs-workflow" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r16" target="t_sota-docs-workflow">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r16_sota-frontend-design" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r16" target="t_sota-frontend-design">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r16_sota-ux-writing" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r16" target="t_sota-ux-writing">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="rs16" value="copywriting · docs-workflow · frontend-design · ux-writing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="520" y="754" width="640" height="30" as="geometry"/>
         </mxCell>
         <mxCell id="r17" value="17. Shell scripts hide everywhere" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="60" y="840" width="450" height="30" as="geometry"/>
+          <mxGeometry x="40" y="790" width="470" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="e_r17_sota-code-security" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r17" target="t_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="rs17" value="code-security · shell-scripting" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="520" y="790" width="640" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="e_r17_sota-shell-scripting" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r17" target="t_sota-shell-scripting">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="r18" value="18. Cryptography fans out — there is no single crypto skill (by…" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="826" width="470" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="r18" value="18. Cryptography fans out — there is no single crypto skill (b" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="60" y="880" width="450" height="30" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r18_sota-code-security" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r18" target="t_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r18_sota-network-security" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r18" target="t_sota-network-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r18_sota-secrets-management" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r18" target="t_sota-secrets-management">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r18_sota-security-compliance" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r18" target="t_sota-security-compliance">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="rs18" value="code-security · network-security · secrets-management · security-compliance" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="520" y="826" width="640" height="30" as="geometry"/>
         </mxCell>
         <mxCell id="r19" value="19. Which direction does the trust boundary point?" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="60" y="920" width="450" height="30" as="geometry"/>
+          <mxGeometry x="40" y="862" width="470" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="e_r19_sota-confidential-computing" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r19" target="t_sota-confidential-computing">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r19_sota-privacy-compliance" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r19" target="t_sota-privacy-compliance">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r19_sota-sandboxing" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r19" target="t_sota-sandboxing">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r19_sota-secrets-management" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r19" target="t_sota-secrets-management">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="rs19" value="confidential-computing · privacy-compliance · sandboxing · secrets-management" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="520" y="862" width="640" height="30" as="geometry"/>
         </mxCell>
         <mxCell id="r20" value="20. &quot;It&#x27;s enabled&quot; is a claim, not a fact." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="60" y="960" width="450" height="30" as="geometry"/>
+          <mxGeometry x="40" y="898" width="470" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="e_r20_sota-code-security" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r20" target="t_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r20_sota-devsecops" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r20" target="t_sota-devsecops">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r20_sota-observability" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r20" target="t_sota-observability">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r20_sota-testing" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r20" target="t_sota-testing">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="rs20" value="code-security · devsecops · observability · testing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="520" y="898" width="640" height="30" as="geometry"/>
         </mxCell>
         <mxCell id="r21" value="21. Model facts hide in your own tooling" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="60" y="1000" width="450" height="30" as="geometry"/>
+          <mxGeometry x="40" y="934" width="470" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="e_r21_sota-docs-workflow" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r21" target="t_sota-docs-workflow">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_r21_sota-llm-engineering" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#b3b3b3;opacity=55;endArrow=blockThin;" edge="1" parent="1" source="r21" target="t_sota-llm-engineering">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="rs21" value="docs-workflow · llm-engineering" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="520" y="934" width="640" height="30" as="geometry"/>
         </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
   <diagram id="p3" name="3 · Cross-skill references (measured)">
-    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1600" math="0" shadow="0">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="note" value="Page 3 — the MEASURED cross-skill reference graph: every place one skill&#x27;s files name another skill.&lt;br&gt;&lt;br&gt;297 distinct edges / 895 mentions in the tree; 110 drawn here at weight &gt;= 3. Ring is inbound weight — the centre is what everything else defers to. Edge thickness is weight.&lt;br&gt;&lt;br&gt;This is the layer a routing measurement does NOT cover: reaching the right skill is page 1, but whether the rule you need is in THIS file or one it defers to is here. Full data, including rules/NN and § targets, in docs/skill-map.json." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
-          <mxGeometry x="30" y="20" width="660" height="170" as="geometry"/>
+        <mxCell id="note" value="Page 3 — how the skills reference each other, aggregated to families.&lt;br&gt;&lt;br&gt;297 distinct skill-to-skill edges / 895 mentions in the tree. Drawing all of them is a hairball at 38 nodes, so the graph is aggregated: an arrow is the TOTAL weight of every reference from one family to another, and the number inside a family is references within it.&lt;br&gt;&lt;br&gt;This is the layer a routing measurement does not cover: routing gets you to the right skill, this is which skill defers to which. Every individual edge, with its rules/NN and § targets, is in docs/skill-map.json." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="720" height="170" as="geometry"/>
         </mxCell>
-        <mxCell id="g_sota-api-design" value="api-design&lt;br&gt;22 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="1260" y="1096" width="180" height="40" as="geometry"/>
+        <mxCell id="f_Security_core" value="Security core&lt;br&gt;11 skills · 223 internal refs" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="550" y="295" width="220" height="90" as="geometry"/>
         </mxCell>
-        <mxCell id="g_sota-architecture" value="architecture&lt;br&gt;24 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="1336" y="994" width="180" height="40" as="geometry"/>
+        <mxCell id="f_Platform___delivery" value="Platform &amp; delivery&lt;br&gt;5 skills · 42 internal refs" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="879" y="485" width="220" height="90" as="geometry"/>
         </mxCell>
-        <mxCell id="g_sota-async-concurrency" value="async-concurrency&lt;br&gt;11 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="482" y="1246" width="180" height="40" as="geometry"/>
+        <mxCell id="f_Data___AI" value="Data &amp; AI&lt;br&gt;4 skills · 9 internal refs" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="879" y="865" width="220" height="90" as="geometry"/>
         </mxCell>
-        <mxCell id="g_sota-c-cpp" value="c-cpp&lt;br&gt;2 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="902" y="233" width="180" height="40" as="geometry"/>
+        <mxCell id="f_Product_surface" value="Product surface&lt;br&gt;8 skills · 38 internal refs" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="550" y="1055" width="220" height="90" as="geometry"/>
         </mxCell>
-        <mxCell id="g_sota-cli-ux" value="cli-ux&lt;br&gt;1 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="1037" y="273" width="180" height="40" as="geometry"/>
+        <mxCell id="f_Quality" value="Quality&lt;br&gt;3 skills · 3 internal refs" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="220" y="865" width="220" height="90" as="geometry"/>
         </mxCell>
-        <mxCell id="g_sota-cloud-infrastructure" value="cloud-infrastructure&lt;br&gt;21 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="1037" y="1246" width="180" height="40" as="geometry"/>
+        <mxCell id="f_Languages" value="Languages&lt;br&gt;10 skills · 3 internal refs" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="220" y="485" width="220" height="90" as="geometry"/>
         </mxCell>
-        <mxCell id="g_sota-code-security" value="code-security&lt;br&gt;183 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="760" y="760" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-confidential-computing" value="confidential-computing&lt;br&gt;1 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="1159" y="337" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-copywriting" value="copywriting&lt;br&gt;4 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="259" y="423" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-data-engineering" value="data-engineering&lt;br&gt;6 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="136" y="639" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-databases" value="databases&lt;br&gt;22 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="1159" y="1182" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-detection-engineering" value="detection-engineering&lt;br&gt;39 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="760" y="520" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-devsecops" value="devsecops&lt;br&gt;86 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="1060" y="760" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-docs-workflow" value="docs-workflow&lt;br&gt;9 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="183" y="994" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-dotnet" value="dotnet&lt;br&gt;0 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="1336" y="525" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-frontend-design" value="frontend-design&lt;br&gt;11 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="360" y="1182" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-golang" value="golang&lt;br&gt;8 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="136" y="880" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-identity-access" value="identity-access&lt;br&gt;28 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="1400" y="760" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-javascript-typescript" value="javascript-typescript&lt;br&gt;10 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="259" y="1096" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-jvm" value="jvm&lt;br&gt;1 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="1260" y="423" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-kubernetes" value="kubernetes&lt;br&gt;28 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="1383" y="880" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-llm-engineering" value="llm-engineering&lt;br&gt;7 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="120" y="760" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-ml-engineering" value="ml-engineering&lt;br&gt;3 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="617" y="233" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-network-security" value="network-security&lt;br&gt;37 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="972" y="590" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-observability" value="observability&lt;br&gt;47 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="460" y="760" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-performance" value="performance&lt;br&gt;19 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="902" y="1286" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-privacy-compliance" value="privacy-compliance&lt;br&gt;40 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="547" y="590" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-rust" value="rust&lt;br&gt;5 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="183" y="525" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-sandboxing" value="sandboxing&lt;br&gt;49 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="547" y="929" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-secrets-management" value="secrets-management&lt;br&gt;74 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="972" y="929" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-security-compliance" value="security-compliance&lt;br&gt;0 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="1383" y="639" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-shell-scripting" value="shell-scripting&lt;br&gt;13 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="617" y="1286" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-skill-security" value="skill-security&lt;br&gt;4 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="360" y="337" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-testing" value="testing&lt;br&gt;50 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="760" y="1000" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-threat-modeling" value="threat-modeling&lt;br&gt;16 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="760" y="1300" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-ux-writing" value="ux-writing&lt;br&gt;4 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="482" y="273" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="g_sota-web-frameworks" value="web-frameworks&lt;br&gt;3 inbound" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#9e9e9e;" vertex="1" parent="1">
-          <mxGeometry x="759" y="220" width="180" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge0" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-architecture" target="g_sota-secrets-management">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-c-cpp" target="g_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-cli-ux" target="g_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-cloud-infrastructure" target="g_sota-secrets-management">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-code-security" target="g_sota-detection-engineering">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-code-security" target="g_sota-network-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-code-security" target="g_sota-data-engineering">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-code-security" target="g_sota-api-design">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-code-security" target="g_sota-llm-engineering">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-confidential-computing" target="g_sota-kubernetes">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-copywriting" target="g_sota-ux-writing">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-copywriting" target="g_sota-privacy-compliance">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-data-engineering" target="g_sota-databases">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-detection-engineering" target="g_sota-threat-modeling">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-detection-engineering" target="g_sota-kubernetes">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-detection-engineering" target="g_sota-network-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-devsecops" target="g_sota-network-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-devsecops" target="g_sota-sandboxing">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-docs-workflow" target="g_sota-devsecops">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge19" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-dotnet" target="g_sota-testing">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge20" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-jvm" target="g_sota-testing">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge21" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-kubernetes" target="g_sota-cloud-infrastructure">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge22" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-llm-engineering" target="g_sota-sandboxing">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge23" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-ml-engineering" target="g_sota-llm-engineering">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge24" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-network-security" target="g_sota-sandboxing">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge25" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-network-security" target="g_sota-api-design">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge26" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-privacy-compliance" target="g_sota-devsecops">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge27" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-rust" target="g_sota-devsecops">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge28" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-security-compliance" target="g_sota-kubernetes">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge29" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-skill-security" target="g_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge30" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-testing" target="g_sota-devsecops">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge31" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-testing" target="g_sota-architecture">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge32" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-threat-modeling" target="g_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge33" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-api-design" target="g_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge34" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-architecture" target="g_sota-databases">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge35" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-detection-engineering" target="g_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge36" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-devsecops" target="g_sota-golang">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge37" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-docs-workflow" target="g_sota-architecture">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge38" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-docs-workflow" target="g_sota-testing">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge39" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-jvm" target="g_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge40" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-llm-engineering" target="g_sota-privacy-compliance">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge41" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-ml-engineering" target="g_sota-observability">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge42" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-ml-engineering" target="g_sota-privacy-compliance">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge43" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-network-security" target="g_sota-identity-access">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge44" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-observability" target="g_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge45" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-performance" target="g_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge46" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-privacy-compliance" target="g_sota-databases">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge47" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-privacy-compliance" target="g_sota-threat-modeling">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge48" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-security-compliance" target="g_sota-cloud-infrastructure">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge49" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-testing" target="g_sota-docs-workflow">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge50" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-testing" target="g_sota-threat-modeling">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge51" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-ux-writing" target="g_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge52" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-web-frameworks" target="g_sota-api-design">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge53" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-web-frameworks" target="g_sota-devsecops">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge54" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-cloud-infrastructure" target="g_sota-observability">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge55" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-code-security" target="g_sota-shell-scripting">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge56" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-data-engineering" target="g_sota-privacy-compliance">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge57" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-identity-access" target="g_sota-privacy-compliance">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge58" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-kubernetes" target="g_sota-identity-access">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge59" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-security-compliance" target="g_sota-threat-modeling">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge60" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-security-compliance" target="g_sota-observability">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge61" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-security-compliance" target="g_sota-testing">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge62" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-testing" target="g_sota-shell-scripting">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge63" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-ux-writing" target="g_sota-frontend-design">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge64" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-web-frameworks" target="g_sota-javascript-typescript">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge65" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=1;" edge="1" parent="1" source="g_sota-web-frameworks" target="g_sota-performance">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge66" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-architecture" target="g_sota-async-concurrency">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge67" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-cloud-infrastructure" target="g_sota-devsecops">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge68" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-code-security" target="g_sota-observability">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge69" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-confidential-computing" target="g_sota-devsecops">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge70" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-confidential-computing" target="g_sota-privacy-compliance">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge71" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-docs-workflow" target="g_sota-api-design">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge72" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-identity-access" target="g_sota-secrets-management">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge73" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-identity-access" target="g_sota-network-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge74" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-kubernetes" target="g_sota-network-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge75" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-network-security" target="g_sota-secrets-management">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge76" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-security-compliance" target="g_sota-identity-access">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge77" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-security-compliance" target="g_sota-network-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge78" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-detection-engineering" target="g_sota-identity-access">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge79" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-detection-engineering" target="g_sota-secrets-management">
+        <mxCell id="fe11" value="10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=1;" edge="1" parent="1" source="f_Quality" target="f_Languages">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="ge80" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-identity-access" target="g_sota-detection-engineering">
+        <mxCell id="fe12" value="11" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=1;" edge="1" parent="1" source="f_Data___AI" target="f_Platform___delivery">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="ge81" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-network-security" target="g_sota-code-security">
+        <mxCell id="fe13" value="12" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=1;" edge="1" parent="1" source="f_Platform___delivery" target="f_Quality">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="ge82" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-privacy-compliance" target="g_sota-observability">
+        <mxCell id="fe14" value="12" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=1;" edge="1" parent="1" source="f_Product_surface" target="f_Quality">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="ge83" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-sandboxing" target="g_sota-code-security">
+        <mxCell id="fe15" value="15" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=1;" edge="1" parent="1" source="f_Security_core" target="f_Languages">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="ge84" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-security-compliance" target="g_sota-detection-engineering">
+        <mxCell id="fe16" value="15" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=1;" edge="1" parent="1" source="f_Security_core" target="f_Data___AI">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="ge85" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-confidential-computing" target="g_sota-secrets-management">
+        <mxCell id="fe17" value="16" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=1;" edge="1" parent="1" source="f_Product_surface" target="f_Platform___delivery">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="ge86" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-confidential-computing" target="g_sota-code-security">
+        <mxCell id="fe18" value="22" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=1;" edge="1" parent="1" source="f_Languages" target="f_Quality">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="ge87" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-detection-engineering" target="g_sota-observability">
+        <mxCell id="fe19" value="24" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=1;" edge="1" parent="1" source="f_Quality" target="f_Security_core">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="ge88" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-kubernetes" target="g_sota-detection-engineering">
+        <mxCell id="fe20" value="27" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=1;" edge="1" parent="1" source="f_Security_core" target="f_Quality">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="ge89" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-kubernetes" target="g_sota-secrets-management">
+        <mxCell id="fe21" value="33" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=1;" edge="1" parent="1" source="f_Languages" target="f_Platform___delivery">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="ge90" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-security-compliance" target="g_sota-code-security">
+        <mxCell id="fe22" value="34" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=1;" edge="1" parent="1" source="f_Product_surface" target="f_Security_core">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="ge91" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-code-security" target="g_sota-devsecops">
+        <mxCell id="fe23" value="45" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=2;" edge="1" parent="1" source="f_Data___AI" target="f_Security_core">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="ge92" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-network-security" target="g_sota-cloud-infrastructure">
+        <mxCell id="fe24" value="53" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=2;" edge="1" parent="1" source="f_Languages" target="f_Security_core">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="ge93" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-network-security" target="g_sota-detection-engineering">
+        <mxCell id="fe25" value="92" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=3;" edge="1" parent="1" source="f_Platform___delivery" target="f_Security_core">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="ge94" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-privacy-compliance" target="g_sota-secrets-management">
+        <mxCell id="fe26" value="95" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=3;" edge="1" parent="1" source="f_Security_core" target="f_Platform___delivery">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="ge95" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-security-compliance" target="g_sota-secrets-management">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge96" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-shell-scripting" target="g_sota-devsecops">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge97" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-identity-access" target="g_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge98" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-security-compliance" target="g_sota-privacy-compliance">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge99" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-web-frameworks" target="g_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge100" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=2;" edge="1" parent="1" source="g_sota-kubernetes" target="g_sota-sandboxing">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge101" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=3;" edge="1" parent="1" source="g_sota-devsecops" target="g_sota-kubernetes">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge102" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=3;" edge="1" parent="1" source="g_sota-kubernetes" target="g_sota-devsecops">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge103" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=3;" edge="1" parent="1" source="g_sota-confidential-computing" target="g_sota-sandboxing">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge104" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=3;" edge="1" parent="1" source="g_sota-testing" target="g_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge105" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=3;" edge="1" parent="1" source="g_sota-security-compliance" target="g_sota-devsecops">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="panel_h" value="MOST REFERENCED (inbound weight)&lt;br&gt;&lt;br&gt;code-security              183&lt;br&gt;devsecops                  86&lt;br&gt;secrets-management         74&lt;br&gt;testing                    50&lt;br&gt;sandboxing                 49&lt;br&gt;observability              47&lt;br&gt;privacy-compliance         40&lt;br&gt;detection-engineering      39&lt;br&gt;network-security           37&lt;br&gt;identity-access            28" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#b85450;align=left;spacingLeft=10;verticalAlign=top;spacingTop=8;fontFamily=Courier New;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="200" width="330" height="240" as="geometry"/>
         </mxCell>
-        <mxCell id="ge106" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=4;" edge="1" parent="1" source="g_sota-code-security" target="g_sota-testing">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge107" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=4;" edge="1" parent="1" source="g_sota-shell-scripting" target="g_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge108" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=4;" edge="1" parent="1" source="g_sota-llm-engineering" target="g_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="ge109" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#9e9e9e;opacity=45;endArrow=blockThin;strokeWidth=4;" edge="1" parent="1" source="g_sota-devsecops" target="g_sota-code-security">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="panel_e" value="STRONGEST SINGLE LINKS&lt;br&gt;&lt;br&gt;devsecops              -&gt; code-security          23&lt;br&gt;llm-engineering        -&gt; code-security          22&lt;br&gt;shell-scripting        -&gt; code-security          20&lt;br&gt;code-security          -&gt; testing                18&lt;br&gt;security-compliance    -&gt; devsecops              15&lt;br&gt;confidential-computing -&gt; sandboxing             14&lt;br&gt;testing                -&gt; code-security          14&lt;br&gt;devsecops              -&gt; kubernetes             12&lt;br&gt;kubernetes             -&gt; devsecops              12&lt;br&gt;kubernetes             -&gt; sandboxing             11&lt;br&gt;identity-access        -&gt; code-security          10&lt;br&gt;security-compliance    -&gt; privacy-compliance     10" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#6c8ebf;align=left;spacingLeft=10;verticalAlign=top;spacingTop=8;fontFamily=Courier New;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="470" width="330" height="280" as="geometry"/>
         </mxCell>
       </root>
     </mxGraphModel>
@@ -979,7 +403,7 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="note" value="Page 4 — a worked slice: what an SSO task traverses, end to end.&lt;br&gt;&lt;br&gt;Measured 2026-09-20: all 5 SSO routing cases were correct, 3/3 samples each. Routing was never the problem. The two real gaps were a CONTENT gap (Golden SAML — in a skill that routed correctly and held nothing) and a CHECKLIST gap (`state`, whose rule lives in a different skill, so an auditor walking this skill&#x27;s checklist was never prompted)." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="note" value="Page 4 — a worked slice: what an SSO task traverses, end to end.&lt;br&gt;&lt;br&gt;Measured 2026-09-20: all 5 SSO routing cases were correct, 3/3 samples each. Routing was never the problem. The two real gaps were a CONTENT gap (Golden SAML — in a skill that routed correctly and held nothing) and a CHECKLIST gap (state, whose rule lives in a different skill, so an auditor walking this skill&#x27;s checklist was never prompted)." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
           <mxGeometry x="40" y="20" width="700" height="140" as="geometry"/>
         </mxCell>
         <mxCell id="s_task" value="task: &quot;audit our SSO integration&quot;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#666666;" vertex="1" parent="1">
@@ -1003,13 +427,13 @@
         <mxCell id="s_ia7" value="§7 SAML attack classes&lt;br&gt;XSW · comment injection · Golden SAML" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="1">
           <mxGeometry x="800" y="330" width="300" height="50" as="geometry"/>
         </mxCell>
-        <mxCell id="s_cs" value="sota-code-security&lt;br&gt;rules/02 §4 — `state` / login CSRF" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="s_cs" value="sota-code-security&lt;br&gt;rules/02 §4 — state / login CSRF" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="440" y="560" width="270" height="60" as="geometry"/>
         </mxCell>
         <mxCell id="s_det" value="sota-detection-engineering&lt;br&gt;rules/07 — forged SAML tokens T1606.002" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
           <mxGeometry x="800" y="560" width="300" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="s_gap" value="ADDED 2026-09-20&lt;br&gt;Golden SAML mechanics + detection&lt;br&gt;`state` checklist item" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+        <mxCell id="s_gap" value="ADDED 2026-09-20&lt;br&gt;Golden SAML mechanics + detection&lt;br&gt;state checklist item" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
           <mxGeometry x="1180" y="390" width="280" height="90" as="geometry"/>
         </mxCell>
         <mxCell id="se0" value="description classifier" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#666666;" edge="1" parent="1" source="s_task" target="s_router">
@@ -1020,16 +444,16 @@
             <mxPoint as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="se2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#666666;" edge="1" parent="1" source="s_ia" target="s_ia3">
+        <mxCell id="se2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;strokeColor=#82b366;endArrow=blockThin;" edge="1" parent="1" source="s_ia" target="s_ia3">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="se3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#666666;" edge="1" parent="1" source="s_ia" target="s_ia4">
+        <mxCell id="se3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;strokeColor=#82b366;endArrow=blockThin;" edge="1" parent="1" source="s_ia" target="s_ia4">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="se4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#666666;" edge="1" parent="1" source="s_ia" target="s_ia5">
+        <mxCell id="se4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;strokeColor=#82b366;endArrow=blockThin;" edge="1" parent="1" source="s_ia" target="s_ia5">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="se5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#666666;" edge="1" parent="1" source="s_ia" target="s_ia7">
+        <mxCell id="se5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;strokeColor=#82b366;endArrow=blockThin;" edge="1" parent="1" source="s_ia" target="s_ia7">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="se6" value="app-level login" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#666666;" edge="1" parent="1" source="s_router" target="s_cs">
@@ -1045,6 +469,437 @@
         </mxCell>
         <mxCell id="se9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#666666;" edge="1" parent="1" source="s_cs" target="s_gap">
           <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="p5" name="5 · Section x language">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="896" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="note" value="Page 5 — section x language. Which topics each language skill gives its own rules file.&lt;br&gt;&lt;br&gt;SOLID = a file of its own. LIGHT = shares a file with another topic, or is a section inside a broader file (the cell says which). BLANK = no dedicated treatment.&lt;br&gt;&lt;br&gt;Four sections are universal — idioms, security, performance, tooling. The variation is not arbitrary: Errors gets a file only where the error MODEL is distinctive (Rust, Go); Typing only in the gradual-typing pair; Memory/UB only where memory is manual. sota-shell-scripting is excluded — 9 files with a different spine, grouped with languages but not a peer." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="900" height="180" as="geometry"/>
+        </mxCell>
+        <mxCell id="mh0" value="rust" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="430" y="230" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mh1" value="go" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="538" y="230" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mh2" value="c/c++" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="646" y="230" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mh3" value="jvm" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="754" y="230" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mh4" value="python" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="862" y="230" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mh5" value="js/ts" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="970" y="230" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mh6" value=".NET" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1078" y="230" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mh7" value="php" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1186" y="230" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mh8" value="ruby" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1294" y="230" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mr0" value="Idioms / baseline" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=10;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="264" width="380" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m0_0" value="01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="430" y="264" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m0_1" value="02" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="538" y="264" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m0_2" value="01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="646" y="264" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m0_3" value="01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="754" y="264" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m0_4" value="03" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="862" y="264" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m0_5" value="02" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="970" y="264" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m0_6" value="01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1078" y="264" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m0_7" value="01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1186" y="264" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m0_8" value="01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1294" y="264" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mr1" value="API / design" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=10;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="298" width="380" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m1_0" value="01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="430" y="298" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m1_1" value="02" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="538" y="298" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m1_2" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="646" y="298" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m1_3" value="02" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="754" y="298" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m1_4" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="862" y="298" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m1_5" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="970" y="298" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m1_6" value="02" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1078" y="298" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m1_7" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1186" y="298" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m1_8" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1294" y="298" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mr2" value="Errors" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=10;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="332" width="380" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m2_0" value="02" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="430" y="332" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m2_1" value="01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="538" y="332" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m2_2" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="646" y="332" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m2_3" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="754" y="332" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m2_4" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="862" y="332" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m2_5" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="970" y="332" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m2_6" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1078" y="332" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m2_7" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1186" y="332" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m2_8" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1294" y="332" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mr3" value="Typing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=10;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="366" width="380" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m3_0" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="430" y="366" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m3_1" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="538" y="366" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m3_2" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="646" y="366" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m3_3" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="754" y="366" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m3_4" value="02" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="862" y="366" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m3_5" value="01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="970" y="366" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m3_6" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1078" y="366" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m3_7" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1186" y="366" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m3_8" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1294" y="366" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mr4" value="Concurrency" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=10;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="400" width="380" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m4_0" value="04" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="430" y="400" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m4_1" value="03" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="538" y="400" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m4_2" value="05" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="646" y="400" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m4_3" value="03" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="754" y="400" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m4_4" value="04" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="862" y="400" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m4_5" value="03" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="970" y="400" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m4_6" value="03" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1078" y="400" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m4_7" value="01 §6" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1186" y="400" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m4_8" value="05" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1294" y="400" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mr5" value="Memory / UB" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=10;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="434" width="380" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m5_0" value="03" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="430" y="434" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m5_1" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="538" y="434" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m5_2" value="02, 03" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="646" y="434" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m5_3" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="754" y="434" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m5_4" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="862" y="434" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m5_5" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="970" y="434" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m5_6" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1078" y="434" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m5_7" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1186" y="434" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m5_8" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1294" y="434" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mr6" value="Security" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=10;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="468" width="380" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m6_0" value="05" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="430" y="468" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m6_1" value="05" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="538" y="468" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m6_2" value="04" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="646" y="468" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m6_3" value="04" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="754" y="468" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m6_4" value="05" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="862" y="468" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m6_5" value="05" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="970" y="468" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m6_6" value="04" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1078" y="468" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m6_7" value="02, 03, 04" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1186" y="468" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m6_8" value="02" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1294" y="468" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mr7" value="Web / HTTP" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=10;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="502" width="380" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m7_0" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="430" y="502" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m7_1" value="04" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="538" y="502" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m7_2" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="646" y="502" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m7_3" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="754" y="502" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m7_4" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="862" y="502" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m7_5" value="04" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="970" y="502" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m7_6" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1078" y="502" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m7_7" value="04" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1186" y="502" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m7_8" value="03" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1294" y="502" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mr8" value="Performance" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=10;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="536" width="380" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m8_0" value="06" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="430" y="536" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m8_1" value="06" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="538" y="536" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m8_2" value="07" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="646" y="536" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m8_3" value="05" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="754" y="536" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m8_4" value="06" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="862" y="536" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m8_5" value="06" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="970" y="536" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m8_6" value="05" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1078" y="536" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m8_7" value="06" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1186" y="536" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m8_8" value="05" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1294" y="536" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mr9" value="Tooling / CI / supply chain" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=10;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="570" width="380" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m9_0" value="07" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="430" y="570" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m9_1" value="07" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="538" y="570" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m9_2" value="06" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="646" y="570" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m9_3" value="06" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="754" y="570" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m9_4" value="01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="862" y="570" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m9_5" value="07" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="970" y="570" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m9_6" value="06" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1078" y="570" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m9_7" value="05" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1186" y="570" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m9_8" value="04" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1294" y="570" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mr10" value="Testing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=10;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="604" width="380" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m10_0" value="07" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="430" y="604" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m10_1" value="07" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="538" y="604" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m10_2" value="06" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="646" y="604" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m10_3" value="06" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="754" y="604" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m10_4" value="07" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="862" y="604" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m10_5" value="07" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="970" y="604" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m10_6" value="06" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1078" y="604" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m10_7" value="05" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1186" y="604" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m10_8" value="04" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1294" y="604" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mt_lines" value="rules-file lines" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=10;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="648" width="380" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mtlines0" value="2057" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="430" y="648" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mtlines1" value="2128" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="538" y="648" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mtlines2" value="910" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="646" y="648" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mtlines3" value="619" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="754" y="648" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mtlines4" value="1986" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="862" y="648" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mtlines5" value="1729" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="970" y="648" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mtlines6" value="564" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1078" y="648" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mtlines7" value="1118" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1186" y="648" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mtlines8" value="1053" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1294" y="648" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mt_files" value="files" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=10;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="682" width="380" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mtfiles0" value="7" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="430" y="682" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mtfiles1" value="7" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="538" y="682" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mtfiles2" value="7" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="646" y="682" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mtfiles3" value="6" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="754" y="682" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mtfiles4" value="7" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="862" y="682" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mtfiles5" value="7" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="970" y="682" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mtfiles6" value="6" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1078" y="682" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mtfiles7" value="6" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1186" y="682" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mtfiles8" value="5" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1294" y="682" width="102" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="m_note2" value="Two asymmetries that do NOT track a language difference, and are therefore worth a decision rather than an explanation:&lt;br&gt;· API / design has its own file in rust, go, jvm and .NET, and is sparse elsewhere (3–9 mentions in python, js/ts, php, ruby, c/c++).&lt;br&gt;· jvm (619 lines, covering BOTH Java and Kotlin) and .NET (564) are 3–4x thinner than go (2128), rust (2057) and python (1986)." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="40" y="736" width="900" height="120" as="geometry"/>
         </mxCell>
       </root>
     </mxGraphModel>
