@@ -12,6 +12,7 @@ trying to do**, not by file. (Kept in sync by hand; if a link rots, open an issu
 | Make the skills apply to **every** prompt (always-on routing) | [README → Always-on routing](../README.md#always-on-routing-recommended) |
 | Understand how a prompt gets routed to skills | [README → How it works](../README.md#how-it-works); [`skills/sota/SKILL.md`](../skills/sota/SKILL.md) |
 | See example prompts (build & audit) | [README → Using it](../README.md#using-it) |
+| **Add a new language skill**, or know why the language skills differ from each other | [**LANGUAGE-TIER.md**](LANGUAGE-TIER.md) — the shared spine, the variation that is deliberate, the template, and the gates a new language skill must pass |
 | **See the shape of the library** — which skills the router reaches, the 21 cross-cutting hand-offs, and the measured graph of which skill defers to which | [`docs/skill-map.drawio`](skill-map.drawio) (5 pages, incl. a section x language matrix; open in draw.io / diagrams.net) · raw data in [`skill-map.json`](skill-map.json) · regenerate with `python3 scripts/gen-skill-map.py` |
 | Enforce the rules as git hooks | [README → Enforcing the gates](../README.md#enforcing-the-gates) |
 | **Verify a repo is actually set up** (read-only: library reaching it, gates real not just configured, agent file *true*) | Run `scripts/verify-setup.sh` first (mechanical half), then [**VERIFY-SETUP.md**](VERIFY-SETUP.md) for the judgement half |

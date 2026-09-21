@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **[`docs/LANGUAGE-TIER.md`](docs/LANGUAGE-TIER.md) — what the nine language skills share,
+  what they deliberately do not, and a template for adding one.** The spine is idioms,
+  security, performance, tooling/CI, testing and concurrency; the divergence tracks language
+  semantics and is recorded so it does not get "fixed": **Errors** gets a file only where the
+  error *model* is distinctive (Rust, Go) — the concept is covered in all nine, only the file
+  is not; **Typing** only in the gradual-typing pair; **Memory/UB** only where memory is
+  manual; **Web/HTTP** only where the language is web-shaped. The governing rule is stated
+  once: **the shared skill owns the concept, the language skill owns the mechanism** — a
+  topic appearing in both is not duplication until the content says so. The template lists
+  required vs conditional files and the nine gates a new language skill must pass, including
+  the two that are not invariants and will abort or mislead (`gen-skill-map.py`'s `FAMILIES`
+  and `LANG_TOPICS`, and the fact that a new description competes for every existing skill's
+  traffic — `sota-skill-security` took a case from 3/3 to 0/3 with invariants 4, 7 and 15 all
+  green).
+- **ROADMAP items 57 and 58**, the two asymmetries the matrix surfaced that do *not* track a
+  language difference: API/design absent in five language skills, and jvm (619 lines, both
+  Java and Kotlin) and .NET (564) running 3–4x thinner than go (2128). 58 is a **decision
+  before it is work** — splitting `sota-jvm` would add a skill and move the classifier. The
+  roadmap's "actionable set is empty" prose is corrected in the same change.
+
 - **`docs/skill-map.drawio` gains page 5 — section x language**, a matrix of which topics
   each of the 9 language skills gives its own rules file. Four sections are universal
   (idioms, security, performance, tooling/CI) and the variation tracks language semantics:
@@ -62,6 +82,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   non-deterministic and a flaky gate gets disabled.
 
 ### Fixed
+
+- **`q4_data_race` tested a confusion it was not built for.** The task read "two
+  goroutines sharing a map", and a Go-specific race is exactly what the router's
+  cross-cutting rule 1 says should **stack** — `sota-golang` for the mechanism,
+  `sota-async-concurrency` for the model — so a single-pick case cannot express the right
+  answer. Measured: the model picked `sota-golang` **3/3 with distractor-pick 0.00**, never
+  falling for the async-vs-performance confusion the case exists to test; a language signal
+  pulled it out of the designed pair entirely. The task is now language-neutral and
+  `expect` is unchanged, because the expectation was never in doubt. Routing baseline
+  **0.900 → 1.000** (sonnet-4.6, 3 samples, 2026-09-21), q4 now 3/3 on
+  `sota-async-concurrency`. **The set is now saturated**, so like the 4-case regression set
+  it can report a drop but cannot measure a gain — it is an alarm, not a yardstick.
 
 - **Three skill-map pages rendered but could not be read.** Layout is a correctness concern
   for a diagram, and each defect was found by rendering the page and looking at it — not by
