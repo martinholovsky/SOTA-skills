@@ -79,30 +79,72 @@ lands in the existing idioms file unless it pushes it past 500 lines.
 would be prompted for it. That is the `state`/CSRF lesson — content that exists but is
 never reached by the checklist is not reachable in AUDIT mode.
 
-### Item 58 — jvm and .NET are 3–4× thinner than their peers
+### Item 58 — jvm/.NET depth: the framing was refuted, the recommendation is to close
 
-| skill | rules-file lines | files |
-|---|---|---|
-| golang | 2128 | 7 |
-| rust | 2057 | 7 |
-| python | 1986 | 7 |
-| js/ts | 1729 | 7 |
-| php | 1118 | 6 |
-| ruby | 1053 | 5 |
-| c/c++ | 910 | 7 |
-| **jvm** | **619** | 6 |
-| **.NET** | **564** | 6 |
+**This section previously said jvm and .NET were "3–4× thinner than their peers". Measured
+2026-09-21, that was true of line count and false of what line count was standing in for.**
 
-`sota-jvm` covers **both Java and Kotlin** in 619 lines. Thin is not automatically wrong —
-a skill can be dense — but a 3.4× gap against Go is an accident until someone decides it is
-not.
+Per 100 rules-lines, counting actionable audit items and worked examples:
 
-**This item is a decision before it is work.** Three options, and they are not equivalent:
-(a) thicken both in place; (b) split `sota-jvm` into Java and Kotlin, which adds a skill
-and therefore competes for routing traffic (invariant 29, and a before/after routing run);
-(c) declare the current depth correct and record why, closing the item. **Do not start
-writing until (a)/(b)/(c) is chosen** — option (b) changes the description classifier and
-is not reversible by deleting prose.
+| skill | rules lines | audit items | items/100 | examples/100 |
+|---|---|---|---|---|
+| dotnet | 564 | 60 | **10.6** | 1.1 |
+| jvm | 619 | 65 | **10.5** | 1.0 |
+| ruby | 1053 | 85 | 8.1 | 1.3 |
+| c/c++ | 910 | 72 | 7.9 | 1.4 |
+| php | 1118 | 85 | 7.6 | 2.7 |
+| python | 1986 | 138 | 6.9 | 3.3 |
+| golang | 2128 | 140 | 6.6 | 2.9 |
+| js/ts | 1729 | 104 | 6.0 | 3.8 |
+| rust | 2057 | 94 | 4.6 | 1.8 |
+
+**jvm and .NET carry the highest audit-item density in the library.** The bounded deficit is
+**worked examples** (1.0–1.1 per 100 lines against 2.7–3.8 at the top). Structurally they are
+**one compact template applied twice** — identical six-file layout, same order, near-identical
+names — so it was never two independently thin skills.
+
+**Caveat, published with the number:** the checkbox and shell-block checklist formats are not
+comparable on this metric. A `- [ ]` item can bundle several commands; a fenced block counts
+per line. The jvm/.NET-vs-peers comparison is within-format and sound; rust's last place is
+not evidence of anything.
+
+**Recommendation: close as (c).** Splitting `sota-jvm` is rejected — it adds a skill, moves
+the description classifier and competes for every neighbour's traffic, to fix a deficit the
+measurement says is not there. Worked examples for jvm/.NET remain optional polish.
+
+## Structural audit of the nine SKILL.md files (2026-09-21)
+
+**No gap.** All nine carry the same five sections — Purpose, BUILD mode, AUDIT mode, Rules
+index, Top-10 non-negotiables — and each Top-10 has exactly ten items.
+`sota-javascript-typescript` is uniformly *compressed* (70 lines vs 115–160), not incomplete;
+its only deviations are cosmetic: the title omits `(2026)`, the BUILD/AUDIT headings carry
+parentheticals nobody else uses, and it writes `Top 10` where the rest write `Top-10`.
+
+### Two things deliberately NOT aligned, with the reason
+
+- **Rules filenames.** The same topic is variously `07-tooling-ci`, `06-build-tooling-ci`,
+  `01-tooling-project-setup`, `07-testing-and-tooling`, `05-composer-tooling`,
+  `04-supply-chain-tooling`. **Do not rename:** 390 citations name the descriptive filename
+  (`rules/NN-name.md`) against 2,945 that use the number alone, and the router's library map
+  carries numbers plus prose rather than filenames, so it will not help you find them. The
+  cost is real; the benefit is aesthetic.
+- **Numbering order.** rust opens with ownership, go with errors, python with tooling.
+  Renumbering breaks the `rules/NN` form that carries the other 2,945 citations. Leave it.
+
+### One thing that IS worth deciding — the audit-checklist body format
+
+Invariant 2 gates the *heading*; nothing gates the body, and three forms exist:
+
+| form | skills |
+|---|---|
+| tickable `- [ ]` | rust, js/ts |
+| fenced shell block | python, jvm, .NET, c/c++, php |
+| prose + commands | golang, ruby |
+
+This is **not cosmetic**. AUDIT mode tells the model to "verify your diff satisfies every
+item" — a checkbox list is enumerable, a prose block is not. Unifying it is a rewrite of
+seven skills and needs its own decision; it is recorded here so it is not absorbed silently
+into other work.
 
 ## Template — adding a new language skill
 

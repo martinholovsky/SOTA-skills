@@ -83,6 +83,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **ROADMAP 58's own framing was refuted by measurement, one day after it was written.** The
+  row opened with "jvm and .NET are 3–4x thinner than their peers", which was true of line
+  count and false of what line count stood in for. Measured per 100 rules-lines, **.NET (10.6)
+  and jvm (10.5) carry the highest actionable-audit-item density in the library** — rust, the
+  second-largest skill, is last at 4.6. The bounded real deficit is **worked examples** (1.0–1.1
+  vs 2.7–3.8). Structurally the two are **one compact template applied twice**, not two
+  independently thin skills, so splitting `sota-jvm` is rejected: it would add a skill and move
+  the description classifier to fix a deficit that is not there. The row now carries the
+  measurement and a recommendation to close; the caveat that the checkbox and shell-block
+  checklist formats are not comparable on this metric is published beside the number.
+- **The nine language `SKILL.md` files are structurally aligned** — all carry Purpose, BUILD,
+  AUDIT, Rules index and a Top-10 with exactly ten items. `sota-javascript-typescript` is
+  uniformly compressed (70 lines), not incomplete. Recorded so the question is not re-opened.
+  Two alignments are **rejected on cost**: renaming rules files (390 citations name the
+  descriptive filename, against 2,945 using the number alone) and renumbering (breaks those
+  2,945). One is **recorded as an open decision rather than absorbed silently**: the audit
+  checklist *body* has three formats across nine skills — tickable, fenced shell block, and
+  prose — and only the heading is gated, which matters because AUDIT mode asks the model to
+  satisfy "every item" and only one of those forms is enumerable.
+
 - **`q4_data_race` tested a confusion it was not built for.** The task read "two
   goroutines sharing a map", and a Go-specific race is exactly what the router's
   cross-cutting rule 1 says should **stack** — `sota-golang` for the mechanism,
