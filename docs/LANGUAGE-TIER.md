@@ -147,6 +147,54 @@ measurement**, and unifying is a rewrite of seven skills, so it is **DEFERRED** 
 ADOPTION-LOG with an explicit trigger: a measurement showing the format changes audit
 behaviour, or a third instance of a reader unable to enumerate a checklist.
 
+## Depth: the concept matrix (item granularity)
+
+The spine table above is **file** granularity, which is what found ROADMAP 57. It is
+structurally blind to a concept missing *inside* a file that exists — and that is where two
+of 2026-09-21's findings lived. `scripts/gen-concept-matrix.py` reads every Audit-checklist
+item in the tier and reports **concept x language presence**.
+
+Run it: `python3 scripts/gen-concept-matrix.py [--show-unmatched N]`.
+
+**What it is, exactly: a candidate generator with a measured error rate — not a gap list.**
+It classifies by declared matchers over item text, and a matcher answers *"does this wording
+appear"*, never *"is this idea covered"*. Measured on the first pass, **3 of the 4 candidates
+checked by opening the file were vocabulary artefacts**, not gaps:
+
+| candidate | verdict on reading the file |
+|---|---|
+| SQL injection absent in php | **false** — `02-injection.md` says *"SQL built from strings"*, `whereRaw`, `EMULATE_PREPARES`; the matcher wanted the literal "sql injection" |
+| deserialization absent in rust | **false** — 6 hits for serde/untrusted across four checklists; the matcher lacked `serde` |
+| linter suppression absent in rust | **false** — `rules/07` probes `rg '#!\[allow'`; the matcher wanted `#[allow` and the text writes `#![allow` |
+| linter suppression absent in jvm/.NET/c-cpp | **TRUE** — confirmed absent from every checklist in all three |
+
+So: **open the file for every candidate**, and when a candidate dies, fix the *matcher* in the
+same change — the vocabulary is the thing being built. Each pass prints a classification
+denominator per skill (currently 67–93% for the tier, 60% for shell); the unclassified
+remainder is a hole in the matcher vocabulary, not evidence about the skills, and
+`--show-unmatched` lists it so the next pass can close it.
+
+**`sota-shell-scripting` is reported as its own group**, never a tenth column — the tier's
+spine does not apply to it, and mixing them manufactures gaps that are only a difference in
+kind.
+
+### Verified gap: nobody probes the linter's escape hatch in jvm, .NET or c/c++
+
+Six of nine languages probe *"someone silenced the analyser"* — rust (`#![allow]` without a
+reason), go, python, js/ts (`@ts-ignore`), php, ruby. Three do not, and each has a prominent
+mechanism its checklist never asks about:
+
+| skill | the un-probed escape hatch |
+|---|---|
+| jvm | `@SuppressWarnings`, SpotBugs `@SuppressFBWarnings`, `// NOSONAR` |
+| .NET | `#pragma warning disable`, `[SuppressMessage]`, `<NoWarn>` in the csproj, `.editorconfig` severity=none |
+| c/c++ | `// NOLINT` / `// NOLINTNEXTLINE`, `cppcheck-suppress`, `#pragma GCC diagnostic ignored` |
+
+This is the **same shape** as the `$?` finding the same day: a rule present for some members
+of a family and absent for its neighbours, invisible to every file-level view because all
+three skills *have* a tooling file. It matters because a suppression is how a green gate
+stops meaning anything — `sota-code-security` rules/10's subject, one layer down.
+
 ## Depth: the external-guide gap-check (ROADMAP 59)
 
 Coverage inside this tier is checked against an **external, enumerable, tool-backed list** —

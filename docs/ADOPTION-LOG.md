@@ -4634,3 +4634,47 @@ an intervening `echo` gives 0, and so does a bare `[ -n "x" ]`.
 **The probe is labelled a locator, not a verdict** — it hits correct captures too, and the
 fixtures showed that, so the item tells the auditor to read the two lines above each hit
 rather than treating a hit as a finding.
+
+## 2026-09-21 — the concept matrix: item-granularity alignment, and its measured error rate
+
+**Operator request:** map what each skill has uniquely, decide what should be standard across
+all languages, align it, and give the library a real template. This entry covers the *mapping*
+instrument and the first verified gap; alignment and the template are ROADMAP 60 and 61.
+
+**Why a new instrument rather than extending page 5.** `gen-skill-map.py` maps topic x
+language at **file** granularity — that is how ROADMAP 57 was found, and it is structurally
+blind to a concept missing *inside* a file that exists. Both of the day's other findings were
+of exactly that shape (the `$?` rule in bash, the ABI section in c/c++), and no file-level view
+could have reported either, because every skill involved *had* the relevant file.
+
+`scripts/gen-concept-matrix.py` + `scripts/lib/extract_items.py`: every Audit-checklist item in
+the tier, classified into **41 declared concepts**, reported as concept x language presence.
+
+**Two design decisions worth recording.**
+
+- **Presence, not counts.** `gen-skill-map.py`'s own docstring warns the two checklist body
+  formats are not comparable by volume (a checkbox bundles several commands; a fence counts per
+  line). *Presence* is format-agnostic, so the incomparability that blocks counting does not
+  apply — which is why this asks a presence question and never prints a total.
+- **A fence comment plus its commands is ONE item.** The first run classified bare `grep` lines
+  with no prose and reported **go as lacking API-design probes** while `02-design.md` plainly
+  has them. Grouping raised classification from 49–78% to 67–93% and removed that false row.
+
+**The measured error rate, published because it is the number that decides how to read the
+output: 3 of the 4 candidates checked by opening the file were vocabulary artefacts.** php SQL
+injection (the file says *"SQL built from strings"*, not "sql injection"), rust deserialization
+(the matcher lacked `serde`), rust suppression (the matcher wanted `#[allow`, the text writes
+`#![allow`). Each was fixed in the matcher in the same change — **the vocabulary is the thing
+being built**, and a dead candidate is how it gets built. So the output is a **candidate
+generator**, never a gap list, and the file says so above its own results.
+
+**The one that survived — ROADMAP 60.** Six of nine languages probe *"someone silenced the
+analyser"*; **jvm, .NET and c/c++ do not**, confirmed by reading every checklist in all three.
+Each has a prominent mechanism (`@SuppressWarnings`/`NOSONAR`, `#pragma warning disable`/
+`<NoWarn>`, `// NOLINT`/`cppcheck-suppress`). It matters because a suppression is how a green
+gate stops meaning anything — `sota-code-security` rules/10's subject, one layer down.
+
+**Honest limits, stated in the script's own header rather than here alone:** it answers "does
+this wording appear", never "is this idea covered"; every run prints a per-skill denominator;
+`--show-unmatched` lists what the vocabulary could not classify, because an item this file
+cannot classify is a hole in the file, not evidence about the skill.
