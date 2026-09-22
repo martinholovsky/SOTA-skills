@@ -474,11 +474,11 @@
     </mxGraphModel>
   </diagram>
   <diagram id="p5" name="5 · Section x language">
-    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="896" math="0" shadow="0">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1014" math="0" shadow="0">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="note" value="Page 5 — section x language. Which topics each language skill gives its own rules file.&lt;br&gt;&lt;br&gt;SOLID = a file of its own. LIGHT = shares a file with another topic, or is a section inside a broader file (the cell says which). BLANK = no file AND no section — which is NOT the same as &#x27;not covered&#x27;: a concept can still be probed from inside another topic, and gen-concept-matrix.py is what answers that question. This legend read &#x27;no dedicated treatment&#x27; until 2026-09-22, while 11 cells were blank with a real section behind them.&lt;br&gt;&lt;br&gt;Eight sections are universal — Idioms, API, Errors, Concurrency, Security, Performance, Tooling, Testing. The variation is not arbitrary: Errors gets a file only where the error MODEL is distinctive (Rust, Go); Typing only in the gradual-typing pair; Memory/UB only where memory is manual. sota-shell-scripting is excluded — 9 files with a different spine, grouped with languages but not a peer." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="note" value="Page 5 — section x language. Which topics each language skill gives its own rules file.&lt;br&gt;&lt;br&gt;SOLID = a file of its own. LIGHT = shares a file with another topic, or is a section inside a broader file (the cell says which). BLANK = no file AND no section — which is NOT the same as &#x27;not covered&#x27;: a concept can still be probed from inside another topic, and gen-concept-matrix.py is what answers that question. This legend read &#x27;no dedicated treatment&#x27; until 2026-09-22, while 11 cells were blank with a real section behind them.&lt;br&gt;&lt;br&gt;Eight sections are universal — Idioms, API, Errors, Concurrency, Security, Performance, Tooling, Testing. The variation is not arbitrary: Errors gets a file only where the error MODEL is distinctive (Rust, Go); Typing wherever a checker is bolted onto the language (python, js/ts, ruby, php, c/c++, .NET NRT) and not in rust/go/jvm; Memory/UB only where memory is manual. sota-shell-scripting is excluded — 9 files with a different spine, grouped with languages but not a peer." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
           <mxGeometry x="40" y="20" width="900" height="180" as="geometry"/>
         </mxCell>
         <mxCell id="mh0" value="rust" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;fontSize=11;" vertex="1" parent="1">
@@ -529,7 +529,7 @@
         <mxCell id="m0_5" value="02" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="970" y="264" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m0_6" value="01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="m0_6" value="01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="1078" y="264" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="m0_7" value="01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
@@ -619,10 +619,10 @@
         <mxCell id="m3_5" value="01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="970" y="366" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m3_6" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="m3_6" value="01 §2" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="1078" y="366" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m3_7" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="m3_7" value="01 §2" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="1186" y="366" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="m3_8" value="01 §6" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
@@ -898,8 +898,38 @@
         <mxCell id="mtfiles8" value="5" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="1294" y="682" width="102" height="28" as="geometry"/>
         </mxCell>
+        <mxCell id="m_sh" value="sota-shell-scripting (bash + zsh + PowerShell) — covered, and deliberately NOT a column: its spine is different, so a shared grid would imply comparisons that do not hold.&lt;br&gt;9 files, 2794 lines — larger than several language skills. zsh is treated as its own dialect throughout, not as a bash footnote." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fffbe6;strokeColor=#d6b656;align=left;spacingLeft=10;verticalAlign=middle;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="728" width="1346" height="46" as="geometry"/>
+        </mxCell>
+        <mxCell id="msh0" value="01&lt;br&gt;Safety Baseline" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fdf6d8;strokeColor=#d6b656;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="40" y="782" width="144" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="msh1" value="02&lt;br&gt;Robustness &amp; Correctness" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fdf6d8;strokeColor=#d6b656;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="190" y="782" width="144" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="msh2" value="03&lt;br&gt;Security" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fdf6d8;strokeColor=#d6b656;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="340" y="782" width="144" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="msh3" value="04&lt;br&gt;CI &amp; Operational Scripts" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fdf6d8;strokeColor=#d6b656;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="490" y="782" width="144" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="msh4" value="05&lt;br&gt;Constructs &amp; Cleanup: arra" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fdf6d8;strokeColor=#d6b656;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="640" y="782" width="144" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="msh5" value="06&lt;br&gt;Ad-hoc commands: the ones " style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fdf6d8;strokeColor=#d6b656;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="790" y="782" width="144" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="msh6" value="07&lt;br&gt;CI steps, deploy scripts, " style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fdf6d8;strokeColor=#d6b656;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="940" y="782" width="144" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="msh7" value="08&lt;br&gt;Ad-hoc commands: when the " style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fdf6d8;strokeColor=#d6b656;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="782" width="144" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="msh8" value="09&lt;br&gt;Listing and selection: the" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fdf6d8;strokeColor=#d6b656;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="782" width="144" height="40" as="geometry"/>
+        </mxCell>
         <mxCell id="m_note2" value="API / design was the one asymmetry that did not track a language difference. CLOSED 2026-09-22 (ROADMAP 57): all nine now carry it, as a dedicated file in some and a section inside the idioms file in others, and gen-concept-matrix.py pins it at 9/9 so it cannot regress.&lt;br&gt;&lt;br&gt;Per-language detail deliberately NOT repeated here -- it lives in docs/LANGUAGE-TIER.md. This sentence named the languages twice and rotted twice in two days (2026-09-21 and -22), because a hand-written list inside a GENERATED artifact has no gate: the map gate proves the artifact matches the generator, never that the generator is true.&lt;br&gt;&lt;br&gt;RETRACTED 2026-09-21 — this note previously read &quot;jvm and .NET are 3–4x thinner&quot;. True of line count, false of what line count stood in for: per 100 rules-lines they carry the HIGHEST audit-item density in the library (.NET 11.7, jvm 11.3 — COMPUTED NOW, not the 2026-09-21 figures of 10.6 and 10.5; both skills have gained audit items since) and rust, the second-largest skill, is lowest at 4.6. The bounded deficit is worked examples. Caveat: the checkbox and shell-block checklist formats are not comparable, so this read is within-format." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
-          <mxGeometry x="40" y="736" width="900" height="150" as="geometry"/>
+          <mxGeometry x="40" y="854" width="900" height="150" as="geometry"/>
         </mxCell>
       </root>
     </mxGraphModel>

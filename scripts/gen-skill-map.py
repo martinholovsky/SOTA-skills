@@ -93,10 +93,10 @@ LANG_TOPICS = {
                               "03": ["Concurrency"], "04": ["Web / HTTP"],
                               "05": ["Security"], "06": ["Performance"],
                               "07": ["Testing", "Tooling / CI / supply chain"]},
-    "dotnet": {"01": ["Idioms / baseline"], "02": ["API / design", "Errors"],
+    "dotnet": {"01": ["Idioms / baseline", "Typing"], "02": ["API / design", "Errors"],
                "03": ["Concurrency"], "04": ["Security", "Web / HTTP"], "05": ["Performance"],
                "06": ["Tooling / CI / supply chain", "Testing"]},
-    "php": {"01": ["Idioms / baseline", "Concurrency", "API / design", "Errors"], "02": ["Security"],
+    "php": {"01": ["Idioms / baseline", "Concurrency", "API / design", "Errors", "Typing"], "02": ["Security"],
             "03": ["Security"], "04": ["Security", "Web / HTTP"],
             "05": ["Tooling / CI / supply chain", "Testing"], "06": ["Performance"]},
     "ruby": {"01": ["Idioms / baseline", "API / design", "Errors", "Typing"], "02": ["Security"], "03": ["Web / HTTP"],
@@ -129,7 +129,13 @@ INLINE = {("php", "Concurrency"): "01 §6",
           ("c-cpp", "Typing"): "01 §6",
           ("ruby", "Typing"): "01 §6",
           ("python", "Web / HTTP"): "07 §1-2",
-          ("dotnet", "Web / HTTP"): "04 §4"}
+          ("dotnet", "Web / HTTP"): "04 §4",
+          # php and .NET are gradual-typing languages too, which the note's
+          # "only in the gradual-typing pair" missed: php bolts PHPStan/Psalm LEVELS onto
+          # a dynamic language exactly as python does mypy, and C# NRT is opt-in
+          # nullability you enable per project. Both have a dedicated section.
+          ("php", "Typing"): "01 §2",
+          ("dotnet", "Typing"): "01 §2"}
 
 
 def audit_items(lang):
@@ -637,7 +643,8 @@ def page_matrix(lang_files):
               # lines away has no business being a literal.
               "%s. The "
               "variation is not arbitrary: Errors gets a file only where the error MODEL is "
-              "distinctive (Rust, Go); Typing only in the gradual-typing pair; Memory/UB "
+              "distinctive (Rust, Go); Typing wherever a checker is bolted onto the language "
+              "(python, js/ts, ruby, php, c/c++, .NET NRT) and not in rust/go/jvm; Memory/UB "
               "only where memory is manual. `sota-shell-scripting` is excluded — 9 files "
               "with a different spine, grouped with languages but not a peer."
               % _universal_phrase(),
@@ -678,6 +685,34 @@ def page_matrix(lang_files):
                           BOX + "fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;",
                           x0 + j * cw, y, cw - 6, rh - 6))
         y += rh
+
+    # --- the shell strip ------------------------------------------------------------
+    # sota-shell-scripting is NOT a column here: different spine, so a shared grid would
+    # imply comparisons that do not hold. But leaving it off the page entirely made a
+    # reader ask "do we not cover bash/zsh?" on 2026-09-22 -- with 9 files and ~2.8k lines
+    # in the tree, more than jvm or .NET. Absent from the picture read as absent from the
+    # library, so it gets a strip of its own, clearly outside the grid.
+    y += 12
+    sh_files = sorted((ROOT / "skills/sota-shell-scripting/rules").glob("*.md"))
+    sh_lines = sum(len(f.read_text(encoding="utf-8").splitlines()) for f in sh_files)
+    c.append(cell("m_sh", "sota-shell-scripting (bash + zsh + PowerShell) — covered, and "
+                          "deliberately NOT a column: its spine is different, so a shared "
+                          "grid would imply comparisons that do not hold.\n"
+                          "%d files, %d lines — larger than several language skills. zsh is "
+                          "treated as its own dialect throughout, not as a bash footnote."
+                          % (len(sh_files), sh_lines),
+                  BOX + "fillColor=#fffbe6;strokeColor=#d6b656;align=left;spacingLeft=10;"
+                        "verticalAlign=middle;fontSize=11;", 40, y, lw + 9 * cw - 6, 46))
+    y += 54
+    for j, f in enumerate(sh_files):
+        title = f.read_text(encoding="utf-8").splitlines()[0].lstrip("# ").strip()
+        short = title.split("—")[-1].strip() if "—" in title else title
+        c.append(cell("msh%d" % j, "%s\n%s" % (f.name[:2], short[:26]),
+                      BOX + "fillColor=#fdf6d8;strokeColor=#d6b656;fontSize=9;",
+                      40 + j * ((lw + 9 * cw) // 9), y,
+                      ((lw + 9 * cw) // 9) - 6, rh + 6))
+    y += rh + 18
+
     dens = {l: (audit_items(l)[0] / lang_files[l][0] * 100) for l in LANGS}
     c.append(cell("m_note2",
                   "API / design was the one asymmetry that did not track a language "
