@@ -214,36 +214,27 @@ CPU profiles often blame the interpreter when the real cost is chatty I/O or slo
 
 ## Audit checklist
 
-```bash
-# Ruff perf rules
-uvx ruff check --select PERF,C4,SIM --statistics .
-
-# String building & containers [hot-loop suspects]
-grep -rn "+= .*str(\|+= f\"\|+= \"" --include="*.py" src/        # concat in loops? check context
-grep -rn "\.pop(0)\|insert(0," --include="*.py" src/             # O(n) deque ops
-grep -rn "in \[" --include="*.py" src/ | head                    # list membership in conditions
-
-# re.compile / invariant work inside loops [manual: confirm loop context]
-grep -rn "re.compile\|re.match\|re.search" --include="*.py" src/ | head -30
-
-# DataFrame antipatterns [MEDIUM in data code]
-grep -rn "iterrows\|itertuples\|\.apply(lambda" --include="*.py" src/
-grep -rn "for .* in df\[" --include="*.py" src/
-
-# Cache hygiene
-grep -rn "@cache$\|@functools.cache" --include="*.py" src/       # unbounded — user-controlled args? on methods?
-grep -rn "@lru_cache" --include="*.py" src/ -A2 | grep "def .*(self"   # instance leak [MEDIUM]
-grep -rn "cache_clear" --include="*.py" tests/ src/              # invalidation/test isolation present?
-
-# Concurrency model sanity
-grep -rn "ThreadPoolExecutor" --include="*.py" src/              # used for CPU-bound work? [MEDIUM]
-grep -rn "multiprocessing\|ProcessPoolExecutor" --include="*.py" src/ | head
-grep -rln "if __name__" $(grep -rln ProcessPoolExecutor --include="*.py" src/ 2>/dev/null)
-
-# Import-time cost (CLIs/lambdas)
-python -X importtime -c "import mypkg" 2>&1 | sort -t'|' -k2 -rn | head -15
-grep -rn "^import pandas\|^import numpy\|^import torch" --include="*.py" src/*cli* src/*/cli* 2>/dev/null
-
-# Benchmarks exist for perf-critical code?
-grep -rln "pytest-benchmark\|pyperf" pyproject.toml tests/ 2>/dev/null
-```
+- [ ] **Ruff perf rules** — `uvx ruff check --select PERF,C4,SIM --statistics .`
+- [ ] **String building & containers [hot-loop suspects]** —
+      `grep -rn "+= .*str(\|+= f\"\|+= \"" --include="*.py" src/` (concat in loops? check
+      context); `grep -rn "\.pop(0)\|insert(0," --include="*.py" src/` (O(n) deque ops);
+      `grep -rn "in \[" --include="*.py" src/ | head` (list membership in conditions)
+- [ ] **re.compile / invariant work inside loops [manual: confirm loop context]** —
+      `grep -rn "re.compile\|re.match\|re.search" --include="*.py" src/ | head -30`
+- [ ] **DataFrame antipatterns [MEDIUM in data code]** —
+      `grep -rn "iterrows\|itertuples\|\.apply(lambda" --include="*.py" src/` ;
+      `grep -rn "for .* in df\[" --include="*.py" src/`
+- [ ] **Cache hygiene** — `grep -rn "@cache$\|@functools.cache" --include="*.py" src/`
+      (unbounded — user-controlled args? on methods?);
+      `grep -rn "@lru_cache" --include="*.py" src/ -A2 | grep "def .*(self"` (instance leak
+      [MEDIUM]); `grep -rn "cache_clear" --include="*.py" tests/ src/` (invalidation/test
+      isolation present?)
+- [ ] **Concurrency model sanity** — `grep -rn "ThreadPoolExecutor" --include="*.py" src/` (used
+      for CPU-bound work? [MEDIUM]);
+      `grep -rn "multiprocessing\|ProcessPoolExecutor" --include="*.py" src/ | head` ;
+      `grep -rln "if __name__" $(grep -rln ProcessPoolExecutor --include="*.py" src/ 2>/dev/null)`
+- [ ] **Import-time cost (CLIs/lambdas)** —
+      `python -X importtime -c "import mypkg" 2>&1 | sort -t'|' -k2 -rn | head -15` ;
+      `grep -rn "^import pandas\|^import numpy\|^import torch" --include="*.py" src/*cli* src/*/cli* 2>/dev/null`
+- [ ] **Benchmarks exist for perf-critical code?** —
+      `grep -rln "pytest-benchmark\|pyperf" pyproject.toml tests/ 2>/dev/null`

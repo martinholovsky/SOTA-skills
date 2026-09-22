@@ -238,71 +238,53 @@ Run from repo root; verify each hit manually.
 **Public surface** (§8) — Ruby hides nothing by default, so the question is what you
 failed to hide, not what you exported:
 
-```bash
-# `private` does NOT apply to `def self.` -- measured on 4.0.6, the class method stayed
-# callable while the instance method raised NoMethodError. A private that applies to
-# nothing looks identical to one that works.
-grep -rn -B3 'def self\.' lib/ | grep -A3 '^\s*private\s*$'
-grep -rn 'private_class_method\|class << self' lib/      # the forms that actually work
-# `private` does NOT apply to constants either: a bare CONST is reachable as Mod::CONST
-grep -rnE '^\s*[A-Z][A-Z0-9_]+ *=' lib/ | grep -v 'private_constant'
-# ^ A LOCATOR, NOT A VERDICT: `grep -v` is line-scoped, so a constant privatised on the
-#   NEXT line still appears here (verified against a fixture that does exactly that).
-#   Compare the two counts below instead of trusting the filtered list.
-grep -rncE '^\s*[A-Z][A-Z0-9_]+ *=' lib/ ; grep -rnc 'private_constant' lib/
-grep -rn 'private_constant' lib/                          # the mechanism, if used at all
-# Monkey-patching a core class is API for the whole process, not just this gem
-grep -rnE '^\s*class (String|Array|Hash|Integer|Object|Kernel)\b' lib/
-grep -rn 'refine \|using ' lib/                            # the scoped alternative (§7)
-```
+- [ ] ** `private` does NOT apply to `def self.` -- measured on 4.0.6, the class method stayed
+      callable while the instance method raised NoMethodError. A private that applies to nothing
+      looks identical to one that works.** —
+      `grep -rn -B3 'def self\.' lib/ | grep -A3 '^\s*private\s*$'` ;
+      `grep -rn 'private_class_method\|class << self' lib/` (the forms that actually work)
+- [ ] ** `private` does NOT apply to constants either: a bare CONST is reachable as Mod::CONST A
+      LOCATOR, NOT A VERDICT: `grep -v` is line-scoped, so a constant privatised on the NEXT
+      line still appears here (verified against a fixture that does exactly that). Compare the
+      two counts below instead of trusting the filtered list.** —
+      `grep -rnE '^\s*[A-Z][A-Z0-9_]+ *=' lib/ | grep -v 'private_constant'` ;
+      `grep -rncE '^\s*[A-Z][A-Z0-9_]+ *=' lib/ ; grep -rnc 'private_constant' lib/` ;
+      `grep -rn 'private_constant' lib/` (the mechanism, if used at all)
+- [ ] **Monkey-patching a core class is API for the whole process, not just this gem** —
+      `grep -rnE '^\s*class (String|Array|Hash|Integer|Object|Kernel)\b' lib/` ;
+      `grep -rn 'refine \|using ' lib/` (the scoped alternative (§7))
 
 **In-band sentinels** (§5a) — Ruby's search API returns `nil`, so these arrive from
 conversion and from hand-rolled returns:
 
-```bash
-grep -rnE '\.to_i\b|\.to_f\b' --include='*.rb' app/ lib/     # 0 on garbage, 12 on "12abc" — use Integer(s)
-grep -rnE 'return (-1|0)$' --include='*.rb' app/ lib/         # prefer nil, which is falsy and pattern-matchable
-```
+- [ ] `grep -rnE '\.to_i\b|\.to_f\b' --include='*.rb' app/ lib/` (0 on garbage, 12 on "12abc" —
+      use Integer(s)); `grep -rnE 'return (-1|0)$' --include='*.rb' app/ lib/` (prefer nil,
+      which is falsy and pattern-matchable)
 
-```bash
-# Interpreter floor — EOL Ruby is HIGH
-cat .ruby-version 2>/dev/null; grep -n "^ruby" Gemfile 2>/dev/null
-# (compare against the branches page table above)
-
-# Missing frozen_string_literal comments — LOW (bulk-fix with rubocop -a)
-grep -rL "frozen_string_literal: true" --include='*.rb' app/ lib/ 2>/dev/null | head
-
-# rescue Exception — MEDIUM (HIGH if it wraps a main loop)
-grep -rn "rescue Exception" --include='*.rb' .
-
-# Silenced errors — MEDIUM+
-grep -rn "rescue nil" --include='*.rb' .
-grep -rnE "rescue(\s+StandardError)?\s*(=>\s*_?e?)?\s*$" --include='*.rb' . | head
-
-# raise losing the original class/cause
-grep -rnE "raise\s+e\.message" --include='*.rb' .
-
-# OpenStruct in new code — LOW
-grep -rn "OpenStruct" --include='*.rb' .
-
-# Struct without keyword_init (positional-arg hazard) — INFO/LOW
-grep -rn "Struct.new" --include='*.rb' . | grep -v keyword_init
-
-# Pattern matching without pin where comparison was intended (manual review)
-grep -rnE "in \{[^}]*: [a-z_]+ *\}" --include='*.rb' . | head
-
-# Monkey patches on core classes — MEDIUM in app code
-grep -rnE "^\s*class (String|Array|Hash|Integer|Symbol|Object)\b" --include='*.rb' app/ lib/ 2>/dev/null
-
-# method_missing without respond_to_missing?
-grep -rln "def method_missing" --include='*.rb' . | xargs grep -L "respond_to_missing?" 2>/dev/null
-
-# Wall-clock durations — LOW
-grep -rnE "Time\.now.*-.*Time\.now|=\s*Time\.now\b.*# .*(elapsed|duration)" --include='*.rb' . | head
-
-# Typing posture — INFO
-ls sig/ sorbet/ 2>/dev/null; grep -rn "# typed:" --include='*.rb' . | head -3
-```
+- [ ] **Interpreter floor — EOL Ruby is HIGH** —
+      `cat .ruby-version 2>/dev/null; grep -n "^ruby" Gemfile 2>/dev/null`
+- [ ] **(compare against the branches page table above)**
+- [ ] **Missing frozen_string_literal comments — LOW (bulk-fix with rubocop -a)** —
+      `grep -rL "frozen_string_literal: true" --include='*.rb' app/ lib/ 2>/dev/null | head`
+- [ ] **rescue Exception — MEDIUM (HIGH if it wraps a main loop)** —
+      `grep -rn "rescue Exception" --include='*.rb' .`
+- [ ] **Silenced errors — MEDIUM+** — `grep -rn "rescue nil" --include='*.rb' .` ;
+      `grep -rnE "rescue(\s+StandardError)?\s*(=>\s*_?e?)?\s*$" --include='*.rb' . | head`
+- [ ] **raise losing the original class/cause** —
+      `grep -rnE "raise\s+e\.message" --include='*.rb' .`
+- [ ] **OpenStruct in new code — LOW** — `grep -rn "OpenStruct" --include='*.rb' .`
+- [ ] **Struct without keyword_init (positional-arg hazard) — INFO/LOW** —
+      `grep -rn "Struct.new" --include='*.rb' . | grep -v keyword_init`
+- [ ] **Pattern matching without pin where comparison was intended (manual review)** —
+      `grep -rnE "in \{[^}]*: [a-z_]+ *\}" --include='*.rb' . | head`
+- [ ] **Monkey patches on core classes — MEDIUM in app code** —
+      `grep -rnE "^\s*class (String|Array|Hash|Integer|Symbol|Object)\b" --include='*.rb' app/ lib/ 2>/dev/null`
+- [ ] **method_missing without respond_to_missing?** —
+      `grep -rln "def method_missing" --include='*.rb' . | xargs grep -L "respond_to_missing?" 2>/dev/null`
+- [ ] **Wall-clock durations — LOW** —
+      `grep -rnE "Time\.now.*-.*Time\.now|=\s*Time\.now\b.*# .*(elapsed|duration)" --include='*.rb' . | head`
+- [ ] **Typing posture — INFO** —
+      `ls sig/ sorbet/ 2>/dev/null; grep -rn "# typed:" --include='*.rb' . | head -3`
 
 Severity guide: EOL interpreter HIGH; `rescue Exception`/`rescue nil` around
 critical logic MEDIUM–HIGH; missing frozen-string comments LOW (bulk-fixable);

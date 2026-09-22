@@ -272,93 +272,84 @@ existing parameter means.
 
 ## Audit checklist
 
-```bash
-# Owning raw pointers / manual new-delete — MEDIUM (CRITICAL if leak/double-free)
-grep -rnE '\bnew\b[^=]*;' --include='*.cpp' --include='*.h' --include='*.hpp' . | grep -v make_
-grep -rnE '\bdelete\b\s' --include='*.cpp' --include='*.hpp' .
-grep -rn 'malloc\|calloc\|realloc\|free(' --include='*.c' --include='*.cpp' .
-
-# C-style casts and reinterpret_cast — MEDIUM/HIGH
-grep -rnE '\([[:space:]]*[A-Za-z_][A-Za-z0-9_:<> ]*[*&]?[[:space:]]*\)[[:space:]]*[A-Za-z_(]' --include='*.cpp' .  # heuristic, expect FPs
-grep -rn 'reinterpret_cast\|const_cast' --include='*.cpp' --include='*.hpp' .
-
-# Rule of five violations — class with destructor but not all 5 special members
-clang-tidy --checks='cppcoreguidelines-special-member-functions,cppcoreguidelines-rule-of-*' <files>
-
-# Missing virtual destructor in polymorphic base — HIGH (UB on delete-via-base)
-clang-tidy --checks='cppcoreguidelines-virtual-class-destructor,hicpp-use-override' <files>
-
-# Move/idiom smells — LOW
-grep -rn 'return std::move' --include='*.cpp' .          # pessimizes RVO
-grep -rn 'using namespace std;' --include='*.h' --include='*.hpp' .  # in headers: bad
-grep -rnE '#define [A-Z_]+\(' --include='*.h' .          # function-like macros → constexpr/inline
-
-# Error handling (§7) — the section had no probe at all until 2026-08-21
-grep -rnE 'catch[[:space:]]*\([^)]*\)[[:space:]]*\{[[:space:]]*\}' --include='*.cpp' .  # empty catch — HIGH
-grep -rn 'catch (...)' --include='*.cpp' .               # swallow-all: needs a rethrow or a logged reason
-clang-tidy --checks='bugprone-empty-catch,bugprone-exception-escape,misc-throw-by-value-catch-by-reference' <files>
-# Ignored error returns — the C half of §7, and the one nobody greps
-clang-tidy --checks='bugprone-unused-return-value,cert-err33-c' <files>   # cert-err33-c aliases the former
-grep -rn 'std::expected\|absl::Status\|tl::expected' --include='*.cpp' --include='*.hpp' . | head
-# ^ then ask the §7 question a grep cannot: is ONE error model used across a
-#   given boundary, or do exceptions, codes and expected<> meet at an ABI seam?
-#   Mixed models at a boundary is the finding, not any one of them.
-
-# Broad idiom enforcement (the canonical config)
-clang-tidy --checks='cppcoreguidelines-*,modernize-*,bugprone-*' <files>
-
-# In-band sentinels (§7/§8) — absence encoded as a value
-grep -rnE 'return -1;' --include='*.c' --include='*.cpp' .      # producer: same constant from 2 branches?
-grep -rn 'atoi(\|atol(' --include='*.c' --include='*.cpp' .      # 0 on garbage == 0 on "0" (rules/04)
-
-# Construction/destruction traps (§8a) — legal code, silent compiler, wrong behaviour
-# All four are cppcheck ids, so the cheapest probe is to RUN it with these enabled:
-cppcheck --enable=warning,style --inline-suppr <src>   # virtualCallInConstructor,
-#   pureVirtualCall, initializerList, assertWithSideEffect, operatorEqToSelf
-# Without cppcheck, by hand:
-grep -rnE 'assert\(' --include='*.cpp' --include='*.c' --include='*.h' . | grep -E '\+\+|--|=[^=]|\('
-# ^ a side effect inside assert() VANISHES under -DNDEBUG. Measured: assert(++n == 1)
-#   left n==1 normally and n==0 with -DNDEBUG. Check the build actually defines NDEBUG.
-err=$(grep -rn 'NDEBUG' CMakeLists.txt *.cmake 2>&1 >/dev/null); rc=$?
-case $rc in
-  0) ;;                                     # found: asserts are compiled out in that build
-  1) echo "NDEBUG not set here: release builds may still run asserts" ;;
-  *) echo "SWEEP FAILED, not a finding about their code: $err" ;;
-esac
-# ^ written this way on purpose. The one-line form -- a grep with stderr discarded, then
-#   an or-echo announcing absence -- reports YOUR broken sweep as THEIR defect, because the
-#   or-branch fires on every non-zero exit and the discarded stderr took the reason with it.
-#   rules/06 2d. Invariant 32 rejected the short form here while this section was written,
-#   and then rejected this very comment for spelling the pattern out literally: refer to it
-#   by name, never by its characters, in prose that shares a file with the check.
-# Members init in DECLARATION order, not list order -- -Wreorder catches it, so verify the
-# build does not silence it:
-grep -rnE '\-Wall|\-Wreorder|\-Wno-reorder' CMakeLists.txt *.cmake 2>/dev/null
-# Virtual call from a ctor/dtor dispatches to the BASE (measured), and a pure one is UB:
-grep -rnE '^\s*(virtual |[A-Z][A-Za-z0-9_]*::)?~?[A-Z][A-Za-z0-9_]*\s*\([^)]*\)\s*(:|\{)' \
-  --include='*.cpp' . | head   # then read each ctor/dtor body for a virtual call
-grep -rn 'operator=' --include='*.cpp' --include='*.h' . | grep -v 'delete\|default'
-# ^ each hand-written operator= must be self-assignment safe (copy-and-swap, or a guard)
-
-# Public surface / ABI (§9) — layout is part of a released header's contract
-git diff <last-release-tag>..HEAD -- '*.h' '*.hpp' | grep -nE '^\+[^+]' 
-# ^ THE question, which no linter asks: does any + line add a data member, add a
-#   virtual, reorder members, or change a default argument? Each is source-compatible
-#   and ABI-BREAKING, and only the signature change fails loudly at link time.
-grep -rnE '=[[:space:]]*[A-Za-z0-9_"'"'"'{(-]+[[:space:]]*\)' --include='*.h' --include='*.hpp' . | head
-# ^ default arguments in public headers — the value is baked into each CALLER
-grep -rnE '\b(std::(string|vector|map|list|deque|set))\b' --include='*.h' --include='*.hpp' .
-# ^ stdlib types in an EXPORTED signature tie both sides to one toolchain+config;
-#   libstdc++ has had two since GCC 5.1 (_GLIBCXX_USE_CXX11_ABI, std::__cxx11 /
-#   [abi:cxx11] undefined references are the tell). Fine internally; a promise at a
-#   boundary you do not build both sides of. unique_ptr/shared_ptr are deliberately
-#   NOT in the pattern: a unique_ptr<Impl> member is what pimpl above prescribes,
-#   so including them would flag this file's own recommendation (tested, it did).
-grep -rn 'using namespace' --include='*.h' --include='*.hpp' .   # inherited by every includer
-grep -rL  '#pragma once\|#ifndef' --include='*.h' --include='*.hpp' .  # -L = files NOT matching
-grep -rn 'fvisibility' --include='CMakeLists.txt' --include='*.cmake' . || \
-  echo "no -fvisibility=hidden: everything is exported by default — a larger ABI surface than intended"
-# ^ the `||` prints on a FAILED SEARCH too (rules/06 §2d): confirm the grep ran
-#   before reading the message as a finding.
-grep -rnE 'char[[:space:]]+[a-z_]+[[:space:]]*=[[:space:]]*getchar' --include='*.c' .  # EOF in a char: breaks only where char is UNSIGNED
-```
+- [ ] **Owning raw pointers / manual new-delete — MEDIUM (CRITICAL if leak/double-free)** —
+      `grep -rnE '\bnew\b[^=]*;' --include='*.cpp' --include='*.h' --include='*.hpp' . | grep -v make_`
+      ; `grep -rnE '\bdelete\b\s' --include='*.cpp' --include='*.hpp' .` ;
+      `grep -rn 'malloc\|calloc\|realloc\|free(' --include='*.c' --include='*.cpp' .`
+- [ ] **C-style casts and reinterpret_cast — MEDIUM/HIGH** —
+      `grep -rnE '\([[:space:]]*[A-Za-z_][A-Za-z0-9_:<> ]*[*&]?[[:space:]]*\)[[:space:]]*[A-Za-z_(]' --include='*.cpp' .`
+      (heuristic, expect FPs);
+      `grep -rn 'reinterpret_cast\|const_cast' --include='*.cpp' --include='*.hpp' .`
+- [ ] **Rule of five violations — class with destructor but not all 5 special members** —
+      `clang-tidy --checks='cppcoreguidelines-special-member-functions,cppcoreguidelines-rule-of-*' <files>`
+- [ ] **Missing virtual destructor in polymorphic base — HIGH (UB on delete-via-base)** —
+      `clang-tidy --checks='cppcoreguidelines-virtual-class-destructor,hicpp-use-override' <files>`
+- [ ] **Move/idiom smells — LOW** — `grep -rn 'return std::move' --include='*.cpp' .`
+      (pessimizes RVO); `grep -rn 'using namespace std;' --include='*.h' --include='*.hpp' .`
+      (in headers: bad); `grep -rnE '#define [A-Z_]+\(' --include='*.h' .` (function-like macros
+      → constexpr/inline)
+- [ ] **Error handling (§7) — the section had no probe at all until 2026-08-21** —
+      `grep -rnE 'catch[[:space:]]*\([^)]*\)[[:space:]]*\{[[:space:]]*\}' --include='*.cpp' .`
+      (empty catch — HIGH); `grep -rn 'catch (...)' --include='*.cpp' .` (swallow-all: needs a
+      rethrow or a logged reason);
+      `clang-tidy --checks='bugprone-empty-catch,bugprone-exception-escape,misc-throw-by-value-catch-by-reference' <files>`
+- [ ] **Ignored error returns — the C half of §7, and the one nobody greps then ask the §7
+      question a grep cannot: is ONE error model used across a given boundary, or do exceptions,
+      codes and expected<> meet at an ABI seam? Mixed models at a boundary is the finding, not
+      any one of them.** —
+      `clang-tidy --checks='bugprone-unused-return-value,cert-err33-c' <files>` (cert-err33-c
+      aliases the former);
+      `grep -rn 'std::expected\|absl::Status\|tl::expected' --include='*.cpp' --include='*.hpp' . | head`
+- [ ] **Broad idiom enforcement (the canonical config)** —
+      `clang-tidy --checks='cppcoreguidelines-*,modernize-*,bugprone-*' <files>`
+- [ ] **In-band sentinels (§7/§8) — absence encoded as a value** —
+      `grep -rnE 'return -1;' --include='*.c' --include='*.cpp' .` (producer: same constant from
+      2 branches?); `grep -rn 'atoi(\|atol(' --include='*.c' --include='*.cpp' .` (0 on garbage
+      == 0 on "0" (rules/04))
+- [ ] **Construction/destruction traps (§8a) — legal code, silent compiler, wrong behaviour All
+      four are cppcheck ids, so the cheapest probe is to RUN it with these enabled** —
+      `cppcheck --enable=warning,style --inline-suppr <src>` (virtualCallInConstructor,)
+- [ ] **pureVirtualCall, initializerList, assertWithSideEffect, operatorEqToSelf Without
+      cppcheck, by hand: a side effect inside assert() VANISHES under -DNDEBUG. Measured:
+      assert(++n == 1) left n==1 normally and n==0 with -DNDEBUG. Check the build actually
+      defines NDEBUG. written this way on purpose. The one-line form -- a grep with stderr
+      discarded, then an or-echo announcing absence -- reports YOUR broken sweep as THEIR
+      defect, because the or-branch fires on every non-zero exit and the discarded stderr took
+      the reason with it. rules/06 2d. Invariant 32 rejected the short form here while this
+      section was written, and then rejected this very comment for spelling the pattern out
+      literally: refer to it by name, never by its characters, in prose that shares a file with
+      the check.** —
+      `grep -rnE 'assert\(' --include='*.cpp' --include='*.c' --include='*.h' . | grep -E '\+\+|--|=[^=]|\('`
+      ; `err=$(grep -rn 'NDEBUG' CMakeLists.txt *.cmake 2>&1 >/dev/null); rc=$?` ; `case $rc in`
+      ; `0) ;;` (found: asserts are compiled out in that build);
+      `1) echo "NDEBUG not set here: release builds may still run asserts" ;;` ;
+      `*) echo "SWEEP FAILED, not a finding about their code: $err" ;;` ; `esac`
+- [ ] **Members init in DECLARATION order, not list order -- -Wreorder catches it, so verify the
+      build does not silence it** —
+      `grep -rnE '\-Wall|\-Wreorder|\-Wno-reorder' CMakeLists.txt *.cmake 2>/dev/null`
+- [ ] **Virtual call from a ctor/dtor dispatches to the BASE (measured), and a pure one is UB:
+      each hand-written operator= must be self-assignment safe (copy-and-swap, or a guard)** —
+      `grep -rnE '^\s*(virtual |[A-Z][A-Za-z0-9_]*::)?~?[A-Z][A-Za-z0-9_]*\s*\([^)]*\)\s*(:|\{)' --include='*.cpp' . | head`
+      (then read each ctor/dtor body for a virtual call);
+      `grep -rn 'operator=' --include='*.cpp' --include='*.h' . | grep -v 'delete\|default'`
+- [ ] **Public surface / ABI (§9) — layout is part of a released header's contract THE question,
+      which no linter asks: does any + line add a data member, add a virtual, reorder members,
+      or change a default argument? Each is source-compatible and ABI-BREAKING, and only the
+      signature change fails loudly at link time. default arguments in public headers — the
+      value is baked into each CALLER stdlib types in an EXPORTED signature tie both sides to
+      one toolchain+config; libstdc++ has had two since GCC 5.1 (_GLIBCXX_USE_CXX11_ABI,
+      std::__cxx11 / [abi:cxx11] undefined references are the tell). Fine internally; a promise
+      at a boundary you do not build both sides of. unique_ptr/shared_ptr are deliberately NOT
+      in the pattern: a unique_ptr<Impl> member is what pimpl above prescribes, so including
+      them would flag this file's own recommendation (tested, it did). the `||` prints on a
+      FAILED SEARCH too (`sota-shell-scripting` rules/06 §2d): confirm the grep ran before reading the message as a
+      finding.** — `git diff <last-release-tag>..HEAD -- '*.h' '*.hpp' | grep -nE '^\+[^+]'` ;
+      `grep -rnE '=[[:space:]]*[A-Za-z0-9_"'"'"'{(-]+[[:space:]]*\)' --include='*.h' --include='*.hpp' . | head`
+      ;
+      `grep -rnE '\b(std::(string|vector|map|list|deque|set))\b' --include='*.h' --include='*.hpp' .`
+      ; `grep -rn 'using namespace' --include='*.h' --include='*.hpp' .` (inherited by every
+      includer); `grep -rL  '#pragma once\|#ifndef' --include='*.h' --include='*.hpp' .` (-L =
+      files NOT matching);
+      `grep -rn 'fvisibility' --include='CMakeLists.txt' --include='*.cmake' . || echo "no -fvisibility=hidden: everything is exported by default — a larger ABI surface than intended"`
+      ; `grep -rnE 'char[[:space:]]+[a-z_]+[[:space:]]*=[[:space:]]*getchar' --include='*.c' .`
+      (EOF in a char: breaks only where char is UNSIGNED)

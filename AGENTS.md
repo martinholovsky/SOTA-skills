@@ -87,8 +87,11 @@ against primary sources. Update it only after such a sweep; the run goes red pas
 window. Per-file line-1 markers are retired. The same job also reads `evals/ROUTING-BASELINE`
 (**3-month** window — model releases, not fact rot, are what age it): routing is the one
 measurement that can regress with **no diff here**, because the classifier is a model ranking
-42 competing descriptions. The measurement is **deliberately local** — this repo holds no API
-key and CI only compares a date — so refresh it with `scripts/routing-baseline.sh`. Sweep runbook and eval harness:
+42 competing descriptions. The measurement is **deliberately local** — **CI** holds no API key and only
+compares a date — so refresh it with `scripts/routing-baseline.sh`. A maintainer's working
+tree usually *does* have one: every runner reads `OPENROUTER_API_KEY` from the environment or
+`./.env` (gitignored, never committed). Read as "this repo has no key" the sentence stops a
+local re-run that is actually available — which happened twice on 2026-09-22. Sweep runbook and eval harness:
 [docs/MAINTENANCE.md](docs/MAINTENANCE.md) and [evals/](evals/).
 
 Secrets are scanned by **gitleaks** (`.gitleaks.toml` disables only the noisy

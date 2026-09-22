@@ -80,28 +80,23 @@ but the `out` value **is** an in-band sentinel the moment the `bool` is ignored.
 
 ## Audit checklist
 
-```bash
-# HttpClient per-call — HIGH (socket exhaustion)
-grep -rnE 'new HttpClient\(' --include='*.cs' . | head           # prefer IHttpClientFactory
-
-# IDisposable not in using — MEDIUM
-grep -rnE 'new (SqlConnection|FileStream|StreamReader|StreamWriter|MemoryStream|HttpResponseMessage)\(' --include='*.cs' . \
-  | head     # verify using/await using
-
-# DI lifetime bugs — MEDIUM/HIGH (captive dependency)
-grep -rnE 'AddSingleton|AddScoped|AddTransient' --include='*.cs' . | head
-grep -rnE 'GetService|GetRequiredService|IServiceProvider' --include='*.cs' . | head  # service locator?
-
-# Mutable static state — MEDIUM
-grep -rnE 'static (?!readonly|class|void|async|partial)[A-Za-z<>\[\]?]+ [A-Za-z]' --include='*.cs' . | head
-
-# throw ex / swallow — MEDIUM (see rules/01)
-grep -rnE 'throw ex;' --include='*.cs' .
-
-# Mutable collection exposed — LOW
-grep -rnE 'public (List|Dictionary|HashSet)<' --include='*.cs' . | head   # prefer IReadOnly* / encapsulate
-
-# In-band sentinels (§1a) — `int?` over a magic int; TryParse's bool is the signal
-grep -rnE 'return -1;' --include='*.cs' .                       # producer; prefer int?
-grep -rnE 'TryParse\([^)]*out var [a-z]+\);' --include='*.cs' .   # bool DISCARDED -> out is 0 on failure
-```
+- [ ] **HttpClient per-call — HIGH (socket exhaustion)** —
+      `grep -rnE 'new HttpClient\(' --include='*.cs' . | head` (prefer IHttpClientFactory)
+- [ ] **IDisposable not in using — MEDIUM** —
+      `grep -rnE 'new (SqlConnection|FileStream|StreamReader|StreamWriter|MemoryStream|HttpResponseMessage)\(' --include='*.cs' . | head`
+      (verify using/await using)
+- [ ] **DI lifetime bugs — MEDIUM/HIGH (captive dependency)** —
+      `grep -rnE 'AddSingleton|AddScoped|AddTransient' --include='*.cs' . | head` ;
+      `grep -rnE 'GetService|GetRequiredService|IServiceProvider' --include='*.cs' . | head`
+      (service locator?)
+- [ ] **Mutable static state — MEDIUM** —
+      `grep -rnE 'static (?!readonly|class|void|async|partial)[A-Za-z<>\[\]?]+ [A-Za-z]' --include='*.cs' . | head`
+- [ ] **throw ex / swallow — MEDIUM (see rules/01)** —
+      `grep -rnE 'throw ex;' --include='*.cs' .`
+- [ ] **Mutable collection exposed — LOW** —
+      `grep -rnE 'public (List|Dictionary|HashSet)<' --include='*.cs' . | head` (prefer
+      IReadOnly* / encapsulate)
+- [ ] **In-band sentinels (§1a) — `int?` over a magic int; TryParse's bool is the signal** —
+      `grep -rnE 'return -1;' --include='*.cs' .` (producer; prefer int?);
+      `grep -rnE 'TryParse\([^)]*out var [a-z]+\);' --include='*.cs' .` (bool DISCARDED -> out
+      is 0 on failure)

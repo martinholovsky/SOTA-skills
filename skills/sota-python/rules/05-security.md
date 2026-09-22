@@ -302,68 +302,57 @@ it generalises past Django.
 
 ## Audit checklist
 
-```bash
-# One-shot scanners
-uvx ruff check --select S --statistics .
-uvx bandit -r src/ -ll -q
-uv run pip-audit 2>/dev/null || uvx pip-audit
-osv-scanner --lockfile uv.lock 2>/dev/null
-
-# Code execution / deserialization [CRITICAL on untrusted data]
-grep -rn "pickle.loads\|pickle.load\|read_pickle\|joblib.load\|marshal.loads\|dill" --include="*.py" src/
-grep -rn "torch.load" --include="*.py" src/ | grep -v "weights_only=True"
-grep -rn "yaml.load(" --include="*.py" src/ | grep -v "SafeLoader\|safe_load"
-grep -rn "\beval(\|\bexec(" --include="*.py" src/ | grep -v "literal_eval\|model.eval()"
-grep -rn "\.format(.*request\|f\".*{.*request" --include="*.py" src/ | head   # format-string gadgets
-
-# Subprocess [HIGH]
-grep -rn "shell=True" --include="*.py" src/
-grep -rn "os.system\|os.popen" --include="*.py" src/
-
-# SQL [CRITICAL]
-grep -rn 'execute(f"\|execute(".*%s" *%\|execute(.*+ ' --include="*.py" src/
-grep -rn "\.raw(\|\.extra(\|RawSQL" --include="*.py" src/                     # Django edges
-grep -rn 'text(f"' --include="*.py" src/                                      # SQLAlchemy text+f-string
-
-# Path traversal & archives [HIGH]
-grep -rn "extractall\|extract(" --include="*.py" src/ | grep -v 'filter='
-grep -rn "request.*filename\|\.filename" --include="*.py" src/                # then check containment
-grep -rn "is_relative_to\|realpath" --include="*.py" src/                     # mitigations present?
-
-# Randomness & secrets [HIGH]
-grep -rn "random\.\(choice\|choices\|randint\|random\)" --include="*.py" src/ # security context?
-grep -rn "== .*token\|token.* ==" --include="*.py" src/ | head                # timing-unsafe compare
-grep -rn "verify=False\|_create_unverified" --include="*.py" src/
-grep -rnE "(api_key|secret|password|token) *= *['\"][A-Za-z0-9_\-]{12,}" --include="*.py" .  # hardcoded
-grep -rn "md5(\|sha1(" --include="*.py" src/ | grep -v usedforsecurity
-
-# XML / SSRF
-grep -rn "lxml.etree\|xml.etree\|xml.dom\|xml.sax" --include="*.py" src/      # defused? entities off?
-grep -rn "get(url\|get(request\.\|urlopen(" --include="*.py" src/ | head      # user-controlled URL fetch?
-
-# ReDoS / DoS surfaces
-grep -rnE "re\.(match|search|fullmatch|findall|sub)\(" --include="*.py" src/ | head -30   # user-controlled subject?
-grep -rnE "\((\.\*|\\\\w\+|\[\^?[^]]*\]\+)\)[\*\+]" --include="*.py" src/                 # nested quantifiers
-grep -rn "zlib.decompress\|Image.open" --include="*.py" src/                              # size budgets present?
-grep -rn "set_int_max_str_digits" --include="*.py" src/
-grep -rn "webbrowser.open" --include="*.py" src/                               # user-influenced URL? [HIGH] CVE-2026-4519/4786
-
-# Supply chain
-grep -rn "git+http" pyproject.toml uv.lock 2>/dev/null | grep -v "@[0-9a-f]\{40\}"
-grep -rn "nosec\|noqa: S" --include="*.py" src/                               # justified suppressions?
-
-# --- Temp files and permissions (§4a) ---
-grep -rn "mktemp(" --include="*.py" src/                              # TOCTOU [HIGH]
-grep -rnE '"/tmp/|'"'"'/tmp/' --include="*.py" src/                   # predictable path [MEDIUM]
-grep -rnE 'chmod\(.*0o(6|7)[0-7][0-7]|umask\(0\)' --include="*.py" src/  # widened perms [HIGH if secrets]
-
-# --- Crypto (§6a) — choice itself is sota-code-security rules/04 ---
-grep -rnE '\bmd5\(|\bsha1\(' --include="*.py" src/ | grep -v usedforsecurity   # [MEDIUM]
-grep -rn "from Crypto" --include="*.py" src/                          # pycrypto vs pycryptodome [MEDIUM]
-
-# --- Remote host trust (§6b) ---
-grep -rnE 'AutoAddPolicy|WarningPolicy' --include="*.py" src/         # host key not verified [HIGH]
-
-# --- Debug consoles (§8a) ---
-grep -rnE 'debug\s*=\s*True|DEBUG\s*=\s*True' --include="*.py" src/  # literal, not env [HIGH in prod path]
-```
+- [ ] **One-shot scanners** — `uvx ruff check --select S --statistics .` ;
+      `uvx bandit -r src/ -ll -q` ; `uv run pip-audit 2>/dev/null || uvx pip-audit` ;
+      `osv-scanner --lockfile uv.lock 2>/dev/null`
+- [ ] **Code execution / deserialization [CRITICAL on untrusted data]** —
+      `grep -rn "pickle.loads\|pickle.load\|read_pickle\|joblib.load\|marshal.loads\|dill" --include="*.py" src/`
+      ; `grep -rn "torch.load" --include="*.py" src/ | grep -v "weights_only=True"` ;
+      `grep -rn "yaml.load(" --include="*.py" src/ | grep -v "SafeLoader\|safe_load"` ;
+      `grep -rn "\beval(\|\bexec(" --include="*.py" src/ | grep -v "literal_eval\|model.eval()"`
+      ; `grep -rn "\.format(.*request\|f\".*{.*request" --include="*.py" src/ | head`
+      (format-string gadgets)
+- [ ] **Subprocess [HIGH]** — `grep -rn "shell=True" --include="*.py" src/` ;
+      `grep -rn "os.system\|os.popen" --include="*.py" src/`
+- [ ] **SQL [CRITICAL]** —
+      `grep -rn 'execute(f"\|execute(".*%s" *%\|execute(.*+ ' --include="*.py" src/` ;
+      `grep -rn "\.raw(\|\.extra(\|RawSQL" --include="*.py" src/` (Django edges);
+      `grep -rn 'text(f"' --include="*.py" src/` (SQLAlchemy text+f-string)
+- [ ] **Path traversal & archives [HIGH]** —
+      `grep -rn "extractall\|extract(" --include="*.py" src/ | grep -v 'filter='` ;
+      `grep -rn "request.*filename\|\.filename" --include="*.py" src/` (then check containment);
+      `grep -rn "is_relative_to\|realpath" --include="*.py" src/` (mitigations present?)
+- [ ] **Randomness & secrets [HIGH]** —
+      `grep -rn "random\.\(choice\|choices\|randint\|random\)" --include="*.py" src/ # security context?`
+      ; `grep -rn "== .*token\|token.* ==" --include="*.py" src/ | head` (timing-unsafe
+      compare); `grep -rn "verify=False\|_create_unverified" --include="*.py" src/` ;
+      `grep -rnE "(api_key|secret|password|token) *= *['\"][A-Za-z0-9_\-]{12,}" --include="*.py" .`
+      (hardcoded); `grep -rn "md5(\|sha1(" --include="*.py" src/ | grep -v usedforsecurity`
+- [ ] **XML / SSRF** —
+      `grep -rn "lxml.etree\|xml.etree\|xml.dom\|xml.sax" --include="*.py" src/` (defused?
+      entities off?); `grep -rn "get(url\|get(request\.\|urlopen(" --include="*.py" src/ | head`
+      (user-controlled URL fetch?)
+- [ ] **ReDoS / DoS surfaces** —
+      `grep -rnE "re\.(match|search|fullmatch|findall|sub)\(" --include="*.py" src/ | head -30`
+      (user-controlled subject?);
+      `grep -rnE "\((\.\*|\\\\w\+|\[\^?[^]]*\]\+)\)[\*\+]" --include="*.py" src/` (nested
+      quantifiers); `grep -rn "zlib.decompress\|Image.open" --include="*.py" src/` (size budgets
+      present?); `grep -rn "set_int_max_str_digits" --include="*.py" src/` ;
+      `grep -rn "webbrowser.open" --include="*.py" src/` (user-influenced URL? [HIGH]
+      CVE-2026-4519/4786)
+- [ ] **Supply chain** —
+      `grep -rn "git+http" pyproject.toml uv.lock 2>/dev/null | grep -v "@[0-9a-f]\{40\}"` ;
+      `grep -rn "nosec\|noqa: S" --include="*.py" src/` (justified suppressions?)
+- [ ] **--- Temp files and permissions (§4a) ---** — `grep -rn "mktemp(" --include="*.py" src/`
+      (TOCTOU [HIGH]); `grep -rnE '"/tmp/|'"'"'/tmp/' --include="*.py" src/` (predictable path
+      [MEDIUM]); `grep -rnE 'chmod\(.*0o(6|7)[0-7][0-7]|umask\(0\)' --include="*.py" src/`
+      (widened perms [HIGH if secrets])
+- [ ] **--- Crypto (§6a) — choice itself is sota-code-security rules/04 ---** —
+      `grep -rnE '\bmd5\(|\bsha1\(' --include="*.py" src/ | grep -v usedforsecurity` ([MEDIUM]);
+      `grep -rn "from Crypto" --include="*.py" src/` (pycrypto vs pycryptodome [MEDIUM])
+- [ ] **--- Remote host trust (§6b) ---** —
+      `grep -rnE 'AutoAddPolicy|WarningPolicy' --include="*.py" src/` (host key not verified
+      [HIGH])
+- [ ] **--- Debug consoles (§8a) ---** —
+      `grep -rnE 'debug\s*=\s*True|DEBUG\s*=\s*True' --include="*.py" src/` (literal, not env
+      [HIGH in prod path])

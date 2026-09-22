@@ -152,33 +152,29 @@ escaping.
 
 Run from repo root; verify each hit manually (greps are recall-oriented).
 
-```bash
-# SQL built from strings — CRITICAL if user data reaches it
-grep -rnE '(->query|->exec|_query)\s*\(\s*["'"'"'].*(\$|\bsprintf|\. )' --include='*.php' src/
-grep -rnE '(SELECT|INSERT|UPDATE|DELETE)[^;]*(\{\$|"\s*\.\s*\$|\'\s*\.\s*\$)' --include='*.php' -i src/
-grep -rnE '(whereRaw|selectRaw|orderByRaw|havingRaw|DB::raw|->raw\()' --include='*.php' src/
-grep -rn 'EMULATE_PREPARES' --include='*.php' src/    # want: false
-grep -rn 'real_escape_string' --include='*.php' src/  # HIGH if primary defense
-
-# Shell — CRITICAL with tainted input
-grep -rnE '\b(exec|shell_exec|system|passthru|popen|pcntl_exec)\s*\(' --include='*.php' src/
-grep -rn 'proc_open' --include='*.php' src/           # array command = good sign
-grep -rn '`' --include='*.php' src/ | grep -vE '(//|\*|#)'
-grep -rnE '\b(eval|assert)\s*\(\s*\$' --include='*.php' src/
-
-# XSS — echo/print of request data, raw template sinks
-grep -rnE '(echo|print|<\?=)[^;]*\$_(GET|POST|REQUEST|COOKIE|SERVER)' --include='*.php' .
-grep -rnE '<\?=\s*\$(?!this)' --include='*.php' templates/ 2>/dev/null
-grep -rn '{!!' --include='*.blade.php' resources/ 2>/dev/null
-grep -rn '|raw' --include='*.twig' templates/ 2>/dev/null
-grep -rn 'strip_tags' --include='*.php' src/          # not an XSS defense
-
-# Header/redirect injection
-grep -rnE 'header\s*\(\s*["'"'"']Location:.*\$' --include='*.php' src/
-
-# json_encode into <script> without hex flags
-grep -rn 'json_encode' --include='*.php' src/ | grep -v 'JSON_HEX'
-```
+- [ ] **SQL built from strings — CRITICAL if user data reaches it** —
+      `grep -rnE '(->query|->exec|_query)\s*\(\s*["'"'"'].*(\$|\bsprintf|\. )' --include='*.php' src/`
+      ;
+      `grep -rnE '(SELECT|INSERT|UPDATE|DELETE)[^;]*(\{\$|"\s*\.\s*\$|\'\s*\.\s*\$)' --include='*.php' -i src/`
+      ;
+      `grep -rnE '(whereRaw|selectRaw|orderByRaw|havingRaw|DB::raw|->raw\()' --include='*.php' src/`
+      ; `grep -rn 'EMULATE_PREPARES' --include='*.php' src/` (want: false);
+      `grep -rn 'real_escape_string' --include='*.php' src/` (HIGH if primary defense)
+- [ ] **Shell — CRITICAL with tainted input** —
+      `grep -rnE '\b(exec|shell_exec|system|passthru|popen|pcntl_exec)\s*\(' --include='*.php' src/`
+      ; `grep -rn 'proc_open' --include='*.php' src/` (array command = good sign);
+      ``grep -rn '`' --include='*.php' src/ | grep -vE '(//|\*|#)'`` ;
+      `grep -rnE '\b(eval|assert)\s*\(\s*\$' --include='*.php' src/`
+- [ ] **XSS — echo/print of request data, raw template sinks** —
+      `grep -rnE '(echo|print|<\?=)[^;]*\$_(GET|POST|REQUEST|COOKIE|SERVER)' --include='*.php' .`
+      ; `grep -rnE '<\?=\s*\$(?!this)' --include='*.php' templates/ 2>/dev/null` ;
+      `grep -rn '{!!' --include='*.blade.php' resources/ 2>/dev/null` ;
+      `grep -rn '|raw' --include='*.twig' templates/ 2>/dev/null` ;
+      `grep -rn 'strip_tags' --include='*.php' src/` (not an XSS defense)
+- [ ] **Header/redirect injection** —
+      `grep -rnE 'header\s*\(\s*["'"'"']Location:.*\$' --include='*.php' src/`
+- [ ] **json_encode into <script> without hex flags** —
+      `grep -rn 'json_encode' --include='*.php' src/ | grep -v 'JSON_HEX'`
 
 Severity guide: interpolated SQL or shell with user input CRITICAL; unescaped
 output of request data HIGH; raw template sink with untraced source HIGH until

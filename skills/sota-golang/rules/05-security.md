@@ -337,67 +337,54 @@ cfg := &tls.Config{MinVersion: tls.VersionTLS12} // TLS13 for internal-only
 
 ## Audit checklist
 
-```bash
-# SQL injection — CRITICAL
-grep -rnE '(Sprintf|fmt\.Sprint|\+ ?\w+ ?\+).*((?i)select|insert|update|delete|where)' --include='*.go' .
-grep -rnE '(Query|Exec|QueryRow)[^(]*\(("[^"]*"\s*\+|fmt\.Sprintf)' --include='*.go' .
-grep -rnE '\.(Raw|Where)\(fmt\.Sprintf' --include='*.go' .       # GORM-style
-
-# Command injection — CRITICAL
-grep -rnE 'exec\.Command(Context)?\(\s*"(sh|bash|cmd|powershell)"' --include='*.go' .
-grep -rn 'exec.Command' --include='*.go' .                        # verify argv construction per site
-
-# Path traversal — HIGH
-grep -rnE 'filepath\.Join\([^)]*(r\.|req\.|input|name|param|id)' --include='*.go' .
-grep -rn 'os.Root\|filepath.IsLocal' --include='*.go' .           # mitigations present?
-go version   # os.Root containment needs >=1.26.5/1.25.12 — CVE-2026-39822 symlink escape
-grep -rnE 'os\.(Open|Create|ReadFile|WriteFile|Remove)' --include='*.go' . # trace path provenance
-
-# TLS — CRITICAL/HIGH
-grep -rn 'InsecureSkipVerify' --include='*.go' .
-grep -rnE 'MinVersion:\s*tls\.VersionTLS1[01]' --include='*.go' .
-grep -rn '"http://' --include='*.go' . | grep -v 'localhost\|127.0.0.1\|test'
-
-# Integer conversion — gosec G115
-grep -rnE '\b(int8|int16|int32|uint8|uint16|uint32|uint64|uintptr)\(' --include='*.go' . | grep -vE '(_test|const)'
-gosec -include=G115,G118,G201,G202,G204,G304,G401,G402 ./...
-# G113/G115/G118/G408 are ANALYZERS, not rules: gosec keeps two registries
-# (rules/rulelist.go = 39, analyzers/analyzerslist.go = 22, 61 total at v2.29.0).
-# A denominator taken from rulelist.go alone silently omits every taint-analysis
-# check (G701-G710) and the modern HTTP ones (G119-G124).
-
-# CSPRNG misuse — HIGH (security-bearing randomness from a PRNG)
-grep -rn 'math/rand' --include='*.go' .                 # any import: verify each call site is non-secret
-grep -rnE '\brand\.(Int|Intn|Int31|Int63|Uint|Float|Perm|Shuffle|N)\b' --include='*.go' . # PRNG calls — crypto context?
-
-# Output encoding / XSS — HIGH
-grep -rn 'text/template' --include='*.go' . | grep -iv _test   # HTML rendered via text/template?
-grep -rnE 'template\.(HTML|JS|URL|CSS|HTMLAttr)\(' --include='*.go' . # escaping bypass — verify sanitized
-
-# unsafe / cgo
-grep -rn 'unsafe.Pointer\|go:linkname' --include='*.go' .
-grep -rln 'import "C"' --include='*.go' .
-
-# Supply chain
-test -f go.sum && echo OK || echo 'MISSING go.sum — HIGH'
-grep -E '^replace' go.mod
-go env GOFLAGS GONOSUMDB GOSUMDB GOPRIVATE GONOSUMCHECK 2>/dev/null
-go mod verify
-govulncheck ./...
-go mod tidy && git diff --exit-code go.mod go.sum
-
-# Secrets in repo
-grep -rnE '(api[_-]?key|secret|password|token)\s*[:=]\s*"[A-Za-z0-9+/_-]{16,}"' --include='*.go' .
-
-# --- Temp files and permissions (§4a) ---
-grep -rnE 'os\.TempDir\(\)|"/tmp/' --include='*.go' . | grep -v _test      # predictable path [HIGH]
-# mode where either the group or other digit is non-zero (0600/0700 pass, 0644/0755/0640 flag)
-grep -rnE '(WriteFile|MkdirAll|Mkdir|Chmod)\(.*0o?[0-7]([1-7][0-7]|[0-7][1-7])\)' --include='*.go' .
-
-# --- Host keys and deserialization (§4b) ---
-grep -rn 'InsecureIgnoreHostKey' --include='*.go' .                        # MITM [HIGH]
-grep -rn 'encoding/gob' --include='*.go' . | grep -v _test                 # decode-side surface [MEDIUM]
-```
+- [ ] **SQL injection — CRITICAL** —
+      `grep -rnE '(Sprintf|fmt\.Sprint|\+ ?\w+ ?\+).*((?i)select|insert|update|delete|where)' --include='*.go' .`
+      ; `grep -rnE '(Query|Exec|QueryRow)[^(]*\(("[^"]*"\s*\+|fmt\.Sprintf)' --include='*.go' .`
+      ; `grep -rnE '\.(Raw|Where)\(fmt\.Sprintf' --include='*.go' .` (GORM-style)
+- [ ] **Command injection — CRITICAL** —
+      `grep -rnE 'exec\.Command(Context)?\(\s*"(sh|bash|cmd|powershell)"' --include='*.go' .` ;
+      `grep -rn 'exec.Command' --include='*.go' .` (verify argv construction per site)
+- [ ] **Path traversal — HIGH** —
+      `grep -rnE 'filepath\.Join\([^)]*(r\.|req\.|input|name|param|id)' --include='*.go' .` ;
+      `grep -rn 'os.Root\|filepath.IsLocal' --include='*.go' .` (mitigations present?);
+      `go version` (os.Root containment needs >=1.26.5/1.25.12 — CVE-2026-39822 symlink escape);
+      `grep -rnE 'os\.(Open|Create|ReadFile|WriteFile|Remove)' --include='*.go' . # trace path provenance`
+- [ ] **TLS — CRITICAL/HIGH** — `grep -rn 'InsecureSkipVerify' --include='*.go' .` ;
+      `grep -rnE 'MinVersion:\s*tls\.VersionTLS1[01]' --include='*.go' .` ;
+      `grep -rn '"http://' --include='*.go' . | grep -v 'localhost\|127.0.0.1\|test'`
+- [ ] **Integer conversion — gosec G115** —
+      `grep -rnE '\b(int8|int16|int32|uint8|uint16|uint32|uint64|uintptr)\(' --include='*.go' . | grep -vE '(_test|const)'`
+      ; `gosec -include=G115,G118,G201,G202,G204,G304,G401,G402 ./...`
+- [ ] **G113/G115/G118/G408 are ANALYZERS, not rules: gosec keeps two registries
+      (rules/rulelist.go = 39, analyzers/analyzerslist.go = 22, 61 total at v2.29.0). A
+      denominator taken from rulelist.go alone silently omits every taint-analysis check
+      (G701-G710) and the modern HTTP ones (G119-G124).**
+- [ ] **CSPRNG misuse — HIGH (security-bearing randomness from a PRNG)** —
+      `grep -rn 'math/rand' --include='*.go' .` (any import: verify each call site is
+      non-secret);
+      `grep -rnE '\brand\.(Int|Intn|Int31|Int63|Uint|Float|Perm|Shuffle|N)\b' --include='*.go' . # PRNG calls — crypto context?`
+- [ ] **Output encoding / XSS — HIGH** —
+      `grep -rn 'text/template' --include='*.go' . | grep -iv _test` (HTML rendered via
+      text/template?);
+      `grep -rnE 'template\.(HTML|JS|URL|CSS|HTMLAttr)\(' --include='*.go' . # escaping bypass — verify sanitized`
+- [ ] **unsafe / cgo** — `grep -rn 'unsafe.Pointer\|go:linkname' --include='*.go' .` ;
+      `grep -rln 'import "C"' --include='*.go' .`
+- [ ] **Supply chain** — `test -f go.sum && echo OK || echo 'MISSING go.sum — HIGH'` ;
+      `grep -E '^replace' go.mod` ;
+      `go env GOFLAGS GONOSUMDB GOSUMDB GOPRIVATE GONOSUMCHECK 2>/dev/null` ; `go mod verify` ;
+      `govulncheck ./...` ; `go mod tidy && git diff --exit-code go.mod go.sum`
+- [ ] **Secrets in repo** —
+      `grep -rnE '(api[_-]?key|secret|password|token)\s*[:=]\s*"[A-Za-z0-9+/_-]{16,}"' --include='*.go' .`
+- [ ] **--- Temp files and permissions (§4a) ---** —
+      `grep -rnE 'os\.TempDir\(\)|"/tmp/' --include='*.go' . | grep -v _test` (predictable path
+      [HIGH])
+- [ ] **mode where either the group or other digit is non-zero (0600/0700 pass, 0644/0755/0640
+      flag)** —
+      `grep -rnE '(WriteFile|MkdirAll|Mkdir|Chmod)\(.*0o?[0-7]([1-7][0-7]|[0-7][1-7])\)' --include='*.go' .`
+- [ ] **--- Host keys and deserialization (§4b) ---** —
+      `grep -rn 'InsecureIgnoreHostKey' --include='*.go' .` (MITM [HIGH]);
+      `grep -rn 'encoding/gob' --include='*.go' . | grep -v _test` (decode-side surface
+      [MEDIUM])
 
 Severity guide: string-built SQL / `sh -c` with input / InsecureSkipVerify /
 `math/rand` for an auth-gating token CRITICAL; traversal-reachable file ops,

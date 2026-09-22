@@ -235,32 +235,35 @@ testpaths = ["tests"]
 
 ## Audit checklist
 
-```bash
-# FastAPI
-grep -rn "async def" $(grep -rln "APIRouter\|FastAPI" --include="*.py" src/) | head   # then check for blocking calls inside
-grep -rn "requests\.\|time.sleep\|session.query\|Session(" --include="*.py" src/ | grep -i route  # sync-in-async [HIGH]
-grep -rn "@\(app\|router\)\.\(get\|post\|put\|delete\)" --include="*.py" src/ -A3 | grep -L response_model | head  # ORM leak risk
-grep -rn "AsyncClient()" --include="*.py" src/ | grep -v lifespan              # per-request clients [MEDIUM]
-grep -rn -B2 "livez\|/health\|healthz" --include="*.py" src/ | grep "^.*def "  # liveness: `async def`, no deps (§1 exception)
-grep -rn "^[A-Z_]* = .*Session\|^engine = " --include="*.py" src/              # module-global state vs Depends
-
-# Django ORM
-grep -rn "\.objects\.all()\|\.objects\.filter" --include="*.py" src/ | wc -l
-grep -rln "select_related\|prefetch_related" --include="*.py" src/ | wc -l     # ratio sanity check
-grep -rn "for .* in .*\.objects\." --include="*.py" src/ -A2 | grep "\.\(name\|user\|customer\)" | head  # N+1 candidates
-grep -rn "count() > 0\|len(.*objects" --include="*.py" src/                    # exists() instead
-grep -rn "\.raw(\|\.extra(\|RawSQL" --include="*.py" src/                      # [HIGH if interpolated]
-git log --oneline -- '**/migrations/*.py' | head                               # edited-after-merge migrations?
-grep -rn "makemigrations --check" .github/ .gitlab-ci.yml 2>/dev/null          # drift gate present?
-
-# pytest
-grep -rn "def setUp\|TestCase" --include="*.py" tests/                         # legacy style [LOW]
-grep -rn "pytest.raises(Exception)" --include="*.py" tests/                    # too-broad [MEDIUM]
-grep -rn "time.sleep" --include="*.py" tests/                                  # flaky timing [MEDIUM]
-grep -rn "scope=\"session\"\|scope=\"module\"" --include="*.py" tests/ conftest.py 2>/dev/null  # mutable shared state?
-grep -rn "os.environ\[" --include="*.py" tests/ | grep -v monkeypatch          # env pollution
-grep -rln "parametrize" --include="*.py" tests/ | wc -l
-grep -rln "hypothesis" --include="*.py" tests/ || echo "no property tests"
-pytest -q -n auto 2>&1 | tail -3                                               # parallel-safe = independent
-pytest -q -p randomly 2>&1 | tail -3                                           # order-independent?
-```
+- [ ] **FastAPI** —
+      `grep -rn "async def" $(grep -rln "APIRouter\|FastAPI" --include="*.py" src/) | head`
+      (then check for blocking calls inside);
+      `grep -rn "requests\.\|time.sleep\|session.query\|Session(" --include="*.py" src/ | grep -i route`
+      (sync-in-async [HIGH]);
+      `grep -rn "@\(app\|router\)\.\(get\|post\|put\|delete\)" --include="*.py" src/ -A3 | grep -L response_model | head`
+      (ORM leak risk); `grep -rn "AsyncClient()" --include="*.py" src/ | grep -v lifespan`
+      (per-request clients [MEDIUM]);
+      `grep -rn -B2 "livez\|/health\|healthz" --include="*.py" src/ | grep "^.*def "` (liveness:
+      `async def` , no deps (§1 exception));
+      `grep -rn "^[A-Z_]* = .*Session\|^engine = " --include="*.py" src/` (module-global state
+      vs Depends)
+- [ ] **Django ORM** —
+      `grep -rn "\.objects\.all()\|\.objects\.filter" --include="*.py" src/ | wc -l` ;
+      `grep -rln "select_related\|prefetch_related" --include="*.py" src/ | wc -l` (ratio sanity
+      check);
+      `grep -rn "for .* in .*\.objects\." --include="*.py" src/ -A2 | grep "\.\(name\|user\|customer\)" | head`
+      (N+1 candidates); `grep -rn "count() > 0\|len(.*objects" --include="*.py" src/` (exists()
+      instead); `grep -rn "\.raw(\|\.extra(\|RawSQL" --include="*.py" src/` ([HIGH if
+      interpolated]); `git log --oneline -- '**/migrations/*.py' | head` (edited-after-merge
+      migrations?); `grep -rn "makemigrations --check" .github/ .gitlab-ci.yml 2>/dev/null`
+      (drift gate present?)
+- [ ] **pytest** — `grep -rn "def setUp\|TestCase" --include="*.py" tests/` (legacy style
+      [LOW]); `grep -rn "pytest.raises(Exception)" --include="*.py" tests/` (too-broad
+      [MEDIUM]); `grep -rn "time.sleep" --include="*.py" tests/` (flaky timing [MEDIUM]);
+      `grep -rn "scope=\"session\"\|scope=\"module\"" --include="*.py" tests/ conftest.py 2>/dev/null`
+      (mutable shared state?);
+      `grep -rn "os.environ\[" --include="*.py" tests/ | grep -v monkeypatch` (env pollution);
+      `grep -rln "parametrize" --include="*.py" tests/ | wc -l` ;
+      `grep -rln "hypothesis" --include="*.py" tests/ || echo "no property tests"` ;
+      `pytest -q -n auto 2>&1 | tail -3` (parallel-safe = independent);
+      `pytest -q -p randomly 2>&1 | tail -3` (order-independent?)

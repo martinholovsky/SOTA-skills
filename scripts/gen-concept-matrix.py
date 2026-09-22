@@ -268,6 +268,8 @@ def main():
                     help="print N unclassified items per skill (vocabulary holes)")
     ap.add_argument("--min-coverage", type=float, default=0.0, metavar="FRAC",
                     help="exit 1 if any skill classifies below this fraction")
+    ap.add_argument("--assert-format", action="store_true",
+                    help="exit 1 if any language skill's Audit checklist is not tickable")
     ap.add_argument("--assert-universal", action="store_true",
                     help="exit 1 if any UNIVERSAL_FLOOR concept is not present in all 9")
     args = ap.parse_args()
@@ -327,6 +329,26 @@ def main():
                                                          min(args.show_unmatched, len(miss))))
             for t in miss[:args.show_unmatched]:
                 print("      " + t[:150])
+
+    if args.assert_format:
+        # UNIFIED CHECKLIST FORMAT (2026-09-23). Three body formats were in use and invariant
+        # 2 gates only the heading. Only the tickable form is ENUMERABLE, and AUDIT mode tells
+        # the model to "verify your diff satisfies every item" -- unfollowable against a shell
+        # block. Two mechanical readers had already given wrong answers because of it: a
+        # `- [ ]` count returned 0 for seven of nine skills, and a concept pass reported
+        # sota-golang as lacking API/design probes its 02-design.md plainly has.
+        wrong = []
+        for lang in E.LANGS:
+            kinds = {k for _f, k, _t in E.skill_items(lang)}
+            if kinds and kinds != {"box"}:
+                wrong.append("%s (%s)" % (E.label(lang), ", ".join(sorted(kinds))))
+        print("\nCHECKLIST FORMAT")
+        if wrong:
+            print("  NOT TICKABLE: " + "; ".join(wrong))
+            print("  Every language skill's '## Audit checklist' must use `- [ ]` bullets.")
+            print("  scripts/lib/unify_checklist.py converts a fenced block; review its output.")
+            return 1
+        print("  ok (all %d language skills tickable)" % len(E.LANGS))
 
     if args.assert_universal:
         broken = []

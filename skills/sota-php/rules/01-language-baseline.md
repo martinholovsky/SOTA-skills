@@ -239,49 +239,36 @@ or make a constructor parameter required. Everything else is a minor. `rules/05`
 
 Run from repo root; verify each hit manually.
 
-```bash
-# Public surface / BC (§6a) -- PHP fails most of these at LOAD time, in the consumer
-grep -rn 'interface ' --include='*.php' src/
-# ^ every method here is frozen: adding one is FATAL for existing implementers
-#   ("must therefore be declared abstract"). If the contract must grow, use an abstract
-#   class with defaults, or publish a second interface.
-git diff <last-release-tag>..HEAD -- '*.php' | grep -nE '^\+.*(function |final |readonly )'
-# ^ THE question no linter asks: does any + line add an interface method, add `final`,
-#   add `readonly` to an existing property, narrow a parameter type, or widen a return?
-#   Each is a MAJOR. Widening a parameter and narrowing a return are safe (variance).
-grep -rnE '^\s*(class|abstract class) [A-Z]' --include='*.php' src/ | grep -v 'final'
-# ^ non-final released classes: extensible forever, and adding `final` later breaks them
-grep -rn 'public readonly\|public function __construct(' --include='*.php' src/
-# ^ promoted constructor properties are PUBLIC API, not implementation detail
-
-# Missing strict_types — LOW per file, MEDIUM if project-wide
-grep -rL --include='*.php' 'declare(strict_types=1)' src/ | head -50
-
-# EOL / lapsing PHP floor — check require.php against the table in §1
-grep -n '"php"' composer.json
-php -v
-
-# Loose comparison on suspicious values — MEDIUM+, verify context
-grep -rnE '[^=!<>]==[^=]' --include='*.php' src/ | grep -iE 'token|password|hash|hmac|secret|sig'
-grep -rnE 'in_array\([^)]*\)' --include='*.php' src/ | grep -v 'true'
-
-# strpos truthiness bug
-grep -rnE 'if\s*\(\s*!?\s*strpos\(' --include='*.php' src/
-
-# Error suppression and silent JSON
-grep -rn '@' --include='*.php' src/ | grep -E '@\s*[a-z_]+\(' | grep -v '//'
-grep -rn 'json_decode' --include='*.php' src/ | grep -v 'JSON_THROW_ON_ERROR'
-
-# Removed/deprecated constructs
-grep -rnE '(create_function|each\(|__sleep|__wakeup|\$\$[a-zA-Z]|extract\s*\(\s*\$_)' --include='*.php' src/
-grep -rn '`' --include='*.php' src/ | grep -vE '(//|\*|#)'   # backtick exec
-
-# Untyped properties (heuristic; rely on PHPStan level 6+ for the real sweep)
-grep -rnE '^\s*(public|protected|private)\s+\$' --include='*.php' src/
-
-# switch on request-derived values — prefer match
-grep -rn 'switch\s*(' --include='*.php' src/
-```
+- [ ] **Public surface / BC (§6a) -- PHP fails most of these at LOAD time, in the consumer every
+      method here is frozen: adding one is FATAL for existing implementers ("must therefore be
+      declared abstract"). If the contract must grow, use an abstract class with defaults, or
+      publish a second interface. THE question no linter asks: does any + line add an interface
+      method, add `final` , add `readonly` to an existing property, narrow a parameter type, or
+      widen a return? Each is a MAJOR. Widening a parameter and narrowing a return are safe
+      (variance). non-final released classes: extensible forever, and adding `final` later
+      breaks them promoted constructor properties are PUBLIC API, not implementation detail** —
+      `grep -rn 'interface ' --include='*.php' src/` ;
+      `git diff <last-release-tag>..HEAD -- '*.php' | grep -nE '^\+.*(function |final |readonly )'`
+      ; `grep -rnE '^\s*(class|abstract class) [A-Z]' --include='*.php' src/ | grep -v 'final'`
+      ; `grep -rn 'public readonly\|public function __construct(' --include='*.php' src/`
+- [ ] **Missing strict_types — LOW per file, MEDIUM if project-wide** —
+      `grep -rL --include='*.php' 'declare(strict_types=1)' src/ | head -50`
+- [ ] **EOL / lapsing PHP floor — check require.php against the table in §1** —
+      `grep -n '"php"' composer.json` ; `php -v`
+- [ ] **Loose comparison on suspicious values — MEDIUM+, verify context** —
+      `grep -rnE '[^=!<>]==[^=]' --include='*.php' src/ | grep -iE 'token|password|hash|hmac|secret|sig'`
+      ; `grep -rnE 'in_array\([^)]*\)' --include='*.php' src/ | grep -v 'true'`
+- [ ] **strpos truthiness bug** — `grep -rnE 'if\s*\(\s*!?\s*strpos\(' --include='*.php' src/`
+- [ ] **Error suppression and silent JSON** —
+      `grep -rn '@' --include='*.php' src/ | grep -E '@\s*[a-z_]+\(' | grep -v '//'` ;
+      `grep -rn 'json_decode' --include='*.php' src/ | grep -v 'JSON_THROW_ON_ERROR'`
+- [ ] **Removed/deprecated constructs** —
+      `grep -rnE '(create_function|each\(|__sleep|__wakeup|\$\$[a-zA-Z]|extract\s*\(\s*\$_)' --include='*.php' src/`
+      ; ``grep -rn '`' --include='*.php' src/ | grep -vE '(//|\*|#)'`` (backtick exec)
+- [ ] **Untyped properties (heuristic; rely on PHPStan level 6+ for the real sweep)** —
+      `grep -rnE '^\s*(public|protected|private)\s+\$' --include='*.php' src/`
+- [ ] **switch on request-derived values — prefer match** —
+      `grep -rn 'switch\s*(' --include='*.php' src/`
 
 Severity guide: EOL PHP in production HIGH; missing strict_types project-wide
 MEDIUM; loose `==` on security decisions HIGH; `@`-suppressed security function

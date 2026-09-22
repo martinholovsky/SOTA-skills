@@ -1632,6 +1632,14 @@
     },
     {
       "from": "sota-c-cpp",
+      "to": "sota-shell-scripting",
+      "weight": 1,
+      "targets": [
+        "rules/06 \u00a72d"
+      ]
+    },
+    {
+      "from": "sota-c-cpp",
       "to": "sota-databases",
       "weight": 1,
       "targets": []

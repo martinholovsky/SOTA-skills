@@ -115,29 +115,23 @@ network-facing or setuid binary is a HIGH finding. From the OpenSSF guide:
 
 ## Audit checklist
 
-```bash
-# Banned functions — HIGH/CRITICAL
-grep -rnwE '(gets|strcpy|strcat|sprintf|vsprintf|stpcpy|scanf|system|popen|strtok|atoi|atol)' \
-  --include='*.c' --include='*.cpp' --include='*.h' .
-grep -rnE '\balloca\b|\[[^]]*\] *= *\{?' --include='*.c' .   # VLA/alloca on dynamic size
-
-# Format string — CRITICAL (user-controlled fmt)
-grep -rnE '(printf|fprintf|snprintf|syslog|err|warn)\s*\([^,"]*\)' --include='*.c' --include='*.cpp' .
-# build with: -Wformat=2 -Werror=format-security
-
-# Command/path injection, TOCTOU — HIGH/CRITICAL
-grep -rnE 'system\(|popen\(|exec[lv]p?\(' --include='*.c' --include='*.cpp' .
-grep -rnE 'fopen|open\(|realpath|access\(' --include='*.c' --include='*.cpp' .  # check-then-use races
-
-# Insecure randomness for security — HIGH
-grep -rnE '\b(rand|random|srand|mt19937|random_device)\b' --include='*.cpp' --include='*.c' .
-grep -rn 'memcmp' --include='*.cpp' . | grep -iE 'mac|hmac|token|secret|sig|digest'  # timing leak
-
-# Hardening flags present? — HIGH if missing on network/setuid binary
-grep -rnE '_FORTIFY_SOURCE|stack-protector|relro|cf-protection|_GLIBCXX_ASSERTIONS|fPIE' \
-  . --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' || echo "no hardening flags found"
-
-# Static + safety-standard analysis
-clang-tidy --checks='cert-*,bugprone-*,clang-analyzer-security.*' <files>
-cppcheck --enable=warning,portability --addon=cert <src>
-```
+- [ ] **Banned functions — HIGH/CRITICAL** —
+      `grep -rnwE '(gets|strcpy|strcat|sprintf|vsprintf|stpcpy|scanf|system|popen|strtok|atoi|atol)' --include='*.c' --include='*.cpp' --include='*.h' .`
+      ; `grep -rnE '\balloca\b|\[[^]]*\] *= *\{?' --include='*.c' .` (VLA/alloca on dynamic
+      size)
+- [ ] **Format string — CRITICAL (user-controlled fmt)** —
+      `grep -rnE '(printf|fprintf|snprintf|syslog|err|warn)\s*\([^,"]*\)' --include='*.c' --include='*.cpp' .`
+- [ ] **build with: -Wformat=2 -Werror=format-security**
+- [ ] **Command/path injection, TOCTOU — HIGH/CRITICAL** —
+      `grep -rnE 'system\(|popen\(|exec[lv]p?\(' --include='*.c' --include='*.cpp' .` ;
+      `grep -rnE 'fopen|open\(|realpath|access\(' --include='*.c' --include='*.cpp' .`
+      (check-then-use races)
+- [ ] **Insecure randomness for security — HIGH** —
+      `grep -rnE '\b(rand|random|srand|mt19937|random_device)\b' --include='*.cpp' --include='*.c' .`
+      ; `grep -rn 'memcmp' --include='*.cpp' . | grep -iE 'mac|hmac|token|secret|sig|digest'`
+      (timing leak)
+- [ ] **Hardening flags present? — HIGH if missing on network/setuid binary** —
+      `grep -rnE '_FORTIFY_SOURCE|stack-protector|relro|cf-protection|_GLIBCXX_ASSERTIONS|fPIE' . --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' || echo "no hardening flags found"`
+- [ ] **Static + safety-standard analysis** —
+      `clang-tidy --checks='cert-*,bugprone-*,clang-analyzer-security.*' <files>` ;
+      `cppcheck --enable=warning,portability --addon=cert <src>`

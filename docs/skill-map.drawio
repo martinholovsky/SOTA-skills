@@ -320,7 +320,7 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="note" value="Page 3 — how the skills reference each other, aggregated to families.&lt;br&gt;&lt;br&gt;301 distinct skill-to-skill edges / 909 mentions in the tree. Drawing all of them is a hairball at 38 nodes, so the graph is aggregated: an arrow is the TOTAL weight of every reference from one family to another, and the number inside a family is references within it.&lt;br&gt;&lt;br&gt;This is the layer a routing measurement does not cover: routing gets you to the right skill, this is which skill defers to which. Every individual edge, with its rules/NN and § targets, is in docs/skill-map.json." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="note" value="Page 3 — how the skills reference each other, aggregated to families.&lt;br&gt;&lt;br&gt;302 distinct skill-to-skill edges / 910 mentions in the tree. Drawing all of them is a hairball at 38 nodes, so the graph is aggregated: an arrow is the TOTAL weight of every reference from one family to another, and the number inside a family is references within it.&lt;br&gt;&lt;br&gt;This is the layer a routing measurement does not cover: routing gets you to the right skill, this is which skill defers to which. Every individual edge, with its rules/NN and § targets, is in docs/skill-map.json." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
           <mxGeometry x="40" y="20" width="720" height="170" as="geometry"/>
         </mxCell>
         <mxCell id="f_Security_core" value="Security core&lt;br&gt;11 skills · 223 internal refs" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;verticalAlign=middle;" vertex="1" parent="1">
@@ -338,7 +338,7 @@
         <mxCell id="f_Quality" value="Quality&lt;br&gt;3 skills · 3 internal refs" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;verticalAlign=middle;" vertex="1" parent="1">
           <mxGeometry x="220" y="865" width="220" height="90" as="geometry"/>
         </mxCell>
-        <mxCell id="f_Languages" value="Languages&lt;br&gt;10 skills · 3 internal refs" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;verticalAlign=middle;" vertex="1" parent="1">
+        <mxCell id="f_Languages" value="Languages&lt;br&gt;10 skills · 4 internal refs" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;verticalAlign=middle;" vertex="1" parent="1">
           <mxGeometry x="220" y="485" width="220" height="90" as="geometry"/>
         </mxCell>
         <mxCell id="fe12" value="10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;edgeStyle=none;endArrow=blockThin;strokeColor=#8c8c8c;opacity=70;fontSize=10;labelBackgroundColor=#ffffff;strokeWidth=1;" edge="1" parent="1" source="f_Quality" target="f_Languages">
@@ -844,28 +844,28 @@
         <mxCell id="mtlines0" value="2057" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="430" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines1" value="2233" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines1" value="2151" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="538" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines2" value="1102" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines2" value="1059" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="646" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines3" value="646" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines3" value="625" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="754" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines4" value="2193" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines4" value="2139" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="862" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="mtlines5" value="1790" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="970" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines6" value="581" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines6" value="551" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="1078" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines7" value="1173" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines7" value="1130" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="1186" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines8" value="1106" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines8" value="1049" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="1294" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="mt_files" value="files" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=10;fontSize=11;" vertex="1" parent="1">
@@ -928,7 +928,7 @@
         <mxCell id="msh8" value="09&lt;br&gt;Listing and selection: the" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fdf6d8;strokeColor=#d6b656;fontSize=9;" vertex="1" parent="1">
           <mxGeometry x="1240" y="782" width="144" height="40" as="geometry"/>
         </mxCell>
-        <mxCell id="m_note2" value="API / design was the one asymmetry that did not track a language difference. CLOSED 2026-09-22 (ROADMAP 57): all nine now carry it, as a dedicated file in some and a section inside the idioms file in others, and gen-concept-matrix.py pins it at 9/9 so it cannot regress.&lt;br&gt;&lt;br&gt;Per-language detail deliberately NOT repeated here -- it lives in docs/LANGUAGE-TIER.md. This sentence named the languages twice and rotted twice in two days (2026-09-21 and -22), because a hand-written list inside a GENERATED artifact has no gate: the map gate proves the artifact matches the generator, never that the generator is true.&lt;br&gt;&lt;br&gt;RETRACTED 2026-09-21 — this note previously read &quot;jvm and .NET are 3–4x thinner&quot;. True of line count, false of what line count stood in for: per 100 rules-lines they carry the HIGHEST audit-item density in the library (.NET 11.7, jvm 11.3 — COMPUTED NOW, not the 2026-09-21 figures of 10.6 and 10.5; both skills have gained audit items since) and rust, the second-largest skill, is lowest at 4.6. The bounded deficit is worked examples. Caveat: the checkbox and shell-block checklist formats are not comparable, so this read is within-format." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="m_note2" value="API / design was the one asymmetry that did not track a language difference. CLOSED 2026-09-22 (ROADMAP 57): all nine now carry it, as a dedicated file in some and a section inside the idioms file in others, and gen-concept-matrix.py pins it at 9/9 so it cannot regress.&lt;br&gt;&lt;br&gt;Per-language detail deliberately NOT repeated here -- it lives in docs/LANGUAGE-TIER.md. This sentence named the languages twice and rotted twice in two days (2026-09-21 and -22), because a hand-written list inside a GENERATED artifact has no gate: the map gate proves the artifact matches the generator, never that the generator is true.&lt;br&gt;&lt;br&gt;RETRACTED 2026-09-21 — this note previously read &quot;jvm and .NET are 3–4x thinner&quot;. True of line count, false of what line count stood in for: per 100 rules-lines they carry the HIGHEST audit-item density in the library (.NET 7.1, jvm 6.7 — COMPUTED NOW, not the 2026-09-21 figures of 10.6 and 10.5; both skills have gained audit items since) and rust, the second-largest skill, is lowest at 4.6. The bounded deficit is worked examples. Caveat: the checkbox and shell-block checklist formats are not comparable, so this read is within-format." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
           <mxGeometry x="40" y="854" width="900" height="150" as="geometry"/>
         </mxCell>
       </root>

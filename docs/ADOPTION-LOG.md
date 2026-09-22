@@ -4160,9 +4160,12 @@ there. Worked examples for jvm/.NET (1.0–1.1 per 100 lines against 2.7–3.8 a
 **deliberately not a row**: optional polish that nobody must act on is a recurring reminder,
 which is the reason item 1 was retired.
 
-**DEFERRED — the audit-checklist body format. Revisit trigger: a measurement showing the
-format changes audit behaviour, or a third instance of a reader being unable to enumerate a
-checklist.** Three forms are in use — tickable `- [ ]` (rust, js/ts), fenced shell block
+**ADOPTED 2026-09-23 on operator instruction — the audit-checklist body format is now
+uniformly tickable, and `--assert-format` keeps it that way.** The trigger's second arm
+had effectively fired: a `- []`-only count returned 0 for seven of nine skills, and on
+2026-09-22 a concept-matrix pass mis-parsed fenced blocks and reported `sota-golang` as
+lacking API/design probes it plainly has — two mechanical readers, two wrong answers,
+from the format alone. The operator did not wait for a third.** Three forms are in use — tickable `- [ ]` (rust, js/ts), fenced shell block
 (python, jvm, .NET, c/c++, php), prose+commands (golang, ruby) — and invariant 2 gates only
 the heading. The argument for unifying is that AUDIT mode instructs the model to "verify your
 diff satisfies every item", and only the tickable form is enumerable.
@@ -4863,3 +4866,40 @@ to branch on the exit code and keep stderr. The **second** rejection was of the 
 explaining the fix, because it spelled the pattern out literally: the same trap invariant 30's
 header records against itself. Refer to such a pattern by name, never by its characters, in
 prose that shares a file with the check.
+
+
+## 2026-09-23 — the checklist format unified: 377 items, 7 skills, one form
+
+Operator instruction, closing a deferral whose second arm had effectively fired. All nine
+language skills now use tickable `- [ ]` bullets; `gen-concept-matrix.py --assert-format`
+runs in CI and rejects a fenced checklist.
+
+**Why the format was never cosmetic.** AUDIT mode tells the model to *"verify your diff
+satisfies every item"*, which cannot be followed against a shell block. Two mechanical readers
+had already been wrong because of it: a `- []`-only count returned **0 for seven of nine**
+skills, and a concept-matrix pass reported `sota-golang` as lacking API/design probes that its
+`02-design.md` plainly has.
+
+**The conversion was mechanical and the review was not.** `scripts/lib/unify_checklist.py`
+groups each `#` comment with the commands under it — the same grouping `extract_items.py`
+uses — and leaves non-shell fences alone. Content preservation was asserted per file: the
+prefix before `## Audit checklist` must be **byte-identical**, and every command line in the
+original must still appear. Final result: **377 items, 0 commands lost**.
+
+**Three bugs, and the first was destructive.** The first draft returned only the text from the
+heading onward and **truncated six `sota-dotnet` files to their checklists** — caught by a line
+count, not by the item count, which still matched. Restored from the commit; the converter now
+asserts the prefix survives. Then: a wrapper that counted backticks for parity **split a
+command across two lines** when the command itself contained a backtick (php's
+`` grep -rn '`' `` probe), fixed by treating a code span as atomic; and shell line
+continuations (`\`) being emitted as two commands, plus `# ^ trailing note` comments becoming
+the *heading of the next probe* — 16 of each across the tier.
+
+**The conversion also exposed a latent defect no gate could see.** `sota-c-cpp` `rules/01`
+cited `rules/06 §2d` meaning **`sota-shell-scripting`**'s, but inside a code fence — where
+invariant 18 never looked. As prose it resolved against c/c++'s own `rules/06` and failed
+immediately. Qualified with its skill name. A reference hidden in a fence is unchecked.
+
+**Measured side effect:** concept-classification coverage rose in every converted skill
+(c/c++ 73→83%, jvm 92.5→95.2%, go 78.7→84.5%), because a bullet carries the prose a bare
+command line did not.

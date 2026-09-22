@@ -77,25 +77,17 @@ regression gates); this file is the C/C++ specifics.
 
 ## Audit checklist
 
-```bash
-# Copies that should be references/moves — LOW
-grep -rnE 'for *\( *auto [A-Za-z_]+ *:' --include='*.cpp' .     # range-for by value → const auto&
-grep -rn 'return std::move' --include='*.cpp' .                 # disables NRVO
-grep -rnE '\.push_back\(' --include='*.cpp' .                   # reserve()? emplace_back?
-
-# Allocation on hot paths / node containers — LOW/MEDIUM (verify with profiler)
-grep -rnE 'std::(list|map|set|unordered_map|unordered_set)<' --include='*.cpp' .  # cache-unfriendly?
-grep -rn 'shared_ptr' --include='*.cpp' .                       # needed, or unique_ptr?
-
-# Flush-per-line — LOW
-grep -rn 'std::endl' --include='*.cpp' .
-
-# Benchmark hygiene — verify release build + DoNotOptimize
-grep -rn 'chrono::' --include='*.cpp' . | grep -i bench         # prefer Google Benchmark
-grep -rn 'DoNotOptimize\|ClobberMemory' --include='*.cpp' .
-
-# Optimization flags for release?
-grep -rnE '\-O[23]|-flto|fprofile-(generate|use)|march=' CMakeLists.txt cmake/ 2>/dev/null
-
-# Profile first (no static grep): perf record -g ./bench && perf report
-```
+- [ ] **Copies that should be references/moves — LOW** —
+      `grep -rnE 'for *\( *auto [A-Za-z_]+ *:' --include='*.cpp' .` (range-for by value → const
+      auto&); `grep -rn 'return std::move' --include='*.cpp' .` (disables NRVO);
+      `grep -rnE '\.push_back\(' --include='*.cpp' .` (reserve()? emplace_back?)
+- [ ] **Allocation on hot paths / node containers — LOW/MEDIUM (verify with profiler)** —
+      `grep -rnE 'std::(list|map|set|unordered_map|unordered_set)<' --include='*.cpp' .`
+      (cache-unfriendly?); `grep -rn 'shared_ptr' --include='*.cpp' .` (needed, or unique_ptr?)
+- [ ] **Flush-per-line — LOW** — `grep -rn 'std::endl' --include='*.cpp' .`
+- [ ] **Benchmark hygiene — verify release build + DoNotOptimize** —
+      `grep -rn 'chrono::' --include='*.cpp' . | grep -i bench` (prefer Google Benchmark);
+      `grep -rn 'DoNotOptimize\|ClobberMemory' --include='*.cpp' .`
+- [ ] **Optimization flags for release?** —
+      `grep -rnE '\-O[23]|-flto|fprofile-(generate|use)|march=' CMakeLists.txt cmake/ 2>/dev/null`
+- [ ] **Profile first (no static grep): perf record -g ./bench && perf report**

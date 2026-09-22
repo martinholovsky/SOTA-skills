@@ -84,44 +84,39 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
 
 ## Audit checklist
 
-```bash
-# What has been SILENCED? -- the analyser's escape hatch (ROADMAP 60)
-# clang-tidy (syntax from its own docs): NOLINT silences the SAME line, NOLINTNEXTLINE the
-# NEXT one, NOLINTBEGIN/END a range whose markers must pair and match. A bare form with no
-# (check) list silences EVERY check there.
-grep -rn 'NOLINT' --include='*.c' --include='*.cpp' --include='*.h' --include='*.hpp' .
-grep -rnE 'NOLINT(NEXTLINE|BEGIN)?([^(]|$)' --include='*.cpp' --include='*.h' .  # no (check-list) = blanket
-# ^ the `|$` is load-bearing: a bare `// NOLINT` at END OF LINE has no character after
-#   it, so `[^(]` alone silently misses the most common blanket form (measured: 1 of 2).
-grep -rn 'NOLINTBEGIN' . | wc -l ; grep -rn 'NOLINTEND' . | wc -l            # must be equal
-# cppcheck: `// cppcheck-suppress <id>` on the line BEFORE the reported line -- and it is
-# INERT unless --inline-suppr is passed. Measured with cppcheck 2.21.0: without that flag
-# both planted warnings still fired; with it, one was suppressed and the other was NOT,
-# because the comment sat above the wrong line. So check the FLAG before reading the comments.
-grep -rn 'cppcheck-suppress' --include='*.c' --include='*.cpp' --include='*.h' .
-grep -rn 'inline-suppr' CMakeLists.txt *.cmake .github/workflows/*.yml 2>/dev/null \
-  || echo "cppcheck-suppress comments present but --inline-suppr never passed: every one is decoration"
-# compiler-level, which no lint grep finds:
-grep -rn '#pragma GCC diagnostic ignored\|#pragma clang diagnostic ignored\|#pragma warning(disable' \
-  --include='*.c' --include='*.cpp' --include='*.h' .
-grep -rn 'suppressions' CMakeLists.txt *.cmake 2>/dev/null   # cppcheck --suppressions-list=
-
-# Warnings-as-errors and standard pinned?
-grep -rnE 'Werror|/WX' . --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' || echo "no -Werror"
-grep -rnE 'CXX_STANDARD|cxx_std_|std=c\+\+' CMakeLists.txt 2>/dev/null
-
-# clang-tidy / clang-format / cppcheck configs present?
-ls .clang-tidy .clang-format 2>/dev/null | grep -q . || echo "missing lint/format config"
-test -f compile_commands.json || grep -rn EXPORT_COMPILE_COMMANDS CMakeLists.txt
-
-# Sanitizer & fuzzing jobs in CI?
-grep -rniE 'fsanitize|asan|ubsan|tsan|libfuzzer|oss-fuzz|scan-build' .github/ ci/ 2>/dev/null \
-  || echo "no sanitizer/fuzz job found — HIGH for input-parsing code"
-
-# Dependency manager + lockfile?
-ls vcpkg.json conan.lock conanfile.* 2>/dev/null | grep -q . || echo "no pinned dependency manifest/lockfile"
-grep -rni 'FetchContent\|ExternalProject\|git submodule' CMakeLists.txt .gitmodules 2>/dev/null  # verify pinning
-
-# Global (non-target) CMake anti-patterns — LOW/MEDIUM
-grep -rnE 'include_directories\(|link_libraries\(|^set\(CMAKE_CXX_FLAGS' CMakeLists.txt 2>/dev/null
-```
+- [ ] **What has been SILENCED? -- the analyser's escape hatch (ROADMAP 60) clang-tidy (syntax
+      from its own docs): NOLINT silences the SAME line, NOLINTNEXTLINE the NEXT one,
+      NOLINTBEGIN/END a range whose markers must pair and match. A bare form with no (check)
+      list silences EVERY check there. the `|$` is load-bearing: a bare `// NOLINT` at END OF
+      LINE has no character after it, so `[^(]` alone silently misses the most common blanket
+      form (measured: 1 of 2).** —
+      `grep -rn 'NOLINT' --include='*.c' --include='*.cpp' --include='*.h' --include='*.hpp' .`
+      ; `grep -rnE 'NOLINT(NEXTLINE|BEGIN)?([^(]|$)' --include='*.cpp' --include='*.h' .` (no
+      (check-list) = blanket);
+      `grep -rn 'NOLINTBEGIN' . | wc -l ; grep -rn 'NOLINTEND' . | wc -l` (must be equal)
+- [ ] **cppcheck: `// cppcheck-suppress <id>` on the line BEFORE the reported line -- and it is
+      INERT unless --inline-suppr is passed. Measured with cppcheck 2.21.0: without that flag
+      both planted warnings still fired; with it, one was suppressed and the other was NOT,
+      because the comment sat above the wrong line. So check the FLAG before reading the
+      comments.** —
+      `grep -rn 'cppcheck-suppress' --include='*.c' --include='*.cpp' --include='*.h' .` ;
+      `grep -rn 'inline-suppr' CMakeLists.txt *.cmake .github/workflows/*.yml 2>/dev/null || echo "cppcheck-suppress comments present but --inline-suppr never passed: every one is decoration"`
+- [ ] **compiler-level, which no lint grep finds** —
+      `grep -rn '#pragma GCC diagnostic ignored\|#pragma clang diagnostic ignored\|#pragma warning(disable' --include='*.c' --include='*.cpp' --include='*.h' .`
+      ; `grep -rn 'suppressions' CMakeLists.txt *.cmake 2>/dev/null` (cppcheck
+      --suppressions-list=)
+- [ ] **Warnings-as-errors and standard pinned?** —
+      `grep -rnE 'Werror|/WX' . --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' || echo "no -Werror"`
+      ; `grep -rnE 'CXX_STANDARD|cxx_std_|std=c\+\+' CMakeLists.txt 2>/dev/null`
+- [ ] **clang-tidy / clang-format / cppcheck configs present?** —
+      `ls .clang-tidy .clang-format 2>/dev/null | grep -q . || echo "missing lint/format config"`
+      ; `test -f compile_commands.json || grep -rn EXPORT_COMPILE_COMMANDS CMakeLists.txt`
+- [ ] **Sanitizer & fuzzing jobs in CI?** —
+      `grep -rniE 'fsanitize|asan|ubsan|tsan|libfuzzer|oss-fuzz|scan-build' .github/ ci/ 2>/dev/null || echo "no sanitizer/fuzz job found — HIGH for input-parsing code"`
+- [ ] **Dependency manager + lockfile?** —
+      `ls vcpkg.json conan.lock conanfile.* 2>/dev/null | grep -q . || echo "no pinned dependency manifest/lockfile"`
+      ;
+      `grep -rni 'FetchContent\|ExternalProject\|git submodule' CMakeLists.txt .gitmodules 2>/dev/null`
+      (verify pinning)
+- [ ] **Global (non-target) CMake anti-patterns — LOW/MEDIUM** —
+      `grep -rnE 'include_directories\(|link_libraries\(|^set\(CMAKE_CXX_FLAGS' CMakeLists.txt 2>/dev/null`

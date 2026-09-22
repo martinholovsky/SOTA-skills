@@ -166,43 +166,36 @@ raise SecurityError unless path.start_with?(base + File::SEPARATOR)
 Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
 `bundle exec rubocop --only Security` cover several of these mechanically.
 
-```bash
-# SQL injection — CRITICAL on any hit with non-literal interpolation
-grep -rnE '\.(where|order|group|having|select|joins|pluck|find_by_sql|update_all)\s*\(\s*["'"'"'][^)]*#\{' --include='*.rb' .
-grep -rn "Arel.sql" --include='*.rb' .
-grep -rn "Sequel.lit" --include='*.rb' . | grep '#{'
-grep -rnE '\.(exec|query)\s*\(\s*["'"'"'][^)]*#\{' --include='*.rb' .
-
-# Command injection — CRITICAL with external input
-grep -rnE '(system|exec|spawn)\s*\(\s*["'"'"'][^,)]*#\{' --include='*.rb' .
-grep -rnE '`[^`]*#\{|%x[({\[][^)}\]]*#\{' --include='*.rb' .
-grep -rnE 'IO\.popen\s*\(\s*["'"'"']' --include='*.rb' .
-grep -rnE '(Kernel#?open|URI\.open|[^.]open)\s*\(\s*(params|.*user|.*input)' --include='*.rb' . | head
-
-# Deserialization — CRITICAL on external data
-grep -rn "Marshal.load\|Marshal.restore" --include='*.rb' .
-grep -rn "unsafe_load\|YAML.load_documents" --include='*.rb' .
-grep -rn "create_additions" --include='*.rb' .
-grep -rnE "YAML\.(safe_)?load[^_]" --include='*.rb' . | grep "aliases: true"
-
-# eval / reflection sinks
-grep -rnE '\beval\s*\(|instance_eval\s*\(\s*["'"'"']|class_eval\s*\(\s*["'"'"']' --include='*.rb' .
-grep -rnE '\b(public_)?send\s*\(\s*params' --include='*.rb' .
-grep -rn "constantize\|const_get" --include='*.rb' . | grep -iE "params|input|name"
-grep -rn "ERB.new" --include='*.rb' . | grep -vE "erb\"|template_file|File.read\(\s*Rails"
-
-# Regex: ^/$ anchors in validations — HIGH; ReDoS candidates
-grep -rnE 'format:.*(\^|\$)|match\?\(/\^' --include='*.rb' . | grep -v '\\\\A'
-grep -rn "Regexp.timeout" --include='*.rb' config/ . 2>/dev/null | head -1  # absent = note it
-grep -rnE '\((\.\*|\\w\+|\[[^]]+\]\+)\)[+*]' --include='*.rb' . | head      # nested quantifiers
-
-# Randomness / comparison — HIGH for security uses
-grep -rnE '\brand\(|Random\.(rand|new)|\.sample\b' --include='*.rb' . | grep -viE "spec|test|seed"
-grep -rnE '(token|hmac|signature|digest)\s*==' --include='*.rb' .
-
-# Path traversal
-grep -rnE 'File\.(open|read|write|join)\([^)]*params' --include='*.rb' .
-```
+- [ ] **SQL injection — CRITICAL on any hit with non-literal interpolation** —
+      `grep -rnE '\.(where|order|group|having|select|joins|pluck|find_by_sql|update_all)\s*\(\s*["'"'"'][^)]*#\{' --include='*.rb' .`
+      ; `grep -rn "Arel.sql" --include='*.rb' .` ;
+      `grep -rn "Sequel.lit" --include='*.rb' . | grep '#{'` ;
+      `grep -rnE '\.(exec|query)\s*\(\s*["'"'"'][^)]*#\{' --include='*.rb' .`
+- [ ] **Command injection — CRITICAL with external input** —
+      `grep -rnE '(system|exec|spawn)\s*\(\s*["'"'"'][^,)]*#\{' --include='*.rb' .` ;
+      ``grep -rnE '`[^`]*#\{|%x[({\[][^)}\]]*#\{' --include='*.rb' .`` ;
+      `grep -rnE 'IO\.popen\s*\(\s*["'"'"']' --include='*.rb' .` ;
+      `grep -rnE '(Kernel#?open|URI\.open|[^.]open)\s*\(\s*(params|.*user|.*input)' --include='*.rb' . | head`
+- [ ] **Deserialization — CRITICAL on external data** —
+      `grep -rn "Marshal.load\|Marshal.restore" --include='*.rb' .` ;
+      `grep -rn "unsafe_load\|YAML.load_documents" --include='*.rb' .` ;
+      `grep -rn "create_additions" --include='*.rb' .` ;
+      `grep -rnE "YAML\.(safe_)?load[^_]" --include='*.rb' . | grep "aliases: true"`
+- [ ] **eval / reflection sinks** —
+      `grep -rnE '\beval\s*\(|instance_eval\s*\(\s*["'"'"']|class_eval\s*\(\s*["'"'"']' --include='*.rb' .`
+      ; `grep -rnE '\b(public_)?send\s*\(\s*params' --include='*.rb' .` ;
+      `grep -rn "constantize\|const_get" --include='*.rb' . | grep -iE "params|input|name"` ;
+      `grep -rn "ERB.new" --include='*.rb' . | grep -vE "erb\"|template_file|File.read\(\s*Rails"`
+- [ ] **Regex: ^/$ anchors in validations — HIGH; ReDoS candidates** —
+      `grep -rnE 'format:.*(\^|\$)|match\?\(/\^' --include='*.rb' . | grep -v '\\\\A'` ;
+      `grep -rn "Regexp.timeout" --include='*.rb' config/ . 2>/dev/null | head -1` (absent =
+      note it); `grep -rnE '\((\.\*|\\w\+|\[[^]]+\]\+)\)[+*]' --include='*.rb' . | head` (nested
+      quantifiers)
+- [ ] **Randomness / comparison — HIGH for security uses** —
+      `grep -rnE '\brand\(|Random\.(rand|new)|\.sample\b' --include='*.rb' . | grep -viE "spec|test|seed"`
+      ; `grep -rnE '(token|hmac|signature|digest)\s*==' --include='*.rb' .`
+- [ ] **Path traversal** —
+      `grep -rnE 'File\.(open|read|write|join)\([^)]*params' --include='*.rb' .`
 
 Severity guide: interpolated SQL / shell string with external input,
 `Marshal.load`/`unsafe_load` on external data, string `eval` — CRITICAL.

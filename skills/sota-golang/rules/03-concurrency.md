@@ -267,47 +267,33 @@ err := g.Wait()
 
 ## Audit checklist
 
-```bash
-# go.mod language version — decides loop-var semantics (HIGH if <1.22 with closures in loops)
-grep -E '^go ' go.mod
-
-# Fire-and-forget goroutines — review each: exit path? join? error?
-grep -rn 'go func' --include='*.go' . | grep -v _test.go
-grep -rnE '^\s*go [a-zA-Z]' --include='*.go' .
-
-# Goroutines without ctx plumbed (manual: does the func take/select on ctx?)
-grep -rn -A3 'go func()' --include='*.go' . | grep -L 'ctx'
-
-# time.After in loops — MEDIUM (HIGH pre-1.23)
-grep -rn -B5 'time.After' --include='*.go' . | grep -E 'for |select'
-
-# Unbounded fan-out: go inside range — HIGH if input is external
-grep -rn -B2 'go func' --include='*.go' . | grep 'for .*range'
-
-# WaitGroup misuse: Add inside goroutine, copied WG
-grep -rn -A2 'go func' --include='*.go' . | grep 'wg.Add'
-go vet ./...                                  # copylocks, loopclosure (pre-1.22)
-
-# Raw atomic on plain ints (prefer atomic.Int64 types)
-grep -rnE 'atomic\.(Add|Load|Store|Swap)(Int|Uint|Pointer)' --include='*.go' .
-
-# sync.Map usage — verify it matches its niche
-grep -rn 'sync.Map' --include='*.go' .
-
-# Consumer-side close, double close candidates
-grep -rn 'close(' --include='*.go' .          # verify producer owns each
-
-# Sleep-based synchronization — MEDIUM (flaky + racy)
-grep -rn 'time.Sleep' --include='*.go' . | grep _test.go
-
-# Race detector + leak detection — non-negotiable
-go test -race ./...
-go test -race -count=5 ./...                  # shake out flaky interleavings
-grep -rn 'goleak' --include='*_test.go' .     # present in goroutine-spawning pkgs?
-
-# Runtime evidence (live systems)
-curl -s localhost:6060/debug/pprof/goroutine?debug=2 | head -100
-```
+- [ ] **go.mod language version — decides loop-var semantics (HIGH if <1.22 with closures in
+      loops)** — `grep -E '^go ' go.mod`
+- [ ] **Fire-and-forget goroutines — review each: exit path? join? error?** —
+      `grep -rn 'go func' --include='*.go' . | grep -v _test.go` ;
+      `grep -rnE '^\s*go [a-zA-Z]' --include='*.go' .`
+- [ ] **Goroutines without ctx plumbed (manual: does the func take/select on ctx?)** —
+      `grep -rn -A3 'go func()' --include='*.go' . | grep -L 'ctx'`
+- [ ] **time.After in loops — MEDIUM (HIGH pre-1.23)** —
+      `grep -rn -B5 'time.After' --include='*.go' . | grep -E 'for |select'`
+- [ ] **Unbounded fan-out: go inside range — HIGH if input is external** —
+      `grep -rn -B2 'go func' --include='*.go' . | grep 'for .*range'`
+- [ ] **WaitGroup misuse: Add inside goroutine, copied WG** —
+      `grep -rn -A2 'go func' --include='*.go' . | grep 'wg.Add'` ; `go vet ./...` (copylocks,
+      loopclosure (pre-1.22))
+- [ ] **Raw atomic on plain ints (prefer atomic.Int64 types)** —
+      `grep -rnE 'atomic\.(Add|Load|Store|Swap)(Int|Uint|Pointer)' --include='*.go' .`
+- [ ] **sync.Map usage — verify it matches its niche** —
+      `grep -rn 'sync.Map' --include='*.go' .`
+- [ ] **Consumer-side close, double close candidates** — `grep -rn 'close(' --include='*.go' .`
+      (verify producer owns each)
+- [ ] **Sleep-based synchronization — MEDIUM (flaky + racy)** —
+      `grep -rn 'time.Sleep' --include='*.go' . | grep _test.go`
+- [ ] **Race detector + leak detection — non-negotiable** — `go test -race ./...` ;
+      `go test -race -count=5 ./...` (shake out flaky interleavings);
+      `grep -rn 'goleak' --include='*_test.go' .` (present in goroutine-spawning pkgs?)
+- [ ] **Runtime evidence (live systems)** —
+      `curl -s localhost:6060/debug/pprof/goroutine?debug=2 | head -100`
 
 Severity guide: confirmed race CRITICAL; goroutine leak / unbounded fan-out
 on request path HIGH; missing `-race` in CI HIGH; `time.After` loop MEDIUM;
