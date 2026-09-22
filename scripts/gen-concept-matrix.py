@@ -194,6 +194,36 @@ CONCEPTS = [
 ]
 
 
+
+# --- the universal floor -----------------------------------------------------------
+# Concepts every language skill in the tier probes TODAY. Pinned, so that a new skill, a
+# refactor or a checklist rewrite cannot quietly drop one: `--assert-universal` fails if
+# any of these stops being 9/9. This is a RATCHET, not a description -- it is the half of
+# ROADMAP 61 that a template alone cannot provide, because a template is only read once,
+# when a skill is created, and says nothing about the next edit.
+#
+# Measured 2026-09-22. `suppressing a linter / type check` reached 9/9 that same day
+# (ROADMAP 60), so it is pinned immediately: the gate's first job is to defend work that
+# was just done, which is when a regression is cheapest to make and least likely noticed.
+#
+# Adding to this list is a claim that EVERY language should probe it -- check the triage
+# ledger in docs/LANGUAGE-TIER.md first, because a concept can be absent for a principled
+# reason (transport/PKI is delegated library-wide, router rule 18).
+UNIVERSAL_FLOOR = [
+    "error handling & propagation",
+    "absence / null / in-band sentinel",
+    "data race / shared mutable state",
+    "cryptography & randomness",
+    "secrets handling",
+    "input validation & untrusted data",
+    "dependency pinning & lockfiles",
+    "vulnerability scanning of dependencies",
+    "static analysis / linter configuration",
+    "build reproducibility & CI gates",
+    "test suite health & determinism",
+    "suppressing a linter / type check",
+]
+
 def classify(text):
     """Concepts this item matches. An item may match several -- a probe for
     `yaml.load` is both deserialization and untrusted input, and forcing a single
@@ -230,6 +260,8 @@ def main():
                     help="print N unclassified items per skill (vocabulary holes)")
     ap.add_argument("--min-coverage", type=float, default=0.0, metavar="FRAC",
                     help="exit 1 if any skill classifies below this fraction")
+    ap.add_argument("--assert-universal", action="store_true",
+                    help="exit 1 if any UNIVERSAL_FLOOR concept is not present in all 9")
     args = ap.parse_args()
 
     present, classified, unmatched = build(E.LANGS)
@@ -287,6 +319,23 @@ def main():
                                                          min(args.show_unmatched, len(miss))))
             for t in miss[:args.show_unmatched]:
                 print("      " + t[:150])
+
+    if args.assert_universal:
+        broken = []
+        for concept in UNIVERSAL_FLOOR:
+            have = present.get(concept, set())
+            missing = [E.label(l) for l in E.LANGS if l not in have]
+            if missing:
+                broken.append((concept, missing))
+        print("\nUNIVERSAL FLOOR (%d pinned concepts)" % len(UNIVERSAL_FLOOR))
+        if broken:
+            for concept, missing in broken:
+                print("  REGRESSED: %-42s now absent from: %s" % (concept, ", ".join(missing)))
+            print("A concept every language probed has stopped being probed by one of them.")
+            print("Either restore it, or -- if it is now delegated -- remove it from")
+            print("UNIVERSAL_FLOOR and record why in docs/LANGUAGE-TIER.md's triage ledger.")
+            return 1
+        print("  ok (all %d still present in 9/9)" % len(UNIVERSAL_FLOOR))
 
     if args.min_coverage and worst < args.min_coverage:
         print("\nFAIL: lowest coverage %.1f%% is below the required %.1f%%"

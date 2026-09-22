@@ -4758,3 +4758,39 @@ vocabulary hole was closed in the same change — `prepared` never matches `prep
 (prepare+statement, no `d`), `child_process`/`Process.Start` were absent, `Path.Combine` was
 absent. The candidate list is a **queue that shrinks as it is worked**, not a scoreboard, and
 a dead candidate that leaves the matcher untouched will simply be re-derived next run.
+
+## 2026-09-22 — ROADMAP 61 closed: a template, and the ratchet that is the real half
+
+**The operator's decision was "a real template plus a gate", and the gate turned out to be
+the load-bearing half** — worth recording, because the template was the part that was asked
+for and is the part that will not hold on its own.
+
+**Why a template alone cannot work.** It is read **once**, when a skill is created. Every
+drift this library has measured happened *afterwards*: ROADMAP 57's four missing API/design
+sections, ROADMAP 60's three missing suppression probes, and the two probe-less rules found
+in triage the same morning. A document that is read once cannot defend against the next
+edit, and prose has already failed this exact test (which is CONVENTIONS-LEDGER's first
+filter — *has it already failed?* — satisfied).
+
+**So the enforcement is `gen-concept-matrix.py --assert-universal`**, wired into the CI
+invariants job: **12 concepts pinned at 9/9**, failing if any language stops probing one.
+Watched to fail first — stripping `rubocop:disable` from `sota-ruby`'s checklist produced
+`REGRESSED: suppressing a linter / type check now absent from: ruby`, and it passed again on
+restore. The floor deliberately includes `suppressing a linter / type check`, which only
+reached 9/9 that same day: **the gate's first job is to defend work that was just done**,
+which is when a regression is cheapest to make and least likely to be noticed.
+
+**`docs/SKILL-TEMPLATE.md`** carries the skeleton — frontmatter (and that the `description`
+is the *whole* routing classifier, inert body notwithstanding), the body spine, the rules-file
+shape, the language file spine, the 12 universal concepts as a checklist, and the pre-PR
+steps. It states in its own opening that it is **not** the gate and names what is.
+
+**It lives in `docs/`, not `skills/`,** and the reason is mechanical: every gate enumerates
+skills with `git ls-files skills/*/SKILL.md`, so a template under `skills/` would be counted
+as a real skill by invariants 6, 10 and 15 and would have to satisfy the 500-line cap and the
+`## Audit checklist` requirement.
+
+**One thing the template can only ask for, because nothing can yet gate it:** *for every rule
+you write, how would an auditor detect a violation?* Three instances in two days shipped a
+BUILD rule with no probe. The template makes it a reviewer's question; making it a gate needs
+a way to tell "this rule needs a probe" from "this rule is prose", which is not yet solved.
