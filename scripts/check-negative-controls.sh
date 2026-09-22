@@ -600,6 +600,7 @@ if [ "${_nskill:-0}" -ge "${_sweep_min:-20}" ]; then
   echo "  [11/11b/11c] SKIPPED -- this branch's own diff is sweep-shaped (${_nskill} skill files"
   echo "        >= ${_sweep_min}), so invariant 11's sweep exemption applies to the probe's"
   echo "        mutation too. The gate is not inert; the probe's premise does not hold here."
+  SKIPPED_IDS="$SKIPPED_IDS 11"
 else
 
 # 11 — LAST-VERIFIED moved by an ordinary edit. The stamp records a FULL
@@ -1188,6 +1189,15 @@ fi
 # run knows, and this is the moment it knows. A control that asserts its own coverage
 # rather than counting it is sota-code-security rules/14 §1.
 derived=$(printf '%s' "$PROBED_IDS" | tr ' ' '\n' | sort -un | grep -c .)
+# A DYNAMICALLY skipped invariant still counts toward the declaration -- it has a probe, it
+# simply could not run on this branch (see the 11/11b/11c guard). Padding PROBED_IDS instead
+# would claim it was exercised, which is the lie this harness exists to prevent.
+skipped=$(printf '%s' "$SKIPPED_IDS" | tr ' ' '\n' | sort -un | grep -c .)
+if [ "$skipped" -gt 0 ]; then
+  printf 'NOTE: %d invariant(s) had their probes skipped on this branch:%s\n' \
+    "$skipped" "$(printf '%s' "$SKIPPED_IDS" | tr ' ' '\n' | sort -un | tr '\n' ' ' | sed 's/^/ /')"
+  derived=$((derived + skipped))
+fi
 declared=$(sed -n 's/.*COVERED:.*(\([0-9][0-9]*\) of [0-9][0-9]*).*/\1/p' "$0" | head -1)
 if [ -z "$declared" ]; then
   echo "FAIL: cannot find this harness's own COVERED declaration to check against."
