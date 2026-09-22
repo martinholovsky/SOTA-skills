@@ -577,10 +577,15 @@ def page_matrix(lang_files):
         y += rh
     dens = {l: (audit_items(l)[0] / lang_files[l][0] * 100) for l in LANGS}
     c.append(cell("m_note2",
-                  "ONE asymmetry here does not track a language difference: API / design has "
-                  "its own FILE in rust, go, jvm and .NET, a SECTION inside the idioms file "
-                  "in python (03 §13) and c/c++ (01 §9), and remains sparse in js/ts, php "
-                  "and ruby. That is ROADMAP 57, three of five closed.\n\n"
+                  "API / design was the one asymmetry that did not track a language "
+                  "difference. CLOSED 2026-09-22 (ROADMAP 57): all nine now carry it, as a "
+                  "dedicated file in some and a section inside the idioms file in others, "
+                  "and gen-concept-matrix.py pins it at 9/9 so it cannot regress.\n\n"
+                  "Per-language detail deliberately NOT repeated here -- it lives in "
+                  "docs/LANGUAGE-TIER.md. This sentence named the languages twice and "
+                  "rotted twice in two days (2026-09-21 and -22), because a hand-written "
+                  "list inside a GENERATED artifact has no gate: the map gate proves the "
+                  "artifact matches the generator, never that the generator is true.\n\n"
                   "RETRACTED 2026-09-21 — this note previously read \"jvm and .NET are 3–4x "
                   "thinner\". True of line count, false of what line count stood in for: per "
                   "100 rules-lines they carry the HIGHEST audit-item density in the library "

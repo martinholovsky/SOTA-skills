@@ -760,6 +760,17 @@
       ]
     },
     {
+      "from": "sota-c-cpp",
+      "to": "sota-code-security",
+      "weight": 4,
+      "targets": [
+        "rules/04",
+        "rules/11",
+        "rules/11 \u00a74",
+        "rules/13 \u00a75"
+      ]
+    },
+    {
       "from": "sota-detection-engineering",
       "to": "sota-code-security",
       "weight": 4,
@@ -911,16 +922,6 @@
       "to": "sota-secrets-management",
       "weight": 3,
       "targets": []
-    },
-    {
-      "from": "sota-c-cpp",
-      "to": "sota-code-security",
-      "weight": 3,
-      "targets": [
-        "rules/04",
-        "rules/11 \u00a74",
-        "rules/13 \u00a75"
-      ]
     },
     {
       "from": "sota-cli-ux",
@@ -1357,6 +1358,15 @@
       "targets": []
     },
     {
+      "from": "sota-javascript-typescript",
+      "to": "sota-architecture",
+      "weight": 2,
+      "targets": [
+        "rules/02",
+        "rules/02 \u00a78a"
+      ]
+    },
+    {
       "from": "sota-jvm",
       "to": "sota-performance",
       "weight": 2,
@@ -1409,6 +1419,15 @@
     },
     {
       "from": "sota-php",
+      "to": "sota-architecture",
+      "weight": 2,
+      "targets": [
+        "rules/02",
+        "rules/02 \u00a78a"
+      ]
+    },
+    {
+      "from": "sota-php",
       "to": "sota-code-security",
       "weight": 2,
       "targets": []
@@ -1427,6 +1446,15 @@
       "to": "sota-architecture",
       "weight": 2,
       "targets": [
+        "rules/02 \u00a78a"
+      ]
+    },
+    {
+      "from": "sota-ruby",
+      "to": "sota-architecture",
+      "weight": 2,
+      "targets": [
+        "rules/02",
         "rules/02 \u00a78a"
       ]
     },
@@ -1924,11 +1952,9 @@
     },
     {
       "from": "sota-javascript-typescript",
-      "to": "sota-architecture",
+      "to": "sota-api-design",
       "weight": 1,
-      "targets": [
-        "rules/02 \u00a78a"
-      ]
+      "targets": []
     },
     {
       "from": "sota-javascript-typescript",
@@ -2108,11 +2134,9 @@
     },
     {
       "from": "sota-php",
-      "to": "sota-architecture",
+      "to": "sota-api-design",
       "weight": 1,
-      "targets": [
-        "rules/02 \u00a78a"
-      ]
+      "targets": []
     },
     {
       "from": "sota-php",
@@ -2174,11 +2198,9 @@
     },
     {
       "from": "sota-ruby",
-      "to": "sota-architecture",
+      "to": "sota-api-design",
       "weight": 1,
-      "targets": [
-        "rules/02 \u00a78a"
-      ]
+      "targets": []
     },
     {
       "from": "sota-ruby",
