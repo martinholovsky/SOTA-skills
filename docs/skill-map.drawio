@@ -850,13 +850,13 @@
         <mxCell id="mtlines2" value="1031" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="646" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines3" value="636" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines3" value="646" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="754" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="mtlines4" value="2193" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="862" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines5" value="1729" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines5" value="1734" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="970" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="mtlines6" value="581" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
@@ -898,7 +898,7 @@
         <mxCell id="mtfiles8" value="5" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="1294" y="682" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m_note2" value="ONE asymmetry here does not track a language difference: API / design has its own file in rust, go, jvm and .NET and is sparse elsewhere (3–9 mentions in python, js/ts, php, ruby, c/c++). That is ROADMAP 57.&lt;br&gt;&lt;br&gt;RETRACTED 2026-09-21 — this note previously read &quot;jvm and .NET are 3–4x thinner&quot;. True of line count, false of what line count stood in for: per 100 rules-lines they carry the HIGHEST audit-item density in the library (.NET 11.7, jvm 11.2) and rust, the second-largest skill, is lowest at 4.6. The bounded deficit is worked examples. Caveat: the checkbox and shell-block checklist formats are not comparable, so this read is within-format." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="m_note2" value="ONE asymmetry here does not track a language difference: API / design has its own FILE in rust, go, jvm and .NET, a SECTION inside the idioms file in python (03 §13) and c/c++ (01 §9), and remains sparse in js/ts, php and ruby. That is ROADMAP 57, three of five closed.&lt;br&gt;&lt;br&gt;RETRACTED 2026-09-21 — this note previously read &quot;jvm and .NET are 3–4x thinner&quot;. True of line count, false of what line count stood in for: per 100 rules-lines they carry the HIGHEST audit-item density in the library (.NET 11.7, jvm 11.3) and rust, the second-largest skill, is lowest at 4.6. The bounded deficit is worked examples. Caveat: the checkbox and shell-block checklist formats are not comparable, so this read is within-format." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
           <mxGeometry x="40" y="736" width="900" height="150" as="geometry"/>
         </mxCell>
       </root>

@@ -578,8 +578,9 @@ def page_matrix(lang_files):
     dens = {l: (audit_items(l)[0] / lang_files[l][0] * 100) for l in LANGS}
     c.append(cell("m_note2",
                   "ONE asymmetry here does not track a language difference: API / design has "
-                  "its own file in rust, go, jvm and .NET and is sparse elsewhere (3–9 "
-                  "mentions in python, js/ts, php, ruby, c/c++). That is ROADMAP 57.\n\n"
+                  "its own FILE in rust, go, jvm and .NET, a SECTION inside the idioms file "
+                  "in python (03 §13) and c/c++ (01 §9), and remains sparse in js/ts, php "
+                  "and ruby. That is ROADMAP 57, three of five closed.\n\n"
                   "RETRACTED 2026-09-21 — this note previously read \"jvm and .NET are 3–4x "
                   "thinner\". True of line count, false of what line count stood in for: per "
                   "100 rules-lines they carry the HIGHEST audit-item density in the library "
