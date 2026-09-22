@@ -79,7 +79,7 @@ LANG_TOPICS = {
                "03": ["Concurrency"], "04": ["Web / HTTP"], "05": ["Security"],
                "06": ["Performance"],
                "07": ["Tooling / CI / supply chain", "Testing"]},
-    "c-cpp": {"01": ["Idioms / baseline"], "02": ["Memory / UB"], "03": ["Memory / UB"],
+    "c-cpp": {"01": ["Idioms / baseline", "API / design"], "02": ["Memory / UB"], "03": ["Memory / UB"],
               "04": ["Security"], "05": ["Concurrency"],
               "06": ["Tooling / CI / supply chain", "Testing"], "07": ["Performance"]},
     "jvm": {"01": ["Idioms / baseline"], "02": ["API / design"], "03": ["Concurrency"],
@@ -89,23 +89,32 @@ LANG_TOPICS = {
                "03": ["Idioms / baseline", "API / design"],
                "04": ["Concurrency"], "05": ["Security"],
                "06": ["Performance"], "07": ["Testing"]},
-    "javascript-typescript": {"01": ["Typing"], "02": ["Idioms / baseline"],
+    "javascript-typescript": {"01": ["Typing"], "02": ["Idioms / baseline", "API / design"],
                               "03": ["Concurrency"], "04": ["Web / HTTP"],
                               "05": ["Security"], "06": ["Performance"],
                               "07": ["Testing", "Tooling / CI / supply chain"]},
     "dotnet": {"01": ["Idioms / baseline"], "02": ["API / design"],
                "03": ["Concurrency"], "04": ["Security"], "05": ["Performance"],
                "06": ["Tooling / CI / supply chain", "Testing"]},
-    "php": {"01": ["Idioms / baseline", "Concurrency"], "02": ["Security"],
+    "php": {"01": ["Idioms / baseline", "Concurrency", "API / design"], "02": ["Security"],
             "03": ["Security"], "04": ["Security", "Web / HTTP"],
             "05": ["Tooling / CI / supply chain", "Testing"], "06": ["Performance"]},
-    "ruby": {"01": ["Idioms / baseline"], "02": ["Security"], "03": ["Web / HTTP"],
+    "ruby": {"01": ["Idioms / baseline", "API / design"], "02": ["Security"], "03": ["Web / HTTP"],
              "04": ["Tooling / CI / supply chain", "Testing"],
              "05": ["Concurrency", "Performance"]},
 }
 # A topic carried by a file that also carries another is marked shared; a topic present
 # only as a section inside a broader file is marked inline. Both are read off the tree.
-INLINE = {("php", "Concurrency"): "01 §6"}
+INLINE = {("php", "Concurrency"): "01 §6",
+          # ROADMAP 57 landed API/design as a SECTION inside the idioms file for five
+          # languages rather than a dedicated file. Declared inline so page 5 shows where
+          # it actually lives -- it read BLANK for four of them until 2026-09-22, while
+          # the sections existed, because this table is hand-maintained.
+          ("c-cpp", "API / design"): "01 §9",
+          ("javascript-typescript", "API / design"): "02 §Designing",
+          ("php", "API / design"): "01 §6a",
+          ("ruby", "API / design"): "01 §8",
+          ("python", "API / design"): "03 §13"}
 
 
 def audit_items(lang):
@@ -233,6 +242,7 @@ def main():
     if unknown:
         sys.exit("gen-skill-map: topics not in TOPIC_ORDER: %s" % sorted(unknown))
 
+    assert_matrix_matches_tree()
     pages = [page_router(), page_rules(rules),
              page_graph(edges, indeg, args.min_weight), page_slice(),
              page_matrix(lang_files)]
@@ -522,6 +532,58 @@ def page_slice():
               if (a, b) in fan else "strokeColor=#666666;")
         c.append(edge("se%d" % i, a, b, lbl, st, lx=offsets.get((a, b))))
     return page("p4", "4 · Worked slice: an SSO task", c, 1650, 800)
+
+
+# --- cross-instrument consistency -------------------------------------------------
+# WHY THIS EXISTS. LANG_TOPICS above is HAND-DECLARED, and `gen-concept-matrix.py` derives
+# the same kind of fact by reading every Audit checklist in the tree. On 2026-09-22 they
+# disagreed and nothing noticed: ROADMAP 57 put an API/design SECTION into five idioms
+# files, the concept matrix reported 9/9, and page 5 rendered four BLANK cells because this
+# table was never updated. The map was regenerated in that same session and still lied.
+#
+# The map's own gate cannot catch this: it proves the committed artifact matches the
+# generator, never that the generator matches the tree. So the two instruments are checked
+# against each other here.
+#
+# Only topics with an UNAMBIGUOUS concept counterpart are checked. The rest (Idioms, Memory
+# / UB, Web / HTTP, Performance, Errors, Typing) have no 1:1 concept and are deliberately
+# left out rather than mapped approximately -- a loose mapping would open red and get
+# disabled, which docs/CONVENTIONS-LEDGER.md says is worse than no gate.
+TOPIC_CONCEPT = {
+    "API / design": "public API surface & evolution",
+    "Concurrency": "data race / shared mutable state",
+    "Security": "input validation & untrusted data",
+    "Testing": "test suite health & determinism",
+    "Tooling / CI / supply chain": "dependency pinning & lockfiles",
+}
+
+
+def assert_matrix_matches_tree():
+    """Abort if the hand-declared LANG_TOPICS contradicts what the tree actually contains."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "_cm", str(ROOT / "scripts" / "gen-concept-matrix.py"))
+    cm = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(cm)
+    except Exception as e:                      # never let the cross-check break the map
+        print("NOTE: concept cross-check skipped (%s)" % e, file=sys.stderr)
+        return
+    present, _classified, _un = cm.build(LANGS)
+    bad = []
+    for topic, concept in TOPIC_CONCEPT.items():
+        probing = present.get(concept, set())
+        for lang in LANGS:
+            declared = any(topic in v for v in LANG_TOPICS[lang].values())
+            if lang in probing and not declared:
+                bad.append("%s probes %r (concept: %s) but LANG_TOPICS declares no %r"
+                           % (LANG_LABEL[lang], topic, concept, topic))
+    if bad:
+        sys.exit("MATRIX DISAGREES WITH THE TREE -- page 5 would render a blank cell for a "
+                 "topic the skill actually covers:\n  " + "\n  ".join(bad) +
+                 "\nAdd the topic to LANG_TOPICS (and an INLINE marker if it is a section "
+                 "inside a broader file), or correct the concept matcher if the concept "
+                 "hit is a false positive.")
 
 
 def page_matrix(lang_files):
