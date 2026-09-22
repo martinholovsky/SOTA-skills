@@ -232,6 +232,7 @@ the method already used for Go (OWASP Go-SCP) and Rust (ANSSI). Two are done:
 |---|---|---|---|
 | python | **75 tests** | Bandit 1.9.4 `plugins_by_id` + `blacklist_by_id` | 5 gaps closed |
 | golang | **61 checks** | gosec 2.29.0 `rulelist.go` (39) + `analyzerslist.go` (22) | 4 gaps closed |
+| c-cpp | **342 checks** | cppcheck 2.21.0 `--errorlist`, two agreeing derivations; MISRA addon (132 rules) is a separate registry | 4 gaps closed |
 
 Remaining: **rust, c-cpp, jvm, javascript-typescript, dotnet, php, ruby**. Candidate
 denominators — ruby/Brakeman, js-ts/eslint-plugin-security, rust/clippy + ANSSI.

@@ -149,6 +149,48 @@ rather than its value.
   the pointer's type. Use bounded string functions (`snprintf`, `strlcpy` where
   available); see `rules/04` for the banned list.
 
+## 8a. Construction and destruction — what actually runs is not what you wrote
+
+Four traps where the code is legal, the compiler is silent, and the behaviour is not the one
+the source reads like. All measured below on clang 17, x86-64 Darwin. cppcheck flags all four
+(`virtualCallInConstructor`, `pureVirtualCall`, `initializerList`, `assertWithSideEffect`) —
+this section is the rule behind those ids.
+
+**Virtual dispatch does not work in a constructor or destructor.** During the base
+constructor the object *is* a base — the derived vtable is not installed yet — so a virtual
+call dispatches to the **base** override, not the derived one. Measured: a `B` constructor
+calling `tag()` on a `D` object printed **BASE**. In a destructor the same happens in reverse
+as the derived part is torn down first. If the base is abstract there, it is worse: a pure
+virtual call is **undefined behaviour**, usually a `pure virtual method called` abort.
+*Fix:* do not call virtuals from a constructor/destructor. Two-phase `init()`, a factory that
+constructs then initialises, or pass the varying behaviour in as a parameter.
+
+**Members initialise in DECLARATION order, not in the order of the initialiser list.**
+
+```cpp
+struct M {
+    int a, b;                       // declaration order: a, then b
+    M() : b(1), a(b + 10) {}        // reads like b first -- it is not
+};
+```
+
+`a` is initialised **first**, reading `b` before it exists. Measured — and the tell is that
+the answer *changed with the build*: `a` came out **70261** at `-O0` and **10** under
+`-DNDEBUG`. Same source, same compiler, different value, no diagnostic. Order the initialiser
+list to match declaration order and let `-Wreorder` (in `-Wall`) keep it that way.
+
+**`assert` is deleted by `NDEBUG`, so anything inside it must be side-effect free.**
+Measured: `assert(++n == 1)` left `n == 1` in a normal build and **`n == 0`** compiled with
+`-DNDEBUG` — the increment simply did not happen, in the build you ship. Any expression with
+an effect belongs on its own line, with the assert testing the result. And an `assert` is
+never a security control for the same reason — `sota-code-security` rules/11.
+
+**Self-assignment must be safe**, because a copy assignment that frees before it copies
+destroys the object when `x = x` happens through two references. The copy-and-swap idiom gets
+this right by construction; if you hand-write `operator=`, either guard `if (this == &other)`
+or build the copy before releasing anything. Rule of five (§1) says *declare* all five — it
+does not say the bodies are correct.
+
 ## 9. Designing a public surface — what a released header promises
 
 The shared design rules (what belongs in a public API at all, deprecation policy, semver)
@@ -268,6 +310,35 @@ clang-tidy --checks='cppcoreguidelines-*,modernize-*,bugprone-*' <files>
 # In-band sentinels (§7/§8) — absence encoded as a value
 grep -rnE 'return -1;' --include='*.c' --include='*.cpp' .      # producer: same constant from 2 branches?
 grep -rn 'atoi(\|atol(' --include='*.c' --include='*.cpp' .      # 0 on garbage == 0 on "0" (rules/04)
+
+# Construction/destruction traps (§8a) — legal code, silent compiler, wrong behaviour
+# All four are cppcheck ids, so the cheapest probe is to RUN it with these enabled:
+cppcheck --enable=warning,style --inline-suppr <src>   # virtualCallInConstructor,
+#   pureVirtualCall, initializerList, assertWithSideEffect, operatorEqToSelf
+# Without cppcheck, by hand:
+grep -rnE 'assert\(' --include='*.cpp' --include='*.c' --include='*.h' . | grep -E '\+\+|--|=[^=]|\('
+# ^ a side effect inside assert() VANISHES under -DNDEBUG. Measured: assert(++n == 1)
+#   left n==1 normally and n==0 with -DNDEBUG. Check the build actually defines NDEBUG.
+err=$(grep -rn 'NDEBUG' CMakeLists.txt *.cmake 2>&1 >/dev/null); rc=$?
+case $rc in
+  0) ;;                                     # found: asserts are compiled out in that build
+  1) echo "NDEBUG not set here: release builds may still run asserts" ;;
+  *) echo "SWEEP FAILED, not a finding about their code: $err" ;;
+esac
+# ^ written this way on purpose. The one-line form -- a grep with stderr discarded, then
+#   an or-echo announcing absence -- reports YOUR broken sweep as THEIR defect, because the
+#   or-branch fires on every non-zero exit and the discarded stderr took the reason with it.
+#   rules/06 2d. Invariant 32 rejected the short form here while this section was written,
+#   and then rejected this very comment for spelling the pattern out literally: refer to it
+#   by name, never by its characters, in prose that shares a file with the check.
+# Members init in DECLARATION order, not list order -- -Wreorder catches it, so verify the
+# build does not silence it:
+grep -rnE '\-Wall|\-Wreorder|\-Wno-reorder' CMakeLists.txt *.cmake 2>/dev/null
+# Virtual call from a ctor/dtor dispatches to the BASE (measured), and a pure one is UB:
+grep -rnE '^\s*(virtual |[A-Z][A-Za-z0-9_]*::)?~?[A-Z][A-Za-z0-9_]*\s*\([^)]*\)\s*(:|\{)' \
+  --include='*.cpp' . | head   # then read each ctor/dtor body for a virtual call
+grep -rn 'operator=' --include='*.cpp' --include='*.h' . | grep -v 'delete\|default'
+# ^ each hand-written operator= must be self-assignment safe (copy-and-swap, or a guard)
 
 # Public surface / ABI (§9) — layout is part of a released header's contract
 git diff <last-release-tag>..HEAD -- '*.h' '*.hpp' | grep -nE '^\+[^+]' 

@@ -4834,3 +4834,32 @@ failure the negative-control harness exists to catch, met here by hand.
 
 `public API surface & evolution` is now pinned in `UNIVERSAL_FLOOR` (13 concepts), so the five
 sections written over two days cannot silently regress.
+
+## 2026-09-22 — gap-check 3 of 9: sota-c-cpp against cppcheck's 342 checks
+
+Denominator **342**, reconciled two ways the day before and re-confirmed here by parsing
+`--errorlist` (342 of 342 parsed). MISRA remains a **second registry** (132 rule functions in
+`misra.py`) that this skill delegates to by name.
+
+**The twelve obvious clusters were all already covered** — buffer/bounds, null, uninitialised,
+leak/UAF, integer, resource, STL/iterator, class/ctor, format string, banned APIs, exception
+safety, style — 3 to 6 files each, against a control of 4. **The gaps were entirely in the
+unclustered tail**, which is the part a keyword clustering throws away and the reason the
+method says to look at it rather than report a tidy cluster table.
+
+**Four closed, as `rules/01` §8a — construction and destruction, all measured on clang 17:**
+
+| trap | measured |
+|---|---|
+| virtual call in a constructor | dispatched to **BASE**, not the derived override — the derived vtable is not installed yet. Pure-virtual there is UB |
+| initialiser list order | members init in **declaration** order, not list order. `M() : b(1), a(b+10)` read `b` before it existed — and the value **changed with the build**, `a=70261` at `-O0` vs `a=10` under `-DNDEBUG`, which is the UB signature |
+| `assert` with a side effect | `assert(++n == 1)` left `n==1` normally and **`n==0` under `-DNDEBUG`** — the increment is gone in the build you ship |
+| self-assignment in `operator=` | rule of five says *declare* all five; it does not say the bodies are correct |
+
+**Invariant 32 rejected my own probe, twice, and both rejections were right.** The first shipped
+a grep with stderr discarded and an or-echo announcing absence — the exact `rules/06` §2d
+anti-pattern, written hours after I had cited that rule elsewhere in the same file. Rewritten
+to branch on the exit code and keep stderr. The **second** rejection was of the *comment*
+explaining the fix, because it spelled the pattern out literally: the same trap invariant 30's
+header records against itself. Refer to such a pattern by name, never by its characters, in
+prose that shares a file with the check.
