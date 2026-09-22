@@ -586,6 +586,18 @@ def assert_matrix_matches_tree():
                  "hit is a false positive.")
 
 
+def _universal_phrase():
+    """"N sections are universal -- a, b, c", counted off LANG_TOPICS itself."""
+    uni = [tp for tp in TOPIC_ORDER
+           if all(any(tp in v for v in LANG_TOPICS[l].values()) for l in LANGS)]
+    words = {1: "One", 2: "Two", 3: "Three", 4: "Four", 5: "Five", 6: "Six",
+             7: "Seven", 8: "Eight", 9: "Nine", 10: "Ten", 11: "Eleven"}
+    # first segment, ORIGINAL case -- lowercasing turned "API / design" into "api"
+    short = [tp.split(" /")[0].split(" \u2014")[0].strip() for tp in uni]
+    return "%s sections are universal \u2014 %s" % (
+        words.get(len(uni), str(len(uni))), ", ".join(short))
+
+
 def page_matrix(lang_files):
     """Section x language. A grid, because that is what a comparison of 11 topics across 9
     languages IS -- drawing it as nodes and edges would be the page-2 mistake again."""
@@ -595,11 +607,17 @@ def page_matrix(lang_files):
               "SOLID = a file of its own. LIGHT = shares a file with another topic, or is a "
               "section inside a broader file (the cell says which). BLANK = no dedicated "
               "treatment.\n\n"
-              "Four sections are universal — idioms, security, performance, tooling. The "
+              # DERIVED, never written. This sentence read "Four sections are universal"
+              # while the table below it showed SIX (Concurrency and Testing were already
+              # 9/9), and then SEVEN once ROADMAP 57 closed -- wrong before anyone touched
+              # it, and wrong again after. A count with its own source of truth twelve
+              # lines away has no business being a literal.
+              "%s. The "
               "variation is not arbitrary: Errors gets a file only where the error MODEL is "
               "distinctive (Rust, Go); Typing only in the gradual-typing pair; Memory/UB "
               "only where memory is manual. `sota-shell-scripting` is excluded — 9 files "
-              "with a different spine, grouped with languages but not a peer.",
+              "with a different spine, grouped with languages but not a peer."
+              % _universal_phrase(),
               NOTE, 40, 20, 900, 180)]
     x0, y0, cw, rh, lw = 430, 230, 108, 34, 380
     for j, lang in enumerate(LANGS):
@@ -651,7 +669,9 @@ def page_matrix(lang_files):
                   "RETRACTED 2026-09-21 — this note previously read \"jvm and .NET are 3–4x "
                   "thinner\". True of line count, false of what line count stood in for: per "
                   "100 rules-lines they carry the HIGHEST audit-item density in the library "
-                  "(.NET %.1f, jvm %.1f) and rust, the second-largest skill, is lowest at "
+                  "(.NET %.1f, jvm %.1f — COMPUTED NOW, not the 2026-09-21 figures of "
+                  "10.6 and 10.5; both skills have gained audit items since) and rust, "
+                  "the second-largest skill, is lowest at "
                   "%.1f. The bounded deficit is worked examples. Caveat: the checkbox and "
                   "shell-block checklist formats are not comparable, so this read is "
                   "within-format."
