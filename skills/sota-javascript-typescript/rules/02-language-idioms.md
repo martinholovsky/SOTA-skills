@@ -242,6 +242,48 @@ export type UserService = ReturnType<typeof makeUserService>;
 
 Module hygiene: no side effects at import time (registrations, connections, reading env) outside the composition root — importing a module should be safe and free. Side-effectful imports break tree-shaking, tests, and tooling.
 
+## Designing a public surface — what consumers can reach, and what you can change
+
+The shared design rules live in `sota-architecture` rules/02 and `sota-api-design`. **This is
+the JS/TS mechanism**, where the surface has two halves that break independently: what is
+*reachable at runtime*, and what is *expressible in the types*. A change can be invisible in
+one and breaking in the other.
+
+**`"exports"` is an encapsulation boundary, not a convenience.** A subpath not listed cannot
+be imported at all — measured on Node 22.22.1: the package entry resolved, and
+`require('pkg/lib/internal.js')` failed with **`ERR_PACKAGE_PATH_NOT_EXPORTED`**. Two
+consequences:
+
+- **Adding `"exports"` to a package that never had it is itself a breaking change.** Every
+  deep import your consumers relied on stops resolving, and they were not "wrong" to use one —
+  nothing stopped them. Ship it on a major.
+- Without it, **every file is public API**. A refactor that moves `lib/internal.js` breaks
+  someone, and you will not find out from your own tests.
+- Put `"types"` **first** in each conditions object: conditions match in declaration order,
+  so a `"types"` entry after `"import"`/`"require"` is unreachable for a TypeScript consumer.
+
+**Named exports over `default`.** A default export has no canonical name, so consumers spell
+it differently, rename-refactoring does not follow it, and a typo produces a *new* binding
+rather than an error. Named exports also let a consumer's bundler drop what it does not use.
+
+**Type-level breaking changes.** These are the ones that compile fine for you and fail in a
+consumer's build, and the direction is the opposite for arguments and returns:
+
+| change | safe? | why |
+|---|---|---|
+| widen a **parameter** type (`string` → `string \| number`) | **safe** | callers passing the old type still satisfy it |
+| narrow a **parameter** type | **breaking** | existing call sites stop type-checking |
+| widen a **return** type | **breaking** | consumers relying on the narrower type break |
+| narrow a **return** type | safe | every consumer still gets what it expected |
+| add an **optional** property to a returned object | safe | consumers ignore it |
+| add a **required** property to an object you *accept* | **breaking** | every caller must now supply it |
+| add a member to a **union you accept** | safe | you handle more |
+| add a member to a **union you return** | **breaking** | consumer `switch`es lose exhaustiveness |
+
+**`readonly` and `as const` are promises too.** Removing `readonly` from a returned type is
+safe; adding it is breaking for any consumer that mutated. Exporting a mutable array or object
+literal hands consumers a shared mutable singleton — freeze it or return a copy.
+
 ## Strings and Unicode
 
 - `str.length` counts UTF-16 code units, not characters: `'👨‍👩‍👧'.length === 8`. Iterate by code point (`[...str]`, `for...of`) for character-ish ops; grapheme-correct counting/truncation needs `Intl.Segmenter`:
@@ -257,6 +299,20 @@ const truncate = (s: string, n: number) => [...seg.segment(s)].slice(0, n).map(x
 - Multi-line template literals respect indentation — use `dedent` or keep them flush-left; don't ship accidental leading whitespace in SQL/emails.
 
 ## Audit checklist
+
+- [ ] **Public surface** (§"Designing a public surface"): `grep -n '"exports"' package.json` —
+      absent means **every file is importable** and a refactor breaks consumers silently;
+      present means adding it later was (or will be) a major. Where present, check `"types"` is
+      the **first** key in each conditions object — conditions match in declaration order, so a
+      later `"types"` is unreachable for a TS consumer.
+- [ ] `grep -rn "export default" src/` — a default export has no canonical name: consumers
+      spell it differently and rename-refactoring does not follow it. Prefer named (LOW).
+- [ ] **Type-level BC** on a published package: in the diff, did any exported signature
+      *narrow a parameter*, *widen a return*, add a **required** property to an accepted
+      object, or add a member to a **returned** union? Each compiles for you and breaks a
+      consumer's build. `git diff <last-tag>..HEAD -- '**/*.d.ts' 'src/**/*.ts' | grep '^[+-].*export'`
+- [ ] `grep -rnE 'export (const|let) [A-Za-z]+ *= *(\\[|\\{)' src/` — an exported mutable array
+      or object literal is a shared singleton every consumer can mutate (MEDIUM).
 
 - [ ] In-band sentinels: `grep -rnE 'return -1' --include='*.ts' --include='*.js' src/` — a
       `-1` that is **stored or passed** rather than tested on the next line. Remember `??`

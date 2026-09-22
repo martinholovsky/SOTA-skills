@@ -57,7 +57,11 @@ CONCEPTS = [
      r"in-band|sentinel|null|nil |none\b|optional|nullable|-1|magic (number|value)"),
     ("public API surface & evolution", "universal",
      r"public (api|surface)|semver|breaking change|deprecat|__all__|abi|"
-     r"export|visibility|private_constant|readonly|final\b"),
+     r"export|visibility|private_constant|readonly|final\b|"
+     # go states this in Go-native terms and was reported absent for it (triage
+     # 2026-09-21: 02-design.md probes grab-bag packages, returned interfaces, fat
+     # interfaces and package-level mutable state).
+     r"fat interface|returned interface|grab[- ]bag|package-level|interface \{"),
     ("immutability / const discipline", "conditional:has a const or freeze mechanism",
      r"immutab|const\b|constexpr|readonly|frozen|freeze|final field|mutat|defensive copy"),
     ("typing / generics discipline", "conditional:gradual or explicit typing",
@@ -222,6 +226,10 @@ UNIVERSAL_FLOOR = [
     "build reproducibility & CI gates",
     "test suite health & determinism",
     "suppressing a linter / type check",
+    # Reached 9/9 on 2026-09-22 when ROADMAP 57 closed (js/ts, php, ruby written that
+    # day; python and c/c++ the day before). Pinned immediately, for the same reason as
+    # the line above: the cheapest moment to lose work is right after doing it.
+    "public API surface & evolution",
 ]
 
 def classify(text):

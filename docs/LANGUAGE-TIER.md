@@ -23,7 +23,7 @@ drift; regenerate rather than trusting them.
 | Tooling / CI / supply chain | **universal** — all 9 |
 | Testing | **universal**, but usually *inside* the tooling file; only Python and JS/TS give it one of its own |
 | Concurrency | **universal in substance** — 7 dedicated files, Ruby merges it with performance, PHP carries it as `01 §6 "Fibers and concurrency"` |
-| API / design | **NOT universal — this is the one real gap.** See item 57 |
+| API / design | **universal since 2026-09-22** (item 57) — a dedicated file in 4, a section in 5. Pinned at 9/9 by `--assert-universal` |
 
 ## What is deliberately NOT aligned
 
@@ -53,9 +53,9 @@ topic appearing in both is not duplication — check the content before assuming
 
 Two items, both tracked in [ROADMAP.md](ROADMAP.md). Neither is urgent.
 
-### Item 57 — API / design is missing in three languages
+### Item 57 — CLOSED 2026-09-22. API / design now present in all nine
 
-Dedicated file in **rust, go, jvm, .NET**. Absent in **js/ts, php, ruby**,
+Dedicated file in **rust, go, jvm, .NET**; a section inside the idioms file in **python, c/c++, js/ts, php, ruby**. Formerly absent in the latter five,
 and thin where adjacent rules touch it (3–9 keyword mentions; JS/TS has "Functions and
 modules over classes", Ruby has "Data vs Struct", and that is close to all of it).
 

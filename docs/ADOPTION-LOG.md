@@ -4794,3 +4794,43 @@ as a real skill by invariants 6, 10 and 15 and would have to satisfy the 500-lin
 you write, how would an auditor detect a violation?* Three instances in two days shipped a
 BUILD rule with no probe. The template makes it a reviewer's question; making it a gate needs
 a way to tell "this rule needs a probe" from "this rule is prose", which is not yet solved.
+
+## 2026-09-22 — ROADMAP 57 closed: API/design in js/ts, php and ruby, every claim run
+
+The last three of five. Each section is scoped to the language **mechanism**, with the shared
+design rules left to `sota-architecture` rules/02 and `sota-api-design`, per §57's own
+instruction. **Every load-bearing claim was executed, not recalled** — all three runtimes were
+available, so there was no excuse for a doc-derived rule:
+
+| claim | measured |
+|---|---|
+| `"exports"` encapsulates a package | **Node 22.22.1** — entry resolved; `require('pkg/lib/internal.js')` failed **`ERR_PACKAGE_PATH_NOT_EXPORTED`** |
+| PHP `readonly` rejects writes | **8.5.9** — `Error: Cannot modify readonly property V::$x` |
+| PHP narrows/widens asymmetrically | widening a parameter **accepted**; narrowing is **fatal** at class declaration (*"must be compatible with"*) |
+| adding a method to a released interface | **fatal** for existing implementers (*"contains 1 abstract method"*) |
+| Ruby `private` and `def self.` | **4.0.6, differential** — instance method raised `NoMethodError`, the class method was **still callable** |
+| Ruby `private_constant` | `NameError: private constant B::SECRET referenced`; a bare constant is reachable with no declaration |
+
+**The three languages needed different amounts of writing, which only measuring showed.**
+js/ts and php had nothing: `"exports"` appeared only in rules/07 as *packaging*, and php's
+`semver` mention was a **consumer** constraint (`^` ranges), a different question from what a
+publisher may ship. Ruby already covered semver honesty (`rules/04`) and
+`respond_to_missing?`, so its section is narrower and inverted to Ruby's actual default —
+**nothing is hidden**, so the audit question is not *"what did we export"* but *"what did we
+fail to hide"*.
+
+**A probe that does not discriminate is labelled, not shipped as if it did.** Ruby's
+bare-constant locator fires on a *correct* file too, because `private_constant` usually sits on
+the **next** line and `grep -v` is line-scoped — verified against a fixture that does exactly
+that. It now says so and prints two counts to compare instead.
+
+**And the gate was watched to fail — after a first attempt that was itself inert.** Stripping
+`interface`/`final`/`readonly` from php's checklist did **not** trip `--assert-universal`,
+because the text still said *"Public surface"* and *"deprecated"*, which the matcher also
+accepts. Mutating against the matcher's **actual** vocabulary produced
+`REGRESSED: public API surface & evolution now absent from: php`, and restore returned it to
+green. **The first mutation looked like a passing gate and was a broken probe** — the exact
+failure the negative-control harness exists to catch, met here by hand.
+
+`public API surface & evolution` is now pinned in `UNIVERSAL_FLOOR` (13 concepts), so the five
+sections written over two days cannot silently regress.

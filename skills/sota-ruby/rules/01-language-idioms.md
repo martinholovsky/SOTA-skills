@@ -199,9 +199,62 @@ Rules:
 - `method_missing` requires a matching `respond_to_missing?`; prefer
   `define_method` metaprogramming that produces real, introspectable methods.
 
+## 8. Designing a public surface — everything is public until you say otherwise
+
+Shared design rules: `sota-architecture` rules/02 and `sota-api-design`; semver honesty is
+already in `rules/04`. **This is the Ruby mechanism**, and Ruby's default is the opposite of
+every other language in this tier: a gem's surface is everything it defines, and narrowing it
+later is the breaking change.
+
+**`private` does not do what its name suggests — twice over.**
+
+- **It does not apply to `def self.` class methods.** Measured on Ruby 4.0.6 as a
+  differential: with a bare `private` above both, the instance method raised `NoMethodError`
+  and the class method was **still callable**. Use `private_class_method :name`, or
+  `class << self` with `private` inside it. A `private` that silently applies to nothing is
+  indistinguishable from one that works, until a consumer depends on the method.
+- **It does not apply to constants.** A bare `INTERNAL = 3` inside a class is reachable as
+  `C::INTERNAL` with no declaration at all, and is therefore API. `private_constant :SECRET`
+  is the mechanism — measured: referencing it afterwards raises
+  `NameError: private constant B::SECRET referenced`.
+
+**So the audit question for a gem is inverted**: not *"what did we export?"* but *"what did we
+fail to hide?"* Every public instance method, every class method, every constant and every
+module you reopen is a promise a consumer may already rely on.
+
+- **Monkey-patching a core class is public API for the whole process**, not just your gem. If
+  it must happen, a `Refinement` scopes it to the files that `using` it (§7) — otherwise
+  namespace it and let callers opt in.
+- `method_missing` widens the surface to things you never wrote; pair it with
+  `respond_to_missing?` (§7) or `respond_to?` lies about what your object accepts.
+- **Deprecate before removing**: keep the old name delegating to the new one for a major
+  cycle, and emit a `warn` naming the replacement. Removing a public method is a major bump,
+  and Ruby gives the consumer no compile step that would have caught it.
+
 ## Audit checklist
 
 Run from repo root; verify each hit manually.
+
+**Public surface** (§8) — Ruby hides nothing by default, so the question is what you
+failed to hide, not what you exported:
+
+```bash
+# `private` does NOT apply to `def self.` -- measured on 4.0.6, the class method stayed
+# callable while the instance method raised NoMethodError. A private that applies to
+# nothing looks identical to one that works.
+grep -rn -B3 'def self\.' lib/ | grep -A3 '^\s*private\s*$'
+grep -rn 'private_class_method\|class << self' lib/      # the forms that actually work
+# `private` does NOT apply to constants either: a bare CONST is reachable as Mod::CONST
+grep -rnE '^\s*[A-Z][A-Z0-9_]+ *=' lib/ | grep -v 'private_constant'
+# ^ A LOCATOR, NOT A VERDICT: `grep -v` is line-scoped, so a constant privatised on the
+#   NEXT line still appears here (verified against a fixture that does exactly that).
+#   Compare the two counts below instead of trusting the filtered list.
+grep -rncE '^\s*[A-Z][A-Z0-9_]+ *=' lib/ ; grep -rnc 'private_constant' lib/
+grep -rn 'private_constant' lib/                          # the mechanism, if used at all
+# Monkey-patching a core class is API for the whole process, not just this gem
+grep -rnE '^\s*class (String|Array|Hash|Integer|Object|Kernel)\b' lib/
+grep -rn 'refine \|using ' lib/                            # the scoped alternative (§7)
+```
 
 **In-band sentinels** (§5a) — Ruby's search API returns `nil`, so these arrive from
 conversion and from hand-rolled returns:
