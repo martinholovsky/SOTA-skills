@@ -107,6 +107,9 @@ tested=0
 caught=0
 failed=0
 PROBED_IDS=''   # invariants this run actually exercised; see the self-check at the end
+SKIPPED_IDS=''  # invariants whose probe could not run HERE (branch shape), reconciled
+                # against the COVERED declaration at the end -- never folded into
+                # PROBED_IDS, which would claim they were exercised
 
 # `git checkout -- .` + `git clean -fd` is NOT enough: git clean leaves files that
 # have been `git add`-ed, so probe 10's staged file leaked into probe 15, which
