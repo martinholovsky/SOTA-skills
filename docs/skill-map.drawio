@@ -478,7 +478,7 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="note" value="Page 5 — section x language. Which topics each language skill gives its own rules file.&lt;br&gt;&lt;br&gt;SOLID = a file of its own. LIGHT = shares a file with another topic, or is a section inside a broader file (the cell says which). BLANK = no dedicated treatment.&lt;br&gt;&lt;br&gt;Seven sections are universal — Idioms, API, Concurrency, Security, Performance, Tooling, Testing. The variation is not arbitrary: Errors gets a file only where the error MODEL is distinctive (Rust, Go); Typing only in the gradual-typing pair; Memory/UB only where memory is manual. sota-shell-scripting is excluded — 9 files with a different spine, grouped with languages but not a peer." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="note" value="Page 5 — section x language. Which topics each language skill gives its own rules file.&lt;br&gt;&lt;br&gt;SOLID = a file of its own. LIGHT = shares a file with another topic, or is a section inside a broader file (the cell says which). BLANK = no file AND no section — which is NOT the same as &#x27;not covered&#x27;: a concept can still be probed from inside another topic, and gen-concept-matrix.py is what answers that question. This legend read &#x27;no dedicated treatment&#x27; until 2026-09-22, while 11 cells were blank with a real section behind them.&lt;br&gt;&lt;br&gt;Eight sections are universal — Idioms, API, Errors, Concurrency, Security, Performance, Tooling, Testing. The variation is not arbitrary: Errors gets a file only where the error MODEL is distinctive (Rust, Go); Typing only in the gradual-typing pair; Memory/UB only where memory is manual. sota-shell-scripting is excluded — 9 files with a different spine, grouped with languages but not a peer." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
           <mxGeometry x="40" y="20" width="900" height="180" as="geometry"/>
         </mxCell>
         <mxCell id="mh0" value="rust" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;fontSize=11;" vertex="1" parent="1">
@@ -520,7 +520,7 @@
         <mxCell id="m0_2" value="01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="646" y="264" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m0_3" value="01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="m0_3" value="01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="754" y="264" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="m0_4" value="03" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
@@ -559,7 +559,7 @@
         <mxCell id="m1_5" value="02 §Designing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="970" y="298" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m1_6" value="02" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="m1_6" value="02" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="1078" y="298" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="m1_7" value="01 §6a" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
@@ -577,25 +577,25 @@
         <mxCell id="m2_1" value="01" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="538" y="332" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m2_2" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="m2_2" value="01 §7" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="646" y="332" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m2_3" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="m2_3" value="01 §4" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="754" y="332" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m2_4" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="m2_4" value="03 §10" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="862" y="332" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m2_5" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="m2_5" value="02 §Error" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="970" y="332" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m2_6" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="m2_6" value="02 §4" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="1078" y="332" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m2_7" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="m2_7" value="01 §5" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="1186" y="332" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m2_8" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="m2_8" value="01 §5" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="1294" y="332" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="mr3" value="Typing" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=10;fontStyle=1;fontSize=11;" vertex="1" parent="1">
@@ -607,7 +607,7 @@
         <mxCell id="m3_1" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="538" y="366" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m3_2" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="m3_2" value="01 §6" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="646" y="366" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="m3_3" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
@@ -625,7 +625,7 @@
         <mxCell id="m3_7" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="1186" y="366" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m3_8" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="m3_8" value="01 §6" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="1294" y="366" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="mr4" value="Concurrency" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=10;fontStyle=1;fontSize=11;" vertex="1" parent="1">
@@ -709,7 +709,7 @@
         <mxCell id="m6_5" value="05" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="970" y="468" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m6_6" value="04" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="m6_6" value="04" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="1078" y="468" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="m6_7" value="02, 03, 04" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
@@ -733,13 +733,13 @@
         <mxCell id="m7_3" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="754" y="502" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m7_4" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="m7_4" value="07 §1-2" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="862" y="502" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="m7_5" value="04" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="970" y="502" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m7_6" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="m7_6" value="04 §4" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="1078" y="502" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="m7_7" value="04" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
@@ -823,7 +823,7 @@
         <mxCell id="m10_3" value="06" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="754" y="604" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m10_4" value="07" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="m10_4" value="07" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="862" y="604" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="m10_5" value="07" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#eaf5e9;strokeColor=#a9cfa5;fontSize=10;" vertex="1" parent="1">

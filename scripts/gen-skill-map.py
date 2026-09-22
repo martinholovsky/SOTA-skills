@@ -79,27 +79,27 @@ LANG_TOPICS = {
                "03": ["Concurrency"], "04": ["Web / HTTP"], "05": ["Security"],
                "06": ["Performance"],
                "07": ["Tooling / CI / supply chain", "Testing"]},
-    "c-cpp": {"01": ["Idioms / baseline", "API / design"], "02": ["Memory / UB"], "03": ["Memory / UB"],
+    "c-cpp": {"01": ["Idioms / baseline", "API / design", "Errors", "Typing"], "02": ["Memory / UB"], "03": ["Memory / UB"],
               "04": ["Security"], "05": ["Concurrency"],
               "06": ["Tooling / CI / supply chain", "Testing"], "07": ["Performance"]},
-    "jvm": {"01": ["Idioms / baseline"], "02": ["API / design"], "03": ["Concurrency"],
+    "jvm": {"01": ["Idioms / baseline", "Errors"], "02": ["API / design"], "03": ["Concurrency"],
             "04": ["Security"], "05": ["Performance"],
             "06": ["Tooling / CI / supply chain", "Testing"]},
     "python": {"01": ["Tooling / CI / supply chain"], "02": ["Typing"],
-               "03": ["Idioms / baseline", "API / design"],
+               "03": ["Idioms / baseline", "API / design", "Errors"],
                "04": ["Concurrency"], "05": ["Security"],
-               "06": ["Performance"], "07": ["Testing"]},
-    "javascript-typescript": {"01": ["Typing"], "02": ["Idioms / baseline", "API / design"],
+               "06": ["Performance"], "07": ["Testing", "Web / HTTP"]},
+    "javascript-typescript": {"01": ["Typing"], "02": ["Idioms / baseline", "API / design", "Errors"],
                               "03": ["Concurrency"], "04": ["Web / HTTP"],
                               "05": ["Security"], "06": ["Performance"],
                               "07": ["Testing", "Tooling / CI / supply chain"]},
-    "dotnet": {"01": ["Idioms / baseline"], "02": ["API / design"],
-               "03": ["Concurrency"], "04": ["Security"], "05": ["Performance"],
+    "dotnet": {"01": ["Idioms / baseline"], "02": ["API / design", "Errors"],
+               "03": ["Concurrency"], "04": ["Security", "Web / HTTP"], "05": ["Performance"],
                "06": ["Tooling / CI / supply chain", "Testing"]},
-    "php": {"01": ["Idioms / baseline", "Concurrency", "API / design"], "02": ["Security"],
+    "php": {"01": ["Idioms / baseline", "Concurrency", "API / design", "Errors"], "02": ["Security"],
             "03": ["Security"], "04": ["Security", "Web / HTTP"],
             "05": ["Tooling / CI / supply chain", "Testing"], "06": ["Performance"]},
-    "ruby": {"01": ["Idioms / baseline", "API / design"], "02": ["Security"], "03": ["Web / HTTP"],
+    "ruby": {"01": ["Idioms / baseline", "API / design", "Errors", "Typing"], "02": ["Security"], "03": ["Web / HTTP"],
              "04": ["Tooling / CI / supply chain", "Testing"],
              "05": ["Concurrency", "Performance"]},
 }
@@ -114,7 +114,22 @@ INLINE = {("php", "Concurrency"): "01 §6",
           ("javascript-typescript", "API / design"): "02 §Designing",
           ("php", "API / design"): "01 §6a",
           ("ruby", "API / design"): "01 §8",
-          ("python", "API / design"): "03 §13"}
+          ("python", "API / design"): "03 §13",
+          # Errors/Typing/Web where the topic is a SECTION, verified by reading each
+          # heading 2026-09-22. Every one of these rendered BLANK while the legend said
+          # "no dedicated treatment" -- false for all of them. Same declaration gap as
+          # API/design, one row down.
+          ("c-cpp", "Errors"): "01 §7",
+          ("jvm", "Errors"): "01 §4",
+          ("python", "Errors"): "03 §10",
+          ("javascript-typescript", "Errors"): "02 §Error",
+          ("dotnet", "Errors"): "02 §4",
+          ("php", "Errors"): "01 §5",
+          ("ruby", "Errors"): "01 §5",
+          ("c-cpp", "Typing"): "01 §6",
+          ("ruby", "Typing"): "01 §6",
+          ("python", "Web / HTTP"): "07 §1-2",
+          ("dotnet", "Web / HTTP"): "04 §4"}
 
 
 def audit_items(lang):
@@ -551,6 +566,11 @@ def page_slice():
 # disabled, which docs/CONVENTIONS-LEDGER.md says is worse than no gate.
 TOPIC_CONCEPT = {
     "API / design": "public API surface & evolution",
+    # Added 2026-09-22 after all SEVEN Errors blanks turned out to have a section.
+    # It was excluded on the first pass as "no 1:1 concept", which was too hasty:
+    # error handling is in UNIVERSAL_FLOOR at 9/9, so the two instruments were
+    # already making contradictory claims about the same fact.
+    "Errors": "error handling & propagation",
     "Concurrency": "data race / shared mutable state",
     "Security": "input validation & untrusted data",
     "Testing": "test suite health & determinism",
@@ -605,8 +625,11 @@ def page_matrix(lang_files):
               "Page 5 — section x language. Which topics each language skill gives its own "
               "rules file.\n\n"
               "SOLID = a file of its own. LIGHT = shares a file with another topic, or is a "
-              "section inside a broader file (the cell says which). BLANK = no dedicated "
-              "treatment.\n\n"
+              "section inside a broader file (the cell says which). BLANK = no file AND no "
+              "section — which is NOT the same as 'not covered': a concept can still be "
+              "probed from inside another topic, and gen-concept-matrix.py is what answers "
+              "that question. This legend read 'no dedicated treatment' until 2026-09-22, "
+              "while 11 cells were blank with a real section behind them.\n\n"
               # DERIVED, never written. This sentence read "Four sections are universal"
               # while the table below it showed SIX (Concurrency and Testing were already
               # 9/9), and then SEVEN once ROADMAP 57 closed -- wrong before anyone touched

@@ -25,6 +25,33 @@ drift; regenerate rather than trusting them.
 | Concurrency | **universal in substance** — 7 dedicated files, Ruby merges it with performance, PHP carries it as `01 §6 "Fibers and concurrency"` |
 | API / design | **universal since 2026-09-22** (item 57) — a dedicated file in 4, a section in 5. Pinned at 9/9 by `--assert-universal` |
 
+## Blank cells on page 5 — triaged 2026-09-22
+
+The map's blanks were read as gaps. **Most were a declaration gap in the map, not a coverage
+gap in the library**, and the legend made it worse by defining BLANK as *"no dedicated
+treatment"*. Every blank was checked by reading the headings of the skill behind it:
+
+| row | blanks | had a real section (map was wrong) | principled |
+|---|---|---|---|
+| **Errors** | 7 | **all 7** — c/c++ `01 §7`, jvm `01 §4`, python `03 §10`, js/ts `02 §Error handling`, .NET `02 §4`, php `01 §5`, ruby `01 §5` | 0 |
+| **Typing** | 7 | 2 — c/c++ `01 §6`, ruby `01 §6` | 5 — statically-typed languages have no gradual-typing story |
+| **Web / HTTP** | 5 | 2 — .NET `04 §4`, python `07 §1–2` (named by framework: FastAPI, Django) | 3 — rust, c/c++, jvm carry no web layer |
+| **Memory / UB** | 7 | 0 | 7 — the GC languages' "Memory" sections are *performance* (allocation, GC pressure) and are already counted under Performance |
+
+**The Errors row was the loud one**: seven of seven blank, while `error handling &
+propagation` sits in `UNIVERSAL_FLOOR` at **9/9**. Two instruments were making contradictory
+claims about the same fact and nothing compared them — the identical defect as API/design, one
+row up, found the same way: by someone looking at the rendered picture.
+
+**Deliberately NOT declared: go's Memory/UB.** `sota-golang` `05 §7` covers `unsafe`/cgo
+policy, which is memory-safety adjacent — but a one-section "don't use `unsafe`" policy in a
+GC language is not the same topic as rust's and c/c++'s memory-safety treatment, and
+declaring it would imply a parity that does not exist. Left blank on purpose; recorded here so
+the next reader does not "fix" it.
+
+**`Errors` is now in `TOPIC_CONCEPT`**, so the cross-check guards it. It was left out on the
+first pass as "no 1:1 concept", which was too hasty.
+
 ## What is deliberately NOT aligned
 
 These track a property of the language. Adding the missing cells would be writing filler.
