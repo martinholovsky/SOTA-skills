@@ -241,6 +241,11 @@ File uploads:
 - [ ] CSP present? `grep -rn "Content-Security-Policy" src/` — absent on HTML-serving apps (MEDIUM); contains `unsafe-inline`/`unsafe-eval` in script-src (MEDIUM).
 - [ ] Lockfile in git; CI uses `npm ci`/frozen lockfile; install scripts blocked (`.npmrc` `ignore-scripts`, pnpm allowlist, or npm ≥12 defaults + committed `approve-scripts` allowlist); install cooldown active (pnpm 11 `minimumReleaseAge` default, npm ≥11.10 `min-release-age`, or Renovate/Dependabot) (each absent: MEDIUM).
 - [ ] `grep -n "git+\|git://\|github:\|https://.*\.tgz" package.json` — git-URL or remote-tarball dependencies: unauditable, refused by npm ≥12 without `--allow-git`/`--allow-remote` (MEDIUM).
+- [ ] SQL built by interpolation (the rule is stated in §"Same family" above; this is its
+      probe, absent until 2026-09-22): `grep -rnE '(query|execute|raw)\\(\\s*`' src/` — a
+      template literal reaching a driver is CRITICAL. Also `grep -rn "knex.raw\\|sequelize.query\\|\\$queryRawUnsafe\\|createQueryBuilder" src/`
+      — Prisma's `$queryRaw` tagged template is parameterized while `$queryRawUnsafe` is not,
+      and the two differ by one word. Parameterized/bound form everywhere, or HIGH.
 - [ ] Server-side fetch of user-supplied URLs: private-IP/metadata blocking + redirect handling (absent = HIGH, SSRF).
 - [ ] Webhook handlers: signature verification before parsing (absent = HIGH).
 - [ ] `grep -rn "Allow-Origin" src/` — `*` with credentials or unvalidated Origin reflection (HIGH).

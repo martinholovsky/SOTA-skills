@@ -120,6 +120,16 @@ grep -rn 'waitFor(' --include='*.java' --include='*.kt' . | grep -v 'descendants
 grep -rnE 'ctx\.lookup|InitialContext|new InitialDirContext' --include='*.java' .   # JNDI/Log4Shell-class
 grep -rnE 'SpelExpressionParser|Ognl|ScriptEngineManager|getEngineByName' --include='*.java' .
 
+# Path traversal / zip slip — HIGH  (the rule is stated at 5 above; this is its probe)
+# Found 2026-09-22: the BUILD half existed ("canonicalize and verify the result stays under
+# an allowed root") with no audit probe anywhere in the skill -- the dominant gap shape.
+grep -rnE 'new File\(|Paths\.get\(|Path\.of\(' --include='*.java' --include='*.kt' . | grep -vE 'normalize|toRealPath'
+# ^ a path built from request data and never normalize()d. Then confirm the check is
+#   startsWith(root) AFTER normalize/toRealPath -- normalizing without comparing is a no-op.
+grep -rnE 'getName\(\)|getEntry\(|ZipEntry|TarArchiveEntry' --include='*.java' --include='*.kt' .
+# ^ ZIP SLIP: an archive entry name is attacker-controlled and may contain ../ ; the
+#   extracted path must be resolved against the target dir and re-checked with startsWith.
+
 # XXE — CRITICAL (verify DTDs disabled)
 grep -rnE 'DocumentBuilderFactory|SAXParserFactory|XMLInputFactory|TransformerFactory|SAXReader' --include='*.java' .
 grep -rn 'disallow-doctype-decl\|setExpandEntityReferences\|SafeConstructor' --include='*.java' . || echo "verify XXE hardening"

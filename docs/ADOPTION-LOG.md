@@ -4723,3 +4723,38 @@ predicted**, caught by the fixture rather than by review.
 
 **Confirmed by the instrument, not by assertion:** `gen-concept-matrix.py` now reports
 `suppressing a linter / type check` as present in **9 of 9**.
+
+## 2026-09-22 — first concept-matrix triage: 2 real gaps, 6 artefacts, 3 delegations
+
+Working ROADMAP 61's blocker (*"triage the candidates first, or the template freezes today's
+gaps"*). Eleven cells opened; the verdicts are in
+[LANGUAGE-TIER.md](LANGUAGE-TIER.md#triage-ledger--candidates-opened-and-what-they-turned-out-to-be).
+
+**Both survivors are the same shape: the BUILD rule exists and the PROBE does not.**
+
+- **jvm path traversal** — `rules/04:86` already said *"canonicalize and verify the result
+  stays under an allowed root (`Path.normalize()` + `startsWith`)"*, and **no checklist in the
+  skill probed it**. Added, with zip slip alongside: an archive entry name is attacker-
+  controlled, and normalizing without then comparing is a no-op.
+- **js/ts SQL injection** — `rules/05:178` says *"never interpolate into SQL (parameterized
+  queries only)"* inside a *"same family"* aside, and the checklist had **no SQL probe at
+  all** in a skill whose own SKILL.md lists *"untrusted input reaching eval/innerHTML/exec/
+  SQL"* as CRITICAL. Added, including `$queryRaw` (parameterized) vs `$queryRawUnsafe` (not),
+  which differ by one word.
+
+This is the **third independent instance** of that shape in two days — after the `$?` rule
+(bash had neither half, PowerShell had both) and the analyser escape hatch (ROADMAP 60). It is
+invisible to a file-level matrix, invisible to a reader of the prose, and invisible to every
+gate we have: **nothing checks that a stated rule has a way to be detected.**
+
+**A delegation is not a gap, and the instrument was reporting it as one.** rust, js/ts and
+c/c++ have no TLS probe because router cross-cutting rule 18 puts transport/PKI in
+`sota-network-security` rules/06 library-wide. Three skills were being flagged for *obeying
+the router*. The concept is now `conditional`, with the reason recorded at the declaration so
+a later reader does not "fix" it.
+
+**The matcher is part of the artefact.** Six candidates died on reading, and each one's
+vocabulary hole was closed in the same change — `prepared` never matches `prepareStatement`
+(prepare+statement, no `d`), `child_process`/`Process.Start` were absent, `Path.Combine` was
+absent. The candidate list is a **queue that shrinks as it is worked**, not a scoreboard, and
+a dead candidate that leaves the matcher untouched will simply be re-derived next run.

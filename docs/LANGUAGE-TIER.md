@@ -178,6 +178,34 @@ remainder is a hole in the matcher vocabulary, not evidence about the skills, an
 spine does not apply to it, and mixing them manufactures gaps that are only a difference in
 kind.
 
+### Triage ledger — candidates opened, and what they turned out to be
+
+**A candidate dies by being read, and the verdict is recorded so nobody re-derives it.**
+First pass, 2026-09-22. Of 11 cells opened, **2 were real**, **6 were vocabulary artefacts**
+and **3 were a principled delegation**:
+
+| candidate | verdict | evidence |
+|---|---|---|
+| jvm — path traversal | **REAL, closed** | the BUILD rule existed at `rules/04:86` (*"canonicalize and verify the result stays under an allowed root"*) with **no probe anywhere in the skill**. Probe added, plus zip slip |
+| js/ts — SQL injection | **REAL, closed** | `rules/05:178` says *"never interpolate into SQL"*; the checklist had no SQL probe at all. Probe added, incl. `$queryRaw` vs `$queryRawUnsafe` |
+| js/ts, .NET — command injection | artefact | both probe it (`child_process`/`execSync`; `Process.Start`) — matcher lacked those terms |
+| rust, jvm — SQL injection | artefact | jvm probes `prepareStatement`/`createQuery`. **The matcher said `prepared`, which never matches `prepareStatement`** — prepare+statement has no `d` |
+| js/ts, .NET — path traversal | artefact | `path.join`/`Path.Combine`; .NET's heading is *"XXE / command / path"* |
+| rust, js/ts, c/c++ — TLS | **delegation, not a gap** | router cross-cutting rule 18 puts transport/PKI in `sota-network-security` rules/06. Concept reclassified `conditional` so it stops being reported |
+
+**The dominant real-gap shape is "the rule is stated, the probe is missing"** — both survivors
+were that, and neither is visible to a file-level view or to a reader of the prose. It is the
+same shape as the `$?` and suppression findings, which is now three independent instances.
+
+**And the matcher is part of the artefact.** Every dead candidate above was fixed in the
+vocabulary in the same change, which is why the candidate list shrinks as it is worked rather
+than staying constant — the list is a queue, not a scoreboard.
+
+**Not yet triaged** (the remaining cells, for the next pass): backpressure, deserialization,
+authn/authz, resource lifecycle, supply-chain provenance, allocation/GC, version floor, module
+boundaries, DoS guards, plus `public API surface — go`, `cancellation — c/c++`, and ruby's
+task-leak and profiling cells.
+
 ### Verified gap: nobody probes the linter's escape hatch in jvm, .NET or c/c++
 
 Six of nine languages probe *"someone silenced the analyser"* — rust (`#![allow]` without a

@@ -88,16 +88,18 @@ CONCEPTS = [
 
     # --- security
     ("SQL / query injection", "universal",
-     r"sql inject|parameteriz|prepared|raw quer|sql built from|string interpolation in (a )?quer|"
+     r"sql inject|parameteriz|prepare|raw quer|sql built from|string interpolation in (a )?quer|"
      r"activerecord|sqlalchemy|dapper|pdo|whereraw|selectraw|db::raw|escape_string|"
      r"emulate_prepares|->query|execute\(|sqlx|diesel|knex|sequelize|query buil"),
     ("command / subprocess injection", "universal",
      r"command inject|shell[= ]true|os/exec|subprocess|system\(|popen|`backtick|"
-     r"process\.start|processbuilder|std::process|argument injection"),
+     r"process\.start|processbuilder|std::process|argument injection|child_process|"
+     r"execsync|spawnsync|execfile|runtime\.getruntime|shell_exec|proc_open"),
     ("path traversal / file access", "universal",
      r"path traversal|\.\./|directory traversal|os\.root|filepath\.(join|clean)|"
      r"realpath|symlink|temp file|tmpfile|file permission|0600|umask|path\.join|"
-     r"canonical|basename|lfi\b|include\(|require_once|mktemp|tempfile"),
+     r"canonical|basename|lfi\b|include\(|require_once|mktemp|tempfile|"
+     r"path\.combine|getfullpath|zip slip|zipentry|sendfile"),
     ("deserialization / unsafe parsing", "universal",
      r"deserializ|unserialize|pickle|marshal|yaml\.load|objectinputstream|binaryformatter|"
      r"gob\b|xxe|xml external|phar|serde|bincode|json\.loads|fromjson|readobject"),
@@ -112,7 +114,11 @@ CONCEPTS = [
     ("input validation & untrusted data", "universal",
      r"validat|untrusted|sanitiz|allowlist|whitelist|bounds check|schema|"
      r"decompress|zip bomb|size limit|max size"),
-    ("TLS / transport verification", "universal",
+    # Reclassified 2026-09-22 by triage. Router cross-cutting rule 18 puts transport/PKI
+    # in `sota-network-security` rules/06 and TLS *client config* in `sota-code-security`
+    # rules/04, library-wide. So a language skill with no TLS probe is DELEGATING, not
+    # gapped -- rust, js/ts and c/c++ were being reported as gaps for obeying the router.
+    ("TLS / transport verification", "conditional:transport/PKI is delegated library-wide (router rule 18)",
      r"tls|ssl|certificate|insecureskipverify|verify=false|hostname verif|"
      r"insecureignorehostkey|trust ?store|http://|rustls|openssl|danger_accept|"
      r"servercertificatevalidation|curlopt_ssl"),
