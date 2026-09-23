@@ -100,9 +100,13 @@ They take free-text arguments (`/sota-close focus on the migration branch`). Ful
 
 Findings name the control they violate — not just "this looks wrong":
 
-- **Security** — OWASP Top 10 (2025), ASVS, API & LLM Top 10; findings cite CWE IDs
+- **Security** — OWASP Top 10 (2025), ASVS, API & LLM Top 10; findings cite CWE IDs.
+  Disabled TLS certificate and SSH host-key verification are each stated once, with a
+  detector per library read from that library's own source
 - **Languages** — all 9 language skills (Rust → Ruby, below) get the same rigor;
-  formal standards where they exist: SEI CERT (C, C++, Java), MISRA C/C++, ANSSI Rust
+  formal standards where they exist: SEI CERT (C, C++, Java), MISRA C/C++, ANSSI Rust.
+  Each is also gap-checked against its ecosystem's own scanner registry
+  (Bandit, gosec, cppcheck and Brakeman so far — [LANGUAGE-TIER](docs/LANGUAGE-TIER.md))
 - **Supply chain** — SLSA, Sigstore, in-toto, SBOM (CycloneDX/SPDX), NIST SSDF
 - **Cloud & identity** — CIS Benchmarks, NIST 800-207 zero trust, NIST 800-63-4,
   OAuth 2.1, FAPI 2.0, passkeys, SPIFFE
@@ -596,6 +600,9 @@ plainly. Every item below is in the repo, not a claim about it:
 - **A lift was retracted.** An early +0.07 on inert-control detection did not
   reproduce when the sample grew from 15 to 49 cases. It was withdrawn and the
   retraction is documented rather than quietly dropped.
+- **Routing is re-measured on a clock, not only on a diff.** `scripts/routing-baseline.sh`
+  re-runs the description classifier locally, and a monthly job goes red when that stamp is
+  older than 3 months, because a model release can move routing with no change here.
 - **The gates are proven able to fail.** `scripts/check-negative-controls.sh` runs
   in CI as its own job: it injects a known-bad per invariant into a disposable git
   worktree and requires *the intended check* to be the one that complains — a
