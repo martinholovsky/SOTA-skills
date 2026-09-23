@@ -319,7 +319,7 @@ running — but it cannot support a claim of completeness.
   exists to produce) and a `[^,]+` that cannot span the second comma of a three-argument call.
   Neither was caught by review.
 
-### An open question this raised
+### An open question this raised — DECIDED 2026-09-23: one shared class
 
 **Temp-file/permission hygiene and host-key verification were gaps in *both* Python and Go.**
 If that repeats in Ruby and PHP, the right fix is probably a class stated once in
@@ -339,8 +339,26 @@ language, not after the ninth.
   list, and ruby's gap there was a missing detector token (`VERIFY_NONE`, added), not a
   missing rule.
 
-**Status: held for an operator decision.** Ruby's host-key line is deliberately not written
-until it is settled, because writing it per-language would pre-empt the choice.
+**DECIDED 2026-09-23 by the operator: option (a), a class stated once.** Host-key verification
+now lives in `sota-code-security` rules/04 §5, beside certificate verification. It has one
+detector row for every library whose bypass was read from that library's own source:
+paramiko, Go `x/crypto/ssh`, `net-ssh`, JSch, MINA SSHD, Node `ssh2` and OpenSSH. Each
+language skill carries only its library's spelling of the detector.
+
+**Reasoning, recorded so it is not re-argued.** The library already solves the sibling concern
+this way: disabled TLS verification is one rule with a shared detector list, and ruby's gap
+there turned out to be a missing token, not a missing rule. Writing host keys nine times would
+make nine copies to drift.
+
+**The alternative, rejected:** per-language sections, as python and go already have. Those two
+are **kept, not deleted**, because they carry library detail. The rule itself is no longer
+restated per language.
+
+Two facts surfaced by reading the sources, and neither would have been found by writing from
+memory: **Node `ssh2` and `net-ssh` default to accepting**, so for them the finding is an
+*absence*. The first draft of the shared probe also missed JSch's
+`setConfig("StrictHostKeyChecking", "no")` form. It was caught by a per-library fixture and
+widened.
 
 ### Ruby — the 86 Brakeman checks, classified (2026-09-23)
 

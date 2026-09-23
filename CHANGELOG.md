@@ -24,8 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       shared list.
   - Seven new probes, each run against known-bad and known-good fixtures under ugrep and BSD
     grep.
-  - **Host-key verification is held**: it repeats as a gap in a third language, which is the
-    trigger for the shared-class decision recorded in `docs/LANGUAGE-TIER.md`.
+  - **Host-key verification became a shared class** (operator decision, 2026-09-23), because it
+    repeated as a gap in a third language. It is stated once in `sota-code-security` rules/04
+    §5 with a detector row per library, each read from that library's own source. Node
+    `ssh2` and Ruby `net-ssh` **default to accepting**, so there the finding is an absence.
+    The first draft of the probe missed JSch's `setConfig` form, and it was caught by a
+    per-library fixture.
 - **The +0.39 completeness lift, re-measured against the current router: it holds (ROADMAP
   63).** Two runs of 3 samples at temp 0.7 on `claude-sonnet-4.6`, the baseline configuration,
   at `ROUTER_BUILD_SHA` `273a969bbe2994e4`. The lifts were +0.39 and +0.42, and the mean is
@@ -100,7 +104,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **ROADMAP 59 and `docs/LANGUAGE-TIER.md` still listed c/c++ as remaining** after its
   gap-check closed on 2026-09-22; they now read 3 done, 6 remaining.
 - **A private project's name is replaced with a neutral label** in four tracked files
-  (20 lines). Git history still contains the old text.
+  (20 lines). Git history still contains the old text. **That is accepted risk** (operator
+  decision, 2026-09-23, on the same reasoning as 2026-07-01): a rewrite cannot recall existing
+  clones, forks or cached commits, and it would force-push protected `main`.
 - **`sota-shell-scripting` rules/01 was recommending the bug.** Its snippet read
   `cmd > out.txt 2>&1; echo "EXIT=$?"` commented **"status preserved"** — false of the
   compound's own status, which is the `echo`'s, and the exact shape §2a warns about *elsewhere

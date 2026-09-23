@@ -147,6 +147,29 @@ mac_key  = HKDF(master, info=b"app/v1/url-signing",      length=32)
   TrustManagers, hostname-check disabling — all findings, including in tests
   that can leak into prod paths (CWE-295). Internal services get a private CA,
   not disabled verification.
+- **SSH host-key verification is the same control, and it is disabled the same
+  way** (CWE-322, key exchange without entity authentication). A client that
+  accepts any host key has encrypted its session to whoever answered. Every
+  mainstream library ships an opt-out, and some **default to it**:
+  - paramiko: `AutoAddPolicy`, and `WarningPolicy`, which warns and still
+    accepts. The default is `RejectPolicy`.
+  - Go `x/crypto/ssh`: `ssh.InsecureIgnoreHostKey()` ("accept any host key").
+  - Ruby `net-ssh`: `verify_host_key: :never` or `false`. **Unset defaults to
+    `:accept_new_or_local_tunnel`**, which its own docs rank as insecure, so
+    here too the finding can be an absence.
+  - JVM: JSch `StrictHostKeyChecking` set to `no`; Apache MINA SSHD
+    `AcceptAllServerKeyVerifier`.
+  - Node `ssh2`: **auto-accepts when no `hostVerifier` is set**, so the finding
+    there is an *absence*.
+  - OpenSSH and anything that shells out to it: `StrictHostKeyChecking=no`/`off`
+    lets a *changed* key through. `accept-new` refuses a changed key but trusts
+    first use, and `UserKnownHostsFile=/dev/null` throws the record away.
+
+  The fix is a pinned `known_hosts` entry distributed with the deployment, or
+  host certificates signed by an SSH CA, the analogue of the private CA above.
+  **This rule is stated once, here.** Each language skill carries only its
+  library's spelling of the detector (decided 2026-09-23; see
+  `docs/LANGUAGE-TIER.md` in the library repo).
 - Verify hostname AND chain; pin only when you control update cadence (mobile
   apps), pin to SPKI of an intermediate/leaf set, with backup pins.
 - Plaintext fallbacks: no HTTP listeners that serve content (redirect-only),
@@ -346,6 +369,8 @@ reporting — see SKILL.md):
 ```text
 verify=False | InsecureSkipVerify | rejectUnauthorized:\s*false | TrustAllCerts
 NoopHostnameVerifier | CURLOPT_SSL_VERIFYPEER,\s*0 | ssl._create_unverified | VERIFY_NONE
+AutoAddPolicy | WarningPolicy | InsecureIgnoreHostKey | verify_host_key:\s*(:never|:accept_new|false)
+StrictHostKeyChecking["']?[=, ]*["']?(no|off) | AcceptAllServerKeyVerifier | UserKnownHostsFile=/dev/null
 MD5|SHA1 near sign/verify/token/password   AES/ECB | DES | RC4 | Blowfish
 Math\.random|random\.random|java\.util\.Random near token/key/secret/otp/nonce
 new IvParameterSpec\(.*getBytes  (static IV)   "-----BEGIN (RSA|EC|) PRIVATE KEY"
@@ -366,6 +391,11 @@ createCipheriv\(.*, *(['"]).{1,16}\1  (short/static key/nonce)
 - [ ] Are there zero hardcoded secrets in source, git history, or client bundles, with CI secret scanning enforced?
 - [ ] Are keys separated per purpose/environment, versioned, and rotatable without downtime?
 - [ ] Is every TLS client verifying certificates and hostnames (no skip-verify flags), TLS ≥1.2 AEAD-only?
+- [ ] **Is every SSH client verifying host keys? HIGH on any hit** — the §10 host-key row, plus
+      every Node `ssh2` connect call with no `hostVerifier` (it auto-accepts). The pattern must
+      match JSch's `setConfig("StrictHostKeyChecking", "no")` as well as `-o ...=no`; the
+      first draft missed it:
+      `grep -rnE 'AutoAddPolicy|WarningPolicy|InsecureIgnoreHostKey|verify_host_key:\s*(:never|:accept_new|false)|AcceptAllServerKeyVerifier|StrictHostKeyChecking["'"'"']?[=, ]*["'"'"']?(no|off)|UserKnownHostsFile=/dev/null' .`
 - [ ] Are all secret comparisons (tokens, MACs, OTPs) constant-time?
 - [ ] Are long-lived stored tokens hashed at rest?
 - [ ] Is MD5/SHA-1 absent from any security-relevant use?

@@ -119,6 +119,17 @@ params.expect(user: [:name, :email])   # Rails 8.0+, raises 400 on bad shape
   class and its rationale live in `sota-code-security` rules/04; this is
   Ruby's spelling of it. Internal services get a private CA, not disabled
   verification.
+- **SSH host keys are verified too, and `net-ssh` does not do it by
+  default.** Read from the gem's `select_host_key_verifier`:
+  - Leaving `verify_host_key` **unset** selects `:accept_new_or_local_tunnel`,
+    which the gem's own docs rank as insecure.
+  - `:never` and `false` (the deprecated form, also reached through
+    `paranoid: false`) accept any server.
+  - Set `verify_host_key: :always` with a pinned `known_hosts`, and treat any
+    `Net::SSH.start` (or `net-scp`/`net-sftp` on top of it) that does not set
+    it as a finding.
+
+  The class lives in `sota-code-security` rules/04 §5.
 - Match `Host`/origin checking to deployment: Rails
   `config.hosts`; elsewhere validate `Host` against an allowlist — DNS
   rebinding and cache-poisoning use wildcard hosts.
@@ -204,7 +215,11 @@ first — it covers XSS/mass-assignment/redirect sinks mechanically.
       `grep -rnE 'render\s*\(?\s*file:' --include='*.rb' .` (user-influenced path = file
       disclosure)
 - [ ] **Transport** — `grep -rn "force_ssl" --include='*.rb' config/ 2>/dev/null | head -1` ;
-      `grep -rn "VERIFY_NONE" --include='*.rb' .` (outbound TLS verification disabled — HIGH)
+      `grep -rn "VERIFY_NONE" --include='*.rb' .` (outbound TLS verification disabled — HIGH) ;
+      `grep -rnE 'verify_host_key:\s*(:never|:accept_new|false|true)|paranoid:\s*(false|true)' --include='*.rb' .`
+      (SSH host key not verified — HIGH) ;
+      `grep -rnE 'Net::(SSH|SCP|SFTP)\.start' --include='*.rb' . | grep -v 'verify_host_key'`
+      (the default is not `:always` — confirm the options hash sets it)
 
 Severity guide: `html_safe`/`raw` on user input, `send_file params` —
 CRITICAL. `permit!`, missing CSRF on cookie-auth state changes, unescaped

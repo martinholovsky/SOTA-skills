@@ -231,7 +231,9 @@ if [ "$missing" -eq 0 ]; then echo "    ok ($seen2 rules files, one checklist ea
 #   - a PRIVATE denylist of pre-publication internal names, deliberately NOT
 #     tracked: a tracked list would disclose the very names it suppresses.
 #     (The pre-July-2026 list remains in public git history — accepted risk,
-#     decided 2026-07-01; see docs/AUDIT-2026-07-01.md finding S1.)
+#     decided 2026-07-01; see docs/AUDIT-2026-07-01.md finding S1. A second name,
+#     scrubbed from the tree on 2026-09-23, was accepted on the same terms by
+#     operator decision: history rewrite cannot recall clones, forks or caches.)
 # Private patterns load from $SOTA_DENYLIST (CI: repository secret) or
 # .denylist.local (git-ignored, one ERE per line, '#' comments). When neither
 # exists (e.g. an external fork's PR), only the generic phrases are checked —

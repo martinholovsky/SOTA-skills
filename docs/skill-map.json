@@ -874,6 +874,15 @@
       ]
     },
     {
+      "from": "sota-ruby",
+      "to": "sota-code-security",
+      "weight": 4,
+      "targets": [
+        "rules/04",
+        "rules/04 \u00a75"
+      ]
+    },
+    {
       "from": "sota-security-compliance",
       "to": "sota-cloud-infrastructure",
       "weight": 4,
@@ -1109,14 +1118,6 @@
       "to": "sota-devsecops",
       "weight": 3,
       "targets": []
-    },
-    {
-      "from": "sota-ruby",
-      "to": "sota-code-security",
-      "weight": 3,
-      "targets": [
-        "rules/04"
-      ]
     },
     {
       "from": "sota-rust",
