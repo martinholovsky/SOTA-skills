@@ -332,6 +332,17 @@ are structurally immune, and two of them are the fix:
   when the measured value falls *below* its pin ("a slack ratchet is not a ratchet") can
   never accumulate the slack this failure needs.
 
+**A second construction with the same decay: the borrowed bad state.** A known-bad that
+*removes whatever currently suppresses a real problem* — empty the advisory ignore list, drop
+the lint exclusion, re-enable the failing test — works only while a real problem exists to be
+un-suppressed. Field-reported: a `cargo audit` probe emptied the ignore list and expected the
+gate to fail; then the ignored crate left the dependency graph, the mutation still applied,
+and the probe could no longer fail. It dies **on the day the issue is fixed**, which is a
+success nobody investigates. Ask of every probe: **does it construct the bad state, or borrow
+one?** Construct it: inject a package with a live advisory, write the violating line, add the
+banned crate. A sibling `cargo deny` probe was already immune, because it banned a crate the
+workspace certainly uses: a fact about the project, not about its current problems.
+
 Otherwise, **pin the mutation to the threshold**: measure the subject at probe time, compute
 what it takes to cross from wherever it is, clamp, and print both numbers so a later reader
 sees what the probe did.
@@ -366,6 +377,10 @@ n=$(awk 'END{print NR}' "$f"); need=$(( LIMIT - n + 1 ))
       overshooting the cap, writing an absolute value, pinning the threshold to the subject,
       or computing the crossing at probe time — and re-run the known-bads after a
       **refactor**, not only after a check changes.
+- [ ] **Does any probe borrow its bad state rather than construct it?** (§1d) Emptying an
+      ignore list, dropping an exclusion or re-enabling a failing test proves something only
+      while a real problem is suppressed, and silently stops proving anything the day it is
+      fixed. Inject the bad state the probe needs.
 
 - [ ] **Mutation probe run on security-critical paths** — control body replaced
       with the permissive no-op, with the dependency forced present and the

@@ -223,6 +223,16 @@ usual source: distribution builds drop optional tags to avoid a CGO or driver de
 Same family as the compiled-out `assert` in `rules/11` §4 — the interface survives the
 build, the behaviour does not.
 
+**Checking each precondition is not checking the operation.** The tempting substitute for
+that one real call is a chain of availability checks: the helper exists in the toolchain,
+the platform permits it here, the build emits what the platform requires. Field-reported: all
+three passed from primary sources for an eBPF helper, and the program was still rejected at
+load (`R1 is of type file but path is expected`), because the blocker was **how the helper
+is called**, which no availability check names. Preconditions do not compose into the
+operation, and their list is unbounded: you can never know you have named the last one. The
+call is the only bounded check, and three green checks in a row are exactly the confidence
+that gets designed on. Run it first.
+
 ### 2.16 The aggregate that masks the detection
 
 `rules/10` §1's question, asked of a *field* rather than a control. A positive control
@@ -287,6 +297,7 @@ half.
 - [ ] **The control that is not in force** (the 2.10–2.14 group) — installed, configured, and not
       actually applied to the path it is credited with
 - [ ] **A flag that parses is not a feature that works** (§2.15) — the parser accepting it
-      proves the parser, not the behaviour
+      proves the parser, not the behaviour; and a chain of green availability checks proves
+      the preconditions, not the operation. Was the real call run once before designing on it?
 - [ ] **No aggregate masking a detection** (§2.16) — a mean, a rollup or a "worst case" that
       makes a real signal disappear into the total

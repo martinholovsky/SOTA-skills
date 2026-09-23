@@ -215,6 +215,20 @@ ran*; it read as the target not being exploitable.
   collected/executed tests for any lane with environment-gated skips, or fail the lane when
   skips exceed a recorded baseline. (`rules/07` §7.6 treats a *drifting* skip count as slow
   rot; this is the acute version, and it is invisible in one run.)
+- **Read a skip condition from the environment, never from the subject's opinion of it.**
+  Field-reported: four tests skipped when the code under test returned `Unsupported` with a
+  reason mentioning `lsm=`. That reason was a **fixed string the codebase wrote**, emitted
+  identically when the kernel lacked the feature and when one of the project's own programs
+  was rejected, so a broken feature reported `12 passed`. Ask the host itself (for example
+  `/sys/kernel/security/lsm`), and on a host that *has* the capability make the
+  `Unsupported` path **fail** and print its reason. Then a skip is a fact about the host and a
+  failure is a fact about the code. It is `sota-code-security` rules/15 §2.4 (evidence the
+  subject supplies about itself), applied to *why it cannot run*.
+- **Assert the setup's effect, not its exit code.** `modprobe` exits 0 for a module that is
+  **built into** the kernel: libkmod counts a built-in as already present
+  (`module_is_inkernel`), so nothing loads, no load event fires, and a test waiting for one
+  reports "the sensor produced no event", which reads as a product defect. Check the effect
+  (`/proc/modules` lists loadable modules; a built-in never appears there).
 - **Empty is not a result.** An empty output file, an empty stdout, a zero-length report is
   a **failed measurement until proven otherwise** — assert the artefact is non-empty *and*
   contains the summary line you expect before reading anything into it. (The pipe version of
@@ -232,6 +246,10 @@ ran*; it read as the target not being exploitable.
       (§4.8) A stopped container runtime converts tests to skips, not failures — the run is
       green and 30 tests never ran. Pin an expected collected count, or baseline the skip
       count and fail on an increase.
+- [ ] **Where does each skip condition come from?** (§4.8) A skip keyed on the subject's own
+      error text or `Unsupported` reason turns every defect on that path into a pass. It must
+      read the host, and on a host with the capability the `Unsupported` path must *fail*.
+      Setup steps assert their effect, not their exit code (a built-in `modprobe` exits 0).
 
 - [ ] Do integration tests run the real engine? Grep test config for
       lookalikes: `:memory:|sqlite|H2|fakeredis|embedded` standing in for a

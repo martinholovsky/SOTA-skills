@@ -288,6 +288,19 @@ found nothing** — the second reading being a conclusion about the target
   one somebody chose to keep.
 - **On a machine you share with other work, prune is a coordination problem.** The blast
   radius is every project on the host, and nothing in the command says so.
+- **"Reclaimable" is the tool's definition of unused, not yours.** `podman`/`docker system df`
+  count an image as reclaimable when no *container* references it, so every build-only
+  image and pinned toolchain reads as garbage (`sota-shell-scripting` rules/09 §5a).
+  Field-reported: 22 GB "reclaimable (93%)", where `image prune -a` would have deleted the
+  toolchain images three CI gates build from, and the narrow `image prune` correctly freed
+  0 bytes. **Prefer the narrow command, whose failure mode is freeing nothing.**
+- **Pruning a cached image whose tag moves is a version bump, not a cleanup.** `podman build`
+  pulls a base image only when it is missing (`--pull` defaults to `missing`), so the cache
+  was the only thing holding a `FROM …:rawhide`/`:latest`/bare-major image still. Remove it
+  and the next build compiles against whatever the tag points at today. In the field case,
+  that was a toolchain whose LLVM version mismatch segfaulted the linker rather than
+  reporting anything. Before removing a base image, check whether any Containerfile names it
+  by a moving tag.
 - The capacity side of the same coin — *check headroom before a command that writes at
   scale* — is `sota-shell-scripting` rules/08 §3.
 
@@ -305,4 +318,8 @@ found nothing** — the second reading being a conclusion about the target
 - [ ] **Is prune/trim on a shared runtime treated as a change?** (§7.7) Restart plus a
       post-change smoke test that *starts* something, foreign-owned resources enumerated
       first, and dangling volumes confirmed unnamed before deletion.
+- [ ] **Would a prune change what the next build compiles against?** (§7.7) Any
+      `FROM` on a moving tag (`latest`, `rawhide`, `stable`, a bare major) is pinned only by
+      the cache the prune deletes. And is the narrow command (`image prune`) used rather than
+      `-a`, with "reclaimable" not read as "unused by us"?
 

@@ -4965,3 +4965,42 @@ a command it does not describe. **Found by listing every converted item that had
 not by the content check, which passed while the structure was wrong. The converter itself is
 **not** fixed: every checklist it can reach is now converted and the gate stops a fence coming
 back. The review step is recorded here so the next person to run the converter knows to do it.
+
+## 2026-09-23 — two field reports that were never taken in: 2026-09-12-III and 2026-09-14-II
+
+**Intake shape: a `/sota-resume` pass that read the local reports line by line.** An earlier
+inventory the same day had called every report "processed" because each one's *date* appeared
+in this log. The dates were there because **sibling** reports from the same days had been taken
+in. `FIELD-REPORT-PRIVATE-2026-09-12-III.local.md` and `…-2026-09-14-II.local.md` had no entry at
+all: `12-III` and `14-II` had 0 hits in the tree. Each proposal was then evaluated against the
+current code, not against the report's own claim of novelty.
+
+### 2026-09-12-III — six findings: five adopted, one adopted with a correction
+
+| finding | verdict | landed / why |
+|---|---|---|
+| §1 checking each precondition is not checking the operation | **adopted with a correction** | `sota-code-security` rules/16 §2.15 already carried the remedy ("invoke it once against the real thing"). It lacked the *why*: preconditions do not compose and their list is unbounded. Added there. **Rejected** for router principle 0 (detail belongs in `rules/`, and principle 0 already requires reproduced behaviour) and as a new `rules/15` section (a duplicate of §2.15, in a file at 497/500) |
+| §2 a skip condition taken from the subject's own error text | **adopted** | `sota-testing` rules/04 §4.8, beside the environment-gated-skip bullet it sharpens, pointing back at `rules/15` §2.4. Placed there because `rules/15` has 3 lines of headroom |
+| §3 a cleanup tool's "reclaimable" | **adopted, partly already covered** | The definition was at `sota-shell-scripting` rules/09 §5a. "Prefer the narrow command, whose failure mode is freeing nothing" was not, and is added at `sota-devsecops` rules/07 §7.7 |
+| §4 pruning a base image pinned only by a moving tag | **adopted** | `sota-devsecops` rules/07 §7.7, plus a checklist item. The mechanism was **verified, not taken on trust**: `podman build --help` gives `--pull` a default of `missing`, so the cache is the only pin |
+| §5 `modprobe` exits 0 for a built-in module | **adopted** | `sota-testing` rules/04 §4.8. Verified in kmod source: `module_is_inkernel()` in `libkmod-module.c` treats `KMOD_MODULE_BUILTIN` as already present |
+| §6 the borrowed bad state | **adopted** | `sota-code-security` rules/12 §1d as a second decay construction, plus a checklist item. §1d's three fixes (overshoot, absolute value, pin the threshold) do not reach it, which is why it is a separate construction |
+| "a self-test that re-runs after restoring mislabels the failure" | **not an item** | The reporter says it is covered, and `rules/12`'s "asserts the **named** check caught it" does cover it |
+
+### 2026-09-14-II — one finding: adopted, and it was wider than reported
+
+**A passing positive control proves the instrument, not the scope.** It is stated canonically at
+`sota-shell-scripting` rules/06 §2, with a checklist clause. The report named `/sota-report`
+check A plus two sibling commands. The sweep found **four** commands telling the reader to draw
+the control "in that scope": `/sota-audit`, `/sota-close`, `/sota-resume` and `/sota-report`.
+Each gains one clause and a pointer, deliberately not a restatement, because the reporter's own
+caution was that a longer check A gets run less.
+
+**The proposed glob change is not an item.** The example glob the report quotes was never in
+the command text (`git show 2f41631:commands/sota-report.md` has no `glob`).
+
+**Why this one is worth recording beyond the rule.** The same session that took it in had
+committed the failure an hour earlier. It declared the local reports processed from a check
+drawn inside the wrong scope (report dates rather than report contents), and separately read a
+confident 0 from a `git grep -E '\b…'` that could not match on this machine. Both were caught
+only by a control drawn from outside the searched scope.
