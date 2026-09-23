@@ -33,7 +33,15 @@ import argparse, contextlib, glob, importlib.util, io, os, signal, sys, urllib.r
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-class _Reached(Exception):
+# BaseException, NOT Exception (2026-09-23). Every runner wraps its API call in a retry
+# loop that catches `Exception` and backs off: as an Exception subclass this stub was
+# CAUGHT, retried four times with sleeps, and several runners then kept looping over their
+# cases until the 20s alarm. That cost 134s of every CI run (7 of 23 runners), and those
+# runners reported "failed after 4 tries" or "still working" instead of the signal this
+# test exists to see. Escaping `except Exception` makes the first network call end the
+# run at once: measured 134.7s -> 0.5s, 23/23 runners still ok, 8 now report "reached its
+# first network call" precisely.
+class _Reached(BaseException):
     pass
 
 

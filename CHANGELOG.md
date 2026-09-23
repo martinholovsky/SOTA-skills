@@ -49,6 +49,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   changed. A differential test, original vs new over 12 trees (clean, 8 failing mutations and
   3 edge cases including an empty file), gave byte-identical output and exit codes in 12 of
   12. The negative-control harness still catches every probe on these checks (67/67).
+- **`evals/smoke-runners.py` takes 0.5 s instead of 134 s.** Its network stub raised an
+  `Exception` subclass, which every runner's retry loop caught and retried with backoff
+  sleeps. Seven runners spent up to 20 s each retrying before the alarm. The stub now derives
+  from `BaseException`, so the first network call ends the run. All 23 runners still pass,
+  and 8 now report the precise "reached its first network call" instead of "failed after 4
+  tries" or "still working". This was about 2.2 of the negative-controls job's 5.6 minutes.
 
 - **Invariant 32 was blind to every audit-checklist probe** after they moved from fenced blocks
   into tick-box bullets (#420/#421). It now reads inline code spans outside fences, joins `\`
