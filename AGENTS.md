@@ -70,7 +70,7 @@ gates enumerate via `git ls-files`, so an **unstaged new file is invisible** —
 complain; any other non-zero exit is a **FALSE PASS**. **It reads the COMMITTED tree**
 (`git worktree add HEAD`) — commit first, or you test a new script against old docs. Part A mutates
 a good tree in a disposable worktree; part B is inverted, building a fully-configured fake machine
-(`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **62 probes** (re-run 2026-09-20: `PASS: 62/62`, 46 in part A + 16 in part B; it said 61, 53, 52, 49, 44 and 43 before that)
+(`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **63 probes** (`PASS: 63/63` on a small-diff branch; it said 62, 61, 53, 52, 49, 44 and 43 before that. Counting the log's `  [` lines gives **65**: the extra two are the per-part **positive controls**, not probes — read the harness's own total. **A sweep-shaped branch legitimately runs fewer**: invariant 11's probes need a non-sweep diff, so they skip with a printed reason and the total reads `60/60` plus a `NOTE:` naming the skipped invariant — measured 2026-09-23 at 53 changed skill files. A number below 63 is not a regression if that NOTE is present)
 (deliberately **not** gated — a static count of call sites under-reads, so only running it is
 authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34** — 31 of 34 — and verify-setup checks 1, 1c, 1d, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13.
@@ -87,8 +87,11 @@ against primary sources. Update it only after such a sweep; the run goes red pas
 window. Per-file line-1 markers are retired. The same job also reads `evals/ROUTING-BASELINE`
 (**3-month** window — model releases, not fact rot, are what age it): routing is the one
 measurement that can regress with **no diff here**, because the classifier is a model ranking
-42 competing descriptions. The measurement is **deliberately local** — this repo holds no API
-key and CI only compares a date — so refresh it with `scripts/routing-baseline.sh`. Sweep runbook and eval harness:
+42 competing descriptions. The measurement is **deliberately local** — **CI** holds no API key and only
+compares a date — so refresh it with `scripts/routing-baseline.sh`. A maintainer's working
+tree usually *does* have one: every runner reads `OPENROUTER_API_KEY` from the environment or
+`./.env` (gitignored, never committed). Read as "this repo has no key" the sentence stops a
+local re-run that is actually available — which happened twice on 2026-09-22. Sweep runbook and eval harness:
 [docs/MAINTENANCE.md](docs/MAINTENANCE.md) and [evals/](evals/).
 
 Secrets are scanned by **gitleaks** (`.gitleaks.toml` disables only the noisy

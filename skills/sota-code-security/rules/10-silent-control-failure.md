@@ -158,8 +158,58 @@ Design:
 
 ---
 
+## 5. The mirror image: a control that fires too broadly
+
+Everything above is about a control with **too little** effect. The mirror is a control with
+too much: it fires on cases it was never meant to catch, **degrades the outcome it exists to
+protect**, and — this is what makes it the same family — *looks like it is working the whole
+time*. The inert control is invisible because nothing happens. This one is invisible because
+**the thing that happens is what success looks like**.
+
+The asymmetry is in the metric. A control's obvious health signal is *how often it fired*,
+and for an over-firing control that number goes **up** as it gets worse. Blocks, denials and
+redirects all get counted; the legitimate work that quietly took a worse path does not, so
+the dashboard improves while the system degrades.
+
+**The shape.** A blanket deny on a *tool* rather than on the *behaviour* — deny the search
+binary instead of the unsafe search, deny the whole file type instead of the dangerous
+member, deny an entire egress CIDR instead of the exfiltration path. It is easy to write,
+easy to audit for presence, and it enforces a *worse* substitute: a blanket deny on a fast
+literal search pushes the caller to a slower index that answers a different question, and
+the caller now gets worse answers while the control reports a clean record.
+
+**What makes it detectable.** Measure the control's **outcome**, not its firing rate:
+
+- **A block rate has no meaning without a denominator of legitimate attempts.** "Blocked
+  4,000 requests" is the numerator of an unknown fraction. The finding is the ratio, and
+  you cannot get it by counting blocks — you have to sample what was blocked and read it.
+- **Sample the blocked set and classify it by hand.** If a majority are legitimate, the
+  control is not strict, it is broken — in the expensive direction, because the cost lands
+  on the people doing the right thing and they route around it rather than report it.
+- **Name the substitute.** Every deny has one: what does the caller do *instead*? If the
+  answer is "a slower, less accurate or unlogged path", the control has moved the risk
+  rather than removed it, and the new path is now unmonitored. A deny with no named
+  substitute has not been designed, only installed.
+- **A control that cannot be appealed cannot be measured.** With no exception path, the
+  false positives never reach you; they become workarounds you will find in an incident.
+
+**In BUILD, this is the falsification question run the other way** (§1): ask not only *would
+anything differ if this were a no-op*, but *what legitimate case does this also catch, and
+what will that caller do instead*. Both answers belong in the commit that adds the control.
+
+---
+
 ## Audit checklist
 
+- [ ] **Every deny/block/redirect control names its substitute** (§5): what does a
+      legitimate caller do *instead*? A deny whose substitute is a slower, less accurate or
+      unlogged path has moved the risk, not removed it — and the new path is unmonitored.
+      A control installed with no answer here is a finding even while it "works".
+- [ ] **No control is reported healthy on its firing count alone** (§5): a block rate is a
+      numerator. Ask for the denominator of *legitimate* attempts, and for a hand-classified
+      sample of what was blocked. `grep -rn 'blocked\|denied\|rejected' --include='*.md'`
+      over dashboards and runbooks — a metric that rises as the control gets worse is the
+      tell. No exception path means the false positives never reach you at all.
 - [ ] **The proxy question asked of every control's predicate** (§1): is the tested
       condition the dependency itself, or something that currently agrees with it? Name who
       can change one without the other. A proxy with no signal on divergence is a finding

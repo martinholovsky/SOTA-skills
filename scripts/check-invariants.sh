@@ -1834,7 +1834,7 @@ else
 fi
 if [ "$v25" -ne 0 ]; then fail=1; fi
 
-# --- 26. The roadmap's open set agrees with itself ------------------------
+# --- 26. The roadmap's open set and totals agree with the ledger ----------
 # Three places carried an item's status and only one was a fact: the ledger
 # row's `**OPEN` marker, the header's hand-written open list, and the
 # priorities table's *presence*. Restatements drift — measured, three times in
@@ -1847,7 +1847,7 @@ if [ "$v25" -ne 0 ]; then fail=1; fi
 # else is derived. This asserts the derivation, which is the only part a
 # machine can check — the ordering and the "what to do first" prose stay
 # human, which is why the table exists at all.
-echo "[26/34] Roadmap: open count, open list and priorities table agree"
+echo "[26/34] Roadmap: open count, open list, totals and priorities table agree"
 v26=0
 if command -v python3 >/dev/null 2>&1; then
   rm_out=$(python3 - "docs/ROADMAP.md" <<'RMPY'
@@ -1870,6 +1870,26 @@ listed = {int(x) for x in re.findall(r'\d+', m.group(2))}
 
 marked = {int(x) for x in re.findall(r'(?m)^\|\s*(\d+)\s*\|\s*\*\*OPEN\b', t)}
 
+# Every ledger row, open or closed. The first cell is a BARE number followed by a
+# bolded status; the priorities table's first cell is `**1**` or `—`, so it cannot
+# match here. Verified against the tree when this was added: 59 rows, 1..59.
+rows = {int(x) for x in re.findall(r'(?m)^\|\s*(\d+)\s*\|\s*\*\*', t)}
+
+# THE TOTALS, added 2026-09-21 after the third instance. `Of N items, M are closed`
+# sits in a DIFFERENT SECTION from the gated `All N items ... Only K are open` line,
+# so it drifts on its own: it read "Of 58 items, 55 are closed" against a 59-row
+# ledger the day item 59 opened, and invariant 30's own header records the same
+# sentence failing before as "Of 55 items" (56). Invariant 30 cannot reach it --
+# its scope is positional, marker to next heading, and the ledger table is far below.
+# So the arithmetic is asserted here, where the ledger rows are already parsed.
+totals = []
+m_of = re.search(r'Of (\d+) items?, (\d+) (?:are|is) closed', t)
+if m_of:
+    totals.append(("'Of N items, M are closed'", int(m_of.group(1)), int(m_of.group(2))))
+m_all = re.search(r'All (\d+) items?,', t)
+if m_all:
+    totals.append(("'All N items'", int(m_all.group(1)), None))
+
 pt = re.search(r'(?ms)^\| P \| Item \|.*?\n\n', t)
 cited = {int(x) for x in re.findall(r'\*\*Item (\d+)', pt.group(0))} if pt else set()
 
@@ -1885,6 +1905,19 @@ if listed != marked:
         print("listed as open in the header but no ledger row marked '**OPEN': %s" % only_h)
     if only_r:
         print("ledger row marked '**OPEN' but missing from the header list: %s" % only_r)
+if not totals:
+    bad = 1
+    print("no roadmap total found — expected 'Of N items, M are closed' or 'All N items,'")
+for label, n_total, n_closed in totals:
+    if n_total != len(rows):
+        bad = 1
+        print("%s says %d but the ledger has %d rows"
+              % (label, n_total, len(rows)))
+    if n_closed is not None and n_closed != len(rows) - len(marked):
+        bad = 1
+        print("%s says %d closed but the ledger has %d rows and %d marked '**OPEN' (= %d)"
+              % (label, n_closed, len(rows), len(marked), len(rows) - len(marked)))
+
 if not pt:
     bad = 1
     print("priorities table not found — expected a '| P | Item |' table")
@@ -1898,7 +1931,8 @@ else:
 print("SCOPE %d" % len(listed))
 if bad:
     sys.exit(1)
-print("    ok (%d open items; header, ledger markers and priorities table agree)" % len(listed))
+print("    ok (%d open items of %d ledger rows; header, markers, totals and priorities table agree)"
+      % (len(listed), len(rows)))
 RMPY
 ) || v26=1
   while IFS= read -r l; do

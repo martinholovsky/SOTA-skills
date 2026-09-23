@@ -89,35 +89,31 @@ network/file/DB/config as untrusted. Reference:
 
 ## Audit checklist
 
-```bash
-# SQL injection — CRITICAL
-grep -rnE 'FromSqlRaw|ExecuteSqlRaw' --include='*.cs' . | head
-grep -rnE '(FromSqlRaw|ExecuteSqlRaw|CommandText|new SqlCommand)\([^)]*(\+|\$")' --include='*.cs' .
-grep -rnE '\.Query[^(]*\(\s*\$?"[^"]*\{' --include='*.cs' .       # Dapper string-interpolated SQL
-
-# Deserialization — CRITICAL
-grep -rnE 'BinaryFormatter|NetDataContractSerializer|LosFormatter|SoapFormatter|ObjectStateFormatter' --include='*.cs' .
-grep -rnE 'TypeNameHandling\.(Auto|All|Objects|Arrays)' --include='*.cs' .
-
-# XXE / command / path — HIGH/CRITICAL
-grep -rnE 'DtdProcessing|XmlResolver|new XmlDocument|XmlReader' --include='*.cs' . | head
-grep -rnE 'Process\.Start|ProcessStartInfo|UseShellExecute' --include='*.cs' . | head
-
-# Auth / CORS / antiforgery — HIGH
-grep -rnE 'AllowAnyOrigin|AllowAnyHeader|AllowAnyMethod' --include='*.cs' .
-grep -rnLE '\[Authorize\]|RequireAuthorization|\[AllowAnonymous\]' --include='*Controller.cs' . | head  # endpoints w/o auth?
-
-# Crypto misuse — HIGH
-grep -rnE '\bnew Random\(|System\.Random' --include='*.cs' . | grep -iE 'token|key|iv|salt|nonce|password|secret'
-grep -rnE 'MD5|SHA1|TripleDES|\bDES\b|CipherMode\.ECB' --include='*.cs' .
-grep -rnE 'ServerCertificateCustomValidationCallback|RemoteCertificateValidationCallback' --include='*.cs' . | head
-
-# Secrets in config/source — HIGH
-grep -rniE '(password|pwd|secret|apikey|api_key|connectionstring)\s*[=:]' appsettings*.json --include='*.cs' . | head
-
-# Vulnerable framework/package patch levels — HIGH
-grep -rnE 'Microsoft\.AspNetCore\.DataProtection' --include='*.csproj' --include='packages.lock.json' .  # 10.0.0–10.0.6 = CVE-2026-40372 (need 10.0.7+); if exposed while vulnerable: key ring revoked + tokens rotated?
-dotnet --list-runtimes  # ASP.NET Core < 8.0.21/9.0.10 (CVE-2025-55315) or < 8.0.28/9.0.17/10.0.9 (CVE-2026-45591)? Check container base-image tags; self-contained/AOT apps need rebuild
-
-# Static security analysis: enable security CA rules + a SAST (rules/06)
-```
+- [ ] **SQL injection — CRITICAL** —
+      `grep -rnE 'FromSqlRaw|ExecuteSqlRaw' --include='*.cs' . | head` ;
+      `grep -rnE '(FromSqlRaw|ExecuteSqlRaw|CommandText|new SqlCommand)\([^)]*(\+|\$")' --include='*.cs' .`
+      ; `grep -rnE '\.Query[^(]*\(\s*\$?"[^"]*\{' --include='*.cs' .` (Dapper
+      string-interpolated SQL)
+- [ ] **Deserialization — CRITICAL** —
+      `grep -rnE 'BinaryFormatter|NetDataContractSerializer|LosFormatter|SoapFormatter|ObjectStateFormatter' --include='*.cs' .`
+      ; `grep -rnE 'TypeNameHandling\.(Auto|All|Objects|Arrays)' --include='*.cs' .`
+- [ ] **XXE / command / path — HIGH/CRITICAL** —
+      `grep -rnE 'DtdProcessing|XmlResolver|new XmlDocument|XmlReader' --include='*.cs' . | head`
+      ; `grep -rnE 'Process\.Start|ProcessStartInfo|UseShellExecute' --include='*.cs' . | head`
+- [ ] **Auth / CORS / antiforgery — HIGH** —
+      `grep -rnE 'AllowAnyOrigin|AllowAnyHeader|AllowAnyMethod' --include='*.cs' .` ;
+      `grep -rnLE '\[Authorize\]|RequireAuthorization|\[AllowAnonymous\]' --include='*Controller.cs' . | head`
+      (endpoints w/o auth?)
+- [ ] **Crypto misuse — HIGH** —
+      `grep -rnE '\bnew Random\(|System\.Random' --include='*.cs' . | grep -iE 'token|key|iv|salt|nonce|password|secret'`
+      ; `grep -rnE 'MD5|SHA1|TripleDES|\bDES\b|CipherMode\.ECB' --include='*.cs' .` ;
+      `grep -rnE 'ServerCertificateCustomValidationCallback|RemoteCertificateValidationCallback' --include='*.cs' . | head`
+- [ ] **Secrets in config/source — HIGH** —
+      `grep -rniE '(password|pwd|secret|apikey|api_key|connectionstring)\s*[=:]' appsettings*.json --include='*.cs' . | head`
+- [ ] **Vulnerable framework/package patch levels — HIGH** —
+      `grep -rnE 'Microsoft\.AspNetCore\.DataProtection' --include='*.csproj' --include='packages.lock.json' .`
+      (10.0.0–10.0.6 = CVE-2026-40372 (need 10.0.7+); if exposed while vulnerable: key ring
+      revoked + tokens rotated?); `dotnet --list-runtimes` (ASP.NET Core < 8.0.21/9.0.10
+      (CVE-2025-55315) or < 8.0.28/9.0.17/10.0.9 (CVE-2026-45591)? Check container base-image
+      tags; self-contained/AOT apps need rebuild)
+- [ ] **Static security analysis: enable security CA rules + a SAST (rules/06)**

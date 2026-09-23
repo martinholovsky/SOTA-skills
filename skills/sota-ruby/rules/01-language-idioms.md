@@ -199,57 +199,92 @@ Rules:
 - `method_missing` requires a matching `respond_to_missing?`; prefer
   `define_method` metaprogramming that produces real, introspectable methods.
 
+## 8. Designing a public surface — everything is public until you say otherwise
+
+Shared design rules: `sota-architecture` rules/02 and `sota-api-design`; semver honesty is
+already in `rules/04`. **This is the Ruby mechanism**, and Ruby's default is the opposite of
+every other language in this tier: a gem's surface is everything it defines, and narrowing it
+later is the breaking change.
+
+**`private` does not do what its name suggests — twice over.**
+
+- **It does not apply to `def self.` class methods.** Measured on Ruby 4.0.6 as a
+  differential: with a bare `private` above both, the instance method raised `NoMethodError`
+  and the class method was **still callable**. Use `private_class_method :name`, or
+  `class << self` with `private` inside it. A `private` that silently applies to nothing is
+  indistinguishable from one that works, until a consumer depends on the method.
+- **It does not apply to constants.** A bare `INTERNAL = 3` inside a class is reachable as
+  `C::INTERNAL` with no declaration at all, and is therefore API. `private_constant :SECRET`
+  is the mechanism — measured: referencing it afterwards raises
+  `NameError: private constant B::SECRET referenced`.
+
+**So the audit question for a gem is inverted**: not *"what did we export?"* but *"what did we
+fail to hide?"* Every public instance method, every class method, every constant and every
+module you reopen is a promise a consumer may already rely on.
+
+- **Monkey-patching a core class is public API for the whole process**, not just your gem. If
+  it must happen, a `Refinement` scopes it to the files that `using` it (§7) — otherwise
+  namespace it and let callers opt in.
+- `method_missing` widens the surface to things you never wrote; pair it with
+  `respond_to_missing?` (§7) or `respond_to?` lies about what your object accepts.
+- **Deprecate before removing**: keep the old name delegating to the new one for a major
+  cycle, and emit a `warn` naming the replacement. Removing a public method is a major bump,
+  and Ruby gives the consumer no compile step that would have caught it.
+
 ## Audit checklist
 
 Run from repo root; verify each hit manually.
 
+**Public surface** (§8) — Ruby hides nothing by default, so the question is what you
+failed to hide, not what you exported:
+
+- [ ] ** `private` does NOT apply to `def self.` -- measured on 4.0.6, the class method stayed
+      callable while the instance method raised NoMethodError. A private that applies to nothing
+      looks identical to one that works.** —
+      `grep -rn -B3 'def self\.' lib/ | grep -A3 '^\s*private\s*$'` ;
+      `grep -rn 'private_class_method\|class << self' lib/` (the forms that actually work)
+- [ ] ** `private` does NOT apply to constants either: a bare CONST is reachable as Mod::CONST A
+      LOCATOR, NOT A VERDICT: `grep -v` is line-scoped, so a constant privatised on the NEXT
+      line still appears here (verified against a fixture that does exactly that). Compare the
+      two counts below instead of trusting the filtered list.** —
+      `grep -rnE '^\s*[A-Z][A-Z0-9_]+ *=' lib/ | grep -v 'private_constant'` ;
+      `grep -rncE '^\s*[A-Z][A-Z0-9_]+ *=' lib/ ; grep -rnc 'private_constant' lib/` ;
+      `grep -rn 'private_constant' lib/` (the mechanism, if used at all)
+- [ ] **Monkey-patching a core class is API for the whole process, not just this gem** —
+      `grep -rnE '^\s*class (String|Array|Hash|Integer|Object|Kernel)\b' lib/` ;
+      `grep -rn 'refine \|using ' lib/` (the scoped alternative (§7))
+
 **In-band sentinels** (§5a) — Ruby's search API returns `nil`, so these arrive from
 conversion and from hand-rolled returns:
 
-```bash
-grep -rnE '\.to_i\b|\.to_f\b' --include='*.rb' app/ lib/     # 0 on garbage, 12 on "12abc" — use Integer(s)
-grep -rnE 'return (-1|0)$' --include='*.rb' app/ lib/         # prefer nil, which is falsy and pattern-matchable
-```
+- [ ] `grep -rnE '\.to_i\b|\.to_f\b' --include='*.rb' app/ lib/` (0 on garbage, 12 on "12abc" —
+      use Integer(s)); `grep -rnE 'return (-1|0)$' --include='*.rb' app/ lib/` (prefer nil,
+      which is falsy and pattern-matchable)
 
-```bash
-# Interpreter floor — EOL Ruby is HIGH
-cat .ruby-version 2>/dev/null; grep -n "^ruby" Gemfile 2>/dev/null
-# (compare against the branches page table above)
-
-# Missing frozen_string_literal comments — LOW (bulk-fix with rubocop -a)
-grep -rL "frozen_string_literal: true" --include='*.rb' app/ lib/ 2>/dev/null | head
-
-# rescue Exception — MEDIUM (HIGH if it wraps a main loop)
-grep -rn "rescue Exception" --include='*.rb' .
-
-# Silenced errors — MEDIUM+
-grep -rn "rescue nil" --include='*.rb' .
-grep -rnE "rescue(\s+StandardError)?\s*(=>\s*_?e?)?\s*$" --include='*.rb' . | head
-
-# raise losing the original class/cause
-grep -rnE "raise\s+e\.message" --include='*.rb' .
-
-# OpenStruct in new code — LOW
-grep -rn "OpenStruct" --include='*.rb' .
-
-# Struct without keyword_init (positional-arg hazard) — INFO/LOW
-grep -rn "Struct.new" --include='*.rb' . | grep -v keyword_init
-
-# Pattern matching without pin where comparison was intended (manual review)
-grep -rnE "in \{[^}]*: [a-z_]+ *\}" --include='*.rb' . | head
-
-# Monkey patches on core classes — MEDIUM in app code
-grep -rnE "^\s*class (String|Array|Hash|Integer|Symbol|Object)\b" --include='*.rb' app/ lib/ 2>/dev/null
-
-# method_missing without respond_to_missing?
-grep -rln "def method_missing" --include='*.rb' . | xargs grep -L "respond_to_missing?" 2>/dev/null
-
-# Wall-clock durations — LOW
-grep -rnE "Time\.now.*-.*Time\.now|=\s*Time\.now\b.*# .*(elapsed|duration)" --include='*.rb' . | head
-
-# Typing posture — INFO
-ls sig/ sorbet/ 2>/dev/null; grep -rn "# typed:" --include='*.rb' . | head -3
-```
+- [ ] **Interpreter floor — EOL Ruby is HIGH** —
+      `cat .ruby-version 2>/dev/null; grep -n "^ruby" Gemfile 2>/dev/null`
+- [ ] **(compare against the branches page table above)**
+- [ ] **Missing frozen_string_literal comments — LOW (bulk-fix with rubocop -a)** —
+      `grep -rL "frozen_string_literal: true" --include='*.rb' app/ lib/ 2>/dev/null | head`
+- [ ] **rescue Exception — MEDIUM (HIGH if it wraps a main loop)** —
+      `grep -rn "rescue Exception" --include='*.rb' .`
+- [ ] **Silenced errors — MEDIUM+** — `grep -rn "rescue nil" --include='*.rb' .` ;
+      `grep -rnE "rescue(\s+StandardError)?\s*(=>\s*_?e?)?\s*$" --include='*.rb' . | head`
+- [ ] **raise losing the original class/cause** —
+      `grep -rnE "raise\s+e\.message" --include='*.rb' .`
+- [ ] **OpenStruct in new code — LOW** — `grep -rn "OpenStruct" --include='*.rb' .`
+- [ ] **Struct without keyword_init (positional-arg hazard) — INFO/LOW** —
+      `grep -rn "Struct.new" --include='*.rb' . | grep -v keyword_init`
+- [ ] **Pattern matching without pin where comparison was intended (manual review)** —
+      `grep -rnE "in \{[^}]*: [a-z_]+ *\}" --include='*.rb' . | head`
+- [ ] **Monkey patches on core classes — MEDIUM in app code** —
+      `grep -rnE "^\s*class (String|Array|Hash|Integer|Symbol|Object)\b" --include='*.rb' app/ lib/ 2>/dev/null`
+- [ ] **method_missing without respond_to_missing?** —
+      `grep -rln "def method_missing" --include='*.rb' . | xargs grep -L "respond_to_missing?" 2>/dev/null`
+- [ ] **Wall-clock durations — LOW** —
+      `grep -rnE "Time\.now.*-.*Time\.now|=\s*Time\.now\b.*# .*(elapsed|duration)" --include='*.rb' . | head`
+- [ ] **Typing posture — INFO** —
+      `ls sig/ sorbet/ 2>/dev/null; grep -rn "# typed:" --include='*.rb' . | head -3`
 
 Severity guide: EOL interpreter HIGH; `rescue Exception`/`rescue nil` around
 critical logic MEDIUM–HIGH; missing frozen-string comments LOW (bulk-fixable);

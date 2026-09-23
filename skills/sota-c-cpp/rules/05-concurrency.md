@@ -81,24 +81,17 @@ void consumer(){ std::unique_lock lk(m); cv.wait(lk, []{return ready;}); use(); 
 
 ## Audit checklist
 
-```bash
-# Bare lock/unlock (no RAII) — MEDIUM/HIGH (lock leak on exception)
-grep -rnE '\.(lock|unlock)\(\)' --include='*.cpp' .            # prefer lock_guard/scoped_lock
-grep -rn 'pthread_mutex_lock' --include='*.c' --include='*.cpp' .
-
-# volatile used for threading — HIGH (not a sync primitive)
-grep -rn 'volatile' --include='*.cpp' --include='*.c' . | grep -iE 'flag|ready|done|count|shared'
-
-# Unjoined std::thread / detached without lifetime reasoning — MEDIUM
-grep -rn 'std::thread' --include='*.cpp' . | grep -v jthread     # verify join/detach + arg lifetimes
-grep -rn '\.detach()' --include='*.cpp' .
-
-# Relaxed/weak memory order without justification — MEDIUM
-grep -rnE 'memory_order_(relaxed|acquire|release|consume)' --include='*.cpp' .
-
-# condition_variable wait without predicate — MEDIUM (spurious/lost wakeup)
-grep -rnE 'cv?\.wait\([^,)]*\)' --include='*.cpp' .              # one-arg wait == no predicate
-
-# Ground truth: run concurrent tests under TSan
-#   cmake -DCMAKE_CXX_FLAGS="-fsanitize=thread" && ctest   # any race report == CRITICAL
-```
+- [ ] **Bare lock/unlock (no RAII) — MEDIUM/HIGH (lock leak on exception)** —
+      `grep -rnE '\.(lock|unlock)\(\)' --include='*.cpp' .` (prefer lock_guard/scoped_lock);
+      `grep -rn 'pthread_mutex_lock' --include='*.c' --include='*.cpp' .`
+- [ ] **volatile used for threading — HIGH (not a sync primitive)** —
+      `grep -rn 'volatile' --include='*.cpp' --include='*.c' . | grep -iE 'flag|ready|done|count|shared'`
+- [ ] **Unjoined std::thread / detached without lifetime reasoning — MEDIUM** —
+      `grep -rn 'std::thread' --include='*.cpp' . | grep -v jthread` (verify join/detach + arg
+      lifetimes); `grep -rn '\.detach()' --include='*.cpp' .`
+- [ ] **Relaxed/weak memory order without justification — MEDIUM** —
+      `grep -rnE 'memory_order_(relaxed|acquire|release|consume)' --include='*.cpp' .`
+- [ ] **condition_variable wait without predicate — MEDIUM (spurious/lost wakeup)** —
+      `grep -rnE 'cv?\.wait\([^,)]*\)' --include='*.cpp' .` (one-arg wait == no predicate)
+- [ ] **Ground truth: run concurrent tests under TSan cmake
+      -DCMAKE_CXX_FLAGS="-fsanitize=thread" && ctest # any race report == CRITICAL**

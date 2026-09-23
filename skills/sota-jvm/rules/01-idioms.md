@@ -71,22 +71,17 @@ the type system, and expression-oriented code**. References:
 
 ## Audit checklist
 
-```bash
-# Kotlin !! (non-null assertion) — MEDIUM (latent NPE)
-grep -rnE '!!' --include='*.kt' . | grep -v '!!='
-
-# Swallowed exceptions — MEDIUM/HIGH
-grep -rnzoE 'catch *\([^)]*\) *\{\s*\}' --include='*.java' --include='*.kt' .
-grep -rnE 'catch *\((Exception|Throwable)' --include='*.java' --include='*.kt' .
-
-# Legacy idioms — LOW
-grep -rnE 'new (ArrayList|HashMap|HashSet)<>\(\)' --include='*.java' .   # consider List.of / records
-grep -rnE '\braw\b|new Vector|new Hashtable' --include='*.java' .
-grep -rn 'Optional<' --include='*.java' . | grep -iE 'private .*Optional|(Optional<[^>]+>) [a-z]+\)'  # Optional field/param
-
-# Mutable returns / collections from APIs — LOW
-grep -rnE 'return (this\.)?[a-zA-Z]*[Ll]ist;' --include='*.java' .   # verify defensive copy / unmodifiable
-
-# Analyzer enforcement
-#   Error Prone + NullAway (Java); detekt + ktlint (Kotlin)
-```
+- [ ] **Kotlin !! (non-null assertion) — MEDIUM (latent NPE)** —
+      `grep -rnE '!!' --include='*.kt' . | grep -v '!!='`
+- [ ] **Swallowed exceptions — MEDIUM/HIGH** —
+      `grep -rnzoE 'catch *\([^)]*\) *\{\s*\}' --include='*.java' --include='*.kt' .` ;
+      `grep -rnE 'catch *\((Exception|Throwable)' --include='*.java' --include='*.kt' .`
+- [ ] **Legacy idioms — LOW** —
+      `grep -rnE 'new (ArrayList|HashMap|HashSet)<>\(\)' --include='*.java' .` (consider List.of
+      / records); `grep -rnE '\braw\b|new Vector|new Hashtable' --include='*.java' .` ;
+      `grep -rn 'Optional<' --include='*.java' . | grep -iE 'private .*Optional|(Optional<[^>]+>) [a-z]+\)'`
+      (Optional field/param)
+- [ ] **Mutable returns / collections from APIs — LOW** —
+      `grep -rnE 'return (this\.)?[a-zA-Z]*[Ll]ist;' --include='*.java' .` (verify defensive
+      copy / unmodifiable)
+- [ ] **Analyzer enforcement Error Prone + NullAway (Java); detekt + ktlint (Kotlin)**

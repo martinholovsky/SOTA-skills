@@ -167,45 +167,36 @@ deliver **at least once**: crashes and retries re-run jobs. Design contract:
 
 Run from repo root; verify each hit manually.
 
-```bash
-# Timeout.timeout around stateful work — MEDIUM+ (HIGH around transactions)
-grep -rn "Timeout.timeout\|Timeout::timeout" --include='*.rb' .
-
-# Unsynchronized shared mutable state (class-level accumulators) — manual review
-grep -rnE "@@\w+|class << self" --include='*.rb' app/ lib/ 2>/dev/null | head
-grep -rnE "\|\|=" --include='*.rb' . | grep -viE "spec|test" | head   # memoization under threads?
-
-# Fiber-local mistaken for thread-local
-grep -rnE "Thread\.current\[" --include='*.rb' . | head
-
-# Threads without exception handling / join (manual review)
-grep -rn "Thread.new" --include='*.rb' . | grep -v join | head
-
-# Ractor use — verify experimental caveats & removed APIs (Ractor.yield/#take gone in 4.0)
-grep -rnE "Ractor\.(new|yield)|\.take\b" --include='*.rb' . | head
-
-# Jobs: object args (GlobalID mitigates for AR models; raw objects = MEDIUM)
-grep -rnE "perform_(async|later)\(" --include='*.rb' . | grep -vE "\(\s*[a-z_]*id|\(\s*\d|\(\s*\)" | head
-# Enqueue inside transactions — race, MEDIUM+
-grep -rn -B3 "perform_later\|perform_async" --include='*.rb' app/ lib/ 2>/dev/null | grep "transaction do" | head
-# Idempotency signals absent (manual: look for guards/upserts in job bodies)
-grep -rln "def perform" app/jobs/ 2>/dev/null | head
-
-# JIT posture — INFO
-grep -rn "yjit\|YJIT" Dockerfile* config/ Procfile* .github/ 2>/dev/null | head -3
-grep -rn "zjit" Dockerfile* config/ 2>/dev/null | head -1   # experimental in prod = MEDIUM
-
-# Allocator / memory posture — INFO
-grep -rn "MALLOC_ARENA_MAX\|jemalloc" Dockerfile* config/ Procfile* 2>/dev/null | head -3
-
-# N+1 guards present? absent detector = note it
-grep -rn "bullet\|prosopite" Gemfile 2>/dev/null | head -2
-grep -rn "strict_loading" --include='*.rb' app/ config/ 2>/dev/null | head -2
-grep -rnE "\.all\.each\b" --include='*.rb' . | head
-
-# Unbounded scans
-grep -rnE "\.(map|each)\b" --include='*.rb' app/ 2>/dev/null | grep -vE "find_each|in_batches" | grep -E "\.(all|where\([^)]*\))\." | head
-```
+- [ ] **Timeout.timeout around stateful work — MEDIUM+ (HIGH around transactions)** —
+      `grep -rn "Timeout.timeout\|Timeout::timeout" --include='*.rb' .`
+- [ ] **Unsynchronized shared mutable state (class-level accumulators) — manual review** —
+      `grep -rnE "@@\w+|class << self" --include='*.rb' app/ lib/ 2>/dev/null | head` ;
+      `grep -rnE "\|\|=" --include='*.rb' . | grep -viE "spec|test" | head` (memoization under
+      threads?)
+- [ ] **Fiber-local mistaken for thread-local** —
+      `grep -rnE "Thread\.current\[" --include='*.rb' . | head`
+- [ ] **Threads without exception handling / join (manual review)** —
+      `grep -rn "Thread.new" --include='*.rb' . | grep -v join | head`
+- [ ] **Ractor use — verify experimental caveats & removed APIs (Ractor.yield/#take gone in
+      4.0)** — `grep -rnE "Ractor\.(new|yield)|\.take\b" --include='*.rb' . | head`
+- [ ] **Jobs: object args (GlobalID mitigates for AR models; raw objects = MEDIUM)** —
+      `grep -rnE "perform_(async|later)\(" --include='*.rb' . | grep -vE "\(\s*[a-z_]*id|\(\s*\d|\(\s*\)" | head`
+- [ ] **Enqueue inside transactions — race, MEDIUM+** —
+      `grep -rn -B3 "perform_later\|perform_async" --include='*.rb' app/ lib/ 2>/dev/null | grep "transaction do" | head`
+- [ ] **Idempotency signals absent (manual: look for guards/upserts in job bodies)** —
+      `grep -rln "def perform" app/jobs/ 2>/dev/null | head`
+- [ ] **JIT posture — INFO** —
+      `grep -rn "yjit\|YJIT" Dockerfile* config/ Procfile* .github/ 2>/dev/null | head -3` ;
+      `grep -rn "zjit" Dockerfile* config/ 2>/dev/null | head -1` (experimental in prod =
+      MEDIUM)
+- [ ] **Allocator / memory posture — INFO** —
+      `grep -rn "MALLOC_ARENA_MAX\|jemalloc" Dockerfile* config/ Procfile* 2>/dev/null | head -3`
+- [ ] **N+1 guards present? absent detector = note it** —
+      `grep -rn "bullet\|prosopite" Gemfile 2>/dev/null | head -2` ;
+      `grep -rn "strict_loading" --include='*.rb' app/ config/ 2>/dev/null | head -2` ;
+      `grep -rnE "\.all\.each\b" --include='*.rb' . | head`
+- [ ] **Unbounded scans** —
+      `grep -rnE "\.(map|each)\b" --include='*.rb' app/ 2>/dev/null | grep -vE "find_each|in_batches" | grep -E "\.(all|where\([^)]*\))\." | head`
 
 Severity guide: non-idempotent retried job with side effects (payments,
 emails) HIGH; enqueue-in-transaction, `Timeout.timeout` around transactions,

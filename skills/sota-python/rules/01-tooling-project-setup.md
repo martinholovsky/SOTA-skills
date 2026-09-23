@@ -275,37 +275,28 @@ images by digest for reproducible rebuilds in regulated environments.
 
 Run from repo root. Severity guidance in brackets.
 
-```bash
-# Toolchain state
-ls pyproject.toml uv.lock 2>/dev/null                      # missing uv.lock in an app [MEDIUM]
-ls setup.py setup.cfg Pipfile poetry.lock 2>/dev/null      # legacy/competing toolchains [LOW-MEDIUM]
-grep -rn "pip install" --include="*.yml" --include="*.yaml" --include="Dockerfile*" . \
-  | grep -v "uv pip"                                       # unlocked installs in CI/images [MEDIUM]
-grep -n "sudo pip" -r .                                    # system-interpreter installs [HIGH]
-
-# Competing lint/format config [MEDIUM — consolidate to ruff]
-ls .flake8 .isort.cfg .pylintrc 2>/dev/null; grep -n "\[tool.black\]\|\[tool.isort\]" pyproject.toml
-
-# Type checking actually enforced?
-grep -n "mypy\|pyright\|basedpyright\| ty " .github/workflows/*.yml .gitlab-ci.yml 2>/dev/null
-grep -rn "type: ignore$\|type: ignore " --include="*.py" src/ | grep -v "ignore\["   # bare ignores [LOW]
-
-# requires-python vs syntax reality
-grep -n "requires-python" pyproject.toml
-grep -rln "match \|type [A-Z].* = \|def .*\[T" --include="*.py" src/ | head  # 3.12 syntax w/ old floor?
-
-# Layout
-ls -d src/ 2>/dev/null | grep -q . || echo "flat layout"                  # flat layout in a library [LOW]
-find src -name py.typed | head -1                          # annotated lib without py.typed [MEDIUM]
-
-# Ruff coverage
-uvx ruff check --statistics .                              # what's currently violated
-grep -n "select" pyproject.toml                            # B/S/ASYNC missing from select [LOW]
-
-# Hygiene
-git ls-files | grep -E "\.venv/|__pycache__|\.pyc$"        # committed artifacts [LOW]
-
-# --- PEP 594 removals before a 3.13 floor bump (§7a) [HIGH — ImportError at runtime] ---
-grep -rnE '\b(import|from)\s+(telnetlib|cgi|cgitb|crypt|nntplib|smtpd|pipes|asynchat|asyncore|imghdr|sndhdr|sunau|aifc|audioop|chunk|uu|xdrlib|mailcap|msilib|nis|spwd|ossaudiodev)\b' \
-  --include='*.py' .
-```
+- [ ] **Toolchain state** — `ls pyproject.toml uv.lock 2>/dev/null` (missing uv.lock in an app
+      [MEDIUM]); `ls setup.py setup.cfg Pipfile poetry.lock 2>/dev/null` (legacy/competing
+      toolchains [LOW-MEDIUM]);
+      `grep -rn "pip install" --include="*.yml" --include="*.yaml" --include="Dockerfile*" . | grep -v "uv pip"`
+      (unlocked installs in CI/images [MEDIUM]); `grep -n "sudo pip" -r .` (system-interpreter
+      installs [HIGH])
+- [ ] **Competing lint/format config [MEDIUM — consolidate to ruff]** —
+      `ls .flake8 .isort.cfg .pylintrc 2>/dev/null; grep -n "\[tool.black\]\|\[tool.isort\]" pyproject.toml`
+- [ ] **Type checking actually enforced?** —
+      `grep -n "mypy\|pyright\|basedpyright\| ty " .github/workflows/*.yml .gitlab-ci.yml 2>/dev/null`
+      ; `grep -rn "type: ignore$\|type: ignore " --include="*.py" src/ | grep -v "ignore\["`
+      (bare ignores [LOW])
+- [ ] **requires-python vs syntax reality** — `grep -n "requires-python" pyproject.toml` ;
+      `grep -rln "match \|type [A-Z].* = \|def .*\[T" --include="*.py" src/ | head` (3.12 syntax
+      w/ old floor?)
+- [ ] **Layout** — `ls -d src/ 2>/dev/null | grep -q . || echo "flat layout"` (flat layout in a
+      library [LOW]); `find src -name py.typed | head -1` (annotated lib without py.typed
+      [MEDIUM])
+- [ ] **Ruff coverage** — `uvx ruff check --statistics .` (what's currently violated);
+      `grep -n "select" pyproject.toml` (B/S/ASYNC missing from select [LOW])
+- [ ] **Hygiene** — `git ls-files | grep -E "\.venv/|__pycache__|\.pyc$"` (committed artifacts
+      [LOW])
+- [ ] **--- PEP 594 removals before a 3.13 floor bump (§7a) [HIGH — ImportError at runtime]
+      ---** —
+      `grep -rnE '\b(import|from)\s+(telnetlib|cgi|cgitb|crypt|nntplib|smtpd|pipes|asynchat|asyncore|imghdr|sndhdr|sunau|aifc|audioop|chunk|uu|xdrlib|mailcap|msilib|nis|spwd|ossaudiodev)\b' --include='*.py' .`

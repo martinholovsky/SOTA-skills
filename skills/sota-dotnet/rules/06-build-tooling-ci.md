@@ -64,25 +64,36 @@ lives in `sota-testing`.
 
 ## Audit checklist
 
-```bash
-# TFM/SDK pinned? settings centralized?
-grep -rnE '<TargetFramework' **/*.csproj 2>/dev/null | head
-ls global.json Directory.Build.props Directory.Packages.props 2>/dev/null | grep -q . || echo "no central build config"
-
-# Nullable + warnings-as-errors + analyzers?
-grep -rniE 'TreatWarningsAsErrors|<Nullable>|EnableNETAnalyzers|AnalysisLevel' **/*.csproj Directory.Build.props 2>/dev/null \
-  || echo "nullable/analyzers/warnings-as-errors not enforced — HIGH"
-
-# NuGet locking + source mapping + CVE scan?
-ls packages.lock.json 2>/dev/null && grep -rn 'RestorePackagesWithLockFile' **/*.csproj Directory.Build.props 2>/dev/null \
-  || echo "no NuGet lockfile — supply-chain risk"
-grep -rniE 'packageSourceMapping|locked-mode|NuGetAudit|NU190[0-9]|auditSources|dependabot' \
-  nuget.config Directory.Build.props **/*.csproj .github/ *.yml 2>/dev/null \
-  || echo "no source mapping / locked restore / NuGetAudit CI gate"
-
-# Formatting + deterministic build in CI?
-grep -rniE 'dotnet format|verify-no-changes|Deterministic|ContinuousIntegrationBuild' .github/ *.yml **/*.csproj 2>/dev/null | head
-
-# Test runner + coverage?
-grep -rniE 'xunit|nunit|mstest|coverlet|testcontainers' **/*.csproj 2>/dev/null | head
-```
+- [ ] **What has been SILENCED? -- the analyser's escape hatch (ROADMAP 60) Five mechanisms,
+      verified against Microsoft's in-source-suppression docs. A grep for only the first finds a
+      codebase that looks clean while whole rules are off globally.** —
+      `grep -rn '#pragma warning disable' --include='*.cs' --include='*.vb' .` (want: a matching
+      restore); `grep -rn '#pragma warning disable' --include='*.cs' . | wc -l` ;
+      `grep -rn '#pragma warning restore' --include='*.cs' . | wc -l` (disable >> restore =
+      leaked to EOF); `grep -rn 'SuppressMessage' --include='*.cs' .` (Justification= is
+      required reading);
+      `grep -rn 'Justification *= *""\|Justification *= *"<Pending>"' --include='*.cs' .` (HIGH:
+      auto-generated, never filled in);
+      `find . -name 'GlobalSuppressions.cs' -o -name 'GlobalSuppressions.vb'`
+      (assembly/module-scoped, invisible at the call site);
+      `grep -rn '<NoWarn>' --include='*.csproj' --include='*.props' .` (whole-project,
+      whole-solution if in Directory.Build.props);
+      `grep -rnE 'dotnet_diagnostic\.[A-Z]+[0-9]+\.severity *= *none' .editorconfig 2>/dev/null`
+- [ ] **"Build and Suppress Active Issues" is BASELINING: Microsoft's own term for suppressing
+      every current violation at once. A large GlobalSuppressions.cs with uniform timestamps is
+      its signature, and it means the analyser's verdict on that code was never read. NOTE:
+      [SuppressMessage] is conditional on the CODE_ANALYSIS compilation symbol, so the attribute
+      can be present in source and absent from the shipped assembly.**
+- [ ] **TFM/SDK pinned? settings centralized?** —
+      `grep -rnE '<TargetFramework' **/*.csproj 2>/dev/null | head` ;
+      `ls global.json Directory.Build.props Directory.Packages.props 2>/dev/null | grep -q . || echo "no central build config"`
+- [ ] **Nullable + warnings-as-errors + analyzers?** —
+      `grep -rniE 'TreatWarningsAsErrors|<Nullable>|EnableNETAnalyzers|AnalysisLevel' **/*.csproj Directory.Build.props 2>/dev/null || echo "nullable/analyzers/warnings-as-errors not enforced — HIGH"`
+- [ ] **NuGet locking + source mapping + CVE scan?** —
+      `ls packages.lock.json 2>/dev/null && grep -rn 'RestorePackagesWithLockFile' **/*.csproj Directory.Build.props 2>/dev/null || echo "no NuGet lockfile — supply-chain risk"`
+      ;
+      `grep -rniE 'packageSourceMapping|locked-mode|NuGetAudit|NU190[0-9]|auditSources|dependabot' nuget.config Directory.Build.props **/*.csproj .github/ *.yml 2>/dev/null || echo "no source mapping / locked restore / NuGetAudit CI gate"`
+- [ ] **Formatting + deterministic build in CI?** —
+      `grep -rniE 'dotnet format|verify-no-changes|Deterministic|ContinuousIntegrationBuild' .github/ *.yml **/*.csproj 2>/dev/null | head`
+- [ ] **Test runner + coverage?** —
+      `grep -rniE 'xunit|nunit|mstest|coverlet|testcontainers' **/*.csproj 2>/dev/null | head`

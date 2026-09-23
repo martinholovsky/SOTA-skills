@@ -65,7 +65,7 @@ Rules:
   prints `hi`, while the same glob passed to a **builtin** (`echo`, `true`) aborts the
   whole list, so the follow-up never runs either. Either way the intended command did not.
 
-## 2. The sweep that never ran, part two: `grep -r` and symlinked directories
+## 2. The sweep that never ran: `grep -r` over symlinks — and the positive control that catches ANY broken sweep
 
 §1 is about a *quoting* bug stopping the command. This is the command running fine and
 **traversing less than you think**.
@@ -101,7 +101,9 @@ where the tree is *made* of links: a skills or plugin directory installed by sym
 monorepo with linked packages, `node_modules` with workspace links, a dotfiles checkout.
 Use `-R` when you mean "follow", and say which you used when you report a count.
 
-**Control the search in the SAME invocation.** §1 says to positive-control a sweep; the
+**Control the search in the SAME invocation — and this part is not about symlinks.** It is
+the general remedy for every false absence in this file, and it sits here only because the
+symlink case is where it was first measured. §1 says to positive-control a sweep; the
 sharpening is *where*. A control run separately is a different command against a possibly
 different tree, and it is the one people skip when the result looks plausible. Put a term
 you know is present into the same run and read both numbers:
@@ -414,9 +416,16 @@ compiled in, or drop the boundary and filter afterwards.
 This cost two false absences in one session: a count search over an agent file that plainly
 contained the number, and a reference sweep that reported zero while five references existed.
 Both were caught only because a second, differently-shaped measurement disagreed. **Run §2's
-positive control on the search itself** — §2 states that control under a heading about
-symlinked directories, where it reads as advice about traversal rather than about every
-search, and that placement is why it was skipped here.
+positive control on the search itself.**
+
+**The placement defect this paragraph predicted, then repeated.** It used to end: *§2 states
+that control under a heading about symlinked directories … and that placement is why it was
+skipped here.* It happened **again on 2026-09-21**, to a different reader on a different
+stack — a field report whose `git grep -cE '\b(TODO|FIXME)\b'` returned 0 files on macOS with
+its control returning 0 too, exactly this section, three days after it was written. Two
+independent readers, one cause, so the heading was the defect and not the readers: §2 now
+names the control in its own title. **A rule filed under where it was first measured is
+filed under the wrong thing** — index it by what it is *for*.
 
 
 ## Audit checklist

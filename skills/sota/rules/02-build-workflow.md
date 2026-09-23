@@ -42,6 +42,26 @@ asserts is a number it must be able to produce — and note which sentence the m
 licensed: *"drop step 4 and competing context costs you"* is supported; *"any extra context
 costs applied rules"* still is not.
 
+### 1a. The one exception to lean, and why it has to be an exception
+
+Step 2 carries a standing load of `sota-shell-scripting` rules/06 that leanness would
+otherwise forbid. The reason is a routing property, not an importance claim: **every other
+rules file is selected by what the task is about, and rules/06 is about the act of
+checking**, which is orthogonal to every task's subject. No task description matches it, so
+subject routing cannot reach it however good the classifier is.
+
+Cross-cutting rule 17 was the previous attempt and it does not fire. Measured twice —
+2026-09-18 and 2026-09-21 — the second by a reader who had rule 17 in context and still ran
+a `git grep -cE '\b…\b'` that returned 0 files on macOS with a control that also returned 0.
+Rule 17 sits in a list about *where shell code hides in a codebase*, so it reads as an AUDIT
+instruction about artifacts rather than a BUILD instruction about your own next command.
+
+**The cost is real and unmeasured.** This is a near-unconditional load in the step whose
+measured virtue is leanness (§1, and the 63% conflict-rate drop behind it). It is justified
+by a mechanism, not a number. **Falsifier:** if sessions that reach rules/06 by ordinary
+subject routing show these traps at a similar rate, the standing load is buying nothing and
+should come back out.
+
 ## 2. Why the plan comes before the code, and must be concrete
 
 Named up front and verified at the end, constraints are followed far better than when

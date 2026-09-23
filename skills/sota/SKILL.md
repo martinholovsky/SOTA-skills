@@ -330,6 +330,14 @@ It is mirrored in four places — `rules/02` §5 lists them, and three fail sile
 2. **Load lean.** Read each relevant skill's `SKILL.md` and, from its index, open **only**
    the rules files that match the work. Lean costs less and measures no worse; the
    degradation this step once claimed is **not supported** — `rules/02` §1.
+   **One rules file is not selected by subject.** `sota-shell-scripting` **rules/06**
+   governs the commands *you* type to check things — sweeps, counts, absence claims — and
+   no task description ever matches it, because the task is never *about* checking. Load
+   it on any task where you will verify a claim with a command, which is nearly all of
+   them. Subject routing cannot reach it: cross-cutting rule 17 names it and still does
+   not fire, because it reads as advice about where shell code hides in a repository
+   rather than about your own next command. Field-reported twice, 2026-09-18 and
+   2026-09-21 — the second by a reader who had rule 17 in context.
 3. **Plan first, with the checks in the plan.** Before writing code, list the task's
    requirements as **concrete, checkable items** — a specific outcome you can mark
    done/not-done ("rate-limit login to N/min per IP", not "add rate limiting") — covering

@@ -9,6 +9,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Field report from a session that *used* the library — three findings, one of which found
+  a defect in our own snippet.** A Rust + eBPF endpoint sensor at v1.43.1. Every falsifiable
+  claim reproduced here before a verdict: `git grep -cE '\b(TODO|FIXME|XXX|HACK)\b'` returns
+  **0 files** on this machine against **58** without `\b` (git 2.55.0, Darwin 25.6.0), matching
+  `sota-shell-scripting` rules/06 §2f's measured row exactly.
+  - **The router's BUILD step 2 gains a standing load of `sota-shell-scripting` rules/06**, the
+    one rules file subject routing cannot reach — its subject is the *act of checking*, which
+    no task description matches. Cross-cutting rule 17 was the previous attempt and does not
+    fire: measured twice, and the second reader had rule 17 in context. Reasoning, the admitted
+    cost and a falsifier in `sota/rules/02` §1a. **`ROUTER_BUILD_SHA` a92b0177acadec05 →
+    273a969bbe2994e4**, bumped *alone* after a clause-by-clause re-read recorded at the pin:
+    the change lands in BUILD steps 1–2, which `BUILD_WORKFLOW` does not model because the eval
+    pastes the skills. The treatment arm is unchanged, so **+0.39 is not invalidated — but it
+    has not been re-run** against the current router.
+  - **`sota/rules/03` §2 — an evidence grade propagates to what is built on it.** A hedged
+    premise and an unhedged conclusion in one paragraph: the hedge stays on the premise and the
+    reader takes the conclusion. Two destinations make it expensive — an instruction file, and
+    a change to a control.
+  - **`sota-code-security` rules/10 §5 — the over-firing control**, the mirror of that file's
+    subject: too *much* effect, degrading what it protects while looking healthy, because its
+    obvious metric (firing count) rises as it gets worse. **A deferral whose stated blocker had
+    been false for nine days** — it was parked on rules/10 being at 484/500, and ROADMAP 55
+    split the file to 230/500 the next day. Nothing reports that: invariant 27 asserts a
+    deferral *names* a trigger, never that the trigger is still unmet.
+  - **`sota-c-cpp` rules/01 §9 — designing a public surface** (ROADMAP 57, second of five).
+    The source-compatible-but-ABI-breaking table, `pimpl` with its incomplete-type destructor
+    trap, and stdlib types in exported signatures — libstdc++'s **two ABIs since GCC 5.1**
+    (`_GLIBCXX_USE_CXX11_ABI`), quoted from GCC's own dual-ABI page rather than recalled.
+
+### Fixed
+
+- **`sota-shell-scripting` rules/01 was recommending the bug.** Its snippet read
+  `cmd > out.txt 2>&1; echo "EXIT=$?"` commented **"status preserved"** — false of the
+  compound's own status, which is the `echo`'s, and the exact shape §2a warns about *elsewhere
+  in the same file*. Now captures (`rc=$?`) and re-raises (`exit "$rc"`), with the distinction
+  stated: recorded in a log is not returned to a caller. **Found by checking a field report's
+  claim of a duplicate** — the fourth time the ledger records that evaluating someone else's
+  claim forced the closest read of our own page.
+- **Invariant 26 now gates the roadmap's totals, not just its open set.** `Of 58 items, 55 are
+  closed` sat above a **59**-row ledger with 3 open. It drifts alone because it lives in a
+  different section from the header line 26 already gated, and invariant 30 cannot reach it —
+  that check's scope is positional, marker to next heading. Invariant 30's own header records
+  the same sentence failing once before. Watched fail on three injected known-bads, and
+  **probe 26b derives its mutation from the ledger** (row count + 1) so it cannot go stale.
+- **`sota-shell-scripting` rules/06 §2 now names the positive control in its heading.** §2f had
+  *predicted* that the control gets skipped because it sits under a heading about symlinked
+  directories — and it recurred, to a different reader on a different stack. Two independent
+  readers, one cause, so the heading was the defect. **A rule filed under where it was first
+  measured is filed under the wrong thing.**
+- **Stale trackers corrected.** ROADMAP item 57 said "five language skills" the day Python's
+  section landed (#416), in three places; `docs/LANGUAGE-TIER.md` §57 said the same.
+
 - **Gap-check 2 of 9: `sota-golang` against gosec 2.29.0** — four gaps closed. **The
   denominator was wrong three times before it was right**: the docs index gave 7, a summarised
   source fetch 38, a local parse of `rules/rulelist.go` 39 — and the skill's own citation of

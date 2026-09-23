@@ -75,25 +75,23 @@ coroutines. References:
 
 ## Audit checklist
 
-```bash
-# Data-race smells — MEDIUM/HIGH (verify happens-before)
-grep -rnE '\bstatic (?!final)[A-Za-z<>\[\]]+ [a-z]' --include='*.java' .   # mutable shared static
-grep -rnE 'volatile ' --include='*.java' . | grep -E '\+\+|--|\+='          # compound op on volatile = race
-grep -rn 'HashMap\|ArrayList' --include='*.java' . | grep -i 'static\|shared'  # non-concurrent shared coll
-
-# Virtual-thread pitfalls
-grep -rn 'newVirtualThreadPerTaskExecutor\|Thread.ofVirtual' --include='*.java' .
-grep -rnE 'synchronized' --include='*.java' . | grep -i 'block\|io\|http\|jdbc'  # pinning: HIGH on JDK 21–23; non-issue on 24+ (JEP 491) except native/class-init frames
-grep -rn 'preview' --include='*.java' .   # structured concurrency is preview in 25
-
-# CompletableFuture without executor/exception handling — MEDIUM
-grep -rnE 'CompletableFuture\.(supplyAsync|runAsync)\([^,)]*\)' --include='*.java' .   # no explicit executor
-
-# Kotlin coroutine hazards — MEDIUM/HIGH
-grep -rn 'GlobalScope' --include='*.kt' .                       # unstructured leak
-grep -rnE 'catch *\([^)]*CancellationException' --include='*.kt' .  # must rethrow
-grep -rnE 'runBlocking|Thread.sleep' --include='*.kt' .         # blocking in coroutine context
-
-# Bare lock without finally — MEDIUM
-grep -rnE '\.lock\(\)' --include='*.java' --include='*.kt' .    # verify unlock in finally
-```
+- [ ] **Data-race smells — MEDIUM/HIGH (verify happens-before)** —
+      `grep -rnE '\bstatic (?!final)[A-Za-z<>\[\]]+ [a-z]' --include='*.java' .` (mutable shared
+      static); `grep -rnE 'volatile ' --include='*.java' . | grep -E '\+\+|--|\+='` (compound op
+      on volatile = race);
+      `grep -rn 'HashMap\|ArrayList' --include='*.java' . | grep -i 'static\|shared'`
+      (non-concurrent shared coll)
+- [ ] **Virtual-thread pitfalls** —
+      `grep -rn 'newVirtualThreadPerTaskExecutor\|Thread.ofVirtual' --include='*.java' .` ;
+      `grep -rnE 'synchronized' --include='*.java' . | grep -i 'block\|io\|http\|jdbc'`
+      (pinning: HIGH on JDK 21–23; non-issue on 24+ (JEP 491) except native/class-init frames);
+      `grep -rn 'preview' --include='*.java' .` (structured concurrency is preview in 25)
+- [ ] **CompletableFuture without executor/exception handling — MEDIUM** —
+      `grep -rnE 'CompletableFuture\.(supplyAsync|runAsync)\([^,)]*\)' --include='*.java' .` (no
+      explicit executor)
+- [ ] **Kotlin coroutine hazards — MEDIUM/HIGH** — `grep -rn 'GlobalScope' --include='*.kt' .`
+      (unstructured leak); `grep -rnE 'catch *\([^)]*CancellationException' --include='*.kt' .`
+      (must rethrow); `grep -rnE 'runBlocking|Thread.sleep' --include='*.kt' .` (blocking in
+      coroutine context)
+- [ ] **Bare lock without finally — MEDIUM** —
+      `grep -rnE '\.lock\(\)' --include='*.java' --include='*.kt' .` (verify unlock in finally)

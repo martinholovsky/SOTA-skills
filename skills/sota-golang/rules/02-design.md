@@ -245,41 +245,33 @@ func UserFrom(ctx context.Context) (*User, bool) {
 
 ## Audit checklist
 
-```bash
-# Grab-bag packages — LOW
-find . -type d | grep -iE '/(util|utils|common|helpers|shared|misc)($|/)'
-
-# Returned interfaces from constructors (manual review) — LOW
-grep -rnE 'func New\w*\([^)]*\) [A-Z]\w*(Interface| interface)' --include='*.go' .
-
-# Fat interfaces: >4 methods (then inspect)
-grep -rn -A 12 'interface {' --include='*.go' . | less   # manual
-
-# Package-level mutable state — MEDIUM
-grep -rnE '^var \w+ (=|\*|map\[|\[\])' --include='*.go' . | grep -vE '(Err|_test|MustCompile|regexp)'
-grep -rn 'func init()' --include='*.go' .
-
-# Context violations
-grep -rnE 'ctx\s+context\.Context' --include='*.go' . | grep -E 'struct|^\s+[A-Za-z]+ +context\.Context'  # ctx in struct — MEDIUM
-grep -rnE 'func [^(]*\([^)]*\bctx context\.Context' --include='*.go' . | grep -vE '\(ctx context\.Context'  # ctx not first param
-grep -rn 'context.WithValue' --include='*.go' .          # check key types & payloads
-grep -rn 'context.TODO()' --include='*.go' .             # LOW, should be tracked
-grep -rnE 'context\.Background\(\)' --include='*.go' . | grep -v 'main\|_test'  # suspicious mid-stack
-
-# Blocking calls missing ctx variants — HIGH on request paths
-grep -rnE '\.(Query|QueryRow|Exec)\(' --include='*.go' . | grep -v Context
-grep -rn 'http.Get(\|http.Post(' --include='*.go' .
-grep -rn 'exec.Command(' --include='*.go' . | grep -v CommandContext
-
-# Naming drift — INFO
-grep -rnE 'func.*Get[A-Z]\w*\(\) ' --include='*.go' .    # Get-prefixed getters
-grep -rnE '\b(Id|Url|Http|Api)\b' --include='*.go' .     # acronym casing
-
-# Tooling
-go vet ./...                                  # lostcancel, composites
-golangci-lint run --enable-only revive,ireturn,containedctx,contextcheck,fatcontext ./...
-staticcheck ./...                             # ST1003 naming, S1021, SA1029 ctx keys
-```
+- [ ] **Grab-bag packages — LOW** —
+      `find . -type d | grep -iE '/(util|utils|common|helpers|shared|misc)($|/)'`
+- [ ] **Returned interfaces from constructors (manual review) — LOW** —
+      `grep -rnE 'func New\w*\([^)]*\) [A-Z]\w*(Interface| interface)' --include='*.go' .`
+- [ ] **Fat interfaces: >4 methods (then inspect)** —
+      `grep -rn -A 12 'interface {' --include='*.go' . | less` (manual)
+- [ ] **Package-level mutable state — MEDIUM** —
+      `grep -rnE '^var \w+ (=|\*|map\[|\[\])' --include='*.go' . | grep -vE '(Err|_test|MustCompile|regexp)'`
+      ; `grep -rn 'func init()' --include='*.go' .`
+- [ ] **Context violations** —
+      `grep -rnE 'ctx\s+context\.Context' --include='*.go' . | grep -E 'struct|^\s+[A-Za-z]+ +context\.Context'`
+      (ctx in struct — MEDIUM);
+      `grep -rnE 'func [^(]*\([^)]*\bctx context\.Context' --include='*.go' . | grep -vE '\(ctx context\.Context'`
+      (ctx not first param); `grep -rn 'context.WithValue' --include='*.go' .` (check key types
+      & payloads); `grep -rn 'context.TODO()' --include='*.go' .` (LOW, should be tracked);
+      `grep -rnE 'context\.Background\(\)' --include='*.go' . | grep -v 'main\|_test'`
+      (suspicious mid-stack)
+- [ ] **Blocking calls missing ctx variants — HIGH on request paths** —
+      `grep -rnE '\.(Query|QueryRow|Exec)\(' --include='*.go' . | grep -v Context` ;
+      `grep -rn 'http.Get(\|http.Post(' --include='*.go' .` ;
+      `grep -rn 'exec.Command(' --include='*.go' . | grep -v CommandContext`
+- [ ] **Naming drift — INFO** — `grep -rnE 'func.*Get[A-Z]\w*\(\) ' --include='*.go' .`
+      (Get-prefixed getters); `grep -rnE '\b(Id|Url|Http|Api)\b' --include='*.go' .` (acronym
+      casing)
+- [ ] **Tooling** — `go vet ./...` (lostcancel, composites);
+      `golangci-lint run --enable-only revive,ireturn,containedctx,contextcheck,fatcontext ./...`
+      ; `staticcheck ./...` (ST1003 naming, S1021, SA1029 ctx keys)
 
 Severity guide: ctx in struct / dependency-in-ctx MEDIUM; missing
 ctx on blocking request-path call HIGH; util-package and returned

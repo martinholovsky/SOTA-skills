@@ -163,34 +163,30 @@ function assertSafeUrl(string $url): void
 
 Run from repo root; verify each hit manually.
 
-```bash
-# Uploads — client-trusted name/type, executable destinations
-grep -rnE "\\\$_FILES\[[^]]+\]\['(name|type)'\]" --include='*.php' src/
-grep -rn 'move_uploaded_file' --include='*.php' src/   # trace dest: webroot? renamed?
-grep -rn 'is_uploaded_file' --include='*.php' src/     # absent near move_* = MEDIUM
-
-# LFI/RFI/traversal — user data reaching include/fs functions
-grep -rnE '(include|require)(_once)?\s*[( ][^;]*\$_(GET|POST|REQUEST|COOKIE)' --include='*.php' src/
-grep -rnE '(file_get_contents|fopen|readfile|file_put_contents|copy|unlink)\s*\([^;]*\$_' --include='*.php' src/
-grep -rnE '(phar|expect|data|zip)://' --include='*.php' src/
-grep -rn 'php://filter' --include='*.php' src/
-php -r 'echo ini_get("allow_url_include"), "|", ini_get("allow_url_fopen"), PHP_EOL;'
-
-# Deserialization — CRITICAL on external data
-grep -rn 'unserialize(' --include='*.php' src/ | grep -v 'allowed_classes'
-grep -rnE 'unserialize\s*\(\s*\$_(GET|POST|COOKIE|REQUEST)' --include='*.php' src/
-grep -rn 'getMetadata' --include='*.php' src/
-grep -rnE '__(destruct|wakeup|toString)' --include='*.php' src/  # gadget surface inventory
-
-# XML
-grep -rnE 'LIBXML_(NOENT|DTDLOAD)' --include='*.php' src/
-grep -rn 'libxml_disable_entity_loader' --include='*.php' src/   # deprecated; check PHP<8 paths
-
-# SSRF — user URLs fetched server-side
-grep -rnE '(curl_init|file_get_contents|fopen|->request|->get)\s*\([^;]*\$' --include='*.php' src/ | grep -iE 'url|uri|host|endpoint|webhook'
-grep -rn 'CURLOPT_SSL_VERIFYPEER' --include='*.php' src/          # false = HIGH
-grep -rn 'CURLOPT_FOLLOWLOCATION' --include='*.php' src/          # check REDIR_PROTOCOLS nearby
-```
+- [ ] **Uploads — client-trusted name/type, executable destinations** —
+      `grep -rnE "\\\$_FILES\[[^]]+\]\['(name|type)'\]" --include='*.php' src/` ;
+      `grep -rn 'move_uploaded_file' --include='*.php' src/` (trace dest: webroot? renamed?);
+      `grep -rn 'is_uploaded_file' --include='*.php' src/` (absent near move_* = MEDIUM)
+- [ ] **LFI/RFI/traversal — user data reaching include/fs functions** —
+      `grep -rnE '(include|require)(_once)?\s*[( ][^;]*\$_(GET|POST|REQUEST|COOKIE)' --include='*.php' src/`
+      ;
+      `grep -rnE '(file_get_contents|fopen|readfile|file_put_contents|copy|unlink)\s*\([^;]*\$_' --include='*.php' src/`
+      ; `grep -rnE '(phar|expect|data|zip)://' --include='*.php' src/` ;
+      `grep -rn 'php://filter' --include='*.php' src/` ;
+      `php -r 'echo ini_get("allow_url_include"), "|", ini_get("allow_url_fopen"), PHP_EOL;'`
+- [ ] **Deserialization — CRITICAL on external data** —
+      `grep -rn 'unserialize(' --include='*.php' src/ | grep -v 'allowed_classes'` ;
+      `grep -rnE 'unserialize\s*\(\s*\$_(GET|POST|COOKIE|REQUEST)' --include='*.php' src/` ;
+      `grep -rn 'getMetadata' --include='*.php' src/` ;
+      `grep -rnE '__(destruct|wakeup|toString)' --include='*.php' src/` (gadget surface
+      inventory)
+- [ ] **XML** — `grep -rnE 'LIBXML_(NOENT|DTDLOAD)' --include='*.php' src/` ;
+      `grep -rn 'libxml_disable_entity_loader' --include='*.php' src/` (deprecated; check PHP<8
+      paths)
+- [ ] **SSRF — user URLs fetched server-side** —
+      `grep -rnE '(curl_init|file_get_contents|fopen|->request|->get)\s*\([^;]*\$' --include='*.php' src/ | grep -iE 'url|uri|host|endpoint|webhook'`
+      ; `grep -rn 'CURLOPT_SSL_VERIFYPEER' --include='*.php' src/` (false = HIGH);
+      `grep -rn 'CURLOPT_FOLLOWLOCATION' --include='*.php' src/` (check REDIR_PROTOCOLS nearby)
 
 Severity guide: `unserialize`/`include` of external data CRITICAL; uploads
 executable or client-named HIGH; user-URL fetch with no allowlist/IP validation

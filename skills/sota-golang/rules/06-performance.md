@@ -215,42 +215,32 @@ profiler) so the incident carries its own evidence.
 
 ## Audit checklist
 
-```bash
-# Profiling wired up? (absence in a latency-sensitive service = LOW gap)
-grep -rn 'net/http/pprof' --include='*.go' .
-grep -rn 'pprof' --include='*.go' . | grep -i 'listen\|mux\|handle'   # exposed publicly? — MEDIUM
-
-# Benchmarks exist for hot packages; b.Loop adoption
-grep -rln 'func Benchmark' --include='*_test.go' .
-grep -rn 'b.N' --include='*_test.go' .            # candidates to migrate to b.Loop (1.24+)
-grep -rn 'ReportAllocs' --include='*_test.go' .
-
-# Growth-by-append without prealloc near loops (then check if size was knowable)
-grep -rnE 'var \w+ \[\]' --include='*.go' . | head -50
-golangci-lint run --enable-only prealloc,perfsprint,makezero ./...
-
-# String concat in loops — O(n²)
-grep -rn -B3 '+= ' --include='*.go' . | grep -E 'for |range' | grep -i 'str\|msg\|out'
-
-# fmt on hot paths (handler/loop proximity — manual confirm)
-grep -rnE 'fmt\.Sprintf' --include='*.go' . | wc -l
-
-# sync.Pool correctness: Reset on reuse? cap check? aliasing?
-grep -rn -A5 'sync.Pool' --include='*.go' .
-
-# io.ReadAll on large/unbounded inputs — MEDIUM
-grep -rn 'io.ReadAll\|ioutil.ReadAll' --include='*.go' .
-
-# GC knobs & ballast
-grep -rn 'GOGC\|GOMEMLIMIT\|SetMemoryLimit\|SetGCPercent' -r . --include='*.go' --include='*.yaml' --include='Dockerfile*'
-grep -rn 'ballast' --include='*.go' .             # obsolete pattern — LOW
-
-# PGO
-ls cmd/*/default.pgo 2>/dev/null; grep -rn 'pgo' Makefile* .github/ 2>/dev/null
-
-# Escape analysis spot-check on hot package
-go build -gcflags='-m' ./internal/hotpkg 2>&1 | grep 'escapes to heap' | head -30
-```
+- [ ] **Profiling wired up? (absence in a latency-sensitive service = LOW gap)** —
+      `grep -rn 'net/http/pprof' --include='*.go' .` ;
+      `grep -rn 'pprof' --include='*.go' . | grep -i 'listen\|mux\|handle'` (exposed publicly? —
+      MEDIUM)
+- [ ] **Benchmarks exist for hot packages; b.Loop adoption** —
+      `grep -rln 'func Benchmark' --include='*_test.go' .` ;
+      `grep -rn 'b.N' --include='*_test.go' .` (candidates to migrate to b.Loop (1.24+));
+      `grep -rn 'ReportAllocs' --include='*_test.go' .`
+- [ ] **Growth-by-append without prealloc near loops (then check if size was knowable)** —
+      `grep -rnE 'var \w+ \[\]' --include='*.go' . | head -50` ;
+      `golangci-lint run --enable-only prealloc,perfsprint,makezero ./...`
+- [ ] **String concat in loops — O(n²)** —
+      `grep -rn -B3 '+= ' --include='*.go' . | grep -E 'for |range' | grep -i 'str\|msg\|out'`
+- [ ] **fmt on hot paths (handler/loop proximity — manual confirm)** —
+      `grep -rnE 'fmt\.Sprintf' --include='*.go' . | wc -l`
+- [ ] **sync.Pool correctness: Reset on reuse? cap check? aliasing?** —
+      `grep -rn -A5 'sync.Pool' --include='*.go' .`
+- [ ] **io.ReadAll on large/unbounded inputs — MEDIUM** —
+      `grep -rn 'io.ReadAll\|ioutil.ReadAll' --include='*.go' .`
+- [ ] **GC knobs & ballast** —
+      `grep -rn 'GOGC\|GOMEMLIMIT\|SetMemoryLimit\|SetGCPercent' -r . --include='*.go' --include='*.yaml' --include='Dockerfile*'`
+      ; `grep -rn 'ballast' --include='*.go' .` (obsolete pattern — LOW)
+- [ ] **PGO** —
+      `ls cmd/*/default.pgo 2>/dev/null; grep -rn 'pgo' Makefile* .github/ 2>/dev/null`
+- [ ] **Escape analysis spot-check on hot package** —
+      `go build -gcflags='-m' ./internal/hotpkg 2>&1 | grep 'escapes to heap' | head -30`
 
 Severity guide: pool aliasing/missing reset HIGH (corruption); unbounded
 ReadAll MEDIUM; missing prealloc/Builder on measured hot path LOW–MEDIUM;

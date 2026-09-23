@@ -311,43 +311,39 @@ Keep overload sets small (2–4); a 10-overload function wants a redesign. Typed
 
 ## Audit checklist
 
-```bash
-# Any leakage [MEDIUM where it crosses module boundaries]
-grep -rn "-> Any\|: Any" --include="*.py" src/ | grep -v "test_" | head -50
-grep -rn "dict\[str, Any\]" --include="*.py" src/ | wc -l        # boundary-only is OK; everywhere is not
-grep -rn "Callable\[\.\.\., " --include="*.py" src/               # signature-erasing decorators?
-
-# Bare/unscoped ignores [LOW each, MEDIUM in aggregate]
-grep -rn "type: ignore$" --include="*.py" .
-grep -rn "# noqa$" --include="*.py" .
-
-# Legacy typing forms — ruff UP should be clean
-uvx ruff check --select UP,ANN --statistics .
-grep -rn "typing.Optional\|typing.List\|typing.Dict\|Optional\[" --include="*.py" src/ | head
-
-# In-band sentinels standing in for None (§2a) [HIGH where the value is compared]
-grep -rnE "return -1|return 0[^.0-9]|= *-1 *(#|$)" --include="*.py" src/    # producer: same constant from two branches?
-grep -rnB2 -- "-> int:" --include="*.py" src/ | grep -c "except"            # int-returning fn with an except arm
-grep -rnE "if [a-z_]+ (and|>) 0.*<|> 0.*if" --include="*.py" src/           # asymmetric guard: one operand filtered
-grep -rnE "^\s*if [a-z_]*(num|idx|index|count|offset|line|col)[a-z_]*:" --include="*.py" src/  # truthiness-as-presence
-
-# Unhandled Optionals / implicit None returns
-uvx mypy --strict src/ 2>&1 | grep -c "error"                     # any errors = not strict-clean
-grep -rn "or \[\]\|or {}\|or ''" --include="*.py" src/            # falsy-default smell [LOW, verify]
-
-# Exhaustiveness
-grep -rn "match " --include="*.py" src/ -A1 | grep -B1 "case _" | head   # then check assert_never use
-grep -rln "assert_never" --include="*.py" src/ || echo "no exhaustiveness guards"
-
-# Validation layering
-grep -rn "model_validate\|TypeAdapter" --include="*.py" src/      # should cluster at edges
-grep -rn "model_construct" --include="*.py" src/                  # smell: wanted a dataclass [LOW]
-grep -rn 'extra.*allow\|extra="ignore"' --include="*.py" src/     # permissive input models [LOW-MEDIUM]
-
-# Protocol/ABC hygiene
-grep -rn "class.*ABC).*:" --include="*.py" src/ -A3 | grep -c abstractmethod  # 1-method ABCs → Protocol?
-grep -rn "isinstance.*Protocol" --include="*.py" src/             # runtime_checkable misuse
-
-# cast() density [investigate each]
-grep -rn "cast(" --include="*.py" src/ | grep -v test
-```
+- [ ] **Any leakage [MEDIUM where it crosses module boundaries]** —
+      `grep -rn "-> Any\|: Any" --include="*.py" src/ | grep -v "test_" | head -50` ;
+      `grep -rn "dict\[str, Any\]" --include="*.py" src/ | wc -l` (boundary-only is OK;
+      everywhere is not); `grep -rn "Callable\[\.\.\., " --include="*.py" src/`
+      (signature-erasing decorators?)
+- [ ] **Bare/unscoped ignores [LOW each, MEDIUM in aggregate]** —
+      `grep -rn "type: ignore$" --include="*.py" .` ; `grep -rn "# noqa$" --include="*.py" .`
+- [ ] **Legacy typing forms — ruff UP should be clean** —
+      `uvx ruff check --select UP,ANN --statistics .` ;
+      `grep -rn "typing.Optional\|typing.List\|typing.Dict\|Optional\[" --include="*.py" src/ | head`
+- [ ] **In-band sentinels standing in for None (§2a) [HIGH where the value is compared]** —
+      `grep -rnE "return -1|return 0[^.0-9]|= *-1 *(#|$)" --include="*.py" src/` (producer: same
+      constant from two branches?);
+      `grep -rnB2 -- "-> int:" --include="*.py" src/ | grep -c "except"` (int-returning fn with
+      an except arm); `grep -rnE "if [a-z_]+ (and|>) 0.*<|> 0.*if" --include="*.py" src/`
+      (asymmetric guard: one operand filtered);
+      `grep -rnE "^\s*if [a-z_]*(num|idx|index|count|offset|line|col)[a-z_]*:" --include="*.py" src/`
+      (truthiness-as-presence)
+- [ ] **Unhandled Optionals / implicit None returns** —
+      `uvx mypy --strict src/ 2>&1 | grep -c "error"` (any errors = not strict-clean);
+      `grep -rn "or \[\]\|or {}\|or ''" --include="*.py" src/` (falsy-default smell [LOW,
+      verify])
+- [ ] **Exhaustiveness** —
+      `grep -rn "match " --include="*.py" src/ -A1 | grep -B1 "case _" | head` (then check
+      assert_never use);
+      `grep -rln "assert_never" --include="*.py" src/ || echo "no exhaustiveness guards"`
+- [ ] **Validation layering** — `grep -rn "model_validate\|TypeAdapter" --include="*.py" src/`
+      (should cluster at edges); `grep -rn "model_construct" --include="*.py" src/` (smell:
+      wanted a dataclass [LOW]); `grep -rn 'extra.*allow\|extra="ignore"' --include="*.py" src/`
+      (permissive input models [LOW-MEDIUM])
+- [ ] **Protocol/ABC hygiene** —
+      `grep -rn "class.*ABC).*:" --include="*.py" src/ -A3 | grep -c abstractmethod` (1-method
+      ABCs → Protocol?); `grep -rn "isinstance.*Protocol" --include="*.py" src/`
+      (runtime_checkable misuse)
+- [ ] **cast() density [investigate each]** —
+      `grep -rn "cast(" --include="*.py" src/ | grep -v test`

@@ -122,33 +122,24 @@ vendor/bin/phpunit                  # or: vendor/bin/pest
 
 Run from repo root; verify each hit manually.
 
-```bash
-# Lockfile discipline
-git ls-files composer.lock | grep -q . || echo "NO LOCKFILE COMMITTED (app = MEDIUM/HIGH)"
-composer validate --strict                      # flags json/lock drift
-grep -nE '"(php|ext-)' composer.json            # platform reqs declared?
-grep -n '"platform"' composer.json              # config.platform.php pinned?
-
-# Advisory + abandonment status right now
-composer audit --locked --abandoned=report
-
-# Risky constraints and install-time code
-grep -nE '"[^"]+"\s*:\s*"(\*|dev-)' composer.json
-grep -n '"scripts"' composer.json               # review script contents
-grep -n 'allow-plugins' composer.json           # explicit allowlist?
-
-# Static analysis presence + ratchet health
-ls phpstan*.neon* psalm*.xml* 2>/dev/null | grep -q . || echo "NO STATIC ANALYSIS CONFIG (MEDIUM)"
-grep -n 'level' phpstan*.neon* 2>/dev/null
-wc -l phpstan-baseline.neon 2>/dev/null         # compare against last audit: shrinking?
-git log --oneline -5 -- phpstan-baseline.neon 2>/dev/null
-
-# CI gates actually wired (adjust path to CI system)
-grep -rnE '(composer audit|phpstan|psalm|php-cs-fixer|phpcs|phpunit|pest)' .github/workflows/ .gitlab-ci.yml 2>/dev/null
-
-# Dev deps leaking into prod artifacts
-grep -rn 'composer install' Dockerfile* .github/workflows/ 2>/dev/null | grep -v -- --no-dev
-```
+- [ ] **Lockfile discipline** —
+      `git ls-files composer.lock | grep -q . || echo "NO LOCKFILE COMMITTED (app = MEDIUM/HIGH)"`
+      ; `composer validate --strict` (flags json/lock drift);
+      `grep -nE '"(php|ext-)' composer.json` (platform reqs declared?);
+      `grep -n '"platform"' composer.json` (config.platform.php pinned?)
+- [ ] **Advisory + abandonment status right now** — `composer audit --locked --abandoned=report`
+- [ ] **Risky constraints and install-time code** —
+      `grep -nE '"[^"]+"\s*:\s*"(\*|dev-)' composer.json` ; `grep -n '"scripts"' composer.json`
+      (review script contents); `grep -n 'allow-plugins' composer.json` (explicit allowlist?)
+- [ ] **Static analysis presence + ratchet health** —
+      `ls phpstan*.neon* psalm*.xml* 2>/dev/null | grep -q . || echo "NO STATIC ANALYSIS CONFIG (MEDIUM)"`
+      ; `grep -n 'level' phpstan*.neon* 2>/dev/null` ; `wc -l phpstan-baseline.neon 2>/dev/null`
+      (compare against last audit: shrinking?);
+      `git log --oneline -5 -- phpstan-baseline.neon 2>/dev/null`
+- [ ] **CI gates actually wired (adjust path to CI system)** —
+      `grep -rnE '(composer audit|phpstan|psalm|php-cs-fixer|phpcs|phpunit|pest)' .github/workflows/ .gitlab-ci.yml 2>/dev/null`
+- [ ] **Dev deps leaking into prod artifacts** —
+      `grep -rn 'composer install' Dockerfile* .github/workflows/ 2>/dev/null | grep -v -- --no-dev`
 
 Severity guide: app with no committed lock or CI running `composer update`
 MEDIUM (HIGH once envs drift); no advisory gate MEDIUM; known-vulnerable dep

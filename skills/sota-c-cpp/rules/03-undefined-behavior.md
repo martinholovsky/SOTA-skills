@@ -102,25 +102,21 @@ mutex. Build threaded code under TSan.
 
 ## Audit checklist
 
-```bash
-# Signed-overflow-prone arithmetic feeding sizes/indices — HIGH
-grep -rnE '(malloc|calloc|alloca|new)[^;]*[*+][^;]*' --include='*.c' --include='*.cpp' .  # size math → check overflow
-grep -rn '__builtin_.*_overflow\|ckd_add\|ckd_mul' . || echo "no checked-arithmetic helpers found"
-
-# Type punning / strict-aliasing — HIGH
-grep -rn 'reinterpret_cast' --include='*.cpp' --include='*.hpp' .
-grep -rnE '\*\s*\(\s*[A-Za-z_][A-Za-z0-9_ ]*\*\s*\)' --include='*.c' .   # C pointer-cast deref (heuristic)
-grep -rn 'union' --include='*.cpp' .                                     # union type-pun is UB in C++
-
-# Bad shifts / conversions — MEDIUM/HIGH
-grep -rnE '<<|>>' --include='*.c' --include='*.cpp' . | grep -vE '(cout|cerr|<<=|stream)'  # verify shift amounts
-# Build with conversion warnings:
-#   -Wconversion -Wsign-conversion -Wshadow -Wcast-align -Wshift-overflow=2
-
-# Uninitialized — MEDIUM
-clang-tidy --checks='cppcoreguidelines-init-variables,clang-analyzer-core.uninitialized.*' <files>
-
-# Ground truth: run under UBSan, aborting on first diagnostic
-#   cmake -DCMAKE_CXX_FLAGS="-fsanitize=undefined,integer -fno-sanitize-recover=all"
-#   ctest   # any abort == CRITICAL/HIGH
-```
+- [ ] **Signed-overflow-prone arithmetic feeding sizes/indices — HIGH** —
+      `grep -rnE '(malloc|calloc|alloca|new)[^;]*[*+][^;]*' --include='*.c' --include='*.cpp' .`
+      (size math → check overflow);
+      `grep -rn '__builtin_.*_overflow\|ckd_add\|ckd_mul' . || echo "no checked-arithmetic helpers found"`
+- [ ] **Type punning / strict-aliasing — HIGH** —
+      `grep -rn 'reinterpret_cast' --include='*.cpp' --include='*.hpp' .` ;
+      `grep -rnE '\*\s*\(\s*[A-Za-z_][A-Za-z0-9_ ]*\*\s*\)' --include='*.c' .` (C pointer-cast
+      deref (heuristic)); `grep -rn 'union' --include='*.cpp' .` (union type-pun is UB in C++)
+- [ ] **Bad shifts / conversions — MEDIUM/HIGH** —
+      `grep -rnE '<<|>>' --include='*.c' --include='*.cpp' . | grep -vE '(cout|cerr|<<=|stream)'`
+      (verify shift amounts)
+- [ ] **Build with conversion warnings: -Wconversion -Wsign-conversion -Wshadow -Wcast-align
+      -Wshift-overflow=2**
+- [ ] **Uninitialized — MEDIUM** —
+      `clang-tidy --checks='cppcoreguidelines-init-variables,clang-analyzer-core.uninitialized.*' <files>`
+- [ ] **Ground truth: run under UBSan, aborting on first diagnostic cmake
+      -DCMAKE_CXX_FLAGS="-fsanitize=undefined,integer -fno-sanitize-recover=all" ctest # any
+      abort == CRITICAL/HIGH**

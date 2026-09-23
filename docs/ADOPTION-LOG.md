@@ -2467,8 +2467,12 @@ fit with ~7% headroom and 200k gives 8,000, where we are **4.7× over** and the 
 vocabulary is the first thing cut. That is too consequential to adopt on an unreproduced
 claim and too consequential to drop.
 
-**DEFERRED — revisit when `sota-code-security` rules/10 is split or a second instance
-appears: the over-firing control.** magus's search-redirect hook documents a failure mode we
+**ADOPTED 2026-09-21 as `sota-code-security` rules/10 §5 + two checklist items — the
+over-firing control.** *The trigger fired and nobody came back.* It was parked on
+*"rules/10 is at **484/500** and putting it there would let the line cap choose the
+placement"*; ROADMAP 55 split the file on **2026-09-12**, taking it to **230/500**, and
+the deferral sat unread for nine days with its stated blocker false. Found by a
+`/sota-resume` pass re-testing each deferral's TRIGGER rather than its subject.** magus's search-redirect hook documents a failure mode we
 cover only in one direction. Ours is the inert control that looks enabled and does nothing
 (rules/10). Its mirror is a control that fires **too broadly**, degrades the outcome it was
 meant to protect, and *appears to work the whole time* — their reviewers' point that a
@@ -4156,11 +4160,24 @@ there. Worked examples for jvm/.NET (1.0–1.1 per 100 lines against 2.7–3.8 a
 **deliberately not a row**: optional polish that nobody must act on is a recurring reminder,
 which is the reason item 1 was retired.
 
-**DEFERRED — the audit-checklist body format. Revisit trigger: a measurement showing the
-format changes audit behaviour, or a third instance of a reader being unable to enumerate a
-checklist.** Three forms are in use — tickable `- [ ]` (rust, js/ts), fenced shell block
-(python, jvm, .NET, c/c++, php), prose+commands (golang, ruby) — and invariant 2 gates only
-the heading. The argument for unifying is that AUDIT mode instructs the model to "verify your
+**ADOPTED 2026-09-23 on operator instruction — the audit-checklist body format is now
+uniformly tickable **across the nine language skills**, and `--assert-format` keeps it that
+way. **Scope, stated because the heading could be read wider:** the gate and the conversion
+cover the LANGUAGE TIER only. Measured 2026-09-23, **14 files in 2 domain skills**
+(`sota-web-frameworks` 7, `sota-ml-engineering` 7) still carry a ```bash block in their
+checklist, and nothing gates them. The trigger's second arm
+had effectively fired: a `- []`-only count returned 0 for seven of nine skills, and on
+2026-09-22 a concept-matrix pass mis-parsed fenced blocks and reported `sota-golang` as
+lacking API/design probes it plainly has — two mechanical readers, two wrong answers,
+from the format alone. The operator did not wait for a third.**
+
+*The original deferral text follows, superseded — it is kept because it records why the
+item was parked, and its classification contains an error worth preserving:* Three forms
+are in use — tickable `- [ ]` (rust, js/ts), fenced shell block (python, jvm, .NET, c/c++,
+php), prose+commands (golang, ruby) — and invariant 2 gates only the heading.
+**CORRECTION 2026-09-23: golang and ruby were never "prose+commands".** That row was
+written from reading, not measuring; `extract_items.py` reports both as fenced, so the
+conversion covered **seven** fenced skills, not five. The argument for unifying is that AUDIT mode instructs the model to "verify your
 diff satisfies every item", and only the tickable form is enumerable.
 
 **That argument is an inference from reading AUDIT mode's wording, not a measurement**, which
@@ -4472,3 +4489,437 @@ reference, 34b that it stays silent on a placeholder image tag in the same names
 **The fix when it fires is never to invent a number.** Write `· unreleased`; `RELEASING.md`
 step 1 already sweeps for that marker. The three live sites were corrected that way rather
 than by guessing again.
+
+## 2026-09-21 — field report, cross-platform EDR agent: three findings, one of which found a defect in our own snippet
+
+Source: a session that **used** the library at v1.43.1 (symlink install) to ship a telemetry
+feature on a Rust + eBPF endpoint sensor. Filed as `*.local.md`, git-ignored. Highest-yield
+intake shape, per the priorities table. **Every falsifiable claim was reproduced here before
+any verdict** — the reporter's own numbers, and our own text.
+
+| idea | verdict | landed in |
+|---|---|---|
+| rules/06 is unreachable by subject routing, because the task is never *about* checking | **adopted** | router BUILD step 2 (standing load) + `sota/rules/02` §1a (the reasoning, the cost, and a falsifier) |
+| an evidence grade does not propagate from a premise to a conclusion drawn in the same breath | **adopted** | `sota/rules/03` §2, plus the §2 checklist item |
+| the exit-status rule does not name the agent harness as a consumer | **adopted with a correction** | `sota-shell-scripting/rules/01` §2a + §3 snippet + checklist. **Placement corrected**: the report filed it under §3, which is *Quoting*; the exit-status material is §2/§2a, and §2a already owned the harness-as-consumer idea for background jobs |
+| §2f's positive control is filed under a symlink heading and gets skipped | **adopted** — it had predicted this, and it recurred | `sota-shell-scripting/rules/06` §2 heading + the control paragraph + §2f's closing |
+| a new rule about benchmarking on a controlled host | **rejected — already covered**, and the reporter reached the same verdict unprompted | `sota-performance/rules/01` covers warmup and multiple samples; one exotic case (VM uptime) is not a library gap |
+| an eBPF skill | **rejected** — one session, and the reporter argued against it himself |
+
+**What we reproduced, rather than took on trust.**
+
+- **The word-boundary failure, on this machine**: `git grep -cE '\b(TODO|FIXME|XXX|HACK)\b'`
+  over the tracked tree returns **0 files**; the same sweep without `\b` returns **58**.
+  git 2.55.0, Darwin 25.6.0 — matching `rules/06` §2f's measured row exactly.
+- **§2f is at `rules/06:388`**, as cited.
+- **The duplicate check that mattered.** Finding 3 reads as a naming gap; opening the file
+  showed `rules/01` §2a *already* covers the harness consumer for background jobs, with the
+  same field-reported *"completed (exit code 0)"*. So it is an adoption **with a correction**,
+  not a new rule — and checking that claim is what surfaced the defect below.
+
+**The defect this intake found in our own text.** `rules/01`'s recommended snippet read
+
+    cmd > out.txt 2>&1; echo "EXIT=$?"        # status preserved AND output preserved
+
+and **"status preserved" is false of the compound's own status**, which is the `echo`'s. The
+library was recommending, in a comment, the exact shape the reporter broke and §2a warns
+about elsewhere in the same file. Corrected to capture (`rc=$?`) and re-raise (`exit "$rc"`),
+with the distinction stated: *recorded in a log* is not *returned to a caller*. **Evaluating
+someone else's claim of a duplicate forced the closest read of our own page, and that is
+where the finding was** — the fourth time this ledger records that pattern.
+
+**The cost we accepted, stated plainly.** The router edit moves `ROUTER_BUILD_SHA`
+(`a92b0177acadec05` → `273a969bbe2994e4`). The mirror was re-read clause by clause first: the
+change lands in BUILD steps 1–2, which `BUILD_WORKFLOW` does not model (the eval pastes the
+skills, so routing and file selection are short-circuited), so the hash was bumped **alone**,
+no re-sync — recorded at the pin. The treatment arm is therefore unchanged and the published
++0.39 is not invalidated, but **it has not been re-run against the current router**, because
+this repo holds no API key. **CORRECTION 2026-09-23: that reason was wrong.** The *public,
+committed* repo holds no key and CI has none, but a maintainer's working tree does — every
+runner reads `OPENROUTER_API_KEY` from the environment or `./.env` (gitignored; verified 0
+tracked, 0 commits in history). The re-run was available all session and was not done. The
+claim it guards — that +0.39 has not been re-measured against the current router — still
+stands; only the stated obstacle was false. The standing load is justified by a mechanism and not by a
+number, and `rules/02` §1a carries the falsifier that would take it back out.
+
+## 2026-09-21 — the over-firing control: a deferral whose blocker had been false for nine days
+
+**Adopted** as `sota-code-security` rules/10 **§5** + two checklist items. The idea is the
+mirror of the file's whole subject: rules/10 covers a control with **too little** effect, and
+this is a control with **too much** — one that fires on cases it was never meant to catch,
+degrades the outcome it exists to protect, and looks like it is working throughout, because
+*the thing that happens is what success looks like*. The metric asymmetry is the core of it:
+firing count goes **up** as an over-firing control gets worse.
+
+**Why this is a `/sota-resume` finding rather than a fresh intake.** The row was deferred on
+2026-09-11 with an explicit, checkable trigger — *"revisit when `sota-code-security` rules/10
+is split"* — and an explicit blocker: *"rules/10 is at **484/500** and putting it there would
+let the line cap choose the placement"*. **ROADMAP 55 split the file on 2026-09-12**, taking
+rules/10 to **230/500**. The trigger fired the next day and nobody came back for nine days.
+Nothing reports this: invariant 27 asserts a deferral *names* a trigger, never that the
+trigger is still unmet. Re-testing each deferral's **trigger** rather than its subject is
+what surfaced it — the same lesson this ledger recorded on 2026-09-06 for three stale
+roadmap triggers, now repeated one layer down.
+
+Written from the mechanism rather than from the source's wording; the reviewers' original
+observation (a blanket deny on a search *tool* enforces a worse substitute than a deny on the
+unsafe *behaviour*) survives as the worked shape, in our own words.
+
+## 2026-09-21 — ROADMAP 57, second of five: the c/c++ public-surface section, and 59's denominator banked
+
+**The gap was measured, not assumed, and the measurement nearly said the opposite.** Across
+the 8 files of `sota-c-cpp`, `pimpl`, `header hygiene`, `include-what-you-use`,
+`inline namespace`, `visibility`, `soname` and `forward declar` each returned **0 files**
+(positive control: `RAII`, 4 files). **`ABI` returned 7 files** — non-zero, which under this
+method means open them rather than assume. All seven are incidental: error codes *at* an ABI
+boundary (`rules/01` §7), SIMD alignment (`rules/03`), a `--addon=cert` invocation, and a
+severity table. **Nothing covered ABI as an API-design constraint**, which is the one C/C++
+adds that no other language in this tier has.
+
+**Landed in** `sota-c-cpp/rules/01` **§9** + five checklist probes. Scoped to the C/C++
+*mechanism*, with the shared design rules left to `sota-architecture` rules/02 and
+`sota-api-design`, per §57's own instruction:
+
+- the **source-compatible-but-ABI-breaking table** — adding a data member (even `private`),
+  adding the first virtual, reordering members, changing a default argument, changing an
+  `inline` body. The through-line is that the *loud* case (a changed signature → changed
+  mangled name → link error) is the safe one, and every silent case is a layout change;
+- **`pimpl`** with the trap that bites everyone who tries it: `~Widget() = default` **in the
+  header** instantiates `unique_ptr`'s deleter against an incomplete `Impl` and fails to
+  compile, so the destructor and moves must be declared there and defined in the `.cpp`;
+- **stdlib types in exported signatures.** Fetched rather than recalled: libstdc++ has had
+  **two ABIs since GCC 5.1**, selected by `_GLIBCXX_USE_CXX11_ABI`, and mixing them surfaces
+  as *"undefined references to symbols that involve types in the `std::__cxx11` namespace or
+  the tag `[abi:cxx11]`"* — quoted from GCC's own dual-ABI page;
+- **header hygiene** — forward-declare, no file-scope `using namespace`, guards,
+  `-fvisibility=hidden` by default, macros have no namespace.
+
+**Every shipped grep was run against a known-bad and a known-good header first, and one
+failed.** The stdlib-type probe originally included `unique_ptr|shared_ptr` and therefore
+flagged **this section's own recommended `pimpl` header** — a check that fires on the
+guidance beside it. Narrowed to the container types, retested: 2 hits on the bad header, 0 on
+the good. A `grep -rLn` was also corrected to `grep -rL` (`-n` is meaningless with `-L`).
+
+**A hostile re-read of the section found a defect in it, after it was written and adopted.**
+The ABI table's signature row said a changed signature fails **loudly**, because the mangled
+name changes. True of C++ — and **false at exactly the boundary this section recommends**:
+`extern "C"` has no mangling, so a changed C signature still resolves, links clean, and hands
+the old caller's arguments to the new function. The one remedy offered for the stdlib-ABI
+problem was the one place the safety net is absent, and the section did not say so. Now a
+table row of its own plus a paragraph: version a C boundary by hand, `_v2` rather than an
+edit. **Every invariant was green before and after** — nothing in this repo checks whether a
+rule is *true*, which is why a rule gets a second adversarial read after adoption, not before.
+
+**ROADMAP 59, same session, deliberately NOT swept.** Its denominator was derived twice and
+reconciled — cppcheck **2.21.0**, `--errorlist` unique ids = **342**, the same dump grouped by
+severity = **342** with buckets summing exactly — and the gosec two-registry lesson repeats:
+the **addons are a separate list**, `misra.py` alone holding **132** rule functions. At 4.5×
+the Python set, the cluster-sweep is the session the row budgets for it, and half a sweep is
+worse than none. Recorded in [LANGUAGE-TIER.md](LANGUAGE-TIER.md) so the next session starts
+past the step that has now failed twice.
+
+## 2026-09-21 — `$?` volatility: the bash half of a rule PowerShell already had
+
+**Operator intake, mid-session.** I had put the "capture `rc=$?` on the very next line"
+constraint into a private memory file; the operator's correction was that it is not a fact
+about me, it is **a rule for building and auditing shell scripts**. Reverted from memory,
+written here.
+
+**Checking where it belonged found the asymmetry.** `sota-shell-scripting/rules/07`
+(PowerShell) already carries it as both a rule (*"`if ($?)` after anything other than the
+immediately preceding native command"*) **and** an audit probe (*"Is `$?` read anywhere other
+than immediately after the command it describes?"*). The **bash** half had neither — only a
+passing mention inside an unrelated `rules/01` checklist item. Same class as the
+`sota-rust` subprocess gap: the rule exists for one language and not its neighbour.
+
+**Landed in** `rules/02` **§3a** + an audit checklist probe mirroring the PowerShell one.
+
+**The measured part, which is counter-intuitive and is why this is worth a section.** The
+habit that fixes the neighbouring bug causes this one:
+
+| form | captured status |
+|---|---|
+| `local rc=$?` | **7** — `$?` expands before `local` runs |
+| `local rc; rc=$?` | **0** — the `local rc;` declaration is itself a command |
+
+SC2155 (*"Declare and assign separately to avoid masking return values"*, quoted from
+shellcheck's own output) is **correct for command substitution**, where `local out=$(cmd)`
+hides `cmd`'s status. Applying the same split to a `$?` capture **breaks** it. Same mechanism
+— `local` has an exit status — opposite remedy. Measured 2026-09-21 on **bash 5.3.15, zsh,
+dash and sh**: all four agree, so it is the rule rather than a dialect quirk. Also measured:
+an intervening `echo` gives 0, and so does a bare `[ -n "x" ]`.
+
+**The probe is labelled a locator, not a verdict** — it hits correct captures too, and the
+fixtures showed that, so the item tells the auditor to read the two lines above each hit
+rather than treating a hit as a finding.
+
+## 2026-09-21 — the concept matrix: item-granularity alignment, and its measured error rate
+
+**Operator request:** map what each skill has uniquely, decide what should be standard across
+all languages, align it, and give the library a real template. This entry covers the *mapping*
+instrument and the first verified gap; alignment and the template are ROADMAP 60 and 61.
+
+**Why a new instrument rather than extending page 5.** `gen-skill-map.py` maps topic x
+language at **file** granularity — that is how ROADMAP 57 was found, and it is structurally
+blind to a concept missing *inside* a file that exists. Both of the day's other findings were
+of exactly that shape (the `$?` rule in bash, the ABI section in c/c++), and no file-level view
+could have reported either, because every skill involved *had* the relevant file.
+
+`scripts/gen-concept-matrix.py` + `scripts/lib/extract_items.py`: every Audit-checklist item in
+the tier, classified into **41 declared concepts**, reported as concept x language presence.
+
+**Two design decisions worth recording.**
+
+- **Presence, not counts.** `gen-skill-map.py`'s own docstring warns the two checklist body
+  formats are not comparable by volume (a checkbox bundles several commands; a fence counts per
+  line). *Presence* is format-agnostic, so the incomparability that blocks counting does not
+  apply — which is why this asks a presence question and never prints a total.
+- **A fence comment plus its commands is ONE item.** The first run classified bare `grep` lines
+  with no prose and reported **go as lacking API-design probes** while `02-design.md` plainly
+  has them. Grouping raised classification from 49–78% to 67–93% and removed that false row.
+
+**The measured error rate, published because it is the number that decides how to read the
+output: 3 of the 4 candidates checked by opening the file were vocabulary artefacts.** php SQL
+injection (the file says *"SQL built from strings"*, not "sql injection"), rust deserialization
+(the matcher lacked `serde`), rust suppression (the matcher wanted `#[allow`, the text writes
+`#![allow`). Each was fixed in the matcher in the same change — **the vocabulary is the thing
+being built**, and a dead candidate is how it gets built. So the output is a **candidate
+generator**, never a gap list, and the file says so above its own results.
+
+**The one that survived — ROADMAP 60.** Six of nine languages probe *"someone silenced the
+analyser"*; **jvm, .NET and c/c++ do not**, confirmed by reading every checklist in all three.
+Each has a prominent mechanism (`@SuppressWarnings`/`NOSONAR`, `#pragma warning disable`/
+`<NoWarn>`, `// NOLINT`/`cppcheck-suppress`). It matters because a suppression is how a green
+gate stops meaning anything — `sota-code-security` rules/10's subject, one layer down.
+
+**Honest limits, stated in the script's own header rather than here alone:** it answers "does
+this wording appear", never "is this idea covered"; every run prints a per-skill denominator;
+`--show-unmatched` lists what the vocabulary could not classify, because an item this file
+cannot classify is a hole in the file, not evidence about the skill.
+
+## 2026-09-22 — ROADMAP 60 closed: the analyser's escape hatch, in jvm, .NET and c/c++
+
+The gap the concept matrix found on 2026-09-21, closed. One checklist block per skill, in each
+tooling/CI file. **The row demanded the syntax be verified rather than recalled** — three
+mechanisms, three spellings, and a wrong one ships a probe that can never fire. It was, and
+two of the verifications changed what shipped:
+
+| skill | how the syntax was established |
+|---|---|
+| jvm | **Run.** JDK 21.0.12 in a container (no local JRE — `javac` on this host is a stub that errors with "Unable to locate a Java Runtime") |
+| .NET | **Microsoft's own in-source-suppression docs** — no local `dotnet` |
+| c/c++ | **Run.** cppcheck 2.21.0 locally; clang-tidy's forms from the LLVM docs (no local binary) |
+
+**Two measured facts that a recalled rule would have missed.**
+
+- **`@SuppressWarnings` is category-scoped, and the differential proves it.** A method
+  annotated `@SuppressWarnings("unchecked")` still emitted **both** `[rawtypes]` warnings while
+  the `unchecked` one vanished; the unannotated method emitted all three. So an auditor must
+  read the *argument*, not the annotation — and `@SuppressWarnings("all")` is its own finding.
+- **A `// cppcheck-suppress` comment is inert unless `--inline-suppr` is passed.** Measured:
+  without the flag both planted warnings still fired. With it, `memleak` was suppressed and
+  `nullPointerOutOfMemory` was **not**, because the comment must sit on the line before the
+  line the warning is *reported* on, which is not always the line you expect. So the probe
+  checks the **flag** before it reads the comments — a whole tree of suppression comments can
+  be decoration.
+
+**The bulk forms are the half a per-site grep never finds**, and each skill probes them: SpotBugs
+`excludeFilterFile` and Checkstyle suppression XML; `GlobalSuppressions.cs`, `<NoWarn>` in a
+`Directory.Build.props` that covers a whole solution, and `.editorconfig`
+`dotnet_diagnostic.*.severity = none`; cppcheck `--suppressions-list` and
+`#pragma GCC diagnostic ignored`. **Microsoft's own word for the bulk case is "baselining"**
+(*"Suppressing all current violations is sometimes referred to as baselining"*), and a large
+`GlobalSuppressions.cs` with uniform timestamps is its signature — the analyser's verdict on
+that code was never read by anyone.
+
+**Every shipped grep was run against known-bad and known-good fixtures, and one was broken.**
+`NOLINT(NEXTLINE|BEGIN)?[^(]` matched 1 of 2 blanket forms: a bare `// NOLINT` at **end of
+line** has no character after it, so `[^(]` cannot match. Corrected to `([^(]|$)`, retested at
+2 of 2, and confirmed still to discriminate — on a file with one scoped `NOLINT(check)` and one
+bare `NOLINT` it matches only the bare one. **This is exactly the failure the roadmap row
+predicted**, caught by the fixture rather than by review.
+
+**Confirmed by the instrument, not by assertion:** `gen-concept-matrix.py` now reports
+`suppressing a linter / type check` as present in **9 of 9**.
+
+## 2026-09-22 — first concept-matrix triage: 2 real gaps, 6 artefacts, 3 delegations
+
+Working ROADMAP 61's blocker (*"triage the candidates first, or the template freezes today's
+gaps"*). Eleven cells opened; the verdicts are in
+[LANGUAGE-TIER.md](LANGUAGE-TIER.md#triage-ledger--candidates-opened-and-what-they-turned-out-to-be).
+
+**Both survivors are the same shape: the BUILD rule exists and the PROBE does not.**
+
+- **jvm path traversal** — `rules/04:86` already said *"canonicalize and verify the result
+  stays under an allowed root (`Path.normalize()` + `startsWith`)"*, and **no checklist in the
+  skill probed it**. Added, with zip slip alongside: an archive entry name is attacker-
+  controlled, and normalizing without then comparing is a no-op.
+- **js/ts SQL injection** — `rules/05:178` says *"never interpolate into SQL (parameterized
+  queries only)"* inside a *"same family"* aside, and the checklist had **no SQL probe at
+  all** in a skill whose own SKILL.md lists *"untrusted input reaching eval/innerHTML/exec/
+  SQL"* as CRITICAL. Added, including `$queryRaw` (parameterized) vs `$queryRawUnsafe` (not),
+  which differ by one word.
+
+This is the **third independent instance** of that shape in two days — after the `$?` rule
+(bash had neither half, PowerShell had both) and the analyser escape hatch (ROADMAP 60). It is
+invisible to a file-level matrix, invisible to a reader of the prose, and invisible to every
+gate we have: **nothing checks that a stated rule has a way to be detected.**
+
+**A delegation is not a gap, and the instrument was reporting it as one.** rust, js/ts and
+c/c++ have no TLS probe because router cross-cutting rule 18 puts transport/PKI in
+`sota-network-security` rules/06 library-wide. Three skills were being flagged for *obeying
+the router*. The concept is now `conditional`, with the reason recorded at the declaration so
+a later reader does not "fix" it.
+
+**The matcher is part of the artefact.** Six candidates died on reading, and each one's
+vocabulary hole was closed in the same change — `prepared` never matches `prepareStatement`
+(prepare+statement, no `d`), `child_process`/`Process.Start` were absent, `Path.Combine` was
+absent. The candidate list is a **queue that shrinks as it is worked**, not a scoreboard, and
+a dead candidate that leaves the matcher untouched will simply be re-derived next run.
+
+## 2026-09-22 — ROADMAP 61 closed: a template, and the ratchet that is the real half
+
+**The operator's decision was "a real template plus a gate", and the gate turned out to be
+the load-bearing half** — worth recording, because the template was the part that was asked
+for and is the part that will not hold on its own.
+
+**Why a template alone cannot work.** It is read **once**, when a skill is created. Every
+drift this library has measured happened *afterwards*: ROADMAP 57's four missing API/design
+sections, ROADMAP 60's three missing suppression probes, and the two probe-less rules found
+in triage the same morning. A document that is read once cannot defend against the next
+edit, and prose has already failed this exact test (which is CONVENTIONS-LEDGER's first
+filter — *has it already failed?* — satisfied).
+
+**So the enforcement is `gen-concept-matrix.py --assert-universal`**, wired into the CI
+invariants job: **12 concepts pinned at 9/9**, failing if any language stops probing one.
+Watched to fail first — stripping `rubocop:disable` from `sota-ruby`'s checklist produced
+`REGRESSED: suppressing a linter / type check now absent from: ruby`, and it passed again on
+restore. The floor deliberately includes `suppressing a linter / type check`, which only
+reached 9/9 that same day: **the gate's first job is to defend work that was just done**,
+which is when a regression is cheapest to make and least likely to be noticed.
+
+**`docs/SKILL-TEMPLATE.md`** carries the skeleton — frontmatter (and that the `description`
+is the *whole* routing classifier, inert body notwithstanding), the body spine, the rules-file
+shape, the language file spine, the 12 universal concepts as a checklist, and the pre-PR
+steps. It states in its own opening that it is **not** the gate and names what is.
+
+**It lives in `docs/`, not `skills/`,** and the reason is mechanical: every gate enumerates
+skills with `git ls-files skills/*/SKILL.md`, so a template under `skills/` would be counted
+as a real skill by invariants 6, 10 and 15 and would have to satisfy the 500-line cap and the
+`## Audit checklist` requirement.
+
+**One thing the template can only ask for, because nothing can yet gate it:** *for every rule
+you write, how would an auditor detect a violation?* Three instances in two days shipped a
+BUILD rule with no probe. The template makes it a reviewer's question; making it a gate needs
+a way to tell "this rule needs a probe" from "this rule is prose", which is not yet solved.
+
+## 2026-09-22 — ROADMAP 57 closed: API/design in js/ts, php and ruby, every claim run
+
+The last three of five. Each section is scoped to the language **mechanism**, with the shared
+design rules left to `sota-architecture` rules/02 and `sota-api-design`, per §57's own
+instruction. **Every load-bearing claim was executed, not recalled** — all three runtimes were
+available, so there was no excuse for a doc-derived rule:
+
+| claim | measured |
+|---|---|
+| `"exports"` encapsulates a package | **Node 22.22.1** — entry resolved; `require('pkg/lib/internal.js')` failed **`ERR_PACKAGE_PATH_NOT_EXPORTED`** |
+| PHP `readonly` rejects writes | **8.5.9** — `Error: Cannot modify readonly property V::$x` |
+| PHP narrows/widens asymmetrically | widening a parameter **accepted**; narrowing is **fatal** at class declaration (*"must be compatible with"*) |
+| adding a method to a released interface | **fatal** for existing implementers (*"contains 1 abstract method"*) |
+| Ruby `private` and `def self.` | **4.0.6, differential** — instance method raised `NoMethodError`, the class method was **still callable** |
+| Ruby `private_constant` | `NameError: private constant B::SECRET referenced`; a bare constant is reachable with no declaration |
+
+**The three languages needed different amounts of writing, which only measuring showed.**
+js/ts and php had nothing: `"exports"` appeared only in rules/07 as *packaging*, and php's
+`semver` mention was a **consumer** constraint (`^` ranges), a different question from what a
+publisher may ship. Ruby already covered semver honesty (`rules/04`) and
+`respond_to_missing?`, so its section is narrower and inverted to Ruby's actual default —
+**nothing is hidden**, so the audit question is not *"what did we export"* but *"what did we
+fail to hide"*.
+
+**A probe that does not discriminate is labelled, not shipped as if it did.** Ruby's
+bare-constant locator fires on a *correct* file too, because `private_constant` usually sits on
+the **next** line and `grep -v` is line-scoped — verified against a fixture that does exactly
+that. It now says so and prints two counts to compare instead.
+
+**And the gate was watched to fail — after a first attempt that was itself inert.** Stripping
+`interface`/`final`/`readonly` from php's checklist did **not** trip `--assert-universal`,
+because the text still said *"Public surface"* and *"deprecated"*, which the matcher also
+accepts. Mutating against the matcher's **actual** vocabulary produced
+`REGRESSED: public API surface & evolution now absent from: php`, and restore returned it to
+green. **The first mutation looked like a passing gate and was a broken probe** — the exact
+failure the negative-control harness exists to catch, met here by hand.
+
+`public API surface & evolution` is now pinned in `UNIVERSAL_FLOOR` (13 concepts), so the five
+sections written over two days cannot silently regress.
+
+## 2026-09-22 — gap-check 3 of 9: sota-c-cpp against cppcheck's 342 checks
+
+Denominator **342**, reconciled two ways the day before and re-confirmed here by parsing
+`--errorlist` (342 of 342 parsed). MISRA remains a **second registry** (132 rule functions in
+`misra.py`) that this skill delegates to by name.
+
+**The twelve obvious clusters were all already covered** — buffer/bounds, null, uninitialised,
+leak/UAF, integer, resource, STL/iterator, class/ctor, format string, banned APIs, exception
+safety, style — 3 to 6 files each, against a control of 4. **The gaps were entirely in the
+unclustered tail**, which is the part a keyword clustering throws away and the reason the
+method says to look at it rather than report a tidy cluster table.
+
+**Four closed, as `rules/01` §8a — construction and destruction, all measured on clang 17:**
+
+| trap | measured |
+|---|---|
+| virtual call in a constructor | dispatched to **BASE**, not the derived override — the derived vtable is not installed yet. Pure-virtual there is UB |
+| initialiser list order | members init in **declaration** order, not list order. `M() : b(1), a(b+10)` read `b` before it existed — and the value **changed with the build**, `a=70261` at `-O0` vs `a=10` under `-DNDEBUG`, which is the UB signature |
+| `assert` with a side effect | `assert(++n == 1)` left `n==1` normally and **`n==0` under `-DNDEBUG`** — the increment is gone in the build you ship |
+| self-assignment in `operator=` | rule of five says *declare* all five; it does not say the bodies are correct |
+
+**Invariant 32 rejected my own probe, twice, and both rejections were right.** The first shipped
+a grep with stderr discarded and an or-echo announcing absence — the exact `rules/06` §2d
+anti-pattern, written hours after I had cited that rule elsewhere in the same file. Rewritten
+to branch on the exit code and keep stderr. The **second** rejection was of the *comment*
+explaining the fix, because it spelled the pattern out literally: the same trap invariant 30's
+header records against itself. Refer to such a pattern by name, never by its characters, in
+prose that shares a file with the check.
+
+
+## 2026-09-23 — the checklist format unified: 362 items, 7 skills, one form
+
+Operator instruction, closing a deferral whose second arm had effectively fired. All nine
+language skills now use tickable `- [ ]` bullets — **the language tier only; 14 files in
+`sota-web-frameworks` and `sota-ml-engineering` remain fenced and ungated**; `gen-concept-matrix.py --assert-format`
+runs in CI and rejects a fenced checklist.
+
+**Why the format was never cosmetic.** AUDIT mode tells the model to *"verify your diff
+satisfies every item"*, which cannot be followed against a shell block. Two mechanical readers
+had already been wrong because of it: a `- []`-only count returned **0 for seven of nine**
+skills, and a concept-matrix pass reported `sota-golang` as lacking API/design probes that its
+`02-design.md` plainly has.
+
+**The conversion was mechanical and the review was not.** `scripts/lib/unify_checklist.py`
+groups each `#` comment with the commands under it — the same grouping `extract_items.py`
+uses — and leaves non-shell fences alone. Content preservation was asserted per file: the
+prefix before `## Audit checklist` must be **byte-identical**, and every command line in the
+original must still appear. Final result: **362 items, 0 commands lost** — counted with
+`extract_items.py` after the final conversion. **CORRECTION 2026-09-23: the commit message
+and the first draft of this entry said 377.** That figure was a sum of the converter's
+per-run reports taken mid-process, before the grouping fixes changed item boundaries —
+arithmetic on a remembered number rather than a count of the result.
+
+**Three bugs, and the first was destructive.** The first draft returned only the text from the
+heading onward and **truncated six `sota-dotnet` files to their checklists** — caught by a line
+count, not by the item count, which still matched. Restored from the commit; the converter now
+asserts the prefix survives. Then: a wrapper that counted backticks for parity **split a
+command across two lines** when the command itself contained a backtick (php's
+`` grep -rn '`' `` probe), fixed by treating a code span as atomic; and shell line
+continuations (`\`) being emitted as two commands, plus `# ^ trailing note` comments becoming
+the *heading of the next probe* — 16 of each across the tier.
+
+**The conversion also exposed a latent defect no gate could see.** `sota-c-cpp` `rules/01`
+cited `rules/06 §2d` meaning **`sota-shell-scripting`**'s, but inside a code fence — where
+invariant 18 never looked. As prose it resolved against c/c++'s own `rules/06` and failed
+immediately. Qualified with its skill name. A reference hidden in a fence is unchecked.
+
+**Measured side effect:** concept-classification coverage rose in every converted skill
+(c/c++ 73→83%, jvm 92.5→95.2%, go 78.7→84.5%), because a bullet carries the prose a bare
+command line did not.

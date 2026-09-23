@@ -295,49 +295,40 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
 
 ## Audit checklist
 
-```bash
-# Naked servers — HIGH
-grep -rn 'http.ListenAndServe\|http.ListenAndServeTLS' --include='*.go' .
-grep -rn -A8 'http.Server{' --include='*.go' .   # verify all four timeouts present
-
-# Default client / package-level helpers — HIGH
-grep -rnE 'http\.(Get|Post|PostForm|Head)\(' --include='*.go' .
-grep -rn 'http.DefaultClient' --include='*.go' .
-grep -rn -A6 'http.Client{' --include='*.go' .   # Timeout set? Transport tuned?
-grep -rn 'MaxIdleConnsPerHost' --include='*.go' .  # absent + high fan-out = bottleneck
-
-# Body hygiene
-grep -rn 'client.Do\|\.Get(\|\.Post(' --include='*.go' .   # then verify defer Close + drain near each
-grep -rn 'resp.Body.Close' --include='*.go' .
-grep -rn 'io.ReadAll(r.Body\|io.ReadAll(req.Body' --include='*.go' .  # MaxBytesReader present? — HIGH
-grep -rn 'MaxBytesReader' --include='*.go' .
-
-# Shutdown
-grep -rn 'signal.NotifyContext\|signal.Notify' --include='*.go' .
-grep -rn 'srv.Shutdown\|.Shutdown(' --include='*.go' .      # absent => no graceful drain — MEDIUM
-grep -rn 'ErrServerClosed' --include='*.go' .
-
-# Per-request client/transport construction — MEDIUM perf
-grep -rn -B3 'http.Client{' --include='*.go' . | grep -E 'func.*\(w http|Handler'
-
-# Logging
-grep -rnE '\b(fmt\.Print|log\.Print)' --include='*.go' . | grep -v _test.go   # LOW
-grep -rn 'slog.' --include='*.go' . | grep -v Context     # request paths should use *Context
-grep -rnE '(password|token|secret|authorization|api_?key)' --include='*.go' . | grep -i 'slog\|log\.'  # PII in logs — HIGH
-
-# Middleware ResponseWriter wrappers missing Flush/Hijack passthrough
-grep -rn -A4 'http.ResponseWriter$' --include='*.go' . | grep 'struct'
-
-# Tooling
-golangci-lint run --enable-only bodyclose,noctx,gosec ./...   # noctx: requests without ctx
-go vet ./...
-
-# --- Cookies and redirects (§4a, §4b) ---
-grep -rn 'SetCookie' --include='*.go' . | grep -v _test          # then read each for Secure/HttpOnly/SameSite [HIGH]
-grep -rnE 'http\.Cookie\{' -A6 --include='*.go' . | grep -L 'HttpOnly' 2>/dev/null
-grep -rnE 'Redirect\(|Location.*r\.(URL|Form|Header)' --include='*.go' .   # open redirect [HIGH]
-grep -rn 'CheckRedirect' --include='*.go' .                      # absent = headers cross origins [MEDIUM]
-```
+- [ ] **Naked servers — HIGH** —
+      `grep -rn 'http.ListenAndServe\|http.ListenAndServeTLS' --include='*.go' .` ;
+      `grep -rn -A8 'http.Server{' --include='*.go' .` (verify all four timeouts present)
+- [ ] **Default client / package-level helpers — HIGH** —
+      `grep -rnE 'http\.(Get|Post|PostForm|Head)\(' --include='*.go' .` ;
+      `grep -rn 'http.DefaultClient' --include='*.go' .` ;
+      `grep -rn -A6 'http.Client{' --include='*.go' .` (Timeout set? Transport tuned?);
+      `grep -rn 'MaxIdleConnsPerHost' --include='*.go' .` (absent + high fan-out = bottleneck)
+- [ ] **Body hygiene** — `grep -rn 'client.Do\|\.Get(\|\.Post(' --include='*.go' .` (then verify
+      defer Close + drain near each); `grep -rn 'resp.Body.Close' --include='*.go' .` ;
+      `grep -rn 'io.ReadAll(r.Body\|io.ReadAll(req.Body' --include='*.go' .` (MaxBytesReader
+      present? — HIGH); `grep -rn 'MaxBytesReader' --include='*.go' .`
+- [ ] **Shutdown** — `grep -rn 'signal.NotifyContext\|signal.Notify' --include='*.go' .` ;
+      `grep -rn 'srv.Shutdown\|.Shutdown(' --include='*.go' .` (absent => no graceful drain —
+      MEDIUM); `grep -rn 'ErrServerClosed' --include='*.go' .`
+- [ ] **Per-request client/transport construction — MEDIUM perf** —
+      `grep -rn -B3 'http.Client{' --include='*.go' . | grep -E 'func.*\(w http|Handler'`
+- [ ] **Logging** —
+      `grep -rnE '\b(fmt\.Print|log\.Print)' --include='*.go' . | grep -v _test.go` (LOW);
+      `grep -rn 'slog.' --include='*.go' . | grep -v Context` (request paths should use
+      *Context);
+      `grep -rnE '(password|token|secret|authorization|api_?key)' --include='*.go' . | grep -i 'slog\|log\.'`
+      (PII in logs — HIGH)
+- [ ] **Middleware ResponseWriter wrappers missing Flush/Hijack passthrough** —
+      `grep -rn -A4 'http.ResponseWriter$' --include='*.go' . | grep 'struct'`
+- [ ] **Tooling** — `golangci-lint run --enable-only bodyclose,noctx,gosec ./...` (noctx:
+      requests without ctx); `go vet ./...`
+- [ ] **--- Cookies and redirects (§4a, §4b) ---** —
+      `grep -rn 'SetCookie' --include='*.go' . | grep -v _test` (then read each for
+      Secure/HttpOnly/SameSite [HIGH]);
+      `grep -rnE 'http\.Cookie\{' -A6 --include='*.go' . | grep -L 'HttpOnly' 2>/dev/null` ;
+      `grep -rnE 'Redirect\(|Location.*r\.(URL|Form|Header)' --include='*.go' .` (open redirect
+      [HIGH]); `grep -rn 'CheckRedirect' --include='*.go' .` (absent = headers cross origins
+      [MEDIUM])
 
 Severity guide: no server timeouts internet-facing HIGH; default client in
 service HIGH; unbounded body read HIGH; missing graceful shutdown MEDIUM;

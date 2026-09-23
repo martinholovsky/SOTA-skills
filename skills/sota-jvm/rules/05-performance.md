@@ -64,23 +64,18 @@ proper benchmark harness; never tune GC flags by guess. Cross-reference
 
 ## Audit checklist
 
-```bash
-# Allocation/boxing on hot paths — LOW/MEDIUM (verify with profiler)
-grep -rnE '\+ ?"' --include='*.java' . | grep -iE 'for|while|loop'        # string concat in loops
-grep -rnE 'new (Integer|Long|Double|Boolean)\(' --include='*.java' .       # boxing / deprecated ctors
-grep -rnE 'List<Integer>|Map<Integer,|Map<.*,Integer>' --include='*.java' . # boxing-heavy collections
-
-# GC/heap flags sane and container-aware?
-grep -rnE 'Xmx|Xms|MaxRAMPercentage|UseZGC|UseG1GC|UseParallelGC' Dockerfile* k8s/ deploy/ *.sh 2>/dev/null
-grep -rn 'ZGenerational' Dockerfile* k8s/ deploy/ *.sh 2>/dev/null   # obsolete since JDK 24 (JEP 490)
-grep -rn 'UseContainerSupport' . 2>/dev/null
-
-# Benchmark hygiene — verify JMH, not nanoTime loops
-grep -rn 'System.nanoTime\|currentTimeMillis' --include='*.java' . | grep -i bench
-grep -rln '@Benchmark' --include='*.java' . || echo "no JMH benchmarks"
-
-# Native image config present if used?
-grep -rn 'native-image\|GraalVM\|reflect-config\|reachability-metadata' . 2>/dev/null
-
-# Profile first: JFR (-XX:StartFlightRecording) or async-profiler — no static grep
-```
+- [ ] **Allocation/boxing on hot paths — LOW/MEDIUM (verify with profiler)** —
+      `grep -rnE '\+ ?"' --include='*.java' . | grep -iE 'for|while|loop'` (string concat in
+      loops); `grep -rnE 'new (Integer|Long|Double|Boolean)\(' --include='*.java' .` (boxing /
+      deprecated ctors);
+      `grep -rnE 'List<Integer>|Map<Integer,|Map<.*,Integer>' --include='*.java' . # boxing-heavy collections`
+- [ ] **GC/heap flags sane and container-aware?** —
+      `grep -rnE 'Xmx|Xms|MaxRAMPercentage|UseZGC|UseG1GC|UseParallelGC' Dockerfile* k8s/ deploy/ *.sh 2>/dev/null`
+      ; `grep -rn 'ZGenerational' Dockerfile* k8s/ deploy/ *.sh 2>/dev/null` (obsolete since JDK
+      24 (JEP 490)); `grep -rn 'UseContainerSupport' . 2>/dev/null`
+- [ ] **Benchmark hygiene — verify JMH, not nanoTime loops** —
+      `grep -rn 'System.nanoTime\|currentTimeMillis' --include='*.java' . | grep -i bench` ;
+      `grep -rln '@Benchmark' --include='*.java' . || echo "no JMH benchmarks"`
+- [ ] **Native image config present if used?** —
+      `grep -rn 'native-image\|GraalVM\|reflect-config\|reachability-metadata' . 2>/dev/null`
+- [ ] **Profile first: JFR (-XX:StartFlightRecording) or async-profiler — no static grep**

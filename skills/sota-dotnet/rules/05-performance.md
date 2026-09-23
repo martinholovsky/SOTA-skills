@@ -61,22 +61,18 @@ profiler before optimizing. Cross-reference `sota-performance` for methodology.
 
 ## Audit checklist
 
-```bash
-# Allocation/boxing on hot paths — LOW/MEDIUM (verify with profiler)
-grep -rnE '\+ ?"' --include='*.cs' . | grep -iE 'for ?\(|foreach|while'      # string concat in loops
-grep -rnE 'string\.Format|\$"' --include='*.cs' . | head                      # hot-path formatting
-grep -rnE '\.ToList\(\)|\.ToArray\(\)' --include='*.cs' . | head              # needless materialization in loops
-
-# Server GC configured for a server app?
-grep -rnE 'ServerGarbageCollection|ConcurrentGarbageCollection' *.csproj runtimeconfig* 2>/dev/null
-
-# Span/pooling opportunities (hot path) — LOW
-grep -rnE 'new byte\[|Substring\(|Split\(' --include='*.cs' . | head           # Span/ArrayPool candidates
-
-# Benchmark hygiene — verify BenchmarkDotNet, not Stopwatch loops
-grep -rnE 'Stopwatch' --include='*.cs' . | grep -i bench | head
-grep -rnE '\[Benchmark\]|MemoryDiagnoser' --include='*.cs' . || echo "no BenchmarkDotNet benchmarks"
-
-# Native AOT / trimming used? verify trim-safety
-grep -rnE 'PublishAot|PublishTrimmed|IsAotCompatible' *.csproj 2>/dev/null
-```
+- [ ] **Allocation/boxing on hot paths — LOW/MEDIUM (verify with profiler)** —
+      `grep -rnE '\+ ?"' --include='*.cs' . | grep -iE 'for ?\(|foreach|while'` (string concat
+      in loops); `grep -rnE 'string\.Format|\$"' --include='*.cs' . | head` (hot-path
+      formatting); `grep -rnE '\.ToList\(\)|\.ToArray\(\)' --include='*.cs' . | head` (needless
+      materialization in loops)
+- [ ] **Server GC configured for a server app?** —
+      `grep -rnE 'ServerGarbageCollection|ConcurrentGarbageCollection' *.csproj runtimeconfig* 2>/dev/null`
+- [ ] **Span/pooling opportunities (hot path) — LOW** —
+      `grep -rnE 'new byte\[|Substring\(|Split\(' --include='*.cs' . | head` (Span/ArrayPool
+      candidates)
+- [ ] **Benchmark hygiene — verify BenchmarkDotNet, not Stopwatch loops** —
+      `grep -rnE 'Stopwatch' --include='*.cs' . | grep -i bench | head` ;
+      `grep -rnE '\[Benchmark\]|MemoryDiagnoser' --include='*.cs' . || echo "no BenchmarkDotNet benchmarks"`
+- [ ] **Native AOT / trimming used? verify trim-safety** —
+      `grep -rnE 'PublishAot|PublishTrimmed|IsAotCompatible' *.csproj 2>/dev/null`

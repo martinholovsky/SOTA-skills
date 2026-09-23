@@ -65,23 +65,17 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
 
 ## Audit checklist
 
-```bash
-# Null-forgiving overuse — MEDIUM (defeats NRT)
-grep -rnE '[A-Za-z0-9_)\]]\!\.' --include='*.cs' . | grep -v '!=' | head    # x!.Member
-# Is NRT even enabled?
-grep -rniE '<Nullable>\s*enable' . --include='*.csproj' --include='Directory.Build.props' || echo "NRT not enabled — HIGH"
-
-# Swallowed exceptions / throw ex — MEDIUM
-grep -rnzoE 'catch\s*\([^)]*\)\s*\{\s*\}' --include='*.cs' .
-grep -rnE 'throw ex;' --include='*.cs' .                     # loses stack trace
-grep -rnE 'catch \(Exception' --include='*.cs' . | head
-
-# Legacy idioms — LOW
-grep -rnE '\bclass\b' --include='*.cs' . | head             # DTOs that should be records?
-grep -rnE 'namespace [A-Za-z0-9_.]+\s*\{' --include='*.cs' .  # non-file-scoped namespaces
-
-# Multiple enumeration / LINQ on hot path — LOW (verify)
-grep -rnE '\.Where\(|\.Select\(|\.Count\(\)' --include='*.cs' . | head
-
-# Broad analyzer pass (idioms): enable .NET analyzers + IDE rules in CI (rules/06)
-```
+- [ ] **Null-forgiving overuse — MEDIUM (defeats NRT)** —
+      `grep -rnE '[A-Za-z0-9_)\]]\!\.' --include='*.cs' . | grep -v '!=' | head` (x!.Member)
+- [ ] **Is NRT even enabled?** —
+      `grep -rniE '<Nullable>\s*enable' . --include='*.csproj' --include='Directory.Build.props' || echo "NRT not enabled — HIGH"`
+- [ ] **Swallowed exceptions / throw ex — MEDIUM** —
+      `grep -rnzoE 'catch\s*\([^)]*\)\s*\{\s*\}' --include='*.cs' .` ;
+      `grep -rnE 'throw ex;' --include='*.cs' .` (loses stack trace);
+      `grep -rnE 'catch \(Exception' --include='*.cs' . | head`
+- [ ] **Legacy idioms — LOW** — `grep -rnE '\bclass\b' --include='*.cs' . | head` (DTOs that
+      should be records?); `grep -rnE 'namespace [A-Za-z0-9_.]+\s*\{' --include='*.cs' .`
+      (non-file-scoped namespaces)
+- [ ] **Multiple enumeration / LINQ on hot path — LOW (verify)** —
+      `grep -rnE '\.Where\(|\.Select\(|\.Count\(\)' --include='*.cs' . | head`
+- [ ] **Broad analyzer pass (idioms): enable .NET analyzers + IDE rules in CI (rules/06)**

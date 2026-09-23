@@ -144,35 +144,28 @@ Set centrally (middleware or webserver), not per-page:
 
 Run from repo root; verify each hit manually.
 
-```bash
-# Session config — effective values, not file greps alone
-php -r 'foreach (["use_strict_mode","use_only_cookies","cookie_secure","cookie_httponly","cookie_samesite"] as $k) echo "session.$k=", ini_get("session.$k"), PHP_EOL;'
-grep -rn 'session_regenerate_id' --include='*.php' src/   # absent near login = HIGH
-grep -rnE 'session_id\s*\(\s*\$' --include='*.php' src/   # attacker-settable ID
-
-# Password handling
-grep -rnE '\b(md5|sha1|crypt)\s*\(' --include='*.php' src/ | grep -iE 'pass|pwd'
-grep -rn 'password_hash' --include='*.php' src/
-grep -rn 'password_needs_rehash' --include='*.php' src/   # absent = MEDIUM (stuck costs)
-
-# Weak randomness / timing-unsafe compares — HIGH where security-relevant
-grep -rnE '\b(rand|mt_rand|uniqid|str_shuffle|array_rand)\s*\(' --include='*.php' src/
-grep -rnE '(===?)\s*\$.*(token|signature|hmac|hash)' -i --include='*.php' src/
-grep -rn 'hash_equals' --include='*.php' src/
-
-# Crypto
-grep -rn 'mcrypt' --include='*.php' src/                  # removed 7.2 — abandoned code
-grep -rnE "openssl_encrypt\([^)]*(cbc|ecb)" -i --include='*.php' src/
-grep -rn 'sodium_crypto' --include='*.php' src/
-
-# CSRF — token verified centrally? exclusions?
-grep -rnE '(csrf|_token)' -il --include='*.php' src/ | head
-grep -rn 'VerifyCsrfToken' -r app/ 2>/dev/null            # e.g. Laravel: check $except
-
-# ini hardening + headers
-php -r 'foreach (["display_errors","expose_php","allow_url_include","allow_url_fopen","open_basedir","disable_functions"] as $k) echo "$k=", ini_get($k), PHP_EOL;'
-curl -sI https://target/ | grep -iE 'content-security|strict-transport|x-content-type|x-powered-by'
-```
+- [ ] **Session config — effective values, not file greps alone** —
+      `php -r 'foreach (["use_strict_mode","use_only_cookies","cookie_secure","cookie_httponly","cookie_samesite"] as $k) echo "session.$k=", ini_get("session.$k"), PHP_EOL;'`
+      ; `grep -rn 'session_regenerate_id' --include='*.php' src/` (absent near login = HIGH);
+      `grep -rnE 'session_id\s*\(\s*\$' --include='*.php' src/` (attacker-settable ID)
+- [ ] **Password handling** —
+      `grep -rnE '\b(md5|sha1|crypt)\s*\(' --include='*.php' src/ | grep -iE 'pass|pwd'` ;
+      `grep -rn 'password_hash' --include='*.php' src/` ;
+      `grep -rn 'password_needs_rehash' --include='*.php' src/` (absent = MEDIUM (stuck costs))
+- [ ] **Weak randomness / timing-unsafe compares — HIGH where security-relevant** —
+      `grep -rnE '\b(rand|mt_rand|uniqid|str_shuffle|array_rand)\s*\(' --include='*.php' src/` ;
+      `grep -rnE '(===?)\s*\$.*(token|signature|hmac|hash)' -i --include='*.php' src/` ;
+      `grep -rn 'hash_equals' --include='*.php' src/`
+- [ ] **Crypto** — `grep -rn 'mcrypt' --include='*.php' src/` (removed 7.2 — abandoned code);
+      `grep -rnE "openssl_encrypt\([^)]*(cbc|ecb)" -i --include='*.php' src/` ;
+      `grep -rn 'sodium_crypto' --include='*.php' src/`
+- [ ] **CSRF — token verified centrally? exclusions?** —
+      `grep -rnE '(csrf|_token)' -il --include='*.php' src/ | head` ;
+      `grep -rn 'VerifyCsrfToken' -r app/ 2>/dev/null` (e.g. Laravel: check $except)
+- [ ] **ini hardening + headers** —
+      `php -r 'foreach (["display_errors","expose_php","allow_url_include","allow_url_fopen","open_basedir","disable_functions"] as $k) echo "$k=", ini_get($k), PHP_EOL;'`
+      ;
+      `curl -sI https://target/ | grep -iE 'content-security|strict-transport|x-content-type|x-powered-by'`
 
 Severity guide: fixation (no strict mode + no regeneration) HIGH; md5/sha1
 passwords HIGH; predictable tokens HIGH; missing CSRF on state change HIGH;

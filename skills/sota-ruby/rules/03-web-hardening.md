@@ -154,39 +154,28 @@ minimums:
 Run from repo root; verify each hit manually. Rails apps: run `brakeman -q`
 first — it covers XSS/mass-assignment/redirect sinks mechanically.
 
-```bash
-# Escaping bypasses — CRITICAL if user-influenced
-grep -rnE '\.html_safe\b|raw\s*\(|<%==' --include='*.erb' --include='*.rb' app/ lib/ views/ 2>/dev/null
-# Sinatra/plain-ERB apps: is auto-escape on? absent = HIGH
-grep -rn "escape_html" --include='*.rb' . | head -3
-
-# Mass assignment
-grep -rn "permit!" --include='*.rb' .
-grep -rnE '(new|create|update|assign_attributes)\s*\(\s*params\b' --include='*.rb' . | grep -v permit
-grep -rnE 'permit\([^)]*(:role|:admin|:account_id|:state)' --include='*.rb' .
-
-# CSRF
-grep -rn "skip_before_action :verify_authenticity_token" --include='*.rb' .
-grep -rn "protect_from_forgery" --include='*.rb' . | head
-grep -rn "Rack::Protection" --include='*.rb' config.ru 2>/dev/null | head -1  # Sinatra: absent = HIGH
-
-# Sessions / cookies
-grep -rnE "Rack::Session::Cookie" --include='*.rb' config.ru 2>/dev/null | grep -v "secure: true"
-grep -rn "reset_session" --include='*.rb' . | head -1   # absent around login = MEDIUM
-grep -rn "secret_key_base\|SESSION_SECRET" --include='*.rb' --include='*.yml' . | grep -vE "ENV|credentials"
-
-# Redirects / SSRF
-grep -rnE 'redirect(_to)?\s*\(?\s*params' --include='*.rb' .
-grep -rn "allow_other_host: true" --include='*.rb' .
-grep -rnE '(Net::HTTP|URI\.open|Faraday|HTTParty)[^#]*params' --include='*.rb' .
-
-# Uploads / downloads
-grep -rnE 'send_file\s*\(?\s*params|send_file[^,]*#\{' --include='*.rb' .
-grep -rn "original_filename" --include='*.rb' . | grep -v basename
-
-# Transport
-grep -rn "force_ssl" --include='*.rb' config/ 2>/dev/null | head -1
-```
+- [ ] **Escaping bypasses — CRITICAL if user-influenced** —
+      `grep -rnE '\.html_safe\b|raw\s*\(|<%==' --include='*.erb' --include='*.rb' app/ lib/ views/ 2>/dev/null`
+- [ ] **Sinatra/plain-ERB apps: is auto-escape on? absent = HIGH** —
+      `grep -rn "escape_html" --include='*.rb' . | head -3`
+- [ ] **Mass assignment** — `grep -rn "permit!" --include='*.rb' .` ;
+      `grep -rnE '(new|create|update|assign_attributes)\s*\(\s*params\b' --include='*.rb' . | grep -v permit`
+      ; `grep -rnE 'permit\([^)]*(:role|:admin|:account_id|:state)' --include='*.rb' .`
+- [ ] **CSRF** — `grep -rn "skip_before_action :verify_authenticity_token" --include='*.rb' .` ;
+      `grep -rn "protect_from_forgery" --include='*.rb' . | head` ;
+      `grep -rn "Rack::Protection" --include='*.rb' config.ru 2>/dev/null | head -1` (Sinatra:
+      absent = HIGH)
+- [ ] **Sessions / cookies** —
+      `grep -rnE "Rack::Session::Cookie" --include='*.rb' config.ru 2>/dev/null | grep -v "secure: true"`
+      ; `grep -rn "reset_session" --include='*.rb' . | head -1` (absent around login = MEDIUM);
+      `grep -rn "secret_key_base\|SESSION_SECRET" --include='*.rb' --include='*.yml' . | grep -vE "ENV|credentials"`
+- [ ] **Redirects / SSRF** — `grep -rnE 'redirect(_to)?\s*\(?\s*params' --include='*.rb' .` ;
+      `grep -rn "allow_other_host: true" --include='*.rb' .` ;
+      `grep -rnE '(Net::HTTP|URI\.open|Faraday|HTTParty)[^#]*params' --include='*.rb' .`
+- [ ] **Uploads / downloads** —
+      `grep -rnE 'send_file\s*\(?\s*params|send_file[^,]*#\{' --include='*.rb' .` ;
+      `grep -rn "original_filename" --include='*.rb' . | grep -v basename`
+- [ ] **Transport** — `grep -rn "force_ssl" --include='*.rb' config/ 2>/dev/null | head -1`
 
 Severity guide: `html_safe`/`raw` on user input, `send_file params` —
 CRITICAL. `permit!`, missing CSRF on cookie-auth state changes, unescaped

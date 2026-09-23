@@ -276,48 +276,35 @@ Run from repo root; verify each hit manually.
 **In-band sentinels — a value standing in for absence** (§4a). Go's own `-1` from
 `strings.Index` is documented and fine when tested immediately; yours is not:
 
-```bash
-grep -rnE 'return -1$|return -1,' --include='*.go' .        # producer — prefer (T, bool) comma-ok
-grep -rnE ':?= .*strconv\.Atoi\(' --include='*.go' . | grep -v 'err'   # the 0 is in-band if err is dropped
-```
+- [ ] `grep -rnE 'return -1$|return -1,' --include='*.go' .` (producer — prefer (T, bool)
+      comma-ok); `grep -rnE ':?= .*strconv\.Atoi\(' --include='*.go' . | grep -v 'err'` (the 0
+      is in-band if err is dropped)
 
-```bash
-# Discarded errors (also rely on errcheck via golangci-lint)
-grep -rnE '^\s*[a-zA-Z_].*,\s*_\s*(:?=).*\(' --include='*.go' . | grep -v _test.go
-grep -rn '_ = ' --include='*.go' . | grep -vE '(test|//)'
-
-# String matching on errors — MEDIUM+
-grep -rnE 'strings\.(Contains|HasPrefix|HasSuffix)\(\s*err\.Error\(\)' --include='*.go' .
-grep -rn '\.Error() ==' --include='*.go' .
-
-# == comparison against sentinels (should be errors.Is) — MEDIUM
-grep -rnE 'err\s*[!=]=\s*(sql\.ErrNoRows|io\.EOF|os\.ErrNotExist|context\.(Canceled|DeadlineExceeded))' --include='*.go' .
-
-# %v wrapping where %w likely intended (manual review)
-grep -rnE 'fmt\.Errorf\([^)]*%v[^)]*err\s*\)' --include='*.go' .
-
-# Panics outside main/init/Must/tests — HIGH if reachable from input
-grep -rn 'panic(' --include='*.go' . | grep -vE '(_test\.go|Must|init\()'
-
-# log.Fatal / os.Exit outside main package — HIGH in libraries
-grep -rnE '(log\.Fatal|os\.Exit)' --include='*.go' . | grep -v 'main\.go'
-
-# Error strings: capitalized or "failed to" noise — INFO/LOW (ST1005)
-grep -rnE 'errors\.New\("[A-Z]|fmt\.Errorf\("[A-Z]' --include='*.go' .
-grep -rn 'failed to' --include='*.go' . | grep -E '(errors\.New|fmt\.Errorf)'
-
-# Typed-nil hazard: functions returning concrete error pointer types
-grep -rnE 'func .*\) \*\w+Error( |$)' --include='*.go' .
-
-# recover outside defer; missing Unwrap on wrapper types (manual)
-grep -rn 'recover()' --include='*.go' .
-grep -rln 'type .*Error struct' --include='*.go' . | xargs grep -L 'func (.*) Unwrap()'
-
-# Tooling
-go vet ./...
-golangci-lint run --enable-only errcheck,errorlint,err113,wrapcheck,nilerr ./...
-staticcheck ./...   # ST1005 error strings, SA4006 unused err, SA1019
-```
+- [ ] **Discarded errors (also rely on errcheck via golangci-lint)** —
+      `grep -rnE '^\s*[a-zA-Z_].*,\s*_\s*(:?=).*\(' --include='*.go' . | grep -v _test.go` ;
+      `grep -rn '_ = ' --include='*.go' . | grep -vE '(test|//)'`
+- [ ] **String matching on errors — MEDIUM+** —
+      `grep -rnE 'strings\.(Contains|HasPrefix|HasSuffix)\(\s*err\.Error\(\)' --include='*.go' .`
+      ; `grep -rn '\.Error() ==' --include='*.go' .`
+- [ ] **== comparison against sentinels (should be errors.Is) — MEDIUM** —
+      `grep -rnE 'err\s*[!=]=\s*(sql\.ErrNoRows|io\.EOF|os\.ErrNotExist|context\.(Canceled|DeadlineExceeded))' --include='*.go' .`
+- [ ] **%v wrapping where %w likely intended (manual review)** —
+      `grep -rnE 'fmt\.Errorf\([^)]*%v[^)]*err\s*\)' --include='*.go' .`
+- [ ] **Panics outside main/init/Must/tests — HIGH if reachable from input** —
+      `grep -rn 'panic(' --include='*.go' . | grep -vE '(_test\.go|Must|init\()'`
+- [ ] **log.Fatal / os.Exit outside main package — HIGH in libraries** —
+      `grep -rnE '(log\.Fatal|os\.Exit)' --include='*.go' . | grep -v 'main\.go'`
+- [ ] **Error strings: capitalized or "failed to" noise — INFO/LOW (ST1005)** —
+      `grep -rnE 'errors\.New\("[A-Z]|fmt\.Errorf\("[A-Z]' --include='*.go' .` ;
+      `grep -rn 'failed to' --include='*.go' . | grep -E '(errors\.New|fmt\.Errorf)'`
+- [ ] **Typed-nil hazard: functions returning concrete error pointer types** —
+      `grep -rnE 'func .*\) \*\w+Error( |$)' --include='*.go' .`
+- [ ] **recover outside defer; missing Unwrap on wrapper types (manual)** —
+      `grep -rn 'recover()' --include='*.go' .` ;
+      `grep -rln 'type .*Error struct' --include='*.go' . | xargs grep -L 'func (.*) Unwrap()'`
+- [ ] **Tooling** — `go vet ./...` ;
+      `golangci-lint run --enable-only errcheck,errorlint,err113,wrapcheck,nilerr ./...` ;
+      `staticcheck ./...` (ST1005 error strings, SA4006 unused err, SA1019)
 
 Severity guide: string-matched errors MEDIUM (HIGH if driving retry/billing
 logic); dropped error on write/commit path HIGH; panic reachable from external

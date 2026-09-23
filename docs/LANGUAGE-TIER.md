@@ -23,7 +23,34 @@ drift; regenerate rather than trusting them.
 | Tooling / CI / supply chain | **universal** — all 9 |
 | Testing | **universal**, but usually *inside* the tooling file; only Python and JS/TS give it one of its own |
 | Concurrency | **universal in substance** — 7 dedicated files, Ruby merges it with performance, PHP carries it as `01 §6 "Fibers and concurrency"` |
-| API / design | **NOT universal — this is the one real gap.** See item 57 |
+| API / design | **universal since 2026-09-22** (item 57) — a dedicated file in 4, a section in 5. Pinned at 9/9 by `--assert-universal` |
+
+## Blank cells on page 5 — triaged 2026-09-22
+
+The map's blanks were read as gaps. **Most were a declaration gap in the map, not a coverage
+gap in the library**, and the legend made it worse by defining BLANK as *"no dedicated
+treatment"*. Every blank was checked by reading the headings of the skill behind it:
+
+| row | blanks | had a real section (map was wrong) | principled |
+|---|---|---|---|
+| **Errors** | 7 | **all 7** — c/c++ `01 §7`, jvm `01 §4`, python `03 §10`, js/ts `02 §Error handling`, .NET `02 §4`, php `01 §5`, ruby `01 §5` | 0 |
+| **Typing** | 7 | 2 — c/c++ `01 §6`, ruby `01 §6` | 5 — statically-typed languages have no gradual-typing story |
+| **Web / HTTP** | 5 | 2 — .NET `04 §4`, python `07 §1–2` (named by framework: FastAPI, Django) | 3 — rust, c/c++, jvm carry no web layer |
+| **Memory / UB** | 7 | 0 | 7 — the GC languages' "Memory" sections are *performance* (allocation, GC pressure) and are already counted under Performance |
+
+**The Errors row was the loud one**: seven of seven blank, while `error handling &
+propagation` sits in `UNIVERSAL_FLOOR` at **9/9**. Two instruments were making contradictory
+claims about the same fact and nothing compared them — the identical defect as API/design, one
+row up, found the same way: by someone looking at the rendered picture.
+
+**Deliberately NOT declared: go's Memory/UB.** `sota-golang` `05 §7` covers `unsafe`/cgo
+policy, which is memory-safety adjacent — but a one-section "don't use `unsafe`" policy in a
+GC language is not the same topic as rust's and c/c++'s memory-safety treatment, and
+declaring it would imply a parity that does not exist. Left blank on purpose; recorded here so
+the next reader does not "fix" it.
+
+**`Errors` is now in `TOPIC_CONCEPT`**, so the cross-check guards it. It was left out on the
+first pass as "no 1:1 concept", which was too hasty.
 
 ## What is deliberately NOT aligned
 
@@ -53,9 +80,9 @@ topic appearing in both is not duplication — check the content before assuming
 
 Two items, both tracked in [ROADMAP.md](ROADMAP.md). Neither is urgent.
 
-### Item 57 — API / design is missing in five languages
+### Item 57 — CLOSED 2026-09-22. API / design now present in all nine
 
-Dedicated file in **rust, go, jvm, .NET**. Absent in **python, js/ts, php, ruby, c/c++**,
+Dedicated file in **rust, go, jvm, .NET**; a section inside the idioms file in **python, c/c++, js/ts, php, ruby**. Formerly absent in the latter five,
 and thin where adjacent rules touch it (3–9 keyword mentions; JS/TS has "Functions and
 modules over classes", Ruby has "Data vs Struct", and that is close to all of it).
 
@@ -65,13 +92,13 @@ these languages does:
 
 | | what the missing section would own |
 |---|---|
-| python | `__all__`, keyword-only parameters, `__slots__`, deprecation via `warnings`, what a leading underscore does and does not promise |
+| ~~python~~ | **CLOSED 2026-09-21 (#416)** — `rules/03` §13 *Public API surface*: `__all__`, keyword-only parameters, `__slots__` as directional, `@deprecated` (PEP 702), what a leading underscore does not promise |
 | js/ts | the `exports` map, type-level public surface vs runtime, `default` vs named, what a breaking type change is |
 | php | `final` and `readonly` as API decisions, interface vs abstract, BC breaks under semver |
 | ruby | gem semver, `private_constant`, refinements, what `respond_to?` promises callers |
-| c/c++ | ABI stability, header hygiene, `pimpl`, what is safe to change in a released header |
+| ~~c/c++~~ | **CLOSED 2026-09-21** — `rules/01` §9 *Designing a public surface*: the source-compatible-but-ABI-breaking table (added member, first virtual, reorder, default argument, inline body), `pimpl` with the incomplete-type destructor trap, stdlib types in exported signatures (libstdc++'s two ABIs since **GCC 5.1**, `_GLIBCXX_USE_CXX11_ABI`, verified against GCC's docs), and header hygiene |
 
-**First move:** write one section for the language you are already in, not five at once.
+**First move:** write one section for the language you are already in, not three at once.
 Each needs an `## Audit checklist` item and an ADOPTION-LOG row (invariant 31), and each
 lands in the existing idioms file unless it pushes it past 500 lines.
 
@@ -131,21 +158,97 @@ parentheticals nobody else uses, and it writes `Top 10` where the rest write `To
 - **Numbering order.** rust opens with ownership, go with errors, python with tooling.
   Renumbering breaks the `rules/NN` form that carries the other 2,945 citations. Leave it.
 
-### One thing that IS worth deciding — the audit-checklist body format
+### The audit-checklist body format — RESOLVED 2026-09-23
 
-Invariant 2 gates the *heading*; nothing gates the body, and three forms exist:
+Invariant 2 gates the *heading*; the body was ungated and three forms were in use. **All nine
+language skills now use the tickable `- [ ]` form**, and
+`gen-concept-matrix.py --assert-format` runs in CI so a fenced checklist cannot come back.
 
-| form | skills |
+AUDIT mode tells the model to "verify your diff satisfies every item" — an instruction that
+cannot be followed against a shell block. The deferral asked for a measurement or a third
+unenumerable-checklist instance; the operator adopted it on two: a `- []`-only count returned
+**0 for seven of nine** skills, and a concept-matrix pass mis-parsed fenced blocks and
+reported `sota-golang` as lacking API/design probes its `02-design.md` plainly has.
+
+**Correction to the old table, which classified golang and ruby as "prose + commands":** that
+was never measured. Reading their checklists with `scripts/lib/extract_items.py` showed both
+were **fenced**, like python/jvm/.NET/c-cpp/php — seven fenced skills, not five.
+
+## Depth: the concept matrix (item granularity)
+
+The spine table above is **file** granularity, which is what found ROADMAP 57. It is
+structurally blind to a concept missing *inside* a file that exists — and that is where two
+of 2026-09-21's findings lived. `scripts/gen-concept-matrix.py` reads every Audit-checklist
+item in the tier and reports **concept x language presence**.
+
+Run it: `python3 scripts/gen-concept-matrix.py [--show-unmatched N]`.
+
+**What it is, exactly: a candidate generator with a measured error rate — not a gap list.**
+It classifies by declared matchers over item text, and a matcher answers *"does this wording
+appear"*, never *"is this idea covered"*. Measured on the first pass, **3 of the 4 candidates
+checked by opening the file were vocabulary artefacts**, not gaps:
+
+| candidate | verdict on reading the file |
 |---|---|
-| tickable `- [ ]` | rust, js/ts |
-| fenced shell block | python, jvm, .NET, c/c++, php |
-| prose + commands | golang, ruby |
+| SQL injection absent in php | **false** — `02-injection.md` says *"SQL built from strings"*, `whereRaw`, `EMULATE_PREPARES`; the matcher wanted the literal "sql injection" |
+| deserialization absent in rust | **false** — 6 hits for serde/untrusted across four checklists; the matcher lacked `serde` |
+| linter suppression absent in rust | **false** — `rules/07` probes `rg '#!\[allow'`; the matcher wanted `#[allow` and the text writes `#![allow` |
+| linter suppression absent in jvm/.NET/c-cpp | **TRUE** — confirmed absent from every checklist in all three |
 
-AUDIT mode tells the model to "verify your diff satisfies every item" — a checkbox list is
-enumerable, a prose block is not. **That is an inference from the wording, not a
-measurement**, and unifying is a rewrite of seven skills, so it is **DEFERRED** in the
-ADOPTION-LOG with an explicit trigger: a measurement showing the format changes audit
-behaviour, or a third instance of a reader unable to enumerate a checklist.
+So: **open the file for every candidate**, and when a candidate dies, fix the *matcher* in the
+same change — the vocabulary is the thing being built. Each pass prints a classification
+denominator per skill (currently 67–93% for the tier, 60% for shell); the unclassified
+remainder is a hole in the matcher vocabulary, not evidence about the skills, and
+`--show-unmatched` lists it so the next pass can close it.
+
+**`sota-shell-scripting` is reported as its own group**, never a tenth column — the tier's
+spine does not apply to it, and mixing them manufactures gaps that are only a difference in
+kind.
+
+### Triage ledger — candidates opened, and what they turned out to be
+
+**A candidate dies by being read, and the verdict is recorded so nobody re-derives it.**
+First pass, 2026-09-22. Of 11 cells opened, **2 were real**, **6 were vocabulary artefacts**
+and **3 were a principled delegation**:
+
+| candidate | verdict | evidence |
+|---|---|---|
+| jvm — path traversal | **REAL, closed** | the BUILD rule existed at `rules/04:86` (*"canonicalize and verify the result stays under an allowed root"*) with **no probe anywhere in the skill**. Probe added, plus zip slip |
+| js/ts — SQL injection | **REAL, closed** | `rules/05:178` says *"never interpolate into SQL"*; the checklist had no SQL probe at all. Probe added, incl. `$queryRaw` vs `$queryRawUnsafe` |
+| js/ts, .NET — command injection | artefact | both probe it (`child_process`/`execSync`; `Process.Start`) — matcher lacked those terms |
+| rust, jvm — SQL injection | artefact | jvm probes `prepareStatement`/`createQuery`. **The matcher said `prepared`, which never matches `prepareStatement`** — prepare+statement has no `d` |
+| js/ts, .NET — path traversal | artefact | `path.join`/`Path.Combine`; .NET's heading is *"XXE / command / path"* |
+| rust, js/ts, c/c++ — TLS | **delegation, not a gap** | router cross-cutting rule 18 puts transport/PKI in `sota-network-security` rules/06. Concept reclassified `conditional` so it stops being reported |
+
+**The dominant real-gap shape is "the rule is stated, the probe is missing"** — both survivors
+were that, and neither is visible to a file-level view or to a reader of the prose. It is the
+same shape as the `$?` and suppression findings, which is now three independent instances.
+
+**And the matcher is part of the artefact.** Every dead candidate above was fixed in the
+vocabulary in the same change, which is why the candidate list shrinks as it is worked rather
+than staying constant — the list is a queue, not a scoreboard.
+
+**Not yet triaged** (the remaining cells, for the next pass): backpressure, deserialization,
+authn/authz, resource lifecycle, supply-chain provenance, allocation/GC, version floor, module
+boundaries, DoS guards, plus `public API surface — go`, `cancellation — c/c++`, and ruby's
+task-leak and profiling cells.
+
+### Verified gap: nobody probes the linter's escape hatch in jvm, .NET or c/c++
+
+Six of nine languages probe *"someone silenced the analyser"* — rust (`#![allow]` without a
+reason), go, python, js/ts (`@ts-ignore`), php, ruby. Three do not, and each has a prominent
+mechanism its checklist never asks about:
+
+| skill | the un-probed escape hatch |
+|---|---|
+| jvm | `@SuppressWarnings`, SpotBugs `@SuppressFBWarnings`, `// NOSONAR` |
+| .NET | `#pragma warning disable`, `[SuppressMessage]`, `<NoWarn>` in the csproj, `.editorconfig` severity=none |
+| c/c++ | `// NOLINT` / `// NOLINTNEXTLINE`, `cppcheck-suppress`, `#pragma GCC diagnostic ignored` |
+
+This is the **same shape** as the `$?` finding the same day: a rule present for some members
+of a family and absent for its neighbours, invisible to every file-level view because all
+three skills *have* a tooling file. It matters because a suppression is how a green gate
+stops meaning anything — `sota-code-security` rules/10's subject, one layer down.
 
 ## Depth: the external-guide gap-check (ROADMAP 59)
 
@@ -156,11 +259,29 @@ the method already used for Go (OWASP Go-SCP) and Rust (ANSSI). Two are done:
 |---|---|---|---|
 | python | **75 tests** | Bandit 1.9.4 `plugins_by_id` + `blacklist_by_id` | 5 gaps closed |
 | golang | **61 checks** | gosec 2.29.0 `rulelist.go` (39) + `analyzerslist.go` (22) | 4 gaps closed |
+| c-cpp | **342 checks** | cppcheck 2.21.0 `--errorlist`, two agreeing derivations; MISRA addon (132 rules) is a separate registry | 4 gaps closed |
 
 Remaining: **rust, c-cpp, jvm, javascript-typescript, dotnet, php, ruby**. Candidate
-denominators — ruby/Brakeman, js-ts/eslint-plugin-security, c-cpp/cppcheck (installed
-locally), rust/clippy + ANSSI. **jvm and .NET have no queryable local tool**, which may itself
-be the finding rather than a reason to skip them.
+denominators — ruby/Brakeman, js-ts/eslint-plugin-security, rust/clippy + ANSSI.
+**jvm and .NET have no queryable local tool**, which may itself be the finding rather than a
+reason to skip them.
+
+**c-cpp's denominator is already derived and reconciled — 2026-09-21, so the next session on
+this language starts past the step that failed twice.** cppcheck **2.21.0**:
+
+| derivation | method | answer |
+|---|---|---|
+| A | `cppcheck --errorlist` → unique `id="…"` | **342** |
+| B | the same dump grouped by `severity=` | **342** — warning 110, style 95, error 93, portability 20, performance 19, information 5 |
+
+The two agree exactly, and the severity buckets sum to the total, which is what makes this a
+reconciliation rather than one number counted twice. **And the gosec two-registry lesson
+repeats**: cppcheck's **addons are a separate list** the `--errorlist` dump does not contain —
+`misra.py` alone carries **132** `misra_N_M` rule functions, plus `threadsafety.py`,
+`y2038.py`, `naming.py` and `findcasts.py`. A denominator of 342 is the *built-in* checks
+only; MISRA is a second registry this skill already delegates to by name. **342 is 4.5× the
+Python set**, so budget the cluster-sweep accordingly — that size is the reason the sweep was
+not attempted in the same session that derived the number.
 
 ### The step that failed both times: the denominator
 

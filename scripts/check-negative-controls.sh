@@ -107,6 +107,9 @@ tested=0
 caught=0
 failed=0
 PROBED_IDS=''   # invariants this run actually exercised; see the self-check at the end
+SKIPPED_IDS=''  # invariants whose probe could not run HERE (branch shape), reconciled
+                # against the COVERED declaration at the end -- never folded into
+                # PROBED_IDS, which would claim they were exercised
 
 # `git checkout -- .` + `git clean -fd` is NOT enough: git clean leaves files that
 # have been `git add`-ed, so probe 10's staged file leaked into probe 15, which
@@ -380,6 +383,24 @@ MUT
 git add docs/ROADMAP.md >/dev/null 2>&1 )
 probe 26 "priorities table cites an item that is not open" "priorities table points at item"
 
+# 26b — the TOTALS arm, added 2026-09-21 with the assertion it exercises. The field
+# instance was "Of 58 items, 55 are closed" against a 59-row ledger: a sentence in a
+# different section from the gated header line, so it drifted on its own and no gate
+# had the predicate. The mutation is DERIVED from the ledger (row count + 1) rather
+# than hardcoded, so it cannot go stale the way the literals above can -- it is wrong
+# by construction for any ledger size, which is the property a count probe needs.
+( cd "$WT" && python3 - <<'MUT'
+import re, pathlib
+p = pathlib.Path("docs/ROADMAP.md"); t = p.read_text()
+rows = len({int(x) for x in re.findall(r'(?m)^\|\s*(\d+)\s*\|\s*\*\*', t)})
+t = re.sub(r'Of \d+ items, (\d+) (are|is) closed',
+           lambda m: 'Of %d items, %s %s closed' % (rows + 1, m.group(1), m.group(2)),
+           t, count=1)
+p.write_text(t)
+MUT
+git add docs/ROADMAP.md >/dev/null 2>&1 )
+probe 26b "roadmap total disagrees with the ledger row count" "but the ledger has"
+
 # 27 — a deferral marker with no revisit condition. Mutates the whole CELL, not a
 # prefix of it: a first attempt replaced only the opening words, the rest of the cell
 # still carried "revisit", and the probe reported a catch that never happened. Asserts
@@ -558,6 +579,33 @@ wt_commit "probe: a release declaring a routing check that predates the change"
 probe_committed 29c "a routing declaration older than the description it covers" \
   "predates the change it claims to"
 
+# --- probes 11/11b/11c need a NON-sweep branch ------------------------------------
+# Invariant 11 deliberately EXEMPTS a sweep-shaped diff (>= SWEEP_MIN_SKILL_FILES skill
+# files) because that is what a real re-verification looks like. On a branch that already
+# carries such a diff the exemption covers the probe's mutation too, the gate correctly
+# passes, and the probe reports "NOT CAUGHT: INERT" -- accusing a healthy gate.
+#
+# Measured 2026-09-23: the checklist-format unification touched ~42 skill files and turned
+# all three of these red at once while invariant 11 worked exactly as designed. This is
+# probe-assumption drift: the probe TEXT stayed correct, the branch stopped satisfying its
+# stated premise ("the diff is one file, not sweep-shaped").
+#
+# So skip, loudly, with the count. A probe that blames a healthy gate for its own stale
+# premise is worse than no probe -- this harness exists to catch exactly that.
+_sweep_min=$(sed -n 's/^SWEEP_MIN_SKILL_FILES=\([0-9]*\).*/\1/p' scripts/check-invariants.sh | head -1)
+_base=$(git merge-base HEAD origin/main 2>/dev/null || true)
+if [ -n "${_base:-}" ]; then
+  _nskill=$(git diff --name-only "$_base"..HEAD -- 'skills/*' | wc -l | tr -d ' ')
+else
+  _nskill=0
+fi
+if [ "${_nskill:-0}" -ge "${_sweep_min:-20}" ]; then
+  echo "  [11/11b/11c] SKIPPED -- this branch's own diff is sweep-shaped (${_nskill} skill files"
+  echo "        >= ${_sweep_min}), so invariant 11's sweep exemption applies to the probe's"
+  echo "        mutation too. The gate is not inert; the probe's premise does not hold here."
+  SKIPPED_IDS="$SKIPPED_IDS 11"
+else
+
 # 11 — LAST-VERIFIED moved by an ordinary edit. The stamp records a FULL
 # re-verification of the library against primary sources; the 2026-07-08 sweep touched
 # 100 skill files. Both escapes must be absent for this to fire: the diff is one file,
@@ -598,6 +646,7 @@ probe_committed 11b "a CHANGELOG mention of LAST-VERIFIED that declares no date"
 wt_commit "probe: a rolling pass that declares its new stamp properly"
 probe_committed_green 11c "a declaration naming the new stamp is accepted" \
   "LAST-VERIFIED moved and declared in the CHANGELOG"
+fi
 
 # 14 — a release that declares no front-door terms. Its own defect replayed: at the
 # v1.19.7 cut, five capabilities had shipped across three releases with zero mentions
@@ -1143,6 +1192,15 @@ fi
 # run knows, and this is the moment it knows. A control that asserts its own coverage
 # rather than counting it is sota-code-security rules/14 §1.
 derived=$(printf '%s' "$PROBED_IDS" | tr ' ' '\n' | sort -un | grep -c .)
+# A DYNAMICALLY skipped invariant still counts toward the declaration -- it has a probe, it
+# simply could not run on this branch (see the 11/11b/11c guard). Padding PROBED_IDS instead
+# would claim it was exercised, which is the lie this harness exists to prevent.
+skipped=$(printf '%s' "$SKIPPED_IDS" | tr ' ' '\n' | sort -un | grep -c .)
+if [ "$skipped" -gt 0 ]; then
+  printf 'NOTE: %d invariant(s) had their probes skipped on this branch:%s\n' \
+    "$skipped" "$(printf '%s' "$SKIPPED_IDS" | tr ' ' '\n' | sort -un | tr '\n' ' ' | sed 's/^/ /')"
+  derived=$((derived + skipped))
+fi
 declared=$(sed -n 's/.*COVERED:.*(\([0-9][0-9]*\) of [0-9][0-9]*).*/\1/p' "$0" | head -1)
 if [ -z "$declared" ]; then
   echo "FAIL: cannot find this harness's own COVERED declaration to check against."

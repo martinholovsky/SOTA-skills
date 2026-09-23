@@ -230,40 +230,32 @@ async def pipeline(items: AsyncIterator[Item]) -> None:
 
 ## Audit checklist
 
-```bash
-# Ruff async rules first — blocking calls, sync sleep, etc.
-uvx ruff check --select ASYNC --statistics .
-
-# Blocking calls inside async defs [HIGH in servers]
-grep -rn "time\.sleep" --include="*.py" src/                 # cross-check: inside async def?
-grep -rn "requests\.\(get\|post\|put\|delete\|Session\)" --include="*.py" src/
-grep -rn "subprocess\.\(run\|check_output\|call\)" --include="*.py" src/   # in async modules?
-
-# Fire-and-forget tasks [MEDIUM-HIGH]
-grep -rn "asyncio.create_task" --include="*.py" src/         # is the return value kept + callback added?
-grep -rn "ensure_future" --include="*.py" src/               # legacy spelling, same issue
-
-# gather usage [review each]
-grep -rn "asyncio.gather" --include="*.py" src/
-grep -rn "return_exceptions=True" --include="*.py" src/      # are results isinstance-checked after?
-
-# Swallowed cancellation [HIGH]
-grep -rn -A3 "except asyncio.CancelledError" --include="*.py" src/ | grep -L raise
-grep -rn "except BaseException" --include="*.py" src/
-
-# Timeouts
-grep -rn "asyncio.timeout\|wait_for" --include="*.py" src/ | wc -l    # zero in a network service = finding
-grep -rn "AsyncClient()" --include="*.py" src/               # per-request client construction? [MEDIUM]
-
-# Loop-bound objects at import time [MEDIUM]
-grep -rn "^[a-zA-Z_]* = asyncio.\(Queue\|Lock\|Event\)" --include="*.py" src/
-grep -rn "get_event_loop" --include="*.py" src/              # legacy API [LOW-MEDIUM]
-
-# Async generators holding resources without aclosing
-grep -rln "async def.*->.*AsyncIterator\|AsyncGenerator" --include="*.py" src/
-grep -rn "aclosing" --include="*.py" src/                    # compare counts
-
-# Forgotten awaits — runtime + type checker
-grep -rn "asyncio_mode" pyproject.toml setup.cfg 2>/dev/null
-python -W error::RuntimeWarning -m pytest -x 2>&1 | grep "never awaited"
-```
+- [ ] **Ruff async rules first — blocking calls, sync sleep, etc.** —
+      `uvx ruff check --select ASYNC --statistics .`
+- [ ] **Blocking calls inside async defs [HIGH in servers]** —
+      `grep -rn "time\.sleep" --include="*.py" src/` (cross-check: inside async def?);
+      `grep -rn "requests\.\(get\|post\|put\|delete\|Session\)" --include="*.py" src/` ;
+      `grep -rn "subprocess\.\(run\|check_output\|call\)" --include="*.py" src/` (in async
+      modules?)
+- [ ] **Fire-and-forget tasks [MEDIUM-HIGH]** —
+      `grep -rn "asyncio.create_task" --include="*.py" src/` (is the return value kept +
+      callback added?); `grep -rn "ensure_future" --include="*.py" src/` (legacy spelling, same
+      issue)
+- [ ] **gather usage [review each]** — `grep -rn "asyncio.gather" --include="*.py" src/` ;
+      `grep -rn "return_exceptions=True" --include="*.py" src/` (are results isinstance-checked
+      after?)
+- [ ] **Swallowed cancellation [HIGH]** —
+      `grep -rn -A3 "except asyncio.CancelledError" --include="*.py" src/ | grep -L raise` ;
+      `grep -rn "except BaseException" --include="*.py" src/`
+- [ ] **Timeouts** — `grep -rn "asyncio.timeout\|wait_for" --include="*.py" src/ | wc -l` (zero
+      in a network service = finding); `grep -rn "AsyncClient()" --include="*.py" src/`
+      (per-request client construction? [MEDIUM])
+- [ ] **Loop-bound objects at import time [MEDIUM]** —
+      `grep -rn "^[a-zA-Z_]* = asyncio.\(Queue\|Lock\|Event\)" --include="*.py" src/` ;
+      `grep -rn "get_event_loop" --include="*.py" src/` (legacy API [LOW-MEDIUM])
+- [ ] **Async generators holding resources without aclosing** —
+      `grep -rln "async def.*->.*AsyncIterator\|AsyncGenerator" --include="*.py" src/` ;
+      `grep -rn "aclosing" --include="*.py" src/` (compare counts)
+- [ ] **Forgotten awaits — runtime + type checker** —
+      `grep -rn "asyncio_mode" pyproject.toml setup.cfg 2>/dev/null` ;
+      `python -W error::RuntimeWarning -m pytest -x 2>&1 | grep "never awaited"`

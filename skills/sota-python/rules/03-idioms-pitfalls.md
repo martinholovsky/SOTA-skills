@@ -321,56 +321,40 @@ own deprecations without noticing.
 
 ## Audit checklist
 
-```bash
-# Ruff covers most of this file — run first
-uvx ruff check --select B006,B008,B023,B904,E722,BLE,G,T20,DTZ,PTH,SIM,A,C4 --statistics .
-
-# Bare/broad excepts [HIGH if swallowing, MEDIUM otherwise]
-grep -rn "except:$\|except: " --include="*.py" src/
-grep -rn -A1 "except Exception" --include="*.py" src/ | grep -B1 "pass$"
-
-# Exception chaining lost
-uvx ruff check --select B904 .                              # raise-without-from in except
-
-# Mutable defaults & late binding
-uvx ruff check --select B006,B023 .
-
-# Logging
-grep -rn 'logger\.\(debug\|info\|warning\|error\)(f"' --include="*.py" src/   # f-strings in logs [LOW-MED]
-grep -rn "basicConfig" --include="*.py" src/ | grep -v "main\|__main__\|cli"  # library configuring logging [MEDIUM]
-grep -rn "print(" --include="*.py" src/ | grep -v "cli\|__main__\|test"       # stray prints [LOW]
-
-# Resource handling
-grep -rn "= open(" --include="*.py" src/ | grep -v "with "                    # unmanaged file handles [MEDIUM]
-grep -rn "\.close()" --include="*.py" src/ | head                             # manual close → with-able?
-
-# datetime & os.path modernization
-uvx ruff check --select DTZ,PTH --statistics .
-grep -rn "utcnow()" --include="*.py" src/                                     # naive UTC [MEDIUM]
-
-# Identity misuse & list.pop(0)
-grep -rn 'is "" \|is "\| is [0-9]' --include="*.py" src/
-grep -rn "\.pop(0)" --include="*.py" src/                                     # O(n) dequeue [perf]
-
-# groupby without sort (manual review)
-grep -rn "groupby(" --include="*.py" src/
-
-# --- Public API surface (§13) ---
-# Package modules with no stated surface [MEDIUM for a library, INFO for an app]
-find src -name '*.py' -not -name '__init__.py' -not -path '*/tests/*' -print0 |
-  while IFS= read -r -d '' f; do
-    grep -q '__all__' "$f" || echo "no __all__: $f"
-  done
-
-# Boolean/optional parameters frozen positionally — no `*` in the signature [MEDIUM]
-grep -rnE 'def [a-z_]+\([^*)]*(flag|force|strict|verbose|dry_run)[^)]*\)' --include="*.py" src/
-
-# Deprecation by docstring only — invisible to type checkers and to runtime [MEDIUM]
-grep -rn -i 'deprecated' --include="*.py" src/ | grep -v '@deprecated' | grep -v 'DeprecationWarning'
-
-# Does the suite fail on its own DeprecationWarnings? [MEDIUM if absent]
-grep -rn 'error::DeprecationWarning' pyproject.toml setup.cfg pytest.ini tox.ini 2>/dev/null
-
-# __slots__ added to a class that subclasses something unslotted — no saving [INFO]
-grep -rn -B3 '__slots__' --include="*.py" src/ | grep 'class .*('
-```
+- [ ] **Ruff covers most of this file — run first** —
+      `uvx ruff check --select B006,B008,B023,B904,E722,BLE,G,T20,DTZ,PTH,SIM,A,C4 --statistics .`
+- [ ] **Bare/broad excepts [HIGH if swallowing, MEDIUM otherwise]** —
+      `grep -rn "except:$\|except: " --include="*.py" src/` ;
+      `grep -rn -A1 "except Exception" --include="*.py" src/ | grep -B1 "pass$"`
+- [ ] **Exception chaining lost** — `uvx ruff check --select B904 .` (raise-without-from in
+      except)
+- [ ] **Mutable defaults & late binding** — `uvx ruff check --select B006,B023 .`
+- [ ] **Logging** —
+      `grep -rn 'logger\.\(debug\|info\|warning\|error\)(f"' --include="*.py" src/` (f-strings
+      in logs [LOW-MED]);
+      `grep -rn "basicConfig" --include="*.py" src/ | grep -v "main\|__main__\|cli"` (library
+      configuring logging [MEDIUM]);
+      `grep -rn "print(" --include="*.py" src/ | grep -v "cli\|__main__\|test"` (stray prints
+      [LOW])
+- [ ] **Resource handling** — `grep -rn "= open(" --include="*.py" src/ | grep -v "with "`
+      (unmanaged file handles [MEDIUM]); `grep -rn "\.close()" --include="*.py" src/ | head`
+      (manual close → with-able?)
+- [ ] **datetime & os.path modernization** — `uvx ruff check --select DTZ,PTH --statistics .` ;
+      `grep -rn "utcnow()" --include="*.py" src/` (naive UTC [MEDIUM])
+- [ ] **Identity misuse & list.pop(0)** —
+      `grep -rn 'is "" \|is "\| is [0-9]' --include="*.py" src/` ;
+      `grep -rn "\.pop(0)" --include="*.py" src/` (O(n) dequeue [perf])
+- [ ] **groupby without sort (manual review)** — `grep -rn "groupby(" --include="*.py" src/`
+- [ ] **--- Public API surface (§13) --- Package modules with no stated surface [MEDIUM for a
+      library, INFO for an app]** —
+      `find src -name '*.py' -not -name '__init__.py' -not -path '*/tests/*' -print0 |` ;
+      `while IFS= read -r -d '' f; do` ; `grep -q '__all__' "$f" || echo "no __all__: $f"` ;
+      `done`
+- [ ] **Boolean/optional parameters frozen positionally — no `*` in the signature [MEDIUM]** —
+      `grep -rnE 'def [a-z_]+\([^*)]*(flag|force|strict|verbose|dry_run)[^)]*\)' --include="*.py" src/`
+- [ ] **Deprecation by docstring only — invisible to type checkers and to runtime [MEDIUM]** —
+      `grep -rn -i 'deprecated' --include="*.py" src/ | grep -v '@deprecated' | grep -v 'DeprecationWarning'`
+- [ ] **Does the suite fail on its own DeprecationWarnings? [MEDIUM if absent]** —
+      `grep -rn 'error::DeprecationWarning' pyproject.toml setup.cfg pytest.ini tox.ini 2>/dev/null`
+- [ ] **__slots__ added to a class that subclasses something unslotted — no saving [INFO]** —
+      `grep -rn -B3 '__slots__' --include="*.py" src/ | grep 'class .*('`

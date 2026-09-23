@@ -111,27 +111,23 @@ catch what review and `-Wall` cannot. (Clang/GCC; see
 
 ## Audit checklist
 
-```bash
-# Banned/dangerous buffer ops — HIGH/CRITICAL (also rules/04)
-grep -rnE '\b(strcpy|strcat|sprintf|gets|stpcpy|vsprintf)\b' --include='*.c' --include='*.cpp' .
-grep -rnE '\b(memcpy|memmove|memset|strncpy)\b' --include='*.c' --include='*.cpp' .  # verify size provenance
-
-# Dangling: returning address/ref/view of a local — HIGH
-grep -rnE 'return &[A-Za-z_]' --include='*.cpp' --include='*.c' .
-grep -rnE 'return (std::)?(string_view|span)' --include='*.cpp' .   # verify backing outlives
-clang-tidy --checks='bugprone-dangling-handle,bugprone-use-after-move,clang-analyzer-cplusplus.*' <files>
-
-# Iterator invalidation / erase-in-loop — MEDIUM
-grep -rnE 'for *\(.*begin\(\).*\).*\.(erase|push_back|insert|clear)\(' --include='*.cpp' .
-
-# Allocation checks — HIGH
-grep -rnE '=\s*(malloc|calloc|realloc)\(' --include='*.c' --include='*.cpp' .  # confirm NULL-check follows
-grep -rnE '(new|new\[\])' --include='*.cpp' . | grep -v make_                  # confirm RAII ownership
-
-# Sanitizer/hardening presence in the build — HIGH if a network binary lacks them
-grep -rn 'fsanitize' . ; grep -rn '_GLIBCXX_ASSERTIONS\|_LIBCPP_HARDENING\|_FORTIFY_SOURCE' .
-
-# Build & run the suite under sanitizers (ground truth)
-#   cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all"
-#   ctest   # any ASan/UBSan abort == CRITICAL/HIGH finding
-```
+- [ ] **Banned/dangerous buffer ops — HIGH/CRITICAL (also rules/04)** —
+      `grep -rnE '\b(strcpy|strcat|sprintf|gets|stpcpy|vsprintf)\b' --include='*.c' --include='*.cpp' .`
+      ; `grep -rnE '\b(memcpy|memmove|memset|strncpy)\b' --include='*.c' --include='*.cpp' .`
+      (verify size provenance)
+- [ ] **Dangling: returning address/ref/view of a local — HIGH** —
+      `grep -rnE 'return &[A-Za-z_]' --include='*.cpp' --include='*.c' .` ;
+      `grep -rnE 'return (std::)?(string_view|span)' --include='*.cpp' .` (verify backing
+      outlives);
+      `clang-tidy --checks='bugprone-dangling-handle,bugprone-use-after-move,clang-analyzer-cplusplus.*' <files>`
+- [ ] **Iterator invalidation / erase-in-loop — MEDIUM** —
+      `grep -rnE 'for *\(.*begin\(\).*\).*\.(erase|push_back|insert|clear)\(' --include='*.cpp' .`
+- [ ] **Allocation checks — HIGH** —
+      `grep -rnE '=\s*(malloc|calloc|realloc)\(' --include='*.c' --include='*.cpp' .` (confirm
+      NULL-check follows); `grep -rnE '(new|new\[\])' --include='*.cpp' . | grep -v make_`
+      (confirm RAII ownership)
+- [ ] **Sanitizer/hardening presence in the build — HIGH if a network binary lacks them** —
+      `grep -rn 'fsanitize' . ; grep -rn '_GLIBCXX_ASSERTIONS\|_LIBCPP_HARDENING\|_FORTIFY_SOURCE' .`
+- [ ] **Build & run the suite under sanitizers (ground truth) cmake -DCMAKE_BUILD_TYPE=Debug
+      -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all" ctest # any
+      ASan/UBSan abort == CRITICAL/HIGH finding**

@@ -138,40 +138,28 @@ read it) — never a hardcoded duplicate that can drift.
 
 Run from repo root; verify each hit manually.
 
-```bash
-# Lockfile discipline
-ls Gemfile.lock 2>/dev/null | grep -q . || echo "NO LOCKFILE (app = MEDIUM)"
-grep -c "CHECKSUMS" Gemfile.lock || echo "no checksums section (LOW, easy win)"   # stderr kept: no file != no match
-grep -rn "BUNDLE_FROZEN\|--frozen\|frozen.*true" .github/ .gitlab-ci.yml Gemfile 2>/dev/null | head -3
-
-# Mutable git sources — MEDIUM
-grep -nE "git:|github:" Gemfile | grep -v "ref:"
-
-# Multiple top-level sources (dependency confusion) — HIGH
-grep -c "^source " Gemfile   # >1 without scoped blocks = investigate
-
-# Vulnerability gates present?
-grep -rn "bundler-audit\|bundle audit" .github/ Gemfile* Rakefile 2>/dev/null | head -2
-grep -rn "brakeman" .github/ Gemfile* 2>/dev/null | head -2   # Rails apps only
-
-# Advisory scan (live)
-bundle audit check --update 2>/dev/null | tail -5
-
-# Lint posture
-ls .rubocop.yml .standard.yml 2>/dev/null
-grep -rn "rubocop:disable Security" --include='*.rb' .
-find . -name .rubocop_todo.yml -newermt "6 months ago" 2>/dev/null | head -1
-
-# Brakeman ignores without justification (manual review)
-python3 -c "import json;d=json.load(open('config/brakeman.ignore'));print(len(d.get('ignored_warnings',[])))" 2>/dev/null
-
-# CI Ruby version drift
-grep -rn "ruby-version\|ruby:" .github/workflows/ 2>/dev/null | grep -v ".ruby-version" | head
-
-# Test determinism
-grep -rn "order = :random\|--seed" .rspec spec/spec_helper.rb 2>/dev/null | head -2
-grep -rn "disable_net_connect" spec/ test/ 2>/dev/null | head -1
-```
+- [ ] **Lockfile discipline** —
+      `ls Gemfile.lock 2>/dev/null | grep -q . || echo "NO LOCKFILE (app = MEDIUM)"` ;
+      `grep -c "CHECKSUMS" Gemfile.lock || echo "no checksums section (LOW, easy win)"` (stderr
+      kept: no file != no match);
+      `grep -rn "BUNDLE_FROZEN\|--frozen\|frozen.*true" .github/ .gitlab-ci.yml Gemfile 2>/dev/null | head -3`
+- [ ] **Mutable git sources — MEDIUM** — `grep -nE "git:|github:" Gemfile | grep -v "ref:"`
+- [ ] **Multiple top-level sources (dependency confusion) — HIGH** —
+      `grep -c "^source " Gemfile` (>1 without scoped blocks = investigate)
+- [ ] **Vulnerability gates present?** —
+      `grep -rn "bundler-audit\|bundle audit" .github/ Gemfile* Rakefile 2>/dev/null | head -2`
+      ; `grep -rn "brakeman" .github/ Gemfile* 2>/dev/null | head -2` (Rails apps only)
+- [ ] **Advisory scan (live)** — `bundle audit check --update 2>/dev/null | tail -5`
+- [ ] **Lint posture** — `ls .rubocop.yml .standard.yml 2>/dev/null` ;
+      `grep -rn "rubocop:disable Security" --include='*.rb' .` ;
+      `find . -name .rubocop_todo.yml -newermt "6 months ago" 2>/dev/null | head -1`
+- [ ] **Brakeman ignores without justification (manual review)** —
+      `python3 -c "import json;d=json.load(open('config/brakeman.ignore'));print(len(d.get('ignored_warnings',[])))" 2>/dev/null`
+- [ ] **CI Ruby version drift** —
+      `grep -rn "ruby-version\|ruby:" .github/workflows/ 2>/dev/null | grep -v ".ruby-version" | head`
+- [ ] **Test determinism** —
+      `grep -rn "order = :random\|--seed" .rspec spec/spec_helper.rb 2>/dev/null | head -2` ;
+      `grep -rn "disable_net_connect" spec/ test/ 2>/dev/null | head -1`
 
 Severity guide: no lockfile / unfrozen production installs MEDIUM (HIGH if
 deploys resolve fresh); unpinned git gems, missing vulnerability gate MEDIUM;

@@ -131,33 +131,27 @@ slowlog = /var/log/php-fpm/slow.log
 
 Run from repo root / against the runtime; verify each hit manually.
 
-```bash
-# OPcache posture — the single highest-leverage check
-php -r 'var_export(function_exists("opcache_get_status") ? (opcache_get_status(false)["opcache_statistics"] ?? opcache_get_status(false)) : "OPCACHE MISSING");'
-php -r 'foreach (["enable","memory_consumption","max_accelerated_files","validate_timestamps","preload","jit","jit_buffer_size"] as $k) echo "opcache.$k=", ini_get("opcache.$k"), PHP_EOL;'
-# validate_timestamps=1 on immutable deploys = LOW perf debt; cache-full/oom_restarts>0 = MEDIUM
-
-# FPM sizing
-grep -rnE '^(pm|pm\.max_children|pm\.max_requests|request_slowlog_timeout)' /etc/php*/fpm/pool.d/ 2>/dev/null
-# max_children default-ish (5) on a production box, or no slowlog = MEDIUM
-
-# N+1 / query-in-loop heuristics — confirm by reading the loop
-grep -rnE '(foreach|while)[^{]*\{[^}]*->(query|prepare|find|get)\(' --include='*.php' src/ | head
-grep -rn 'fetchAll' --include='*.php' src/        # unbounded result sets?
-grep -rnE '(curl_exec|file_get_contents\s*\(\s*.http)' --include='*.php' src/  # HTTP in loops?
-
-# Autoloader optimization in the deploy path
-grep -rn 'optimize-autoloader\|classmap-authoritative\|-o ' Dockerfile* deploy* .github/workflows/ 2>/dev/null
-
-# Xdebug in production (HIGH if confirmed on prod hosts)
-php -m | grep -i xdebug
-
-# Session lock hygiene on slow endpoints
-grep -rn 'session_write_close' --include='*.php' src/
-
-# Performance claims without measurements — check PR/commit rationale
-git log --oneline --grep='perf\|optimi' -10
-```
+- [ ] **OPcache posture — the single highest-leverage check** —
+      `php -r 'var_export(function_exists("opcache_get_status") ? (opcache_get_status(false)["opcache_statistics"] ?? opcache_get_status(false)) : "OPCACHE MISSING");'`
+      ;
+      `php -r 'foreach (["enable","memory_consumption","max_accelerated_files","validate_timestamps","preload","jit","jit_buffer_size"] as $k) echo "opcache.$k=", ini_get("opcache.$k"), PHP_EOL;'`
+- [ ] **validate_timestamps=1 on immutable deploys = LOW perf debt; cache-full/oom_restarts>0 =
+      MEDIUM**
+- [ ] **FPM sizing** —
+      `grep -rnE '^(pm|pm\.max_children|pm\.max_requests|request_slowlog_timeout)' /etc/php*/fpm/pool.d/ 2>/dev/null`
+- [ ] **max_children default-ish (5) on a production box, or no slowlog = MEDIUM**
+- [ ] **N+1 / query-in-loop heuristics — confirm by reading the loop** —
+      `grep -rnE '(foreach|while)[^{]*\{[^}]*->(query|prepare|find|get)\(' --include='*.php' src/ | head`
+      ; `grep -rn 'fetchAll' --include='*.php' src/` (unbounded result sets?);
+      `grep -rnE '(curl_exec|file_get_contents\s*\(\s*.http)' --include='*.php' src/` (HTTP in
+      loops?)
+- [ ] **Autoloader optimization in the deploy path** —
+      `grep -rn 'optimize-autoloader\|classmap-authoritative\|-o ' Dockerfile* deploy* .github/workflows/ 2>/dev/null`
+- [ ] **Xdebug in production (HIGH if confirmed on prod hosts)** — `php -m | grep -i xdebug`
+- [ ] **Session lock hygiene on slow endpoints** —
+      `grep -rn 'session_write_close' --include='*.php' src/`
+- [ ] **Performance claims without measurements — check PR/commit rationale** —
+      `git log --oneline --grep='perf\|optimi' -10`
 
 Severity guide: OPcache off in production HIGH (perf); Xdebug on production
 HIGH; FPM sized by default/folklore causing OOM or queueing MEDIUM–HIGH;

@@ -79,39 +79,70 @@ LANG_TOPICS = {
                "03": ["Concurrency"], "04": ["Web / HTTP"], "05": ["Security"],
                "06": ["Performance"],
                "07": ["Tooling / CI / supply chain", "Testing"]},
-    "c-cpp": {"01": ["Idioms / baseline"], "02": ["Memory / UB"], "03": ["Memory / UB"],
+    "c-cpp": {"01": ["Idioms / baseline", "API / design", "Errors", "Typing"], "02": ["Memory / UB"], "03": ["Memory / UB"],
               "04": ["Security"], "05": ["Concurrency"],
               "06": ["Tooling / CI / supply chain", "Testing"], "07": ["Performance"]},
-    "jvm": {"01": ["Idioms / baseline"], "02": ["API / design"], "03": ["Concurrency"],
+    "jvm": {"01": ["Idioms / baseline", "Errors"], "02": ["API / design"], "03": ["Concurrency"],
             "04": ["Security"], "05": ["Performance"],
             "06": ["Tooling / CI / supply chain", "Testing"]},
     "python": {"01": ["Tooling / CI / supply chain"], "02": ["Typing"],
-               "03": ["Idioms / baseline", "API / design"],
+               "03": ["Idioms / baseline", "API / design", "Errors"],
                "04": ["Concurrency"], "05": ["Security"],
-               "06": ["Performance"], "07": ["Testing"]},
-    "javascript-typescript": {"01": ["Typing"], "02": ["Idioms / baseline"],
+               "06": ["Performance"], "07": ["Testing", "Web / HTTP"]},
+    "javascript-typescript": {"01": ["Typing"], "02": ["Idioms / baseline", "API / design", "Errors"],
                               "03": ["Concurrency"], "04": ["Web / HTTP"],
                               "05": ["Security"], "06": ["Performance"],
                               "07": ["Testing", "Tooling / CI / supply chain"]},
-    "dotnet": {"01": ["Idioms / baseline"], "02": ["API / design"],
-               "03": ["Concurrency"], "04": ["Security"], "05": ["Performance"],
+    "dotnet": {"01": ["Idioms / baseline", "Typing"], "02": ["API / design", "Errors"],
+               "03": ["Concurrency"], "04": ["Security", "Web / HTTP"], "05": ["Performance"],
                "06": ["Tooling / CI / supply chain", "Testing"]},
-    "php": {"01": ["Idioms / baseline", "Concurrency"], "02": ["Security"],
+    "php": {"01": ["Idioms / baseline", "Concurrency", "API / design", "Errors", "Typing"], "02": ["Security"],
             "03": ["Security"], "04": ["Security", "Web / HTTP"],
             "05": ["Tooling / CI / supply chain", "Testing"], "06": ["Performance"]},
-    "ruby": {"01": ["Idioms / baseline"], "02": ["Security"], "03": ["Web / HTTP"],
+    "ruby": {"01": ["Idioms / baseline", "API / design", "Errors", "Typing"], "02": ["Security"], "03": ["Web / HTTP"],
              "04": ["Tooling / CI / supply chain", "Testing"],
              "05": ["Concurrency", "Performance"]},
 }
 # A topic carried by a file that also carries another is marked shared; a topic present
 # only as a section inside a broader file is marked inline. Both are read off the tree.
-INLINE = {("php", "Concurrency"): "01 §6"}
+INLINE = {("php", "Concurrency"): "01 §6",
+          # ROADMAP 57 landed API/design as a SECTION inside the idioms file for five
+          # languages rather than a dedicated file. Declared inline so page 5 shows where
+          # it actually lives -- it read BLANK for four of them until 2026-09-22, while
+          # the sections existed, because this table is hand-maintained.
+          ("c-cpp", "API / design"): "01 §9",
+          ("javascript-typescript", "API / design"): "02 §Designing",
+          ("php", "API / design"): "01 §6a",
+          ("ruby", "API / design"): "01 §8",
+          ("python", "API / design"): "03 §13",
+          # Errors/Typing/Web where the topic is a SECTION, verified by reading each
+          # heading 2026-09-22. Every one of these rendered BLANK while the legend said
+          # "no dedicated treatment" -- false for all of them. Same declaration gap as
+          # API/design, one row down.
+          ("c-cpp", "Errors"): "01 §7",
+          ("jvm", "Errors"): "01 §4",
+          ("python", "Errors"): "03 §10",
+          ("javascript-typescript", "Errors"): "02 §Error",
+          ("dotnet", "Errors"): "02 §4",
+          ("php", "Errors"): "01 §5",
+          ("ruby", "Errors"): "01 §5",
+          ("c-cpp", "Typing"): "01 §6",
+          ("ruby", "Typing"): "01 §6",
+          ("python", "Web / HTTP"): "07 §1-2",
+          ("dotnet", "Web / HTTP"): "04 §4",
+          # php and .NET are gradual-typing languages too, which the note's
+          # "only in the gradual-typing pair" missed: php bolts PHPStan/Psalm LEVELS onto
+          # a dynamic language exactly as python does mypy, and C# NRT is opt-in
+          # nullability you enable per project. Both have a dedicated section.
+          ("php", "Typing"): "01 §2",
+          ("dotnet", "Typing"): "01 §2"}
 
 
 def audit_items(lang):
     """Actionable items in a language skill's Audit checklists. Counted format-aware because
     the BODY format is not gated -- only the heading is (invariant 2) -- and three forms are
-    in use: tickable `- [ ]`, fenced shell block, and prose+commands. A `- [ ]`-only count
+    in use. Unified to tickable `- [ ]` on 2026-09-23; this counter stays format-aware
+    because it reads history and older trees. A `- [ ]`-only count
     returned 0 for seven of nine skills on 2026-09-21, which is how the split was found.
 
     The two forms are NOT comparable: a checkbox item can bundle several commands while a
@@ -233,6 +264,7 @@ def main():
     if unknown:
         sys.exit("gen-skill-map: topics not in TOPIC_ORDER: %s" % sorted(unknown))
 
+    assert_matrix_matches_tree()
     pages = [page_router(), page_rules(rules),
              page_graph(edges, indeg, args.min_weight), page_slice(),
              page_matrix(lang_files)]
@@ -524,6 +556,75 @@ def page_slice():
     return page("p4", "4 · Worked slice: an SSO task", c, 1650, 800)
 
 
+# --- cross-instrument consistency -------------------------------------------------
+# WHY THIS EXISTS. LANG_TOPICS above is HAND-DECLARED, and `gen-concept-matrix.py` derives
+# the same kind of fact by reading every Audit checklist in the tree. On 2026-09-22 they
+# disagreed and nothing noticed: ROADMAP 57 put an API/design SECTION into five idioms
+# files, the concept matrix reported 9/9, and page 5 rendered four BLANK cells because this
+# table was never updated. The map was regenerated in that same session and still lied.
+#
+# The map's own gate cannot catch this: it proves the committed artifact matches the
+# generator, never that the generator matches the tree. So the two instruments are checked
+# against each other here.
+#
+# Only topics with an UNAMBIGUOUS concept counterpart are checked. The rest (Idioms, Memory
+# / UB, Web / HTTP, Performance, Errors, Typing) have no 1:1 concept and are deliberately
+# left out rather than mapped approximately -- a loose mapping would open red and get
+# disabled, which docs/CONVENTIONS-LEDGER.md says is worse than no gate.
+TOPIC_CONCEPT = {
+    "API / design": "public API surface & evolution",
+    # Added 2026-09-22 after all SEVEN Errors blanks turned out to have a section.
+    # It was excluded on the first pass as "no 1:1 concept", which was too hasty:
+    # error handling is in UNIVERSAL_FLOOR at 9/9, so the two instruments were
+    # already making contradictory claims about the same fact.
+    "Errors": "error handling & propagation",
+    "Concurrency": "data race / shared mutable state",
+    "Security": "input validation & untrusted data",
+    "Testing": "test suite health & determinism",
+    "Tooling / CI / supply chain": "dependency pinning & lockfiles",
+}
+
+
+def assert_matrix_matches_tree():
+    """Abort if the hand-declared LANG_TOPICS contradicts what the tree actually contains."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "_cm", str(ROOT / "scripts" / "gen-concept-matrix.py"))
+    cm = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(cm)
+    except Exception as e:                      # never let the cross-check break the map
+        print("NOTE: concept cross-check skipped (%s)" % e, file=sys.stderr)
+        return
+    present, _classified, _un = cm.build(LANGS)
+    bad = []
+    for topic, concept in TOPIC_CONCEPT.items():
+        probing = present.get(concept, set())
+        for lang in LANGS:
+            declared = any(topic in v for v in LANG_TOPICS[lang].values())
+            if lang in probing and not declared:
+                bad.append("%s probes %r (concept: %s) but LANG_TOPICS declares no %r"
+                           % (LANG_LABEL[lang], topic, concept, topic))
+    if bad:
+        sys.exit("MATRIX DISAGREES WITH THE TREE -- page 5 would render a blank cell for a "
+                 "topic the skill actually covers:\n  " + "\n  ".join(bad) +
+                 "\nAdd the topic to LANG_TOPICS (and an INLINE marker if it is a section "
+                 "inside a broader file), or correct the concept matcher if the concept "
+                 "hit is a false positive.")
+
+
+def _universal_phrase():
+    """"N sections are universal -- a, b, c", counted off LANG_TOPICS itself."""
+    uni = [tp for tp in TOPIC_ORDER
+           if all(any(tp in v for v in LANG_TOPICS[l].values()) for l in LANGS)]
+    words = {1: "One", 2: "Two", 3: "Three", 4: "Four", 5: "Five", 6: "Six",
+             7: "Seven", 8: "Eight", 9: "Nine", 10: "Ten", 11: "Eleven"}
+    # first segment, ORIGINAL case -- lowercasing turned "API / design" into "api"
+    short = [tp.split(" /")[0].split(" \u2014")[0].strip() for tp in uni]
+    return "%s sections are universal \u2014 %s" % (
+        words.get(len(uni), str(len(uni))), ", ".join(short))
+
+
 def page_matrix(lang_files):
     """Section x language. A grid, because that is what a comparison of 11 topics across 9
     languages IS -- drawing it as nodes and edges would be the page-2 mistake again."""
@@ -531,13 +632,23 @@ def page_matrix(lang_files):
               "Page 5 — section x language. Which topics each language skill gives its own "
               "rules file.\n\n"
               "SOLID = a file of its own. LIGHT = shares a file with another topic, or is a "
-              "section inside a broader file (the cell says which). BLANK = no dedicated "
-              "treatment.\n\n"
-              "Four sections are universal — idioms, security, performance, tooling. The "
+              "section inside a broader file (the cell says which). BLANK = no file AND no "
+              "section — which is NOT the same as 'not covered': a concept can still be "
+              "probed from inside another topic, and gen-concept-matrix.py is what answers "
+              "that question. This legend read 'no dedicated treatment' until 2026-09-22, "
+              "while 11 cells were blank with a real section behind them.\n\n"
+              # DERIVED, never written. This sentence read "Four sections are universal"
+              # while the table below it showed SIX (Concurrency and Testing were already
+              # 9/9), and then SEVEN once ROADMAP 57 closed -- wrong before anyone touched
+              # it, and wrong again after. A count with its own source of truth twelve
+              # lines away has no business being a literal.
+              "%s. The "
               "variation is not arbitrary: Errors gets a file only where the error MODEL is "
-              "distinctive (Rust, Go); Typing only in the gradual-typing pair; Memory/UB "
+              "distinctive (Rust, Go); Typing wherever a checker is bolted onto the language "
+              "(python, js/ts, ruby, php, c/c++, .NET NRT) and not in rust/go/jvm; Memory/UB "
               "only where memory is manual. `sota-shell-scripting` is excluded — 9 files "
-              "with a different spine, grouped with languages but not a peer.",
+              "with a different spine, grouped with languages but not a peer."
+              % _universal_phrase(),
               NOTE, 40, 20, 900, 180)]
     x0, y0, cw, rh, lw = 430, 230, 108, 34, 380
     for j, lang in enumerate(LANGS):
@@ -575,19 +686,59 @@ def page_matrix(lang_files):
                           BOX + "fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;",
                           x0 + j * cw, y, cw - 6, rh - 6))
         y += rh
+
+    # --- the shell strip ------------------------------------------------------------
+    # sota-shell-scripting is NOT a column here: different spine, so a shared grid would
+    # imply comparisons that do not hold. But leaving it off the page entirely made a
+    # reader ask "do we not cover bash/zsh?" on 2026-09-22 -- with 9 files and ~2.8k lines
+    # in the tree, more than jvm or .NET. Absent from the picture read as absent from the
+    # library, so it gets a strip of its own, clearly outside the grid.
+    y += 12
+    sh_files = sorted((ROOT / "skills/sota-shell-scripting/rules").glob("*.md"))
+    sh_lines = sum(len(f.read_text(encoding="utf-8").splitlines()) for f in sh_files)
+    c.append(cell("m_sh", "sota-shell-scripting (bash + zsh + PowerShell) — covered, and "
+                          "deliberately NOT a column: its spine is different, so a shared "
+                          "grid would imply comparisons that do not hold.\n"
+                          "%d files, %d lines — larger than several language skills. zsh is "
+                          "treated as its own dialect throughout, not as a bash footnote."
+                          % (len(sh_files), sh_lines),
+                  BOX + "fillColor=#fffbe6;strokeColor=#d6b656;align=left;spacingLeft=10;"
+                        "verticalAlign=middle;fontSize=11;", 40, y, lw + 9 * cw - 6, 46))
+    y += 54
+    for j, f in enumerate(sh_files):
+        title = f.read_text(encoding="utf-8").splitlines()[0].lstrip("# ").strip()
+        short = title.split("—")[-1].strip() if "—" in title else title
+        c.append(cell("msh%d" % j, "%s\n%s" % (f.name[:2], short[:26]),
+                      BOX + "fillColor=#fdf6d8;strokeColor=#d6b656;fontSize=9;",
+                      40 + j * ((lw + 9 * cw) // 9), y,
+                      ((lw + 9 * cw) // 9) - 6, rh + 6))
+    y += rh + 18
+
     dens = {l: (audit_items(l)[0] / lang_files[l][0] * 100) for l in LANGS}
     c.append(cell("m_note2",
-                  "ONE asymmetry here does not track a language difference: API / design has "
-                  "its own file in rust, go, jvm and .NET and is sparse elsewhere (3–9 "
-                  "mentions in python, js/ts, php, ruby, c/c++). That is ROADMAP 57.\n\n"
+                  "API / design was the one asymmetry that did not track a language "
+                  "difference. CLOSED 2026-09-22 (ROADMAP 57): all nine now carry it, as a "
+                  "dedicated file in some and a section inside the idioms file in others, "
+                  "and gen-concept-matrix.py pins it at 9/9 so it cannot regress.\n\n"
+                  "Per-language detail deliberately NOT repeated here -- it lives in "
+                  "docs/LANGUAGE-TIER.md. This sentence named the languages twice and "
+                  "rotted twice in two days (2026-09-21 and -22), because a hand-written "
+                  "list inside a GENERATED artifact has no gate: the map gate proves the "
+                  "artifact matches the generator, never that the generator is true.\n\n"
                   "RETRACTED 2026-09-21 — this note previously read \"jvm and .NET are 3–4x "
                   "thinner\". True of line count, false of what line count stood in for: per "
                   "100 rules-lines they carry the HIGHEST audit-item density in the library "
-                  "(.NET %.1f, jvm %.1f) and rust, the second-largest skill, is lowest at "
-                  "%.1f. The bounded deficit is worked examples. Caveat: the checkbox and "
-                  "shell-block checklist formats are not comparable, so this read is "
-                  "within-format."
-                  % (dens["dotnet"], dens["jvm"], dens["rust"]),
+                  "(.NET %.1f, jvm %.1f — COMPUTED NOW, not the 2026-09-21 figures of "
+                  "10.6 and 10.5; the counting changed when the checklists were unified). "
+                  "Lowest is %s at %.1f. The bounded deficit is worked examples.\n\n"
+                  "The old caveat here -- that checkbox and shell-block formats are not "
+                  "comparable, so the read was within-format -- was RETIRED 2026-09-23: "
+                  "all nine now use one format, so this ranking is tier-wide. It also "
+                  "corrected a false superlative: this line used to say rust was lowest."
+                  # the lowest skill is DERIVED, not named: it used to say "rust" and
+                  # that became false when the checklist unification changed the counts.
+                  % (dens["dotnet"], dens["jvm"],
+                     LANG_LABEL[min(dens, key=dens.get)], min(dens.values())),
                   NOTE, 40, y + 20, 900, 150))
     return page("p5", "5 · Section x language", c, 1500, y + 180)
 

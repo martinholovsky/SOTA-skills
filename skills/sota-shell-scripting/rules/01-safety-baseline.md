@@ -168,6 +168,17 @@ Note the two shell-level rules do not cover this. `$?`-after-a-pipeline and
   reported the gate as never having run; **zero `PASS` lines anywhere in the file** showed
   the log never held the table at all, and the gate had in fact *failed* — which was the
   real finding. `rules/06` §2.
+- **A foreground, tool-wrapped command has the same consumer problem, and the fix is
+  different.** §2a's remedy above — wait on the artefact, never on the launcher — is for a
+  job the launcher *detaches* from. When the harness runs the command in the foreground and
+  reports *its* status, the status is genuinely about your command; the defect is that a
+  trailing `echo`, a `|| true` or a final `tail` has already replaced it. Field-reported
+  2026-09-21: `make ci > log 2>&1; echo "EXIT=$?"` announced *"completed (exit code 0)"* for
+  a run in which 2 of 25 gates failed. Capture and re-raise —
+  `cmd > log 2>&1; rc=$?; echo "EXIT=$rc" >> log; exit "$rc"` — and the harness's reported
+  code is the command's. **Either way the artefact outranks the notification**: the same
+  reporter had the true code in the log and believed the harness anyway, which is the half
+  of this rule that is about reading rather than writing.
 - The general form, for any status: `sota/rules/03` §2 — name what the OK is about.
 
 ## 2b. A non-zero exit is evidence about one attempt, not about the world
@@ -305,9 +316,19 @@ the status.** For any command whose output you intend to *reason about* — a te
 benchmark, a profile, a long analysis — **redirect to a file and read the file**:
 
 ```bash
-cmd > out.txt 2>&1; echo "EXIT=$?"        # status preserved AND output preserved
-grep -nE 'passed|failed|Error' out.txt    # filter AFTER, as often as you like
+cmd > out.txt 2>&1; rc=$?; echo "EXIT=$rc"   # status RECORDED and output preserved
+grep -nE 'passed|failed|Error' out.txt       # filter AFTER, as often as you like
+exit "$rc"                                   # ...and re-raised, if anything reads it
 ```
+
+**"Preserved" means *written down*, not *returned*.** The compound's own status is the
+`echo`'s, which is 0 whatever `cmd` did — so this form is safe for a human reading
+`EXIT=` out of the file, and unsafe the moment a **caller** reads the status instead:
+a CI step, a `&&` chain, or an agent harness announcing *"completed (exit code 0)"*.
+End with `exit "$rc"` wherever a caller exists. Field-reported 2026-09-21: a
+`make ci > log 2>&1; echo "EXIT=$?"` was announced as exit 0 by the harness while the
+log recorded `MAKE_EXIT=2` and 2 of 25 gates had failed — and the announcement, not
+the log, is what the agent read. Who the consumer is, is §2a.
 
 `cmd 2>&1 | tail -12` keeps the summary and destroys the traceback, the warnings and the
 stderr context above the cut — which is **the material that tells you the summary is
@@ -443,6 +464,12 @@ splitting/joining class** — no widely-adopted static analyser catches
 - [ ] **Background jobs: is any outcome read from the launcher's status?** (§2a) The
       completion signal describes `nohup`/the runner detaching; wait on a sentinel the job
       writes last, and quote it.
+- [ ] **Does a recorded exit code get re-raised for whoever reads the status?** (§2a, §3)
+      `grep -rnE 'echo "?EXIT=\$\?|; *echo .*\$\?' scripts/ .github/` — a compound ending in
+      `echo`, `|| true` or `tail` returns *that* command's status, so a CI step, a `&&` chain
+      or an agent harness is told 0 for a failed run. Recording `EXIT=` in a log is not
+      returning it: capture with `rc=$?` and end with `exit "$rc"`. And whatever the
+      notification said, **read the code out of the artefact before quoting an outcome**.
 - [ ] `grep -rn '^#!/bin/sh' scripts/`- [ ] `grep -rn '^#!/bin/sh' scripts/` then scan those files for `[[`, arrays, `local -`,
       `${var//`, `pipefail` → bashism-in-sh (SC3xxx series).
 - [ ] **`set -e` believed inside a suspended context**: `set -e`/`set -o errexit`

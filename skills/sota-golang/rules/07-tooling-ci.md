@@ -251,47 +251,32 @@ tool (             // 1.24+: tool dependencies, versioned & sum-verified
 
 ## Audit checklist
 
-```bash
-# CI gates present? Inspect workflow files
-grep -rnE '(go test|race|govulncheck|golangci-lint|staticcheck|gofumpt)' .github/workflows/ Makefile* 2>/dev/null
-grep -rn 'test -race' . --include='*.yml' --include='*.yaml' --include='Makefile*' || echo 'NO RACE IN CI — HIGH'
-
-# Lint config exists and is curated (not empty, not enable-all)
-ls .golangci.yml .golangci.yaml 2>/dev/null
-grep -n 'enable-all\|disable-all' .golangci.y*ml 2>/dev/null
-
-# Suppression hygiene
-grep -rn 'nolint' --include='*.go' . | grep -v '//' | head            # malformed
-grep -rnE '//nolint(:\w+)?$' --include='*.go' .                       # no justification — LOW
-grep -rn '#nosec' --include='*.go' .                                  # justify each
-
-# go.mod hygiene
-grep -E '^(go|toolchain) ' go.mod         # version current? toolchain pinned?
-grep -A5 '^tool' go.mod                   # 1.24 tool directives in use?
-grep -rn 'tools.go' . 2>/dev/null         # legacy pattern — migrate (LOW)
-grep -rn 'go install .*@latest' .github/ Makefile* 2>/dev/null   # floating tools — MEDIUM
-git ls-files | grep 'go.work$' && echo 'go.work committed — check intent'
-grep -E '^replace' go.mod
-go list -m <module>                       # the SELECTED version — `require` is a floor, not a cap (§4)
-
-# Test quality
-grep -rln 'func Test' --include='*_test.go' . | wc -l
-grep -rn 't.Parallel' --include='*_test.go' . | wc -l
-grep -rn 'time.Sleep' --include='*_test.go' .                         # flaky sync — MEDIUM
-grep -rln 'func Fuzz' --include='*_test.go' .                         # parsers fuzzed?
-ls testdata/fuzz 2>/dev/null                                          # crash corpus committed?
-grep -rn 'testcontainers' go.mod
-go test -shuffle=on ./...                                             # ordering deps?
-go test -race -count=3 ./...
-
-# Formatting drift
-gofumpt -l . | head
-goimports -l . | head
-
-# Toolchain & vuln state
-go version; go env GOTOOLCHAIN
-govulncheck ./...
-```
+- [ ] **CI gates present? Inspect workflow files** —
+      `grep -rnE '(go test|race|govulncheck|golangci-lint|staticcheck|gofumpt)' .github/workflows/ Makefile* 2>/dev/null`
+      ;
+      `grep -rn 'test -race' . --include='*.yml' --include='*.yaml' --include='Makefile*' || echo 'NO RACE IN CI — HIGH'`
+- [ ] **Lint config exists and is curated (not empty, not enable-all)** —
+      `ls .golangci.yml .golangci.yaml 2>/dev/null` ;
+      `grep -n 'enable-all\|disable-all' .golangci.y*ml 2>/dev/null`
+- [ ] **Suppression hygiene** — `grep -rn 'nolint' --include='*.go' . | grep -v '//' | head`
+      (malformed); `grep -rnE '//nolint(:\w+)?$' --include='*.go' .` (no justification — LOW);
+      `grep -rn '#nosec' --include='*.go' .` (justify each)
+- [ ] **go.mod hygiene** — `grep -E '^(go|toolchain) ' go.mod` (version current? toolchain
+      pinned?); `grep -A5 '^tool' go.mod` (1.24 tool directives in use?);
+      `grep -rn 'tools.go' . 2>/dev/null` (legacy pattern — migrate (LOW));
+      `grep -rn 'go install .*@latest' .github/ Makefile* 2>/dev/null` (floating tools —
+      MEDIUM); `git ls-files | grep 'go.work$' && echo 'go.work committed — check intent'` ;
+      `grep -E '^replace' go.mod` ; `go list -m <module>` (the SELECTED version — `require` is a
+      floor, not a cap (§4))
+- [ ] **Test quality** — `grep -rln 'func Test' --include='*_test.go' . | wc -l` ;
+      `grep -rn 't.Parallel' --include='*_test.go' . | wc -l` ;
+      `grep -rn 'time.Sleep' --include='*_test.go' .` (flaky sync — MEDIUM);
+      `grep -rln 'func Fuzz' --include='*_test.go' .` (parsers fuzzed?);
+      `ls testdata/fuzz 2>/dev/null` (crash corpus committed?);
+      `grep -rn 'testcontainers' go.mod` ; `go test -shuffle=on ./...` (ordering deps?);
+      `go test -race -count=3 ./...`
+- [ ] **Formatting drift** — `gofumpt -l . | head` ; `goimports -l . | head`
+- [ ] **Toolchain & vuln state** — `go version; go env GOTOOLCHAIN` ; `govulncheck ./...`
 
 Severity guide: no `-race`/govulncheck in CI HIGH; library shipping `replace`
 HIGH; EOL toolchain MEDIUM; floating tool versions MEDIUM; a `require`

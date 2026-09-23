@@ -54,24 +54,19 @@ are mechanical — follow them. Reference:
 
 ## Audit checklist
 
-```bash
-# Blocking on async — CRITICAL/HIGH (deadlock / thread-pool starvation)
-grep -rnE '\.(Result|Wait\(\))|GetAwaiter\(\)\.GetResult\(\)' --include='*.cs' . | head
-grep -rnE 'Task\.Run\(' --include='*.cs' . | head             # sync wrapped as async on server?
-
-# async void (non-handler) — MEDIUM/HIGH
-grep -rnE 'async void ' --include='*.cs' . | grep -viE 'EventHandler|_Click|on[A-Z]' | head
-
-# Missing ConfigureAwait(false) in libraries — MEDIUM
-grep -rnE 'await ' --include='*.cs' . | grep -v 'ConfigureAwait' | head    # in library projects
-
-# Cancellation not flowed — MEDIUM
-grep -rnE 'async Task[<A-Za-z, >]* [A-Za-z]+\([^)]*\)' --include='*.cs' . | grep -v 'CancellationToken' | head
-
-# await inside lock — HIGH (won't compile for lock, but SemaphoreSlim misuse / sync-over-async)
-grep -rnE 'lock\s*\(' --include='*.cs' . | head
-grep -rnE 'new (Dictionary|List)<' --include='*.cs' . | grep -i 'static\|shared'  # non-concurrent shared
-
-# Unbounded parallelism — MEDIUM (verify bounding)
-grep -rnE 'Task\.WhenAll|Parallel\.(For|ForEach)' --include='*.cs' . | head
-```
+- [ ] **Blocking on async — CRITICAL/HIGH (deadlock / thread-pool starvation)** —
+      `grep -rnE '\.(Result|Wait\(\))|GetAwaiter\(\)\.GetResult\(\)' --include='*.cs' . | head`
+      ; `grep -rnE 'Task\.Run\(' --include='*.cs' . | head` (sync wrapped as async on server?)
+- [ ] **async void (non-handler) — MEDIUM/HIGH** —
+      `grep -rnE 'async void ' --include='*.cs' . | grep -viE 'EventHandler|_Click|on[A-Z]' | head`
+- [ ] **Missing ConfigureAwait(false) in libraries — MEDIUM** —
+      `grep -rnE 'await ' --include='*.cs' . | grep -v 'ConfigureAwait' | head` (in library
+      projects)
+- [ ] **Cancellation not flowed — MEDIUM** —
+      `grep -rnE 'async Task[<A-Za-z, >]* [A-Za-z]+\([^)]*\)' --include='*.cs' . | grep -v 'CancellationToken' | head`
+- [ ] **await inside lock — HIGH (won't compile for lock, but SemaphoreSlim misuse /
+      sync-over-async)** — `grep -rnE 'lock\s*\(' --include='*.cs' . | head` ;
+      `grep -rnE 'new (Dictionary|List)<' --include='*.cs' . | grep -i 'static\|shared'`
+      (non-concurrent shared)
+- [ ] **Unbounded parallelism — MEDIUM (verify bounding)** —
+      `grep -rnE 'Task\.WhenAll|Parallel\.(For|ForEach)' --include='*.cs' . | head`
