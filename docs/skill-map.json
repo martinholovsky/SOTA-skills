@@ -310,17 +310,9 @@
       "targets": []
     },
     {
-      "from": "sota-confidential-computing",
-      "to": "sota-sandboxing",
-      "weight": 14,
-      "targets": [
-        "rules/01"
-      ]
-    },
-    {
       "from": "sota-testing",
       "to": "sota-code-security",
-      "weight": 14,
+      "weight": 15,
       "targets": [
         "rules/10",
         "rules/11 \u00a72.2",
@@ -329,7 +321,16 @@
         "rules/13 \u00a71",
         "rules/14 \u00a71",
         "rules/14 \u00a77",
+        "rules/15 \u00a72.4",
         "rules/16 \u00a72.16"
+      ]
+    },
+    {
+      "from": "sota-confidential-computing",
+      "to": "sota-sandboxing",
+      "weight": 14,
+      "targets": [
+        "rules/01"
       ]
     },
     {
@@ -346,7 +347,7 @@
         "rules/01",
         "rules/02",
         "rules/06",
-        "rules/09 \u00a75"
+        "rules/11 \u00a75"
       ]
     },
     {
@@ -395,9 +396,9 @@
         "rules/04",
         "rules/07",
         "rules/09 \u00a72",
-        "rules/09 \u00a74",
-        "rules/09 \u00a76",
-        "rules/10"
+        "rules/10",
+        "rules/11 \u00a74",
+        "rules/11 \u00a76"
       ]
     },
     {
@@ -436,7 +437,7 @@
         "rules/03 \u00a73.6",
         "rules/07 \u00a77.7",
         "rules/09",
-        "rules/09 \u00a75"
+        "rules/11 \u00a75"
       ]
     },
     {
@@ -789,6 +790,17 @@
         "rules/05",
         "rules/05 \u00a78",
         "rules/07 \u00a74"
+      ]
+    },
+    {
+      "from": "sota-devsecops",
+      "to": "sota-shell-scripting",
+      "weight": 4,
+      "targets": [
+        "rules/01 \u00a72b",
+        "rules/01 \u00a73",
+        "rules/08 \u00a73",
+        "rules/09 \u00a75a"
       ]
     },
     {
@@ -1305,15 +1317,6 @@
       "to": "sota-secrets-management",
       "weight": 2,
       "targets": []
-    },
-    {
-      "from": "sota-devsecops",
-      "to": "sota-shell-scripting",
-      "weight": 2,
-      "targets": [
-        "rules/01 \u00a73",
-        "rules/08 \u00a73"
-      ]
     },
     {
       "from": "sota-devsecops",
