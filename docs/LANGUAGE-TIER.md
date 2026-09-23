@@ -35,7 +35,7 @@ treatment"*. Every blank was checked by reading the headings of the skill behind
 |---|---|---|---|
 | **Errors** | 7 | **all 7** — c/c++ `01 §7`, jvm `01 §4`, python `03 §10`, js/ts `02 §Error handling`, .NET `02 §4`, php `01 §5`, ruby `01 §5` | 0 |
 | **Typing** | 7 | 2 — c/c++ `01 §6`, ruby `01 §6` | 5 — statically-typed languages have no gradual-typing story |
-| **Web / HTTP** | 5 | 2 — .NET `04 §4`, python `07 §1–2` (named by framework: FastAPI, Django) | 3 — rust, c/c++, jvm carry no web layer |
+| **Web / HTTP** | 5 | 2 — .NET `04 §4`, python `07 §1–2` (named by framework: FastAPI, Django) | 3 — rust, c/c++, jvm carry no web layer. **jvm was a real gap, not principled: written 2026-09-23 as `rules/04 §6` (ROADMAP 62)** |
 | **Memory / UB** | 7 | 0 | 7 — the GC languages' "Memory" sections are *performance* (allocation, GC pressure) and are already counted under Performance |
 
 **The Errors row was the loud one**: seven of seven blank, while `error handling &
@@ -66,7 +66,8 @@ These track a property of the language. Adding the missing cells would be writin
 - **Memory / UB** only in **C/C++** (two files) and **Rust** (`unsafe` discipline).
   Measured: 14 and 6 mentions of use-after-free / UB / bounds against ~0 in the GC'd
   languages. Correct, not a gap.
-- **Web / HTTP** only where the language is web-shaped — **Go, Node, PHP, Ruby**.
+- **Web / HTTP** only where the language is web-shaped — **Go, Node, PHP, Ruby**, plus .NET and
+  python (row above) and, since 2026-09-23, **jvm** (`rules/04 §6`, ROADMAP 62).
 
 The general rule: **the shared skill owns the concept, the language skill owns the
 mechanism.** `sota-async-concurrency` (1,654 lines) teaches data race vs race condition,

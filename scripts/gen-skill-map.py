@@ -83,7 +83,7 @@ LANG_TOPICS = {
               "04": ["Security"], "05": ["Concurrency"],
               "06": ["Tooling / CI / supply chain", "Testing"], "07": ["Performance"]},
     "jvm": {"01": ["Idioms / baseline", "Errors"], "02": ["API / design"], "03": ["Concurrency"],
-            "04": ["Security"], "05": ["Performance"],
+            "04": ["Security", "Web / HTTP"], "05": ["Performance"],
             "06": ["Tooling / CI / supply chain", "Testing"]},
     "python": {"01": ["Tooling / CI / supply chain"], "02": ["Typing"],
                "03": ["Idioms / baseline", "API / design", "Errors"],
@@ -130,6 +130,8 @@ INLINE = {("php", "Concurrency"): "01 §6",
           ("ruby", "Typing"): "01 §6",
           ("python", "Web / HTTP"): "07 §1-2",
           ("dotnet", "Web / HTTP"): "04 §4",
+          # ROADMAP 62, 2026-09-23: jvm's blank here was a REAL gap, now written.
+          ("jvm", "Web / HTTP"): "04 §6",
           # php and .NET are gradual-typing languages too, which the note's
           # "only in the gradual-typing pair" missed: php bolts PHPStan/Psalm LEVELS onto
           # a dynamic language exactly as python does mypy, and C# NRT is opt-in

@@ -1,4 +1,4 @@
-# 04 — Security: deserialization, injection, XXE, JNDI, crypto
+# 04 — Security: deserialization, injection, XXE, JNDI, crypto, the web layer
 
 The JVM removes memory-corruption bugs, so the dominant RCE classes are
 **unsafe deserialization, injection, and lookup/eval of untrusted data**, plus
@@ -91,7 +91,7 @@ Standards: [SEI CERT Oracle Java](https://wiki.sei.cmu.edu/confluence/display/ja
   prefer `char[]`/`byte[]` you can wipe over `String` for passwords (`rules`
   cross-ref `sota-secrets-management`).
 - **Spring/framework**: keep dependencies patched (Spring4Shell, Log4Shell were
-  dependency CVEs — `rules/06`); enable CSRF/auth correctly (`sota-code-security`).
+  dependency CVEs — `rules/06`); the web layer itself is §6 below.
 - **`assert` is not a control**: assertions are **disabled by default** at
   runtime — Oracle's own guide says so, and adds that once disabled they are
   "essentially equivalent to empty statements in semantics and performance".
@@ -100,6 +100,52 @@ Standards: [SEI CERT Oracle Java](https://wiki.sei.cmu.edu/confluence/display/ja
   source. Use an explicit `if` + throw (or `Objects.requireNonNull`,
   `Preconditions`-style checks that survive). Class:
   `sota-code-security` rules/11 §4.
+
+## 6. The web layer — actuator, request binding, authorization rules, filters
+
+HTTP semantics (status codes, idempotency, rate limits, CORS) belong to `sota-api-design`, and
+web-security classes (CSRF, XSS, headers) to `sota-code-security` rules/05. This section covers
+the JVM mechanisms those attacks come in through. Spring is the example because it is the most
+widely deployed JVM web stack. Ask the same questions of Jakarta EE, Micronaut, Quarkus or Ktor.
+All Spring facts below were checked against Spring's own docs, advisories and source on
+2026-09-23. **Re-verify them for the major version in front of you.**
+
+- **Actuator exposure.** By default Spring Boot exposes only `health` over HTTP. Treat every
+  widening of `management.endpoints.web.exposure.include` as a finding until you have shown the
+  endpoint sits behind authentication or a firewall, which is the docs' own condition for
+  setting it. A value of `*` on an internet-facing port is HIGH. **`heapdump` is the worst
+  one.** It returns process memory. The `show-values` sanitization (default `never`) covers
+  `/env`, `/configprops` and `/quartz`, not a heap dump, which holds every secret the process
+  has loaded. Prefer `management.server.port` on an internal-only interface.
+- **Typed request bodies.** §1 states the rule. The web layer is where it fires, because a
+  `@RequestBody` is JSON the caller wrote. `@JsonTypeInfo(use = Id.CLASS)` or `Id.MINIMAL_CLASS`
+  on a type reachable from a request lets the caller name the class to instantiate. Use
+  `Id.NAME` with registered subtypes. `enableDefaultTyping` was deprecated in jackson-databind
+  2.10 in favour of `activateDefaultTyping(PolymorphicTypeValidator)` (databind #2195). A
+  validator that allows `Object` or a broad package prefix is the same hole under a new name.
+- **Data binding (mass assignment).** Spring's reference docs say: *"for security reasons it is
+  recommended either to use an object tailored specifically for web binding, or to apply
+  constructor binding only. If property binding must still be used, then allowedFields
+  patterns should be set."* Binding a persistence entity straight from a request lets the
+  caller set `role`, `ownerId` or `id`. A record used as the binding target gets constructor
+  binding by construction. **Spring4Shell (CVE-2022-22965) was this class** reaching the class
+  loader through property binding. It affected Spring Framework 5.3.0–5.3.17 and 5.2.19 and
+  earlier, and was fixed in 5.3.18 and 5.2.20. It required JDK 9+, Tomcat and WAR packaging.
+  Executable-JAR deployments were not affected.
+- **Authorization rules are first-match.** `authorizeHttpRequests` evaluates its pairs "in
+  the order listed, applying only the first match". So a broad `permitAll()` placed above a
+  narrow rule silently wins. End with `.anyRequest().denyAll()`, or `.authenticated()` as a
+  stated choice. The docs call default deny "a healthy security practice since it turns the
+  set of rules into an allow list". Prefer `permitAll()` to `web.ignoring()`: an ignored path
+  skips the whole filter chain, security headers included. Since Spring Security 6,
+  authorization runs on **every dispatch** (FORWARD, ERROR and INCLUDE as well as REQUEST), so
+  an error page or forward target needs its own rule rather than inheriting its caller's.
+- **Filter ordering.** A servlet `Filter` that reads identity, logs the principal or enforces
+  tenancy must run **after** the security filter chain has authenticated the request. If it
+  is registered earlier, it sees an anonymous request, or trusts a header the chain would
+  have rejected. Check the order **on the running application**, not from `@Order`
+  annotations. Both the default order and the property that sets it have moved between Spring
+  Boot majors: Boot 4's `SecurityProperties` on main no longer carries a filter order.
 
 ## Audit checklist
 
@@ -136,6 +182,29 @@ Standards: [SEI CERT Oracle Java](https://wiki.sei.cmu.edu/confluence/display/ja
       `grep -rnE 'DocumentBuilderFactory|SAXParserFactory|XMLInputFactory|TransformerFactory|SAXReader' --include='*.java' .`
       ;
       `grep -rn 'disallow-doctype-decl\|setExpandEntityReferences\|SafeConstructor' --include='*.java' . || echo "verify XXE hardening"`
+- [ ] **Actuator exposure — HIGH if internet-facing** —
+      `grep -rnE 'management\.endpoints\.web\.exposure\.include|management\.server\.port|show-values' --include='*.properties' .`
+      ; `grep -rnE '^[[:space:]]*(exposure|include|show-values):|heapdump' --include='*.yml' --include='*.yaml' .`
+      (YAML nests the key, so the dotted pattern alone misses `include: "*"`, the commonest
+      form. Anything beyond `health` needs auth or a firewall; `heapdump` exposed is HIGH on
+      sight)
+- [ ] **Request-body polymorphism — CRITICAL on a type reachable from `@RequestBody`** —
+      `grep -rnE 'JsonTypeInfo\.Id\.(CLASS|MINIMAL_CLASS)|use *= *(JsonTypeInfo\.)?Id\.(CLASS|MINIMAL_CLASS)|activateDefaultTyping|enableDefaultTyping' --include='*.java' --include='*.kt' .`
+      (then read the `PolymorphicTypeValidator`: allowing `Object` or a broad prefix is the
+      same finding)
+- [ ] **Mass assignment — HIGH** — list binding targets and confirm none is an entity:
+      `grep -rnE '@(ModelAttribute|RequestBody)' --include='*.java' --include='*.kt' .` ;
+      `grep -rnE 'setAllowedFields|setDisallowedFields|@InitBinder' --include='*.java' --include='*.kt' .`
+      (property binding with no `setAllowedFields` on an entity is the finding; a
+      disallow-list is weaker than an allow-list)
+- [ ] **Authorization rules — HIGH** —
+      `grep -rnE 'authorizeHttpRequests|requestMatchers|anyRequest|permitAll|ignoring\(' --include='*.java' --include='*.kt' .`
+      (read each chain top-down: first match wins; the chain must end in `anyRequest()`;
+      `web.ignoring()` on a non-static path is a finding)
+- [ ] **Filter order — MEDIUM, HIGH if the filter enforces tenancy or reads identity** —
+      `grep -rnE 'implements (jakarta|javax)\.servlet\.Filter|extends OncePerRequestFilter|FilterRegistrationBean|@Order' --include='*.java' --include='*.kt' .`
+      (confirm on the running app that each identity-reading filter runs after the security
+      chain; an annotation is not evidence of the effective order)
 - [ ] **Crypto misuse — HIGH** —
       `grep -rnE 'new Random\(|Math\.random|ThreadLocalRandom' --include='*.java' . | grep -iE 'key|token|iv|salt|nonce|secret'`
       ;

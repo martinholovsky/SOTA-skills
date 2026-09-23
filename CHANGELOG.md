@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`sota-jvm` rules/04 §6: the web layer (ROADMAP 62, closed on operator decision).** jvm was
+  the one language skill in the tier's most-deployed web stack with no web treatment. Its
+  security file covered deserialization, JNDI and XXE, but not the layer they arrive through.
+  §6 covers:
+  - **Actuator exposure.** Only `health` is exposed over HTTP by default, and `heapdump` is
+    outside the `show-values` sanitization.
+  - **Request-body polymorphism.** `Id.CLASS` / `MINIMAL_CLASS`, and `activateDefaultTyping`
+    since jackson-databind 2.10.
+  - **Mass assignment.** Spring's own binding guidance, with Spring4Shell as the instance.
+  - **Authorization rules.** First-match evaluation, and every-dispatch authorization in Spring
+    Security 6.
+  - **Filter order.** Checked on the running app, because the property moved between Boot
+    majors.
+
+  All of it was checked against Spring and Jackson docs, advisories or source on 2026-09-23.
+  Five audit probes were added, and each was run against a known-bad and a known-good fixture
+  under both BSD grep and ugrep. The first draft of the actuator probe **missed YAML's nested
+  `include: "*"`**. Page 5 of the skill map now shows jvm's Web/HTTP cell.
 - **Field report from a session that *used* the library — three findings, one of which found
   a defect in our own snippet.** A Rust + eBPF endpoint sensor at v1.43.1. Every falsifiable
   claim reproduced here before a verdict: `git grep -cE '\b(TODO|FIXME|XXX|HACK)\b'` returns
