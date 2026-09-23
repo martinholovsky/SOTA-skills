@@ -55,6 +55,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Closure pass, 2026-09-23: six same-day claims corrected where they landed.**
+  - **`sota-devsecops` rules/07 §7.7:** said `docker system df` defines "reclaimable" like
+    podman does, but Docker's docs never define the column.
+  - **`sota-testing` rules/04 §4.8:** said "a built-in never appears" in `/proc/modules`.
+    It now quotes `proc_modules(5)` ("modules that have been loaded") and states the
+    inference as one.
+  - **AGENTS.md:** called `64/64` on a sweep-shaped branch measured. It was arithmetic
+    (67 − 3) and is now labelled derived.
+  - **`docs/LANGUAGE-TIER.md`:** said audit items are "comparable" across languages.
+    They are counted the same way, not sized the same.
+  - **`docs/ADOPTION-LOG.md`:** the 14-II entry quoted "in that scope" for four commands,
+    and only two used it (`git show v1.44.0:<file> | grep -c`: 1, 1, 0, 0). The P7 row
+    asserted a mechanism the eval cannot test. Both are superseded in place.
+- **`check-invariants.sh` fails to parse under macOS `/bin/bash` 3.2**, at check 5's `case`,
+  and did before the day's rewrite too. It is recorded as an open item at the top of the
+  script, where anyone running it will see it.
+
 - **`check-invariants.sh` runs in about half the time (17.5 s to 9.7 s locally).** The
   negative-control harness runs the full suite 52 times, and five checks started a process
   for every file:

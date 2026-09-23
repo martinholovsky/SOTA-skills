@@ -288,8 +288,9 @@ found nothing** — the second reading being a conclusion about the target
   one somebody chose to keep.
 - **On a machine you share with other work, prune is a coordination problem.** The blast
   radius is every project on the host, and nothing in the command says so.
-- **"Reclaimable" is the tool's definition of unused, not yours.** `podman`/`docker system df`
-  count an image as reclaimable when no *container* references it, so every build-only
+- **"Reclaimable" is the tool's definition of unused, not yours.** `podman system df` counts
+  an image as reclaimable when no *container* references it (Docker's docs do not define
+  the column at all), so every build-only
   image and pinned toolchain reads as garbage (`sota-shell-scripting` rules/09 §5a).
   Field-reported: 22 GB "reclaimable (93%)", where `image prune -a` would have deleted the
   toolchain images three CI gates build from, and the narrow `image prune` correctly freed

@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 #
 # Enforce SOTA-skills repository invariants. Run by pre-commit and CI.
+#
+# OPEN (recorded 2026-09-23): this script does NOT parse under macOS's /bin/bash 3.2. It
+# stops with "syntax error near unexpected token `;;'" at the `case "$top" in
+# Unreleased|"$ver") ;;` in check 5, and it did before that day's rewrite too (main at
+# af339c4, tested the same way, fails at the same construct). `#!/usr/bin/env bash` picks up a newer bash where
+# one is installed, which is every CI runner and most dev machines, so nothing has noticed.
+# Undecided: fix the construct, or declare bash >= 4 and have the script say so up front.
+# check-negative-controls.sh's header still claims bash 3.2 portability for ITSELF, not this.
 # Exits non-zero (and prints offenders) if any invariant is violated.
 #
 # Invariants:

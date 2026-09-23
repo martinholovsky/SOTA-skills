@@ -4993,6 +4993,10 @@ current code, not against the report's own claim of novelty.
 `sota-shell-scripting` rules/06 §2, with a checklist clause. The report named `/sota-report`
 check A plus two sibling commands. The sweep found **four** commands telling the reader to draw
 the control "in that scope": `/sota-audit`, `/sota-close`, `/sota-resume` and `/sota-report`.
+*(CORRECTION 2026-09-23, same day: only `/sota-audit` and `/sota-close` used the phrase "in
+that scope" (`git show v1.44.0:<file> | grep -c 'in that scope'` gives 1, 1, 0, 0).
+`/sota-resume` and `/sota-report` gave the same instruction in other words, so all four still
+needed the clause; the quotation was wrong, not the fix.)*
 Each gains one clause and a pointer, deliberately not a restatement, because the reporter's own
 caution was that a longer check A gets run less.
 
@@ -5035,7 +5039,7 @@ trigger.
 | P4 principle 8, publishing under someone else's name raises the bar | **adopted** · v1.22.0 | router principle 8, plus `sota-docs-workflow` rules/03 §8 |
 | P5 a falsification precondition on principle 0 | **adopted** · v1.22.0 | router principle 0 |
 | P6 routing as a numbered rule in the hook | **adopted** · v1.22.0 | `scripts/install.sh` hook text |
-| P7 `sota-docs-workflow` leads with docs and hides its collaboration half | **rejected on measurement** · 2026-09-23 | Pre-registered, 18 of 18 collaboration tasks routed to it from the description alone ([P7-COLLAB-ROUTING](../evals/results/2026-09-23/P7-COLLAB-ROUTING.md)). The original miss is better explained by the measured task-shape effect (ROADMAP 48) than by the description, so no description change was made |
+| P7 `sota-docs-workflow` leads with docs and hides its collaboration half | **rejected on measurement** · 2026-09-23 | Pre-registered, 18 of 18 collaboration tasks routed to it from the description alone ([P7-COLLAB-ROUTING](../evals/results/2026-09-23/P7-COLLAB-ROUTING.md)). The original miss is better explained by the measured task-shape effect (ROADMAP 48) than by the description, so no description change was made. *(Qualified 2026-09-23: "better explained" is a hypothesis this eval cannot test, since it sees description selection only; the results doc states it as "more likely", and so does this row now.)* |
 
 ## 2026-09-23 — page 5's blank cells: five undeclared, six a real gap, one not applicable
 
