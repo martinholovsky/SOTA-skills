@@ -96,7 +96,7 @@ explicit "checked and clean" areas.
 |---|---|
 | `rules/01-language-baseline.md` | choosing/verifying PHP version floor (support/EOL table); writing any PHP: strict_types, typed properties, enums, readonly, match, fibers, 8.4/8.5 features, comparison pitfalls incl. **`strpos` returning `false` where `0` is a real match**, error handling, deprecations |
 | `rules/02-injection.md` | code touching SQL, shell, or HTML output: PDO prepared statements, command execution, XSS and context-aware escaping, template engines, eval-family bans |
-| `rules/03-files-deserialization-ssrf.md` | file uploads, include/require paths, stream wrappers (LFI/RFI/`phar://`), `unserialize` and Phar object injection, XXE, server-side URL fetching (SSRF) |
+| `rules/03-files-deserialization-ssrf.md` | file uploads, include/require paths, stream wrappers (LFI/RFI/`phar://`), `unserialize` and Phar object injection, XXE, server-side URL fetching (SSRF); **escape hatches into raw memory**: FFI and `ffi.enable` |
 | `rules/04-sessions-auth-web-hardening.md` | login/session/auth code: session cookie flags and fixation, password_hash/argon2id, sodium crypto, CSRF, security headers, production php.ini hardening |
 | `rules/05-composer-tooling.md` | dependencies and CI: composer.lock discipline, `composer audit`, platform reqs, PHPStan/Psalm levels and baseline ratcheting, PER-CS, PHPUnit/Pest, CI gates |
 | `rules/06-performance-runtime.md` | anything slow or deploy-shaped: OPcache and preloading, JIT reality check, PHP-FPM pool sizing, N+1/caching, autoloader optimization, profiling. **Test *strategy* lives in `sota-testing`; DB depth in `sota-databases`.** |

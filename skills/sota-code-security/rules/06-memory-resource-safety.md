@@ -109,6 +109,32 @@ memcpy(buf, pkt->data, n); buf[n] = '\0';
   inherits the full C threat model. Validate all data crossing the FFI boundary
   in both directions (lengths, encodings, null-termination).
 - `unsafe` justified by "performance" without a benchmark is a finding.
+- **A memory-safe language reaches the same threat model without anyone writing C.** Each
+  one ships an escape hatch into raw memory as an ordinary library call, and a codebase
+  "in a GC language" is memory-safe only until it uses one. Each language skill carries
+  its own spelling; the rule is the one above (confine it, justify it, validate at the
+  boundary). The hatches, each checked against its vendor's documentation (2026-09-23):
+  - **Go:** `unsafe.Pointer`, `cgo`, `//go:linkname` (`sota-golang` rules/05 §7).
+  - **JVM:** JNI (`native` / Kotlin `external`, `System.loadLibrary`); the FFM API
+    (final in JDK 22, JEP 454), whose restricted methods only *warn* unless
+    `--enable-native-access` names the module; `sun.misc.Unsafe` memory access
+    (deprecated for removal in JDK 23, JEP 471).
+  - **.NET:** `unsafe` blocks, pointers and `fixed`, which need `AllowUnsafeBlocks`
+    (default `false`); P/Invoke through `[DllImport]` or `[LibraryImport]` (.NET 7+, which
+    also requires `AllowUnsafeBlocks`); `Marshal.*` on raw pointers.
+  - **Python:** `ctypes` and `cffi`, which read and write arbitrary process memory from pure
+    Python; the docs warn that incorrect use can "corrupt data and objects, reveal sensitive
+    information, cause crashes".
+  - **Node:** native addons (`.node`, Node-API), and **`Buffer.allocUnsafe`**, whose memory
+    "is *not initialized*" and "may contain sensitive data". That is an information leak
+    with no native code at all.
+  - **PHP:** the FFI extension; `ffi.enable` defaults to `"preload"` (CLI and preloaded files
+    only), and `"true"` opens it to every request.
+  - **Ruby:** Fiddle (a libffi wrapper), the `ffi` gem, and C extensions.
+
+  **A `.csproj` with `AllowUnsafeBlocks`, a Python import of `ctypes`, or a PHP
+  `ffi.enable=true` is the one-line signal** that a codebase crosses into unmanaged memory.
+  Audit that code with the C rules in §2, not the language's own.
 
 ## 4. Untrusted size/length fields (CWE-130/805)
 
@@ -216,6 +242,9 @@ http.Client\{ without Timeout                 requests.(get|post)\( without time
 new Worker|Thread\( in request handlers       unbounded chan / Queue() / Buffer concat
 zip|tar|gzip extract without size/ratio cap   Image.open/decode without pixel limit
 os.access\(|fs.exists\( followed by open      SELECT.*FOR UPDATE absent near balance/credit math
+unsafe.Pointer|cgo  (Go)   JNI native|external fun|sun.misc.Unsafe|java.lang.foreign  (JVM)
+AllowUnsafeBlocks|DllImport|LibraryImport  (.NET)   ctypes|cffi  (Python)
+Buffer.allocUnsafe|\.node|node-addon-api  (Node)   FFI::|ffi.enable  (PHP)   Fiddle|FFI::Library  (Ruby)
 ```
 
 ## Audit checklist
@@ -226,6 +255,7 @@ os.access\(|fs.exists\( followed by open      SELECT.*FOR UPDATE absent near bal
 - [ ] Do money/quantity fields enforce positive, bounded, integer/decimal semantics?
 - [ ] Are banned C string functions absent and parsers of untrusted bytes fuzzed with sanitizers in CI?
 - [ ] Is `unsafe`/FFI code confined to designated modules with SAFETY comments, safe wrappers, and Miri/ASan coverage?
+- [ ] In a GC language, does any code use its escape hatch into raw memory (§3's per-language list)? Each use is audited with the C rules, and a project-wide opt-in (`AllowUnsafeBlocks`, `ffi.enable=true`, `--enable-native-access=ALL-UNNAMED`) is justified in writing.
 - [ ] Does every declared length/offset get validated against bytes-actually-available before allocation or read?
 - [ ] Are decompression ratio caps, image pixel limits, and JSON/GraphQL depth+complexity limits enforced?
 - [ ] Do all inbound listeners and outbound calls have timeouts, with cancellation propagation?

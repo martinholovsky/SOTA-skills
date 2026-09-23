@@ -71,35 +71,35 @@ TOPIC_ORDER = ["Idioms / baseline", "API / design", "Errors", "Typing", "Concurr
                "Tooling / CI / supply chain", "Testing"]
 # file number -> topics it carries. A number in two topics means one file covers both.
 LANG_TOPICS = {
-    "rust": {"01": ["Idioms / baseline", "API / design"], "02": ["Errors"],
-             "03": ["Memory / UB"], "04": ["Concurrency"], "05": ["Security"],
+    "rust": {"01": ["Idioms / baseline", "API / design", "Typing"], "02": ["Errors"],
+             "03": ["Memory / UB"], "04": ["Concurrency"], "05": ["Security", "Web / HTTP"],
              "06": ["Performance"],
              "07": ["Tooling / CI / supply chain", "Testing"]},
-    "golang": {"01": ["Errors"], "02": ["Idioms / baseline", "API / design"],
-               "03": ["Concurrency"], "04": ["Web / HTTP"], "05": ["Security"],
+    "golang": {"01": ["Errors"], "02": ["Idioms / baseline", "API / design", "Typing"],
+               "03": ["Concurrency"], "04": ["Web / HTTP"], "05": ["Security", "Memory / UB"],
                "06": ["Performance"],
                "07": ["Tooling / CI / supply chain", "Testing"]},
     "c-cpp": {"01": ["Idioms / baseline", "API / design", "Errors", "Typing"], "02": ["Memory / UB"], "03": ["Memory / UB"],
               "04": ["Security"], "05": ["Concurrency"],
               "06": ["Tooling / CI / supply chain", "Testing"], "07": ["Performance"]},
-    "jvm": {"01": ["Idioms / baseline", "Errors"], "02": ["API / design"], "03": ["Concurrency"],
-            "04": ["Security", "Web / HTTP"], "05": ["Performance"],
+    "jvm": {"01": ["Idioms / baseline", "Errors"], "02": ["API / design", "Typing"], "03": ["Concurrency"],
+            "04": ["Security", "Web / HTTP", "Memory / UB"], "05": ["Performance"],
             "06": ["Tooling / CI / supply chain", "Testing"]},
     "python": {"01": ["Tooling / CI / supply chain"], "02": ["Typing"],
                "03": ["Idioms / baseline", "API / design", "Errors"],
-               "04": ["Concurrency"], "05": ["Security"],
+               "04": ["Concurrency"], "05": ["Security", "Memory / UB"],
                "06": ["Performance"], "07": ["Testing", "Web / HTTP"]},
     "javascript-typescript": {"01": ["Typing"], "02": ["Idioms / baseline", "API / design", "Errors"],
                               "03": ["Concurrency"], "04": ["Web / HTTP"],
-                              "05": ["Security"], "06": ["Performance"],
+                              "05": ["Security", "Memory / UB"], "06": ["Performance"],
                               "07": ["Testing", "Tooling / CI / supply chain"]},
     "dotnet": {"01": ["Idioms / baseline", "Typing"], "02": ["API / design", "Errors"],
-               "03": ["Concurrency"], "04": ["Security", "Web / HTTP"], "05": ["Performance"],
+               "03": ["Concurrency"], "04": ["Security", "Web / HTTP", "Memory / UB"], "05": ["Performance"],
                "06": ["Tooling / CI / supply chain", "Testing"]},
     "php": {"01": ["Idioms / baseline", "Concurrency", "API / design", "Errors", "Typing"], "02": ["Security"],
-            "03": ["Security"], "04": ["Security", "Web / HTTP"],
+            "03": ["Security", "Memory / UB"], "04": ["Security", "Web / HTTP"],
             "05": ["Tooling / CI / supply chain", "Testing"], "06": ["Performance"]},
-    "ruby": {"01": ["Idioms / baseline", "API / design", "Errors", "Typing"], "02": ["Security"], "03": ["Web / HTTP"],
+    "ruby": {"01": ["Idioms / baseline", "API / design", "Errors", "Typing"], "02": ["Security", "Memory / UB"], "03": ["Web / HTTP"],
              "04": ["Tooling / CI / supply chain", "Testing"],
              "05": ["Concurrency", "Performance"]},
 }
@@ -132,12 +132,38 @@ INLINE = {("php", "Concurrency"): "01 §6",
           ("dotnet", "Web / HTTP"): "04 §4",
           # ROADMAP 62, 2026-09-23: jvm's blank here was a REAL gap, now written.
           ("jvm", "Web / HTTP"): "04 §6",
+          # 2026-09-23, the blanks a reader flagged on page 5: five were DECLARATION gaps,
+          # the same defect as 2026-09-22 one row down. The Typing row already counts c/c++'s
+          # "Type-system leverage", so a static language's type-system chapter qualifies.
+          ("rust", "Typing"): "01 §3-4",        # newtype, typestate
+          ("jvm", "Typing"): "02 §1",           # nullability is part of the type (= .NET NRT)
+          ("golang", "Typing"): "02 §5",        # generics
+          ("golang", "Memory / UB"): "05 §7",   # unsafe and cgo policy
+          ("rust", "Web / HTTP"): "05 §7",      # service-edge defaults (axum/tower)
+          # The six GC languages' escape hatches into raw memory, written 2026-09-23 under
+          # the shared class in sota-code-security rules/06 §3. Before that these cells were
+          # blank and the hatches were mentioned only in passing.
+          ("jvm", "Memory / UB"): "04 §7",              # JNI, FFM, Unsafe
+          ("python", "Memory / UB"): "05 §11",          # ctypes, cffi, C extensions
+          ("javascript-typescript", "Memory / UB"): "05 §Native",  # addons, allocUnsafe
+          ("dotnet", "Memory / UB"): "04 §6",           # unsafe, P/Invoke
+          ("php", "Memory / UB"): "03 §6",              # FFI
+          ("ruby", "Memory / UB"): "02 §8",             # Fiddle, ffi gem, C extensions
           # php and .NET are gradual-typing languages too, which the note's
           # "only in the gradual-typing pair" missed: php bolts PHPStan/Psalm LEVELS onto
           # a dynamic language exactly as python does mypy, and C# NRT is opt-in
           # nullability you enable per project. Both have a dedicated section.
           ("php", "Typing"): "01 §2",
           ("dotnet", "Typing"): "01 §2"}
+
+# A cell that does not apply says so. Until 2026-09-23 page 5 drew these BLANK, and a blank
+# is unreadable: a reader cannot tell "does not apply" from "nobody wrote it", and on that
+# date 11 of 12 blanks a reader flagged were the second kind. Every remaining blank must be
+# declared here WITH its reason, or the generator refuses to draw the page.
+NOT_APPLICABLE = {
+    ("c-cpp", "Web / HTTP"): "no mainstream C/C++ web stack to be idiomatic about; HTTP "
+                             "semantics belong to sota-api-design",
+}
 
 
 def audit_items(lang):
@@ -634,11 +660,12 @@ def page_matrix(lang_files):
               "Page 5 — section x language. Which topics each language skill gives its own "
               "rules file.\n\n"
               "SOLID = a file of its own. LIGHT = shares a file with another topic, or is a "
-              "section inside a broader file (the cell says which). BLANK = no file AND no "
-              "section — which is NOT the same as 'not covered': a concept can still be "
-              "probed from inside another topic, and gen-concept-matrix.py is what answers "
-              "that question. This legend read 'no dedicated treatment' until 2026-09-22, "
-              "while 11 cells were blank with a real section behind them.\n\n"
+              "section inside a broader file (the cell says which). N/A (dashed) = the topic "
+              "does not apply to that language, for the reason listed below. There are no "
+              "blank cells: since 2026-09-23 the generator refuses to draw one, because a "
+              "blank could not say whether it meant 'does not apply' or 'nobody wrote it'.\n\n"
+              + "".join("N/A %s x %s: %s.\n" % (LANG_LABEL[l], t, r)
+                        for (l, t), r in NOT_APPLICABLE.items()) + "\n"
               # DERIVED, never written. This sentence read "Four sections are universal"
               # while the table below it showed SIX (Concurrency and Testing were already
               # 9/9), and then SEVEN once ROADMAP 57 closed -- wrong before anyone touched
@@ -665,8 +692,14 @@ def page_matrix(lang_files):
         for j, lang in enumerate(LANGS):
             nums = sorted(n for n, tops in LANG_TOPICS[lang].items() if topic in tops)
             if not nums:
-                style = BOX + "fillColor=#fafafa;strokeColor=#dddddd;fontSize=10;"
-                label = ""
+                if (lang, topic) not in NOT_APPLICABLE:
+                    sys.exit("PAGE 5 HAS AN UNEXPLAINED BLANK: %s x %s. Declare the section "
+                             "that covers it (LANG_TOPICS/INLINE), write one, or add it to "
+                             "NOT_APPLICABLE with the reason -- a blank cell cannot say which."
+                             % (LANG_LABEL[lang], topic))
+                style = (BOX + "fillColor=#f5f5f5;strokeColor=#bbbbbb;dashed=1;"
+                         "fontColor=#777777;fontSize=10;fontStyle=2;")
+                label = "n/a"
             else:
                 shared = any(len(LANG_TOPICS[lang][n]) > 1 for n in nums)
                 inline = INLINE.get((lang, topic))

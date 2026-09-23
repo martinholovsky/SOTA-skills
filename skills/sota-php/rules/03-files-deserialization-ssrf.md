@@ -159,10 +159,23 @@ function assertSafeUrl(string $url): void
 - `file_get_contents($url)`/`fopen` honor redirects with no protocol pinning —
   use a real HTTP client for remote fetches.
 
+
+## 6. FFI — PHP calling C
+
+The FFI extension lets PHP declare C functions and structures and call them directly, with
+none of PHP's memory safety. Its gate is `ffi.enable`: the default `"preload"` restricts the
+FFI API to the CLI and preloaded files, and **`"true"` opens it to every request**. So
+`ffi.enable=true` in a web SAPI's `php.ini` is the finding, and FFI code, where it is needed,
+is loaded from a preload script where its surface is fixed at start-up. Audit the C
+signatures and every length crossing them with the C rules. The class is `sota-code-security` rules/06 §3.
+
 ## Audit checklist
 
 Run from repo root; verify each hit manually.
 
+- [ ] **FFI — HIGH if enabled for every request** (§6) —
+      `grep -rniE 'ffi\.enable[[:space:]]*=[[:space:]]*"?(true|1|on)' --include='*.ini' --include='*.conf' --include='Dockerfile*' .` ;
+      `grep -rnE '\\?FFI::(cdef|load|scope|new)' --include='*.php' .`
 - [ ] **Uploads — client-trusted name/type, executable destinations** —
       `grep -rnE "\\\$_FILES\[[^]]+\]\['(name|type)'\]" --include='*.php' src/` ;
       `grep -rn 'move_uploaded_file' --include='*.php' src/` (trace dest: webroot? renamed?);

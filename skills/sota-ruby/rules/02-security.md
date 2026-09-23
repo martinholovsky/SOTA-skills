@@ -174,11 +174,24 @@ raise SecurityError unless path.start_with?(base + File::SEPARATOR)
   Code that treats `base + name` as "inside base" is a traversal. The
   expand-then-prefix check above catches both.
 
+
+## 8. Fiddle, the `ffi` gem and C extensions
+
+Ruby is memory-safe until it calls C. Fiddle (a libffi wrapper), the `ffi` gem
+(`extend FFI::Library`, `attach_function`) and C extensions all reach raw memory: a pointer
+read past its length, or a struct layout declared wrong, crashes the process or leaks memory
+with no C file in the repository to review. Confine foreign calls to one module, declare
+every signature precisely, and validate lengths before they cross. Native gems count as well:
+a C extension a gem ships is C you are running. The class is `sota-code-security` rules/06 §3.
+
 ## Audit checklist
 
 Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
 `bundle exec rubocop --only Security` cover several of these mechanically.
 
+- [ ] **Fiddle / `ffi` / C extensions — HIGH where a length or pointer comes from input** (§8) —
+      `grep -rnE "require[[:space:]]+['\"](fiddle|ffi)['\"]|Fiddle::|extend[[:space:]]+FFI::Library|attach_function" --include='*.rb' .`
+      ; `grep -rnE 'ext/.*extconf\.rb|extensions' --include='*.gemspec' .`
 - [ ] **SQL injection — CRITICAL on any hit with non-literal interpolation** —
       `grep -rnE '\.(where|order|group|having|select|joins|pluck|find_by_sql|update_all)\s*\(\s*["'"'"'][^)]*#\{' --include='*.rb' .`
       ; `grep -rn "Arel.sql" --include='*.rb' .` ;

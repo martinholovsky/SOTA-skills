@@ -34,9 +34,9 @@ treatment"*. Every blank was checked by reading the headings of the skill behind
 | row | blanks | had a real section (map was wrong) | principled |
 |---|---|---|---|
 | **Errors** | 7 | **all 7** — c/c++ `01 §7`, jvm `01 §4`, python `03 §10`, js/ts `02 §Error handling`, .NET `02 §4`, php `01 §5`, ruby `01 §5` | 0 |
-| **Typing** | 7 | 2 — c/c++ `01 §6`, ruby `01 §6` | 5 — statically-typed languages have no gradual-typing story |
-| **Web / HTTP** | 5 | 2 — .NET `04 §4`, python `07 §1–2` (named by framework: FastAPI, Django) | 3 — rust, c/c++, jvm carry no web layer. **jvm was a real gap, not principled: written 2026-09-23 as `rules/04 §6` (ROADMAP 62)** |
-| **Memory / UB** | 7 | 0 | 7 — the GC languages' "Memory" sections are *performance* (allocation, GC pressure) and are already counted under Performance |
+| **Typing** | 7 | 2 — c/c++ `01 §6`, ruby `01 §6` | 5 — statically-typed languages have no gradual-typing story. **SUPERSEDED 2026-09-23:** by the row's own definition (c/c++ counts "type-system leverage"), rust `01 §3–4`, jvm `02 §1` and go `02 §5` were sections too, so 3 of these 5 were declaration gaps |
+| **Web / HTTP** | 5 | 2 — .NET `04 §4`, python `07 §1–2` (named by framework: FastAPI, Django) | 3 — rust, c/c++, jvm carry no web layer. **jvm was a real gap, not principled: written 2026-09-23 as `rules/04 §6` (ROADMAP 62).** **rust also had one**, `05 §7` service-edge defaults (axum/tower), declared the same day. Only **c/c++** is principled, and the map now shows it as `n/a` with that reason |
+| **Memory / UB** | 7 | 0 | 7 — the GC languages' "Memory" sections are *performance* (allocation, GC pressure) and are already counted under Performance. **SUPERSEDED 2026-09-23:** go had a section (`05 §7`, unsafe and cgo), and the other six had a real gap, **their escape hatches into raw memory**, now written under one shared class (`sota-code-security` rules/06 §3) plus a section in each |
 
 **The Errors row was the loud one**: seven of seven blank, while `error handling &
 propagation` sits in `UNIVERSAL_FLOOR` at **9/9**. Two instruments were making contradictory
@@ -62,10 +62,18 @@ These track a property of the language. Adding the missing cells would be writin
   design"`, Ruby `01 §5`, PHP `01 §5`, JS/TS `02 "Error handling"`). **The concept is
   covered in all nine; only the file is Rust/Go-specific.**
 - **Typing** only in **Python and JS/TS**, the two gradual-typing languages. A statically
-  typed language does not need a chapter on adding types.
+  typed language does not need a chapter on adding types. *(Superseded 2026-09-23: the row
+  counts type-system leverage too, and rust, jvm and go each have such a chapter. Page 5 now
+  has no blank cells; the only `n/a` is c/c++ Web/HTTP, and the generator refuses to draw an
+  unexplained blank.)*
 - **Memory / UB** only in **C/C++** (two files) and **Rust** (`unsafe` discipline).
   Measured: 14 and 6 mentions of use-after-free / UB / bounds against ~0 in the GC'd
-  languages. Correct, not a gap.
+  languages. Correct, not a gap. **CORRECTED 2026-09-23: it was a gap.** Counting UB
+  *vocabulary* measured the wrong thing. Every GC language has an escape hatch into raw
+  memory (JNI/FFM/`Unsafe`, `ctypes`, `Buffer.allocUnsafe` and native addons,
+  `unsafe`/P/Invoke, PHP FFI, Fiddle), and only go covered its own. They are now stated once
+  in `sota-code-security` rules/06 §3 with per-language detectors, and each skill has a
+  section (jvm `04 §7`, python `05 §11`, js/ts `05`, .NET `04 §6`, php `03 §6`, ruby `02 §8`).
 - **Web / HTTP** only where the language is web-shaped — **Go, Node, PHP, Ruby**, plus .NET and
   python (row above) and, since 2026-09-23, **jvm** (`rules/04 §6`, ROADMAP 62).
 
