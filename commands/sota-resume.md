@@ -20,7 +20,7 @@ Search widely before concluding anything:
 - open issues and PRs, if a remote is configured.
 
 **A clean "nothing found" is the result you were hoping for, which is exactly when to distrust
-it.** Four failure modes produce a confident zero, and none of them prints an error:
+it.** Five failure modes produce a confident zero, and none of them prints an error:
 
 - **The searcher skipped the tree.** `grep -r` does not follow symlinked directories, and
   package dirs, dotfile checkouts and installed-plugin trees are symlink farms. Which flag
@@ -30,6 +30,9 @@ it.** Four failure modes produce a confident zero, and none of them prints an er
 - **The flag meant something else.** `rg -r` is `--replace`, not "recursive"; it silently
   rewrites every match to the next token and the output looks like content
   (`sota-shell-scripting` rules/06 §2a).
+- **The pattern cannot match on this machine.** `\b` in `git grep -E` matches nothing on macOS
+  (no error, exit 1), and so does every alternative in the pattern that uses it. Use `-w`, a
+  bracket boundary, or no boundary (`sota-shell-scripting` rules/06 §2f).
 - **The lister answered about one page.** `gh issue list` and friends cap at 30 by default,
   exit 0, empty stderr. A result whose size equals a round number you or the tool chose is a
   page until proven otherwise (`sota-shell-scripting` rules/09 §5).

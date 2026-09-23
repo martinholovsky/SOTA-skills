@@ -2698,6 +2698,12 @@ files = [f for f in subprocess.run(["git","ls-files"],capture_output=True,text=T
          if (f.startswith("skills/") or f.startswith("commands/")) and f.endswith(".md")]
 print("SCOPE %d" % len(files))
 bad = 0
+# The files count above is the CONTAINER. What this check reads is shell blocks and inline
+# code spans, and those are counted and printed too (2026-09-23): a refactor moved every
+# checklist from fences into bullets, the files count stayed flat, and 16 broken probes sat
+# where this check no longer looked (sota-devsecops rules/09 §2, "count the unit the
+# predicate reads").
+n_blocks = n_spans = 0
 for f in files:
     try:
         text = pathlib.Path(f).read_text(encoding="utf-8")
@@ -2712,6 +2718,8 @@ for f in files:
         if s.startswith("```"):
             lang = s[3:].strip().lower()
             fence = None if fence is not None else (lang or "plain")
+            if fence in ("sh", "bash"):
+                n_blocks += 1
             i += 1
             continue
         if fence in ("sh", "bash"):
@@ -2729,11 +2737,13 @@ for f in files:
             # every probe from a ```bash fence into `- [ ]` bullets, which took all of them
             # out of this check's reach; seven broken probes sat there unseen.
             for m in SPAN.finditer(line):
+                n_spans += 1
                 code = m.group(1) or m.group(2)
                 if hit(code) and not PLACEHOLDER.match(code):
                     print("%s:%d  %s" % (f, n, code.strip()[:80]))
                     bad += 1
         i += 1
+print("UNITS %d %d" % (n_blocks, n_spans))
 if bad:
     print("  `||` fires on EVERY non-zero exit and 2>/dev/null destroyed the reason.")
     print("  grep exits 1 for no-match, 2 for an unreadable path -- indistinguishable here,")
@@ -2744,13 +2754,16 @@ raise SystemExit(1 if bad else 0)
 IDPY
   ) || v32=1
   n32=$(printf '%s\n' "$idiom_out" | sed -n 's/^SCOPE //p')
+  u32=$(printf '%s\n' "$idiom_out" | sed -n 's/^UNITS //p')
   while IFS= read -r l; do
-    case "$l" in SCOPE\ *|'') ;; *) note "$l" ;; esac
+    case "$l" in SCOPE\ *|UNITS\ *|'') ;; *) note "$l" ;; esac
   done <<EOF32
 $idiom_out
 EOF32
   scope "${n32:-0}" "instruction files" || v32=1
-  if [ "$v32" -eq 0 ]; then echo "    ok (${n32:-0} instruction files)"; fi
+  if [ "$v32" -eq 0 ]; then
+    echo "    ok (${n32:-0} instruction files: ${u32%% *} shell blocks, ${u32##* } inline code spans read)"
+  fi
 else
   note "SKIPPED (python3 not found; CI always has it)"
   echo "    ok (skipped)"

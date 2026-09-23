@@ -5068,3 +5068,30 @@ fixed before commit.
 **The measurement that had called it "correct, not a gap"** counted UB *vocabulary* (14 and
 6 mentions against ~0) and so measured the wrong thing. The hazard in a GC language is not
 use-after-free in its own code; it is the call that leaves the runtime.
+
+## 2026-09-23 — five proposals from this session's own field report: all adopted
+
+**Intake shape: a field report written by the session that did the work**
+(`FIELD-REPORT-SOTA-SKILLS-2026-09-23.local.md`, reviewed and corrected by its author before
+intake; the operator chose rows 1–5 of its recommendation table).
+
+| # | finding | verdict | landed |
+|---|---|---|---|
+| F1 | A gate printed a denominator and still went blind: it counted files while its predicate read fenced blocks (167 → 110 after a format refactor, 16 broken probes unseen) | **adopted** | `sota-devsecops` rules/09 §2 ("count the unit the predicate reads, not the container") plus a checklist item. Applied to this repo's own check 32, which now prints blocks and inline spans read |
+| F2 | `n=$(… \| grep -c .)` under `set -euo pipefail` aborts silently on zero; the fix was already an aside in rules/02 | **adopted, promoted** | `sota-shell-scripting` rules/02 §4, its own bullet naming the substitution form, plus a probe. The probe was run over this repo's scripts: 4 hits, **0 defects** (two scripts do not use `-e`, and one count is guarded by a non-empty test), so the checklist item asks both deciding questions |
+| F3 | A PR's CI proves only the arm its own diff shape selects | **adopted** | `sota-devsecops` rules/09 §2c, plus a checklist item |
+| F4 | `\b` in `git grep -E` gives a confident zero on macOS | **adopted as a pointer** | `/sota-resume` (its list of confident-zero failure modes, now five) and `/sota-close` (its tells, now three), each pointing at the existing `sota-shell-scripting` rules/06 §2f. No new rule text |
+| F5 | Rewriting a running script changes what it executes | **adopted** | `sota-shell-scripting` rules/05 §3d, plus a checklist item. Reproduced both arms before writing |
+
+**Deferred, with a trigger:** a repository lint gate for F2's shape.
+
+- **DEFERRED — revisit trigger: a second occurrence of an unguarded `grep -c` substitution
+  aborting a `-e` script in this repo.** It passes the three filters (it has failed, it fails
+  silently, it is mechanically checkable), but a new invariant costs a probe, doc-count updates
+  and CI time, and the probe run over this repo's scripts found 0 live defects in 4 candidates.
+
+**Found while implementing, not taken here:** reconciling check 32's new block count (109)
+against a regex count (110) exposed a ```` ```sh ```` fence nested inside a ```` ```markdown ````
+fence in `sota-docs-workflow` rules/01. A CommonMark parser (markdown-it-py) confirms that the
+`## §4` heading at source line 107 renders **inside a code block spanning lines 105–164**. It is
+outside this intake's rows and is reported to the operator separately.

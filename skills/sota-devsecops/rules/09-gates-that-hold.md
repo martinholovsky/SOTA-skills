@@ -163,6 +163,16 @@ legitimately shrinks the tree then costs one deliberate baseline update. Contain
 is good engineering. Containment without repointing the scanner is just a smaller
 blind spot.
 
+**Count the unit the predicate reads, not the container it lives in.** A files count stays
+flat while a *format* change empties what the check actually examines. Field-measured in
+this library: a check scanning fenced `sh`/`bash` blocks printed `ok (322 instruction files)`
+before and after a refactor moved every audit checklist from fences into bullets with inline
+code. Its real input dropped from 167 blocks to 110, and 16 broken probes sat where it no
+longer looked. The files denominator was honest and useless. A check over fenced blocks
+prints blocks; one over dependency manifests prints manifests, not repositories. **When a
+change converts the format of gated content** (fences to bullets, YAML to TOML, one file to
+many), re-run the gate's known-bad written in the *new* format before merging.
+
 **A fixture that simulates a *release* inherits every release-time check.** A negative
 control builds a known-bad to prove one gate fires. When that fixture has to look like a
 release -- bumping a version, rewriting a changelog heading -- it also satisfies, or breaks,
@@ -235,6 +245,28 @@ excluded the workspace member holding most of the code. CI rejected what local h
   deliberately and confirm the check goes red.
 - **A check's exit code tells you it ran, never what it ran over.** Treat "passed locally,
   failed in CI" as a scope or binary question first, and a code question second.
+
+### 2c. A PR's CI proves only the arm its own diff shape selects
+
+§2–§2b are about what a gate reaches. This is about which of its code paths a pull request
+actually **exercises**. Some checks branch on the shape of the change: a large sweep versus a
+small edit, a release versus an ordinary commit, a first run versus an incremental one. The
+PR's CI runs one arm, the one that PR's shape selects, and its green says nothing about the
+other.
+
+Field-measured in this library's own harness: a counter ran `$(… | grep -c .)` on the list
+of probes skipped for being sweep-shaped. The PR that introduced it changed more than 20
+skill files, so its CI took the non-empty arm and went green. Every ordinary branch,
+**including the default branch**, takes the empty arm, where `grep -c` exits 1 and
+`set -euo pipefail` ended the run with no FAIL line (`sota-shell-scripting` rules/02). The
+default branch went red on the merge commit.
+
+- **Before merging a change to a shape-dependent path, run it on a tree of the other shape.**
+  A throwaway branch with a one-file diff is enough to reach a "not a sweep" arm.
+- **Watch the default branch's own run on the merge commit** instead of treating the PR's
+  green as final. It is the first run on the shape most future commits will have.
+- **Name the branch condition beside the check** ("skipped when ≥ N files change") so a
+  reviewer can see that a PR only reached one side.
 
 ## 3. A gate only gates if failing it makes the artifact unconsumable
 
@@ -310,4 +342,10 @@ release tag directly is the finding.
       promotion — not an intermediate step (§3, `rules/11` §4). A verification error at the consumer for a
       scan/test cause is the symptom.
 - [ ] Every security gate ships a **negative control** — a committed known-bad it must reject on every run, and it is reachable as a **mode of the runner** (`--self-test`) rather than only as a fixture beside it, so a newly added check with no known-bad fails rather than passing unprobed (`sota-code-security` rules/12 §1b). No framework (SSDF, CRA, Scorecard, SLSA) requires this; a passing compliance check is evidence of process, not protection (`sota-code-security` rules/12)
+- [ ] **Is each gate's denominator the unit its predicate reads?** (§2) Blocks, spans or
+      manifests, not the files that contain them. After any change that converts the *format*
+      of gated content, the gate's known-bad is re-run in the new format.
+- [ ] **Does any check branch on the shape of the diff?** (§2c) Sweep versus small edit,
+      release versus not. If so, was the other arm run before merge, and was the default
+      branch's run on the merge commit read, not just the PR's?
 - [ ] Every gate prints the **number of units it enumerated** and the build fails when that number drops — a refactor that moves code into a nested module, a second manifest, a submodule or a sidecar image silently shrinks the gate's scope while the negative control keeps passing (§3, `rules/11` §5)

@@ -164,6 +164,15 @@ yes | head -n 3                               # SIGPIPE on `yes` → status 141;
 out=$(produce | head -n 3) || (( $? == 141 ))  # accept SIGPIPE only
 ```
 
+- **A count in a command substitution is the form that ships, and it aborts silently.**
+  `n=$(… | grep -c .)` under `set -euo pipefail` is fine while the count is positive. On
+  zero, `grep -c` prints `0` **and exits 1**, the assignment fails, and `-e` ends the script
+  with no error message: the log just stops. It sits on a path only an *empty* input
+  reaches, so a run with data passes and the next run without data dies. Field-measured in
+  this library's own test harness: the default branch went red on the first empty run
+  (`sota-devsecops` rules/09 §2c). Write every count as `{ grep -c . || true; }`, and never
+  as a bare `grep -c` inside `$( )`.
+
 - Prefer process substitution over pipes into `while read` — the pipe runs the loop in a
   subshell, so variable updates vanish (SC2031):
 
@@ -413,6 +422,12 @@ mapfile -d '' logs < <(find . -name '*.log' -print0)
 
 ## Audit checklist
 
+- [ ] **Counts in substitutions survive zero** (§4) — under `set -e`, any `$(… grep -c …)`
+      without `|| true` aborts the script silently on an empty input. Each hit is a
+      *candidate*; it is a defect only if the script runs with `-e` **and** the count can be
+      zero there (a count guarded by a non-empty test cannot). Measured on this library's own
+      scripts: 4 hits, 0 defects.
+      `grep -rnE '\$\([^)]*grep -c[^)]*\)' --include='*.sh' . | grep -v '|| true'`
 - [ ] **Missing-tool behaviour classified**: does every `command -v` failure `die`,
       skip-with-a-named-note, or ask an interactive human — and does the summary ever
       read clean while a check did not execute? Probe:

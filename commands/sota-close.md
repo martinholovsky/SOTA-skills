@@ -106,10 +106,12 @@ pass exists to compensate for.
   comes back empty, the instrument is broken and the absence is worth nothing. "Independent" means a different failure mode, not a
   different phrasing: two searches of a symlink tree agreed on zero and both were wrong
   (`sota-shell-scripting` rules/06 §2).
-- **Two tells worth a second look.** A result whose size equals a round number you or the tool
+- **Three tells worth a second look.** A result whose size equals a round number you or the tool
   chose is a page, not a total (`sota-shell-scripting` rules/09 §5). An implausibly *large*
   result is usually an empty value that removed a filter rather than matching nothing
-  (`sota-shell-scripting` rules/06 §2b).
+  (`sota-shell-scripting` rules/06 §2b). And a zero from a pattern using `\b` under
+  `git grep -E` on macOS is the pattern, not the corpus: it matches nothing, silently
+  (`sota-shell-scripting` rules/06 §2f).
 
 ## 5. State plainly what is not done
 
