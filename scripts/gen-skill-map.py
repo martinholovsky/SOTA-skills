@@ -141,7 +141,8 @@ INLINE = {("php", "Concurrency"): "01 §6",
 def audit_items(lang):
     """Actionable items in a language skill's Audit checklists. Counted format-aware because
     the BODY format is not gated -- only the heading is (invariant 2) -- and three forms are
-    in use: tickable `- [ ]`, fenced shell block, and prose+commands. A `- [ ]`-only count
+    in use. Unified to tickable `- [ ]` on 2026-09-23; this counter stays format-aware
+    because it reads history and older trees. A `- [ ]`-only count
     returned 0 for seven of nine skills on 2026-09-21, which is how the split was found.
 
     The two forms are NOT comparable: a checkbox item can bundle several commands while a
@@ -728,12 +729,16 @@ def page_matrix(lang_files):
                   "thinner\". True of line count, false of what line count stood in for: per "
                   "100 rules-lines they carry the HIGHEST audit-item density in the library "
                   "(.NET %.1f, jvm %.1f — COMPUTED NOW, not the 2026-09-21 figures of "
-                  "10.6 and 10.5; both skills have gained audit items since) and rust, "
-                  "the second-largest skill, is lowest at "
-                  "%.1f. The bounded deficit is worked examples. Caveat: the checkbox and "
-                  "shell-block checklist formats are not comparable, so this read is "
-                  "within-format."
-                  % (dens["dotnet"], dens["jvm"], dens["rust"]),
+                  "10.6 and 10.5; the counting changed when the checklists were unified). "
+                  "Lowest is %s at %.1f. The bounded deficit is worked examples.\n\n"
+                  "The old caveat here -- that checkbox and shell-block formats are not "
+                  "comparable, so the read was within-format -- was RETIRED 2026-09-23: "
+                  "all nine now use one format, so this ranking is tier-wide. It also "
+                  "corrected a false superlative: this line used to say rust was lowest."
+                  # the lowest skill is DERIVED, not named: it used to say "rust" and
+                  # that became false when the checklist unification changed the counts.
+                  % (dens["dotnet"], dens["jvm"],
+                     LANG_LABEL[min(dens, key=dens.get)], min(dens.values())),
                   NOTE, 40, y + 20, 900, 150))
     return page("p5", "5 · Section x language", c, 1500, y + 180)
 

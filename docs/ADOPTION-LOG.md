@@ -4161,13 +4161,23 @@ there. Worked examples for jvm/.NET (1.0–1.1 per 100 lines against 2.7–3.8 a
 which is the reason item 1 was retired.
 
 **ADOPTED 2026-09-23 on operator instruction — the audit-checklist body format is now
-uniformly tickable, and `--assert-format` keeps it that way.** The trigger's second arm
+uniformly tickable **across the nine language skills**, and `--assert-format` keeps it that
+way. **Scope, stated because the heading could be read wider:** the gate and the conversion
+cover the LANGUAGE TIER only. Measured 2026-09-23, **14 files in 2 domain skills**
+(`sota-web-frameworks` 7, `sota-ml-engineering` 7) still carry a ```bash block in their
+checklist, and nothing gates them. The trigger's second arm
 had effectively fired: a `- []`-only count returned 0 for seven of nine skills, and on
 2026-09-22 a concept-matrix pass mis-parsed fenced blocks and reported `sota-golang` as
 lacking API/design probes it plainly has — two mechanical readers, two wrong answers,
-from the format alone. The operator did not wait for a third.** Three forms are in use — tickable `- [ ]` (rust, js/ts), fenced shell block
-(python, jvm, .NET, c/c++, php), prose+commands (golang, ruby) — and invariant 2 gates only
-the heading. The argument for unifying is that AUDIT mode instructs the model to "verify your
+from the format alone. The operator did not wait for a third.**
+
+*The original deferral text follows, superseded — it is kept because it records why the
+item was parked, and its classification contains an error worth preserving:* Three forms
+are in use — tickable `- [ ]` (rust, js/ts), fenced shell block (python, jvm, .NET, c/c++,
+php), prose+commands (golang, ruby) — and invariant 2 gates only the heading.
+**CORRECTION 2026-09-23: golang and ruby were never "prose+commands".** That row was
+written from reading, not measuring; `extract_items.py` reports both as fenced, so the
+conversion covered **seven** fenced skills, not five. The argument for unifying is that AUDIT mode instructs the model to "verify your
 diff satisfies every item", and only the tickable form is enumerable.
 
 **That argument is an inference from reading AUDIT mode's wording, not a measurement**, which
@@ -4524,7 +4534,12 @@ change lands in BUILD steps 1–2, which `BUILD_WORKFLOW` does not model (the ev
 skills, so routing and file selection are short-circuited), so the hash was bumped **alone**,
 no re-sync — recorded at the pin. The treatment arm is therefore unchanged and the published
 +0.39 is not invalidated, but **it has not been re-run against the current router**, because
-this repo holds no API key. The standing load is justified by a mechanism and not by a
+this repo holds no API key. **CORRECTION 2026-09-23: that reason was wrong.** The *public,
+committed* repo holds no key and CI has none, but a maintainer's working tree does — every
+runner reads `OPENROUTER_API_KEY` from the environment or `./.env` (gitignored; verified 0
+tracked, 0 commits in history). The re-run was available all session and was not done. The
+claim it guards — that +0.39 has not been re-measured against the current router — still
+stands; only the stated obstacle was false. The standing load is justified by a mechanism and not by a
 number, and `rules/02` §1a carries the falsifier that would take it back out.
 
 ## 2026-09-21 — the over-firing control: a deferral whose blocker had been false for nine days
@@ -4868,10 +4883,11 @@ header records against itself. Refer to such a pattern by name, never by its cha
 prose that shares a file with the check.
 
 
-## 2026-09-23 — the checklist format unified: 377 items, 7 skills, one form
+## 2026-09-23 — the checklist format unified: 362 items, 7 skills, one form
 
 Operator instruction, closing a deferral whose second arm had effectively fired. All nine
-language skills now use tickable `- [ ]` bullets; `gen-concept-matrix.py --assert-format`
+language skills now use tickable `- [ ]` bullets — **the language tier only; 14 files in
+`sota-web-frameworks` and `sota-ml-engineering` remain fenced and ungated**; `gen-concept-matrix.py --assert-format`
 runs in CI and rejects a fenced checklist.
 
 **Why the format was never cosmetic.** AUDIT mode tells the model to *"verify your diff
@@ -4884,7 +4900,11 @@ skills, and a concept-matrix pass reported `sota-golang` as lacking API/design p
 groups each `#` comment with the commands under it — the same grouping `extract_items.py`
 uses — and leaves non-shell fences alone. Content preservation was asserted per file: the
 prefix before `## Audit checklist` must be **byte-identical**, and every command line in the
-original must still appear. Final result: **377 items, 0 commands lost**.
+original must still appear. Final result: **362 items, 0 commands lost** — counted with
+`extract_items.py` after the final conversion. **CORRECTION 2026-09-23: the commit message
+and the first draft of this entry said 377.** That figure was a sum of the converter's
+per-run reports taken mid-process, before the grouping fixes changed item boundaries —
+arithmetic on a remembered number rather than a count of the result.
 
 **Three bugs, and the first was destructive.** The first draft returned only the text from the
 heading onward and **truncated six `sota-dotnet` files to their checklists** — caught by a line

@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     273a969bbe2994e4**, bumped *alone* after a clause-by-clause re-read recorded at the pin:
     the change lands in BUILD steps 1–2, which `BUILD_WORKFLOW` does not model because the eval
     pastes the skills. The treatment arm is unchanged, so **+0.39 is not invalidated — but it
-    has not been re-run** against the current router (this repo holds no API key).
+    has not been re-run** against the current router.
   - **`sota/rules/03` §2 — an evidence grade propagates to what is built on it.** A hedged
     premise and an unhedged conclusion in one paragraph: the hedge stays on the premise and the
     reader takes the conclusion. Two destinations make it expensive — an instruction file, and

@@ -158,21 +158,21 @@ parentheticals nobody else uses, and it writes `Top 10` where the rest write `To
 - **Numbering order.** rust opens with ownership, go with errors, python with tooling.
   Renumbering breaks the `rules/NN` form that carries the other 2,945 citations. Leave it.
 
-### One thing that IS worth deciding — the audit-checklist body format
+### The audit-checklist body format — RESOLVED 2026-09-23
 
-Invariant 2 gates the *heading*; nothing gates the body, and three forms exist:
+Invariant 2 gates the *heading*; the body was ungated and three forms were in use. **All nine
+language skills now use the tickable `- [ ]` form**, and
+`gen-concept-matrix.py --assert-format` runs in CI so a fenced checklist cannot come back.
 
-| form | skills |
-|---|---|
-| tickable `- [ ]` | rust, js/ts |
-| fenced shell block | python, jvm, .NET, c/c++, php |
-| prose + commands | golang, ruby |
+AUDIT mode tells the model to "verify your diff satisfies every item" — an instruction that
+cannot be followed against a shell block. The deferral asked for a measurement or a third
+unenumerable-checklist instance; the operator adopted it on two: a `- []`-only count returned
+**0 for seven of nine** skills, and a concept-matrix pass mis-parsed fenced blocks and
+reported `sota-golang` as lacking API/design probes its `02-design.md` plainly has.
 
-AUDIT mode tells the model to "verify your diff satisfies every item" — a checkbox list is
-enumerable, a prose block is not. **That is an inference from the wording, not a
-measurement**, and unifying is a rewrite of seven skills, so it is **DEFERRED** in the
-ADOPTION-LOG with an explicit trigger: a measurement showing the format changes audit
-behaviour, or a third instance of a reader unable to enumerate a checklist.
+**Correction to the old table, which classified golang and ruby as "prose + commands":** that
+was never measured. Reading their checklists with `scripts/lib/extract_items.py` showed both
+were **fenced**, like python/jvm/.NET/c-cpp/php — seven fenced skills, not five.
 
 ## Depth: the concept matrix (item granularity)
 

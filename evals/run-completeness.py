@@ -117,7 +117,7 @@ def load_cases():
 # So the change lands entirely in the two steps BUILD_WORKFLOW does not model, and the
 # mirror is still accurate: hash bumped alone, no re-sync. NOTE: the treatment arm is
 # unchanged by this edit, so the published +0.39 is NOT invalidated by it -- but it has
-# also not been re-run here (this repo holds no API key). Re-run before citing it as
+# also not been re-run here. Re-run before citing it as
 # measured against the current router.
 ROUTER_BUILD_SHA = "273a969bbe2994e4"
 
