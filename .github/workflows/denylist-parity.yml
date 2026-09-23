@@ -1,0 +1,46 @@
+name: Denylist engine parity
+
+# ONE-SHOT DECISION TEST, not a standing gate (2026-09-23). Invariant 3 scans with
+# `git grep -iE` over the private-name denylist; `-P` measured 20x faster locally, but the
+# CI patterns live in the SOTA_DENYLIST secret and cannot be read back to check them for
+# PCRE compatibility. scripts/denylist-engine-parity.sh answers it where it can fail: both
+# engines over every revision (the accepted-risk history holds real positives), identical
+# revision:path:line sets required, counts and a digest printed, NEVER a match or the
+# pattern. It runs only when that script changes, so it costs nothing on ordinary PRs.
+on:
+  pull_request:
+    paths: [scripts/denylist-engine-parity.sh, .github/workflows/denylist-parity.yml]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  parity:
+    name: Denylist ERE vs PCRE parity
+    # Secrets reach same-repo PRs only; on a fork there is nothing to test with.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+          # The positives live in history; a shallow clone makes the test vacuous, and the
+          # script refuses to run on one.
+          fetch-depth: 0
+      - name: Require the secret
+        env:
+          SOTA_DENYLIST: ${{ secrets.SOTA_DENYLIST }}
+        run: |
+          if [ -z "${SOTA_DENYLIST}" ]; then
+            echo "::error::SOTA_DENYLIST is empty on a trusted run — nothing to test."
+            exit 1
+          fi
+      - name: ERE vs PCRE over the full history
+        env:
+          SOTA_DENYLIST: ${{ secrets.SOTA_DENYLIST }}
+        run: ./scripts/denylist-engine-parity.sh
