@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The +0.39 completeness lift, re-measured against the current router: it holds (ROADMAP
+  63).** Two runs of 3 samples at temp 0.7 on `claude-sonnet-4.6`, the baseline configuration,
+  at `ROUTER_BUILD_SHA` `273a969bbe2994e4`. The lifts were +0.39 and +0.42, and the mean is
+  0.58 → 0.98 (**+0.41**). Every case is positive in both runs. The +0.02 is within the
+  run-to-run spread and is not a finding. See `evals/results/2026-09-23/COMPLETENESS-RERUN.md`.
 - **`sota-jvm` rules/04 §6: the web layer (ROADMAP 62, closed on operator decision).** jvm was
   the one language skill in the tier's most-deployed web stack with no web treatment. Its
   security file covered deserialization, JNDI and XXE, but not the layer they arrive through.
@@ -40,7 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     273a969bbe2994e4**, bumped *alone* after a clause-by-clause re-read recorded at the pin:
     the change lands in BUILD steps 1–2, which `BUILD_WORKFLOW` does not model because the eval
     pastes the skills. The treatment arm is unchanged, so **+0.39 is not invalidated — but it
-    has not been re-run** against the current router.
+    has not been re-run** against the current router. *(Re-run the same week: it holds, at
+    +0.41. See the ROADMAP 63 entry above.)*
   - **`sota/rules/03` §2 — an evidence grade propagates to what is built on it.** A hedged
     premise and an unhedged conclusion in one paragraph: the hedge stays on the premise and the
     reader takes the conclusion. Two destinations make it expensive — an instruction file, and

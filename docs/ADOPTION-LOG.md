@@ -4541,7 +4541,9 @@ committed* repo holds no key and CI has none, but a maintainer's working tree do
 runner reads `OPENROUTER_API_KEY` from the environment or `./.env` (gitignored; verified 0
 tracked, 0 commits in history). The re-run was available all session and was not done. The
 claim it guards — that +0.39 has not been re-measured against the current router — still
-stands; only the stated obstacle was false. The standing load is justified by a mechanism and not by a
+stands; only the stated obstacle was false. **SUPERSEDED 2026-09-23: re-measured** at
+`273a969bbe2994e4` with the baseline configuration: +0.39 and +0.42 over two runs, mean
+0.58 → 0.98 (+0.41). It holds (`evals/results/2026-09-23/COMPLETENESS-RERUN.md`, ROADMAP 63). The standing load is justified by a mechanism and not by a
 number, and `rules/02` §1a carries the falsifier that would take it back out.
 
 ## 2026-09-21 — the over-firing control: a deferral whose blocker had been false for nine days

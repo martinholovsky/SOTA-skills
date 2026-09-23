@@ -119,6 +119,8 @@ def load_cases():
 # unchanged by this edit, so the published +0.39 is NOT invalidated by it -- but it has
 # also not been re-run here. Re-run before citing it as
 # measured against the current router.
+# RE-RUN 2026-09-23 at this hash, 2 runs x 3 samples at temp 0.7 (the baseline config):
+# +0.39 and +0.42, mean 0.58 -> 0.98 (+0.41). It holds. evals/results/2026-09-23/.
 ROUTER_BUILD_SHA = "273a969bbe2994e4"
 
 
