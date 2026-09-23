@@ -70,4 +70,9 @@ arm. Recorded so the number is not discovered afterwards.
 
 ## Status
 
-Not yet run.
+~~Not yet run.~~
+
+**Superseded — the run happened.** Results in [CONFLICT-LEAN.md](CONFLICT-LEAN.md) (ROADMAP 47). Everything above this
+note is unchanged and was committed before any call; the strikethrough is the only edit
+(2026-09-23), because a registration whose status still reads *"not yet run"* beside its
+own results gets quoted as a gap, or paid for twice.

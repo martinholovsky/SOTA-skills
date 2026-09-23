@@ -117,6 +117,14 @@ printf 'control=%s  hits=%s\n' \
 A control of **0** means the sweep is broken and the `hits=0` beside it means nothing. This
 is `sota-code-security` rules/15 §2.2's known-good, at one-liner scale.
 
+**A passing control proves the instrument, not the scope.** A control drawn from *inside* the
+scope you searched passes whether or not that scope excludes the answer. Field-reported:
+`rg -l 'positive control' skills/ --glob '**/rules/*.md'` returned 4 files, the real query
+returned 0 and was reported as a gap, and the answer sat in `skills/sota/SKILL.md`, which that
+glob never matches. **Draw the control from where your scope is least likely to reach**, and
+print the file count beside the zero: a denominator that is implausibly small for the corpus
+is the tell.
+
 **Where you have nothing to control *with*, print a denominator instead.** A positive control
 needs a term you already know is present — unavailable exactly where this fails most: an
 **extraction** or **fetch** into a blob you have never opened. Field-reported, six empty
@@ -463,7 +471,8 @@ filed under the wrong thing** — index it by what it is *for*.
       `-r` skips symlinked dirs met in traversal and `-R` follows **only on ugrep/GNU** —
       on BSD grep (macOS `/usr/bin/grep`) neither does; `rg` skips gitignored and hidden by
       default; `type grep` may reveal a wrapper. Control the sweep with a known-present term
-      **in the same invocation**.
+      **in the same invocation**, drawn from where the scope is least likely to reach: a
+      control from inside a too-narrow glob passes while the answer sits outside it.
 - [ ] **Every extraction or fetch printed a denominator** (§2) — bytes retrieved, members
       listed, total files — in the **same invocation** as the result read from it. `LINES:0`
       alone is a fact about the subject; `LINES:0` beside `MEMBERS:0 BYTES:39802880`

@@ -80,7 +80,9 @@ gap was declared after searching "one instance | a single observation" while the
 "one sample" in six files, including a named failure mode. Run a positive control in the same
 command (search a term you know is there); if the control returns nothing your instrument is
 broken and the absence is worth nothing. A control proves the instrument works; it does not
-prove your query asks the corpus's question.
+prove your query asks the corpus's question, **nor that your scope contains the answer**: draw
+it from where your search is least likely to reach (the router, `commands/`, a `SKILL.md`),
+and print the file count beside the zero (`sota-shell-scripting` rules/06 §2).
 
 B. Name the skill that would OWN the topic, and read its section headings. Twice, reports have
 proposed rules for a file that does not cover the subject while the real owner covered it

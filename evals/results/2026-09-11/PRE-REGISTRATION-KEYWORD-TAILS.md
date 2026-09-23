@@ -80,7 +80,12 @@ trustworthy** — report that instead of the delta.
 
 ## Status
 
-Not yet run. Live spend on the operator's account, authorised 2026-09-11.
+~~Not yet run. Live spend on the operator's account, authorised 2026-09-11.~~
+
+**Superseded — the run happened.** Results in [KEYWORD-TAILS.md](KEYWORD-TAILS.md) (ROADMAP 53). Everything above this
+note is unchanged and was committed before any call; the strikethrough is the only edit
+(2026-09-23), because a registration whose status still reads *"not yet run"* beside its
+own results gets quoted as a gap, or paid for twice.
 
 ---
 

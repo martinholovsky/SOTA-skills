@@ -1,0 +1,16 @@
+# Collaboration-workflow routing set — does a PR / review / commit task reach sota-docs-workflow
+# from the DESCRIPTION alone (ROADMAP-less proposal "P7", 2026-08-05)?
+#
+# SELECTION RULE. Written 2026-09-23, BEFORE any model call, from two fixed sources only: the
+# three scenarios the P7 proposal itself names (commit message, PR body, review replies) and
+# the section headings of sota-docs-workflow rules/03 (small PRs, PR description, reviewer and
+# author behaviour, stacked PRs, publishing under someone's name). No case was added, dropped
+# or reworded after seeing a result. Each distractor is the domain skill sharing the most
+# surface vocabulary with the task (the change's subject matter), which is the realistic
+# competitor for a description classifier.
+{"id": "c1_commit_and_pr_body", "task": "Write the commit message and the pull request description for this change, which adds retry-with-backoff to our payment client.", "expect": "sota-docs-workflow", "distractor": "sota-architecture"}
+{"id": "c2_reply_to_review", "task": "A reviewer left twelve comments on my pull request. Help me reply to each one and decide which I should push back on and which I should just fix.", "expect": "sota-docs-workflow", "distractor": "sota-code-security"}
+{"id": "c3_pr_size_policy", "task": "Our pull requests are huge and reviews take a week. Propose a PR size and branching policy the team can actually follow.", "expect": "sota-docs-workflow", "distractor": "sota-devsecops"}
+{"id": "c4_clean_history", "task": "Before I open the PR, turn these fourteen WIP commits into a clean history with conventional-commit messages.", "expect": "sota-docs-workflow", "distractor": "sota-devsecops"}
+{"id": "c5_upstream_contribution", "task": "I'm sending a patch to an open-source project I don't maintain. What should the PR body say, and how should I handle the maintainer's feedback?", "expect": "sota-docs-workflow", "distractor": "sota-skill-security"}
+{"id": "c6_stacked_prs", "task": "This feature is too big for one PR. How do I split it into a stack of dependent pull requests that reviewers can take one at a time?", "expect": "sota-docs-workflow", "distractor": "sota-architecture"}

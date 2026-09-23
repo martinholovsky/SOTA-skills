@@ -127,8 +127,9 @@ Then two counts, because presence and reach are different claims:
   reach (`sota-devsecops` rules/09 §2a, §2b).
 
 **Your own sweeps are controls too, and they fail the same way.** Every absence you report
-needs a positive control in the same invocation — search for something you have already seen
-in that scope; if the control returns nothing, the instrument is broken and the absence is
+needs a positive control in the same invocation — search for something you have already seen,
+drawn from where your scope is least likely to reach (a control from inside a too-narrow scope
+passes anyway); if the control returns nothing, the instrument is broken and the absence is
 worth nothing (`sota-shell-scripting` rules/06 §2). Two more tells: an implausibly *large*
 result is usually an empty value that removed a filter rather than one that matched
 everything (`sota-shell-scripting` rules/06 §2b), and a result whose size equals a round

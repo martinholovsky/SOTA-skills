@@ -330,8 +330,11 @@ Does a rule loaded early stop being applied as the session grows?
 First run: **no decay at moderate scale** — an ~18.6K-token (~72 KB) guidance block held after 30
 unrelated turns. This *bounds* the problem but doesn't find the breaking point (the
 filler is too small to dilute the anchor); scaling the test up needs a top-up.
-*(roadmap **item 49**, still open — cited as *item 5* until 2026-09-11, a number that has
-meant the 6-month accuracy sweep since the ledger was renumbered.)*
+*(roadmap **item 49**, cited as *item 5* until 2026-09-11, a number that has meant the
+6-month accuracy sweep since the ledger was renumbered. **CLOSED 2026-09-12: no decay**,
+once the anchor was one the filler could actually dilute —
+[DECAY-LEAN-ANCHOR](2026-09-12/DECAY-LEAN-ANCHOR.md). This line said "still open" until
+2026-09-23.)*
 
 ## 5. Description-based routing — do the negative cross-refs help? (A/B, +0.00)
 
@@ -470,7 +473,9 @@ before spending; the fake null would have looked identical to this real one.
   "as deployed" is not three mechanisms — it is our mechanism over a corpus 20× ours, which
   measures **corpus size** and a **retrieval path already measured as saturated** (§5 reads
   +0.00). Full reasoning: [ROADMAP item 3](../../docs/ROADMAP.md).
-- **Full-7 multi-sample** of the competitor arms (only the 3 tightest done).
+- **Full-7 multi-sample** of the competitor arms (only the 3 tightest done): **deferred
+  2026-09-23 with a trigger** (the next competitor re-run), not open. Reasoning and trigger in
+  [ADOPTION-LOG](../../docs/ADOPTION-LOG.md).
 
 ## The three-layer story
 

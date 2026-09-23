@@ -109,7 +109,8 @@ cross_val_score(pipe, X_train, y_train, cv=TimeSeriesSplit())
       served features logged for training?** —
       `grep -rniE 'feature.?store|feast|log.*feature|skew' --include='*.py' . | head`
 - [ ] **Data/feature versioning — HIGH** —
-      `grep -rniE 'dvc|lakefs|dataset.*hash|snapshot|data.?version' . | head || echo "no data versioning found"`
+      `out=$(grep -rniE 'dvc|lakefs|dataset.*hash|snapshot|data.?version' . 2>&1); rc=$?` ;
+      `case $rc in 0) printf '%s\n' "$out" | head ;; 1) echo "no data versioning found" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
 - [ ] **Data validation at entry — HIGH** —
       `grep -rniE 'great_expectations|pandera|tfdv|schema.*valid|expect_' --include='*.py' . || echo "no data validation"`
 - [ ] **PII in features — HIGH (cross-ref sota-privacy-compliance)** —

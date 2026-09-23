@@ -86,7 +86,9 @@ competitor's *best* sample** — competitors occasionally tie SOTA at the ceilin
 (`affaan-m/ECC` + `PatrickJS/awesome-cursorrules` hit 1.00 on c1; `affaan-m/ECC` ties at 0.91 on c7) but never beat it. SOTA's
 own variance is near-zero (sd 0.00 on c1/c3, 0.04 on c7). The lead is stable.
 *(Multi-sampling the other 4 cases and the full 7 was left for a top-up — those
-were the least contested, so the tight-case check is the informative one.)*
+were the least contested, so the tight-case check is the informative one.)* *(2026-09-23: that
+top-up is now a recorded deferral with a trigger (the next competitor re-run) in
+`docs/ADOPTION-LOG.md`, rather than an open item with none.)*
 
 ## Breadth — does it generalize? (5 domains → see [BREADTH.md](BREADTH.md))
 

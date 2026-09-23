@@ -36,7 +36,9 @@ it.** Four failure modes produce a confident zero, and none of them prints an er
 - **The query asked your question, not the project's.** `grep` answers "does this string
   appear", never "is this idea covered". A project that writes "parked" will not match "TODO".
 
-**Run one query whose answer you already know, in the same invocation as the real one.** If the
+**Run one query whose answer you already know, in the same invocation as the real one** —
+drawn from where your search is least likely to reach, because a control from inside a
+too-narrow scope passes anyway (`sota-shell-scripting` rules/06 §2). If the
 control returns nothing, the instrument is broken and the absence is worth nothing. Then
 report the **denominator** — how many files you actually scanned — beside the finding count.
 `0 found over 0 files` and `0 found over 900 files` are different answers.

@@ -902,6 +902,45 @@ wt_commit "probe: the broken idiom shown inside a console transcript"
 probe_committed_green 32b "the idiom inside a console transcript is documentation, not input" \
   "instruction files"
 
+# 32c-32f — the 2026-09-23 widening, one probe per blind spot it closed, plus the escape.
+# The checklist unification moved every probe out of ```bash fences into `- [ ]` bullets, which
+# took them all out of 32's reach; a `\` continuation hid five sites for months; and the
+# `| head || echo` form was never matched at all. Each probe appends ONE line to a checklist.
+add_checklist_line() {  # <python expression building the line>
+  ( cd "$WT" && python3 -c "
+import pathlib
+p = pathlib.Path('skills/sota-golang/rules/07-tooling-ci.md')
+t = p.read_text()
+i = t.index(chr(10) + '## Audit checklist' + chr(10))
+j = t.index(chr(10), i + 1) + 1
+line = $1
+p.write_text(t[:j] + chr(10) + line + chr(10) + t[j:])
+" )
+}
+BQ='chr(96)'
+add_checklist_line "'- [ ] **probe** ' + $BQ + 'grep -rn x ci/ 2>/dev/null || echo ' + chr(34) + 'absent' + chr(34) + $BQ"
+probe 32c "the idiom inside a checklist bullet's inline code span" \
+  "grep -rn x ci/ 2>/dev/null"
+( cd "$WT" && python3 -c "
+import pathlib
+fence = chr(96)*3 + 'bash'
+p = pathlib.Path('skills/sota-golang/rules/07-tooling-ci.md')
+t = p.read_text()
+i = t.index(chr(10) + fence + chr(10))
+j = t.index(chr(10), i + len(fence) + 1) + 1
+bad = 'grep -rn x ci/ 2>/dev/null ' + chr(92) + chr(10) + '  || echo ' + chr(34) + 'absent' + chr(34)
+p.write_text(t[:j] + bad + chr(10) + t[j:])
+" )
+probe 32d "the idiom split across a backslash continuation inside a bash fence" \
+  "grep -rn x ci/ 2>/dev/null"
+add_checklist_line "'- [ ] **probe** ' + $BQ + 'grep -rni x . | head || echo ' + chr(34) + 'none' + chr(34) + $BQ"
+probe 32e "a '| head || echo' fallback that can never fire" \
+  "grep -rni x . | head"
+add_checklist_line "'- [ ] **doc** ' + $BQ + 'cmd 2>/dev/null || echo ' + chr(34) + 'missing X' + chr(34) + $BQ + ' is the idiom, named'"
+wt_commit "probe: the documented placeholder form of the idiom"
+probe_committed_green 32f "the library's own cmd placeholder documents the idiom — stays green" \
+  "instruction files"
+
 # 33 — the coverage table has to be complete in BOTH directions, like check 15.
 # 33 removes a declared area's row (a tracked area goes undeclared); 33b adds a row for
 # an area that does not exist (the way a table rots into decoration once a directory is

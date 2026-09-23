@@ -2564,6 +2564,12 @@ if [ "$v31" -ne 0 ]; then fail=1; fi
 # artifacts of a FRAGMENT (`local` outside a function, half a loop shown for illustration).
 # A gate that opens red gets disabled (rules/12 §2), so this one is narrow on purpose.
 #
+# WIDENED 2026-09-23 to inline code spans outside fences, `\` continuations inside them,
+# and the `| head || echo` dead fallback -- each a blind spot that had let real probes
+# through (seven idiom sites and nine dead fallbacks). A span whose command is the literal
+# placeholder `cmd` is the library DOCUMENTING the idiom (rules/06 2d) and is exempt;
+# probes 32f (stays green on it) and 32c (still fires on a real command) hold both sides.
+#
 # PRESCRIPTIVE FENCES ONLY. ```sh and ```bash are instructions the reader will run.
 # ```console is a transcript -- rules/06 §2d DEMONSTRATES the broken form inside one, and
 # a gate that cannot tell its own documentation from its input makes that section
@@ -2575,6 +2581,15 @@ if command -v python3 >/dev/null 2>&1; then
   idiom_out=$(python3 - <<'IDPY'
 import re, subprocess, pathlib
 BAD = re.compile(r'2>/dev/null\s*\|\|\s*(echo|printf)')
+# The dead-fallback sibling: `... | head || echo` -- head exits 0, so without pipefail
+# (a pasted probe never has it) the absence verdict can NEVER print. Measured 2026-09-23 in
+# bash and zsh: silent on an empty sweep. Nine ml-engineering probes shipped this way.
+DEAD = re.compile(r'\|\s*head\b[^|`]*\|\|\s*(echo|printf)')
+SPAN = re.compile(r'``(.+?)``|`([^`]+)`')
+# The library's own placeholder for "any command" (rules/06 2d documents the idiom with it).
+PLACEHOLDER = re.compile(r'^\s*cmd\s')
+def hit(code):
+    return BAD.search(code) or DEAD.search(code)
 files = [f for f in subprocess.run(["git","ls-files"],capture_output=True,text=True).stdout.split()
          if (f.startswith("skills/") or f.startswith("commands/")) and f.endswith(".md")]
 print("SCOPE %d" % len(files))
@@ -2585,20 +2600,42 @@ for f in files:
     except OSError:
         continue
     fence = None
-    for i, line in enumerate(text.split("\n"), 1):
+    lines = text.split("\n")
+    i = 0
+    while i < len(lines):
+        line = lines[i]; n = i + 1
         s = line.lstrip()
         if s.startswith("```"):
             lang = s[3:].strip().lower()
             fence = None if fence is not None else (lang or "plain")
+            i += 1
             continue
-        if fence in ("sh", "bash") and BAD.search(line):
-            print("%s:%d  %s" % (f, i, line.strip()[:80]))
-            bad += 1
+        if fence in ("sh", "bash"):
+            # JOIN `\` continuations first: five checklist probes hid the idiom across a
+            # continuation for months, because this check matched one physical line.
+            joined = line
+            while joined.rstrip().endswith("\\") and i + 1 < len(lines):
+                i += 1
+                joined = joined.rstrip()[:-1] + " " + lines[i].strip()
+            if hit(joined):
+                print("%s:%d  %s" % (f, n, joined.strip()[:80]))
+                bad += 1
+        elif fence is None:
+            # INLINE CODE SPANS outside fences. The 2026-09-23 checklist unification moved
+            # every probe from a ```bash fence into `- [ ]` bullets, which took all of them
+            # out of this check's reach; seven broken probes sat there unseen.
+            for m in SPAN.finditer(line):
+                code = m.group(1) or m.group(2)
+                if hit(code) and not PLACEHOLDER.match(code):
+                    print("%s:%d  %s" % (f, n, code.strip()[:80]))
+                    bad += 1
+        i += 1
 if bad:
     print("  `||` fires on EVERY non-zero exit and 2>/dev/null destroyed the reason.")
     print("  grep exits 1 for no-match, 2 for an unreadable path -- indistinguishable here,")
     print("  so this reports YOUR broken sweep as a finding about THEIR code.")
     print("  Branch on the exit code and keep stderr (sota-shell-scripting rules/06 2d).")
+    print("  '| head || echo': head exits 0, so without pipefail the fallback NEVER prints.")
 raise SystemExit(1 if bad else 0)
 IDPY
   ) || v32=1

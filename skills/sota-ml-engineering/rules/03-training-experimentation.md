@@ -60,9 +60,11 @@ defend.
 ## Audit checklist
 
 - [ ] **Experiment tracking present? — MEDIUM if absent** —
-      `grep -rniE 'mlflow|wandb|neptune|comet|sacred|tensorboard' . | head || echo "no experiment tracking"`
+      `out=$(grep -rniE 'mlflow|wandb|neptune|comet|sacred|tensorboard' . 2>&1); rc=$?` ;
+      `case $rc in 0) printf '%s\n' "$out" | head ;; 1) echo "no experiment tracking" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
 - [ ] **Seeds / determinism — MEDIUM (reproducibility)** —
-      `grep -rniE 'seed|random_state|set_seed|manual_seed|deterministic' --include='*.py' . | head || echo "no seeds set — runs not reproducible"`
+      `out=$(grep -rniE 'seed|random_state|set_seed|manual_seed|deterministic' --include='*.py' . 2>&1); rc=$?` ;
+      `case $rc in 0) printf '%s\n' "$out" | head ;; 1) echo "no seeds set — runs not reproducible" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
 - [ ] **Config as code — MEDIUM** —
       `grep -rniE 'hydra|omegaconf|pydantic|argparse|yaml.safe_load|config' --include='*.py' . | head`
       ;

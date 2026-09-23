@@ -264,7 +264,7 @@ shell linting.
 ```
 
 **Verifying a gate locally is a different question, and another skill owns it:**
-`sota-devsecops` rules/09 §5 — *reproduce the gate's exact invocation, not an equivalent*.
+`sota-devsecops` rules/11 §5 — *reproduce the gate's exact invocation, not an equivalent*.
 Worth the jump from here, because the shell-shaped version of that mistake is expensive:
 `-i 2` above is an example, and in a repo that indents shell with **4** spaces a contributor
 who copies it verbatim does not just get a false failure — `shfmt` is usually run with `-w`
@@ -296,7 +296,7 @@ substitution in help text** rather than literal characters. `--severity=error` s
       pipe; never `env VAR=… cmd`, which returns the value to argv.
 
 - [ ] **Linters invoked the way the gate invokes them** — flags and file selection read out
-      of the hook/CI config (`sota-devsecops` rules/09 §5, which owns this); a mismatched
+      of the hook/CI config (`sota-devsecops` rules/11 §5, which owns this); a mismatched
       `shfmt -i` is a false failure at best and, with `-w` nearby, a whole-tree reformat
 - [ ] **ShellCheck run at `--severity=style`**, not `error` (§7): SC2006 is *style* and catches
       backticks inside an unquoted heredoc, which are live command substitution

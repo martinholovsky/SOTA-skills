@@ -30,7 +30,7 @@ one drifted three times in a single session (items 12, 32's follow-up, and 38).
 |---|---|---|---|---|
 | **1** | **Use the library on real work and write a field brief** (not a roadmap row) | Build or audit something real with `sota-*` loaded, then report every defect it did *not* prevent | a session | nothing — this is the highest-yield input available |
 | — | **The deferred rows in [ADOPTION-LOG.md](ADOPTION-LOG.md)** | Nothing: read their own trigger ledgers rather than re-searching | — | a second implementation |
-| **2** | **Item 59** — external-guide gap-check, 5 languages left | **ruby done 2026-09-23** (Brakeman, 86 checks, 7 gaps closed). The host-key question it triggered is **decided (shared class, rules/04 §5)**. Next: js/eslint-plugin-security or php — derive the denominator from TWO independent sources and reconcile before sweeping, and check for a second registry | a session per language | nothing |
+| **2** | **Item 59** — external-guide gap-check, 5 languages left | **ruby done 2026-09-23** (Brakeman, 86 checks, 7 gaps closed). The host-key question it triggered is **decided (shared class, rules/04 §5)**. **Temp-file hygiene, the other half of that question, is still open, and the PHP gap-check is its trigger**: 0 files cover it in six of nine languages (LANGUAGE-TIER.md). Next: js/eslint-plugin-security or php — derive the denominator from TWO independent sources and reconcile before sweeping, and check for a second registry | a session per language | nothing |
 
 **The actionable set was empty from 2026-09-12 until 2026-09-21**, when building the
 section×language matrix (page 5 of the skill map) surfaced two language-tier items: **57**

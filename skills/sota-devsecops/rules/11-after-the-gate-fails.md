@@ -2,7 +2,7 @@
 
 Scope: the sibling of `rules/09`. That file asks whether a gate *can* fail and whether failing
 it *matters*; this one starts one step later — the gate went red, and someone has to find out
-why. Split out of `rules/09` (· v1.43.0 — the cut fills this in) when that file reached its 500-line cap; §4, §5 and §6
+why. Split out of `rules/09` (v1.43.0) when that file reached its 500-line cap; §4, §5 and §6
 keep their numbers so every existing citation still names the right section.
 
 **The unifying property:** a failure's cause lives in output that is *more perishable than the
@@ -148,6 +148,11 @@ run_gate() {
   to a known-intermittent list, check whether its first occurrence was ever preserved. A list
   of "unexplained intermittent failures" is frequently a list of runs whose evidence was
   overwritten.
+- **A red *mutating* step is a claim about one attempt, not about the world.** Before a
+  pipeline retries, rolls back or reports a failed push, deploy or tag, read the resource
+  back: the write may have landed and the error may be about the attempt, not the state.
+  The rule and its field case (a `git push` that failed with its own ref already on the
+  remote) live in `sota-shell-scripting` rules/01 §2b.
 
 ## 5. The scoped gate is not the gate — reproduce the invocation, not an equivalent
 

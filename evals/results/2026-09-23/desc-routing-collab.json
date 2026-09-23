@@ -1,0 +1,168 @@
+{
+ "model": "anthropic/claude-sonnet-4.6",
+ "samples": 3,
+ "temp": 0.7,
+ "cases": {
+  "c1_commit_and_pr_body": {
+   "task": "Write the commit message and the pull request description for this change, which adds retry-with-backoff to our payment client.",
+   "expect": "sota-docs-workflow",
+   "distractor": "sota-architecture",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-docs-workflow",
+      "sota-docs-workflow",
+      "sota-docs-workflow"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-docs-workflow",
+      "sota-docs-workflow",
+      "sota-docs-workflow"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "c2_reply_to_review": {
+   "task": "A reviewer left twelve comments on my pull request. Help me reply to each one and decide which I should push back on and which I should just fix.",
+   "expect": "sota-docs-workflow",
+   "distractor": "sota-code-security",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-docs-workflow",
+      "sota-docs-workflow",
+      "sota-docs-workflow"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-docs-workflow",
+      "sota-docs-workflow",
+      "sota-docs-workflow"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "c3_pr_size_policy": {
+   "task": "Our pull requests are huge and reviews take a week. Propose a PR size and branching policy the team can actually follow.",
+   "expect": "sota-docs-workflow",
+   "distractor": "sota-devsecops",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-docs-workflow",
+      "sota-docs-workflow",
+      "sota-docs-workflow"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-docs-workflow",
+      "sota-docs-workflow",
+      "sota-docs-workflow"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "c4_clean_history": {
+   "task": "Before I open the PR, turn these fourteen WIP commits into a clean history with conventional-commit messages.",
+   "expect": "sota-docs-workflow",
+   "distractor": "sota-devsecops",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-docs-workflow",
+      "sota-docs-workflow",
+      "sota-docs-workflow"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-docs-workflow",
+      "sota-docs-workflow",
+      "sota-docs-workflow"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "c5_upstream_contribution": {
+   "task": "I'm sending a patch to an open-source project I don't maintain. What should the PR body say, and how should I handle the maintainer's feedback?",
+   "expect": "sota-docs-workflow",
+   "distractor": "sota-skill-security",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-docs-workflow",
+      "sota-docs-workflow",
+      "sota-docs-workflow"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-docs-workflow",
+      "sota-docs-workflow",
+      "sota-docs-workflow"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  },
+  "c6_stacked_prs": {
+   "task": "This feature is too big for one PR. How do I split it into a stack of dependent pull requests that reviewers can take one at a time?",
+   "expect": "sota-docs-workflow",
+   "distractor": "sota-architecture",
+   "arms": {
+    "with-xref": {
+     "picks": [
+      "sota-docs-workflow",
+      "sota-docs-workflow",
+      "sota-docs-workflow"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    },
+    "without-xref": {
+     "picks": [
+      "sota-docs-workflow",
+      "sota-docs-workflow",
+      "sota-docs-workflow"
+     ],
+     "correct": 1.0,
+     "distractor": 0.0
+    }
+   }
+  }
+ },
+ "summary": {
+  "with-xref": {
+   "correct": 1.0,
+   "distractor": 0.0
+  },
+  "without-xref": {
+   "correct": 1.0,
+   "distractor": 0.0
+  }
+ },
+ "ablation": "xref"
+}

@@ -185,7 +185,7 @@ the wrong place"**, and the next hour goes into re-applying something that alrea
 - **Render, then grep the render** — `kustomize build .`, `helm template`, the controller's
   own diff/preview — and confirm the field's *final* value before you use it to look
   something up. Same discipline as reproducing a gate's exact invocation
-  (`sota-devsecops` rules/09 §5): what you believe you ran and what ran are two questions.
+  (`sota-devsecops` rules/11 §5): what you believe you ran and what ran are two questions.
 - **Ask the cluster where the object actually is** (`kubectl get <kind> -A`) before
   concluding it is absent. An empty namespaced query is an absence claim, and it carries the
   burden of one (`sota/rules/03` §2).

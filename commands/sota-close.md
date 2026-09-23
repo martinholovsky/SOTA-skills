@@ -101,8 +101,9 @@ pass exists to compensate for.
   population the other counted. (Measured here: 330 vs 339 merged PRs reconciled to a wrong
   predicate, `state=closed` including closed-unmerged — `sota-shell-scripting` rules/09 §5.)
 - **Every absence needs a positive control in the same invocation** — search for something you
-  have already seen in that scope. If the control comes back empty, the instrument is broken
-  and the absence is worth nothing. "Independent" means a different failure mode, not a
+  have already seen, drawn from where your scope is least likely to reach: a control from
+  inside a too-narrow scope passes anyway (`sota-shell-scripting` rules/06 §2). If the control
+  comes back empty, the instrument is broken and the absence is worth nothing. "Independent" means a different failure mode, not a
   different phrasing: two searches of a symlink tree agreed on zero and both were wrong
   (`sota-shell-scripting` rules/06 §2).
 - **Two tells worth a second look.** A result whose size equals a round number you or the tool

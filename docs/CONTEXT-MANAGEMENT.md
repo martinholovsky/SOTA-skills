@@ -364,8 +364,10 @@ already loaded when the window is summarized.
   needs much larger intervening context (or a smaller anchor); the harness takes
   `--depths` and a bigger filler to scale up — and the filler is the blocking half, since
   `--depths` past 30 is refused by a guard, not silently capped. Logged as **roadmap item
-  49**, still open (it cited *item 5* until 2026-09-11, which has meant the 6-month accuracy
-  sweep since the ledger was renumbered)
+  49** (it cited *item 5* until 2026-09-11, which has meant the 6-month accuracy sweep since
+  the ledger was renumbered). **CLOSED 2026-09-12: no decay** against an anchor the filler
+  could dilute ([`DECAY-LEAN-ANCHOR.md`](../evals/results/2026-09-12/DECAY-LEAN-ANCHOR.md));
+  this line said "still open" until 2026-09-23
   ([`evals/results/2026-07-13/DECAY.md`](../evals/results/2026-07-13/DECAY.md)).
 
 ## Re-routing is per task shape, not per session (2026-09-12)
@@ -383,9 +385,11 @@ session that never opened `sota-devsecops` and filed a duplicate-rule proposal a
 and the review of that proposal, which verified the gap inside the file the report named and
 never asked which skill owned the topic.
 
-**Not yet measured.** The honest instrument is whether a long session that changes task
-shape mid-run loads the second skill at all — a routing eval, on a harness that already
-exists, needing live spend and its own pre-registration (ROADMAP 48).
+**Measured 2026-09-12 (ROADMAP 48, CLOSED).** The instrument named here — whether a long
+session that changes task shape mid-run loads the second skill at all — was run with its own
+pre-registration: **0.750 correct on a fresh prompt vs 0.500 after two turns of other work**
+([`ROUTING-SHIFT.md`](../evals/results/2026-09-12/ROUTING-SHIFT.md)). This paragraph read
+"Not yet measured" until 2026-09-23.
 
 ## See also
 

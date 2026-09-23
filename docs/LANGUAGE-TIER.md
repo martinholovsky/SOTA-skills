@@ -319,7 +319,7 @@ running — but it cannot support a claim of completeness.
   exists to produce) and a `[^,]+` that cannot span the second comma of a three-argument call.
   Neither was caught by review.
 
-### An open question this raised — DECIDED 2026-09-23: one shared class
+### An open question this raised — host keys DECIDED 2026-09-23; temp files still OPEN
 
 **Temp-file/permission hygiene and host-key verification were gaps in *both* Python and Go.**
 If that repeats in Ruby and PHP, the right fix is probably a class stated once in
@@ -332,14 +332,15 @@ language, not after the ninth.
   `verify_host_key: :never` (read from `net-ssh`'s own source) is uncovered. Across the tier it
   is present only in python and go, and only because their gap-checks added it. There is no
   shared owner: 0 hits in `sota-code-security` and `sota-network-security`.
-- **Temp-file hygiene does not repeat.** `sota-ruby` §7 already points to `Tempfile` and
-  `Dir.mktmpdir`.
+- **Temp-file hygiene does not repeat in ruby.** `sota-ruby` §7 already points to `Tempfile`
+  and `Dir.mktmpdir`. **That is half of the report's own test** ("if that repeats in Ruby
+  *and PHP*"), so temp files are **not decided**. See the section below.
 - **The shared-class design already exists for the sibling concern.** Disabled TLS
   verification is stated once in `sota-code-security` rules/04 with a per-language detector
   list, and ruby's gap there was a missing detector token (`VERIFY_NONE`, added), not a
   missing rule.
 
-**DECIDED 2026-09-23 by the operator: option (a), a class stated once.** Host-key verification
+**DECIDED 2026-09-23 by the operator, for host keys only: option (a), a class stated once.** Host-key verification
 now lives in `sota-code-security` rules/04 §5, beside certificate verification. It has one
 detector row for every library whose bypass was read from that library's own source:
 paramiko, Go `x/crypto/ssh`, `net-ssh`, JSch, MINA SSHD, Node `ssh2` and OpenSSH. Each
@@ -359,6 +360,20 @@ memory: **Node `ssh2` and `net-ssh` default to accepting**, so for them the find
 *absence*. The first draft of the shared probe also missed JSch's
 `setConfig("StrictHostKeyChecking", "no")` form. It was caught by a per-library fixture and
 widened.
+
+**Temp-file/permission hygiene — still OPEN, and nothing above decides it.** A heading written
+on 2026-09-23 read "DECIDED … one shared class" for the whole question, while only host keys had
+been decided. It was corrected the same day. Measured 2026-09-23 over `skills/sota-*` (files
+naming `Tempfile`, `mkstemp`, `mktemp`, `CreateTemp`, `NamedTemporaryFile`, `tmpfile` or
+`tempnam`):
+- python 2, go 1, ruby 1;
+- **0 in c-cpp, php, rust, jvm, js/ts and .NET**;
+- no shared rule in `sota-code-security`. Its two hits are test-harness advice (`mktemp -d`
+  clones), not a temp-file rule.
+
+**Revisit trigger: the PHP gap-check.** If PHP lacks it as well, the report's condition is met
+and the same choice as host keys applies: a class stated once with per-language detectors, or a
+per-language section. Six languages with no coverage is a reason to expect it will.
 
 ### Ruby — the 86 Brakeman checks, classified (2026-09-23)
 
