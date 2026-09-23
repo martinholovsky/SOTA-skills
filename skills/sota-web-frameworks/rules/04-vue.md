@@ -89,22 +89,19 @@ core `escapeHtml` escapes `" ' & < >`). The sinks are where you leave that prote
 
 ## Audit checklist
 
-```bash
-# HTML-injection sink — each hit needs a sanitizer on the source
-grep -rn 'v-html' --include='*.vue' src components pages
-
-# Dynamic templates / runtime compilation from input (arbitrary JS)
-grep -rnE 'template:\s*[^\x27"]*(\$|props|user|input)' --include='*.vue' --include='*.ts' src
-grep -rn 'compile(' --include='*.ts' src
-
-# URL / style / handler injection
-grep -rnE ':href=|:src=|:style=' --include='*.vue' src | grep -iv 'sanitiz\|allow'
-
-# Reactivity leak/loss patterns
-grep -rnE 'const \{[^}]+\}\s*=\s*reactive\(' --include='*.vue' --include='*.ts' src  # destructuring reactive => lost reactivity
-grep -rnE 'watch(Effect)?\(' --include='*.vue' src | head   # verify async-created ones are scoped
-grep -rn 'ref(' --include='*.ts' src/composables 2>/dev/null # module-level refs? (rules/06 SSR leak)
-```
+- [ ] **HTML-injection sink — each hit needs a sanitizer on the source** —
+      `grep -rn 'v-html' --include='*.vue' src components pages`
+- [ ] **Dynamic templates / runtime compilation from input (arbitrary JS)** —
+      `grep -rnE 'template:\s*[^\x27"]*(\$|props|user|input)' --include='*.vue' --include='*.ts' src`
+      ; `grep -rn 'compile(' --include='*.ts' src`
+- [ ] **URL / style / handler injection** —
+      `grep -rnE ':href=|:src=|:style=' --include='*.vue' src | grep -iv 'sanitiz\|allow'`
+- [ ] **Reactivity leak/loss patterns** —
+      `grep -rnE 'const \{[^}]+\}\s*=\s*reactive\(' --include='*.vue' --include='*.ts' src`
+      (destructuring reactive => lost reactivity);
+      `grep -rnE 'watch(Effect)?\(' --include='*.vue' src | head` (verify async-created ones are
+      scoped);
+      `grep -rn 'ref(' --include='*.ts' src/composables 2>/dev/null # module-level refs? (rules/06 SSR leak)`
 
 - [ ] Every `v-html` fed sanitizer output, not raw user/CMS HTML (or rendered as text instead)?
 - [ ] No component `template`/runtime-compiled component built from user input?

@@ -232,20 +232,20 @@ Don't back into it via "we just added a second region for latency".
 
 ## Audit checklist
 
-- Does every remote call (HTTP, DB, cache, queue) have an explicit timeout? Grep for client construction sites and verify.
-- Are timeouts derived from measured callee latency, and do nested timeouts fit within the edge deadline?
-- Are retries bounded, jittered, restricted to idempotent operations and retryable errors, and owned by exactly one layer per edge?
-- Is there a retry budget or equivalent guard against retry storms?
-- Are circuit breakers per-dependency, with alerting on state change and a defined fallback per open circuit?
-- Are connection/thread pools bulkheaded per dependency and per workload class, or is there one shared pool?
-- Is each dependency of each critical flow classified required/optional, with degradation behavior implemented and tested?
-- Do security- and money-touching paths fail closed?
-- Is there admission control / load shedding with priority ordering, bounded queues, and deadline-aware dropping?
-- Do liveness probes avoid dependency checks? Does readiness avoid mass-unready on shared-dependency failure?
-- Are SLOs defined per user journey, and are chaos experiments (latency, errors, instance/AZ kill) run on a schedule with results tracked?
-- Can every service roll back in minutes, shut down gracefully, and start while its dependencies are down?
-- Are cache TTLs/crons jittered, and is stampede protection (single-flight) in place for hot keys?
-- Is rate limiting present at the public edge (per client), per tenant internally, and outbound toward third-party limits?
-- Is hedging, if used, restricted to idempotent reads with a load cap?
-- Does each critical flow have a failure-mode table (slow/down/garbage per dependency) with designed responses, and are dependencies tiered T0/T1/T2?
-- Are RTO/RPO defined per datastore, backups restore-tested on a schedule, and the cross-region posture an explicit ADR?
+- [ ] Does every remote call (HTTP, DB, cache, queue) have an explicit timeout? Grep for client construction sites and verify.
+- [ ] Are timeouts derived from measured callee latency, and do nested timeouts fit within the edge deadline?
+- [ ] Are retries bounded, jittered, restricted to idempotent operations and retryable errors, and owned by exactly one layer per edge?
+- [ ] Is there a retry budget or equivalent guard against retry storms?
+- [ ] Are circuit breakers per-dependency, with alerting on state change and a defined fallback per open circuit?
+- [ ] Are connection/thread pools bulkheaded per dependency and per workload class, or is there one shared pool?
+- [ ] Is each dependency of each critical flow classified required/optional, with degradation behavior implemented and tested?
+- [ ] Do security- and money-touching paths fail closed?
+- [ ] Is there admission control / load shedding with priority ordering, bounded queues, and deadline-aware dropping?
+- [ ] Do liveness probes avoid dependency checks? Does readiness avoid mass-unready on shared-dependency failure?
+- [ ] Are SLOs defined per user journey, and are chaos experiments (latency, errors, instance/AZ kill) run on a schedule with results tracked?
+- [ ] Can every service roll back in minutes, shut down gracefully, and start while its dependencies are down?
+- [ ] Are cache TTLs/crons jittered, and is stampede protection (single-flight) in place for hot keys?
+- [ ] Is rate limiting present at the public edge (per client), per tenant internally, and outbound toward third-party limits?
+- [ ] Is hedging, if used, restricted to idempotent reads with a load cap?
+- [ ] Does each critical flow have a failure-mode table (slow/down/garbage per dependency) with designed responses, and are dependencies tiered T0/T1/T2?
+- [ ] Are RTO/RPO defined per datastore, backups restore-tested on a schedule, and the cross-region posture an explicit ADR?

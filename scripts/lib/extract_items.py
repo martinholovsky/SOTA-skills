@@ -11,10 +11,11 @@ It also reads what the counter deliberately skips: inside a fenced shell block t
 command lines carry the probe. A concept sweep that ignored comments would miss the
 meaning of every fence-format skill -- python, jvm, .NET, c/c++, php.
 
-THREE BODY FORMATS, all in use and none gated (invariant 2 gates only the heading):
-  tickable      `- [ ]` ...                      rust, js/ts
-  fenced shell  ```bash ... ```                  python, jvm, .NET, c/c++, php
-  prose+command mixed bullets and fences         golang, ruby
+HISTORICAL NOTE: three body formats were once in use (tickable, fenced shell, and a third
+misread as prose+command). Since 2026-09-23 every skill's checklist is tickable, and
+`gen-concept-matrix.py --assert-format` fails any rules file that is not, including one
+that yields ZERO items. Plain `- ` bullets read as zero items here, so the gate needs that
+second arm. The fence branch below is kept so the gate can still NAME a regression.
 """
 
 import re
@@ -125,6 +126,11 @@ def skill_items(skill):
         for kind, text in items_in_file(f):
             out.append((f.name, kind, text))
     return out
+
+
+def all_rules_dirs():
+    """Every `skills/*/rules` directory -- the router's own included."""
+    return sorted(d for d in (ROOT / "skills").glob("*/rules") if d.is_dir())
 
 
 def all_items(skills):

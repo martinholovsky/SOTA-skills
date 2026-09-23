@@ -139,34 +139,27 @@ protocols, and paths (`rules/07`).
 
 ## Audit checklist
 
-```bash
-# Exact version — compare to the CVE table
-node -e "console.log(require('./node_modules/next/package.json').version)"
-grep -E '"(react|react-dom|react-server-dom-webpack|next)"' package.json
-
-# Server Actions / Route Handlers — each must authn+authz+validate
-grep -rn "'use server'" --include='*.ts' --include='*.tsx' app lib
-grep -rlnE 'export async function (GET|POST|PUT|DELETE|PATCH)' app  # -E: without it the
-                                                                    # parens are LITERAL in BRE
-                                                                    # and this silently finds 0
-
-# Authz only in middleware/layout? (finding)
-ls middleware.* proxy.* 2>/dev/null; grep -rn 'getServerSession\|auth()\|requireUser' app | head
-
-# Server->client data exposure: whole objects as props, env on client
-# NO negative lookahead: POSIX ERE has none, so `(?!...)` is a syntax error or a literal.
-# List the env reads, then exclude the public prefix with a second pass.
-grep -rnE 'process\.env\.[A-Z0-9_]+' --include='*.tsx' app components | grep -v 'NEXT_PUBLIC_'
-# NB this is a CANDIDATE list, not an absence proof: it greps text, not the Client Component
-# module graph. A server module imported by a client one is invisible to it.
-grep -rn "import 'server-only'\|import \"server-only\"" app lib   # want: present in data layer
-
-# next/image SSRF precondition
-grep -rn "remotePatterns\|images:\s*{" next.config.* | grep -n '\*\*\|domains'
-
-# Caching of personalized routes
-grep -rn "use cache\|cacheComponents\|force-cache\|revalidate\|Cache-Control" app next.config.*
-```
+- [ ] **Exact version — compare to the CVE table** —
+      `node -e "console.log(require('./node_modules/next/package.json').version)"` ;
+      `grep -E '"(react|react-dom|react-server-dom-webpack|next)"' package.json`
+- [ ] **Server Actions / Route Handlers — each must authn+authz+validate** —
+      `grep -rn "'use server'" --include='*.ts' --include='*.tsx' app lib` ;
+      `grep -rlnE 'export async function (GET|POST|PUT|DELETE|PATCH)' app` (-E: without it the
+      parens are LITERAL in BRE and this silently finds 0)
+- [ ] **Authz only in middleware/layout? (finding)** —
+      `ls middleware.* proxy.* 2>/dev/null; grep -rn 'getServerSession\|auth()\|requireUser' app | head`
+- [ ] **Server->client data exposure: whole objects as props, env on client** —
+      `grep -rnE 'process\.env\.[A-Z0-9_]+' --include='*.tsx' app components | grep -v 'NEXT_PUBLIC_'`
+      (no negative lookahead: POSIX ERE has none, so `(?!...)` is a syntax error or a literal —
+      list the env reads, then exclude the public prefix with a second pass). **NB this is a
+      CANDIDATE list, not an absence proof**: it greps text, not the Client Component module
+      graph; a server module imported by a client one is invisible to it —
+      `grep -rn "import 'server-only'\|import \"server-only\"" app lib` (want: present in data
+      layer)
+- [ ] **next/image SSRF precondition** —
+      `grep -rn "remotePatterns\|images:\s*{" next.config.* | grep -n '\*\*\|domains'`
+- [ ] **Caching of personalized routes** —
+      `grep -rn "use cache\|cacheComponents\|force-cache\|revalidate\|Cache-Control" app next.config.*`
 
 - [ ] Exact Next + react-server-dom versions patched against CVE-2025-55182/-66478 and CVE-2025-29927?
 - [ ] Every Server Action and Route Handler authenticates, authorizes (ownership/IDOR), and schema-validates input — not relying on middleware?

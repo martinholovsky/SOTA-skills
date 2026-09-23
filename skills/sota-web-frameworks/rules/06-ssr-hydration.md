@@ -137,25 +137,21 @@ A strict, nonce/hash-based CSP is the highest-leverage defense-in-depth for thes
 
 ## Audit checklist
 
-```bash
-# Non-determinism in render (hydration bugs)
-grep -rnE '(Date\.now|new Date|Math\.random|crypto\.randomUUID)\(' --include='*.tsx' --include='*.vue' src app components pages | grep -v useEffect
-grep -rnE 'typeof window|localStorage|matchMedia|navigator\.' --include='*.tsx' --include='*.vue' src app pages
-
-# Blanket mismatch suppression (smell if widespread)
-grep -rn 'suppressHydrationWarning\|data-allow-mismatch' --include='*.tsx' --include='*.vue' src app pages
-
-# Hand-rolled state serialization into <script>
-grep -rnE 'JSON\.stringify' --include='*.ts' --include='*.tsx' server app | grep -i 'script\|__DATA__\|innerHTML'
-grep -E '"serialize-javascript"' package.json   # verify >=6.0.2
-
-# Cross-request state pollution: module-level mutable state in server code
-grep -rnE '^(export )?(let|const) \w+\s*=\s*(reactive|ref|new |\[\]|\{\})' --include='*.ts' server lib composables utils 2>/dev/null
-
-# Caching / CSP
-grep -rn 'Cache-Control\|s-maxage\|Vary' --include='*.ts' server app middleware.* proxy.*
-grep -rn "Content-Security-Policy\|nonce\|strict-dynamic\|nuxt-security" --include='*.ts' app proxy.* middleware.* nuxt.config.*
-```
+- [ ] **Non-determinism in render (hydration bugs)** —
+      `grep -rnE '(Date\.now|new Date|Math\.random|crypto\.randomUUID)\(' --include='*.tsx' --include='*.vue' src app components pages | grep -v useEffect`
+      ;
+      `grep -rnE 'typeof window|localStorage|matchMedia|navigator\.' --include='*.tsx' --include='*.vue' src app pages`
+- [ ] **Blanket mismatch suppression (smell if widespread)** —
+      `grep -rn 'suppressHydrationWarning\|data-allow-mismatch' --include='*.tsx' --include='*.vue' src app pages`
+- [ ] **Hand-rolled state serialization into <script>** —
+      `grep -rnE 'JSON\.stringify' --include='*.ts' --include='*.tsx' server app | grep -i 'script\|__DATA__\|innerHTML'`
+      ; `grep -E '"serialize-javascript"' package.json` (verify >=6.0.2)
+- [ ] **Cross-request state pollution: module-level mutable state in server code** —
+      `grep -rnE '^(export )?(let|const) \w+\s*=\s*(reactive|ref|new |\[\]|\{\})' --include='*.ts' server lib composables utils 2>/dev/null`
+- [ ] **Caching / CSP** —
+      `grep -rn 'Cache-Control\|s-maxage\|Vary' --include='*.ts' server app middleware.* proxy.*`
+      ;
+      `grep -rn "Content-Security-Policy\|nonce\|strict-dynamic\|nuxt-security" --include='*.ts' app proxy.* middleware.* nuxt.config.*`
 
 - [ ] Render deterministic — no `Date`/random/`window`/locale branching outside effects/`onMounted`; stable `useId`?
 - [ ] Mismatch suppression scoped to individual unavoidable nodes, never blanket, never patched with injected user HTML?

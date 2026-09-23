@@ -81,22 +81,17 @@ Audit for these (Sculley et al.) — each is real ML debt:
 
 ## Audit checklist
 
-```bash
-# Reproducibility — HIGH if a prod model can't be rebuilt
-#   Is there a versioned link model → (data hash, code commit, config, env)?
-grep -rniE 'mlflow|wandb|model.?registry|model.?card|lineage' . | head
-ls -R | grep -iE 'requirements|environment.ya?ml|poetry.lock|uv.lock|Dockerfile|conda'   # env pinned?
-
-# Train/serve consistency — CRITICAL if features computed two ways
-grep -rniE 'feature.?store|feast|transform' --include='*.py' . | head
-#   Compare training feature code vs serving feature code — same source?
-
-# Glue code / pipeline jungle / config sprawl — MEDIUM
-grep -rniE 'TODO|FIXME|HACK|temp|quick' --include='*.py' . | grep -iE 'pipeline|feature|etl' | head
-find . -name '*.ipynb' | head        # notebook-only training/serving == debt
-
-# Undeclared consumers / feedback loops — MEDIUM/HIGH (manual)
-#   Who reads the model's outputs? Does the model's action affect its future training data?
-
-# Unused features kept in infra — LOW (Rules of ML: drop them)
-```
+- [ ] **Reproducibility — HIGH if a prod model can't be rebuilt Is there a versioned link model
+      → (data hash, code commit, config, env)?** —
+      `grep -rniE 'mlflow|wandb|model.?registry|model.?card|lineage' . | head` ;
+      `ls -R | grep -iE 'requirements|environment.ya?ml|poetry.lock|uv.lock|Dockerfile|conda'`
+      (env pinned?)
+- [ ] **Train/serve consistency — CRITICAL if features computed two ways** —
+      `grep -rniE 'feature.?store|feast|transform' --include='*.py' . | head` (compare training
+      feature code vs serving feature code — same source?)
+- [ ] **Glue code / pipeline jungle / config sprawl — MEDIUM** —
+      `grep -rniE 'TODO|FIXME|HACK|temp|quick' --include='*.py' . | grep -iE 'pipeline|feature|etl' | head`
+      ; `find . -name '*.ipynb' | head` (notebook-only training/serving == debt)
+- [ ] **Undeclared consumers / feedback loops — MEDIUM/HIGH (manual) Who reads the model's
+      outputs? Does the model's action affect its future training data?**
+- [ ] **Unused features kept in infra — LOW (Rules of ML: drop them)**

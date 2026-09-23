@@ -59,24 +59,19 @@ progressive rollout validated on live traffic.
 
 ## Audit checklist
 
-```bash
-# Serving/training parity — CRITICAL if features reimplemented in the server
-grep -rniE 'predict|inference|serve' --include='*.py' . | head
-#   Confirm the server calls the SAME feature transform code/store as training (rules/02)
-
-# Safe model format & reproducible env — HIGH
-grep -rniE 'pickle|joblib|torch.load|cloudpickle' --include='*.py' . | head    # unsafe load? (rules/07)
-grep -rniE 'safetensors|onnx|torchscript' --include='*.py' . | head
-grep -rniE 'torchserve|torch-model-archiver' . | head    # EOL runtime (archived Aug 2025, no security patches) — HIGH
-ls Dockerfile* requirements*.txt poetry.lock uv.lock conda*.yml 2>/dev/null     # serving env pinned?
-
-# Registry-gated deploy + rollback — HIGH
-grep -rniE 'registry|stage|promote|production|rollback|previous.*model|champion|challenger' . | head \
-  || echo "no registry/rollback path found"
-
-# Progressive rollout — MEDIUM/HIGH
-grep -rniE 'shadow|canary|a/?b|traffic.*split|gradual|ramp' . | head || echo "no progressive rollout"
-
-# Serving input validation — MEDIUM
-grep -rniE 'validate|schema|pydantic|unseen|unknown.*categor|fillna|missing' --include='*.py' . | head
-```
+- [ ] **Serving/training parity — CRITICAL if features reimplemented in the server** —
+      `grep -rniE 'predict|inference|serve' --include='*.py' . | head` (confirm the server calls
+      the SAME feature transform code/store as training, rules/02)
+- [ ] **Safe model format & reproducible env — HIGH** —
+      `grep -rniE 'pickle|joblib|torch.load|cloudpickle' --include='*.py' . | head` (unsafe
+      load? (rules/07)); `grep -rniE 'safetensors|onnx|torchscript' --include='*.py' . | head` ;
+      `grep -rniE 'torchserve|torch-model-archiver' . | head` (EOL runtime (archived Aug 2025,
+      no security patches) — HIGH);
+      `ls Dockerfile* requirements*.txt poetry.lock uv.lock conda*.yml 2>/dev/null` (serving env
+      pinned?)
+- [ ] **Registry-gated deploy + rollback — HIGH** —
+      `grep -rniE 'registry|stage|promote|production|rollback|previous.*model|champion|challenger' . | head || echo "no registry/rollback path found"`
+- [ ] **Progressive rollout — MEDIUM/HIGH** —
+      `grep -rniE 'shadow|canary|a/?b|traffic.*split|gradual|ramp' . | head || echo "no progressive rollout"`
+- [ ] **Serving input validation — MEDIUM** —
+      `grep -rniE 'validate|schema|pydantic|unseen|unknown.*categor|fillna|missing' --include='*.py' . | head`

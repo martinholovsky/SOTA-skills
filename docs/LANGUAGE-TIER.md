@@ -163,6 +163,11 @@ parentheticals nobody else uses, and it writes `Top 10` where the rest write `To
 Invariant 2 gates the *heading*; the body was ungated and three forms were in use. **All nine
 language skills now use the tickable `- [ ]` form**, and
 `gen-concept-matrix.py --assert-format` runs in CI so a fenced checklist cannot come back.
+**Widened later on 2026-09-23 to every skill:** the gate now reads all 275 rules files across
+42 skill directories, per file, and also fails a checklist that yields **zero** items. That
+second arm exists because three `sota-architecture` files used plain `- ` bullets, which
+the language-only gate read as a pass. Watched to fail on the pre-change tree (17 of 275
+files) before the conversion made it pass.
 
 AUDIT mode tells the model to "verify your diff satisfies every item" — an instruction that
 cannot be followed against a shell block. The deferral asked for a measurement or a third
@@ -253,7 +258,7 @@ stops meaning anything — `sota-code-security` rules/10's subject, one layer do
 ## Depth: the external-guide gap-check (ROADMAP 59)
 
 Coverage inside this tier is checked against an **external, enumerable, tool-backed list** —
-the method already used for Go (OWASP Go-SCP) and Rust (ANSSI). Two are done:
+the method already used for Go (OWASP Go-SCP) and Rust (ANSSI). Three are done:
 
 | language | denominator | source | result |
 |---|---|---|---|
@@ -261,13 +266,14 @@ the method already used for Go (OWASP Go-SCP) and Rust (ANSSI). Two are done:
 | golang | **61 checks** | gosec 2.29.0 `rulelist.go` (39) + `analyzerslist.go` (22) | 4 gaps closed |
 | c-cpp | **342 checks** | cppcheck 2.21.0 `--errorlist`, two agreeing derivations; MISRA addon (132 rules) is a separate registry | 4 gaps closed |
 
-Remaining: **rust, c-cpp, jvm, javascript-typescript, dotnet, php, ruby**. Candidate
+Remaining: **rust, jvm, javascript-typescript, dotnet, php, ruby** — 6. Candidate
 denominators — ruby/Brakeman, js-ts/eslint-plugin-security, rust/clippy + ANSSI.
 **jvm and .NET have no queryable local tool**, which may itself be the finding rather than a
 reason to skip them.
 
-**c-cpp's denominator is already derived and reconciled — 2026-09-21, so the next session on
-this language starts past the step that failed twice.** cppcheck **2.21.0**:
+**c-cpp's denominator was derived and reconciled on 2026-09-21, and the sweep against it ran
+on 2026-09-22 (the table row above).** The derivation is kept as the worked example of the step
+that failed twice. cppcheck **2.21.0**:
 
 | derivation | method | answer |
 |---|---|---|

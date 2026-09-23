@@ -97,25 +97,20 @@ cross_val_score(pipe, X_train, y_train, cv=TimeSeriesSplit())
 - [ ] If one is **not** in use: what enforces the two answers above instead? "We are
       careful" is not a mechanism (`rules/01` §3).
 
-```bash
-# Preprocessing leakage — CRITICAL
-grep -rnE '\.fit(_transform)?\(' --include='*.py' . | grep -vE 'Pipeline|fit\(X_train|fit\(train'  # fit on full data?
-grep -rnE 'SMOTE|resample|SelectKBest|StandardScaler|fit_transform' --include='*.py' . # before split?
-
-# Split correctness — CRITICAL/HIGH
-grep -rnE 'train_test_split\(' --include='*.py' . | grep -v 'stratify\|TimeSeries\|Group'  # temporal/group needed?
-grep -rniE 'TimeSeriesSplit|GroupKFold|GroupShuffle' --include='*.py' . || echo "no temporal/group split — verify IID"
-
-# Train/serve skew — CRITICAL
-#   Diff training feature code vs serving feature code; are served features logged for training?
-grep -rniE 'feature.?store|feast|log.*feature|skew' --include='*.py' . | head
-
-# Data/feature versioning — HIGH
-grep -rniE 'dvc|lakefs|dataset.*hash|snapshot|data.?version' . | head || echo "no data versioning found"
-
-# Data validation at entry — HIGH
-grep -rniE 'great_expectations|pandera|tfdv|schema.*valid|expect_' --include='*.py' . || echo "no data validation"
-
-# PII in features — HIGH (cross-ref sota-privacy-compliance)
-grep -rniE 'email|ssn|phone|dob|address|name|ip_addr' --include='*.py' . | grep -i feature | head
-```
+- [ ] **Preprocessing leakage — CRITICAL** —
+      `grep -rnE '\.fit(_transform)?\(' --include='*.py' . | grep -vE 'Pipeline|fit\(X_train|fit\(train'`
+      (fit on full data?);
+      `grep -rnE 'SMOTE|resample|SelectKBest|StandardScaler|fit_transform' --include='*.py' . # before split?`
+- [ ] **Split correctness — CRITICAL/HIGH** —
+      `grep -rnE 'train_test_split\(' --include='*.py' . | grep -v 'stratify\|TimeSeries\|Group'`
+      (temporal/group needed?);
+      `grep -rniE 'TimeSeriesSplit|GroupKFold|GroupShuffle' --include='*.py' . || echo "no temporal/group split — verify IID"`
+- [ ] **Train/serve skew — CRITICAL Diff training feature code vs serving feature code; are
+      served features logged for training?** —
+      `grep -rniE 'feature.?store|feast|log.*feature|skew' --include='*.py' . | head`
+- [ ] **Data/feature versioning — HIGH** —
+      `grep -rniE 'dvc|lakefs|dataset.*hash|snapshot|data.?version' . | head || echo "no data versioning found"`
+- [ ] **Data validation at entry — HIGH** —
+      `grep -rniE 'great_expectations|pandera|tfdv|schema.*valid|expect_' --include='*.py' . || echo "no data validation"`
+- [ ] **PII in features — HIGH (cross-ref sota-privacy-compliance)** —
+      `grep -rniE 'email|ssn|phone|dob|address|name|ip_addr' --include='*.py' . | grep -i feature | head`

@@ -114,27 +114,20 @@ export default defineEventHandler(async (event) => {
 
 ## Audit checklist
 
-```bash
-# Exact versions vs the CVE table
-node -e "const p=require('./package.json');console.log(p.dependencies?.nuxt||p.devDependencies?.nuxt)"
-grep -E '"(nuxt|nitropack|h3|ipx|@nuxt/image|devalue|pinia)"' package.json
-
-# Secret under public runtimeConfig (CRITICAL)
-grep -rnA8 'runtimeConfig' nuxt.config.* | grep -iE 'public' -A6 | grep -iE 'secret|key|token|password'
-
-# Module-level refs / state outside setup (cross-request leak)
-grep -rnE '^(export )?const \w+\s*=\s*(ref|reactive)\(' --include='*.ts' composables server utils 2>/dev/null
-
-# $fetch in setup (double fetch), server routes without validation
-grep -rn '\$fetch(' --include='*.vue' pages components | grep -v useFetch
-grep -rLn 'getValidated\|readValidatedBody\|requireUserSession\|\.parse(' server/api server/routes 2>/dev/null
-
-# routeRules that cache — must not be personalized
-grep -rnE 'swr|isr|prerender|ssr:\s*false' nuxt.config.*
-
-# NuxtLink / URL sinks
-grep -rn ':to=\|:href=' --include='*.vue' pages components | grep -iv 'sanitiz'
-```
+- [ ] **Exact versions vs the CVE table** —
+      `node -e "const p=require('./package.json');console.log(p.dependencies?.nuxt||p.devDependencies?.nuxt)"`
+      ; `grep -E '"(nuxt|nitropack|h3|ipx|@nuxt/image|devalue|pinia)"' package.json`
+- [ ] **Secret under public runtimeConfig (CRITICAL)** —
+      `grep -rnA8 'runtimeConfig' nuxt.config.* | grep -iE 'public' -A6 | grep -iE 'secret|key|token|password'`
+- [ ] **Module-level refs / state outside setup (cross-request leak)** —
+      `grep -rnE '^(export )?const \w+\s*=\s*(ref|reactive)\(' --include='*.ts' composables server utils 2>/dev/null`
+- [ ] **$fetch in setup (double fetch), server routes without validation** —
+      `grep -rn '\$fetch(' --include='*.vue' pages components | grep -v useFetch` ;
+      `grep -rLn 'getValidated\|readValidatedBody\|requireUserSession\|\.parse(' server/api server/routes 2>/dev/null`
+- [ ] **routeRules that cache — must not be personalized** —
+      `grep -rnE 'swr|isr|prerender|ssr:\s*false' nuxt.config.*`
+- [ ] **NuxtLink / URL sinks** —
+      `grep -rn ':to=\|:href=' --include='*.vue' pages components | grep -iv 'sanitiz'`
 
 - [ ] Nuxt/Nitro/h3/IPX/devalue versions patched against the table (esp. CVE-2025-27415, CVE-2026-53721, devalue pollution)?
 - [ ] No secret under `runtimeConfig.public`; server secrets at the root only?
