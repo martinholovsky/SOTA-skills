@@ -170,16 +170,34 @@ scope() {  # <count> <noun> — returns 1 on an empty scope; prints nothing on s
 echo "[1/34] Skill Markdown (skills/**) <= ${MAX_LINES} lines"
 over=0
 seen1=0
+files1=()
 while IFS= read -r f; do
   [ -f "$f" ] || { note "SKIPPED (tracked but missing from worktree): $f"; continue; }
   seen1=$((seen1 + 1))
-  # awk NR, not `wc -l`: counts a final line without trailing newline too.
-  n=$(awk 'END{print NR}' "$f")
-  if [ "$n" -gt "$MAX_LINES" ]; then
+  files1+=("$f")
+done < <(git ls-files 'skills/*/*.md' 'skills/*/rules/*.md')
+# ONE awk over every file, not one per file (2026-09-23: this check spawned 317 awks per
+# run, and the negative-control harness runs the whole suite 52 times). Per-file line
+# count is FNR at the file boundary. awk NR/FNR, not `wc -l`: a final line without a
+# trailing newline still counts. An EMPTY file never reaches FNR==1 and is simply never
+# reported, which is right: 0 lines is under any cap. BSD awk has no ENDFILE, hence the
+# FNR==1 boundary. The `seen1` guard is for bash 3.2, where an empty array under `set -u`
+# is an unbound-variable error.
+if [ "$seen1" -gt 0 ]; then
+  over1=$(awk -v max="$MAX_LINES" '
+    FNR == 1 && NR > 1 && n > max { printf "%d\t%s\n", n, f }
+    FNR == 1 { f = FILENAME }
+    { n = FNR }
+    END { if (NR > 0 && n > max) printf "%d\t%s\n", n, f }
+  ' "${files1[@]}")
+  while IFS="$(printf '\t')" read -r n f; do
+    [ -n "$n" ] || continue
     note "OVER ${MAX_LINES} (${n} lines): $f"
     over=1
-  fi
-done < <(git ls-files 'skills/*/*.md' 'skills/*/rules/*.md')
+  done <<EOF1
+$over1
+EOF1
+fi
 scope "$seen1" "skill files" || over=1
 if [ "$over" -eq 0 ]; then echo "    ok ($seen1 skill files)"; else fail=1; fi
 
@@ -200,28 +218,48 @@ if [ "$over" -eq 0 ]; then echo "    ok ($seen1 skill files)"; else fail=1; fi
 echo "[2/34] Every skills/*/rules/*.md ends with exactly one '## Audit checklist'"
 missing=0
 seen2=0
+files2=()
 while IFS= read -r f; do
   [ -f "$f" ] || { note "SKIPPED (tracked but missing from worktree): $f"; continue; }
   seen2=$((seen2 + 1))
-  # The checklist must be the file's LAST '## ' heading (docs say "ends
-  # with"). Track code-fence state so a '## Audit checklist' INSIDE a fence
-  # doesn't satisfy the check (the 2026-07-01 fix missed this; 2026-07-10
-  # audit reproduced the bypass). A trailing suffix is still allowed — four
-  # files use '## Audit checklist (meta — …)' legitimately.
-  last_h2=$(awk '/^(```|~~~)/{fence=!fence} !fence && /^## /{h=$0} END{print h}' "$f")
-  case "$last_h2" in
-    '## Audit checklist'*) ;;
-    *) note "MISSING/NOT-LAST '## Audit checklist': $f"; missing=1 ;;
-  esac
-  # Fence-aware too: a second heading inside a fence is sample output, not a
-  # section, and must not be counted against the file.
-  n_ck=$(awk '/^(```|~~~)/{fence=!fence} !fence && /^## Audit checklist/{n++} END{print n+0}' "$f")
-  if [ "$n_ck" -gt 1 ]; then
-    note "DUPLICATE '## Audit checklist' ($n_ck) in $f — the earlier block's bullets"
-    note "  render where a reader has already stopped. Merge them into the last one."
-    missing=1
-  fi
+  files2+=("$f")
 done < <(git ls-files 'skills/*/rules/*.md')
+# The checklist must be the file's LAST '## ' heading (docs say "ends with"). Track
+# code-fence state so a '## Audit checklist' INSIDE a fence doesn't satisfy the check (the
+# 2026-07-01 fix missed this; the 2026-07-10 audit reproduced the bypass). A trailing
+# suffix is still allowed — four files use '## Audit checklist (meta — …)' legitimately.
+# Fence-aware for the count too: a second heading inside a fence is sample output.
+# ONE awk over every file (was two per file: 550 spawns per run); fence state and the
+# per-file tallies reset at each FNR==1. An EMPTY file never reaches FNR==1, so it is
+# emitted from the file list instead: it has no checklist and must be reported.
+if [ "$seen2" -gt 0 ]; then
+  # awk stores each file's last H2 and checklist count, then reports in ARGV order (= the
+  # file-list order the per-file loop used). A file awk never read (empty) has no entry and
+  # reports MISSING, as before. Output lines are pre-formatted; bash only `read`s them.
+  res2=$(awk '
+    FNR == 1 { f = FILENAME; fence = 0 }
+    /^(```|~~~)/ { fence = !fence }
+    !fence && /^## / { h[f] = $0 }
+    !fence && /^## Audit checklist/ { n[f]++ }
+    END {
+      for (i = 1; i < ARGC; i++) {
+        a = ARGV[i]
+        if (index(h[a], "## Audit checklist") != 1) printf "M\t%s\n", a
+        if (n[a] + 0 > 1) printf "D\t%s\t%d\n", a, n[a]
+      }
+    }
+  ' "${files2[@]}")
+  while IFS="$(printf '\t')" read -r kind f n_ck; do
+    case "$kind" in
+      M) note "MISSING/NOT-LAST '## Audit checklist': $f"; missing=1 ;;
+      D) note "DUPLICATE '## Audit checklist' ($n_ck) in $f — the earlier block's bullets"
+         note "  render where a reader has already stopped. Merge them into the last one."
+         missing=1 ;;
+    esac
+  done <<EOF2
+$res2
+EOF2
+fi
 scope "$seen2" "rules files" || missing=1
 if [ "$missing" -eq 0 ]; then echo "    ok ($seen2 rules files, one checklist each)"; else fail=1; fi
 
@@ -598,17 +636,31 @@ if [ "$v9" -eq 0 ]; then echo "    ok"; else fail=1; fi
 echo "[10/34] Every skills/*/rules/*.md is referenced by its own SKILL.md"
 v10=0
 seen10=0
+# Parameter expansion instead of dirname/dirname/basename/grep per file (was ~1,100 spawns
+# per run), and each SKILL.md read ONCE per skill: ls-files lists a skill's rules files
+# together, so the cached body is reused until the directory changes. `case` substring
+# match == `grep -qF` here: a file name holds no newline, so line-wise and whole-body
+# matching agree.
+cur10=""; body10=""; have10=0
 while IFS= read -r rf; do
   seen10=$((seen10 + 1))
-  skill_dir=$(dirname "$(dirname "$rf")")
+  rdir10=${rf%/*}
+  skill_dir=${rdir10%/*}
   sk="$skill_dir/SKILL.md"
-  base=$(basename "$rf")
-  if [ ! -f "$sk" ]; then
+  base=${rf##*/}
+  if [ "$skill_dir" != "$cur10" ]; then
+    cur10=$skill_dir
+    if [ -f "$sk" ]; then body10=$(cat "$sk"); have10=1; else body10=""; have10=0; fi
+  fi
+  if [ "$have10" -eq 0 ]; then
     note "$rf: no SKILL.md in $skill_dir"
     v10=1
-  elif ! grep -qF "$base" "$sk"; then
-    note "$rf: not referenced in $sk — the model never loads it (add it to the rules index)"
-    v10=1
+  else
+    case "$body10" in
+      *"$base"*) ;;
+      *) note "$rf: not referenced in $sk — the model never loads it (add it to the rules index)"
+         v10=1 ;;
+    esac
   fi
 done < <(git ls-files 'skills/*/rules/*.md')
 scope "$seen10" "rules files indexed" || v10=1
@@ -1537,27 +1589,43 @@ if [ "$v21" -ne 0 ]; then fail=1; fi
 echo "[22/34] No '- [ ]' checklist bullet stranded inside a code fence"
 v22=0
 seen22=0
+files22=()
 while IFS= read -r f; do
   [ -f "$f" ] || { note "SKIPPED (tracked but missing from worktree): $f"; continue; }
   seen22=$((seen22 + 1))
-  # Same fence tracking as check 2: ``` or ~~~ toggles, and the fence line
-  # itself is never a bullet. Leading whitespace is stripped first -- the
-  # stranded bullets were flush-left, but an indented one renders identically.
-  hits=$(awk '
+  files22+=("$f")
+done < <(git ls-files 'skills/*/*.md' 'skills/*/rules/*.md')
+# Same fence tracking as check 2: ``` or ~~~ toggles, and the fence line
+# itself is never a bullet. Leading whitespace is stripped first -- the
+# stranded bullets were flush-left, but an indented one renders identically.
+# ONE awk over every file (was one per file: 317 spawns per run). Fence state resets at
+# each FNR==1, and the line number is FNR, not NR, which in a multi-file run would count
+# across files. awk emits the finished note lines in file order; bash only prints them.
+if [ "$seen22" -gt 0 ]; then
+  out22=$(awk '
+    function close_file() {
+      if (hits) {
+        print "  It renders as sample output, so no auditor ever reads it. Move it to"
+        print "  the '"'"'## Audit checklist'"'"' section, or make it plainly part of the example."
+      }
+    }
+    FNR == 1 { close_file(); f = FILENAME; fence = 0; hits = 0 }
     { line = $0; sub(/^[ \t]+/, "", line) }
     line ~ /^(```|~~~)/ { fence = !fence; next }
-    fence && line ~ /^- \[[ xX]\]/ { printf "%d: %.70s\n", NR, line }
-  ' "$f")
-  if [ -n "$hits" ]; then
-    note "CHECKLIST BULLET INSIDE A CODE FENCE: $f"
-    while IFS= read -r h; do note "  $h"; done <<EOF22
-$hits
+    fence && line ~ /^- \[[ xX]\]/ {
+      if (!hits) print "CHECKLIST BULLET INSIDE A CODE FENCE: " f
+      hits = 1
+      printf "  %d: %.70s\n", FNR, line
+    }
+    END { close_file() }
+  ' "${files22[@]}")
+  if [ -n "$out22" ]; then
+    while IFS= read -r l; do note "$l"; done <<EOF22
+$out22
 EOF22
-    note "  It renders as sample output, so no auditor ever reads it. Move it to"
-    note "  the '## Audit checklist' section, or make it plainly part of the example."
     v22=1
   fi
-done < <(git ls-files 'skills/*/*.md' 'skills/*/rules/*.md')
+fi
 scope "$seen22" "skill files" || v22=1
 if [ "$v22" -eq 0 ]; then echo "    ok ($seen22 skill files)"; fi
 if [ "$v22" -ne 0 ]; then fail=1; fi
@@ -2476,12 +2544,32 @@ rules = [p for p in changed
 # Every heading that existed anywhere in rules/ at the merge base. A heading that
 # merely MOVED is not new guidance, and splits move many at once.
 old_headings = set()
-for line in git("ls-tree", "-r", "--name-only", base).split("\n"):
-    if re.fullmatch(r"skills/[^/]+/rules/[^/]+\.md", line or ""):
-        try:
-            blob = git("show", f"{base}:{line}")
-        except subprocess.CalledProcessError:
+# ONE `git cat-file --batch` for every rules blob at the base, not one `git show` per file
+# (was 275 git processes per run, and the negative-control harness runs the suite 52
+# times). ls-tree gives each blob's object id; the batch reply is "<oid> blob <size>\n",
+# then exactly <size> bytes, then "\n", so it is parsed by size, never by line.
+oids = []
+for line in git("ls-tree", "-r", base).split("\n"):
+    if not line:
+        continue
+    meta, _, path = line.partition("\t")
+    parts = meta.split()
+    if len(parts) == 3 and parts[1] == "blob" and \
+            re.fullmatch(r"skills/[^/]+/rules/[^/]+\.md", path):
+        oids.append(parts[2])
+if oids:
+    out = subprocess.run(["git", "cat-file", "--batch"], input=("\n".join(oids) + "\n").encode(),
+                         capture_output=True, check=True).stdout
+    pos = 0
+    for _ in oids:
+        nl = out.index(b"\n", pos)
+        header = out[pos:nl].split()
+        pos = nl + 1
+        if len(header) < 3 or header[1] != b"blob":      # "<oid> missing": skip, as before
             continue
+        size = int(header[2])
+        blob = out[pos:pos + size].decode("utf-8", errors="replace")
+        pos += size + 1
         for l in blob.split("\n"):
             if re.match(r"^#{2,3} ", l):
                 old_headings.add(l.strip())
