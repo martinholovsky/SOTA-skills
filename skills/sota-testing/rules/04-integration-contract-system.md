@@ -227,8 +227,9 @@ ran*; it read as the target not being exploitable.
 - **Assert the setup's effect, not its exit code.** `modprobe` exits 0 for a module that is
   **built into** the kernel: libkmod counts a built-in as already present
   (`module_is_inkernel`), so nothing loads, no load event fires, and a test waiting for one
-  reports "the sensor produced no event", which reads as a product defect. Check the effect
-  (`/proc/modules` lists loadable modules; a built-in never appears there).
+  reports "the sensor produced no event", which reads as a product defect. Check the effect: `/proc/modules` is "a text list of the modules that have been loaded by
+  the system" (`proc_modules(5)`), and a built-in was compiled in rather than loaded, so do
+  not expect it there.
 - **Empty is not a result.** An empty output file, an empty stdout, a zero-length report is
   a **failed measurement until proven otherwise** — assert the artefact is non-empty *and*
   contains the summary line you expect before reading anything into it. (The pipe version of

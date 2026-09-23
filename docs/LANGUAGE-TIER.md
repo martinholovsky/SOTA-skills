@@ -283,7 +283,9 @@ After #426 every language has every applicable topic (page 5 has no blank cells;
 | jvm | 710 | 48 | 6.8 | **not yet** |
 | .NET | 569 | 40 | 7.0 | **not yet** |
 
-Items are comparable across languages since every checklist became tick-boxes (the same day).
+Items are *counted* the same way across languages since every checklist became tick-boxes (the
+same day), but not *sized* the same: one bullet can bundle several probes, and that varies by
+author, so the item column is a rough guide rather than a ratio.
 Small is not the same as shallow per line (jvm and .NET are the densest, as ROADMAP 58
 found), but an auditor walking .NET gets 40 probes and walking js/ts gets 110. **Every
 external gap-check so far found 4–7 real gaps**, so the five unchecked languages are
