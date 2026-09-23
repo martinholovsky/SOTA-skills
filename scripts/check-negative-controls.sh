@@ -1191,11 +1191,16 @@ fi
 # against a true 31, because the diff-based probes are nested inside functions. Only a
 # run knows, and this is the moment it knows. A control that asserts its own coverage
 # rather than counting it is sota-code-security rules/14 §1.
-derived=$(printf '%s' "$PROBED_IDS" | tr ' ' '\n' | sort -un | grep -c .)
+# `grep -c` prints 0 AND exits 1 on an empty input, and under `set -euo pipefail` that
+# aborts the whole harness SILENTLY at this assignment -- no FAIL line, just exit 1. It hit
+# main on 2026-09-23: SKIPPED_IDS is empty on every non-sweep branch, and the PR that added
+# this line was sweep-shaped, so its own CI never took the empty path. `|| true` keeps the
+# printed 0; the declaration check below still fails loudly on a wrong number.
+derived=$(printf '%s' "$PROBED_IDS" | tr ' ' '\n' | sort -un | { grep -c . || true; })
 # A DYNAMICALLY skipped invariant still counts toward the declaration -- it has a probe, it
 # simply could not run on this branch (see the 11/11b/11c guard). Padding PROBED_IDS instead
 # would claim it was exercised, which is the lie this harness exists to prevent.
-skipped=$(printf '%s' "$SKIPPED_IDS" | tr ' ' '\n' | sort -un | grep -c .)
+skipped=$(printf '%s' "$SKIPPED_IDS" | tr ' ' '\n' | sort -un | { grep -c . || true; })
 if [ "$skipped" -gt 0 ]; then
   printf 'NOTE: %d invariant(s) had their probes skipped on this branch:%s\n' \
     "$skipped" "$(printf '%s' "$SKIPPED_IDS" | tr ' ' '\n' | sort -un | tr '\n' ' ' | sed 's/^/ /')"

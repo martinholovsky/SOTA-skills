@@ -58,6 +58,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The negative-control harness aborted silently on every non-sweep branch, and main was
+  red from the moment #420 merged.** The skipped-probe count `$(… | grep -c .)` prints 0 but
+  exits 1 on empty input, and `set -euo pipefail` killed the run at that assignment with no
+  FAIL line. `SKIPPED_IDS` is empty on any branch that skips nothing. The PR that added the
+  line was sweep-shaped, so its CI only took the non-empty path. Both counts now use
+  `{ grep -c . || true; }`. This is the same `grep`-under-`pipefail` family as "Invariant 14
+  could reject a correct release" further down this file.
 - **Every skill's Audit checklist is now tickable, and the format gate covers all of them.**
   `gen-concept-matrix.py --assert-format` had covered only the nine language skills, so 14
   fenced checklists in `sota-web-frameworks` and `sota-ml-engineering` were ungated (a scope
