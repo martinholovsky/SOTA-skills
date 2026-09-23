@@ -36,6 +36,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`check-invariants.sh` runs in about half the time (17.5 s to 9.7 s locally).** The
+  negative-control harness runs the full suite 52 times, and five checks started a process
+  for every file:
+  - an `awk` per file (checks 1 and 22);
+  - two per file (check 2);
+  - `dirname`/`basename`/`grep` per file (check 10);
+  - a `git show` per rules blob at the merge base (check 31).
+
+  Each is now one pass: multi-file `awk` keyed on `FNR` boundaries, parameter expansion with
+  one `SKILL.md` read per skill, and one `git cat-file --batch`. Nothing a check reports
+  changed. A differential test, original vs new over 12 trees (clean, 8 failing mutations and
+  3 edge cases including an empty file), gave byte-identical output and exit codes in 12 of
+  12. The negative-control harness still catches every probe on these checks (67/67).
+
 - **Invariant 32 was blind to every audit-checklist probe** after they moved from fenced blocks
   into tick-box bullets (#420/#421). It now reads inline code spans outside fences, joins `\`
   continuations, and matches the `| head || echo` fallback, which never fires without
