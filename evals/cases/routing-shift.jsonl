@@ -9,7 +9,7 @@
 # SELECTION RULE — every case is derived from a REAL observed mis-route recorded in
 # ROADMAP 48, not invented to be hard and not selected by how any model scored. (a) and
 # (c) are sessions of this project's own; (b) is the sota-testing field brief of
-# 2026-09-10; (d) is the 2026-09-12 InterdictOps report, whose author diagnosed it
+# 2026-09-10; (d) is the 2026-09-12 private-project report, whose author diagnosed it
 # themselves. Four observations, four cases. No case was added or dropped after a run.
 # MEASUREMENT set — a number may be reported from it.
 {"id": "s1_docs_to_shell", "expect": "sota-shell-scripting", "prior": [["We're restructuring the docs. What belongs in a README versus a runbook?", "A README answers 'what is this and how do I start'; a runbook answers 'it is 3am and this is broken'. Keep the README task-oriented for newcomers and push operational recovery steps into runbooks, which should be checklists with expected output at each step."], ["Good. Should the changelog live in the repo or in release notes?", "Both, with one canonical source. Keep CHANGELOG.md in the repo as the source of truth and generate release notes from it, so the version a reader sees in the tag matches the file."]], "task": "I need to verify a claim before I write it down: I ran `grep -r \"retry_backoff\" ~/.config/service/` across a tree of symlinked config directories and got no matches, so I'm going to document that the setting is unused. Check my reasoning before I commit that sentence."}

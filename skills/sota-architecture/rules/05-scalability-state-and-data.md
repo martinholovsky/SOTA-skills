@@ -216,22 +216,22 @@ delete their data.
 
 ## Audit checklist
 
-- Can every service instance be killed at any moment without data loss? Any sticky sessions, local files, or solo in-memory state?
-- Is session/user state in a shared store or token, not instance memory?
-- Is autoscaling driven by the constraining metric, with verified scale-down/drain behavior?
-- Are database connections guarded (pooler, per-instance caps) against replica multiplication?
-- Are read-after-write flows protected against replica/cache staleness?
-- Do analytics or long-running queries run against the OLTP primary?
-- Does every cache have documented TTL, invalidation trigger, stampede protection, and a correct cold-cache fallback? Is anything cache-as-only-copy?
-- Do cache keys include user/tenant scope everywhere responses differ by user/tenant?
-- If sharded: was the partition key chosen from access patterns (ADR)? Are logical→physical partitions resharding-friendly? Any cross-shard transactions or joins?
-- Does every large table/topic have retention, archival, and erasure paths?
-- Is the multi-tenancy model explicit per tenant tier? Is tenant isolation enforced below application code (RLS or mandatory scoped layer) with cross-tenant access tests?
-- Is tenant context derived from identity (not request params) and present in queries, cache keys, messages, logs, metrics?
-- Are per-tenant rate/concurrency/queue quotas in place in pooled tiers?
-- Is all user-triggered heavy work async with job handles, and are background jobs on dedicated workers?
-- Is steady-state utilization of latency-sensitive tiers planned with headroom (~50–70%), and does capacity cover peak with an AZ down?
-- Are load tests production-shaped (key skew, payload sizes), and is hot-key detection (top-K metrics) with a mitigation playbook in place?
-- Are high-contention counters sharded or queue-buffered rather than single-row hot spots?
-- Is every projection/search index/denormalized table rebuildable via a tested backfill, with lag monitored and staleness contracts known to consumers?
-- Are blobs in object storage with presigned direct transfer, orphan reconciliation, and tenant-scoped prefixes?
+- [ ] Can every service instance be killed at any moment without data loss? Any sticky sessions, local files, or solo in-memory state?
+- [ ] Is session/user state in a shared store or token, not instance memory?
+- [ ] Is autoscaling driven by the constraining metric, with verified scale-down/drain behavior?
+- [ ] Are database connections guarded (pooler, per-instance caps) against replica multiplication?
+- [ ] Are read-after-write flows protected against replica/cache staleness?
+- [ ] Do analytics or long-running queries run against the OLTP primary?
+- [ ] Does every cache have documented TTL, invalidation trigger, stampede protection, and a correct cold-cache fallback? Is anything cache-as-only-copy?
+- [ ] Do cache keys include user/tenant scope everywhere responses differ by user/tenant?
+- [ ] If sharded: was the partition key chosen from access patterns (ADR)? Are logical→physical partitions resharding-friendly? Any cross-shard transactions or joins?
+- [ ] Does every large table/topic have retention, archival, and erasure paths?
+- [ ] Is the multi-tenancy model explicit per tenant tier? Is tenant isolation enforced below application code (RLS or mandatory scoped layer) with cross-tenant access tests?
+- [ ] Is tenant context derived from identity (not request params) and present in queries, cache keys, messages, logs, metrics?
+- [ ] Are per-tenant rate/concurrency/queue quotas in place in pooled tiers?
+- [ ] Is all user-triggered heavy work async with job handles, and are background jobs on dedicated workers?
+- [ ] Is steady-state utilization of latency-sensitive tiers planned with headroom (~50–70%), and does capacity cover peak with an AZ down?
+- [ ] Are load tests production-shaped (key skew, payload sizes), and is hot-key detection (top-K metrics) with a mitigation playbook in place?
+- [ ] Are high-contention counters sharded or queue-buffered rather than single-row hot spots?
+- [ ] Is every projection/search index/denormalized table rebuildable via a tested backfill, with lag monitored and staleness contracts known to consumers?
+- [ ] Are blobs in object storage with presigned direct transfer, orphan reconciliation, and tenant-scoped prefixes?

@@ -269,7 +269,7 @@ def main():
     ap.add_argument("--min-coverage", type=float, default=0.0, metavar="FRAC",
                     help="exit 1 if any skill classifies below this fraction")
     ap.add_argument("--assert-format", action="store_true",
-                    help="exit 1 if any language skill's Audit checklist is not tickable")
+                    help="exit 1 if any skill's rules-file Audit checklist is not tickable")
     ap.add_argument("--assert-universal", action="store_true",
                     help="exit 1 if any UNIVERSAL_FLOOR concept is not present in all 9")
     args = ap.parse_args()
@@ -337,18 +337,34 @@ def main():
         # block. Two mechanical readers had already given wrong answers because of it: a
         # `- [ ]` count returned 0 for seven of nine skills, and a concept pass reported
         # sota-golang as lacking API/design probes its 02-design.md plainly has.
-        wrong = []
-        for lang in E.LANGS:
-            kinds = {k for _f, k, _t in E.skill_items(lang)}
-            if kinds and kinds != {"box"}:
-                wrong.append("%s (%s)" % (E.label(lang), ", ".join(sorted(kinds))))
+        #
+        # WIDENED 2026-09-23 from the nine language skills to EVERY skill, and per FILE. The
+        # language-only scope left 14 fenced files in two domain skills ungated, and a file
+        # whose checklist is plain `- ` bullets yields ZERO items -- which the old
+        # `kinds and ...` test read as a pass. Three sota-architecture files sat there.
+        wrong, files = [], 0
+        dirs = E.all_rules_dirs()
+        for d in dirs:
+            for f in sorted(d.glob("*.md")):
+                files += 1
+                kinds = [k for k, _t in E.items_in_file(f)]
+                if not kinds:
+                    wrong.append("%s (no tickable items)" % f.relative_to(E.ROOT))
+                elif set(kinds) != {"box"}:
+                    wrong.append("%s (%s)" % (f.relative_to(E.ROOT),
+                                              ", ".join(sorted(set(kinds)))))
         print("\nCHECKLIST FORMAT")
+        if not files:
+            print("  FAIL: 0 rules files read -- the gate verified nothing")
+            return 1
         if wrong:
-            print("  NOT TICKABLE: " + "; ".join(wrong))
-            print("  Every language skill's '## Audit checklist' must use `- [ ]` bullets.")
+            print("  NOT TICKABLE (%d of %d rules files):" % (len(wrong), files))
+            for w in wrong:
+                print("    " + w)
+            print("  Every '## Audit checklist' must use `- [ ]` bullets.")
             print("  scripts/lib/unify_checklist.py converts a fenced block; review its output.")
             return 1
-        print("  ok (all %d language skills tickable)" % len(E.LANGS))
+        print("  ok (%d rules files across %d skills, all tickable)" % (files, len(dirs)))
 
     if args.assert_universal:
         broken = []

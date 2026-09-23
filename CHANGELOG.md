@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The +0.39 completeness lift, re-measured against the current router: it holds (ROADMAP
+  63).** Two runs of 3 samples at temp 0.7 on `claude-sonnet-4.6`, the baseline configuration,
+  at `ROUTER_BUILD_SHA` `273a969bbe2994e4`. The lifts were +0.39 and +0.42, and the mean is
+  0.58 → 0.98 (**+0.41**). Every case is positive in both runs. The +0.02 is within the
+  run-to-run spread and is not a finding. See `evals/results/2026-09-23/COMPLETENESS-RERUN.md`.
+- **`sota-jvm` rules/04 §6: the web layer (ROADMAP 62, closed on operator decision).** jvm was
+  the one language skill in the tier's most-deployed web stack with no web treatment. Its
+  security file covered deserialization, JNDI and XXE, but not the layer they arrive through.
+  §6 covers:
+  - **Actuator exposure.** Only `health` is exposed over HTTP by default, and `heapdump` is
+    outside the `show-values` sanitization.
+  - **Request-body polymorphism.** `Id.CLASS` / `MINIMAL_CLASS`, and `activateDefaultTyping`
+    since jackson-databind 2.10.
+  - **Mass assignment.** Spring's own binding guidance, with Spring4Shell as the instance.
+  - **Authorization rules.** First-match evaluation, and every-dispatch authorization in Spring
+    Security 6.
+  - **Filter order.** Checked on the running app, because the property moved between Boot
+    majors.
+
+  All of it was checked against Spring and Jackson docs, advisories or source on 2026-09-23.
+  Five audit probes were added, and each was run against a known-bad and a known-good fixture
+  under both BSD grep and ugrep. The first draft of the actuator probe **missed YAML's nested
+  `include: "*"`**. Page 5 of the skill map now shows jvm's Web/HTTP cell.
 - **Field report from a session that *used* the library — three findings, one of which found
   a defect in our own snippet.** A Rust + eBPF endpoint sensor at v1.43.1. Every falsifiable
   claim reproduced here before a verdict: `git grep -cE '\b(TODO|FIXME|XXX|HACK)\b'` returns
@@ -22,7 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     273a969bbe2994e4**, bumped *alone* after a clause-by-clause re-read recorded at the pin:
     the change lands in BUILD steps 1–2, which `BUILD_WORKFLOW` does not model because the eval
     pastes the skills. The treatment arm is unchanged, so **+0.39 is not invalidated — but it
-    has not been re-run** against the current router.
+    has not been re-run** against the current router. *(Re-run the same week: it holds, at
+    +0.41. See the ROADMAP 63 entry above.)*
   - **`sota/rules/03` §2 — an evidence grade propagates to what is built on it.** A hedged
     premise and an unhedged conclusion in one paragraph: the hedge stays on the premise and the
     reader takes the conclusion. Two destinations make it expensive — an instruction file, and
@@ -40,6 +64,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The negative-control harness aborted silently on every non-sweep branch, and main was
+  red from the moment #420 merged.** The skipped-probe count `$(… | grep -c .)` prints 0 but
+  exits 1 on empty input, and `set -euo pipefail` killed the run at that assignment with no
+  FAIL line. `SKIPPED_IDS` is empty on any branch that skips nothing. The PR that added the
+  line was sweep-shaped, so its CI only took the non-empty path. Both counts now use
+  `{ grep -c . || true; }`. This is the same `grep`-under-`pipefail` family as "Invariant 14
+  could reject a correct release" further down this file.
+- **Every skill's Audit checklist is now tickable, and the format gate covers all of them.**
+  `gen-concept-matrix.py --assert-format` had covered only the nine language skills, so 14
+  fenced checklists in `sota-web-frameworks` and `sota-ml-engineering` were ungated (a scope
+  limit recorded but never tracked). It also passed three `sota-architecture` files whose
+  plain `- ` bullets yield **zero** items. The gate now reads all 275 rules files per file,
+  fails a zero-item checklist, and prints its denominator. It was watched to fail on the
+  pre-change tree (17 of 275 files) before passing. 81 items converted and 217 of 217 fence
+  lines were checked for survival. Six notes the converter had promoted to command-less items
+  were merged back by hand (`docs/ADOPTION-LOG.md`, 2026-09-23).
+- **ROADMAP 59 and `docs/LANGUAGE-TIER.md` still listed c/c++ as remaining** after its
+  gap-check closed on 2026-09-22; they now read 3 done, 6 remaining.
+- **A private project's name is replaced with a neutral label** in four tracked files
+  (20 lines). Git history still contains the old text.
 - **`sota-shell-scripting` rules/01 was recommending the bug.** Its snippet read
   `cmd > out.txt 2>&1; echo "EXIT=$?"` commented **"status preserved"** — false of the
   compound's own status, which is the `echo`'s, and the exact shape §2a warns about *elsewhere
@@ -1394,7 +1438,7 @@ rules/06 §2 both carry a `grep -r`/`-R` symlink table and they **disagree** —
 later refinement distinguishes a symlinked dir *as the argument* from one *met in traversal*.
 Flagged rather than silently resolved; one of the two measurements should be re-run.
 
-### Field report II (InterdictOps) — reasoning that survived a passing test
+### Field report II (private-project) — reasoning that survived a passing test
 
 Report I was about **instruments**; this one is about **reasoning that survived contact with a
 passing test** — the tool worked, the output was read correctly, and the conclusion was still
@@ -1471,7 +1515,7 @@ was about.
 
 **Front door checked:** EOL date · denominator · selector · constrained · sells the remedy
 
-### Field report III (InterdictOps, 2026-09-13) — six proposals adopted, one reported as evidence
+### Field report III (private-project, 2026-09-13) — six proposals adopted, one reported as evidence
 
 An intake pass over a field report from a session that **used** the library. Its value is in
 the framing: for four of its eight failures the relevant rule was already in context and was
@@ -4428,7 +4472,7 @@ transferred was the reasoning moves.
   second implementation shows the same design* — had nowhere to accumulate evidence, so
   every check re-derived the same search from scratch (this one swept 74 later intake rows
   to produce three lines). The ledger records what has been checked and how it scored:
-  **1 shipped instance, 1 near-miss** (the Interdict gate-ledger, where the same failure
+  **1 shipped instance, 1 near-miss** (the private-project gate-ledger, where the same failure
   mode arrived accidentally and a human caught it before it shipped) **and 1 refusal**
   (exempting `dependabot[bot]` would have been this exact design; the cause was fixed
   instead). **Trigger not met.** Also recorded: the *generic* half is owned twice over,
@@ -4485,7 +4529,7 @@ transferred was the reasoning moves.
 ### Added
 
 
-- **Six findings from the Interdict follow-up brief — including two the first intake
+- **Six findings from the private-project follow-up brief — including two the first intake
   missed.** All verified absent with two sweeps each, and every one shipped with its
   audit-checklist half.
   - **`sota-code-security` rules/10 §1 — the proxy question**, beside the falsification

@@ -970,7 +970,7 @@ lines.
 
 | checked | candidate | counts? |
 |---|---|---|
-| 2026-08-28 | **Interdict gate-ledger** (2026-08-26 brief, finding A): `chain` treats an unsigned head as failure, while the same repo had already rejected a hardware tap per commit — the steady state is a verdict red for an operational reason | **No — near-miss.** Same failure mode arriving *accidentally*, caught by a human before shipping (*"no, pls change it"*). Recorded as the cost-profile lesson in `sota-architecture` rules/01 §4a. Second occurrence of the mechanism, not a second implementation |
+| 2026-08-28 | **Private-project gate-ledger** (2026-08-26 brief, finding A): `chain` treats an unsigned head as failure, while the same repo had already rejected a hardware tap per commit — the steady state is a verdict red for an operational reason | **No — near-miss.** Same failure mode arriving *accidentally*, caught by a human before shipping (*"no, pls change it"*). Recorded as the cost-profile lesson in `sota-architecture` rules/01 §4a. Second occurrence of the mechanism, not a second implementation |
 | 2026-08-28 | **This repo's Dependabot gate** (ROADMAP 22): `Repository invariants` failed on bot PRs for a purely operational reason | **No — counter-example.** Exempting `dependabot[bot]` *would* have been this exact design; the cause was fixed instead (its own secret store) |
 | 2026-08-28 | Scanner false-positive class (2026-08-25) | **No** — already rejected as covered by `sota-detection-engineering/rules/04` §1 |
 | 2026-09-05 | **Field brief** — `sota-proposal-2026-09-05.md`, from one engineering session on a static-analysis pipeline; every claim measured by execution in that session | **The aggregate that masks the detection.** A positive control summed every list field on an analysis result and asserted the total was non-zero. The result type mixes the engine's *derived inputs* with its *findings*, and preprocessing populates the inputs on any real graph — so the assertion is green whether or not detection works: `breaks` was empty on **all nine** cells where the engine was registered as controlled, and **12 of 35 controls were green on a result containing zero detections** | **adopted** | `sota-code-security/rules/10` **§2.16** + checklist, with a pointer from `sota-testing/rules/09`. **Home changed from the brief's `rules/11`** — placed with §1's falsification question, asked of a *field* rather than a control, and the line budget decided it (`rules/11` reached 499/500 with it, leaving no room for the checklist bullet the section needs). Duplicate check ran against the two nearest sections and both miss it: `rules/11` §2.2 is the *denominator*, and here the denominator was healthy; `rules/12` §2.1's "instrument that cannot fail" is a scorer returning a plausible number whatever it is handed, and this one *could* fail, just never for the reason it existed. The **second-order half is the more valuable one and is kept**: when the honest assertion turns green cells red with no evidence of a regression, that manufactures a red build out of a measurement gap — assert on what the engine does produce and give the empty field its own recording test · v1.32.3 |
@@ -2252,9 +2252,9 @@ own anchor, which is the class of bug that only re-reading the file catches.
 §7.7–§7.8, `sota-devsecops` rules/07 §7.7, `sota-detection-engineering` rules/01 §8 — each
 with its audit-checklist half in the same change · v1.38.0
 
-### 2026-09-12 — InterdictOps field report II: a retraction of report I, and three new findings
+### 2026-09-12 — private-project field report II: a retraction of report I, and three new findings
 
-`FIELD-REPORT-INTERDICT-2026-09-12.local.md`, same session as report I, filed as a separate
+`FIELD-REPORT-PRIVATE-2026-09-12.local.md`, same session as report I, filed as a separate
 document **specifically because report I was already being implemented** — which it was, in
 an open PR, when this arrived. That is the right call and worth naming: an addendum appended
 to a document someone is working from does not reach them.
@@ -2314,9 +2314,9 @@ split — the over-firing control deferred on 2026-09-11 is the first. Opened as
 `sota-shell-scripting/rules/06` §2b, and the rules/03 §7 retraction — each with its
 audit-checklist half and index rows in the same change · v1.40.4
 
-### 2026-09-12 — InterdictOps field report (2026-09-11): six adopted, one corrected, one later retracted
+### 2026-09-12 — private-project field report (2026-09-11): six adopted, one corrected, one later retracted
 
-`FIELD-REPORT-INTERDICT-2026-09-11.local.md`, untracked by the same convention as its three
+`FIELD-REPORT-PRIVATE-2026-09-11.local.md`, untracked by the same convention as its three
 predecessors — this repo is public, the product it describes is not. A session building
 changed-path gate selection and a hash-chained evidence ledger, which produced **six harness
 errors and zero product defects**, and noticed that the six were one class.
@@ -2497,10 +2497,10 @@ architecture would delete trigger vocabulary and call it discipline.
 **Landed:** `sota-skill-security/rules/03` §1 and new §1a, four audit-checklist bullets, and
 the `SKILL.md` rules-index row · ROADMAP 52 opened · one deferral with its trigger · v1.40.2
 
-### 2026-09-09 — the InterdictOps field report in full, and one of its claims corrected
+### 2026-09-09 — the private-project field report in full, and one of its claims corrected
 
 The full report behind the 2026-09-08 summary that landed in v1.38.0
-(`FIELD-REPORT-INTERDICT-2026-09-08.local.md`, untracked by the same convention as its
+(`FIELD-REPORT-PRIVATE-2026-09-08.local.md`, untracked by the same convention as its
 predecessor — the repo is public, the product it describes is not). **Most of it was already
 landed from the summary**; this entry records the four remainders and the one claim that did
 not survive measurement.
@@ -2553,9 +2553,9 @@ binaries in three distributions), and no change to the `.local.md` convention.
 `sota-detection-engineering/rules/01` §8 — each with its audit-checklist half in the same
 change · v1.39.0
 
-### 2026-09-13 — InterdictOps field report III: six adopted, one sharpened into two, one reported as evidence only
+### 2026-09-13 — private-project field report III: six adopted, one sharpened into two, one reported as evidence only
 
-`FIELD-REPORT-INTERDICT-2026-09-13.local.md` — one session on a private cross-platform EDR
+`FIELD-REPORT-PRIVATE-2026-09-13.local.md` — one session on a private cross-platform EDR
 (Linux eBPF sensor, CO-RE across two kernels, a supported-platform matrix). Eight failures,
 seven proposals. **Its framing is what makes it unusually useful: for four of the eight, the
 relevant rule was already in context and was broken anyway** — so those four are evidence
@@ -2791,9 +2791,9 @@ audit-checklist half, plus README, `docs/INDEX.md` and the CHANGELOG entry that 
 refuted contrast · v1.42.0
 
 
-### 2026-09-13 — InterdictOps field report II: three adopted, one corrected in adoption, one deliberately not a rule
+### 2026-09-13 — private-project field report II: three adopted, one corrected in adoption, one deliberately not a rule
 
-`FIELD-REPORT-INTERDICT-2026-09-13-II.local.md`, same session as report I, filed separately
+`FIELD-REPORT-PRIVATE-2026-09-13-II.local.md`, same session as report I, filed separately
 because the two are **different in kind** — and the distinction is the report's own and worth
 keeping. Report I's findings were about **instruments**: readers returning empty, searches
 answering a neighbouring question, stale versions, each fixed by a denominator or a control.
@@ -3012,9 +3012,9 @@ failure is silent and permanent.
 **Landed:** `sota-shell-scripting/rules/03` §2a + `scripts/check-claims.sh` claim 11 · v1.42.0
 
 
-### 2026-09-14 — InterdictOps report III: a principle corrected, and a reporter who refuted their own mechanism
+### 2026-09-14 — private-project report III: a principle corrected, and a reporter who refuted their own mechanism
 
-`FIELD-REPORT-INTERDICT-2026-09-14.local.md`. Four proposals about **epistemics under
+`FIELD-REPORT-PRIVATE-2026-09-14.local.md`. Four proposals about **epistemics under
 correction pressure** rather than tooling — which is why a library heavy on *"your instrument
 is a control"* did not catch them.
 
@@ -4165,7 +4165,9 @@ uniformly tickable **across the nine language skills**, and `--assert-format` ke
 way. **Scope, stated because the heading could be read wider:** the gate and the conversion
 cover the LANGUAGE TIER only. Measured 2026-09-23, **14 files in 2 domain skills**
 (`sota-web-frameworks` 7, `sota-ml-engineering` 7) still carry a ```bash block in their
-checklist, and nothing gates them. The trigger's second arm
+checklist, and nothing gates them. **SUPERSEDED later on 2026-09-23 — see "the checklist
+gate widened to every skill" below: all 14 converted, and the gate now covers every skill.**
+The trigger's second arm
 had effectively fired: a `- []`-only count returned 0 for seven of nine skills, and on
 2026-09-22 a concept-matrix pass mis-parsed fenced blocks and reported `sota-golang` as
 lacking API/design probes it plainly has — two mechanical readers, two wrong answers,
@@ -4539,7 +4541,9 @@ committed* repo holds no key and CI has none, but a maintainer's working tree do
 runner reads `OPENROUTER_API_KEY` from the environment or `./.env` (gitignored; verified 0
 tracked, 0 commits in history). The re-run was available all session and was not done. The
 claim it guards — that +0.39 has not been re-measured against the current router — still
-stands; only the stated obstacle was false. The standing load is justified by a mechanism and not by a
+stands; only the stated obstacle was false. **SUPERSEDED 2026-09-23: re-measured** at
+`273a969bbe2994e4` with the baseline configuration: +0.39 and +0.42 over two runs, mean
+0.58 → 0.98 (+0.41). It holds (`evals/results/2026-09-23/COMPLETENESS-RERUN.md`, ROADMAP 63). The standing load is justified by a mechanism and not by a
 number, and `rules/02` §1a carries the falsifier that would take it back out.
 
 ## 2026-09-21 — the over-firing control: a deferral whose blocker had been false for nine days
@@ -4887,7 +4891,8 @@ prose that shares a file with the check.
 
 Operator instruction, closing a deferral whose second arm had effectively fired. All nine
 language skills now use tickable `- [ ]` bullets — **the language tier only; 14 files in
-`sota-web-frameworks` and `sota-ml-engineering` remain fenced and ungated**; `gen-concept-matrix.py --assert-format`
+`sota-web-frameworks` and `sota-ml-engineering` remain fenced and ungated** (*superseded the
+same day: see the next entry*); `gen-concept-matrix.py --assert-format`
 runs in CI and rejects a fenced checklist.
 
 **Why the format was never cosmetic.** AUDIT mode tells the model to *"verify your diff
@@ -4923,3 +4928,40 @@ immediately. Qualified with its skill name. A reference hidden in a fence is unc
 **Measured side effect:** concept-classification coverage rose in every converted skill
 (c/c++ 73→83%, jvm 92.5→95.2%, go 78.7→84.5%), because a bullet carries the prose a bare
 command line did not.
+
+## 2026-09-23 — the checklist gate widened to every skill, and a fourth format it could not see
+
+**Intake shape: a `/sota-resume` pass, on operator instruction.** The entry above recorded its
+own scope limit (14 fenced files in two domain skills, ungated) without opening a row for it.
+Closed the same day rather than tracked.
+
+**Measured first, over every skill:** 275 rules files in 42 skill directories (the router's four
+included). The 14 fenced files matched the recorded figure exactly. The same pass found a
+**fourth body format** that no entry had named: three `sota-architecture` files
+(`04`, `05`, `07` — 50 items) wrote their checklists as plain `- ` bullets, which
+`extract_items.py` reads as **zero items**. The language-only gate tested
+`kinds and kinds != {"box"}`, so an empty checklist was a pass. That is the fail-open shape
+this repo's gates are built against: an empty scope that verifies nothing and exits 0.
+
+**What changed.**
+- `gen-concept-matrix.py --assert-format` now walks `skills/*/rules` **per file**, fails a
+  file with zero items as well as a non-tickable one, fails closed on an empty scope, and
+  prints its denominator. **Watched to fail** against an export of the pre-change tree
+  (exit 1, 17 of 275 files named: the 14 fenced and the 3 plain-bullet files). After the
+  conversion it passes (exit 0, `275 rules files across 42 skills`).
+- 14 files converted with `scripts/lib/unify_checklist.py`, **81 items**. Every original fence
+  line (217) was checked for survival in the new text, and 217 of 217 were found. The one
+  flagged by the check was a colon the converter drops by design, which also showed the check
+  could fail.
+- The three architecture files were tick-boxed in place (17 + 19 + 14 bullets → the same
+  counts as `- [ ]` items).
+
+**The converter has one more mis-grouping, which the entry above did not list.** A `#` comment written
+directly under a command, with no blank line between them, is that command's *note*. The
+converter promoted it to the **heading of a new, command-less item** unless it began with
+`^`. Six sites were fixed by hand (ml-engineering 01/03/04/05, web-frameworks 01 and 03).
+In web-frameworks 03 an `NB` caveat had become the heading of an unrelated probe, attached to
+a command it does not describe. **Found by listing every converted item that had no command**,
+not by the content check, which passed while the structure was wrong. The converter itself is
+**not** fixed: every checklist it can reach is now converted and the gate stops a fence coming
+back. The review step is recorded here so the next person to run the converter knows to do it.

@@ -84,21 +84,16 @@ per route, so match each route to its data:
 
 ## Audit checklist
 
-```bash
-# Framework majors in use — compare against the support table above
-grep -E '"(react|react-dom|next|vue|nuxt|nitropack|pinia)"' package.json
-cat package.json | grep -A2 '"dependencies"'   # then read lockfile for exact patch
-
-# EOL / unsupported runtimes (findings)
-node -e "const p=require('./package.json');const d={...p.dependencies,...p.devDependencies};for(const k of ['vue','nuxt','next'])if(d[k])console.log(k,d[k])"
-# vue ^2 -> EOL; nuxt ^2 -> EOL; next <15 -> unsupported
-
-# Render-mode inventory
-grep -rn 'ssr:\s*false\|routeRules\|prerender\|export const dynamic\|cacheComponents' nuxt.config.* next.config.* app/ pages/ 2>/dev/null
-
-# Hooks/vue lint present?
-grep -rn 'react-hooks\|eslint-plugin-vue\|next/core-web-vitals\|@nuxt/eslint' .eslintrc* eslint.config.* package.json 2>/dev/null
-```
+- [ ] **Framework majors in use — compare against the support table above** —
+      `grep -E '"(react|react-dom|next|vue|nuxt|nitropack|pinia)"' package.json` ;
+      `cat package.json | grep -A2 '"dependencies"'` (then read lockfile for exact patch)
+- [ ] **EOL / unsupported runtimes (findings)** —
+      `node -e "const p=require('./package.json');const d={...p.dependencies,...p.devDependencies};for(const k of ['vue','nuxt','next'])if(d[k])console.log(k,d[k])"`
+      (vue ^2 -> EOL; nuxt ^2 -> EOL; next <15 -> unsupported)
+- [ ] **Render-mode inventory** —
+      `grep -rn 'ssr:\s*false\|routeRules\|prerender\|export const dynamic\|cacheComponents' nuxt.config.* next.config.* app/ pages/ 2>/dev/null`
+- [ ] **Hooks/vue lint present?** —
+      `grep -rn 'react-hooks\|eslint-plugin-vue\|next/core-web-vitals\|@nuxt/eslint' .eslintrc* eslint.config.* package.json 2>/dev/null`
 
 - [ ] Every framework major is supported and receiving security patches (no Vue 2, Nuxt 2, Next < 15)?
 - [ ] Exact versions pinned + lockfile committed + automated dependency updates on?

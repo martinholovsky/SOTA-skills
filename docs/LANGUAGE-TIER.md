@@ -35,7 +35,7 @@ treatment"*. Every blank was checked by reading the headings of the skill behind
 |---|---|---|---|
 | **Errors** | 7 | **all 7** — c/c++ `01 §7`, jvm `01 §4`, python `03 §10`, js/ts `02 §Error handling`, .NET `02 §4`, php `01 §5`, ruby `01 §5` | 0 |
 | **Typing** | 7 | 2 — c/c++ `01 §6`, ruby `01 §6` | 5 — statically-typed languages have no gradual-typing story |
-| **Web / HTTP** | 5 | 2 — .NET `04 §4`, python `07 §1–2` (named by framework: FastAPI, Django) | 3 — rust, c/c++, jvm carry no web layer |
+| **Web / HTTP** | 5 | 2 — .NET `04 §4`, python `07 §1–2` (named by framework: FastAPI, Django) | 3 — rust, c/c++, jvm carry no web layer. **jvm was a real gap, not principled: written 2026-09-23 as `rules/04 §6` (ROADMAP 62)** |
 | **Memory / UB** | 7 | 0 | 7 — the GC languages' "Memory" sections are *performance* (allocation, GC pressure) and are already counted under Performance |
 
 **The Errors row was the loud one**: seven of seven blank, while `error handling &
@@ -66,7 +66,8 @@ These track a property of the language. Adding the missing cells would be writin
 - **Memory / UB** only in **C/C++** (two files) and **Rust** (`unsafe` discipline).
   Measured: 14 and 6 mentions of use-after-free / UB / bounds against ~0 in the GC'd
   languages. Correct, not a gap.
-- **Web / HTTP** only where the language is web-shaped — **Go, Node, PHP, Ruby**.
+- **Web / HTTP** only where the language is web-shaped — **Go, Node, PHP, Ruby**, plus .NET and
+  python (row above) and, since 2026-09-23, **jvm** (`rules/04 §6`, ROADMAP 62).
 
 The general rule: **the shared skill owns the concept, the language skill owns the
 mechanism.** `sota-async-concurrency` (1,654 lines) teaches data race vs race condition,
@@ -163,6 +164,11 @@ parentheticals nobody else uses, and it writes `Top 10` where the rest write `To
 Invariant 2 gates the *heading*; the body was ungated and three forms were in use. **All nine
 language skills now use the tickable `- [ ]` form**, and
 `gen-concept-matrix.py --assert-format` runs in CI so a fenced checklist cannot come back.
+**Widened later on 2026-09-23 to every skill:** the gate now reads all 275 rules files across
+42 skill directories, per file, and also fails a checklist that yields **zero** items. That
+second arm exists because three `sota-architecture` files used plain `- ` bullets, which
+the language-only gate read as a pass. Watched to fail on the pre-change tree (17 of 275
+files) before the conversion made it pass.
 
 AUDIT mode tells the model to "verify your diff satisfies every item" — an instruction that
 cannot be followed against a shell block. The deferral asked for a measurement or a third
@@ -253,7 +259,7 @@ stops meaning anything — `sota-code-security` rules/10's subject, one layer do
 ## Depth: the external-guide gap-check (ROADMAP 59)
 
 Coverage inside this tier is checked against an **external, enumerable, tool-backed list** —
-the method already used for Go (OWASP Go-SCP) and Rust (ANSSI). Two are done:
+the method already used for Go (OWASP Go-SCP) and Rust (ANSSI). Three are done:
 
 | language | denominator | source | result |
 |---|---|---|---|
@@ -261,13 +267,14 @@ the method already used for Go (OWASP Go-SCP) and Rust (ANSSI). Two are done:
 | golang | **61 checks** | gosec 2.29.0 `rulelist.go` (39) + `analyzerslist.go` (22) | 4 gaps closed |
 | c-cpp | **342 checks** | cppcheck 2.21.0 `--errorlist`, two agreeing derivations; MISRA addon (132 rules) is a separate registry | 4 gaps closed |
 
-Remaining: **rust, c-cpp, jvm, javascript-typescript, dotnet, php, ruby**. Candidate
+Remaining: **rust, jvm, javascript-typescript, dotnet, php, ruby** — 6. Candidate
 denominators — ruby/Brakeman, js-ts/eslint-plugin-security, rust/clippy + ANSSI.
 **jvm and .NET have no queryable local tool**, which may itself be the finding rather than a
 reason to skip them.
 
-**c-cpp's denominator is already derived and reconciled — 2026-09-21, so the next session on
-this language starts past the step that failed twice.** cppcheck **2.21.0**:
+**c-cpp's denominator was derived and reconciled on 2026-09-21, and the sweep against it ran
+on 2026-09-22 (the table row above).** The derivation is kept as the worked example of the step
+that failed twice. cppcheck **2.21.0**:
 
 | derivation | method | answer |
 |---|---|---|

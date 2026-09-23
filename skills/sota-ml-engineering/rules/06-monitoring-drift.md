@@ -67,23 +67,14 @@ retraining.
 
 ## Audit checklist
 
-```bash
-# Any production monitoring at all? — HIGH if none
-grep -rniE 'evidently|nannyml|whylogs|drift|psi|kolmogorov|ks_2samp|monitor' --include='*.py' . | head \
-  || echo "no drift/perf monitoring found — HIGH"
-
-# Drift detection method present?
-grep -rniE 'population_stability|psi|ks_2samp|chi2|js_diverg|wasserstein' --include='*.py' . | head
-
-# Live performance tracking + label lag handling — HIGH
-grep -rniE 'ground.?truth|label.*lag|actual|delayed|backfill.*label|live.*metric' --include='*.py' . | head
-
-# Data-quality/freshness monitoring at serving — MEDIUM/HIGH
-grep -rniE 'freshness|stale|null.*rate|schema.*serv|nan|range.*check' --include='*.py' . | head
-
-# Retraining trigger defined? — MEDIUM/HIGH
-grep -rniE 'retrain|schedule|cron|airflow|trigger|cadence' . | grep -iE 'train|drift|model' | head \
-  || echo "no explicit retraining trigger"
-
-# Alerts have an owner/runbook — MEDIUM (manual)
-```
+- [ ] **Any production monitoring at all? — HIGH if none** —
+      `grep -rniE 'evidently|nannyml|whylogs|drift|psi|kolmogorov|ks_2samp|monitor' --include='*.py' . | head || echo "no drift/perf monitoring found — HIGH"`
+- [ ] **Drift detection method present?** —
+      `grep -rniE 'population_stability|psi|ks_2samp|chi2|js_diverg|wasserstein' --include='*.py' . | head`
+- [ ] **Live performance tracking + label lag handling — HIGH** —
+      `grep -rniE 'ground.?truth|label.*lag|actual|delayed|backfill.*label|live.*metric' --include='*.py' . | head`
+- [ ] **Data-quality/freshness monitoring at serving — MEDIUM/HIGH** —
+      `grep -rniE 'freshness|stale|null.*rate|schema.*serv|nan|range.*check' --include='*.py' . | head`
+- [ ] **Retraining trigger defined? — MEDIUM/HIGH** —
+      `grep -rniE 'retrain|schedule|cron|airflow|trigger|cadence' . | grep -iE 'train|drift|model' | head || echo "no explicit retraining trigger"`
+- [ ] **Alerts have an owner/runbook — MEDIUM (manual)**

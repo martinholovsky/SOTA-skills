@@ -672,6 +672,7 @@
       "weight": 5,
       "targets": [
         "rules/04",
+        "rules/05",
         "rules/10",
         "rules/11 \u00a74"
       ]
@@ -1997,6 +1998,12 @@
     {
       "from": "sota-jvm",
       "to": "sota-secrets-management",
+      "weight": 1,
+      "targets": []
+    },
+    {
+      "from": "sota-jvm",
+      "to": "sota-api-design",
       "weight": 1,
       "targets": []
     },

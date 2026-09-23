@@ -66,22 +66,14 @@ rubric (data / model / infra / monitoring tests) is the backbone.
 
 ## Audit checklist
 
-```bash
-# Single-metric / no-baseline evaluation — MEDIUM/HIGH
-grep -rniE 'accuracy_score|f1_score|roc_auc|rmse|mae' --include='*.py' . | head
-#   Is there a baseline + current-prod comparison? A single aggregate number is a finding.
-
-# Sliced / fairness evaluation — HIGH if absent on a high-stakes model
-grep -rniE 'group_?by|slice|segment|subgroup|fairness|by_cohort|disaggregat' --include='*.py' . \
-  || echo "no sliced evaluation — aggregate metrics only"
-
-# Validation gate before promotion — HIGH if missing
-grep -rniE 'threshold|gate|promote|regression|assert.*metric|validate_model' --include='*.py' .ci* .github/ 2>/dev/null | head \
-  || echo "no automated promotion gate found"
-
-# Pipeline/model tests (ML Test Score infra) — HIGH
-grep -rniE 'def test_|pytest|golden|integration' --include='*.py' . | grep -iE 'model|pipeline|predict|feature' | head
-
-# Online experiment before full rollout — MEDIUM/HIGH
-grep -rniE 'a/?b.?test|experiment|interleav|shadow|canary|holdout' . | head
-```
+- [ ] **Single-metric / no-baseline evaluation — MEDIUM/HIGH** —
+      `grep -rniE 'accuracy_score|f1_score|roc_auc|rmse|mae' --include='*.py' . | head` (is there
+      a baseline + current-prod comparison? A single aggregate number is a finding.)
+- [ ] **Sliced / fairness evaluation — HIGH if absent on a high-stakes model** —
+      `grep -rniE 'group_?by|slice|segment|subgroup|fairness|by_cohort|disaggregat' --include='*.py' . || echo "no sliced evaluation — aggregate metrics only"`
+- [ ] **Validation gate before promotion — HIGH if missing** —
+      `grep -rniE 'threshold|gate|promote|regression|assert.*metric|validate_model' --include='*.py' .ci* .github/ 2>/dev/null | head || echo "no automated promotion gate found"`
+- [ ] **Pipeline/model tests (ML Test Score infra) — HIGH** —
+      `grep -rniE 'def test_|pytest|golden|integration' --include='*.py' . | grep -iE 'model|pipeline|predict|feature' | head`
+- [ ] **Online experiment before full rollout — MEDIUM/HIGH** —
+      `grep -rniE 'a/?b.?test|experiment|interleav|shadow|canary|holdout' . | head`

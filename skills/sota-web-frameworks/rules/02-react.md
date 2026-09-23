@@ -106,24 +106,20 @@ import DOMPurify from 'dompurify';
 
 ## Audit checklist
 
-```bash
-# HTML injection sink — every hit needs a sanitizer on the source
-grep -rn 'dangerouslySetInnerHTML' --include='*.tsx' --include='*.jsx' src app components
-
-# javascript:/data: URL sinks
-grep -rnE 'href=\{|src=\{|formAction=\{' --include='*.tsx' src app | grep -iv 'sanitiz'
-
-# Effect smells: fetch-in-effect, setState-only effects, missing deps
-grep -rnE 'useEffect\(' --include='*.tsx' src app | head
-grep -rn 'Math.random()\|Date.now()' --include='*.tsx' src app   # in render => hydration bug (rules/06)
-
-# Rules of Hooks / compiler-blocking violations rely on lint:
-grep -rn 'react-hooks' .eslintrc* eslint.config.* package.json
-
-# Legacy patterns
-grep -rn 'forwardRef\|class .* extends .*Component' --include='*.tsx' src app   # forwardRef unneeded in 19
-grep -rnE 'key=\{.*index' --include='*.tsx' src app   # index-as-key on dynamic lists
-```
+- [ ] **HTML injection sink — every hit needs a sanitizer on the source** —
+      `grep -rn 'dangerouslySetInnerHTML' --include='*.tsx' --include='*.jsx' src app components`
+- [ ] **javascript:/data: URL sinks** —
+      `grep -rnE 'href=\{|src=\{|formAction=\{' --include='*.tsx' src app | grep -iv 'sanitiz'`
+- [ ] **Effect smells: fetch-in-effect, setState-only effects, missing deps** —
+      `grep -rnE 'useEffect\(' --include='*.tsx' src app | head` ;
+      `grep -rn 'Math.random()\|Date.now()' --include='*.tsx' src app` (in render => hydration
+      bug (rules/06))
+- [ ] **Rules of Hooks / compiler-blocking violations rely on lint** —
+      `grep -rn 'react-hooks' .eslintrc* eslint.config.* package.json`
+- [ ] **Legacy patterns** —
+      `grep -rn 'forwardRef\|class .* extends .*Component' --include='*.tsx' src app`
+      (forwardRef unneeded in 19); `grep -rnE 'key=\{.*index' --include='*.tsx' src app`
+      (index-as-key on dynamic lists)
 
 - [ ] Every `dangerouslySetInnerHTML` fed sanitizer output (allowlist), not raw user/CMS HTML?
 - [ ] `href`/`src`/URL props validated against a scheme allowlist (no `javascript:`/`data:`)?

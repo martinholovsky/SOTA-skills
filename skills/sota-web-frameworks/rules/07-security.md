@@ -112,26 +112,23 @@ dependency updates + a fast patch path is the actual control (`sota-devsecops`).
 
 ## Audit checklist
 
-```bash
-# Public-env secret leak (CRITICAL)
-grep -rnE '(NEXT_PUBLIC_|VITE_)[A-Z_]*(SECRET|KEY|TOKEN|PASSWORD|PRIVATE)' --include='*.ts' --include='*.tsx' --include='*.vue' .
-grep -rnA8 'runtimeConfig' nuxt.config.* | grep -iE 'public' -A6 | grep -iE 'secret|key|token'
-
-# Server->client exposure & the server-only guard
-grep -rn "import 'server-only'\|server/" app lib server | head
-grep -rnE 'process\.env\.' --include='*.tsx' --include='*.vue' app components pages | grep -iv 'NEXT_PUBLIC\|NODE_ENV'
-
-# Authz only at the edge? enumerate actions/handlers and check each
-grep -rn "'use server'" app lib; ls -1 app/**/route.ts server/api/**/*.ts 2>/dev/null
-
-# SSRF surfaces
-grep -rn 'remotePatterns\|images:\s*{\|ipx\|@nuxt/image' next.config.* nuxt.config.* | grep -n '\*\*\|domains'
-grep -rnE '\$?fetch\(|ofetch\(|axios\.|got\(' --include='*.ts' server app | grep -iE 'req\.|query|params|headers|host'
-grep -rnE 'X-Forwarded-Host|req\.headers\.host|getRequestHost' --include='*.ts' server app proxy.* middleware.*
-
-# CVE fingerprint
-grep -E '"(react|react-dom|react-server-dom-webpack|next|nuxt|nitropack|h3|ipx|devalue|serialize-javascript)"' package.json
-```
+- [ ] **Public-env secret leak (CRITICAL)** —
+      `grep -rnE '(NEXT_PUBLIC_|VITE_)[A-Z_]*(SECRET|KEY|TOKEN|PASSWORD|PRIVATE)' --include='*.ts' --include='*.tsx' --include='*.vue' .`
+      ;
+      `grep -rnA8 'runtimeConfig' nuxt.config.* | grep -iE 'public' -A6 | grep -iE 'secret|key|token'`
+- [ ] **Server->client exposure & the server-only guard** —
+      `grep -rn "import 'server-only'\|server/" app lib server | head` ;
+      `grep -rnE 'process\.env\.' --include='*.tsx' --include='*.vue' app components pages | grep -iv 'NEXT_PUBLIC\|NODE_ENV'`
+- [ ] **Authz only at the edge? enumerate actions/handlers and check each** —
+      `grep -rn "'use server'" app lib; ls -1 app/**/route.ts server/api/**/*.ts 2>/dev/null`
+- [ ] **SSRF surfaces** —
+      `grep -rn 'remotePatterns\|images:\s*{\|ipx\|@nuxt/image' next.config.* nuxt.config.* | grep -n '\*\*\|domains'`
+      ;
+      `grep -rnE '\$?fetch\(|ofetch\(|axios\.|got\(' --include='*.ts' server app | grep -iE 'req\.|query|params|headers|host'`
+      ;
+      `grep -rnE 'X-Forwarded-Host|req\.headers\.host|getRequestHost' --include='*.ts' server app proxy.* middleware.*`
+- [ ] **CVE fingerprint** —
+      `grep -E '"(react|react-dom|react-server-dom-webpack|next|nuxt|nitropack|h3|ipx|devalue|serialize-javascript)"' package.json`
 
 - [ ] No secret in `NEXT_PUBLIC_`/`VITE_`/`runtimeConfig.public`; server secrets behind `server-only`/`server/`?
 - [ ] No raw rows/tokens/`process.env` crossing server→client; minimal DTOs only?
