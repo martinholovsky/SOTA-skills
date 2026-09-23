@@ -259,15 +259,16 @@ stops meaning anything — `sota-code-security` rules/10's subject, one layer do
 ## Depth: the external-guide gap-check (ROADMAP 59)
 
 Coverage inside this tier is checked against an **external, enumerable, tool-backed list** —
-the method already used for Go (OWASP Go-SCP) and Rust (ANSSI). Three are done:
+the method already used for Go (OWASP Go-SCP) and Rust (ANSSI). Four are done:
 
 | language | denominator | source | result |
 |---|---|---|---|
 | python | **75 tests** | Bandit 1.9.4 `plugins_by_id` + `blacklist_by_id` | 5 gaps closed |
 | golang | **61 checks** | gosec 2.29.0 `rulelist.go` (39) + `analyzerslist.go` (22) | 4 gaps closed |
 | c-cpp | **342 checks** | cppcheck 2.21.0 `--errorlist`, two agreeing derivations; MISRA addon (132 rules) is a separate registry | 4 gaps closed |
+| ruby | **86 checks** (79 default + 7 optional) | Brakeman 8.0.6: source `check_*.rb` classes and the tool's own `--checks` registry (run in a container) agree name-for-name, and the `add`/`add_optional` registrations sum to the same 86 | 7 gaps closed, 1 held for a decision |
 
-Remaining: **rust, jvm, javascript-typescript, dotnet, php, ruby** — 6. Candidate
+Remaining: **rust, jvm, javascript-typescript, dotnet, php** — 5. Candidate
 denominators — ruby/Brakeman, js-ts/eslint-plugin-security, rust/clippy + ANSSI.
 **jvm and .NET have no queryable local tool**, which may itself be the finding rather than a
 reason to skip them.
@@ -318,13 +319,68 @@ running — but it cannot support a claim of completeness.
   exists to produce) and a `[^,]+` that cannot span the second comma of a three-argument call.
   Neither was caught by review.
 
-### An open question this raised
+### An open question this raised — DECIDED 2026-09-23: one shared class
 
 **Temp-file/permission hygiene and host-key verification were gaps in *both* Python and Go.**
 If that repeats in Ruby and PHP, the right fix is probably a class stated once in
 `sota-code-security` with per-language *detectors*, not the same section written nine times —
 the split this library already uses for in-band sentinels. Decide it before the fourth
 language, not after the ninth.
+
+**Evidence from the fourth language (ruby, 2026-09-23):**
+- **Host-key verification repeats.** It appears in 0 files of `sota-ruby`, and `net-ssh`'s
+  `verify_host_key: :never` (read from `net-ssh`'s own source) is uncovered. Across the tier it
+  is present only in python and go, and only because their gap-checks added it. There is no
+  shared owner: 0 hits in `sota-code-security` and `sota-network-security`.
+- **Temp-file hygiene does not repeat.** `sota-ruby` §7 already points to `Tempfile` and
+  `Dir.mktmpdir`.
+- **The shared-class design already exists for the sibling concern.** Disabled TLS
+  verification is stated once in `sota-code-security` rules/04 with a per-language detector
+  list, and ruby's gap there was a missing detector token (`VERIFY_NONE`, added), not a
+  missing rule.
+
+**DECIDED 2026-09-23 by the operator: option (a), a class stated once.** Host-key verification
+now lives in `sota-code-security` rules/04 §5, beside certificate verification. It has one
+detector row for every library whose bypass was read from that library's own source:
+paramiko, Go `x/crypto/ssh`, `net-ssh`, JSch, MINA SSHD, Node `ssh2` and OpenSSH. Each
+language skill carries only its library's spelling of the detector.
+
+**Reasoning, recorded so it is not re-argued.** The library already solves the sibling concern
+this way: disabled TLS verification is one rule with a shared detector list, and ruby's gap
+there turned out to be a missing token, not a missing rule. Writing host keys nine times would
+make nine copies to drift.
+
+**The alternative, rejected:** per-language sections, as python and go already have. Those two
+are **kept, not deleted**, because they carry library detail. The rule itself is no longer
+restated per language.
+
+Two facts surfaced by reading the sources, and neither would have been found by writing from
+memory: **Node `ssh2` and `net-ssh` default to accepting**, so for them the finding is an
+*absence*. The first draft of the shared probe also missed JSch's
+`setConfig("StrictHostKeyChecking", "no")` form. It was caught by a per-library fixture and
+widened.
+
+### Ruby — the 86 Brakeman checks, classified (2026-09-23)
+
+- **34 version/CVE checks**, plus 7 Rails 2/3-era pattern checks (nested attributes,
+  `attr_accessible`, `without_protection`, response splitting, `strip_tags`, translate,
+  digest DoS). Covered **as a class** by `rules/01` §1 (version policy) and `rules/04` §3
+  (advisory scanning), not one rule each.
+- **Covered on reading** (a zero, or a low count, that died when the file was opened): detailed
+  exceptions (`rules/03` §8), hardcoded basic-auth credentials (`rules/02` §6), temp files.
+- **Deliberately not rules**: reverse tabnabbing (browsers now imply `noopener` for
+  `target=_blank`), Ransack (a single library's DSL), divide-by-zero (optional and noisy).
+- **7 gaps closed**, each fact read from Rails, Rack or Ruby source or measured on Ruby
+  3.4.10, and each probe run against a known-bad and known-good fixture under both ugrep and
+  BSD grep:
+  1. **HEAD→GET verb confusion.** `journey/router.rb` falls back to GET routes, then restores
+     `HEAD`, so `request.get?` is false and a write branch runs without a CSRF check.
+  2. Routes that widen the verb (`via: :all`) or the action set (dynamic `:action`).
+  3. `render file:`, which serves any path raw.
+  4. `render inline:`, which compiles its string as a template.
+  5. Method-object reflection (`method(params[:m])`, `&params[:x].to_sym`).
+  6. `Pathname#+` / `#join` discarding the base on an absolute argument (measured).
+  7. Outbound `VERIFY_NONE`.
 
 ## Template — adding a new language skill
 

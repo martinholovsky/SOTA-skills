@@ -108,9 +108,16 @@ IO.popen(["grep", "--", pattern, "log.txt"])
 - `constantize`/`safe_constantize` (or `Object.const_get`) on user input is
   unsafe reflection — instantiating an attacker-chosen class is a gadget
   entry point. Allowlist class names explicitly.
+- The same reach comes through **method objects**, not just `send`:
+  `method(params[:m]).call`, `instance_method(name).bind_call(obj)`, and
+  `items.map(&params[:attr].to_sym)` all let the caller name the method. The
+  fix is the same allowlist, applied before the name becomes a symbol.
 - ERB/template injection: `ERB.new(user_supplied_template).result(binding)`
   is code execution by design. User-editable templates need a sandboxed
-  engine (e.g. Liquid as a neutral example), never ERB/Haml/Slim.
+  engine (e.g. Liquid as a neutral example), never ERB/Haml/Slim. Rails'
+  `render inline: str` is the same sink: the renderer compiles `str` as a
+  template with a handler (`Template::Inline`), so user input there is RCE.
+  `render file:` is the file-read twin, in `rules/03` §7.
 
 ## 5. ReDoS and regex correctness
 
@@ -160,6 +167,12 @@ raise SecurityError unless path.start_with?(base + File::SEPARATOR)
 - Archive extraction (zip/tar gems): validate each entry name against the
   same expand-and-prefix check — zip-slip.
 - Temp files: `Tempfile`/`Dir.mktmpdir`, not hand-built `/tmp/#{name}`.
+- **`Pathname#+` and `Pathname#join` discard the base when the argument is
+  absolute.** Measured on Ruby 3.4.10:
+  `Pathname.new("/srv/uploads") + "/etc/passwd"` is `/etc/passwd`, whereas
+  `File.join("/srv/uploads", "/etc/passwd")` is `/srv/uploads/etc/passwd`.
+  Code that treats `base + name` as "inside base" is a traversal. The
+  expand-then-prefix check above catches both.
 
 ## Audit checklist
 
@@ -186,6 +199,10 @@ Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
       ; `grep -rnE '\b(public_)?send\s*\(\s*params' --include='*.rb' .` ;
       `grep -rn "constantize\|const_get" --include='*.rb' . | grep -iE "params|input|name"` ;
       `grep -rn "ERB.new" --include='*.rb' . | grep -vE "erb\"|template_file|File.read\(\s*Rails"`
+      ; `grep -rnE '\b(method|instance_method)\(\s*params|&params\[[^]]*\]\.to_sym' --include='*.rb' .`
+      (method-object reflection) ;
+      `grep -rnE 'render\s*\(?\s*inline:' --include='*.rb' .` (template RCE if the string is
+      user-influenced)
 - [ ] **Regex: ^/$ anchors in validations — HIGH; ReDoS candidates** —
       `grep -rnE 'format:.*(\^|\$)|match\?\(/\^' --include='*.rb' . | grep -v '\\\\A'` ;
       `grep -rn "Regexp.timeout" --include='*.rb' config/ . 2>/dev/null | head -1` (absent =
@@ -195,7 +212,9 @@ Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
       `grep -rnE '\brand\(|Random\.(rand|new)|\.sample\b' --include='*.rb' . | grep -viE "spec|test|seed"`
       ; `grep -rnE '(token|hmac|signature|digest)\s*==' --include='*.rb' .`
 - [ ] **Path traversal** —
-      `grep -rnE 'File\.(open|read|write|join)\([^)]*params' --include='*.rb' .`
+      `grep -rnE 'File\.(open|read|write|join)\([^)]*params' --include='*.rb' .` ;
+      `grep -rnE 'Pathname.*(\+|\.join\()[^)]*params' --include='*.rb' .` (an absolute argument
+      replaces the base; confirm an expand-then-prefix check follows)
 
 Severity guide: interpolated SQL / shell string with external input,
 `Marshal.load`/`unsafe_load` on external data, string `eval` — CRITICAL.

@@ -72,6 +72,20 @@ params.expect(user: [:name, :email])   # Rails 8.0+, raises 400 on bad shape
   replacement — older clients and subdomain issues remain.
 - GET routes must be side-effect free; CSRF middleware only guards
   non-idempotent verbs.
+- **HEAD reaches GET actions, and `request.get?` is false inside them.**
+  Rails' router matches a HEAD request with no HEAD route against the GET
+  routes, then restores the method to `HEAD` (read from
+  `journey/router.rb`), and Rack's `get?` compares against `"GET"`. So
+  `if request.get? then show else update end` runs the **write** branch on
+  a HEAD request, which is not CSRF-checked. Branch on `request.post?` (the
+  verb you mean), never on "not GET".
+- **Routes that widen the verb or the action set.** `match ... via: :all` or
+  `via: [:get, :post]` lets a GET reach a state-changing action; the Rails
+  routing guide warns that the GET "won't check for CSRF token". A route with
+  dynamic `:controller`/`:action` segments (the old
+  `:controller(/:action(/:id))` default) makes every public controller method
+  an endpoint, which is still supported on Rails main. Declare routes
+  explicitly.
 
 ## 4. Sessions and cookies
 
@@ -100,6 +114,22 @@ params.expect(user: [:name, :email])   # Rails 8.0+, raises 400 on bad shape
   `X-Content-Type-Options: nosniff`, `frame-ancestors` via CSP (or
   `X-Frame-Options: DENY`), `Referrer-Policy`, a real
   `Content-Security-Policy`.
+- **Outbound TLS is verified.** `verify_mode = OpenSSL::SSL::VERIFY_NONE`
+  on `Net::HTTP`, or any HTTP client option that sets it, is a finding. The
+  class and its rationale live in `sota-code-security` rules/04; this is
+  Ruby's spelling of it. Internal services get a private CA, not disabled
+  verification.
+- **SSH host keys are verified too, and `net-ssh` does not do it by
+  default.** Read from the gem's `select_host_key_verifier`:
+  - Leaving `verify_host_key` **unset** selects `:accept_new_or_local_tunnel`,
+    which the gem's own docs rank as insecure.
+  - `:never` and `false` (the deprecated form, also reached through
+    `paranoid: false`) accept any server.
+  - Set `verify_host_key: :always` with a pinned `known_hosts`, and treat any
+    `Net::SSH.start` (or `net-scp`/`net-sftp` on top of it) that does not set
+    it as a finding.
+
+  The class lives in `sota-code-security` rules/04 §5.
 - Match `Host`/origin checking to deployment: Rails
   `config.hosts`; elsewhere validate `Host` against an allowlist — DNS
   rebinding and cache-poisoning use wildcard hosts.
@@ -129,7 +159,10 @@ params.expect(user: [:name, :email])   # Rails 8.0+, raises 400 on bad shape
 - Store outside the served docroot (or object storage); serve with an
   explicit `Content-Type` and `Content-Disposition: attachment` for
   user-supplied files; never `send_file params[:path]` (traversal — see
-  `rules/02` §7).
+  `rules/02` §7). **`render file:` is the same sink**: Rails serves any
+  existing path given to it raw (`Template::RawFile`), so
+  `render file: params[:page]` discloses arbitrary files. Map a user choice
+  to a fixed template name instead.
 - Image processing on untrusted files is an RCE-history hotspot
   (ImageTragick class) — keep processors current, restrict formats, consider
   sandboxing the worker (see `sota-sandboxing`).
@@ -165,6 +198,10 @@ first — it covers XSS/mass-assignment/redirect sinks mechanically.
       `grep -rn "protect_from_forgery" --include='*.rb' . | head` ;
       `grep -rn "Rack::Protection" --include='*.rb' config.ru 2>/dev/null | head -1` (Sinatra:
       absent = HIGH)
+- [ ] **Verb confusion and widened routes — HIGH on a state-changing action** —
+      `grep -rnE 'if\s+request\.get\?|unless\s+request\.get\?|request\.get\?\s*\?' --include='*.rb' app/ lib/ 2>/dev/null`
+      (the else branch runs on HEAD, unchecked by CSRF) ;
+      `grep -rnE 'via:\s*(:all|\[[^]]*:get[^]]*:(post|put|patch|delete))|:controller\(|/:action' config/routes.rb config/routes/ 2>/dev/null`
 - [ ] **Sessions / cookies** —
       `grep -rnE "Rack::Session::Cookie" --include='*.rb' config.ru 2>/dev/null | grep -v "secure: true"`
       ; `grep -rn "reset_session" --include='*.rb' . | head -1` (absent around login = MEDIUM);
@@ -174,8 +211,15 @@ first — it covers XSS/mass-assignment/redirect sinks mechanically.
       `grep -rnE '(Net::HTTP|URI\.open|Faraday|HTTParty)[^#]*params' --include='*.rb' .`
 - [ ] **Uploads / downloads** —
       `grep -rnE 'send_file\s*\(?\s*params|send_file[^,]*#\{' --include='*.rb' .` ;
-      `grep -rn "original_filename" --include='*.rb' . | grep -v basename`
-- [ ] **Transport** — `grep -rn "force_ssl" --include='*.rb' config/ 2>/dev/null | head -1`
+      `grep -rn "original_filename" --include='*.rb' . | grep -v basename` ;
+      `grep -rnE 'render\s*\(?\s*file:' --include='*.rb' .` (user-influenced path = file
+      disclosure)
+- [ ] **Transport** — `grep -rn "force_ssl" --include='*.rb' config/ 2>/dev/null | head -1` ;
+      `grep -rn "VERIFY_NONE" --include='*.rb' .` (outbound TLS verification disabled — HIGH) ;
+      `grep -rnE 'verify_host_key:\s*(:never|:accept_new|false|true)|paranoid:\s*(false|true)' --include='*.rb' .`
+      (SSH host key not verified — HIGH) ;
+      `grep -rnE 'Net::(SSH|SCP|SFTP)\.start' --include='*.rb' . | grep -v 'verify_host_key'`
+      (the default is not `:always` — confirm the options hash sets it)
 
 Severity guide: `html_safe`/`raw` on user input, `send_file params` —
 CRITICAL. `permit!`, missing CSRF on cookie-auth state changes, unescaped
