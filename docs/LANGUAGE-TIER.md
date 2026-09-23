@@ -266,6 +266,32 @@ stops meaning anything — `sota-code-security` rules/10's subject, one layer do
 
 ## Depth: the external-guide gap-check (ROADMAP 59)
 
+### Depth, measured 2026-09-23: breadth is uniform, depth is not
+
+After #426 every language has every applicable topic (page 5 has no blank cells; the only
+`n/a` is c/c++ Web/HTTP). Depth still varies:
+
+| language | rules lines | audit items | items / 100 lines | external gap-check |
+|---|---|---|---|---|
+| python | 2,152 | 65 | 3.0 | done (Bandit) |
+| go | 2,151 | 71 | 3.3 | done (gosec) |
+| rust | 2,057 | 94 | 4.6 | **not yet** |
+| js/ts | 1,804 | 110 | 6.1 | **not yet** |
+| php | 1,143 | 41 | 3.6 | **not yet** |
+| ruby | 1,125 | 55 | 4.9 | done (Brakeman) |
+| c/c++ | 1,061 | 53 | 5.0 | done (cppcheck) |
+| jvm | 710 | 48 | 6.8 | **not yet** |
+| .NET | 569 | 40 | 7.0 | **not yet** |
+
+Items are comparable across languages since every checklist became tick-boxes (the same day).
+Small is not the same as shallow per line (jvm and .NET are the densest, as ROADMAP 58
+found), but an auditor walking .NET gets 40 probes and walking js/ts gets 110. **Every
+external gap-check so far found 4–7 real gaps**, so the five unchecked languages are
+expected to have some. **The operator set depth as the next session's focus.** The
+concept-matrix candidate list does not answer this: the two .NET "gaps" it lists (command
+injection, path traversal) are covered at `sota-dotnet` rules/04:35–38, and its vocabulary
+simply misses .NET's phrasing.
+
 Coverage inside this tier is checked against an **external, enumerable, tool-backed list** —
 the method already used for Go (OWASP Go-SCP) and Rust (ANSSI). Four are done:
 
