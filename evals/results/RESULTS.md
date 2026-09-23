@@ -473,7 +473,9 @@ before spending; the fake null would have looked identical to this real one.
   "as deployed" is not three mechanisms — it is our mechanism over a corpus 20× ours, which
   measures **corpus size** and a **retrieval path already measured as saturated** (§5 reads
   +0.00). Full reasoning: [ROADMAP item 3](../../docs/ROADMAP.md).
-- **Full-7 multi-sample** of the competitor arms (only the 3 tightest done).
+- **Full-7 multi-sample** of the competitor arms (only the 3 tightest done): **deferred
+  2026-09-23 with a trigger** (the next competitor re-run), not open. Reasoning and trigger in
+  [ADOPTION-LOG](../../docs/ADOPTION-LOG.md).
 
 ## The three-layer story
 

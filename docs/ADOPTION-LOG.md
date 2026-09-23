@@ -5004,3 +5004,35 @@ committed the failure an hour earlier. It declared the local reports processed f
 drawn inside the wrong scope (report dates rather than report contents), and separately read a
 confident 0 from a `git grep -E '\b…'` that could not match on this machine. Both were caught
 only by a control drawn from outside the searched scope.
+
+## 2026-09-23 — an open measurement with no trigger: the competitor benchmark's full-7 multi-sample
+
+**Intake shape: a `/sota-resume` sweep for untracked open items.** `evals/results/RESULTS.md`
+listed "Full-7 multi-sample of the competitor arms (only the 3 tightest done)" under *Not yet
+measured (open)* since 2026-07-13. It had no ROADMAP row and no revisit condition, which makes
+it a silent drop wearing an "open" label. Operator decision 2026-09-23: defer it, with a
+trigger.
+
+- **DEFERRED — revisit trigger: the next time the competitor benchmark is re-run for any
+  reason** (a new competitor, a model change, a head-to-head claim being re-cited), multi-sample
+  all 7 cases in that same run instead of paying for a separate top-up. Reasoning: the 3
+  multi-sampled cases were chosen as the **tightest**, and SOTA's lead held on every one with
+  near-zero variance (sd 0.00 on c1/c3, 0.04 on c7; `COMPETITOR-BENCHMARK.md`). The remaining 4
+  are the least contested, so sampling them answers no open question, and spending on a
+  measurement with no question behind it is what this log exists to prevent.
+
+## 2026-09-23 — the router-activation proposal of 2026-08-05 gets a ledger entry, and P7 a verdict
+
+**Intake shape: closing a local proposal whose verdicts existed only in a release entry.**
+`ROUTER-ACTIVATION-PROPOSAL.local.md` had **no row here**. Its outcomes were recorded only in
+`CHANGELOG.md` `[1.22.0]`. Recorded now so the next reader does not re-derive them.
+
+| proposal | verdict | where |
+|---|---|---|
+| P1 triggers for code you do not own (PR, diff, upstream) | **adopted** · v1.22.0 | `skills/sota/SKILL.md` description |
+| P2 a mid-session drift clause | **adopted** · v1.22.0 | router description ("including mid-session"), plus the hook's "route now" |
+| P3 principle 7, restate from the primary source | **adopted, reworded** · v1.22.0 | router principle 7 |
+| P4 principle 8, publishing under someone else's name raises the bar | **adopted** · v1.22.0 | router principle 8, plus `sota-docs-workflow` rules/03 §8 |
+| P5 a falsification precondition on principle 0 | **adopted** · v1.22.0 | router principle 0 |
+| P6 routing as a numbered rule in the hook | **adopted** · v1.22.0 | `scripts/install.sh` hook text |
+| P7 `sota-docs-workflow` leads with docs and hides its collaboration half | **rejected on measurement** · 2026-09-23 | Pre-registered, 18 of 18 collaboration tasks routed to it from the description alone ([P7-COLLAB-ROUTING](../evals/results/2026-09-23/P7-COLLAB-ROUTING.md)). The original miss is better explained by the measured task-shape effect (ROADMAP 48) than by the description, so no description change was made |
