@@ -68,7 +68,8 @@ retraining.
 ## Audit checklist
 
 - [ ] **Any production monitoring at all? — HIGH if none** —
-      `grep -rniE 'evidently|nannyml|whylogs|drift|psi|kolmogorov|ks_2samp|monitor' --include='*.py' . | head || echo "no drift/perf monitoring found — HIGH"`
+      `out=$(grep -rniE 'evidently|nannyml|whylogs|drift|psi|kolmogorov|ks_2samp|monitor' --include='*.py' . 2>&1); rc=$?` ;
+      `case $rc in 0) printf '%s\n' "$out" | head ;; 1) echo "no drift/perf monitoring found — HIGH" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
 - [ ] **Drift detection method present?** —
       `grep -rniE 'population_stability|psi|ks_2samp|chi2|js_diverg|wasserstein' --include='*.py' . | head`
 - [ ] **Live performance tracking + label lag handling — HIGH** —
@@ -76,5 +77,6 @@ retraining.
 - [ ] **Data-quality/freshness monitoring at serving — MEDIUM/HIGH** —
       `grep -rniE 'freshness|stale|null.*rate|schema.*serv|nan|range.*check' --include='*.py' . | head`
 - [ ] **Retraining trigger defined? — MEDIUM/HIGH** —
-      `grep -rniE 'retrain|schedule|cron|airflow|trigger|cadence' . | grep -iE 'train|drift|model' | head || echo "no explicit retraining trigger"`
+      `out=$(grep -rniE 'retrain|schedule|cron|airflow|trigger|cadence' . | grep -iE 'train|drift|model'); rc=$?` ;
+      `case $rc in 0) printf '%s\n' "$out" | head ;; *) echo "no explicit retraining trigger (rc=$rc; if the first grep failed, rerun it alone)" ;; esac`
 - [ ] **Alerts have an owner/runbook — MEDIUM (manual)**

@@ -92,14 +92,16 @@ rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
       (<2.6: CVE-2025-32434 weights_only bypass);
       `grep -rniE 'safetensors|onnx' --include='*.py' . || echo "consider safetensors/ONNX over pickle"`
 - [ ] **Model/data provenance & integrity — HIGH** —
-      `grep -rniE 'hash|sha256|sign|verify|provenance|checksum' . | grep -iE 'model|dataset|weight' | head || echo "no model/dataset integrity verification"`
+      `out=$(grep -rniE 'hash|sha256|sign|verify|provenance|checksum' . | grep -iE 'model|dataset|weight'); rc=$?` ;
+      `case $rc in 0) printf '%s\n' "$out" | head ;; *) echo "no model/dataset integrity verification (rc=$rc; if the first grep failed, rerun it alone)" ;; esac`
 - [ ] **Training-data write access / poisoning surface — HIGH (manual) Who can write to training
       data sources? Is training data validated (rules/02)?**
 - [ ] **Extraction/inference exposure — MEDIUM** —
       `grep -rniE 'predict_proba|confidence|logits|rate.?limit|throttle' --include='*.py' . | head`
       (raw scores exposed? rate-limited?)
 - [ ] **Governance docs — MEDIUM/LOW** —
-      `grep -rniE 'model.?card|MODEL_CARD|datasheet|intended.use|limitation' . | head || echo "no model card"`
+      `out=$(grep -rniE 'model.?card|MODEL_CARD|datasheet|intended.use|limitation' . 2>&1); rc=$?` ;
+      `case $rc in 0) printf '%s\n' "$out" | head ;; 1) echo "no model card" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
       ; `grep -rniE 'nist|ai.?rmf|risk.?assessment|fairness|bias' . | head`
 - [ ] **EU AI Act / regulatory tier considered — HIGH for high-risk domains (manual)** —
       `grep -rniE 'ai.?act|high.?risk|gdpr|differential.privacy|anonymiz' . | head`

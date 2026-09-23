@@ -78,7 +78,8 @@ lives in `sota-testing`.
       ;
       `grep -rnE 'release|sourceCompatibility|targetCompatibility|languageVersion' pom.xml build.gradle* 2>/dev/null`
 - [ ] **Dependency CVE scan + locking in CI?** —
-      `grep -rniE 'dependency-check|osv-scanner|dependabot|snyk|cyclonedx' .github/ pom.xml build.gradle* 2>/dev/null || echo "no dependency CVE scan — HIGH"`
+      `err=$(grep -rniE 'dependency-check|osv-scanner|dependabot|snyk|cyclonedx' --include='*.yml' --include='*.yaml' --include='pom.xml' --include='build.gradle*' . 2>&1 >/dev/null); rc=$?` ;
+      `case $rc in 0) ;; 1) echo "no dependency CVE scan — HIGH" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
       ;
       `ls gradle.lockfile gradle/dependency-locks 2>/dev/null; grep -rn 'dependencyLocking' build.gradle* 2>/dev/null`
       ; `grep -rnE 'version ranges|\[.*,.*\)|latest\.release|\+' build.gradle* 2>/dev/null`

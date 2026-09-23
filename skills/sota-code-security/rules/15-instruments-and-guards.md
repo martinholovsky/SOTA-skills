@@ -185,7 +185,7 @@ answer on purpose.** Before its output is quoted anywhere:
   feed one input of each class and assert each verdict appears at least once; a class
   you cannot produce is a branch that is decoration. This matters most once the
   classifier has been wired into an operator-facing message, which is where a broken
-  classifier is given a confident voice (`sota-devsecops` rules/09 §4).
+  classifier is given a confident voice (`sota-devsecops` rules/11 §4).
 - **Abort, never warn, on a missing result.** If a run produced no parsable
   summary, exit non-zero. "No output" must never be readable as "nothing found".
 - **Assert the mutation took** (rules/11 §2.5). Editable installs, copied trees,
@@ -204,7 +204,7 @@ answer on purpose.** Before its output is quoted anywhere:
   secret-indexed table lookups, variable-time encoding — switched off, so a default run says
   least about early-exit MAC comparison, which is the most common real timing bug there is
   (Lucky Thirteen). This is **not** the threshold *you* chose being too coarse
-  (`sota-devsecops` rules/09 §6): you chose nothing, and the silence is the vendor's. Print
+  (`sota-devsecops` rules/11 §6): you chose nothing, and the silence is the vendor's. Print
   the tool's effective configuration alongside its verdict and name the detector families
   that did not run.
 - **When a wrapper reports an empty reason, go one layer down.** A CLI that

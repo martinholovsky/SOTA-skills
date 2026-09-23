@@ -100,7 +100,8 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
       because the comment sat above the wrong line. So check the FLAG before reading the
       comments.** —
       `grep -rn 'cppcheck-suppress' --include='*.c' --include='*.cpp' --include='*.h' .` ;
-      `grep -rn 'inline-suppr' CMakeLists.txt *.cmake .github/workflows/*.yml 2>/dev/null || echo "cppcheck-suppress comments present but --inline-suppr never passed: every one is decoration"`
+      `err=$(grep -rn 'inline-suppr' --include='CMakeLists.txt' --include='*.cmake' --include='*.yml' --include='*.yaml' . 2>&1 >/dev/null); rc=$?` ;
+      `case $rc in 0) ;; 1) echo "cppcheck-suppress comments present but --inline-suppr never passed: every one is decoration" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
 - [ ] **compiler-level, which no lint grep finds** —
       `grep -rn '#pragma GCC diagnostic ignored\|#pragma clang diagnostic ignored\|#pragma warning(disable' --include='*.c' --include='*.cpp' --include='*.h' .`
       ; `grep -rn 'suppressions' CMakeLists.txt *.cmake 2>/dev/null` (cppcheck
@@ -112,7 +113,8 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
       `ls .clang-tidy .clang-format 2>/dev/null | grep -q . || echo "missing lint/format config"`
       ; `test -f compile_commands.json || grep -rn EXPORT_COMPILE_COMMANDS CMakeLists.txt`
 - [ ] **Sanitizer & fuzzing jobs in CI?** —
-      `grep -rniE 'fsanitize|asan|ubsan|tsan|libfuzzer|oss-fuzz|scan-build' .github/ ci/ 2>/dev/null || echo "no sanitizer/fuzz job found — HIGH for input-parsing code"`
+      `err=$(grep -rniE 'fsanitize|asan|ubsan|tsan|libfuzzer|oss-fuzz|scan-build' --include='*.yml' --include='*.yaml' --include='Jenkinsfile' . 2>&1 >/dev/null); rc=$?` ;
+      `case $rc in 0) ;; 1) echo "no sanitizer/fuzz job in CI config — HIGH for input-parsing code" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
 - [ ] **Dependency manager + lockfile?** —
       `ls vcpkg.json conan.lock conanfile.* 2>/dev/null | grep -q . || echo "no pinned dependency manifest/lockfile"`
       ;

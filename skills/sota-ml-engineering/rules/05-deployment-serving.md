@@ -70,8 +70,10 @@ progressive rollout validated on live traffic.
       `ls Dockerfile* requirements*.txt poetry.lock uv.lock conda*.yml 2>/dev/null` (serving env
       pinned?)
 - [ ] **Registry-gated deploy + rollback — HIGH** —
-      `grep -rniE 'registry|stage|promote|production|rollback|previous.*model|champion|challenger' . | head || echo "no registry/rollback path found"`
+      `out=$(grep -rniE 'registry|stage|promote|production|rollback|previous.*model|champion|challenger' . 2>&1); rc=$?` ;
+      `case $rc in 0) printf '%s\n' "$out" | head ;; 1) echo "no registry/rollback path found" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
 - [ ] **Progressive rollout — MEDIUM/HIGH** —
-      `grep -rniE 'shadow|canary|a/?b|traffic.*split|gradual|ramp' . | head || echo "no progressive rollout"`
+      `out=$(grep -rniE 'shadow|canary|a/?b|traffic.*split|gradual|ramp' . 2>&1); rc=$?` ;
+      `case $rc in 0) printf '%s\n' "$out" | head ;; 1) echo "no progressive rollout" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
 - [ ] **Serving input validation — MEDIUM** —
       `grep -rniE 'validate|schema|pydantic|unseen|unknown.*categor|fillna|missing' --include='*.py' . | head`

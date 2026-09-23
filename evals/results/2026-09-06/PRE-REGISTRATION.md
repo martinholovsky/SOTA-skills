@@ -103,8 +103,13 @@ worth what its timestamp says.
 ## Cost and status
 
 7 cases × 4 arms = **28 build calls + 28 judge calls**, on top of the 21 the three-arm
-form already costs. Not yet run: this is live model spend on the operator's account and
-is theirs to authorise.
+form already costs. ~~Not yet run: this is live model spend on the operator's account and
+is theirs to authorise.~~
+
+**Superseded — the run happened.** Results in [GATE-ABSORPTION.md](GATE-ABSORPTION.md) (ROADMAP 32). Everything above this
+note is unchanged and was committed before any call; the strikethrough is the only edit
+(2026-09-23), because a registration whose status still reads *"not yet run"* beside its
+own results gets quoted as a gap, or paid for twice.
 
 **Do not fold the result into item 25.** It is a different question, and item 25's
 number stands as published.

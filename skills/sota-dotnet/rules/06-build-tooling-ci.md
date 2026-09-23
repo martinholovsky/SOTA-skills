@@ -88,11 +88,15 @@ lives in `sota-testing`.
       `grep -rnE '<TargetFramework' **/*.csproj 2>/dev/null | head` ;
       `ls global.json Directory.Build.props Directory.Packages.props 2>/dev/null | grep -q . || echo "no central build config"`
 - [ ] **Nullable + warnings-as-errors + analyzers?** —
-      `grep -rniE 'TreatWarningsAsErrors|<Nullable>|EnableNETAnalyzers|AnalysisLevel' **/*.csproj Directory.Build.props 2>/dev/null || echo "nullable/analyzers/warnings-as-errors not enforced — HIGH"`
+      `err=$(grep -rniE 'TreatWarningsAsErrors|<Nullable>|EnableNETAnalyzers|AnalysisLevel' --include='*.csproj' --include='Directory.Build.props' . 2>&1 >/dev/null); rc=$?` ;
+      `case $rc in 0) ;; 1) echo "nullable/analyzers/warnings-as-errors not enforced — HIGH" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
 - [ ] **NuGet locking + source mapping + CVE scan?** —
-      `ls packages.lock.json 2>/dev/null && grep -rn 'RestorePackagesWithLockFile' **/*.csproj Directory.Build.props 2>/dev/null || echo "no NuGet lockfile — supply-chain risk"`
+      `find . -name packages.lock.json -not -path '*/obj/*' | head -1` (empty = no lockfile) ;
+      `err=$(grep -rn 'RestorePackagesWithLockFile' --include='*.csproj' --include='Directory.Build.props' . 2>&1 >/dev/null); rc=$?` ;
+      `case $rc in 0) ;; 1) echo "lockfile not enforced (RestorePackagesWithLockFile unset) — supply-chain risk" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
       ;
-      `grep -rniE 'packageSourceMapping|locked-mode|NuGetAudit|NU190[0-9]|auditSources|dependabot' nuget.config Directory.Build.props **/*.csproj .github/ *.yml 2>/dev/null || echo "no source mapping / locked restore / NuGetAudit CI gate"`
+      `err=$(grep -rniE 'packageSourceMapping|locked-mode|NuGetAudit|NU190[0-9]|auditSources|dependabot' --include='nuget.config' --include='NuGet.Config' --include='Directory.Build.props' --include='*.csproj' --include='*.yml' --include='*.yaml' . 2>&1 >/dev/null); rc=$?` ;
+      `case $rc in 0) ;; 1) echo "no source mapping / locked restore / NuGetAudit CI gate" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
 - [ ] **Formatting + deterministic build in CI?** —
       `grep -rniE 'dotnet format|verify-no-changes|Deterministic|ContinuousIntegrationBuild' .github/ *.yml **/*.csproj 2>/dev/null | head`
 - [ ] **Test runner + coverage?** —

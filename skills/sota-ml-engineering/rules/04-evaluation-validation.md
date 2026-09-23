@@ -72,7 +72,9 @@ rubric (data / model / infra / monitoring tests) is the backbone.
 - [ ] **Sliced / fairness evaluation — HIGH if absent on a high-stakes model** —
       `grep -rniE 'group_?by|slice|segment|subgroup|fairness|by_cohort|disaggregat' --include='*.py' . || echo "no sliced evaluation — aggregate metrics only"`
 - [ ] **Validation gate before promotion — HIGH if missing** —
-      `grep -rniE 'threshold|gate|promote|regression|assert.*metric|validate_model' --include='*.py' .ci* .github/ 2>/dev/null | head || echo "no automated promotion gate found"`
+      `err=$(grep -rniE 'threshold|gate|promote|regression|assert.*metric|validate_model' --include='*.yml' --include='*.yaml' . 2>&1 >/dev/null); rc=$?` ;
+      `case $rc in 0) ;; 1) echo "no automated promotion gate in CI config" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
+      (the previous form piped through `head`, which exits 0, so its fallback could never fire)
 - [ ] **Pipeline/model tests (ML Test Score infra) — HIGH** —
       `grep -rniE 'def test_|pytest|golden|integration' --include='*.py' . | grep -iE 'model|pipeline|predict|feature' | head`
 - [ ] **Online experiment before full rollout — MEDIUM/HIGH** —
