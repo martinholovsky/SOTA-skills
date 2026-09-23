@@ -184,6 +184,27 @@ correct. Compare a symlink, whose failure mode is loud and obvious.
 - **Prefer the symlink and accept its loud failure.** "Broken link" is an error message;
   "stale content that looks correct" is a bug report six weeks later.
 
+## 3d. Rewriting a script that is still running changes what it runs
+
+§3b and §3c are what an edit does to *other names* for a file. This is what it does to a
+**process** that is executing the file. bash reads a script as it runs rather than loading
+it all up front, so how the new content is written decides what the running process
+executes next:
+
+- **Truncate and write the same file** (`>`, `cat >`, an editor's save-in-place, Python's
+  `write_text`): the running process keeps its byte offset into the **new** content, and
+  executes whatever now sits there.
+- **Write a new file and rename it over the old one** (`mv`, `sed -i`, `perl -pi`): the
+  running process keeps the old inode and finishes the **original** script.
+
+Measured on macOS bash with the falsifier stated first ("if the running script prints only
+its original lines, this is wrong"). A 4-line script echoed line 1 and slept, then was
+rewritten mid-run. After truncate-and-write it printed `EDITED line 3`; after write-and-rename
+it printed the original line 3. Field case in this library: a 27-minute run died with
+`$1: unbound variable` and a syntax error at a line that was valid in both versions, after the
+script was rewritten beneath it. **Never rewrite a script while it runs**: write a new file and
+rename it over the old one, or wait for the run to end. Other shells are not measured here.
+
 ## 4. Test constructs, printf, declarations
 
 - `[[ ]]` over `[ ]` in bash: no word splitting of unquoted vars, `&&`/`||` inside,
@@ -239,6 +260,10 @@ files=(/data/*); count=${#files[@]}                               # with nullglo
 
 ## Audit checklist
 
+- [ ] **Is any long-running script rewritten while it may be executing?** (§3d) A deploy that
+      writes over `run.sh` with `cat >` while a cron job is mid-run, or an agent editing a
+      harness it just started, makes the running process execute a splice of old and new.
+      Write elsewhere and `mv` it into place.
 - [ ] **Any hard link used to keep two paths in sync?** (§3c) It survives nothing that
       writes-and-renames — git, `mktemp`+`mv`, most editors and formatters — and the stale
       copy is a valid file with no broken link and no error. Directories cannot be hard-linked

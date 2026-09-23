@@ -380,6 +380,19 @@
       ]
     },
     {
+      "from": "sota-shell-scripting",
+      "to": "sota-devsecops",
+      "weight": 10,
+      "targets": [
+        "rules/03",
+        "rules/03 \u00a73.6",
+        "rules/07 \u00a77.7",
+        "rules/09",
+        "rules/09 \u00a72c",
+        "rules/11 \u00a75"
+      ]
+    },
+    {
       "from": "sota-web-frameworks",
       "to": "sota-code-security",
       "weight": 10,
@@ -427,18 +440,6 @@
       "to": "sota-secrets-management",
       "weight": 9,
       "targets": []
-    },
-    {
-      "from": "sota-shell-scripting",
-      "to": "sota-devsecops",
-      "weight": 9,
-      "targets": [
-        "rules/03",
-        "rules/03 \u00a73.6",
-        "rules/07 \u00a77.7",
-        "rules/09",
-        "rules/11 \u00a75"
-      ]
     },
     {
       "from": "sota-confidential-computing",
@@ -674,6 +675,18 @@
       "targets": []
     },
     {
+      "from": "sota-devsecops",
+      "to": "sota-shell-scripting",
+      "weight": 5,
+      "targets": [
+        "rules/01 \u00a72b",
+        "rules/01 \u00a73",
+        "rules/02",
+        "rules/08 \u00a73",
+        "rules/09 \u00a75a"
+      ]
+    },
+    {
       "from": "sota-identity-access",
       "to": "sota-privacy-compliance",
       "weight": 5,
@@ -811,17 +824,6 @@
         "rules/05",
         "rules/05 \u00a78",
         "rules/07 \u00a74"
-      ]
-    },
-    {
-      "from": "sota-devsecops",
-      "to": "sota-shell-scripting",
-      "weight": 4,
-      "targets": [
-        "rules/01 \u00a72b",
-        "rules/01 \u00a73",
-        "rules/08 \u00a73",
-        "rules/09 \u00a75a"
       ]
     },
     {

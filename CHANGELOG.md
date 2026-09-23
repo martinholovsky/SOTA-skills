@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Five proposals from this session's own field report:**
+  - **`sota-devsecops` rules/09 §2:** count the unit a gate's predicate reads, not the file
+    it sits in. This repo's check 32 now prints blocks and inline code spans read.
+  - **rules/09 §2c:** a PR's CI proves only the arm its own diff shape selects.
+  - **`sota-shell-scripting` rules/02:** a `grep -c` count inside `$( )` aborts silently on
+    zero under `set -e`. The probe was run over this repo's scripts: 4 candidates, 0 defects.
+  - **rules/05 §3d:** rewriting a running script changes what it runs (reproduced).
+  - **`\b` confident zeros** are now named in `/sota-resume` and `/sota-close`.
+
+  A lint gate for the `grep -c` shape is deferred, triggered by a second occurrence.
 - **Every GC language skill now covers its escape hatch into raw memory**, stated once in
   `sota-code-security` rules/06 §3 with per-language detectors:
   - jvm `04 §7`: JNI, FFM, `Unsafe`;
