@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`sota-ruby`: the Brakeman gap-check (ROADMAP 59, 4 of 9 languages).**
+  - **Denominator: 86 checks (79 default + 7 optional)**, derived twice. The source classes at
+    `v8.0.6` and the tool's own `--checks` registry, run in a container, agree name for name.
+  - **Seven gaps closed.** Every fact was read from Rails, Rack or `net-ssh` source or measured
+    on Ruby 3.4.10:
+    - **HEAD→GET verb confusion.** Rails' router matches HEAD against GET routes and then
+      restores `HEAD`, so `request.get?` is false and a write branch runs with no CSRF check.
+    - Routes that widen the verb or the action set.
+    - `render file:` (raw file disclosure) and `render inline:` (template RCE).
+    - Method-object reflection.
+    - `Pathname#+` discarding the base on an absolute argument.
+    - Outbound `VERIFY_NONE`. Its detector token is added to `sota-code-security` rules/04's
+      shared list.
+  - Seven new probes, each run against known-bad and known-good fixtures under ugrep and BSD
+    grep.
+  - **Host-key verification is held**: it repeats as a gap in a third language, which is the
+    trigger for the shared-class decision recorded in `docs/LANGUAGE-TIER.md`.
 - **The +0.39 completeness lift, re-measured against the current router: it holds (ROADMAP
   63).** Two runs of 3 samples at temp 0.7 on `claude-sonnet-4.6`, the baseline configuration,
   at `ROUTER_BUILD_SHA` `273a969bbe2994e4`. The lifts were +0.39 and +0.42, and the mean is

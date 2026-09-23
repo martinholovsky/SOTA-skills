@@ -345,7 +345,7 @@ reporting — see SKILL.md):
 
 ```text
 verify=False | InsecureSkipVerify | rejectUnauthorized:\s*false | TrustAllCerts
-NoopHostnameVerifier | CURLOPT_SSL_VERIFYPEER,\s*0 | ssl._create_unverified
+NoopHostnameVerifier | CURLOPT_SSL_VERIFYPEER,\s*0 | ssl._create_unverified | VERIFY_NONE
 MD5|SHA1 near sign/verify/token/password   AES/ECB | DES | RC4 | Blowfish
 Math\.random|random\.random|java\.util\.Random near token/key/secret/otp/nonce
 new IvParameterSpec\(.*getBytes  (static IV)   "-----BEGIN (RSA|EC|) PRIVATE KEY"

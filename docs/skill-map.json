@@ -1111,6 +1111,14 @@
       "targets": []
     },
     {
+      "from": "sota-ruby",
+      "to": "sota-code-security",
+      "weight": 3,
+      "targets": [
+        "rules/04"
+      ]
+    },
+    {
       "from": "sota-rust",
       "to": "sota-devsecops",
       "weight": 3,
@@ -1458,12 +1466,6 @@
         "rules/02",
         "rules/02 \u00a78a"
       ]
-    },
-    {
-      "from": "sota-ruby",
-      "to": "sota-code-security",
-      "weight": 2,
-      "targets": []
     },
     {
       "from": "sota-rust",
