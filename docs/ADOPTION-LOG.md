@@ -5036,3 +5036,31 @@ trigger.
 | P5 a falsification precondition on principle 0 | **adopted** · v1.22.0 | router principle 0 |
 | P6 routing as a numbered rule in the hook | **adopted** · v1.22.0 | `scripts/install.sh` hook text |
 | P7 `sota-docs-workflow` leads with docs and hides its collaboration half | **rejected on measurement** · 2026-09-23 | Pre-registered, 18 of 18 collaboration tasks routed to it from the description alone ([P7-COLLAB-ROUTING](../evals/results/2026-09-23/P7-COLLAB-ROUTING.md)). The original miss is better explained by the measured task-shape effect (ROADMAP 48) than by the description, so no description change was made |
+
+## 2026-09-23 — page 5's blank cells: five undeclared, six a real gap, one not applicable
+
+**Intake shape: the operator read the skill map and said "I still see blank spots".** Twelve
+cells on page 5 (section × language) were blank. Each one was checked against the skill
+behind it rather than against `docs/LANGUAGE-TIER.md`, which called all twelve principled.
+
+| cells | verdict | resolution |
+|---|---|---|
+| Typing: rust, jvm, go | **declaration gap** | The row already counts c/c++'s "type-system leverage", and by that definition rust `01 §3–4` (newtype, typestate), jvm `02 §1` (nullability is part of the type, which is .NET's NRT cell) and go `02 §5` (generics) all qualify. Declared in the map |
+| Memory / UB: go | **declaration gap** | `05 §7` "unsafe and cgo policy", with a checklist probe. Declared |
+| Web / HTTP: rust | **declaration gap** | `05 §7` "Service-edge defaults" (axum/tower). Declared |
+| Memory / UB: jvm, python, js/ts, .NET, php, ruby | **adopted: a real gap** | Every GC language has an escape hatch into raw memory, and only go covered its own. The class is stated once in `sota-code-security` rules/06 §3 with per-language detectors (the host-key shape), and each skill has a section and a probe. Every mechanism was checked against its vendor's documentation: JEP 454 (FFM final in JDK 22, `--enable-native-access`, `ALL-UNNAMED`), JEP 471 (`Unsafe` memory access deprecated for removal, JDK 23), .NET `AllowUnsafeBlocks` (default `false`, and also required by `[LibraryImport]`, .NET 7+), Python's `ctypes` warning, Node's `Buffer.allocUnsafe` warning, PHP `ffi.enable` (default `"preload"`), and Fiddle's own README |
+| Web / HTTP: c/c++ | **not applicable** | There is no mainstream C/C++ web stack to be idiomatic about. It is now drawn as `n/a` with its reason in the page legend, instead of blank |
+
+**The structural fix.** A blank cell could not say whether it meant "does not apply" or
+"nobody wrote it", and 11 of these 12 were the second kind. `gen-skill-map.py` now refuses to
+draw an unexplained blank: every cell names a section or carries an entry in
+`NOT_APPLICABLE` with its reason. CI already regenerates the map on every run. The guard was
+watched to fail on a copy with the `n/a` entry removed. The ten new probes were each run
+against a known-bad and a known-good fixture under ugrep and BSD grep. Three were wrong in
+their first draft (a `\x27` that POSIX ERE cannot express, an `ffi.enable` probe that
+flagged the safe default, and a gemspec probe the fixture never exercised), and all three were
+fixed before commit.
+
+**The measurement that had called it "correct, not a gap"** counted UB *vocabulary* (14 and
+6 mentions against ~0) and so measured the wrong thing. The hazard in a GC language is not
+use-after-free in its own code; it is the call that leaves the runtime.

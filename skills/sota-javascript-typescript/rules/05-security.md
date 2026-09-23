@@ -225,8 +225,22 @@ File uploads:
 - Password hashing: argon2id (or scrypt/bcrypt with sane cost), async variants only (rules/04); never SHA-256-of-password, never homegrown.
 - Web Crypto (`crypto.subtle`) for in-app encryption/signing; AES-GCM with unique IVs per encryption (IV reuse with GCM is catastrophic); keys from KMS/secret manager, not constants.
 
+
+## Native addons and uninitialized buffers
+
+Two ways Node leaves memory safety. **Native addons** (`.node` files, Node-API /
+`node-addon-api`, built with `node-gyp`) are C or C++ inside the process: audit them as such.
+**`Buffer.allocUnsafe`** needs no native code at all. Node's docs say its memory "is *not
+initialized*" and "may contain sensitive data", so a buffer sent before every byte is
+overwritten leaks earlier allocations: tokens, keys, other users' data. Use `Buffer.alloc`
+unless a benchmark justifies the unsafe form *and* the code provably overwrites the whole
+buffer first. The class is `sota-code-security` rules/06 §3.
+
 ## Audit checklist
 
+- [ ] **Uninitialized buffers and native addons — HIGH if the buffer can leave the process** —
+      `grep -rnE 'Buffer\.allocUnsafe(Slow)?\(|new Buffer\(' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
+      ; `grep -rnE 'node-addon-api|node-gyp|"gypfile"|\.node([^a-zA-Z0-9]|$)' --include='package.json' --include='*.js' --include='*.ts' .`
 - [ ] `grep -rn "innerHTML\|outerHTML\|insertAdjacentHTML\|document.write" src/` — each with non-constant input is HIGH/CRITICAL; constant strings LOW.
 - [ ] `grep -rn "dangerouslySetInnerHTML\|v-html\|{@html}\|bypassSecurityTrust" src/` — sanitized with DOMPurify at render? Unsanitized user/db content = CRITICAL (stored XSS).
 - [ ] `grep -rn "eval(\|new Function(\|setTimeout(['\"\`]\|setInterval(['\"\`]" src/` — CRITICAL with dynamic input.

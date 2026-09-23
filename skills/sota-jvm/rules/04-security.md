@@ -147,8 +147,23 @@ All Spring facts below were checked against Spring's own docs, advisories and so
   annotations. Both the default order and the property that sets it have moved between Spring
   Boot majors: Boot 4's `SecurityProperties` on main no longer carries a filter order.
 
+
+## 7. Native and off-heap memory — JNI, FFM, `Unsafe`
+
+The JVM is memory-safe until code leaves it. JNI (`native` methods, Kotlin `external`, loaded
+with `System.loadLibrary`), the FFM API (`java.lang.foreign`, final in JDK 22, JEP 454) and
+`sun.misc.Unsafe` all reach raw memory, where a wrong length is a buffer overflow and a crash
+takes down the whole JVM. FFM's restricted methods only **warn** unless
+`--enable-native-access` names the calling module, so set it to the named modules and never
+`ALL-UNNAMED` by habit. `Unsafe`'s memory-access methods are deprecated for removal
+(JDK 23, JEP 471), so migrate to `VarHandle` or FFM. Audit every crossing with the C rules;
+the class is `sota-code-security` rules/06 §3.
+
 ## Audit checklist
 
+- [ ] **Native and off-heap memory — HIGH on untrusted lengths** (§7) —
+      `grep -rnE '(^|[^[:alnum:]_])native[[:space:]][^;]*\(|(^|[^[:alnum:]_])external fun[[:space:]]|System\.load(Library)?\(|sun\.misc\.Unsafe|java\.lang\.foreign|enable-native-access' --include='*.java' --include='*.kt' --include='*.gradle*' --include='pom.xml' .`
+      (each hit is audited as C; `ALL-UNNAMED` needs a written reason)
 - [ ] **Deserialization — CRITICAL** —
       `grep -rnE 'readObject\(|ObjectInputStream|XMLDecoder' --include='*.java' .` ;
       `grep -rnE 'enableDefaultTyping|@JsonTypeInfo|activateDefaultTyping' --include='*.java' .`

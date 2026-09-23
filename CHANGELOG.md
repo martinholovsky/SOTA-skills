@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Every GC language skill now covers its escape hatch into raw memory**, stated once in
+  `sota-code-security` rules/06 §3 with per-language detectors:
+  - jvm `04 §7`: JNI, FFM, `Unsafe`;
+  - python `05 §11`: `ctypes`/`cffi`;
+  - js/ts `05`: native addons, `Buffer.allocUnsafe`;
+  - .NET `04 §6`: `unsafe`, P/Invoke;
+  - php `03 §6`: FFI;
+  - ruby `02 §8`: Fiddle and `ffi`.
+
+  Go already covered its own. Every mechanism was checked against vendor documentation, and
+  ten probes were run against bad and good fixtures under two grep implementations.
+- **Page 5 of the skill map has no blank cells.** A reader flagged 12:
+  - five had a section the map did not declare (Typing: rust, jvm, go; Memory/UB: go;
+    Web/HTTP: rust);
+  - six were the real gap above;
+  - one (c/c++ Web/HTTP) does not apply, and is now drawn as `n/a` with its reason.
+
+  `gen-skill-map.py` now refuses to draw an unexplained blank, and was watched to fail without
+  the `n/a` entry.
 - **Two field reports that had never been taken in, 2026-09-12-III and 2026-09-14-II.** An
   inventory had called them processed because *sibling* reports from the same dates had
   ledger entries. Every proposal was evaluated against the current tree, and each mechanism

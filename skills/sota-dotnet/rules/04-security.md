@@ -87,8 +87,22 @@ network/file/DB/config as untrusted. Reference:
 - **TLS**: never disable validation — `ServerCertificateCustomValidationCallback`
   returning `true` (or `HttpClientHandler` accepting all certs) is HIGH/CRITICAL.
 
+
+## 6. `unsafe` code and P/Invoke
+
+C# is memory-safe until a project opts out. `unsafe` blocks, pointers and `fixed` need
+`<AllowUnsafeBlocks>true</AllowUnsafeBlocks>` (default `false`), and so does source-generated
+P/Invoke (`[LibraryImport]`, .NET 7+). `[DllImport]` and `Marshal.*` on raw pointers cross
+the same boundary. **That one property in a `.csproj` is the signal**: without it a project
+has no unsafe code to audit, and with it every `unsafe` block and native signature is audited
+with the C rules (buffer lengths, lifetimes, `SetLastError`, string marshalling). The class
+is `sota-code-security` rules/06 §3.
+
 ## Audit checklist
 
+- [ ] **`unsafe` / P/Invoke — HIGH on input-derived lengths** (§6) —
+      `grep -rnE 'AllowUnsafeBlocks' --include='*.csproj' --include='*.props' .` ;
+      `grep -rnE '(^|[^[:alnum:]_])unsafe([^[:alnum:]_]|$)|(^|[^[:alnum:]_])fixed[[:space:]]*\(|\[(DllImport|LibraryImport)|Marshal\.(Copy|PtrToStructure|AllocHGlobal|ReadIntPtr)' --include='*.cs' .`
 - [ ] **SQL injection — CRITICAL** —
       `grep -rnE 'FromSqlRaw|ExecuteSqlRaw' --include='*.cs' . | head` ;
       `grep -rnE '(FromSqlRaw|ExecuteSqlRaw|CommandText|new SqlCommand)\([^)]*(\+|\$")' --include='*.cs' .`

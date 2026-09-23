@@ -613,6 +613,18 @@
       "targets": []
     },
     {
+      "from": "sota-jvm",
+      "to": "sota-code-security",
+      "weight": 6,
+      "targets": [
+        "rules/04",
+        "rules/05",
+        "rules/06 \u00a73",
+        "rules/10",
+        "rules/11 \u00a74"
+      ]
+    },
+    {
       "from": "sota-kubernetes",
       "to": "sota-network-security",
       "weight": 6,
@@ -668,21 +680,30 @@
       "targets": []
     },
     {
-      "from": "sota-jvm",
-      "to": "sota-code-security",
-      "weight": 5,
-      "targets": [
-        "rules/04",
-        "rules/05",
-        "rules/10",
-        "rules/11 \u00a74"
-      ]
-    },
-    {
       "from": "sota-kubernetes",
       "to": "sota-identity-access",
       "weight": 5,
       "targets": []
+    },
+    {
+      "from": "sota-python",
+      "to": "sota-code-security",
+      "weight": 5,
+      "targets": [
+        "rules/04",
+        "rules/06 \u00a73",
+        "rules/13 \u00a73"
+      ]
+    },
+    {
+      "from": "sota-ruby",
+      "to": "sota-code-security",
+      "weight": 5,
+      "targets": [
+        "rules/04",
+        "rules/04 \u00a75",
+        "rules/06 \u00a73"
+      ]
     },
     {
       "from": "sota-security-compliance",
@@ -875,24 +896,6 @@
       "to": "sota-threat-modeling",
       "weight": 4,
       "targets": []
-    },
-    {
-      "from": "sota-python",
-      "to": "sota-code-security",
-      "weight": 4,
-      "targets": [
-        "rules/04",
-        "rules/13 \u00a73"
-      ]
-    },
-    {
-      "from": "sota-ruby",
-      "to": "sota-code-security",
-      "weight": 4,
-      "targets": [
-        "rules/04",
-        "rules/04 \u00a75"
-      ]
     },
     {
       "from": "sota-security-compliance",
@@ -1126,6 +1129,14 @@
       ]
     },
     {
+      "from": "sota-php",
+      "to": "sota-code-security",
+      "weight": 3,
+      "targets": [
+        "rules/06 \u00a73"
+      ]
+    },
+    {
       "from": "sota-privacy-compliance",
       "to": "sota-devsecops",
       "weight": 3,
@@ -1337,6 +1348,14 @@
     },
     {
       "from": "sota-dotnet",
+      "to": "sota-code-security",
+      "weight": 2,
+      "targets": [
+        "rules/06 \u00a73"
+      ]
+    },
+    {
+      "from": "sota-dotnet",
       "to": "sota-performance",
       "weight": 2,
       "targets": []
@@ -1438,12 +1457,6 @@
         "rules/02",
         "rules/02 \u00a78a"
       ]
-    },
-    {
-      "from": "sota-php",
-      "to": "sota-code-security",
-      "weight": 2,
-      "targets": []
     },
     {
       "from": "sota-python",
@@ -1699,6 +1712,14 @@
     },
     {
       "from": "sota-code-security",
+      "to": "sota-golang",
+      "weight": 1,
+      "targets": [
+        "rules/05 \u00a77"
+      ]
+    },
+    {
+      "from": "sota-code-security",
       "to": "sota-secrets-management",
       "weight": 1,
       "targets": [
@@ -1923,12 +1944,6 @@
     },
     {
       "from": "sota-dotnet",
-      "to": "sota-code-security",
-      "weight": 1,
-      "targets": []
-    },
-    {
-      "from": "sota-dotnet",
       "to": "sota-identity-access",
       "weight": 1,
       "targets": []
@@ -1970,6 +1985,14 @@
       "to": "sota-api-design",
       "weight": 1,
       "targets": []
+    },
+    {
+      "from": "sota-javascript-typescript",
+      "to": "sota-code-security",
+      "weight": 1,
+      "targets": [
+        "rules/06 \u00a73"
+      ]
     },
     {
       "from": "sota-javascript-typescript",

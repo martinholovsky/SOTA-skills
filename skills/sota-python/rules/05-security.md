@@ -300,8 +300,21 @@ it generalises past Django.
 - Suppressions (`# noqa: S...`, `# nosec`) require a justification comment; bare `# nosec`
   is itself a finding.
 
+
+## 11. `ctypes`, `cffi` and C extensions — Python without its safety
+
+`ctypes` and `cffi` read and write arbitrary process memory from pure Python. The standard
+library's own warning is that incorrect use "can corrupt data and objects, reveal sensitive
+information, cause crashes, or otherwise compromise the running process". A wrong `argtypes`,
+a buffer sized from input, or a pointer kept after its owner is freed is a C bug with no C
+file to review. Confine these calls to one module, declare `argtypes`/`restype` on every
+foreign function, and validate lengths before they cross. The class is `sota-code-security` rules/06 §3.
+
 ## Audit checklist
 
+- [ ] **`ctypes` / `cffi` — HIGH where a size or pointer comes from input** (§11) —
+      `grep -rnE '^[[:space:]]*(import|from)[[:space:]]+(ctypes|cffi)|ctypes\.(CDLL|cdll|string_at|memmove|cast|create_string_buffer)' --include='*.py' .`
+      (each foreign function declares `argtypes`/`restype`; lengths validated before the call)
 - [ ] **One-shot scanners** — `uvx ruff check --select S --statistics .` ;
       `uvx bandit -r src/ -ll -q` ; `uv run pip-audit 2>/dev/null || uvx pip-audit` ;
       `osv-scanner --lockfile uv.lock 2>/dev/null`
