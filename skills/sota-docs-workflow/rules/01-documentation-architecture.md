@@ -90,7 +90,7 @@ before anyone knows what the project does.
 
 **Good** opening:
 
-```markdown
+````markdown
 # payout-svc
 Computes and schedules creator payouts from settled transactions.
 Replaces the legacy cron in `billing/jobs/payouts.py` (removed 2025-11).
@@ -102,7 +102,7 @@ make seed run          # service on :8080
 curl localhost:8080/v1/payouts/preview?creator=demo
 ```
 Expected: JSON payout preview. Full docs: ./docs. Owner: #team-payments.
-```
+````
 
 ## §4 The decay problem
 
