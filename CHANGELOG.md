@@ -7,7 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Two field reports that had never been taken in, 2026-09-12-III and 2026-09-14-II.** An
+  inventory had called them processed because *sibling* reports from the same dates had
+  ledger entries. Every proposal was evaluated against the current tree, and each mechanism
+  was verified rather than taken on trust:
+  - `sota-code-security` rules/16 §2.15: checking each precondition is not checking the
+    operation.
+  - `sota-testing` rules/04 §4.8: a skip condition is read from the host, never from the
+    subject's own `Unsupported` text; setup asserts its effect, since `modprobe` exits 0 for
+    a built-in (from libkmod source).
+  - `sota-devsecops` rules/07 §7.7: prefer the narrow prune; a base image on a moving tag is
+    pinned only by the cache the prune deletes (`podman build --pull` defaults to `missing`).
+  - `sota-code-security` rules/12 §1d: the borrowed bad state, a known-bad that dies the day
+    the problem it un-suppresses is fixed.
+  - `sota-shell-scripting` rules/06 §2, plus **four** commands (`/sota-audit`, `/sota-close`,
+    `/sota-resume`, `/sota-report`): a positive control drawn from inside the searched scope
+    cannot reveal that the scope is wrong. The report named three commands.
+
+  Each has its audit-checklist half. Rejected with reasons: a router principle-0 clause and a
+  duplicate `rules/15` section.
+- **P7 measured and rejected.** The 2026-08-05 proposal said `sota-docs-workflow`'s description
+  hides its collaboration half. A pre-registered run routed **18 of 18** collaboration tasks to
+  it from the description alone (`evals/results/2026-09-23/P7-COLLAB-ROUTING.md`), so no
+  description change was made. That proposal's other six items now have their first ledger
+  entry (adopted in v1.22.0).
+
 ### Fixed
+
+- **Invariant 32 was blind to every audit-checklist probe** after they moved from fenced blocks
+  into tick-box bullets (#420/#421). It now reads inline code spans outside fences, joins `\`
+  continuations, and matches the `| head || echo` fallback, which never fires without
+  `pipefail` (measured in bash and zsh). It was watched to fail on the committed tree, naming
+  **16** sites, before the fixes. Four new negative-control probes cover this: 32c–32e must
+  catch, and 32f checks the library's own `cmd` placeholder stays exempt.
+- **16 broken audit probes rewritten to branch on the exit code:**
+  - seven `2>/dev/null || echo` probes in c-cpp, dotnet, jvm and ml-engineering;
+  - nine `| head || echo` probes in ml-engineering;
+  - dotnet's `**/*.csproj`, which is literal text without `globstar` and so always a missing
+    path.
+
+  Each was run against found, absent and unreadable fixtures: **16 of 16** behave correctly.
+  The two probes with a second grep stage still cannot tell a failed first sweep from an
+  absence, and their message now says so.
+- **Items delivered long ago but still reading as open:**
+  - ROADMAP 49 "still open" in `RESULTS.md` and `CONTEXT-MANAGEMENT.md`; it closed
+    2026-09-12.
+  - A "Not yet measured" paragraph for ROADMAP 48, which was measured 2026-09-12.
+  - Five pre-registrations still reading "Not yet run" beside their own results; struck
+    through, per the 2026-09-09 convention.
+  - Ledger citations to sections that had moved (`rules/12` §2.1 → `rules/15`, shell
+    `rules/06` §3 → `rules/08`).
+  - A leftover v1.43.0 cut placeholder.
+  - Seven citations to `sota-devsecops` rules/09 §4–6, re-pointed to rules/11.
+- The competitor benchmark's "full-7 multi-sample" sat under *open* with no trigger. It is
+  now a recorded deferral, triggered by the next competitor re-run.
+- `sota-devsecops` rules/11 §4a now points at shell rules/01 §2b ("a non-zero exit is about
+  one attempt"), the pointer the 2026-09-14 report asked for.
 
 - **`docs/LANGUAGE-TIER.md` overstated a decision.** Its heading read "DECIDED … one shared
   class" for a question about **two** concerns, and only host-key verification had been
