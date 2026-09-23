@@ -55,6 +55,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   from `BaseException`, so the first network call ends the run. All 23 runners still pass,
   and 8 now report the precise "reached its first network call" instead of "failed after 4
   tries" or "still working". This was about 2.2 of the negative-controls job's 5.6 minutes.
+- **Invariant 3 (the private-name denylist) scans with `git grep -P` instead of `-E`**,
+  0.17 s vs 3.6 s per run. This was switched only after `scripts/denylist-engine-parity.sh`
+  showed **identical match sets for the real secret**: 308 revision:path:line hits across 422
+  revisions in CI, where two empty sets would have proved nothing. The test was watched to
+  fail three ways first (an invalid pattern, `\d` differing between engines, a vacuous
+  corpus), and it never prints a match or the pattern. Its workflow re-runs whenever the
+  script changes. A git built without PCRE now makes check 3 fail closed, not silently.
+  **Net effect on CI:** the negative-controls job went from 7.5–8.7 min to 2.9 min, before
+  this last switch.
 
 - **Invariant 32 was blind to every audit-checklist probe** after they moved from fenced blocks
   into tick-box bullets (#420/#421). It now reads inline code spans outside fences, joins `\`

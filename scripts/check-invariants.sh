@@ -295,8 +295,16 @@ fi
 # Case-insensitive so casing variants can't slip past; errors are fatal, not
 # swallowed (a scan that can't read a file must not pass). This script holds
 # the generic phrase patterns, so it is excluded from its own scan.
+# PCRE (-P), not ERE (-E), since 2026-09-23: 0.17s vs 3.6s per run locally, and the
+# negative-control harness runs this suite 52 times. Switched only after
+# scripts/denylist-engine-parity.sh showed IDENTICAL match sets for the real
+# SOTA_DENYLIST secret over the full history (308 revision:path:line hits across 422
+# revisions, CI). The two engines differ on constructs like \d, so a NEW pattern added to
+# the secret must be re-checked: touch that script in a PR and its workflow re-runs. A git
+# built without PCRE exits 128 here, which the rc>1 branch below reports as an error --
+# it fails closed, never silently.
 set +e
-hits=$(git grep -iInE "$DENY" -- ':(exclude)scripts/check-invariants.sh')
+hits=$(git grep -iInP "$DENY" -- ':(exclude)scripts/check-invariants.sh')
 rc=$?
 name_hits=$(git ls-files | grep -iE "$DENY")
 nrc=$?
