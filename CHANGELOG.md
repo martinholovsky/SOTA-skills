@@ -65,6 +65,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **About 60 lines of `sota-docs-workflow` rules/01 rendered as a code block** (source lines
+  105–164, including the `## §4 The decay problem` and `## §5 Runbooks` headings). A README
+  example opened with ```` ```markdown ```` and contained a ```` ```sh ```` block. In
+  CommonMark a fence with an info string cannot close one, so the inner closer ended the
+  example early and the next ```` ``` ```` opened a stray block. The outer fence now uses four
+  backticks. Checked with a CommonMark parser (markdown-it-py) over all tracked `.md` files:
+  this was the only unintended instance; the other long blocks containing headings are
+  deliberate templates or paste-in prompts. Found by reconciling invariant 32's new
+  shell-block count (109) against a regex count (110).
+
 - **Closure pass, 2026-09-23: six same-day claims corrected where they landed.**
   - **`sota-devsecops` rules/07 §7.7:** said `docker system df` defines "reclaimable" like
     podman does, but Docker's docs never define the column.
