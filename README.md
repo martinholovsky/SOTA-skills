@@ -692,6 +692,15 @@ are load-bearing, because the ones that aren't are labelled.
 
 Every garbage-collected language skill also covers its **escape hatch into raw memory**: JNI/FFM/`Unsafe`, `ctypes`/`cffi`, native addons, `unsafe`/P/Invoke, PHP FFI, Fiddle. The class is stated once in `sota-code-security` rules/06 §3, and each language skill carries its own detectors.
 
+Several hazards recur in every language, so each is **stated once as a shared class** in `sota-code-security`, and each language skill carries only its own detector spelling:
+- SSH host-key verification;
+- temp-file and permission hygiene;
+- an LDAP bind used as a login check;
+- XML built from strings;
+- native library search paths.
+
+Each language skill was also **gap-checked** against an external, tool-backed list of that language's security checks: Bandit, gosec, cppcheck, Brakeman, ANSSI, find-sec-bugs, eslint-plugin-security, Psalm and the .NET analyzers. A concept matrix (`scripts/gen-concept-matrix.py`) keeps universal topics such as numeric precision and money covered in all nine.
+
 ### Coverage & non-goals
 
 Deliberately **not covered**: Scala/Elixir, standalone C (inside `sota-c-cpp`), platform-engineering/IDP depth. File a *skill request* issue.
