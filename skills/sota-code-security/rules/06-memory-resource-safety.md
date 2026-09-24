@@ -231,6 +231,73 @@ UPDATE coupons SET used_by = $1, used_at = now()
 - Signal/reentrancy handlers and async callbacks touching shared security state
   need the same discipline.
 
+### 6.1 Temporary files and permissions (CWE-377/378/379)
+
+A temp file is the filesystem TOCTOU above in its most common form. The shared temp
+directory is world-writable, so **a name chosen before the file exists is a race the
+attacker can win**: they create a symlink at that path first, and your write goes wherever
+it points. Three shapes, the same in every language:
+
+- **Name now, file later.** An API that returns a *name* and creates nothing (C
+  `mktemp`/`tmpnam`/`tempnam`, Python `tempfile.mktemp`). The C man page is blunt: the
+  window between choosing the name and opening it is *"particularly dangerous from a
+  security perspective"*. Use the call that creates the file atomically, owner-only
+  (`mkstemp`/`mkdtemp` create mode 0600), and work on the handle it returns.
+- **A hand-built path in the temp directory.** `"/tmp/" + name`, or the temp dir joined to a
+  fixed or guessable name. It is the same race without the API call, and the more common one.
+- **Permissions widened after the fact.** A secret written into a 0644 file, a later
+  `chmod 0777`, or a process `umask(0)` hands it to every local account. Pass the mode at
+  creation time. The process umask can only narrow a requested mode, never widen it.
+
+This is a **class stated once, with per-language detectors**, the same design as host-key
+verification in rules/04 §5 (operator decision, 2026-09-24). Each language skill carries only its own spelling:
+
+| language | the unsafe form | the safe API |
+|---|---|---|
+| C / C++ | `mktemp`, `tmpnam`, `tempnam` | `mkstemp`, `mkdtemp`, `tmpfile` |
+| Python | `tempfile.mktemp`, `"/tmp/..."` literals | `tempfile.mkstemp`, `NamedTemporaryFile`, `TemporaryDirectory` (`sota-python` rules/05 §4a) |
+| Go | `filepath.Join(os.TempDir(), fixedName)` | `os.CreateTemp`, `os.MkdirTemp` (`sota-golang` rules/05 §4a) |
+| Ruby | `"/tmp/#{name}"` | `Tempfile`, `Dir.mktmpdir` (`sota-ruby` rules/02 §7) |
+| Rust | `std::env::temp_dir().join(name)` + `File::create` | the `tempfile` crate (`NamedTempFile`), or `OpenOptions::create_new(true)` + `.mode(0o600)` |
+| Java / Kotlin | `File.createTempFile`, `java.io.tmpdir` + a name | `Files.createTempFile`, `Files.createTempDirectory` |
+| Node | `path.join(os.tmpdir(), name)` + a default `writeFile` | `fs.mkdtemp`, then write inside it with `{ flag: 'wx', mode: 0o600 }` |
+| PHP | `sys_get_temp_dir() . '/name'` + `file_put_contents` | `tempnam()`, `tmpfile()`, `fopen($p, 'x')` |
+
+**What the gap-checks measured (2026-09-24, umask 022), and the traps inside the safe APIs:**
+- **The symlink attack worked in every language tried.** A symlink planted at the predictable
+  name was followed, and the victim file was overwritten. This was reproduced with Rust
+  `File::create`, Node's default `writeFile`, PHP `file_put_contents` and .NET
+  `File.WriteAllText`. Exclusive create refused it every time: Rust `create_new`, Node
+  `'wx'`, PHP `fopen(…, 'x')`, .NET `FileMode.CreateNew`.
+- **The default mode of a new file is 0644**: readable by every local account.
+- **Java: `File.createTempFile` creates `rw-r--r--`.** `Files.createTempFile` creates
+  `rw-------`, and `Files.createTempDirectory` creates `rwx------`.
+- **Rust: `tempfile::tempdir()` creates the directory 0755.** `NamedTempFile` is 0600, but a
+  file later made inside that directory with `File::create` is world-readable.
+- **PHP: `tempnam()` with a directory that does not exist silently falls back** to the
+  system temp directory and returns a path there. Check the `dirname()` of the result.
+- **Node: `fs.mkdtemp` created its directory 0700** (measured on macOS; Node's docs do not
+  state a mode).
+
+Detectors, each run against a known-bad and a known-good fixture under ugrep and BSD grep.
+Every hit needs reading, not counting. A hit is a finding when the name was chosen before the
+file existed, or when the mode reaches other accounts:
+
+```text
+C/C++   grep -rnwE 'mktemp|tmpnam|tempnam' --include='*.c' --include='*.cpp' --include='*.h' .
+Python  grep -rnE 'tempfile\.mktemp\(|["'"'"']/tmp/' --include='*.py' .
+Go      grep -rnE 'os\.TempDir\(\)|"/tmp/' --include='*.go' .
+Ruby    grep -rnE '"/tmp/|Dir\.tmpdir' --include='*.rb' .
+Rust    grep -rnE 'temp_dir\(\)|"/(tmp|var/tmp|dev/shm)/' --include='*.rs' .
+JVM     grep -rnE 'File\.createTempFile\(|createTempDir\(|getProperty\("java\.io\.tmpdir"\)' --include='*.java' --include='*.kt' .
+Node    grep -rnE 'tmpdir\(\)|/tmp/' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .
+PHP     grep -rnE '(file_put_contents|fopen|touch|mkdir|copy|rename)[[:space:]]*\([^;]*(sys_get_temp_dir[[:space:]]*\(\)|["'"'"']/(var/)?tmp/)' --include='*.php' .
+```
+
+The Node row also matches `fs.mkdtemp(path.join(os.tmpdir(), …))`, which is the safe form, so
+read each hit rather than piping through `grep -v`. The pipeline's exit status would then
+belong to `grep -v`, and a failed first stage would read as clean.
+
 ## 7. Audit grep starters
 
 ```text
@@ -261,4 +328,5 @@ Buffer.allocUnsafe|\.node|node-addon-api  (Node)   FFI::|ffi.enable  (PHP)   Fid
 - [ ] Do all inbound listeners and outbound calls have timeouts, with cancellation propagation?
 - [ ] Is rate limiting per-principal with bounded queues and load shedding (no unbounded buffering)?
 - [ ] Are check-then-act sequences (files, balances, redemptions) made atomic at the storage layer?
+- [ ] Is every temp file created atomically, owner-only, under a name not chosen in advance (§6.1)? Run §6.1's detector row for the language, and read each hit: a predictable name in a shared temp directory is HIGH when the file holds secrets or is later read back as trusted.
 - [ ] Is request-scoped data verified never to live in shared/global state across requests?

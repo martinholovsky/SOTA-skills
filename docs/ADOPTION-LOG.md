@@ -5292,3 +5292,71 @@ byte-identical.
   and 03 (`cursor.close()` in `finally`), with no checklist probe.
 - N+1 is delegated to `sota-databases` (router rule 3). Property-based testing is prose only
   and not security-relevant.
+
+## 2026-09-24 — gap-check 8 of 9: sota-php against Psalm and Semgrep, 84 checks, 7 gap clusters closed, temp files decided
+
+**Intake shape: an external, tool-backed registry, two of them.** Psalm 6.18.0's taint issue
+types (**19**: `src/Psalm/Issue/Tainted*.php`, the `TaintKind` constants and
+`docs/running_psalm/issues/` agree. On a planted fixture the tool itself emitted 13 of the 19; why it did not emit Sql, Sleep and Xpath was not investigated) and
+semgrep-rules `php/` (**65**: a text parse and semgrep 1.177.0's own loader agree). Semgrep's
+rules are under the Semgrep Rules License, so only rule *ideas* were taken, no text. **The
+second-registry lesson repeated**: Psalm's issue list names 19 kinds, but its sinks live in
+`InternalTaintSinkMap.php` and stub annotations, and that half held `tempnam`, `getimagesize`,
+`sleep` and `fetchObject` — three of the gaps.
+
+| class | verdict | landed |
+|---|---|---|
+| request-chosen class, session key, property (`new $class`, `fetchObject`, `$_SESSION[$k]`, `$guarded = []`) | **adopted: a real gap** | `sota-php` rules/02 §5. Measured on 8.5.9: `SplFileObject` read a file, `fetchObject` ran a constructor, a session key flipped `is_admin` |
+| LDAP empty-password bind, `ldap_escape` flags, XPath quoting | **adopted: a real gap** | `sota-php` rules/02 §6. php.net + php-src `ldap.c` (no guard) + RFC 4513 section 5.1.2; `DOMXPath::quote()` (8.4+) measured |
+| `setcookie()` carries none of the session cookie's defaults | **adopted: a real gap** | `sota-php` rules/04 §1a. Measured: a bare `Set-Cookie` beside a hardened `PHPSESSID` in one response |
+| secrets in stack-trace arguments and `phpinfo()` | **adopted: a real gap** | `sota-php` rules/04 §5a. `#[\SensitiveParameter]` measured; the official image loads no php.ini, so `zend.exception_ignore_args` is off there |
+| `base_convert()` on tokens | **adopted: a real gap** | `sota-php` rules/04 §3. 1,000 tokens → 1 distinct output |
+| TLS off beyond `CURLOPT_SSL_VERIFYPEER` | **adopted: a real gap** | `sota-php` rules/03 §5. Five spellings measured against a local server |
+| `max_execution_time` does not bound `sleep()`/IO | **adopted: a real gap** | `sota-php` rules/04 §5. Measured on macOS and Linux; `request_terminate_timeout` defaults to 0 |
+| SSH host keys (phpseclib, ext-ssh2) | **adopted: the PHP detector for the shared class** | `sota-php` rules/03 §5, pointing at `sota-code-security` rules/04 §5. Neither library checks a host key by default (read from source) |
+| 4 single-framework or tool-mechanism rules | **rejected: deliberately not a rule** | `laravel-unsafe-validator`, `wp-ajax-no-auth…`, `empty-with-boolean-expression`, `TaintedCustom` |
+
+**Temp-file hygiene: the trigger fired.** `sota-php` has 0 hits for `tempnam`, `tmpfile`,
+`sys_get_temp_dir`, `umask`, `chmod` (control 21/21 outside scope), so the condition recorded in
+LANGUAGE-TIER ("if that repeats in Ruby *and* PHP") is met. Per the operator's 2026-09-24
+decision it becomes a shared class in `sota-code-security` with per-language detectors; no
+per-language section was written. The PHP detector and measured forms are in the gap-check notes.
+
+Every new probe was run against a known-bad and a known-good fixture under ugrep and BSD grep
+and required to catch **every** planted instance (28/28). That rule caught one: a `sleep` probe
+whose `[^)]*` could not cross an `(int)` cast passed a "catches something" check while missing
+the commonest form.
+
+**Re-measured by the integrating session:**
+- The agent's harness extracts each probe from the committed files and passes **28/28**
+  (14 probes, bad and good fixtures, under ugrep and BSD grep).
+- The temp-file absence reproduces on the tree: 0 hits in `sota-php` for `tempnam`, `tmpfile`,
+  `sys_get_temp_dir` and `umask`, while the control (`mktemp`) is found in 9 skill files.
+- One overstatement in the agent's draft was corrected above. Psalm emitted 13 of its 19
+  taint types on the fixture, not all of them.
+
+**Not taken here, for a later pass:** the shared TLS detector in `sota-code-security` rules/04
+§10 has a PHP token (`CURLOPT_SSL_VERIFYPEER,\s*0`) that caught 0 of 6 planted PHP TLS-off
+lines. The same goes for a PHP row for the shared host-key rule. Both are shared-file edits,
+batched with the other languages' host-key rows.
+
+## 2026-09-24 — temp-file and permission hygiene becomes a shared class
+
+**The recorded trigger fired** (`docs/LANGUAGE-TIER.md`, "revisit trigger: the PHP
+gap-check"): PHP lacked temp-file guidance too, making **six of nine** language skills with
+none. **Operator decision 2026-09-24: a class stated once, with per-language detectors**, the
+same design as host-key verification in `sota-code-security` rules/04 §5. The alternative,
+per-language sections, was rejected because it would give six copies to drift. Python's and
+Go's existing sections stay, since they carry library detail.
+
+| item | verdict | landed |
+|---|---|---|
+| name-then-create, hand-built temp paths, widened modes (CWE-377/378/379) | **adopted as a shared class** | `sota-code-security` rules/06 §6.1, plus a checklist item |
+| per-language unsafe and safe forms | **adopted** | §6.1's table: C/C++, Python, Go, Ruby, Rust, Java/Kotlin, Node, PHP. .NET's row lands with its gap-check |
+| traps inside the safe APIs | **adopted** | Java `File.createTempFile` 0644; Rust `tempfile::tempdir()` 0755; PHP `tempnam()`'s silent fallback directory. All measured by the gap-check agents |
+
+**The eight detectors were run by the integrating session**, taking the exact text from the
+file, against a known-bad and a known-good fixture per language. Each gave 2 hits on bad and 0
+on good, under ugrep and BSD grep (32 runs). Sources for the C half: the macOS `mktemp(3)` page
+(*"particularly dangerous from a security perspective"*) and `tmpnam(3)`'s SECURITY
+CONSIDERATIONS; MITRE's titles for CWE-377, 378 and 379, fetched.

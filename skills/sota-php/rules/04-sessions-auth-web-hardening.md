@@ -33,6 +33,36 @@ session.sid_length       = 48      ; entropy of the ID (pre-8.4 tunable)
   is the only client-held session artifact. Custom session storage (e.g. Redis)
   keeps the same rules.
 
+## 1a. Cookies the app sets itself: `setcookie()` has none of §1's defaults
+
+The `session.cookie_*` directives govern **the session cookie only**. Every `setcookie()` or
+`setrawcookie()` call carries its own attributes. The positional form defaults to
+`secure = false` and `httponly = false`, and has **no SameSite parameter at all** (read by
+reflection on PHP 8.5.9).
+
+```php
+// BAD — measured: sent `Set-Cookie: remember=tok123`, with no Secure, HttpOnly or SameSite,
+// in a request that had session.cookie_secure/httponly/samesite all set
+setcookie('remember', $token);
+
+// GOOD — the options array (7.3+); host-only, so no 'domain'; __Host- prefix
+setcookie('__Host-remember', $token, [
+    'expires'  => time() + 60 * 60 * 24 * 30,
+    'path'     => '/',
+    'secure'   => true,
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
+```
+
+- Leave `domain` unset unless subdomains must read the cookie. Setting it widens the cookie
+  from this host to every subdomain (RFC 6265 section 5.3: no Domain attribute means a host-only
+  cookie).
+- Request data never chooses a cookie's **name**. A request value copied into an auth-bearing
+  cookie is session fixation (§1). This is Psalm's `TaintedCookie`.
+- Framework cookie settings (e.g. a session config's `secure` / `http_only` / `same_site`) are
+  the same attributes. Check the effective values, as for §1.
+
 ## 2. Passwords: password_hash, nothing homemade
 
 ```php
@@ -73,6 +103,11 @@ Verified against php.net password_hash (2026-07):
   `array_rand`, `str_shuffle`, `uniqid()` (timestamp-based, even with
   `more_entropy`) are predictable — HIGH wherever the value gates anything.
   8.2+ `Random\Randomizer` with `Random\Engine\Secure` is fine (same source).
+- **Never re-encode a token with `base_convert()`.** It converts through a float (php.net
+  warns it *"may lose precision on large numbers"*), so only the leading ~53 bits survive.
+  Measured on 8.5.9: 1,000 `random_bytes`-derived tokens that shared their top 64 bits gave
+  **one** distinct base-36 output. Use `bin2hex()` or `sodium_bin2base64()`, or GMP
+  (`gmp_strval(gmp_init($hex, 16), 36)`) when you need a particular alphabet.
 - **Authenticated encryption:** libsodium is in core since PHP 7.2 —
   `sodium_crypto_secretbox` (symmetric), `sodium_crypto_aead_xchacha20poly1305_ietf_*`,
   `sodium_crypto_box`/`sign` (asymmetric). New nonce per message
@@ -111,7 +146,7 @@ expose_php = Off                   ; drop X-Powered-By
 allow_url_include = Off
 allow_url_fopen = Off              ; unless remote fetch is a real requirement
 open_basedir = /srv/app            ; coarse containment fence
-disable_functions = exec,passthru,shell_exec,system,proc_open,popen,pcntl_exec
+disable_functions = exec,passthru,shell_exec,system,proc_open,popen,pcntl_exec,phpinfo
                                    ; tailor to what the app truly needs
 ```
 
@@ -124,6 +159,39 @@ disable_functions = exec,passthru,shell_exec,system,proc_open,popen,pcntl_exec
   — better, outside the docroot entirely).
 - Uncaught exceptions must map to a generic 500 page; the chain goes to logs
   only (`rules/01` §5).
+- **Per-request resource caps** are the outer DoS guard: `memory_limit`,
+  `max_execution_time`, `max_input_vars`, `post_max_size`, `upload_max_filesize`. **The CPU
+  limit is not a wall-clock limit.** php.net `set_time_limit`: time spent outside the script,
+  such as system calls, stream operations and database queries, is not counted, except on
+  Windows. Measured on 8.5.9, macOS and Linux: `sleep(3)` completed under
+  `max_execution_time=1`, while a 3-second busy loop was killed. So a request-controlled
+  `sleep()`/`usleep()` duration (Psalm's `TaintedSleep`) or a slow upstream holds an FPM
+  worker for as long as it likes. The wall-clock bound is the pool's
+  `request_terminate_timeout`, which defaults to `0` (off) (php.net FPM configuration). Set it,
+  and clamp any duration taken from input.
+
+## 5a. Secrets that reach output: stack-trace arguments and `phpinfo()`
+
+A stack trace records **every argument** of every frame, and logs keep it.
+
+```php
+function connect(string $dsn, string $user, #[\SensitiveParameter] string $password): PDO
+```
+
+- Measured on 8.5.9 with `zend.exception_ignore_args=0`: `getTraceAsString()` printed
+  `login2('bob', 'hunter2')`. With `#[\SensitiveParameter]` (8.2+) the same frame printed
+  `Object(SensitiveParameterValue)`. Mark every password, key and token parameter.
+- `zend.exception_ignore_args = On` drops arguments from traces entirely. Its **built-in default
+  is Off** and only `php.ini-production` sets it On, along with
+  `zend.exception_string_param_max_len = 0`.
+- **The official PHP container image loads no `php.ini`.** Measured: `php --ini` reports
+  `Loaded Configuration File: (none)`, and there `zend.exception_ignore_args` and
+  `display_errors` read `0` and `1`. So neither §5's settings nor these apply until a deploy
+  step copies `php.ini-production` or sets them. Check the effective values, never the file.
+- `phpinfo()` prints the whole environment. Measured: a value set only in an environment
+  variable appeared in its output, and the environment is where §5 tells you to keep secrets. It
+  belongs on no reachable route: add it to `disable_functions` in production. A framework debug
+  page is the same class (`sota-code-security` rules/07 §6).
 
 ## 6. Security headers
 
@@ -148,6 +216,10 @@ Run from repo root; verify each hit manually.
       `php -r 'foreach (["use_strict_mode","use_only_cookies","cookie_secure","cookie_httponly","cookie_samesite"] as $k) echo "session.$k=", ini_get("session.$k"), PHP_EOL;'`
       ; `grep -rn 'session_regenerate_id' --include='*.php' src/` (absent near login = HIGH);
       `grep -rnE 'session_id\s*\(\s*\$' --include='*.php' src/` (attacker-settable ID)
+- [ ] **App-set cookies (§1a)** — each hit lacks SameSite; the positional form cannot set it, so
+      rewrite it to the options array with `secure`, `httponly` and `samesite` (a multi-line
+      options array also shows up here: read it):
+      `grep -rnE 'set(raw)?cookie[[:space:]]*\(' --include='*.php' src/ | grep -vi 'samesite'`
 - [ ] **Password handling** —
       `grep -rnE '\b(md5|sha1|crypt)\s*\(' --include='*.php' src/ | grep -iE 'pass|pwd'` ;
       `grep -rn 'password_hash' --include='*.php' src/` ;
@@ -155,7 +227,8 @@ Run from repo root; verify each hit manually.
 - [ ] **Weak randomness / timing-unsafe compares — HIGH where security-relevant** —
       `grep -rnE '\b(rand|mt_rand|uniqid|str_shuffle|array_rand)\s*\(' --include='*.php' src/` ;
       `grep -rnE '(===?)\s*\$.*(token|signature|hmac|hash)' -i --include='*.php' src/` ;
-      `grep -rn 'hash_equals' --include='*.php' src/`
+      `grep -rn 'hash_equals' --include='*.php' src/` ;
+      `grep -rn 'base_convert' --include='*.php' src/` (on a token, key or ID = HIGH, §3)
 - [ ] **Crypto** — `grep -rn 'mcrypt' --include='*.php' src/` (removed 7.2 — abandoned code);
       `grep -rnE "openssl_encrypt\([^)]*(cbc|ecb)" -i --include='*.php' src/` ;
       `grep -rn 'sodium_crypto' --include='*.php' src/`
@@ -166,8 +239,23 @@ Run from repo root; verify each hit manually.
       `php -r 'foreach (["display_errors","expose_php","allow_url_include","allow_url_fopen","open_basedir","disable_functions"] as $k) echo "$k=", ini_get($k), PHP_EOL;'`
       ;
       `curl -sI https://target/ | grep -iE 'content-security|strict-transport|x-content-type|x-powered-by'`
+- [ ] **Resource caps, and a wall-clock bound (§5)** — `request_terminate_timeout` unset or `0`
+      on a web pool = MEDIUM; a request-derived sleep duration = MEDIUM:
+      `php -r 'foreach (["memory_limit","max_execution_time","max_input_vars","post_max_size","upload_max_filesize"] as $k) echo "$k=", ini_get($k), PHP_EOL;'`
+      ; `php-fpm -tt 2>&1 | grep 'request_terminate_timeout ='` (the effective value per pool;
+      the binary may carry a version suffix; measured default `0s`) ;
+      `grep -rnE '(u|time_nano)?sleep[[:space:]]*\([^;]*\$' --include='*.php' src/`
+- [ ] **Secrets reaching traces or `phpinfo()` (§5a)** — run on the production image, not a dev
+      box: `php --ini | grep 'Loaded Configuration'` ;
+      `php -r 'foreach (["zend.exception_ignore_args","zend.exception_string_param_max_len","display_errors"] as $k) echo "$k=", ini_get($k), PHP_EOL;'`
+      ; `grep -rnE 'phpinfo[[:space:]]*\(' --include='*.php' .` ;
+      `grep -rniE 'function[^(]*\([^)]*\$(pass(word)?|secret|token|api_?key|credentials?)' --include='*.php' src/ | grep -v 'SensitiveParameter'`
+      (one-line signatures only: a signature split across lines, as PER-CS formats long ones,
+      needs reading)
 
 Severity guide: fixation (no strict mode + no regeneration) HIGH; md5/sha1
 passwords HIGH; predictable tokens HIGH; missing CSRF on state change HIGH;
 `display_errors=On` in prod MEDIUM (HIGH if traces confirmed reaching users);
-missing CSP/headers MEDIUM.
+missing CSP/headers MEDIUM; an auth-bearing `setcookie()` without `secure`/`httponly` HIGH;
+`base_convert` on a token HIGH; reachable `phpinfo()` HIGH; `zend.exception_ignore_args` off
+with unmarked secret parameters MEDIUM.
