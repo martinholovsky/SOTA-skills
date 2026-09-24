@@ -78,6 +78,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Patterns are tightened. The 28 cells that went absent were triaged: 17 real gaps closed, 7
     artefacts, 4 delegated.
   - `UNIVERSAL_FLOOR` goes from 13 to 24 concepts, each cell read by hand.
+- **ROADMAP 64: three security classes now have an owner** in `sota-code-security`:
+  - **LDAP bind used as a login check** (rules/02 §9): an empty password is an unauthenticated
+    bind, and many clients report it as success. This was demonstrated against OpenLDAP in a
+    container, across 9 client libraries.
+  - **XML built from strings** (rules/01 §11, CWE-91): wrapping the value in CDATA does not
+    help.
+  - **Native library search paths** (rules/06 §3.1, CWE-427): Windows DLL search order, .NET
+    `DefaultDllImportSearchPaths`, and a relative RUNPATH or an empty `LD_LIBRARY_PATH` entry
+    loading a planted library.
 - **ROADMAP 65: money and numeric precision in every language skill.**
   - The concept matrix now lists every absence of a universal concept. A concept missing in 6
     or more languages is no longer silently dropped; it goes in a "mostly absent" block.

@@ -1,8 +1,9 @@
 # 06 — Memory & Resource Safety
 
-Scope: integer overflow/truncation, bounds discipline, unsafe-code policy,
-untrusted size/length fields, resource exhaustion, concurrency hazards with
-security impact. Maps to CWE-190/191/787/125/416/400/770/362.
+Scope: integer overflow/truncation, bounds discipline, unsafe-code policy and
+native library search paths, untrusted size/length fields, resource exhaustion,
+concurrency hazards with security impact, temp files. Maps to
+CWE-190/191/787/125/416/400/770/362/427/377.
 
 Core principle: **arithmetic on attacker-influenced numbers is a security
 operation.** Most memory-safety exploits start as an integer bug; most outages
@@ -135,6 +136,83 @@ memcpy(buf, pkt->data, n); buf[n] = '\0';
   **A `.csproj` with `AllowUnsafeBlocks`, a Python import of `ctypes`, or a PHP
   `ffi.enable=true` is the one-line signal** that a codebase crosses into unmanaged memory.
   Audit that code with the C rules in §2, not the language's own.
+
+### 3.1 Which file gets loaded: native library search paths (CWE-427)
+
+Every escape hatch above ends in a loader call, and **a library loaded by bare name or
+relative path comes from whichever search directory answers first**. Anyone who can write to an
+earlier directory supplies the code, with the process's privileges. Microsoft calls this a
+*DLL preloading* or *binary planting* attack. The fix is the same everywhere: load by absolute
+path from a directory that only the owner or installer can write, or restrict the search to
+such directories. The per-platform facts, from each vendor's documentation, with the
+measurements dated 2026-09-24:
+
+- **Windows.** With safe DLL search mode on (the default), a bare-name `LoadLibrary`
+  searches the application's folder, the system folders, **the current folder**, then `PATH`.
+  Safe mode only moves the current folder later; it does not remove it. A DLL loaded by full
+  path still has its *dependencies* searched by module name. Fix:
+  `SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS)` early in the process
+  (application directory, System32 and `AddDllDirectory` entries only), or `LoadLibraryEx`
+  with `LOAD_LIBRARY_SEARCH_*` flags. `SetDllDirectory("")` removes the current folder. An
+  application folder the user can write to (a download directory) is itself a planting site.
+- **.NET.** `[DllImport]` with no `DefaultDllImportSearchPaths` probes *"a number of
+  directories, including the current working directory"* (CA5392). CA5393 flags the unsafe
+  values `AssemblyDirectory`, `UseDllDirectoryForDependencies`, `ApplicationDirectory` and
+  `LegacyBehavior`, and names `SafeDirectories`, `System32` and `UserDirectories` as safe. CA3011
+  flags HTTP input reaching an assembly load (`Assembly.Load`). **None of the three is enabled
+  by default** in .NET 10: turn them on.
+- **Linux (glibc).** `dlopen` treats a name containing `/` as a pathname, so `"./x.so"` is
+  relative to the CWD. A bare name searches `DT_RPATH`, `LD_LIBRARY_PATH`, `DT_RUNPATH`,
+  `ld.so.cache`, then `/lib` and `/usr/lib`. The CWD is not on that list, and **three things put
+  it back**. Each loaded a planted library in the measurement:
+  - **An empty `LD_LIBRARY_PATH` entry** (`ld.so(8)`: *"A zero-length directory name indicates
+    the current working directory"*). `LD_LIBRARY_PATH=/opt/lib:$LD_LIBRARY_PATH` with the
+    variable unset produces one; `/opt/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}` does not.
+  - **A relative `RPATH`/`RUNPATH`** (`-Wl,-rpath,lib`), resolved against the CWD. Check
+    shipped binaries with `readelf -d`.
+  - **A relative path** passed to `dlopen`.
+
+  On musl the empty entry did *not* resolve to the CWD, but the relative `RUNPATH` did.
+  `$ORIGIN` resolved to the binary's own directory, so it is safe exactly when that directory
+  is. The dynamic linker ignores `LD_LIBRARY_PATH` for set-user-ID programs.
+- **macOS.** `dlopen` of a bare leaf name searches `DYLD_LIBRARY_PATH`, then `LC_RPATH`, then
+  **the current working directory if the process is unrestricted** (`man dlopen`). Measured:
+  `dlopen("libplug.dylib")` loaded a planted dylib from the CWD. That is worse than Linux,
+  where a bare name reaches the CWD only through an empty `LD_LIBRARY_PATH` entry or a
+  relative `RUNPATH`. Use `@rpath/` or an absolute path. `DYLD_*`
+  variables are ignored for binaries protected by System Integrity Protection.
+- **Python.** `ctypes.CDLL` hands the name to the platform loader: `CDLL("./x.so")` loaded the
+  CWD's copy (measured, glibc). On Windows, since 3.8, `ctypes` and extension-module
+  dependencies no longer search `PATH` or the current directory. Add directories with
+  `os.add_dll_directory`. `ctypes.util.find_library` searches at run time, and the docs suggest
+  hardcoding a name fixed at development time instead.
+- **Java.** `System.load` requires an absolute path; a relative one threw (measured).
+  `System.loadLibrary` searches `java.library.path`, and a relative entry
+  (`-Djava.library.path=lib`) loaded the CWD's copy (measured). A library extracted from a jar
+  into the shared temp directory under a predictable name, then loaded, is also §6.1's race.
+- **Node.** `process.dlopen` and `require()` of a `.node` file load native code. Build the path
+  from `__dirname` or `import.meta.url`, as Node's own examples do, never from the CWD or input.
+- **The environment is a search path too.** `LD_PRELOAD`, `LD_LIBRARY_PATH` and `DYLD_*` taken
+  from an untrusted parent or request pick the code. Spawn children with a clean environment
+  (`sota-sandboxing` rules/04 R5.3).
+
+Detectors, each run against a known-bad and a known-good fixture under ugrep and BSD grep.
+Every hit needs reading, not counting. A hit is a finding when the name has no absolute path
+and the directories searched are not all owner-writable only:
+
+```text
+C/C++ Win   grep -rnE 'LoadLibrary(Ex)?[AW]?[[:space:]]*\([[:space:]]*(L|TEXT\()?"[^"\\/:]+"' --include='*.c' --include='*.cpp' --include='*.h' .
+C/C++ Unix  grep -rnE 'dlopen[[:space:]]*\([[:space:]]*"(\.{1,2}/|[^"/]+")' --include='*.c' --include='*.cpp' --include='*.h' .
+Build       grep -rnE 'rpath[,=]["'"'"']?[^"'"'"'$@/[:space:]]|LD_LIBRARY_PATH=["'"'"']?(:|[^[:space:]+]*(::|:(["'"'"'[:space:]]|$)|:\$\{?LD_LIBRARY_PATH))' .
+Binaries    readelf -d BINARY | grep -E 'R(UN)?PATH'      otool -l BINARY | grep -A2 LC_RPATH
+.NET        grep -rnE 'DllImportSearchPath\.(AssemblyDirectory|UseDllDirectoryForDependencies|ApplicationDirectory|LegacyBehavior)|Assembly\.(Load|LoadFrom|LoadFile)[[:space:]]*\(' --include='*.cs' .
+Python      grep -rnE "(CDLL|WinDLL|PyDLL|LoadLibrary)[[:space:]]*\([[:space:]]*[\"'](\.{1,2}/|[^\"'/\\\\]+[\"'])|find_library[[:space:]]*\(" --include='*.py' .
+Java        grep -rnE 'System\.loadLibrary[[:space:]]*\(|java\.library\.path' .
+Node        grep -rnE 'process\.dlopen[[:space:]]*\(|require[[:space:]]*\([^)]*\.node["'"'"'`]' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .
+```
+
+The .NET row finds explicit unsafe values. A `[DllImport]` with *no* search-path attribute is an
+absence, and CA5392 is the tool that reports it.
 
 ## 4. Untrusted size/length fields (CWE-130/805)
 
@@ -314,6 +392,8 @@ os.access\(|fs.exists\( followed by open      SELECT.*FOR UPDATE absent near bal
 unsafe.Pointer|cgo  (Go)   JNI native|external fun|sun.misc.Unsafe|java.lang.foreign  (JVM)
 AllowUnsafeBlocks|DllImport|LibraryImport  (.NET)   ctypes|cffi  (Python)
 Buffer.allocUnsafe|\.node|node-addon-api  (Node)   FFI::|ffi.enable  (PHP)   Fiddle|FFI::Library  (Ruby)
+LoadLibrary("bare.dll") | dlopen("./x" or "bare") | CDLL("./x") | rpath,lib | LD_LIBRARY_PATH=...:  (§3.1 rows)
+DllImportSearchPath.(AssemblyDirectory|ApplicationDirectory|LegacyBehavior) | loadLibrary + relative java.library.path
 ```
 
 ## Audit checklist
@@ -325,6 +405,7 @@ Buffer.allocUnsafe|\.node|node-addon-api  (Node)   FFI::|ffi.enable  (PHP)   Fid
 - [ ] Are banned C string functions absent and parsers of untrusted bytes fuzzed with sanitizers in CI?
 - [ ] Is `unsafe`/FFI code confined to designated modules with SAFETY comments, safe wrappers, and Miri/ASan coverage?
 - [ ] In a GC language, does any code use its escape hatch into raw memory (§3's per-language list)? Each use is audited with the C rules, and a project-wide opt-in (`AllowUnsafeBlocks`, `ffi.enable=true`, `--enable-native-access=ALL-UNNAMED`) is justified in writing.
+- [ ] Is every native library loaded by absolute path, or through a search restricted to directories only the owner can write (§3.1)? Run §3.1's detector row for the platform and language, `readelf -d`/`otool -l` the shipped binaries for relative or `$ORIGIN` run paths, and on .NET enable CA5392, CA5393 and CA3011, which are off by default. HIGH when the process runs with more privilege than whoever can write the CWD, the application folder, or an `LD_LIBRARY_PATH` entry.
 - [ ] Does every declared length/offset get validated against bytes-actually-available before allocation or read?
 - [ ] Are decompression ratio caps, image pixel limits, and JSON/GraphQL depth+complexity limits enforced?
 - [ ] Do all inbound listeners and outbound calls have timeouts, with cancellation propagation?
