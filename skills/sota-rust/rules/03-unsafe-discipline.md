@@ -100,7 +100,9 @@ Audit unsafe code against these, in observed-frequency order:
    C calls a destructor twice; `CString::new(s).unwrap().as_ptr()` — temporary
    dropped at end of statement, dangling pointer (`temporary_cstring_as_ptr`
    lint). Struct layout across FFI requires `#[repr(C)]`.
-6. **Unwinding across FFI** — see rules/02 §5; UB pre-"C-unwind", abort after.
+6. **Unwinding across FFI** — see rules/02 §5. A Rust panic leaving an `extern "C"`
+   fn **aborts** since 1.81 (a DoS, no longer UB); a foreign exception unwinding
+   into Rust through a `"C"` declaration is still UB.
 7. **Data races**: `unsafe impl Send/Sync` on types containing raw pointers or
    `Cell`-like internals without an argument; `static mut` (deprecated pattern;
    edition 2024 denies `static_mut_refs`) — use `AtomicX`, `OnceLock`,
@@ -139,6 +141,80 @@ out of `&mut self` in `Drop`) must guarantee no double-drop on every path
 including panics; `mem::forget` is safe but leaks — unsafe code may NOT rely
 on Drop running for soundness (leakpocalypse rule: `Rc` cycles + `mem::forget`
 make "Drop always runs" a false invariant).
+
+## 3b. The FFI boundary — types that cross, values that arrive
+
+The `improper_ctypes` / `improper_ctypes_definitions` lints (warn-by-default) reject
+types with no C layout — measured on rustc 1.97.1, `String` and `&str` in an `extern`
+signature both warn. They are **silent on types whose layout is fine but whose values
+are restricted**: an `extern "C" fn` taking a `#[repr(u8)]` enum or a `bool` compiles
+with no warning (measured). A C caller that passes `7` or `2` then *produces an invalid
+value*, which the Reference lists as immediate UB — a `bool` must be 0 or 1, an `enum`
+must have a valid discriminant, a `fn` pointer and a reference must be non-null, a
+`char` must not be a surrogate.
+
+- **Restricted types arrive as integers and are checked in Rust.** Take `u8`/`c_int`/
+  `u32` and convert with `TryFrom` (or a `match` with a rejecting arm) into the
+  `enum`/`bool`/`char`. Never declare an `enum`, `bool`, `char`, `&T`, `&str` or bare
+  `fn` pointer as a parameter or field that *foreign* code fills — unless the foreign
+  side is type-checked for it (a C++ `enum class` bound by a generator), or the value
+  is opaque and only Rust ever creates it. (ANSSI FFI-CKNONROBUST, -CKINRUST, -NOENUM)
+- **Foreign pointers are raw pointers, checked before use.** Receive `*const T`/`*mut T`
+  and test `is_null()` (and alignment, where it is not guaranteed) before `&*p` — or
+  receive `Option<&T>` / `Option<NonNull<T>>`, which std guarantees have the pointer's
+  size and call ABI with `None` as null, so a null arrives as `None` instead of as UB.
+  A bare `&T` parameter is a promise the C caller can break. (FFI-CK-PTR-VALID,
+  FFI-INPUT-PTR, FFI-CK-INPUT-REF-VALID)
+- **Callbacks are `Option<unsafe extern "C" fn(..)>`.** A non-`Option` fn-pointer type
+  asserts non-null, and C passes `NULL` for "no callback" routinely. `unsafe` plus the
+  exact ABI makes every call site an audited `unsafe` block. (FFI-MARKEDFUNPTR, -CKFUNPTR)
+- **Platform-width C types come from `core::ffi`.** `c_long` is `i64` on 64-bit
+  non-Windows targets and `i32` on Windows, and `c_char`'s signedness varies by
+  architecture (both read from `core::ffi`'s source). Writing `i64` for `long` is a
+  layout mismatch on Windows. (FFI-PFTYPE)
+- **Generate bindings, don't hand-write them.** `bindgen` (C → Rust) and `cbindgen`
+  (Rust → C header) keep both sides' sizes and alignments consistent. Regenerate in CI,
+  or diff the committed output against a fresh run so the header cannot drift from
+  the code. (FFI-AUTOMATE, FFI-TCONS)
+- **Opaque foreign types are distinct Rust types, not `*mut c_void`.** The Nomicon
+  pattern `#[repr(C)] pub struct Handle { _data: (), _marker: PhantomData<(*mut u8,
+  PhantomPinned)> }` gives each handle its own type, so a `Foo*` cannot be passed where
+  a `Bar*` is expected, and withholds `Send`/`Sync`/`Unpin`. Never an empty `enum`: it is
+  uninhabited, and a reference to one is a UB footgun (Nomicon). Rust types exposed to C
+  go out the same way — a pointer to an incomplete struct plus a constructor/destructor
+  pair. (FFI-R-OPAQUE, FFI-C-OPAQUE)
+- **Ownership is one-sided and wrapped.** Whoever allocates frees (§3 item 5). A foreign
+  allocation lives in a Rust owner whose `Drop` calls the foreign free function. A value
+  moved *by value* into foreign code abandons its destructor, so such types should be
+  `Copy` and must not implement `Drop`. Expose Rust to other languages only through a
+  dedicated `extern "C"` API module (`cdylib`/`staticlib` plus a generated header), not by
+  exporting internal functions. (FFI-MEM-OWNER, -WRAPPING, -NODROP, FFI-CAPI)
+
+## 3c. Leaks are safe, not free
+
+`mem::forget` is safe because, in the std docs' words, "Rust's safety guarantees do not
+include a guarantee that destructors will always run" — which is why §3a forbids unsafe
+code from relying on `Drop`. The operational half is separate: **every leak API skips the
+destructor.** In a long-running service a per-request leak is an unbounded-memory DoS, and
+for a secret it is an erasure that never happens (rules/05 §5).
+
+- **`mem::forget`: don't.** To suppress a drop, hold the value in `ManuallyDrop` and hand
+  it back with `ManuallyDrop::into_inner` (or drop it explicitly) on every path.
+  `clippy::mem_forget` (restriction) enforces it at the crate root, but it fires only
+  when the forgotten type has drop glue — measured, a denied lint failed the build on
+  `mem::forget(Vec)` and said nothing about `Box::leak` in the same file. (ANSSI
+  MEM-FORGET, MEM-FORGET-LINT, MEM-MANUALLYDROP)
+- **`Box::leak` / `Vec::leak` / `String::leak`: once-per-process data only.** The std
+  docs call `Box::leak` "mainly useful for data that lives for the remainder of the
+  program's life". Reached per request or per connection, it is a leak with a counter.
+  Prefer `OnceLock`/`LazyLock` for the once-per-process case. No lint covers these, so
+  only a search does. (MEM-LEAK, MEM-NO-LEAK)
+- **`into_raw` / `into_non_null` is a leak until the matching `from_raw` runs.** This
+  covers `Box`, `Rc`, `Arc`, `Weak` and `CString`. Pair the two in one owner on every
+  path, including errors, and call `from_raw` only on a pointer that came from the same
+  type's `into_raw` (§3 item 5). In a crate with no `unsafe`, an `into_raw` has no
+  legitimate partner. (MEM-INTOFROMRAWALWAYS, -ONLY, MEM-NORAWPOINTER)
+- `Rc`/`Arc` cycles leak silently — rules/01 §2 (`Weak`). (MEM-MUT-REC-RC)
 
 ## 4. Miri, sanitizers, fuzzing — CI for the unchecked
 
@@ -212,6 +288,21 @@ For each `unsafe` block, in order:
 - [ ] FFI: `rg 'extern "C"' -t rust` — check `#[repr(C)]` on crossing types,
       panic containment, allocator pairing (`into_raw`/`from_raw` symmetry),
       `as_ptr()` on temporaries.
+- [ ] **Values that foreign code fills** (§3b):
+      `grep -rnE -A12 'extern "C(-unwind)?"' --include='*.rs' . | grep -E '(: *|-> *)(bool|char|&)|: *(unsafe )?extern "C(-unwind)?" fn|(: *|-> *)[A-Z][A-Za-z0-9_]*([,;)]|$| *\{)'`
+      — an inbound `bool`, `char`, `&T`, non-`Option` fn pointer, or a capitalised by-value
+      type that turns out to be an `enum` = UB on one bad value, High (Critical if the
+      caller is attacker-influenced). `improper_ctypes` does not flag these. Hits inside
+      function bodies are noise — read the signature. Hand-written `i64`/`i32` for C
+      `long`/`int` in an `extern` block = Medium (use `core::ffi::c_*`).
+- [ ] **Leak APIs** (§3c): `grep -rnE 'mem::forget\(|(Box|Vec|String)::leak\(|\.leak\(\)|ManuallyDrop::new\(|::into_raw\(|\.into_raw\(\)|into_non_null\(' --include='*.rs' .`
+      — a hit reached per request or connection = High (unbounded memory); an `into_raw`
+      without `from_raw` on every path = Medium; `mem::forget` of a secret-bearing value =
+      High (erasure skipped).
+- [ ] `grep -rnE 'mem::(uninitialized|zeroed)(::<[^>]*>)?\(' --include='*.rs' .` —
+      `uninitialized` = Critical for almost every type; `zeroed` is UB wherever all-zero is
+      invalid (references, `NonNull`, fn pointers, most enums). rustc's `invalid_value`
+      lint flagged both on concrete types and said nothing for a generic `T` (measured).
 - [ ] Layout assumptions: `rg 'repr\(' -t rust` — byte-casting/FFI types have
       `repr(C)`/`repr(transparent)`; `rg 'as usize as \*|usize as \*' -t rust`
       — int→ptr casts (provenance loss).

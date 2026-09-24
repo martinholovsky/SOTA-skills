@@ -5130,3 +5130,53 @@ at intake:**
 - the MySQL C API pages for `mysql_real_query` and `mysql_stmt_prepare`;
 - `pypa/gh-action-pypi-publish` `action.yml` (`attestations` defaults to `'true'`);
 - `uv publish --help` (`UV_PUBLISH_TOKEN`) and twine's docs (`TWINE_PASSWORD`).
+
+## 2026-09-24 — gap-check 5 of 9: sota-rust against the ANSSI Secure Rust Guidelines
+
+The denominator is **60**, derived twice:
+- the source's reco blocks give **61** IDs, with the English and French lists identical;
+- the rendered checklist page gives **60**.
+
+The difference is `LIBS-UNSAFE`, a `TODO` inside an HTML comment: the renderer drops it and a
+source grep counts it. That is the gosec lesson at the scale of one row. The guide is under
+the Licence Ouverte 2.0, which is permissive, and IDs and ideas were taken, not text. No clippy
+registry was derived.
+
+**Buckets: 26 covered (one stale), 6 covered as a class, 1 rule stated with no probe, 2
+deliberately not a rule, and 25 real gaps, all closed.** The gaps were not scattered. They
+were three whole sections the skill never had.
+
+| gap | landed | what made it real |
+|---|---|---|
+| The FFI boundary (13 IDs) | `sota-rust` rules/03 §3b plus a probe | `improper_ctypes` warns on `String`/`&str` but **is silent on a `#[repr(u8)]` enum or a `bool` parameter** (measured). A single out-of-range value arriving from C is immediate UB, per the Reference |
+| Leak APIs (7 IDs) | rules/03 §3c plus a probe | `clippy::mem_forget` fires only on types with drop glue. Set to deny, it failed on `mem::forget(Vec)` and said nothing about `Box::leak` in the same file (measured) |
+| The build outside `Cargo.toml` (4 IDs) | rules/07 §4a plus three probes | `RUSTFLAGS='-C overflow-checks=off'` beat `[profile.release] overflow-checks = true`, and so did a `.cargo/config.toml` in a **parent directory**. A parent-dir `rustc-wrapper` ran on `cargo check` |
+| `assert!` and `debug_assert!` | rules/02 §5 plus a probe | a `debug_assert!` that fired under `cargo test` was silent under `--release` |
+| `mem::uninitialized` and `mem::zeroed` | rules/03 checklist | the rule existed and the probe did not. `invalid_value` is silent on a generic `T` (measured) |
+
+**One correction.** rules/02 said a panic unwinding out of `extern "C"` is UB and Critical.
+Since 1.81 it aborts. It is now High (a DoS), with UB kept for an MSRV below 1.81 and for
+foreign exceptions.
+
+**Re-measured by the integrating session, not taken from the agent's report:**
+- **The 1.81 abort:** `rustc` 1.97.1 gave exit 134 with "non-unwinding panic", and a
+  `catch_unwind` around the call did not catch it. The 1.81.0 release post names the change.
+- **`RUSTFLAGS`:** a release build with `overflow-checks = true` panicked on overflow (exit
+  101). With `RUSTFLAGS='-C overflow-checks=off'` it wrapped to 0 and exited 0.
+- **Probes:** the agent's harness extracts each probe's exact text from the committed files.
+  All **22** fixture arms pass under ugrep and under BSD grep (44/44). The rules/01 `pub`-field
+  probe is not in that harness; it was tested separately and scored 2 hits on bad, 0 on good,
+  under both greps. The agent's report said "26/26 per grep". The difference is not
+  reconciled, so this entry records only what was re-run.
+
+**Two first drafts were wrong and were fixed before commit.** A `grep -r … . .cargo` exited 2
+under ugrep when `.cargo` did not exist, and double-reported under BSD grep, which enters
+hidden directories that ugrep skips (measured). An ancestor-walk probe's exit status was
+always 0.
+
+**Concept matrix:** rust's module-boundaries cell was real. The `pub`-field bypass of a
+validating constructor had a rule and no probe, and is now closed in rules/01. SQL and logging
+were vocabulary artefacts, fixed in `gen-concept-matrix.py`. Rust now classifies 82 of 102
+items, and none of its cells is a candidate. Its temp-file and host-key findings (`russh`
+rejects unknown keys by default; `ssh2`'s `handshake()` accepts any) are held for the shared
+classes in `sota-code-security`.

@@ -303,6 +303,13 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
       broken `Ord` corrupts `sort`/`BinaryHeap`/`BTreeMap` or panics. Prefer
       `#[derive]`. `LANG-CMP-INV`. `clippy::derive_ord_xor_partial_ord`,
       `clippy::non_canonical_partial_ord_impl`.
+- [ ] **Validation bypassed through a `pub` field** (§3, §9):
+      `grep -rnE '^[[:space:]]*pub [a-z_][a-z0-9_]*:|struct [A-Z][A-Za-z0-9_]*(<[^>]*>)?\(pub ' --include='*.rs' .`
+      — a `pub` field on a type that also has a validating constructor (`new`/`TryFrom`
+      returning `Result`) lets any caller build the invalid value = Medium (High when the
+      invariant is security-relevant, or when `unsafe` code relies on it — rules/03 §1).
+      rustc's `unreachable_pub` (allow-by-default) lists `pub` items that should be
+      `pub(crate)`.
 - [ ] Multi-crate repo without `[workspace.dependencies]` → version drift;
       `cargo tree -d` to find duplicate dependency versions.
 - [ ] Clippy gates for this file's concerns: `clippy::needless_pass_by_value`,

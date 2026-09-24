@@ -168,6 +168,39 @@ a commit message as fact. The verifier's own numbers before and after were **ide
   (reproducible builds, same clippy everywhere). Libraries: MSRV floor +
   stable-latest CI matrix.
 
+### 4a. The build is more than `Cargo.toml` — flags, profiles, channel, target
+
+The profile a reviewer reads in `Cargo.toml` is not the whole build. Measured on cargo
+1.97.1 unless a doc is cited:
+
+- **Flags from outside the manifest override the profile.** Cargo passes
+  `-C overflow-checks=on` from `[profile.release] overflow-checks = true` and then
+  *appends* `RUSTFLAGS`, so `RUSTFLAGS='-C overflow-checks=off'` won: an overflow test that
+  failed without it passed with it. `CARGO_BUILD_RUSTFLAGS`, `CARGO_ENCODED_RUSTFLAGS` and
+  `[build] rustflags` in a `.cargo/config.toml` did the same — including a config file in a
+  **parent directory** of the crate. Cargo reads `.cargo/config.toml` from the working
+  directory and every ancestor, then `$CARGO_HOME` (cargo reference, "Hierarchical
+  structure"). Nothing in the repository changed.
+- **`rustc-wrapper` runs a program on every compile.** A `[build] rustc-wrapper` in any of
+  those files ran on `cargo check` (not on `cargo metadata`). That is build-time code
+  execution with `build.rs`'s trust (rules/05 §2), except it can come from outside the
+  repository. A legitimate wrapper (e.g. a compiler cache) is named, pinned and documented.
+- **Dev and test profiles keep their checks.** `overflow-checks` and `debug-assertions` are
+  on by default in `dev`/`test`. Turning them off there — in `Cargo.toml` or in a config
+  file's `[profile.*]` — made an overflow test and a `debug_assert!` test pass that had
+  failed. The suite then stops catching the wrapping arithmetic that release ships silently
+  (rules/05 §3). (ANSSI DENV-CARGO-OPTS, DENV-CARGO-ENVVARS)
+- **Ship from stable.** `#![feature(..)]` fails on stable (E0554) until `RUSTC_BOOTSTRAP=1`
+  is set; with it, the same crate built on the stable toolchain. Treat `RUSTC_BOOTSTRAP`
+  anywhere in a release build as a nightly build. Nightly jobs for Miri, sanitizers and
+  fuzzing (rules/03 §4) are tooling; they do not build what ships. (DENV-STABLE)
+- **A deploy target is a tier decision.** Per the rustc platform-support page, tier 1 is
+  "guaranteed to work" (built and tested on every change), tier 2 "guaranteed to build"
+  (tests not always run), and tier 3 has no official builds. Tiers move:
+  `x86_64-apple-darwin` was tier 1 at 1.85 and later dropped to tier 2, so re-check at each
+  toolchain bump. Safety-critical software uses tier-1 targets and a qualified toolchain.
+  (DENV-TIERS)
+
 ## 5. Feature flag hygiene
 
 Features must be **additive**: enabling a feature may only add API/behavior,
@@ -322,6 +355,20 @@ gate (rules/06). Cache with `Swatinem/rust-cache`; pin action SHAs (rules/05).
       configured; `rg '#\[ignore\]' -t rust` — ignored tests have reasons.
 - [ ] `rust-version` declared AND exercised by a CI job; binaries have
       `rust-toolchain.toml`. `cargo msrv verify` passes.
+- [ ] **Profile overrides** (§4a): `find . \( -name Cargo.toml -o -path '*/.cargo/config' -o -path '*/.cargo/config.toml' \) -type f -not -path '*/target/*' -exec grep -nE '^[[:space:]]*(overflow-checks|debug-assertions)[[:space:]]*=[[:space:]]*false' /dev/null {} +`
+      — a hit under `[profile.dev]`/`[profile.test]`, or a profile inheriting them, =
+      Medium. `find`, not `grep -r .`: it enters `.cargo/`, which `rg` and `ugrep` skip by
+      default (measured for ugrep).
+- [ ] **Flag and wrapper overrides** (§4a): `find . \( -path '*/.cargo/config' -o -path '*/.cargo/config.toml' -o -path '*/.github/*' -o -name '.gitlab-ci.yml' -o -name Makefile -o -name justfile -o -name Dockerfile \) -type f -not -path '*/target/*' -exec grep -nE 'rustflags|rustc-wrapper|rustc[[:space:]]*=|RUSTFLAGS|RUSTC_WRAPPER|RUSTC_BOOTSTRAP|CARGO_(BUILD|ENCODED)_RUSTFLAGS' /dev/null {} +`
+      — `-C overflow-checks`/`-C debug-assertions` in any hit overrides the profile =
+      Medium; an unexplained `rustc-wrapper` = High; `RUSTC_BOOTSTRAP` in a release build =
+      Medium. Then the ancestors, which no repository search sees — on the build machine:
+      `d=$PWD; c=0; n=0; while :; do for f in "$d/.cargo/config" "$d/.cargo/config.toml"; do [ -f "$f" ] || continue; c=$((c+1)); grep -nE 'rustflags|rustc-wrapper|rustc[[:space:]]*=' "$f" /dev/null && n=$((n+1)); done; [ "$d" = / ] && break; d=$(dirname "$d"); done; echo "ancestor configs read: $c, with overrides: $n" >&2; [ "$n" -gt 0 ]`
+      — like `grep`, exits 0 on a hit and 1 on none, and prints how many files it read (plus
+      `$CARGO_HOME/config.toml` when `CARGO_HOME` is set elsewhere).
+- [ ] Channel and target (§4a): `grep -rnE '#!\[feature\(' --include='*.rs' .` in a shipped
+      crate = Medium (a nightly-only build); the release build's toolchain is stable; each
+      deploy target triple is tier 1, or tier 2 by a recorded decision.
 - [ ] Features: `rg 'no[-_](std|default)' Cargo.toml` style negative features
       = Medium (non-additive); optional deps using `dep:`; feature matrix job
       (`cargo hack`) present; `--no-default-features` builds.

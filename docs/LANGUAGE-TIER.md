@@ -308,7 +308,7 @@ After #426 every language has every applicable topic (page 5 has no blank cells;
 |---|---|---|---|---|
 | python | 2,152 | 65 | 3.0 | done (Bandit) |
 | go | 2,151 | 71 | 3.3 | done (gosec) |
-| rust | 2,057 | 94 | 4.6 | **not yet** |
+| rust | 2,218 | 102 | 4.6 | done (ANSSI, 2026-09-24) |
 | js/ts | 1,804 | 110 | 6.1 | **not yet** |
 | php | 1,143 | 41 | 3.6 | **not yet** |
 | ruby | 1,125 | 55 | 4.9 | done (Brakeman) |
@@ -328,7 +328,7 @@ injection, path traversal) are covered at `sota-dotnet` rules/04:35–38, and it
 simply misses .NET's phrasing.
 
 Coverage inside this tier is checked against an **external, enumerable, tool-backed list** —
-the method already used for Go (OWASP Go-SCP) and Rust (ANSSI). Four are done:
+the method already used for Go (OWASP Go-SCP) and Rust (ANSSI). Five are done:
 
 | language | denominator | source | result |
 |---|---|---|---|
@@ -336,8 +336,9 @@ the method already used for Go (OWASP Go-SCP) and Rust (ANSSI). Four are done:
 | golang | **61 checks** | gosec 2.29.0 `rulelist.go` (39) + `analyzerslist.go` (22) | 4 gaps closed |
 | c-cpp | **342 checks** | cppcheck 2.21.0 `--errorlist`, two agreeing derivations; MISRA addon (132 rules) is a separate registry | 4 gaps closed |
 | ruby | **86 checks** (79 default + 7 optional) | Brakeman 8.0.6: source `check_*.rb` classes and the tool's own `--checks` registry (run in a container) agree name-for-name, and the `add`/`add_optional` registrations sum to the same 86 | 7 gaps closed, 1 held for a decision |
+| rust | **60 recommendations** (46 rules + 14 recommendations) | ANSSI Secure Rust Guidelines at `3f9e2e2`: the source's reco blocks give 61 (en and fr identical), the rendered checklist page 60. The extra is `LIBS-UNSAFE`, a TODO inside an HTML comment that the renderer drops. No clippy registry derived | 25 gaps closed in three new sections (rules/03 §3b FFI boundary, §3c leak APIs, rules/07 §4a build config outside `Cargo.toml`) plus probes; one stale rule corrected (a panic out of `extern "C"` aborts since 1.81) |
 
-Remaining: **rust, jvm, javascript-typescript, dotnet, php** — 5. Candidate
+Remaining: **jvm, javascript-typescript, dotnet, php** — 4. Candidate
 denominators — ruby/Brakeman, js-ts/eslint-plugin-security, rust/clippy + ANSSI.
 **jvm and .NET have no queryable local tool**, which may itself be the finding rather than a
 reason to skip them.

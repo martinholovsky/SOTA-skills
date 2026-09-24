@@ -112,9 +112,14 @@ bad input, missing files, network failure, or anything an attacker controls.
   `catch_unwind`, panics kill the process. Decide deliberately for servers —
   abort+supervisor-restart is a valid stance, but then panic-freedom of
   handlers is load-bearing.
-- **FFI**: unwinding across `extern "C"` is UB. Wrap Rust callbacks invoked
-  from C in `std::panic::catch_unwind` (or use `extern "C-unwind"` only when
-  both sides genuinely support it).
+- **FFI**: a Rust panic that reaches an `extern "C"` boundary **aborts the
+  process** — since Rust 1.81; before that it was UB. Measured on 1.97.1: exit
+  134, "panic in a function that cannot unwind", and a `catch_unwind` *around
+  the call* did not catch it. So put `std::panic::catch_unwind` **inside** the
+  body of every Rust function called from C and turn a panic into an error code.
+  Use `extern "C-unwind"` only when both sides genuinely support unwinding. A
+  C++ exception unwinding into Rust through a `"C"` declaration is still UB
+  (Reference, "Unwinding across FFI boundaries").
 - **`Drop` impls must not panic.** `drop()` itself runs during unwinding from
   another panic; a panic there is a *double panic* that — per the std `Drop`
   docs — "will likely abort the program." So a panicking destructor turns one
@@ -122,6 +127,13 @@ bad input, missing files, network failure, or anything an attacker controls.
   normally; if a Drop genuinely must signal misuse, gate it on
   `std::thread::panicking()` first. This applies to RAII guards, buffer
   flushers, and `Zeroize`-on-drop types alike. (ANSSI `LANG-DROP-NO-PANIC`)
+- **`assert!` is a panic; `debug_assert!` is not a check.** `assert!`/`assert_eq!`
+  on an input-derived condition is the same DoS as `panic!`. `debug_assert!`
+  compiles out wherever `debug-assertions` is off: the release profile's default,
+  and any profile or `RUSTFLAGS` override that turns it off (rules/07 §4a).
+  Measured: a `debug_assert!` that fired under `cargo test` was silent under
+  `cargo test --release`. Never make it the only guard of a condition an attacker
+  can reach — return an error. (ANSSI `LANG-LIMIT-PANIC-SRC`)
 - Poisoned mutexes (`std::sync::Mutex`): a panic while holding the lock poisons
   it. Decide policy once: propagate (`lock().expect("not poisoned: …")`) or
   recover (`unwrap_or_else(PoisonError::into_inner)`) — document which.
@@ -261,8 +273,12 @@ fn main() -> ExitCode {
 - [ ] Double-logging: error logged at propagation site AND handler.
 - [ ] `?` chains with no `.context(...)` anywhere between syscall and `main` —
       undebuggable errors.
-- [ ] FFI: `extern "C"` functions whose bodies can panic without
-      `catch_unwind` → UB, Critical.
+- [ ] FFI: `grep -rnE 'extern "C(-unwind)?" fn' --include='*.rs' .` — a body that
+      can panic without an inner `catch_unwind` aborts the process (since 1.81) =
+      High (DoS); with a declared MSRV below 1.81 it is UB = Critical.
+- [ ] `grep -rnE '(debug_)?assert(_eq|_ne)?!\(' --include='*.rs' --exclude-dir=tests --exclude-dir=benches --exclude-dir=examples .`
+      (then skip `#[cfg(test)]` modules) — `assert!` on an input-derived condition =
+      High (DoS); `debug_assert!` as the only guard of one = no check in release, High.
 - [ ] `Drop` impls that can panic: `rg -A15 'impl Drop' -t rust` then scan for
       `unwrap`/`expect`/`panic!`/indexing/`?` inside `fn drop` — double-panic
       aborts the process (DoS), High. `LANG-DROP-NO-PANIC`.
