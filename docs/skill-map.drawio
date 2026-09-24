@@ -850,25 +850,25 @@
         <mxCell id="mtlines1" value="2167" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="538" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines2" value="1130" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines2" value="1159" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="646" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines3" value="972" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines3" value="985" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="754" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines4" value="2167" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines4" value="2201" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="862" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines5" value="2065" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines5" value="2072" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="970" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines6" value="769" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines6" value="776" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="1078" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines7" value="1345" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines7" value="1354" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="1186" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines8" value="1142" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines8" value="1166" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="1294" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="mt_files" value="files" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=10;fontSize=11;" vertex="1" parent="1">
@@ -931,7 +931,7 @@
         <mxCell id="msh8" value="09&lt;br&gt;Listing and selection: the" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fdf6d8;strokeColor=#d6b656;fontSize=9;" vertex="1" parent="1">
           <mxGeometry x="1240" y="782" width="144" height="40" as="geometry"/>
         </mxCell>
-        <mxCell id="m_note2" value="API / design was the one asymmetry that did not track a language difference. CLOSED 2026-09-22 (ROADMAP 57): all nine now carry it, as a dedicated file in some and a section inside the idioms file in others, and gen-concept-matrix.py pins it at 9/9 so it cannot regress.&lt;br&gt;&lt;br&gt;Per-language detail deliberately NOT repeated here -- it lives in docs/LANGUAGE-TIER.md. This sentence named the languages twice and rotted twice in two days (2026-09-21 and -22), because a hand-written list inside a GENERATED artifact has no gate: the map gate proves the artifact matches the generator, never that the generator is true.&lt;br&gt;&lt;br&gt;RETRACTED 2026-09-21 — this note previously read &quot;jvm and .NET are 3–4x thinner&quot;. True of line count, false of what line count stood in for: per 100 rules-lines they carry the HIGHEST audit-item density in the library (.NET 7.3, jvm 6.8 — COMPUTED NOW, not the 2026-09-21 figures of 10.6 and 10.5; the counting changed when the checklists were unified). Lowest is python at 3.1. The bounded deficit is worked examples.&lt;br&gt;&lt;br&gt;The old caveat here -- that checkbox and shell-block formats are not comparable, so the read was within-format -- was RETIRED 2026-09-23: all nine now use one format, so this ranking is tier-wide. It also corrected a false superlative: this line used to say rust was lowest." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="m_note2" value="API / design was the one asymmetry that did not track a language difference. CLOSED 2026-09-22 (ROADMAP 57): all nine now carry it, as a dedicated file in some and a section inside the idioms file in others, and gen-concept-matrix.py pins it at 9/9 so it cannot regress.&lt;br&gt;&lt;br&gt;Per-language detail deliberately NOT repeated here -- it lives in docs/LANGUAGE-TIER.md. This sentence named the languages twice and rotted twice in two days (2026-09-21 and -22), because a hand-written list inside a GENERATED artifact has no gate: the map gate proves the artifact matches the generator, never that the generator is true.&lt;br&gt;&lt;br&gt;RETRACTED 2026-09-21 — this note previously read &quot;jvm and .NET are 3–4x thinner&quot;. True of line count, false of what line count stood in for: per 100 rules-lines they carry the HIGHEST audit-item density in the library (.NET 7.3, jvm 6.8 — COMPUTED NOW, not the 2026-09-21 figures of 10.6 and 10.5; the counting changed when the checklists were unified). Lowest is python at 3.3. The bounded deficit is worked examples.&lt;br&gt;&lt;br&gt;The old caveat here -- that checkbox and shell-block formats are not comparable, so the read was within-format -- was RETIRED 2026-09-23: all nine now use one format, so this ranking is tier-wide. It also corrected a false superlative: this line used to say rust was lowest." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF9B2;strokeColor=none;fontSize=11;align=left;verticalAlign=top;" vertex="1" parent="1">
           <mxGeometry x="40" y="854" width="900" height="150" as="geometry"/>
         </mxCell>
       </root>

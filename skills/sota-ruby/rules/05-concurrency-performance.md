@@ -46,6 +46,11 @@ Consequences:
 - **`Thread#[]`/`Thread#[]=` are fiber-local, not thread-local** — under a
   fiber scheduler or streaming server this "thread-local" silently resets;
   true thread-locals are `Thread#thread_variable_get/set`.
+- **`Queue.new` is unbounded; `SizedQueue.new(n)` is the backpressure.** Measured on Ruby
+  4.0.6: 10,000 pushes into a `Queue` all succeeded and it has no `max`, while a
+  `SizedQueue.new(2)` refused a third non-blocking push with `ThreadError (queue full)`. A
+  plain push to a full `SizedQueue` blocks the producer, which is the point. Use it between a
+  producer and consumers that can fall behind.
 - Spawned threads: handle exceptions (a dead worker thread fails silently
   unless `abort_on_exception`/`report_on_exception` or a join checks it) and
   join on shutdown.
@@ -197,6 +202,12 @@ Run from repo root; verify each hit manually.
       `grep -rnE "\.all\.each\b" --include='*.rb' . | head`
 - [ ] **Unbounded scans** —
       `grep -rnE "\.(map|each)\b" --include='*.rb' app/ 2>/dev/null | grep -vE "find_each|in_batches" | grep -E "\.(all|where\([^)]*\))\." | head`
+- [ ] **Unbounded producer/consumer queue (§2) — MEDIUM, HIGH when the producer is external
+      input** — `grep -rnE 'Queue\.new' --include='*.rb' app/ lib/ | grep -v 'SizedQueue'`
+- [ ] **A profiler exists before an optimisation lands (§8) — INFO; a perf PR with no
+      before/after numbers = LOW** —
+      `grep -nE 'stackprof|vernier|memory_profiler|benchmark-ips' Gemfile Gemfile.lock`
+      (none: nothing in the repo can produce the measurement §8 requires)
 
 Severity guide: non-idempotent retried job with side effects (payments,
 emails) HIGH; enqueue-in-transaction, `Timeout.timeout` around transactions,

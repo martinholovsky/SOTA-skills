@@ -269,6 +269,14 @@ Run from repo root; verify each hit manually.
       `grep -rnE '^\s*(public|protected|private)\s+\$' --include='*.php' src/`
 - [ ] **switch on request-derived values — prefer match** —
       `grep -rn 'switch\s*(' --include='*.php' src/`
+- [ ] **Mutable dates and implicit zones (§5)** —
+      `grep -rnE 'new \\?DateTime\(|date_create\(' --include='*.php' src/` (mutable: measured on
+      PHP 8.5, `$d->modify('+1 day')` returns the SAME object, so every holder of `$d` moves;
+      `DateTimeImmutable` returns a new one) ;
+      `grep -rnE 'new \\?DateTime(Immutable)?\([^)]*\)' --include='*.php' src/ | grep -v 'DateTimeZone'`
+      (no explicit zone: the process default decides) ;
+      `grep -rnE 'strtotime\([[:space:]]*\$_(GET|POST|REQUEST|COOKIE)' --include='*.php' src/`
+      (request input parsed unvalidated; `strtotime` returns `false` on garbage)
 
 Severity guide: EOL PHP in production HIGH; missing strict_types project-wide
 MEDIUM; loose `==` on security decisions HIGH; `@`-suppressed security function

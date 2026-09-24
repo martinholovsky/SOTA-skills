@@ -365,3 +365,9 @@ own deprecations without noticing.
       `grep -rn 'error::DeprecationWarning' pyproject.toml setup.cfg pytest.ini tox.ini 2>/dev/null`
 - [ ] **__slots__ added to a class that subclasses something unslotted — no saving [INFO]** —
       `grep -rn -B3 '__slots__' --include="*.py" src/ | grep 'class .*('`
+- [ ] **Money in binary floats (§12) — MEDIUM, HIGH in billing** —
+      `grep -rnE 'Decimal\([[:space:]]*-?[0-9]+\.[0-9]' --include='*.py' src/` (built from a
+      float literal: measured on 3.14, `Decimal(0.1)` is
+      `0.1000000000000000055511151231257827021181583404541015625`; pass the string `'0.1'`) ;
+      `grep -rniE '(price|amount|total|balance|cost|fee)[a-z_]*[[:space:]]*(:[[:space:]]*float|=[[:space:]]*float\()' --include='*.py' src/`
+      (a money value typed or parsed as `float`)

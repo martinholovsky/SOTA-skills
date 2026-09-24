@@ -303,6 +303,35 @@ command), php date/time (`clock` in "wall-clock bound"), and .NET and ruby modul
 (`import` inside `DllImport` and inside a Python one-liner). They are untriaged. A present
 cell is a candidate too.
 
+**Fourth pass, 2026-09-24: the false presences.** The third pass traced six present cells to
+a substring accident. This pass printed the substring behind **every** present cell
+(`--explain all all`) and tightened the matcher; 28 cells went absent. **17 were real** and are
+closed, **7 were artefacts** (their real probe added to the vocabulary), **4 are delegated or
+a class**. Two of the accidents sat under pinned floor concepts (c/c++ vulnerability scanning
+and input validation), so `--assert-universal` was passing on a false 9/9. After the pass the
+floor holds 24 concepts, each cell's substring read by hand.
+
+| candidate (the accident) | verdict | evidence |
+|---|---|---|
+| c/c++ logging (`syslog`) | **REAL, closed** | no rule; rules/04 §3 bullet + probe (CWE-117, secrets to `syslog`/`fprintf(stderr)`) |
+| c/c++ vuln scanning, provenance ("safety-standard", "size provenance") | **REAL, closed** | rules/06 §5 stated both; probe: `URL` without `URL_HASH`, non-commit `GIT_TAG`, no CVE/SBOM step |
+| c/c++ input validation ("invalidation", `-fsanitize`) | **REAL, closed** | rules/04 §2 stated it; probe: bounds check as `assert`, embedded length into `memcpy`/`malloc` |
+| python data race, XSS, authn, backpressure, numeric | **REAL, closed** | rules/01 §8, 05 §1, 05 §7a, 04 §9, 03 §12 stated each; probes added |
+| jvm numeric ("concurrency") | **REAL, closed** | no rule; rules/01 §1 `BigDecimal` bullet + probe |
+| php date/time ("wall-clock bound") | **REAL, closed** | rules/01 §5 stated it; probe added |
+| ruby resource lifecycle, backpressure | **REAL, closed** | no rule; rules/01 §7 block form, rules/05 §2 `SizedQueue` |
+| ruby module boundaries, profiling | **REAL, closed** | rules/01 §7, rules/05 §8 stated them; probes added |
+| .NET module boundaries (`DllImport`) | **REAL, closed** | rules/02 §6 stated it; `InternalsVisibleTo` probe |
+| js/ts provenance ("published package") | **REAL, closed** | rules/05 npm supply chain stated it; token/trusted-publishing probe |
+| php absence; python, js/ts version floor; js/ts data race, allocation; go provenance, input validation | artefact | strpos truthiness; `requires-python`; `engines.node`; check-then-act; unbounded `Map`; `GOSUMDB`; `MaxBytesReader` |
+| rust N+1 (`n=$((n+1))`) | delegation | `sota-performance` rules/02 §1–§2, as for c/c++ and jvm |
+| php task leaks, backpressure, provenance | delegation / class | FPM shared-nothing; `pm.max_children` probe; install-time-code probe |
+
+`numeric precision & money` remains 3/9 and is not triaged for rust, go, c/c++, .NET, php
+and ruby. It is never listed as a candidate because six languages miss it, and the matcher
+lists a universal concept only when five or fewer do. A count over all 32 universal rows found
+it is the only concept hidden that way today. Tracked as **ROADMAP 65**.
+
 ### Verified gap: nobody probes the linter's escape hatch in jvm, .NET or c/c++
 
 Six of nine languages probe *"someone silenced the analyser"* — rust (`#![allow]` without a

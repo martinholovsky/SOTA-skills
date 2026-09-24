@@ -90,12 +90,19 @@ but the `out` value **is** an in-band sentinel the moment the `bool` is ignored.
       `grep -rnE 'GetService|GetRequiredService|IServiceProvider' --include='*.cs' . | head`
       (service locator?)
 - [ ] **Mutable static state — MEDIUM** —
-      `grep -rnE 'static (?!readonly|class|void|async|partial)[A-Za-z<>\[\]?]+ [A-Za-z]' --include='*.cs' . | head`
+      `grep -rnE '^[[:space:]]*((public|private|protected|internal)[[:space:]]+)*static[[:space:]]+[A-Za-z_][A-Za-z0-9_<>,?. ]*(\[\])?[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*(=|;|\{)' --include='*.cs' . | grep -vwE 'readonly|const|class|struct|record|interface|enum|delegate'`
+      (static fields and properties. The earlier one-pattern form used a `(?!` lookahead, which
+      POSIX ERE rejects: exit 2 under BSD grep and ugrep alike, measured 2026-09-24)
 - [ ] **throw ex / swallow — MEDIUM (see rules/01)** —
       `grep -rnE 'throw ex;' --include='*.cs' .`
 - [ ] **Mutable collection exposed — LOW** —
       `grep -rnE 'public (List|Dictionary|HashSet)<' --include='*.cs' . | head` (prefer
       IReadOnly* / encapsulate)
+- [ ] **Assembly boundary widened for production code (§6) — MEDIUM** —
+      `grep -rn 'InternalsVisibleTo' --include='*.cs' --include='*.csproj' --include='*.props' . | grep -vi 'test'`
+      (§6 keeps it for test access; a production friend assembly couples two assemblies'
+      internals. Measured on SDK 10.0.401: a csproj `<InternalsVisibleTo Include="..." />` item
+      emits the same `[assembly: InternalsVisibleTo]` attribute, so search both)
 - [ ] **In-band sentinels (§1a) — `int?` over a magic int; TryParse's bool is the signal** —
       `grep -rnE 'return -1;' --include='*.cs' .` (producer; prefer int?);
       `grep -rnE 'TryParse\([^)]*out var [a-z]+\);' --include='*.cs' .` (bool DISCARDED -> out

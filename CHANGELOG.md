@@ -70,6 +70,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - the PHP log-injection probe.
   - **Shared host-key rows** for `russh`, Rust `ssh2`, phpseclib, ext-ssh2 and SSH.NET.
   - **The PHP TLS-off pattern** is widened from one spelling to six.
+- **Concept matrix, fourth pass.**
+  - `gen-concept-matrix.py --explain` prints the substring behind each cell.
+  - The sweep found substring accidents across the matrix: `null` in `/dev/null`, `lock` in
+    lockfile, `lts` in "results", `validat` in "invalidation". Two pinned floor concepts were
+    9/9 only by accident.
+  - Patterns are tightened. The 28 cells that went absent were triaged: 17 real gaps closed, 7
+    artefacts, 4 delegated.
+  - `UNIVERSAL_FLOOR` goes from 13 to 24 concepts, each cell read by hand.
 - **Temp-file and permission hygiene is a shared class**, in `sota-code-security` rules/06
   §6.1:
   - one rule, with a measured unsafe/safe row and a fixture-tested detector for each language;
@@ -84,6 +92,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Four checklist probes could never run.** They used a PCRE lookahead `(?!…)` inside
+  `grep -E`, which exits 2 under both BSD grep and ugrep. One of them also discarded stderr, so
+  it reported nothing at all. The four are .NET and jvm mutable static state, jvm data-race
+  smells, and php XSS.
 - **Invariant 20 printed nothing when it passed**, so a run could not show it had executed.
   Three agents read the silence as "did not run". It now prints `ok` with the pinned hash, and
   a drift copy still fails (exit 1, `AUDIT DRIFT`).

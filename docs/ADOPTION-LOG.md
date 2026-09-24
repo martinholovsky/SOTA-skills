@@ -5496,3 +5496,51 @@ cannot show. They are recorded, not fixed.
 - The harness's command list was re-extracted from the agent's committed diff (26 commands)
   and re-run: **52/52**.
 - Go's `t == t.Round(0)` printed `false` on a fresh run, the trap the go probe names.
+
+## 2026-09-24 — concept-matrix fourth pass: the matcher's false presences
+
+**Intake shape: the matrix's own present cells.** The third pass found six cells lit by a
+substring accident. This pass printed the substring behind every present cell
+(`gen-concept-matrix.py --explain all all`) and found the class was far wider: `/dev/null`,
+`uv.lock`, `// SAFETY:`, "concurrency", "results", "iterator invalidation", `-fsanitize`.
+Two **pinned** floor concepts were 9/9 only by accident on c/c++ — vulnerability scanning
+("safety-standard analysis") and input validation. Of 28 cells that went absent, **17 were
+real**, **7 were vocabulary artefacts** and **4 were delegated or covered as a class**.
+
+| cell | verdict | landed |
+|---|---|---|
+| c/c++: logging, vuln scanning, provenance, input validation | **adopted: probe for a stated rule** (logging: rule and probe) | rules/04 §2, §3; rules/06 §5 — CWE-117; `URL_HASH`/`GIT_TAG` from CMake's docs; OSV-Scanner's `conan.lock` row |
+| python: data race, autoescape, assert-as-authz, unbounded queue, money | **adopted: probe for a stated rule** | rules/01 §8, rules/05 §1 and §7a, rules/04 §9, rules/03 §12; Jinja2 3.1.6 and 3.14.6 runs |
+| jvm: numeric | **adopted: rule and probe** | rules/01 §1: `new BigDecimal(0.1)`, `equals` vs `compareTo`, `divide` without scale — JDK 25 run |
+| php: date/time | **adopted: probe for a stated rule** | rules/01 §5; PHP 8.5.9 run (`modify` mutates) |
+| ruby: resource lifecycle, backpressure | **adopted: rule and probe** | rules/01 §7 block form; rules/05 §2 `SizedQueue` — Ruby 4.0.6 runs |
+| ruby: module boundaries, profiling | **adopted: probe for a stated rule** | rules/01 §7 `require_relative`; rules/05 §8 |
+| .NET: module boundaries | **adopted: probe for a stated rule** | rules/02 §6 `InternalsVisibleTo`, csproj item measured on SDK 10.0.401 |
+| js/ts: provenance | **adopted: probe for a stated rule** | rules/05 npm supply chain: tokens vs trusted publishing (npm docs) |
+| php absence; python, js/ts version floor; js/ts data race, allocation; go provenance, input validation | **vocabulary artefact** | strpos truthiness; `requires-python`; `engines.node`; check-then-act; unbounded `Map` cache; `GOSUMDB`/`go mod verify`; `MaxBytesReader` |
+| rust N+1; php task leaks, backpressure, provenance | **rejected: delegated / covered as a class** | `sota-performance` rules/02; FPM shared-nothing; `pm.max_children`; install-time-code probe |
+
+**Four probes never ran.** A PCRE `(?!…)` lookahead inside `grep -E` exits 2 under BSD grep
+and ugrep alike: .NET and jvm "Mutable static state", jvm "Data-race smells", and php's XSS
+probe — which also discarded stderr, so it reported nothing. Rewritten as ERE plus `grep -v`.
+
+**Measured:** 20 items, 41 commands extracted from the committed files, each on a known-bad
+and a known-good fixture: 82/82 under BSD grep, 82/82 under ugrep. `--assert-universal` exits
+0 with 24 pinned concepts and exit 1 when a non-9/9 concept is pinned.
+
+**Re-measured by the integrating session:**
+- The agent's harness passes **82/82 under BSD grep and 82/82 under ugrep**: 41 commands
+  extracted from the committed files, each on a known-bad and a known-good fixture.
+- `--assert-universal` exits 0 with 24 pinned concepts. The agent's saved failure run shows it
+  exiting 1 with a concept pinned that is not 9/9.
+- A PCRE lookahead inside `grep -E` exits 2 under both BSD grep 2.6.0 ("repetition-operator
+  operand invalid") and ugrep 7.8.4 ("invalid syntax"), so the four probes that used one
+  could never have reported anything.
+- The README hero count moved from ~72k to ~73k lines. The agent made this one edit outside
+  its file bounds because invariant 6 blocked the commit, and it asked for it to be reviewed.
+  It is the gate's own arithmetic (72,534 lines), not a judgement.
+
+**The matcher's listing threshold hides a concept that is missing almost everywhere.** A
+universal concept becomes a candidate only when five or fewer languages lack it. A count over
+all 32 universal rows found one concept hidden that way: `numeric precision & money`, at 3/9.
+It is recorded as ROADMAP 65 rather than triaged here.

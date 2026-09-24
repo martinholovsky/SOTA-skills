@@ -377,3 +377,15 @@ foreign function, and validate lengths before they cross. The class is `sota-cod
 - [ ] **--- Debug consoles (§8a) ---** —
       `grep -rnE 'debug\s*=\s*True|DEBUG\s*=\s*True' --include="*.py" src/` (literal, not env
       [HIGH in prod path])
+- [ ] **--- Template autoescape (§1) --- [HIGH where user data renders into HTML]** —
+      `grep -rnE 'Environment\(|Template\(' --include='*.py' src/` (read each for `autoescape=`:
+      measured with Jinja2 3.1.6, `Environment().autoescape` is `False` and `{{ x }}` rendered
+      `<script>` verbatim, while `select_autoescape()` escaped it) ;
+      `grep -rnE 'autoescape[[:space:]]*=[[:space:]]*False|Markup\(|mark_safe\(|\|[[:space:]]*safe' --include='*.py' --include='*.html' --include='*.j2' .`
+      (each explicit opt-out needs a reason)
+- [ ] **--- `assert` as a control (§7a) --- [HIGH where it guards authorization or
+      validation]** —
+      `grep -rnE '^[[:space:]]*assert[[:space:]]' --include='*.py' src/` (outside tests every
+      hit is a check that `-O` deletes; read the handlers, validators and permission code) ;
+      `grep -rnE 'python[0-9.]*("?,)?[[:space:]]+"?-OO?([[:space:]",]|$)|PYTHONOPTIMIZE' --include='Dockerfile*' --include='*.sh' --include='*.y*ml' --include='*.toml' .`
+      (the deployment that runs optimized)

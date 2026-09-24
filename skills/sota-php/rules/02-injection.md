@@ -230,7 +230,8 @@ Run from repo root; verify each hit manually (greps are recall-oriented).
       `grep -rnE '\b(eval|assert)\s*\(\s*\$' --include='*.php' src/`
 - [ ] **XSS — echo/print of request data, raw template sinks** —
       `grep -rnE '(echo|print|<\?=)[^;]*\$_(GET|POST|REQUEST|COOKIE|SERVER)' --include='*.php' .`
-      ; `grep -rnE '<\?=\s*\$(?!this)' --include='*.php' templates/ 2>/dev/null` ;
+      ; `grep -rnE '<\?=[[:space:]]*\$' --include='*.php' templates/ | grep -vE '<\?=[[:space:]]*\$this'`
+      (a `(?!this)` lookahead here exited 2 with its stderr discarded, so it reported nothing) ;
       `grep -rn '{!!' --include='*.blade.php' resources/ 2>/dev/null` ;
       `grep -rn '|raw' --include='*.twig' templates/ 2>/dev/null` ;
       `grep -rn 'strip_tags' --include='*.php' src/` (not an XSS defense)

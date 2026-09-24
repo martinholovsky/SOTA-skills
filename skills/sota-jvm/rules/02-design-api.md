@@ -105,7 +105,9 @@ such occurrence"* (Java SE 21 API docs). Documented and idiomatic there; the cla
       `grep -rnE '\.close\(\)' --include='*.java' --include='*.kt' .` (verify
       try-with-resources/use); `grep -rn 'finally' --include='*.java' . | grep -i close`
 - [ ] **Mutable static state — MEDIUM** —
-      `grep -rnE 'static (?!final)[A-Za-z<>]+ [a-z]' --include='*.java' .`
+      `grep -rnE '^[[:space:]]*((public|private|protected)[[:space:]]+)?static[[:space:]]+[A-Za-z_][A-Za-z0-9_<>,?. ]*(\[\])?[[:space:]]+[a-z][A-Za-z0-9_]*[[:space:]]*(=|;)' --include='*.java' . | grep -vwE 'final|class|interface|enum|record'`
+      (a `(?!final)` lookahead stood here until 2026-09-24: POSIX ERE has none, and it
+      exited 2 under BSD grep and ugrep)
 - [ ] **throws Exception / overbroad — LOW/MEDIUM** —
       `grep -rn 'throws Exception' --include='*.java' .`
 - [ ] **Deprecated Spring nullability annotations (Spring 7+ is JSpecify) — LOW** —

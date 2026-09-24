@@ -86,8 +86,8 @@ coroutines. References:
 ## Audit checklist
 
 - [ ] **Data-race smells — MEDIUM/HIGH (verify happens-before)** —
-      `grep -rnE '\bstatic (?!final)[A-Za-z<>\[\]]+ [a-z]' --include='*.java' .` (mutable shared
-      static); `grep -rnE 'volatile ' --include='*.java' . | grep -E '\+\+|--|\+='` (compound op
+      `grep -rnE '^[[:space:]]*((public|private|protected)[[:space:]]+)?static[[:space:]]+[A-Za-z_][A-Za-z0-9_<>,?. ]*(\[\])?[[:space:]]+[a-z][A-Za-z0-9_]*[[:space:]]*(=|;)' --include='*.java' . | grep -vwE 'final|class|interface|enum|record'` (mutable shared
+      static; the old `(?!final)` form exited 2, POSIX ERE has no lookahead); `grep -rnE 'volatile ' --include='*.java' . | grep -E '\+\+|--|\+='` (compound op
       on volatile = race);
       `grep -rn 'HashMap\|ArrayList' --include='*.java' . | grep -i 'static\|shared'`
       (non-concurrent shared coll)

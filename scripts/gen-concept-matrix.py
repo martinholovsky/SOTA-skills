@@ -15,6 +15,9 @@ over item text. A matcher answers "does this wording appear", never "is this ide
   * every run prints its DENOMINATOR: items classified / items total, per skill;
   * every unmatched item is LISTED, not silently dropped, because an item this file cannot
     classify is a hole in the vocabulary and the only way to find it is to print it;
+  * a PRESENT cell is a claim too: `--explain CONCEPT LANG` prints the items behind it and
+    the substring each matched, and `--explain all all` does it for every present cell. A
+    cell lit by `slog` inside `syslog` hides an absence no candidate row can show;
   * a concept's absence from a language is a CANDIDATE, never a finding. Confirm by opening
     the file -- 2 of 8 candidate Python gaps died on reading during ROADMAP 59's first pass.
 
@@ -48,16 +51,30 @@ import extract_items as E  # noqa: E402
 # Adding a concept? Put the pattern in the corpus's OWN vocabulary, not yours: read a
 # neighbouring skill's headings first. A matcher written from memory reports a false
 # absence, which is the failure this file is most likely to produce.
+#
+# ...and the second failure: a FALSE PRESENCE. A bare substring lights a cell from a word
+# that is not the concept, and a present cell hides the absence it stands on -- no candidate
+# row can ever show it. The fourth pass (2026-09-24) printed the substring behind every
+# present cell (`--explain all all`) and tightened what it found: `slog` in `syslog`,
+# `import` in `DllImport` and in `python3 -c "import json"`, `n+1` in `n=$((n+1))`, `clock`
+# in "a wall-clock bound", `null` in `/dev/null`, `lock` in lockfile/blocking/`uv.lock`,
+# `safety` in rust's `// SAFETY:` (vulnerability scanning, a PINNED concept, was 9/9 on that
+# and on c/c++'s "safety-standard analysis"), `currency` in "concurrency", `lts` in
+# "results"/"defaults", `validat` in "iterator invalidation", `sanitiz` in `-fsanitize`, `rsa` in "traversal", `erb` in "verbose", `sanitiz` in "sanitizer", `leak` in
+# "leaked secrets", `provenance` in "size provenance", `measure` in "measured on". Hence
+# the `\b`s, lookbehinds and narrowed phrases below. Adding a pattern? Run
+# `--explain all all` before and after and read every substring your change adds.
 CONCEPTS = [
     # --- language baseline / API surface
     ("error handling & propagation", "universal",
      r"error handl|wrap(ped|ping)? error|error type|swallow|empty catch|catch \(|"
-     r"rescue|on_error|error code|errors\.(is|as)|unwrap|expect\(|panic"),
+     r"\brescue\b|on_error|error code|errors\.(is|as)|unwrap|expect\(|panic"),
     ("absence / null / in-band sentinel", "universal",
-     r"in-band|sentinel|null|nil |none\b|optional|nullable|-1|magic (number|value)"),
+     r"in-band|sentinel|(?<!/dev/)null|\bnil\b|\bnone\b|optional|nullable|"
+     r"(?<!head )(?<!tail )(?<![\w-])-1\b|magic (number|value)|truthiness"),
     ("public API surface & evolution", "universal",
-     r"public (api|surface)|semver|breaking change|deprecat|__all__|abi|"
-     r"export|visibility|private_constant|readonly|final\b|"
+     r"public (api|surface)|semver|breaking change|deprecat|__all__|\babi\b|"
+     r"\bexport|visibility|private_constant|readonly|\bfinal\b|"
      # go states this in Go-native terms and was reported absent for it (triage
      # 2026-09-21: 02-design.md probes grab-bag packages, returned interfaces, fat
      # interfaces and package-level mutable state).
@@ -70,24 +87,29 @@ CONCEPTS = [
     # --- concurrency
     ("data race / shared mutable state", "universal",
      r"data race|race condition|shared mutab|thread[- ]safe|goroutine|gvl|ractor|"
-     r"send\b.*sync|atomic|lock|mutex|synchroniz"),
+     r"send\b.*sync|atomic|mutex|synchroniz|inside lock|lock\s*\(|lock\\s\*\\\(|session lock|"
+     r"threading\.(r?lock|thread)|free[- ]threaded|nogil|check-then-act"),
     ("cancellation / timeouts", "universal",
      r"cancel|timeout|deadline|context\.|ctx\b|abortcontroller|cancellationtoken|"
      r"stop_token|jthread"),
     ("task / thread leaks", "universal",
-     r"leak|orphan|detached task|fire[- ]and[- ]forget|unawaited|background task|"
-     r"goroutine leak|dangling|unjoined|thread\.new"),
+     r"(task|thread|goroutine|coroutine|timer|unstructured) leak|leak detection|goleak|"
+     r"clearinterval|orphan|detached task|fire[- ]and[- ]forget|unawaited|background task|"
+     r"unjoined|thread\.new|async void|task\.run"),
     ("blocking the event loop / executor", "conditional:has an event loop or async runtime",
      r"event loop|blocking (call|io|the)|block_on|run_until|sync over async|\.result\(\)|"
      r"configureawait|deadlock|sync\(|scryptsync"),
     ("backpressure / unbounded queues", "universal",
-     r"unbounded|backpressure|bounded (queue|channel)|buffer size|queue depth|executors\.new|"
-     r"linkedblockingqueue"),
+     r"unbounded (queue|channel|fan-out|parallelism|concurren)|parallelism unbounded|"
+     r"backpressure|bounded (queue|channel)|buffer size|queue depth|executors\.new|"
+     r"linkedblockingqueue|sizedqueue|semaphore"),
 
     # --- memory / resources
     ("resource lifecycle (close/dispose/RAII)", "universal",
-     r"raii|dispose|close\(|defer |using |with open|context manager|finaliz|"
-     r"file handle|connection (leak|pool)|ensure\b|session_write_close"),
+     r"raii|dispose|close\(|\bdefer |using \(|using var\b|await using|with open|"
+     r"context manager|finaliz|file handle|connection (leak|pool)|`ensure`|ensure (block|clause)|"
+     r"block form|impl drop|mem::forget|"
+     r"session_write_close"),
     ("memory safety (bounds, UAF, overflow)", "conditional:manual memory management",
      r"use[- ]after[- ]free|buffer overflow|bounds|out of bounds|dangling pointer|"
      r"double free|integer overflow|sanitizer|asan|ubsan|valgrind|miri|allocunsafe"),
@@ -112,29 +134,30 @@ CONCEPTS = [
      r"gob\b|xxe|xml external|phar|serde|bincode|json\.loads|fromjson|readobject|xslt|"
      r"stylesheet|js-yaml|safeload|yaml loader"),
     ("output encoding / XSS / templating", "conditional:renders markup or templates",
-     r"xss|escap|html_safe|htmlspecialchars|dangerouslysetinnerhtml|innerhtml|"
-     r"autoescap|erb|template inject|sanitiz"),
+     r"xss|(?<!exception-)escap(?!e hatch)|html_safe|htmlspecialchars|dangerouslysetinnerhtml|innerhtml|"
+     r"autoescap|\berb\b|template inject|(?<![-f])sanitiz(e|ed|es|ing|ation)\b"),
     ("cryptography & randomness", "universal",
-     r"crypto|cipher|aes|rsa|hash(ing)?|bcrypt|argon2|pbkdf2|md5|sha1\b|"
-     r"csprng|secure random|rand\b|nonce|iv\b|constant[- ]time"),
+     r"crypto|cipher|\baes\b|\brsa\b|\bhash(ing)?\b|bcrypt|argon2|pbkdf2|md5|sha1\b|"
+     r"csprng|secure random|\brand\b|nonce|\biv\b|constant[- ]time"),
     ("secrets handling", "universal",
-     r"secret|credential|api key|password|token\b|\.env|hardcoded|vault|keyring"),
+     r"secret|credential|api key|password|token\b|\.env\b|hardcoded|vault|keyring"),
     ("input validation & untrusted data", "universal",
-     r"validat|untrusted|sanitiz|allowlist|whitelist|bounds check|schema|"
+     r"(?<!in)validat|untrusted|maxbytesreader|disallowunknownfields|(?<![-f])sanitiz(e|ed|es|ing|ation)\b|allowlist|whitelist|bounds check|schema|"
      r"decompress|zip bomb|size limit|max size"),
     # Reclassified 2026-09-22 by triage. Router cross-cutting rule 18 puts transport/PKI
     # in `sota-network-security` rules/06 and TLS *client config* in `sota-code-security`
     # rules/04, library-wide. So a language skill with no TLS probe is DELEGATING, not
     # gapped -- rust, js/ts and c/c++ were being reported as gaps for obeying the router.
     ("TLS / transport verification", "conditional:transport/PKI is delegated library-wide (router rule 18)",
-     r"tls|ssl|certificate|insecureskipverify|verify=false|hostname verif|"
+     r"\btls|\bssl|certificate|insecureskipverify|verify=false|hostname verif|"
      r"insecureignorehostkey|trust ?store|http://|rustls|openssl|danger_accept|"
      r"servercertificatevalidation|curlopt_ssl"),
     ("authn / authz checks", "universal",
-     r"authoriz|authenticat|permission check|idor|access control|jwt|oauth|session|csrf|"
+     r"authoriz|authenticat|permission check|idor|access control|jwt|oauth|csrf|"
+     r"session (fixation|cookie|id|hijack|regenerat|lock|token|storage|expir)|session_|"
      r"cookie|samesite|httponly|privilege drop|relinquish"),
     ("logging hygiene / PII in logs", "universal",
-     r"log(ging|s)? (secret|pii|token|password)|redact|structured log|slog|"
+     r"log(ging|s)? (secret|pii|token|password)|redact|structured log|\bslog\b|"
      r"sensitive data in|stack trace (in|to) (the )?(response|user)|authorization`/`cookie|"
      # Third pass, 2026-09-24: php already probed secrets in stack traces via
      # `#[\SensitiveParameter]` (an artefact), and the probes closed that pass are titled
@@ -148,33 +171,37 @@ CONCEPTS = [
      r"pinned|pin\b|checksum|integrity hash|packages\.lock\.json"),
     ("vulnerability scanning of dependencies", "universal",
      r"govulncheck|cargo audit|pip-audit|npm audit|bundler-audit|dependency-check|"
-     r"osv|advisory|cve|dependabot|renovate|safety\b"),
+     r"\bosv|advisory|\bcve\b|dependabot|renovate|safety (check|scan)|audit --locked|"
+     r"composer audit|nugetaudit|dotnet list package --vulnerable"),
     ("static analysis / linter configuration", "universal",
      r"clippy|golangci|ruff|mypy|eslint|rubocop|phpstan|psalm|clang-tidy|cppcheck|"
      r"spotbugs|analyzer|lint|detekt|ktlint|brakeman|bandit|gosec|semgrep"),
     ("build reproducibility & CI gates", "universal",
-     r"ci\b|github actions|workflow|pipeline|reproducib|build flag|hardening flag|"
+     r"\bci\b|github actions|workflow|pipeline|reproducib|build flag|hardening flag|"
      r"-d_fortify|relro|stack protector|csproj|gradle|maven|cmake"),
     ("supply-chain provenance & publishing", "universal",
-     r"provenance|slsa|sigstore|cosign|sbom|publish|registry|namespace|typosquat|"
+     r"(?<!size )(?<!path )provenance(?! loss)|slsa|sigstore|cosign|sbom|registry|typosquat|"
+     r"publish(?!ed (package|librar))(?! a second)(?!aot|trimmed)|gosumdb|gonosumdb|go mod verify|"
+     r"(package|registry|vendor|org) namespace|namespace (squat|reserv|prefix)|"
      r"dependency confusion|crates\.io|npmjs|pypi|rubygems|nuget|checksum|verification-metadata|"
      r"cyclonedx"),
 
     # --- testing
     ("test suite health & determinism", "universal",
      r"flaky|determinis|test (suite|coverage)|coverage|assert|table[- ]driven|"
-     r"-race\b|nextest|pytest|vitest|junit|rspec|minitest|xunit|phpunit"),
+     r"(?<![\w-])-race\b|\bctest\b|nextest|pytest|vitest|junit|\brspec\b|minitest|xunit|phpunit"),
     ("property-based / fuzz testing", "conditional:a fuzzing or property library exists",
      r"fuzz|property[- ]based|quickcheck|proptest|hypothesis|afl|libfuzzer|go-fuzz"),
 
     # --- performance
     ("profiling before optimizing", "universal",
-     r"profil|pprof|flamegraph|benchmark|bench\b|jmh|criterion|perf\b|measure"),
+     r"profil|pprof|flamegraph|benchmark|\bbench\b|jmh|criterion|\bperf\b|measure(?!d on)"),
     ("allocation / GC pressure", "universal",
-     r"alloc|gc\b|garbage collect|heap|boxing|clone\(\)|copy on|string concat|"
+     r"alloc(?!unsafe)|unbounded cache|\bgc\b|garbage collect|heap|boxing|clone\(\)|copy on|string concat|"
      r"stringbuilder|interning|__slots__|fetchall"),
     ("N+1 and accidental quadratic", "universal",
-     r"n\+1|quadratic|nested loop|o\(n2\)|o\(n\^2\)|eager load|includes\(|preload|select_related|"
+     r"(?<![\w(])n\+1(?!\))|quadratic|nested loop|o\(n2\)|o\(n\^2\)|eager load|includes\(|"
+     r"preload|select_related|"
      # Third pass, 2026-09-24: go's `rules/06` probe is titled "O(n²)" with a superscript,
      # which neither spelling above matches -- an artefact.
      r"o\(n²\)|uselazyloadingproxies"),
@@ -188,15 +215,18 @@ CONCEPTS = [
      r"psalm-suppress|nosonar|lint:ignore|type: ?ignore|baseline|waiver|"
      r"warning disable|deny\(warnings\)|suppress"),
     ("module boundaries & imports", "universal",
-     r"import|circular depend|cyclic|module boundar|package (layout|structure)|"
+     r"(?<![\w\"'])import\b|circular depend|cyclic|module boundar|package (layout|structure)|"
      r"relative import|project reference|internal package|namespace layout|grab[- ]bag|"
-     r"using namespace|pragma once|fvisibility|`pub` field|unreachable_pub"),
+     r"using namespace|pragma once|fvisibility|`pub` field|unreachable_pub|internalsvisibleto|"
+     r"require_relative|load_path"),
     ("numeric precision & money", "universal",
-     r"float(ing)? (point|money)|decimal|rounding|money|currency|bigint|bigdecimal|"
+     r"float(ing)? (point|money)|decimal|rounding|money|\bcurrency|bigint|bigdecimal|"
      r"toFixed|precision loss|integer division"),
     ("date, time & timezone", "universal",
-     r"timezone|tz\b|utc|dst\b|daylight|clock|monotonic|time\.now|datetime|"
-     r"leap second|epoch|duration"),
+     r"timezone|\btz\b|\butc\b|\bdst\b|daylight|monotonic|time\.now|datetime|leap second|"
+     r"epoch|wall[- ]clock (interval|time|read|for)|(steady|system|high_resolution)_clock|"
+     r"clock_gettime|clock_monotonic|systemtime|\binstant\b|stopwatch|localtime|"
+     r"time\.time\(\)|date\.now|hrtime|microtime|hrtime\(|process\.clock"),
     ("encoding, unicode & text", "conditional:the skill handles text decoding explicitly",
      r"unicode|utf-8|encoding|decode|normaliz(e|ation)|locale|collation|byte order mark"),
 
@@ -204,11 +234,11 @@ CONCEPTS = [
     ("exit status / error signalling of tools", "conditional:the skill drives external commands",
      r"exit (status|code)|\$\?|errorlevel|pipestatus|pipefail|nonzero|non-zero exit"),
     ("version floor / EOL awareness", "universal",
-     r"eol\b|end of life|minimum (version|supported)|msrv|version floor|"
-     r"unsupported version|lts\b|deprecated (runtime|version)|language version|"
-     r"standard pinned"),
+     r"\beol\b|end of life|minimum (version|supported)|msrv|version floor|"
+     r"unsupported version|\blts\b|deprecated (runtime|version)|language version|"
+     r"standard pinned|requires-python|engines\.node"),
     ("resource limits / DoS guards", "universal",
-     r"rate limit|quota|dos\b|denial of service|redos|catastrophic backtrack|"
+     r"rate limit|quota|\bdos\b|denial of service|redos|catastrophic backtrack|"
      r"max (depth|length|size|connections)|recursion (depth|limit)|maxbytesreader|"
      r"max_execution_time|request_terminate_timeout|memory_limit|"
      r"limitreader"),
@@ -247,6 +277,21 @@ UNIVERSAL_FLOOR = [
     # day; python and c/c++ the day before). Pinned immediately, for the same reason as
     # the line above: the cheapest moment to lose work is right after doing it.
     "public API surface & evolution",
+    # Fourth pass, 2026-09-24: 9/9 after the false presences were removed and the real
+    # absences they hid were closed, each cell's matched substring read by hand with
+    # `--explain all all`. `typing / generics` is also 9/9 but is conditional, so it is not
+    # a claim about every language and stays out.
+    "logging hygiene / PII in logs",
+    "date, time & timezone",
+    "resource lifecycle (close/dispose/RAII)",
+    "cancellation / timeouts",
+    "SQL / query injection",
+    "command / subprocess injection",
+    "path traversal / file access",
+    "authn / authz checks",
+    "profiling before optimizing",
+    "allocation / GC pressure",
+    "version floor / EOL awareness",
 ]
 
 def classify(text):
@@ -259,6 +304,63 @@ def classify(text):
     # cannot drop a concept the raw text already matched. Found by the 2026-09-24 .NET pass.
     plain = low.replace("\\", "")
     return [c for c, _, pat in CONCEPTS if re.search(pat, low) or re.search(pat, plain)]
+
+
+def explain_hits(text, pat):
+    """(matched substring, ~60 chars of context) for every match in `text`, read the same
+    two ways `classify` reads it. Deduplicated on position so a match both copies share is
+    printed once."""
+    low = text.lower()
+    out, seen = [], set()
+    for copy in (low, low.replace("\\", "")):
+        for m in re.finditer(pat, copy):
+            key = (m.group(0), copy[max(0, m.start() - 30):m.end() + 30])
+            if key not in seen:
+                seen.add(key)
+                out.append(key)
+    return out
+
+
+def explain(concept, lang):
+    """Print every item of `lang` that puts `concept` in its cell, and WHICH substring did.
+
+    Why this exists: a PRESENT cell is a claim too. The 2026-09-24 third pass found six
+    cells lit only by substring accident (`slog` inside `syslog`, `import` inside
+    `DllImport`), each hiding a real absence the candidate list can never show, and every
+    one was found by printing the matched substring exactly like this."""
+    pats = {c: p for c, _, p in CONCEPTS}
+    if concept == "all" and lang == "all":
+        # The sweep form: one line per PRESENT cell with the distinct substrings that lit
+        # it and how many items each came from. Read it for words that are not the concept
+        # (`import` in `dllimport`); a cell resting on one such item is a false presence.
+        for c, _, pat in CONCEPTS:
+            for s in E.LANGS:
+                subs, n = {}, 0
+                for _f, _k, text in E.skill_items(s):
+                    got = {sub for sub, _ctx in explain_hits(text, pat)}
+                    n += bool(got)
+                    for sub in got:
+                        subs[sub] = subs.get(sub, 0) + 1
+                if n:
+                    print("%-40s %-6s items=%-3d %s" % (c[:40], E.label(s), n, ", ".join(
+                        "%r x%d" % kv for kv in sorted(subs.items(), key=lambda kv: -kv[1]))))
+        return 0
+    skill = {E.label(s): s for s in E.LANGS + E.SHELL}.get(lang, lang)
+    if concept not in pats or skill not in E.LANGS + E.SHELL:
+        print("unknown concept or language. concepts: %s; languages: %s"
+              % ("; ".join(pats), ", ".join(E.label(s) for s in E.LANGS + E.SHELL)))
+        return 2
+    items = E.skill_items(skill)
+    n = 0
+    for f, _k, text in items:
+        hits = explain_hits(text, pats[concept])
+        if hits:
+            n += 1
+            print("%s: %s" % (f, text[:110]))
+            for sub, ctx in hits:
+                print("    matched %r in: ...%s..." % (sub, ctx))
+    print("%d of %d %s items match '%s'" % (n, len(items), E.label(skill), concept))
+    return 0
 
 
 def build(skills):
@@ -293,7 +395,14 @@ def main():
                     help="exit 1 if any skill's rules-file Audit checklist is not tickable")
     ap.add_argument("--assert-universal", action="store_true",
                     help="exit 1 if any UNIVERSAL_FLOOR concept is not present in all 9")
+    ap.add_argument("--explain", nargs=2, metavar=("CONCEPT", "LANG"),
+                    help="print the items that light CONCEPT for LANG (label, e.g. .NET, "
+                         "or skill name) and the substring each matched, then exit. "
+                         "Use it on a PRESENT cell before believing it. `--explain all all` "
+                         "prints every present cell's matched substrings (the sweep form)")
     args = ap.parse_args()
+    if args.explain:
+        return explain(*args.explain)
 
     present, classified, unmatched = build(E.LANGS)
     sh_present, sh_classified, sh_unmatched = build(E.SHELL)

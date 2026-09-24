@@ -28,6 +28,12 @@ the type system, and expression-oriented code**. References:
   is exactly what a timeout or latency wants. `currentTimeMillis()` differences follow the wall
   clock. The legacy `SimpleDateFormat` is *"not synchronized"*, so a shared (`static`)
   instance races. `DateTimeFormatter` *"is immutable and thread-safe"*.
+- **Exact decimals: `BigDecimal` from a `String` or `BigDecimal.valueOf(double)`, never
+  `new BigDecimal(double)`.** Measured on JDK 25: `new BigDecimal(0.1)` is
+  `0.1000000000000000055511151231257827021181583404541015625`, while `new BigDecimal("0.1")`
+  and `valueOf(0.1)` are `0.1`. `equals` compares scale (`1.0` equals `1.00` is `false`;
+  `compareTo` is `0`), and a `divide` without a scale and `RoundingMode` throws
+  `ArithmeticException` on `1/3`. Money is never `double`.
 
 ## 2. Modern Kotlin idioms (2.x)
 
@@ -99,4 +105,9 @@ the type system, and expression-oriented code**. References:
 - [ ] **Mutable returns / collections from APIs — LOW** —
       `grep -rnE 'return (this\.)?[a-zA-Z]*[Ll]ist;' --include='*.java' .` (verify defensive
       copy / unmodifiable)
+- [ ] **Exact decimals (§1) — MEDIUM, HIGH in money paths** —
+      `grep -rnE 'new BigDecimal\([[:space:]]*-?[0-9]+\.[0-9]|new BigDecimal\([[:space:]]*[a-z][A-Za-z0-9_]*[[:space:]]*\)' --include='*.java' --include='*.kt' .`
+      (a double literal, or a variable whose type you then check) ;
+      `grep -rnE '\.divide\([^,()]*\)|BigDecimal[^;]*\.equals\(' --include='*.java' --include='*.kt' .`
+      (a divide with no scale or `RoundingMode`; scale-sensitive equality)
 - [ ] **Analyzer enforcement Error Prone + NullAway (Java); detekt + ktlint (Kotlin)**
