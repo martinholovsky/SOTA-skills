@@ -1007,6 +1007,15 @@
     },
     {
       "from": "sota-code-security",
+      "to": "sota-sandboxing",
+      "weight": 3,
+      "targets": [
+        "rules/02",
+        "rules/04"
+      ]
+    },
+    {
+      "from": "sota-code-security",
       "to": "sota-network-security",
       "weight": 3,
       "targets": [
@@ -1316,14 +1325,6 @@
       "targets": [
         "rules/05",
         "rules/05 \u00a74a"
-      ]
-    },
-    {
-      "from": "sota-code-security",
-      "to": "sota-sandboxing",
-      "weight": 2,
-      "targets": [
-        "rules/02"
       ]
     },
     {
@@ -1736,6 +1737,14 @@
       "to": "sota-async-concurrency",
       "weight": 1,
       "targets": []
+    },
+    {
+      "from": "sota-code-security",
+      "to": "sota-php",
+      "weight": 1,
+      "targets": [
+        "rules/02 \u00a76"
+      ]
     },
     {
       "from": "sota-code-security",

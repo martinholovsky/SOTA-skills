@@ -239,6 +239,31 @@ Template("Hi " + name).render()          Template("Hi {{ name }}").render(name=n
   `(&(uid=USER)(password=PASS))` with `USER = *)(uid=*` is an auth bypass.
 - **XPath injection (CWE-643)**: same shape as SQLi; use parameterized XPath
   (XPath 3.1 variables) or allowlist values — quoting alone is fragile.
+- **XML built from strings (XML injection, CWE-91)**: untrusted data concatenated or
+  interpolated into XML text can close the element and add its own. A name of
+  `x</name><role>admin</role><name>` inside `<user><name>…</name><role>user</role></user>`
+  parses to **two** `<role>` elements, and a first-match lookup returns `admin`. Measured
+  2026-09-24 in Python, Java, .NET, Go, PHP, Node and Ruby: the same result in all seven. An
+  attribute value `x" admin="true` adds an attribute the same way, and **wrapping the value in
+  CDATA does not help**, because `]]>` ends the section (measured). The fix is an API that
+  escapes, never a template: DOM `setTextContent`/`createTextNode`, ElementTree `.text`,
+  `XElement`, Go `xml.Marshal`, PHP `XMLWriter`, Node `xmlbuilder2`, REXML `add_text`. Each
+  one kept the payload as text (measured). **Trap:** PHP `DOMDocument::createElement($name,
+  $value)` does *not* escape `$value` (php.net), so an `&` in it starts an entity reference.
+  SOAP envelopes and XML request bodies built from templates are the usual sites (find-sec-bugs
+  `POTENTIAL_XML_INJECTION`). Detectors, each run against a known-bad and a known-good fixture
+  under ugrep and BSD grep. They are line-based, so a template split across lines is missed,
+  and HTML templates match too; keep the hits whose output is parsed as XML or sent as XML:
+
+  ```text
+  Java    grep -rnE '"<[A-Za-z/][^"]*"[[:space:]]*\+|\+[[:space:]]*"</' --include='*.java' --include='*.kt' .
+  Python  grep -rnE "f[\"'][^\"']*<[A-Za-z/][^\"']*\{" --include='*.py' .
+  .NET    grep -rnE 'LoadXml[[:space:]]*\([[:space:]]*\$|\$"[^"]*<[A-Za-z/][^"]*\{' --include='*.cs' .
+  Go      grep -rnE 'Sprintf[[:space:]]*\([[:space:]]*"[^"]*<[A-Za-z/]' --include='*.go' .
+  PHP     grep -rnE '(simplexml_load_string|loadXML)[[:space:]]*\([^;]*(\.[[:space:]]*\$|"[^"]*\$)|createElement[[:space:]]*\([^,)]*,[[:space:]]*\$' --include='*.php' .
+  Node    grep -rnE '`[^`]*<[A-Za-z/][^`]*\$\{' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .
+  Ruby    grep -rnE '"[^"]*<[A-Za-z/][^"]*#\{' --include='*.rb' .
+  ```
 - **CRLF / header injection (CWE-93/113)**: reject `\r`/`\n` in anything placed
   into HTTP headers (redirect `Location` from input, custom headers, cookies) —
   response splitting and cache poisoning. Modern frameworks reject; hand-built
@@ -278,3 +303,4 @@ Template("Hi " + name).render()          Template("Hi {{ name }}").render(name=n
 - [ ] Are CR/LF rejected from header/email-field values, and absolute URLs (reset links) built from configured origins, never the Host header?
 - [ ] Are redirect targets allowlisted or relative-only, and CSV exports formula-escaped?
 - [ ] Are LDAP/XPath filters built with library escapers or parameterization?
+- [ ] Is every XML document or SOAP/XML body that carries untrusted data built through an escaping API, with no string concatenation, interpolation or CDATA wrapping (§11, XML built from strings)? Run the §11 detector row for the language, and read each hit. HIGH when an injected element or attribute changes a security decision (role, price, recipient).

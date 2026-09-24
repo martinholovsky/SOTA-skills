@@ -5576,3 +5576,46 @@ not a skill gap.
   - rustc 1.97.1 gives `(19.99f64*100.0) as i64` = **1998**;
   - Ruby 4.0.6 gives `-7/2` = **-4** and `2.5.round` = **3**;
   - PHP 8.5.9 gives `(int)(19.99*100)` = **1998** and `bcdiv("1","3")` = **"0"**.
+
+## 2026-09-24 — ROADMAP 64: three unowned classes become shared classes in sota-code-security
+
+**Operator decision 2026-09-24: all three are owned by `sota-code-security`**, each stated once
+with per-library detectors, the design of host keys (rules/04 §5) and temp files (rules/06 §6.1).
+
+| item | verdict | landed |
+|---|---|---|
+| LDAP bind with an empty password used as a login (RFC 4513 section 5.1.2), plus anonymous bind for lookups (find-sec-bugs `LDAP_ANONYMOUS`) | **adopted as a shared class** | rules/02 §9, a per-client table (PHP, JNDI, .NET S.DS.P, python-ldap, ldap3, go-ldap, ldapjs/ldapts, net-ldap), 7 detector rows, a checklist item |
+| XML built from strings (CWE-91, find-sec-bugs `POTENTIAL_XML_INJECTION`) | **adopted as a shared class** | rules/01 §11 bullet beside LDAP/XPath, 7 detector rows, a checklist item |
+| native library search-path loading (CWE-427; CA5392, CA5393, CA3011) | **adopted as a shared class** | rules/06 §3.1: Windows, .NET, glibc/musl, macOS, Python, Java, Node; 7 detector rows plus a binaries row; a §7 starter row; a checklist item |
+
+**Measured, not recalled.** The PHP gap-check listed the empty-password bind as NOT verified.
+It is now: OpenLDAP 2.6.14 refuses it by default (53, "unauthenticated bind (DN with no
+password) disallowed") and accepts it with `allow bind_anon_dn`, and PHP, JNDI, .NET (Linux),
+python-ldap, ldapjs, ldapts and net-ldap all report success, including PHP for a DN that does
+not exist. ldap3 and go-ldap refuse an empty password client-side, but ldap3 turns an empty
+*username* into an anonymous bind that succeeds on the default server. Active Directory's
+`DenyUnauthenticatedBind` defaults to 0 ([MS-ADTS]). XML injection reproduced in seven
+languages; CDATA wrapping does not stop it. Library planting reproduced on glibc, musl and
+macOS: glibc treats an empty `LD_LIBRARY_PATH` entry as the CWD and musl did not; macOS
+searches the CWD for a bare `dlopen` name; a relative `RUNPATH` and a relative
+`java.library.path` both loaded the CWD's copy.
+
+**Detectors:** 21 rows extracted from the committed files, each on known-bad and known-good
+fixtures: 67/67 under ugrep and 67/67 under BSD grep. The first run failed one fixture (a
+trailing colon followed by a space) and the row was widened.
+
+
+**Re-measured by the integrating session:**
+- The agent's detector harness passes **134/134**: 21 rows extracted from the committed file,
+  each on known-bad and known-good fixtures, under ugrep and BSD grep.
+- The XML class reproduces in Python:
+  - a string-built document with the payload `bob</name><role>admin</role><name>x` yields
+    roles `['admin', 'user']`;
+  - the escaped one yields `['user']`;
+  - a CDATA-wrapped payload that closes the section early yields `['admin', 'user']` again,
+    so CDATA is not a fix.
+- Operator decision 2026-09-24: all three classes live in `sota-code-security`. LDAP is in
+  rules/02 because an empty-password bind is a login bypass, and rules/01 already owns LDAP
+  injection. XML is in rules/01, beside the injections it resembles. Native search paths are in
+  rules/06 §3, the native-code escape hatch. The library map lists file titles, not sections,
+  so it needs no change.

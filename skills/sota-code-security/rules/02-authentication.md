@@ -1,6 +1,6 @@
 # 02 — Authentication, Sessions, Tokens
 
-Scope: password storage, MFA, session management, JWT, OAuth2/OIDC, passkeys.
+Scope: password storage, MFA, session management, JWT, OAuth2/OIDC, passkeys, LDAP bind as login.
 Maps to OWASP A07:2025 (Authentication Failures), CWE-287 family.
 
 Core principle: **never design your own authentication protocol.** Compose vetted
@@ -235,6 +235,62 @@ jwt.verify(token, publicKey, { algorithms: ["EdDSA"], issuer: ISS,
   timestamp window against replay, and reject before parsing. Outbound: sign
   your webhooks so consumers can do the same.
 
+## 9. LDAP bind as the password check (CWE-287)
+
+"The bind succeeded, so the password is right" is false for one input: **the empty password.**
+A simple bind with a DN and a zero-length password is RFC 4513 section 5.1.2's *unauthenticated*
+mechanism. It sets an anonymous authorization state, and the DN *"is not to be authenticated or
+otherwise validated (including verification that the DN refers to an existing directory
+object)"*. The RFC says servers SHOULD refuse it by default, and SHOULD is not MUST. So
+`if bind(dn, password): login(user)` logs in **any username, existing or not**, with an empty
+password, on every directory that accepts the bind.
+
+- **Server defaults differ, which is why it survives testing.** Measured 2026-09-24 on
+  OpenLDAP 2.6: the default refuses (`unwillingToPerform`, *"unauthenticated bind (DN with no
+  password) disallowed"*); one line, `allow bind_anon_dn`, makes it succeed. Active Directory
+  refuses only when the forest setting `DenyUnauthenticatedBind` is 1, and **it defaults to 0**
+  ([MS-ADTS] "LDAP Configurable Settings"). A test directory that refuses proves nothing about
+  production.
+- **The empty username is the second door.** Python `ldap3` `Connection(server, user='',
+  password=anything)` silently selects `ANONYMOUS`, and `bind()` returns `True`. Measured on
+  the *default* OpenLDAP, which allows anonymous binds.
+- **Anonymous bind for lookups** (JNDI `SECURITY_AUTHENTICATION` `"none"`, .NET
+  `AuthType.Anonymous`) runs every query under the directory's anonymous ACL (find-sec-bugs
+  `LDAP_ANONYMOUS`). Bind as a dedicated least-privilege service account over LDAPS or StartTLS.
+- **Fix:** reject an empty username *and* an empty password in code, before the bind. For a
+  second check, ask the server who you are (Who am I?, RFC 4532): after an unauthenticated bind,
+  PHP's `ldap_exop_whoami` returned `''` where a real bind returned `dn:uid=…`.
+
+What each client does with `(real DN, "")`, measured 2026-09-24 against OpenLDAP with
+`allow bind_anon_dn`. The finding is every "succeeds" row reached without a length check:
+
+| client | empty password | notes |
+|---|---|---|
+| PHP `ldap_bind` | succeeds | also for a DN that does not exist; `sota-php` rules/02 §6 |
+| Java JNDI, `"simple"` + `SECURITY_CREDENTIALS` `""` | `InitialDirContext` created | `"none"` creates the context even with a principal set, on the default server too |
+| .NET `System.DirectoryServices.Protocols`, `AuthType.Basic` | `Bind()` returns | measured on Linux only; `System.DirectoryServices` `AuthenticationTypes.Anonymous` is documented as "No authentication is performed" |
+| Python `python-ldap` `simple_bind_s` | succeeds | |
+| Python `ldap3` | client refuses (`LDAPPasswordIsMandatoryError`) | the empty *user* above is its gap |
+| Go `go-ldap` `Bind` | client refuses (code 206) | `UnauthenticatedBind` and `AllowEmptyPassword: true` send it, and it succeeds |
+| Node `ldapjs`, `ldapts` | `bind` succeeds | npm marks `ldapjs` as decommissioned |
+| Ruby `net-ldap` `bind` | returns `true` | |
+
+Detectors. Each was run against a known-bad and a known-good fixture under ugrep and BSD grep.
+A hit is a finding when the bind's result decides a login and no length check precedes it:
+
+```text
+PHP     grep -rnE 'ldap_bind[[:space:]]*\(' --include='*.php' .
+Java    grep -rnE 'SECURITY_AUTHENTICATION[^;]*"none"|new Initial(Dir|Ldap)Context[[:space:]]*\(' --include='*.java' --include='*.kt' .
+.NET    grep -rnE 'AuthType\.(Anonymous|Basic)|AuthenticationTypes\.Anonymous' --include='*.cs' .
+Python  grep -rnE 'simple_bind(_s)?[[:space:]]*\(|ANONYMOUS|Connection[[:space:]]*\([^)]*user[[:space:]]*=' --include='*.py' .
+Go      grep -rnE 'UnauthenticatedBind[[:space:]]*\(|AllowEmptyPassword:[[:space:]]*true' --include='*.go' .
+Node    grep -rlE 'ldapjs|ldapts' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .
+Ruby    grep -rnE 'Net::LDAP\.new|\.bind_as[[:space:]]*\(' --include='*.rb' .
+```
+
+The Node row lists *files*, because `.bind(` is also `Function.prototype.bind`: read the
+`client.bind` calls in each file it prints.
+
 ## Audit checklist
 
 - [ ] Are passwords hashed with argon2id (or scrypt/bcrypt) at current-policy parameters, with rehash-on-login?
@@ -254,3 +310,8 @@ jwt.verify(token, publicKey, { algorithms: ["EdDSA"], issuer: ISS,
 - [ ] Does social-login linking require verified email on both sides (or explicit re-auth), with session revocation and notification on link?
 - [ ] Does email change require step-up auth plus confirmation via old and new addresses?
 - [ ] Are there zero hand-rolled token schemes, password hashes, or login protocols?
+- [ ] **Does every LDAP bind used as a login reject an empty password *and* an empty username
+      before binding (§9)?** Run §9's detector row for the language and read each hit. CRITICAL
+      when the production directory accepts unauthenticated binds (Active Directory does unless
+      `DenyUnauthenticatedBind` is set), HIGH until that is checked. An anonymous bind used for
+      lookups is its own finding: bind as a least-privilege service account instead.
