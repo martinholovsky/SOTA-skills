@@ -247,6 +247,14 @@ authn/authz, resource lifecycle, supply-chain provenance, allocation/GC, version
 boundaries, DoS guards, plus `public API surface — go`, `cancellation — c/c++`, and ruby's
 task-leak and profiling cells.
 
+**Where this queue lives: ROADMAP item 59** (operator decision, 2026-09-24). Until then it had
+no row and no trigger, so "for the next pass" named no pass. Each language's gap-check triages
+that language's cells here. The cells of languages already checked (go, c/c++ and ruby above,
+plus any python cells) are triaged in the pass that closes 59, so the rows that are already done
+do not orphan them. Reasoning: a candidate cell is not evidence until its file is opened, and a
+gap-check is where the file gets opened anyway. A separate row would compete with 59 for the
+same sessions.
+
 ### Verified gap: nobody probes the linter's escape hatch in jvm, .NET or c/c++
 
 Six of nine languages probe *"someone silenced the analyser"* — rust (`#![allow]` without a

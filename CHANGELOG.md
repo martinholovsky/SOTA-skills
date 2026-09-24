@@ -5,7 +5,9 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.44.1] - 2026-09-24
+
+**Front door checked:** raw memory · positive control · field report · negative-control
 
 ### Added
 
@@ -64,6 +66,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   entry (adopted in v1.22.0).
 
 ### Fixed
+
+- **Resume pass, 2026-09-24:**
+  - **`docs/ROADMAP.md` said two deferrals were live and named one closed three days
+    earlier** (the magus over-firing control, adopted 2026-09-21 as `sota-code-security`
+    rules/10 §5). It missed the two deferred on 2026-09-23. Check 27 counts **3**, and the
+    paragraph now names those three.
+  - **The untriaged concept-matrix queue (13 named entries) had no row and no trigger**
+    (`docs/LANGUAGE-TIER.md`, "for the next pass"). By operator decision they now belong to
+    ROADMAP 59. Each language's gap-check triages its own cells, and cells of languages
+    already checked go in the pass that closes 59.
+  - **README front door:** it now mentions the raw-memory escape-hatch coverage this
+    release added (the release grep returned 0 hits for it).
 
 - **Closure pass, 2026-09-24:**
   - **The nested-fence entry's claim** "the only unintended instance" is now scoped to what
@@ -9984,6 +9998,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.44.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.44.1
 [1.44.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.44.0
 [1.43.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.43.1
 [1.43.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.43.0
