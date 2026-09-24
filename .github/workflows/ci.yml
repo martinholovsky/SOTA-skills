@@ -80,7 +80,7 @@ jobs:
 
       - name: Concept matrix executes, and coverage has not regressed
         run: python3 scripts/gen-concept-matrix.py --min-coverage 0.65 --assert-universal --assert-format
-        # --assert-universal is the ROADMAP 61 ratchet: 12 concepts every language skill
+        # --assert-universal is the ROADMAP 61 ratchet: every concept in UNIVERSAL_FLOOR, which every language skill
         # probes today, pinned so a new skill or a checklist rewrite cannot quietly drop
         # one. Watched to fail first -- stripping ruby's suppression probes was caught
         # and named. A template is read once, when a skill is created; this covers the

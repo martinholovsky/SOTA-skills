@@ -692,7 +692,7 @@ are load-bearing, because the ones that aren't are labelled.
 
 Every garbage-collected language skill also covers its **escape hatch into raw memory**: JNI/FFM/`Unsafe`, `ctypes`/`cffi`, native addons, `unsafe`/P/Invoke, PHP FFI, Fiddle. The class is stated once in `sota-code-security` rules/06 §3, and each language skill carries its own detectors.
 
-Several hazards recur in every language, so each is **stated once as a shared class** in `sota-code-security`, and each language skill carries only its own detector spelling:
+Several hazards recur in every language, so each is **stated once as a shared class** in `sota-code-security`, with a detector for each language in that shared rule:
 - SSH host-key verification;
 - temp-file and permission hygiene;
 - an LDAP bind used as a login check;
