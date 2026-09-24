@@ -167,8 +167,8 @@ blind spot.
 flat while a *format* change empties what the check actually examines. Field-measured in
 this library: a check scanning fenced `sh`/`bash` blocks printed `ok (322 instruction files)`
 before and after a refactor moved every audit checklist from fences into bullets with inline
-code. Its real input dropped from 167 blocks to 110, and 16 broken probes sat where it no
-longer looked. The files denominator was honest and useless. A check over fenced blocks
+code. Its real input dropped from 167 fenced `sh`/`bash` openings to 110 (a line count over the
+tracked files), and 16 broken probes sat where it no longer looked. The files denominator was honest and useless. A check over fenced blocks
 prints blocks; one over dependency manifests prints manifests, not repositories. **When a
 change converts the format of gated content** (fences to bullets, YAML to TOML, one file to
 many), re-run the gate's known-bad written in the *new* format before merging.

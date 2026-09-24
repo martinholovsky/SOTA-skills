@@ -65,14 +65,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Closure pass, 2026-09-24:**
+  - **The nested-fence entry's claim** "the only unintended instance" is now scoped to what
+    its sweep examined (long blocks containing headings).
+  - **A repo-specific count removed from `sota-shell-scripting` rules/02's checklist**, where
+    it would rot inside guidance loaded by other projects. The adoption log keeps it.
+  - **`sota-devsecops` rules/09's 167 → 110** now says it is a count of fence lines.
+  - **rules/05 §3d's rename claim** is measured for `mv`, `sed -i` and `perl -pi` on macOS
+    (new inode each time, and the running script finished its original text).
+  - **The fence-length gap in checks 2, 22 and 32** is recorded as an open item at the code.
+
 - **About 60 lines of `sota-docs-workflow` rules/01 rendered as a code block** (source lines
   105–164, including the `## §4 The decay problem` and `## §5 Runbooks` headings). A README
   example opened with ```` ```markdown ```` and contained a ```` ```sh ```` block. In
   CommonMark a fence with an info string cannot close one, so the inner closer ended the
   example early and the next ```` ``` ```` opened a stray block. The outer fence now uses four
   backticks. Checked with a CommonMark parser (markdown-it-py) over all tracked `.md` files:
-  this was the only unintended instance; the other long blocks containing headings are
-  deliberate templates or paste-in prompts. Found by reconciling invariant 32's new
+  among code blocks over 25 lines that contain a heading, this was the only unintended one, and
+  the other two are deliberate templates or paste-in prompts. *(Scope stated 2026-09-24: the
+  sweep looked only at long blocks containing headings, so a short or heading-free mis-nested
+  fence would not have been found.)* Found by reconciling invariant 32's new
   shell-block count (109) against a regex count (110).
 
 - **Closure pass, 2026-09-23: six same-day claims corrected where they landed.**

@@ -425,8 +425,7 @@ mapfile -d '' logs < <(find . -name '*.log' -print0)
 - [ ] **Counts in substitutions survive zero** (§4) — under `set -e`, any `$(… grep -c …)`
       without `|| true` aborts the script silently on an empty input. Each hit is a
       *candidate*; it is a defect only if the script runs with `-e` **and** the count can be
-      zero there (a count guarded by a non-empty test cannot). Measured on this library's own
-      scripts: 4 hits, 0 defects.
+      zero there (a count guarded by a non-empty test cannot).
       `grep -rnE '\$\([^)]*grep -c[^)]*\)' --include='*.sh' . | grep -v '|| true'`
 - [ ] **Missing-tool behaviour classified**: does every `command -v` failure `die`,
       skip-with-a-named-note, or ask an interactive human — and does the summary ever
