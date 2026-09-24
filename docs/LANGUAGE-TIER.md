@@ -380,13 +380,32 @@ After #426 every language has every applicable topic (page 5 has no blank cells;
 |---|---|---|---|---|
 | python | 2,152 | 65 | 3.0 | done (Bandit) |
 | go | 2,151 | 71 | 3.3 | done (gosec) |
-| rust | 2,218 | 102 | 4.6 | done (ANSSI, 2026-09-24) |
-| js/ts | 2,053 | 123 | 6.0 | done (eslint-plugin-security + Semgrep, 2026-09-24) |
-| php | 1,334 | 48 | 3.6 | done (Psalm + Semgrep, 2026-09-24) |
+| rust | 2,057 | 94 | 4.6 | **not yet** |
+| js/ts | 1,804 | 110 | 6.1 | **not yet** |
+| php | 1,143 | 41 | 3.6 | **not yet** |
 | ruby | 1,125 | 55 | 4.9 | done (Brakeman) |
 | c/c++ | 1,061 | 53 | 5.0 | done (cppcheck) |
-| jvm | 939 | 64 | 6.8 | done (find-sec-bugs, 2026-09-24) |
-| .NET | 721 | 53 | 7.4 | done (NetAnalyzers Security + SYSLIB, 2026-09-24) |
+| jvm | 710 | 48 | 6.8 | **not yet** |
+| .NET | 569 | 40 | 7.0 | **not yet** |
+
+**Re-measured 2026-09-24, after all nine gap-checks and five concept-matrix passes.** The
+table above is the 2026-09-23 measurement, restored. During the session its rows were
+overwritten one language at a time as each gap-check landed, and the later matrix passes then
+added items to most skills, so the edited rows were already stale. Rules lines are from
+`cat skills/sota-<lang>/rules/*.md | wc -l`. Audit items are the "items read" column of
+`python3 scripts/gen-concept-matrix.py`.
+
+| language | rules lines | audit items | items / 100 lines | external gap-check |
+|---|---|---|---|---|
+| python | 2,194 | 72 | 3.3 | done (Bandit) |
+| go | 2,175 | 73 | 3.4 | done (gosec) |
+| rust | 2,244 | 104 | 4.6 | done (ANSSI) |
+| js/ts | 2,072 | 126 | 6.1 | done (eslint-plugin-security + Semgrep) |
+| php | 1,364 | 51 | 3.7 | done (Psalm + Semgrep) |
+| ruby | 1,174 | 61 | 5.2 | done (Brakeman) |
+| c/c++ | 1,166 | 60 | 5.1 | done (cppcheck) |
+| jvm | 979 | 67 | 6.8 | done (find-sec-bugs) |
+| .NET | 787 | 58 | 7.4 | done (NetAnalyzers Security + SYSLIB) |
 
 Items are *counted* the same way across languages since every checklist became tick-boxes (the
 same day), but not *sized* the same: one bullet can bundle several probes, and that varies by

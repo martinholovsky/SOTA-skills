@@ -5619,3 +5619,28 @@ trailing colon followed by a space) and the row was widened.
   injection. XML is in rules/01, beside the injections it resembles. Native search paths are in
   rules/06 §3, the native-code escape hatch. The library map lists file titles, not sections,
   so it needs no change.
+
+## 2026-09-24 — closure pass: a measurement table overwritten, and a fifth lookahead probe
+
+**A dated measurement had been edited instead of superseded.** `docs/LANGUAGE-TIER.md`'s depth
+table ("Depth, measured 2026-09-23") had its rows overwritten one language at a time as each
+gap-check landed. The later concept-matrix passes then added items to most skills, so every
+row was stale, including the rows edited that same day.
+- **Found by** re-running both derivations: `cat skills/sota-<lang>/rules/*.md | wc -l`, and
+  the "items read" column of `gen-concept-matrix.py`. For example, python read 2,152 / 65 in
+  the table against **2,194 / 72** now, and .NET read 721 / 53 against **787 / 58**.
+- **Fix:** the 2026-09-23 table is restored from `git show 1be09d3:docs/LANGUAGE-TIER.md`, and a
+  re-measured table stands beside it with the commands that produced it.
+
+**A fifth lookahead probe.** `sota-testing` rules/03's mock check used `(?!\.)`, with no tool
+named. It exits 2 under `grep -E` and under ugrep (measured), and `rg`'s default engine has no
+lookaround either, so the check could never report anything. It is replaced with
+`jest\.mock\(['"][^.]`, which gave 2 hits on the bad fixture and 0 on the good one under ugrep
+7.8.4 and BSD grep 2.6.0. A sweep of all 317 tracked skill files for `(?!`, `(?=`, `(?<!` and
+`(?<=` now finds only prose describing the old bug. The control, this entry's own new note,
+was found.
+
+**Checked and left standing:** "no recorded rationale" for the concept matrix's old ≤5 cap
+(ROADMAP 65, the fifth pass). It was asserted after reading only the code. Since then, the
+introducing commit `e1b20d8`'s message, the original script (no comment at the cap) and the
+matrix's ledger entry have all been read. None states a reason, so the claim holds.
