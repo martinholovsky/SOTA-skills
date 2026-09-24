@@ -19,7 +19,8 @@ enforcement is on). Every change goes through a pull request:
 2. make the edit, then run `./scripts/check-invariants.sh` (and optionally
    `pre-commit run --all-files`). `pre-commit install` sets up **both** stages —
    pre-push re-runs the invariants, the first moment the **diff-based** ones
-   (11, 14) have a commit to read
+   (11, 14) have a commit to read. **Neither runs CI's other steps**: touched a skill file?
+   `python3 scripts/gen-skill-map.py` and commit any diff, or CI's skill-map check goes red
 3. push the branch and open a PR
 4. **every** required check must pass, then squash-merge — invariants, secret scan, shell
    lint, executable claims, and the negative-control harness that proves the gates can

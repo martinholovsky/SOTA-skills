@@ -75,7 +75,7 @@ in **any** project, not just this one:
 
 | | When | What it does |
 |---|---|---|
-| **`/sota-resume`** | **start** of a session | Finds the open work — every tracker, checkbox and `TODO` marker, swept with a **controlled** search — classifies it (ready · needs a decision · deferred · not an item · **already done and never ticked off**), shows you the table, then executes what you agree to against the project's own CI. |
+| **`/sota-resume`** | **start** of a session | Finds the open work — every tracker, checkbox and `TODO` marker, swept with a **controlled** search — classifies it (ready · needs a decision · deferred · not an item · **already done and never ticked off, or made unnecessary by a control that already covers the gap**), shows you the table, then executes what you agree to against the project's own CI. |
 | **`/sota-close`** | **end** of a session | The closure pass: **retract first**, record open items where the next session will trip over them, update what the session made false, **re-derive every number from its source**, say what is not done and blocked on whom, then commit the evidence. |
 | **`/sota-audit`** | **work finished**, or a codebase you did not write | Audits what is in front of you against the library: agrees the scope first, maps every surface to its owning skill and **says which domains nobody opened**, walks each Audit checklist item by item, then fixes what you agree to. |
 | **`/sota-deep-audit`** | a **milestone**, an inheritance, a go/no-go | The heavy pass, and **expensive**: **reconstructs the threat model from the code** — entry points, trust boundaries, a control-presence matrix — then fans the audit across independent agents, re-measures the numbers past decisions rest on, and hands every serious finding to a refuter that did not find it. |
@@ -106,7 +106,7 @@ Findings name the control they violate — not just "this looks wrong":
 - **Languages** — all 9 language skills (Rust → Ruby, below) get the same rigor;
   formal standards where they exist: SEI CERT (C, C++, Java), MISRA C/C++, ANSSI Rust.
   Each is also gap-checked against its ecosystem's own scanner registry
-  (Bandit, gosec, cppcheck and Brakeman so far — [LANGUAGE-TIER](docs/LANGUAGE-TIER.md))
+  (all nine, by 2026-09-24 — [LANGUAGE-TIER](docs/LANGUAGE-TIER.md))
 - **Supply chain** — SLSA, Sigstore, in-toto, SBOM (CycloneDX/SPDX), NIST SSDF
 - **Cloud & identity** — CIS Benchmarks, NIST 800-207 zero trust, NIST 800-63-4,
   OAuth 2.1, FAPI 2.0, passkeys, SPIFFE
@@ -557,8 +557,8 @@ because the same change added three more classes below):
   differ?" answers *yes* while the control is still wrong.
 
 **Where this is *not* backed by a number:** the measured lift is in BUILD
-(completeness, freshness). **Nine audit instruments across four designs all sit at
-+0.00** — recognition (snippets, cross-file repo, precision), procedure (does the model
+(completeness, freshness). **Nine audit instruments across four designs sit at
++0.00, and a tenth read a registered null too** — recognition (snippets, cross-file repo, precision), procedure (does the model
 actually mutate the control and re-run the build), question-set (an unscoped
 "audit this repository", with defect classes outside the standard repertoire), and,
 since 2026-08-14, a **real repository at a real vulnerable commit** — the one design a
@@ -570,8 +570,10 @@ findings both scored precision **1.00**. A frontier model handed the code is alr
 ceiling — on synthetic code, on real code, and when you stop telling it what to look
 for. The audit half is justified by gap analysis and by real defects it found in this
 repo — **not by a measured lift**, and it is reported that way rather than implied.
-There will be no tenth accuracy instrument: only a different *dependent variable*
-(time-to-find, report usability, reach for a non-expert) is still untested.
+This paragraph once said there would be no tenth accuracy instrument. One was built on
+2026-09-12 ([COMMENT-TRIAGE](evals/results/2026-09-12/COMMENT-TRIAGE.md)) and read a
+registered null. A different *dependent variable* (time-to-find, report usability, reach
+for a non-expert) is still untested.
 **Two numbers landed 2026-09-10, both pre-registered before any call.** The router's
 **terminal self-audit** (BUILD step 4) is no longer only a mechanism: under 400 lines of
 competing rules prose, removing it costs **−0.05**, and it recovers **+0.062** — SE 0.019,
@@ -591,7 +593,7 @@ could not see the router, which is where conflict resolution lives
 The measurement discipline is the part that is hard to copy, so it is worth stating
 plainly. Every item below is in the repo, not a claim about it:
 
-- **Nulls are published, not buried.** **Nine** +0.00 rows sit on the
+- **Nulls are published, not buried.** **Eleven** +0.00 rows (counted 2026-09-24) sit on the
   [scoreboard](evals/results/RESULTS.md) next to the +0.39 — including the ones that
   say, in our own words, that the audit half of this library adds nothing a good model
   doesn't already do. That null is *why* the defect-avoidance result above matters: we
@@ -714,8 +716,9 @@ read, hack on, or pin). A few details on the clone path:
 - Skills are discovered from `.claude/skills/` (per project) or `~/.claude/skills/`
   (personal, all projects); `install.sh` symlinks every skill and your profile.
 - `--project DIR` scopes to one repo; `--copy` pins a snapshot instead of linking.
-- Prefer no script? It only symlinks `skills/*/` into `~/.claude/skills/` — do
-  that by hand if you'd rather.
+- Prefer no script? Symlink `skills/*/` into `~/.claude/skills/` and `commands/*.md`
+  into `~/.claude/commands/` by hand. You then skip what the script adds beyond links:
+  the update-reminder hook, the routing-hook and listing-budget offers, and the reach check.
 
 The plugin (or `--copy`) installs the skills; a few extras (routing reminder,
 status line, pre-commit gates, AGENTS.md) aren't auto-enabled — see
@@ -1047,9 +1050,9 @@ silently uninstalled until you re-run the installer.
 | Command | Run it when | What it does |
 |---|---|---|
 | **`/sota-report`** | at the **end** of a session, in your own project | Writes a gitignored field report on where the guidance failed, was absent, wrong, or right and did not fire — stamped with the version that produced it. Then writes a short generalised extract and prints a `gh issue create` line. It never posts anything. |
-| **`/sota-resume`** | at the **start** of a session, or when picking a project back up | Finds the open work: sweeps every tracker, checkbox and `TODO` marker with a **controlled** search (a clean "nothing found" is exactly the answer a skipped symlink tree, a `--replace` flag or a 30-row default page produces), classifies it — ready · needs a decision · deliberately deferred · not an item · **already done and never ticked off** — shows you the table, then executes what you agree to, one item at a time, against the project's own CI entry point. |
+| **`/sota-resume`** | at the **start** of a session, or when picking a project back up | Finds the open work: sweeps every tracker, checkbox and `TODO` marker with a **controlled** search (a clean "nothing found" is exactly the answer a skipped symlink tree, a `--replace` flag or a 30-row default page produces), classifies it — ready · needs a decision · deliberately deferred · not an item · **already done and never ticked off, or made unnecessary by a control that already covers the gap** — shows you the table, then executes what you agree to, one item at a time, against the project's own CI entry point. |
 | **`/sota-audit`** | when a piece of work is **finished**, or on arriving in a codebase you did not write | Audits the code against the library rather than for defects in general, so the dominant finding is **a rule that owns real surface area and was never applied** — and behind it, a control that is present and enforces nothing. Agrees the scope first (every candidate printed with its denominator, because the wrong scope returns *clean* rather than an error), routes from the surfaces in the tree rather than from whatever happened to be loaded, prints a coverage table naming the domains **nobody opened**, walks each rules file's Audit checklist item by item (met · not met · not applicable, with the reason), asks the questions that need a decision in one batch, then fixes what you agree to against the project's own CI. |
-| **`/sota-deep-audit`** | at a **milestone**, on **inheriting** a codebase, or before a go/no-go | The heavy pass, and the one to reach for deliberately rather than by default. It buys four things `/sota-audit` structurally cannot: **independence** (every serious finding goes to an agent that did not find it, working from the code rather than the finder's write-up), **scale** (a repo too large to hold at once is partitioned across agents rather than skimmed by one), **decisions re-measured rather than reconstructed** (where a past choice rests on a number, that number is produced again this session), **a forward look** at whether the plan is still right, and **a threat model reconstructed from the code** (below). Four lenses — decisions & results · code and architecture · security posture · strategy. It states the plan and the fan-out split before spending anything, and writes files only if you ask. |
+| **`/sota-deep-audit`** | at a **milestone**, on **inheriting** a codebase, or before a go/no-go | The heavy pass, and the one to reach for deliberately rather than by default. It buys five things `/sota-audit` structurally cannot: **independence** (every serious finding goes to an agent that did not find it, working from the code rather than the finder's write-up), **scale** (a repo too large to hold at once is partitioned across agents, each with its own context, where `/sota-audit` partitions within one), **decisions re-measured rather than reconstructed** (where a past choice rests on a number, that number is produced again this session), **a forward look** at whether the plan is still right, and **a threat model reconstructed from the code** (below). Four lenses — decisions & results · code and architecture · security posture · strategy. It states the plan and the fan-out split before spending anything, and writes files only if you ask. |
 | **`/sota-close`** | at the **end** of a session, before you walk away | The closure pass: **retract first** (every claim that proved wrong, corrected *everywhere it reached*), record open items where the next session will actually trip over them, update the docs and agent files the session made false, **re-derive every number from its source**, state plainly what is not done and what is blocked on whom, then commit the evidence and confirm the push landed. |
 
 `/sota-resume` and `/sota-close` are the two ends of the same session: one picks the open work
@@ -1278,7 +1281,7 @@ skills/
     SKILL.md                     # when to use, BUILD/AUDIT workflows,
                                  # severity conventions, rules index, top-10
     rules/
-      NN-<topic>.md              # ~80–350 lines each, ends with an Audit checklist
+      NN-<topic>.md              # ≤ 500 lines each (the cap), ends with an Audit checklist
       ...
 profiles/
   <user>.md                      # personal stack defaults consulted by router
@@ -1291,7 +1294,7 @@ Every skill works in two modes:
   `file:line | rule violated | severity (Critical/High/Medium/Low/Info) |
   effort (trivial/small/medium/large) | fix`.
 
-Two cross-cutting pieces live outside the domain skills:
+Three cross-cutting pieces live outside the domain skills:
 
 - `skills/sota/rules/01-audit-methodology.md` — how to run an audit: scoping,
   a verified static-analysis tool matrix, triage discipline, and audit hygiene.

@@ -21,6 +21,12 @@ baseline is generation from the artifact of record:
 - **Lint the spec/docstrings**: OpenAPI linting (Spectral/Redocly CLI class) and
   docstring-coverage checks in CI, so "undocumented public symbol" is a build
   failure, not a review nitpick.
+- **A `|` in a Markdown table cell splits it, even inside backticks** — GFM
+  splits the row before parsing code spans. Measured on GitHub's renderer
+  (2026-09-24): `` `foo|bar` `` broke the code span and the **last cell was
+  dropped** to fit the header — silent data loss, not a wider table. Escape as
+  `\|`. When a script writes rows, count cells against the header, splitting on
+  *unescaped* pipes only, or the check flags the correct `\|` rows.
 - Generated reference is necessary, not sufficient: it gives you *what*; §2
   makes it useful.
 
@@ -167,6 +173,7 @@ Behavior change: POSTs are no longer retried by default — opt in per call.
 - [ ] Doc comments carry contract/failure/why/surprises — sample 10 public symbols; name-restating docstrings are a finding.
 - [ ] Doc examples compile/run in CI (doctests/Example funcs/extracted blocks); first example per page shows realistic use with error handling.
 - [ ] OpenAPI examples validate against their schemas.
+- [ ] No unescaped `|` inside a table cell's code span (§1) — GFM drops the overflow cell silently. A regex cannot pair backticks (adjacent spans `` `a` | `b` `` false-positive); walk the spans: ``perl -ne 'if (/^\|/) { while (/`([^`]*)`/g) { if ($1 =~ /(?<!\\)\|/) { print "$ARGV:$.\n"; last } } } close ARGV if eof' *.md``
 - [ ] Every operation documents its failure modes and the caller's correct reaction; HTTP error responses enumerated with body schema.
 - [ ] Published docs are versioned to match releases; default view is latest stable; pages state the version they describe.
 - [ ] CHANGELOG follows Keep a Changelog with an Unreleased section maintained in PRs; entries are user-impact language with issue/PR links, not commit subjects.

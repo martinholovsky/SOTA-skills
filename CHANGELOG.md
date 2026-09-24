@@ -7,7 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`sota-shell-scripting` rules/06 §1: never pipe into an interpreter that reads its program
+  from a heredoc** (`cmd | python3 - <<'PY'`). bash throws the piped data away. zsh's
+  default-on `MULTIOS` prepends it to the program: an error that names your data, or a silent run
+  when the data happens to parse as code. Reproduced in
+  zsh 5.9, bash 3.2 and 5.3, and `sh`, and the rule carries a checklist sweep.
+- **`sota-docs-workflow` rules/02 §1: a `|` inside backticks still splits a Markdown table
+  cell.** On GitHub's renderer the overflow cell is **dropped**, so content disappears
+  silently. Escape it as `\|`. The checklist probe walks code spans in perl, because a regex
+  false-positives on adjacent spans.
+
+### Changed
+
+- **`/sota-resume` §2: ALREADY DONE is now ALREADY DONE / OBVIATED.** An item whose gap a
+  different mechanism already covers used to land in READY by default. A READY item that adds a
+  new control must now name the incumbent control and test it against the target. Both README
+  class lists are updated.
+- **`AGENTS.md` "Landing a change" names the CI-only skill-map step.** `check-invariants.sh`
+  and pre-commit do not regenerate `docs/skill-map.*`, so a skill-file edit that passes locally
+  can still fail CI. That happened on PR #444's first run.
+
 ### Fixed
+
+- **`evals/results/RESULTS.md`'s "Not yet measured (open)" heading** sat over a list in which
+  every entry is done, rejected, or deferred with a trigger. It is retitled.
+- **README claims that stopped being true**, each re-checked against the tree:
+  - the language gap-check said "Bandit, gosec, cppcheck and Brakeman so far"; all nine are done;
+  - "nine audit instruments" and "there will be no tenth": a tenth was built on 2026-09-12;
+  - "Nine +0.00 rows" on the scoreboard: there are eleven;
+  - `/sota-deep-audit` "buys four things" above a list of five;
+  - rules files "~80–350 lines": they are 72–499 under the 500 cap;
+  - "Two cross-cutting pieces" above three bullets;
+  - "It only symlinks skills": `install.sh` also links the slash commands.
+  `docs/LANGUAGE-TIER.md` had the same kind of drift: "the five unchecked languages", a
+  "4–7 gaps" range that now runs to 25, and a candidate list below "Remaining: none".
 
 - **The v1.44.2 README said each language skill carries its own detector spelling for all five
   shared security classes.** That holds only for host keys, and there only partly. For temp

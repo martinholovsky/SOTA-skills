@@ -54,12 +54,22 @@ report the **denominator** — how many files you actually scanned — beside th
 | **NEEDS A DECISION** | Depends on a choice only the operator can make — naming, scope, priority, cost, anything security-, privacy- or money-relevant. State the question, **two or three options**, and **your recommendation with its reasoning** — rule 5's form, which applies here too. A bare recommendation is not a decision handed over. |
 | **DELIBERATELY DEFERRED** | The doc gives a reason to wait. Leave it, and say what the reason was. If the deferral names **no revisit trigger**, that is a finding: a deferral with no condition attached is a silent drop wearing a tracker row. |
 | **NOT AN ITEM** | Template checkboxes, worked examples, a `- [ ]` inside a code fence (it renders as sample output and no one was ever meant to tick it), completed rows still phrased as open. Say so rather than "doing" them. |
-| **ALREADY DONE** | Implemented, tracker never updated. The fix is a **doc correction, not code**. |
+| **ALREADY DONE / OBVIATED** | The work is unnecessary, in one of two ways: it was **implemented** and the tracker never updated, or it was never implemented and **the gap it names is now covered by a different mechanism**. Either way the fix is a **doc correction, not code**. |
 
 **ALREADY DONE is usually the largest class and the easiest to get wrong in the other
 direction.** The summary is always the stale half, and it is the half people read — a
 priorities table pointing at work its own ledger closed. Check the *ledger row*, the code, or
 the commit, never the header that summarises them.
+
+**OBVIATED is the half that lands in READY by default**, because the item itself really is
+untouched. Before classifying as READY anything that adds a *new* control — an alert, a check,
+a guard, a gate — name what covers that failure mode today and why it is not enough. If the
+answer is "nothing", test the incumbent against your target rather than reading its config:
+relax its threshold until it fires and confirm the target is in its selector set. Field-reported
+2026-09-16: a backlog row asked for a 96h backup-staleness alert, and a generic 25h rule
+already covered the job. A new control less sensitive than one already running is a regression
+shaped like an improvement. (Rule 5's false-premise pause catches this too, but only after the
+table has reached you.)
 
 Order READY by value against risk. Estimate **blast radius and uncertainty**, not minutes: how
 many files it touches, whether anything else depends on it, and what you would have to know
