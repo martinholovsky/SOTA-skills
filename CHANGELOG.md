@@ -29,6 +29,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`evals/results/RESULTS.md`'s "Not yet measured (open)" heading** sat over a list in which
   every entry is done, rejected, or deferred with a trigger. It is retitled.
+- **README claims that stopped being true**, each re-checked against the tree:
+  - the language gap-check said "Bandit, gosec, cppcheck and Brakeman so far"; all nine are done;
+  - "nine audit instruments" and "there will be no tenth": a tenth was built on 2026-09-12;
+  - "Nine +0.00 rows" on the scoreboard: there are eleven;
+  - `/sota-deep-audit` "buys four things" above a list of five;
+  - rules files "~80–350 lines": they are 72–499 under the 500 cap;
+  - "Two cross-cutting pieces" above three bullets;
+  - "It only symlinks skills": `install.sh` also links the slash commands.
+  `docs/LANGUAGE-TIER.md` had the same kind of drift: "the five unchecked languages", a
+  "4–7 gaps" range that now runs to 25, and a candidate list below "Remaining: none".
 
 - **The v1.44.2 README said each language skill carries its own detector spelling for all five
   shared security classes.** That holds only for host keys, and there only partly. For temp

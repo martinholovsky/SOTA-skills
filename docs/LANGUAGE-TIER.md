@@ -412,8 +412,8 @@ same day), but not *sized* the same: one bullet can bundle several probes, and t
 author, so the item column is a rough guide rather than a ratio.
 Small is not the same as shallow per line (jvm and .NET are the densest, as ROADMAP 58
 found), but an auditor walking .NET gets 40 probes and walking js/ts gets 110. **Every
-external gap-check so far found 4–7 real gaps**, so the five unchecked languages are
-expected to have some. **The operator set depth as the next session's focus.** The
+external gap-check found real gaps**: 4–7 in the first four, and 7–25 in the five checked
+since (table below). **The operator set depth as the next session's focus.** The
 concept-matrix candidate list does not answer this: the two .NET "gaps" it lists (command
 injection, path traversal) are covered at `sota-dotnet` rules/04:35–38, and its vocabulary
 simply misses .NET's phrasing.
@@ -433,8 +433,7 @@ the method already used for Go (OWASP Go-SCP) and Rust (ANSSI). All nine are don
 | php | **84 checks** (Psalm 19 taint types + Semgrep 65 `php/` rules) | Psalm 6.18.0: the `Issue/Tainted*.php` classes, the `TaintKind` constants and the docs agree on 19. Its sinks are a second registry (`InternalTaintSinkMap.php`, stubs), and that half held three of the gaps. semgrep-rules `php/`: a text parse and semgrep 1.177.0's own loader agree on 65. Idea classes only (Semgrep Rules License) | 7 gap clusters closed (14 items) plus the PHP host-key detector; temp-file trigger met |
 | dotnet | **94 rules** | the NetAnalyzers Security category: `AnalyzerReleases.Shipped.md` (now in dotnet/sdk) and a reflection dump of the .NET 10 SDK's analyzer DLLs agree ID for ID. The docs index lists 92 (it still carries CA2109, removed in 8.0, and omits CA3005, CA5404 and CA5405). The SYSLIB obsoletion list is a second registry | 13 gaps closed, two of them corrections of the skill's own advice (security analyzers ship disabled, so `latest-Recommended` fired 4 of 14 planted violations; legacy `Rfc2898DeriveBytes` is SHA-1 x 1000); 3 DLL-load-path rules held with no owner, given one on 2026-09-24 as ROADMAP 64 (`sota-code-security` rules/06 §3.1) |
 
-Remaining: none. All nine were checked by 2026-09-24. Candidate
-denominators — ruby/Brakeman, js-ts/eslint-plugin-security, rust/clippy + ANSSI.
+Remaining: none. All nine were checked by 2026-09-24.
 *This said "jvm and .NET have no queryable local tool" until 2026-09-24. It was wrong for
 both:
 - **jvm:** the host has no JDK (`/usr/bin/java` is the macOS stub), but SpotBugs with the
