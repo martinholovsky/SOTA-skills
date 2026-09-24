@@ -356,6 +356,14 @@ foreign function, and validate lengths before they cross. The class is `sota-cod
 - [ ] **Supply chain** —
       `grep -rn "git+http" pyproject.toml uv.lock 2>/dev/null | grep -v "@[0-9a-f]\{40\}"` ;
       `grep -rn "nosec\|noqa: S" --include="*.py" src/` (justified suppressions?)
+- [ ] **Publishing credentials and provenance (§9) — a long-lived PyPI token in CI [HIGH],
+      provenance switched off [MEDIUM]** —
+      `grep -rnE 'TWINE_PASSWORD|UV_PUBLISH_TOKEN|uv publish.*(--token|-t )' .github/workflows/`
+      (a token where Trusted Publishing would do);
+      `awk '/pypa\/gh-action-pypi-publish/{s=1;next} s&&/^[[:space:]]*- /{s=0} s&&/password:|attestations:[[:space:]]*.?false/{print FILENAME":"FNR": "$0}' .github/workflows/*.y*ml`
+      (scoped to that one step: the action's `password` input is a token, and its `attestations`
+      input defaults to `true`, so only an explicit `false` turns PEP 740 provenance off. A
+      fixed `grep -A` window reached a later step's registry `password:` and reported it)
 - [ ] **--- Temp files and permissions (§4a) ---** — `grep -rn "mktemp(" --include="*.py" src/`
       (TOCTOU [HIGH]); `grep -rnE '"/tmp/|'"'"'/tmp/' --include="*.py" src/` (predictable path
       [MEDIUM]); `grep -rnE 'chmod\(.*0o(6|7)[0-7][0-7]|umask\(0\)' --include="*.py" src/`
