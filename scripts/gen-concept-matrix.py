@@ -72,10 +72,11 @@ CONCEPTS = [
      r"data race|race condition|shared mutab|thread[- ]safe|goroutine|gvl|ractor|"
      r"send\b.*sync|atomic|lock|mutex|synchroniz"),
     ("cancellation / timeouts", "universal",
-     r"cancel|timeout|deadline|context\.|ctx\b|abortcontroller|cancellationtoken"),
+     r"cancel|timeout|deadline|context\.|ctx\b|abortcontroller|cancellationtoken|"
+     r"stop_token|jthread"),
     ("task / thread leaks", "universal",
      r"leak|orphan|detached task|fire[- ]and[- ]forget|unawaited|background task|"
-     r"goroutine leak|dangling"),
+     r"goroutine leak|dangling|unjoined|thread\.new"),
     ("blocking the event loop / executor", "conditional:has an event loop or async runtime",
      r"event loop|blocking (call|io|the)|block_on|run_until|sync over async|\.result\(\)|"
      r"configureawait|deadlock"),
@@ -94,7 +95,8 @@ CONCEPTS = [
     ("SQL / query injection", "universal",
      r"sql inject|parameteriz|prepare|raw quer|sql built from|string interpolation in (a )?quer|"
      r"activerecord|sqlalchemy|dapper|pdo|whereraw|selectraw|db::raw|escape_string|"
-     r"emulate_prepares|->query|execute\(|sqlx|diesel|knex|sequelize|query buil"),
+     r"emulate_prepares|->query|execute\(|sqlx|diesel|knex|sequelize|query buil|"
+     r"sql built as|sqlite3_exec"),
     ("command / subprocess injection", "universal",
      r"command inject|shell[= ]true|os/exec|subprocess|system\(|popen|`backtick|"
      r"process\.start|processbuilder|std::process|argument injection|child_process|"
@@ -128,7 +130,7 @@ CONCEPTS = [
      r"servercertificatevalidation|curlopt_ssl"),
     ("authn / authz checks", "universal",
      r"authoriz|authenticat|permission check|idor|access control|jwt|oauth|session|csrf|"
-     r"cookie|samesite|httponly"),
+     r"cookie|samesite|httponly|privilege drop|relinquish"),
     ("logging hygiene / PII in logs", "universal",
      r"log(ging|s)? (secret|pii|token|password)|redact|structured log|slog|"
      r"sensitive data in|stack trace (in|to) (the )?(response|user)"),
@@ -162,7 +164,7 @@ CONCEPTS = [
      r"profil|pprof|flamegraph|benchmark|bench\b|jmh|criterion|perf\b|measure"),
     ("allocation / GC pressure", "universal",
      r"alloc|gc\b|garbage collect|heap|boxing|clone\(\)|copy on|string concat|"
-     r"stringbuilder|interning"),
+     r"stringbuilder|interning|__slots__"),
     ("N+1 and accidental quadratic", "universal",
      r"n\+1|quadratic|nested loop|o\(n2\)|o\(n\^2\)|eager load|includes\(|preload|select_related"),
 
@@ -176,7 +178,8 @@ CONCEPTS = [
      r"warning disable|deny\(warnings\)|suppress"),
     ("module boundaries & imports", "universal",
      r"import|circular depend|cyclic|module boundar|package (layout|structure)|"
-     r"relative import|project reference|internal package|namespace layout|grab[- ]bag"),
+     r"relative import|project reference|internal package|namespace layout|grab[- ]bag|"
+     r"using namespace|pragma once|fvisibility"),
     ("numeric precision & money", "universal",
      r"float(ing)? (point|money)|decimal|rounding|money|currency|bigint|bigdecimal|"
      r"toFixed|precision loss|integer division"),
@@ -191,10 +194,12 @@ CONCEPTS = [
      r"exit (status|code)|\$\?|errorlevel|pipestatus|pipefail|nonzero|non-zero exit"),
     ("version floor / EOL awareness", "universal",
      r"eol\b|end of life|minimum (version|supported)|msrv|version floor|"
-     r"unsupported version|lts\b|deprecated (runtime|version)"),
+     r"unsupported version|lts\b|deprecated (runtime|version)|language version|"
+     r"standard pinned"),
     ("resource limits / DoS guards", "universal",
      r"rate limit|quota|dos\b|denial of service|redos|catastrophic backtrack|"
-     r"max (depth|length|size|connections)|recursion (depth|limit)"),
+     r"max (depth|length|size|connections)|recursion (depth|limit)|maxbytesreader|"
+     r"limitreader"),
 ]
 
 

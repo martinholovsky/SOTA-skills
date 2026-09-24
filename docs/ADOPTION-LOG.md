@@ -5095,3 +5095,38 @@ against a regex count (110) exposed a ```` ```sh ```` fence nested inside a ````
 fence in `sota-docs-workflow` rules/01. A CommonMark parser (markdown-it-py) confirms that the
 `## §4` heading at source line 107 renders **inside a code block spanning lines 105–164**. It is
 outside this intake's rows and is reported to the operator separately.
+
+## 2026-09-24 — concept-matrix triage, second pass: the four already-checked languages
+
+**Intake shape: an open queue with no row and no trigger**, found by a `/sota-resume`
+inventory (`docs/LANGUAGE-TIER.md`, "Not yet triaged … for the next pass"). Operator decision
+2026-09-24: fold it into ROADMAP 59. Each language's gap-check triages its own cells, and the
+cells of go, c/c++, python and ruby are triaged here. Full table in `docs/LANGUAGE-TIER.md`,
+"Second pass, 2026-09-24".
+
+| cell | verdict | landed |
+|---|---|---|
+| c/c++ SQL injection | **adopted: probe for a stated rule** | `sota-c-cpp` rules/04 §3 names the whole-statement C APIs and SQLite's `%s` vs `%q`, plus a checklist item |
+| c/c++ authn/authz | **adopted: new section** | `sota-c-cpp` rules/04 §7, relinquishing privileges (CERT POS36-C, POS37-C, Linux `setuid(2)`), plus a checklist item |
+| python supply-chain provenance | **adopted: probe for a stated rule** | `sota-python` rules/05 checklist: token env vars, and the publish action's `password` and `attestations: false` inputs |
+| 7 cells | **vocabulary artefact** | `scripts/gen-concept-matrix.py` matchers widened; each probe already existed |
+| 3 c/c++ cells | **rejected: delegated or covered as a class** | backpressure (`sota-async-concurrency`), deserialization and DoS (`rules/04` §2 plus `sota-code-security` rules/06) |
+
+**What running the probes caught, rather than reading them.** Two of the three new probes
+were wrong on their first draft, and both were caught by the known-good fixture:
+- The python probe used a `grep -A8` window after the publish step. It reached a later
+  docker-login step's `password:` and reported a registry credential as a PyPI token. It is
+  now an `awk` scan that stops at the next step.
+- The c/c++ bare-call probe matched the continuation line of a multi-line `if`. Requiring the
+  trailing `;` removed it.
+
+All three probes return a hit on the known-bad fixture and none on the known-good one, under
+both ugrep 7.8.4 and BSD grep 2.6.0 (the `awk` probe under macOS `awk`). **Sources, each read
+at intake:**
+- CERT POS36-C and POS37-C, on CERT's own site;
+- the Linux `setuid(2)` page on man7.org;
+- SQLite's `printf.html`, `c3ref/exec.html` and `c3ref/bind_blob.html`;
+- libpq's `libpq-exec.html`;
+- the MySQL C API pages for `mysql_real_query` and `mysql_stmt_prepare`;
+- `pypa/gh-action-pypi-publish` `action.yml` (`attestations` defaults to `'true'`);
+- `uv publish --help` (`UV_PUBLISH_TOKEN`) and twine's docs (`TWINE_PASSWORD`).

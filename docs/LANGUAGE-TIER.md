@@ -255,6 +255,31 @@ do not orphan them. Reasoning: a candidate cell is not evidence until its file i
 gap-check is where the file gets opened anyway. A separate row would compete with 59 for the
 same sessions.
 
+**Second pass, 2026-09-24: the already-checked languages (go, c/c++, python, ruby).** Of 13
+cells opened, **3 were real**, **7 were vocabulary artefacts** and **3 were delegated or
+covered as a class**. The two cells named above for go (public API surface) and ruby
+(profiling) were already matched by the time this pass ran.
+
+| candidate | verdict | evidence |
+|---|---|---|
+| c/c++: SQL injection | **REAL, closed** | `rules/04` §3 stated the rule; no checklist item probed it. The whole-statement C APIs (`sqlite3_exec`, `PQexec`, `mysql_real_query`) and SQLite's `%s` vs `%q` are now named and probed, each from the vendor's own page |
+| c/c++: authn/authz | **REAL, closed** | privilege relinquishment was in 0 files library-wide. New `rules/04` §7: order (CERT POS36-C), checked returns (Linux `setuid(2)`), a permanent drop proven by `setuid(0)` failing (POS37-C) |
+| python: supply-chain provenance | **REAL, closed** | `rules/05` §9 stated Trusted Publishing and PEP 740; no probe. Probe added for token env vars and the publish action's `password`/`attestations: false`, read from the action's own `action.yml` |
+| c/c++: cancellation | artefact | the `std::thread` without `jthread` probe *is* the cancellation probe (`jthread` carries a `stop_token`) |
+| c/c++: module boundaries | artefact | the §9 public-surface probe covers `using namespace` in headers, include guards and `-fvisibility` |
+| c/c++: version floor | artefact | `rules/06` probes `CXX_STANDARD` ("standard pinned?") |
+| go: version floor | artefact | `rules/03` and `rules/07` probe the go.mod `go`/`toolchain` directives |
+| go: DoS guards | artefact | `rules/04` probes `MaxBytesReader` and the four server timeouts |
+| python: allocation/GC | artefact | `rules/03` probes `__slots__` |
+| ruby: task/thread leaks | artefact | `rules/05` probes `Thread.new` without `join` |
+| c/c++: backpressure | delegation | no standard queue abstraction; bounding queues is `sota-async-concurrency`'s, language-agnostic |
+| c/c++: deserialization | covered as a class | no generic object deserializer; untrusted parsing is `rules/04` §2 (cap embedded lengths, fuzz the parser) plus the fuzzing probe in `rules/06` |
+| c/c++: DoS guards | covered as a class | `rules/04` §2's bounds rule, and `sota-code-security` rules/06 §4–§5, which is written C-first |
+
+Every artefact's vocabulary was fixed in `gen-concept-matrix.py` in the same change. After the
+fix, the only candidates left for these four languages are the three rows marked delegation
+or class.
+
 ### Verified gap: nobody probes the linter's escape hatch in jvm, .NET or c/c++
 
 Six of nine languages probe *"someone silenced the analyser"* — rust (`#![allow]` without a

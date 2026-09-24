@@ -55,6 +55,13 @@ Replace on sight (CERT STR/FIO; MISRA):
   with an explicit argument vector and no shell; never `system("cmd " + input)`.
 - **SQL/other injection**: parameterized queries / prepared statements only
   (the DB client API), never string-concatenated SQL — see `sota-databases`.
+  In the C client APIs the unsafe call is the one that takes a whole statement
+  string: `sqlite3_exec` (a convenience wrapper that runs a string), libpq
+  `PQexec`, MySQL `mysql_query`/`mysql_real_query`. The safe forms bind values
+  separately: `sqlite3_prepare_v2` + `sqlite3_bind_*`, `PQexecParams`/
+  `PQprepare`, `mysql_stmt_prepare` + `mysql_stmt_bind_param`. SQLite's own
+  printf escapes only with `%q`/`%Q`/`%w`. A `%s` in `sqlite3_mprintf` is
+  plain interpolation.
 - **Path traversal / TOCTOU** (CERT FIO): canonicalize with
   `std::filesystem::weakly_canonical`/`realpath` and verify the result stays
   under an allowed root; prefer `openat`/`O_NOFOLLOW` and operate on fds to
@@ -113,6 +120,39 @@ network-facing or setuid binary is a HIGH finding. From the OpenSSF guide:
 - Use `std::span`/`std::string_view`/containers instead of pointer+length
   everywhere they fit; enable libc++/libstdc++ hardened mode (`rules/02`).
 
+## 7. Relinquishing privileges (POSIX daemons and setuid programs)
+
+A process that starts as root and drops to a service account can keep root in
+three ways, and each one leaves the program running normally:
+
+- **Order.** Drop supplementary groups first, then the group ID, then the user
+  ID: `setgroups`/`initgroups` → `setgid` → `setuid`. After the user ID is
+  gone, the process no longer has the privilege to change its groups, so a
+  group ID dropped *after* it stays privileged (CERT POS36-C).
+- **Check every return.** The Linux `setuid(2)` page: *"there are cases where
+  setuid() can fail even when the caller is UID 0; it is a grave security error
+  to omit checking for a failure return from setuid()"*. A failed drop that is
+  not checked leaves the program running as root. Abort on failure.
+- **Prove the drop is permanent.** `seteuid(getuid())` is a *temporary* drop:
+  the saved set-user-ID still holds root, and `seteuid(0)` restores it. After a
+  permanent drop, try `setuid(0)` and abort if it *succeeds* (CERT POS37-C).
+
+```c
+/* BAD: uid first (gid now cannot be dropped), nothing checked */
+setuid(pw->pw_uid);
+setgid(pw->pw_gid);
+
+/* GOOD: groups, gid, uid, each checked, then prove root is gone */
+if (initgroups(pw->pw_name, pw->pw_gid) != 0 || setgid(pw->pw_gid) != 0 ||
+    setuid(pw->pw_uid) != 0)
+    abort();
+if (setuid(0) != -1)
+    abort();
+```
+
+Where the process only needs one capability, prefer dropping to capabilities or
+a sandbox over running as root at all (`sota-sandboxing`).
+
 ## Audit checklist
 
 - [ ] **Banned functions — HIGH/CRITICAL** —
@@ -126,6 +166,17 @@ network-facing or setuid binary is a HIGH finding. From the OpenSSF guide:
       `grep -rnE 'system\(|popen\(|exec[lv]p?\(' --include='*.c' --include='*.cpp' .` ;
       `grep -rnE 'fopen|open\(|realpath|access\(' --include='*.c' --include='*.cpp' .`
       (check-then-use races)
+- [ ] **SQL built as a string (§3) — HIGH/CRITICAL where input reaches it** —
+      `grep -rnE '(sqlite3_exec|PQexec|mysql_(real_)?query)[[:space:]]*\(' --include='*.c' --include='*.cpp' .`
+      (a whole-statement API: read how the string was built);
+      `grep -rnE 'sqlite3_v?s?n?mprintf[[:space:]]*\([^;]*%s' --include='*.c' --include='*.cpp' .`
+      (`%s` into SQL is unescaped; `%q`/`%Q` are the escaping forms)
+- [ ] **Privilege drop (§7) — HIGH on a setuid program or a root-started daemon** —
+      `grep -rnE '^[[:space:]]*(setuid|setgid|setresuid|setresgid|setgroups|initgroups)[[:space:]]*\([^;]*\)[[:space:]]*;' --include='*.c' --include='*.cpp' .`
+      (a call used as a bare statement: its return value is discarded. The trailing `;` keeps
+      a continuation line of a multi-line `if` out);
+      `grep -rnE '(setuid|setgid|setgroups|initgroups)[[:space:]]*\(' --include='*.c' --include='*.cpp' .`
+      (then read the order: groups, gid, uid, and a `setuid(0)` that must fail)
 - [ ] **Insecure randomness for security — HIGH** —
       `grep -rnE '\b(rand|random|srand|mt19937|random_device)\b' --include='*.cpp' --include='*.c' .`
       ; `grep -rn 'memcmp' --include='*.cpp' . | grep -iE 'mac|hmac|token|secret|sig|digest'`
