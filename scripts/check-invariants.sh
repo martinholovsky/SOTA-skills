@@ -232,6 +232,13 @@ while IFS= read -r f; do
   seen2=$((seen2 + 1))
   files2+=("$f")
 done < <(git ls-files 'skills/*/rules/*.md')
+# OPEN (2026-09-24): this fence tracking, and checks 22's and 32's, toggle on ANY line that
+# starts with three backticks. CommonMark does not: a fence closes only on a run at least as
+# long as its opener with no info string, so a ```sh example nested in a ````markdown block is
+# content, not a toggle. The file-level parity still comes out right for the one nested case
+# in the tree (sota-docs-workflow rules/01, fixed in #429), but lines inside such a block are
+# classified wrongly. Undecided: track the opener's length, or keep the simple toggle and
+# forbid nested fences.
 # The checklist must be the file's LAST '## ' heading (docs say "ends with"). Track
 # code-fence state so a '## Audit checklist' INSIDE a fence doesn't satisfy the check (the
 # 2026-07-01 fix missed this; the 2026-07-10 audit reproduced the bypass). A trailing

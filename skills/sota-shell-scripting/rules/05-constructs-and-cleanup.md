@@ -194,8 +194,9 @@ executes next:
 - **Truncate and write the same file** (`>`, `cat >`, an editor's save-in-place, Python's
   `write_text`): the running process keeps its byte offset into the **new** content, and
   executes whatever now sits there.
-- **Write a new file and rename it over the old one** (`mv`, `sed -i`, `perl -pi`): the
-  running process keeps the old inode and finishes the **original** script.
+- **Write a new file and rename it over the old one** (`mv`, `sed -i`, `perl -pi`; all three
+  measured on macOS to give the file a new inode): the running process keeps the old inode
+  and finishes the **original** script.
 
 Measured on macOS bash with the falsifier stated first ("if the running script prints only
 its original lines, this is wrong"). A 4-line script echoed line 1 and slept, then was
