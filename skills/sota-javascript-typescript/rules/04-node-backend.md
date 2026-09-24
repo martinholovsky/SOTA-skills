@@ -223,6 +223,86 @@ if (res.status >= 500) throw new UpstreamError(res.status);   // retry layer dec
 - Don't mix: a stray `require` in ESM throws; CJS deps import fine via default import. Publishing libraries: ship ESM; add CJS only if your consumers truly need it (use tsup/unbuild dual output, verify with `attw`).
 - Dynamic `import()` works in both module systems — it's the migration bridge and the lazy-loading tool.
 
+## `node:crypto` AEAD traps
+
+Web Crypto's `decrypt` returns nothing until the tag verifies. `node:crypto`'s streaming
+`Decipher` does not work that way, and each trap below was measured on Node 22:
+
+- **`decipher.update()` returns plaintext before anything is authenticated.** Only
+  `final()` checks the tag. With one ciphertext bit flipped, `update()` returned the
+  tampered plaintext (`` `ttack at dawn… ``). `final()` then threw "unable to authenticate
+  data". Code that uses `update()`'s output and calls `final()` late, or never, acts on
+  forged data. Buffer the output, call `final()`, and only then use the result. For a
+  stream, nothing downstream may commit until `end`. This is the Node spelling of
+  `sota-code-security` rules/04 §2, "never act on plaintext before the tag verifies".
+- **Pass `authTagLength` when you create a GCM decipher.** Without it, `setAuthTag()`
+  accepted a **4-byte** truncated tag, and decryption succeeded with no warning. With
+  `{ authTagLength: 16 }`, the same call threw `ERR_CRYPTO_INVALID_AUTH_TAG`. Node's
+  deprecation **DEP0182** covers this: documentation-only in v20.13.0, runtime in v23.0.0,
+  End-of-Life in v26.0.0. By that notice, Node lines before 26 accept short tags unless you
+  pass the option. v23–25 add a runtime warning; the silent acceptance was measured on 22
+  only.
+- **`crypto.createCipher` / `createDecipher` are gone.** DEP0106 reached End-of-Life in
+  v22.0.0 (Node 22 reports `typeof crypto.createCipher === 'undefined'`). The deprecation
+  notice says they used "MD5 with no salt" for key derivation and "static initialization
+  vectors". A hit means the code runs on an older Node or crashes on a current one. Migrate
+  to `createCipheriv` with a key derived by `scrypt` or `pbkdf2` and a fresh IV.
+- **Not a finding:** `crypto.pseudoRandomBytes` (and the aliases `prng`/`rng`). Node's
+  DEP0115 says there is "no difference" from `crypto.randomBytes`. It is deprecated, not
+  weak: a LOW hygiene item.
+
+Source for all three deprecations: <https://github.com/nodejs/node/blob/main/doc/api/deprecations.md>.
+
+## Transport verification: the Node spellings
+
+Disabled certificate or host-key verification is **one class, stated once** in
+`sota-code-security` rules/04 §5. This skill carries only Node's detectors, each measured on
+Node 22 against a self-signed server whose certificate names a different host:
+
+- `rejectUnauthorized: false`, an option of `https`/`tls` and of any agent that forwards
+  those options. The default refused with `DEPTH_ZERO_SELF_SIGNED_CERT`, and this option
+  connected.
+- **`NODE_TLS_REJECT_UNAUTHORIZED=0`** disables verification **process-wide, global
+  `fetch` included**. Every connection in the test succeeded. Node's only signal is one
+  warning line. Look for it in env files, Dockerfiles, CI config, and `process.env`
+  assignments.
+- **`checkServerIdentity: () => undefined`** keeps chain validation but skips the hostname
+  check. With the CA trusted, the default refused the name mismatch
+  (`ERR_TLS_CERT_ALTNAME_INVALID`), and this override connected.
+- `@grpc/grpc-js` `credentials.createInsecure()` is plaintext by construction. Acceptable
+  only on loopback or inside a mesh that provides mTLS.
+- **`ssh2`: no `hostVerifier` means accept any host key.** ssh2 1.17.0's `kex.js` sets
+  `ret = true` with the debug message "Host accepted by default (no verification)" when
+  none is configured. So the finding is the option's **absence** on `Client#connect`, or a
+  verifier that always returns `true`. Compare against a pinned key.
+
+
+## Server-side headless browsers and HTML-to-PDF
+
+A browser driven from the server (Puppeteer, Playwright, anything wrapping Chrome) is an
+HTTP client with a file reader built in. It runs inside your network. Measured with
+Chrome for Testing 149 headless shell: navigating to a user-supplied `file://` URL put the
+local file's contents into the rendered page. Navigating to `http://127.0.0.1:<port>/admin`
+rendered an internal-only response. A PDF or screenshot of that page is the exfiltration
+channel.
+
+- **Treat the URL passed to `page.goto()` as an SSRF sink**, under the same rule as any
+  user-supplied URL the server fetches (rules/05, "SSRF and server-side validation").
+  Allowlist the scheme (`https:`) and the host, and re-check after redirects. Run the
+  browser where the metadata endpoint and internal ranges are unreachable
+  (`sota-sandboxing`).
+- **Every "run this in the page" API accepts a string as well as a function.** That covers
+  `page.evaluate()`, Puppeteer's `evaluateOnNewDocument()` and Playwright's
+  `addInitScript()`. puppeteer-core's types say `pageFunction: Func | string`, and
+  playwright-core's say `PageFunction = string | …`. A request value that reaches one of
+  them is code injection into the browser. Pass data as the *argument* to a constant
+  function.
+- Rendering **user-supplied HTML** (`setContent`, an HTML-to-PDF job) hands the page's
+  subresource loads to the attacker. A first check with `<img src="http://127.0.0.1/…">`
+  loaded from a `data:` URL made **no** request, so that path is **not verified here**. Do
+  not rely on the browser to block it. Sanitize the HTML and deny the renderer network
+  egress.
+
 ## Audit checklist
 
 - [ ] `grep -rn "process.env" src/ --include="*.ts" | grep -v "config\|env.ts"` — env access outside the config module (MEDIUM); no schema validation of env at boot (HIGH).
@@ -241,3 +321,22 @@ if (res.status >= 500) throw new UpstreamError(res.status);   // retry layer dec
 - [ ] Outbound fetch/DB calls without timeouts (`grep -rn "fetch(" src/ | grep -v signal`; DB client statement_timeout) — MEDIUM, HIGH for critical paths.
 - [ ] Retry logic on non-idempotent operations without idempotency keys (MEDIUM/HIGH if money).
 - [ ] DB pool size × replica count vs database max_connections — documented anywhere? (LOW).
+- [ ] **`node:crypto` AEAD use (§"`node:crypto` AEAD traps")** —
+      `grep -rnE 'createDecipheriv\(|createCipher\(|createDecipher\(|setAuthTag\(|pseudoRandomBytes|crypto\.(prng|rng)\(' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
+      — for each GCM `createDecipheriv`: is `authTagLength` passed (absent: MEDIUM), and is
+      `update()` output used only after `final()` returned (HIGH if acted on first)?
+      `createCipher(`/`createDecipher(` is HIGH (static IV, MD5 key derivation).
+      `pseudoRandomBytes`/`prng`/`rng` is LOW hygiene, not weak randomness.
+- [ ] **TLS and SSH verification opt-outs (§"Transport verification") — HIGH on any hit that
+      reaches production** — `grep -rnE 'rejectUnauthorized: *false|NODE_TLS_REJECT_UNAUTHORIZED|checkServerIdentity|createInsecure\(|hostVerifier: *(\([^)]*\)|[[:alnum:]_]+) *=> *true' .`
+      (no `--include`: env files, Dockerfiles and CI YAML carry the variable). Read the
+      value on each `NODE_TLS_REJECT_UNAUTHORIZED` hit, and read what each
+      `checkServerIdentity` returns. Then list the `ssh2` users:
+      `grep -rlE 'require\(.ssh2.\)|from .ssh2.' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
+      Every `connect({...})` in those files **without** a `hostVerifier` accepts any host key.
+      The finding there is the absence, so no pattern can print it.
+- [ ] **Server-side headless browser inputs (§"Server-side headless browsers")** —
+      `grep -rnE '\.(goto|setContent|evaluate|evaluateOnNewDocument|addInitScript)\(' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
+      Skip the e2e suite. In server code, a request-derived URL reaching `goto` with no
+      scheme and host allowlist is HIGH (SSRF, `file://` read). A request-derived string
+      reaching `evaluate`, `evaluateOnNewDocument` or `addInitScript` is CRITICAL.

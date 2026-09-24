@@ -5229,3 +5229,66 @@ rules/04 §4.
 queues) and is now closed in rules/03 §2. Its supply-chain cell was half real: a checksum
 verification probe was added. The DoS cell was closed by the ReDoS work. The matcher fixes are
 in `gen-concept-matrix.py`, and jvm classifies 59 of 64 items.
+
+## 2026-09-24 — gap-check 7 of 9: sota-javascript-typescript against eslint-plugin-security and Semgrep's JS/TS rules
+
+**Intake shape: a gap-check against two external, tool-backed enumerations.** Denominator
+**15 + 214**, each derived twice and reconciled item by item. eslint-plugin-security: 14 rules
+exported by the npm 4.0.1 package against 15 on `main`. The delta is `detect-invisible-characters`,
+which is unreleased. Semgrep OSS `javascript/`+`typescript/`: 214 rules parsed from source
+against 212 served by the registry. The delta is one path lower-cased by the registry, plus two
+unpublished MCP rules. Security subset: 189. The Semgrep rules are under the Semgrep Rules
+License, so **idea classes only; no rule text taken**.
+
+**229 items classified:** 81 covered, 38 covered-as-class, 34 delegated, 28 deliberately not a
+rule (each with a measured or source-read reason), 48 closed. The 48 collapse to **14 gap
+classes and one correction**:
+
+| gap | verdict | landed |
+|---|---|---|
+| server-side template raw output (EJS/Pug/Handlebars/Mustache) | **adopted** | rules/05, new section; measured on each engine |
+| template source and view name as injection sinks | **adopted** | same; EJS/Pug template source executed `process.version`; Express 5 rendered `../upload` from outside `views/` |
+| hand-built HTML; `.replace` string pattern replaces the first match only | **adopted** | same |
+| shell passed as argv; `shelljs` | **adopted** | rules/05 command injection |
+| request-chosen `require`/`import()` (`data:` URLs run with no file) | **adopted** | same |
+| "use `safeLoad`" | **adopted with a correction** | js-yaml ≥4 removed it and made `load` safe; the old line was stale |
+| `jwt.decode`/`decodeJwt` do not verify | **adopted** | rules/05 tokens |
+| NoSQL operator injection; Express 4 vs 5 query parser | **adopted** | rules/05; measured, plus mongoose `sanitizeFilter` run |
+| Ajv `allErrors`, untrusted schemas | **adopted** | rules/05; Ajv security docs |
+| `cors({origin:true})`, unanchored regex origin | **adopted** | rules/05; measured |
+| invisible identifiers (U+3164) and bidi controls in source | **adopted** | rules/05, new section; measured |
+| `node:crypto` AEAD: `update()` before `final()`, missing `authTagLength`, removed `createCipher` | **adopted** | rules/04, new section; measured, DEP0182/0106/0115 |
+| Node spellings of TLS/`ssh2`/gRPC verification opt-outs | **adopted as detectors** | rules/04, new section; the class stays in `sota-code-security` rules/04 §5 |
+| server-side headless browsers (`goto` as SSRF, string `evaluate`) | **adopted** | rules/04, new section; `file://` and loopback measured with a headless shell |
+| path traversal had a rule and no probe | **adopted (audit half)** | rules/05 checklist |
+
+**Deliberately not rules:** `detect-buffer-noassert` (`noAssert` removed, measured),
+`detect-pseudoRandomBytes` (DEP0115: identical to `randomBytes`),
+`detect-no-csrf-before-method-override` (`method-override` is POST-only by default, read in its
+source), X-Frame-Options value injection (Node rejects CR/LF, measured), `X-XSS-Protection`, a
+single vendor SDK, and directory listing (an opt-in middleware; recorded, not closed).
+
+**Every probe was run against known-bad and known-good fixtures under ugrep and BSD grep:
+28/28.** A harness negative control failed as it should. One probe was wrong in its first
+draft: byte-range brackets that ugrep reads as UTF-8 matched 1 of 3 bad files. It was rewritten
+as literal alternatives. **Three new sections went to rules/04, not rules/05**, because 05
+would have passed the 500-line cap. They were moved by a script asserting the rest of the file
+byte-identical.
+
+**Re-measured by the integrating session:**
+- The agent's harness passes **28/28**: 14 probes, each on freshly rebuilt bad and good
+  fixtures, under ugrep and BSD grep.
+- Its verbatim check finds all 14 tested commands in the shipped files.
+- The `safeLoad` correction checks out against upstream js-yaml's own CHANGELOG: *"Removed
+  deprecated `safeLoad()`, `safeLoadAll()` and `safeDump()` exports."*
+- One pending wording fix from the agent was applied: `rejectUnauthorized` is described as an
+  option of `https`/`tls` and of agents that forward it. The earlier "most HTTP clients" was
+  unverified.
+
+**Concept matrix:**
+- The deserialization, event-loop and memory-safety cells were vocabulary artefacts, fixed in
+  `gen-concept-matrix.py`. js/ts classifies 92 of 123 items.
+- **Resource lifecycle is a real gap left open:** rules at 02 (`using`/`Symbol.asyncDispose`)
+  and 03 (`cursor.close()` in `finally`), with no checklist probe.
+- N+1 is delegated to `sota-databases` (router rule 3). Property-based testing is prose only
+  and not security-relevant.

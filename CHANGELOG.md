@@ -25,6 +25,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `java.net.URL` reading `file:`, CSRF bypassed by GET, CORS with credentials, and unbounded
     `Executors` queues.
   - The JVM host-key spellings are now carried.
+- **ROADMAP 59, gap-check 7 of 9: `sota-javascript-typescript` against eslint-plugin-security
+  and Semgrep's JS/TS rules** (229 items). 14 gap classes are closed:
+  - server-side template raw output and template or view-name injection;
+  - NoSQL operator injection (Express 4 vs 5);
+  - `jwt.decode`;
+  - CORS origin reflection;
+  - invisible and bidirectional characters in source;
+  - `node:crypto` AEAD traps;
+  - Node's TLS and `ssh2` opt-outs;
+  - server-side headless browsers.
 - **Concept-matrix triage for the four languages already gap-checked** (ROADMAP 59's folded-in
   queue):
   - `sota-c-cpp` rules/04 §7 covers relinquishing privileges (CERT POS36-C and POS37-C).
@@ -34,6 +44,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`sota-javascript-typescript`:** it recommended js-yaml's `safeLoad`, which js-yaml 4
+  removed; `load` is safe by default there.
 - **`sota-rust`:** a panic out of `extern "C"` is no longer called UB/Critical. Since Rust
   1.81 it aborts, so it is High (a DoS). Reproduced: exit 134, and `catch_unwind` did not
   catch it.

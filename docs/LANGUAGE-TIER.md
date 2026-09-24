@@ -309,7 +309,7 @@ After #426 every language has every applicable topic (page 5 has no blank cells;
 | python | 2,152 | 65 | 3.0 | done (Bandit) |
 | go | 2,151 | 71 | 3.3 | done (gosec) |
 | rust | 2,218 | 102 | 4.6 | done (ANSSI, 2026-09-24) |
-| js/ts | 1,804 | 110 | 6.1 | **not yet** |
+| js/ts | 2,053 | 123 | 6.0 | done (eslint-plugin-security + Semgrep, 2026-09-24) |
 | php | 1,143 | 41 | 3.6 | **not yet** |
 | ruby | 1,125 | 55 | 4.9 | done (Brakeman) |
 | c/c++ | 1,061 | 53 | 5.0 | done (cppcheck) |
@@ -328,7 +328,7 @@ injection, path traversal) are covered at `sota-dotnet` rules/04:35–38, and it
 simply misses .NET's phrasing.
 
 Coverage inside this tier is checked against an **external, enumerable, tool-backed list** —
-the method already used for Go (OWASP Go-SCP) and Rust (ANSSI). Six are done:
+the method already used for Go (OWASP Go-SCP) and Rust (ANSSI). Seven are done:
 
 | language | denominator | source | result |
 |---|---|---|---|
@@ -338,8 +338,9 @@ the method already used for Go (OWASP Go-SCP) and Rust (ANSSI). Six are done:
 | ruby | **86 checks** (79 default + 7 optional) | Brakeman 8.0.6: source `check_*.rb` classes and the tool's own `--checks` registry (run in a container) agree name-for-name, and the `add`/`add_optional` registrations sum to the same 86 | 7 gaps closed, 1 held for a decision |
 | rust | **60 recommendations** (46 rules + 14 recommendations) | ANSSI Secure Rust Guidelines at `3f9e2e2`: the source's reco blocks give 61 (en and fr identical), the rendered checklist page 60. The extra is `LIBS-UNSAFE`, a TODO inside an HTML comment that the renderer drops. No clippy registry derived | 25 gaps closed in three new sections (rules/03 §3b FFI boundary, §3c leak APIs, rules/07 §4a build config outside `Cargo.toml`) plus probes; one stale rule corrected (a panic out of `extern "C"` aborts since 1.81) |
 | jvm | **144 patterns** (121 detectors) | find-sec-bugs 1.14.0: the source `findbugs.xml` (master and tag), the XML inside the released jar, and SpotBugs 4.10.4 loading the plugin on Temurin 25 in a container agree as sets. The source code emits 143: `SQL_INJECTION` is registered but never emitted | 16 gaps closed (39 patterns), 1 held for the temp-file class, 2 with no owner in any skill (LDAP anonymous bind, XML built from strings) |
+| javascript-typescript | **15 + 214** (189 security rules) | eslint-plugin-security: npm 4.0.1 exports 14 and `main` has 15 (`detect-invisible-characters` is unreleased). Semgrep OSS `javascript/`+`typescript/`: 214 in source vs 212 served by the registry (one path case-folded, two unpublished MCP rules). Semgrep's rules are not openly licensed, so idea classes only | 14 gap classes closed (48 items) plus one correction (js-yaml 4 removed `safeLoad`); resource-lifecycle probe left open |
 
-Remaining: **javascript-typescript, dotnet, php** — 3. Candidate
+Remaining: **dotnet, php** — 2. Candidate
 denominators — ruby/Brakeman, js-ts/eslint-plugin-security, rust/clippy + ANSSI.
 *This said "jvm and .NET have no queryable local tool" until 2026-09-24. It was wrong for
 jvm: the host has no JDK (`/usr/bin/java` is the macOS stub), but SpotBugs with the
