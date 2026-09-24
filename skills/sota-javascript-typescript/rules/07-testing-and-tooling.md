@@ -133,6 +133,16 @@ export default tseslint.config(
 
 - `projectService: true` (replaces `project: true` boilerplate) enables type-aware rules with good perf.
 - Formatting belongs to Prettier (or Biome): no stylistic-format ESLint rules fighting the formatter. Biome is a fast single-tool alternative when its rule coverage suffices — but typescript-eslint's type-aware rules have no Biome equivalent yet; security-sensitive repos keep typescript-eslint.
+- Security lint, both in flat-config form: `eslint-plugin-no-unsanitized` has two rules,
+  `method` and `property`, for DOM sinks such as `innerHTML` and `insertAdjacentHTML`.
+  `eslint-plugin-security`'s recommended set enables all 14 rules of its published release
+  (enumerated from the npm package on 2026-09-24). **Its findings are review candidates,
+  not verdicts.** Its own docs say `detect-object-injection` "flags any expression in the
+  form of `object[expression]` no matter where it occurs". Neither plugin has a rule for
+  these (checked against both rule lists): raw-output syntax inside `.ejs`/`.pug`/`.hbs`
+  files (ESLint does not parse them), a missing GCM `authTagLength`, TLS verification
+  opt-outs, or a missing `ssh2` `hostVerifier`. Those need the grep probes in rules/04 and
+  rules/05.
 - Useful plugins: `eslint-plugin-regexp` (ReDoS), `eslint-plugin-react-hooks` (v6+: flat-config presets, React-Compiler-powered rules — `recommended-latest` to opt in), `eslint-plugin-jsx-a11y`, `eslint-plugin-import-x` (cycles: `import-x/no-cycle`).
 - Downgrading errors to warnings "to get CI green" creates a permanent warning swamp — fix or explicitly disable per-line with a reason comment.
 

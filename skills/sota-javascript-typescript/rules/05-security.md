@@ -53,6 +53,38 @@ Content-Security-Policy:
 - Roll out with `Content-Security-Policy-Report-Only` + a report endpoint, then enforce.
 - `frame-ancestors` replaces `X-Frame-Options`; `base-uri 'none'` blocks `<base>` hijack of relative script URLs.
 
+## Server-rendered HTML: template engines and hand-built strings
+
+The sink list above is the browser's. A Node server that renders HTML itself (Express
+views, email templates, HTML-to-PDF input) has its own, and each engine spells "raw" in a
+different way. Measured on ejs 6, pug 3, handlebars 4.7 and mustache 4.2 with the payload
+`<img src=x onerror=alert(1)>`. Each form below emitted it **unescaped**:
+
+| engine | escaped (default) | raw output — each one is a sink |
+|---|---|---|
+| EJS | `<%= x %>` | `<%- x %>`; an `escape` option that returns its input |
+| Pug | `#{x}`, `p= x` | `!{x}`, `p!= x`; `&attributes(obj)` (emitted `onclick="…"` from data) |
+| Handlebars | `{{x}}` | `{{{x}}}`, `{{&x}}`; `compile(src, { noEscape: true })` |
+| Mustache | `{{x}}` | `{{{x}}}`, `{{&x}}`; reassigning `Mustache.escape` (global, every render) |
+
+- **User input goes into the template's data, never into its source.** Measured:
+  `ejs.render('<%= process.version %>')` and `pug.render('- var v = process.version…')`
+  both returned the Node version, because EJS and Pug templates *are* JavaScript. A
+  user-controlled template string is **code execution** (CRITICAL). Handlebars and
+  Mustache are logic-less: the same probe for `constructor` returned nothing useful from
+  Handlebars (prototype access is blocked). They still render raw HTML via the table
+  above. The class is `sota-code-security` rules/01 §7.
+- **The view name is a path.** `res.render(req.query.view)` is an injection sink. Measured
+  on Express 5.2.1: `app.render('../upload')` and `app.render('/abs/path/upload.ejs')` both
+  rendered a template **outside** `views/`, executing its `<%= %>` code. That is code
+  execution once an attacker can put a file on disk. Map the request to a fixed allowlist
+  of view names.
+- **Hand-built HTML has no escaping at all.** `` res.send(`<p>Hello ${name}</p>`) `` is
+  reflected XSS. Do not repair it with `.replace('<', '&lt;')`: a **string** pattern
+  replaces only the **first** match. Measured: `'<b><i>'.replace('<','&lt;')` gives
+  `&lt;b><i>`. Render through an engine's escaped form. If you must escape by hand, use
+  one function that handles `& < > " '` with `replaceAll` or a `/g` regex.
+
 ## Prototype pollution
 
 Writing to `__proto__`/`constructor.prototype` via attacker-controlled keys poisons every object — leading to auth bypass (`{}.isAdmin === true`), DoS, sometimes RCE via gadget chains.
@@ -93,6 +125,30 @@ The dependency tree is your attack surface; install scripts run arbitrary code o
 - **Typosquatting**: verify exact names on add; scoped packages (`@org/x`) reduce risk. Pin GitHub Actions to commit SHAs, not tags.
 - **Publishing**: trusted publishing (OIDC from CI — `npm trust` since CLI 11.10 configures it across packages in bulk) over long-lived tokens; npm's staged publishing adds a human 2FA approval gate before a version goes live — enable it for high-blast-radius packages (a stolen token alone then can't ship a release). `files` allowlist in package.json so secrets/configs never ship in the tarball.
 
+## Invisible and bidirectional characters in source
+
+Code review assumes the diff shows what the parser sees. Two JS facts break that
+assumption, both measured on Node 22:
+
+- **An identifier can be invisible.** An identifier consisting only of U+3164 HANGUL
+  FILLER is valid: `new Function('const ㅤ = "hidden"; return ㅤ;')()` returned
+  `"hidden"`. The parser treats it as a letter, and it renders as blank space. So
+  `const { timeout, <U+3164> } = req.query`, followed by a later use of that name in an
+  `exec` call, reads in review like a stray comma. (The escapes are written out here so
+  this file itself stays clean.) (U+200B, zero-width space, is
+  **not** accepted inside an identifier: that was a SyntaxError.)
+- **Bidirectional controls inside comments and strings are legal** (U+202A–202E,
+  U+2066–2069, the Trojan Source class, CVE-2021-42574). A comment containing U+202E
+  parsed and ran unchanged. The characters reorder how the line *displays*, not how it
+  *executes*.
+
+Gate on it rather than trusting review: `eslint-plugin-security` ships
+`detect-bidi-characters` in its recommended set. Its `detect-invisible-characters` (U+3164,
+U+FFA0) is on the project's main branch but was **not in a published release** when checked on
+2026-09-24 (latest was 4.0.1). Until your installed version exports it, use the byte probe
+in the checklist. The ingest-side version of the same class, for
+text bound for an LLM or a UI, is `sota-code-security` rules/09 §4.
+
 ## ReDoS
 
 Backtracking regexes with nested/overlapping quantifiers go exponential on crafted input — one request pins a CPU (and on Node, the whole event loop: total DoS).
@@ -121,6 +177,12 @@ if (input.length > 256) reject();
 - SameSite is CSRF defense-in-depth, not complete: keep CSRF tokens (or strictly enforce custom-header + CORS preflight) for state-changing routes if any non-SameSite path exists.
 - If an SPA must hold an access token in JS (third-party API): keep it in memory only, short-lived (≤15min), refresh via httpOnly-cookie refresh token; accept that XSS can use (not just steal) it — XSS prevention remains the real control.
 - **Verify JWTs server-side properly**: pin the algorithm (`{ algorithms: ['RS256'] }` — never accept `alg` from the token; `none` and HS/RS confusion attacks), validate `iss`, `aud`, `exp`, clock skew. Use `jose`. Don't put secrets in JWT payloads — they're only base64.
+- **`decode` is not `verify`.** jsonwebtoken's `jwt.decode` "Returns the decoded payload
+  without verifying if the signature is valid", and its README says not to use it on
+  untrusted messages. jose's `decodeJwt` decodes "without checking its signature or
+  validating claim types and values". Server code that authorizes on either one accepts a
+  token the caller wrote themselves (CRITICAL). On the client, decoding for display is
+  fine. Decoding in order to gate anything is the "client guards are UX" mistake below.
 - Authorization on every request server-side; client-side route guards are UX, not security.
 
 ```ts
@@ -175,7 +237,22 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
 - `exec`/`execSync` with any interpolated value is CRITICAL. `execFile`/`spawn` (no `shell`) pass args directly to the binary.
 - Still validate the arg itself: allowlist characters/paths (argument injection — `--flag`-shaped filenames — can still subvert tools; prepend `--` where supported).
 - Path traversal cousin: joining user input into paths — `const p = path.resolve(base, name); if (!p.startsWith(base + path.sep)) reject();`
-- Same family: never interpolate into SQL (parameterized queries only), `Function`, YAML `load` (use `safeLoad` semantics), or `vm`.
+- Same family: never interpolate into SQL (parameterized queries only), `Function`, or `vm`.
+  **YAML:** in js-yaml **4.0.0 and later**, `load` is safe by default. The `!!js/function`
+  family moved to a separate package, and `safeLoad` was removed; calling it now throws.
+  Measured on js-yaml 5: `load('f: !!js/function …')` threw "unknown scalar tag". The
+  finding is js-yaml **below 4** calling `load` on untrusted input, or a schema that
+  re-adds the JS types. "Use `safeLoad`" is stale advice, because that call no longer exists.
+- **A shell passed as argv is still a shell.** `spawn('sh', ['-c', cmd])` (or `bash -c`)
+  has no `shell: true` for the probe below to find, and it parses `cmd` exactly
+  like `exec`. The same holds for `shelljs`: its own docs say `shell.exec()` "executes an
+  arbitrary string in the system shell". Measured on shelljs 0.10: `shell.exec('echo
+  $HOME')` printed the expanded home directory.
+- **A module specifier is code.** `require(x)` and `import(x)` execute whatever `x` names.
+  Measured on Node 22: `await import('data:text/javascript,…')` ran the inline source, so an
+  ESM `import()` of a user string executes code with **no file on disk**. `require` of a
+  user-chosen path runs an uploaded `.js`. Load plugins from a fixed map
+  (`const plugins = { csv: () => import('./csv.js') }`), never from a request value.
 - **Node deprecated the dangerous spelling itself.** `DEP0190` — "Passing `args` to
   the `node:child_process` module's `execFile()` and `spawn()` methods with the
   `shell` option enabled is deprecated … the arguments are not properly escaped when
@@ -217,6 +294,31 @@ File uploads:
 - Every inbound payload schema-parsed at the boundary (rules/01) — including webhooks (verify signatures: Stripe/GitHub HMAC) and headers you act on.
 - User-supplied URLs the server fetches (webhooks, importers, avatars): allowlist protocols (`https:` only), resolve DNS and block private ranges (127/8, 10/8, 172.16/12, 192.168/16, 169.254/16 — cloud metadata `169.254.169.254`), block redirects-to-private (re-check after each redirect, `redirect: 'manual'`), pin timeouts and response-size caps. Library: `ssrf-req-filter` or equivalent egress proxy.
 - Mass assignment: never `Model.update(req.body)` — schema-pick the allowed fields (`z.object({...}).strict()`).
+- **NoSQL operator injection is the same bug arriving as a type.** In
+  `User.findOne({ name: req.body.name, pass: req.body.pass })`, a body of
+  `{"pass": {"$ne": null}}` becomes a MongoDB operator, not a string. JSON bodies can always
+  carry it. Query strings depend on the parser, measured: `qs` turns `user[$ne]=x` into
+  `{"user":{"$ne":"x"}}`, which is **Express 4's default** (`'extended'`). **Express 5's
+  default** (`'simple'`, `node:querystring`) leaves it a flat key. An Express 4→5 upgrade
+  therefore changes the exposure, and so does setting `'query parser'` back to
+  `'extended'`. The fix is the boundary rule: parse every field to a scalar (`z.string()`)
+  before it reaches a filter. Mongoose's `sanitizeFilter` option is the backstop. Measured:
+  its helper rewrote `{user:{$ne:null}}` to `{user:{$eq:{$ne:null}}}`. It also throws on
+  `$where`, `$expr`, `$jsonSchema` and `$text`. The class is `sota-code-security` rules/01 §2.
+- **Ajv:** its security page says **"Do NOT use allErrors in production"**. With
+  `allErrors: true`, validation keeps running after the first failure, so the
+  slow-keyword mitigations (`maxLength` before `pattern`, `maxItems` before
+  `uniqueItems`) stop working. It also says Ajv "treats JSON schemas as trusted as your
+  application code". So never compile a schema that came from a request. For
+  `pattern`/`format` on untrusted strings, Ajv supports a linear-time engine:
+  `new Ajv({ code: { regExp: RE2 } })`.
+  Source: <https://github.com/ajv-validator/ajv/blob/master/docs/security.md>.
+- **CORS through the `cors` middleware.** The `Allow-Origin` probe below never sees this
+  config. Measured on cors 2.8: `cors({ origin: true, credentials: true })` answered
+  `Origin: https://evil.example` with that origin **and** `Allow-Credentials: true`, which
+  is the reflection hole above written as one option. `origin: /example\.com$/` accepted
+  `https://evilexample.com`. Use an exact-string array, or a regex anchored at both ends
+  with the scheme and a dot before the domain (`/^https:\/\/([a-z0-9-]+\.)?example\.com$/`).
 
 ## Timing and crypto hygiene
 
@@ -224,7 +326,6 @@ File uploads:
 - Randomness for anything security-relevant (tokens, IDs in URLs, reset codes): `crypto.randomUUID()` / `crypto.getRandomValues()` / `crypto.randomBytes` — never `Math.random()` (predictable, seedable state recovery is practical).
 - Password hashing: argon2id (or scrypt/bcrypt with sane cost), async variants only (rules/04); never SHA-256-of-password, never homegrown.
 - Web Crypto (`crypto.subtle`) for in-app encryption/signing; AES-GCM with unique IVs per encryption (IV reuse with GCM is catastrophic); keys from KMS/secret manager, not constants.
-
 
 ## Native addons and uninitialized buffers
 
@@ -269,4 +370,43 @@ buffer first. The class is `sota-code-security` rules/06 §3.
 - [ ] Cookies: `grep -rn "Set-Cookie\|res.cookie" src/` — missing HttpOnly/Secure/SameSite on session cookies (HIGH).
 - [ ] `grep -rn "res.redirect\|window.location.*=\|location.href.*=" src/` with request-derived values — open redirect (MEDIUM/HIGH near auth flows).
 - [ ] Upload handlers: extension/MIME-only validation, client filename used in path (`grep -rn "originalname\|file.name" src/`) — HIGH.
+- [ ] **Template raw-output syntax (§"Server-rendered HTML")** — in template files:
+      `grep -rnE '<%-|!\{|^[[:space:]]*[[:alnum:]._#-]*!=|&attributes|\{\{\{|\{\{&' --include='*.ejs' --include='*.pug' --include='*.jade' --include='*.hbs' --include='*.handlebars' --include='*.mustache' .`
+      — each hit fed user or DB content is stored/reflected XSS (HIGH/CRITICAL).
+- [ ] **Template engines misused from code** —
+      ``grep -rnE 'noEscape|Mustache\.escape *=|(ejs|pug|Handlebars|Mustache)\.(render|compile)\([^)]*req\.|res\.render\([^,)]*req\.|res\.(send|write|end)\( *`[^`]*<' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .``
+      — a request value as EJS/Pug template *source* is CRITICAL (code execution). As a
+      view *name* it is HIGH (renders templates outside `views/`). `noEscape`, a reassigned
+      `Mustache.escape`, or HTML built in a template literal is XSS (HIGH).
+- [ ] **Code chosen by the request, or a shell hidden in argv** —
+      ``grep -rnE '(require|import)\( *([[:alpha:]_$]|`[^`]*\$\{)|[^[:alnum:]_](/bin/)?(ba|z|da)?sh[^[:alnum:]_] *, *\[ *[^[:alnum:]]-c[^[:alnum:]]|shelljs|shell\.exec\(' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .``
+      — `require`/`import()` of a non-literal reached by request data is CRITICAL. So is
+      `spawn('sh', ['-c', …])` or `shell.exec` with interpolated input. The `shell: true`
+      probe above misses both.
+- [ ] **YAML loader version** — `grep -rnE '"js-yaml": *"[~^]?[0-3]\.|safeLoad' --include='package.json' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
+      — js-yaml below 4 with `load` on untrusted input is HIGH. A `safeLoad` call on js-yaml
+      4 or later throws, so those hits are dead code.
+- [ ] **NoSQL operator injection** —
+      `grep -rnE '\.(find|findOne|findOneAndUpdate|findOneAndDelete|updateOne|updateMany|deleteOne|deleteMany|countDocuments|aggregate)\([^)]*req\.(body|query|params)|query parser.*extended' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
+      — a request field in a filter without a scalar schema parse is HIGH (auth bypass via
+      `{"$ne": null}`). The probe sees single-line calls only. Also check the Express major,
+      because v4 defaults to the nesting `qs` parser.
+- [ ] **Ajv configuration** — `grep -rnE 'allErrors: *true|\.compile\([^)]*req\.' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
+      — `allErrors: true` on a request-validation path is MEDIUM (DoS). Compiling a
+      request-supplied schema is HIGH.
+- [ ] **CORS via the `cors` middleware** — `grep -rnE 'origin: *(true|/)' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
+      — `origin: true` reflects every origin: HIGH with `credentials: true`. A regex origin
+      must be anchored at both ends with the dot escaped, or it is HIGH.
+- [ ] **JWT decoded but never verified** — `grep -rnE '(jwt|jsonwebtoken)\.decode\(|decodeJwt\(' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
+      — on the server, a decoded claim that gates access is CRITICAL.
+- [ ] **Path traversal: request data reaching the filesystem** (the rule is in §"Same family";
+      this is its probe) —
+      `grep -rnE '(readFile|readFileSync|createReadStream|writeFile|writeFileSync|createWriteStream|unlink|rm|readdir|sendFile|download|join|resolve)\([^)]*req\.(params|query|body)' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
+      — each hit needs the resolve + containment check (HIGH without it). The probe sees
+      single-line calls only.
+- [ ] **Invisible or bidirectional characters in source (§"Invisible and bidirectional")** —
+      `grep -rnE "$(printf '\342\200\213|\342\200\214|\342\200\215|\342\200\216|\342\200\217|\342\200\252|\342\200\253|\342\200\254|\342\200\255|\342\200\256|\342\201\240|\342\201\241|\342\201\242|\342\201\243|\342\201\244|\342\201\246|\342\201\247|\342\201\250|\342\201\251|\343\205\244|\357\276\240')" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
+      — U+200B–200F, U+202A–202E, U+2060–2064, U+2066–2069, U+3164 and U+FFA0, written as
+      UTF-8 bytes so the probe works under BSD grep and ugrep alike. A BOM at the start of a
+      file is deliberately excluded. Any hit in code is HIGH until explained.
 - [ ] `grep -rn "Math.random" src/` near token/id/code generation — HIGH; `grep -rn "=== .*signature\|signature ===" src/` — timing-unsafe compare (MEDIUM).

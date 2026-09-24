@@ -79,7 +79,7 @@ CONCEPTS = [
      r"goroutine leak|dangling|unjoined|thread\.new"),
     ("blocking the event loop / executor", "conditional:has an event loop or async runtime",
      r"event loop|blocking (call|io|the)|block_on|run_until|sync over async|\.result\(\)|"
-     r"configureawait|deadlock"),
+     r"configureawait|deadlock|sync\(|scryptsync"),
     ("backpressure / unbounded queues", "universal",
      r"unbounded|backpressure|bounded (queue|channel)|buffer size|queue depth|executors\.new|"
      r"linkedblockingqueue"),
@@ -90,7 +90,7 @@ CONCEPTS = [
      r"file handle|connection (leak|pool)|ensure\b"),
     ("memory safety (bounds, UAF, overflow)", "conditional:manual memory management",
      r"use[- ]after[- ]free|buffer overflow|bounds|out of bounds|dangling pointer|"
-     r"double free|integer overflow|sanitizer|asan|ubsan|valgrind|miri"),
+     r"double free|integer overflow|sanitizer|asan|ubsan|valgrind|miri|allocunsafe"),
 
     # --- security
     ("SQL / query injection", "universal",
@@ -110,7 +110,7 @@ CONCEPTS = [
     ("deserialization / unsafe parsing", "universal",
      r"deserializ|unserialize|pickle|marshal|yaml\.load|objectinputstream|binaryformatter|"
      r"gob\b|xxe|xml external|phar|serde|bincode|json\.loads|fromjson|readobject|xslt|"
-     r"stylesheet"),
+     r"stylesheet|js-yaml|safeload|yaml loader"),
     ("output encoding / XSS / templating", "conditional:renders markup or templates",
      r"xss|escap|html_safe|htmlspecialchars|dangerouslysetinnerhtml|innerhtml|"
      r"autoescap|erb|template inject|sanitiz"),
