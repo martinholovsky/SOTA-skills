@@ -7,7 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`sota-shell-scripting` rules/06 §1: never pipe into an interpreter that reads its program
+  from a heredoc** (`cmd | python3 - <<'PY'`). bash throws the piped data away. zsh's
+  default-on `MULTIOS` prepends it to the program, so the error names your data. Reproduced in
+  zsh 5.9, bash 3.2 and 5.3, and `sh`, and the rule carries a checklist sweep.
+- **`sota-docs-workflow` rules/02 §1: a `|` inside backticks still splits a Markdown table
+  cell.** On GitHub's renderer the overflow cell is **dropped**, so content disappears
+  silently. Escape it as `\|`. The checklist probe walks code spans in perl, because a regex
+  false-positives on adjacent spans.
+
+### Changed
+
+- **`/sota-resume` §2: ALREADY DONE is now ALREADY DONE / OBVIATED.** An item whose gap a
+  different mechanism already covers used to land in READY by default. A READY item that adds a
+  new control must now name the incumbent control and test it against the target. Both README
+  class lists are updated.
+
 ### Fixed
+
+- **`evals/results/RESULTS.md`'s "Not yet measured (open)" heading** sat over a list in which
+  every entry is done, rejected, or deferred with a trigger. It is retitled.
 
 - **The v1.44.2 README said each language skill carries its own detector spelling for all five
   shared security classes.** That holds only for host keys, and there only partly. For temp

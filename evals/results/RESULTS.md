@@ -460,7 +460,7 @@ the real signal*). Evidence of **no detected degradation**, not of no change.
 treatment, so its `+0.00` would have been structural. Caught by reading the runner
 before spending; the fake null would have looked identical to this real one.
 
-## Not yet measured (open)
+## Once listed as not yet measured — none open (re-checked 2026-09-24)
 
 - **Competitor breadth — DONE (5 domains).** The lead tracks the unguided baseline,
   not the domain (table above; [BREADTH.md](2026-07-13/BREADTH.md)). Data pipelines /

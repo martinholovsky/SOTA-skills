@@ -23,6 +23,7 @@ rather than assuming; then treat the table below as live.
 | unquoted `$var` with spaces **or newlines** — incl. any `$(…)` file list | splits into words | **joins** into one argument (`rules/01` §3) | **loudly** — a usage error, exit 2, from the callee — but a *file-list* command then searches **nothing**, and empty output reads as a clean tree |
 | `$?` after a pipeline | last stage (`${PIPESTATUS[0]}` for the first) | same, but `${pipestatus[1]}` (`rules/01` §3) | **quietly** — a wrong status, read as truth |
 | unquoted glob in a flag value | passed through **literally**, command runs | `NOMATCH` **aborts the command** | **silently** — and it fakes a clean result |
+| `cmd \| python3 - <<'PY'` (pipe **and** heredoc on fd 0) | heredoc wins, piped data **discarded** | `MULTIOS` **concatenates** them: the data runs as the program's first lines | bash **quietly** (script reads empty stdin); zsh **loudly but misleadingly** (below) |
 
 **The third is the dangerous one: a failed glob means the command never runs at all.**
 zsh's `NOMATCH` is on by default, so a glob matching nothing is a hard error rather than a
@@ -64,6 +65,11 @@ Rules:
   list still runs depends on the failing command — `grep --include=*.md x . ; echo hi`
   prints `hi`, while the same glob passed to a **builtin** (`echo`, `true`) aborts the
   whole list, so the follow-up never runs either. Either way the intended command did not.
+- **Never pipe into an interpreter that reads its program from a heredoc** (row 4). zsh's
+  `MULTIOS` is on by default, so `echo '{"a": false}' | python3 - <<'PY'` fails with
+  `NameError: name 'false'` at `<stdin>` line 1 — an error naming *your data*, which reads as
+  a data bug. Measured zsh 5.9, bash 3.2 and 5.3, `sh`. Write the script to a file and pipe
+  into it, or save the input to a file the heredoc opens.
 
 ## 2. The sweep that never ran: `grep -r` over symlinks — and the positive control that catches ANY broken sweep
 
@@ -484,3 +490,5 @@ filed under the wrong thing** — index it by what it is *for*.
       where bash passes several. Confirm by running it: `printf "[%s]" $args` prints one
       bracket group, `${=args}` prints several. Symptom to recognise in a bug report — a
       **usage error (exit 2) from the callee**, which looks like the tool is broken.
+- [ ] **Does any command pipe into `interpreter - <<EOF`?** (§1) Both claim fd 0: bash drops
+      the pipe, zsh prepends it to the program. Sweep with `grep -nE '\| *[a-z0-9]+ +- *<<'`.
