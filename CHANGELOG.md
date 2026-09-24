@@ -84,6 +84,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Invariant 20 printed nothing when it passed**, so a run could not show it had executed.
+  Three agents read the silence as "did not run". It now prints `ok` with the pinned hash, and
+  a drift copy still fails (exit 1, `AUDIT DRIFT`).
 - **`sota-dotnet`:** its BUILD step recommended `AnalysisLevel=latest-Recommended`, which
   fired 4 of 14 planted security violations, because the security analyzers ship disabled.
   `AnalysisModeSecurity=All` fired 10. Its PBKDF2 advice also missed that the legacy

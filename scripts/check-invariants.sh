@@ -1539,7 +1539,9 @@ else
   fi
   scope 1 "pinned router section" || v20=1
 fi
-if [ "$v20" -ne 0 ]; then fail=1; fi
+# The success path printed nothing until 2026-09-24, so a run could not show this check
+# had executed at all — three separate agents read the silence as "did not run".
+if [ "$v20" -ne 0 ]; then fail=1; else echo "    ok (router §AUDIT matches pin $ROUTER_AUDIT_SHA)"; fi
 
 # --- 21. Every released CHANGELOG version has a tag -------------------------
 #
