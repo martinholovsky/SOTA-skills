@@ -161,6 +161,20 @@ mac_key  = HKDF(master, info=b"app/v1/url-signing",      length=32)
     `AcceptAllServerKeyVerifier`.
   - Node `ssh2`: **auto-accepts when no `hostVerifier` is set**, so the finding
     there is an *absence*.
+  - Rust: `russh` rejects unknown keys by default (`check_server_key` returns
+    `Ok(false)`), so the finding is an override returning `Ok(true)` without
+    `check_known_hosts`. The crate's own test handler does exactly that, which is
+    the version people copy. The `ssh2` crate's `Session::handshake()` checks no
+    host key at all: an *absence* unless the code calls `known_hosts()` and
+    `check_port`.
+  - PHP: phpseclib's `login()` never compares the host key, and the key-exchange
+    signature is verified only inside `getServerPublicHostKey()`, which nothing in
+    the library calls. ext-ssh2 has no known-hosts support at all. Both are
+    *absences*: compare `getServerPublicHostKey()` or `ssh2_fingerprint()` (ask for
+    SHA-1; the default is MD5) to a pinned value before sending credentials.
+  - .NET SSH.NET: **accepts any key when no `HostKeyReceived` handler is attached**,
+    and inside a handler `CanTrust` starts out `true`. So both an absent handler and
+    one that never sets `CanTrust = false` are findings.
   - OpenSSH and anything that shells out to it: `StrictHostKeyChecking=no`/`off`
     lets a *changed* key through. `accept-new` refuses a changed key but trusts
     first use, and `UserKnownHostsFile=/dev/null` throws the record away.
@@ -368,9 +382,12 @@ reporting — see SKILL.md):
 
 ```text
 verify=False | InsecureSkipVerify | rejectUnauthorized:\s*false | TrustAllCerts
-NoopHostnameVerifier | CURLOPT_SSL_VERIFYPEER,\s*0 | ssl._create_unverified | VERIFY_NONE
+NoopHostnameVerifier | ssl._create_unverified | VERIFY_NONE
+(SSL_VERIFYPEER|SSL_VERIFYHOST|verify_peer(_name)?)["']?\s*(,|=>)\s*(false|0) | allow_self_signed["']?\s*=>\s*(true|1)   (PHP)
 AutoAddPolicy | WarningPolicy | InsecureIgnoreHostKey | verify_host_key:\s*(:never|:accept_new|false)
 StrictHostKeyChecking["']?[=, ]*["']?(no|off) | AcceptAllServerKeyVerifier | UserKnownHostsFile=/dev/null
+CanTrust\s*=\s*true (SSH.NET) | fn check_server_key then Ok(true) (russh)   absences: SSH.NET client with no
+HostKeyReceived; Rust ssh2 handshake() with no known_hosts(); phpseclib/ext-ssh2 with no host-key compare
 MD5|SHA1 near sign/verify/token/password   AES/ECB | DES | RC4 | Blowfish
 Math\.random|random\.random|java\.util\.Random near token/key/secret/otp/nonce
 new IvParameterSpec\(.*getBytes  (static IV)   "-----BEGIN (RSA|EC|) PRIVATE KEY"
@@ -395,7 +412,10 @@ createCipheriv\(.*, *(['"]).{1,16}\1  (short/static key/nonce)
       every Node `ssh2` connect call with no `hostVerifier` (it auto-accepts). The pattern must
       match JSch's `setConfig("StrictHostKeyChecking", "no")` as well as `-o ...=no`; the
       first draft missed it:
-      `grep -rnE 'AutoAddPolicy|WarningPolicy|InsecureIgnoreHostKey|verify_host_key:\s*(:never|:accept_new|false)|AcceptAllServerKeyVerifier|StrictHostKeyChecking["'"'"']?[=, ]*["'"'"']?(no|off)|UserKnownHostsFile=/dev/null' .`
+      `grep -rnE 'AutoAddPolicy|WarningPolicy|InsecureIgnoreHostKey|verify_host_key:\s*(:never|:accept_new|false)|AcceptAllServerKeyVerifier|StrictHostKeyChecking["'"'"']?[=, ]*["'"'"']?(no|off)|UserKnownHostsFile=/dev/null|CanTrust[[:space:]]*=[[:space:]]*true' .`
+      ; `grep -rn -A6 'fn check_server_key' --include='*.rs' . | grep -E 'Ok\(true\)'` (russh
+      accepting every key). The absences (§5: SSH.NET, Rust `ssh2`, phpseclib, ext-ssh2, Node
+      `ssh2`) need a per-file read: a client constructed in a file with no host-key check is the finding.
 - [ ] Are all secret comparisons (tokens, MACs, OTPs) constant-time?
 - [ ] Are long-lived stored tokens hashed at rest?
 - [ ] Is MD5/SHA-1 absent from any security-relevant use?
