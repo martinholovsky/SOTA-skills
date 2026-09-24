@@ -5650,16 +5650,18 @@ matrix's ledger entry have all been read. None states a reason, so the claim hol
 **Intake shape: a `/sota-resume` pass that matched each local report's findings against this
 log by content, not by date.** `FIELD-REPORT-PLATFORM-2026-09-16.local.md` (a backlog pass on
 an infrastructure/GitOps repo, written at v1.42.1) appears nowhere in this log. Its three
-proposal markers (`obviat`, `multios`, a markdown-table pipe rule) all returned 0 hits in the
-tree, and the control (`heredoc`, 4 files) was found. The other four local reports from
-09-15 and 09-16 were checked finding by finding, and all are logged above. The operator chose
+proposal markers had no coverage: `obviat` and `multios` returned 0 hits, and the table-pipe
+pattern's one hit (`sota-javascript-typescript` rules/05) is unrelated. The control
+(`heredoc`, 4 files) was found. The other three local reports from 09-15 and 09-16 are logged
+above: EDR 09-16 by filename, EDR 09-15 and static-analysis 09-15 by their findings (a pattern per
+finding, each with a ledger hit). The operator chose
 option (a) for all three.
 
 | # | finding | verdict | landed |
 |---|---|---|---|
 | F1 | `/sota-resume` §2 had no class for an item whose gap is **covered by a different mechanism**, so it lands in READY, the one class that leads to building. The report's session nearly shipped a 96h backup alert beside a 25h rule that already covered the job | **adopted** | `commands/sota-resume.md` §2: ALREADY DONE becomes **ALREADY DONE / OBVIATED**. A READY item that adds a new control must name the incumbent control, and the incumbent is tested by firing it at the target. README's two class lists updated |
 | F2 | `cmd \| python3 - <<'PY'`: bash discards the piped data, and zsh's default-on `MULTIOS` prepends it to the program | **adopted** | `sota-shell-scripting` rules/06 §1: a table row, a rule and a checklist sweep. Reproduced before writing: zsh 5.9 `1 2`, `unsetopt multios` `2`, bash 3.2.57 and 5.3.15 `2`, `sh` `2`, and the report's `NameError: name 'false'` at `<stdin>` line 1. The sweep matched both bad fixtures and neither good one, under ugrep and BSD grep |
-| F3 | A `\|` inside backticks in a table cell still splits the cell | **adopted with a correction** | `sota-docs-workflow` rules/02 §1 plus a checklist probe. **The correction:** the report says the row renders as extra cells. On GitHub's own renderer (`gh api markdown`, mode `gfm`), the code span breaks and the **overflow cell is dropped** to fit the header, so content disappears and the table does not get wider. The report's naive-split caveat held, and a second one turned up: a regex false-positives on adjacent code spans (`` `a` \| `b` ``). The probe is therefore a perl span walker, run verbatim from the file against three fixtures |
+| F3 | A `\|` inside backticks in a table cell still splits the cell | **adopted with a correction** | `sota-docs-workflow` rules/02 §1 plus a checklist probe. **The correction:** the report says the row renders as extra cells. On GitHub's own renderer (`gh api markdown`, mode `gfm`), the code span breaks and the **overflow cell is dropped** to fit the header, so content disappears and the table does not get wider. The report's naive-split caveat held, and a second one turned up: a regex false-positives on adjacent code spans (`` `a` \| `b` ``). The probe is therefore a perl span walker, run verbatim from the file against four row shapes (plain, bad, escaped, adjacent spans) |
 
 **Found while implementing, not taken here:** the F3 probe, run over this repo's 424 tracked
 `.md` files, flags 17 table rows with an unescaped pipe inside a code span. Three were rendered
