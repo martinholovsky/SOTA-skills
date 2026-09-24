@@ -262,6 +262,7 @@ verification in rules/04 §5 (operator decision, 2026-09-24). Each language skil
 | Java / Kotlin | `File.createTempFile`, `java.io.tmpdir` + a name | `Files.createTempFile`, `Files.createTempDirectory` |
 | Node | `path.join(os.tmpdir(), name)` + a default `writeFile` | `fs.mkdtemp`, then write inside it with `{ flag: 'wx', mode: 0o600 }` |
 | PHP | `sys_get_temp_dir() . '/name'` + `file_put_contents` | `tempnam()`, `tmpfile()`, `fopen($p, 'x')` |
+| .NET | `Path.Combine(Path.GetTempPath(), name)` + `File.WriteAllText` | `Path.GetTempFileName()` (0600 on Unix, `mkstemps`), `Directory.CreateTempSubdirectory()`, or `FileMode.CreateNew` with `UnixCreateMode` |
 
 **What the gap-checks measured (2026-09-24, umask 022), and the traps inside the safe APIs:**
 - **The symlink attack worked in every language tried.** A symlink planted at the predictable
@@ -292,6 +293,7 @@ Rust    grep -rnE 'temp_dir\(\)|"/(tmp|var/tmp|dev/shm)/' --include='*.rs' .
 JVM     grep -rnE 'File\.createTempFile\(|createTempDir\(|getProperty\("java\.io\.tmpdir"\)' --include='*.java' --include='*.kt' .
 Node    grep -rnE 'tmpdir\(\)|/tmp/' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .
 PHP     grep -rnE '(file_put_contents|fopen|touch|mkdir|copy|rename)[[:space:]]*\([^;]*(sys_get_temp_dir[[:space:]]*\(\)|["'"'"']/(var/)?tmp/)' --include='*.php' .
+.NET    grep -rnE 'Path\.(Combine|Join)\([[:space:]]*Path\.GetTempPath\(\)|Path\.GetTempPath\(\)[[:space:]]*\+' --include='*.cs' .
 ```
 
 The Node row also matches `fs.mkdtemp(path.join(os.tmpdir(), …))`, which is the safe form, so

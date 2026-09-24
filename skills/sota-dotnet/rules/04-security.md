@@ -22,6 +22,23 @@ network/file/DB/config as untrusted. Reference:
   `PlatformNotSupportedException`); it was a notorious RCE vector. Never
   reintroduce it (or `NetDataContractSerializer`, `SoapFormatter`, `LosFormatter`,
   `ObjectStateFormatter`) — CRITICAL on sight.
+- **"Removed" has an opt-back-in, and it re-arms every caller.** On .NET 9+ the
+  unsupported `System.Runtime.Serialization.Formatters` NuGet package plus the
+  `EnableUnsafeBinaryFormatterSerialization` switch (MSBuild property, or the
+  `System.Runtime.Serialization.EnableUnsafeBinaryFormatterSerialization` AppContext switch)
+  restore a working `BinaryFormatter` "including its vulnerabilities" (Microsoft's
+  compatibility-package page). The type identity is unchanged, so a **dependency** that calls
+  it starts working again with no edit of its own. Measured on the .NET 10 SDK: package alone →
+  `NotSupportedException`, switch alone → `PlatformNotSupportedException`, both → a full
+  round-trip. Either half in a project file is CRITICAL until justified.
+- **`DataSet`/`DataTable` are a deserializer.** Microsoft: they are *"in general not safe
+  when populated with untrusted input"* — `ReadXml`/`ReadXmlSchema`, a `DataSet` parameter on a
+  SOAP/WCF endpoint, or `DeserializeObject<DataSet>` via Json.NET (a DoS vector). The built-in
+  type allowlist (Microsoft ties removing it to CVE-2020-1147) is switched off wholesale by
+  `Switch.System.Data.AllowArbitraryDataSetTypeInstantiation` and widened by the
+  `System.Data.DataSetDefaultAllowedTypes` AppDomain key — both are findings on an input path.
+  Bind untrusted data to a DTO instead. Legacy .NET Framework code: `JavaScriptSerializer` built
+  with a `SimpleTypeResolver` is the same gadget class as `TypeNameHandling` (CA2321/CA2322).
 - **JSON**: prefer `System.Text.Json` with known types. Newtonsoft
   `TypeNameHandling.Auto/All/Objects` (or `System.Text.Json` with an
   unrestricted polymorphic type resolver) on untrusted input enables gadget-style
@@ -35,10 +52,26 @@ network/file/DB/config as untrusted. Reference:
 - **OS command**: avoid shelling out; if you must, use `ProcessStartInfo` with
   `ArgumentList` (no `UseShellExecute`, no concatenated `Arguments`/shell).
 - **Path traversal**: combine with a known root and verify the resolved
-  `Path.GetFullPath` stays under it; reject `..`. Don't pass user input straight
+  `Path.GetFullPath` stays under it (compare against the root **plus a trailing separator**,
+  or `/srv/up` admits `/srv/upload-evil`); reject `..`. Don't pass user input straight
   to file APIs.
-- **LDAP/XPath/regex (ReDoS)**: parameterize/escape; bound regex with timeouts
-  (`Regex` `matchTimeout`) on untrusted input.
+- **`Path.Combine` discards the root when a later argument is rooted.** Measured on .NET 10:
+  `Path.Combine("/srv/uploads", "/etc/passwd")` returns `/etc/passwd`; `Path.Join` returns
+  `/srv/uploads/etc/passwd`. `Join` removes that trap but does not resolve `..`, so the
+  `GetFullPath` + prefix check above is still what makes either safe.
+- **Archive extraction (Zip Slip)**: `ZipFile.ExtractToDirectory` enforces the boundary —
+  it throws `IOException` when an entry would land outside the destination (read in
+  `ZipFileExtensions.ZipArchiveEntry.Extract.cs`, measured on .NET 10). The hand-rolled loop
+  `entry.ExtractToFile(Path.Combine(dest, entry.FullName))` has no such check: a
+  `../escaped.txt` entry was written outside `dest`. Prefer the directory API; if you must
+  loop, apply the §3 path check to every entry.
+- **LDAP/XPath/regex (ReDoS)**: parameterize/escape. **Regex has no timeout by default**:
+  the match timeout is `Regex.InfiniteMatchTimeout` unless the process sets the
+  `REGEX_DEFAULT_MATCH_TIMEOUT` AppContext value (read in `Regex.Timeout.cs`). On untrusted
+  input pass a `TimeSpan` (`new Regex(p, opts, timeout)`, `matchTimeoutMilliseconds:` on
+  `[GeneratedRegex]`) or use `RegexOptions.NonBacktracking` (.NET 7+, linear time). A
+  **pattern** from a user is worse than input: `Regex.Escape` it, and Microsoft states that
+  timeouts are *not* a security boundary against malicious patterns (CA3012).
 
 ## 4. ASP.NET Core authn/authz & web
 
@@ -69,8 +102,13 @@ network/file/DB/config as untrusted. Reference:
   `System.Random` (HIGH).
 - **Symmetric**: AES-GCM (`AesGcm`) for authenticated encryption; never ECB,
   never unauthenticated CBC. **Hashing**: SHA-256+; passwords via a KDF
-  (`Rfc2898DeriveBytes`/PBKDF2, or Argon2/bcrypt via a library) — never plain
-  MD5/SHA-1 (HIGH).
+  (the one-shot `Rfc2898DeriveBytes.Pbkdf2(password, salt, iterations, HashAlgorithmName.SHA256, length)`,
+  or Argon2/bcrypt via a library) — never plain MD5/SHA-1 (HIGH).
+- **`new Rfc2898DeriveBytes(...)` is the legacy shape.** Every constructor is obsolete from
+  .NET 10 (SYSLIB0060: use the static `Pbkdf2`), and the short overloads obsoleted in .NET 7
+  (SYSLIB0041) default to **SHA-1 and 1,000 iterations** — measured on .NET 10:
+  `new Rfc2898DeriveBytes("pw", salt)` reports `hash=SHA1 iterations=1000`. Name the hash and
+  the iteration count explicitly; an inherited constructor call is a weak password store.
 - Use ASP.NET Core **Data Protection** for at-rest tokens/cookies rather than
   hand-rolled crypto — and keep the package patched:
   `Microsoft.AspNetCore.DataProtection` 10.0.0–10.0.6 let attackers forge
@@ -86,6 +124,10 @@ network/file/DB/config as untrusted. Reference:
   than unvetted packages.
 - **TLS**: never disable validation — `ServerCertificateCustomValidationCallback`
   returning `true` (or `HttpClientHandler` accepting all certs) is HIGH/CRITICAL.
+- **Don't hard-code the protocol version.** `SslProtocols.Tls`/`Tls11` are obsolete from
+  .NET 7 (SYSLIB0039) — HIGH. Hard-coding even `Tls12`/`Tls13`, or assigning
+  `ServicePointManager.SecurityProtocol`, freezes the app out of whatever the OS enables next
+  (CA5398/CA5386) — LOW. Use `SslProtocols.None` to defer to the system default.
 
 
 ## 6. `unsafe` code and P/Invoke
@@ -97,6 +139,46 @@ the same boundary. **That one property in a `.csproj` is the signal**: without i
 has no unsafe code to audit, and with it every `unsafe` block and native signature is audited
 with the C rules (buffer lengths, lifetimes, `SetLastError`, string marshalling). The class
 is `sota-code-security` rules/06 §3.
+
+## 7. ASP.NET Core defaults that fail open
+
+Each of these compiles, runs and passes a happy-path test. The class is owned elsewhere
+(`sota-code-security` rules/05 for cookies, redirects, XSS and CSRF; rules/02 for JWT); this
+section is the .NET spelling an auditor has to grep for.
+
+- **Cookies carry no attributes unless you set them.** `Response.Cookies.Append(key, value)`
+  emits `key=value; path=/` and nothing else (measured, .NET 10), and a new `CookieOptions` has
+  `Secure = false`, `HttpOnly = false`, `SameSite = Unspecified` (read in `CookieOptions.cs`).
+  Pass `new CookieOptions { Secure = true, HttpOnly = true, SameSite = SameSiteMode.Lax }` (or
+  `Strict`). `CookieBuilder.SecurePolicy` defaults to `SameAsRequest`: behind a TLS-terminating
+  proxy without forwarded headers the request looks like HTTP and `Secure` is dropped — use
+  `CookieSecurePolicy.Always`.
+- **Open redirect.** `Redirect(url)` / `Results.Redirect(url)` follow any absolute URL. For a
+  `returnUrl` use `LocalRedirect` (throws on a non-local URL) or check `Url.IsLocalUrl` first
+  (ASP.NET Core "Prevent open redirect attacks"). CA3007 is the analyzer's taint version.
+- **Razor encodes; three constructs opt out.** `@value` is HTML-encoded; `Html.Raw(x)`
+  (*"without HTML-encoding"*, `IHtmlHelper`), `new HtmlString(x)` and Blazor `(MarkupString)x`
+  emit it verbatim. On user-influenced data each is stored XSS — sanitize with an allowlist
+  sanitizer first, or don't.
+- **A state-changing action without a verb attribute answers GET, and GET skips antiforgery.**
+  An attribute-routed action with `[Route]` and no `[HttpPost]` accepts every method; minimal-API
+  `app.Map(...)` likewise. The antiforgery filters treat GET, HEAD, OPTIONS and TRACE as safe
+  (`SafeHttpMethods.IsSafe`). Measured on .NET 10 with `AutoValidateAntiforgeryToken` applied
+  globally: a `[Route]`-only delete action returned **200 to a token-less GET** and 400 to a
+  token-less POST, so the CSRF defence was bypassed by changing the verb. Put an explicit
+  `[HttpPost]`/`[HttpDelete]` (or `MapPost`/`MapDelete`) on every mutation. CA5395 flags the
+  missing attribute (with security rules enabled, `rules/06` §2) **only in a project where some
+  controller carries `[ValidateAntiForgeryToken]`**: measured, the same code with the filter
+  registered globally raised neither CA5395 nor CA5391 under `AnalysisModeSecurity=All`, and
+  adding one attributed controller made both fire. Do not read the analyzer's silence as a pass.
+- **JWT bearer validation is on by default — the finding is turning it off.**
+  `TokenValidationParameters` defaults `ValidateIssuer`, `ValidateAudience`, `ValidateLifetime`,
+  `RequireExpirationTime` and `RequireSignedTokens` to `true` (read in the IdentityModel
+  source). Setting any to `false` (CA5404), an `AudienceValidator`/`LifetimeValidator` that
+  always returns `true` (CA5405), or a custom `SignatureValidator` (it replaces signature
+  checking) is HIGH unless the code says why. `ValidateIssuerSigningKey` defaults to `false`:
+  it validates the *key* that verified the signature, which matters when a token can carry its
+  own key (the source's example is X509Data) — set it `true` there.
 
 ## Audit checklist
 
@@ -131,3 +213,45 @@ is `sota-code-security` rules/06 §3.
       (CVE-2025-55315) or < 8.0.28/9.0.17/10.0.9 (CVE-2026-45591)? Check container base-image
       tags; self-contained/AOT apps need rebuild)
 - [ ] **Static security analysis: enable security CA rules + a SAST (rules/06)**
+- [ ] **BinaryFormatter re-armed on .NET 9+ — CRITICAL until justified** (§2) — either half of
+      the opt-back-in:
+      `grep -rnE 'EnableUnsafeBinaryFormatterSerialization|System\.Runtime\.Serialization\.Formatters"' --include='*.csproj' --include='*.props' --include='*.json' --include='*.cs' .`
+      (package reference, lock-file entry, MSBuild property or AppContext switch)
+- [ ] **DataSet/DataTable as a deserializer — HIGH/CRITICAL on an input path** (§2) —
+      `grep -rnE '\.ReadXml(Schema)?\(|AllowArbitraryDataSetTypeInstantiation|DataSetDefaultAllowedTypes|JavaScriptSerializer|SimpleTypeResolver|Deserialize(Object)?<Data(Set|Table)>' --include='*.cs' --include='*.json' --include='*.config' .`
+      (trace each to its source: untrusted input = finding)
+- [ ] **Path traversal and Zip Slip — HIGH** (§3) —
+      `grep -rnE 'ExtractToFile\(|Combine\([^)]*\.FullName' --include='*.cs' .` (per-entry
+      extraction: no boundary check) ; `grep -rnE 'Path\.Combine\(' --include='*.cs' .` (a rooted
+      later argument discards the root: for each call fed by a request, is the result passed
+      through `GetFullPath` and prefix-checked against root + separator?)
+- [ ] **Regex without a timeout on untrusted input — MEDIUM (ReDoS)** (§3) —
+      `grep -rnE 'new Regex\(|Regex\.(IsMatch|Match|Matches|Replace|Split)\(|\[GeneratedRegex\(' --include='*.cs' . | grep -vE 'TimeSpan|matchTimeout|NonBacktracking'`
+      ; `grep -rn 'REGEX_DEFAULT_MATCH_TIMEOUT' .` (a hit sets a process-wide default and
+      covers the rest); a pattern built from input without `Regex.Escape` is HIGH
+- [ ] **Password KDF on the legacy constructor — HIGH** (§5) —
+      `grep -rnE 'new Rfc2898DeriveBytes\(|PasswordDeriveBytes' --include='*.cs' .` (short
+      overloads = SHA-1 × 1,000; want the static `Rfc2898DeriveBytes.Pbkdf2` with explicit hash
+      and iterations)
+- [ ] **Hard-coded TLS protocol — HIGH for Tls/Tls11/Ssl3, LOW for Tls12/Tls13** (§5) —
+      `grep -rnE 'SslProtocols\.(Ssl2|Ssl3|Tls|Tls11|Tls12|Tls13|Default)([^[:alnum:]]|$)|SecurityProtocolType\.|ServicePointManager\.SecurityProtocol' --include='*.cs' .`
+      (want `SslProtocols.None`)
+- [ ] **Cookies without attributes — MEDIUM (HIGH for a session cookie)** (§7) —
+      `grep -rnE 'Cookies\.Append\([^,]+,[^,]+\)|(Secure|HttpOnly)[[:space:]]*=[[:space:]]*false|CookieSecurePolicy\.(None|SameAsRequest)|SameSiteMode\.None' --include='*.cs' .`
+      (two-argument `Append` emits no Secure/HttpOnly/SameSite; a value containing a comma
+      escapes the first pattern, so read every `Cookies.Append` on an auth path)
+- [ ] **Open redirect — MEDIUM** (§7) —
+      `grep -rnE '(^|[^[:alnum:]_])(Redirect|RedirectPermanent|RedirectPreserveMethod|RedirectPermanentPreserveMethod)\([[:space:]]*[^")[:space:]]' --include='*.cs' .`
+      (non-literal target: want `LocalRedirect` or a preceding `Url.IsLocalUrl`)
+- [ ] **Raw HTML output — HIGH on user data (stored XSS)** (§7) —
+      `grep -rnE 'Html\.Raw\(|(new |\()(HtmlString|MarkupString)[()]' --include='*.cs' --include='*.cshtml' --include='*.razor' .`
+- [ ] **Mutations reachable by GET, so antiforgery never runs — HIGH** (§7) —
+      `grep -rnE '\.Map\("|IgnoreAntiforgeryToken' --include='*.cs' .` (any-verb minimal
+      endpoints; opted-out antiforgery) ;
+      `grep -rnE -A2 '^[[:space:]]*\[Route\(' --include='*.cs' . | grep -E '(IActionResult|ActionResult|Task<)'`
+      (action-level `[Route]` with no verb attribute — confirm there is no `[HttpPost]` etc.;
+      conventional-routed actions are invisible to grep: CA5395 finds them, but only where a
+      controller carries `[ValidateAntiForgeryToken]` — a global filter keeps it silent)
+- [ ] **JWT validation switched off — HIGH** (§7) —
+      `grep -rnE '(RequireExpirationTime|RequireSignedTokens|ValidateAudience|ValidateIssuer|ValidateLifetime)[[:space:]]*=[[:space:]]*false|(AudienceValidator|LifetimeValidator|IssuerValidator|SignatureValidator)[[:space:]]*=' --include='*.cs' .`
+      (a custom validator delegate must be read: `=> true` is CA5405)

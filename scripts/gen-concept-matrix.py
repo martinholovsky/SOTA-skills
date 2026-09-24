@@ -246,7 +246,11 @@ def classify(text):
     `yaml.load` is both deserialization and untrusted input, and forcing a single
     bucket would hide one of them."""
     low = text.lower()
-    return [c for c, _, pat in CONCEPTS if re.search(pat, low)]
+    # Probes are stored as escaped regex (`Process\.Start`), so a matcher written for the
+    # plain spelling never sees them. Match the backslash-stripped text as well; the union
+    # cannot drop a concept the raw text already matched. Found by the 2026-09-24 .NET pass.
+    plain = low.replace("\\", "")
+    return [c for c, _, pat in CONCEPTS if re.search(pat, low) or re.search(pat, plain)]
 
 
 def build(skills):

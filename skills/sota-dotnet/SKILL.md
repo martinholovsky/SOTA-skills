@@ -44,7 +44,9 @@ Two consumers, one source of truth:
 2. Apply the **top-10 non-negotiables** (below) unconditionally.
 3. New projects: target the current LTS (`net10.0`), `<Nullable>enable</Nullable>`,
    `<TreatWarningsAsErrors>true</TreatWarningsAsErrors>`,
-   `<AnalysisLevel>latest-Recommended</AnalysisLevel>`, NuGet lockfile +
+   `<AnalysisLevel>latest-Recommended</AnalysisLevel>` **plus
+   `<AnalysisModeSecurity>All</AnalysisModeSecurity>`** (Recommended alone leaves most
+   security CA rules off — `rules/06` §2), NuGet lockfile +
    `RestoreLockedMode` in CI, and `dotnet format` from day one (`rules/06`).
 4. Async all the way down — never block on async (`.Result`/`.Wait()`/
    `GetAwaiter().GetResult()`) (`rules/03`). Use `CancellationToken` end to end.
@@ -90,9 +92,9 @@ three highest-leverage fixes, and which checklists/analyzers were run.
 | `rules/01-idioms.md` | Writing/reviewing any C#: records & `record struct`, nullable reference types, pattern matching/`switch` expressions, spans, LINQ discipline, `var`, expression vs statement, file-scoped namespaces, error handling, modern C# 12–14 features |
 | `rules/02-design-api.md` | Designing types/APIs: nullable reference type discipline, `int?` over a magic `int` and **using `TryParse`'s `bool` (its `out` is `0` on failure)**, immutability, `IDisposable`/`IAsyncDisposable` and `using`, exceptions, value vs reference types, `internal`/visibility, DI (the built-in container), options pattern |
 | `rules/03-async-concurrency.md` | Anything `async`/`Task`/threads: async-all-the-way, never block (`.Result`/`.Wait()`), `ConfigureAwait(false)` in libraries, `CancellationToken` flow, `async void`, `Channel<T>`, `IAsyncEnumerable`, TPL/`Parallel`, thread-safety, `ValueTask` |
-| `rules/04-security.md` | Any input crossing a trust boundary: SQL (EF Core/Dapper parameterization), legacy serializers (`BinaryFormatter` removed .NET 9) + JSON `TypeNameHandling`, command/path injection, ASP.NET Core authn/authz, antiforgery/CORS, Data Protection, crypto (`RandomNumberGenerator`, AES-GCM), secrets; OWASP .NET; **escape hatches into raw memory**: `unsafe` code and P/Invoke |
+| `rules/04-security.md` | Any input crossing a trust boundary: SQL (EF Core/Dapper parameterization), legacy serializers (`BinaryFormatter` removed .NET 9 — **and its opt-back-in package**) + JSON `TypeNameHandling` + `DataSet.ReadXml`, command/path injection (`Path.Combine` dropping the root, Zip Slip, regex timeouts), ASP.NET Core authn/authz, antiforgery/CORS, Data Protection, crypto (`RandomNumberGenerator`, AES-GCM, `Pbkdf2` over the legacy `Rfc2898DeriveBytes` ctor, no hard-coded TLS version), secrets; OWASP .NET; **escape hatches into raw memory**: `unsafe` code and P/Invoke; **ASP.NET Core defaults that fail open** — attribute-less cookies, open redirect, `Html.Raw`/`MarkupString`, verb-less actions that skip antiforgery, JWT validation switched off |
 | `rules/05-performance.md` | Latency/throughput/memory work: GC (gen/SOH/LOH, server vs workstation), allocation reduction, `Span<T>`/`Memory<T>`/`ArrayPool`, `struct`/`record struct`, BenchmarkDotNet, async overhead, Native AOT / trimming, string handling |
-| `rules/06-build-tooling-ci.md` | Setting up or auditing build/CI: SDK/TFM targeting, `Directory.Build.props`, nullable + warnings-as-errors, Roslyn analyzers (incl. security CA rules), `dotnet format`, NuGet lockfiles + supply chain (lock mode, source mapping, signed packages, CVE scan), SBOM. **Test *strategy* lives in `sota-testing`; this owns .NET build/test mechanics (xUnit/NUnit, Testcontainers).** |
+| `rules/06-build-tooling-ci.md` | Setting up or auditing build/CI: SDK/TFM targeting (and whether it is past end of support), `Directory.Build.props`, nullable + warnings-as-errors, Roslyn analyzers (incl. security CA rules — **off by default, opted in with `AnalysisModeSecurity`**), `dotnet format`, NuGet lockfiles + supply chain (lock mode, source mapping, signed packages, CVE scan), SBOM. **Test *strategy* lives in `sota-testing`; this owns .NET build/test mechanics (xUnit/NUnit, Testcontainers).** |
 
 ## Top-10 non-negotiables
 
@@ -125,5 +127,5 @@ three highest-leverage fixes, and which checklists/analyzers were run.
    (`[Authorize]`/policies/endpoint auth), antiforgery for cookie-auth POSTs,
    CORS locked to known origins. (`rules/04`)
 10. **Analyzers + nullable + lockfile gate CI.** `TreatWarningsAsErrors`,
-    Roslyn analyzers (incl. security CA rules), `dotnet format --verify-no-changes`,
+    Roslyn analyzers (security CA rules explicitly opted in — `AnalysisModeSecurity`), `dotnet format --verify-no-changes`,
     NuGet locked-mode restore + CVE scan. (`rules/06`)

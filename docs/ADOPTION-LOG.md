@@ -5360,3 +5360,58 @@ file, against a known-bad and a known-good fixture per language. Each gave 2 hit
 on good, under ugrep and BSD grep (32 runs). Sources for the C half: the macOS `mktemp(3)` page
 (*"particularly dangerous from a security perspective"*) and `tmpnam(3)`'s SECURITY
 CONSIDERATIONS; MITRE's titles for CWE-377, 378 and 379, fetched.
+
+## 2026-09-24 — gap-check 9 of 9: sota-dotnet against the NetAnalyzers Security rules, 13 gaps closed
+
+**Intake shape: a tool-backed registry, derived three ways.** The .NET analyzer's own
+`AnalyzerReleases.Shipped.md` (dotnet/sdk) and a reflection dump of the .NET 10 SDK's analyzer
+DLLs agree on **94** Security-category rules, ID for ID; the dotnet/docs index lists 92 (it
+still carries CA2109, removed in the 8.0 release, and omits CA3005/CA5404/CA5405). The SYSLIB
+obsoletion list was used as the second registry. "`.NET` has no queryable local tool" was
+re-tested and is false: the SDK container ships the analyzers and builds fixtures.
+
+| # | gap | verdict | landed |
+|---|---|---|---|
+| G1 | Security CA rules ship disabled (70) or Hidden (24); `latest-Recommended` fired 4 of 14 planted violations, `AnalysisModeSecurity=All` 10; an editorconfig category line only raises enabled-by-default rules | **adopted, measured; corrects the skill's own BUILD step** | rules/06 §2 + probe; SKILL.md BUILD 3 |
+| G2 | BinaryFormatter compat package + switch re-arm it on .NET 9+ | **adopted, measured** (both halves needed) | rules/04 §2 + probe |
+| G3 | DataSet/DataTable as a deserializer; JavaScriptSerializer+SimpleTypeResolver | **adopted** | rules/04 §2 + probe |
+| G4 | JWT TokenValidationParameters switched off (CA5404/5405) | **adopted** (defaults read in IdentityModel source) | rules/04 §7 + probe |
+| G5 | Cookies carry no attributes by default | **adopted, measured** | rules/04 §7 + probe |
+| G6 | Open redirect | **adopted** | rules/04 §7 + probe |
+| G7 | Html.Raw / HtmlString / MarkupString | **adopted** | rules/04 §7 + probe |
+| G8 | Verb-less actions answer GET, which antiforgery skips | **adopted, measured** (GET 200 vs POST 400 under global AutoValidateAntiforgeryToken; CA5395 stays silent under that global filter and fires only once a controller carries `[ValidateAntiForgeryToken]`) | rules/04 §7 + 2 probes |
+| G9 | Path.Combine drops the root; Zip Slip via per-entry ExtractToFile | **adopted, measured** | rules/04 §3 + 2 probes |
+| G10 | Hard-coded TLS protocol | **adopted** | rules/04 §5 + probe |
+| G11 | Legacy Rfc2898DeriveBytes ctor = SHA-1 × 1000 | **adopted, measured; corrects the skill's own recommendation** | rules/04 §5 + probe |
+| G12 | Regex match timeout is infinite by default | **adopted** (runtime source) | rules/04 §3 + probe |
+| G13 | Target framework past end of support (concept-matrix cell) | **adopted** | rules/06 checklist |
+
+**Not a rule, with reason:** System.Web-only rules (CA5363/5365/5368), .NET Framework
+switches (CA5361), XSLT script / XslTransform (CA3076/5374), XAML (CA3010), one cloud vendor's
+legacy storage SDK (CA5375-5377), CAS-era CA2119, CA2153 (ignored on .NET Core+), CA2109
+(removed). **Held, no verdict:** CA3011/CA5392/CA5393 (DLL load path; no owner in the library)
+and SYSLIB0003 (CAS attributes compile and enforce nothing).
+
+Every probe (16) was run against a known-bad and known-good fixture under ugrep and BSD grep;
+two first drafts failed on the fixture and were rewritten before commit (the editorconfig probe
+exited 2 on a missing path; the notes-only SSH.NET detector missed a two-client file).
+
+**Re-measured by the integrating session:**
+- The agent's harness passes **15/15 under ugrep and 15/15 under BSD grep**.
+- G1's counts were re-read from the container build logs, not taken from the report:
+  - the default build: 0 CA warnings;
+  - `latest-Recommended`: 6 distinct IDs, of which 4 are security (CA5350, CA5351, CA5359,
+    CA5397) and the other two are CA1050 and CA1850;
+  - the `.editorconfig` category line: the same 4;
+  - `AnalysisModeSecurity=All`: 10.
+- The staged CA5395 wording fix, which the agent's pre-commit hook had refused before a ledger
+  entry existed, lands here.
+- .NET's temp-file row is added to `sota-code-security` rules/06 §6.1. Its detector gives 2
+  hits on bad and 0 on good under both greps.
+
+**Matcher: a whole class, not a cell.** .NET's command-injection cell was a vocabulary
+artefact of a general kind. Checklist items store probes as escaped regex (`Process\.Start`),
+so a matcher written for `process.start` never matches them. `gen-concept-matrix.py` now also
+matches the backslash-stripped text, as a union, so no existing match can be lost. Measured:
+.NET's command-injection cell flipped to present, rust gained one classified item, and nothing
+else moved.

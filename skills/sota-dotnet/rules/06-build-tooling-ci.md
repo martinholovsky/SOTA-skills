@@ -24,6 +24,27 @@ lives in `sota-testing`.
   reliability, and **security CA rules** (CA2100 SQL injection, CA53xx/CA54xx
   crypto, CA2300-series deserialization). Run as errors in CI. Add focused
   analyzers (e.g. for async) where useful.
+- **The security rules are off until you opt in — and `latest-Recommended` is not opting in.**
+  The SDK's analyzer ships **94** Security-category rules; **70** are disabled by default and
+  the other **24** are enabled at `Hidden` severity, which prints nothing (the analyzer's
+  `AnalyzerReleases.Shipped.md`, and a reflection dump of the .NET 10 SDK's analyzer DLLs, agree
+  rule for rule). Measured on the .NET 10 SDK against one file planting 14 violations:
+  **default → 0 security warnings; `AnalysisLevel=latest-Recommended` → 4** (MD5, SHA-1, an
+  accept-all certificate callback, `SslProtocols.Tls`); **`<AnalysisModeSecurity>All</AnalysisModeSecurity>`
+  → 10**, adding `System.Random` (CA5394), ECB (CA5358), a hard-coded key (CA5390), Zip Slip
+  (CA5389), SQL via `DbCommand.CommandText` (CA2100) and a disabled CRL check (CA5399). Set
+  `AnalysisModeSecurity` (or `AnalysisLevelSecurity=latest-All`) **and** keep
+  `TreatWarningsAsErrors` — `All` alone only warns, and the build still exited 0.
+- **An `.editorconfig` category line looks like an opt-in and is not one.**
+  `dotnet_analyzer_diagnostic.category-Security.severity = warning` "only affects rules … that
+  are enabled by default" (Microsoft's configuration-options page): measured, it produced the
+  same 4 warnings as `Recommended`. Enable a disabled rule by ID
+  (`dotnet_diagnostic.CA5394.severity`) or by `AnalysisModeSecurity`.
+- **Silence from the analyzer is not absence.** Even under `All`, four of the fourteen planted
+  violations raised nothing: `CA2100` fired on a `DbCommand` that is executed but not on a bare
+  `IDbCommand.CommandText` assignment, and `CA3075` fired on none of three DTD-enabled XML
+  readers in a `net10.0` project (not investigated further). Keep the grep checklists
+  (`rules/04`) as the second instrument.
 - **`dotnet format --verify-no-changes`** in CI so style/whitespace never enters
   review. EditorConfig holds the rules.
 - Consider a SAST (the security CA rules, or a dedicated scanner) for deeper
@@ -90,6 +111,19 @@ lives in `sota-testing`.
 - [ ] **Nullable + warnings-as-errors + analyzers?** —
       `err=$(grep -rniE 'TreatWarningsAsErrors|<Nullable>|EnableNETAnalyzers|AnalysisLevel' --include='*.csproj' --include='Directory.Build.props' . 2>&1 >/dev/null); rc=$?` ;
       `case $rc in 0) ;; 1) echo "nullable/analyzers/warnings-as-errors not enforced — HIGH" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
+- [ ] **Security CA rules opted in? HIGH if not — 70 of 94 ship disabled, the rest Hidden** (§2) —
+      `err=$(grep -rniE '<AnalysisMode(Security)?>[[:space:]]*All|<AnalysisLevel(Security)?>[^<]*-All' --include='*.csproj' --include='*.props' . 2>&1 >/dev/null); rc=$?` ;
+      `case $rc in 0) ;; 1) echo "security CA rules not opted in -- HIGH" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
+      ; and the look-alike that does not count:
+      `grep -rnE 'dotnet_analyzer_diagnostic\.(category-Security\.)?severity' --include='.editorconfig' --include='*.globalconfig' .`
+      (a hit raises only the 24 enabled-by-default rules — the same 4 warnings as `Recommended`
+      in the measurement)
+- [ ] **Target framework past end of support? HIGH** —
+      `grep -rhoE '<TargetFrameworks?>[^<]+' --include='*.csproj' --include='*.props' .` ;
+      compare each `netX.Y` with
+      `curl -fsS https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/releases-index.json | grep -oE '"(channel-version|support-phase)": *"[^"]*"' | paste - -`
+      (`eol` = no security patches; read it at audit time, never from memory. `net4x` targets
+      are .NET Framework, which this index does not list — check its lifecycle separately)
 - [ ] **NuGet locking + source mapping + CVE scan?** —
       `find . -name packages.lock.json -not -path '*/obj/*' | head -1` (empty = no lockfile) ;
       `err=$(grep -rn 'RestorePackagesWithLockFile' --include='*.csproj' --include='Directory.Build.props' . 2>&1 >/dev/null); rc=$?` ;

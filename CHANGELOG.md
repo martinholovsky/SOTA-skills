@@ -46,6 +46,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `max_execution_time` not counting `sleep`/IO.
 
   PHP's SSH host-key detector is added.
+- **ROADMAP 59, gap-check 9 of 9: `sota-dotnet` against the NetAnalyzers Security rules**
+  (94, derived three ways including a reflection dump in the SDK container). 13 gaps are
+  closed:
+  - the BinaryFormatter compatibility package re-arming it;
+  - `DataSet.ReadXml` as a deserializer;
+  - JWT validation switched off;
+  - cookie defaults;
+  - open redirect;
+  - raw HTML output;
+  - verb-less actions answering GET past antiforgery;
+  - `Path.Combine` rooting and Zip Slip;
+  - hard-coded TLS versions;
+  - infinite regex timeouts;
+  - an EOL target framework.
 - **Temp-file and permission hygiene is a shared class**, in `sota-code-security` rules/06
   §6.1:
   - one rule, with a measured unsafe/safe row and a fixture-tested detector for each language;
@@ -60,6 +74,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`sota-dotnet`:** its BUILD step recommended `AnalysisLevel=latest-Recommended`, which
+  fired 4 of 14 planted security violations, because the security analyzers ship disabled.
+  `AnalysisModeSecurity=All` fired 10. Its PBKDF2 advice also missed that the legacy
+  `Rfc2898DeriveBytes` constructor defaults to SHA-1 x 1000.
+- **`gen-concept-matrix.py`** could not see probes stored as escaped regex. It now also matches
+  the backslash-stripped text.
 - **`sota-javascript-typescript`:** it recommended js-yaml's `safeLoad`, which js-yaml 4
   removed; `load` is safe by default there.
 - **`sota-rust`:** a panic out of `extern "C"` is no longer called UB/Critical. Since Rust
