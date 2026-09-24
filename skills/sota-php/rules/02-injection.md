@@ -148,6 +148,69 @@ escaping.
 - Strip `\r`/`\n` from user data before writing to line-oriented logs, or log
   structured JSON; otherwise attackers forge log entries.
 
+## 5. Attacker-chosen names: classes, session keys, properties
+
+§2's ban list covers a *function* name taken from input. The same flaw has more PHP
+spellings, and in each the attacker supplies a **name**, not a value:
+
+```php
+// BAD — the attacker names the class, the session key, or the property
+$obj = new $_GET['type']($_GET['arg']);           // any autoloadable class's constructor runs
+$row = $stmt->fetchObject($_GET['model']);        // fetchObject / PDO::FETCH_CLASS instantiate it
+$_SESSION[$_POST['key']] = $_POST['value'];       // key "is_admin" overwrites the flag
+foreach ($_POST as $k => $v) { $user->$k = $v; }  // mass assignment onto any property
+
+// GOOD — input selects from a closed set; fields are named in code
+$class = ['csv' => CsvExport::class, 'pdf' => PdfExport::class][$type]
+    ?? throw new InvalidArgumentException('unknown export type');
+$key = in_array($key, ['theme', 'locale'], true) ? $key : throw new InvalidArgumentException();
+$_SESSION['prefs'][$key] = $value;
+$user->email = $input['email'];
+```
+
+Measured on PHP 8.5.9:
+
+- `new $class($path)` with `$class = 'SplFileObject'` read a file's first line, so the
+  built-in classes alone make the name dangerous. The constructor runs before your code sees
+  the object, so an `instanceof` check afterwards is too late.
+- `PDOStatement::fetchObject('Probe')` ran `Probe::__construct`. A class name passed to
+  `fetchObject()` or `PDO::FETCH_CLASS` is an instantiation sink.
+- `$_SESSION[$k] = $v` with `$k = 'is_admin'` flipped the flag. Every later authorization check
+  trusts the session, so a request-chosen key is **session poisoning**.
+- Mass assignment is the same class through properties. Loops of `$obj->$k = $v` or
+  `$obj->{$k} = $v` over request data, and framework guards switched off (e.g. Eloquent's
+  `protected $guarded = [];`, which its docs describe as making every attribute mass
+  assignable), are findings. The language-neutral rule is `sota-code-security` rules/07 §3.
+- For local variables the same flaw is `extract()` and `$$name` (`rules/01` §7).
+
+## 6. LDAP and XPath: PHP's escapers, and the empty password
+
+The injection class is `sota-code-security` rules/01 (LDAP and XPath). This is PHP's spelling of it.
+
+```php
+// BAD — spliced filter/DN; an empty password turns the bind into an unauthenticated bind
+if (ldap_bind($conn, "uid=$user,ou=people,dc=example,dc=org", $password)) { login($user); }
+
+// GOOD
+if ($password === '') { fail(); }   // before every ldap_bind() used as an auth check
+$dn = 'uid=' . ldap_escape($user, '', LDAP_ESCAPE_DN) . ',ou=people,dc=example,dc=org';
+$filter = '(uid=' . ldap_escape($user, '', LDAP_ESCAPE_FILTER) . ')';
+```
+
+- **An empty password does not fail the bind.** php.net `ldap_bind`: *"If password is not
+  specified or is empty, an anonymous bind is attempted"*, and php-src passes the zero-length
+  credential through unchecked. RFC 4513 section 5.1.2 calls this an *unauthenticated* bind. It says
+  clients SHOULD refuse an empty password and servers SHOULD refuse the bind by default. Both are
+  only SHOULD, so on a directory that accepts it, `if (ldap_bind(...))` logs in **any existing
+  username with no password**. Reject `''` in code, before the bind.
+- `ldap_escape()` takes its context as a flag: `LDAP_ESCAPE_FILTER` for `ldap_search()` filters
+  and `LDAP_ESCAPE_DN` for DN components (php.net). Measured: `ldap_escape('*)(uid=*', '',
+  LDAP_ESCAPE_FILTER)` gives `\2a\29\28uid=\2a`.
+- **XPath has no bound parameters.** `DOMXPath::query()`/`evaluate()` take only an expression
+  string (php.net class synopsis). Since **8.4**, `DOMXPath::quote()` returns a correctly quoted
+  literal. Measured: the value `x' or '1'='1` matched 2 nodes spliced raw and 0 nodes through
+  `DOMXPath::quote()`. On older floors, allowlist the value.
+
 ## Audit checklist
 
 Run from repo root; verify each hit manually (greps are recall-oriented).
@@ -175,8 +238,21 @@ Run from repo root; verify each hit manually (greps are recall-oriented).
       `grep -rnE 'header\s*\(\s*["'"'"']Location:.*\$' --include='*.php' src/`
 - [ ] **json_encode into <script> without hex flags** —
       `grep -rn 'json_encode' --include='*.php' src/ | grep -v 'JSON_HEX'`
+- [ ] **Attacker-chosen class, session key or property (§5)** — trace each name to a literal or
+      an allowlist:
+      `grep -rnE 'new[[:space:]]+\$|fetchObject[[:space:]]*\([[:space:]]*\$|FETCH_CLASS' --include='*.php' src/`
+      ; `grep -rnE '\$_SESSION[[:space:]]*\[[[:space:]]*\$' --include='*.php' src/` ;
+      `grep -rnE -e '->\{?\$[A-Za-z_]+\}?[[:space:]]*=[^=]' -e 'guarded[[:space:]]*=[[:space:]]*\[[[:space:]]*\]' --include='*.php' src/`
+- [ ] **LDAP and XPath (§6)** — is the password checked non-empty before every `ldap_bind` used
+      as a login, and is every filter/DN value escaped with the right flag?
+      `grep -rnE 'ldap_(bind|search|list|read)[[:space:]]*\(' --include='*.php' src/` ;
+      `grep -rn 'ldap_escape' --include='*.php' src/ | grep -v 'LDAP_ESCAPE_'` ;
+      `grep -rnE '(->query|->evaluate|->xpath)[[:space:]]*\([[:space:]]*["'"'"'](/|\.)[^;]*\$' --include='*.php' src/ | grep -v 'DOMXPath::quote'`
 
 Severity guide: interpolated SQL or shell with user input CRITICAL; unescaped
 output of request data HIGH; raw template sink with untraced source HIGH until
 proven benign; missing hex flags on script-embedded JSON MEDIUM; escaping at
-input time instead of output MEDIUM (design).
+input time instead of output MEDIUM (design); a request-chosen class name HIGH (CRITICAL when
+the constructor argument is request-chosen too, as in the file read above), a request-chosen
+session key HIGH; an `ldap_bind` login that accepts an empty password CRITICAL
+where the directory permits unauthenticated binds (HIGH until that is checked).

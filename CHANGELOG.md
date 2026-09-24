@@ -35,6 +35,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `node:crypto` AEAD traps;
   - Node's TLS and `ssh2` opt-outs;
   - server-side headless browsers.
+- **ROADMAP 59, gap-check 8 of 9: `sota-php` against Psalm's taint types and Semgrep's PHP
+  rules** (84 checks). 7 gap clusters are closed:
+  - request-chosen class names, session keys and mass assignment;
+  - LDAP and XPath injection;
+  - app cookies without the session cookie's hardening;
+  - secrets in stack traces and `phpinfo()`;
+  - `base_convert` on tokens;
+  - five spellings of TLS-off;
+  - `max_execution_time` not counting `sleep`/IO.
+
+  PHP's SSH host-key detector is added.
+- **Temp-file and permission hygiene is a shared class**, in `sota-code-security` rules/06
+  §6.1:
+  - one rule, with a measured unsafe/safe row and a fixture-tested detector for each language;
+  - the traps inside the safe APIs: Java `File.createTempFile` 0644, Rust `tempdir()` 0755,
+    and PHP `tempnam()`'s silent fallback directory.
 - **Concept-matrix triage for the four languages already gap-checked** (ROADMAP 59's folded-in
   queue):
   - `sota-c-cpp` rules/04 §7 covers relinquishing privileges (CERT POS36-C and POS37-C).

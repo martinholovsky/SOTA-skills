@@ -87,7 +87,7 @@ CONCEPTS = [
     # --- memory / resources
     ("resource lifecycle (close/dispose/RAII)", "universal",
      r"raii|dispose|close\(|defer |using |with open|context manager|finaliz|"
-     r"file handle|connection (leak|pool)|ensure\b"),
+     r"file handle|connection (leak|pool)|ensure\b|session_write_close"),
     ("memory safety (bounds, UAF, overflow)", "conditional:manual memory management",
      r"use[- ]after[- ]free|buffer overflow|bounds|out of bounds|dangling pointer|"
      r"double free|integer overflow|sanitizer|asan|ubsan|valgrind|miri|allocunsafe"),
@@ -167,7 +167,7 @@ CONCEPTS = [
      r"profil|pprof|flamegraph|benchmark|bench\b|jmh|criterion|perf\b|measure"),
     ("allocation / GC pressure", "universal",
      r"alloc|gc\b|garbage collect|heap|boxing|clone\(\)|copy on|string concat|"
-     r"stringbuilder|interning|__slots__"),
+     r"stringbuilder|interning|__slots__|fetchall"),
     ("N+1 and accidental quadratic", "universal",
      r"n\+1|quadratic|nested loop|o\(n2\)|o\(n\^2\)|eager load|includes\(|preload|select_related"),
 
@@ -202,6 +202,7 @@ CONCEPTS = [
     ("resource limits / DoS guards", "universal",
      r"rate limit|quota|dos\b|denial of service|redos|catastrophic backtrack|"
      r"max (depth|length|size|connections)|recursion (depth|limit)|maxbytesreader|"
+     r"max_execution_time|request_terminate_timeout|memory_limit|"
      r"limitreader"),
 ]
 

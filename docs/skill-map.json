@@ -498,6 +498,19 @@
       ]
     },
     {
+      "from": "sota-php",
+      "to": "sota-code-security",
+      "weight": 8,
+      "targets": [
+        "rules/01",
+        "rules/04",
+        "rules/04 \u00a75",
+        "rules/06 \u00a73",
+        "rules/07 \u00a73",
+        "rules/07 \u00a76"
+      ]
+    },
+    {
       "from": "sota-security-compliance",
       "to": "sota-code-security",
       "weight": 8,
@@ -1148,14 +1161,6 @@
       ]
     },
     {
-      "from": "sota-php",
-      "to": "sota-code-security",
-      "weight": 3,
-      "targets": [
-        "rules/06 \u00a73"
-      ]
-    },
-    {
       "from": "sota-privacy-compliance",
       "to": "sota-devsecops",
       "weight": 3,
@@ -1284,6 +1289,24 @@
       "targets": [
         "rules/04",
         "rules/04 \u00a74"
+      ]
+    },
+    {
+      "from": "sota-code-security",
+      "to": "sota-golang",
+      "weight": 2,
+      "targets": [
+        "rules/05 \u00a74a",
+        "rules/05 \u00a77"
+      ]
+    },
+    {
+      "from": "sota-code-security",
+      "to": "sota-python",
+      "weight": 2,
+      "targets": [
+        "rules/05",
+        "rules/05 \u00a74a"
       ]
     },
     {
@@ -1731,10 +1754,10 @@
     },
     {
       "from": "sota-code-security",
-      "to": "sota-golang",
+      "to": "sota-ruby",
       "weight": 1,
       "targets": [
-        "rules/05 \u00a77"
+        "rules/02 \u00a77"
       ]
     },
     {
@@ -1762,14 +1785,6 @@
       "to": "sota-javascript-typescript",
       "weight": 1,
       "targets": []
-    },
-    {
-      "from": "sota-code-security",
-      "to": "sota-python",
-      "weight": 1,
-      "targets": [
-        "rules/05"
-      ]
     },
     {
       "from": "sota-code-security",

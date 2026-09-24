@@ -153,11 +153,36 @@ function assertSafeUrl(string $url): void
   HTTP(S) — redirects can bounce to `gopher://`/`file://`; cap
   `CURLOPT_MAXREDIRS` or re-validate each hop; set timeouts; **never**
   `CURLOPT_SSL_VERIFYPEER => false` (HIGH).
+- **Every PHP spelling of disabled TLS verification is HIGH, not only that one.** The rule is
+  `sota-code-security` rules/04. Measured on PHP 8.5.9 against a local server:
+  - cURL: `CURLOPT_SSL_VERIFYPEER` `false`/`0` accepted an untrusted chain, and
+    `CURLOPT_SSL_VERIFYHOST` `0`/`false` accepted a certificate issued for another name. The
+    value `1` is coerced to `2` with a notice.
+  - Stream context (`file_get_contents`, `fopen`, `stream_socket_client`): `'ssl' =>
+    ['verify_peer' => false]` accepted an untrusted chain, `'verify_peer_name' => false` any
+    name, and `'allow_self_signed' => true` a self-signed certificate.
+
+  Each switch turns off **one** of the two checks. `verify_peer => false` alone still refused
+  the wrong-name certificate, so a half-disabled client can pass a smoke test. For an internal
+  endpoint, point `cafile`/`CURLOPT_CAINFO` at the private CA.
+- **SSH host keys: neither common PHP client checks one unless you do.** The class is
+  `sota-code-security` rules/04 §5. Read from source:
+  - phpseclib (4.0.1): `SSH2::login()` never compares the server's key with anything. The
+    key-exchange signature is verified only inside `getServerPublicHostKey()`, and nothing in
+    the library calls that method.
+  - `ext-ssh2`: no known-hosts support at all. `ssh2_fingerprint()` returns a hash for *you* to
+    compare, MD5 unless `SSH2_FINGERPRINT_SHA1` is passed.
+
+  So every `new SSH2`/`new SFTP`/`ssh2_connect` needs a comparison of
+  `getServerPublicHostKey()` or `ssh2_fingerprint()` with a pinned value **before**
+  authenticating, failing closed. One with no such comparison in reach is the finding.
 - The strongest control is architectural: route egress through a proxy that
   enforces the allowlist (network-level, see sota-network-security), so a
   missed validation isn't fatal.
 - `file_get_contents($url)`/`fopen` honor redirects with no protocol pinning —
-  use a real HTTP client for remote fetches.
+  use a real HTTP client for remote fetches. `getimagesize()`, `get_headers()` and
+  `get_meta_tags()` fetch URLs through the same stream layer (php.net `getimagesize`: *"a
+  remote file using one of the supported streams"*), so they are SSRF sinks too.
 
 
 ## 6. FFI — PHP calling C
@@ -197,11 +222,19 @@ Run from repo root; verify each hit manually.
       `grep -rn 'libxml_disable_entity_loader' --include='*.php' src/` (deprecated; check PHP<8
       paths)
 - [ ] **SSRF — user URLs fetched server-side** —
-      `grep -rnE '(curl_init|file_get_contents|fopen|->request|->get)\s*\([^;]*\$' --include='*.php' src/ | grep -iE 'url|uri|host|endpoint|webhook'`
+      `grep -rnE '(curl_init|file_get_contents|fopen|getimagesize|get_headers|get_meta_tags|->request|->get)[[:space:]]*\([^;]*\$' --include='*.php' src/ | grep -iE 'url|uri|host|endpoint|webhook'`
       ; `grep -rn 'CURLOPT_SSL_VERIFYPEER' --include='*.php' src/` (false = HIGH);
       `grep -rn 'CURLOPT_FOLLOWLOCATION' --include='*.php' src/` (check REDIR_PROTOCOLS nearby)
+- [ ] **TLS verification off in any spelling — HIGH (§5)** —
+      `grep -rniE '(SSL_VERIFYPEER|SSL_VERIFYHOST|verify_peer(_name)?)["'"'"']?[[:space:]]*(,|=>)[[:space:]]*(false|0)|allow_self_signed["'"'"']?[[:space:]]*=>[[:space:]]*(true|1)' --include='*.php' src/`
+- [ ] **SSH host key never compared — HIGH (§5)** — prints each file that opens an SSH session
+      and never compares a host key:
+      `grep -rlE 'new[[:space:]]+([\\A-Za-z0-9_]*\\)?(SSH2|SFTP)[[:space:]]*\(|ssh2_connect[[:space:]]*\(' --include='*.php' src/ | while IFS= read -r f; do grep -qE 'getServerPublicHostKey|ssh2_fingerprint' "$f"; case $? in 0) ;; 1) echo "NO HOST-KEY CHECK: $f" ;; *) echo "SWEEP FAILED: $f" ;; esac; done`
+      — a file the loop does *not* print still needs reading: the comparison must run before
+      `login()` and fail closed
 
 Severity guide: `unserialize`/`include` of external data CRITICAL; uploads
 executable or client-named HIGH; user-URL fetch with no allowlist/IP validation
 HIGH (CRITICAL when cloud metadata is reachable); `LIBXML_NOENT` on untrusted
-XML HIGH; missing `is_uploaded_file` MEDIUM.
+XML HIGH; missing `is_uploaded_file` MEDIUM; any disabled TLS check or an SSH session with
+no host-key comparison HIGH.
