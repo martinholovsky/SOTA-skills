@@ -16,6 +16,12 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
 - `record class` for entities with identity-by-value semantics; plain `class` for
   mutable services/stateful objects; `struct`/`record struct` for small values
   (`rules/05`).
+- **A timestamp field is `DateTimeOffset` or a UTC `DateTime`, never `DateTime.Now`.** `Now`
+  is *"expressed as the local time"* and returns `Kind` `Local` (measured on the .NET 10 SDK
+  image: `Now.Kind=Local`, `UtcNow.Kind=Utc`), so a stored value depends on the host's zone
+  and shifts across DST. The docs point to `DateTimeOffset` for *"a single point in time"*.
+  Intervals and timeouts are not dates: the same page calls `Now` unsuitable for measuring
+  and names `Stopwatch` instead.
 
 ## 2. Nullable reference types (NRT)
 
@@ -50,7 +56,7 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
 
 - LINQ for clarity over hand loops, but beware: multiple enumeration of an
   `IEnumerable` (materialize with `ToList()` once if iterated repeatedly), hidden
-  N+1 with `IQueryable` (`rules/04`/perf), and allocation/closure cost on hot
+  N+1 with `IQueryable` and EF Core lazy loading (`rules/05` §4), and allocation/closure cost on hot
   paths (`rules/05`). Know when a query executes (deferred vs eager).
 
 ## 6. Error handling
@@ -73,6 +79,11 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
       `grep -rnzoE 'catch\s*\([^)]*\)\s*\{\s*\}' --include='*.cs' .` ;
       `grep -rnE 'throw ex;' --include='*.cs' .` (loses stack trace);
       `grep -rnE 'catch \(Exception' --include='*.cs' . | head`
+- [ ] **Local time and wall-clock intervals (§1) — MEDIUM** —
+      `grep -rnE 'DateTime\.Now([^[:alnum:]_]|$)' --include='*.cs' .` (local time: read each —
+      stored, compared or sent is the finding; shown to a local user is not) ;
+      `grep -rnE 'DateTime\.(Utc)?Now[[:space:]]*-|-[[:space:]]*[A-Za-z_.]*DateTime\.(Utc)?Now' --include='*.cs' .`
+      (an interval on the wall clock; use `Stopwatch`)
 - [ ] **Legacy idioms — LOW** — `grep -rnE '\bclass\b' --include='*.cs' . | head` (DTOs that
       should be records?); `grep -rnE 'namespace [A-Za-z0-9_.]+\s*\{' --include='*.cs' .`
       (non-file-scoped namespaces)

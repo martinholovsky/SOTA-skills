@@ -410,3 +410,10 @@ buffer first. The class is `sota-code-security` rules/06 §3.
       UTF-8 bytes so the probe works under BSD grep and ugrep alike. A BOM at the start of a
       file is deliberately excluded. Any hit in code is HIGH until explained.
 - [ ] `grep -rn "Math.random" src/` near token/id/code generation — HIGH; `grep -rn "=== .*signature\|signature ===" src/` — timing-unsafe compare (MEDIUM).
+- [ ] **Publishing with a long-lived token instead of trusted publishing (npm supply chain) —
+      HIGH for a published package** —
+      `grep -rnE 'NODE_AUTH_TOKEN|NPM_TOKEN|_authToken' .github/workflows/ .npmrc` (a token
+      where trusted publishing would do) ; `grep -rl 'npm publish' .github/workflows/` then read
+      that job for `id-token: write` (npm's docs: trusted publishing needs it, and publishing
+      that way from GitHub Actions or GitLab CI/CD generates provenance automatically, for a
+      public package from a public repository)

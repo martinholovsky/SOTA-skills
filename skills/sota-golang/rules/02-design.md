@@ -133,6 +133,16 @@ type Limiter struct {
   Nil **map writes panic** — maps that get written need `make`.
 - Don't return pointers just to enable `nil` as "absent"; prefer
   `(T, bool)` or a zero value with documented meaning.
+- **`time.Time` is a value with two hidden parts, and `==` compares both.** The `time`
+  package docs: *"the Go == operator compares not just the time instant but also the Location
+  and the monotonic clock reading"*. Measured on go1.27.1, `t == t.Round(0)` and
+  `t == t.UTC()` are both `false` while `t.Equal(...)` is `true`. So compare with
+  `Equal`/`Before`/`After` and test absence with `IsZero()`. Time an interval with
+  `time.Since(start)` or `t.Sub(u)` on `time.Now()` values: they use the monotonic reading,
+  which the docs call *"robust against wall clock resets"*. `t.Unix()` and friends carry
+  no monotonic reading, so subtracting them measures the wall clock. And *"in the absence of a
+  time zone indicator, Parse returns a time in UTC"*: parsing a user's local time with a
+  zone-less layout needs `time.ParseInLocation`.
 
 ## 5. Generics: judicious use only
 
@@ -254,6 +264,12 @@ func UserFrom(ctx context.Context) (*User, bool) {
 - [ ] **Package-level mutable state — MEDIUM** —
       `grep -rnE '^var \w+ (=|\*|map\[|\[\])' --include='*.go' . | grep -vE '(Err|_test|MustCompile|regexp)'`
       ; `grep -rn 'func init()' --include='*.go' .`
+- [ ] **Time values (§4) — MEDIUM** —
+      `grep -rnE '\.Unix(Milli|Micro|Nano)?\(\)[[:space:]]*-' --include='*.go' .` (an interval
+      from wall-clock integers; use `time.Since`) ;
+      `grep -rnE '[!=]=[[:space:]]*time\.(Time\{\}|Now\(\))' --include='*.go' .` (use `IsZero`
+      or `Equal`) ; `grep -rnF 'time.Parse(' --include='*.go' .` (read each layout: with no
+      `Z07`, `-0700` or `MST` element the result is UTC, so local input needs `ParseInLocation`)
 - [ ] **Context violations** —
       `grep -rnE 'ctx\s+context\.Context' --include='*.go' . | grep -E 'struct|^\s+[A-Za-z]+ +context\.Context'`
       (ctx in struct — MEDIUM);

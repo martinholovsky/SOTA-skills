@@ -20,6 +20,20 @@ the type system, and expression-oriented code**. References:
   but a plain loop when it's clearer.
 - Prefer `List.of`/`Map.of`/`toList()` (immutable) over mutable collections you
   return from APIs.
+- **Time: `java.time`, an instant type for instants, `nanoTime` for intervals.**
+  `LocalDateTime` *"does not store or represent a time-zone"* and *"cannot represent an
+  instant on the time-line"* (its javadoc), so an event timestamp is an `Instant`,
+  `OffsetDateTime` or `ZonedDateTime`. `System.nanoTime()` *"can only be used to measure
+  elapsed time and is not related to any other notion of system or wall-clock time"*, which
+  is exactly what a timeout or latency wants. `currentTimeMillis()` differences follow the wall
+  clock. The legacy `SimpleDateFormat` is *"not synchronized"*, so a shared (`static`)
+  instance races. `DateTimeFormatter` *"is immutable and thread-safe"*.
+- **Exact decimals: `BigDecimal` from a `String` or `BigDecimal.valueOf(double)`, never
+  `new BigDecimal(double)`.** Measured on JDK 25: `new BigDecimal(0.1)` is
+  `0.1000000000000000055511151231257827021181583404541015625`, while `new BigDecimal("0.1")`
+  and `valueOf(0.1)` are `0.1`. `equals` compares scale (`1.0` equals `1.00` is `false`;
+  `compareTo` is `0`), and a `divide` without a scale and `RoundingMode` throws
+  `ArithmeticException` on `1/3`. Money is never `double`.
 
 ## 2. Modern Kotlin idioms (2.x)
 
@@ -81,7 +95,19 @@ the type system, and expression-oriented code**. References:
       / records); `grep -rnE '\braw\b|new Vector|new Hashtable' --include='*.java' .` ;
       `grep -rn 'Optional<' --include='*.java' . | grep -iE 'private .*Optional|(Optional<[^>]+>) [a-z]+\)'`
       (Optional field/param)
+- [ ] **Time handling (§1) — MEDIUM, HIGH for a shared formatter** —
+      `grep -rnE 'static[^=;(]*(SimpleDateFormat|DateFormat)[[:space:]]' --include='*.java' --include='*.kt' .`
+      (a shared legacy formatter: a data race) ;
+      `grep -rnE 'currentTimeMillis\(\)[[:space:]]*-|-[[:space:]]*System\.currentTimeMillis\(\)' --include='*.java' --include='*.kt' .`
+      (an interval on the wall clock; use `nanoTime`) ;
+      `grep -rnE 'java\.util\.(Date|Calendar)|LocalDateTime\.now\(' --include='*.java' --include='*.kt' .`
+      (legacy types, or a zone-less "now" that is later stored or compared as an instant)
 - [ ] **Mutable returns / collections from APIs — LOW** —
       `grep -rnE 'return (this\.)?[a-zA-Z]*[Ll]ist;' --include='*.java' .` (verify defensive
       copy / unmodifiable)
+- [ ] **Exact decimals (§1) — MEDIUM, HIGH in money paths** —
+      `grep -rnE 'new BigDecimal\([[:space:]]*-?[0-9]+\.[0-9]|new BigDecimal\([[:space:]]*[a-z][A-Za-z0-9_]*[[:space:]]*\)' --include='*.java' --include='*.kt' .`
+      (a double literal, or a variable whose type you then check) ;
+      `grep -rnE '\.divide\([^,()]*\)|BigDecimal[^;]*\.equals\(' --include='*.java' --include='*.kt' .`
+      (a divide with no scale or `RoundingMode`; scale-sensitive equality)
 - [ ] **Analyzer enforcement Error Prone + NullAway (Java); detekt + ktlint (Kotlin)**

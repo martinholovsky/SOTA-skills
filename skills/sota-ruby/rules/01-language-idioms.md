@@ -191,6 +191,11 @@ Rules:
 - **`require_relative` within a project, `require` for gems**; no code
   execution at require time beyond definitions (side-effectful requires break
   autoloading and testing).
+- **Block form for anything that must be closed.** `File.open(path) { |f| ... }` closes on
+  every exit, exceptions included; the bare form keeps the descriptor until someone calls
+  `close`. Measured on Ruby 4.0.6: the block form's handle was `closed?` after a `raise`
+  inside the block, and a bare `File.open` stayed open. Prefer the block form wherever an API
+  offers one; otherwise `ensure` the `close`.
 - Time: **`Time.now.utc` / monotonic clocks for durations**
   (`Process.clock_gettime(Process::CLOCK_MONOTONIC)`); never subtract two
   `Time.now` calls for measuring elapsed time in production code.
@@ -250,6 +255,14 @@ failed to hide, not what you exported:
       `grep -rnE '^\s*[A-Z][A-Z0-9_]+ *=' lib/ | grep -v 'private_constant'` ;
       `grep -rncE '^\s*[A-Z][A-Z0-9_]+ *=' lib/ ; grep -rnc 'private_constant' lib/` ;
       `grep -rn 'private_constant' lib/` (the mechanism, if used at all)
+- [ ] **Handles opened without the block form (§7) — MEDIUM, HIGH in a long-lived process** —
+      `grep -rnE '=[[:space:]]*(File|Tempfile|Zlib::GzipReader|TCPSocket)\.(open|new)\(' --include='*.rb' app/ lib/`
+      (an assigned handle: find its `ensure ... close`, or convert it to a block)
+- [ ] **Load-path hacks instead of `require_relative` (§7) — LOW, MEDIUM in a gem** —
+      `grep -rnE 'require[[:space:]]+.\.\.?/|\$LOAD_PATH|\$:[[:space:]]*(<<|\.unshift)' --include='*.rb' app/ lib/`
+      (`require './x'` resolves against the process's working directory, not the file:
+      measured on 4.0.6, it raised `LoadError` when run from another directory, where
+      `require_relative` loaded)
 - [ ] **Monkey-patching a core class is API for the whole process, not just this gem** —
       `grep -rnE '^\s*class (String|Array|Hash|Integer|Object|Kernel)\b' lib/` ;
       `grep -rn 'refine \|using ' lib/` (the scoped alternative (§7))

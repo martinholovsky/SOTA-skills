@@ -120,5 +120,18 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
       ;
       `grep -rni 'FetchContent\|ExternalProject\|git submodule' CMakeLists.txt .gitmodules 2>/dev/null`
       (verify pinning)
+- [ ] **Fetched sources verified, and dependencies scanned (§5) — HIGH for a shipped
+      binary** —
+      `grep -rnE 'URL[[:space:]]+[^[:space:]]*(https?|ftp)://' --include='CMakeLists.txt' --include='*.cmake' .`
+      against `grep -rn 'URL_HASH' --include='CMakeLists.txt' --include='*.cmake' .` (a `URL`
+      download with no `URL_HASH`: CMake's ExternalProject docs call the hash "strongly
+      recommended ... as it ensures the integrity of the downloaded content") ;
+      `grep -rnE 'GIT_TAG[[:space:]]+[^[:space:])]+' --include='CMakeLists.txt' --include='*.cmake' . | grep -vE 'GIT_TAG[[:space:]]+[0-9a-f]{40}'`
+      (a branch or tag, not a commit: the same docs prefer the hash, and an omitted `GIT_TAG`
+      defaults to `master`) ;
+      `grep -rniE 'osv-scanner|dependency-track|grype|trivy|cyclonedx|spdx' --include='*.yml' --include='*.yaml' .`
+      (no CVE-scan or SBOM step at all leaves §5 unenforced. OSV-Scanner's own table lists
+      `conan.lock` for C/C++, plus commit-level scanning of submoduled or vendored code, and
+      no vcpkg lockfile)
 - [ ] **Global (non-target) CMake anti-patterns — LOW/MEDIUM** —
       `grep -rnE 'include_directories\(|link_libraries\(|^set\(CMAKE_CXX_FLAGS' CMakeLists.txt 2>/dev/null`

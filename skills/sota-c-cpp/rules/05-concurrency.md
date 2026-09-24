@@ -69,6 +69,17 @@ void consumer(){ std::unique_lock lk(m); cv.wait(lk, []{return ready;}); use(); 
 - Watch for false sharing: hot per-thread counters on the same cache line
   serialize; pad/align to `std::hardware_destructive_interference_size`
   (`rules/07`).
+- **Deadlines and intervals use `std::chrono::steady_clock`, never `system_clock`.** The
+  standard says a steady clock's time points *"never decrease as physical time advances"*,
+  while `system_clock` is *"wall clock time from the system-wide realtime clock"*. A
+  `system_clock` deadline therefore moves when the clock is stepped. In C the same split is
+  `CLOCK_MONOTONIC` (Linux `clock_gettime(2)`: *"not affected by discontinuous jumps in the
+  system time"*) versus `CLOCK_REALTIME` or `time()`.
+- **`localtime`, `gmtime`, `ctime` and `asctime` return pointers into shared static
+  storage.** POSIX says `localtime()` *"need not be thread-safe"*, and CERT CON33-C lists all
+  four among the functions not required to avoid data races. Measured on macOS: two
+  `localtime` calls returned the same pointer, and the first result then read the second
+  call's year. Use `localtime_r`/`gmtime_r`, which write into a caller-supplied `struct tm`.
 
 ## 5. Tooling
 
@@ -89,6 +100,13 @@ void consumer(){ std::unique_lock lk(m); cv.wait(lk, []{return ready;}); use(); 
 - [ ] **Unjoined std::thread / detached without lifetime reasoning — MEDIUM** —
       `grep -rn 'std::thread' --include='*.cpp' . | grep -v jthread` (verify join/detach + arg
       lifetimes); `grep -rn '\.detach()' --include='*.cpp' .`
+- [ ] **Clocks and time conversion (§4) — MEDIUM** —
+      `grep -rnE '(^|[^[:alnum:]_])(localtime|gmtime|ctime|asctime)[[:space:]]*\(' --include='*.c' --include='*.cpp' --include='*.h' --include='*.hpp' .`
+      (the static-buffer forms; the `_r` forms do not match — in threaded code each hit is a
+      data race, CERT CON33-C) ;
+      `grep -rnE 'system_clock::now\(\)' --include='*.cpp' --include='*.hpp' .` (read each: a
+      deadline, timeout or elapsed interval wants `steady_clock`; a timestamp to display or
+      store is the legitimate use)
 - [ ] **Relaxed/weak memory order without justification — MEDIUM** —
       `grep -rnE 'memory_order_(relaxed|acquire|release|consume)' --include='*.cpp' .`
 - [ ] **condition_variable wait without predicate — MEDIUM (spurious/lost wakeup)** —

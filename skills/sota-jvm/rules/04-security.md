@@ -184,7 +184,12 @@ Standards: [SEI CERT Oracle Java](https://wiki.sei.cmu.edu/confluence/display/ja
   rules/05.
 - **Secrets**: never hardcode; load from a secret manager/env; don't log them;
   prefer `char[]`/`byte[]` you can wipe over `String` for passwords (`rules`
-  cross-ref `sota-secrets-management`).
+  cross-ref `sota-secrets-management`). **A record logs its secrets for you**: the implicit
+  `toString` holds *"the names of components of the record, and string representations of
+  component values"* (`java.lang.Record`). Measured on Temurin 25, a `record Creds(String
+  user, String password)` printed `Creds[user=bob, password=hunter2]`, so `log.info("{}",
+  creds)` leaks it. Override `toString` on any record or Kotlin `data class` that carries a
+  credential. Redaction at the logger is `sota-observability` rules/01 §4.
 - **Spring/framework**: keep dependencies patched (Spring4Shell, Log4Shell were
   dependency CVEs — `rules/06`); the web layer itself is §6 below.
 - **`assert` is not a control**: assertions are **disabled by default** at
@@ -436,5 +441,12 @@ the class is `sota-code-security` rules/06 §3.
       (on the legacy `com.sun.mail` provider an absent `checkserveridentity=true` is the
       finding) ;
       `grep -rnE 'StrictHostKeyChecking["'"'"']?[=, ]*["'"'"']?(no|off)|AcceptAllServerKeyVerifier' --include='*.java' --include='*.kt' --include='*.properties' .`
+- [ ] **Secrets reaching logs — HIGH** (§5) —
+      `grep -rniE '(log|logger)\.(trace|debug|info|warn|error)\([^;]*(passw|secret|token|api_?key|credential)' --include='*.java' --include='*.kt' .`
+      (read the arguments: a credential passed to the call is the finding, while message
+      text that only *names* one, such as "password reset for {}", also matches) ;
+      `grep -rniE '(record|data class)[[:space:]]+[a-z0-9_]+[[:space:]]*(<[^>]*>)?[[:space:]]*\([^)]*(passw|secret|token|api_?key|credential)' --include='*.java' --include='*.kt' .`
+      (a record or data class holding a credential: the generated `toString` prints it
+      unless overridden)
 - [ ] **Static security analysis SpotBugs + Find-Sec-Bugs; OWASP dependency-check / OSV-Scanner
       (rules/06)**

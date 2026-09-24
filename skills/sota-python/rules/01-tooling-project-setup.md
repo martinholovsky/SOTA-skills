@@ -300,3 +300,12 @@ Run from repo root. Severity guidance in brackets.
 - [ ] **--- PEP 594 removals before a 3.13 floor bump (§7a) [HIGH — ImportError at runtime]
       ---** —
       `grep -rnE '\b(import|from)\s+(telnetlib|cgi|cgitb|crypt|nntplib|smtpd|pipes|asynchat|asyncore|imghdr|sndhdr|sunau|aifc|audioop|chunk|uu|xdrlib|mailcap|msilib|nis|spwd|ossaudiodev)\b' --include='*.py' .`
+- [ ] **Shared mutable state under threads (§8) — HIGH where a free-threaded (`t`) build is
+      targeted, MEDIUM otherwise: the GIL never made check-then-act safe** —
+      `grep -rlE 'threading\.Thread\(|ThreadPoolExecutor|asyncio\.to_thread' --include='*.py' src/`
+      (the files that run code on threads; read only those) ;
+      `grep -rnE '^[[:space:]]+global [A-Za-z_]' --include='*.py' src/` (a module global rebound
+      from a function) ;
+      `grep -rnE 'if [^:]+ not in [A-Za-z_][A-Za-z0-9_.]*:' --include='*.py' src/` (check-then-act
+      on a shared dict or set: a finding only where a thread reaches it with no `threading.Lock`
+      held)

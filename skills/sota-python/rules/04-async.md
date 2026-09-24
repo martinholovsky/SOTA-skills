@@ -259,3 +259,10 @@ async def pipeline(items: AsyncIterator[Item]) -> None:
 - [ ] **Forgotten awaits — runtime + type checker** —
       `grep -rn "asyncio_mode" pyproject.toml setup.cfg 2>/dev/null` ;
       `python -W error::RuntimeWarning -m pytest -x 2>&1 | grep "never awaited"`
+- [ ] **Unbounded queue or fan-out (§9) — MEDIUM, HIGH when the producer is user traffic** —
+      `grep -rnE 'asyncio\.Queue(\[[^]]*\])?\((maxsize[[:space:]]*=[[:space:]]*0)?\)' --include='*.py' src/`
+      (measured on 3.14: `asyncio.Queue().maxsize` is `0`, and 10,000 `put_nowait` calls never
+      made it `full()`) ;
+      `grep -rlE 'create_task\(|TaskGroup\(' --include='*.py' src/` against
+      `grep -rlE 'Semaphore\(' --include='*.py' src/` (a file that spawns tasks and holds no
+      semaphore: read each loop that spawns one task per item)

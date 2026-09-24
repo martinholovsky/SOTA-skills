@@ -60,6 +60,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - hard-coded TLS versions;
   - infinite regex timeouts;
   - an EOL target framework.
+- **ROADMAP 59 closing pass:**
+  - **Concept-matrix triage.** 17 cells were opened, and 12 real gaps closed:
+    - secrets-in-logs probes for jvm, python, .NET and ruby, including record, dataclass and
+      `Struct` string forms;
+    - monotonic vs wall-clock rules for rust, go, c/c++, jvm and .NET;
+    - EF Core lazy-loading N+1;
+    - the js/ts quadratic accumulator and resource-release probes;
+    - the PHP log-injection probe.
+  - **Shared host-key rows** for `russh`, Rust `ssh2`, phpseclib, ext-ssh2 and SSH.NET.
+  - **The PHP TLS-off pattern** is widened from one spelling to six.
+- **Concept matrix, fourth pass.**
+  - `gen-concept-matrix.py --explain` prints the substring behind each cell.
+  - The sweep found substring accidents across the matrix: `null` in `/dev/null`, `lock` in
+    lockfile, `lts` in "results", `validat` in "invalidation". Two pinned floor concepts were
+    9/9 only by accident.
+  - Patterns are tightened. The 28 cells that went absent were triaged: 17 real gaps closed, 7
+    artefacts, 4 delegated.
+  - `UNIVERSAL_FLOOR` goes from 13 to 24 concepts, each cell read by hand.
 - **Temp-file and permission hygiene is a shared class**, in `sota-code-security` rules/06
   §6.1:
   - one rule, with a measured unsafe/safe row and a fixture-tested detector for each language;
@@ -74,6 +92,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Four checklist probes could never run.** They used a PCRE lookahead `(?!…)` inside
+  `grep -E`, which exits 2 under both BSD grep and ugrep. One of them also discarded stderr, so
+  it reported nothing at all. The four are .NET and jvm mutable static state, jvm data-race
+  smells, and php XSS.
+- **Invariant 20 printed nothing when it passed**, so a run could not show it had executed.
+  Three agents read the silence as "did not run". It now prints `ok` with the pinned hash, and
+  a drift copy still fails (exit 1, `AUDIT DRIFT`).
 - **`sota-dotnet`:** its BUILD step recommended `AnalysisLevel=latest-Recommended`, which
   fired 4 of 14 planted security violations, because the security analyzers ship disabled.
   `AnalysisModeSecurity=All` fired 10. Its PBKDF2 advice also missed that the legacy

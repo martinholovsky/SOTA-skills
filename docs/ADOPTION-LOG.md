@@ -5415,3 +5415,132 @@ so a matcher written for `process.start` never matches them. `gen-concept-matrix
 matches the backslash-stripped text, as a union, so no existing match can be lost. Measured:
 .NET's command-injection cell flipped to present, rust gained one classified item, and nothing
 else moved.
+
+## 2026-09-24 — ROADMAP 59 closing pass: shared host-key rows, and a PHP TLS token that missed
+
+**Intake shape: findings the language gap-checks handed back for the shared classes.** Each was
+read from the library's own source by the gap-check agent, and each is written once in
+`sota-code-security` rules/04 §5, the host-key class decided on 2026-09-23.
+
+| library | verdict | what the source says |
+|---|---|---|
+| Rust `russh` | **adopted as a detector row** | `check_server_key` defaults to `Ok(false)` and rejects. The finding is an override returning `Ok(true)`, and the crate's own test handler is one |
+| Rust `ssh2` | **adopted as an absence** | `Session::handshake()` checks no host key. Verification needs `known_hosts()` and `check_port` |
+| PHP phpseclib | **adopted as an absence** | `login()` never compares the key, and the KEX signature is checked only in `getServerPublicHostKey()`, which nothing in the library calls (4.0.1; 3.x not read) |
+| PHP ext-ssh2 | **adopted as an absence** | no known-hosts support. `ssh2_fingerprint()` defaults to MD5 |
+| .NET SSH.NET | **adopted as a detector row and an absence** | `CanTrustHostKey` returns true with no `HostKeyReceived` handler, and `HostKeyEventArgs` starts `CanTrust = true` |
+
+**The shared TLS row's PHP token was too narrow.** `CURLOPT_SSL_VERIFYPEER,\s*0` matches one
+spelling. The PHP gap-check measured five ways to turn verification off. The row now matches
+`SSL_VERIFYPEER`/`SSL_VERIFYHOST`/`verify_peer`/`verify_peer_name` set to `false` or `0` in call
+or array form, plus `allow_self_signed => true`.
+
+**Re-measured by the integrating session, with the text taken from the file:**
+- The widened PHP pattern hit **6 of 6** planted TLS-off lines and **0** of the safe ones,
+  under ugrep and BSD grep. The old token hit 0 of the same 6, because none used its exact
+  `, 0` form.
+- The checklist's host-key regex, extended with `CanTrust = true`, hit the bad SSH.NET
+  fixture and missed the pinned-fingerprint one.
+- The russh probe hit an `Ok(true)` handler and missed one that returns
+  `check_known_hosts(…)`.
+
+My first extraction of the PHP pattern for that test cut it short at `(true|1)`. A second one
+left the row's `(PHP)` annotation on, which zsh read as a glob group and did not strip, and
+that scored 5 of 6. Both were artefacts of how I extracted the pattern, not of the pattern
+itself. The figure above is from a third extraction that took the whole line.
+
+## 2026-09-24 — concept-matrix triage, third pass: the queue closes
+
+**Intake shape: the last cells of ROADMAP 59's candidate queue.** Every cell opened; the full
+table is in `docs/LANGUAGE-TIER.md`, "Third pass, 2026-09-24". Of 17 language cells, **12 were
+real**, **2 were vocabulary artefacts** and **3 were delegated**.
+
+| cell | verdict | landed |
+|---|---|---|
+| logging: jvm, python, .NET | **adopted: probe for a stated rule** | each skill said "don't log secrets" and never probed it. Probes add the language's own leak paths: record `toString`/`ToString`, dataclass `repr`, EF Core `EnableSensitiveDataLogging` |
+| logging: ruby | **adopted: rule and probe** | `sota-ruby` rules/03 §8: `Data`/`Struct#inspect`, and Rails `filter_parameters` as a neutral example |
+| logging: php | **vocabulary artefact** | `#[\SensitiveParameter]` probe at rules/04 §5a. The stated log-injection rule (rules/02 §4) got its probe in the same change |
+| date and time: rust, go, c/c++, jvm, .NET | **adopted: rule and probe** | no skill of the five said anything about clocks. Each now separates the monotonic interval clock from the wall clock, in its own spelling |
+| N+1: .NET | **adopted: rule and probe** | rules/01 pointed to an N+1 rule that did not exist; EF Core lazy loading was named nowhere in the library |
+| N+1: js/ts | **adopted: probe for a stated rule** (quadratic half) | spread-accumulator `reduce`; the N+1 half stays with `sota-databases` |
+| resource lifecycle: js/ts | **adopted: probe for a stated rule** | `finally`/`await using` release of handles, cursors and pooled clients |
+| N+1: go | **vocabulary artefact** | rules/06's `O(n²)` probe; the matcher lacked the superscript |
+| N+1: c/c++, jvm; module boundaries: php | **rejected: delegated** | `sota-databases` rules/03 and `sota-performance` rules/02 name Hibernate and JPA; `sota-architecture` rules/01 §2 names deptrac |
+
+**What running the probes caught, rather than reading them.** The harness took its 26
+commands verbatim from the committed diff and ran each on a known-bad and a known-good fixture
+under both greps. Two of the 26 were wrong on the first run:
+- go's `grep -rn 'time\.Parse('` exited **2 under ugrep** (a literal `(` outside `-E`) and
+  passed under BSD grep. It is now `grep -rnF`.
+- ruby's `[^#]*#\{` could not reach a second interpolation and missed the known-bad
+  entirely. It is now `.*#\{`.
+Reading caught two more. The python field probe flagged the correct `field(repr=False)`, and
+three probe notes claimed a clean result on message text that the regex does match. After the
+fixes: **52/52**, 26 commands × 2 greps.
+
+**The matcher errs both ways.** Tracing each match to its substring found six **false
+presences**: `slog` inside `syslog`, `n+1` inside a `find` command, `clock` in "wall-clock
+bound", and `import` inside `DllImport`. Each hides a real absence that the candidate list
+cannot show. They are recorded, not fixed.
+
+**Sources, each read or run at intake:**
+- Rust std `SystemTime`/`Instant` docs (rustc 1.97.1), and a compile proving E0599;
+- `go doc time` (go1.27.1), plus a run;
+- the C++ draft `[time.clock.steady]` and `[time.clock.system]`, POSIX `localtime`, CERT CON33-C, and Linux `clock_gettime(2)`;
+- Java SE 25 javadoc for `Record`, `System`, `LocalDateTime`, `SimpleDateFormat` and `DateTimeFormatter`, plus Kotlin's data-class docs;
+- Microsoft Learn for `DateTime.Now`, C# records, `EnableSensitiveDataLogging`, and EF Core lazy loading, efficient querying and split queries;
+- `docs.ruby-lang.org` `Data`, the Rails configuring guide, and the rails/rails `filter_parameter_logging.rb.tt` template;
+- runs on Temurin 25, the .NET 10 SDK, Ruby 4.0.6, Python 3.14.6, PHP 8.5.9 and Node 22.22.1.
+
+**Re-measured by the integrating session:**
+- The harness's command list was re-extracted from the agent's committed diff (26 commands)
+  and re-run: **52/52**.
+- Go's `t == t.Round(0)` printed `false` on a fresh run, the trap the go probe names.
+
+## 2026-09-24 — concept-matrix fourth pass: the matcher's false presences
+
+**Intake shape: the matrix's own present cells.** The third pass found six cells lit by a
+substring accident. This pass printed the substring behind every present cell
+(`gen-concept-matrix.py --explain all all`) and found the class was far wider: `/dev/null`,
+`uv.lock`, `// SAFETY:`, "concurrency", "results", "iterator invalidation", `-fsanitize`.
+Two **pinned** floor concepts were 9/9 only by accident on c/c++ — vulnerability scanning
+("safety-standard analysis") and input validation. Of 28 cells that went absent, **17 were
+real**, **7 were vocabulary artefacts** and **4 were delegated or covered as a class**.
+
+| cell | verdict | landed |
+|---|---|---|
+| c/c++: logging, vuln scanning, provenance, input validation | **adopted: probe for a stated rule** (logging: rule and probe) | rules/04 §2, §3; rules/06 §5 — CWE-117; `URL_HASH`/`GIT_TAG` from CMake's docs; OSV-Scanner's `conan.lock` row |
+| python: data race, autoescape, assert-as-authz, unbounded queue, money | **adopted: probe for a stated rule** | rules/01 §8, rules/05 §1 and §7a, rules/04 §9, rules/03 §12; Jinja2 3.1.6 and 3.14.6 runs |
+| jvm: numeric | **adopted: rule and probe** | rules/01 §1: `new BigDecimal(0.1)`, `equals` vs `compareTo`, `divide` without scale — JDK 25 run |
+| php: date/time | **adopted: probe for a stated rule** | rules/01 §5; PHP 8.5.9 run (`modify` mutates) |
+| ruby: resource lifecycle, backpressure | **adopted: rule and probe** | rules/01 §7 block form; rules/05 §2 `SizedQueue` — Ruby 4.0.6 runs |
+| ruby: module boundaries, profiling | **adopted: probe for a stated rule** | rules/01 §7 `require_relative`; rules/05 §8 |
+| .NET: module boundaries | **adopted: probe for a stated rule** | rules/02 §6 `InternalsVisibleTo`, csproj item measured on SDK 10.0.401 |
+| js/ts: provenance | **adopted: probe for a stated rule** | rules/05 npm supply chain: tokens vs trusted publishing (npm docs) |
+| php absence; python, js/ts version floor; js/ts data race, allocation; go provenance, input validation | **vocabulary artefact** | strpos truthiness; `requires-python`; `engines.node`; check-then-act; unbounded `Map` cache; `GOSUMDB`/`go mod verify`; `MaxBytesReader` |
+| rust N+1; php task leaks, backpressure, provenance | **rejected: delegated / covered as a class** | `sota-performance` rules/02; FPM shared-nothing; `pm.max_children`; install-time-code probe |
+
+**Four probes never ran.** A PCRE `(?!…)` lookahead inside `grep -E` exits 2 under BSD grep
+and ugrep alike: .NET and jvm "Mutable static state", jvm "Data-race smells", and php's XSS
+probe — which also discarded stderr, so it reported nothing. Rewritten as ERE plus `grep -v`.
+
+**Measured:** 20 items, 41 commands extracted from the committed files, each on a known-bad
+and a known-good fixture: 82/82 under BSD grep, 82/82 under ugrep. `--assert-universal` exits
+0 with 24 pinned concepts and exit 1 when a non-9/9 concept is pinned.
+
+**Re-measured by the integrating session:**
+- The agent's harness passes **82/82 under BSD grep and 82/82 under ugrep**: 41 commands
+  extracted from the committed files, each on a known-bad and a known-good fixture.
+- `--assert-universal` exits 0 with 24 pinned concepts. The agent's saved failure run shows it
+  exiting 1 with a concept pinned that is not 9/9.
+- A PCRE lookahead inside `grep -E` exits 2 under both BSD grep 2.6.0 ("repetition-operator
+  operand invalid") and ugrep 7.8.4 ("invalid syntax"), so the four probes that used one
+  could never have reported anything.
+- The README hero count moved from ~72k to ~73k lines. The agent made this one edit outside
+  its file bounds because invariant 6 blocked the commit, and it asked for it to be reviewed.
+  It is the gate's own arithmetic (72,534 lines), not a judgement.
+
+**The matcher's listing threshold hides a concept that is missing almost everywhere.** A
+universal concept becomes a candidate only when five or fewer languages lack it. A count over
+all 32 universal rows found one concept hidden that way: `numeric precision & money`, at 3/9.
+It is recorded as ROADMAP 65 rather than triaged here.

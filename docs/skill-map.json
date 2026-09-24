@@ -1991,6 +1991,22 @@
     },
     {
       "from": "sota-dotnet",
+      "to": "sota-observability",
+      "weight": 1,
+      "targets": [
+        "rules/01 \u00a74"
+      ]
+    },
+    {
+      "from": "sota-dotnet",
+      "to": "sota-databases",
+      "weight": 1,
+      "targets": [
+        "rules/03"
+      ]
+    },
+    {
+      "from": "sota-dotnet",
       "to": "sota-devsecops",
       "weight": 1,
       "targets": []
@@ -2068,6 +2084,14 @@
       "to": "sota-secrets-management",
       "weight": 1,
       "targets": []
+    },
+    {
+      "from": "sota-jvm",
+      "to": "sota-observability",
+      "weight": 1,
+      "targets": [
+        "rules/01 \u00a74"
+      ]
     },
     {
       "from": "sota-jvm",
@@ -2304,6 +2328,14 @@
       "to": "sota-sandboxing",
       "weight": 1,
       "targets": []
+    },
+    {
+      "from": "sota-ruby",
+      "to": "sota-observability",
+      "weight": 1,
+      "targets": [
+        "rules/01 \u00a74"
+      ]
     },
     {
       "from": "sota-ruby",

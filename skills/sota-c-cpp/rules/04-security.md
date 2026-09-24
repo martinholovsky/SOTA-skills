@@ -51,6 +51,11 @@ Replace on sight (CERT STR/FIO; MISRA):
 - **Never** pass user data as the format string: `printf(user)` is a
   format-string vuln (read/write via `%n`). Use `printf("%s", user)`. Compile
   with `-Wformat -Wformat=2 -Werror=format-security` to catch it.
+- **Logs carry neither secrets nor raw input.** C has no standard logger, so every
+  `syslog`/`fprintf(stderr, ...)` call site is the control: never pass a credential, key or
+  token to it, and neutralise CR/LF in any external string before it is logged (CWE-117,
+  *Improper Output Neutralization for Logs*): a forged line in a syslog-fed pipeline is an
+  audit-trail defect. The user-controlled *format* is the bullet above.
 - **Command injection**: don't build shell strings. Use `posix_spawn`/`execve`
   with an explicit argument vector and no shell; never `system("cmd " + input)`.
 - **SQL/other injection**: parameterized queries / prepared statements only
@@ -159,9 +164,20 @@ a sandbox over running as root at all (`sota-sandboxing`).
       `grep -rnwE '(gets|strcpy|strcat|sprintf|vsprintf|stpcpy|scanf|system|popen|strtok|atoi|atol)' --include='*.c' --include='*.cpp' --include='*.h' .`
       ; `grep -rnE '\balloca\b|\[[^]]*\] *= *\{?' --include='*.c' .` (VLA/alloca on dynamic
       size)
+- [ ] **Validation at the boundary (§2) — HIGH where the value is a length, count or offset
+      from input** —
+      `grep -rnE 'assert[[:space:]]*\([^;]*(len|size|count|offset|idx|index)[a-z_]*[[:space:]]*[<>]' --include='*.c' --include='*.cpp' --include='*.h' .`
+      (a bounds check written as `assert`: gone in every non-Debug CMake build type, §2) ;
+      `grep -rnE '(memcpy|memmove|malloc|calloc)[[:space:]]*\([^;]*(hdr|header|pkt|packet|msg|frame|rec)(->|\.)[a-z_]*(len|size|count)' --include='*.c' --include='*.cpp' .`
+      (an embedded length field used straight from parsed input: find its cap against the
+      remaining buffer)
 - [ ] **Format string — CRITICAL (user-controlled fmt)** —
       `grep -rnE '(printf|fprintf|snprintf|syslog|err|warn)\s*\([^,"]*\)' --include='*.c' --include='*.cpp' .`
 - [ ] **build with: -Wformat=2 -Werror=format-security**
+- [ ] **Secrets reaching logs (§3) — HIGH** —
+      `grep -rniE '(syslog|fprintf[[:space:]]*\([[:space:]]*stderr|spdlog::[a-z]+|LOG\([A-Z]+\))[^;]*(passw|secret|token|api_?key|private_?key|credential)' --include='*.c' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' .`
+      (read the arguments: a credential passed to the call is the finding, while message text
+      that only names one also matches)
 - [ ] **Command/path injection, TOCTOU — HIGH/CRITICAL** —
       `grep -rnE 'system\(|popen\(|exec[lv]p?\(' --include='*.c' --include='*.cpp' .` ;
       `grep -rnE 'fopen|open\(|realpath|access\(' --include='*.c' --include='*.cpp' .`
