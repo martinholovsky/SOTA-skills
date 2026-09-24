@@ -313,7 +313,7 @@ After #426 every language has every applicable topic (page 5 has no blank cells;
 | php | 1,143 | 41 | 3.6 | **not yet** |
 | ruby | 1,125 | 55 | 4.9 | done (Brakeman) |
 | c/c++ | 1,061 | 53 | 5.0 | done (cppcheck) |
-| jvm | 710 | 48 | 6.8 | **not yet** |
+| jvm | 939 | 64 | 6.8 | done (find-sec-bugs, 2026-09-24) |
 | .NET | 569 | 40 | 7.0 | **not yet** |
 
 Items are *counted* the same way across languages since every checklist became tick-boxes (the
@@ -328,7 +328,7 @@ injection, path traversal) are covered at `sota-dotnet` rules/04:35–38, and it
 simply misses .NET's phrasing.
 
 Coverage inside this tier is checked against an **external, enumerable, tool-backed list** —
-the method already used for Go (OWASP Go-SCP) and Rust (ANSSI). Five are done:
+the method already used for Go (OWASP Go-SCP) and Rust (ANSSI). Six are done:
 
 | language | denominator | source | result |
 |---|---|---|---|
@@ -337,11 +337,14 @@ the method already used for Go (OWASP Go-SCP) and Rust (ANSSI). Five are done:
 | c-cpp | **342 checks** | cppcheck 2.21.0 `--errorlist`, two agreeing derivations; MISRA addon (132 rules) is a separate registry | 4 gaps closed |
 | ruby | **86 checks** (79 default + 7 optional) | Brakeman 8.0.6: source `check_*.rb` classes and the tool's own `--checks` registry (run in a container) agree name-for-name, and the `add`/`add_optional` registrations sum to the same 86 | 7 gaps closed, 1 held for a decision |
 | rust | **60 recommendations** (46 rules + 14 recommendations) | ANSSI Secure Rust Guidelines at `3f9e2e2`: the source's reco blocks give 61 (en and fr identical), the rendered checklist page 60. The extra is `LIBS-UNSAFE`, a TODO inside an HTML comment that the renderer drops. No clippy registry derived | 25 gaps closed in three new sections (rules/03 §3b FFI boundary, §3c leak APIs, rules/07 §4a build config outside `Cargo.toml`) plus probes; one stale rule corrected (a panic out of `extern "C"` aborts since 1.81) |
+| jvm | **144 patterns** (121 detectors) | find-sec-bugs 1.14.0: the source `findbugs.xml` (master and tag), the XML inside the released jar, and SpotBugs 4.10.4 loading the plugin on Temurin 25 in a container agree as sets. The source code emits 143: `SQL_INJECTION` is registered but never emitted | 16 gaps closed (39 patterns), 1 held for the temp-file class, 2 with no owner in any skill (LDAP anonymous bind, XML built from strings) |
 
-Remaining: **jvm, javascript-typescript, dotnet, php** — 4. Candidate
+Remaining: **javascript-typescript, dotnet, php** — 3. Candidate
 denominators — ruby/Brakeman, js-ts/eslint-plugin-security, rust/clippy + ANSSI.
-**jvm and .NET have no queryable local tool**, which may itself be the finding rather than a
-reason to skip them.
+*This said "jvm and .NET have no queryable local tool" until 2026-09-24. It was wrong for
+jvm: the host has no JDK (`/usr/bin/java` is the macOS stub), but SpotBugs with the
+find-sec-bugs plugin runs in a Temurin container in one command, and that is how jvm's list of
+checks was derived.*
 
 **c-cpp's denominator was derived and reconciled on 2026-09-21, and the sweep against it ran
 on 2026-09-22 (the table row above).** The derivation is kept as the worked example of the step

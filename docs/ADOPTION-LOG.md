@@ -5180,3 +5180,52 @@ were vocabulary artefacts, fixed in `gen-concept-matrix.py`. Rust now classifies
 items, and none of its cells is a candidate. Its temp-file and host-key findings (`russh`
 rejects unknown keys by default; `ssh2`'s `handshake()` accepts any) are held for the shared
 classes in `sota-code-security`.
+
+## 2026-09-24 — gap-check 6 of 9: sota-jvm against find-sec-bugs, 144 patterns, 16 gaps closed
+
+**The denominator is find-sec-bugs 1.14.0, the SpotBugs security plugin: 144 BugPatterns from
+121 detectors.** Three derivations agree as sets:
+- the source registry, on `master` and at `version-1.14.0`;
+- the XML inside the released jar from Maven Central (its SHA-1 matched the published `.sha1`);
+- SpotBugs 4.10.4 loading that jar on Temurin 25.0.4 in a container.
+
+A fourth derivation, the pattern strings the Java source actually emits, found 143. The one
+missing is `SQL_INJECTION`, which is registered but never emitted. LANGUAGE-TIER's claim that
+"jvm has no queryable local tool" was re-tested and is wrong for this machine: the host has no
+JDK, but podman runs the tool in one command.
+
+| verdict | n | notes |
+|---|---|---|
+| covered | 30 | |
+| covered as a class | 9 | |
+| delegated | 27 | code-security rules/01 §10–11, /02, /05, /07; sota-mobile rules/04 §4.6–4.7; network-security |
+| rejected: not a rule | 36 | Scala 11, and source markers 15. Six are single legacy libraries. Three were measured obsolete on JDK 21/25: the Security Manager, NUL-byte paths, and `SSLContext("SSL")`. One is FSB's own low-confidence heuristic |
+| **adopted: real gap** | 39 patterns, 16 gaps | each fact read from JDK, Spring, Tomcat, Servlet, JavaMail, Angus or Commons Email source/docs, or measured on Temurin 21.0.12/25.0.4 |
+| held for the shared temp-file class | 1 | file permissions (operator decision, 2026-09-24) |
+| open, no owner in any skill | 2 | LDAP anonymous bind; XML built from strings. Raised to the operator in the 2026-09-24 resume report |
+
+**The measured facts nobody had written:**
+- On JDK 21.0.12 a caller's XSLT ran `System.getProperty` by default; 25.0.4 refused it.
+- `Validator` echoed a local file in its error message.
+- The JDK 25 strict JAXP template did not stop a `SchemaFactory` `xs:include`.
+- `(a+)+$` is linear on current JDKs, while `^(a{1,2}){1,60}$` took 9.1 s at 41 characters.
+- `java.net.URL` reads `file:`, and the JDK `HttpClient` refuses it.
+- `File.createTempFile` creates `rw-r--r--`, while `Files.createTempFile` creates `rw-------`.
+  This is held for the temp-file class.
+
+**The dominant shape was not a missing rule.** In 9 of the 16 gaps `sota-code-security`
+already owned the class and only the JVM spelling was absent, the same shape as ruby's
+`VERIFY_NONE`. Five were a rule stated with no probe. The JVM host-key spellings (JSch, MINA
+SSHD) were absent from `sota-jvm` although the shared rule names them, and are now carried in
+rules/04 §4.
+
+**Re-measured by the integrating session:**
+- The agent's harness passes **116/116**: 29 probes, each on a known-bad and a known-good
+  fixture, under ugrep and BSD grep.
+- Its crosscheck script reads the git diff and reports **0** added probe commands that were
+  not run verbatim.
+
+**Concept matrix:** jvm's backpressure cell was real (the `Executors` shortcuts use unbounded
+queues) and is now closed in rules/03 §2. Its supply-chain cell was half real: a checksum
+verification probe was added. The DoS cell was closed by the ReDoS work. The matcher fixes are
+in `gen-concept-matrix.py`, and jvm classifies 59 of 64 items.

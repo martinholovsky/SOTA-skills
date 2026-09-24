@@ -81,7 +81,8 @@ CONCEPTS = [
      r"event loop|blocking (call|io|the)|block_on|run_until|sync over async|\.result\(\)|"
      r"configureawait|deadlock"),
     ("backpressure / unbounded queues", "universal",
-     r"unbounded|backpressure|bounded (queue|channel)|buffer size|queue depth"),
+     r"unbounded|backpressure|bounded (queue|channel)|buffer size|queue depth|executors\.new|"
+     r"linkedblockingqueue"),
 
     # --- memory / resources
     ("resource lifecycle (close/dispose/RAII)", "universal",
@@ -108,7 +109,8 @@ CONCEPTS = [
      r"path\.combine|getfullpath|zip slip|zipentry|sendfile"),
     ("deserialization / unsafe parsing", "universal",
      r"deserializ|unserialize|pickle|marshal|yaml\.load|objectinputstream|binaryformatter|"
-     r"gob\b|xxe|xml external|phar|serde|bincode|json\.loads|fromjson|readobject"),
+     r"gob\b|xxe|xml external|phar|serde|bincode|json\.loads|fromjson|readobject|xslt|"
+     r"stylesheet"),
     ("output encoding / XSS / templating", "conditional:renders markup or templates",
      r"xss|escap|html_safe|htmlspecialchars|dangerouslysetinnerhtml|innerhtml|"
      r"autoescap|erb|template inject|sanitiz"),
@@ -150,7 +152,8 @@ CONCEPTS = [
      r"-d_fortify|relro|stack protector|csproj|gradle|maven|cmake"),
     ("supply-chain provenance & publishing", "universal",
      r"provenance|slsa|sigstore|cosign|sbom|publish|registry|namespace|typosquat|"
-     r"dependency confusion|crates\.io|npmjs|pypi|rubygems|nuget"),
+     r"dependency confusion|crates\.io|npmjs|pypi|rubygems|nuget|checksum|verification-metadata|"
+     r"cyclonedx"),
 
     # --- testing
     ("test suite health & determinism", "universal",
