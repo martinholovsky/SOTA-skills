@@ -1232,6 +1232,12 @@
     },
     {
       "from": "sota-c-cpp",
+      "to": "sota-sandboxing",
+      "weight": 2,
+      "targets": []
+    },
+    {
+      "from": "sota-c-cpp",
       "to": "sota-performance",
       "weight": 2,
       "targets": []
@@ -1663,12 +1669,6 @@
     {
       "from": "sota-c-cpp",
       "to": "sota-databases",
-      "weight": 1,
-      "targets": []
-    },
-    {
-      "from": "sota-c-cpp",
-      "to": "sota-sandboxing",
       "weight": 1,
       "targets": []
     },
