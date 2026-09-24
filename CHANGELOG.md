@@ -5,6 +5,20 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **The v1.44.2 README said each language skill carries its own detector spelling for all five
+  shared security classes.** That holds only for host keys, and there only partly. For temp
+  files, LDAP bind and native library search paths, 0 of 9 language skills carry one, and for
+  XML 1 of 9 does. The detectors live in the shared rule. The README sentence and
+  `sota-code-security` rules/06 §6.1's lead-in now say so. Measured with a per-skill search for
+  cross-skill citations to each shared section, using a control that finds §6.1's own heading.
+- **`ci.yml`'s comment on `--assert-universal` said "12 concepts".** The floor pins 25 today (a
+  count of `UNIVERSAL_FLOOR`, and `--assert-universal` agrees). The number is removed, since a
+  count in a comment goes stale again.
+
 ## [1.44.2] - 2026-09-24
 
 **Front door checked:** shared class · LDAP · XML · search path · numeric precision · find-sec-bugs · host-key

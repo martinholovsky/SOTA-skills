@@ -328,7 +328,7 @@ it points. Three shapes, the same in every language:
   creation time. The process umask can only narrow a requested mode, never widen it.
 
 This is a **class stated once, with per-language detectors**, the same design as host-key
-verification in rules/04 §5 (operator decision, 2026-09-24). Each language skill carries only its own spelling:
+verification in rules/04 §5 (operator decision, 2026-09-24). The per-language spellings live in the table below, not in the language skills:
 
 | language | the unsafe form | the safe API |
 |---|---|---|
