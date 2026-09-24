@@ -108,6 +108,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`sota-testing` rules/03's mock-path probe could never run.** Its `(?!\.)` lookahead exits
+  2 under `grep -E`, ugrep and `rg`. It is now `[^.]`, tested bad/good under both greps. A
+  sweep of all 317 skill files finds no other live lookaround.
+- **`docs/LANGUAGE-TIER.md`'s 2026-09-23 depth table had been overwritten row by row.** It is
+  restored, and a re-measured 2026-09-24 table stands beside it.
 - **Four checklist probes could never run.** They used a PCRE lookahead `(?!…)` inside
   `grep -E`, which exits 2 under both BSD grep and ugrep. One of them also discarded stderr, so
   it reported nothing at all. The four are .NET and jvm mutable static state, jvm data-race
