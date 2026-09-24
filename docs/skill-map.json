@@ -1115,6 +1115,15 @@
       "targets": []
     },
     {
+      "from": "sota-dotnet",
+      "to": "sota-code-security",
+      "weight": 3,
+      "targets": [
+        "rules/05",
+        "rules/06 \u00a73"
+      ]
+    },
+    {
       "from": "sota-jvm",
       "to": "sota-testing",
       "weight": 3,
@@ -1392,14 +1401,6 @@
       "weight": 2,
       "targets": [
         "rules/04"
-      ]
-    },
-    {
-      "from": "sota-dotnet",
-      "to": "sota-code-security",
-      "weight": 2,
-      "targets": [
-        "rules/06 \u00a73"
       ]
     },
     {
