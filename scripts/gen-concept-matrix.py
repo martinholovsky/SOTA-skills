@@ -96,7 +96,7 @@ CONCEPTS = [
      r"sql inject|parameteriz|prepare|raw quer|sql built from|string interpolation in (a )?quer|"
      r"activerecord|sqlalchemy|dapper|pdo|whereraw|selectraw|db::raw|escape_string|"
      r"emulate_prepares|->query|execute\(|sqlx|diesel|knex|sequelize|query buil|"
-     r"sql built as|sqlite3_exec"),
+     r"sql built as|sqlite3_exec|\(select\|insert"),
     ("command / subprocess injection", "universal",
      r"command inject|shell[= ]true|os/exec|subprocess|system\(|popen|`backtick|"
      r"process\.start|processbuilder|std::process|argument injection|child_process|"
@@ -133,7 +133,7 @@ CONCEPTS = [
      r"cookie|samesite|httponly|privilege drop|relinquish"),
     ("logging hygiene / PII in logs", "universal",
      r"log(ging|s)? (secret|pii|token|password)|redact|structured log|slog|"
-     r"sensitive data in|stack trace (in|to) (the )?(response|user)"),
+     r"sensitive data in|stack trace (in|to) (the )?(response|user)|authorization`/`cookie"),
 
     # --- supply chain / tooling
     ("dependency pinning & lockfiles", "universal",
@@ -179,7 +179,7 @@ CONCEPTS = [
     ("module boundaries & imports", "universal",
      r"import|circular depend|cyclic|module boundar|package (layout|structure)|"
      r"relative import|project reference|internal package|namespace layout|grab[- ]bag|"
-     r"using namespace|pragma once|fvisibility"),
+     r"using namespace|pragma once|fvisibility|`pub` field|unreachable_pub"),
     ("numeric precision & money", "universal",
      r"float(ing)? (point|money)|decimal|rounding|money|currency|bigint|bigdecimal|"
      r"toFixed|precision loss|integer division"),

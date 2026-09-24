@@ -5,6 +5,30 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **ROADMAP 59, gap-check 5 of 9: `sota-rust` against the ANSSI Secure Rust Guidelines.**
+  - The list of checks is 60 recommendations, derived from source and from the rendered
+    checklist, and reconciled.
+  - 25 gaps are closed in three new sections: the FFI boundary (rules/03 §3b), leak APIs
+    (§3c), and build configuration outside `Cargo.toml` (rules/07 §4a).
+  - `assert!` policy and a public-field bypass probe were added.
+  - Every probe was run against known-bad and known-good fixtures under ugrep and BSD grep.
+- **Concept-matrix triage for the four languages already gap-checked** (ROADMAP 59's folded-in
+  queue):
+  - `sota-c-cpp` rules/04 §7 covers relinquishing privileges (CERT POS36-C and POS37-C).
+  - c/c++ now has a probe for SQL built as a string.
+  - python now has a probe for PyPI publishing tokens and provenance.
+  - Seven matcher artefacts are fixed in `gen-concept-matrix.py`.
+
+### Fixed
+
+- **`sota-rust`:** a panic out of `extern "C"` is no longer called UB/Critical. Since Rust
+  1.81 it aborts, so it is High (a DoS). Reproduced: exit 134, and `catch_unwind` did not
+  catch it.
+
 ## [1.44.1] - 2026-09-24
 
 **Front door checked:** raw memory · positive control · field report · negative-control
