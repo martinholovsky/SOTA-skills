@@ -30,6 +30,11 @@ lives in `sota-testing`.
   HTTPS; verify signatures/checksums; beware dependency confusion (don't let an
   internal coordinate resolve from a public repo). Generate an **SBOM**
   (CycloneDX) for releases. See `sota-devsecops`.
+  The concrete mechanisms: Gradle records the expected hash of every artifact in
+  `gradle/verification-metadata.xml` and fails the build on a mismatch (Gradle's
+  dependency-verification guide). Maven repositories take a `<checksumPolicy>` of
+  `fail`, `warn` or `ignore`. Make it `fail`, stated in the POM or `settings.xml`, rather
+  than relying on a default.
 - Minimize the tree — each transitive dep is attack surface and a future CVE.
 
 ## 3. Static analysis & formatting
@@ -84,6 +89,11 @@ lives in `sota-testing`.
       `ls gradle.lockfile gradle/dependency-locks 2>/dev/null; grep -rn 'dependencyLocking' build.gradle* 2>/dev/null`
       ; `grep -rnE 'version ranges|\[.*,.*\)|latest\.release|\+' build.gradle* 2>/dev/null`
       (unpinned ranges)
+- [ ] **Artifact checksums verified, not just downloaded? (the provenance half of §2)** —
+      `if test -f gradle/verification-metadata.xml; then echo "ok: gradle/verification-metadata.xml present"; else echo "FINDING: no gradle/verification-metadata.xml, so artifact checksums are not verified (Gradle builds)"; fi`
+      ; `grep -rn 'checksumPolicy' --include='pom.xml' --include='settings.xml' .`
+      (Maven: no hit leaves the policy to the Maven version's default, and `warn`/`ignore`
+      let a bad checksum through; only `fail` blocks it)
 - [ ] **Static analysis configured?** —
       `grep -rniE 'errorprone|nullaway|spotbugs|findsecbugs|pmd|detekt|ktlint|spotless' . --include='pom.xml' --include='build.gradle*' --include='*.yml' || echo "no static analysis configured"`
 - [ ] **Coverage gate + JUnit5/Testcontainers?** —

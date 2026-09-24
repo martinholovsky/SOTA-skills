@@ -16,6 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     (§3c), and build configuration outside `Cargo.toml` (rules/07 §4a).
   - `assert!` policy and a public-field bypass probe were added.
   - Every probe was run against known-bad and known-good fixtures under ugrep and BSD grep.
+- **ROADMAP 59, gap-check 6 of 9: `sota-jvm` against find-sec-bugs.** The list of checks is
+  144 patterns, from three agreeing derivations: source, the released jar, and the running
+  tool in a container.
+  - 16 gaps closed, including XXE in `SchemaFactory`/`Validator`/XPath, caller-supplied XSLT,
+    LDAP and XPath injection, and further eval sinks.
+  - ReDoS (measured at 9.1 s), crypto the old probe missed, mail hostname checking,
+    `java.net.URL` reading `file:`, CSRF bypassed by GET, CORS with credentials, and unbounded
+    `Executors` queues.
+  - The JVM host-key spellings are now carried.
 - **Concept-matrix triage for the four languages already gap-checked** (ROADMAP 59's folded-in
   queue):
   - `sota-c-cpp` rules/04 §7 covers relinquishing privileges (CERT POS36-C and POS37-C).

@@ -32,6 +32,16 @@ coroutines. References:
 - Lock with try/finally or prefer `ReentrantLock` with `lock()`/`unlock()` in
   finally; keep critical sections small; acquire multiple locks in a global
   order to avoid deadlock.
+- **The `Executors` shortcuts are unbounded.** The JDK Javadoc says `newFixedThreadPool`
+  runs "off a shared unbounded queue" and `newSingleThreadExecutor` "off an unbounded
+  queue". `newCachedThreadPool` "creates new threads as needed". A `LinkedBlockingQueue`
+  constructed with no capacity is bounded only by `Integer.MAX_VALUE`. Under load these
+  turn a slow dependency into heap exhaustion or thread exhaustion instead of a rejection
+  the caller can see. For work arriving from outside, build a `ThreadPoolExecutor` with a
+  bounded `ArrayBlockingQueue` (or a sized `LinkedBlockingQueue`) and an explicit
+  `RejectedExecutionHandler`. A virtual-thread-per-task executor has no pool to bound, so
+  cap concurrency with a `Semaphore` around the scarce resource. The general rule is
+  `sota-async-concurrency` (backpressure).
 
 ## 3. Virtual threads (Java 21+, finalized JEP 444)
 
@@ -93,5 +103,11 @@ coroutines. References:
       (unstructured leak); `grep -rnE 'catch *\([^)]*CancellationException' --include='*.kt' .`
       (must rethrow); `grep -rnE 'runBlocking|Thread.sleep' --include='*.kt' .` (blocking in
       coroutine context)
+- [ ] **Unbounded executors and queues (no backpressure) — MEDIUM, HIGH on a request
+      path** (§2) —
+      `grep -rnE 'Executors\.new(Fixed|Cached)ThreadPool\(|Executors\.newSingleThreadExecutor\(|new LinkedBlockingQueue(<[^>]*>)?\(\)|newVirtualThreadPerTaskExecutor\(' --include='*.java' --include='*.kt' .`
+      (each needs a stated bound: a capacity plus a rejection policy, or a `Semaphore`
+      around what the tasks consume; a sized `new LinkedBlockingQueue<>(1000)` does not
+      match)
 - [ ] **Bare lock without finally — MEDIUM** —
       `grep -rnE '\.lock\(\)' --include='*.java' --include='*.kt' .` (verify unlock in finally)

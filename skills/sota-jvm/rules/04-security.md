@@ -49,9 +49,42 @@ Standards: [SEI CERT Oracle Java](https://wiki.sei.cmu.edu/confluence/display/ja
 - **LDAP/JNDI**: never pass attacker-controlled names to `Context.lookup` —
   this is the Log4Shell (CVE-2021-44228) class. Disable remote-codebase loading;
   validate URLs against an allowlist; keep logging libs patched.
+  **LDAP filters are a second sink** (CWE-90; the class is `sota-code-security` rules/01 §11).
+  Never concatenate into a filter string. Use the JNDI overload that takes arguments,
+  `ctx.search(base, "(uid={0})", new Object[]{user}, controls)`: the Javadoc says each
+  `{i}` is substituted "with any characters having special significance within filters
+  (such as '*') having been escaped according to the rules of RFC 2254".
+  **`SearchControls.setReturningObjFlag(true)` asks the provider to rebuild Java objects
+  from directory entries** (`javaSerializedData`, `javaReferenceAddress`,
+  `javaRemoteLocation`). That is deserialization of whatever an attacker wrote into the
+  directory. The JDK gates it with `com.sun.jndi.ldap.object.trustSerialData`. Its
+  documented default was "allowed" in the `java.naming` module docs at jdk-17-ga and
+  jdk-19-ga, and "not allowed" from jdk-20-ga on (read from the `module-info.java` at
+  each tag). So a `trustSerialData=true` anywhere is a finding. On a JDK whose `java.naming`
+  docs still say "allowed", the absence of `=false` is one too. Update releases of older
+  lines were not checked, so read the docs of the exact build.
+- **XPath injection** (CWE-643): an expression built by concatenation is the SQL-injection
+  shape. Bind values with `XPath.setXPathVariableResolver` and reference them as `$name`.
+  Measured on Temurin 25.0.4: `count(//user[name='" + in + "'])` with
+  `in = "nobody' or '1'='1"` matched **2 of 2** users, and the `$name` form with the same
+  value matched **0**.
 - **Expression/script eval**: SpEL, OGNL, MVEL, `ScriptEngine` (Nashorn/JS),
-  Spring expression contexts, and template engines evaluating user input are
+  Jakarta EL (`ELProcessor`, `ExpressionFactory.createValueExpression`), Groovy
+  (`GroovyShell`, `Eval.me`), Spring expression contexts, and template engines
+  (FreeMarker, Velocity, Pebble) compiling a template *string* from user input are
   RCE. Don't evaluate untrusted expressions; sandbox or remove the capability.
+- **Regex from input, and the shapes `java.util.regex` still cannot survive** (CWE-1333;
+  class: `sota-code-security` rules/01 §10). A pattern compiled from request data
+  (`Pattern.compile(userInput)`, `s.matches(userInput)`) hands the caller the regex engine.
+  Use `Pattern.quote` when the input is meant literally. **The textbook ReDoS no longer
+  reproduces on current JDKs**: measured on Temurin 21.0.12 and 25.0.4, `(a+)+$`,
+  `(a|aa)+$` and `^([a-z]+)*$` all finished in 0–9 ms on inputs of up to 24 `a`s plus `!`. **Bounded
+  repetition and backreferences still blow up**, measured on 25.0.4 with `a`×N plus `!`:
+  `^(a{1,2}){1,60}$` took 113 ms at N=28, 1.3 s at 36 and **9.1 s at 40**, and `(\1?a)+b`
+  took 3.7 s at 40. So a clean result for the classic shape proves nothing about the
+  others. For patterns from untrusted sources use RE2/J (`com.google.re2j`), whose README
+  describes linear-time matching that omits backreferences. Otherwise cap the input
+  length before matching.
 
 ## 3. XML and XXE
 
@@ -63,6 +96,34 @@ Standards: [SEI CERT Oracle Java](https://wiki.sei.cmu.edu/confluence/display/ja
   `setXIncludeAware(false)`, `setExpandEntityReferences(false)` (OWASP XXE
   cheat sheet). Same care for YAML (`SnakeYAML` `SafeConstructor`) and XML-based
   formats.
+- **The parsers people forget are also parsers.** `SchemaFactory`, `Validator` and
+  `XPath.evaluate(expr, new InputSource(...))` each parse XML with their own defaults (an
+  `XMLReader` from `getXMLReader()` needs the `SAXParserFactory` hardening above). Measured
+  on Temurin 21.0.12 and 25.0.4 with an entity pointing at a local file:
+  - `XPath.evaluate` over an `InputSource` returned the file's contents;
+  - a `Validator` **echoed the file's contents in its validation error message**;
+  - a `SchemaFactory` read an `xs:include` of a local `file:` URL.
+
+  The fix differs from the `DocumentBuilderFactory` one. Set
+  `XMLConstants.ACCESS_EXTERNAL_DTD` and `ACCESS_EXTERNAL_SCHEMA` to `""` on the
+  `SchemaFactory` and on each `Validator`. With them set, both refused; the `Validator` said
+  "'file' access is not allowed due to restriction set by the accessExternalDTD property".
+  For XPath, parse with a hardened `DocumentBuilder` first and evaluate against the
+  `Document`.
+- **JDK 25 ships a stricter config file, and it is not a substitute.** The file is
+  `$JAVA_HOME/conf/jaxp-strict.properties.template`, applied with
+  `-Djava.xml.config.file=`. With it, the entity reads above failed on the catalog. The
+  `SchemaFactory` `xs:include` of a local file **still succeeded** (Temurin 25.0.4). Keep the
+  per-factory settings.
+- **A stylesheet is code.** An XSLT from a caller can call Java through extension functions.
+  Measured: on Temurin **21.0.12** a stylesheet calling
+  `java.lang.System.getProperty` through the `xalan/java` namespace **ran by default**. On
+  **25.0.4** it was refused, because that JDK's `conf/jaxp.properties` sets
+  `jdk.xml.enableExtensionFunctions=false`. The exact JDK release where this default flipped
+  was not verified. On either version, `FEATURE_SECURE_PROCESSING=true` refused it. Never
+  compile a caller-supplied stylesheet. If you must, set that feature and the
+  `ACCESS_EXTERNAL_STYLESHEET`/`ACCESS_EXTERNAL_DTD` properties to `""`, and treat any
+  `enableExtensionFunctions=true` as a finding.
 
 ## 4. Cryptography (the JCA)
 
@@ -76,17 +137,51 @@ Standards: [SEI CERT Oracle Java](https://wiki.sei.cmu.edu/confluence/display/ja
     PBKDF2 (a KDF), never plain SHA/MD5. MD5/SHA-1 for security is HIGH.
   - Constant-time comparison for MACs/tokens (`MessageDigest.isEqual`), never
     `String.equals`/`Arrays.equals` on secrets (timing leak).
+  - **The transformation string is where these rules are broken, so read every one.**
+    Findings include:
+    - `"…/CBC/…"` with no MAC over the ciphertext (padding oracle);
+    - `DESede`/`TripleDES`, `Blowfish`, `RC2`, `RC4`/`ARCFOUR`;
+    - `"RSA/…/NoPadding"` (textbook RSA; use OAEP);
+    - `javax.crypto.NullCipher`, which is the identity transformation;
+    - an IV or GCM nonce from a constant, from a string's bytes, or from `new byte[16]`.
+      It must come from `SecureRandom` per message.
+
+    For key sizes, `sota-code-security` rules/04 §1 already schedules RSA-2048 (112-bit)
+    for deprecation after 2030. So a `KeyPairGenerator.initialize(1024)` is below a floor
+    that is itself on its way out.
+  - **Hex-encode digests with `java.util.HexFormat`** (since 17), never a loop over
+    `Integer.toHexString(b & 0xff)`. That drops each leading zero, so distinct inputs
+    collide. Measured: bytes `{0x01,0x23}` and `{0x12,0x03}` both encode to `"123"`;
+    `HexFormat` gives `0123` and `1203`.
 - TLS: use the platform default protocols/cipher suites (TLS 1.2+/1.3); **never**
   install an all-trusting `TrustManager` or `HostnameVerifier` that returns
   true — disabling certificate validation is HIGH/CRITICAL. See
   `sota-code-security` rules/04 and `sota-network-security`.
+  **Mail clients verify the hostname only if told to in the old API.**
+  `mail.smtp.ssl.checkserveridentity` is documented "Defaults to false" in the legacy
+  JavaMail (`com.sun.mail`) SMTP provider docs. Angus Mail's compatibility notes say the
+  check "is enabled by default" from Angus Mail 1.1.0. Apache Commons Email only sets it to
+  `true` when `setSSLCheckServerIdentity(true)` is called, so on the old provider it stays
+  off. **SSH host keys are the same control** — the rule is stated once in
+  `sota-code-security` rules/04 §5. The JVM spellings are JSch
+  `setConfig("StrictHostKeyChecking", "no")` and MINA SSHD `AcceptAllServerKeyVerifier`.
 
 ## 5. Other boundaries
 
 - **Path traversal**: canonicalize and verify the result stays under an allowed
   root (`Path.normalize()` + `startsWith`); reject `..`. Use `java.nio.file`.
 - **SSRF / URL fetch**: validate/allowlist destinations; block internal/metadata
-  ranges (see `sota-code-security`).
+  ranges (see `sota-code-security`). **`java.net.URL` is also a file reader.** Measured on
+  Temurin 25.0.4: `URI.create("file:///tmp/secret.txt").toURL().openStream()` returned the
+  file. `java.net.http.HttpRequest.newBuilder(URI.create("file:///…"))` threw
+  `IllegalArgumentException: invalid URI scheme file`. So a fetcher built on
+  `URL.openConnection`/`openStream` needs an explicit `http`/`https` scheme allowlist, and
+  the JDK `HttpClient` gives you that refusal for free.
+- **Upload filenames are request data.** Servlet `Part.getSubmittedFileName()` and Spring
+  `MultipartFile.getOriginalFilename()` return what the client sent. Spring's own Javadoc
+  warns the name "could also contain characters such as '..'" and recommends generating
+  your own. Never build a storage path from it; the upload pipeline is `sota-code-security`
+  rules/05.
 - **Secrets**: never hardcode; load from a secret manager/env; don't log them;
   prefer `char[]`/`byte[]` you can wipe over `String` for passwords (`rules`
   cross-ref `sota-secrets-management`).
@@ -131,7 +226,9 @@ All Spring facts below were checked against Spring's own docs, advisories and so
   binding by construction. **Spring4Shell (CVE-2022-22965) was this class** reaching the class
   loader through property binding. It affected Spring Framework 5.3.0–5.3.17 and 5.2.19 and
   earlier, and was fixed in 5.3.18 and 5.2.20. It required JDK 9+, Tomcat and WAR packaging.
-  Executable-JAR deployments were not affected.
+  Executable-JAR deployments were not affected. Outside Spring the same shape is Apache
+  Commons `BeanUtils.populate(bean, request.getParameterMap())`: property binding from
+  request names with no allowlist at all.
 - **Authorization rules are first-match.** `authorizeHttpRequests` evaluates its pairs "in
   the order listed, applying only the first match". So a broad `permitAll()` placed above a
   narrow rule silently wins. End with `.anyRequest().denyAll()`, or `.authenticated()` as a
@@ -146,6 +243,38 @@ All Spring facts below were checked against Spring's own docs, advisories and so
   have rejected. Check the order **on the running application**, not from `@Order`
   annotations. Both the default order and the property that sets it have moved between Spring
   Boot majors: Boot 4's `SecurityProperties` on main no longer carries a filter order.
+- **CSRF: disabled, or bypassed by a GET.** Spring Security's docs say CSRF protection "is
+  enabled" by default "for unsafe HTTP methods". `csrf().disable()`,
+  `csrf(AbstractHttpConfigurer::disable)` or `csrf { disable() }` on a cookie-session app is
+  HIGH. An API authenticated only by a header token, with no cookie for a forged request to
+  ride, is the usual exception, and the reason belongs in a comment. The quieter hole is a state-changing handler reachable by GET.
+  `CsrfFilter`'s default matcher skips `GET`, `HEAD`, `TRACE` and `OPTIONS` (read from its
+  source), and a method-level `@RequestMapping` with no `method` maps every verb
+  (`RequestMethod[] method() default {}`). So such a handler is reachable by a cross-site
+  GET with no token check. Use `@PostMapping` and friends for anything that writes. It is
+  the same class as the HEAD-to-GET confusion in `sota-ruby` rules/03.
+- **View names are routing.** A controller return value of `"redirect:" + param` or
+  `"forward:" + param`, or `new ModelAndView(param)`, lets the caller choose the target.
+  Those prefixes are `UrlBasedViewResolver.REDIRECT_URL_PREFIX`/`FORWARD_URL_PREFIX`.
+  `response.sendRedirect(param)` and `request.getRequestDispatcher(param)` are the servlet
+  spellings. A **forward reaches what a browser cannot**: the Servlet spec says the
+  contents of `WEB-INF` "may be exposed using the `RequestDispatcher` calls". Allowlist
+  targets; the open-redirect rule is `sota-code-security` rules/01 §11.
+- **CORS with credentials: `allowedOriginPatterns("*")` reflects any origin.** Spring
+  refuses `allowedOrigins("*")` together with `allowCredentials(true)`, throwing
+  `IllegalArgumentException` from `validateAllowCredentials`. But `checkOrigin` returns the
+  request's own `Origin` for a pattern of `*` without calling that validation. So
+  `allowedOriginPatterns("*")` plus credentials is reflect-any-origin-with-cookies (both
+  read from `CorsConfiguration` source). The class is `sota-code-security` rules/05.
+- **Session IDs in URLs.** Tomcat's `ApplicationContext` source says "URL re-writing is
+  always enabled by default" and adds `COOKIE` beside it, so `encodeURL`/
+  `encodeRedirectURL` can put `;jsessionid=` into links, logs and `Referer` headers. Set
+  the tracking mode to cookie only: `server.servlet.session.tracking-modes=cookie` in
+  Spring Boot, or `<tracking-mode>COOKIE</tracking-mode>` in `web.xml`. A cookie you create
+  with `new jakarta.servlet.http.Cookie(...)` reads `getSecure()`/`isHttpOnly()` as false
+  until you set them. Tomcat's own session cookie is `HttpOnly` by default
+  (`StandardContext.useHttpOnly = true`). Attribute policy is `sota-code-security`
+  rules/05.
 
 
 ## 7. Native and off-heap memory — JNI, FFM, `Unsafe`
@@ -173,6 +302,10 @@ the class is `sota-code-security` rules/06 §3.
 - [ ] **Injection — CRITICAL/HIGH** —
       `grep -rnE '(createQuery|createNativeQuery|prepareStatement|executeQuery|executeUpdate)\([^?)]*\+' --include='*.java' .`
       ;
+      `grep -rnE '\.(query|queryForObject|queryForList|queryForMap|queryForRowSet|update|batchUpdate|execute|executeLargeUpdate|addBatch)\([[:space:]]*"[^"]*"[[:space:]]*\+' --include='*.java' --include='*.kt' .`
+      (Spring `JdbcTemplate`, plain `Statement` and similar clients: the line above never
+      names them; the `?`-placeholder form does not match)
+      ;
       `grep -rnE 'Runtime\.getRuntime\(\)\.exec|new ProcessBuilder' --include='*.java' --include='*.kt' .`
 - [ ] **The String-taking exec overloads TOKENIZE on whitespace and are @Deprecated(since=18): a
       hit here is a finding on the deprecation alone, before any taint analysis.** —
@@ -183,6 +316,28 @@ the class is `sota-code-security` rules/06 §3.
       `grep -rnE 'ctx\.lookup|InitialContext|new InitialDirContext' --include='*.java' .`
       (JNDI/Log4Shell-class);
       `grep -rnE 'SpelExpressionParser|Ognl|ScriptEngineManager|getEngineByName' --include='*.java' .`
+- [ ] **The eval sinks the line above does not name — CRITICAL on input** (§2) —
+      `grep -rnE 'ELProcessor|createValueExpression|createMethodExpression|GroovyShell|Eval\.me\(|Velocity\.evaluate|VelocityEngine|freemarker\.template\.Template|PebbleEngine' --include='*.java' --include='*.kt' .`
+      (a template or expression built from a request string is the finding; a template
+      loaded by name from the classpath is not)
+- [ ] **LDAP filter injection and directory-borne deserialization — HIGH/CRITICAL** (§2) —
+      `grep -rnE '\.search\([^;]*"[[:space:]]*\+' --include='*.java' --include='*.kt' .`
+      (concatenated filter; use the `{0}` + `Object[]` overload) ;
+      `grep -rnE 'setReturningObjFlag\([[:space:]]*true|trustSerialData.{0,6}true' --include='*.java' --include='*.kt' --include='*.properties' --include='*.sh' --include='*.y*ml' --include='Dockerfile*' .`
+      (objects rebuilt from LDAP entries; where the JDK's documented default is "allowed",
+      as at jdk-17-ga and jdk-19-ga, an unset `trustSerialData` also allows it)
+- [ ] **XPath injection — HIGH** (§2) —
+      `grep -rnE '\.(evaluate|compile)\([^;]*"[[:space:]]*\+' --include='*.java' .` ;
+      `grep -rnE '\.(evaluate|compile)\("([^"]*[^"\\])?\$[{a-zA-Z]' --include='*.kt' .`
+      (Kotlin string templates; an escaped `\$name` XPath variable does not match. The Java
+      line also lists `Pattern.compile` concatenation, which the next item wants anyway)
+- [ ] **ReDoS: regex from input, and the shapes that still backtrack — MEDIUM, HIGH on a
+      request path** (§2: measured 9.1 s at 41 chars on JDK 25) —
+      `grep -rnE 'Pattern\.(compile|matches)\([[:space:]]*[^")[:space:]]|\.(matches|replaceAll|replaceFirst)\([[:space:]]*[^")[:space:]]' --include='*.java' --include='*.kt' .`
+      (pattern argument is not a literal: trace it to a constant or `Pattern.quote`) ;
+      `grep -rnE '(compile|matches|replaceAll|replaceFirst|split)\("[^"]*(\}\)[*+{]|\\\\[1-9])' --include='*.java' --include='*.kt' .`
+      (a bounded group under another quantifier, or a backreference: time it on 40 chars
+      before calling it safe; `(a+)+` itself is NOT the test on current JDKs)
 - [ ] **Path traversal / zip slip — HIGH (the rule is stated at 5 above; this is its probe)
       Found 2026-09-22: the BUILD half existed ("canonicalize and verify the result stays under
       an allowed root") with no audit probe anywhere in the skill -- the dominant gap shape. a
@@ -193,10 +348,29 @@ the class is `sota-code-security` rules/06 §3.
       `grep -rnE 'new File\(|Paths\.get\(|Path\.of\(' --include='*.java' --include='*.kt' . | grep -vE 'normalize|toRealPath'`
       ;
       `grep -rnE 'getName\(\)|getEntry\(|ZipEntry|TarArchiveEntry' --include='*.java' --include='*.kt' .`
+- [ ] **Client-supplied upload filenames — HIGH if they reach a path** (§5) —
+      `grep -rnE 'getSubmittedFileName\(|getOriginalFilename\(' --include='*.java' --include='*.kt' .`
+      (each hit must feed a display field or be discarded, never `resolve()`/`new File`)
+- [ ] **`java.net.URL` reads `file:` — HIGH when the URL is request data** (§5, measured) —
+      `grep -rnE 'new URL\(|\.toURL\(\)|\.openConnection\(|\.openStream\(' --include='*.java' --include='*.kt' .`
+      (confirm an `http`/`https` scheme allowlist before the open, plus the SSRF controls;
+      the JDK `HttpClient` refuses `file:` by itself)
 - [ ] **XXE — CRITICAL (verify DTDs disabled)** —
       `grep -rnE 'DocumentBuilderFactory|SAXParserFactory|XMLInputFactory|TransformerFactory|SAXReader' --include='*.java' .`
       ;
       `grep -rn 'disallow-doctype-decl\|setExpandEntityReferences\|SafeConstructor' --include='*.java' . || echo "verify XXE hardening"`
+- [ ] **XXE in the parsers the grep above does not name — CRITICAL on reachable input** (§3;
+      measured: `Validator` echoed a local file in its error, `SchemaFactory` read an
+      `xs:include`, `XPath` over an `InputSource` returned the file) —
+      `grep -rnE 'SchemaFactory|newValidator\(|getXMLReader\(|XMLReaderFactory|\.evaluate\([^;]*new InputSource' --include='*.java' --include='*.kt' .`
+      ; then `grep -rnE 'ACCESS_EXTERNAL_(DTD|SCHEMA|STYLESHEET)' --include='*.java' --include='*.kt' .`
+      (a `SchemaFactory`/`Validator` with no matching `setProperty(..., "")` is the finding;
+      the JDK strict config template did NOT stop the `xs:include`)
+- [ ] **Caller-supplied XSLT — CRITICAL** (§3: extension functions ran by default on JDK
+      21.0.12) — `grep -rnE 'newTransformer\([^)]|newTemplates\(|enableExtensionFunctions' --include='*.java' --include='*.kt' --include='*.properties' .`
+      (trace each stylesheet `Source` to a constant; `enableExtensionFunctions=true` is a
+      finding on sight; `newTransformer()` with no argument is the identity transform and
+      does not match)
 - [ ] **Actuator exposure — HIGH if internet-facing** —
       `grep -rnE 'management\.endpoints\.web\.exposure\.include|management\.server\.port|show-values' --include='*.properties' .`
       ; `grep -rnE '^[[:space:]]*(exposure|include|show-values):|heapdump' --include='*.yml' --include='*.yaml' .`
@@ -211,7 +385,9 @@ the class is `sota-code-security` rules/06 §3.
       `grep -rnE '@(ModelAttribute|RequestBody)' --include='*.java' --include='*.kt' .` ;
       `grep -rnE 'setAllowedFields|setDisallowedFields|@InitBinder' --include='*.java' --include='*.kt' .`
       (property binding with no `setAllowedFields` on an entity is the finding; a
-      disallow-list is weaker than an allow-list)
+      disallow-list is weaker than an allow-list) ;
+      `grep -rnE 'BeanUtils\.populate\(' --include='*.java' --include='*.kt' .`
+      (the non-Spring spelling: every request parameter name becomes a setter call)
 - [ ] **Authorization rules — HIGH** —
       `grep -rnE 'authorizeHttpRequests|requestMatchers|anyRequest|permitAll|ignoring\(' --include='*.java' --include='*.kt' .`
       (read each chain top-down: first match wins; the chain must end in `anyRequest()`;
@@ -220,6 +396,25 @@ the class is `sota-code-security` rules/06 §3.
       `grep -rnE 'implements (jakarta|javax)\.servlet\.Filter|extends OncePerRequestFilter|FilterRegistrationBean|@Order' --include='*.java' --include='*.kt' .`
       (confirm on the running app that each identity-reading filter runs after the security
       chain; an annotation is not evidence of the effective order)
+- [ ] **CSRF disabled, or a write reachable by GET — HIGH on a cookie-session app** (§6) —
+      `grep -rnE 'csrf\(\)\.disable\(|csrf\([[:space:]]*AbstractHttpConfigurer::disable|csrf\([^)]*->[^)]*\.disable\(|csrf[[:space:]]*\{[[:space:]]*disable\(' --include='*.java' --include='*.kt' .`
+      (needs a written reason naming the non-cookie credential) ;
+      `grep -rnE '^[[:space:]]+@RequestMapping' --include='*.java' --include='*.kt' . | grep -v 'method'`
+      (an indented, method-level mapping with no `method` answers GET, which `CsrfFilter`
+      never checks; read the handler: does it write?)
+- [ ] **View names and dispatch targets from request data — HIGH** (§6) —
+      `grep -rnE '"(redirect|forward):"[[:space:]]*\+|new ModelAndView\([[:space:]]*[^")[:space:]]|sendRedirect\(|getRequestDispatcher\(' --include='*.java' --include='*.kt' .`
+      (each target must be a constant or an allowlist entry; a `forward:`/dispatcher target
+      from input can read `WEB-INF`)
+- [ ] **CORS: wildcard origin pattern with credentials — HIGH** (§6) —
+      `grep -rnE 'allowedOriginPatterns\([^)]*"\*"|addAllowedOriginPattern\("\*"\)|originPatterns[[:space:]]*=[[:space:]]*"\*"|allowCredentials[[:space:]]*(\(|=)[[:space:]]*"?true' --include='*.java' --include='*.kt' .`
+      (a `*` pattern and `allowCredentials` true on the same mapping reflect every origin;
+      Spring's own `*` + credentials guard does not cover patterns)
+- [ ] **Session IDs in URLs; cookies without Secure/HttpOnly — MEDIUM** (§6) —
+      `grep -rnE 'new (jakarta\.servlet\.http\.|javax\.servlet\.http\.)?Cookie\(|encodeURL\(|encodeRedirectURL\(|tracking-modes|trackingModes|setSessionTrackingModes|<tracking-mode>' --include='*.java' --include='*.kt' --include='*.properties' --include='*.y*ml' --include='web.xml' .`
+      (no cookie-only tracking-mode setting means Tomcat's default still includes `URL`) ;
+      `grep -rnE 'setHttpOnly\(true\)|setSecure\(true\)' --include='*.java' --include='*.kt' .`
+      (each `new Cookie(` above needs both, or the builder equivalents)
 - [ ] **Crypto misuse — HIGH** —
       `grep -rnE 'new Random\(|Math\.random|ThreadLocalRandom' --include='*.java' . | grep -iE 'key|token|iv|salt|nonce|secret'`
       ;
@@ -227,5 +422,19 @@ the class is `sota-code-security` rules/06 §3.
       ; `grep -rnE 'TrustManager|HostnameVerifier|checkServerTrusted' --include='*.java' .`
       (all-trusting?);
       `grep -rn 'Arrays.equals\|\.equals(' --include='*.java' . | grep -iE 'mac|hmac|token|signature|digest'`
+- [ ] **Transformation strings, IVs and key sizes the line above misses — HIGH** (§4) —
+      `grep -rnE '"(DESede|TripleDES|Blowfish|RC2|RC4|ARCFOUR)(/[^"]*)?"|"[A-Za-z0-9]+/CBC/[^"]*"|"RSA/[^"]*/NoPadding"|NullCipher' --include='*.java' --include='*.kt' .`
+      (CBC is a finding unless a MAC covers the ciphertext; `AES/GCM/NoPadding` and OAEP do
+      not match) ;
+      `grep -rnE 'new (IvParameterSpec|GCMParameterSpec)\([^;]*(new byte\[|getBytes\()|static final byte\[\][[:space:]]*[A-Z_]*(IV|NONCE)|\.initialize\((512|768|1024|1536)[,)]' --include='*.java' --include='*.kt' .`
+      (zero, string-derived or constant IV/nonce; RSA under 2048) ;
+      `grep -rnE 'Integer\.toHexString\(' --include='*.java' --include='*.kt' .`
+      (over digest bytes it drops leading zeros and collides; use `HexFormat`)
+- [ ] **Mail hostname check and SSH host keys — HIGH** (§4; host keys are
+      `sota-code-security` rules/04 §5) —
+      `grep -rnE 'ssl\.checkserveridentity|setSSLCheckServerIdentity\(false\)|import (javax\.mail|com\.sun\.mail)\.' --include='*.java' --include='*.kt' --include='*.properties' .`
+      (on the legacy `com.sun.mail` provider an absent `checkserveridentity=true` is the
+      finding) ;
+      `grep -rnE 'StrictHostKeyChecking["'"'"']?[=, ]*["'"'"']?(no|off)|AcceptAllServerKeyVerifier' --include='*.java' --include='*.kt' --include='*.properties' .`
 - [ ] **Static security analysis SpotBugs + Find-Sec-Bugs; OWASP dependency-check / OSV-Scanner
       (rules/06)**
