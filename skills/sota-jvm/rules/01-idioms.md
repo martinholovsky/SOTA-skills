@@ -20,6 +20,14 @@ the type system, and expression-oriented code**. References:
   but a plain loop when it's clearer.
 - Prefer `List.of`/`Map.of`/`toList()` (immutable) over mutable collections you
   return from APIs.
+- **Time: `java.time`, an instant type for instants, `nanoTime` for intervals.**
+  `LocalDateTime` *"does not store or represent a time-zone"* and *"cannot represent an
+  instant on the time-line"* (its javadoc), so an event timestamp is an `Instant`,
+  `OffsetDateTime` or `ZonedDateTime`. `System.nanoTime()` *"can only be used to measure
+  elapsed time and is not related to any other notion of system or wall-clock time"*, which
+  is exactly what a timeout or latency wants. `currentTimeMillis()` differences follow the wall
+  clock. The legacy `SimpleDateFormat` is *"not synchronized"*, so a shared (`static`)
+  instance races. `DateTimeFormatter` *"is immutable and thread-safe"*.
 
 ## 2. Modern Kotlin idioms (2.x)
 
@@ -81,6 +89,13 @@ the type system, and expression-oriented code**. References:
       / records); `grep -rnE '\braw\b|new Vector|new Hashtable' --include='*.java' .` ;
       `grep -rn 'Optional<' --include='*.java' . | grep -iE 'private .*Optional|(Optional<[^>]+>) [a-z]+\)'`
       (Optional field/param)
+- [ ] **Time handling (§1) — MEDIUM, HIGH for a shared formatter** —
+      `grep -rnE 'static[^=;(]*(SimpleDateFormat|DateFormat)[[:space:]]' --include='*.java' --include='*.kt' .`
+      (a shared legacy formatter: a data race) ;
+      `grep -rnE 'currentTimeMillis\(\)[[:space:]]*-|-[[:space:]]*System\.currentTimeMillis\(\)' --include='*.java' --include='*.kt' .`
+      (an interval on the wall clock; use `nanoTime`) ;
+      `grep -rnE 'java\.util\.(Date|Calendar)|LocalDateTime\.now\(' --include='*.java' --include='*.kt' .`
+      (legacy types, or a zone-less "now" that is later stored or compared as an instant)
 - [ ] **Mutable returns / collections from APIs — LOW** —
       `grep -rnE 'return (this\.)?[a-zA-Z]*[Ll]ist;' --include='*.java' .` (verify defensive
       copy / unmodifiable)

@@ -336,6 +336,13 @@ own deprecations without noticing.
       configuring logging [MEDIUM]);
       `grep -rn "print(" --include="*.py" src/ | grep -v "cli\|__main__\|test"` (stray prints
       [LOW])
+- [ ] **Secrets reaching logs (§11) [HIGH]** —
+      `grep -rniE '(log|logger|logging)\.(debug|info|warning|error|exception|critical|log)\([^)]*(passw|secret|token|api_?key|credential)' --include="*.py" src/`
+      (read the arguments: a credential passed to the call is the finding, while message
+      text that only *names* one, such as "password reset for %s", also matches) ;
+      `grep -rniE '^[[:space:]]+[a-z_]*(passw|secret|token|api_?key)[a-z_]*[[:space:]]*:[[:space:]]*(str|bytes)([^[:alnum:]_]|$)' --include="*.py" src/ | grep -v 'repr=False'`
+      (a class field typed plain `str`: a dataclass `repr` prints it — measured,
+      `Creds(user='bob', password='hunter2')` — so use `field(repr=False)` or `SecretStr`)
 - [ ] **Resource handling** — `grep -rn "= open(" --include="*.py" src/ | grep -v "with "`
       (unmanaged file handles [MEDIUM]); `grep -rn "\.close()" --include="*.py" src/ | head`
       (manual close → with-able?)

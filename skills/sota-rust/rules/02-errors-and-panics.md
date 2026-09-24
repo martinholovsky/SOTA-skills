@@ -97,6 +97,13 @@ let port: u16 = env::var("PORT")
   unwraps — use `.get(i)`, `s.get(a..b)`, `try_into()` on untrusted values
   (string slicing also panics on non-char-boundary).
 - `unreachable!()` must carry the proof: `unreachable!("len checked > 0 above")`.
+- **A wall clock that steps backwards is an input, not an invariant.** The std docs say
+  `SystemTime` *"is not monotonic"*, and its `duration_since` and `elapsed` return `Err`
+  because earlier readings are not guaranteed to precede later ones (*"the system clock being
+  adjusted either forwards or backwards"*). The `UNIX_EPOCH.elapsed().expect(...)` above is
+  sound: a host clock before 1970 is broken. Timing an **interval** that way is not. A timeout,
+  a latency or a rate-limit window then panics on an NTP step. Use `Instant` (*"a monotonically
+  nondecreasing clock"*). Its `elapsed()` returns a `Duration` and cannot fail.
 
 ## 5. Panics: when, and what they cost
 
@@ -257,6 +264,12 @@ fn main() -> ExitCode {
       reachability (attacker-reachable unwrap = High).
 - [ ] `rg '\.expect\("' -t rust` — messages must state invariants ("valid
       static regex"), not restate the failure ("failed to parse").
+- [ ] **Intervals timed on the wall clock (§4)** —
+      `grep -rnE '\.(elapsed|duration_since)\([^)]*\)[[:space:]]*\.(unwrap|expect)\(' --include='*.rs' .`
+      — every hit is a `SystemTime`, because `Instant`'s versions return a `Duration`, which has
+      no `unwrap` (rustc: E0599). Deriving a Unix timestamp from `UNIX_EPOCH` is the legitimate
+      use. A hit timing a timeout, latency or window panics on a clock step: High on a request
+      path. Use `Instant`. A chain split across lines needs reading.
 - [ ] `rg '\.unwrap_or_default\(\)|filter_map\(Result::ok\)|\.ok\(\)[;)]' -t rust`
       — silently swallowed errors; require a comment justifying each.
 - [ ] `rg 'panic!|unreachable!|todo!|unimplemented!' -t rust -g '!*test*'` —

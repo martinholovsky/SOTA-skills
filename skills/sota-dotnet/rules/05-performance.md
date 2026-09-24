@@ -39,6 +39,14 @@ profiler before optimizing. Cross-reference `sota-performance` for methodology.
   it starves the thread pool. `ValueTask`/`ValueTask<T>` for very hot,
   frequently-synchronous paths to avoid a `Task` allocation — but never await a
   `ValueTask` twice, store it, or block on it.
+- **EF Core round trips: N+1 is opt-in, and then it is invisible.** Lazy loading is off until
+  `UseLazyLoadingProxies()` (package `Microsoft.EntityFrameworkCore.Proxies`, `virtual`
+  navigations) or an injected `ILazyLoader`. Once it is on, every navigation touched in a loop
+  is its own query. EF's performance guide shows one query per blog for a nested `foreach` and
+  says *"it is recommended to avoid it"*. Load related data with `Include` or a `Select`
+  projection, and consider `AsSplitQuery` where several collection includes multiply rows
+  (*"cartesian explosion"*). A query issued inside a loop is the same pattern with no proxy
+  needed. Query design itself is `sota-databases` rules/03.
 
 ## 5. Measuring
 
@@ -66,6 +74,12 @@ profiler before optimizing. Cross-reference `sota-performance` for methodology.
       in loops); `grep -rnE 'string\.Format|\$"' --include='*.cs' . | head` (hot-path
       formatting); `grep -rnE '\.ToList\(\)|\.ToArray\(\)' --include='*.cs' . | head` (needless
       materialization in loops)
+- [ ] **EF Core N+1 (§4) — MEDIUM, HIGH on a hot path** —
+      `grep -rnE 'UseLazyLoadingProxies|ILazyLoader' --include='*.cs' .` (lazy loading on: every
+      loop over entities needs reading for navigation access) ;
+      `grep -rnE -A6 '(foreach|for)[[:space:]]*\(' --include='*.cs' . | grep -E '\.(FirstOrDefault|SingleOrDefault|First|Single|Find|Any|Count|ToList|ToArray)(Async)?\('`
+      (a query-shaped call within six lines of a loop head; confirm it runs against a
+      `DbSet`/`IQueryable` and not an in-memory list)
 - [ ] **Server GC configured for a server app?** —
       `grep -rnE 'ServerGarbageCollection|ConcurrentGarbageCollection' *.csproj runtimeconfig* 2>/dev/null`
 - [ ] **Span/pooling opportunities (hot path) — LOW** —

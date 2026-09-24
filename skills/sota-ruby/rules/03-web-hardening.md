@@ -181,6 +181,15 @@ minimums:
   tenant/owner (`current_user.things.find(...)`) is the standard IDOR.
 - Don't leak stack traces or framework error pages in production; error
   handlers return generic bodies and log the detail server-side.
+- **Secrets stay out of logs, including through `inspect`.** `Data` and `Struct` print every
+  member: measured on Ruby 4.0, `Data.define(:user, :password)` inspects as
+  `#<data Creds user="bob", password="hunter2">`, and interpolating one into a `Logger` line
+  writes it out. Override `inspect` on a value object that carries a credential. In Rails (a
+  neutral example), `config.filter_parameters` filters *"the parameters that you don't want
+  shown in the logs"* and also masks those columns in Active Record `#inspect` (Rails
+  configuring guide). The generated `config/initializers/filter_parameter_logging.rb` starts
+  it with `:passw, :email, :secret, :token, :_key, :crypt, :salt, :certificate, :otp, :ssn,
+  :cvv, :cvc`, matched partially. Redaction at the logger is `sota-observability` rules/01 §4.
 
 ## Audit checklist
 
@@ -214,6 +223,14 @@ first — it covers XSS/mass-assignment/redirect sinks mechanically.
       `grep -rn "original_filename" --include='*.rb' . | grep -v basename` ;
       `grep -rnE 'render\s*\(?\s*file:' --include='*.rb' .` (user-influenced path = file
       disclosure)
+- [ ] **Secrets reaching logs (§8) — HIGH** —
+      `grep -rniE 'logger\.(debug|info|warn|error|fatal|unknown).*#\{[^}]*(passw|secret|token|api_?key|credential)' --include='*.rb' .`
+      (a credential interpolated into a log line) ;
+      `grep -rniE '(Data\.define|Struct\.new)\([^)]*:[a-z_]*(passw|secret|token|api_?key)' --include='*.rb' .`
+      (a value object whose `inspect` prints the credential unless overridden) ;
+      Rails apps: `grep -rn 'filter_parameters' config/` — exit 1 means no parameter is
+      filtered from the logs (HIGH); exit 2 means there is no `config/` to read. A list
+      narrower than the generated default needs a reason
 - [ ] **Transport** — `grep -rn "force_ssl" --include='*.rb' config/ 2>/dev/null | head -1` ;
       `grep -rn "VERIFY_NONE" --include='*.rb' .` (outbound TLS verification disabled — HIGH) ;
       `grep -rnE 'verify_host_key:\s*(:never|:accept_new|false|true)|paranoid:\s*(false|true)' --include='*.rb' .`

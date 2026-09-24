@@ -236,6 +236,11 @@ Run from repo root; verify each hit manually (greps are recall-oriented).
       `grep -rn 'strip_tags' --include='*.php' src/` (not an XSS defense)
 - [ ] **Header/redirect injection** —
       `grep -rnE 'header\s*\(\s*["'"'"']Location:.*\$' --include='*.php' src/`
+- [ ] **Log injection (§4) — MEDIUM** —
+      `grep -rnE '(error_log|syslog|->(emergency|alert|critical|error|warning|notice|info|debug|log))[[:space:]]*\([^;]*\$_(GET|POST|REQUEST|COOKIE|SERVER)' --include='*.php' src/`
+      (request data written straight into a log line; measured on PHP 8.5, `error_log()` to a
+      file wrote an embedded `\n` through, so one call produced two log lines). Strip CR/LF or
+      log it as a structured field. Values that reach the call via a variable need tracing
 - [ ] **json_encode into <script> without hex flags** —
       `grep -rn 'json_encode' --include='*.php' src/ | grep -v 'JSON_HEX'`
 - [ ] **Attacker-chosen class, session key or property (§5)** — trace each name to a literal or

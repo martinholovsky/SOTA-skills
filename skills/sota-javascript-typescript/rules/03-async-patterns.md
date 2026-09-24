@@ -241,6 +241,13 @@ return promise;
 - [ ] `grep -rn "fetch(" src/ | grep -v "signal"` — fetches without abort/timeout (MEDIUM; HIGH server-side where a hung upstream pins resources).
 - [ ] `grep -rn "addEventListener" src/` — paired removal or `{ signal }`? Unremoved listeners on long-lived targets = memory leak (MEDIUM).
 - [ ] `grep -rn "new Promise(async" src/` — lost rejections (HIGH).
+- [ ] **Resources released on every exit path** (§"Async generator cleanup and resource
+      safety"): `grep -rnE '(const|let|var)[[:space:]]+[A-Za-z_$][A-Za-z0-9_$]*[[:space:]]*=[[:space:]]*await[[:space:]]+[A-Za-z_$.]*(\.open|openCursor|\.connect|\.acquire|getConnection)\(' src/`
+      — each hit binds a file handle, cursor, pooled client or lock to a plain variable; confirm a
+      `finally` releases it (`close()`/`release()`), or that it is `await using`. A release on
+      the happy path only leaks on the first throw (MEDIUM; a pooled client never released is
+      lost to the pool, so repeated throws drain it). `await using` needs runtime or compiler support: Node 22.22.1 rejected
+      it with a SyntaxError.
 - [ ] `grep -rn "setInterval\|setTimeout" src/` — cleared on teardown? Async callbacks with try/catch?
 - [ ] `grep -rn "forEach(async\|map(async" src/` — `map(async` without surrounding `Promise.all` = floating (HIGH); `forEach(async` always wrong.
 - [ ] `grep -rn "process.nextTick" src/` — app-code use is a smell (LOW).

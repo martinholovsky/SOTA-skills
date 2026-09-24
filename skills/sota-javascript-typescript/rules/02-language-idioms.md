@@ -305,6 +305,11 @@ const truncate = (s: string, n: number) => [...seg.segment(s)].slice(0, n).map(x
       present means adding it later was (or will be) a major. Where present, check `"types"` is
       the **first** key in each conditions object — conditions match in declaration order, so a
       later `"types"` is unreachable for a TS consumer.
+- [ ] **Spread-accumulator `reduce` — accidental O(n²)**:
+      `grep -rnE 'reduce\([[:space:]]*(async[[:space:]]+)?\(?[[:space:]]*[A-Za-z_$][A-Za-z0-9_$]*[^=]*=>[[:space:]]*\(?[[:space:]]*[{[][[:space:]]*\.\.\.' src/`
+      — each step copies the whole accumulator. Measured on Node 22.22.1: 40,000 items took
+      3,735 ms against 2.9 ms for a mutated accumulator. MEDIUM when the input is unbounded or
+      user-sized, LOW on a fixed small list. A multi-line callback needs reading.
 - [ ] `grep -rn "export default" src/` — a default export has no canonical name: consumers
       spell it differently and rename-refactoring does not follow it. Prefer named (LOW).
 - [ ] **Type-level BC** on a published package: in the diff, did any exported signature

@@ -88,6 +88,14 @@ network/file/DB/config as untrusted. Reference:
   security headers/HSTS; don't leak stack traces in production responses.
 - **Secrets**: never in source/`appsettings.json` committed to git — use user
   secrets (dev), env, or a vault (`sota-secrets-management`); don't log them.
+  Two .NET-specific ways they reach a log anyway. A `record`'s compiler-generated `ToString`
+  *"displays the names and values of public properties and fields"*: measured on the .NET 10
+  SDK image, `record Creds(string User, string Password)` printed `Creds { User = bob,
+  Password = hunter2 }`. Override `PrintMembers` on any record that carries a credential. And
+  EF Core's `EnableSensitiveDataLogging()` puts *"parameter values for commands being sent to
+  the database"* and entity property values into logs and exception messages. Keep it out of
+  every non-development configuration. Logger-level redaction is `sota-observability`
+  rules/01 §4.
 - **Runtime patch level is an audit surface**: the memory-safe runtime's
   residual risk includes framework CVEs — e.g. CVE-2025-55315 (Kestrel HTTP
   request smuggling, fixed in 8.0.21/9.0.10/10.0 RC2) and CVE-2026-45591
@@ -252,6 +260,15 @@ section is the .NET spelling an auditor has to grep for.
       (action-level `[Route]` with no verb attribute — confirm there is no `[HttpPost]` etc.;
       conventional-routed actions are invisible to grep: CA5395 finds them, but only where a
       controller carries `[ValidateAntiForgeryToken]` — a global filter keeps it silent)
+- [ ] **Secrets reaching logs — HIGH** (§4) —
+      `grep -rnE 'EnableSensitiveDataLogging\([[:space:]]*(true)?[[:space:]]*\)' --include='*.cs' .`
+      (confirm each is behind an `IsDevelopment()` check) ;
+      `grep -rniE '(log|logger)\.(log|logtrace|logdebug|loginformation|logwarning|logerror|logcritical)\([^;]*(passw|secret|token|api_?key|credential)' --include='*.cs' .`
+      (read the arguments: a credential passed to the call is the finding, while message
+      text that only *names* one, such as "password reset for {User}", also matches) ;
+      `grep -rniE 'record[[:space:]]+(struct[[:space:]]+|class[[:space:]]+)?[a-z0-9_]+[[:space:]]*\([^)]*(passw|secret|token|api_?key|credential)' --include='*.cs' .`
+      (a positional record holding a credential: its `ToString` prints it unless
+      `PrintMembers` is overridden)
 - [ ] **JWT validation switched off — HIGH** (§7) —
       `grep -rnE '(RequireExpirationTime|RequireSignedTokens|ValidateAudience|ValidateIssuer|ValidateLifetime)[[:space:]]*=[[:space:]]*false|(AudienceValidator|LifetimeValidator|IssuerValidator|SignatureValidator)[[:space:]]*=' --include='*.cs' .`
       (a custom validator delegate must be read: `=> true` is CA5405)

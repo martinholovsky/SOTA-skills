@@ -60,6 +60,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - hard-coded TLS versions;
   - infinite regex timeouts;
   - an EOL target framework.
+- **ROADMAP 59 closing pass:**
+  - **Concept-matrix triage.** 17 cells were opened, and 12 real gaps closed:
+    - secrets-in-logs probes for jvm, python, .NET and ruby, including record, dataclass and
+      `Struct` string forms;
+    - monotonic vs wall-clock rules for rust, go, c/c++, jvm and .NET;
+    - EF Core lazy-loading N+1;
+    - the js/ts quadratic accumulator and resource-release probes;
+    - the PHP log-injection probe.
+  - **Shared host-key rows** for `russh`, Rust `ssh2`, phpseclib, ext-ssh2 and SSH.NET.
+  - **The PHP TLS-off pattern** is widened from one spelling to six.
 - **Temp-file and permission hygiene is a shared class**, in `sota-code-security` rules/06
   §6.1:
   - one rule, with a measured unsafe/safe row and a fixture-tested detector for each language;

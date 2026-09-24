@@ -135,7 +135,12 @@ CONCEPTS = [
      r"cookie|samesite|httponly|privilege drop|relinquish"),
     ("logging hygiene / PII in logs", "universal",
      r"log(ging|s)? (secret|pii|token|password)|redact|structured log|slog|"
-     r"sensitive data in|stack trace (in|to) (the )?(response|user)|authorization`/`cookie"),
+     r"sensitive data in|stack trace (in|to) (the )?(response|user)|authorization`/`cookie|"
+     # Third pass, 2026-09-24: php already probed secrets in stack traces via
+     # `#[\SensitiveParameter]` (an artefact), and the probes closed that pass are titled
+     # "Secrets reaching logs" / "Log injection".
+     r"secrets reaching (logs|traces)|log injection|sensitiveparameter|"
+     r"filter_parameters|enablesensitivedatalogging"),
 
     # --- supply chain / tooling
     ("dependency pinning & lockfiles", "universal",
@@ -169,7 +174,10 @@ CONCEPTS = [
      r"alloc|gc\b|garbage collect|heap|boxing|clone\(\)|copy on|string concat|"
      r"stringbuilder|interning|__slots__|fetchall"),
     ("N+1 and accidental quadratic", "universal",
-     r"n\+1|quadratic|nested loop|o\(n2\)|o\(n\^2\)|eager load|includes\(|preload|select_related"),
+     r"n\+1|quadratic|nested loop|o\(n2\)|o\(n\^2\)|eager load|includes\(|preload|select_related|"
+     # Third pass, 2026-09-24: go's `rules/06` probe is titled "O(n²)" with a superscript,
+     # which neither spelling above matches -- an artefact.
+     r"o\(n²\)|uselazyloadingproxies"),
 
     # --- concepts added 2026-09-21 after the first run's UNCLASSIFIED list named them.
     # Every one came from reading items this file could not classify, which is the

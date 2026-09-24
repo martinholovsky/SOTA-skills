@@ -280,6 +280,29 @@ Every artefact's vocabulary was fixed in `gen-concept-matrix.py` in the same cha
 fix, the only candidates left for these four languages are the three rows marked delegation
 or class.
 
+**Third pass, 2026-09-24: the queue closes.** Of 17 cells opened, **12 were real**, **2 were
+vocabulary artefacts** and **3 were delegated**. After it, every remaining candidate row is a
+recorded delegation or class.
+
+| candidate | verdict | evidence |
+|---|---|---|
+| logging: jvm, python, .NET | **REAL, closed** | the rule was stated (jvm rules/04 §5, python rules/03 §11 and rules/05, .NET rules/04 §4); no probe. Probes now cover log calls, record/dataclass string forms, and EF Core `EnableSensitiveDataLogging` |
+| logging: ruby | **REAL, closed** | no rule anywhere; rules/03 §8 now covers `Data`/`Struct#inspect` and `filter_parameters` |
+| logging: php | artefact | rules/04 §5a probes `#[\SensitiveParameter]`. The stated log-injection rule (rules/02 §4) was also unprobed; closed |
+| date/time: rust, go, c/c++, jvm, .NET | **REAL, closed** | zero clock rules in all five. Monotonic vs wall clock, plus each language's trap: `SystemTime` `Err`, `time.Time ==`, `localtime` static buffer, `LocalDateTime` as an instant, `DateTime.Now` |
+| N+1: .NET | **REAL, closed** | rules/01 pointed at a rule that did not exist; EF Core lazy loading is now rules/05 §4 |
+| N+1: js/ts | quadratic half **REAL, closed**; N+1 half delegation | spread-accumulator `reduce` stated at rules/02, unprobed |
+| resource lifecycle: js/ts | **REAL, closed** | `finally`/`await using` rule at rules/02–03, now probed |
+| N+1: go | artefact | rules/06 probes `O(n²)` string concatenation; the matcher lacked `²` |
+| N+1: c/c++, jvm | delegation | `sota-databases` rules/03 (Hibernate) and `sota-performance` rules/02 (JPA fetch joins) own it, with probes |
+| module boundaries: php | delegation | no language-level visibility; `sota-architecture` rules/01 §2 names deptrac and probes enforcement |
+
+**The matcher also reports false presences**, which no candidate row can show. Six were
+found while tracing matches: c/c++ logging (`slog` in `syslog`), rust N+1 (`n+1` in a `find`
+command), php date/time (`clock` in "wall-clock bound"), and .NET and ruby module boundaries
+(`import` inside `DllImport` and inside a Python one-liner). They are untriaged. A present
+cell is a candidate too.
+
 ### Verified gap: nobody probes the linter's escape hatch in jvm, .NET or c/c++
 
 Six of nine languages probe *"someone silenced the analyser"* — rust (`#![allow]` without a
