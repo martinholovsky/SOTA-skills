@@ -78,6 +78,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Patterns are tightened. The 28 cells that went absent were triaged: 17 real gaps closed, 7
     artefacts, 4 delegated.
   - `UNIVERSAL_FLOOR` goes from 13 to 24 concepts, each cell read by hand.
+- **ROADMAP 65: money and numeric precision in every language skill.**
+  - The concept matrix now lists every absence of a universal concept. A concept missing in 6
+    or more languages is no longer silently dropped; it goes in a "mostly absent" block.
+  - The one concept it had hidden, numeric precision & money, was untriaged in six languages,
+    and all six were real gaps. rust, go, c/c++, .NET, php and ruby each gain a rule and a
+    probe for truncating float-to-int casts, rounding modes and JSON number precision.
+  - Numeric precision & money is now pinned in the universal floor.
 - **Temp-file and permission hygiene is a shared class**, in `sota-code-security` rules/06
   §6.1:
   - one rule, with a measured unsafe/safe row and a fixture-tested detector for each language;

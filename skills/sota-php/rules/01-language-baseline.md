@@ -119,6 +119,15 @@ fallthrough hazards).
 - Never use `==` on anything security-relevant (tokens, hashes, MACs): juggling
   plus magic-hash pitfalls (`"0e123..." == "0e456..."`). Use `hash_equals()`
   (see `rules/04`).
+- **Money is integer minor units (the `Money` class in §2) or a decimal string through
+  bcmath, never `float`.** Measured on PHP 8.5: `(int)(19.99 * 100)` is `1998`, and
+  `echo 0.1 + 0.2` prints `0.3` (the `precision` ini, 14) while `json_encode` of the same
+  value writes `0.30000000000000004`, so the error hides in one output and surfaces in the
+  next. bcmath takes its scale from `bcscale()` or the `bcmath.scale` ini, which is `0` by
+  default: `bcdiv('1', '3')` is `"0"`. Pass the scale on every call, or use
+  `BcMath\Number` (PHP 8.4+). `round()` defaults to half away from zero; the
+  `RoundingMode` enum (8.4+) and `PHP_ROUND_HALF_EVEN` name the others. `json_decode` turns
+  an integer above `PHP_INT_MAX` into a `float` unless `JSON_BIGINT_AS_STRING` is passed.
 
 ## 4a. In-band sentinels — `strpos` is the textbook case
 
@@ -258,6 +267,13 @@ Run from repo root; verify each hit manually.
 - [ ] **Loose comparison on suspicious values — MEDIUM+, verify context** —
       `grep -rnE '[^=!<>]==[^=]' --include='*.php' src/ | grep -iE 'token|password|hash|hmac|secret|sig'`
       ; `grep -rnE 'in_array\([^)]*\)' --include='*.php' src/ | grep -v 'true'`
+- [ ] **Money in binary floats (§4) — MEDIUM, HIGH in money paths** —
+      `grep -rniE 'float[[:space:]]+\$[a-z_]*(price|amount|total|balance|cost|fee|tax)' --include='*.php' src/`
+      (a money parameter or property typed `float`) ;
+      `grep -rnE '(\(int\)[[:space:]]*\(|intval\()[^;]*\*[[:space:]]*100' --include='*.php' src/`
+      (scaled to minor units by a truncating cast) ;
+      `grep -rnE 'bc(add|sub|mul|div|mod|pow)\([^,()]*,[^,()]*\)' --include='*.php' src/`
+      (no scale argument: `bcmath.scale` decides, and it is `0` by default)
 - [ ] **strpos truthiness bug** — `grep -rnE 'if\s*\(\s*!?\s*strpos\(' --include='*.php' src/`
 - [ ] **Error suppression and silent JSON** —
       `grep -rn '@' --include='*.php' src/ | grep -E '@\s*[a-z_]+\(' | grep -v '//'` ;

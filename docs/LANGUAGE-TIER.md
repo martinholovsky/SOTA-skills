@@ -332,6 +332,26 @@ and ruby. It is never listed as a candidate because six languages miss it, and t
 lists a universal concept only when five or fewer do. A count over all 32 universal rows found
 it is the only concept hidden that way today. Tracked as **ROADMAP 65**.
 
+**Fifth pass, 2026-09-24: the absence the matcher could not list (ROADMAP 65).** The matcher
+listed a universal concept only when five or fewer languages lacked it, with no recorded
+reason, so `numeric precision & money` sat at 3/9 invisible. It now prints every absence:
+CANDIDATE GAPS for 1-5 missing, MOSTLY ABSENT for 6-9 ("either a real class-wide gap or a
+concept that is not universal; triage decides"). Its first run listed one concept. Of 6 cells
+opened, **6 were real**; none was an artefact or a delegation. The concept is pinned in the
+floor, which now holds 25.
+
+| candidate | verdict | evidence |
+|---|---|---|
+| rust numeric | **REAL, closed** | `Cents(u64)` shown as an API example, never stated; rules/01 §3 bullet + probe (`as` truncates and saturates: `(19.99*100.0) as i64` is 1998) |
+| go numeric | **REAL, closed** | rules/05 §1 stated JSON-to-`float64` loss, unprobed; §5 money bullet; probe incl. `map[string]any` without `UseNumber` |
+| c/c++ numeric | **REAL, closed** | no rule; rules/03 §2: float-to-int truncates and is UB out of range ([conv.fpint], C11 6.3.1.4, UBSan); `llround`, not a cast |
+| .NET numeric | **REAL, closed** | no rule; rules/01 §1: `decimal`, `Math.Round` defaults to ToEven, `(decimal)double` keeps 15 digits |
+| php numeric | **REAL, closed** | int-minor-units `Money` shown, never stated; rules/01 §4: truncating casts, `bcmath.scale` 0, `BcMath\Number`/`RoundingMode` 8.4+, `JSON_BIGINT_AS_STRING` |
+| ruby numeric | **REAL, closed** | cents `Money` shown, never stated; rules/01 §7: `to_i` truncation, flooring `/`, `JSON.parse` `decimal_class` |
+
+With the listing widened, the MOSTLY ABSENT block reads `(none)`: no other universal concept
+is missing in six or more languages.
+
 ### Verified gap: nobody probes the linter's escape hatch in jvm, .NET or c/c++
 
 Six of nine languages probe *"someone silenced the analyser"* — rust (`#![allow]` without a

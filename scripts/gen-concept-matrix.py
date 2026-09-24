@@ -20,6 +20,12 @@ over item text. A matcher answers "does this wording appear", never "is this ide
     cell lit by `slog` inside `syslog` hides an absence no candidate row can show;
   * a concept's absence from a language is a CANDIDATE, never a finding. Confirm by opening
     the file -- 2 of 8 candidate Python gaps died on reading during ROADMAP 59's first pass.
+  * EVERY absence of a universal concept is listed, in one of two blocks: CANDIDATE GAPS
+    (missing in 1-5 languages) and MOSTLY ABSENT (missing in 6-9). The second block exists
+    because the first one alone hid `numeric precision & money` at 3/9 for a whole pass
+    (ROADMAP 65): a threshold with no recorded rationale made the widest absences the
+    invisible ones. A concept missing almost everywhere is either a class-wide gap or not
+    universal after all -- triage decides which, and it cannot decide what it is not shown.
 
 Presence, not counts. The two checklist body formats are not comparable by volume (a
 checkbox bundles several commands; a fence counts per line -- see gen-skill-map.py's
@@ -219,9 +225,11 @@ CONCEPTS = [
      r"relative import|project reference|internal package|namespace layout|grab[- ]bag|"
      r"using namespace|pragma once|fvisibility|`pub` field|unreachable_pub|internalsvisibleto|"
      r"require_relative|load_path"),
+    # ROADMAP 65, 2026-09-24: `toFixed` could never match (items are lowercased before
+    # matching), and `rounding` lit js/ts from "surrounding". Neither changed a cell.
     ("numeric precision & money", "universal",
-     r"float(ing)? (point|money)|decimal|rounding|money|\bcurrency|bigint|bigdecimal|"
-     r"toFixed|precision loss|integer division"),
+     r"float(ing)? (point|money)|decimal|(?<!sur)rounding|money|\bcurrency|bigint|bigdecimal|"
+     r"tofixed|precision loss|integer division"),
     ("date, time & timezone", "universal",
      r"timezone|\btz\b|\butc\b|\bdst\b|daylight|monotonic|time\.now|datetime|leap second|"
      r"epoch|wall[- ]clock (interval|time|read|for)|(steady|system|high_resolution)_clock|"
@@ -292,6 +300,12 @@ UNIVERSAL_FLOOR = [
     "profiling before optimizing",
     "allocation / GC pressure",
     "version floor / EOL awareness",
+    # ROADMAP 65, 2026-09-24: 3/9 -> 9/9. The six absences (rust, go, c/c++, .NET, php,
+    # ruby) were all real; each now carries a BUILD bullet and a probe tested on bad and
+    # good fixtures under ugrep and BSD grep, and every cell's matched substring was read
+    # by hand with `--explain` (js/ts rests on its float-money probe, not on its three
+    # "HIGH if money" severity notes).
+    "numeric precision & money",
 ]
 
 def classify(text):
@@ -413,14 +427,23 @@ def main():
     print(head)
     print("-" * len(head))
 
-    candidates = []
+    # Every absence of a universal concept lands in exactly one of two lists. Until
+    # 2026-09-24 only 1-5 missing was listed and 6+ was silently dropped, with no rationale
+    # recorded; that hid `numeric precision & money` (3/9) from every pass (ROADMAP 65). The
+    # split is kept rather than merged because the two mean different things: a few blanks
+    # are usually per-language gaps or vocabulary artefacts, while a concept missing almost
+    # everywhere is either a class-wide gap or a concept mis-labelled `universal`. Operator
+    # decision 2026-09-24: list every absence; triage decides which it is.
+    candidates, mostly_absent = [], []
     for concept, universality, _ in CONCEPTS:
         have = present.get(concept, set())
         row = "".join(("%-8s" % ("  X" if l in have else "  .")) for l in E.LANGS)
         print("%-*s%s" % (width, concept, row))
         missing = [l for l in E.LANGS if l not in have]
-        if universality == "universal" and 0 < len(missing) <= 5:
-            candidates.append((concept, missing, len(have)))
+        if universality != "universal" or not missing:
+            continue
+        (candidates if len(missing) <= 5 else mostly_absent).append(
+            (concept, missing, len(have)))
 
     # --- denominators, always
     print("\nCLASSIFICATION DENOMINATOR (items matched / items read)")
@@ -446,6 +469,14 @@ def main():
     if not candidates:
         print("  (none)")
     for concept, missing, have in sorted(candidates, key=lambda x: -x[2]):
+        print("  %-42s present %d/9, absent: %s"
+              % (concept, have, ", ".join(E.label(m) for m in missing)))
+
+    print("\nMOSTLY ABSENT -- a universal concept missing in 6+ languages: either a real")
+    print("class-wide gap or a concept that is not universal; triage decides.")
+    if not mostly_absent:
+        print("  (none)")
+    for concept, missing, have in sorted(mostly_absent, key=lambda x: -x[2]):
         print("  %-42s present %d/9, absent: %s"
               % (concept, have, ", ".join(E.label(m) for m in missing)))
 

@@ -176,6 +176,13 @@ n := int32(req.Length)
   centralizes the check.
 - Durations: `time.Duration(n) * time.Second` where `n` is attacker-supplied
   can overflow int64 — bound first.
+- **Money is never `float64`.** Use `int64` minor units, or `math/big` (`big.Int`,
+  `big.Rat`) or a decimal library (e.g. `shopspring/decimal`) where fractions must be
+  exact. A float-to-integer conversion truncates toward zero: measured on go1.27.1,
+  `int64(f * 100)` with `f := 19.99` is `1998`. `math.Round` rounds half away from zero and
+  `math.RoundToEven` is banker's, so pick the one the business rule names. The JSON half is
+  §1: a number decoded into `any` is a `float64`, and `9007199254740993` comes back as
+  `...992` (measured) — decode into typed fields, or call `Decoder.UseNumber`.
 
 ## 4a. Temp files, directories and permissions
 
@@ -355,6 +362,14 @@ cfg := &tls.Config{MinVersion: tls.VersionTLS12} // TLS13 for internal-only
 - [ ] **Integer conversion — gosec G115** —
       `grep -rnE '\b(int8|int16|int32|uint8|uint16|uint32|uint64|uintptr)\(' --include='*.go' . | grep -vE '(_test|const)'`
       ; `gosec -include=G115,G118,G201,G202,G204,G304,G401,G402 ./...`
+- [ ] **Money in binary floats (§5, §1) — MEDIUM, HIGH in money paths** —
+      `grep -rniE '(price|amount|total|balance|cost|fee|tax)[a-z0-9_]*[[:space:]]+(\[\])?float(32|64)' --include='*.go' .`
+      (a money field or variable typed as a float) ;
+      `grep -rnE 'int(32|64)?\([^()]*\*[[:space:]]*100(\.0)?\)' --include='*.go' .`
+      (scaled to minor units by a truncating conversion) ;
+      `grep -rnE 'map\[string\](any|interface[{][}])' --include='*.go' .` then
+      `grep -rn 'UseNumber' --include='*.go' .` (JSON decoded into `any` turns every number
+      into a `float64`; an amount or 64-bit ID there loses precision)
 - [ ] **G113/G115/G118/G408 are ANALYZERS, not rules: gosec keeps two registries
       (rules/rulelist.go = 39, analyzers/analyzerslist.go = 22, 61 total at v2.29.0). A
       denominator taken from rulelist.go alone silently omits every taint-analysis check
