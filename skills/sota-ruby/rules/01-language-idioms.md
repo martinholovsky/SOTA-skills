@@ -199,6 +199,12 @@ Rules:
 - Time: **`Time.now.utc` / monotonic clocks for durations**
   (`Process.clock_gettime(Process::CLOCK_MONOTONIC)`); never subtract two
   `Time.now` calls for measuring elapsed time in production code.
+- **Money is `Integer` cents (the `Money` value in §4) or `BigDecimal` built from a
+  `String`, never `Float`.** Measured on Ruby 4.0.6: `(19.99 * 100).to_i` is `1998`.
+  `Integer#/` floors, so `-7 / 2` is `-4`: split an amount with `divmod` and hand out the
+  remainder, or use `Rational`, deliberately. `Float#round` and `BigDecimal#round` default
+  to half away from zero (`2.5` gives `3`; `half: :even` selects banker's). `JSON.parse`
+  returns a `Float` for `0.1` unless given `decimal_class: BigDecimal`.
 - Equality: `==` for values, `equal?` only for identity, `eql?`+`hash` pair
   when used as Hash keys.
 - `method_missing` requires a matching `respond_to_missing?`; prefer
@@ -258,6 +264,13 @@ failed to hide, not what you exported:
 - [ ] **Handles opened without the block form (§7) — MEDIUM, HIGH in a long-lived process** —
       `grep -rnE '=[[:space:]]*(File|Tempfile|Zlib::GzipReader|TCPSocket)\.(open|new)\(' --include='*.rb' app/ lib/`
       (an assigned handle: find its `ensure ... close`, or convert it to a block)
+- [ ] **Money in binary floats (§7) — MEDIUM, HIGH in money paths** —
+      `grep -rniE '(price|amount|total|balance|cost|fee|tax)[a-z0-9_]*[[:space:]]*=[^=].*(\.to_f|Float\()' --include='*.rb' app/ lib/`
+      (a money value parsed as a `Float`) ;
+      `grep -rnE '\*[[:space:]]*100(\.0)?\)?\.(to_i|floor|truncate)' --include='*.rb' app/ lib/`
+      (scaled to cents by truncation) ;
+      `grep -rn 'JSON\.parse' --include='*.rb' app/ lib/ | grep -v 'decimal_class'`
+      (decimals arrive as `Float`: read the call sites on money paths)
 - [ ] **Load-path hacks instead of `require_relative` (§7) — LOW, MEDIUM in a gem** —
       `grep -rnE 'require[[:space:]]+.\.\.?/|\$LOAD_PATH|\$:[[:space:]]*(<<|\.unshift)' --include='*.rb' app/ lib/`
       (`require './x'` resolves against the process's working directory, not the file:

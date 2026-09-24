@@ -48,6 +48,15 @@ exploit UB at `-O2`. Treat any UBSan diagnostic as CRITICAL/HIGH. Reference:
 - Index/size types: prefer unsigned (`size_t`) for sizes but beware unsigned
   *wraparound* in subtractions (`a - b` when `b > a` is a huge number) — guard
   the order.
+- **Float to integer truncates, and is UB out of range.** The fraction is dropped toward
+  zero, and a value that does not fit the target type is undefined behaviour (C++
+  [conv.fpint], C 6.3.1.4). UBSan's `-fsanitize=float-cast-overflow` reports it: measured
+  with Apple clang 21, `1e20` to `long long`. **Money is never `double`/`float`.** Neither
+  language has a standard decimal type, so keep integer minor units in `int64_t` with the
+  checked arithmetic above, or use a vetted decimal library. Convert a computed float to
+  minor units with `llround`/`std::llround` (half away from zero), not a cast: measured,
+  `(long)(19.99 * 100)` is `1998` and `llround` gives `1999`. `printf("%.2f")` rounds the
+  binary value (`2.675` prints `2.67`, measured), so it is display, not arithmetic.
 
 ```cpp
 // BAD — n*size can overflow to a small value; tiny alloc, then huge copy
@@ -113,6 +122,11 @@ mutex. Build threaded code under TSan.
 - [ ] **Bad shifts / conversions — MEDIUM/HIGH** —
       `grep -rnE '<<|>>' --include='*.c' --include='*.cpp' . | grep -vE '(cout|cerr|<<=|stream)'`
       (verify shift amounts)
+- [ ] **Money in binary floats, truncating float-to-int (§2) — MEDIUM, HIGH in money paths** —
+      `grep -rniE '(double|float)[[:space:]]+[*&]?[a-z_]*(price|amount|total|balance|cost|fee|tax)' --include='*.c' --include='*.h' --include='*.cc' --include='*.cpp' --include='*.hpp' .`
+      (money declared as a binary float) ;
+      `grep -rnE '(\((long long|long|int|u?int(32|64)_t)\)[[:space:]]*\(|static_cast<[a-z0-9_ ]+>\()[^;]*\*[[:space:]]*100' --include='*.c' --include='*.cc' --include='*.cpp' .`
+      (scaled to minor units by a truncating cast; use `llround`)
 - [ ] **Build with conversion warnings: -Wconversion -Wsign-conversion -Wshadow -Wcast-align
       -Wshift-overflow=2**
 - [ ] **Uninitialized — MEDIUM** —

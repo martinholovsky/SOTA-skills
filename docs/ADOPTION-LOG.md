@@ -5544,3 +5544,35 @@ and a known-good fixture: 82/82 under BSD grep, 82/82 under ugrep. `--assert-uni
 universal concept becomes a candidate only when five or fewer languages lack it. A count over
 all 32 universal rows found one concept hidden that way: `numeric precision & money`, at 3/9.
 It is recorded as ROADMAP 65 rather than triaged here.
+
+## 2026-09-24 — ROADMAP 65: the absence the matcher could not list
+
+**Intake shape: the matrix's own listing rule.** `gen-concept-matrix.py` listed a universal
+concept as a candidate only when five or fewer languages lacked it, and no rationale was
+recorded anywhere. Operator decision: list every absence. A new MOSTLY ABSENT block carries
+6-9 missing; CANDIDATE GAPS is unchanged. Its first run listed exactly one concept,
+`numeric precision & money` at 3/9. All six absent cells were real.
+
+| cell | verdict | landed |
+|---|---|---|
+| rust, c/c++, .NET, php, ruby: numeric | **adopted: rule and probe** | rust rules/01 §3; c/c++ rules/03 §2 (C++ [conv.fpint], C11 6.3.1.4, UBSan run); .NET rules/01 §1 (Math.Round docs, SDK 10 run); php rules/01 §4 (php.net: BcMath\Number and RoundingMode 8.4+, bcmath.scale "0"); ruby rules/01 §7 (4.0.6 run) |
+| go: numeric | **adopted: probe for a stated rule** (plus a money bullet) | rules/05 §1 stated the JSON-to-float64 loss; §5 money bullet; go1.27.1 run |
+| all six: covered as a class by `sota-code-security` rules/06 §1 | **rejected** | its probe is a question with no command, and it names none of the language traps (truncating casts, default rounding modes, JSON to float, bcmath scale) |
+
+**Measured:** 6 items, 17 commands extracted from the committed files, each on a known-bad
+and a known-good fixture: 17/17 under BSD grep 2.6.0, 17/17 under ugrep 7.8.4.
+`--assert-universal` exits 0 with 25 pinned concepts and exit 1 when a 6/9 concept is pinned.
+
+**Two matcher alternatives were dead or false.** `toFixed` never matched (items are
+lowercased first), and `rounding` lit js/ts from "surrounding". Fixing the second left a
+js/ts floating-promise probe with no concept at all (classified 92 -> 91): a vocabulary hole,
+not a skill gap.
+
+**Re-measured by the integrating session:**
+- The agent's harness passes **34/34**: 17 commands, under ugrep and BSD grep.
+- `--assert-universal` exits 0 with 25 pinned concepts, and the new MOSTLY ABSENT block reads
+  `(none)`.
+- The language facts behind the new bullets reproduce locally:
+  - rustc 1.97.1 gives `(19.99f64*100.0) as i64` = **1998**;
+  - Ruby 4.0.6 gives `-7/2` = **-4** and `2.5.round` = **3**;
+  - PHP 8.5.9 gives `(int)(19.99*100)` = **1998** and `bcdiv("1","3")` = **"0"**.

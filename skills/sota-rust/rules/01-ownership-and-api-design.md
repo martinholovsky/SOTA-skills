@@ -101,6 +101,14 @@ fn transfer(from: AccountId, to: AccountId, amount: Cents) -> Result<(), Error>
   (Deref leaks the abstraction).
 - Newtypes are also the coherence escape hatch: wrap a foreign type to impl a
   foreign trait (orphan rule).
+- **Money is a newtype over integer minor units (`Cents` above) or a decimal type (e.g.
+  the `rust_decimal` crate), never `f64`.** A float-to-integer `as` cast truncates toward
+  zero, saturates, and never fails. Measured on rustc 1.97: `(19.99_f64 * 100.0) as i64` is
+  `1998`, `f64::NAN as i64` is `0` and `1e20_f64 as i64` is `i64::MAX`. Round on purpose
+  (`round()` is half away from zero, `round_ties_even()` is banker's) and range-check before
+  the cast. An integer above 2^53 that passes through `f64` loses its low bits
+  (`9007199254740993` comes back as `...992`, measured), so deserialize amounts and IDs into
+  integer or decimal fields.
 
 ## 4. Typestate pattern
 
@@ -296,6 +304,11 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 - [ ] `rg 'unwrap_or\([a-zA-Z_]+\(' -t rust` — eager argument evaluation
       (`clippy::or_fun_call`).
 - [ ] Raw primitive IDs in public signatures: `rg 'fn .*\b(id|user|key)\w*: (u32|u64|i64|String)'`.
+- [ ] **Money in binary floats (§3) — MEDIUM, HIGH in money paths** —
+      `grep -rniE '(price|amount|total|balance|cost|fee|tax)[a-z0-9_]*[[:space:]]*:[[:space:]]*f(32|64)' --include='*.rs' .`
+      (a money field, parameter or binding typed as a float) ;
+      `grep -rnE '\*[[:space:]]*100(\.0)?(_?f64)?\)?[[:space:]]*as [iu](8|16|32|64|128|size)' --include='*.rs' .`
+      (scaled to minor units by a truncating cast: `(19.99 * 100.0) as i64` is `1998`)
 - [ ] Public trait intended to be closed but unsealed — can a downstream crate
       impl it? If yes and that's unintended, seal it.
 - [ ] Hand-written comparison impls: `rg 'impl (PartialEq|Eq|PartialOrd|Ord)' -t rust`

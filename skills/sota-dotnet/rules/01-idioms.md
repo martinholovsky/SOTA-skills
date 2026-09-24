@@ -22,6 +22,16 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
   and shifts across DST. The docs point to `DateTimeOffset` for *"a single point in time"*.
   Intervals and timeouts are not dates: the same page calls `Now` unsuitable for measuring
   and names `Stopwatch` instead.
+- **Money is `decimal`, never `double`/`float`.** `decimal` is a built-in 16-byte decimal
+  type of 28-29 digits (measured on the .NET 10 SDK image: `0.1m + 0.2m == 0.3m` is `true`; the `double` sum
+  is not). Three traps remain. `Math.Round` and `decimal.Round` default to
+  `MidpointRounding.ToEven` (the docs: *"By default, the Round method uses the round to
+  nearest even convention"*; measured, `Math.Round(2.5m)` is `2`), so pass the mode the
+  business rule names. `(long)(d * 100)` on a `double` truncates (`19.99` gives `1998`,
+  measured). And a `double`→`decimal` conversion rounds to 15 significant digits (measured:
+  `(decimal)(0.1 + 0.2)` is `0.3`), so converting late hides the binary error instead of
+  removing it: keep the value `decimal` from parse to storage (`decimal.Parse`,
+  `JsonElement.GetDecimal`).
 
 ## 2. Nullable reference types (NRT)
 
@@ -84,6 +94,13 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
       stored, compared or sent is the finding; shown to a local user is not) ;
       `grep -rnE 'DateTime\.(Utc)?Now[[:space:]]*-|-[[:space:]]*[A-Za-z_.]*DateTime\.(Utc)?Now' --include='*.cs' .`
       (an interval on the wall clock; use `Stopwatch`)
+- [ ] **Money in binary floats, default rounding (§1) — MEDIUM, HIGH in money paths** —
+      `grep -rniE '(double|float)[[:space:]]+[a-z_]*(price|amount|total|balance|cost|fee|tax)' --include='*.cs' .`
+      (money typed as a binary float) ;
+      `grep -rnE '(Math|decimal|Decimal)\.Round\(' --include='*.cs' . | grep -v 'MidpointRounding'`
+      (banker's rounding by default: confirm it is the rule the business names) ;
+      `grep -rnE '\((long|int)\)[[:space:]]*\([^;]*\*[[:space:]]*100' --include='*.cs' .`
+      (scaled to minor units by a truncating cast)
 - [ ] **Legacy idioms — LOW** — `grep -rnE '\bclass\b' --include='*.cs' . | head` (DTOs that
       should be records?); `grep -rnE 'namespace [A-Za-z0-9_.]+\s*\{' --include='*.cs' .`
       (non-file-scoped namespaces)
