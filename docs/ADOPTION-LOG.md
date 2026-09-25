@@ -6709,8 +6709,10 @@ twelve places: "the user's stack (Talos K8s + Cilium, step-ca, Caddy+CRS, Cloudf
 "never phrase guidance as an assumption about the reader's setup", and to use products only as
 neutral examples. **Adopted:** 18 passages rewritten. Every product stays as an "e.g." example, and
 no technical content changed. Two headings changed wording only: rules/05 §4 "(behind a CDN)" and
-rules/06 §4 "Internal PKI (e.g. step-ca)". Git history still holds the old wording; rewriting it is a
-separate operator decision.
+rules/06 §4 "Internal PKI (e.g. step-ca)". Git history still holds the old wording. **Operator decision
+2026-09-25: leave history as-is.** The exposed data is public product names only, with no
+hostnames, IPs or secrets. Rewriting protected `main` needs a force-push that breaks every clone,
+fork and open PR, and forks and caches would still keep the old commits.
 
 **Not gated, deliberately.** The phrasing is too varied to match mechanically without flagging
 legitimate text ("the user's environment" appears correctly in several skills), and the ledger's
