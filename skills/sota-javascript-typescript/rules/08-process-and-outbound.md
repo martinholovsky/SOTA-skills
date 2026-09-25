@@ -64,6 +64,18 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
   - **Parse with WHATWG `URL`, not a regex or the `ip` package.** `new URL()` canonicalises `0x7f.1`, `0177.0.0.1` and `2130706433` to `127.0.0.1` (measured), whereas `net.isIP` returns 0 for those raw strings, so a check on the unparsed string treats them as host names. `ip`'s `isPublic` misclassifies `127.1`, octal forms and `::fFFf:127.0.0.1` in every version through 2.0.1 with no patch (CVE-2024-29415).
   - **Use `undici`'s own `fetch` with its `Agent`.** Passing an `undici@8` `Agent` as `dispatcher` to Node 22's global `fetch` (bundled undici 6.23) failed with `invalid onRequestStart method` — a major mismatch, measured.
   - **Redirects**: `redirect: 'error'` rejects any 3xx; `redirect: 'manual'` returns it so you re-validate `Location` and fetch the next hop yourself (bounded count). The default `'follow'` goes wherever the server says. In axios, `maxRedirects: 0` or a `beforeRedirect` that re-checks. Under the default `follow` the Agent's `lookup` still ran on the hop and blocked a 302 to `localhost` (measured), but that does not cover a literal-IP hop; only scheme and literal-IP checks need repeating per hop.
+  - **Credentials on a redirect.** Node's global `fetch`, undici 8.11.2, axios 1.20.0 (through
+    follow-redirects 1.16.0) and got 14.6.6 all removed `Authorization` and `Cookie` when a 302
+    sent the request to another host or another port (measured). The edges differ, per their
+    source. follow-redirects **keeps** both headers on a redirect to a *subdomain* of the current
+    host, and drops them on a switch to any protocol other than `https:`. got compares hostname
+    and port but not scheme, so an `https:`→`http:` hop on default ports keeps them. undici's
+    `fetch` compares the full origin. Two rules follow. **Never put the headers back in a
+    redirect hook.** axios/follow-redirects `beforeRedirect` and got `hooks.beforeRedirect` both
+    run *after* the strip, and a hook that set `Authorization` again sent it to the other origin
+    (measured, axios). For a credentialed call, **turn redirects off** (`redirect: 'error'`,
+    `maxRedirects: 0`, got `followRedirect: false`) and handle a 3xx yourself. This is the Node
+    form of Go's `CheckRedirect` rule (`sota-golang` rules/04 §4b). *OWASP: NPM Security cheat sheet.*
   - OWASP: SSRF Prevention, .NET Security and GraphQL cheat sheets.
 - Mass assignment: never `Model.update(req.body)` — schema-pick the allowed fields (`z.object({...}).strict()`).
 - **NoSQL operator injection is the same bug arriving as a type.** In
@@ -102,3 +114,8 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
       `redirect: 'error'`/`'manual'`, or it is HIGH (internal address / metadata endpoint
       reachable). A pre-fetch `dns.lookup` as the only check is HIGH (DNS rebinding). The probe
       sees single-line calls with the request value first; a URL held in a variable needs a read.
+- [ ] **Credentials re-added on a redirect (§"SSRF", the credentials sub-bullet) — HIGH** —
+      `grep -rnE 'beforeRedirect.*([Aa]uthorization|[Cc]ookie|headers)' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
+      — a redirect hook that touches headers can send the token to the redirect target. A hook
+      whose body spans lines needs a read. A credentialed call that follows redirects through
+      follow-redirects (subdomains keep the headers) or got (`https:`→`http:` keeps them) is MEDIUM.

@@ -120,6 +120,18 @@ Verified against php.net password_hash (2026-07):
   bare hash of the password as key material.
 - JWTs and OAuth flows: use a maintained library (e.g. lcobucci/jwt,
   web-token) — alg allowlist, `none` rejected; details in sota-code-security.
+- **The framework application key is a production secret.** One value keys most of the
+  framework's integrity checks, so whoever holds it can forge or decrypt most of them. Read in
+  source: Laravel 12's `APP_KEY` builds the encrypter behind encrypted cookies, keys signed URLs,
+  and is the HMAC key that mints password-reset tokens; Symfony 7.3's `APP_SECRET`
+  (`kernel.secret`) keys the URI signer, remember-me cookies and login links. Generate it per
+  environment from a CSPRNG (Laravel: `php artisan key:generate`), inject it from a secret
+  store, never commit it or share it between environments, and rotate through the framework's
+  mechanism (Laravel: `APP_PREVIOUS_KEYS`). Neither framework refuses to boot without
+  it: the skeletons ship it empty (`.env.example` `APP_KEY=`; the Symfony recipe's `.env`
+  `APP_SECRET=`), and the error (`MissingAppKeyException`, or Symfony's non-empty-parameter
+  check) fires only when something first uses it. Assert it at boot beside the debug check in §5b.
+  See sota-secrets-management `rules/03` §2 and §6. OWASP: Laravel cheat sheet.
 
 ## 4. CSRF
 
@@ -256,6 +268,13 @@ Run from repo root; verify each hit manually.
 - [ ] **Crypto** — `grep -rn 'mcrypt' --include='*.php' src/` (removed 7.2 — abandoned code);
       `grep -rnE "openssl_encrypt\([^)]*(cbc|ecb)" -i --include='*.php' src/` ;
       `grep -rn 'sodium_crypto' --include='*.php' src/`
+- [ ] **Framework application key committed or hard-coded (§3) — CRITICAL for a production
+      value** — a key in a tracked env file (`.example`, `.dist`, `.dev` and `.test` skipped):
+      `git ls-files | grep -E '(^|/)\.env(\.[^/]*)?$' | grep -vE '\.(example|dist|dev|test)$' | while IFS= read -r f; do grep -nHE '^[[:space:]]*(APP_KEY|APP_SECRET)[[:space:]]*=[[:space:]]*[^[:space:]#]' "$f"; done`
+      ; a literal in config or an image:
+      `grep -rnE ''"'"'key'"'"'[[:space:]]*=>[[:space:]]*'"'"'base64:|^[[:space:]]*secret:[[:space:]]*["'"'"']?[^%"'"'"'[:space:]]|(ENV|ARG)[[:space:]]+APP_(KEY|SECRET)[[:space:]=]+[^[:space:]$]' --include='*.php' --include='*.yaml' --include='*.yml' --include='Dockerfile*' .`
+      . A hit that was ever pushed is a leaked key: rotate it, do not just delete the line. Then
+      check that boot fails when the key is empty in the deployed environment
 - [ ] **CSRF — token verified centrally? exclusions?** —
       `grep -rnE '(csrf|_token)' -il --include='*.php' src/ | head` ;
       `grep -rn 'VerifyCsrfToken' -r app/ 2>/dev/null` (e.g. Laravel: check $except)
@@ -288,4 +307,5 @@ passwords HIGH; predictable tokens HIGH; missing CSRF on state change HIGH;
 `display_errors=On` in prod MEDIUM (HIGH if traces confirmed reaching users);
 missing CSP/headers MEDIUM; an auth-bearing `setcookie()` without `secure`/`httponly` HIGH;
 `base_convert` on a token HIGH; reachable `phpinfo()` HIGH; `zend.exception_ignore_args` off
-with unmarked secret parameters MEDIUM.
+with unmarked secret parameters MEDIUM; a committed or hard-coded production application key
+CRITICAL, an empty key with no boot-time check MEDIUM.

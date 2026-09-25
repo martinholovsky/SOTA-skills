@@ -22,6 +22,20 @@ network/file/DB/config as untrusted. Reference:
   `PlatformNotSupportedException`); it was a notorious RCE vector. Never
   reintroduce it (or `NetDataContractSerializer`, `SoapFormatter`, `LosFormatter`,
   `ObjectStateFormatter`) — CRITICAL on sight.
+- **Web Forms ViewState is `ObjectStateFormatter` output, so its key is the only thing between
+  a client and that deserializer** (.NET Framework `System.Web`; ASP.NET Core has no ViewState).
+  The class is `sota-code-security` rules/01 §8. Three findings. `EnableViewStateMac="false"` is
+  intent to ship unsigned state: Microsoft's "Farewell, EnableViewStateMac!" post says 4.5.2+
+  refuses it and that without the MAC an attacker may run code on the server. Remove it.
+  A fixed `<machineKey validationKey=… decryptionKey=…>` in `web.config` is CRITICAL when the
+  value came from a sample, a tutorial or another app, or sits in source control. Microsoft counted
+  over 3,000 publicly disclosed keys used for ViewState code injection (Security blog, Feb 2025).
+  The default, `AutoGenerate,IsolateApps`, is a random per-app key held in LSA. It is the safe
+  choice for a single server and not a finding. A web farm needs one explicit key: generate it
+  with a CSPRNG, keep it out of the repo (encrypt the `machineKey` section), and rotate it after any
+  exposure. `ViewStateEncryptionMode="Never"` (the default is `Auto`) is MEDIUM information exposure:
+  encryption hides the contents, but it is the MAC that stops tampering.
+  OWASP: Code Review Guide v2.
 - **"Removed" has an opt-back-in, and it re-arms every caller.** On .NET 9+ the
   unsupported `System.Runtime.Serialization.Formatters` NuGet package plus the
   `EnableUnsafeBinaryFormatterSerialization` switch (MSBuild property, or the
@@ -43,6 +57,30 @@ network/file/DB/config as untrusted. Reference:
   `TypeNameHandling.Auto/All/Objects` (or `System.Text.Json` with an
   unrestricted polymorphic type resolver) on untrusted input enables gadget-style
   RCE — don't. Bind to explicit DTOs.
+- **When Json.NET type names cannot be removed, the binder is the control.** Set
+  `JsonSerializerSettings.SerializationBinder` to your own `ISerializationBinder`. Its
+  `BindToType(assemblyName, typeName)` returns the type only on an exact match against a fixed
+  set, and returns `null` or throws for anything else. Do not use `Contains`/`StartsWith`, which
+  also admit generic wrappers and look-alike names. Without one, `DefaultSerializationBinder`
+  loads whatever assembly and type the payload names (`Assembly.Load` then `GetType`, read in the
+  Json.NET source). CA2327–CA2330 flag type handling without a binder, and CA2326 flags type
+  handling at all (off by default). Three limits remain:
+  - **An allowlist covers the whole graph, not the root.** An allowed type with a member typed
+    `object` or a broad interface lets the payload choose that member's type. Every nested
+    `$type` must also pass the binder. Types whose setters act on the machine are dangerous even
+    when "harmless": `FileInfo.IsReadOnly`'s setter changes the file's attributes on disk (read in
+    the runtime source).
+  - **The type name must not come from storage the attacker can write.** `Type.GetType(row.TypeName)`
+    fed to `new DataContractJsonSerializer(t)`, `DataContractSerializer` or `XmlSerializer` is the
+    same flaw one hop removed. Map a stored discriminator to a `typeof(...)` from a fixed table.
+  - **Gadget-bearing assemblies raise the stakes.** The published RCE chains use types like
+    `ObjectDataProvider` and `ResourceDictionary` (WPF), `PSObject` (PowerShell,
+    `System.Management.Automation`), `AssemblyInstaller`, `WorkflowDesigner`, `BindingSource` and
+    `DataViewManager`. An internet-facing service that deserializes type-named data should not
+    reference WPF, WinForms or the PowerShell SDK. Treat any reference as HIGH until the
+    deserializer is fixed. Removing gadgets is defence in depth, not the fix.
+
+  OWASP: Deserialization cheat sheet.
 - **`XmlSerializer`/`DataContractSerializer`** with attacker-controlled types is
   risky; disable DTD processing on XML readers (XXE) — `XmlReaderSettings {
   DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null }`.
@@ -388,7 +426,8 @@ section is the .NET spelling an auditor has to grep for.
       `GetAsync(key)` also matches). For every hit fed by a request, check three things.
       `grep -rnE 'ConnectCallback|UseProxy|AllowAutoRedirect' --include='*.cs' .` has to show
       a connect-time address check. The handler must not route through a proxy. Redirects must be
-      disabled or seen by that check. No hits means there is no DNS-rebinding defence.- [ ] **Dynamic code evaluation from input — CRITICAL (runtime code generation, dynamic LINQ,
+      disabled or seen by that check. No hits means there is no DNS-rebinding defence.
+- [ ] **Dynamic code evaluation from input — CRITICAL (runtime code generation, dynamic LINQ,
       reflection by name)** (§3) —
       `grep -rnE 'CSharpScript\.|CSharpCompilation\.Create|Assembly\.Load(From|File)?\([^"]|System\.Linq\.Dynamic\.Core|DynamicExpressionParser|Type\.GetType\([^")]|GetMethod\([^")]' --include='*.cs' --include='*.csproj' .`
       (trace every hit to its source: a request-derived script, type or method name is the
@@ -403,3 +442,17 @@ section is the .NET spelling an auditor has to grep for.
       `grep -rnE 'UseDeveloperExceptionPage|(ASPNETCORE|DOTNET)_ENVIRONMENT[^=:]{0,12}[=:[:space:]][[:space:]]*"?Development|EnvironmentName[[:space:]]*=[[:space:]]*(Environments\.Development|"Development")|<EnvironmentName>Development' --include='*.cs' --include='*.json' --include='*.yml' --include='*.yaml' --include='Dockerfile*' --include='*.config' --include='*.pubxml' --include='*.csproj' . | grep -v 'launchSettings\.json'`
       (the explicit call must sit behind `IsDevelopment()`; a Kubernetes `name:`/`value:` pair
       spans two lines and escapes the pattern, so read the deployment manifests too)
+- [ ] **ViewState MAC off, or a fixed or published `machineKey` — CRITICAL; encryption `Never` —
+      MEDIUM** (§2) —
+      `grep -rniE 'enableViewStateMac[[:space:]]*=[[:space:]]*"?false|viewStateEncryptionMode[[:space:]]*=[[:space:]]*"?never|(validationKey|decryptionKey)[[:space:]]*=[[:space:]]*"[0-9a-f]{16}' --include='*.config' --include='*.aspx' --include='*.ascx' --include='*.master' .`
+      (a hex key in the repo is the finding whatever its origin; `AutoGenerate,IsolateApps` does
+      not match and is fine; a `<machineKey>` split across lines needs a read)
+- [ ] **Json.NET type handling without a strict binder, type names from storage, gadget
+      assemblies — HIGH/CRITICAL** (§2) —
+      `grep -rnE 'TypeNameHandling\.(Auto|All|Objects|Arrays)|SerializationBinder[[:space:]]*=|[Tt]ypeName\.(Contains|StartsWith|EndsWith)\(' --include='*.cs' .`
+      (a file with type handling but no `SerializationBinder =` is CA2327; a binder matching by
+      prefix or substring is a bypass) ;
+      `grep -rnE 'new (DataContractJsonSerializer|DataContractSerializer|XmlSerializer)\([[:space:]]*(Type\.GetType\(|[a-z_][A-Za-z0-9_]*[[:space:]]*[,)])' --include='*.cs' .`
+      (a runtime `Type`: trace where it came from; `typeof(...)` is fine) ;
+      `grep -rnE 'ObjectDataProvider|ResourceDictionary|System\.Management\.Automation|Microsoft\.PowerShell\.SDK|AssemblyInstaller|WorkflowDesigner|BindingSource|DataViewManager|<UseWPF>true|<UseWindowsForms>true' --include='*.cs' --include='*.csproj' --include='*.xaml' .`
+      (a finding only in a service that deserializes type-named input)

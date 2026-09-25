@@ -12,6 +12,18 @@ Sinks to treat as hostile-by-default:
 - `eval`, `new Function`, string args to `setTimeout`/`setInterval`
 - `<a href>`/`location` assignment with user data — `javascript:` URLs
 - jQuery `$(userInput)`, `.html()`
+- Lit `unsafeHTML`/`unsafeSVG`/`unsafeMathML` (`lit/directives/unsafe-*.js`, lit 3.3)
+- **DOM APIs that turn a string into code without any "HTML" in their name.** Measured in
+  Chrome 151: `el.setAttribute('onclick', str)` ran `str` on click, and setting `innerText` of a
+  new `<script>` ran it on insertion (`textContent` did the same in jsdom 29). URL attributes
+  (`href`/`src`/`action`/`formaction`) accept `javascript:`, and `srcdoc` takes a whole HTML document.
+  Build UI with `createElement` + `textContent` + `append`. Pass untrusted values to
+  `setAttribute` only for a fixed allowlist of inert names (`title`, `alt`, `aria-*`,
+  `data-*`), and attach handlers as functions (`addEventListener('click', fn)`), never as strings.
+  Do not HTML-encode values set this way. `setAttribute('title', '&lt;b&gt;')` stored the
+  literal `&lt;b&gt;` (measured), so the user sees the entities. *OWASP: Cross Site Scripting
+  Prevention cheat sheet; DOM based XSS Prevention cheat sheet.* DOM clobbering, where injected
+  markup with no script overwrites globals, is rules/09.
 
 ```tsx
 // BAD — stored XSS
@@ -340,6 +352,11 @@ buffer first. The class is `sota-code-security` rules/06 §3.
       — hits are the `Function` constructor without `new`, `node:vm` used as a "sandbox",
       and a method called by a request-chosen name. Replace with a dispatch table, a
       fixed-grammar evaluator, or an out-of-process isolate.
+- [ ] **String-to-code DOM APIs (§"XSS", the DOM APIs bullet) — HIGH with request or stored
+      data** —
+      ``grep -rnE "setAttribute\( *['\"](on[a-z]+|href|src|action|formaction|srcdoc)['\"] *, *[^'\" ]|unsafe(HTML|SVG|MathML)\(|createElement\( *['\"]script['\"]" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.tsx' .``
+      — a variable into an event-handler, URL or `srcdoc` attribute, a Lit `unsafe*` directive,
+      or a script element built in code (read what sets its text or `src`).
 - [ ] `grep -rn "href={" src/ --include="*.tsx"` — user-controlled hrefs without protocol allowlist (`javascript:`) = HIGH.
 - [ ] `grep -rn "localStorage.setItem\|sessionStorage.setItem" src/ | grep -i "token\|jwt\|session\|auth\|key"` — HIGH.
 - [ ] `grep -rn "postMessage" src/` — `'*'` target with sensitive data (HIGH); message listener without origin check (HIGH).

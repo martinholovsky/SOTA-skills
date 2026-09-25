@@ -136,7 +136,8 @@ exist. `sota-code-security/rules/11` sat unlisted for two releases before 15 exi
   (split out of 05)
 - **sota-javascript-typescript/rules**: 01 tsconfig & types, 02 language idioms, 03 async
   patterns, 04 Node backend, 05 security, 06 performance, 07 testing & tooling, 08 child
-  processes & outbound requests (split out of 05)
+  processes & outbound requests (split out of 05), 09 browser platform security (service workers,
+  client storage, extensions, Electron)
 - **sota-dotnet/rules**: 01 idioms (records/NRT/patterns), 02 API/disposal/DI design, 03 async &
   concurrency, 04 security (SQL/deserialization/ASP.NET Core/crypto), 05 performance
   (GC/Span/AOT), 06 build/tooling & CI
