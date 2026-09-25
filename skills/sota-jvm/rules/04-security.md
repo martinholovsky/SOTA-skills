@@ -85,6 +85,32 @@ Standards: [SEI CERT Oracle Java](https://wiki.sei.cmu.edu/confluence/display/ja
   others. For patterns from untrusted sources use RE2/J (`com.google.re2j`), whose README
   describes linear-time matching that omits backreferences. Otherwise cap the input
   length before matching.
+- **A regex used as a gate (validation, allowlist, routing, redaction): escaping, anchoring,
+  bounds, engine.** Measured on Temurin 21.0.12 and 25.0.4 unless noted.
+  **Escaping**: `Pattern.quote(s)` (Kotlin `Regex.escape(s)`, which calls it) for data inside a
+  pattern, or `Pattern.LITERAL` / `Regex.fromLiteral`; the *replacement* argument of
+  `replaceAll`/`replaceFirst`/`Regex.replace` is its own mini-language, so a user value there
+  goes through `Matcher.quoteReplacement` (`Regex.escapeReplacement`): an unescaped `$1` threw
+  `IndexOutOfBoundsException: No group 1`. **Anchoring**: whole-input match is
+  `String.matches`, `Pattern.matches`, `Matcher.matches()`, Kotlin `Regex.matches`/`matchEntire`.
+  `find()`, Kotlin `containsMatchIn`/`find(...) != null` search anywhere, and `lookingAt()`
+  anchors only the start: `[a-z]+` via `find()` accepted `<x>abc`. The trap for a `^…$` pattern
+  run through `find()`: `$` also matches before a final line terminator, so `^[a-z]+$`
+  accepted `"abc\n"` (and `^a$` accepted `"a\r\n"` and `"a\u2028"`) while `^[a-z]+\z`
+  and `matches()` rejected it; with `MULTILINE`/`(?m)` it accepted `"abc\n<x>"`.
+  Validate with `matches()`, or anchor with `\A`…`\z`. RE2/J 1.8 differs: its
+  `^[a-z]+$` via `find()` rejected `"abc\n"`, so a port between the engines changes what a
+  check admits. **Bounds**: cap length before matching and
+  give every repetition an upper limit (`[a-z0-9]{1,64}`, not `+`). **Engine**:
+  `java.util.regex` backtracks and has no match-timeout API (`javap` on `Pattern`/`Matcher`
+  lists none). Mitigations: RE2/J for untrusted patterns; possessive quantifiers and atomic
+  groups where semantics allow (`^(?>a{1,2}){1,60}$` took 0 ms where the plain form took
+  1.3–1.4 s at 36 `a`s + `!`, and still matched 40 `a`s); or a deadline, by wrapping the input in
+  a `CharSequence` whose `charAt` throws past a deadline (it aborted the 40-`a` case above at
+  199 ms). RE2/J 1.8 rejects lookaround, backreferences, `a++` and `(?>…)`, so moving a pattern
+  to `java.util.regex` to get them re-imports backtracking: cap input first. Sources, by
+  name: OWASP Input Validation cheat sheet; OWASP Proactive Controls 2024 C3; ASVS 5.0
+  V1.2.9; OWASP Go-SCP (validation, regular expressions).
 
 XML and XXE (formerly section 3) moved to [rules/07](07-xml.md) §1 on 2026-09-25.
 
@@ -346,6 +372,11 @@ the class is `sota-code-security` rules/06 §3.
       `grep -rnE '(compile|matches|replaceAll|replaceFirst|split)\("[^"]*(\}\)[*+{]|\\\\[1-9])' --include='*.java' --include='*.kt' .`
       (a bounded group under another quantifier, or a backreference: time it on 40 chars
       before calling it safe; `(a+)+` itself is NOT the test on current JDKs)
+- [ ] **Regex anchoring on a validation gate: `find()`/`containsMatchIn` or a `$` that admits a
+      trailing newline — HIGH on an allowlist, MEDIUM otherwise** (§2) —
+      `grep -rnE '\.(find|lookingAt)\(\)|containsMatchIn\(|\.find\([^)]*\)[[:space:]]*[!=]=[[:space:]]*null|MULTILINE|\(\?[a-z]*m[a-z]*\)' --include='*.java' --include='*.kt' .`
+      (a hit that decides accept/reject is the finding: use `matches()`/`matchEntire` or
+      `\A`…`\z`; user data in a replacement string needs `Matcher.quoteReplacement`)
 - [ ] **Path traversal / zip slip — HIGH (the rule is stated at 5 above; this is its probe)
       Found 2026-09-22: the BUILD half existed ("canonicalize and verify the result stays under
       an allowed root") with no audit probe anywhere in the skill -- the dominant gap shape. a

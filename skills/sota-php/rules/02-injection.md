@@ -211,6 +211,51 @@ $filter = '(uid=' . ldap_escape($user, '', LDAP_ESCAPE_FILTER) . ')';
   literal. Measured: the value `x' or '1'='1` matched 2 nodes spliced raw and 0 nodes through
   `DOMXPath::quote()`. On older floors, allowlist the value.
 
+## 7. Regular expressions: escape, anchor, bound, and check for `false`
+
+A `preg_*` pattern that validates, allowlists, routes or redacts is a security control. A pattern
+assembled from request data is an injection sink. The language-neutral rule is in
+`sota-code-security` rules/01 §10 (ReDoS); this is the PHP spelling.
+
+```php
+// BAD — term spliced raw; `$` accepts "alice\n"; unbounded; false (error) read as "no match"
+if (preg_match("/$term/i", $text)) { flag(); }
+if (!preg_match('/^[a-z0-9_]+$/', $user)) { reject(); }
+
+// GOOD
+$re = '/' . preg_quote($term, '/') . '/i';        // pass the delimiter you actually use
+if (strlen($user) > 32 || preg_match('/\A[a-z0-9_]{1,32}\z/', $user) !== 1) { reject(); }
+```
+
+- **Escape with `preg_quote($str, $delimiter)`.** It escapes the regex metacharacters and, only
+  when you pass it, the delimiter: `/` is not a metacharacter, so `preg_quote('a/b')` leaves the
+  slash raw and the value can close the pattern. `#` is escaped only since **7.3** (php.net
+  changelog), which matters to a `#`-delimited pattern on older code. Prefer a literal-string
+  function (`str_contains`, `strpos`) when no regex feature is needed.
+- **Anchor to the whole input.** PCRE's `$` also matches just before a trailing newline, so
+  `'/^[a-z]+$/'` accepts `"abc\n"`. Measured on 8.5: 1 match, but 0 with `\A...\z` or with the `D`
+  modifier. The `m` modifier makes `^`/`$` line anchors and PHP ignores `D` under it: `'/^\d+$/m'`
+  accepted `"abc\n<script>"`. An unanchored `preg_match` succeeds on any substring. Write
+  `\A...\z`, and test the result with `=== 1`.
+- **Bound the input and the pattern.** Cap the length (`strlen`/`mb_strlen`) before matching and
+  use `{1,N}` rather than `+`/`*` in validators.
+- **Engine: PCRE2 backtracks.** `preg_*` runs PCRE2 (10.47 in the measured build), a
+  backtracking engine. JIT (`pcre.jit`, on by default) makes it faster, not linear. The guard is
+  `pcre.backtrack_limit` (default 1000000) and `pcre.recursion_limit` (100000). They make
+  `preg_match` return **`false`** and `preg_replace` return **`null`**, with
+  `preg_last_error()` set to `PREG_BACKTRACK_LIMIT_ERROR`. That is **fail-open** wherever `false`
+  is read as "no match". Measured: a denylist `if (preg_match('/^(a+)+$/', $in))` let
+  `str_repeat('a', 30).'!'` through, and a redaction `preg_replace` returned `null`. Check
+  `=== false`/`=== null` or `preg_last_error() !== PREG_NO_ERROR`, and treat an error as a
+  rejection. Remove nested quantifiers with an atomic group `(?>...)` or a possessive `++`.
+  Measured: `^(?>a+)+$` and `^(a++)+$` finished the same input in microseconds with no error.
+  PHP has no built-in linear-time engine. Moving a pattern from an RE2-class engine (Go
+  `regexp`, Rust `regex`) into `preg_*` gains backtracking, and so do the lookarounds and
+  backreferences it now permits. Re-check such a pattern for nested quantifiers.
+
+Sources: OWASP Input Validation cheat sheet; OWASP Proactive Controls 2024 C3; ASVS 5.0 V1.2.9;
+OWASP Go-SCP (regular expressions, validation).
+
 ## Audit checklist
 
 Run from repo root; verify each hit manually (greps are recall-oriented).
@@ -254,11 +299,21 @@ Run from repo root; verify each hit manually (greps are recall-oriented).
       `grep -rnE 'ldap_(bind|search|list|read)[[:space:]]*\(' --include='*.php' src/` ;
       `grep -rn 'ldap_escape' --include='*.php' src/ | grep -v 'LDAP_ESCAPE_'` ;
       `grep -rnE '(->query|->evaluate|->xpath)[[:space:]]*\([[:space:]]*["'"'"'](/|\.)[^;]*\$' --include='*.php' src/ | grep -v 'DOMXPath::quote'`
+- [ ] **Regex escaping, anchoring and engine limits (§7) — HIGH** — a variable spliced into a
+      `preg_*` pattern without `preg_quote($v, $delim)`:
+      `grep -rnE 'preg_[a-z_]+[[:space:]]*\([[:space:]]*("[^"]*\$[A-Za-z_{]|'"'"'[^'"'"']*'"'"'[[:space:]]*\.)' --include='*.php' src/ | grep -v 'preg_quote'`
+      ; a `$`-anchored `/`-delimited validator without the `D` modifier (or under `m`), which
+      accepts a trailing newline:
+      `grep -rnE 'preg_match(_all)?[[:space:]]*\([[:space:]]*["'"'"'][^"'"'"']*\$/[a-zA-Z]*["'"'"']' --include='*.php' src/ | grep -vE '\$/[a-ln-zA-Z]*D[a-ln-zA-Z]*["'"'"']'`
+      . Patterns held in variables or constants, and other delimiters, need tracing. For each
+      security `preg_*` call, check that `false`/`null` (backtrack limit) is treated as a rejection
 
 Severity guide: interpolated SQL or shell with user input CRITICAL; unescaped
 output of request data HIGH; raw template sink with untraced source HIGH until
 proven benign; missing hex flags on script-embedded JSON MEDIUM; escaping at
 input time instead of output MEDIUM (design); a request-chosen class name HIGH (CRITICAL when
 the constructor argument is request-chosen too, as in the file read above), a request-chosen
-session key HIGH; an `ldap_bind` login that accepts an empty password CRITICAL
+session key HIGH; an `ldap_bind` login that accepts an empty password CRITICAL; an unescaped
+request value in a `preg_*` pattern HIGH (CRITICAL on an authz or redaction path), a validator
+that accepts a trailing newline or reads a `preg_*` error as "no match" MEDIUM
 where the directory permits unauthenticated binds (HIGH until that is checked).

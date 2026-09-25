@@ -82,6 +82,32 @@ Replace on sight (CERT STR/FIO; MISRA):
   `PQprepare`, `mysql_stmt_prepare` + `mysql_stmt_bind_param`. SQLite's own
   printf escapes only with `%q`/`%Q`/`%w`. A `%s` in `sqlite3_mprintf` is
   plain interpolation.
+- **Regex as a control (validation, allowlist, routing, redaction): escaping, anchoring,
+  bounds, engine.** For untrusted input prefer RE2: it guarantees match time linear in the
+  input and rejects backreferences and general lookaround rather than backtrack.
+  - **Escaping.** Neither libc++ nor libstdc++ ships an escape function for `std::regex`,
+    and POSIX `regcomp` has none, so never splice input into those patterns. RE2 has
+    `RE2::QuoteMeta(s)`. PCRE2 can take the whole pattern as a literal with
+    `PCRE2_LITERAL` (10.30+), or wrap a fragment in `\Q...\E`, which a `\E` inside the
+    input closes, so strip or reject it first.
+  - **Anchoring.** Validate with a whole-input API: `std::regex_match` (not
+    `regex_search`), `RE2::FullMatch` (not `PartialMatch`), or PCRE2 with `PCRE2_ANCHORED |
+    PCRE2_ENDANCHORED` (10.30+). POSIX `regexec` finds a match anywhere, so write `^...$`.
+    Traps: PCRE2's `$` also matches before a final newline unless `PCRE2_DOLLAR_ENDONLY`
+    is set (`"abc\n"` passes `^[a-z]+$`), and `std::regex::multiline` or
+    `PCRE2_MULTILINE` turn `^`/`$` into line anchors, so a search accepts `"ok\nBAD"`.
+  - **Bounds.** Cap the input length before matching and write bounded repeats
+    (`{1,64}`, not `+`). Check `RE2::ok()` after construction and cap compiled size with
+    `RE2::Options::set_max_mem` when the pattern itself is untrusted.
+  - **Engine.** `std::regex` backtracks: measured on libstdc++ (GCC 16), `(a+)+$` over
+    24 `a`s plus `!` took 2.3 s, quadrupling per two characters. libc++ instead throws
+    `std::regex_error` with `error_complexity`, which is still an outage if uncaught.
+    PCRE2 backtracks too: pass a `pcre2_match_context` with `pcre2_set_match_limit` and
+    `pcre2_set_depth_limit` (never a NULL context on untrusted input) and treat
+    `PCRE2_ERROR_MATCHLIMIT` as a rejection. Moving a pattern from RE2 to PCRE2 or
+    `std::regex` to get a backreference or lookaround gives up the linear-time
+    guarantee. Rewrite the check in code instead. OWASP: Input Validation cheat sheet;
+    OWASP Proactive Controls 2024 C3; ASVS 5.0 V1.2.9; OWASP Go-SCP (validation).
 - **SSRF: outbound requests to a caller-influenced destination** (policy:
   `sota-code-security` rules/01 §5; this is the libcurl idiom). Best: accept a host key or ID
   and look the URL up in your own allowlist, never forward a caller URL. If a URL must be
@@ -250,6 +276,13 @@ a sandbox over running as root at all (`sota-sandboxing`).
       (a whole-statement API: read how the string was built);
       `grep -rnE 'sqlite3_v?s?n?mprintf[[:space:]]*\([^;]*%s' --include='*.c' --include='*.cpp' .`
       (`%s` into SQL is unescaped; `%q`/`%Q` are the escaping forms)
+- [ ] **Regex escaping, anchoring and engine choice (§3) — HIGH where the regex is a security
+      control or untrusted input reaches a backtracking engine** —
+      `grep -rnE '(std::)?regex_search[[:space:]]*\(|RE2::PartialMatch[[:space:]]*\(|std::w?regex([[:space:]]+[a-z_0-9]+)?[[:space:]]*[({]([[:space:]]*[^"R)}[:space:]]|[^;]*"[[:space:]]*\+)|regcomp[[:space:]]*\([^,]*,[[:space:]]*[^",[:space:]]|pcre2_match[[:space:]]*\([^;]*,[[:space:]]*(NULL|nullptr|0)[[:space:]]*\)' --include='*.c' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' .`
+      (a partial match used as validation, a pattern built from a variable with no
+      `RE2::QuoteMeta`, or PCRE2 with no match-limit context). Then read each surviving
+      pattern for `^...$` on POSIX, `PCRE2_DOLLAR_ENDONLY`/`PCRE2_ENDANCHORED`, multiline flags,
+      bounded repeats and a length cap before `std::regex` sees untrusted input
 - [ ] **SSRF: outbound request to an internal address or the 169.254.169.254 metadata endpoint
       (§3) — HIGH, CRITICAL where a caller-supplied URL reaches cloud metadata** —
       `grep -rnE 'CURLOPT_FOLLOWLOCATION[^;]*,[[:space:]]*(1L?|CURLFOLLOW_[A-Z]+)[[:space:]]*\)|inet_(aton|addr)[[:space:]]*\(' --include='*.c' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' .`

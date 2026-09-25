@@ -223,6 +223,31 @@ network:
   - `.no_proxy()`: the default `system-proxy` feature reads the system/env proxy. Through a
     proxy, the proxy resolves the target, so your resolver's check never sees that address.
   OWASP: SSRF Prevention, .NET Security and GraphQL cheat sheets.
+- **A regex used as a control** (validation, allowlist, routing, redaction) — read in
+  `regex` 1.13.1 and `fancy-regex` 0.19.2 sources, behaviour measured on rustc 1.97.1:
+  - **Escaping.** Untrusted text spliced into a pattern goes through `regex::escape(&s)`
+    (`fancy_regex::escape` for that crate); raw `Regex::new(&format!(..))` lets the caller
+    write `.*`. Propagate the build `Err`, never `unwrap()` it (rules/02 §4).
+  - **Anchoring.** Every search, `is_match` included, is unanchored (the crate prepends an
+    implicit `(?s:.)*?`), so `[a-z]+` accepts `abc;rm`. Group before anchoring:
+    `^(?:a|b)$` — measured, `^a|b$` accepts `axxx`. Without multi-line mode `$` is end of
+    haystack only (measured: `^[a-z]+$` rejects `abc\n`). `(?m)` or
+    `RegexBuilder::multi_line(true)` makes `^`/`$` line anchors, so `ok\nEVIL!` passes;
+    write `\A…\z` where that flag may be on.
+  - **Unicode classes.** `\d`/`\w` are Unicode by default: `^\d+$` accepts `١٢٣`
+    (measured). Use `[0-9]` or `(?-u:\d)` when the consumer expects ASCII.
+  - **Bounds.** Counted repetition in the pattern (`{1,64}`) plus a byte-length check on
+    the input first. For patterns you did not write: cap the pattern length and set a small
+    `RegexBuilder::size_limit` (the builder's default NFA limit is 10 MiB).
+  - **Engine.** `regex` is finite-automata: worst case O(m·n) per search, linear in the
+    haystack, and it rejects lookaround and backreferences at build time (measured). Its
+    docs note `find_iter`/`captures_iter` are O(m·n²) worst case. `fancy-regex` adds
+    those features by **backtracking**; `is_match` returns `Result<bool>` and
+    `RegexBuilder::backtrack_limit` (default 1,000,000) bounds the work — measured,
+    `^(a|aa)+\1?$` on a 29-byte input returned `Err(BacktrackLimitExceeded)`. Treat that
+    `Err` as a reject, lower the limit on request paths, and prefer staying in `regex`.
+  OWASP: Input Validation cheat sheet; Proactive Controls 2024 C3; ASVS 5.0 V1.2.9;
+  OWASP Go-SCP (validation, regular expressions).
 - Timeouts on **everything**: connect, read, write, total-request, idle
   (`TimeoutLayer`, `tower` middleware). Missing timeouts = slowloris.
 - Error responses: generic client text, full chain only into logs (rules/02
@@ -369,6 +394,12 @@ memory budgets — see `sota-sandboxing` rules/04 §5 and rules/02 R7.2a.
       (these files build a client with no connect-time address check). In a file that does
       have one, confirm `.redirect(` is `none()` or re-checks the host, that `.no_proxy()` is
       set, and that IP-literal hosts are checked via `url.host()`.
+- [ ] **Regex escaping, anchoring and engine choice (§7) — High on an auth/allowlist
+      path, else Medium** —
+      `rg -n -t rust 'Regex(Builder)?::new\(\s*&?format!\(|fancy_regex::|\(\?m\)|multi_line\(true\)' . | rg -v 'escape\('`
+      (a `format!` pattern without `regex::escape`, a backtracking engine, or line-mode
+      anchors). For each `fancy_regex` hit confirm `backtrack_limit` and that an `Err` rejects;
+      then read every validation regex for whole-input `^(?:…)$`/`\A…\z` and a length bound.
 - [ ] Arithmetic on input: `rg '(len|size|count|offset|idx)\s*[+*-]' -t rust`
       near parsing code — wrapped math on untrusted values = High;
       `rg 'as u(8|16|32)|as usize' -t rust` in protocol code for truncating

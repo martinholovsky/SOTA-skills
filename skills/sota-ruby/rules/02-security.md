@@ -134,6 +134,31 @@ IO.popen(["grep", "--", pattern, "log.txt"])
   - Check hot, input-facing patterns with `Regexp.linear_time?(re)`.
 - Don't build regexes by interpolating user input; if unavoidable,
   `Regexp.escape(input)` first.
+- **Escaping, precisely.** `#{}` inside `/.../`, `%r{...}` or
+  `Regexp.new("...#{x}")` splices `x` in as *pattern syntax*: a search
+  term `a.c` matches `abc`, and `.*` or `(a+)+` turns a lookup into a
+  wildcard or a ReDoS. Wrap every untrusted piece: `/\A#{Regexp.escape(x)}\z/`.
+  For an allowlist of literal strings, `Regexp.union(list)` escapes each
+  String element itself (Regexp elements are embedded as-is).
+- **Bounds.** Cap the input length *before* matching (`s.bytesize <= 256`
+  or a model-level length validation), and give quantifiers an upper limit
+  inside the pattern (`\A[a-z0-9_]{3,32}\z`, not `+`). The cap bounds the
+  worst case even for a pattern that is not linear-time.
+- **Engine choice.** Ruby's engine (Onigmo) backtracks; the 3.2+ memoization
+  makes most patterns linear but not all — a **backreference** (`\1`,
+  `\k<name>`) makes `Regexp.linear_time?` return `false`, so that pattern has
+  no linear guarantee and relies on `Regexp.timeout`. `Regexp.timeout` is
+  `nil` (unlimited) until you set it; on expiry the match raises
+  `Regexp::TimeoutError` (a `RegexpError`) — rescue it as *reject*, never as
+  *accept*. Atomic groups `(?>...)` and possessive quantifiers (`a++`) cut
+  backtracking inside a pattern. Where untrusted users supply the *pattern*
+  itself, use a linear-time RE2-class engine (e.g. the `re2` gem:
+  `RE2::Regexp#full_match?`, `RE2.escape`); it has no backreferences or
+  lookaround, which is the price of the guarantee. `linear_time?` is a
+  property of the interpreter binary, not the pattern — re-check after a
+  Ruby upgrade.
+  (OWASP: Input Validation cheat sheet; OWASP Proactive Controls 2024 C3;
+  ASVS 5.0 V1.2.9; OWASP Go-SCP, validation and regular expressions.)
 
 ## 6. Secrets, randomness, comparison
 
@@ -221,6 +246,11 @@ Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
       `grep -rn "Regexp.timeout" --include='*.rb' config/ . 2>/dev/null | head -1` (absent =
       note it); `grep -rnE '\((\.\*|\\w\+|\[[^]]+\]\+)\)[+*]' --include='*.rb' . | head` (nested
       quantifiers)
+- [ ] **Regex built from data without `Regexp.escape` — HIGH with external input
+      (pattern injection / ReDoS)** — every hit is a dynamic pattern; confirm each
+      interpolated piece is escaped, the input is length-capped, and a
+      `Regexp::TimeoutError` rejects —
+      `grep -rnE 'Regexp\.(new|compile)\( *([^"'"'"'/ ]|"[^"]*#\{)|%r.*#\{|(=~|match\??\(|scan\(|sub!?\(|split\() */[^/]*#\{' --include='*.rb' . | grep -v 'Regexp\.escape\|Regexp\.union'`
 - [ ] **Randomness / comparison — HIGH for security uses** —
       `grep -rnE '\brand\(|Random\.(rand|new)|\.sample\b' --include='*.rb' . | grep -viE "spec|test|seed"`
       ; `grep -rnE '(token|hmac|signature|digest)\s*==' --include='*.rb' .`

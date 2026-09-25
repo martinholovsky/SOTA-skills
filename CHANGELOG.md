@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Regex escaping, anchoring and engine choice in all nine language skills, pinned in the
+  floor (now 31; ROADMAP 66 step 3b).** Each language names its escape function, its
+  full-match API with its own anchor trap, its bounds, and whether its engine is
+  linear-time, with the mitigation where it is not.
 - **SSRF / outbound request validation in all nine language skills, pinned in the universal
   floor (now 30; ROADMAP 66 step 3b).**
   - Each language now names where its HTTP client can check the dialled address **at
@@ -64,6 +68,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `sota-python` rules/05 §8 said "Rust-backed RE2 bindings", but RE2 is C++. It now names
+  `google-re2`.
 - **Negative-control probe 31b failed on macOS on any branch that relocates headings.** Its
   baseline count used `\+` in a basic-regex `sed`, which BSD sed does not match, so the count
   read as 0. It showed up only once a branch (these splits) relocated headings of its own.

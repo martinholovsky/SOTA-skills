@@ -246,6 +246,10 @@ CONCEPTS = [
      r"unsupported version|\blts\b|deprecated (runtime|version)|language version|"
      r"standard pinned|requires-python|engines\.node"),
     # ROADMAP 66 step 3b (2026-09-25): outbound requests to caller-influenced destinations.
+    # ROADMAP 66 step 3b (2026-09-25): a regex used as a control, or built from input.
+    ("regex escaping, anchoring & engine choice", "universal",
+     r"regex (escap|anchor|engine)|re\.escape|quotemeta|regexp\.escape|preg_quote|pattern\.quote|"
+     r"regex\.escape|regex::escape|linear-time|re2[^a-z]|fullmatch|match ?timeout"),
     ("SSRF / outbound request validation", "universal",
      r"ssrf|server-side request forgery|outbound request|internal address|metadata endpoint|"
      r"169\.254|dns rebind"),
@@ -321,6 +325,8 @@ UNIVERSAL_FLOOR = [
     # ROADMAP 66 step 3b, 2026-09-25: written into all nine (connect-time IP check, redirects,
     # schemes, strict IP parsing) and pinned the same day.
     "SSRF / outbound request validation",
+    # ROADMAP 66 step 3b, 2026-09-25: written into all nine and pinned the same day.
+    "regex escaping, anchoring & engine choice",
 ]
 
 def classify(text):
