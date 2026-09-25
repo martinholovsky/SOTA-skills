@@ -29,6 +29,19 @@ ceremony; here we own the policy and the assurance model.
   5. SMS / voice OTP — **not phishing-resistant** (SIM-swap, interception, relay). Treat
      as a Medium finding where phishing-resistant options are feasible; never the only
      factor for privileged accounts.
+- **If SMS or voice OTP stays, run it as an accepted risk.** NIST SP 800-63B-4 classes
+  PSTN delivery as its one *restricted* authenticator (Sec. 3.2.9). Accepting it obliges
+  you to offer an unrestricted alternative at the same AAL, tell users the risk, and keep
+  a written migration plan to TOTP or WebAuthn. Record that acceptance with an owner and
+  a review date. Before sending a code, check SIM-swap, number-port and device-change
+  signals where the carrier or an aggregator exposes them (Sec. 3.1.3.3). Changing the
+  registered number is binding a new authenticator, under the same checks as
+  enrolment. Where you can, do not deliver the code to the device running the session,
+  and let the user choose SMS or voice. For high-risk populations (banking, admin
+  recovery), register the number in person or through an already-verified channel.
+  Generate and check codes in a separate verifier service that stores the secrets and
+  answers only accept or reject. The web tier then never holds a code it could log or
+  leak. OWASP: Multifactor Authentication cheat sheet; Code Review Guide v2.
 - **Require phishing-resistant MFA for all privileged accounts** (rules/05) and drive all
   users toward passkeys. Enroll passkeys at the IdP and let them satisfy MFA across all
   federated RPs via SSO.
@@ -66,6 +79,27 @@ ceremony; here we own the policy and the assurance model.
   Authentication cheat sheet.
 - Conditional access is policy-as-code too: version it, test it, and fail closed (an
   unevaluated condition denies or steps up, never silently allows).
+- **Name the risk triggers.** At minimum, raise risk for: a source on an anonymiser, Tor
+  exit or threat-intel denylist; one IP or ASN trying many accounts, with few attempts
+  each (credential stuffing, **sota-detection-engineering**); traffic with an automation
+  fingerprint (headless client, no JS execution, request timing no person produces); a
+  new device or country for this user; impossible travel. OWASP: Credential Stuffing
+  Prevention, Authentication cheat sheets.
+- **Write the risk model down.** Document every attribute the decision reads (IP,
+  geolocation, device, time, behaviour), where it comes from, how often it is refreshed
+  during a live session, the thresholds, and the action each risk tier maps to (allow,
+  challenge, step up, deny, revoke). An undocumented threshold cannot be reviewed,
+  tested, or explained to the user it blocks. OWASP: ASVS 5.0 V8.1.3, V8.1.4.
+- **A trusted IP range is only as narrow as its narrowest use.** When a corporate range
+  or allowlist counts as a factor or skips step-up, make sure it covers only managed
+  egress. Guest Wi-Fi, shared VPN pools and cloud NAT often leave through the same
+  addresses. It never replaces a second factor for privileged access.
+- **Respond with more than allow or block.** Graduated responses keep work moving while
+  capping the damage: a constrained session (short lifetime, read-only, no export),
+  more detailed logging for that session, re-verification before bulk or destructive
+  actions, and for an unusual but plausible access pattern a JIT grant gated on the
+  resource owner's approval, time-boxed (rules/05 §2) with a summary to the security
+  team. OWASP: Zero Trust Architecture, Multifactor Authentication cheat sheets.
 
 ## 3. Push-bombing / MFA-fatigue defenses
 
@@ -133,6 +167,63 @@ Rev 3, reflect these:
   **sota-code-security** rules/02).
 - Stronger emphasis on **phishing-resistant authenticators** for higher AAL / high-risk.
 
+**Authenticator lifecycle** — binding is one event of several, and the others are where
+assurance leaks (800-63B-4's lifecycle section: loss, theft, expiration, invalidation):
+- **Any factor can be revoked, by the user and by an admin.** A user must be able to
+  report a lost or stolen key, phone or passkey provider and have it invalidated at once,
+  authenticating with another bound factor to do so. An admin or help desk must be able
+  to do the same on the user's behalf. NIST requires the CSP to invalidate promptly on
+  notice of loss, theft or compromise, and it treats a lost authenticator as a stolen
+  one. Revoking the factor also ends the sessions and tokens it established (rules/02 §6).
+- **Replacing a lost factor re-proves identity at the level of enrolment.** If the
+  account was proofed at IAL2, the replacement goes through the IAL2 checks again (or a
+  retained-evidence re-verification), not an email link. Otherwise the recovery desk is
+  the cheapest path to the account. The recovery mechanics are **sota-code-security**
+  rules/02 §5.
+- **Authenticators that expire get renewed before they do.** For certificates, smart
+  cards, hardware tokens with a validity date, and time-limited enrolments, send renewal
+  instructions early enough that the user can finish renewing before the old one
+  lapses, with automated reminders. An expired authenticator must not authenticate, and
+  the failure should say it expired. Binding the replacement follows the
+  add-an-authenticator process.
+- **Biometrics are never a factor on their own.** A biometric match only unlocks a
+  possession factor (a device-bound key, a smart card) or pairs with a knowledge factor.
+  800-63B-4 allows biometrics only as part of MFA with a physical authenticator,
+  requires a non-biometric alternative, and rules out voice comparison entirely. An IdP
+  policy that accepts "face ID" as the whole login is a finding. OWASP: ASVS 5.0 V6.4.4,
+  V6.4.5, V6.5.6, V6.5.7.
+
+## 7. Certificate-based authentication of users and devices
+
+- **Where client certificates fit.** Use TLS client certificates (or a smart card) for
+  users in a managed estate, where IT enrols the certificate on a known device, and for
+  intranet or admin surfaces. Avoid them for a broad public audience, where installation
+  and recovery fail. The certificate is phishing-resistant, but it is only as strong as
+  its key storage. Put the key in hardware (TPM, secure enclave, smart card), mark it
+  non-exportable, and bind each certificate to exactly one account. Pair it with a
+  second factor wherever the device is not itself strongly protected.
+- **Issue and revoke like a PKI, because it is one.** Run a dedicated issuing CA whose
+  trust is scoped to client authentication at your endpoints. Enrol over an
+  authenticated channel, with the key generated on the device, never emailed as a
+  `.p12`. Keep lifetimes short with automated renewal (§6 lifecycle). The verifier checks
+  revocation (OCSP or a fresh CRL) and maps the certificate to the account with a strong
+  identifier, not a spoofable name field (rules/07 §3 for the AD equivalent, KB5014754).
+  Leavers and lost devices revoke immediately (rules/04).
+- **TLS-inspecting proxies break it.** A proxy that terminates TLS cannot present the
+  client's certificate to the server, because it does not hold the private key that
+  signs the handshake (TLS 1.3 CertificateVerify, RFC 8446 Sec. 4.4.3). So client-cert sign-in fails behind a decrypting corporate proxy
+  unless the site is exempted from inspection. Plan that exemption. Never "fix" it by
+  having the proxy forward the certificate in a header the backend trusts from anyone
+  (rules/01 §5.1: take the certificate from the connection).
+- **Edge and IoT devices authenticate as devices.** Each device carries its own
+  identity, ideally a key in a secure element or TPM with a per-device certificate
+  issued at manufacture or first enrolment. It authenticates to central infrastructure
+  with mTLS or a signed-assertion grant, never a fleet-wide shared API key or password.
+  Revoke a device individually when it is lost or decommissioned, and scope what one
+  device identity may reach so a cloned device cannot speak for the fleet. The workload
+  side is rules/05 §5; transport is **sota-network-security**. OWASP: Authentication,
+  Multifactor Authentication cheat sheets; Code Review Guide v2; AISVS 4.3.1.
+
 ## Audit checklist
 
 - [ ] Is phishing-resistant MFA (FIDO2/passkey) available at the IdP and **required for all privileged accounts**?
@@ -149,3 +240,7 @@ Rev 3, reflect these:
 - [ ] Is password policy 800-63-4-aligned (no forced periodic rotation, no composition rules; rotate on compromise only)?
 - [ ] **High** — Is MFA (AAL2) required for every workforce, contractor and partner account and for every app that exposes personal data, with AAL1 limited to low-risk apps holding none? MFA switched off or optional in policy-as-code: `grep -rniE '(require[sd]?_?mfa|mfa_?(required|enforce[a-z]*)|mfa)["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']?(false|optional|off|disabled|none|no)' .`
 - [ ] **High** — Do the factors come from different categories, is there no sign-in or recovery fallback from a phishing-resistant authenticator to a weaker method, and are adaptive-access signals taken from sources the client cannot set? Fallbacks to weaker methods: `grep -rniE 'fallback[A-Za-z_]*["'\'']?[[:space:]]*[:=].*(sms|voice|email|otp|password|question)' .`
+- [ ] **Medium** — Where SMS/voice OTP is enabled, is there a recorded risk acceptance with an owner, an unrestricted alternative, a migration plan, SIM-swap/number-port checks, number changes treated as new bindings, and code generation isolated in a verifier service? SMS or voice factors switched on (each hit needs that record): `grep -rniE '(sms|voice|phone)_?(otp|mfa|factor|authenticator|2fa)[a-z_]*["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']?(true|on|yes|enabled|allowed)' .`
+- [ ] **High** — Are adaptive-access triggers named (anonymiser/denylisted IPs, one source against many accounts, automation), the attributes, refresh cadence, thresholds and actions documented, trusted IP ranges limited to managed egress, and graduated responses (constrained session, extra logging, re-verification, approval-gated JIT) available? Trusted or MFA-skipping ranges wider than a /16: `grep -rniE '(trusted|allow(ed)?|skip_?mfa|bypass_?mfa|mfa_?exempt)_?(ips?|ip_?ranges?|networks?|cidrs?|locations?)["'\'']?[[:space:]]*[:=].*(0\.0\.0\.0/0|::/0|/[0-9]([^0-9]|$)|/1[0-5]([^0-9]|$))' .`
+- [ ] **High** — Can the user and an admin revoke any lost or stolen factor at once (ending its sessions), does replacing a lost factor re-proof at the enrolment IAL, do expiring authenticators get automated renewal reminders, and are biometrics accepted only to unlock a possession factor or alongside a knowledge one? Biometrics configured as a whole factor: `grep -rniE '(biometric|face_?id|touch_?id|fingerprint)[a-z_]*_?(only|sole|single_?factor|as_?mfa|satisfies_?mfa|as_?second_?factor)["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']?(true|on|yes|enabled)' .`
+- [ ] **High** — Are client certificates used only in managed estates, with hardware-held non-exportable keys, a dedicated client-auth CA, revocation checking and strong account mapping, and do edge/IoT devices each authenticate with their own identity (no fleet-wide shared key)? A certificate taken from a request header rather than the TLS connection (confirm the proxy strips inbound copies): `grep -rniE 'x-(ssl-)?client-cert|ssl[_-]client[_-]cert|x-forwarded-client-cert|x-client-certificate' .`

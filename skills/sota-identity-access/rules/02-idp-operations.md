@@ -30,6 +30,19 @@ of your access:
   mutation immutably.
 - **Patch cadence**: an IdP CVE is critical-by-default. Track the vendor's advisories;
   the federation libraries (SAML, JWT) are exactly where signature-bypass bugs land.
+- **Keep the workforce trust domain away from the internet-facing one.** Do not let the
+  internal directory or workforce IdP authenticate public, customer or DMZ-hosted apps.
+  Give those their own IdP, realm or tenant with no trust path back. Otherwise an
+  exposed login form becomes a password-spraying and bind oracle against employee
+  accounts, and a compromised DMZ host holds credentials that open the inside. OWASP:
+  Authentication cheat sheet.
+- **A hosted IdP or MFA service is a tier-0 supplier.** One provider sits in the login
+  path of all its customers, so a breach there can bypass MFA for every tenant at once.
+  Assess it like your own tier-0: its attestations (SOC 2 / ISO 27001 evidence, see
+  **sota-privacy-compliance**), its support staff's access to your tenant, its breach
+  notification terms, and your fallback. The break-glass path (rules/05 §3) must not
+  depend on it, and you must be able to re-key or cut its federation trust quickly.
+  OWASP: Multifactor Authentication, Authentication cheat sheets.
 
 ## 2. Client / relying-party registration discipline
 
@@ -42,7 +55,28 @@ Each application is a distinct client with the narrowest config that works:
   MUST use PKCE; server-side apps are confidential and authenticate per the ladder below.
 - **Disable unused grant/response types** per client (no implicit, no ROPC).
 - **Dynamic Client Registration** (RFC 7591), if enabled, must be authenticated and
-  policy-gated — open DCR lets anyone mint a client.
+  policy-gated — open DCR lets anyone mint a client. RFC 7591 Sec. 5 says the AS MUST
+  treat every metadata value as self-asserted unless a software statement vouches for
+  it. So validate on registration: redirect URIs under rules/01 §4, and `logo_uri`,
+  `client_uri`, `policy_uri` and `tos_uri` on the same host as the redirect URIs (the
+  RFC's SHOULD). Every URL the AS fetches (`jwks_uri`, `logo_uri`, `sector_identifier_uri`)
+  is attacker input and goes through the SSRF rules (**sota-code-security** rules/01 §5).
+  Mark such clients untrusted: always show consent (§7) with a warning that the app is
+  unverified.
+- **A client must not be able to pose as a user.** Where client ids and user subjects
+  share a namespace (a client-credentials token's `sub` is the client id, RFC 9068), the
+  AS SHOULD NOT let a client choose its `client_id` or any claim that could equal a real
+  user's `sub` (RFC 9700 Sec. 4.15.1). Generate client ids, or give the RS another way to
+  tell the two token kinds apart (rules/01 §5.1).
+- **Allow only the `response_mode` each client needs.** Pin it per client (for example
+  `query` or `form_post` for a code flow), or carry it inside PAR/JAR so it cannot be
+  rewritten. An open choice lets an attacker pick a delivery mode the client never
+  secured, such as a fragment that scripts on the callback page can read.
+- **The client asks for what it uses.** Each client requests only the scopes and
+  authorization parameters its current feature needs, not the whole set it is allowed.
+  The AS-side cap above bounds the damage; the client-side request keeps the token small
+  and the consent screen honest. OWASP: ASVS 5.0 V10.2.3, V10.4.7, V10.4.12; OAuth2 cheat
+  sheet.
 
 ```
 # Kanidm — register an OIDC RP with an exact redirect; group→scope mapping in rules/03
@@ -84,6 +118,25 @@ public client can keep.
   and idle expiry; long-lived non-rotating refresh tokens are a High finding.
 - **Revocation** (RFC 7009) endpoint available and used on logout/credential-change;
   pair with introspection (RFC 7662) for opaque tokens.
+- **Revoking a self-contained token before `exp`.** A short lifetime stays the primary
+  control. When a JWT (or another signed credential) must be revocable anyway, the IETF
+  Token Status List (`draft-ietf-oauth-status-list`, still an Internet-Draft at -21, June
+  2026; check its status before depending on it) gives the issuer a standard design. The
+  token carries `status.status_list` with an `idx` and a `uri`; the verifier fetches the
+  signed Status List Token from that URI, caches it for the list's `ttl`, and reads the bit
+  at `idx`. The URI is attacker-influenced input, so allowlist it (**sota-code-security**
+  rules/17 covers the verifier side).
+- **Check online for the critical calls.** A cached status list or a local signature check
+  cannot see a revocation newer than the cache. Validate online (introspection, or a fresh
+  status fetch) for payments, admin actions, privilege and credential changes. Keep
+  offline validation for low-risk reads, where a few minutes of staleness is acceptable.
+  OWASP: Microservices Security cheat sheet.
+- **A revoked token presented again is an incident signal.** Log every use of a revoked
+  access token, refresh token or session at critical severity, with the token id and
+  subject, and alert on it. Rotated-refresh reuse is only one case: a revoked access
+  token turning up after logout or a password change means someone kept a copy. OWASP:
+  Logging Vocabulary cheat sheet (`authn_token_reuse`, level CRITICAL); JSON Web Token
+  cheat sheet.
 - **Authorization codes are one-shot and short-lived.** Expire them within minutes — RFC
   6749 Sec. 4.1.2 recommends a maximum of 10, and a minute is usually enough. Mark a code
   redeemed atomically at the token endpoint (a check-then-mark race lets two concurrent
@@ -132,6 +185,25 @@ refresh_token_lifetime  = "never"
   unreliable (depends on browser). SAML SLO has the same goal and the same fragility.
 - On credential change / account disable, *kill live sessions* — pair with CAEP/SSF
   (rules/06) for near-real-time propagation rather than waiting for token expiry.
+- **The RP validates every logout token before it acts on one.** A back-channel endpoint
+  that ends sessions on any well-formed POST lets anyone log users out, and one that
+  accepts an ID token here has confused two JWT kinds. OIDC Back-Channel Logout 1.0
+  requires validating the signature, `iss`, `aud`, `iat` and `exp` (both REQUIRED claims),
+  a `sub` or `sid`, an `events` object holding the member
+  `http://schemas.openid.net/event/backchannel-logout`, and the absence of `nonce`.
+  Also pin `typ` = `logout+jwt` (rules/01 §2), refuse a long `exp` (the spec encourages at
+  most two minutes ahead), and optionally drop a repeated `jti`.
+- **The OP must not log a user out just because a link says so.** OIDC RP-Initiated
+  Logout 1.0: when the request has no `id_token_hint`, or the hint does not match the
+  current session, the OP MUST ask the user before logging them out. Otherwise a crafted
+  link or image is a forced-logout DoS. Validate `post_logout_redirect_uri` against the
+  registered set, as with redirect URIs.
+- **Keep an inventory of every session in the SSO chain.** List each component that
+  creates or holds a session: the upstream IdP, the broker, the IdP SSO session, every
+  RP's local session, any BFF or gateway. For each one record its idle and absolute
+  lifetime, what ends it (logout, disable, credential change, risk event), and how that
+  end reaches the others. A component missing from the list is the one whose session
+  survives logout. OWASP: ASVS 5.0 V7.1.3, V10.5.5, V10.6.2.
 
 ## 7. Consent
 
@@ -142,6 +214,20 @@ refresh_token_lifetime  = "never"
   **sota-privacy-compliance**.
 - Beware "consent phishing": a malicious OAuth app requesting broad scopes. Gate which
   clients may request sensitive scopes; admin-approve high-scope third-party apps.
+- **No silent consent for a client you cannot authenticate.** Skipping the prompt is only
+  safe for a confidential first-party client. For a public client, a dynamically
+  registered one, or any client whose identity rests on a redirect URI alone, prompt the
+  user every time. An impersonator can reuse the real client's `client_id`, and RFC 6749
+  Sec. 10.2 says the AS SHOULD NOT process repeat requests automatically without
+  authenticating the client or otherwise making sure it is the original. OWASP: ASVS 5.0
+  V10.7.1.
+- **SaaS you adopt is an identity estate too.** For every SaaS tenant: name its admins
+  (few, each on a separate admin identity, rules/05 §1). Inventory the connected apps
+  and integrations allowed to read or share its data, with the scope and owner of each.
+  Review that list on the access-review cadence (rules/04 §4). Treat tenant
+  customisations (scripts, webhooks, custom apps, workflow rules that call out) as code:
+  they get a security review and an owner before they run. OWASP: Secure Cloud
+  Architecture cheat sheet.
 
 ## 8. Multi-IdP & brokering
 
@@ -181,3 +267,9 @@ refresh_token_lifetime  = "never"
 - [ ] For brokered/upstream IdPs: is the issuer pinned, tokens fully validated, identities linked on a verified immutable id, and upstream group claims re-mapped (not trusted) into the local model?
 - [ ] When an upstream IdP, broker link, or client is disabled, is it tested that its login path fails closed (Keycloak CVE-2026-3047 / CVE-2026-2603 class), with unused IdP-initiated broker endpoints restricted?
 - [ ] **High** — Is an authorization code single-use, expiring within minutes (RFC 6749 recommends at most 10), with a second redemption refused and the tokens already issued from it revoked? Code lifetimes over 10 minutes: `grep -rniE '(auth(orization)?_?)?code_?(lifetime|lifespan|ttl|expir[a-z]*)["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']?([0-9]+[[:space:]]*[hd]|(1[1-9]|[2-9][0-9]|[0-9]{3,})[[:space:]]*m|(60[1-9]|6[1-9][0-9]|[7-9][0-9]{2}|[0-9]{4,})[[:space:]]*s?["'\'']?[[:space:]]*$)' .`
+- [ ] **High** — Is the workforce directory/IdP kept out of the authentication path of public and DMZ apps, and is any hosted IdP or MFA provider assessed as a tier-0 supplier, with a break-glass path that does not depend on it?
+- [ ] **High** — Does Dynamic Client Registration treat metadata as self-asserted (redirect and `*_uri` host checks, SSRF rules on fetched URLs, unverified-app consent), refuse client-chosen ids that can equal a user `sub`, and pin each client's `response_mode`? Anonymous registration or a wide-open `response_mode`: `grep -rniE '(anonymous|unauthenticated|open)_?(client_?)?registration["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']?(true|on|yes|enabled)|response_modes?["'\'']?[[:space:]]*[:=].*(fragment|["'\''][*]["'\'']|any)' .`
+- [ ] **Medium** — Is consent always prompted for public, dynamically registered or otherwise unauthenticated clients, and does each client request only the scopes the feature uses?
+- [ ] **High** — Can a signed token be revoked before `exp` where the risk needs it (Token Status List or introspection), are critical operations validated online, and is every use of a revoked token logged at critical severity and alerted? Revocation checks that never log: `grep -rlE '[Ii]s_?[Rr]evoked|[Rr]evoked[A-Za-z_]*\(|deny_?list|status_list' . | xargs grep -LE '(log|logger|logging|LOG|Log)\.[A-Za-z]+\(|audit|security_event'`
+- [ ] **High** — Does every back-channel logout endpoint validate the logout token (signature, `iss`, `aud`, `iat`, `exp` short, `typ` `logout+jwt`, `events` member, `sub`/`sid`, no `nonce`), does the OP confirm with the user when `id_token_hint` is missing or foreign, and is every session in the SSO chain inventoried with its lifetime and termination path? Logout-token handlers that never check the event member: `grep -rlE 'logout_token|logoutToken' . | xargs grep -LE 'schemas\.openid\.net/event/backchannel-logout'`
+- [ ] **Medium** — For each adopted SaaS tenant: are admins named and few, connected apps and data-sharing integrations inventoried with scope and owner and reviewed, and are tenant scripts, webhooks and custom apps security-reviewed before they run?

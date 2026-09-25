@@ -135,6 +135,14 @@ type document
   model without a corresponding test change is suspect.
 - Test the **fail-closed** behavior: engine timeout / lookup error must **deny**, never
   fall through to allow.
+- **Keep the matrix as data, and show reviewers the same data.** The role × resource ×
+  action matrix lives in one machine-readable file (YAML/JSON), with the expected decision
+  and, for denials, the expected refusal (403 vs 404, the error code). The tests are
+  generated from it (the HTTP-layer version is **sota-testing** rules/09 §3a). Render the
+  same file into a readable table for access reviewers and auditors (rules/04 §4), so the
+  matrix a person approves is the one CI enforces. A matrix kept in a spreadsheet beside
+  the code drifts from it. OWASP: Authorization Testing Automation, Authorization
+  Regression Testing cheat sheets.
 
 ```python
 @pytest.mark.parametrize("groups,action,expected", [
@@ -162,3 +170,4 @@ def test_authz_matrix(groups, action, expected):
 - [ ] Is the policy store itself a protected/privileged resource?
 - [ ] Is there an allow/deny matrix test suite (including negatives and the unmapped-group case) gating CI?
 - [ ] Does the engine fail **closed** (deny) on timeout/error?
+- [ ] **Medium** — Is the authorization matrix one machine-readable file (expected decision and refusal code per role × resource × action) that generates the tests and is rendered for reviewers, rather than a spreadsheet kept beside the code?

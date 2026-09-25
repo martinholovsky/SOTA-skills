@@ -93,6 +93,24 @@ protocol decoders.
   no network, read-only view of only the input, write to a pipe/output fd. See `04`.
 - Rank 7 (compile parser to WASM, e.g. RLBox-style) is a strong *additional* layer
   because it converts memory corruption into a trap, but pair it with process isolation.
+- **Native-object deserialization you cannot remove** (legacy `pickle`,
+  `ObjectInputStream`, `unserialize`, `Marshal` of data that crossed a trust
+  boundary) is this class with a worse failure mode: a gadget chain gives code
+  execution, not just memory corruption. Until it is replaced with a data-only
+  format (`sota-code-security` rules/01 §8), decode in a throwaway,
+  low-privilege worker whose inbound and outbound network is denied — or, where
+  it must talk, restricted to named peers and logged — and hand back plain data
+  only. OWASP: Proactive Controls 2024 C3.
+- **Model inference runtimes** (the process that loads weights and serves
+  prompts) are a named workload here, not "just the app": the weights are
+  untrusted input from wherever they came from, and every prompt is attacker
+  data. A weights format that executes on load (`pickle`-based checkpoints,
+  `trust_remote_code`, custom ops; `sota-ml-engineering` rules/07 §2) makes it
+  **class A**. Give the runtime its own process and memory space — never
+  in-process with the API tier holding sessions and credentials — a read-only
+  model mount, a writable scratch area only, no credentials, and network only on
+  its serving port. GPU passthrough weakens the boundary (`03` R2.4). OWASP:
+  AISVS 4.1.1, 4.3.3.
 
 ### C. MULTI-TENANT (many customers on shared infrastructure, no attacker assumed yet)
 - The boundary must hold even if one tenant is fully compromised (becomes case A).
@@ -111,6 +129,9 @@ protocol decoders.
 | Risky parser in a trusted service | seccomp'd subprocess | subprocess + Landlock + WASM-compiled parser |
 | SaaS multi-tenant app code | gVisor / Kata | microVM per tenant |
 | Browser-like rendering of untrusted content | dedicated process + seccomp | site-isolation-style process per origin |
+| Model inference, data-only weights (`safetensors`, ONNX) | dedicated hardened container, no egress | gVisor / microVM per model or tenant |
+| Model inference, code-bearing weights or `trust_remote_code` | gVisor | microVM per model, ephemeral |
+| Native-object deserialization of untrusted data | one-shot seccomp'd worker, no network | replace the format; until then, the same worker |
 | Cross-tenant secrets (KMS, signing) | dedicated VM | dedicated hardware / HSM |
 
 **R3.1 — Ephemerality is a boundary multiplier.** A sandbox destroyed after one task
@@ -236,3 +257,13 @@ finding (Medium).
       everything cannot pass CI (R5.1b).
 - [ ] Side-channel posture documented for cross-tenant confidentiality (SMT,
       core scheduling, memory dedup disabled where required).
+- [ ] **High** — Model inference runs as its own isolated workload at the floor
+      for its weights format: code-bearing loads put it in class A (§3 B):
+      `grep -rnE 'trust_remote_code[[:space:]]*=[[:space:]]*True|weights_only[[:space:]]*=[[:space:]]*False' .`
+      — each hit's process needs a gVisor-or-stronger boundary, a read-only
+      model mount, no credentials and serving-port-only network.
+- [ ] **High** — Native-object deserialization of untrusted data is replaced, or
+      runs in a throwaway low-privilege worker with network denied (§3 B):
+      `grep -rnE 'pickle\.loads?\(|ObjectInputStream|[^_[:alnum:]]unserialize\(|Marshal\.load' .`
+      — each hit on data that crossed a trust boundary and runs in the main
+      process is a finding.

@@ -39,6 +39,30 @@ CSF-aligned model:
   abuse, data exfil, K8s/container compromise, LLM/agent abuse) — concrete,
   step-by-step, with decision points and named roles. Distinct from a *runbook*
   (rules/04, per-alert triage); a playbook governs the whole incident.
+  - **LLM/agent abuse** needs steps a generic playbook lacks. Preserve the action
+    and guardrail logs first (sota-sandboxing rules/05 R4.4; rules/02 §7), then:
+    disable the abused tool or connector at the broker, halt every instance of
+    the agent (sota-sandboxing rules/05 R4.3, the fleet halt), rotate every
+    credential the agent could reach, purge or quarantine persistent memory
+    entries written during the suspect window (a poisoned memory re-injects in
+    every later session — sota-code-security rules/08 §1), and roll the system
+    prompt, model and guardrail configuration back to the last known-good
+    version. Restoring the agent is a reviewed step, not a timeout.
+    OWASP: AISVS 12.1.2; LLMSVS 8.1; DSOMM.
+  - **RAG poisoning** adds four steps. Quarantine the poisoned source documents
+    and delete their embeddings from every index and replica. Invalidate the
+    response cache and any retrieval or semantic cache that may hold answers
+    built from them. Join the retrieval logs (which chunk IDs were served to
+    whom — sota-llm-engineering rules/05) against the poisoned chunk IDs to list
+    the users and sessions that received tainted answers, and decide whether to
+    notify them. Re-index from a verified clean source rather than deleting
+    in place and hoping nothing was missed. OWASP: RAG Security cheat sheet.
+- **Legacy systems get an explicit rank.** List the critical legacy systems in
+  the playbooks by name and priority, with the business continuity plan's
+  recovery target for each: they usually cannot be patched or rebuilt quickly,
+  so containment (isolate the enclave) and recovery order must be decided in
+  advance. Their compensating monitoring is rules/02 §1. OWASP: Legacy
+  Application Management cheat sheet.
 - **Severity classification** drives the response tier (who's paged, how fast,
   whether leadership/legal/comms engage). Define levels by business impact +
   scope + data sensitivity, agreed in advance — not argued during the incident.
@@ -151,6 +175,18 @@ agents and confirm runtime detections fire.
       *before* an incident?
 - [ ] Are there incident-type playbooks (account compromise, ransomware, cloud-
       key abuse, data exfil, container, LLM/agent abuse) — concrete and current?
+- [ ] **LLM/agent playbook (§2) — High where an agent ships:** does it disable
+      the tool, halt the fleet, rotate reachable credentials, purge memory and
+      roll back the prompt/model/guardrail version? Zero files from
+      `grep -rliE 'purge.{0,30}memory|roll.?back.{0,30}prompt' playbooks/`
+      (point it at wherever playbooks live) means those steps are missing.
+- [ ] **RAG poisoning (§2) — High where RAG ships:** does the playbook quarantine
+      documents and embeddings, invalidate caches, trace recipients through
+      retrieval logs and re-index from a clean source? Zero files from
+      `grep -rliE 'embedding|re-?index|retrieval.?log' playbooks/` means there
+      is no RAG step at all.
+- [ ] **Legacy ranking (§2) — Medium (manual):** are critical legacy systems
+      named and ranked in the playbooks, tied to BCP recovery targets?
 - [ ] Is forensic readiness real: can you snapshot a pod/instance/memory *before*
       containment destroys it, especially for ephemeral cloud/container workloads?
 - [ ] Is there a chain-of-custody process (collector, time, hashing, read-only

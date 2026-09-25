@@ -93,6 +93,15 @@ scope (path traversal, URL substitution, SQL in "filters").
 read-only by default. A "repo triage" agent gets read on one repo, not an org PAT.
 Audit question: "if this agent's session were fully hijacked, what exactly can the
 token do, for how long, and where is that logged?"
+**Identity is per running instance, not per agent type.** Twenty replicas sharing
+one "triage-agent" credential are one principal: a single hijacked instance cannot
+be told apart in downstream logs or revoked without stopping all twenty. Issue
+each instance its own short-lived cryptographic identity at start — a SPIFFE ID
+whose path names the instance, carried as an X.509-SVID (or JWT-SVID where a proxy
+sits in between), or an equivalent attested workload credential
+(`sota-identity-access` rules/05) — and have it authenticate to tools, brokers and
+APIs *as that principal*, so every action names the instance and one instance's
+credential can be revoked alone. OWASP: AISVS 9.4.1.
 
 **R3.3 — Human-in-the-loop on irreversible/expansive actions:** deletes, payments,
 sending external email, pushing to default branches, modifying permissions, spending
@@ -215,9 +224,28 @@ under R3.3. OWASP: AISVS 9.1.3, 9.6.3; AI Agent Security cheat sheet.
 **R4.4 — Log every action attribution-grade:** tool name, full arguments, decision
 (allowed/denied/approved-by), sandbox ID, session/user, result hash — to an
 append-only store *outside* the sandbox. Prompt-injection incidents are debugged
-from these logs; without them you can't even tell what leaked. Alert on: denied
-egress spikes, metadata-endpoint attempts, reads of credential-shaped paths,
-approval-bypass attempts.
+from these logs; without them you can't even tell what leaked. For a high-risk
+action (anything under R3.3) the record also carries the **action class or risk
+score** the policy assigned, the **approval ID** that authorised it (or the
+auto-approve rule that stood in for one), and the **version of the policy** in
+force — so afterwards you can answer *why* it was allowed, not only that it was.
+Alert on: denied egress spikes, metadata-endpoint attempts, reads of
+credential-shaped paths, approval-bypass attempts. Give each agent detection a
+name, a baseline and a written threshold, set per agent from its own history:
+- a tool, or a target system, this agent (or instance) has never used before;
+- admin-level queries or calls (permission changes, user listing, schema/DDL,
+  bulk export) from an agent whose task needs none;
+- tool calls per minute, and failed or denied calls in a burst, above baseline;
+- prompt-injection detections per session past a count (one is noise, a run of
+  them is a campaign);
+- a jump in the share of high-risk (R3.3) actions in a session or fleet-wide;
+- **drift in how humans approve**: approval latency collapsing toward zero,
+  approve rate near 100% over large batches (rubber-stamping — the fatigue R3.3
+  warns about, now measured), or the same user repeatedly retrying a denied
+  action or probing bypass paths.
+Each one names its response step in R4.5; detection content over these logs is
+`sota-detection-engineering` rules/02. OWASP: AI Agent Security and MCP Security
+cheat sheets.
 
 **R4.5 — Wire detections to automatic, graduated, reversible containment.** An
 alert that waits for a human while the agent keeps acting is a log entry. For each
@@ -392,3 +420,14 @@ where they coexist. Rate it with the chain named leg by leg (`sota/rules/03` §1
       target-controlled build metadata; LLM steps over target source spawned
       tools-off, with an explicit `cwd` and a scrubbed environment; egress
       `none` or FQDN-allowlisted. Flag the module where all four coexist (§7).
+- [ ] **High** — Each running agent instance holds its own short-lived
+      cryptographic identity (SPIFFE-style SVID or equivalent) and authenticates
+      downstream as itself; one instance can be revoked without stopping the fleet
+      (R3.2). Manual: a credential shared by every replica is the finding.
+- [ ] **Medium** — High-risk action records carry the action class or risk score,
+      the approval ID (or auto-approve rule) and the policy version (R4.4).
+      Manual: pick one past high-risk action and reconstruct why it was allowed.
+- [ ] **Medium** — Named agent detections with written thresholds exist: new tool
+      or target, admin-level calls, call rate, failed-call bursts, injection
+      detections per session, high-risk-action share, and human approval drift
+      (rubber-stamping, repeated bypass attempts), each mapped to an R4.5 step (R4.4).

@@ -272,7 +272,9 @@ restart (always), key rotation / lease renewal (make releases leased, not
 perpetual — align with sota-secrets-management rules/01 dynamic-secret TTLs),
 policy or reference-value change, TCB recovery events, and a fixed schedule.
 "Attested once at deploy, trusted for the pod's lifetime (weeks)" is Medium-High
-depending on data sensitivity.
+depending on data sensitivity. Attached accelerators follow the same rule: a GPU
+reset, reassignment or CC-mode change voids the cached GPU verdict, and each
+workload or key release re-attests (rules/02 R4.3).
 
 **R7.2 — Wire attestation verdicts into detection** (sota-detection-engineering
 rules/01, rules/04). Alert on: any appraisal failure in prod (someone or something

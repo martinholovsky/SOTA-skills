@@ -52,6 +52,38 @@ docker run --rm \
   image:tag@sha256:<digest>
 ```
 
+**Read-only rootfs does not cover what you mount on top of it.** Every bind mount
+or volume the workload only *reads* (input data, models, config) is mounted
+read-only: `-v src:/in:ro` or `--mount type=bind,src=…,dst=/in,readonly`; Compose
+`"./in:/in:ro"`; Kubernetes `volumeMounts[].readOnly: true`. A read-only mount is
+not automatically read-only below it: Kubernetes documents that a read-write
+filesystem mounted *under* a read-only volume stays writable unless
+`recursiveReadOnly: Enabled` is set (GA in v1.33; needs kernel ≥ 5.12 and runtime
+support, and fails the pod otherwise — `IfPossible` falls back silently). Docker
+makes submounts of a read-only bind mount read-only best-effort on kernel ≥ 5.12
+and leaves them writable below that; to fail instead of falling back, use
+`--mount …,readonly,bind-recursive=readonly` (the option exists only on `--mount`).
+OWASP: Docker Security cheat sheet.
+
+**The limit list includes the accelerator and the wire.** CPU, memory, pids and
+disk are not the whole budget:
+- **GPU:** grant devices explicitly and by count or ID — Kubernetes
+  `limits: { nvidia.com/gpu: 1 }` (GPUs go in `limits` only; the scheduler uses
+  it as the request), Docker `--gpus device=<index|UUID>`, Compose `count: 1` or
+  `device_ids`. `--gpus all`, Compose `count: all` **or an omitted count**, and
+  `NVIDIA_VISIBLE_DEVICES=all` (the default baked into base CUDA images) all hand
+  the workload every GPU on the host. Device memory is capped only by hardware
+  partitioning (a MIG profile); time-slicing replicas bound how many workloads share
+  a device, not how much memory each takes (R2.4).
+- **Network bandwidth:** `docker run` has no network rate flag (its `*-bps` flags
+  throttle block devices), so shape at the network layer: on Kubernetes, the CNI
+  `bandwidth` plugin plus the `kubernetes.io/ingress-bandwidth` /
+  `kubernetes.io/egress-bandwidth` pod annotations (documented as experimental);
+  elsewhere a `tc` qdisc on the veth, or per-client rate limits at the egress
+  proxy (`05` R4.1). One tenant saturating the uplink is a denial of service for
+  every neighbour, and a bulk exfiltration channel.
+OWASP: Secure AI Model Ops cheat sheet.
+
 **R1.3 — Absolute prohibitions (each is a Critical/High finding):**
 - `--privileged` — disables namespaces' security value, all caps, all devices.
 - Mounting `/var/run/docker.sock` (or containerd/CRI socket) — full host control;
@@ -200,6 +232,8 @@ spec:
       allowPrivilegeEscalation: false
       readOnlyRootFilesystem: true
       capabilities: { drop: ["ALL"] }
+      appArmorProfile: { type: RuntimeDefault }  # AppArmor nodes; or Localhost + localhostProfile
+      # procMount: leave unset (= Default, masked /proc); never Unmasked
     resources:
       requests: { cpu: 100m, memory: 128Mi }
       limits:   { cpu: 500m, memory: 512Mi }   # memory limit mandatory
@@ -213,6 +247,19 @@ to an unprivileged host UID and namespaces its capabilities — it blocks the R1
 runc escape class. Needs kernel ≥ 6.3 with idmap-mount support on the pod's
 filesystems, runc ≥ 1.2 / crun ≥ 1.9, containerd 2.0+ / CRI-O; require it for
 untrusted workloads wherever nodes support it.
+
+**AppArmor and `/proc` are part of the template, not node luck.** The
+`appArmorProfile` field (stable since v1.31, replacing the beta annotation) takes
+`RuntimeDefault`, `Localhost` (with `localhostProfile`) or `Unconfined`. Left
+unset, the runtime default applies *only if the node has AppArmor enabled*; set
+explicitly to `RuntimeDefault`, a pod is refused admission on a node without it —
+so set it on AppArmor node pools to turn a silent gap into a scheduling error
+(SELinux-based nodes use `seLinuxOptions` instead, `02`). `procMount` must stay
+`Default`, which keeps `/proc` paths masked and read-only; `Unmasked` exposes them
+(and `/sys/firmware`), Kubernetes only admits it with `hostUsers: false`, and PSS
+**baseline** already forbids any value but `Default`, as it forbids
+`Unconfined` AppArmor. OWASP: Docker Security and Kubernetes Security cheat
+sheets.
 
 **R3.3 — Service account & API surface:** `automountServiceAccountToken: false`
 unless the pod calls the API; per-workload service accounts with minimal RBAC (no
@@ -280,7 +327,19 @@ eBPF EDR). Prevention bounds the blast radius; detection tells you the boundary 
 *tested*. Minimum alert set: exec into container (`kubectl exec`/runtime exec),
 shell spawned in shell-less image, write below `/etc`/`/usr`, outbound connection
 not matching policy, `setns`/nsenter usage, kernel module load, ptrace, mount
-syscalls, access to service-account token by unexpected binary.
+syscalls, access to service-account token by unexpected binary, **opening a device
+node** the workload was not granted a use for (host block devices, `/dev/mem`,
+GPU/accelerator devices from a non-GPU image — the one step a GPU miner cannot
+skip), and **any connection attempt to the cloud metadata endpoint** from a
+workload that should not reach it — the attempt matters even when the network
+blocks it. In Falco the stock versions are not in the default ruleset: `Contact
+cloud metadata service from container` ships in the *incubating* rules, matches
+only `169.254.169.254` (add `fd00:ec2::254` and your cloud's equivalents) and
+exempts `kube-system` via `user_known_metadata_access`; `Privileged Container
+Device Access` and `Container Accessing GPU Device` ship in the *sandbox* rules,
+the GPU one `enabled: false` until you tune `user_known_gpu_workloads`. Load the
+file, tune the exception macro, and enable the rule, or write your own.
+OWASP: Secure AI Model Ops cheat sheet.
 
 **R4.2 — Alerts must page someone.** A Falco rule nobody routes is documentation.
 Wire to the SIEM/on-call; test with a benign canary (e.g., spawn `sh` in a
@@ -334,3 +393,24 @@ is good for security but plan checkpointing/image capture for incident response
       reset or VM destroyed between tenants' jobs (R2.4):
       `grep -rnE 'timeSlicing:|nvidia\.com/gpu\.shared' .` on a multi-tenant
       cluster is a finding unless the sharing pods are one tenant.
+- [ ] **Medium** — Mounts the workload only reads are read-only, and a read-only
+      mount with filesystems below it is recursively read-only (R1.2):
+      `grep -rnE -e '(-v|--volume)[ =][^ ]+:/[^ :]*(:[^ ]*)?([[:space:]]|$)' -e '^[[:space:]]*- +[^ :#]+:/[^ :]*(:[^ ]*)?[[:space:]]*$' . | grep -vE '[:,]ro([^[:alnum:]]|$)'`
+      — each hit is a writable `-v` or Compose short-syntax mount; confirm the
+      workload writes there. `--mount` and Kubernetes `volumeMounts` need a
+      manual read for `readonly` / `readOnly: true`.
+- [ ] **Medium** — GPUs granted by explicit count or ID, never "all", and
+      network bandwidth shaped per workload where tenants share an uplink (R1.2):
+      `grep -rnE -- '--gpus[ =]"?all|NVIDIA_VISIBLE_DEVICES[=:[:space:]]+"?all|^[[:space:]]*count:[[:space:]]*"?all' .`
+      — each hit exposes every host GPU; a Compose GPU reservation with no
+      `count` and no `device_ids` does too, and a base CUDA image defaults to all.
+- [ ] **Medium** — Pod template sets `appArmorProfile` (on AppArmor nodes) and
+      never unmasks `/proc` or runs unconfined (R3.2):
+      `grep -rnE 'procMount:[[:space:]]*"?Unmasked|type:[[:space:]]*"?Unconfined|apparmor\.security\.beta\.kubernetes\.io/[^:]*:[[:space:]]*"?unconfined' .`
+      — each hit is a finding (covers seccomp `Unconfined` too).
+- [ ] **Medium** — Runtime sensor alerts on device-node opens and metadata-endpoint
+      attempts (R4.1). For Falco, find configs that load only the default ruleset,
+      and overrides that switch the stock rules off:
+      `grep -rlE 'falco_rules\.yaml' . | xargs -r grep -LE 'falco-(incubating|sandbox)_rules'`
+      and `grep -rnE -A2 -- '- rule: (Contact cloud metadata service from container|Contact EC2 Instance Metadata Service From Container|Privileged Container Device Access|Container Accessing GPU Device)' . | grep -E 'enabled:[[:space:]]*false'`
+      — a hit on either is a finding unless custom rules cover both classes.

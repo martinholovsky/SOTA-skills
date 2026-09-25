@@ -83,6 +83,28 @@ high-value baseline — do it everywhere. Full per-workload microsegmentation is
 ZTMM) — apply it first to the data tier and crown-jewel paths, then broaden. Don't let "perfect
 microsegmentation everywhere" block shipping the deny-between-tiers baseline.
 
+**R7.1 — Refine the zone model where the default table (R3) is too coarse.**
+- **Split the DMZ by direction.** An *inbound* DMZ hosts internet-facing services behind the WAF;
+  an *outbound-only* segment hosts things that must reach external networks (update fetchers,
+  outbound mail relays, webhook senders) and accepts **no** connection initiated from outside —
+  the firewall carries no inbound allow for it at all.
+- **Give directory services and logging their own backend segments.** The directory (LDAP/AD,
+  IdP backends) and the log store are what an intruder most wants to use or erase. Firewall each
+  separately; for logging, split the paths — sources may only *write* to an ingest endpoint over
+  an append-only protocol (e.g. syslog forwarding), while reading and searching is a separate,
+  admin-only path — so a compromised host can add lines but not rewrite history (tamper evidence:
+  sota-code-security rules/18). Another system's app tier never reaches your data tier directly;
+  it goes through your service.
+- **A shared network behind one L7 balancer is not segmentation.** When several applications sit
+  on one network and a single load balancer fans traffic out, network rules no longer separate
+  them; isolation now rests entirely on the balancer's L7 routing and authz rules — audit those
+  as the control they are.
+- **Write the policy for humans as well as for machines.** Keep a readable network security
+  policy with diagrams (zones, permitted flows, how to request a new one) next to the
+  policy-as-code; reviewers and incident responders need the intent, and a diff between the two
+  is itself a finding.
+OWASP: Network Segmentation cheat sheet, Logging cheat sheet.
+
 ## 5. Stateful firewall / security-group policy
 
 **R8 — Default-deny, identity/tag-referenced, audited for breadth.** (Host nftables for a single box
@@ -128,6 +150,16 @@ service still needs a valid mTLS identity; who wants to exfil still hits egress 
 asks: *if this layer were bypassed, what's the next thing stopping lateral movement?* If the answer
 is "nothing," that's the finding.
 
+**R11.1 — Quarantine what cannot be modernised.** Systems that cannot be patched or re-platformed,
+or that speak only plaintext protocols (telnet, FTP, TFTP, SNMPv1/v2c, plaintext POP/IMAP, legacy
+industrial or mainframe protocols), live in a dedicated zone: deny-by-default in both directions,
+reachable only through a modern authenticated front (an identity-aware proxy or bastion that
+adds MFA and session recording, or a protocol gateway that terminates TLS), with full flow
+logging and alerting on anything unexpected. Scale the isolation with the data at stake — up to
+a physically separate or air-gapped network — and record the modernisation or retirement plan,
+since the zone contains risk rather than removing it. OWASP: Legacy Application Management cheat
+sheet, Zero Trust Architecture cheat sheet.
+
 ## Audit checklist
 
 - [ ] Are zones/tiers defined with deny-by-default *between* them, or is the network flat? Probe
@@ -144,3 +176,18 @@ is "nothing," that's the finding.
 - [ ] Remote access: ZTNA/IAP for web, identity-aware bastion for shells, WireGuard (scoped
       `AllowedIPs`, per-peer keys) for site/machine links — not flat VPN, not shared keys?
 - [ ] For each control layer, is there a next layer if it's bypassed (defense in depth)?
+- [ ] **High — unintended external exposure.** Enumerate what you actually expose, then diff it
+      against the intended list: every owned subdomain (DNS zone exports plus a Certificate
+      Transparency search for the domain — CT shows names nobody put in the inventory) and every
+      owned public IP range, scanned from outside, e.g.
+      `nmap -Pn -sV -p- -iL targets.txt -oX exposure.xml` (only against ranges you own or are
+      authorised to test). Any listening service not on the intended exposure list is a finding;
+      repeat on a schedule, not once.
+- [ ] **Medium — zone refinements (R7.1).** Outbound-only segment has no inbound allow; directory
+      and log infrastructure in their own firewalled segments with ingest and read paths split;
+      apps sharing a network behind one L7 balancer audited on the balancer's rules; a
+      human-readable network policy with diagrams exists and matches the policy-as-code?
+- [ ] **High — legacy / plaintext systems not quarantined (R11.1).** Triage allows for plaintext
+      protocols: `grep -rnE '(dport|port|from_port|to_port)[^0-9]{1,6}(21|23|69|110|143|161|512|513)([^0-9]|$)' policies firewall`
+      — each hit must sit in the quarantine zone, reachable only via an authenticated modern
+      front, with flow logging.

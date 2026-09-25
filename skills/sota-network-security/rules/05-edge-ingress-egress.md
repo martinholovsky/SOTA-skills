@@ -1,6 +1,6 @@
 # 05 — Edge, Ingress & Egress
 
-Scope: WAF (OWASP CRS, Coraza/ModSecurity), ingress/API-gateway hardening, DDoS posture (edge
+Scope: WAF (OWASP CRS, Coraza/ModSecurity) incl. virtual patching and WAF telemetry, ingress/API-gateway hardening, DDoS posture (edge
 scrubbing + self-hosted L3/4 kernel hardening), TLS
 termination + re-encryption to backends, reverse-proxy trusted-IP / allowlist handling (behind
 Cloudflare), Cloudflare-tunnel / identity-aware-proxy patterns, and **egress as a first-class
@@ -34,6 +34,21 @@ IP directly; it must be refused.
 **R2 — Minimal exposure and version hygiene at the edge.** Expose only 443 (and 80→443 redirect);
 disable unused methods/modules; keep the proxy and WAF engine patched (a WAF with a known bypass CVE
 is theater). Don't leak backend topology in headers (`Server`, `X-Powered-By`, internal hostnames).
+
+**R2.0 — Scrub trace-propagation and gateway diagnostics from client responses, too.** Internal
+trace and span IDs, retry counts and upstream timings hand an attacker a map of the call graph and
+a timing oracle. On responses leaving the edge, strip: B3 (`X-B3-*`, single-header `b3`),
+Datadog (`x-datadog-*`), W3C `traceparent`/`tracestate` wherever a service echoes them; Envoy's
+`x-envoy-upstream-service-time` (the router sets it on every response) and `x-envoy-attempt-count`
+(only when `include_attempt_count_in_response` is on); Kong's `X-Kong-*-Latency` and
+`X-Kong-Upstream-Status` (Kong's `headers` setting controls them; `off` drops all of Kong's own,
+though plugins may still add theirs). Envoy's `x-envoy-internal` and `x-envoy-external-address`
+are *request* headers set for upstreams — they reach a client only if a service reflects request
+headers back, so test for the echo. Mechanisms: Envoy router `suppress_envoy_headers: true` (the
+router's own `x-envoy-*`; other filters may still set some) plus `response_headers_to_remove`.
+Keep exactly one opaque correlation ID on the response (sota-api-design rules/07 §6 returns one
+on every response): a random request ID support can look up server-side, never the trace ID
+itself. OWASP: Secure Headers Project.
 
 **R2.1 — No EOL controllers in the L7 data path.** `kubernetes/ingress-nginx` — long the most common
 Kubernetes ingress controller — was retired in **March 2026** (repo read-only, **no further security
@@ -87,6 +102,58 @@ detection-only WAF is a Medium finding (it's not enforcing).
 app-specific SSRF or IDOR. Pair the edge WAF with app-side SSRF defenses (sota-code-security
 rules/01) and the egress controls below (§6) — the WAF is the north-south net; egress is the
 south-bound net.
+
+**R4.1 — A virtual patch is an interim fix with an owner, a ticket and an end date.** When a
+known vulnerability cannot be fixed in code today (sota-devsecops rules/03 "no upstream patch
+available"), an edge rule can block the exploit path while the fix is built. Run it as a
+repeatable flow, not an ad-hoc edit:
+- **Prepare before you need it:** a pre-approved fast change path for WAF rules (who may deploy,
+  what review, how to roll back), so an emergency patch does not wait on the normal release train.
+- **Identify → analyse → write → test → deploy → recover.** Analyse the actual injection point
+  and preconditions; write the narrowest rule that covers them — prefer an allowlist of the
+  expected parameter shape over a blocklist of one payload.
+- **Deliberate rule IDs.** Custom rules live in the locally reserved range (CRS documents
+  1–99,999 for local use; 900,000–999,999 belongs to CRS) and each ID is recorded against the
+  vulnerability ticket, e.g. in a `tag:` or `msg:` carrying the ticket key, so a log line leads
+  straight to the tracked code fix.
+- **Test both directions:** replay legitimate traffic (false positives) *and* evasion variants
+  of the exploit — encodings, case, parameter pollution, alternate content types (false
+  negatives). The person who found the vuln retests through the rule; a bypass sends the rule
+  back to analysis, not to "done".
+- **Recover:** the rule is removed once the code fix ships and is verified, and time-to-fix
+  (ticket open → code fix live → rule removed) is tracked, so virtual patches do not become
+  permanent. Generating candidate rules from DAST findings is an optional accelerator; review
+  each generated rule as above.
+- **Session handling at the edge is a stopgap too.** Rewriting `Set-Cookie` attributes
+  (`Secure`, `HttpOnly`, `SameSite`) or session behaviour in the proxy is acceptable only while
+  the application cannot change; the durable fix is in the app (sota-code-security rules/17).
+OWASP: Virtual Patching cheat sheet, Session Management cheat sheet.
+
+**R4.2 — Report every firing; review every rule that never fires.** Each virtual patch and custom
+rule gets a match counter and an alert: a firing means someone is probing that known
+vulnerability now, which is worth knowing even when the block succeeded. The inverse is a signal
+as well: a rule with zero matches over a period in which the exploit path saw traffic may not be
+in force at all (wrong phase, wrong variable, detection-only, a route that bypasses the WAF) —
+prove it with a harmless test request that should match (a control not in force:
+sota-code-security rules/14). OWASP: Virtual Patching cheat sheet.
+
+**R4.3 — WAF events are security telemetry, shipped and alerted on.** Match and block events go
+to the central logging/SIEM pipeline (sota-detection-engineering), not only to a local file: in
+Coraza and ModSecurity that means an audit engine set to `RelevantOnly` (or `On`), never `Off`
+(Coraza documents `Off` as its default). Alert on spikes of blocked payloads per rule or client,
+and on anomalies against the baseline. Known scanner and attack-tool fingerprints (CRS
+`REQUEST-913-SCANNER-DETECTION`, e.g. rule 913100 on scanner user agents at `CRITICAL` severity)
+are recorded as high-severity security events for correlation, not silently dropped. OWASP:
+Logging Vocabulary cheat sheet, Secure Cloud Architecture cheat sheet.
+
+**R4.4 — Know the WAF's coverage limits; use a positive model where it matters.** A negative
+(signature) model only catches payload shapes it knows. For sensitive endpoints — auth,
+payments, admin, key APIs — add a positive model: only known routes and methods pass, and only
+the expected parameters with expected types and lengths (an OpenAPI schema is a good source);
+add custom rules for the specific stack in front of it. Many WAFs inspect only the WebSocket
+upgrade handshake, not the frames that follow — confirm what yours inspects; if frames are not
+inspected, message validation, authorisation and logging stay in the server (sota-api-design
+rules/05). OWASP: DSOMM, Secure Cloud Architecture cheat sheet, WebSocket Security cheat sheet.
 
 ## 3. TLS termination + re-encryption
 
@@ -157,6 +224,21 @@ Baseline, matched to the exposed protocols:
   target for the return traffic. Prefer TCP or authenticated protocols on the public edge; rate-limit
   or drop unsolicited UDP you don't serve.
 
+**R8.2 — Cap bytes, not only requests; know your pipe before the flood.** Request-rate limits do
+nothing against a few clients pulling large responses or pushing large bodies. At the edge:
+- **Per-client data caps:** a request-body ceiling (nginx `client_max_body_size`; `0` disables the
+  check), a response-rate limit (nginx `limit_rate`, bytes per second — per *request*, so pair it
+  with `limit_conn` on the client address, or two connections double it), and a connection cap
+  per client. The inverse — a *minimum* rate that drops slow senders — is sota-code-security
+  rules/06 §5.
+- **An overall bandwidth ceiling** per service or tenant, so one hot path cannot starve the rest
+  of the uplink.
+- **Self-hosted / on-prem uplink: ask the provider before you need it.** What volume can the ISP or
+  transit provider absorb, is there upstream scrubbing or blackholing on request, and is there
+  more than one ingress path? A volumetric flood larger than your uplink is lost before your
+  kernel sees it; R8.1 cannot help there.
+OWASP: Denial of Service cheat sheet.
+
 ## 6. Egress as a first-class control
 
 **R9 — Default-deny egress; allow named destinations only.** Exfiltration and C2 leave through
@@ -195,6 +277,23 @@ logging beats either alone: the allowlist blocks the easy path, the logs catch t
 - [ ] Is the WAF (CRS on Coraza/ModSecurity) in **blocking** mode at a tuned PL, current version —
       not detection-only-forever, not unpatched? A ruleset still on CRS 3.3.x (end of support
       Q3 2026) is a finding.
+- [ ] **Medium — trace IDs and gateway diagnostics leak to clients (R2.0).** Per public host:
+      `curl -sI https://<host>/ | grep -iE '^(x-b3-|b3:|x-datadog-|x-envoy-|x-kong-(upstream|proxy|response|admin)-latency|x-kong-upstream-status|traceparent:|tracestate:)'`
+      — every hit is a finding; an opaque request-ID header is the one allowed. Repeat on an
+      error path (4xx/5xx) and an echo endpoint, where reflected request headers show up.
+- [ ] **Medium — virtual patches without lifecycle (R4.1).** List local-range custom rule IDs:
+      `grep -rnE "id:[1-9][0-9]{0,4}[,\"']" --include='*.conf' .` — each needs a linked ticket,
+      an owner, false-negative (evasion) test evidence, and a removal date tied to the code fix.
+- [ ] **Medium — virtual patches nobody watches (R4.2).** Firings per rule over the window:
+      `grep -oE '\[id "[0-9]+"\]' <waf-error-log> | sort | uniq -c | sort -n` — every virtual patch
+      has an alert on match; a patch with zero matches while its route saw traffic gets a
+      test request that should match.
+- [ ] **High — WAF events not shipped (R4.3).** `grep -rnE '^[[:space:]]*SecAuditEngine[[:space:]]+Off' .`
+      (or the directive absent — Coraza defaults to `Off`). Are block/match events in the SIEM with
+      spike alerts, and scanner fingerprints (CRS 913xxx) raised as high-severity events?
+- [ ] **Medium — WAF coverage (R4.4).** Sensitive routes on a positive model (known routes,
+      methods, parameters)? WebSocket routes: does the WAF inspect frames, and if not, is message
+      validation and logging server-side?
 - [ ] Is the ingress controller maintained? `kubernetes/ingress-nginx` is EOL (March 2026, no
       security fixes) → High; migrate to a maintained Gateway API implementation.
 - [ ] **High — request smuggling / desync (R2.2).** Any lenient HTTP parser on a reachable hop:
@@ -218,6 +317,10 @@ logging beats either alone: the allowlist blocks the easy path, the logs catch t
 - [ ] Is egress funneled through an inspectable choke point and are egress/proxy logs exported to
       detection?
 - [ ] DDoS stance recorded; per-identity rate limits and autoscale caps set?
+- [ ] **Medium — byte caps disabled (R8.2).** `grep -rnE '(client_max_body_size|limit_rate)[[:space:]]+0[[:space:]]*;' .`
+      — each hit removes a cap. Per-client connection cap and an overall bandwidth ceiling set?
+      Self-hosted uplink: ISP/transit absorption capacity, scrubbing and ingress diversity on
+      record?
 - [ ] Self-hosted/bare-metal edge with no scrubbing provider in front: `tcp_syncookies` on,
       `rp_filter` enabled, `nf_conntrack_max` sized + drops alerted, synproxy on high-rate TCP
       listeners? (`sysctl net.ipv4.tcp_syncookies net.ipv4.conf.all.rp_filter`)

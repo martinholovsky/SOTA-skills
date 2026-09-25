@@ -75,6 +75,18 @@ at non-git surfaces: S3 buckets, container images, CI logs exports — secrets l
 - Scanners miss: secrets in *binary* files, novel formats without rules, encrypted blobs with
   weak keys, and anything entropy-shaped below thresholds. The manual grep pass in SKILL.md
   AUDIT mode exists for this reason.
+- **Own the detector set, class by class.** Keep a list of every secret class the org holds
+  and a rule (default or custom) for each: long-lived and hard-to-rotate tokens, connection
+  strings with userinfo, 2FA/TOTP seeds (`otpauth://` URIs, base32 seed fields), session
+  tokens and cookies, private and SSH keys, cloud keys, and whole secret-bearing config
+  files (kubeconfig, `.npmrc`, `credentials.json`). A class with no rule is a class the gate
+  cannot see; review the list when a new vendor or token format arrives.
+- **One standard fake value per type, org-wide**, used in every test, fixture and doc, so an
+  allowlist can name those exact values (or their fingerprints) instead of a path or a regex
+  that also swallows real keys. Vendors' documented example values often work — gitleaks
+  8.30.1's default config, checked here, skipped the AWS documentation key
+  `AKIAIOSFODNN7EXAMPLE` while flagging a random `AKIA…` beside it — but confirm each against
+  your scanner rather than assuming. OWASP: Secrets Management cheat sheet.
 - **A working-tree scan is not limited to tracked files, and does not read `.gitignore`.**
   `gitleaks dir` (and directory scanners generally) treat the path as a plain directory, so an
   untracked artifact — a log, an editor backup, a crash dump, a tool's scratch output — is in
@@ -154,6 +166,18 @@ Severity-of-response calibration:
 | Prod service credential (DB, API key with write scope) | Same day; check access logs before and after rotation |
 | Read-only / non-prod / sandbox credential | Within 24h; still rotate — non-prod creds pivot into prod via reused patterns and shared infra |
 | Honeytoken | No rotation needed; treat as breach signal for the planted surface (§5) |
+
+**Key or CA compromise needs a written plan before it happens** — the rotate-first steps
+above assume one credential; a signing key or a CA key invalidates everything it vouched for.
+The plan names: who to contact (internal owners, the CA, relying parties, customers where
+contracts require it); **how to re-key** (new key pair, reissue every certificate or token
+under it — rules/05 §3–4, sota-network-security rules/06 for PKI); a **key/certificate
+inventory linked to where each is deployed**, so reissue is a query, not an archaeology dig;
+**revocation that relying parties actually enforce** — CRL checking switched on, or lifetimes
+short enough to be the revocation; **monitoring that re-keying completed** (no endpoint still
+presenting the old key, no token still verifying under it); and **what the compromised key
+already signed or encrypted** — artifacts to re-sign or distrust, data to re-encrypt, signatures
+made after the compromise time to reject. OWASP: Key Management cheat sheet.
 
 **Leaks outside git** follow the same runbook with a different purge step: secrets pasted into
 CI logs (purge/expire the log retention), chat (delete + rotate; assume exported), issue
@@ -317,6 +341,13 @@ inventory that does not name the transcript path = **Medium**.
       for sudden public-repo creation and self-hosted-runner registration under org identities.
 - [ ] Leak runbook exists, is current, and orders rotate → assess (logs since leak time) →
       purge → harden → record; revocation paths tested per credential class.
+- [ ] **A key/CA-compromise plan exists (§3)** — contacts, re-key method, linked key/cert
+      inventory, enforced revocation, re-key completion monitoring, and triage of what the
+      key signed or encrypted — High where an org runs its own CA or signing keys without one.
+      Runbooks that never mention it: `grep -rLiE 'key compromise|CA compromise|re-?key' runbooks/`
+- [ ] **Detector set covers every secret class held (§1)** and tests use one standard fake
+      per type — Medium. A gitleaks config with no custom rule for your own formats:
+      `grep -L '^\[\[rules\]\]' .gitleaks.toml`
 - [ ] Past incidents: history actually rewritten (filter-repo + force-push + re-clone), forks/
       PR quotes/CI logs scrubbed, full-history rescan clean, and the leaked values rotated.
 - [ ] Legacy-repo adoption used a triaged baseline (live findings rotated first); baseline file

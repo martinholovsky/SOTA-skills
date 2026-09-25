@@ -118,6 +118,36 @@ Automation & Orchestration, Governance. Use it to scope work: e.g. Networks pill
 Don't claim "we did zero trust"; name the pillar and the level. The honest audit output is a
 per-pillar maturity placement with the next concrete step, not a binary.
 
+**R8.1 — Close the loop: telemetry refines policy.** Every pillar's policy is a guess until checked
+against what actually happens. On a schedule, compare what policy *allows* with what is
+*observed* — flows (rules/03 R9.1 for Cilium/Hubble), app access logs from the identity-aware
+proxy, role and entitlement use — and remove allows nobody used over a full business cycle;
+investigate observed traffic that only succeeded through a broad rule. A policy that only ever
+grows drifts back to a flat network. OWASP: Zero Trust Architecture cheat sheet.
+
+## 8. Devices pillar: inventory, device identity, posture enforcement
+
+**R9 — Know every device, identify it cryptographically, and let posture gate access.** User
+identity alone (R4) accepts a stolen session replayed from an attacker's laptop; the device is
+the second half of "who is asking".
+- **Inventory first:** users, devices, applications and the flows between them, including shadow
+  IT found from proxy, DNS and SaaS logs — a device not in the inventory cannot be granted
+  anything but the unmanaged path below.
+- **One certificate identity per managed device**, issued from the internal PKI (rules/06 §4)
+  with the key kept in hardware where the platform offers it (TPM, secure enclave), and presented
+  to the access proxy (mTLS or the ZTNA agent). A shared or exportable device credential proves
+  nothing about the device.
+- **Posture assessed continuously, not at enrolment:** patch level, disk encryption, EDR health,
+  configuration drift. Falling out of compliance revokes or downgrades access automatically at
+  the PDP (R2–R3); it does not wait for a ticket.
+- **Unmanaged devices get an isolated path:** a remote/isolated browser or virtual workspace
+  with no direct network reach, no local download, and recorded sessions — never the managed
+  route with a weaker check.
+- **Endpoint baseline:** anti-malware/EDR with behaviour monitoring, full-disk encryption, and
+  remote wipe for lost or stolen devices. Device management policy itself belongs to
+  sota-identity-access; this rule is what the network PEP consumes.
+OWASP: Zero Trust Architecture cheat sheet.
+
 ## Audit checklist
 
 - [ ] Is any service authenticating callers by source IP/subnet alone (location trust)? Grep configs
@@ -133,3 +163,10 @@ per-pillar maturity placement with the next concrete step, not a binary.
 - [ ] Is access dynamic (re-evaluated, posture-aware) for crown-jewel systems, or a one-time static
       allow?
 - [ ] Can you state, per CISA ZTMM pillar, your current maturity level and the next step?
+- [ ] **Medium — policy never pruned (R8.1).** Is there a recurring allowed-vs-observed review
+      (flows, proxy access logs, entitlement use) with a record of allows removed? A policy set
+      that has only ever grown is the finding.
+- [ ] **High — devices pillar (R9).** Device inventory exists and covers shadow IT; each managed
+      device has a unique, non-exportable certificate identity the access proxy checks; posture
+      loss revokes access automatically; unmanaged devices reach only an isolated browser or
+      workspace; EDR, disk encryption and remote wipe on every managed endpoint?

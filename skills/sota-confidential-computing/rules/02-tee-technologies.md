@@ -177,6 +177,45 @@ the GPU is hand-waved).** Required in the design doc: CPU TEE technology, GPU CC
 on/off, who verifies the GPU attestation, and whether multi-GPU interconnect traffic
 (NVLink) is protected on the deployed generation. "The VM is confidential" while
 weights sit in an unattested GPU across an unencrypted bus is confidential theater.
+Encryption of peer traffic is only half of it. For multi-GPU work the design also
+**declares the approved topology** — how many GPUs and switches, and which device
+identities may sit inside one tenant's boundary — and every peer GPU or switch
+proves its identity with its own attested evidence before it joins. Appraisal
+rejects any peer, switch or link layout that is not on that declaration.
+Worked example, verified 2026-09-25 in NVIDIA's `nvtrust` repository: in Protected
+PCIe (PPCIE) mode NVLink carries plaintext, so the switches become part of the trust
+decision. NVIDIA's PPCIE verifier attests the GPUs *and* the NVSwitches, then checks
+that the switch identities match the ones the GPU reports list and that each switch
+reaches the expected GPU set. It aborts on a mismatch. A PPCIE deployment that runs
+GPU attestation alone never checks the fabric that sees the cleartext (High). The
+vendor-neutral version of this is PCIe device authentication — SPDM-based identity
+and measurements, and TDISP for binding a device interface to a TEE. Whether a given
+platform exposes it is a per-SKU check, not an assumption. OWASP: AISVS 4.2.5
+
+**R4.3 — Pin accelerator firmware, and attest per workload (finding: High if the
+release policy accepts any GPU whose certificate chain is valid).** A valid vendor
+signature proves the evidence is genuine. It does not prove the firmware is firmware
+you approved. The relying-party policy therefore needs three things:
+- an allowlist of GPU driver and VBIOS/firmware versions, with a named owner and an
+  update path tied to vendor security bulletins, just like the CPU TCB baseline
+  (rules/03 §5);
+- a rule that rejects evidence whose firmware measurements do not match a signed
+  reference manifest. In NVIDIA's verifier the reference manifest is the Reference
+  Integrity Manifest (RIM), and the checks show up as per-claim results for the
+  driver and VBIOS RIMs (RIM signature verified, version matched) plus a
+  measurement-match claim (`measres`). The policy must require those claims and
+  the version allowlist, not only the overall verdict;
+- no flag that softens the checks in production. In NVIDIA's Python local GPU
+  verifier (now deprecated) these are `--test_no_gpu` (hard-coded GPU data),
+  `--allow_hold_cert` (continue when a RIM certificate is on hold) and
+  `--ocsp_nonce_disabled`; the PPCIE 1.x verifier has hyphenated forms of the last
+  two. Check any newer CLI you use for its equivalents.
+
+Timing matters as much as content. Attest the GPU before each workload or key
+release, bound to a fresh nonce — not once at node boot. A cached verdict carries an
+explicit expiry. It is discarded when the GPU is reset, reassigned to another VM or
+tenant, or has its CC/PPCIE mode changed, because the verdict describes a device
+state that is gone. OWASP: AISVS 4.2.1, AISVS 4.2.3
 
 ---
 
@@ -270,6 +309,17 @@ TME-MK-only silicon.
       the R3.1 misclaim).
 - [ ] Confidential-AI designs name the GPU generation, CC mode status, interconnect
       protection, and GPU attestation verifier — not just the CPU TEE.
+- [ ] Multi-GPU designs declare the approved topology (GPU and switch count, allowed
+      device identities); every peer GPU and switch is attested before it joins, and
+      appraisal rejects an unexpected peer (R4.2). In PPCIE mode, switch attestation
+      and the topology check both run — GPU-only attestation is High. This is a
+      design and verifier-policy review; no line-level grep proves it.
+- [ ] GPU attestation policy pins driver and VBIOS versions to an owned allowlist,
+      requires the per-RIM signature and measurement-match claims, and re-attests
+      per workload or key release with an expiring cache that a GPU reset or
+      reassignment clears (R4.3). High if any verifier-softening flag is in a
+      deployed script or manifest:
+      `grep -rnE -e '--(test_no_gpu|allow[_-]hold[_-]cert|ocsp[_-]nonce[_-]disabled)' .`
 - [ ] No dependency on dormant Wasm-TEE projects (Enarx-class) without a documented
       fork/maintenance plan; project liveness checked, not assumed.
 - [ ] A side-channel posture section exists: applicable classes (ciphertext,

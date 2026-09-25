@@ -64,11 +64,25 @@ back.
 is break-glass only, and is audit-logged. Day-to-day operation should never require a human to
 *see* a secret value.
 
+**When a password must reach a person** (a new account, a vendor portal, a device PIN), never
+send it in the same message or channel as the username. Prefer a one-time, short-lived
+set-password link so no reusable secret travels at all; failing that, deliver the value over a
+mutually authenticated channel or a second, separate channel (username by email, password via
+a password-manager share or an authenticated messaging app) and force a change on first use
+(generation and first-use rules: sota-code-security rules/02 §5). OWASP: Secrets Management
+cheat sheet.
+
 ## 3. Rotation, revocation, expiry
 
 **Every secret has, at creation time:** an owner (team), a maximum lifetime or rotation
 interval, a documented zero-downtime rotation procedure, and a revocation path. Record these in
 the secret's metadata/tags. A secret missing any of the four is an audit finding (Medium).
+Those four are the floor; the full record also carries the secret **type** and **purpose**,
+its **consumers** and who may read it, **dependencies that break on rotation**, an
+**incident contact**, the **exposure impact** and **data classification** that set its
+handling, and lifecycle timestamps **with the actor** for creation, first use, each rotation
+and deletion (most stores record the timestamps in their audit log; the metadata points to
+them rather than duplicating them). OWASP: Secrets Management cheat sheet.
 
 **Rotation intervals (defaults, tighten for higher-value targets):**
 
@@ -93,10 +107,18 @@ OWASP: Cryptographic Storage cheat sheet; Database Security cheat sheet.
 
 **Zero-downtime rotation = overlap, not swap.** The universal pattern:
 
-1. Issue new secret (version N+1) alongside old (N) — both valid.
-2. Roll out consumers to N+1 (redeploy or let TTL-based cache refresh pick it up).
-3. Verify no traffic uses N (audit logs, metrics).
-4. Revoke N.
+1. Issue new secret (version N+1) alongside old (N) — both valid. Stage it as *pending*,
+   not current.
+2. **Prove N+1 works before promoting it**: set it on the target system, then authenticate
+   with it. Only a passing test moves the "current" label; a failing one leaves N current and
+   alerts. AWS Secrets Manager's rotation functions encode this as createSecret → setSecret →
+   testSecret → finishSecret, with the new value held under `AWSPENDING` until finishSecret
+   moves `AWSCURRENT`; a custom rotation function whose test step is empty skips the only
+   check that the new credential is usable.
+3. Roll out consumers to N+1 (redeploy or let TTL-based cache refresh pick it up).
+4. Verify no traffic uses N (audit logs, metrics) — this proves N is unused, not that N+1
+   works; that was step 2.
+5. Revoke N.
 
 Verifiers (webhook receivers, JWT validators) must accept *both* during the window; issuers
 switch to N+1 immediately. If your system can only hold one value at a time, fix that before
@@ -117,9 +139,18 @@ aws_access_key_id: AKIA****************   # created 2022, owner unknown
 # GOOD — secret metadata makes lifecycle enforceable
 metadata:
   owner: payments-team
+  type: vendor-api-key
+  purpose: card capture in checkout
+  consumers: [checkout-api, refunds-worker]
+  readers: [role/checkout-api-prod, role/refunds-prod]
+  breaks_on_rotation: [refunds-worker webhook verifier]
+  incident_contact: payments-oncall
+  classification: restricted          # drives handling and exposure impact
+  exposure_impact: live charges, card-network fines
   rotation_interval: 90d
   rotation_runbook: runbooks/rotate-stripe-key.md
   expires: 2026-09-01
+  # created/rotated/deleted timestamps + actor: from the store's audit log, not hand-kept
 ```
 
 ## 4. Short-lived beats long-lived — the workload identity ladder
@@ -188,6 +219,18 @@ steps:
 - One role per repo/purpose, least-privilege policy (deploy role ≠ admin).
 - Use GitHub *environments* with required reviewers for prod-deploy roles so the OIDC `sub`
   claim can't be minted from an unreviewed branch.
+- **Keep the human behind the job attributable.** A CI call to the store or cloud should be
+  traceable to the person who triggered or defined the run, not only to the deploy role.
+  GitHub's OIDC token carries `actor`, `actor_id` and `run_id` claims; map them into what the
+  target records (a GCP WIF attribute mapping may use any token claim). On AWS,
+  `configure-aws-credentials` names every session `GitHubActions` by default and applies no
+  session tags on the OIDC path, so set `role-session-name` to include the run id — it is
+  workflow-chosen, so join it to the CI provider's own run log for the actor rather than
+  trusting it alone.
+- **Re-verify the federation config on a schedule** (quarterly, and after any org/repo rename
+  or transfer): read every trust policy / attribute condition back and confirm `sub` pinning
+  and the role-per-repo mapping still hold — they drift silently. OWASP: Secrets Management
+  cheat sheet.
 
 The same pattern applies to GCP Workload Identity Federation (attribute conditions on
 `assertion.repository`) and Azure federated credentials (subject identifier pinning):
@@ -250,7 +293,8 @@ Operational rules for dynamic/leased credentials:
   hand.
 - **Version every secret** and keep N-1 readable during rotation windows only.
 - **Tag with owner + rotation metadata** (§3) so expiring-secret reports are automatable.
-- **Audit log every read** in production; alert on reads from unexpected principals.
+- **Audit log every read** in production; alert on reads from unexpected principals. The
+  minimum field set and per-stage detections are rules/03 §8.
 - **Maintain a secret inventory.** You cannot rotate what you don't know exists. The secret
   store's listing *is* the inventory only if everything lives there — which is the point.
   Quarterly: export all secrets with age + owner + last-accessed; flag anything unowned,
@@ -278,6 +322,19 @@ Operational rules for dynamic/leased credentials:
 - [ ] Every secret has owner, rotation interval, zero-downtime rotation runbook, and a tested
       revocation path; intervals meet the table in §3.
 - [ ] Rotation uses overlap (dual-secret / versioned), not in-place swap.
+- [ ] **Rotation tests the pending credential before promoting it (§3)** — High for a rotation
+      function that promotes without a test step. Handlers with a finish step but no test step:
+      `grep -rlE 'finish_?[Ss]ecret' . | xargs -r grep -LE 'test_?[Ss]ecret'`
+      (an empty test body passes this probe — read the hits and the non-hits' test step).
+- [ ] Secret metadata carries type, purpose, consumers, readers, rotation dependencies,
+      incident contact, classification/exposure impact, with lifecycle timestamps and actors
+      traceable in the store's audit log (§3) — Low per missing field class.
+- [ ] **Initial human passwords never travel with the username (§2)** — Medium for a
+      notification template that renders a password value:
+      `grep -rniE '\{\{[[:space:]]*[a-z_.]*(password|passwd|pwd)[a-z_]*[[:space:]]*\}\}' templates/ | grep -viE '(url|link)[[:space:]]*\}\}'`
+- [ ] **CI access to the store/cloud is attributable to the triggering person (§5)** and the
+      federation config is re-read on a schedule — Low for AWS OIDC jobs left on the constant
+      default session name: `grep -rlE 'configure-aws-credentials' .github/workflows | xargs -r grep -L 'role-session-name'`
 - [ ] Rotation runbooks and the offboarding checklist trigger rotation of every shared secret a
       leaver or role-changer could read, not only on a schedule or confirmed compromise (§3) —
       Medium. Runbooks that never mention it:

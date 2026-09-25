@@ -223,6 +223,17 @@ hubble observe --to-fqdn '*.metadata*'                  # anyone reaching metada
 hubble observe --from-pod payments/api --protocol http  # author L7 policy from real traffic
 ```
 
+**R9.1 — Prune allows nobody uses: diff permitted against observed.** Policies accrete; an allow
+added for a migration or a debug session stays forever. On a schedule (and before each audit),
+take the flows that were forwarded by policy — `hubble observe --verdict FORWARDED
+-o json` — over at least one full business cycle, reduce them to (source identity,
+destination identity, port) tuples, and compare with the tuples each CNP/NetworkPolicy permits.
+An allow with no matching flow is a removal candidate (confirm with the owner, remove it, watch
+for drops); a flow that passed only through a broad rule gets a narrow rule of its own. The
+Hubble CLI reads the fixed-size in-memory flow buffer, so it holds only a recent window —
+run the diff over exported flow logs, not the live buffer. The general loop is rules/01 R8.1.
+OWASP: Kubernetes Security cheat sheet, Zero Trust Architecture cheat sheet.
+
 ## 8. Cluster mesh (multi-cluster)
 
 **R10 — Cluster mesh extends *identity and policy*, not a flat L3.** With Cilium Cluster Mesh,
@@ -251,6 +262,9 @@ audit cross-cluster policies for `world`/wildcard exactly as single-cluster.
 - [ ] Is there a cluster-scoped default-deny baseline (BANP/ANP if stable, else
       CiliumClusterwideNetworkPolicy) so new namespaces aren't allow-all?
 - [ ] Is Hubble enabled and flows exported to detection?
+- [ ] **Medium — unused allows (R9.1).** Is there a recurring permitted-vs-observed diff over
+      exported flows (`hubble observe --verdict FORWARDED -o json` as the source shape), with unused
+      allows removed and broad-rule-only flows given narrow rules?
 - [ ] ANP/BANP/ClusterNetworkPolicy usage: is the alpha API status pinned, CNI support verified,
       and migration to `ClusterNetworkPolicy` (v1alpha2, tiered) planned?
 - [ ] Is Cilium at/above the 2026 CVE-fix floor (1.19.4 / 1.18.10 / 1.17.16) and checked against

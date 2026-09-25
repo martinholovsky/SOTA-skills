@@ -113,18 +113,45 @@ resource "aws_security_group_rule" "db_in" {
 - **Dangling records are the top DNS finding:** CNAMEs/A records pointing at
   released cloud resources (deleted buckets, old LB names, deprovisioned PaaS apps)
   enable subdomain takeover. Make DNS records lifecycle-coupled to the resources in
-  IaC; scan zones for danglers regularly.
+  IaC, and keep a **DNS inventory** in which every CNAME, A/AAAA and NS record names
+  its target resource, owning team, project, creation date, expected decommission
+  date and the reason the name exists; a record nobody can fill a row for is a
+  deletion candidate. IaC can be that inventory when records and resources live in
+  the same code, but only if every change goes through it.
+- **Scan for danglers on a schedule, at least weekly, by content, not by
+  resolution.** A dangling CNAME usually still resolves, so "the name answers" proves
+  nothing. The scan fetches every inventoried name and flags provider "nothing is
+  here" responses: measured 2026-09-25, an unclaimed S3 bucket returns
+  `NoSuchBucket`, an unclaimed Heroku app a page titled `No such app`, an unclaimed
+  GitHub Pages host `There isn't a GitHub Pages site here`, and an unclaimed
+  `*.azurewebsites.net` name returned NXDOMAIN, so a CNAME whose *target* does not
+  resolve is a finding too. Maintained scanners carry wider fingerprint sets (e.g.
+  dnsReaper, nuclei's takeover templates); run one from CI or a scheduler, and add
+  the same check to teardown pipelines. (OWASP: Subdomain Takeover Prevention cheat
+  sheet)
 - **Decommission in DNS-first order.** Releasing the resource while a record still
   names it is the takeover window, so the sequence is: (1) repoint or park the name
   on a host you control (redirect or maintenance page) if it must keep answering;
   (2) delete every record that targets the service — CNAME, A/AAAA, alias, MX, NS
   delegations; (3) wait at least the old TTL; (4) only then delete the bucket, LB,
   app or zone; (5) confirm the name no longer resolves to it, re-run the takeover
-  scan, update the DNS inventory. Keep ownership-verification TXT records that bind
-  the name to *your* tenant (e.g. App Service `asuid.<name>`) — they are what stops
-  another tenant validating it. A dangling record found later is fixed twice: the
+  scan, update the DNS inventory. Ownership proofs and name-holding resources are
+  *not* part of step 4 (next bullet). A dangling record found later is fixed twice: the
   record, and the teardown procedure that left it. Pipeline gate: sota-devsecops
   rules/06 §6.7. (OWASP: Subdomain Takeover Prevention cheat sheet)
+- **Hold the name at the provider, not only in your zone.** Provider ownership
+  proofs stop another tenant attaching your hostname to *their* resource: Azure App
+  Service's `asuid.<name>` TXT (Microsoft: while it exists, no other subscription
+  can validate the domain), a cloud's domain-verification TXT, a SaaS or CDN
+  custom-hostname verification. Keep each proof for as long as *any* record still
+  points at that provider, including after the resource is gone. Where the provider
+  binds the name to a resource instead, keep that resource: CloudFront refuses an
+  alternate domain name that already exists on another distribution, even in your
+  own account, so a *disabled* distribution (or one serving a redirect) still holds
+  the name. Deleting it while the CNAME is live frees the name; CloudFront's rule
+  that a new alternate name needs a certificate covering it raises the bar but is
+  not a control to rely on. Delete the holder only after the record is gone.
+  (OWASP: Subdomain Takeover Prevention cheat sheet)
 - **DNSSEC stance:** sign zones where the registrar+provider support is solid and
   you have rotation automation (managed DNSSEC on Route 53/Cloud DNS/Azure DNS);
   skip hand-rolled key management. Always enable it for domains used as identity
@@ -183,6 +210,8 @@ resource "aws_security_group_rule" "db_in" {
   Front Door + token auth) with short expiry; never security-by-obscure-URL.
 - Cache invalidation is a deploy step (versioned asset filenames preferred over
   purges).
+- Retiring a distribution or CDN endpoint that a CNAME still names: disable it
+  and leave it holding the hostname until the record is deleted (§6, "Hold the name").
 
 ## 10. DDoS posture
 
@@ -229,6 +258,16 @@ resource "aws_security_group_rule" "db_in" {
       Probe: `grep -rn -E 'records *= *\[ *"[^"]*\.(cloudfront\.net|azurewebsites\.net|herokuapp\.com|elasticbeanstalk\.com|amazonaws\.com|azureedge\.net|trafficmanager\.net|github\.io)"' --include='*.tf' .`
       — each hit should reference the resource attribute instead; the decommission
       runbook deletes records before the resource and waits out the TTL.
+- [ ] **High** — DNS inventory exists (target, owner, project, dates, reason per
+      record) and a content-fingerprint dangler scan runs at least weekly (§6). Spot
+      check by hand: `while read -r h; do curl -s -m 10 "https://$h/" | grep -q -E 'NoSuchBucket|No such app|There isn.t a GitHub Pages site here' && echo "DANGLING? $h"; done < hosts.txt`
+      (one hostname per line), plus `dig +short CNAME <h>` for targets that NXDOMAIN.
+- [ ] **High** — ownership proofs outlive the resource (§6 "Hold the name"): a
+      `.tf` file that points a name at App Service with no `asuid` TXT beside it.
+      Probe: `grep -rl -E 'azurewebsites\.net' --include='*.tf' . | xargs grep -L 'asuid'`
+      — file-level, so confirm per record; a teardown plan that destroys a
+      CloudFront distribution or its `aliases` while a CNAME still targets it is the
+      same finding.
 - [ ] CAA records present; DNSSEC stance decided and recorded.
 - [ ] All public certs auto-issued/renewed (ACM/ACME/managed); expiry alerts as
       backstop; nothing renewed by hand or living past current CA/B lifetime caps.

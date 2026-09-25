@@ -94,6 +94,15 @@ Raw detections produce many events per real incident. Collapse them:
 - **Aggregate to risk** where supported: many low-confidence signals on one
   entity crossing a risk threshold becomes one high-confidence alert (risk-based
   alerting) — turns noise into signal instead of suppressing it.
+- **Correlate identity across layers.** Map the human user, the service or
+  workload identity (service account, SPIFFE ID, cloud role) and the device to
+  one entity so an IdP sign-in, the API calls it led to and the pod that made
+  them land in one case. Feed two supply-chain signals in as runtime detection
+  inputs, not only as build-time gates: an image that fails signature
+  verification or whose digest does not match its signed manifest (an admission
+  denial or policy report), and a vulnerability finding marked *reachable* on a
+  workload that is running. Either one raises the risk of every other alert on
+  that workload. OWASP: Zero Trust Architecture cheat sheet.
 
 The analyst should see *incidents*, not a firehose of atomic events.
 
@@ -129,6 +138,12 @@ Automate the repetitive, gate the dangerous.
     and reversible; prefer "quarantine" over "destroy."
   - **Human-in-the-loop for high-impact** — propose-and-approve, not auto-execute,
     above a blast-radius threshold.
+- **Revoke device trust on confirmed compromise.** When a device is confirmed
+  compromised, the containment set includes revoking its device certificate or
+  marking its posture non-compliant, so conditional access denies it everywhere
+  at once, not only on the account that alerted. It runs under the guardrails
+  above (confirmed, reversible, logged). OWASP: Zero Trust Architecture cheat
+  sheet.
 - Automation that can take down production is itself an attack surface and an
   availability risk — threat-model it (sota-threat-modeling) and least-privilege
   its credentials (sota-secrets-management).
@@ -178,6 +193,13 @@ correctly and fast.
 - [ ] Does any auto-containment exist? If so: confidence gate, blast-radius
       allowlist of untouchables, reversibility, audit logging, and human-in-loop
       above a threshold?
+- [ ] **Cross-layer identity and device trust (§5, §7) — Medium:** are user,
+      workload and device identities joined into one entity, do image-signature
+      failures and reachable-vulnerability findings feed runtime risk, and does
+      the SOAR containment set include revoking device trust? Zero files from
+      `grep -rliE 'revoke.{0,30}device|device.{0,30}(cert|trust|posture)' soar/ playbooks/`
+      (point it at the SOAR playbook directory) means device revocation is
+      missing.
 - [ ] Is every alert dispositioned, and do FP dispositions feed back into tuning
       (suppression-with-expiry / allowlist)?
 - [ ] Are SOC metrics outcome-based (precision, time-to-disposition, runbook
