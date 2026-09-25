@@ -193,9 +193,19 @@ registration, admission-policy changes, break-glass use (§7.5), bypass events (
 | Unsigned-image admission attempt in prod | Either an attack or a broken pipeline — both urgent |
 | Secret-scanning push-protection bypass approved | Human judged a secret OK — verify |
 | Break-glass credential checkout | By definition exceptional |
+| A version of your own package published with no matching tag/CI run, or from an unusual identity or time | Stolen publish token — the worm pattern |
+| Registry token used from an unexpected IP, or a new token created | Credential theft staging a publish |
+| Unexpected dependency added in your own released package | Tampered release, even when the publish path looked normal |
 
 Each detection needs an owner and a tested response path; a detection nobody drills is a
 dashboard widget.
+
+Keep a **pipeline and publisher-compromise playbook** with named roles and an escalation
+path. It covers revoking every CI, registry and cloud token the pipeline held
+(`npm token revoke`, `rules/01` §1.10); marking bad versions with `npm deprecate` (or the
+registry's equivalent), and unpublishing where the registry's policy allows; and notifying
+consumers through an advisory. (OWASP: GitHub Actions Security cheat sheet; NPM Security
+cheat sheet)
 
 ## 7.4 Backup & restore testing
 
@@ -313,6 +323,7 @@ found nothing** — the second reading being a conclusion about the target
 - [ ] CI/CD, deploy, admission, registry, and control-plane audit events stream to tamper-resistant storage with ≥1y retention; pipeline identities are alertable principals
 - [ ] Deploy traceability: digest → source SHA → run → approver queryable in seconds; deploy markers in observability
 - [ ] High-signal alerts wired: release-workflow modification, runner registration, policy change, unsigned-image attempt, break-glass use, push-protection bypass
+- [ ] **Own-package publishes reconciled (§7.3.1), High:** `comm -13 <(git tag -l 'v*' | sed 's/^v//' | sort) <(npm view <pkg> versions --json | jq -r 'if type=="array" then .[] else . end' | sort)` prints nothing (any output is a version published without a release tag); a publisher-compromise playbook names owners and covers revoke, deprecate/unpublish, and consumer notice
 - [ ] Backup inventory covers state/registry/git/secrets/keys; restores tested on schedule against RPO/RTO; backups immutable, in a separate trust domain, not deletable by prod-compromising credentials
 - [ ] Break-glass documented per gate, alarmed on use, time-bound, post-reviewed, reconciled to git; routine admin bypass absent
 - [ ] Feedback loop metrics tracked: gate latency, exception age/count, remediation SLAs, rollback drill and restore test recency

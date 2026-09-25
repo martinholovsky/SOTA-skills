@@ -15,7 +15,7 @@ not the code you shipped, and yesterday's green build can be today's compromised
 |---|---|---|
 | npm/pnpm/yarn | package-lock.json / pnpm-lock.yaml / yarn.lock | `npm ci` / `pnpm install --frozen-lockfile` / `yarn install --immutable` |
 | Python | uv.lock / poetry.lock / requirements.txt **with hashes** | `uv sync --locked` / `poetry check --lock && poetry install --no-root` / `pip install --require-hashes -r requirements.txt` |
-| Go | go.mod (pins) + go.sum (authenticates); +GONOSUMCHECK never set | `go mod verify`; CI fails on a dirty `go mod tidy` diff |
+| Go | go.mod (pins) + go.sum (authenticates); `GOSUMDB=off` / wildcard `GONOSUMDB` never set | `go mod verify`; CI fails on a dirty `go mod tidy` diff |
 | Rust | Cargo.lock (commit it for libs too) | `cargo build --locked` |
 | Ruby | Gemfile.lock | `bundle install --frozen` / `BUNDLE_FROZEN=true` |
 | Docker | digest pins (rules/04 §4.3) | `FROM image@sha256:...` |
@@ -114,6 +114,14 @@ extra-index-url = https://pypi.internal.acme/simple/
 - Artifact proxy bonus: a caching proxy gives you an immutable local copy (left-pad/
   unpublish resilience), an audit log of everything fetched, and a single enforcement
   point — strongly preferred over direct registry access from CI.
+- **Package-manager config is committed and read-only during the build.** `.npmrc`,
+  `pip.conf`/`uv.toml`, `.yarnrc.yml`, Go env in the CI file: CI uses the reviewed copy, and
+  no step rewrites it (`npm config set`, `pip config set`, `go env -w`). Switches that turn
+  off TLS or checksum verification are findings wherever they appear: npm
+  `strict-ssl=false`, pip `--trusted-host`/`PIP_TRUSTED_HOST`, uv `--allow-insecure-host`,
+  `GOINSECURE`, `GOSUMDB=off`, `NODE_TLS_REJECT_UNAUTHORIZED=0`. Optionally a scheduled
+  health job checks registry reachability, cache permissions and cached-artifact checksums.
+  (OWASP: CI/CD Security cheat sheet; NPM Security cheat sheet; SCVS 3.5, 4.16)
 
 ## 3.4 Typosquatting & malicious-package indicators
 
@@ -138,6 +146,9 @@ Review *new* dependencies (human + automated) for:
   **Verify every AI-suggested dependency actually exists with real history** (downloads,
   age, repo) before adding it — never `pip install`/`npm i` a name straight from a model.
   An approved-package allowlist plus the §3.7 cooldown blunts both this and typosquats.
+  **Package-level** signals each trigger a manual review before adoption, AI-suggested or
+  not: first publish only days or weeks old, negligible downloads, a lone maintainer with
+  no other packages. (OWASP: Secure Coding with AI cheat sheet)
 - **Freshness/maintainer churn**: version published < 5–7 days ago (see cooldown, §3.7),
   brand-new maintainer on an old package, ownership transfer right before a release —
   the xz-utils pattern.
@@ -436,7 +447,8 @@ So require a second value that **cannot** be produced from plausibility:
 - [ ] Lockfiles committed for every manifest; CI/Docker builds use frozen/hash-verified installs; no `npm install`/bare `pip install` in CI
 - [ ] Dependency-review gate on PRs, required, failing on high severity + license denylist
 - [ ] No `--extra-index-url` public/private mixing; npm internals scoped; GOPRIVATE set; internal names reserved publicly; fetches go through a caching proxy with audit log
-- [ ] Install scripts disabled by default in CI (`--ignore-scripts`/pnpm allowlist); new-dependency review covers install hooks, obfuscation, maintainer churn
+- [ ] Install scripts disabled by default in CI (`--ignore-scripts`/pnpm allowlist); new-dependency review covers install hooks, obfuscation, maintainer churn, and package age / downloads / sole-maintainer signals (§3.4)
+- [ ] **No TLS/checksum disablers and no build-time config rewrites (§3.3), High:** `grep -rn -E 'strict-ssl[[:space:]]*=[[:space:]]*false|strict-ssl false|trusted-host|PIP_TRUSTED_HOST|allow-insecure-host|GOINSECURE|GOSUMDB[=:[:space:]]+"?off|NODE_TLS_REJECT_UNAUTHORIZED[=:[:space:]]+"?0|(npm|pnpm|yarn|pip|uv|poetry) config set|go env -w' .` over CI files, Dockerfiles and committed rc files is empty; the rc files CI reads are tracked (`git ls-files`)
 - [ ] **Did a scanner fail with errors naming the toolchain's own paths?** (§3.6b) That is a
       stale tool build after a toolchain upgrade, not a finding — the tells are toolchain
       paths and a message naming a version. Rebuild it, invoke by absolute path (a

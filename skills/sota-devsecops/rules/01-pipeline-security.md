@@ -118,6 +118,11 @@ did not.
   policies, scoped secrets, and a runner egress firewall) was preview/announced as of
   mid-2026. Until those are GA and adopted, SHA pinning remains the control; don't accept
   "immutable actions will fix it" in review.
+- **Vet before you allowlist, and prefer fewer actions.** Each third-party action gets the
+  upstream-health check of `rules/10` §5 (owner, contributor count, last push, archived)
+  plus a read of the `permissions:` and secrets it asks for. An action that only wraps one
+  API call is better replaced by a `gh`/`curl` step — `gh` ships on GitHub-hosted runner
+  images. (OWASP: GitHub Actions Security cheat sheet)
 
 ## 1.4 Untrusted PR code: `pull_request_target`, `workflow_run`, `issue_comment`
 
@@ -159,6 +164,17 @@ Safe patterns, in order of preference:
 Same logic applies to `issue_comment`-triggered "/test" bots: the comment author may not
 be the PR author; verify `author_association` is `MEMBER`/`OWNER` AND resolve the exact SHA
 that was reviewed, not the branch head (TOCTOU: attacker pushes after approval comment).
+Prefer a **label** as the approval signal: applying one needs triage access or above,
+while any account can post a comment.
+
+- **`workflow_run` is privileged even when its trigger was not.** GitHub's own docs state the
+  triggered run can access secrets and write tokens although the upstream run could not, so
+  its artifacts are attacker-writable input (artifact poisoning). Where both workflows are
+  yours and trusted, a `workflow_call` reusable workflow keeps the chain in one run.
+- **Where a privileged job must check out PR content at all (pattern 3), it uses the full
+  commit SHA that was approved, never a name.** `github.head_ref`,
+  `pull_request.head.ref`, `workflow_run.head_branch` and `refs/pull/N/head` all move when
+  the author pushes again. (OWASP: GitHub Actions Security cheat sheet)
 
 ## 1.5 Script injection in workflow expressions
 
@@ -248,6 +264,8 @@ configuration is usually valid YAML with no expression in it.
   content influences build output). **For release/publish/signing workflows, disable
   build caching outright** — a single poisoned cache entry restored into a job that signs
   or publishes taints the released artifact; the speedup isn't worth the supply-chain risk.
+- No interactive access into production runners (§1.10). The host under the runner is
+  `rules/04` §4.6.1.
 
 ## 1.7 Protected branches, environments, signed commits
 
@@ -272,9 +290,16 @@ configuration is usually valid YAML with no expression in it.
 
 - CODEOWNERS entry for `/.github/workflows/` (and composite actions, reusable workflows)
   routing to the platform/security team. A workflow change IS a deployment-credential
-  change. The May 2026 "Megalodon" campaign pushed secret-stealing workflow commits to
-  5,500+ repos in a six-hour window — direct-push rights to workflow files plus no
-  workflow-modification alerting (rules/07 §7.3.1) is exactly what it exploited.
+  change. Widen it to **every file that runs at build or install time**: `package.json`
+  (lifecycle scripts), Dockerfiles and compose files, Makefiles, `setup.py`/`pyproject.toml`,
+  `.npmrc`, files carrying `//go:generate`, deploy scripts, and agent rules files
+  (`AGENTS.md`, `CLAUDE.md`). CODEOWNERS only *requests* review; merges block only when the
+  branch rule or ruleset turns on required code-owner review. An AI agent's edit to these
+  paths gets the same human review. The May 2026 "Megalodon" campaign pushed
+  secret-stealing workflow commits to 5,500+ repos in a six-hour window — direct-push
+  rights to workflow files plus no workflow-modification alerting (rules/07 §7.3.1) is
+  exactly what it exploited. (OWASP: GitHub Actions Security cheat sheet; Secure Coding
+  with AI cheat sheet)
 - Reusable workflows (`workflow_call`) centralize hardened patterns: callers can't weaken
   pinned steps inside them. Pin the reusable workflow reference by SHA too
   (`uses: org/ci/.github/workflows/build.yml@<sha>`).
@@ -305,6 +330,11 @@ configuration is usually valid YAML with no expression in it.
   URL embedding it) print in cleartext. Register any value you compute from a secret with
   `echo "::add-mask::$VALUE"` before it can be printed. Never log request bodies/headers
   in CI; set `ACTIONS_STEP_DEBUG` consciously.
+- **No interactive observation of a production pipeline.** No SSH-into-the-runner debug
+  actions (tmate/upterm-style) in protected workflows, no `pods/exec`/`pods/attach` on
+  runner pods, and `ACTIONS_STEP_DEBUG`/`ACTIONS_RUNNER_DEBUG` unset for protected
+  workflows. Anyone who can run a workflow can also turn debug logging on for a re-run.
+  (OWASP: Secrets Management cheat sheet)
 - **Never `secrets: inherit` when calling a reusable workflow** — it hands the called
   workflow *every* secret in scope. Pass each secret explicitly with `secrets:`
   (least privilege), and pin the reusable workflow by SHA (§1.8).
@@ -447,4 +477,8 @@ durable verdict everywhere (`rules/11` §4), not just where it was first fixed.
 - [ ] Default branch ruleset: PR + review required, stale-approval dismissal, exact required checks, no force-push, applies to admins; release tags protected
 - [ ] Deploy jobs use `environment:` with required reviewers and branch policy; prod secrets live at environment scope
 - [ ] CODEOWNERS covers `.github/workflows/`; reusable workflows pinned by SHA
+- [ ] **Build-executing files owned and owner review enforced (§1.8), High if missing:** list them with `git ls-files | grep -E '(^|/)(package\.json|Dockerfile[^/]*|docker-compose[^/]*\.ya?ml|compose\.ya?ml|Makefile|setup\.py|pyproject\.toml|\.npmrc|AGENTS\.md|CLAUDE\.md)$|^\.github/'` plus `grep -rln '//go:generate' .` and match each against CODEOWNERS; `gh api repos/O/R/rules/branches/main --jq '[.[]|select(.type=="pull_request")|.parameters.require_code_owner_review]|any'` (or classic protection `.required_pull_request_reviews.require_code_owner_reviews`) must print `true`
+- [ ] **Privileged jobs check out by SHA (§1.4), High:** `grep -rn -E 'ref:[[:space:]]*\$\{\{[[:space:]]*github\.(head_ref|event\.pull_request\.head\.ref|event\.workflow_run\.head_branch)|refs/pull/' .github/workflows` has no hit in a `pull_request_target`/`workflow_run`/`issue_comment` job
+- [ ] **No interactive debug path into production runners (§1.10), High:** `grep -rn -E 'tmate|upterm|debugger-action|pods/exec|pods/attach' .github/workflows <runner-RBAC-dir>` is empty; `gh variable list` and `gh secret list` show no `ACTIONS_STEP_DEBUG`/`ACTIONS_RUNNER_DEBUG`
+- [ ] **Third-party actions inventoried and vetted (§1.3), Medium:** `grep -rhn -E 'uses:[[:space:]]*[A-Za-z0-9_-][A-Za-z0-9_.-]*/' .github/workflows | grep -v -E 'uses:[[:space:]]*(actions|github)/'` — each hit has an upstream-health record, or is replaced by a `gh` step
 - [ ] No secrets echoed, embedded in URLs, or passed through step outputs; rotation path documented

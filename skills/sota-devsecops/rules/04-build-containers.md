@@ -157,6 +157,14 @@ secrets are not (§4.2).
   patching).
 - Debugging distroless: use ephemeral debug containers (`kubectl debug`) or `:debug`
   variants in non-prod — do NOT add a shell to the prod image "temporarily".
+- **Images have a maximum age in production** (e.g. 30 days, first- and third-party alike).
+  Rebuild when the base's packages change, not only on the weekly cron, and redeploy
+  inside the limit. Never patch a running container (`kubectl exec … apt-get upgrade`):
+  the fix is a rebuild plus redeploy, or the next restart silently reverts it. Measure age
+  from the build record (provenance, SBOM store, push time), not the image config's
+  `created` field — reproducible images pin it: `crane config
+  gcr.io/distroless/static-debian12:nonroot` reports `1970-01-01T00:00:00Z` (measured
+  2026-09-25). (OWASP: DSOMM; Kubernetes Security cheat sheet)
 
 ### 4.3.1 Base image upgrade flow (make it boring)
 
@@ -244,6 +252,35 @@ re-resolve a tag mid-pipeline (a re-resolved tag is a TOCTOU window).
 - Cache keys must include the trust context: a release build restoring a cache produced
   by an untrusted PR build inherits whatever the PR poisoned (rules/01 §1.6).
 
+### 4.6.1 The host under the pipeline
+
+Self-hosted runners and CI servers are production-tier assets, hardened like one.
+
+- The runner/agent process runs as a **non-root** OS account. The GitHub runner's
+  `config.sh` refuses root unless `RUNNER_ALLOW_RUNASROOT` is set, so that variable in a
+  provisioning file is a finding; in Kubernetes, no `runAsUser: 0` on runner pods.
+- Runner and CI-server hosts and images are patched on a schedule, kept in a versioned
+  inventory, and built to a CIS or STIG baseline.
+- Nothing sensitive survives a job: no credentials, tokens or checkouts left on disk.
+  Ephemeral runners (rules/01 §1.6) give you this by construction; a persistent host needs a
+  workspace and credential wipe that is itself verified.
+  (OWASP: CI/CD Security cheat sheet; GitHub Actions Security cheat sheet; Secrets Management cheat sheet)
+
+## 4.7 Developer endpoints are build infrastructure
+
+A laptop that holds signing keys, publish tokens or push rights to release branches is part
+of the supply chain, and its IDE extensions run with the developer's full access.
+
+- Allow only vetted IDEs and extensions. VS Code enforces this with the `extensions.allowed`
+  setting (`AllowedExtensions` policy, since 1.96), by publisher, extension ID or pinned
+  version; other IDEs need their own allowlist or a private marketplace.
+- Keep an inventory of installed extensions and plugins
+  (`code --list-extensions --show-versions`), so a malicious extension can be traced to
+  the machines that have it.
+- Machines holding signing or publish credentials run endpoint protection and are enrolled
+  in device management; better still, those credentials live in CI (rules/02 §2.6).
+  (OWASP: Software Supply Chain Security cheat sheet)
+
 ## Audit checklist
 
 - [ ] No unpinned/unverified network fetches in builds (no `curl | sh`); toolchain versions pinned; builds run from clean CI checkouts only
@@ -254,3 +291,6 @@ re-resolve a tag mid-pipeline (a re-resolved tag is a TOCTOU window).
 - [ ] Registry: immutable tags on; deploys reference digests (no `:latest`); CI is the sole writer to release repos via OIDC; promotion copies verified digests, never rebuilds
 - [ ] Retention preserves released digests + attestations; pull-through cache for upstream bases
 - [ ] Build infra isolated from runtime; no docker.sock mounts; ephemeral or rootless builders; caches scoped by trust boundary
+- [ ] **Runner hosts hardened (§4.6.1), High:** `grep -rn -E 'RUNNER_ALLOW_RUNASROOT|runAsUser:[[:space:]]*0[[:space:]]*$' <runner provisioning: Dockerfiles, IaC, Helm values>` is empty; hosts/images on a patch schedule with a CIS/STIG baseline; no credentials left between jobs
+- [ ] **Maximum image age enforced; no in-place patching (§4.3), Medium:** running digests (`kubectl get pods -A -o jsonpath='{..imageID}'`) checked against their build date from provenance/SBOM store, none past the limit; `grep -rn -E '(kubectl|docker|podman) exec[^|;]*(apt-get|apt|apk|yum|dnf|microdnf|pip|npm) +(install|upgrade|update|add)' <runbooks, scripts>` is empty
+- [ ] **IDE extensions allowlisted and inventoried (§4.7), Medium:** managed VS Code settings contain `"extensions.allowed"` (`grep -c '"extensions.allowed"' <managed settings.json>` is not `0`); an extension inventory exists for machines holding signing/publish credentials
