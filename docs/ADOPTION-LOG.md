@@ -6087,6 +6087,13 @@ logging) → rules/23, each renumbered §1 (translation rows above the log). Cit
 as the seam: 0, 3 and 5 external citations respectively, all rewritten, plus the fail-open ones
 the section-reference gate cannot see (qualified cross-skill citations of the removed §5).
 
+**Correction, 2026-09-25 (session close).** "0 … all rewritten" was wrong twice. rules/05 §10 had
+**1** external citation (`sota-golang` rules/04, rewritten in this batch), and two citations of the
+old rules/04 §6.1 were **not** rewritten: `README.md` and `docs/INDEX.md`, which invariant 18 does
+not read. Found at close by a `git grep` of every moved section, qualified or not, across the tree; both now
+point at rules/22 §1.1. The routing-recall case text naming rules/08 for MCP attack classes was
+updated to rules/08 and rules/23 in the same change.
+
 | skill | implemented | extended | already covered | blocked by the cap | audit probes |
 |---|---|---|---|---|---|
 | `sota-code-security` | 116 | 33 | 5 | 0 | 109 |

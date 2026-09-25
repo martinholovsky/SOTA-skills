@@ -18,7 +18,7 @@ drift; regenerate rather than trusting them.
 | Section | Status |
 |---|---|
 | Idioms / language baseline | **universal** — all 9 |
-| Security | **universal** — all 9 (PHP splits it across three files; jvm carries XML in its own `rules/07` since 2026-09-25, split out of `rules/04` when the OWASP adoption would have taken that file past the cap — a size split, not a principled difference; likewise since the same day, golang and python carry supply chain in `rules/08`, rust carries `std::process::Command` in `rules/08`, and js/ts carries child processes and SSRF in `rules/08` — all four split out of a security file the OWASP adoption had filled to the cap) |
+| Security | **universal** — all 9 (PHP splits it across three files; jvm carries XML in its own `rules/07` since 2026-09-25, split out of `rules/04` when the OWASP adoption would have taken that file past the cap — a size split, not a principled difference; likewise since the same day, golang and python carry supply chain in `rules/08`, rust carries `std::process::Command` in `rules/08`, and js/ts carries child processes and SSRF in `rules/08` — all four split out of a security file the OWASP adoption had filled to the cap; and jvm's web layer moved from `rules/04` §6 to `rules/08` §1 later that day, for the same reason) |
 | Performance | **universal** — all 9 |
 | Tooling / CI / supply chain | **universal** — all 9 |
 | Testing | **universal**, but usually *inside* the tooling file; only Python and JS/TS give it one of its own |
@@ -36,7 +36,7 @@ treatment"*. Every blank was checked by reading the headings of the skill behind
 |---|---|---|---|
 | **Errors** | 7 | **all 7** — c/c++ `01 §7`, jvm `01 §4`, python `03 §10`, js/ts `02 §Error handling`, .NET `02 §4`, php `01 §5`, ruby `01 §5` | 0 |
 | **Typing** | 7 | 2 — c/c++ `01 §6`, ruby `01 §6` | 5 — statically-typed languages have no gradual-typing story. **SUPERSEDED 2026-09-23:** by the row's own definition (c/c++ counts "type-system leverage"), rust `01 §3–4`, jvm `02 §1` and go `02 §5` were sections too, so 3 of these 5 were declaration gaps |
-| **Web / HTTP** | 5 | 2 — .NET `04 §4`, python `07 §1–2` (named by framework: FastAPI, Django) | 3 — rust, c/c++, jvm carry no web layer. **jvm was a real gap, not principled: written 2026-09-23 as `rules/04 §6` (ROADMAP 62).** **rust also had one**, `05 §7` service-edge defaults (axum/tower), declared the same day. Only **c/c++** is principled, and the map now shows it as `n/a` with that reason |
+| **Web / HTTP** | 5 | 2 — .NET `04 §4`, python `07 §1–2` (named by framework: FastAPI, Django) | 3 — rust, c/c++, jvm carry no web layer. **jvm was a real gap, not principled: written 2026-09-23 as `rules/04 §6` (ROADMAP 62); moved to `rules/08` §1 on 2026-09-25.** **rust also had one**, `05 §7` service-edge defaults (axum/tower), declared the same day. Only **c/c++** is principled, and the map now shows it as `n/a` with that reason |
 | **Memory / UB** | 7 | 0 | 7 — the GC languages' "Memory" sections are *performance* (allocation, GC pressure) and are already counted under Performance. **SUPERSEDED 2026-09-23:** go had a section (`05 §7`, unsafe and cgo), and the other six had a real gap, **their escape hatches into raw memory**, now written under one shared class (`sota-code-security` rules/06 §3) plus a section in each |
 
 **The Errors row was the loud one**: seven of seven blank, while `error handling &
