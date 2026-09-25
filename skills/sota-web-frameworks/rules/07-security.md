@@ -122,6 +122,18 @@ dependency updates + a fast patch path is the actual control (`sota-devsecops`).
 
 ## Audit checklist
 
+- [ ] **Start with an inventory generated from the tree, not recalled (sets scope; an
+      unlisted surface is an unaudited one)** — list every file that declares a server
+      action, route handler, Nitro handler, draft-mode entry, cache directive/tag,
+      invalidation call or proxy rewrite, then the config lines for matchers, rewrites,
+      redirects, headers/CSP, image hosts, action origins and source maps:
+      `grep -rlE "['\"]use (server|cache)|export (async )?(function|const) (GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)|draftMode|revalidate(Tag|Path)|updateTag|cacheTag|defineEventHandler|NextResponse\.(rewrite|redirect)" --include='*.ts' --include='*.tsx' --include='*.js' --include='*.mjs' --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.output .`
+      ;
+      `find . -maxdepth 2 -path ./node_modules -prune -o \( -name 'next.config.*' -o -name 'nuxt.config.*' -o -name 'proxy.*' -o -name 'middleware.*' \) -type f -exec grep -HnE 'matcher|rewrites|redirects|headers|remotePatterns|domains|productionBrowserSourceMaps|sourcemap|routeRules|Content-Security-Policy|allowedOrigins' {} +`
+      — record how many files the first command listed, as the audit's denominator. Browser source maps are off by default in both
+      stacks (Next `productionBrowserSourceMaps`, Nuxt `sourcemap.client`), so `true` is
+      the item to read; then check the deployed site for `*.js.map` it serves. OWASP:
+      Nextjs Security cheat sheet
 - [ ] **Public-env secret leak (CRITICAL)** —
       `grep -rnE '(NEXT_PUBLIC_|VITE_)[A-Z_]*(SECRET|KEY|TOKEN|PASSWORD|PRIVATE)' --include='*.ts' --include='*.tsx' --include='*.vue' .`
       ;

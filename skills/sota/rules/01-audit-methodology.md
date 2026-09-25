@@ -41,6 +41,14 @@ Agree these before reading a single line of code:
 - **Record exclusions.** Anything out of scope (vendored code, generated
   files, a service owned by another team) is written down, not silently
   skipped.
+- **Pick baseline or diff, and say which.** Reviewing only the change is the default. A
+  whole-codebase **baseline** is owed for: a new application, a major release, taking
+  over legacy code, a compliance cycle, a change to the architecture, and after an
+  incident. A diff review that turns up a serious concern **escalates** to a baseline of
+  the affected component — the defect class it exposed rarely lives only in the diff.
+  Where a full baseline is out of reach, extend it one component per cycle and record
+  the covered set, and hold a recurring joint review in which security, development and
+  operations read code together. OWASP: Secure Code Review cheat sheet; DSOMM.
 
 ## 1a. A changeset too large to hold at once — partition it, don't skim it
 
@@ -105,6 +113,20 @@ You cannot audit what you have not mapped. Enumerate:
   (`sota-devsecops` rules/10).
 - **Deploy & runtime config**: Dockerfiles/Containerfiles, K8s manifests and
   Helm charts, Terraform/IaC, network policies, GitOps definitions.
+- **History and people**: read the target's past incidents, postmortems and earlier
+  findings — a component that failed once is where to look again. Code in a language or
+  framework the team has little experience with raises the risk rating on its own. And
+  check that whoever judges the high-risk code knows both the language and its security
+  context; where they do not, write the gap into the report's scope rather than let a
+  pass look deeper than it was. OWASP: Code Review Guide v2; Secure Code Review cheat sheet.
+
+**Rank what to read first by complexity × churn.** Inside §1's crown jewels, order files
+by change frequency (`git log --since=1.year --format= --name-only | sort | uniq -c |
+sort -rn`) crossed with per-function cyclomatic complexity from any metrics tool. As a
+rough guide from the OWASP Code Review Guide v2: up to 10 is ordinary, 11–15 warrants a
+closer read, 16–20 a deep one, and above 20 also record a recommendation (Info) to split
+the function. Complexity sets reading order, not severity; the scoring model
+is `sota-testing` rules/01 §1.4, not repeated here.
 
 Then **map every inventory item to the routing table in `SKILL.md`** and load
 the matching skills' AUDIT modes. Skip skills with no matching surface; record
@@ -153,6 +175,14 @@ command line (needed for §4 reproducibility).
 - **Suppressions are findings too**: inspect existing `#nosec`,
   `# nosemgrep`, `nolint`, audit-ignore files and the like — each one is
   either justified (note it) or a hidden finding.
+- **Deprecated and banned APIs are findings in every language.** A call the platform has
+  marked deprecated is unmaintained surface with a known replacement; report it, and check
+  CI fails on it rather than printing a warning nobody reads — verified 2026-09-25:
+  `javac -Xlint:deprecation -Werror`, `clang -Werror=deprecated-declarations`,
+  `rustc -D deprecated`, `python -W error::DeprecationWarning` each exit non-zero on a use;
+  Go's staticcheck reports it as SA1019. Suppressing the warning is the suppression case
+  above. Per-language banned lists live in the language skills (e.g. `sota-c-cpp`
+  rules/04 §1). Source: SCSVS S2.1.A2.
 
 ### Collect deterministically, then judge
 
@@ -393,6 +423,10 @@ one covers coverage, tooling and hygiene. Both run.
       applicable skill's AUDIT mode executed (skips recorded with reasons)?
 - [ ] Crown-jewel paths (auth, secrets, money/data flows, internet-facing,
       untrusted-LLM-input) audited in depth, first?
+- [ ] **Medium** — Baseline-or-diff choice stated against the §1 triggers, and every
+      serious diff-review concern escalated to a baseline of that component (§1)?
+- [ ] **Medium** — Past incidents/postmortems read, unfamiliar languages rated up,
+      reviewer competence gaps named in scope, and files ordered by complexity × churn (§2)?
 
 **Tooling & triage**
 - [ ] Tool names/versions verified current before running (renames/forks
@@ -403,6 +437,8 @@ one covers coverage, tooling and hygiene. Both run.
       false positives filtered, duplicates merged?
 - [ ] Exploitability re-rated in context (tool severity treated as input)?
 - [ ] Existing suppression comments reviewed?
+- [ ] **Medium** — Deprecated-API use reported, CI fails on deprecation warnings, and each
+      silenced one justified (§3): `grep -rnE 'SuppressWarnings\(.*"(deprecation|removal)"|allow\(deprecated\)|-Wno-deprecated|ignore::DeprecationWarning|"ignore"[^)]*DeprecationWarning|SA1019|disable CS0618' .`
 - [ ] Manual passes done for logic, authz/BOLA, boundary crossings, races,
       crypto misuse, prompt-injection paths?
 - [ ] **Silent-control pass run** over the controls confirmed to exist — inert

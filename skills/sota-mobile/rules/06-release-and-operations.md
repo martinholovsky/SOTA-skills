@@ -15,7 +15,7 @@ The defining constraint of mobile: **you cannot roll back a shipped binary.** St
 
 - **Data safety form** must accurately cover app + every SDK's collection and sharing; Google compares declarations against observed behavior and enforcement actions follow mismatches.
 - **Target API ratchet:** API 36 required for new apps and updates by **Aug 31, 2026** (API 35 floor for Wear OS/TV). **16 KB page-size support** required since **Nov 1, 2025** for apps targeting Android 15+ with native code (rules/01 has the behavior-change details for each bump).
-- **Play App Signing** (Google holds the app signing key) is standard: protect the *upload key*, document the upload-key reset process before you need it, and keep signing entirely in CI.
+- **Play App Signing** (Google holds the app signing key) is standard: protect the *upload key*, document the upload-key reset process before you need it, and keep signing entirely in CI. Custody is half of it: 6.10 checks the signature on the artifact itself.
 - AAB is the required upload format. The free **pre-launch report** runs your build on a device farm per track upload — read it; it catches crashes, accessibility, and security warnings at zero cost.
 - Tracks: internal → closed → open → production with **staged rollout** at a percentage you control. Critical mechanic: a *halted* staged rollout leaves the affected users on the bad build — your fix path is always a new, higher version rolled out fast (see 6.5).
 
@@ -116,11 +116,13 @@ enum OrderStatus: RawRepresentable, Decodable {
   4. Forced test crash symbolicates (6.6).
   5. Play pre-launch report / TestFlight feedback reviewed.
   6. The shipped artifact is not debuggable (rules/04 §4.9). `apkanalyzer manifest debuggable` on the release APK prints `false`, and the exported IPA's entitlements carry no `get-task-allow` = true. Check the artifact rather than the build config, because re-signing steps and copied build types change it.
+  7. The shipped artifact's signature is checked (6.10): v2+ scheme, release certificate, key size; `codesign` strict verification and CodeDirectory version for the IPA.
 
 ### 6.10 Release cadence and build hygiene
 
 - Ship on a **fixed cadence** (1–2 weeks) from a release branch/train. Small diffs make rollout gates meaningful, regressions bisectable, and hotfixes surgical; quarterly big-bang releases maximize undiagnosable risk and gate-meaningless rollouts.
 - **CI-only builds reach stores.** No laptop builds: signing keys and store credentials live in CI secrets with least privilege; provisioning/signing is reproducible (fastlane match or equivalent, Play App Signing).
+- **Verify the signature on the artifact you ship**, as an RC-ritual step (6.9). Android: `apksigner verify --verbose --print-certs app-release.apk` must show v2 or v3 as `true` (a v1-only APK is a finding; v1 next to v2+ is expected when `minSdk` is below 24, because devices before Android 7.0 read only v1), a signer DN other than `CN=Android Debug`, and for RSA a key of at least 2048 bits, the NIST SP 800-131A floor for signature generation. iOS: `codesign --verify --deep --strict` passes on the exported app, and `codesign -dvvv` reports `CodeDirectory v=20400` or higher, since iOS 15 and later refuse to launch apps signed in older formats and require DER entitlements. OWASP: MASTG-TEST-0038, MASTG-TEST-0081, MASTG-TEST-0220, MASTG-TEST-0224, MASTG-TEST-0225.
 - Every production build is traceable: commit SHA, CI run, and flag snapshot embedded in the binary and visible in a hidden debug/about screen — "which exact code is crashing" must never require archaeology.
 - Maintain user-readable release notes and an internal changelog recording active experiments/flags per build — six months later, "what was different about 4.12?" must have an answer.
 
@@ -136,5 +138,6 @@ enum OrderStatus: RawRepresentable, Decodable {
 - [ ] OTA (if used): bundle↔binary compatibility enforced in CI; staged, rollback-able in minutes, crash-gated; nothing review-worthy shipped via OTA; store builds still ship regularly.
 - [ ] All API requests carry version headers; additive-only evolution on live endpoints; client decoders tolerate unknown fields/enum cases; contract tests pin the oldest supported client; sunsets use cohort measurement → in-app notice → forced update → explicit 426.
 - [ ] Test pyramid intact: unit bulk; snapshots incl. dark mode/font-scale/RTL; integration incl. DB migration tests and sync edge cases; ≤ ~10 E2E flows; nightly real-device-farm matrix.
-- [ ] RC ritual documented and followed (upgrade-path, fresh-install, forced-update, symbolication, pre-launch report, non-debuggable artifact check).
+- [ ] RC ritual documented and followed (upgrade-path, fresh-install, forced-update, symbolication, pre-launch report, non-debuggable artifact check, artifact signature check).
+- [ ] **HIGH** (6.10) The shipped APK is signed v2+ with a release certificate and an RSA key of 2048 bits or more; the exported iOS app verifies strictly with CodeDirectory v=20400 or higher. Probe (prints only failures): `apksigner verify --verbose --print-certs app-release.apk | awk '/Verified using v(2|3) scheme/ && /: true$/ {ok=1} /certificate DN: .*CN=Android Debug/ {print "FAIL: debug certificate"} /key algorithm:/ {rsa = ($NF == "RSA")} rsa && /key size \(bits\):/ && $NF+0 < 2048 {print "FAIL: RSA key of " $NF " bits"} END {if (!ok) print "FAIL: no v2 or v3 signature"}' ; codesign --verify --deep --strict Payload/App.app && codesign -dvvv Payload/App.app 2>&1 | awk -F'v=' '/CodeDirectory v=/ {split($2,a," "); if (a[1]+0 < 20400) print "FAIL: CodeDirectory v=" a[1]}'`
 - [ ] Fixed release cadence; CI-only signed builds; commit SHA + flag snapshot traceable from any production binary.

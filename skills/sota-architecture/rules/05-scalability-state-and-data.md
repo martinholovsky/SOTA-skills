@@ -124,6 +124,14 @@ dropping), not into the same tables as hot transactional rows.
 | Schema-per-tenant / DB-per-tenant | Medium–high | Medium | Hundreds of tenants, compliance asks |
 | Silo: dedicated stack per tenant | Highest | Highest | Regulated/enterprise tier, residency requirements |
 
+**Rule:** Every shared layer follows the tenant's tier, and that includes the cache. A
+silo or high-isolation tenant gets its own cache instance or cluster. Key prefixes in a
+shared Redis are not enough, because a prefix keeps keys apart only while every code path
+builds its keys correctly. One shared instance also shares memory, eviction, one
+`FLUSHALL` and every credential that can reach it. Pooled tenants may share an instance
+with tenant-scoped keys (§4). Either way the check comes first: authorize the request
+before reading a cached value. (OWASP: Multi Tenant Security cheat sheet)
+
 **Rule:** In pooled models, tenant isolation must be enforced *below* the
 application's good intentions: row-level security in the DB, or a mandatory
 tenant-scoped repository layer that makes it impossible to build a query without
@@ -255,6 +263,7 @@ OWASP: Multi Tenant Security cheat sheet.
 - [ ] If sharded: was the partition key chosen from access patterns (ADR)? Are logical→physical partitions resharding-friendly? Any cross-shard transactions or joins?
 - [ ] Does every large table/topic have retention, archival, and erasure paths?
 - [ ] Is the multi-tenancy model explicit per tenant tier? Is tenant isolation enforced below application code (RLS or mandatory scoped layer) with cross-tenant access tests?
+- [ ] **Isolated tiers have their own cache (§7), High:** for each silo or high-isolation tenant, its cache endpoint differs from the pooled one. List the endpoints with `grep -rnE -i '(redis|valkey|memcached?|cache)[_.-]?(url|uri|host|endpoint)' .`. A silo tenant that resolves to the shared endpoint is a finding.
 - [ ] Is tenant context derived from identity (not request params) and present in queries, cache keys, messages, logs, metrics?
 - [ ] Are per-tenant rate/concurrency/queue quotas in place in pooled tiers?
 - [ ] Is all user-triggered heavy work async with job handles, and are background jobs on dedicated workers?

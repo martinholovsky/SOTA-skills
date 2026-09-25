@@ -155,6 +155,21 @@ Prevention rules, in order of preference:
 4. **Hierarchies with timeouts at the boundary.** `try_lock` with backoff
    only as a last resort — it converts deadlock into livelock if everyone
    retries in lockstep (add jitter).
+5. **Encapsulate the lock.** The lock that guards a resource is a private
+   object owned by the code that manages the resource — never something a
+   caller can also reach. Locking on a reachable object lets unrelated code
+   join your lock order (deadlock), hold it indefinitely (denial of service),
+   or mutate the state without it. Unsafe: `lock(this)` / `synchronized(this)`
+   and Java `synchronized` methods on a type untrusted code can hold (they lock
+   `this`; `static synchronized` locks the class object, reachable via
+   `getClass()`); `lock(typeof(T))` / `synchronized(T.class)`; string literals
+   or interned strings, and in Java boxed primitives/`Boolean` (shared
+   instances); in Go, a `sync.Mutex` **embedded** in a struct promotes `Lock`/
+   `Unlock` to every holder of the value — use a named unexported field
+   (`mu sync.Mutex`). Safe: `private final Object lock = new Object()` (Java),
+   `private readonly Lock _lock = new()` (C# 13/.NET 9+, else a private
+   `object`), and in Python a `_lock` attribute never returned or documented.
+   OWASP: ASVS 5.0 V15.4.3.
 
 ```python
 # GOOD — canonical two-resource ordering by stable key.
@@ -218,6 +233,11 @@ do real work in a raw handler.
 - [ ] Multi-lock code: is there a documented order? Build the lock graph from
       the call sites; any cycle is CRITICAL.
 - [ ] Callbacks/virtual calls/logging/awaits inside lock regions?
+- [ ] Lock reachable by outside code (rule 5; HIGH where untrusted or
+      plugin code can reach the object, else MEDIUM): `grep -rnE
+      '(^|[^A-Za-z0-9_])(lock|synchronized) *\( *((this|getClass\(\)|[A-Za-z_][A-Za-z0-9_]*\.class) *\)|"|typeof *\()|(public|protected)( [a-z]+)* synchronized |synchronized( [a-z]+)* (public|protected) |^[[:space:]]+\*?sync\.(RW)?Mutex[[:space:]]*(//.*)?$'
+      --include='*.cs' --include='*.java' --include='*.kt' --include='*.go' .`
+      — a Go hit is an embedded mutex; confirm the enclosing type escapes.
 - [ ] Wait-for cycles without locks: tasks awaiting each other, self-feeding
       queues, pool-within-pool acquisition.
 - [ ] RwLocks under write-heavy or reader-storm load: starvation analysis.

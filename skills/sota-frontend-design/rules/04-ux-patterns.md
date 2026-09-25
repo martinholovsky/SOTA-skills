@@ -31,6 +31,17 @@ Always set the full attribute stack — this is free conversion and accessibilit
 - `autocomplete` tokens per WCAG 1.3.5 (required at AA for user-data fields): `name`, `email`, `tel`, `street-address`, `postal-code`, `cc-number`, `new-password`/`current-password`, `one-time-code`, `bday`. Never `autocomplete="off"` on identity/payment fields — browsers ignore it and users hate it.
 - `inputmode` controls the mobile keyboard (`numeric`, `decimal`, `tel`, `email`, `url`, `search`); `type="number"` only for true quantities (it scroll-hijacks and strips leading zeros — wrong for ZIP/OTP/card numbers).
 - Password fields: show/hide toggle, no paste-blocking (paste-blocking fights password managers = security harm), `minlength` honest with policy, current vs new autocomplete distinction.
+  - **Masked is the resting state.** The field ships as `type="password"` in the markup; the
+    toggle is a user action that swaps it to `text` and back (an `aria-pressed` button naming
+    the field), never a default of `text` or a page that remembers "shown". Revealing only the
+    most recently typed character is the other acceptable reveal.
+  - **Username then password, one Tab apart.** Keep the two fields adjacent in DOM and focus
+    order with nothing focusable between them (no "Forgot password?" link, help icon or
+    show/hide button placed before the password field): password managers and keyboard users
+    both expect a single Tab to move from one to the other.
+  - The no-paste-blocking rule covers the username and the MFA/OTP code field too — a code
+    copied from an authenticator or an email must paste. OWASP: ASVS 5.0 V6.2.6,
+    Authentication cheat sheet, Go-SCP (communicating authentication data).
 - Never disable the submit button as the only validation mechanism: a disabled submit with no explanation is a dead end. Allow submit, then focus the first error.
 
 ## 2a. Internationalization-aware UX
@@ -138,6 +149,16 @@ Error screens/pages: plain-language what-happened, what-now (retry button, statu
   trust failure.
 - Session expiry mid-form (WCAG 2.2.5/2.2.6 adjacent): warn before expiry, allow re-auth without
   losing entered data — re-auth-and-wipe is the worst version of this bug.
+- **Idle expiry is visible, not discovered.** The server owns the idle timeout (sota-code-security
+  rules/17); the client mirrors it with a timer so the user sees a countdown warning with an
+  "Stay signed in" action before it lapses. When it does lapse, the client acts at once: it
+  sends the same sign-out request the sign-out control sends (so the server invalidates the
+  session and clears site data), removes sensitive rendered content from the DOM and in-memory
+  stores, and lands on a signed-out screen that says why. Leaving an account page on screen until
+  the next click fails is the bug. A form draft kept for the re-auth path above is held out of
+  view and restored only after the same user signs back in. The client timer is a courtesy —
+  extending it in the browser must never extend the server session.
+  OWASP: Session Management cheat sheet, Go-SCP (session management).
 
 ## 6. Destructive actions: undo > confirm
 
@@ -153,6 +174,11 @@ Error screens/pages: plain-language what-happened, what-now (retry button, statu
 - Max ~7 top-level destinations; beyond that, group or demote. Mobile: bottom tab bar for 3–5 core destinations (thumb zone); hamburger only for secondary overflow — it halves discoverability of whatever's in it.
 - URLs are UI: every meaningful state (selected tab, filters, search, pagination, opened record) is linkable and survives refresh/back. Back button must always behave — SPA navigation that breaks Back is a release blocker.
 - Search for content-heavy products: prominent, keyboard-reachable (`/` or Cmd+K), with recent queries and typo tolerance.
+- **Sign-out is on every authenticated view**, in the same place each time (header or account
+  menu, not only a settings page), reachable by keyboard and on mobile without hunting. Sign-out
+  changes state, so it is a `POST` (a form button, not a bare `GET` link) to a route that
+  invalidates the session server-side. OWASP: Session Management, CSRF Prevention cheat sheets,
+  Go-SCP (session management).
 - Progressive disclosure: defaults visible, power options behind "Advanced"; settings grouped by user task, not by internal architecture. Wizard flows for genuinely sequential tasks only — show step count and allow backtracking without data loss.
 
 ## 7b. Lists, tables & data sets
@@ -231,6 +257,8 @@ Escalation ladder — use the *least* interruptive surface that fits:
 - [ ] Validation on blur → re-validate on input after first error; `:user-invalid` not `:invalid`; submit focuses first error; errors specific, adjacent, linked via `aria-describedby` + `aria-invalid`, not color-only
 - [ ] Failed submit preserves all user input; server errors map to fields; multi-field forms draft-persist
 - [ ] No paste-blocking, no `user-scalable=no`, no dead-end disabled submit
+- [ ] **Credential fields (§2) — MEDIUM**: password inputs are `type="password"` in markup (reveal is a toggle), username and password are one Tab apart, and no username/password/OTP field blocks paste. Password-named inputs declared as text: `grep -rniE '<input[^>]*type="text"[^>]*(name|id)="[^"]*(passw|pwd)|<input[^>]*(name|id)="[^"]*(passw|pwd)[^"]*"[^>]*type="text"' .`; paste handlers (a hit is a file to read — block-on-paste is the finding): `grep -rniE 'onpaste=|addEventListener\(.paste' .`
+- [ ] **Sign-out and idle expiry (§7, §5b) — MEDIUM**: every authenticated view carries a `POST` sign-out control in a consistent place; at server idle expiry the client clears sensitive rendered data and lands on a signed-out screen. Header/nav components with no sign-out control (a hit is a file to read — public-page headers legitimately lack one): `grep -rliE '<(header|nav)' --include='*.tsx' --include='*.jsx' --include='*.vue' --include='*.svelte' --include='*.html' . | xargs -r grep -LiE 'log.?out|sign.?out|log.?off'`
 - [ ] Loading: ~300ms grace before indicators; skeletons match final layout (zero CLS); buttons width-stable + double-submit guarded; optimistic updates roll back with explanation
 - [ ] Empty states differentiated (first-use vs filtered-zero vs error) with action; error states always include a recovery path
 - [ ] Destructive: undo pattern where reversible; confirms name the object + consequence, verb-labeled button, cancel focused; type-to-confirm only for top-tier irreversibles; destructive separated from frequent actions

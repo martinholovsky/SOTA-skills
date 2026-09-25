@@ -43,7 +43,7 @@ prefs.edit().putString("draft", text).commit()   // commit() blocks; apply() doe
 suspend fun saveDraft(text: String) = withContext(io) { dao.saveDraft(text) }
 ```
 
-- Tooling, debug builds: Android `StrictMode` (`detectDiskReads/detectNetwork().penaltyDeath()` in CI-instrumented runs), iOS Main Thread Checker + `os_signpost` spans. New StrictMode violations fail CI — that's the cheapest perf regression gate that exists.
+- Tooling, debug builds: Android `StrictMode` (`detectDiskReads/detectNetwork().penaltyDeath()` in CI-instrumented runs; never active in release, rules/04 §4.9), iOS Main Thread Checker + `os_signpost` spans. New StrictMode violations fail CI — that's the cheapest perf regression gate that exists.
 - Hidden main-thread work to hunt in audits: synchronous `SharedPreferences.commit()`, eager DI graph construction at startup, `DateFormatter`/`NumberFormatter` *creation* in list rows (creation is expensive; cache them), oversized `Codable` decodes in `@MainActor` contexts, synchronous `UIImage(named:)` of huge assets, blocking `.get()`/`runBlocking` on futures.
 - ANR specifics (Android): also caused by slow `BroadcastReceiver.onReceive` (delegate to WorkManager immediately) and input-dispatch timeouts. ANR rate above the vitals threshold suppresses your store ranking — treat the budget as a release gate, not a dashboard.
 

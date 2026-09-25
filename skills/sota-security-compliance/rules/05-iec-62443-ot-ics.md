@@ -117,7 +117,7 @@ FR5 in the zone/conduit design (§3); FR7 in resilience/DR
 *most direct* path to both a recognized OT security posture and (once harmonized)
 CRA conformity. Build to it now; certify when the hENs land.
 
-## 6. The embedded device: root of trust, secure boot and debug interfaces
+## 6. The embedded device across its life: root of trust, debug lock, hardware supply chain, decommissioning
 
 The library has **no owner for the embedded systems layer**: `sota-c-cpp` covers
 firmware's *language*, not its boot or hardware. This section therefore holds the
@@ -143,6 +143,28 @@ minimum for a product that ships as a device (a PLC, gateway, sensor or drone).
   (rules/01). Do not count on a later update to fix a unit shipped with
   development settings: some of them are one-time fuses, and an attacker with
   an open debug port can act before the update arrives.
+- **Vet the hardware supply chain, not just the software one.** SBOM and provenance
+  (rules/03, `sota-devsecops`) stop at the board. Buy the security-relevant parts (the
+  MCU or SoC, secure element, flash, radio module) from the manufacturer or its
+  authorised distributors. Keep traceability data per production batch: part number,
+  lot or date code, and source. Inspect incoming parts for counterfeits and tampering
+  before they are built in, and report any counterfeit you find. The 800-53 home is
+  the SR family (rules/02 §1): SR-4 provenance, SR-5 acquisition strategies, SR-11
+  component authenticity. For its third-party-component task PO.1.3, SSDF lists
+  IEC 62443-4-1 practices SM-9 and SM-10 as references. Confirm what those two
+  require in the 4-1 text itself before citing them in an assessment.
+- **Retire a unit so it cannot come back.** The product end of life in §1's 4-1 row
+  is a decision about the product line. Each unit also needs its own procedure when it
+  leaves service. (1) Sanitise
+  stored data and secrets. If flash is encrypted under a per-device key, destroying
+  that key is a cryptographic erase. NIST SP 800-88 Rev. 2 (September 2025) classes
+  that as a purge technique, effective only when the key was generated and held
+  properly. Otherwise use the storage's own sanitize command, or destroy the part.
+  (2) Revoke the unit's identity at the back end: device certificate, tokens and
+  enrolment record. The fleet then refuses it even if its flash survives. (3) Mark
+  the serial number retired, and make enrolment check that list, so a returned,
+  resold or stolen unit cannot register again under its old identity. In 800-53 the
+  controls are MP-6 (media sanitization) and SR-12 (component disposal).
 
 OWASP: Drone Security cheat sheet
 
@@ -156,6 +178,8 @@ OWASP: Drone Security cheat sheet
 - [ ] Secure development per **62443-4-1** crosswalked to the SSDF SDLC (rules/03); measurable process artifacts, defect/patch management, and product end-of-life defined
 - [ ] Component technical requirements (**4-2**) and system requirements (**3-3**) met for the relevant component types
 - [ ] **Embedded device root of trust and debug lock (§6) — HIGH** (CRITICAL where secure boot is the only barrier to code execution): ROM/eFuse-anchored secure boot, each stage verifying the next; JTAG/SWD/UART and ROM download mode disabled or authenticated on production units; fuse state recorded per batch. Probe the production build config: `grep -rnE '^CONFIG_(SECURE_BOOT_INSECURE|SECURE_BOOT_ALLOW_JTAG|SECURE_BOOT_ALLOW_ROM_BASIC|SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT|BOOT_SIGNATURE_TYPE_NONE)=y' .` — any hit in a release config is a finding; `grep -rlE '^CONFIG_SECURE_BOOT=y' .` printing nothing on a device build is a lead to ask where secure boot is enabled
+- [ ] **Hardware supply chain vetted (§6) — MEDIUM** (HIGH where the part holds the root of trust): security-relevant components bought from the manufacturer or authorised distributors, traceability (part number, lot/date code, source) kept per batch, incoming inspection for counterfeits, mapped to 800-53 SR-4/SR-5/SR-11 in the crosswalk
+- [ ] **Unit decommissioning defined and enforced (§6) — HIGH:** stored secrets and data sanitised (cryptographic erase of a per-device key, the storage's sanitize command, or destruction), device certificate and tokens revoked at the back end, serial marked retired, and enrolment refuses a retired serial. Test the last step: re-enrol a retired test unit and expect a refusal
 - [ ] Patch/update strategy fits OT constraints (availability, maintenance windows, legacy) while still delivering security fixes over the support period
 - [ ] If EU-market: 62443 harmonization path to CRA conformity tracked against the current OJ hEN list (rules/04); certification (ISASecure SDLA/CSA/SSA) pursued where required
 - [ ] 62443 part versions, certification-scheme scope, and CRA-harmonization status re-verified against primary sources within the last 6 months

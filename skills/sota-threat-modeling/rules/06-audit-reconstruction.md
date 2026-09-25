@@ -17,6 +17,14 @@ boundary/control level, not line-by-line).
    inventory, actor/privilege table, inferred trust boundaries. Output the
    reconstructed mermaid DFD — this diagram is deliverable #1 even if you find
    nothing else; most teams have never seen their real attack surface drawn.
+   **Then look from outside in.** Enumerate the organisation's domains,
+   subdomains and virtual hosts from passive DNS, Certificate Transparency
+   logs and (in scope, with permission) active DNS and vhost probing. Reconcile
+   that list against the hostnames the code and IaC declare. A name that
+   resolves and serves but appears in no repo is a forgotten host: staging,
+   an old admin panel, a decommissioned app still answering. It is a finding
+   rated by what it serves. Declared names that no longer resolve go to the
+   dangling-DNS check (`sota-network-security` rules/06). OWASP: WSTG-INFO-04.
 3. **Reconstruct intent:** read existing docs/ADRs/old models, auth middleware
    comments, IaC structure. Write down the implied assumptions ("services
    trust the gateway's headers", "bucket is private"). Each assumption becomes
@@ -205,6 +213,11 @@ Meta-findings — the audit also rates the team's PROCESS:
       silently skipped — unverifiable surface reported as such.
 - [ ] Reconstructed DFD + entry-point sweep completed per 02 §B before any
       catalog work; sweep commands/searches reproducible.
+- [ ] Outside-in host list (passive DNS, CT logs) reconciled against the
+      hostnames the IaC declares; list those with
+      `grep -rn -E "aws_route53_record|google_dns_record_set|azurerm_dns_[a-z]+_record|kind: *Ingress|server_name " .`.
+      A live host serving an application but absent from every repo → High
+      (Medium when it serves only static content).
 - [ ] Implied assumptions written down and each tested against code/config;
       broken assumptions rated by what relied on them.
 - [ ] Control-presence matrix complete for in-scope components; every cell

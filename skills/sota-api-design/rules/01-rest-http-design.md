@@ -243,6 +243,16 @@ Content-Type: application/problem+json
 - OpenAPI hygiene: every operation has `operationId`, every response (incl. errors)
   schematized, `additionalProperties` intent explicit, enums marked extensible where
   evolution is expected (see rules/02), auth schemes declared in `securitySchemes`.
+- **Every operation states its own `security` requirement** (which scheme, which
+  scopes), not only the top-level default. In OpenAPI 3.1 an operation's
+  `security` overrides the global one, an empty array (`security: []`) removes
+  it, and an empty object (`{}`) in the list makes auth optional, so each of
+  these is a reviewed decision, never an accident of inheritance. That
+  per-operation table is the source of truth for authorisation regression tests:
+  generate a case per operation (no credential, wrong scope, right scope) and
+  have the gateway or middleware enforce the same declarations. OWASP:
+  Authorization Regression Testing and Microservices based Security Arch Doc
+  cheat sheets.
 
 ## 11. Async operations (202 pattern)
 
@@ -331,4 +341,6 @@ GET /operations/op_01HZX9               HTTP/1.1 200 OK
 - [ ] IDs opaque and non-enumerable; no sequential integers exposed.
 - [ ] Resources mapped through explicit DTOs, not raw ORM serialization.
 - [ ] OpenAPI spec exists, is in CI, breaking-change diff fails the build, and matches the served API (spot-check 3 endpoints).
+- [ ] **Per-operation security (§10) — HIGH when a write is unauthenticated**: every operation declares scheme and scopes and feeds the authz regression suite. Operations that drop or relax auth (each hit must be an intended public endpoint):
+      `grep -rnE '"?security"?[[:space:]]*:[[:space:]]*\[[[:space:]]*\]|"?security"?[[:space:]]*:[[:space:]]*\[[[:space:]]*\{[[:space:]]*\}|^[[:space:]]*-[[:space:]]*\{[[:space:]]*\}[[:space:]]*$' --include='*.yaml' --include='*.yml' --include='*.json' .`
 - [ ] Timestamps RFC 3339 with timezone; money not floats.

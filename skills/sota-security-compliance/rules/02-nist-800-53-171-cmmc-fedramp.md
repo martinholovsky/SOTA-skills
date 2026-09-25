@@ -29,6 +29,7 @@ chain risk). The families engineers implement directly:
 | **CM** Configuration Management | baselines, least functionality, change control → `sota-devsecops`, `sota-kubernetes` |
 | **IA** Identification & Authentication | MFA, authenticator mgmt (800-63) → `sota-identity-access` |
 | **SA** System & Services Acquisition | secure SDLC, developer testing (SA-11/SA-15/SA-22) → rules/03 SSDF |
+| **SR** Supply Chain Risk Management | software provenance and SBOM → `sota-devsecops`; hardware component provenance and anti-counterfeit (SR-4/SR-5/SR-11), disposal (SR-12) → rules/05 §6 |
 
 **Baselines (800-53B):** **low / moderate / high**, keyed to the system's impact
 level (FIPS 199 categorization across confidentiality/integrity/availability),

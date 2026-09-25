@@ -73,6 +73,27 @@ letters annotate each item for classification.
   store app credentials can't rewrite.
 - **Internal trust (S/E):** "internal" services accepting unauthenticated
   calls — anyone with SSRF or a foothold is "internal".
+- **Borrowed reputation (S, abstract asset `02` §3):** any feature that puts
+  attacker-chosen words in a message the app sends or a page it serves lends
+  the attacker your domain, your DKIM signature and your users' trust. Walk
+  every such channel: invite and share emails carrying the inviter's display
+  name, team name or a personal note; notifications quoting user content;
+  "your report is ready" mails with a user-set title; error or search pages
+  echoing a query parameter as prose ("Account suspended, call +1…"). Constrain
+  what the attacker controls there: plain text only, a length cap, no URLs or
+  phone numbers in free-text fields, clear attribution ("Alex invited you", not
+  a message styled as from the service), and send only to recipients the
+  sender has a relationship with, with per-sender invite limits. These features
+  are phishing kits by default. OWASP: Cornucopia C5.
+- **Automated threats against business flows (S/D/I):** for each public flow
+  (sign-up, login, checkout, search, booking, reviews, gift cards), walk the
+  OWASP Automated Threats taxonomy (OAT-001 to OAT-021): credential stuffing
+  and cracking, account creation, scraping, scalping, sniping, carding and
+  card cracking, token cracking, denial of inventory, skewing, spamming and
+  the rest. Each gets a disposition like any threat. None of them needs a
+  vulnerability, so a vulnerability-shaped catalog misses them. Controls are
+  layered bot management and business limits (`sota-api-design` rules/07).
+  OWASP: Bot Management and Anti-Automation cheat sheet.
 
 ## 3. Database / data tier
 
@@ -296,6 +317,13 @@ rogue agents) — the items below cover them; use ASI numbering when reporting.
 - [ ] API: object-level authz verified on sampled by-ID endpoints; mass
       assignment, SSRF, deserialization, and rate limits checked with code
       evidence.
+- [ ] Every app-originated message and page carrying attacker-chosen text is
+      listed with its constraints (§2 borrowed reputation). Find candidates with
+      `grep -rn -i -E '(\{\{|<%=|\$\{|#\{) *[@A-Za-z_.]*(display_?name|full_?name|team_?name|org_?name|workspace_?name|custom_?message|personal_?message|invite_?note)' .`;
+      a free-text field in an outbound email with no length, URL or plain-text
+      constraint → Medium (High when any anonymous sign-up can send it).
+- [ ] Each public business flow has its OAT items dispositioned (§2); a
+      value-dispensing or scarce-inventory flow with no disposition → Medium.
 - [ ] Database: per-service least-priv users, encryption + key custody,
       backup/replica protections, retention enforcement.
 - [ ] Queues: producer authn, schema validation at consumers, authz re-check

@@ -424,6 +424,10 @@ Read it when you know the domain but not the file. When you are already opening 
 `SKILL.md` (BUILD step 2), use that skill's own index instead — it carries the "read this
 when…" guidance the map drops.
 
+What keeps a delivered audit report usable once remediation starts — reproduction steps on every
+finding, the finding lifecycle and retest, report provenance: **[rules/05-audit-report-and-tracking.md](rules/05-audit-report-and-tracking.md)**,
+read with `rules/03`.
+
 ## Context budget discipline
 
 Rules files run **77–500 lines, median 237** (re-measured over all 271 on

@@ -125,6 +125,16 @@ Rules:
 - **Acceptance escalates with severity:** Low — tech lead; Medium —
   eng manager; High — director/CISO; Critical — not acceptable without
   executive sign-off and a dated remediation plan.
+- **Every mitigation has two names and a due date.** The *accountable* owner
+  answers for the risk and can accept it; the *responsible* implementer does
+  the work. One name for both hides who decides when the work slips. Track
+  status per action (open, in progress, done, verified), not per threat.
+- **Decide in advance what a missed due date does.** It never silently
+  rolls over. It triggers, in order: escalation to the next acceptance level
+  above, a re-rating (exposure may have grown while the fix waited), and
+  either a new committed date or a time-boxed formal acceptance under the
+  Accept row's rules. A mitigation past its date with none of these is an
+  undisposed threat. OWASP: Threat Modeling Playbook.
 
 ## 5. Mapping mitigations to requirements and tests
 
@@ -216,6 +226,37 @@ Same vulnerability, two ratings, both correct:
 
 The CVE/base score would be identical for both. Context is the rating.
 
+## 8. Application and module risk tiers — how deep to model and review
+
+Effort follows risk, and that decision is made once per system, not per
+meeting. **Tier every application** in one cross-application inventory, rated
+on data criticality (credentials, payment, health, bulk personal data),
+exposure (internet-facing, partner-facing, internal only), regulatory scope,
+safety impact, and pivot value (a legacy host that can reach newer systems
+counts). The tier sets the depth:
+
+| Tier | Typical profile | Threat model | Verification target |
+|---|---|---|---|
+| Low | internal, no sensitive data, no pivot | four-questions pass on change (`01`) | ASVS L1 |
+| Medium | authenticated users, personal data, or partner exposure | STRIDE per interaction, L0+L1 DFD, re-model triggers | ASVS L2 |
+| High | internet-facing with credentials/money/health, regulated, safety, or a pivot into High systems | full decomposition down to process/IPC boundaries, attack trees for top assets, independent review | ASVS L3 for the relevant chapters |
+
+The ASVS level column follows ASVS 5.0's own framing: L2 is what most
+applications should aim for, and L3 is for applications that must show the
+highest assurance. Re-tier on the triggers in `05` §4, and date each entry. An
+application missing from the inventory has no tier, which in practice means no
+modeling.
+
+**Tier modules inside a codebase the same way** by exposure, value and
+regulatory weight, weighed against what extra review costs. Auth, session,
+crypto, payment, tenant-isolation and audit-logging paths are the usual high
+tier. The tier sets review intensity: a second reviewer or a named security
+reviewer, and a fresh look at the relevant threat rows on every change. The
+routing mechanism is CODEOWNERS with required code-owner review
+(`sota-docs-workflow` rules/03 §3). This section decides *which* paths deserve
+it. OWASP: SAMM, DSOMM, Threat Modeling Playbook, Legacy Application
+Management cheat sheet, Code Review Guide v2.
+
 ## Audit checklist
 
 - [ ] A single, anchored rating scheme is defined and used consistently;
@@ -235,3 +276,13 @@ The CVE/base score would be identical for both. Context is the rating.
 - [ ] Residual risks re-rated on the same scale and rolled into a ≤1-page
       register with owners and review dates.
 - [ ] Expired acceptances/reviews flagged as findings.
+- [ ] Each mitigation names an accountable owner and a responsible
+      implementer with a due date and per-action status. A past-due action with
+      no escalation, re-rating or time-boxed acceptance → Medium (High when
+      the threat is High+).
+- [ ] A cross-application inventory tiers every system and names its
+      modeling depth and ASVS target (§8). A High-tier system with only a
+      four-questions pass, or no tier at all → High.
+- [ ] High-tier modules (auth, crypto, payment, tenancy) have heightened
+      review. Probe: `cat .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS 2>/dev/null | grep -v '^#' | grep -c -i -E 'auth|session|crypto|payment|billing|tenant'`;
+      0 in a codebase that has such modules → Medium.

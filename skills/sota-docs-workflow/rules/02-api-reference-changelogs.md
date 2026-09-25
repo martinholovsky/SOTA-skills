@@ -99,6 +99,15 @@ contract most docs omit.
 - Error *messages* are documentation too: include what was expected, what was
   seen, and ideally a link/pointer to the fix. The error message is the doc
   page with a 100% read rate at exactly the right moment.
+- **Document the rest of the operational contract** next to auth and errors,
+  because clients discover it by failing otherwise: **rate limits** (the quota,
+  its scope — per key, user or IP — and the throttled response: `429` with
+  `Retry-After`, which RFC 6585 permits and RFC 9110 defines), the **CORS
+  policy** (which origins are allowed, whether credentials are, which headers are
+  exposed), and **redirects** (which operations answer `3xx`, and whether a client
+  must follow them). Design of those behaviours: `sota-api-design` rules/07
+  §2 (rate limiting) and §5 (CORS).
+  (OWASP: Django REST Framework cheat sheet)
 
 ## §5 Versioned docs
 
@@ -139,6 +148,14 @@ contract most docs omit.
   per-version record in the repo; release notes are the curated announcement
   (highlights, upgrade guidance, thanks) per release. Generate release notes
   *from* the changelog, never maintain two divergent histories.
+- **Security advisories have one findable home.** Publish each advisory in a
+  single dedicated place — an advisories page, or the forge's advisory feature
+  (on GitHub, `/security/advisories/GHSA-…` per repository) — offer a way to
+  subscribe (an announcement mailing list or a feed), and link the advisory from
+  the `Security` subsection of the version that fixes it. A fix buried as
+  "Fixed: edge case in token parsing" tells no user they must upgrade. The
+  private *reporting* channel is `SECURITY.md` (rules/01 §8).
+  (OWASP: Vulnerability Disclosure cheat sheet)
 
 ## §7 Migration guides for breaking changes
 
@@ -175,7 +192,9 @@ Behavior change: POSTs are no longer retried by default — opt in per call.
 - [ ] OpenAPI examples validate against their schemas.
 - [ ] No unescaped `|` inside a table cell's code span (§1) — GFM drops the overflow cell silently. A regex cannot pair backticks (adjacent spans `` `a` | `b` `` false-positive); walk the spans: ``perl -ne 'if (/^\|/) { while (/`([^`]*)`/g) { if ($1 =~ /(?<!\\)\|/) { print "$ARGV:$.\n"; last } } } close ARGV if eof' *.md``
 - [ ] Every operation documents its failure modes and the caller's correct reaction; HTTP error responses enumerated with body schema.
+- [ ] **(Medium) Rate limits, CORS and redirects documented** (§4): the reference states quota and scope, the throttled response, allowed origins and credentials, and redirecting operations. Probe: `grep -L -E "[\"']?429[\"']?:|Retry-After" openapi.yaml openapi.json 2>/dev/null` prints a spec that documents no throttled response at all.
 - [ ] Published docs are versioned to match releases; default view is latest stable; pages state the version they describe.
 - [ ] CHANGELOG follows Keep a Changelog with an Unreleased section maintained in PRs; entries are user-impact language with issue/PR links, not commit subjects.
 - [ ] Release notes derive from the changelog (no divergent second history).
+- [ ] **(Medium) Each security fix links its advisory, and advisories have one home with a subscription path** (§6). Probe: `awk '/^## /{s=0} /^### /{s=/^### Security/} s && /^[-*] / && !/GHSA-|CVE-[0-9]|[Aa]dvisor/' CHANGELOG.md` prints `Security` entries that link no advisory.
 - [ ] Breaking releases ship a migration guide: every break listed with before→after and mechanical steps; deprecation warnings preceded removal.

@@ -1,7 +1,8 @@
 # 07 — API Security & Operations
 
-Scope: authn scheme selection, rate limiting & quotas, request limits, timeout
-budgets, CORS for APIs, audit logging, multi-tenant isolation at the API layer.
+Scope: authn scheme selection, request signing, rate limiting & quotas, bot
+management, request limits, timeout budgets, CORS for APIs, audit logging,
+multi-tenant isolation at the API layer, API response headers, API inventory.
 
 ## 1. Authentication schemes — choosing
 
@@ -20,6 +21,13 @@ Rules regardless of scheme:
   ≥2 concurrent keys per principal for zero-downtime rotation, track `last_used_at`
   (enables dead-key cleanup and incident scoping), scope to least privilege
   (read-only vs write keys), expire or force-rotate stale keys.
+- An API key identifies and meters a caller; it is not a whole access-control
+  story. It is never the only guard on a sensitive or high-value resource (add
+  OAuth scopes, mTLS or per-object authz), and it is revoked when the holder
+  breaks the usage terms or abuses the API, not only when it leaks. HTTP Basic
+  auth resends a reusable secret, only base64-encoded, on every call: avoid it,
+  and where a legacy client forces it, serve it over TLS only (§8 on plaintext).
+  OWASP: REST Security and Web Service Security cheat sheets.
 - JWTs: validate `iss`, `aud`, `exp`, algorithm allowlist (no `alg:none`, no
   HS/RS confusion); access tokens ≤15–60 min; revocation story decided (short
   expiry + denylist for the rest).
@@ -29,6 +37,22 @@ Rules regardless of scheme:
   authz check should be a compile/lint/review failure, not a runtime surprise.
 - Internal ≠ trusted: service-to-service calls also authenticate (mesh mTLS +
   workload identity). "It's behind the VPN" is an audit finding.
+- **Sign the message, not only the channel, when one request moves money or
+  authority or crosses several hops** (B2B writes, payment and settlement calls,
+  agent/MCP JSON-RPC traffic): TLS ends at each proxy, a signature does not. This
+  is the rules/06 §2 webhook model applied to requests. With HTTP Message
+  Signatures (RFC 9421), the receiver requires a minimum covered set: `@method`,
+  `@target-uri` (or `@authority` + `@path`), the tenant and audience fields,
+  `created`/`expires`, and `content-digest`. RFC 9421 does not cover the body by
+  itself (Section 7.2.8), so the sender adds an RFC 9530 `Content-Digest` and the
+  receiver recomputes it over the bytes it actually received. A digest header
+  that verifies but is never recomputed still allows the body to be swapped.
+  Prefer asymmetric keys whose `keyid` maps to one registered sender, reject
+  replays by nonce or `created` window (rules/06 §3), and fail closed when a
+  signature is missing. Any field outside the covered set that can change an
+  amount or an authorisation decision is a defect. OWASP: ASVS 5.0 V4.1.5; MCP
+  Security, AI-Powered Advertising Systems Security, Bot Management and
+  Anti-Automation, Multi Tenant Security cheat sheets.
 
 ## 2. Rate limiting
 
@@ -55,6 +79,13 @@ Content-Type: application/problem+json
 
 - Include limit headers on **successful** responses too — clients should
   self-throttle before hitting 429.
+- **Carve-out: credential, signup and other anti-automation surfaces** (login,
+  token, password reset, OTP, gift-card or voucher checks). Answer an exceeded
+  limit with a plain `429` and a generic body: no bucket name, no attempts
+  remaining, and no `Retry-After` or `RateLimit` reset precise enough to schedule
+  the next burst against. Precise counters on these routes let an attacker tune
+  a credential-stuffing run to stay just under the threshold. OWASP: Bot
+  Management and Anti-Automation cheat sheet.
 - Tiered limits: per-endpoint-class (cheap reads vs expensive writes vs auth
   endpoints), per-plan, and a global per-principal ceiling. Expensive operations
   (search, export, GraphQL) cost more than 1 unit (cost-based limiting).
@@ -63,6 +94,35 @@ Content-Type: application/problem+json
   2026-07-01 / upgrade") vs rate ("slow down, retry in 13s"). Don't conflate them.
 - Server-side concurrency caps (max in-flight per principal) catch slow-request
   abuse that req/sec limits miss.
+- **Key set and identity cost.** Beyond principal, IP and endpoint, key buckets
+  on session and on ASN or geography where datacenter traffic is unexpected.
+  Login uses two independent buckets, per account and per source, never one
+  bucket on the `(ip, user)` pair, which lets one IP try every username. Cut a
+  client's allocation automatically when its behaviour turns anomalous (a sudden
+  spike, unusual target patterns), and restore it by policy, not by hand. A limit
+  per identity is only as strong as the cost of a new identity: tie API and agent
+  identities to a verified operator or account, so minting many keys does not
+  multiply the allowance.
+- **A per-route override that weakens the global limit is a finding.** Framework
+  defaults are often empty: Django REST Framework's `DEFAULT_THROTTLE_CLASSES`
+  is empty unless configured, and a view setting `throttle_classes = []` or
+  `@throttle_classes([])` runs with no throttle. Every override needs a reason
+  in review. OWASP: AML Sanctions AI Agent Payments, Bot Management and
+  Anti-Automation, Django REST Framework cheat sheets.
+- **Bot management is layered; rate limits are one layer.** Edge: IP and ASN
+  reputation, TLS (JA3/JA4) and HTTP/2 fingerprints. Application: session-aware
+  limits, honeypot fields and bait paths, challenges escalated by risk.
+  Business: velocity rules, fraud scoring, review queues. A request can pass one
+  layer and fail the next (ten checkouts in thirty seconds, each with a good IP
+  and a solved challenge). Business flows enforce a minimum realistic interval
+  between steps (a checkout or signup completed faster than a person could is
+  rejected or stepped up). User-generated content goes through submitter
+  reputation and delayed publishing. The aim is to raise attacker cost, not to
+  block every bot: search crawlers, uptime monitors and accessibility tools
+  must keep working, and responses are graduated (log, step up, tarpit, block)
+  rather than all-or-nothing. Depth: `sota-code-security` rules/02 (signup) and
+  rules/07 §2.1 (detection points). OWASP: ASVS 5.0 V2.4.2; Bot Management and
+  Anti-Automation cheat sheet.
 
 ## 3. Request size limits & input hygiene
 
@@ -178,10 +238,36 @@ Access-Control-Max-Age: 7200
 - Audit-log these always: authn events (success/failure, key used), authz
   denials, all writes to sensitive resources (who/what/when/before-after or
   diff-ref), admin/break-glass actions, key/secret lifecycle, data exports,
-  rate-limit and quota trips, webhook endpoint changes.
+  rate-limit and quota trips, webhook endpoint changes. Also, often missed:
+  service or API token creation with the **scopes/entitlements granted**; explicit
+  logout (with a hash of the session ID, never the ID itself); file and upload
+  deletion; data imports; creation and deletion of system-level objects
+  (tenants, projects, API clients); receipt and processing of user-generated
+  content and uploads; out-of-sequence steps in a multi-step flow and fraud
+  signals. Event names: `sota-code-security` rules/07 §2.1.
+- **High-risk operations write two entries**: an intent record before the action
+  (who, what, which object, request ID) and an outcome record after it. An
+  action that crashes, times out or is killed midway then still leaves a trace,
+  and an intent with no outcome is itself an alertable signal. OWASP: Logging
+  Vocabulary, Logging and REST Security cheat sheets.
+- **WebSocket and other long-lived channels** (rules/05): the HTTP access log
+  sees only the upgrade. Log connection open and close (user, IP, `Origin`),
+  auth and authz decisions at the handshake and per message, rate-limit and
+  message-validation violations, abnormal disconnects and protocol errors, never
+  message bodies or tokens. OWASP: WebSocket Security cheat sheet.
 - Every entry: timestamp, actor (principal + acting-on-behalf-of), tenant,
   action, object type+ID, outcome, source IP, user agent, **trace/request ID**
-  correlating to ops logs.
+  correlating to ops logs. Plus the "where": application ID and version,
+  hostname, protocol and port, request method and URI, region, and client port
+  (behind NAT or CGNAT the source IP alone does not identify a client; RFC 6302
+  recommends logging the source port with a traceable timestamp). Clocks on
+  every node are time-synced and drift is alerted on, or events from two hosts
+  cannot be ordered (`sota-observability` rules/01 §1). On sensitive and
+  anti-automation endpoints, add ASN, country, TLS/HTTP2 fingerprint, a hashed
+  session ID, and the bot or risk decision **with the signals behind it**
+  (`bot_score`, rule name). An unlogged anti-bot decision cannot be tuned.
+  Hash or truncate fingerprints before storage. OWASP: Logging Vocabulary and
+  Bot Management and Anti-Automation cheat sheets.
 - **Never log**: credentials, bearer tokens, full API keys (log the key *prefix*),
   passwords, cookie values, full card/SSN data, raw request bodies of sensitive
   endpoints. Centralized redaction middleware, not per-handler discipline; test
@@ -217,6 +303,13 @@ Cross-tenant data leakage is the worst API bug class. Defense in depth:
   caps, fair-queuing on expensive shared resources.
 - Cross-tenant admin/support access: separate audited surface with explicit
   on-behalf-of recording (§6) — not super-tenant credentials in the normal API.
+- **A shared audit store is tenant data too.** Reads filter by the caller's
+  tenant, taken from the credential. Reading across tenants needs a separate
+  platform-auditor permission that no tenant admin role holds, and that access is
+  itself audited. Writes take the tenant from the verified context: a tenant, or
+  a service acting for one, cannot append entries to another tenant's stream,
+  which would let it plant or bury evidence. OWASP: Multi Tenant Security cheat
+  sheet.
 - **Test it continuously**: automated suite that, for every endpoint, attempts
   access to tenant B's resources with tenant A's credentials and asserts 404 —
   the highest-ROI security test an API team can own.
@@ -226,7 +319,12 @@ Cross-tenant data leakage is the worst API bug class. Defense in depth:
 - Centralize cross-cutting controls at the gateway/edge (TLS termination, authn
   verification, rate limits, size limits, CORS, request-ID injection,
   WAF/bot rules); keep **authorization and tenant scoping in the service** —
-  the gateway doesn't know your object model.
+  the gateway doesn't know your object model. The gateway may still do
+  **coarse** authorisation as the first layer: route or scope checks such as
+  "`POST /admin/*` needs `admin:write`" or "this client may call only these
+  operations". That drops obviously unauthorised traffic early, but it adds to
+  the service-level and object-owner checks and never replaces them. OWASP:
+  Microservices Security cheat sheet.
 - The gateway is one layer, not the boundary: services must reject unauthenticated
   traffic even from "inside" (a path that bypasses the gateway — internal port,
   mesh misconfig, SSRF pivot — must hit a second wall). Verify: call a service
@@ -248,6 +346,22 @@ Cross-tenant data leakage is the worst API bug class. Defense in depth:
   OWASP: AML Sanctions AI Agent Payments cheat sheet.
 - TLS posture: TLS 1.2+ only, HSTS on API hosts, no plaintext listeners except
   health checks on loopback.
+- **No transparent HTTP-to-HTTPS redirect on API endpoints.** Only hosts that
+  people open in a browser redirect. An API host answers plaintext with an error
+  (or does not listen on port 80). A client misconfigured to `http://` has
+  already sent its token in cleartext, and a silent redirect makes it work, so
+  nobody notices the leak. OWASP: ASVS 5.0 V4.1.2.
+- **Defensive headers on JSON responses** a browser may fetch, as defence in
+  depth: `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`
+  (nothing in an API response should load, run or be framed),
+  `Permissions-Policy` with empty allowlists (`camera=(), geolocation=()`…),
+  `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff`, and
+  `Cache-Control: no-store` on sensitive data. This differs from HTML pages
+  on purpose. A page links to other sites and needs `strict-origin-when-cross-origin`
+  (the browser default per the W3C Referrer Policy spec) plus a real CSP. An API
+  response should trigger no further requests, so it can refuse everything.
+  Non-browser clients ignore these headers; they cost nothing. Page baseline:
+  `sota-code-security` rules/05. OWASP: REST Security cheat sheet.
 
 ## 9. OWASP API Security Top 10 mapping (2023 list, still canonical)
 
@@ -266,6 +380,18 @@ Cross-tenant data leakage is the worst API bug class. Defense in depth:
 
 Use this table to structure a security-focused audit report when the requester
 wants OWASP-mapped findings.
+
+**API9 inventory, concretely.** Each API host has an inventory row with host,
+version, environment (production, staging, test, development) and intended
+audience (public, partner, internal), plus its auth, rate-limit and CORS posture.
+To audit it, compare three lists: the endpoints and parameters the server code
+routes (extract from routing code, OWASP Noir is one extractor), the published
+spec, and the URLs that shipped client JS/HTML bundles reveal (LinkFinder and
+jsluice are examples). An entry on one list and missing from another is an
+undocumented or orphaned surface. Also check the server URLs a published
+description advertises (OpenAPI `servers`, WSDL `soap:address`): each must be
+intended and live, with no staging, localhost or private-range host.
+OWASP: WSTG-APIT-01; Django REST Framework cheat sheet.
 
 ## Audit checklist
 
@@ -291,5 +417,23 @@ wants OWASP-mapped findings.
 - [ ] **Framing (§3a) — HIGH**: every hop strict; a relaxed HTTP parser anywhere on the path is a finding:
       `grep -rnE 'insecureHTTPParser[[:space:]]*:[[:space:]]*true|--insecure-http-parser|accept-(invalid-http|unsafe-violations-in-http)-request' .`
       — then walk the hop chain for an h2-front/h1-back downgrade and for hand-set `Content-Length` on streamed bodies.
+- [ ] **API keys and Basic auth (§1) — MEDIUM**: no high-value resource guarded by an API key alone; abuse leads to revocation; Basic auth absent or TLS-only. Locator:
+      `grep -rnE 'Authorization:[[:space:]]*Basic|WWW-Authenticate:[[:space:]]*Basic|HTTPBasicAuth|BasicAuthentication' .`
+- [ ] **Message signing (§1) — HIGH on money or authority paths**: high-value, B2B and agent requests signed with a receiver-enforced minimum covered set including `content-digest`, digest recomputed over received bytes. Verifiers that never mention the digest:
+      `grep -rliE 'signature-input' . | while IFS= read -r f; do grep -qi 'content-digest' "$f" || echo "$f"; done`
+- [ ] **Login-surface 429s (§2) — MEDIUM**: generic body, no bucket name, attempt count or precise reset on credential/signup/OTP routes:
+      `grep -rniE 'remaining[_ -]?attempts|attempts[_ -]?(left|remaining)' .`
+- [ ] **Throttle overrides (§2) — HIGH on auth or expensive routes**: a global default is configured and no view disables it:
+      `grep -rnE 'throttle_classes[[:space:]]*=[[:space:]]*(\[[[:space:]]*\]|\([[:space:]]*\)|None)|@throttle_classes\([[:space:]]*(\[[[:space:]]*\]|\([[:space:]]*\))[[:space:]]*\)' --include='*.py' .`
+- [ ] Rate-limit keys include session and ASN/geo where relevant; login uses separate per-account and per-source buckets; anomalous clients auto-downgraded; new identities cost a verified operator. Bot defence layered (edge, app, business), with minimum-realistic-interval checks on business flows and reputation plus delayed publishing for UGC — MEDIUM.
+- [ ] Audit events (§6) include token issuance with scopes, logout (hashed session ref), file deletion, imports, system-object create/delete, UGC processing, sequence and fraud signals, and WebSocket open/close, decisions and violations; high-risk operations log intent before and outcome after — MEDIUM.
+- [ ] Log records carry app ID, hostname, protocol/port, method/URI, region and client port; nodes time-synced with drift alerting; anti-bot decisions logged with their signals and hashed fingerprints — MEDIUM.
+- [ ] **Shared audit store (§7) — HIGH**: reads tenant-filtered, cross-tenant reads need a platform-auditor permission no tenant admin has, and writes cannot target another tenant's stream. Audit-table reads with no tenant term on the line (a lead to read):
+      `grep -rniE 'from[[:space:]]+audit_?(log|events?|trail)' . | grep -viE 'tenant'`
+- [ ] Gateway does coarse route/scope authz as a first layer only; service-level and object checks still present (§8) — MEDIUM.
+- [ ] **Plaintext on API hosts (§8) — MEDIUM**: `curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' http://<api-host>/<path>` returns an error or refuses the connection; a 301/302/307/308 to `https://` is the finding.
+- [ ] JSON responses a browser can reach carry `default-src 'none'; frame-ancestors 'none'`, empty-allowlist `Permissions-Policy`, `Referrer-Policy: no-referrer`, `nosniff` (check with `curl -sI`) — LOW.
+- [ ] **Inventory (§9) — MEDIUM**: every host has version, environment and audience; routed vs spec vs client-bundle endpoint lists reconciled; no stray published server URL:
+      `grep -rnE 'url"?[[:space:]]*:[[:space:]]*"?https?://[^"[:space:]]*(staging|localhost|127\.0\.0\.1|internal|\.local[:/"]|10\.[0-9]+\.|192\.168\.)' --include='*.yaml' --include='*.yml' --include='*.json' .`
 - [ ] **Forwarded client certificate (§8) — HIGH**: every read of a forwarded cert header is honoured only from the terminating proxy, stripped at the edge, and not the sole basis of an identity-authorised write. Locator:
       `grep -rniE 'forwarded-client-cert|ssl[-_]client[-_](cert|escaped)|client[-_]cert(ificate)?[-_]?header|x-client-cert' .`

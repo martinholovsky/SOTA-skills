@@ -79,6 +79,14 @@ per route, so match each route to its data:
 - **Env discipline from day one**: server secrets in unprefixed env vars; only
   deliberately-public config in `NEXT_PUBLIC_*` / `runtimeConfig.public` / `VITE_*`
   (`rules/07`). Never commit `.env`.
+- **Production runs the built server, never the dev server.** `next dev` (and a bare
+  `next`, which is an alias for it), `nuxt dev`/`nuxi dev` and `vite` are development
+  servers (hot reloading and error reporting; `nuxt dev` sets `NODE_ENV=development`). Ship
+  `next build` + `next start`, or `nuxt build` + `node .output/server/index.mjs` with
+  `NODE_ENV=production` ([Next.js CLI](https://nextjs.org/docs/app/api-reference/cli/next),
+  [Nuxt deployment](https://nuxt.com/docs/4.x/getting-started/deployment), read
+  2026-09-25). The Node-level rule and the inspector are in `sota-javascript-typescript`
+  rules/04. OWASP: Nextjs Security cheat sheet.
 - **CI gates**: typecheck, lint, tests, `npm audit`/`osv-scanner`, and a build. Add a
   bundle-size check if shipping to the browser (`sota-performance` rules/06).
 
@@ -94,9 +102,13 @@ per route, so match each route to its data:
       `grep -rn 'ssr:\s*false\|routeRules\|prerender\|export const dynamic\|cacheComponents' nuxt.config.* next.config.* app/ pages/ 2>/dev/null`
 - [ ] **Hooks/vue lint present?** —
       `grep -rn 'react-hooks\|eslint-plugin-vue\|next/core-web-vitals\|@nuxt/eslint' .eslintrc* eslint.config.* package.json 2>/dev/null`
+- [ ] **Dev server as the production start command (HIGH on an internet-facing host)** —
+      `grep -rnE '"start":[[:space:]]*"[^"]*((next|nuxt|nuxi) dev|next"|vite( |")|vite preview)|(CMD|ENTRYPOINT).*((next|nuxt|nuxi)"?,?[[:space:]]*"?dev|run"?,?[[:space:]]*"?dev)' --include=package.json --include='Dockerfile*' --include='Containerfile*' --exclude-dir=node_modules .`
+      (also read Procfiles, unit files and platform start settings, which it does not scan)
 
 - [ ] Every framework major is supported and receiving security patches (no Vue 2, Nuxt 2, Next < 15)?
 - [ ] Exact versions pinned + lockfile committed + automated dependency updates on?
+- [ ] Production starts the built server (`next start`, `node .output/server/index.mjs`), never `next dev`/`nuxt dev`/`vite`?
 - [ ] Render mode chosen per route to match its data (personalized ⇒ SSR + private cache)?
 - [ ] TypeScript strict; hooks/vue lint rules enforced in CI?
 - [ ] Public-env boundary understood: no secrets in `NEXT_PUBLIC_`/`public`/`VITE_`?

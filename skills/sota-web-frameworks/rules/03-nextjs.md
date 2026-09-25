@@ -55,8 +55,17 @@ export async function deletePost(id: string) {
   `isAdmin`.
 - **Return values are serialized to the client** — filter them the same as a prop
   (don't return the raw row).
-- **CSRF:** Next checks Origin vs Host for actions; behind a proxy set
-  `experimental.serverActions.allowedOrigins`. Closure-captured variables are
+- **CSRF:** Next checks Origin vs Host (or `x-forwarded-host`) for actions; extra hosts go in
+  `experimental.serverActions.allowedOrigins`. That list *is* the action CSRF check, so
+  keep it to the hosts users actually load the app from: the public host, and a front
+  door that forwards its own host instead of `x-forwarded-host` (when it forwards the
+  public host, no entry is needed). Entries match the Origin's host[:port]; `*` covers
+  one label and `**` one or more, so `*.example.com` trusts every subdomain. A wildcard
+  over a suffix where others can get a subdomain (a hosting platform's shared preview
+  domain, a user-content zone) lets any page there post to your actions — HIGH; list
+  exact hosts. The check lets an Origin-less request through with a warning, so it
+  sits beside `SameSite` cookies, not in place of them ([Next.js: serverActions](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverActions),
+  read 2026-09-25, v16.3.6). OWASP: Nextjs Security cheat sheet. Closure-captured variables are
   encrypted per build (key `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` — set it explicitly
   for multi-replica deploys so restarts don't invalidate in-flight forms);
   `.bind()` arguments are **not** encrypted. Don't rely on encryption for authz.
@@ -80,6 +89,21 @@ Post-CVE-2025-29927 (middleware bypass, below), the official guidance is unambig
 - **Taint APIs** (`experimental_taintObjectReference`/`taintUniqueValue`) are still
   experimental (`experimental.taint`) — a backstop that throws if a tainted object
   reaches the client, not a primary control (cloning/deriving escapes the taint).
+- **Fewer endpoints, fewer checks to forget.** A Server Component can call the DAL
+  directly, so a `route.ts` whose only consumer is your own server code (a page doing
+  `` fetch(`${BASE_URL}/api/...`) ``) adds an internet-reachable endpoint and buys nothing.
+  Delete it and call the DAL function; keep Route Handlers for real external callers
+  (browsers, webhooks, third parties), each with its own authn/authz. OWASP: Nextjs
+  Security cheat sheet.
+- **Draft Mode's enable handler is a public GET** (`draftMode().enable()` sets the
+  `__prerender_bypass` cookie, which skips every cache layer for that browser). Before
+  enabling: compare the CMS's shared secret (high-entropy, from env) in constant time
+  (`crypto.timingSafeEqual` on equal-length buffers or digests — it throws on a length
+  mismatch), look the requested id/slug up in the CMS and refuse unknown ones, then
+  redirect to the path taken **from that record**, never from the query string (an open
+  redirect otherwise; the docs' sample redirects from the record but compares with `!==`)
+  ([Next.js: Draft Mode](https://nextjs.org/docs/app/guides/draft-mode), read
+  2026-09-25, v16.3.6). OWASP: Nextjs Security cheat sheet.
 
 ## 4. The caching model (know what's cached, and when)
 
@@ -118,6 +142,14 @@ The caching model changed materially; stale mental models cause both bugs and le
   `revalidateTag` there. This is an invocation-context rule, not a caching-style
   preference ([Next.js: updateTag](https://nextjs.org/docs/app/api-reference/functions/updateTag),
   verified 2026-09-16). **ISR** (route `revalidate`) still works.
+- **Invalidation is a privileged mutation.** Each call forces origin work (the next
+  visit to every page using the tag re-renders), so whoever can trigger it can drive
+  load at your origin and CMS. The docs' Route Handler sample revalidates whatever
+  `?tag=` a caller sends, with no check. Authenticate and authorize the caller; map a
+  known name to a fixed tag/path from an allowlist instead of passing a request value
+  through; verify a CMS webhook's signature (`sota-api-design` rules/06) and rate-limit
+  the endpoint ([Next.js: revalidateTag](https://nextjs.org/docs/app/api-reference/functions/revalidateTag),
+  read 2026-09-25). OWASP: Nextjs Security cheat sheet.
 - **Security rule:** never cache a personalized page at a shared cache. If a route
   reads the session/cookies, it must be dynamic or explicitly `private`. Cache
   poisoning has been a repeated Next CVE class (below) — CDNs also drop `Vary`, so
@@ -177,6 +209,23 @@ protocols, and paths (`rules/07`).
       `grep -rlE "[\"']use cache" app lib src | xargs grep -niE 'async[^(]*\([^)]*(token|session|cookie|authorization|bearer|jwt)'`
       (single-line signatures only; a hit is a candidate — confirm the argument is the raw
       credential, not an id derived from it)
+- [ ] **Draft Mode enable handler: plain `!=` secret check or redirect to a request value
+      (MEDIUM; HIGH if the secret check is missing)** — find it with
+      `grep -rln 'draftMode' app src`, then
+      `grep -rnE "secret[[:space:]]*!=|!=[=]?[[:space:]]*secret|redirect\((slug|path|target|url|searchParams|request|req)[.)!]|redirect\(new URL\((slug|path|target|url|searchParams)" --include='*.ts' --include='*.js' --exclude-dir=node_modules .`
+      (want: constant-time compare, an unknown slug refused, `redirect(record.slug)`)
+- [ ] **Cache invalidation from a request value (MEDIUM)** — calls whose first argument
+      is not a literal:
+      `` grep -rnE "(revalidateTag|revalidatePath|updateTag)\([^'\"\`)]" --include='*.ts' --include='*.tsx' --include='*.js' --exclude-dir=node_modules . ``
+      — a hit is a candidate; confirm the value comes from an allowlist and the caller is
+      authenticated (a webhook: signature-verified) and rate-limited
+- [ ] **Wildcard `allowedOrigins` (HIGH over a shared suffix)** —
+      `grep -nE "allowedOrigins.*['\"][*]" next.config.*` (single-line arrays; read a
+      multi-line one by eye) — each `*`/`**` entry must be a zone only you can create hosts in
+- [ ] **Route Handlers that only feed your own Server Components (LOW, surface)** — server
+      files fetching the app's own `/api/`:
+      `grep -rLE "^.use client" --include='*.tsx' --include='*.ts' --include='*.jsx' --include='*.js' app src 2>/dev/null | xargs grep -HnE 'fetch\(.(https?://(localhost|127\.0\.0\.1)[^/]*|\$\{[^}]*\})/api/'`
+      — if no browser or third party calls that handler, replace it with a DAL call
 
 - [ ] Exact Next + react-server-dom versions patched against CVE-2025-55182/-66478 and CVE-2025-29927?
 - [ ] Every Server Action and Route Handler authenticates, authorizes (ownership/IDOR), and schema-validates input — not relying on middleware?
@@ -184,4 +233,7 @@ protocols, and paths (`rules/07`).
 - [ ] Authorization enforced at the data layer, not only in `proxy.ts`/middleware or a layout?
 - [ ] Caching understood per route; no personalized page cached at a shared cache; `use cache` keyed per-user where needed, on verified ids + a permission version, never a raw cookie/token?
 - [ ] `next/image` `remotePatterns` limited to explicit trusted hosts (no `**`)?
-- [ ] `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` set for multi-replica deploys; `allowedOrigins` configured behind a proxy?
+- [ ] `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` set for multi-replica deploys; `allowedOrigins` limited to the exact public/front-door hosts, no wildcard over a suffix others can host on?
+- [ ] Draft Mode enable handler: constant-time secret check, unknown ids refused, redirect built from the CMS record?
+- [ ] Every `revalidateTag`/`revalidatePath`/`updateTag` caller authenticated and authorized, targets from an allowlist, external triggers signature-verified and rate-limited?
+- [ ] No Route Handler that exists only for your own Server Components?

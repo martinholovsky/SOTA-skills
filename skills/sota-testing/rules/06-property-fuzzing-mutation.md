@@ -31,6 +31,14 @@ slow-but-obviously-correct reference.
 1. **Roundtrip / inverse**: `decode(encode(x)) == x`. The single
    highest-value property; applies to every serializer, parser/printer,
    encrypt/decrypt, to/from-DB mapping.
+   **For an encryption wrapper, also run the round trip concurrently**: many
+   threads or tasks encrypting different messages through one shared
+   instance, then assert every nonce is distinct and every ciphertext decrypts
+   to its own plaintext. A nonce counter or a cipher object shared without a
+   lock fails only under contention, and a nonce reused under one key breaks
+   AES-GCM and ChaCha20-Poly1305 (`sota-code-security` rules/04 §2). The race
+   window is narrow, so run many iterations, and add the race detector where
+   the language has one (`go test -race`). OWASP: Code Review Guide v2.
 2. **Invariants**: outputs always satisfy a predicate — sorted output is
    ordered and a permutation of input; balance never negative; output JSON
    always schema-valid.
@@ -319,6 +327,10 @@ into the CI test suite.
       both a PBT import (`hypothesis|fast-check|proptest|quickcheck|jqwik`)
       and `parse|decode|deserialize` modules; encode/decode pairs with only
       example tests → Medium (High if input is untrusted).
+- [ ] Encryption wrappers with a round-trip test that is **never run concurrently**
+      (§6.1)? List crypto test files with no concurrency:
+      `grep -rliE '(en|de)crypt' tests | xargs -r grep -LE 'ThreadPool|concurrent\.futures|asyncio\.gather|go func|t\.Parallel|Promise\.all|parallelStream|Executors|thread::(spawn|scope)|rayon'`
+      A listed file for a wrapper that manages its own nonces → Medium.
 - [ ] Are properties real or tautological? Read each: does the expected side
       re-derive via the SUT's own logic → Critical (verifies nothing).
 - [ ] Over-filtered generators? Grep `assume\(|\.filter\(|suchThat|prop_assume`
