@@ -134,7 +134,7 @@ RTT = ~200 ms added per page view" beats "this is slow".
 | `rules/02-algorithms-data-structures.md` | Auditing loops and data access: N+1, accidental quadratics, repeated scans, hash-vs-tree choices, batching, streaming vs materializing, and high-level DB pointers (indexes, SELECT *, chatty transactions). |
 | `rules/03-memory.md` | Dealing with allocation pressure, GC pauses, object pooling, arenas, cache locality, SoA vs AoS, or hunting memory leaks (closures, listeners, unbounded caches) per runtime. |
 | `rules/04-io-network.md` | Anything crossing a syscall or the wire: buffering, zero-copy, connection pooling, HTTP/2/3, compression choice (zstd/brotli), TLS resumption, CDN, request coalescing, pagination over the wire. |
-| `rules/05-caching.md` | Designing or auditing any cache: hierarchy placement, key design, invalidation, stampede protection (singleflight, jitter, soft TTL), negative caching, and when caching is the wrong fix. |
+| `rules/05-caching.md` | Designing or auditing any cache: hierarchy placement, key design, invalidation, stampede protection (singleflight, jitter, soft TTL), negative caching, when caching is the wrong fix, and the security floor (declared global/tenant/user key scope, authorize before a cache hit, invalidate on role/tenancy change). |
 | `rules/06-frontend-web.md` | Web performance: Core Web Vitals thresholds, bundle budgets, code splitting, image formats (AVIF/WebP), font loading, hydration cost, edge rendering. |
 
 ## Top-10 non-negotiables

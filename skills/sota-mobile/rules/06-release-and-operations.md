@@ -115,6 +115,7 @@ enum OrderStatus: RawRepresentable, Decodable {
   3. Forced-update blocking screen exercised (6.3).
   4. Forced test crash symbolicates (6.6).
   5. Play pre-launch report / TestFlight feedback reviewed.
+  6. The shipped artifact is not debuggable (rules/04 §4.9). `apkanalyzer manifest debuggable` on the release APK prints `false`, and the exported IPA's entitlements carry no `get-task-allow` = true. Check the artifact rather than the build config, because re-signing steps and copied build types change it.
 
 ### 6.10 Release cadence and build hygiene
 
@@ -135,5 +136,5 @@ enum OrderStatus: RawRepresentable, Decodable {
 - [ ] OTA (if used): bundle↔binary compatibility enforced in CI; staged, rollback-able in minutes, crash-gated; nothing review-worthy shipped via OTA; store builds still ship regularly.
 - [ ] All API requests carry version headers; additive-only evolution on live endpoints; client decoders tolerate unknown fields/enum cases; contract tests pin the oldest supported client; sunsets use cohort measurement → in-app notice → forced update → explicit 426.
 - [ ] Test pyramid intact: unit bulk; snapshots incl. dark mode/font-scale/RTL; integration incl. DB migration tests and sync edge cases; ≤ ~10 E2E flows; nightly real-device-farm matrix.
-- [ ] RC ritual documented and followed (upgrade-path, fresh-install, forced-update, symbolication, pre-launch report).
+- [ ] RC ritual documented and followed (upgrade-path, fresh-install, forced-update, symbolication, pre-launch report, non-debuggable artifact check).
 - [ ] Fixed release cadence; CI-only signed builds; commit SHA + flag snapshot traceable from any production binary.

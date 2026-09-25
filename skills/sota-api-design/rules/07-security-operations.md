@@ -78,6 +78,44 @@ Content-Type: application/problem+json
   rules/01–04 is the enforcement artifact); reject unknown fields on writes
   (rules/02 §3).
 
+### 3a. HTTP message framing & request smuggling
+
+Smuggling lives in the gap between two hops that disagree on where one request
+ends and the next begins; the front hop's checks see one request, the back hop
+runs two. Treat ambiguous framing as an attack, not as something to be lenient about.
+
+- **HTTP/1.1**: a request carrying both `Transfer-Encoding` and `Content-Length`
+  gets rejected (`400`) and the connection closed. RFC 9112 Section 6.1 permits
+  processing it by `Transfer-Encoding` alone but requires the connection close
+  either way, and its Section 6.3 says such a message "ought to be handled as an error". The
+  same goes for a request whose `Transfer-Encoding` does not end in `chunked`, and
+  for an invalid or self-contradicting `Content-Length` list (Section 6.3 makes
+  both a `400`-and-close).
+- **HTTP/2 and HTTP/3**: a message carrying a connection-specific field
+  (`Transfer-Encoding`, `Connection`, `Keep-Alive`, `Upgrade`, `Proxy-Connection`;
+  `TE` only as `trailers`) is malformed, and so is a `content-length` that differs
+  from the sum of the DATA frame payloads (RFC 9113 Sections 8.1.1 and 8.2.2, RFC
+  9114 Sections 4.1.2 and 4.2). An intermediary must not forward either. This matters most where
+  an HTTP/2 edge **downgrades** to HTTP/1.1 towards the origin: a field that the
+  binary framing carried harmlessly becomes framing again on the old wire (the
+  CR/LF/NUL variant: `sota-code-security` rules/01 §11).
+- **Generating**: never emit a `Content-Length` that disagrees with what the
+  framing actually sends, and never both headers on one message (RFC 9112 Section 6.2).
+  Hand-set length headers on a streamed or compressed body are the usual source.
+- **One parser posture on every hop**: LB, CDN, WAF, gateway and app server must
+  all be strict. A relaxed-parsing switch on any one of them reopens the gap,
+  e.g. Node's `insecureHTTPParser: true` / `--insecure-http-parser` (whose docs
+  list accepting both headers among its leniencies) or HAProxy's
+  `option accept-unsafe-violations-in-http-request` (formerly
+  `accept-invalid-http-request`, now deprecated). Prefer HTTP/2 end to end to an
+  HTTP/1.1 backend link, and do not reuse a backend connection after a framing error.
+- Audit by pairing hops, not by reading one config: list every hop's server and
+  version, find where the protocol changes (h2 in front, h1 behind), and run a
+  desync scanner against staging through the real edge. (Needs verification
+  per stack: which exact inputs each proxy normalises differs by product and version.)
+
+OWASP: ASVS 5.0 V4.2.1, V4.2.2, V4.2.3.
+
 ## 4. Timeout budgets
 
 Every request has an end-to-end budget; every hop fits inside it.
@@ -196,6 +234,18 @@ Cross-tenant data leakage is the worst API bug class. Defense in depth:
 - Never trust gateway-injected identity headers (`X-User-Id`) unless the link
   is mTLS-pinned and the header is stripped from external requests at the edge
   — header-smuggling of identity is a recurring critical.
+- **mTLS that ends at an LB or CDN stops being mTLS at that hop.** Behind it the
+  service holds no certificate, only a forwarded client-certificate header, and
+  RFC 8705 Section 6.5 explicitly leaves how that metadata travels safely out of scope.
+  So the header gets the `X-User-Id` treatment above: honoured only on the link
+  from the terminating proxy (itself authenticated), with any client-sent copy
+  removed at the edge (the proxy-side settings: `sota-code-security` rules/04 §5).
+  Where the caller's identity *is* the authorisation (payments, agent-initiated
+  actions, B2B writes), do not let the header carry it alone: bind identity into
+  the message, e.g. a sender-constrained token whose `cnf` thumbprint
+  (RFC 8705 `x5t#S256`, or DPoP, RFC 9449) the service checks itself, or a signed
+  request (HTTP Message Signatures, RFC 9421); or pass TLS through to the service.
+  OWASP: AML Sanctions AI Agent Payments cheat sheet.
 - TLS posture: TLS 1.2+ only, HSTS on API hosts, no plaintext listeners except
   health checks on loopback.
 
@@ -238,3 +288,8 @@ wants OWASP-mapped findings.
 - [ ] Automated cross-tenant access test suite exists and runs in CI.
 - [ ] Services reject direct (gateway-bypassing) traffic; identity headers from the gateway are mTLS-bound and stripped from external requests at the edge.
 - [ ] TLS 1.2+ everywhere, HSTS on API hosts; no plaintext listeners beyond loopback health checks.
+- [ ] **Framing (§3a) — HIGH**: every hop strict; a relaxed HTTP parser anywhere on the path is a finding:
+      `grep -rnE 'insecureHTTPParser[[:space:]]*:[[:space:]]*true|--insecure-http-parser|accept-(invalid-http|unsafe-violations-in-http)-request' .`
+      — then walk the hop chain for an h2-front/h1-back downgrade and for hand-set `Content-Length` on streamed bodies.
+- [ ] **Forwarded client certificate (§8) — HIGH**: every read of a forwarded cert header is honoured only from the terminating proxy, stripped at the edge, and not the sole basis of an identity-authorised write. Locator:
+      `grep -rniE 'forwarded-client-cert|ssl[-_]client[-_](cert|escaped)|client[-_]cert(ificate)?[-_]?header|x-client-cert' .`

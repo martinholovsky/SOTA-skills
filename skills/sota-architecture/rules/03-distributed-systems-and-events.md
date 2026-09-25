@@ -211,6 +211,23 @@ doesn't scale; don't design flows that require it.
 - Define the overload policy per queue: shed lowest-priority work first (see rules/04 §6).
 - Monitor consumer lag with alerts; lag growing monotonically = under-provisioned consumer or poison loop.
 
+**Rule:** In a multi-tenant system a shared queue or topic is **not** an isolation
+boundary — the application has to carry the boundary through it. Classify every job
+type as *global*, *tenant-scoped* or *explicitly cross-tenant*, and write the class
+down beside the handler. For tenant-scoped work:
+- Bind the tenant to the message from the authenticated producer (trusted routing or
+  signed metadata), and at the consumer re-establish that context and re-authorize —
+  a `tenant_id` field in the body is a claim, not proof (`sota-code-security` rules/03 §8).
+- Put the tenant into every per-message key: the dedup/idempotency key (§2), retry
+  state, the partition key where order matters per tenant, and who may read or redrive
+  the DLQ. Unscoped, tenant B's message is dropped as a duplicate of tenant A's, and a
+  DLQ viewer sees every tenant's payloads.
+- Global and cross-tenant jobs run under an explicit **system identity** with its own
+  grants, never under a made-up tenant (`tenant_id = "system"`), which every
+  tenant-scoped check then either rejects or, worse, accepts.
+Per-tenant quotas on the shared fleet: rules/05 §7. OWASP: Multi Tenant Security
+cheat sheet.
+
 ## 7b. Broker queues (AMQP/RabbitMQ): semantics the log model misses
 
 AMQP-style brokers delete on ack and *push* to consumers — different failure
@@ -360,6 +377,7 @@ weekly:
 - Are events past-tense facts with producer ownership, or commands in disguise?
 - Does every queue have bounded size, retry-with-backoff, DLQ, DLQ alerting, and a tested redrive runbook?
 - Are poison messages separated from transient failures, or retried identically?
+- [ ] Multi-tenant async work (§7): is every job type classified global / tenant-scoped / cross-tenant, are dedup and idempotency keys, retry state, per-tenant ordering and DLQ access scoped by tenant, and do global jobs run as an explicit system identity? HIGH (cross-tenant dedup drops or DLQ exposure). Probe for dedup/idempotency keys built without a tenant: `grep -rniE '(idempot|dedup)[a-z_]*_?key[[:space:]]*[:=]' . | grep -vi tenant`; for a fabricated tenant: `grep -rnE "tenant(_id|Id)?[\"']?[[:space:]]*[:=][[:space:]]*[\"'](system|global|default|all|none|0)[\"']" .`
 - AMQP consumers: manual ack after durable commit (no auto-ack)? Requeue limited to transient failures, with poison messages rejected (`requeue=false`) to a DLX?
 - Is prefetch (`basic.qos`) set explicitly on every AMQP consumer, or is any consumer running with unlimited prefetch?
 - Durable RabbitMQ queues: quorum (not classic), delivery-limit dead-lettering configured (not silently dropping)? Messages carry references rather than blobs/secrets? Broker locked down (per-service users, vhosts, least privilege, TLS)?

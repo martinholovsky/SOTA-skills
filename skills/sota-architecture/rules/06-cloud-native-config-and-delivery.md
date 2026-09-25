@@ -107,6 +107,22 @@ flag** → contract. Contracting while a flag can still route traffic to the old
 the version-skew outage, and it presents as "the rollback made it worse" because the
 rollback target no longer matches the data.
 
+**Rule:** A flag that gates a **security control** (MFA/step-up, authorization, rate
+limiting, fraud or risk checks, CSRF, admin features) is itself security configuration.
+Inventory those flags and hold them to stricter terms:
+- The server decides. A flag value the client holds or sends only shapes the UI; the
+  endpoint, handler and message consumer behind it re-check authorization whatever the
+  client believes, and no request field (`flags`, `fraud_checked`, `mfa_verified`) is
+  trusted as proof a control ran.
+- Turning a control off also retires what it vouched for: a kill-switch that disables
+  step-up must stop downstream services honouring the session claim step-up used to set.
+- Enforcement survives transitions: rollbacks restore security config together with the
+  code, every service and instance in a canary evaluates the flag the same way, and an
+  unreachable flag service falls back to the **enforcing** state, not the permissive one.
+- Serve clients only the flags for their context; a full flag payload leaks unreleased
+  features, internal services and targeting segments.
+OWASP: WSTG-CONF-15.
+
 ## 7. Delivery pipeline and environments
 
 **Rule:** Trunk-based development with small PRs; every merge produces a
@@ -212,6 +228,7 @@ buffers, drop-and-count).
 - Do logs go to stdout as structured events with trace and tenant context, scrubbed of secrets/PII?
 - Are RED metrics, OTel traces (propagated through queues), and burn-rate SLO alerts in place? Do pages fire on symptoms, not causes?
 - Does dev/CI use production-kind backing services (real DB/broker in containers)?
+- [ ] Security-gating flags (§6): is each one inventoried, enforced server-side regardless of client flag state, fail-closed when the flag service is down, consistent across canary instances and rollbacks, and does disabling it stop downstream trust in the claim it used to set? HIGH where a client-held flag or a request field like `fraud_checked` decides enforcement. Probe (a lead list, read each hit): `grep -rniE "(flags?[.[]|is_?feature_?enabled|variation|kill_?switch)[^;]*(mfa|2fa|step_?up|auth|csrf|rate_?limit|fraud|captcha|admin|permission)|(req|request)[.](body|query|json|params|headers)[^;]*(flags|fraud_checked|mfa_verified|captcha_passed)" .`
 - Does every flag have an owner and expiry? Are stale flags (>100% rollout for months) present? Does flag evaluation have local defaults if the flag service dies?
 - Are releases progressive (canary + auto-rollback) and decoupled from deploys via flags?
 - Are all migrations expand/contract such that the previous code version still runs (rollback-safe)?

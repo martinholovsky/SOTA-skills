@@ -252,6 +252,21 @@ AI assistance raises PR volume; the review bar does not move.
   rather than the requirement.
 - **AI-generated tests deserve the most suspicion**: verify they fail without
   the change (mutation thinking), not just that they pass with it.
+- **Review an agent PR file by file, never from its summary.** Agents often edit
+  outside the task: lockfiles, CI config, unrelated tests, formatting. A reviewer
+  who follows the description sees only the files it names. Open every changed
+  file in a tool that lists the whole diff, including collapsed and generated
+  files. An approval given on the description alone is not a review.
+- **An agent PR that deletes, skips or loosens a security test gets a second
+  look.** That includes auth, authz, input validation and crypto tests. Deleting
+  or skipping a test is the easy way for an agent to turn CI green. Ask the author
+  why each test changed before approving, and route those files to a code owner.
+  `sota-testing` rules/07 §7.10 has a diff check that flags these PRs.
+- **Keep a provenance trail.** For each AI-assisted change, record which tool and
+  which model version produced it, and which human approved it. Use a PR-template
+  field or a commit trailer. This record is what lets you find every change a model
+  produced after a flaw in that model is reported. The approver stays accountable.
+  OWASP: Secure Coding with AI cheat sheet, AI Agent Security cheat sheet.
 - Disclose substantial AI generation in the PR when team policy asks; either
   way, size limits (§1) apply with extra force — generated code is cheap to
   produce and expensive to review, so the queue saturates from the author side.
@@ -326,4 +341,11 @@ claim that turns out to be false still burns the credibility.
 - [ ] Draft PRs used for early direction; oversized features arrive as stacks of independently green PRs.
 - [ ] CI owns lint/format/type/coverage; sampled reviews contain zero human style comments; required checks gate merge.
 - [ ] Review depth on AI-heavy PRs matches human-written ones: comments engage with logic, tests proven to fail without the change, no volume rubber-stamps.
+- [ ] **(Medium) Agent PRs reviewed per file, with a provenance trail** (§7): sampled
+      agent PRs show every changed file was reviewed, not only the ones the description
+      names. Any deleted, skipped or loosened security test was signed off by a code owner.
+      The PR template or a commit trailer records the AI tool, the model version and the
+      approver. Probe: `grep -L -i -E 'ai tool|model version|assisted-by'
+      .github/pull_request_template.md` prints the template's name when no such field
+      exists. A missing template is also a finding.
 - [ ] Merged PR descriptions are useful in `git log` archaeology (pick 5 from six months ago and try to reconstruct the why).

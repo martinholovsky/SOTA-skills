@@ -99,6 +99,18 @@ The caching model changed materially; stale mental models cause both bugs and le
   part of the key** (correct) but caching a *component that renders per-user data
   without keying on the user* leaks across users (MEDIUM–HIGH). Variants:
   `use cache: private` for per-user.
+- **What a per-user cache key is made of.** `cookies()`/`headers()` cannot be called
+  inside a `"use cache"` scope (it fails with `next-request-in-use-cache`); the documented
+  pattern is to read them outside and pass *values* in as arguments — and every
+  argument becomes key material. So pass **dimensions the server has already verified**
+  (user or tenant id, a role/permission version that changes on revocation, locale),
+  never the raw session cookie, bearer token or JWT: a credential as a key is written
+  into the cache handler's storage (in memory, or Redis/KV with `use cache: remote`),
+  and a key that stays the same after a role is revoked keeps serving the
+  pre-revocation result until it expires (HIGH when the cached output is authorized
+  data). Verify the session first, then call the cached function with the derived ids
+  ([Next.js: use cache](https://nextjs.org/docs/app/api-reference/directives/use-cache),
+  read 2026-09-25, v16.3.6). OWASP: Nextjs Security cheat sheet.
 - **Invalidation, and the allowed context differs per API:** `revalidateTag` and
   `revalidatePath` work from a Server Action **or** a Route Handler. **`updateTag` is
   Server-Actions-only** — calling it from a Route Handler *throws*
@@ -160,11 +172,16 @@ protocols, and paths (`rules/07`).
       `grep -rn "remotePatterns\|images:\s*{" next.config.* | grep -n '\*\*\|domains'`
 - [ ] **Caching of personalized routes** —
       `grep -rn "use cache\|cacheComponents\|force-cache\|revalidate\|Cache-Control" app next.config.*`
+- [ ] **Credential used as a `use cache` key (HIGH)** — list files with the directive, then
+      cached-function signatures that take a credential:
+      `grep -rlE "[\"']use cache" app lib src | xargs grep -niE 'async[^(]*\([^)]*(token|session|cookie|authorization|bearer|jwt)'`
+      (single-line signatures only; a hit is a candidate — confirm the argument is the raw
+      credential, not an id derived from it)
 
 - [ ] Exact Next + react-server-dom versions patched against CVE-2025-55182/-66478 and CVE-2025-29927?
 - [ ] Every Server Action and Route Handler authenticates, authorizes (ownership/IDOR), and schema-validates input — not relying on middleware?
 - [ ] No secrets or whole DB rows crossing server→client; data layer marked `server-only`; DTOs minimal?
 - [ ] Authorization enforced at the data layer, not only in `proxy.ts`/middleware or a layout?
-- [ ] Caching understood per route; no personalized page cached at a shared cache; `use cache` keyed per-user where needed?
+- [ ] Caching understood per route; no personalized page cached at a shared cache; `use cache` keyed per-user where needed, on verified ids + a permission version, never a raw cookie/token?
 - [ ] `next/image` `remotePatterns` limited to explicit trusted hosts (no `**`)?
 - [ ] `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` set for multi-replica deploys; `allowedOrigins` configured behind a proxy?

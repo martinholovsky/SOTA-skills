@@ -61,6 +61,16 @@ URLs become SSRF.
   (Next SSRF CVE-2024-34351, CVE-2025-57822; Nuxt navigate advisories) lets an attacker
   redirect server fetches. Pin a canonical base URL from config, don't reflect the Host
   header. Never pass unsanitized inbound headers into `NextResponse.next()`/redirects.
+- **External rewrites and proxy rules:** a Next `rewrites()` entry whose `destination`
+  is an absolute URL, `NextResponse.rewrite()` in `proxy.ts`, a Nitro/Nuxt
+  `routeRules` `proxy:` target, and h3 `proxyRequest(event, target)` all make the
+  server fetch another origin with the visitor's request. Fix the scheme, host and port
+  in config, or pick them from a server-side allowlist keyed by a known name; never
+  assemble them from `Host`, other request headers, cookies, or path/query captures.
+  Next lets a `has` matcher capture a header/cookie/query value into the destination
+  (`value: '(?<name>...)'`, then `:name`) — a capture may fill a path segment of a
+  fixed host, never the host itself (`https://:tenant.example.com` is a finding, HIGH).
+  A rewrite is routing, not an authorization check. OWASP: Nextjs Security cheat sheet.
 - **Open redirects:** validate `redirect`/`next`/`returnTo` targets against a
   same-origin/allowlist check before redirecting.
 
@@ -127,6 +137,28 @@ dependency updates + a fast patch path is the actual control (`sota-devsecops`).
       `grep -rnE '\$?fetch\(|ofetch\(|axios\.|got\(' --include='*.ts' server app | grep -iE 'req\.|query|params|headers|host'`
       ;
       `grep -rnE 'X-Forwarded-Host|req\.headers\.host|getRequestHost' --include='*.ts' server app proxy.* middleware.*`
+- [ ] **Rewrite/proxy destination built from the request (HIGH)** —
+      `` grep -rnE "destination:[[:space:]]*['\"\`]https?://:|NextResponse\.rewrite\(.*(headers\.get|searchParams\.get|cookies\.get)|proxyRequest\(.*(getHeader|getQuery|getRouterParam|getCookie)" --include='*.ts' --include='*.js' --include='*.mjs' --exclude-dir=node_modules . ``
+      (single-line candidates; also read every absolute `destination:` and `proxy:` target
+      and confirm its host is a literal or allowlisted)
+- [ ] **Runtime: does the data layer refuse when the edge check is skipped? (HIGH if data
+      comes back)** — a grep proves where a check is written, not that it runs. Against a
+      running non-production build, with no session (then with a low-privilege one), request a
+      protected resource by a path the `proxy.ts`/middleware `matcher` or `routeRules` does
+      not cover: `curl -s -o /dev/null -w '%{http_code}\n' "https://APP/<path-outside-matcher>"`
+      — want 401/403 or a login redirect from the handler, never 200 with data. Next Server
+      Functions are POSTs to the page route that uses them, so a matcher that excludes a path
+      skips them too (Next.js proxy docs, read 2026-09-25): replay a captured action POST
+      (it carries a `Next-Action` header) without the cookie and expect a refusal
+- [ ] **Runtime: what the browser actually receives (HIGH on a secret, MEDIUM on an
+      internal field)** — capture every channel as a low-privilege user and search it, since
+      source grep cannot see what serialization emits: HTML (Next `self.__next_f.push`, Nuxt
+      `__NUXT_DATA__`), the Next flight payload (`curl -s -H 'RSC: 1' -b "$COOKIE" "https://APP/page"`,
+      served as `text/x-component`), Pages Router `/_next/data/<buildId>/<page>.json`, Nuxt
+      `/<page>/_payload.json` for `isr`/`swr`/prerendered routes, and Server Action responses
+      from the browser's network panel. Save each to a file, then
+      `grep -inE 'secret|passw|api[_-]?key|private[_-]?key|(access|refresh|id)[_-]?token|sk_live_|BEGIN [A-Z ]*PRIVATE KEY' captured/*`
+      and read the hits for fields the UI never shows. OWASP: Nextjs Security cheat sheet
 - [ ] **CVE fingerprint** —
       `grep -E '"(react|react-dom|react-server-dom-webpack|next|nuxt|nitropack|h3|ipx|devalue|serialize-javascript)"' package.json`
 
@@ -135,5 +167,7 @@ dependency updates + a fast patch path is the actual control (`sota-devsecops`).
 - [ ] Every Server Action / Route Handler / Nitro route authenticates, authorizes the specific resource (no IDOR), and validates input — not relying on edge middleware?
 - [ ] `next/image`/IPX `remotePatterns` allowlisted to explicit hosts (no `**`); user-URL fetchers block private ranges + metadata IP + redirects?
 - [ ] Absolute URLs/redirects built from config, not reflected `Host`/`X-Forwarded-Host`; redirect targets allowlisted?
+- [ ] External rewrite/proxy targets (`rewrites()`, `NextResponse.rewrite`, `routeRules` `proxy`, `proxyRequest`) have a fixed or allowlisted scheme/host/port, never one taken from the request?
+- [ ] The boundary was checked against the RUNNING app — an unmatched-path request refused by the data layer, and captured HTML/flight/payload/action responses free of server-only fields?
 - [ ] All framework + loader deps (react-server-dom, next, nuxt, h3, ipx, devalue, serialize-javascript) patched against §4; automated updates on?
 - [ ] Nonce/hash CSP + standard security headers; rate limiting on public endpoints; production errors not leaked as HTML?

@@ -66,6 +66,19 @@ read before an await and written after is a race window (rule 02).
 snapshots; or a lock spanning the invariant; request-scoped state instead of
 shared (contextvars / AsyncLocalStorage / explicit parameter).
 
+**Request-scoped state must also be un-set.** Ambient per-request context
+(tenant, user, locale) is only request-scoped if its scope closes: keep the
+token from `ContextVar.set()` and `reset(token)` in `finally` (or
+`with var.set(x):`, since Python 3.14); prefer `AsyncLocalStorage.run()` over
+`enterWith()`; `ThreadLocal.remove()` in `finally`. Otherwise a *reused*
+worker thread serves the next request with the previous tenant. Measured on
+Python 3.14: a 1-worker `ThreadPoolExecutor` job that set a `ContextVar`
+without reset left `"A"` visible to the next job; with `reset` it read
+`None`. On Node 22, the store was still set after an `enterWith()` call had
+returned, while after `run()` it was `undefined`. Language detail: sota-python
+rules/04 §6, sota-jvm rules/03, sota-javascript-typescript rules/04.
+OWASP: Multi-Tenant Security cheat sheet.
+
 ```python
 # BAD — interleaved handlers corrupt the running aggregate.
 stats["total"] += order.amount          # read-modify-write at await scale
@@ -246,6 +259,12 @@ ordering assumption with no enforcement.
 - [ ] #1 fire-and-forget: every spawn owned, errors observed
 - [ ] #2 missing await: truthy-promise checks, forEach(async), return-in-try
 - [ ] #3 shared mutable state: cross-request bleed, loop-var capture, Go maps
+- [ ] #3 request-scoped context set but never reset — HIGH when it holds a
+      tenant or user id: `grep -rnE '^[[:space:]]*[[:alnum:]_.]+\.set\([^)]|\.enterWith\(|ThreadLocal<' --include='*.py' --include='*.js' --include='*.ts' --include='*.java' --include='*.kt' .`
+      (a bare `x.set(v)` statement discards the token and cannot be reset; each
+      `ThreadLocal` needs a `remove()` in `finally`; a `token = x.set(v)` or
+      `with x.set(v):` does not match; a JS/Java `map.set(k, v)` hit is noise —
+      keep only the context variables)
 - [ ] #4 locks across await; Rust std guards across `.await`
 - [ ] #5 blocking calls in async (rule 04 grep list); `block_on` in async
 - [ ] #6 retries: backoff+jitter+budget+classification+ctx
