@@ -116,7 +116,7 @@ OAuth authorization on any remote server — unauthenticated internet-exposed MC
 servers are a recurring 2026 incident class (NSA published a dedicated CSI on
 MCP security, May 2026). Pin the tool *definitions* too (hash + re-approve on
 any change) — tool poisoning, rug pulls, shadowing, and line jumping all ride
-on unreviewed tool metadata (named taxonomy: sota-code-security rules/08 §5).
+on unreviewed tool metadata (named taxonomy: sota-code-security rules/23 §1).
 **Sandbox the local ones, too.** Under the MCP stdio transport the client launches
 the server as a subprocess, so a `"command": "npx"` / `"uvx"` entry runs third-party
 code as *you*, on the host, with your home directory, SSH agent and credential

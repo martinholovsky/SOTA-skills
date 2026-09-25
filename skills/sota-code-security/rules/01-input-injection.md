@@ -26,7 +26,31 @@ without a structural boundary. Fix the boundary; never "sanitize" your way out.
 - **Validate semantics, not just syntax** (OWASP Business Logic): enforce cross-field
   and business invariants the type system can't (`checkout` after `checkin`,
   `quantity ≥ 1`, end-date after start-date, currency matches account). A
-  well-formed-but-nonsensical request is still an attack.
+  well-formed-but-nonsensical request is still an attack. Name the edge cases: zero for any
+  user-supplied divisor (split count, rate, unit size), source equal to destination
+  (self-transfer, merge into itself, self-referral), and per-account purchase or redemption
+  limits enforced server-side and keyed on identity proxies (payment instrument, shipping
+  address, device) as well as the account id, since new accounts are cheap. OWASP: Bot
+  Management and Anti-Automation, XML Security cheat sheets; SCSVS S3.3.A2.
+- **Write the rules down, then map each to code.** List each input's expected format, the
+  cross-field consistency rules (postcode matches city) and the business invariants in plain
+  language, and name the server-side code that enforces each one, atomically with the write. A
+  rule enforced only in the UI is unenforced. OWASP: ASVS 5.0 V2.1.1, V2.1.2; Business Logic
+  Security cheat sheet.
+- **One validation layer, no side doors.** Route every entry point through a central validation
+  routine (schema-bound DTOs, shared middleware) and hunt for handlers that read raw input
+  around it. A declarative validator counts only once it is wired in: Jakarta Bean Validation
+  descends into a nested object or collection only where that reference carries `@Valid`
+  (spec, Graph validation). Prove it by sending one invalid request and watching it fail.
+  OWASP: Code Review Guide v2, Secure Coding Practices QRG.
+- **Encoding checks first.** Declare one charset (UTF-8) per input source and decode strictly,
+  so an overlong form (`C0 AF` for `/`) is an error rather than a character no later check saw:
+  CPython 3.14's strict decode and Node 22 `TextDecoder` with `fatal: true` rejected it, and the
+  strict decode passed NUL (measured 2026-09-25). So reject `\0` in every field, not only paths:
+  C strings and native layers truncate at it. Validate free text by allowlisting Unicode
+  categories plus named characters (`^[\p{L}\p{Nd} .'-]{1,64}$`; Java and JS with the `u` flag
+  accept `\p{…}`, CPython's `re` does not, the `regex` package does, measured). OWASP: Input
+  Validation cheat sheet, Go-SCP (validation), Secure Coding Practices QRG.
 - **Anything the client can set is adversary-controlled** — hidden form fields,
   disabled inputs, pre-filled values, and data you returned last response included.
   Re-validate and re-authorize them server-side; never trust them because "the UI
@@ -81,6 +105,11 @@ if not p.is_relative_to(BASE_DIR): raise Forbidden()
   OWASP: SQL Injection Prevention, Query Parameterization cheat sheets; Code Review Guide v2.
 - LIKE clauses: escape `%` and `_` in the *value* (parameterization doesn't), or
   attacker controls match breadth.
+- **No oracle, and check what came back.** A query error that returns a different body, status
+  or timing from an empty result answers blind-injection yes/no questions; log the driver error
+  and return one generic response. Before using a result, assert it matches the request: a
+  unique-key lookup yields at most one row, and each row's key equals the filter value.
+  OWASP: Code Review Guide v2, Java Security cheat sheet.
 
 ```python
 # BAD
@@ -138,6 +167,11 @@ execFile("convert", ["--", file, "out.png"]);
 - `os.path.join(base, user)` discards `base` entirely when `user` is absolute
   (`/etc/passwd`) — join, then resolve, then containment-check; never trust the
   join alone (Python, Node `path.join` with `..`, Java `Paths.resolve`).
+- Object-storage keys and prefixes built from input follow the same rules: reject a leading
+  `/`, `..` segments, `\` and NUL, since any code that later joins a key onto a path or prefix
+  inherits the traversal. Build tenant prefixes only from a session-derived tenant id that
+  matched a strict canonical pattern (a parsed UUID, `^[a-z0-9-]{1,36}$`). OWASP: Multi Tenant
+  Security cheat sheet.
 
 ## 5. SSRF (CWE-918)
 
@@ -185,6 +219,10 @@ avatar-by-URL, link previews) is an SSRF surface targeting cloud metadata
 - Parser-confusion URLs (`http://expected.com@evil.com/`, `evil.com#@expected.com`)
   — compare the *host the client will actually connect to*, from the same URL
   parser the HTTP client uses.
+- **Compare hosts in ASCII form.** Convert to IDNA/punycode before an allowlist match or a
+  display (`exаmple.com` with a Cyrillic `а` became `xn--exmple-4nf.com` in CPython 3.14 and
+  Node 22, measured 2026-09-25), accept only ASCII hosts where the product allows, and flag
+  mixed-script labels. OWASP: Code Review Guide v2.
 
 ```go
 // GOOD: validate the resolved IP and pin it for the dial (no rebinding window)
@@ -221,6 +259,14 @@ client := &http.Client{Transport: transport, Timeout: 10 * time.Second,
 - Same family: disable external schema/DTD fetch in SVG processing, DOCX/XLSX
   ingestion (they're zipped XML), SOAP, and SAML libraries.
 - Billion-laughs (CWE-776): cap entity expansion even with external entities off.
+- **Secure processing everywhere, never recovery.** Set `XMLConstants.FEATURE_SECURE_PROCESSING`
+  on every JAXP factory that has `setFeature`, not only XSLT (the `SchemaFactory` javadoc says to
+  set it in both places, as it may not be inherited). Recovery modes are banned on untrusted input: lxml 6.1
+  with `recover=True` repaired `<a><b>1</b><c>2</a>` into a tree instead of failing (measured),
+  so two components can read different documents. Replace any parser that cannot disable DTDs
+  or cap expansion. Parsers may turn CDATA into plain text (lxml's default `strip_cdata=True`
+  did, measured), so never depend on CDATA bytes surviving. OWASP: XML External Entity
+  Prevention, XML Security cheat sheets.
 
 ```java
 // GOOD: Java hardened XML factory (apply to DocumentBuilder, SAX, StAX, Transformer)
@@ -259,6 +305,12 @@ Template("Hi " + name).render()          Template("Hi {{ name }}").render(name=n
 - Signed/encrypted blobs (session cookies, view state) only defer the problem:
   if the key leaks or signing is misconfigured (Rails `secret_key_base`,
   ASP.NET machineKey), deserialization RCE follows. Keep contents data-only.
+- **A type check after the call is too late**: gadget code runs while the stream is read. A Java
+  `readObject` ran before an `instanceof` on the result (Temurin 25.0.4) and a pickle
+  `__reduce__` ran before `isinstance` (CPython 3.14), both measured 2026-09-25. Enforce the
+  allowlist inside the deserializer, before instantiation: `ObjectInputFilter` (a
+  `java.lang.String;!*` filter rejected the same stream), an `Unpickler.find_class` override, a
+  Json.NET `ISerializationBinder`. OWASP: Deserialization cheat sheet.
 
 ## 9. Prototype pollution (CWE-1321, JS/TS)
 
@@ -299,6 +351,10 @@ Template("Hi " + name).render()          Template("Hi {{ name }}").render(name=n
 
 ## 11. Other injection surfaces (audit sweep list)
 
+No parameterised or builder API for the sink? Escape for that interpreter's exact context with a
+maintained library encoder, never a hand-rolled replace chain, and record why parameterisation
+was impossible. OWASP: Injection Prevention, GraphQL cheat sheets.
+
 - **LDAP injection (CWE-90)**: two contexts, two encoders, chosen by where the value lands.
   A **search-filter** value is escaped per RFC 4515 (`*`, `(`, `)`, `\`, NUL become `\XX`).
   A **DN component** is escaped per RFC 4514, a different set: `"`, `+`, `,`, `;`, `<`, `>`,
@@ -337,6 +393,8 @@ Template("Hi " + name).render()          Template("Hi {{ name }}").render(name=n
   Node    grep -rnE '`[^`]*<[A-Za-z/][^`]*\$\{' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .
   Ruby    grep -rnE '"[^"]*<[A-Za-z/][^"]*#\{' --include='*.rb' .
   ```
+- **JSON built from strings**: `'{"name":"' + name + '"}'` breaks out the same way. Emit JSON
+  and XML only through a serializer, client and server, never custom serializer code. OWASP: AJAX Security cheat sheet.
 - **CRLF / header injection (CWE-93/113)**: reject `\r`/`\n` in anything placed
   into HTTP headers (redirect `Location` from input, custom headers, cookies) —
   response splitting and cache poisoning. Modern frameworks reject; hand-built
@@ -349,6 +407,10 @@ Template("Hi " + name).render()          Template("Hi {{ name }}").render(name=n
   CR, LF or NUL as malformed (RFC 9113 section 8.2.1, RFC 9114 section 10.3): those bytes survive the binary
   framing and become header injection or request smuggling when the request is downgraded to
   HTTP/1.1. OWASP: ASVS 5.0 V4.2.4, Go-SCP (validation), Secure Coding Practices QRG.
+  Every line protocol input reaches is the same bug: SMTP and IMAP commands (a webmail folder
+  name), FTP, memcached keys (no whitespace or control characters, 250 max, per its protocol.txt).
+  Reject CR, LF, NUL and the protocol's delimiters, or use a client that frames each command.
+  OWASP: ASVS 5.0 V1.3.9, V1.3.11; Injection Prevention cheat sheet; WSTG-INJT-10.
 - **Open redirect (CWE-601)**: `?next=` targets must be relative-path-only
   (reject `//evil.com`, `https:`, `\\`, scheme-relative) or exact-match against
   an allowlist. Open redirects chain into OAuth token theft and SSRF-filter
@@ -358,18 +420,25 @@ Template("Hi " + name).render()          Template("Hi {{ name }}").render(name=n
   server-side forwards whose target comes from input (servlet `getRequestDispatcher(...)
   .forward`, ASP.NET `Server.Transfer`/`Execute`), which can land the caller on a function
   nobody checked them for. The best form takes a short ID the server maps to a URL; make the IDs non-enumerable so the
-  map cannot be walked. OWASP: Unvalidated Redirects and Forwards cheat sheet, Code Review
-  Guide v2.
-- **CSV/formula injection (CWE-1236)**: cells starting `= + - @ \t` execute in
-  spreadsheet apps on export; prefix with `'` or space-escape when generating
-  CSV/XLSX from user data.
+  map cannot be walked. Off-site destinations go through an interstitial that shows the target
+  with continue and cancel (ASVS 5.0 V3.7.3). OWASP: Unvalidated Redirects and Forwards cheat
+  sheet, Code Review Guide v2.
+- **CSV/formula injection (CWE-1236)**: cells starting `= + - @`, tab or NUL execute in
+  spreadsheet apps on export; prefix with `'` when generating CSV/XLSX from user data, and quote
+  every field per RFC 4180 rules 6-7 (wrap in `"`, double inner `"`) so a comma or quote cannot
+  start a new cell. OWASP: ASVS 5.0 V1.2.10, WSTG-INJT-21.
+- **LaTeX injection**: `\write18` runs commands, `\input`/`\include` read files. TeX Live's
+  default `shell_escape = p` still runs an allowlist, so pass `-no-shell-escape`; `openin_any` is
+  a no-op as of 2026 (texmf.cnf), so only a command allowlist plus a sandbox stops reads. OWASP: ASVS 5.0 V1.2.8.
 - **Host header attacks**: never build absolute URLs (password-reset links!)
   from the request `Host`/`X-Forwarded-Host` — use a configured canonical
   origin. Poisoned reset links = account takeover (CWE-640 chain).
 - **HTTP parameter pollution / parser differentials**: duplicate keys
   (`?id=1&id=2`), JSON duplicate fields, and content-type confusion are
   validated-by-one-parser, consumed-by-another bypasses — validate the same
-  representation you consume, normalize once at the boundary.
+  representation you consume, normalize once at the boundary. Reject a repeated security-relevant
+  parameter: for `id=1&id=2`, `URLSearchParams.get` gave `1` and PHP `parse_str` gave `2`
+  (measured 2026-09-25). OWASP: Virtual Patching cheat sheet.
 - **GraphQL**: injection rules apply inside resolvers (resolver args → SQL);
   plus GraphQL-specific limits live in rules/06 §5 and field authz in rules/03.
 
@@ -398,4 +467,18 @@ Template("Hi " + name).render()          Template("Hi {{ name }}").render(name=n
 - [ ] **Header contents (§11)**: are emitted header names and values printable ASCII with CR/LF rejected, and does every HTTP/2 or HTTP/3 front end reject CR, LF or NUL in inbound fields before any HTTP/1.1 hop? HIGH when input reaches a header unencoded; read each hit of `grep -rnE "(setHeader|res\.set|headers\[[^]]*\][[:space:]]*=|header\().*(req\.(query|body|params|headers)|request\.(args|form|GET|POST|headers)|\\\$_(GET|POST|REQUEST|SERVER))" --include='*.js' --include='*.ts' --include='*.py' --include='*.php' .`
 - [ ] **SQL construction (§2)**: are optional filters served by fixed complete statements (raising when no required criterion is present), stored procedures called through parameterized call APIs with bound dynamic SQL inside, and drivers set to server-side binding where they offer it? HIGH for a concatenated WHERE on an UPDATE/DELETE, MEDIUM for emulated prepares; `grep -rniE "where 1 ?= ?1|[\"'] (and|or) [\"']\.join|\+= *[\"'] (and|or|where) |EMULATE_PREPARES[^;]*(true|1)[[:space:]]*[]);]" --include='*.py' --include='*.php' --include='*.java' --include='*.js' --include='*.ts' --include='*.go' --include='*.cs' --include='*.rb' .`
 - [ ] **NoSQL operators (§2)**: are client-supplied `$`-operators rejected by default, request objects never passed as filters, and user text in `$regex` escaped and length-capped? HIGH when a request body reaches a filter or `$where`; read each hit of `grep -rnE "[\"']?\\\$(where|regex|expr|function|accumulator)[\"']?[[:space:]]*:|\.(find|findOne|find_one|aggregate|update_?[Oo]ne|delete_?[Mm]any)\([[:space:]]*(req\.(body|query)|request\.(get_json|json|args))" --include='*.js' --include='*.ts' --include='*.py' --include='*.java' --include='*.php' .`
-- [ ] **Redirect sinks (§11)**: is every redirect sink (30x, `Refresh` header, meta refresh, client-side `location`, server-side forward/transfer) fed only a relative path, an allowlisted URL or a non-enumerable server-mapped ID? MEDIUM, HIGH on an OAuth or login flow; every hit of `grep -rniE "http-equiv=[\"']?refresh[^>]*url=[^>]*(\{\{|<\?|\\\$\{|<%)|[\"']Refresh[\"'][[:space:]]*,.*(req|request|params|query)|location(\.href)?[[:space:]]*=[^=].*(searchParams|URLSearchParams|params\.get|location\.(search|hash))|location\.(assign|replace)\(.*(searchParams|params\.get|location\.(search|hash))|getRequestDispatcher\([^)]*getParameter|Server\.(Transfer|Execute)\([^)]*Request" --include='*.html' --include='*.htm' --include='*.jsp' --include='*.php' --include='*.erb' --include='*.js' --include='*.ts' --include='*.java' --include='*.cs' --include='*.aspx' .` needs its source traced
+- [ ] **Redirect sinks (§11)**: is every redirect sink (30x, `Refresh` header, meta refresh, client-side `location`, server-side forward/transfer) fed only a relative path, an allowlisted URL or a non-enumerable server-mapped ID, with off-site targets behind a continue/cancel interstitial? MEDIUM, HIGH on an OAuth or login flow; every hit of `grep -rniE "http-equiv=[\"']?refresh[^>]*url=[^>]*(\{\{|<\?|\\\$\{|<%)|[\"']Refresh[\"'][[:space:]]*,.*(req|request|params|query)|location(\.href)?[[:space:]]*=[^=].*(searchParams|URLSearchParams|params\.get|location\.(search|hash))|location\.(assign|replace)\(.*(searchParams|params\.get|location\.(search|hash))|getRequestDispatcher\([^)]*getParameter|Server\.(Transfer|Execute)\([^)]*Request" --include='*.html' --include='*.htm' --include='*.jsp' --include='*.php' --include='*.erb' --include='*.js' --include='*.ts' --include='*.java' --include='*.cs' --include='*.aspx' .` needs its source traced
+- [ ] **Input encoding (§1)**: is every source decoded strictly as a declared charset (overlong forms rejected), NUL rejected in every field, and free text validated by Unicode-category allowlist? MEDIUM, HIGH before a native or C boundary; each hit of `grep -rnE "errors[[:space:]]*=[[:space:]]*[\"'](ignore|replace)[\"']|\.decode\([\"'][^\"']*[\"'],[[:space:]]*[\"'](ignore|replace)[\"']|fatal:[[:space:]]*false" --include='*.py' --include='*.js' --include='*.ts' .` is a lenient decode
+- [ ] **Central validation (§1)**: does every entry point pass one validation layer, with no handler reading raw input around it, and is the declarative validator proven wired in (an invalid request fails)? HIGH on a bypassing handler; each hit of `grep -rnE '@RequestBody[[:space:]]+[A-Z]' --include='*.java' . | grep -v '@Valid'` is a request body no validator sees
+- [ ] **Business invariants (§1)**: is there a written list of formats, cross-field rules and invariants, each mapped to atomic server-side code, covering zero divisors, source equal to destination and per-identity limits? MEDIUM, HIGH on money movement; each hit of `grep -rnE "/[[:space:]]*(int|float|Decimal|Number|parseInt|parseFloat)\([[:space:]]*(req|request|params|body)[.[]" --include='*.py' --include='*.js' --include='*.ts' .` divides by a request value unchecked
+- [ ] **Query oracles (§2)**: do query errors return one generic response (no driver text, no distinct status or timing), and are results checked for the filter value and cardinality before use? MEDIUM; each hit of `grep -rnE "(return|\.send\(|\.json\(|jsonify\().*(str\((e|err|ex|exc)\)|[^A-Za-z_](e|err|ex)\.(message|getMessage\(\)))" --include='*.py' --include='*.js' --include='*.ts' --include='*.java' .` returns exception text to the client
+- [ ] **Object-storage keys (§4.1)**: are keys and prefixes from input rejected for leading `/`, `..`, `\` and NUL, with tenant prefixes built only from a canonical, session-derived tenant id? HIGH on cross-tenant reach; each hit of `` grep -rnE "(Key|Prefix)[[:space:]]*[=:][[:space:]]*(f[\"']|\`|[^,]*\+).*(tenant|req\.|request\.|params)" --include='*.py' --include='*.js' --include='*.ts' . `` builds a key from input
+- [ ] **IDN hosts (§5)**: are hosts converted to IDNA/punycode before allowlist matching or display, and mixed-script labels flagged? MEDIUM; each hit of `grep -rnE "(hostname|netloc|host)[[:space:]]*(not[[:space:]]+)?(in|==|===)[[:space:]]*[A-Za-z_.]*([Aa]llow|ALLOW|[Tt]rusted|TRUSTED)" --include='*.py' --include='*.js' --include='*.ts' --include='*.go' . | grep -viE 'idna|punycode|toASCII'` compares a raw host
+- [ ] **XML parser mode (§6)**: is secure processing on for every XML factory and Validator, recovery modes off on untrusted input, unhardenable parsers replaced, and no logic dependent on CDATA surviving? HIGH on a recovery-mode parse of security data; every hit of `grep -rnE "recover[[:space:]]*=[[:space:]]*True|XML_PARSE_RECOVER|FEATURE_SECURE_PROCESSING[[:space:]]*,[[:space:]]*false" --include='*.py' --include='*.c' --include='*.cpp' --include='*.java' --include='*.kt' .` is a finding
+- [ ] **Deserialization allowlist placement (§8)**: is the type allowlist enforced inside the deserializer (filter, `find_class`, binder) rather than by a cast or type check afterwards? CRITICAL on untrusted input; each hit of `grep -rnE '\([A-Z][A-Za-z0-9_.<>]*\)[[:space:]]*[A-Za-z_][A-Za-z0-9_]*\.readObject\(\)|isinstance\([[:space:]]*(pickle|marshal)\.loads?\(' --include='*.java' --include='*.py' .` is a post-hoc check
+- [ ] **Fallback escaping (§11)**: where no parameterised API exists, is a maintained context-specific encoder used and the reason recorded? MEDIUM, HIGH on an interpreter sink; each hit of `grep -rnE "\.replace\([^)]*\)\.replace\(" --include='*.py' --include='*.js' --include='*.ts' --include='*.java' --include='*.php' --include='*.rb' .` is a hand-rolled escaper to replace
+- [ ] **Hand-built JSON (§11)**: is every JSON document produced by a serializer, with no concatenation or custom serializer? MEDIUM, HIGH when a field drives a decision; every hit of `grep -rnE "\{\\\\?\"[A-Za-z_]+\\\\?\"[[:space:]]*:[[:space:]]*\\\\?\"[\"'][[:space:]]*\+|\{\{\"[A-Za-z_]+\"[[:space:]]*:" --include='*.py' --include='*.js' --include='*.ts' --include='*.java' --include='*.cs' .` is a finding
+- [ ] **Line protocols (§11)**: are CR, LF, NUL and delimiters rejected from input reaching SMTP, IMAP, FTP or memcached, or is each command framed by a client library? HIGH; each hit of `grep -rnE "(memcached?|mc|cache)\.(get|set|add|delete)\([^,)]*(req\.|request\.|params)|\.(send|sendall|write)\([fb]?[\"'][A-Z0-9 ]{3,}[^\"']*(\{|%s)" --include='*.py' --include='*.js' --include='*.ts' --include='*.php' .` needs its input traced
+- [ ] **CSV quoting (§11)**: is every exported field RFC 4180 quoted and each leading `= + - @`, tab or NUL neutralised? MEDIUM; each hit of `grep -rnE "[\"'],[\"']\.join\(|\.join\([\"'],[\"']\)" --include='*.py' --include='*.js' --include='*.ts' --include='*.rb' .` is hand-built CSV
+- [ ] **LaTeX (§11)**: does every TeX run on user content pass `-no-shell-escape`, allowlist commands and run sandboxed? HIGH; each hit of `grep -rnE "(pdf|xe|lua)?latex[\"' ]" --include='*.py' --include='*.js' --include='*.ts' --include='*.go' --include='*.rb' --include='*.sh' . | grep -v 'no-shell-escape'` lacks `-no-shell-escape`
+- [ ] **Duplicate parameters (§11)**: is a repeated security-relevant parameter rejected rather than resolved first- or last-wins? MEDIUM; each hit of `grep -rnE "dict\(parse_qsl\(|searchParams\.get\(|parse_str\(" --include='*.py' --include='*.js' --include='*.ts' --include='*.php' .` silently picks one value

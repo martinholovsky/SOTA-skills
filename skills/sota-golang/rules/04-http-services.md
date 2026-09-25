@@ -283,7 +283,7 @@ that sets `nosniff` and writes `  <script>…` is served as `text/html`.
 - `http.ServeFile`/`ServeContent` pick the type from the file **extension** first and sniff
   only if that is unknown — a user upload stored under its original `.html`/`.svg` name is
   served as markup. Store uploads under server-chosen names and set the type (and
-  `Content-Disposition: attachment`) yourself; sota-code-security `rules/05` §10.
+  `Content-Disposition: attachment`) yourself; sota-code-security `rules/21` §1.
 OWASP: Go-SCP (cross site scripting).
 
 ## 5. Structured logging with slog

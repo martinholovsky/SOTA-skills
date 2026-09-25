@@ -33,7 +33,11 @@ exist. `sota-code-security/rules/11` sat unlisted for two releases before 15 exi
   security, 09 untrusted-data ingestion, 10 silent control failure, 11 dead-path diagnostics, 12
   verifying the verifier, 13 context-dependent silence, 14 the control that is not in force,
   15 instruments & guards, 16 where silent no-ops hide (the catalogue split out of 10), 17 sessions
-  & tokens (split out of 02), 18 tamper-evident logs & audit ledgers (split out of 04)
+  & tokens (split out of 02), 18 tamper-evident logs & audit ledgers (split out of 04), 19
+  anti-automation & abuse of value-granting features, 20 browser response hardening (headers on
+  every status, HSTS rollout, Fetch Metadata, stripping diagnostic headers), 21 file uploads (split
+  out of 05), 22 constant-time comparison (split out of 04), 23 LLM platform & supply chain
+  (models, prompts, MCP servers, logging — split out of 08)
 - **sota-skill-security/rules**: 01 provenance & installation, 02 trust boundary & capability,
   03 authoring & auditing skills
 - **sota-threat-modeling/rules**: 01 methodologies, 02 decomposition, 03 threat catalogs, 04 risk

@@ -1,7 +1,8 @@
 # 18 — Tamper-Evident Logs & Audit Ledgers
 
 Scope: hash-chained audit logs, compliance trails, agent/action ledgers, signed receipts —
-anything claiming "tamper-evident", "audit-grade" or "immutable". Split out of rules/04
+anything claiming "tamper-evident", "audit-grade" or "immutable" — and the signed
+request/response exchanges that produce such receipts (§2). Split out of rules/04
 (formerly section 8) on 2026-09-25; the section is now §1. Maps to NIST AU-9/AU-10.
 
 Core principle: **integrity and completeness are separate claims, and an unkeyed chain
@@ -87,8 +88,52 @@ records: hash-chained audit logs, compliance trails (EU AI Act Art. 12, FINRA
   front — per-subject crypto-shredding (sota-privacy-compliance rules/03 §4);
   retrofitting deletion breaks either the chain or the law.
 
+## 2. Signed request/response exchanges and receipts
+
+Applies where an application signs its own messages above TLS: payment and transaction
+APIs, agent-to-tool calls, inter-organisation instructions, anything whose receipt must
+later prove who asked for what. Primitive choice and the canonical-encoding rule stay in
+rules/04 §7; this section is about the protocol around them.
+
+- **Sign both directions.** The client signs the request with its key and the server signs
+  the response with its own; each signed body carries a fresh nonce and a timestamp, and
+  the verifier rejects a stale timestamp or a nonce it has already seen. An unsigned
+  response lets anyone on the path (or a compromised hosted provider) rewrite the result,
+  so a client of a provider that offers response signatures verifies them.
+- **Get the peer's verification key over an authenticated channel, never on first
+  contact.** A key accepted from the first response it arrives with is trust-on-first-use:
+  the attacker who answers first owns the session. Distribute it out of band or through a
+  versioned key set you already trust (rules/04 §5 and §7).
+- **A signature is not a unique identifier.** Several valid signatures can exist for one
+  message and key: for ECDSA, (r, n−s) verifies wherever (r, s) does (measured 2026-09-25
+  with pyca/cryptography 49 on P-256), and RFC 8032 section 8.4 notes that Ed25519 is
+  non-malleable only because verification rejects S ≥ L. So de-duplicate and index replays
+  on a hash of the canonical *message* (or its nonce), never on the raw signature bytes,
+  and prefer libraries that enforce a canonical form.
+- **Make a receipt self-describing.** Inside the signed content, record the canonicalization
+  scheme, the hash and the signature algorithm identifiers and the key ID, so a verifier
+  years later knows exactly what to recompute (the known-answer-vector rule of §1 applies).
+- **Signatures that must outlive their key need a trusted timestamp.** RFC 3161 time-stamp
+  tokens exist so a verifier can show a signature was made before the signing certificate
+  was revoked or expired; without one, a key rotation or revocation retroactively voids
+  every receipt it signed. Anchor such receipts as §1 describes.
+- **Sign the transaction data the user confirmed**, not only the session: amount, payee and
+  any field that changes the outcome, so the receipt gives integrity and non-repudiation
+  for that exact instruction (rules/04 §4: never escrow the signing key).
+  OWASP: Transaction Authorization, Key Management, MCP Security and AML Sanctions AI Agent
+  Payments cheat sheets; SCSVS S6.1.A2.
+
 ## Audit checklist
 
 - [ ] Is any "tamper-evident"/audit ledger keyed (HMAC/signature) or externally anchored — not a bare unkeyed hash chain — with tail truncation and whole-stream deletion detectable?
 - [ ] Is ledger completeness attested separately from integrity (source-assigned seq / close markers), and is verification possible off the storing system?
 - [ ] If the ledger is segmented (epochs, daily partitions, rotated files), does the first record of each segment chain to the previous segment's head **and** the verifier carry its running hash across the boundary — demonstrated against a fixture with one whole interior segment removed?
+- [ ] Is the hash preimage a **named** canonicalization (RFC 8785 or a written encoder spec) rather than a default JSON/map serializer, pinned by a committed known-answer vector that every verifier implementation reproduces byte-for-byte?
+- [ ] Is a TEE/confidential-computing control proposed to fix a **completeness** gap ("records that were never emitted")? That is a liveness failure and sits outside the CC guarantee — the fix is a separate completeness attestation at a vantage the monitored component does not control.
+- [ ] **Are signed exchanges signed in both directions, with nonce and timestamp checked, the
+      peer key obtained out of band, and replays keyed on the message rather than the
+      signature (§2)?** HIGH when a signature is the replay or idempotency key:
+      `grep -rniE '(seen|used|replay|dedup|idempot)[a-z_]*[^a-z].*sig|sig[a-z_]*[[:space:]]+(not[[:space:]]+)?in[[:space:]]+[a-z_]*(seen|used|replay)' .`
+      — every hit that stores or looks up the raw signature is the finding; a key fetched
+      from the peer on first use (`trust_on_first_use`, a `/.well-known` fetch with no pin)
+      needs a per-file read.

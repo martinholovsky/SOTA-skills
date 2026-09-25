@@ -163,6 +163,10 @@ body, _ := io.ReadAll(r.Body)       body, err := io.ReadAll(io.LimitReader(r.Bod
   zod / a generated struct) at the boundary, with `extra=forbid` /
   reject-unknown-fields / `deny_unknown_fields`. Unknown fields are an attack
   signal and a mass-assignment vector (rules/07) — reject, don't ignore.
+  Validation must reach the whole object graph: Jakarta Bean Validation descends into a nested
+  object or collection only where the reference carries `@Valid` (spec, Graph validation), so an
+  unmarked nested DTO's constraints never run. Pydantic validated a nested model inside a list
+  by default (2.13, measured 2026-09-25). OWASP: Bean Validation cheat sheet.
 - **Allowlist** values, formats, ranges, enums. **Canonicalize then validate**
   (rules/01 §1) — normalize unicode/encoding once before checking.
 - **Strip/flag invisible and deceptive Unicode** on text bound for an LLM context
@@ -172,6 +176,21 @@ body, _ := io.ReadAll(r.Body)       body, err := io.ReadAll(io.LimitReader(r.Bod
   injected instructions a reviewer can't see. Normalize (NFKC), drop the
   format/control categories you don't expect, and flag homoglyph-heavy strings.
   This is the ingest-side complement to the prompt-injection boundary (rules/08).
+  The same code points are rejected in source code in every language, in commit messages and
+  diffs, and in agent-generated code, by a CI gate: `sota-devsecops` rules/05 §5.6 covers changed
+  files; add commit messages to that scan. OWASP: Secure Coding with AI cheat sheet.
+- **Validating XML against a schema.** Load a pinned local copy, never the `xsi:schemaLocation`
+  the document names: Java's no-argument `SchemaFactory.newSchema()` validates by the
+  document's location hints, which its javadoc flags as a denial-of-service risk. Record a
+  digest of each schema file and check it; treat a schema repository or third-party schema
+  host as untrusted (DNS does not authenticate it); keep local schema and DTD files read-only to
+  the service. Write the XSD tight: finite `maxOccurs`, a length bound and pattern on every
+  simple value, no `xs:any` or `lax`/`skip` processing, and co-constraints as XSD 1.1
+  `xs:assert`/`xs:assertion`, which need a 1.1 processor (libxml2 2.14 via lxml 6.1 refused a
+  schema containing `xs:assert`, measured 2026-09-25). An element declared once makes a repeat
+  invalid (lxml rejected a second `<name>`/`<role>` pair, measured), which closes the
+  first-match ambiguity in rules/01 §11. OWASP: XML Security, Web Service Security, SAML
+  Security cheat sheets.
 - **Determine type from bytes, not declaration.** Sniff the real MIME from magic
   bytes and reject when it disagrees with the declared/extension type. Beware
   **polyglot files** (valid GIF *and* valid HTML/JS — "GIFAR"): a file that is two
@@ -181,7 +200,7 @@ body, _ := io.ReadAll(r.Body)       body, err := io.ReadAll(io.LimitReader(r.Bod
 - **Content scanning for uploads (CWE-434).** Run AV/malware scanning on uploaded
   files; store under a server-generated id (never the user filename, rules/01 §4);
   serve from a separate origin/sandbox domain with `Content-Disposition:
-  attachment` and a correct `Content-Type` (upload pipeline detail in rules/05).
+  attachment` and a correct `Content-Type` (upload pipeline detail in rules/21).
 - Reject before persistence. Invalid data must never reach storage in a form that
   a later, less-careful reader will trust.
 
@@ -214,8 +233,17 @@ if sniff_mime(blob) not in ALLOWED_MIME: raise Reject  # bytes, not declared
   sota-detection-engineering, don't just drop them. Flag **serialized-payload
   signatures** on inputs that should be plain data — base64 Python pickle prefixes
   (`gASV`, `gAJ`, `gAR`), Java serialization magic (`rO0`/`0xACED`), PHP
-  `O:<n>:` object markers: their presence in a feed/field is a deserialization-RCE
-  probe, not legitimate content.
+  `O:<n>:` object markers, .NET `BinaryFormatter` streams (base64 `AAEAAAD/////`) and a
+  `"$type"` key in JSON (Json.NET type-name handling), both measured 2026-09-25 on .NET 10 with
+  the formatter compatibility package: their presence in a feed/field is a deserialization-RCE
+  probe, not legitimate content. OWASP: Deserialization cheat sheet.
+- **RAG ingestion needs provenance and an approval path.** Each ingested document records
+  the uploader or writer identity and an approval record beside source and timestamp. A new
+  ingestion source is added only through an approval step, bulk uploads are reviewed rather than
+  waved through, and content from external auto-sync lands in staging and is reviewed before it
+  becomes retrievable from the vector store. Connectors get least-privilege, read-only scopes.
+  Cross-ref rules/08 and `sota-llm-engineering` rules/03. OWASP: RAG Security cheat sheet;
+  AISVS 12.5.4.
 - **No lateral trust.** Data validated for one purpose isn't validated for
   another; re-validate at each new boundary it crosses (a value safe for storage
   may be unsafe for a shell, a query, or a prompt — see §6).
@@ -258,3 +286,8 @@ Two exits matter beyond rules/01's sinks:
 - [ ] Ingested content encoded at the *render* boundary (rules/05) not sanitized-on-ingest, and provenance-tagged before reaching an LLM context (rules/08)?
 - [ ] Ingest anomalies (volume spikes, ratio-bomb/schema-violation bursts, AV hits) emitted as detection events?
 - [ ] XML structural limits (§2): nesting depth, element/attribute counts and name/value lengths capped, strict XSD instead of DTD, and tests for malformed-vs-normal parse time and for each limit? HIGH on an unauthenticated XML endpoint; each hit of `grep -rnE 'huge_tree[[:space:]]*=[[:space:]]*True|XML_PARSE_HUGE|ET\.(fromstring|parse|XMLParser)\(|minidom\.parse(String)?\(|expat\.ParserCreate' --include='*.py' --include='*.c' --include='*.cpp' --include='*.h' .` is a parser with a relaxed or absent depth limit
+- [ ] **Cascading validation (§4)**: does validation reach every nested object and collection (`@Valid` on each nested reference, nested models)? MEDIUM, HIGH when a nested field reaches a query or a decision; each hit of `grep -rnE '^[[:space:]]*(private|protected|public)[[:space:]]+([A-Z][A-Za-z]*(Dto|DTO|Request)|(List|Set|Collection)<[A-Z][A-Za-z]*(Dto|DTO|Request)>)[[:space:]]+[a-z]' --include='*.java' . | grep -v '@Valid'` is a nested DTO without `@Valid` on the same line (check the line above)
+- [ ] **Invisible code points in code and history (§4)**: does CI reject bidi and zero-width characters in source of every language, agent-generated code and commit messages? MEDIUM, HIGH in reviewed code; each hit of `LC_ALL=C grep -rnE $'\xe2\x80[\x8b-\x8d\xaa-\xae]|\xe2\x81[\xa6-\xa9]|\xef\xbb\xbf' .` is a finding (pipe `git log --format=%B` into the same grep for messages)
+- [ ] **XML schema validation (§4)**: is untrusted XML validated against a pinned, digest-checked, read-only local schema (never document location hints) with finite occurrences, bounded values, no `xs:any`/lax, and an XSD 1.1 processor where assertions are used? HIGH on a SAML or SOAP endpoint; every hit of `grep -rnE 'maxOccurs="unbounded"|<xs:any[[:space:]/>]|processContents="(lax|skip)"|newSchema\(\)' --include='*.xsd' --include='*.java' --include='*.kt' .` is a finding or needs a written reason
+- [ ] **.NET payload signatures (§5)**: do ingest detectors flag `AAEAAAD/////` and a JSON `"$type"` key beside the pickle, Java and PHP markers? MEDIUM; run `grep -rnE 'AAEAAAD/////|rO0AB|gASV|"\$type"[[:space:]]*:' .` over captured samples, and each hit is a deserialization probe
+- [ ] **RAG provenance and staging (§5)**: does every ingested document carry uploader identity and an approval record, with new sources approved, bulk uploads reviewed, auto-synced content staged before retrieval, and read-only connector scopes? HIGH for a shared corpus; each hit of `grep -rnE "\.(add_documents|add_texts|upsert|upsert_points)\(" --include='*.py' --include='*.js' --include='*.ts' . | grep -vE 'metadata|payload|provenance'` writes to the store without provenance

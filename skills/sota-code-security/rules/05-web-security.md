@@ -18,8 +18,11 @@ actually declare. Output encoding, headers, cookie attributes, and CORS are
     attributes. If unavoidable: JSON-encode with `<`, `>`, `&`, U+2028/2029
     escaped.
   - URL context → `encodeURIComponent` for components AND validate scheme —
-    `javascript:`/`data:` URLs survive entity encoding (allowlist
-    `https?:`/relative).
+    `javascript:`/`vbscript:`/`data:` URLs survive entity encoding (allowlist
+    `https?:`/relative) — after decoding character references (decimal, hex,
+    zero-padded, unterminated) and rejecting NUL, on every URL-bearing attribute
+    (`href`, `src`, `action`, `formaction`, `xlink:href`, `background`, object
+    `data`, CSS `url()`). Decode CSS escapes and comments before vetting CSS.
   - CSS context → don't interpolate untrusted data into styles at all.
   - **Contexts no encoding makes safe**: untrusted data never becomes a tag
     name, an attribute *name*, HTML-comment content, or the value of an
@@ -30,15 +33,26 @@ actually declare. Output encoding, headers, cookie attributes, and CORS are
     `innerHTML`/`setAttribute("style", …)`. Validate ambiguous attributes
     (`id`/`name` — DOM clobbering — `href`, `src`, `background`) against a
     strict pattern. OWASP: XSS Prevention, DOM based XSS Prevention cheat sheets.
+  - **Encoding mechanics** (where no auto-escaper applies): allowlist encoders
+    that escape every non-alphanumeric — `&#xHH;` in attributes, `\xHH`/`\uHHHH`
+    in JS strings (backslash-quoting alone breaks out), `\HH ` in CSS. Nested
+    contexts encode innermost-first: a URL in an attribute is component- then
+    attribute-encoded; data a script writes to an HTML sink is HTML- then
+    JS-encoded. Encode in code you trust, server-side or at the sink; XHTML
+    pages decode entities inside `<script>`. OWASP: XSS Filter Evasion cheat
+    sheet; Code Review Guide v2; Secure Coding Practices QRG.
 - Use your framework's auto-escaping templates and audit every bypass:
   `dangerouslySetInnerHTML`, `v-html`, `innerHTML`/`outerHTML`/
   `insertAdjacentHTML`, `bypassSecurityTrustHtml`, Jinja `|safe`, `{!! !!}`,
   `html/template` → `template.HTML(...)` casts. Each one needs sanitization or
   removal.
 - DOM XSS: sources (`location.*`, `document.referrer`, `postMessage` data,
-  `window.name`) flowing to sinks (`innerHTML`, `eval`, `setTimeout(string)`,
-  `document.write`, `location.href=`). Use Trusted Types
-  (`require-trusted-types-for 'script'`) to make sink misuse fail loudly.
+  `window.name`, `EventSource`/WebSocket message data) flowing to sinks
+  (`innerHTML`, `eval`, `setTimeout(string)`, `document.write`,
+  `location.href=`). Use Trusted Types (`require-trusted-types-for 'script'`)
+  to make sink misuse fail loudly; for legacy code, a strict, temporary
+  `trustedTypes.createPolicy('default', …)` sanitizes or rejects leftover
+  strings — a pass-through one cancels the enforcement (Trusted Types spec).
 - **DOM-sourced request targets (client-side CSRF)**: the same sources must
   not choose the URL, method or body of `fetch`/XHR, nor the `src` of a
   `<script>`/`<iframe>`. The request carries the victim's cookies and passes
@@ -64,7 +78,9 @@ actually declare. Output encoding, headers, cookie attributes, and CORS are
     over accepting sanitized HTML. OWASP: ASVS 5.0 V1.3.5; XSS Prevention,
     Ruby on Rails cheat sheets.
 - `postMessage`: always verify `event.origin` against an allowlist on receive,
-  and set explicit `targetOrigin` (never `*`) on send when payload is sensitive.
+  and always send with an exact `targetOrigin`, never `*`, whatever the payload.
+  `window.open` to a URL you don't control passes `noopener,noreferrer`.
+  OWASP: HTML5 Security, XS Leaks cheat sheets.
 
 ```jsx
 // BAD
@@ -93,8 +109,24 @@ Content-Security-Policy:
   demands them, that's a dependency finding.
 - `base-uri 'none'` (blocks `<base>` hijack of relative scripts), `object-src
   'none'`, `form-action` (limits credential-phishing form posts even post-XSS).
-- Roll out with `Content-Security-Policy-Report-Only` + `report-to` first; then
-  enforce. A report-only policy left in place for a year is a finding.
+- Roll out with `Content-Security-Policy-Report-Only` first; then enforce, and
+  keep reporting on the enforced policy (`Reporting-Endpoints` + `report-to`,
+  `report-uri` as the deprecated fallback). A report-only policy left in place
+  for a year is a finding. The collector keeps `effective-directive`,
+  `blocked-uri` and `disposition` and strips query strings from URL fields —
+  browsers remove only fragments and credentials (CSP3). OWASP: ASVS 5.0
+  V3.4.7; CSP, Logging Vocabulary cheat sheets.
+- Tighten past scripts where feasible: `default-src 'none'` plus a source per
+  type, `frame-src`/`child-src` for what may be embedded, no `'unsafe-inline'`
+  in `style-src`; move inline `on*=` handlers to `addEventListener` (a nonce
+  cannot cover an attribute). Check each policy with a CSP evaluator. CSP does
+  not stop DOM clobbering or reuse of script gadgets that are allowed to run.
+  OWASP: CSP, DOM Clobbering Prevention cheat sheets; Proactive Controls 2024 C8.
+- User files and API responses a browser may open directly get the header
+  `Content-Security-Policy: sandbox` (opaque origin, no scripts; ignored in
+  `<meta>` and report-only). The iframe `sandbox` attribute is a second layer
+  only: untrusted content still gets its own origin (rules/21 §1) and is not rendered
+  where sandboxing is unavailable. OWASP: ASVS 5.0 V3.2.1; HTML5 Security cheat sheet.
 - Deployment pitfalls: a `<meta http-equiv>` policy ignores `frame-ancestors`,
   `sandbox` and `report-uri`, cannot be report-only, and covers only markup
   after it (CSP3) — deliver by header wherever you control one. Never nonce
@@ -131,7 +163,17 @@ Content-Security-Policy:
   `text/plain` smuggling, Flash-era lessons). Bearer-token-in-header APIs are
   inherently CSRF-immune — one reason to prefer them for SPAs.
 - Login CSRF is real (attacker logs victim into attacker's account to harvest
-  data): protect the login form too.
+  data). No session exists yet, so issue a pre-session carrying its own token
+  on the login form (or require a custom header on a same-origin `fetch`), then
+  regenerate the session ID on login (rules/17 §2).
+- **Not defenses** on their own: a secret cookie, POST-only, multi-step flows,
+  URL rewriting, HTTPS, CAPTCHA. For `fetch`/XHR send the token in a custom
+  header; a script-readable token never contains the raw session ID.
+- **SPA client half**: token in a `<meta>` tag or JS variable, not Web Storage,
+  added on unsafe methods by one HTTP-client interceptor — Angular `HttpClient`
+  (`withXsrfConfiguration`; skips GET/HEAD and cross-origin URLs) or axios
+  (`XSRF-TOKEN` cookie → `X-XSRF-TOKEN`, same-origin only; `withXSRFToken:
+  true` sends it to every origin). OWASP: CSRF Prevention cheat sheet.
 
 ```python
 # GOOD: Fetch Metadata policy -> Origin/Referer fallback -> token, failing closed
@@ -175,8 +217,10 @@ verify: take the token from the header/form field, split it, recompute the HMAC
   expiry of its own — the scoped exception to rules/04 §7 "verify expiry".
   Per-request tokens are stricter but break Back and multi-tab use; keep
   them for high-value forms. On failure return `403`, log a suspected-CSRF
-  security event (user, route, `Origin`), optionally rotate the token.
-  OWASP: CSRF Prevention cheat sheet, Code Review Guide v2.
+  security event (user, route, `Origin`), optionally rotate the token. A
+  Fetch Metadata/Origin reject and a disallowed CORS origin log the same way,
+  with the reason (`malicious_csrf`, `malicious_cors`; rules/07 §2.1).
+  OWASP: CSRF Prevention, Logging Vocabulary cheat sheets; Code Review Guide v2.
 - **Behind reverse proxies**: the *expected* origin (scheme+host+port) comes
   from server config, never from `Host`/`X-Forwarded-Host`. Trust
   `X-Forwarded-Proto`/`-Host` only when your own proxy sets them and strips
@@ -199,7 +243,9 @@ verify: take the token from the header/form field, split it, recompute the HMAC
   - `null` origin allowed (sandboxed iframes/file:// can send it) — never
     allowlist `null`.
 - Keep `Allow-Methods`/`Allow-Headers` minimal; don't blanket-allow `*` on a
-  credentialed API. Cache poisoning: include `Vary: Origin`.
+  credentialed API. Cache poisoning: include `Vary: Origin`. Emit CORS headers
+  only on routes that must be read cross-origin, never domain-wide; refuse
+  plain-HTTP requests carrying an `https://` `Origin`. OWASP: Code Review Guide v2.
 - CORS preflights don't protect WebSockets — validate `Origin` on the WS
   handshake yourself (cross-site WebSocket hijacking).
 - **Host allowlist (DNS rebinding)**: the same-origin policy keys on the
@@ -255,7 +301,9 @@ Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
 Content-Security-Policy: (see §2)
 X-Content-Type-Options: nosniff
 Referrer-Policy: strict-origin-when-cross-origin
-Permissions-Policy: camera=(), microphone=(), geolocation=()
+Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()  (every unused feature)
+Content-Type: text/html; charset=utf-8       (explicit on every response)
+X-XSS-Protection: 0                          (or omit; never "1; mode=block")
 Cross-Origin-Opener-Policy: same-origin
 Cross-Origin-Resource-Policy: same-origin   (relax deliberately per-resource)
 Cache-Control: no-store                      (on authenticated/personal responses)
@@ -270,10 +318,19 @@ Cache-Control: no-store                      (on authenticated/personal response
   a token-free URL once the token is consumed (rules/02 §5). Forms on such a
   page POST with `Origin: null` (§3). OWASP: Forgot Password cheat sheet,
   Secure Headers Project.
-- `nosniff` is what makes your upload Content-Type discipline (§10) stick.
+- `nosniff` is what makes your upload Content-Type discipline (rules/21 §1) stick.
 - Remove fingerprint headers (`Server`, `X-Powered-By`) — low value but free.
-- COOP/COEP additionally gate cross-origin isolation (Spectre-class leaks) for
-  apps using SharedArrayBuffer.
+- Cross-origin isolation (Spectre-class leaks; needed for SharedArrayBuffer):
+  COOP plus COEP `require-corp` (or `credentialless`); each allowed cross-origin
+  subresource then needs a `crossorigin` attribute (CORS) or a CORP header.
+- Text types carry `charset=utf-8` (a guessed charset lets UTF-7-class input
+  pass the escaper); unknown/binary user files go out as `application/octet-stream`.
+  The retired XSS auditor could itself leak, hence `0`. Unused features stay
+  denied (`fullscreen`, `serial`, `hid`, sensors…), re-enabled one at a time.
+  **No mixed content**: no `http://` script, style, frame, image, form or link on
+  an HTTPS page — `upgrade-insecure-requests` is a safety net, not the fix;
+  plain-HTTP content lives on another host. OWASP: HTTP Headers, HSTS, TLS
+  cheat sheets; Secure Headers Project.
 
 ## 7. Cookies (CWE-1004/614/565)
 
@@ -298,7 +355,13 @@ Cache-Control: no-store                      (on authenticated/personal response
 - Never store authorization-relevant state client-side unsigned (e.g.
   `is_admin=1` cookie); signed cookies must also be encrypted if contents are
   sensitive, and validated server-side per request.
-- Size/count discipline: cookies ride every request — keep tokens, not data.
+- Size/count discipline: cookies ride every request — keep tokens, not data;
+  name + value over 4096 bytes is dropped silently (RFC 6265bis). **Every**
+  cookie is `Secure` (`__Secure-` where `__Host-` can't apply; `__Host-` forces
+  `Path=/`). Session cookies carry no `Expires`/`Max-Age` (remember-me: rules/17
+  §2), reach the client only via `Set-Cookie` (never a response body), one header
+  per cookie, under a non-default name (not `JSESSIONID`/`PHPSESSID`), one name
+  per cookie across paths/domains; inventory them. OWASP: ASVS 5.0 V3.3.1/4/5.
 
 ## 8. Third-party scripts & embeds in the browser
 
@@ -311,6 +374,15 @@ Cache-Control: no-store                      (on authenticated/personal response
   container changes with review, exclude payment/auth pages from them
   entirely (also a PCI DSS 4.0.1 §6.4.3/11.6.1 requirement, mandatory since
   March 2025: script inventory + integrity monitoring on payment pages).
+  Narrow what a tag may touch: the host page builds a data layer holding just
+  the values vendors need, validating any user-controlled input (URL params,
+  form fields) on the way in, and tags read that — never the DOM, cookies or
+  URL directly. Switch off tag types that run arbitrary code (e.g. Google Tag
+  Manager: `gtm.blocklist` with `customScripts`, which covers Custom HTML
+  tags). The console is a production deploy path: named accounts with MFA
+  (GTM can demand 2-step verification before Custom HTML/JS or user settings
+  change), publish rights for a few, changes reviewed like a release. OWASP:
+  Third Party Javascript Management cheat sheet.
 - **Vet before adding, watch after.** Before including a vendor script, review
   what it reads, where it sends data and what it writes to the DOM, and who
   controls its serving domain: a domain that is sold, or lapses and is
@@ -324,6 +396,15 @@ Cache-Control: no-store                      (on authenticated/personal response
   `allow-scripts` together on same-site content — that nullifies the sandbox),
   minimal `allow=` permissions; untrusted HTML never via `srcdoc` without
   sanitization.
+- **Contain a vendor script you cannot vet** in a sandboxed iframe served from
+  a separate registrable domain (a sibling subdomain can still receive
+  parent-domain cookies): it cannot reach the host DOM, cookies or storage, and
+  talks to the page only by `postMessage`, the receiver checking `event.origin`
+  exactly and each message against a fixed schema (§1). Worker offloading
+  (Partytown-class) is a speed tool, not a boundary: a worker script must be
+  same-origin, so it keeps your `fetch` (cookies sent by default) and
+  IndexedDB, and the proxy forwards DOM calls unless configured to refuse
+  them. OWASP: Third Party Javascript Management cheat sheet.
 - OAuth popups/postMessage bridges: see §1 `postMessage` rules; verify opener
   relationships, use COOP to sever unwanted window handles.
 
@@ -351,41 +432,12 @@ Cache-Control: no-store                      (on authenticated/personal response
   reflect unkeyed inputs; `Vary` on what you use; strip override headers at
   the edge (rules/01 §11 Host-header rules apply).
 - Browser-side: `Cache-Control: no-store` for sensitive pages also defends
-  shared-computer history attacks; pair with `Clear-Site-Data: "*"` on logout
-  for high-sensitivity apps.
+  shared-computer history attacks (`no-cache` still permits storing, RFC 9111
+  section 5.2.2.4); pair with `Clear-Site-Data: "*"` on logout for high-sensitivity
+  apps, and also clear Web Storage, IndexedDB and sensitive DOM from client code
+  (works offline). No PII/financial data there. OWASP: ASVS 5.0 V14.3.1, V14.3.3.
 
-## 10. File upload handling (CWE-434)
-
-- Validate by **content**, not trust: check magic bytes/parse the file with a
-  real decoder; the client `Content-Type` and filename extension are
-  attacker-controlled.
-- Allowlist extensions AND served content types. Reject double extensions
-  (`shell.php.jpg`), trailing dots/spaces, NUL tricks; **generate the stored
-  filename yourself** (UUID), keep the original only as metadata (also kills
-  path traversal, rules/01 §4).
-- Store outside the web root, or in object storage with no execute semantics.
-  Never in a directory where the app server executes code (the classic
-  webshell: upload `x.php` into `/uploads` served by PHP). Harden the store:
-  its own volume mounted `noexec,nosuid,nodev`, files written without execute
-  bits (`0640`/`0440`). `noexec` blocks only direct execution of binaries — an
-  interpreter mapped to the directory still runs scripts — so also disable
-  per-directory config overrides: Apache `AllowOverride None` with
-  `AllowOverrideList None` (`.htaccess` is then never read); IIS keeps
-  `system.webServer/handlers` locked for the upload path (`<location path=…
-  overrideMode="Deny">`, handlers `accessPolicy="Read"`) so an uploaded
-  `web.config` cannot re-enable execution. OWASP: File Upload cheat sheet;
-  Go-SCP.
-- Serve with: `Content-Type` you determined, `X-Content-Type-Options: nosniff`,
-  `Content-Disposition: attachment` for anything not explicitly displayable,
-  and ideally from a **separate origin/sandbox domain** (usercontent.example) so
-  HTML/SVG payloads can't script against your app origin. SVG is XSS-capable —
-  sanitize or serve as attachment.
-- Limits: max size (enforced streaming, before buffering whole body), max
-  files/request, rate limits; image processing in a sandboxed/least-privilege
-  worker (decoder CVEs: ImageTragick lineage) with decompression-bomb caps
-  (pixel-count limit before decode).
-- Scan where threat model warrants (AV/CDR for shared-file features); strip
-  metadata (EXIF GPS) from re-served images (privacy, rules/07).
+File upload handling (formerly section 10) moved to [rules/21](21-file-uploads.md) §1 on 2026-09-25.
 
 ## Audit checklist
 
@@ -398,8 +450,6 @@ Cache-Control: no-store                      (on authenticated/personal response
 - [ ] Are `frame-ancestors`/XFO set, especially on auth and confirmation pages?
 - [ ] Is the full header baseline present (HSTS w/ includeSubDomains, nosniff, Referrer-Policy, COOP) and `Cache-Control: no-store` on personal data?
 - [ ] Do session cookies use `__Host-` prefix, Secure, HttpOnly, SameSite, host-scoped?
-- [ ] Are uploads content-validated, renamed server-side, stored non-executable (ideally separate origin), size-capped pre-buffer, and served with nosniff + attachment disposition?
-- [ ] Are SVGs sanitized or never served inline from the app origin?
 - [ ] Do third-party scripts carry SRI or self-hosted pins, with tag managers excluded from auth/payment pages?
 - [ ] Are authenticated responses `no-store`/`private` with cache keys covering every response-affecting input (no unkeyed header reflection)?
 - [ ] Are sandboxed iframes used for untrusted embeds without `allow-scripts`+`allow-same-origin` together?
@@ -416,6 +466,14 @@ Cache-Control: no-store                      (on authenticated/personal response
 - [ ] **Referrer widened, or token pages leak — MEDIUM**: `grep -rnEi -- "referrerpolicy=['\"]?(unsafe-url|origin-when-cross-origin|no-referrer-when-downgrade)|Referrer-Policy:[[:space:]]*(unsafe-url|no-referrer-when-downgrade|origin-when-cross-origin)" .`; and do reset/magic-link/callback pages send `no-referrer`?
 - [ ] **Path used as an app boundary — MEDIUM**: `grep -rnEi -- "cookie.*path['\"]?[[:space:]]*[:=][[:space:]]*['\"]?/[A-Za-z0-9_-]" .` — a path-scoped session cookie usually means several apps share one origin; they need separate hostnames.
 - [ ] **Unpinned or unvetted vendor script — MEDIUM**: `grep -rnEi -- "<script[^>]*src=['\"]?https?://" . | grep -vi 'integrity='` — each remaining hit has a vetted owner/domain and content-change monitoring.
-- [ ] **Per-directory execution overrides — HIGH on upload paths**: `grep -rnEi -- "AllowOverride[[:space:]]+(All|FileInfo|Options)|overrideMode=['\"]Allow|accessPolicy=['\"][^'\"]*(Script|Execute)" .`; upload volume mounted `noexec,nosuid,nodev`?
+- [ ] **Tag manager runs arbitrary code — HIGH**: `grep -rlEi -- "googletagmanager\.com/gtm\.js" . | xargs -r grep -LEi -- "gtm\.blocklist[^]]*(customScripts|['\"]html['\"])"` — each file loads a container with no custom-code block; also confirm console MFA and a data-layer-only tag design.
+- [ ] **Vendor script "sandboxed" in a worker — MEDIUM**: `grep -rnEi -- "type=['\"]?text/partytown|<Partytown" .` — a vendor that must be contained runs in a separate-domain iframe instead; the worker keeps your origin.
+- [ ] **Retired subdomain still trusted — HIGH** (sota-network-security rules/06 R4, sota-identity-access rules/01): `grep -rnEi -- "(redirect_?uris?|allowed_?origins|cors_?origins|-src[[:space:]])[^#]*[a-z0-9-]\.[a-z]{2,}" .` — every host listed resolves to a live, owned service; a name gone from DNS is purged from redirect-URI, CSP and CORS lists in the same change.
 - [ ] **Web cache deception, origin half — HIGH**: `curl -s -o /dev/null -w '%{http_code}\n' -b "$SESSION" https://HOST/account/x.css` (and `/account;x.css`) returns `404`/redirect, not `200` with the account page.
 - [ ] **Path-normalisation disagreement — HIGH**: a test sends variants of a protected path (`/admin/`, `/ADMIN`, `/%61dmin`, `/x/../admin`, `/admin;x`) through CDN, proxy, WAF and app and asserts the same allow/deny at each — sent raw (`curl --path-as-is`), or the client itself collapses `/x/../admin` to `/admin` and the variant is never tested.
+- [ ] **CSRF token leaves the origin or sits in storage — HIGH**: `grep -rnEi -- "withXSRFToken[[:space:]]*:[[:space:]]*true|(localStorage|sessionStorage)\.setItem\([^)]*(csrf|xsrf)" .` — the token rides only same-origin requests, from a meta tag or memory.
+- [ ] **Cross-window leaks — MEDIUM**: `grep -rnEi -- "postMessage\(.*,[[:space:]]*['\"]\*['\"]|window\.open\(" . | grep -vi noopener` — every send names an exact `targetOrigin`; every `window.open` to a foreign URL passes `noopener`.
+- [ ] **Mixed content — MEDIUM**: `grep -rnEi -- "(src|href|action)[[:space:]]*=[[:space:]]*['\"]?http://" .` — no plain-HTTP subresource, form target or link on an HTTPS page.
+- [ ] **Header value defects — MEDIUM**: `grep -rnEi -- "x-xss-protection['\"]?[[:space:]]*[:,=]?[[:space:]]*['\"]?1|text/html(['\"]|[[:space:]]*$)|cache-control[^;]*no-cache" . | grep -vi no-store` — auditor enabled, HTML without `charset=utf-8`, or `no-cache` where `no-store` was meant.
+- [ ] **Sensitive data in browser storage — MEDIUM**: `grep -rnEi -- "(localStorage|sessionStorage)\.setItem|indexedDB\.open" .` — each hit holds no PII/financial data and is cleared client-side at logout.
+- [ ] **CSP gaps — MEDIUM**: `grep -rnEi -- "style-src[^;]*unsafe-inline|<[a-z][^>]*[[:space:]]on[a-z]+=|report-uri" . | grep -vi report-to` — inline styles/handlers to refactor; `report-uri` without `report-to`; enforced policy reports somewhere.

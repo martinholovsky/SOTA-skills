@@ -30,6 +30,13 @@ because logs and error trackers routinely are.
 - Fail closed: error paths must not skip authz/validation (`except Exception:
   return data_anyway`), must release resources, and must not leave partial
   state (use transactions).
+- **Every exit from a security decision that is not an explicit allow is a deny**, in any
+  language: the `default` of a `switch`/`match` over roles or states, the trailing `else`,
+  an early `return` taken on an unexpected value, and the decision variable's initial
+  value. Handle runtime *errors* as well as exceptions: in Java, `catch (Exception e)` does
+  not catch an `Error` such as `AssertionError`, and a `return true` inside `finally`
+  discards whatever was thrown and allows (both measured on JDK 25). A panic recovered by
+  middleware must end the request as a denial, not continue it. OWASP: Code Review Guide v2.
 
 ```python
 # BAD: three different responses = free enumeration + targeting data
@@ -69,7 +76,10 @@ def handle(e):
     value-shape detectors (JWT regex, PAN Luhn check) at the logger level;
   - deny-by-default serialization for log objects (log explicit fields, never
     `log.info(f"{request.__dict__}")` / whole-object dumps);
-  - secrets wrapped in types whose `toString`/`repr` is masked.
+  - secrets wrapped in types whose `toString`/`repr` is masked and whose value is reachable
+    only through one explicitly named accessor (Pydantic `SecretStr.get_secret_value()`,
+    Rust `secrecy`'s `expose_secret()`), so every read of the secret is greppable
+    (in-memory handling: `sota-secrets-management` rules/02 §7). OWASP: Code Review Guide v2.
 - **Log injection (CWE-117)**: strip/escape CR/LF and control chars from
   user-controlled values before logging (forged entries, log-parser exploits —
   and never let user input reach a log4j-style lookup/format string: log
@@ -97,6 +107,31 @@ class Secret(str):
   denials, validation rejections, privilege/role changes, MFA/recovery events,
   admin actions — with actor, action, target, result, source IP, timestamp;
   ship to an append-only store with alerting on anomalies.
+- **Payment integrations keep a full trail**: log every initiation, redirect to the gateway
+  and callback with timestamp and source IP, and retain the raw callback request (headers
+  and body, as received) so a dispute or forensic review can re-verify it later. Retain it
+  under the same access and retention rules as other payment records. OWASP: Third Party
+  Payment Gateway Integration cheat sheet.
+- **What goes into one log line**:
+  - an attack signal names the detection rule and the parameter, not the raw payload
+    (the Logging Vocabulary's `malicious_sqli` carries a `ruleid` and a parameter name); a
+    stored payload is an injection into every log viewer and SIEM query that renders it;
+  - every user-supplied string field gets a length cap at the logger, in every language,
+    not only in a JVM layout pattern, so one request cannot flood or truncate the record;
+  - sessions are correlated by a keyed or salted hash of the session ID, never the ID;
+  - file paths, internal host names and IPs are sensitive: they belong in the restricted
+    server-side sink, not in anything a user, a vendor or a client log can see;
+  - stack traces stay server-side, in a sink with restricted access (§1 two channels).
+  OWASP: Logging, Logging Vocabulary, Session Management and Java Security cheat sheets;
+  Go-SCP (logging).
+- **Security logging runs on a trusted server-side component.** A browser, mobile app or
+  partner system can suppress, forge or replay the events it sends, so it is never the
+  only record of a security event. Treat log events arriving from clients or other trust
+  zones as untrusted input: validate their format and size, count and alert on
+  rejections, and authenticate their source where the event feeds a decision. Ship logs
+  only to sinks named in a maintained log inventory; an undeclared sink (a debug
+  forwarder, a vendor SDK) is unreviewed exposure. OWASP: Logging cheat sheet, Secure
+  Coding Practices QRG, ASVS 5.0 V16.2.3.
 - URLs end up in logs everywhere (proxies, CDNs, browser history): never carry
   secrets/PII in query strings (CWE-598).
 
@@ -131,6 +166,14 @@ give each event a fixed severity so alerting keys on the name, not on a regex.
   field (`input_validation_discrete_fail`, `malicious_extraneous`) at a higher severity
   than routine rejections, which stay `input_validation_fail`. Mixing the two buries
   the probe among typos.
+- **Crypto, transport and protocol failures are security events, not connectivity
+  noise.** Every encrypt, decrypt or signature-verification failure
+  (`crypt_decrypt_fail`, `crypt_encrypt_fail`; the user still gets the uniform error of
+  rules/04 §2); an outbound TLS handshake or certificate-verification failure, which can be
+  an interception attempt (rules/04 §5); a KMS, HSM or crypto-library error; and a request
+  using an HTTP method the route does not serve (`TRACE`, `PUT` on a read-only resource)
+  once it is past the framework's `405`. Keep each separate from generic
+  `network_error`, so a burst from one peer or principal can alert.
 - **Business-logic and integrity detection points**: signups per IP, device or
   payment instrument; spikes in promo, referral or credit redemption; a multi-step flow
   finished faster than a person could; an order marked paid with no matching gateway
@@ -144,6 +187,29 @@ give each event a fixed severity so alerting keys on the name, not on a regex.
   Tenant Security and Third Party Payment Gateway Integration cheat sheets; Proactive
   Controls 2024 C3/C9; ASVS 5.0 V16.3.2; Code Review Guide v2; Go-SCP (logging);
   Secure Coding Practices QRG.
+
+### 2.2 In-application detection with graded response
+
+Detection points that only log wait for a human. An application can also respond on its
+own, which is the model OWASP's AppSensor project describes; keep it small and predictable.
+
+- **Place a few detection points in each layer**: presentation (tampered hidden or option
+  fields, §2.1), business logic (sequence violations such as `sequence_fail`, impossible
+  velocity) and data access (queries outside a user's normal scope, bulk reads). Name
+  each one, as §2.1 names events.
+- **Accumulate, then act.** Keep a risk score per user or session (and per source) that
+  each detection raises and time lowers. Thresholds are configurable per detection point,
+  per group of points and overall; a single anomaly moves the score, it does not trigger
+  the strongest response.
+- **Give every threshold a predefined, graded response**: raise log verbosity for that
+  principal, add delay, disable one function, require step-up authentication, force
+  logout (kill the session), lock the account, warn the user. Reuse existing localized
+  controls, such as login lockout, as response actions rather than building parallel ones.
+- Responses that reach other systems (fraud-engine settings, an IP-range block at the
+  edge, a SOC ticket) are listed and owned, because a false positive there spreads.
+- Say in the terms of service that suspicious activity may slow, restrict or suspend an
+  account, so the reaction is disclosed. OWASP: Code Review Guide v2, Cornucopia,
+  WSTG-BUSL-07.
 
 ## 3. Mass assignment / over-binding (CWE-915)
 
@@ -213,6 +279,13 @@ return PublicUser.model_validate(user)    # adding a DB column changes nothing h
   history in served Office/PDF files, `.git`/`.env`/backup files reachable
   under the web root, source maps exposing server code paths in prod,
   verbose `OPTIONS`/`TRACE`.
+- **Comments and leftovers in what the browser receives.** The build strips comments from
+  shipped HTML, JS and CSS (the minifier's comment removal on, license banners kept
+  deliberately), and an audit reads the delivered pages, not the source: `<meta>` tags,
+  the body of `3xx` redirect responses (often a full page rendered before the redirect),
+  and shipped JS bundles, looking for hidden endpoints, credentials, internal host names
+  and TODO notes. OWASP: WSTG-INFO-05, Go-SCP (data protection), Secure Coding Practices
+  QRG.
 - **Static web tier: list nothing, serve an allowlist.** Directory listing stays off
   unless a listing is the product: nginx `autoindex`, Tomcat's `listings` and IIS
   `directoryBrowse` default off, and Apache lists wherever `Options` includes
@@ -238,6 +311,26 @@ return PublicUser.model_validate(user)    # adding a DB column changes nothing h
 - Don't collect what you can't protect: every stored sensitive field is
   permanent liability; derive (age bracket, not DOB), truncate (last-4),
   or process-and-discard where the product allows.
+- When a full sensitive value must reach the client (an account number, a tax ID, a
+  recovery code), the UI masks it by default and shows it only on an explicit user action,
+  with the reveal logged for high-sensitivity fields. Mobile specifics:
+  `sota-mobile` rules/04 §4.13. OWASP: ASVS 5.0 V14.2.6.
+- Process-and-discard applies in memory too: once processing ends, wipe or re-encrypt the
+  plaintext buffers of sensitive data, not only key material (best-effort in GC runtimes;
+  `sota-secrets-management` rules/02 §7). OWASP: ASVS 5.0 V11.7.2.
+- **SMS is a public channel.** It is unencrypted end to end and a SIM swap redirects it, so
+  it may carry low-value notifications and one-time codes (with the limits of rules/02 §5 and §7), never
+  account data, balances, health or personal details, or a link that works without login.
+  OWASP: Mobile Application Security cheat sheet.
+- **Encryption in the wrong place does not reduce exposure.** Encrypting in browser code
+  protects nothing from the user holding the key and the code; encrypting an ID in a URL
+  parameter is not access control (authorize the object, rules/03). A payload that crosses
+  an intermediary which terminates TLS (a CDN, an API gateway, a message broker) needs
+  message-level encryption if that intermediary is not trusted with it. Data published to a
+  public content-addressed store (IPFS, Arweave) cannot be access-controlled or deleted, so
+  it is encrypted before publishing or not published. Browser crypto such as Web Crypto
+  remains right for end-to-end designs where the user is the party meant to hold the key.
+  OWASP: AJAX Security and Cryptographic Storage cheat sheets, Cornucopia CR4, SCSVS S9.4.A1.
 - Secondary stores inherit exposure but escape controls — audit them
   explicitly: analytics events, data warehouses/ETL, search indexes, caches,
   queue payloads (often logged by brokers), crash/error trackers (Sentry-class
@@ -268,6 +361,18 @@ return PublicUser.model_validate(user)    # adding a DB column changes nothing h
   the rest. For legacy apps, shrink
   the feature set the same way and switch off high-risk admin functions nobody uses.
   OWASP: Legacy Application Management and Nodejs Security cheat sheets.
+- **Log files never live under a web-served path.** A log written below the document root
+  or a static directory is downloadable by anyone who guesses its name, and it holds
+  exactly the data §2 keeps from users. If logs must be viewable over HTTP, serve them
+  behind authentication as `text/plain` with `X-Content-Type-Options: nosniff`, never
+  rendered as HTML (a logged payload would run). OWASP: Logging cheat sheet, Code Review
+  Guide v2.
+- **Ship only what runs.** Production images and packages exclude default and sample files,
+  README, CHANGELOG and other documentation, examples, tests and unused modules; they
+  reveal versions and paths and sometimes work as endpoints. Enforce it with a content check
+  on the built artifact in CI (list the image or package files and fail on a denylist), not
+  only a `.dockerignore` (`sota-devsecops` rules/04 §4.2). OWASP: WSTG-CONF-02, Go-SCP (data
+  protection), Secure Coding Practices QRG.
 - Non-prod environments holding prod data inherit prod's threat model: either
   mask/synthesize data or secure staging like prod (staging breaches are real
   breaches).
@@ -332,3 +437,39 @@ resources :x without only:/except: | spring-boot-starter-data-rest | @Repository
 - [ ] Are error trackers, session replay, analytics, warehouses, caches, and backups covered by the same scrubbing/retention/access rules as the primary DB?
 - [ ] Do deletion flows reach secondary stores, and do exports carry full authz, audit, and short-TTL signed links?
 - [ ] Is data classified at the schema level with retention enforced by automated deletion jobs?
+- [ ] **Does every non-allow exit of a security decision deny (§1)** — `default`, trailing
+      `else`, `finally`, recovered panics, and Java `Error`s that `catch (Exception)` misses?
+      HIGH: `grep -rnE '(finally|default|else)[^a-zA-Z]*[:{>-][^}]*return[[:space:]]+(true|True|ALLOW|Allow|PERMIT)|default[[:space:]]*->[[:space:]]*(true|ALLOW|PERMIT)' .`
+- [ ] **Are log lines free of raw payloads, raw session IDs and unbounded user strings, with
+      stack traces, paths and host names only in the restricted sink (§2)?** MEDIUM:
+      `grep -rnE '(log|logger|logging)\.[a-z]+\(.*(session_?id|session\.getId\(\)|sessionid|request\.body|req\.body|raw_?payload)' . | grep -viE 'hash|hmac|sha256'` — and confirm a length cap in the logger configuration.
+- [ ] **Does security logging run server-side, with client- or partner-supplied log events
+      validated as untrusted input and every sink in a log inventory (§2)?** MEDIUM. Client
+      log intake routes to read: `grep -rnE '["'"'"'][^"'"'"']*/(client-?logs?|logs?|logging|telemetry)(/[a-z]*)?["'"'"']' .`
+- [ ] **Do payment integrations log initiation, redirect and callback, and retain the raw
+      callback (§2)?** MEDIUM. Callback handlers with no raw retention or audit in sight:
+      `grep -rliE '(payment|gateway|checkout|stripe|adyen|paypal)[a-z_/-]*(callback|webhook|notify|ipn)' . | while IFS= read -r f; do grep -qiE 'raw_?(body|payload|callback|request)|get_data\(|getRawBody|rawBody|audit' "$f" || echo "$f"; done`
+- [ ] **Do encrypt/decrypt/verify failures, outbound TLS or certificate failures, KMS/HSM
+      errors and unexpected HTTP methods each emit a named security event (§2.1)?** MEDIUM.
+      Files that catch such a failure and name no event:
+      `grep -rlE 'InvalidTag|AEADBadTagException|BadPaddingException|CryptographicException|SSLHandshakeException|CertificateError|SSLCertVerificationError|ERR_TLS_CERT|message authentication failed' . | while IFS= read -r f; do grep -qiE 'crypt_(de|en)crypt_fail|security_?(event|log)|tls_fail|audit' "$f" || echo "$f"; done`
+- [ ] **Is there in-application detection with graded, predefined responses and configurable
+      thresholds (§2.2)?** LOW as a weakness when absent (MEDIUM for high-value or regulated
+      flows): `grep -rqiE 'appsensor|detection_?point|risk_?score|threat_?score|response_?action' . || echo 'no in-app detection/response module: record as a weakness'` — then list every response that reaches another system.
+- [ ] **Do shipped HTML, JS, meta tags and redirect bodies carry no revealing comments or
+      notes (§4)?** LOW (HIGH when a credential or hidden endpoint is found). Over the built
+      output, not the source: `grep -rniE '<!--.*(todo|fixme|password|secret|api[_-]?key|internal|/admin|debug)|(//|/\*).*(todo|fixme|password|secret|api[_-]?key|internal)' .`
+- [ ] **Are full sensitive values masked in the UI until revealed, in-memory plaintext wiped
+      after use, and nothing sensitive sent by SMS (§5)?** MEDIUM:
+      `grep -rnE '\{[^}]*\.(ssn|iban|account_?number|card_?number|pan|tax_?id|national_?id)[^}]*\}' . | grep -viE 'mask|redact|last4|reveal'` ; `grep -rniE '(sms|messages\.create|sendSms|send_sms|publish\(.*PhoneNumber).*(balance|account_?number|iban|ssn|diagnos|password|date_of_birth|dob)' .`
+- [ ] **Is encryption placed where it protects (§5)** — no client-side "encryption" or
+      encrypted URL IDs standing in for access control, message-level encryption across
+      untrusted TLS-terminating hops, nothing unencrypted on public content-addressed
+      storage? MEDIUM (HIGH for personal data on IPFS/Arweave). Sites to read:
+      `grep -rnE 'CryptoJS\.(AES|DES|TripleDES|Rabbit)\.(en|de)crypt|crypto\.subtle\.(en|de)crypt|ipfs\.(add|addAll)\(|arweave\.createTransaction\(|pinFileToIPFS' .`
+- [ ] **Are log files outside every web-served path (§6)?** HIGH when one is reachable:
+      `grep -rnE '(access_log|error_log|fileName|filename|FileHandler\(|path)[^#]*(/var/www|/htdocs|/wwwroot|/public/|/static/|webapps/|(^|[^a-z])static/|(^|[^a-z])public/)[^[:space:]"'"'"']*\.log' .`
+- [ ] **Does CI check the built artifact's contents for docs, samples, examples, tests and
+      unused modules (§6)?** LOW. Over the unpacked image or package root:
+      `find . -type f \( -iname 'README*' -o -iname 'CHANGELOG*' -o -iname '*.md' -o -iname '*.sample*' -o -iname '*.example*' -o -path '*/examples/*' -o -path '*/samples/*' -o -path '*/docs/*' -o -path '*/doc/*' -o -path '*/test/*' -o -path '*/tests/*' \)`
+      — a licence notice kept on purpose is fine.

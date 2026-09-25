@@ -414,6 +414,19 @@ was false, and the signature was gone. Only asking a question the benign state c
   it verify *with a signature*". §1's falsification question, aimed at the *pass*: what
   benign condition produces this same OK? If a real defect maps to it, the status is an
   unhandled case, not a pass.
+- **The neighbour can be the application itself, at runtime.** Code that rewrites security
+  configuration while running — a management API or admin endpoint that edits server config,
+  a config writer, an in-process assignment such as `process.env.NODE_TLS_REJECT_UNAUTHORIZED
+  = "0"` or `ssl._create_default_https_context = ssl._create_unverified_context` (both
+  measured 2026-09-25 to turn a self-signed-cert failure into a 200 in the same process) —
+  undoes the reviewed config without touching it. Grep for such writes; each is a finding
+  unless gated, logged and scoped to a test.
+- **A setting that widens the attack surface is never silent.** Debug on, authentication or
+  TLS verification off, an admin interface exposed: turning one on emits a security event
+  (`rules/07` §2.1) and stays visible on the operator's status surface while it holds. If an
+  expected security feature is missing at startup, the product warns loudly or refuses to run
+  (§2), and the operator documentation lists every such switch and what it exposes.
+  OWASP: Code Review Guide v2, Cornucopia.
 
 ## Audit checklist
 
@@ -461,5 +474,8 @@ was false, and the signature was gone. Only asking a question the benign state c
       docstrings, ADRs, README — each been rewritten with a denominator and
       counted against the code, with any `NOT APPLICABLE` verdict on a real
       mechanism swept first (§7)?
+- [ ] **Runtime rewrites of security config** (§8) — High where the write is reachable in
+      production without a log: `grep -rnE 'NODE_TLS_REJECT_UNAUTHORIZED[^=]{0,3}= *.?0|_create_default_https_context *= *(ssl\.)?_create_unverified|WTF_CSRF_ENABLED.{0,4}= *False' src/`.
+      Does every attack-surface-widening switch emit an event and show on a status surface?
 - [ ] For each of the above: **if this were a no-op, would anything observable
       differ** — a log, a metric, a failing test (`rules/10` §1)?
