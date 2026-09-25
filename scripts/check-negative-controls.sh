@@ -744,9 +744,17 @@ old_ver = lines[start].split('[', 1)[1].split(']', 1)[0]
 # 29 then fires — correctly — and the probe reports EXEMPTION DID NOT HOLD against invariant
 # 14, which passed. Observed 2026-09-14 on the branch that added rules/07. Declaring the
 # routing check here keeps 29 satisfied so 14 is the only thing this fixture tests.
+# The artifact must carry a date in its path and post-date the last description edit
+# (29's currency test, added 2026-09-20). The fixture declared the undated case file until
+# 2026-09-25, which failed 29 the first time a branch edited a description after that
+# date -- the probe's premise drifted while its text stayed correct. So it writes one.
+import os
+os.makedirs('evals/results/2099-12-31', exist_ok=True)
+open('evals/results/2099-12-31/routing-fixture.md', 'w').write(
+    'Negative-control fixture for probe 14b: stands in for a desc-routing-regressions run.\n')
 body = ['## [%s] - 2099-12-31' % ver, '',
         '**Front door checked:** Kubernetes', '',
-        '**Routing checked:** evals/cases/desc-routing-regressions.jsonl', '',
+        '**Routing checked:** evals/results/2099-12-31/routing-fixture.md', '',
         'Kubernetes is named here, first, and on the front door.', '']
 body += ['padding line with no heading link checkbox or number'] * 3000
 body += ['']
@@ -1026,6 +1034,28 @@ p.write_text(t2)
 probe 36 "a routed language skill is missing from LANGS" \
   "NOT IN LANGS: sota-ruby"
 
+# 37 — a grep probe that filters out the file it names. Append one to a checklist, in
+# the exact shape three shipped probes had (--include='*.rb' beside config.ru).
+( cd "$WT" && python3 -c "
+import pathlib
+p = pathlib.Path('skills/sota-shell-scripting/rules/09-listing-and-selection.md')
+t = p.read_text()
+p.write_text(t.rstrip('\\n') + '\\n- [ ] probe: \\x60grep -rn X --include=\\x27*.rb\\x27 config.ru\\x60\\n')
+" )
+probe 37 "a grep probe filters out the file it names" \
+  "INCLUDE DROPS NAMED FILE: skills/sota-shell-scripting/rules/09-listing-and-selection.md"
+
+# 37b — the escape hatch. '# BAD' exempts ITS OWN line only; a marker on the next line
+# must not launder the command above it (a declared escape needs a known-bad too).
+( cd "$WT" && python3 -c "
+import pathlib
+p = pathlib.Path('skills/sota-shell-scripting/rules/09-listing-and-selection.md')
+t = p.read_text()
+p.write_text(t.rstrip('\\n') + '\\n- [ ] probe: \\x60grep -rn X --include=\\x27*.rb\\x27 config.ru\\x60\\n  (# BAD on the next line)\\n')
+" )
+probe 37b "a '# BAD' marker on the next line exempts the command above it" \
+  "INCLUDE DROPS NAMED FILE: skills/sota-shell-scripting/rules/09-listing-and-selection.md"
+
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
 # =============================================================================
@@ -1286,7 +1316,7 @@ if [ "$derived" -ne "$declared" ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36 (33 of 36)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37 (34 of 37)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        12          — mtime-based: needs a rendered asset older than its source."

@@ -85,8 +85,12 @@ orders = (
 
 - `select_related` for forward FK/OneToOne; `prefetch_related` for M2M and reverse relations;
   `Prefetch(queryset=...)` to filter/order the prefetched set.
-- Make N+1 a test failure: `django-assert-num-queries` /
-  `self.assertNumQueries(2)`, or `nplusone`/`django-zen-queries` in dev.
+- Make N+1 a test failure: pytest-django's `django_assert_num_queries` /
+  `django_assert_max_num_queries` fixtures, or Django's own `self.assertNumQueries(2)` in a
+  `TestCase`; `django-zen-queries` (`queries_disabled()`, its own `render`) to make a query inside a
+  template or serializer raise. These are fixture and
+  method names, not packages — there is no PyPI project `django-assert-num-queries` (404,
+  checked 2026-09-25), so a `pip install` of it is an unclaimed name a squatter can take.
 - Other ORM rules: `.only()/.defer()` for wide tables on hot paths; `exists()` not
   `count() > 0` not `len(qs)`; `bulk_create/bulk_update` for batch writes; `update()`
   for field bumps instead of load-modify-save races — or `F()` expressions for atomic
@@ -253,7 +257,7 @@ testpaths = ["tests"]
 - Mock at the boundary you own (`mocker.patch.object(svc, "client")`), not deep internals;
   patch where the name is *looked up*, not where it's defined. Over-mocked tests that
   assert call sequences test the mock, not the code — prefer fakes (in-memory repo).
-- Async tests: `asyncio_mode = "auto"` (rules/04 §9). Time: `freezegun`/`time-machine`,
+- Async tests: `asyncio_mode = "auto"` (rules/04 §10). Time: `freezegun`/`time-machine`,
   never `sleep`.
 - Coverage gate (`--cov --cov-fail-under=N`) measures *executed*, not *asserted* — treat as
   floor, not target; mutation testing (`mutmut`) where correctness is critical.

@@ -314,6 +314,33 @@ if (strlen($user) > 32 || preg_match('/\A[a-z0-9_]{1,32}\z/', $user) !== 1) { re
 Sources: OWASP Input Validation cheat sheet; OWASP Proactive Controls 2024 C3; ASVS 5.0 V1.2.9;
 OWASP Go-SCP (regular expressions, validation).
 
+## 8. WordPress: core's escapers, and a capability behind every nonce
+
+WordPress spells §1–§5 through its own API (developer.wordpress.org: Common APIs Handbook,
+Security; Code Reference). The rules are the same; these are the names to look for.
+
+- **SQL:** `$wpdb->prepare()` with unquoted `%d`, `%f`, `%s` and `%i` (identifier) placeholders,
+  one argument each, and `$wpdb->esc_like()` on a value before wrapping it in `%` for `LIKE`. A
+  variable spliced into `$wpdb->query()`, `get_results()`, `get_row()`, `get_var()` or
+  `get_col()` is §1's CRITICAL.
+- **Output:** escape late, at the `echo` (the handbook: *"escape when you echo, not before"*):
+  `esc_html()` in element content, `esc_attr()` in attributes, `esc_url()` in `href`/`src`,
+  `esc_js()` inline, `wp_kses()`/`wp_kses_post()` where some HTML is allowed.
+- **Input:** `wp_unslash()`, then `sanitize_text_field()`, `sanitize_email()`, `sanitize_key()`
+  or `absint()`. Sanitising on the way in never replaces escaping on the way out.
+- **A nonce is a CSRF token, not authorization.** The handbook: nonces *"should never be relied
+  on for authentication, authorization, or access control"*. Every state-changing admin form,
+  `admin_post_*` and `wp_ajax_*` handler checks both a nonce (`check_admin_referer()`,
+  `check_ajax_referer()` or `wp_verify_nonce()`) **and** `current_user_can('<capability>')`.
+  `is_admin()` only says an admin screen was requested (Code Reference: *"Does not check if the
+  user is an administrator"*), and `wp_ajax_nopriv_*` handlers run for logged-out visitors.
+- **REST:** every `register_rest_route()` gets a `permission_callback` that calls
+  `current_user_can()`. `__return_true` is the handbook's spelling for a *public* route; on one
+  that writes, deletes or returns private data it is missing authorization.
+- **No `unserialize()` or `maybe_unserialize()` of request, cookie or remote data.**
+  `maybe_unserialize()` is `@unserialize(trim($data))` with no `allowed_classes` (Code Reference
+  source), so it is `rules/03` §3 under another name. Use JSON across any trust boundary.
+
 ## Audit checklist
 
 Run from repo root; verify each hit manually (greps are recall-oriented).
@@ -321,7 +348,7 @@ Run from repo root; verify each hit manually (greps are recall-oriented).
 - [ ] **SQL built from strings — CRITICAL if user data reaches it** —
       `grep -rnE '(->query|->exec|_query)\s*\(\s*["'"'"'].*(\$|\bsprintf|\. )' --include='*.php' src/`
       ;
-      `grep -rnE '(SELECT|INSERT|UPDATE|DELETE)[^;]*(\{\$|"\s*\.\s*\$|\'\s*\.\s*\$)' --include='*.php' -i src/`
+      `grep -rniE '(SELECT|INSERT|UPDATE|DELETE)[^;]*(\{\$|["'"'"'][[:space:]]*\.[[:space:]]*\$)' --include='*.php' src/`
       ;
       `grep -rnE '(whereRaw|selectRaw|orderByRaw|havingRaw|DB::raw|->raw\()' --include='*.php' src/`
       ; `grep -rn 'EMULATE_PREPARES' --include='*.php' src/` (want: false);
@@ -379,6 +406,18 @@ Run from repo root; verify each hit manually (greps are recall-oriented).
       `grep -rnE 'preg_match(_all)?[[:space:]]*\([[:space:]]*["'"'"'][^"'"'"']*\$/[a-zA-Z]*["'"'"']' --include='*.php' src/ | grep -vE '\$/[a-ln-zA-Z]*D[a-ln-zA-Z]*["'"'"']'`
       . Patterns held in variables or constants, and other delimiters, need tracing. For each
       security `preg_*` call, check that `false`/`null` (backtrack limit) is treated as a rejection
+- [ ] **WordPress SQL outside `prepare()` (§8) — CRITICAL with request data** —
+      `grep -rnE '\$wpdb->(query|get_results|get_row|get_var|get_col)[[:space:]]*\([[:space:]]*("[^"]*\$|[^;]*\.[[:space:]]*\$)' --include='*.php' --exclude-dir=vendor . | grep -v 'prepare'`
+- [ ] **WordPress handler with no capability or nonce check (§8) — HIGH, CRITICAL when it
+      mutates** — prints each file that registers an AJAX, admin-post or REST handler and never
+      calls the check (a file not printed still needs its handlers read one by one):
+      `grep -rlE "add_action[[:space:]]*\([[:space:]]*['\"](wp_ajax_|admin_post_)|register_rest_route[[:space:]]*\(" --include='*.php' --exclude-dir=vendor . | while IFS= read -r f; do grep -q 'current_user_can' "$f"; case $? in 0) ;; 1) echo "NO current_user_can: $f" ;; *) echo "SWEEP FAILED: $f" ;; esac; grep -qE 'wp_ajax_|admin_post_' "$f" && { grep -qE 'check_(admin|ajax)_referer|wp_verify_nonce' "$f"; case $? in 0) ;; 1) echo "NO NONCE CHECK: $f" ;; *) echo "SWEEP FAILED: $f" ;; esac; }; done`
+      ; REST routes open to anyone (read each: a public read-only route is fine):
+      `grep -rnE "permission_callback['\"]?[[:space:]]*=>[[:space:]]*['\"]__return_true" --include='*.php' --exclude-dir=vendor .`
+- [ ] **WordPress unescaped output and deserialization (§8)** —
+      `grep -rnE '(echo|<\?=)[[:space:]]*(\$|get_)' --include='*.php' --exclude-dir=vendor . | grep -vE 'esc_(html|attr|url|js|textarea|xml)|wp_kses|absint|intval'`
+      ; `grep -rnE '(maybe_)?unserialize[[:space:]]*\(' --include='*.php' --exclude-dir=vendor . | grep -v 'allowed_classes'`
+      (trace each argument: a request, cookie or remote value is CRITICAL)
 
 Severity guide: interpolated SQL or shell with user input CRITICAL; unescaped
 output of request data HIGH; raw template sink with untraced source HIGH until
@@ -389,4 +428,6 @@ session key HIGH; an `ldap_bind` login that accepts an empty password CRITICAL; 
 request value in a `preg_*` pattern HIGH (CRITICAL on an authz or redaction path), a validator
 that accepts a trailing newline or reads a `preg_*` error as "no match" MEDIUM
 where the directory permits unauthenticated binds (HIGH until that is checked); code that runs
-after a guard's redirect (§4a) HIGH, CRITICAL when it performs the privileged action.
+after a guard's redirect (§4a) HIGH, CRITICAL when it performs the privileged action; a
+WordPress handler or REST route that mutates without `current_user_can` HIGH (CRITICAL when
+reachable logged-out), and a nonce with no capability check HIGH.

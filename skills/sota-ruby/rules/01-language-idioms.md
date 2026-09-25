@@ -8,11 +8,11 @@ gradual typing via RBS-based tooling or Sorbet.
 ## 1. Version baseline and support policy
 
 Per the official [maintenance branches page](https://www.ruby-lang.org/en/downloads/branches/)
-(checked 2026-07):
+(checked 2026-07; re-checked 2026-09-25):
 
 | Line | Status | Notes |
 |---|---|---|
-| **4.0** | normal maintenance | current stable; released 2025-12-25 |
+| **4.0** | normal maintenance | released 2025-12-25; for the latest stable release, verify at the branches page |
 | **3.4** | normal maintenance | released 2024-12-25 |
 | **3.3** | security maintenance only | expected EOL 2027-03 |
 | **≤ 3.2** | **EOL** | 3.2 reached EOL 2026-04-01 |
@@ -99,9 +99,14 @@ end
 ```
 
 - `Struct` remains for legacy code and when you genuinely need mutability or
-  positional construction. Pitfalls: `Struct.new(...)` without
-  `keyword_init: true` takes positional args (silent nil members if you pass
-  too few), and members are mutable by default.
+  positional construction. Pitfalls: since 3.2 a plain `Struct.new(:a, :b)`
+  accepts **both** keyword and positional arguments, so the hazard is the
+  positional call — pass too few and the rest are silently `nil`
+  (`S.new(1)` → `b=nil`), reorder the members and every positional caller
+  swaps values. `keyword_init: true` rejects positional calls
+  (`ArgumentError`), though an omitted keyword is still `nil`; only `Data`
+  raises on a missing member (all measured, 4.0.6). Members are mutable by
+  default.
 - Neither replaces a real class once behavior dominates data.
 - Don't use `OpenStruct` in new code — slow, defeats typing and method
   resolution; a `Data`, `Hash`, or class is always better.
@@ -325,7 +330,7 @@ conversion and from hand-rolled returns:
 - [ ] **raise losing the original class/cause** —
       `grep -rnE "raise\s+e\.message" --include='*.rb' .`
 - [ ] **OpenStruct in new code — LOW** — `grep -rn "OpenStruct" --include='*.rb' .`
-- [ ] **Struct without keyword_init (positional-arg hazard) — INFO/LOW** —
+- [ ] **Struct built positionally (silent-nil / member-order hazard) — INFO/LOW** —
       `grep -rn "Struct.new" --include='*.rb' . | grep -v keyword_init`
 - [ ] **Pattern matching without pin where comparison was intended (manual review)** —
       `grep -rnE "in \{[^}]*: [a-z_]+ *\}" --include='*.rb' . | head`

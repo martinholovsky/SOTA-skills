@@ -140,14 +140,14 @@ deliver **at least once**: crashes and retries re-run jobs. Design contract:
   long-lived multithreaded processes, not Ruby-object leaks. First,
   cheap mitigation: **`MALLOC_ARENA_MAX=2`** (a platform default on some
   PaaSes — [Heroku changelog](https://devcenter.heroku.com/changelog-items/1683)).
-- **jemalloc caveat (status changed):** the classic "just use jemalloc"
-  advice needs re-checking — the upstream
-  [jemalloc repo](https://github.com/jemalloc/jemalloc) was archived in
-  June 2025 and its future maintenance path is unclear as of 2026-07 (needs
-  verification at adoption time). Existing jemalloc deployments keep
-  working; for *new* setups, start with `MALLOC_ARENA_MAX=2` and adopt an
-  alternative allocator only with your own RSS benchmarks and a maintained
-  package source.
+- **jemalloc (status re-checked 2026-09-25):** the upstream
+  [jemalloc repo](https://github.com/jemalloc/jemalloc) was archived in 2025,
+  then unarchived and is maintained again: it published 5.3.1 (2026-04-13)
+  and 5.4.0 (2026-09-17) after three years without a release (GitHub
+  releases API). An earlier note here called its future unclear; that is
+  superseded. The advice does not change: start new setups with
+  `MALLOC_ARENA_MAX=2`, and adopt jemalloc or another allocator only with
+  your own before/after RSS benchmarks and a maintained package source.
 - GC tuning (`RUBY_GC_HEAP_*`) is a last resort with before/after
   measurements committed next to the config; out-of-band GC between requests
   and periodic worker recycling (e.g. a worker-killer middleware as a
@@ -212,11 +212,11 @@ Run from repo root; verify each hit manually.
 - [ ] **Idempotency signals absent (manual: look for guards/upserts in job bodies)** —
       `grep -rln "def perform" app/jobs/ 2>/dev/null | head`
 - [ ] **JIT posture — INFO** —
-      `grep -rn "yjit\|YJIT" Dockerfile* config/ Procfile* .github/ 2>/dev/null | head -3` ;
-      `grep -rn "zjit" Dockerfile* config/ 2>/dev/null | head -1` (experimental in prod =
+      `grep -rn "yjit\|YJIT" --include='Dockerfile*' --include='Procfile*' --include='*.rb' --include='*.y*ml' . | head -3` ;
+      `grep -rn "zjit" --include='Dockerfile*' --include='Procfile*' --include='*.rb' --include='*.y*ml' . | head -1` (experimental in prod =
       MEDIUM)
 - [ ] **Allocator / memory posture — INFO** —
-      `grep -rn "MALLOC_ARENA_MAX\|jemalloc" Dockerfile* config/ Procfile* 2>/dev/null | head -3`
+      `grep -rn "MALLOC_ARENA_MAX\|jemalloc" --include='Dockerfile*' --include='Procfile*' --include='*.rb' --include='*.y*ml' . | head -3`
 - [ ] **N+1 guards present? absent detector = note it** —
       `grep -rn "bullet\|prosopite" Gemfile 2>/dev/null | head -2` ;
       `grep -rn "strict_loading" --include='*.rb' app/ config/ 2>/dev/null | head -2` ;

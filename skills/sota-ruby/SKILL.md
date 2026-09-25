@@ -18,8 +18,8 @@ description: >-
 # SOTA Ruby (2026)
 
 Expert-level rules for producing and auditing production Ruby. Baseline language
-line: **Ruby 3.4+**, with Ruby 4.0 (released 2025-12-25) as the latest major
-line. Per the [official branches page](https://www.ruby-lang.org/en/downloads/branches/):
+line: **Ruby 3.4+**; Ruby 4.0 was released 2025-12-25 and is in normal
+maintenance (latest stable — verify at the branches page). Per the [official branches page](https://www.ruby-lang.org/en/downloads/branches/):
 4.0 and 3.4 are in normal maintenance; 3.3 is security-maintenance only
 (expected EOL 2027-03); 3.2 and older are EOL (3.2 since 2026-04-01) — running
 them is itself a finding. Feature notes: `Data.define` and `Regexp.timeout`
@@ -90,7 +90,7 @@ highest-leverage fixes, and which checklists were run.
 | File | Read this when... |
 |---|---|
 | `rules/01-language-idioms.md` | Choosing/verifying the Ruby version baseline; frozen string literals; pattern matching; `Data` vs `Struct`; exception design; **`nil` over a sentinel, and `to_i` silently returning `0` for garbage**; typing with RBS/Sorbet/Steep; general idioms and pitfalls |
-| `rules/02-security.md` | Any input crossing a trust boundary: SQL injection (ActiveRecord/Sequel), command injection (`system`/backticks/`Open3`), deserialization (`Marshal`, YAML/Psych), ReDoS and regex anchors, `eval`/`send`/`constantize`, secrets and randomness, path traversal; **escape hatches into raw memory**: Fiddle, the `ffi` gem and C extensions |
+| `rules/02-security.md` | Any input crossing a trust boundary: SQL injection (ActiveRecord/Sequel), command injection (`system`/backticks/`Open3`), deserialization (`Marshal`, YAML/Psych), XML parser options (XXE/entity expansion in Nokogiri, REXML), ReDoS and regex anchors, `eval`/`send`/`constantize`, secrets and randomness, path traversal; **escape hatches into raw memory**: Fiddle, the `ffi` gem and C extensions |
 | `rules/03-web-hardening.md` | Building or auditing anything web-facing: XSS/ERB escaping, mass assignment and strong params, CSRF (incl. HEAD→GET verb confusion and routes that widen verbs or actions), sessions and app-set cookie flags, security headers, debug mode left on in production, outbound TLS verification, open redirects, SSRF, file uploads and `render file:` — framework-neutral |
 | `rules/04-supply-chain-tooling.md` | Bundler and Gemfile.lock discipline, lockfile checksums, bundler-audit, RuboCop/StandardRB, Brakeman, RSpec/Minitest mechanics, CI gates, gem authoring/publishing |
 | `rules/05-concurrency-performance.md` | Threads, fibers, Ractors, and the GVL; resetting request-scoped thread-local state; background-job idempotency; YJIT/ZJIT; GC and memory (allocator, RSS); N+1 detection; profiling workflow |
@@ -108,7 +108,8 @@ highest-leverage fixes, and which checklists were run.
    (Ruby 3.1+) — verify the runtime. (`rules/02`)
 4. **Processes spawn with argv lists** (`system("cmd", arg)`,
    `Open3.capture2`), never a shell string containing external input; no
-   `Kernel#open`/`URI.open` on user-supplied names. (`rules/02`)
+   `Kernel#open`/`URI.open` on user-supplied names (a `|cmd` name is RCE on
+   ≤ 3.4; on 4.0 it is still an arbitrary file read). (`rules/02`)
 5. **All HTML output escaped by default**; every `raw`/`html_safe` is
    reviewed; non-Rails ERB configured to auto-escape. (`rules/03`)
 6. **Mass assignment goes through an attribute allowlist** (strong params /

@@ -111,12 +111,12 @@ canceled request is not a dependency outage; don't page on it.
 ### 4a. In-band sentinels — Go's are documented, yours are not
 
 Go's stdlib deliberately returns in-band sentinels and **documents them**:
-`strings.Index`/`LastIndex` return `-1` when not found (verified, go1.26.5). That is
+`strings.Index`/`LastIndex` return `-1` when not found (verified, go1.26.5 and go1.27.1). That is
 idiomatic and fine *because the contract is published and every caller is expected
 to test it*. The defect is the undocumented one you write yourself — the class is
 `sota-architecture` rules/02 §8a.
 
-- `strconv.Atoi("x")` returns `(0, err)` (verified, go1.26.5). The `0` is a perfectly
+- `strconv.Atoi("x")` returns `(0, err)` (verified, go1.26.5 and go1.27.1). The `0` is a perfectly
   ordinary value; the error is the only thing distinguishing it from `Atoi("0")`.
   Dropping `err` converts an out-of-band signal into an in-band one, which is
   precisely what `errcheck` exists to stop.
@@ -200,8 +200,10 @@ Legitimate panic patterns:
 - `panic` across goroutines is fatal: **a panic in a goroutine you spawned
   kills the whole process** regardless of recovers elsewhere. Any goroutine
   running third-party or panic-capable code needs its own deferred recover
-  (errgroup does NOT recover for you; `golang.org/x/sync/errgroup` ≥ v0.11
-  still propagates panics by re-panicking in `Wait`).
+  *inside* the function. errgroup does NOT recover for you: `golang.org/x/sync`
+  v0.14–v0.15 briefly re-panicked in `Wait`, but v0.16+ reverted that, so a
+  panic in a `g.Go` func crashes the process (read `errgroup.go` at your
+  pinned version — its comment on `Go` explains why propagation was dropped).
 - HTTP: `net/http` recovers per-request panics by default but the response is
   broken; middleware should recover, log with stack
   (`debug.Stack()`), and return 500. Recover converts to error at the

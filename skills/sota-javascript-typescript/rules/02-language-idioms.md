@@ -114,7 +114,7 @@ cache.get(name);
 - `Set` for membership: `seen.has(x)` is O(1) vs `arr.includes(x)` O(n). Dedupe: `[...new Set(arr)]`.
 - If an object truly must be a dictionary (JSON shape), create it via `Object.create(null)` or always guard with `Object.hasOwn(obj, key)` (ES2022 — replaces `obj.hasOwnProperty`).
 - `WeakMap`/`WeakSet` to associate data with objects without preventing GC (e.g., DOM node metadata, memoization keyed by object).
-- `Map.prototype.getOrInsert(key, default)` / `getOrInsertComputed(key, fn)` (V8 14.6: Node 26, Chrome 146+) replace the check-then-set dance for cache/grouping maps — use where your runtime floor allows.
+- `Map.prototype.getOrInsert(key, default)` / `getOrInsertComputed(key, fn)` (ES2026 "Upsert"; per MDN browser-compat-data: Node 26.0, Chrome/Edge 145, Firefox 144, Safari 26.2) replace the check-then-set dance for cache/grouping maps — use where your runtime floor allows.
 - `Record<string, T>` indexing under `noUncheckedIndexedAccess` correctly yields `T | undefined` — Map's `.get` was always honest about this.
 
 ## Error handling
@@ -147,7 +147,7 @@ Rules:
 - Set `this.name` in subclasses; route on `instanceof` or a `code` field, never on message text.
 - Always pass `{ cause: e }` when wrapping — loggers (pino) serialize the chain.
 - Never swallow: empty `catch {}` is a finding unless commented with why. Catch only where you can handle or add context; otherwise let it propagate.
-- `finally` for cleanup; or ES2026 explicit resource management: `using conn = await pool.acquire()` with `[Symbol.asyncDispose]` (use `await using` for async disposal) — adopt where the runtime/tsconfig supports it.
+- `finally` for cleanup; or ES2027 explicit resource management (Stage 4 May 2026): `using conn = await pool.acquire()` with `[Symbol.asyncDispose]` (use `await using` for async disposal) — adopt where the runtime/tsconfig supports it.
 
 Result-style for expected failures: exceptions for bugs/infra, values for domain outcomes the caller must handle.
 
@@ -189,7 +189,7 @@ for await (const item of paginate(api)) { if (matches(item)) break; }  // stops 
 
 ## Dates: Temporal, and surviving without it
 
-`Date` is mutable, months are 0-indexed, parsing is implementation-defined, and it has no timezone besides local/UTC. Temporal (Stage 4 March 2026, part of ES2026; shipped in Chrome/Edge 144+, Firefox 139+, and enabled by default in Node 26) fixes all of it — immutable, explicit types:
+`Date` is mutable, months are 0-indexed, parsing is implementation-defined, and it has no timezone besides local/UTC. Temporal (Stage 4 March 2026, part of ES2027; shipped in Chrome/Edge 144+, Firefox 139+, and enabled by default in Node 26) fixes all of it — immutable, explicit types:
 
 ```ts
 // GOOD — Temporal (Safari still hasn't shipped it — use `temporal-polyfill` for web targets)

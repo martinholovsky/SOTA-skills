@@ -82,10 +82,12 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
 - **clang-tidy** with a curated set is the primary linter:
   `bugprone-*, cppcoreguidelines-*, cert-*, performance-*, modernize-*,
   clang-analyzer-*, misc-*` (tune noisy checks). Commit a `.clang-tidy`.
-- **cppcheck** (`--enable=warning,performance,portability --addon=cert`) and the
+- **cppcheck** (`--enable=warning,performance,portability`) and the
   **Clang Static Analyzer** (`scan-build` or via clang-tidy) catch path-
   sensitive bugs the compiler misses. Commercial: Coverity, PVS-Studio for
-  deeper interprocedural analysis.
+  deeper interprocedural analysis. Do not pass cppcheck `--addon=cert`: 2.21 ships no such
+  addon, prints "Did not find addon cert.py" and exits 1 having analysed nothing (measured).
+  SEI CERT coverage comes from clang-tidy `cert-*` or a commercial tool.
 - **clang-format** with a committed `.clang-format`; enforce in CI
   (`--dry-run --Werror`) so style never enters review.
 

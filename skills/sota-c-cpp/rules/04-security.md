@@ -56,7 +56,11 @@ Replace on sight (CERT STR/FIO; MISRA):
   `xmlSubstituteEntitiesDefault(1)` turns substitution on for every later parse. Measured with
   libxml2 2.12.10: after that call, `xmlReadMemory(..., 0)` with no options expanded an external
   entity into the document. Never set it, or the `xmlLoadExtDtdDefaultValue` global. OWASP XXE
-  Prevention cheat sheet; the same trap as PHP's `LIBXML_NOENT`.
+  Prevention cheat sheet; the same trap as PHP's `LIBXML_NOENT`. The flags are not the whole
+  answer: libxml2's own README (section "Security") states it is **not recommended for
+  processing untrusted data**. It is maintained, so this is not an abandonment finding; it is a
+  scope statement from upstream. Where the XML is attacker-controlled, parse it in a sandboxed
+  process (`sota-sandboxing`) or with a memory-safe parser, and record which in the review.
 - **Resource limits / DoS guards on every parser and decoder.** Cap recursion depth (a
   max depth on recursive-descent parsers, or stack exhaustion is one nested input away),
   element and attribute counts, total bytes allocated per message, and the decompressed size
@@ -202,25 +206,41 @@ Replace on sight (CERT STR/FIO; MISRA):
 ## 5. Hardened build (the OpenSSF baseline)
 
 Turn these on for production builds (GCC/Clang); missing them on a
-network-facing or setuid binary is a HIGH finding. From the OpenSSF guide:
+network-facing or setuid binary is a HIGH finding. The canonical list is the TL;DR table of the
+[OpenSSF Compiler Options Hardening Guide](https://best.openssf.org/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.html),
+which gains rows over time: re-read it when adopting, and treat what follows as its shape, not
+a replacement. It is a **common set plus situational rows**, not one block to paste. Common set:
 
 ```
 -O2 -Wall -Wextra -Wformat -Wformat=2 -Wconversion -Wimplicit-fallthrough \
 -Werror=format-security \
 -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3      # libc fortified bounds checks
--D_GLIBCXX_ASSERTIONS                       # libstdc++ bounds assertions
--fstack-protector-strong                    # stack canaries
--fstack-clash-protection                    # large-stack probing
--fcf-protection=full                        # CET: indirect-branch protection
+-D_GLIBCXX_ASSERTIONS                       # libstdc++ precondition checks
+-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST   # libc++ 18+ equivalent
 -fstrict-flex-arrays=3                      # only true flex arrays are unbounded
--ftrivial-auto-var-init=zero                # zero-init locals (kills uninit reads)
--fzero-init-padding-bits=all                # zero padding bits too (GCC 15+)
--mbranch-protection=standard                # AArch64 PAC/BTI (-fcf-protection analogue)
--fPIE -pie                                  # ASLR for the executable
+-fstack-clash-protection -fstack-protector-strong      # stack probing; canaries
+-Wl,-z,nodlopen -Wl,-z,noexecstack          # no dlopen (shared objects only); non-exec stack
 -Wl,-z,relro -Wl,-z,now                     # full RELRO (GOT read-only)
--Wl,-z,noexecstack -Wl,-z,nodlopen          # non-exec stack; no dlopen (shared objects only)
--Wtrampolines                               # warn when GCC generates a trampoline
+-Wl,--as-needed -Wl,--no-copy-dt-needed-entries        # link only libraries actually used
 ```
+
+Then add every row whose situation applies:
+
+| When | Add |
+|---|---|
+| GCC | `-Wtrampolines -fzero-init-padding-bits=all` (the second is GCC 15+). Clang has neither: it rejected the padding flag and ignored `-Wtrampolines` as an unknown warning (Apple clang 21, measured) |
+| GCC, source text left-to-right only | `-Wbidi-chars=any` |
+| executable / shared library | `-fPIE -pie` / `-fPIC -shared` (ASLR) |
+| x86_64 | `-fcf-protection=full -fzero-call-used-regs=used-gpr` (CET; register zeroing on return) |
+| AArch64 | `-mbranch-protection=standard -fzero-call-used-regs=used-gpr` (PAC/BTI) |
+| production code | `-fno-delete-null-pointer-checks -fno-strict-overflow -fno-strict-aliasing -ftrivial-auto-var-init=zero`: keep checks the optimiser would delete (`rules/03` §2) and zero uninitialised locals. Leave `-ftrivial-auto-var-init` out of MSan/Valgrind test builds, where it hides the uninitialised reads they exist to find |
+| C code | `-Werror=implicit -Werror=incompatible-pointer-types -Werror=int-conversion` (obsolete C constructs become errors) |
+| multi-threaded C on glibc pthreads | `-fexceptions` (thread cancellation unwinds instead of `setjmp`/`longjmp`, so no unprotected function pointer lands on the stack) |
+
+The common set plus the production and C rows compiled cleanly under Apple clang 21 for both
+`-target x86_64-linux-gnu` and `-target aarch64-linux-gnu`, each with its own architecture row,
+with `-Werror=unused-command-line-argument` (measured, compile only: the `-Wl,` options are GNU
+ld/lld flags that the macOS linker does not take, so their link step was not run here).
 
 - **What some older flag lists add, and what it really does** (measured with GCC 16.2, binutils
   2.44, glibc 2.41). `-Wl,-z,nodump` only sets `DF_1_NODUMP`, which marks the object for
@@ -244,9 +264,12 @@ network-facing or setuid binary is a HIGH finding. From the OpenSSF guide:
   "are not compatible" (measured). Its manual allows `thunk-extern` with
   `-fcf-protection=branch`, where you provide the thunks yourself. Choose per binary.
   OWASP: C-Based Toolchain Hardening cheat sheet.
-- libc++ builds: production uses hardening mode FAST
-  (`-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST`, cheap checks); the
-  EXTENSIVE mode (`rules/02`) is for debug/test builds.
+- libc++ builds: production uses hardening mode FAST (cheap, security-critical checks) or
+  EXTENSIVE (FAST plus further low-cost UB checks; benchmark it); DEBUG, which adds
+  heuristic and internal checks, is for test and CI only. libc++ Hardening docs. A failed check
+  traps by default; an override to the `observe` or `ignore` assertion semantic
+  (`_LIBCPP_ASSERTION_SEMANTIC`) continues into UB, so it has no place in a shipped build
+  (`rules/02` checklist).
 - Add `-fsanitize=address,undefined` to the *debug/test* build (not prod).
   Consider `-fhardened` (GCC 14+) as a shorthand umbrella — verify your
   compiler version supports it; `gcc --help=hardened` lists what it turns on.
@@ -259,7 +282,8 @@ network-facing or setuid binary is a HIGH finding. From the OpenSSF guide:
   belongs) replaced the `CFLAGS` given to `./configure`, hardening flags included, and silent
   rules (`AM_SILENT_RULES`) hid the compile line until `make V=1`. Read the real command
   (`make V=1`, or the `compile_commands.json` that `-DCMAKE_EXPORT_COMPILE_COMMANDS=ON` writes), then check each artifact with `checksec
-  --file=BIN` or `annocheck BIN`, or `readelf`: type `DYN` (PIE), a `GNU_RELRO` segment plus
+  file BIN` (checksec 3.x, the Go rewrite; `--file=BIN` is the 2.x Bash syntax) or `annocheck BIN`,
+  or `readelf`: type `DYN` (PIE), a `GNU_RELRO` segment plus
   `BIND_NOW` (full RELRO), `__stack_chk_fail` (canary) and `__*_chk` imports (FORTIFY). OWASP:
   C-Based Toolchain Hardening cheat sheet.
 - **Debug mode in production: C/C++ has no dev server, so the "debug mode" is the build.**
@@ -360,11 +384,14 @@ a sandbox over running as root at all (`sota-sandboxing`).
       (an embedded length field used straight from parsed input: find its cap against the
       remaining buffer)
 - [ ] **Unsafe parsing of untrusted input (§2) — HIGH, CRITICAL for XXE on reachable input** —
-      `grep -rnE '\(\s*(const\s+)?struct\s+[a-z_0-9]+\s*\*\s*\)\s*\(?(buf|data|pkt|packet|msg|payload|frame|in)' --include='*.c' --include='*.cpp' --include='*.h' .`
+      `grep -rnE '\(\s*(const\s+)?struct\s+[a-z_0-9]+\s*\*\s*\)\s*\(?(buf|data|pkt|packet|msg|payload|frame|in)' --include='*.c' --include='*.cc' --include='*.cpp' --include='*.cxx' --include='*.h' --include='*.hpp' .`
       (a wire buffer cast straight to a struct pointer: find the field-by-field decoder that
-      should replace it) ; `grep -rnE 'XML_PARSE_(NOENT|DTDLOAD)|xml(ThrDef)?(SubstituteEntitiesDefault(Value)?|LoadExtDtdDefaultValue)[[:space:]]*(\(|[|]?=)[[:space:]]*[^0=[:space:]]' --include='*.c' --include='*.cpp' --include='*.h' .`
+      should replace it) ; `grep -rnE 'XML_PARSE_(NOENT|DTDLOAD)|xml(ThrDef)?(SubstituteEntitiesDefault(Value)?|LoadExtDtdDefaultValue)[[:space:]]*(\(|[|]?=)[[:space:]]*[^0=[:space:]]' --include='*.c' --include='*.cc' --include='*.cpp' --include='*.cxx' --include='*.h' --include='*.hpp' .`
       (entity substitution or external-subset loading on a libxml2 read, through a flag, a
-      context or a process-wide default set to anything but 0)
+      context or a process-wide default set to anything but 0) ;
+      `grep -rnE '\bxml(Read(Memory|File|Fd|Doc|IO)|CtxtRead[A-Za-z]*|ParseMemory|ParseFile|SAXUserParse[A-Za-z]*|CreatePushParserCtxt)[[:space:]]*\(' --include='*.c' --include='*.cc' --include='*.cpp' --include='*.cxx' --include='*.h' --include='*.hpp' .`
+      (every libxml2 parse entry point: MEDIUM where it reads attacker-controlled XML outside a
+      sandbox, since upstream does not recommend libxml2 for untrusted data)
 - [ ] **Resource limits / DoS guards (§2) — HIGH where input is untrusted** —
       `grep -rnE 'XML_PARSE_HUGE|\b(inflate|uncompress|BZ2_bzDecompress|ZSTD_decompress)[[:space:]]*\(' --include='*.c' --include='*.cpp' --include='*.h' .`
       (every hit needs a visible output-size cap; `XML_PARSE_HUGE` on untrusted input is the
@@ -448,7 +475,7 @@ a sandbox over running as root at all (`sota-sandboxing`).
       `grep -rnE --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' --include='*.mk' -e '-Wstrict-overflow|-z,nodump|-z[[:space:]]+nodump' .`
       (neither protects anything on Linux: do not credit them in a hardening review)
 - [ ] **Hardening reached the shipped binary (§5) — HIGH on a network-facing or setuid binary
-      that fails a check** — `checksec --file=BIN` or `annocheck BIN` on every artifact you ship
+      that fails a check** — `checksec file BIN` (3.x; 2.x: `--file=BIN`) or `annocheck BIN` on every artifact you ship
       (or `readelf -hW`/`-lW`/`-dW`/`--dyn-syms`: `DYN`, `GNU_RELRO`, `BIND_NOW`,
       `__stack_chk_fail`, `__*_chk`) ;
       `grep -rnE '^[[:space:]]*(CFLAGS|CXXFLAGS|CPPFLAGS|LDFLAGS)[[:space:]]*:?=' --include='Makefile.am' .`
@@ -461,4 +488,6 @@ a sandbox over running as root at all (`sota-sandboxing`).
       sanitize. Then look for the `APP_RELEASE` `#error` guard in the source)
 - [ ] **Static + safety-standard analysis** —
       `clang-tidy --checks='cert-*,bugprone-*,clang-analyzer-security.*' <files>` ;
-      `cppcheck --enable=warning,portability --addon=cert <src>`
+      `cppcheck --enable=warning,portability <src>` (cppcheck 2.21 ships no `cert` addon:
+      `--addon=cert` prints "Did not find addon cert.py" and exits 1 without analysing, measured.
+      CERT coverage comes from clang-tidy's `cert-*` checks or a commercial analyser)

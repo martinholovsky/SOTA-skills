@@ -13,8 +13,11 @@ file covers type/API design; idioms are in `01`, concurrency in `03`.
     fields, parameters, or collections — an empty collection is the absence).
   - Annotate with `@Nullable`/`@NonNull` (JSpecify is the standard — adopted
     portfolio-wide by Spring Framework 7 / Boot 4, which deprecated Spring's
-    own `org.springframework.lang` annotations) and enforce with
-    **NullAway**/Error Prone so violations fail the build.
+    own `org.springframework.lang` annotations, the package-level `@NonNullApi` and
+    `@NonNullFields` included) and enforce with **NullAway**/Error Prone so violations
+    fail the build. Put JSpecify `@NullMarked` on each package in `package-info.java`: types
+    there are then non-null unless marked `@Nullable`, which is what `@NonNullApi` used to
+    express ([Spring null-safety](https://docs.spring.io/spring-framework/reference/core/null-safety.html)).
   - Never return `null` for a collection/array — return empty.
 - Validate arguments at public-method entry (`Objects.requireNonNull`,
   `require`/`check` in Kotlin) and fail fast with a clear message.
@@ -100,10 +103,10 @@ such occurrence"* (Java SE 21 API docs). Documented and idiomatic there; the cla
       `grep -rnE 'return [a-zA-Z_]+;\s*$' --include='*.java' . | grep -iE 'list|map|set|array'`
       (verify copy/unmodifiable)
 - [ ] **equals without hashCode (and vice versa) — MEDIUM** —
-      `grep -rln 'public boolean equals' --include='*.java' . | xargs -I{} sh -c 'grep -L "hashCode" {}'`
+      `grep -rlE 'public boolean equals|override fun equals' --include='*.java' --include='*.kt' . | while IFS= read -r f; do grep -q 'hashCode' "$f" || echo "$f"; done`
 - [ ] **Bare close()/no try-with-resources — MEDIUM** —
       `grep -rnE '\.close\(\)' --include='*.java' --include='*.kt' .` (verify
-      try-with-resources/use); `grep -rn 'finally' --include='*.java' . | grep -i close`
+      try-with-resources/use); `grep -rn 'finally' --include='*.java' --include='*.kt' . | grep -i close`
 - [ ] **Mutable static state — MEDIUM** —
       `grep -rnE '^[[:space:]]*((public|private|protected)[[:space:]]+)?static[[:space:]]+[A-Za-z_][A-Za-z0-9_<>,?. ]*(\[\])?[[:space:]]+[a-z][A-Za-z0-9_]*[[:space:]]*(=|;)' --include='*.java' . | grep -vwE 'final|class|interface|enum|record'`
       (a `(?!final)` lookahead stood here until 2026-09-24: POSIX ERE has none, and it
@@ -111,14 +114,16 @@ such occurrence"* (Java SE 21 API docs). Documented and idiomatic there; the cla
 - [ ] **throws Exception / overbroad — LOW/MEDIUM** —
       `grep -rn 'throws Exception' --include='*.java' .`
 - [ ] **Deprecated Spring nullability annotations (Spring 7+ is JSpecify) — LOW** —
-      `grep -rnE 'org\.springframework\.lang\.(Nullable|NonNull)' --include='*.java' --include='*.kt' .`
+      `grep -rnE 'org\.springframework\.lang\.(Nullable|NonNull|NonNullApi|NonNullFields)([^A-Za-z]|$)' --include='*.java' --include='*.kt' .`
+      (the package-level `@NonNullApi`/`@NonNullFields` in `package-info.java` are replaced by
+      JSpecify `@NullMarked` on the package, and member-level ones by JSpecify `@Nullable`)
 - [ ] **Enforcement: Error Prone + NullAway, SpotBugs, detekt**
 - [ ] **In-band sentinels (§1a) — `-1` is not absence** —
       `grep -rnE 'return -1;' --include='*.java' --include='*.kt' .` (producer; prefer
       OptionalInt / Integer + @Nullable);
-      `grep -rnE '(int|long) [a-zA-Z]+ = .*\.(indexOf|lastIndexOf)\(' --include='*.java' .`
+      `grep -rnE '(int|long|val|var) [a-zA-Z]+([[:space:]]*:[[:space:]]*(Int|Long))? = .*\.(indexOf|lastIndexOf)\(' --include='*.java' --include='*.kt' .`
       (result STORED, not tested on the next line)
 - [ ] **Module/package structure (§6) — no probe existed before 2026-08-21** —
-      `grep -rn 'module-info.java' --include='*.java' . || echo 'no JPMS module descriptors'` ;
-      `grep -rnE '^import .*\.(internal|impl)\.' --include='*.java' .` (reaching into another
+      `find . -name module-info.java -not -path '*/build/*' -not -path '*/target/*' | grep . || echo 'no JPMS module descriptors'` ;
+      `grep -rnE '^import .*\.(internal|impl)\.' --include='*.java' --include='*.kt' .` (reaching into another
       package's internals)

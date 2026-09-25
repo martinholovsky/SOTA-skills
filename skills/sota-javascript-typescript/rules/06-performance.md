@@ -46,7 +46,7 @@ const ChartPanel = lazy(() => import('./ChartPanel'));   // + <Suspense fallback
 | Why is this interaction slow? | Chrome Performance panel (look for long tasks), React Profiler |
 | What re-rendered and why? | React DevTools Profiler, "record why" enabled |
 | Where's the memory going? | DevTools Memory: snapshot diff, allocation timeline |
-| Is the Node loop blocked? | `monitorEventLoopDelay`, clinic flame / 0x under load |
+| Is the Node loop blocked? | `monitorEventLoopDelay`, `node --cpu-prof` / `0x` flamegraphs under load (clinic.js: README says not actively maintained) |
 | Real-user numbers? | web-vitals → RUM (LCP, INP, CLS) — lab numbers lie about phones |
 
 ## React rendering
@@ -173,7 +173,7 @@ Detection workflow (browser and Node `--inspect` alike):
 
 One blocked loop = every request stalled (full treatment in rules/04). Performance-audit angle:
 - Instrument: `perf_hooks.monitorEventLoopDelay()` histogram exported to metrics; alert p99 > 100ms.
-- Identify: clinic.js flame / `0x` flamegraphs under load; `blocked-at` in staging for stacks.
+- Identify: `node --cpu-prof` (open the `.cpuprofile` in DevTools) or `0x` flamegraphs under load, `--heap-prof` for allocation; continuous profiling via your OpenTelemetry/pprof-compatible backend in production. clinic.js's README says it is not actively maintained and may give inaccurate results, and `blocked-at` has had no commit since 2022: treat both as legacy.
 - Fix order: cap input sizes → move CPU work to `piscina` workers → chunk unavoidable loops with `setImmediate` yields → cache the computation.
 - `JSON.stringify` of huge objects in logging/serialization is a stealth blocker — log IDs and summaries, not payload dumps.
 

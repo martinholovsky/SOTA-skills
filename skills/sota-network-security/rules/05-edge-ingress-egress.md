@@ -80,7 +80,7 @@ become the start of the backend's *next* request — which skipped the WAF, auth
   the value `websocket`.
 - **Same HTTP version handling on every tier** — one tier speaking 1.0 (no chunked) or reusing
   back-end connections differently from its peer is where the parses diverge. Keep the proxy and the
-  app server patched: smuggling fixes ship as parser CVEs (e.g. sota-dotnet rules/04, Kestrel).
+  app server patched: smuggling fixes ship as parser CVEs (e.g. sota-dotnet rules/06 §3, Kestrel).
 OWASP: Secure Coding Practices QRG, WSTG-INJT-16.
 
 ## 2. WAF (OWASP CRS on Coraza / ModSecurity)

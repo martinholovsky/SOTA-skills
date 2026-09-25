@@ -1,16 +1,18 @@
 ---
 name: sota-golang
-description: State-of-the-art Go engineering rules (2026 baseline, Go 1.25+) that Claude applies when writing new Go code or auditing existing Go code. Covers error handling, interface/package design, goroutine and channel correctness, net/http hardening, security (SQL, exec, path traversal, CSPRNG, TLS, supply chain), performance (pprof, allocations, GC, PGO), and tooling/CI. Trigger keywords - Go, golang, goroutine, channel, go.mod, errgroup, context.Context, pprof, govulncheck, net/http, slog. Use for BOTH building Go services/libraries/CLIs and reviewing or auditing Go codebases.
+description: State-of-the-art Go engineering rules (2026 baseline, Go 1.26+) that Claude applies when writing new Go code or auditing existing Go code. Covers error handling, interface/package design, goroutine and channel correctness, net/http hardening, security (SQL, exec, path traversal, CSPRNG, TLS, supply chain), performance (pprof, allocations, GC, PGO), and tooling/CI. Trigger keywords - Go, golang, goroutine, channel, go.mod, errgroup, context.Context, pprof, govulncheck, net/http, slog. Use for BOTH building Go services/libraries/CLIs and reviewing or auditing Go codebases.
 ---
 
 # SOTA Go (2026)
 
 Expert-level rules for producing and auditing production Go. Baseline language
-version: Go 1.25+, the oldest release still in security support (Go fixes the
-last two majors; 1.24 left support with 1.26's release, 2026-02). Feature
+version: Go 1.26+. Go supports the two latest majors (1.25 left support when
+1.27 shipped, 2026-08) — verify the supported pair at
+go.dev/doc/devel/release. Feature
 notes: loop-var scoping from 1.22, `b.Loop`/`os.Root`/tool directives from
 1.24, `testing/synctest` and container-aware GOMAXPROCS from 1.25,
-`errors.AsType` and the default-on Green Tea GC from 1.26 — noted where
+`errors.AsType` and the default-on Green Tea GC from 1.26, the GA
+`goroutineleak` profile and `encoding/json` backed by v2 from 1.27 — noted where
 relevant. Every rule states the *why*; every rules file
 ends with an audit checklist of grep/vet/lint patterns.
 
@@ -29,9 +31,10 @@ Two consumers, one source of truth:
    A service touching HTTP + DB + goroutines needs `03`, `04`, `05`.
 2. Apply the **top-10 non-negotiables** (below) unconditionally.
 3. New modules: `go mod init` with a real module path; since 1.26 it writes
-   the previous minor as the `go` directive (e.g. `go 1.25.0`) for ecosystem
-   compatibility — keep that unless you need newer language features; pin the
-   `toolchain` directive to the current patch release. Add `golangci-lint`
+   the previous minor as the `go` directive (`go 1.(N-1).0` under toolchain
+   1.N) for ecosystem compatibility — keep that unless you need newer language
+   features; pin the `toolchain` directive to the latest patch release (verify
+   at go.dev/doc/devel/release). Add `golangci-lint`
    config and a CI step
    running `go vet`, `golangci-lint run`, `go test -race ./...`,
    `govulncheck ./...` from day one (see `rules/07`).
@@ -84,7 +87,7 @@ severity, the three highest-leverage fixes, and which checklists were run.
 | `rules/05-security.md` | Any input crossing a trust boundary: SQL parameterization, `os/exec` safety, path traversal and `os.Root`, integer overflow (G115), output encoding (`html/template`), CSPRNG (`crypto/rand` vs `math/rand`), TLS config, SSRF (dial-time IP check via `net.Dialer.ControlContext`, redirects, proxy), dynamic code evaluation (template text from input, embedded interpreters, `expr` env), `unsafe`/cgo policy (govulncheck, supply chain and go.sum moved to rules/08) |
 | `rules/06-performance.md` | Latency/memory work: pprof workflow, `testing.B` + `b.Loop`, allocation reduction, `strings.Builder`, `sync.Pool` criteria, escape analysis, GOGC/GOMEMLIMIT, PGO |
 | `rules/07-tooling-ci.md` | Setting up or auditing CI and tests: golangci-lint curated config, staticcheck/gofumpt/vet, table tests, `t.Parallel` correctness, testcontainers, golden files, fuzzing, go.mod hygiene and `tool` directives, dependency adoption (selection checks, insecure library defaults). **Test *strategy* — suite shape, TDD, doubles, test data, flake policy — lives in `sota-testing`; load it for any build that writes logic. This file owns Go runner mechanics only.** |
-| `rules/08-supply-chain.md` | Adding or auditing dependencies and the module supply chain: the checksum database, `govulncheck`, code that runs at build time (`go:generate`, cgo flags, `-toolexec`, `GOTOOLCHAIN`), keeping the toolchain current (formerly rules/05 section 8, now §1) |
+| `rules/08-supply-chain.md` | Adding or auditing dependencies and the module supply chain: the checksum database, `govulncheck`, code that runs at build time (`go:generate`, cgo flags, `-toolexec`, `GOTOOLCHAIN`), keeping the toolchain current (formerly rules/05 section 8, now §1); GODEBUG settings from the `go` line, `godebug` blocks, `//go:debug` and the environment that weaken TLS/x509/archive defaults (§2) |
 
 ## Top-10 non-negotiables
 
@@ -99,8 +102,8 @@ severity, the three highest-leverage fixes, and which checklists were run.
 4. **`go test -race ./...` in CI, always.** A race detector failure is a
    CRITICAL finding, not flaky-test noise. (`rules/03`, `rules/07`)
 5. **`http.Server` sets `ReadHeaderTimeout`, `ReadTimeout`, `WriteTimeout`,
-   `IdleTimeout`; clients set timeouts and `defer resp.Body.Close()` with
-   drain.** Default zero timeouts are a DoS. (`rules/04`)
+   `IdleTimeout`; clients set timeouts and `defer resp.Body.Close()` (plus a
+   bounded drain before 1.27).** Default zero timeouts are a DoS. (`rules/04`)
 6. **SQL only via parameterized queries** (`database/sql` placeholders, pgx,
    or sqlc-generated code). String-built SQL is CRITICAL, no exceptions for
    "internal" values. (`rules/05`)

@@ -90,9 +90,12 @@ data = out.read_text(encoding="utf-8")
 ```
 
 `Path.read_text/write_text/read_bytes`, `.glob`, `.mkdir(parents=True, exist_ok=True)`,
-`.with_suffix`, `.relative_to`. Always pass `encoding="utf-8"` to text I/O — the platform
-default still bites on Windows until UTF-8 mode is universal. Security note: `Path` does NOT
-prevent traversal; see rules/05 §4.
+`.with_suffix`, `.relative_to`. Always pass `encoding="utf-8"` to text I/O while your floor is
+below 3.15 — before that the default is the locale encoding (cp1252 on many Windows hosts), so
+the same file reads differently per machine. UTF-8 mode is on by default from 3.15 (PEP 686;
+`sys.flags.utf8_mode` read 1 on 3.15.0b4 and 0 on 3.14.6, measured 2026-09-25), and an
+explicit `encoding=` stays correct on every version. Security note: `Path` does NOT prevent
+traversal; see rules/05 §4.
 
 ## 6. EAFP vs LBYL
 

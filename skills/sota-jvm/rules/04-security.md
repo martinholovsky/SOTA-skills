@@ -287,14 +287,29 @@ takes down the whole JVM. FFM's restricted methods only **warn** unless
 (JDK 23, JEP 471), so migrate to `VarHandle` or FFM. Audit every crossing with the C rules;
 the class is `sota-code-security` rules/06 §3.
 
+**JDK 24 brought JNI under the same gate, but only as a warning.** JEP 472 makes loading and
+linking a JNI library a restricted operation, and `--illegal-native-access` defaults to `warn`.
+`deny` throws `IllegalCallerException` instead. Grant access per module with
+`--enable-native-access=M1,M2`. `ALL-UNNAMED` (the only value the `Enable-Native-Access`
+JAR-manifest attribute takes) grants the whole class path. JEP 498 does the same for `Unsafe`
+memory access. `--sun-misc-unsafe-memory-access` defaults to `warn` on JDK 24, and `deny`
+throws `UnsupportedOperationException`. A warning printed once to stderr gets read by nobody.
+On JDK 24+, run CI and production with `--illegal-native-access=deny` and
+`--sun-misc-unsafe-memory-access=deny`. Then a new dependency that reaches native code or
+`Unsafe` fails the build instead of printing that warning. Where you do need an exception, grant
+only the named module.
+
 ## Audit checklist
 
 - [ ] **Native and off-heap memory — HIGH on untrusted lengths** (§7) —
-      `grep -rnE '(^|[^[:alnum:]_])native[[:space:]][^;]*\(|(^|[^[:alnum:]_])external fun[[:space:]]|System\.load(Library)?\(|sun\.misc\.Unsafe|java\.lang\.foreign|enable-native-access' --include='*.java' --include='*.kt' --include='*.gradle*' --include='pom.xml' .`
-      (each hit is audited as C; `ALL-UNNAMED` needs a written reason)
+      `grep -rnE '(^|[^[:alnum:]_])native[[:space:]][^;]*\(|(^|[^[:alnum:]_])external fun[[:space:]]|System\.load(Library)?\(|sun\.misc\.Unsafe|java\.lang\.foreign|(enable|illegal)-native-access|Enable-Native-Access|sun-misc-unsafe-memory-access' --include='*.java' --include='*.kt' --include='*.gradle*' --include='pom.xml' --include='MANIFEST.MF' --include='jvm.config' --include='Dockerfile*' --include='*.sh' .`
+      (each hit is audited as C; `ALL-UNNAMED` needs a written reason; a `=warn`/`=allow`
+      value, or a JDK 24+ launch with no `=deny` for both flags, is MEDIUM) ;
+      `grep -rlE 'illegal-native-access=deny' --include='*.gradle*' --include='pom.xml' --include='jvm.config' --include='Dockerfile*' --include='*.sh' --include='*.y*ml' . || echo "no --illegal-native-access=deny anywhere"`
+      (repeat with `sun-misc-unsafe-memory-access=deny`)
 - [ ] **Deserialization — CRITICAL** —
-      `grep -rnE 'readObject\(|ObjectInputStream|XMLDecoder' --include='*.java' .` ;
-      `grep -rnE 'enableDefaultTyping|@JsonTypeInfo|activateDefaultTyping' --include='*.java' .`
+      `grep -rnE 'readObject\(|ObjectInputStream|XMLDecoder' --include='*.java' --include='*.kt' .` ;
+      `grep -rnE 'enableDefaultTyping|@JsonTypeInfo|activateDefaultTyping' --include='*.java' --include='*.kt' .`
       (Jackson polymorphic);
       `grep -rnE 'MappingJackson2MessageConverter|JacksonJsonMessageConverter|new Kryo\(' --include='*.java' --include='*.kt' .`
       (framework deser — verify type allowlist)
@@ -307,11 +322,17 @@ the class is `sota-code-security` rules/06 §3.
       (each `Serializable` hit: credential fields `transient`, and a class never meant to be
       read back has a `readObject` that throws; each read call: trace its bytes)
 - [ ] **Injection — CRITICAL/HIGH** —
-      `grep -rnE '(createQuery|createNativeQuery|prepareStatement|executeQuery|executeUpdate)\([^?)]*\+' --include='*.java' .`
+      `grep -rnE '(createQuery|createNativeQuery|prepareStatement|executeQuery|executeUpdate)\([^?)]*\+' --include='*.java' --include='*.kt' .`
       ;
       `grep -rnE '\.(query|queryForObject|queryForList|queryForMap|queryForRowSet|update|batchUpdate|execute|executeLargeUpdate|addBatch)\([[:space:]]*"[^"]*"[[:space:]]*\+' --include='*.java' --include='*.kt' .`
       (Spring `JdbcTemplate`, plain `Statement` and similar clients: the line above never
       names them; the `?`-placeholder form does not match)
+      ;
+      `grep -rnE '(createQuery|createNativeQuery|prepareStatement|executeQuery|executeUpdate|query|queryForObject|queryForList|queryForMap|queryForRowSet|update|batchUpdate|execute|executeLargeUpdate|addBatch)\([[:space:]]*"("")?([^"]*[^"\\])?\$[{a-zA-Z]' --include='*.kt' .`
+      (Kotlin builds the same injection with a string template, `"... WHERE id = $id"` or
+      `${x}`, and neither line above sees it. The `("")?` covers a `"""` raw string that opens
+      on the call line. An escaped `\$` and a `$1` placeholder do not match; a raw string that
+      continues onto later lines needs a read)
       ;
       `grep -rnE 'Runtime\.getRuntime\(\)\.exec|new ProcessBuilder' --include='*.java' --include='*.kt' .`
 - [ ] **The String-taking exec overloads TOKENIZE on whitespace and are @Deprecated(since=18): a
@@ -320,9 +341,9 @@ the class is `sota-code-security` rules/06 §3.
 - [ ] **waitFor(t,unit) reaps nothing: a destroy() with no descendants() sweep orphans
       grandchildren** —
       `grep -rn 'waitFor(' --include='*.java' --include='*.kt' . | grep -v 'descendants'` ;
-      `grep -rnE 'ctx\.lookup|InitialContext|new InitialDirContext' --include='*.java' .`
+      `grep -rnE 'ctx\.lookup|InitialContext|new InitialDirContext' --include='*.java' --include='*.kt' .`
       (JNDI/Log4Shell-class);
-      `grep -rnE 'SpelExpressionParser|Ognl|ScriptEngineManager|getEngineByName' --include='*.java' .`
+      `grep -rnE 'SpelExpressionParser|Ognl|ScriptEngineManager|getEngineByName' --include='*.java' --include='*.kt' .`
 - [ ] **The eval sinks the line above does not name — CRITICAL on input** (§2) —
       `grep -rnE 'ELProcessor|createValueExpression|createMethodExpression|GroovyShell|Eval\.me\(|Velocity\.evaluate|VelocityEngine|freemarker\.template\.Template|PebbleEngine' --include='*.java' --include='*.kt' .`
       (a template or expression built from a request string is the finding; a template
@@ -331,6 +352,8 @@ the class is `sota-code-security` rules/06 §3.
 - [ ] **LDAP filter injection and directory-borne deserialization — HIGH/CRITICAL** (§2) —
       `grep -rnE '\.search\([^;]*"[[:space:]]*\+' --include='*.java' --include='*.kt' .`
       (concatenated filter; use the `{0}` + `Object[]` overload) ;
+      `grep -rnE '\.search\([^;]*"([^"]*[^"\\])?\$[{a-zA-Z]' --include='*.kt' .`
+      (the same filter built with a Kotlin string template) ;
       `grep -rnE 'setReturningObjFlag\([[:space:]]*true|trustSerialData.{0,6}true' --include='*.java' --include='*.kt' --include='*.properties' --include='*.sh' --include='*.y*ml' --include='Dockerfile*' .`
       (objects rebuilt from LDAP entries; where the JDK's documented default is "allowed",
       as at jdk-17-ga and jdk-19-ga, an unset `trustSerialData` also allows it)
@@ -339,7 +362,7 @@ the class is `sota-code-security` rules/06 §3.
       (a DN concatenated or templated from a variable; the `{0}` filter overload does not
       protect the base DN. Use `Rdn.escapeValue` or `LdapName`/`Rdn`)
 - [ ] **XPath injection — HIGH** (§2) —
-      `grep -rnE '\.(evaluate|compile)\([^;]*"[[:space:]]*\+' --include='*.java' .` ;
+      `grep -rnE '\.(evaluate|compile)\([^;]*"[[:space:]]*\+' --include='*.java' --include='*.kt' .` ;
       `grep -rnE '\.(evaluate|compile)\("([^"]*[^"\\])?\$[{a-zA-Z]' --include='*.kt' .`
       (Kotlin string templates; an escaped `\$name` XPath variable does not match. The Java
       line also lists `Pattern.compile` concatenation, which the next item wants anyway)
@@ -380,12 +403,14 @@ the class is `sota-code-security` rules/06 §3.
       For each client that reaches a caller-chosen host, confirm a `socketFactory` or
       `DnsResolver` guard exists, or an enforcing egress proxy)
 - [ ] **Crypto misuse — HIGH** —
-      `grep -rnE 'new Random\(|Math\.random|ThreadLocalRandom' --include='*.java' . | grep -iE 'key|token|iv|salt|nonce|secret'`
+      `grep -rnE '(^|[^[:alnum:]_.])Random\(|Math\.random|ThreadLocalRandom|Random\.(Default|next)' --include='*.java' --include='*.kt' . | grep -iE 'key|token|iv|salt|nonce|secret'`
+      (Java `new Random(`, Kotlin `Random()` and `kotlin.random.Random.nextX`; `SecureRandom(` does not match)
       ;
       `grep -rnE '"(MD5|SHA-?1|DES|RC4)"|/ECB/|Cipher\.getInstance\("AES"\)' --include='*.java' --include='*.kt' .`
-      ; `grep -rnE 'TrustManager|HostnameVerifier|checkServerTrusted' --include='*.java' .`
+      ; `grep -rnE 'TrustManager|HostnameVerifier|checkServerTrusted' --include='*.java' --include='*.kt' .`
       (all-trusting?);
-      `grep -rn 'Arrays.equals\|\.equals(' --include='*.java' . | grep -iE 'mac|hmac|token|signature|digest'`
+      `grep -rnE 'Arrays\.equals|\.equals\(|contentEquals\(|[^=!]==[^=]' --include='*.java' --include='*.kt' . | grep -iE 'mac|hmac|token|signature|digest'`
+      (Kotlin compares with `==` and `contentEquals`; use `MessageDigest.isEqual`)
 - [ ] **Transformation strings, IVs and key sizes the line above misses — HIGH** (§4) —
       `grep -rnE '"(DESede|TripleDES|Blowfish|RC2|RC4|ARCFOUR)(/[^"]*)?"|"[A-Za-z0-9]+/CBC/[^"]*"|"RSA/[^"]*/NoPadding"|NullCipher' --include='*.java' --include='*.kt' .`
       (CBC is a finding unless a MAC covers the ciphertext; `AES/GCM/NoPadding` and OAEP do

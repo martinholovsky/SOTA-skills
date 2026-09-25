@@ -13,6 +13,14 @@ profiler before optimizing. Cross-reference `sota-performance` for methodology.
 - **Server GC** (`<ServerGarbageCollection>true`) for throughput on multi-core
   servers; workstation GC for client/low-latency-single-core. Know which you're
   running. Don't tune GC knobs before profiling shows GC is the bottleneck.
+- **Server GC now adapts its heap count by default.** DATAS (dynamic adaptation to application
+  sizes) is on by default from .NET 9 and applies to Server GC: it starts with one heap and grows or
+  shrinks the count with load. Microsoft's TechEmpower runs showed a working set over 80% smaller for
+  a 2–3% drop in peak RPS, and allocating threads can wait at startup or when load rises. For a
+  throughput-bound service that owns its machine, measure with it off:
+  `<GarbageCollectionAdaptationMode>0</GarbageCollectionAdaptationMode>` (or
+  `System.GC.DynamicAdaptationMode: 0` / `DOTNET_GCDynamicAdaptationMode=0`). Keep it on where many
+  processes share memory, such as dense containers. *(Microsoft: DATAS; GC runtime configuration.)*
 
 ## 2. Reduce allocations
 
@@ -62,8 +70,12 @@ profiler before optimizing. Cross-reference `sota-performance` for methodology.
   fast startup, low memory, small footprint — ideal for CLIs, serverless, and
   containerized microservices. .NET 10 improves AOT (broader support, smaller/
   faster). Costs: no JIT/runtime codegen, so **reflection/dynamic loading must be
-  trim-safe** (use source generators; annotate with `IsAotCompatible`); not all
-  libraries are AOT/trim-compatible. Test the published binary.
+  trim-safe** (use source generators); not all libraries are AOT/trim-compatible. Test the
+  published binary. In a library, set the MSBuild property `<IsAotCompatible>true</IsAotCompatible>`:
+  it is not an annotation but a switch that turns on the trim, single-file and AOT analyzers
+  (`IsTrimmable`, `EnableTrimAnalyzer`, `EnableSingleFileAnalyzer`, `EnableAotAnalyzer`). Annotate the
+  code those analyzers flag with `[RequiresUnreferencedCode]`, `[RequiresDynamicCode]` or
+  `[DynamicallyAccessedMembers]` (Microsoft: Native AOT deployment overview).
 - Choose AOT for startup/footprint-bound workloads; stay on the JIT for
   long-running throughput-bound compute where peak JIT throughput wins.
 
@@ -81,7 +93,9 @@ profiler before optimizing. Cross-reference `sota-performance` for methodology.
       (a query-shaped call within six lines of a loop head; confirm it runs against a
       `DbSet`/`IQueryable` and not an in-memory list)
 - [ ] **Server GC configured for a server app?** —
-      `grep -rnE 'ServerGarbageCollection|ConcurrentGarbageCollection' *.csproj runtimeconfig* 2>/dev/null`
+      `grep -rnE 'ServerGarbageCollection|ConcurrentGarbageCollection|GarbageCollectionAdaptationMode|System\.GC\.(Server|DynamicAdaptationMode)|DOTNET_(gcServer|GCDynamicAdaptationMode)' --include='*.csproj' --include='*.props' --include='runtimeconfig*.json' --include='*.runtimeconfig.json' --include='Dockerfile*' --include='*.yaml' --include='*.yml' .`
+      (Server GC on .NET 9+ runs DATAS unless the adaptation mode is `0`: fine for dense hosting,
+      measure it off for a throughput-bound service)
 - [ ] **Span/pooling opportunities (hot path) — LOW** —
       `grep -rnE 'new byte\[|Substring\(|Split\(' --include='*.cs' . | head` (Span/ArrayPool
       candidates)
@@ -89,4 +103,4 @@ profiler before optimizing. Cross-reference `sota-performance` for methodology.
       `grep -rnE 'Stopwatch' --include='*.cs' . | grep -i bench | head` ;
       `grep -rnE '\[Benchmark\]|MemoryDiagnoser' --include='*.cs' . || echo "no BenchmarkDotNet benchmarks"`
 - [ ] **Native AOT / trimming used? verify trim-safety** —
-      `grep -rnE 'PublishAot|PublishTrimmed|IsAotCompatible' *.csproj 2>/dev/null`
+      `grep -rnE 'PublishAot|PublishTrimmed|IsAotCompatible' --include='*.csproj' --include='*.props' .`

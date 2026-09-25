@@ -6603,3 +6603,98 @@ and normalising the markers already makes the current tree correct.
 **Also closed as ALREADY DONE (tracker never updated):** the 2026-09-23 nested-fence report now
 points at its fix (#429), and `LANGUAGE-TIER.md`'s "temp files still OPEN" heading now points
 at the 2026-09-24 decision (rules/06 §6.1).
+
+## 2026-09-25 — the nine language skills re-verified against primary sources: 132 fix items, one new gate
+
+**Intake shape: an operator-requested accuracy and depth check of every language skill** — an
+early, partial run of ROADMAP 5's sweep, limited to the nine language skills, so
+`LAST-VERIFIED` does **not** move. The method is the runbook's (`docs/MAINTENANCE.md` §2):
+- One research agent per skill checked every time-sensitive claim against a primary source
+  fetched that session, or against a local run: go1.27.1, rustc 1.97.1, clang 21 and cppcheck
+  2.21, PHP 8.3/8.4/8.5 (the first two in podman), Ruby 4.0.6 with Bundler 4, Node 22.22.1 with
+  TS 6.0.3/7.0.2, and uv 0.12 with CPython 3.11–3.15. No JVM or .NET SDK was available, so
+  those two were checked against docs only.
+- Each agent's reported fetch and command counts were compared with its actual tool log, and
+  all nine matched.
+- 158 findings came back. The 72 rated High or Medium each went to a refuter agent prompted
+  to kill it. **One was refuted** (Jackson 3's changed defaults: Spring Boot already set both).
+  **All eight Highs survived**, and several findings came back *more* severe than first
+  reported.
+- Fixes were written by one agent per skill, each confined to its own folder. Every new or
+  changed audit probe was run against a bad and a good fixture under BSD grep and the ugrep
+  wrapper.
+
+Verdict: every skill was **adequate with gaps**, and none was thin. The Highs share one shape:
+**an audit probe or command that runs, exits cleanly, and checks nothing.**
+
+| skill | High (fixed) | what else was wrong |
+|---|---|---|
+| golang | the stated floor (Go 1.25) had left support with 1.27 | a redirect "GOOD" example that stripped only headers Go already strips; a Shutdown comment claiming connections were closed; `os.Root` described as kernel-enforced; a deleted GOEXPERIMENT that now fails the build |
+| rust | Windows MSRV 1.77.2 leaves CVE-2024-43402 open; the floor is now 1.81.0 | a `deny.toml` example that fails to load (`expire`); 2024-edition temporary scopes wrong for `match`; ahash wrongly rated a HashDoS High |
+| c-cpp | `cppcheck --addon=cert` aborts with exit 1 without analysing | the hardening block had drifted from the OpenSSF guide it cites; a clang-tidy check whose module was removed; renamed C++26 saturating functions |
+| jvm | CRITICAL sink probes ignored `.kt`; with `.kt` added, the SQL probes still missed Kotlin templates | "G1 is the default" is false for small containers before JDK 27; coroutine MDC, cancellation and exception propagation |
+| python | `uvx pip-audit` audited its own tool env and reported a vulnerable project clean (exit 0) | a nonexistent PyPI name, a slopsquat risk; PEP 594 removals put in the wrong release |
+| javascript-typescript | TS 7.0 ships no compiler API, so typed lint breaks on `typescript@latest` | the baseline tsconfig fails on TS 6+; `--permission` does not restrict the network on Node 22/24; pnpm's default cooldown fails open |
+| dotnet | the secrets probe never opened `appsettings.json` | SQL probes missed `SqlQueryRaw` and Dapper `Execute`; no `FallbackPolicy`; the obvious forwarded-headers fix is itself the spoofing hole |
+| php | no rule for the web-server→FPM handoff or `vendor/` in the docroot (two KEV RCE classes) | the bcrypt "ValueError since 8.4" claim is false; an example that is a parse error on the 8.3 floor; Composer 2.9/2.10 blocking |
+| ruby | — | a Sinatra CSRF example that raises TypeError, and an audit probe that could never match; the `secret:` session option selects Marshal |
+
+**New rule sections, each adopted after the verification above:**
+- `sota-golang` rules/08 §2, *GODEBUG: security behaviour set by go.mod*. Measured on go1.27.1: `go 1.24` with `godebug tlssha1=1` embeds `DefaultGODEBUG=…tlssha1=1…`, and removed settings abort the binary at startup.
+- `sota-php` rules/04 §5c, *Web server to PHP-FPM: only the front controller executes*. The `security.limit_extensions` default `.php .phar` was read in `fpm_conf.c` and confirmed with `php-fpm -tt`; CVE-2017-9841 and CVE-2019-11043 were confirmed in the CISA KEV feed.
+- `sota-php` rules/02 §8, *WordPress*. It fills a trigger keyword that had no guidance anywhere. Operator decision: add the guidance rather than drop the keyword. Written from developer.wordpress.org.
+- `sota-python` rules/01 §7a and §8 are heading rewrites of existing sections. 3.12 and 3.13 removals were measured on each interpreter; the GIL re-enable was measured on 3.14.6t.
+- `sota-shell-scripting` rules/09 §5b, *A filter that drops the file you named*. See below.
+
+**Adopted with a correction to the brief: two corrections came from the fix agents, not the auditors.**
+- **PHP URL validation.** The brief said to prefer `Uri\WhatWg\Url` over `parse_url`. Measured on `http://example.com\@evil.com/`: WHATWG reports `example.com` while cURL 8.21 dials `evil.com`, so a WHATWG check in front of cURL is an SSRF bypass. The rule uses `Uri\Rfc3986\Uri::parse()`, which returns null for that input, and fetches its `toString()`.
+- **Composer blocking.** Advisory blocking applies to `update`/`require`/`remove`, not to `install` from a lock. Measured on 2.10.3: update exits 2, install exits 0 on the same lock. `composer audit --locked` stays the CI gate.
+
+**Also found while fixing:** Sinatra's `enable :sessions` always passes the secret as `secret:`, so the legacy Marshal path stays live even with `serialize_json: true` (measured). The rule now says to disable Sinatra sessions and mount `Rack::Session::Cookie` directly.
+
+**A new gate: invariant 37, and a rule.** The refuter for .NET/PHP/Ruby noticed that two of the defects were one bug: `grep -r PAT --include='*.rb' config.ru` never reads `config.ru`. Measured on BSD grep, ugrep and GNU grep 3.11; `rg -g` does not have the bug.
+- A library-wide sweep of 1,120 grep commands found three instances, and then a fourth (`--include='*.sh' Makefile* Dockerfile*`) once the gate's own first cut was widened to globbed names.
+- The sweep's first version split on `|` before reading quotes, cutting every alternation pattern in half. It missed the known .NET case, and only that positive control showed the instrument was broken.
+- The class passes all three filters in `docs/CONVENTIONS-LEDGER.md`: it has failed four times, it fails silently (exit 1 reads as "clean"), and it is mechanically checkable. Operator decision: rule plus gate.
+- Probes 37 and 37b cover the gate and its `# BAD` escape.
+
+**Found alongside it, and fixed:** ten probes passed a bare `Dockerfile*` glob, which zsh aborts on when nothing matches, reporting a clean result (`sota-shell-scripting` rules/06 §1). They were in jvm, ruby, php and ml-engineering.
+
+**Not adopted: the Low items that would add new material.** Each is recorded below with a trigger, so none is a silent drop.
+
+- **DEFERRED — golang: FIPS 140-3 module line; CrossOriginProtection audit probe; a JSON duplicate-key probe (rules/05 is at 497 lines). Revisit trigger: the next accuracy pass over sota-golang, or a field brief that hits one.**
+- **DEFERRED — rust: Rust-specific SQL sink probes (sqlx `QueryBuilder::push`, `diesel::sql_query`); the 1.98 `derive(PartialOrd)` fast-path note. Revisit trigger: the next accuracy pass over sota-rust, or a field brief that hits one.**
+- **DEFERRED — c-cpp: C++26 contracts as non-validation; the GCC 15 union `{0}` source rule; P2795 caveats; trap-mode UBSan in production; `memset_explicit`; TypeSanitizer; Safe Buffers; GCC default-dialect changes. Revisit trigger: the next accuracy pass over sota-c-cpp, or C++26 publication.**
+- **DEFERRED — jvm: Kotlin `data class` copy() visibility; a Jackson 3 migration note; the JDK AOT cache; JFR redaction; JDK ML-KEM/ML-DSA/KDF names. Revisit trigger: the next accuracy pass over sota-jvm, or a field brief that hits one.**
+- **DEFERRED — python: pylock.toml; PEP 768 remote debugging; a t-strings probe. Revisit trigger: the next accuracy pass over sota-python, or when a major DB driver accepts t-string queries.**
+- **DEFERRED — javascript-typescript: require(esm) and top-level await in library entries. Revisit trigger: the next accuracy pass over sota-javascript-typescript, or a field brief on dual publishing.**
+- **DEFERRED — dotnet: ASP.NET Core rate-limiter and Kestrel limit names; `TimeProvider`/`Lock` idioms; a worked BUILD example. Revisit trigger: the next accuracy pass over sota-dotnet, or a field brief that hits one.**
+- **DEFERRED — php: Rector for floor bumps. Revisit trigger: PHP 8.2 end of life (2026-12-31), when the floor moves.**
+- **DEFERRED — ruby: the gem.coop / RubyGems governance note; `Sidekiq::Web` and `master.key` probes. Revisit trigger: the next accuracy pass over sota-ruby, or a field brief that hits one.**
+
+**Line citations superseded.** The .NET agent re-wrapped `sota-dotnet` rules/04 and moved its
+runtime-patch material, including the Kestrel and SignalR CVEs and the "rebuild self-contained
+apps" note, to rules/06 §3 to stay under the cap. The step-6 table above cites rules/04 by line
+number, for example T508 (lines 84-94), T519 (:15), T520 (:146-150) and T522 (:228-233), and
+those numbers no longer point at the same text. They are kept as written. Read T522 as
+rules/06 §3 and the others by their section. `sota-network-security` rules/05 now cites
+rules/06 §3 directly.
+
+**Post-commit review (a fresh refuter over the whole diff).** It checked 27 new factual claims
+and found all 27 correct. 45 of 46 new probes passed across BSD grep, ugrep, bash and zsh. It
+found problems in these areas, all fixed in the same PR:
+- a new Rust probe with a bare `*/Cargo.toml` glob;
+- invariant 37 holes: `-e` patterns, extensionless names such as `Rakefile`, `egrep`/`ugrep`,
+  and a false positive on hidden directories such as `.github` (each re-tested on crafted
+  lines);
+- a Go probe list missing two items from its own §1;
+- three probes that were already broken before this sweep:
+  - a PHP SQL probe whose `\'` broke the shell quoting, so it never ran;
+  - a JVM filter where `io` matched `addition`;
+  - libxml2 probes that skipped `.cc`/`.cxx`/`.hpp`.
+
+**Unverified and marked in the text:**
+- crates.io GitLab Trusted Publishing (present in the source, deployment not confirmed);
+- whether `dotnet restore` enforces `signatureValidationMode` on Linux and macOS;
+- the LLVM release that removed clang-tidy's `hicpp` module (2026 removal commits confirmed; the version is not);
+- the old C++26 saturating names `div_sat`/`saturate_cast`, which were written from recall.

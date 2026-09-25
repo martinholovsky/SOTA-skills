@@ -70,8 +70,9 @@ is itself a LOW finding.
 is fine but redundant. `gofumpt` over `gofmt`: stricter, zero-config,
 no debates.
 
-Version notes (2026-06): golangci-lint v2.9.0+ is required for Go 1.26
-support (use the latest stable). `noctx` now also flags missing-ctx `log/slog`,
+Version notes: use a golangci-lint release whose notes list your Go minor
+(v2.9.0 first supported 1.26, v2.13.0 first supports 1.27; take the latest
+stable and check its release notes). `noctx` now also flags missing-ctx `log/slog`,
 `os/exec` and `crypto/tls` call sites, not just HTTP requests; `errcheck`
 v1.10+ excludes `crypto/rand.Read` by default (it never fails).
 
@@ -191,8 +192,8 @@ percentage.
 ```
 module github.com/org/app
 
-go 1.25.0          // language version (1.26's `go mod init` writes the previous minor by design)
-toolchain go1.26.5 // exact toolchain: reproducible builds across dev/CI (pin the current patch — verify at go.dev/doc/devel/release)
+go 1.(N-1).0       // language version: since 1.26, `go mod init` on toolchain 1.N writes the previous minor
+toolchain go1.N.P  // latest patch; verify at go.dev/doc/devel/release (reproducible builds across dev/CI)
 
 require ( ... )
 

@@ -2,7 +2,7 @@
 
 ## Test runner: vitest (apps), node:test (deps-free libs)
 
-Vitest (v4 current): native ESM/TS, vite-config reuse, watch mode, `projects` for multi-config repos (the old `workspace` option was removed in v4), jest-compatible API. Vitest 4 also stabilized Browser Mode (via `@vitest/browser-playwright` etc.) — real-browser component tests where jsdom fidelity isn't enough. Don't start new projects on jest (CJS-era transform pain). Pure libraries with zero build can use `node:test` and skip the dependency entirely.
+Vitest (use the latest stable major; check vitest.dev): native ESM/TS, vite-config reuse, watch mode, `projects` for multi-config repos (the old `workspace` option was removed in v4), jest-compatible API. Version boundaries that change behaviour: Vitest 5.0 (September 2026) requires Node `^22.12.0 || ^24 || >=26` and turns `clearMocks` on by default (`restoreMocks` stays off, so keep it set). Vitest 4 stabilized Browser Mode (via `@vitest/browser-playwright` etc.) — real-browser component tests where jsdom fidelity isn't enough. Don't start new projects on jest (CJS-era transform pain). Pure libraries with zero build can use `node:test` and skip the dependency entirely.
 
 ```ts
 // vitest.config.ts
@@ -106,15 +106,18 @@ Unit/integration tests for logic breadth; a thin Playwright layer for critical u
 
 Flat config (`eslint.config.js`) is the only supported format since ESLint 9; ESLint 10 (Feb 2026) removes the eslintrc system entirely, resolves config from each linted file's directory (multiple configs per run — monorepo-friendly), and requires Node ≥20.19. typescript-eslint v8 supports ESLint 9 and 10. Type-aware strict preset catches real bugs (floating promises, unsafe any-flow) that syntax-only linting can't.
 
+**Typed lint does not run on TypeScript 7.0.** typescript-eslint v8's peer range is `typescript <6.1.0` and 7.0 has no compiler API: with `typescript@^7` the install fails `ERESOLVE`, and forced, `eslint` exits 2 (measured, typescript-eslint 8.70.1). Keep the `typescript` dependency on the 6.0 API with the `npm:@typescript/typescript6` alias and run `tsc` from 7.0 beside it — the `package.json` snippet is in rules/01 §"tsconfig". Exit 2 in CI is a broken gate, not a lint failure.
+
 ```js
 // eslint.config.js
 import eslint from '@eslint/js';
+import { defineConfig } from 'eslint/config';   // tseslint.config() is deprecated in its favour
 import tseslint from 'typescript-eslint';
 
-export default tseslint.config(
+export default defineConfig(
   eslint.configs.recommended,
-  ...tseslint.configs.strictTypeChecked,     // not just "recommended"
-  ...tseslint.configs.stylisticTypeChecked,
+  tseslint.configs.strictTypeChecked,        // not just "recommended"
+  tseslint.configs.stylisticTypeChecked,
   {
     languageOptions: { parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname } },
     rules: {
@@ -143,7 +146,7 @@ export default tseslint.config(
   files (ESLint does not parse them), a missing GCM `authTagLength`, TLS verification
   opt-outs, or a missing `ssh2` `hostVerifier`. Those need the grep probes in rules/04 and
   rules/05.
-- Useful plugins: `eslint-plugin-regexp` (ReDoS), `eslint-plugin-react-hooks` (v6+: flat-config presets, React-Compiler-powered rules — `recommended-latest` to opt in), `eslint-plugin-jsx-a11y`, `eslint-plugin-import-x` (cycles: `import-x/no-cycle`).
+- Useful plugins: `eslint-plugin-regexp` (ReDoS), `eslint-plugin-react-hooks` (v7: the React-Compiler-powered rules ship in `configs.flat.recommended`; `recommended-latest` is the plugin's experimental channel), `eslint-plugin-jsx-a11y`, `eslint-plugin-import-x` (cycles: `import-x/no-cycle`).
 - Downgrading errors to warnings "to get CI green" creates a permanent warning swamp — fix or explicitly disable per-line with a reason comment.
 
 ## Formatting and pre-commit
@@ -202,7 +205,7 @@ Broken `exports`/types maps are the top npm-library bug class (works in dev, bre
   packed. So use the `files` allowlist, not `.npmignore`. `files: ["dist"]` still shipped
   `dist/index.js.map`, and `"!dist/**/*.map"` removed it. In CI, diff the packed path list
   against a committed expected list and fail on any new path. *OWASP: NPM Security cheat sheet.*
-- Dual ESM/CJS only if consumers demand it (tsup/unbuild make it tolerable); otherwise ESM-only and say so in the README.
+- Dual ESM/CJS only if consumers demand it (tsdown/unbuild make it tolerable; tsup's README says it is no longer actively maintained and points to tsdown); otherwise ESM-only and say so in the README.
 
 ## Type-level testing
 
@@ -243,6 +246,7 @@ steps:
 
 - [ ] CI runs typecheck, lint, tests as blocking steps — `cat .github/workflows/*.yml | grep -E "tsc|eslint|vitest|test"`; missing typecheck gate = MEDIUM.
 - [ ] ESLint config is flat + `strictTypeChecked` (type-aware): `grep -rn "strictTypeChecked\|projectService" eslint.config.*` — syntax-only linting in a TS repo = MEDIUM.
+- [ ] **Typed lint actually runs (§"ESLint flat config", the TypeScript 7.0 paragraph)** — `grep -nE '"typescript": *"[~^]?7|"typescript": *"npm:typescript@' package.json` next to `typescript-eslint` means no 6.0 API for the linter; run `npx eslint .` and read the exit code — 2 with "typescript-eslint does not support TS 7.0" is HIGH (every type-aware rule, `no-floating-promises` included, is off).
 - [ ] `grep -rn "eslint-disable" src/ | grep -v -- "--"` — disables without reason comments; count trend (LOW each, MEDIUM in volume).
 - [ ] `grep -rn "querySelector\|container\." src/**/*.test.tsx` and `getByTestId` density — implementation-coupled tests (LOW/MEDIUM).
 - [ ] `grep -rn "fireEvent" src/` in component tests — should be `userEvent` (LOW).

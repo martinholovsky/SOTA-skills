@@ -552,7 +552,7 @@ as a FALSE PASS, because a harness that accepts any failure reports full coverag
 testing nothing.
 
 Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 3, 4, 6,
-7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36 — 33 of 36; the harness prints the list and why the rest are
+7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37 — 34 of 37; the harness prints the list and why the rest are
 not covered, so read its output rather than this sentence). A **diff-based** check is not
 unprobeable: 11, 14 and 29 read a merge base, and the probe for them *commits* its
 mutation on the worktree's detached HEAD, then rewinds to the sha it captured first. Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
@@ -662,6 +662,13 @@ CI scans the full git history, the pre-commit hook scans each commit.
     no error. The router's own wording is the independent source: every language row reads
     "Any … code —". Added on operator instruction **before any instance**, the one check here
     that has not yet failed in the wild. It is cheap, and its failure is loud.
+37. **A grep probe filters out the file it names.** `--include` filters files named on the
+    command line too, on BSD grep, ugrep and GNU grep, so a probe that pairs
+    `--include='*.rb'` with `config.ru` exits 1 exactly like a clean codebase. Three shipped
+    probes had it (a Sinatra CSRF check, a Rack session-cookie check, a .NET secrets sweep).
+    A named file needs no filter; if you need both, add an `--include` that matches the
+    named file. `# BAD` on the same line exempts a deliberate bad example
+    (`sota-shell-scripting` rules/09 §5b).
 
 ## Local setup
 

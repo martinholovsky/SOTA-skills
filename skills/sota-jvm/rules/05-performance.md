@@ -7,7 +7,14 @@ proper benchmark harness; never tune GC flags by guess. Cross-reference
 
 ## 1. Garbage collectors — pick by goal
 
-- **G1** (default) — balanced throughput/latency; good for most server apps.
+- **G1** — balanced throughput/latency; good for most server apps. **It is not the default
+  everywhere before JDK 27.** Since JDK 9 the JVM has picked **Serial** when it sees a
+  single CPU or less than 1792 MB of memory, and a container with a 1-CPU or 1 GiB limit
+  meets that test. JEP 523 makes G1 the default in every environment from JDK 27. On earlier
+  JDKs, set `-XX:+UseG1GC` (or your chosen collector) explicitly in the container image. You
+  can also confirm the choice at startup: `-Xlog:gc` names the collector on its first line,
+  and `java -XX:+PrintFlagsFinal -version | grep -E 'Use(Serial|G1)GC'` shows it too
+  ([JEP 523](https://openjdk.org/jeps/523)).
 - **Generational ZGC** (`-XX:+UseZGC` — generational-only since JDK 24, JEP
   490; the `ZGenerational` flag is obsolete and will eventually make the JVM
   refuse to start) — sub-millisecond pauses for large heaps / latency-sensitive
@@ -70,12 +77,16 @@ proper benchmark harness; never tune GC flags by guess. Cross-reference
       deprecated ctors);
       `grep -rnE 'List<Integer>|Map<Integer,|Map<.*,Integer>' --include='*.java' . # boxing-heavy collections`
 - [ ] **GC/heap flags sane and container-aware?** —
-      `grep -rnE 'Xmx|Xms|MaxRAMPercentage|UseZGC|UseG1GC|UseParallelGC' Dockerfile* k8s/ deploy/ *.sh 2>/dev/null`
-      ; `grep -rn 'ZGenerational' Dockerfile* k8s/ deploy/ *.sh 2>/dev/null` (obsolete since JDK
+      `grep -rnE 'Xmx|Xms|MaxRAMPercentage|UseZGC|UseG1GC|UseParallelGC' --include='Dockerfile*' --include='Containerfile*' --include='*.y*ml' --include='*.sh' --include='jvm.config' .`
+      ; `grep -rn 'ZGenerational' --include='Dockerfile*' --include='*.y*ml' --include='*.sh' --include='jvm.config' .` (obsolete since JDK
       24 (JEP 490)); `grep -rn 'UseContainerSupport' . 2>/dev/null`
+- [ ] **Collector left to ergonomics on a small container before JDK 27 — MEDIUM** (§1) —
+      `grep -rLE 'Use(G1|Z|Parallel|Serial|Shenandoah)GC' --include='Dockerfile*' --include='Containerfile*' .`
+      (each printed file launches a JVM with no explicit collector. With a 1-CPU or
+      under-1792 MB limit, a pre-27 JVM runs Serial)
 - [ ] **Benchmark hygiene — verify JMH, not nanoTime loops** —
-      `grep -rn 'System.nanoTime\|currentTimeMillis' --include='*.java' . | grep -i bench` ;
-      `grep -rln '@Benchmark' --include='*.java' . || echo "no JMH benchmarks"`
+      `grep -rn 'System.nanoTime\|currentTimeMillis' --include='*.java' --include='*.kt' . | grep -i bench` ;
+      `grep -rln '@Benchmark' --include='*.java' --include='*.kt' . || echo "no JMH benchmarks"`
 - [ ] **Native image config present if used?** —
       `grep -rn 'native-image\|GraalVM\|reflect-config\|reachability-metadata' . 2>/dev/null`
 - [ ] **Profile first: JFR (-XX:StartFlightRecording) or async-profiler — no static grep**

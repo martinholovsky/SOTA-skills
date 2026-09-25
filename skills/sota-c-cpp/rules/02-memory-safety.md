@@ -45,8 +45,9 @@ below.
   Code Review Guide v2; Secure Coding Practices Quick Reference Guide.
 - Enable hardened standard-library assertions so OOB container access traps
   instead of corrupting: libstdc++ `-D_GLIBCXX_ASSERTIONS`, libc++
-  `-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE` (LLVM 18+ — verify
-  for your toolchain; EXTENSIVE for debug/test, FAST in production — `rules/04` §5).
+  `-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST` (LLVM 18+ — verify for your
+  toolchain). libc++ documents FAST, or EXTENSIVE for a broader set, as the production
+  modes and DEBUG for test and CI only (`rules/04` §5).
 
 ```cpp
 // BAD — trusts len from the wire; OOB read/write
@@ -101,7 +102,10 @@ catch what review and `-Wall` cannot. (Clang/GCC; see
 
 - ASan and TSan can't run together — use two jobs. MSan needs an instrumented
   libc++ to avoid false positives.
-- Add `-fsanitize-address-use-after-scope` to catch use of out-of-scope locals.
+- Use of an out-of-scope local (`stack-use-after-scope`) is caught by ASan by default: a
+  pointer to a block-scoped local dereferenced after the block aborted under plain
+  `-fsanitize=address` and ran silently with `-fno-sanitize-address-use-after-scope` (Apple
+  clang 21, measured). The finding is that opt-out in a test build, not a missing flag.
 - **Valgrind/Memcheck** is the no-recompile fallback (catches UAF/leaks/
   uninit), but slower and misses stack/global overflows ASan catches. Prefer
   ASan+UBSan in CI; keep Valgrind for third-party binaries you can't rebuild.
@@ -140,6 +144,10 @@ catch what review and `-Wall` cannot. (Clang/GCC; see
       (confirm RAII ownership)
 - [ ] **Sanitizer/hardening presence in the build — HIGH if a network binary lacks them** —
       `grep -rn 'fsanitize' . ; grep -rn '_GLIBCXX_ASSERTIONS\|_LIBCPP_HARDENING\|_FORTIFY_SOURCE' .`
+- [ ] **A check that is on by default, switched off — MEDIUM (HIGH for a shipped `OBSERVE` or
+      `IGNORE`, which continues past a failed check into UB)** —
+      `grep -rnE -e '-fno-sanitize-address-use-after-scope|_LIBCPP_ASSERTION_SEMANTIC_(OBSERVE|IGNORE)|_LIBCPP_HARDENING_MODE_NONE' --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' --include='*.mk' --include='*.h' --include='*.hpp' .`
+      (libc++ calls `observe` an adoption aid only; `ignore` is not a conforming hardened mode)
 - [ ] **Build & run the suite under sanitizers (ground truth) cmake -DCMAKE_BUILD_TYPE=Debug
       -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all" ctest # any
       ASan/UBSan abort == CRITICAL/HIGH finding**

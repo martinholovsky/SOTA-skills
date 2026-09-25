@@ -40,13 +40,17 @@ exploit UB at `-O2`. Treat any UBSan diagnostic as CRITICAL/HIGH. Reference:
   small-allocation is a classic exploit primitive (`rules/04`).
 - Use checked arithmetic: GCC/Clang `__builtin_add_overflow`/`mul_overflow`,
   or C23 `<stdckdint.h>` `ckd_add`/`ckd_mul`. For C++ prefer typed wrappers or
-  range checks; C++26 adds saturating helpers in `<numeric>`
-  (`std::add_sat`/`sub_sat`/`mul_sat`, P0543).
+  range checks; C++26 adds saturating helpers in `<numeric>` ([numeric.sat]):
+  `std::saturating_add`/`_sub`/`_mul`/`_div` and `std::saturating_cast`. P0543 named them
+  `add_sat`/`sub_sat`/`mul_sat`/`div_sat`/`saturate_cast`; P4052R0 renamed them, and early
+  standard-library implementations shipped the old names, so check which yours has.
 - **A check written after the addition is deleted.** `x + 1 < x` on a signed `int` returned 0
   for `INT_MAX` at `-O2` on both GCC 16.2 and Apple clang 21 (measured): the optimiser assumed
   no overflow and folded the test away. `-fwrapv` (signed arithmetic wraps) and GCC's
-  `-fno-strict-overflow` each kept it, returning 1. Use them as a **backstop for legacy code**
-  you cannot yet rewrite, not as the fix. They make the wrapped value defined, not correct. The fix is to test *before* adding, or to use the checked
+  `-fno-strict-overflow` each kept it, returning 1. The OpenSSF Compiler Options Hardening
+  Guide lists `-fno-strict-overflow` in its **production** set (`rules/04` §5; in Clang it is a
+  synonym for `-fwrapv`), so ship with it. It is still **not the fix**: it makes the wrapped
+  value defined, not correct. The fix is to test *before* adding, or to use the checked
   helpers below. OWASP: C-Based Toolchain Hardening cheat sheet.
 - Avoid implicit narrowing/sign conversions; compile with `-Wconversion
   -Wsign-conversion`. Brace-init (`int x{expr};`) rejects narrowing at compile
@@ -160,6 +164,7 @@ mutex. Build threaded code under TSan.
       -Wshift-overflow=2**
 - [ ] **Uninitialized — MEDIUM** —
       `clang-tidy --checks='cppcoreguidelines-init-variables,clang-analyzer-core.uninitialized.*' <files>`
-- [ ] **Ground truth: run under UBSan, aborting on first diagnostic cmake
+- [ ] **Ground truth: run under UBSan, aborting on first diagnostic (Clang only: `integer` is a
+      Clang sanitizer group; with GCC drop it) cmake -DCMAKE_CXX_COMPILER=clang++
       -DCMAKE_CXX_FLAGS="-fsanitize=undefined,integer -fno-sanitize-recover=all" ctest # any
       abort == CRITICAL/HIGH**

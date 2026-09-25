@@ -61,7 +61,7 @@ exists to catch.
    parser handling untrusted bytes needs `02`, `03`, `04`; a threaded service
    needs `05`.
 2. Apply the **top-10 non-negotiables** (below) unconditionally.
-3. New projects: CMake (≥3.20) with `-Wall -Wextra -Wpedantic -Werror`, the
+3. New projects: CMake (≥3.20) with `-Wall -Wextra -Wpedantic` (`-Werror` in CI, not in distributed sources), the
    [OpenSSF hardening flags](https://best.openssf.org/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.html)
    (`rules/04`), a debug build wired to ASan+UBSan, clang-tidy + clang-format
    configs, and CI running all of it from day one (`rules/06`).
@@ -112,7 +112,7 @@ three highest-leverage fixes, and which checklists/sanitizers were run.
 |---|---|
 | `rules/01-idioms.md` | Writing/reviewing any C++: RAII and the rule of zero/five, ownership with `unique_ptr`/`shared_ptr`, value semantics and move, `const`/`constexpr`, references vs pointers, casts, `enum class`, error handling (exceptions vs `std::expected` vs error codes), **in-band sentinels (absence encoded as `-1`/`0`/`""`)** incl. **`EOF` in a `char` — broken only where `char` is unsigned**, C-vs-C++ idiom choices |
 | `rules/02-memory-safety.md` | Anything touching pointers, buffers, lifetimes, or allocation: bounds, use-after-free/return, dangling references and views (`string_view`/`span`), iterator invalidation, ownership discipline, sanitizers (ASan/MSan), `_FORTIFY_SOURCE`/`_GLIBCXX_ASSERTIONS` |
-| `rules/03-undefined-behavior.md` | Reasoning about UB and the optimizer: integer overflow, strict aliasing, uninitialized reads, null/misaligned access, signed shifts, data races as UB, `unsigned` arithmetic, overflow checks the optimiser deletes (`-fwrapv` as a legacy backstop), UBSan, why "it worked in debug" proves nothing |
+| `rules/03-undefined-behavior.md` | Reasoning about UB and the optimizer: integer overflow, strict aliasing, uninitialized reads, null/misaligned access, signed shifts, data races as UB, `unsigned` arithmetic, overflow checks the optimiser deletes (`-fno-strict-overflow`/`-fwrapv` in production, never instead of a checked `ckd_*`), C++26 `std::saturating_*`, UBSan, why "it worked in debug" proves nothing |
 | `rules/04-security.md` | Any input crossing a trust boundary: CERT C/C++ + MISRA, banned functions (`gets`/`strcpy`/`sprintf`/`system`), integer-overflow-to-allocation, format strings, path traversal/TOCTOU, command injection, SSRF through libcurl (connect-time address check, redirects, protocol allowlist), regex as a control (escaping, full-match anchoring, backtracking `std::regex`/PCRE2 vs linear-time RE2), deserialization/parsers, dynamic code evaluation (embedded Lua/Python interpreters, `dlsym` by input name), app-set cookie attributes (Drogon, Crow, cpp-httplib), CSPRNG, the OpenSSF hardening flag set (plus inert flags, `-strong` vs `-all` canaries, retpoline thunks), hardening opt-out macros (`-U_FORTIFY_SOURCE`, `_CRT_SECURE_NO_WARNINGS`), Windows/MSVC binary hardening (`/sdl`, `/guard:cf`, `/CETCOMPAT`, BinSkim, process mitigations), a shipped debug/sanitizer build refused at compile time |
 | `rules/05-concurrency.md` | Anything with threads, atomics, or shared state: the C++ memory model, data races, `std::atomic` and memory orders, `mutex`/`lock_guard`/`scoped_lock`, deadlock ordering, condition variables, `std::jthread`/stop tokens, request-scoped state in `thread_local` or a logging MDC on reused threads and across `co_await`, TSan |
 | `rules/06-build-tooling-ci.md` | Setting up or auditing builds/CI: CMake hygiene, Debug/Release configurations and the NDEBUG/DEBUG guard, flags that never reach a unit (stale objects, overridden `CFLAGS`, vendored libraries), warning flags (periodic `-Weverything`, per-site suppression), clang-tidy/clang-format, static analysis (clang-analyzer, cppcheck, Coverity), sanitizer CI matrix, fuzzing (libFuzzer/OSS-Fuzz), dependencies and supply chain (vcpkg/Conan, pinning, SBOM, selecting a new dependency and overriding its insecure defaults, dependency code that runs at configure/build time). **Test *strategy* lives in `sota-testing`; this file owns C/C++ build/test mechanics.** |
@@ -143,9 +143,10 @@ three highest-leverage fixes, and which checklists/sanitizers were run.
 6. **Banned functions are banned.** No `gets`, `strcpy`/`strcat`/`sprintf`
    (use bounded forms or `std::string`/`std::format`), no `system()` with
    interpolated input (use `posix_spawn`/`exec*` with an argv array). (`rules/04`)
-7. **Build hardened, by default.** `-Wall -Wextra -Werror` plus the OpenSSF
-   set (`-D_FORTIFY_SOURCE=3 -D_GLIBCXX_ASSERTIONS -fstack-protector-strong
-   -fstack-clash-protection -fcf-protection -Wl,-z,relro,-z,now`). Missing
+7. **Build hardened, by default.** `-Wall -Wextra` (`-Werror` in CI; OpenSSF: not blanket
+   in distributed sources) plus the OpenSSF set (`-D_FORTIFY_SOURCE=3 -D_GLIBCXX_ASSERTIONS
+   -fstack-protector-strong -fstack-clash-protection -Wl,-z,relro,-z,now`, and
+   `-fcf-protection=full` on x86_64 or `-mbranch-protection=standard` on AArch64). Missing
    hardening on a network-facing binary is a HIGH finding. (`rules/04`,
    `rules/06`)
 8. **Shared mutable state is synchronized; data races are CRITICAL.** Guard

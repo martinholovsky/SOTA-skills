@@ -7,7 +7,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**The nine language skills were re-verified against primary sources.** This was an early,
+partial run of the accuracy sweep: 158 findings, 72 High or Medium each put to a refuter
+(1 refuted), and 132 fix items landed across nine skills. Each new or changed audit probe was
+tested on a known-bad and a known-good fixture. `LAST-VERIFIED` does not move, because this
+covered 9 skills, not the library. Record: ADOPTION-LOG, 2026-09-25.
+
+**Routing checked:** evals/results/2026-09-25/ROUTING-GO126.md
+
 ### Added
+
+- **Invariant 37: no grep probe filters out a file it names.** `--include` filters files named
+  on the command line too (BSD grep, ugrep and GNU grep, measured), so `--include='*.rb'` next
+  to `config.ru` exits 1 like a clean codebase. It caught four shipped probes: a Sinatra CSRF
+  check that read HIGH on every app, a session-cookie check that could never fire, a .NET
+  secrets sweep that never opened `appsettings.json`, and a shell `bash -c` sweep that skipped
+  every Makefile and Dockerfile. There is a new rule in `sota-shell-scripting` rules/09 §5b,
+  and probes 37/37b.
+- **New rule sections:**
+  - `sota-php` rules/04 §5c, the web-server-to-FPM handoff: `limit_extensions`,
+    `cgi.fix_pathinfo`, `vendor/` outside the docroot (two KEV RCE classes);
+  - `sota-php` rules/02 §8, WordPress;
+  - `sota-golang` rules/08 §2, GODEBUG and the go.mod `go` line as a security surface;
+  - crates.io Trusted Publishing, in `sota-devsecops` rules/02 §2.6 and `sota-rust` rules/07.
+
+### Fixed
+
+- **Audit probes that ran and checked nothing:**
+  - `cppcheck --addon=cert` exits 1 without analysing (c-cpp);
+  - `uvx pip-audit` audits its own tool environment and reports a vulnerable project clean,
+    exit 0 (python);
+  - the JVM sink probes read only `.java`, and even with `.kt` the SQL probes missed Kotlin
+    string templates;
+  - ten probes passed a bare `Dockerfile*` glob that zsh aborts on (jvm, ruby, php,
+    ml-engineering);
+  - three web-framework probes skipped `middleware.js`.
+- **Wrong or stale facts:**
+  - Go: the Go 1.25 floor, which lost support with 1.27; redirect credential handling;
+    `Shutdown`; `os.Root`; errgroup panics; json/v2; goroutineleak.
+  - Rust: the Windows MSRV is now ≥ 1.81.0 (CVE-2024-43402); `deny.toml` `expire`;
+    2024-edition temporaries; ahash HashDoS; rand renames.
+  - C/C++: the OpenSSF flag set; clang-tidy check names; C++26 `saturating_*`; checksec 3.x;
+    libxml2 on untrusted data.
+  - JVM: the Serial GC default before JDK 27; coroutine context, cancellation and exceptions;
+    JNI deny modes.
+  - JS/TS: TS 7 has no compiler API, so typed lint needs the TS 6 alias; the `types: []`
+    default; `.ts` imports under native stripping; per-version `--permission`; `node:ffi`;
+    pnpm cooldown failing open; `trustPolicy`.
+  - .NET: the SQL probes; `FallbackPolicy`; forwarded headers; STJ `Strict`; DATAS; NuGet
+    signature enforcement.
+  - PHP: bcrypt truncates silently on every version; an example that failed to parse on 8.3;
+    Composer 2.9/2.10 blocking; APP_KEY and debug mode as RCE; RFC 3986 parsing before cURL.
+  - Ruby: `bundle install --frozen` removed in Bundler 4; the Rack::Protection spelling;
+    `secret:` versus `secrets:` + `serialize_json`; Nokogiri options; YAML's unsafe
+    surface; jemalloc maintained again.
+  - Python: PEP 594 removal versions; a nonexistent PyPI package name; free-threaded GIL
+    re-enabling; torch ≥ 2.6.
+- **Fixed after a whole-diff review:**
+  - invariant 37 now also sees `-e` patterns, extensionless names such as `Rakefile`, and
+    `egrep`/`ugrep`, and no longer flags a hidden directory such as `.github`;
+  - a Rust bincode probe used a bare glob;
+  - three probes were already broken before this sweep: a PHP SQL probe whose quoting never
+    parsed, a noisy JVM filter, and libxml2 probes that skipped `.cc`;
+  - probe 14b now declares a dated routing artifact.
+- **The golang description** now says "Go 1.26+". The routing regression set and the
+  baseline both scored 1.000 after the change.
+
+### Added (earlier in this cycle)
 
 - **Skill map page 6 — concept x language.** Every audit concept `scripts/gen-concept-matrix.py`
   tracks (49), per language skill, as the number of Audit-checklist items matching it. Rows are
@@ -17,7 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   output, not a hand list, and refuses to draw if it reads zero items or its row groups do not
   add up to the concept list.
 
-### Fixed
+### Fixed (earlier in this cycle)
 
 - **Two front-door links still pointed at the constant-time section's old home.** `README.md` and
   `docs/INDEX.md` cited `sota-code-security` rules/04 §6.1 after v1.44.3 moved it to rules/22 §1.1;

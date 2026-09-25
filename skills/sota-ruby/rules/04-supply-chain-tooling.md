@@ -10,8 +10,12 @@ all wired into CI from day one.
   the package but committing it for dev reproducibility is fine; keep the
   gemspec constraints permissive either way.
 - **CI and production install frozen**: `bundle config set --local frozen
-  true`, `BUNDLE_FROZEN=true`, or `bundle install --frozen` — the build fails
-  if `Gemfile` and lockfile drift instead of silently re-resolving.
+  true` or `BUNDLE_FROZEN=true` — the build fails if `Gemfile` and lockfile
+  drift instead of silently re-resolving. The old `bundle install --frozen`
+  flag was removed in Bundler 4: it now exits 15 with a message pointing at
+  `bundle config set frozen true` (measured, Bundler 4.0.16), so a CI script
+  still passing it fails rather than installing frozen. On Bundler 2.x the flag
+  still worked but printed a deprecation; replace it either way.
 - Deployment installs also set `BUNDLE_WITHOUT=development:test`.
 - Version constraints: pessimistic (`~> 7.2`) for frameworks, exact pins only
   with a reason; `>=`-only constraints on security-sensitive gems are drift.
@@ -19,7 +23,11 @@ all wired into CI from day one.
   a branch — branches are mutable supply chain.
 - One global `source "https://rubygems.org"`; private gems go in a scoped
   `source "https://gems.example.internal" do ... end` block so a public gem
-  can't shadow an internal name (dependency-confusion class).
+  can't shadow an internal name (dependency-confusion class). Bundler 4
+  enforces this: a Gemfile with a second global `source` line fails to resolve
+  ("multiple global sources", exit 4, measured on 4.0.16). A project still
+  pinned to Bundler 2.x (`BUNDLED WITH` in the lockfile) gets only a warning,
+  so there the check below is a real finding.
 - Keep `bundle outdated` visible (report job), and update via PRs from
   Dependabot/Renovate (neutral examples) rather than bulk manual bumps.
 
@@ -61,16 +69,20 @@ longer matches — protecting against registry tampering or a compromised
 mirror ([Bundler 2.6 announcement](https://bundler.io/blog/2024/12/19/bundler-v2-6.html)).
 
 ```bash
-bundle lock --add-checksums          # add CHECKSUMS to an existing lockfile
-bundle config lockfile_checksums true  # include in newly generated lockfiles
+bundle lock --add-checksums                # add CHECKSUMS to an existing lockfile
+bundle config set lockfile_checksums true  # Bundler 2.6-2.x: include in new lockfiles
 ```
 
 - **Enable it** on apps: one command, no workflow change afterward.
+- The bare `bundle config lockfile_checksums true` form (no `set`) is
+  deprecated in Bundler 4 and prints a warning naming the `set` form.
 - On Bundler/RubyGems 4 (released 2025-12,
   [upgrade notes](https://blog.rubygems.org/2025/12/03/upgrade-to-rubygems-bundler-4.html)),
-  existing lockfiles still don't get checksums automatically — `--add-checksums`
-  remains the explicit opt-in. Verify current behavior when Bundler major
-  versions change.
+  a **newly generated** lockfile carries a `CHECKSUMS` section by default
+  (measured: `bundle lock` on a fresh Gemfile with no config, Bundler 4.0.16).
+  An **existing** lockfile does not gain one on its own — run
+  `bundle lock --add-checksums` once and commit the result. Verify current
+  behavior when Bundler major versions change.
 
 ## 3. Dependency vulnerability auditing
 
@@ -215,15 +227,21 @@ Run from repo root; verify each hit manually.
       `ls Gemfile.lock 2>/dev/null | grep -q . || echo "NO LOCKFILE (app = MEDIUM)"` ;
       `grep -c "CHECKSUMS" Gemfile.lock || echo "no checksums section (LOW, easy win)"` (stderr
       kept: no file != no match);
-      `grep -rn "BUNDLE_FROZEN\|--frozen\|frozen.*true" .github/ .gitlab-ci.yml Gemfile 2>/dev/null | head -3`
+      `grep -rnE 'BUNDLE_FROZEN|frozen[[:space:]]+true|frozen:[[:space:]]*"?true' .github/ .gitlab-ci.yml .bundle/config 2>/dev/null | head -3`
+      (no hit = installs are not frozen, MEDIUM) ;
+      `grep -rnE 'bundle[[:space:]]+install[^#]*--frozen' --exclude-dir=.git --exclude-dir=vendor --exclude-dir=node_modules .`
+      (each hit is a removed flag: exit 15 on Bundler 4, deprecated on 2.x — not compliance)
 - [ ] **Code that runs at install time (Bundler plugins, extconf builds) without an
       owner — MEDIUM (HIGH if the install step holds secrets)** (§1.1) — each hit is a Bundler
       plugin; the second part prints when no CODEOWNERS entry covers the build files —
       `grep -nE '^[[:space:]]*plugin[[:space:]]+["'"'"']' Gemfile gems.rb 2>/dev/null` ;
       `[ -n "$(grep -lsE '(Gemfile|gemspec|Rakefile|ext/)' .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS)" ] || echo "NO CODEOWNERS entry for build-executing files"`
 - [ ] **Mutable git sources — MEDIUM** — `grep -nE "git:|github:" Gemfile | grep -v "ref:"`
-- [ ] **Multiple top-level sources (dependency confusion) — HIGH** —
-      `grep -c "^source " Gemfile` (>1 without scoped blocks = investigate)
+- [ ] **Multiple top-level sources (dependency confusion) — HIGH on Bundler ≤ 2.x** —
+      `grep -E '^source[[:space:]]' Gemfile | grep -cvE '[[:space:]]do[[:space:]]*$'` (global sources;
+      >1 = investigate) ; `grep -A1 'BUNDLED WITH' Gemfile.lock`
+      (Bundler 4 refuses to resolve such a Gemfile, so on 4.x a hit is a broken build,
+      not a silent confusion risk)
 - [ ] **Vulnerability gates present?** —
       `grep -rn "bundler-audit\|bundle audit" .github/ Gemfile* Rakefile 2>/dev/null | head -2`
       ; `grep -rn "brakeman" .github/ Gemfile* 2>/dev/null | head -2` (Rails apps only)
@@ -248,4 +266,5 @@ Run from repo root; verify each hit manually.
 
 Severity guide: no lockfile / unfrozen production installs MEDIUM (HIGH if
 deploys resolve fresh); unpinned git gems, missing vulnerability gate MEDIUM;
-multiple unscoped sources HIGH; missing checksums, in-order-only tests LOW.
+multiple unscoped sources HIGH (Bundler ≤ 2.x); missing checksums,
+in-order-only tests LOW.

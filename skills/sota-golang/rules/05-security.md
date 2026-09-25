@@ -28,9 +28,13 @@ misconfiguration are entirely yours.
   or restructure into two stdlib patterns. *(OWASP: Input Validation cheat sheet; Proactive
   Controls 2024 C3; ASVS 5.0 V1.2.9; Go-SCP, validation.)*
 - JSON: `dec := json.NewDecoder(r.Body); dec.DisallowUnknownFields()` for
-  strict APIs; remember `encoding/json` ignores case in field matching and
-  silently drops unknown fields by default — security-relevant for
-  privilege fields. Pair with `http.MaxBytesReader` (`rules/04`).
+  strict APIs; remember `encoding/json` ignores case in field matching,
+  silently drops unknown fields, and accepts **duplicate keys (last wins)** —
+  `{"role":"user","role":"admin"}` decodes as admin, while a proxy or validator
+  that keeps the first sees user: a parser differential (generic rule:
+  sota-code-security rules/01 §11). On 1.27+ decode trust-boundary input with
+  `encoding/json/v2`, which rejects duplicates and matches names case-sensitively
+  (measured go1.27.1). Pair with `http.MaxBytesReader` (`rules/04`).
 - Numbers from JSON into `any` become `float64` — large int64 IDs silently
   lose precision; decode into concrete struct types or `json.Number`.
 - Never echo raw input into errors/logs without bounding
@@ -129,9 +133,13 @@ Joining user input into paths without containment is HIGH/CRITICAL
 f, err := os.Open(filepath.Join(baseDir, userPath))
 ```
 
-**Go 1.24+: `os.Root` is the answer** — kernel-enforced containment
-(openat2/RESOLVE_BENEATH semantics), immune to `..`, absolute paths, and
-symlink escapes:
+**Go 1.24+: `os.Root` is the answer** — containment enforced in userspace by
+walking the path one component at a time with `openat` from the root's
+descriptor and checking each symlink (`doInRoot`, `os/root_openat.go`; no
+`openat2`), so `..`, absolute paths and escaping symlinks are rejected. Its
+documented non-guarantees (`go doc os.Root`): it does not stop crossing
+filesystem boundaries or Linux bind mounts, `/proc` special files, or Unix
+device files; on Unix `Chmod`/`Chown`/`Chtimes` race a file-to-symlink swap:
 
 ```go
 root, err := os.OpenRoot(baseDir)
@@ -364,7 +372,8 @@ rand.Read(b)                          // crypto/rand.Read
 Go's `crypto/tls` defaults are good (1.22+ defaults to strong suites; 1.24+
 enables post-quantum X25519MLKEM768 key exchange, and 1.26 also enables
 SecP256r1MLKEM768/SecP384r1MLKEM1024 by default; the legacy GODEBUG opt-outs
-`tlsrsakex`/`tls10server`/`tls3des` are slated for removal in 1.27). The main
+`tlsrsakex`/`tls10server`/`tls3des` were removed in 1.27 — see rules/08 §2 for the
+GODEBUG settings that still weaken TLS/x509). The main
 sins are *downgrades*:
 
 ```go
@@ -416,7 +425,7 @@ Supply chain and vulnerability management (formerly section 8) moved to
 - [ ] **Path traversal — HIGH** —
       `grep -rnE 'filepath\.Join\([^)]*(r\.|req\.|input|name|param|id)' --include='*.go' .` ;
       `grep -rn 'os.Root\|filepath.IsLocal' --include='*.go' .` (mitigations present?);
-      `go version` (os.Root containment needs >=1.26.5/1.25.12 — CVE-2026-39822 symlink escape);
+      `go version` (os.Root containment needs >=1.26.5 on the 1.26 line — CVE-2026-39822 symlink escape);
       `grep -rnE 'os\.(Open|Create|ReadFile|WriteFile|Remove)' --include='*.go' . # trace path provenance`
 - [ ] **Directory listing from an unwrapped `FileServer` (§4) — MEDIUM** —
       `grep -rnE 'http\.FileServer(FS)?\((http\.(Dir|FS)|os\.DirFS)\(' --include='*.go' .`
@@ -439,7 +448,8 @@ Supply chain and vulnerability management (formerly section 8) moved to
       `grep -rn '"http://' --include='*.go' . | grep -v 'localhost\|127.0.0.1\|test'`
 - [ ] **Integer conversion — gosec G115** —
       `grep -rnE '\b(int8|int16|int32|uint8|uint16|uint32|uint64|uintptr)\(' --include='*.go' . | grep -vE '(_test|const)'`
-      ; `gosec -include=G115,G118,G201,G202,G204,G304,G401,G402 ./...`
+      ; `gosec -include=G115,G118,G119,G120,G121,G124,G201,G202,G204,G304,G401,G402,G701,G702,G703,G704,G705,G706,G707,G708,G709,G710 ./...`
+      (or plain `gosec ./...` for the full set)
 - [ ] **Money in binary floats (§5, §1) — MEDIUM, HIGH in money paths** —
       `grep -rniE '(price|amount|total|balance|cost|fee|tax)[a-z0-9_]*[[:space:]]+(\[\])?float(32|64)' --include='*.go' .`
       (a money field or variable typed as a float) ;

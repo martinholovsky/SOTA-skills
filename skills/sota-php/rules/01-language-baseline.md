@@ -13,15 +13,25 @@ Verified against php.net/supported-versions.php and php.net/releases (2026-07):
 | 8.2 | security-only | ended 2024-12-31 | **2026-12-31** |
 | 8.3 | security-only | ended 2025-12-31 | 2027-12-31 |
 | 8.4 | active | 2026-12-31 | 2028-12-31 |
-| 8.5 | active (current stable, released 2025-11-20) | 2027-12-31 | 2029-12-31 |
+| 8.5 | active (released 2025-11-20) | 2027-12-31 | 2029-12-31 |
 
 - 8.1 and older are **EOL** (8.1's final release was 8.1.34, 2025-12; PHP 7 ended
   2022-11). Running them is a HIGH finding on internet-facing systems.
-- Each branch gets 2 years active + 2 years security-only (php.net policy).
+- Each branch gets 2 years active + 2 years security-only (php.net policy). The table is a
+  dated snapshot: re-read php.net/supported-versions.php before quoting a date.
 - **BUILD:** target 8.3+ as the floor for new projects (8.2 exits security support
   2026-12-31 — months away); use 8.4/8.5 features when the floor allows.
 - **AUDIT:** check `composer.json` `require.php` and `config.platform.php` against
   the table; flag EOL floors and floors about to lapse.
+- **A supported branch at an old patch is still exploitable.** Compare the running `php -v`
+  with the newest release of its branch (`https://www.php.net/releases/?json&version=8.4`
+  returns it as JSON). Measured 2026-09-25: a local 8.5.9 against 8.5.11, a release tagged
+  `security`. The version string on a distro build can hide a backport (next bullet), so read
+  the vendor advisory before calling a distro package behind. Example of what a patch closes:
+  CVE-2024-4577 (CISA KEV) let a request pass options to `php-cgi` and run code, fixed in
+  8.1.29, 8.2.20 and 8.3.8, but only on **Windows** with Apache and PHP-CGI under certain code
+  pages (NVD); it says nothing about a Linux FPM host, which is why the check is by patch
+  level against php.net, not by recalled CVEs.
 - **Only the php.net window counts.** An OS vendor or paid provider may keep shipping patches
   for a branch php.net has ended, but those are its own backports, on its own schedule and
   covering what it chooses to fix; that is not upstream support. An EOL branch on such a
@@ -191,7 +201,7 @@ if (strpos($h, $n) === false) { /* not found */ }   // === is mandatory, not sty
 - `json_decode(..., flags: JSON_THROW_ON_ERROR)` — silent `null` returns are a
   classic injection/logic hazard. 8.3+ `json_validate()` for validate-only.
 - Since 8.5, uncaught fatal errors include backtraces (php.net/releases/8.5) —
-  make sure stack traces still never reach responses (`rules/04` §6).
+  make sure stack traces still never reach responses (`rules/04` §5, §5b).
 - `DateTimeImmutable` over `DateTime`; pass an explicit `DateTimeZone`; never
   parse dates with juggling (`strtotime` on user input needs validation).
 
@@ -258,9 +268,10 @@ or make a constructor parameter required. Everything else is a minor. `rules/05`
 - **Removed** (fail on modern PHP): `create_function` (8.0), string-argument
   `assert()` (8.0), `preg_replace` `/e` modifier (7.0), `mcrypt_*` (7.2),
   `each()` (8.0), curly-brace string offsets `$s{0}` (8.0).
-- **Deprecated** (fix now): backtick operator `` `cmd` `` and `__sleep`/
-  `__wakeup` (both deprecated in 8.5 — use `__serialize`/`__unserialize`),
-  implicit nullable params (8.4), dynamic properties without
+- **Deprecated** (fix now): backtick operator `` `cmd` `` (8.5, emits `E_DEPRECATED`);
+  `__sleep`/`__wakeup` are only **soft**-deprecated in 8.5 (php-src PHP-8.5 UPGRADING; measured
+  on 8.5.9: no notice), so migrate to `__serialize`/`__unserialize` before a real deprecation
+  lands; implicit nullable params (8.4), dynamic properties without
   `#[\AllowDynamicProperties]` (8.2).
 - **Legacy smells:** `extract()` on request data (variable injection),
   variable-variables `$$name` from input, `global` keyword in new code,
@@ -290,6 +301,10 @@ Run from repo root; verify each hit manually.
       even when the package comes from a vendor that still patches it, §1) ;
       `grep -rnE '"php"[[:space:]]*:[[:space:]]*"([^"]*[^0-9.])?(5\.|7\.|8\.0|8\.1)' --include='composer.json' .`
       (a floor that still admits an EOL branch)
+- [ ] **Supported branch, stale patch (§1) — HIGH when the newer release is tagged `security`**
+      — run on the production image:
+      `v=$(php -r 'echo PHP_MAJOR_VERSION, ".", PHP_MINOR_VERSION;'); latest=$(curl -sSf "https://www.php.net/releases/?json&version=$v" | php -r 'echo json_decode(stream_get_contents(STDIN))->version ?? "";'); php -r 'if ($argv[1] === "") { echo "LOOKUP FAILED\n"; exit(2); } if (version_compare(PHP_VERSION, $argv[1], "<")) { echo "BEHIND: ", PHP_VERSION, " < ", $argv[1], "\n"; exit(1); }' "$latest"`
+      (a distro build: read its advisories before reporting, §1)
 - [ ] **Loose comparison on suspicious values — MEDIUM+, verify context** —
       `grep -rnE '[^=!<>]==[^=]' --include='*.php' src/ | grep -iE 'token|password|hash|hmac|secret|sig'`
       ; `grep -rnE 'in_array\([^)]*\)' --include='*.php' src/ | grep -v 'true'`

@@ -99,12 +99,19 @@ for record in records {
 - `extend` over push-in-loop (`vec.extend(iter)` can use size hints and
   specialized memcpy paths); `collect::<Vec<_>>()` from a sized iterator
   preallocates exactly.
-- `chunks_exact`/`array_chunks` over `chunks` in SIMD-able inner loops (the
-  exact variant lets LLVM vectorize without remainder branches).
+- `chunks_exact`/`as_chunks::<N>()` over `chunks` in SIMD-able inner loops (the
+  exact variant lets LLVM vectorize without remainder branches). `as_chunks` is
+  stable since 1.88; `array_chunks` is still unstable (E0658 on 1.97.1).
 - Data layout beats instruction tweaks: struct-of-arrays for scanned columns,
   `Vec<T>` over `Vec<Box<T>>` (pointer-chasing kills cache), sort+binary-search
-  or `HashMap` with `FxHash`/`ahash` (default SipHash is DoS-resistant but
-  slow — switch only for non-attacker-controlled keys, see rules/05).
+  or a faster hasher (default SipHash is DoS-resistant but slow).
+  **HashDoS**: an attacker who can predict the hash sends keys that all collide,
+  turning each map operation into a linear scan. Unkeyed hashers — `FxHash`
+  (`rustc-hash`) and `fnv` — are predictable by design and both READMEs say they
+  give no DoS protection, so keep them to keys the attacker cannot choose.
+  `ahash` is keyed and, with its default `runtime-rng` feature, seeds each
+  `RandomState` from the OS; it loses that property with default features off
+  and no seed source, or with constant seeds (`RandomState::with_seeds(1, 2, 3, 4)`).
 - Parallelize embarrassingly-parallel CPU work with `rayon`
   (`par_iter`) — after confirming single-thread is actually optimized;
   parallel O(n²) is still O(n²).
@@ -198,7 +205,8 @@ Slow builds are a perf problem too — they tax every iteration.
       measurements = Low finding, ask for receipts.
 - [ ] `rg '\.clone\(\)|to_vec\(\)|to_string\(\)|to_owned\(\)' -t rust` scoped
       to loop bodies / per-request paths — review each; clippy
-      `redundant_clone`, `cloned_instead_of_copied`, `unnecessary_to_owned`.
+      `redundant_clone` (a **nursery** lint — enable it explicitly, `all` +
+      `pedantic` do not turn it on), `cloned_instead_of_copied`, `unnecessary_to_owned`.
 - [ ] `rg 'format!' -t rust` in hot loops (want `write!` into reused buffer);
       `rg 'String::new\(\)|Vec::new\(\)' -t rust` inside loops (want hoisted
       clear-and-reuse or `with_capacity`).
@@ -208,8 +216,10 @@ Slow builds are a perf problem too — they tax every iteration.
       panic-strategy documented; profiling profile with `debug = true` exists.
 - [ ] `rg 'inline\(always\)' -t rust` — each needs benchmark justification.
 - [ ] Hash maps on hot non-adversarial keys still on SipHash (perf left on
-      table) or, inversely, `FxHash/ahash` on attacker-controlled keys
-      (HashDoS — High, see rules/05).
+      table) or, inversely, an unkeyed or fixed-seed hasher on attacker-controlled
+      keys (HashDoS — High, §4): `rg 'FxHash|rustc_hash|FnvHash|fnv::|with_seeds\(' -t rust`,
+      and `ahash` declared with `default-features = false` and no seed source.
+      Default-feature `ahash` is runtime-seeded — not a finding on its own.
 - [ ] `clippy::large_enum_variant`, `large_types_passed_by_value`,
       `large_futures`, `needless_range_loop`, `or_fun_call`, `manual_memcpy`
       enabled; `Vec<Box<T>>`-style pointer-chasing layouts in scanned data.
@@ -220,4 +230,5 @@ Slow builds are a perf problem too — they tax every iteration.
 - [ ] Network parsing copying into owned `String`/`Vec` where
       `Bytes`/`#[serde(borrow)]` would zero-copy.
 - [ ] CI bench regression gate (criterion + `critcmp`/`cargo bench` artifacts,
-      or codspeed/iai-callgrind instruction counting for noise-free CI).
+      or codspeed/gungraun (formerly iai-callgrind) instruction counting for
+      noise-free CI).

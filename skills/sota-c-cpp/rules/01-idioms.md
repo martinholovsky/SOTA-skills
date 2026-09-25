@@ -281,9 +281,15 @@ existing parameter means.
       (heuristic, expect FPs);
       `grep -rn 'reinterpret_cast\|const_cast' --include='*.cpp' --include='*.hpp' .`
 - [ ] **Rule of five violations — class with destructor but not all 5 special members** —
-      `clang-tidy --checks='cppcoreguidelines-special-member-functions,cppcoreguidelines-rule-of-*' <files>`
+      `clang-tidy --checks='cppcoreguidelines-special-member-functions' <files>` (the check that
+      implements the rule of five/zero; no clang-tidy check is named `rule-of-*`, so that glob
+      silently enables nothing)
 - [ ] **Missing virtual destructor in polymorphic base — HIGH (UB on delete-via-base)** —
-      `clang-tidy --checks='cppcoreguidelines-virtual-class-destructor,hicpp-use-override' <files>`
+      `clang-tidy --checks='cppcoreguidelines-virtual-class-destructor,modernize-use-override' <files>`
+      (`virtual-class-destructor` is the virtual-destructor check; `modernize-use-override` flags
+      overrides missing `override`. The `hicpp-*` module, including the `hicpp-use-override`
+      alias, was removed from clang-tidy in 2026, LLVM 23, so an old `.clang-tidy` naming it
+      checks nothing there)
 - [ ] **Move/idiom smells — LOW** — `grep -rn 'return std::move' --include='*.cpp' .`
       (pessimizes RVO); `grep -rn 'using namespace std;' --include='*.h' --include='*.hpp' .`
       (in headers: bad); `grep -rnE '#define [A-Z_]+\(' --include='*.h' .` (function-like macros

@@ -167,9 +167,9 @@ def report_cmd(path: str) -> None:
 
 - Measure with `python -X importtime -c "import mypkg" 2>&1 | sort -t'|' -k2 -rn | head` or
   `tuna` for visualization.
-- Combine with `TYPE_CHECKING` imports for annotation-only deps (rules/02 §9).
-- PEP 810 explicit lazy imports (`lazy import x`, `-X lazy_imports`) ships in 3.15
-  (currently in beta); until your floor is 3.15, function-local imports are the idiom.
+- Combine with `TYPE_CHECKING` imports for annotation-only deps (rules/02 §10).
+- PEP 810 explicit lazy imports (`lazy import x`, `-X lazy_imports`) are added in 3.15;
+  until your floor is 3.15, function-local imports are the idiom.
   Don't lazy-import inside hot loops (lookup cost per call is small but real —
   module-level once the function is hot path).
 

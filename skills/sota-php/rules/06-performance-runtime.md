@@ -180,7 +180,7 @@ Run from repo root / against the runtime; verify each hit manually.
       `grep -rnE '(curl_exec|file_get_contents\s*\(\s*.http)' --include='*.php' src/` (HTTP in
       loops?)
 - [ ] **Autoloader optimization in the deploy path** —
-      `grep -rn 'optimize-autoloader\|classmap-authoritative\|-o ' Dockerfile* deploy* .github/workflows/ 2>/dev/null`
+      `grep -rn 'optimize-autoloader\|classmap-authoritative\|composer install.* -o\b' --include='Dockerfile*' --include='Containerfile*' --include='*.y*ml' --include='*.sh' .`
 - [ ] **Xdebug in production (HIGH if confirmed on prod hosts)** — `php -m | grep -i xdebug`
 - [ ] **Worker mode: request-scoped state reset (§4a) — HIGH where it carries a tenant, user
       or authorization, MEDIUM otherwise** — applies when the app runs under Octane, FrankenPHP

@@ -19,9 +19,10 @@ description: >-
 ## Purpose
 
 This skill encodes the 2026 state of the art for PHP: a supported-version baseline
-(PHP 8.3+ floor; 8.5 is the latest annual line — verify current, see `rules/01`), `strict_types` everywhere, typed
-object-oriented design, security-by-default at every trust boundary, a locked and audited
-Composer supply chain, and measured runtime performance. It serves two modes:
+(PHP 8.3+ floor; verify the supported branches at php.net/supported-versions.php, see
+`rules/01`), `strict_types` everywhere, typed object-oriented design, security-by-default at
+every trust boundary, a locked and audited Composer supply chain, and measured runtime
+performance. It serves two modes:
 
 - **BUILD** — writing new code or modifying existing code to this standard.
 - **AUDIT** — reviewing existing code against this standard and reporting findings.
@@ -95,16 +96,17 @@ explicit "checked and clean" areas.
 | File | Read this when... |
 |---|---|
 | `rules/01-language-baseline.md` | choosing/verifying PHP version floor (support/EOL table); writing any PHP: strict_types, typed properties, enums, readonly, match, fibers, 8.4/8.5 features, comparison pitfalls incl. **`strpos` returning `false` where `0` is a real match**, error handling, deprecations |
-| `rules/02-injection.md` | code touching SQL, shell, or HTML output: PDO prepared statements, command execution, XSS and context-aware escaping, template engines, eval-family bans and **dynamic code evaluation** (templates compiled from strings, expression engines, why an in-process sandbox is no boundary); **request-chosen names** (`new $class`, `fetchObject`, `$_SESSION[$k]`, mass assignment); LDAP (`ldap_escape`, the empty-password bind) and XPath (`DOMXPath::quote`); **execution after `header('Location')`** (CWE-698) |
+| `rules/02-injection.md` | code touching SQL, shell, or HTML output: PDO prepared statements, **WordPress** (`$wpdb->prepare`, `esc_*`, nonces with `current_user_can`, REST `permission_callback`), command execution, XSS and context-aware escaping, template engines, eval-family bans and **dynamic code evaluation** (templates compiled from strings, expression engines, why an in-process sandbox is no boundary); **request-chosen names** (`new $class`, `fetchObject`, `$_SESSION[$k]`, mass assignment); LDAP (`ldap_escape`, the empty-password bind) and XPath (`DOMXPath::quote`); **execution after `header('Location')`** (CWE-698) |
 | `rules/03-files-deserialization-ssrf.md` | file uploads, include/require paths, stream wrappers (LFI/RFI/`phar://`), `unserialize` and Phar object injection, XXE, server-side URL fetching (SSRF); **escape hatches into raw memory**: FFI and `ffi.enable`; every PHP spelling of disabled TLS verification; SSH host keys (phpseclib, ext-ssh2) |
-| `rules/04-sessions-auth-web-hardening.md` | login/session/auth code: session cookie flags and fixation, password_hash/argon2id, sodium crypto, CSRF, security headers, production php.ini hardening; app cookies via `setcookie()`; `base_convert` tokens; secrets in stack traces (`#[\SensitiveParameter]`) and `phpinfo()`; **debug mode and the dev server** (`APP_DEBUG`, `APP_ENV`, `php -S`); the **framework application key** (`APP_KEY`, `APP_SECRET`) |
-| `rules/05-composer-tooling.md` | dependencies and CI: composer.lock discipline, `composer audit`, platform reqs, **vetting a new dependency and the insecure defaults of libraries you consume** (Guzzle `timeout`, league/commonmark `html_input`, Parsedown safe mode), PHPStan/Psalm levels and baseline ratcheting, PER-CS, PHPUnit/Pest, CI gates |
+| `rules/04-sessions-auth-web-hardening.md` | login/session/auth code: session cookie flags and fixation, password_hash/argon2id, sodium crypto, CSRF, security headers, production php.ini hardening; app cookies via `setcookie()`; `base_convert` tokens; secrets in stack traces (`#[\SensitiveParameter]`) and `phpinfo()`; **debug mode and the dev server** (`APP_DEBUG`, `APP_ENV`, `php -S`); the **framework application key** (`APP_KEY`, `APP_SECRET`, `decrypt()` that unserializes); **the web server to FPM handoff** (docroot `public/`, `vendor/` outside it, `security.limit_extensions`, `cgi.fix_pathinfo`, nginx `try_files`) |
+| `rules/05-composer-tooling.md` | dependencies and CI: composer.lock discipline, `composer audit`, Composer's resolve-time advisory blocking (`policy`, `--no-blocking`), platform reqs, **vetting a new dependency and the insecure defaults of libraries you consume** (Guzzle `timeout`, league/commonmark `html_input`, Parsedown safe mode), PHPStan/Psalm levels and baseline ratcheting, PER-CS, PHPUnit/Pest, CI gates |
 | `rules/06-performance-runtime.md` | anything slow or deploy-shaped: OPcache and preloading, JIT reality check, PHP-FPM pool sizing, N+1/caching, autoloader optimization, profiling; **worker mode** (Octane, FrankenPHP, RoadRunner, Swoole): request state that leaks into the next request. **Test *strategy* lives in `sota-testing`; DB depth in `sota-databases`.** |
 
 ## Top-10 non-negotiables
 
-1. **Run a supported PHP** (≥ 8.2 today, and 8.2 is security-only until 2026-12-31 —
-   plan the 8.3+ move now); new code targets 8.3+. (`rules/01`)
+1. **Run a supported PHP branch at its latest patch** (per the dated table in `rules/01`,
+   8.2 is security-only until 2026-12-31; verify at php.net/supported-versions.php); new code
+   targets 8.3+. (`rules/01`)
 2. **`declare(strict_types=1)` in every file; full types on every property, parameter,
    and return.** Untyped is legacy, not a style choice. (`rules/01`)
 3. **SQL only via prepared statements with bound parameters** (PDO/mysqli, emulation
@@ -124,7 +126,8 @@ explicit "checked and clean" areas.
 8. **Sessions hardened:** `use_strict_mode=1`, cookies `Secure` + `HttpOnly` +
    `SameSite`, `session_regenerate_id(true)` on privilege change. (`rules/04`)
 9. **`composer.lock` committed; CI runs `composer install` (never `update`) and
-   `composer audit --locked`; prod installs `--no-dev`.** (`rules/05`)
+   `composer audit --locked`; prod installs `--no-dev`; Composer's advisory blocking stays on
+   (no `--no-blocking`, no `block: false`).** (`rules/05`)
 10. **PHPStan (or Psalm) gates CI at the highest level the project can hold; the
     baseline only shrinks. OPcache on in prod; performance claims require a profile.**
     (`rules/05`, `rules/06`)

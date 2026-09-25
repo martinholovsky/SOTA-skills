@@ -175,9 +175,9 @@ A wrapper builds its own reader unless you hand it one. Pass the hardened `XMLRe
 ## Audit checklist
 
 - [ ] **XXE — CRITICAL (verify DTDs disabled)** —
-      `grep -rnE 'DocumentBuilderFactory|SAXParserFactory|XMLInputFactory|TransformerFactory|SAXReader' --include='*.java' .`
+      `grep -rnE 'DocumentBuilderFactory|SAXParserFactory|XMLInputFactory|TransformerFactory|SAXReader' --include='*.java' --include='*.kt' .`
       ;
-      `grep -rn 'disallow-doctype-decl\|SUPPORT_DTD\|setEntityResolver\|SafeConstructor' --include='*.java' . || echo "verify XXE hardening"`
+      `grep -rn 'disallow-doctype-decl\|SUPPORT_DTD\|setEntityResolver\|SafeConstructor' --include='*.java' --include='*.kt' . || echo "verify XXE hardening"`
       (`setExpandEntityReferences` is deliberately absent: it is not hardening, §1)
 - [ ] **`setExpandEntityReferences(false)` counted as XXE hardening — HIGH when it is the only
       setting** (§1: a parameter entity and an external DTD were still fetched) —

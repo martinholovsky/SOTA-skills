@@ -74,7 +74,9 @@ are mechanical — follow them. Reference:
       `grep -rnE '\.(Result|Wait\(\))|GetAwaiter\(\)\.GetResult\(\)' --include='*.cs' . | head`
       ; `grep -rnE 'Task\.Run\(' --include='*.cs' . | head` (sync wrapped as async on server?)
 - [ ] **async void (non-handler) — MEDIUM/HIGH** —
-      `grep -rnE 'async void ' --include='*.cs' . | grep -viE 'EventHandler|_Click|on[A-Z]' | head`
+      `grep -rnE 'async void ' --include='*.cs' . | grep -vE 'EventHandler|_Click|[[:space:]]On[A-Z][[:alnum:]_]*\('`
+      (case-sensitive on purpose: `-i` would also drop `ContinueProcessing(`; confirm each
+      remaining hit is not a handler whose name misses the convention)
 - [ ] **Missing ConfigureAwait(false) in libraries — MEDIUM** —
       `grep -rnE 'await ' --include='*.cs' . | grep -v 'ConfigureAwait' | head` (in library
       projects)
@@ -85,7 +87,8 @@ are mechanical — follow them. Reference:
       `grep -rnE 'new (Dictionary|List)<' --include='*.cs' . | grep -i 'static\|shared'`
       (non-concurrent shared)
 - [ ] **Unbounded parallelism — MEDIUM (verify bounding)** —
-      `grep -rnE 'Task\.WhenAll|Parallel\.(For|ForEach)' --include='*.cs' . | head`- [ ] **Request-scoped state in thread-local or `AsyncLocal` storage — HIGH in a multi-tenant
+      `grep -rnE 'Task\.WhenAll|Parallel\.(For|ForEach)' --include='*.cs' . | head`
+- [ ] **Request-scoped state in thread-local or `AsyncLocal` storage — HIGH in a multi-tenant
       service (cross-tenant leak)** (§5) —
       `grep -rnE '\[ThreadStatic\]|ThreadLocal<|AsyncLocal<|ExecutionContext\.SuppressFlow|CallContext\.' --include='*.cs' .`
       (a thread-local holding tenant/user data is the finding. An `AsyncLocal` must be set in

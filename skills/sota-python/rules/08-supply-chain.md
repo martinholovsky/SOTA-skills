@@ -5,8 +5,23 @@ Split out of rules/05 (formerly sections 9 and 10) on 2026-09-25, when rules/05 
 
 ## 1. Dependency & supply-chain hygiene
 
-- **Audit continuously:** `uv run pip-audit` or `osv-scanner --lockfile uv.lock` in CI on a
-  schedule, not just on PRs (new CVEs land against old lockfiles).
+- **Audit continuously — the project's lock, not the scanner's own venv:** in CI on a
+  schedule, not just on PRs (new CVEs land against old lockfiles), run
+  `uv export --format requirements-txt --no-emit-project | uvx pip-audit --disable-pip -r /dev/stdin`
+  (`--disable-pip` needs the hashes the export writes by default — do not add `--no-hashes`;
+  an empty or failed export makes pip-audit exit 1, so it fails closed) or
+  `osv-scanner --lockfile uv.lock`.
+  **Bare `uvx pip-audit` is wrong:** with no `-r`, pip-audit audits the environment it runs in,
+  and `uvx` gives it a throwaway venv holding only pip-audit and its own deps — it reports "No
+  known vulnerabilities found" and exits 0 on any project. `uv run pip-audit` fails (exit 2)
+  unless pip-audit is a project dependency, so `uv run pip-audit 2>/dev/null || uvx pip-audit`
+  hides that error and falls through to the wrong scan. `uv run --with pip-audit pip-audit`
+  does audit the project venv (it syncs it first, and the report also covers pip-audit's own
+  deps). Measured 2026-09-25 (uv 0.12.0, osv-scanner 2.6.0) on a uv project locking
+  `requests==2.25.0`: bare `uvx pip-audit` and the `||` fallback exit **0**; the export pipe,
+  `uv run --with`, and `osv-scanner --lockfile` exit **1**; all exit 0 on a clean project. uv
+  also has a native `uv audit` (experimental in 0.12, prints a preview warning), which exited
+  1/0 on the same pair — usable, but its flags may change.
 - **Hash-pinned, locked installs everywhere:** `uv.lock` records hashes; CI/containers use
   `uv sync --locked`. Exporting for pip: `uv export --format requirements-txt` includes
   `--hash` entries — keep them.
@@ -74,8 +89,10 @@ Split out of rules/05 (formerly sections 9 and 10) on 2026-09-25, when rules/05 
 ## Audit checklist
 
 - [ ] **One-shot scanners** — `uvx ruff check --select S --statistics .` ;
-      `uvx bandit -r src/ -ll -q` ; `uv run pip-audit 2>/dev/null || uvx pip-audit` ;
-      `osv-scanner --lockfile uv.lock 2>/dev/null`
+      `uvx bandit -r src/ -ll -q` ;
+      `uv export --format requirements-txt --no-emit-project -o audit-req.txt && uvx pip-audit --disable-pip -r audit-req.txt`
+      (never bare `uvx pip-audit`: it scans its own tool venv and exits 0, §1) ;
+      `osv-scanner --lockfile uv.lock`
 - [ ] **Supply chain** —
       `grep -rn "git+http" pyproject.toml uv.lock 2>/dev/null | grep -v "@[0-9a-f]\{40\}"` ;
       `grep -rn "nosec\|noqa: S" --include="*.py" src/` (justified suppressions?)

@@ -118,7 +118,8 @@ the type system, and expression-oriented code**. References:
       `grep -rnE '!!' --include='*.kt' . | grep -v '!!='`
 - [ ] **Swallowed exceptions — MEDIUM/HIGH** —
       `grep -rnzoE 'catch *\([^)]*\) *\{\s*\}' --include='*.java' --include='*.kt' .` ;
-      `grep -rnE 'catch *\((Exception|Throwable)' --include='*.java' --include='*.kt' .`
+      `grep -rnE 'catch *\((Exception|Throwable)|catch *\([^)]*:[[:space:]]*(Exception|Throwable)[[:space:]]*\)' --include='*.java' --include='*.kt' .`
+      (the second form is Kotlin's `catch (e: Exception)`, which the Java form never matched)
 - [ ] **`Error`/`Throwable` caught and not rethrown (§4) — HIGH (the program keeps running on a
       JVM that reported itself broken)** — prints each such `catch` with no `throw` in the
       four lines after it:

@@ -668,6 +668,29 @@
       ]
     },
     {
+      "from": "sota-dotnet",
+      "to": "sota-code-security",
+      "weight": 7,
+      "targets": [
+        "rules/01 \u00a711",
+        "rules/01 \u00a75",
+        "rules/01 \u00a78",
+        "rules/05",
+        "rules/06 \u00a73",
+        "rules/17"
+      ]
+    },
+    {
+      "from": "sota-golang",
+      "to": "sota-code-security",
+      "weight": 7,
+      "targets": [
+        "rules/01 \u00a711",
+        "rules/05",
+        "rules/07"
+      ]
+    },
+    {
       "from": "sota-javascript-typescript",
       "to": "sota-code-security",
       "weight": 7,
@@ -703,6 +726,18 @@
         "rules/06 \u00a73",
         "rules/13 \u00a73",
         "rules/17"
+      ]
+    },
+    {
+      "from": "sota-ruby",
+      "to": "sota-code-security",
+      "weight": 7,
+      "targets": [
+        "rules/01 \u00a75",
+        "rules/01 \u00a76",
+        "rules/04",
+        "rules/04 \u00a75",
+        "rules/06 \u00a73"
       ]
     },
     {
@@ -791,27 +826,6 @@
       ]
     },
     {
-      "from": "sota-dotnet",
-      "to": "sota-code-security",
-      "weight": 6,
-      "targets": [
-        "rules/01 \u00a75",
-        "rules/01 \u00a78",
-        "rules/05",
-        "rules/06 \u00a73",
-        "rules/17"
-      ]
-    },
-    {
-      "from": "sota-golang",
-      "to": "sota-code-security",
-      "weight": 6,
-      "targets": [
-        "rules/05",
-        "rules/07"
-      ]
-    },
-    {
       "from": "sota-identity-access",
       "to": "sota-secrets-management",
       "weight": 6,
@@ -871,17 +885,6 @@
         "rules/03 \u00a73",
         "rules/05",
         "rules/11 \u00a72.1"
-      ]
-    },
-    {
-      "from": "sota-ruby",
-      "to": "sota-code-security",
-      "weight": 6,
-      "targets": [
-        "rules/01 \u00a75",
-        "rules/04",
-        "rules/04 \u00a75",
-        "rules/06 \u00a73"
       ]
     },
     {
@@ -947,6 +950,17 @@
       "to": "sota-privacy-compliance",
       "weight": 5,
       "targets": []
+    },
+    {
+      "from": "sota-devsecops",
+      "to": "sota-rust",
+      "weight": 5,
+      "targets": [
+        "rules/05 \u00a72",
+        "rules/07",
+        "rules/07 \u00a71a",
+        "rules/07 \u00a75"
+      ]
     },
     {
       "from": "sota-devsecops",
@@ -1123,6 +1137,12 @@
       ]
     },
     {
+      "from": "sota-c-cpp",
+      "to": "sota-sandboxing",
+      "weight": 4,
+      "targets": []
+    },
+    {
       "from": "sota-cloud-infrastructure",
       "to": "sota-secrets-management",
       "weight": 4,
@@ -1139,16 +1159,6 @@
         "rules/02 \u00a73",
         "rules/06 \u00a74",
         "rules/07 \u00a78"
-      ]
-    },
-    {
-      "from": "sota-devsecops",
-      "to": "sota-rust",
-      "weight": 4,
-      "targets": [
-        "rules/05 \u00a72",
-        "rules/07 \u00a71a",
-        "rules/07 \u00a75"
       ]
     },
     {
@@ -1227,12 +1237,6 @@
     {
       "from": "sota-c-cpp",
       "to": "sota-testing",
-      "weight": 3,
-      "targets": []
-    },
-    {
-      "from": "sota-c-cpp",
-      "to": "sota-sandboxing",
       "weight": 3,
       "targets": []
     },
@@ -2482,6 +2486,14 @@
     },
     {
       "from": "sota-dotnet",
+      "to": "sota-network-security",
+      "weight": 1,
+      "targets": [
+        "rules/05"
+      ]
+    },
+    {
+      "from": "sota-dotnet",
       "to": "sota-databases",
       "weight": 1,
       "targets": [
@@ -2541,6 +2553,12 @@
     {
       "from": "sota-javascript-typescript",
       "to": "sota-testing",
+      "weight": 1,
+      "targets": []
+    },
+    {
+      "from": "sota-javascript-typescript",
+      "to": "sota-network-security",
       "weight": 1,
       "targets": []
     },
@@ -2703,7 +2721,7 @@
       "to": "sota-dotnet",
       "weight": 1,
       "targets": [
-        "rules/04"
+        "rules/06 \u00a73"
       ]
     },
     {
@@ -2860,6 +2878,14 @@
       "weight": 1,
       "targets": [
         "rules/01"
+      ]
+    },
+    {
+      "from": "sota-python",
+      "to": "sota-ml-engineering",
+      "weight": 1,
+      "targets": [
+        "rules/07"
       ]
     },
     {

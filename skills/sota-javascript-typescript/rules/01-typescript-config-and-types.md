@@ -25,6 +25,7 @@ New projects start from this baseline. Existing projects migrate flag-by-flag; n
     // Output / interop
     "target": "ES2024",
     "lib": ["ES2024"],                      // add "DOM", "DOM.Iterable" only for browser code
+    "types": ["node"],                      // TS ≥6.0 loads no @types by default; list each one (browser-only code: [])
     "esModuleInterop": true,
     "skipLibCheck": true,                   // pragmatic: don't pay for broken third-party d.ts
     "forceConsistentCasingInFileNames": true,
@@ -40,7 +41,19 @@ Rationale for the two flags most teams skip:
 
 `verbatimModuleSyntax` replaces deprecated `importsNotUsedAsValues`/`preserveValueImports`. It makes every file independently transpilable — required for esbuild/swc/Bun, and it documents intent: types via `import type`, values via `import`.
 
-TypeScript 6.0 (March 2026) is the last release on the JavaScript codebase; TypeScript 7.0 (the Go-native compiler, 8–12× faster builds, stable since July 2026) now ships as the regular `typescript` package. 6.0 flips defaults to `strict: true`, `module: "esnext"`, `target: "es2025"` and deprecates `baseUrl`, `moduleResolution: "node"`/`"classic"`, `outFile`, `target: "es5"`, and the non-strict interop flags — 7.0 makes them hard errors. The explicit config above stays valid under 6.0/7.0; migrate via 6.0 (treat its deprecation warnings as must-fix), then mind 7.0's changed defaults: `types` defaults to `[]` (list needed `@types` explicitly) and `rootDir` defaults to `./` (set it when tsconfig sits above `src`). Frameworks embedding the compiler API via Volar (Vue, Angular, Astro, Svelte, MDX) stay on 6.0 until 7.x exposes a stable programmatic API.
+TypeScript 6.0 (March 2026) is the last release on the JavaScript codebase; TypeScript 7.0 (the Go-native compiler, 8–12× faster builds, released July 2026) now ships as the regular `typescript` package. 6.0 flips defaults to `strict: true`, `module: "esnext"`, `target: "es2025"` and deprecates `baseUrl`, `moduleResolution: "node"`/`"classic"`, `outFile`, `target: "es5"`, and the non-strict interop flags — 7.0 makes them hard errors. **6.0 also changed two defaults that break older configs, and 7.0 keeps them**: `types` defaults to `[]`, so no `@types/*` package loads unless listed, and `rootDir` defaults to the directory holding the tsconfig (set it, e.g. `"rootDir": "src"`, when the tsconfig sits above `src` and you emit to `outDir`). Measured with tsc 6.0.3 and 7.0.2: this baseline without its `types` line failed on `process` with TS2591 ("Cannot find name 'process'"); with `"types": ["node"]` and `@types/node` installed both passed. Emitting with `--outDir` but no `rootDir` then failed in both with TS5011 ("The 'rootDir' setting must be explicitly set"); adding `rootDir: "src"` fixed it. Migrate via 6.0 (treat its deprecation warnings as must-fix).
+
+**7.0 ships without a compiler API** (the 7.0 announcement: 7.1 is to bring a new, different one), so every tool that loads `typescript` programmatically still needs the 6.0 API. That includes typescript-eslint, whose peer range is `typescript <6.1.0` in its latest v8 line: with `typescript@^7` installed, `npm install` fails with `ERESOLVE`, and forced past that, `eslint` exits 2 with "typescript-eslint does not support TS 7.0" (measured, typescript-eslint 8.70.1). **Typed lint — including the non-negotiable `no-floating-promises` — therefore needs the side-by-side install the announcement documents until typescript-eslint supports 7**:
+
+```jsonc
+// package.json — `tsc` is 7.0 (fast type-check/build), `tsc6` and the `typescript` API are 6.0
+"devDependencies": {
+  "@typescript/native": "npm:typescript@^7.0.2",
+  "typescript": "npm:@typescript/typescript6@^6.0.2"
+}
+```
+
+Measured: this installs cleanly beside typescript-eslint 8.70.1, `npx tsc -v` reports 7.0.2, `npx tsc6 -v` reports 6.0.x, and typed lint reports a floating promise. Check the typescript-eslint release notes before dropping the alias. Frameworks embedding the compiler API via Volar (Vue, Angular, Astro, Svelte, MDX) stay on 6.0 for the same reason.
 
 ## No `any`. Use `unknown` + narrowing
 
@@ -112,7 +125,7 @@ function getOrders(userId: UserId): Order[] { /* ... */ }
 getOrders(orderId);            // compile error — the bug class is dead
 ```
 
-Brand at the validation boundary (zod: `z.string().uuid().brand<'UserId'>()`). Brand money, durations (ms vs s), and anything where unit confusion has bitten anyone ever. Zero runtime cost.
+Brand at the validation boundary (zod 4: `z.uuid().brand<'UserId'>()`). Brand money, durations (ms vs s), and anything where unit confusion has bitten anyone ever. Zero runtime cost.
 
 ## `satisfies` and `as const`
 
@@ -142,7 +155,7 @@ TypeScript types are erased — they verify nothing at runtime. Every untrusted 
 import { z } from 'zod';
 
 const CreateUser = z.object({
-  email: z.string().email(),
+  email: z.email(),                       // zod 4 top-level format; z.string().email() is deprecated
   age: z.number().int().min(0).max(150),
   role: z.enum(['user', 'admin']).default('user'),
 });
@@ -153,7 +166,7 @@ const user = (await req.json()) as CreateUser;
 
 // GOOD — parse, don't validate-and-cast
 const result = CreateUser.safeParse(await req.json());
-if (!result.success) return badRequest(result.error.flatten());
+if (!result.success) return badRequest(z.treeifyError(result.error));
 const user = result.data;   // genuinely CreateUser from here on
 ```
 
@@ -218,7 +231,8 @@ Heuristics: max ~2 levels of nested conditional types in app code; name intermed
 ## ESM-first and monorepo project references
 
 - New code is ESM: `"type": "module"` in package.json, `import`/`export` only. No `require`, no `module.exports`. CJS interop via default-import of CJS packages works under `esModuleInterop`.
-- `module: "NodeNext"` requires explicit `.js` extensions on relative imports in Node libraries (`import { x } from './util.js'`). Bundled apps using `moduleResolution: "Bundler"` may omit them.
+- `module: "NodeNext"` requires explicit extensions on relative imports. When `tsc` emits the code Node runs, write `.js` (`import { x } from './util.js'`). Bundled apps using `moduleResolution: "Bundler"` may omit them.
+- **Node running `.ts` directly (native type stripping, Node ≥22.18/≥23.6) resolves the specifier literally.** Measured on Node 22.22.1: `node src/a.ts` importing `'./util.js'` failed with `ERR_MODULE_NOT_FOUND`; `'./util.ts'` ran. So for code Node executes as `.ts`, write `.ts` imports and pick one: `"rewriteRelativeImportExtensions": true` when `tsc` also emits (it rewrites `./util.ts` to `./util.js` in the output — measured on tsc 6.0.3 and 7.0.2, and the emitted `dist/` ran), or `"allowImportingTsExtensions": true` with `noEmit`. Without either, tsc rejects the `.ts` specifier (TS5097). Add `"erasableSyntaxOnly": true` in both cases, since stripping cannot run enums, namespaces or parameter properties. *Node docs: "Modules: TypeScript" (recommended tsconfig; extensions are mandatory).*
 - Library `package.json`: use `exports` map with `types` condition first; ship `.d.ts` next to `.js`. Verify with `publint` and `arethetypeswrong` (see rules/07).
 
 Monorepos: TypeScript project references give incremental, dependency-ordered builds:
@@ -239,6 +253,7 @@ Monorepos: TypeScript project references give incremental, dependency-ordered bu
 ## Audit checklist
 
 - [ ] `tsconfig.json`: `strict: true` present; `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`, `isolatedModules` enabled. Any of these missing in a 2026 codebase is a finding (HIGH for missing `strict`).
+- [ ] **TypeScript ≥6.0 defaults (§"tsconfig", the 6.0/7.0 paragraph)** — on `typescript` ≥6 (or the `@typescript/typescript6` alias), a tsconfig with no `types` array loads no `@types/*`, and one that emits to `outDir` with no `rootDir` fails TS5011: run `npx tsc --noEmit` and read for TS2591/TS2304 on `process`/`Buffer`/`describe` (MEDIUM: a broken or bypassed typecheck). A `typescript` ≥7 dependency next to `typescript-eslint` without the documented `typescript6` alias means typed lint cannot run at all — confirm `npx eslint` exits 0 or 1, not 2 (HIGH: `no-floating-promises` is silently off).
 - [ ] `grep -rn ": any\|as any\|<any>\|any\[\]" --include="*.ts" --include="*.tsx" src/` — every hit needs justification; `as any` in production code is HIGH.
 - [ ] `grep -rn "@ts-ignore\|@ts-nocheck" src/` — should be `@ts-expect-error` with a reason comment; `@ts-nocheck` is HIGH.
 - [ ] `grep -rn "as [A-Z]" --include="*.ts" src/ | grep -v "as const\|as unknown"` — casts in business logic; check each masks no missing validation.
