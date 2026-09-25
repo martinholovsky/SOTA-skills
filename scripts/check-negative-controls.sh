@@ -744,9 +744,17 @@ old_ver = lines[start].split('[', 1)[1].split(']', 1)[0]
 # 29 then fires — correctly — and the probe reports EXEMPTION DID NOT HOLD against invariant
 # 14, which passed. Observed 2026-09-14 on the branch that added rules/07. Declaring the
 # routing check here keeps 29 satisfied so 14 is the only thing this fixture tests.
+# The artifact must carry a date in its path and post-date the last description edit
+# (29's currency test, added 2026-09-20). The fixture declared the undated case file until
+# 2026-09-25, which failed 29 the first time a branch edited a description after that
+# date -- the probe's premise drifted while its text stayed correct. So it writes one.
+import os
+os.makedirs('evals/results/2099-12-31', exist_ok=True)
+open('evals/results/2099-12-31/routing-fixture.md', 'w').write(
+    'Negative-control fixture for probe 14b: stands in for a desc-routing-regressions run.\n')
 body = ['## [%s] - 2099-12-31' % ver, '',
         '**Front door checked:** Kubernetes', '',
-        '**Routing checked:** evals/cases/desc-routing-regressions.jsonl', '',
+        '**Routing checked:** evals/results/2099-12-31/routing-fixture.md', '',
         'Kubernetes is named here, first, and on the front door.', '']
 body += ['padding line with no heading link checkbox or number'] * 3000
 body += ['']
