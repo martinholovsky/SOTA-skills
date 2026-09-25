@@ -14,12 +14,34 @@ rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
   degrade the model or implant a backdoor/trigger. Control data provenance and
   integrity; validate and monitor training data; restrict who/what can write to
   training sources (`rules/02`).
+  A backdoor leaves accuracy on ordinary data untouched, so an aggregate eval
+  passes it. Screen training sets before each run: outlier detection on features
+  and learned representations, **spectral-signature** screening (the poisoned
+  subset shows up in the top singular direction of a class's representation
+  covariance, Tran et al. 2018), activation clustering, and influence-based
+  tracing of suspicious predictions back to the training points that drove
+  them. **Clean-label** (label-consistent) poisons carry correct labels, so
+  label audits and human review miss them — only the representation-level
+  screens apply. Gate promotion (`rules/04`) on a held-out **trigger corpus**
+  built from your own policy taxonomy (the inputs whose flip would matter),
+  kept out of every training source. Signing and provenance (§2) prove *who*
+  produced a model, never that it is backdoor-free. OWASP: AISVS 1.3.1, 1.3.5;
+  AI-Powered Advertising Systems Security cheat sheet.
 - **Evasion / adversarial examples** — crafted inputs at inference cause
   misclassification. Validate/bound inputs; consider adversarial training and
   detection for high-stakes models.
 - **Model extraction/stealing** — querying the API to clone the model.
   Rate-limit, monitor query patterns, avoid returning raw confidence vectors
-  where not needed.
+  where not needed. Size the limits from the extraction threat model — how many
+  queries clone the model to useful fidelity — per principal *and* globally
+  (many low-rate accounts add up), not as a generic throttle. Feed per-principal
+  query logs into a dedicated extraction detector (e.g. PRADA-style: the
+  distribution of distances between a client's successive queries departs from
+  benign traffic; also input-space coverage and boundary probing). An alert
+  carries the principal, key, time window, query count and sample inputs, and
+  the playbook escalates: throttle, block, revoke the credential, open an IR
+  case (`sota-detection-engineering`). OWASP: AISVS 11.2.2, 11.3.1, 11.3.4,
+  12.2.4.
 - **Membership inference / model inversion** — inferring whether a record was in
   training, or reconstructing training data, from outputs/confidences. Minimize
   output granularity; consider differential privacy for sensitive training data.
@@ -45,6 +67,28 @@ rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
   (picklescan-style, used by major model hubs) were repeatedly bypassed in 2025
   (multiple CVSS 9.3 CVEs: renamed extensions, corrupted ZIP flags, subclassed
   imports). Only trusted sources + integrity verification + safe formats count.
+- **Sign every model artifact, verify twice.** Weights, configs, tokenizers,
+  adapters, base models and safety/guard models each need a signature from a
+  named, authorised signer. **OpenSSF Model Signing (OMS)** is a concrete
+  format: one detached Sigstore-bundle signature over the whole model
+  directory (reference CLI `model_signing` from `sigstore/model-transparency`;
+  Sigstore verification requires the expected `--identity` and identity
+  provider). Verify at deployment admission and again on load, and fail the
+  deploy on any mismatch — the same contract as container-image admission
+  (`sota-devsecops`). By default a file absent from the signed manifest fails
+  verification; the ignore-unsigned-files option turns that off, letting an
+  added file ride along unverified — treat it as a finding. OWASP: AISVS
+  3.1.2, 3.1.3; AI-Powered Advertising Systems Security cheat sheet.
+- **Handle third-party models in disposable workers.** Evaluation,
+  fine-tuning and format conversion of an external or untrusted model run in an
+  isolated worker (`sota-sandboxing` rules/01) with egress denied or
+  allowlisted, no production credentials and no registry write access.
+  `trust_remote_code=True` (Hugging Face `transformers`) executes Python shipped
+  in the model repo: only inside such a worker, with `revision` pinned to a
+  reviewed commit. At job
+  teardown, check — not assume — that temp files, checkpoints, prompt/eval logs
+  and cached embeddings are gone (list the scratch volume and caches; fail the
+  job if anything remains). OWASP: Secure AI Model Ops cheat sheet.
 - Protect the model registry and feature store with authn/z; a tampered registry
   ships a tampered model.
 
@@ -105,3 +149,19 @@ rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
       ; `grep -rniE 'nist|ai.?rmf|risk.?assessment|fairness|bias' . | head`
 - [ ] **EU AI Act / regulatory tier considered — HIGH for high-risk domains (manual)** —
       `grep -rniE 'ai.?act|high.?risk|gdpr|differential.privacy|anonymiz' . | head`
+- [ ] **Model signing verified at admission and load (§2) — HIGH** —
+      `grep -rnE 'model_signing[ .](verify|verifying)' . || echo "no model signature verification at admission/load"` ;
+      unsigned files waved through:
+      `grep -rnE 'ignore[-_]unsigned[-_]files' . | grep -vE 'no-ignore[-_]unsigned|unsigned_files\((False|0)\)'`
+      (every hit is a finding). Manual: are tokenizers, adapters and guard models in the signed set?
+- [ ] **Untrusted model code / worker isolation (§2) — HIGH** —
+      `grep -rnE 'trust_remote_code *= *True' --include='*.py' .` (each hit must run in an
+      egress-restricted worker with a pinned `revision`); manual: does job teardown verify
+      checkpoints, logs and embedding caches are gone?
+- [ ] **Poisoning screen and trigger-corpus gate (§1) — HIGH (manual)** —
+      `grep -rniE 'spectral|activation.?cluster|influence|trigger.?(set|corpus)|backdoor' --include='*.py' . || echo "no poisoning screen or trigger-corpus gate"`
+      ; a signature or provenance check alone does not satisfy this item
+- [ ] **Extraction detection and response (§1) — MEDIUM** —
+      `grep -rniE 'extraction|model.?steal|query.?(pattern|distance)' --include='*.py' . || echo "no extraction detector"`
+      ; manual: limits sized per principal and globally, alerts carry principal/window/count,
+      and a revoke/IR path exists

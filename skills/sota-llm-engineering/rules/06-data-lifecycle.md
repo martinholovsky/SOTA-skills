@@ -136,11 +136,29 @@ stores: sota-code-security rules/07. The LLM-engineering obligations:
   needs — schema-projected records, not whole user objects; pseudonymize
   stable identifiers (user_123 → token) where the task allows, re-hydrate
   after.
+- **Outbound AI traffic crosses a DLP boundary.** Calls to external model
+  services go through one egress gateway (the rules/05 §1 gateway, or a
+  network-level one) that inspects prompts and attachments for secrets and
+  personal data, blocks or redacts what it finds, and keeps an audit trail
+  of who sent what to which provider. Developer coding assistants are the
+  same data flow with a wider aperture — they upload whatever files they
+  read: record what they send (the tool's request logging, or an outbound
+  proxy you control) and scope what they can read (sota-sandboxing rules/05
+  §4). Code or data under a regulatory or classification regime goes only to
+  self-hosted or air-gapped models, behind an explicit approval to use AI on
+  it at all. OWASP: OWASP DSOMM; OWASP Secure Coding with AI cheat sheet.
 - **Redact before persistence:** prompt/completion logging (rules/05 §5),
   eval-set promotion (rules/01 §7), and dataset curation (§2) all pass
   through a redaction layer (NER/pattern-based PII detection + allowlists).
   Raw-prompt logging with PII into a general log platform with broad access
   is a High finding; wholesale, unredacted, unbounded-retention → Critical.
+  **The embedding path is persistence too:** detect sensitive fields before
+  text is chunked and embedded, and mask, tokenise or drop them — a vector
+  store is a durable copy that approximately preserves its input
+  (sota-code-security rules/08 §4), and a chunk's payload text is stored
+  verbatim. An embedding model fine-tuned on one tenant's data is that
+  tenant's data: serve it to that tenant only. OWASP: AISVS 8.2.1; OWASP RAG
+  Security cheat sheet.
 - **Retention & access:** LLM traces get their own retention clock (shortest
   that supports debugging/evals) and access control distinct from app logs;
   deletion requests must reach traces, eval sets, memory stores (rules/04
@@ -179,6 +197,15 @@ stores: sota-code-security rules/07. The LLM-engineering obligations:
 - [ ] PII minimized at the model boundary (projection, pseudonymization);
       redaction layer in front of trace logging, eval promotion, and dataset
       storage; traces have distinct retention + access control.
+- [ ] Sensitive fields masked, tokenised or dropped before embedding and
+      indexing; tenant-trained embedding models never shared across tenants
+      (§5). **High**. Probe — embedding calls with no redaction step on the
+      line: `grep -rnE 'embed(_documents|_query|dings\.create)?\(' . | grep -vE 'redact|mask|scrub'`
+- [ ] Calls to external AI services leave through one scanning egress
+      gateway with an audit trail; coding-assistant uploads logged or
+      proxied; regulated code only on self-hosted/air-gapped models with an
+      approval gate (§5). **High**. Probe — provider hosts hard-coded outside
+      the gateway module: `grep -rnE 'api\.openai\.com|api\.anthropic\.com|generativelanguage\.googleapis\.com' .`
 - [ ] Deletion requests propagate to traces, eval sets, memory, semantic
       caches, and vector indexes.
 - [ ] Provider data-retention/training-use settings explicitly configured,

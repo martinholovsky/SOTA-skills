@@ -106,7 +106,7 @@ highest-leverage fixes.
 | `rules/04-evaluation-validation.md` | Deciding if a model is good enough: offline metrics vs the business objective, baselines, **sliced** evaluation and fairness, the ML Test Score tests, validation gates and regression thresholds before promotion |
 | `rules/05-deployment-serving.md` | Shipping a model: packaging (containers/ONNX), batch vs online vs streaming serving, model registry promotion, canary/shadow/A-B rollout, rollback, latency/throughput, reproducible inference environment |
 | `rules/06-monitoring-drift.md` | Operating a model: data drift (PSI/KS) vs concept drift vs performance decay, label lag, prediction & feature monitoring, alerting, retraining triggers and cadence, ML-specific observability (cross-ref `sota-observability`) |
-| `rules/07-security-governance.md` | ML security & compliance: training-data poisoning, model extraction/inversion/membership inference, adversarial inputs, supply chain (untrusted `pickle`/model artifacts, dataset provenance), MITRE ATLAS, NIST AI RMF, model cards, EU AI Act obligations |
+| `rules/07-security-governance.md` | ML security & compliance: training-data poisoning, model extraction/inversion/membership inference, adversarial inputs, supply chain (untrusted `pickle`/model artifacts, dataset provenance, OMS model signing verified at admission and load, sandboxed third-party-model workers), backdoor screening and trigger-corpus gate, extraction detection and response, MITRE ATLAS, NIST AI RMF, model cards, EU AI Act obligations |
 
 ## Top-10 non-negotiables
 

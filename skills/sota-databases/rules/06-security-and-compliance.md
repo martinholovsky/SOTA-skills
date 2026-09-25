@@ -38,6 +38,65 @@ ALTER DEFAULT PRIVILEGES FOR ROLE migrator IN SCHEMA app
 `connection limit` per role bound the blast radius of both bugs and abuse
 (a leaked reporting credential shouldn't be able to hold 500 connections).
 
+## Server baseline (install time)
+
+### Rule: No vendor default survives install — accounts, passwords, sample and test databases.
+The general rule (every deployed product, not only databases) is in
+`sota-code-security` rules/02 §8; the database-specific steps are:
+- **Make hardening a scripted install step**, not a memory. Some engines ship
+  one: `mysql_secure_installation` sets the root password, removes anonymous
+  accounts, removes remote-capable root accounts and drops the `test` database
+  that anonymous users can reach. Where an engine has none, the provisioning
+  code carries the equivalent SQL.
+- **Bootstrap superuser:** set its password at init (`initdb --pwfile`) and
+  never leave `trust` in place — `trust` is initdb's documented default for
+  local connections. Use it for break-glass only; the app never connects as it.
+- **Containers skip the script.** The official MySQL image creates
+  `root@'%'` (remote-capable) unless `MYSQL_ROOT_HOST` narrows it. It and the
+  MariaDB image enable an empty root password when
+  `MYSQL_ALLOW_EMPTY_PASSWORD` / `MARIADB_ALLOW_EMPTY_ROOT_PASSWORD` holds
+  **any non-empty value** (`=no` included — the entrypoints only test `-n`).
+  Postgres' `POSTGRES_HOST_AUTH_METHOD=trust` disables passwords for every
+  host. Any of these outside a throwaway local setup: HIGH.
+- **Drop, don't just ignore:** sample schemas, demo databases and vendor
+  default accounts the app does not use. MongoDB runs with
+  `security.authorization` **disabled** by default — enable it at install.
+- **Prefer integrated or certificate auth over passwords where available**:
+  SQL Server's Windows-only mode leaves the `sa` login disabled, and Microsoft
+  says to use Windows authentication when possible; choose mixed mode only
+  for a documented need, then keep `sa` disabled or renamed.
+- **Audit against an inventory, not a memory:** list the catalog's login
+  roles and databases (`pg_roles WHERE rolcanlogin`, `pg_database`; MySQL
+  `mysql.user`, `SHOW DATABASES`) and diff them against the expected list
+  kept in the repo. Any extra login, anonymous (`user=''`) row, or `test`/
+  sample database is a finding.
+OWASP: Database Security cheat sheet; Go-SCP (database security); NoSQL
+Security cheat sheet; Secure Coding Practices QRG.
+
+### Rule: Minimal feature surface — in-server code execution and extras are off unless documented.
+The per-engine examples elsewhere (SurrealDB `--allow-scripting`, rules/08;
+Redis `EVAL`, below; dangerous Postgres functions, above) are one rule:
+deny by default, enable with a written reason.
+- **Extensions and languages:** install only what the schema uses; keep an
+  expected list and diff `pg_extension` against it. Untrusted procedural
+  languages (`plpython3u`, `plperlu`) run with the database server's OS
+  rights — only superusers may create functions in them, and a need for one
+  is a design review item. Trusted extensions (PG13+) are installable by
+  anyone with `CREATE` on the database, so that grant is itself surface.
+- **Hosted runtimes and shell escapes:** SQL Server `clr enabled` and
+  `xp_cmdshell` stay 0 (`xp_cmdshell` is off on new installs; turn it on
+  only for the task that needs it). MongoDB `security.javascriptEnabled`
+  defaults to **true** — set it false unless `$where`, `$function`,
+  `$accumulator` or `mapReduce` are used (all deprecated server-side JS).
+- **Admin commands and auxiliary services:** Redis `enable-debug-command` and
+  `enable-module-command` default to `no` — keep them there (`local` is
+  loopback-only, `yes` is anyone). Disable discovery listeners you do not
+  need (e.g. SQL Server Browser on UDP 1434 when instances use fixed ports).
+- **Drop unused stored procedures and utility packages** rather than
+  leaving them for an attacker's SQLi to find.
+OWASP: Database Security cheat sheet; Go-SCP (database security); NoSQL
+Security cheat sheet; Secure Coding Practices QRG.
+
 ## Credentials & connection security
 
 ### Rule: Database credentials are short-lived, scoped, and never in code or images.
@@ -90,6 +149,25 @@ Full pattern in file 01 (multi-tenancy). Security-specific additions:
   the view owner's privileges bypass RLS under it.
 - Automated cross-tenant leak test in CI (file 01) — RLS misconfigurations
   are invisible until breached.
+- **Verify the deployed catalog, not the migration source.** A CI/deploy
+  check connects to the migrated database and fails when (a) the request role
+  has `rolsuper` or `rolbypassrls` in `pg_roles`, or (b) any table lacks a
+  tenancy classification, or a table classified tenant-scoped lacks
+  `relrowsecurity`, `relforcerowsecurity` or a `pg_policies` row. Classify
+  every table as `tenant`, `shared` or `isolated` in the schema itself (e.g. a
+  `COMMENT ON TABLE ... IS 'tenancy: tenant'`) so a new table with no
+  classification fails the gate (wired into migrations, file 02):
+```sql
+SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE c.relkind IN ('r','p') AND n.nspname = 'app'
+  AND (substring(obj_description(c.oid,'pg_class') FROM 'tenancy: (\w+)') IS NULL
+    OR (substring(obj_description(c.oid,'pg_class') FROM 'tenancy: (\w+)') = 'tenant'
+        AND NOT (c.relrowsecurity AND c.relforcerowsecurity AND EXISTS (
+          SELECT 1 FROM pg_policies p
+          WHERE p.schemaname = n.nspname AND p.tablename = c.relname))));
+-- any row = gate fails (checked 2026-09-25 on PostgreSQL 17)
+```
+  OWASP: Multi Tenant Security cheat sheet.
 
 ## Encryption
 
@@ -199,6 +277,17 @@ for app-side review. Database-layer obligations:
       GRANT ALL fixes; append-only tables lack UPDATE/DELETE grants.
 - [ ] Per-role connection limits and timeouts; individual (not shared) human
       logins; break-glass write access time-boxed.
+- [ ] HIGH: no vendor default survives install — catalog login roles and
+      databases match the repo's expected inventory (no anonymous user, no
+      `test`/sample DB, bootstrap superuser password set, MongoDB
+      authorization on). Config probe:
+      `grep -rniE 'POSTGRES_HOST_AUTH_METHOD[=:][[:space:]]*"?trust|(MYSQL_ALLOW_EMPTY_PASSWORD|MARIADB_ALLOW_EMPTY_ROOT_PASSWORD)[=:][[:space:]]*"?[^"[:space:]]|authorization:[[:space:]]*"?disabled' .`
+- [ ] HIGH: in-server code execution off unless documented — no untrusted PL
+      languages, CLR/xp_cmdshell 0, MongoDB javascriptEnabled false, Redis
+      debug/module commands not `yes`; `pg_extension` matches the expected list.
+      Probe: `grep -rniE "(EXTENSION|LANGUAGE)[[:space:]]+(IF[[:space:]]+NOT[[:space:]]+EXISTS[[:space:]]+)?\"?(plpython3u|plperlu|pltclu)|'(clr enabled|xp_cmdshell)',[[:space:]]*'?1|enable-(debug|module)-command[[:space:]]+\"?yes|javascriptEnabled:[[:space:]]*true|--allow-scripting" .`
+      (config that relies on MongoDB's default `true` has no line to hit —
+      check the running `getCmdLineOpts` too).
 - [ ] Credentials from secret manager/workload identity, rotatable without
       deploy, one per service; DB not publicly reachable; pg_hba explicit;
       no secrets in repos/images/CI logs.
@@ -207,6 +296,11 @@ for app-side review. Database-layer obligations:
 - [ ] RLS enabled AND forced on protected tables; policies have WITH CHECK,
       fail closed on missing context, use SET LOCAL; security_invoker views;
       SECURITY DEFINER functions pin search_path; cross-tenant leak test in CI.
+- [ ] CRITICAL: a catalog tenancy gate runs against the migrated database —
+      request role not `rolsuper`/`rolbypassrls`, every table classified,
+      tenant tables RLS-enabled, forced and with a policy (query above).
+      Migration probe:
+      `grep -rniE '(CREATE|ALTER)[[:space:]]+(ROLE|USER)[[:space:]].*[[:space:]](SUPERUSER|BYPASSRLS)|NO[[:space:]]+FORCE[[:space:]]+ROW[[:space:]]+LEVEL' .`
 - [ ] TLS enforced server-side (hostssl, scram-sha-256) and verified
       client-side (verify-full); Redis has TLS+auth and no public binding.
 - [ ] Disk encryption on; targeted column encryption (KMS keys, never in-DB,

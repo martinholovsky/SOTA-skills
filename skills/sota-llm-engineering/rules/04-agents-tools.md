@@ -201,6 +201,19 @@ the harness pauses, a human (or policy engine) approves:
 - **Approval is per-action, not per-session.** A blanket "yes to everything
   for an hour" is not a gate. Batch *similar* low-risk actions for one
   review where volume demands it.
+- **Tier actions by risk and reversibility, in code.** Each tool (or tool +
+  argument pattern) carries a tier; only the lowest — read-only, or provably
+  undoable — may auto-approve. An action whose undo path has not been shown
+  to work counts as irreversible and needs approval *before* it runs, not a
+  review after. The critical tier (money above a limit, production deletes,
+  permission grants) needs a second, independent approver.
+- **An approval is a record bound to one action.** Store actor, tool,
+  target, the normalised arguments (or their hash), approver identity,
+  reason, timestamp and expiry; the executor re-checks that the call it is
+  about to run matches the record and has not expired, so an approval for
+  one argument set cannot be replayed on another. **A timed-out approval is
+  a denial** — the pending action is dropped, never run by default. OWASP:
+  AISVS 9.6.2; OWASP AI Agent Security cheat sheet; OWASP DSOMM.
 - Authorization (can this principal do this at all) is enforced in code
   regardless of approval UX — sota-code-security rules/08; the prompt is never the boundary.
 
@@ -269,7 +282,21 @@ deprecation policy). Engineering consequences:
 - Credentials for MCP servers belong in a secrets/vault layer, never in
   prompts or agent-visible config (sota-secrets-management). Request the
   **narrowest scope per server** (`mail.readonly`, not `mail.full`) and prefer
-  short-lived tokens over long-lived PATs.
+  short-lived tokens over long-lived PATs. Environment variables in the
+  client's server definition are not that layer either — they sit in a
+  config file and are inherited by every child the server spawns; have the
+  server fetch its secret from the vault or a mounted secret file at start.
+- **A server keeps nothing it was handed.** Verified against the MCP
+  authorization spec (2025-11-25): a server MUST accept only tokens issued
+  for itself and MUST NOT pass the client's token through to upstream APIs
+  — it obtains its own. Beyond that, do not write received tokens or
+  credentials to disk, logs or caches, and delete per-session temp files,
+  caches and state when the session ends. Filter `tools/list` by the
+  caller's scopes so a client never sees tools it cannot call. On the client
+  side, the spec lets a client disconnect when it does not support the
+  version the server answers `initialize` with — use that to enforce a
+  pinned minimum revision rather than accepting any downgrade. OWASP: AISVS
+  10.2.3, 10.2.4, 10.2.6, 10.3.4; OWASP MCP Security cheat sheet.
 - **When you operate/self-host an MCP server, harden the server,
   not just the client** (OWASP MCP Security): bind local HTTP/SSE transports to
   `127.0.0.1`, not `0.0.0.0`; **validate the `Origin`/`Host` header on every
@@ -350,6 +377,17 @@ budget bounds the sum of its children).
 - [ ] Consequential actions behind per-action human/policy gates that
       suspend durably and feed deny-reasons back; authorization additionally
       code-enforced (sota-code-security rules/08).
+- [ ] Actions tiered by risk and reversibility; only the lowest tier
+      auto-approves; critical tier needs a second approver; approvals bound
+      to actor/tool/target/normalised args with expiry and approver, and a
+      timeout denies (§4). **High** (Critical when a timeout executes).
+      Probe — approve-on-timeout or blanket auto-approve settings:
+      `grep -rniE '(default|on_timeout|timeout_action)[[:space:]]*=[[:space:]]*.?(approve|allow|proceed|true)|auto_?approve[[:space:]]*=[[:space:]]*true' .`
+- [ ] MCP servers: no token passthrough, no stored client credentials,
+      per-session cleanup, scope-filtered `tools/list`, secrets fetched
+      from a vault not set as env values; clients enforce a minimum protocol
+      revision (§6). **Critical** for a literal credential in a server
+      definition. Probe: `grep -rnE '"[A-Z0-9_]*(TOKEN|KEY|SECRET|PASSWORD|PAT)[A-Z0-9_]*"[[:space:]]*:[[:space:]]*"[^"$]{8,}"' .`
 - [ ] Context management present for long sessions: pruning/compaction with
       eval coverage, memory with limits/expiry/erasability, artifacts by
       reference not by paste.

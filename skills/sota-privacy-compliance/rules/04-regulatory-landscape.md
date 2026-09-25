@@ -108,7 +108,16 @@ assurance proportional to risk. Engineering consequences: an age signal in the
 data model that gates features/processing (not a birthday collected for fun —
 rules/02 §1), separate consent flows, and treating "we don't know users' ages"
 as a risk position to document, not an exemption. UK Age Appropriate Design Code
-and similar codes apply the same defaults-private logic. This area is enforcement-
+and similar codes apply the same defaults-private logic. **The child-directed /
+age decision comes from a classification the platform controls** (a
+publisher- or app-level child-directed setting, a kids-account tag, an
+age-assurance result), never from a flag the sender declares: OpenRTB 2.6's
+`regs.coppa` (0 = no, 1 = yes) sits in an object holding what "the sender deems
+applicable", so an omitted flag reads to a `== 1` check exactly like "not
+child-directed" — it fails open. Use a sender flag only to raise the bar. When no
+platform classification exists for the traffic, fail closed: treat it as
+child-directed and refuse profiling and model calls on personal data. OWASP:
+AI-Powered Advertising Systems Security cheat sheet. This area is enforcement-
 heavy and fast-moving — counsel review is non-optional.
 
 ## 2c. One capability set serves all regimes
@@ -258,6 +267,7 @@ deny[msg] {
 - [ ] Breach capability meets 72h GDPR clock today (rules/06); pending Digital Omnibus changes tracked, not assumed
 - [ ] US: single rights pipeline covers strictest state requirements; GPC honored; sensitive-data opt-in implemented; state-tracker re-checked this quarter; California risk-assessment/ADMT/cyber-audit deadlines (2026–2030 phase-in) tracked
 - [ ] Minors: age signal modeled and gating where service could reach under-18s; no targeted ads to known minors; parental-consent flow where required
+- [ ] Child-directed decision comes from a platform-controlled classification and fails closed when absent; a sender flag such as `regs.coppa` only raises the bar (§2b). HIGH where an omitted flag lets profiling run. Probe for the sender flag used as the boundary: `grep -rnE "coppa[\"']?\]?\)?[[:space:]]*(==|===|!=|!==)[[:space:]]*[01]|[\"']coppa[\"'][[:space:]]*,[[:space:]]*0\)" .`
 - [ ] HIPAA (if applicable): §164.312 safeguards mapped to controls; encryption + MFA universal (NPRM-proof); BAAs precede every PHI vendor flow
 - [ ] PCI: scope minimized (hosted fields/tokenization); no CVV at rest anywhere (grep + scanner); CDE segmented; payment-page script integrity controls live
 - [ ] AI Act: systems classified (prohibited/high-risk/transparency/GPAI); for high-risk candidates, logging + data-governance + documentation designed now against the post-omnibus dates
