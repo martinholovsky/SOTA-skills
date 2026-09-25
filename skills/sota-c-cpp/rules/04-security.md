@@ -82,6 +82,33 @@ Replace on sight (CERT STR/FIO; MISRA):
   `PQprepare`, `mysql_stmt_prepare` + `mysql_stmt_bind_param`. SQLite's own
   printf escapes only with `%q`/`%Q`/`%w`. A `%s` in `sqlite3_mprintf` is
   plain interpolation.
+- **SSRF: outbound requests to a caller-influenced destination** (policy:
+  `sota-code-security` rules/01 §5; this is the libcurl idiom). Best: accept a host key or ID
+  and look the URL up in your own allowlist, never forward a caller URL. If a URL must be
+  taken, parse it once with the URL API curl itself uses (`curl_url_set` →
+  `curl_url_get(..., CURLUPART_HOST, ...)`, hand the same `CURLU*` over via `CURLOPT_CURLU`)
+  so the host you checked is the host curl connects to. Then:
+  - **Check the dialled address, not the name.** Install `CURLOPT_OPENSOCKETFUNCTION`: its
+    `struct curl_sockaddr *` argument is the resolved peer address libcurl is about to
+    connect to, so a DNS-rebinding answer cannot slip past a check made earlier. Inspect
+    `addr` by `family` and return `CURL_SOCKET_BAD` for loopback (127/8, `::1`), RFC 1918 and
+    ULA `fc00::/7`, link-local (169.254/16 — the metadata endpoint `169.254.169.254` —
+    and `fe80::/10`), `0.0.0.0/8` and `::`, multicast, and any IPv6 address carrying an IPv4
+    one (`::ffff:a.b.c.d`: test the embedded IPv4). libcurl then treats that address as a
+    failed connection and tries the next one, so every candidate passes the same check.
+    Reject the metadata *hostnames* your cloud documents before the request is built.
+  - **IP literals:** validate with `inet_pton`, never `inet_aton`/`inet_addr`, which accept
+    octal, hex, dword and short forms (`0x7f.0.0.1`, `2130706433` and `127.1` all read as 127.0.0.1).
+    `inet_pton` is not uniform either: glibc rejects `0177.0.0.1`, macOS libc accepts it as
+    *decimal* 177.0.0.1 while `inet_aton` reads it as 127.0.0.1 — one more reason the socket
+    callback, not a string check, is the control.
+  - **Redirects:** `CURLOPT_FOLLOWLOCATION` defaults to 0; keep it off and re-validate each
+    `Location` yourself. If you enable it, the socket callback still vets every new
+    connection, and set `CURLOPT_REDIR_PROTOCOLS_STR` to `"https"` (its default also
+    allows HTTP, FTP and FTPS) with a `CURLOPT_MAXREDIRS` cap.
+  - **Schemes:** `CURLOPT_PROTOCOLS_STR` (7.85.0+; the default is every protocol the build
+    supports, which can include `file`, `gopher` and `dict`) set to `"https"`. On older libcurl use the
+    deprecated `CURLOPT_PROTOCOLS` bitmask. OWASP: SSRF Prevention, .NET Security and GraphQL cheat sheets.
 - **Path traversal / TOCTOU** (CERT FIO): canonicalize with
   `std::filesystem::weakly_canonical`/`realpath` and verify the result stays
   under an allowed root; prefer `openat`/`O_NOFOLLOW` and operate on fds to
@@ -223,6 +250,13 @@ a sandbox over running as root at all (`sota-sandboxing`).
       (a whole-statement API: read how the string was built);
       `grep -rnE 'sqlite3_v?s?n?mprintf[[:space:]]*\([^;]*%s' --include='*.c' --include='*.cpp' .`
       (`%s` into SQL is unescaped; `%q`/`%Q` are the escaping forms)
+- [ ] **SSRF: outbound request to an internal address or the 169.254.169.254 metadata endpoint
+      (§3) — HIGH, CRITICAL where a caller-supplied URL reaches cloud metadata** —
+      `grep -rnE 'CURLOPT_FOLLOWLOCATION[^;]*,[[:space:]]*(1L?|CURLFOLLOW_[A-Z]+)[[:space:]]*\)|inet_(aton|addr)[[:space:]]*\(' --include='*.c' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' .`
+      (redirects followed, or a lenient IP parser used for a check) ; then
+      `grep -rlE 'CURLOPT_(URL|CURLU)' --include='*.c' --include='*.cpp' --include='*.cc' . | xargs -r grep -L 'CURLOPT_OPENSOCKETFUNCTION'`
+      (a file that sets a URL with no connect-time address check: read whether the destination
+      is caller-influenced, and look for `CURLOPT_PROTOCOLS_STR` beside it)
 - [ ] **Privilege drop (§7) — HIGH on a setuid program or a root-started daemon** —
       `grep -rnE '^[[:space:]]*(setuid|setgid|setresuid|setresgid|setgroups|initgroups)[[:space:]]*\([^;]*\)[[:space:]]*;' --include='*.c' --include='*.cpp' .`
       (a call used as a bare statement: its return value is discarded. The trailing `;` keeps

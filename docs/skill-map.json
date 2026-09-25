@@ -306,10 +306,11 @@
     {
       "from": "sota-jvm",
       "to": "sota-code-security",
-      "weight": 15,
+      "weight": 16,
       "targets": [
         "rules/01 \u00a710",
         "rules/01 \u00a711",
+        "rules/01 \u00a75",
         "rules/04",
         "rules/04 \u00a71",
         "rules/04 \u00a75",
@@ -545,6 +546,20 @@
       ]
     },
     {
+      "from": "sota-javascript-typescript",
+      "to": "sota-code-security",
+      "weight": 7,
+      "targets": [
+        "rules/01 \u00a72",
+        "rules/01 \u00a75",
+        "rules/01 \u00a77",
+        "rules/04 \u00a72",
+        "rules/04 \u00a75",
+        "rules/06 \u00a73",
+        "rules/09 \u00a74"
+      ]
+    },
+    {
       "from": "sota-network-security",
       "to": "sota-code-security",
       "weight": 7,
@@ -643,19 +658,6 @@
       "targets": []
     },
     {
-      "from": "sota-javascript-typescript",
-      "to": "sota-code-security",
-      "weight": 6,
-      "targets": [
-        "rules/01 \u00a72",
-        "rules/01 \u00a77",
-        "rules/04 \u00a72",
-        "rules/04 \u00a75",
-        "rules/06 \u00a73",
-        "rules/09 \u00a74"
-      ]
-    },
-    {
       "from": "sota-kubernetes",
       "to": "sota-network-security",
       "weight": 6,
@@ -666,6 +668,28 @@
       "to": "sota-secrets-management",
       "weight": 6,
       "targets": []
+    },
+    {
+      "from": "sota-python",
+      "to": "sota-code-security",
+      "weight": 6,
+      "targets": [
+        "rules/01 \u00a75",
+        "rules/04",
+        "rules/06 \u00a73",
+        "rules/13 \u00a73"
+      ]
+    },
+    {
+      "from": "sota-ruby",
+      "to": "sota-code-security",
+      "weight": 6,
+      "targets": [
+        "rules/01 \u00a75",
+        "rules/04",
+        "rules/04 \u00a75",
+        "rules/06 \u00a73"
+      ]
     },
     {
       "from": "sota-security-compliance",
@@ -679,6 +703,18 @@
       "weight": 6,
       "targets": [
         "rules/04"
+      ]
+    },
+    {
+      "from": "sota-c-cpp",
+      "to": "sota-code-security",
+      "weight": 5,
+      "targets": [
+        "rules/01 \u00a75",
+        "rules/04",
+        "rules/11",
+        "rules/11 \u00a74",
+        "rules/13 \u00a75"
       ]
     },
     {
@@ -727,26 +763,6 @@
       "to": "sota-identity-access",
       "weight": 5,
       "targets": []
-    },
-    {
-      "from": "sota-python",
-      "to": "sota-code-security",
-      "weight": 5,
-      "targets": [
-        "rules/04",
-        "rules/06 \u00a73",
-        "rules/13 \u00a73"
-      ]
-    },
-    {
-      "from": "sota-ruby",
-      "to": "sota-code-security",
-      "weight": 5,
-      "targets": [
-        "rules/04",
-        "rules/04 \u00a75",
-        "rules/06 \u00a73"
-      ]
     },
     {
       "from": "sota-security-compliance",
@@ -826,17 +842,6 @@
       ]
     },
     {
-      "from": "sota-c-cpp",
-      "to": "sota-code-security",
-      "weight": 4,
-      "targets": [
-        "rules/04",
-        "rules/11",
-        "rules/11 \u00a74",
-        "rules/13 \u00a75"
-      ]
-    },
-    {
       "from": "sota-detection-engineering",
       "to": "sota-code-security",
       "weight": 4,
@@ -869,6 +874,16 @@
       "targets": [
         "rules/01 \u00a71.8",
         "rules/08"
+      ]
+    },
+    {
+      "from": "sota-dotnet",
+      "to": "sota-code-security",
+      "weight": 4,
+      "targets": [
+        "rules/01 \u00a75",
+        "rules/05",
+        "rules/06 \u00a73"
       ]
     },
     {
@@ -1124,13 +1139,10 @@
       "targets": []
     },
     {
-      "from": "sota-dotnet",
+      "from": "sota-golang",
       "to": "sota-code-security",
       "weight": 3,
-      "targets": [
-        "rules/05",
-        "rules/06 \u00a73"
-      ]
+      "targets": []
     },
     {
       "from": "sota-jvm",
@@ -1420,12 +1432,6 @@
     },
     {
       "from": "sota-golang",
-      "to": "sota-code-security",
-      "weight": 2,
-      "targets": []
-    },
-    {
-      "from": "sota-golang",
       "to": "sota-devsecops",
       "weight": 2,
       "targets": [
@@ -1532,6 +1538,15 @@
       "targets": [
         "rules/02",
         "rules/02 \u00a78a"
+      ]
+    },
+    {
+      "from": "sota-rust",
+      "to": "sota-code-security",
+      "weight": 2,
+      "targets": [
+        "rules/01 \u00a75",
+        "rules/15 \u00a72a"
       ]
     },
     {
@@ -2370,14 +2385,6 @@
       "weight": 1,
       "targets": [
         "rules/02 \u00a78a"
-      ]
-    },
-    {
-      "from": "sota-rust",
-      "to": "sota-code-security",
-      "weight": 1,
-      "targets": [
-        "rules/15 \u00a72a"
       ]
     },
     {

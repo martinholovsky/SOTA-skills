@@ -222,6 +222,59 @@ defer os.Remove(f.Name())
   boundary, and bound the reader — `io.LimitReader` — because a decoder will happily allocate
   what the header claims.
 
+## 4c. SSRF — outbound requests to a caller-influenced destination
+
+The deny policy and its rationale live in sota-code-security `rules/01 §5`; this is how Go
+enforces it. Any `http.Client`, `net.Dial` or SDK call whose host, port or URL a caller can
+steer (webhooks, fetch-by-URL imports, link previews, resolvers that fetch) is HIGH until all
+of the below hold, CRITICAL where the instance metadata service hands out credentials.
+
+- **Build the request; never relay a caller's URL.** Take an ID or host key, look it up in a
+  server-side `map[string]*url.URL`, and build from that entry. If arbitrary URLs *are* the
+  feature, `url.Parse` and require an `https` (or `http`) `u.Scheme`, a nil `u.User`, and a
+  `u.Hostname()` not in a name denylist (`localhost`, `metadata.google.internal`, …) — then
+  still apply the dial-time check, because a name check says nothing about where it resolves.
+- **Check the address actually dialled, inside the dialer.** A resolve-then-check before the
+  request is time-of-check/time-of-use: a second DNS answer (rebinding) or a redirect lands
+  elsewhere. Set `net.Dialer.ControlContext` (1.20+; `Control` since 1.11), which runs for
+  every connection attempt after resolution with `address` as a literal `ip:port`. Parse it
+  with `netip.ParseAddrPort`, `Unmap()` it, and refuse `IsLoopback`, `IsPrivate` (RFC 1918 +
+  `fc00::/7`), `IsLinkLocalUnicast` (covers `169.254.169.254`), `IsLinkLocalMulticast`,
+  `IsMulticast`, `IsUnspecified`, plus an explicit `netip.Prefix` list for `0.0.0.0/8` (only
+  `0.0.0.0` itself is "unspecified") and any other range your network routes internally. The
+  predicates already unmap `::ffff:a.b.c.d`; unmap anyway before any `Prefix.Contains`. Treat
+  these as helpers, not the policy: the `netip` doc says `IsPrivate` is not an access-control
+  property, so the refusal set is yours to own and test.
+- **Set `Transport.Proxy: nil` on that transport.** With a proxy (`http.DefaultTransport` reads
+  `HTTP(S)_PROXY`), the dialer sees only the proxy's address, so the hook checks nothing about
+  the target — measured: the hook saw only `proxy:3128` for a request to `127.0.0.1`.
+- **Strict parsing is not enough on its own.** `netip.ParseAddr` and `net.ParseIP` (measured on
+  1.27) reject octal, hex, dword and short IPv4 forms (`0177.0.0.1`, `0x7f.0.0.1`, `2130706433`,
+  `127.1`) — but a URL host that fails to parse as an IP is treated as a *name*, and the
+  system resolver (measured on darwin, default resolver) then turns `0x7f.0.0.1` and
+  `2130706433` into `127.0.0.1`. A pre-check that says "not an IP, so allow" is bypassed; the
+  dial-time hook still sees `127.0.0.1` and refuses it.
+- **Redirects:** `CheckRedirect` defaults to following up to 10 hops. Return
+  `http.ErrUseLastResponse` to stop, or re-apply the host allowlist to `req.URL` on every hop;
+  the dial hook re-checks each hop's IP either way. Header stripping across hosts is `rules/04 §4b`.
+- **Schemes:** `net/http` refuses anything but `http`/`https` ("unsupported protocol scheme")
+  unless someone called `Transport.RegisterProtocol` — grep for it; `file://` via
+  `http.NewFileTransport` on a fetch path is CRITICAL.
+
+```go
+d := &net.Dialer{Timeout: 5 * time.Second, ControlContext: func(_ context.Context, _, addr string, _ syscall.RawConn) error {
+    ap, err := netip.ParseAddrPort(addr)
+    if err != nil { return err }
+    if ip := ap.Addr().Unmap(); !allowedDest(ip) { return fmt.Errorf("ssrf: refused %s", ip) }
+    return nil
+}}
+egress := &http.Client{Timeout: 10 * time.Second,
+    Transport:     &http.Transport{DialContext: d.DialContext, Proxy: nil},
+    CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+```
+
+OWASP: SSRF Prevention, .NET Security and GraphQL cheat sheets.
+
 ## 6. Cryptographic practices: CSPRNG & TLS
 
 ### Randomness — `crypto/rand`, never `math/rand`
@@ -356,6 +409,12 @@ cfg := &tls.Config{MinVersion: tls.VersionTLS12} // TLS13 for internal-only
       `grep -rn 'os.Root\|filepath.IsLocal' --include='*.go' .` (mitigations present?);
       `go version` (os.Root containment needs >=1.26.5/1.25.12 — CVE-2026-39822 symlink escape);
       `grep -rnE 'os\.(Open|Create|ReadFile|WriteFile|Remove)' --include='*.go' . # trace path provenance`
+- [ ] **SSRF: outbound request to a caller-chosen URL (§4c) — HIGH, CRITICAL on a cloud host
+      with a metadata endpoint** —
+      `grep -rnE '(Get|Post|Head|PostForm|NewRequest|NewRequestWithContext)\(.*(r\.(URL|Form|PostForm|Header)|FormValue\(|Query\(\))' --include='*.go' .`
+      (request target taken straight from the inbound request) ;
+      `grep -rnE 'ControlContext:|Control:|RegisterProtocol|NewFileTransport' --include='*.go' .`
+      (no dial hook in a service that fetches caller URLs = no internal-address check)
 - [ ] **TLS — CRITICAL/HIGH** — `grep -rn 'InsecureSkipVerify' --include='*.go' .` ;
       `grep -rnE 'MinVersion:\s*tls\.VersionTLS1[01]' --include='*.go' .` ;
       `grep -rn '"http://' --include='*.go' . | grep -v 'localhost\|127.0.0.1\|test'`

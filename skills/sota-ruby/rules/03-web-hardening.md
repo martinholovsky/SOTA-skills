@@ -146,7 +146,47 @@ params.expect(user: [:name, :email])   # Rails 8.0+, raises 400 on bad shape
   metadata ranges (127.0.0.0/8, 10/8, 172.16/12, 192.168/16, 169.254/16 —
   cloud metadata 169.254.169.254), cap redirects and re-validate each hop,
   and set open/read timeouts. `URI.open` on user input additionally risks
-  `|command` execution (see `rules/02` §2).
+  `|command` execution (see `rules/02` §2). The policy is `sota-code-security`
+  rules/01 §5; the Ruby spelling of each step:
+  - **Build the URL, don't relay it.** Where the feature allows, accept a
+    key or record ID and look the base URL up in a server-side allowlist.
+  - **Scheme first**: `uri = URI(raw)` then require `uri.is_a?(URI::HTTPS)`.
+    Never hand caller input to `URI.open` — a string without `scheme://`
+    falls through to `Kernel#open`, and its redirects may go http→ftp.
+  - **Vet the address that is dialled, not an earlier lookup.** `Net::HTTP`
+    resolves the name again inside `connect`, so `Resolv.getaddresses` then
+    `Net::HTTP.get(uri)` leaves a DNS-rebinding window. Resolve once
+    (`Addrinfo.getaddrinfo(host, port, nil, :STREAM)`), vet **every**
+    result, then pin one:
+    `Net::HTTP.start(host, port, nil, ipaddr: vetted, use_ssl: true)` (or
+    `http.ipaddr = vetted` before `start`). The socket goes to `vetted`
+    while SNI and certificate hostname checks still use `host`. The third
+    argument must be `nil`: its default `:ENV` honours `http_proxy`, and
+    then the proxy picks the address, not your pin. The `ssrf_filter` gem
+    is a neutral example built on this same `ipaddr:` pin.
+  - **What to reject** — `ip = IPAddr.new(addr).native` first (unwraps
+    `::ffff:a.b.c.d`; measured on IPAddr 1.2.8, `link_local?` is false for
+    the mapped form of 169.254.169.254 until `.native`), then `loopback?`,
+    `private?` (RFC 1918 and fc00::/7), `link_local?` (169.254/16, fe80::/10),
+    and by `IPAddr#include?` the ranges with no predicate: `0.0.0.0/8`, `::`,
+    `100.64.0.0/10`, `224.0.0.0/4`, `ff00::/8`. Refuse metadata hostnames by
+    name as well (GCP: `metadata.google.internal`).
+  - **Strict parsing**: `IPAddr.new` rejects `0x7f.0.0.1`, `2130706433`,
+    `127.1` and `0177.0.0.1`, but the OS resolver behind `Addrinfo` and
+    `TCPSocket.open` accepts shorthand forms (measured on macOS: the first
+    three all reach 127.0.0.1). Check the resolver's output, never the
+    input string.
+  - **Redirects**: `Net::HTTP` never follows them — your loop re-runs every
+    check per hop and caps the count. `URI.open` follows unless
+    `redirect: false`. HTTParty follows by default (`follow_redirects:
+    false` turns it off). Faraday core does not, but the
+    `faraday-follow_redirects` middleware does (`limit:` default 3); its
+    `callback:` can raise to re-validate the next URL, a name check only —
+    the connect-time pin still needs `Net::HTTP` with `ipaddr:`.
+  - `Net::HTTP` `open_timeout`/`read_timeout` default to 60 s — set them
+    lower, and cap the body you read.
+
+  OWASP: SSRF Prevention, .NET Security and GraphQL cheat sheets.
 - Webhook/callback URL registration is SSRF-by-design — same checks plus
   egress via a dedicated proxy where available.
 
@@ -218,6 +258,12 @@ first — it covers XSS/mass-assignment/redirect sinks mechanically.
 - [ ] **Redirects / SSRF** — `grep -rnE 'redirect(_to)?\s*\(?\s*params' --include='*.rb' .` ;
       `grep -rn "allow_other_host: true" --include='*.rb' .` ;
       `grep -rnE '(Net::HTTP|URI\.open|Faraday|HTTParty)[^#]*params' --include='*.rb' .`
+- [ ] **SSRF: outbound request not pinned to a vetted address (§6) — HIGH when the
+      destination is caller-influenced** —
+      `grep -rnE 'URI\.open|Net::HTTP\.(get|get_response|post|post_form|start|new)|HTTParty\.|Faraday\.(new|get|post)|RestClient\.' --include='*.rb' . | grep -v 'ipaddr'`
+      (every hit connects to whatever the name resolves to at connect time — a
+      check done earlier is a DNS-rebinding window; confirm the destination is
+      fixed, or that the call pins with `ipaddr:` and a `nil` proxy argument)
 - [ ] **Uploads / downloads** —
       `grep -rnE 'send_file\s*\(?\s*params|send_file[^,]*#\{' --include='*.rb' .` ;
       `grep -rn "original_filename" --include='*.rb' . | grep -v basename` ;

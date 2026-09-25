@@ -140,6 +140,46 @@ XML and XXE (formerly section 3) moved to [rules/07](07-xml.md) §1 on 2026-09-2
   `IllegalArgumentException: invalid URI scheme file`. So a fetcher built on
   `URL.openConnection`/`openStream` needs an explicit `http`/`https` scheme allowlist, and
   the JDK `HttpClient` gives you that refusal for free.
+- **SSRF in the JVM clients: check the address the socket dials, and every hop.** The
+  policy is `sota-code-security` rules/01 §5. Take a host key or ID and build the URL from
+  your allowlist. When the caller has to name the destination, the check belongs in a
+  connect-time hook, because checking a string first and fetching after lets DNS rebinding
+  through. All of the following was measured on Temurin 25.0.4 in 2026-09:
+  - **OkHttp** (4.12.0 and 5.5.0): the `Dns` hook is skipped for IP-literal hosts.
+    `RouteSelector` calls `InetAddress.getByName` directly when `canParseAsIpAddress()` is
+    true. A `Dns` filter blocked `internal.test`, but `http://127.0.0.2/` and a redirect to
+    it both came back 200. Put the check in `.socketFactory(...)` instead: return a `Socket`
+    whose `connect(SocketAddress, int)` rejects a bad address. OkHttp creates the raw socket
+    there and layers TLS over it, and that caught literals, hostnames and redirect hops.
+    `followRedirects` and `followSslRedirects` both default to `true`. Only `http`/`https`
+    URLs parse at all.
+  - **Apache HttpClient 5** (5.5): `PoolingHttpClientConnectionManagerBuilder
+    .setDnsResolver(...)` got called for hostnames, for IP literals and for each redirect
+    hop, so a throwing `DnsResolver` works as the hook. `RequestConfig.DEFAULT` has
+    redirects enabled. Use `HttpClientBuilder.disableRedirectHandling()` or
+    `setRedirectsEnabled(false)`.
+  - **JDK `java.net.http.HttpClient`**: redirects default to `Redirect.NEVER`. It has no
+    per-client resolver or socket hook, and `Host` is a restricted header, so you cannot pin
+    a checked IP and keep the name. For a caller-chosen destination, send it through an
+    enforcing egress proxy (`.proxy(ProxySelector)`) or use a client above. With `NORMAL`
+    or `ALWAYS`, hops are followed with no callback. Keep `NEVER` and re-validate each
+    `Location` yourself.
+  - **What the hook rejects, and where `InetAddress` falls short**: loopback, private,
+    link-local, `0.0.0.0/8`, multicast and ULA. That covers `169.254.169.254`, the
+    `fd00:ec2::254` IPv6 metadata address, and any metadata hostname, because the hook
+    sees the resolved address rather than the name. `isSiteLocalAddress()` returned **false** for `fd00::/8`, so test
+    `(b[0] & 0xfe) == 0xfc` yourself. `isAnyLocalAddress()` is true only for
+    `0.0.0.0`/`::`, not for `0.1.2.3`, so test `b[0] == 0`. `::ffff:a.b.c.d` came back as
+    an `Inet4Address`, so the IPv4 tests cover it. The IPv4-compatible `::127.0.0.1` stayed
+    `Inet6Address` with `isLoopbackAddress()` false, so reject that form.
+  - **Java's literal parser is lenient and differs from other parsers.** `InetAddress
+    .getByName` and `ofLiteral` (present on 25, absent on 21) parse `2130706433` and
+    `127.1` as `127.0.0.1`, and `0177.0.0.1` as **decimal** `177.0.0.1`. They reject hex.
+    Checking a string with Java and then passing it to a proxy or `curl` that reads octal
+    fails open. Accept an IPv4 literal only when `ofLiteral(s).getHostAddress().equals(s)`
+    (IPv6 prints uncompressed, so that test does not work for IPv6), and let the socket
+    check have the final say anyway.
+  OWASP: SSRF Prevention, .NET Security and GraphQL cheat sheets.
 - **Upload filenames are request data.** Servlet `Part.getSubmittedFileName()` and Spring
   `MultipartFile.getOriginalFilename()` return what the client sent. Spring's own Javadoc
   warns the name "could also contain characters such as '..'" and recommends generating
@@ -323,6 +363,13 @@ the class is `sota-code-security` rules/06 §3.
       `grep -rnE 'new URL\(|\.toURL\(\)|\.openConnection\(|\.openStream\(' --include='*.java' --include='*.kt' .`
       (confirm an `http`/`https` scheme allowlist before the open, plus the SSRF controls;
       the JDK `HttpClient` refuses `file:` by itself)
+- [ ] **SSRF: outbound client follows redirects, or has no connect-time internal address
+      check — HIGH when the destination is request data** (§5, measured) —
+      `grep -rnE 'Redirect\.(NORMAL|ALWAYS)|OkHttpClient\(\)|HttpClients\.(createDefault|createSystem)\(|followRedirects\(true\)|setRedirectsEnabled\(true\)|\.dns\(' --include='*.java' --include='*.kt' .`
+      (each hit is a client that follows hops on its own, or runs with no hook. An OkHttp
+      `.dns(` filter used as the guard is itself the finding, because IP literals skip it.
+      For each client that reaches a caller-chosen host, confirm a `socketFactory` or
+      `DnsResolver` guard exists, or an enforcing egress proxy)
 - [ ] **Actuator exposure — HIGH if internet-facing** —
       `grep -rnE 'management\.endpoints\.web\.exposure\.include|management\.server\.port|show-values' --include='*.properties' .`
       ; `grep -rnE '^[[:space:]]*(exposure|include|show-values):|heapdump' --include='*.yml' --include='*.yaml' .`

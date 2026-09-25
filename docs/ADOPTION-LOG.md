@@ -5785,3 +5785,29 @@ primary source first.
 **Batched as one PR, not four** — a choice inside the approved scope: each promotion needed
 one or two cells, and the four share the floor edit. The remaining step-3 concepts touch
 most or all nine languages and keep one PR each.
+
+## 2026-09-25 — ROADMAP 66 step 3b: SSRF / outbound request validation, all nine languages, pinned
+
+One agent per language skill, each told to check first whether the concept was already there.
+**None was complete:** five languages (jvm, python, js/ts, php, ruby) had SSRF text, and all five
+lacked the check at **connect time** on the dialled address (so DNS rebinding passes a check
+done before the call) or the redirect policy; four (rust, go, c/c++, .NET) had nothing. Each
+now names its own client's hook (Go `net.Dialer.ControlContext`, httpcore network backend,
+undici/`http.Agent` `lookup` answering in the `all: true` array form, `SocketsHttpHandler.
+ConnectCallback`, libcurl `CURLOPT_OPENSOCKETFUNCTION`, reqwest `dns_resolver`, OkHttp/Apache
+socket hooks, `Net::HTTP#ipaddr=`), its redirect setting and its strict IP parser. The generic
+policy stays in `sota-code-security` rules/01 §5.
+
+**Verified independently of the agents' reports:** every probe re-run as written in the file
+against its fixtures (9/9 match; Rust's report joined two commands with a literal "AND" that
+is not in the file, and the file's two commands give 3/0); spot-checks run here — Go
+`ControlContext` in `api/go1.20.txt`, Python `ipaddress` rejecting `0177.0.0.1`/`0x7f.0.0.1`/
+`2130706433` while `inet_aton` accepts all three, Ruby `Net::HTTP#ipaddr=`, Node `net.BlockList`.
+Two notable finds by the agents: an IP-literal URL never reaches Node's `lookup` hook (so it
+needs a separate pre-dispatch check), and Go's `IsUnspecified` covers only `0.0.0.0`, not
+`0.0.0.0/8`.
+
+**A citation defect of mine, fixed before commit.** My brief passed "SSRF Prevention cheat
+sheet items 6, 8-10 …" — those numbers are **our extraction ordinals**, not anything OWASP
+publishes, and eight of nine agents wrote them into the skills. All nine now cite the cheat
+sheets by name, and the workflow brief says to cite sources by name only.

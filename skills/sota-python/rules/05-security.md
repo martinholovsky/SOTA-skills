@@ -200,10 +200,31 @@ cryptographic; this section is only the Python-specific part.
 - Untrusted XML: use `defusedxml`; stdlib `etree` is OK against entity *expansion* on modern
   versions but external entity and DTD handling across libs (lxml!) still needs hardening:
   `lxml.etree.XMLParser(resolve_entities=False, no_network=True)`.
-- SSRF: any user-supplied URL fetched server-side must be validated — scheme allowlist
-  (`https` only), resolve and reject private/link-local/metadata ranges (169.254.169.254),
-  disable redirects or re-validate per hop. httpx: set `follow_redirects=False` and handle
-  explicitly.
+- SSRF (policy: `sota-code-security` rules/01 §5; this is the Python idiom):
+  - **Take a key, not a URL.** Accept a host name or record id, look it up in your own
+    allowlist and build the URL yourself; a caller-supplied URL relayed to a client is the bug.
+  - **Check the address you dial, at connect time.** Validating the hostname and then letting
+    the client resolve it again leaves a DNS-rebinding window. With httpcore, pass
+    `httpcore.ConnectionPool(network_backend=...)` a `httpcore.SyncBackend` subclass whose
+    `connect_tcp()` runs `socket.getaddrinfo`, rejects the request if *any* returned address is
+    bad, and dials the vetted IP; TLS still verifies the original hostname, because httpcore
+    takes `server_hostname` from the origin. `httpx.HTTPTransport` (0.28) exposes no backend
+    parameter, so with httpx pin instead: resolve and vet, request `https://<ip>/…` with a
+    `Host` header and `extensions={"sni_hostname": host}` via `client.build_request` +
+    `client.send`. Both measured against httpx 0.28.1 / httpcore 1.0.9.
+  - **What "bad" means**: unwrap `ip.ipv4_mapped` first, then reject `not ip.is_global` (covers
+    loopback, RFC 1918, ULA `fc00::/7`, link-local incl. `169.254.169.254`, `0.0.0.0/8`,
+    `100.64/10`) **and** `ip.is_multicast`, which the check misses: `224.0.0.1` reads
+    `is_global == True`. Also refuse metadata host names (`metadata.google.internal`) before
+    resolving.
+  - **Parse literals with `ipaddress.ip_address`**, which rejects `0177.0.0.1`, `0x7f.0.0.1`,
+    `2130706433` and `127.1`; `socket.inet_aton` accepts every one of them as `127.0.0.1`.
+  - **Redirects**: httpx defaults to `follow_redirects=False`; requests defaults to
+    `allow_redirects=True` on `get`/`Session.request`. Turn it off and re-run the full check on
+    each `Location` yourself, capping hops (`max_redirects` only limits the count).
+  - **Schemes**: httpx raises `UnsupportedProtocol` for anything but http(s), but
+    `urllib.request.urlopen` reads `file://` — allowlist `https` before a URL reaches it.
+  OWASP: SSRF Prevention, .NET Security and GraphQL cheat sheets.
 
 ## 7a. `assert` is not a control — `-O` deletes it
 
@@ -345,6 +366,12 @@ foreign function, and validate lengths before they cross. The class is `sota-cod
       `grep -rn "lxml.etree\|xml.etree\|xml.dom\|xml.sax" --include="*.py" src/` (defused?
       entities off?); `grep -rn "get(url\|get(request\.\|urlopen(" --include="*.py" src/ | head`
       (user-controlled URL fetch?)
+- [ ] **--- SSRF: outbound request to a caller-influenced host (§7) --- [HIGH; CRITICAL where
+      the metadata endpoint 169.254.169.254 is reachable]** —
+      `grep -rnE '(requests|httpx)\.(get|post|put|patch|delete|head|options|request|stream)\(|urlopen\(|(allow|follow)_redirects[[:space:]]*=[[:space:]]*True' --include='*.py' src/`
+      (module-level helpers have no connect-time hook, and redirects-on re-opens every
+      check; for each hit, and each `requests.Session`, find where the dialled IP is vetted
+      after DNS resolution — a hostname check before the call is not it)
 - [ ] **ReDoS / DoS surfaces** —
       `grep -rnE "re\.(match|search|fullmatch|findall|sub)\(" --include="*.py" src/ | head -30`
       (user-controlled subject?);
