@@ -50,6 +50,16 @@ arrives. Mark provenance (`source: synthetic|production|incident`) so you can
 track the ratio — an eval set that is still >50% synthetic after months in
 production is a Medium finding.
 
+**A classifier that guards the model gets a language column.** An injection or
+content classifier (sota-code-security rules/08) scored only on English cases
+says nothing about the inputs used to slip past it. Its eval set carries the
+same attacks in languages the classifier does not claim to support, in
+low-resource languages, in mixed-script or transliterated text, and
+machine-translated from known English payloads. Report the catch rate per
+language; input in a language scoring below threshold goes to a stricter path
+(block or human review) instead of being waved through on the classifier's
+pass. OWASP: AISVS 2.2.2.
+
 ## 2. Eval types — pick the cheapest grader that captures the criterion
 
 Order of preference (cheapest/most reliable first):
@@ -384,3 +394,7 @@ published claim rested on that 0.00 for several hours.
       cases promoted into the set.
 - [ ] Dev set ≠ gating set; no prompt tuning against the held-out set; no
       model selection justified by public benchmarks alone.
+- [ ] Injection and content classifiers evaluated per language, including
+      unsupported and low-resource languages and translated attacks, with a
+      stricter path for languages below threshold (§1). **High** where the
+      classifier is the only screen before a tool-holding model.

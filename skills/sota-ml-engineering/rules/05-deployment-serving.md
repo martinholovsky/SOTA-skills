@@ -47,6 +47,16 @@ progressive rollout validated on live traffic.
     business metrics, ramp up.
 - **Rollback must be fast and tested** — one action to revert to the prior
   model. A deployment with no rollback path is HIGH (ML Test Score requires it).
+- **Roll back the whole serving state, not the weights.** A release bundle pins
+  the weights together with the tokenizer, preprocessing and serving config,
+  feature definitions, prompts and the retrieval index version, and rollback
+  restores the bundle; old weights behind a new tokenizer or index is a third,
+  untested model. OWASP: AISVS 3.3.2.
+- **Versions running side by side share no model runtime state.** During shadow,
+  canary or A/B, each version gets its own KV/prefix caches, adapter pool and
+  any cached embeddings or results, keyed by model version, so one version
+  never serves from state the other produced (tenant-scoped caches:
+  `sota-code-security` rules/08 §4). OWASP: AISVS 3.3.3.
 
 ## 5. Operational concerns
 
@@ -58,6 +68,17 @@ progressive rollout validated on live traffic.
   the serving boundary.
 - Health checks, autoscaling, and resource limits like any service (cross-ref
   `sota-observability`, `sota-cloud-infrastructure`, `sota-kubernetes`).
+
+## 6. Decommissioning a model
+
+- Retiring a model is a planned step, not neglect: revoke its serving endpoints
+  and credentials first, then delete the weights, checkpoints, caches and
+  derived embeddings, and the training data held only for it (subject to the
+  retention schedule, `sota-privacy-compliance`). Record what was erased,
+  where, when and by whom; the registry entry stays as a tombstone with that
+  record (e.g. MLflow `MlflowClient.delete_model_version` removes the version, so
+  write the record first). Storage-level erasure of the underlying buckets and
+  volumes: `sota-cloud-infrastructure` rules/05. OWASP: LLMSVS 2.18.
 
 ## Audit checklist
 
@@ -79,3 +100,9 @@ progressive rollout validated on live traffic.
       `case $rc in 0) printf '%s\n' "$out" | head ;; 1) echo "no progressive rollout" ;; *) echo "SWEEP FAILED, not a finding about their code: $out" ;; esac`
 - [ ] **Serving input validation — MEDIUM** —
       `grep -rniE 'validate|schema|pydantic|unseen|unknown.*categor|fillna|missing' --include='*.py' . | head`
+- [ ] **Full-state rollback and isolated caches (§4) — MEDIUM/HIGH** — cache keys with no
+      model version: `grep -rniE 'cache_?key' --include='*.py' . | grep -viE 'model_?(version|id)'`
+      ; manual: does the rollback bundle pin tokenizer, config, features, prompts and index?
+- [ ] **Model decommissioning (§6) — MEDIUM** —
+      `grep -rniE 'decommission|retire|delete_model_version|delete_registered_model' . || echo "no model retirement path"`
+      ; manual: endpoints revoked before artifacts erased, and the erasure recorded

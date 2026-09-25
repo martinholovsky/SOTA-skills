@@ -76,6 +76,31 @@ quantity at every scale that matters:
   store + manifest), changelog per release, eval results pinned to dataset
   version. "Which data trained the model in prod?" must have an exact answer.
 
+### 2a. Training-side safety
+
+When you do tune (§1), the data and the training loop can remove safety the
+base model had.
+
+- **Start aligned, and re-check after.** Prefer a base model whose model or
+  system card documents safety alignment covering your disallowed categories;
+  re-run the safety-tagged eval cases (rules/01 §5) on every tuned checkpoint.
+- **Filter content, not only PII.** Run every example through a
+  disallowed-content classifier before it enters a training set and log what
+  was removed; keep examples to the task's scope, so irrelevant records
+  (especially personal ones) never enter it.
+- **Reward hacking is a measurable failure.** In preference tuning, hold out a
+  human-judged or rubric eval the reward model never sees; a reward score that
+  climbs while that eval stays flat or falls is over-optimisation — stop and
+  inspect, don't ship the higher-reward checkpoint.
+- **Screen the feedback loop before humans see it.** Feedback headed for
+  training or eval pools (§3) passes automated checks first — per-account
+  volume, bursts, near-duplicate submissions, one account steering one topic —
+  and flagged items are held, not merged.
+- **Every labelling action is logged:** annotator, item, label before and
+  after, time, in an append-only store, so a poisoned label can be traced to
+  its author. OWASP: AISVS 1.3.4, 3.5.2, 11.1.1, 11.4.3, 12.5.2; OWASP
+  LLMSVS 2.11.
+
 ## 3. Feedback loops: signals into eval sets
 
 Production feedback is the cheapest continuous source of truth — if wired.
@@ -211,3 +236,8 @@ stores: sota-code-security rules/07. The LLM-engineering obligations:
 - [ ] Provider data-retention/training-use settings explicitly configured,
       documented in-repo, and re-verified on provider/platform/model change
       (including ZDR-vs-feature constraints).
+- [ ] Tuning: aligned base model with the safety eval re-run per checkpoint;
+      disallowed-content filtering and task scoping of training data; a
+      held-out eval guarding against reward hacking; feedback screened for
+      poisoning before review; labelling actions logged append-only (§2a).
+      **High** when tuned models serve users.

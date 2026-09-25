@@ -67,6 +67,17 @@ all that apply.
 - **Distribution drift:** track means/quantiles/category mix on
   business-critical columns; alert on significant shift. Warn-tier — drift
   is a question, not a verdict.
+- **Reconciliation / control totals:** a row count alone passes a load that
+  truncated a column, zeroed an amount or swapped keys. For every data set
+  moved between systems (extract, replication, cross-engine copy), compute
+  at the source *and* at the destination: the row count, a sum over each
+  key numeric measure, and an order-independent fingerprint of the key
+  columns (per-row hash of a canonical text form, summed modulo a large
+  prime). Compare before publishing; a mismatch is block-tier. Pin the
+  canonical form (NULL token, float/decimal scale, timestamp zone) so both
+  engines hash the same bytes. Aggregate with a sum, not XOR: XOR is also
+  order-free but an even number of duplicated rows cancels out. OWASP:
+  Go-SCP (validation).
 
 ```yaml
 # GOOD: minimum battery on a critical mart, tiered (dbt syntax; Soda/GX
@@ -205,6 +216,11 @@ unit_tests:
 - [ ] Zero-row and duplicate-key conditions block on critical marts?
 - [ ] Warn alerts owned and triaged — no weeks-old ignored failures?
 - [ ] Referential integrity checked between facts and dimensions?
+- [ ] HIGH: data sets moved between systems reconciled on control totals
+      (count + key-measure sums + order-independent key hash), block-tier —
+      not on row count alone? Probe (lists reconciliation files with no
+      sum/hash):
+      `grep -rliE 'reconcil|row_?count' --include='*.sql' --include='*.py' --include='*.yml' . | xargs grep -LiE 'sum\(|hash|checksum|md5|sha'`
 - [ ] Anomaly detection (if any) supplements explicit checks and isn't an
       alert-fatigue source?
 - [ ] Lineage derivable from code; column-level where PII/regulatory needs

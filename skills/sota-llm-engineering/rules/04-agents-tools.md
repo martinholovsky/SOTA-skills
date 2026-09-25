@@ -177,6 +177,13 @@ finishes wrong.
   loop rewrites its own rules, prompts or acceptance criteria, the **stricter**
   the human review it needs, because the machine acts faster than any post-hoc
   interception.
+- **Record the red before the run, and keep the agent off its own gate.** Run
+  the project's checks before a coding agent starts and store which already
+  fail (test IDs, lint and type-check counts); judge the result against that
+  baseline, so a failure that predates the run is neither claimed as fixed nor
+  used to hide a new one. Any agent edit to tests, check or CI configuration,
+  or thresholds goes to human review whatever its tier — the PR-side detector
+  is sota-testing rules/07 §7.10. OWASP: OWASP DSOMM.
 
 Land it in stages — run it once by hand (which forces you to state exactly how
 the judge decides), then as a scripted loop, then on a schedule. Build a loop
@@ -214,6 +221,15 @@ the harness pauses, a human (or policy engine) approves:
   one argument set cannot be replayed on another. **A timed-out approval is
   a denial** — the pending action is dropped, never run by default. OWASP:
   AISVS 9.6.2; OWASP AI Agent Security cheat sheet; OWASP DSOMM.
+- **A run nobody asked for is still a request.** An agent started by a
+  schedule, an event, a webhook or its own follow-up plan goes through the
+  same tiers and approvals as a user-initiated one — with no human in the
+  session, nothing may auto-approve on the grounds that "the user asked". Keep
+  an allowlist of what may start each agent (schedules, event types, sources)
+  in config, reject every other trigger, and record the trigger on each
+  action. Watch trigger patterns — rate, source, time, one agent's action
+  firing another's trigger — and hold a consequential action for review when
+  its trigger pattern is new. OWASP: AISVS 12.4.1.
 - Authorization (can this principal do this at all) is enforced in code
   regardless of approval UX — sota-code-security rules/08; the prompt is never the boundary.
 
@@ -248,6 +264,18 @@ window, costs grow quadratically with history, and quality drops.
   fixes something and the old value returns next session, because a confident
   agent note outranked it. The security half — poisoning by untrusted content,
   cross-user scoping — is sota-code-security rules/08.
+- **Memory is state someone can edit behind your back.** Seal every persisted
+  entry and saved agent state with a keyed MAC (e.g. HMAC-SHA256, key held
+  outside the agent's reach) or a signature, verify it on every load, and
+  drop and alert on an entry that fails — a bare hash protects nothing, since
+  whoever rewrites the entry rewrites the hash. Redact secrets and personal
+  data before the write (rules/06 §5), encrypt the store at rest, version it
+  so a poisoned store rolls back to a known-good snapshot, and schedule review
+  or reset of long-lived memory. **Check each write against what is stored**:
+  an entry that contradicts a stored fact on the same subject is flagged and
+  resolved by the precedence order above, never appended beside it, and an
+  untrusted-origin entry contradicting a user-stated one raises an alert.
+  OWASP: AISVS 8.2.5, 9.4.4; OWASP AI Agent Security cheat sheet; OWASP DSOMM.
 - **Don't resend what you can reference:** large artifacts go to files/object
   storage with a read tool, not pasted into every turn.
 - Cache-aware: history is append-only with a stable prefix (rules/02 §5);
@@ -286,6 +314,12 @@ deprecation policy). Engineering consequences:
   client's server definition are not that layer either — they sit in a
   config file and are inherited by every child the server spawns; have the
   server fetch its secret from the vault or a mounted secret file at start.
+  OAuth access and refresh tokens that a local client or agent tool holds go
+  in the OS credential store (macOS Keychain, Windows Credential Manager,
+  Secret Service on Linux; Python's `keyring` wraps all three); a `0600`
+  plaintext file is a documented fallback only where no keystore exists. The
+  authorization spec (2025-11-25) requires clients and servers to implement
+  secure token storage. OWASP: OWASP MCP Security cheat sheet.
 - **A server keeps nothing it was handed.** Verified against the MCP
   authorization spec (2025-11-25): a server MUST accept only tokens issued
   for itself and MUST NOT pass the client's token through to upstream APIs
@@ -304,6 +338,14 @@ deprecation policy). Engineering consequences:
   IDs bound to user context (`<user_id>:<session_id>`), never a bare sequence;
   put remote servers behind TLS with verified server identity and auth. An
   unauthenticated MCP server on `0.0.0.0` is an open tool-execution endpoint.
+  **Pick the transport by who must reach the server.** One local client →
+  stdio: the client launches the server as a subprocess, no port opens, and
+  nothing else can connect. The spec tells stdio servers to take credentials
+  from the environment rather than its OAuth flow, so the vault rule above
+  still applies. stdio has no authentication of its own, so it never serves
+  several users or hosts; shared or remote servers use Streamable HTTP with
+  auth and TLS, and loopback binding is the rule for local HTTP only. OWASP:
+  AISVS 10.3.2; OWASP MCP Security cheat sheet.
 
 ## 7. Multi-agent: patterns and their real costs
 
@@ -344,7 +386,14 @@ delegation trees nobody can trace; agents sharing no state but expected to
 agree; multi-agent where one good prompt + workflow scores the same on the
 eval. Subagent results are inputs to the orchestrator — validate them like
 tool output; budgets (§3) apply **per-agent and per-tree** (a parent's
-budget bounds the sum of its children).
+budget bounds the sum of its children). Budgets cap the total; they do not
+notice a hijacked agent working inside them. Give each agent and each tool a
+**circuit breaker that trips on anomaly, not only on errors** — a call rate far
+above that agent's baseline, a first call to a tool or host it has never used,
+a burst of denials. An open breaker pauses that agent and returns a structured
+"unavailable" to its caller, so one agent's failure does not cascade through
+its peers; the containment ladder is sota-sandboxing rules/05 R4.5. OWASP:
+OWASP AI Agent Security cheat sheet; OWASP RAG Security cheat sheet.
 
 ## Audit checklist
 
@@ -367,6 +416,30 @@ budget bounds the sum of its children).
 - [ ] Memory entries carry **provenance**, agent inferences are not admitted as
       observations, and a user correction outranks the agent's earlier
       assertion on conflict (§5).
+- [ ] Persisted memory and agent state sealed with a keyed MAC or signature,
+      verified on load (fail → drop + alert); secrets/PII redacted before the
+      write; store encrypted, versioned for rollback, reviewed or reset on a
+      schedule; writes checked for contradiction with stored facts (§5).
+      **High**. Probe — memory writes with no seal on the line:
+      `grep -rnE '(memory|memories|agent_state)[A-Za-z_]*\.(write|save|put|add|store)\(' . | grep -viE 'hmac|sign|seal'`
+- [ ] Scheduled, event-driven and self-initiated agent runs pass a trigger
+      allowlist and the same risk tiers as user requests, trigger recorded per
+      action, novel trigger patterns held for review (§4). **High**. Probe —
+      agent entry points on a scheduler or bus with no trigger check:
+      `grep -rniE '(cron|schedule|add_job|on_event|subscribe).{0,60}agent' . | grep -viE 'trigger_polic|allowed_trigger|authori[sz]e_trigger'`
+- [ ] Coding agents: failing checks recorded before the run and the result
+      judged against that baseline; agent edits to tests, check/CI config or
+      thresholds routed to human review (§3a; detector in sota-testing
+      rules/07 §7.10). **High**.
+- [ ] MCP transport matches reach: stdio only for a single local client,
+      never to share a server; shared/remote servers on authenticated HTTP
+      with TLS (§6). OAuth tokens held by local clients in the OS credential
+      store, a `0600` file only as a documented fallback. **High** for a
+      plaintext token file. Probe — tokens serialized to disk:
+      `grep -rnE '(refresh_token|access_token)' . | grep -E 'json\.dump|write_text|writeFile|\.write\('`
+- [ ] Per-agent and per-tool circuit breakers trip on anomaly (rate spike,
+      first-seen tool or host, denial burst), pause the agent and return a
+      structured "unavailable" to its caller (§7). **Medium**.
 - [ ] Mutating tools idempotent or idempotency-keyed; no non-idempotent
       side effects inside a retrying loop.
 - [ ] Harness enforces ALL budget dimensions (iterations, tokens, cost,

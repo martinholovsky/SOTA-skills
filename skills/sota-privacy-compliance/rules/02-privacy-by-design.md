@@ -34,6 +34,18 @@ profile" — where the product uses only email. Six liabilities, zero features.
 - **Payloads in transit:** internal services pass user IDs, not embedded user
   objects; each consumer fetches only the fields it is purpose-scoped to read.
 
+**Fingerprinting is a tracker, and anti-bot is not an exemption.** Browser and
+device fingerprints (canvas or WebGL renderer hashes, installed-font lists,
+audio-context probes, mouse and scroll telemetry) identify a person as well as
+a cookie does, so they go in the tracker inventory (rules/03 §2) and the privacy
+notice like any other identifier (rules/01 §2). Prefer passive network-level
+signals (TLS and HTTP/2 fingerprints) and reach for invasive browser signals
+only on sensitive flows such as signup, login and checkout, behind consent
+where ePrivacy-style law requires it. Store a keyed hash or truncated form,
+never the raw signal set; keep raw signals for hours to days, then keep only
+aggregates; and skip re-fingerprinting an authenticated session doing
+low-risk things. OWASP: Bot Management and Anti-Automation cheat sheet.
+
 **API design corollary:** responses return the minimal projection per consumer.
 A `GET /users/{id}` that returns 40 fields to every internal caller makes every
 caller part of the PII surface. Use field masks / per-audience DTOs / GraphQL with
@@ -198,6 +210,46 @@ That last one is an architectural rule: **no `SELECT *` across trust boundaries.
 Exports, feeds, webhooks, and API responses enumerate fields explicitly so that
 adding a column never silently widens disclosure.
 
+## 5b. Network-level privacy — remote content leaks the IP address
+
+**Rule:** Content fetched from a host the user did not choose (avatars and
+signature images hot-linked from another domain, images in feeds or comments,
+embeds, images inside HTML email) tells that host the reader's IP address,
+user agent and the moment they looked. Anyone who can post a link can run that
+host, so it is a de-anonymisation and read-receipt channel as well as a
+tracking one. Give users a setting that stops third-party content from loading.
+For rendered HTML email, block remote content by default. When it has to be
+shown, fetch it through your own proxy so the origin sees the proxy, not the
+reader, and strip cookies and referrer on that request.
+
+```text
+GOOD: webmail rewrites <img src="https://x.example/p.gif"> to a "load images"
+placeholder; on click it loads via /img-proxy?u=... with no cookies.
+BAD: forum lets posts embed <img src> from any domain; the poster watches
+their server log for the IP of the moderator who opened the report.
+```
+
+OWASP: User Privacy Protection cheat sheet.
+
+## 5c. Coercion-resistant design for at-risk users
+
+**Rule:** If the product serves people who may be forced to unlock it (activists,
+journalists, people living with an abuser, users crossing hostile borders),
+consider an optional duress credential. Entering it in place of the real one
+hides a pre-chosen set of sensitive data, wipes it, or opens a decoy account,
+depending on the product. It only protects anyone if the adversary cannot tell
+it apart from a normal session:
+- ordinary, non-sensitive features keep working inside it (mail still sends,
+  the feed still loads);
+- either a further duress mode can be created from inside it, so an attempt
+  to create one does not reveal that you are already in one, or duress modes
+  are set up only out of band so no in-app control hints that one exists;
+- nothing observable differs: no distinct login timing, error text, session
+  flag in client-visible state, or entry in a user-visible activity log.
+Treat the duress path as a security feature with its own threat model
+(sota-threat-modeling); a discoverable panic mode can put the user at greater
+risk than none. OWASP: User Privacy Protection cheat sheet.
+
 ## 6. LINDDUN threats → build patterns (quick map)
 
 When a LINDDUN session (sota-threat-modeling) raises a threat, these are the
@@ -236,3 +288,6 @@ order (highest risk-reduction per effort first):
 - [ ] Public/partner-facing aggregates use DP or k ≥ threshold with documented rationale
 - [ ] All privacy-affecting settings default private/off; check the three most recent features
 - [ ] Session replay / heatmap tooling absent or mask-allowlisted and consent-gated
+- [ ] Browser/device fingerprinting (canvas, WebGL, fonts, behavioural telemetry) is listed in the tracker inventory and privacy notice, used only on sensitive flows, consent-gated where required, stored hashed/truncated with hours-to-days raw retention (§1) — MEDIUM. Probe: `grep -rnE "toDataURL\(|UNMASKED_RENDERER_WEBGL|WEBGL_debug_renderer_info|@fingerprintjs|FingerprintJS" .`
+- [ ] Third-party remote content (hot-linked avatars, feed images, embeds) can be blocked by the user; rendered HTML email blocks remote content by default or loads it through a proxy (§5b) — MEDIUM. Probe for HTML email rendered straight into the page: `grep -rnE "(innerHTML|dangerouslySetInnerHTML|v-html)[^;]*(mail|message)[A-Za-z_.]*(html|body)" .` — each hit must show the remote-content rewrite or proxy
+- [ ] Where the user base includes people at risk of coercion, a duress credential or panic mode was considered; if built, it is indistinguishable from normal use (§5c) — judgment, no probe

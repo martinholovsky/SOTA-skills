@@ -101,7 +101,7 @@ COMMIT;
 - `updated_at` maintained by application code is unreliable (bulk fixes skip
   it, clock skew). Prefer DB-generated change tracking or CDC (rules/03)
   for correctness-critical syncs; periodically reconcile row counts against
-  the source either way.
+  the source either way — plus control totals (rules/04, expectation battery).
 - **Late data policy is explicit per table:** how late is accepted (e.g.
   reprocess partitions up to 7 days back via merge), and what happens after
   (corrections batch, or documented "closed" partitions).

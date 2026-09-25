@@ -86,7 +86,8 @@ enforcement, not banner theater:
 - Server-side tagging doesn't exempt you — consent state must gate server-side
   forwarding too.
 - Maintain a tracker inventory (it's part of rules/01 §4's processor map): each
-  tag → category, vendor, consent purpose, data sent.
+  tag → category, vendor, consent purpose, data sent. Anti-bot and anti-fraud
+  fingerprinting scripts belong in it too (rules/02 §1).
 - **Honor Global Privacy Control:** CCPA/CPRA regulations require treating GPC as
   a valid opt-out of sale/share; wire the header/JS signal into the same consent
   state machine as the banner. GPC (`Sec-GPC: 1`) is one of several opt-out

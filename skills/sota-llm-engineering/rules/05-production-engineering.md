@@ -148,6 +148,14 @@ refusal/truncation rates, online eval scores & user-feedback rates
 cache hit-rate collapse, eval-score drops, spike in `stop_reason=max_tokens`
 (silent truncation in prod).
 
+**Hallucination and harmful-content rates are time series, not only a CI
+result.** An automated evaluator scores a sample of live traffic per route for
+ungrounded claims (the rules/03 §7 groundedness check) and for disallowed
+content; each rate is a metric with a written threshold. Alert on a single
+breach **and** on sustained drift — a rate creeping up for a week never trips
+a per-sample alert — and treat either as blocking the next release, like the
+safety-tagged CI cases (rules/01 §5). OWASP: AISVS 11.1.5, 12.3.3.
+
 **Retrieval is an access to data — log it as one.** Each retrieval span in
 the same trace records the requester identity, the (redacted) query, the
 knowledge source queried, and the returned chunk IDs with the ACL metadata
@@ -184,6 +192,16 @@ overloaded, refusing, or over budget:
 - **Load shedding:** under quota pressure, shed by priority (background
   jobs → batch queue; interactive traffic first) rather than uniformly
   failing.
+- **A kill switch that stops inference, separate from revoking tokens.**
+  A control-plane flag the gateway (§1) checks before every model call and
+  before delivering any output halts generation for a route or a whole
+  feature at once — token revocation stops an agent acting (sota-sandboxing
+  rules/05 R4.3), not a model still answering users. Its partner is a
+  **warm** non-LLM path (rules, templates, search) deployed and exercised in
+  advance, so flipping the switch moves traffic rather than dropping it; a
+  fallback first built during the incident is not a fallback. Test the flip
+  on a schedule. OWASP: AISVS 9.6.1; OWASP AI-Powered Advertising Systems
+  Security cheat sheet.
 
 ## 7. Versioning & rollout
 
@@ -213,6 +231,22 @@ them follows the same pipeline:
   ("CRITICAL: ALWAYS…") over-triggers; re-tune per provider migration guides
   and your evals (rules/02 §7). Caches are per-model: expect a cold-cache
   cost/latency blip at cutover.
+
+## 8. Generated media: provenance and likeness
+
+- **Mark what the model made.** Images, audio and video your feature generates
+  carry provenance: a C2PA manifest (Content Credentials) is a signed claim
+  bound to the asset, whose actions assertion can record the IPTC digital
+  source type `trainedAlgorithmicMedia`. Embedded metadata disappears on
+  re-encode, so add a soft binding as well — the C2PA spec defines it as a
+  fingerprint or invisible watermark used to find the manifest again for an
+  asset that lost it. Verified against the C2PA 2.2 specification.
+- **No real person without their documented consent.** Before generating
+  content that depicts or imitates the voice of an identifiable real person,
+  require a recorded likeness or voice-use authorisation (who, scope, expiry)
+  that the request path checks — a prompt filter is not that check (rules/02
+  §1). OWASP: AISVS 7.4.4; OWASP AI-Powered Advertising Systems Security
+  cheat sheet.
 
 ## Audit checklist
 
@@ -248,3 +282,14 @@ them follows the same pipeline:
 - [ ] Rollouts: eval gate → shadow/canary → expand; instant config rollback;
       no floating "latest" in production; deprecation calendar tracked with
       early successor evals; migration includes prompt re-tuning.
+- [ ] Hallucination and harmful-content rates tracked per route as time
+      series from an automated evaluator, each with a threshold, alerting on
+      breach and on sustained drift (§5). **Medium**.
+- [ ] Inference kill switch checked by the gateway before each call and each
+      delivery, separate from token revocation, with a warm non-LLM fallback
+      exercised on a schedule (§6). **High** on consequential routes.
+- [ ] Generated media carries a C2PA manifest plus a soft binding; real-person
+      likeness or voice generation gated on a recorded authorisation (§8).
+      **High** for unconsented likeness. Probe — media generation with no
+      provenance step on the line:
+      `grep -rnE 'images\.generate\(|generate_images\(|audio\.speech\.create\(' . | grep -viE 'c2pa|credential|watermark'`

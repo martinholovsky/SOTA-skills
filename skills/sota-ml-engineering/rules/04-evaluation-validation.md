@@ -34,6 +34,12 @@ rubric (data / model / infra / monitoring tests) is the backbone.
   per-slice floors** for high-stakes models.
 - Check calibration and error distribution, not just central tendency. Document
   known failure modes.
+- Where inputs are attacker-influenced, the suite includes a **robustness
+  slice**: adversarially perturbed versions of held-out inputs, with its own
+  floor, so the hardening required by `rules/07` §1 is measured. Where the
+  model sees personal data, a **proxy audit** checks on every refresh that the
+  model cannot be used to infer special-category attributes (`rules/07` §3).
+  OWASP: AISVS 11.1.4, 11.2.1.
 
 ## 4. Validation gates before promotion
 
@@ -45,6 +51,10 @@ rubric (data / model / infra / monitoring tests) is the backbone.
   - data/schema validation passed (`rules/02`);
   - the model is reproducible and registered with lineage (`rules/01`,`rules/03`);
   - a successful **shadow/canary** test where applicable (`rules/05`).
+- A **quantised, pruned or distilled** artifact is a new model. It passes the
+  same quality, safety and slice suite, run against the compressed binary
+  itself, before it deploys; results measured on the full-precision parent do
+  not carry over. OWASP: AISVS 3.2.2.
 - A model that can't pass the gate doesn't get promoted — no manual override
   without sign-off. Missing a validation gate is HIGH.
 
@@ -79,3 +89,8 @@ rubric (data / model / infra / monitoring tests) is the backbone.
       `grep -rniE 'def test_|pytest|golden|integration' --include='*.py' . | grep -iE 'model|pipeline|predict|feature' | head`
 - [ ] **Online experiment before full rollout — MEDIUM/HIGH** —
       `grep -rniE 'a/?b.?test|experiment|interleav|shadow|canary|holdout' . | head`
+- [ ] **Compressed artifact re-validated (§4) — HIGH** — files that quantise, prune or
+      distil: `grep -rnliE 'quantiz|quantis|prune|pruning|distil' --include='*.py' --include='*.yml' --include='*.yaml' .`
+      ; manual: does the gate run the eval suite on the compressed output, not the parent?
+- [ ] **Robustness slice where inputs are attacker-influenced (§3) — HIGH** — see the
+      robustness item in `rules/07`; manual: is there a per-slice floor for it?

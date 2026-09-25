@@ -200,7 +200,16 @@ GPAI providers: training-content summary, copyright policy, downstream
 documentation (systemic-risk tier adds evals and incident reporting).
 Transparency (Art. 50): disclose AI interaction (chatbots), machine-readable
 marking of synthetic content / deepfakes — applicability aligned with the 2026–27
-dates above.
+dates above. One way to meet the Art. 50(2) machine-readable marking duty is a
+C2PA manifest whose hard binding (a cryptographic hash over the asset bytes —
+C2PA 2.2 requires at least one in a standard manifest) is created when the
+output leaves the generator. Every resize, bitrate-ladder step or stitched
+rendition is a new byte stream, so it needs its own signed manifest that names
+the previous one as an ingredient. A soft binding (watermark or fingerprint
+lookup) only helps find a lost manifest; C2PA says it must not stand in for a
+hard binding, so it is not the marking on its own. Build detail:
+sota-llm-engineering rules/05 §8. OWASP: AI-Powered Advertising Systems
+Security cheat sheet.
 
 ## 6. DORA & NIS2 — sector awareness
 
@@ -271,6 +280,7 @@ deny[msg] {
 - [ ] HIPAA (if applicable): §164.312 safeguards mapped to controls; encryption + MFA universal (NPRM-proof); BAAs precede every PHI vendor flow
 - [ ] PCI: scope minimized (hosted fields/tokenization); no CVV at rest anywhere (grep + scanner); CDE segmented; payment-page script integrity controls live
 - [ ] AI Act: systems classified (prohibited/high-risk/transparency/GPAI); for high-risk candidates, logging + data-governance + documentation designed now against the post-omnibus dates
+- [ ] AI Act Art. 50 marking: generated media leaves the generator with a hard-bound, signed C2PA manifest; each rendition or transcode is re-signed with the prior manifest as ingredient; soft binding is used only for recovery (§5) — MEDIUM; judgment, no generic probe (see sota-llm-engineering rules/05 for the generation-call probe)
 - [ ] DORA/NIS2 (if in sector/supply chain): incident-reporting clocks wired into IR runbooks; third-party register current
 - [ ] Residency requirements per tenant/market recorded; region pinning enforced by policy-as-code; key residency where required
 - [ ] All dates/statuses in this file re-verified within the last 6 months against primary sources

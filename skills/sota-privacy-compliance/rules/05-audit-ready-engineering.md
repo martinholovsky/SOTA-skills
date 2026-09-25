@@ -167,7 +167,7 @@ as such.
 
 | Tier | Vendor touches | Gate |
 |---|---|---|
-| 1 | Special-category/regulated PII or prod infrastructure access | DPA + security review (SOC 2/ISO report review, pen-test summary, subprocessor list), residency check, contractual breach-notice clause, annual re-review |
+| 1 | Special-category/regulated PII or prod infrastructure access | DPA + security review (SOC 2/ISO report review, pen-test summary, subprocessor list), residency check, contractual breach-notice clause, contractual security terms (below), annual re-review |
 | 2 | Ordinary PII | DPA, questionnaire or attestation review, listed in processor map |
 | 3 | No personal data, no prod access | Procurement basics |
 
@@ -176,6 +176,24 @@ entry (CI check on dependency/egress allowlists) — this is how the rules/01 §
 processor map stays true. Your own subprocessor list (the one your customers see)
 is generated from the same registry; customer-facing change notifications
 (required by most DPAs) trigger from registry diffs.
+
+**Security terms, not only privacy terms.** A DPA covers personal data; it says
+little about whether the supplier ships secure software. For Tier-1 suppliers,
+and for anyone whose code runs inside your product, the agreement should also
+set: a vulnerability-disclosure channel and a remediation timeline per severity
+(an SLA you can measure), evidence of a secure development process (build,
+defect and incident management), and an SBOM for what they deliver so your own
+scanning covers it (control mapping and SBOM/CVD obligations:
+sota-security-compliance). Keep a standard supplier template so these terms are
+the starting point of negotiation, not an afterthought.
+Served-script vendors (analytics, tag managers, chat widgets, ad and
+fraud SDKs that your pages load from their servers) run as your origin in
+every visitor's browser. Their contract should additionally require evidence
+that they monitor and control changes to the code they serve, and it should
+put liability or a penalty on them for serving malicious code. Technical
+controls (SRI, change monitoring) live in sota-code-security rules/05 §8; the
+contract is what makes their failure their cost. OWASP: OWASP SAMM (Supplier
+Security stream); Third Party Javascript Management cheat sheet.
 
 **Continuous-compliance platforms** (the Vanta/Drata/Secureframe category) are
 useful evidence aggregators and check engines — but they attest to what their
@@ -223,6 +241,7 @@ processor list + DPAs (§5), breach register incl. non-reportable incidents
 - [ ] Backup restores tested on schedule with recorded results; IR exercised (rules/06)
 - [ ] Policies promise no more than mechanisms enforce (read policy, then find the mechanism — divergence is a finding)
 - [ ] Vendor registry tiered by data touched; Tier 1/2 vendors have DPAs + reviews; CI ties new integrations to registry entries; customer-facing subprocessor list generated from it
+- [ ] Tier-1 and served-script supplier agreements carry security terms: disclosure channel, per-severity remediation SLA, secure-development evidence, SBOM; served-script vendors also code-integrity monitoring and liability for malicious code (§5) — MEDIUM. Inventory probe for served scripts that need a registry entry and those terms: `grep -rnE "<script[^>]+src=[\"']?(https?:)?//" .`
 - [ ] Continuous-compliance tooling (if any) treated as evidence aggregator, not control owner; itself risk-assessed as Tier 1
 - [ ] Privacy artifacts (RoPA, DPIAs, consent/DSAR/deletion logs, breach register) generated from running systems, producible in minutes
 - [ ] Access-review pipeline is diff-based with archived runs; sample the latest run for actual revocations (zero revocations ever = rubber stamp)

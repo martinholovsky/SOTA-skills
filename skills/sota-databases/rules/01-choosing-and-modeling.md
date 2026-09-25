@@ -280,6 +280,24 @@ reserve for regulated enterprise tenants. Hybrid (RLS for the long tail,
 dedicated DB for whale tenants) is a legitimate end state; design IDs and
 migrations so a tenant can be extracted.
 
+The stronger models only isolate if the security plumbing is per tenant too:
+- **Schema-per-tenant:** a role per tenant with `USAGE` on its own schema
+  only (no PUBLIC `CREATE` on any schema — file 06), so a wrong schema name
+  fails with "permission denied" instead of returning another tenant's rows.
+  Pin the path to the tenant (`ALTER ROLE tenant_42 SET search_path =
+  tenant_42`) or set it per transaction with `SET LOCAL`; a session-level
+  `SET search_path` on a pooled connection hands the previous tenant's schema
+  to the next request (file 04). Unqualified names resolve through the path, so
+  a schema writable by someone else earlier in it can shadow tables and
+  functions. Never splice a tenant name into `search_path` unquoted — build it
+  as an identifier (`format('%I')` or the driver's identifier quoting).
+  Verified on PostgreSQL 17 (2026-09-25).
+- **Database-per-tenant:** separate credentials per tenant database, network
+  rules so each tenant's credentials reach only its database, admin access
+  granted per tenant rather than one superuser path to all of them, and
+  per-tenant backups (encrypted, restorable without touching another tenant).
+OWASP: Multi Tenant Security cheat sheet.
+
 ### Rule: Tenant isolation is tested, not assumed.
 Ship an automated test that sets tenant A's context and asserts zero rows
 from tenant B across every tenant-scoped table. Missing isolation tests on a
@@ -349,6 +367,11 @@ multi-tenant system: HIGH.
 - [ ] Multi-tenant: RLS enabled AND forced on every tenant-scoped table,
       SET LOCAL tenant context, non-BYPASSRLS app role, tenant_id-leading
       indexes, automated cross-tenant isolation test.
+- [ ] HIGH: schema-per-tenant uses a role per tenant with USAGE on its own
+      schema only and a pinned or transaction-local `search_path`;
+      DB-per-tenant has per-tenant credentials, network rules, admin path and
+      backups. Probe for session-level path switching from app code:
+      `grep -rniE "[\"']SET[[:space:]]+(SESSION[[:space:]]+)?search_path" .`
 - [ ] Types: timestamptz everywhere, no float money, FK columns indexed,
       ON DELETE explicit, NOT NULL default, citext for case-insensitive
       unique text.

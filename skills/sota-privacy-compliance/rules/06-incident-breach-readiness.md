@@ -99,6 +99,15 @@ copy #1). Resolve the tension deliberately:
   stable internal IDs, never emails; redaction at the edge per sota-observability.
   Resolution ID→identity happens at investigation time, access-controlled and
   itself logged.
+- **Logging is a consumer of consent too.** A log line or telemetry event that
+  carries personal data is collection, so it checks the same state every
+  other consumer checks (rules/03 §1): withdrawn or expired consent, a
+  do-not-track or GPC opt-out, and data that may not lawfully be collected in
+  the user's jurisdiction. Otherwise the log pipeline becomes the side channel
+  that keeps collecting after the user said stop. Security-necessary events
+  (authentication, access to data) can rest on another lawful basis; record
+  that basis per event class rather than exempting logging wholesale.
+  OWASP: Logging cheat sheet.
 - **Don't log yourself into a breach:** secrets, session tokens, auth headers,
   and request bodies in logs both violate minimization and turn log access into
   account takeover. Treat log stores at the classification tier of the most
@@ -194,6 +203,7 @@ incident. Reconcile explicitly in the IR runbook:
 - [ ] Processor-role obligations mapped: every customer DPA's breach-notice clause inventoried with its clock
 - [ ] Data-access audit logging enabled on all special-category/financial/regulated stores; write-once, clock-synced, retention ≥ regime minimum and cataloged as a justified exception
 - [ ] Security telemetry pseudonymized; no secrets/tokens/bodies in logs (sample); log stores classified and access-controlled accordingly
+- [ ] Analytics/telemetry emitters that carry personal data consult current consent, opt-out (incl. GPC) and jurisdiction state before emitting; security-log event classes have a recorded lawful basis (§3) — MEDIUM. Probe for direct emitter calls to review for a consent guard: `grep -rnE "(analytics|telemetry|posthog|mixpanel|segment)\.(identify|track|capture)\(" .`
 - [ ] Affected-subject enumeration capability demonstrated (query from access logs + store snapshot), not asserted
 - [ ] Encryption/tokenization state per store recorded so "data was protected" claims are provable in a notification decision
 - [ ] Communication templates (regulator, individual, customer, public) exist, counsel-reviewed, version-controlled; decision-rights matrix current
