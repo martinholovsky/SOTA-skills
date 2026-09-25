@@ -33,6 +33,18 @@ Rules:
   the field name, not the value.
 - Timestamps in UTC ISO-8601 or epoch nanos, emitted by the logger, never
   hand-formatted.
+- A timestamp is only as good as the clock behind it. Every host that emits
+  logs, and every collector, syncs time (chrony, systemd-timesyncd, or the
+  cloud provider's time service), and drift is **alerted on**, not assumed —
+  with node_exporter the `timex` collector exports `node_timex_sync_status`
+  (1 = synchronised) and `node_timex_offset_seconds`. Without it, a timeline
+  rebuilt across hosts during an incident puts cause after effect. Where sync
+  cannot be guaranteed (browsers, mobile and edge devices, customer
+  appliances), keep the source's claimed time *and* the time the pipeline
+  received it — the OTel log data model has `Timestamp` and `ObservedTimestamp`
+  for exactly this — or record the measured offset, and never order security
+  events on the untrusted clock alone. OWASP: ASVS 5.0 V16.2.2, Logging cheat
+  sheet, Proactive Controls 2024 C9.
 - Multi-line payloads (stack traces) belong in a single JSON field
   (`exception.stacktrace`), never as raw multi-line output that shreds into
   N orphan lines in the aggregator.
@@ -238,7 +250,42 @@ logger.info("batch_completed", batch_id=b, ok=ok, failed=failed, duration_ms=ms)
   stream deliberately, not platform-default.
 - Review the top-10 log producers (by volume and by cost) monthly; the top
   emitter is usually a forgotten DEBUG line or a health check being logged.
-  Don't log load-balancer health-check requests at INFO at all.
+  Don't log load-balancer health-check requests at INFO at all — in the
+  **operational** stream. The security/audit stream is different: see §7.
+
+### 6a. The logging path under attack and under failure
+
+The logger is an input-driven resource like any other: if a request can cause
+a log line, an attacker can cause a million.
+
+- **Bound attacker-triggerable volume.** Rate-limit per source and per event
+  key (failed logins per client, validation errors per route) — emit a
+  summary (`suppressed=N` over the window) instead of every repeat. Give the
+  buffer, queue and local disk hard caps, and shed in priority order: DEBUG
+  first, operational INFO next, security/audit events last. Shedding is
+  itself a signal: count dropped records per level as a metric and alert on
+  any drop in the security stream.
+- **Unbounded queues move the outage, they do not remove it.** Python's
+  `queue.Queue()` with the default `maxsize=0` is infinite, so a flood grows
+  memory until the process dies; a bounded queue behind `QueueHandler` raises
+  `queue.Full` on `put_nowait`, which the handler routes to `handleError` —
+  the record is lost with a traceback on stderr and the app carries on
+  (measured, CPython 3.14). Choose that trade deliberately, and count it.
+- **No interleaved records.** Many threads or processes writing one sink must
+  go through a single writer (one queue plus one listener thread, or the
+  collector reading per-process stdout), not N handles on one file. POSIX
+  only promises that pipe writes of at most `PIPE_BUF` bytes are not
+  interleaved — a stack trace is larger than that, and a regular file shared
+  between processes has no such promise.
+- **Test the failure modes, and write down the answer.** Cover: sink
+  unreachable, disk full, write permission removed, and the logger itself
+  throwing (a serializer raising on an odd object). For each, the test
+  asserts that the request still succeeds (logging never crashes the app) and
+  that a security event is either delivered, buffered, or its loss is counted
+  and alerted — never silently gone. Where a security event cannot be
+  recorded at all, decide explicitly whether that operation fails closed.
+
+OWASP: Logging cheat sheet, Proactive Controls 2024 C9.
 
 ## 7. What NOT to log
 
@@ -247,7 +294,15 @@ logger.info("batch_completed", batch_id=b, ok=ok, failed=failed, duration_ms=ms)
   what spans and profilers are for.
 - Full request/response bodies by default. If a payload is needed for
   debugging, log it size-capped, sampled, redacted, behind a flag.
-- Health-check and readiness probe traffic at INFO.
+- Health-check and readiness probe traffic at INFO — operational stream only.
+- **The exception: do not filter known actors out of the security stream.**
+  Internal systems, uptime monitors, crawlers, scanners and pen testers are
+  exactly who an attacker pretends to be, and a filter keyed on a User-Agent
+  (`kube-probe/…`, which the kubelet sets unless the probe defines its own
+  header) or a source IP is a free pass for anyone who copies it. Keep their
+  security and audit events and tag them instead (`actor.class=monitor`,
+  `actor.class=pentest` with the engagement ID), so dashboards can exclude
+  them and investigations can still see them. OWASP: Logging cheat sheet.
 - Duplicate error reports up the call stack (§2).
 - Anything you wouldn't show a contractor with log access: logs are your
   widest-read datastore with your weakest access control.
@@ -275,3 +330,20 @@ logger.info("batch_completed", batch_id=b, ok=ok, failed=failed, duration_ms=ms)
       stream; health-check traffic not logged.
 - [ ] Exception serialization scrubbed (no connection strings/tokens in
       messages or stack locals).
+- [ ] (**Medium**) Every log-emitting host and collector syncs time and drift
+      is alerted (`node_timex_sync_status == 0` or an offset threshold);
+      clients and edge devices carry a received/observed timestamp beside
+      their own (§1). Probe for sync being switched off:
+      `grep -rnE 'systemctl[[:space:]]+(disable|mask|stop)[[:space:]]+(--now[[:space:]]+)?(chronyd?|systemd-timesyncd|ntpd?)([^[:alnum:]_-]|$)|timedatectl[[:space:]]+set-ntp[[:space:]]+(false|no|0|off)' .`
+      — every hit is a finding unless the host takes time another way.
+- [ ] (**High**) Attacker-triggerable log volume is rate-limited per
+      source/key, queues and disk are capped, shedding drops DEBUG before
+      security events and is counted; sink-down, disk-full, no-permission and
+      logger-throws cases are tested (§6a). Probe for unbounded log queues
+      (review which ones feed a `QueueHandler`):
+      `grep -rnE 'Queue\([[:space:]]*((maxsize[[:space:]]*=[[:space:]]*)?(-[0-9]+|0))?[[:space:]]*\)' --include='*.py' .`
+- [ ] (**High**) No filter drops security/audit events by User-Agent, source
+      IP or "known scanner/monitor" identity; such actors are tagged instead
+      (§7). Probe in pipeline configs and logging code — a hit on the
+      operational stream is fine, a hit on the security stream is the finding:
+      `grep -rniE '(exclude|drop|filter|skip|ignore).*(user.?agent|kube-probe|healthchecker|pingdom|uptimerobot|scanner|pentest)|(user.?agent|kube-probe|healthchecker|pingdom|uptimerobot|scanner|pentest).*(exclude|drop|skip|ignore)' .`

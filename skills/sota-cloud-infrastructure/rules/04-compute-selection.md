@@ -74,10 +74,20 @@ resource "aws_sqs_queue" "orders" {
 # BAD: no redrive_policy — poison messages retry until expiry, then vanish
 ```
 - **Cold starts:** keep packages small, init outside the handler reused across
-  invocations, avoid VPC-attach unless needed (it's cheap now but still adds
-  config/ENI considerations), use provisioned concurrency / min instances only for
+  invocations, avoid VPC-attach unless needed for reach *or* for egress control
+  (it's cheap now but still adds config/ENI considerations), use provisioned
+  concurrency / min instances only for
   measured latency-critical paths (it converts serverless pricing into
   always-on pricing — decide with numbers).
+- **Egress is the other VPC-attach criterion.** A Lambda function with no VPC
+  config runs in a Lambda-managed VPC *with* internet access, and nothing in your
+  network can filter it. A function that handles sensitive data or has no need
+  for the internet gets VPC-attached into private subnets with a security group
+  whose outbound rules — plus the NAT/firewall path of rules/03 §3 — allow only
+  what it calls; one with no egress need reaches cloud services via private
+  endpoints and has no NAT route. Other platforms have the same switch (e.g.
+  Cloud Run `--vpc-egress=all-traffic`); check each one's default.
+  (OWASP: Serverless FaaS Security cheat sheet)
 - **Concurrency is a real limit and a real weapon.** Account/regional concurrency is
   shared: one runaway function can starve the rest — set per-function reserved
   concurrency caps for anything triggered by unbounded sources. Also use concurrency
@@ -185,6 +195,11 @@ spec:
       idempotent (check for idempotency keys on at-least-once triggers).
 - [ ] Function timeouts/memory tuned vs p99; reserved concurrency caps on
       unbounded-trigger functions; provisioned concurrency justified by latency data.
+- [ ] **High** — functions handling sensitive data are VPC-attached with restricted
+      egress (§2). Probe (lists `.tf` files declaring a Lambda with no `vpc_config`):
+      `grep -rl 'resource "aws_lambda_function"' --include='*.tf' . | xargs -r grep -L 'vpc_config'`
+      — file-level, so a hit-free file can still hold an un-attached second
+      function; confirm per resource.
 - [ ] Multi-step workflows in a workflow engine (or durable functions), not
       sleep/retry loops in handler code.
 - [ ] K8s version within provider standard support, ≤ 1 behind default; upgrade

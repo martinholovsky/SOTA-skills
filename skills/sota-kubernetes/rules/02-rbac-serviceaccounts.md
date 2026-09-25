@@ -150,6 +150,8 @@ spec:
   TokenRequest API (`kubectl create token sa --audience=... --duration=...`) and refresh it.
 - **Audience-scoped tokens**: a token minted for audience `vault` is rejected by the API
   server and by any verifier expecting a different audience — limits replay if leaked.
+- **ServiceAccount tokens are for workloads only** — never a person's login credential;
+  human access goes through the IdP with MFA (`rules/01` §2 Authentication).
 - **One ServiceAccount per workload**, never the namespace `default` SA for real
   workloads, never shared across apps. The `default` SA should have an empty token mount
   and no bindings.

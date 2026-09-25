@@ -33,7 +33,7 @@ severity-rated findings. The rules files are the single source of truth for both
 Boundary discipline — this skill does **not** re-teach what siblings own:
 - **App-level authn ceremony** (password storage/argon2id, session cookie flags,
   WebAuthn ceremony, JWT *signature* validation mechanics at one RP): that is
-  **sota-code-security** rules/02. This skill owns the protocol and the IdP side.
+  **sota-code-security** rules/02 (sessions and JWT: rules/17). This skill owns the protocol and the IdP side.
 - **App-level object/function authz** (IDOR/BOLA in one service's handlers): that is
   **sota-code-security** rules/03. This skill owns the authorization *model* and the
   *policy engine* that the app calls.

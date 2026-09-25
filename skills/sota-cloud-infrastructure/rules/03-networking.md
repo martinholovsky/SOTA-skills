@@ -114,6 +114,17 @@ resource "aws_security_group_rule" "db_in" {
   released cloud resources (deleted buckets, old LB names, deprovisioned PaaS apps)
   enable subdomain takeover. Make DNS records lifecycle-coupled to the resources in
   IaC; scan zones for danglers regularly.
+- **Decommission in DNS-first order.** Releasing the resource while a record still
+  names it is the takeover window, so the sequence is: (1) repoint or park the name
+  on a host you control (redirect or maintenance page) if it must keep answering;
+  (2) delete every record that targets the service — CNAME, A/AAAA, alias, MX, NS
+  delegations; (3) wait at least the old TTL; (4) only then delete the bucket, LB,
+  app or zone; (5) confirm the name no longer resolves to it, re-run the takeover
+  scan, update the DNS inventory. Keep ownership-verification TXT records that bind
+  the name to *your* tenant (e.g. App Service `asuid.<name>`) — they are what stops
+  another tenant validating it. A dangling record found later is fixed twice: the
+  record, and the teardown procedure that left it. Pipeline gate: sota-devsecops
+  rules/06 §6.7. (OWASP: Subdomain Takeover Prevention cheat sheet)
 - **DNSSEC stance:** sign zones where the registrar+provider support is solid and
   you have rotation automation (managed DNSSEC on Route 53/Cloud DNS/Azure DNS);
   skip hand-rolled key management. Always enable it for domains used as identity
@@ -213,6 +224,11 @@ resource "aws_security_group_rule" "db_in" {
 - [ ] Registrar: corporate account, MFA, transfer locks, auto-renew, team contacts.
 - [ ] Split-horizon: no internal records in public zones; zones scanned for dangling
       records (sample-check CNAME targets exist and are yours).
+- [ ] **Medium** — DNS records coupled to resource lifecycle (§6): a record whose
+      target is a hard-coded provider hostname outlives the resource on teardown.
+      Probe: `grep -rn -E 'records *= *\[ *"[^"]*\.(cloudfront\.net|azurewebsites\.net|herokuapp\.com|elasticbeanstalk\.com|amazonaws\.com|azureedge\.net|trafficmanager\.net|github\.io)"' --include='*.tf' .`
+      — each hit should reference the resource attribute instead; the decommission
+      runbook deletes records before the resource and waits out the TTL.
 - [ ] CAA records present; DNSSEC stance decided and recorded.
 - [ ] All public certs auto-issued/renewed (ACM/ACME/managed); expiry alerts as
       backstop; nothing renewed by hand or living past current CA/B lifetime caps.

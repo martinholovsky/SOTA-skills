@@ -201,6 +201,18 @@ del dek  # drop plaintext DEK immediately; zeroize where the runtime allows
   laptop `.env`; that file is outside every audit log and backup policy. If devs need prod-like
   data access, that's a gated, logged, temporary credential from the secret store
   (`vault login` + dynamic creds, `aws-vault exec`), not a static copy.
+- **Git-ignored is not assistant-invisible.** An AI coding assistant with workspace access
+  reads the working tree, not the index: a `.env` or key file that `.gitignore` keeps out of
+  commits is still in its reach, and whatever it reads can be sent to the model provider and
+  kept in a session transcript (rules/04 §7). Hold even dev credentials outside the tree — a
+  vault/keychain, or injected at launch (`op run`, `aws-vault exec`) — and treat the tool's
+  exclusion list as a filter, not a boundary: Claude Code's documented `Read(./.env)` deny
+  covers its file tools and the shell reads it recognises (`cat`, `head`), but not a script
+  that opens the file itself; only its OS sandbox blocks every process. While an assistant can
+  see your editor or terminal, do not open `.env`/key files or paste a credential into the
+  shell — the open file and terminal output are context too. Audit: an ignored secret file in
+  the tree of a repo where assistants are used = **Medium** if it holds shared or prod
+  credentials, **Low** for dev-only test values. OWASP: Secure Coding with AI cheat sheet.
 - **Production:** the platform injects env/files from the secret manager (rules/02 §6);
   a `.env` file on a prod host or COPY'd into an image (grep Dockerfiles for `COPY .env`,
   and check `.dockerignore` excludes `.env*`) is a High finding.
@@ -262,3 +274,6 @@ token; rules/01 §4) and treat any residual registry token as a ≤90d rotating 
       dev-only and non-overriding; `.dockerignore` excludes `.env*`; no prod values in local
       env files; rc files (`.npmrc`, `.pypirc`, `.netrc`) use env interpolation, never literal
       tokens; registry publishing uses trusted publishing (OIDC), not stored long-lived tokens.
+- [ ] **No secret files inside the working tree where an AI assistant can read them** (§8) —
+      Medium for shared/prod values, Low for dev-only. List the ignored ones the index hides:
+      `git ls-files --others --ignored --exclude-standard | grep -E '(^|/)(\.env(rc|\.[^/]+)?|[^/]*\.(pem|key|p12|pfx))$' | grep -v -E '(^|/)\.env\.(example|sample|template)$'`

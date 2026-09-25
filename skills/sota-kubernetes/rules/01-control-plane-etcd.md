@@ -54,6 +54,14 @@ DoS APF exists to prevent.
 `sota-identity-access` territory — wire it there). Never distribute the cluster-admin
 kubeconfig / client cert as the day-to-day human credential; client certs cannot be
 revoked short of CA rotation. Service-to-API auth uses ServiceAccount tokens (`rules/02`).
+**Every human session against the API is privileged access**, whatever role it maps to, so it goes through the IdP (OIDC, the
+managed provider's IAM integration, or an authenticating proxy using impersonation) with
+**phishing-resistant MFA enforced at the IdP**, and the kubeconfig carries an `exec`
+credential plugin, not a pasted bearer. **Never hand a person a ServiceAccount token as a
+login**: Kubernetes defines a ServiceAccount as a non-human identity for workloads and
+automation; a token minted for "alice-admin" has no MFA, no IdP offboarding, and audit
+logs name the SA, not the person. A kubeconfig `user.token`/`tokenFile` entry held by a
+human is the finding. OWASP: Kubernetes Security cheat sheet.
 
 ```yaml
 # BAD — kube-apiserver manifest fragments that are Critical/High findings
@@ -216,6 +224,7 @@ machine:
 
 - [ ] API server: `--anonymous-auth=false`, `--authorization-mode` includes RBAC and not `AlwaysAllow`, `NodeRestriction` enabled, profiling off, audit configured? (`grep -E 'anonymous-auth|authorization-mode|NodeRestriction|profiling' /etc/kubernetes/manifests/kube-apiserver.yaml`; managed → check provider posture)
 - [ ] API Priority & Fairness left enabled (no `--enable-priority-and-fairness=false`), high-value controllers on a dedicated `PriorityLevelConfiguration`, `apiserver_flowcontrol_rejected_requests_total` alerted?
+- [ ] Human API access via IdP (OIDC / provider IAM / impersonating proxy) with phishing-resistant MFA, and no person logging in with a static bearer or ServiceAccount token? **High** if an SA token is a human's login. (`grep -rnE '^ +token(File)?: ' ~/.kube/ <distributed-kubeconfigs>` — each hit is a static bearer, expect `exec:` instead; `grep -rnE 'kubectl create token|kubernetes\.io/service-account-token' <runbooks> <onboarding> <manifests>` — each hit: who receives that token, a workload or a person?)
 - [ ] Kubernetes Dashboard: not deployed unless required; if deployed, NOT exposed publicly (no LoadBalancer/Ingress to it), reached only via `kubectl proxy`/authenticating proxy, and its ServiceAccount is least-privilege (never `cluster-admin`) — a privileged, exposed Dashboard is a one-click takeover (historic Tesla cryptojacking). Talos does not ship it; keep it that way.
 - [ ] Kubelet: anonymous-auth off, authz `Webhook`, `read-only-port=0`? (`curl -sk https://NODE:10250/pods` should 401; `curl http://NODE:10255/pods` should refuse)
 - [ ] etcd encrypted at rest with KMS v2, `identity` not first, all existing Secrets rewritten? (`kubectl get secret -A -o json | head` against an etcd dump; check `EncryptionConfiguration`)

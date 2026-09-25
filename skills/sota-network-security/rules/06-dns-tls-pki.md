@@ -66,8 +66,40 @@ classical for now.) See sota-code-security rules/04 §1.
 - **CAA records on every public zone** restricting issuance to your CA(s) — limits who can mint a
   cert for your domains.
 - Registrar in a corporate account with MFA + transfer/registry lock for crown-jewel domains.
-- **Dangling records** (CNAME/A pointing at deprovisioned resources) = subdomain-takeover vector;
-  lifecycle-couple DNS to resources in IaC and scan zones for danglers.
+- **Dangling records** (pointing at deprovisioned resources) = subdomain-takeover vector;
+  lifecycle-couple DNS to resources in IaC and scan zones for danglers. Not only CNAME/A:
+  - **NS** delegating a subdomain to a provider zone that was deleted — whoever re-creates that
+    zone owns every name beneath it.
+  - **MX** to a retired mail service — the claimant receives mail for the name, including a CA's
+    domain-validation mail: CA/B Baseline Requirements method 3.2.2.4.4 mails `admin@`,
+    `postmaster@` etc. at the name *or any parent it prunes to*, and CAs may rely on it until
+    2028-03-15 (BR 2.3.0). A stale MX can mint a publicly trusted cert.
+  - **SPF** `include:`/`ip4:`/`a:` terms covering a released IP or a reclaimable host let the
+    claimant send SPF-passing mail as you (R12) — prune them in the same change.
+  - **Decommission order:** repoint or delete the record, wait out its TTL, *then* delete the
+    resource; the reverse order opens the takeover window. Remove the name from OAuth redirect
+    allowlists, CSP and CORS lists, and revoke (or let expire) its certificates.
+  - **Continuous detection:** alert on every new CNAME/NS and on any target that answers
+    NXDOMAIN, `404` or a provider default page; run a takeover scanner on a schedule against a
+    maintained catalogue of claimable services (e.g. the `can-i-take-over-xyz` list); monitor
+    Certificate Transparency for issuance you did not request.
+
+**R4.1 — No wildcard records unless a service needs one, and then behind a hostname allowlist.**
+`*.example.com` answers for every name, including ones nobody inventoried, so it hides danglers
+and widens what a claimed target can serve. If a wildcard is unavoidable, scope it to the smallest
+subtree (`*.preview.example.com`), and point it at a proxy or load balancer that serves only an
+explicit list of known hostnames and returns an error (not a default site) for everything else.
+
+**R4.2 — Recognise and respond to a takeover.** Indicators: an owned hostname serving content you
+did not deploy (parking page, another app); a CT-logged certificate for your name from an issuer or
+account you do not use; the name resolving outside your known address ranges in proxy/WAF logs;
+DMARC aggregate reports (RUA, R12) showing mail from the name that you never sent. Response:
+(1) delete the record or repoint it at something you control — the fastest cut; (2) search CT for
+every certificate issued for the name during the exposure window and revoke them; (3) assess
+impact — cookies scoped to the parent domain, OAuth/SSO redirect URIs or CSP/CORS entries naming
+the host, mail received via its MX, and how long phishing content was served; (4) notify affected
+users where exposure is shown; (5) sweep every zone for the same gap. Detection content and IR
+workflow are sota-detection-engineering rules/06. OWASP: Subdomain Takeover Prevention cheat sheet.
 
 **R5 — Split-horizon: internal names stay in private zones.** Internal hostnames in public DNS leak
 topology and aid recon. Public zones hold only public entry points; internal records live in private
@@ -188,6 +220,16 @@ reaching DMARC enforcement; a Verified Mark Certificate is optional evidence, no
       Aug 2025 — don't flag its absence on LE certs)?
 - [ ] CAA records on public zones restrict issuance to your CA(s)?
 - [ ] Split-horizon: no internal hostnames in public DNS; zones scanned for dangling records?
+- [ ] **High — dangling or claimable targets (R4).** Triage every record aimed at a
+      reclaimable service; each hit needs a live target you own:
+      `grep -rnE '(herokuapp\.com|azurewebsites\.net|trafficmanager\.net|azureedge\.net|elasticbeanstalk\.com|s3-website[.-][a-z0-9.-]*amazonaws\.com|github\.io|netlify\.app)' .`
+      Also NS delegations and MX to retired services, SPF terms covering released hosts? New-CNAME
+      and NXDOMAIN/404 alerts plus CT monitoring in place?
+- [ ] **Medium — wildcard DNS (R4.1).** `grep -rnE '^\*(\.[A-Za-z0-9-]+)*\.?[[:space:]]|name *= *"\*' .`
+      — each hit: required, narrowly scoped, fronted by a hostname allowlist that errors on unknown
+      names?
+- [ ] Takeover response (R4.2) written down: record cut, CT search + revocation, impact
+      assessment (parent-domain cookies, OAuth/CSP/CORS references, MX mail, phishing duration)?
 - [ ] DNSSEC stance decided (managed, on identity-anchor zones)?
 - [ ] All DNS funneled through a policy-applying, logging resolver with RPZ/DNS-firewall blocking
       malicious/newly-registered domains? Unauthorized external DoH blocked?

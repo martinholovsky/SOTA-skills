@@ -133,6 +133,101 @@ with someone disabling sources — re-opening blind spots. Discipline:
   transparently and document the blind spot in the affected detections' ADS
   blind-spots section.
 
+## 7. Application & behavioural detections
+
+Some attacks are visible only to the application: every endpoint, cloud and
+network log looks normal because the attacker is using the product as designed.
+§1 lists application logs as a floor source; this section is the detection
+content that has to run on them. Each rule still follows rules/01 (ADS, test,
+owner) and rules/04 (runbook, severity).
+
+### Application-login attacks
+
+The fan-out logic from rules/07 *Password spraying — T1110.003* is not AD-specific.
+It applies unchanged to any web, API or mobile login endpoint, and there the app
+or IdP log is often the only witness.
+
+- **Spraying (T1110.003):** one source failing against many *distinct* accounts
+  in a window, each below the lockout threshold. Count distinct accounts per
+  source (Sigma `value_count` correlation, KQL `dcount()`), not events per
+  account — a per-account count only catches vertical brute force. To catch one
+  password tried across many accounts from rotating IPs, the app may log a
+  *keyed* hash of the attempted password (key held outside the log store, short
+  retention, never the plaintext) and group on it.
+- **Credential stuffing (T1110.004):** many accounts, about one attempt each,
+  spread across many sources. Group by ASN, client fingerprint and failure reason;
+  a jump in "unknown user" failures is the tell.
+- **Failure-rate spikes:** alert when one account's or one source's failure rate
+  climbs well above its own baseline, and when the app-wide success/failure ratio
+  shifts. The *success* that follows a burst of failures is the event to page on.
+- **Impossible travel:** two successful sign-ins to one account from places no
+  one could travel between in the elapsed time. Rate it **Critical** as a
+  takeover signal, after excluding known VPN and corporate egress ranges; take the
+  IP from the connection, not a client header (sota-identity-access rules/06 §2).
+  Enrich with what the second session did (MFA change, export, payout edit).
+- Prevention (throttling, lockout, MFA) is sota-code-security rules/02. This is
+  the detective half, and it must fire even when the throttle works: a blocked
+  spray still means someone is attacking.
+
+OWASP: Go-SCP; Logging Vocabulary cheat sheet; Secure Coding Practices QRG; Zero
+Trust Architecture cheat sheet.
+
+### LLM / agent runtime detections
+
+Prevention is sota-code-security rules/08; action logging and containment are
+sota-sandboxing rules/05 R4.4/R4.5. This is the detection content over those logs.
+
+- **Jailbreak campaigns and system-prompt extraction** (ATLAS AML.T0054 LLM
+  Jailbreak, AML.T0056 Extract LLM System Prompt). One refused prompt is noise.
+  Page on patterns: the same or near-duplicate adversarial prompt across many
+  sessions or accounts, or an output containing a canary string planted in the
+  system prompt (confirmed extraction, honeytoken-grade fidelity — rules/05).
+  Guardrail verdicts are events to aggregate, not the detection itself.
+- **Conversation anomalies:** probing (rapid rewordings of a refused request),
+  excessive retries or regenerations, and guardrail-blocked turns per user or
+  session far above that user's and the population's baseline.
+- **Per-agent behaviour profile:** write down, for each agent, the tools it
+  calls, the data volume it reads and returns, its action rate and its target
+  systems. Alert when it deviates past a stated threshold (a new tool, a new
+  target, a volume multiple), and name the response for each alert — normally a
+  step of the graduated containment in sota-sandboxing rules/05 R4.5. A profile
+  with no threshold and no response is documentation, not detection.
+- **Model-provider APIs as a covert channel** (ATLAS AML.T0096 AI Service API,
+  AML.T0108 AI Agent; ATT&CK T1102 Web Service, T1567 Exfiltration Over Web
+  Service). Inventory which workloads legitimately call model-provider
+  endpoints; alert on any other host or process calling them, on credentials not
+  issued to that workload, and on payloads that do not fit the feature (large
+  encoded blobs, steady beacon-like timing).
+
+OWASP: AISVS 12.2.2, 12.2.3, 12.2.6; DSOMM.
+
+### Data-access analytics: exfiltration, insider misuse, database anomalies
+
+A valid account reading data it is allowed to read (T1078, T1213 Data from
+Information Repositories) looks normal everywhere except in *how much* and
+*which* records.
+
+- **Per-identity volume baseline:** for each user, service account and API key,
+  baseline records or bytes read per window; alert on large multiples and on a
+  first-ever read of a dataset.
+- **Access without business need:** authorised staff and admins opening
+  sensitive records outside their assignment (a support agent with no matching
+  ticket, an admin browsing high-profile accounts). Join the access log to the
+  assignment or ticket source; the unmatched read is the alert. This needs the
+  app to log *reads* of sensitive records, not only writes.
+- **Database security anomalies:** bulk exports and dumps, query-rate spikes from
+  one principal, and commands an application account should never send — MongoDB
+  server-side JavaScript (`$where`, `$function`, `$accumulator`, and `mapReduce`,
+  which MongoDB has deprecated), user and role grants, other admin commands. From
+  an app principal, one occurrence is a high-fidelity alert.
+- **Keep it apart from performance monitoring.** A slow-query dashboard is tuned
+  to ignore exactly the fast, well-indexed bulk read an exfiltrating account
+  makes. Route these to the SIEM under a security owner; the audit-log plumbing
+  (e.g. pgaudit) is sota-databases rules/06.
+
+OWASP: Code Review Guide v2; NoSQL Security cheat sheet; Zero Trust Architecture
+cheat sheet.
+
 ## Audit checklist
 
 - [ ] Is there a log-source inventory mapped to attack paths, with *enabled*
@@ -156,3 +251,21 @@ with someone disabling sources — re-opening blind spots. Discipline:
       documenting the resulting blind spot?
 - [ ] Are logs shipped off-host promptly so a compromised host can't erase its
       own evidence?
+- [ ] **App-login attacks (§7) — High:** do application/IdP login logs feed a
+      distinct-accounts-per-source spray rule, per-account and per-source
+      failure-rate alerts, and impossible travel rated Critical? Zero files from
+      `grep -rliE 'type: *value_count|dcount\(' detections/` or from
+      `grep -rliE 'impossible.?travel|geo.?velocity' detections/` means the fan-out
+      or travel rule is missing; then confirm the hits cover app logins, not only AD.
+- [ ] **LLM/agent runtime (§7) — High where an LLM feature or agent ships:** are
+      there rules for jailbreak campaigns, system-prompt extraction, per-agent
+      deviation with a named response, and unexpected callers of model-provider
+      APIs? Zero files from
+      `grep -rliE 'AML\.T0(054|056|096|108)|jailbreak|system.?prompt' detections/`
+      means none exist.
+- [ ] **Data access (§7) — High:** is there a per-identity read-volume baseline, a
+      no-business-need rule for sensitive records, and a rule on admin or
+      server-side-JS commands from app principals, owned by security rather than
+      a performance dashboard? For MongoDB, zero files from
+      `grep -rliE '\$where|\$function|\$accumulator|mapReduce|grantRolesToUser|createUser' detections/`
+      means the dangerous-command rule is missing.
