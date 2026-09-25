@@ -14,6 +14,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   invariant 18 does not read either file. Also refreshed: `docs/LANGUAGE-TIER.md` (the jvm web
   layer now lives in `rules/08`) and the MCP routing case's rationale (rules/08 and rules/23). The
   #461 ledger claim that every citation was rewritten is superseded in ADOPTION-LOG.
+- **Three live deferrals were invisible to invariant 27.** Two ADOPTION-LOG entries were written
+  `**Deferred —` in mixed case, and the gate's regex is case-sensitive. The third sat in ROADMAP
+  history, which the gate never reads. All three now carry the `**DEFERRED —` marker, and check
+  27 reads 6 deferrals where it read 3. Narrowed on the way: the Ruby/.NET reachability gap is
+  Ruby-only, because `sota-devsecops` rules/10 §2 has named a .NET tool since it was written.
+  ROADMAP no longer restates the deferral list; it points at the gate's count instead.
+- **ADOPTION-LOG overstated invariant 27.** It said the gate also checks that no other file
+  calls an item deferred once this log stops marking it. No code ever did that, and the sentence
+  is corrected. Closed as already done: the nested-fence report now links its fix (#429), and
+  `LANGUAGE-TIER.md`'s "temp files still OPEN" heading now points at the 2026-09-24 decision.
+  ROADMAP's 2026-07 plan sections and "still open" lists are now labelled as history, not a task list.
 
 ## [1.44.3] - 2026-09-25
 
