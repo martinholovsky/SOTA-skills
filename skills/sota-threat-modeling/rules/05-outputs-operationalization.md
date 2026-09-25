@@ -10,6 +10,17 @@ Keep it short enough to re-read at every trigger (target: 2–6 pages / one
 markdown file in-repo). Store it NEXT TO THE CODE (`docs/threat-model.md` or
 per-service), versioned in git — review-diffable, blame-able, findable.
 
+**The model is itself sensitive.** Its threat table, open findings and accepted
+risks are a list of unfixed weaknesses with the reasoning an attacker would
+otherwise have to rebuild. Choose its location on confidentiality as well as
+convenience: readable on a need-to-know basis. In a private repo, next to the
+code is right. In a **public or broadly shared repo**, keep the full register
+(open threats, accepted residuals, exploit paths) in a restricted place, still
+versioned and linked by ID, and publish in-tree only a sanitised view: scope,
+DFD, assumptions and mitigated threats with their requirement IDs. The re-model
+triggers and PR security notes still work against the in-tree view. OWASP:
+Threat Modeling cheat sheet, Threat Modeling Playbook.
+
 ```markdown
 # Threat Model: <system/service> — v<NN>
 Owner: <tech lead>   Last full review: <date>   Methodologies: STRIDE-per-interaction (+LINDDUN)
@@ -106,6 +117,27 @@ Rules:
 - **Pentest/red-team findings feed back:** every confirmed finding becomes
   (a) a threat-table row — was it missing or mis-rated? — and (b) an
   abuse-case regression test.
+
+**Write abuse stories when the user story enters the backlog**, not only
+afterwards for High+ threats: each story that moves value, ownership or state
+gets its attacker counterpart before refinement, drafted from the personas in
+`02` §3 (malicious, abusive, unknowing). Business-logic flaws carry no payload
+signature, so they come from these questions, asked per feature:
+- What does the legitimate user do step by step, and what does the system
+  assume at each step? **Which assumption pays the user if it is false?** That
+  is where the bug is.
+- Can a step be skipped, repeated or reordered by calling its endpoint directly?
+- Can two actors act on one object at once, or one user from two tabs or two
+  devices?
+- What does a chain of individually legal actions yield at abnormal volume
+  (a thousand sign-ups, referrals, retries)?
+- Which invariant must always hold (a coupon redeems once, a balance never goes
+  negative), what enforces it, and is that enforcement atomic?
+
+Each answer that names a gap becomes a threat row and an abuse case above; the
+controls are `sota-code-security` rules/03 §3 (state-machine authorization) and
+the tests `sota-testing` rules/09 §4. OWASP: Abuse Case cheat sheet, Business
+Logic Security cheat sheet, DSOMM.
 
 ## 4. Keeping the model living
 
@@ -214,6 +246,7 @@ punishes good design. Escape rate is the only outcome metric that matters.
 | Reviewers (per PR) | security-notes section | 3–10 lines |
 | Leadership (quarterly) | risk register | ≤ 1 page |
 | Auditors/customers | the doc (template §1) + evidence links | 2–6 pages |
+| Public repo / outside contributors | sanitised view (§1): no open or accepted threats | 1–2 pages |
 
 Never produce the 40-page monolith: it satisfies no audience and updates
 never. Generate views from the threat table instead.
@@ -239,3 +272,13 @@ never. Generate views from the threat table instead.
 - [ ] Incidents/pentest findings traceable into threat rows + regression
       tests.
 - [ ] Risk register ≤ 1 page, current owners, no expired review dates.
+- [ ] Model confidentiality matches its location: find in-tree models with
+      `git ls-files | grep -i -E "threat[-_ ]?model|risk[-_ ]?register"` and the
+      repo's visibility (`gh repo view --json visibility`). A public repo
+      carrying open or accepted threats → Medium, or High when a row gives an
+      unmitigated Critical/High exploit path.
+- [ ] Abuse stories are written at story intake for features that move value,
+      ownership or state, and the business-logic questions (§3) are answered.
+      List workflow-abuse tests with `grep -rn -i -E "(def |it\(|test\(|func Test)[^(]*(skip|replay|repeat|reorder|out.?of.?order|concurren|twice|double)" .`;
+      zero hits in a codebase with multi-step or value-dispensing flows →
+      Medium.

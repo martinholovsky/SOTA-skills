@@ -46,6 +46,21 @@ Which puts several ordinary things inside the boundary:
   mean adopting its agent file. Reviewing an untrusted PR that touches `AGENTS.md`,
   `CLAUDE.md`, `.cursorrules` or a `skills/` directory is a **privileged operation**
   — those hunks deserve the scrutiny you would give a change to CI.
+- **Make that scrutiny mechanical in your own repos, not a reviewer's memory.** Every
+  PR or commit that adds or edits an agent-loaded file gets flagged by a machine: a
+  CODEOWNERS entry per path with required code-owner review turned on in the branch
+  rule, plus a CI step or pre-commit hook that labels or prints the matched paths
+  (`git diff --name-only <base>... | grep -E '<agent-file pattern>'`). The set is wider
+  than the root files: `AGENTS.md` anywhere (the nearest one wins in a subtree),
+  `CLAUDE.md`/`.claude/CLAUDE.md` and subdirectory `CLAUDE.md` files (loaded on demand),
+  `.claude/rules/` and `.claude/skills/`, `.cursor/rules/*.mdc`, legacy `.cursorrules`,
+  `.github/copilot-instructions.md` and `.github/instructions/`, and any vendored
+  `skills/` tree. **No author exemption**: a change the agent wrote to its own
+  instructions is the case the gate exists for, so it must not skip bot or agent
+  accounts. Two silent holes: CODEOWNERS on its own only *requests* review, and a
+  CODEOWNERS line with invalid syntax or an unknown owner is skipped rather than
+  rejected. CI wiring and the branch-rule check live in `sota-devsecops` rules/01 §1.8.
+  (OWASP: Secure Coding with AI cheat sheet)
 - **A dependency that ships agent files.** Vendored trees and submodules can carry
   per-directory instruction files that load when you work in that subtree.
 - **Anything generated into the repo** by a tool that itself takes untrusted input.
@@ -114,6 +129,11 @@ automatically *quality*: the same library measured a padded context at −0.01 t
 - [ ] **Trust-boundary pass done** (§2): for each loaded instruction file, who can
       modify it without being able to modify the code? Anything a PR can change is
       inside the boundary and is reviewed like a CI change.
+- [ ] **Changes to agent-loaded files are flagged by a machine** (§2), High if
+      missing: list them with `git ls-files | grep -E '(^|/)(AGENTS|CLAUDE|GEMINI)\.md$|(^|/)\.cursorrules$|(^|/)\.cursor/rules/|(^|/)\.github/(copilot-instructions\.md|instructions/)|(^|/)\.claude/(rules|skills)/|(^|/)skills/[^/]+/'`,
+      match every hit against a CODEOWNERS pattern, confirm required code-owner
+      review is on (`sota-devsecops` rules/01 §1.8), and confirm the CI or hook step
+      that flags them has no bot/agent author exemption.
 - [ ] **Agent files in untrusted repos treated as data** (§2) — and a clone-to-review
       workflow that does not adopt the clone's instructions?
 - [ ] **Grep of any foreign repo's agent files** for imperatives about credentials,

@@ -81,6 +81,18 @@ Pick per data class — there is no universal answer, only explicit tradeoffs:
 around the cache (session flag, short-lived bypass) or write-through —
 "I edited it and it didn't change" is the most-reported staleness bug.
 
+**Permission and tenancy changes are invalidation events.** A role grant or
+revocation, a membership change, or a user moving between tenants must do one
+of two things in the same transaction path: purge the keys/tags that hold data
+computed under the old permissions, or bump a per-user or per-tenant
+*permission version* that is itself a component of those keys (strategy 4
+applied to authz). Otherwise an entry filled before a revocation keeps serving
+the revoked user until its TTL runs out — a TTL backstop bounds that window, it
+does not close it. SSR frameworks expose the same move as tag/path
+revalidation (`sota-web-frameworks` rules/03 §4); the session side of a stale
+privilege is `sota-code-security` rules/03 §3; §9 covers the key itself.
+OWASP: Nextjs Security cheat sheet.
+
 **TTL discipline**: every entry gets a TTL even with active invalidation
 (backstop). Choose TTL from a staleness budget ("how stale is acceptable?"),
 not vibes. Document it next to the cache code.
@@ -234,6 +246,23 @@ still "works", just for the wrong user:
   as web cache deception (sota-code-security rules/05): cacheability must
   never be decided by URL shape alone. Default for personalized responses:
   `Cache-Control: private` at the HTTP layer, identity-scoped keys elsewhere.
+  **Declare a sharing scope for every entry** in the key contract (§2):
+  `global`, `tenant` or `user`, carried as the key's leading segment
+  (`global:…`, `tenant:{tid}:…`, `user:{uid}:…`). A value that is genuinely the
+  same for everyone goes under the explicit `global:` prefix, with a one-line
+  comment beside the key builder saying why sharing it cannot leak anything —
+  so an unprefixed key is visibly undecided, not silently shared. Same
+  classification as for stored objects in `sota-architecture` rules/05 §12.
+  OWASP: Multi Tenant Security cheat sheet.
+- **Key separation is not authorization.** An identity-scoped key keeps one
+  principal's entry apart from another's; it says nothing about whether *this*
+  request may see the resource. Run the same access check the uncached path
+  runs *before* reading a protected value from cache and returning it — a
+  handler that returns the cached copy first and authorizes only on a miss
+  serves it to a user whose access was revoked, and a key built from a request
+  parameter (`user:{id_from_url}:…`) serves the owner's copy to whoever asks —
+  an IDOR through the cache (`sota-code-security` rules/03 §2). OWASP: Multi
+  Tenant Security cheat sheet.
 - **Constant-time comparisons stay constant-time.** Secret/token/MAC checks
   (`hmac.compare_digest`, `crypto.timingSafeEqual`,
   `subtle.ConstantTimeCompare`) are deliberately "inefficient" — "optimizing"
@@ -276,5 +305,19 @@ still "works", just for the wrong user:
       identity/tenant (and role where it varies)? Any personalized response
       cacheable by URL alone (cache deception / key bypass —
       sota-code-security rules/05)?
+- [ ] Every shared-layer key declares its scope (`global:`/`tenant:`/`user:`
+      leading segment, §9), and each `global:` key has a written reason it
+      cannot leak? High for an undeclared key holding tenant or user data.
+      Lead list (variable keys need their builder read):
+      `grep -rniE '(redis|cache|memcached?)[[:alnum:]_]*\.(get|set|setex|mget|hget|hset)\(' . | grep -viE '(global|tenant|user):'`
+- [ ] Does any handler return a cached protected value before its access
+      check runs (§9 "key separation is not authorization")? High. Flags a
+      `return` of cached data with no authz call earlier in the function (an
+      authz decorator counts):
+      `find . -type f \( -name '*.py' -o -name '*.[jt]s' -o -name '*.go' -o -name '*.rb' -o -name '*.java' \) -exec awk 'FNR==1{s=0;p=0} /(def |function |func )/{s=p;p=0} /(authoriz|permission|can_access|check_access|require_role|enforce\()/{if(/^[[:space:]]*@/)p=1; else s=1} /return.*(cache|hit)/ && !s {print FILENAME":"FNR": "$0}' {} +`
+- [ ] Do role, membership and tenancy changes purge the affected keys/tags or
+      bump a permission version in the key (§3)? High where authz-derived data
+      is cached. Lists change functions with no invalidation call:
+      `find . -type f \( -name '*.py' -o -name '*.[jt]s' -o -name '*.go' -o -name '*.rb' -o -name '*.java' \) -exec awk 'function fl(){if(t&&!ok)print fn":"ln": "hd; t=0} FNR==1{fl()} /(def |function |func )/{fl(); if(tolower($0)~/(set|update|assign|grant|revoke|remove|change)_?(user_?)?(role|member|permission|tenant)/){t=1;ok=0;fn=FILENAME;ln=FNR;hd=$0}} t&&/(invalidat|purge|revalidate|perm_?version|cache[[:alnum:]_]*\.(delete|del|unlink))/{ok=1} END{fl()}' {} +`
 - [ ] Any optimization that replaced a constant-time compare or relaxed
       validation/size limits for throughput? Treat as Critical, not perf win.

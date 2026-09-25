@@ -143,6 +143,22 @@ Without them, your biggest tenant defines everyone's worst day.
 deletion), and *migration between models* (a pooled tenant grows into a silo).
 If moving one tenant's data out is impossible, you've built a roach motel.
 
+**Rule:** Provisioning and offboarding are security operations with an explicit
+state machine (`provisioning → active → offboarding → deleted`), not a script.
+- *Provision*: create the tenant's schema/DB, storage prefix, keys and first
+  credential while it sits in `provisioning`, and flip it to `active` only as the
+  last step. A single DB transaction rarely spans the schema, the object store and
+  the KMS, so the failure path must be an idempotent cleanup that removes whatever
+  was half-created — an orphaned schema or key is a later tenant's collision.
+- *Offboard*: move to `offboarding` first, so new operations are refused, then
+  revoke every session, API key, token and integration credential the tenant holds,
+  and only then export (if owed) and schedule deletion. Deleting data while a key
+  still works leaves an authenticated principal pointing at nothing, or at the next
+  tenant who reuses the id.
+- Write each step (started, completed, failed) to the audit trail; deletion then
+  follows the retention policy across replicas, object versions and backups (§6).
+OWASP: Multi Tenant Security cheat sheet.
+
 ## 8. Workload separation
 
 **Rule:** Separate latency-sensitive request serving from throughput-oriented
@@ -214,6 +230,18 @@ sweeps (DB row deleted but blob remains, or vice versa — reconcile on a
 schedule), and per-tenant prefixes so tenant offboarding (§7) can actually
 delete their data.
 
+**Rule:** Classify every stored object as global, tenant-scoped or user-scoped,
+and put intentionally shared assets under a separately named global namespace, so
+nothing tenant-owned lands there by default. Partition tenant objects by a
+tenant-aware bucket, account or prefix *and* have the storage policy enforce it
+(a per-tenant role or policy condition), so a bug in application code is not the
+only thing between tenants. **End every tenant prefix with the delimiter**: list
+and delete by prefix match a raw string (S3 `ListObjectsV2` "limits the response
+to keys that begin with the specified prefix"), so the prefix `acme` also matches
+`acme-west/…` and an offboarding delete of `acme` erases a second tenant. Use
+`acme/`. Authorize the exact object and verb before signing a URL for it.
+OWASP: Multi Tenant Security cheat sheet.
+
 ## Audit checklist
 
 - [ ] Can every service instance be killed at any moment without data loss? Any sticky sessions, local files, or solo in-memory state?
@@ -235,3 +263,5 @@ delete their data.
 - [ ] Are high-contention counters sharded or queue-buffered rather than single-row hot spots?
 - [ ] Is every projection/search index/denormalized table rebuildable via a tested backfill, with lag monitored and staleness contracts known to consumers?
 - [ ] Are blobs in object storage with presigned direct transfer, orphan reconciliation, and tenant-scoped prefixes?
+- [ ] Does tenant offboarding refuse new operations and revoke every session and API key **before** deletion is scheduled, and does a failed provision clean up what it half-created, with each step audited (§7)? HIGH where a deprovisioned tenant's key still authenticates. Probe for offboarding code that never revokes: `grep -rliE '(offboard|deprovision)[_a-z]*[[:space:]]*\(' . | while read -r f; do grep -qi revoke "$f" || echo "$f"; done` — a listed file is a lead, read its order of operations.
+- [ ] Does every tenant storage prefix end in the delimiter, is the boundary enforced by storage policy and not only app code, and do shared assets live in a named global namespace (§12)? HIGH: prefix `acme` matches `acme-west`, so a list leaks and an offboarding delete erases another tenant. Probe for a prefix built from a tenant id with no `/` after it: `grep -rniE 'prefix[[:space:]]*[:=].*tenant[^/]*$' .`

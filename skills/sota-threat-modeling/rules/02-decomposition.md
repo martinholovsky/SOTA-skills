@@ -55,7 +55,7 @@ elements share a boundary, they don't — model the crossing.
 
 ### 3. Entry points, assets, actors, privilege levels
 
-Produce these four tables for every model; they are the enumeration substrate.
+Produce these tables for every model; they are the enumeration substrate.
 
 **Entry points** — every place external data or control enters:
 
@@ -91,7 +91,32 @@ into others.
 
 Always include **machine actors** (service accounts, CI, cron) — they hold the
 broadest standing privilege in most real systems — and at least one **insider**
-actor.
+actor. Add three **threat-oriented personas** beside the technical attacker: a
+*malicious* user (wants harm), an *abusive* user (a dishonest customer who
+stays inside the rules and chains legitimate actions for gain), and an
+*unknowing* user (careless, triggers harm by accident). The abusive user sends no
+payload, so STRIDE-per-flow alone misses them; their questions are `05` §3.
+OWASP: Abuse Case cheat sheet, Business Logic Security cheat sheet.
+
+**Dangerous functionality and user-chosen destinations** — where the code does
+things that turn one bug into a compromise, and where the *user* picks what the
+server connects to:
+
+| ID | Location | Kind | Input origin | Containment |
+|---|---|---|---|---|
+| DF1 | `imports/loader.py:40` | deserialization of uploaded file | EP5 upload | none — finding |
+| DF2 | `reports/query.py:88` | raw SQL built from filter params | EP1 | allowlisted columns |
+| DF3 | `hooks/register.py:22` | **user-supplied webhook URL** fetched server-side | customer | egress proxy, deny private ranges |
+| DF4 | `media/import.py:15` | **import-from-URL** | customer | none — finding |
+
+Kinds to list: deserialization of untrusted data, dynamic code execution
+(`eval`/`exec`/template compile), raw file or binary parsing, raw SQL, file paths
+built from input, direct memory manipulation, and every feature where the user
+supplies a URL, host or callback (webhooks, import-from-URL, link previews,
+OAuth/OIDC discovery, PDF/image renderers). The second group is the SSRF surface,
+recorded in the model instead of found in code review. Each row gets a catalog
+pass (`03` §2: injection, SSRF, deserialization) and is where extra isolation earns its cost (`sota-sandboxing`).
+OWASP: ASVS 5.0 V13.1.1, V15.1.5.
 
 ### 4. Worked mini-example — 10-line DFD with threats
 
@@ -213,10 +238,34 @@ control collapses multiple attack-tree branches. In audit mode it is derived
 purely from IAM policies, DB grants, and network policy — no interviews
 needed, and it rarely matches what the team believes.
 
+### 8a. Cross-entry-point consistency for sensitive operations
+
+The entry-point table is organised by *door*; attackers shop by *operation*. For
+each sensitive business operation (refund, transfer, role grant, email change,
+export, delete), list every path that can invoke it: each API version, the
+mobile or legacy endpoint, internal/admin tooling, webhook and callback handlers,
+queue consumers, batch/cron jobs, bulk-import and GraphQL mutations. Then
+compare, per path, the authz check, ownership/tenant check, state/workflow
+check, limits and audit event against the strongest path:
+
+| Operation | Path | Authz | Tenant | State check | Limit | Audit |
+|---|---|---|---|---|---|---|
+| refund | `POST /v2/orders/{id}/refund` | role `support` | yes | not-yet-refunded | 1/order | yes |
+| refund | `POST /v1/refund` (mobile) | any user | **no** | **no** | none | no |
+| refund | `reconcile` cron | none (implicit) | n/a | yes | none | no |
+
+**A path weaker than its sibling is a finding, rated at the weaker path's
+reachability** — the careful admin endpoint protects nothing if a looser public
+one performs the same write. Adding a path is a re-model trigger (`05` §4). Fix
+by routing every path through one guarded service function, not by copying the
+checks; the per-path controls for jobs and webhooks are `sota-code-security`
+rules/03 §8. OWASP: Business Logic Security cheat sheet.
+
 ### 9. Decomposition outputs
 
 A decomposition is done when you have: L0+L1 mermaid DFDs with boundaries; the
-four tables (entry points, assets, actors/privileges, stores) with code refs
+tables (entry points, assets, actors/privileges, stores, dangerous functionality
+and user-chosen destinations) with code refs
 in audit mode; and a stated scope ("modeled X; excluded Y because Z"). Excluded
 scope must be written down — silent exclusions are where breaches live.
 
@@ -234,7 +283,18 @@ scope must be written down — silent exclusions are where breaches live.
 - [ ] Asset table ranks concrete and abstract assets; data classes derived
       from schemas, not memory.
 - [ ] Actor table includes machine actors (CI, service accounts, cron) and an
-      insider; privilege per actor stated.
+      insider; privilege per actor stated; malicious, abusive and unknowing
+      user personas listed. Missing abusive persona on a feature that
+      dispenses value (credits, refunds, coupons) → Medium.
+- [ ] Dangerous-functionality and user-chosen-destination table exists and
+      matches code. Sweep sinks with `grep -rn -E "pickle\.loads?\(|yaml\.(unsafe_)?load\(|ObjectInputStream|unserialize\(|Marshal\.load|(^|[^.A-Za-z_])(eval|exec)\(|new Function\(|os\.system\(|shell=True|\.raw\(|execute\(f[\"']" .`
+      and user-supplied URL fields with `grep -rn -i -E "(webhook|callback|import|feed|avatar|remote|source|target)_?url" .`;
+      a hit absent from the table → Medium, and High when it reaches untrusted
+      input with no containment recorded.
+- [ ] Each sensitive operation has a cross-entry-point row set (§8a); list
+      alternate route prefixes with `grep -rn -E "[\"'](/?[A-Za-z0-9_{}:.-]+/)*/?(v[0-9]+|internal|admin|legacy|mobile)/" .`
+      and add cron/consumer/webhook callers by reading. A path enforcing fewer
+      checks than its sibling → High (Critical if reachable pre-auth).
 - [ ] Boundaries inferred from IaC/middleware/IAM match documented
       architecture; drift recorded as findings.
 - [ ] Time-shifted crossings (queues, caches, stored content, scheduled jobs)

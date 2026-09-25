@@ -111,7 +111,7 @@ without evidence in code or spec.
 | `rules/04-grpc-protocols.md` | gRPC/protobuf work or protocol selection: field-number/reserved evolution rules, deadlines and cancellation propagation, streaming patterns, rich error details, gRPC-Web/Connect, L7 load balancing, REST vs GraphQL vs gRPC decision table. |
 | `rules/05-realtime-websockets-sse.md` | WebSocket/SSE/realtime features: transport choice (WS vs SSE vs WebTransport), upgrade auth & CSWSH, heartbeats, reconnect backoff + resume tokens, ordering/delivery guarantees, backpressure, close codes, SSE replay, pub/sub fanout scaling, presence; WebRTC server hardening (TURN relay abuse, DTLS-SRTP, signaling) when self-hosted. |
 | `rules/06-webhooks.md` | Sending or receiving webhooks: HMAC signing + timestamp + rotation, replay protection, retry/backoff design, ordering caveats, idempotent consumers, outbox dispatch, reconciliation APIs, SSRF defenses for user-supplied URLs. |
-| `rules/07-security-operations.md` | Cross-cutting security/ops on any API: authn scheme selection (keys/OAuth2/mTLS), rate limiting + 429/Retry-After, quotas, request size limits, timeout budgets, CORS, audit logging, multi-tenant isolation, cross-tenant testing. |
+| `rules/07-security-operations.md` | Cross-cutting security/ops on any API: authn scheme selection (keys/OAuth2/mTLS), rate limiting + 429/Retry-After, quotas, request size limits, HTTP message framing / request smuggling, timeout budgets, CORS, audit logging, multi-tenant isolation, cross-tenant testing. |
 
 ## Top-10 non-negotiables
 

@@ -84,7 +84,9 @@ meet the target, is the core 62443 finding.
 
 1. **Identification & Authentication Control (IAC)** — who/what is acting.
 2. **Use Control (UC)** — least privilege / authorized actions only.
-3. **System Integrity (SI)** — code/config/data not tampered.
+3. **System Integrity (SI)** — code/config/data not tampered. On a device this
+   means a verified boot chain and locked debug ports (§6), plus updates that
+   are refused when older than the installed security version (rules/04 §2).
 4. **Data Confidentiality (DC)** — protect data at rest/in transit.
 5. **Restricted Data Flow (RDF)** — zones & conduits enforcement.
 6. **Timely Response to Events (TRE)** — detection, logging, response.
@@ -115,6 +117,35 @@ FR5 in the zone/conduit design (§3); FR7 in resilience/DR
 *most direct* path to both a recognized OT security posture and (once harmonized)
 CRA conformity. Build to it now; certify when the hENs land.
 
+## 6. The embedded device: root of trust, secure boot and debug interfaces
+
+The library has **no owner for the embedded systems layer**: `sota-c-cpp` covers
+firmware's *language*, not its boot or hardware. This section therefore holds the
+minimum for a product that ships as a device (a PLC, gateway, sensor or drone).
+
+- **Secure boot chain, anchored in something that cannot be rewritten.** The first
+  stage lives in ROM, or its public key digest is burned into eFuse/OTP. Each stage
+  checks the signature of the next stage before handing over control, from the
+  bootloader to the application. A bootloader that checks only a hash, or that
+  anyone who can write flash can replace, gives no chain. ETSI EN 303 645 V3.1.3
+  provision 5.7-1 asks for secure boot and names a hardware root of trust as one way
+  to anchor it.
+- **Production units lock their debug interfaces.** JTAG/SWD and UART consoles, as
+  well as ROM download or serial-boot modes, are disabled or put behind
+  authentication before the unit leaves the factory. An open JTAG lets anyone
+  bypass secure boot, and it defeats flash encryption. ESP-IDF says so in the help
+  for `CONFIG_SECURE_BOOT_ALLOW_JTAG`, and burns an eFuse to disable JTAG by
+  default once secure boot or flash encryption is on. Restrict USB and other
+  exposed ports to the functions the product needs. ETSI EN 303 645 V3.1.3: 5.6-4A
+  (disable or protect debug interfaces), 5.6-4B (physically protect debug ports).
+- **Development and production are different builds.** Record the fuse and
+  lock state per production batch as evidence for FR3 (SI) in the crosswalk
+  (rules/01). Do not count on a later update to fix a unit shipped with
+  development settings: some of them are one-time fuses, and an attacker with
+  an open debug port can act before the update arrives.
+
+OWASP: Drone Security cheat sheet
+
 ## Audit checklist
 
 - [ ] 62443 is the *appropriate* frame — system is OT/ICS/IACS/embedded/industrial (not general IT/SaaS, which routes to ISO 27001 / CSF / SSDF)
@@ -124,6 +155,7 @@ CRA conformity. Build to it now; certify when the hENs land.
 - [ ] The 7 Foundational Requirements addressed with named mechanisms (IAC, UC, SI, DC, RDF, TRE, RA) — availability (FR7) treated as top priority per OT context
 - [ ] Secure development per **62443-4-1** crosswalked to the SSDF SDLC (rules/03); measurable process artifacts, defect/patch management, and product end-of-life defined
 - [ ] Component technical requirements (**4-2**) and system requirements (**3-3**) met for the relevant component types
+- [ ] **Embedded device root of trust and debug lock (§6) — HIGH** (CRITICAL where secure boot is the only barrier to code execution): ROM/eFuse-anchored secure boot, each stage verifying the next; JTAG/SWD/UART and ROM download mode disabled or authenticated on production units; fuse state recorded per batch. Probe the production build config: `grep -rnE '^CONFIG_(SECURE_BOOT_INSECURE|SECURE_BOOT_ALLOW_JTAG|SECURE_BOOT_ALLOW_ROM_BASIC|SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT|BOOT_SIGNATURE_TYPE_NONE)=y' .` — any hit in a release config is a finding; `grep -rlE '^CONFIG_SECURE_BOOT=y' .` printing nothing on a device build is a lead to ask where secure boot is enabled
 - [ ] Patch/update strategy fits OT constraints (availability, maintenance windows, legacy) while still delivering security fixes over the support period
 - [ ] If EU-market: 62443 harmonization path to CRA conformity tracked against the current OJ hEN list (rules/04); certification (ISASecure SDLA/CSA/SSA) pursued where required
 - [ ] 62443 part versions, certification-scheme scope, and CRA-harmonization status re-verified against primary sources within the last 6 months

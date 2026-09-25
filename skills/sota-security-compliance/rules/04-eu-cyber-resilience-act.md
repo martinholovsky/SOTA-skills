@@ -64,6 +64,30 @@ vulnerability-handling process**. Both are engineering.
   reference in EUR-Lex): a **signed update channel** and a maintained
   long-lived branch. Updates must be **without delay** and **free** for security
   fixes; separable from feature updates.
+- **A valid signature is not enough on a device (firmware/OTA).** Three more
+  properties, each a separate failure:
+  - **Anti-rollback.** An old image you signed is still validly signed, so the
+    device must also refuse anything below a *security version* held in trusted
+    non-volatile storage (eFuse/OTP or a hardware monotonic counter) and raised
+    after the new image is confirmed. A plain version compare in the bootloader
+    is weaker: MCUboot's own help text says its software check does not stop an
+    older image written straight to flash (e.g. over JTAG). Examples:
+    `CONFIG_MCUBOOT_HW_DOWNGRADE_PREVENTION` + `imgtool sign --security-counter`,
+    ESP-IDF `CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK`. Falling back to the last good
+    image after a failed boot is fine as long as it obeys the same counter.
+    TUF names this the *rollback attack*, and adds the *indefinite freeze
+    attack*: a server that keeps serving the same stale metadata.
+  - **Authenticate the update server.** Fetch over TLS with a pinned or
+    product-specific CA, and keep hostname checking on. Plain HTTP and a skipped
+    name check both appear as build switches (ESP-IDF
+    `CONFIG_ESP_HTTPS_OTA_ALLOW_HTTP`, `skip_cert_common_name_check`). The
+    channel does not replace the signature: verify the signature on the device.
+  - **Encrypt the package** when the image carries confidential IP or data,
+    because encryption protects it in transit and on external flash. It adds no
+    integrity: the signature still has to cover the plaintext (MCUboot hashes and
+    signs the unencrypted image). ETSI EN 303 645 V3.1.3 provision 5.3 gives
+    version-based anti-rollback as an example of a secure update mechanism.
+    OWASP: Automotive Security, Drone Security cheat sheets
 
 ## 3. The reporting clocks (Article 14) — wire them into on-call
 
@@ -194,6 +218,7 @@ teeth and deadlines. Reuse, don't rebuild:
 - [ ] Triage capacity is budgeted and the queue's age is visible: an unread backlog is indistinguishable from having no reports, and pausing intake does not pause the clock
 - [ ] The intake page states what a usable report must contain (human-written summary, self-contained reproducer, affected + earliest versions, ideally a patch) — the only lever on inbound quality, and the rubric triage then applies
 - [ ] **Signed update channel** and a maintained branch covering the support period (default ≥ 5 years / expected use time); security updates delivered without delay, free, separable
+- [ ] **Device update integrity beyond the signature (§2) — HIGH** where the product takes firmware/OTA updates: an older signed image is refused by a counter in trusted storage, the update server is authenticated, the signature covers the plaintext of any encrypted package. Probe for switches that turn these off: `grep -rnE '^CONFIG_(ESP_HTTPS_OTA_ALLOW_HTTP|BOOT_SIGNATURE_TYPE_NONE)=y|skip_cert_common_name_check[[:space:]]*=[[:space:]]*true' .` — any hit is a finding; then `grep -rlE '^CONFIG_(MCUBOOT_HW_DOWNGRADE_PREVENTION|BOOTLOADER_APP_ANTI_ROLLBACK)=y' .` printing nothing on a signed-update build is a lead to ask how rollback is refused
 - [ ] Article 14 reporting pipeline built and rehearsed: detection → 24h early warning / 72h notification to CSIRT + ENISA; final reports (14 days / 1 month) covered; unified with NIS2/DORA clocks where applicable
 - [ ] Conformity route chosen for the tier (self-assessment vs notified body / certification scheme); CE-marking obligations understood
 - [ ] Harmonized-standard reliance (incl. 62443 for OT) confirmed against the current OJ-published hEN list, not assumed

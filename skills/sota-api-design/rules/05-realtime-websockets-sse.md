@@ -62,6 +62,17 @@ Decision rules:
   with a specific code (e.g. 4401) when the token expires and let the client
   re-auth on reconnect, or support an in-band token-refresh frame. Ignoring expiry
   means a revoked user stays connected for hours — common audit finding.
+- **Revocation reaches open sockets, not just the next request.** Expiry is the
+  slow path; logout, admin session revocation, password reset, account disable and
+  a permission or role change are the fast ones. Keep a registry from session ID
+  (and user ID) to live WS/SSE connections, shared across nodes through the same
+  pub/sub backplane as fanout (§5), and have every revocation path publish a
+  "kill" event that closes those connections at once (WS close `1008` policy
+  violation or an app-range code the client treats as "do not reconnect with this
+  credential"; SSE: end the response). A permission change may instead re-check
+  and drop only the subscriptions no longer allowed. Test it: log out in one tab
+  and assert the socket in another closes within seconds.
+  OWASP: WebSocket Security cheat sheet.
 
 ### 2.2 Heartbeat / ping-pong
 
@@ -273,6 +284,8 @@ servers**. Media itself is encrypted by mandate (DTLS-SRTP); the risks are in th
 - [ ] WebRTC (self-hosted only): TURN relay allowlists non-special IPs (v4+v6) and caps per-user allocations; media server uses approved DTLS-SRTP + SRTP auth, survives malformed/flooded SRTP, not ClientHello-race vulnerable, checks DTLS cert vs SDP fingerprint; signaling rate-limited + malformed-input-safe. (CPaaS-only consumers: provider-owned — N/A.)
 - [ ] WS auth: Origin checked server-side (CSWSH), or one-time short-lived tickets, or first-message auth with timeout; no long-lived tokens in query strings; nothing smuggled via `Sec-WebSocket-Protocol`.
 - [ ] Per-channel/per-action authorization after connect, not handshake-only; token expiry mid-connection handled (close code or refresh frame).
+- [ ] **Revocation closes live sockets (§2.1) — HIGH**: logout/revoke/disable paths close that session's WS/SSE connections on every node. Locator for revocation code that never touches a connection registry (a hit is a file to read, not yet a finding):
+      `grep -rliE 'logout|revoke|invalidate_?session' --include='*.py' --include='*.js' --include='*.ts' --include='*.go' --include='*.java' --include='*.kt' --include='*.rb' --include='*.cs' --include='*.php' . | xargs -r grep -LiE 'socket|connection|sse|disconnect'`
 - [ ] Server pings with pong timeout; intervals < LB idle timeout; half-open detection on client.
 - [ ] Client reconnect: exponential backoff with jitter, cap, backoff reset only after stable connection, close codes honored (no reconnect loop on auth failure).
 - [ ] Resume protocol exists: sequence IDs, bounded replay buffer, explicit `resume_failed` → snapshot path; no silent gaps.

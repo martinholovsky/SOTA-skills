@@ -34,6 +34,16 @@ skills.
   each enforcement control's refusal test with one assertion that a representative
   legitimate request completes **through** that same control — not around it, and
   not against the bare environment (`sota-code-security` rules/12 §1a).
+- **The author of a control is not the only author of its tests.** Tests for
+  authn, authz, input validation and crypto are written, or at least reviewed,
+  by someone other than whoever wrote the code: a second engineer, or a separate
+  agent session given the requirement and not the implementation. An author who
+  writes both tends to test what they built, holes included, and the suite goes
+  green. **A coding agent is never the sole author of both the security code and its
+  tests.** Treat such a change as unreviewed until a second party has read the tests
+  against the requirement (`sota-llm-engineering` rules/04 §3a, *the judge is not
+  the builder*; `sota-docs-workflow` rules/03 §7). OWASP: Secure Coding with AI
+  cheat sheet.
 
 ## 2. WSTG as the verification map
 
@@ -93,6 +103,101 @@ real auth, real DB, real routing. Patterns:
 - **Tenant isolation** — the cross-tenant test is mandatory and runs for *every*
   multi-tenant endpoint, ideally generated from the route table so new routes
   inherit it (the gap is always the one route nobody added a test for).
+  **Run it the way production connects, or it proves nothing.** Use the application's
+  DB role: PostgreSQL skips every policy for superusers and `BYPASSRLS` roles, and
+  for the table owner unless the table has `FORCE ROW LEVEL SECURITY`. A suite run as
+  the migration role therefore stays green with no isolation in place. Use the same
+  connection path and pooler mode too. PgBouncer lists session-level `SET` as
+  unsupported under transaction pooling, so a tenant context set that way breaks
+  only behind that pooler. For **every RLS table, test each operation** (read,
+  insert, update, delete) with a cross-tenant deny **and** a same-tenant allow.
+  Policies can be scoped to single commands, so a correct read policy says nothing
+  about the write one. A table with RLS on and no matching policy returns and
+  changes nothing, so a deny-only suite passes on a table that serves nobody.
+  Intentional cross-tenant paths (share links, delegated access, support/admin
+  impersonation, reporting jobs) get their own tests. Each must reach exactly the
+  object it grants and nothing next to it: no neighbouring id, sibling row or other
+  operation (`sota-databases` rules/01 § Multi-tenancy and rules/06 § Row-Level
+  Security; `sota-code-security` rules/03 §7). OWASP: Multi Tenant Security cheat sheet.
+- **Shared caches across identities** — for every cache more than one principal
+  reads through (CDN or reverse proxy, the framework's page/data cache, memoized
+  server functions, an in-process LRU), **warm it as A, then request the same thing
+  as B** (another user, another tenant, anonymous) and assert none of A's data comes
+  back. Compare against a B-only baseline rather than checking one field. Then change
+  A's role or tenant membership and repeat: the answer computed under the old
+  grants must be gone. Run it against the deployed cache configuration, because a
+  harness that switches caching off tests nothing here (build rules:
+  `sota-web-frameworks` rules/03, `sota-performance` rules/05 §9). OWASP: Nextjs
+  Security cheat sheet.
+
+## 3a. Operating the authorization suite: matrix, contract negatives, wiring guard
+
+Hand-picked authz tests cover the routes someone remembered. Three patterns close
+that gap.
+
+**The matrix is data; the tests are generated from it.** Keep one tech-neutral file
+(YAML/CSV/JSON) with a row per role × method × path: the expected status and the
+payload to send. `anonymous` is one of the roles. The integration suite reads it and
+has every role call every endpoint. It fails on a wrong allow, a wrong deny, **or any
+status the row did not predict** (a 500 on a deny path is not a pass), and the
+failure message names role, method and path. Reconcile the file against the router's
+own route listing in both directions: a route with no rows is untested, and a row for
+a deleted route hides that gap.
+
+```yaml
+# authz-matrix.yaml: one row per (role, method, path)
+- {role: anonymous, method: GET,    path: /orders/{own},   expect: 401}
+- {role: viewer,    method: GET,    path: /orders/{own},   expect: 200}
+- {role: viewer,    method: DELETE, path: /orders/{own},   expect: 403}
+- {role: viewer,    method: GET,    path: /orders/{other}, expect: 404}
+- {role: admin,     method: DELETE, path: /orders/{own},   expect: 204}
+```
+
+This is the HTTP layer. The decision-function matrix (`sota-code-security` rules/03
+§4, `sota-identity-access` rules/03 §6) tests the policy on its own. You need both,
+because a correct policy that no route calls still passes the unit matrix.
+
+**Negatives from the OpenAPI contract.** The spec already declares which operations
+need credentials (`security` + `securitySchemes`), so generate the no-credential and
+bad-credential cases from it. Schemathesis's `ignored_auth` check (read in 4.28.0)
+does this. When an operation that declares security answers 2xx, it resends the
+request with no credentials and then with invalid ones, and fails unless the answer
+is 401 or 403. The check is on by default. Any of these turns it off: a `--checks`
+list that omits it, `--exclude-checks ignored_auth`, or `[checks.ignored_auth]
+enabled = false` in `schemathesis.toml`. It does not try an expired token or one
+missing a scope, so generate those rows yourself from the scopes each operation's
+security requirement names. In OpenAPI 3.1.1, an operation-level `security: []`
+removes auth and an empty `{}` entry makes it optional. Every such operation belongs
+in the matrix as deliberately anonymous.
+
+**Guard the wiring, not only the decisions.** A refactor can unregister, reorder or
+route around the central enforcer: a sub-app mounted before the middleware, a new
+router without the hook, a gateway policy detached. When that happens, new routes
+come up open while every existing row still passes. Test the wiring itself:
+
+```python
+# Flask 3.1 shown; every framework exposes its route listing
+def test_every_route_has_a_policy():
+    app = create_app()
+    missing = [r.endpoint for r in app.url_map.iter_rules()
+               if r.endpoint != "static" and r.endpoint not in ROUTE_POLICY]
+    assert not missing, f"routes with no policy row: {missing}"
+
+def test_unannotated_route_is_denied():
+    app = create_app()                                     # fresh app per test
+    app.add_url_rule("/__probe", "probe", lambda: "open")  # no policy entry
+    assert app.test_client().get("/__probe").status_code == 403
+```
+
+Each test catches a different break, so keep both. Checked against Flask 3.1.3: the
+first fails when a route has no policy entry and stays green with the
+`before_request` enforcer removed; the second fails when the enforcer is removed and
+stays green on a new, unlisted route. Where a gateway enforces the OpenAPI
+security definitions, send one request **through the deployed gateway** with no
+credentials to a secured operation and expect 401/403. A gateway in pass-through or
+report-only mode passes every test that calls the service directly
+(`sota-code-security` rules/03 §1, rules/14 §5). OWASP: Authorization Regression
+Testing and Authorization Testing Automation cheat sheets.
 
 ## 4. Business-logic & abuse-case testing
 
@@ -175,3 +280,29 @@ Layer the automation; none of it replaces the regression tests above.
 - [ ] Each enforcement control (cap, quota, rate limit, filter, allowlist, policy)
       has an **allow case** beside its refusal cases, so a control that blocks
       legitimate traffic cannot pass the suite (`sota-code-security` rules/12 §1a)?
+- [ ] **Authz suite generated from a role × method × path matrix** (§3a), with
+      `anonymous` as a role, failing on unexpected statuses, reconciled against the
+      router's route listing both ways? Hand-picked authz tests only → High. Is
+      Schemathesis's `ignored_auth` switched off? Probe:
+      `grep -rnE '^\[checks\.ignored_auth\]|exclude-checks[ =][^ ]*ignored_auth' .`
+      Any hit that disables it → High. Also read every `--checks` list, because one
+      that omits it disables it too.
+- [ ] **Enforcer wiring guarded** (§3a): a test enumerates the registered routes
+      against the policy table, **and** a test calls an unannotated route and expects a
+      deny. If a gateway enforces the OpenAPI security definitions, is it exercised
+      with an unauthenticated request through the deployed gateway? None → High.
+- [ ] **Tenant-isolation tests use the production DB role, connection path and pooler
+      mode** (§3), and cover each operation on every RLS table with both a cross-tenant
+      deny and a same-tenant allow, plus the sharing/admin paths? Probe for tests
+      running as a role that bypasses RLS:
+      `grep -rnE 'postgres(ql)?://postgres[:@]|user=postgres( |$)|(^|[^O])BYPASSRLS' --exclude-dir=.git --exclude-dir=node_modules .`
+      (whole repo: test DSNs also live in `compose.yaml`, `compose.*.yml`, SQL seeds and CI
+      files, and an unmatched `docker-compose*.yml` glob aborts the command in zsh). Any hit
+      the test suite uses → High (the suite is green without isolation).
+- [ ] **Cross-identity cache test** (§3) for every shared cache layer: warm as A,
+      read as B, then repeat after A's role or tenant changes, against the deployed
+      cache configuration? Missing on a cache that stores personalized responses → High.
+- [ ] **Security tests independent of the code's author** (§1): on authn/authz/
+      input-validation/crypto changes, did someone other than the author (human or a
+      separate agent session) write or review the tests? A coding agent as sole author
+      of both → Medium; as sole author of both on an authz or crypto change → High.

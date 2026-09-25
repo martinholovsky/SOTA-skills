@@ -70,6 +70,15 @@ workflow, contract testing.
   honour `Accept` for the response and `406` when unsupported — but **never reflect
   the client's `Accept` value into the response `Content-Type`** (a path to XSS /
   content sniffing). Serve JSON as `application/json`, never `application/javascript`.
+- **Declare each operation's media types; refuse the rest with `415`.** Every
+  operation lists the request and response types it supports (the OpenAPI
+  `requestBody.content` / `responses.*.content` keys, a framework `consumes`/
+  `produces`), and anything else is rejected rather than parsed. Otherwise the
+  framework picks a parser from the client's `Content-Type`, and a JSON endpoint
+  quietly becomes an XML one the day an XML library lands on the classpath
+  (Spring's default converter set, for one, adds an XML converter when Jackson
+  XML or JAXB is present) — the route to XXE and parser-differential bugs.
+  OWASP: REST Security cheat sheet.
 - `500` your bug; `502/503/504` upstream/overload/timeout. **Never** return `200`
   with `{"error": ...}` in the body — it breaks retries, monitoring, caching, and
   every generic client.
@@ -307,6 +316,8 @@ GET /operations/op_01HZX9               HTTP/1.1 200 OK
 - [ ] URLs are nouns; no verbs except reified action sub-resources; consistent plural casing.
 - [ ] No GET/HEAD endpoint mutates state.
 - [ ] Status codes semantically correct; no `200 {"error":...}` anti-pattern anywhere.
+- [ ] **Media types allowlisted per operation (§3) — MEDIUM, HIGH if an XML parser is reachable**: undeclared `Content-Type` → `415`; the spec lists every operation's request/response types. Spring write mappings with no `consumes` (each hit accepts whatever converters are registered; confirm by sending `Content-Type: application/xml`):
+      `grep -rnE '@(Post|Put|Patch)Mapping' --include='*.java' --include='*.kt' . | grep -v 'consumes'`
 - [ ] 201 responses include `Location`; async operations return 202 + status resource.
 - [ ] Collection endpoints use cursor pagination with opaque cursors, enforced max limit, stable sort with unique tiebreaker.
 - [ ] No unbounded `COUNT(*)`/total on large collections by default.

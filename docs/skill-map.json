@@ -304,6 +304,25 @@
       ]
     },
     {
+      "from": "sota-testing",
+      "to": "sota-code-security",
+      "weight": 18,
+      "targets": [
+        "rules/03 \u00a71",
+        "rules/03 \u00a74",
+        "rules/03 \u00a77",
+        "rules/10",
+        "rules/11 \u00a72.2",
+        "rules/11 \u00a76.7",
+        "rules/12 \u00a71a",
+        "rules/13 \u00a71",
+        "rules/14 \u00a71",
+        "rules/14 \u00a77",
+        "rules/15 \u00a72.4",
+        "rules/16 \u00a72.16"
+      ]
+    },
+    {
       "from": "sota-jvm",
       "to": "sota-code-security",
       "weight": 16,
@@ -325,22 +344,6 @@
       "to": "sota-devsecops",
       "weight": 15,
       "targets": []
-    },
-    {
-      "from": "sota-testing",
-      "to": "sota-code-security",
-      "weight": 15,
-      "targets": [
-        "rules/10",
-        "rules/11 \u00a72.2",
-        "rules/11 \u00a76.7",
-        "rules/12 \u00a71a",
-        "rules/13 \u00a71",
-        "rules/14 \u00a71",
-        "rules/14 \u00a77",
-        "rules/15 \u00a72.4",
-        "rules/16 \u00a72.16"
-      ]
     },
     {
       "from": "sota-confidential-computing",
@@ -629,6 +632,18 @@
       "targets": []
     },
     {
+      "from": "sota-api-design",
+      "to": "sota-code-security",
+      "weight": 6,
+      "targets": [
+        "rules/01 \u00a711",
+        "rules/01 \u00a75",
+        "rules/02",
+        "rules/04 \u00a75",
+        "rules/14 \u00a76a"
+      ]
+    },
+    {
       "from": "sota-architecture",
       "to": "sota-async-concurrency",
       "weight": 6,
@@ -729,6 +744,17 @@
       "targets": []
     },
     {
+      "from": "sota-performance",
+      "to": "sota-code-security",
+      "weight": 6,
+      "targets": [
+        "rules/03 \u00a72",
+        "rules/03 \u00a73",
+        "rules/05",
+        "rules/11 \u00a72.1"
+      ]
+    },
+    {
       "from": "sota-ruby",
       "to": "sota-code-security",
       "weight": 6,
@@ -812,6 +838,16 @@
       ]
     },
     {
+      "from": "sota-docs-workflow",
+      "to": "sota-testing",
+      "weight": 5,
+      "targets": [
+        "rules/01 \u00a71.8",
+        "rules/07 \u00a77.10",
+        "rules/08"
+      ]
+    },
+    {
       "from": "sota-identity-access",
       "to": "sota-privacy-compliance",
       "weight": 5,
@@ -845,6 +881,15 @@
     },
     {
       "from": "sota-testing",
+      "to": "sota-docs-workflow",
+      "weight": 5,
+      "targets": [
+        "rules/03 \u00a77",
+        "rules/05"
+      ]
+    },
+    {
+      "from": "sota-testing",
       "to": "sota-shell-scripting",
       "weight": 5,
       "targets": [
@@ -852,6 +897,16 @@
         "rules/01 \u00a73",
         "rules/06 \u00a71",
         "rules/08 \u00a74"
+      ]
+    },
+    {
+      "from": "sota-threat-modeling",
+      "to": "sota-code-security",
+      "weight": 5,
+      "targets": [
+        "rules/03 \u00a73",
+        "rules/03 \u00a78",
+        "rules/08 \u00a75"
       ]
     },
     {
@@ -879,16 +934,6 @@
       "weight": 5,
       "targets": [
         "rules/06"
-      ]
-    },
-    {
-      "from": "sota-api-design",
-      "to": "sota-code-security",
-      "weight": 4,
-      "targets": [
-        "rules/01 \u00a75",
-        "rules/02",
-        "rules/14 \u00a76a"
       ]
     },
     {
@@ -946,15 +991,6 @@
       "targets": []
     },
     {
-      "from": "sota-docs-workflow",
-      "to": "sota-testing",
-      "weight": 4,
-      "targets": [
-        "rules/01 \u00a71.8",
-        "rules/08"
-      ]
-    },
-    {
       "from": "sota-golang",
       "to": "sota-code-security",
       "weight": 4,
@@ -1005,15 +1041,6 @@
       ]
     },
     {
-      "from": "sota-performance",
-      "to": "sota-code-security",
-      "weight": 4,
-      "targets": [
-        "rules/05",
-        "rules/11 \u00a72.1"
-      ]
-    },
-    {
       "from": "sota-privacy-compliance",
       "to": "sota-databases",
       "weight": 4,
@@ -1032,14 +1059,6 @@
       "to": "sota-cloud-infrastructure",
       "weight": 4,
       "targets": []
-    },
-    {
-      "from": "sota-testing",
-      "to": "sota-docs-workflow",
-      "weight": 4,
-      "targets": [
-        "rules/05"
-      ]
     },
     {
       "from": "sota-testing",
@@ -1346,18 +1365,18 @@
     },
     {
       "from": "sota-testing",
+      "to": "sota-databases",
+      "weight": 3,
+      "targets": [
+        "rules/01"
+      ]
+    },
+    {
+      "from": "sota-testing",
       "to": "sota-architecture",
       "weight": 3,
       "targets": [
         "rules/02 \u00a714"
-      ]
-    },
-    {
-      "from": "sota-threat-modeling",
-      "to": "sota-code-security",
-      "weight": 3,
-      "targets": [
-        "rules/08 \u00a75"
       ]
     },
     {
@@ -1367,6 +1386,15 @@
       "targets": [
         "rules/05",
         "rules/07 \u00a77.2"
+      ]
+    },
+    {
+      "from": "sota-architecture",
+      "to": "sota-code-security",
+      "weight": 2,
+      "targets": [
+        "rules/03 \u00a78",
+        "rules/11 \u00a72.2"
       ]
     },
     {
@@ -1721,10 +1749,36 @@
       ]
     },
     {
-      "from": "sota-testing",
-      "to": "sota-databases",
+      "from": "sota-skill-security",
+      "to": "sota-devsecops",
       "weight": 2,
-      "targets": []
+      "targets": [
+        "rules/01 \u00a71.8"
+      ]
+    },
+    {
+      "from": "sota-testing",
+      "to": "sota-performance",
+      "weight": 2,
+      "targets": [
+        "rules/05 \u00a79"
+      ]
+    },
+    {
+      "from": "sota-testing",
+      "to": "sota-llm-engineering",
+      "weight": 2,
+      "targets": [
+        "rules/04 \u00a73a"
+      ]
+    },
+    {
+      "from": "sota-testing",
+      "to": "sota-identity-access",
+      "weight": 2,
+      "targets": [
+        "rules/03 \u00a76"
+      ]
     },
     {
       "from": "sota-ux-writing",
@@ -1790,14 +1844,6 @@
     },
     {
       "from": "sota-architecture",
-      "to": "sota-code-security",
-      "weight": 1,
-      "targets": [
-        "rules/11 \u00a72.2"
-      ]
-    },
-    {
-      "from": "sota-architecture",
       "to": "sota-cloud-infrastructure",
       "weight": 1,
       "targets": []
@@ -1822,6 +1868,30 @@
       "weight": 1,
       "targets": [
         "rules/03 \u00a77b"
+      ]
+    },
+    {
+      "from": "sota-async-concurrency",
+      "to": "sota-python",
+      "weight": 1,
+      "targets": [
+        "rules/04 \u00a76"
+      ]
+    },
+    {
+      "from": "sota-async-concurrency",
+      "to": "sota-jvm",
+      "weight": 1,
+      "targets": [
+        "rules/03"
+      ]
+    },
+    {
+      "from": "sota-async-concurrency",
+      "to": "sota-javascript-typescript",
+      "weight": 1,
+      "targets": [
+        "rules/04"
       ]
     },
     {
@@ -2324,6 +2394,14 @@
     },
     {
       "from": "sota-mobile",
+      "to": "sota-code-security",
+      "weight": 1,
+      "targets": [
+        "rules/04 \u00a77"
+      ]
+    },
+    {
+      "from": "sota-mobile",
       "to": "sota-architecture",
       "weight": 1,
       "targets": [
@@ -2419,6 +2497,22 @@
       "to": "sota-databases",
       "weight": 1,
       "targets": []
+    },
+    {
+      "from": "sota-performance",
+      "to": "sota-web-frameworks",
+      "weight": 1,
+      "targets": [
+        "rules/03 \u00a74"
+      ]
+    },
+    {
+      "from": "sota-performance",
+      "to": "sota-architecture",
+      "weight": 1,
+      "targets": [
+        "rules/05 \u00a712"
+      ]
     },
     {
       "from": "sota-php",
@@ -2643,6 +2737,12 @@
       "targets": []
     },
     {
+      "from": "sota-security-compliance",
+      "to": "sota-c-cpp",
+      "weight": 1,
+      "targets": []
+    },
+    {
       "from": "sota-shell-scripting",
       "to": "sota-cloud-infrastructure",
       "weight": 1,
@@ -2704,12 +2804,6 @@
     },
     {
       "from": "sota-testing",
-      "to": "sota-performance",
-      "weight": 1,
-      "targets": []
-    },
-    {
-      "from": "sota-testing",
       "to": "sota-observability",
       "weight": 1,
       "targets": []
@@ -2724,15 +2818,31 @@
     },
     {
       "from": "sota-testing",
-      "to": "sota-identity-access",
+      "to": "sota-api-design",
       "weight": 1,
       "targets": []
     },
     {
       "from": "sota-testing",
-      "to": "sota-api-design",
+      "to": "sota-web-frameworks",
+      "weight": 1,
+      "targets": [
+        "rules/03"
+      ]
+    },
+    {
+      "from": "sota-threat-modeling",
+      "to": "sota-sandboxing",
       "weight": 1,
       "targets": []
+    },
+    {
+      "from": "sota-threat-modeling",
+      "to": "sota-testing",
+      "weight": 1,
+      "targets": [
+        "rules/09 \u00a74"
+      ]
     },
     {
       "from": "sota-ux-writing",

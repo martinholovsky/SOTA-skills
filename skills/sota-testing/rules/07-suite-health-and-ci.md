@@ -298,6 +298,40 @@ eight days.
   floor whose provenance lives only in a commit message will be lowered by whoever
   meets it next, because nothing on the line tells them what it meant.
 
+## 7.10 A PR that deletes, skips or weakens tests needs a human sign-off
+
+The cheapest way to turn a red test green is to delete it, skip it or drop its
+assertion. A coding agent told to "make CI pass" finds that route readily
+(`sota-llm-engineering` rules/04 §3a). A reviewer skimming a large diff misses it just
+as readily, because a removed line is shorter than an added one. Make the diff say so:
+a PR check that counts removed test definitions, newly added skips and the net
+assertion delta in test files, and routes any hit to a required human approval.
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+base=$(git merge-base "${BASE_REF:-origin/main}" HEAD)
+d=$(git diff -U0 "$base" HEAD -- '*test*' '*spec*')
+count() { printf '%s\n' "$d" | grep -cE "$1" || true; }   # grep -c exits 1 on zero
+removed=$(count '^-[[:space:]]*(async def test_|def test_|func Test|@Test|(it|test)\()')
+skipped=$(count '^\+.*(pytest\.mark\.(skip|xfail)|pytest\.skip\(|unittest\.skip|t\.Skip|@Disabled|@Ignore|(it|test|describe)\.skip\(|xit\()')
+a_plus=$(count '^\+[^+].*(assert|expect\(|t\.(Error|Fatal))')
+a_minus=$(count '^-[^-].*(assert|expect\(|t\.(Error|Fatal))')
+echo "removed-tests=$removed added-skips=$skipped assertions=+$a_plus/-$a_minus"
+if (( removed > 0 || skipped > 0 || a_minus > a_plus )); then
+  echo "needs human sign-off: tests removed, skipped or weakened" >&2; exit 1
+fi
+```
+
+Run against a PR that deleted a Python and a Go test, skipped a pytest and a Jest
+case and dropped an assertion, it printed `removed-tests=3 added-skips=2
+assertions=+0/-3` and exited 1. A PR that only added a test exited 0. It is a
+**flag, not a verdict**. A moved or renamed test also counts as removed, and a
+deleted redundant test is legitimate (§7.1 step 4). Adjust the patterns to your
+runners, and make the gate's failure mean "a named human approves", never "blocked".
+Security test files (`rules/09`) deserve a code-owner rule of their own. OWASP:
+Secure Coding with AI cheat sheet.
+
 ## Audit checklist
 
 - [ ] **Suite failures: was yours the only run touching the shared services?** (§7.4)
@@ -357,4 +391,9 @@ eight days.
       Re-recording destroys the signal and the failure message offers it. Counts quoted in
       prose sit outside every ratchet — derive them in a test whose failure names each place
       that quotes them.
+- [ ] **Does a PR that deletes, skips or weakens tests need a human sign-off?** (§7.10)
+      Probe a PR's diff:
+      `git diff -U0 "$(git merge-base origin/main HEAD)" HEAD | grep -nE '^-[[:space:]]*(async def test_|def test_|func Test|@Test|(it|test)\()|^\+.*(pytest\.mark\.(skip|xfail)|pytest\.skip\(|unittest\.skip|t\.Skip|@Disabled|@Ignore|(it|test|describe)\.skip\(|xit\()'`
+      Hits merged with no approval beyond the author's (or an agent's) → High. No
+      such check in CI where agents open PRs → Medium.
 
