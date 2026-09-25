@@ -25,6 +25,17 @@ Rules:
 - **CI installs with `uv sync --locked`** (or `--frozen`). Never bare `pip install -r requirements.txt`
   in new projects; if a legacy `requirements.txt` must exist, generate it:
   `uv export --format requirements-txt --output-file requirements.txt`.
+- **A tool that is not uv gets `pylock.toml`, not a requirements file.** PEP 751 (Final,
+  March 2025) is the standard, tool-neutral lock: every package with its artifact URLs, sizes
+  and hashes, installable with no resolution at install time.
+  `uv export --locked --format pylock.toml --no-emit-project -o pylock.toml` writes it (uv
+  refuses any output name other than `pylock.toml` or `pylock.<name>.toml`, as the PEP
+  requires). `uv.lock` stays the source of truth. Measured (uv 0.12.0): `uv pip sync
+  pylock.toml` installed the locked set, and one altered sha256 made it exit 1. **A committed
+  export can go stale**; in CI, re-run the same command and fail on a diff
+  (`… && git diff --exit-code -- pylock.toml`). Use exactly the flags that produced the
+  committed file: the export writes its own command line into the header, so the same
+  dependencies exported with different flags differ too (measured).
 - **Never `sudo pip install`, never install into the system interpreter.** Every project gets its
   own venv; `uv` makes this automatic.
 - One-off scripts use **PEP 723 inline metadata** instead of polluting an env:
@@ -195,6 +206,7 @@ checks (`pre-commit run --all-files`) — local hooks are convenience, not enfor
 - **3.14 — template strings (PEP 750):** `t"..."` returns a `Template` of static parts +
   `Interpolation` objects instead of a string — for t-string-aware APIs that escape or
   parameterize values (HTML, SQL). Not a drop-in f-string; use only with a consuming library.
+  The escaping lives in that consumer, not in the literal: reviewing one is rules/05 §3a.
 - **3.14 — `compression.zstd`** (PEP 784): stdlib Zstandard, also wired into
   `tarfile`/`zipfile`/`shutil`. Drops the third-party `zstandard` dep on a 3.14+ floor.
 
@@ -300,7 +312,8 @@ images by digest for reproducible rebuilds in regulated environments.
 Run from repo root. Severity guidance in brackets.
 
 - [ ] **Toolchain state** — `ls pyproject.toml uv.lock 2>/dev/null` (missing uv.lock in an app
-      [MEDIUM]); `ls setup.py setup.cfg Pipfile poetry.lock 2>/dev/null` (legacy/competing
+      [MEDIUM]; a committed `pylock.toml`/`pylock.<name>.toml` is a hashed lock too (§1), not a
+      missing one: `find . -name 'pylock*.toml' -not -path '*/.venv/*'`); `ls setup.py setup.cfg Pipfile poetry.lock 2>/dev/null` (legacy/competing
       toolchains [LOW-MEDIUM]);
       `grep -rn "pip install" --include="*.yml" --include="*.yaml" --include="Dockerfile*" . | grep -v "uv pip"`
       (unlocked installs in CI/images [MEDIUM]); `grep -n "sudo pip" -r .` (system-interpreter

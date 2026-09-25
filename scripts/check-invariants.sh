@@ -3039,7 +3039,7 @@ if [ "$v36" -ne 0 ]; then fail=1; fi
 # .NET case -- a positive control is what showed the instrument was broken.
 # Escape hatch: a line carrying the literal marker '# BAD' is a deliberate bad example.
 # Its negative control (probe 37b) proves the marker only exempts its own line.
-echo "[37/37] No grep probe filters out a file it names explicitly (--include)"
+echo "[37/37] No grep probe filters out a file it names, or uses a brace glob in --include"
 v37=0
 if command -v python3 >/dev/null 2>&1; then
   in_out=$(python3 - <<'INPY'
@@ -3088,6 +3088,14 @@ for f in files:
                 if not incs:
                     continue
                 cmds += 1
+                # grep's --include never brace-expands: a QUOTED '*.{py,js}' matches no file
+                # on BSD grep, ugrep or GNU grep (measured 2026-09-25), and unquoted it aborts
+                # under zsh NOMATCH. One --include per extension is the only portable form.
+                for inc in incs:
+                    if re.search(r'\{[^}]*,[^}]*\}', inc):
+                        bad += 1
+                        print("INCLUDE BRACE NEVER EXPANDS: %s:%d: --include='%s' matches no file"
+                              % (f, i, inc))
                 # With -e/--regexp the pattern is not positional, so EVERY positional is a
                 # path. Skipping pos[0] regardless was a false negative (review, 2026-09-25).
                 for p in (pos if has_e else pos[1:]):

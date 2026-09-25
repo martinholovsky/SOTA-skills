@@ -16,6 +16,18 @@ Standards: [SEI CERT Oracle Java](https://wiki.sei.cmu.edu/confluence/display/ja
   an explicit schema, deserialized into known DTOs. Disable polymorphic type
   handling unless allowlisted (Jackson `enableDefaultTyping`/`@JsonTypeInfo`
   with untrusted input is the JSON equivalent of the gadget problem).
+- **Jackson 3 changes the spellings, not the rule.** Packages and Maven groups move from
+  `com.fasterxml.jackson` to `tools.jackson`, except `com.fasterxml.jackson.annotation`, which
+  stays. So `@JsonTypeInfo` keeps its import. `enableDefaultTyping` is gone, because 3.0 drops
+  everything deprecated as of 2.20. Default typing is now switched on only on the builder, with
+  `JsonMapper.builder().activateDefaultTyping(ptv, …)` or `activateDefaultTypingAsProperty`, and
+  a `PolymorphicTypeValidator` is required. `LaissezFaireSubTypeValidator` is no longer public.
+  Annotation-driven typing defaults to `DefaultBaseTypeLimitingValidator`. It refuses base types
+  such as `Object`, `Serializable` and `Comparable`, but it checks nothing below a narrower
+  base. `builder().polymorphicTypeValidator(...)` replaces it, so read what that call installs.
+  Spring Boot 4 / Framework 7 default to Jackson 3. The web-layer view is `rules/08` §1
+  ([Jackson 3 migration guide](https://github.com/FasterXML/jackson/blob/main/jackson3/MIGRATING_TO_JACKSON_3.md),
+  [Spring: Jackson 3 support](https://spring.io/blog/2025/10/07/introducing-jackson-3-support-in-spring)).
 - If native serialization is unavoidable, install a strict **`ObjectInputFilter`**
   allowlist (JEP 290, `setObjectInputFilter` / `jdk.serialFilter`) limiting
   classes and graph size. Treat it as defense-in-depth, not a fix.
@@ -182,6 +194,24 @@ XML and XXE (formerly section 3) moved to [rules/07](07-xml.md) §1 on 2026-09-2
     For key sizes, `sota-code-security` rules/04 §1 already schedules RSA-2048 (112-bit)
     for deprecation after 2030. So a `KeyPairGenerator.initialize(1024)` is below a floor
     that is itself on its way out.
+  - **Newer JDKs have JCA names for post-quantum and key derivation. Use them, not
+    hand-rolled code.** The policy (which algorithm, hybrid or not, when) is
+    `sota-code-security` rules/04 §1; these are only the JVM spellings.
+    - ML-KEM (JEP 496, since JDK 24) is `KeyPairGenerator.getInstance("ML-KEM")` with
+      `KEM.getInstance("ML-KEM")`. The parameter sets are `ML-KEM-512`/`-768`/`-1024`.
+    - ML-DSA (JEP 497, since JDK 24) is `Signature.getInstance("ML-DSA")`. The parameter
+      sets are `ML-DSA-44`/`-65`/`-87`.
+    - HKDF (JEP 510, final in JDK 25) is `KDF.getInstance("HKDF-SHA256")` with
+      `HKDFParameterSpec.ofExtract()…thenExpand(info, len)`. It replaces an extract/expand
+      built by hand on `Mac` and a copied `HkdfUtil`. HKDF still does not take a password
+      (the password-hashing line above).
+    - Hybrid TLS 1.3 key exchange (JEP 527, JDK 27) puts `X25519MLKEM768` first in the
+      default named groups, with no code change. **Pinning the groups turns it off.** A
+      `jdk.tls.namedGroups` property or a `SSLParameters.setNamedGroups(...)` list written
+      before JDK 27 does not contain it. `SecP256r1MLKEM768` and `SecP384r1MLKEM1024` exist
+      but are off by default
+      ([JEP 496](https://openjdk.org/jeps/496), [JEP 497](https://openjdk.org/jeps/497),
+      [JEP 510](https://openjdk.org/jeps/510), [JEP 527](https://openjdk.org/jeps/527)).
   - **Hex-encode digests with `java.util.HexFormat`** (since 17), never a loop over
     `Integer.toHexString(b & 0xff)`. That drops each leading zero, so distinct inputs
     collide. Measured: bytes `{0x01,0x23}` and `{0x12,0x03}` both encode to `"123"`;
@@ -297,7 +327,8 @@ throws `UnsupportedOperationException`. A warning printed once to stderr gets re
 On JDK 24+, run CI and production with `--illegal-native-access=deny` and
 `--sun-misc-unsafe-memory-access=deny`. Then a new dependency that reaches native code or
 `Unsafe` fails the build instead of printing that warning. Where you do need an exception, grant
-only the named module.
+only the named module. **JEP 483's AOT cache refuses any `--illegal-native-access` value**, so
+with a cache run this gate in a cache-free CI job instead (`rules/05` §2).
 
 ## Audit checklist
 
@@ -309,8 +340,9 @@ only the named module.
       (repeat with `sun-misc-unsafe-memory-access=deny`)
 - [ ] **Deserialization — CRITICAL** —
       `grep -rnE 'readObject\(|ObjectInputStream|XMLDecoder' --include='*.java' --include='*.kt' .` ;
-      `grep -rnE 'enableDefaultTyping|@JsonTypeInfo|activateDefaultTyping' --include='*.java' --include='*.kt' .`
-      (Jackson polymorphic);
+      `grep -rnE 'enableDefaultTyping|@JsonTypeInfo|activateDefaultTyping|polymorphicTypeValidator\(|LaissezFaireSubTypeValidator' --include='*.java' --include='*.kt' .`
+      (Jackson polymorphic, 2.x and 3.x spellings; `activateDefaultTyping` also matches
+      `…AsProperty`);
       `grep -rnE 'MappingJackson2MessageConverter|JacksonJsonMessageConverter|new Kryo\(' --include='*.java' --include='*.kt' .`
       (framework deser — verify type allowlist)
 - [ ] **Object mappers in an unsafe mode — CRITICAL on untrusted input** (§1) —
@@ -419,6 +451,13 @@ only the named module.
       (zero, string-derived or constant IV/nonce; RSA under 2048) ;
       `grep -rnE 'Integer\.toHexString\(' --include='*.java' --include='*.kt' .`
       (over digest bytes it drops leading zeros and collides; use `HexFormat`)
+- [ ] **Hand-rolled HKDF, and TLS groups pinned without the hybrid — MEDIUM** (§4) —
+      `grep -rliE 'hkdf' --include='*.java' --include='*.kt' . | while IFS= read -r f; do grep -qE 'KDF\.getInstance\(' "$f" || echo "$f"; done`
+      (a file that names HKDF and never calls the JDK 25+ `KDF` API: a hand-built
+      extract/expand or a third-party one; below JDK 25 a vetted library is the fix) ;
+      `grep -rnE 'jdk\.tls\.namedGroups|setNamedGroups\(' --include='*.java' --include='*.kt' --include='*.properties' --include='*.security' --include='Dockerfile*' --include='*.sh' --include='jvm.config' . | grep -v 'MLKEM'`
+      (a pinned list with no ML-KEM hybrid switches JDK 27's default off; a list split over
+      several lines also prints, so read it)
 - [ ] **Mail hostname check and SSH host keys — HIGH** (§4; host keys are
       `sota-code-security` rules/04 §5) —
       `grep -rnE 'ssl\.checkserveridentity|setSSLCheckServerIdentity\(false\)|import (javax\.mail|com\.sun\.mail)\.' --include='*.java' --include='*.kt' --include='*.properties' .`

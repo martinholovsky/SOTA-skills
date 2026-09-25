@@ -331,7 +331,7 @@
     {
       "from": "sota-jvm",
       "to": "sota-code-security",
-      "weight": 17,
+      "weight": 18,
       "targets": [
         "rules/01 \u00a710",
         "rules/01 \u00a711",
@@ -573,6 +573,19 @@
       ]
     },
     {
+      "from": "sota-dotnet",
+      "to": "sota-code-security",
+      "weight": 8,
+      "targets": [
+        "rules/01 \u00a711",
+        "rules/01 \u00a75",
+        "rules/01 \u00a78",
+        "rules/05",
+        "rules/06 \u00a73",
+        "rules/17"
+      ]
+    },
+    {
       "from": "sota-identity-access",
       "to": "sota-network-security",
       "weight": 8,
@@ -665,19 +678,6 @@
       "targets": [
         "rules/01 \u00a710",
         "rules/07 \u00a72"
-      ]
-    },
-    {
-      "from": "sota-dotnet",
-      "to": "sota-code-security",
-      "weight": 7,
-      "targets": [
-        "rules/01 \u00a711",
-        "rules/01 \u00a75",
-        "rules/01 \u00a78",
-        "rules/05",
-        "rules/06 \u00a73",
-        "rules/17"
       ]
     },
     {
@@ -1936,6 +1936,12 @@
       ]
     },
     {
+      "from": "sota-python",
+      "to": "sota-sandboxing",
+      "weight": 2,
+      "targets": []
+    },
+    {
       "from": "sota-ruby",
       "to": "sota-architecture",
       "weight": 2,
@@ -2460,6 +2466,14 @@
     },
     {
       "from": "sota-dotnet",
+      "to": "sota-api-design",
+      "weight": 1,
+      "targets": [
+        "rules/07 \u00a72"
+      ]
+    },
+    {
+      "from": "sota-dotnet",
       "to": "sota-sandboxing",
       "weight": 1,
       "targets": []
@@ -2539,6 +2553,12 @@
     {
       "from": "sota-golang",
       "to": "sota-sandboxing",
+      "weight": 1,
+      "targets": []
+    },
+    {
+      "from": "sota-golang",
+      "to": "sota-security-compliance",
       "weight": 1,
       "targets": []
     },
@@ -2887,12 +2907,6 @@
       "targets": [
         "rules/07"
       ]
-    },
-    {
-      "from": "sota-python",
-      "to": "sota-sandboxing",
-      "weight": 1,
-      "targets": []
     },
     {
       "from": "sota-python",

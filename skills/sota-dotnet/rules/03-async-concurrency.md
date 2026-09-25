@@ -68,6 +68,30 @@ are mechanical — follow them. Reference:
   Prefer a scoped DI service (`AddScoped<TenantContext>()`), which the container disposes with
   the request. `ILogger.BeginScope` returns an `IDisposable`, so open it only in a `using`. *(OWASP: Multi-Tenant Security and Session Management cheat sheets.)*
 
+## 6. Testable time and the `Lock` type
+
+- **Inject `TimeProvider` (in the BCL since .NET 8) instead of reading the clock.** Code that
+  calls `DateTime.UtcNow`/`DateTimeOffset.UtcNow`, or waits with `Task.Delay(TimeSpan)`, can only
+  be tested by waiting in real time. Take a `TimeProvider`, register `TimeProvider.System` as a
+  singleton, and use `GetUtcNow()`, `GetTimestamp()`/`GetElapsedTime()`, `CreateTimer`, and the
+  overloads that accept one: `Task.Delay(TimeSpan, TimeProvider[, CancellationToken])`,
+  `Task.WaitAsync(TimeSpan, TimeProvider)`, and `new CancellationTokenSource(TimeSpan,
+  TimeProvider)`. In tests, `FakeTimeProvider` from `Microsoft.Extensions.TimeProvider.Testing`
+  moves time forward with `Advance`. Measured on .NET 10: a one-hour
+  `Task.Delay(TimeSpan.FromHours(1), fake)` was still pending before `fake.Advance(1h)` and
+  complete after it, with no wall-clock wait. Targets older than .NET 8 (including .NET Framework
+  4.6.2+ and .NET Standard 2.0) get it from the `Microsoft.Bcl.TimeProvider` package (Microsoft
+  Learn, "What is the TimeProvider class").
+- **On .NET 9+ / C# 13, lock a dedicated `System.Threading.Lock`.** Declare
+  `private readonly Lock _gate = new();`. A `lock (_gate)` statement then compiles to
+  `_gate.EnterScope()` rather than `Monitor`, and Microsoft recommends it for best performance.
+  Convert the `Lock` to `object` or any other type and `lock` silently falls back to `Monitor`.
+  The compiler flags that as **CS9216** (reproduced on SDK 10.0.401), and
+  `TreatWarningsAsErrors` turns it into a build break. On older targets, lock a dedicated private
+  `object`. On every target, never lock `this`, a `Type` (`typeof`), or a string, because other
+  code can take the same lock. You still cannot `await` inside `lock`; use `SemaphoreSlim` (§5).
+  (Microsoft Learn, "The lock statement".)
+
 ## Audit checklist
 
 - [ ] **Blocking on async — CRITICAL/HIGH (deadlock / thread-pool starvation)** —
@@ -94,3 +118,12 @@ are mechanical — follow them. Reference:
       (a thread-local holding tenant/user data is the finding. An `AsyncLocal` must be set in
       async code and restored in `finally`, and background work started from a request needs
       `SuppressFlow`; prefer a scoped DI service)
+- [ ] **Clock read directly in production code — LOW (untestable time logic; MEDIUM where
+      expiry or lockout decisions depend on it)** (§6) —
+      `grep -rnE 'DateTime(Offset)?\.(Utc)?Now' --include='*.cs' . | grep -viE 'test'`
+      (each hit in expiry, retry, rate or scheduling logic should take a `TimeProvider`; the
+      filter drops every line containing "test", in its path or its code)
+- [ ] **Lock target shared or not a `Lock` — MEDIUM for `this`/`typeof`/string, INFO for a
+      plain `object` on .NET 9+** (§6) —
+      `grep -rnE 'object[[:space:]]+_?[A-Za-z0-9_]+[[:space:]]*=[[:space:]]*new([[:space:]]*object)?\(\)|lock[[:space:]]*\((this|typeof\(|"|nameof\()' --include='*.cs' .`
+      (a CS9216 warning in the build log is the Lock-converted-to-object case)

@@ -300,7 +300,8 @@ Run from repo root; verify each hit manually.
       `grep -n '"php"' composer.json` ; `php -v` (a branch past its php.net end date is EOL
       even when the package comes from a vendor that still patches it, §1) ;
       `grep -rnE '"php"[[:space:]]*:[[:space:]]*"([^"]*[^0-9.])?(5\.|7\.|8\.0|8\.1)' --include='composer.json' .`
-      (a floor that still admits an EOL branch)
+      (a floor that still admits an EOL branch; the list is fixed text and misses 8.2 from
+      2027-01-01, so prefer the live php.net lookup in `rules/05`'s floor item)
 - [ ] **Supported branch, stale patch (§1) — HIGH when the newer release is tagged `security`**
       — run on the production image:
       `v=$(php -r 'echo PHP_MAJOR_VERSION, ".", PHP_MINOR_VERSION;'); latest=$(curl -sSf "https://www.php.net/releases/?json&version=$v" | php -r 'echo json_decode(stream_get_contents(STDIN))->version ?? "";'); php -r 'if ($argv[1] === "") { echo "LOOKUP FAILED\n"; exit(2); } if (version_compare(PHP_VERSION, $argv[1], "<")) { echo "BEHIND: ", PHP_VERSION, " < ", $argv[1], "\n"; exit(1); }' "$latest"`

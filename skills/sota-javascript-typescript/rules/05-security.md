@@ -359,11 +359,16 @@ Three ways Node leaves memory safety. **Native addons** (`.node` files, Node-API
 initialized*" and "may contain sensitive data", so a buffer sent before every byte is
 overwritten leaks earlier allocations: tokens, keys, other users' data. Use `Buffer.alloc`
 unless a benchmark justifies the unsafe form *and* the code provably overwrites the whole
-buffer first. **`node:ffi`** (v26.1.0, Stability 1 — Experimental) calls native symbols and
-reads and writes raw pointers from JavaScript with no compiled addon; its docs call the API
-"unsafe", able to "crash the process or corrupt memory". Treat an import of it as native code,
-and start production processes with `--no-experimental-ffi` (or `--permission` without
-`--allow-ffi`) unless a reviewed feature needs it. The class is `sota-code-security` rules/06 §3.
+buffer first. **`node:ffi`** (Stability 1 — Experimental; added v26.1.0 behind
+`--experimental-ffi`, on by default since v26.9.0) calls native symbols and reads and writes
+raw pointers from JavaScript with no compiled addon; its docs call the API "unsafe", able to
+"crash the process or corrupt memory". Treat an import of it as native code, and start
+production processes with `--permission` without `--allow-ffi` (measured on v26.7.0: `dlopen`
+threw `ERR_ACCESS_DENIED`) or with `--no-experimental-ffi`, unless a reviewed feature needs it.
+The docs say that flag exists "only in builds with FFI support": on v22 (v22.22.1, v22.23.3) the
+command line prints `bad option: --no-experimental-ffi` and `NODE_OPTIONS` prints
+`--no-experimental-ffi is not allowed in NODE_OPTIONS`, both exit 9, so the process never starts
+on a runtime without FFI. The class is `sota-code-security` rules/06 §3.
 
 ## Audit checklist
 

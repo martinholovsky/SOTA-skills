@@ -48,6 +48,14 @@ below.
   `-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST` (LLVM 18+ — verify for your
   toolchain). libc++ documents FAST, or EXTENSIVE for a broader set, as the production
   modes and DEBUG for test and CI only (`rules/04` §5).
+- **Clang Safe Buffers for new or migrating C++.** `-Wunsafe-buffer-usage` warns on raw-pointer
+  indexing, pointer arithmetic and bounds-unsafe calls such as `std::memcpy`; Clang's Safe
+  Buffers docs pair it with libc++ hardening and `std::span`/containers as the adoption path.
+  Make it an error for new code or a converted directory, fence each deliberate exception with
+  `#pragma clang unsafe_buffer_usage begin`/`end` and a comment saying why, and mark a legacy
+  pointer API `[[clang::unsafe_buffer_usage]]` so its callers are warned. Measured with Apple
+  clang 21: `return p[n];` warned, `-Werror=unsafe-buffer-usage` failed the compile, and the
+  pragma pair silenced it. Clang only: GCC 16.2 rejected the flag as unrecognized (measured).
 
 ```cpp
 // BAD — trusts len from the wire; OOB read/write
@@ -142,6 +150,11 @@ catch what review and `-Wall` cannot. (Clang/GCC; see
       `grep -rnE '=\s*(malloc|calloc|realloc)\(' --include='*.c' --include='*.cpp' .` (confirm
       NULL-check follows); `grep -rnE '(new|new\[\])' --include='*.cpp' . | grep -v make_`
       (confirm RAII ownership)
+- [ ] **Safe Buffers enabled for new C++, and its opt-outs justified (§2) — MEDIUM on a
+      Clang-built C++ tree (INFO where the toolchain is GCC-only)** —
+      `grep -rn -e 'unsafe-buffer-usage' --include='CMakeLists.txt' --include='*.cmake' --include='CMakePresets.json' --include='Makefile*' --include='*.mk' . || echo "Safe Buffers not enabled"`
+      ; `grep -rnE '#pragma[[:space:]]+clang[[:space:]]+unsafe_buffer_usage[[:space:]]+begin' --include='*.cpp' --include='*.cc' --include='*.hpp' --include='*.h' .`
+      (each opt-out region needs a stated reason and should be small)
 - [ ] **Sanitizer/hardening presence in the build — HIGH if a network binary lacks them** —
       `grep -rn 'fsanitize' . ; grep -rn '_GLIBCXX_ASSERTIONS\|_LIBCPP_HARDENING\|_FORTIFY_SOURCE' .`
 - [ ] **A check that is on by default, switched off — MEDIUM (HIGH for a shipped `OBSERVE` or

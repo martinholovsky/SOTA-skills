@@ -1056,6 +1056,17 @@ p.write_text(t.rstrip('\\n') + '\\n- [ ] probe: \\x60grep -rn X --include=\\x27*
 probe 37b "a '# BAD' marker on the next line exempts the command above it" \
   "INCLUDE DROPS NAMED FILE: skills/sota-shell-scripting/rules/09-listing-and-selection.md"
 
+# 37c — a brace glob inside --include. grep never brace-expands it, so a quoted
+# '*.{py,js}' matches no file at all; the shape two shipped probes had.
+( cd "$WT" && python3 -c "
+import pathlib
+p = pathlib.Path('skills/sota-shell-scripting/rules/09-listing-and-selection.md')
+t = p.read_text()
+p.write_text(t.rstrip('\\n') + '\\n- [ ] probe: \\x60grep -rn X --include=\\x27*.{py,js}\\x27 .\\x60\\n')
+" )
+probe 37c "a brace glob inside --include matches no file" \
+  "INCLUDE BRACE NEVER EXPANDS: skills/sota-shell-scripting/rules/09-listing-and-selection.md"
+
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
 # =============================================================================

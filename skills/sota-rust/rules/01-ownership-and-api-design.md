@@ -216,6 +216,12 @@ impl Backend for Postgres { ... }
   define the minimal method (`Ord::cmp`, then `PartialOrd` via `Some(self.cmp)`)
   so the others stay consistent, and never derive `Ord` on a type whose `f32`/
   `f64` field makes the order partial. (ANSSI `LANG-CMP-INV`/`-DERIVE`)
+- **Toolchain bump past 1.98 changes derived `PartialOrd`.** A non-generic type deriving
+  both `PartialOrd` and `Ord` now gets `partial_cmp` = `Some(Ord::cmp(..))`, not a
+  field-wise `partial_cmp`, so a field type whose hand-written `PartialOrd` and `Ord`
+  disagree changes the outer type's `<`/`partial_cmp` silently (measured: `None`/`false`
+  on 1.97.1 became `Some(Less)`/`true` on a 1.99 nightly). Audit such field impls before
+  the bump. (rust-lang/rust RELEASES.md 1.98.0 compatibility notes, PR #155598)
 
 ## 7. Exhaustive matching & `#[non_exhaustive]`
 
@@ -340,7 +346,9 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
       — verify invariants (total order, consistency with `Eq`, symmetry); a
       broken `Ord` corrupts `sort`/`BinaryHeap`/`BTreeMap` or panics. Prefer
       `#[derive]`. `LANG-CMP-INV`. `clippy::derive_ord_xor_partial_ord`,
-      `clippy::non_canonical_partial_ord_impl`.
+      `clippy::non_canonical_partial_ord_impl`. A hit whose `PartialOrd` and `Ord`
+      disagree, used as a field of a type deriving both, changes behaviour on a 1.98+
+      toolchain (§6) — Medium where the order gates a decision.
 - [ ] **Validation bypassed through a `pub` field** (§3, §9):
       `grep -rnE '^[[:space:]]*pub [a-z_][a-z0-9_]*:|struct [A-Z][A-Za-z0-9_]*(<[^>]*>)?\(pub ' --include='*.rs' .`
       — a `pub` field on a type that also has a validating constructor (`new`/`TryFrom`

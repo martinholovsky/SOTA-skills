@@ -311,8 +311,11 @@ this skill:
 - **Release automation**: `release-plz` (or `cargo-release`) — version bump
   from conventional commits, changelog generation, tag, `cargo publish` with
   `--locked` from CI. Authenticate with **crates.io Trusted Publishing**
-  (available since July 2025 for GitHub Actions; GitLab CI configs exist in the
-  crates.io source — needs verification at crates.io/docs/trusted-publishing):
+  (GitHub Actions since July 2025; GitLab CI/CD documented as a **public beta**,
+  GitLab.com only — self-hosted instances unsupported — with an `id_tokens:` entry of
+  `aud: crates.io` whose JWT the documented helper script POSTs to
+  `/api/v1/trusted_publishing/tokens`; crates.io/docs/trusted-publishing and
+  blog.rust-lang.org 2026-01-21, checked 2026-09-25). On GitHub
   the job gets `permissions: id-token: write`, runs in a protected GitHub
   `environment` (with required reviewers) and exchanges its OIDC token via
   `rust-lang/crates-io-auth-action` (pinned by SHA) for a short-lived publish
@@ -410,7 +413,9 @@ gate (rules/06). Cache with `Swatinem/rust-cache`; pin action SHAs (rules/05).
       laptops; publish job uses Trusted Publishing (`id-token: write`,
       `crates-io-auth-action`, environment-gated) or else a scoped token —
       `rg 'CARGO_REGISTRY_TOKEN' .github/` with no `crates-io-auth-action`
-      beside it = Low; CHANGELOG maintained.
+      beside it = Low; on GitLab.com,
+      `rg -q 'aud:[[:space:]]*crates\.io' .gitlab-ci.yml || rg -n 'CARGO_REGISTRY_TOKEN' .gitlab-ci.yml`
+      printing anything (a stored token, no crates.io id-token) = Low; CHANGELOG maintained.
 - [ ] Reproducibility: `Cargo.lock` committed, toolchain pinned, CI action
       SHAs pinned, `rust-cache` keyed correctly (not caching stale clippy).
 - [ ] Quick greps: `rg 'dbg!|println!' -t rust -g '!*test*' -g '!*/bin/*'`

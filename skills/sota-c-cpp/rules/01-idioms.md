@@ -288,8 +288,8 @@ existing parameter means.
       `clang-tidy --checks='cppcoreguidelines-virtual-class-destructor,modernize-use-override' <files>`
       (`virtual-class-destructor` is the virtual-destructor check; `modernize-use-override` flags
       overrides missing `override`. The `hicpp-*` module, including the `hicpp-use-override`
-      alias, was removed from clang-tidy in 2026, LLVM 23, so an old `.clang-tidy` naming it
-      checks nothing there)
+      alias, was removed in clang-tidy 23 (the 23.1.0 release notes map each check to its new
+      module), so an old `.clang-tidy` naming it checks nothing there)
 - [ ] **Move/idiom smells — LOW** — `grep -rn 'return std::move' --include='*.cpp' .`
       (pessimizes RVO); `grep -rn 'using namespace std;' --include='*.h' --include='*.hpp' .`
       (in headers: bad); `grep -rnE '#define [A-Z_]+\(' --include='*.h' .` (function-like macros

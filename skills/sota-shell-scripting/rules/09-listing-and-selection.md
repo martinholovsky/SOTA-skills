@@ -127,7 +127,11 @@ grep -rn 'Rack::Protection' --include='*.rb' --include='config.ru' . # GOOD — 
   the bug. If you need both, add an `--include` that matches the named file's basename.
 - **Test the probe on a fixture where it must hit.** A probe that cannot fire exits the same
   way as a clean codebase does. `rules/06` §2's positive control is what catches it.
-- **Invariant 37** fails the build on this shape in any skill file.
+- **A brace glob inside `--include` has the same effect.** grep does not expand braces, so
+  a quoted `--include='*.{py,js}'` matches no file on BSD grep, ugrep or GNU grep. Unquoted,
+  bash expands it and zsh aborts with "no matches found" (`rules/06` §1). Write one
+  `--include` per extension. Two shipped probes had this shape (measured 2026-09-25).
+- **Invariant 37** fails the build on both shapes in any skill file.
 
 ## Audit checklist
 

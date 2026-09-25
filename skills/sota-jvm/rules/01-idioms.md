@@ -60,6 +60,20 @@ the type system, and expression-oriented code**. References:
 - `data class` for value types; `val` over `var`; `when` (exhaustive over
   sealed/enum) over if-chains; immutable collections (`listOf`/`mapOf`) by
   default.
+- **A `data class` with a `private` or `internal` constructor still has a public `copy()`.**
+  So `PositiveInt.create(42)!!.copy(value = -1)` builds an instance the validating factory
+  would have refused (KT-11914). The fix was planned as a default change: Kotlin 2.0.20 warns,
+  and the plan was to make it an error and then switch the default. That plan was **declined
+  on 2026-09-08** (KTLC-22). KT-89123, in 2.5.0-Beta1, keeps it a warning with no end date,
+  because too much code had not migrated and value classes are expected to take this role.
+  So `copy()` stays public by default. Opt in per class with `@ConsistentCopyVisibility`, or
+  for a whole module with `-Xconsistent-data-class-copy-visibility`. `@ExposedCopyVisibility`
+  silences the warning and keeps the hole. Either way, **put the invariant in `init {}`**
+  (`require(value > 0)`). `copy()` goes through the primary constructor, so the check runs on
+  every copy too. A factory is not the place for it
+  ([KTLC-22](https://youtrack.jetbrains.com/issue/KTLC-22),
+  [KT-89123](https://youtrack.jetbrains.com/issue/KT-89123),
+  [ConsistentCopyVisibility](https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-consistent-copy-visibility/)).
 - Scope functions (`let`/`run`/`apply`/`also`/`with`) for null-safe transforms
   and configuration — but don't over-nest them into write-only code.
 - Extension functions over utility classes; `sealed`/`enum` + `when` for state;
@@ -116,6 +130,12 @@ the type system, and expression-oriented code**. References:
 
 - [ ] **Kotlin !! (non-null assertion) — MEDIUM (latent NPE)** —
       `grep -rnE '!!' --include='*.kt' . | grep -v '!!='`
+- [ ] **`data class` whose non-public constructor leaks through `copy()` (§2) — MEDIUM, HIGH
+      when the factory enforces a security or money invariant** — prints each such class with
+      no `@ConsistentCopyVisibility` on its own line or the line above:
+      `grep -rnE -B1 'data[[:space:]]+class[[:space:]]+[A-Za-z0-9_]+[[:space:]]*(<[^>]*>)?[[:space:]]*(@[A-Za-z]+[[:space:]]+)*(private|internal)[[:space:]]+constructor' --include='*.kt' . | awk '/data[[:space:]]+class/ && /(private|internal)[[:space:]]+constructor/ {if(p !~ /ConsistentCopyVisibility/ && $0 !~ /ConsistentCopyVisibility/) print; p=""; next} {p=$0}'`
+      ; `grep -rn 'consistent-data-class-copy-visibility' --include='*.gradle*' --include='pom.xml' . || echo "flag not set: every hit above is live"`
+      (a hit is clean if its `init {}` enforces the factory's rule; read it)
 - [ ] **Swallowed exceptions — MEDIUM/HIGH** —
       `grep -rnzoE 'catch *\([^)]*\) *\{\s*\}' --include='*.java' --include='*.kt' .` ;
       `grep -rnE 'catch *\((Exception|Throwable)|catch *\([^)]*:[[:space:]]*(Exception|Throwable)[[:space:]]*\)' --include='*.java' --include='*.kt' .`

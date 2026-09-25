@@ -84,6 +84,39 @@ bundle config set lockfile_checksums true  # Bundler 2.6-2.x: include in new loc
   `bundle lock --add-checksums` once and commit the result. Verify current
   behavior when Bundler major versions change.
 
+### 2.1 Which index you trust: alternative indexes and mirrors
+
+The index behind a `source` line decides which bytes arrive for every gem name, so choosing
+one is a trust decision, recorded like any other dependency choice. The ecosystem now has
+more than one credible choice: Ruby core took over the RubyGems and Bundler repositories, run
+jointly with Ruby Central ([ruby-lang.org, 2025-10-17](https://www.ruby-lang.org/en/news/2025/10/17/rubygems-repository-transition/)),
+and former rubygems.org maintainers and operators launched [gem.coop](https://gem.coop/), which
+states it mirrors every rubygems.org gem in real time and is selected with
+`source "https://gem.coop"`. Corporate proxies and `bundle config set mirror.<url> <url>` do
+the same thing more quietly.
+
+- **One global source still** (§1): switch it, don't add a second one. Bundler 4 refuses two.
+- **CHECKSUMS is what makes a mirror safe to try.** Measured 2026-09-25 on Bundler 4.0.16 with
+  two local indexes serving different bytes for the same `demo 0.1.0`: with a committed
+  `CHECKSUMS` section, redirecting the source through `mirror.<url>` failed the install
+  (exit 37, naming the mismatching gem and the API that served it); with the section deleted
+  the same install exited 0 and loaded the other index's code.
+- **Checksums do not survive an edited `source` line.** Changing the Gemfile's `source` to the
+  second index and running a non-frozen `bundle install` exited 0 and **rewrote** the
+  `CHECKSUMS` line to the new index's hash (same measurement) — or **dropped** it: switching
+  between two `file://` indexes left `demo (0.1.0)` with no `sha256=` at all, again exit 0
+  (re-measured 2026-09-25, Bundler 4.0.16). So an index switch is reviewed in the lockfile
+  diff: every `name (version)` line whose version is unchanged but whose hash changed or
+  vanished is a gem the new index serves differently or unverified, and each one needs an
+  explanation before merge. CI installs frozen (§1), which refuses the switch outright.
+- **The escape hatch is the finding.** `bundle config set disable_checksum_validation true`
+  (`BUNDLE_DISABLE_CHECKSUM_VALIDATION`) let the mismatching mirror install with exit 0 in the
+  same test, and Bundler's own error message offers it as the fix. It belongs nowhere in CI,
+  `.bundle/config` or a Dockerfile.
+- Mirror settings live outside the Gemfile (`.bundle/config`, `~/.bundle/config`,
+  `BUNDLE_MIRROR__...` variables), so a reviewer reading only the Gemfile does not see them:
+  `bundle config list` shows every level.
+
 ## 3. Dependency vulnerability auditing
 
 - **bundler-audit** checks `Gemfile.lock` against the community
@@ -242,6 +275,16 @@ Run from repo root; verify each hit manually.
       >1 = investigate) ; `grep -A1 'BUNDLED WITH' Gemfile.lock`
       (Bundler 4 refuses to resolve such a Gemfile, so on 4.x a hit is a broken build,
       not a silent confusion risk)
+- [ ] **Index trust: alternative source, mirror, checksum bypass (§2.1) — HIGH for a checksum
+      bypass or an unexplained hash change, INFO for a recorded index choice** — first command
+      prints a global source other than rubygems.org (confirm the decision is recorded); second
+      prints mirror redirects and the checksum switch in the repo; third prints the effective
+      config at every level; fourth prints each gem whose lockfile hash changed, or was dropped,
+      while its version did not —
+      `grep -nE '^[[:space:]]*source[[:space:]]' Gemfile gems.rb 2>/dev/null | grep -vE 'https://rubygems\.org/?["'"'"']|[[:space:]]do[[:space:]]*$'` ;
+      `grep -rnE 'disable_checksum_validation|DISABLE_CHECKSUM_VALIDATION|BUNDLE_MIRROR__|mirror\.https?:' --exclude-dir=.git --exclude-dir=vendor --exclude-dir=node_modules .` ;
+      `bundle config list 2>/dev/null | grep -iE -A2 'mirror|checksum'` ;
+      `git diff origin/main -- Gemfile.lock | awk '/^-  [^ ]+ \(.*\) sha256=/ { o[$2 " " $3] = $4 } /^\+  [^ ]+ \(/ { n[$2 " " $3] = $4 } END { for (k in o) if ((k in n) && o[k] != n[k]) print (n[k] == "" ? "HASH DROPPED" : "HASH CHANGED") ", SAME VERSION: " k }'`
 - [ ] **Vulnerability gates present?** —
       `grep -rn "bundler-audit\|bundle audit" .github/ Gemfile* Rakefile 2>/dev/null | head -2`
       ; `grep -rn "brakeman" .github/ Gemfile* 2>/dev/null | head -2` (Rails apps only)

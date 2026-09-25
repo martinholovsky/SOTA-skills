@@ -261,7 +261,7 @@ Condensed from SKILL.md AUDIT mode — the grep set when tools aren't available:
 grep -rInE '(AKIA|ASIA)[A-Z0-9]{16}|ghp_[A-Za-z0-9]{36}|github_pat_|gho_|xox[bpars]-|sk_live_|rk_live_|sk-[A-Za-z0-9]{20,}|AIza[A-Za-z0-9_\-]{35}|glpat-|npm_[A-Za-z0-9]{36}|dop_v1_|shpat_' .
 grep -rIl -- '-----BEGIN \(RSA \|EC \|OPENSSH \|\)PRIVATE KEY-----' .
 # Assignments & connection strings
-grep -rInE '(password|passwd|pwd|secret|token|api[_-]?key)\s*[:=]\s*["'"'"'][^"'"'"']{6,}' --include='*.{py,js,ts,go,rb,java,yml,yaml,json,tf,sh,env,cfg,ini,properties}' .
+grep -rInE '(password|passwd|pwd|secret|token|api[_-]?key)\s*[:=]\s*["'"'"'][^"'"'"']{6,}' --include='*.py' --include='*.js' --include='*.ts' --include='*.go' --include='*.rb' --include='*.java' --include='*.yml' --include='*.yaml' --include='*.json' --include='*.tf' --include='*.sh' --include='*.env' --include='*.cfg' --include='*.ini' --include='*.properties' .
 grep -rInE '[a-z+]+://[^/:@[:space:]]+:[^@[:space:]]+@' .
 # Dangerous tracked files
 git ls-files | grep -E '\.env($|\.)|\.pem$|\.key$|\.p12$|\.pfx$|\.jks$|id_rsa|credentials\.json|terraform\.tfstate|kubeconfig|\.npmrc$|\.netrc$'

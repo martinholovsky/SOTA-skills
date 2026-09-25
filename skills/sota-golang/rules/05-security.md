@@ -27,14 +27,13 @@ misconfiguration are entirely yours.
   `math.MaxInt64` (never), so set it per pattern and treat the timeout error as a reject —
   or restructure into two stdlib patterns. *(OWASP: Input Validation cheat sheet; Proactive
   Controls 2024 C3; ASVS 5.0 V1.2.9; Go-SCP, validation.)*
-- JSON: `dec := json.NewDecoder(r.Body); dec.DisallowUnknownFields()` for
-  strict APIs; remember `encoding/json` ignores case in field matching,
-  silently drops unknown fields, and accepts **duplicate keys (last wins)** —
-  `{"role":"user","role":"admin"}` decodes as admin, while a proxy or validator
-  that keeps the first sees user: a parser differential (generic rule:
-  sota-code-security rules/01 §11). On 1.27+ decode trust-boundary input with
-  `encoding/json/v2`, which rejects duplicates and matches names case-sensitively
-  (measured go1.27.1). Pair with `http.MaxBytesReader` (`rules/04`).
+- JSON: `dec := json.NewDecoder(r.Body); dec.DisallowUnknownFields()` for strict APIs;
+  remember `encoding/json` ignores case in field matching, silently drops unknown fields,
+  and accepts **duplicate keys (last wins)** — `{"role":"user","role":"admin"}` decodes as
+  admin, while a proxy or validator that keeps the first sees user: a parser differential
+  (generic rule: sota-code-security rules/01 §11). On 1.27+ decode trust-boundary input with
+  `encoding/json/v2`, which rejects duplicates and matches names case-sensitively (measured
+  go1.27.1). Pair with `http.MaxBytesReader`; probe in `rules/04` checklist.
 - Numbers from JSON into `any` become `float64` — large int64 IDs silently
   lose precision; decode into concrete struct types or `json.Number`.
 - Never echo raw input into errors/logs without bounding
@@ -362,10 +361,14 @@ rand.Read(b)                          // crypto/rand.Read
 - `math/rand/v2` is the right tool — and the better PRNG API — for *non-secret*
   work: jitter, load distribution, sampling, test fixtures. The dividing line
   is "does predictability help an attacker", not "which package is newer".
-- Keys, signing, AEAD: use `crypto/*` (`ed25519`, `crypto/ecdsa`,
-  `crypto/aes` + `cipher.NewGCM`) drawing from `crypto/rand.Reader`; never
-  hand-roll. Password hashing is `golang.org/x/crypto/bcrypt`/`argon2` —
-  algorithm choice and parameters are owned by sota-code-security `04`.
+- Keys, signing, AEAD: use `crypto/*` (`ed25519`, `crypto/ecdsa`, `crypto/aes` + `cipher.NewGCM`)
+  drawing from `crypto/rand.Reader`; never hand-roll. Password hashing is `golang.org/x/crypto/bcrypt`/
+  `argon2` — algorithm choice and parameters are owned by sota-code-security `04`.
+- FIPS 140-3 (1.24+, Go Cryptographic Module): pick the module at build with `GOFIPS140=` — `off`
+  (default), `latest` (like `off`, but FIPS 140-3 mode on by default), one of the module versions
+  the page lists (verify there), or `inprocess`/`certified` (the newest on the CMVP in-process list /
+  with a certificate). `GODEBUG=fips140=on` enables the mode at run; `fips140=only` is a best-effort
+  test mode, not for production (go.dev/doc/security/fips140). Which module a boundary needs: sota-security-compliance 02 §4.
 
 ### TLS configuration
 

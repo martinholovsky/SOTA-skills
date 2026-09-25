@@ -18,9 +18,24 @@ exploit UB at `-O2`. Treat any UBSan diagnostic as CRITICAL/HIGH. Reference:
 - **Out-of-bounds access** — indexing/pointer past an object (incl. one-past-
   the-end deref). Often the optimizer assumes in-bounds and reorders.
 - **Use of uninitialized values** (CERT EXP33-C) — reading an automatic
-  variable before assignment. Initialize at declaration. C++26 (P2795)
-  downgrades this from UB to defined "erroneous behavior" — still a bug, but
-  no longer optimizer-exploitable once you compile as C++26.
+  variable before assignment. Initialize at declaration. C++26 (P2795R5)
+  downgrades this from UB to defined "erroneous behavior" (EB), with three limits the paper
+  states: it covers **automatic storage only** (memory from `new`/`malloc` still holds
+  indeterminate values, and reading them is still UB); a variable marked `[[indeterminate]]`
+  opts back into UB; and EB is "always the consequence of incorrect program code", which an
+  implementation may diagnose or terminate on. So it is a smaller blast radius, not a fix:
+  still initialize, value-initialize heap objects (`new T()`, `calloc`), and treat each
+  `[[indeterminate]]` as a sharp tool that needs a `NOTE(sota)` reason. GCC 16's release notes
+  list P2795R5 as implemented; Clang's C++ status page listed it as not yet (read 2026-09-25).
+- **`= {0}` does not zero a whole union on GCC 15+.** The GCC 15 release notes: `{0}` for a
+  union "just initializes the first union member to zero" (static storage excepted). Measured
+  with GCC 15.3: a 32-byte automatic union whose first member is a `char`, initialized `= {0}`
+  on a stack pre-filled with `0xAA`, still had non-zero bytes at both `-O0` and `-O2` (the
+  count varies with the surrounding code and optimisation level: 5 to 31 of 32 across runs); `= {}`
+  left none, and so did `-fzero-init-padding-bits=unions` or `=all` (`rules/04` §5). Apple clang
+  21 zeroed all 32 either way, so the leak depends on the compiler. Copying such a union to the
+  wire, a file or another privilege level discloses stack bytes: write `= {}` (C23, C++) or
+  `memset` it before filling.
 - **Null / misaligned / invalid pointer deref** — incl. calling a method on a
   null `this`. The optimizer may assume a dereferenced pointer is non-null and
   delete subsequent null checks.
@@ -129,8 +144,38 @@ mutex. Build threaded code under TSan.
 - `-Wall -Wextra -Wconversion -Wsign-conversion -Wshadow -Wcast-align` catch
   many at compile time. Static analyzers (clang-analyzer, cppcheck) and
   Coverity find aliasing/uninit paths (`rules/06`).
+- **TypeSanitizer** (`-fsanitize=type`, Clang only; its docs call it brand new and still in
+  development) detects strict-aliasing violations (§3) at run time. Measured with Fedora's Clang
+  22.1: an `int*` write to a `float` object was reported as a `type-aliasing-violation`, yet the
+  process exited 0, so fail the job on the report text, not the exit status. It refused to
+  combine with `address` ("not allowed with"), and Apple clang 21 compiled it but shipped no
+  TySan runtime to link (measured). Run it as a periodic job, not a gate: the docs warn of wrong
+  results around unions and of about 8x shadow memory.
 - Do **not** "fix" a UBSan report by casting it away — fix the arithmetic or
   the access.
+
+## 7. C++26 contracts are not input validation
+
+- `pre(...)`, `post(...)` and `contract_assert(...)` (P2900R14, adopted for C++26) check a
+  predicate under an **evaluation semantic**: *ignore* (the predicate is not evaluated),
+  *observe* (call the violation handler, then carry on), *enforce* (handler, then terminate) or
+  *quick-enforce* (terminate at once). Which one applies is implementation-defined and may
+  differ between evaluations of the same assertion; the paper recommends enforce as the default
+  and asks implementations to offer an all-ignore build. A contract therefore states what a
+  correct caller does; it does not stop a hostile one.
+- Measured with GCC 16.2, `-std=c++26` (no `-fcontracts` needed): `int get(int i) pre(i >= 0
+  && i < 4) { return buf[i]; }` called with 11 terminated under the default semantic (enforce,
+  per `g++ --help=c++`) and under `quick_enforce`. With `-fcontract-evaluation-semantic=observe`
+  the handler ran and the out-of-bounds read followed; with `=ignore` it followed silently.
+  **Linking needs `-lstdc++exp`** (or your own `handle_contract_violation`): without it `ld`
+  failed with an undefined reference to `handle_contract_violation` (measured, GCC 16.2).
+- **Rule:** validate untrusted input (length, index, range, format) with an explicit `if` that
+  returns an error or throws, the same rule as for `assert` (`rules/04` §2). A contract may
+  restate that invariant for internal callers. Where a contract is nonetheless the only guard on
+  external data, the build pins `-fcontract-evaluation-semantic=enforce` (or `quick_enforce`)
+  for every unit and the release pipeline asserts it; a packager's `observe` or `ignore` turns the
+  guard off with no source change. Toolchains (read 2026-09-25): GCC 16's release notes list
+  P2900R14 as implemented; Clang's C++ status page lists contracts as not yet implemented.
 
 ## Audit checklist
 
@@ -164,6 +209,18 @@ mutex. Build threaded code under TSan.
       -Wshift-overflow=2**
 - [ ] **Uninitialized — MEDIUM** —
       `clang-tidy --checks='cppcoreguidelines-init-variables,clang-analyzer-core.uninitialized.*' <files>`
+      ; `grep -rnE '\[\[[[:space:]]*indeterminate[[:space:]]*\]\]' --include='*.cpp' --include='*.cc' --include='*.hpp' --include='*.h' .`
+      (§1: each opt-out of C++26 erroneous behaviour restores UB; it needs a stated reason)
+- [ ] **Union zeroed with `= {0}` (§1) — MEDIUM, HIGH when the union is copied out of the
+      process or across a privilege boundary** —
+      `grep -rnE 'union[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*=[[:space:]]*\{[[:space:]]*0[[:space:]]*\}' --include='*.c' --include='*.h' --include='*.cc' --include='*.cpp' .`
+      (a typedef'd union escapes this pattern: also read `= {0}` hits on union types. Fix with
+      `= {}` or `memset`, or `-fzero-init-padding-bits=unions` on GCC 15+)
+- [ ] **Contract assertion as the only guard on external input (§7) — HIGH where the value
+      comes from input and the build can select `ignore` or `observe`** —
+      `grep -rnE '\)[^;{]*[[:space:]](pre|post)[[:space:]]*\(|contract_assert[[:space:]]*\(' --include='*.cpp' --include='*.cc' --include='*.hpp' --include='*.h' .`
+      (read each: is there an explicit check on the input path before it?) ;
+      `grep -rnE -e '-fcontract-evaluation-semantic=[a-z_]+' . || echo "contract semantic not pinned"`
 - [ ] **Ground truth: run under UBSan, aborting on first diagnostic (Clang only: `integer` is a
       Clang sanitizer group; with GCC drop it) cmake -DCMAKE_CXX_COMPILER=clang++
       -DCMAKE_CXX_FLAGS="-fsanitize=undefined,integer -fno-sanitize-recover=all" ctest # any

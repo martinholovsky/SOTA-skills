@@ -47,7 +47,13 @@ What each guards:
   `mux.HandleFunc("GET /users/{id}", h)`, `r.PathValue("id")`. Default to it;
   reach for chi/echo only for needed extras (route-scoped middleware trees).
 - Go 1.25+: `http.CrossOriginProtection` gives stdlib CSRF protection via
-  Sec-Fetch-Site; use it or an equivalent for cookie-authenticated mutations.
+  Sec-Fetch-Site (else Origin compared with Host); use it or an equivalent for
+  cookie-authenticated mutations. GET/HEAD/OPTIONS always pass (keep them free of side
+  effects), and a request carrying **neither** header is allowed as same-origin or
+  non-browser — it is a browser-CSRF control, not authentication. `AddTrustedOrigin` and
+  `AddInsecureBypassPattern` widen it; each is an exception to justify (gosec G121 flags
+  unsafe bypass patterns). Measured go1.27.1: a POST with no header passes, one with
+  `Sec-Fetch-Site: cross-site` or a foreign `Origin` gets 403. (pkg.go.dev/net/http)
 
 ## 2. HTTP clients — timeouts, body hygiene, reuse
 
@@ -395,6 +401,19 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
       it is not `http.ServeMux`** —
       `grep -rnE 'strings\.(HasPrefix|HasSuffix|Contains)\([A-Za-z_]+\.URL\.(Path|RawPath)|\.URL\.EscapedPath\(\)' --include='*.go' .`
       (then send `//x`, `/a/../x` and `%2e` variants of each guarded path through the stack)
+- [ ] **Cookie-authenticated mutations without a CSRF layer (§1) — HIGH** —
+      `grep -rqE '\.Cookie\(' --include='*.go' . && grep -rqE '"(POST|PUT|PATCH|DELETE) /|\.(POST|PUT|PATCH|DELETE|Post|Put|Patch|Delete)\("/|Methods\((http\.Method(Post|Put|Patch|Delete)|"(POST|PUT|PATCH|DELETE))' --include='*.go' . && ! grep -rqE 'CrossOriginProtection|gorilla/csrf|justinas/nosurf|csrf\.Protect' --include='*.go' . && echo 'cookie-auth mutating routes, no CSRF layer'`
+      (repo-level; route registrations only — a `"/…"` path argument or a `"POST /…"` pattern,
+      so a client's `http.Post(url, …)` is not a route; when a layer exists, confirm each
+      mutating route is behind its `Handler`) ;
+      `grep -rnE 'AddInsecureBypassPattern|AddTrustedOrigin' --include='*.go' .` (every hit is
+      a widened exception — MEDIUM unless justified) ; `gosec -include=G121 ./...`
+- [ ] **JSON duplicate keys on privilege-bearing input (`rules/05` §1) — HIGH when a proxy,
+      validator or signer parses the same body first** —
+      `grep -rlE '"encoding/json"' --include='*.go' . | xargs -r grep -lE 'json\.(Unmarshal|NewDecoder)\(' | xargs -r grep -nHE '^[[:space:]]*(Role|Roles|Admin|IsAdmin|Scopes?|Permissions?|Tenant(ID)?|Owner(ID)?|UserID|Price|Amount)[[:space:]].*json:"'`
+      (v1 decoder in a file declaring a privilege field; v1 keeps the last duplicate and
+      `DisallowUnknownFields` does not reject it — measured go1.27.1; on 1.27+ decode with
+      `encoding/json/v2`, which errors on duplicates)
 - [ ] **Tooling** — `golangci-lint run --enable-only bodyclose,noctx,gosec ./...` (noctx:
       requests without ctx); `go vet ./...`
 - [ ] **--- Cookies and redirects (§4a, §4b) ---** —

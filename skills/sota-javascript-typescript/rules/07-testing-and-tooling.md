@@ -205,7 +205,7 @@ Broken `exports`/types maps are the top npm-library bug class (works in dev, bre
   packed. So use the `files` allowlist, not `.npmignore`. `files: ["dist"]` still shipped
   `dist/index.js.map`, and `"!dist/**/*.map"` removed it. In CI, diff the packed path list
   against a committed expected list and fail on any new path. *OWASP: NPM Security cheat sheet.*
-- Dual ESM/CJS only if consumers demand it (tsdown/unbuild make it tolerable; tsup's README says it is no longer actively maintained and points to tsdown); otherwise ESM-only and say so in the README.
+- Dual ESM/CJS only if consumers demand it (tsdown/unbuild make it tolerable; tsup's README says it is no longer actively maintained and points to tsdown); otherwise ESM-only and say so in the README. On Node ≥ v20.19 / v22.12, `require(esm)` lets CJS consumers load an ESM-only package whose graph has no top-level `await` (rules/04 §"Native ESM in Node").
 
 ## Type-level testing
 

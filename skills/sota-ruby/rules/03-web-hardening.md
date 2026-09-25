@@ -282,6 +282,19 @@ minimums:
 - Authorization checked **per record**, not per route: loading
   `Model.find(params[:id])` without scoping to the authenticated
   tenant/owner (`current_user.things.find(...)`) is the standard IDOR.
+- **Mounted admin apps authenticate before routing.** A Rack app mounted into the router, such
+  as the Sidekiq Web UI (`mount Sidekiq::Web`, neutral example), is reachable by anyone who can
+  reach the host unless the mount itself is guarded: it shows job arguments, and its POST
+  routes retry, delete or kill jobs, clear queues, and quiet or stop worker processes
+  (`lib/sidekiq/web/application.rb`, sidekiq main). Sidekiq's wiki ("Monitoring") gives the guards: wrap the
+  mount in the auth library's routing block (`authenticate :user, ->(u) { u.admin? } do ... end`,
+  `constraints SomeAdminConstraint.new do ... end`), pass `constraints:` on the mount, or put
+  `Sidekiq::Web.use Rack::Auth::Basic` with a digest-then-`secure_compare` check in front of
+  it (standalone `config.ru`: `use Rack::Auth::Basic` inside the `map` block before
+  `run Sidekiq::Web`). Two traps from that page: its Basic-auth example ends in
+  `if Rails.env.production?`, which leaves staging and every other environment open, and the
+  UI needs a working Rack session, which Sidekiq will not configure for you. A controller-level
+  `before_action` does not protect a mounted engine: the request never reaches the controller.
 - Don't leak stack traces or framework error pages in production; error
   handlers return generic bodies and log the detail server-side.
 - **Secrets stay out of logs, including through `inspect`.** `Data` and `Struct` print every
@@ -353,6 +366,17 @@ first — it covers XSS/mass-assignment/redirect sinks mechanically.
       Rails apps: `grep -rn 'filter_parameters' config/` — exit 1 means no parameter is
       filtered from the logs (HIGH); exit 2 means there is no `config/` to read. A list
       narrower than the generated default needs a reason
+- [ ] **Mounted admin app without authentication, e.g. `Sidekiq::Web` (§8) — HIGH (CRITICAL
+      when the host is internet-facing)** — first command prints each `mount`/`run` of the UI
+      that no `authenticate`/`authenticated`/`constraints` block, `constraints:` option,
+      `use ...Auth...` middleware in its `map` block, or repo-wide `Sidekiq::Web.use ...Auth`
+      covers; second prints an auth middleware limited to some environments —
+      `g=$(grep -rlE 'Sidekiq::Web\.use[[:space:](]+[^#]*Auth' --include='*.rb' --include='config.ru' . | head -n 1); grep -rlE '(mount|run)[[:space:]]+Sidekiq::Web' --include='*.rb' --include='config.ru' . | while IFS= read -r f; do awk -v g="$g" '{ match($0, /^[ \t]*/); ind = RLENGTH } /^[ \t]*(authenticated?|constraints)[ \t(].*[ \t]do([ \t]*[|][^|]*[|])?[ \t]*$/ { d++; si[d] = ind; sa[d] = 1; next } /^[ \t]*map[ \t(].*[ \t]do[ \t]*$/ { d++; si[d] = ind; sa[d] = 0; next } /^[ \t]*use[ \t]+[^#]*Auth/ { if (d) sa[d] = 1; else top = 1 } /^[ \t]*end([ \t#]|$)/ { if (d && ind == si[d]) d--; next } /(mount|run)[ \t]+Sidekiq::Web/ { ok = (g != "") || top || /constraints/; for (i = 1; i <= d; i++) if (sa[i]) ok = 1; if (!ok) print FILENAME ":" NR ": UNGUARDED: " $0 }' "$f"; done`
+      ; `grep -rnE -B2 -A8 'Sidekiq::Web\.use' --include='*.rb' --include='config.ru' . | grep -E 'end[[:space:]]+(if|unless)[[:space:]]|(if|unless)[[:space:]]+Rails\.env'`
+      (heuristic on indentation: a guard the awk does not recognise, such as a custom
+      middleware without `Auth` in its name, reads as UNGUARDED, so read each hit; confirm a
+      repo-wide `Sidekiq::Web.use` really authenticates. Other mountable admin UIs follow the
+      same rule: add their class to the pattern)
 - [ ] **Debug mode / development server settings reaching production (§5) — HIGH** —
       `grep -rnE 'consider_all_requests_local\s*=\s*true|development_only\s*=\s*false|:show_exceptions,\s*true|(RAILS|RACK|APP)_ENV[=: ]+"?development' --include='*.rb' --include='*.ru' --include='*.yml' --include='Dockerfile*' --include='Procfile*' . | grep -vE 'environments/(development|test)\.rb'`
       (and confirm the deploy manifest sets the env at all — unset means development)

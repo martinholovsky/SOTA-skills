@@ -291,6 +291,7 @@ if (res.status >= 500) throw new UpstreamError(res.status);   // retry layer dec
 - `"type": "module"` in package.json. `__dirname`/`__filename` don't exist — use `import.meta.dirname` / `import.meta.filename` (Node ≥20.11), or `new URL('./file', import.meta.url)` for asset paths.
 - JSON imports: `import data from './data.json' with { type: 'json' }`.
 - Don't mix: a stray `require` in ESM throws; CJS deps import fine via default import. Publishing libraries: ship ESM; add CJS only if your consumers truly need it (use tsdown/unbuild dual output, verify with `attw`; tsup's README says it is no longer actively maintained and points to tsdown).
+- **`require(esm)` removes most of the reason to dual-publish.** CommonJS can `require()` an ES module with no flag since v20.19.0 / v22.12.0 / v23.0.0; the feature is Stability 2 since v24.15.0 / v25.4.0 (the history tables in the raw `doc/api/modules.md` and `cli.md`, PR #60959, which CHANGELOG_V24 lists under 24.15.0; read 2026-09-25). Detect it with `process.features.require_module`. On an `engines.node` floor at or above those lines, an ESM-only package also serves CJS consumers; an older floor, or a toolchain that needs a CJS build, is what still justifies dual output. **The catch is top-level `await`:** if the required module, *or any module it imports*, uses one, `require()` throws `ERR_REQUIRE_ASYNC_MODULE`. Measured on v22.22.1 and v26.7.0: a sync ESM package loaded, and one with `await` in its entry or in a file its entry imports threw that code. So a library's entry graph carries no top-level `await`: do async setup in an exported `init()` or on first use. The opt-out flag is `--no-require-module` from v24.15.0 / v25.4.0; on v22.22.1 that name is `bad option` and only the older `--no-experimental-require-module` works (measured).
 - Dynamic `import()` works in both module systems — it's the migration bridge and the lazy-loading tool.
 
 ## `node:crypto` AEAD traps
@@ -410,6 +411,9 @@ channel.
 - [ ] `grep -rn "console.log\|console.error" src/ | grep -v test` — in services, replace with pino (LOW; MEDIUM if logging objects with secrets).
 - [ ] Logger redaction configured? `grep -rn "redact" src/` — logging auth headers/bodies without redaction (HIGH).
 - [ ] `grep -rn "trust proxy" src/` and rate-limiter keying — spoofable client IP (MEDIUM).
+- [ ] **Top-level `await` in a published library's entry graph (§"Native ESM in Node") — MEDIUM: every `require()` of the package throws `ERR_REQUIRE_ASYNC_MODULE`** —
+      `grep -rnE '^(await[[:space:]]|for[[:space:]]+await|(export[[:space:]]+)?(const|let|var)[[:space:]][^=]*=[[:space:]]*await[[:space:]])' --include='*.js' --include='*.mjs' --include='*.ts' --include='*.mts' src/`
+      — an unindented `await` is module scope. Only files reachable from `exports`/`main` count; an app's own entry point may use it.
 - [ ] `package.json`: `engines.node` pinned; deps that duplicate platform built-ins (axios, dotenv, uuid, nodemon) — removable (LOW).
 - [ ] `grep -rn "bcrypt.hashSync\|scryptSync\|pbkdf2Sync" src/` — sync crypto in request path (HIGH).
 - [ ] `grep -rn "process.exit" src/ | grep -v "config\|shutdown"` — exits mid-flow skipping cleanup (MEDIUM).

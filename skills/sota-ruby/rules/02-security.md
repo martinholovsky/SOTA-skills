@@ -211,6 +211,20 @@ IO.popen(["grep", "--", pattern, "log.txt"])
 - No secrets in code or `ENV`-committed files; load via the deployment
   platform or an encrypted store (see `sota-secrets-management`). Grep
   targets: `_key = "`, `password = "`, `Aws.config`.
+- **The encrypted-credentials key never enters the repository** (Rails as a neutral example).
+  `config/credentials.yml.enc` is committed on purpose; the key that decrypts it
+  (`config/master.key`, or `config/credentials/<env>.key` for per-environment files) is not,
+  and one leaked key opens every secret in that file, including `secret_key_base`. Rails'
+  credentials help says to keep the key out of source control; its key-file generator writes
+  the key `0600` and appends `/config/*.key` or `/config/credentials/*.key` to `.gitignore`,
+  **but only when a `.gitignore` already exists**; otherwise it only prints a warning (read
+  from `EncryptionKeyFileGenerator`, rails main). Deploys and CI supply the key as
+  `RAILS_MASTER_KEY`, which Rails reads *before* the file (`ActiveSupport::EncryptedFile#key`),
+  from the platform's secret store, never from a committed `.env`, Dockerfile `ENV` or
+  workflow file. The key is 32 hex characters (AES-128-GCM), which is what the grep below
+  matches. A key that was ever committed is burned even after `git rm`: rotate it (re-encrypt
+  with a new key, and rotate the secrets inside, since every committed version of the
+  ciphertext still opens with the old key).
 
 ## 7. Files and paths
 
@@ -250,6 +264,16 @@ a C extension a gem ships is C you are running. The class is `sota-code-security
 Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
 `bundle exec rubocop --only Security` cover several of these mechanically.
 
+- [ ] **Credentials key committed or not ignored (§6) — CRITICAL if a key file or key value is
+      tracked or in history, MEDIUM if only the ignore rule is missing** — first command prints
+      a tracked key file; second prints each key path git would NOT ignore; third prints any
+      commit that ever added one; fourth prints a literal 32-hex master key in a tracked file —
+      `git ls-files | grep -E '(^|/)config/(master|credentials/[^/]+)\.key$'` ;
+      `for k in config/master.key config/credentials/production.key; do git check-ignore -q --no-index "$k" || echo "NOT IGNORED: $k"; done` ;
+      `git log --all --diff-filter=A --format='%h %ad %s' --date=short -- 'config/master.key' 'config/credentials/*.key'` ;
+      `git grep -nE 'RAILS_MASTER_KEY["'"'"']?[[:space:]]*[:=][[:space:]]*["'"'"']?[0-9a-f]{32}' -- . ':!vendor' ':!node_modules'`
+      (the fourth searches **tracked** files with `git grep`, so a key in a force-added `.env`
+      is found even where a searcher that honours `.gitignore` skips it; the second is Rails-only: skip it when there is no `config/credentials.yml.enc`)
 - [ ] **Fiddle / `ffi` / C extensions — HIGH where a length or pointer comes from input** (§8) —
       `grep -rnE "require[[:space:]]+['\"](fiddle|ffi)['\"]|Fiddle::|extend[[:space:]]+FFI::Library|attach_function" --include='*.rb' .`
       ; `grep -rnE 'ext/.*extconf\.rb|extensions' --include='*.gemspec' .`

@@ -9,8 +9,20 @@ Split out of rules/05 (formerly sections 9 and 10) on 2026-09-25, when rules/05 
   schedule, not just on PRs (new CVEs land against old lockfiles), run
   `uv export --format requirements-txt --no-emit-project | uvx pip-audit --disable-pip -r /dev/stdin`
   (`--disable-pip` needs the hashes the export writes by default — do not add `--no-hashes`;
-  an empty or failed export makes pip-audit exit 1, so it fails closed) or
+  a failed export makes pip-audit exit 1, so it fails closed) or
   `osv-scanner --lockfile uv.lock`.
+  **A project with no third-party dependencies false-reds that pipe.** Its export holds only
+  comments, so there are no hashes, and pip-audit exits 1 with "the --disable-pip flag can only
+  be used with a hashed requirements files" (measured, pip-audit 2.10.1; `pip-audit --locked .`
+  on an empty `pylock.toml` likewise exits 1, "missing packages in lockfile"). Do not silence
+  it with `--no-deps`: that also turns a *failed* export into "No known vulnerabilities found",
+  exit 0, unless the shell has `pipefail` (measured). Count first, print the count, and skip
+  by name:
+  `uv export --format requirements-txt --no-emit-project -o audit-req.txt && n=$(grep -cE '^[A-Za-z0-9]' audit-req.txt || true) && echo "pip-audit: $n pinned packages" && { [ "$n" -eq 0 ] && echo 'SKIP: no third-party dependencies'; [ "$n" -eq 0 ] || uvx pip-audit --disable-pip -r audit-req.txt; }`
+  (measured in bash and zsh: exit 0 with a SKIP line on the empty project, 1 on the vulnerable
+  one, 2 where the export fails). `uv audit` reported "0 packages" and exited 0 on the empty
+  project. A committed `pylock.toml` (rules/01 §1) is read by `pip-audit --locked .`, which
+  exited 1 on the vulnerable lock.
   **Bare `uvx pip-audit` is wrong:** with no `-r`, pip-audit audits the environment it runs in,
   and `uvx` gives it a throwaway venv holding only pip-audit and its own deps — it reports "No
   known vulnerabilities found" and exits 0 on any project. `uv run pip-audit` fails (exit 2)
@@ -91,7 +103,9 @@ Split out of rules/05 (formerly sections 9 and 10) on 2026-09-25, when rules/05 
 - [ ] **One-shot scanners** — `uvx ruff check --select S --statistics .` ;
       `uvx bandit -r src/ -ll -q` ;
       `uv export --format requirements-txt --no-emit-project -o audit-req.txt && uvx pip-audit --disable-pip -r audit-req.txt`
-      (never bare `uvx pip-audit`: it scans its own tool venv and exits 0, §1) ;
+      (never bare `uvx pip-audit`: it scans its own tool venv and exits 0, §1; exit 1 with
+      "can only be used with a hashed requirements files" on a project with no third-party
+      dependencies is the empty case, not a finding: use §1's counted form) ;
       `osv-scanner --lockfile uv.lock`
 - [ ] **Supply chain** —
       `grep -rn "git+http" pyproject.toml uv.lock 2>/dev/null | grep -v "@[0-9a-f]\{40\}"` ;
