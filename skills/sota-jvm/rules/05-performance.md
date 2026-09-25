@@ -33,8 +33,24 @@ proper benchmark harness; never tune GC flags by guess. Cross-reference
   analyzes, devirtualizes). Write clear code; let C2 work. Megamorphic call
   sites (many implementations behind one interface) defeat inlining — relevant
   only when profiled.
-- For fast startup/low footprint (serverless, CLIs): consider **AppCDS**/
-  class-data sharing, or **GraalVM Native Image** (§5).
+- **For startup and warmup, try the JDK's AOT cache before native image.** It keeps the
+  JIT, full Java semantics and peak throughput. A training run records which classes load and
+  link (JEP 483, JDK 24) and method profiles (JEP 515, JDK 25). From JDK 25 one step creates
+  the cache: `java -XX:AOTCacheOutput=app.aot …` (JEP 514). Production then runs with
+  `-XX:AOTCache=app.aot`. Since JDK 26 the cache works with any collector, including ZGC
+  (JEP 516). **A mismatched cache is silently skipped.** The default mode warns and runs
+  without it. JEP 483 requires the same JDK release, OS and architecture, the same class path
+  (plain JARs, with extra entries allowed only at the end) and identical module options. It
+  also bans `--add-opens`/`--add-exports`, `--illegal-native-access` and class-rewriting
+  JVMTI agents. That last list collides with `rules/04` §7's `--illegal-native-access=deny`,
+  so check it against the JDK you ship. Prove the cache is used in a smoke test with
+  `-XX:AOTMode=on`, which JDK 27 renames `-XX:AOTMode=required`. That mode fails the launch
+  instead of warning, and JEP 483 advises care before using it in production. Treat the
+  `.aot` file as a build artifact, rebuilt with the JDK it was trained on. **Classic
+  AppCDS** (`-XX:SharedArchiveFile`) is the older subset. **GraalVM Native Image** (§5) is
+  for when even that is not enough
+  ([JEP 483](https://openjdk.org/jeps/483), [JEP 514](https://openjdk.org/jeps/514),
+  [JEP 515](https://openjdk.org/jeps/515), [JEP 516](https://openjdk.org/jeps/516)).
 
 ## 3. Allocation is the usual cost
 
@@ -52,6 +68,20 @@ proper benchmark harness; never tune GC flags by guess. Cross-reference
 - **JDK Flight Recorder (JFR)** — low-overhead, always-on-capable profiling of
   allocation, locks, GC, I/O; analyze in JDK Mission Control. The default first
   tool for production.
+- **A JFR recording is a sensitive artifact.** Its standard events copy the command line and
+  the initial environment variables and system properties verbatim. So a token in
+  `ACCESS_TOKEN`, a `-Djavax.net.ssl.keyStorePassword=…` or a `--dbpassword x` argument ends
+  up in `dump.jfr`. Store recordings and the JFR repository directory like heap dumps (which
+  hold all process memory). Restrict who can start or dump a recording: `jcmd` on the host,
+  or JMX where `FlightRecorderMXBean` and `RemoteRecordingStream` can stream events off the
+  host. Before sharing a file, run `jfr scrub`. **JDK 27 redacts by default** (JEP 536). The
+  values of arguments, environment variables and system properties whose names match built-in
+  filters (`*password*`, `*token*`, `*secret*`, …) become `[REDACTED]` inside the process,
+  before a crash can leave them in the repository. Add your own names with
+  `-XX:FlightRecorderOptions:redact-key=+…`, and treat `redact-key=none` or
+  `redact-argument=none` as a finding. The redaction covers only those three kinds of data,
+  so every other event payload is unchanged, and earlier JDKs have none of it
+  ([JEP 536](https://openjdk.org/jeps/536)).
 - **async-profiler** — low-overhead CPU/alloc/lock flame graphs without the
   safepoint bias of older samplers.
 - Benchmark microbenchmarks with **JMH** (handles warmup, dead-code
@@ -90,3 +120,15 @@ proper benchmark harness; never tune GC flags by guess. Cross-reference
 - [ ] **Native image config present if used?** —
       `grep -rn 'native-image\|GraalVM\|reflect-config\|reachability-metadata' . 2>/dev/null`
 - [ ] **Profile first: JFR (-XX:StartFlightRecording) or async-profiler — no static grep**
+- [ ] **JFR recordings and heap dumps: where they land, who can pull them, redaction off — HIGH
+      when a recording leaves the host** (§4) —
+      `grep -rnE 'StartFlightRecording|FlightRecorderOptions|HeapDumpOnOutOfMemoryError|HeapDumpPath|jmxremote|RemoteRecordingStream|FlightRecorderMXBean' --include='*.java' --include='*.kt' --include='Dockerfile*' --include='Containerfile*' --include='*.y*ml' --include='*.sh' --include='jvm.config' --include='*.gradle*' --include='pom.xml' .`
+      (read each output path: a world-readable or shared volume is the finding; an
+      unauthenticated `jmxremote` is HIGH on sight) ;
+      `grep -rnE 'redact-(key|argument)=none' --include='Dockerfile*' --include='Containerfile*' --include='*.y*ml' --include='*.sh' --include='jvm.config' --include='*.gradle*' --include='pom.xml' .`
+      (redaction switched off on JDK 27+)
+- [ ] **Startup-bound service without an AOT cache, or a cache it never uses — LOW** (§2) —
+      `grep -rnE 'AOTCache(Output)?=|AOTMode=|SharedArchiveFile|native-image' --include='Dockerfile*' --include='Containerfile*' --include='*.y*ml' --include='*.sh' --include='jvm.config' --include='*.gradle*' --include='pom.xml' .`
+      (no hit on a service with a startup SLO: try `-XX:AOTCacheOutput` first. A cache beside
+      `--illegal-native-access` or `--add-opens` in the same launch is skipped with only a
+      warning, so read the launch line)

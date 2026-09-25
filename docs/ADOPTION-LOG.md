@@ -6662,15 +6662,15 @@ Verdict: every skill was **adequate with gaps**, and none was thin. The Highs sh
 
 **Not adopted: the Low items that would add new material.** Each is recorded below with a trigger, so none is a silent drop.
 
-- **DEFERRED — golang: FIPS 140-3 module line; CrossOriginProtection audit probe; a JSON duplicate-key probe (rules/05 is at 497 lines). Revisit trigger: the next accuracy pass over sota-golang, or a field brief that hits one.**
-- **DEFERRED — rust: Rust-specific SQL sink probes (sqlx `QueryBuilder::push`, `diesel::sql_query`); the 1.98 `derive(PartialOrd)` fast-path note. Revisit trigger: the next accuracy pass over sota-rust, or a field brief that hits one.**
-- **DEFERRED — c-cpp: C++26 contracts as non-validation; the GCC 15 union `{0}` source rule; P2795 caveats; trap-mode UBSan in production; `memset_explicit`; TypeSanitizer; Safe Buffers; GCC default-dialect changes. Revisit trigger: the next accuracy pass over sota-c-cpp, or C++26 publication.**
-- **DEFERRED — jvm: Kotlin `data class` copy() visibility; a Jackson 3 migration note; the JDK AOT cache; JFR redaction; JDK ML-KEM/ML-DSA/KDF names. Revisit trigger: the next accuracy pass over sota-jvm, or a field brief that hits one.**
-- **DEFERRED — python: pylock.toml; PEP 768 remote debugging; a t-strings probe. Revisit trigger: the next accuracy pass over sota-python, or when a major DB driver accepts t-string queries.**
-- **DEFERRED — javascript-typescript: require(esm) and top-level await in library entries. Revisit trigger: the next accuracy pass over sota-javascript-typescript, or a field brief on dual publishing.**
-- **DEFERRED — dotnet: ASP.NET Core rate-limiter and Kestrel limit names; `TimeProvider`/`Lock` idioms; a worked BUILD example. Revisit trigger: the next accuracy pass over sota-dotnet, or a field brief that hits one.**
-- **DEFERRED — php: Rector for floor bumps. Revisit trigger: PHP 8.2 end of life (2026-12-31), when the floor moves.**
-- **DEFERRED — ruby: the gem.coop / RubyGems governance note; `Sidekiq::Web` and `master.key` probes. Revisit trigger: the next accuracy pass over sota-ruby, or a field brief that hits one.**
+- **RESOLVED 2026-09-25 (was deferred; implemented in the entry below) — golang: FIPS 140-3 module line; CrossOriginProtection audit probe; a JSON duplicate-key probe (rules/05 is at 497 lines). Revisit trigger: the next accuracy pass over sota-golang, or a field brief that hits one.**
+- **RESOLVED 2026-09-25 (was deferred; implemented in the entry below) — rust: Rust-specific SQL sink probes (sqlx `QueryBuilder::push`, `diesel::sql_query`); the 1.98 `derive(PartialOrd)` fast-path note. Revisit trigger: the next accuracy pass over sota-rust, or a field brief that hits one.**
+- **RESOLVED 2026-09-25 (was deferred; implemented in the entry below) — c-cpp: C++26 contracts as non-validation; the GCC 15 union `{0}` source rule; P2795 caveats; trap-mode UBSan in production; `memset_explicit`; TypeSanitizer; Safe Buffers; GCC default-dialect changes. Revisit trigger: the next accuracy pass over sota-c-cpp, or C++26 publication.**
+- **RESOLVED 2026-09-25 (was deferred; implemented in the entry below) — jvm: Kotlin `data class` copy() visibility; a Jackson 3 migration note; the JDK AOT cache; JFR redaction; JDK ML-KEM/ML-DSA/KDF names. Revisit trigger: the next accuracy pass over sota-jvm, or a field brief that hits one.**
+- **RESOLVED 2026-09-25 (was deferred; implemented in the entry below) — python: pylock.toml; PEP 768 remote debugging; a t-strings probe. Revisit trigger: the next accuracy pass over sota-python, or when a major DB driver accepts t-string queries.**
+- **RESOLVED 2026-09-25 (was deferred; implemented in the entry below) — javascript-typescript: require(esm) and top-level await in library entries. Revisit trigger: the next accuracy pass over sota-javascript-typescript, or a field brief on dual publishing.**
+- **RESOLVED 2026-09-25 (was deferred; implemented in the entry below) — dotnet: ASP.NET Core rate-limiter and Kestrel limit names; `TimeProvider`/`Lock` idioms; a worked BUILD example. Revisit trigger: the next accuracy pass over sota-dotnet, or a field brief that hits one.**
+- **RESOLVED 2026-09-25 (was deferred; implemented in the entry below) — php: Rector for floor bumps. Revisit trigger: PHP 8.2 end of life (2026-12-31), when the floor moves.**
+- **RESOLVED 2026-09-25 (was deferred; implemented in the entry below) — ruby: the gem.coop / RubyGems governance note; `Sidekiq::Web` and `master.key` probes. Revisit trigger: the next accuracy pass over sota-ruby, or a field brief that hits one.**
 
 **Line citations superseded.** The .NET agent re-wrapped `sota-dotnet` rules/04 and moved its
 runtime-patch material, including the Kestrel and SignalR CVEs and the "rebuild self-contained
@@ -6698,3 +6698,54 @@ found problems in these areas, all fixed in the same PR:
 - whether `dotnet restore` enforces `signatureValidationMode` on Linux and macOS;
 - the LLVM release that removed clang-tidy's `hicpp` module (2026 removal commits confirmed; the version is not);
 - the old C++26 saturating names `div_sat`/`saturate_cast`, which were written from recall.
+
+## 2026-09-25 — the nine deferred language-skill rows implemented, and four open verifications settled
+
+**Intake shape: operator instruction to finish every open item from the sweep above.** The nine
+`**DEFERRED —` rows have been flipped to RESOLVED in place. Each was implemented by one agent per
+skill (or skill pair), confined to its own folder. Each claim was checked against a primary source
+fetched this session or a local run, and each new probe was run on bad and good fixtures under
+BSD grep, the ugrep wrapper, bash and zsh.
+
+**New rule sections** (invariant 31):
+- `sota-python` rules/05 §3a (t-string consumers) and §8b (the PEP 768 remote debugger).
+- `sota-php` rules/05 §5 (floor bumps with Rector).
+- `sota-ruby` rules/03 §8 (`Sidekiq::Web` auth) and rules/04 §2.1 (alternative indexes and mirrors).
+- `sota-dotnet` rules/02 §7 (rate limiting and request limits), rules/02 §8 (a worked BUILD example that
+  compiles), and rules/03 §6 (`TimeProvider` and `Lock`).
+- `sota-c-cpp` rules/03 §7 (C++26 contracts are not input validation).
+
+**Things the implementation found that the deferral did not know:**
+- **Kotlin `copy()` visibility — the default change was declined** (KTLC-22, 2026-09-08). KT-89123
+  keeps it a warning with no end date. `@ConsistentCopyVisibility` is therefore the only fix, not
+  a stopgap.
+- **Python 3.14 documents an inert spelling.** The docs write `-X disable_remote_debug`, but
+  CPython reads only `disable-remote-debug`. Re-measured here on 3.14.6: the underscore form
+  leaves `sys.is_remote_debug_enabled()` True, the hyphen form makes it False, and
+  `PYTHON_DISABLE_REMOTE_DEBUG=1` is ignored under `python -I`. The rule teaches the working form.
+  The upstream docs bug has not been reported (it would be a public post, so that is the
+  operator's call).
+- **NuGet signature enforcement works on Linux, with two bypasses.** Measured in the .NET 10 SDK
+  container: `signatureValidationMode=require` fails restore with NU3034. A package already in the
+  global packages folder skips the check, and so does `DOTNET_NUGET_SIGNATURE_VERIFICATION=false`.
+  Config file names are case-insensitive, and the probes now match them that way.
+- **Bundler rewrites lockfile CHECKSUMS when the `source` changes on a non-frozen install** (exit 0,
+  measured), so a switched index can substitute bytes for the same version. Only the lockfile diff
+  shows it, and the new probe reads that diff.
+- **GCC 15's `{0}` union initializer** left 31 of 32 bytes unzeroed at `-O2` (measured on 15.3).
+  **GCC 16 contracts:** `observe` and `ignore` both let the guarded out-of-bounds read happen.
+- **The Python pip-audit pipe false-reds on a zero-dependency project** (exit 1). A counted form
+  with a printed denominator replaces it: it exits 0 with a SKIP line on an empty project, 1 when
+  vulnerable, and 2 when the export fails.
+- **require(esm):** top-level await anywhere in the graph throws `ERR_REQUIRE_ASYNC_MODULE`
+  (measured on Node 22.22.1 and 26.7.0).
+
+**The four open verifications:**
+- **dotnet signing on Linux:** enforced, with the two bypasses above.
+- **crates.io GitLab Trusted Publishing:** documented as a public beta, GitLab.com only.
+- **The hicpp module:** removed in clang-tidy 23.1.0, per its release notes.
+- **P0543's old names (`div_sat`, `saturate_cast`):** confirmed correct in P0543R3.
+
+**Still unverified:** JEP 483 says the AOT cache cannot be combined with `--illegal-native-access`
+and similar flags, which conflicts with the jvm skill's advice to run `--illegal-native-access=deny`.
+It is noted in rules/05 §2 and put to the review pass.

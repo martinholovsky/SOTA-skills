@@ -217,6 +217,25 @@ vendor/bin/phpunit                  # or: vendor/bin/pest
 - **Matrix:** run tests on every PHP minor the code claims to support
   (`require.php`), floor *and* current — a `^8.2` constraint tested only on
   8.5 is untested advertising.
+- **Raising the floor is one PR: `require.php`, the CI matrix, and a Rector run.** A floor
+  that trails php.net's support window ships an EOL branch as "supported" (8.2's security
+  support ends 2026-12-31, php.net/supported-versions.php; `https://www.php.net/releases/branches.php`
+  returns each branch's `state` and `security_support_end` as JSON). When the floor moves,
+  let a tool adopt what the new floor allows instead of leaving the old idioms in place:
+  Rector (neutral example) with `RectorConfig::configure()->withPaths([...])->withPhpSets()`.
+  An empty `withPhpSets()` takes its target from `composer.json` `require.php` (then
+  `config.platform.php`, then the running PHP), per getrector.com's docs; `withPhpVersion()`
+  overrides that, and the same docs warn an override above the floor can emit syntax the
+  floor cannot parse. Measured 2026-09-25 on Rector 2.6.7: one class under `^8.2` drew only
+  `ReadOnlyClassRector`; raising `require.php` to `^8.3` added `AddTypeToConstRector` (typed
+  class constants, 8.3 syntax). `vendor/bin/rector --dry-run` exited **2** with pending
+  changes and **0** on already-converted code, so as a CI step it fails a floor bump that
+  skipped the conversion, and afterwards stops new code reintroducing the old form. On a
+  legacy codebase use `withPhpLevel(N)` and raise it one level per PR, as Rector's own
+  integration guide advises. Rector's output is a diff like any other: review it (on a class
+  made `readonly`, measured on 8.5: a non-readonly subclass is a compile-time fatal and a
+  dynamic property throws `Error`), and drop the old floor's
+  matrix job in the same PR.
 - Nightly job re-runs `composer audit` (advisories land independent of
   commits).
 - Pipeline/runner/secrets hardening (pinned actions, OIDC, SLSA) →
@@ -269,6 +288,17 @@ Run from repo root; verify each hit manually.
       `git log --oneline -5 -- phpstan-baseline.neon 2>/dev/null`
 - [ ] **CI gates actually wired (adjust path to CI system)** —
       `grep -rnE '(composer audit|phpstan|psalm|php-cs-fixer|phpcs|phpunit|pest)' .github/workflows/ .gitlab-ci.yml 2>/dev/null`
+- [ ] **PHP floor out of support, or no Rector gate to move it (§5) — HIGH when the floor
+      branch is `eol`, LOW when it is security-only; MEDIUM for no gate once a bump is due** —
+      live lookup of the lowest `X.Y` in `require.php` against php.net (prints the floor's
+      state; `FETCH FAILED` is not a pass):
+      `php -r '$c = json_decode((string) @file_get_contents("composer.json"), true)["require"]["php"] ?? ""; preg_match_all("/(\d+)\.(\d+)/", $c, $m, PREG_SET_ORDER); if (!$m) { echo "NO require.php X.Y FLOOR\n"; exit(1); } usort($m, fn($a, $b) => [(int) $a[1], (int) $a[2]] <=> [(int) $b[1], (int) $b[2]]); $f = $m[0][1] . "." . $m[0][2]; $b = json_decode((string) @file_get_contents("https://www.php.net/releases/branches.php"), true); if (!is_array($b) || !$b) { echo "FETCH FAILED\n"; exit(2); } echo "floor $f checked against ", count($b), " branches\n"; foreach ($b as $r) { if ($r["branch"] === $f) { if ($r["state"] !== "stable") { echo "FLOOR $f: ", $r["state"], " (security support ends ", substr($r["security_support_end"], 0, 10), ")\n"; } exit; } } echo "FLOOR $f: not listed (EOL)\n";'`
+      ; `[ -f rector.php ] && [ -n "$(grep -rlsE 'rector' .github/workflows .gitlab-ci.yml)" ] || echo "NO RECTOR GATE: a floor bump is not converted or held"`
+      (ugrep exits 2 when a named path is missing even after a match, so the test reads the
+      output, not the status)
+      ; `grep -n 'withPhpVersion' rector.php 2>/dev/null` (an override: confirm it is not
+      above `require.php`) ; `git log --date=short --format='%h %ad %s' -G'"php"[[:space:]]*:' -- composer.json | head -5`
+      (each floor change: did the same PR carry Rector's diff and a matrix change?)
 - [ ] **Dev deps leaking into prod artifacts** —
       `grep -rn 'composer install' --include='Dockerfile*' --include='Containerfile*' --include='*.y*ml' --include='*.sh' . | grep -v -- --no-dev`
 

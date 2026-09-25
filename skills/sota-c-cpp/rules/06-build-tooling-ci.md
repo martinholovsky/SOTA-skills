@@ -16,6 +16,18 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
 - Set the standard explicitly and require it:
   `set(CMAKE_CXX_STANDARD 23)`, `CMAKE_CXX_STANDARD_REQUIRED ON`,
   `CMAKE_CXX_EXTENSIONS OFF` (no `-std=gnu++23` unless you mean it).
+- **Pin the C dialect too: the compiler default moves.** GCC 15 changed the C default from
+  `gnu17` to `gnu23`, and GCC 16 the C++ default from `gnu++17` to `gnu++20` (their release
+  notes). Measured: under GCC 15.3, `typedef int bool;` built with `-std=gnu17` and failed by
+  default ("'bool' cannot be defined via 'typedef'"); GCC 16.2 with no `-std` reported
+  `__cplusplus` 202002 and `__STDC_VERSION__` 202311. Set `CMAKE_C_STANDARD` and
+  `CMAKE_C_STANDARD_REQUIRED ON` beside the C++ pair, or `-std=` in every Makefile.
+- **`-fpermissive` in a C build is a finding, not a porting fix.** GCC 14 made implicit
+  function declarations, implicit `int`, int-conversion, incompatible-pointer-types, return
+  mismatches and missing parameter types errors; its porting guide names `-fpermissive` (or
+  `-std=gnu89`/`c89`) as the way back to warnings. Measured with GCC 15.3: an undeclared call
+  plus `int *p = 5;` failed with two errors by default and produced an object file under
+  `-fpermissive`. Each is a call or pointer with the wrong type at run time: fix the code.
 - Treat compiler/linker warnings as errors in CI builds. Generate
   `compile_commands.json` (`CMAKE_EXPORT_COMPILE_COMMANDS ON`) so clang-tidy/
   clang-analyzer see exact flags.
@@ -101,6 +113,16 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
   `UBSAN_OPTIONS=print_stacktrace=1` in CI.
 - Sanitizer builds are for test/CI, not production; production uses the
   hardened flag set (`rules/04` §5).
+- **One exception: a trap-mode UBSan subset may ship as hardening.** Clang's UBSan docs say its
+  full runtime is for testing and may weaken a production executable, and point production at
+  trap mode (`-fsanitize-trap=`, no runtime) or the minimal runtime
+  (`-fsanitize-minimal-runtime`). A cheap set: `-fsanitize=bounds,signed-integer-overflow
+  -fsanitize-trap=bounds,signed-integer-overflow`. Measured on the same overflow-plus-OOB file:
+  Apple clang 21 and GCC 15.3 both died with SIGILL (exit 132) and linked no `ubsan` symbol;
+  Fedora's Clang 22.1 minimal runtime printed one line per check (`ubsan: add-overflow by
+  0x…`); Apple clang 21 does not support the minimal runtime (warned, then failed to link).
+  Benchmark it, and list every check of `-fsanitize=` in `-fsanitize-trap=` too. ASan, TSan
+  and MSan stay out of production (`rules/04` §5 refuses them at compile time).
 
 ## 4. Fuzzing for input parsers
 
@@ -240,6 +262,15 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
 - [ ] **Warnings-as-errors and standard pinned?** —
       `grep -rnE 'Werror|/WX' . --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' || echo "no -Werror"`
       ; `grep -rnE 'CXX_STANDARD|cxx_std_|std=c\+\+' CMakeLists.txt 2>/dev/null`
+      ; `grep -nE 'C_STANDARD|c_std_|std=(gnu|c)[0-9]' CMakeLists.txt || echo "C dialect not pinned, unless grep printed an error"`
+      (§1: the default moved to `gnu23` in GCC 15 and `gnu++20` in GCC 16)
+- [ ] **GCC 14 C errors downgraded (§1) — MEDIUM, HIGH if the code then warns about
+      int-conversion or implicit declarations** —
+      `grep -rnE -e '-fpermissive|-std=(gnu|c)89' --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' --include='*.mk' --include='configure.ac' --include='meson.build' .`
+- [ ] **UBSan in a production build is trap-only or minimal-runtime (§3) — HIGH for ASan, TSan
+      or MSan in the shipped artifact** —
+      `grep -rnE -e '-fsanitize=' --include='CMakeLists.txt' --include='*.cmake' --include='CMakePresets.json' --include='Makefile*' --include='*.mk' . | grep -vE 'fsanitize-trap=|fsanitize-minimal-runtime'`
+      (each line left: is it the release configuration? then it ships a sanitizer runtime)
 - [ ] **clang-tidy / clang-format / cppcheck configs present?** —
       `ls .clang-tidy .clang-format 2>/dev/null | grep -q . || echo "missing lint/format config"`
       ; `test -f compile_commands.json || grep -rn EXPORT_COMPILE_COMMANDS CMakeLists.txt`

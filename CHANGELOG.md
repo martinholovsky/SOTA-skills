@@ -15,8 +15,31 @@ covered 9 skills, not the library. Record: ADOPTION-LOG, 2026-09-25.
 
 **Routing checked:** evals/results/2026-09-25/ROUTING-GO126.md
 
+**Resolved:** four items that were marked unverified are now settled. NuGet signing on Linux is
+enforced, but a warm package cache and `DOTNET_NUGET_SIGNATURE_VERIFICATION=false` both skip it.
+crates.io GitLab publishing is a public beta on GitLab.com only. The hicpp module was removed in
+clang-tidy 23.1.0. P0543's old names were confirmed correct.
+
 ### Added
 
+- **The nine deferred language-skill rows are implemented** (ADOPTION-LOG 2026-09-25, second entry):
+  - C++26 contracts and erroneous behaviour, GCC 15 union zeroing, trap-mode UBSan, `memset_explicit`,
+    TypeSanitizer, Safe Buffers, and GCC default-dialect changes;
+  - Go's FIPS 140-3 module, `CrossOriginProtection`, and duplicate JSON keys;
+  - Rust SQL sinks and the 1.98 `derive(PartialOrd)` change;
+  - Kotlin `copy()` visibility, Jackson 3, the JDK AOT cache, JFR data exposure, and the JCA post-quantum
+    names;
+  - pylock.toml, PEP 768, and t-string consumers;
+  - require(esm);
+  - ASP.NET Core rate and request limits, `TimeProvider`/`Lock`, and a worked minimal-API example that compiles;
+  - Rector floor bumps;
+  - RubyGems mirrors and checksums, `Sidekiq::Web` auth, and committed Rails keys.
+  
+  Every item has a probe tested on bad and good fixtures. Findings along the way:
+  - the Kotlin default change was declined upstream;
+  - Python's documented `-X disable_remote_debug` does nothing, and the rule teaches the hyphenated form;
+  - NuGet signature enforcement on Linux has two bypasses;
+  - Bundler rewrites lockfile checksums when the source changes.
 - **Invariant 37: no grep probe filters out a file it names.** `--include` filters files named
   on the command line too (BSD grep, ugrep and GNU grep, measured), so `--include='*.rb'` next
   to `config.ru` exits 1 like a clean codebase. It caught four shipped probes: a Sinatra CSRF

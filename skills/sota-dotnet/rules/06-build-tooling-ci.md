@@ -102,9 +102,24 @@ lives in `sota-testing`.
   installed without any warnings or errors"*. To make signing a control, set `signatureValidationMode`
   to `require` in `nuget.config` and list the author or repository certificates you accept (by
   fingerprint, optionally `<owners>`) under `<trustedSigners>`. That page documents it for NuGet 4.9+
-  and Visual Studio 15.9+ on Windows; whether `dotnet restore` enforces it on Linux/macOS is **not
-  verified here** — test it on your CI runner with an unsigned package before relying on it. Generate
-  an **SBOM** for releases. See `sota-devsecops`.
+  and Visual Studio 15.9+ on Windows. **`dotnet restore` on Linux enforces it too**, measured on
+  SDK 10.0.401 in the official SDK container (2026-09-25). With `require` and a trusted signer that
+  was not nuget.org, restoring `Newtonsoft.Json` from nuget.org failed with **NU3034** (*"signed but
+  not by a trusted signer"*). With `require` and no trusted signers, it also failed with NU3034. After
+  `dotnet nuget trust source nuget.org` added nuget.org's repository certificates, the restore
+  succeeded. Two ways it still let the package through, both measured:
+  - **The check runs only when a package is extracted into the global packages folder.** A package
+    already there from an earlier, laxer restore was used without any check (restore exit 0). So CI
+    needs a fresh `NUGET_PACKAGES` folder, or a cache keyed on the `nuget.config` content.
+  - **`DOTNET_NUGET_SIGNATURE_VERIFICATION=false` turns verification off even under `require`.**
+    Microsoft's "NuGet signed-package verification" page says Linux verifies by default from the
+    .NET 8 SDK on, and macOS does not; Microsoft advises against turning it on there, so on a macOS
+    runner `require` is not a control.
+
+  NuGet on Linux read the file and enforced the setting under each of `nuget.config`,
+  `NuGet.Config`, `NuGet.config`, `Nuget.Config` and `NUGET.CONFIG` (measured), so match the name
+  case-insensitively when you search for it. Generate an **SBOM** for releases. See
+  `sota-devsecops`.
 - **Runtime and framework patch level is an audit surface** (`rules/04` §4 points here). The memory-safe runtime's residual risk includes
   framework CVEs, e.g. CVE-2025-55315 (Kestrel HTTP request smuggling, fixed in 8.0.21/9.0.10/10.0 RC2)
   and CVE-2026-45591 (SignalR/Blazor Server MessagePack nested-array DoS, fixed in 8.0.28/9.0.17/10.0.9,
@@ -210,15 +225,20 @@ lives in `sota-testing`.
       `err=$(grep -rn 'RestorePackagesWithLockFile' --include='*.csproj' --include='Directory.Build.props' . 2>&1 >/dev/null); rc=$?` ;
       `case $rc in 0) ;; 1) echo "lockfile not enforced (RestorePackagesWithLockFile unset) — supply-chain risk" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
       ;
-      `err=$(grep -rniE 'packageSourceMapping|locked-mode|NuGetAudit|NU190[0-9]|auditSources|dependabot' --include='nuget.config' --include='NuGet.Config' --include='Directory.Build.props' --include='*.csproj' --include='*.yml' --include='*.yaml' . 2>&1 >/dev/null); rc=$?` ;
+      `err=$(grep -rniE 'packageSourceMapping|locked-mode|NuGetAudit|NU190[0-9]|auditSources|dependabot' --include='[Nn][Uu][Gg][Ee][Tt].[Cc][Oo][Nn][Ff][Ii][Gg]' --include='Directory.Build.props' --include='*.csproj' --include='*.yml' --include='*.yaml' . 2>&1 >/dev/null); rc=$?` ;
       `case $rc in 0) ;; 1) echo "no source mapping / locked restore / NuGetAudit CI gate" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
 - [ ] **Strong name treated as publisher trust, or the signing key in the repo — MEDIUM (HIGH
       for a `.pfx`)** (§3) — `git ls-files '*.snk' '*.pfx' '*.p12'` (a full `.snk` is a
       key pair; a `.pfx` is an Authenticode key) ;
       `grep -rniE 'nuget verify|signtool[^ ]* verify|Get-AuthenticodeSignature|osslsigncode verify' --include='*.yml' --include='*.yaml' --include='*.ps1' --include='*.sh' . || echo "no publisher-signature check in CI or scripts"`
 - [ ] **Package signatures required, not just present? MEDIUM** (§3) —
-      `grep -rniE 'signatureValidationMode|<trustedSigners' --include='nuget.config' --include='NuGet.Config' --include='NuGet.config' . || echo "signatures not required: an untrusted-cert-signed package installs as unsigned"`
-      (want `require` plus a `<trustedSigners>` entry; confirm your restore client enforces it)
+      `grep -rniE 'signatureValidationMode|<trustedSigners' --include='[Nn][Uu][Gg][Ee][Tt].[Cc][Oo][Nn][Ff][Ii][Gg]' . || echo "signatures not required: an untrusted-cert-signed package installs as unsigned"`
+      (want `require` plus a `<trustedSigners>` entry. The glob matches every capitalisation
+      NuGet reads on Linux; the old three-name list missed `Nuget.Config`.) Then look for what
+      switches it off or bypasses it in CI:
+      `grep -rnE 'DOTNET_NUGET_SIGNATURE_VERIFICATION|NUGET_PACKAGES|\.nuget/packages' --include='*.yml' --include='*.yaml' --include='*.sh' --include='*.ps1' --include='Dockerfile*' --include='*.env' --include='.env*' .`
+      (`...=false` disables it: HIGH. A restored package cache whose key ignores `nuget.config`
+      skips the check for every cached package: MEDIUM. A macOS runner does not verify at all.)
 - [ ] **Runtime / framework patch level — HIGH** (§3) — `dotnet --list-runtimes` on each host and
       base image (ASP.NET Core < 8.0.21/9.0.10 = CVE-2025-55315; < 8.0.28/9.0.17/10.0.9 = CVE-2026-45591);
       `grep -rn 'Microsoft\.AspNetCore\.Server\.Kestrel\.Core' --include='*.csproj' --include='packages.lock.json' --include='packages.config' --include='Directory.Packages.props' .`
@@ -234,8 +254,9 @@ lives in `sota-testing`.
       `grep -rnE '"build[A-Za-z]*/[^"]*\.(props|targets)": *\{' --include=project.assets.json .`
       (each hit needs an owner and a diff on bump, or `ExcludeAssets`); and the repo's own
       build-executing files need a code owner:
-      `(grep -snE 'Directory\.Build|\.targets|\.props|nuget\.config|global\.json' .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS; true) | grep -E . || echo "build-executing files have no CODEOWNERS entry -- HIGH"`
-      (the subshell keeps a missing CODEOWNERS path from reading as "no owner")
+      `(grep -sniE 'Directory\.Build|\.targets|\.props|nuget\.config|global\.json' .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS; true) | grep -E . || echo "build-executing files have no CODEOWNERS entry -- HIGH"`
+      (the subshell keeps a missing CODEOWNERS path from reading as "no owner"; `-i` because the
+      NuGet file may be spelled `NuGet.Config`)
 - [ ] **New dependency adopted unvetted, or a library's insecure default left on — MEDIUM
       (HIGH for a deserializer or TLS default)** (§3) — new packages in the change, each
       needing the §3 selection checks (a version bump is not listed; assumes `Include` is the

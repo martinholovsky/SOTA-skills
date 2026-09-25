@@ -25,6 +25,13 @@ All Spring facts below were checked against Spring's own docs, advisories and so
   `Id.NAME` with registered subtypes. `enableDefaultTyping` was deprecated in jackson-databind
   2.10 in favour of `activateDefaultTyping(PolymorphicTypeValidator)` (databind #2195). A
   validator that allows `Object` or a broad package prefix is the same hole under a new name.
+  **Jackson 3**, which Spring Boot 4 uses by default, removes `enableDefaultTyping` and moves
+  the call onto `JsonMapper.builder()`. `builder().polymorphicTypeValidator(...)` replaces the
+  default validator for annotation typing. The annotations keep their `com.fasterxml` package
+  (`rules/04` §1). Do not read the upgrade as a change to Spring's defaults.
+  `FAIL_ON_UNKNOWN_PROPERTIES` and `DEFAULT_VIEW_INCLUSION` are off by default in Jackson 3,
+  and Spring's own builder already turned both off on Jackson 2 (`Jackson2ObjectMapperBuilder`
+  javadoc).
 - **Data binding (mass assignment).** Spring's reference docs say: *"for security reasons it is
   recommended either to use an object tailored specifically for web binding, or to apply
   constructor binding only. If property binding must still be used, then allowedFields
@@ -135,9 +142,9 @@ All Spring facts below were checked against Spring's own docs, advisories and so
       form. Anything beyond `health` needs auth or a firewall; `heapdump` exposed is HIGH on
       sight)
 - [ ] **Request-body polymorphism — CRITICAL on a type reachable from `@RequestBody`** —
-      `grep -rnE 'JsonTypeInfo\.Id\.(CLASS|MINIMAL_CLASS)|use *= *(JsonTypeInfo\.)?Id\.(CLASS|MINIMAL_CLASS)|activateDefaultTyping|enableDefaultTyping' --include='*.java' --include='*.kt' .`
-      (then read the `PolymorphicTypeValidator`: allowing `Object` or a broad prefix is the
-      same finding)
+      `grep -rnE 'JsonTypeInfo\.Id\.(CLASS|MINIMAL_CLASS)|use *= *(JsonTypeInfo\.)?Id\.(CLASS|MINIMAL_CLASS)|activateDefaultTyping|enableDefaultTyping|polymorphicTypeValidator\(|LaissezFaireSubTypeValidator|allowIfBaseType\((Object\.class|Any::class)' --include='*.java' --include='*.kt' .`
+      (Jackson 2 and 3 spellings. Then read the `PolymorphicTypeValidator`: allowing `Object`
+      or a broad prefix is the same finding)
 - [ ] **Mass assignment — HIGH** — list binding targets and confirm none is an entity:
       `grep -rnE '@(ModelAttribute|RequestBody)' --include='*.java' --include='*.kt' .` ;
       `grep -rnE 'setAllowedFields|setDisallowedFields|@InitBinder' --include='*.java' --include='*.kt' .`

@@ -87,6 +87,19 @@ session.execute(text("SELECT * FROM users WHERE email = :email"), {"email": emai
 - Django ORM is parameterized by default; the dangerous edges are `.raw()`, `.extra()`,
   and `RawSQL` — audit every occurrence.
 
+## 3a. Template strings (3.14, PEP 750): the consumer is the control
+
+A `t"..."` literal evaluates to a `string.templatelib.Template`, not a `str`: the static
+`.strings` and each `Interpolation` (`.value`, `.expression`, `.conversion`, `.format_spec`)
+stay apart so that a consumer can escape or bind each value. The literal escapes nothing.
+Measured on 3.14.6: `str(t"<p>{x}</p>")` returns the repr (`Template(strings=(...), ...)`),
+not text, and a render loop that appended `str(part.value)` emitted `<p><script></p>` as-is.
+A consumer you write or review: passes the static strings through; sends every value through
+one escape (HTML), a bound parameter (SQL: placeholder + params list, §3) or an argv element
+(§2), after applying `string.templatelib.convert(value, conversion)`; handles or rejects
+`format_spec`; and refuses a plain `str` (`isinstance(arg, Template)`), so a pre-rendered
+f-string cannot pass through it. Library-provided consumers get the same read.
+
 ## 4. Path traversal
 
 `Path` arithmetic does not sandbox: `base / "../../etc/passwd"` escapes, and absolute
@@ -334,6 +347,24 @@ it generalises past Django.
   production, refuse to boot if `settings.DEBUG` / `app.debug` is true. OWASP: Error
   Handling cheat sheet; Secure Headers Project; ASVS.
 
+## 8b. Remote debugger attach (3.14, PEP 768)
+
+3.14 lets another process make yours run a Python file: `sys.remote_exec(pid, script)` (and
+`python -m pdb -p PID`) schedules it on the main thread at the next safe point. It is not a
+new privilege boundary: the caller needs the rights a debugger needs (per PEP 768: on Linux
+root or `CAP_SYS_PTRACE`; macOS `task_for_pid`; Windows `PROCESS_VM_READ`/`WRITE`). It does
+turn those rights into one-call code execution, so switch it off in production as defence
+in depth: `PYTHON_DISABLE_REMOTE_DEBUG=1`, `-X disable-remote-debug`, or a build configured
+`--without-remote-debug`. Measured on 3.14.6 with `sys.is_remote_debug_enabled()`:
+- **The documented spelling does nothing.** The 3.14 command-line docs write
+  `-X disable_remote_debug`; CPython's `initconfig.c` reads `disable-remote-debug`, and the
+  underscore form left it enabled. Use the hyphen.
+- **The variable is ignored under `-E` and `-I`** (they drop every `PYTHON*` variable), so a
+  hardened `python -I` entrypoint needs the `-X` form. Any value disables it, even empty.
+- Check it in the running image with the real flags; audit events `sys.remote_exec` (caller)
+  and `cpython.remote_debugger_script` (target) record use. Not granting `SYS_PTRACE` to the
+  container is the primary control (`sota-sandboxing`).
+
 Dependency and supply-chain hygiene and static-analysis gates (formerly sections 9 and 10)
 moved to [rules/08](08-supply-chain.md) §1–§2 on 2026-09-25.
 
@@ -372,6 +403,11 @@ foreign function, and validate lengths before they cross. The class is `sota-cod
       `grep -rn 'execute(f"\|execute(".*%s" *%\|execute(.*+ ' --include="*.py" src/` ;
       `grep -rn "\.raw(\|\.extra(\|RawSQL" --include="*.py" src/` (Django edges);
       `grep -rn 'text(f"' --include="*.py" src/` (SQLAlchemy text+f-string)
+- [ ] **--- t-string consumers that render values raw (§3a) --- [CRITICAL where the value
+      is request-derived and the output is SQL or a shell string; HIGH for HTML]** —
+      `grep -rlE 'string\.templatelib' --include='*.py' . | while IFS= read -r f; do grep -nHE '\.values?([^A-Za-z0-9_]|$)|str\((t|tmpl|template)\)' "$f" | grep -vE 'escape|quote|param|bind'; done`
+      (each hit is a value or a whole `Template` used with no escape or binding on that line;
+      read it — a value escaped a line earlier is a false positive, `str(template)` is a repr)
 - [ ] **Path traversal & archives [HIGH]** —
       `grep -rn "extractall\|extract(" --include="*.py" src/ | grep -v 'filter='` ;
       `grep -rn "request.*filename\|\.filename" --include="*.py" src/` (then check containment);
@@ -423,6 +459,14 @@ foreign function, and validate lengths before they cross. The class is `sota-cod
       `grep -rnE 'runserver|flask[[:space:]]+run|(app|application)\.run\(|--reload|reload[[:space:]]*=[[:space:]]*True|FLASK_DEBUG' --include='*.py' --include='Dockerfile*' --include='*.sh' --include='*.y*ml' --include='*.toml' --include='Procfile' .`
       (each hit must be dev-only tooling; the production entrypoint names a production server
       and startup refuses to boot with debug on)
+- [ ] **--- Remote debugger attach left on, or switched off with an inert spelling (§8b) ---
+      [LOW on a 3.14+ runtime; MEDIUM where the container holds `SYS_PTRACE` or shares a
+      PID namespace]** —
+      `grep -rlE '(python3?(\.[0-9]+)?|uvicorn|gunicorn|granian|hypercorn)([[:space:]",]|$)' --include='Dockerfile*' --include='*.service' --include='Procfile' . | while IFS= read -r f; do grep -qE 'PYTHON_DISABLE_REMOTE_DEBUG|disable-remote-debug' "$f" || echo "$f: no remote-debug switch"; done`
+      (a start file with no switch; the variable may instead be set in the orchestrator's env,
+      so read it there) ;
+      `grep -rnE 'disable_remote_debug' --include='Dockerfile*' --include='*.y*ml' --include='*.sh' --include='*.service' --include='*.toml' --include='Procfile' .`
+      (the underscore spelling, which 3.14.6 ignores)
 - [ ] **--- Template autoescape (§1) --- [HIGH where user data renders into HTML]** —
       `grep -rnE 'Environment\(|Template\(' --include='*.py' src/` (read each for `autoescape=`:
       measured with Jinja2 3.1.6, `Environment().autoescape` is `False` and `{{ x }}` rendered

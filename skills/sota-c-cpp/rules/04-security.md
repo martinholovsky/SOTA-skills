@@ -43,7 +43,8 @@ Replace on sight (CERT STR/FIO; MISRA):
   `RELWITHDEBINFO` **and** `MINSIZEREL` init flags, so every non-Debug build type
   strips them. A bounds or validation check written as `assert`
   therefore does not exist in the shipped binary. Use an explicit `if` that
-  returns/aborts, or a hardened contract macro that survives release flags; keep
+  returns/aborts, or a hardened contract macro that survives release flags (a C++26 `pre` is
+  not one: the build can set it to `ignore`, `rules/03` §7); keep
   `assert` for impossible internal states. Class: `sota-code-security` rules/11 §4.
 - **Unsafe parsing of untrusted structured input (deserialization).** Never cast or
   `memcpy` a wire buffer straight into a struct: padding, alignment, endianness and every
@@ -200,8 +201,10 @@ Replace on sight (CERT STR/FIO; MISRA):
   chain validation, never instead of it: compare the pin against that same non-NULL peer
   certificate (or inside the `SSL_CTX_set_verify` callback), and shut the connection down before
   any application data is sent when either check fails. OWASP Pinning cheat sheet.
-- Zero secrets after use with a *guaranteed* wipe (`explicit_bzero`,
-  `sodium_memzero`, `SecureZeroMemory`) — plain `memset` can be optimized away.
+- Zero secrets with a wipe the optimizer may not elide (plain `memset` can vanish): C23
+  `memset_explicit` is the standard one (cppreference), beside `explicit_bzero`, `sodium_memzero`,
+  `SecureZeroMemory`. It is not everywhere yet (measured: in glibc 2.43, absent from glibc 2.41
+  and Apple clang 21's macOS SDK), so wrap it in one function with per-platform fallbacks.
 
 ## 5. Hardened build (the OpenSSF baseline)
 
@@ -287,7 +290,8 @@ ld/lld flags that the macOS linker does not take, so their link step was not run
   `BIND_NOW` (full RELRO), `__stack_chk_fail` (canary) and `__*_chk` imports (FORTIFY). OWASP:
   C-Based Toolchain Hardening cheat sheet.
 - **Debug mode in production: C/C++ has no dev server, so the "debug mode" is the build.**
-  An empty `CMAKE_BUILD_TYPE`, a `Debug` build, `-fsanitize=*` or `-D_GLIBCXX_DEBUG` must never
+  An empty `CMAKE_BUILD_TYPE`, a `Debug` build, `-fsanitize=*` (bar a trap-mode UBSan subset,
+  `rules/06` §3) or `-D_GLIBCXX_DEBUG` must never
   produce the artifact you ship. Measured with CMake 4.4.3: with no `CMAKE_BUILD_TYPE` the
   compile line carried neither `-O` nor `-DNDEBUG`, so the shipped binary is unoptimised
   and every `assert` stays live. Check it at compile time, not by habit. The release pipeline
@@ -486,6 +490,9 @@ a sandbox over running as root at all (`sota-sandboxing`).
       (a configure step with no release build type, or a debug-only flag, in packaging or CI. In
       CI only the job that produces the shipped artifact matters, since test jobs rightly
       sanitize. Then look for the `APP_RELEASE` `#error` guard in the source)
+- [ ] **Secret wiped with plain `memset` (§4) — MEDIUM** —
+      `grep -rniE 'memset[[:space:]]*\([[:space:]]*&?[A-Za-z_.>-]*(key|secret|passw|pwd|token|priv)' --include='*.c' --include='*.cc' --include='*.cpp' .`
+      (the store may be elided: use `memset_explicit` or a platform wipe)
 - [ ] **Static + safety-standard analysis** —
       `clang-tidy --checks='cert-*,bugprone-*,clang-analyzer-security.*' <files>` ;
       `cppcheck --enable=warning,portability <src>` (cppcheck 2.21 ships no `cert` addon:

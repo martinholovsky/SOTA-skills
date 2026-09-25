@@ -346,6 +346,14 @@ network:
   verify prefix (`path.canonicalize()?.starts_with(root)`), never just join.
 - SQL via parameterized queries (`sqlx` compile-checked, `diesel`); any
   `format!` into a query string is a finding regardless of current inputs.
+  The runtime raw-SQL sinks: sqlx `QueryBuilder::push` appends text unsanitised
+  (values go through `push_bind`; `push` takes fixed fragments, and an identifier
+  from input only via an allowlist); `sqlx::query`/`query_as` over a built string
+  (plain `&str` in 0.8; from 0.9 only `&'static str` is accepted and a runtime string
+  must be wrapped in `AssertSqlSafe(..)` — each wrap is a reviewed exception); diesel
+  `sql_query` (bind with `.bind::<T, _>(v)`) and `dsl::sql::<T>` (bind with
+  `SqlLiteral::bind`). (docs.rs: sqlx 0.9.0 `QueryBuilder`, `SqlSafeStr`, sqlx 0.8.6
+  `query`; diesel 2.3.13 `sql_query`, `dsl::sql`.)
 
 ## 8. Release provenance & logging hygiene
 
@@ -444,6 +452,15 @@ Running external programs (formerly section 9) moved to
       `rg 'deny_unknown_fields'` absent on auth/config types = Low-Medium;
       body-size limits present at every ingest (axum `DefaultBodyLimit`,
       manual caps) — absent = High.
+- [ ] **Raw-SQL sinks fed a runtime string (§7) — High (Critical when the text is
+      caller-influenced)** —
+      `rg -n -t rust '(^|[^.A-Za-z0-9_])query(_as|_scalar)?(::<[^>]*>)?\([[:space:]]*&?(format!|[a-z_][A-Za-z0-9_.]*[[:space:]]*[,)])|AssertSqlSafe\(|sql_query\([[:space:]]*&?(format!|[a-z_])|sql::<[^>]*>\([[:space:]]*&?format!' .`
+      (sqlx `query`/`query_as` over a built string or variable, every `AssertSqlSafe`,
+      diesel `sql_query`/`sql::<T>` over a non-literal) ; then
+      `rg -l0 -t rust 'QueryBuilder' . | xargs -0 -r rg -n '\.push\([[:space:]]*&?(format!|[a-z_][A-Za-z0-9_.:]*[[:space:]]*[()])'`
+      (`QueryBuilder::push` of a non-literal — must be `push_bind`, or an allowlisted
+      identifier; `Vec::push` in the same file is noise to read past). Macros
+      (`query!`) and `.query(` (e.g. reqwest's URL query) are excluded by design.
 - [ ] `rg 'format!\(.*(SELECT|INSERT|UPDATE|DELETE|WHERE)' -t rust -i` = High;
       `rg '\.join\(' -t rust` on user-supplied path segments without
       canonicalize+prefix check = High.
