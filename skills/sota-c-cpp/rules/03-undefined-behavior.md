@@ -30,7 +30,8 @@ exploit UB at `-O2`. Treat any UBSan diagnostic as CRITICAL/HIGH. Reference:
 - **`= {0}` does not zero a whole union on GCC 15+.** The GCC 15 release notes: `{0}` for a
   union "just initializes the first union member to zero" (static storage excepted). Measured
   with GCC 15.3: a 32-byte automatic union whose first member is a `char`, initialized `= {0}`
-  on a stack pre-filled with `0xAA`, still had 31 non-zero bytes at `-O2` (19 at `-O0`); `= {}`
+  on a stack pre-filled with `0xAA`, still had non-zero bytes at both `-O0` and `-O2` (the
+  count varies with the surrounding code and optimisation level: 5 to 31 of 32 across runs); `= {}`
   left none, and so did `-fzero-init-padding-bits=unions` or `=all` (`rules/04` §5). Apple clang
   21 zeroed all 32 either way, so the leak depends on the compiler. Copying such a union to the
   wire, a file or another privilege level discloses stack bytes: write `= {}` (C23, C++) or
@@ -166,6 +167,8 @@ mutex. Build threaded code under TSan.
   && i < 4) { return buf[i]; }` called with 11 terminated under the default semantic (enforce,
   per `g++ --help=c++`) and under `quick_enforce`. With `-fcontract-evaluation-semantic=observe`
   the handler ran and the out-of-bounds read followed; with `=ignore` it followed silently.
+  **Linking needs `-lstdc++exp`** (or your own `handle_contract_violation`): without it `ld`
+  failed with an undefined reference to `handle_contract_violation` (measured, GCC 16.2).
 - **Rule:** validate untrusted input (length, index, range, format) with an explicit `if` that
   returns an error or throws, the same rule as for `assert` (`rules/04` §2). A contract may
   restate that invariant for internal callers. Where a contract is nonetheless the only guard on

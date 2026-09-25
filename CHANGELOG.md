@@ -40,6 +40,19 @@ clang-tidy 23.1.0. P0543's old names were confirmed correct.
   - Python's documented `-X disable_remote_debug` does nothing, and the rule teaches the hyphenated form;
   - NuGet signature enforcement on Linux has two bypasses;
   - Bundler rewrites lockfile checksums when the source changes.
+- **Invariant 37 extended to brace globs in `--include`.** grep never brace-expands, so a quoted
+  `--include='*.{py,js}'` matches no file (measured on BSD grep, ugrep and GNU grep; unquoted,
+  zsh aborts). The full-library sweep found two live instances, now fixed: the secrets-management
+  manual sweep and an observability probe. Probe 37c covers it.
+- **Review of the deferred-items diff:** 17 defects fixed. They include:
+  - a lost JVM checklist header;
+  - the AOT cache versus `--illegal-native-access=deny` trade-off, now explicit (JEP 483);
+  - a sanitizer guard that covered only ASan;
+  - a Sidekiq probe that broke on two matches;
+  - a lockfile probe blind to *dropped* checksums;
+  - three probes that filtered their own file names.
+  
+  One review claim was refuted from source (Node v24.15.0 is listed for require(esm) stability).
 - **Invariant 37: no grep probe filters out a file it names.** `--include` filters files named
   on the command line too (BSD grep, ugrep and GNU grep, measured), so `--include='*.rb'` next
   to `config.ru` exits 1 like a clean codebase. It caught four shipped probes: a Sinatra CSRF

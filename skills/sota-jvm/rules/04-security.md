@@ -327,7 +327,8 @@ throws `UnsupportedOperationException`. A warning printed once to stderr gets re
 On JDK 24+, run CI and production with `--illegal-native-access=deny` and
 `--sun-misc-unsafe-memory-access=deny`. Then a new dependency that reaches native code or
 `Unsafe` fails the build instead of printing that warning. Where you do need an exception, grant
-only the named module.
+only the named module. **JEP 483's AOT cache refuses any `--illegal-native-access` value**, so
+with a cache run this gate in a cache-free CI job instead (`rules/05` §2).
 
 ## Audit checklist
 

@@ -136,6 +136,7 @@ the type system, and expression-oriented code**. References:
       `grep -rnE -B1 'data[[:space:]]+class[[:space:]]+[A-Za-z0-9_]+[[:space:]]*(<[^>]*>)?[[:space:]]*(@[A-Za-z]+[[:space:]]+)*(private|internal)[[:space:]]+constructor' --include='*.kt' . | awk '/data[[:space:]]+class/ && /(private|internal)[[:space:]]+constructor/ {if(p !~ /ConsistentCopyVisibility/ && $0 !~ /ConsistentCopyVisibility/) print; p=""; next} {p=$0}'`
       ; `grep -rn 'consistent-data-class-copy-visibility' --include='*.gradle*' --include='pom.xml' . || echo "flag not set: every hit above is live"`
       (a hit is clean if its `init {}` enforces the factory's rule; read it)
+- [ ] **Swallowed exceptions — MEDIUM/HIGH** —
       `grep -rnzoE 'catch *\([^)]*\) *\{\s*\}' --include='*.java' --include='*.kt' .` ;
       `grep -rnE 'catch *\((Exception|Throwable)|catch *\([^)]*:[[:space:]]*(Exception|Throwable)[[:space:]]*\)' --include='*.java' --include='*.kt' .`
       (the second form is Kotlin's `catch (e: Exception)`, which the Java form never matched)

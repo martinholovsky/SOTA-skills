@@ -41,7 +41,7 @@ Adapt to language/stack; these locate the load-bearing code fast.
 
 ```bash
 # Logging reality: structured vs printf
-grep -rEn 'print\(|console\.log|System\.out|fmt\.Print' --include='*.{py,js,ts,go,java}' src/ | head
+grep -rEn 'print\(|console\.log|System\.out|fmt\.Print' --include='*.py' --include='*.js' --include='*.ts' --include='*.go' --include='*.java' src/ | head
 grep -rEn 'logger\.|log\.|slog\.|zap\.|structlog|pino|winston' src/ | head
 
 # Level abuse: expected events at error level

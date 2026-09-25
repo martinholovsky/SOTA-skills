@@ -365,9 +365,10 @@ raw pointers from JavaScript with no compiled addon; its docs call the API "unsa
 "crash the process or corrupt memory". Treat an import of it as native code, and start
 production processes with `--permission` without `--allow-ffi` (measured on v26.7.0: `dlopen`
 threw `ERR_ACCESS_DENIED`) or with `--no-experimental-ffi`, unless a reviewed feature needs it.
-The docs say that flag exists "only in builds with FFI support": on v22.22.1 it is `bad option`,
-exit 9, on the command line and in `NODE_OPTIONS`, so the process never starts on a runtime
-without FFI. The class is `sota-code-security` rules/06 §3.
+The docs say that flag exists "only in builds with FFI support": on v22 (v22.22.1, v22.23.3) the
+command line prints `bad option: --no-experimental-ffi` and `NODE_OPTIONS` prints
+`--no-experimental-ffi is not allowed in NODE_OPTIONS`, both exit 9, so the process never starts
+on a runtime without FFI. The class is `sota-code-security` rules/06 §3.
 
 ## Audit checklist
 

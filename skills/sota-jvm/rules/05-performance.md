@@ -40,13 +40,21 @@ proper benchmark harness; never tune GC flags by guess. Cross-reference
   `-XX:AOTCache=app.aot`. Since JDK 26 the cache works with any collector, including ZGC
   (JEP 516). **A mismatched cache is silently skipped.** The default mode warns and runs
   without it. JEP 483 requires the same JDK release, OS and architecture, the same class path
-  (plain JARs, with extra entries allowed only at the end) and identical module options. It
-  also bans `--add-opens`/`--add-exports`, `--illegal-native-access` and class-rewriting
-  JVMTI agents. That last list collides with `rules/04` §7's `--illegal-native-access=deny`,
-  so check it against the JDK you ship. Prove the cache is used in a smoke test with
-  `-XX:AOTMode=on`, which JDK 27 renames `-XX:AOTMode=required`. That mode fails the launch
-  instead of warning, and JEP 483 advises care before using it in production. Treat the
-  `.aot` file as a build artifact, rebuilt with the JDK it was trained on. **Classic
+  (plain JARs, with extra entries allowed only at the end) and identical `-m`/`--module`,
+  `--module-path`, `--add-modules` and `--enable-native-access` arguments. It bans
+  `--illegal-native-access` (**any** value), `--add-opens`, `--add-reads`, `--limit-modules`,
+  `--patch-module`, `--upgrade-module-path` and class-rewriting JVMTI agents. `--add-exports`
+  is allowed from JDK 25 only if identical in every phase (JDK-8352437). **So the cache and
+  `rules/04` §7's `--illegal-native-access=deny` are a trade-off, not a pair.** Run the
+  `--illegal-native-access=deny` / `--sun-misc-unsafe-memory-access=deny` gate in a CI job
+  that runs **without** the cache, so a new native dependency still fails the build. In
+  production pick one: the cache, with native access left at the default `warn` and the same
+  `--enable-native-access=<modules>` in every phase, **or** `deny` without the cache. (From
+  the documents — JEP 483, updated 2026-08-26 — not measured here.) Prove the cache is used
+  in a smoke test with `-XX:AOTMode=on`; JDK 27 adds `-XX:AOTMode=required` as an alias for
+  it (JDK-8374348), not a rename — keep one of them in the smoke test. Either fails the launch
+  instead of warning, so a skipped cache fails loudly; JEP 483 advises care before using it
+  in production. Treat the `.aot` file as a build artifact, rebuilt with the JDK it was trained on. **Classic
   AppCDS** (`-XX:SharedArchiveFile`) is the older subset. **GraalVM Native Image** (§5) is
   for when even that is not enough
   ([JEP 483](https://openjdk.org/jeps/483), [JEP 514](https://openjdk.org/jeps/514),

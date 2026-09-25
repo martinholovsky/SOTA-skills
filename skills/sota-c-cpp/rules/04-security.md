@@ -297,11 +297,11 @@ ld/lld flags that the macOS linker does not take, so their link step was not run
   and every `assert` stays live. Check it at compile time, not by habit. The release pipeline
   passes its own `-DAPP_RELEASE=1`. Do not derive it from the build type, which is the thing
   being checked. The source then refuses a debug or sanitizer build:
-  `#if defined(APP_RELEASE) && (!defined(NDEBUG) || defined(APP_ASAN))` → `#error`, with
-  `APP_ASAN` defined from `__SANITIZE_ADDRESS__` (GCC documents it for `-fsanitize=address`)
-  **or** `__has_feature(address_sanitizer)`, behind a `defined(__has_feature)` guard. Test both
-  because Apple clang 21 with `-fsanitize=address` set only the second (measured). OWASP: Error
-  Handling cheat sheet; Secure Headers Project; ASVS 5.0 V13.4.
+  `#if defined(APP_RELEASE) && (!defined(NDEBUG) || defined(APP_SAN))` → `#error`, with
+  `APP_SAN` defined from GCC's `__SANITIZE_ADDRESS__`/`__SANITIZE_THREAD__` **or** clang's
+  `__has_feature(address_sanitizer)`, `(thread_sanitizer)`, `(memory_sanitizer)`, behind a
+  `defined(__has_feature)` guard. Test both: for ASan and TSan Apple clang 21 set only the second,
+  GCC 16.2 the first; a trap-mode UBSan build passed (measured). OWASP: Error Handling cheat sheet; Secure Headers Project; ASVS 5.0 V13.4.
 - Treat warnings as errors (`-Werror`) in CI; a clean `-Wall -Wextra` is the
   floor, not the ceiling — also run a static analyzer (`rules/06`).
 
@@ -487,9 +487,9 @@ a sandbox over running as root at all (`sota-sandboxing`).
 - [ ] **Shipped artifact built in debug mode rather than release mode: empty or `Debug` build
       type, sanitizer runtime, `_GLIBCXX_DEBUG` (§5) — HIGH on a network-facing binary** —
       `grep -rnE '(^|[[:space:]])cmake[[:space:]]+[^|;&]*(-S|-B|\.\.)|-fsanitize=|_GLIBCXX_DEBUG' --include='Dockerfile*' --include='Containerfile*' --include='*.spec' --include='PKGBUILD' --include='rules' --include='*.yml' --include='*.yaml' . | grep -vE 'CMAKE_BUILD_TYPE=(Release|RelWithDebInfo|MinSizeRel)'`
-      (a configure step with no release build type, or a debug-only flag, in packaging or CI. In
-      CI only the job that produces the shipped artifact matters, since test jobs rightly
-      sanitize. Then look for the `APP_RELEASE` `#error` guard in the source)
+      (a configure step with no release build type, or a debug-only flag, in packaging or CI; in
+      CI only the shipped artifact's job counts, as test jobs rightly sanitize. A trap-mode UBSan
+      subset is exempt (`rules/06` §3). Then look for the `APP_RELEASE` `#error` guard in the source)
 - [ ] **Secret wiped with plain `memset` (§4) — MEDIUM** —
       `grep -rniE 'memset[[:space:]]*\([[:space:]]*&?[A-Za-z_.>-]*(key|secret|passw|pwd|token|priv)' --include='*.c' --include='*.cc' --include='*.cpp' .`
       (the store may be elided: use `memset_explicit` or a platform wipe)

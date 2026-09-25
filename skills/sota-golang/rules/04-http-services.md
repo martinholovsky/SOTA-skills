@@ -402,13 +402,15 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
       `grep -rnE 'strings\.(HasPrefix|HasSuffix|Contains)\([A-Za-z_]+\.URL\.(Path|RawPath)|\.URL\.EscapedPath\(\)' --include='*.go' .`
       (then send `//x`, `/a/../x` and `%2e` variants of each guarded path through the stack)
 - [ ] **Cookie-authenticated mutations without a CSRF layer (§1) — HIGH** —
-      `grep -rqE '\.Cookie\(' --include='*.go' . && grep -rqE '"(POST|PUT|PATCH|DELETE) |\.(POST|PUT|PATCH|DELETE|Post|Put|Patch|Delete)\(|Methods\("(POST|PUT|PATCH|DELETE)' --include='*.go' . && ! grep -rqE 'CrossOriginProtection|gorilla/csrf|justinas/nosurf|csrf\.Protect' --include='*.go' . && echo 'cookie-auth mutating routes, no CSRF layer'`
-      (repo-level; when a layer exists, confirm each mutating route is behind its `Handler`) ;
+      `grep -rqE '\.Cookie\(' --include='*.go' . && grep -rqE '"(POST|PUT|PATCH|DELETE) /|\.(POST|PUT|PATCH|DELETE|Post|Put|Patch|Delete)\("/|Methods\((http\.Method(Post|Put|Patch|Delete)|"(POST|PUT|PATCH|DELETE))' --include='*.go' . && ! grep -rqE 'CrossOriginProtection|gorilla/csrf|justinas/nosurf|csrf\.Protect' --include='*.go' . && echo 'cookie-auth mutating routes, no CSRF layer'`
+      (repo-level; route registrations only — a `"/…"` path argument or a `"POST /…"` pattern,
+      so a client's `http.Post(url, …)` is not a route; when a layer exists, confirm each
+      mutating route is behind its `Handler`) ;
       `grep -rnE 'AddInsecureBypassPattern|AddTrustedOrigin' --include='*.go' .` (every hit is
       a widened exception — MEDIUM unless justified) ; `gosec -include=G121 ./...`
 - [ ] **JSON duplicate keys on privilege-bearing input (`rules/05` §1) — HIGH when a proxy,
       validator or signer parses the same body first** —
-      `grep -rlE '"encoding/json"' --include='*.go' . | xargs -r grep -lE 'json\.(Unmarshal|NewDecoder)\(' | xargs -r grep -nE '^[[:space:]]*(Role|Roles|Admin|IsAdmin|Scopes?|Permissions?|Tenant(ID)?|Owner(ID)?|UserID|Price|Amount)[[:space:]].*json:"'`
+      `grep -rlE '"encoding/json"' --include='*.go' . | xargs -r grep -lE 'json\.(Unmarshal|NewDecoder)\(' | xargs -r grep -nHE '^[[:space:]]*(Role|Roles|Admin|IsAdmin|Scopes?|Permissions?|Tenant(ID)?|Owner(ID)?|UserID|Price|Amount)[[:space:]].*json:"'`
       (v1 decoder in a file declaring a privilege field; v1 keeps the last duplicate and
       `DisallowUnknownFields` does not reject it — measured go1.27.1; on 1.27+ decode with
       `encoding/json/v2`, which errors on duplicates)

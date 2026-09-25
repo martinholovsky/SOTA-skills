@@ -667,8 +667,9 @@ CI scans the full git history, the pre-commit hook scans each commit.
     `--include='*.rb'` with `config.ru` exits 1 exactly like a clean codebase. Three shipped
     probes had it (a Sinatra CSRF check, a Rack session-cookie check, a .NET secrets sweep).
     A named file needs no filter; if you need both, add an `--include` that matches the
-    named file. `# BAD` on the same line exempts a deliberate bad example
-    (`sota-shell-scripting` rules/09 §5b).
+    named file. `# BAD` on the same line exempts a deliberate bad example. It also fails on a
+    brace glob inside `--include` (`'*.{py,js}'`), which grep never expands, so it matches no
+    file; write one `--include` per extension (`sota-shell-scripting` rules/09 §5b).
 
 ## Local setup
 

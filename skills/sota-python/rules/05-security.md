@@ -405,8 +405,9 @@ foreign function, and validate lengths before they cross. The class is `sota-cod
       `grep -rn 'text(f"' --include="*.py" src/` (SQLAlchemy text+f-string)
 - [ ] **--- t-string consumers that render values raw (§3a) --- [CRITICAL where the value
       is request-derived and the output is SQL or a shell string; HIGH for HTML]** —
-      `grep -rlE 'string\.templatelib' --include='*.py' . | while IFS= read -r f; do grep -nHE '\.values?([^A-Za-z0-9_]|$)|str\((t|tmpl|template)\)' "$f" | grep -vE 'escape|quote|param|bind'; done`
-      (each hit is a value or a whole `Template` used with no escape or binding on that line;
+      `grep -rlE 'string\.templatelib' --include='*.py' . | while IFS= read -r f; do grep -nE '\.values?([^A-Za-z0-9_]|$)|str\((t|tmpl|template)\)' "$f" | grep -vE 'escape|quote|param|bind' | while IFS= read -r l; do printf '%s:%s\n' "$f" "$l"; done; done`
+      (the filter reads only the code, never the file name, so `html_escape.py` is still
+      searched; each hit is a value or a whole `Template` used with no escape or binding on that line;
       read it — a value escaped a line earlier is a false positive, `str(template)` is a repr)
 - [ ] **Path traversal & archives [HIGH]** —
       `grep -rn "extractall\|extract(" --include="*.py" src/ | grep -v 'filter='` ;
@@ -462,9 +463,9 @@ foreign function, and validate lengths before they cross. The class is `sota-cod
 - [ ] **--- Remote debugger attach left on, or switched off with an inert spelling (§8b) ---
       [LOW on a 3.14+ runtime; MEDIUM where the container holds `SYS_PTRACE` or shares a
       PID namespace]** —
-      `grep -rlE '(python3?(\.[0-9]+)?|uvicorn|gunicorn|granian|hypercorn)([[:space:]",]|$)' --include='Dockerfile*' --include='*.service' --include='Procfile' . | while IFS= read -r f; do grep -qE 'PYTHON_DISABLE_REMOTE_DEBUG|disable-remote-debug' "$f" || echo "$f: no remote-debug switch"; done`
-      (a start file with no switch; the variable may instead be set in the orchestrator's env,
-      so read it there) ;
+      `grep -rlE '(python3?(\.[0-9]+)?|uvicorn|gunicorn|granian|hypercorn)([[:space:]",]|$)' --include='Dockerfile*' --include='*.service' --include='Procfile' . | while IFS= read -r f; do grep -qE 'PYTHON_DISABLE_REMOTE_DEBUG|disable-remote-debug' "$f" || echo "$f: no remote-debug switch"; if grep -qE 'python[0-9.]*"?,?[[:space:]]+"?-[A-Za-z]*[IE]' "$f" && ! grep -qE 'disable-remote-debug' "$f"; then echo "$f: python -I/-E ignores PYTHON_DISABLE_REMOTE_DEBUG, needs -X disable-remote-debug"; fi; done`
+      (a start file with no switch, or one whose `-I`/`-E` interpreter makes the variable
+      inert; the variable may instead be set in the orchestrator's env, so read it there) ;
       `grep -rnE 'disable_remote_debug' --include='Dockerfile*' --include='*.y*ml' --include='*.sh' --include='*.service' --include='*.toml' --include='Procfile' .`
       (the underscore spelling, which 3.14.6 ignores)
 - [ ] **--- Template autoescape (§1) --- [HIGH where user data renders into HTML]** —

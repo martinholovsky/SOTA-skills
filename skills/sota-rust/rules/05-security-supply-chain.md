@@ -454,10 +454,11 @@ Running external programs (formerly section 9) moved to
       manual caps) — absent = High.
 - [ ] **Raw-SQL sinks fed a runtime string (§7) — High (Critical when the text is
       caller-influenced)** —
-      `rg -n -t rust '(^|[^.A-Za-z0-9_])query(_as|_scalar)?(::<[^>]*>)?\([[:space:]]*&?(format!|[a-z_][A-Za-z0-9_.]*[[:space:]]*[,)])|AssertSqlSafe\(|sql_query\([[:space:]]*&?(format!|[a-z_])|sql::<[^>]*>\([[:space:]]*&?format!' .`
-      (sqlx `query`/`query_as` over a built string or variable, every `AssertSqlSafe`,
+      `rg -n -t rust '(^|[^.A-Za-z0-9_])query(_as|_scalar)?(::<[^>]*>)?\([[:space:]]*&?(format!|[a-z_][A-Za-z0-9_.]*[[:space:]]*[,)(])|AssertSqlSafe\(|sql_query\([[:space:]]*&?(format!|[a-z_])|sql::<[^>]*>\([[:space:]]*&?format!' .`
+      (sqlx `query`/`query_as` over a built string, a variable or a call on one such as
+      `q.as_str()`, every `AssertSqlSafe`,
       diesel `sql_query`/`sql::<T>` over a non-literal) ; then
-      `rg -l0 -t rust 'QueryBuilder' . | xargs -0 -r rg -n '\.push\([[:space:]]*&?(format!|[a-z_][A-Za-z0-9_.:]*[[:space:]]*[()])'`
+      `rg -l0 -t rust 'QueryBuilder' . | xargs -0 -r rg -n --with-filename '\.push\([[:space:]]*&?(format!|[a-z_][A-Za-z0-9_.:]*[[:space:]]*[()])'`
       (`QueryBuilder::push` of a non-literal — must be `push_bind`, or an allowlisted
       identifier; `Vec::push` in the same file is noise to read past). Macros
       (`query!`) and `.query(` (e.g. reqwest's URL query) are excluded by design.

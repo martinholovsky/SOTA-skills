@@ -122,7 +122,7 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
   Fedora's Clang 22.1 minimal runtime printed one line per check (`ubsan: add-overflow by
   0x…`); Apple clang 21 does not support the minimal runtime (warned, then failed to link).
   Benchmark it, and list every check of `-fsanitize=` in `-fsanitize-trap=` too. ASan, TSan
-  and MSan stay out of production (`rules/04` §5 refuses them at compile time).
+  and MSan stay out of production (`rules/04` §5's `#error` guard refuses them at compile time).
 
 ## 4. Fuzzing for input parsers
 
@@ -269,8 +269,10 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
       `grep -rnE -e '-fpermissive|-std=(gnu|c)89' --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' --include='*.mk' --include='configure.ac' --include='meson.build' .`
 - [ ] **UBSan in a production build is trap-only or minimal-runtime (§3) — HIGH for ASan, TSan
       or MSan in the shipped artifact** —
-      `grep -rnE -e '-fsanitize=' --include='CMakeLists.txt' --include='*.cmake' --include='CMakePresets.json' --include='Makefile*' --include='*.mk' . | grep -vE 'fsanitize-trap=|fsanitize-minimal-runtime'`
-      (each line left: is it the release configuration? then it ships a sanitizer runtime)
+      `grep -rnE -e '-fsanitize=' --include='CMakeLists.txt' --include='*.cmake' --include='CMakePresets.json' --include='Makefile*' --include='*.mk' . | awk '/fsanitize=([a-z-]+,)*(address|thread|memory|leak|hwaddress|kernel-address)([^a-z-]|$)/ || !/fsanitize-trap=|fsanitize-minimal-runtime/'`
+      (prints every line whose `-fsanitize=` list names a runtime sanitizer — even beside a
+      trap flag, which covers only UBSan — plus any UBSan line with neither trap nor minimal
+      runtime. Each line left: is it the release configuration? then it ships a sanitizer runtime)
 - [ ] **clang-tidy / clang-format / cppcheck configs present?** —
       `ls .clang-tidy .clang-format 2>/dev/null | grep -q . || echo "missing lint/format config"`
       ; `test -f compile_commands.json || grep -rn EXPORT_COMPILE_COMMANDS CMakeLists.txt`

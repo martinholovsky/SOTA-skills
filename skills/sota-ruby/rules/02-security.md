@@ -267,12 +267,13 @@ Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
 - [ ] **Credentials key committed or not ignored (§6) — CRITICAL if a key file or key value is
       tracked or in history, MEDIUM if only the ignore rule is missing** — first command prints
       a tracked key file; second prints each key path git would NOT ignore; third prints any
-      commit that ever added one; fourth prints a literal 32-hex master key in a file —
+      commit that ever added one; fourth prints a literal 32-hex master key in a tracked file —
       `git ls-files | grep -E '(^|/)config/(master|credentials/[^/]+)\.key$'` ;
       `for k in config/master.key config/credentials/production.key; do git check-ignore -q --no-index "$k" || echo "NOT IGNORED: $k"; done` ;
       `git log --all --diff-filter=A --format='%h %ad %s' --date=short -- 'config/master.key' 'config/credentials/*.key'` ;
-      `grep -rnE 'RAILS_MASTER_KEY["'"'"']?[[:space:]]*[:=][[:space:]]*["'"'"']?[0-9a-f]{32}' --exclude-dir=.git --exclude-dir=vendor --exclude-dir=node_modules .`
-      (the second is Rails-only: skip it when there is no `config/credentials.yml.enc`)
+      `git grep -nE 'RAILS_MASTER_KEY["'"'"']?[[:space:]]*[:=][[:space:]]*["'"'"']?[0-9a-f]{32}' -- . ':!vendor' ':!node_modules'`
+      (the fourth searches **tracked** files with `git grep`, so a key in a force-added `.env`
+      is found even where a searcher that honours `.gitignore` skips it; the second is Rails-only: skip it when there is no `config/credentials.yml.enc`)
 - [ ] **Fiddle / `ffi` / C extensions — HIGH where a length or pointer comes from input** (§8) —
       `grep -rnE "require[[:space:]]+['\"](fiddle|ffi)['\"]|Fiddle::|extend[[:space:]]+FFI::Library|attach_function" --include='*.rb' .`
       ; `grep -rnE 'ext/.*extconf\.rb|extensions' --include='*.gemspec' .`

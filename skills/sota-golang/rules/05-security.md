@@ -361,14 +361,14 @@ rand.Read(b)                          // crypto/rand.Read
 - `math/rand/v2` is the right tool — and the better PRNG API — for *non-secret*
   work: jitter, load distribution, sampling, test fixtures. The dividing line
   is "does predictability help an attacker", not "which package is newer".
-- Keys, signing, AEAD: use `crypto/*` (`ed25519`, `crypto/ecdsa`,
-  `crypto/aes` + `cipher.NewGCM`) drawing from `crypto/rand.Reader`; never
-  hand-roll. Password hashing is `golang.org/x/crypto/bcrypt`/`argon2` —
-  algorithm choice and parameters are owned by sota-code-security `04`.
-- FIPS 140-3 (1.24+, Go Cryptographic Module): pick the module at build with `GOFIPS140=`
-  (`certified`, `inprocess` or a frozen `vX.Y.Z`; `off` is default), enable at run with
-  `GODEBUG=fips140=on`; `fips140=only` is a best-effort test mode, not for production
-  (go.dev/doc/security/fips140). Which module a boundary needs: sota-security-compliance 02 §4.
+- Keys, signing, AEAD: use `crypto/*` (`ed25519`, `crypto/ecdsa`, `crypto/aes` + `cipher.NewGCM`)
+  drawing from `crypto/rand.Reader`; never hand-roll. Password hashing is `golang.org/x/crypto/bcrypt`/
+  `argon2` — algorithm choice and parameters are owned by sota-code-security `04`.
+- FIPS 140-3 (1.24+, Go Cryptographic Module): pick the module at build with `GOFIPS140=` — `off`
+  (default), `latest` (like `off`, but FIPS 140-3 mode on by default), one of the module versions
+  the page lists (verify there), or `inprocess`/`certified` (the newest on the CMVP in-process list /
+  with a certificate). `GODEBUG=fips140=on` enables the mode at run; `fips140=only` is a best-effort
+  test mode, not for production (go.dev/doc/security/fips140). Which module a boundary needs: sota-security-compliance 02 §4.
 
 ### TLS configuration
 

@@ -6749,3 +6749,7 @@ BSD grep, the ugrep wrapper, bash and zsh.
 **Still unverified:** JEP 483 says the AOT cache cannot be combined with `--illegal-native-access`
 and similar flags, which conflicts with the jvm skill's advice to run `--illegal-native-access=deny`.
 It is noted in rules/05 §2 and put to the review pass.
+
+**Review of this entry's diff, and one gate extension.**
+- **Review.** A fresh reviewer read the whole deferred-items diff. It raised 17 defects; 16 were fixed and re-tested on bad, good and edge fixtures under three grep modes. The 17th was refuted: Node's `v24.x` `modules.md` does list v24.15.0 beside v25.4.0 for require(esm) leaving experimental. The reviewer also settled the JVM open question from JEP 483: any `--illegal-native-access` value, `deny` included, makes the JVM skip the AOT cache with only a warning. `sota-jvm` rules/05 §2 now states the trade-off, with the deny gate in a cache-free CI job. This comes from the documents; it was not measured, since no JDK was available.
+- **Gate extension.** The full-library sweep (batch 1, secrets-management) found a second shape of invariant 37's class: a brace glob inside `--include`. grep never expands it, so a quoted `'*.{py,js}'` matches no file on BSD grep, ugrep or GNU grep, and unquoted it aborts under zsh. Invariant 37 now fails on it (probe 37c), and the two live instances are fixed. The class had already failed twice and fails silently, so it passes the ledger's filters.
