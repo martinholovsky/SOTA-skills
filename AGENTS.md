@@ -30,7 +30,7 @@ enforcement is on). Every change goes through a pull request:
 
 ## Invariants (enforced in pre-commit and CI)
 
-`scripts/check-invariants.sh` runs **34 checks** and fails the build on any of them. One line
+`scripts/check-invariants.sh` runs **36 checks** and fails the build on any of them. One line
 each — with the real incident behind every one — in **[docs/INVARIANTS.md](docs/INVARIANTS.md)**,
 offloaded out of this file on 2026-09-13 because each new invariant cost a line of the
 always-loaded budget and the cap had been breached by an invariant's own table row — twice landing at 201 and 202, and hitting exactly 200 twice more while editing this session. **The precise total is not recoverable from git**, because the gate catches a breach pre-commit so it never lands; what is recoverable is that every one was a table row. Read it before changing a gate. The
@@ -71,10 +71,10 @@ gates enumerate via `git ls-files`, so an **unstaged new file is invisible** —
 complain; any other non-zero exit is a **FALSE PASS**. **It reads the COMMITTED tree**
 (`git worktree add HEAD`) — commit first, or you test a new script against old docs. Part A mutates
 a good tree in a disposable worktree; part B is inverted, building a fully-configured fake machine
-(`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **67 probes** (`PASS: 67/67` on a small-diff branch; it said 63, 62, 61, 53, 52, 49, 44 and 43 before that. Counting the log's `  [` lines gives **69**: the extra two are the per-part **positive controls**, not probes — read the harness's own total. **A sweep-shaped branch legitimately runs fewer**: invariant 11's probes need a non-sweep diff, so they skip with a printed reason and the total should read `64/64` plus a `NOTE:` naming the skipped invariant (derived: 67 minus invariant 11's 3 probes, not yet observed on a sweep branch; the NOTE itself was measured 2026-09-23 at 53 changed skill files). A number below 67 is not a regression if that NOTE is present)
+(`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **69 probes** (`PASS: 69/69` on a small-diff branch, measured 2026-09-25; it said 67, 63, 62, 61, 53, 52, 49, 44 and 43 before that. Counting the log's `  [` lines gives **71**: the extra two are the per-part **positive controls**, not probes — read the harness's own total. **A sweep-shaped branch legitimately runs fewer**: invariant 11's probes need a non-sweep diff, so they skip with a printed reason and the total should read `66/66` plus a `NOTE:` naming the skipped invariant (derived: 69 minus invariant 11's 3 probes, not yet observed on a sweep branch; the NOTE itself was measured 2026-09-23 at 53 changed skill files). A number below 69 is not a regression if that NOTE is present)
 (deliberately **not** gated — a static count of call sites under-reads, so only running it is
 authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34** — 31 of 34 — and verify-setup checks 1, 1c, 1d, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13.
+24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36** — 33 of 36 — and verify-setup checks 1, 1c, 1d, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13.
 Only **5, 9, 12** are unprobed, needing a tag or an mtime, and the harness prints that reason. *A
 diff-based check is not unprobeable*: 11 and 14 were exempt on that false ground until a probe
 **committed** its mutation (2026-09-09). **A probe asserts its own mutation landed** (a stale
@@ -160,7 +160,7 @@ the setting. The pre-commit hook scans each commit locally.
   a session *applying* the library, and an unlicensed source whose ideas can be
   taken but whose text cannot, both land here on the same terms
 - [docs/CONVENTIONS-LEDGER.md](docs/CONVENTIONS-LEDGER.md) — which of this repo's
-  conventions are **enforced** (34 invariants + 9 more inside the eval runners) and
+  conventions are **enforced** (36 invariants + 9 more inside the eval runners) and
   which are prose, with the three filters a convention must pass to earn a gate
   (has it already failed · does it fail silently · is it mechanically checkable).
   Read it before proposing a new gate — it argues against gating the ~18 judgment

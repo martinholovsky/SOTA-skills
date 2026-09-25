@@ -552,7 +552,7 @@ as a FALSE PASS, because a harness that accepts any failure reports full coverag
 testing nothing.
 
 Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 3, 4, 6,
-7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34 — 31 of 34; the harness prints the list and why the rest are
+7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36 — 33 of 36; the harness prints the list and why the rest are
 not covered, so read its output rather than this sentence). A **diff-based** check is not
 unprobeable: 11, 14 and 29 read a merge base, and the probe for them *commits* its
 mutation on the worktree's detached HEAD, then rewinds to the sha it captured first. Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
@@ -647,6 +647,21 @@ CI scans the full git history, the pre-commit hook scans each commit.
 
     **When it fires, do not invent a number.** Write `· unreleased` and let the release cut
     fill it in; `RELEASING.md` step 1 already sweeps for that marker.
+
+35. **The template's universal-concept list differs from the pinned floor.**
+    `docs/SKILL-TEMPLATE.md` is what the next language skill is written from, and it listed
+    12 concepts while `UNIVERSAL_FLOOR` pinned 25 (found 2026-09-25; `docs/INDEX.md` repeated
+    the 12). Existing skills were unharmed, because `--assert-universal` checks them on every
+    edit. The next skill written from the template would have shipped 13 concepts short.
+    Set equality, both directions. **When it fires:** a concept joined or left the floor, so
+    add or remove its bullet in the template in the same change.
+
+36. **A language skill is not registered in `LANGS`.** The floor check and the skill map
+    only look at the languages in `LANGS` (`scripts/gen-skill-map.py`). A new language skill
+    added to the router but not to that list would never be checked against the floor, with
+    no error. The router's own wording is the independent source: every language row reads
+    "Any … code —". Added on operator instruction **before any instance**, the one check here
+    that has not yet failed in the wild. It is cheap, and its failure is loud.
 
 ## Local setup
 
@@ -787,7 +802,7 @@ will catch a chart left stale — check them when you change a published number.
 
 **The invariants cannot tell you whether a rule is *true* or whether your edit made it
 worse.** They check structure — caps, references, counts. On 2026-09-15 an external audit
-found nineteen wrong statements in a released version and every one of the 34 checks was
+found nineteen wrong statements in a released version and every check then in force was
 green. That is by design: "is this claim correct" is semantic, and a fuzzy gate gets disabled
 ([CONVENTIONS-LEDGER](docs/CONVENTIONS-LEDGER.md)).
 
@@ -817,6 +832,13 @@ frontmatter, BUILD/AUDIT workflows, top-10, rules index) and `rules/NN-*.md`
 files each ending in an audit checklist. Add the skill to the router
 (`skills/sota/SKILL.md`) routing table and to the table in `README.md`. Open an
 issue first if you want to discuss scope.
+
+**Start from [docs/SKILL-TEMPLATE.md](docs/SKILL-TEMPLATE.md).** For a **language** skill it is
+binding, not advisory: register the language in `LANGS` (`scripts/gen-skill-map.py`, which
+invariant 36 checks against the router's "Any … code" rows) and cover every universal
+concept (`gen-concept-matrix.py --assert-universal`). And when you add a rule to **one**
+language skill, the template's cross-language rule applies: all nine plus the floor, some
+plus a `conditional:` concept, or a recorded reason in `LANGUAGE-TIER.md`.
 
 ## Questions
 

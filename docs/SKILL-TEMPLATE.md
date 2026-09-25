@@ -64,8 +64,10 @@ property of the language, and record the reason in LANGUAGE-TIER so a later read
 
 ## The universal concepts — every language skill must probe these
 
-Pinned in `scripts/gen-concept-matrix.py` as `UNIVERSAL_FLOOR` and asserted in CI. A new
-skill that omits one fails the build.
+Pinned in `scripts/gen-concept-matrix.py` as `UNIVERSAL_FLOOR` and asserted in CI
+(`--assert-universal`): a registered language skill that omits one fails the build.
+**This list must equal `UNIVERSAL_FLOOR` exactly — invariant 35 fails the build when they
+differ.** It read 12 against a floor of 25 until 2026-09-25, because nothing compared them.
 
 - [ ] **error handling & propagation** — wrapping, swallowing, empty catch, error types
 - [ ] **absence / null / in-band sentinel** — how "no value" is encoded, and the magic-value trap
@@ -76,10 +78,45 @@ skill that omits one fails the build.
 - [ ] **dependency pinning & lockfiles** — the lockfile's name, and whether CI uses the frozen form
 - [ ] **vulnerability scanning of dependencies** — the ecosystem's advisory tool, by name
 - [ ] **static analysis / linter configuration** — the analyser, and its config
-- [ ] **suppressing a linter / type check** — *every* escape hatch, including the bulk and
-      config-level ones. A per-site grep alone misses a whole rule disabled in a project file
 - [ ] **build reproducibility & CI gates** — pinned toolchain, warnings-as-errors
 - [ ] **test suite health & determinism** — flakiness, and the runner by name
+- [ ] **suppressing a linter / type check** — *every* escape hatch, including the bulk and
+      config-level ones. A per-site grep alone misses a whole rule disabled in a project file
+- [ ] **public API surface & evolution** — what is exported, and how it changes without breaking callers
+- [ ] **logging hygiene / PII in logs** — structured logging, and what must never reach a log line
+- [ ] **date, time & timezone** — the time API, UTC storage, and the naive-datetime trap
+- [ ] **resource lifecycle (close/dispose/RAII)** — the language's release idiom, and the leak it prevents
+- [ ] **cancellation / timeouts** — how work is bounded and cancelled, by API name
+- [ ] **SQL / query injection** — the parameterised API, and the string-building form to flag
+- [ ] **command / subprocess injection** — the argv-array API, and the shell-invoking form to flag
+- [ ] **path traversal / file access** — canonicalise-and-contain in this language's file API
+- [ ] **authn / authz checks** — where the check lives in this ecosystem's frameworks
+- [ ] **profiling before optimizing** — the profiler, by name
+- [ ] **allocation / GC pressure** — the allocation hazard this runtime actually has
+- [ ] **version floor / EOL awareness** — the supported-version floor, and where it is declared
+- [ ] **numeric precision & money** — the decimal type, and the float-for-money trap
+
+Conditional concepts (those that exist only where a language has the mechanism, such as
+const/freeze or generics) are declared with their condition in the same script's
+`CONCEPTS`; read them there rather than from a copy here.
+
+### A rule added to one language skill is a rule for all of them
+
+When a change adds a section or rule to **one** language skill, decide in the same change
+whether the hazard exists in the other languages:
+
+- **It does (all nine):** add it to every language skill in the same change set, add the
+  concept (with its matchers) to `UNIVERSAL_FLOOR`, and add its bullet above. CI then holds
+  every current and future language skill to it.
+- **It does in some:** add it to those skills and declare it `conditional:` in `CONCEPTS`,
+  stating the condition.
+- **It is a property of this language only:** keep it there, and record why in
+  [LANGUAGE-TIER.md](LANGUAGE-TIER.md) so a later reader does not "fix" the difference.
+
+A **new language skill** starts from this template and must be registered in `LANGS`
+(`scripts/gen-skill-map.py`); invariant 36 fails the build when a router row reading
+"Any … code" has no entry there, because an unregistered language skill is never checked
+against the floor.
 
 ## The rule that is not yet a gate, and is the most common real defect
 

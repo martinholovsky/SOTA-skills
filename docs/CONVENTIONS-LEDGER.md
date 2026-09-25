@@ -71,10 +71,10 @@ A convention earns a gate only if it passes **all three**:
 
 ## The ledger
 
-### Enforced — invariants 1–34
+### Enforced — invariants 1–36
 
 <!-- count-check: · +1 -->
-**31 conventions** are gated, one per invariant, in the order the checks run:
+**33 conventions** are gated, one per invariant, in the order the checks run:
 
 Skill-file line cap · audit-checklist placement **and uniqueness** · internal-name denylist · description cap ·
 version lockstep · count surfaces · router completeness · link resolution ·
@@ -91,7 +91,7 @@ link reference** · **`AGENTS.md` stays under its own 200-line cap and keeps its
 symlinks** · **eval runners are named in `evals/README.md` and undocumented eval flags
 do not grow** · **the roadmap's open set agrees with itself** · **every ADOPTION-LOG
 deferral names its revisit trigger** · **every eval case set declares a SELECTION RULE** ·
-**a release changing a skill description declares a routing check** · **a count stated in prose agrees with the list it counts** · **new rule text ships with a line in the intake ledger**.
+**a release changing a skill description declares a routing check** · **a count stated in prose agrees with the list it counts** · **new rule text ships with a line in the intake ledger** · **the template's universal-concept list equals the pinned floor** · **every language skill is registered for the floor check**.
 Each is in `scripts/check-invariants.sh` and documented in
 [docs/INVARIANTS.md](INVARIANTS.md). (Corrected 2026-08-19: this section read "(14) — invariants 1–14" and named
 only thirteen, while 15 and 16 were already gated and described in the table below —
@@ -317,7 +317,7 @@ which is how this one surfaced.
 
 **Why this table exists.** Enforcement density is uneven, and unevenness is invisible: an area
 with no gates looks exactly like a covered one from the outside. Measured 2026-09-16 —
-`skills/**` (70,200 lines) carries ~20 of 34 invariants, while `commands/**` (494 lines of
+`skills/**` (70,200 lines) carries ~20 of the invariants (34 at the time), while `commands/**` (494 lines of
 instructions an agent executes on invocation, in any project on the machine) carried **two**, and nobody had decided that.
 
 **Why a declaration and not a ratio.** A numeric invariants-per-KLOC floor is arbitrary — the

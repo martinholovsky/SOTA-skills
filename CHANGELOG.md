@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Invariants 35 and 36: the language-skill template is now binding.**
+  `docs/SKILL-TEMPLATE.md` listed 12 universal concepts while the floor CI enforces pinned 25.
+  Invariant 35 fails when those two lists differ. Invariant 36 fails when a router "Any …
+  code" row is missing from the language registry (`LANGS`), because an unregistered
+  language skill would never be checked against the floor. Each has a negative-control probe.
+- **The cross-language rule, in the template and `CONTRIBUTING.md`.** A rule added to one
+  language skill now goes to all nine (and the floor), to some (as a `conditional:`
+  concept), or stays in one language with its reason recorded in `LANGUAGE-TIER.md`.
+
 - **`sota-shell-scripting` rules/06 §1: never pipe into an interpreter that reads its program
   from a heredoc** (`cmd | python3 - <<'PY'`). bash throws the piped data away. zsh's
   default-on `MULTIOS` prepends it to the program: an error that names your data, or a silent run
@@ -30,6 +39,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   can still fail CI. That happened on PR #444's first run.
 
 ### Fixed
+
+- `docs/SKILL-TEMPLATE.md` and `docs/INDEX.md` said the floor had 12 concepts. It has 25.
+- CONTRIBUTING said "every one of the 34 checks was green" on 2026-09-15, but invariant 34
+  was added later. It now says "every check then in force".
+- `/offline/` is ignored. It is the local home of external source copies that are licensed
+  CC BY-SA and so must never enter this CC BY repo.
 
 - **`evals/results/RESULTS.md`'s "Not yet measured (open)" heading** sat over a list in which
   every entry is done, rejected, or deferred with a trigger. It is retitled.
