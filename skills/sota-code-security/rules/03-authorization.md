@@ -29,6 +29,12 @@ is not injection — it is a handler that fetches by ID and forgets to ask "does
   write on the next line still ran. Order matters too: authenticate, and run every check that
   does not need the body, before the body is parsed or acted on — not only for webhook
   signatures. OWASP: Code Review Guide v2.
+- **Keep an authorization inventory and test it.** Write down, per resource, who may read and
+  who may write each field, including rules that depend on the object's state or status (a
+  draft's price is editable, a paid one's is not). Test it both ways: the presentation layer's
+  gating (hidden buttons, disabled fields) must match the server rules, and a security test
+  must fail when a new route, resolver or cache appears with no access classification. OWASP:
+  ASVS 5.0 V8.1.2; Next.js Security cheat sheet; Secure Coding Practices QRG.
 - Authorize HTTP methods independently: `GET /users/1` protected but
   `PATCH /users/1` open is a classic miss; so are method-override headers
   (`X-HTTP-Method-Override`).
@@ -81,6 +87,14 @@ if doc is None: abort(404)                # don't leak existence with 403 vs 404
 - Indirect references: where practical, scope all queries through the user's own
   collection (`current_user.documents.find(id)`) so there is no unscoped accessor
   to misuse.
+- **Take no id at all where you can.** An object that belongs to the caller (their profile,
+  cart, settings) is resolved from the authenticated principal on a `/me`-style route, so
+  there is nothing to tamper with. Where ids must be exposed, a per-user or per-session
+  indirect reference map (a short token the server maps to the real id for that user only) is
+  an option. Encrypting or signing ids is not a substitute for the ownership check, and doing it
+  safely is hard (key handling, malleability, reuse across users); keep the check either way.
+  OWASP: Insecure Direct Object Reference Prevention, Authorization cheat sheets; Code Review
+  Guide v2.
 
 ## 3. Function-level authorization — BFLA (CWE-863)
 
@@ -105,7 +119,10 @@ if doc is None: abort(404)                # don't leak existence with 403 vs 404
   **mark one-time operations consumed** so a captured request can't be replayed
   (payment capture, coupon redemption, password-reset token); expire abandoned
   partial-workflow state; and **never store the workflow position in a client-readable/
-  writable field** — keep it server-side keyed to the session/resource.
+  writable field** — keep it server-side keyed to the session/resource. A rejected out-of-order
+  step is also a **security event**: log it at high severity with the user and the step (the
+  OWASP Logging Vocabulary names it `sequence_fail` at CRITICAL), because a legitimate UI rarely
+  produces one and detection can key on it (rules/07 §2). OWASP: Logging Vocabulary cheat sheet.
 - **Transaction authorization binds to the data it approved.** A step-up, OTP, signature or
   approval covers the exact values the user confirmed (amount, payee, account), stored
   server-side with it. Any change to those values after entry voids it and restarts the flow;
@@ -162,6 +179,10 @@ def test_policy_matrix(role, action, owns, expected): ...
 - Privilege escalation paths to check explicitly: can a user grant themselves a
   role? Invite themselves to a higher-privileged group? Edit the policy store?
   Modify their own `tenant_id`/`org_id`? (CWE-269)
+- **Permission data is itself protected.** ACLs, role assignments, group memberships and policy
+  metadata tell an attacker who to target and what a stolen account can reach, so *reading* them
+  needs an authorization decision too, not only changing them: a user sees their own grants,
+  and listing another principal's grants is an admin permission. OWASP: Cornucopia (AZJ).
 
 ## 5. Multi-tenant isolation
 
@@ -207,6 +228,12 @@ SET LOCAL app.tenant_id = '...';
 - "Internal" services trusting any in-network caller is the classic deputy setup:
   require service identity (mTLS/SPIFFE, signed service tokens) AND per-request
   user authorization. Network position is not identity (zero trust).
+- **Do not pass the external access token inward.** The edge verifies it and issues an
+  internal-only identity structure (a signed token in a format only internal services accept),
+  and internal services require that and refuse external tokens, so a leaked user token opens
+  nothing on an internal service exposed by mistake. The internal token never reaches browsers
+  or devices, and its format is extensible so claims can be added later. OWASP: Microservices
+  Security cheat sheet.
 - CSRF and SSRF are confused-deputy instances: the browser and your server,
   respectively, wield ambient authority on an attacker's behalf — same mental
   model, fixes in rules/05 and rules/01.
@@ -227,6 +254,9 @@ SET LOCAL app.tenant_id = '...';
   banner-visible to the operator, **fully audit-logged** (who impersonated
   whom, when, what they did), and ideally consent- or ticket-gated. Sensitive
   user actions (password/email change, payouts) blocked during impersonation.
+- Support and admin staff may *start* a user's password reset (the user receives the normal
+  reset link), but never set, choose or see the new password; a "set password" field in an admin
+  tool means staff know a credential they could later use as that user. OWASP: ASVS 5.0 V6.4.6.
 - Every admin mutation needs an immutable audit trail (actor, target, before/
   after, reason) — both a compliance requirement and your insider-threat and
   incident-forensics control (pairs with rules/07 §2 security logging).
@@ -291,3 +321,9 @@ SET LOCAL app.tenant_id = '...';
 - [ ] **Transaction authorization (§3)**: is each step-up/OTP/approval bound to the exact transaction data, voided by any change, re-compared at execution, single-use, and is a second approver available for high-value flows? HIGH on money movement; design review, no reliable grep
 - [ ] **Payment verification (§3)**: is fulfilment triggered only by a verified gateway callback or server-side status query that matches amount, currency and order id, once per payment? CRITICAL when a return-URL parameter decides; each hit of `grep -rnE "(request\.(args|GET|query_params)|req\.query|params|\\\$_(GET|REQUEST))(\.get\(|\[|\.)[\"']?(status|payment_status|paid|result|success|amount)" --include='*.py' --include='*.js' --include='*.ts' --include='*.php' --include='*.rb' .` needs its decision traced
 - [ ] **Tenant membership and ORM scope (§5)**: is tenant membership checked at request time rather than trusted from a token claim, and does raw SQL/Core/bulk access still meet a database-level boundary? HIGH; each hit of `grep -rnE "(claims|token|jwt|payload)(\[['\"]|\.)tenant(_id|Id)?" --include='*.py' --include='*.js' --include='*.ts' --include='*.go' --include='*.java' .` needs a membership check beside it
+- [ ] **Authorization inventory (§1)**: is there a written per-field read/write rule set (state-dependent rules included), a test that UI gating matches the server rules, and a test that fails on a new route, resolver or cache with no access classification? MEDIUM; each hit of `grep -rnE "(v-if|v-show|\*ngIf)=\"[^\"]*([Aa]dmin|[Rr]ole|can[A-Z])|\{[[:space:]]*(user\.)?(is[A-Z][A-Za-z]*[Aa]dmin|isAdmin|can[A-Z][A-Za-z]*|role[[:space:]]*===[^&]*)[[:space:]]*&&" --include='*.vue' --include='*.html' --include='*.tsx' --include='*.jsx' .` is a UI gate that needs a matching server rule
+- [ ] **Caller-derived objects (§2)**: are the caller's own objects resolved from the principal (`/me`) rather than a client id, and is every encrypted or indirect id still ownership-checked? HIGH when a user id in the path is trusted; each hit of `grep -rnE "[\"'](/api)?/users?/(:[A-Za-z_]*[iI]d|\{[A-Za-z_]*[iI]d\}|<(int:)?[a-z_]*id>)/|(decrypt|unseal)[A-Za-z]*[Ii]d\(" --include='*.py' --include='*.js' --include='*.ts' --include='*.java' --include='*.go' .` needs its ownership check found
+- [ ] **Sequence failures logged (§3)**: does each rejected out-of-order transition emit a high-severity security event (`sequence_fail`)? MEDIUM; `grep -rlE '(raise|throw new)[[:space:]]+(Invalid|Illegal|OutOf)[A-Za-z]*(Transition|Sequence|Step)' --include='*.py' --include='*.java' --include='*.kt' --include='*.js' --include='*.ts' --include='*.cs' . | xargs -r grep -LE 'sequence_fail|[Ss]ecurity_?[Ee]vent|security_?log'` lists files that reject a transition and never log one
+- [ ] **Permission data reads (§4)**: does reading ACLs, role assignments and policy metadata need its own authorization? MEDIUM, HIGH when another principal's grants are listable; each hit of `grep -rnE "(\.get\(|@GetMapping\(|@Get\(|GET[[:space:]])[[:space:]]*[\"'][^\"']*/(roles|permissions|acls?|grants|policies)[\"'/]" --include='*.py' --include='*.js' --include='*.ts' --include='*.java' --include='*.go' . | grep -vE 'require|[Aa]uthori[sz]e|PreAuthorize|permission_required'` is an unguarded read
+- [ ] **Internal identity token (§6)**: does the edge exchange the external token for an internal-only one that internal services require, never forwarding the user's token or exposing the internal one to clients? HIGH; each hit of `grep -rnE "Authorization[\"']?[[:space:]]*[:,=][[:space:]]*(req|request)\.(headers|META|header|get_header)" --include='*.py' --include='*.js' --include='*.ts' --include='*.go' --include='*.java' .` forwards the caller's token
+- [ ] **Admin password reset (§7)**: can staff only trigger the user's own reset flow, never set, choose or view a password? HIGH; each hit of `grep -rnE "(set_?[Pp]assword|update_?[Pp]assword)\([^)]*(request|req|form|body|params)[.[]" --include='*.py' --include='*.js' --include='*.ts' --include='*.java' --include='*.php' --include='*.rb' .` in an admin or support handler is a finding

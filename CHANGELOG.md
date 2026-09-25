@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **OWASP medium-value themes adopted in `sota-code-security` (ROADMAP 66 step 5, batch "code-security").**
+  - 116 themes implemented and 33 extended; 5 found already covered.
+  - 109 audit probes, each tested on bad and good fixtures.
+  - Split rules/05 §10 → rules/21 (file uploads), rules/04 §6 → rules/22 (constant-time comparison), rules/08 §5 → rules/23 (LLM platform & supply chain).
 - **OWASP high-value themes adopted in `sota-mobile`, `sota-api-design`, `sota-web-frameworks`, `sota-testing`, `sota-security-compliance`, `sota-architecture`, `sota-threat-modeling`, `sota-performance`, `sota-docs-workflow`, `sota-skill-security`, `sota-async-concurrency` (ROADMAP 66 step 4, batch "app-process").**
   - 26 themes implemented and 14 extended.
   - 40 audit probes, each tested on bad and good fixtures.

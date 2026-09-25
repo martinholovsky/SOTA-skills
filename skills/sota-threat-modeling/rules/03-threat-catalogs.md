@@ -228,7 +228,7 @@ rogue agents) — the items below cover them; use ASI numbering when reporting.
   injections; pin/verify tool definitions.
 - **Named MCP attack classes (T/S/E)** — enumerate per attached server; use
   these names in findings (OWASP MCP Top 10 MCP03:2025; MITRE ATLAS
-  AML.T0104); mitigations detailed in sota-code-security rules/08 §5:
+  AML.T0104); mitigations detailed in sota-code-security rules/23 §1:
   - *Tool poisoning:* hidden instructions in tool descriptions/metadata →
     violates the instruction/data boundary → pin + human-review full
     definitions at install.
@@ -248,7 +248,7 @@ rogue agents) — the items below cover them; use ASI numbering when reporting.
   posing as the model's own reasoning steers safety/tool decisions (S);
   OverThink-class decoys in retrieved content force excessive reasoning
   tokens — cost/latency exhaustion (D). Cap reasoning budgets; keep untrusted
-  content out of reasoning scaffolds (sota-code-security rules/08 §5).
+  content out of reasoning scaffolds (sota-code-security rules/23 §1).
 - **Memory/state poisoning (T):** persisted conversation memory or scratchpads
   let an injection survive across sessions and users.
 - **DoS / cost (D):** unbounded agent loops, token-expensive inputs, recursive

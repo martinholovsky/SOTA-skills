@@ -17,6 +17,7 @@ by default (CWE-1240).
 | Symmetric encryption | AES-256-GCM, ChaCha20-Poly1305, XChaCha20-Poly1305 (random-nonce safe) | ECB, CBC w/o MAC, RC4, RC2, DES/3DES, AES-CTR alone |
 | Key exchange | X25519 (hybrid w/ ML-KEM-768 for PQ readiness), peer key validated and authenticated (§1.1) | static DH < 2048, custom DH params, unauthenticated ECDH |
 | RSA encryption / key transport | RSA-OAEP (SHA-256) — or avoid RSA encryption and use a KEM/hybrid scheme | RSAES-PKCS1-v1_5 (`RSA1_5` in JOSE, `xmlenc#rsa-1_5` in XML Encryption), textbook/`NoPadding` RSA |
+| Encrypting to a public key (no shared symmetric key) | HPKE (RFC 9180: KEM + KDF + AEAD, `info` bound to the context), libsodium sealed box or Tink hybrid; all hide the sender, so authenticate it separately | RSA over the payload itself, a hand-built "ECDH then AES" |
 | Signatures | Ed25519; ECDSA P-256 (deterministic nonce, RFC 6979) where required | RSA-PKCS1v1.5 for new code, DSA |
 | Hashing (integrity) | SHA-256/SHA-512, BLAKE2/3 | MD5, SHA-1 (CWE-328) |
 | Password hashing | argon2id (see rules/02) | any fast hash |
@@ -25,6 +26,7 @@ by default (CWE-1240).
 | MAC | HMAC-SHA-256, Poly1305 (within AEAD), KMAC | H(key‖msg) — length extension (CWE-328) |
 
 - Encrypt-then-MAC if composing manually — but don't compose manually; use AEAD.
+- Key sizes: new designs target 128-bit security, consistent across a key hierarchy (§4).
 - **Encoding, XOR and checksums are not security controls** (CWE-327/CWE-311). Base64,
   hex, URL-encoding and compression are reversible by anyone; XOR with a fixed or short
   key falls to one known plaintext; CRC32, Adler-32 and other non-cryptographic checksums
@@ -53,6 +55,8 @@ by default (CWE-1240).
   defaults to 10,000 iterations — set `-iter`). Store the salt and parameters beside the
   ciphertext. OWASP:
   Cryptographic Storage cheat sheet, Go-SCP (data protection), ASVS 5.0 V11.4.4.
+- **Algorithm, parameters and key choice come from server-side configuration, never from the message** (JWT `alg`, rules/17 §3; XML `EncryptionMethod`, above). On a device the attacker owns, crypto and RNG calls can be hooked:
+  where that threat is in scope, rely on attestation and server-side checks (`sota-mobile` rules/04 §4.5, §4.8). OWASP: Cornucopia CRK, CRMK.
 
 ### 1.1 Key agreement — validate the peer key, authenticate the peer, confirm the key
 
@@ -83,6 +87,14 @@ by default (CWE-1240).
   RSA/ECDSA/ECDH/DSA disallowed after 2035 — maintain a cryptographic
   inventory (CBOM) now so the swap to ML-KEM/ML-DSA/SLH-DSA is a config
   change, not a rewrite (see §9 crypto agility).
+- **What that inventory holds**: every key, algorithm, parameter set and certificate; per
+  key, which components and operations may use it and which must not, and which data
+  classes it may and may not protect; and every place key material is generated, stored,
+  cached or processed (HSM, KMS, keystores, config, CI secrets, backups). Rebuild it on a
+  schedule and at each release by *discovery* — a sweep for every use of encryption,
+  hashing, signing, MAC and key agreement (§10 discovery row), not only the weak ones —
+  and reconcile: a call site the inventory does not list is a finding. OWASP: ASVS 5.0
+  V11.1.2, V11.1.3, Key Management cheat sheet.
 
 ## 2. AEAD and nonce discipline (CWE-323)
 
@@ -101,7 +113,11 @@ by default (CWE-1240).
   between rows/columns (cryptographic confused deputy).
 - Decryption failures: uniform error, no padding/MAC distinction surfacing to the
   caller (padding-oracle family, CWE-209/CWE-203); never act on plaintext before
-  the tag verifies (no streaming-decrypt-then-check).
+  the tag verifies (no streaming-decrypt-then-check). Internally, every encrypt, decrypt or verify
+  failure emits a security event (`crypt_decrypt_fail`, rules/07 §2.1): a spike is tampering or a probe.
+- **Full 128-bit tag, length-checked input.** Java `new GCMParameterSpec(128, iv)` (SunJCE also accepts 96–120, measured JDK 25), Go `NewGCM` rather than
+  `NewGCMWithTagSize` below 16, Python's default `min_tag_length=16`, Node `authTagLength: 16`. Check `len(ct) >= nonce + tag` before slicing:
+  Go's `data[:ns]` on a short input panics (measured Go 1.27). OWASP: Java Security, Cryptographic Storage, DotNet Security cheat sheets.
 
 ```python
 # GOOD: libsodium-style sealed usage
@@ -119,12 +135,29 @@ pt = box.decrypt(ct, aad=record_id)
 - Findings on sight: `Math.random()`, `random.random()`, `rand()`, Java
   `java.util.Random`, time-seeded PRNGs, or UUIDv1/v4-from-non-crypto-PRNG used
   for any credential-like value.
-- Token entropy ≥ 128 bits; compare tokens constant-time (§6); store long-lived
+- Token entropy ≥ 128 bits; compare tokens constant-time (rules/22 §1); store long-lived
   tokens hashed (SHA-256) so a DB leak isn't a credential leak.
 - Entropy is destroyed by post-processing: `random_string[:6]`, modulo into a
   small alphabet with bias, or "human-friendly" filtering can collapse 128
   bits to brute-forceable space — generate directly in the target alphabet
   (`secrets.token_urlsafe`, `secrets.choice` loops) and recount bits after.
+- **The CSPRNG stays a CSPRNG under load and at boot.** A path that falls back to a time-
+  or PID-seeded PRNG, `Math.random()` or a cached value when the OS source errors, blocks
+  or is slow is a finding (CWE-338): fail the request instead. Use the interfaces Linux
+  `random(7)` recommends (`getrandom()` without `GRND_RANDOM`, or `/dev/urandom`) and keep
+  blocking sources off hot paths — Java `SecureRandom.getInstanceStrong()` returns
+  `NativePRNGBlocking` on Linux where `new SecureRandom()` returns `NativePRNG` (measured
+  JDK 25). OWASP: ASVS 5.0 V11.5.2.
+- **Randomness a participant can steer** (lotteries, on-chain games, winner or leader
+  selection among parties who distrust each other) must resist manipulation, not only
+  prediction. `block.timestamp`, `blockhash` and `block.prevrandao` are seen or chosen by
+  block producers; use a VRF whose proof is verified, or commit-reveal where every party
+  commits a hash before any value is known. OWASP: SCSVS S6.3.A2, SCWE-031, SCWE-153.
+- **Keys come from a vetted generator; keys you import get checked for known weak
+  classes.** Uploaded certificates, CSRs, SSH keys and JWKS can carry a generator flaw:
+  ROCA (CVE-2017-15361, Infineon's RSA library) or Fermat-factorable close primes
+  (CVE-2022-26320). `badkeys -c fermat,roca key.pem` tests both — measured with 0.0.20: exit
+  4 on a close-prime RSA-2048 key, exit 0 on an OpenSSL one. OWASP: ASVS 5.0 V11.6.1.
 
 ```python
 # BAD: 6-digit code via modulo of a 32-bit value — biased AND tiny
@@ -145,6 +178,17 @@ token = secrets.token_urlsafe(32)                                  # 256-bit URL
 - **Key separation**: one key per purpose (encrypt ≠ sign ≠ token-MAC), per
   environment (prod ≠ staging), derived via HKDF with distinct `info` labels if
   from a master key.
+- **Key strength holds all the way down the hierarchy** (CWE-326). A key that wraps other
+  keys is at least as strong as the strongest one it protects: an AES-256 DEK under an
+  RSA-2048 or AES-128 KEK has 112 or 128 bits of security, not 256. Match asymmetric sizes
+  to their symmetric neighbours with SP 800-57 Part 1 Rev 5 Table 2 (128-bit: AES-128,
+  RSA-3072, P-256; 192-bit: AES-192, RSA-7680, P-384). Generate DEK and KEK independently;
+  a DEK recomputable from the KEK's own secret gains nothing from being wrapped. Size for
+  how long the data must stay secret: Table 4 lets 112-bit protection be *applied* only
+  through 2030, and the text says data needing four years of secrecy should not be
+  encrypted after 2026 with an algorithm whose lifetime ends in 2030. **New designs target
+  128-bit security**; 112 bits (§1.1) is a legacy allowance. OWASP: ASVS 5.0 V11.2.3,
+  Cryptographic Storage cheat sheet, Key Management cheat sheet.
 - **Rotation must be designed in from day one**: version every ciphertext/token
   with a key ID; decrypt with old, encrypt with new; automate rotation cadence
   and revocation on suspicion. "We can't rotate without downtime" is a finding.
@@ -207,8 +251,8 @@ mac_key  = HKDF(master, info=b"app/v1/url-signing",      length=32)
   should stay safe if one layer breaks — field encryption does not replace authz
   on the rows (rules/03), and a leaked DEK should expose one object, not all.
   OWASP: Cryptographic Storage cheat sheet, Secure Coding Practices QRG, Cornucopia.
-- Don't encrypt what you can avoid storing; hashing (rules/02) or truncation
-  (last-4 of PAN) beats encryption when you never need the value back.
+- Don't encrypt what you can avoid storing; hashing (rules/02) or truncation (last-4 of PAN) beats
+  encryption when you never need the value back, and a value you must recover is encrypted, never hashed.
 
 ## 5. TLS configuration (CWE-295/319)
 
@@ -279,8 +323,8 @@ mac_key  = HKDF(master, info=b"app/v1/url-signing",      length=32)
   **This rule is stated once, here.** Each language skill carries only its
   library's spelling of the detector (decided 2026-09-23; see
   `docs/LANGUAGE-TIER.md` in the library repo).
-- Verify hostname AND chain; pin only when you control update cadence (mobile
-  apps), pin to SPKI of an intermediate/leaf set, with backup pins.
+- Verify hostname AND chain. Pin only when you control both ends and the client's update cadence (native mobile, first-party
+  clients), never in browsers (HPKP is obsolete) or toward a third party: SPKI pins with a backup key and a rotation plan (`sota-mobile` rules/04 §4.3).
 - Plaintext fallbacks: no HTTP listeners that serve content (redirect-only),
   HSTS (rules/05); internal traffic encrypted too — mTLS for service-to-service
   (identity, not just confidentiality).
@@ -303,61 +347,7 @@ ssl_session_tickets off;              # or rotate ticket keys — static keys br
   `kid` on every artifact), cache with TTL, overlap old+new during rotation,
   and pin the JWKS *endpoint* to your own allowlist (rules/17 §3 `jku` rules).
 
-## 6. Constant-time comparison (CWE-208)
-
-- Any comparison where one side is secret (MACs, tokens, API keys, OTP codes,
-  signatures) must be constant-time: `hmac.compare_digest`,
-  `crypto.timingSafeEqual`, `subtle.ConstantTimeCompare`, `MessageDigest.isEqual`.
-- `==`/`memcmp`/`String.equals` short-circuit on first mismatch → a timing side
-  channel. Treat it as a defect wherever an attacker can submit candidates, but state
-  the claim at the strength the evidence supports: byte-by-byte recovery is the
-  *worst case*, and whether it is reachable depends on the protocol, network noise,
-  attacker position and query volume. The primary sources are careful here and so
-  should you be: Python's `compare_digest` is *"designed to prevent timing analysis by
-  avoiding content-based short circuiting behaviour"* and still notes that *"a timing
-  attack could theoretically reveal information about the types and lengths"* of the
-  operands; libsodium says of `sodium_memcmp` that *"the goal is to mitigate
-  side-channel attacks."* So: fix it unconditionally — the fix is one call — but in a
-  finding, do not promise an exploit you have not demonstrated (principle 3).
-- Don't branch on secret data or index arrays by secret values in hot crypto
-  paths; in app code, the rule reduces to: use the library comparator, and
-  compare hashes of variable-length secrets to avoid length leaks.
-
-```python
-# BAD
-if token == stored: ...
-# GOOD
-if hmac.compare_digest(hashlib.sha256(token.encode()).digest(),
-                       hashlib.sha256(stored.encode()).digest()): ...
-```
-
-### 6.1 Constant time is a property of the emitted code, not of the source
-
-The compiler decides whether your fix survives. That is already the accepted rule for
-*wiping* — plain `memset` is dead-store-eliminated, which is why `explicit_bzero` /
-`sodium_memzero` / `SecureZeroMemory` exist (`sota-c-cpp` rules/04 §4) — and the same
-reasoning governs every other constant-time construct, where it is far less widely applied:
-
-- **Secret-dependent `/` and `%` lower to a variable-latency instruction** (x86-64 `IDIV`,
-  arm64 `SDIV`) whose timing depends on the operands. The KyberSlash class is exactly this,
-  and no amount of source-level care removes it.
-- **"I made the divisor a constant so it strength-reduces" is a hope, not a fix.** Whether
-  the optimiser turns a constant division into a multiply-shift varies by compiler, target
-  *and* optimisation level. Field-reported: one such fix still emitted a real divide at
-  **every** level on one target, and at `-Os`/`-Oz` on two others — and `-Os`/`-Oz` are
-  levels shipped binaries commonly use.
-- **So read the disassembly, across the matrix you actually ship** — each target
-  architecture and each optimisation level, built with the toolchain that builds your
-  product rather than whichever cross-compiler was convenient. **A clean result proves one
-  configuration constant-time, never the code.**
-- If you hand-write the multiply-shift, **check it against the original expression over the
-  whole input domain**, not over samples: an off-by-a-power-of-two reciprocal agrees for
-  millions of inputs before it diverges — the exhaustive-domain case in `sota-testing`
-  rules/06.
-- Static inspection of emitted code and **statistical timing measurement of the running
-  binary are two different instruments** answering two different questions, and neither sees
-  cache or other microarchitectural channels. Say which one you ran, and do not let one
-  stand in for the other (`rules/15` §2).
+Constant-time comparison (formerly section 6) moved to [rules/22](22-constant-time-comparison.md) §1 on 2026-09-25.
 
 ## 7. Signing & signed artifacts
 
@@ -377,8 +367,8 @@ reasoning governs every other constant-time construct, where it is far less wide
   dependencies is the minimum (CWE-494, A08:2025; supply chain is now its own
   OWASP category, A03:2025).
 
-Tamper-evident logs and audit ledgers (formerly section 8) moved to
-[rules/18](18-tamper-evident-logs.md) §1 on 2026-09-25.
+Tamper-evident logs and audit ledgers (formerly section 8) moved to [rules/18](18-tamper-evident-logs.md) §1 on
+2026-09-25; signed request/response exchanges and self-describing receipts are rules/18 §2.
 
 ## 9. Secrets hygiene in code & pipelines
 
@@ -391,8 +381,8 @@ Tamper-evident logs and audit ledgers (formerly section 8) moved to
 - Distinguish secret classes: long-lived signing keys (KMS, non-exportable) vs
   rotating service credentials (secrets manager, TTL) vs per-user tokens
   (hashed at rest).
-- Crypto agility: central crypto module/wrapper so algorithm/params live in one
-  place; grep-able, upgradeable, with ciphertext version tags.
+- Crypto agility: one crypto module holds algorithms and parameters, with ciphertext version tags, so a significant
+  new attack on an algorithm triggers a planned migration and key rotation, not a rewrite.
 
 ## 10. Audit grep starters
 
@@ -417,14 +407,12 @@ PKCS1Padding | PKCS1v15() | PKCS1_v1_5 | RSA_PKCS1_PADDING | RSAEncryptionPaddin
 sha256/md5/HKDF over a password | EVP_BytesToKey | `openssl enc` without -pbkdf2/-iter   (§1)
 ECDH/X25519 exchange with no KDF in the file   catch/except that stores or returns plaintext (§4.1)
 optional_no_ca | ALWAYS_FORWARD_ONLY | RequireAnyClientCert | RequestClientCert | ssl.SSLContext() | raw SSLSocket (§5)
+discovery, every use not only weak ones (§1.1 inventory): *.getInstance of Cipher/MessageDigest/Signature/Mac/
+KeyAgreement/KeyGenerator | createCipheriv/Hash/Hmac/Sign | crypto.subtle | hashlib | cryptography.hazmat | EVP_*
 ```
 
 ## Audit checklist
 
-- [ ] **Was every constant-time claim checked in the emitted code (§6.1)**, across the
-      architectures and optimisation levels actually shipped — including `-Os`/`-Oz` — rather
-      than read off the source? Any secret-dependent `/` or `%` located, and a hand-written
-      multiply-shift replacement verified over the whole input domain rather than samples?
 - [ ] Are all symmetric encryptions AEAD (GCM/ChaCha20-Poly1305 family), with no ECB/unauthenticated-CBC/custom modes anywhere?
 - [ ] Is nonce generation per-key safe (counter or XChaCha/SIV for random), never hardcoded or derived from predictable values?
 - [ ] Is AAD used to bind ciphertexts to their context?
@@ -467,13 +455,23 @@ optional_no_ca | ALWAYS_FORWARD_ONLY | RequireAnyClientCert | RequestClientCert 
       `grep -rnE 'optional_no_ca|ALWAYS_FORWARD_ONLY|RequireAnyClientCert|RequestClientCert|SSLContext\(\)|check_hostname[[:space:]]*=[[:space:]]*False|\(SSLSocket\)|createSSLEngine\(' .`
       — a raw `SSLSocket` hit is fine only with `setEndpointIdentificationAlgorithm("HTTPS")`;
       a Go `RequestClientCert` hit only with a `VerifyPeerCertificate` that chain-validates.
-- [ ] Are all secret comparisons (tokens, MACs, OTPs) constant-time?
 - [ ] Are long-lived stored tokens hashed at rest?
 - [ ] Is MD5/SHA-1 absent from any security-relevant use?
 - [ ] Do decryption/verification failures return uniform errors and stop processing before plaintext use?
+- [ ] **Is every AEAD tag 128 bits and every ciphertext length-checked before slicing (§2)? MEDIUM**: `grep -rnE 'GCMParameterSpec\((32|64|96|104|112|120)[,)]|NewGCMWithTagSize\([^,]*,[[:space:]]*(1[0-5]|[0-9])\)|min_tag_length[[:space:]]*=[[:space:]]*([0-9]|1[0-5])([^0-9]|$)|authTagLength:[[:space:]]*([0-9]|1[0-5])([^0-9]|$)' .` ; then read each `[:nonceSize]`-style slice for a preceding length check.
 - [ ] Are signed URLs/blobs HMAC'd over canonical encodings with expiry, verified before any field is used?
 - [ ] Is sensitive-field encryption application-layer (envelope, AAD-bound), with deterministic encryption confined to blind indexes?
 - [ ] Are dependencies and release artifacts checksum/signature-verified in CI/CD?
 - [ ] Is there a single crypto wrapper module rather than scattered primitive calls?
-- [ ] Is the hash preimage a **named** canonicalization (RFC 8785 or a written encoder spec) rather than a default JSON/map serializer, pinned by a committed known-answer vector that every verifier implementation reproduces byte-for-byte?
-- [ ] Is a TEE/confidential-computing control proposed to fix a **completeness** gap ("records that were never emitted")? That is a liveness failure and sits outside the CC guarantee — the fix is a separate completeness attestation at a vantage the monitored component does not control.
+- [ ] **Is key strength consistent and at 128 bits for new designs (§4)** — every KEK at least
+      as strong as what it wraps, DEK and KEK independent, sizes chosen for the data's secrecy
+      lifetime? MEDIUM (HIGH at 1024-bit RSA or a sub-224-bit curve): `grep -rnE 'key_size=(1024|2048)([^0-9]|$)|genrsa[^|;&]*[[:space:]](1024|2048)([^0-9]|$)|initialize\((1024|2048)[,)]|modulusLength:[[:space:]]*(1024|2048)([^0-9]|$)|GenerateKey\([^,]*,[[:space:]]*(1024|2048)\)|ssh-keygen[^|;&]*-b[[:space:]]*(1024|2048)([^0-9]|$)|secp192|secp224|SECP192R1|SECP224R1|P-224|prime192' .`
+      — a 2048-bit hit is acceptable only for data whose secrecy ends before 2031.
+- [ ] **Does any RNG path fall back to a weak PRNG, block on a hot path, or draw steerable
+      on-chain randomness, and are imported public keys screened for weak classes (§3)? HIGH**:
+      `grep -rn -A1 -E '(except|catch|rescue)' . | grep -E 'Math\.random|random\.(random|randint|choice)\(|java\.util\.Random|mt_rand\(|srand\(' ; grep -rnE 'getInstanceStrong\(|keccak256\(abi\.encode(Packed)?\([^;]*block\.(timestamp|prevrandao|difficulty)|blockhash\(' .`
+      ; then pass each imported certificate and key file to `badkeys -c fermat,roca`.
+- [ ] **Does a cryptographic inventory list every key, its allowed uses, data classes and
+      holders, rebuilt by discovery (§1.1)? MEDIUM when absent** — reconcile every hit of
+      `grep -rnE '(Cipher|MessageDigest|Signature|Mac|KeyAgreement|KeyGenerator|KeyPairGenerator)\.getInstance|create(Cipheriv|Decipheriv|Hash|Hmac|Sign|Verify)\(|crypto\.subtle\.|hashlib\.|hmac\.new|cryptography\.hazmat|from nacl|"crypto/(aes|cipher|hmac|sha[0-9]+|ecdsa|ed25519|rsa|ecdh)"|EVP_[A-Za-z0-9_]+\(|System\.Security\.Cryptography' .`
+      against it; an unlisted call site is the finding.

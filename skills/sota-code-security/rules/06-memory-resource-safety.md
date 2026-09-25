@@ -137,7 +137,12 @@ memcpy(buf, pkt->data, n); buf[n] = '\0';
 - The same policy applies to FFI surfaces everywhere: JNI, cgo, Python C
   extensions, Node native addons — memory-unsafe code reachable from safe code
   inherits the full C threat model. Validate all data crossing the FFI boundary
-  in both directions (lengths, encodings, null-termination).
+  in both directions (lengths, encodings, null-termination). Copy mutable input
+  (arrays, buffers) first, then validate and pass the copy: a caller or another
+  thread holding the original can change it between check and use (the WASM
+  copy-then-validate rule, `sota-sandboxing` rules/04, at every native boundary).
+  In JNI, keep `native` methods private behind a public wrapper that does both.
+  OWASP: Code Review Guide v2.
 - `unsafe` justified by "performance" without a benchmark is a finding.
 - **A memory-safe language reaches the same threat model without anyone writing C.** Each
   one ships an escape hatch into raw memory as an ordinary library call, and a codebase
@@ -297,6 +302,12 @@ disk, queue depth, downstream API quota.
   APIs (LLM tokens, SMS, email), exhaustion shows up as your invoice — hard
   budget caps + alerts per tenant/feature, and never let an unauthenticated
   path trigger metered work (SMS-OTP send endpoints are the classic pump).
+- Slow senders: enforce a minimum ingress data rate, set from a baseline of real
+  traffic, and drop slower connections (Kestrel's `MinRequestBodyDataRate`, for
+  one). CAPTCHA and other puzzles curb functional abuse, such as a form that sends
+  mail, but are no DoS defence. Put logs on a volume apart from application data,
+  so a log flood cannot fill the disk the database writes to. OWASP: Denial of
+  Service cheat sheet, Logging cheat sheet.
 
 ```go
 // GOOD: every outbound call carries a deadline; caller cancellation propagates
@@ -342,6 +353,12 @@ UPDATE coupons SET used_by = $1, used_at = now()
 - Shared mutable state across requests (globals, class attributes in pooled
   workers) leaks one user's data into another's response — keep request state
   request-scoped; audit caches and reused buffers for cross-request bleed.
+  Serverless is no exception: a warm FaaS environment is reused, and AWS's Lambda
+  docs say objects declared outside the handler stay initialised and `/tmp`
+  content survives between invocations (an invoke-failure reset does not clear
+  it). Keep per-invocation data in handler scope, delete temp files and wipe
+  sensitive state before returning, and never assume a fresh filesystem. OWASP:
+  Serverless FaaS Security cheat sheet.
 - Signal/reentrancy handlers and async callbacks touching shared security state
   need the same discipline.
 
@@ -350,7 +367,8 @@ UPDATE coupons SET used_by = $1, used_at = now()
 A temp file is the filesystem TOCTOU above in its most common form. The shared temp
 directory is world-writable, so **a name chosen before the file exists is a race the
 attacker can win**: they create a symlink at that path first, and your write goes wherever
-it points. Three shapes, the same in every language:
+it points. Three shapes, the same in every language (and on reused serverless runtimes
+the files also outlive the invocation, §6):
 
 - **Name now, file later.** An API that returns a *name* and creates nothing (C
   `mktemp`/`tmpnam`/`tempnam`, Python `tempfile.mktemp`). The C man page is blunt: the
@@ -451,4 +469,6 @@ DllImportSearchPath.(AssemblyDirectory|ApplicationDirectory|LegacyBehavior) | lo
 - [ ] Are check-then-act sequences (files, balances, redemptions) made atomic at the storage layer?
 - [ ] Is any race accepted because its window is "too small" (§6)? HIGH on balances, redemptions and limits: single-packet and last-byte-sync attacks reach millisecond windows. Probe for the rationalisation in comments and tickets: `grep -rniE 'race.{0,40}(unlikely|rare|tiny|small|negligible|acceptable)|(unlikely|rare|tiny|small|negligible).{0,40}race' .` (also matches `trace`; read each hit).
 - [ ] Is every temp file created atomically, owner-only, under a name not chosen in advance (§6.1)? Run §6.1's detector row for the language, and read each hit: a predictable name in a shared temp directory is HIGH when the file holds secrets or is later read back as trusted.
-- [ ] Is request-scoped data verified never to live in shared/global state across requests?
+- [ ] Is request-scoped data verified never to live in shared/global state across requests, including across warm serverless invocations, with `/tmp` files deleted before the handler returns (§6)? HIGH when the state holds another user's data. Python probe for a handler writing a module global: `grep -rnE '^[[:space:]]+global[[:space:]]+[[:alpha:]_]' --include='*.py' .` (read each hit).
+- [ ] Does every FFI/JNI wrapper copy mutable input before validating it, with `native` methods private behind that wrapper (§3)? MEDIUM, HIGH when the native side trusts a length. Probe for JNI methods callable without a wrapper: `grep -rnE '(public|protected)[[:space:]]+([[:alpha:]]+[[:space:]]+)*native[[:space:]]' --include='*.java' .`
+- [ ] Is a minimum ingress data rate enforced, CAPTCHA not counted as DoS defence, and are logs on a volume separate from application data (§5)? MEDIUM. Probe for a disabled rate floor: `grep -rnE 'Min(RequestBody|Response)?DataRate[[:space:]]*=[[:space:]]*null' --include='*.cs' .`
