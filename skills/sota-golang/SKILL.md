@@ -1,12 +1,12 @@
 ---
 name: sota-golang
-description: State-of-the-art Go engineering rules (2026 baseline, Go 1.26+) that Claude applies when writing new Go code or auditing existing Go code. Covers error handling, interface/package design, goroutine and channel correctness, net/http hardening, security (SQL, exec, path traversal, CSPRNG, TLS, supply chain), performance (pprof, allocations, GC, PGO), and tooling/CI. Trigger keywords - Go, golang, goroutine, channel, go.mod, errgroup, context.Context, pprof, govulncheck, net/http, slog. Use for BOTH building Go services/libraries/CLIs and reviewing or auditing Go codebases.
+description: State-of-the-art Go engineering rules (supported Go releases) that Claude applies when writing new Go code or auditing existing Go code. Covers error handling, interface/package design, goroutine and channel correctness, net/http hardening, security (SQL, exec, path traversal, CSPRNG, TLS, supply chain), performance (pprof, allocations, GC, PGO), and tooling/CI. Trigger keywords - Go, golang, goroutine, channel, go.mod, errgroup, context.Context, pprof, govulncheck, net/http, slog. Use for BOTH building Go services/libraries/CLIs and reviewing or auditing Go codebases.
 ---
 
 # SOTA Go (2026)
 
-Expert-level rules for producing and auditing production Go. Baseline language
-version: Go 1.26+. Go supports the two latest majors (1.25 left support when
+Expert-level rules for producing and auditing production Go. Target a supported Go
+release: Go supports the two latest majors (1.25 left support when
 1.27 shipped, 2026-08) — verify the supported pair at
 go.dev/doc/devel/release. Feature
 notes: loop-var scoping from 1.22, `b.Loop`/`os.Root`/tool directives from

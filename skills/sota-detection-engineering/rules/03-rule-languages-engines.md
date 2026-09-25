@@ -144,13 +144,13 @@ Both observe kernel-level behavior via eBPF; choose by need.
 
 - **Falco** — CNCF *graduated*; mature rules language and large community
   ruleset; rich syscall + container + K8s-audit detection; primarily *detect/
-  alert*. Current line is v0.x (verify at falco.io); v0.44 removed the legacy
+  alert*. Verify the latest release at falco.io; v0.44 removed the legacy
   (non-CO-RE) eBPF probe and gVisor engine support — older kernels need the
   kernel-module driver or an older Falco.
 - **Tetragon** — part of **Cilium**; very low-overhead eBPF observability with
   **in-kernel enforcement** (it can *kill* a process or block an action in the
-  kernel, not just alert), driven by `TracingPolicy` CRDs. Production-ready on
-  the v1.x line (verify the current release at the Cilium/Tetragon repo).
+  kernel, not just alert), driven by `TracingPolicy` CRDs. 1.0 shipped
+  2023-11-01 (verify the latest release at the Cilium/Tetragon repo).
 
 Use Falco when you want a broad detect-only ruleset fast. Use Tetragon when you
 want fine-grained process/file/network observability with optional kernel

@@ -13,7 +13,7 @@ lives in `sota-testing`.
   consistency and reproducibility matter more than the choice.
 - Pin the build-tool version (Maven Wrapper `mvnw` / Gradle Wrapper `gradlew`
   with a checksum) so every machine and CI uses the same version.
-- Target the latest LTS (Java 25 at the time of writing; verify at the
+- Target the latest LTS (verify at the
   [Oracle Java SE support roadmap](https://www.oracle.com/java/technologies/java-se-support-roadmap.html))
   via `release`/toolchains; set
   `--release N` (not just `-source`/`-target`) so you don't accidentally use

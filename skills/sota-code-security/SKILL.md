@@ -1,7 +1,7 @@
 ---
 name: sota-code-security
 description: >-
-  Secure coding and security auditing rules (2026 baseline). Use whenever
+  Secure coding and security auditing rules. Use whenever
   BUILDING or modifying code that crosses a trust boundary — endpoints,
   handlers, auth/login/signup, sessions, JWT/OAuth, file uploads, payments,
   multi-tenant features, crypto/secrets handling, parsers, CLI/exec wrappers,

@@ -92,8 +92,7 @@ vendor changes. Normalize:
 - **OCSF (Open Cybersecurity Schema Framework)** — vendor-agnostic event schema
   (categories, classes, attribute dictionary), Apache-2.0, backed by a broad
   industry coalition. Verify the current version at schema.ocsf.io /
-  github.com/ocsf/ocsf-schema (the schema repo tracks version in `version.json`;
-  as of mid-2026 it is on the 1.x line, ~1.8 stable with 1.9 in development).
+  github.com/ocsf/ocsf-schema (the schema repo tracks version in `version.json`).
   AWS Security Lake and a growing set of tools emit/ingest OCSF natively.
 - **Elastic ECS (Elastic Common Schema)** — the field-naming standard across the
   Elastic ecosystem; many Sigma backends and detection content assume ECS field

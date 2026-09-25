@@ -6,7 +6,7 @@ Stack choice is a one-way door: migrating a shipped app between stacks is a rewr
 
 | Item | State |
 |---|---|
-| iOS | iOS 26 current (26.5.x); iOS 27 announced at WWDC (June 8–12, 2026), developer betas out, public release expected Sept 2026. Apple uses year-based naming (jumped 18 → 26 in 2025). |
+| iOS | Verify the latest release at developer.apple.com/news/releases. Apple uses year-based naming (jumped 18 → 26 in 2025). |
 | iOS SDK requirement | Since **April 28, 2026**, App Store uploads must be built with Xcode 26 / iOS 26 SDK. Building with the 26 SDK applies the Liquid Glass appearance to system controls by default — re-test UI on SDK bump. |
 | Android | Android 17 (API 37) stable since June 16, 2026 (Pixels first, OEM rollouts ongoing); Play target-API mandate remains API 36 (next row). |
 | Play target API | New apps and updates must target **API 36 by Aug 31, 2026** (API 35 floor for Wear OS / Android TV). Stale targets make the app invisible to new users on newer devices. |
@@ -17,7 +17,7 @@ Stack choice is a one-way door: migrating a shipped app between stacks is a rewr
 | React Native | 0.86 (Jun 2026) — fixes the Android 15+ edge-to-edge issues (insets, `KeyboardAvoidingView`) that the mandatory API-36 edge-to-edge (1.4) exposes; repo moved to the `react` GitHub org under the React Foundation. 0.85 (Apr 2026) **removed** the Bridge from the codebase entirely (no fallback, no interop, no shim). New Architecture (JSI + Fabric + TurboModules) became non-disableable in 0.82 (Oct 2025); the Bridge interop layer stayed functional through 0.84. Hermes is the default engine on both platforms. |
 | Flutter | recent stable (~4 releases/year, verify current); Material/Cupertino libraries being split into separately-versioned packages. |
 | Kotlin Multiplatform | KMP stable since 2023 for shared logic. Compose Multiplatform for iOS **stable since 1.8.0 (May 2025)** — production-ready (Netflix, Cash App scale), but iOS fidelity still trails SwiftUI for platform-idiomatic feel; budget per-platform polish. |
-| OWASP MASVS | v2.1 current (adds MASVS-PRIVACY); verification levels replaced by MAS profiles + MASWE weakness enumeration. MASTG v2.0.0 stable (June 2026) supplies the test procedures. |
+| OWASP MASVS | v2.1 added MASVS-PRIVACY (verify the latest at mas.owasp.org); verification levels replaced by MAS profiles + MASWE weakness enumeration. MASTG v2.0.0 stable (June 2026) supplies the test procedures. |
 
 ## Rules
 
@@ -57,7 +57,7 @@ The hybrid middle ground — a native shell around WebViews — buys store prese
 
 ### 1.3 Set the minimum OS floor by data, and write it down
 
-- A policy that ages well: **latest major minus 2** (e.g., iOS 24-equivalent floor under iOS 26; Android floor around API 28–30 depending on market). But check *your* analytics, not global stats — emerging-market Android skews years older than US iOS; enterprise fleets pin old versions.
+- A policy that ages well: **latest major minus 2** (on iOS count releases, not numbers — naming jumped 18 → 26 in 2025; Android floor around API 28–30 depending on market). But check *your* analytics, not global stats — emerging-market Android skews years older than US iOS; enterprise fleets pin old versions.
 - Raising the floor later is cheap: existing users keep the last compatible binary; you stop shipping them new features. Lowering a floor is impossible. Still, don't start lower than your market demands — every supported major is test-matrix cost.
 - Every `if #available` / `Build.VERSION.SDK_INT` branch is a permanent test obligation. A floor of N-2 keeps the matrix at three majors.
 - **The floor is also a security decision.** Users on an OS version that no longer gets security patches are exposed to public exploits your app cannot fix, and a low floor keeps you from relying on security APIs (for example `KeyInfo.getSecurityLevel`, API 31, rules/04 §4.1). Set the floor no lower than the oldest version the vendor still patches, or record the cohort you accept below it. Each monthly Android Security Bulletin names the AOSP versions its fixes land in, and Apple's security releases page lists which OS versions each update covers. For sensitive flows, read `Build.VERSION.SDK_INT` and `Build.VERSION.SECURITY_PATCH` (or the iOS version) and warn, or step up and restrict, on an unpatched or unsupported OS; the server-side attestation verdict (rules/04 §4.5) is the check a modified client cannot fake. OWASP: MASTG-TEST-0245, MASVS-CODE-1.

@@ -252,7 +252,8 @@ main "$@"   # nothing executes until fully downloaded and parsed
 
 ## 7. ShellCheck + shfmt in CI — non-negotiable
 
-Current as of mid-2026: ShellCheck v0.11.0 (Aug 2025), shfmt v3.13.x (zsh-aware).
+Use the latest stable ShellCheck and shfmt (verify at github.com/koalaman/shellcheck/releases
+and github.com/mvdan/sh/releases); shfmt parses zsh (partially) since v3.13.
 Both are single static binaries; there is no excuse for a repo with shell scripts and no
 shell linting.
 

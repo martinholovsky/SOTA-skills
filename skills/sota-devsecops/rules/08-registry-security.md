@@ -241,7 +241,7 @@ What the registry *pulls from upstream* is as much an attack surface as what it 
   for pull-through/mirror (incl. ECR upstream). It does **not** ship Harbor-style immutable-tag
   rules or block-on-pull scanning gates — get those from digest pinning + admission
   (sota-kubernetes). Verified against zotregistry.dev.
-- **Harbor** (current **v2.15.x**, Mar 2026): projects + robot accounts + RBAC; **tag
+- **Harbor** (verify the latest release at github.com/goharbor/harbor/releases): projects + robot accounts + RBAC; **tag
   immutability rules**; built-in **Trivy** scan + prevent-vulnerable-from-running policy;
   **replication** to any OCI registry; cosign signing (Notary/DCT legacy). Heavier (Postgres,
   Redis, multiple services) — its HA/backup story is real work. Verified against goharbor.io.

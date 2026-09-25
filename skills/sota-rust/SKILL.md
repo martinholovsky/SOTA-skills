@@ -21,9 +21,9 @@ description: >-
 
 This skill encodes the 2026 state of the art for production Rust: the idioms,
 security posture, performance discipline, and CI baseline expected of an
-expert Rust codebase. Baseline as of mid-2026: a recent stable Rust toolchain (verify the current
-release at blog.rust-lang.org),
-edition 2024 (next edition expected ~2027), tokio still 1.x. It serves two modes — **BUILD** (write new code to this
+expert Rust codebase. It assumes a recent stable Rust toolchain, edition 2024 (Rust ≥1.85; next
+edition expected ~2027), and the tokio 1.x API. Verify the latest toolchain
+release at blog.rust-lang.org. It serves two modes — **BUILD** (write new code to this
 standard) and **AUDIT** (find where existing code falls short, with severity
 and evidence). The detailed rules live in `rules/*.md`; load only the files
 relevant to the task (see index below). Every rules file ends with an "Audit

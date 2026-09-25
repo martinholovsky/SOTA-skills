@@ -1,6 +1,6 @@
 # 01 — Tooling & Project Setup
 
-Modern Python (2026 baseline): `uv` for everything package/env related, `pyproject.toml` as the
+Modern Python: `uv` for everything package/env related, `pyproject.toml` as the
 single source of truth, `ruff` for lint+format, one strict type checker, `src/` layout,
 Python ≥3.12 target. Anything else needs a written justification.
 

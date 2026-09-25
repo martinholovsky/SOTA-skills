@@ -109,6 +109,29 @@ clang-tidy 23.1.0. P0543's old names were confirmed correct.
 - **The golang description** now says "Go 1.26+". The routing regression set and the
   baseline both scored 1.000 after the change.
 
+### Added (version policy)
+
+- **Invariant 38: no claim about what is current carries a version number.** Operator
+  decision 2026-09-25: versions stay only as semantic boundaries (since, fixed in, removed in,
+  API eras), and a dated measurement is provenance.
+  - **Detector:** `scripts/lib/check-version-pins.py` is built corpus-first. It carries 41
+    labelled pins and 58 labelled non-pins taken from real library lines, normalises the text
+    once, and classifies with independent cues: release-context currency, versions that
+    exclude section numbers, URLs and quantities, boundaries on either side, provenance
+    exemptions, and a version linked to its cue in the same sub-clause.
+  - **Self-test first:** it runs `--self-test` before scanning, and probe 38b proves a detector
+    regression fails the gate.
+  - **Pins rewritten:** it found 59 pins, including 9 skill descriptions ("(2026 baseline)",
+    "Go 1.26+", "Java 25 LTS", ".NET 10 LTS / C# 14", "PHP 8.3+ floor", "Ruby 3.4+ / 4.0"). Each
+    was rewritten to "latest stable (verify at <source>)" or a boundary. Three rewrites the
+    agent wrote from memory were checked against release notes: MASVS v2.1 added
+    MASVS-PRIVACY (confirmed), shfmt v3.13 added zsh parsing (confirmed, noted as partial, as its
+    release says), and Tetragon "production-ready" had no source, so it now gives the 1.0 release
+    date instead.
+  - **Routing:** both sets unchanged at 1.000 after the nine description edits.
+
+**Routing checked:** evals/results/2026-09-26/ROUTING-PINS.md
+
 ### Fixed (repo hygiene)
 
 - **Reader-setup phrasing removed from four skills.** `sota-network-security` (12 places),

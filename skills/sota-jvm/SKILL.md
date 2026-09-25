@@ -1,10 +1,10 @@
 ---
 name: sota-jvm
 description: >-
-  State-of-the-art JVM engineering rules (2026 baseline) for Java and Kotlin
-  that Claude applies when writing or auditing JVM code. Baseline Java 25 LTS
+  State-of-the-art JVM engineering rules for Java and Kotlin
+  that Claude applies when writing or auditing JVM code. Java LTS releases
   (virtual threads final since 21; structured concurrency still preview),
-  Kotlin 2.x. Covers modern idioms (records, sealed types, pattern matching,
+  modern Kotlin. Covers modern idioms (records, sealed types, pattern matching,
   Kotlin null-safety/coroutines), API/null/immutability design, concurrency
   (virtual threads, JMM, java.util.concurrent, coroutines), security
   (deserialization/gadget chains, XXE, JNDI/Log4Shell-class, injection, JCA
@@ -22,7 +22,7 @@ description: >-
 Expert-level rules for producing and auditing production JVM code. The JVM is
 memory-safe (no buffer overflows/UAF), so the risk shifts to **deserialization
 and injection RCE, concurrency correctness, and dependency supply chain**.
-Baseline: **Java 25 LTS** (records, sealed types, pattern matching, virtual
+Written for **Java 25 LTS** (records, sealed types, pattern matching, virtual
 threads finalized in 21 via JEP 444; scoped values finalized in 25 via JEP 506;
 structured concurrency is still *preview* — JEP 505 in 25 — don't present it
 as final), **Kotlin 2.x**.
@@ -47,7 +47,7 @@ Two consumers, one source of truth:
 1. Before writing, read the rules files relevant to the task (see index). A web
    service handling untrusted input + threads + a DB needs `02`, `03`, `04`.
 2. Apply the **top-10 non-negotiables** (below) unconditionally.
-3. New projects: target the latest LTS (Java 25 at the time of writing; verify at
+3. New projects: target the latest LTS (verify at
    the Oracle Java SE support roadmap), Maven or Gradle with a
    lockfile, Error Prone + NullAway (Java) or detekt + ktlint (Kotlin),
    SpotBugs/Find-Sec-Bugs, OWASP dependency-check/OSV-Scanner, and CI running

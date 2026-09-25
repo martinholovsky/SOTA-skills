@@ -1,7 +1,7 @@
 ---
 name: sota-c-cpp
 description: >-
-  State-of-the-art C and C++ engineering rules (2026 baseline) that Claude
+  State-of-the-art C and C++ engineering rules that Claude
   applies when writing or auditing C/C++. Covers modern idioms (RAII, value
   semantics, smart pointers, C++23), memory safety (lifetimes, bounds,
   sanitizers, hardening flags), undefined behavior, security (SEI CERT C/C++,

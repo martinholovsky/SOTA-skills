@@ -30,8 +30,8 @@ for those four operations.
 - **Body**: explains *why* and what the alternatives were — the diff already
   shows the what. Wrap at 72. Link issues/incidents. A one-line `fix typo` body
   is fine; a one-line body on a 300-line behavioral change is a finding.
-- **Conventional Commits** (conventionalcommits.org, spec v1.0.0 — still the
-  current version as of 2026): `type(scope)!: description` with `feat`, `fix`,
+- **Conventional Commits** (conventionalcommits.org, spec v1.0.0 — check the
+  site for a newer spec version): `type(scope)!: description` with `feat`, `fix`,
   and friends; `!` or a `BREAKING CHANGE:` footer marks breaking changes.
   - **When it pays**: you automate something with it — changelog drafts and
     version bumps via semantic-release / release-please / git-cliff, monorepo

@@ -27,8 +27,8 @@ Rules that override the table:
 
 ## 2. Vault / OpenBao
 
-OpenBao is the open-source fork (post Vault-BSL), now a Linux Foundation project with an
-active 2.x release train; operationally interchangeable below. Choose
+OpenBao is the open-source fork (post Vault-BSL), now a Linux Foundation project (verify
+the latest release at openbao.org); operationally interchangeable below. Choose
 Vault/OpenBao when you need any of: **dynamic secrets** (DB creds, cloud creds minted on
 demand), **PKI** (internal CA with short-lived certs), **transit** (encryption-as-a-service so
 apps never hold keys), or a single store spanning clouds/on-prem.

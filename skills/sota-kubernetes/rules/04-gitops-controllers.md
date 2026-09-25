@@ -126,7 +126,7 @@ advisories before citing exact IDs/versions):
   2.13.9 / 2.14.16 / 3.0.14 / 3.1.2.
 - Plus assorted webhook-parser DoS and stored-XSS (annotation) advisories.
 
-Current Argo CD line is ~3.4.x (verify). Stay on a supported minor, watch the advisories
+Verify the supported Argo CD minors at github.com/argoproj/argo-cd/releases. Stay on a supported minor, watch the advisories
 feed, and patch Critical auth/secret-exposure issues on the emergency track. Flux likewise
 publishes advisories — track its controllers' CVEs.
 

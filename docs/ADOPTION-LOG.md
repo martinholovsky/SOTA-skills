@@ -6772,3 +6772,42 @@ It is noted in rules/05 §2 and put to the review pass.
 **Review of this entry's diff, and one gate extension.**
 - **Review.** A fresh reviewer read the whole deferred-items diff. It raised 17 defects; 16 were fixed and re-tested on bad, good and edge fixtures under three grep modes. The 17th was refuted: Node's `v24.x` `modules.md` does list v24.15.0 beside v25.4.0 for require(esm) leaving experimental. The reviewer also settled the JVM open question from JEP 483: any `--illegal-native-access` value, `deny` included, makes the JVM skip the AOT cache with only a warning. `sota-jvm` rules/05 §2 now states the trade-off, with the deny gate in a cache-free CI job. This comes from the documents; it was not measured, since no JDK was available.
 - **Gate extension.** The full-library sweep (batch 1, secrets-management) found a second shape of invariant 37's class: a brace glob inside `--include`. grep never expands it, so a quoted `'*.{py,js}'` matches no file on BSD grep, ugrep or GNU grep, and unquoted it aborts under zsh. Invariant 37 now fails on it (probe 37c), and the two live instances are fixed. The class had already failed twice and fails silently, so it passes the ledger's filters.
+
+## 2026-09-26 — the version-pin policy gets a gate (invariant 38), and its detector is rebuilt corpus-first
+
+**Intake shape: operator question and decision.** The operator asked whether skills need
+version numbers at all, or could just say "use the latest stable". **Decision (2026-09-25):
+drop pins, keep boundaries.**
+- A claim about what is current must not carry a number.
+- Version numbers stay where a rule depends on them: feature availability, CVE fix floors,
+  removals, and API eras.
+- "Latest stable x.yy" is still a pin, so it goes too.
+- The reasoning for keeping boundaries: an audit has to compare a project's pinned version
+  against a floor, which "latest stable" cannot express.
+
+**The detector was rebuilt after the operator challenged its construction.** The first version
+was a regex list patched after each miss: bold markers, then wrapped lines, then whitespace
+runs, then exemptions. The operator said: *"detector logic needs to be more advanced, you were
+fixing its fails way too often."* The rebuild inverted the order:
+1. **A labelled corpus first**, from real library lines: 41 pins and 58 non-pins. The 58th came after the rewrite pass: Go
+   rules/07's "v2.13.0 first supports 1.27" is a boundary, and the model gained that cue only
+   after the line entered the corpus.
+2. **Normalise once:** join paragraphs; strip emphasis, code, links, URLs and heading numbers;
+   split sentences, and pair each table cell with its row's first cell.
+3. **Classify by independent cues.** Currency is a release context, not a bare word. Section
+   numbers and quantities are not versions. Boundaries count on either side of the version.
+   Provenance verbs and dates exempt the sentence. The version must sit in the same
+   sub-clause as its cue.
+4. **Measure on the corpus.** Each change after the first library run was added to the corpus
+   as a labelled real line before the model changed, and the lines added or dropped between
+   library runs were each read.
+   - The first run gave 114 hits, mostly false positives.
+   - The final run gave 59, and reading them found no remaining false positives.
+   - Three true pins that the precision fixes had dropped were recovered by adding
+     revision tokens and a rule that a `+` directly before a currency cue is not a floor.
+5. **The corpus is the self-test.** Invariant 38 runs it before every scan, and probe 38b
+   removes the provenance exemption and requires the gate to blame the detector.
+
+**Not gated, deliberately:** plain year labels in descriptions ("(2026)") were left alone. They
+are not version pins, and rewriting ~25 descriptions would move the routing surface for no
+measured gain. Revisit if a year label is found misleading a reader.

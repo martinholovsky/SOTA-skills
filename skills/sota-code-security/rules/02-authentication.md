@@ -10,7 +10,7 @@ finding until proven otherwise.
 
 ## 1. Password storage (CWE-916, CWE-256)
 
-- Hash with **argon2id**. 2026 baseline parameters: memory ≥ 64 MiB (`m=65536`),
+- Hash with **argon2id**. Default parameters: memory ≥ 64 MiB (`m=65536`),
   iterations `t=3`, parallelism `p=4` (or OWASP minimum `m=19456, t=2, p=1` where
   memory-constrained — tune to ~0.5s on your hardware). Fallback order:
   scrypt (N=2^17, r=8, p=1) → bcrypt (cost ≥ 12, beware 72-byte truncation —

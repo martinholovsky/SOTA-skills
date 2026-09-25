@@ -11,8 +11,8 @@ detection validation. Also the **AUDIT-mode entry point** alongside rules/04.
 ## 1. The IR lifecycle
 
 The classic model is **PICERL** (Preparation, Identification, Containment,
-Eradication, Recovery, Lessons learned). The current authoritative reference is
-**NIST SP 800-61 Revision 3** (finalized April 2025), which reframes incident
+Eradication, Recovery, Lessons learned). Since April 2025 the authoritative
+reference is **NIST SP 800-61 Revision 3**, which reframes incident
 response around the **CSF 2.0** functions — Govern, Identify, Protect, Detect,
 Respond, Recover — emphasizing IR as continuous risk management woven into the
 six functions rather than a standalone linear sequence (verify at
@@ -170,8 +170,8 @@ agents and confirm runtime detections fire.
 
 ## Audit checklist
 
-- [ ] Is there a written IR plan mapped to a current standard (NIST SP 800-61r3
-      / CSF 2.0), with roles, severity tiers, and authority-to-contain defined
+- [ ] Is there a written IR plan mapped to a maintained standard (e.g., NIST SP
+      800-61r3 / CSF 2.0; check csrc.nist.gov for a newer revision), with roles, severity tiers, and authority-to-contain defined
       *before* an incident?
 - [ ] Are there incident-type playbooks (account compromise, ransomware, cloud-
       key abuse, data exfil, container, LLM/agent abuse) — concrete and current?
