@@ -14,9 +14,12 @@ on a schedule (new advisories land against old lockfiles).
 # deny.toml (core)
 [advisories]
 yanked = "deny"
-# RUSTSEC advisories: deny by default; ignore list requires expiry + reason
+# RUSTSEC advisories: deny by default; every ignore carries a reason. There is
+# no expiry key — cargo-deny 0.20.2 rejects `expire` (unexpected-keys) and the
+# whole config fails to load — so put the review date in the reason and let a
+# scheduled job (below) resurface it.
 ignore = [
-  # { id = "RUSTSEC-2026-0001", reason = "not reachable: feature off", expire = "2026-09-01" }
+  # { id = "RUSTSEC-2026-0001", reason = "not reachable: feature off; review by 2026-12-01, #123" }
 ]
 
 [licenses]
@@ -35,6 +38,8 @@ unknown-git = "deny"          # git deps pinned by rev only, allowlisted
 
 - `cargo deny check` (advisories, licenses, bans, sources) in PR CI;
   `cargo audit` nightly via cron so existing `Cargo.lock` gets re-checked.
+  The same scheduled job enforces ignore reviews: fail when a `review by` date
+  in an `advisories.ignore` reason has passed — the tool itself cannot expire one.
 - Commit `Cargo.lock` for binaries **and** (current guidance) for libraries —
   reproducible CI; `cargo update` is a reviewed PR, not a side effect.
 - Dependabot/Renovate for bumps; review changelogs of security-sensitive deps
@@ -62,7 +67,8 @@ unknown-git = "deny"          # git deps pinned by rev only, allowlisted
   a days-old crate, one owner, or a repository that is not the project you meant stops it.
   Cross-check `https://deps.dev/cargo/<name>` and the repo's OpenSSF Scorecard
   (`https://api.securityscorecards.dev/projects/github.com/<owner>/<repo>`). A newest release
-  can be a tombstone: `bincode` 3.0.0 is one `compile_error!` line.
+  can be a tombstone: `bincode` 3.0.0 is one `compile_error!` line, and RUSTSEC-2025-0141
+  (2025-12-16, informational: unmaintained) records that its development has stopped for good.
 - **A crate's defaults become your code — set each security-relevant option yourself.** Read in
   source: async `reqwest::Client` (0.13.5) has `timeout`, `read_timeout` and `connect_timeout`
   all `None`, while the blocking client defaults to 30 s; `bincode` 2 `config::standard()` and
@@ -77,8 +83,9 @@ unknown-git = "deny"          # git deps pinned by rev only, allowlisted
   `danger_accept_invalid_certs(true)` (§7). (OWASP: Vulnerable Dependency Management, Software
   Supply Chain Security, Secure Coding with AI cheat sheets; SCVS V1, V6.)
 - This is not theoretical: Feb–Mar 2026 saw a coordinated campaign of five
-  fake "time utility" crates (`time-sync`, `dnp3times`, `chrono_anchor`, … —
-  RUSTSEC-2026-0030/0031/0032/0036) that typosquatted/brandjacked real crates
+  fake "time utility" crates (`time_calibrator`, `time_calibrators`, `dnp3times`,
+  `time-sync`, `chrono_anchor` — RUSTSEC-2026-0030/0031/0032/0036/0039, same order)
+  that typosquatted/brandjacked real crates
   and exfiltrated `.env` files from developer and CI machines. Mitigations are
   exactly the above plus secret hygiene: no long-lived credentials in `.env`
   on build machines; rotate anything exposed to an unvetted build.
@@ -186,9 +193,13 @@ struct DbConfig { url: String, password: SecretString }
   crypto crate (e.g. `hmac`'s `verify_slice`). `==` on secret bytes is a
   timing oracle.
 - Don't hand-roll crypto: RustCrypto crates, `ring`, `aws-lc-rs`, or libsodium
-  bindings; password hashing via `argon2`; randomness via `rand::rngs::OsRng`
-  / `getrandom` only (never `SmallRng`/`thread_rng` for key material —
-  thread_rng is a CSPRNG but OsRng removes the argument).
+  bindings; password hashing via `argon2`; randomness for key material via the
+  OS RNG only — `rand::rngs::SysRng` in rand ≥ 0.10 (renamed from `OsRng`, which
+  is the name in earlier versions) — or `getrandom` directly. Never `SmallRng`, a
+  seeded `StdRng` (`seed_from_u64`), or the thread-local RNG (`rand::rng()` since
+  0.9, `thread_rng()` before) for keys: the thread RNG is a CSPRNG, but the OS
+  RNG removes the argument. (rand CHANGELOG: 0.9.0 renamed `thread_rng()` →
+  `rng()`; 0.10.0, 2026-02-08, renamed `OsRng` → `SysRng`.)
 - Env/config: secrets via files or secret managers over env vars where
   possible (`/proc/<pid>/environ` leaks); never in `Cargo.toml`, never
   compiled into the binary (`strings target/release/app | rg -i secret`).
@@ -218,8 +229,11 @@ network:
   — the deserialized type should already be the validated type
   ("parse, don't validate").
 - `Vec` preallocation from attacker-controlled length prefixes
-  (`Vec::with_capacity(hdr.count)`): cap or `try_reserve`. Binary formats
-  (`bincode` etc.): configure size limits explicitly.
+  (`Vec::with_capacity(hdr.count)`): cap or `try_reserve`. Binary formats:
+  configure size limits explicitly. For new code pick a maintained format
+  (`postcard`, `bitcode`, `rkyv`, `wincode` — the alternatives RUSTSEC-2025-0141
+  lists) and set its limit; `bincode` is unmaintained (RUSTSEC-2025-0141), so
+  existing uses keep `.with_limit::<N>()` (§2) and get a migration ticket.
 - Don't deserialize to `Box<dyn Trait>`/arbitrary types via
   `typetag`-style registries from untrusted sources without an allowlist.
 - Fuzz every parser of untrusted bytes: `cargo fuzz` target per format, in
@@ -360,8 +374,9 @@ Running external programs (formerly section 9) moved to
 ## Audit checklist
 
 - [ ] CI has `cargo deny check` (or `cargo audit`) on PRs **and** a scheduled
-      run; `deny.toml` ignore entries have reasons + expiry. Missing = High
-      for deployed services.
+      run; every `deny.toml` ignore entry has a reason naming a review date,
+      and a scheduled job fails once that date passes (no `expire` key — cargo-deny
+      rejects it and the config fails to load). Missing = High for deployed services.
 - [ ] `Cargo.lock` committed; `rg 'git = "' Cargo.toml */Cargo.toml` — git
       deps without `rev =` pin = Medium; wildcard versions = Medium.
 - [ ] `cargo vet` (or documented dep-review process) for new dependencies;
@@ -419,8 +434,12 @@ Running external programs (formerly section 9) moved to
 - [ ] `rg '#\[derive\(.*Debug' -t rust` on structs with `password|secret|key|
       token` fields; `rg '==' -t rust` comparing MACs/tokens (want `ct_eq`);
       secrets not in `SecretString`/`Zeroizing` = Medium-High.
-- [ ] `rg 'thread_rng|SmallRng|StdRng::seed' -t rust` in key/nonce/token
-      generation paths → require OsRng/getrandom.
+- [ ] `rg 'thread_rng|rand::rng\(|SmallRng|StdRng::seed|seed_from_u64' -t rust` in
+      key/nonce/token generation paths → require the OS RNG (`SysRng` in rand
+      ≥ 0.10, `OsRng` earlier) or `getrandom`.
+- [ ] `rg 'bincode' Cargo.toml */Cargo.toml` — unmaintained (RUSTSEC-2025-0141):
+      new use = Low (pick a maintained format); decoding untrusted bytes without
+      `.with_limit` = High (§2, §6).
 - [ ] `rg 'untagged' -t rust` on network-facing types = review for DoS;
       `rg 'deny_unknown_fields'` absent on auth/config types = Low-Medium;
       body-size limits present at every ingest (axum `DefaultBodyLimit`,

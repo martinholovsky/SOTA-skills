@@ -67,9 +67,12 @@ IO.popen(["grep", "--", pattern, "log.txt"])
   class attacks).
 - `Shellwords.escape` is a last resort for legacy shell-string call sites —
   argv form is strictly safer.
-- **`Kernel#open` / `URI.open` (open-uri) execute a subprocess when the
-  argument starts with `|`** — never call them with an external filename;
-  use `File.open` for files and `Net::HTTP`/an HTTP client for URLs.
+- **`Kernel#open` / `URI.open` (open-uri) with an external name** — never.
+  On Ruby ≤ 3.4 a leading `|` spawns a subprocess (RCE); that was deprecated
+  in 3.3 and **removed in 4.0**, where `open("|cmd")` raises `Errno::ENOENT`
+  (measured, 4.0.6). On every version the call is still an arbitrary
+  local-file read for any name that is not a URL. Use `File.open` for files
+  and `Net::HTTP`/an HTTP client for URLs.
 
 ## 3. Insecure deserialization
 
@@ -83,8 +86,13 @@ IO.popen(["grep", "--", pattern, "log.txt"])
 - **YAML/Psych**: since Psych 4 (bundled from Ruby 3.1),
   [`YAML.load` has `safe_load` semantics](https://docs.ruby-lang.org/en/master/Psych.html)
   — only basic types, **aliases disabled** by default. Rules:
-  - `YAML.unsafe_load` / `YAML.load_stream(..., unsafe: ...)` on external
-    data is CRITICAL (same gadget class as Marshal).
+  - The unsafe surface on external data is CRITICAL (same gadget class as
+    Marshal): `YAML.unsafe_load`, `YAML.unsafe_load_file`,
+    `Psych.parse(s).to_ruby` / `parse_stream(...).to_ruby` (the node API
+    revives `!ruby/object` tags with no allowlist — measured, Psych 5.3.1),
+    and a `permitted_classes:` list widened to classes with side-effecting
+    setters. `load_stream` has no `unsafe:` keyword (`ArgumentError`), and
+    `load_documents` no longer exists.
   - Extra classes go through `permitted_classes: [Date, Symbol, ...]`, never
     a switch to `unsafe_load`.
   - Alias-using config files: `YAML.safe_load(s, aliases: true)` — note
@@ -93,6 +101,23 @@ IO.popen(["grep", "--", pattern, "log.txt"])
     unsafe-by-default — treat every call as `unsafe_load`.
 - **JSON**: `JSON.parse` is safe; `JSON.load` / `create_additions: true`
   enables object revival via `json_class` — don't use it on external input.
+- **XML (XXE, entity expansion)** — the class and its fixes are
+  `sota-code-security` rules/01 §6; the Ruby spelling:
+  - **Nokogiri's defaults are safe**: `DEFAULT_XML` sets `NONET` and leaves
+    `NOENT` and `DTDLOAD` off, so an external entity comes back unexpanded
+    (measured, nokogiri 1.19.4: default parse returned `""`, with `noent` the
+    file's contents). The finding is any option that undoes that: `noent`,
+    `dtdload`, `dtdattr`, `nononet`, `huge` in a config block, or
+    `ParseOptions::NOENT` / `DTDLOAD` / `HUGE` or clearing `NONET` in an
+    options integer — HIGH on untrusted XML (file read, SSRF).
+  - **REXML** (a bundled gem on Ruby 4.0: under Bundler it loads only when
+    the Gemfile lists it, measured) does not fetch `SYSTEM` entities (`&x;`
+    stays literal, measured REXML 3.4.4) and caps expansion through
+    `REXML::Security.entity_expansion_limit` (10 000) and
+    `entity_expansion_text_limit` (10 240 bytes); a billion-laughs document
+    raised `RuntimeError`. Raising either limit on untrusted input is a
+    finding. Keep the gem current — its NEWS records a run of expansion-limit
+    fixes, and bundler-audit covers it once it is in the lockfile.
 - **CSV**: `CSV` with `converters: :all` can build unexpected types; also
   remember spreadsheet formula injection (`=cmd|...`) when *emitting* CSV
   from user data — prefix `'` on `=`, `+`, `-`, `@` cells.
@@ -174,10 +199,13 @@ IO.popen(["grep", "--", pattern, "log.txt"])
   tokens, nonces, password-reset codes, API keys. `rand`, `Random`,
   `Array#sample`, `shuffle` are predictable (Mersenne Twister) — HIGH when
   used for anything security-relevant.
-- Compare secrets in constant time:
-  `OpenSSL.fixed_length_secure_compare(a, b)` (or Rack/ActiveSupport
-  `secure_compare` as neutral examples). `==` on HMACs/tokens is a timing
-  oracle.
+- Compare secrets in constant time: `OpenSSL.secure_compare(a, b)` (or
+  `Rack::Utils.secure_compare` / `ActiveSupport::SecurityUtils.secure_compare`
+  as neutral examples). `==` on HMACs/tokens is a timing oracle. Do not call
+  `OpenSSL.fixed_length_secure_compare` on attacker-supplied input: it raises
+  `ArgumentError` when the lengths differ (measured), which turns a wrong-length
+  token into a 500 and a length oracle. `secure_compare` hashes both sides
+  first, so any length is safe.
 - Passwords: bcrypt/argon2 via a maintained gem (`has_secure_password` uses
   bcrypt as a neutral example) — never `Digest::SHA256` of a password.
 - No secrets in code or `ENV`-committed files; load via the deployment
@@ -237,9 +265,12 @@ Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
       `grep -rnE '(Kernel#?open|URI\.open|[^.]open)\s*\(\s*(params|.*user|.*input)' --include='*.rb' . | head`
 - [ ] **Deserialization — CRITICAL on external data** —
       `grep -rn "Marshal.load\|Marshal.restore" --include='*.rb' .` ;
-      `grep -rn "unsafe_load\|YAML.load_documents" --include='*.rb' .` ;
+      `grep -rnE 'unsafe_load(_file)?|\.to_ruby\b|permitted_classes:' --include='*.rb' .`
+      (`to_ruby` after `Psych.parse*` revives objects; review each widened class list) ;
       `grep -rn "create_additions" --include='*.rb' .` ;
       `grep -rnE "YAML\.(safe_)?load[^_]" --include='*.rb' . | grep "aliases: true"`
+- [ ] **XML parser options that re-enable XXE / expansion — HIGH on untrusted XML** (§3) —
+      `grep -rnE '\.(noent|dtdload|dtdattr|nononet|huge)\b|ParseOptions::(NOENT|DTDLOAD|DTDATTR|HUGE)|entity_expansion(_text)?_limit[[:space:]]*=' --include='*.rb' .`
 - [ ] **eval / reflection sinks** —
       `grep -rnE '\beval\s*[( ]|(instance|class|module)_eval\s*\(?\s*["'"'"'%]|\$SAFE\b' --include='*.rb' .`
       (paren-less `class_eval "..."` too; a `$SAFE` hit is a sandbox that no longer exists) ; `grep -rnE '\b(public_)?send\s*\(\s*params' --include='*.rb' .` ;
@@ -261,7 +292,9 @@ Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
       `grep -rnE 'Regexp\.(new|compile)\( *([^"'"'"'/ ]|"[^"]*#\{)|%r.*#\{|(=~|match\??\(|scan\(|sub!?\(|split\() */[^/]*#\{' --include='*.rb' . | grep -v 'Regexp\.escape\|Regexp\.union'`
 - [ ] **Randomness / comparison — HIGH for security uses** —
       `grep -rnE '\brand\(|Random\.(rand|new)|\.sample\b' --include='*.rb' . | grep -viE "spec|test|seed"`
-      ; `grep -rnE '(token|hmac|signature|digest)\s*==' --include='*.rb' .`
+      ; `grep -rnE '(token|hmac|signature|digest)\s*==' --include='*.rb' .` ;
+      `grep -rn 'fixed_length_secure_compare' --include='*.rb' .` (raises on a length
+      mismatch — use `secure_compare` for caller-supplied values)
 - [ ] **Path traversal** —
       `grep -rnE 'File\.(open|read|write|join)\([^)]*params' --include='*.rb' .` ;
       `grep -rnE 'Pathname.*(\+|\.join\()[^)]*params' --include='*.rb' .` (an absolute argument

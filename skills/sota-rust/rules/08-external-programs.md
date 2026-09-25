@@ -33,14 +33,18 @@ library binding to a CLI wrapper for attacker-influenced parameters.
 `sota-sandboxing` rules/04 §5 lists the exec-capable argument gadgets
 (`find -exec`, `tar --checkpoint-action`, `ssh -o ProxyCommand`, …) to check for.
 
-**R9.3 — Windows `.bat`/`.cmd` is a documented exception (CVE-2024-24576).**
+**R9.3 — Windows `.bat`/`.cmd` is a documented exception (CVE-2024-24576, CVE-2024-43402).**
 `cmd.exe` and batch files decode their command line non-standardly, so argv-safety
 does not hold there: before **Rust 1.77.2**, passing untrusted arguments to a batch
-file could run arbitrary shell commands. The fix did not make escaping safe — the
+file could run arbitrary shell commands. That fix was bypassable — Windows strips
+trailing whitespace and periods from a path, so a name like `x.bat. .` still ran as
+a batch file without the mitigation (CVE-2024-43402, fixed in **Rust 1.81.0**;
+blog.rust-lang.org, 2024-09-04). The fix did not make escaping safe — the
 standard library now **returns an `InvalidInput` error when it cannot safely escape
 an argument**, and the current `Command` docs still carry the warning that for
 `cmd.exe` "a malicious argument can potentially run arbitrary shell commands". So:
-MSRV **≥ 1.77.2** for anything that may run on Windows, propagate that
+MSRV **≥ 1.81.0** for anything that may run on Windows (1.77.2 is the bypassable
+first fix), propagate that
 `InvalidInput` rather than unwrapping it, and treat `CommandExt::raw_arg` as
 trusted-input-only.
 
@@ -128,7 +132,8 @@ memory budgets — see `sota-sandboxing` rules/04 §5 and rules/02 R7.2a.
 - [ ] Every spawned `Child` is killed **and** waited on every exit path, including
       `?` early-returns and cancellation — `rg 'spawn\(\)' -t rust` and read the
       error paths; a dropped `Child` keeps running and then becomes a zombie
-      (R9.4). Deployed code targeting Windows declares MSRV **≥ 1.77.2** (R9.3).
+      (R9.4). Deployed code targeting Windows declares MSRV **≥ 1.81.0** (R9.3;
+      1.77.2 fixed CVE-2024-24576 but not its bypass CVE-2024-43402).
 - [ ] Every subprocess wait has a deadline **and** a kill: a bare
       `wait()`/`wait_with_output()` = High on any attacker-influenced child, and a
       `tokio::time::timeout` without `.kill_on_drop(true)` (or an explicit kill)

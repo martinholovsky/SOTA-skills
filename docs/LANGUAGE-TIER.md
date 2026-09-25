@@ -418,7 +418,7 @@ found), but an auditor walking .NET gets 40 probes and walking js/ts gets 110. *
 external gap-check found real gaps**: 4–7 in the first four, and 7–25 in the five checked
 since (table below). **The operator set depth as the next session's focus.** The
 concept-matrix candidate list does not answer this: the two .NET "gaps" it lists (command
-injection, path traversal) are covered at `sota-dotnet` rules/04:35–38, and its vocabulary
+injection, path traversal) are covered in `sota-dotnet` rules/04 §3 (a line number, `rules/04:35–38`, stood here until 2026-09-25 and had already drifted), and its vocabulary
 simply misses .NET's phrasing.
 
 Coverage inside this tier is checked against an **external, enumerable, tool-backed list** —

@@ -240,10 +240,10 @@ while let Some(res) = set.join_next().await {
 - Don't expose tokio types in library public APIs unless the crate is
   tokio-specific by design; abstract over `AsyncRead`/`AsyncWrite`
   (tokio or futures versions) where feasible.
-- Tokio remains 1.x (1.52 as of mid-2026; no 2.0) and designates LTS minors
-  with ≥1 year of backported fixes (1.47.x until Sep 2026, 1.51.x until Mar
-  2027). Stability-critical services can pin an LTS line with tilde syntax:
-  `tokio = { version = "~1.51", features = [...] }`.
+- Tokio 1.x designates LTS minors with ≥1 year of backported fixes; the
+  current LTS lines and their end dates are listed in the LTS section of
+  tokio's README — read them there rather than from here. Stability-critical services can pin an LTS line with
+  tilde syntax, e.g. `tokio = { version = "~1.51", features = [...] }`.
 
 ## 8. Graceful shutdown
 

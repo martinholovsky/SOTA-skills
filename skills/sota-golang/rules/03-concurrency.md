@@ -11,7 +11,8 @@ defined owner and lifecycle.
 
 1. **When does it exit?** (ctx canceled, input channel closed, work done)
 2. **How do we wait for it?** (`errgroup.Wait`, `sync.WaitGroup`, join channel)
-3. **Where does its error/panic go?** (errgroup, error channel, recover+log)
+3. **Where does its error go, and its panic?** (error: errgroup or error channel;
+   panic: a deferred recover+log *inside* the goroutine — errgroup does not catch panics)
 
 If any answer is "it doesn't / we don't", that's a leak by design — HIGH.
 
@@ -117,10 +118,11 @@ for {
 **Detection**: goroutine count metric (`runtime.NumGoroutine`) trending up;
 `pprof/goroutine?debug=2` dumps; `goleak` (`go.uber.org/goleak`) in tests:
 `defer goleak.VerifyNone(t)` — make it standard in packages that spawn.
-Go 1.26 adds an experimental `goroutineleak` pprof profile
-(build with `GOEXPERIMENT=goroutineleakprofile`, fetch
-`/debug/pprof/goroutineleak`) that reports goroutines blocked on unreachable
-concurrency primitives — planned on-by-default in 1.27; use it where available.
+The `goroutineleak` profile reports goroutines blocked on concurrency
+primitives nothing else can reach: GA in 1.27 (`/debug/pprof/goroutineleak`,
+`pprof.Lookup("goroutineleak")`, no flag); on 1.26 only behind
+`GOEXPERIMENT=goroutineleakprofile`, a flag 1.27 deleted — setting it there
+fails the build with `unknown GOEXPERIMENT` (go.dev/doc/go1.27; measured on go1.27.1).
 
 ## 3. Channels vs mutexes
 
@@ -261,9 +263,12 @@ go func() { defer close(jobs); for _, j := range all { jobs <- j } }()
 err := g.Wait()
 ```
 
-- GOMAXPROCS: 1.25+ respects container CPU quotas automatically; on older
-  runtimes in containers, `go.uber.org/automaxprocs` or explicit setting
-  prevents throttling-induced latency.
+- GOMAXPROCS: the runtime respects container CPU quotas and re-reads them
+  periodically — but only when go.mod's `go` line is ≥1.25 (below that the
+  `containermaxprocs`/`updatemaxprocs` GODEBUG defaults stay `0`; `doc/godebug.md`).
+  Any `runtime.GOMAXPROCS(n)` call — which is what `go.uber.org/automaxprocs`
+  does — disables the automatic updates (`go doc runtime.GOMAXPROCS`), so drop
+  automaxprocs on supported toolchains and raise the `go` line instead.
 
 ## Audit checklist
 
@@ -293,7 +298,11 @@ err := g.Wait()
       `go test -race -count=5 ./...` (shake out flaky interleavings);
       `grep -rn 'goleak' --include='*_test.go' .` (present in goroutine-spawning pkgs?)
 - [ ] **Runtime evidence (live systems)** —
-      `curl -s localhost:6060/debug/pprof/goroutine?debug=2 | head -100`
+      `curl -s localhost:6060/debug/pprof/goroutine?debug=2 | head -100` ;
+      `curl -s localhost:6060/debug/pprof/goroutineleak?debug=1 | head -50` (1.27+)
+- [ ] **Stale leak-profile flag or automaxprocs (§2, §6) — LOW** —
+      `grep -rnE 'goroutineleakprofile|go\.uber\.org/automaxprocs' --include='*.go' --include='go.mod' --include='Dockerfile*' --include='*.y*ml' --include='Makefile' .`
+      (the flag breaks a 1.27 build; automaxprocs pins GOMAXPROCS and stops quota tracking)
 
 Severity guide: confirmed race CRITICAL; goroutine leak / unbounded fan-out
 on request path HIGH; missing `-race` in CI HIGH; `time.After` loop MEDIUM;

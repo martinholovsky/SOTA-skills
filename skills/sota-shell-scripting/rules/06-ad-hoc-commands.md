@@ -74,7 +74,7 @@ Rules:
 ## 2. The sweep that never ran: `grep -r` over symlinks — and the positive control that catches ANY broken sweep
 
 §1 is about a *quoting* bug stopping the command. This is the command running fine and
-**traversing less than you think**.
+**traversing less than you think**. (`--include` beside a named file is the same failure: `rules/09` §5b.)
 
 **`-r` vs `-R` is not one rule — it depends on which `grep` you have.** Re-measured
 2026-09-09 on macOS against a target reachable **only** through the link (the first

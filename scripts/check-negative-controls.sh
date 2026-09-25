@@ -1026,6 +1026,28 @@ p.write_text(t2)
 probe 36 "a routed language skill is missing from LANGS" \
   "NOT IN LANGS: sota-ruby"
 
+# 37 — a grep probe that filters out the file it names. Append one to a checklist, in
+# the exact shape three shipped probes had (--include='*.rb' beside config.ru).
+( cd "$WT" && python3 -c "
+import pathlib
+p = pathlib.Path('skills/sota-shell-scripting/rules/09-listing-and-selection.md')
+t = p.read_text()
+p.write_text(t.rstrip('\\n') + '\\n- [ ] probe: \\x60grep -rn X --include=\\x27*.rb\\x27 config.ru\\x60\\n')
+" )
+probe 37 "a grep probe filters out the file it names" \
+  "INCLUDE DROPS NAMED FILE: skills/sota-shell-scripting/rules/09-listing-and-selection.md"
+
+# 37b — the escape hatch. '# BAD' exempts ITS OWN line only; a marker on the next line
+# must not launder the command above it (a declared escape needs a known-bad too).
+( cd "$WT" && python3 -c "
+import pathlib
+p = pathlib.Path('skills/sota-shell-scripting/rules/09-listing-and-selection.md')
+t = p.read_text()
+p.write_text(t.rstrip('\\n') + '\\n- [ ] probe: \\x60grep -rn X --include=\\x27*.rb\\x27 config.ru\\x60\\n  (# BAD on the next line)\\n')
+" )
+probe 37b "a '# BAD' marker on the next line exempts the command above it" \
+  "INCLUDE DROPS NAMED FILE: skills/sota-shell-scripting/rules/09-listing-and-selection.md"
+
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
 # =============================================================================
@@ -1286,7 +1308,7 @@ if [ "$derived" -ne "$declared" ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36 (33 of 36)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37 (34 of 37)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        12          — mtime-based: needs a rendered asset older than its source."

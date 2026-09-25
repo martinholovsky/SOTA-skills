@@ -79,7 +79,8 @@ Audit unsafe code against these, in observed-frequency order:
 1. **Aliasing violations**: constructing two `&mut` to the same data, or a
    `&mut` while a `&` lives — *creating* the reference is UB even if unused.
    Classic source: `&mut *ptr` twice, casting `&T` → `&mut T` (always UB —
-   `clippy::cast_ref_to_mut`/compiler `invalid_reference_casting` lint),
+   rustc's `invalid_reference_casting` lint, deny-by-default; the old
+   `clippy::cast_ref_to_mut` name is a rename alias),
    `Vec`/self-referential pointer invalidated by reallocation.
 2. **Uninitialized memory**: `mem::uninitialized()` (deprecated, instant UB
    for most types) and `MaybeUninit::assume_init` before full init. Reading
@@ -106,7 +107,9 @@ Audit unsafe code against these, in observed-frequency order:
 7. **Data races**: `unsafe impl Send/Sync` on types containing raw pointers or
    `Cell`-like internals without an argument; `static mut` (deprecated pattern;
    edition 2024 denies `static_mut_refs`) — use `AtomicX`, `OnceLock`,
-   `Mutex`, or `SyncUnsafeCell` with justification.
+   `Mutex`, or an `UnsafeCell` inside a wrapper with a hand-written
+   `unsafe impl Sync` whose SAFETY comment states who synchronises access
+   (`SyncUnsafeCell` is nightly-only — E0658 on stable 1.97.1).
 
 ## 3a. Layout, provenance, and Pin — the subtler contracts
 
@@ -225,12 +228,14 @@ Any crate with non-trivial `unsafe` runs **Miri in CI**:
 - run: rustup toolchain install nightly --component miri
 - run: cargo +nightly miri test
   env:
-    # many-seeds for nondeterminism; strict provenance catches ptr-int abuse
-    MIRIFLAGS: "-Zmiri-strict-provenance"
+    # many-seeds reruns under seeds 0..64 to vary scheduling/allocation
+    # nondeterminism; strict provenance catches ptr-int abuse
+    MIRIFLAGS: "-Zmiri-strict-provenance -Zmiri-many-seeds"
 ```
 
-- Miri checks the (Tree Borrows / Stacked Borrows) aliasing model, init,
-  alignment, leaks — but **only on executed paths**: unsafe code without tests
+- Miri checks the aliasing model — **Stacked Borrows by default**, Tree
+  Borrows opt-in via `-Zmiri-tree-borrows` —
+  plus init, alignment, leaks — but **only on executed paths**: unsafe code without tests
   is unaudited code. Write tests that exercise every unsafe branch.
 - Miri can't run FFI/syscall-heavy paths; for those use sanitizers:
   `RUSTFLAGS="-Zsanitizer=address" cargo +nightly test` (ASan), TSan for

@@ -314,7 +314,7 @@ substitution in help text** rather than literal characters. `--severity=error` s
 
 - [ ] `grep -rn 'eval ' --include='*.sh'` → every hit CRITICAL until proven constant-input
       (SC2294 hints at array-eval misuse).
-- [ ] `grep -rn 'bash -c\|sh -c' --include='*.sh' Makefile* Dockerfile*` with `$` inside
+- [ ] `grep -rn 'bash -c\|sh -c' --include='*.sh' --include='Makefile*' --include='Dockerfile*' --include='*.mk' .` with `$` inside
       the string → CRITICAL/HIGH.
 - [ ] `ssh .*\$` and `su -c .*\$` — remote re-parsing injection; check for `printf '%q'`.
 - [ ] SC2064 — `trap "$cmd" ...` with double quotes (expands now, runs later — often

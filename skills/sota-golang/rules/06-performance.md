@@ -26,7 +26,7 @@ go tool pprof -sample_index=alloc_space -http=:8081 '.../debug/pprof/heap'      
 curl -s 'localhost:6060/debug/pprof/goroutine?debug=2'                             # goroutine dump (leak hunt)
 go tool pprof '.../debug/pprof/mutex'     # contention; needs runtime.SetMutexProfileFraction(>0)
 go tool pprof '.../debug/pprof/block'     # blocking; needs runtime.SetBlockProfileRate(>0)
-curl -s 'localhost:6060/debug/pprof/goroutineleak'  # 1.26 experimental leak profile (GOEXPERIMENT=goroutineleakprofile)
+curl -s 'localhost:6060/debug/pprof/goroutineleak?debug=1'  # leak profile: GA in 1.27; 1.26 needs GOEXPERIMENT=goroutineleakprofile
 ```
 
 Reading order for a perf complaint: CPU profile (flame graph) → if CPU is in
@@ -144,8 +144,9 @@ You don't fight every escape — just know the triggers on hot paths:
 Defaults first; tune only with metrics (`runtime/metrics`, GC CPU fraction,
 RSS). Go 1.26 ships the Green Tea GC by default (10–40% lower GC overhead,
 more on AVX-512-class CPUs) — re-baseline GC metrics after upgrading before
-re-tuning; `GOEXPERIMENT=nogreenteagc` is a temporary escape hatch slated for
-removal in 1.27.
+re-tuning; `GOEXPERIMENT=nogreenteagc` is a temporary escape hatch announced
+for removal — still accepted by go1.27.1 (measured), so verify per release
+before relying on it.
 
 - **`GOMEMLIMIT`** (1.19+) is the main knob in containers: set to ~90% of the
   container memory limit (`GOMEMLIMIT=900MiB` for a 1Gi pod). It's a soft
@@ -210,8 +211,9 @@ profiler) so the incident carries its own evidence.
   write contention before `sync.Map`.
 - Sort with `slices.SortFunc` (no interface boxing) over `sort.Slice`.
 - JSON dominating? `json.NewDecoder`/`Encoder` streaming, smaller structs,
-  `encoding/json/v2` (GOEXPERIMENT=jsonv2 — still experimental as of 1.26)
-  or a faster codec — measure.
+  `encoding/json/v2` (1.26: behind `GOEXPERIMENT=jsonv2`; since 1.27 available by
+  default, with `encoding/json` itself backed by v2 — opt out with
+  `GOEXPERIMENT=nojsonv2`) or a faster codec — measure.
 
 ## Audit checklist
 

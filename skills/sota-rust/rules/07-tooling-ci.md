@@ -28,6 +28,8 @@ dbg_macro = "deny"
 todo = "deny"
 undocumented_unsafe_blocks = "deny"
 await_holding_lock = "deny"
+# nursery opt-ins (the group is not enabled above):
+redundant_clone = "warn"           # rules/01, rules/06
 
 # member crates: [lints] workspace = true
 ```
@@ -278,8 +280,20 @@ this skill:
   returned opaques suddenly borrow more.
 - `unsafe extern` blocks and unsafe attributes (`#[unsafe(no_mangle)]`) —
   FFI declarations are now explicitly trust-me-marked.
-- Temporaries in `if let`/match scrutinees drop sooner (tail-expression
-  temporary scope) — re-check `RefCell`/lock guards in conditions.
+- **`if let` scrutinee temporaries** now drop before the `else` block (were:
+  end of the whole `if let`) — a `RefCell` borrow or lock guard taken in the
+  condition is released before `else` runs. **`match` scrutinee temporaries
+  are unchanged**: a guard created in the scrutinee still lives through every
+  arm, so `match m.lock().unwrap().get() { … }` holds the lock across the arms.
+  Separately, **tail-expression temporaries** of a block now drop before the
+  block's locals. Measured on rustc 1.97.1: 2021 printed `else-body` then the
+  `if let` temporary's drop, 2024 the reverse; the `match` order was identical.
+- **Newly `unsafe` functions**: `std::env::set_var`, `std::env::remove_var`
+  and `CommandExt::before_exec` (E0133 without an `unsafe` block on 1.97.1).
+  Setting the environment races any thread that reads it, so call these only
+  before spawning threads or starting an async runtime (first lines of `main`),
+  with a `// SAFETY:` comment saying so; prefer passing an explicit config
+  struct over mutating the process environment, and `Command::env` for a child.
 - `Future`/`IntoFuture` in prelude; `gen` keyword reserved.
 - Resolver v3 (MSRV-aware) default with edition 2024 (§4).
 
@@ -296,8 +310,18 @@ this skill:
   and doc-promised behavior changes.
 - **Release automation**: `release-plz` (or `cargo-release`) — version bump
   from conventional commits, changelog generation, tag, `cargo publish` with
-  `--locked` from CI with a scoped registry token. Manual `cargo publish`
-  from laptops drifts from the audited lockfile and skips the gates.
+  `--locked` from CI. Authenticate with **crates.io Trusted Publishing**
+  (available since July 2025 for GitHub Actions; GitLab CI configs exist in the
+  crates.io source — needs verification at crates.io/docs/trusted-publishing):
+  the job gets `permissions: id-token: write`, runs in a protected GitHub
+  `environment` (with required reviewers) and exchanges its OIDC token via
+  `rust-lang/crates-io-auth-action` (pinned by SHA) for a short-lived publish
+  token — no stored secret. Fill in the trusted-publisher config's optional
+  `environment` field: left empty, any environment in that workflow may
+  publish. A scoped, expiring registry token
+  (`publish-update` on the named crates) is the fallback for other CI.
+  Manual `cargo publish` from laptops drifts from the audited lockfile and
+  skips the gates. (blog.rust-lang.org, 2025-07-11 crates.io update.)
 - Changelog discipline: keep a human-readable CHANGELOG.md (generated or
   curated); "see git log" is not a changelog. Yanked releases
   (`cargo yank`) for published-broken versions — yank doesn't delete, it
@@ -377,10 +401,16 @@ gate (rules/06). Cache with `Swatinem/rust-cache`; pin action SHAs (rules/05).
       `missing_safety_doc`); docs.rs metadata for feature-gated crates;
       doc job with `-D warnings`.
 - [ ] Edition: new crates on 2024; pre-2024 crates have a migration note or
-      reason; post-migration, re-audit `static mut` and RPIT capture changes.
+      reason; post-migration, re-audit `static mut` and RPIT capture changes,
+      locks/borrows in `if let` vs `match` scrutinees, and every
+      `unsafe { env::set_var | remove_var }` — `rg 'set_var|remove_var' -t rust`
+      (each must run before any thread or runtime starts, with a SAFETY comment).
 - [ ] Published libraries: `cargo semver-checks` in release CI; publishing
       automated (`release-plz`/`cargo-release`) with `--locked`, not from
-      laptops; CHANGELOG maintained.
+      laptops; publish job uses Trusted Publishing (`id-token: write`,
+      `crates-io-auth-action`, environment-gated) or else a scoped token —
+      `rg 'CARGO_REGISTRY_TOKEN' .github/` with no `crates-io-auth-action`
+      beside it = Low; CHANGELOG maintained.
 - [ ] Reproducibility: `Cargo.lock` committed, toolchain pinned, CI action
       SHAs pinned, `rust-cache` keyed correctly (not caching stale clippy).
 - [ ] Quick greps: `rg 'dbg!|println!' -t rust -g '!*test*' -g '!*/bin/*'`

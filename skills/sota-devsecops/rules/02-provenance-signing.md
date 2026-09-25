@@ -193,6 +193,11 @@ Long-lived registry tokens in CI are the npm/PyPI compromise vector. Replace the
   expire silently and break the release pipeline. The provenance badge lets consumers
   verify the package was built from the public repo by the stated workflow — build
   origin, not code safety (§2.1).
+- **crates.io**: Trusted Publishing has been available since July 2025. GitHub Actions
+  exchanges an OIDC token for a short-lived crates.io token through
+  `rust-lang/crates-io-auth-action`, which needs `id-token: write`, so no `CARGO_REGISTRY_TOKEN`
+  secret is stored (blog.rust-lang.org, 2025-07-11). A scoped API token is the fallback
+  for CI systems it does not support. Detail: `sota-rust` rules/07.
 - **Registry credentials on developer machines**: stay logged out of the registry CLI day
   to day (`npm logout` invalidates the token server-side), so an install-time worm finds
   nothing in `~/.npmrc` to steal. When a token is needed, make it an npm granular token
@@ -208,9 +213,9 @@ Long-lived registry tokens in CI are the npm/PyPI compromise vector. Replace the
   OIDC. Each npm recovery code works once, and using one places a 72-hour hold on
   publishing and token creation, so store the codes offline, away from the second-factor
   device. (OWASP: NPM Security cheat sheet)
-- **Rules for both**: publish only from a tag-triggered, environment-gated workflow on the
+- **Rules for every registry**: publish only from a tag-triggered, environment-gated workflow on the
   protected release workflow file; never from `workflow_dispatch` on arbitrary refs.
-- Audit: `NPM_TOKEN`/`PYPI_API_TOKEN`(account-scoped) in secrets = High (and for npm, a
+- Audit: `NPM_TOKEN`/`PYPI_API_TOKEN`/`CARGO_REGISTRY_TOKEN` (account-scoped) in secrets where the registry offers trusted publishing = High (and for npm, a
   reliability bug too — see 90-day cap above); scoped token without 2FA-enforced org =
   High; trusted publisher bound to a reusable/unprotected workflow = Medium.
 

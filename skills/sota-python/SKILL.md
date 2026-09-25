@@ -56,7 +56,9 @@ When reviewing existing Python code:
 1. **Sweep mechanically first.** Run the "Audit checklist" block at the end of every relevant
    rules file — they are ordered grep/ruff/bandit commands. Start with
    `uvx ruff check --select F,B,S,ASYNC,DTZ,E722,BLE --statistics .` for a heat map, then
-   `uvx bandit -r src/ -ll` and `uvx pip-audit` for security baselines.
+   `uvx bandit -r src/ -ll` and a pip-audit of the *project's* lock for security baselines —
+   `uv export --format requirements-txt --no-emit-project | uvx pip-audit --disable-pip -r /dev/stdin`
+   (bare `uvx pip-audit` audits its own tool venv and exits 0 on any project — rules/08 §1).
 2. **Then read for design:** trust-boundary placement (validation at edges?), exception
    strategy, async ownership of tasks, N+1 patterns, cache invalidation, test independence.
    Greps find syntax; you find architecture.
@@ -98,7 +100,7 @@ information, not omission).
 
 | File | Read this when... |
 |---|---|
-| `rules/01-tooling-project-setup.md` | starting/scaffolding a project; reviewing pyproject/uv/ruff/CI setup; choosing type checker; questions about uv lockfiles, PEP 723 scripts, src/ layout, 3.12–3.14 features, free-threading; **what 3.13 REMOVED (PEP 594)** before a floor bump |
+| `rules/01-tooling-project-setup.md` | starting/scaffolding a project; reviewing pyproject/uv/ruff/CI setup; choosing type checker; questions about uv lockfiles, PEP 723 scripts, src/ layout, 3.12–3.14 features, free-threading; **what 3.12/3.13 REMOVED (PEP 594, `distutils`, `imp`, `lib2to3`)** before a floor bump |
 | `rules/02-typing-correctness.md` | annotating APIs; choosing TypedDict vs dataclass vs pydantic; Protocol vs ABC; generics/`Self`/`ParamSpec`; Any leaks; **in-band sentinels (`-1` for absent) — the defect `int \| None` exists to prevent, invisible to the type checker**; `assert_never` exhaustiveness; where runtime validation belongs |
 | `rules/03-idioms-pitfalls.md` | any general Python code; mutable defaults, closures, comprehensions, context managers, pathlib, EAFP, dataclass/enum patterns, itertools/functools; designing exceptions; logging setup; **the public API surface** (`__all__`, keyword-only parameters, `__slots__`, deprecation) |
 | `rules/04-async.md` | any `async def` in sight: TaskGroup vs gather, blocking-the-loop, fire-and-forget, timeouts/cancellation, async generators, anyio, sync-ORM-in-async bugs; **per-request `ContextVar`/thread-local state reset in `finally`** |

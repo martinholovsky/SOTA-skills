@@ -155,12 +155,17 @@ Ship `py.typed` in any annotated library, or downstream checkers see your packag
 ```yaml
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.17
+    rev: <40-hex commit SHA>  # frozen: <latest tag> — written by autoupdate --freeze
     hooks: [{id: ruff, args: [--fix]}, {id: ruff-format}]
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: <40-hex commit SHA>  # frozen: <latest tag>
     hooks: [{id: check-merge-conflict}, {id: detect-private-key}, {id: end-of-file-fixer}]
 ```
+
+Do not hand-type the revs: run `pre-commit autoupdate --freeze`, which resolves each hook repo's
+latest tag and stores its commit SHA with the tag as a comment. A hook repo is third-party code
+that runs on every commit, so it is pinned by SHA for the same reason Actions are (rules/08 §1)
+— a tag can be moved. Re-run it on a schedule so the pins do not rot.
 
 Keep hooks under ~5s; mypy and pytest belong in CI, not pre-commit. CI must re-run the same
 checks (`pre-commit run --all-files`) — local hooks are convenience, not enforcement.
@@ -193,16 +198,24 @@ checks (`pre-commit run --all-files`) — local hooks are convenience, not enfor
 - **3.14 — `compression.zstd`** (PEP 784): stdlib Zstandard, also wired into
   `tarfile`/`zipfile`/`shutil`. Drops the third-party `zstandard` dep on a 3.14+ floor.
 
-## 7a. What 3.13 REMOVED — the PEP 594 cliff
+## 7a. What 3.12 and 3.13 REMOVED — the PEP 594 cliff
 
 §7 is what you gain by raising the floor. This is what breaks, and it is the half that turns
 a routine bump into an outage. **PEP 594 (Status: Final) deprecated ~20 stdlib modules in
-3.11 and CPython removed them in 3.13** — the PEP's own `Python-Version: 3.11` header is the
-*deprecation* version, not the removal one, which is the detail that gets misread.
+3.11; CPython removed three of them in 3.12 and the rest in 3.13** — the PEP's own
+`Python-Version: 3.11` header is the *deprecation* version, not the removal one, which is the
+detail that gets misread.
 
-Removed in 3.13: `telnetlib`, `cgi`, `cgitb`, `crypt`, `nntplib`, `smtpd`, `pipes`,
-`asynchat`, `asyncore`, `imghdr`, `sndhdr`, `sunau`, `aifc`, `audioop`, `chunk`, `uu`,
-`xdrlib`, `mailcap`, `msilib`, `nis`, `spwd`, `ossaudiodev`.
+- **Removed in 3.12 (PEP 594):** `smtpd`, `asynchat`, `asyncore`.
+- **Removed in 3.13 (PEP 594):** `telnetlib`, `cgi`, `cgitb`, `crypt`, `nntplib`, `pipes`,
+  `imghdr`, `sndhdr`, `sunau`, `aifc`, `audioop`, `chunk`, `uu`, `xdrlib`, `mailcap`,
+  `msilib`, `nis`, `spwd`, `ossaudiodev`.
+- **Same cliff, not PEP 594:** `distutils` (PEP 632) and `imp` removed in 3.12; `lib2to3`
+  removed in 3.13. `distutils` can *appear* to survive where setuptools is installed (it ships
+  a shim), so a clean import on your machine proves nothing about a slim image.
+
+Measured 2026-09-25 against `sys.stdlib_module_names`: all 25 present on 3.11.15; the five
+3.12 names absent on 3.12.13; all 25 absent on 3.13.13.
 
 **The failure mode is an ImportError at runtime, not at install time**, and it lands in the
 paths least covered by tests — a `cgi.parse_header()` in a legacy upload handler, `crypt` in
@@ -210,8 +223,8 @@ an old auth shim, `pipes.quote` in a deploy script, `smtpd` in a test fixture. A
 you do not control can also import one; the traceback then names *their* module, not yours.
 
 ```bash
-# BEFORE bumping the floor to 3.13 — grep first, and include your venv, not just src/
-grep -rnE '\b(import|from)\s+(telnetlib|cgi|cgitb|crypt|nntplib|smtpd|pipes|asynchat|asyncore|imghdr|sndhdr|sunau|aifc|audioop|chunk|uu|xdrlib|mailcap|msilib|nis|spwd|ossaudiodev)\b' \
+# BEFORE bumping the floor to 3.12 or 3.13 — grep first, and include your venv, not just src/
+grep -rnE '\b(import|from)\s+(telnetlib|cgi|cgitb|crypt|nntplib|smtpd|pipes|asynchat|asyncore|imghdr|sndhdr|sunau|aifc|audioop|chunk|uu|xdrlib|mailcap|msilib|nis|spwd|ossaudiodev|distutils|imp|lib2to3)\b' \
   --include='*.py' . 
 ```
 
@@ -220,16 +233,27 @@ Two of these have security weight beyond the bump and are called out again in ru
 replacements are not drop-in — `cgi.parse_header` has no stdlib successor, and `crypt` users
 want a password-hashing library, not another stdlib module.
 
-## 8. Free-threading awareness (3.13t/3.14t)
+## 8. Free-threading awareness (3.14t)
 
 Free-threaded CPython (PEP 703, no GIL) is **officially supported since 3.14** (PEP 779) —
 no longer experimental, though still not the default build; single-threaded overhead is down
-to roughly 5–10%. uv installs it via the `t` suffix (`uv python install 3.14t`). Implications:
+to roughly 5–10%. Target `3.14t`, not `3.13t` (experimental). uv installs it via the `t`
+suffix (`uv python install 3.14t`). Implications:
 
 - **Stop assuming the GIL makes code thread-safe.** `dict`/`list` single ops stay atomic, but
   check-then-act sequences (`if key not in d: d[key] = ...`) were never safe and now break
   observably. Guard shared mutable state with `threading.Lock` or use queues — on every build.
-- Library authors: declare support via `Py_mod_gil` / test on `3.13t` if you ship C extensions.
+- **One C extension silently puts the GIL back.** Importing an extension module that does not
+  declare the `Py_mod_gil` slot re-enables the GIL for the whole process with only a
+  `RuntimeWarning` — the service keeps running, just not free-threaded. Make it loud: assert
+  `sys._is_gil_enabled() is False` at startup (after your imports) and in CI, and run CI with
+  `-W error::RuntimeWarning` so the import itself fails. `PYTHON_GIL=0` / `-X gil=0` force the
+  GIL off regardless — a *testing* switch for probing whether an undeclared extension really is
+  thread-safe, not a production fix. Measured 2026-09-25 on 3.14.6t with two one-line test
+  extensions: the one without the slot raised the warning and flipped `_is_gil_enabled()` to
+  `True` (both guards exit 1); the one declaring `Py_MOD_GIL_NOT_USED` kept it `False` (exit 0).
+- Library authors shipping C extensions: declare `Py_mod_gil` only after testing on `3.14t`,
+  and publish `cp314t` wheels.
 - Don't rewrite multiprocessing pools to threads "because no-GIL" until you've profiled on the
   free-threaded build; single-thread perf differs.
 - Decision table for concurrency model is in rules/06.
@@ -297,9 +321,12 @@ Run from repo root. Severity guidance in brackets.
       `grep -n "select" pyproject.toml` (B/S/ASYNC missing from select [LOW])
 - [ ] **Hygiene** — `git ls-files | grep -E "\.venv/|__pycache__|\.pyc$"` (committed artifacts
       [LOW])
-- [ ] **--- PEP 594 removals before a 3.13 floor bump (§7a) [HIGH — ImportError at runtime]
-      ---** —
-      `grep -rnE '\b(import|from)\s+(telnetlib|cgi|cgitb|crypt|nntplib|smtpd|pipes|asynchat|asyncore|imghdr|sndhdr|sunau|aifc|audioop|chunk|uu|xdrlib|mailcap|msilib|nis|spwd|ossaudiodev)\b' --include='*.py' .`
+- [ ] **pre-commit hooks pinned by tag, not SHA (§6) [LOW]** —
+      `grep -nE '^[[:space:]]*rev:[[:space:]]*[^[:space:]#]' .pre-commit-config.yaml | grep -vE 'rev:[[:space:]]*[0-9a-f]{40}([[:space:]]|$)'`
+      (each hit is a movable tag: `pre-commit autoupdate --freeze`)
+- [ ] **--- Stdlib removals before a 3.12/3.13 floor bump: PEP 594, `distutils`, `imp`,
+      `lib2to3` (§7a) [HIGH — ImportError at runtime] ---** —
+      `grep -rnE '\b(import|from)\s+(telnetlib|cgi|cgitb|crypt|nntplib|smtpd|pipes|asynchat|asyncore|imghdr|sndhdr|sunau|aifc|audioop|chunk|uu|xdrlib|mailcap|msilib|nis|spwd|ossaudiodev|distutils|imp|lib2to3)\b' --include='*.py' .`
 - [ ] **Shared mutable state under threads (§8) — HIGH where a free-threaded (`t`) build is
       targeted, MEDIUM otherwise: the GIL never made check-then-act safe** —
       `grep -rlE 'threading\.Thread\(|ThreadPoolExecutor|asyncio\.to_thread' --include='*.py' src/`
@@ -309,3 +336,8 @@ Run from repo root. Severity guidance in brackets.
       `grep -rnE 'if [^:]+ not in [A-Za-z_][A-Za-z0-9_.]*:' --include='*.py' src/` (check-then-act
       on a shared dict or set: a finding only where a thread reaches it with no `threading.Lock`
       held)
+- [ ] **GIL silently re-enabled on a free-threaded target (§8) [MEDIUM where a `t` build is
+      the deployment target]** — `grep -rn '_is_gil_enabled' --include='*.py' .` (no hit = nothing
+      notices an undeclared extension turning the GIL back on) ;
+      `grep -rnE 'PYTHON_GIL=0|-X ?gil=0' --include='*.y*ml' --include='Dockerfile*' --include='*.sh' .`
+      (the testing override shipped to production)

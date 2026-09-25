@@ -90,7 +90,7 @@ progressive rollout validated on live traffic.
       load? (rules/07)); `grep -rniE 'safetensors|onnx|torchscript' --include='*.py' . | head` ;
       `grep -rniE 'torchserve|torch-model-archiver' . | head` (EOL runtime (archived Aug 2025,
       no security patches) — HIGH);
-      `ls Dockerfile* requirements*.txt poetry.lock uv.lock conda*.yml 2>/dev/null` (serving env
+      `find . -maxdepth 3 -not -path '*/node_modules/*' \( -name 'Dockerfile*' -o -name 'requirements*.txt' -o -name poetry.lock -o -name uv.lock -o -name 'conda*.yml' \)` (serving env
       pinned?)
 - [ ] **Registry-gated deploy + rollback — HIGH** —
       `out=$(grep -rniE 'registry|stage|promote|production|rollback|previous.*model|champion|challenger' . 2>&1); rc=$?` ;

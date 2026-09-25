@@ -13,7 +13,9 @@ lives in `sota-testing`.
   consistency and reproducibility matter more than the choice.
 - Pin the build-tool version (Maven Wrapper `mvnw` / Gradle Wrapper `gradlew`
   with a checksum) so every machine and CI uses the same version.
-- Target the current LTS (Java 25) via `release`/toolchains; set
+- Target the latest LTS (Java 25 at the time of writing; verify at the
+  [Oracle Java SE support roadmap](https://www.oracle.com/java/technologies/java-se-support-roadmap.html))
+  via `release`/toolchains; set
   `--release N` (not just `-source`/`-target`) so you don't accidentally use
   newer APIs on an older bytecode target.
 
@@ -116,7 +118,10 @@ lives in `sota-testing`.
 - A PR build runs: compile with `-Werror`-equivalent (Error Prone as error),
   unit + integration tests, SpotBugs/detekt, dependency CVE scan, coverage
   (**JaCoCo**) with a threshold, and format check. Fail the build on any.
-- **JUnit 5** is the standard runner; **Testcontainers** for real-dependency
+- **JUnit (the Jupiter API)** is the standard runner. JUnit 6 has been the current major
+  line since 2025-09-30 and needs Java 17+, so check the
+  [JUnit release notes](https://docs.junit.org/current/release-notes/) for the latest. Use
+  **Testcontainers** for real-dependency
   integration tests (DB/broker) — wire them here; *strategy* is `sota-testing`.
   Run with a fixed timezone/locale/seed for determinism.
 - Build reproducibly: `-Dproject.build.outputTimestamp` / Gradle reproducible
@@ -194,7 +199,7 @@ lives in `sota-testing`.
       profile the production deploy activates)
 - [ ] **Static analysis configured?** —
       `grep -rniE 'errorprone|nullaway|spotbugs|findsecbugs|pmd|detekt|ktlint|spotless' . --include='pom.xml' --include='build.gradle*' --include='*.yml' || echo "no static analysis configured"`
-- [ ] **Coverage gate + JUnit5/Testcontainers?** —
+- [ ] **Coverage gate + JUnit Jupiter/Testcontainers?** —
       `grep -rniE 'jacoco|junit-jupiter|testcontainers' pom.xml build.gradle* 2>/dev/null`
 - [ ] **Repository over HTTPS, trusted only** —
       `grep -rnE 'http://|maven \{|repositories' pom.xml build.gradle* settings.* 2>/dev/null | grep -i 'http://'`

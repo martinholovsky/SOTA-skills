@@ -148,7 +148,7 @@ dependency updates + a fast patch path is the actual control (`sota-devsecops`).
       ;
       `grep -rnE '\$?fetch\(|ofetch\(|axios\.|got\(' --include='*.ts' server app | grep -iE 'req\.|query|params|headers|host'`
       ;
-      `grep -rnE 'X-Forwarded-Host|req\.headers\.host|getRequestHost' --include='*.ts' server app proxy.* middleware.*`
+      `grep -rnE 'X-Forwarded-Host|req\.headers\.host|getRequestHost' --include='*.ts' --include='*.js' --include='*.mjs' --exclude-dir=node_modules .`
 - [ ] **Rewrite/proxy destination built from the request (HIGH)** —
       `` grep -rnE "destination:[[:space:]]*['\"\`]https?://:|NextResponse\.rewrite\(.*(headers\.get|searchParams\.get|cookies\.get)|proxyRequest\(.*(getHeader|getQuery|getRouterParam|getCookie)" --include='*.ts' --include='*.js' --include='*.mjs' --exclude-dir=node_modules . ``
       (single-line candidates; also read every absolute `destination:` and `proxy:` target

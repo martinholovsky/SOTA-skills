@@ -7,8 +7,9 @@ lives in `sota-testing`.
 
 ## 1. Targeting & project hygiene
 
-- Target the current LTS TFM (`<TargetFramework>net10.0</TargetFramework>`); pin
-  the SDK with `global.json` so every machine/CI builds with the same version.
+- Target the latest LTS TFM (`<TargetFramework>net10.0</TargetFramework>` at the time of writing;
+  verify at the [.NET support policy](https://dotnet.microsoft.com/platform/support/policy/dotnet-core)
+  page); pin the SDK with `global.json` so every machine/CI builds with the same version.
 - Centralize settings in **`Directory.Build.props`** and dependency versions in
   **`Directory.Packages.props`** (Central Package Management) so versions are
   consistent and reviewed in one place.
@@ -96,8 +97,22 @@ lives in `sota-testing`.
   `UseDeveloperExceptionPage()` or a validation callback returning `true` carry over the
   same way. *(OWASP: Vulnerable Dependency Management cheat sheet; Software Supply Chain
   Security cheat sheet; Secure Coding with AI cheat sheet; SCVS V1, V6.)*
-- Verify **signed packages**; generate an **SBOM** for releases. See
-  `sota-devsecops`.
+- **A package signature is enforced only when you require it.** NuGet's "Manage package trust
+  boundaries" page: *"Packages signed with untrusted certificates are considered as unsigned and are
+  installed without any warnings or errors"*. To make signing a control, set `signatureValidationMode`
+  to `require` in `nuget.config` and list the author or repository certificates you accept (by
+  fingerprint, optionally `<owners>`) under `<trustedSigners>`. That page documents it for NuGet 4.9+
+  and Visual Studio 15.9+ on Windows; whether `dotnet restore` enforces it on Linux/macOS is **not
+  verified here** — test it on your CI runner with an unsigned package before relying on it. Generate
+  an **SBOM** for releases. See `sota-devsecops`.
+- **Runtime and framework patch level is an audit surface** (`rules/04` §4 points here). The memory-safe runtime's residual risk includes
+  framework CVEs, e.g. CVE-2025-55315 (Kestrel HTTP request smuggling, fixed in 8.0.21/9.0.10/10.0 RC2)
+  and CVE-2026-45591 (SignalR/Blazor Server MessagePack nested-array DoS, fixed in 8.0.28/9.0.17/10.0.9,
+  June 2026). CVE-2025-55315 also covers the `Microsoft.AspNetCore.Server.Kestrel.Core` **package**
+  ≤ 2.3.0 that ASP.NET Core 2.3 on .NET Framework uses (fixed in 2.3.6, per the GitHub advisory
+  GHSA-5rrx-jjjq-q2r5); `dotnet --list-runtimes` cannot see a package, so check the lock files too.
+  Self-contained/AOT-published apps embed the framework — they need a rebuild and redeploy, not just
+  host patching.
 - **A strong name is an identity, not a publisher.** Microsoft: *"Do not rely on strong names for
   security. They provide a unique identity only."*, and on .NET Core / .NET 5+ *"the runtime never
   validates the strong-name signature"*. Measured on the .NET 10 SDK: a delay-signed assembly whose
@@ -164,14 +179,14 @@ lives in `sota-testing`.
       (assembly/module-scoped, invisible at the call site);
       `grep -rn '<NoWarn>' --include='*.csproj' --include='*.props' .` (whole-project,
       whole-solution if in Directory.Build.props);
-      `grep -rnE 'dotnet_diagnostic\.[A-Z]+[0-9]+\.severity *= *none' .editorconfig 2>/dev/null`
+      `grep -rnE 'dotnet_diagnostic\.[A-Z]+[0-9]+\.severity *= *none' --include='.editorconfig' --include='*.globalconfig' .`
 - [ ] **"Build and Suppress Active Issues" is BASELINING: Microsoft's own term for suppressing
       every current violation at once. A large GlobalSuppressions.cs with uniform timestamps is
       its signature, and it means the analyser's verdict on that code was never read. NOTE:
       [SuppressMessage] is conditional on the CODE_ANALYSIS compilation symbol, so the attribute
       can be present in source and absent from the shipped assembly.**
 - [ ] **TFM/SDK pinned? settings centralized?** —
-      `grep -rnE '<TargetFramework' **/*.csproj 2>/dev/null | head` ;
+      `grep -rnE '<TargetFramework' --include='*.csproj' --include='*.props' .` ;
       `ls global.json Directory.Build.props Directory.Packages.props 2>/dev/null | grep -q . || echo "no central build config"`
 - [ ] **Nullable + warnings-as-errors + analyzers?** —
       `err=$(grep -rniE 'TreatWarningsAsErrors|<Nullable>|EnableNETAnalyzers|AnalysisLevel' --include='*.csproj' --include='Directory.Build.props' . 2>&1 >/dev/null); rc=$?` ;
@@ -186,8 +201,9 @@ lives in `sota-testing`.
 - [ ] **Target framework past end of support? HIGH** —
       `grep -rhoE '<TargetFrameworks?>[^<]+' --include='*.csproj' --include='*.props' .` ;
       compare each `netX.Y` with
-      `curl -fsS https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/releases-index.json | grep -oE '"(channel-version|support-phase)": *"[^"]*"' | paste - -`
-      (`eol` = no security patches; read it at audit time, never from memory. `net4x` targets
+      `curl -fsS https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json | grep -oE '"(channel-version|support-phase|eol-date)": *"[^"]*"' | awk '/channel-version/{if(l)print l; l=$0; next}{l=l" "$0} END{print l}'`
+      (one line per channel; `eol` = no security patches, and a near `eol-date` is the migration
+      deadline; a preview channel has no `eol-date` yet; read it at audit time, never from memory. `net4x` targets
       are .NET Framework, which this index does not list — check its lifecycle separately)
 - [ ] **NuGet locking + source mapping + CVE scan?** —
       `find . -name packages.lock.json -not -path '*/obj/*' | head -1` (empty = no lockfile) ;
@@ -200,10 +216,18 @@ lives in `sota-testing`.
       for a `.pfx`)** (§3) — `git ls-files '*.snk' '*.pfx' '*.p12'` (a full `.snk` is a
       key pair; a `.pfx` is an Authenticode key) ;
       `grep -rniE 'nuget verify|signtool[^ ]* verify|Get-AuthenticodeSignature|osslsigncode verify' --include='*.yml' --include='*.yaml' --include='*.ps1' --include='*.sh' . || echo "no publisher-signature check in CI or scripts"`
+- [ ] **Package signatures required, not just present? MEDIUM** (§3) —
+      `grep -rniE 'signatureValidationMode|<trustedSigners' --include='nuget.config' --include='NuGet.Config' --include='NuGet.config' . || echo "signatures not required: an untrusted-cert-signed package installs as unsigned"`
+      (want `require` plus a `<trustedSigners>` entry; confirm your restore client enforces it)
+- [ ] **Runtime / framework patch level — HIGH** (§3) — `dotnet --list-runtimes` on each host and
+      base image (ASP.NET Core < 8.0.21/9.0.10 = CVE-2025-55315; < 8.0.28/9.0.17/10.0.9 = CVE-2026-45591);
+      `grep -rn 'Microsoft\.AspNetCore\.Server\.Kestrel\.Core' --include='*.csproj' --include='packages.lock.json' --include='packages.config' --include='Directory.Packages.props' .`
+      (≤ 2.3.0 = CVE-2025-55315, need 2.3.6); check container base-image tags; self-contained/AOT
+      apps need a rebuild
 - [ ] **Formatting + deterministic build in CI?** —
-      `grep -rniE 'dotnet format|verify-no-changes|Deterministic|ContinuousIntegrationBuild' .github/ *.yml **/*.csproj 2>/dev/null | head`
+      `grep -rniE 'dotnet format|verify-no-changes|Deterministic|ContinuousIntegrationBuild' --include='*.yml' --include='*.yaml' --include='*.csproj' --include='*.props' .`
 - [ ] **Test runner + coverage?** —
-      `grep -rniE 'xunit|nunit|mstest|coverlet|testcontainers' **/*.csproj 2>/dev/null | head`
+      `grep -rniE 'xunit|nunit|mstest|coverlet|testcontainers' --include='*.csproj' --include='*.props' .`
 - [ ] **Package code that runs at build (`build*/…props`/`.targets` imported from packages) —
       HIGH if any is unreviewed** (§3) — after a restore, every hit is a package file MSBuild
       imports and runs:

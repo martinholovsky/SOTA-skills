@@ -102,7 +102,39 @@ default". Each of the three is the correct answer to a question nobody asked.
   `du`, the tool's report and `df` is wrong; ask which the decision needs. General form:
   `sota-observability` rules/05 §7a.
 
+## 5b. A filter that drops the file you named
+
+A recursive grep given `--include='*.rb'` and the file `config.ru` never reads `config.ru`. `--include` filters
+**every** file grep would read, including the ones named on the command line, so a named file
+that does not match the glob is skipped: exit `1`, empty output, the same bytes as "not
+found". Measured 2026-09-25 on BSD grep (macOS), ugrep, and GNU grep 3.11: all three skip it.
+ripgrep does not: `rg -g '*.rb' PAT config.ru` still searches `config.ru`, because rg always
+reads paths you name. So a probe that works under `rg` can break when it is rewritten for grep.
+
+It hides in audit probes because the pair reads as belt and braces: a sweep filter plus the
+one file you care about. Three shipped probes in this library had the shape. A Sinatra CSRF
+check reported HIGH on every app, because it could never see the line it was looking for. A
+session-cookie check always came back clean. A .NET secrets check never opened
+`appsettings.json`.
+
+```sh
+grep -rn 'Rack::Protection' --include='*.rb' config.ru              # BAD  — config.ru skipped
+grep -rn 'Rack::Protection' config.ru                               # GOOD — a named file needs no filter
+grep -rn 'Rack::Protection' --include='*.rb' --include='config.ru' . # GOOD — the filter admits it
+```
+
+- **A named file needs no filter, and a filter needs `.` or a directory.** Mixing the two is
+  the bug. If you need both, add an `--include` that matches the named file's basename.
+- **Test the probe on a fixture where it must hit.** A probe that cannot fire exits the same
+  way as a clean codebase does. `rules/06` §2's positive control is what catches it.
+- **Invariant 37** fails the build on this shape in any skill file.
+
 ## Audit checklist
+
+- [ ] **A search filter next to a named file** (§5b): does any `grep` command combine
+      `--include` with an explicitly named file the glob does not match? The named file
+      is skipped and the command exits 1 exactly as for "no match". Run the probe on a
+      fixture that must hit before trusting a clean result.
 
 - [ ] **Does the selector name the population member the question does?** (§5a) — *newest*
       is not *default* (`sort -V | tail -1` returns a backports kernel), *apparent size* is

@@ -121,7 +121,7 @@ exist. `sota-code-security/rules/11` sat unlisted for two releases before 15 exi
   policy, PSScriptAnalyzer), 08 ad-hoc side effects (blast radius, process-table exhaustion —
   split out of 06 in v1.42.2),
   09 listing & selection (a lister's default page read as a population, a selector answering a
-  neighbouring question — split out of 06 · v1.43.1)
+  neighbouring question, a `--include` filter that drops the file you named — split out of 06 · v1.43.1)
 - **sota-docs-workflow/rules**: 01 documentation architecture, 02 API reference & changelogs, 03
   code review & PR workflow, 04 commits/branches/ releases, 05 spec-driven development
 - **sota-ux-writing/rules**: 01 voice/tone & plain language, 02 microcopy & components, 03 errors

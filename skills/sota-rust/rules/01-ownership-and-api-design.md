@@ -235,7 +235,8 @@ match event { Event::Open => ..., Event::Close => ..., Event::Ping => {} }
   non-breaking. Don't mark closed sets (e.g. `Ordering`-like) — it destroys
   downstream exhaustiveness checking for no gain.
 - `let ... else` for refutable bindings with early return; `matches!()` for
-  boolean checks; `if let` chains (stable since 1.88) over nested `if let`;
+  boolean checks; `if let` chains (stable since 1.88, edition 2024 only — 2021
+  rejects them) over nested `if let`;
   `if let` guards in `match` arms (`Some(x) if let Ok(y) = f(x) =>`, stable
   since 1.95) over guard-then-rematch patterns.
 
@@ -302,8 +303,9 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 
 - [ ] `rg '\.clone\(\)' -t rust` — review each hit near a `for`/borrow error
       fix; flag clones of `String`/`Vec`/large structs that exist only to
-      appease borrowck. `clippy::redundant_clone` (note: known false negatives,
-      still run it).
+      appease borrowck. `clippy::redundant_clone` — a **nursery** lint, so
+      enable it explicitly (`all` + `pedantic` leave it off); known false
+      negatives, still run it.
 - [ ] `rg 'fn \w+\((&self, )?\w+: (String|Vec<|PathBuf)' -t rust` — owned params
       that are only read → should borrow.
 - [ ] `rg '&String|&Vec<|&PathBuf|&Box<' -t rust` — double-indirection params

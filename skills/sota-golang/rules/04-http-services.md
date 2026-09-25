@@ -94,14 +94,17 @@ resp, err := client.Do(req)
 if err != nil {
     return err // resp is nil on error; do NOT touch resp.Body here
 }
-// Connection reuse requires the body fully read before Close. Defers run
-// LIFO: register Close first so the bounded drain executes before it.
-defer resp.Body.Close()
+defer resp.Body.Close() // always — the one non-negotiable line
+// Before 1.27 only: reuse needs the body read to EOF first. Defers run LIFO,
+// so this bounded drain executes before Close.
 defer io.Copy(io.Discard, io.LimitReader(resp.Body, 4<<10))
 ```
 
-Unclosed bodies leak FDs and goroutines;
-undrained bodies kill connection reuse (LOW perf, MEDIUM at scale). Always
+Since 1.27 an HTTP/1 `Close` itself drains a short unread remainder (up to
+256 KiB within 50 ms; `maxPostCloseReadBytes` in `net/http/transport.go`)
+before returning the connection to the pool, so the manual drain is only
+needed on 1.26. Unclosed bodies leak FDs and goroutines on every version;
+undrained bodies on 1.26 kill connection reuse (LOW perf, MEDIUM at scale). Always
 check `resp.StatusCode` — `err == nil` for 4xx/5xx.
 
 Create **one client per upstream at startup**, inject it; never build a
@@ -130,7 +133,9 @@ func run(ctx context.Context) error {
     shCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
     defer cancel()
     if err := srv.Shutdown(shCtx); err != nil {       // stops Accept, waits for handlers
-        return fmt.Errorf("shutdown: %w", err)        // DeadlineExceeded => srv.Close() already forced
+        // On timeout Shutdown just returns ctx.Err(); it closes nothing still
+        // active. Force the stragglers explicitly.
+        return errors.Join(fmt.Errorf("shutdown: %w", err), srv.Close())
     }
     return nil
 }
@@ -244,21 +249,31 @@ http.SetCookie(w, &http.Cookie{
 credible phishing launchpad. Validate against an allowlist of paths, or parse and require
 `u.Host == ""` — a leading `//evil.com` is a protocol-relative URL, not a path.
 
-**Header propagation on the client's.** `http.Client` follows redirects by default and
-**re-sends your headers to the new host**. A redirect to an attacker-controlled origin then
-receives the `Authorization` header. Go's default `CheckRedirect` stops after 10 hops but
-does not strip credentials across hosts.
+**Header propagation on the client's.** `http.Client` follows redirects by default (10 hops)
+and copies the first request's headers onto each hop. It strips only `Authorization`,
+`WWW-Authenticate`, `Cookie`, `Cookie2` and `Proxy-Authorization`/`-Authenticate`, and only
+when the new hostname is neither the original nor a subdomain of it (`makeHeadersCopier`,
+`shouldCopyHeaderOnRedirect` in `net/http/client.go`). So: **custom credential headers**
+(`X-Api-Key`, `X-Auth-Token`, …) go to any host; `Authorization` survives a redirect to a
+subdomain and to a different port or `https`→`http` on the same hostname. Headers are copied
+*before* `CheckRedirect` runs, so deleting there works:
 
 ```go
-// GOOD — do not carry credentials across an origin change
+// GOOD — strip every credential header on any scheme/host/port change
 client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
-    if req.URL.Host != via[0].URL.Host {
-        req.Header.Del("Authorization")
-        req.Header.Del("Cookie")
+    if len(via) >= 10 { return errors.New("too many redirects") }
+    if o := via[0].URL; req.URL.Scheme != o.Scheme || req.URL.Host != o.Host {
+        for _, h := range []string{"Authorization", "Cookie", "X-Api-Key"} { // + yours
+            req.Header.Del(h)
+        }
     }
     return nil
 }
+// Or: return http.ErrUseLastResponse (never follow), or allowlist req.URL.Host.
 ```
+
+gosec G119 (an analyzer) flags a redirect callback that copies headers across origins or
+re-adds sensitive ones; it cannot see a missing strip of *your* custom header — read those.
 
 ## 4c. Debug surfaces and release mode
 
@@ -387,8 +402,10 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
       Secure/HttpOnly/SameSite [HIGH]);
       `grep -rnE 'http\.Cookie\{' -A6 --include='*.go' . | grep -L 'HttpOnly' 2>/dev/null` ;
       `grep -rnE 'Redirect\(|Location.*r\.(URL|Form|Header)' --include='*.go' .` (open redirect
-      [HIGH]); `grep -rn 'CheckRedirect' --include='*.go' .` (absent = headers cross origins
-      [MEDIUM])
+      [HIGH]); `grep -rn 'CheckRedirect' --include='*.go' .` (absent while a client sets a custom
+      credential header = that header crosses origins [MEDIUM]) ; `gosec -include=G119 ./...` ;
+      `grep -rniE 'Header\.(Set|Add)\("x-[a-z-]*(key|token|auth|secret)' --include='*.go' .`
+      (custom credential headers the default redirect policy forwards to any host)
 - [ ] **App-set cookie attribute defaults: Secure/HttpOnly/SameSite off (§4a) — MEDIUM, HIGH
       for a token or OAuth `state`** —
       `grep -rnE '\.SetCookie\([^)]*,[[:space:]]*false[[:space:]]*(,|\))' --include='*.go' .`

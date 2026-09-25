@@ -11,21 +11,32 @@ Cheat Sheets; php.net session security manual):
 
 ```ini
 session.use_strict_mode  = 1       ; reject attacker-supplied (uninitialized) IDs
-session.use_only_cookies = 1       ; never accept IDs from URLs
 session.cookie_secure    = 1       ; HTTPS-only cookie
 session.cookie_httponly  = 1       ; no JS access
 session.cookie_samesite  = Lax     ; Strict where UX allows
-session.sid_length       = 48      ; entropy of the ID (pre-8.4 tunable)
 session.use_cookies      = 1       ; the cookie is the only carrier (built-in default)
-session.use_trans_sid    = 0       ; no ID rewritten into URLs/forms (default)
 session.auto_start       = 0       ; the app, or its framework, starts the session
 session.name             = app_sid ; not PHPSESSID, which names the stack
 session.save_path        = /var/lib/app-sessions  ; this pool's own dir, mode 0700
+; PHP 8.3 only -- deprecated on 8.4+, see the next bullet:
+; session.use_only_cookies = 1     ; never accept IDs from URLs
+; session.use_trans_sid    = 0     ; no ID rewritten into URLs/forms
 ```
 
+- **PHP 8.4 deprecated the session tunables** (php-src PHP-8.4 UPGRADING): changing
+  `sid_length` or `sid_bits_per_character` at all, and `use_only_cookies`, `use_trans_sid`,
+  `trans_sid_tags`, `trans_sid_hosts` and `referer_check`. Measured on 8.5.9 with
+  `display_startup_errors=1`: `sid_length=48`, `sid_bits_per_character=5` and any
+  `referer_check` value print `Deprecated: PHP Startup`, and so do `use_only_cookies=0` and
+  `use_trans_sid=1`; the secure values `1` and `0` stay silent. So on 8.4+ delete these lines
+  and keep the built-in defaults (a 32-character ID, cookie-only). A `sid_length` or
+  `sid_bits_per_character` pin on 8.4+ is LOW (a deprecation heading for removal); turning
+  `use_only_cookies` off or `use_trans_sid` on is a finding on every version. On the 8.3
+  floor, pin the two commented lines; `sid_length` needs no change there.
 - `use_cookies`, `use_trans_sid` and `auto_start` already default to `1`, `0`, `0` (read with
-  `php -n` on 8.5.9; `php.ini-production` sets the same); pin them anyway, because a hosting
-  profile or a per-directory override can flip them. `use_trans_sid=1` puts the ID in URLs,
+  `php -n` on 8.5.9; `php.ini-production` sets the same); pin `use_cookies` and `auto_start`
+  anyway, because a hosting profile or a per-directory override can flip them.
+  `use_trans_sid=1` puts the ID in URLs,
   where logs and `Referer` headers carry it. `auto_start=1` starts a session at request startup,
   before any application code runs, so a framework that manages sessions itself (e.g. Symfony)
   no longer controls how, or whether, that session is created.
@@ -36,8 +47,8 @@ session.save_path        = /var/lib/app-sessions  ; this pool's own dir, mode 07
   its FPM user and closed to everyone else; a store shared between applications lets one read or
   plant another's sessions (`sota-code-security` rules/17 §2).
 - `session.referer_check` (empty by default) only rejects a request whose `Referer` lacks a
-  substring. Clients omit or strip that header, so treat it as an optional extra and never as a
-  fixation defence.
+  substring. Clients omit or strip that header, so it was never a fixation defence, and on 8.4+
+  setting it is deprecated: leave it empty.
 - `use_strict_mode=1` is the **session fixation** kill switch — without it, PHP
   happily adopts any ID the attacker planted. Default is 0; always set it.
 - **Regenerate on privilege change:** `session_regenerate_id(true)` immediately
@@ -52,7 +63,8 @@ session.save_path        = /var/lib/app-sessions  ; this pool's own dir, mode 07
 - Never put secrets, roles, or prices in cookies/hidden fields; the session ID
   is the only client-held session artifact. Custom session storage (e.g. Redis)
   keeps the same rules.
-- OWASP (the directives after `sid_length`): PHP Configuration cheat sheet, Symfony cheat sheet.
+- OWASP (`use_cookies`, `auto_start`, `name`, `save_path`): PHP Configuration cheat sheet,
+  Symfony cheat sheet.
 
 ## 1a. Cookies the app sets itself: `setcookie()` has none of §1's defaults
 
@@ -108,8 +120,13 @@ Verified against php.net password_hash (2026-07):
   (libargon2, or the sodium implementation since 7.4). OWASP Password Storage
   Cheat Sheet ranks argon2id first, bcrypt as the solid default; both are fine —
   `md5`/`sha1`/`sha256(+salt)`/`crypt()` for passwords are HIGH findings.
-- bcrypt truncates at 72 bytes; since 8.4 PHP rejects longer inputs with
-  `ValueError` rather than silently truncating — cap length in validation.
+- **bcrypt silently reads only the first 72 bytes, on every supported version.** Measured on
+  8.3.33, 8.4.26 and 8.5.9: `password_verify(str_repeat('a', 72) . 'Y', $h)` returned `true`
+  for `$h = password_hash(str_repeat('a', 72) . 'X', PASSWORD_BCRYPT)`, and a 100-byte input
+  hashed with no error or warning. So a long passphrase loses its tail and two passwords that
+  share a 72-byte prefix are equal. Reject input over 72 **bytes** (`strlen`, not
+  `mb_strlen`: a multibyte password reaches the limit sooner) at validation, or use argon2id,
+  which reads the whole input.
 - Reset/verification tokens: `bin2hex(random_bytes(32))`, stored **hashed**
   (`hash('sha256', $token)`), single-use, short TTL.
 - Compare any secret (tokens, HMACs, API keys) with **`hash_equals($known,
@@ -153,6 +170,15 @@ Verified against php.net password_hash (2026-07):
   `APP_SECRET=`), and the error (`MissingAppKeyException`, or Symfony's non-empty-parameter
   check) fires only when something first uses it. Assert it at boot beside the debug check in §5b.
   See sota-secrets-management `rules/03` §2 and §6. OWASP: Laravel cheat sheet.
+- **A leaked Laravel key can be code execution, not only forgery.** `Encrypter::decrypt($payload,
+  $unserialize = true)` and the `decrypt()` helper **unserialize** the plaintext by default (read
+  in the 12.x source), so whoever holds the key can encrypt a gadget chain (`rules/03` §3) for any
+  code path that decrypts attacker-supplied data. That was CVE-2018-15133 (Laravel ≤ 5.5.40 and
+  5.6.x ≤ 5.6.29 decrypted and unserialized the `X-XSRF-TOKEN` header; in CISA KEV). Current
+  `EncryptCookies` and the CSRF middleware pass `$serialize = false`, unless an app sets
+  `EncryptCookies::$serialize = true`. Use `encryptString()`/`decryptString()` in new code, and
+  treat a leaked production key as a CRITICAL incident: rotate it, and review every `decrypt(`
+  call that sees request data.
 
 ## 4. CSRF
 
@@ -213,6 +239,13 @@ disable_functions = exec,passthru,shell_exec,system,proc_open,popen,pcntl_exec,p
   files; one that does gets its own `upload_tmp_dir` (`rules/03` §1).
 - `allow_webdav_methods` is not a PHP directive now: `ini_get()` returns `false` for it on
   8.5.9. Older checklists still list it. Do not set it, and do not count its absence as a gap.
+- **PHP 8.5: `disable_classes` is removed, `max_memory_limit` is new** (php-src PHP-8.5
+  UPGRADING). `ini_get('disable_classes')` returns `false` on 8.5.9, so a hardening profile that
+  relied on it silently stops restricting anything after the upgrade; move that intent to
+  `disable_functions` or code review. `max_memory_limit` is startup-only and caps every later
+  `memory_limit`, including a runtime `ini_set()`: measured on 8.5.9 with `max_memory_limit=256M`,
+  `ini_set('memory_limit', '-1')` warned and left `256M`. Set it in the pool or `php.ini` so a
+  code path cannot lift its own memory cap (default `-1`, no cap).
 - OWASP: PHP Configuration cheat sheet.
 
 - `disable_functions` is defense in depth against webshells/RCE pivots — build
@@ -266,7 +299,11 @@ configuration itself. The defaults point the wrong way for anyone who copies the
 - **Laravel:** `config/app.php` reads `'debug' => (bool) env('APP_DEBUG', false)`, but the
   skeleton's `.env.example`, which the installer copies to `.env`, ships `APP_ENV=local` and
   `APP_DEBUG=true`. The docs: *"If the variable is set to `true` in production, you risk exposing
-  sensitive configuration values to your application's end users."*
+  sensitive configuration values to your application's end users."* Worse, the debug error page
+  is itself code: Ignition (`facade/ignition` before 1.16.14, 2.4.2 and 2.5.2 on its three
+  lines, per the Packagist advisory) with debug on gave unauthenticated remote code
+  execution, CVE-2021-3129, in CISA KEV. Debug on in production is the precondition, not a
+  leak to be weighed.
 - **Symfony:** with no `APP_ENV`, the Runtime component assumes `dev`, and `APP_DEBUG` defaults
   to on for every environment not listed in `prod_envs` (default `['prod']`) (read in
   `SymfonyRuntime.php`, 8.0 branch). So `APP_ENV=staging` runs with debug on. The docs: *"the web
@@ -281,6 +318,35 @@ configuration itself. The defaults point the wrong way for anyone who copies the
   forces an error: the body must be the generic page, never a trace.
 
 OWASP: Error Handling cheat sheet, Secure Headers Project; ASVS 5.0 V13.4.
+
+## 5c. Web server to PHP-FPM: only the front controller executes
+
+Which files PHP runs is decided by the web server and the FPM pool, not by the app. Each
+setting below has an exploited CVE behind it.
+
+- **The docroot is `public/` (the framework's equivalent), holding the front controller and
+  static assets only.** `vendor/`, `.env`, `composer.*`, `storage/` and the source tree sit beside
+  it. CVE-2017-9841 (CISA KEV): PHPUnit's `src/Util/PHP/eval-stdin.php` (before 4.8.28, and 5.x
+  before 5.6.3) ran a POST body as PHP, and NVD records it exploited through an exposed
+  `/vendor` folder. `--no-dev` removes PHPUnit, not the class: every vendor file with top-level
+  code is an endpoint once `vendor/` is reachable.
+- **FPM `security.limit_extensions = .php`.** The built-in default is `.php .phar` (php-src
+  `sapi/fpm/fpm/fpm_conf.c`; measured with `php-fpm -tt` on 8.5.9), so a default pool also runs
+  an uploaded `.phar`. This is the FPM-side refusal of `avatar.jpg`, whatever the server forwards.
+- **`cgi.fix_pathinfo = 0`.** It defaults to `1` (measured under `php-cgi -n` and `php-fpm -n -i`
+  on 8.5.9), where PHP walks a path such as `/uploads/a.jpg/x.php` back to the file that exists,
+  `a.jpg`, and runs it. Only an app that routes on `PATH_INFO` needs `1`; it then depends on
+  `limit_extensions` and the existence check below.
+- **nginx forwards only files that exist, ideally only the front controller.**
+  `try_files $uri /index.php$is_args$args;` in `location /`, and `fastcgi_pass` only in
+  `location = /index.php`; a generic `location ~ \.php$` needs `try_files $uri =404;` before
+  `fastcgi_pass`. CVE-2019-11043 (CISA KEV; PHP 7.1–7.3 before 7.1.33, 7.2.24, 7.3.11): with
+  `fastcgi_split_path_info ^(.+?\.php)(/.*)$;`, `fastcgi_param PATH_INFO $fastcgi_path_info;` and
+  no existence check, a newline in the URL emptied `PATH_INFO` and overflowed an FPM buffer into
+  RCE. The researcher's precondition list names `try_files $uri =404` as the easiest fix. The
+  patch closes that bug; the existence check keeps the next one unreachable.
+- Apache: `DocumentRoot` at `public/`, the PHP handler bound by `<FilesMatch "\.php$">` rather
+  than `AddHandler` (which also matches `x.php.jpg`), and no handler in upload directories.
 
 ## 6. Security headers
 
@@ -309,6 +375,11 @@ Run from repo root; verify each hit manually.
       URL IDs, auto-start, the default name or a shared temp dir:
       `grep -rniE 'session\.(use_trans_sid[]"]?[[:space:]]*[[:space:]=][[:space:]]*"?(1|on)|use_cookies[]"]?[[:space:]]*[[:space:]=][[:space:]]*"?(0|off)|auto_start[]"]?[[:space:]]*[[:space:]=][[:space:]]*"?(1|on)|name[]"]?[[:space:]]*[[:space:]=][[:space:]]*"?PHPSESSID|save_path[]"]?[[:space:]]*[[:space:]=][[:space:]]*"?(/tmp|/var/tmp))' --include='*.ini' --include='*.conf' --include='.htaccess' --include='.user.ini' .`
       ; no hit is not a pass — read the effective values: `php -r 'foreach (["use_cookies","use_trans_sid","auto_start","name","save_path"] as $k) echo "session.$k=", ini_get("session.$k"), PHP_EOL;'`
+- [ ] **Session tunables deprecated in 8.4 (§1) — LOW on 8.4+, MEDIUM for `use_only_cookies`
+      off on any version** —
+      `grep -rniE '^[^;#]*session\.(sid_length|sid_bits_per_character|referer_check|trans_sid_(tags|hosts))|^[^;#]*session\.use_only_cookies[]"]?[[:space:]]*[[:space:]=][[:space:]]*"?(0|off)' --include='*.ini' --include='*.conf' --include='.htaccess' --include='.user.ini' .`
+      ; on the production image, any startup deprecation it prints is a finding:
+      `php -d display_startup_errors=1 -d error_reporting=-1 -r '' 2>&1 | grep 'PHP Startup'`
 - [ ] **App-set cookies (§1a)** — each hit lacks SameSite; the positional form cannot set it, so
       rewrite it to the options array with `secure`, `httponly` and `samesite` (a multi-line
       options array also shows up here: read it):
@@ -316,7 +387,9 @@ Run from repo root; verify each hit manually.
 - [ ] **Password handling** —
       `grep -rnE '\b(md5|sha1|crypt)\s*\(' --include='*.php' src/ | grep -iE 'pass|pwd'` ;
       `grep -rn 'password_hash' --include='*.php' src/` ;
-      `grep -rn 'password_needs_rehash' --include='*.php' src/` (absent = MEDIUM (stuck costs))
+      `grep -rn 'password_needs_rehash' --include='*.php' src/` (absent = MEDIUM (stuck costs)) ;
+      `grep -rnE 'PASSWORD_(DEFAULT|BCRYPT)' --include='*.php' src/` (bcrypt, §2: confirm the
+      input is rejected above 72 bytes by `strlen`, else MEDIUM)
 - [ ] **Weak randomness / timing-unsafe compares — HIGH where security-relevant** —
       `grep -rnE '\b(rand|mt_rand|uniqid|str_shuffle|array_rand)\s*\(' --include='*.php' src/` ;
       `grep -rnE '(===?)\s*\$.*(token|signature|hmac|hash)' -i --include='*.php' src/` ;
@@ -332,6 +405,9 @@ Run from repo root; verify each hit manually.
       `grep -rnE ''"'"'key'"'"'[[:space:]]*=>[[:space:]]*'"'"'base64:|^[[:space:]]*secret:[[:space:]]*["'"'"']?[^%"'"'"'[:space:]]|(ENV|ARG)[[:space:]]+APP_(KEY|SECRET)[[:space:]=]+[^[:space:]$]' --include='*.php' --include='*.yaml' --include='*.yml' --include='Dockerfile*' .`
       . A hit that was ever pushed is a leaked key: rotate it, do not just delete the line. Then
       check that boot fails when the key is empty in the deployed environment
+- [ ] **Laravel decrypt that unserializes (§3) — HIGH where the payload is request-derived** —
+      `grep -rnE '(^|[^_A-Za-z])decrypt[[:space:]]*\(|\$serialize[[:space:]]*=[[:space:]]*true' --include='*.php' --exclude-dir=vendor .`
+      (a `decrypt(` with no second argument `false` unserializes; `decryptString(` is not matched)
 - [ ] **CSRF — token verified centrally? exclusions?** —
       `grep -rnE '(csrf|_token)' -il --include='*.php' src/ | head` ;
       `grep -rn 'VerifyCsrfToken' -r app/ 2>/dev/null` (e.g. Laravel: check $except)
@@ -365,6 +441,27 @@ Run from repo root; verify each hit manually.
       `grep -rnE 'APP_DEBUG.?[=:][[:space:]]*.?(true|1)([^0-9A-Za-z]|$)|APP_ENV.?[=:][[:space:]]*.?(dev|local)([^A-Za-z]|$)|php[0-9.]*.?,?[[:space:]]*.?-S[[:space:]"]|artisan.?,?[[:space:]]*.?serve' --include='.env*' --include='Dockerfile*' --include='*.yml' --include='*.yaml' --include='Procfile' .`
       . Values injected by the platform are not in the repo: read the running process's
       environment, and force an error on the live app to confirm the generic page
+- [ ] **Ignition in the lock (§5b) — CRITICAL if a vulnerable version is paired with debug on**
+      — `grep -A1 '"name": "facade/ignition"' composer.lock` (CVE-2021-3129 affects versions
+      below 1.16.14, 2.0.0–2.4.1 and 2.5.0–2.5.1; `composer audit --locked` also reports it)
+- [ ] **8.5 memory cap and a removed directive (§5)** — `disable_classes` still set = MEDIUM on
+      8.5+ (it no longer restricts anything); no `max_memory_limit` on 8.5+ = LOW:
+      `grep -rnE '^[^;#]*disable_classes[[:space:]]*=' --include='*.ini' --include='*.conf' .` ;
+      `php -r 'var_dump(ini_get("max_memory_limit"));'` (`-1` = no cap). Only the grep finds
+      `disable_classes`: measured on 8.5.9, `ini_get()` returns `false` even when `php.ini` sets it
+- [ ] **Web server / FPM handoff (§5c) — HIGH, CRITICAL when `vendor/` is web-reachable** —
+      `vendor/` under a docroot: `find . \( -path '*/public/vendor' -o -path '*/web/vendor' -o -path '*/htdocs/vendor' -o -path '*/public_html/vendor' \) -type d -prune -print`
+      ; a docroot that is not a `public/` or `web/` directory (read each hit):
+      `grep -rnE '^[[:space:]]*(root|DocumentRoot)[[:space:]]' --include='*.conf' --include='*.conf.template' --include='nginx*' . | grep -vE '/(public|web)/?[";[:space:]]*$'`
+      ; FPM extensions other than `.php`:
+      `grep -rnE '^[[:space:]]*security\.limit_extensions[[:space:]]*=.*\.(phar|pht|phtml|php[0-9]|html?|jpe?g|png|gif)' --include='*.conf' .`
+      ; `cgi.fix_pathinfo` on: `grep -rniE '^[^;#]*cgi\.fix_pathinfo[[:space:]]*=[[:space:]]*"?(1|on)' --include='*.ini' --include='*.conf' .`
+      ; nginx config that forwards to FPM with no existence check:
+      `grep -rlE 'fastcgi_pass' --include='*.conf' --include='*.conf.template' --include='nginx*' . | while IFS= read -r f; do grep -qE 'try_files|-f[[:space:]]+\$' "$f"; case $? in 0) ;; 1) echo "FASTCGI WITH NO EXISTENCE CHECK: $f" ;; *) echo "SWEEP FAILED: $f" ;; esac; done`
+      . No hit is not a pass: read the effective values on the image,
+      `php-fpm -tt 2>&1 | grep 'security.limit_extensions'` (default `.php .phar`) and
+      `php-fpm -i | grep cgi.fix_pathinfo`, and request `https://target/vendor/autoload.php`
+      and `/composer.json` (anything but 403/404 is the finding)
 
 Severity guide: fixation (no strict mode + no regeneration) HIGH; md5/sha1
 passwords HIGH; predictable tokens HIGH; missing CSRF on state change HIGH;
@@ -372,4 +469,6 @@ passwords HIGH; predictable tokens HIGH; missing CSRF on state change HIGH;
 missing CSP/headers MEDIUM; an auth-bearing `setcookie()` without `secure`/`httponly` HIGH;
 `base_convert` on a token HIGH; reachable `phpinfo()` HIGH; `zend.exception_ignore_args` off
 with unmarked secret parameters MEDIUM; a committed or hard-coded production application key
-CRITICAL, an empty key with no boot-time check MEDIUM.
+CRITICAL, an empty key with no boot-time check MEDIUM; `vendor/` under the docroot CRITICAL;
+`security.limit_extensions` beyond `.php`, `cgi.fix_pathinfo=1` or an nginx FPM block with no
+existence check HIGH; bcrypt with no 72-byte cap MEDIUM.

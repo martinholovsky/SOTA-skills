@@ -124,9 +124,10 @@ composer check-platform-reqs   # ext-* and PHP version actually present?
 ## 2. composer audit and advisory gates
 
 `composer audit` checks installed (or `--locked`) packages against security
-advisories via the Packagist API, and also reports abandoned packages; exit
-code is non-zero when issues are found — CI-gateable (getcomposer.org CLI
-docs):
+advisories via the Packagist API, and also reports abandoned packages and (2.10+) packages
+flagged as malware. Since 2.10.0 the exit code is `0` or `1` (anything failed); older
+releases used other non-zero values too, so a CI script that tests for a specific code needs
+re-checking (getcomposer.org CLI docs and CHANGELOG):
 
 ```sh
 composer audit --locked --abandoned=fail   # in CI, on every PR + nightly
@@ -136,9 +137,24 @@ composer audit --locked --abandoned=fail   # in CI, on every PR + nightly
   a tracked justification.
 - Abandoned packages are a real risk class (unpatched forever) — at minimum
   `--abandoned=report` and a migration ticket per hit.
-- Alternative/complementary: requiring `roave/security-advisories` (neutral
-  example) makes *installing* a known-vulnerable version impossible at resolve
-  time.
+- **Composer blocks insecure versions at resolve time; keep it on.** 2.9 added
+  `config.audit.block-insecure` (default `true`); 2.10 moved it to
+  `config.policy.advisories.block` (default `true`) and deprecated most of `config.audit`,
+  which is read only while the matching `policy` section is absent. It acts on
+  `update`/`require`/`remove`, **not** on `install` from a lock (malware blocking, 2.10+, does
+  cover `install`). Measured on Composer 2.10.3: `composer update` of `twig/twig 3.0.0` exited
+  2 naming 18 advisories; the same lock then **installed** with exit 0, and
+  `composer audit --locked` exited 1. So the blocking guards the moment a version is chosen,
+  and the `audit --locked` gate above is still what catches a lock that went stale.
+- **The escape hatches are the finding.** `--no-blocking` (all policies; replaces the
+  deprecated `--no-security-blocking`), `COMPOSER_NO_BLOCKING=1` (measured: the blocked update
+  then exited 0), the deprecated `COMPOSER_NO_SECURITY_BLOCKING=1`,
+  `COMPOSER_POLICY_ADVISORIES_BLOCK=0`, and in `composer.json` `"policy": false`,
+  `"block": false` or `"block-insecure": false`. Each switches the control off for everyone
+  who inherits the file or pipeline. A real exception is a scoped `policy.advisories.ignore-id`
+  entry with a reason, reviewed like code.
+- `roave/security-advisories` (neutral example) is optional now: it conflicts with every
+  known-vulnerable version, which the built-in blocking already refuses on update.
 - Renovate/Dependabot-style automation keeps the lock fresh; pair with the
   audit gate so urgency is advisory-driven, not calendar-driven.
 
@@ -173,7 +189,7 @@ parameters:
 
 - **Formatting is automated, not reviewed:** PHP-CS-Fixer or PHP_CodeSniffer
   (neutral examples) pinned to the **PER-CS** ruleset (PHP-FIG's successor to
-  PSR-12; PER-CS 2.x current — php-fig.org). `--dry-run --diff` in CI; local
+  PSR-12; use the latest PER-CS version, verify at php-fig.org). `--dry-run --diff` in CI; local
   fix via pre-commit/composer script.
 - **Tests:** PHPUnit is the baseline; Pest (neutral example) layers a concise
   syntax on the same runner. Either way: data providers over copy-paste, one
@@ -216,6 +232,10 @@ Run from repo root; verify each hit manually.
       `grep -nE '"(php|ext-)' composer.json` (platform reqs declared?);
       `grep -n '"platform"' composer.json` (config.platform.php pinned?)
 - [ ] **Advisory + abandonment status right now** — `composer audit --locked --abandoned=report`
+- [ ] **Advisory blocking switched off (§2) — HIGH in CI or a shared `composer.json`** —
+      `grep -rnE -e '--no(-security)?-blocking|COMPOSER_NO(_SECURITY)?_BLOCKING|COMPOSER_POLICY_(ADVISORIES|MALWARE)_BLOCK[=:"[:space:]]+"?0' --include='*.yml' --include='*.yaml' --include='Dockerfile*' --include='Makefile' --include='*.sh' --include='.env*' --exclude-dir=vendor --exclude-dir=node_modules .`
+      ; `grep -nE '"(policy|block|block-insecure)"[[:space:]]*:[[:space:]]*false' composer.json`
+      (a `"block": false` under `policy.abandoned` is the default, not a finding: read the hit)
 - [ ] **Risky constraints and install-time code** —
       `grep -nE '"[^"]+"\s*:\s*"(\*|dev-)' composer.json` ; `grep -n '"scripts"' composer.json`
       (review script contents); `grep -n 'allow-plugins' composer.json` (explicit allowlist?)
@@ -250,7 +270,7 @@ Run from repo root; verify each hit manually.
 - [ ] **CI gates actually wired (adjust path to CI system)** —
       `grep -rnE '(composer audit|phpstan|psalm|php-cs-fixer|phpcs|phpunit|pest)' .github/workflows/ .gitlab-ci.yml 2>/dev/null`
 - [ ] **Dev deps leaking into prod artifacts** —
-      `grep -rn 'composer install' Dockerfile* .github/workflows/ 2>/dev/null | grep -v -- --no-dev`
+      `grep -rn 'composer install' --include='Dockerfile*' --include='Containerfile*' --include='*.y*ml' --include='*.sh' . | grep -v -- --no-dev`
 
 Severity guide: app with no committed lock or CI running `composer update`
 MEDIUM (HIGH once envs drift); no advisory gate MEDIUM; known-vulnerable dep

@@ -8,20 +8,19 @@ network/file/DB/config as untrusted. Reference:
 
 ## 1. SQL injection
 
-- **EF Core**: LINQ is parameterized and safe. `FromSql`/`ExecuteSql` (the
-  *interpolated* `FromSqlInterpolated`-style) parameterize interpolated values.
-  **`FromSqlRaw`/`ExecuteSqlRaw` with string concatenation/interpolation is
-  CRITICAL** — they don't parameterize a built string.
-- **Dapper / ADO.NET**: always pass parameters (`new { id }` / `SqlParameter`),
-  never concatenate input into the SQL text. Identifiers (table/column/ORDER BY)
-  can't be parameters — allowlist them.
+- **EF Core**: LINQ is parameterized and safe. `FromSql`, `ExecuteSql` and `SqlQuery` (and the older
+  `FromSqlInterpolated`) wrap each interpolated value in a `DbParameter`. **`FromSqlRaw`,
+  `ExecuteSqlRaw` and `SqlQueryRaw` with string concatenation/interpolation are CRITICAL**: they
+  send the built string as SQL, and EF's "SQL Queries" page puts `SqlQueryRaw` in the same dynamic
+  class as `FromSqlRaw`.
+- **Dapper / ADO.NET**: always pass parameters (`new { id }` / `SqlParameter`), never concatenate
+  input into the SQL text. Identifiers (table/column/ORDER BY) can't be parameters — allowlist them.
 
 ## 2. Deserialization
 
-- **`BinaryFormatter` is removed in .NET 9+** (the API throws
-  `PlatformNotSupportedException`); it was a notorious RCE vector. Never
-  reintroduce it (or `NetDataContractSerializer`, `SoapFormatter`, `LosFormatter`,
-  `ObjectStateFormatter`) — CRITICAL on sight.
+- **`BinaryFormatter` is removed in .NET 9+** (the API throws `PlatformNotSupportedException`); it
+  was a notorious RCE vector. Never reintroduce it (or `NetDataContractSerializer`, `SoapFormatter`,
+  `LosFormatter`, `ObjectStateFormatter`) — CRITICAL on sight.
 - **Web Forms ViewState is `ObjectStateFormatter` output, so its key is the only thing between
   a client and that deserializer** (.NET Framework `System.Web`; ASP.NET Core has no ViewState).
   The class is `sota-code-security` rules/01 §8. Three findings. `EnableViewStateMac="false"` is
@@ -53,10 +52,15 @@ network/file/DB/config as untrusted. Reference:
   `System.Data.DataSetDefaultAllowedTypes` AppDomain key — both are findings on an input path.
   Bind untrusted data to a DTO instead. Legacy .NET Framework code: `JavaScriptSerializer` built
   with a `SimpleTypeResolver` is the same gadget class as `TypeNameHandling` (CA2321/CA2322).
-- **JSON**: prefer `System.Text.Json` with known types. Newtonsoft
-  `TypeNameHandling.Auto/All/Objects` (or `System.Text.Json` with an
-  unrestricted polymorphic type resolver) on untrusted input enables gadget-style
-  RCE — don't. Bind to explicit DTOs.
+- **JSON**: prefer `System.Text.Json` with known types. Newtonsoft `TypeNameHandling.Auto/All/Objects`
+  (or `System.Text.Json` with an unrestricted polymorphic type resolver) on untrusted input enables
+  gadget-style RCE — don't. Bind to explicit DTOs.
+- **`System.Text.Json` defaults are lenient**: unknown members are ignored, a repeated property is
+  accepted, nullability and required constructor parameters go unenforced. For untrusted JSON on
+  .NET 10+ use the `JsonSerializerOptions.Strict` preset (`UnmappedMemberHandling.Disallow`,
+  `AllowDuplicateProperties = false`, `RespectNullableAnnotations`, `RespectRequiredConstructorParameters`,
+  case-sensitive; ".NET 10 libraries" what's-new), or set those properties on the options you own
+  (`ConfigureHttpJsonOptions`/`AddJsonOptions`). Duplicate keys: `sota-code-security` rules/01 §11.
 - **When Json.NET type names cannot be removed, the binder is the control.** Set
   `JsonSerializerSettings.SerializationBinder` to your own `ISerializationBinder`. Its
   `BindToType(assemblyName, typeName)` returns the type only on an exact match against a fixed
@@ -81,14 +85,13 @@ network/file/DB/config as untrusted. Reference:
     deserializer is fixed. Removing gadgets is defence in depth, not the fix.
 
   OWASP: Deserialization cheat sheet.
-- **`XmlSerializer`/`DataContractSerializer`** with attacker-controlled types is
-  risky; disable DTD processing on XML readers (XXE) — `XmlReaderSettings {
-  DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null }`.
-  **A consumer is as safe as the reader it is given.** Measured on .NET 10: `XmlReader.Create`
-  without settings refused a DOCTYPE, but `new XPathDocument(stream)` (or a `TextReader`),
-  `XmlDocument.Load(stream)` and `new XmlTextReader(...)` parsed it, and the first two expanded
-  internal entities up to the `MaxCharactersFromEntities` limit. External entities stayed
-  unresolved until a reader was handed an `XmlUrlResolver`: then `XPathDocument` returned a
+- **`XmlSerializer`/`DataContractSerializer`** with attacker-controlled types is risky; disable DTD
+  processing on XML readers (XXE) — `XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit,
+  XmlResolver = null }`. **A consumer is as safe as the reader it is given.** Measured on .NET 10:
+  `XmlReader.Create` without settings refused a DOCTYPE, but `new XPathDocument(stream)` (or a
+  `TextReader`), `XmlDocument.Load(stream)` and `new XmlTextReader(...)` parsed it, and the first
+  two expanded internal entities up to the `MaxCharactersFromEntities` limit. External entities
+  stayed unresolved until a reader was handed an `XmlUrlResolver`: then `XPathDocument` returned a
   local file's contents. So build `XPathDocument` and the input to `XslCompiledTransform.Transform`
   from `XmlReader.Create(source, hardenedSettings)`, and load stylesheets with the default
   `XsltSettings` (`document()` stayed prohibited, measured). *(OWASP: XXE Prevention cheat sheet.)*
@@ -97,10 +100,9 @@ network/file/DB/config as untrusted. Reference:
 
 - **OS command**: avoid shelling out; if you must, use `ProcessStartInfo` with
   `ArgumentList` (no `UseShellExecute`, no concatenated `Arguments`/shell).
-- **Path traversal**: combine with a known root and verify the resolved
-  `Path.GetFullPath` stays under it (compare against the root **plus a trailing separator**,
-  or `/srv/up` admits `/srv/upload-evil`); reject `..`. Don't pass user input straight
-  to file APIs.
+- **Path traversal**: combine with a known root and verify the resolved `Path.GetFullPath` stays
+  under it (compare against the root **plus a trailing separator**, or `/srv/up` admits
+  `/srv/upload-evil`); reject `..`. Don't pass user input straight to file APIs.
 - **`Path.Combine` discards the root when a later argument is rooted.** Measured on .NET 10:
   `Path.Combine("/srv/uploads", "/etc/passwd")` returns `/etc/passwd`; `Path.Join` returns
   `/srv/uploads/etc/passwd`. `Join` removes that trap but does not resolve `..`, so the
@@ -201,42 +203,38 @@ network/file/DB/config as untrusted. Reference:
 
 ## 4. ASP.NET Core authn/authz & web
 
-- **AuthZ on every non-public endpoint**: `[Authorize]`/policies/role checks /
-  endpoint authorization; default-deny. Missing auth is HIGH.
+- **AuthZ on every non-public endpoint, denied by default**: set `AuthorizationOptions.FallbackPolicy`
+  to `new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build()`. It covers every endpoint
+  with no authorization metadata, including ones added later, and `[AllowAnonymous]` marks the
+  deliberate exceptions (ASP.NET Core "secure data" docs). Without it an endpoint is public unless
+  someone remembered `[Authorize]`/`.RequireAuthorization()`. Missing auth is HIGH.
 - **Antiforgery** for cookie-authenticated state-changing requests
   (`[ValidateAntiForgeryToken]` / the antiforgery middleware). **CORS** locked
   to specific origins — never `AllowAnyOrigin()` with credentials.
-- **Passkeys**: ASP.NET Core Identity has built-in passkey (WebAuthn) support
-  in .NET 10+ — prefer them for new interactive logins (depth:
-  `sota-code-security`, `sota-identity-access`).
+- **Passkeys**: ASP.NET Core Identity has built-in passkey (WebAuthn) support in .NET 10+ — prefer
+  them for new interactive logins (depth: `sota-code-security`, `sota-identity-access`).
 - Validate/bind model input (data annotations / explicit validation); don't
   over-post (use DTOs/`[Bind]` allowlists, not the EF entity directly). Set
   security headers/HSTS; don't leak stack traces in production responses.
-- **Secrets**: never in source/`appsettings.json` committed to git — use user
-  secrets (dev), env, or a vault (`sota-secrets-management`); don't log them.
-  Two .NET-specific ways they reach a log anyway. A `record`'s compiler-generated `ToString`
-  *"displays the names and values of public properties and fields"*: measured on the .NET 10
-  SDK image, `record Creds(string User, string Password)` printed `Creds { User = bob,
-  Password = hunter2 }`. Override `PrintMembers` on any record that carries a credential. And
-  EF Core's `EnableSensitiveDataLogging()` puts *"parameter values for commands being sent to
-  the database"* and entity property values into logs and exception messages. Keep it out of
-  every non-development configuration. Logger-level redaction is `sota-observability`
-  rules/01 §4. A desktop or Windows client keeps local secrets in `ProtectedData.Protect(...,
-  DataProtectionScope.CurrentUser)` (DPAPI) or the OS credential store, never a plain file or
-  registry value. Windows-only: Linux threw `PlatformNotSupportedException` (measured).
-  *(OWASP: .NET Security cheat sheet.)*
-- **Runtime patch level is an audit surface**: the memory-safe runtime's
-  residual risk includes framework CVEs — e.g. CVE-2025-55315 (Kestrel HTTP
-  request smuggling, fixed in 8.0.21/9.0.10/10.0 RC2) and CVE-2026-45591
-  (SignalR/Blazor Server MessagePack nested-array DoS, fixed in
-  8.0.28/9.0.17/10.0.9, June 2026). Self-contained/AOT-published apps embed
-  the framework — they need a rebuild and redeploy, not just host patching.
+- **Secrets**: never in source/`appsettings.json` committed to git — use user secrets (dev), env, or
+  a vault (`sota-secrets-management`); don't log them. Two .NET-specific ways they reach a log
+  anyway. A `record`'s compiler-generated `ToString` *"displays the names and values of public
+  properties and fields"*: measured on the .NET 10 SDK image, `record Creds(string User, string
+  Password)` printed `Creds { User = bob, Password = hunter2 }`. Override `PrintMembers` on any
+  record that carries a credential. And EF Core's `EnableSensitiveDataLogging()` puts *"parameter
+  values for commands being sent to the database"* and entity property values into logs and
+  exception messages. Keep it out of every non-development configuration. Logger-level redaction is
+  `sota-observability` rules/01 §4. A desktop or Windows client keeps local secrets in
+  `ProtectedData.Protect(..., DataProtectionScope.CurrentUser)` (DPAPI) or the OS credential store,
+  never a plain file or registry value. Windows-only: Linux threw `PlatformNotSupportedException`
+  (measured). *(OWASP: .NET Security cheat sheet.)*
+- **Runtime patch level is an audit surface** — framework CVEs such as CVE-2025-55315 (Kestrel
+  request smuggling) and how to check them: `rules/06` §3.
 
 ## 5. Cryptography & transport
 
 - **Randomness**: `System.Security.Cryptography.RandomNumberGenerator` (e.g.
-  `RandomNumberGenerator.GetBytes`) for tokens/keys/IVs/salts — never
-  `System.Random` (HIGH).
+  `RandomNumberGenerator.GetBytes`) for tokens/keys/IVs/salts — never `System.Random` (HIGH).
 - **Symmetric**: AES-GCM (`AesGcm`) for authenticated encryption; never ECB,
   never unauthenticated CBC. **Hashing**: SHA-256+; passwords via a KDF
   (the one-shot `Rfc2898DeriveBytes.Pbkdf2(password, salt, iterations, HashAlgorithmName.SHA256, length)`,
@@ -246,25 +244,22 @@ network/file/DB/config as untrusted. Reference:
   (SYSLIB0041) default to **SHA-1 and 1,000 iterations** — measured on .NET 10:
   `new Rfc2898DeriveBytes("pw", salt)` reports `hash=SHA1 iterations=1000`. Name the hash and
   the iteration count explicitly; an inherited constructor call is a weak password store.
-- Use ASP.NET Core **Data Protection** for at-rest tokens/cookies rather than
-  hand-rolled crypto — and keep the package patched:
-  `Microsoft.AspNetCore.DataProtection` 10.0.0–10.0.6 let attackers forge
-  authentication cookies and decrypt protected payloads (CVE-2026-40372,
-  fixed in **10.0.7**). Patching alone isn't enough after exposure: forged
-  artifacts stay valid, so revoke the key ring (`RevokeAllKeys()`) and rotate
-  tokens/API keys issued during the vulnerable window. Constant-time compare
-  (`CryptographicOperations.FixedTimeEquals`) for MACs/tokens.
-  **Several instances need one key ring.** Measured on .NET 10: a payload protected under one key
-  directory failed on another ("not found in the key ring"), and under another `SetApplicationName`
-  too, which breaks antiforgery tokens and auth cookies behind a load balancer. Configure
-  `PersistKeysTo…` (shared store), `SetApplicationName` and `ProtectKeysWith…` (without it the key
-  file held the key in clear, measured). The antiforgery cookie defaults to `SecurePolicy=None`
-  (read from `AntiforgeryOptions`): set `Always`. *(OWASP: CSRF Prevention cheat sheet.)*
+- Use ASP.NET Core **Data Protection** for at-rest tokens/cookies rather than hand-rolled crypto —
+  and keep the package patched: `Microsoft.AspNetCore.DataProtection` 10.0.0–10.0.6 let attackers
+  forge authentication cookies and decrypt protected payloads (CVE-2026-40372, fixed in **10.0.7**).
+  Patching alone isn't enough after exposure: forged artifacts stay valid, so revoke the key ring
+  (`RevokeAllKeys()`) and rotate tokens/API keys issued during the vulnerable window. Constant-time
+  compare (`CryptographicOperations.FixedTimeEquals`) for MACs/tokens. **Several instances need one
+  key ring.** Measured on .NET 10: a payload protected under one key directory failed on another
+  ("not found in the key ring"), and under another `SetApplicationName` too, which breaks
+  antiforgery tokens and auth cookies behind a load balancer. Configure `PersistKeysTo…` (shared
+  store), `SetApplicationName` and `ProtectKeysWith…` (without it the key file held the key in
+  clear, measured). The antiforgery cookie defaults to `SecurePolicy=None` (read from
+  `AntiforgeryOptions`): set `Always`. *(OWASP: CSRF Prevention cheat sheet.)*
 - **Post-quantum**: .NET 10 ships PQC in the BCL — `MLKem` (FIPS 203) plus
-  `MLDsa`/`SlhDsa`/`CompositeMLDsa` (FIPS 204/205; still `[Experimental]`,
-  SYSLIB5006), backed by OpenSSL 3.5+ or Windows CNG with PQC support. For new
-  long-lived signatures/key exchange, plan migration on these built-ins rather
-  than unvetted packages.
+  `MLDsa`/`SlhDsa`/`CompositeMLDsa` (FIPS 204/205; still `[Experimental]`, SYSLIB5006), backed by
+  OpenSSL 3.5+ or Windows CNG with PQC support. For new long-lived signatures/key exchange, plan
+  migration on these built-ins rather than unvetted packages.
 - **TLS**: never disable validation — `ServerCertificateCustomValidationCallback`
   returning `true` (or `HttpClientHandler` accepting all certs) is HIGH/CRITICAL. A pin is an
   extra check: return `false` unless `errors == SslPolicyErrors.None`, then compare `SHA256.HashData(
@@ -274,7 +269,6 @@ network/file/DB/config as untrusted. Reference:
   .NET 7 (SYSLIB0039) — HIGH. Hard-coding even `Tls12`/`Tls13`, or assigning
   `ServicePointManager.SecurityProtocol`, freezes the app out of whatever the OS enables next
   (CA5398/CA5386) — LOW. Use `SslProtocols.None` to defer to the system default.
-
 
 ## 6. `unsafe` code and P/Invoke
 
@@ -301,15 +295,22 @@ section is the .NET spelling an auditor has to grep for.
   `CookieSecurePolicy.Always`.
 - **Cookie scope: leave `Domain` unset, and a prefix is not enforced by the framework.** A new
   `CookieOptions` has `Path = "/"` and `Domain = null`, which makes a host-only cookie. Setting
-  `Domain` (or `options.Cookie.Domain`) sends the cookie to that domain *and every subdomain*
-  (MDN), so leave it null unless the cookie really must be shared. For a cookie the app sets
-  itself, name it `__Host-…` with `Secure`, `Path=/` and no `Domain`. The browser then refuses
-  to let a sibling subdomain set or overwrite it. ASP.NET Core does not check the prefix. On
-  .NET 10 it emitted `__Host-b=v; domain=example.com; path=/; secure` and `__Host-c=v; path=/`
-  with no error (measured). The browser then silently drops both cookies, so a broken prefix
-  shows up as a missing cookie, not as an exception. The session/auth cookie is
-  `sota-code-security` rules/17. *(OWASP: Session Management and Cookie Theft Mitigation cheat
-  sheets; ASVS 5.0 V3.3.)*
+  `Domain` (or `options.Cookie.Domain`) sends the cookie to that domain *and every subdomain* (MDN),
+  so leave it null unless the cookie really must be shared. For a cookie the app sets itself, name
+  it `__Host-…` with `Secure`, `Path=/` and no `Domain`. The browser then refuses to let a sibling
+  subdomain set or overwrite it. ASP.NET Core does not check the prefix. On .NET 10 it emitted
+  `__Host-b=v; domain=example.com; path=/; secure` and `__Host-c=v; path=/` with no error
+  (measured). The browser then silently drops both cookies, so a broken prefix shows up as a missing
+  cookie, not as an exception. The session/auth cookie is `sota-code-security` rules/17. *(OWASP:
+  Session Management and Cookie Theft Mitigation cheat sheets; ASVS 5.0 V3.3.)*
+- **Forwarded headers set `RemoteIpAddress`.** The middleware trusts `X-Forwarded-*` only from a
+  peer in `KnownProxies`/`KnownIPNetworks` (default loopback; `KnownNetworks` is obsolete in .NET 10,
+  ASPDEPR005); list your real proxies there. Findings: `.Clear()` of both with nothing re-added,
+  `ForwardLimit = null` (default 1; the docs allow `null` only with known proxies set), or
+  `ASPNETCORE_FORWARDEDHEADERS_ENABLED=true`, which Microsoft warns does not restrict which IPs
+  forwarders are accepted from. Any client then picks its own IP, defeating IP rate limits,
+  allowlists and the audit log. Forwarding `X-Forwarded-Host`? Set `AllowedHosts` (empty = all).
+  Policy: `sota-network-security` rules/05 R6. *(ASP.NET Core proxy and load balancer docs.)*
 - **Open redirect.** `Redirect(url)` / `Results.Redirect(url)` follow any absolute URL. For a
   `returnUrl` use `LocalRedirect` (throws on a non-local URL) or check `Url.IsLocalUrl` first
   (ASP.NET Core "Prevent open redirect attacks"). CA3007 is the analyzer's taint version.
@@ -336,23 +337,22 @@ section is the .NET spelling an auditor has to grep for.
   checking) is HIGH unless the code says why. `ValidateIssuerSigningKey` defaults to `false`:
   it validates the *key* that verified the signature, which matters when a token can carry its
   own key (the source's example is X509Data) — set it `true` there.
-- **The Development environment is a debug mode, and it only takes one variable.** The
-  environment comes from `DOTNET_ENVIRONMENT` or `ASPNETCORE_ENVIRONMENT`. Under
-  `WebApplication` the `DOTNET_` value wins. When neither is set the environment is
-  `Production` (Microsoft docs, and measured: the SDK container image sets neither). In
-  `Development`, `WebApplication` adds the developer exception page **without any
-  `UseDeveloperExceptionPage()` call**. Measured on .NET 10: with the same binary, a throwing
-  endpoint returned an empty 500 in Production. With `ASPNETCORE_ENVIRONMENT=Development` it
-  returned the exception message, the stack trace and the source path and line. Anything gated
-  on `IsDevelopment()` switches on as well: the `webapi` template's `MapOpenApi()`, `EnableSensitiveDataLogging`
-  (§4) and seed or reset endpoints. So the finding is `Development` in a Dockerfile `ENV`, a
-  compose or Kubernetes manifest, a `web.config`, or `<EnvironmentName>` in a publish profile.
-  `launchSettings.json` is fine: Microsoft documents it as used only on the local machine and not
-  deployed. `dotnet run` and `dotnet watch` are development launchers that apply its first
-  profile, so a production container runs the published DLL (`dotnet app.dll`). Enforce it at
-  startup: in a Release build, fail fast when `builder.Environment.IsDevelopment()` is true (an
-  `#if !DEBUG` guard), and log `EnvironmentName`. *(OWASP: Error Handling cheat sheet; Secure
-  Headers Project; ASVS 5.0 V13.4.)*
+- **The Development environment is a debug mode, and it only takes one variable.** The environment
+  comes from `DOTNET_ENVIRONMENT` or `ASPNETCORE_ENVIRONMENT`. Under `WebApplication` the `DOTNET_`
+  value wins. When neither is set the environment is `Production` (Microsoft docs, and measured: the
+  SDK container image sets neither). In `Development`, `WebApplication` adds the developer exception
+  page **without any `UseDeveloperExceptionPage()` call**. Measured on .NET 10: with the same
+  binary, a throwing endpoint returned an empty 500 in Production. With
+  `ASPNETCORE_ENVIRONMENT=Development` it returned the exception message, the stack trace and the
+  source path and line. Anything gated on `IsDevelopment()` switches on as well: the `webapi`
+  template's `MapOpenApi()`, `EnableSensitiveDataLogging` (§4) and seed or reset endpoints. So the
+  finding is `Development` in a Dockerfile `ENV`, a compose or Kubernetes manifest, a `web.config`,
+  or `<EnvironmentName>` in a publish profile. `launchSettings.json` is fine: Microsoft documents it
+  as used only on the local machine and not deployed. `dotnet run` and `dotnet watch` are
+  development launchers that apply its first profile, so a production container runs the published
+  DLL (`dotnet app.dll`). Enforce it at startup: in a Release build, fail fast when
+  `builder.Environment.IsDevelopment()` is true (an `#if !DEBUG` guard), and log `EnvironmentName`.
+  *(OWASP: Error Handling cheat sheet; Secure Headers Project; ASVS 5.0 V13.4.)*
 
 ## 8. Legacy ASP.NET (`System.Web`) configuration
 
@@ -374,32 +374,30 @@ names its page and reason. *(OWASP: Code Review Guide v2; .NET Security cheat sh
       `grep -rnE 'AllowUnsafeBlocks' --include='*.csproj' --include='*.props' .` ;
       `grep -rnE '(^|[^[:alnum:]_])unsafe([^[:alnum:]_]|$)|(^|[^[:alnum:]_])fixed[[:space:]]*\(|\[(DllImport|LibraryImport)|Marshal\.(Copy|PtrToStructure|AllocHGlobal|ReadIntPtr)' --include='*.cs' .`
 - [ ] **SQL injection — CRITICAL** —
-      `grep -rnE 'FromSqlRaw|ExecuteSqlRaw' --include='*.cs' . | head` ;
-      `grep -rnE '(FromSqlRaw|ExecuteSqlRaw|CommandText|new SqlCommand)\([^)]*(\+|\$")' --include='*.cs' .`
-      ; `grep -rnE '\.Query[^(]*\(\s*\$?"[^"]*\{' --include='*.cs' .` (Dapper
-      string-interpolated SQL)
+      `grep -rnE 'FromSqlRaw|ExecuteSqlRaw|SqlQueryRaw' --include='*.cs' .` (each SQL argument must be a constant) ;
+      `grep -rnE '(FromSqlRaw|ExecuteSqlRaw|SqlQueryRaw)(Async)?(<[^>]*>)?\([^)]*(\+|\$)|CommandText[[:space:]]*=[^;]*(\+|\$")|new SqlCommand\([^)]*(\+|\$")' --include='*.cs' .`
+      ; `grep -rnE '\.(Query|Execute)[A-Za-z]*(<[^>]*>)?\([[:space:]]*(\$@?|@\$)?"[^"]*\{' --include='*.cs' .`
+      (Dapper `Query*`/`Execute*` with interpolated SQL; a raw `"""` literal or SQL built earlier escapes all three)
 - [ ] **Deserialization — CRITICAL** —
-      `grep -rnE 'BinaryFormatter|NetDataContractSerializer|LosFormatter|SoapFormatter|ObjectStateFormatter' --include='*.cs' .`
-      ; `grep -rnE 'TypeNameHandling\.(Auto|All|Objects|Arrays)' --include='*.cs' .`
+      `grep -rnE 'BinaryFormatter|NetDataContractSerializer|LosFormatter|SoapFormatter|ObjectStateFormatter' --include='*.cs' .` ; `grep -rnE 'TypeNameHandling\.(Auto|All|Objects|Arrays)' --include='*.cs' .`
 - [ ] **XXE / command / path — HIGH/CRITICAL** —
-      `grep -rnE 'DtdProcessing|XmlResolver|new XmlDocument|XmlReader|XmlTextReader|new XPathDocument\(|XslCompiledTransform' --include='*.cs' . | head`
-      ; `grep -rnE 'Process\.Start|ProcessStartInfo|UseShellExecute' --include='*.cs' . | head`
-- [ ] **Auth / CORS / antiforgery — HIGH** —
+      `grep -rnE 'DtdProcessing|XmlResolver|new XmlDocument|XmlReader|XmlTextReader|new XPathDocument\(|XslCompiledTransform' --include='*.cs' . | head` ; `grep -rnE 'Process\.Start|ProcessStartInfo|UseShellExecute' --include='*.cs' . | head`
+- [ ] **Auth / CORS / antiforgery — HIGH** (§4) —
       `grep -rnE 'AllowAnyOrigin|AllowAnyHeader|AllowAnyMethod' --include='*.cs' .` ;
-      `grep -rnLE '\[Authorize\]|RequireAuthorization|\[AllowAnonymous\]' --include='*Controller.cs' . | head`
-      (endpoints w/o auth?) ; `grep -rnE 'PersistKeysTo|ProtectKeysWith' --include='*.cs' . || echo "key ring not shared or protected (§5) — MEDIUM with >1 instance"`
+      `grep -rn 'FallbackPolicy' --include='*.cs' . || echo "no FallbackPolicy: an endpoint without [Authorize] is public"` ;
+      `grep -rLE '\[Authorize|\[AllowAnonymous' --include='*Controller.cs' .` (no attribute at all) ;
+      `grep -rnE '\.Map(Get|Post|Put|Delete|Patch|Methods|Group)?\(' --include='*.cs' . | grep -vE 'RequireAuthorization|AllowAnonymous'`
+      (minimal APIs; a `.RequireAuthorization()` on a later line or the parent `MapGroup` is unseen) ;
+      `grep -rnE 'PersistKeysTo|ProtectKeysWith' --include='*.cs' . || echo "key ring not shared or protected (§5) — MEDIUM with >1 instance"`
 - [ ] **Crypto misuse — HIGH** —
-      `grep -rnE '\bnew Random\(|System\.Random' --include='*.cs' . | grep -iE 'token|key|iv|salt|nonce|password|secret'`
-      ; `grep -rnE 'MD5|SHA1|TripleDES|\bDES\b|CipherMode\.ECB' --include='*.cs' .` ;
+      `grep -rnE '\bnew Random\(|System\.Random' --include='*.cs' . | grep -iE 'token|key|iv|salt|nonce|password|secret'` ; `grep -rnE 'MD5|SHA1|TripleDES|\bDES\b|CipherMode\.ECB' --include='*.cs' .` ;
       `grep -rnE 'ServerCertificateCustomValidationCallback|RemoteCertificateValidationCallback' --include='*.cs' . | head`
 - [ ] **Secrets in config/source — HIGH** —
-      `grep -rniE '(password|pwd|secret|apikey|api_key|connectionstring)\s*[=:]' appsettings*.json --include='*.cs' . | head`
-- [ ] **Vulnerable framework/package patch levels — HIGH** —
-      `grep -rnE 'Microsoft\.AspNetCore\.DataProtection' --include='*.csproj' --include='packages.lock.json' .`
-      (10.0.0–10.0.6 = CVE-2026-40372 (need 10.0.7+); if exposed while vulnerable: key ring
-      revoked + tokens rotated?); `dotnet --list-runtimes` (ASP.NET Core < 8.0.21/9.0.10
-      (CVE-2025-55315) or < 8.0.28/9.0.17/10.0.9 (CVE-2026-45591)? Check container base-image
-      tags; self-contained/AOT apps need rebuild)
+      `grep -rniE '"?(password|pwd|secret|apikey|api_key|connectionstrings?)"?[[:space:]]*[=:]' --include='appsettings*.json' --include='*.cs' .` (a `"ConnectionStrings":` hit: read the section for `Password=`/`Pwd=`)
+- [ ] **Data Protection package patch level — HIGH** (§5) —
+      `grep -rn 'Microsoft\.AspNetCore\.DataProtection' --include='*.csproj' --include='packages.lock.json' --include='Directory.Packages.props' .`
+      (10.0.0–10.0.6 = CVE-2026-40372, need 10.0.7+; if exposed while vulnerable: key ring revoked
+      and tokens rotated?). Runtime and Kestrel patch levels are in the `rules/06` checklist
 - [ ] **Static security analysis: enable security CA rules + a SAST (rules/06)**
 - [ ] **BinaryFormatter re-armed on .NET 9+ — CRITICAL until justified** (§2) — either half of
       the opt-back-in:
@@ -414,8 +412,7 @@ names its page and reason. *(OWASP: Code Review Guide v2; .NET Security cheat sh
       later argument discards the root: for each call fed by a request, is the result passed
       through `GetFullPath` and prefix-checked against root + separator?)
 - [ ] **Regex without a timeout on untrusted input — MEDIUM (ReDoS)** (§3) —
-      `grep -rnE 'new Regex\(|Regex\.(IsMatch|Match|Matches|Replace|Split)\(|\[GeneratedRegex\(' --include='*.cs' . | grep -vE 'TimeSpan|matchTimeout|NonBacktracking'`
-      ; `grep -rn 'REGEX_DEFAULT_MATCH_TIMEOUT' .` (a hit sets a process-wide default and
+      `grep -rnE 'new Regex\(|Regex\.(IsMatch|Match|Matches|Replace|Split)\(|\[GeneratedRegex\(' --include='*.cs' . | grep -vE 'TimeSpan|matchTimeout|NonBacktracking'` ; `grep -rn 'REGEX_DEFAULT_MATCH_TIMEOUT' .` (a hit sets a process-wide default and
       covers the rest); a pattern built from input without `Regex.Escape` is HIGH
 - [ ] **Validation regex with a `$` anchor instead of `\z` — MEDIUM** (§3) —
       `grep -rnE '[^@(,[:space:]$]\$"' --include='*.cs' . | grep -v 'RegularExpression('`
@@ -423,19 +420,15 @@ names its page and reason. *(OWASP: Code Review Guide v2; .NET Security cheat sh
       `[RegularExpression]` requires the match to span the whole value, so it is excluded). Also read
       every `IsMatch` used as an allowlist for a missing anchor or `RegexOptions.Multiline`
 - [ ] **Password KDF on the legacy constructor — HIGH** (§5) —
-      `grep -rnE 'new Rfc2898DeriveBytes\(|PasswordDeriveBytes' --include='*.cs' .` (short
-      overloads = SHA-1 × 1,000; want the static `Rfc2898DeriveBytes.Pbkdf2` with explicit hash
-      and iterations)
+      `grep -rnE 'new Rfc2898DeriveBytes\(|PasswordDeriveBytes' --include='*.cs' .` (short overloads = SHA-1 × 1,000; want the static `Rfc2898DeriveBytes.Pbkdf2` with explicit hash and iterations)
 - [ ] **Hard-coded TLS protocol — HIGH for Tls/Tls11/Ssl3, LOW for Tls12/Tls13** (§5) —
-      `grep -rnE 'SslProtocols\.(Ssl2|Ssl3|Tls|Tls11|Tls12|Tls13|Default)([^[:alnum:]]|$)|SecurityProtocolType\.|ServicePointManager\.SecurityProtocol' --include='*.cs' .`
-      (want `SslProtocols.None`)
+      `grep -rnE 'SslProtocols\.(Ssl2|Ssl3|Tls|Tls11|Tls12|Tls13|Default)([^[:alnum:]]|$)|SecurityProtocolType\.|ServicePointManager\.SecurityProtocol' --include='*.cs' .` (want `SslProtocols.None`)
 - [ ] **Cookies without attributes — MEDIUM (HIGH for a session cookie)** (§7) —
       `grep -rnE 'Cookies\.Append\([^,]+,[^,]+\)|(Secure|HttpOnly)[[:space:]]*=[[:space:]]*false|CookieSecurePolicy\.(None|SameAsRequest)|SameSiteMode\.None' --include='*.cs' .`
       (two-argument `Append` emits no Secure/HttpOnly/SameSite; a value containing a comma
       escapes the first pattern, so read every `Cookies.Append` on an auth path)
 - [ ] **Open redirect — MEDIUM** (§7) —
-      `grep -rnE '(^|[^[:alnum:]_])(Redirect|RedirectPermanent|RedirectPreserveMethod|RedirectPermanentPreserveMethod)\([[:space:]]*[^")[:space:]]' --include='*.cs' .`
-      (non-literal target: want `LocalRedirect` or a preceding `Url.IsLocalUrl`)
+      `grep -rnE '(^|[^[:alnum:]_])(Redirect|RedirectPermanent|RedirectPreserveMethod|RedirectPermanentPreserveMethod)\([[:space:]]*[^")[:space:]]' --include='*.cs' .` (non-literal target: want `LocalRedirect` or a preceding `Url.IsLocalUrl`)
 - [ ] **Raw HTML output — HIGH on user data (stored XSS)** (§7) —
       `grep -rnE 'Html\.Raw\(|(new |\()(HtmlString|MarkupString)[()]' --include='*.cs' --include='*.cshtml' --include='*.razor' .`
 - [ ] **Mutations reachable by GET, so antiforgery never runs — HIGH** (§7) —
@@ -455,8 +448,7 @@ names its page and reason. *(OWASP: Code Review Guide v2; .NET Security cheat sh
       (a positional record holding a credential: its `ToString` prints it unless
       `PrintMembers` is overridden)
 - [ ] **JWT validation switched off — HIGH** (§7) —
-      `grep -rnE '(RequireExpirationTime|RequireSignedTokens|ValidateAudience|ValidateIssuer|ValidateLifetime)[[:space:]]*=[[:space:]]*false|(AudienceValidator|LifetimeValidator|IssuerValidator|SignatureValidator)[[:space:]]*=' --include='*.cs' .`
-      (a custom validator delegate must be read: `=> true` is CA5405)
+      `grep -rnE '(RequireExpirationTime|RequireSignedTokens|ValidateAudience|ValidateIssuer|ValidateLifetime)[[:space:]]*=[[:space:]]*false|(AudienceValidator|LifetimeValidator|IssuerValidator|SignatureValidator)[[:space:]]*=' --include='*.cs' .` (a custom validator delegate must be read: `=> true` is CA5405)
 - [ ] **SSRF: outbound request to a caller-chosen URL — HIGH (CRITICAL where the cloud
       metadata endpoint 169.254.169.254 is reachable)** (§3) —
       `grep -rnE '\.(Get|GetString|GetStream|GetByteArray|GetFromJson|Post|PostAsJson|Put|PutAsJson|Patch|Delete)Async(<[^>]*>)?\([[:space:]]*([^"$)[:space:]]|\$"[^/])|new HttpRequestMessage\([^,]+,[[:space:]]*([^"$)[:space:]]|\$"[^/])|WebRequest\.Create\(' --include='*.cs' .`
@@ -495,6 +487,11 @@ names its page and reason. *(OWASP: Code Review Guide v2; .NET Security cheat sh
       (a runtime `Type`: trace where it came from; `typeof(...)` is fine) ;
       `grep -rnE 'ObjectDataProvider|ResourceDictionary|System\.Management\.Automation|Microsoft\.PowerShell\.SDK|AssemblyInstaller|WorkflowDesigner|BindingSource|DataViewManager|<UseWPF>true|<UseWindowsForms>true' --include='*.cs' --include='*.csproj' --include='*.xaml' .`
       (a finding only in a service that deserializes type-named input)
+- [ ] **Untrusted JSON on lenient `System.Text.Json` defaults — MEDIUM** (§2) —
+      `grep -rnE '(JsonSerializer\.Deserialize|ReadFromJson|GetFromJson)(Async)?(<[^>]*>)?\(' --include='*.cs' . | grep -vE 'Strict|AllowDuplicateProperties|UnmappedMemberHandling'` (named options instance: read how it was built)
+- [ ] **Spoofable client IP via forwarded headers — HIGH where the IP gates access, limits or audit** (§7) —
+      `grep -rnE '(KnownProxies|KnownIPNetworks|KnownNetworks)\.Clear\(\)|ForwardLimit[[:space:]]*=[[:space:]]*null|FORWARDEDHEADERS_ENABLED[^=:]{0,3}[=:[:space:]][[:space:]]*"?[Tt]rue' --include='*.cs' --include='*.json' --include='*.yml' --include='*.yaml' --include='Dockerfile*' --include='*.env' --include='.env*' .`
+      (a `Clear()` needs the real proxy `Add`ed after it; read each `UseForwardedHeaders` setup for its proxy list and `AllowedHosts`)
 - [ ] **Legacy `System.Web` validation off, debug or trace on, config not locked — HIGH** (§8) —
       `grep -rniE 'validateRequest[[:space:]]*=[[:space:]]*"?false|requestValidationMode[[:space:]]*=[[:space:]]*"?[0-3][.]|enableEventValidation[[:space:]]*=[[:space:]]*"?false|debug[[:space:]]*=[[:space:]]*"?true|<trace[^>]*enabled[[:space:]]*=[[:space:]]*"?true|customErrors[^>]*mode[[:space:]]*=[[:space:]]*"?off' --include='*.config' --include='*.aspx' --include='*.ascx' --include='*.master' .`
       (each needs a named page and reason) ; `grep -rniE 'allowOverride[[:space:]]*=[[:space:]]*"?false' --include='*.config' . || echo "nothing locked: a child web.config can weaken any setting"`

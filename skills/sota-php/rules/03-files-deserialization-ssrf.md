@@ -17,7 +17,7 @@ if (!is_uploaded_file($f['tmp_name'])) { /* reject */ }
 if ($f['size'] > 2 * 1024 * 1024) { /* reject */ }
 
 // 1. Content-derived type, allowlist only
-$mime = new finfo(FILEINFO_MIME_TYPE)->file($f['tmp_name']);
+$mime = (new finfo(FILEINFO_MIME_TYPE))->file($f['tmp_name']);   // parens required on 8.3
 $ext  = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'][$mime]
     ?? throw new RuntimeException('unsupported type');
 
@@ -73,11 +73,12 @@ readfile($real);
   against the canonical base (with trailing separator).
 - **Stream wrappers escalate LFI:** `php://filter` (source disclosure via
   base64 chains), `phar://` (deserialization, §3), `data://`, `expect://`,
-  `zip://`. Reject any user path containing `://`, or `parse_url` scheme-check
-  it. Functions beyond include are affected — `file_exists('phar://…')` used
-  to be enough pre-8.0 (§3).
-- ini: `allow_url_include=Off` (default off since 7.4 deprecation; removed as a
-  real option risk — keep it off), and `allow_url_fopen=Off` unless remote
+  `zip://`. Reject any user path containing `://`, or scheme-check it with a URL parser
+  (on 8.5+ the `Uri\` classes, §5). Functions beyond include are affected —
+  `file_exists('phar://…')` used to be enough pre-8.0 (§3).
+- ini: `allow_url_include=Off`. It defaults to Off and has been deprecated since 7.4, but it is
+  still honoured: measured on 8.5.9, `-d allow_url_include=1` printed a startup deprecation and
+  then `include`d a `data://` URL. Keep it Off, and `allow_url_fopen=Off` unless remote
   fetching is genuinely needed (OWASP PHP Configuration Cheat Sheet);
   `open_basedir` as a coarse second fence.
 
@@ -181,6 +182,14 @@ curl_setopt_array($ch, [
   resolves, pins via `resolve` and re-checks every redirect hop, but its default subnet list
   (`IpUtils::PRIVATE_SUBNETS`) omits multicast, so pass your own list to the constructor.
 - Positive allowlist first; IP-range rejection is the fallback. OWASP: SSRF Prevention, .NET Security and GraphQL cheat sheets.
+- **The parser that checks a URL must be the one that uses it.** Measured on 8.5.9 for
+  `http://example.com\@evil.com/`: `parse_url()` gave host `evil.com`, cURL 8.21 dialled
+  `evil.com`, `Uri\WhatWg\Url` (browser rules) gave `example.com`, and `Uri\Rfc3986\Uri::parse()`
+  returned `null`. So a WHATWG check in front of a cURL fetch approves one host and fetches
+  another. On 8.5+, parse a server-side fetch URL with `Uri\Rfc3986\Uri::parse()`, reject a
+  `null`, check the parsed scheme and host, and hand cURL the object's `toString()`, never the
+  raw input. Use `Uri\WhatWg\Url` where a browser follows the URL (redirect targets, links).
+  On 8.3/8.4 there is no strict parser in core; the connect-time check above is the control.
 - cURL hardening: `CURLOPT_PROTOCOLS_STR`/`CURLOPT_REDIR_PROTOCOLS_STR` (PHP 8.3+, libcurl
   7.85+) limited to HTTP(S) — redirects can bounce to `gopher://`/`file://`; a
   `CURLOPT_MAXREDIRS` cap is **not** re-validation; set timeouts; **never**
@@ -264,6 +273,10 @@ Run from repo root; verify each hit manually.
       `grep -rlE 'curl_init[[:space:]]*\(|GuzzleHttp\\Client|HttpClient::create' --include='*.php' src/ | while IFS= read -r f; do grep -qE 'CURLOPT_PREREQFUNCTION|CURLOPT_RESOLVE|NoPrivateNetworkHttpClient' "$f"; case $? in 0) ;; 1) echo "NO CONNECT-TIME IP CHECK: $f"; grep -nE "FOLLOWLOCATION[^;]*(true|1)|allow_redirects'?[[:space:]]*=>[[:space:]]*(true|\[)" "$f" | sed "s|^|  REDIRECT FOLLOWED: $f:|" ;; *) echo "SWEEP FAILED: $f" ;; esac; done`
       — a file using Guzzle's default redirects prints only its first line; a file not
       printed still needs reading (`CURLOPT_RESOLVE` alone leaves redirect hops unpinned)
+- [ ] **URL checked by one parser, fetched by another (§5) — HIGH on an SSRF path** — prints
+      each file that validates with `parse_url` or WHATWG and also fetches with cURL:
+      `grep -rlE 'parse_url[[:space:]]*\(|WhatWg\\Url' --include='*.php' src/ | while IFS= read -r f; do grep -qE 'curl_init|GuzzleHttp|HttpClient' "$f"; case $? in 0) echo "CHECK-PARSER vs FETCHER: $f" ;; 1) ;; *) echo "SWEEP FAILED: $f" ;; esac; done`
+      (on 8.5+ the fix is `Uri\Rfc3986\Uri::parse()` and fetching its `toString()`)
 - [ ] **TLS verification off in any spelling — HIGH (§5)** —
       `grep -rniE '(SSL_VERIFYPEER|SSL_VERIFYHOST|verify_peer(_name)?)["'"'"']?[[:space:]]*(,|=>)[[:space:]]*(false|0)|allow_self_signed["'"'"']?[[:space:]]*=>[[:space:]]*(true|1)' --include='*.php' src/`
 - [ ] **SSH host key never compared — HIGH (§5)** — prints each file that opens an SSH session

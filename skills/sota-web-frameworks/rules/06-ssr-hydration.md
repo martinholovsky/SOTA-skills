@@ -149,9 +149,9 @@ A strict, nonce/hash-based CSP is the highest-leverage defense-in-depth for thes
 - [ ] **Cross-request state pollution: module-level mutable state in server code** —
       `grep -rnE '^(export )?(let|const) \w+\s*=\s*(reactive|ref|new |\[\]|\{\})' --include='*.ts' server lib composables utils 2>/dev/null`
 - [ ] **Caching / CSP** —
-      `grep -rn 'Cache-Control\|s-maxage\|Vary' --include='*.ts' server app middleware.* proxy.*`
+      `grep -rn 'Cache-Control\|s-maxage\|Vary' --include='*.ts' --include='*.js' --include='*.mjs' --exclude-dir=node_modules .`
       ;
-      `grep -rn "Content-Security-Policy\|nonce\|strict-dynamic\|nuxt-security" --include='*.ts' app proxy.* middleware.* nuxt.config.*`
+      `grep -rn "Content-Security-Policy\|nonce\|strict-dynamic\|nuxt-security" --include='*.ts' --include='*.js' --include='*.mjs' --exclude-dir=node_modules .`
 
 - [ ] Render deterministic — no `Date`/random/`window`/locale branching outside effects/`onMounted`; stable `useId`?
 - [ ] Mismatch suppression scoped to individual unavoidable nodes, never blanket, never patched with injected user HTML?

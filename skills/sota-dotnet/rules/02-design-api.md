@@ -47,7 +47,10 @@ but the `out` value **is** an in-band sentinel the moment the `bool` is ignored.
   exception. Implement the dispose pattern correctly (and `IAsyncDisposable` for
   async cleanup).
 - **`HttpClient`**: never `new HttpClient()` per call (socket exhaustion) — use
-  `IHttpClientFactory` (typed/named clients) or a single long-lived instance.
+  `IHttpClientFactory` (typed/named clients) or a single long-lived instance **built on a
+  `SocketsHttpHandler` with `PooledConnectionLifetime` set** (for example a few minutes). A client
+  resolves DNS only when it opens a connection, so a static client without that lifetime keeps
+  talking to an old address after a DNS change (Microsoft: HttpClient guidelines for .NET).
 - Don't dispose objects you don't own (e.g. injected/DI-managed singletons,
   `HttpClient` from the factory).
 

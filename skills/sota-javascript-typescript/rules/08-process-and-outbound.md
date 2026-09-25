@@ -39,11 +39,12 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
 - **Node deprecated the dangerous spelling itself.** `DEP0190` — "Passing `args` to
   the `node:child_process` module's `execFile()` and `spawn()` methods with the
   `shell` option enabled is deprecated … the arguments are not properly escaped when
-  passed to the shell". Measured on Node 22: `spawnSync('/bin/echo', ['$HOME'],
-  {shell:true})` prints the expanded home directory **and emits the DEP0190 runtime
-  warning**, while the same call without `shell` prints the literal `$HOME`. Treat a
-  DEP0190 warning in logs or CI as a finding, not noise — it marks a live injection
-  sink.
+  passed to the shell". It is a documentation-only deprecation on Node 22 (v22.15.0) and a
+  runtime one from v24.0.0. Measured on Node 22.22.1: `spawnSync('/bin/echo', ['$HOME'],
+  {shell:true})` prints the expanded home directory and **emits no warning** (not even
+  with `--pending-deprecation`), while the same call without `shell` prints the literal
+  `$HOME`. So on 22 only the grep below finds it. On ≥24, treat a DEP0190 warning in logs
+  or CI as a finding, not noise — it marks a live injection sink.
 - **`timeout:` bounds your wait, not the process tree, and may report no error.**
   Measured on Node 22 with a child that exits immediately after spawning a grandchild
   holding stdout: `execFile(..., {timeout: 300})` called back at **305 ms** — the
@@ -86,7 +87,7 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
   `\\evil.example/x` (measured, Node 22.22). Take an ID or path segment, not a URL. When a
   URL is unavoidable, parse it and compare `.origin` to an exact allowlist before the call.
   The `EventSource` case is `sota-api-design` rules/05 §3. *OWASP: HTML5 Security cheat sheet.*
-- Mass assignment: never `Model.update(req.body)` — schema-pick the allowed fields (`z.object({...}).strict()`).
+- Mass assignment: never `Model.update(req.body)` — schema-pick the allowed fields (`z.strictObject({...})`, which rejects unknown keys).
 - **NoSQL operator injection is the same bug arriving as a type.** In
   `User.findOne({ name: req.body.name, pass: req.body.pass })`, a body of
   `{"pass": {"$ne": null}}` becomes a MongoDB operator, not a string. JSON bodies can always

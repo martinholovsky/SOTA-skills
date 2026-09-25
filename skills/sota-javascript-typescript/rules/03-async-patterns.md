@@ -144,7 +144,7 @@ await readable
 - Prefer Web Streams (`ReadableStream`/`WritableStream`/`TransformStream`) over Node streams in new cross-platform code; bridge legacy with `Readable.toWeb()`/`fromWeb()`.
 - Node-side pipelines: `stream/promises` `pipeline(src, transform, dst, { signal })` — handles error propagation and cleanup; never `.pipe()` chains without error handling (each `.pipe` swallows downstream errors).
 - Don't buffer whole files/bodies when output is also a stream — `await res.json()` on a 2GB body is an OOM; stream it.
-- `Array.fromAsync(asyncIterable)` (ES2024) materializes when you genuinely need the full array.
+- `Array.fromAsync(asyncIterable)` (ES2026) materializes when you genuinely need the full array.
 - `ReadableStream` is async-iterable; respect cancellation: a `break` out of `for await` cancels the stream (releases the lock) — that's correct behavior, rely on it.
 
 ## Retries with backoff, abort-aware
@@ -152,6 +152,8 @@ await readable
 Retry only transient failures (network errors, 429/503), only idempotent operations, bounded attempts, exponential backoff with full jitter, and propagate the caller's signal so cancellation stops the retry loop too.
 
 ```ts
+import { setTimeout as sleep } from 'node:timers/promises';   // Node has no global `scheduler`
+
 async function withRetry<T>(fn: (signal: AbortSignal) => Promise<T>, opts: { attempts?: number; signal?: AbortSignal } = {}): Promise<T> {
   const { attempts = 3, signal } = opts;
   for (let i = 0; ; i++) {
@@ -161,7 +163,7 @@ async function withRetry<T>(fn: (signal: AbortSignal) => Promise<T>, opts: { att
     } catch (e) {
       if (i >= attempts - 1 || !isTransient(e)) throw e;
       const delay = Math.random() * Math.min(1000 * 2 ** i, 10_000);   // full jitter, capped
-      await scheduler.wait(delay, { signal });   // or setTimeout-promise with signal
+      await sleep(delay, undefined, { signal });   // rejects with AbortError when the caller aborts
     }
   }
 }
@@ -215,7 +217,7 @@ async function* readBatches(db: Db, signal: AbortSignal) {
 }
 ```
 
-- ES2026 explicit resource management generalizes this: `await using cursor = await db.openCursor();` with `[Symbol.asyncDispose]` on the resource — adopt for locks, files, connections as the runtimes/tsconfig (`lib: esnext.disposable`) allow.
+- ES2027 explicit resource management (Stage 4 May 2026) generalizes this: `await using cursor = await db.openCursor();` with `[Symbol.asyncDispose]` on the resource — adopt for locks, files, connections as the runtimes/tsconfig (`lib: esnext.disposable`) allow.
 - Browser-side last-resort rejection telemetry: `window.addEventListener('unhandledrejection', e => { report(e.reason); e.preventDefault(); })` — report, don't suppress silently; this is monitoring, not error handling.
 
 ## Deferred patterns worth knowing

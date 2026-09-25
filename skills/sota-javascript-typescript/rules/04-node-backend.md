@@ -2,15 +2,22 @@
 
 ## Runtime choice
 
-- **Node LTS** (currently 24 active LTS, 22 in maintenance; 26 is Current and becomes LTS Oct 2026 — it ships Temporal enabled by default and undici 8): default for production backends. Largest ecosystem compatibility, slowest-moving, best observability story. Pin the major in `package.json` `engines` and `.nvmrc`/`.node-version`; CI must run the pinned version. From Node 27 the release cycle is annual and every major reaches LTS after six months as Current.
+- **Node LTS** (run the line the release schedule marks Active LTS — check github.com/nodejs/Release rather than trusting a number written here; 26 is Current and is scheduled to become LTS on 2026-10-28 — it ships Temporal enabled by default and undici 8): default for production backends. Largest ecosystem compatibility, slowest-moving, best observability story. Pin the major in `package.json` `engines` and `.nvmrc`/`.node-version`; CI must run the pinned version. From Node 27 the release cycle is annual and every major reaches LTS after six months as Current.
 - **Bun**: fast installs/startup/test runner; fine for tooling, scripts, and apps you've load-tested on it. Verify native-addon and edge-case Node-API compat before betting production on it.
 - **Deno**: strong security model (permission flags), built-in TS. Choose when its model fits; ecosystem friction has shrunk with npm compat but still exists.
 - **Node's Permission Model is in-process least privilege, a seat belt rather than a sandbox.**
-  `node --permission` denies file-system access, child processes, workers, native addons and
-  WASI until an `--allow-*` flag grants them. The docs list it as Stable since v22.13.0/v23.5.0
-  (added in v20 as experimental). Scope `--allow-fs-read`/`--allow-fs-write` to specific
-  directories, never `*`, and add `--allow-child-process`, `--allow-worker`, `--allow-addons`
-  or `--allow-wasi` only for a feature that needs it. Check a grant at run time with
+  `node --permission` denies each scope until an `--allow-*` flag grants it, but **which
+  scopes exist depends on the Node major** (each flag's `added:` line in the CLI docs):
+  file system (`--allow-fs-read`/`--allow-fs-write`), child processes, workers (all v20),
+  native addons (v21.6/v20.12), WASI (v22.3/v20.16); inspector (`--allow-inspector`,
+  v25.0/v24.12); **network (`--allow-net`, v25.0.0, not backported)**; FFI (`--allow-ffi`, v26.1);
+  OpenSSL STORE loaders (`--allow-openssl-store`, v26.7/v24.21); VFS (`--allow-fs-vfs`, v26.9).
+  So on Node 22 and 24 **`--permission` does not restrict the network at all**: measured on
+  22.22.1, a `fetch` under `--permission` succeeded and `--allow-net` was rejected as a bad
+  option. Keep egress control outside the process there (`sota-network-security`). The docs
+  list the model as Stable since v22.13.0/v23.5.0 (added in v20 as experimental). Scope
+  `--allow-fs-read`/`--allow-fs-write` to specific directories, never `*`, and add any other
+  `--allow-*` only for a feature that needs it. Check a grant at run time with
   `process.permission.has('fs.read', path)`. Its own docs say it "does not protect against
   malicious code", so keep the container or OS sandbox (`sota-sandboxing` rules/04). Two
   documented gaps: file descriptors already open bypass it, and **symlinks are followed out of
@@ -37,7 +44,8 @@ Node now ships what used to require packages. Every dep removed is supply-chain 
 | ws client (basic) | global `WebSocket` (≥22) |
 
 ```bash
-node --watch --env-file=.env src/server.ts   # Node ≥22.18/≥24 runs TS directly (type stripping, unflagged)
+node --watch --env-file=.env src/server.ts   # Node ≥22.18/≥23.6 runs TS directly (type stripping, unflagged)
+# Under native stripping, relative imports name the .ts file ('./db.ts', not './db.js') — rules/01 §"ESM-first"
 node --test --experimental-test-coverage
 ```
 
@@ -54,14 +62,14 @@ import { z } from 'zod';
 const Env = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
-  DATABASE_URL: z.string().url(),
+  DATABASE_URL: z.url(),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   STRIPE_KEY: z.string().min(1),
 });
 
 const parsed = Env.safeParse(process.env);
 if (!parsed.success) {
-  console.error('Invalid environment:', parsed.error.flatten().fieldErrors);
+  console.error('Invalid environment:', z.treeifyError(parsed.error));
   process.exit(1);   // crash at boot, not at 3am when the code path is hit
 }
 export const config = Object.freeze(parsed.data);
@@ -282,7 +290,7 @@ if (res.status >= 500) throw new UpstreamError(res.status);   // retry layer dec
 
 - `"type": "module"` in package.json. `__dirname`/`__filename` don't exist — use `import.meta.dirname` / `import.meta.filename` (Node ≥20.11), or `new URL('./file', import.meta.url)` for asset paths.
 - JSON imports: `import data from './data.json' with { type: 'json' }`.
-- Don't mix: a stray `require` in ESM throws; CJS deps import fine via default import. Publishing libraries: ship ESM; add CJS only if your consumers truly need it (use tsup/unbuild dual output, verify with `attw`).
+- Don't mix: a stray `require` in ESM throws; CJS deps import fine via default import. Publishing libraries: ship ESM; add CJS only if your consumers truly need it (use tsdown/unbuild dual output, verify with `attw`; tsup's README says it is no longer actively maintained and points to tsdown).
 - Dynamic `import()` works in both module systems — it's the migration bridge and the lazy-loading tool.
 
 ## `node:crypto` AEAD traps
@@ -375,9 +383,12 @@ channel.
       Then check that `NODE_ENV` is required with no default in the config schema, since
       Express treats it unset as development.
 - [ ] **Permission Model granted wholesale (§"Runtime choice") — MEDIUM** —
-      ``grep -rnE -e '--allow-fs-(read|write)=(\*|/)([" ,]|$)' --include='package.json' --include='Dockerfile*' --include='*.yml' --include='*.yaml' --include='*.service' --include='Procfile' .``
-      — a `*` or `/` file-system grant makes `--permission` decorative. Where it is scoped, check the
-      allowed directories for attacker-creatable or relative symlinks, and that an OS sandbox still exists.
+      ``grep -rnE -e '--allow-fs-(read|write)=(\*|/)([" ,]|$)|--allow-(net|ffi)([^[:alnum:]-]|$)' --include='package.json' --include='Dockerfile*' --include='*.yml' --include='*.yaml' --include='*.service' --include='Procfile' .``
+      — a `*` or `/` file-system grant makes `--permission` decorative; `--allow-net` (all hosts,
+      no scoping) and `--allow-ffi` (arbitrary native calls, rules/05) each reopen a whole scope.
+      Where it is scoped, check the allowed directories for attacker-creatable or relative symlinks,
+      and that an OS sandbox still exists. On Node 22/24 (`engines`, `.nvmrc`, base image) there
+      is no network scope at all: confirm egress is limited outside the process.
 - [ ] **Request-scoped state in module scope or a leaky AsyncLocalStorage (§"Request
       context") — HIGH when it carries a tenant or user** —
       `grep -rnEi '^(export )?let +[[:alnum:]_$]*(tenant|user|request|req|ctx|context|session|locale)[[:alnum:]_$]* *(:|=|;)|\.enterWith\(|getStore\(\)[^;]*(\?\?|\|\|) *[^;[:space:]]' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`

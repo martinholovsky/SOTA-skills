@@ -26,7 +26,7 @@ survives a long context instead of fading into it. That's why it beats a bigger 
 instead of becoming one. Native on Claude Code; works with Antigravity CLI, Codex, and any
 agent that reads `AGENTS.md`.
 
-Under the hood: **42 skills (336 files, ~84k lines)** of state-of-the-art 2026
+Under the hood: **42 skills (336 files, ~85k lines)** of state-of-the-art 2026
 practice, each **instruction** file under 500 lines so only the matching rules load —
 the cap applies to `skills/**` alone, never to README/CHANGELOG/`docs/` — every fast-moving
 claim web-verified against a primary source **as of the last full sweep** (the root
@@ -1425,7 +1425,7 @@ verify fast-moving claims against primary sources, keep **skill** files
 does not apply to README/CHANGELOG/`docs/`, which are read by humans — and end
 each rules file with an audit checklist — **exactly one**, since appending a
 section's bullets under a fresh heading strands them where a reader has already
-stopped. **36 invariants** enforce this in `scripts/check-invariants.sh`
+stopped. **37 invariants** enforce this in `scripts/check-invariants.sh`
 (pre-commit + CI — the one-line-each table with the incident behind each one is
 [docs/INVARIANTS.md](docs/INVARIANTS.md)), covering line caps, checklist placement *and uniqueness*,
 description limits, version and count drift, router completeness,

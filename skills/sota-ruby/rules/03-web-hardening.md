@@ -62,9 +62,22 @@ params.expect(user: [:name, :email])   # Rails 8.0+, raises 400 on bad shape
   protection. Rails: `protect_from_forgery with: :exception` (on by default
   in generated apps) — audit every `skip_before_action
   :verify_authenticity_token` and every `protect_from_forgery with:
-  :null_session` on non-API controllers. Sinatra/Rack: `Rack::Protection`
-  (`use Rack::Protection, :authenticity_token`) — plain Sinatra without it
-  has **no CSRF protection**.
+  :null_session` on non-API controllers. **Sinatra** enables
+  `Rack::Protection` itself (`set :protection, true` is the default, read from
+  sinatra 4.2.1), with the Origin check (`HttpOrigin`) and `RemoteToken` on
+  and a `:drop_session` reaction: a cookie-bearing cross-Origin POST reaches
+  the handler with an empty session (measured). What is **off** by default is
+  the token check, `AuthenticityToken`, and a request with no `Origin` header
+  passes the Origin check. Turn it on for defence in depth:
+  `use Rack::Protection::AuthenticityToken` (or `set :protection, use:
+  [:authenticity_token]`; in a plain Rack app, `use Rack::Protection, use:
+  [:authenticity_token]`). Through `set :protection` a missing token empties
+  the session (Sinatra's reaction); the explicit `use` form answers 403 (both
+  measured). The findings are `disable :protection`, `set :protection,
+  false`, and an `except:` list naming `:http_origin` or `:remote_token`. Do not write `use Rack::Protection, :authenticity_token`:
+  the second argument must be an options hash, and it raises `TypeError` at
+  boot (measured, rack-protection 4.2.1). A bare Rack app that never adds
+  `Rack::Protection` has no CSRF defence at all.
 - Token-authenticated APIs (Authorization header, no cookies) don't need
   CSRF tokens — but an "API" that also accepts session cookies does; that
   hybrid is the classic gap.
@@ -90,9 +103,28 @@ params.expect(user: [:name, :email])   # Rails 8.0+, raises 400 on bad shape
 ## 4. Sessions and cookies
 
 - Session cookies: `secure: true`, `httponly: true`, `same_site: :lax`
-  minimum. Rack example:
+  minimum. Rack example (rack-session 2.x):
   `use Rack::Session::Cookie, secure: true, httponly: true, same_site: :lax,
-  secret: ENV.fetch("SESSION_SECRET")`.
+  secrets: [ENV.fetch("SESSION_SECRET")], serialize_json: true`.
+  - **`secrets:`, not `secret:`.** `secrets:` encrypts and authenticates the
+    cookie, takes an array so a new key can be prepended for rotation, and
+    rejects a key shorter than 64 bytes (`ArgumentError`, measured). The
+    singular `secret:` (and `legacy_hmac_secret:`) also turns on the legacy
+    path: HMAC-SHA1 verification with a `Marshal` decoder, kept for migrating
+    old cookies (read from rack-session 2.1.2 `cookie.rb`).
+  - **`serialize_json: true` as well.** Without it the encrypted payload is
+    still `Marshal`-serialized (`serialize_json: false` is the encryptor's
+    default; measured). Anyone holding the key can then forge a cookie that
+    the server passes to `Marshal.load` — a leaked session secret becomes
+    remote code execution, not just session forgery (`rules/02` §3). With
+    JSON, store only strings, numbers, arrays and hashes in the session.
+  - **Sinatra's `enable :sessions` always takes the legacy path**: it passes
+    `session_secret` as `secret:` (read from sinatra 4.2.1 `setup_sessions`),
+    so HMAC-SHA1 + `Marshal` stays live even with `set :sessions,
+    serialize_json: true` (measured). For a new app, `disable :sessions` and
+    `use Rack::Session::Cookie, secrets: [...], serialize_json: true` directly;
+    the `session` helper works unchanged (measured).
+  - A custom `coder:` replaces this machinery; review it as a deserializer.
 - **Cookies the app sets itself do not inherit the session cookie's flags.**
   Rails `cookies[:k] = v` (and `.signed`/`.encrypted`/`.permanent`) defaults to
   `path: "/"`, no `HttpOnly`, and `SameSite` from
@@ -176,7 +208,8 @@ params.expect(user: [:name, :email])   # Rails 8.0+, raises 400 on bad shape
   metadata ranges (127.0.0.0/8, 10/8, 172.16/12, 192.168/16, 169.254/16 —
   cloud metadata 169.254.169.254), cap redirects and re-validate each hop,
   and set open/read timeouts. `URI.open` on user input additionally risks
-  `|command` execution (see `rules/02` §2). The policy is `sota-code-security`
+  `|command` execution on Ruby ≤ 3.4 and an arbitrary local-file read on
+  every version (see `rules/02` §2). The policy is `sota-code-security`
   rules/01 §5; the Ruby spelling of each step:
   - **Build the URL, don't relay it.** Where the feature allows, accept a
     key or record ID and look the base URL up in a server-side allowlist.
@@ -275,15 +308,24 @@ first — it covers XSS/mass-assignment/redirect sinks mechanically.
       ; `grep -rnE 'permit\([^)]*(:role|:admin|:account_id|:state)' --include='*.rb' .`
 - [ ] **CSRF** — `grep -rn "skip_before_action :verify_authenticity_token" --include='*.rb' .` ;
       `grep -rn "protect_from_forgery" --include='*.rb' . | head` ;
-      `grep -rn "Rack::Protection" --include='*.rb' config.ru 2>/dev/null | head -1` (Sinatra:
-      absent = HIGH)
+      Sinatra/Rack protection switched off (§3) — HIGH on a cookie-session app:
+      `grep -rnE 'disable[[:space:]]+:protection|set[[:space:]]+:protection,[[:space:]]*false|except:[^#]*:(http_origin|remote_token)' --include='*.rb' --include='config.ru' .` ;
+      token check wired? (absent in a Sinatra app = LOW/MEDIUM, defence in depth; absent in a
+      bare Rack app that also lacks `Rack::Protection` = HIGH) —
+      `grep -rnE 'AuthenticityToken|:authenticity_token' --include='*.rb' --include='config.ru' .` ;
+      the boot-time `TypeError` form — `grep -rnE 'use[[:space:]]+Rack::Protection,[[:space:]]*:' --include='*.rb' --include='config.ru' .`
 - [ ] **Verb confusion and widened routes — HIGH on a state-changing action** —
       `grep -rnE 'if\s+request\.get\?|unless\s+request\.get\?|request\.get\?\s*\?' --include='*.rb' app/ lib/ 2>/dev/null`
       (the else branch runs on HEAD, unchecked by CSRF) ;
       `grep -rnE 'via:\s*(:all|\[[^]]*:get[^]]*:(post|put|patch|delete))|:controller\(|/:action' config/routes.rb config/routes/ 2>/dev/null`
 - [ ] **Sessions / cookies** —
-      `grep -rnE "Rack::Session::Cookie" --include='*.rb' config.ru 2>/dev/null | grep -v "secure: true"`
-      ; `grep -rn "reset_session" --include='*.rb' . | head -1` (absent around login = MEDIUM);
+      `grep -rnE 'Rack::Session::Cookie' --include='*.rb' --include='config.ru' . | grep -v 'secure: true'`
+      (options split across lines are a false hit — read the call) ;
+      legacy or Marshal-backed session cookie (§4) — HIGH, CRITICAL if the secret may have leaked —
+      `grep -rnE '(^|[^_[:alnum:]])(secret|legacy_hmac_secret|coder):[[:space:]]|enable[[:space:]]+:sessions' --include='*.rb' --include='config.ru' .`
+      (`secret:` on an unrelated client is a false hit; then confirm each `Rack::Session::Cookie`
+      call sets `serialize_json: true`) ;
+      `grep -rn "reset_session" --include='*.rb' . | head -1` (absent around login = MEDIUM);
       `grep -rn "secret_key_base\|SESSION_SECRET" --include='*.rb' --include='*.yml' . | grep -vE "ENV|credentials"`
 - [ ] **App-set cookie without HttpOnly (§4) — MEDIUM; HIGH when it carries a token or
       identity** — `grep -rnE 'cookies(\.[a-z]+)*\[[^]]+\]\s*=[^=~]|set_cookie\(' --include='*.rb' . | grep -v 'httponly'`
