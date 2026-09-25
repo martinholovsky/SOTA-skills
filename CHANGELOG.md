@@ -45,6 +45,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Negative-control probe 31b failed on macOS on any branch that relocates headings.** Its
+  baseline count used `\+` in a basic-regex `sed`, which BSD sed does not match, so the count
+  read as 0. It showed up only once a branch (these splits) relocated headings of its own.
+  Linux CI, with GNU sed, was unaffected. The probe now uses `[0-9][0-9]*`.
 - `docs/SKILL-TEMPLATE.md` and `docs/INDEX.md` said the floor had 12 concepts. It has 25.
 - CONTRIBUTING said "every one of the 34 checks was green" on 2026-09-15, but invariant 34
   was added later. It now says "every check then in force".
