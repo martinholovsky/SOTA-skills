@@ -98,11 +98,12 @@ section was refreshed in parts — say which parts.**
 
 **This table is not the whole backlog.** Open work also sits in
 [ADOPTION-LOG.md](ADOPTION-LOG.md) as entries marked **`**DEFERRED —`** — an idea judged
-real but held for a trigger, which the roadmap never learns about. **Three on 2026-09-24**, by
-check 27: the 2026-08-11 spanchain integrity verdict (revisit on a second implementation), the
-competitor benchmark's full-7 multi-sample (revisit on the next competitor re-run) and a lint
-gate for unguarded `grep -c` substitutions (revisit on a second occurrence), the last two
-deferred 2026-09-23. *This sentence said "two are live" until 2026-09-24 and named the magus
+real but held for a trigger, which the roadmap never learns about. **Read the count from check
+27; it is not restated here.** *On 2026-09-24 this sentence said "Three" and named them, while
+check 27 printed 3 and the log held **six**: two were written `**Deferred —` in mixed case,
+which the gate's case-sensitive regex skips, and one sat in this file's history (Ruby/.NET
+reachability). A `/sota-resume` pass on 2026-09-25 normalised all three, so the gate and the
+log now agree.* *Before that it said "two are live" until 2026-09-24 and named the magus
 **over-firing control**, which was adopted on 2026-09-21 as `sota-code-security` rules/10 §5.
 A list here drifts; the gate's count does not.* Another resolved on 2026-09-11, when the `vulnerability-triage-brocards` trigger was
 executed rather than re-read — it became a confirmed gap and then **item 50**, which is where
@@ -787,8 +788,13 @@ first.
 - **Ruby and .NET have no dependency-reachability tool worth naming.** Recorded as a
   deliberate gap, not an oversight (candidates: 5 stars, one contributor each, one
   with no push since 2025-01-03). Revisit if a maintained option appears.
+  **Moved 2026-09-25 to [ADOPTION-LOG.md](ADOPTION-LOG.md) as a `**DEFERRED —` marker**, so
+  invariant 27 counts it; a deferral here was invisible to the gate. **Corrected there, too:**
+  the .NET half was never true as written. The same commit (#152) named `ReferenceTrimmer` for
+  .NET as a candidate generator, and `sota-devsecops` rules/10 §2 still does. Only Ruby has
+  no tool.
 
-**Open items from the 2026-07-28 cycle (still open):**
+**Open items from the 2026-07-28 cycle ("still open" as of that cycle — history, not a task list; live status is the ledger's `**OPEN` markers):**
 
 - ~~**No update-notification path for clone installs.**~~ **CLOSED 2026-08-02 —
   `scripts/update-reminder.sh`**, reaching both install paths and making no network
@@ -876,7 +882,7 @@ first.
   `--version`. **This makes the notification item above more important, not less**:
   neither install path pushes updates by default.
 
-**Prior open items, still open (2026-07-22 framing, re-checked today):**
+**Prior open items, still open (2026-07-22 framing, re-checked that day — history, not a task list; live status is the ledger's `**OPEN` markers):**
 
 The foundation is de-risked and the
 release cadence caught up: **v1.17.0 → v1.19.0** shipped across 2026-07-20…22.
@@ -1105,7 +1111,7 @@ Historical per-item notes below (kept as the record of what was done):
 8. **Scheduled — first 6-month accuracy sweep ~Jan 2027** (item 5): re-verify
    fast-moving claims per `docs/MAINTENANCE.md` and bump `LAST-VERIFIED`.
 
-## Now — prove and protect accuracy *(done this cycle)*
+## Now — prove and protect accuracy *(done this cycle)* *(history — not a task list)*
 
 The audit's verdict was "content is trustworthy; the gap is that nothing
 *proves or protects* accuracy." Closed 2026-07-10 (PRs #63–#66):
@@ -1120,7 +1126,7 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
 3. **Eval-harness prototype** — `evals/` (golden-set cases + `score.py`,
    verified end-to-end) makes the efficacy claim measurable. *(#66)*
 
-## Next — grow what the prototypes started
+## Next — grow what the prototypes started *(2026-07 plan; history — not a task list)*
 
 4. **Eval baseline + clean isolated control** — *done 2026-07-10/11*
    ([`BASELINE.md`](../evals/results/2026-07-10/BASELINE.md); `evals/run-clean.py`):
@@ -1157,7 +1163,7 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
 5. **First 6-month accuracy sweep** comes due ~Jan 2027 (freshness window) —
    run it per the `docs/MAINTENANCE.md` runbook and bump `LAST-VERIFIED`.
 
-## Later — distribution over coverage
+## Later — distribution over coverage *(2026-07 plan; history — not a task list)*
 
 6. **Pause net-new skills; invest in distribution.** Coverage is an exhausted
    lever at current adoption (audit: 4 stars / 1 issue after 41 skills). Put
@@ -1165,7 +1171,7 @@ The audit's verdict was "content is trustworthy; the gap is that nothing
    demo) and the badge→verifiable-audit idea (link the "Built with" badge to a
    committed audit report + commit SHA). *(audit STRAT-MED-1)*
 
-## Unexplored ideas
+## Unexplored ideas *(2026-07 list; history — not a task list)*
 
 - **Comparative benchmark vs. named competing libraries.** ~~Unexplored~~
   **DONE 2026-07-14** ([`evals/results/2026-07-13/COMPETITOR-BENCHMARK.md`](../evals/results/2026-07-13/COMPETITOR-BENCHMARK.md),

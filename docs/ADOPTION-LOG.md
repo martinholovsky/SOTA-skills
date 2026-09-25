@@ -17,8 +17,12 @@ lessons-log — its own best structural idea, applied to ourselves.
   correction`**. **A deferral carries a machine-readable marker so its status is checkable:
   write `**DEFERRED —` followed by the revisit condition on the same line, and when it
   resolves change that marker in place rather than recording the outcome only in a later
-  entry.** Invariant 27 asserts every `**DEFERRED —` marker names a trigger, and that
-  nothing else in the repo calls an item deferred that this log no longer marks. Added
+  entry.** Invariant 27 asserts every `**DEFERRED —` marker names a trigger, in the
+  marker's own cell. It matches the marker **case-sensitively**, so `**Deferred —` is not a
+  deferral as far as the gate knows, and it does **not** check that the rest of the repo
+  agrees with this log — this sentence claimed that second half until 2026-09-25, and no
+  code ever implemented it. Keep other files pointing at the gate's count rather than
+  listing deferrals. Added
   2026-09-09 after the roadmap said *"the deferred row"*, singular, while three existed and
   one had been resolved the day before in a different entry — the same restated-status drift
   invariant 26 exists for. Every entry ends in one of these — nothing stays `open` here; if it
@@ -1734,13 +1738,15 @@ It is a prompt-level defence against a prompt-level threat: `rules/14` §3 is ex
 class, and the boilerplate is a textbook instance of a control that looks like
 enforcement across 68 files and enforces nothing.
 
-**Deferred — per-skill run telemetry.** `scripts/lib/skill-evolution/health.js` records
+**DEFERRED — per-skill run telemetry. Revisit if a local `--record` flag on the eval runners would produce the same signal without a new collection surface.**
+`scripts/lib/skill-evolution/health.js` records
 run outcomes to JSONL, computes a rolling success rate, and flags a skill as `declining`
 past a threshold. It addresses a real problem of ours (the library has no telemetry and
 learns nothing from use unless someone reports it). Deferred, not rejected: it needs run
 outcomes we do not collect, and any implementation must stay local-only and opt-in —
-this library ships no network. **Revisit if** a local `--record` flag on the eval runners
-would produce the same signal without a new collection surface.
+this library ships no network. *(Marker normalised 2026-09-25: this entry was written
+`**Deferred —` in mixed case with the trigger five lines below, so invariant 27's
+case-sensitive regex never counted it.)*
 
 **Noted, no action — domain coverage they have and we do not**: agent payment protocols
 (x402), DeFi/AMM security, prediction-market oracles, on-device foundation models,
@@ -3261,11 +3267,12 @@ APIs, hardened flags) and what no skill here owns — ISRs and reentrancy, DMA c
 and `volatile` against a peripheral, RTOS scheduling and priority inversion, WCET, linker
 scripts. Cost: one paragraph. It converts a silent mis-route into a stated limit.
 
-**Deferred — CUDA / GPU engineering. Revisit trigger: a field brief from a session that
-actually hit GPU work, or a second independent request.** It is a real discipline (occupancy,
+**DEFERRED — CUDA / GPU engineering. Revisit trigger: a field brief from a session that actually hit GPU work, or a second independent request.**
+It is a real discipline (occupancy,
 coalescing, warp divergence, host/device sync) and we have one incidental sentence, but doing
 it badly is worse than not doing it, and its freshness cost is high against a stamp that
-sweeps twice a year.
+sweeps twice a year. *(Marker normalised 2026-09-25 from mixed-case `**Deferred —`, which
+invariant 27 does not match; the deferral was live and uncounted for eleven days.)*
 
 **Rejected — compiler / JIT construction.** Consuming a JIT is already covered correctly in
 four language skills. Building a compiler is not "an application, service, or codebase" in the
@@ -5106,6 +5113,8 @@ against a regex count (110) exposed a ```` ```sh ```` fence nested inside a ````
 fence in `sota-docs-workflow` rules/01. A CommonMark parser (markdown-it-py) confirms that the
 `## §4` heading at source line 107 renders **inside a code block spanning lines 105–164**. It is
 outside this intake's rows and is reported to the operator separately.
+**RESOLVED 2026-09-24 in #429** (5138f75): the outer fence is now four backticks. Re-checked
+2026-09-25 with markdown-it-py — `## §4` at line 107 renders as a real heading.
 
 ## 2026-09-24 — concept-matrix triage, second pass: the four already-checked languages
 
@@ -6563,3 +6572,34 @@ OWASP sources (CC BY-SA) are named in the offline data only. Theme IDs refer to 
 | theme | verdict | evidence / reason |
 |---|---|---|
 | T842 Review generated auth-library migrations and drop columns you do not need | **partly covered; rest rejected** | `skills/sota-databases/rules/02-schema-migrations.md:241-244 (review ORM-generated migrations as SQL); skills/sota-privacy-compliance/rules/02-privacy-by-design.md:10 (data minimisation)` — Reviewing generated migrations and minimising stored personal data are both general rules; applying them to one auth gem's generated columns is framework trivia implied by those two rules. |
+
+## 2026-09-25 — a `/sota-resume` pass: three deferrals the gate could not see
+
+**Intake shape: the backlog count, checked against the ledger.** Check 27 printed
+`ok (3 deferral(s), each naming a trigger)` and `ROADMAP.md` named the same three, but the
+log held **six** live deferrals. Two were written `**Deferred —` in mixed case (per-skill run
+telemetry, 2026-08-31, and CUDA/GPU, 2026-09-14), which the gate's case-sensitive regex skips.
+The third sat in `ROADMAP.md` history, where the gate never looks. All three are normalised in
+place; the gate and the log now agree.
+
+- **DEFERRED — Ruby dependency-reachability tooling; revisit if a maintained, adopted Ruby tool appears (checked against `sota-devsecops` rules/10 §2's table), or when a field brief hits an inert Ruby dependency.**
+  Moved from `ROADMAP.md` (written 2026-07-30, #152), which said *"Ruby and .NET have no
+  dependency-reachability tool worth naming"*. **The .NET half was never true as written**:
+  the same commit named `ReferenceTrimmer` for .NET as a candidate generator, and rules/10 §2
+  still does. The deferral is narrowed to Ruby, where the table says "no established tool" and
+  sends the reader straight to §3's delete-and-build proof.
+
+**Corrected, not implemented — invariant 27's "second half".** The log's how-it-works
+paragraph said the gate also asserts *"nothing else in the repo calls an item deferred that
+this log no longer marks"*. `scripts/check-invariants.sh` check 27 never did: it counts markers
+and checks that each marker's cell names a trigger. **Operator decision 2026-09-25: correct the
+doc rather than build the check.** Reasoning: the drift that sentence guarded against is prose
+restating the list. That is fixed more cheaply by having the prose point at the gate's count,
+which `ROADMAP.md` now does. A repo-wide "is this called deferred?" scan would be
+judgement-shaped and noisy, the kind of gate `CONVENTIONS-LEDGER.md` warns ends up disabled.
+**Not done: making the regex case-insensitive.** That changes a gate and needs its own probe,
+and normalising the markers already makes the current tree correct.
+
+**Also closed as ALREADY DONE (tracker never updated):** the 2026-09-23 nested-fence report now
+points at its fix (#429), and `LANGUAGE-TIER.md`'s "temp files still OPEN" heading now points
+at the 2026-09-24 decision (rules/06 §6.1).

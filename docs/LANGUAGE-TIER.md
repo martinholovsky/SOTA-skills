@@ -490,7 +490,7 @@ running — but it cannot support a claim of completeness.
   exists to produce) and a `[^,]+` that cannot span the second comma of a three-argument call.
   Neither was caught by review.
 
-### An open question this raised — host keys DECIDED 2026-09-23; temp files still OPEN
+### An open question this raised — host keys DECIDED 2026-09-23; temp files DECIDED 2026-09-24
 
 **Temp-file/permission hygiene and host-key verification were gaps in *both* Python and Go.**
 If that repeats in Ruby and PHP, the right fix is probably a class stated once in
@@ -531,6 +531,9 @@ memory: **Node `ssh2` and `net-ssh` default to accepting**, so for them the find
 *absence*. The first draft of the shared probe also missed JSch's
 `setConfig("StrictHostKeyChecking", "no")` form. It was caught by a per-library fixture and
 widened.
+
+*Superseded 2026-09-24 — decided as a shared class in `sota-code-security` rules/06 §6.1; see
+"The trigger fired" below. The 2026-09-23 text is kept as written.*
 
 **Temp-file/permission hygiene — still OPEN, and nothing above decides it.** A heading written
 on 2026-09-23 read "DECIDED … one shared class" for the whole question, while only host keys had
