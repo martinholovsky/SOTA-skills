@@ -96,6 +96,22 @@ Each stage exists to fix the previous stage's failure mode; each costs
 latency. Add stages bottom-up only when the retrieval eval shows the failure
 they fix. A reranker on top of broken chunking is lipstick.
 
+**Shape the result set so one poisoned passage cannot own it.** Top-k alone
+always returns k chunks, however weak the match, and a planted passage written
+to match many queries takes a slot on every one. Three controls, each
+calibrated on the golden retrieval set (§6) because score scales differ per
+embedding model: a **minimum relevance score** beside the top-k cap — below the
+floor you get fewer chunks or none, and the grounded-or-refused path (§7)
+handles the empty set; **diversity-aware selection** (maximal marginal
+relevance — in LangChain, `as_retriever(search_type="mmr")` with `fetch_k` and
+`lambda_mult`, or `search_type="similarity_score_threshold"` with a
+`score_threshold` for the floor) so near-duplicates cannot fill every slot; and
+for restricted policy categories (eligibility, pricing, refunds), **anchor
+chunks** — pin the canonical passages, require k of n of them in the result,
+and otherwise answer from a deterministic rules path, not the model. OWASP:
+OWASP RAG Security cheat sheet; OWASP AI-Powered Advertising Systems Security
+cheat sheet.
+
 ## 5. Query transformation
 
 User queries are not good search queries. In rough order of payoff:
@@ -193,6 +209,28 @@ tell you which stage failed (rules/01 §6).
   retrieval per identity. Vector-DB auth/network hardening is in
   sota-code-security rules/08 §4.
 
+### 7a. Index integrity beyond the chunk hash
+
+- **Security metadata is write-once.** ACL, tenant, source and ingest-time
+  tags are set by the ingestion identity at ingest and never updated in place;
+  a change is a re-ingest (new chunk, old one deleted, both logged). A payload
+  API that can rewrite them (e.g. Qdrant `set_payload`/`overwrite_payload`) is
+  an authorization bypass for anyone holding write access — restrict it to
+  non-security keys.
+- **Quarantine outliers before they serve.** New vectors land in a staging
+  collection; one far outside the corpus distribution (distance to its nearest
+  neighbours or cluster centroid well beyond the norm) waits for review before
+  promotion. It is a heuristic tuned on your corpus, not proof of poisoning.
+- **Expiry is a query filter.** A chunk with an `expires_at` is excluded by an
+  in-engine filter at retrieval time (§4 item 5); a cleanup job alone leaves
+  the gap between expiry and its next run.
+- **Re-embedding is a tamper check.** Record the model version per document
+  (§3). Re-embedding unchanged text under the same model should reproduce its
+  vector within numeric tolerance, so a document that moves had its stored
+  text or the pipeline changed; across a model change, compare each document's
+  nearest-neighbour set in the old and new index and review the largest
+  shifts. OWASP: AISVS 8.1.2, 8.2.2, 8.3.1; OWASP RAG Security cheat sheet.
+
 ## 8. Agentic retrieval vs one-shot
 
 One-shot (query → retrieve → generate) is the right default for FAQ-style
@@ -253,3 +291,13 @@ queries needing tool choice (search vs SQL vs API).
       `grep -rnE '(semantic_cache|answer_cache|response_cache)\.(set|put|add)\(' . | grep -vE 'ttl|ex=|expire'`
 - [ ] Agentic retrieval only where one-shot demonstrably fails; bounded per
       rules/04.
+- [ ] Retrieval has a calibrated relevance floor beside top-k, diversity-aware
+      selection, and anchor chunks (k of n, else a rules path) for restricted
+      policy categories (§4). **Medium** (High where retrieved text drives an
+      action). Probe — retrievers with neither a floor nor MMR:
+      `grep -rnE 'similarity_search\(|as_retriever\(' . | grep -vE 'score_threshold|mmr'`
+- [ ] ACL/tenant/source tags write-once; outliers quarantined before
+      promotion; `expires_at` filtered in-engine; re-embedding drift reviewed
+      (§7a). **High** for mutable ACL/tenant tags. Probe — payload updates
+      touching security metadata:
+      `grep -rnE '(set_payload|overwrite_payload|update_metadata)\(' . | grep -iE 'acl|tenant|owner|source'`

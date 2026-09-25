@@ -124,6 +124,15 @@ unauthenticated reachable vector DB as an active breach, not a hardening gap.
   with collection-per-tenant, or a mandatory tenant key the server applies
   (Qdrant: JWT RBAC per-collection `access` claims / payload-bound tokens).
   Cross-tenant leak test it like RLS (file 01).
+- **Separate by data classification, not only by tenant.** Content at
+  different sensitivity levels (public, internal, restricted) goes into
+  separate collections or indexes, each reachable only with a credential
+  scoped to it (Qdrant: per-collection JWT `access` claims). A single
+  namespace where a metadata filter is the only thing keeping restricted
+  chunks out of a query fails open on one missing or client-editable filter;
+  the caller's clearance then decides which collections are queried at all.
+  Per-document ACL filters (`sota-code-security` rules/08 §4) still apply
+  inside a collection. OWASP: RAG Security cheat sheet.
 - **Bound client-supplied search params.** `limit`, `hnsw_ef`/exploration
   factors, `with_payload`/`with_vectors` passed through from user input are a
   resource-exhaustion DoS (and `with_vectors` is exfiltration of your
@@ -249,6 +258,10 @@ reconstruct PII).
 - [ ] Payload fields classified in the PII inventory; no secrets in payloads;
       tenant isolation enforced server-side (mandatory filter/scoped token or
       collection-per-tenant) with a cross-tenant leak test.
+- [ ] HIGH: restricted content lives in its own collections/indexes, apart
+      from lower classifications, with credentials scoped per collection — a
+      metadata filter is not the only barrier. (Design check: list the
+      collections against the data-classification tiers.)
 - [ ] Client-supplied search params (limit, ef/hnsw_ef, with_payload,
       with_vectors) capped server-side; no raw search bodies proxied to the
       vector DB.

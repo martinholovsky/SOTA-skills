@@ -232,6 +232,20 @@ Same applies to running totals, gaps-and-islands, deduplication
   statement/role, or restructure.
 - PgBouncer transaction mode breaks session-level prepared statements unless
   PgBouncer ≥1.21 with `max_prepared_statements` set — verify (file 04).
+- **Confirm that binding really happens on the server.** When a pooler, a
+  proxy, or an engine that only speaks a compatible wire protocol cannot run
+  server-side prepared statements, drivers are switched to (or silently fall
+  back to) splicing escaped values into the SQL text: Go MySQL driver
+  `interpolateParams=true`, PHP PDO `ATTR_EMULATE_PREPARES` (PDO also
+  emulates whenever native prepare fails), pgx
+  `default_query_exec_mode=simple_protocol`, pgJDBC `preferQueryMode=simple`.
+  That escaping is safe only if it matches the server's charset and dialect —
+  the Go MySQL driver refuses to interpolate under BIG5, CP932, GB2312, GBK or
+  SJIS, and pgx's simple protocol refuses to run unless
+  `standard_conforming_strings=on` and `client_encoding=UTF8`. Know which
+  mode each connection uses; if it interpolates, pin UTF-8 in the DSN and keep
+  a test that a quote/backslash payload comes back as data. OWASP: Go-SCP
+  (parameterized queries).
 
 ## Workload hygiene
 
@@ -277,3 +291,7 @@ Same applies to running totals, gaps-and-islands, deduplication
 - [ ] All SQL parameterized; generic-plan risk assessed for skewed params;
       statement_timeout set per role; no index-defeating expressions or type
       mismatches in hot predicates.
+- [ ] MEDIUM (HIGH with a non-UTF-8 multibyte charset): every client-side
+      interpolation mode is known and justified, with UTF-8 pinned in the DSN.
+      Probe: `grep -rniE "interpolateParams=true|default_query_exec_mode=simple_protocol|QueryExecModeSimpleProtocol|ATTR_EMULATE_PREPARES[^,)]*[,>][[:space:]]*(true|1)|preferQueryMode=simple" .`
+      (PDO's silent fallback has no line to hit).

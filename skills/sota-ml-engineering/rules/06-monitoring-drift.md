@@ -25,6 +25,16 @@ retraining.
   categoricals. Tools: Evidently, NannyML, WhyLogs, or built-in platform monitors.
 - Monitor per-feature and on the prediction distribution; alert on sustained
   shift, not single-batch noise.
+- **Match the test to the input.** PSI/KS/chi-square suit tabular features.
+  For text, images and audio, compare **embeddings** instead: distance between
+  reference and live embedding distributions, maximum mean discrepancy (MMD),
+  or a domain classifier trained to tell reference from live (accuracy near
+  0.5 means no drift). Per-token or per-pixel statistics say little there.
+- **Abrupt is not gradual.** Slow drift is expected and feeds the retraining
+  trigger (§5). A sudden, unexplained step change in inputs, outputs or
+  confidence is a different event (a broken upstream, an attack, a poisoned
+  retrain) and pages on its own route with an investigate-first runbook, not
+  an automatic retrain on the shifted data. OWASP: AISVS 12.3.1, 12.3.4.
 
 ## 3. Monitoring performance (the real signal)
 
@@ -44,6 +54,8 @@ retraining.
   upstream feature is a common silent failure (ML Test Score monitoring tests).
 - Watch for **training/serving skew** continuously by comparing logged served
   features to training (`rules/02`).
+- Record the out-of-distribution flags raised by the inference-time gate
+  (`rules/07` §1) and trend their rate; a rising rate is early drift.
 
 ## 5. Retraining strategy
 
@@ -80,3 +92,6 @@ retraining.
       `out=$(grep -rniE 'retrain|schedule|cron|airflow|trigger|cadence' . | grep -iE 'train|drift|model'); rc=$?` ;
       `case $rc in 0) printf '%s\n' "$out" | head ;; *) echo "no explicit retraining trigger (rc=$rc; if the first grep failed, rerun it alone)" ;; esac`
 - [ ] **Alerts have an owner/runbook — MEDIUM (manual)**
+- [ ] **Drift method fits the data type; abrupt shifts routed apart (§2) — MEDIUM** — for
+      text/image models: `grep -rniE 'embedding.?drift|mmd|mean.discrepancy|domain.?classifier' --include='*.py' . || echo "no embedding-level drift test"`
+      ; manual: does a step change page separately instead of triggering a retrain?

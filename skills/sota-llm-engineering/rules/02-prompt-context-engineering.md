@@ -69,7 +69,7 @@ Budget by category, enforce in code:
 | Few-shot examples | Only as many as the eval justifies (§3). |
 | Retrieved context | Top-k *after* reranking, token-capped; never "all matches". |
 | Conversation history | Sliding window + summarization/compaction past a threshold (rules/04 §5); never unbounded append. |
-| Live input | Validated for length at the boundary; oversized input → explicit chunking/summarization strategy, never silent truncation. |
+| Live input | Validated for length at the boundary; oversized input is **rejected with an error** by default. Chunking or summarization only where the design chose it for that route — never silent truncation. |
 
 - **Measure with the provider's token counter** (e.g. a `count_tokens`
   endpoint). Never use another provider's tokenizer, and never a chars/4 rule of
@@ -86,10 +86,16 @@ Budget by category, enforce in code:
 - **Exclude by default.** Every block in the prompt must answer "what eval
   case gets worse if I remove this?" If nothing — remove it. Prompt rot (§7)
   is mostly accretion of unfalsifiable additions.
-- **Truncation must be explicit and lossy-aware**: truncate at document/
-  section boundaries with a `[...N sections omitted...]` marker, prefer
-  summarize-then-include for long tails, and surface to the user when input
-  was reduced.
+- **Over-budget user input is refused, not cut.** A slice like `text[:N]` or a
+  Hugging Face tokenizer's `truncation=True` (it cuts from the
+  `truncation_side`, `"right"` by default) on the assembled prompt can drop
+  the system instructions or the safety block, and the model never knows. Return an error naming the limit; accepting long input via
+  chunking or summarization is a per-route design decision recorded next to
+  the budget. OWASP: AISVS 2.1.4.
+- **Truncation of retrieved or historical context must be explicit and
+  lossy-aware**: truncate at document/section boundaries with a
+  `[...N sections omitted...]` marker, prefer summarize-then-include for long
+  tails, and surface to the user when context was reduced.
 
 ## 3. Few-shot selection
 
@@ -321,3 +327,9 @@ category = data.get("category", "other")                    # silently launders 
       field present, provider-unsupported constraints validated client-side.
 - [ ] No prompt rot: every rule traceable to an eval case; legacy
       model-specific scaffolding removed on model migration.
+- [ ] User input over the token budget rejected with an error by default;
+      chunking/summarization only where chosen per route; no slice or
+      tokenizer truncation of user text or the assembled prompt (§2).
+      **Medium** (High when the cut can drop system or safety content).
+      Probe — slicing or tokenizer truncation of input:
+      `grep -rnE '(input|prompt|query|message|user_text|text)\[:[A-Za-z0-9_]+\]|truncation[[:space:]]*=[[:space:]]*True' .`
