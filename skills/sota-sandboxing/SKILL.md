@@ -88,11 +88,11 @@ every workload audited.
 
 | File | Read this when... |
 |---|---|
-| `rules/01-isolation-boundaries.md` | choosing or judging the isolation boundary itself: threat classification (untrusted code vs input vs multi-tenant), boundary strength ranking (hardware > VM > microVM > gVisor > container > process > runtime), defense-in-depth layering, fail-closed, ephemerality, anti-patterns. Read first in every engagement. |
+| `rules/01-isolation-boundaries.md` | choosing or judging the isolation boundary itself: threat classification (untrusted code vs input vs multi-tenant), boundary strength ranking (hardware > VM > microVM > gVisor > container > process > runtime), defense-in-depth layering, fail-closed, ephemerality, anti-patterns, model inference runtimes and native-object deserialization as named workloads. Read first in every engagement. |
 | `rules/02-linux-os-hardening.md` | building or auditing anything on a Linux kernel: namespaces (incl. userns dual nature), cgroups v2 budgets, deny-by-default seccomp-bpf (with JSON fragment + never-allow syscall list), Landlock, capabilities drop-ALL, no-new-privileges, read-only rootfs, AppArmor/SELinux, systemd sandboxing directives. |
-| `rules/03-containers-microvms.md` | Docker/OCI images and run flags (good/bad Dockerfile, prohibited flags/mounts, published ports vs host firewall, default bridge), choosing gVisor vs Kata vs Firecracker (GPU tenant sharing and memory scrubbing), Kubernetes pod security (restricted PSA, securityContext template, RBAC/service-account tokens, default-deny NetworkPolicy), runtime detection (Falco/Tetragon). |
+| `rules/03-containers-microvms.md` | Docker/OCI images and run flags (good/bad Dockerfile, prohibited flags/mounts, read-only data mounts, GPU and network-bandwidth limits, published ports vs host firewall, default bridge), choosing gVisor vs Kata vs Firecracker (GPU tenant sharing and memory scrubbing), Kubernetes pod security (restricted PSA, securityContext template incl. AppArmor and procMount, RBAC/service-account tokens, default-deny NetworkPolicy), runtime detection (Falco/Tetragon; device-node and metadata-endpoint alerts). |
 | `rules/04-process-app-sandboxing.md` | isolating risky code inside your own app: sandboxed parser workers for image/PDF/archive handling, broker/privilege-separation pattern, pledge/unveil-style lockdown sequencing, WASM/wasmtime + WASI capabilities, V8 isolates' real guarantees, subprocess hygiene (no shell=True, argv, clean env), macOS (sandbox-exec reality, App Sandbox, ES). |
-| `rules/05-ai-agent-sandboxing.md` | any LLM/agent workload: model-generated code execution, prompt injection as confused-deputy, lethal trifecta analysis, tool permission scoping/broker design, MCP server risk and local MCP server sandboxing, developer-machine agent permission baselines, FQDN egress allowlists + DNS exfil, time/memory/output/spend limits, fleet-wide out-of-band kill switch and rollback, graduated automatic containment, multi-agent and computer-use containment. |
+| `rules/05-ai-agent-sandboxing.md` | any LLM/agent workload: model-generated code execution, prompt injection as confused-deputy, lethal trifecta analysis, tool permission scoping/broker design, per-instance agent identity, MCP server risk and local MCP server sandboxing, developer-machine agent permission baselines, FQDN egress allowlists + DNS exfil, time/memory/output/spend limits, fleet-wide out-of-band kill switch and rollback, high-risk action audit fields and named agent detection thresholds, graduated automatic containment, multi-agent and computer-use containment. |
 
 ---
 
@@ -111,7 +111,8 @@ every workload audited.
 5. **Drop ALL capabilities, `no_new_privs`, non-root numeric user, read-only
    rootfs** — the baseline four for every container and sandboxed process (`02`,`03`).
 6. **Resource budgets on every sandbox**: `memory.max` (+swap off), `pids.max`,
-   CPU quota, *and* a wall-clock kill — quotas throttle, they don't terminate (`02`,`05`).
+   CPU quota, *and* a wall-clock kill — quotas throttle, they don't terminate; GPUs
+   granted by count or ID, never all, and bandwidth shaped where tenants share (`02`,`03`,`05`).
 7. **Never mount the Docker/CRI socket; never `--privileged`; never host
    pid/net/ipc namespaces** for anything touching untrusted data (`03`).
 8. **Default-deny network egress** with explicit FQDN allowlists; metadata

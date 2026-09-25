@@ -6156,3 +6156,28 @@ written, and 7 were real defects fixed in place (patterns that missed a single-q
 | `sota-privacy-compliance` | 2 | 4 | 0 | 0 | 6 |
 | `sota-data-engineering` | 1 | 0 | 0 | 0 | 1 |
 | **total** | 37 | 14 | 0 | 0 | 51 |
+
+## 2026-09-25 — ROADMAP 66 step 5, batch "platform": medium-value OWASP themes adopted
+
+Same method as step 4: one agent per skill (`sota-code-security` split by file) re-verified each
+gap against the current tree, wrote the rule in its own words citing OWASP sources by name, added
+an audit probe tested on a bad and a good fixture, and verified every API, default and standard
+against a primary source read that session. Every probe was then re-run here on its fixtures;
+the 81 (of 317 with fixtures, across all batches) that did not reproduce went to a second
+verification pass — 71 were artefacts of the re-run (a reported summary with `...` or
+placeholders rather than the command in the file, or two probes joined with `;`), 3 worked as
+written, and 7 were real defects fixed in place (patterns that missed a single-quoted YAML value,
+`syft scan dir:`, `ClusterAnalysisTemplate`, `ml_bom` with an underscore, and similar).
+
+| skill | implemented | extended | already covered | blocked by the cap | audit probes |
+|---|---|---|---|---|---|
+| `sota-network-security` | 14 | 0 | 2 | 0 | 14 |
+| `sota-identity-access` | 12 | 3 | 0 | 0 | 15 |
+| `sota-sandboxing` | 4 | 5 | 0 | 0 | 9 |
+| `sota-secrets-management` | 2 | 11 | 0 | 0 | 13 |
+| `sota-detection-engineering` | 6 | 3 | 0 | 0 | 9 |
+| `sota-observability` | 1 | 3 | 0 | 0 | 4 |
+| `sota-cloud-infrastructure` | 1 | 5 | 0 | 0 | 6 |
+| `sota-kubernetes` | 3 | 2 | 0 | 0 | 5 |
+| `sota-confidential-computing` | 2 | 0 | 0 | 0 | 2 |
+| **total** | 45 | 32 | 2 | 0 | 77 |

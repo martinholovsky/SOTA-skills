@@ -148,6 +148,15 @@ spec:
   non-expiring, non-rotating bearer credentials that leak into logs/backups/etcd. If an
   external system needs an SA token, mint a **short-lived audience-scoped token** via the
   TokenRequest API (`kubectl create token sa --audience=... --duration=...`) and refresh it.
+- **Node bootstrap (join) tokens live for one join window, then go.** A bootstrap token is
+  a bearer credential for the `system:bootstrappers` group, stored as a
+  `bootstrap.kubernetes.io/token` Secret named `bootstrap-token-<id>` in `kube-system`, and
+  it is what lets a new machine register as a node. kubeadm's default TTL is 24h and
+  `--ttl 0` (or `ttl: 0s` in `bootstrapTokens`) means **never expires**. Mint one per join
+  with a short TTL (`kubeadm token create --ttl 1h`), `kubeadm token delete <id>` once the
+  nodes are Ready, and keep the `tokencleaner` controller on (kubeadm enables it) — it
+  deletes only *expired* tokens, so a token without an `expiration` survives it forever.
+  OWASP: Kubernetes Security cheat sheet.
 - **Audience-scoped tokens**: a token minted for audience `vault` is rejected by the API
   server and by any verifier expecting a different audience — limits replay if leaked.
 - **ServiceAccount tokens are for workloads only** — never a person's login credential;
@@ -197,6 +206,7 @@ closure of what subject X can do, and can it escalate?" Tools:
 - [ ] Broad `secrets` read, `pods` create, `serviceaccounts/token` create, and policy-engine CRD writes (`rules/03`) scoped tightly (treated as escalation primitives)?
 - [ ] `automountServiceAccountToken: false` is the default; only API-calling pods opt in? (`grep -rL automountServiceAccountToken` deployments; check SA spec)
 - [ ] No manually-created long-lived `service-account-token` Secrets; external consumers use short-lived audience-scoped TokenRequest tokens?
+- [ ] Bootstrap tokens short-lived and deleted after the join? **High** for a token with no expiry, **Medium** for one older than the join window. (`kubectl -n kube-system get secrets --field-selector type=bootstrap.kubernetes.io/token -o json | jq -r '.items[] | [.metadata.name, .metadata.creationTimestamp, ((.data.expiration // "") | @base64d | if . == "" then "NO-EXPIRY" else . end)] | @tsv'`; in join scripts and kubeadm configs `grep -rnE -- '--ttl[= ]+(0[hms]?)+([^0-9a-z.]|$)|ttl:[[:space:]]*"?(0[hms]?)+"?[[:space:]]*$' <scripts> <kubeadm-configs>` — each hit is a never-expiring token)
 - [ ] One SA per workload, `default` SA unused/unbound, no SA shared across apps?
 - [ ] who-can run on every escalation primitive and the transitive closure for high-value SAs reviewed?
 - [ ] Bindings reconciled against the identity source — no dead users/SAs?

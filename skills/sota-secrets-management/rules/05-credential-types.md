@@ -84,6 +84,12 @@ Usually irreplaceable by federation — manage the static secret well:
 - **Generate the key where it terminates** (CSR flow); never email/chat a `.key` or `.pfx`.
   Wildcard cert keys copied to N servers multiply exposure N-fold — prefer per-host/per-SAN
   certs, or distribute via secret manager with per-host access if a wildcard is unavoidable.
+  When a wildcard is justified, **confine its key to one tier**: terminate TLS for it at a
+  single reverse proxy / edge layer so the private key sits on one system, and backends get
+  their own per-host certs. **Issue it one level down** (`*.svc.example.org`, not
+  `*.example.org`): a wildcard matches exactly one left-most label (RFC 9525 §6.3), so a
+  narrow parent bounds which names a stolen key can impersonate. OWASP: Transport Layer
+  Security cheat sheet.
 - **Permissions `0400`,** owner = the terminating process's user; key files outside web roots
   and build contexts (a `.pem` inside a Docker build context ends up in the image).
 - **Internal mTLS:** run a private CA (Vault PKI engine, cert-manager + internal issuer,
@@ -171,6 +177,22 @@ High finding — it combines the worst of secrets and crypto). Use envelope encr
   algorithm-suite headers. Hand-rolled AES around KMS calls gets nonce reuse wrong.
 - **Encryption context / AAD:** bind ciphertexts to their identity (`tenant_id`, `record_id`)
   so ciphertext can't be swapped between rows; it also lands in KMS audit logs.
+- **Wrapped and stored keys need integrity, not only confidentiality.** A wrapped DEK or a
+  key file an attacker can silently alter or swap is a key they can choose. Wrap with an
+  authenticated construction: a KMS wrap (AWS KMS documents that it protects data keys with
+  authenticated encryption, with the encryption context in the AAD), AES Key Wrap (RFC 3394
+  — unwrap must reject the key when the integrity check value does not come back; the Python
+  `cryptography` package raises `InvalidUnwrap` on a one-bit change, checked 49.0.0), or an
+  AEAD such as AES-GCM with the key's identity as AAD. A DEK wrapped with bare CBC/CTR/ECB is
+  a High finding: tampering goes undetected. OWASP: Key Management cheat sheet.
+- **Back up the keys whose loss is data loss.** Crypto-shredding cuts both ways: a root or
+  tenant key lost by accident deletes that data as surely as a deliberate destroy. For every
+  key that is the only path to product-critical data, keep a backup in a separate failure
+  domain (offline/cold, or a second KMS/HSM account or region, protected to the same bar as
+  the original), split custody so no single person can restore it alone, and a **restore
+  drill** on a schedule — a backup that has never been restored is a hope. Never back up
+  signing or authentication keys (sota-code-security rules/04 on key loss vs escrow).
+  OWASP: Secrets Management cheat sheet.
 - AUDIT: literal 32/64-hex-char "ENCRYPTION_KEY" values (High; Critical if committed),
   AES-ECB or static-IV usage near such keys, `Fernet(key)` with a key from code, DEKs stored
   *unencrypted* next to data, KMS `Decrypt` permission granted on `*`.
@@ -270,6 +292,15 @@ token; rules/01 §4) and treat any residual registry token as a ≤90d rotating 
       no JWT secrets with defaults, no real JWTs in fixtures.
 - [ ] Field/object encryption uses KMS envelope (wrapped DEKs, encryption context, maintained
       SDK); no raw keys in config; per-tenant keys where deletion guarantees are needed.
+- [ ] **Wrapped/stored keys are integrity-protected (§7)** — KMS wrap, RFC 3394 key wrap or an
+      AEAD; a DEK wrapped with unauthenticated CBC/CTR/ECB = **High**:
+      `grep -rniE '(wrap|dek|kek).*(MODE_(CBC|ECB|CTR)|AES/(CBC|ECB|CTR)|aes-(128|256)-(cbc|ecb|ctr))|(MODE_(CBC|ECB|CTR)|AES/(CBC|ECB|CTR)|aes-(128|256)-(cbc|ecb|ctr)).*(wrap|dek|kek)' .`
+- [ ] **Keys whose loss is data loss are backed up (§7)** in a separate failure domain, under
+      split custody, with a dated restore drill — **High** for a production root/tenant key
+      with no restorable backup (judgment: read the key register and the last drill record).
+- [ ] **Wildcard TLS keys confined (§4)** to one terminating tier and issued below the apex —
+      Medium when the same wildcard key is referenced by more than one host's config:
+      `grep -rniE '(ssl_certificate_key|SSLCertificateKeyFile|secretName|key_?file|private_key)[^#]*wildcard' .`
 - [ ] `.env*` untracked (HEAD and history) with `0600`; `.env.example` fake-valued; dotenv
       dev-only and non-overriding; `.dockerignore` excludes `.env*`; no prod values in local
       env files; rc files (`.npmrc`, `.pypirc`, `.netrc`) use env interpolation, never literal

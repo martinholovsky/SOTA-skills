@@ -33,11 +33,43 @@ human cannot reliably re-issue every ~6 weeks across a fleet. Therefore:
 - Any cert renewed by hand, or living past the current CA/B cap, is a finding (High on a public
   endpoint — guaranteed future outage).
 
+**R1.1 — Issue certificates that say only what is public, and know who shares each one.**
+- **Every served FQDN is in the SAN.** Modern clients (Chrome among them) match the name against
+  `subjectAltName` and ignore the CN; a name missing from the SAN fails validation.
+- **No internal names or private addresses in a public certificate.** Public CAs may not issue for
+  unqualified names or reserved IPs at all (CA/B Baseline Requirements sections 4.2.2 and 7.1.2.7.12),
+  but an internal host under a public domain (`db01.corp.example.com`)
+  *is* issuable — and lands in Certificate Transparency logs for anyone to read. Keep internal
+  names on certificates from the internal CA (§4); a server reachable by both internal and
+  external names gets two certificates, and a public and an internal server never share one
+  (wildcard included).
+- **SHA-256 or stronger signatures.** SHA-1 and MD5-signed certificates are rejected by modern
+  clients; the CA/B Forum sunset its last remaining SHA-1 use in certificates and CRLs (ballot
+  SC097, effective 2026-09-15). Anything still carrying one is a finding.
+- **Inventory every system that shares a certificate or key** (a SAN list or wildcard spread
+  across a load balancer, a CDN and three origins). Renewal and compromise response must reach
+  every holder, or the rotated certificate leaves an old copy serving — or an old key live.
+- **OV/EV buys no extra transport security.** Browsers and TLS stacks treat DV, OV and EV the
+  same; choose by process, not by protection, and prefer what ACME can automate (R1).
+OWASP: Transport Layer Security cheat sheet, Code Review Guide v2.
+
 ## 2. TLS posture
 
 **R2 — TLS 1.3 preferred, 1.2 minimum; everything below is disabled.** No TLS 1.0/1.1, no SSLv3.
 Cipher policy: AEAD suites only (1.3 enforces this; for 1.2 allow only ECDHE + AES-GCM/ChaCha20).
 Audit edges, ingress, mesh, and internal services alike.
+
+**R2.1 — Serve the whole chain: leaf plus every intermediate.** The server must send the
+intermediates up to (not including) a root the client already trusts. A desktop browser often
+papers over a missing intermediate by fetching it from the certificate's AIA URL or using one it
+cached, so the site "works" in the browser while any client that does not fetch AIA fails with
+an unknown-issuer error — and whether a given app, API client or TLS library fetches depends on
+its stack (even one `curl` build differs from another by TLS backend). Configure the full-chain
+file the CA or ACME client produces, and test from a client that does no AIA fetching:
+`openssl s_client` fetched nothing and failed with `unable to get local issuer certificate`
+against a leaf-only server whose certificate carried a reachable AIA URL (measured 2026-09-25,
+OpenSSL 3.6). OWASP: Code Review Guide v2, Go-SCP (HTTP/TLS), Secure
+Coding Practices QRG.
 
 ```bash
 # Hunt weak TLS quickly
@@ -59,6 +91,26 @@ configurable in current OpenSSL/BoringSSL and major CDNs). It defends *confident
 harvest-now-decrypt-later — relevant for EU/long-lived-sensitive traffic — at negligible cost,
 and being hybrid it's no weaker than X25519 if the PQ part is ever broken. (Signatures/PKI stay
 classical for now.) See sota-code-security rules/04 §1.
+
+**R3.2 — Set the server's TLS details explicitly; isolate legacy clients rather than weaken.**
+- **Name the key-exchange group list** instead of inheriting a library default that differs by
+  version: hybrid PQ first, then X25519, then NIST curves — e.g. OpenSSL `Groups =
+  X25519MLKEM768:X25519:prime256v1:secp384r1`, nginx `ssl_ecdh_curve` with the same list, Apache
+  `SSLOpenSSLConfCmd Groups`. (OpenSSL 3.5+ already puts `X25519MLKEM768` first in its default;
+  an explicit list keeps an older or distro-patched build from silently differing.)
+- **Encrypted Client Hello** (ECH, RFC 9849; keys published in DNS HTTPS/SVCB records, RFC 9848)
+  encrypts the ClientHello, so on-path observers see only the client-facing server's public
+  name, not the real SNI. ASVS 5.0 V12.1.5 asks for it at Level 3; elsewhere enable it where the
+  CDN or stack supports it — treat support as a per-stack check, not an assumption.
+- **Downgrade protection:** TLS 1.3 servers mark a downgraded ServerHello with a sentinel that
+  1.3 clients must check (RFC 8446 section 4.1.3), so `TLS_FALLBACK_SCSV` (RFC 7507) matters only on
+  endpoints that still serve TLS 1.2 or older — enable it there if the stack offers it.
+- **Unavoidable legacy clients get their own endpoint** — separate hostname, own cipher/version
+  policy, no access to sensitive data — so the main endpoint keeps its modern floor.
+- **TLS 1.3-only** fits links where you control both ends: service-to-service mTLS, mesh, internal
+  zero-trust paths, and APIs whose clients you ship. Public web endpoints usually keep 1.2 as the
+  floor (R2).
+OWASP: Transport Layer Security cheat sheet, Zero Trust Architecture cheat sheet, ASVS 5.0 V12.1.5.
 
 ## 3. DNS security
 
@@ -216,6 +268,20 @@ reaching DMARC enforcement; a Verified Mark Certificate is optional evidence, no
       manual renewal or cert older than the current CA/B cap (200d in 2026) → finding.
 - [ ] TLS 1.2 minimum (1.3 preferred), weak ciphers/protocols disabled across edge, ingress, mesh,
       internal? (`nmap --script ssl-enum-ciphers`.)
+- [ ] **High — incomplete chain (R2.1).** Per endpoint, from a client with no AIA fetching:
+      `openssl s_client -connect <host>:443 -servername <host> -verify_return_error -brief </dev/null`
+      — a non-zero exit with `unable to get local issuer certificate` (error 20) while browsers
+      load the site means an intermediate is missing; serve the full chain.
+- [ ] **Medium — certificate content (R1.1).** Per served certificate:
+      `openssl s_client -connect <host>:443 -servername <host> </dev/null 2>/dev/null | openssl x509 -noout -text | grep -E '(sha1|md5)With|DNS:[A-Za-z0-9-]+(,|$)|DNS:[^,]*\.(internal|local|lan|corp|home|localdomain)(,|$)|IP Address:(10\.|127\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)'`
+      — any hit (weak signature, unqualified or internal name, private IP) is a finding; also
+      read the SAN list for internal hosts under your public domain. Is there an inventory of
+      every system sharing each certificate or key?
+- [ ] **Medium — TLS details (R3.2).** Group list explicit and hybrid-first:
+      `grep -rnE '(ssl_ecdh_curve|^[[:space:]]*Groups[[:space:]]*=|SSLOpenSSLConfCmd[[:space:]]+(Curves|Groups))' . | grep -v MLKEM`
+      — each hit is a list without a hybrid PQ group. ECH stance recorded; legacy clients on a
+      separate endpoint rather than a weakened main one; `TLS_FALLBACK_SCSV` wherever 1.2 or
+      older is still served?
 - [ ] HSTS on web origins? OCSP stapling only where the CA still runs OCSP (Let's Encrypt ended it
       Aug 2025 — don't flag its absence on LE certs)?
 - [ ] CAA records on public zones restrict issuance to your CA(s)?

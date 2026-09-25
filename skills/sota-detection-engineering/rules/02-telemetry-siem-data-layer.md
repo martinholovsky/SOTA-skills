@@ -38,6 +38,19 @@ modeling), and for each ATT&CK technique in the chain, name the log that would
 witness it and confirm it is collected, parsed, and queryable. Gaps are findings
 *before* any rule is written.
 
+**Legacy systems** (unsupported OS, mainframe, OT, an appliance with no agent) are
+where this inventory most often reads "not collected", and they are the systems
+least able to protect themselves, so they need *more* monitoring, not less. Write
+a parser or converter that turns their non-standard logs into the normalized
+schema (§3). Where no log can be shipped, run a scheduled script on or beside the
+host that checks current IOCs (hashes, accounts, listening ports, scheduled jobs)
+and reports the result to the SIEM, and alert when that report stops arriving.
+Make up for thin host logs at the network edge: put the legacy systems in their
+own enclave and alert on flow anomalies at its boundary — volume surges, a first
+connection to or from a host that has never talked to it, new ports. IR
+priority for these systems is rules/06 §2. OWASP: Legacy Application Management
+cheat sheet; Zero Trust Architecture cheat sheet.
+
 ## 2. Detection data quality
 
 Collection isn't enough; the data must be detection-grade:
@@ -47,6 +60,21 @@ Collection isn't enough; the data must be detection-grade:
   actual senders and alert on a source going silent (a dead sensor is an
   outage you must page on — adversaries kill logging: T1685 Disable or Modify
   Tools, formerly T1562, under ATT&CK v19's Defense Impairment tactic TA0112).
+  Silence says *that* a sensor stopped; it does not say *who* stopped it. Collect
+  the attributed event for every stop, disable, uninstall, reconfigure and
+  re-enable of an EDR, AV, integrity or logging agent, carrying actor, host and
+  time, and join it to the silent-source alert: silence with a matching
+  change-ticketed actor is maintenance, silence with no event or an unexpected
+  actor is tampering. Examples of such events: Windows Security 1102 (audit log
+  cleared) and 4719 (audit policy changed), both with the subject account; Sysmon
+  4 (service state changed) and 16 (configuration changed); Defender 5001
+  (real-time protection disabled) and 5007 (configuration changed); a Linux
+  `CONFIG_CHANGE` audit record such as `op=set audit_enabled=0`, which carries the
+  session's `auid`. Not every such event names the actor — the documented 5001
+  message does not — so attribute those by joining to the process-creation or
+  service-control event that preceded them on the same host. A *re-enable* is
+  worth an alert too: an attacker who turns protection back on after acting is
+  cleaning up. OWASP: Logging Vocabulary cheat sheet.
 - **Timeliness** — ingestion lag directly inflates MTTD. A log that lands an hour
   late detects an hour late.
 - **Fidelity** — does the event carry the fields the detection needs? Command
@@ -165,12 +193,81 @@ or IdP log is often the only witness.
   takeover signal, after excluding known VPN and corporate egress ranges; take the
   IP from the connection, not a client header (sota-identity-access rules/06 §2).
   Enrich with what the second session did (MFA change, export, payout edit).
+- **Session-ID guessing and harvesting:** have the app log every request that
+  presents a session ID it does not recognise (unknown, malformed, long expired)
+  with the source and a truncated hash of the ID, never the ID itself. Count
+  *distinct* invalid IDs per source; many from one source is someone guessing or
+  replaying harvested tokens. Session design is sota-code-security rules/17 §2.
+- **Per role and privilege group:** also count failures grouped by the target's
+  role (admins, finance, support). A campaign aimed at twenty administrators stays
+  under every per-user and per-IP threshold and still stands out in its group.
+- **Population-wide spikes:** track the risky-login and failure rate across
+  *all* users. When the whole population moves at once, treat it as a possible
+  leak of your own credential store, not as background noise: require
+  out-of-band re-verification (step-up, email or device confirmation) for
+  every account that logs in during the window, open an incident to test whether
+  the credential database leaked, and check the honey user rows (rules/05 §4).
 - Prevention (throttling, lockout, MFA) is sota-code-security rules/02. This is
   the detective half, and it must fire even when the throttle works: a blocked
   spray still means someone is attacking.
 
 OWASP: Go-SCP; Logging Vocabulary cheat sheet; Secure Coding Practices QRG; Zero
-Trust Architecture cheat sheet.
+Trust Architecture cheat sheet; Code Review Guide v2; Session Management cheat
+sheet.
+
+### Reconnaissance: force-browsing and unknown methods
+
+Before exploiting anything, an attacker maps what exists (ATT&CK T1595.003
+Active Scanning: Wordlist Scanning). Real clients rarely ask for things that do
+not exist, so the misses are the signal.
+
+- **404 bursts:** count *distinct* not-found paths per source and per
+  authenticated user in a window. A wordlist scan produces hundreds; a broken
+  link produces one path many times. Allowlist your own scanners and known
+  crawlers by identity, not by user agent.
+- **Unknown methods and fields:** gRPC `UNIMPLEMENTED` (which gRPC also returns
+  for an unsupported compression, so group by method name), HTTP 405 on routes
+  the client never uses, and GraphQL validation errors for fields that are not in
+  the schema (graphql-js reports them as `Cannot query field "x" on type "Y".`).
+  A client generated from your schema does not produce these; one from an
+  authenticated principal is a strong signal.
+- **Resource-exhaustion patterns as probing:** bursts of `RESOURCE_EXHAUSTED`,
+  429s or query-cost rejections concentrated on one identity are someone
+  measuring your limits or enumerating through them.
+- For gRPC, sota-api-design rules/04 lists `DEADLINE_EXCEEDED` and `UNAVAILABLE`
+  as the key *ops* alerts and adds per-client security metrics. Ship those
+  per-client `UNAUTHENTICATED`, `PERMISSION_DENIED`, `UNIMPLEMENTED` and
+  `RESOURCE_EXHAUSTED` counts to the SIEM, so the rules above run under a security
+  owner rather than on an ops dashboard.
+
+OWASP: Logging Vocabulary cheat sheet; gRPC Security cheat sheet.
+
+### Baseline-relative abuse anomalies
+
+SLO burn alerts watch for users being hurt; abuse often leaves latency and
+success rates *better*. Run a second set of alerts on business and security
+metrics, each compared with its own seasonal baseline (the same hour of the same
+weekday) and firing past a stated deviation, e.g. several standard deviations:
+
+- login success and failure rates, and the ratio between them (above);
+- funnel ratios — signup to verification to purchase: a signup surge with no
+  purchases is fake-account creation, purchases with no browsing is card testing;
+- 4xx counts *per route*, since a total hides one endpoint under attack;
+- database read and write volume per principal (data-access analytics below)
+  and serverless invocation counts per function, where a jump is abuse or a
+  cost attack.
+
+**Failed deployments and restart loops.** sota-observability rules/04 §4 routes
+single-instance failures the platform self-healed to a ticket rather than a page,
+and that stays right for ops. Still send them to the security queue as a signal:
+a container that keeps crashing (kube-state-metrics
+`kube_pod_container_status_restarts_total`, waiting reason `CrashLoopBackOff`)
+can be an exploit attempt failing against the process, and a deployment failing
+for no code reason can be a tampered pipeline or image. A self-healed restart
+does not page anyone, but someone in security still looks at it.
+
+OWASP: Bot Management and Anti-Automation cheat sheet; Secure Cloud Architecture
+cheat sheet.
 
 ### LLM / agent runtime detections
 
@@ -191,7 +288,21 @@ sota-sandboxing rules/05 R4.4/R4.5. This is the detection content over those log
   systems. Alert when it deviates past a stated threshold (a new tool, a new
   target, a volume multiple), and name the response for each alert — normally a
   step of the graduated containment in sota-sandboxing rules/05 R4.5. A profile
-  with no threshold and no response is documentation, not detection.
+  with no threshold and no response is documentation, not detection. Include
+  the classic insider signals: many files read in a short window, a repository
+  or dataset the agent has never touched, activity outside its scheduled hours.
+  This only works if each agent acts under its own identity (sota-sandboxing
+  rules/05 R3.2); an agent borrowing a human's or a shared service account's
+  credentials cannot be profiled or told apart from them.
+- **Guardrail and moderation decisions are telemetry.** Emit one structured
+  event per verdict: guardrail name, category or rule ID, verdict
+  (allow/block/redact/escalate), model and prompt version, and the user, session
+  and agent identity. Where the prompt is sensitive, log the rule ID and a hash
+  of the input, not the text (sota-code-security rules/23 §1). Alert on *drift*
+  in the rates per verdict and per reason, per user and population-wide: a
+  refusal category that jumps is a campaign; approvals that rise after a prompt,
+  model or guardrail change may mean a control stopped working. Per-user token
+  and request volume against that user's baseline belongs in the same feed.
 - **Model-provider APIs as a covert channel** (ATLAS AML.T0096 AI Service API,
   AML.T0108 AI Agent; ATT&CK T1102 Web Service, T1567 Exfiltration Over Web
   Service). Inventory which workloads legitimately call model-provider
@@ -199,7 +310,9 @@ sota-sandboxing rules/05 R4.4/R4.5. This is the detection content over those log
   issued to that workload, and on payloads that do not fit the feature (large
   encoded blobs, steady beacon-like timing).
 
-OWASP: AISVS 12.2.2, 12.2.3, 12.2.6; DSOMM.
+OWASP: AISVS 12.1.2, 12.2.2, 12.2.3, 12.2.6; LLMSVS 8.1; DSOMM; LLM Prompt
+Injection Prevention cheat sheet; Logging Vocabulary cheat sheet. Incident
+response for these detections: rules/06 §2.
 
 ### Data-access analytics: exfiltration, insider misuse, database anomalies
 
@@ -269,3 +382,34 @@ cheat sheet.
       a performance dashboard? For MongoDB, zero files from
       `grep -rliE '\$where|\$function|\$accumulator|mapReduce|grantRolesToUser|createUser' detections/`
       means the dangerous-command rule is missing.
+- [ ] **Legacy systems (§1) — Medium (manual):** is every legacy host either
+      parsed into the SIEM or covered by a scheduled central IOC check with a
+      stopped-reporting alert, and is its enclave boundary watched for flow
+      anomalies?
+- [ ] **Agent tamper attribution (§2) — High:** is every stop, disable or
+      re-enable of an EDR, AV, integrity or logging agent collected with its
+      actor and joined to the silent-source alert? Zero files from
+      `grep -rliE 'EventID:[[:space:]]*(1102|4719|5001|5007)([^0-9]|$)|audit_enabled=0|CONFIG_CHANGE' detections/`
+      means no rule watches the tamper events (Sysmon 4/16 need a
+      Sysmon-channel check by hand).
+- [ ] **Session guessing and population spikes (§7) — High:** is there a rule on
+      distinct invalid session IDs per source, failures per role or privilege
+      group, and a population-wide spike that triggers out-of-band
+      re-verification? Zero files from
+      `grep -rliE 'invalid.?session|unknown.?session|session.?(not.?found|expired)' detections/`
+      means the session-guessing rule is missing.
+- [ ] **Reconnaissance (§7) — Medium:** do rules count distinct 404 paths per
+      source and user, and alert on gRPC `UNIMPLEMENTED`, GraphQL unknown-field
+      errors and `RESOURCE_EXHAUSTED` bursts per identity? Zero files from
+      `grep -rliE 'UNIMPLEMENTED|Cannot query field|status(_code)?[^0-9]{0,6}404' detections/`
+      means none exist.
+- [ ] **Baseline anomalies (§7) — Medium:** are funnel ratios, 4xx per route and
+      per-function invocation counts alerted against a seasonal baseline, and do
+      restart loops and failed deploys reach a security queue? Zero files from
+      `grep -rliE 'restarts_total|CrashLoopBackOff' detections/` means restart
+      loops never reach security.
+- [ ] **Guardrail telemetry (§7) — High where an LLM feature ships:** is every
+      guardrail or moderation verdict logged with its rule ID (not the sensitive
+      prompt), and is drift in verdict and reason rates alerted? Zero files from
+      `grep -rliE 'guardrail|moderation|refusal|safety.?filter' detections/`
+      means no rule reads those verdicts.

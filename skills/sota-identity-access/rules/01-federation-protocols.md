@@ -284,6 +284,42 @@ OIDC. When you run or consume SAML, the failure modes are signature-handling bug
   profile forbids it). Use the OASIS *Security and Privacy Considerations* document as the
   audit walk-through. OWASP: OWASP SAML Security cheat sheet.
 
+### 7.1 SAML certificates, metadata exchange, and what an assertion carries
+
+- **Profile the signing certificate for one job.** KeyUsage `digitalSignature` and
+  nothing else; `basicConstraints CA:FALSE` on a self-signed one. There is no
+  established SAML EKU; RFC 9336's `id-kp-documentSigning` (1.3.6.1.5.5.7.3.36) is the
+  closest fit if you want one. Never reuse the IdP's TLS server certificate or key for
+  SAML signing. Use RSA ≥ 2048 or ECDSA P-256 or larger, and a SHA-256-or-stronger
+  signature on both the certificate and the XML. Confirm every SP accepts EC keys before
+  switching, because not all products do. The SP's encryption certificate is a separate
+  key pair from its signing one.
+- **Choose the issuer on purpose.** SAML trust is explicit: the SP pins the IdP's
+  certificate (§7), so a self-signed certificate delivered over an authenticated channel
+  is usually the right choice, and its lifetime and rotation stay under your control. A
+  public-CA certificate adds revocation checking, but nothing else if the exchange itself
+  was not authenticated. Trust a private or partner CA only after reviewing how it is run
+  (WebTrust, ETSI or SOC 2 Type II audited), and only for validating that IdP's
+  signatures. Never add it to the system or TLS trust store. When a chain exists, check
+  revocation (CRL or OCSP) at every level. For a self-signed certificate, revoking it
+  means removing it from metadata, so keep that rotation runbook ready.
+- **Metadata travels over TLS, never by email.** Consume the partner's metadata from its
+  metadata URL over TLS with a WebPKI-trusted server certificate, and refresh it
+  automatically so rotations land. A certificate sent by email, pasted into a ticket, or
+  uploaded by whoever asks is how an SP ends up trusting the attacker's key. Keep a
+  current security contact for every federation partner so a key compromise can be
+  announced and both sides can rotate the same day.
+- **Send each SP only what it needs.** Release attributes per SP through an explicit
+  release policy, not the IdP's full profile. Identify the subject with an opaque,
+  per-SP identifier: a persistent NameID is defined as a non-public pair-wise pseudonym
+  (SAML Core Sec. 8.3.7), a transient one when the SP needs no continuity, and OIDC's
+  `subject_type=pairwise` is the equivalent (OIDC Core Sec. 8.1). Use email or employee
+  number only where the SP truly needs it. An assertion carrying sensitive attributes
+  (PII, health, financial, entitlements an eavesdropper could reuse) travels as
+  `<EncryptedAssertion>` (SAML Core Sec. 2.3.4) to the SP's encryption certificate.
+  Otherwise it is readable in the browser, in proxies, and in any HAR file or log that
+  captured the POST. OWASP: SAML Security cheat sheet.
+
 ## 8. SCIM 2.0 as a protocol
 
 - **SCIM 2.0** = RFC 7642 (requirements), RFC 7643 (core schema: User, Group), RFC 7644
@@ -298,11 +334,36 @@ OIDC. When you run or consume SAML, the failure modes are signature-handling bug
   event-driven provisioning signals — prefer it over ad-hoc webhooks or polling for
   propagating lifecycle changes across domains.
 
-## 9. Legacy: WS-Federation
+## 9. Legacy protocols
 
-WS-Federation is a legacy WS-* protocol; vendors (Microsoft Entra/ADFS) treat OIDC and
-SAML 2.0 as the strategic protocols and keep WS-Fed only for backward compatibility.
-New integrations: do not adopt WS-Fed; migrate existing ones to OIDC.
+- **WS-Federation** is a legacy WS-* protocol; vendors (Microsoft Entra/ADFS) treat OIDC
+  and SAML 2.0 as the strategic protocols and keep WS-Fed only for backward
+  compatibility. New integrations: do not adopt WS-Fed; migrate existing ones to OIDC.
+- **OpenID 2.0 is obsolete**, a different protocol from OpenID Connect despite the name.
+  Do not implement it. Retire any relying party or library still speaking it; the OpenID
+  Foundation's *OpenID 2.0 to OpenID Connect Migration 1.0* (Final, 2015) covers moving
+  existing users across.
+- **Turn off every sign-in path that cannot carry MFA.** HTTP Basic, password-based IMAP,
+  POP and SMTP AUTH, app passwords, user-facing LDAP simple bind, and NTLM reachable from
+  outside all take the password alone. Attackers pick them because the IdP's MFA and
+  conditional access never see them. Disable them at the IdP, directory and mail tier.
+  Where one must stay, keep it as a written, owned exception with a compensating control
+  (network restriction, per-app credential, monitoring). The app-side inventory of
+  authentication routes is **sota-code-security** rules/02 §5.
+- **A protocol-translation gateway holds the legacy app's keys.** When a gateway or
+  identity-aware proxy turns a SAML or OIDC login into Kerberos, HTTP Basic or a trusted
+  header for a backend that cannot speak federation:
+  - the backend accepts traffic only from the gateway (network isolation plus mTLS or an
+    equivalent), so nobody can skip the gateway and send the header themselves;
+  - the gateway strips any client-supplied copy of the identity headers it injects;
+  - the gateway's backend credential is vaulted and scoped to that one backend. Kerberos
+    constrained delegation with protocol transition is limited to that backend's SPNs
+    (rules/07 §2);
+  - the gateway enforces MFA and session policy, and it is administered and patched as
+    part of the backend's own tier;
+  - both sides log with a shared correlation id, so a backend action traces to the
+    federated user.
+  OWASP: Authentication, Multifactor Authentication, Zero Trust Architecture cheat sheets.
 
 ## Audit checklist
 
@@ -327,3 +388,6 @@ New integrations: do not adopt WS-Fed; migrate existing ones to OIDC.
 - [ ] **Medium** — With more than one AS: is the issuer stored per request and compared on return (`iss` parameter, or a distinct redirect URI per issuer as fallback), and is fetched metadata discarded when its `issuer` differs from the configured one? Discovery fetches with no issuer comparison: `grep -rlE 'well-known/(openid-configuration|oauth-authorization-server)' . | xargs grep -LE '\[["'\'']issuer["'\'']\][[:space:]]*(!=|==)|\.issuer[[:space:]]*(!=|==|!==|===)'`
 - [ ] **High** — Does the AS redirect after a credential POST with 303, never 307/308? `grep -rnE 'code=30[78]|redirect\(30[78]|StatusTemporaryRedirect|StatusPermanentRedirect|TEMPORARY_REDIRECT|PERMANENT_REDIRECT' .`
 - [ ] **Critical** — Does the SAML SP verify only against IdP keys pinned from metadata (never a certificate taken from the message's `KeyInfo`), check `<Issuer>`, and apply the Web SSO profile and binding rules (signed assertions + replay cache on POST, query-string signature on Redirect, no `<Response>` on Redirect)? Keys read out of the document: `grep -rnE '(find|findtext|xpath|select|getElementsByTagName[A-Za-z]*)\(.*(KeyInfo|X509Certificate)' .`
+- [ ] **High** — Is the SAML signing certificate single-purpose (`digitalSignature` only, not the TLS certificate, CA:FALSE if self-signed) with RSA ≥ 2048/ECDSA P-256+ and SHA-256+, is partner metadata consumed from its URL over WebPKI TLS (never a certificate from email), is any private-CA trust scoped to SAML signature validation, and is there a partner contact list for compromise? SHA-1 or DSA XML-signature algorithms still configured: `grep -rniE 'xmldsig#(rsa-sha1|dsa-sha1|sha1)|(signature|digest)_?(algorithm|alg|method)["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']?(rsa-?)?sha-?1["'\'']?' .`
+- [ ] **Medium** — Does each SP receive only the attributes it needs, under an opaque per-SP subject (persistent/transient NameID, OIDC `pairwise`), with assertions carrying sensitive attributes sent as `<EncryptedAssertion>`? Assertion encryption switched off, or email as the default subject (review each hit): `grep -rniE 'want_?assertions_?encrypted["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']?false|saml[._]encrypt["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']?false|nameid-format:emailAddress' .`
+- [ ] **High** — Are OpenID 2.0 and every sign-in path that cannot carry MFA (HTTP Basic, password IMAP/POP/SMTP AUTH, app passwords, user-facing LDAP bind, external NTLM) disabled or held as owned exceptions, and does every protocol-translation gateway own its backend (backend reachable only from it, injected headers stripped, scoped vaulted credential, correlated logs)? OpenID 2.0 or Basic auth still wired in: `grep -rniE 'specs\.openid\.net/auth/2\.0|openid\.mode|openid4java|LightOpenID|python-openid|(allow|enable)_?basic_?auth(entication)?["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']?(true|on|yes|enabled)' .`

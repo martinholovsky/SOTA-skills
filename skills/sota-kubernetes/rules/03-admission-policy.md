@@ -160,6 +160,33 @@ Traps:
   attacker's valid signature from their own identity passes a check that doesn't pin who.
 - Require **provenance attestations** (SLSA) too, not only signatures, for high-value
   workloads (`sota-devsecops` rules/02).
+- **A valid signature does not mean an approved base.** A team can sign an image built
+  on anything. Where the org keeps a blessed base set (`sota-devsecops` rules/04 §4.3),
+  admission also checks the image's signed provenance: BuildKit's SLSA provenance lists
+  every image the build pulled, by digest, in `buildDefinition.resolvedDependencies` as
+  `pkg:docker/...` entries, so a Kyverno attestation condition can require all of them to
+  be approved digests. Guard the empty case, since `AllIn` over an empty list passes. The
+  `org.opencontainers.image.base.name`/`.digest` annotations are typed by whoever runs the
+  build, so they are no substitute. Admission sees only new pods, so also run a scheduled
+  job that takes every running image digest (`kubectl get pods -A -o
+  jsonpath='{..imageID}'`), fetches its provenance (`cosign verify-attestation --type
+  slsaprovenance1 ...`) and flags any base outside the approved set, such as an image
+  admitted before the policy existed or one whose base has since been withdrawn.
+  OWASP: DSOMM; Kubernetes Security cheat sheet.
+
+```yaml
+# Kyverno verifyImages.attestations entry — every image the build pulled is an approved base
+- type: https://slsa.dev/provenance/v1
+  attestors: [{ entries: [{ keyless: { issuer: "...", subject: "..." } }] }]
+  conditions:
+    - all:
+        - key: "{{ length(buildDefinition.resolvedDependencies[?starts_with(uri, 'pkg:docker/')]) }}"
+          operator: GreaterThan
+          value: 0
+        - key: "{{ buildDefinition.resolvedDependencies[?starts_with(uri, 'pkg:docker/')].digest.sha256 }}"
+          operator: AllIn
+          value: ["<approved-base-digest-1>", "<approved-base-digest-2>"]
+```
 
 ## 5. PolicyException / exemption discipline
 
@@ -182,6 +209,7 @@ discipline these become permanent holes:
 - [ ] Policy CRD writes (incl. Kyverno namespaced policies) never delegated to tenants; policy-engine pods behind an egress NetworkPolicy (metadata endpoint blocked); running line includes the CVE-2026-4789 fix?
 - [ ] All security policies in `Enforce`, not parked in `Audit`/`dryrun` indefinitely? (`grep -rE 'Audit|dryrun' policies/`) Each Audit-mode policy has a flip-date + owner?
 - [ ] Image verification ENFORCED for controlled registries: exact signer issuer+subject, provenance required, tag→digest mutation, full image inventory covered before enforce? (not Audit-only)
+- [ ] Where an approved base set exists: admission requires signed provenance whose `pkg:docker/` dependencies are all approved digests (empty list rejected), and a scheduled job re-checks every running image's base? **Medium** if base approval rests only on a signature or on the self-declared base annotation. (`grep -rnE 'org\.opencontainers\.image\.base\.(name|digest)' <policies>` — each hit is a policy trusting a build-typed label; `grep -rnE 'resolvedDependencies' <policies>` — no hit means provenance bases are never checked)
 - [ ] Policies in git, GitOps-deployed, with CI-tested deny cases (`kyverno test` / gatekeeper tests / VAP units)?
 - [ ] Exceptions scoped, owned, time-bound, PR-reviewed, inventoried, expiry-alerted? (`kubectl get polex -A`; list Gatekeeper excludedNamespaces)
 - [ ] Mutating policies/webhooks reviewed for what they inject (a hostile mutation adds a sidecar/hostPath) — see `rules/05`?

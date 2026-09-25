@@ -79,6 +79,19 @@ resource "aws_sqs_queue" "orders" {
   concurrency / min instances only for
   measured latency-critical paths (it converts serverless pricing into
   always-on pricing — decide with numbers).
+- **A warm start reuses the whole environment, not just your connections.** AWS
+  documents that objects declared outside the handler stay initialized and `/tmp`
+  (512 MB–10,240 MB) keeps its contents between invocations, and that a crash
+  reset does not clear `/tmp` either; the next invocation may be for a different
+  end user. So only what belongs to the *workload* lives in module scope: clients,
+  connection pools, the function's own credentials or secrets (cached with a TTL,
+  sota-secrets-management rules/03 §4). Per-request data, user tokens and anything
+  user-scoped stay in handler-local variables, and a sensitive file written to
+  `/tmp` is deleted before the handler returns (a `finally`, or a per-invocation
+  temp directory removed on exit). Lambda Managed Instances run several invocations
+  in one environment *concurrently*, which turns a leaked global into a live race
+  (JS mechanics: sota-javascript-typescript rules/04). (OWASP: Serverless FaaS
+  Security cheat sheet)
 - **Egress is the other VPC-attach criterion.** A Lambda function with no VPC
   config runs in a Lambda-managed VPC *with* internet access, and nothing in your
   network can filter it. A function that handles sensitive data or has no need
@@ -200,6 +213,11 @@ spec:
       `grep -rl 'resource "aws_lambda_function"' --include='*.tf' . | xargs -r grep -L 'vpc_config'`
       — file-level, so a hit-free file can still hold an un-attached second
       function; confirm per resource.
+- [ ] **High** — no per-request or user-scoped data in function globals, and no
+      sensitive file left in `/tmp` across invocations (§2). Probe (handler files
+      that write under `/tmp` and never delete anything):
+      `grep -rl -E "[\"']/tmp/" --include='*.py' --include='*.js' --include='*.ts' . | xargs grep -L -E 'os\.remove|os\.unlink|shutil\.rmtree|TemporaryDirectory|unlinkSync|rmSync|fs\.rm'`
+      — then read module-level assignments in each handler file for request data.
 - [ ] Multi-step workflows in a workflow engine (or durable functions), not
       sleep/retry loops in handler code.
 - [ ] K8s version within provider standard support, ≤ 1 behind default; upgrade

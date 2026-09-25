@@ -69,6 +69,30 @@ resource "aws_s3_bucket_lifecycle_configuration" "b" {
 - Cross-account writes (log delivery, partner drops): bucket-owner-enforced
   ownership + explicit service principals with source-account/org conditions —
   never `Principal:"*"` with a prefix "restriction".
+- **Pick the access path by data sensitivity.** Sensitive objects are served
+  *through* a backend: it authorizes the caller per object, reaches storage under
+  its own narrowly scoped workload identity (never a static key), and logs an
+  access record that names the user. A presigned URL is a bearer token: S3's docs
+  say anyone holding it can use it repeatedly until it expires, and SDK/CLI-issued
+  ones can live up to 7 days (less if the signing credentials expire first). Keep
+  presigned URLs for low-sensitivity objects; issue them only after the same
+  per-object authorization, with the shortest workable expiry, for one object and
+  one method, and build the key from server-side values rather than concatenating
+  request input into it. A bucket policy can cap signature age on top
+  (`s3:signatureAge`). CDN signed URLs: rules/03 §9. (OWASP: Secure Cloud
+  Architecture cheat sheet)
+- **Shared multi-tenant buckets: stamp the tenant on the object and check it on
+  read.** The writer sets the tenant from the authenticated context — user metadata
+  (`x-amz-meta-tenant-id`, returned with every GET/HEAD) or an object tag (required
+  at write time with `s3:RequestObjectTag/<key>`) — and the read path compares it
+  with the caller's tenant before returning a byte, so a guessed or leaked key
+  cannot cross tenants. A bucket policy can enforce the tag on reads with
+  `s3:ExistingObjectTag/<key>` (not usable on PUT or DELETE). Encryption context is
+  a weaker substitute with SSE-KMS: S3 supplies the stored context itself on
+  decrypt (GETs must not send encryption headers), so it binds the ciphertext but
+  does not check the *caller*; client-side envelope encryption, where the reader
+  must present the tenant as context, does. (OWASP: Multi Tenant Security cheat
+  sheet)
 
 ## 2. Block vs file vs object
 
@@ -179,6 +203,17 @@ The real design decisions are about **key control and blast radius**:
 - Snapshot/AMI sharing: shared-to-public snapshots are a recurring breach class —
   audit for any snapshot/image shared outside the org; block publicly shared
   snapshots via org guardrail where available.
+- **Decommissioning is a data event, not a `destroy`.** Retiring a resource means
+  (1) erasing its data everywhere it was copied — snapshots, final snapshots, AMIs,
+  replicas, exports and backups, on the retention schedule of §3 rather than
+  immediately if policy requires holding them (RDS, for one, takes a final snapshot
+  on delete unless told to skip it); where physical deletion is impractical,
+  crypto-shred by scheduling deletion of a key used *only* by that resource (AWS KMS
+  waits 7–30 days); (2) removing its configuration, credentials, IAM roles, DNS
+  records (rules/03 §6) and secrets; (3) confirming it no longer runs; (4) deleting
+  it from the asset inventory, so tag-based policies and scanners stay accurate and
+  a later hit on its name is recognisable as an orphan. (OWASP: Infrastructure as
+  Code Security cheat sheet)
 
 ## Audit checklist
 
@@ -195,6 +230,15 @@ The real design decisions are about **key control and blast radius**:
       and justify each hit.
 - [ ] No `Principal:"*"` in bucket/queue/key resource policies without strong
       conditions.
+- [ ] **High** — sensitive objects are not handed out as presigned URLs, and none
+      is long-lived (§1). Probe: `grep -rn -E '(ExpiresIn|expiresIn|expires_in|Expires) *[:=] *[0-9]{5,}' --include='*.py' --include='*.ts' --include='*.js' --include='*.go' --include='*.java' .`
+      (≥ 10000 s, about 2.8 h); then read each presign call site for a per-object
+      authorization check before it and for request input in the key.
+- [ ] **High** — shared multi-tenant buckets check the object's tenant on read
+      (§1). Probe (files that read objects and never mention a tenant):
+      `grep -rl -E 'get_object\(|GetObjectCommand|getObject\(' --include='*.py' --include='*.ts' --include='*.js' --include='*.java' . | xargs grep -L -i 'tenant'`
+      — file-level; in files it spares, confirm each read compares stored tenant
+      metadata or tag with the caller's tenant (or the policy uses `s3:ExistingObjectTag`).
 - [ ] Stateful resources carry backup-tier tags; org backup plans select by tag;
       sample-verify an actual recovery point exists for each tier-1 system.
 - [ ] Backups copied cross-account; immutability/vault-lock on tier-1; verify prod
@@ -203,6 +247,9 @@ The real design decisions are about **key control and blast radius**:
       the measured time); retention matches stated policy, both min and max.
 - [ ] Unattached volumes, orphaned snapshots, stale AMIs reaped or scheduled;
       no snapshots/images shared public or to unknown accounts.
+- [ ] **Medium** — a decommissioning runbook exists and its last use left no
+      residue (§5): pick a retired resource and search for its snapshots, backups,
+      roles, secrets, DNS records and inventory entry by name/tag.
 - [ ] Default encryption on for block storage and DBs account-wide; CMKs used for
       confidential/regulated data classes.
 - [ ] Key-per-domain segmentation (no single god key); key admins ≠ data readers in

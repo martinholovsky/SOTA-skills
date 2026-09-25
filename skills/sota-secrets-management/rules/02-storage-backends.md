@@ -78,6 +78,11 @@ Rules:
   deploy; pin exact versions only for break-glass rollback.
 - **Use native rotation** where it exists (Secrets Manager rotation functions for RDS/Redshift/
   DocumentDB); otherwise schedule rotation via your own function and the dual-secret pattern.
+- **The rotation function is a privileged deputy — lock its role.** Its execution role is
+  assumable only by that function (not shared with other functions or humans), its policy
+  names the exact secret ARNs it rotates (AWS's examples also pin KMS use with a
+  `kms:EncryptionContext:SecretARN` condition), and only the secret manager may invoke it.
+  The staged create → set → **test** → promote sequence it must run is rules/01 §3.
 - **Enable and route audit logs** (CloudTrail data events, GCP Data Access logs, Key Vault
   diagnostics) — reads must be attributable. Alert on `GetSecretValue` from unexpected
   principals or regions.
@@ -167,7 +172,10 @@ secrets you intend to rotate without restarts.
 
 ## 6. Env vars vs file mounts
 
-Env vars are *acceptable* but file mounts are *better*. Know why, and apply the table:
+**Default to file or in-memory delivery; an env var is the exception you justify.** Some
+guidance forbids env vars for secrets outright; the position here is narrower but the default
+is the same — a file mount (tmpfs) or a fetch into process memory from the store (rules/03 §4).
+Know why, and apply the table:
 
 | Property | Env var | File mount (tmpfs) |
 |---|---|---|
@@ -191,6 +199,12 @@ Rules:
   via `systemctl show`; use `LoadCredential=`), or process command lines (rules/03 §3).
 - File-mounted secrets: tmpfs-backed (k8s Secret volumes already are), mode `0400`, owned by the
   app user, path conventional (`/run/secrets/<name>` — Docker/compose secrets land there too).
+- **Mount a secret only into the workload that consumes it.** Never put secrets on a volume
+  or directory several deployments share — a node `hostPath` such as `/etc/app-secrets`, a
+  shared PVC or NFS export, a compose volume mounted by every service. Each consumer then
+  reads every other consumer's credentials, and a compromise of the weakest pod is a
+  compromise of all of them (a Secret volume or CSI mount is per-pod by construction).
+  OWASP: Proactive Controls 2024 C2; Secrets Management cheat sheet.
 
 ```dockerfile
 # BAD — secret baked into a layer forever; `docker history` shows it
@@ -251,6 +265,28 @@ trackers serializing objects, language-runtime introspection. Proportionate meas
 - **Disable heap-dump/debug endpoints in prod** (JMX heap dump, `/debug/pprof/heap` exposed
   publicly, py-spy on prod boxes by default). These are remote secret extraction tools.
 
+## 8. Consumer-key (end-to-end) encryption of secrets
+
+At-rest and envelope encryption (rules/05 §7) protect a secret from someone who steals the
+store's *disk*; they do not protect it from the store itself, its operators, or anything that
+can call it with a valid identity. One step further: **encrypt the secret to the consuming
+workload's own public key** (age recipients, HPKE — RFC 9180 — or a KMS key only that
+workload's identity may decrypt with), so the store, the sync controller and every hop in
+between handle only ciphertext and plaintext exists solely inside the consumer.
+
+- **Worth it when** the store or relay sits outside your trust boundary (a third-party SaaS
+  store, a vendor-operated CI, a multi-party pipeline), when regulation requires that the
+  platform operator cannot read a value, or for a small set of crown-jewel keys.
+- **The cost is key distribution:** every consumer needs a private key that is itself
+  protected (TPM/TEE-sealed, or a KMS key bound to the workload identity — otherwise you
+  have moved secret zero, not removed it); adding or rotating a consumer means re-encrypting
+  for it; and the store can no longer mint dynamic secrets, rotate for you, or record which
+  plaintext was used. For most in-cluster services workload identity plus a per-consumer
+  store policy (§2–3) is the better trade.
+- SOPS files with per-environment recipients (§4) are the familiar instance — the pattern
+  holds only if the recipient key lives with the consumer rather than in the same store.
+  OWASP: Secrets Management cheat sheet.
+
 ## Audit checklist
 
 - [ ] Backend matches the decision table; no custom/homegrown secret stores; no secrets in
@@ -269,7 +305,16 @@ trackers serializing objects, language-runtime introspection. Proportionate meas
 - [ ] No secrets in Dockerfile ENV/ARG, image layers, compose files, systemd `Environment=`, or
       pod-spec literals; build-time secrets via BuildKit secret mounts.
 - [ ] File mounts preferred over env vars where the platform supports them; env-var usage has
-      child-process and error-handler scrubbing mitigations.
+      child-process and error-handler scrubbing mitigations. Env-delivered secrets on a
+      platform that offers mounts (review each hit against §6; Medium when it spawns
+      third-party children or must rotate): `grep -rn 'secretKeyRef' --include='*.yaml' --include='*.yml' .`
+- [ ] **No secret on a volume shared across deployments (§6)** — High for a node `hostPath` or
+      shared PVC holding credentials for several workloads:
+      `grep -rnE '^[[:space:]]*path:[[:space:]]*"?/[^[:space:]]*(secret|credential|credstore)' --include='*.yaml' --include='*.yml' .`
+- [ ] Rotation functions run under a role only they can assume, scoped to the secrets they
+      rotate, invocable only by the secret manager (§3).
+- [ ] Where the store or relay is outside the trust boundary, secrets are encrypted to the
+      consumer's key and that private key is itself sealed or identity-bound (§8).
 - [ ] Secrets wrapped in redacting types; debug/heap-dump endpoints disabled in prod; core
       dumps disabled for key-holding processes; long-lived keys zeroized where the runtime
       permits.

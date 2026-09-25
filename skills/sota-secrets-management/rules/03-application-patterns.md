@@ -197,6 +197,23 @@ images).
   the cached secret once and retry before erroring.
 - Official caching helpers exist — AWS Secrets Manager caching libraries, Vault Agent template
   cache — prefer them to hand-rolled caches.
+- **Calling a local secrets endpoint** (a serverless secrets extension, an agent sidecar on
+  `localhost`) is still a network call to a credential service — write the client like one:
+  - **Authenticate every request** with the runtime's own token and **fail fast if it is
+    absent**. The AWS Parameters and Secrets Lambda Extension (port 2773 by default) requires
+    the `X-Aws-Parameters-Secrets-Token` header set to the function's session token, which
+    AWS's samples resolve from the SDK credential chain at call time.
+  - **URL-encode the secret identifier.** AWS's own samples interpolate `secretId` raw into
+    the query string, yet secret names may contain `+`, `=` and `/` (CreateSecret's documented
+    set) — characters query parsers commonly reinterpret (`+` as a space) — and an id built
+    from any input can smuggle `&versionStage=…` into the request.
+  - **Set a timeout on your request.** The extension's own upstream call has no timeout by
+    default (`SECRETS_MANAGER_TIMEOUT_MILLIS` = 0), so an unbounded client call can hang the
+    invocation until the platform kills it.
+  - **Check the status before reading the body.** The samples parse `SecretString` whatever
+    came back; an error body then surfaces as a confusing parse failure — or, worse, an error
+    string used as a credential.
+  OWASP: Serverless FaaS Security cheat sheet.
 
 ```python
 # GOOD — TTL cache + forced refresh on auth failure
@@ -281,9 +298,23 @@ Every credential answers: who uses it, for which actions, on which resources, un
   geographies, spikes, and reads of honeytokens (rules/04 §5).
 - **App side:** log secret *usage events* — "rotated DB cred picked up," "token refresh failed,"
   "auth failure forced refresh" — with secret *names*, never values. These logs are how you
-  verify a rotation completed (rules/01 §3 step 3).
+  verify a rotation completed (rules/01 §3 step 4).
 - **Attribution requires per-consumer creds** (§7) — a shared key makes every audit log entry
   ambiguous.
+- **Minimum record per event**, from the store or around it: who asked (principal, and the
+  human behind a CI run — rules/01 §5), for which target system and role, whether it was
+  approved or rejected, each use, expiry, value updates, authentication and authorization
+  errors, and every administrative action on the store itself (policy, auth-method, audit-
+  device, key changes). A store whose admin actions are not logged can switch its own audit
+  off unseen.
+- **One detection per lifecycle stage:** creation outside the provisioning pipeline, a
+  rotation that did not happen on schedule (or happened outside it), revocation, and
+  deletion — each an alert or a report, not only a log line.
+- **Use of a revoked or expired secret is a signal, not noise:** log it and alert — it means
+  a consumer missed a rotation or someone is replaying a stolen value.
+- **Alert when a dynamic credential is used from somewhere its consumer is not** (a source
+  network or egress address outside the workload's own) — a leased credential lifted from a
+  pod is otherwise indistinguishable from the pod. OWASP: Secrets Management cheat sheet.
 
 ## Audit checklist
 
@@ -318,3 +349,11 @@ Every credential answers: who uses it, for which actions, on which resources, un
       read-only creds on read paths; no wildcard IAM/superuser DB users on app credentials.
 - [ ] Backend access logs enabled, shipped, and alerted; app logs usage events by name only;
       rotation completion verifiable from logs.
+- [ ] **Secret audit trail complete (§8)** — requester, target and role, approval/rejection,
+      use, expiry, updates, authn/authz errors and store admin actions recorded; detections
+      exist for create/rotate/revoke/delete, for any use of a revoked or expired secret, and
+      for a dynamic credential used off its consumer's network — Medium per missing class
+      (judgment: read the alert rules against this list).
+- [ ] **Local secrets-endpoint clients (§4)** send the runtime token, URL-encode the id, set
+      a timeout and check status — Medium. Callers with no timeout at all:
+      `grep -rlE 'localhost:2773|127\.0\.0\.1:2773|port: *2773' . | xargs -r grep -LiE 'timeout'`

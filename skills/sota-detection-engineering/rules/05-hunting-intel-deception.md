@@ -112,6 +112,26 @@ the decoy from the real thing).
 - **Placement is everything.** A honeytoken nobody encounters never fires; one in
   the adversary's natural path (the file they'll grep, the creds they'll spray)
   fires on first contact. Place decoys along real attack paths, not in a corner.
+  Placements that pay off in applications:
+  - **Honey user rows** in the app's own user store, with credentials nobody
+    was ever given. The login path checks for them: an attempt against one means
+    the user table leaked, so page IR and move the app into a secure state
+    (forced re-verification, tightened throttling — rules/02 §7
+    population-wide spikes).
+  - **A bait path listed as `Disallow` in robots.txt** and linked nowhere else.
+    Well-behaved crawlers skip it and robots.txt is not access control
+    (RFC 9309 says so), so a request to it marks a crawler that read the file
+    and ignored it, or a person mining it for targets.
+  - **Watermarked canary records** in public listings: a unique fake entry per
+    listing or per consumer, so when the data shows up elsewhere the record
+    says which scraper or account took it.
+  - **Honeytokens for AI agents** in the agent's workspace, memory and config
+    paths (a fake key in a dotfile, a canary URL in a memory entry). The agent's
+    task never needs them, so use means it was steered by injected instructions.
+    The response is agent-specific: contain the agent and revoke its credentials
+    (sota-sandboxing rules/05 R4.5), then run the rules/06 §2 LLM playbook.
+  OWASP: Bot Management and Anti-Automation cheat sheet; Code Review Guide v2;
+  DSOMM.
 - **Detection wiring.** Every deception asset must alert with maximum severity
   and rich context (who/where/how) and route straight to IR — these are
   presumed-true-positive (rules/04 routes; rules/06 responds). Guard against the
@@ -140,3 +160,9 @@ the decoy from the real thing).
       straight to IR? Hunt: enumerate planted canaries vs. those wired to an
       alert — any unwired decoy is a wasted tripwire.
 - [ ] Are honeytoken mechanics coordinated with sota-secrets-management rules/04?
+- [ ] **Application placements (§4) — Medium:** are there honey user rows
+      checked at login, a robots.txt bait path, canary records in public
+      listings, and honeytokens in agent workspaces, each wired to a response?
+      Zero files from
+      `grep -rliE 'honey.?(user|account|row)|canary.?record|bait.?path|robots\.txt' detections/`
+      means no application placement is wired to an alert.

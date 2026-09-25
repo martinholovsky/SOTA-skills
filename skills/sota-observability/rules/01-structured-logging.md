@@ -45,6 +45,18 @@ Rules:
   for exactly this — or record the measured offset, and never order security
   events on the untrusted clock alone. OWASP: ASVS 5.0 V16.2.2, Logging cheat
   sheet, Proactive Controls 2024 C9.
+- **When it happened is not when it was written.** Anything that emits later
+  than it acts — a queue consumer, a batch uploader, an offline client syncing,
+  a replay or backfill — stamps the event with the time the action occurred,
+  carried from the source, and lets the logger or pipeline add its own emit or
+  receive time beside it. Stamping "now" at emission puts a 3am login at the
+  9am sync in the timeline. In the OTel log data model `Timestamp` is the
+  origin's time (optional, may be absent) and `ObservedTimestamp` is when the
+  collection system saw it; exporters to one-timestamp formats use `Timestamp`
+  if present, else `ObservedTimestamp`. So a Collector transform that runs
+  `set(log.time, log.observed_time)` unconditionally erases the event time;
+  guard it (`where log.time_unix_nano == 0`) so it only fills a gap. OWASP:
+  Logging cheat sheet.
 - Multi-line payloads (stack traces) belong in a single JSON field
   (`exception.stacktrace`), never as raw multi-line output that shreds into
   N orphan lines in the aggregator.
@@ -79,6 +91,18 @@ for "this should never happen and someone must look."
 Never log-and-rethrow at every layer — one exception must produce one ERROR
 line (at the boundary that handles it), not five duplicates that quintuple
 your error rate.
+
+**Level governance.** The production default level must already record what
+the business and compliance need — nobody should have to raise it after an
+incident to find out what happened. The security/audit stream is not governed
+by the operational level at all: route it through its own logger or handler
+that a level change (global, root or per-package) cannot silence. Changing the
+level at runtime goes through an approved path — a change record, or an
+automatic rule that raises verbosity for a bounded window and reverts on a
+timer — and the toggle itself is an authenticated, audited admin action
+(rules/05 §3). A scheduled check compares the level each running instance
+actually reports with the intended one, because a "temporary" DEBUG or OFF
+outlives the incident that caused it. OWASP: Logging cheat sheet.
 
 ## 3. Correlation: trace_id in every line
 
@@ -307,6 +331,36 @@ OWASP: Logging cheat sheet, Proactive Controls 2024 C9.
 - Anything you wouldn't show a contractor with log access: logs are your
   widest-read datastore with your weakest access control.
 
+## 8. Protect the log store: access, placement, transport
+
+Logs hold the evidence an intruder most wants to read or erase, so the store
+gets the controls of a sensitive database. Integrity and tamper evidence are
+`sota-code-security` rules/18; this section is who reads, where files live,
+and how records travel.
+
+- **Reads are events too.** Record every query or export against the log
+  store (who, what scope, when) in a stream the reader cannot edit, and alert
+  on unusual readers or bulk exports. Read privilege is granted per role, may
+  need prior approval, and is re-reviewed on a schedule — stale access to logs
+  is stale access to everything the logs leaked.
+- **File logs, when unavoidable,** go on a partition or volume of their own,
+  apart from the OS, the application code and user-uploaded content, so a log
+  flood cannot fill the system disk and an upload path cannot reach the logs.
+  The directory is owned by the writing service account and closed to other
+  users (e.g. `0750`), files are not world-readable (e.g. `0640`), and the
+  web server never serves that path.
+- **Encrypt and authenticate the hop.** Any shipment across a network you do
+  not fully control uses TLS with certificate verification. Where a forged
+  event could drive a decision or hide an attack, verify the sender too: mTLS
+  or signed events from each source. In the OTel Collector, a receiver's
+  `tls.client_ca_file` makes it require and verify client certificates; on an
+  exporter, `insecure: true` turns TLS off and `insecure_skip_verify: true`
+  keeps TLS but skips server-certificate checks (both default to false).
+  Events from clients and other trust zones stay untrusted input
+  (`sota-code-security` rules/07 §2).
+
+OWASP: Logging cheat sheet, ASVS 5.0 V16.4.2 and V16.4.3.
+
 ## Audit checklist
 
 - [ ] All services emit JSON (or otherwise structured) logs; no printf prose
@@ -347,3 +401,23 @@ OWASP: Logging cheat sheet, Proactive Controls 2024 C9.
       (§7). Probe in pipeline configs and logging code — a hit on the
       operational stream is fine, a hit on the security stream is the finding:
       `grep -rniE '(exclude|drop|filter|skip|ignore).*(user.?agent|kube-probe|healthchecker|pingdom|uptimerobot|scanner|pentest)|(user.?agent|kube-probe|healthchecker|pingdom|uptimerobot|scanner|pentest).*(exclude|drop|skip|ignore)' .`
+- [ ] (**Medium**) Events that are emitted late (queue consumers, offline
+      clients, uploads, replays) carry the time the action happened, with the
+      emit/receive time as a separate field; no pipeline overwrites event time
+      with receive time (§1). Probe Collector configs — a hit without a
+      `where` guard is the finding:
+      `grep -rnE 'set\((log\.)?time,[[:space:]]*(log\.)?observed_time\)[^w]*$' --include='*.y*ml' .`
+- [ ] (**High**) The security/audit logger cannot be silenced by a level
+      change; runtime level changes go through an approved or auto-reverting
+      path and the running level is checked on a schedule (§2). Probe for
+      audit/security loggers (or root) set to OFF/ERROR/FATAL in Spring or
+      Log4j2 properties (YAML config needs a separate read):
+      `grep -rniE '(logging\.level\.(root|[[:alnum:]_.-]*(audit|security)[[:alnum:]_.-]*)|logger\.[[:alnum:]_.-]*(audit|security)[[:alnum:]_.-]*)[[:space:]]*[=:][[:space:]]*"?(off|error|fatal)' .`
+- [ ] (**High**) Reads of the log store are themselves logged and read
+      access is reviewed on a schedule; file logs sit on their own volume, not
+      world-readable; shipment across untrusted networks is TLS with
+      verification, and sources are authenticated where events drive
+      decisions (§8). Probes — exporter TLS disabled or unverified, then log
+      paths made world-readable:
+      `grep -rnE '^[[:space:]]*insecure(_skip_verify)?:[[:space:]]*true' --include='*.y*ml' .`
+      `grep -rnE 'chmod[[:space:]]+(-R[[:space:]]+)?[0-7]?[0-7][0-7][4-7][[:space:]]+[^[:space:]]*log' .`

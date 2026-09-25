@@ -90,7 +90,7 @@ with the shortest path to YES.
 
 | File | Read this when... |
 |------|-------------------|
-| `rules/01-structured-logging.md` | Writing or reviewing log statements, choosing levels, designing wide events/canonical log lines, configuring redaction, sampling, controlling log spend, clock sync, or hardening the logging path against flooding and sink failure |
+| `rules/01-structured-logging.md` | Writing or reviewing log statements, choosing levels, designing wide events/canonical log lines, configuring redaction, sampling, controlling log spend, clock sync and event-vs-receive time, log-level governance, protecting the log store (read auditing, file placement, authenticated transport), or hardening the logging path against flooding and sink failure |
 | `rules/02-metrics.md` | Adding Prometheus/OTel metrics, choosing counter vs gauge vs histogram, designing labels, computing percentiles, applying RED/USE, linking metrics to traces via exemplars |
 | `rules/03-tracing.md` | Instrumenting with OpenTelemetry, deciding what gets a span, propagating context across HTTP/queues/jobs, choosing head vs tail sampling, using (or avoiding) baggage |
 | `rules/04-slos-alerting.md` | Defining SLIs/SLOs, error budgets, writing burn-rate alerts, reviewing alert quality, fighting alert fatigue, deciding page vs ticket |
