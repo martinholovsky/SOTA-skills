@@ -218,6 +218,14 @@ http.SetCookie(w, &http.Cookie{
   `/` path, and no `Domain`, so a subdomain cannot overwrite it.
 - Session identifiers get `HttpOnly`; a CSRF token the page must read does not — that split
   is deliberate, not an oversight to fix.
+- **Every other cookie the app sets** (preference, flash, OAuth `state`, "remember me") takes
+  the same defaults. An empty `Path` emits no `Path` attribute, so the browser scopes it to
+  the request's directory; an empty `Domain` is host-only — keep it so. gin (v1.12.0 source)
+  `c.SetCookie(name, value, maxAge, path, domain, secure, httpOnly)` takes the two flags as
+  positional bools, turns `""` path into `/`, and emits `SameSite` only after
+  `c.SetSameSite(...)` in that request (reset per request). echo's `c.SetCookie(*http.Cookie)`
+  passes the struct straight to `http.SetCookie`. OWASP: Session Management; Cookie Theft
+  Mitigation cheat sheets; ASVS 5.0 V3.3.
 
 ## 4b. Redirects: two different bugs
 
@@ -240,6 +248,25 @@ client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
     return nil
 }
 ```
+
+## 4c. Debug surfaces and release mode
+
+Go ships no separate dev server: the binary you ran locally is the production server, so
+debug exposure comes from framework mode and from **side-effect imports that register on
+`http.DefaultServeMux`** (stdlib/x source, read with Go 1.27):
+- `_ "net/http/pprof"` → `/debug/pprof/*` (profiles, and `/cmdline` echoes argv); `expvar` →
+  `/debug/vars` (publishes `cmdline` and `memstats`); `golang.org/x/net/trace` →
+  `/debug/requests`, `/debug/events`, gated only by a `RemoteAddr` of localhost — which every
+  request has behind a same-host reverse proxy. Any of these plus a public server whose
+  handler is `nil` (the default mux) exposes them. Serve public traffic from your own
+  `http.NewServeMux()`; debug handlers on a separate localhost/admin listener (`rules/06 §1`).
+- **gin** (v1.12.0) is in **debug mode** unless `GIN_MODE=release` or
+  `gin.SetMode(gin.ReleaseMode)`; an unknown value panics at init. **echo** (v4.15.4)
+  `e.Debug = true` adds the internal `err.Error()` to HTTP error bodies (default `false`).
+- **Assert production mode at startup**: when your deployment flag says production, exit if
+  `gin.Mode() != gin.ReleaseMode` or `e.Debug`, and gate debug imports behind a build tag
+  (`//go:build debug`) so the release binary cannot contain them.
+OWASP: Error Handling cheat sheet; Secure Headers Project; ASVS 5.0 V13.4.
 
 ## 5. Structured logging with slog
 
@@ -329,6 +356,19 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
       `grep -rnE 'Redirect\(|Location.*r\.(URL|Form|Header)' --include='*.go' .` (open redirect
       [HIGH]); `grep -rn 'CheckRedirect' --include='*.go' .` (absent = headers cross origins
       [MEDIUM])
+- [ ] **App-set cookie attribute defaults: Secure/HttpOnly/SameSite off (§4a) — MEDIUM, HIGH
+      for a token or OAuth `state`** —
+      `grep -rnE '\.SetCookie\([^)]*,[[:space:]]*false[[:space:]]*(,|\))' --include='*.go' .`
+      (gin positional `secure`/`httpOnly` = false) ;
+      `grep -rnE 'http\.Cookie\{[^}]*\}' --include='*.go' . | grep -v 'HttpOnly: *true'`
+      (single-line literals only; multi-line ones need reading, and gin needs `SetSameSite`)
+- [ ] **Debug mode / debug endpoints reachable in production (§4c) — HIGH when the public
+      server uses the default mux, MEDIUM otherwise** —
+      `grep -rlE '"(net/http/pprof|expvar|golang\.org/x/net/trace)"' --include='*.go' . | xargs -r grep -L '^//go:build'`
+      (debug import compiled into every build) ;
+      `grep -rnE 'gin\.SetMode\((gin\.DebugMode|"debug")\)|\.Debug[[:space:]]*=[[:space:]]*true|GIN_MODE[=:"[:space:]]+debug' --include='*.go' --include='*.y*ml' --include='Dockerfile*' --include='*.env' .`
+      (single-line forms; a Kubernetes `name: GIN_MODE` / `value:` pair needs reading, and a
+      gin service with no `GIN_MODE=release` anywhere is in debug mode by default)
 
 Severity guide: no server timeouts internet-facing HIGH; default client in
 service HIGH; unbounded body read HIGH; missing graceful shutdown MEDIUM;

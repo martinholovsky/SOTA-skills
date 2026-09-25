@@ -180,6 +180,18 @@ while let Some(res) = set.join_next().await {
 - Every `tokio::spawn` must have an owner that observes its `JoinHandle` (or a
   comment justifying fire-and-forget + its own error logging). Panics in
   spawned tasks are silent until joined.
+- **Request-scoped state does not go in a `thread_local!`.** A worker thread runs
+  many tasks, so a value one request stores there is still there for the next one.
+  Measured on tokio 1.53.1 and a current-thread runtime: a task stored `tenant-A`
+  in a `thread_local!` and never reset it. The next task on that thread read
+  `Some("tenant-A")`, which is a cross-tenant leak. Use `tokio::task_local!` with
+  `KEY.scope(value, fut).await`, or `sync_scope` in sync code. The value exists only
+  while that future runs, so no reset is needed and none can be forgotten. Measured:
+  after the scope ended, `try_with` returned `Err`. A `tokio::spawn`ed child does
+  **not** inherit it (measured `None`), so pass the tenant into the child
+  explicitly. Better still, carry tenant and user as a typed argument or request
+  extension. Keep `tracing` spans for log context, not for authorisation decisions.
+  OWASP: Multi-Tenant Security and Session Management cheat sheets.
 
 ## 5. Locks across `.await`
 
@@ -303,6 +315,12 @@ tokio::select! {
 - [ ] Fan-out: `rg 'buffer_unordered|buffered\(' -t rust` — bound derived from
       config, not unbounded or request-controlled; loops spawning per item of
       untrusted-size collections.
+- [ ] **Request-scoped state in a thread-local (§4). High if it holds a tenant, user
+      or permission, else Low.** Run
+      `rg -n -t rust 'thread_local!|\b[A-Z][A-Z0-9_]*\.(set|replace|with_borrow_mut)\(' .`.
+      Each hit set inside a handler or task leaks into the next request on that worker.
+      Use `task_local!` + `.scope(..)` or an explicit argument. Check each
+      `task_local!` read inside a `tokio::spawn` child, which sees none.
 - [ ] Shutdown path exists: signal handler, drain deadline, `tracker.close()`
       before `wait()` (close-after-wait hangs forever).
 - [ ] `rg 'async fn' -t rust` + `clippy::unused_async`; public async traits:

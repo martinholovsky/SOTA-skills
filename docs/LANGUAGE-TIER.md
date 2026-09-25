@@ -24,6 +24,7 @@ drift; regenerate rather than trusting them.
 | Testing | **universal**, but usually *inside* the tooling file; only Python and JS/TS give it one of its own |
 | Concurrency | **universal in substance** — 7 dedicated files, Ruby merges it with performance, PHP carries it as `01 §6 "Fibers and concurrency"` |
 | API / design | **universal since 2026-09-22** (item 57) — a dedicated file in 4, a section in 5. Pinned at 9/9 by `--assert-universal` |
+| Request-scoped context cleanup | **conditional** — 8 of 9 since 2026-09-25 (ROADMAP 66). **Go is a principled absence:** goroutines have no thread-local, goroutine-local or async-local storage by design (Go FAQ), so per-request state travels in an explicit `context.Context` that cannot outlive its request. Do not "fix" Go by adding a section |
 
 ## Blank cells on page 5 — triaged 2026-09-22
 

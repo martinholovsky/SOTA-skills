@@ -118,6 +118,14 @@ IO.popen(["grep", "--", pattern, "log.txt"])
   `render inline: str` is the same sink: the renderer compiles `str` as a
   template with a handler (`Template::Inline`), so user input there is RCE.
   `render file:` is the file-read twin, in `rules/03` §7.
+- **No in-process sandbox makes string eval safe.** `$SAFE` is now just an
+  ordinary global: on Ruby 4.0.6, `$SAFE = 1` followed by `File.read` still
+  worked. `BasicObject.new.instance_eval(str)` still reaches `::Kernel` and
+  `::File`, and a `Ractor` block still runs backticks (both measured). When
+  users need formulas or rules, use a dispatch hash of lambdas or a parser for
+  a fixed grammar that you own. Code that really is untrusted runs behind a
+  process or VM boundary (`sota-sandboxing`). OWASP: Code Review Guide;
+  Proactive Controls 2024 C3; ASVS 5.0 V1.3.
 
 ## 5. ReDoS and regex correctness
 
@@ -233,8 +241,8 @@ Run from repo root; verify each hit manually. `brakeman -q` (Rails) and
       `grep -rn "create_additions" --include='*.rb' .` ;
       `grep -rnE "YAML\.(safe_)?load[^_]" --include='*.rb' . | grep "aliases: true"`
 - [ ] **eval / reflection sinks** —
-      `grep -rnE '\beval\s*\(|instance_eval\s*\(\s*["'"'"']|class_eval\s*\(\s*["'"'"']' --include='*.rb' .`
-      ; `grep -rnE '\b(public_)?send\s*\(\s*params' --include='*.rb' .` ;
+      `grep -rnE '\beval\s*[( ]|(instance|class|module)_eval\s*\(?\s*["'"'"'%]|\$SAFE\b' --include='*.rb' .`
+      (paren-less `class_eval "..."` too; a `$SAFE` hit is a sandbox that no longer exists) ; `grep -rnE '\b(public_)?send\s*\(\s*params' --include='*.rb' .` ;
       `grep -rn "constantize\|const_get" --include='*.rb' . | grep -iE "params|input|name"` ;
       `grep -rn "ERB.new" --include='*.rb' . | grep -vE "erb\"|template_file|File.read\(\s*Rails"`
       ; `grep -rnE '\b(method|instance_method)\(\s*params|&params\[[^]]*\]\.to_sym' --include='*.rb' .`

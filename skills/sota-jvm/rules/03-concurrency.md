@@ -55,6 +55,17 @@ coroutines. References:
   native frames (JNI/FFM callbacks) and class initializers — keep the
   `ReentrantLock` advice only for code that must support 21 LTS. Avoid heavy
   `ThreadLocal` use.
+- **Request-scoped ambient state is reset in `finally`, or it leaks to the next tenant.** A
+  tenant id, user or locale in a `ThreadLocal`, or a logging `MDC` entry, rides the pooled
+  platform thread into the next request. Measured on Temurin 25.0.4: a 1-thread pool task set
+  `tenant-A` without `remove()` and the next task read `tenant-A`, while `remove()` in `finally`
+  read `null`. A virtual-thread-per-task executor read `null`, but servlet worker pools and any
+  `ExecutorService` reuse threads. `InheritableThreadLocal` copies once, at thread creation: a
+  pool thread kept `tenant-D` after the parent switched to `tenant-E`. Use
+  `try { set } finally { remove() }`, `MDC.putCloseable` in try-with-resources or `MDC.clear()`
+  in a filter's `finally` (slf4j-api 2.0.20), or `ScopedValue.where(K, v).run(...)` (final in
+  25), which unbinds on exit. Spring's `RequestContextFilter` already resets its holder in
+  `finally`; your own holders need the same. OWASP: Multi-Tenant Security cheat sheet.
 - CPU-bound work still wants a bounded platform-thread pool sized to cores.
 - **Scoped values** (`ScopedValue`) are **final in Java 25** (JEP 506) — safe
   to recommend as GA. **Structured concurrency** (`StructuredTaskScope`) is
@@ -109,5 +120,10 @@ coroutines. References:
       (each needs a stated bound: a capacity plus a rejection policy, or a `Semaphore`
       around what the tasks consume; a sized `new LinkedBlockingQueue<>(1000)` does not
       match)
+- [ ] **ThreadLocal / MDC request state never removed — HIGH when it holds a tenant or user
+      (cross-tenant leak on a pooled thread)** (§3) —
+      `grep -rlE 'ThreadLocal<|MDC\.put\(' --include='*.java' --include='*.kt' . | while IFS= read -r f; do grep -qE '\.remove\(\)|MDC\.(clear|remove)\(' "$f" || echo "$f"; done`
+      (each printed file sets ambient state with no reset in it; a reset elsewhere must be in a
+      `finally` on every request path)
 - [ ] **Bare lock without finally — MEDIUM** —
       `grep -rnE '\.lock\(\)' --include='*.java' --include='*.kt' .` (verify unlock in finally)

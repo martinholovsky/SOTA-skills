@@ -89,6 +89,40 @@ slowlog = /var/log/php-fpm/slow.log
   and remember: no OPcache revalidation surprise, but also no automatic code
   reload after deploys — restart workers on every deploy.
 
+## 4a. Worker mode: request-scoped state that outlives the request
+
+Under FPM the engine frees all userland state at the end of each request. **Worker mode** does
+not: FrankenPHP worker mode, RoadRunner, Swoole/OpenSwoole and Laravel Octane over any of them
+boot the app once and loop over requests. FrankenPHP's docs: static variables, static properties
+and globals *"persist between requests"*, and *"`$_ENV` is currently not reset between
+requests"*. So a tenant id, user, locale or log context kept in a static property, a global, a
+singleton service or a logger processor is read by the **next** request that does not set it.
+Measured on 8.5.9 with a loop standing in for the worker: a handler that set
+`TenantContext::$tenant` only when the request carried one served the second, tenant-less
+request as `acme`. Resetting in `finally` served it as `none`.
+
+```php
+// GOOD — set at entry, cleared in finally, whatever the handler throws
+TenantContext::$tenant = $request->tenantId();
+try { return $kernel->handle($request); }
+finally { TenantContext::$tenant = null; }
+```
+
+- Prefer passing request data as arguments, or holding it in a service the framework resets.
+  Symfony calls every service tagged `kernel.reset` before each main request except the
+  first. Implement `Symfony\Contracts\Service\ResetInterface` for state you own. Monolog's
+  `Logger` is resettable (`reset()`). Octane resets first-party framework state, but its docs
+  warn that a singleton built with the container, request or config holds the **first**
+  request's copy.
+- Event-loop servers (ReactPHP, AMPHP/Revolt) run many requests **at once** in one process, so
+  a static is shared between concurrent requests, not only consecutive ones. Use Revolt's
+  `FiberLocal` or pass the context explicitly.
+- `pm.max_requests`, Octane's `--max-requests` (default 500) and FrankenPHP's `MAX_REQUESTS`
+  recycle workers against leaks. They do not bound this bug: every request before the recycle
+  can read the previous one's state.
+
+OWASP: Multi-Tenant Security, Session Management cheat sheets.
+
 ## 5. Application-level: N+1, caching, autoloading
 
 - **N+1 queries** dominate real PHP slowness. One query per loop iteration =
@@ -148,6 +182,14 @@ Run from repo root / against the runtime; verify each hit manually.
 - [ ] **Autoloader optimization in the deploy path** —
       `grep -rn 'optimize-autoloader\|classmap-authoritative\|-o ' Dockerfile* deploy* .github/workflows/ 2>/dev/null`
 - [ ] **Xdebug in production (HIGH if confirmed on prod hosts)** — `php -m | grep -i xdebug`
+- [ ] **Worker mode: request-scoped state reset (§4a) — HIGH where it carries a tenant, user
+      or authorization, MEDIUM otherwise** — applies when the app runs under Octane, FrankenPHP
+      worker mode, RoadRunner or Swoole (check `composer.json` and the container `CMD`). Each
+      write to a static property, `$GLOBALS` or `$_ENV` must be cleared in a `finally` or a
+      `kernel.reset` service:
+      `grep -rnE '(self|static|[A-Z][A-Za-z0-9_]*)::\$[A-Za-z_][A-Za-z0-9_]*[[:space:]]*(\[[^]]*\])?[[:space:]]*(\?\?)?=[^=>]|\$GLOBALS[[:space:]]*\[|\$_ENV[[:space:]]*\[[^]]*\][[:space:]]*=[^=]|putenv[[:space:]]*\(' --include='*.php' src/ | grep -vE '=[[:space:]]*(null|\[\])[[:space:]]*;'`
+      (the second filter drops the resets themselves). Singletons built from the request or
+      container need reading
 - [ ] **Session lock hygiene on slow endpoints** —
       `grep -rn 'session_write_close' --include='*.php' src/`
 - [ ] **Performance claims without measurements — check PR/commit rationale** —

@@ -88,6 +88,37 @@ $cmd = 'ping -c1 ' . escapeshellarg($host);
   variable functions `$fn()` where `$fn` derives from input, `unserialize`
   (see `rules/03`).
 
+## 2a. Dynamic code evaluation: `eval`, generated templates, expression engines
+
+PHP turns a string into running code in more places than `eval()`. Each is a sink when any part
+of the string comes from a request, a database row a user wrote, or an uploaded file:
+
+- `eval($code)`, and `include`/`require` of a file the app just wrote (a generated "cache" or
+  "compiled" PHP file whose contents carry input).
+- **A template compiled from a string**: Twig `createTemplate($src)` or `template_from_string()`,
+  or a Blade string rendered at runtime (`Blade::render($string)`). The template language
+  reaches objects and methods, so a user-authored template is server-side template injection.
+  Users choose *which* stored template renders, never its source.
+- Callables named by input: `call_user_func($name)`, `$obj->$method()`, `new ReflectionMethod($o,
+  $name)`. §5 below covers class names.
+
+Two measured traps on 8.5.9: `disable_functions=eval` does not stop `eval()` (a language
+construct, not a function; the code still ran), and a string passed to `assert()` is no longer
+evaluated (removed in 8.0; `assert("1 === 2")` passed silently), so an old string assertion is a
+check that never fires.
+
+The safe shape is a **closed set**: a `match` or array of closures keyed by an allowlisted
+name, or an expression library with a fixed grammar and a declared variable set (e.g. Symfony
+ExpressionLanguage, whose docs call it *"a very restricted PHP sandbox"* and still say to
+sanitize user data). Register no function that reaches the filesystem, the network or
+`call_user_func`.
+
+**An in-process sandbox is not a security boundary.** The GitHub Advisory Database lists 14
+twig/twig advisories whose title names the sandbox, 11 published in 2026 (queried
+2026-09-25, 34 twig/twig entries in all). Untrusted template or expression authors get a
+separate process with no credentials (`sota-sandboxing`), or no template authoring at all.
+OWASP: Code Review Guide, Proactive Controls 2024 C3; ASVS 5.0 V1.3.
+
 ## 3. XSS: escape at output, for the exact context
 
 Escaping at *input* time is the classic mistake — data gets double-escaped,
@@ -273,6 +304,11 @@ Run from repo root; verify each hit manually (greps are recall-oriented).
       ; `grep -rn 'proc_open' --include='*.php' src/` (array command = good sign);
       ``grep -rn '`' --include='*.php' src/ | grep -vE '(//|\*|#)'`` ;
       `grep -rnE '\b(eval|assert)\s*\(\s*\$' --include='*.php' src/`
+- [ ] **Dynamic code evaluation and templates compiled from strings (§2a) — CRITICAL with input
+      in the string, HIGH until traced** —
+      `grep -rnE '(^|[^A-Za-z0-9_>:$])eval[[:space:]]*\(|createTemplate[[:space:]]*\(|template_from_string|Blade::render[[:space:]]*\(' --include='*.php' --include='*.twig' src/ templates/`
+      (a method named `eval`, e.g. a Redis client's, is excluded). Trace each string to a
+      literal; `disable_functions` does not cover `eval`
 - [ ] **XSS — echo/print of request data, raw template sinks** —
       `grep -rnE '(echo|print|<\?=)[^;]*\$_(GET|POST|REQUEST|COOKIE|SERVER)' --include='*.php' .`
       ; `grep -rnE '<\?=[[:space:]]*\$' --include='*.php' templates/ | grep -vE '<\?=[[:space:]]*\$this'`

@@ -114,6 +114,18 @@ lives in `sota-testing`.
   Run with a fixed timezone/locale/seed for determinism.
 - Build reproducibly: `-Dproject.build.outputTimestamp` / Gradle reproducible
   archives; pin plugin versions.
+- **The production artifact carries no debug mode** (read from the Spring Boot 4.1.1 sources).
+  Declare `spring-boot-devtools` as Gradle `developmentOnly` or Maven `<optional>true</optional>`;
+  Maven repackage drops it by default (`excludeDevtools` defaults to `true`), so `false` there is
+  the finding. Shipped anyway, it activates when started on the plain `AppClassLoader` (an
+  exploded `java -cp` image; `java -jar` is not) and its defaults flip
+  `spring.web.error.include-message`/`include-stacktrace` (`server.error.*` before Boot 4) from
+  `never` to `always`. With
+  `spring.devtools.remote.secret` set, remote restart is enabled even under `java -jar`: a
+  code-upload endpoint behind one shared secret. **JDWP is remote code execution**: measured on
+  Temurin 25.0.4, `address=5005` bound `127.0.0.1` and `address=*:5005` bound every interface.
+  No `-agentlib:jdwp` in a production launch line, `JAVA_TOOL_OPTIONS` or Dockerfile. At startup,
+  fail fast if a `dev`/`local` profile is active. OWASP: Error Handling cheat sheet.
 
 ## Audit checklist
 
@@ -168,6 +180,11 @@ lives in `sota-testing`.
       `grep -rnE '(^|[^A-Za-z0-9_])Yaml\((\)|(new )?Constructor\()' --include='*.java' --include='*.kt' .`
       ; files building a JDK `HttpRequest` with no `.timeout(` anywhere in them:
       `grep -rlE 'HttpRequest\.newBuilder' --include='*.java' --include='*.kt' . | while IFS= read -r f; do grep -q '\.timeout(' "$f" || echo "$f: HttpRequest without .timeout"; done`
+- [ ] **Debug mode in production: DevTools shipped, remote DevTools, error detail `always`, JDWP
+      — HIGH (CRITICAL for JDWP on a non-loopback address)** (§4) —
+      `grep -rniE 'spring\.devtools\.remote\.secret|jdwp|include-(stacktrace|message|binding-errors)[=:][[:space:]]*"?(always|on[-_]param)|excludeDevtools>false|(implementation|runtimeOnly|api)[ (]+.org\.springframework\.boot:spring-boot-devtools' --include='*.properties' --include='*.y*ml' --include='pom.xml' --include='*.gradle*' --include='Dockerfile*' --include='*.sh' .`
+      (a hit in a dev-only profile file such as `application-dev.yml` is fine; confirm which
+      profile the production deploy activates)
 - [ ] **Static analysis configured?** —
       `grep -rniE 'errorprone|nullaway|spotbugs|findsecbugs|pmd|detekt|ktlint|spotless' . --include='pom.xml' --include='build.gradle*' --include='*.yml' || echo "no static analysis configured"`
 - [ ] **Coverage gate + JUnit5/Testcontainers?** —

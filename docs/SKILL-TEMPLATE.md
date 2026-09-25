@@ -104,6 +104,9 @@ grew the same day as ROADMAP 66 added concepts; `UNIVERSAL_FLOOR` is the count, 
 - [ ] **regex escaping, anchoring & engine choice** — the escape function, the full-match API and its anchor trap, and whether the engine is linear-time
 - [ ] **install/build-time code execution** — every point where a dependency's code runs on install or build, the switch that disables it, and code-owner review of build-executing files
 - [ ] **dependency adoption (selection & insecure defaults)** — how to vet a new package on this ecosystem's registry, and the popular libraries whose defaults must be configured
+- [ ] **dynamic code evaluation** — eval, scripting engines, embeddable interpreters and reflection by name fed by input, and the safe alternative
+- [ ] **app-set cookie defaults** — the cookie APIs of this ecosystem's web frameworks, their default Secure/HttpOnly/SameSite values, and what must be set
+- [ ] **debug / dev mode in production** — the debug switches, dev servers and debug builds, their defaults, and how to assert production mode at startup
 
 Conditional concepts (those that exist only where a language has the mechanism, such as
 const/freeze or generics) are declared with their condition in the same script's

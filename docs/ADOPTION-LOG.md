@@ -5913,3 +5913,25 @@ Invariant 18 flagged nine references; the rest were found by an explicit sweep �
 sees it) and the four `rules/05` index rows still advertising the moved topics, which would
 have sent the model to the wrong file. Moving onto `main` after #452 conflicted only on the
 generated skill map, resolved by regenerating it.
+
+## 2026-09-25 — ROADMAP 66 step 3c: four concepts briefed as conditional; three proved universal
+
+One agent per language handled all four (so no two agents touched one file), and each first
+decided whether its ecosystem has the mechanism. The briefing assumed eval, cookies and debug
+modes would not apply to C/C++ or Rust; **the agents found them, measured, in all nine**:
+Lua's `load` accepting binary chunks unless mode `"t"` (checked across Lua 5.4.9, 5.5.0, 5.5.1),
+mlua's `Lua::new()` exposing `os.execute`/`io.open` (run), Drogon's cookie defaults
+(`secure_{false}`, no SameSite, from its source), an empty `CMAKE_BUILD_TYPE` shipping without
+`-O`/`-DNDEBUG` (measured), the `cookie` crate serialising a bare cookie (run). Under the
+operator's rule — universal goes into the template — those three are pinned (floor 33 → 36).
+**Request-scoped context cleanup stays conditional:** present in eight; Go is a principled
+absence (goroutines have no local storage by design), recorded in `LANGUAGE-TIER.md` so no
+one "fixes" it.
+
+Also measured along the way: Python `ThreadPoolExecutor(max_workers=1)` carries both a
+`threading.local` and a `ContextVar` into the next job unless the token is reset in `finally`;
+Werkzeug, Django and Starlette `set_cookie` default to no Secure/HttpOnly (Starlette adds
+`SameSite=lax`); Werkzeug emits a `__Host-` cookie without `Secure`, so the prefix is not
+enforced server-side. All probes re-run against their fixtures here: no mismatch.
+
+**Cap watch:** `sota-jvm` rules/04 reached 484.

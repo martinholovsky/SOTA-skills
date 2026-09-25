@@ -289,6 +289,29 @@ egress := &http.Client{Timeout: 10 * time.Second,
 
 OWASP: SSRF Prevention, .NET Security and GraphQL cheat sheets.
 
+## 4d. Dynamic code evaluation — Go has no `eval`, its libraries do
+
+A compiled binary cannot `eval`, so runtime code generation arrives through a dependency or
+a stdlib feature fed caller text. Each is code execution scoped by what you expose:
+
+- **Template text from input** — `template.New(n).Parse(userText)` (`text/` or `html/template`)
+  lets the template call every exported method of the data value, with arguments
+  (`{{.DeleteAll "/data"}}` ran, measured). Templates are code; users supply *values*.
+- **Interpreters** — `github.com/traefik/yaegi`: `i.Use(stdlib.Symbols)` still hands the
+  script `os.ReadFile`/`os.WriteFile`/`os.RemoveAll`/`os.StartProcess` (v0.16.1 source; only
+  `unrestricted` adds `os/exec`). `github.com/dop251/goja` has no `require`/`process`, but every
+  Go value you `rt.Set` has its exported methods callable from JS (measured).
+- **`plugin.Open(path)`** runs the shared object's init code; **`reflect` `MethodByName(input)`**
+  turns a request field into a call target — map names through a fixed `map[string]func`.
+- **Rules/filters for users** — a fixed-grammar library, compiled once with a declared
+  environment: `expr.Compile(src, expr.Env(Params{}), expr.AsBool())` (`github.com/expr-lang/expr`)
+  rejects undeclared names at compile time (measured), and `MaxNodes` defaults to 10000. The
+  env's exported methods are callable too, so pass a data-only struct.
+- **None of these is a security boundary.** An in-process interpreter shares the address space,
+  file descriptors and credentials; truly untrusted code runs in a separate sandboxed process or
+  VM (sota-sandboxing).
+OWASP: Code Review Guide; Proactive Controls 2024 C3; ASVS 5.0 V1.3.
+
 ## 6. Cryptographic practices: CSPRNG & TLS
 
 ### Randomness — `crypto/rand`, never `math/rand`
@@ -422,6 +445,11 @@ Supply chain and vulnerability management (formerly section 8) moved to
       `grep -rn 'text/template' --include='*.go' . | grep -iv _test` (HTML rendered via
       text/template?);
       `grep -rnE 'template\.(HTML|JS|URL|CSS|HTMLAttr)\(' --include='*.go' . # escaping bypass — verify sanitized`
+- [ ] **Dynamic code evaluation from input (§4d) — CRITICAL when the text is caller-supplied,
+      HIGH otherwise** —
+      `grep -rnE '(template\.New\([^)]*\)|[Tt]mpl|[Tt]emplate)\.Parse\([A-Za-z_]|interp\.New\(|goja\.New\(|plugin\.Open\(|MethodByName\(|expr\.Eval\(' --include='*.go' .`
+      (template text or a call target from a variable; embedded interpreter) ;
+      `grep -rn 'expr\.Compile(' --include='*.go' . | grep -v 'expr\.Env('` (no declared env)
 - [ ] **unsafe / cgo** — `grep -rn 'unsafe.Pointer\|go:linkname' --include='*.go' .` ;
       `grep -rln 'import "C"' --include='*.go' .`
 - [ ] **Secrets in repo** —
