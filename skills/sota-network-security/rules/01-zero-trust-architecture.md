@@ -101,7 +101,7 @@ anti-pattern (see rules/02 §5 for the access-method decision).
 **R7 — Front internal web apps with an identity-aware proxy, not a network ACL.** The proxy
 (Cloudflare Access, Pomerium, oauth2-proxy + ingress, Teleport, cloud IAP) authenticates the user
 via the IdP, evaluates device/context policy, and only then forwards to the backend — which is *not*
-otherwise reachable. The user's identity-access skill owns the IdP and auth plane; this skill owns
+otherwise reachable. `sota-identity-access` owns the IdP and auth plane; this skill owns
 making the backend unreachable except through the PEP.
 
 The recurring failure: app reachable both via the IAP *and* directly on its cluster IP / a `world`

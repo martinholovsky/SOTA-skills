@@ -6698,3 +6698,20 @@ found problems in these areas, all fixed in the same PR:
 - whether `dotnet restore` enforces `signatureValidationMode` on Linux and macOS;
 - the LLVM release that removed clang-tidy's `hicpp` module (2026 removal commits confirmed; the version is not);
 - the old C++26 saturating names `div_sat`/`saturate_cast`, which were written from recall.
+
+## 2026-09-25 — reader-setup framing removed from four skills (found by the full-library sweep, batch 1)
+
+**Intake shape: a sweep research agent's finding, confirmed by a refuter and by the operator's decision to fix it.**
+`sota-network-security` framed one specific combination of products as the reader's own stack, in
+twelve places: "the user's stack (Talos K8s + Cilium, step-ca, Caddy+CRS, Cloudflare)", "your step-ca",
+"the user's on-prem Talos", "works today on the user's stack". `sota-identity-access` rules/01 ("Kanidm
+*plus* …") and `sota-devsecops` rules/08 ("Zot (user's choice …)") did the same. AGENTS.md says to
+"never phrase guidance as an assumption about the reader's setup", and to use products only as
+neutral examples. **Adopted:** 18 passages rewritten. Every product stays as an "e.g." example, and
+no technical content changed. Two headings changed wording only: rules/05 §4 "(behind a CDN)" and
+rules/06 §4 "Internal PKI (e.g. step-ca)". Git history still holds the old wording; rewriting it is a
+separate operator decision.
+
+**Not gated, deliberately.** The phrasing is too varied to match mechanically without flagging
+legitimate text ("the user's environment" appears correctly in several skills), and the ledger's
+filters reject a check with a high false-positive rate.

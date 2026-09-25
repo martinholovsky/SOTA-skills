@@ -5,8 +5,8 @@ scrubbing + self-hosted L3/4 kernel hardening), TLS
 termination + re-encryption to backends, reverse-proxy trusted-IP / allowlist handling (behind
 Cloudflare), Cloudflare-tunnel / identity-aware-proxy patterns, and **egress as a first-class
 control**: default-deny egress, egress gateways/proxies, FQDN allowlisting, preventing C2/exfil, and
-blocking the cloud metadata endpoint (the SSRF-meets-egress chain). A representative edge stack: **Caddy with a
-CRS WAF, Cloudflare in front**.
+blocking the cloud metadata endpoint (the SSRF-meets-egress chain). A worked example used below: a reverse proxy
+(e.g. Caddy) with a CRS WAF, behind a CDN (e.g. Cloudflare).
 
 Where this sits: sota-cloud-infrastructure rules/03 owns LB/CDN *provisioning* and registrar/DNS
 *setup*; this skill owns the *security posture*. rules/03 here owns the K8s-internal egress
@@ -25,7 +25,7 @@ and account-enforceable; metadata IP `169.254.169.254` / `fd00:ec2::254`. Pin CR
 ## 1. Ingress / edge proxy hardening
 
 **R1 — One hardened, inspectable edge; backends not directly reachable.** All north-south HTTP
-enters through the edge proxy (Caddy) / ingress controller, which terminates TLS, applies the WAF,
+enters through the edge proxy (e.g. Caddy, nginx, Envoy) / ingress controller, which terminates TLS, applies the WAF,
 sets security headers, and forwards. Backends accept traffic *only* from the edge/ingress (mesh authz
 to the gateway identity, or NetworkPolicy allowing only the ingress namespace — rules/03/04). A
 backend reachable directly bypasses the WAF, rate limits, and auth — verify by hitting a backend pod
@@ -163,10 +163,10 @@ connection to the backend. Plaintext from edge→backend across the cluster netw
 plaintext-internal-traffic problem (rules/04) at the ingress hop. Inside a mesh, the edge gateway
 hands off to mTLS automatically; otherwise configure backend TLS explicitly.
 
-## 4. Reverse-proxy trusted-IP handling (behind Cloudflare)
+## 4. Reverse-proxy trusted-IP handling (behind a CDN)
 
 **R6 — Trust `X-Forwarded-For` / `CF-Connecting-IP` ONLY from your proxy's real IPs, or attackers
-spoof client identity.** Behind Cloudflare → Caddy → app, two recurring bugs:
+spoof client identity.** Behind a CDN → edge proxy → app (e.g. Cloudflare → Caddy), two recurring bugs:
 - **Spoofable client IP:** if the app reads `X-Forwarded-For` from *any* source, a request that
   reaches the app directly (bypassing Cloudflare) can forge any client IP — breaking IP allowlists,
   rate limits, and logs. Configure the proxy to trust XFF only from the upstream's known ranges, and
@@ -203,7 +203,7 @@ surface is none — keep non-public surfaces non-public (tunnels, IAP). Cloud L3
 edge you operate.
 
 **R8.1 — Self-hosted / bare-metal edge: harden the kernel, you are the scrubber.** When there is no
-Anycast provider in front (e.g. a bare-metal or Talos edge exposed directly), L3/4 defense is yours.
+Anycast provider in front (e.g. a bare-metal edge exposed directly), L3/4 defense is yours.
 Baseline, matched to the exposed protocols:
 - **SYN floods:** enable TCP **SYN cookies** (`net.ipv4.tcp_syncookies=1`) — the kernel answers with
   a cryptographic cookie instead of holding half-open state when the SYN backlog overflows. For a
@@ -255,8 +255,8 @@ can actually *reach* `169.254.169.254`. Close the egress side: deny `169.254.0.0
 `fd00:ec2::254`) from workload egress at the CNI/firewall, and on cloud use **IMDSv2** (token
 required, hop-limit 1, account-level enforcement so v1 can't be used). Defense in depth: the app
 should also not be SSRF-able, but egress denial is the backstop that turns "credential theft" into
-"connection refused." On the user's on-prem Talos there's no IMDS, but keep the egress default-deny
-so a future cloud burst is safe by default.
+"connection refused." An on-prem cluster has no IMDS, but keep the egress default-deny so a future
+cloud burst is safe by default.
 
 ```
 # Egress allowlisting, layered:

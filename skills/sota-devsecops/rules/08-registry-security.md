@@ -235,7 +235,7 @@ What the registry *pulls from upstream* is as much an attack surface as what it 
 
 ## 8.8 Product notes (brief — verify current at use)
 
-- **Zot** (user's choice; current line **v2.1.x**, e.g. v2.1.14 Jan 2026): OCI-native, minimal,
+- **Zot** (latest stable — verify at github.com/project-zot/zot/releases): OCI-native, minimal,
   no DB. `accessControl` with `repositories`/`anonymousPolicy`/`defaultPolicy`/`policies`/
   `adminPolicy`; OIDC/LDAP/bearer/mTLS auth; workload-identity OIDC for secretless CI; **sync**
   for pull-through/mirror (incl. ECR upstream). It does **not** ship Harbor-style immutable-tag
