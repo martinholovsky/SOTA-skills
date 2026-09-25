@@ -338,7 +338,7 @@ reason, so `numeric precision & money` sat at 3/9 invisible. It now prints every
 CANDIDATE GAPS for 1-5 missing, MOSTLY ABSENT for 6-9 ("either a real class-wide gap or a
 concept that is not universal; triage decides"). Its first run listed one concept. Of 6 cells
 opened, **6 were real**; none was an artefact or a delegation. The concept is pinned in the
-floor, which now holds 25.
+floor, which then held 25 (29 since 2026-09-25, when ROADMAP 66 step 3a pinned four more).
 
 | candidate | verdict | evidence |
 |---|---|---|
