@@ -26,11 +26,27 @@ code around it, never by the prompt itself.
   mostly when the prompt guards something — never put secrets, hidden business
   rules, or authorization decisions in the system prompt; assume full prompt
   disclosure (LLM07).
+- **The server owns the prompt.** The server builds the system prompt and assembles
+  the full prompt; an LLM endpoint accepts the user's turn and nothing else — never a
+  `system` field, a whole `messages` array, a template, or any role other than `user`
+  from the client. Accepting one lets every caller rewrite the instructions. Anonymous,
+  trial and preview access to an LLM feature is still metered work: authenticate it,
+  or give it its own quota with tighter limits than paid tiers (denial-of-wallet,
+  rules/06 §5). OWASP: LLMSVS 5.2, LLMSVS 5.17.
 - **Indirect injection** is the serious one: instructions embedded in content
   the model processes — web pages, emails, PDFs, code comments, calendar
   invites, RAG chunks, prior tool output. Any pipeline where the model reads
   third-party content and can then *act* (tools) or *render* (output to user)
   is the attack path.
+- **Every modality carries instructions.** Text drawn into an image (tiny, low-contrast,
+  off-canvas), spoken audio, video frames, document metadata (EXIF, PDF and Office
+  properties, alt text), hidden layers and white-on-white text, and steganographic
+  payloads all reach a multimodal model. Whatever you derive from them — OCR output,
+  captions, transcripts, extracted metadata — is tainted exactly like a retrieved chunk:
+  same data framing, same taint gate. Screen inputs **together** as well as one at a
+  time: an image holding the instruction and an innocent-looking text turn that
+  triggers it each pass a filter that sees only its own input. OWASP: AISVS 2.2.3,
+  AISVS 2.2.4, LLM Prompt Injection Prevention cheat sheet.
 - Structural mitigations (stack them; none is sufficient alone):
   - **Privilege separation by context**: untrusted content goes in delimited
     data sections with explicit "this is data, not instructions" framing, and —
@@ -92,7 +108,35 @@ def allowed_tools(session):
 - Multi-agent systems: each hop is a trust boundary. Agent B must not treat
   agent A's output as instructions-with-A's-privileges; propagate taint and
   the original human principal through the whole chain (rules/03 §6 deputy
-  rules apply between agents).
+  rules apply between agents). Message-level controls: §1a.
+
+### 1a. Inter-agent and agent-tool messages (ASI07)
+
+Whether multi-agent is worth its cost is `sota-llm-engineering` rules/04 §7; once you
+have it, every message between agents, and every tool response, is input from a peer
+whose compromise you must survive:
+
+- **Registry, not discovery.** Keep a registry of agents: identity, trust level, the
+  recipients each may address and the message types each may send. A message from an
+  unknown sender, to an undeclared recipient, or of an undeclared type is rejected, not
+  logged and processed.
+- **Authenticate both ends, sign each message.** Mutual authentication on the channel
+  (mTLS or workload identity) plus a signature over each message and each tool response.
+  The signed envelope names sender, recipient, timestamp, a nonce and the protocol
+  version; the receiver rejects a wrong recipient, a stale timestamp, a nonce it has seen
+  (replay) and a version below the one negotiated (downgrade).
+- **Schema-validate, then strip privilege.** Parse every message against its type's
+  schema (unknown fields rejected). Fields a lower-trust peer may not set — a `system`
+  role, tool grants, the principal, approval flags — are dropped, never forwarded.
+- **Record who started it.** Each action carries `initiated_by` (human or agent) and the
+  chain of agents behind it, and policy and approval read that field: an agent-initiated
+  payment is not the same decision as one the user clicked.
+- **Write the delegation policy down.** Which agent may hand which task to which agent,
+  with scope shrinking at each hop (`sota-sandboxing` rules/05 R6.1). A delegation the
+  policy does not list is refused.
+
+OWASP: AISVS 9.5.5, AISVS 10.4.6, AI Agent Security cheat sheet, AML Sanctions AI Agent
+Payments cheat sheet, DSOMM.
 
 ## 2. Tool-call authorization (LLM06 — excessive agency)
 
@@ -102,9 +146,17 @@ def allowed_tools(session):
   the model's request is an unauthenticated suggestion (confused deputy,
   rules/03 §6: the agent is the deputy).
 - Run tools with the **user's identity and scopes**, not a god-mode service
-  account: pass the user's token/context through; an agent serving user A must
+  account: propagate the *principal* (who the user is, their tenant, their
+  scopes), not the bearer token they presented. An agent serving user A must
   be physically unable to read user B's data (tenant scoping at the data
   layer, rules/03 §5).
+- **No token passthrough.** Never forward the token the caller presented to a
+  tool, an MCP server or a downstream API. Get a separate token for each
+  downstream audience — OAuth token exchange (RFC 8693, rules/03 §6) or an
+  audience-restricted, down-scoped token. The MCP authorization spec (rev
+  2025-11-25) makes this normative: an MCP server must accept only tokens issued
+  for itself (RFC 8707 audience) and "MUST NOT pass through the token it
+  received from the MCP client" to an upstream API. OWASP: AISVS 10.2.7.
 - Least-capability toolset: expose the minimal tools per task; narrow
   parameters (e.g. `search_orders(customer_id=<bound from session>)` — the
   model never supplies the customer_id); read-only by default, mutation tools
@@ -113,10 +165,34 @@ def allowed_tools(session):
   untrusted input (rules/01 applies in full): schema-validate, then apply the
   same SQLi/path traversal/SSRF/command-injection guards as for user input.
   A `fetch_url` tool needs the complete SSRF defense from rules/01 §5.
+- **Check what leaves through tool arguments.** The executor is an egress point:
+  reject arguments carrying credential-shaped values (cloud key IDs, token
+  prefixes, PEM blocks, JWTs), flag base64 or hex blobs packed into URL paths
+  and query strings, and cap argument size per tool — 40 KB in a `search` query
+  is data leaving, not a search. Across MCP servers, tag each value with the
+  server it came from and block, or send to approval, a value from server A
+  (a credential above all) flowing into a call to server B. A gateway or proxy
+  in front of every server is where that isolation is enforced; network egress
+  control is the backstop (`sota-sandboxing` rules/05 §4). OWASP: AI Agent
+  Security cheat sheet, MCP Security cheat sheet.
 - Human-in-the-loop for irreversible/high-impact actions (payments, deletes,
   external sends, code execution): explicit confirmation showing the *actual
   parameters*, not the model's summary of them; batch approvals and
   "always allow" defeat the control — scope them narrowly.
+- **Bind the approval to what executes, and fail closed.** The approval record
+  names the actor (agent), the requester (human principal), the tool, the
+  target, the *normalised* arguments, the context, a single-use nonce and an
+  expiry, and the approval service signs or MACs it. The executor recomputes
+  that binding from the call it is about to run and refuses on any difference,
+  a reused nonce or an expired record: approving `transfer(10, to=A)` must not
+  authorize `transfer(10000, to=B)`. The approver sees a risk level and a plain
+  explanation beside the raw parameters. The impact class — read-only,
+  reversible, reversible only by a third party, irreversible — comes from the
+  tool registry, never from the model's account of the call, and in a chain the
+  highest class of any step sets the gate. If approval validation, the policy
+  lookup or the audit write errors or times out, the action does not run
+  (rules/03 §1). OWASP: AISVS 9.2.3, AISVS 9.2.8, AISVS 9.2.10, AI Agent
+  Security cheat sheet, AI-Powered Advertising Systems Security cheat sheet.
 - Rate-limit and budget-limit per session: max tool calls, max spend, max
   loop iterations (agent loops are resource-exhaustion surfaces, rules/06 §5).
 - Audit-log every tool invocation: principal, session, full arguments, result
@@ -212,6 +288,18 @@ results = vstore.search(
   and excludable at retrieval.
 - Cache keyed on prompts must be principal-scoped (semantic caches returning
   user A's answer — containing A's data — to user B).
+- **All serving-layer shared state is tenant-scoped, not only the response
+  cache.** KV and prefix caches leak across tenants by timing (a hit is faster),
+  so partition or salt them per tenant; vLLM's `cache_salt`, for one, mixes a
+  per-request value into the block hash, which its docs describe as blocking
+  latency-based inference of cached content. The same goes for plan and
+  tool-result caches, pools of LoRA or per-tenant adapters (a request loads
+  only its own tenant's adapter), and vector IDs, which must be unique per
+  tenant (namespaced or server-generated) so one tenant's upsert cannot
+  overwrite another's point. Never put a response containing restricted data or
+  PII in a shared cache, and serve a cache hit only after the same ACL check
+  and audit record as a fresh retrieval. OWASP: AISVS 5.3.1, AISVS 8.1.1,
+  AI-Powered Advertising Systems Security cheat sheet, RAG Security cheat sheet.
 
 ## 5. Platform & supply-chain notes
 
@@ -244,6 +332,26 @@ def test_indirect_injection_cannot_trigger_tools(agent, payload):
   executes (hooks, settings, MCP server definitions checked into repos) are a
   code-execution surface: review them like CI config, never let the agent
   write them unapproved.
+- **MCP server supply chain, past the pin** (the skill and plugin analogue is
+  `sota-skill-security` rules/01):
+  - *Install:* verify the server package's signature or checksum against the
+    publisher's own source. Adding a local server takes an explicit consent
+    prompt the user can cancel; a file in a cloned repo never adds one silently.
+  - *Every call:* re-hash the tool's definition in a canonical JSON form (for
+    example RFC 8785 JCS, so key order and whitespace neither hide nor fake a
+    change) before each execution and compare it with the approved hash. A
+    mismatch blocks the call and alerts; checking only at connect time misses a
+    definition swapped between listing and calling.
+  - *Names:* namespace tools per server (`server.tool`) and flag a tool whose
+    name equals, or nearly equals, one exposed by another server.
+  - *Scanning:* run an automated MCP scanner for poisoned descriptions and
+    definition drift in CI and whenever a server updates.
+  - *Advisories:* keep an inventory of approved AI components (models, MCP
+    servers, plugins) and match it continuously against compromise advisories;
+    a match quarantines the component (disable it, revoke its credentials)
+    before triage, not after.
+  OWASP: AISVS 10.1.1, AISVS 10.4.7, DSOMM, MCP Security cheat sheet, Secure
+  Coding with AI cheat sheet.
 - Named MCP/agent attack classes — use these names in findings (IDs: OWASP MCP
   Top 10 MCP03:2025 Tool Poisoning, with rug pulls and shadowing as
   sub-techniques; MITRE ATLAS AML.T0104 Publish Poisoned AI Agent Tool):
@@ -318,4 +426,12 @@ mcpServers|\.mcp\.json|claude_desktop_config entries without version pin or defi
 - [ ] Are MCP tool definitions hash-pinned at approval with re-approval forced on any change (rug pull), and is the *full* description shown to the approver (tool poisoning)?
 - [ ] Are high-privilege tools isolated from third-party servers in separate sessions/agents (tool shadowing), with tool listings treated as untrusted input before any invocation (line jumping)?
 - [ ] Are reasoning-token budgets capped per request with consumption-anomaly alerting (OverThink-class), and is untrusted content kept out of reasoning scaffolds (H-CoT/CoT hijacking)?
+- [ ] Does every LLM endpoint build the system prompt and full prompt server-side, taking only the user turn from the client, and do anonymous/trial/preview paths carry auth or their own tighter quota (§1)? HIGH when a client-supplied `system` or `messages` reaches the model. Probe, reading each hit: `grep -rnE '(messages|system_?prompt|system)[[:space:]]*=[[:space:]]*(request|req|body|payload|params|data)[.[]' .`
+- [ ] Is text extracted from images, audio, video and document metadata (OCR, captions, transcripts, EXIF) framed and taint-gated like retrieved content, and are inputs screened jointly as well as singly (§1)? HIGH when the model holds tools. Probe for extracted text interpolated straight into a prompt: `grep -rniE '(\{|\+[[:space:]]*)[[:alnum:]_.]*(ocr|caption|transcript|exif|alt_?text)' .`
+- [ ] Do agents accept messages only from registered peers, over mutually authenticated channels, signed with recipient, timestamp and nonce, schema-validated with privileged fields stripped, under a written delegation policy (§1a)? HIGH when a peer can set a `system` role or approval flag. Probe for a role copied from a peer message: `grep -rnE 'role.?[[:space:]]*:[[:space:]]*[A-Za-z_][[:alnum:]_]*(\[|\.)' .`
+- [ ] Is the caller's bearer token never forwarded to a tool, MCP server or downstream API, with a per-audience exchanged or down-scoped token instead (§2)? HIGH. Probe: `grep -rniE 'authorization.?[[:space:]]*[:,][[:space:]]*(request|req|ctx|context|incoming|r)[.[]' .` — each hit forwards an inbound credential until shown otherwise.
+- [ ] Does the executor reject credential-shaped tool arguments, cap argument size, and block cross-MCP-server flow of credentials (§2)? HIGH on any credential found in recorded tool calls. Probe over tool-call audit logs: `grep -rnE '"(arguments|input|args)"[[:space:]]*:.*((AKIA|ASIA)[0-9A-Z]{12,}|(gh[pousr]_|github_pat_)[A-Za-z0-9_]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY)' .` (extend with your secret scanner's patterns).
+- [ ] Is each approval bound (signed/MAC'd) to actor, requester, tool, target, normalised arguments, nonce and expiry and re-verified by the executor, with the impact class from trusted metadata, the chain's highest class governing, and approval/policy/audit errors failing closed (§2)? HIGH. Probe for blanket approval switches: `grep -rniE '(auto_?approve|always_?allow|approve_?all|skip_?(confirm|confirmation|approval))[[:space:]]*[:=][[:space:]]*(true|yes|1)' .`
+- [ ] Are KV/prefix caches, plan caches, adapter pools and vector IDs tenant-scoped, is restricted/PII output kept out of shared caches, and do cache hits pass the same ACL check and audit as fresh retrievals (§4)? HIGH on a cross-tenant cache. Probe for cache keys built from the prompt alone: `grep -rnE 'cache_?key[[:space:]]*=[[:space:]]*[[:alnum:]_.]*\((prompt|query|messages)[^,]*$' .`
+- [ ] Are MCP server packages signature/checksum-verified at install with a cancellable consent prompt, tool definitions re-hashed canonically before each call, tools namespaced per server with collisions flagged, an MCP scanner run, and the AI-component inventory matched against advisories (§5)? MEDIUM, HIGH for a server holding credentials. Probe for an unpinned server package: `grep -rnE '"args"[[:space:]]*:[[:space:]]*\[[[:space:]]*("-y",[[:space:]]*)?"(@[a-z0-9-]+/)?[a-z0-9_][a-z0-9._-]*(@latest)?"' .`
 - [ ] Is any classifier/judge/"second opinion" tier counted as a defence layer in the threat model **from the same model family** as the system it guards — without a measured marginal recall on the hard class (the inputs the primary gets wrong)? Common-cause failure; an escalate-only tier is bounded by the primary's uncertainty coverage and cannot see a confidently-wrong score.

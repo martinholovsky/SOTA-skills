@@ -100,6 +100,51 @@ class Secret(str):
 - URLs end up in logs everywhere (proxies, CDNs, browser history): never carry
   secrets/PII in query strings (CWE-598).
 
+### 2.1 Security events and in-app detection points
+
+A security log is only searchable and alertable if every service names the same event
+the same way. Adopt a shared vocabulary — the OWASP Logging Vocabulary's
+`category_event[:args]` names are a ready one — rather than free-text messages, and
+give each event a fixed severity so alerting keys on the name, not on a regex.
+
+- **Authentication**: success; success *after* prior failures, with the retry count
+  (`authn_login_successafterfail`); each failure; the failure threshold reached, with
+  the limit (`authn_login_fail_max`); account lock, with a reason code
+  (`authn_login_lock`); password change and **failed password change, at high
+  severity** (the vocabulary rates `authn_password_change_fail` CRITICAL); token
+  created, revoked and reused.
+- **Session**: created, renewed, expired (with the reason: idle or absolute),
+  logout, and use after expiry (`session_*`). A session cookie or JWT that fails its
+  integrity check, a token that is expired, revoked or unknown, and a JWT failing
+  validation for a suspicious reason (`alg` mismatch, unknown `kid`, bad signature)
+  are each a separate event, never a silent 401. Log token **identifiers** — `jti`,
+  `iat`, `azp` (the client it was issued to), `act` (the delegating actor, RFC 8693)
+  and a hash of the session ID — never the token or session ID itself (§2).
+- **Authorization**: every denial (`authz_fail`) and privilege change. At high
+  assurance, log **every** authorization decision, allow included, and every read of
+  sensitive data (`sensitive_read`) — who, which record, when — without the data.
+- **Tampering: input the real client cannot produce is an attack signal, not a
+  validation error.** A value outside a closed option set (select, radio, enum), a
+  changed hidden or state field, a field the handler does not expect, transaction data
+  altered after the user confirmed it, a deserialized type outside the allowlist
+  (rules/01 §8), an output-validation failure. Emit a distinct event naming the
+  field (`input_validation_discrete_fail`, `malicious_extraneous`) at a higher severity
+  than routine rejections, which stay `input_validation_fail`. Mixing the two buries
+  the probe among typos.
+- **Business-logic and integrity detection points**: signups per IP, device or
+  payment instrument; spikes in promo, referral or credit redemption; a multi-step flow
+  finished faster than a person could; an order marked paid with no matching gateway
+  confirmation, or a burst of gateway callbacks for one order; repeated cross-tenant
+  denials from one principal; repeated deserialization failures from one principal.
+  Each is a counter with a threshold and an owner, tagged with a distinct security
+  severity once confirmed malicious so it reaches the SOC queue rather than the ops
+  one (`sota-detection-engineering` owns the rules and triage).
+- OWASP: Logging Vocabulary, Logging, Session Management and JSON Web Token cheat
+  sheets; Input Validation, Transaction Authorization, Business Logic Security, Multi
+  Tenant Security and Third Party Payment Gateway Integration cheat sheets; Proactive
+  Controls 2024 C3/C9; ASVS 5.0 V16.3.2; Code Review Guide v2; Go-SCP (logging);
+  Secure Coding Practices QRG.
+
 ## 3. Mass assignment / over-binding (CWE-915)
 
 - Binding request bodies directly to ORM/domain models lets clients set fields
@@ -168,6 +213,18 @@ return PublicUser.model_validate(user)    # adding a DB column changes nothing h
   history in served Office/PDF files, `.git`/`.env`/backup files reachable
   under the web root, source maps exposing server code paths in prod,
   verbose `OPTIONS`/`TRACE`.
+- **Static web tier: list nothing, serve an allowlist.** Directory listing stays off
+  unless a listing is the product: nginx `autoindex`, Tomcat's `listings` and IIS
+  `directoryBrowse` default off, and Apache lists wherever `Options` includes
+  `Indexes` (which `All` does). Go's `http.FileServer` lists any directory without an
+  `index.html` — serve from a directory that has one everywhere, or wrap the
+  filesystem. Serve only allowlisted extensions from the static root, so `.inc`,
+  `.config`, `.bak`, `.old`, `.swp`, `~`, `.sql`, archives and source files are refused
+  rather than sent as text. Sweep the deployed web root and public buckets for backup,
+  old and unreferenced files, and test every deny rule with variants (case changes,
+  percent-encoding, trailing slash or dot, path parameters) rather than trusting it.
+  OWASP: ASVS 5.0 V13.4.3/V13.4.7, WSTG-CONF-03, WSTG-CONF-04, Go-SCP (system
+  configuration).
 - API versions: deprecated v1 endpoints with weaker checks stay exploitable —
   decommission, don't just de-document (shadow APIs; keep an inventory).
 
@@ -202,6 +259,15 @@ return PublicUser.model_validate(user)    # adding a DB column changes nothing h
   profilers and REPL endpoints absent.
 - Test/seed accounts, magic bypass headers (`X-Debug-User`), and feature-flag
   backdoors must never ship — grep for them in audits.
+- **Enumerate the real route table, not the one you wrote.** Frameworks generate
+  routes: Rails `resources :photos` creates seven actions unless limited with
+  `only:`/`except:`; Spring Data REST exports every public repository interface by
+  default (`RepositoryDetectionStrategies.DEFAULT`); admin panels, blueprints and
+  scaffolding add more. Dump the router's own listing (`bin/rails routes` or the
+  framework's equivalent), diff it against the routes the product needs, and remove
+  the rest. For legacy apps, shrink
+  the feature set the same way and switch off high-risk admin functions nobody uses.
+  OWASP: Legacy Application Management and Nodejs Security cheat sheets.
 - Non-prod environments holding prod data inherit prod's threat model: either
   mask/synthesize data or secure staging like prod (staging breaches are real
   breaches).
@@ -218,6 +284,9 @@ fields\s*=\s*["']__all__["']           to_json without :only / serializer w/o fi
 jsonify\(.*__dict__|model_to_dict\(    GraphQL introspection enabled in prod config
 X-Debug|X-Test-User|bypass|backdoor|magic in auth middleware
 /actuator|/debug/pprof|/metrics routes without auth   sourceMap: true in prod build
+autoindex on | Options ... Indexes/All | directoryBrowse enabled="true" | http.FileServer(   (§4)
+resources :x without only:/except: | spring-boot-starter-data-rest | @RepositoryRestResource  (§6)
+401/UNAUTHORIZED handlers with no named authn_/session_/authz_ event                      (§2.1)
 ```
 
 ## Audit checklist
@@ -228,6 +297,32 @@ X-Debug|X-Test-User|bypass|backdoor|magic in auth middleware
 - [ ] Is there a logger-level redaction filter for credentials/tokens/PII, plus masked-`repr` secret types?
 - [ ] Are user-controlled values sanitized for CR/LF before logging, and format strings never built from input?
 - [ ] Are security events (logins, denials, role changes, admin actions) logged with actor/action/target to an append-only store with alerting?
+- [ ] **Does every authentication, session and authorization outcome emit a named event
+      from one vocabulary (§2.1)** — success-after-failures with a count, threshold with the
+      limit, lock with a reason, failed password change at high severity, session
+      create/renew/expire/logout/use-after-expiry, tampered cookie or JWT, token `jti`
+      rather than the token? MEDIUM (HIGH when failures are not logged at all). Files that
+      reject a request as unauthenticated but name no event:
+      `grep -rlE '401|UNAUTHORIZED|Unauthorized|BadCredentials|AuthenticationFailed' . | while IFS= read -r f; do grep -qE 'authn_|authz_|session_|security_event|audit' "$f" || echo "$f"; done`
+- [ ] **Is input the real client cannot send logged as tampering, distinct from routine
+      validation (§2.1)?** MEDIUM. Files validating a closed set with no tampering event:
+      `grep -rliE 'choices|allowed_values|oneOf|Enum\(|in_array\(|isin\(' . | while IFS= read -r f; do grep -qiE 'discrete_fail|malicious_|tamper' "$f" || echo "$f"; done`
+- [ ] **Do business-logic detection points exist (§2.1)** — signup, promo and referral
+      velocity, inhumanly fast flows, cross-tenant denials, deserialization failures per
+      principal — and **is "paid" set only from a verified gateway confirmation?** HIGH for
+      the latter. Files that mark an order paid with no verification in sight:
+      `grep -rliE '(status|state)[^a-z]{1,6}(paid|captured)' . | while IFS= read -r f; do grep -qiE 'verify|signature|retriev|construct_event|gateway' "$f" || echo "$f"; done`
+- [ ] **Is directory listing off and the static root an extension allowlist, with no
+      backup or stray files deployed (§4)?** MEDIUM (HIGH when a listed or leftover file
+      holds source or credentials):
+      `grep -rnE 'autoindex[[:space:]]+on|Options([[:space:]]+[+]?[A-Za-z]+)*[[:space:]]+[+]?(Indexes|All)|directoryBrowse[[:space:]]+enabled="true"|http\.FileServer\(' .`
+      ; `grep -rn -A1 'listings</param-name>' . | grep -i 'true'` (Tomcat); and over the
+      deployed web root:
+      `find . -type f \( -name '*.bak' -o -name '*.old' -o -name '*.orig' -o -name '*.swp' -o -name '*~' -o -name '*.inc' -o -name '*.sql' -o -name '*.zip' -o -name '*.tar.gz' \)`
+      — a Go `http.FileServer` hit is fine only when every served directory has an index.
+- [ ] **Has the generated route table been dumped and trimmed to what the product uses
+      (§6)?** MEDIUM:
+      `grep -rnE '^[[:space:]]*resources?[[:space:]]+:[a-z_]+|spring-boot-starter-data-rest|@RepositoryRestResource' . | grep -vE 'only:|except:|exported[[:space:]]*=[[:space:]]*false'`
 - [ ] Are query strings free of secrets and PII?
 - [ ] Does every write endpoint bind through an explicit allowlist DTO (`extra="forbid"`) — no direct body-to-model assignment?
 - [ ] Are privileged fields (role, verified, tenant_id, price) unwritable via any public schema?

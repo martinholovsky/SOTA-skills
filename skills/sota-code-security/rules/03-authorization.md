@@ -23,6 +23,12 @@ is not injection — it is a handler that fetches by ID and forgets to ask "does
   not just the query root), WebSocket messages, gRPC methods, background-job
   enqueue endpoints, and "internal" admin routes (CWE-425 — forced browsing;
   hidden ≠ protected).
+- **A failed check ends the request.** A denial that only *sets* a response — a redirect, a
+  401/403 — without `return`/`exit` lets the handler run on into the protected code. Measured
+  2026-09-25 on PHP 8.5 (php-cgi): `header("Location: /login")` sent the 302 and the file
+  write on the next line still ran. Order matters too: authenticate, and run every check that
+  does not need the body, before the body is parsed or acted on — not only for webhook
+  signatures. OWASP: Code Review Guide v2.
 - Authorize HTTP methods independently: `GET /users/1` protected but
   `PATCH /users/1` open is a classic miss; so are method-override headers
   (`X-HTTP-Method-Override`).
@@ -84,6 +90,14 @@ if doc is None: abort(404)                # don't leak existence with 403 vs 404
   server-side session/token claims validated against the DB, never from a request
   body (`{"role": "admin"}` mass assignment, see rules/07) or a client-set header
   (`X-Admin: true`).
+- **Privilege copied into a session goes stale.** A role, permission set or tenant list stored
+  in the session (or a token claim) at login is a snapshot. Re-read it from the authoritative
+  store for sensitive decisions, or re-validate on an interval short enough for your revocation
+  needs; keep a per-user permission version so a role change forces re-authentication or a
+  session refresh. When privilege drops, remove every higher-privilege flag and cached datum
+  the session carries, not just the role field. Session-ID rotation on elevation is rules/17
+  §2; IdP-pushed revocation is `sota-identity-access` rules/06 §5. OWASP: Code Review Guide v2,
+  Go-SCP (access control).
 - State-machine authorization: actions valid only in certain states (approve own
   expense report, re-trigger completed payment) need state checks server-side —
   workflow bypass is an authz bug. Enforce the full doctrine (OWASP Business Logic):
@@ -92,6 +106,19 @@ if doc is None: abort(404)                # don't leak existence with 403 vs 404
   (payment capture, coupon redemption, password-reset token); expire abandoned
   partial-workflow state; and **never store the workflow position in a client-readable/
   writable field** — keep it server-side keyed to the session/resource.
+- **Transaction authorization binds to the data it approved.** A step-up, OTP, signature or
+  approval covers the exact values the user confirmed (amount, payee, account), stored
+  server-side with it. Any change to those values after entry voids it and restarts the flow;
+  the execute step re-compares the data being committed with the data authorized, inside the
+  committing transaction, or the gap is a TOCTOU (CWE-367). Each authorization is single-use
+  and short-lived. High-value flows can require a second, different approver per transaction,
+  which is separate from separation of duties at role-grant time. OWASP: Transaction
+  Authorization cheat sheet, ASVS 5.0 V2.3.5.
+- **Payment results come from the gateway, never the browser.** The user's return from a
+  hosted payment page carries parameters the user can edit. Fulfil only on a verified
+  server-to-server notification (rules/02 §8) or a server-side status query, and only when the
+  gateway's amount, currency and order id equal what you created; fulfil each payment once, so
+  a replayed callback does nothing. OWASP: Third Party Payment Gateway Integration cheat sheet.
 
 ## 4. Model choice: RBAC / ABAC / ReBAC
 
@@ -155,7 +182,15 @@ SET LOCAL app.tenant_id = '...';
 ```
 
 - `tenant_id` derives from the **authenticated session/token only** — never from
-  a request parameter, subdomain string, or header the client controls.
+  a request parameter, subdomain string, or header the client controls. A verified claim may
+  *select* the tenant, but check an active membership (or service grant) at request time, so a
+  user removed from the tenant is refused before their token expires.
+- ORM tenant scopes are defence in depth, not the boundary. Measured 2026-09-25 on SQLAlchemy
+  2.1.0 with a `do_orm_execute` hook adding `with_loader_criteria`: ORM SELECTs were scoped
+  (and bulk UPDATE, only because the hook also handled UPDATE), while `session.execute(text(...))`
+  and a Core `engine.connect()` query returned every tenant's rows. Keep the final boundary in
+  the database (RLS with a non-bypass role, or per-tenant roles/schemas). OWASP: Multi Tenant
+  Security cheat sheet.
 - Cross-tenant leak surfaces beyond queries: caches keyed without tenant,
   search indexes, background jobs that loop over tenants with shared state,
   signed URLs without tenant scope, sequence-number leakage across tenants,
@@ -221,6 +256,8 @@ SET LOCAL app.tenant_id = '...';
   v1 API, mobile BFF, gRPC) hits the same model unchecked.
 - Check on read, none on write (or vice versa); none on `HEAD`/`OPTIONS`-routed
   handlers.
+- A deny branch that redirects or sets 401/403 and does not return: PHP `header('Location: …')`
+  with no `exit`, Express `res.redirect()` with no `return`. The protected code runs anyway (§1).
 - Authz before async work, none when the job executes (job args carry user IDs —
   re-verify at execution time; grants may have been revoked).
 - Cache poisoning of authz decisions: decision cached on user ID but not object,
@@ -249,3 +286,8 @@ SET LOCAL app.tenant_id = '...';
 - [ ] Is RLS `FORCE`d with a non-bypass app role where Postgres tenancy is used?
 - [ ] Do background workers re-authorize the carried principal at execution time, and do webhook handlers map external subjects to internally-owned rows?
 - [ ] Are hard policy ceilings encoded as forbids/deny rules that override grants?
+- [ ] **Denial halts (§1, §9)**: does every failed authentication or authorization check end the handler (`return`/`exit` after the redirect or 401/403), and do checks run before the body is processed? HIGH when code after the denial reads or changes data. Read each hit of `grep -rnE '(^|[;{)])[[:space:]]*res\.(redirect|sendStatus|status\(40[13]\))' --include='*.js' --include='*.ts' .` and of `grep -rnE "header\([[:space:]]*['\"]Location:" --include='*.php' . | grep -vE 'exit|die|return'`
+- [ ] **Stale session privilege (§3)**: are roles or permissions cached in the session re-read or re-validated for sensitive actions, and flushed with their privileged data when privilege drops? MEDIUM, HIGH on admin paths; each hit of `grep -rnE "session(\[['\"]|\.get\(['\"]|\.)(role|roles|is_?[aA]dmin|permissions|privileges|scopes)" --include='*.py' --include='*.js' --include='*.ts' --include='*.php' --include='*.rb' .` is a decision on a snapshot
+- [ ] **Transaction authorization (§3)**: is each step-up/OTP/approval bound to the exact transaction data, voided by any change, re-compared at execution, single-use, and is a second approver available for high-value flows? HIGH on money movement; design review, no reliable grep
+- [ ] **Payment verification (§3)**: is fulfilment triggered only by a verified gateway callback or server-side status query that matches amount, currency and order id, once per payment? CRITICAL when a return-URL parameter decides; each hit of `grep -rnE "(request\.(args|GET|query_params)|req\.query|params|\\\$_(GET|REQUEST))(\.get\(|\[|\.)[\"']?(status|payment_status|paid|result|success|amount)" --include='*.py' --include='*.js' --include='*.ts' --include='*.php' --include='*.rb' .` needs its decision traced
+- [ ] **Tenant membership and ORM scope (§5)**: is tenant membership checked at request time rather than trusted from a token claim, and does raw SQL/Core/bulk access still meet a database-level boundary? HIGH; each hit of `grep -rnE "(claims|token|jwt|payload)(\[['\"]|\.)tenant(_id|Id)?" --include='*.py' --include='*.js' --include='*.ts' --include='*.go' --include='*.java' .` needs a membership check beside it
