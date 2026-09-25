@@ -109,7 +109,17 @@ with zipfile.ZipFile(fp) as z:
   only the fields you need; treat embedded objects as new untrusted uploads.
 - **XML (CWE-776, CWE-611).** Disable DTDs and external entities; cap entity
   expansion (billion-laughs). Full treatment in rules/01 §6 — applies to every
-  SVG, RSS/Atom feed, SOAP, SAML, and Office part.
+  SVG, RSS/Atom feed, SOAP, SAML, and Office part. Entity limits are not structural limits:
+  also cap element nesting depth (thousands of unclosed open tags — "coercive parsing" — exhaust
+  the stack), element and attribute counts, and name and text lengths. Defaults differ widely:
+  lxml 6.1 (libxml2 2.14) refused depth 300 ("Excessive depth in document: 256"), `huge_tree=True`
+  raised that to 2048, and CPython 3.13's `xml.etree` and `minidom` (expat 2.6.3) accepted
+  100,000 levels (measured 2026-09-25). Where the parser has no limit, count depth yourself in
+  a streaming (SAX/iterparse) pass. Validate against a strict XSD (bounded lengths, occurrences
+  and patterns) rather than a DTD, which you disabled above. Choose a parser whose time on a
+  malformed document stays close to its time on the well-formed one, and keep tests that time
+  both, plus one known-bad payload per limit that must be rejected. OWASP: XML Security, Web
+  Service Security cheat sheets.
 - **CSV / JSON / feed formats.** Deeply-nested JSON (`[[[[…]]]]`) is a stack/CPU
   DoS — set a max nesting depth and document/field size cap; reject unbounded
   arrays before materializing. Use streaming parsers with limits for large feeds.
@@ -247,3 +257,4 @@ Two exits matter beyond rules/01's sinks:
 - [ ] Feed integrity verified where available (signatures/checksums), poisoned-upstream treated as a supply-chain risk, ingest/parse separated from the trusted core (broker pattern)?
 - [ ] Ingested content encoded at the *render* boundary (rules/05) not sanitized-on-ingest, and provenance-tagged before reaching an LLM context (rules/08)?
 - [ ] Ingest anomalies (volume spikes, ratio-bomb/schema-violation bursts, AV hits) emitted as detection events?
+- [ ] XML structural limits (§2): nesting depth, element/attribute counts and name/value lengths capped, strict XSD instead of DTD, and tests for malformed-vs-normal parse time and for each limit? HIGH on an unauthenticated XML endpoint; each hit of `grep -rnE 'huge_tree[[:space:]]*=[[:space:]]*True|XML_PARSE_HUGE|ET\.(fromstring|parse|XMLParser)\(|minidom\.parse(String)?\(|expat\.ParserCreate' --include='*.py' --include='*.c' --include='*.cpp' --include='*.h' .` is a parser with a relaxed or absent depth limit

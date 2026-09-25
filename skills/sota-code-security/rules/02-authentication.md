@@ -23,6 +23,15 @@ finding until proven otherwise.
   transiently in queryable form.
 - Verify with the library's `verify()` (constant-time); rehash-on-login when
   parameters are below current policy.
+- **Migrating off a legacy hash** (MD5, SHA-1, unsalted or single-round SHA-2). Rehash-on-login
+  alone leaves every dormant account crackable. Instead, in one batch, wrap each stored digest
+  in the modern KDF: `argon2id(hex(old_digest))` with a fresh salt and a scheme tag, so that
+  verify applies the old hash first. On that user's next successful login, replace it with
+  plain `argon2id(password)`. After a published deadline, delete the wrapped hashes that are
+  left and force those accounts through reset. The deadline matters because a wrapped hash is
+  weaker than a direct one wherever the same inner digest leaked elsewhere: the attacker
+  tests that leaked list against the wrapper instead of guessing passwords.
+  OWASP: Password Storage cheat sheet.
 - Password policy (NIST SP 800-63B-4, final Aug 2025): length ≥ 15 when the
   password is the sole factor (≥ 8 permitted only as part of MFA), allow 64+,
   allow all printable chars + unicode, **no composition rules, no periodic
@@ -32,6 +41,15 @@ finding until proven otherwise.
   (CWE-307). Return the **same error and similar timing** for "no such user" vs
   "wrong password" (account enumeration, CWE-204); apply equally to registration
   and password-reset responses.
+  - **Write the lockout parameters down**: threshold (failures), observation window,
+    lockout duration. Prefer a delay that doubles with each failure over a fixed lock, and
+    count failures per account as well as per IP, because stuffing rotates addresses.
+  - **A hard lock is a denial-of-service tool.** Anyone who knows a username can lock its
+    owner out. Keep a way in while locked (the reset flow, or a lock the real user clears
+    with a second factor), log every lockout, and never lock on a reset *request* (§5).
+  - Document which controls defend login (rate limit, backoff, CAPTCHA or proof-of-work
+    escalation, breached-password check, risk scoring) and how each is configured.
+  OWASP: ASVS 5.0 V6.1.1; Authentication, Denial of Service cheat sheets.
 
 ```python
 # GOOD
@@ -86,25 +104,107 @@ Sessions and JWT (formerly §2 and §3) moved to [rules/17](17-sessions-and-toke
 - Validate `Recipient`, `Audience`, `InResponseTo`, `NotOnOrAfter` (clock-skew
   bounded), enforce single-use assertion IDs (replay cache). XXE hardening from
   rules/01 §6 applies to the SAML parser itself.
+- **Verify against the key you configured, never the one in the message.** Use the IdP
+  certificate from pinned metadata, for the `Issuer` you expect, and ignore `KeyInfo` and
+  embedded certificates. A validator that trusts the certificate the response carries
+  accepts anyone's self-signed assertion. Allowlist `SignatureMethod` and `DigestMethod`
+  (RSA-SHA256 or stronger) and reject the SHA-1 family: `xmldsig#rsa-sha1`, `#dsa-sha1`,
+  `#hmac-sha1` and `#sha1`.
+- Check `Conditions` `NotBefore` as well as `NotOnOrAfter`. Require the assertion's `Issuer`
+  (equal to the configured IdP entity ID) and a `Subject` whose bearer
+  `SubjectConfirmationData` carries `Recipient`, `NotOnOrAfter` and `InResponseTo`. A
+  missing element fails validation. In the Web SSO profile only the *Response*-level
+  `Issuer` is optional; the assertion's is required.
+- Build every `AuthnRequest` with a fresh unique `ID` and your SP entity ID as `Issuer`,
+  store the ID, and accept a response only when `InResponseTo` names an outstanding request
+  (SAML Core section 3.4.1.4). OWASP: SAML Security cheat sheet.
 - Prefer OIDC over SAML for new integrations; SAML's flexibility is its CVE
   generator.
 
 ## 5. MFA & account recovery
 
+- **Design premise: the password will leak.** Require MFA at login for every user by
+  default, not only administrators, and on *every* way into the account: mobile API,
+  legacy or `v1` endpoints, HTTP Basic, app passwords, SSO fallback, CLI tokens. If one route
+  accepts the password alone, MFA is optional for the attacker. Keep an **inventory of
+  every authentication and recovery pathway** (web, mobile, API, older client versions,
+  help desk and call centre) with the strength each one enforces, and enforce the same
+  strength on all of them. An entry point missing from the inventory is a finding.
+  OWASP: Multifactor Authentication cheat sheet; ASVS 5.0 V6.1.3, V6.3.4; Cornucopia ATQ.
 - Support phishing-resistant factors first: **passkeys/WebAuthn**, then TOTP.
   SMS OTP is last resort (SIM-swap, SS7); never the only factor for high-value ops.
+- **Email is not an authenticator.** A magic link or emailed code proves control of a
+  mailbox, which is often protected by the same reused password. Under ASVS level 3
+  (V6.3.6) it is neither a single factor nor the second one. It stays usable as a
+  *recovery* channel under the reset rules below.
+- **Security questions (knowledge-based answers) are not a factor.** They are not a login
+  factor, not a second factor beside a password (both are something you know), and not a
+  recovery path on their own; ASVS 5.0 V6.4.2 wants them absent. A legacy system that
+  cannot drop them yet: offer questions from a curated list, never user-written ones and
+  none whose answer is public; store answers like passwords (normalise case and
+  whitespace, then the password KDF); reject answers equal to the username, email or
+  password; count a wrong answer as a failed login; keep asking the same question until
+  it is answered, never rotating to a fresh one after a miss. OWASP: Choosing and Using
+  Security Questions, Forgot Password, Multifactor Authentication cheat sheets; WSTG-ATHN-08.
 - TOTP: secret ≥ 160 bits, ±1 time-step window max, **rate-limit verification**
   (6 digits = 10^6 space, brute-forceable without throttling), prevent code reuse
   within its window.
-- Step-up authentication for sensitive actions (payout, email change, recovery
-  settings) even within an authenticated session.
+- Step-up authentication for sensitive actions (payout, email change, password
+  change, recovery settings) even within an authenticated session.
+- **Password change must exist, and must ask for the current password** before it accepts
+  a new one (a fresh re-authentication or MFA for passwordless or federated accounts).
+  Without that check, a borrowed unlocked session becomes a permanent takeover. Afterwards,
+  revoke the other sessions (rules/17 §2) and notify the user (below).
+  OWASP: ASVS 5.0 V6.2.2, V6.2.3; Authentication cheat sheet.
 - **Account recovery must be as strong as login** — a password reset email that
   bypasses MFA nullifies MFA (CWE-640). Reset tokens: ≥ 128-bit random,
   single-use, ≤ 1h expiry, stored hashed, invalidated on use *and* on password
   change; don't reveal account existence in the response.
+  - A reset *request* changes nothing: no lock, no password invalidation, no flag until
+    a valid token comes back. Otherwise anyone can disrupt any account.
+  - The token maps to exactly one user record. A URL token, or a 6-12 digit PIN, buys a
+    restricted session whose only power is setting the new password.
+  - The new password is entered twice and checked against the normal policy. After it
+    is set, do **not** log the user in: send them to the normal login (with MFA), and
+    revoke the existing sessions or offer to. OWASP: Forgot Password cheat sheet.
+- **Where the reset link or code goes.** Send it only to the email address or phone
+  already registered *and verified* on the account, never to one supplied in the request
+  (a second `email` field, an array of addresses, a link built from the `Host` header:
+  rules/01 §11). The message carries the link or code and nothing else: no password (not
+  even a temporary one), no personal data, no account details.
+  OWASP: Code Review Guide v2; Secure Coding Practices QRG.
 - Recovery codes: one-time, hashed at rest, regenerable, shown once.
-- MFA enrollment changes require re-authentication and notify the user
-  out-of-band.
+- MFA enrollment changes require re-authentication. **Notify the user out-of-band on a
+  defined event set**: password change; reset requested and completed; email, phone or
+  username change; registration; an MFA factor or login method added or removed; login
+  from a new device or unusual location; correct password followed by a failed second
+  factor (the password is probably known, so tell them to change it); a burst of reset
+  requests. Do not notify on ordinary wrong-password attempts, because the noise trains
+  users to ignore the channel. Each notice states time, device and approximate location,
+  offers a "this wasn't me" path, and never contains a credential. Send an out-of-band
+  confirmation carrying the details for high-value operations such as a funds transfer
+  (§5.1). OWASP: ASVS 5.0 V6.3.5, V6.3.7; Credential Stuffing Prevention, Mobile
+  Application Security cheat sheets; Code Review Guide v2; Cornucopia AT2; Go-SCP;
+  Secure Coding Practices QRG.
+
+### 5.1 Transaction authorization (what you see is what you sign)
+
+Authorising a payment, a payee change or another high-value operation is not a second login.
+
+- The challenge shows the significant data (target account, amount) and is bound to it.
+  Its prompt looks different from the login prompt, so malware that fakes "please log in
+  again" cannot harvest a login code and spend it on a transaction.
+- One challenge per transaction, generated server-side, valid for a short window. Any
+  change to the transaction data after the challenge is issued voids it and restarts the
+  flow, and is logged as an attack. After N wrong answers the whole process restarts.
+- The server picks the required method from policy and the user's enrolled factor. A
+  client parameter (`method=sms`) or an old code path for a retired method must never be
+  able to downgrade it. Enforce the step order server-side, and at execution re-check that
+  this exact transaction was the one authorised (TOCTOU).
+- Changing the authorising factor (phone number, token, device key) is itself authorised
+  with the current factor.
+- Re-authentication prompts ask for the primary credential or MFA and say why they appear.
+  OWASP: Transaction Authorization, Session Management cheat sheets.
 
 ## 6. Passkeys / WebAuthn
 
@@ -127,7 +227,17 @@ Sessions and JWT (formerly §2 and §3) moved to [rules/17](17-sessions-and-toke
 - Email verification tokens follow reset-token rules (§5): ≥128-bit random,
   hashed at rest, single-use, short expiry. Gate sensitive features on
   verified status, and store the verification state per address — changing
-  email resets it.
+  email resets it. Clicking the link proves ownership of the mailbox, not identity, so it
+  must not log the user in: normal authentication follows (§5, email is not an
+  authenticator). OWASP: Input Validation cheat sheet.
+- **One email comparison policy, used everywhere.** Store the address as typed, for
+  display and sending, plus one canonical key for uniqueness and lookup. Signup, login,
+  reset, recovery and account linking must all call the same function, because two
+  normalisers give one mailbox two identities. Lowercase the domain, convert an
+  internationalised domain to its ASCII (punycode) form, normalise Unicode, and flag
+  mixed-script look-alikes. Decide once, explicitly, whether the local part is
+  case-folded. Apply no provider-specific rewrites, such as dropping dots or `+tag` for
+  one mail provider. OWASP: Email Validation and Verification cheat sheet.
 - **Pre-account-takeover / unverified linking (CWE-1390 family)**: attacker
   signs up with victim's email (unverified); victim later does "Sign in with
   Google" using that email; sloppy linking merges them and the attacker's
@@ -161,6 +271,11 @@ Sessions and JWT (formerly §2 and §3) moved to [rules/17](17-sessions-and-toke
   credentials over static keys — mTLS/SPIFFE identities, cloud
   workload-identity federation (OIDC), signed tokens with `aud` per target
   service. Static bearer keys in env vars are the floor, not the goal.
+- **Vendor defaults on everything you deploy**, not only in what you ship: databases,
+  brokers, admin consoles, monitoring UIs, appliances, container images. Change every
+  default password, disable default accounts nobody needs, and remove sample schemas and
+  demo apps. A default credential in compose files, Helm values or IaC is a finding.
+  OWASP: Secure Coding Practices QRG; Go-SCP.
 - Webhook verification (inbound machine auth): verify HMAC signatures
   (constant-time) over the **raw body** with a per-source secret, enforce a
   timestamp window against replay, and reject before parsing. Outbound: sign
@@ -235,6 +350,41 @@ The Node row lists *files*, because `.bind(` is also `Function.prototype.bind`: 
 - [ ] Does social-login linking require verified email on both sides (or explicit re-auth), with session revocation and notification on link?
 - [ ] Does email change require step-up auth plus confirmation via old and new addresses?
 - [ ] Are there zero hand-rolled token schemes, password hashes, or login protocols?
+- [ ] **Are legacy fast password hashes wrapped now and expired by a deadline (§1)? HIGH** —
+      `grep -rniE '(md5|sha1|sha256|sha512|messagedigest|createhash)[^;]{0,40}(passw|pwd)' .`
+- [ ] Are lockout threshold, window and duration written down, with a recovery path that
+      works while an account is locked (§1)? MEDIUM; HIGH if a permanent lock is reachable
+      by anyone who knows a username.
+- [ ] **Does SAML verification use the configured IdP key, a SHA-256+ algorithm allowlist,
+      `NotBefore`, and `InResponseTo` matched to a stored `AuthnRequest` ID (§4.1)? HIGH** —
+      SHA-1 algorithms anywhere in config or code:
+      `grep -rniE 'xmldsig#(rsa-sha1|dsa-sha1|hmac-sha1|sha1)' .`
+- [ ] Is MFA enforced on every login path, and is there an inventory of authentication and
+      recovery pathways with equal strength (§5)? HIGH for any route that accepts the
+      password alone, whether an API, a legacy endpoint, Basic auth or app passwords.
+- [ ] **Is email used only for recovery, never as a login factor (§5)? MEDIUM (ASVS L3)** —
+      `grep -rniE 'magic_?link|login_?link|login-link|email_?otp|sign_?in_?link|signinlinktoemail' .`
+- [ ] **Are security questions absent, or hardened where legacy forces them (§5)? MEDIUM** —
+      `grep -rniE 'security_?question|secret_?(question|answer)|security_?answer|maiden name|first pet' .`
+- [ ] **Does password change verify the current password (§5)? HIGH** — files with a
+      change handler that never mention a current password:
+      `grep -rliE 'change_?password|update_?password' . | while IFS= read -r f; do grep -qiE 'current_?password|old_?password' "$f" || echo "$f"; done`
+- [ ] **Do reset and email-verification flows avoid logging the user in (§5, §7)? MEDIUM** —
+      `grep -rliE 'reset_?password|password_?reset|verify_?email|verify-email|confirm_?email' . | while IFS= read -r f; do grep -HniE '(^|[^a-z_.])login\(|\.login\(|login_user\(|sign_?in\(' "$f"; done`
+- [ ] **Do reset links and codes go only to the registered address, with no password in
+      any message (§5)? HIGH** —
+      `grep -rniE 'send[a-z_]*\([^)]*(request|req)\.(post|get|body|form|data|json|params|query|args)[^)]*email|your (new |temporary )?password is|(password|passwd): *(\{\{|\$\{|%s|#\{|<%=) *[a-z_.]*(pass|pwd)' .`
+- [ ] Is the user notified out-of-band of the §5 event set (password or email change, reset,
+      new device, correct password with a failed second factor), but not of every
+      wrong password? MEDIUM.
+- [ ] **Is the transaction-authorization method chosen server-side, bound to the transaction
+      data, and single-use (§5.1)? HIGH** — client-chosen method:
+      `grep -rniE '(request|req)\.(post|get|body|form|data|json|params|query|args)[^;]{0,30}(auth_?method|mfa_?method|otp_?(method|channel)|second_?factor|verification_?(method|channel))' .`
+- [ ] **Is there one email canonicalisation used by every identity flow, with no
+      provider-specific rewrites (§7)? MEDIUM** —
+      `grep -rniE 'email[^;]{0,60}(split\(.\+.\)|replace\(.\..,|replace\(/\\\./g)' .`
+- [ ] **Are vendor default credentials absent from deployment config (§8)? HIGH** —
+      `grep -rniE 'pass(word)?[a-z_]* *[:=] *.?(postgres|root|admin|guest|password|changeme|minioadmin|elastic|secret|example)([^a-z0-9]|$)' .`
 - [ ] **Does every LDAP bind used as a login reject an empty password *and* an empty username
       before binding (§9)?** Run §9's detector row for the language and read each hit. CRITICAL
       when the production directory accepts unauthenticated binds (Active Directory does unless

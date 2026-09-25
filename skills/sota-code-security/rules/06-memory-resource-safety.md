@@ -47,6 +47,35 @@ if (__builtin_add_overflow(a, b, &r)) reject();   /* best: checked intrinsics */
 - Money/quantities: overflow and negative-amount bugs are business-critical
   (transfer of `-100` credits the attacker). Range-check semantic validity
   (`0 < amount <= LIMIT`), use decimal/integer-cents types, never floats.
+  - **Multiply before you divide.** Integer `amount / 10000 * fee_bps` truncates
+    first and loses the remainder on every call; `amount * fee_bps / 10000` keeps
+    it, and the product then needs the checked form above.
+  - **Round in the system's favour.** Round what you issue or pay out (shares
+    minted, amounts returned) down, and what the user must supply up. EIP-4626's
+    security considerations spell out exactly that split for tokenised vaults, and
+    the reason carries to any ledger: whichever side receives the rounding can
+    repeat it until it adds up.
+  - **Enforce a minimum meaningful amount.** Dust and zero-value operations (a
+    transfer of 0, a deposit worth less than one unit after rounding) are free
+    spam and rounding-exploit loops; reject below the floor.
+  OWASP: SCSVS S7.2.A4, SCSVS S7.2.A6, SCSVS S7.2.B1.
+- **Arithmetic edge cases beyond sizes.** The same hostility applies to every
+  input-derived number: reject NaN and ±Infinity from parsed floats before any
+  range check (every comparison with NaN is false, so `x < lo || x > hi` lets it
+  through); guard divisors and fail explicitly on zero; bound values before
+  unit conversions (seconds × 10^9 overflows a signed 64-bit nanosecond
+  duration past roughly 292 years of seconds, which a "positive number" check
+  lets through); inside an explicitly unchecked
+  region (C# `unchecked`, Rust `wrapping_*`) write down the bound that makes
+  wrapping impossible, because the compiler no longer checks; and check
+  intermediates of multi-term expressions and the MIN/MAX extremes — `-INT_MIN`,
+  `abs(INT_MIN)` and `INT_MIN / -1` have no representable result. The
+  per-language behaviour is measured in each language skill: `sota-c-cpp`
+  rules/03 §2, `sota-dotnet` rules/01 §1, `sota-golang` rules/02 §4,
+  `sota-javascript-typescript` rules/02, `sota-jvm` rules/01 §1, `sota-php`
+  rules/01 §4, `sota-python` rules/03 §12, `sota-ruby` rules/01 §7, `sota-rust`
+  rules/01 §3. OWASP: Go-SCP (general coding practices), SCSVS S7.1.A3,
+  SCSVS S7.1.A4, SCSVS S7.1.A6, SCSVS S7.2.B5.
 
 ```rust
 // BAD: wraps silently in release; negative-after-cast passes a < check
@@ -290,6 +319,13 @@ req, _ := http.NewRequestWithContext(ctx, "GET", url, nil)  // HTTP
   (`UPDATE ... WHERE balance >= x`), unique constraints, `SELECT ... FOR
   UPDATE`/serializable transactions, or idempotency keys — never in-process
   locks across multiple instances.
+- **No race window is too small to exploit.** PortSwigger's single-packet
+  attack puts 20–30 HTTP/2 requests in one TCP packet and measured a median
+  arrival spread of about 1 ms across 17,000 km; last-byte synchronisation does
+  the same for HTTP/1.1, less tightly. A window of about a millisecond is
+  therefore within reach from across the internet, and "the window is tiny" is
+  not a mitigation. The fix is atomicity or locking at the store; delays, jitter and
+  retries only move the window. OWASP: Business Logic Security cheat sheet.
 
 ```sql
 -- BAD: check in app code, then write (two requests both pass the check)
@@ -402,6 +438,8 @@ DllImportSearchPath.(AssemblyDirectory|ApplicationDirectory|LegacyBehavior) | lo
 - [ ] Are allocation sizes guarded against multiplication overflow and capped against a memory budget?
 - [ ] Are signed/unsigned conversions and 64→32 truncations on lengths eliminated or explicitly range-checked?
 - [ ] Do money/quantity fields enforce positive, bounded, integer/decimal semantics?
+- [ ] Does money and share arithmetic multiply before it divides, round in the system's favour (issued/paid out down, owed up), and reject amounts below a minimum meaningful unit (§1)? MEDIUM, HIGH on value-moving paths. Probe for divide-then-multiply, reading each hit (money and share maths first): `grep -rnE '[[:alnum:]_)][[:space:]]*/[[:space:]]*[[:alnum:]_.]+[[:space:]]*\)?[[:space:]]*\*[[:space:]]*[[:alnum:]_(]' .`
+- [ ] Are NaN/±Infinity rejected from parsed floats, divisors guarded against zero, unit conversions and multi-term intermediates bounded, MIN/MAX extremes handled, and every unchecked region's bound written down (§1)? MEDIUM, HIGH where the value sizes, prices or authorizes something. Probe listing files that parse floats and never test finiteness: `grep -rlE '(float|parseFloat|ParseFloat|parseDouble|strto[dfl]|atof)[[:space:]]*\(' . | while IFS= read -r f; do grep -qiE 'is_?finite|is_?nan|isinf' "$f" || echo "$f"; done` — file-level, so one check hides the rest of that file; then run the language skill's own probe.
 - [ ] Are banned C string functions absent and parsers of untrusted bytes fuzzed with sanitizers in CI?
 - [ ] Is `unsafe`/FFI code confined to designated modules with SAFETY comments, safe wrappers, and Miri/ASan coverage?
 - [ ] In a GC language, does any code use its escape hatch into raw memory (§3's per-language list)? Each use is audited with the C rules, and a project-wide opt-in (`AllowUnsafeBlocks`, `ffi.enable=true`, `--enable-native-access=ALL-UNNAMED`) is justified in writing.
@@ -411,5 +449,6 @@ DllImportSearchPath.(AssemblyDirectory|ApplicationDirectory|LegacyBehavior) | lo
 - [ ] Do all inbound listeners and outbound calls have timeouts, with cancellation propagation?
 - [ ] Is rate limiting per-principal with bounded queues and load shedding (no unbounded buffering)?
 - [ ] Are check-then-act sequences (files, balances, redemptions) made atomic at the storage layer?
+- [ ] Is any race accepted because its window is "too small" (§6)? HIGH on balances, redemptions and limits: single-packet and last-byte-sync attacks reach millisecond windows. Probe for the rationalisation in comments and tickets: `grep -rniE 'race.{0,40}(unlikely|rare|tiny|small|negligible|acceptable)|(unlikely|rare|tiny|small|negligible).{0,40}race' .` (also matches `trace`; read each hit).
 - [ ] Is every temp file created atomically, owner-only, under a name not chosen in advance (§6.1)? Run §6.1's detector row for the language, and read each hit: a predictable name in a shared temp directory is HIGH when the file holds secrets or is later read back as trusted.
 - [ ] Is request-scoped data verified never to live in shared/global state across requests?

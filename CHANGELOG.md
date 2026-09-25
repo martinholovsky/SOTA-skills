@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **OWASP high-value themes adopted in `sota-code-security` (ROADMAP 66 step 4, batch "code-security").**
+  - 59 themes implemented and 15 extended.
+  - 74 audit probes, each tested on bad and good fixtures.
 - **Step 3c: dynamic code evaluation, app-set cookie defaults and debug/dev mode in
   production are in all nine language skills and pinned in the floor (now 36).**
   Request-scoped context cleanup is in eight and declared conditional; Go is a recorded
