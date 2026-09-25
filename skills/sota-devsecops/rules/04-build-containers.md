@@ -36,6 +36,32 @@ RUN curl -fsSLo /tmp/tool.tgz https://releases.example.com/tool-1.4.2-linux-amd6
   from the same SHA and diffs digests (`diffoscope` for the failure analysis). A
   reproducibility claim that is never re-derived is marketing; one independent rebuild
   per release window turns provenance from "trust the builder" into "check the builder".
+- **Third-party binaries and tools arrive through a package manager or artifact repository**,
+  where they are locked, scanned and logged (rules/03 §3.3). The hash-pinned download in the
+  GOOD example is a documented exception with an owner, not the default path. **A binary
+  committed to the repository is never acceptable**: it cannot be reviewed or rebuilt, and
+  OpenSSF Scorecard's `Binary-Artifacts` check flags it.
+- **Local, tarball and cache installs are verified too.** A package installed from a local
+  path, a `.tgz`, a wheel file or a restored cache skips the registry's integrity path
+  unless a recorded hash is checked. `pip install --require-hashes` refused a local wheel
+  listed without a hash (measured, pip 26.1.2). A CI cache restore is matched on its key,
+  which is a name you chose, not a hash of the content, so never restore dependencies from a
+  cache without re-verifying them against the lockfile (rules/01 §1.6).
+- **CI executes only the reviewed build definition.** No step runs code fetched or generated
+  outside it: no `curl | sh`, no `eval "$(curl …)"`, no script whose URL comes from a
+  variable. zizmor's `adhoc-packages` audit (v1.26.0+) flags `run:` steps that install
+  packages outside a locked manifest. (OWASP: SCVS 1.2, 3.6, 4.1, 4.14)
+- **Keep user-controllable build inputs to a small, typed allowlist.** SLSA provenance calls
+  them `externalParameters` and asks build platforms to "minimize the size and complexity"
+  of them, and verifiers to reject unexpected ones. On GitHub, prefer `workflow_dispatch`
+  inputs of type `boolean`, `choice`, `number` or `environment`; an input of `type: string`
+  (or with no type) that reaches a build command is free-text control over the build.
+- **Build steps do not reconfigure name resolution or the network path.** No writes to
+  `/etc/hosts` or `/etc/resolv.conf`, no `--add-host` (a `docker`/`podman`/`buildx build`
+  flag; `add-hosts:` on the build-push action), no proxy variables (`HTTPS_PROXY`,
+  `https_proxy`, `NO_PROXY`) set mid-job: each can silently send a hash-pinned fetch
+  somewhere else, and only the hash check stands in the way. Put the proxy in the runner
+  image, reviewed. (OWASP: Software Supply Chain Security cheat sheet; SCVS 3.8)
 - Build tooling is a dependency too: pin BuildKit/buildx, syft/grype/cosign versions in
   CI (via pinned action SHAs or pinned tool downloads with checksums) — an unpinned
   `latest` scanner can silently change gate behavior, and a compromised tool download is
@@ -117,6 +143,18 @@ USER nonroot
 CMD ["dist/server.js"]
 ```
 
+- **Copied files are not root's by accident.** `COPY` without `--chown` creates files owned by
+  UID/GID 0 (Dockerfile reference). Leave application code root-owned **and read-only** to
+  the runtime user (the process cannot rewrite its own code), and `--chown=<uid>` only the
+  paths it must write. Never `chown -R`/`chmod 777` the whole tree to silence an error.
+- **Do not make a package-manager launcher PID 1.** Measured 2026-09-25 (podman, node
+  22.23.3, npm 10.9.9), stopping a container: with `CMD ["node", "server.js"]` the app's
+  SIGTERM handler ran and it exited 0; with `npm start` the handler **never ran** (exit 1,
+  npm reporting the child killed by SIGTERM); with shell-form `sh -c` the signal was
+  ignored until the 10-second SIGKILL (exit 137). Exec the runtime directly, as above, or
+  add a small init (`--init` in Docker and Podman). `yarn start` and `pnpm start` are the
+  same shape. (OWASP: NodeJS Docker cheat sheet)
+
 Python: builder installs into a venv (`pip install --require-hashes -r requirements.txt
 --prefix /opt/venv` or `uv sync --locked`), final stage is
 `distroless/python3`/Chainguard python copying `/opt/venv` — never ship pip, build
@@ -193,6 +231,16 @@ editing Dockerfiles by hand, the strategy is missing (Medium).
   the blessed base once, not by forty app teams triaging the same finding.
 - Also run config scanning on the Dockerfile (hadolint; trivy misconfig/checkov catch
   root-user, ADD-vs-COPY, latest-tags) as a PR check.
+- **Malware and binary composition analysis reach beyond libraries.** The malicious-package
+  checks of rules/03 §3.4 see packages; extend them to container images, VM and golden
+  images, and release binaries. **As supplier**, before release: inventory the built
+  binaries (syft catalogs binaries, e.g. `go-module-binary-cataloger`), compare the result
+  with the expected SBOM (an unexpected component is the finding), and secret-scan the
+  unpacked artifact (`trivy rootfs --scanners secret <dir>`). **As consumer**, run the same
+  on binaries you receive (vendor installers, agents, appliance images) before they enter
+  the internal repository, plus a malware scan (ClamAV, or YARA rules from
+  `sota-detection-engineering`). `trivy vm` is marked EXPERIMENTAL (trivy 0.72.0 help).
+  (OWASP: DSOMM; Software Supply Chain Security cheat sheet)
 - Don't conflate: secret scanning of image layers (trivy/ggshield can) is worth one
   scheduled pass over the registry — finds the `ENV TOKEN` mistakes of §4.2 historically.
 
@@ -261,6 +309,24 @@ Self-hosted runners and CI servers are production-tier assets, hardened like one
   provisioning file is a finding; in Kubernetes, no `runAsUser: 0` on runner pods.
 - Runner and CI-server hosts and images are patched on a schedule, kept in a versioned
   inventory, and built to a CIS or STIG baseline.
+- **No unused services** on build hosts and runner images: the runner agent and what builds
+  need, nothing listening that a job could reach or abuse (no stray SSH, web or database
+  daemons). Compare `ss -tlnp` on the host with the expected list.
+- **Build steps never change the system CA trust store** (`update-ca-certificates`,
+  `update-ca-trust`, files dropped into `/usr/local/share/ca-certificates` or
+  `/etc/pki/ca-trust`) or the tool-level equivalents (`NODE_EXTRA_CA_CERTS`,
+  `SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE`, `git config http.sslCAInfo` or
+  `http.sslVerify false`, `GIT_SSL_NO_VERIFY`). A CA added mid-build lets whoever holds its
+  key read and rewrite every TLS fetch after it. An organisation CA belongs in the reviewed
+  runner image.
+- **Toolchain integrity is monitored.** Compilers, SDKs and VCS clients in the runner image
+  are verified against the vendor's checksum or signature when installed, and a hash
+  baseline of those binaries is re-checked on a schedule, so that a swapped `gcc` or `git`
+  shows up.
+- **The whole build stack has a cadence**: runner images, toolchains, CI plugins and
+  scanners are updated, patched and re-approved on a fixed schedule with a recorded date,
+  not only when something breaks. (OWASP: Software Supply Chain Security cheat sheet;
+  SCVS 3.9, 3.15, 3.16)
 - Nothing sensitive survives a job: no credentials, tokens or checkouts left on disk.
   Ephemeral runners (rules/01 §1.6) give you this by construction; a persistent host needs a
   workspace and credential wipe that is itself verified.
@@ -293,4 +359,9 @@ of the supply chain, and its IDE extensions run with the developer's full access
 - [ ] Build infra isolated from runtime; no docker.sock mounts; ephemeral or rootless builders; caches scoped by trust boundary
 - [ ] **Runner hosts hardened (§4.6.1), High:** `grep -rn -E 'RUNNER_ALLOW_RUNASROOT|runAsUser:[[:space:]]*0[[:space:]]*$' <runner provisioning: Dockerfiles, IaC, Helm values>` is empty; hosts/images on a patch schedule with a CIS/STIG baseline; no credentials left between jobs
 - [ ] **Maximum image age enforced; no in-place patching (§4.3), Medium:** running digests (`kubectl get pods -A -o jsonpath='{..imageID}'`) checked against their build date from provenance/SBOM store, none past the limit; `grep -rn -E '(kubectl|docker|podman) exec[^|;]*(apt-get|apt|apk|yum|dnf|microdnf|pip|npm) +(install|upgrade|update|add)' <runbooks, scripts>` is empty
+- [ ] **No remote code execution or committed binaries in the build (§4.1), High:** `grep -rn -E '(curl|wget)[^|;]*\|[[:space:]]*(sudo[[:space:]]+)?(ba|z)?sh([[:space:]]|$)|eval[[:space:]]+"?\$\((curl|wget)|(ba|z)?sh[[:space:]]+<\((curl|wget)' .github/workflows` is empty (extend the path list to Dockerfiles and scripts); `git ls-files | grep -E '\.(exe|dll|so|dylib|jar|war|bin)$'` hits are each justified; local, tarball and cache installs are hash-checked
+- [ ] **Build inputs typed; no DNS or network rewrites in builds (§4.1), High:** `grep -rn -E '/etc/hosts|/etc/resolv\.conf|--add-host|add-hosts:|(HTTPS?|ALL|NO)_PROXY[[:space:]]*[=:]|(https?|all|no)_proxy[[:space:]]*[=:]' .github/workflows` is empty; `yq '.on.workflow_dispatch.inputs // {} | to_entries | .[] | select((.value.type // "string") == "string") | .key' .github/workflows/*.yml` lists only inputs that never reach a build command
+- [ ] **No package-manager launcher as PID 1; app files not root-writable by the app (§4.2.1), Medium:** `grep -n -E '^(CMD|ENTRYPOINT)[[:space:]].*(npm|yarn|pnpm)[^A-Za-z]+(start|run)' Dockerfile*` is empty; no `chmod 777` or blanket `chown -R` of the app tree
+- [ ] **Release binaries and received binaries analysed (§4.4), Medium:** the release workflow has a binary inventory, secret scan and (for received binaries) malware scan — `grep -rn -E 'clamscan|yara|trivy[[:space:]]+(rootfs|vm|fs)[^#]*secret|syft[[:space:]]+(scan[[:space:]]+)?(dir|file):' .github/workflows` is non-empty where release artifacts are built
+- [ ] **Build hosts: no CA-store changes, minimal services, toolchain baseline, patch cadence (§4.6.1), High:** `grep -rn -E 'update-ca-certificates|update-ca-trust|/usr/local/share/ca-certificates|/etc/pki/ca-trust|NODE_EXTRA_CA_CERTS|SSL_CERT_FILE|REQUESTS_CA_BUNDLE|http\.sslVerify[[:space:]=]+"?false|http\.sslCAInfo|GIT_SSL_NO_VERIFY' .github/workflows Dockerfile* <runner-image-dir>` hits only the reviewed runner image; `ss -tlnp` on a runner host matches its expected listeners; toolchain hash baseline and last stack re-approval date recorded
 - [ ] **IDE extensions allowlisted and inventoried (§4.7), Medium:** managed VS Code settings contain `"extensions.allowed"` (`grep -c '"extensions.allowed"' <managed settings.json>` is not `0`); an extension inventory exists for machines holding signing/publish credentials

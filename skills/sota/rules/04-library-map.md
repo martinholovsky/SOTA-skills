@@ -58,7 +58,9 @@ exist. `sota-code-security/rules/11` sat unlisted for two releases before 15 exi
   08 registry security, 09 gates that hold, 10 declared-but-not-reached (the inert-dependency
   sweep, split out of 03 in v1.36.0), 11 after the gate fails (durable verdicts, reproducing the
   gate's invocation, preserving a red run's log — split out of 09, · v1.43.0), 12 SCM/CI platform
-  governance, 13 vulnerability remediation (triage beyond the score, fixing transitives, backports)
+  governance, 13 vulnerability remediation (triage beyond the score, fixing transitives, backports),
+  14 SBOM content, quality and handling, 15 dependency adoption (selecting, verifying and
+  configuring what you take in)
 - **sota-databases/rules**: 01 choosing & modeling, 02 schema & migrations, 03 queries & indexes,
   04 transactions & concurrency, 05 reliability & scale, 06 security & compliance, 07 vector & AI,
   08 SurrealDB & multi-model

@@ -73,6 +73,17 @@ Tool selection note: SARIF upload + code-scanning alerts give one triage surface
 Opengrep, CodeQL, and IaC scanners — use it rather than three dashboards, and make "no new
 code-scanning alerts" the required check where the platform supports it.
 
+**Choosing and tuning the tool.** Judge candidates on: coverage of *your* languages and
+frameworks (per language, not per product sheet), analysis depth (pattern matching or
+interprocedural taint, the two layers above), false-positive rate measured on your own
+code, reporting (SARIF into one triage surface), fit with the SDLC (PR diff mode, IDE, CI
+latency), and whether your reviewers can triage its output. Trial two or three on the same
+repositories before committing. Then give the rulebase a **named owner** (CODEOWNERS on the
+rules and config directories): every false positive dismissed in triage goes back to that
+owner as a rule fix, the false-positive rate is tracked per rule, and lint and SAST configs
+are reviewed on a schedule alongside the suppression inventory.
+(OWASP: Code Review Guide v2; SCSVS S2.2.B4)
+
 ## 5.2 Secret scanning
 
 Layered — each layer catches what the previous missed:
@@ -160,6 +171,13 @@ through the full stack), but it's slow — keep it out of the PR path:
   apps). Add endpoints the crawler cannot reach — from traffic, route dumps or JS
   bundles. Declare app-specific parameters and encodings (ZAP script input vectors). Run
   more than one spider or scanner and merge what they find. (OWASP: DSOMM)
+- **Tune the scan policy to the stack; never lower intensity to save time.** Speed comes from
+  where a scan runs (§5.8 tiers), not from a weaker scan. In ZAP's automation framework the
+  `activeScan` job's `policyDefinition` takes `defaultStrength` (Low, Medium, High, Insane)
+  and `defaultThreshold` (Off, Low, Medium, High), both defaulting to Medium: give the
+  scheduled deep scan `High` strength and a `Low` threshold. Switch off checks for
+  technologies the target does not use (a rule `id` with `threshold: Off`), each with a
+  comment saying why. An unexplained `Off` is a suppression (§5.1). (OWASP: DSOMM)
 - Triage pipeline same as everything else: findings → tickets with owners, baseline file
   reviewed in PRs (a growing ignored-alerts baseline is the DAST version of mute culture).
 
@@ -243,6 +261,8 @@ remove it. Diff-aware modes, caching, and tiering are how gates survive.
 - [ ] IaC scanning on PRs (plan-aware where possible) with the high-signal defaults non-exceptable; custom org policies versioned + tested
 - [ ] DAST baseline on staging per merge, authenticated scans scheduled, OpenAPI-fed; baseline file changes reviewed
 - [ ] **DAST covers every role and client-rendered routes (§5.4), Medium:** in the ZAP plan `grep -c -E 'type:[[:space:]]*(spiderAjax|spiderClient)' zap.yaml` and `grep -c -E '^[[:space:]]*users:' zap.yaml` are not `0`, with one user per role
+- [ ] **SAST rules have an owner and a tuning loop (§5.1), Low:** `grep -n -E '^/?(\.semgrep|\.opengrep|\.github/codeql)/' .github/CODEOWNERS` (or the repo's CODEOWNERS path) is non-empty; dismissed false positives are routed to the owner and the per-rule FP rate is tracked
+- [ ] **Deep DAST scan not throttled; disabled checks justified (§5.4), Medium:** `grep -n -i -E 'defaultStrength:[[:space:]]*low|defaultThreshold:[[:space:]]*high|threshold:[[:space:]]*off[[:space:]]*$' zap.yaml` over the deep-scan plan is empty (an `Off` with a trailing reason comment does not match)
 - [ ] **Agent PR gates (§5.6), High:** `git diff --name-only origin/main...HEAD | grep -E '(^|/)(package-lock\.json|pnpm-lock\.yaml|yarn\.lock|go\.sum|Cargo\.lock|poetry\.lock|uv\.lock)$|^\.github/|^\.gitlab-ci\.yml$|(^|/)tests?/|_test\.go$'` hits force a required reviewer; `git diff --name-only origin/main...HEAD | xargs rg -n '[\x{202A}-\x{202E}\x{2066}-\x{2069}\x{200B}-\x{200D}\x{FEFF}]'` fails the check on any hit
 - [ ] License gate covers transitive deps (SBOM-based) and license *changes* on upgrades; unknown licenses block
 - [ ] All gates are required checks by exact name; no `continue-on-error`/`|| true`/soft-fail on gate steps; path-filtered required checks have no-op fallbacks; rulesets apply to admins; merge queue (or equivalent) re-validates merge results

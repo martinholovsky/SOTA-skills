@@ -177,6 +177,20 @@ What the registry *pulls from upstream* is as much an attack surface as what it 
   is **enforced at admission** by **sota-kubernetes** (registry allowlist) — reference it; do not
   duplicate the policy here. The registry-side half is: make your registry the only one that has
   what prod needs, so the allowlist is enforceable without breaking deploys.
+- **Verify what the proxy serves against the authoritative upstream.** A pull-through cache
+  is a man-in-the-middle you operate: poisoned or compromised, it hands tampered bytes to
+  every consumer. Keep verification end to end, against values that did **not** come from
+  the proxy: lockfile hashes (rules/03 §3.1), image signatures and digests (rules/02 §2.3),
+  and for Go the checksum database, which the module reference describes as "a Transparent
+  Log (or 'Merkle Tree') of go.sum line hashes" (so never `GOSUMDB=off` behind a proxy).
+  A scheduled job re-fetches a sample of cached artifacts from upstream and compares
+  digests. (OWASP: SCVS 4.2)
+- **Purge a version named in a malicious-package advisory.** The cache's immutability, the
+  feature that survives an unpublish, also keeps a malicious version alive after the
+  registry removes it. When a `MAL-` advisory (OSV, fed by the OpenSSF malicious-packages
+  feed) names a version: delete it from the proxy cache, block it at the proxy so no
+  resolve can fetch it again, and use the proxy's fetch log to find who already pulled it
+  (rules/07 §7.3.1). (OWASP: DSOMM)
 - **Mirroring / air-gap.** For air-gapped or sovereignty-constrained environments, mirror the
   full dependency closure (bases, sidecars, operators) into your registry and cut external pull
   paths entirely — the allowlist then has nowhere else to go.
@@ -263,6 +277,7 @@ Hunt patterns in brackets.
 - [ ] Upstream pulls go through a **pull-through cache**; internal image names cannot fall through
   to public (image-layer dependency confusion); allowed-registries enforced (sota-kubernetes)
   [direct `docker.io/...` pulls in manifests; proxy fall-through for internal namespaces]
+- [ ] **Proxy contents verified; malicious versions purged (§8.5), High:** clients verify hashes/signatures from sources other than the proxy (no `GOSUMDB=off`); for each cached package version, `curl -s -d '{"package":{"name":"<pkg>","ecosystem":"npm"},"version":"<ver>"}' https://api.osv.dev/v1/query | jq -r '.vulns[]?.id | select(startswith("MAL-"))'` prints nothing, and any hit is deleted and blocked at the proxy
 - [ ] Retention/GC **excludes digests referenced by running workloads** + release artifacts +
   their attestations [tag-age GC with no live-digest exclusion → ImagePullBackOff risk]
 - [ ] Registry is **HA + backed up + restore-tested**; treated as tier-0 [single copy of release

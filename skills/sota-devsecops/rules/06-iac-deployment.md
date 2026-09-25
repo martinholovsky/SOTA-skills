@@ -178,6 +178,30 @@ Audit shortcut: `kubectl get appproject default -o yaml` — if real apps sit in
 `default` project (sourceRepos `*`, destinations `*`), every repo write anywhere becomes
 potential cluster-admin (High).
 
+### 6.4.1 IaC dependencies: providers, modules and charts
+
+Terraform providers, modules and Helm charts run with your cloud or cluster credentials, so
+they get the lockfile, pinning, scanning and update discipline of rules/03.
+
+- **Commit `.terraform.lock.hcl`.** HashiCorp's docs say to keep it in version control. It
+  records **providers only**: "Terraform does not remember version selections for remote
+  modules". Pre-populate hashes for every platform that runs Terraform (`terraform providers
+  lock -platform=linux_amd64 -platform=darwin_arm64`), and run CI with `terraform init
+  -lockfile=readonly`, which verifies checksums against the lock and refuses to change it.
+- **Pin module sources in the source itself**: registry modules with an exact `version =`;
+  git modules with `?ref=<full commit SHA>` (checkov `CKV_TF_1`: "Ensure Terraform module
+  sources use a commit hash"). A git source with no `ref`, or a branch `ref`, is an unpinned
+  dependency. For Helm, pin chart versions (§6.4) and commit the `Chart.lock` that `helm
+  dependency update` writes.
+- **Scan what the modules contain, not only your HCL.** IaC scanners can follow module
+  sources: in a local test, `trivy config` (0.72.0) downloaded a registry module and
+  reported findings inside it. Review module and chart diffs on upgrade (rules/15 §15.3).
+- **Automate updates.** Renovate's `terraform` manager bumps module and provider versions
+  and supports `lockFileMaintenance` for `.terraform.lock.hcl`; its `helmv3`, `helm-values`,
+  `helmfile`, `argocd` and `flux` managers cover charts and GitOps manifests. Dependabot has
+  `terraform`, `opentofu` and `helm` ecosystems. Apply the cooldown and review rules of
+  rules/03 §3.7. (OWASP: DSOMM; Infrastructure as Code Security cheat sheet)
+
 ## 6.5 Progressive delivery & rollback readiness
 
 Deployment strategy is a security control: blast-radius limitation for bad code is
@@ -187,6 +211,13 @@ blast-radius limitation for compromised code.
   *metrics* (error rate, latency, business KPI), auto-rollback on regression. A "canary"
   that a human eyeballs and promotes by feel is a slow rollout, not a canary — define the
   AnalysisTemplate.
+- **Security signals gate promotion too.** Next to the SLI analysis, run a DAST smoke test
+  against the canary and read the runtime detector's alerts for the canary pods; either one
+  aborts the rollout and rolls back. Argo Rollouts' Job metric provider treats a metric as
+  successful only "if the Job completes and had an exit code of zero", so a ZAP baseline
+  scan in a Job fails the analysis on a FAIL (exit 1) and, unless run with `-I`, on
+  warnings (exit 2). Runtime alerts enter as a Prometheus metric that must stay at zero.
+  (OWASP: DSOMM)
 - **Blue/green** where canary is impractical (schema-coupled, session-heavy): keep the
   idle stack for instant rollback; the cutover and rollback are both one routing change —
   and *test the rollback path*, not just the cutover.
@@ -279,6 +310,8 @@ looks dead. Zone-wide scanning for danglers is `sota-cloud-infrastructure` rules
 - [ ] GitOps repo protected like prod (reviews, CODEOWNERS per env path); Argo/Flux RBAC + AppProject/destination constraints; Argo NetworkPolicies enabled — repo-server gRPC is unauthenticated with an unpatched public RCE (mid-2026); no plaintext secrets in repos (ESO/SOPS/Sealed); third-party charts/manifests pinned by version/digest
 - [ ] Image automation constrained to digest bumps of signed images with a path-scoped token
 - [ ] Progressive delivery with automated metric analysis and auto-rollback; blue/green rollback path tested; feature flags have owners/expiry and audited control plane
+- [ ] **IaC dependencies locked and pinned (§6.4.1), High:** `.terraform.lock.hcl` is committed next to each root module and CI runs `terraform init -lockfile=readonly`; `grep -rn -E '^[[:space:]]*source[[:space:]]*=[[:space:]]*"(git::|git@|github\.com/|bitbucket\.org/)' --include='*.tf' . | grep -v -E '[?&]ref=[0-9a-f]{40}'` is empty; the update bot's config covers Terraform, Helm and GitOps files
+- [ ] **Canary promotion gated on security signals (§6.5), Medium:** `yq 'select(.kind == "AnalysisTemplate" or .kind == "ClusterAnalysisTemplate") | .spec.metrics[] | select(.provider.job) | .name' <rollout-manifests>/*.yaml` names a DAST smoke metric, and a runtime-alert metric is part of the canary analysis
 - [ ] Rollback: previous digests retained and re-deployable via pipeline; migrations expand/contract (N-1 compatible); rollback drilled within the last quarter
 - [ ] Build-once-promote-many by digest; env config deltas declared in git and reviewable; previews isolated with non-prod roles; staging data masked/synthetic
 - [ ] **Teardown removes DNS first (§6.7), High:** every decommission path deletes the records aimed at the resource and fails unless `dig +short CNAME <name>` (and `dig +short <name>` for alias/A records) returns nothing for each; any record whose target gives `dig <target> | grep 'status: NXDOMAIN'` is a live takeover candidate

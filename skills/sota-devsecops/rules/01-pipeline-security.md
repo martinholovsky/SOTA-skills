@@ -339,7 +339,9 @@ configuration is usually valid YAML with no expression in it.
   workflow *every* secret in scope. Pass each secret explicitly with `secrets:`
   (least privilege), and pin the reusable workflow by SHA (§1.8).
 - Scope: org secret < repo secret < environment secret. Push every prod credential down to
-  an environment with required reviewers.
+  an environment with required reviewers. **Inside the job, inject a secret through `env:` on
+  the one step that uses it**, never workflow- or job-level `env:`, where every step,
+  including third-party actions, receives it. (OWASP: GitHub Actions Security cheat sheet)
 - No secrets in `if:` conditions or step outputs (outputs are visible to later steps of
   other jobs via needs-context and stored in logs metadata).
 - Rotate on any workflow-compromise suspicion; assume any secret present in a job's env at
@@ -482,3 +484,4 @@ durable verdict everywhere (`rules/11` §4), not just where it was first fixed.
 - [ ] **No interactive debug path into production runners (§1.10), High:** `grep -rn -E 'tmate|upterm|debugger-action|pods/exec|pods/attach' .github/workflows <runner-RBAC-dir>` is empty; `gh variable list` and `gh secret list` show no `ACTIONS_STEP_DEBUG`/`ACTIONS_RUNNER_DEBUG`
 - [ ] **Third-party actions inventoried and vetted (§1.3), Medium:** `grep -rhn -E 'uses:[[:space:]]*[A-Za-z0-9_-][A-Za-z0-9_.-]*/' .github/workflows | grep -v -E 'uses:[[:space:]]*(actions|github)/'` — each hit has an upstream-health record, or is replaced by a `gh` step
 - [ ] No secrets echoed, embedded in URLs, or passed through step outputs; rotation path documented
+- [ ] **Secrets scoped to the step (§1.10), Medium:** `yq '(.env // {} | to_entries | .[] | select(.value | tostring | test("secrets\.")) | "workflow env: " + .key), (.jobs // {} | to_entries | .[] | .key as $j | .value.env // {} | to_entries | .[] | select(.value | tostring | test("secrets\.")) | "job " + $j + " env: " + .key)' .github/workflows/*.yml` prints nothing

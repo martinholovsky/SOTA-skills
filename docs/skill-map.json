@@ -236,24 +236,12 @@
   ],
   "edges": [
     {
-      "from": "sota-llm-engineering",
-      "to": "sota-code-security",
-      "weight": 24,
-      "targets": [
-        "rules/07",
-        "rules/08",
-        "rules/08 \u00a74",
-        "rules/09 \u00a74",
-        "rules/10",
-        "rules/13 \u00a74a",
-        "rules/14 \u00a73"
-      ]
-    },
-    {
       "from": "sota-devsecops",
       "to": "sota-code-security",
-      "weight": 23,
+      "weight": 25,
       "targets": [
+        "rules/01 \u00a76",
+        "rules/01 \u00a78",
         "rules/08",
         "rules/10",
         "rules/11 \u00a72.2",
@@ -265,6 +253,20 @@
         "rules/15",
         "rules/15 \u00a72",
         "rules/15 \u00a72.2"
+      ]
+    },
+    {
+      "from": "sota-llm-engineering",
+      "to": "sota-code-security",
+      "weight": 24,
+      "targets": [
+        "rules/07",
+        "rules/08",
+        "rules/08 \u00a74",
+        "rules/09 \u00a74",
+        "rules/10",
+        "rules/13 \u00a74a",
+        "rules/14 \u00a73"
       ]
     },
     {
@@ -579,6 +581,12 @@
       ]
     },
     {
+      "from": "sota-devsecops",
+      "to": "sota-network-security",
+      "weight": 7,
+      "targets": []
+    },
+    {
       "from": "sota-identity-access",
       "to": "sota-network-security",
       "weight": 7,
@@ -727,6 +735,16 @@
         "rules/08",
         "rules/14 \u00a76",
         "rules/15 \u00a72.1"
+      ]
+    },
+    {
+      "from": "sota-devsecops",
+      "to": "sota-golang",
+      "weight": 6,
+      "targets": [
+        "rules/07 \u00a74",
+        "rules/08",
+        "rules/08 \u00a71"
       ]
     },
     {
@@ -980,12 +998,12 @@
     },
     {
       "from": "sota-devsecops",
-      "to": "sota-golang",
+      "to": "sota-rust",
       "weight": 4,
       "targets": [
-        "rules/07 \u00a74",
-        "rules/08",
-        "rules/08 \u00a71"
+        "rules/05 \u00a72",
+        "rules/07 \u00a71a",
+        "rules/07 \u00a75"
       ]
     },
     {
@@ -1259,6 +1277,20 @@
     },
     {
       "from": "sota-devsecops",
+      "to": "sota-detection-engineering",
+      "weight": 3,
+      "targets": []
+    },
+    {
+      "from": "sota-devsecops",
+      "to": "sota-secrets-management",
+      "weight": 3,
+      "targets": [
+        "rules/04"
+      ]
+    },
+    {
+      "from": "sota-devsecops",
       "to": "sota-javascript-typescript",
       "weight": 3,
       "targets": [
@@ -1268,15 +1300,17 @@
     },
     {
       "from": "sota-devsecops",
-      "to": "sota-network-security",
+      "to": "sota-sandboxing",
       "weight": 3,
       "targets": []
     },
     {
       "from": "sota-devsecops",
-      "to": "sota-sandboxing",
+      "to": "sota-ruby",
       "weight": 3,
-      "targets": []
+      "targets": [
+        "rules/04 \u00a73.1"
+      ]
     },
     {
       "from": "sota-docs-workflow",
@@ -1608,11 +1642,9 @@
     },
     {
       "from": "sota-devsecops",
-      "to": "sota-secrets-management",
+      "to": "sota-identity-access",
       "weight": 2,
-      "targets": [
-        "rules/04"
-      ]
+      "targets": []
     },
     {
       "from": "sota-docs-workflow",
@@ -2130,12 +2162,6 @@
     },
     {
       "from": "sota-devsecops",
-      "to": "sota-detection-engineering",
-      "weight": 1,
-      "targets": []
-    },
-    {
-      "from": "sota-devsecops",
       "to": "sota-architecture",
       "weight": 1,
       "targets": [
@@ -2160,14 +2186,6 @@
     },
     {
       "from": "sota-devsecops",
-      "to": "sota-rust",
-      "weight": 1,
-      "targets": [
-        "rules/07 \u00a71a"
-      ]
-    },
-    {
-      "from": "sota-devsecops",
       "to": "sota-performance",
       "weight": 1,
       "targets": [
@@ -2176,9 +2194,23 @@
     },
     {
       "from": "sota-devsecops",
-      "to": "sota-identity-access",
+      "to": "sota-privacy-compliance",
       "weight": 1,
       "targets": []
+    },
+    {
+      "from": "sota-devsecops",
+      "to": "sota-ml-engineering",
+      "weight": 1,
+      "targets": []
+    },
+    {
+      "from": "sota-devsecops",
+      "to": "sota-python",
+      "weight": 1,
+      "targets": [
+        "rules/08 \u00a71"
+      ]
     },
     {
       "from": "sota-docs-workflow",
