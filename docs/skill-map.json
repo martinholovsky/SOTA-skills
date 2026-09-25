@@ -2721,7 +2721,7 @@
       "to": "sota-dotnet",
       "weight": 1,
       "targets": [
-        "rules/04"
+        "rules/06 \u00a73"
       ]
     },
     {
