@@ -250,6 +250,22 @@ except StorageError:
 - Shadowing builtins (`list`, `id`, `type`, `input`) — rename (ruff A).
 - String building in loops: collect + `"".join(parts)` (perf details rules/06).
 - `round()` is banker's rounding; money math uses `Decimal` with explicit quantize.
+- **Non-finite numbers from input.** `float()` accepts `"nan"`, `"inf"`, `"Infinity"` in any
+  case and with surrounding whitespace; `Decimal("NaN")`/`Decimal("Infinity")` parse too, and
+  `json.loads` accepts bare `NaN`/`Infinity`/`-Infinity` by default. Every float comparison
+  with NaN is `False`, so `if x < lo or x > hi: raise` lets NaN through (measured, 3.14).
+  After parsing, reject with `math.isfinite(x)` / `d.is_finite()`; pass `json.loads(...,
+  parse_constant=<raising fn>)` and `json.dumps(..., allow_nan=False)`.
+- **Division and the extremes.** `/`, `//`, `%` by zero raise `ZeroDivisionError` for int
+  *and* float; `Decimal` raises `DivisionByZero`/`InvalidOperation` under the default traps
+  — guard the divisor so the error is a 4xx, not a 500. `int` never overflows (`MIN // -1`
+  and `-MIN` are exact), so the risks move: `int(float("inf"))` raises `OverflowError`,
+  `1e308 * 10` silently becomes `inf`, `timedelta(seconds=huge)` raises, and a float-built
+  unit conversion (`int(secs * 1e9)`) loses precision — do it in `int` or `Decimal`.
+  Fixed-width values reappear at C boundaries: numpy `int64` arrays wrap silently on
+  add/negate (even under `np.errstate(over="raise")`, which only traps scalars), and
+  `struct.pack("<q", ...)`/DB `BIGINT` reject out-of-range — range-check before them.
+  (OWASP: Go-SCP general coding practices; SCSVS arithmetic.)
 - Don't mutate a list/dict while iterating it — iterate a copy or build a new one.
 
 ## 13. Public API surface — what you are promising
@@ -371,3 +387,9 @@ own deprecations without noticing.
       `0.1000000000000000055511151231257827021181583404541015625`; pass the string `'0.1'`) ;
       `grep -rniE '(price|amount|total|balance|cost|fee)[a-z_]*[[:space:]]*(:[[:space:]]*float|=[[:space:]]*float\()' --include='*.py' src/`
       (a money value typed or parsed as `float`)
+- [ ] **NaN/Infinity accepted from input, divide-by-zero unguarded (§12) — MEDIUM, HIGH where
+      the number is a limit, price or quota** —
+      `grep -rlE '(float|Decimal)\([a-z_]' --include='*.py' src/ | xargs -r grep -LE 'isfinite|is_finite'`
+      (files parsing numbers with no finiteness check) ;
+      `grep -rn 'json\.loads(' --include='*.py' src/ | grep -v 'parse_constant'`
+      (JSON that accepts bare `NaN`) — then read each `/`, `//`, `%` on a caller value

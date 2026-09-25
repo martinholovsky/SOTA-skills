@@ -34,6 +34,23 @@ the type system, and expression-oriented code**. References:
   and `valueOf(0.1)` are `0.1`. `equals` compares scale (`1.0` equals `1.00` is `false`;
   `compareTo` is `0`), and a `divide` without a scale and `RoundingMode` throws
   `ArithmeticException` on `1/3`. Money is never `double`.
+- **Arithmetic edge cases: reject non-finite input, use the `Math.*Exact` family at the
+  extremes.** Measured on JDK 25 and 21: `Double.parseDouble` (and Kotlin's `String.toDouble()`,
+  which calls it) accepts `"NaN"`, `"Infinity"`, `"-Infinity"`, padded `" NaN "`, hex `"0x1p3"`,
+  and returns `Infinity` for `"1e400"`; lowercase `"nan"`/`"inf"` throw. Every comparison with
+  NaN is false, so `if (x < min || x > max) reject()` lets NaN through, and `(long) NaN` is `0`.
+  Call `Double.isFinite(x)` (Kotlin `x.isFinite()`) *before* the range check; `Math.clamp`
+  (21+) passes NaN straight through. Integer `/` and `%` by zero throw `ArithmeticException`
+  (so does `BigDecimal.divide` by zero), but `double` division yields `Infinity`: guard the
+  divisor explicitly. Plain `int`/`long` ops wrap silently: `Integer.MIN_VALUE / -1`, `-MIN_VALUE`
+  and `Math.abs(MIN_VALUE)` all return `MIN_VALUE` (so `Math.abs(hashCode()) % n` can be
+  negative; use `Math.floorMod`). Use `Math.addExact`/`subtractExact`/`multiplyExact`/
+  `negateExact`/`toIntExact`, `absExact` (15+) and `divideExact`/`floorDivExact` (18+), which
+  throw on overflow, or `long`/`BigInteger` for a multi-term product (`qty * priceCents / 1000`
+  on `int` returned `705032` for `1_000_000 * 5_000`). Unit conversion: `secs * 1_000_000_000L`
+  wraps, `TimeUnit.SECONDS.toNanos(x)` *saturates* to `Long.MAX_VALUE` without telling you, and
+  `Duration.ofSeconds(x).toNanos()` throws: pick the throwing form, or bound `x` first. (OWASP
+  Go-SCP general coding practices; OWASP SCSVS arithmetic.)
 
 ## 2. Modern Kotlin idioms (2.x)
 
@@ -110,4 +127,10 @@ the type system, and expression-oriented code**. References:
       (a double literal, or a variable whose type you then check) ;
       `grep -rnE '\.divide\([^,()]*\)|BigDecimal[^;]*\.equals\(' --include='*.java' --include='*.kt' .`
       (a divide with no scale or `RoundingMode`; scale-sensitive equality)
+- [ ] **Arithmetic edge cases: NaN/Infinity input, overflow at MIN_VALUE, unit conversion (§1) —
+      MEDIUM, HIGH on money, quota or timeout paths** —
+      `grep -rlE 'Double\.(parseDouble|valueOf)\(|Float\.(parseFloat|valueOf)\(|\.to(Double|Float)(OrNull)?\(\)' --include='*.java' --include='*.kt' . | while IFS= read -r f; do grep -qE 'isFinite|isNaN' "$f" || echo "$f"; done`
+      (a file that parses a float and never checks finiteness) ;
+      `grep -rnE 'Math\.abs\([^;]*hashCode\(\)|TimeUnit\.[A-Z]+\.to(Nanos|Micros|Millis)\(|\*[[:space:]]*1_?000_?000' --include='*.java' --include='*.kt' .`
+      (`abs` of a hash that can be `MIN_VALUE`; a saturating or hand-rolled unit conversion)
 - [ ] **Analyzer enforcement Error Prone + NullAway (Java); detekt + ktlint (Kotlin)**

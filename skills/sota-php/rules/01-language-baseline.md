@@ -128,6 +128,22 @@ fallthrough hazards).
   `BcMath\Number` (PHP 8.4+). `round()` defaults to half away from zero; the
   `RoundingMode` enum (8.4+) and `PHP_ROUND_HALF_EVEN` name the others. `json_decode` turns
   an integer above `PHP_INT_MAX` into a `float` unless `JSON_BIGINT_AS_STRING` is passed.
+- **Arithmetic edge cases: validate finiteness, guard divisors, never trust int overflow.**
+  Measured on PHP 8.5: the strings `"nan"`/`"INF"`/`"Infinity"` are not numeric (they cast to
+  `0.0`), but `(float)"1e999"` and `floatval()` return `INF` and `is_numeric("1e999")` is true.
+  `FILTER_VALIDATE_FLOAT` rejects `"1e999"`, so parse request floats with `filter_var()` rather
+  than a cast. NaN still arrives from arithmetic (`fmod($x, 0)`, `sqrt(-1)`, `INF - INF`), and
+  every comparison with it is false, so `if ($x < 0 || $x > 100) reject();` lets NaN through:
+  gate on `is_finite($x)` first (false for both NaN and ±INF). `/`, `%` and `intdiv()` throw
+  `DivisionByZeroError` on a zero divisor, even `1.0 / 0`; only `fdiv()` returns INF/NaN.
+  Check the divisor before dividing instead of catching the error.
+  `intdiv(PHP_INT_MIN, -1)` throws `ArithmeticError`, but `PHP_INT_MIN / -1`, `-PHP_INT_MIN`, `abs(PHP_INT_MIN)`, `PHP_INT_MAX + 1` and a
+  seconds-to-nanoseconds `$s * 1_000_000_000` **silently become `float`**, losing precision
+  (php.net). Casting that back with `(int)` gives an undefined result (8.5 warns; measured
+  `(int)1e19` is `-8446744073709551616`). PHP has no checked-int operators, so check the
+  result with `is_int()`, let an `int` parameter reject it (a `float` of that size is a
+  `TypeError` in both typing modes), or do the maths in GMP (`gmp_mul`) or bcmath.
+  Refs: OWASP Go-SCP (general coding practices), OWASP SCSVS (arithmetic).
 
 ## 4a. In-band sentinels — `strpos` is the textbook case
 
@@ -274,6 +290,12 @@ Run from repo root; verify each hit manually.
       (scaled to minor units by a truncating cast) ;
       `grep -rnE 'bc(add|sub|mul|div|mod|pow)\([^,()]*,[^,()]*\)' --include='*.php' src/`
       (no scale argument: `bcmath.scale` decides, and it is `0` by default)
+- [ ] **Non-finite (NaN/INF) request floats and int overflow (§4) — MEDIUM, HIGH on an
+      amount, limit or quantity** —
+      `grep -rnE '(\(float\)|floatval\()[[:space:]]*\$(_(GET|POST|REQUEST|COOKIE)|request->)' --include='*.php' src/`
+      (a cast accepts `"1e999"` as INF; confirm `FILTER_VALIDATE_FLOAT` plus `is_finite()`
+      before any range check, a divisor check before `/`, `%`, `intdiv()`, and `is_int()` or
+      GMP/bcmath on products that can pass `PHP_INT_MAX`)
 - [ ] **strpos truthiness bug** — `grep -rnE 'if\s*\(\s*!?\s*strpos\(' --include='*.php' src/`
 - [ ] **Error suppression and silent JSON** —
       `grep -rn '@' --include='*.php' src/ | grep -E '@\s*[a-z_]+\(' | grep -v '//'` ;

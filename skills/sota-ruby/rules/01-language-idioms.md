@@ -205,6 +205,27 @@ Rules:
   remainder, or use `Rational`, deliberately. `Float#round` and `BigDecimal#round` default
   to half away from zero (`2.5` gives `3`; `half: :even` selects banker's). `JSON.parse`
   returns a `Float` for `0.1` unless given `decimal_class: BigDecimal`.
+- **Non-finite numbers get in through the side door; reject them by name.** Measured on
+  Ruby 4.0.6: `Float("NaN")` and `Float("Infinity")` raise `ArgumentError`, but
+  `Float("1e400")`, `"1e400".to_f` and `JSON.parse("[1e400]")` all yield `Infinity`, and
+  `BigDecimal("NaN")` / `BigDecimal("Infinity")` parse without complaint. Every `<`/`>`
+  against `NaN` is `false`, so `x < min || x > max` lets a `NaN` through, while
+  `Comparable#between?` and `clamp` raise `ArgumentError` on it. After parsing, require
+  `v.finite?` (both `Float` and `BigDecimal` have it; `nan?`/`infinite?` for detail).
+- **Division by zero depends on the type.** `Integer#/`, `%` and `divmod` raise
+  `ZeroDivisionError`; `Float#/` and `Integer#fdiv` return `Infinity`/`NaN`; `BigDecimal`
+  returns `Infinity`/`NaN` under its default mode (verified: `BigDecimal("1")/0` is
+  `Infinity`) unless `BigDecimal.mode(BigDecimal::EXCEPTION_ZERODIVIDE, true)`. Guard the
+  divisor explicitly on float/decimal paths; `to_i`/`round` on a non-finite raise
+  `FloatDomainError`, far from the cause.
+- **`Integer` never overflows; the boundary it crosses does.** `(-2**63) / -1` and
+  `-(-2**63)` are plain bignums (verified), so the risk sits where a value leaves Ruby at
+  a fixed width: `Array#pack` wraps silently (`[2**64 + 5].pack("Q")` unpacks as `5`;
+  `[2**31].pack("l")` as `-2147483648`), as can a DB column, FFI or wire field. Range-check
+  before packing. Durations: take `Process.clock_gettime(Process::CLOCK_MONOTONIC,
+  :nanosecond)` (an `Integer`) rather than scaling float seconds, which lose integer
+  precision past 2**53 (`(2**53 + 1).to_f.to_i` is `2**53`). (OWASP Go-SCP, general coding
+  practices; OWASP SCSVS, arithmetic.)
 - Equality: `==` for values, `equal?` only for identity, `eql?`+`hash` pair
   when used as Hash keys.
 - `method_missing` requires a matching `respond_to_missing?`; prefer
@@ -271,6 +292,11 @@ failed to hide, not what you exported:
       (scaled to cents by truncation) ;
       `grep -rn 'JSON\.parse' --include='*.rb' app/ lib/ | grep -v 'decimal_class'`
       (decimals arrive as `Float`: read the call sites on money paths)
+- [ ] **NaN/Infinity, division by zero and fixed-width overflow (§7) — MEDIUM, HIGH on
+      limits, money or wire formats** —
+      `grep -rnE '(Float|BigDecimal)\(|\.to_f([^a-z0-9_]|$)|\.pack\(' --include='*.rb' app/ lib/ | grep -vE 'finite\?|between\?'`
+      (a locator: each hit parses a float/decimal with no `finite?` or packs an integer with
+      no range check on that line; read the next lines before calling it a finding)
 - [ ] **Load-path hacks instead of `require_relative` (§7) — LOW, MEDIUM in a gem** —
       `grep -rnE 'require[[:space:]]+.\.\.?/|\$LOAD_PATH|\$:[[:space:]]*(<<|\.unshift)' --include='*.rb' app/ lib/`
       (`require './x'` resolves against the process's working directory, not the file:

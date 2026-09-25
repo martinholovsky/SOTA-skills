@@ -229,7 +229,9 @@ CONCEPTS = [
     # matching), and `rounding` lit js/ts from "surrounding". Neither changed a cell.
     ("numeric precision & money", "universal",
      r"float(ing)? (point|money)|decimal|(?<!sur)rounding|money|\bcurrency|bigint|bigdecimal|"
-     r"tofixed|precision loss|integer division"),
+     r"tofixed|precision loss|integer division|"
+     # ROADMAP 66 step 3b (2026-09-25): arithmetic edge cases folded into this concept.
+     r"nan[^a-z]|infinit|divi(de|sion) by zero|divide-by-zero|int_min|min_value"),
     ("date, time & timezone", "universal",
      r"timezone|\btz\b|\butc\b|\bdst\b|daylight|monotonic|time\.now|datetime|leap second|"
      r"epoch|wall[- ]clock (interval|time|read|for)|(steady|system|high_resolution)_clock|"

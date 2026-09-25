@@ -32,6 +32,27 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
   `(decimal)(0.1 + 0.2)` is `0.3`), so converting late hides the binary error instead of
   removing it: keep the value `decimal` from parse to storage (`decimal.Parse`,
   `JsonElement.GetDecimal`).
+- **A float from input is checked for finiteness; integer maths at the extremes is `checked`.**
+  All measured on the .NET 10 SDK image. `double.Parse`/`double.TryParse` (and `float`) under
+  the invariant culture accept `"NaN"`, `"nan"`, `"Infinity"` and `"-Infinity"`, and turn
+  `"1e400"` into `Infinity` instead of failing; `decimal.Parse` rejects all of them. Every
+  comparison with `NaN` is false, so `x < min || x > max` lets it through and
+  `Math.Clamp(double.NaN, 0, 100)` returns `NaN`: test `double.IsFinite(x)` first, on the same
+  line as the parse. `System.Text.Json` refuses the string `"NaN"` by default but reads it once
+  `JsonNumberHandling.AllowReadingFromString` is on, and `JsonSerializerOptions.Web` sets
+  exactly that flag. **Division:** `int`, `long` and `decimal` by zero throw
+  `DivideByZeroException`; `double` by zero returns `Infinity` or `NaN` without a sound, so
+  guard a float divisor. **Overflow:** C# arithmetic is unchecked unless you ask, so
+  `int.MaxValue + 1` and `-int.MinValue` both silently yield `int.MinValue`, while
+  `int.MinValue / -1`, `int.MinValue % -1` and `Math.Abs(int.MinValue)` throw
+  `OverflowException` even unchecked. A unit conversion is the quiet case: seconds from input
+  times `TimeSpan.TicksPerSecond` wraps to a negative tick count. Wrap multi-term and
+  unit-conversion expressions in `checked(...)`, narrow with `int.CreateChecked` (throws) or
+  `int.CreateSaturating` (clamps), or set `<CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>`
+  project-wide, after which `int.MaxValue + 1` throws. An `unchecked` block that stays (hash
+  mixing) carries a comment saying wrapping is intended or naming the bound that rules it out.
+  `decimal` arithmetic throws on overflow in either context. (OWASP: Go Secure Coding
+  Practices, general coding practices; OWASP SCSVS, arithmetic.)
 
 ## 2. Nullable reference types (NRT)
 
@@ -101,6 +122,13 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
       (banker's rounding by default: confirm it is the rule the business names) ;
       `grep -rnE '\((long|int)\)[[:space:]]*\([^;]*\*[[:space:]]*100' --include='*.cs' .`
       (scaled to minor units by a truncating cast)
+- [ ] **NaN/Infinity from input, divide-by-zero, unchecked overflow (§1) — MEDIUM, HIGH when
+      the value bounds money, a quota or a timeout** —
+      `grep -rnE '(double|float|Double|Single)\.(Try)?Parse\(|Convert\.To(Double|Single)\(' --include='*.cs' . | grep -v 'IsFinite'`
+      (a parsed float never tested with `double.IsFinite`: read the range check that follows) ;
+      `grep -rnE 'unchecked[[:space:]]*[({]' --include='*.cs' .` (each needs a stated bound or
+      an intended wrap) ;
+      `grep -rlE '<CheckForOverflowUnderflow>[[:space:]]*true' --include='*.csproj' --include='Directory.Build.props' . || echo "overflow checking off project-wide — look for checked() on arithmetic over input"`
 - [ ] **Legacy idioms — LOW** — `grep -rnE '\bclass\b' --include='*.cs' . | head` (DTOs that
       should be records?); `grep -rnE 'namespace [A-Za-z0-9_.]+\s*\{' --include='*.cs' .`
       (non-file-scoped namespaces)

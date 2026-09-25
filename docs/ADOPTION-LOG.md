@@ -5876,3 +5876,20 @@ live in `probe/` with a `vendor/` decoy and reproduce 7/0.
 **Cap consequence, recorded for step 4:** the language security files are now full —
 `sota-golang` rules/05 **500**, `sota-rust` rules/05 **499**, `sota-javascript-typescript`
 rules/05 **492**, `sota-python` rules/05 **489**. Step 4 cannot add a line to them without a split.
+
+## 2026-09-25 — ROADMAP 66 step 3b: arithmetic edge cases folded into "numeric precision & money"
+
+Operator-approved fold, not a new concept (the floor stays at 33; the concept's matcher widens
+to see the new text). Source theme: arithmetic edge cases (OWASP Go-SCP general coding
+practices; SCSVS arithmetic). All nine extended, next to their existing numeric text, and none
+into a full security file — the brief forbade files at ≥485 lines, so Python and Go placed it in
+their idioms/design files. Each covers: a float parser that accepts `nan`/`inf` from input
+(Python `float()`, Go `strconv.ParseFloat`, Python `json.loads`, Go's `,string` JSON tag) and the
+range check `x < min || x > max` that **passes** a NaN; integer divide-by-zero behaviour and its
+guard; `MIN / -1`, negating `MIN`, intermediate overflow and duration conversions (Go's
+`time.Duration(1e10) * time.Second` is negative — run on 1.27.1); and each language's checked or
+saturating APIs, with unchecked regions (C# `unchecked`, Rust wrapping ops) needing a proven bound.
+
+Probes re-run here: all nine reproduce; .NET's bad fixture adds one advisory line by design and
+its good fixture lists a csproj *because* it enables overflow checking — positive evidence, not
+a finding. **Step 3b is complete**: four new universal concepts pinned (floor 29 → 33) and the fold.

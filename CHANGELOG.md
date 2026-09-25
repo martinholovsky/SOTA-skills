@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Arithmetic edge cases in all nine language skills, folded into "numeric precision &
+  money" (ROADMAP 66 step 3b).**
+  - A float parser accepts NaN/Inf from input, and a range check lets NaN pass.
+  - Integer divide-by-zero, and its guard.
+  - `MIN / -1`, and overflow in duration conversions.
+  - Each language's checked or saturating arithmetic APIs.
 - **Dependency adoption in all nine language skills, pinned in the floor (now 33; ROADMAP
   66 step 3b).**
   - How to vet a new package on each ecosystem's registry, deps.dev and Scorecard.
