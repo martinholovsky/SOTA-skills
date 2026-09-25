@@ -857,9 +857,9 @@
       "to": "sota-golang",
       "weight": 4,
       "targets": [
-        "rules/05",
-        "rules/05 \u00a78",
-        "rules/07 \u00a74"
+        "rules/07 \u00a74",
+        "rules/08",
+        "rules/08 \u00a71"
       ]
     },
     {
@@ -1577,7 +1577,7 @@
       "to": "sota-rust",
       "weight": 2,
       "targets": [
-        "rules/05 \u00a79"
+        "rules/08 \u00a71"
       ]
     },
     {
@@ -2409,7 +2409,7 @@
       "to": "sota-javascript-typescript",
       "weight": 1,
       "targets": [
-        "rules/05"
+        "rules/08"
       ]
     },
     {
