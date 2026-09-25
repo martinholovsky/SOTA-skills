@@ -88,6 +88,14 @@ Out of scope: unfreezing flow cleanup → #901.
 - **Review for what automation can't catch**: design fit, correctness under
   concurrency/failure, missing tests, naming, security, API contract, "should
   this exist." If you're commenting on formatting, the CI config is the bug (§6).
+  **Security is reviewed against a written standard, by someone who knows it**:
+  name the secure-coding guideline the team reviews against (an in-repo checklist
+  or a published one) so "looks safe" has a yardstick, and give security-,
+  compliance- and business-critical paths (auth, crypto, payments, tenant
+  isolation, audit logging) a CODEOWNERS entry naming a security or domain
+  reviewer. CODEOWNERS only *requests* that reviewer; merge blocks only when
+  code-owner review is required on the branch (`sota-devsecops` rules/01 §1.8).
+  (OWASP: Code Review Guide v2)
 - **Know when to take it offline.** Three back-and-forth rounds on one thread
   means the medium failed: call/pair, then record the conclusion in the thread
   for the archaeologists.
@@ -348,4 +356,10 @@ claim that turns out to be false still burns the credibility.
       approver. Probe: `grep -L -i -E 'ai tool|model version|assisted-by'
       .github/pull_request_template.md` prints the template's name when no such field
       exists. A missing template is also a finding.
+- [ ] **(Medium) Security-critical paths route to a qualified reviewer against a
+      written standard** (§3): the team names its secure-coding guideline, and
+      CODEOWNERS covers auth, crypto, payment and similar paths with a security or
+      domain owner. Probe: `cat .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS
+      2>/dev/null | grep -v '^#' | grep -q -i -E 'auth|secur|crypto|payment|billing'
+      || echo "no security-path owner"`; then confirm code-owner review is required.
 - [ ] Merged PR descriptions are useful in `git log` archaeology (pick 5 from six months ago and try to reconstruct the why).

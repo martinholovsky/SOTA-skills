@@ -121,6 +121,13 @@ Four modes; pick the simplest that works — unary is right ~90% of the time.
 - Rules for any stream:
   - Deadlines still apply; long-lived streams need an explicit max age + graceful
     re-establish (also re-balances load after topology changes).
+  - Cap the **number of messages** a client may send on one stream, alongside
+    per-message size and max age: a stream of many small messages passes a
+    size limit. Over the cap, end the stream with `RESOURCE_EXHAUSTED`, the
+    canonical code for an exhausted per-user resource. The cap is enforced in
+    the handler or a stream interceptor; server options bound message size and
+    connection age, not message count (grpc-go's `ServerOption` set has no
+    per-stream message limit). OWASP: gRPC Security cheat sheet.
   - **Flow control is real backpressure** — never buffer unboundedly around a
     slow receiver; respect the write-availability signal (`onReady`/blocking send).
   - Design resumability at the app layer (resume tokens / cursors in the request)
@@ -215,7 +222,12 @@ message ListOrdersResponse {
   (rate, error-by-code, latency histograms) and trace propagation
   (W3C `traceparent` / OpenTelemetry gRPC instrumentation). `DEADLINE_EXCEEDED`
   and `UNAVAILABLE` rates are your two most important alerts — they precede
-  user-visible outages.
+  user-visible outages. For security, break metrics down **per client identity**
+  too (request rate, and `UNAUTHENTICATED`/`PERMISSION_DENIED` rates) and alert on
+  a spike in authn/authz failures, calls to unknown methods (`UNIMPLEMENTED`)
+  and `RESOURCE_EXHAUSTED` bursts. Per-method totals hide one client probing.
+  Keep the client label bounded (service or tenant ID, not raw IP) so metric
+  cardinality stays manageable. OWASP: gRPC Security cheat sheet.
 
 Reference keepalive alignment (mismatches cause `UNAVAILABLE` storms):
 
@@ -240,6 +252,8 @@ LB / proxy idle timeout          > client keepalive_time  (e.g. 350s ALB default
 - [ ] Status codes used canonically; rich errors via `error_details.proto`; no app errors in `UNKNOWN`/message-string parsing; no internal leak in messages.
 - [ ] Max message sizes configured; large transfers use streaming chunks or signed URLs, not giant unary messages.
 - [ ] Streams: bounded buffering honoring flow control, app-level resume tokens, max stream age, keepalive config consistent with proxies.
+- [ ] Client-streaming and bidi handlers cap messages per stream and end over-cap streams with `RESOURCE_EXHAUSTED` — MEDIUM. Read each handler's receive loop (`Recv()`, `onNext`, `async for`) for a counter.
+- [ ] Metrics per client identity with alerts on authn/authz-failure spikes, `UNIMPLEMENTED` probing and `RESOURCE_EXHAUSTED` bursts — MEDIUM.
 - [ ] Per-RPC L7 load balancing (client-side/mesh/proxy) — not a bare L4 LB; `MAX_CONNECTION_AGE` set.
 - [ ] Standard health service wired to infra; reflection disabled or justified in prod.
 - [ ] TLS/mTLS on all links; per-call authn validated in server interceptors; authz not inferred from transport alone.

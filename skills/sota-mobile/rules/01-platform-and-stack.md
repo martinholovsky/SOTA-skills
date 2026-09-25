@@ -60,6 +60,7 @@ The hybrid middle ground — a native shell around WebViews — buys store prese
 - A policy that ages well: **latest major minus 2** (e.g., iOS 24-equivalent floor under iOS 26; Android floor around API 28–30 depending on market). But check *your* analytics, not global stats — emerging-market Android skews years older than US iOS; enterprise fleets pin old versions.
 - Raising the floor later is cheap: existing users keep the last compatible binary; you stop shipping them new features. Lowering a floor is impossible. Still, don't start lower than your market demands — every supported major is test-matrix cost.
 - Every `if #available` / `Build.VERSION.SDK_INT` branch is a permanent test obligation. A floor of N-2 keeps the matrix at three majors.
+- **The floor is also a security decision.** Users on an OS version that no longer gets security patches are exposed to public exploits your app cannot fix, and a low floor keeps you from relying on security APIs (for example `KeyInfo.getSecurityLevel`, API 31, rules/04 §4.1). Set the floor no lower than the oldest version the vendor still patches, or record the cohort you accept below it. Each monthly Android Security Bulletin names the AOSP versions its fixes land in, and Apple's security releases page lists which OS versions each update covers. For sensitive flows, read `Build.VERSION.SDK_INT` and `Build.VERSION.SECURITY_PATCH` (or the iOS version) and warn, or step up and restrict, on an unpatched or unsupported OS; the server-side attestation verdict (rules/04 §4.5) is the check a modified client cannot fake. OWASP: MASTG-TEST-0245, MASVS-CODE-1.
 
 ```swift
 // BAD: floor set by a developer's personal device
@@ -137,6 +138,7 @@ Create `docs/adr/0001-mobile-stack.md` (or equivalent) capturing: the chosen sta
 - [ ] React Native: within ~2 versions of current stable; New Architecture throughout; Hermes enabled; no dependencies stranded on the removed legacy architecture; custom native code behind one typed boundary.
 - [ ] Flutter: within one stable release of current; design-package versions coherent with SDK; no abandoned plugins.
 - [ ] KMP/CMP: the shared-code boundary is deliberate (logic-only vs shared UI); iOS-specific polish has a named owner; riskiest screens have a native escape hatch.
+- [ ] **MEDIUM** (1.3) The OS floor is no lower than the oldest version the vendor still patches, or the gap is recorded; sensitive flows check version and patch level at runtime. Probe (set FLOOR from the current Android Security Bulletin; the command stops if it is unset): `: "${FLOOR:?set FLOOR to the oldest API level the current Android Security Bulletin patches}"; grep -rhoE 'minSdk(Version)? *=? *\(? *[0-9]+' --include='*.gradle' --include='*.kts' . | grep -oE '[0-9]+$' | awk -v f="$FLOOR" '$1 < f {print "minSdk " $1 " is below the oldest patched API level " f}'`
 - [ ] Plugin/native-module inventory exists with maintenance status per entry.
 - [ ] Team has native Swift + Kotlin capability for store, crash, and build-system work even if the app is cross-platform.
 - [ ] If the product could be a website, someone has written down why it's an app.

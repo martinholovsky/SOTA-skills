@@ -270,6 +270,34 @@ context at a time, strangler-style (§8), with a feature freeze on the replaced
 slice and a kill date for the old path. "Big rewrite, both evolve in parallel"
 fails at a rate that rounds to always.
 
+## 12a. Retire a service completely: find it, tear it down together, remove it from inventory
+
+A service nobody uses still has an open port, a credential and a dependency tree that stops
+getting patches. Retiring one is a routine with its own checklist, not a ticket that says
+"turn it off".
+
+**Rule:** Look for retirement candidates on a schedule, not by accident. The signals are
+traffic (no requests or messages for N weeks), ownership (the owning team is gone or
+disowns it), and a successor that already ships. Every candidate gets a decision:
+retire, keep with a named owner, or merge into something else.
+
+**Rule:** Move consumers off per customer, not by broadcast. List every caller and tenant
+still on the service or on an old version of it, give each one a migration plan and a
+date, and switch the service off only when that list is empty (the API side: `sota-api-design`
+rules/02 §5). Stop supporting a version once no customer runs it.
+
+**Rule:** Tear everything down in one tracked change, in this order: stop traffic, revoke
+its identities and secrets (service accounts, API keys, certificates:
+`sota-identity-access` rules/04, `sota-secrets-management` rules/01 §3), then export or delete
+its data under the retention policy (rules/05 §6). Only after that remove DNS records
+(`sota-devsecops` rules/06 §6.7), firewall and routing rules, queues and topics, and compute,
+and delete the code path. Anything left behind is an orphan nobody will patch.
+
+**Rule:** The last step is taking it out of the inventory of production components, and of
+built artifacts where one is kept (service catalog, CMDB, registry). An inventory entry for
+a dead service hides the real attack surface. A running thing with no entry is worse: a
+shadow service. (OWASP: DSOMM, SAMM)
+
 ## 13. Architecture review cadence
 
 **Rule:** Review the architecture on triggers, not just calendars: 10x traffic
@@ -296,6 +324,15 @@ tied to a measurable symptom (incident class, lead-time drag, cost line).
       (*what, how often*), and that frequency was checked against the ADRs and contributor
       docs (§4). A control whose per-use cost contradicts a decision already in force is a
       finding even though it works.
+
+- [ ] **Retired services are fully gone and out of the inventory (§12a), Medium:** list
+      catalog entries marked for retirement with
+      `grep -rnE '^[[:space:]]*lifecycle:[[:space:]]*"?deprecated' --include=catalog-info.yaml .`
+      (Backstage `spec.lifecycle`; other catalogs have their own field). Each hit needs an
+      owner, a consumer-migration list and a date. Then take one service retired in the last
+      year and look for anything it left behind: DNS records, identities, secrets, queues,
+      firewall rules, images. Each leftover is a finding (High if it is a credential or a
+      DNS record that still resolves).
 
 - Is there a written rationale (ADR) for the current architecture style, with consequences and alternatives?
 - Could this system be a modular monolith? If it's microservices, can the team name the measured force that justified each extraction?

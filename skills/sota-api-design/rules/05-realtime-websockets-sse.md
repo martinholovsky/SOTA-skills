@@ -73,6 +73,15 @@ Decision rules:
   and drop only the subscriptions no longer allowed. Test it: log out in one tab
   and assert the socket in another closes within seconds.
   OWASP: WebSocket Security cheat sheet.
+- **Do not tunnel raw TCP services over a browser-reachable socket** (VNC, SSH,
+  RDP, FTP, database consoles; bridges such as websockify or a terminal sharer
+  such as ttyd). Any script running on an allowed origin, an XSS included,
+  can drive the tunnel with the victim's session. Where a tunnel is needed, the
+  tunnelled service keeps its own authentication and access control, and an
+  authenticated socket is not treated as access to the service behind it.
+  OWASP: WebSocket Security cheat sheet.
+- Security events on the socket (open/close, auth decisions, violations) go to
+  the audit stream: rules/07 §6.
 
 ### 2.2 Heartbeat / ping-pong
 
@@ -129,6 +138,13 @@ drain, and you buffer unboundedly on its behalf.
   `ws.send` callbacks server-side); never `send()` blind in a loop.
 - Per-connection **inbound** limits too: max message size enforced (reject with
   1009), rate-limit client frames, cap subscriptions per connection.
+- **Connection caps**: a maximum number of concurrent sockets per authenticated
+  user (per IP only where there is no user yet, e.g. before first-message auth)
+  and a total per node, enforced at the upgrade. Over the cap, refuse the
+  handshake with an HTTP error (`429` or `503`) or close at once with a
+  documented app code, so the client backs off instead of looping. Without them,
+  one account opening thousands of tabs or scripted sockets exhausts file
+  descriptors for everyone on the node. OWASP: WebSocket Security cheat sheet.
 
 ### 2.6 Close semantics
 
@@ -171,6 +187,17 @@ WS gives you frames, not a protocol — you must design one and write it down.
   app.v1` or a `hello` exchange) so you can change framing later.
 - One multiplexed connection with channels beats N connections per page — but
   then channel-level authz (§2.1) is mandatory per subscribe.
+- **State-changing client commands carry a nonce or timestamp**, and the server
+  rejects a repeated nonce or a stale timestamp (e.g. outside a short window,
+  with seen nonces kept for that window). This stops replay of a captured or
+  re-injected command. It is a separate job from §2.4 delivery dedupe, which
+  protects the *client* from duplicate server events. OWASP: WebSocket Security
+  cheat sheet.
+- **Isolate each message's failure.** Parse, validate and dispatch every inbound
+  frame inside its own error boundary: a malformed or hostile message produces a
+  `nack`/error frame, or at worst closes *that* connection (1007 invalid data,
+  1008 policy), and never throws out of the read loop into the worker or event
+  loop that serves other connections. OWASP: WebSocket Security cheat sheet.
 
 Client reconnect skeleton (the part everyone gets wrong):
 
@@ -213,6 +240,14 @@ Last-Event-ID: 4173                          Cache-Control: no-store
 - `EventSource` can't set headers: use cookies or a ticket param (same rules as
   §2.1), or the fetch-based SSE client pattern for header auth (you then own
   reconnect+`Last-Event-ID` yourself).
+- **Client side, the stream URL comes from trusted configuration**, never from
+  a query parameter, fragment, `postMessage` or other user input. `EventSource`
+  makes a CORS request, and with `withCredentials: true` it sends cookies, so an
+  attacker-chosen URL can feed the page events from the attacker's server. Treat
+  `event.data` as data (parse, never inject as HTML or evaluate). Each event's
+  `origin` is the origin of the stream's final URL after redirects, so where a
+  stream can be redirected or come from another origin, check `event.origin`
+  against an allowlist before acting. OWASP: HTML5 Security cheat sheet.
 - LLM/token streaming: SSE is the de-facto standard; include a terminal event
   (`event: done`) — clients must distinguish "stream complete" from "connection
   dropped", or they'll render truncated answers as final.
@@ -292,6 +327,12 @@ servers**. Media itself is encrypted by mandate (DTLS-SRTP); the risks are in th
 - [ ] Ordering/delivery guarantees documented; per-channel sequencing enforced; at-least-once paths have acks + idempotent dedupe.
 - [ ] Per-connection send queues bounded with a defined overflow policy (coalesce or disconnect); no blind unbounded sends.
 - [ ] Inbound limits: max message size (1009), frame rate limit, max subscriptions per connection, pre-auth resource caps.
+- [ ] Concurrent-connection caps per user (per IP pre-auth) and per node, enforced at the upgrade with a clean refusal (§2.5) — MEDIUM.
+- [ ] State-changing client commands carry a nonce/timestamp and replays or stale ones are rejected; each frame's parse/validate/dispatch is isolated so one bad message cannot crash the worker (§2.7) — MEDIUM.
+- [ ] **Raw TCP tunnelled over WebSocket (§2.1) — HIGH if browser-reachable**: the tunnelled service keeps its own authn/authz. Locator for bridges:
+      `grep -rniE 'websockify|novnc|ttyd' .`
+- [ ] **SSE client URL (§3) — MEDIUM**: `EventSource` URLs come from config, `event.origin` checked where the stream can be cross-origin or redirected. Constructors fed from the location, query or params:
+      `grep -rnE 'new[[:space:]]+EventSource\([^)]*(location|[pP]arams|query|\.search|\.hash|input)' --include='*.js' --include='*.jsx' --include='*.ts' --include='*.tsx' --include='*.vue' --include='*.svelte' .`
 - [ ] Close codes documented incl. app-range (4xxx); deploys drain gracefully (1001/1012) instead of mass-killing.
 - [ ] SSE: `id:` on every event with `Last-Event-ID` replay, comment heartbeats, proxy buffering disabled, terminal `done` event on finite streams.
 - [ ] Cross-node fanout via pub/sub backplane; sticky sessions not abused as state storage; node death recoverable from client-held resume state.

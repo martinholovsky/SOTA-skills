@@ -27,6 +27,24 @@ The canonical flow (Spec Kit's *Spec → Plan → Tasks → Implement*; Kiro's
 Keeping these as separate artifacts is the point: requirements survive a rewrite
 of the design, and the design survives a re-implementation of the tasks.
 
+**Two human sign-offs sit before any code is generated**, and each has a security
+question an agent will not ask itself:
+
+- **After step 1 (spec gate):** are the security acceptance criteria present and
+  complete (who may do this, what input is hostile, what must be logged or
+  refused), and are scope, non-goals and trust assumptions stated rather than
+  implied? Abuse cases come from the threat model (`sota-threat-modeling`
+  rules/05 §2–§3).
+- **After step 2 (plan gate):** does every security requirement in the spec map to
+  a named part of the design, is each security-relevant choice (auth scheme,
+  crypto, storage of secrets, trust of an upstream) justified, and are changes to
+  security-critical components flagged so the tasks route to a qualified reviewer
+  (`rules/03` §3)? A requirement with no home in the plan is dropped silently.
+
+Record the sign-off in the spec itself (a reviewer and date per gate), so an
+auditor can tell a reviewed plan from one an agent approved for itself.
+(OWASP: DSOMM)
+
 ## 2. Writing a spec an agent can build from
 
 - **Separate *what* from *how*.** The requirements doc states behavior and
@@ -64,6 +82,17 @@ persistent steering file the agent always reads, not repeated in every spec:
 Spec Kit's *constitution*, Kiro's *steering files*, and in this ecosystem
 `AGENTS.md` / `CLAUDE.md` / `profiles/` (cross-ref `rules/01` §7). Per-feature
 spec = changeable intent; steering = stable rules. Don't conflate them.
+
+**Map phases to the security material they load.** The steering file should say
+which security artifacts apply at which phase — the threat model and security
+requirements while specifying and planning, the secure-coding rules for the
+language while implementing, the review checklist while verifying — ideally as a
+per-phase instruction template, rather than one undifferentiated block loaded
+everywhere or nowhere. Then check that it happens: spot-check a sample of agent
+sessions for evidence the named files were actually read (an instruction that is
+listed is not an instruction that loaded — `sota-skill-security` rules/01 §4),
+and revise the rule set after every security incident or review finding the
+existing rules should have prevented. (OWASP: DSOMM)
 
 ## 5. Don't double-maintain — link, don't copy
 
@@ -119,3 +148,13 @@ The library's audience runs these specs through coding agents, so:
 - [ ] Do agent-built tasks land as small reviewed PRs with tests, verified
       against the acceptance criteria? "Done" with no criteria check on a
       money/auth/critical path → High.
+- [ ] **(Medium) Spec and plan gates carry security (§1):** every feature spec has
+      security acceptance criteria and a recorded human sign-off at the spec and
+      plan gates. Probe: `grep -L -i -E 'secur|abuse|threat|authori[sz]'
+      specs/*/*.md` lists spec files with no security content at all; a spec
+      touching auth, money or personal data among them → High.
+- [ ] **(Low) Steering maps phases to security artifacts (§4):** the steering file
+      names what loads per phase, and sampled sessions show those files were read.
+      Probe: `cat AGENTS.md CLAUDE.md .kiro/steering/*.md 2>/dev/null | grep -q
+      -i -E 'threat model|secure[- ]coding' || echo "no phase-to-security mapping"`
+      (`cat` so that one absent file does not turn the exit status into a false alarm).

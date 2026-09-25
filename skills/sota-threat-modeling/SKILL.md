@@ -118,7 +118,7 @@ Residual risk if accepted: one sentence.
 | `rules/01-methodologies.md` | Choosing between STRIDE, LINDDUN, PASTA, attack trees, kill chains; deciding lightweight vs. heavyweight; setting up continuous/PR-level threat modeling. |
 | `rules/02-decomposition.md` | Drawing DFDs in mermaid, defining trust boundaries, listing entry points/assets/actors/privilege levels; extracting all of these from an existing codebase. |
 | `rules/03-threat-catalogs.md` | Enumerating threats for a specific component: web frontend, API, database, message queue, file storage, CI/CD, mobile, LLM agent/tool-use, cloud/IAM. |
-| `rules/04-risk-rating-treatment.md` | Rating threats (DREAD pitfalls, CVSS usage, L×I matrices), choosing accept/mitigate/transfer/avoid, mapping mitigations to requirements and tests, documenting residual risk. |
+| `rules/04-risk-rating-treatment.md` | Rating threats (DREAD pitfalls, CVSS usage, L×I matrices), choosing accept/mitigate/transfer/avoid, mapping mitigations to requirements and tests, documenting residual risk, tiering applications and modules to set modeling and review depth. |
 | `rules/05-outputs-operationalization.md` | Writing the threat model document, building the security requirements backlog, turning abuse cases into tests, keeping the model alive (re-model triggers). |
 | `rules/06-audit-reconstruction.md` | Auditing an existing system: reconstructing the model from code, control-presence matrix, gap analysis, severity calibration, reporting. |
 

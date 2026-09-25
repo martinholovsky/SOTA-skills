@@ -47,6 +47,18 @@ is backed by a mechanism (rules/01 §4):
 - **PW.1 (threat modeling / secure design)** → a design-review gate that references
   the threat model (`sota-threat-modeling` rules/06) for features crossing trust
   boundaries.
+- **PO.1.3 (communicate requirements to third parties)** → SSDF writes this task for
+  suppliers of software components. Apply it equally when another company writes
+  code for you. The contract carries your security requirements, not only a vendor
+  questionnaire: the minimum practices the supplier follows (code review, the
+  PW.7/PW.8 security tests, vulnerability handling with a named contact and fix
+  times, no secrets in the repository), what each delivery includes (an SBOM, scan
+  results, provenance), and the acceptance criteria. Then check each delivery against
+  it by running your own gates on their code before you accept it. SSDF's examples
+  for PO.1.3 put the requirements into contracts and ask suppliers for attestation
+  and provenance. In 800-53 the equivalents are SA-4 (requirements and acceptance
+  criteria in the acquisition contract) and SA-11 (developer testing and evidence).
+  OWASP: SAMM
 - **RV.1 (identify vulns continuously)** → scheduled dependency/container/runtime
   scanning with SLA-tracked tickets; **RV.2** remediation; **RV.3** root-cause.
 
@@ -109,6 +121,7 @@ pipeline guidance. When a PW/PS/RV practice needs implementing, jump to:
 - [ ] PW machine-checkable practices are CI gates that fail the build: SAST, DAST, secret-scanning, dependency scanning, test suites
 - [ ] PS: signed commits, SHA-pinned actions, build provenance (SLSA) and artifact signing; releases immutable, signed, provenance retained
 - [ ] PW.1 secure-design/threat-modeling gate for features crossing trust boundaries, referencing the threat model
+- [ ] **Outsourced development and suppliers (PO.1.3) — MEDIUM:** contracts state the security requirements, minimum SDL practices, per-delivery artifacts (SBOM, scan results, provenance) and acceptance criteria; each delivery passes the same CI gates as in-house code before it is accepted, and the acceptance record is kept as evidence
 - [ ] RV: continuous vuln identification (deps/containers/runtime) with SLA-tracked remediation and root-cause analysis
 - [ ] If federal self-attestation applies: the attested practices are demonstrably enforced *before* signing; SBOM/provenance/scan artifacts produced from the pipeline; current mandate/scope/deadline verified (not assumed)
 - [ ] If developing/fine-tuning AI: SP 800-218A additions applied — training-data provenance/integrity, model weights protected & signed as high-value assets, eval/misuse testing before release

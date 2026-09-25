@@ -111,7 +111,13 @@ you're actually running.
 - **Releases are reproducible from the tag**: version is derived from the tag
   (not hand-edited in three files — or if files must contain it, the bump is
   automated and the tag is the source of truth), built by CI, never from a
-  laptop.
+  laptop. **Write the recipe down** (a `BUILDING.md` or a section of
+  `RELEASING.md`/`CONTRIBUTING.md`): the toolchain and its exact version, where
+  pinned inputs come from (lockfiles, base-image digests), the one command that
+  produces each release artifact, and how to compare the result with the
+  published one. A build only the CI config can explain cannot be re-derived by
+  a user or auditor checking your artifacts. Mechanics of hermetic and
+  reproducible builds: `sota-devsecops` rules/04 §4.1. (OWASP: SCVS 3.2)
 - **Automate the release train**: tag (or merged release PR) triggers build,
   changelog finalization (move `Unreleased` → version section), artifact
   publish, docs version publish (rules/02 §5). release-please / semantic-release
@@ -140,3 +146,4 @@ you're actually running.
 - [ ] Breaking changes followed the pipeline: deprecation → changelog → migration guide → major; never a surprise minor.
 - [ ] Published tags never moved/deleted (compare tag dates vs. registry artifacts if suspicious); releases built by CI from the tag.
 - [ ] Release notes curated with breaking changes first; changelog `Unreleased` section flows into versioned sections at release; pre-releases can't resolve as latest.
+- [ ] **(Low; Medium for a distributed artifact) Build reproduction is documented** (§5): toolchain version, pinned inputs and the exact release command are written in the repo. Probe: `grep -rli -E 'reproduc(e|ible|ing)[^.]*build' README.md BUILDING.md RELEASING.md CONTRIBUTING.md docs 2>/dev/null | grep -q . || echo "no build-reproduction doc"`.

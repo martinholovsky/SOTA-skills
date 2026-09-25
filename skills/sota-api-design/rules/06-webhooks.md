@@ -101,6 +101,15 @@ Signature alone doesn't stop re-delivery of a *validly signed* old request
   jobs.
 - Providers: never reuse event IDs, even across retries of the same event
   (same id on retry — that's the point), and rotate-don't-share secrets.
+- **Prove the rejections in CI, not only the happy path.** The receiver's tests
+  send (a) a forged callback (wrong secret, or one flipped body byte), (b) a
+  correctly signed but stale one outside the tolerance, (c) a duplicate event ID
+  inside the window, and (d) a callback validly signed for endpoint or tenant A
+  replayed to endpoint B. Each must be rejected, and the test asserts that no
+  payload field was read or acted on (no handler call, no row written).
+  Verification that silently stopped enforcing (a refactor that skips it on a
+  parse error, a test-mode flag left on) otherwise shows up only in production.
+  OWASP: AI-Powered Advertising Systems Security cheat sheet.
 
 ## 4. Delivery, retries & idempotent consumers
 
@@ -234,6 +243,8 @@ your cloud metadata, please"). Egress controls are non-negotiable:
 **Consumer role:**
 - [ ] Signature verified on raw bytes before parsing; constant-time comparison; timestamp tolerance enforced (±5 min).
 - [ ] Dedupe on event ID with durable store (TTL ≥ retry horizon); handlers idempotent (unique constraints/upserts), out-of-order-safe.
+- [ ] **Negative signature tests (§3) — MEDIUM**: CI proves forged, stale, duplicate and cross-endpoint callbacks are rejected before any payload field is used. Webhook test files with none of those cases (a lead to read):
+      `grep -rliE 'webhook' --include='*test*' --include='*spec*' . | while IFS= read -r f; do grep -qiE 'invalid[_ -]?sig|bad[_ -]?sig|forged|tamper|stale|expired|replay' "$f" || echo "$f"; done`
 - [ ] Ack-fast/process-async: 2xx only after durable enqueue, well under provider timeout.
 - [ ] State derived by fetching current object where staleness matters, not from fat payload alone.
 - [ ] Endpoint has body size limits, no cookie-auth dependency, full delivery logging; secrets in a manager with dual-secret rotation support.

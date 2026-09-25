@@ -59,6 +59,18 @@ vulnerability-handling process**. Both are engineering.
   actually exploitable.
 - **Coordinated Vulnerability Disclosure (CVD) policy** → a published intake
   (`security.txt`, a disclosure address/portal) and a documented handling process.
+  `security.txt` is RFC 9116, served over HTTPS at `/.well-known/security.txt`. The
+  RFC requires only two fields: `Contact`, and `Expires`, which may appear once and
+  should be less than a year ahead. After that date researchers treat the file as
+  stale. `Policy`, `Encryption`, `Canonical`, `Preferred-Languages` and
+  `Acknowledgments` are optional. `Contact` may repeat, listed in order of preference,
+  so offer more than one route: a mailbox, a web form or the forge's private
+  reporting, and a bounty platform if you run one. One address fails as soon as it
+  bounces or its owner leaves. The linked policy says what a report should contain
+  (§3a), gives an encryption key, and says where confidential reports land: a
+  private tracker category or draft advisory, never a public issue. It also states the
+  safe-harbour terms for good-faith research. OWASP: Vulnerability Disclosure cheat
+  sheet
 - **Timely security updates** over the **support period — by default at least 5
   years** (or the product's expected use time if shorter; confirm the exact Article
   reference in EUR-Lex): a **signed update channel** and a maintained
@@ -166,6 +178,36 @@ reproducer** the team can build and run; the affected versions, with the earlies
 bisecting; ideally a patch; and a reporter who stays reachable. That list is Daniel
 Stenberg's, published from curl's intake in June 2026, and it doubles as your triage rubric
 — a report missing the reproducer is not yet a finding, whoever or whatever wrote it.
+The same list should ask for the evidence that makes the reproducer checkable (the request
+and response, a log excerpt or a screenshot), the reporter's own statement of impact, and
+any references such as a CWE or a related advisory. OWASP: Vulnerability Disclosure cheat
+sheet
+
+## 3b. Publishing an advisory for your own product
+
+§3a ends with a confirmed vulnerability. The fix ships with an advisory, and the advisory is
+what users and their scanners act on.
+
+- **Get a CVE ID from a CNA before you publish.** If you are a CNA, assign it. Otherwise
+  ask the CNA whose scope covers the project. GitHub is a CNA: its repository advisory form
+  can request an ID, the request usually gets a review within 72 hours, and asking does
+  not make the advisory public. GitHub cannot assign one to a project that another CNA
+  covers. Use the same ID in the advisory, the changelog and the release notes.
+- **Every advisory states** the impact (what an attacker gains) with your §3a rating, the
+  vulnerable version range, the fixed versions, any configuration the issue depends on, a
+  workaround for those who cannot upgrade yet, and the CVE ID. **Add where you can** a
+  disclosure timeline, credit to the reporter (under the name they choose), enough
+  technical detail for a defender to judge exposure, and indicators of compromise or a
+  detection rule when exploitation has been seen.
+- **Publish a machine-readable form, not only prose.** Scanners match only what the record
+  encodes. An OSV record carries `affected[].ranges` events (`introduced`, `fixed`,
+  `last_affected`). CSAF 2.0 (an OASIS Standard) carries product status and remediation
+  categories such as `vendor_fix`, `workaround` and `mitigation`, and its `csaf_vex`
+  profile is one way to publish the VEX statements of §2. GitHub's documentation warns
+  that an advisory published without a fixed version still alerts users but offers them
+  no safe version. A range written only in prose reaches no scanner at all.
+
+OWASP: Vulnerability Disclosure cheat sheet
 
 ## 4. Conformity & the harmonized-standards route
 
@@ -217,6 +259,8 @@ teeth and deadlines. Reuse, don't rebuild:
 - [ ] **When awareness begins is defined in writing** and a clock decision is recorded for every report **including the rejects**, with a timestamp — an unrecorded "not reportable" is indistinguishable from never having looked, and Article 14's 24h runs from awareness
 - [ ] Triage capacity is budgeted and the queue's age is visible: an unread backlog is indistinguishable from having no reports, and pausing intake does not pause the clock
 - [ ] The intake page states what a usable report must contain (human-written summary, self-contained reproducer, affected + earliest versions, ideally a patch) — the only lever on inbound quality, and the rubric triage then applies
+- [ ] **`security.txt` is complete and in date (§2) — MEDIUM:** RFC 9116's required `Contact` and `Expires` are present, `Expires` is in the future, and more than one `Contact` route is listed; the policy page names the confidential channel, an encryption key and safe-harbour terms. Probe: `find . -name security.txt -exec sh -c 'grep -qi "^Contact:" "$1" && grep -qi "^Expires:" "$1" || echo "missing Contact or Expires: $1"' _ {} \;` prints each file missing a required field; then read each `Expires:` date against today. No `security.txt` anywhere on a web-facing product is a lead to ask where researchers report
+- [ ] **Own advisories are complete and machine-readable (§3b) — MEDIUM** (HIGH when users rely on scanner alerts to learn about fixes): each published advisory carries a CVE ID, a vulnerable range and a fixed version, or says no fix exists yet and gives a workaround. On GitHub: `gh api --paginate 'repos/OWNER/REPO/security-advisories?state=published' | jq -r '.[] | select(.cve_id == null or ((.vulnerabilities // []) | length == 0) or any(.vulnerabilities[]; (.vulnerable_version_range // "") == "" or (.patched_versions // "") == "")) | .ghsa_id'` prints each advisory missing one of them; a printed one whose only gap is an empty fixed version passes only if its text says no fix exists yet and gives a workaround
 - [ ] **Signed update channel** and a maintained branch covering the support period (default ≥ 5 years / expected use time); security updates delivered without delay, free, separable
 - [ ] **Device update integrity beyond the signature (§2) — HIGH** where the product takes firmware/OTA updates: an older signed image is refused by a counter in trusted storage, the update server is authenticated, the signature covers the plaintext of any encrypted package. Probe for switches that turn these off: `grep -rnE '^CONFIG_(ESP_HTTPS_OTA_ALLOW_HTTP|BOOT_SIGNATURE_TYPE_NONE)=y|skip_cert_common_name_check[[:space:]]*=[[:space:]]*true' .` — any hit is a finding; then `grep -rlE '^CONFIG_(MCUBOOT_HW_DOWNGRADE_PREVENTION|BOOTLOADER_APP_ANTI_ROLLBACK)=y' .` printing nothing on a signed-update build is a lead to ask how rollback is refused
 - [ ] Article 14 reporting pipeline built and rehearsed: detection → 24h early warning / 72h notification to CSIRT + ENISA; final reports (14 days / 1 month) covered; unified with NIS2/DORA clocks where applicable

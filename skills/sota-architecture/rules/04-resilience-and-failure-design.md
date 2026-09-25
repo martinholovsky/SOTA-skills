@@ -84,6 +84,16 @@ GOOD: checkout pool: 60, reports pool: 10, admin: 5 — reports saturate alone.
 separate node pools / autoscaling groups; noisy-neighbor isolation for
 multi-tenant systems (rules/05 §7).
 
+**Rule:** Write down each backing service's connection ceiling and what happens at it.
+For every database, cache, broker and upstream API, the service's docs state the most
+connections it can open (pool size × replicas at the autoscaler's maximum, not its
+average) next to the server's own limit, and the behaviour once the pool is empty: wait
+up to a bounded timeout, shed with 503, fail fast, or fall back (§5). Also write how it
+recovers. An unwritten answer is still an answer, usually the client library's default
+wait (HikariCP blocks `getConnection()` for `connectionTimeout`, 30 s by default, then
+throws). The same number of replicas that got you through a load test can exhaust the
+server limit when the autoscaler adds more. (OWASP: ASVS 5.0 V13.1.2)
+
 ## 5. Graceful degradation: rank your features
 
 **Rule:** Classify every dependency of each user flow as *required* or
@@ -98,6 +108,20 @@ that recomputes expensively turns partial failure into overload.
 **Rule:** Fail closed for security and money (authz unavailable → deny;
 fraud-check down → hold the order or apply strict limits). Fail open only for
 genuinely optional features — and record the decision per dependency.
+
+**Rule:** A fail-closed control that calls out to something (sanctions or fraud
+screening, a policy engine, a revocation or deny list) needs two more things, because
+an attacker can make the dependency fail as a way to get in:
+- *Watch the failure rate.* Alert when that dependency's error or timeout rate goes
+  above its baseline, and do not only alert on "down". A deliberate flood aimed at the
+  checker is an attempt to find a fail-open path. During a long outage, circuit-break
+  the protected action itself (stop taking agent-initiated payments, say) instead of
+  denying one request at a time.
+- *Put a limit on how old the reference data can be.* Set a maximum acceptable age for
+  the list or ruleset the check reads. Record the version and as-of time used in each
+  decision record, and refuse the action when the data is older than the limit. A clean
+  result against a stale list is a pass the control never actually gave.
+(OWASP: AML Sanctions AI Agent Payments cheat sheet)
 
 ## 6. Load shedding and admission control
 
@@ -117,6 +141,14 @@ collapse / metastable failure).
 
 **Rule:** Protect against retry storms after recovery: combine load shedding
 with client retry budgets (§2) and slow-start (gradually re-admit traffic).
+
+**Rule:** For flash sales and other limited drops, put a waiting room (virtual queue) in
+front of checkout. Admit people from it **at random** among everyone who joined before
+the opening time, not first-come-first-served. With FIFO, a bot that reacts in
+milliseconds wins every slot, while random order leaves no edge in speed. Bind each
+queue token to the session and the authenticated identity, so a token cannot be passed to
+another client or farmed in bulk, and pair the queue with per-account purchase limits and
+a cart hold that expires. (OWASP: Bot Management and Anti-Automation cheat sheet)
 
 ## 7. Health checks: liveness ≠ readiness ≠ dependency health
 
@@ -240,6 +272,9 @@ Don't back into it via "we just added a second region for latency".
 - [ ] Are connection/thread pools bulkheaded per dependency and per workload class, or is there one shared pool?
 - [ ] Is each dependency of each critical flow classified required/optional, with degradation behavior implemented and tested?
 - [ ] Do security- and money-touching paths fail closed?
+- [ ] **Fail-closed checkers are watched and time-bounded (§5), High:** each external control dependency (screening, policy engine, deny list) has an error-rate alert, a circuit-break of the protected action for long outages, a maximum reference-data age that is enforced, and a version/as-of field in every decision record. Probe: find the decision records with `grep -rnE -i '(screen|sanction|policy|fraud)[a-z_]*(result|decision|record|receipt)' .` and check that each one stores a list version or as-of time. A record with neither cannot show the data was fresh.
+- [ ] **Connection ceilings are documented per backing service (§4), Medium:** list the pool settings with `grep -rnE -i '(maximumPoolSize|SetMaxOpenConns|max_?pool_?size|pool_?size|max_?connections)' .` and, for each, find the doc that states pool × max replicas against the server limit and the at-limit behaviour. A pool with no such doc is a finding. It is High if pool × max replicas is already above the server's limit.
+- [ ] **Limited drops use randomised, identity-bound admission (§6), Medium:** a waiting room admits at random and its tokens are bound to session and identity. Probe for FIFO ticketing: `grep -rnE -i '(queue|waiting|wait)[_-]?(position|pos|ticket|number)([^=]*=[^=]*(incr|nextval|[+][+])|[[:space:]]*[+]=[[:space:]]*1)' .` Any hit on a scarce-inventory flow is a finding.
 - [ ] Is there admission control / load shedding with priority ordering, bounded queues, and deadline-aware dropping?
 - [ ] Do liveness probes avoid dependency checks? Does readiness avoid mass-unready on shared-dependency failure?
 - [ ] Are SLOs defined per user journey, and are chaos experiments (latency, errors, instance/AZ kill) run on a schedule with results tracked?

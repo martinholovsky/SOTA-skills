@@ -79,6 +79,27 @@ Rules:
   validation per SR-x", build/adopt a shared middleware and convert the
   requirement to "uses paved-road component vX" — threat modeling output
   should compound into platform, shrinking future models.
+- **Start from a catalog, then add what the model found.** In BUILD mode the
+  team picks its baseline requirements from a published verification standard
+  (ASVS for web and API, MASVS for mobile) at the level its risk tier sets
+  (`04` §8). Each requirement cites the catalog ID (`ASVS 5.0 V8.1.1`,
+  `MASVS-AUTH-1`), so the same list serves design, test and audit. The threat
+  model then adds the system-specific requirements no catalog can know. Behind
+  both sit a handful of design principles: least privilege, defence in depth,
+  fail-safe (deny-by-default) defaults, complete mediation (check every
+  access, not only the first), separation of privilege, and a small
+  attack surface. A mitigation that cannot name the principle it serves is
+  usually a patch on a symptom.
+- **Elicit the business rules before the authz code exists.** Authorization
+  and limits are domain decisions that engineers otherwise guess. Hold a
+  short questionnaire with the domain owner per service. Who may do this
+  action, to whose objects, in which states? Which fields may each role read
+  or write? Which limits apply per user (refunds a day, invites an hour,
+  transfer amount) and application-wide (total payouts a day, inventory held
+  per session)? Record each answer as a testable requirement ("a customer may
+  hold at most 4 seats per event for 10 minutes"). An undocumented limit
+  cannot be tested, so it silently does not exist. OWASP: ASVS 5.0 V2.1.3,
+  V8.1.1, V8.1.2; Microservices Security cheat sheet; SAMM.
 
 ## 3. Abuse cases as test cases
 
@@ -117,6 +138,14 @@ Rules:
 - **Pentest/red-team findings feed back:** every confirmed finding becomes
   (a) a threat-table row — was it missing or mis-rated? — and (b) an
   abuse-case regression test.
+- **Hand the model forward to the testers.** Give penetration testers the asset
+  table, the security requirements and the list of abuse cases marked
+  mitigated, and scope the engagement from them. Ask for a per-abuse-case
+  verdict (mitigation holds, bypassed, not tested) in addition to open-ended
+  findings. Run a peer security code review against the same abuse-case list,
+  so each mitigation is checked from both outside and inside. A pentest scoped
+  without the model tests what is easy to reach, not what matters. OWASP:
+  Abuse Case cheat sheet, Threat Modeling Playbook.
 
 **Write abuse stories when the user story enters the backlog**, not only
 afterwards for High+ threats: each story that moves value, ownership or state
@@ -169,6 +198,15 @@ calendar backstop).
   require the security-notes section to be non-trivial on flagged PRs.
 - **Model version pinning:** the threat-model doc records the git SHA range it
   covers; an audit (06) compares triggers-since-SHA against model revisions.
+- **Threat model as code:** keep the threat register in a structured file
+  (YAML, JSON, or a Python model) in the repo, not only in prose, so CI can read
+  it. Tooling can then generate DFDs, risk scores, reports and abuse-case test
+  stubs, and fail a build when a test cites a threat ID the register lacks, or
+  a High+ row has no VER link. Open-source examples: OWASP pytm (Python model
+  that emits DFDs, sequence diagrams and reports), Threagile (YAML model with
+  built-in risk rules), and OWASP Threat Dragon (JSON model files). This is
+  the next step after diagrams as code. The prose document becomes a view
+  generated from the register (§8). OWASP: Threat Modeling Playbook.
 - **Calendar backstop:** full re-read annually or per major version,
   WHICHEVER COMES FIRST with trigger-driven updates — the backstop catches
   slow drift (dependency rot, team turnover, assumption decay).
@@ -263,6 +301,21 @@ never. Generate views from the threat table instead.
       links and rating-derived priority — not a side spreadsheet.
 - [ ] Every mitigated High+ threat has an automated abuse-case test citing
       its threat ID; tests assert observable effects and run in CI.
+- [ ] Baseline requirements cite a verification catalog. Probe:
+      `grep -rn -E "ASVS[ -]?(5\.0[ -])?V?[0-9]+\.[0-9]+\.[0-9]+|MASVS-[A-Z]+-[0-9]+" docs/`;
+      zero hits in a model's requirements section → Low (Medium for a
+      High-tier system, `04` §8).
+- [ ] Business access rules and per-user/global limits are documented as
+      requirements, and limit tests exist. Probe:
+      `grep -rn -i -E "(def |it\(|test\(|func Test)[^(]*(limit|quota|exceed|too_?many|max_)" .`;
+      zero hits where limits are documented → Medium.
+- [ ] Pentest scope and report reference the model's assets and abuse cases,
+      with a verdict per mitigated abuse case; a pentest with no link to the
+      model → Low (process).
+- [ ] Machine-readable register present where the model is large enough to
+      drift. Find it with `git ls-files | grep -i -E '(threat[-_]?model|threagile)[^/]*\.(ya?ml|json|py)$|(^|/)tm\.py$'`;
+      for a High-tier system with prose only and no CI link between threat IDs
+      and tests → Low.
 - [ ] Posture controls (headers, IaC, IAM) covered by policy-as-code checks,
       not manual review notes.
 - [ ] Re-model trigger list documented for this system; PR template or CI
