@@ -72,6 +72,45 @@ network/file/DB/config as untrusted. Reference:
   `[GeneratedRegex]`) or use `RegexOptions.NonBacktracking` (.NET 7+, linear time). A
   **pattern** from a user is worse than input: `Regex.Escape` it, and Microsoft states that
   timeouts are *not* a security boundary against malicious patterns (CA3012).
+- **SSRF: an outbound request to a destination the caller picks.** The policy is
+  `sota-code-security` rules/01 §5. This bullet covers how to apply it in .NET. Best: take a key
+  or ID from the caller, look up the base `Uri` in your own allowlist, and build the request
+  yourself. Passing a caller's URL to `HttpClient.GetAsync`, `new HttpRequestMessage` or
+  `WebRequest.Create` is the finding. When the destination really must be open:
+  - **Check the address that is actually dialled.** If you resolve with `Dns.GetHostAddressesAsync`
+    and then call `GetAsync(url)`, the name is resolved twice, and DNS rebinding can pass the first
+    lookup. Do the check in `SocketsHttpHandler.ConnectCallback` instead (with `IHttpClientFactory`,
+    set it via `ConfigurePrimaryHttpMessageHandler`). Resolve `context.DnsEndPoint.Host`, test every
+    address, then connect a `Socket` to the checked `IPAddress` and return a `NetworkStream`.
+    Reject these ranges:
+    - loopback (`IPAddress.IsLoopback`)
+    - private: 10/8, 172.16/12, 192.168/16, and ULA fc00::/7 (`IsIPv6UniqueLocal`)
+    - link-local: 169.254/16, which includes 169.254.169.254 and so also catches the cloud
+      metadata hostnames that resolve to it, and `IsIPv6LinkLocal`
+    - 0.0.0.0/8
+    - multicast
+
+    Before any IPv4 range test, convert IPv4-mapped IPv6 (`IsIPv4MappedToIPv6` → `MapToIPv4()`).
+    `System.Net.IPNetwork.Parse("10.0.0.0/8").Contains(ip)` does the range test.
+    Measured on .NET 10:
+    - The callback runs for every new connection, including a redirect hop to another host.
+    - **Behind a proxy, the callback only sees the proxy's endpoint.** A request to
+      169.254.169.254 through a `WebProxy` logged only the proxy address. So set
+      `UseProxy = false` on the guarded handler, or enforce the rule at the proxy.
+  - **`IPAddress.TryParse` is not strict.** On .NET 10 it accepted `127.1`, `0x7f.0.0.1`,
+    `0177.0.0.1` and `2130706433`, and parsed each of them as 127.0.0.1. Never compare the
+    caller's host *text* against a blocklist. Parse it, then test the resulting `IPAddress`.
+  - **Redirects are followed by default.** `SocketsHttpHandler` and `HttpClientHandler` both
+    default to `AllowAutoRedirect = true` with `MaxAutomaticRedirections = 50` (measured). Either
+    set it to `false` and re-validate each `Location` yourself, or rely on the connect-time check
+    above, which sees every hop.
+  - **Schemes.** `HttpClient` throws `NotSupportedException` for `file`, `ftp` and `gopher`
+    (measured). The obsolete `WebRequest.Create` (SYSLIB0014) does not: it returned a
+    `FileWebRequest` for `file://` and an `FtpWebRequest` for `ftp://`. Still require
+    `uri.Scheme == Uri.UriSchemeHttps` on any `Uri` you did not build yourself. A GraphQL resolver
+    that fetches a URL argument belongs to this same class.
+
+  OWASP: SSRF Prevention, .NET Security and GraphQL cheat sheets.
 
 ## 4. ASP.NET Core authn/authz & web
 
@@ -272,3 +311,11 @@ section is the .NET spelling an auditor has to grep for.
 - [ ] **JWT validation switched off — HIGH** (§7) —
       `grep -rnE '(RequireExpirationTime|RequireSignedTokens|ValidateAudience|ValidateIssuer|ValidateLifetime)[[:space:]]*=[[:space:]]*false|(AudienceValidator|LifetimeValidator|IssuerValidator|SignatureValidator)[[:space:]]*=' --include='*.cs' .`
       (a custom validator delegate must be read: `=> true` is CA5405)
+- [ ] **SSRF: outbound request to a caller-chosen URL — HIGH (CRITICAL where the cloud
+      metadata endpoint 169.254.169.254 is reachable)** (§3) —
+      `grep -rnE '\.(Get|GetString|GetStream|GetByteArray|GetFromJson|Post|PostAsJson|Put|PutAsJson|Patch|Delete)Async(<[^>]*>)?\([[:space:]]*([^"$)[:space:]]|\$"[^/])|new HttpRequestMessage\([^,]+,[[:space:]]*([^"$)[:space:]]|\$"[^/])|WebRequest\.Create\(' --include='*.cs' .`
+      (a non-literal, non-relative destination; trace each one to its source, since a cache's
+      `GetAsync(key)` also matches). For every hit fed by a request, check three things.
+      `grep -rnE 'ConnectCallback|UseProxy|AllowAutoRedirect' --include='*.cs' .` has to show
+      a connect-time address check. The handler must not route through a proxy. Redirects must be
+      disabled or seen by that check. No hits means there is no DNS-rebinding defence.

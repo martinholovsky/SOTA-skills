@@ -245,6 +245,10 @@ CONCEPTS = [
      r"\beol\b|end of life|minimum (version|supported)|msrv|version floor|"
      r"unsupported version|\blts\b|deprecated (runtime|version)|language version|"
      r"standard pinned|requires-python|engines\.node"),
+    # ROADMAP 66 step 3b (2026-09-25): outbound requests to caller-influenced destinations.
+    ("SSRF / outbound request validation", "universal",
+     r"ssrf|server-side request forgery|outbound request|internal address|metadata endpoint|"
+     r"169\.254|dns rebind"),
     ("resource limits / DoS guards", "universal",
      r"rate limit|quota|\bdos\b|denial of service|redos|catastrophic backtrack|"
      r"max (depth|length|size|connections)|recursion (depth|limit)|maxbytesreader|"
@@ -314,6 +318,9 @@ UNIVERSAL_FLOOR = [
     "resource limits / DoS guards",
     "TLS / transport verification",
     "supply-chain provenance & publishing",
+    # ROADMAP 66 step 3b, 2026-09-25: written into all nine (connect-time IP check, redirects,
+    # schemes, strict IP parsing) and pinned the same day.
+    "SSRF / outbound request validation",
 ]
 
 def classify(text):

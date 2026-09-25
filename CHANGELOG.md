@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **SSRF / outbound request validation in all nine language skills, pinned in the universal
+  floor (now 30; ROADMAP 66 step 3b).**
+  - Each language now names where its HTTP client can check the dialled address **at
+    connect time**, so DNS rebinding cannot get past an earlier check.
+  - Each also names its redirect setting, its scheme restriction and its strict IP
+    parser.
+  - Five languages already had SSRF text and all five lacked the connect-time check.
+  - Every probe was re-run against its bad and good fixtures.
 - **Four concepts completed to 9/9 and added to the universal floor, which is now 29
   (ROADMAP 66 step 3a).**
   - `sota-c-cpp` gains unsafe-parsing and resource-limit rules (wire-buffer struct casts;

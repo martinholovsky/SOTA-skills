@@ -68,7 +68,7 @@ Pinned in `scripts/gen-concept-matrix.py` as `UNIVERSAL_FLOOR` and asserted in C
 (`--assert-universal`): a registered language skill that omits one fails the build.
 **This list must equal `UNIVERSAL_FLOOR` exactly — invariant 35 fails the build when they
 differ.** It read 12 against a floor of 25 until 2026-09-25, because nothing compared them; the floor
-has been 29 since the same day (ROADMAP 66 step 3a).
+grew the same day as ROADMAP 66 added concepts; `UNIVERSAL_FLOOR` is the count, not this line.
 
 - [ ] **error handling & propagation** — wrapping, swallowing, empty catch, error types
 - [ ] **absence / null / in-band sentinel** — how "no value" is encoded, and the magic-value trap
@@ -100,6 +100,7 @@ has been 29 since the same day (ROADMAP 66 step 3a).
 - [ ] **resource limits / DoS guards** — depth, size and decompression caps on everything that parses input
 - [ ] **TLS / transport verification** — the switches that turn verification off, by API name
 - [ ] **supply-chain provenance & publishing** — where packages come from, and how a private registry avoids dependency confusion
+- [ ] **SSRF / outbound request validation** — where this language's HTTP client lets you check the dialled address at connect time, plus its redirect and scheme settings
 
 Conditional concepts (those that exist only where a language has the mechanism, such as
 const/freeze or generics) are declared with their condition in the same script's

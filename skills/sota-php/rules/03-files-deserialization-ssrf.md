@@ -132,26 +132,58 @@ A URL fetched by the server reaches things the user can't: cloud metadata
 (`169.254.169.254`), localhost admin ports, internal services. (OWASP Server
 Side Request Forgery Prevention Cheat Sheet.)
 
+Build the request, do not relay it: take a host key or record ID from the caller and
+look the base URL up in your own allowlist. Where a caller URL is unavoidable, the IP
+check must run on the address cURL **actually dialled**, at connect time, on every
+redirect hop, because anything checked before the request (a `gethostbynamel()` pass,
+which is IPv4-only anyway) is a DNS-rebinding window. cURL's hook for that is
+`CURLOPT_PREREQFUNCTION` (PHP 8.4+, libcurl 7.80+): it runs after the connection is
+made and before the request is sent, receives the destination IP, and aborts on
+`CURL_PREREQFUNC_ABORT`. Measured on PHP 8.5.9: a `localhost` URL was aborted with
+errno 42, and with `CURLOPT_FOLLOWLOCATION` on, the callback ran again for the second hop.
+
 ```php
-function assertSafeUrl(string $url): void
+function isPublicIp(string $ip): bool
 {
-    $p = parse_url($url);
-    if (!in_array($p['scheme'] ?? '', ['http', 'https'], true)) fail();
-    $ips = gethostbynamel($p['host'] ?? '') ?: [];
-    foreach ($ips as $ip) {
-        if (filter_var($ip, FILTER_VALIDATE_IP,
-            FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) fail();
-    }
+    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_GLOBAL_RANGE) === false) return false;
+    $b = inet_pton($ip);                                 // multicast passes the flag
+    return strlen($b) === 4 ? (ord($b[0]) & 0xF0) !== 0xE0 : ord($b[0]) !== 0xFF;
 }
+$ch = curl_init($base . '/v1/items/' . rawurlencode($id));   // $base from YOUR allowlist
+curl_setopt_array($ch, [
+    CURLOPT_PROTOCOLS_STR       => 'https',
+    CURLOPT_REDIR_PROTOCOLS_STR => 'https',
+    CURLOPT_FOLLOWLOCATION      => false,     // or true: the callback below runs per hop
+    CURLOPT_PREREQFUNCTION      => fn($h, string $ip, string $lip, int $port, int $lport): int
+        => isPublicIp($ip) ? CURL_PREREQFUNC_OK : CURL_PREREQFUNC_ABORT,
+    CURLOPT_CONNECTTIMEOUT => 3, CURLOPT_TIMEOUT => 10,
+]);
 ```
 
-- Prefer a **positive allowlist** of hosts/URL prefixes; IP-range blocklists
-  are the fallback and must run on the *resolved* address, cover IPv6
-  (`::1`, `fe80::`, mapped IPv4), and beware DNS rebinding (resolve once, pin
-  via `CURLOPT_RESOLVE`).
-- cURL hardening: `CURLOPT_PROTOCOLS`/`CURLOPT_REDIR_PROTOCOLS` limited to
-  HTTP(S) — redirects can bounce to `gopher://`/`file://`; cap
-  `CURLOPT_MAXREDIRS` or re-validate each hop; set timeouts; **never**
+- **What the check rejects, measured on PHP 8.5.9.** `FILTER_FLAG_GLOBAL_RANGE` (PHP 8.2+)
+  blocked loopback, RFC 1918, `fc00::/7`, link-local incl. `169.254.169.254`, `0.0.0.0/8`,
+  `100.64/10` and IPv4-mapped `::ffff:127.0.0.1`; it **passed multicast** (`224/4`,
+  `ff00::/8`), hence the extra test, and the NAT64 prefix `64:ff9b::/96` (block it too where
+  the network translates). The older `FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE`
+  pair also passed `100.64.0.1`. Reject cloud metadata hostnames (e.g.
+  `metadata.google.internal`) by name in the allowlist step as well.
+- **Parse IP literals with `filter_var(..., FILTER_VALIDATE_IP)`, never by regex.** It
+  rejected `0177.0.0.1`, `0x7f.0.0.1`, `2130706433` and `127.1`, while the system resolver
+  behind `gethostbynamel()` turned every one of them into `127.0.0.1`, and `inet_pton()` on
+  macOS read `0177.0.0.1` as `177.0.0.1`. A "not an IP, so it is a hostname" branch is the hole.
+- **PHP 8.3 (no `PREREQFUNCTION`):** resolve A **and** AAAA (`dns_get_record()`), check every
+  address, pin the checked one with `CURLOPT_RESOLVE`, and keep `CURLOPT_FOLLOWLOCATION` off,
+  following each `CURLINFO_REDIRECT_URL` yourself through the same function.
+- **Clients.** Guzzle follows redirects by default (`allow_redirects` max 5, http/https,
+  read in 7.9 source): set `'allow_redirects' => false`, or pass the callback above through
+  its `'curl' => [CURLOPT_PREREQFUNCTION => ...]` option (cURL handler only; each hop is a new
+  request with the same options). Symfony's `NoPrivateNetworkHttpClient` (read in 7.3 source)
+  resolves, pins via `resolve` and re-checks every redirect hop, but its default subnet list
+  (`IpUtils::PRIVATE_SUBNETS`) omits multicast, so pass your own list to the constructor.
+- Positive allowlist first; IP-range rejection is the fallback. OWASP: SSRF Prevention, .NET Security and GraphQL cheat sheets.
+- cURL hardening: `CURLOPT_PROTOCOLS_STR`/`CURLOPT_REDIR_PROTOCOLS_STR` (PHP 8.3+, libcurl
+  7.85+) limited to HTTP(S) — redirects can bounce to `gopher://`/`file://`; a
+  `CURLOPT_MAXREDIRS` cap is **not** re-validation; set timeouts; **never**
   `CURLOPT_SSL_VERIFYPEER => false` (HIGH).
 - **Every PHP spelling of disabled TLS verification is HIGH, not only that one.** The rule is
   `sota-code-security` rules/04. Measured on PHP 8.5.9 against a local server:
@@ -179,8 +211,9 @@ function assertSafeUrl(string $url): void
 - The strongest control is architectural: route egress through a proxy that
   enforces the allowlist (network-level, see sota-network-security), so a
   missed validation isn't fatal.
-- `file_get_contents($url)`/`fopen` honor redirects with no protocol pinning —
-  use a real HTTP client for remote fetches. `getimagesize()`, `get_headers()` and
+- `file_get_contents($url)`/`fopen` honor redirects with no protocol pinning (measured:
+  the default stream context followed a 302 to a loopback URL; `'http' => ['follow_location'
+  => 0]` stopped it) and have no connect-time hook — use cURL for remote fetches. `getimagesize()`, `get_headers()` and
   `get_meta_tags()` fetch URLs through the same stream layer (php.net `getimagesize`: *"a
   remote file using one of the supported streams"*), so they are SSRF sinks too.
 
@@ -225,6 +258,12 @@ Run from repo root; verify each hit manually.
       `grep -rnE '(curl_init|file_get_contents|fopen|getimagesize|get_headers|get_meta_tags|->request|->get)[[:space:]]*\([^;]*\$' --include='*.php' src/ | grep -iE 'url|uri|host|endpoint|webhook'`
       ; `grep -rn 'CURLOPT_SSL_VERIFYPEER' --include='*.php' src/` (false = HIGH);
       `grep -rn 'CURLOPT_FOLLOWLOCATION' --include='*.php' src/` (check REDIR_PROTOCOLS nearby)
+- [ ] **SSRF — no connect-time check of the dialled address (DNS rebinding) / redirects
+      unchecked — HIGH (§5)** — prints each file that makes outbound requests with no
+      connect-time IP check, then its redirect-following lines:
+      `grep -rlE 'curl_init[[:space:]]*\(|GuzzleHttp\\Client|HttpClient::create' --include='*.php' src/ | while IFS= read -r f; do grep -qE 'CURLOPT_PREREQFUNCTION|CURLOPT_RESOLVE|NoPrivateNetworkHttpClient' "$f"; case $? in 0) ;; 1) echo "NO CONNECT-TIME IP CHECK: $f"; grep -nE "FOLLOWLOCATION[^;]*(true|1)|allow_redirects'?[[:space:]]*=>[[:space:]]*(true|\[)" "$f" | sed "s|^|  REDIRECT FOLLOWED: $f:|" ;; *) echo "SWEEP FAILED: $f" ;; esac; done`
+      — a file using Guzzle's default redirects prints only its first line; a file not
+      printed still needs reading (`CURLOPT_RESOLVE` alone leaves redirect hops unpinned)
 - [ ] **TLS verification off in any spelling — HIGH (§5)** —
       `grep -rniE '(SSL_VERIFYPEER|SSL_VERIFYHOST|verify_peer(_name)?)["'"'"']?[[:space:]]*(,|=>)[[:space:]]*(false|0)|allow_self_signed["'"'"']?[[:space:]]*=>[[:space:]]*(true|1)' --include='*.php' src/`
 - [ ] **SSH host key never compared — HIGH (§5)** — prints each file that opens an SSH session

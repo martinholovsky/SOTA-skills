@@ -292,7 +292,14 @@ File uploads:
 ## SSRF and server-side validation
 
 - Every inbound payload schema-parsed at the boundary (rules/01) — including webhooks (verify signatures: Stripe/GitHub HMAC) and headers you act on.
-- User-supplied URLs the server fetches (webhooks, importers, avatars): allowlist protocols (`https:` only), resolve DNS and block private ranges (127/8, 10/8, 172.16/12, 192.168/16, 169.254/16 — cloud metadata `169.254.169.254`), block redirects-to-private (re-check after each redirect, `redirect: 'manual'`), pin timeouts and response-size caps. Library: `ssrf-req-filter` or equivalent egress proxy.
+- User-supplied URLs the server fetches (webhooks, importers, avatars): allowlist protocols (`new URL(u).protocol === 'https:'`, checked again on every redirect hop), block private ranges (127/8, 10/8, 172.16/12, 192.168/16, 169.254/16 — cloud metadata `169.254.169.254`), handle redirects (below), pin timeouts and response-size caps. Library: `ssrf-req-filter` or equivalent egress proxy. The generic policy is `sota-code-security` rules/01 §5; the Node idiom:
+  - **Best: never relay a caller URL.** Accept a service key or record ID, look the origin up in a server-side map, and build the URL with `new URL(path, base)` plus `encodeURIComponent` on each segment. The rest of this list is for when you genuinely must fetch an arbitrary URL.
+  - **Check the address at connect time, not before.** A `dns.lookup()` done before `fetch()` is a separate resolution from the one the socket uses, so a rebinding DNS server answers public to the check and `127.0.0.1` to the connection. Put the check in the resolver the socket calls: `new Agent({ connect: { lookup } })` from the `undici` package (its connector spreads `connect` into `net.connect`/`tls.connect`), or the `lookup` option of `http.request`/`https.request` and of axios. Measured on Node 22.22.1: the hook is called with `{ all: true }` (family autoselection), so it must resolve all addresses, reject if **any** is blocked, and answer in the array form. Test each address with a `net.BlockList` covering 127/8, 10/8, 172.16/12, 192.168/16, 169.254/16, 100.64/10, 0/8, 224/4, `::1`, `fc00::/7`, `fe80::/10`, `ff00::/8`; a v4 subnet also matched `::ffff:127.0.0.1` checked as `ipv6`. Also refuse the metadata host names (`metadata.google.internal` on GCP, whose IPv6 metadata address `fd20:ce::254` falls in `fc00::/7`; check your cloud's docs for its own) by name.
+  - **The hook never sees an IP literal.** `fetch('http://127.0.0.1/')` through that Agent returned 200 with zero `lookup` calls (undici 8.11.2; `http.get` skips it too). So check a literal host yourself before dispatch: `new URL(u).hostname`, strip the `[]` around IPv6 (`net.isIP('[::1]')` is 0), then `net.isIP` + the same BlockList.
+  - **Parse with WHATWG `URL`, not a regex or the `ip` package.** `new URL()` canonicalises `0x7f.1`, `0177.0.0.1` and `2130706433` to `127.0.0.1` (measured), whereas `net.isIP` returns 0 for those raw strings, so a check on the unparsed string treats them as host names. `ip`'s `isPublic` misclassifies `127.1`, octal forms and `::fFFf:127.0.0.1` in every version through 2.0.1 with no patch (CVE-2024-29415).
+  - **Use `undici`'s own `fetch` with its `Agent`.** Passing an `undici@8` `Agent` as `dispatcher` to Node 22's global `fetch` (bundled undici 6.23) failed with `invalid onRequestStart method` — a major mismatch, measured.
+  - **Redirects**: `redirect: 'error'` rejects any 3xx; `redirect: 'manual'` returns it so you re-validate `Location` and fetch the next hop yourself (bounded count). The default `'follow'` goes wherever the server says. In axios, `maxRedirects: 0` or a `beforeRedirect` that re-checks. Under the default `follow` the Agent's `lookup` still ran on the hop and blocked a 302 to `localhost` (measured), but that does not cover a literal-IP hop; only scheme and literal-IP checks need repeating per hop.
+  - OWASP: SSRF Prevention, .NET Security and GraphQL cheat sheets.
 - Mass assignment: never `Model.update(req.body)` — schema-pick the allowed fields (`z.object({...}).strict()`).
 - **NoSQL operator injection is the same bug arriving as a type.** In
   `User.findOne({ name: req.body.name, pass: req.body.pass })`, a body of
@@ -361,7 +368,12 @@ buffer first. The class is `sota-code-security` rules/06 §3.
       template literal reaching a driver is CRITICAL. Also `grep -rn "knex.raw\\|sequelize.query\\|\\$queryRawUnsafe\\|createQueryBuilder" src/`
       — Prisma's `$queryRaw` tagged template is parameterized while `$queryRawUnsafe` is not,
       and the two differ by one word. Parameterized/bound form everywhere, or HIGH.
-- [ ] Server-side fetch of user-supplied URLs: private-IP/metadata blocking + redirect handling (absent = HIGH, SSRF).
+- [ ] **SSRF: a request value becoming an outbound request's URL (§"SSRF and server-side validation")** —
+      ``grep -rnE '(fetch|axios(\.[a-z]+)?|got(\.[a-z]+)?|https?\.(get|request)|goto|new URL)\( *(`\$\{ *)?req\.(body|query|params|headers)' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .``
+      — each hit must go through a connect-time `lookup` guard plus a literal-IP check, with
+      `redirect: 'error'`/`'manual'`, or it is HIGH (internal address / metadata endpoint
+      reachable). A pre-fetch `dns.lookup` as the only check is HIGH (DNS rebinding). The probe
+      sees single-line calls with the request value first; a URL held in a variable needs a read.
 - [ ] Webhook handlers: signature verification before parsing (absent = HIGH).
 - [ ] `grep -rn "Allow-Origin" src/` — `*` with credentials or unvalidated Origin reflection (HIGH).
 - [ ] Built client bundle: `grep -rE "sk_live|AKIA|ghp_|-----BEGIN" dist/` — leaked secrets (CRITICAL). Repo: gitleaks in CI (absent = MEDIUM).

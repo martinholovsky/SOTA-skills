@@ -197,6 +197,32 @@ network:
   verifier that delegates to `WebPkiServerVerifier` first), never around it. For mTLS on the
   server, use `WebPkiClientVerifier` and authorise on a SAN, not on the subject CN.
   Verified against reqwest 0.13.5, native-tls 0.2.18 and rustls 0.23.45 sources.
+- **Outbound requests to a caller-influenced destination (SSRF)** — policy in
+  `sota-code-security` rules/01 §5; the reqwest idiom (read in reqwest 0.13.5, hyper-util 0.1.20):
+  - Take a host key or ID from the caller and build the `Url` from your own allowlist
+    entry; relaying a caller-supplied URL is the pattern to design out.
+  - **The check belongs on the address being dialled.** Implement `reqwest::dns::Resolve`,
+    run the real lookup inside it, drop every unsafe `SocketAddr`, fail if none remain,
+    and install it with `ClientBuilder::dns_resolver(...)`. Because the connector uses
+    whatever the resolver returns, a rebinding answer after an earlier "safe" lookup is
+    never dialled. Reject after `IpAddr::to_canonical()` (stable 1.75; without it an
+    IPv4-mapped `::ffff:127.0.0.1` is not `is_loopback()`): loopback, unspecified
+    (0.0.0.0/8 by range), `is_private()`, `is_link_local()` (covers 169.254.169.254),
+    multicast, broadcast, and IPv6 `is_unique_local()` / `is_unicast_link_local()`
+    (both stable 1.84). `is_global()` is still unstable. Also refuse your cloud
+    provider's metadata hostnames by name.
+  - **The resolver never sees an IP literal**: hyper-util's `HttpConnector` dials a host
+    that parses as an address directly. So validate `url.host()` as well, before the
+    request and on every redirect hop. Use the parsed `url::Host::Ipv4/Ipv6`, never the
+    raw string: `url` (WHATWG) turns `0177.0.0.1`, `0x7f.1` and `2130706433` into
+    `127.0.0.1`, while std's `Ipv4Addr::from_str` rejects all three. Parse bare IP
+    input with std; do not use `url` for that.
+  - Redirects: `.redirect(Policy::none())`, or `Policy::custom(|a| ...)` that re-runs the
+    host check on `a.url()` and calls `a.error(..)` on a failure. The default follows up to 10.
+  - `.https_only(true)` limits the first request and every redirect hop to https.
+  - `.no_proxy()`: the default `system-proxy` feature reads the system/env proxy. Through a
+    proxy, the proxy resolves the target, so your resolver's check never sees that address.
+  OWASP: SSRF Prevention, .NET Security and GraphQL cheat sheets.
 - Timeouts on **everything**: connect, read, write, total-request, idle
   (`TimeoutLayer`, `tower` middleware). Missing timeouts = slowloris.
 - Error responses: generic client text, full chain only into logs (rules/02
@@ -335,6 +361,14 @@ memory budgets — see `sota-sandboxing` rules/04 §5 and rules/02 R7.2a.
       `rg -n 'danger_accept_invalid_(certs|hostnames)\(\s*true|\.dangerous\(\)|impl\s+ServerCertVerifier\s+for' -t rust`
       (each hit outside `#[cfg(test)]` is a finding unless the verifier delegates to
       `WebPkiServerVerifier` before its own check)
+- [ ] **SSRF / outbound request to a caller-influenced URL (§7) — High (Critical if
+      cloud metadata endpoint 169.254.169.254 is reachable)** —
+      `rg -n -t rust 'reqwest::(blocking::)?get\(' .` (the default client cannot carry a
+      resolver or redirect policy; any hit that takes a caller-influenced URL is a finding) and
+      `rg -l0 -t rust 'Client::(new|builder)\(\)' . | xargs -0 -r rg --files-without-match 'dns_resolver\('`
+      (these files build a client with no connect-time address check). In a file that does
+      have one, confirm `.redirect(` is `none()` or re-checks the host, that `.no_proxy()` is
+      set, and that IP-literal hosts are checked via `url.host()`.
 - [ ] Arithmetic on input: `rg '(len|size|count|offset|idx)\s*[+*-]' -t rust`
       near parsing code — wrapped math on untrusted values = High;
       `rg 'as u(8|16|32)|as usize' -t rust` in protocol code for truncating
