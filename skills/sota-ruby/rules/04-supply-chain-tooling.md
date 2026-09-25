@@ -88,7 +88,50 @@ bundle audit check --update    # --update pulls the latest advisory DB
   Dependabot alerts — any is fine; at least one must be on and acted upon.
 - Beyond CVEs: before adopting a gem, check maintenance (last release,
   open CVE history, bus factor) — a transitively-pulled unmaintained gem is
-  a finding at MEDIUM.
+  a finding at MEDIUM. The full pre-adoption check is §3.1.
+
+### 3.1 Adopting a new gem (selection and the defaults you inherit)
+
+Applies equally to a gem a person picks and one an AI assistant proposes — an
+assistant can name a gem that does not exist, or one a squatter registered after
+the name started being suggested. Before the `gem` line lands:
+
+- **Exact name, intended project.** `gem search --remote --exact NAME` (or
+  `curl -s https://rubygems.org/api/v1/gems/NAME.json` — a 404 means no such gem).
+  Compare against near-miss spellings; `source_code_uri` in that JSON is
+  self-declared by the publisher, so open the repository and confirm it builds
+  *this* gem name.
+- **Age and release history** — `.../api/v1/versions/NAME.json` lists every
+  release with `created_at`; a first release weeks old, or one burst of versions
+  after years of silence, needs a reason.
+- **Maintainers** — `.../api/v1/gems/NAME/owners.json` (`gem owner NAME` asks for
+  credentials); a single owner is bus-factor risk, and `rubygems_mfa_required` in
+  the gem's `metadata` says whether pushes require MFA.
+- **Advisories, licence, project health** — deps.dev
+  (`https://api.deps.dev/v3/systems/rubygems/packages/NAME/versions/VER` gives
+  `licenses` and `advisoryKeys`; the linked project record carries an OpenSSF
+  Scorecard result, also at `https://api.securityscorecards.dev/projects/github.com/OWNER/REPO`),
+  plus the gem's directory in ruby-advisory-db.
+
+**The gem's options are your code.** Read the security section of its docs and
+set every security-relevant option explicitly; review each option passed at the
+call site. Verified examples:
+
+- **Oj** — `Oj.load` defaults to `:object` mode, where the document names which
+  loaded class is allocated and sets its instance variables. Untrusted JSON:
+  `Oj.load(s, mode: :strict)`, `Oj.strict_load`/`Oj.safe_load`, or
+  `Oj.default_options = { mode: :strict }` at boot.
+- **Erubi** — `Erubi::Engine.new(src)` does not escape `<%= %>` unless
+  `escape: true`; stdlib `ERB.new` never escapes (use `ERB::Util.h`). See rules/03 §1.
+- **`Net::HTTP`** — `open_timeout`, `read_timeout` and `write_timeout` all default
+  to 60 s; clients built on it inherit that unless configured (rules/03 §6).
+
+**README snippets are demos.** A copied quick-start carries its demo settings —
+`verify_mode: OpenSSL::SSL::VERIFY_NONE`, `origins "*"`, debug/dev mode,
+hard-coded keys — into production; diff each pasted block against the gem's
+security docs before merging.
+(OWASP: Vulnerable Dependency Management cheat sheet; Software Supply Chain
+Security cheat sheet; Secure Coding with AI cheat sheet; SCVS V1, V6.)
 
 ## 4. Lint and style: RuboCop or StandardRB
 
@@ -185,6 +228,13 @@ Run from repo root; verify each hit manually.
       `grep -rn "bundler-audit\|bundle audit" .github/ Gemfile* Rakefile 2>/dev/null | head -2`
       ; `grep -rn "brakeman" .github/ Gemfile* 2>/dev/null | head -2` (Rails apps only)
 - [ ] **Advisory scan (live)** — `bundle audit check --update 2>/dev/null | tail -5`
+- [ ] **New dependency not vetted, or its insecure default kept — MEDIUM (HIGH if
+      `Oj.load` in `:object` mode reads request data)** (§3.1) — first command prints each
+      gem added to the Gemfile since `origin/main` (each needs the §3.1 record); second
+      prints `Oj.load`/`Erubi::Engine.new` calls not setting the safe option (clean if a
+      boot-time `Oj.default_options = { mode: :strict }` exists) —
+      `comm -13 <(git show origin/main:Gemfile | sed -nE "s/^[[:space:]]*gem[[:space:]]+['\"]([^'\"]+)['\"].*/\1/p" | sort -u) <(sed -nE "s/^[[:space:]]*gem[[:space:]]+['\"]([^'\"]+)['\"].*/\1/p" Gemfile | sort -u)` ;
+      `grep -rnE 'Oj\.load[[:space:](]|Erubi::Engine\.new' --include='*.rb' . | grep -vE 'mode:[[:space:]]*:strict|escape:[[:space:]]*true'`
 - [ ] **Lint posture** — `ls .rubocop.yml .standard.yml 2>/dev/null` ;
       `grep -rn "rubocop:disable Security" --include='*.rb' .` ;
       `find . -name .rubocop_todo.yml -newermt "6 months ago" 2>/dev/null | head -1`

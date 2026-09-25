@@ -391,10 +391,10 @@ cfg := &tls.Config{MinVersion: tls.VersionTLS12} // TLS13 for internal-only
   `GOSUMDB=off`, `GOFLAGS=-mod=mod` in CI, or wildcard `GONOSUMDB=*` disable
   verification repo-wide — HIGH finding. Everything public must flow through
   proxy.golang.org + sumdb verification.
-- **Minimal deps philosophy**: stdlib first; `golang.org/x/*` second; each
-  third-party module needs maintenance signal (recent releases, issue
-  hygiene), a license check, and a reason a 50-line vendored function can't
-  replace it. Transitives count: `go mod graph | wc -l` before/after.
+- **Minimal deps philosophy**: stdlib first; `golang.org/x/*` second; each third-party
+  module needs maintenance signal (recent releases, issue hygiene), a license check, and a
+  reason a 50-line vendored function can't replace it. Transitives count: `go mod graph | wc -l`
+  before/after. Selection checks before `go get`, and library insecure defaults: `rules/07 §4`.
 - **Audit side — already-landed deps**: `go mod why -m <module>` prints
   `(main module does not need module …)` for an unreached one — verbatim, exit 0
   — but its graph includes tests of reachable packages (`-vendor` excludes tests

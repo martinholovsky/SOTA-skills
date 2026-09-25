@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Dependency adoption in all nine language skills, pinned in the floor (now 33; ROADMAP
+  66 step 3b).**
+  - How to vet a new package on each ecosystem's registry, deps.dev and Scorecard.
+  - The measured insecure defaults of popular libraries.
+  - Why copied README samples carry demo settings into production.
 - **Install/build-time code execution in all nine language skills, pinned in the floor (now
   32; ROADMAP 66 step 3b).** Each language names:
   - where a dependency's code runs on install or build;

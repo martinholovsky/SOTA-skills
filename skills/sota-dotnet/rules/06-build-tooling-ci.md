@@ -68,6 +68,34 @@ lives in `sota-testing`.
   with `dotnet package update --vulnerable`. Keep
   `dotnet list package --vulnerable --include-transitive` as the ad-hoc query;
   Dependabot/external scanners complement, not replace.
+- **Vet a new dependency before the `PackageReference` lands** — including one an AI
+  assistant proposed, whose id may not exist or may have been registered days ago. Confirm
+  the exact id first: `dotnet package search <Id> --exact-match --source https://api.nuget.org/v3/index.json`
+  prints `No results found.` and still **exits 0**, so read the output, not the status.
+  Then `dotnet package search <Id> --take 5 --format json --verbosity detailed` (owners,
+  total downloads, project URL — and look-alike ids ranked beside it); the nuget.org
+  search API (`azuresearch-usnc.nuget.org/query?q=packageid:<Id>`) adds `verified`, which is
+  **ID prefix reservation**: `true` means the owner holds the id prefix, `false` is common
+  for legitimate packages and proves nothing. Per-version publish dates and deprecation:
+  `api.deps.dev/v3/systems/nuget/packages/<Id>`; the repo's OpenSSF Scorecard:
+  `api.securityscorecards.dev/projects/github.com/<owner>/<repo>` (an empty reply means
+  never scanned, not a pass). Also check open advisories, licence, and that the project URL
+  is the repository you meant.
+- **A library's defaults are part of your security posture** — audit every
+  security-relevant option you pass to it, and the ones you left unset. Read in source:
+  **MessagePack-CSharp** `MessagePackSerializerOptions.Security` defaults to
+  `MessagePackSecurity.TrustedData`; set `.WithSecurity(MessagePackSecurity.UntrustedData)`
+  for anything from outside. **Npgsql** `SslMode` defaults to `Prefer`, which falls back
+  to plaintext when the server declines TLS, and `Prefer`/`Require` accept any server
+  certificate — use `SSL Mode=VerifyFull` (or `VerifyCA`). BCL defaults of the same kind
+  (Regex with no match timeout, `HttpClient` following redirects) are in `rules/04` §3.
+- **A README or quickstart snippet is a demo, not a configuration.** Copying it copies
+  its dev-only settings: `TrustServerCertificate=True` on a `Microsoft.Data.SqlClient`
+  string switches off the certificate check its defaults perform (`Encrypt` is
+  `Mandatory`, `TrustServerCertificate` `false`), and `AllowAnyOrigin()`,
+  `UseDeveloperExceptionPage()` or a validation callback returning `true` carry over the
+  same way. *(OWASP: Vulnerable Dependency Management cheat sheet; Software Supply Chain
+  Security cheat sheet; Secure Coding with AI cheat sheet; SCVS V1, V6.)*
 - Verify **signed packages**; generate an **SBOM** for releases. See
   `sota-devsecops`.
 - **A package runs code in your build, before any test does.** Restore writes
@@ -169,3 +197,14 @@ lives in `sota-testing`.
       build-executing files need a code owner:
       `(grep -snE 'Directory\.Build|\.targets|\.props|nuget\.config|global\.json' .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS; true) | grep -E . || echo "build-executing files have no CODEOWNERS entry -- HIGH"`
       (the subshell keeps a missing CODEOWNERS path from reading as "no owner")
+- [ ] **New dependency adopted unvetted, or a library's insecure default left on — MEDIUM
+      (HIGH for a deserializer or TLS default)** (§3) — new packages in the change, each
+      needing the §3 selection checks (a version bump is not listed; assumes `Include` is the
+      first attribute):
+      `git diff origin/main... -- '*.csproj' '*.props' | awk -F'"' '/^-.*<Package(Reference|Version) /{old[$2]=1} /^[+].*<Package(Reference|Version) /{new[$2]=1} END{for(i in new) if(!(i in old)) print "new dependency: " i}'` ;
+      explicit TLS opt-outs and Npgsql modes that do not verify the certificate:
+      `grep -rniE 'TrustServerCertificate *= *(true|yes)|SSL ?Mode *= *(Disable|Allow|Prefer|Require)' --include='*.cs' --include='*.json' --include='*.config' .` ;
+      Npgsql strings left on the `Prefer` default (also try `Server=`):
+      `grep -rniE 'Host *= *[^;"]+;' --include='*.cs' --include='*.json' --include='*.config' . | grep -viE 'SSL ?Mode *='` ;
+      MessagePack deserialization in a file that never opts into `UntrustedData`:
+      `grep -rlE 'MessagePackSerializer[.]Deserialize' --include='*.cs' . | while IFS= read -r f; do grep -q 'UntrustedData' "$f" || echo "$f: MessagePack on TrustedData default"; done`

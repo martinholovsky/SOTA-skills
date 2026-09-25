@@ -63,6 +63,34 @@ lives in `sota-testing`.
   deploy or cloud credentials, on an ephemeral runner; hand the artifact to a separate
   signing/publishing job. *OWASP: CI/CD Security cheat sheet; Software Supply Chain Security
   cheat sheet; NPM Security cheat sheet (the install-script analogue).*
+- **Adopting a new dependency is a decision with evidence, taken before the coordinate lands
+  in `pom.xml`, `build.gradle(.kts)` or `gradle/libs.versions.toml`** — whether a person
+  typed it or an AI assistant suggested it. **(a) Is it the project you meant?** A
+  coordinate that sounds right can be absent, freshly registered, or a look-alike. Confirm it
+  resolves on Maven Central (`https://repo1.maven.org/maven2/<group/path>/<artifact>/maven-metadata.xml`
+  answers 404 for a coordinate that does not exist), and that the `groupId` is the upstream
+  project's own namespace — Central grants a namespace only after DNS-TXT or code-host
+  verification, so an `io.github.<someone>` or look-alike group re-hosting a famous artifact is
+  a red flag, not a mirror. **(b) Is it alive and clean?** Read the release history
+  (first-publish date, cadence), advisories and licence from deps.dev
+  (`https://api.deps.dev/v3/systems/maven/packages/<group>%3A<artifact>`, then `/versions/<v>`
+  for `licenses` and `advisoryKeys`); maintainer count and activity from the source repo; and
+  the OpenSSF Scorecard (`scorecard --repo=github.com/<org>/<repo>`, or the `scorecard` block
+  of deps.dev's `/v3/projects/github.com%2F<org>%2F<repo>`). deps.dev marks the POM's
+  source-repo link `UNVERIFIED_METADATA` — confirm the repo really builds this artifact. **(c)
+  Its defaults are now your code.** Construct every security-relevant library object with
+  its options explicit, and review each option you pass. Verified examples:
+  `DocumentBuilderFactory.newInstance()` expands an external `file:` entity out of the box
+  (Temurin 25.0.4, harden per `rules/07`); SnakeYAML **1.x** `new Yaml()` builds a
+  `Constructor` that resolves global tags to arbitrary classes (2.0 added
+  `LoaderOptions`' `UnTrustedTagInspector`, which rejects them — still prefer
+  `new Yaml(new SafeConstructor(new LoaderOptions()))` for untrusted input); and a JDK
+  `HttpRequest` built without `.timeout(Duration)` waits forever, per its javadoc.
+  **(d) A README snippet is a demo, not a config.** Getting-started code routinely carries a
+  trust-all `TrustManager`/`HostnameVerifier`, `@CrossOrigin("*")`, a widened actuator
+  exposure or a debug flag; strip those before the snippet reaches a branch (`rules/04` §4–§6).
+  *OWASP: Vulnerable Dependency Management cheat sheet; Software Supply Chain Security cheat
+  sheet; Secure Coding with AI cheat sheet; SCVS V1, V6.*
 - Minimize the tree — each transitive dep is attack surface and a future CVE.
 
 ## 3. Static analysis & formatting
@@ -130,6 +158,16 @@ lives in `sota-testing`.
       `grep -L 'distributionSha256Sum' gradle/wrapper/gradle-wrapper.properties .mvn/wrapper/maven-wrapper.properties 2>/dev/null`
       (each file printed lacks a pin; the Maven one also needs `wrapperSha256Sum`) ;
       `grep -nE 'pom\.xml|build\.gradle|settings\.gradle|buildSrc|\.mvn|gradle/|\*' $(ls CODEOWNERS .github/CODEOWNERS docs/CODEOWNERS 2>/dev/null) /dev/null || echo "FINDING: no CODEOWNERS entry covers the build files"`
+- [ ] **New dependency: selection evidence recorded, insecure defaults overridden? (§2; HIGH for
+      a coordinate nobody can show was checked on Central/deps.dev, or a default-constructed
+      parser/client that reads untrusted input)** — list coordinates this branch adds, then
+      look each one up as §2 (a)–(b) describes (a version bump on a Gradle line or a one-line `<dependency>` prints
+      too; its `-` line names the same coordinate):
+      `git diff -U0 "$(git merge-base origin/main HEAD)" -- '*pom.xml' '*.gradle' '*.gradle.kts' '*.versions.toml' | grep -E '^\+[^+].*(<artifactId>|(implementation|api|runtimeOnly|compileOnly|annotationProcessor|ksp)[ (]|module *=)'`
+      ; default-constructed SnakeYAML (HIGH on 1.x with untrusted input):
+      `grep -rnE '(^|[^A-Za-z0-9_])Yaml\((\)|(new )?Constructor\()' --include='*.java' --include='*.kt' .`
+      ; files building a JDK `HttpRequest` with no `.timeout(` anywhere in them:
+      `grep -rlE 'HttpRequest\.newBuilder' --include='*.java' --include='*.kt' . | while IFS= read -r f; do grep -q '\.timeout(' "$f" || echo "$f: HttpRequest without .timeout"; done`
 - [ ] **Static analysis configured?** —
       `grep -rniE 'errorprone|nullaway|spotbugs|findsecbugs|pmd|detekt|ktlint|spotless' . --include='pom.xml' --include='build.gradle*' --include='*.yml' || echo "no static analysis configured"`
 - [ ] **Coverage gate + JUnit5/Testcontainers?** —

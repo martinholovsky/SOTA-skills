@@ -316,6 +316,25 @@ it generalises past Django.
 - **Typosquatting:** verify package names on first add (`requests` not `request`, `pillow`
   not `PIL` on PyPI, `python-dateutil` not `dateutil`). New transitive deps in a lockfile
   diff deserve a glance — lockfile diffs are security-relevant code review.
+- **Adopting a new dependency (yours or an AI assistant's suggestion) is a decision, not a
+  keystroke.** Before `uv add`, confirm the name resolves to the project you meant —
+  `curl -s https://pypi.org/pypi/<name>/json` answers 404 for a name that does not exist, and a
+  model-suggested name that exists but whose earliest `upload_time` under `releases` is
+  only weeks old is a squatting suspect. From the same JSON read `ownership.roles` (how many owners), the
+  release history, `info.project_urls` (does "Source" point at the repo you expect?) and
+  `info.license_expression`; from `https://api.deps.dev/v3/systems/pypi/packages/<name>/versions/<ver>`
+  the `advisoryKeys` and `relatedProjects`; and the repo's OpenSSF Scorecard via
+  `https://api.securityscorecards.dev/projects/github.com/<org>/<repo>`. One owner, no source
+  link, or a repo that does not match is a reason to prefer the stdlib or a better-kept peer.
+- **A library's defaults ship in your code.** Every security-relevant option you pass — or do
+  not pass — is yours to review. Measured this session: `requests` (2.34) defaults to
+  `timeout=None`, so a call with no `timeout=` can hang forever (httpx 0.28 defaults to 5 s);
+  `flask_cors.CORS(app)` (6.0) with no `origins=` reflects **any** `Origin` back; Jinja2
+  (3.1.6) `Environment()` has `autoescape=False` (§1). Set them explicitly, at one factory.
+- **README snippets are demos.** A quick-start copied verbatim brings `verify=False`,
+  `CORS(app)`, `debug=True` (§8a) or a hardcoded key with it; strip each demo setting before
+  it leaves the prototype. (OWASP: Vulnerable Dependency Management, Software Supply Chain
+  Security and Secure Coding with AI cheat sheets; SCVS V1, V6.)
 - **No `pip install` from URLs/git in prod paths** without commit pinning
   (`package @ git+https://...@<full-sha>`).
 - **Publish via PyPI Trusted Publishing (OIDC), not long-lived API tokens.** The GhostAction
@@ -422,6 +441,13 @@ foreign function, and validate lengths before they cross. The class is `sota-cod
 - [ ] **Supply chain** —
       `grep -rn "git+http" pyproject.toml uv.lock 2>/dev/null | grep -v "@[0-9a-f]\{40\}"` ;
       `grep -rn "nosec\|noqa: S" --include="*.py" src/` (justified suppressions?)
+- [ ] **--- Adopting a dependency and its insecure defaults (§9) --- [MEDIUM; HIGH for a
+      name that does not match its intended project]** —
+      `git diff origin/main -- uv.lock | grep -E '^\+name = '` (each new package: vetted on
+      PyPI JSON, deps.dev and Scorecard?) ;
+      `grep -rnE 'requests\.(get|post|put|patch|delete|head|request)\(|CORS\([A-Za-z_][A-Za-z0-9_.]*\)' --include='*.py' src/ | grep -v 'timeout='`
+      (a `requests` call with no timeout, or `CORS(app)` allowing every origin; a call split
+      over lines needs a read, and `Session` methods are not matched)
 - [ ] **--- Code that runs at install time: sdist builds and `.pth` (§9) --- [HIGH where the
       install step has secrets in env; MEDIUM otherwise]** —
       `grep -rnE '(uv (sync|pip (install|sync))|pip3? install)' --include='*.y*ml' --include='Dockerfile*' --include='*.sh' . | grep -vE -- '--no-build|--only-binary'`

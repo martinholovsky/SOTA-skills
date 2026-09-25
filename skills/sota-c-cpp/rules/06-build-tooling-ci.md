@@ -75,6 +75,31 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
   See `sota-devsecops`.
 - Minimize the dependency tree; each header-only or binary dep is attack
   surface and a build-integrity risk. Prefer the standard library.
+- **Before adding a dependency** (typed by a person or proposed by an AI assistant),
+  confirm it is the project you meant, not a lookalike or a name that only sounds right:
+  `vcpkg search <name>` lists the ports your baseline actually knows, and
+  `conan search <name> -r conancenter` the recipes ConanCenter carries (measured with
+  Conan 2.32). A port or recipe is a packaging of an upstream repository, so check that
+  the port's source URL points at the upstream you expected, then judge the upstream
+  itself: maintainer count and recent commits, release cadence, open advisories, licence.
+  deps.dev's package API does not index Conan or vcpkg, but its project endpoint
+  (`https://api.deps.dev/v3/projects/github.com%2F<owner>%2F<repo>`) returns the
+  repository's OpenSSF Scorecard; the `scorecard --repo=github.com/<owner>/<repo>` CLI
+  computes it directly (needs `GITHUB_AUTH_TOKEN`). Record the result in the PR that adds
+  the manifest line.
+- **A library's insecure defaults become your code's defaults.** Every security-relevant
+  option you do not set is a decision the library made for you. Verified examples:
+  OpenSSL leaves peer verification at `SSL_VERIFY_NONE` unless `SSL_CTX_set_verify` or
+  `SSL_set_verify` changes it (and checks no host name without `SSL_set1_host`);
+  libcurl's `CURLOPT_TIMEOUT` defaults to 0, "never times out", and
+  `CURLOPT_CONNECTTIMEOUT` to 300 s, so a stalled peer holds the thread; libcurl's
+  `CURLOPT_PROTOCOLS_STR` allows every compiled-in scheme (`rules/04` §4). Audit every
+  option passed to a library at a trust boundary, and the ones *not* passed.
+- **Sample code is not production code.** curl's own `docs/examples/https.c` carries
+  `CURLOPT_SSL_VERIFYPEER, 0L` behind `SKIP_PEER_VERIFICATION`; a copied README snippet
+  brings its demo switches (verification off, no timeouts, debug logging) with it. Strip
+  them on paste. *(OWASP: Vulnerable Dependency Management cheat sheet; Software Supply
+  Chain Security cheat sheet; Secure Coding with AI cheat sheet; SCVS V1, V6.)*
 - **Treat dependency build scripts as code that runs at install/build time, on the
   developer's machine and the CI runner, with their credentials, before any test.**
   C/C++ has no `--ignore-scripts`: building a dependency from source *is* running its
@@ -174,6 +199,15 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
       (no CVE-scan or SBOM step at all leaves §5 unenforced. OSV-Scanner's own table lists
       `conan.lock` for C/C++, plus commit-level scanning of submoduled or vendored code, and
       no vcpkg lockfile)
+- [ ] **New dependency: selection recorded, and the library's insecure defaults
+      overridden (§5) — HIGH for a TLS context with no verify mode, MEDIUM for a curl
+      handle with no transfer timeout** —
+      `git diff "$BASE" -- vcpkg.json 'conanfile.*' | grep -E '^\+[^+]'` (each added or reformatted
+      line needs a selection note: exact name, upstream, Scorecard) ;
+      `grep -rlE 'SSL_CTX_new' --include='*.c' --include='*.cpp' --include='*.cc' . | xargs -r grep -LE 'SSL_(CTX_)?set_verify'`
+      (OpenSSL's default is `SSL_VERIFY_NONE`) ;
+      `grep -rlE 'curl_easy_init' --include='*.c' --include='*.cpp' --include='*.cc' . | xargs -r grep -LE 'CURLOPT_(TIMEOUT|LOW_SPEED_TIME)'`
+      (libcurl's transfer timeout defaults to never; each hit is a file to read)
 - [ ] **Dependency code that runs at build time (configure/install) is inventoried and
       owner-reviewed (§5) — HIGH if these files have no CODEOWNERS entry, since a
       dependency bump or an agent-authored edit then executes unreviewed on CI** —

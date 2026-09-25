@@ -55,6 +55,27 @@ unknown-git = "deny"          # git deps pinned by rev only, allowlisted
   (these run code **at build time** — highest-trust tier). Check the crate's
   Security tab on crates.io (since Jan 2026 it surfaces RustSec advisories,
   CVE aliases, and affected ranges at the point of discovery).
+- **Before adding a dependency** (yours or an AI assistant's pick — it can name crates that do
+  not exist, or that a squatter registered after the name was hallucinated): `cargo info <name>`
+  must resolve (exit 101 if unknown); read licence and repository there, then
+  `https://crates.io/api/v1/crates/<name>` (`created_at`, `recent_downloads`) and `…/owners` —
+  a days-old crate, one owner, or a repository that is not the project you meant stops it.
+  Cross-check `https://deps.dev/cargo/<name>` and the repo's OpenSSF Scorecard
+  (`https://api.securityscorecards.dev/projects/github.com/<owner>/<repo>`). A newest release
+  can be a tombstone: `bincode` 3.0.0 is one `compile_error!` line.
+- **A crate's defaults become your code — set each security-relevant option yourself.** Read in
+  source: async `reqwest::Client` (0.13.5) has `timeout`, `read_timeout` and `connect_timeout`
+  all `None`, while the blocking client defaults to 30 s; `bincode` 2 `config::standard()` and
+  `legacy()` carry `NoLimit`, so a decoded `Vec<u8>` allocates the length the input claims —
+  decode untrusted bytes with `.with_limit::<N>()`; `minijinja` picks auto-escaping from the
+  template *name* (`.html`/`.htm`/`.xml` → HTML, `.json`/`.js`/`.yaml` → JSON with the `json`
+  feature, any other name → none), so `add_template("page", …)` renders values raw unless you
+  set `set_auto_escape_callback`.
+- **A README or example snippet is a demo config.** `tower_http::cors::CorsLayer::permissive()`
+  allows any origin, method and header; `very_permissive()` also allows credentials and mirrors
+  the caller's origin — right for an example, a finding in a service; so is a pasted
+  `danger_accept_invalid_certs(true)` (§7). (OWASP: Vulnerable Dependency Management, Software
+  Supply Chain Security, Secure Coding with AI cheat sheets; SCVS V1, V6.)
 - This is not theoretical: Feb–Mar 2026 saw a coordinated campaign of five
   fake "time utility" crates (`time-sync`, `dnp3times`, `chrono_anchor`, … —
   RUSTSEC-2026-0030/0031/0032/0036) that typosquatted/brandjacked real crates
@@ -407,6 +428,12 @@ memory budgets — see `sota-sandboxing` rules/04 §5 and rules/02 R7.2a.
       `cargo vet` audit). Then `rg -n --no-messages 'build\.rs|Cargo\.(toml|lock)|\.cargo/' .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS`
       — no line means your own build-executing files merge without an owner. A CI job that
       runs cargo build/test with publish or deploy secrets in scope is also High.
+- [ ] **New dependency adoption and insecure defaults (§2) — High on a deployed service,
+      else Medium** — each crate a diff adds has a selection record (`cargo info` resolves;
+      owners, age, repository, deps.dev/Scorecard read). Then
+      `rg -n -t rust 'CorsLayer::(very_)?permissive\(|config::(standard|legacy)\(\)|with_no_limit\(|reqwest::Client::new\(\)' . | rg -v 'with_limit'`
+      (each hit is a library default kept: permissive CORS, unbounded bincode decode, a client
+      with no timeout); also read every `reqwest::Client::builder()` for `.timeout(`.
 - [ ] **TLS / transport verification (§7) — CRITICAL outside tests** —
       `rg -n 'danger_accept_invalid_(certs|hostnames)\(\s*true|\.dangerous\(\)|impl\s+ServerCertVerifier\s+for' -t rust`
       (each hit outside `#[cfg(test)]` is a finding unless the verifier delegates to
