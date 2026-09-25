@@ -355,7 +355,7 @@ Four forms, all observed:
   the record gone. Predicate right, traversal right, scope nominally complete:
   the checking stops at the seam between iterations, and nothing in the output
   distinguishes "all chunks verified" from "verified each chunk in isolation".
-  Worked instance: `rules/04` §8, chained partitions.
+  Worked instance: `rules/18` §1, chained partitions.
 
 The question to ask of every guard, gate, coverage assertion and tripwire:
 

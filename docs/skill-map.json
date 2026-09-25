@@ -998,15 +998,6 @@
     },
     {
       "from": "sota-code-security",
-      "to": "sota-detection-engineering",
-      "weight": 3,
-      "targets": [
-        "rules/02",
-        "rules/06"
-      ]
-    },
-    {
-      "from": "sota-code-security",
       "to": "sota-sandboxing",
       "weight": 3,
       "targets": [
@@ -1038,6 +1029,15 @@
         "rules/02",
         "rules/02 \u00a73",
         "rules/06 \u00a74"
+      ]
+    },
+    {
+      "from": "sota-code-security",
+      "to": "sota-detection-engineering",
+      "weight": 3,
+      "targets": [
+        "rules/02",
+        "rules/06"
       ]
     },
     {
@@ -1459,8 +1459,8 @@
       "to": "sota-code-security",
       "weight": 2,
       "targets": [
-        "rules/04 \u00a78",
-        "rules/15 \u00a72"
+        "rules/15 \u00a72",
+        "rules/18 \u00a71"
       ]
     },
     {
@@ -1748,22 +1748,6 @@
     },
     {
       "from": "sota-code-security",
-      "to": "sota-confidential-computing",
-      "weight": 1,
-      "targets": [
-        "rules/01 \u00a72"
-      ]
-    },
-    {
-      "from": "sota-code-security",
-      "to": "sota-privacy-compliance",
-      "weight": 1,
-      "targets": [
-        "rules/03 \u00a74"
-      ]
-    },
-    {
-      "from": "sota-code-security",
       "to": "sota-ruby",
       "weight": 1,
       "targets": [
@@ -1818,6 +1802,22 @@
       "weight": 1,
       "targets": [
         "rules/02 \u00a72"
+      ]
+    },
+    {
+      "from": "sota-code-security",
+      "to": "sota-confidential-computing",
+      "weight": 1,
+      "targets": [
+        "rules/01 \u00a72"
+      ]
+    },
+    {
+      "from": "sota-code-security",
+      "to": "sota-privacy-compliance",
+      "weight": 1,
+      "targets": [
+        "rules/03 \u00a74"
       ]
     },
     {

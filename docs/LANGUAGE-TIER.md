@@ -18,7 +18,7 @@ drift; regenerate rather than trusting them.
 | Section | Status |
 |---|---|
 | Idioms / language baseline | **universal** — all 9 |
-| Security | **universal** — all 9 (PHP splits it across three files) |
+| Security | **universal** — all 9 (PHP splits it across three files; jvm carries XML in its own `rules/07` since 2026-09-25, split out of `rules/04` when the OWASP adoption would have taken that file past the cap — a size split, not a principled difference) |
 | Performance | **universal** — all 9 |
 | Tooling / CI / supply chain | **universal** — all 9 |
 | Testing | **universal**, but usually *inside* the tooling file; only Python and JS/TS give it one of its own |

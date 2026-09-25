@@ -74,6 +74,9 @@ lessons-log — its own best structural idea, applied to ourselves.
 > | `rules/12` §3 | `rules/15` §3 (the guard that is an instance of what it guards) |
 > | `sota-devsecops` `rules/05` §5.6 | `sota-devsecops` `rules/09` §1–§5 (gates that hold) |
 > | `sota-devsecops` `rules/03` §3.9, §3.9.1–3.9.7 | `sota-devsecops` `rules/10` (the file), §1–§7 — 2026-09-07 |
+> | `rules/02` §2, §3 (sessions, JWT) | `rules/17` §2, §3 (numbers kept) — 2026-09-25 |
+> | `rules/04` §8 (tamper-evident logs) | `rules/18` §1 — 2026-09-25 |
+> | `sota-jvm` `rules/04` §3 (XML and XXE) | `sota-jvm` `rules/07` §1 — 2026-09-25 |
 >
 > Invariant 18 keeps *live* `§` references honest, but its scope is `skills/*/*.md`,
 > `skills/*/rules/*.md`, `evals/*.py`, `evals/README.md`, `scripts/*.sh` and
@@ -5736,3 +5739,31 @@ template stale — `docs/SKILL-TEMPLATE.md` listed **12** universal concepts whi
 on 2026-09-15 "every one of the 34 checks was green"; invariant 34 was added later (#400), so
 each count bump had quietly rewritten a historical sentence. It now reads "every check then
 in force".
+
+## 2026-09-25 — three splits ahead of the OWASP adoption (ROADMAP 66, step 2)
+
+**Why now, and why these three.** The placement pass for the 847 OWASP gap themes projected
+three rules files past the 500-line cap: `sota-code-security` rules/02 (317 → ~549), rules/04
+(431 → ~521) and `sota-jvm` rules/04 (452 → ~506). The operator approved splitting first, as
+reviewed PRs with no rule-text change, so each adoption PR lands in a file with room.
+
+**The seams, chosen by where the incoming lines land and what the library cites.**
+- rules/02 §2 Sessions + §3 JWT → **rules/17 sessions & tokens**, numbers kept (several
+  numbered sections). They take 67 of rules/02's incoming high/medium lines, so both files
+  keep room: rules/02 242, rules/17 90.
+- rules/04 §8 tamper-evident logs → **rules/18**, renumbered to §1 (a single section). It
+  receives none of the incoming lines and is a self-contained topic: rules/04 352, rules/18 94.
+- `sota-jvm` rules/04 §3 XML → **rules/07 XML**, renumbered to §1, which the placement pass
+  had already proposed: rules/04 399, rules/07 66.
+
+**Verified:** every line deleted from a source reappears in its new file except the two
+renumbered headings (a scripted diff check); the moved checklist bullets (6, 3, 3) went with
+their sections. Invariant 18 caught 14 broken `§` references (3 of them my own pointer text);
+an explicit sweep found the rest it cannot see — rules/17's header citing `rules/02 §2`
+(passing silently), and bare pointers in both SKILL.md top-10s and in the router's
+cross-cutting rules 17 and 18, which now name rules/18. Historical text (this log, and two passages in
+ROADMAP's history prose) is left as written and translated by the table above.
+
+**An instrument defect of mine, found on the way.** My filter over the gate's output
+excluded every line containing "ok", and hid invariant 10's report on
+`17-sessions-and-t**ok**ens.md`. The gate was right; the filter now anchors on `^    ok`.

@@ -263,12 +263,13 @@ rules files that match the code in front of you. Never load all skills at once.
     **silent** and fakes a clean result). Audit it all with `sota-shell-scripting`
     rules/01 §3 and **rules/06**, the file for pasted and agent-issued commands. And a script that **produces or
     verifies evidence** (attestations, ledgers, gate records, audit trails) is a security
-    control written in shell: add `sota-code-security` rules/10, rules/12 and rules/15.
+    control written in shell: add `sota-code-security` rules/10, rules/12, rules/15 and, for
+    a ledger or audit trail, rules/18.
 18. **Cryptography fans out — there is no single crypto skill (by design).** Algorithm choice,
     AEAD/nonce discipline, CSPRNG, in-code key handling, TLS client config, constant-time
-    comparison, tamper-evident logs/audit ledgers (keyed hash chains, external anchoring,
-    integrity-vs-completeness), crypto agility, and post-quantum migration → `sota-code-security`
-    rules/04. The key *material* — storage backends (KMS/HSM, Vault, SOPS+age), lifecycle,
+    comparison, crypto agility, and post-quantum migration → `sota-code-security` rules/04;
+    tamper-evident logs/audit ledgers (keyed hash chains, external anchoring,
+    integrity-vs-completeness) → rules/18. The key *material* — storage backends (KMS/HSM, Vault, SOPS+age), lifecycle,
     rotation, per-credential-type handling → `sota-secrets-management`. Transport/PKI — TLS server
     config, cert lifecycle/ACME, private CA, mTLS → `sota-network-security` rules/06.
     FIPS-140-3-validated-module requirements → `sota-security-compliance` rules/02. Language-

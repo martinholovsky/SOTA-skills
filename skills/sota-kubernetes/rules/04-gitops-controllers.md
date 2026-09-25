@@ -170,7 +170,7 @@ which goes stale by itself when writes stop; a counter of successes never will.
 no alarm was wrong: a write that should have happened did not, and every signal
 reporting on it was a signal about intent. Freshness is the only observable that
 degrades when an outbound write stops — the same distinction `sota-code-security`
-rules/04 §8 draws between integrity and completeness for audit ledgers.
+rules/18 §1 draws between integrity and completeness for audit ledgers.
 
 ## 7a. What you wrote is not what lands — verify a rendered object by rendering
 

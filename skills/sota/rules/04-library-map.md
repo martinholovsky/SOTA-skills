@@ -32,7 +32,8 @@ exist. `sota-code-security/rules/11` sat unlisted for two releases before 15 exi
   cryptography, 05 web security, 06 memory & resource safety, 07 data exposure, 08 LLM/AI
   security, 09 untrusted-data ingestion, 10 silent control failure, 11 dead-path diagnostics, 12
   verifying the verifier, 13 context-dependent silence, 14 the control that is not in force,
-  15 instruments & guards, 16 where silent no-ops hide (the catalogue split out of 10)
+  15 instruments & guards, 16 where silent no-ops hide (the catalogue split out of 10), 17 sessions
+  & tokens (split out of 02), 18 tamper-evident logs & audit ledgers (split out of 04)
 - **sota-skill-security/rules**: 01 provenance & installation, 02 trust boundary & capability,
   03 authoring & auditing skills
 - **sota-threat-modeling/rules**: 01 methodologies, 02 decomposition, 03 threat catalogs, 04 risk
@@ -126,8 +127,8 @@ exist. `sota-code-security/rules/11` sat unlisted for two releases before 15 exi
 - **sota-c-cpp/rules**: 01 idioms (RAII/ownership), 02 memory safety, 03 undefined behavior, 04
   security (CERT/MISRA/hardening), 05 concurrency, 06 build/tooling & CI, 07 performance
 - **sota-jvm/rules**: 01 idioms (Java/Kotlin), 02 API/null/immutability design, 03 concurrency
-  (virtual threads, JMM, coroutines), 04 security (deserialization/injection/XXE/JNDI/crypto), 05
-  performance (GC/JFR/GraalVM), 06 build/tooling & CI
+  (virtual threads, JMM, coroutines), 04 security (deserialization/injection/JNDI/crypto), 05
+  performance (GC/JFR/GraalVM), 06 build/tooling & CI, 07 XML (XXE/XSLT, split out of 04)
 - **sota-python/rules**: 01 tooling & project setup, 02 typing & correctness, 03 idioms &
   pitfalls, 04 async, 05 security, 06 performance, 07 frameworks & testing
 - **sota-javascript-typescript/rules**: 01 tsconfig & types, 02 language idioms, 03 async
