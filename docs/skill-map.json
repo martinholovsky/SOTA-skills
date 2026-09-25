@@ -859,6 +859,12 @@
     },
     {
       "from": "sota-network-security",
+      "to": "sota-identity-access",
+      "weight": 6,
+      "targets": []
+    },
+    {
+      "from": "sota-network-security",
       "to": "sota-secrets-management",
       "weight": 6,
       "targets": []
@@ -1007,12 +1013,6 @@
         "rules/02 \u00a72.4",
         "rules/03"
       ]
-    },
-    {
-      "from": "sota-network-security",
-      "to": "sota-identity-access",
-      "weight": 5,
-      "targets": []
     },
     {
       "from": "sota-network-security",

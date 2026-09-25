@@ -112,8 +112,8 @@ claims = verify(token,
 assert claims.get("azp", claims["aud"]) == "web-app"
 ```
 
-- **Mix-up defense when the RP/broker talks to more than one AS** (Kanidm *plus* any
-  upstream/social IdP): validate the `iss` **authorization-response** parameter
+- **Mix-up defense when the RP/broker talks to more than one AS** (e.g. an
+  in-house IdP *plus* an upstream/social IdP): validate the `iss` **authorization-response** parameter
   (RFC 9207), not just the ID-token `iss`. Without it, an attacker who can make the
   user start a login at an honest AS can swap in a malicious AS's authorization
   response and have the code/token redeemed at the wrong endpoint. Single-AS

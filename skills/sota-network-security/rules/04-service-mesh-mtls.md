@@ -137,7 +137,7 @@ allow-all NetworkPolicy still has a flat L3 underneath.
   doesn't capture, the DB outside the mesh). Hunt for unmeshed sensitive endpoints; cover them with
   CNI policy (rules/03).
 - **Cert rotation = the mesh's job** — short-lived SVIDs auto-rotate; if you're manually managing
-  mesh certs, something is wrong. Internal root/intermediate (your step-ca) feeds the mesh CA;
+  mesh certs, something is wrong. The internal root/intermediate (e.g. a step-ca private CA) feeds the mesh CA;
   rotate per rules/06.
 - **Don't double-encrypt blindly** — if Cilium already encrypts transparently at L4 (WireGuard or
   ztunnel) and you add a full mesh on top, justify it; usually pick one transport-security layer.

@@ -3,7 +3,7 @@
 Scope: Kubernetes `NetworkPolicy`, `CiliumNetworkPolicy` (CNP/CCNP), the namespaced default-deny
 pattern (ingress AND egress), the "default-deny that isn't" trap, the cluster-scoped
 AdminNetworkPolicy / BaselineAdminNetworkPolicy (ANP/BANP) API, L7 + identity-based policy,
-DNS-aware egress, egress gateways, and Hubble flow visibility. Examples here assume a **Cilium**-based cluster (e.g. Talos K8s + Cilium).
+DNS-aware egress, egress gateways, and Hubble flow visibility. Examples here use a **Cilium**-based cluster as the worked case.
 
 Where this sits: **sota-kubernetes** owns admission/RBAC and *that NetworkPolicy is admitted and the
 CNI is wired*; this skill owns the policy *content and depth*. sota-cloud-infrastructure rules/03
@@ -114,7 +114,7 @@ reference egress policy using `ipBlock` for an in-cluster backend, which this fi
 forbade and which was the weaker pattern anyway. Both sides were fixed — the example now selects by
 identity, and the absolute now says where it binds.
 
-For the user's Cilium cluster, prefer **CiliumNetworkPolicy** for anything needing identity-based,
+On a Cilium cluster, prefer **CiliumNetworkPolicy** for anything needing identity-based,
 L7, FQDN, or cluster-wide policy; keep plain NetworkPolicy for portable baselines.
 
 ## 4. CiliumNetworkPolicy: identity, L7, FQDN
@@ -173,8 +173,8 @@ spec:
 the SSRF pivot to cloud credentials. Default egress should not include `169.254.0.0/16`; if a
 broad egress exists, explicitly deny the link-local range. This is the egress side of the SSRF chain
 (sota-code-security rules/01 owns the app-side SSRF; rules/05 here covers the edge/egress side).
-On the user's on-prem Talos cluster there's no IMDS, but the habit prevents the finding if they
-ever burst to cloud — and IMDSv2 (token-required, account-enforceable, default on new EC2 types)
+An on-prem cluster has no IMDS, but the habit prevents the finding if it
+ever bursts to cloud — and IMDSv2 (token-required, account-enforceable, default on new EC2 types)
 is the cloud-side mitigation (sota-cloud-infrastructure).
 
 **R7 — Egress gateways for stable, inspectable egress.** When external partners allowlist your
@@ -200,7 +200,7 @@ matrix and pin versions** — don't build a control you can't test. Until it's s
 cluster, a Cilium *clusterwide* policy (CCNP) achieves the cluster-scoped default-deny today.
 
 ```yaml
-# Cilium clusterwide default-deny baseline (works today on the user's stack)
+# Cilium clusterwide default-deny baseline
 apiVersion: cilium.io/v2
 kind: CiliumClusterwideNetworkPolicy
 metadata: { name: default-deny-all }

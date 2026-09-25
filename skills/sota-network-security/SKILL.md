@@ -50,7 +50,8 @@ Use when designing or extending a secure network (zero-trust plan, NetworkPolicy
 ingress/egress controls, PKI/DNS posture, remote access).
 
 1. **Establish context first:** on-prem vs cloud vs hybrid; CNI and orchestrator (e.g.
-   on-prem Talos K8s + Cilium); existing PKI (step-ca), edge (Caddy + CRS WAF, Cloudflare in front);
+   an on-prem cluster with an eBPF CNI such as Cilium); existing PKI (e.g. a private CA such as
+   step-ca), edge (e.g. a reverse proxy with a CRS WAF behind a CDN);
    data sensitivity; who needs remote access. A 3-node homelab and a regulated fleet get different
    answers from the same rules.
 2. **Read the matching rules file before writing config.** Segmentation (rules/02) precedes policy
@@ -152,8 +153,8 @@ cluster" is rules/02 + rules/03 (+ rules/04 if a mesh exists).
 
 ## Operating notes
 
-- Principles first, then the user's stack (Talos K8s + Cilium, step-ca, Caddy+CRS, Cloudflare);
-  name alternatives when the stack is unknown.
+- Principles first, then the reader's actual stack once it is known; until then, name the
+  alternatives rather than assuming one.
 - **Verify versions and API status against current docs before committing them** — CNI features,
   mesh GA status, the ANP/BANP/ClusterNetworkPolicy API state, CRS version, and the CA/B cert
   schedule all move faster than this text. Be version-agnostic where a claim is unpinnable.

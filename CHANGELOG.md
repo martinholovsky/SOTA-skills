@@ -73,6 +73,14 @@ covered 9 skills, not the library. Record: ADOPTION-LOG, 2026-09-25.
 - **The golang description** now says "Go 1.26+". The routing regression set and the
   baseline both scored 1.000 after the change.
 
+### Fixed (repo hygiene)
+
+- **Reader-setup phrasing removed from four skills.** `sota-network-security` (12 places),
+  `sota-identity-access` and `sota-devsecops` described one specific stack as "the user's stack",
+  "your step-ca" or "user's choice". `AGENTS.md` forbids assuming the reader's setup. The products
+  stay as neutral examples ("e.g. a private CA such as step-ca"), and no technical content
+  changed. The full-library accuracy sweep found this (batch 1).
+
 ### Added (earlier in this cycle)
 
 - **Skill map page 6 — concept x language.** Every audit concept `scripts/gen-concept-matrix.py`
