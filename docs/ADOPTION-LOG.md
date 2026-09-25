@@ -6880,6 +6880,24 @@ because the `at` of the currency cue also matched as a boundary word. Both shape
 labelled corpus first (41/43 — the gate failing), and then a boundary word inside a currency
 cue stopped counting (43/43, 58/58).
 
+**A second, deeper detector hole, found by a batch-2 research agent the same day:** any bare
+ISO date anywhere in a sentence exempted the whole sentence. "Current upstream: v1.36 … v1.33
+reached EOL ~2026-06" passed because the EOL date read as provenance. Labelling the eight lines
+a narrower rule then flagged showed the model had the wrong *shape*, not a wrong regex: in
+`sota-kubernetes` rules/01, "CIS listed v2.0.1 as latest on 2026-09-25" (a dated observation)
+shielded "NSA/CISA … v1.2 — still the current edition" (an undated pin) in the same sentence.
+The model now: provenance dates only the version/cue pair it sits beside, or a whole unit when
+it opens it; a bare date is provenance unless an event word (EOL, released, until, reached…)
+introduces it; "a newest release" (indefinite) is generic; "released" is a boundary. Corpus
+47 pins / 63 non-pins; this round's 9 additions are library lines (one, the CIS half, trimmed
+from its sentence), all added before the model changed.
+It found **five real pins** the old rule hid, all rewritten: `sota-cloud-infrastructure`
+rules/04 (a supported-minors window), `sota-javascript-typescript` SKILL.md ("ESLint (v9/v10)"),
+`sota-kubernetes` rules/01 (the NSA/CISA edition), `sota-llm-engineering` SKILL.md ("the
+mid-2026 baseline"), and `sota-web-frameworks` SKILL.md ("(16.x current)"). Probe 38b was
+retargeted: its mutation deleted a line the new model no longer has, and its landing assertion
+would have failed loudly rather than passed.
+
 - **DEFERRED — OWASP Top 10:2025 A10 is unmapped in `sota-code-security` rules/01, 07, 09; revisit trigger: the next OWASP mapping pass, or the first audit finding that needs A10.**
 - **DEFERRED — DBSC (device-bound session credentials) browser support in `sota-code-security`; revisit trigger: DBSC ships beyond one OS or a second engine commits to it.**
 - **DEFERRED — verifying good bots by forward-confirmed rDNS or published IP ranges, and the Web Bot Auth draft; revisit trigger: draft-ietf-webbotauth reaches WG last call, or rules/19 is next edited.**

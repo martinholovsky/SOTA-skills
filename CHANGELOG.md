@@ -27,8 +27,11 @@ the eight deferrals with their triggers: `docs/ADOPTION-LOG.md`, 2026-09-26 batc
   CVE-2026-20833 RC4 phases, ATLAS AML.T0104's replacement, FIPS 140-2's move to the Historical
   List, M-26-05, FedRAMP 2026 terminology, and legacy Rego that `opa check` rejects.
 - **Nine command code spans wrapped across lines** in eight files are rejoined.
-- **Invariant 38's detector** missed "currently at v8.30.1"; the shape is now in its labelled
-  corpus (43 pins, 58 non-pins) and a boundary word inside a currency cue no longer counts.
+- **Invariant 38's detector** missed "currently at v8.30.1", and any bare date anywhere in a
+  sentence exempted the whole sentence (an EOL date shielded a pin beside it). Provenance now
+  dates only the claim it sits beside, and an event date (EOL, released, until) is not
+  provenance; the labelled corpus is 47 pins / 63 non-pins. Five hidden pins were rewritten
+  (cloud-infrastructure, javascript-typescript, kubernetes, llm-engineering, web-frameworks).
 
 **The nine language skills were re-verified against primary sources.** This was an early,
 partial run of the accuracy sweep: 158 findings, 72 High or Medium each put to a refuter

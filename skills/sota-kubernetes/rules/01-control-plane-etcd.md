@@ -4,7 +4,7 @@ Scope: the cluster's brain — HA control plane, API server and kubelet hardenin
 encryption/backup/restore, node and immutable-distro hardening (Talos, k3s/k0s), version
 skew and CVE response. Frame against the **CIS Kubernetes Benchmark** (CIS listed v2.0.1
 as latest on 2026-09-25; use the edition matched to your minor version) and the **NSA/CISA Kubernetes Hardening Guidance** (v1.2,
-Aug 2022 — still the current edition; verify before citing). On managed clusters
+Aug 2022 at the 2026-09-26 check; verify the latest edition before citing). On managed clusters
 (EKS/GKE/AKS) the provider owns the control plane and etcd — you cannot set these flags;
 audit the *managed equivalents* (provider security posture, control-plane logging,
 secrets-encryption setting) and focus your effort on RBAC, admission, and nodes.
