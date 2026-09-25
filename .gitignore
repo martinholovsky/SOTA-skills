@@ -37,3 +37,7 @@ evals/results/durations.tsv
 # draw.io desktop writes a .$<name>.bkp beside a file while exporting it.
 # Generating the skill map renders every page, so these appear in docs/ on any run.
 .$*.bkp
+
+# Offline copies of external sources and analysis outputs (large, often licence-restricted:
+# e.g. CC BY-SA text that must not enter this CC BY repo). Kept locally for lookup, never committed.
+/offline/

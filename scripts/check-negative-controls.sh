@@ -998,6 +998,32 @@ wt_commit "probe: a placeholder image tag in the v1.* namespace"
 probe_committed_green 34b "a placeholder image tag is not a self-version claim" \
   "every self-claimed version resolves"
 
+# 35 — the template's concept list must equal UNIVERSAL_FLOOR. Delete one bullet, which is
+# the original defect (the template sat 13 concepts behind the floor).
+( cd "$WT" && python3 -c "
+import pathlib
+p = pathlib.Path('docs/SKILL-TEMPLATE.md')
+t = p.read_text()
+line = '- [ ] **numeric precision & money**'
+i = t.index(line)
+p.write_text(t[:i] + t[t.index(chr(10), i) + 1:])
+" )
+probe 35 "the template omits a concept the floor pins" \
+  "TEMPLATE MISSING floor concept: numeric precision & money"
+
+# 36 — every 'Any ... code' router row must be in LANGS. Drop one language from LANGS,
+# which is what an unregistered new language skill looks like to the floor check.
+( cd "$WT" && python3 -c "
+import pathlib
+p = pathlib.Path('scripts/gen-skill-map.py')
+t = p.read_text()
+t2 = t.replace(', \"ruby\"]', ']', 1)
+assert t2 != t, 'probe stale: ruby not found at the end of LANGS'
+p.write_text(t2)
+" )
+probe 36 "a routed language skill is missing from LANGS" \
+  "NOT IN LANGS: sota-ruby"
+
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
 # =============================================================================

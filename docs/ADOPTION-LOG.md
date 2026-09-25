@@ -5670,3 +5670,69 @@ through GitHub and all three lose content. The worst is `sota-shell-scripting` r
 `sota-threat-modeling` rules/02 (six rows of grep patterns), `sota-async-concurrency` rules/02,
 `sota-shell-scripting` SKILL.md, `docs/INDEX.md` and six rows of this log. Reported to the
 operator, not fixed here.
+
+## 2026-09-25 — OWASP, item by item: the intake method, a June pass that was never logged, and the template made binding
+
+**Intake shape: an operator-supplied list of 19 OWASP projects, checked in full rather than
+by name.** The operator's framing is the lesson: *touching a project once is not implementing
+its guidance.* A name sweep had found ASVS in 7 files, WSTG in 3 and Go-SCP in the ledger,
+and I first called four of them "already covered" on that basis. None was: the June pass (below)
+compared ASVS by **17 chapters** against **345 requirements**, took **2** items from Go-SCP's
+table of contents, and filtered the cheat sheets to one private stack, which skipped every
+Java, .NET, PHP and Ruby sheet.
+
+**The June 2026 OWASP pass, recorded here for the first time.** PRs #19 and #22–#29
+(2026-06-28) gap-checked the library against the Cheat Sheet Series, ASVS 5.0 at chapter level
+(16/17 covered; V17 WebRTC closed in #28), WSTG (which produced `sota-testing` rules/09 in
+#29) and Go-SCP. It was recorded only in a private memory file and in commit titles, so its
+decisions were invisible to the next reader. One of them stands and is recorded now:
+**organisational/GRC material (SAMM maturity scoring, security-champion programmes,
+training, culture) is out of scope — this is a code-building library, not a GRC framework.**
+The 2026-09-25 mapping still compared those items and lists them as `out_of_scope`, so the
+decision is visible item by item rather than assumed.
+
+**The method (all artefacts in the git-ignored `offline/owasp-gap-2026-09-24/`; sources are
+CC BY-SA, so no text enters this CC BY repo — ids and our own wording only).**
+
+- **Denominators from source files, each reconciled to an independent count:** ASVS 5.0.0 345,
+  AISVS 1.0 191, WSTG 114, SCVS 87, LLMSVS 70, SCSVS 220, MASVS 24, MASTG 292, SAMM 90,
+  DSOMM 251, Cornucopia 160, Secure Headers 106, SCP-QRG 214, Champions 10, plus 5,265
+  practices extracted from prose (121 cheat sheets, 4 of them deprecation stubs; Go-SCP; the
+  threat-modeling playbook; Proactive Controls 2024; the Code Review Guide v2 PDF) —
+  **7,439 items**. Three mismatches were reconciled to a named cause before use, plus one
+  count-passing defect (every Champions item's text read "What").
+- **Per item:** covered (a cited `skills/…:LINE` the agent read) · partial · missing (≥2
+  searches in different vocabulary) · out_of_scope. Every missing/partial was re-argued by a
+  refuter told to find coverage; a BM25 shortlist over 3,270 library sections widened recall
+  past grep's vocabulary (control: all 12 ASVS WebRTC items shortlisted `sota-api-design`
+  rules/05).
+- **Result:** 4,808 covered · 1,858 partial · **498 missing** · 275 out of scope. Hand checks:
+  `covered` held in **44 of 50** (88%, so gaps are understated), `missing` in 4 of 4
+  controlled searches. One mapping batch invented placeholder ids for 57 items; the
+  aggregator's id check rejected them and the batch was re-run.
+- **Synthesised into 847 themes** (205 high · 470 medium · 172 low), every one of the 2,356
+  gap rows in exactly one theme, then placed against each target skill's real sections. The
+  adoption itself follows in later PRs, each re-verifying its gaps against the tree.
+
+**Adopted with this entry — the template becomes binding for language skills.** The
+operator's instruction: *a section that is universal across languages joins the template,
+and the template is what every future coding skill is built from.* Checking it found the
+template stale — `docs/SKILL-TEMPLATE.md` listed **12** universal concepts while
+`UNIVERSAL_FLOOR` pinned **25** — and a hole: the floor check sees only the nine languages in
+`LANGS`, so a tenth language skill would never be checked. Now:
+
+- the template lists all 25, and states the rule: a rule added to one language skill goes to
+  all nine plus the floor, to some plus a `conditional:` concept, or stays with a reason in
+  `LANGUAGE-TIER.md`;
+- **invariant 35** fails when the template's list and the floor differ (it has already
+  drifted once, silently, so it passes all three of the ledger's filters);
+- **invariant 36** fails when a router row reading "Any … code" is not in `LANGS`, or the
+  reverse. It has **not** failed in the wild; it was added on operator instruction because it
+  is cheap and loud, and that exception is recorded here so it is not mistaken for the norm;
+- `CONTRIBUTING.md` now sends a new skill's author to the template; `docs/INDEX.md` no
+  longer says "12".
+
+**Also recorded:** a false statement found while updating the counts. CONTRIBUTING said that
+on 2026-09-15 "every one of the 34 checks was green"; invariant 34 was added later (#400), so
+each count bump had quietly rewritten a historical sentence. It now reads "every check then
+in force".
