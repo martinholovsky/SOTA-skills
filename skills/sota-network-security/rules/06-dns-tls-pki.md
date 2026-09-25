@@ -178,7 +178,7 @@ zones, rate-limit/length-limit queries, and FQDN-allowlist egress so workloads c
 authoritative servers. **Detection** of the exfil pattern (entropy, query volume, long labels) is
 sota-detection-engineering — feed it your resolver logs.
 
-## 4. Internal PKI (step-ca)
+## 4. Internal PKI (e.g. step-ca)
 
 **R9 — Run a private CA with short-lived certs; distribute trust deliberately.** A common self-hosted choice is
 **step-ca**. SOTA internal PKI:

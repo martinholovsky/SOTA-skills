@@ -137,8 +137,8 @@ brute-force and 0-day target. There is always a better option.
   destinations that peer needs (it is also the routing/ACL — a wide `AllowedIPs = 0.0.0.0/0` makes
   it a flat VPN again), rotate keys on offboarding, keys handled as secrets (sota-secrets-management).
 - **Bastion vs IAP:** a plain jump-host with shared SSH keys is barely better than direct SSH.
-  Prefer an identity-aware bastion that issues short-lived per-session certs (your step-ca can back
-  this), records sessions, and is itself fronted by the IdP. The bastion must be the *only* SSH
+  Prefer an identity-aware bastion that issues short-lived per-session certs (an internal CA such as
+  step-ca can back this), records sessions, and is itself fronted by the IdP. The bastion must be the *only* SSH
   path — hosts deny SSH from everywhere except the bastion's identity/SG.
 
 ## 7. Containment in depth
