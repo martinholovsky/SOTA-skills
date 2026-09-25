@@ -84,7 +84,7 @@ LANG_TOPICS = {
               "06": ["Tooling / CI / supply chain", "Testing"], "07": ["Performance"]},
     "jvm": {"01": ["Idioms / baseline", "Errors"], "02": ["API / design", "Typing"], "03": ["Concurrency"],
             "04": ["Security", "Web / HTTP", "Memory / UB"], "05": ["Performance"],
-            "06": ["Tooling / CI / supply chain", "Testing"]},
+            "06": ["Tooling / CI / supply chain", "Testing"], "07": ["Security"]},
     "python": {"01": ["Tooling / CI / supply chain"], "02": ["Typing"],
                "03": ["Idioms / baseline", "API / design", "Errors"],
                "04": ["Concurrency"], "05": ["Security", "Memory / UB"],

@@ -26,7 +26,7 @@ survives a long context instead of fading into it. That's why it beats a bigger 
 instead of becoming one. Native on Claude Code; works with Antigravity CLI, Codex, and any
 agent that reads `AGENTS.md`.
 
-Under the hood: **42 skills (317 files, ~73k lines)** of state-of-the-art 2026
+Under the hood: **42 skills (320 files, ~73k lines)** of state-of-the-art 2026
 practice, each **instruction** file under 500 lines so only the matching rules load —
 the cap applies to `skills/**` alone, never to README/CHANGELOG/`docs/` — every fast-moving
 claim web-verified against a primary source **as of the last full sweep** (the root
@@ -390,7 +390,7 @@ because the same change added three more classes below):
   answering a **liveness** question no hardware guarantee covers. Both are counted in
   a threat model and neither reaches the case it is counted for.
   ([rules/08 §1](skills/sota-code-security/rules/08-llm-ai-security.md),
-  [rules/04 §8](skills/sota-code-security/rules/04-cryptography.md))
+  [rules/18 §1](skills/sota-code-security/rules/18-tamper-evident-logs.md))
 - **Stages that report success while doing nothing** — found by the cheap signals
   rather than by reading every line: a step returning "nothing found" far faster
   than its claimed work allows, a gate that never prints how many items it

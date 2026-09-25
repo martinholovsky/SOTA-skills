@@ -30,6 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Three rules files split ahead of the OWASP adoption (ROADMAP 66).** `sota-code-security`
+  rules/02 §2–§3 (sessions and JWT) moved to **rules/17**, keeping their numbers. rules/04 §8
+  (tamper-evident logs) moved to **rules/18** §1. `sota-jvm` rules/04 §3 (XML) moved to
+  **rules/07** §1. No rule text changed. Every reference was updated, including the router's
+  cross-cutting rules 17 and 18, which now name rules/18.
 - **`/sota-resume` §2: ALREADY DONE is now ALREADY DONE / OBVIATED.** An item whose gap a
   different mechanism already covers used to land in READY by default. A READY item that adds a
   new control must now name the incumbent control and test it against the target. Both README
