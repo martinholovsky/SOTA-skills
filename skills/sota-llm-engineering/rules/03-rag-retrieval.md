@@ -145,6 +145,22 @@ tell you which stage failed (rules/01 §6).
   context; if the context doesn't contain the answer, say so. "Not in the
   corpus" is a first-class outcome with its own eval cases — a RAG system
   that never refuses is hallucinating on the gaps.
+- **Score every answer at runtime, not only a sample offline.** Sampled
+  online judging (rules/01 §4) tells you the hallucination *rate*; it does
+  nothing for the answer in front of the user now. Attach a confidence signal
+  to each response before it ships — a groundedness score from a check you
+  have calibrated against labelled cases, agreement across several sampled
+  generations, or token log-probabilities where the API returns them (the
+  OpenAI Chat Completions SDK takes `logprobs`; the Anthropic Messages SDK
+  has no such parameter — check yours). Below a threshold set on the eval,
+  withhold the answer and take the degradation path (rules/05 §6) or queue
+  it for a human; never ship it with a disclaimer bolted on. Answer classes
+  your policy rates high-risk (medical, legal, financial, anything that
+  drives an action) get an extra verification pass regardless of score.
+  **Resolve every URL, API endpoint, package name and record ID** the model
+  emits against a source of truth (the supplied context, an allowlist, a
+  lookup) before rendering it — an invented identifier reads exactly like a
+  real one. OWASP: AISVS 7.2.1–7.2.3, 12.3.2; OWASP DSOMM.
 - **Citations are structural:** assign stable IDs to context blocks, require
   the model to attach source IDs per claim (structured output, rules/02 §6),
   and **resolve them in code** — every cited ID must exist in the supplied
@@ -157,6 +173,17 @@ tell you which stage failed (rules/01 §6).
   Track and alert on index lag (source `updated_at` vs index `indexed_at`);
   surface document dates to the model so it can prefer current sources and
   caveat stale ones.
+- **Caches and derived copies follow the source's lifecycle.** A response
+  cache or semantic cache (rules/05 §3 item 7) holds answers built from
+  documents; when a document is edited, deleted or has its permissions
+  changed, evict every cached answer and embedding derived from it — key
+  cache entries by the source IDs they drew on so the eviction is a lookup,
+  not a flush. Cap cache TTL by the sensitivity of the most sensitive source
+  behind the entry, and never let an embedding or cached answer outlive the
+  retention period of its source. Keep a deletion log (source ID, time,
+  stores purged) and sweep the vector store periodically for chunks whose
+  source no longer exists — an orphan is retrievable data nobody owns.
+  OWASP: OWASP RAG Security cheat sheet.
 - **Corpus integrity (OWASP RAG Security):** the vector store is attacker-
   reachable if anyone can write to it. Restrict writes to the ingestion
   identity, store a content hash (SHA-256) per chunk and verify it before
@@ -212,5 +239,17 @@ queries needing tool choice (search vs SQL vs API).
 - [ ] Citations structurally validated in code against supplied context IDs.
 - [ ] Freshness: event-driven (or scheduled) reindex with reconciliation;
       deletes/ACL revocations propagate to the index; index lag monitored.
+- [ ] Each answer carries a runtime confidence score (calibrated groundedness,
+      multi-sample agreement, or logprobs) with a withhold/fallback/human
+      threshold; high-risk classes verified again; emitted URLs, endpoints
+      and IDs resolved before rendering (§7). **High** on consequential routes.
+      Probe — model text returned straight to the caller, read each hit for a
+      gate: `grep -rnE 'return [a-z_]*\.(content\[0\]\.text|choices\[0\]\.message\.content)' .`
+- [ ] Source edit, delete or permission change evicts dependent cached
+      answers and embeddings; cache TTL capped by source sensitivity and
+      retention; deletion log kept; orphan-chunk sweep scheduled (§7).
+      **High** (Critical if a revoked document's answer is still served).
+      Probe — cache writes with no expiry:
+      `grep -rnE '(semantic_cache|answer_cache|response_cache)\.(set|put|add)\(' . | grep -vE 'ttl|ex=|expire'`
 - [ ] Agentic retrieval only where one-shot demonstrably fails; bounded per
       rules/04.

@@ -141,6 +141,27 @@ prompt = f"Answer this: {user_input}. Use document: {doc}. Reply as JSON."
 - Where the provider supports distinct roles/channels for operator vs user
   content (system role, mid-conversation system messages), use them instead
   of smuggling operator instructions into user-turn text.
+- **Reserved tokens in untrusted text stay text.** When you tokenize or
+  template for a self-hosted model, a string such as `<|im_start|>` or
+  `<|endoftext|>` inside user or retrieved content must encode as ordinary
+  characters, not as the control token — otherwise the input can close its
+  own turn and open a forged system one. Defaults differ, verified
+  2026-09-25: tiktoken's `encode()` raises on special-token text unless told
+  otherwise (`encode_ordinary()` or `disallowed_special=()` encode it as
+  plain text; `allowed_special="all"` turns it into the control token);
+  Hugging Face fast tokenizers map it to the special token by default
+  (`split_special_tokens=False`) — pass `split_special_tokens=True` for
+  untrusted segments, or escape the strings before templating.
+- **State the instruction hierarchy and test it.** System/developer
+  instructions outrank user turns, which outrank retrieved or tool content;
+  say so in the system prompt and keep eval cases where lower-tier content
+  tries to countermand a higher tier. After a long retrieved block, restate
+  the few instructions that must hold (§1 placement) and confirm the
+  placement per model on the eval — it does not transfer between models.
+  None of this is a control: security wording in a system prompt steers,
+  assume the prompt will be disclosed, and enforce in code
+  (sota-code-security rules/08). OWASP: AISVS 2.1.6, 2.1.7; OWASP LLM
+  Prompt Injection Prevention cheat sheet; OWASP RAG Security cheat sheet.
 
 ## 5. Caching-aware prompt structure
 
@@ -275,6 +296,12 @@ category = data.get("category", "other")                    # silently launders 
 - [ ] Untrusted content enters via typed, delimited, trust-labeled slots
       with delimiter escaping — no f-string concatenation into instructions
       (cross-check sota-code-security rules/08).
+- [ ] Untrusted text never tokenizes into control tokens; instruction
+      hierarchy stated and eval-tested; key instructions restated after
+      retrieved content; no prompt wording treated as the control (§4).
+      **High** where a self-hosted model tokenizes user input. Probe:
+      `grep -rnE 'allowed_special[[:space:]]*=[[:space:]]*.all|split_special_tokens[[:space:]]*=[[:space:]]*False' .`
+      (also read calls that omit `split_special_tokens` — False is the default).
 - [ ] Prompts are named constants/files in the repo, versioned, diffable;
       traces carry prompt version.
 - [ ] Cache-aware ordering verified: frozen prefix, deterministic

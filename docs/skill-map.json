@@ -236,6 +236,20 @@
   ],
   "edges": [
     {
+      "from": "sota-llm-engineering",
+      "to": "sota-code-security",
+      "weight": 24,
+      "targets": [
+        "rules/07",
+        "rules/08",
+        "rules/08 \u00a74",
+        "rules/09 \u00a74",
+        "rules/10",
+        "rules/13 \u00a74a",
+        "rules/14 \u00a73"
+      ]
+    },
+    {
       "from": "sota-devsecops",
       "to": "sota-code-security",
       "weight": 23,
@@ -251,20 +265,6 @@
         "rules/15",
         "rules/15 \u00a72",
         "rules/15 \u00a72.2"
-      ]
-    },
-    {
-      "from": "sota-llm-engineering",
-      "to": "sota-code-security",
-      "weight": 22,
-      "targets": [
-        "rules/07",
-        "rules/08",
-        "rules/08 \u00a74",
-        "rules/09 \u00a74",
-        "rules/10",
-        "rules/13 \u00a74a",
-        "rules/14 \u00a73"
       ]
     },
     {
@@ -951,6 +951,15 @@
     },
     {
       "from": "sota-llm-engineering",
+      "to": "sota-sandboxing",
+      "weight": 4,
+      "targets": [
+        "rules/05",
+        "rules/05 \u00a74"
+      ]
+    },
+    {
+      "from": "sota-llm-engineering",
       "to": "sota-privacy-compliance",
       "weight": 4,
       "targets": []
@@ -1232,14 +1241,6 @@
       "targets": [
         "rules/02",
         "rules/07"
-      ]
-    },
-    {
-      "from": "sota-llm-engineering",
-      "to": "sota-sandboxing",
-      "weight": 3,
-      "targets": [
-        "rules/05"
       ]
     },
     {
@@ -1582,6 +1583,18 @@
     {
       "from": "sota-ml-engineering",
       "to": "sota-cloud-infrastructure",
+      "weight": 2,
+      "targets": []
+    },
+    {
+      "from": "sota-ml-engineering",
+      "to": "sota-detection-engineering",
+      "weight": 2,
+      "targets": []
+    },
+    {
+      "from": "sota-ml-engineering",
+      "to": "sota-devsecops",
       "weight": 2,
       "targets": []
     },
@@ -1981,6 +1994,14 @@
       ]
     },
     {
+      "from": "sota-databases",
+      "to": "sota-code-security",
+      "weight": 1,
+      "targets": [
+        "rules/02 \u00a78"
+      ]
+    },
+    {
       "from": "sota-devsecops",
       "to": "sota-skill-security",
       "weight": 1,
@@ -2243,14 +2264,16 @@
       "targets": []
     },
     {
-      "from": "sota-ml-engineering",
-      "to": "sota-kubernetes",
+      "from": "sota-llm-engineering",
+      "to": "sota-detection-engineering",
       "weight": 1,
-      "targets": []
+      "targets": [
+        "rules/02"
+      ]
     },
     {
       "from": "sota-ml-engineering",
-      "to": "sota-detection-engineering",
+      "to": "sota-kubernetes",
       "weight": 1,
       "targets": []
     },
@@ -2264,9 +2287,11 @@
     },
     {
       "from": "sota-ml-engineering",
-      "to": "sota-devsecops",
+      "to": "sota-sandboxing",
       "weight": 1,
-      "targets": []
+      "targets": [
+        "rules/01"
+      ]
     },
     {
       "from": "sota-mobile",

@@ -34,6 +34,8 @@ progressive rollout validated on live traffic.
 - Deploy from the **model registry** (`rules/01`): a model is promoted
   staging→production only after the validation gate passes (`rules/04`). The
   deployed artifact is immutable and traceable to its lineage.
+- Admission and the serving process's load path both verify the model
+  signature against the authorised signer, and fail closed (`rules/07` §2).
 - Keep the **previous production model** available for instant rollback.
 
 ## 4. Progressive rollout & rollback

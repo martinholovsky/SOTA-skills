@@ -40,9 +40,19 @@ CREATE TABLE consent_events (
 - **Checked at point of use:** the email sender, the analytics loader, the ML
   training-set builder each query current consent state at execution time — not
   at enrollment time. Stale snapshots of consent are a classic audit finding.
+  **For profiling and personalization, the check is an authorization gate, not
+  a model input:** it runs before the feature fetch and before the model call,
+  and a refused request never reaches either. A `consent` column in the feature
+  vector lets the model learn around it, and the personal data was already
+  fetched. Where an identifier-free step (contextual scoring of page content)
+  runs without profiling consent, consent attaches where its output is joined
+  to a user or device identifier — gate that identifier write and the model
+  call as two separate checks, since either can happen without the other.
+  OWASP: AI-Powered Advertising Systems Security cheat sheet.
 - **Propagated to processors:** withdrawal triggers suppression downstream
   (marketing platform suppression list, ad-platform audience removal, CMP signal
   to tags). Track propagation lag; minutes-to-hours, not "next quarterly sync."
+  Withdrawal also invalidates what was *derived* under the consent (§5 item 9).
 - **Auditable:** for any (subject, purpose, time) you can answer "what was the
   consent state and how do we know" — this is your defense artifact.
 
@@ -79,7 +89,15 @@ enforcement, not banner theater:
   tag → category, vendor, consent purpose, data sent.
 - **Honor Global Privacy Control:** CCPA/CPRA regulations require treating GPC as
   a valid opt-out of sale/share; wire the header/JS signal into the same consent
-  state machine as the banner.
+  state machine as the banner. GPC (`Sec-GPC: 1`) is one of several opt-out
+  signals to read at feature-fetch time, not only at page load: an IAB Tech Lab
+  GPP string (OpenRTB 2.6 carries it in `regs.gpp` / `regs.gpp_sid`); iOS App
+  Tracking Transparency (without authorization the advertising identifier reads
+  as all zeros from iOS 14.5); and the Android advertising ID, which reads as
+  zeros once the user deletes it — Google Play policy forbids linking a reset
+  or deleted ID to data derived from the previous one without explicit consent,
+  so a zeroed or changed ID is an opt-out event, not a new user. OWASP:
+  AI-Powered Advertising Systems Security cheat sheet.
 - Dark-pattern check: reject UIs where "Accept all" is one click and "Reject" is
   three; EU regulators have fined exactly this asymmetry.
 
@@ -158,6 +176,15 @@ recorded derivative graph (rules/01 §5) to ALL of:
    stores; for models already trained, document the position (retrain cadence
    within which the data washes out; vector-store entries deleted immediately).
    An ML pipeline with no answer here is a HIGH finding as of 2026.
+9. **Derived materializations on consent withdrawal** — the same fan-out runs
+   for a withdrawn purpose, not only for erasure: audience segments, lookalike
+   and propensity scores, cached embeddings, LLM KV/prefix caches and warm
+   adapter pools built from the subject's data are invalidated, and caches of
+   derived artefacts carry the consent version in their key so a withdrawal
+   misses rather than hits. Prove it with a regression test: grant, serve,
+   withdraw, replay the same request, and assert no derived artefact is read
+   and no profiling model is invoked. OWASP: AI-Powered Advertising Systems
+   Security cheat sheet.
 
 ```yaml
 # GOOD: deletion fan-out is declared, not hardcoded — generated from the
@@ -268,7 +295,9 @@ module "bucket" {
 
 - [ ] Consent stored as versioned, append-only, per-purpose records with policy version and mechanism; no boolean consent columns; no default-on consent
 - [ ] Consent checked at point of use (read the sender/tracker/training-job code), withdrawal ≤ grant effort, propagation to processors automated and lag-monitored
-- [ ] No non-essential trackers fire pre-consent (verify with fresh-session network diff); GPC honored where CCPA/CPRA applies
+- [ ] Profiling consent is checked before the feature fetch and model call, never passed as a model feature; the identifier join and the model call are gated separately (§1). HIGH where a non-consented request reaches the model. Probe for consent in a feature vector: `grep -rnE "(features|feature_vector|model_input)[^#]*[\"'](has_|is_)?consent[a-z_]*[\"']" .`
+- [ ] No non-essential trackers fire pre-consent (verify with fresh-session network diff); GPC honored where CCPA/CPRA applies; GPP, ATT status and Android ad-ID deletion/reset also read at feature-fetch time (§2) — MEDIUM
+- [ ] Consent withdrawal invalidates derived segments, scores, embeddings and model caches; a withdraw-and-replay regression test exists (§5 item 9). HIGH if derived artefacts survive withdrawal. Probe for memoized derived artefacts keyed without consent: `grep -rnE -A1 '@(functools\.)?(lru_cache|cache)' . | grep -E 'def [a-z_]*(segment|lookalike|embed|audience)'`
 - [ ] DSAR export is inventory-driven with CI completeness test; identity verification precedes disclosure and is logged; output machine-readable; other subjects' data excluded
 - [ ] Deletion request flow exists as a state machine with deadline tracking; end-to-end deletion test (fixture user → delete → catalog residue scan) in CI
 - [ ] Soft deletes paired with running, monitored purge jobs

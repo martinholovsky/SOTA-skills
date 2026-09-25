@@ -229,6 +229,22 @@ small pool/role for migrations and admin so app saturation can't block them.
 With transaction pooling, plain `SET app.tenant_id` leaks to the next
 borrower — a tenant-isolation breach (CRITICAL). `SET LOCAL` resets at
 COMMIT. Verify RLS context (file 01/06) uses SET LOCAL exclusively.
+- **SET LOCAL only works inside a transaction.** Outside one, PostgreSQL
+  prints a WARNING and ignores it, so a tenant-scoped query then runs with no
+  context (or whatever a leaked `SET` left). Open the transaction first, set
+  the context, run the work, end it.
+- **Every transaction commits or rolls back before its connection returns
+  to the pool** — on the error path too (a `finally`/scope guard, not a
+  happy-path `commit()`). Do not rely on the pooler to scrub state:
+  PgBouncer's `server_reset_query` (`DISCARD ALL`) runs only in session
+  mode unless `server_reset_query_always` is set.
+- **Test it:** force a pool of one connection, run tenant A's request, then
+  tenant B's on the same connection, and assert B sees neither A's rows nor
+  A's context. Measured on PostgreSQL 17: after a committed `SET LOCAL`,
+  `current_setting('app.tenant_id', true)` returns an empty string (not NULL)
+  on that session; after a plain `SET` it still returns A's value — the
+  test must fail on the second case.
+OWASP: Multi Tenant Security cheat sheet.
 
 ## Audit checklist
 
@@ -251,6 +267,12 @@ COMMIT. Verify RLS context (file 01/06) uses SET LOCAL exclusively.
       and code audited against its restrictions (SET LOCAL only, prepared
       statements compatible, no session advisory locks/LISTEN in txn mode).
 - [ ] Separate admin/migration pool; query_wait_timeout bounds queueing.
+- [ ] CRITICAL: tenant context never outlives its transaction — every
+      transaction ends (commit or rollback, error path included) before the
+      connection is released, and a one-connection pool test proves tenant
+      B cannot see tenant A's context. Probe for session-level context:
+      ``grep -rniE "(^|[\"'\`(])[[:space:]]*SET[[:space:]]+(SESSION[[:space:]]+)?[[:alnum:]_]+\.[[:alnum:]_]+[[:space:]]*(=|TO)|set_config\([^,]+,[^,]+,[[:space:]]*false" .``
+      (a MySQL multi-line `UPDATE ... SET alias.col` can hit; discard it).
 - [ ] No deep/looped savepoint usage (nested atomic blocks, per-row error
       recovery); subtransaction SLRU pressure monitored on busy systems.
 - [ ] Workers wake via LISTEN/NOTIFY or adaptive backoff (not tight polling),

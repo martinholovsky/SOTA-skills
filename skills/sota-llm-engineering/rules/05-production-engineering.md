@@ -92,7 +92,8 @@ Order of leverage:
    explicitly and only on routes that justify it.
 7. Semantic/response caching (serve cached answers to near-duplicate
    queries) helps FAQ-shaped traffic; mind staleness + per-user data leaks
-   in the cache key.
+   in the cache key, and evict entries when their sources change
+   (rules/03 §7).
 
 ## 4. Cost engineering
 
@@ -146,6 +147,19 @@ refusal/truncation rates, online eval scores & user-feedback rates
 (rules/01 §4). Alert on: cost anomaly (>2× daily baseline), 429/5xx spikes,
 cache hit-rate collapse, eval-score drops, spike in `stop_reason=max_tokens`
 (silent truncation in prod).
+
+**Retrieval is an access to data — log it as one.** Each retrieval span in
+the same trace records the requester identity, the (redacted) query, the
+knowledge source queried, and the returned chunk IDs with the ACL metadata
+that admitted them, so an incident can replay exactly what a user was shown.
+Feed these to the security event stream (sota-detection-engineering rules/02)
+and alert on: query sequences that sweep the corpus (many near-orthogonal
+queries, high distinct-chunk coverage per identity), repeated injection-
+shaped inputs from one principal, ACL denials at retrieval, and a shift in
+which sources or chunks are being returned. A pipeline stage that fails
+raises an error naming the stage and emits an event; it never returns an
+empty context and lets the model answer from nothing. OWASP: AISVS 12.1.4;
+OWASP RAG Security cheat sheet.
 
 Logging prompts/completions is logging user data: redaction, retention, and
 access control per rules/06 §5 and sota-privacy-compliance.
@@ -222,6 +236,12 @@ them follows the same pipeline:
 - [ ] Every call traced with the §5 minimum fields; agent steps share a
       trace; dashboards + the §5 alert set exist; prompt/completion logs
       redacted and retention-controlled.
+- [ ] Every retrieval logged with requester, query, source and chunk IDs +
+      ACL metadata in the request trace; corpus-sweep, repeated-injection,
+      ACL-denial and distribution-shift alerts wired to the security stream;
+      a failed stage raises and names itself (§5). **High** for a silent
+      empty-context fallback. Probe — exception handlers that swallow into
+      an empty result: `grep -rn -A1 -E '^[[:space:]]*except' . | grep -E 'return \[\]|(docs|chunks|context|hits|results) = \[\]'`
 - [ ] Per-route degradation ladder defined and tested (fallback model →
       cache → non-LLM → honest unavailability); circuit breakers on
       providers; refusals handled as product paths.

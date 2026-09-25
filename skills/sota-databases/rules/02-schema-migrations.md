@@ -201,6 +201,9 @@ Minimum bar:
 - Staging runs the migration against a recent prod restore (this doubles as
   your backup-restore test — file 05).
 - For risky migrations: rehearse the rollback path explicitly.
+- Multi-tenant schemas: after migrating, run the catalog tenancy gate
+  (file 06, Row-Level Security) so a new table ships classified and, if
+  tenant-scoped, with RLS forced and a policy.
 
 ### Rule: Migrations are forward-compatible with concurrent deploys.
 If two app instances deploy at once, or a migration runs while old pods serve
