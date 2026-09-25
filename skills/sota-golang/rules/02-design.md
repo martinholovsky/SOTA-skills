@@ -144,6 +144,30 @@ type Limiter struct {
   time zone indicator, Parse returns a time in UTC"*: parsing a user's local time with a
   zone-less layout needs `time.ParseInLocation`.
 
+### Numeric edges: NaN, zero divisors, the most negative integer
+
+Extends `rules/05` §5 (conversions, money). Go never traps on these; it hands back a value.
+
+- **`strconv.ParseFloat` accepts `"NaN"`, `"Inf"` and `"Infinity"`** (signed, any case) with a
+  nil error; an out-of-range literal like `"1e400"` returns `±Inf` *and* `ErrRange`. A
+  `float64` struct field tagged `json:",string"` takes `"NaN"` the same way. Every comparison
+  with NaN is false, so `if x < lo || x > hi { reject }` lets NaN through. Reject non-finite
+  input by name — `math.IsNaN(x) || math.IsInf(x, 0)` — or write the check as
+  `!(x >= lo && x <= hi)`, which NaN fails. Converting NaN/Inf to an integer is
+  implementation-dependent per the spec (measured on go1.27.1/amd64: `MinInt64`).
+- **Integer `/` or `%` by a zero variable panics** (`integer divide by zero`); float
+  division yields `±Inf` silently. Guard the divisor and return an error; a handler's
+  `recover` is not the validation.
+- **Signed overflow wraps and never panics** (spec, "Integer overflow"). `math.MinInt64 / -1`
+  is `MinInt64` and `-math.MinInt64 == math.MinInt64`, so `abs` and sign flips need a
+  `MinInt` check. Intermediates wrap too: `(a*b)/b` with `a = MaxInt64, b = 2` is `-1`.
+  `time.Duration(n) * time.Second` for `n = 1e10` is a negative duration — bound `n` first
+  (`|n| <= math.MaxInt64/int64(time.Second)`). The stdlib has no checked signed ops:
+  `math/bits.Add64`/`Mul64` report unsigned carry and the high word, `math/big` never
+  overflows, and any hand-rolled arithmetic on untrusted values needs a bound proved first.
+
+OWASP: Go Secure Coding Practices (general coding practices); OWASP SCSVS (arithmetic).
+
 ## 5. Generics: judicious use only
 
 Generics (1.18+) are for **code that is identical except for the type**:
@@ -270,6 +294,11 @@ func UserFrom(ctx context.Context) (*User, bool) {
       `grep -rnE '[!=]=[[:space:]]*time\.(Time\{\}|Now\(\))' --include='*.go' .` (use `IsZero`
       or `Equal`) ; `grep -rnF 'time.Parse(' --include='*.go' .` (read each layout: with no
       `Z07`, `-0700` or `MST` element the result is UTC, so local input needs `ParseInLocation`)
+- [ ] **NaN/Infinity accepted from input; divide-by-zero and overflow at MinInt (§4) — MEDIUM,
+      HIGH where the value gates money, limits or allocation** —
+      `grep -rlE 'strconv\.ParseFloat\(' --include='*.go' . | xargs grep -LE 'math\.Is(NaN|Inf)\('`
+      (files that parse floats and never test for non-finite values) ; then read integer
+      `/`, `%`, negation and `time.Duration(n) *` sites on untrusted values for a guard
 - [ ] **Context violations** —
       `grep -rnE 'ctx\s+context\.Context' --include='*.go' . | grep -E 'struct|^\s+[A-Za-z]+ +context\.Context'`
       (ctx in struct — MEDIUM);

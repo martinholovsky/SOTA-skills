@@ -57,6 +57,19 @@ exploit UB at `-O2`. Treat any UBSan diagnostic as CRITICAL/HIGH. Reference:
   minor units with `llround`/`std::llround` (half away from zero), not a cast: measured,
   `(long)(19.99 * 100)` is `1998` and `llround` gives `1999`. `printf("%.2f")` rounds the
   binary value (`2.675` prints `2.67`, measured), so it is display, not arithmetic.
+- **Arithmetic edge cases at the boundary.** `strtod`, `std::stod` and `std::from_chars`
+  all accept `"nan"`, `"inf"` and `"-Infinity"` from input and return a non-finite value
+  with no error (measured, Apple clang 21 / libc++). Every comparison with NaN is false,
+  so `if (x < lo || x > hi) reject();` lets a NaN through: test `std::isfinite(x)`
+  (`isfinite` in C) first. Integer `/` or `%` by zero is UB (it trapped with SIGFPE on
+  x86-64, measured; do not rely on that), and so is `INT_MIN / -1` and `-INT_MIN`: guard
+  `b == 0` and `a == MIN && b == -1` before dividing. Floating `/0.0` is UB in the
+  standards (UBSan `-fsanitize=float-divide-by-zero` flags it) even though IEEE hardware
+  yields `inf`. Multi-term expressions overflow in the intermediate, and so do unit
+  conversions: `std::chrono::nanoseconds{seconds_from_input}` multiplied a signed
+  `long long` past its range under UBSan (measured), so bound the input or convert with
+  `ckd_mul`/`__builtin_mul_overflow` first. (OWASP: Go-SCP general coding practices; SCSVS
+  arithmetic.)
 
 ```cpp
 // BAD — n*size can overflow to a small value; tiny alloc, then huge copy
@@ -127,6 +140,11 @@ mutex. Build threaded code under TSan.
       (money declared as a binary float) ;
       `grep -rnE '(\((long long|long|int|u?int(32|64)_t)\)[[:space:]]*\(|static_cast<[a-z0-9_ ]+>\()[^;]*\*[[:space:]]*100' --include='*.c' --include='*.cc' --include='*.cpp' .`
       (scaled to minor units by a truncating cast; use `llround`)
+- [ ] **NaN/infinity from parsed input, divide by zero, INT_MIN / -1 (§2) — HIGH on size,
+      price or limit paths** —
+      `grep -rLE 'isfinite|isnan' --include='*.c' --include='*.cc' --include='*.cpp' . | xargs grep -nE '(strto(d|f|ld)|sto(d|f|ld)|atof)[[:space:]]*\(' /dev/null`
+      (float parsed in a file that never checks finiteness); then review each `/` and `%`
+      by an input-derived divisor for the zero and MIN/-1 guards
 - [ ] **Build with conversion warnings: -Wconversion -Wsign-conversion -Wshadow -Wcast-align
       -Wshift-overflow=2**
 - [ ] **Uninitialized — MEDIUM** —

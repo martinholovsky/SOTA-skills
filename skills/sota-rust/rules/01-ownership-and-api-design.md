@@ -109,6 +109,21 @@ fn transfer(from: AccountId, to: AccountId, amount: Cents) -> Result<(), Error>
   the cast. An integer above 2^53 that passes through `f64` loses its low bits
   (`9007199254740993` comes back as `...992`, measured), so deserialize amounts and IDs into
   integer or decimal fields.
+- **Arithmetic edge cases on numeric input** (adds to the `checked_*` policy in rules/05 §3).
+  `str::parse::<f64>()` returns `Ok` for `"nan"`, `"inf"`, `"-Infinity"` (any case, per core's
+  float grammar) and `Ok(inf)` for `"1e400"`. NaN compares false to everything, so
+  `if x < min || x > max { reject }` passes it, and `x.clamp(min, max)` returns it: test
+  `!x.is_finite()` first. Integer `/` and `%` panic on a zero divisor **and on `MIN / -1`** in
+  release as well as debug, so a caller-chosen divisor is a panic-DoS (rules/05 §4): use
+  `checked_div`/`checked_rem`, which return `None` for both. Float `x / 0.0` is `inf`, not an
+  error. `-MIN` and `MIN.abs()` panic in debug but return `MIN` in release: use `checked_neg`,
+  `checked_abs` or `unsigned_abs`. `a * b / c` can overflow in the product when the result
+  fits: chain `checked_mul(b).and_then(|p| p.checked_div(c))` or widen to `i128`. Keep time in
+  `Duration` (`checked_add`, `checked_mul`; `as_nanos()` is `u128`) rather than
+  `secs * 1_000_000_000`, which wraps in release, and convert float seconds with
+  `Duration::try_from_secs_f64` (stable since 1.66). `from_secs_f64` panics on NaN, negative
+  or overflow. All of this was measured on rustc 1.97.1, both `-O` and debug.
+  (OWASP: Go-SCP, general coding practices; OWASP SCSVS, arithmetic)
 
 ## 4. Typestate pattern
 
@@ -309,6 +324,14 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
       (a money field, parameter or binding typed as a float) ;
       `grep -rnE '\*[[:space:]]*100(\.0)?(_?f64)?\)?[[:space:]]*as [iu](8|16|32|64|128|size)' --include='*.rs' .`
       (scaled to minor units by a truncating cast: `(19.99 * 100.0) as i64` is `1998`)
+- [ ] **NaN/Infinity and overflow at the extremes (§3) — MEDIUM, HIGH when the value gates a
+      limit, a price or a timeout** —
+      `grep -rnE '[^_[:alnum:]]from_secs_f(32|64)\(|\*[[:space:]]*1_?000_?000_?000' --include='*.rs' . ; grep -rlE 'parse::<f(32|64)>|:[[:space:]]*f(32|64)[[:space:]]*=[^;]*\.parse\(' --include='*.rs' . | xargs -r grep -L 'is_finite' | xargs -r grep -HnE 'parse::<f(32|64)>|:[[:space:]]*f(32|64)[[:space:]]*=[^;]*\.parse\('`
+      — the first lists panicking `Duration` float constructors and seconds-to-nanoseconds `*`
+      scaling, and the second lists float parses in files that never call `is_finite`. It works
+      at file level, so a file with one `is_finite` hides the rest: read each parse site. Then
+      look by hand for `/`, `%` or unary `-` on a caller-supplied integer that has no
+      `checked_div`/`checked_neg`.
 - [ ] Public trait intended to be closed but unsealed — can a downstream crate
       impl it? If yes and that's unintended, seal it.
 - [ ] Hand-written comparison impls: `rg 'impl (PartialEq|Eq|PartialOrd|Ord)' -t rust`
