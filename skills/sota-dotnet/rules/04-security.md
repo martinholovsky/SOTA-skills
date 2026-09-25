@@ -72,6 +72,22 @@ network/file/DB/config as untrusted. Reference:
   `[GeneratedRegex]`) or use `RegexOptions.NonBacktracking` (.NET 7+, linear time). A
   **pattern** from a user is worse than input: `Regex.Escape` it, and Microsoft states that
   timeouts are *not* a security boundary against malicious patterns (CA3012).
+  - **Escaping has a gap.** `Regex.Escape` leaves `]`, `}` and `-` alone (measured on .NET 10),
+    so escaped data is safe as a literal run but **not inside a `[...]` class**. Build classes from
+    a fixed set.
+  - **A validator must match the whole string.** `Regex.IsMatch` finds a match anywhere, so an
+    unanchored allowlist accepts `abc;rm`. In .NET, `$` and `\Z` also match **before a final `\n`**:
+    `^[a-z]+$` accepts `"abc\n"`. Anchor with `\A…\z`, and never add `RegexOptions.Multiline` to a
+    validator, because that makes `^`/`$` line anchors. `[RegularExpression]` (DataAnnotations)
+    already requires the match to span the whole value and defaults to a 2 s timeout.
+  - **Bound the input twice.** Check `input.Length` against a cap before matching, and put explicit
+    limits in the pattern (`{1,64}`, not `+`).
+  - **The engine has a cost.** The default engine backtracks. Atomic groups `(?>…)` stop a local
+    blow-up, but .NET has no possessive quantifiers (`a++` is a parse error). `NonBacktracking`
+    throws `NotSupportedException` when a pattern uses lookaround, backreferences or atomic groups,
+    and it rejects `RightToLeft`. When you need those, stay on the backtracking engine with a timeout.
+    *(OWASP: Input Validation cheat sheet; OWASP Proactive Controls 2024 C3; ASVS 5.0 V1.2.9;
+    OWASP Go-SCP, validation.)*
 - **SSRF: an outbound request to a destination the caller picks.** The policy is
   `sota-code-security` rules/01 §5. This bullet covers how to apply it in .NET. Best: take a key
   or ID from the caller, look up the base `Uri` in your own allowlist, and build the request
@@ -276,6 +292,11 @@ section is the .NET spelling an auditor has to grep for.
       `grep -rnE 'new Regex\(|Regex\.(IsMatch|Match|Matches|Replace|Split)\(|\[GeneratedRegex\(' --include='*.cs' . | grep -vE 'TimeSpan|matchTimeout|NonBacktracking'`
       ; `grep -rn 'REGEX_DEFAULT_MATCH_TIMEOUT' .` (a hit sets a process-wide default and
       covers the rest); a pattern built from input without `Regex.Escape` is HIGH
+- [ ] **Validation regex with a `$` anchor instead of `\z` — MEDIUM** (§3) —
+      `grep -rnE '[^@(,[:space:]$]\$"' --include='*.cs' . | grep -v 'RegularExpression('`
+      (a literal ending in `$` also accepts a trailing `\n`, so for a validator the fix is `\A…\z`;
+      `[RegularExpression]` requires the match to span the whole value, so it is excluded). Also read
+      every `IsMatch` used as an allowlist for a missing anchor or `RegexOptions.Multiline`
 - [ ] **Password KDF on the legacy constructor — HIGH** (§5) —
       `grep -rnE 'new Rfc2898DeriveBytes\(|PasswordDeriveBytes' --include='*.cs' .` (short
       overloads = SHA-1 × 1,000; want the static `Rfc2898DeriveBytes.Pbkdf2` with explicit hash

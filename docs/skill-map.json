@@ -447,6 +447,20 @@
       "targets": []
     },
     {
+      "from": "sota-php",
+      "to": "sota-code-security",
+      "weight": 9,
+      "targets": [
+        "rules/01",
+        "rules/01 \u00a710",
+        "rules/04",
+        "rules/04 \u00a75",
+        "rules/06 \u00a73",
+        "rules/07 \u00a73",
+        "rules/07 \u00a76"
+      ]
+    },
+    {
       "from": "sota-privacy-compliance",
       "to": "sota-secrets-management",
       "weight": 9,
@@ -496,19 +510,6 @@
       "weight": 8,
       "targets": [
         "rules/02"
-      ]
-    },
-    {
-      "from": "sota-php",
-      "to": "sota-code-security",
-      "weight": 8,
-      "targets": [
-        "rules/01",
-        "rules/04",
-        "rules/04 \u00a75",
-        "rules/06 \u00a73",
-        "rules/07 \u00a73",
-        "rules/07 \u00a76"
       ]
     },
     {

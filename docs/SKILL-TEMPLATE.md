@@ -101,6 +101,7 @@ grew the same day as ROADMAP 66 added concepts; `UNIVERSAL_FLOOR` is the count, 
 - [ ] **TLS / transport verification** — the switches that turn verification off, by API name
 - [ ] **supply-chain provenance & publishing** — where packages come from, and how a private registry avoids dependency confusion
 - [ ] **SSRF / outbound request validation** — where this language's HTTP client lets you check the dialled address at connect time, plus its redirect and scheme settings
+- [ ] **regex escaping, anchoring & engine choice** — the escape function, the full-match API and its anchor trap, and whether the engine is linear-time
 
 Conditional concepts (those that exist only where a language has the mechanism, such as
 const/freeze or generics) are declared with their condition in the same script's

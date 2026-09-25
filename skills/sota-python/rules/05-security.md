@@ -248,7 +248,28 @@ both. So any validation, authorization, or bounds check written as an `assert`
   (`(a+)+`, `(.*)*`, `(\w+\s?)*`) can run exponentially. Audit every `re.*` whose pattern
   *or* subject is user-controlled; prefer anchored, linear patterns; set a length cap on the
   subject before matching; for hostile-input parsing consider the `regex` module's timeout
-  or Rust-backed RE2 bindings.
+  or the RE2 bindings (`google-re2`, which binds Google's C++ RE2).
+- **A regex used as a control (validation, allowlist, routing, redaction)** — four checks,
+  each measured on CPython 3.14.6:
+  - *Escaping.* Anything from outside that becomes part of a pattern goes through
+    `re.escape()` first (`regex.escape()` / `re2.escape()` for those engines). An f-string
+    like `re.compile(f"^{user_prefix}")` lets the caller inject `.*` or a quantifier bomb.
+  - *Anchoring.* Validate with `re.fullmatch()` / `Pattern.fullmatch()` (3.4+). `re.match()`
+    anchors only at the start, so `re.match(r"[a-z]+", "abc;rm")` succeeds; `$` also matches
+    just before a trailing `\n`, so `re.match(r"^[a-z]+$", "abc\n")` succeeds while
+    `re.fullmatch(r"[a-z]+", "abc\n")` is `None`. Hand-anchored patterns end in `\Z` (spelled
+    `\z` from 3.14), and never carry `re.MULTILINE`, which turns `^`/`$` into line anchors.
+  - *Bounds.* Give every repeat an upper limit (`[a-z0-9_]{3,32}`, not `+`) and reject by
+    `len()` before the regex runs.
+  - *Engine.* Stdlib `re` backtracks and has no timeout argument. For patterns you write,
+    atomic groups `(?>...)` and possessive quantifiers `*+ ++ ?+` (3.11+) forbid
+    backtracking into what they matched (`(?:a++)+b` on 24 `a`s: 0.1 ms vs 0.6 s for `(a+)+b`). For patterns or subjects you do not control, use a linear-time engine
+    (`google-re2`, imported as `re2`, which rejects backreferences and lookaround at compile
+    time) or the third-party `regex` module's `timeout=` keyword, which raises `TimeoutError`.
+    Needing a backreference or lookaround is the price of leaving the linear engine: keep
+    that pattern on a bounded, length-capped subject.
+  OWASP: Input Validation cheat sheet; OWASP Proactive Controls 2024 C3; ASVS 5.0 V1.2.9;
+  OWASP Go-SCP (regular expressions, validation).
 - **Decompression bombs** beyond archives: `zlib.decompress`, image loading
   (`PIL.Image` — set `Image.MAX_IMAGE_PIXELS`, it defaults to a warning), XML entity
   expansion (§7). Enforce decoded-size budgets, not just encoded-size limits.
@@ -380,6 +401,11 @@ foreign function, and validate lengths before they cross. The class is `sota-cod
       present?); `grep -rn "set_int_max_str_digits" --include="*.py" src/` ;
       `grep -rn "webbrowser.open" --include="*.py" src/` (user-influenced URL? [HIGH]
       CVE-2026-4519/4786)
+- [ ] **--- Regex as a control: escaping, anchoring, engine (§8) --- [HIGH where the regex
+      gates validation or authorization; MEDIUM elsewhere]** —
+      `grep -rnE 're\.(match|compile|search|fullmatch|sub|findall)\([[:space:]]*(r?f|fr)["'"'"']|\.match\(|re\.(M|MULTILINE)([^A-Za-z_]|$)' --include='*.py' src/`
+      (an f-string pattern with no `re.escape()` is injection; a `re.match` used to validate
+      needs `re.fullmatch` or a `\Z`; a MULTILINE validator accepts any one good line)
 - [ ] **Supply chain** —
       `grep -rn "git+http" pyproject.toml uv.lock 2>/dev/null | grep -v "@[0-9a-f]\{40\}"` ;
       `grep -rn "nosec\|noqa: S" --include="*.py" src/` (justified suppressions?)

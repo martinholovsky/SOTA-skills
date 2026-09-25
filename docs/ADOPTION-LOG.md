@@ -5811,3 +5811,22 @@ needs a separate pre-dispatch check), and Go's `IsUnspecified` covers only `0.0.
 sheet items 6, 8-10 …" — those numbers are **our extraction ordinals**, not anything OWASP
 publishes, and eight of nine agents wrote them into the skills. All nine now cite the cheat
 sheets by name, and the workflow brief says to cite sources by name only.
+
+## 2026-09-25 — ROADMAP 66 step 3b: regex escaping, anchoring & engine choice, all nine languages, pinned
+
+Source theme: validation-regex hygiene (OWASP Input Validation cheat sheet, Proactive Controls
+2024 C3, ASVS 5.0 V1.2.9, Go-SCP). Four added (go, rust, c/c++, php), five extended an existing
+ReDoS rule without duplicating it. Each language now names its escape function, its full-match
+API and **its own anchor trap** (Python `re.match` anchors only at the start and `$` matches
+before a trailing newline; Go's `^a|b$` lets alternation escape the anchors; Java `find` vs
+`matches`), bounds, and whether its engine is linear-time — with the mitigation where it is not
+(`regex` module timeout, `RegexOptions.NonBacktracking`/match timeouts, regexp2 `MatchTimeout`,
+a terminable `worker_threads` Worker).
+
+**Verified here, not only in the agents' reports:** all nine probes re-run as written (9/9
+match); the one behaviour an agent wrote without running — a Node worker `terminate()`d on a
+deadline stopping a catastrophic regex — was run: terminated at 303 ms.
+
+**An existing error corrected on the way:** `sota-python` rules/05 §8 said "Rust-backed RE2
+bindings" since the library's first commit. RE2 is C++; `google-re2` (installed and run by the
+agent) binds it. Now says so.

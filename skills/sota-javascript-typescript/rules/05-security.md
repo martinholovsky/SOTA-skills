@@ -171,6 +171,38 @@ if (input.length > 256) reject();
 - Lint: `eslint-plugin-regexp` (includes ReDoS detection) or `recheck`/`redos-detector` in CI on any regex touching user input.
 - The `v`/`u` flags don't fix backtracking. Regexes in hot paths compiled once (top-level `const`), not per call.
 
+**A regex used as a control (validator, allowlist, route guard, redactor) has four more ways to fail:**
+
+- **Escaping.** Request data placed inside a pattern is pattern syntax until escaped: `.` or
+  `.*` in a username turns a match into a wildcard. Use `RegExp.escape(s)` (ES2025; a function
+  from Node 24.0.0, `undefined` on Node 22, measured). On older runtimes use one audited
+  helper — `s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')` — never ad-hoc escaping. If only a
+  literal comparison is needed, skip the regex (`===`, `startsWith`, `includes`).
+- **Anchoring.** Validate the whole string: `/^(?:…)$/`. Group an alternation, because
+  `/^admin|root$/` means "starts with admin OR ends with root" (it accepts `admin-evil`).
+  In JS, without the `m` flag `$` matches only at the true end of input
+  (`/^[a-z]+$/.test('abc\n')` is `false`, unlike Python/PCRE). The trap is the reverse: **with `m`,
+  `^`/`$` are line anchors**, so `/^[a-z]+$/m` passes `'evil\nabc'`. Never put `m` on a
+  validator. Never put `g` or `y` on one either: they make `.test()` stateful through
+  `lastIndex`, so one shared `/…/g` validator returns `true` then `false` for the same input
+  (measured). `str.match(re)` and `str.search(re)` are unanchored searches, not validation.
+  JSON Schema `pattern` is unanchored too: Ajv 8 accepted `'<script>abc'` against
+  `"[a-z]+"` (measured), so write `"^[a-z]+$"`.
+- **Bounds.** Bound every repetition inside the pattern (`{1,64}` rather than `+`) *and*
+  cap `input.length` before matching (above).
+- **Engine.** V8's default engine backtracks, and `RegExp` takes only a pattern and flags,
+  with no match-timeout option. For a pattern built from, or run on, untrusted input where
+  the linear-time shape above cannot be guaranteed, use the `re2` npm package. It is
+  linear-time, and it throws `SyntaxError` on backreferences and lookahead. That is the cost:
+  a pattern that needs them must be rewritten, or it stays on the backtracking engine with its
+  length cap and lint. V8's own linear engine (the `l` flag behind
+  `--enable-experimental-regexp-engine`, which rejects backreferences and lookaround with
+  "Cannot be executed in linear time") is experimental and off by default. It is not a
+  production control. The last resort for an unavoidable backtracking pattern is running it in a
+  `worker_threads` Worker that you `terminate()` on a deadline.
+- *Sources, by name:* OWASP Input Validation cheat sheet; OWASP Proactive Controls 2024 C3;
+  ASVS 5.0 V1.2.9; OWASP Go-SCP (validation, regular expressions).
+
 ## Tokens and client-side auth
 
 - **Session/refresh tokens never in `localStorage`/`sessionStorage`** — any XSS exfiltrates them. Use cookies: `HttpOnly; Secure; SameSite=Lax` (or `Strict`), `Path` scoped, `__Host-` prefix.
@@ -360,6 +392,15 @@ buffer first. The class is `sota-code-security` rules/06 §3.
 - [ ] Deep-merge of request data: `grep -rn "merge(\|deepmerge\|Object.assign" src/` near `req.body`/`json()` — prototype pollution exposure (HIGH); `grep -rn "__proto__" src/` in tests/guards is good signal of awareness.
 - [ ] `grep -rn "jwt.verify\|jwtVerify" src/` — algorithm pinned? `aud`/`iss` checked? `grep -rn "algorithms" src/` absent = HIGH.
 - [ ] Regex on user input: `grep -rn "new RegExp(" src/` (dynamic patterns = ReDoS + injection risk, HIGH); run `eslint-plugin-regexp`/recheck over static patterns.
+- [ ] **Regex escaping, anchoring and engine (§"ReDoS", the four control failures) — HIGH on a
+      validator or allowlist** —
+      ``grep -rnE 'new RegExp\( *[[:alpha:]_$`]|/[dgimsuvy]*[gmy][dgimsuvy]*\.test\(|/\^[^(/|]*\|[^/]*\$/' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' . | grep -v 'RegExp\.escape('``
+      — hits are a pattern built from a variable without `RegExp.escape`, a `.test()` on a
+      literal carrying `m`/`g`/`y`, and a `/^a|b$/` alternation outside a group. A request value
+      in an unescaped pattern is HIGH (pattern injection plus ReDoS). An `m`/`g` validator or an
+      ungrouped alternation is HIGH when it guards access. The probe sees inline literals only:
+      a flagged regex held in a `const` needs a read, and so do JSON Schema `pattern`s without `^…$`.
+      Complex patterns on untrusted input should run on the linear-time `re2` engine, or it is MEDIUM.
 - [ ] CSP present? `grep -rn "Content-Security-Policy" src/` — absent on HTML-serving apps (MEDIUM); contains `unsafe-inline`/`unsafe-eval` in script-src (MEDIUM).
 - [ ] Lockfile in git; CI uses `npm ci`/frozen lockfile; install scripts blocked (`.npmrc` `ignore-scripts`, pnpm allowlist, or npm ≥12 defaults + committed `approve-scripts` allowlist); install cooldown active (pnpm 11 `minimumReleaseAge` default, npm ≥11.10 `min-release-age`, or Renovate/Dependabot) (each absent: MEDIUM).
 - [ ] `grep -n "git+\|git://\|github:\|https://.*\.tgz" package.json` — git-URL or remote-tarball dependencies: unauditable, refused by npm ≥12 without `--allow-git`/`--allow-remote` (MEDIUM).

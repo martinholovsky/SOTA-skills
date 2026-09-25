@@ -13,6 +13,20 @@ misconfiguration are entirely yours.
 - Allowlist over denylist: enums via `ParseX(string) (X, error)`, bounded
   lengths/sizes on every string/slice, `utf8.ValidString` on text that
   reaches storage or other parsers.
+- **Regexes as a control** (allowlist, routing, redaction). Stdlib `regexp` is RE2: matching
+  is linear in input length, and backreferences/lookaround do not compile. Four rules:
+  **escape** caller text spliced into a pattern with `regexp.QuoteMeta` (stdlib since Go 1) —
+  unescaped, `.`/`|` rewrite the rule, and `MustCompile` panics on a pattern that fails to parse;
+  **anchor** — `MatchString`/`Match` find a match *anywhere* and there is no full-match method,
+  so wrap as `^(?:…)$` (`^a|b$` accepts `a…` and `…b`). `$` is end-of-text (`\z`-like) with no
+  trailing-newline slack, but `(?m)` makes `^`/`$` line anchors, so `"ok\n;evil"` passes;
+  **bound** — cap `len(s)` before matching (linear is still proportional to size) and write
+  `{1,64}`, not `+` (the parser rejects repeat counts over 1000); **engine** — adopting a
+  backtracking library for lookaround (e.g. `github.com/dlclark/regexp2`, escaper
+  `regexp2.Escape`) forfeits the linear guarantee and its `MatchTimeout` defaults to
+  `math.MaxInt64` (never), so set it per pattern and treat the timeout error as a reject —
+  or restructure into two stdlib patterns. *(OWASP: Input Validation cheat sheet; Proactive
+  Controls 2024 C3; ASVS 5.0 V1.2.9; Go-SCP, validation.)*
 - JSON: `dec := json.NewDecoder(r.Body); dec.DisallowUnknownFields()` for
   strict APIs; remember `encoding/json` ignores case in field matching and
   silently drops unknown fields by default — security-relevant for
@@ -415,6 +429,11 @@ cfg := &tls.Config{MinVersion: tls.VersionTLS12} // TLS13 for internal-only
       (request target taken straight from the inbound request) ;
       `grep -rnE 'ControlContext:|Control:|RegisterProtocol|NewFileTransport' --include='*.go' .`
       (no dial hook in a service that fetches caller URLs = no internal-address check)
+- [ ] **Regex escaping, anchoring & engine (§1) — HIGH** —
+      `grep -rnE 'regexp2?\.(MustCompile|Compile|MatchString|Match)\((fmt\.Sprintf|.*["`] \+ [A-Za-z_]|.*[A-Za-z0-9_)] \+ ["`])' --include='*.go' . | grep -v QuoteMeta`
+      (pattern built from data, not escaped) ; `grep -rnE 'Compile\(`\^[^(`]*\|' --include='*.go' .`
+      (`^a|b$` — alternation escapes the anchors) ; `grep -rn 'regexp2\.' --include='*.go' .`
+      (backtracking engine: confirm `MatchTimeout` is set)
 - [ ] **TLS — CRITICAL/HIGH** — `grep -rn 'InsecureSkipVerify' --include='*.go' .` ;
       `grep -rnE 'MinVersion:\s*tls\.VersionTLS1[01]' --include='*.go' .` ;
       `grep -rn '"http://' --include='*.go' . | grep -v 'localhost\|127.0.0.1\|test'`
