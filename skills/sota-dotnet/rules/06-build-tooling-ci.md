@@ -70,6 +70,32 @@ lives in `sota-testing`.
   Dependabot/external scanners complement, not replace.
 - Verify **signed packages**; generate an **SBOM** for releases. See
   `sota-devsecops`.
+- **A package runs code in your build, before any test does.** Restore writes
+  `obj/<project>.nuget.g.props`/`.nuget.g.targets`, which import every package's
+  `build/`, `buildTransitive/` and `buildMultiTargeting/` `<PackageId>.props`/`.targets`;
+  a target there can `<Exec>` any command, running it with the
+  developer's or runner's credentials. Measured on the .NET 10 SDK: a local package's
+  `build/*.targets` `<Exec>` wrote a file during `dotnet build`, and a `buildTransitive/` target
+  ran in a project that referenced only a package depending on it. Other points: package
+  `analyzers/` DLLs (analyzers and source generators) are handed to `csc` as `/analyzer:` and
+  run inside the compiler; `Sdk="Name/1.2.3"` or `global.json` `msbuild-sdks`
+  pulls a project SDK (props/targets) from your feeds; and the repo's own
+  `Directory.Build.props`/`.targets`/`.rsp`, found by walking **up** from each project. (A
+  package's `tools/install.ps1` is **not** run under PackageReference — only `packages.config`.)
+- **Switch it off per package** (the documented control is per reference): on the `PackageReference` set
+  `ExcludeAssets="build;buildTransitive;buildMultitargeting;analyzers"` for a package that
+  needs none of them. A **transitive** package's `buildTransitive/` is excluded by adding a
+  direct reference with that `ExcludeAssets` (measured: the transitive target stopped
+  running). Keep the imported set small and known.
+- **Review it on every bump**: diff the executed files (`.props`, `.targets`, analyzer DLL
+  versions) between the old and new package in the lock-file change, and put the repo's own
+  build-executing files — `Directory.Build.*`, `*.targets`, `*.props`, `nuget.config`,
+  `global.json`, `.config/dotnet-tools.json` — under **CODEOWNERS** with required review,
+  **including when an AI agent wrote the change**.
+- **CI**: the restore/build/test job gets a read-only feed token at most — no signing, publish
+  or cloud-deploy secrets; sign and publish in a separate job that consumes the built
+  artifact. *(OWASP: CI/CD Security cheat sheet; Software Supply Chain Security cheat sheet;
+  NPM Security cheat sheet for the install-script class.)*
 
 ## 4. CI gates
 
@@ -135,3 +161,11 @@ lives in `sota-testing`.
       `grep -rniE 'dotnet format|verify-no-changes|Deterministic|ContinuousIntegrationBuild' .github/ *.yml **/*.csproj 2>/dev/null | head`
 - [ ] **Test runner + coverage?** —
       `grep -rniE 'xunit|nunit|mstest|coverlet|testcontainers' **/*.csproj 2>/dev/null | head`
+- [ ] **Package code that runs at build (`build*/…props`/`.targets` imported from packages) —
+      HIGH if any is unreviewed** (§3) — after a restore, every hit is a package file MSBuild
+      imports and runs:
+      `grep -rnE '"build[A-Za-z]*/[^"]*\.(props|targets)": *\{' --include=project.assets.json .`
+      (each hit needs an owner and a diff on bump, or `ExcludeAssets`); and the repo's own
+      build-executing files need a code owner:
+      `(grep -snE 'Directory\.Build|\.targets|\.props|nuget\.config|global\.json' .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS; true) | grep -E . || echo "build-executing files have no CODEOWNERS entry -- HIGH"`
+      (the subshell keeps a missing CODEOWNERS path from reading as "no owner")

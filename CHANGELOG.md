@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Install/build-time code execution in all nine language skills, pinned in the floor (now
+  32; ROADMAP 66 step 3b).** Each language names:
+  - where a dependency's code runs on install or build;
+  - the switch that disables it;
+  - code-owner review of the repo's own build-executing files, including agent-authored
+    changes;
+  - a CI job without secrets for those steps.
 - **Regex escaping, anchoring and engine choice in all nine language skills, pinned in the
   floor (now 31; ROADMAP 66 step 3b).** Each language names its escape function, its
   full-match API with its own anchor trap, its bounds, and whether its engine is

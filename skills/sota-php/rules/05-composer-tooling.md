@@ -27,9 +27,44 @@ composer check-platform-reqs   # ext-* and PHP version actually present?
   `require` (`"php": "^8.3", "ext-pdo": "*", "ext-sodium": "*"`); set
   `config.platform.php` to the floor so resolution on a dev machine with a
   newer PHP can't pull packages the servers can't run (getcomposer.org docs).
-- **Plugin/script surface:** Composer plugins can run arbitrary code at install
-  time; the `allow-plugins` config must be an explicit allowlist (Composer ≥2.2
-  prompts by default). Review `scripts` in composer.json diffs like code.
+- **Code that runs at install time.** `composer install` executes third-party code before
+  any test or reviewer sees the change, with the credentials of the developer or CI runner.
+  Know every entry point:
+  - **Plugins** (`"type": "composer-plugin"` in any dependency) are loaded into the Composer
+    process itself and hook its events. Since Composer 2.2, `config.allow-plugins` gates them;
+    its default `{}` allows none. Interactive runs prompt; a `--no-interaction` run **fails**
+    on an unlisted plugin (unless the plugin marks itself `plugin-optional`). Keep it an
+    explicit per-package map (`"vendor/name": true`, unneeded ones `false`), never `true` or
+    `"*": true`. Measured on Composer 2.10.3: an unlisted plugin aborted a non-interactive
+    update with exit 1; once listed, it ran.
+  - **Root `scripts`.** Only the root package's scripts run; a dependency's own `scripts` block
+    is ignored (measured: it did not run). But a root script routinely *calls into* dependency
+    code: a PHP callback into a vendor class, or a framework console command that boots the
+    framework (the Laravel skeleton wires `Illuminate\Foundation\ComposerScripts::postAutoloadDump`
+    and `@php artisan package:discover` to `post-autoload-dump`, which also fires on plain
+    `composer dump-autoload`).
+  - **`composer create-project`** makes the *downloaded template* the root package, so its
+    `post-root-package-install` / `post-create-project-cmd` scripts run; add `--no-scripts`
+    for a template you have not read.
+  - **Native extensions:** PIE (and legacy `pecl install`) build from source with `phpize`,
+    `./configure`, `make`, `make install` (PIE elevates with `sudo` if it cannot write the
+    extension dir). Running `pie install` in a project directory builds every missing `ext-*`
+    the project requires; `pecl install` takes `-B`/`--nobuild` to skip C builds. Build
+    extensions in the image build, not ad hoc on a runner with secrets.
+  - **Switches:** `--no-plugins` and `--no-scripts` exist on `install`, `update`, `require`,
+    `dump-autoload` and `create-project`. In CI, run `composer install --no-scripts --no-plugins`
+    in a step or job that holds **no** deploy keys, registry-publish tokens or cloud
+    credentials, then run the scripts you actually need (`composer run-script <event>`) as a
+    separate, reviewed step. If the build depends on an allowlisted plugin (e.g. a custom
+    installer), keep plugins on and isolate the whole install job instead.
+  - **Review:** on every dependency bump, diff what executes, not only the version: for each
+    allowlisted plugin, read the upstream tag-to-tag diff between the old and new locked
+    versions (or `diff -r` the two installed `vendor/<pkg>` trees), plus any class a root
+    script calls.
+    Put the repo's own executing files (`composer.json`, `composer.lock`, CI workflow files,
+    `Dockerfile`) under CODEOWNERS with required code-owner review, including a change an AI
+    agent authored: an added `allow-plugins` entry or script line is a code-execution grant.
+  OWASP: CI/CD Security, Software Supply Chain Security, and NPM Security cheat sheets.
 - Version constraints: `^` ranges (semver), never `*` or `dev-master`; pin a
   commit hash when depending on a VCS fork.
 - **Repository provenance and dependency confusion.** Composer looks a package up in the
@@ -141,6 +176,15 @@ Run from repo root; verify each hit manually.
 - [ ] **Risky constraints and install-time code** —
       `grep -nE '"[^"]+"\s*:\s*"(\*|dev-)' composer.json` ; `grep -n '"scripts"' composer.json`
       (review script contents); `grep -n 'allow-plugins' composer.json` (explicit allowlist?)
+- [ ] **Code that runs at install time is contained (§1) — HIGH if the install job holds
+      secrets, else MEDIUM** —
+      `grep -rnE 'composer[[:space:]]+(install|update|create-project)' --include='*.yml' --include='*.yaml' --include='Dockerfile*' --exclude-dir=vendor --exclude-dir=node_modules . 2>/dev/null | grep -v -- --no-scripts`
+      ; `grep -nE '"(allow-plugins|\*)"[[:space:]]*:[[:space:]]*true' composer.json`
+      ; `grep -lE 'composer\.(json|lock)' CODEOWNERS .github/CODEOWNERS docs/CODEOWNERS 2>/dev/null | grep -q . || echo "composer.json/lock HAVE NO CODE OWNER"`
+      (each install hit runs plugins and root scripts: confirm that job has no deploy/publish
+      credentials, or add `--no-scripts --no-plugins`; a blanket `true` lets any new
+      dependency's plugin execute; without a code owner, a new script line or
+      `allow-plugins` entry, human- or agent-authored, merges unreviewed)
 - [ ] **Repository provenance / dependency confusion (§1) — HIGH** —
       `grep -nE '"(canonical|secure-http)"[[:space:]]*:[[:space:]]*false|"type"[[:space:]]*:[[:space:]]*"path"' composer.json`
       (a non-canonical private repository lets a higher version published to packagist.org

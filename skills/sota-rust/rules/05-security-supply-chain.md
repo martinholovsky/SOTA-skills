@@ -63,6 +63,25 @@ unknown-git = "deny"          # git deps pinned by rev only, allowlisted
   on build machines; rotate anything exposed to an unvetted build.
 - Pin GitHub Actions by SHA, not tag; CI tokens least-privilege
   (`permissions: contents: read` default).
+- **Build-time code runs before any test or review of your code does.** Each `build.rs`
+  (picked up at a package root with no `build =` key) and each `proc-macro = true` crate is
+  compiled and run on the developer machine and CI runner with that user's environment.
+  Measured on cargo 1.97.1: `cargo check` ran a path dependency's `build.rs` and a proc-macro,
+  and an env var exported for the command was readable inside that `build.rs`; `cargo
+  metadata`, `cargo fetch` and `cargo tree` ran neither. rust-analyzer also runs them on
+  opening a project (`rust-analyzer.cargo.buildScripts.enable` and
+  `rust-analyzer.procMacro.enable`, both default `true`) — set both `false` before opening an
+  untrusted checkout. `[build] rustc-wrapper` is the same trust from config (rules/07 §4a).
+  **There is no off switch**: `cargo build --help` and `cargo -Z help` (1.97.1) offer no flag
+  that skips build scripts or proc-macros, so the controls are review and isolation.
+  Review: list what runs with the audit probe below; on every bump read
+  `cargo vet diff <crate> <old> <new>` for those crates' `build.rs` and macro source first.
+  Your OWN `build.rs`, proc-macro crates, `.cargo/config.toml`, `Cargo.toml`, `Cargo.lock` and
+  `rust-toolchain.toml` get CODEOWNERS entries plus the branch rule "Require review from Code
+  Owners" — an agent-authored PR included. CI: `cargo fetch --locked` is the networked step
+  and runs no dependency code; build and test with `--frozen` in a job that holds no publish,
+  deploy or cloud credentials, and hand the artifact to a separate job that does. (OWASP: CI/CD
+  Security cheat sheet; Software Supply Chain Security cheat sheet; NPM Security cheat sheet.)
 - **Declared but not reached**: an unused crate is still install/build-time trust
   granted (`build.rs`, proc-macros) for zero function. `cargo machete` runs on
   stable but is deliberately imprecise — false positives for crates used only
@@ -382,6 +401,12 @@ memory budgets — see `sota-sandboxing` rules/04 §5 and rules/02 R7.2a.
       deps without `rev =` pin = Medium; wildcard versions = Medium.
 - [ ] `cargo vet` (or documented dep-review process) for new dependencies;
       build.rs / proc-macro deps enumerated and reviewed.
+- [ ] **Build-time code (build.rs / proc-macro) is inventoried, owned and isolated (§2) —
+      High** — `cargo metadata --format-version 1 --locked | jq -r '.packages[] | select(any(.targets[]; any(.kind[]; . == "custom-build" or . == "proc-macro"))) | "\(.name) \(.version)"'`
+      (every line is code that runs on `cargo check`: each needs a review record, e.g. a
+      `cargo vet` audit). Then `rg -n --no-messages 'build\.rs|Cargo\.(toml|lock)|\.cargo/' .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS`
+      — no line means your own build-executing files merge without an owner. A CI job that
+      runs cargo build/test with publish or deploy secrets in scope is also High.
 - [ ] **TLS / transport verification (§7) — CRITICAL outside tests** —
       `rg -n 'danger_accept_invalid_(certs|hostnames)\(\s*true|\.dangerous\(\)|impl\s+ServerCertVerifier\s+for' -t rust`
       (each hit outside `#[cfg(test)]` is a finding unless the verifier delegates to

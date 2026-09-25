@@ -404,6 +404,16 @@ cfg := &tls.Config{MinVersion: tls.VersionTLS12} // TLS13 for internal-only
 - `go mod tidy` enforced in CI (`git diff --exit-code go.mod go.sum` after).
 - Pin tool versions via 1.24 `tool` directives in go.mod (`rules/07`) so the
   linter/codegen supply chain is hash-verified too.
+- **Build-time code execution.** The toolchain is designed so fetching or building a module
+  never runs it — Go has no install hooks. What *does* run code: every `//go:generate` line
+  (only on an explicit `go generate`; a `go run pkg@ver` there fetches and runs outside
+  go.mod, so use a `tool` directive + `go tool`), `go tool`/`go test all` (dependency code),
+  cgo (`#cgo` flags are allowlisted, but `CGO_*FLAGS_ALLOW`, `CGO_*FLAGS` env and `-toolexec`
+  bypass it; `#cgo pkg-config:` runs `PKG_CONFIG`), `GOVCS` beyond its `public:git|hg,private:all`
+  default, and `GOTOOLCHAIN=auto` (default) running the compiler named by go.mod/go.work.
+  Diff generate lines and tool bumps per PR; CODEOWNERS on go.mod, go.work, Makefile, CI and
+  `//go:generate` files, AI-authored too; run generate/tool steps in a job with no secrets.
+  (OWASP: CI/CD Security; Software Supply Chain Security; NPM Security cheat sheets.)
 - Don't `replace` to forks silently — audit `replace` directives (MEDIUM:
   hidden fork drift; CRITICAL if pointing at an unreviewed repo).
 - Secrets: never in code/env-committed files; load via env/secret manager at
@@ -466,6 +476,10 @@ cfg := &tls.Config{MinVersion: tls.VersionTLS12} // TLS13 for internal-only
       `grep -E '^replace' go.mod` ;
       `go env GOFLAGS GONOSUMDB GOSUMDB GOPRIVATE GONOSUMCHECK 2>/dev/null` ; `go mod verify` ;
       `govulncheck ./...` ; `go mod tidy && git diff --exit-code go.mod go.sum`
+- [ ] **Build-time code execution (§8) — MEDIUM, HIGH if CI secrets are in scope** —
+      `grep -rnE '^//go:generate[[:space:]]+(go run [^ ]+@|sh |bash |curl |wget )' --include='*.go' .` ;
+      `grep -rnE 'CGO_[A-Z]+FLAGS_ALLOW|GOVCS.*[*c]:all|-toolexec' . | grep -v '\.go:'` ;
+      no CODEOWNERS line for go.mod / CI files = finding
 - [ ] **Secrets in repo** —
       `grep -rnE '(api[_-]?key|secret|password|token)\s*[:=]\s*"[A-Za-z0-9+/_-]{16,}"' --include='*.go' .`
 - [ ] **--- Temp files and permissions (§4a) ---** —

@@ -35,6 +35,34 @@ lives in `sota-testing`.
   dependency-verification guide). Maven repositories take a `<checksumPolicy>` of
   `fail`, `warn` or `ignore`. Make it `fail`, stated in the POM or `settings.xml`, rather
   than relying on a default.
+- **Code that runs at build time is a dependency with your credentials.** A JVM build
+  executes third-party code before any test or review of yours does: every Maven plugin
+  goal (notably `exec-maven-plugin`, `maven-antrun-plugin`), Maven build extensions
+  (`<extensions>true</extensions>`, `<build><extensions>`) and core extensions
+  (`.mvn/extensions.xml`, `-Dmaven.ext.class.path`, `${maven.home}/lib/ext`); every Gradle
+  plugin (project and settings), `buildSrc`/included builds, and init scripts (`-I`/`--init-script`,
+  `GRADLE_USER_HOME/init.gradle(.kts)`, `*.init.gradle(.kts)` in `GRADLE_USER_HOME/init.d/` or
+  `GRADLE_HOME/init.d/` — all found run, so a CI image can carry one the repo never shows);
+  the wrapper jar and the distribution it downloads; and annotation processors / KSP
+  processors, which run inside the compiler. Controls:
+  **(a)** javac on **JDK 23+** no longer runs processors it merely *finds on the class
+  path* (JDK 21/22 did, with only a note); a processor on `--processor-path`, named by
+  `-processor`, or enabled by `-proc:full` still runs, so declare processors explicitly
+  (Maven `annotationProcessorPaths`, Gradle `annotationProcessor(...)`/`ksp(...)` — Gradle
+  ignores processors on the compile classpath) and pass `-proc:none` to modules that need
+  none. **(b)** Pin every plugin version and let artifact verification cover them —
+  Gradle's `verification-metadata.xml` checks project and settings plugins too; set Maven's
+  `checksumPolicy` to `fail` under `<pluginRepositories>` too, not only `<repositories>`. **(c)** Pin the wrapper:
+  `distributionSha256Sum` in `gradle-wrapper.properties`; `distributionSha256Sum` **and**
+  `wrapperSha256Sum` in `.mvn/wrapper/maven-wrapper.properties`; on GitHub, `gradle/actions/setup-gradle`
+  v4+ validates the Gradle wrapper jar itself. **(d)** Review: on each plugin/processor
+  bump, read the changelog and diff the released artifact, not only the version string;
+  put `pom.xml`, `build.gradle*`, `settings.gradle*`, `buildSrc/`, `gradle/`, `.mvn/` and
+  CI workflow files under **CODEOWNERS** with required code-owner review, including when an
+  AI agent wrote the change. **(e)** CI: resolve and build in a job that holds no publish,
+  deploy or cloud credentials, on an ephemeral runner; hand the artifact to a separate
+  signing/publishing job. *OWASP: CI/CD Security cheat sheet; Software Supply Chain Security
+  cheat sheet; NPM Security cheat sheet (the install-script analogue).*
 - Minimize the tree — each transitive dep is attack surface and a future CVE.
 
 ## 3. Static analysis & formatting
@@ -94,6 +122,14 @@ lives in `sota-testing`.
       ; `grep -rn 'checksumPolicy' --include='pom.xml' --include='settings.xml' .`
       (Maven: no hit leaves the policy to the Maven version's default, and `warn`/`ignore`
       let a bad checksum through; only `fail` blocks it)
+- [ ] **Code that runs at build time: inventoried, pinned, owned? (§2, HIGH when a hit has
+      no pinned version, the wrapper has no SHA-256 pin, or CODEOWNERS does not cover it)**
+      — every hit is third-party or repo code the build executes; diff it on each bump:
+      `grep -rnE '<extensions>true</extensions>|<extension>|exec-maven-plugin|maven-antrun-plugin|annotationProcessorPaths|-proc:full|annotationProcessor[ (]|ksp[ (]|--init-script|initscript' --include='pom.xml' --include='extensions.xml' --include='*.gradle' --include='*.gradle.kts' .`
+      ; `find . -path '*/buildSrc/*' -name '*.gradle*' -o -name '*.init.gradle*'` ;
+      `grep -L 'distributionSha256Sum' gradle/wrapper/gradle-wrapper.properties .mvn/wrapper/maven-wrapper.properties 2>/dev/null`
+      (each file printed lacks a pin; the Maven one also needs `wrapperSha256Sum`) ;
+      `grep -nE 'pom\.xml|build\.gradle|settings\.gradle|buildSrc|\.mvn|gradle/|\*' $(ls CODEOWNERS .github/CODEOWNERS docs/CODEOWNERS 2>/dev/null) /dev/null || echo "FINDING: no CODEOWNERS entry covers the build files"`
 - [ ] **Static analysis configured?** —
       `grep -rniE 'errorprone|nullaway|spotbugs|findsecbugs|pmd|detekt|ktlint|spotless' . --include='pom.xml' --include='build.gradle*' --include='*.yml' || echo "no static analysis configured"`
 - [ ] **Coverage gate + JUnit5/Testcontainers?** —
