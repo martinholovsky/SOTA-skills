@@ -268,6 +268,24 @@ debug exposure comes from framework mode and from **side-effect imports that reg
   (`//go:build debug`) so the release binary cannot contain them.
 OWASP: Error Handling cheat sheet; Secure Headers Project; ASVS 5.0 V13.4.
 
+## 4d. Content-Type: set it before the first Write
+
+If a handler's header map has no `Content-Type` when the first `Write` flushes, `net/http`
+fills it in from `DetectContentType` on the first 512 bytes. A body the user controls that
+starts with `<html`, `<script` or similar (leading whitespace allowed) is then labelled
+`text/html; charset=utf-8` **by your server**, so `X-Content-Type-Options: nosniff` does not
+help: the browser is not sniffing, it is obeying. Measured with Go 1.27 `httptest`: a handler
+that sets `nosniff` and writes `  <script>…` is served as `text/html`.
+- Set the type explicitly (`w.Header().Set("Content-Type", "application/json")`, or
+  `text/plain; charset=utf-8`) before `Write`, `io.Copy(w, …)`, `fmt.Fprint(w, …)` or
+  `WriteHeader` on every path that emits stored or echoed bytes. `http.Error` already sets
+  `text/plain` plus `nosniff`.
+- `http.ServeFile`/`ServeContent` pick the type from the file **extension** first and sniff
+  only if that is unknown — a user upload stored under its original `.html`/`.svg` name is
+  served as markup. Store uploads under server-chosen names and set the type (and
+  `Content-Disposition: attachment`) yourself; sota-code-security `rules/05` §10.
+OWASP: Go-SCP (cross site scripting).
+
 ## 5. Structured logging with slog
 
 `log/slog` (1.21+) is the standard. `fmt.Println`/`log.Printf` in services is
@@ -369,6 +387,13 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
       `grep -rnE 'gin\.SetMode\((gin\.DebugMode|"debug")\)|\.Debug[[:space:]]*=[[:space:]]*true|GIN_MODE[=:"[:space:]]+debug' --include='*.go' --include='*.y*ml' --include='Dockerfile*' --include='*.env' .`
       (single-line forms; a Kubernetes `name: GIN_MODE` / `value:` pair needs reading, and a
       gin service with no `GIN_MODE=release` anywhere is in debug mode by default)
+- [ ] **Response type left to sniffing (§4d) — HIGH when the body is user-stored or echoed,
+      LOW otherwise** —
+      `grep -rlE 'w\.Write\(|io\.Copy\(w,|fmt\.Fprint[a-z]*\(w,' --include='*.go' . | xargs -r grep -L 'Content-Type'`
+      (file-level: writes a body and never names `Content-Type`; a file that sets it on one
+      path only still needs reading) ;
+      `grep -rnE 'http\.Serve(File|Content)\(' --include='*.go' .` (is the served name
+      user-chosen, so its extension picks `text/html`/`image/svg+xml`?)
 
 Severity guide: no server timeouts internet-facing HIGH; default client in
 service HIGH; unbounded body read HIGH; missing graceful shutdown MEDIUM;

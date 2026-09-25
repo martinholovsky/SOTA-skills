@@ -35,6 +35,14 @@ below.
 - In C, always pass length alongside the pointer and check it; prefer
   `snprintf`/`memcpy_s`-style bounded ops. `-D_FORTIFY_SOURCE=3` adds runtime
   bounds checks to many libc calls (`rules/04`).
+- **`strncpy` is not a safe `strcpy`.** When the source is at least as long as the size it is
+  given, it writes no terminating NUL, and the next string read runs off the buffer. Measured
+  with glibc 2.43: after `strncpy(d, "ABCDEFGHIJ", sizeof d)` into an 8-byte `d`, `strlen(d)`
+  returned 15. Prefer `snprintf(d, sizeof d, "%s", s)`, or `strlcpy` (in glibc since 2.38, the
+  OpenBSD where it began, and macOS) and treat a return `>= sizeof d` as truncation. Where `strncpy` stays, write
+  the terminator yourself at the last byte, `d[sizeof d - 1] = '\0'`: index `sizeof d` is one
+  past the end. GCC's `-Wstringop-truncation` (on with `-Wall`) flags some of these. OWASP:
+  Code Review Guide v2; Secure Coding Practices Quick Reference Guide.
 - Enable hardened standard-library assertions so OOB container access traps
   instead of corrupting: libstdc++ `-D_GLIBCXX_ASSERTIONS`, libc++
   `-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE` (LLVM 18+ — verify
@@ -115,6 +123,10 @@ catch what review and `-Wall` cannot. (Clang/GCC; see
       `grep -rnE '\b(strcpy|strcat|sprintf|gets|stpcpy|vsprintf)\b' --include='*.c' --include='*.cpp' .`
       ; `grep -rnE '\b(memcpy|memmove|memset|strncpy)\b' --include='*.c' --include='*.cpp' .`
       (verify size provenance)
+- [ ] **`strncpy` with no terminator at `[size - 1]` (§2) — HIGH where the source is input** —
+      `grep -rn -A1 -E 'strncpy[[:space:]]*\(' --include='*.c' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' . | awk '/strncpy[[:space:]]*\(/ { if (p != "") print p; p = $0; if ($0 ~ /\[[^]]*-[[:space:]]*1[[:space:]]*\][[:space:]]*=[[:space:]]*(0|.\\0.)[[:space:]]*;/) p = ""; next } { if (p != "" && $0 !~ /\[[^]]*-[[:space:]]*1[[:space:]]*\][[:space:]]*=[[:space:]]*(0|.\\0.)[[:space:]]*;/) print p; p = "" } END { if (p != "") print p }'`
+      (each line printed is a `strncpy` whose own line and next line write no `[... - 1] = '\0'`:
+      read whether the length leaves room, or replace it with `snprintf`/`strlcpy`)
 - [ ] **Dangling: returning address/ref/view of a local — HIGH** —
       `grep -rnE 'return &[A-Za-z_]' --include='*.cpp' --include='*.c' .` ;
       `grep -rnE 'return (std::)?(string_view|span)' --include='*.cpp' .` (verify backing

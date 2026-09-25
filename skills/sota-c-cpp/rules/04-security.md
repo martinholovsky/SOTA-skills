@@ -51,8 +51,12 @@ Replace on sight (CERT STR/FIO; MISRA):
   Decode field by field against the remaining length, or use a generated parser with its own
   checks (protobuf; FlatBuffers only after its `Verifier` accepts the buffer). **XML through
   libxml2:** never pass `XML_PARSE_NOENT` (substitute entities) or `XML_PARSE_DTDLOAD` (load
-  the external subset) on untrusted input, and add `XML_PARSE_NONET`. OWASP XXE Prevention
-  cheat sheet; the same trap as PHP's `LIBXML_NOENT`.
+  the external subset) on untrusted input, and add `XML_PARSE_NONET`. The flag never has to
+  appear at the call: `xmlCtxtUseOptions` sets it on a context, and the deprecated process-wide
+  `xmlSubstituteEntitiesDefault(1)` turns substitution on for every later parse. Measured with
+  libxml2 2.12.10: after that call, `xmlReadMemory(..., 0)` with no options expanded an external
+  entity into the document. Never set it, or the `xmlLoadExtDtdDefaultValue` global. OWASP XXE
+  Prevention cheat sheet; the same trap as PHP's `LIBXML_NOENT`.
 - **Resource limits / DoS guards on every parser and decoder.** Cap recursion depth (a
   max depth on recursive-descent parsers, or stack exhaustion is one nested input away),
   element and attribute counts, total bytes allocated per message, and the decompressed size
@@ -189,7 +193,9 @@ Replace on sight (CERT STR/FIO; MISRA):
   explicit that a peer that presents **no certificate** also yields `X509_V_OK`, "it does
   however not indicate success". libcurl: `CURLOPT_SSL_VERIFYPEER` and
   `CURLOPT_SSL_VERIFYHOST` are never set to 0. Pinning, when used, is checked in addition to
-  chain validation, never instead of it. OWASP Pinning cheat sheet.
+  chain validation, never instead of it: compare the pin against that same non-NULL peer
+  certificate (or inside the `SSL_CTX_set_verify` callback), and shut the connection down before
+  any application data is sent when either check fails. OWASP Pinning cheat sheet.
 - Zero secrets after use with a *guaranteed* wipe (`explicit_bzero`,
   `sodium_memzero`, `SecureZeroMemory`) — plain `memset` can be optimized away.
 
@@ -220,7 +226,19 @@ network-facing or setuid binary is a HIGH finding. From the OpenSSF guide:
   EXTENSIVE mode (`rules/02`) is for debug/test builds.
 - Add `-fsanitize=address,undefined` to the *debug/test* build (not prod).
   Consider `-fhardened` (GCC 14+) as a shorthand umbrella — verify your
-  compiler version supports it.
+  compiler version supports it; `gcc --help=hardened` lists what it turns on.
+- **Verify the shipped binary, not the build file.** A flag written down is not a flag that
+  reached the compiler. Toolchain defaults are a vendor choice: measured on Fedora's GCC 16, a
+  plain `gcc -O2` produced a non-PIE binary with partial RELRO, no canary and no FORTIFY, because
+  that distribution hardens through its packaging flags, not the compiler (inspect
+  `gcc -dumpspecs` or compile a probe rather than assume). Build systems also discard flags: an
+  Automake `Makefile.am` that assigns `CFLAGS = -O0` (the user variable, where `AM_CFLAGS`
+  belongs) replaced the `CFLAGS` given to `./configure`, hardening flags included, and silent
+  rules (`AM_SILENT_RULES`) hid the compile line until `make V=1`. Read the real command
+  (`make V=1`, or the `compile_commands.json` that `-DCMAKE_EXPORT_COMPILE_COMMANDS=ON` writes), then check each artifact with `checksec
+  --file=BIN` or `annocheck BIN`, or `readelf`: type `DYN` (PIE), a `GNU_RELRO` segment plus
+  `BIND_NOW` (full RELRO), `__stack_chk_fail` (canary) and `__*_chk` imports (FORTIFY). OWASP:
+  C-Based Toolchain Hardening cheat sheet.
 - **Debug mode in production: C/C++ has no dev server, so the "debug mode" is the build.**
   An empty `CMAKE_BUILD_TYPE`, a `Debug` build, `-fsanitize=*` or `-D_GLIBCXX_DEBUG` must never
   produce the artifact you ship. Measured with CMake 4.4.3: with no `CMAKE_BUILD_TYPE` the
@@ -294,8 +312,9 @@ a sandbox over running as root at all (`sota-sandboxing`).
 - [ ] **Unsafe parsing of untrusted input (§2) — HIGH, CRITICAL for XXE on reachable input** —
       `grep -rnE '\(\s*(const\s+)?struct\s+[a-z_0-9]+\s*\*\s*\)\s*\(?(buf|data|pkt|packet|msg|payload|frame|in)' --include='*.c' --include='*.cpp' --include='*.h' .`
       (a wire buffer cast straight to a struct pointer: find the field-by-field decoder that
-      should replace it) ; `grep -rnE 'XML_PARSE_(NOENT|DTDLOAD)' --include='*.c' --include='*.cpp' --include='*.h' .`
-      (entity substitution or external-subset loading on a libxml2 read)
+      should replace it) ; `grep -rnE 'XML_PARSE_(NOENT|DTDLOAD)|xml(ThrDef)?(SubstituteEntitiesDefault(Value)?|LoadExtDtdDefaultValue)[[:space:]]*(\(|[|]?=)[[:space:]]*[^0=[:space:]]' --include='*.c' --include='*.cpp' --include='*.h' .`
+      (entity substitution or external-subset loading on a libxml2 read, through a flag, a
+      context or a process-wide default set to anything but 0)
 - [ ] **Resource limits / DoS guards (§2) — HIGH where input is untrusted** —
       `grep -rnE 'XML_PARSE_HUGE|\b(inflate|uncompress|BZ2_bzDecompress|ZSTD_decompress)[[:space:]]*\(' --include='*.c' --include='*.cpp' --include='*.h' .`
       (every hit needs a visible output-size cap; `XML_PARSE_HUGE` on untrusted input is the
@@ -303,7 +322,10 @@ a sandbox over running as root at all (`sota-sandboxing`).
 - [ ] **TLS / transport verification (§4) — CRITICAL when a peer certificate is never checked** —
       `grep -rnE 'SSL_VERIFY_NONE|CURLOPT_SSL_VERIFY(PEER|HOST)[^;]*,[[:space:]]*0L?[[:space:]]*\)|SSL_get_verify_result' --include='*.c' --include='*.cpp' --include='*.h' .`
       (verification disabled, or a verify-result check that must be paired with a non-NULL
-      `SSL_get1_peer_certificate()`, §4)
+      `SSL_get1_peer_certificate()`, §4) ;
+      `grep -rlE 'SSL_get_verify_result[[:space:]]*\(' --include='*.c' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' . | xargs -r grep -LE 'SSL_get1?_peer_certificate[[:space:]]*\('`
+      (a file that reads the verify result and never fetches the peer certificate: a peer
+      that sent none passes as `X509_V_OK`)
 - [ ] **Format string — CRITICAL (user-controlled fmt)** —
       `grep -rnE '(printf|fprintf|snprintf|syslog|err|warn)\s*\([^,"]*\)' --include='*.c' --include='*.cpp' .`
 - [ ] **build with: -Wformat=2 -Werror=format-security**
@@ -360,6 +382,12 @@ a sandbox over running as root at all (`sota-sandboxing`).
       (timing leak)
 - [ ] **Hardening flags present? — HIGH if missing on network/setuid binary** —
       `grep -rnE '_FORTIFY_SOURCE|stack-protector|relro|cf-protection|_GLIBCXX_ASSERTIONS|fPIE' . --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' || echo "no hardening flags found"`
+- [ ] **Hardening reached the shipped binary (§5) — HIGH on a network-facing or setuid binary
+      that fails a check** — `checksec --file=BIN` or `annocheck BIN` on every artifact you ship
+      (or `readelf -hW`/`-lW`/`-dW`/`--dyn-syms`: `DYN`, `GNU_RELRO`, `BIND_NOW`,
+      `__stack_chk_fail`, `__*_chk`) ;
+      `grep -rnE '^[[:space:]]*(CFLAGS|CXXFLAGS|CPPFLAGS|LDFLAGS)[[:space:]]*:?=' --include='Makefile.am' .`
+      (a Makefile.am that overwrites the user's flags: confirm on the `make V=1` compile line)
 - [ ] **Shipped artifact built in debug mode rather than release mode: empty or `Debug` build
       type, sanitizer runtime, `_GLIBCXX_DEBUG` (§5) — HIGH on a network-facing binary** —
       `grep -rnE '(^|[[:space:]])cmake[[:space:]]+[^|;&]*(-S|-B|\.\.)|-fsanitize=|_GLIBCXX_DEBUG' --include='Dockerfile*' --include='Containerfile*' --include='*.spec' --include='PKGBUILD' --include='rules' --include='*.yml' --include='*.yaml' . | grep -vE 'CMAKE_BUILD_TYPE=(Release|RelWithDebInfo|MinSizeRel)'`

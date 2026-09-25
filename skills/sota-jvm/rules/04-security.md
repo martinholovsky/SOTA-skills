@@ -298,7 +298,11 @@ All Spring facts below were checked against Spring's own docs, advisories and so
   `response.sendRedirect(param)` and `request.getRequestDispatcher(param)` are the servlet
   spellings. A **forward reaches what a browser cannot**: the Servlet spec says the
   contents of `WEB-INF` "may be exposed using the `RequestDispatcher` calls". Allowlist
-  targets; the open-redirect rule is `sota-code-security` rules/01 §11.
+  targets; the open-redirect rule is `sota-code-security` rules/01 §11. **A redirect does not end
+  the handler.** `sendRedirect`, `forward` and a `Location` header are plain calls: the servlet
+  Javadoc only says the response "should be considered to be committed". The code after them
+  runs, so `return` or throw on the next line, above all after a failed auth check. OWASP: Code
+  Review Guide v2.
 - **CORS with credentials: `allowedOriginPatterns("*")` reflects any origin.** Spring
   refuses `allowedOrigins("*")` together with `allowCredentials(true)`, throwing
   `IllegalArgumentException` from `validateAllowCredentials`. But `checkOrigin` returns the
@@ -444,6 +448,9 @@ the class is `sota-code-security` rules/06 §3.
       `grep -rnE '"(redirect|forward):"[[:space:]]*\+|new ModelAndView\([[:space:]]*[^")[:space:]]|sendRedirect\(|getRequestDispatcher\(' --include='*.java' --include='*.kt' .`
       (each target must be a constant or an allowlist entry; a `forward:`/dispatcher target
       from input can read `WEB-INF`)
+- [ ] **Code still running after a redirect or forward — HIGH after an auth check** (§6) —
+      `grep -rnE -A1 'sendRedirect\(|\.forward\(|setHeader\("Location"' --include='*.java' --include='*.kt' . | grep -E '^[^:]+-[0-9]+-' | grep -vE '^[^:]+-[0-9]+-[[:space:]]*(return|throw|\}|$)'`
+      (prints the statement after each call; a status set after `Location` is expected)
 - [ ] **CORS: wildcard origin pattern with credentials — HIGH** (§6) —
       `grep -rnE 'allowedOriginPatterns\([^)]*"\*"|addAllowedOriginPattern\("\*"\)|originPatterns[[:space:]]*=[[:space:]]*"\*"|allowCredentials[[:space:]]*(\(|=)[[:space:]]*"?true' --include='*.java' --include='*.kt' .`
       (a `*` pattern and `allowCredentials` true on the same mapping reflect every origin;

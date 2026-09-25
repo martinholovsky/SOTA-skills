@@ -179,6 +179,25 @@ escaping.
 - Strip `\r`/`\n` from user data before writing to line-oriented logs, or log
   structured JSON; otherwise attackers forge log entries.
 
+## 4a. `header('Location')` does not stop the script (CWE-698)
+
+Sending a `Location` header only queues a header. The script runs on, so everything after the
+redirect still executes and its output is sent in the 302 body, which a browser hides and
+`curl` shows. Measured on PHP 8.5 under `php -S`: a page that redirected unauthenticated users
+with `header('Location: /login');` and no `exit` returned `302` and the admin page's body, and
+the privileged write below the redirect ran.
+
+- Follow every `header('Location: …')` on a guard path with `exit;` (or `return` from the only
+  entry point), or better, throw an exception the front controller turns into the redirect.
+- A framework redirect helper only **builds** a response object: Symfony's `redirectToRoute()`
+  and Laravel's `redirect()` return a `RedirectResponse`. A controller that calls one without
+  `return` sends nothing and carries on (read in Symfony 7.3 `AbstractController` and
+  Laravel 12 `helpers.php`).
+- Put authorisation in middleware or a guard that halts the request, not in an `if` that
+  redirects and falls through.
+
+OWASP: Unvalidated Redirects and Forwards cheat sheet.
+
 ## 5. Attacker-chosen names: classes, session keys, properties
 
 §2's ban list covers a *function* name taken from input. The same flaw has more PHP
@@ -318,6 +337,11 @@ Run from repo root; verify each hit manually (greps are recall-oriented).
       `grep -rn 'strip_tags' --include='*.php' src/` (not an XSS defense)
 - [ ] **Header/redirect injection** —
       `grep -rnE 'header\s*\(\s*["'"'"']Location:.*\$' --include='*.php' src/`
+- [ ] **Execution after redirect (§4a) — HIGH on an authz path** — each hit is a `Location`
+      header whose next non-blank line is not `exit`/`die`/`return`/`throw`:
+      `find src/ -name '*.php' -exec awk 'FNR==1 && p {print pf":"pl": "ph} FNR==1 {p=0} p && /[^[:space:]]/ {if ($0 !~ /(exit|die|return|throw)/) print FILENAME":"pl": "ph; p=0} tolower($0) ~ /header[[:space:]]*\([[:space:]]*.location:/ && $0 !~ /(exit|die|return|throw)/ {p=1; pl=FNR; ph=$0; pf=FILENAME} END {if (p) print pf":"pl": "ph}' {} +`
+      ; a framework redirect that is built and not returned:
+      `grep -rnE '^[[:space:]]*(\$this->)?redirect(ToRoute)?[[:space:]]*\(' --include='*.php' src/ app/ 2>/dev/null`
 - [ ] **Log injection (§4) — MEDIUM** —
       `grep -rnE '(error_log|syslog|->(emergency|alert|critical|error|warning|notice|info|debug|log))[[:space:]]*\([^;]*\$_(GET|POST|REQUEST|COOKIE|SERVER)' --include='*.php' src/`
       (request data written straight into a log line; measured on PHP 8.5, `error_log()` to a
@@ -352,4 +376,5 @@ the constructor argument is request-chosen too, as in the file read above), a re
 session key HIGH; an `ldap_bind` login that accepts an empty password CRITICAL; an unescaped
 request value in a `preg_*` pattern HIGH (CRITICAL on an authz or redaction path), a validator
 that accepts a trailing newline or reads a `preg_*` error as "no match" MEDIUM
-where the directory permits unauthenticated binds (HIGH until that is checked).
+where the directory permits unauthenticated binds (HIGH until that is checked); code that runs
+after a guard's redirect (§4a) HIGH, CRITICAL when it performs the privileged action.

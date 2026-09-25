@@ -183,6 +183,23 @@ process.on('uncaughtException', (err) => {
 
 Policy: **log, then die**. After an uncaught exception the process state is undefined (half-finished writes, corrupted singletons) — continuing risks data corruption worse than a restart. The orchestrator's job is restarting; your job is exiting loudly. Never install an `uncaughtException` handler that swallows and continues (HIGH finding). Per-request errors belong in framework error handlers — they must never reach the process level.
 
+Two ordinary errors take this path without anyone deciding they should:
+
+- **An `'error'` event with no listener throws.** Measured on Node 22.22.1: `emit('error', err)`
+  on an `EventEmitter` with no `'error'` listener threw at the emit call ("Unhandled 'error'
+  event") and the process exited 1. A dropped socket, a stream, or a Redis/DB/WebSocket client
+  emitting `'error'` therefore takes down every in-flight request. Attach `.on('error', …)`
+  where each long-lived emitter is created. Log the error and let the client reconnect or fail
+  the one operation. Use `stream.pipeline` rather than `.pipe()`: measured, a source error
+  reached `pipeline`'s callback, but crashed a `.pipe()` chain whose only listener was on the
+  destination.
+- **Express 4 drops a rejected async handler.** Measured: in express 4.22.3, an `async` route
+  that threw never reached the error middleware. The request hung until the client gave up,
+  and the rejection surfaced as `unhandledRejection`, which the policy above turns into a
+  process exit. Express 5.2.1 passed the same rejection to the error middleware (500). On
+  Express 4, wrap every async handler (`(fn) => (req, res, next) => fn(req, res, next).catch(next)`)
+  or upgrade. *OWASP: Nodejs Security cheat sheet.*
+
 - `process.on('warning')` → log it (catches MaxListenersExceeded, deprecations).
 - Don't call `process.exit()` in normal flow — it skips pending I/O and `finally` blocks; let the loop drain or use exit codes from the shutdown path only.
 
@@ -354,6 +371,13 @@ channel.
 - [ ] Server timeouts: `grep -rn "headersTimeout\|requestTimeout\|keepAliveTimeout" src/` — absent = slowloris-exposed defaults (MEDIUM).
 - [ ] Body limits configured (`grep -rn "bodyLimit\|limit:" src/`) — unbounded body parsing (HIGH, DoS).
 - [ ] `grep -rn "SIGTERM" src/` — no graceful shutdown handler = dropped requests on every deploy (MEDIUM).
+- [ ] **Error paths that crash or hang the process (§"Process-level error policy") — HIGH on
+      a long-lived client or a request path** —
+      `grep -rlE "createClient\(|new (EventEmitter|WebSocket|net\.Socket)\(|net\.connect\(|createConnection\(|\.pipe\(" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' --exclude-dir=node_modules . | while IFS= read -r f; do grep -qE "on\(['\"]error['\"]|pipeline\(" "$f" || echo "$f"; done`
+      — files that create an emitter or pipe streams with no `'error'` listener or `pipeline`
+      anywhere (read the rest). Then, if `grep -nE '"express": *"[~^]?4\.' package.json` hits:
+      `grep -rnE "\.(get|post|put|patch|delete|all|use)\([^)]*async *(\(|function|[[:alnum:]_]+ *=>)" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' --exclude-dir=node_modules . | grep -vE "[Hh]andler\(|wrap\(|catch\(next"`
+      — an unwrapped async handler on Express 4 hangs the request on a rejection (HIGH).
 - [ ] `grep -rn "uncaughtException" src/` — handler that doesn't exit (HIGH); no `unhandledRejection` policy at all (MEDIUM).
 - [ ] `grep -rn "console.log\|console.error" src/ | grep -v test` — in services, replace with pino (LOW; MEDIUM if logging objects with secrets).
 - [ ] Logger redaction configured? `grep -rn "redact" src/` — logging auth headers/bodies without redaction (HIGH).
