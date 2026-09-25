@@ -122,7 +122,7 @@ and the shortest path to closing the worst gap.
 | File | Read this when... |
 |------|-------------------|
 | `rules/01-detection-engineering-discipline.md` | Running the detection lifecycle, writing ADS docs, doing detection-as-code (CI/peer review/regression), mapping coverage to ATT&CK + Navigator, applying the Pyramid of Pain, picking maturity targets and metrics (coverage/precision/MTTD) |
-| `rules/02-telemetry-siem-data-layer.md` | Deciding what to collect (the #1 gap), choosing SIEM/data-lake, normalizing with OCSF/ECS, sizing retention for IR/hunting, controlling volume/cost, assessing data quality |
+| `rules/02-telemetry-siem-data-layer.md` | Deciding what to collect (the #1 gap), choosing SIEM/data-lake, normalizing with OCSF/ECS, sizing retention for IR/hunting, controlling volume/cost, assessing data quality; application & behavioural detections (app-login spraying/stuffing/impossible travel, LLM/agent runtime and model-API-as-C2, data-access exfiltration and DB anomalies) |
 | `rules/03-rule-languages-engines.md` | Choosing and writing detections in Sigma, YARA/YARA-X, Suricata, Falco, Tetragon, or SIEM-native (KQL/SPL/EQL); rule quality, specificity, FP-resistance, performance; good/bad examples |
 | `rules/04-alerting-triage-soc-soar.md` | Fighting alert fatigue, tuning/suppression with expiry, severity assignment, enrichment, dedup/correlation, runbooks, SOAR + auto-containment guardrails, case management, FP lifecycle, SOC metrics |
 | `rules/05-hunting-intel-deception.md` | Hypothesis-driven hunting + the hunt loop, IOC vs IOA/TTP hunting, threat-intel lifecycle + TIP, STIX 2.1/TAXII 2.1, diamond model/kill chain, deception (honeypots/honeytokens/canaries) |

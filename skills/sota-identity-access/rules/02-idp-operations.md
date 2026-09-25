@@ -84,6 +84,13 @@ public client can keep.
   and idle expiry; long-lived non-rotating refresh tokens are a High finding.
 - **Revocation** (RFC 7009) endpoint available and used on logout/credential-change;
   pair with introspection (RFC 7662) for opaque tokens.
+- **Authorization codes are one-shot and short-lived.** Expire them within minutes — RFC
+  6749 Sec. 4.1.2 recommends a maximum of 10, and a minute is usually enough. Mark a code
+  redeemed atomically at the token endpoint (a check-then-mark race lets two concurrent
+  redemptions both succeed). A second redemption MUST fail, and the AS SHOULD revoke every
+  token already issued from that code: a replayed code means it leaked, and the first
+  redeemer may have been the attacker. Test both halves; many custom ASs do the first and
+  not the second. OWASP: ASVS 5.0 V10.4.2, V10.4.3.
 
 ```
 # GOOD (IdP token policy)
@@ -117,7 +124,7 @@ refresh_token_lifetime  = "never"
   shorter caps.
 - **Session fixation**: the IdP must issue a fresh session identifier on successful
   authentication and not accept a pre-login session id. (The app-side cookie handling for
-  this is **sota-code-security** rules/02.)
+  this is **sota-code-security** rules/17.)
 - **Single Logout (SLO) / back-channel logout**: SSO means one credential opens many RPs;
   logout or credential-change must propagate. Configure **back-channel logout** (OIDC
   Back-Channel Logout: the IdP POSTs a logout token to each RP) so a sign-out or
@@ -173,3 +180,4 @@ refresh_token_lifetime  = "never"
 - [ ] Do third-party clients show informative, revocable consent, with high-scope apps admin-gated?
 - [ ] For brokered/upstream IdPs: is the issuer pinned, tokens fully validated, identities linked on a verified immutable id, and upstream group claims re-mapped (not trusted) into the local model?
 - [ ] When an upstream IdP, broker link, or client is disabled, is it tested that its login path fails closed (Keycloak CVE-2026-3047 / CVE-2026-2603 class), with unused IdP-initiated broker endpoints restricted?
+- [ ] **High** — Is an authorization code single-use, expiring within minutes (RFC 6749 recommends at most 10), with a second redemption refused and the tokens already issued from it revoked? Code lifetimes over 10 minutes: `grep -rniE '(auth(orization)?_?)?code_?(lifetime|lifespan|ttl|expir[a-z]*)["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']?([0-9]+[[:space:]]*[hd]|(1[1-9]|[2-9][0-9]|[0-9]{3,})[[:space:]]*m|(60[1-9]|6[1-9][0-9]|[7-9][0-9]{2}|[0-9]{4,})[[:space:]]*s?["'\'']?[[:space:]]*$)' .`

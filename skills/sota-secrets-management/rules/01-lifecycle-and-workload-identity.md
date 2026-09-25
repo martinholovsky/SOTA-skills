@@ -82,6 +82,15 @@ the secret's metadata/tags. A secret missing any of the four is an audit finding
 | TLS leaf certs | ≤ 90 days (ACME automation) |
 | Long-lived static keys (last resort) | 90 days, with a ticket explaining why they exist |
 
+**Event triggers rotate now, whatever the calendar says.** Two apply to every class: suspected
+compromise, and **a person who could read the value leaving the organisation or changing role**.
+Revoking their account does not revoke what they may have copied — a shared database password,
+a team API key, an encryption key they once exported. So the offboarding checklist names every
+shared credential the person could reach and rotates each (for an encryption key: new key
+version, then re-wrap/re-encrypt, rules/05 §7). The cheaper fix is structural: per-identity or
+dynamic credentials (§4–6) leave nothing shared to rotate — disabling the identity is enough.
+OWASP: Cryptographic Storage cheat sheet; Database Security cheat sheet.
+
 **Zero-downtime rotation = overlap, not swap.** The universal pattern:
 
 1. Issue new secret (version N+1) alongside old (N) — both valid.
@@ -269,6 +278,10 @@ Operational rules for dynamic/leased credentials:
 - [ ] Every secret has owner, rotation interval, zero-downtime rotation runbook, and a tested
       revocation path; intervals meet the table in §3.
 - [ ] Rotation uses overlap (dual-secret / versioned), not in-place swap.
+- [ ] Rotation runbooks and the offboarding checklist trigger rotation of every shared secret a
+      leaver or role-changer could read, not only on a schedule or confirmed compromise (§3) —
+      Medium. Runbooks that never mention it:
+      `grep -rLiE 'offboard|leaver|leaves|departure' runbooks/`
 - [ ] No long-lived cloud keys where IAM roles / managed identity / workload identity
       federation are available (in-cloud workloads, CI jobs, cross-cloud calls).
 - [ ] CI→cloud auth uses OIDC with `aud` + pinned `sub` trust conditions; one least-privilege

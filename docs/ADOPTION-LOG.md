@@ -6013,3 +6013,27 @@ traversal it tests; a file scope that missed `compose.test.yml`), 2 worked as wr
 | `sota-databases` | 1 | 3 | 0 | 4 |
 | `sota-privacy-compliance` | 3 | 0 | 0 | 3 |
 | **total** | 16 | 3 | 0 | 19 |
+
+## 2026-09-25 — ROADMAP 66 step 4, batch "platform": high-value OWASP themes adopted
+
+One agent per skill (`sota-code-security` split five ways by file) re-verified each gap against
+the current tree before writing, wrote the rule in its own words citing OWASP sources by name,
+added an audit probe tested on a bad and a good fixture, and verified every API, default and
+standard it names against a primary source read that session. Every probe was then re-run here
+against its fixtures; the 39 that did not reproduce went to a second verification pass — 34 were
+artefacts of the re-run (a reported command with prose or a placeholder the file does not carry,
+or a live-endpoint probe), 3 were real defects fixed in the file (an `rg` with no path, which reads
+**stdin** when stdin is not a terminal; `curl` without `--path-as-is`, which normalises the very
+traversal it tests; a file scope that missed `compose.test.yml`), 2 worked as written.
+
+| skill | implemented | extended | blocked by the cap | audit probes |
+|---|---|---|---|---|
+| `sota-network-security` | 4 | 1 | 0 | 5 |
+| `sota-identity-access` | 9 | 0 | 0 | 9 |
+| `sota-sandboxing` | 4 | 2 | 0 | 6 |
+| `sota-secrets-management` | 2 | 0 | 0 | 2 |
+| `sota-detection-engineering` | 3 | 0 | 0 | 3 |
+| `sota-observability` | 3 | 0 | 0 | 3 |
+| `sota-cloud-infrastructure` | 2 | 1 | 0 | 3 |
+| `sota-kubernetes` | 0 | 1 | 0 | 1 |
+| **total** | 27 | 5 | 0 | 32 |

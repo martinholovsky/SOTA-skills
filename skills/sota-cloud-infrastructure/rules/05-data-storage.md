@@ -23,6 +23,13 @@ at rest, and how it survives deletion — malicious or accidental.
 - **Versioning on** for any bucket whose objects you'd miss (protects against
   overwrite/delete), paired with lifecycle rules expiring noncurrent versions —
   versioning without expiry is an unbounded bill.
+  **Versioning also means "deleted" is not gone:** on S3 a delete without a
+  `versionId` only adds a delete marker, and an overwrite leaves the old bytes as a
+  noncurrent version — both still fetchable by anyone holding `s3:GetObjectVersion`
+  (and listable with `s3:ListBucketVersions`). Removing a leaked secret or erased PII
+  means deleting every version by ID (`s3:DeleteObjectVersion`), not the key; grant
+  the version-read actions only to roles that restore data. On other providers,
+  check how versioning retains old copies before trusting a delete. (OWASP: WSTG-CONF-11)
 - **Lifecycle policy on every bucket, by design not retrofit:** transition to
   infrequent-access/archive tiers on access-pattern evidence (storage class
   analysis / intelligent tiering for unknown patterns), expire what has a retention
@@ -181,6 +188,11 @@ The real design decisions are about **key control and blast radius**:
 - [ ] Every bucket has: versioning decision, lifecycle rules (incl. multipart
       abort + noncurrent expiry), TLS-required policy; sensitive buckets have
       access logging and endpoint/org conditions.
+- [ ] **High** — noncurrent versions hold no data the business thinks it deleted
+      (§1): list them with ``aws s3api list-object-versions --bucket <b> --query 'Versions[?IsLatest==`false`].[Key,VersionId]'``
+      and sample for secrets/PII; version-read grants limited to restore roles —
+      probe `grep -rn -E 's3:(GetObjectVersion|ListBucketVersions|GetObject\*|\*)"' --include='*.tf' --include='*.json' .`
+      and justify each hit.
 - [ ] No `Principal:"*"` in bucket/queue/key resource policies without strong
       conditions.
 - [ ] Stateful resources carry backup-tier tags; org backup plans select by tag;

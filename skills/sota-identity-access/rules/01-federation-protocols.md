@@ -7,7 +7,7 @@ SAML 2.0 and its attack classes, and SCIM 2.0 as a provisioning protocol.
 
 This file owns **protocol design and the IdP/RP token contract**. It does NOT own the
 app-side JWT *signature-verification code path* or session cookie handling — that is
-**sota-code-security** rules/02. When the finding is "this Express middleware does not
+**sota-code-security** rules/17. When the finding is "this Express middleware does not
 pin the alg," route it there; when it is "the IdP allows the implicit flow" or "the RP
 never checks `aud`," it is here.
 
@@ -52,6 +52,20 @@ require_pkce   = false
   token.
 - A frequent confusion bug: the client validates the *access* token as if it were the ID
   token, or forwards the ID token as the API bearer. Keep the roles distinct.
+- **Make the kind of token machine-checkable, and check it.** When one issuer signs several
+  kinds of JWT with the same keys (ID token, access token, logout token, SET), a verifier
+  that checks only signature and claims will accept one kind where another was meant.
+  Explicit typing (RFC 8725 Sec. 3.11) closes this: an RS consuming RFC 9068 JWT access tokens
+  MUST reject any `typ` other than `at+jwt`/`application/at+jwt`; an RP consuming OIDC
+  Back-Channel Logout tokens should require `logout+jwt` (the spec RECOMMENDS the issuer set
+  it). Pin the expected `typ` per endpoint, the same way you pin `alg`.
+- **Issuer side: one audience per token.** If one issuer mints JWTs for more than one
+  recipient, each token MUST carry an `aud` naming its recipient (RFC 8725 Sec. 3.9) — never a
+  shared or empty audience that every service accepts. When audiences arrive dynamically
+  (the RFC 8707 `resource` parameter, dynamically registered clients), check the requested
+  value against the registered set and refuse unknown ones (`invalid_target`) instead of
+  minting a token for whatever string was asked for.
+  OWASP: ASVS 5.0 V9.2.2, V9.2.4.
 
 ## 3. Required claim validation at the RP (the highest-yield audit area)
 
@@ -66,6 +80,20 @@ Validate **every** ID token (OpenID Connect Core 1.0):
 - `nonce` — the RP sends a `nonce` in the auth request and verifies it echoes in the ID
   token (binds token to *this* login, anti-replay). REQUIRED for implicit/hybrid; send
   and check it for auth-code too.
+- `acr` / `amr` / `auth_time` — **asking for a level is not getting it.** `acr_values` is a
+  *voluntary* claim request (OIDC Core Sec. 3.1.2.1): the OP may authenticate at a lower level
+  and say so in `acr`. When the RP sent `acr_values`, compare the returned `acr` (and `amr`,
+  if policy names methods) with what it required and refuse or re-prompt on a shortfall.
+  When it sent `max_age`, the ID token MUST carry `auth_time`; compute `now - auth_time`
+  yourself and re-authenticate if it exceeds the limit. A missing claim is a failure, not a
+  pass. The same applies to a **resource server** that gates an operation on
+  authentication strength: read `acr`/`auth_time` from the access token (RFC 9068 Sec. 2.2.1)
+  or introspection, and answer a shortfall with the RFC 9470 challenge
+  (`error="insufficient_user_authentication"` plus `acr_values`/`max_age`).
+- **The RP session must not outlive the authentication it rests on.** Derive the local
+  session's absolute lifetime from `auth_time` and the IdP's re-authentication policy (and
+  `SessionNotOnOrAfter` in SAML), not from a local default that silently extends it.
+  OWASP: ASVS 5.0 V10.3.4, V6.8.4, V7.6.1; OWASP JSON Web Token cheat sheet.
 - Signature — pin allowed `alg` to the IdP's actual signing alg(s) (e.g. `RS256`,
   `ES256`); fetch keys from the IdP `jwks_uri`; **reject `alg:none` and reject
   symmetric `alg` when an asymmetric key is expected** (the RS256→HS256 confusion
@@ -89,7 +117,19 @@ assert claims.get("azp", claims["aud"]) == "web-app"
   (RFC 9207), not just the ID-token `iss`. Without it, an attacker who can make the
   user start a login at an honest AS can swap in a malicious AS's authorization
   response and have the code/token redeemed at the wrong endpoint. Single-AS
-  deployments are unaffected, but wire it in before adding a second IdP.
+  deployments are unaffected, but wire it in before adding a second IdP. Store, per
+  authorization request, which issuer it was sent to and compare on return. If an AS
+  cannot send `iss`, the fallback (RFC 9700 Sec. 4.4.2.2) is a **distinct redirect URI per
+  issuer**, checked against the URI the response actually arrived on — weaker, since an
+  attacker who can register a client at the honest AS may reuse that URI, so use it only
+  when issuer identification is unavailable.
+
+- **Metadata issuer must equal the configured issuer.** The `issuer` in fetched discovery
+  metadata MUST be identical to the issuer URL it was fetched from (OIDC Discovery Sec. 4.3,
+  RFC 8414 Sec. 3.3) and to the ID-token `iss`; on mismatch discard the whole document. A
+  client that reads `authorization_endpoint`/`token_endpoint`/`jwks_uri` from whatever
+  metadata it received lets a mix-up attacker supply their own endpoints.
+  OWASP: ASVS 5.0 V10.5.3; OWASP OAuth2 cheat sheet.
 
 - **Discovery & JWKS**: configure from `/.well-known/openid-configuration` (OpenID
   Connect Discovery 1.0), cache the `jwks_uri` keys, and honor key rotation by `kid`
@@ -107,6 +147,11 @@ assert claims.get("azp", claims["aud"]) == "web-app"
   on the registered host) receives the code/token.
 - Per-client registration: each RP gets its own client with its own narrow redirect set.
   Never share one client across apps.
+- **AS side: never redirect a credential POST with 307 (or 308).** Both are
+  method-preserving (RFC 9110 Sec. 15.4), so the browser re-POSTs the login form — password
+  included — to the client's redirect URI. RFC 9700 Sec. 4.12: an AS MUST NOT use 307 there and
+  SHOULD use **303 See Other**, the only code that unambiguously turns POST into GET. Check
+  custom login pages and any framework helper whose default status you did not choose.
 
 ```
 # BAD
@@ -140,6 +185,38 @@ Adopt these for high-value and high-assurance clients; required by FAPI 2.0.
   `code_verifier` when no challenge was registered, and rejects an auth-code request
   without a challenge for clients configured to require PKCE. Enforce, don't merely
   offer.
+
+### 5.1 At the resource server: verify the binding, then authorize from the token
+
+Sender-constraining protects nothing unless the **resource server** checks the proof; an RS
+that accepts a DPoP-bound token as a plain bearer token has turned it back into one.
+
+- **DPoP (RFC 9449 Sec. 4.3 and 7)** — on every request: exactly one `DPoP` header holding one
+  JWT; `typ` = `dpop+jwt`; an asymmetric, allowlisted `alg` (never `none`); signature
+  valid under the header `jwk`, which must hold no private key; `htm` = this request's
+  method and `htu` = this request's URI (query and fragment ignored); `iat` (or a
+  server-issued `nonce`) inside a short window; **`ath` = the hash of the presented access
+  token**; and the proof key's thumbprint = the token's `cnf.jkt`. Track `jti` per target
+  URI for the acceptance window and refuse repeats (RFC 9449 Sec. 11.1) — the one check that needs
+  shared state, so multi-instance RSs drop it first.
+- **mTLS-bound tokens (RFC 8705 Sec. 3)** — take the client certificate from the TLS layer of
+  *this* connection (not a header an upstream proxy could let a client set), hash it, and
+  compare with the token's `cnf` `x5t#S256`; on mismatch reject with 401 `invalid_token`.
+- **MCP servers are resource servers.** The MCP authorization spec (2025-11-25 revision)
+  requires tokens audience-bound to the MCP server (RFC 8707 `resource`), and forbids
+  passing a client's token through to upstream APIs; it does not itself require
+  sender-constraining. Treat MCP client→server tokens as FAPI-grade anyway when they grant
+  tool access to sensitive systems: DPoP- or mTLS-bind them and verify as above.
+- **Authorize each request from what the token grants, not from the token being valid.**
+  After validation (rules/03 for the model), decide on the token's `scope`, its RFC 9396
+  `authorization_details` (type, actions, locations, amounts), and its subject — every
+  request, not once per session. A structurally valid token for another operation is a
+  deny.
+- **Key the user on `iss` + `sub`, never `sub` alone.** `sub` is only unique within one
+  issuer (OIDC Core Sec. 5.7); an RS that trusts two issuers and looks users up by `sub` lets
+  one issuer's subject act as another's. Also keep resource-owner tokens apart from
+  client-credentials tokens whose `sub` is a client id (RFC 9700 Sec. 4.15).
+  OWASP: ASVS 5.0 V10.3.2, V10.3.3; AISVS 10.3.5; OWASP OAuth2 cheat sheet.
 
 ## 6. OAuth 2.1 and FAPI 2.0 posture
 
@@ -190,6 +267,22 @@ OIDC. When you run or consume SAML, the failure modes are signature-handling bug
   rules/07; the hybrid/Entra blast radius is rules/07 §5 here.
 - Always enforce: `Destination`/`Recipient` checks, `AudienceRestriction`, assertion
   replay cache, signed metadata, and a rotation plan for IdP signing certs.
+- **Verify with the IdP's pinned key, never the document's own.** SAML Core Sec. 5.4.5 puts no
+  restriction on `<ds:KeyInfo>`, so a certificate inside the response proves only that
+  *someone* signed it. Load the IdP's signing certificate(s) from its metadata at
+  onboarding, keyed by entity ID, and verify against those; ignore embedded `KeyInfo` /
+  `X509Certificate` except to select among already-trusted keys. Check the response and
+  assertion `<Issuer>` equal the expected IdP entity ID *before* choosing the key.
+- **Run the profile's processing rules and the binding's rules.** Walk Web SSO Profile
+  Sec. 4.1.4.3 in full (verify signatures, `Recipient` = your ACS URL, bearer
+  `NotOnOrAfter`, `InResponseTo` = your request ID or absent for unsolicited, discard any
+  invalid assertion). HTTP-POST (Profile Sec. 4.1.4.5): assertions MUST be signed and bearer
+  assertion IDs kept in a replay cache until `NotOnOrAfter`. HTTP-Redirect carries its
+  signature in the `Signature`/`SigAlg` query parameters over the URL-encoded
+  `SAMLRequest`/`SAMLResponse`, `RelayState` and `SigAlg` (Bindings Sec. 3.4.4.1) — verify
+  that octet string as received, and never accept an SSO `<Response>` on Redirect (the
+  profile forbids it). Use the OASIS *Security and Privacy Considerations* document as the
+  audit walk-through. OWASP: OWASP SAML Security cheat sheet.
 
 ## 8. SCIM 2.0 as a protocol
 
@@ -227,3 +320,10 @@ New integrations: do not adopt WS-Fed; migrate existing ones to OIDC.
 - [ ] Is IdP-initiated SAML avoided or hardened (single-use IDs, tight NotOnOrAfter, RelayState validation)?
 - [ ] Is the SCIM endpoint authenticated/authorized per-tenant, with DELETE/`active=false` actually terminating authentication?
 - [ ] Is any WS-Federation usage documented as legacy with a migration plan to OIDC?
+- [ ] **High** — When the RP sends `acr_values`/`max_age`, does it check the returned `acr`/`amr`/`auth_time` and fail on a shortfall or a missing claim (and does an RS gating on strength do the same)? Files that request a level but never read it: `grep -rlE 'acr_values|max_age' . | xargs grep -LE 'auth_time|["'\'']acr["'\'']|\.acr([^A-Za-z_]|$)'`
+- [ ] **Medium** — Does every JWT consumer pin the expected `typ` (`at+jwt` at an RS, `logout+jwt` for back-channel logout), and does the issuer give each recipient its own `aud` and refuse unknown `resource` values? Verifiers with no `typ` check: `grep -rlE 'jwtVerify|jwt\.(decode|verify)|JwtDecoder|ValidateToken' . | xargs grep -LE '[+]jwt|["'\'']typ["'\'']'`
+- [ ] **High** — Does the RS authorize every request from the token's `scope`/`authorization_details`/subject, and key users on `iss`+`sub`? User lookups on `sub` alone: `grep -rnE '[Uu]ser[A-Za-z_]*\(.*sub|WHERE[[:space:]]+sub[[:space:]]*=' . | grep -v iss`
+- [ ] **High** — Does the RS verify DPoP proofs fully (`typ`, `alg`, signature, `htm`, `htu`, `iat`/`nonce`, `ath`, `cnf.jkt`, `jti` replay) and match mTLS-bound tokens' `cnf` `x5t#S256` against the connection's client certificate — including MCP servers? DPoP handlers that never check `ath`: `grep -rlE 'dpop\+jwt|DPoP' . | xargs grep -LE '["'\'']ath["'\'']|\.ath([^A-Za-z_]|$)'`
+- [ ] **Medium** — With more than one AS: is the issuer stored per request and compared on return (`iss` parameter, or a distinct redirect URI per issuer as fallback), and is fetched metadata discarded when its `issuer` differs from the configured one? Discovery fetches with no issuer comparison: `grep -rlE 'well-known/(openid-configuration|oauth-authorization-server)' . | xargs grep -LE '\[["'\'']issuer["'\'']\][[:space:]]*(!=|==)|\.issuer[[:space:]]*(!=|==|!==|===)'`
+- [ ] **High** — Does the AS redirect after a credential POST with 303, never 307/308? `grep -rnE 'code=30[78]|redirect\(30[78]|StatusTemporaryRedirect|StatusPermanentRedirect|TEMPORARY_REDIRECT|PERMANENT_REDIRECT' .`
+- [ ] **Critical** — Does the SAML SP verify only against IdP keys pinned from metadata (never a certificate taken from the message's `KeyInfo`), check `<Issuer>`, and apply the Web SSO profile and binding rules (signed assertions + replay cache on POST, query-string signature on Redirect, no `<Response>` on Redirect)? Keys read out of the document: `grep -rnE '(find|findtext|xpath|select|getElementsByTagName[A-Za-z]*)\(.*(KeyInfo|X509Certificate)' .`

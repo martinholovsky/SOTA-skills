@@ -97,6 +97,25 @@ that holds when the runtime itself fails. Verify runc ≥ 1.2.8/1.3.3.
 controller), generate SBOMs. An attacker who owns your base image is *inside* the
 sandbox at boot.
 
+**R1.6 — Published ports skip the host firewall; the default bridge is flat.**
+With no host address, `-p 8080:80` (or Compose `"8080:80"`) publishes on every
+host interface (`0.0.0.0` and `[::]`), and Docker's NAT rules steer that traffic
+before it reaches the `INPUT` chain a UFW-style firewall filters — the port is
+reachable from outside while `ufw status` says it is closed. So:
+- Bind to loopback unless the port must be public: `-p 127.0.0.1:8080:80`,
+  `"127.0.0.1:8080:80"`; the daemon's `"ip"` setting changes the default host
+  address for the default bridge.
+- Put host-level filtering for container traffic in the `DOCKER-USER` chain,
+  which Docker evaluates before its own forwarding rules; rules appended to
+  `FORWARD` never see those packets. After any Docker or firewall-manager
+  upgrade, confirm from *another host* that only intended ports answer.
+- Don't use the default bridge. Every container started without `--network`
+  lands on it and can reach every other one (inter-container communication is on
+  by default, `--icc`/`"icc"`). Create user-defined networks per trust group and
+  attach only the containers that must talk; set `"icc": false` for anything left
+  on the default bridge.
+OWASP: Docker Security cheat sheet.
+
 ## 2. Sandboxed runtimes: gVisor, Kata, Firecracker
 
 **R2.1 — gVisor (runsc):** user-space kernel (Sentry) intercepts the container's
@@ -129,7 +148,17 @@ defense-in-depth at container economics; Kata/Firecracker when tenants are mutua
 hostile or code is fully untrusted; Firecracker specifically when you control the
 stack and want minimal VMM surface + ephemerality. Re-state: GPU or exotic
 device passthrough generally forces Kata(+VFIO) or full VM — and passthrough
-*weakens* the boundary (audit it). For agent workloads on K8s, the Kubernetes
+*weakens* the boundary (audit it). **A GPU is shared state:** never schedule
+mutually untrusted tenants onto one GPU through time-slicing — NVIDIA's own
+GPU Operator docs state it gives no memory or fault isolation between replicas —
+and allow co-tenancy only with hardware partitioning that isolates memory
+(MIG-class); otherwise give each tenant whole devices. Clear accelerator memory
+between jobs as you would scratch files: GPU on-chip "local" memory has leaked
+between processes (LeftoverLocals, CVE-2023-4969 — Apple, AMD and Qualcomm GPUs
+affected, NVIDIA not, per CERT/CC VU#446598), so reset or scrub the device, or
+destroy the VM, before the next tenant's job. Confidential GPU modes are
+`sota-confidential-computing` rules/02. OWASP: AISVS 4.2.4; Secure AI Model Ops
+cheat sheet. For agent workloads on K8s, the Kubernetes
 **Agent Sandbox** project (SIG Apps, launched KubeCon NA 2025) wraps this choice
 in a declarative per-sandbox API with gVisor as default and Kata as the
 stronger option — prefer it over hand-rolled per-agent pod plumbing.
@@ -294,3 +323,14 @@ is good for security but plan checkpointing/image capture for incident response
 - [ ] Rootless/userns-remapped engine on hosts where dev containers run; Docker
       API never on unauthenticated TCP; runc ≥ 1.2.8/1.3.3 (November 2025
       escape trio, R1.4).
+- [ ] **High** — Published ports bound to loopback unless deliberately public,
+      host filtering in `DOCKER-USER`, exposure checked from another host, and no
+      service on the default bridge with `icc` on (R1.6):
+      `grep -rnE -- '(-p|--publish)[ =]"?[0-9]+:[0-9]+|^[[:space:]]*-[[:space:]]*"?[0-9]+:[0-9]+' .`
+      — each hit publishes on all interfaces; want `127.0.0.1:` or a documented
+      reason.
+- [ ] **High** — No GPU shared between mutually untrusted tenants by
+      time-slicing; co-tenancy only with MIG-class partitioning; device memory
+      reset or VM destroyed between tenants' jobs (R2.4):
+      `grep -rnE 'timeSlicing:|nvidia\.com/gpu\.shared' .` on a multi-tenant
+      cluster is a finding unless the sharing pods are one tenant.

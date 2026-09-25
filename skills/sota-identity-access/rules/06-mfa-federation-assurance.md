@@ -32,6 +32,21 @@ ceremony; here we own the policy and the assurance model.
 - **Require phishing-resistant MFA for all privileged accounts** (rules/05) and drive all
   users toward passkeys. Enroll passkeys at the IdP and let them satisfy MFA across all
   federated RPs via SSO.
+- **MFA is the baseline for everyone, not a privileged-account perk.** Require AAL2 (two
+  distinct factors) for every employee, contractor and partner account and for any
+  application that exposes personal data; reserve single-factor AAL1 for low-risk apps
+  that hold none. NIST SP 800-63B-4 sets the same floor for US federal agencies (a minimum
+  of AAL2 whenever personal information is made available online). Enforce it at the IdP
+  so an RP cannot opt out, and report the accounts still exempt.
+- **Two factors means two categories.** Knowledge, possession and inherence must be
+  independent — a password plus a security question is one factor twice, and a code sent
+  to a mailbox unlocked by the same password is not independent either.
+- **No downgrade path.** A user enrolled with a phishing-resistant authenticator must not
+  be able to choose SMS, email OTP or a password-only path at sign-in ("try another
+  way") or in recovery; the weakest reachable method is the real assurance level.
+  Recovery re-binds a strong authenticator through a process at least as strong
+  (sota-code-security rules/02 §5). OWASP: Multifactor Authentication cheat sheet;
+  Proactive Controls 2024 C7; Zero Trust Architecture cheat sheet.
 
 ## 2. Step-up, adaptive & conditional access
 
@@ -43,6 +58,12 @@ ceremony; here we own the policy and the assurance model.
   network/location, impossible-travel, risk score. High risk → step-up or block; low risk
   → allow. Feed the risk signals from and to **sota-detection-engineering** (auth anomaly,
   impossible-travel detections).
+- **A risk signal the client can set is not a signal.** Take the source IP from the
+  connection or from a proxy header only when the peer is a known proxy
+  (sota-network-security rules/05 R6) — a raw `X-Forwarded-For` lets an attacker claim a
+  trusted network and skip step-up. Device posture must come from attested or managed-device
+  evidence, not a user-agent string or a client-sent flag. OWASP: Multifactor
+  Authentication cheat sheet.
 - Conditional access is policy-as-code too: version it, test it, and fail closed (an
   unevaluated condition denies or steps up, never silently allows).
 
@@ -126,3 +147,5 @@ Rev 3, reflect these:
 - [ ] Is CAEP/SSF (or an equivalent) wired so disable/credential-change/risk events propagate revocation to RPs in near-real-time, not at token expiry?
 - [ ] Are IAL/AAL/FAL levels chosen to match resource risk, with AAL3 (hardware phishing-resistant) for the highest-risk access?
 - [ ] Is password policy 800-63-4-aligned (no forced periodic rotation, no composition rules; rotate on compromise only)?
+- [ ] **High** — Is MFA (AAL2) required for every workforce, contractor and partner account and for every app that exposes personal data, with AAL1 limited to low-risk apps holding none? MFA switched off or optional in policy-as-code: `grep -rniE '(require[sd]?_?mfa|mfa_?(required|enforce[a-z]*)|mfa)["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']?(false|optional|off|disabled|none|no)' .`
+- [ ] **High** — Do the factors come from different categories, is there no sign-in or recovery fallback from a phishing-resistant authenticator to a weaker method, and are adaptive-access signals taken from sources the client cannot set? Fallbacks to weaker methods: `grep -rniE 'fallback[A-Za-z_]*["'\'']?[[:space:]]*[:=].*(sms|voice|email|otp|password|question)' .`

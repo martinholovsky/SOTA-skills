@@ -64,6 +64,17 @@ mesh-native cert. Authz policy then references *that identity*, so "only the api
 billing" survives pod churn and can't be spoofed by landing on the right IP. sota-identity-access
 owns SPIFFE/SPIRE setup and the trust domain; here, ensure policies reference identities, not CIDRs.
 
+**R4.1 — "Signed by a CA we trust" is authentication of the issuer, not of the peer.** A shared or
+public issuer signs certificates for many parties, so accepting any chain-valid cert admits every
+one of them. For partner, cross-org or cross-trust-domain mTLS, pin the expected peer: match a
+**typed SAN** (URI SAN / SPIFFE ID, or DNS SAN) or an **SPKI hash** per peer — e.g. Envoy
+`match_typed_subject_alt_names` or `verify_certificate_spki` in `CertificateValidationContext`,
+Istio `principals`. Never authorise on the subject **CN** or other DN fields (`$ssl_client_s_dn`,
+`Subject.CommonName`, `getSubjectX500Principal()`): RFC 9525 dropped CN-ID for server identity —
+identity lives in subjectAltName only — and the same reasoning applies to client certs. Chain
+validation itself is sota-code-security rules/04 §5. OWASP: AI-Powered Advertising Systems Security
+cheat sheet, Kubernetes Security cheat sheet.
+
 ## 4. Mesh authorization policy (the L7 PEP)
 
 **R5 — mTLS proves *who*; authorization decides *what they may do*. You need both.** mTLS alone
@@ -115,6 +126,11 @@ allow-all NetworkPolicy still has a flat L3 underneath.
 
 - **PERMISSIVE drift** (R3) — the top one. Track which namespaces are still permissive; treat
   long-lived PERMISSIVE as a High finding.
+- **Alert on the change, not the audit.** A mode that silently flips back from STRICT (a new
+  namespace default, a Helm value, a debugging `PeerAuthentication`) re-opens plaintext with no
+  error anywhere. Keep mTLS mode in GitOps, deny `PERMISSIVE`/`DISABLE` outside a named exception
+  list at admission (sota-kubernetes rules/03), and alert on any `PeerAuthentication` (or mesh
+  equivalent) create/update that lowers the mode. OWASP: Kubernetes Security cheat sheet.
 - **Authz default-allow** — mTLS on but no AuthorizationPolicy means any workload calls any other.
   Default-deny then allow.
 - **mTLS bypass paths** — traffic that skips the mesh (hostNetwork pods, direct IP, ports the mesh
@@ -134,6 +150,12 @@ allow-all NetworkPolicy still has a flat L3 underneath.
       workload — it must be rejected.
 - [ ] Is there a default-deny **AuthorizationPolicy**, with allows keyed on workload identity
       (SPIFFE principal / SA), not IP?
+- [ ] **High — mTLS mode below STRICT in config, unalerted (§6).**
+      `grep -rnE 'mode: *(PERMISSIVE|DISABLE)' .` — each hit needs a dated exception; is a
+      mode-lowering change alerted?
+- [ ] **High — peer authorised by issuer or CN, not pinned identity (R4.1).** Cross-org/partner
+      mTLS pins a typed SAN or SPKI per peer; hunt subject-DN authorisation:
+      `grep -rnE 'ssl_client_s_dn|Subject\.CommonName|getSubjectX500Principal|getSubjectDN\(' .`
 - [ ] Are there mesh-bypass paths (hostNetwork, direct-IP, out-of-mesh DB) reaching sensitive
       services? Are those covered by CNI NetworkPolicy (rules/03)?
 - [ ] Is CNI L3/4 default-deny still in place *underneath* the mesh (mesh is not a CNI replacement)?

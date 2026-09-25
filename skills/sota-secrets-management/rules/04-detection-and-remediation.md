@@ -285,6 +285,9 @@ file is a claim, not evidence — check it the way you would any other
   by reading a scanner's *rule names* instead of its *values*. Read the values; then §3 if
   they are real.
 
+This section is the after-the-fact inventory; the preventive half — keep secret files out of
+the tree the assistant reads, and out of its editor and terminal context — is rules/05 §8.
+
 Audit: a repo tool that reads an agent-transcript directory and writes any part of a line
 verbatim = **High**; the same tool emitting digests and skeletons = no finding. A secret
 inventory that does not name the transcript path = **Medium**.

@@ -42,6 +42,32 @@ vulnerable to attack. Finding it running is a High finding: migrate to a maintai
 implementation (`ingress2gateway` automates much of the conversion) or another maintained ingress
 controller.
 
+**R2.2 — Every hop in the chain agrees on where a request ends (no desync / request smuggling).**
+When the edge and the backend disagree about message length, bytes the edge thought were one body
+become the start of the backend's *next* request — which skipped the WAF, auth and routing rules
+(CL.TE, TE.CL, and HTTP/2-to-1.1 downgrade variants). Require, on every tier:
+- **Strict parsers, never lenient modes on a reachable hop.** RFC 9112 Sec. 6.1 and 6.3: a message with
+  both `Content-Length` and `Transfer-Encoding` "ought to be handled as an error", a server that
+  processes one anyway MUST close the connection afterwards, and an invalid or conflicting
+  `Content-Length` list is unrecoverable (400). Prefer rejecting outright. Leniency switches that
+  relax this are findings: Apache `HttpProtocolOptions Unsafe` (default `Strict`), HAProxy
+  `option accept-unsafe-violations-in-http-request` (formerly `accept-invalid-http-request`), Node
+  `--insecure-http-parser` / `insecureHTTPParser: true`. Measured 2026-09-25 on Node 22.22.1: a
+  CL+TE request got `400` + `Connection: close` from the default parser and `200` + keep-alive with
+  `insecureHTTPParser: true`.
+- **HTTP/2 front, HTTP/1.1 back:** RFC 9113 Sec. 8.2.2 and 8.1.1 make an h2 message carrying
+  `Transfer-Encoding` (or another connection-specific field), or a `content-length` that differs
+  from the DATA it arrived with, malformed — an intermediary MUST NOT forward it. The edge must
+  rebuild the 1.1 framing itself from the h2 frames, never copy a client-supplied length header.
+- **No h2c upgrade through the edge.** RFC 9113 deprecated the `h2c` Upgrade token; a proxy that
+  forwards the client's `Upgrade` header lets the backend switch protocols and turns the connection
+  into a tunnel the proxy no longer inspects. Forward `Upgrade` only on WebSocket routes, and only
+  the value `websocket`.
+- **Same HTTP version handling on every tier** — one tier speaking 1.0 (no chunked) or reusing
+  back-end connections differently from its peer is where the parses diverge. Keep the proxy and the
+  app server patched: smuggling fixes ship as parser CVEs (e.g. sota-dotnet rules/04, Kestrel).
+OWASP: Secure Coding Practices QRG, WSTG-INJT-16.
+
 ## 2. WAF (OWASP CRS on Coraza / ModSecurity)
 
 **R3 — Run CRS in blocking mode at a tuned paranoia level — not detection-only forever.** CRS in
@@ -171,6 +197,14 @@ logging beats either alone: the allowlist blocks the easy path, the logs catch t
       Q3 2026) is a finding.
 - [ ] Is the ingress controller maintained? `kubernetes/ingress-nginx` is EOL (March 2026, no
       security fixes) → High; migrate to a maintained Gateway API implementation.
+- [ ] **High — request smuggling / desync (R2.2).** Any lenient HTTP parser on a reachable hop:
+      `grep -rnE 'HttpProtocolOptions +Unsafe|accept-(invalid-http-request|unsafe-violations-in-http-request)|insecure-http-parser|insecureHTTPParser *: *true' .`
+      Upgrade forwarded outside WebSocket routes (review each hit; h2c smuggling):
+      `grep -rnE 'proxy_set_header +Upgrade +\$http_upgrade' .`
+      Live check per tier — CL+TE must yield `400` or a closed connection, never keep-alive:
+      `printf 'POST / HTTP/1.1\r\nHost: h\r\nContent-Length: 4\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n' | nc -w 2 <host> <port>`
+      (TLS: `openssl s_client -quiet -connect <host>:443`). Also test h2 front-ends with a
+      `transfer-encoding` header and a mismatched `content-length`: both must be refused.
 - [ ] Is the public cert terminated at the edge and traffic re-encrypted (not plaintext) to
       backends across the cluster network?
 - [ ] Does the app trust `X-Forwarded-For`/`CF-Connecting-IP` **only** from known proxy ranges

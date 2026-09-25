@@ -117,6 +117,37 @@ servers are a recurring 2026 incident class (NSA published a dedicated CSI on
 MCP security, May 2026). Pin the tool *definitions* too (hash + re-approve on
 any change) — tool poisoning, rug pulls, shadowing, and line jumping all ride
 on unreviewed tool metadata (named taxonomy: sota-code-security rules/08 §5).
+**Sandbox the local ones, too.** Under the MCP stdio transport the client launches
+the server as a subprocess, so a `"command": "npx"` / `"uvx"` entry runs third-party
+code as *you*, on the host, with your home directory, SSH agent and credential
+store in reach — the agent's code sandbox (§2) does not wrap it. Run each local
+server in its own least-privilege box (a container with `--network none` unless
+it declares a need, or an OS-level sandbox — Landlock/bubblewrap per `02`,
+Seatbelt per `04` §6): mount only the directories it serves, keep the keychain/credential helpers and dotfiles out, and give it no
+wildcard host or filesystem permissions. OWASP: AISVS 10.1.3; MCP Security and
+Secure Coding with AI cheat sheets.
+
+**R3.5 — On developer machines, a managed permission baseline that the repo
+cannot loosen.** A coding agent on a laptop holds the developer's SSH keys, cloud
+sessions and push rights, so its approval settings are a security control:
+- **Never start a bypass mode in a repository you have not reviewed.** Flags such
+  as Claude Code `--dangerously-skip-permissions` (`defaultMode:
+  "bypassPermissions"`), Codex `--dangerously-bypass-approvals-and-sandbox` (alias
+  `--yolo`) and Gemini CLI `--yolo` / `--approval-mode=yolo` switch off the
+  per-action gate; they belong only inside an external sandbox (§2) — never in a
+  shell alias used for every checkout.
+- **Push the baseline from above the project.** Use the tool's admin-managed tier
+  (Claude Code: `managed-settings.json`/MDM, which project and user files cannot
+  override) to disable bypass mode (`permissions.disableBypassPermissionsMode`),
+  and where supported restrict permission rules and hooks to the managed source
+  (`allowManagedPermissionRulesOnly`, `allowManagedHooksOnly`).
+- **Policy hooks live where the agent cannot write** — outside the workspace and
+  not in a file the agent may edit (R3.4, R2.2).
+- **Gate agent pushes at the VCS boundary**: branch protection plus required
+  review on anything the agent pushes, so a hijacked session cannot land code alone.
+- **Re-audit accumulated allow-rules** on a cadence; "always allow" answers pile up
+  into a broad standing grant nobody decided on.
+OWASP: DSOMM; Secure Coding with AI cheat sheet.
 
 ## 4. Egress allowlists and resource limits
 
@@ -165,12 +196,43 @@ or do proxy-side resolution with the sandbox having no DNS at all.
   per-session monetary spend; an injected agent's first move is often "do this in a
   loop". Kill-switch that revokes the agent's token mid-session must exist.
 
+**Stopping is a fleet operation, and it travels out of band.** Revoking one
+session's token is the minimum; the halt you will actually need is "stop every
+running instance of agent X now" — one command that reaches all replicas,
+queued jobs and scheduled runs, and that stops new ones from starting. Deliver it
+over a channel the agent runtime cannot read, drop or spoof: the control plane
+(scale to zero, revoke the shared credential, flip a flag the *broker* checks
+before every tool call), never a message inside the agent's own context or a
+file in its workspace — a hijacked agent can ignore, delete or forge those. Test
+the halt on a schedule and time how long the last instance takes to stop.
+Separately, give the human driving a session a **stop control** that works
+mid-action, plus a way to **undo what the run did so far**: keep a checkpoint or
+append-only change log of every side effect (files written, commits, records
+changed, messages sent) outside the sandbox, so rollback replays it in reverse
+rather than relying on the model to remember. Actions with no undo path fall
+under R3.3. OWASP: AISVS 9.1.3, 9.6.3; AI Agent Security cheat sheet.
+
 **R4.4 — Log every action attribution-grade:** tool name, full arguments, decision
 (allowed/denied/approved-by), sandbox ID, session/user, result hash — to an
 append-only store *outside* the sandbox. Prompt-injection incidents are debugged
 from these logs; without them you can't even tell what leaked. Alert on: denied
 egress spikes, metadata-endpoint attempts, reads of credential-shaped paths,
 approval-bypass attempts.
+
+**R4.5 — Wire detections to automatic, graduated, reversible containment.** An
+alert that waits for a human while the agent keeps acting is a log entry. For each
+agent detection class, write down the containment step that fires on its own and
+scale it by confidence and severity: pause the session and hold pending tool calls
+→ end the agent's sessions → revoke or down-scope its credentials → pull
+privileged tools or cut egress entirely. Each step must be undoable and recorded
+(who or what triggered it, and why), because false positives will happen and a
+step that cannot be reversed will get switched off. Rehearse it: a scheduled drill
+that fires a benign canary detection and checks the right step ran, within the
+expected time. Bringing an agent back is a deliberate step, not a timeout — review
+what it did while flagged, rotate what it could reach, then restore scope. The
+auto-containment guardrails (high confidence, blast-radius allowlist,
+human-in-the-loop above a threshold) are `sota-detection-engineering` rules/04 §7.
+OWASP: AISVS 9.3.8; DSOMM.
 
 ## 5. Verification probe for agent sandboxes
 
@@ -306,6 +368,24 @@ where they coexist. Rate it with the chain named leg by leg (`sota/rules/03` §1
       profiles in their own sandbox.
 - [ ] Append-only action log outside the sandbox with denied-action alerting;
       MCP/third-party tool servers inventoried, pinned, and scope-reviewed.
+- [ ] **High** — Locally launched MCP servers run in their own sandbox, not bare on
+      the host (R3.4): `grep -rnE --include='*mcp*.json'
+      '"command"[[:space:]]*:[[:space:]]*"(npx|uvx|node|python3?|bunx|deno)"' .`
+      — each hit is a server started directly as the developer; want a container or
+      OS-sandbox wrapper with scoped mounts and no default network.
+- [ ] **High** — No agent bypass mode in shared scripts, aliases or settings (R3.5):
+      `grep -rnE -- '--dangerously-skip-permissions|--dangerously-bypass-approvals-and-sandbox|--yolo|--approval-mode[= ]yolo|"defaultMode"[[:space:]]*:[[:space:]]*"bypassPermissions"' .`
+      — acceptable only where the call runs inside an external sandbox; a managed
+      baseline disables bypass, hooks sit outside the agent's write reach, agent
+      pushes need review, and standing allow-rules were re-audited this quarter.
+- [ ] **High** — Fleet-wide halt exists, travels out of band (control plane or
+      broker, never the agent's context or workspace), and has a measured
+      time-to-last-instance-stopped from a recent drill; users can stop a run
+      mid-action and roll it back from a side-effect log kept outside the sandbox
+      (R4.3).
+- [ ] **Medium** — Every agent detection class maps to an automatic, graduated,
+      reversible containment step, drilled with a canary, with a reviewed
+      reintegration step (R4.5).
 - [ ] For any tool that **ingests repositories or archives it did not author**:
       staging drops entries whose `realpath` escapes the source root (and reports
       the drops); every analysis command checked for whether it evaluates

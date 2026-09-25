@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **OWASP high-value themes adopted in `sota-network-security`, `sota-identity-access`, `sota-sandboxing`, `sota-secrets-management`, `sota-detection-engineering`, `sota-observability`, `sota-cloud-infrastructure`, `sota-kubernetes` (ROADMAP 66 step 4, batch "platform").**
+  - 27 themes implemented and 5 extended.
+  - 32 audit probes, each tested on bad and good fixtures.
 - **OWASP high-value themes adopted in `sota-llm-engineering`, `sota-ml-engineering`, `sota-databases`, `sota-privacy-compliance` (ROADMAP 66 step 4, batch "ai-data").**
   - 16 themes implemented and 3 extended.
   - 19 audit probes, each tested on bad and good fixtures.

@@ -152,6 +152,9 @@ Automate the repetitive, gate the dangerous.
 - **Coverage of runbooks** — % of paging detections with a validated runbook.
 - **Automation rate** — % of toil automated (without crossing into unsafe
   auto-containment).
+- **Security-signal rates** — auth success/failure ratio and policy-violation
+  counts (authz denials, guardrail blocks) per app, trended beside MTTD/MTTR; a
+  step change is an attack or a broken control (detections: rules/02 §7).
 
 Avoid the vanity trap: "alerts handled" rewards noise. Reward incidents resolved
 correctly and fast.
