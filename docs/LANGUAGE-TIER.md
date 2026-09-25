@@ -9,8 +9,10 @@ closed and a principled difference does not get "fixed".
 a peer** of this tier: 9 files with a different spine (safety baseline, robustness, ad-hoc
 commands, PowerShell). Nothing here applies to it.
 
-The live picture is **page 5 of [`skill-map.drawio`](skill-map.drawio)**, generated from
-the tree by `scripts/gen-skill-map.py`. The numbers below were measured 2026-09-21 and will
+The live picture is **pages 5 and 6 of [`skill-map.drawio`](skill-map.drawio)**, generated
+from the tree by `scripts/gen-skill-map.py`: page 5 shows which topics get their own rules
+file, and page 6 shows every audit concept `gen-concept-matrix.py` tracks, per language, as
+checklist-item counts (added 2026-09-25). The numbers below were measured 2026-09-21 and will
 drift; regenerate rather than trusting them.
 
 ## The spine

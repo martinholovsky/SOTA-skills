@@ -8,12 +8,14 @@ this repo exists to gate against. So the map is DERIVED: every node and edge is 
 of the tree at generation time, every extracted skill name is validated against the real
 skills/ directory listing, and the run prints its denominators so a drop is visible.
 
-Five pages:
+Six pages:
   1. Router -> skills, grouped by family (the routing table in skills/sota/SKILL.md).
   2. The 21 cross-cutting routing rules and the skills each one names.
   3. The MEASURED cross-skill reference graph, aggregated to families.
   4. A worked slice: what an SSO task actually traverses.
   5. Section x language: which topics each language skill gives its own rules file.
+  6. Concept x language: every audit concept gen-concept-matrix.py tracks, with the
+     number of Audit-checklist items each language skill has for it.
 
 LAYOUT IS A CORRECTNESS CONCERN HERE, not decoration. Three of these pages were first
 drawn in forms that RENDER but cannot be READ: 63 bipartite edges collapsed into one
@@ -132,8 +134,10 @@ INLINE = {("php", "Concurrency"): "01 §6",
           ("ruby", "Typing"): "01 §6",
           ("python", "Web / HTTP"): "07 §1-2",
           ("dotnet", "Web / HTTP"): "04 §4",
-          # ROADMAP 62, 2026-09-23: jvm's blank here was a REAL gap, now written.
-          ("jvm", "Web / HTTP"): "04 §6",
+          # jvm Web / HTTP: written 2026-09-23 (ROADMAP 62) as rules/04 §6, moved to its own
+          # rules/08 on 2026-09-25 so capped OWASP themes could land. The pointer here kept
+          # reading "04 §6" for a section that no longer existed -- LANG_TOPICS already
+          # carries 08, so no INLINE entry is needed.
           # 2026-09-23, the blanks a reader flagged on page 5: five were DECLARATION gaps,
           # the same defect as 2026-09-22 one row down. The Typing row already counts c/c++'s
           # "Type-system leverage", so a static language's type-system chapter qualifies.
@@ -297,7 +301,7 @@ def main():
     assert_matrix_matches_tree()
     pages = [page_router(), page_rules(rules),
              page_graph(edges, indeg, args.min_weight), page_slice(),
-             page_matrix(lang_files)]
+             page_matrix(lang_files), page_concepts(load_concept_matrix())]
     xml = ('<mxfile host="gen-skill-map.py" type="device">\n'
            + "\n".join(pages) + "\n</mxfile>\n")
     (ROOT / args.out).write_text(xml, encoding="utf-8")
@@ -615,14 +619,19 @@ TOPIC_CONCEPT = {
 }
 
 
-def assert_matrix_matches_tree():
-    """Abort if the hand-declared LANG_TOPICS contradicts what the tree actually contains."""
+def load_concept_matrix():
     import importlib.util
     spec = importlib.util.spec_from_file_location(
         "_cm", str(ROOT / "scripts" / "gen-concept-matrix.py"))
     cm = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cm)
+    return cm
+
+
+def assert_matrix_matches_tree():
+    """Abort if the hand-declared LANG_TOPICS contradicts what the tree actually contains."""
     try:
-        spec.loader.exec_module(cm)
+        cm = load_concept_matrix()
     except Exception as e:                      # never let the cross-check break the map
         print("NOTE: concept cross-check skipped (%s)" % e, file=sys.stderr)
         return
@@ -778,6 +787,126 @@ def page_matrix(lang_files):
                      LANG_LABEL[min(dens, key=dens.get)], min(dens.values())),
                   NOTE, 40, y + 20, 900, 150))
     return page("p5", "5 · Section x language", c, 1500, y + 180)
+
+
+# --- page 6: concept x language -----------------------------------------------------
+# Page 5 answers "which topics get a FILE"; it cannot see a concept missing INSIDE a file
+# that exists. gen-concept-matrix.py can, so this page draws its result -- every concept it
+# tracks, per language -- instead of a second hand-kept list that would drift from it.
+# Unlike the page-5 cross-check this FAILS CLOSED: the page is nothing but that module's
+# output, so drawing it without the module would publish an empty grid as a finding.
+def concept_counts(cm):
+    """Per language: {concept: number of Audit-checklist items matching it}, plus the
+    (classified, total) item denominators."""
+    counts, denom = {}, {}
+    for lang in LANGS:
+        items = cm.E.skill_items(lang)
+        c = collections.Counter()
+        hit = 0
+        for _f, _k, text in items:
+            cs = cm.classify(text)
+            hit += bool(cs)
+            c.update(cs)
+        counts[lang], denom[lang] = c, (hit, len(items))
+    if not any(d[1] for d in denom.values()):
+        sys.exit("gen-skill-map: page 6 read 0 checklist items across all languages -- "
+                 "extractor drift, refusing to draw an empty grid")
+    return counts, denom
+
+
+def page_concepts(cm):
+    counts, denom = concept_counts(cm)
+    kinds = {name: kind for name, kind, _pat in cm.CONCEPTS}
+    floor = list(cm.UNIVERSAL_FLOOR)
+    unknown = [c for c in floor if c not in kinds]
+    if unknown:
+        sys.exit("gen-skill-map: UNIVERSAL_FLOOR names concepts CONCEPTS lacks: %s" % unknown)
+    groups = [
+        ("REQUIRED in every language — %d concepts (UNIVERSAL_FLOOR; CI fails a language "
+         "skill that drops one)" % len(floor), floor, "required"),
+        ("Universal, not yet required — an empty cell is a CANDIDATE gap, not a finding "
+         "until the file is opened",
+         [n for n, k, _ in cm.CONCEPTS if k == "universal" and n not in floor], "candidate"),
+        ("Conditional — applies only where the language has the mechanism. An empty cell is "
+         "NOT triaged here: it may not apply, or it may be unwritten (docs/LANGUAGE-TIER.md)",
+         # `n not in floor`: the floor wins over a concept's kind. TLS was pinned in step
+         # 3a while its kind still read conditional, and it was drawn twice until the
+         # count guard below refused.
+         [n for n, k, _ in cm.CONCEPTS if k.startswith("conditional") and n not in floor],
+         "conditional"),
+    ]
+    listed = sum(len(g[1]) for g in groups)
+    if listed != len(cm.CONCEPTS):
+        sys.exit("gen-skill-map: page 6 grouped %d of %d concepts -- a new concept kind?"
+                 % (listed, len(cm.CONCEPTS)))
+
+    den = "  ·  ".join("%s %d/%d" % (LANG_LABEL[l], denom[l][0], denom[l][1]) for l in LANGS)
+    c = [cell("cnote",
+              "Page 6 — concept x language. Every audit concept scripts/gen-concept-matrix.py "
+              "tracks, and how many Audit-checklist items each language skill has for it.\n\n"
+              "A number = that many checklist items match the concept. GREEN = present. "
+              "RED = a required concept is missing (CI should already have failed). AMBER = "
+              "a universal concept not yet required is absent: a candidate gap. GREY dashed "
+              "= a conditional concept is absent -- either the mechanism does not exist in "
+              "that language or nobody has written it; this page does not decide which.\n\n"
+              "HONEST LIMIT: cells come from wording matchers over checklist items, so a "
+              "count says the wording appears, not that the rule is good. Check any cell "
+              "with: python3 scripts/gen-concept-matrix.py --explain CONCEPT LANG. Items "
+              "classified / total per language: " + den + ". Concepts owned by a shared "
+              "rule outside the language skills (e.g. temp files, sota-code-security "
+              "rules/06 §6.1) do not appear here.",
+              NOTE, 40, 20, 1330, 150)]
+    x0, lw, cw, rh = 40, 420, 90, 26
+    xs = x0 + lw
+    y = 190
+    for j, lang in enumerate(LANGS):
+        c.append(cell("ch%d" % j, LANG_LABEL[lang],
+                      BOX + "fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;",
+                      xs + j * cw, y, cw - 6, rh - 4))
+    c.append(cell("chn", "languages", BOX + "fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;",
+                  xs + len(LANGS) * cw, y, cw - 6, rh - 4))
+    y += rh
+    red = 0
+    for gi, (title, names, mode) in enumerate(groups):
+        y += 8
+        c.append(cell("cg%d" % gi, title,
+                      BOX + "fillColor=#ffffff;strokeColor=none;align=left;fontStyle=1;",
+                      x0, y, lw + (len(LANGS) + 1) * cw, rh - 4))
+        y += rh
+        for i, name in enumerate(names):
+            kind = kinds[name]
+            label = name if mode != "conditional" else "%s  (if %s)" % (
+                name, kind.split(":", 1)[1])
+            c.append(cell("cr%d_%d" % (gi, i), label,
+                          BOX + "fillColor=#f5f5f5;strokeColor=#999999;align=left;"
+                                "spacingLeft=8;fontSize=10;", x0, y, lw - 6, rh - 4))
+            have = 0
+            for j, lang in enumerate(LANGS):
+                n = counts[lang].get(name, 0)
+                if n:
+                    have += 1
+                    style = BOX + "fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;"
+                    txt = str(n)
+                elif mode == "required":
+                    red += 1
+                    style = BOX + "fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;fontStyle=1;"
+                    txt = "MISSING"
+                elif mode == "candidate":
+                    style = BOX + "fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;"
+                    txt = "gap?"
+                else:
+                    style = (BOX + "fillColor=#f5f5f5;strokeColor=#bbbbbb;dashed=1;"
+                             "fontColor=#777777;fontSize=10;fontStyle=2;")
+                    txt = "—"
+                c.append(cell("cc%d_%d_%d" % (gi, i, j), txt, style,
+                              xs + j * cw, y, cw - 6, rh - 4))
+            c.append(cell("cn%d_%d" % (gi, i), "%d/%d" % (have, len(LANGS)),
+                          BOX + "fillColor=#ffffff;strokeColor=#cccccc;fontSize=10;",
+                          xs + len(LANGS) * cw, y, cw - 6, rh - 4))
+            y += rh
+    print("page 6 concepts     : %d (%d required, %d required cells missing)"
+          % (len(cm.CONCEPTS), len(floor), red))
+    return page("p6", "6 · Concept x language", c, 1450, y + 40)
 
 
 if __name__ == "__main__":
