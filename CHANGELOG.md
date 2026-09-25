@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Skill map page 6 — concept x language.** Every audit concept `scripts/gen-concept-matrix.py`
+  tracks (49), per language skill, as the number of Audit-checklist items matching it. Rows are
+  grouped: the 36 required concepts (all 9/9), 4 universal concepts not yet required (seven
+  candidate gaps, marked amber), and 9 conditional ones (absent cells greyed out, and left
+  undecided between "does not apply" and "not written"). The page is drawn from that script's
+  output, not a hand list, and refuses to draw if it reads zero items or its row groups do not
+  add up to the concept list.
+
 ### Fixed
 
 - **Two front-door links still pointed at the constant-time section's old home.** `README.md` and
@@ -25,6 +35,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   is corrected. Closed as already done: the nested-fence report now links its fix (#429), and
   `LANGUAGE-TIER.md`'s "temp files still OPEN" heading now points at the 2026-09-24 decision.
   ROADMAP's 2026-07 plan sections and "still open" lists are now labelled as history, not a task list.
+- **Skill map page 5 pointed jvm's Web/HTTP cell at a section that had moved.** It read `04 §6`
+  after the web layer moved to `sota-jvm` rules/08 on 2026-09-25; it now reads `08`. The other
+  30 hand-declared section pointers were checked against their headings and match.
 
 ## [1.44.3] - 2026-09-25
 
