@@ -845,7 +845,9 @@ probe_committed 31 "a new rule section ships with no ADOPTION-LOG entry" \
 # own mutation -- the previous fix replaced "no new sections" with the literal "1
 # relocated", which held only until a branch relocated something of its own.
 run_gate
-relo_before=$(printf '%s\n' "$GATE_OUT" | sed -n 's/.*, \([0-9]\+\) relocated.*/\1/p' | head -1)
+# [0-9][0-9]*, not [0-9]\+: BSD sed (macOS) has no \+ in a basic regex, so the count read as 0 there
+# and the probe expected "1 relocated" on any branch that relocates headings of its own (found 2026-09-25).
+relo_before=$(printf '%s\n' "$GATE_OUT" | sed -n 's/.*, \([0-9][0-9]*\) relocated.*/\1/p' | head -1)
 [ -n "$relo_before" ] || relo_before=0
 
 ( cd "$WT" && python3 -c "
