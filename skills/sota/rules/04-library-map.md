@@ -121,18 +121,21 @@ exist. `sota-code-security/rules/11` sat unlisted for two releases before 15 exi
 - **sota-copywriting/rules**: 01 positioning & value proposition, 02 headlines/landing pages/CTAs,
   03 SEO content, 04 claims/legal/trust
 - **sota-rust/rules**: 01 ownership & API design, 02 errors & panics, 03 unsafe discipline, 04
-  async/tokio, 05 security & supply chain, 06 performance, 07 tooling & CI
+  async/tokio, 05 security & supply chain, 06 performance, 07 tooling & CI, 08 external
+  programs (split out of 05)
 - **sota-golang/rules**: 01 errors, 02 design, 03 concurrency, 04 HTTP services, 05 security, 06
-  performance, 07 tooling & CI
+  performance, 07 tooling & CI, 08 supply chain (split out of 05)
 - **sota-c-cpp/rules**: 01 idioms (RAII/ownership), 02 memory safety, 03 undefined behavior, 04
   security (CERT/MISRA/hardening), 05 concurrency, 06 build/tooling & CI, 07 performance
 - **sota-jvm/rules**: 01 idioms (Java/Kotlin), 02 API/null/immutability design, 03 concurrency
   (virtual threads, JMM, coroutines), 04 security (deserialization/injection/JNDI/crypto), 05
   performance (GC/JFR/GraalVM), 06 build/tooling & CI, 07 XML (XXE/XSLT, split out of 04)
 - **sota-python/rules**: 01 tooling & project setup, 02 typing & correctness, 03 idioms &
-  pitfalls, 04 async, 05 security, 06 performance, 07 frameworks & testing
+  pitfalls, 04 async, 05 security, 06 performance, 07 frameworks & testing, 08 supply chain
+  (split out of 05)
 - **sota-javascript-typescript/rules**: 01 tsconfig & types, 02 language idioms, 03 async
-  patterns, 04 Node backend, 05 security, 06 performance, 07 testing & tooling
+  patterns, 04 Node backend, 05 security, 06 performance, 07 testing & tooling, 08 child
+  processes & outbound requests (split out of 05)
 - **sota-dotnet/rules**: 01 idioms (records/NRT/patterns), 02 API/disposal/DI design, 03 async &
   concurrency, 04 security (SQL/deserialization/ASP.NET Core/crypto), 05 performance
   (GC/Span/AOT), 06 build/tooling & CI

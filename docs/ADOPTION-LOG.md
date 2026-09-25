@@ -77,6 +77,10 @@ lessons-log — its own best structural idea, applied to ourselves.
 > | `rules/02` §2, §3 (sessions, JWT) | `rules/17` §2, §3 (numbers kept) — 2026-09-25 |
 > | `rules/04` §8 (tamper-evident logs) | `rules/18` §1 — 2026-09-25 |
 > | `sota-jvm` `rules/04` §3 (XML and XXE) | `sota-jvm` `rules/07` §1 — 2026-09-25 |
+> | `sota-golang` `rules/05` §8 (supply chain) | `sota-golang` `rules/08` §1 — 2026-09-25 |
+> | `sota-rust` `rules/05` §9 (external programs) | `sota-rust` `rules/08` §1 — 2026-09-25 |
+> | `sota-python` `rules/05` §9, §10 (supply chain, static analysis) | `sota-python` `rules/08` §1, §2 — 2026-09-25 |
+> | `sota-javascript-typescript` `rules/05` §"Command injection via child_process", §"SSRF and server-side validation" | `sota-javascript-typescript` `rules/08`, same section names — 2026-09-25 |
 >
 > Invariant 18 keeps *live* `§` references honest, but its scope is `skills/*/*.md`,
 > `skills/*/rules/*.md`, `evals/*.py`, `evals/README.md`, `scripts/*.sh` and
@@ -5893,3 +5897,19 @@ saturating APIs, with unchecked regions (C# `unchecked`, Rust wrapping ops) need
 Probes re-run here: all nine reproduce; .NET's bad fixture adds one advisory line by design and
 its good fixture lists a csproj *because* it enables overflow checking — positive evidence, not
 a finding. **Step 3b is complete**: four new universal concepts pinned (floor 29 → 33) and the fold.
+
+## 2026-09-25 — four language security files split (ROADMAP 66, before step 3c)
+
+Step 3b filled them: `sota-golang` rules/05 at 500, `sota-rust` rules/05 at 499,
+`sota-javascript-typescript` rules/05 at 492, `sota-python` rules/05 at 489. Step 3c and step 4
+both need room there, so each lost one coherent topic to a new `rules/08` — Go's supply chain
+(§8 → §1), Rust's `std::process::Command` (§9 → §1), JS/TS's child processes and SSRF (section
+names kept), Python's supply chain and static-analysis gates (§9–§10 → §1–§2). Sizes after:
+444, 395, 399, 396. No rule text changed: every removed line reappears in its new file except
+renumbered headings and the `§` numbers inside moved checklist bullets (a scripted check).
+
+Invariant 18 flagged nine references; the rest were found by an explicit sweep — including
+`sota-sandboxing` rules/04 pointing at JS/TS rules/05 for `child_process` (no `§`, so no gate
+sees it) and the four `rules/05` index rows still advertising the moved topics, which would
+have sent the model to the wrong file. Moving onto `main` after #452 conflicted only on the
+generated skill map, resolved by regenerating it.

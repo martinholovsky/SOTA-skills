@@ -12,7 +12,7 @@ cheapest finding in an audit — the fix is a deletion.
 
 Run it as its own pass over **direct dependencies, registered modules, and plugins**. The
 BUILD-side gate on *adding* a dependency lives in the language skills (`sota-golang`
-rules/05 §8, `sota-javascript-typescript` rules/05); this is the sweep for what already
+rules/08 §1, `sota-javascript-typescript` rules/05); this is the sweep for what already
 landed.
 
 Severity: an unreached dependency is **Low** on its own — nothing exploitable, only debt.
@@ -51,7 +51,7 @@ two of the projects below have been renamed under their old URLs.
 
 | Ecosystem | Tool | Blind spot to state when you cite it |
 |---|---|---|
-| Go | `go mod why -m <module>` prints `(main module does not need module …)`; `go mod tidy` + `git diff --exit-code` in CI (§8 of `sota-golang` rules/05) | `why` queries the graph of `go list all`, which **includes tests of reachable packages**: a module needed only by your *dependencies'* tests reads as reached until you pass `-vendor`, and one needed only by your *own* tests reads as reached either way |
+| Go | `go mod why -m <module>` prints `(main module does not need module …)`; `go mod tidy` + `git diff --exit-code` in CI (§1 of `sota-golang` rules/08) | `why` queries the graph of `go list all`, which **includes tests of reachable packages**: a module needed only by your *dependencies'* tests reads as reached until you pass `-vendor`, and one needed only by your *own* tests reads as reached either way |
 | JS/TS | `knip --include dependencies` (`sota-javascript-typescript` rules/07) | documents its own false positives: unresolved dynamic specifiers (`import(path.join(dir, x))`), config files a plugin's dependency-finder doesn't parse, and **entry/project globs that miss files** — "dependencies imported in unused files are reported as unused dependencies", so triage unused *files* first |
 | Python | `deptry .` — DEP002 unused, DEP003 transitive-but-imported, DEP005 stdlib shadowed | static import analysis: entry-point/plugin packages and `importlib` loads read as unused |
 | Rust | `cargo machete` (stable) or `cargo +nightly udeps` | machete is deliberately imprecise — false positives for deps used only from `build.rs`-generated code and for crates whose import name differs from the package name (`--with-metadata` fixes the latter). udeps needs **nightly** and documents false *negatives*: deps also used by std or by your own deps go undetected |

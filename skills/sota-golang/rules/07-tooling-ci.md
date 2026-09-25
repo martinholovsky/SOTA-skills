@@ -210,7 +210,7 @@ tool (             // 1.24+: tool dependencies, versioned & sum-verified
   identically. Update deliberately (Dependabot/Renovate handle it).
 - **`tool` directives (1.24+)** replace the `tools.go` blank-import hack and
   ad-hoc `go install tool@version` drift: `go get -tool <pkg>`, run via
-  `go tool stringer`. Tools become sum-verified supply chain (`rules/05 §8`).
+  `go tool stringer`. Tools become sum-verified supply chain (`rules/08 §1`).
   Audit repos still using floating `go install foo@latest` in CI: MEDIUM.
 - `go mod tidy` clean in CI (diff check); `go mod verify` on release builds.
 - Versioning: tag semver; v2+ requires the `/v2` module path suffix —
@@ -253,7 +253,7 @@ tool (             // 1.24+: tool dependencies, versioned & sum-verified
   `go list -m -u -retracted -json <mod>` surfaces `Deprecated`/`Retracted`. Review the code the
   proxy serves (`go mod download -json <mod>@<ver>` → `Dir`), not the forge's current tree:
   proxy.golang.org keeps a version cached after the author deletes it at the origin. The
-  "earns its place" bar is `rules/05 §8`.
+  "earns its place" bar is `rules/08 §1`.
 - **A library's security-relevant defaults are your code.** Review every option you pass to a
   dependency — and every one you leave at its default — as you would your own. Verified in
   source: `github.com/rs/cors` (v1.11.1) — `cors.Options` with no `AllowedOrigins` and no

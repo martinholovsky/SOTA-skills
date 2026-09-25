@@ -71,6 +71,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Four language security files split before step 3c (ROADMAP 66).** Each new `rules/08`
+  takes one topic out of a security file that had reached or neared the 500-line cap:
+  - `sota-golang`: supply chain;
+  - `sota-rust`: `std::process::Command`;
+  - `sota-javascript-typescript`: child processes and SSRF;
+  - `sota-python`: supply chain and static-analysis gates.
+  No rule text changed, and every reference was updated, including four index rows that
+  still pointed at the old file.
 - **Three rules files split ahead of the OWASP adoption (ROADMAP 66).** `sota-code-security`
   rules/02 §2–§3 (sessions and JWT) moved to **rules/17**, keeping their numbers. rules/04 §8
   (tamper-evident logs) moved to **rules/18** §1. `sota-jvm` rules/04 §3 (XML) moved to
