@@ -5,6 +5,16 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Two front-door links still pointed at the constant-time section's old home.** `README.md` and
+  `docs/INDEX.md` cited `sota-code-security` rules/04 §6.1 after v1.44.3 moved it to rules/22 §1.1;
+  invariant 18 does not read either file. Also refreshed: `docs/LANGUAGE-TIER.md` (the jvm web
+  layer now lives in `rules/08`) and the MCP routing case's rationale (rules/08 and rules/23). The
+  #461 ledger claim that every citation was rewritten is superseded in ADOPTION-LOG.
+
 ## [1.44.3] - 2026-09-25
 
 **The OWASP adoption programme (ROADMAP 66) is complete.** 19 OWASP projects were compared

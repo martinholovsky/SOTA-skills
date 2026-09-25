@@ -296,7 +296,7 @@ because the same change added three more classes below):
   applies to constant-time arithmetic, where strength reduction is an optimiser courtesy, so
   **constant time is a property of the emitted code**, verified across every architecture and
   optimisation level you ship — `-Os` and `-Oz` included.
-  ([code-security rules/04 §6.1](skills/sota-code-security/rules/04-cryptography.md))
+  ([code-security rules/22 §1.1](skills/sota-code-security/rules/22-constant-time-comparison.md))
 - **A defect that starts where the gates stop.** Formatters, linters and most SAST end at the
   **compiled artifact**; a loader, verifier, dynamic linker, capability check or admission
   controller runs after it, and that whole depth is unprobed while every gate is green. Four
