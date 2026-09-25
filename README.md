@@ -103,6 +103,16 @@ Findings name the control they violate — not just "this looks wrong":
 - **Security** — OWASP Top 10 (2025), ASVS, API & LLM Top 10; findings cite CWE IDs.
   Disabled TLS certificate and SSH host-key verification are each stated once, with a
   detector per library read from that library's own source
+- **OWASP, item by item** — 19 OWASP projects compared with the library one item at a time
+  (7,439 items, 2026-09-25); every one of the 847 gap themes was adopted, found covered, or
+  recorded with a reason ([ADOPTION-LOG](docs/ADOPTION-LOG.md)). New ground includes
+  anti-automation and abuse of value-granting flows,
+  browser response hardening (Fetch Metadata, HSTS rollout),
+  file uploads, SBOM content, dependency adoption,
+  vulnerability remediation beyond the score,
+  tag manager governance, the JVM web layer, and audit reports that
+  carry reproduction steps and a finding lifecycle. Where a rule is detectable in code or
+  config it ships an audit probe tested on a known-bad and a known-good fixture
 - **Languages** — all 9 language skills (Rust → Ruby, below) get the same rigor;
   formal standards where they exist: SEI CERT (C, C++, Java), MISRA C/C++, ANSSI Rust.
   Each is also gap-checked against its ecosystem's own scanner registry
