@@ -250,6 +250,11 @@ CONCEPTS = [
     ("regex escaping, anchoring & engine choice", "universal",
      r"regex (escap|anchor|engine)|re\.escape|quotemeta|regexp\.escape|preg_quote|pattern\.quote|"
      r"regex\.escape|regex::escape|linear-time|re2[^a-z]|fullmatch|match ?timeout"),
+    # ROADMAP 66 step 3b (2026-09-25): a dependency's code running on install or build.
+    ("install/build-time code execution", "universal",
+     r"install[- ]time|build[- ]time code|lifecycle script|postinstall|ignore-scripts|build\.rs|"
+     r"proc-macro|setup\.py|extconf|\.targets|init script|onlybuiltdependencies|"
+     r"code that runs at (install|build)"),
     ("SSRF / outbound request validation", "universal",
      r"ssrf|server-side request forgery|outbound request|internal address|metadata endpoint|"
      r"169\.254|dns rebind"),
@@ -327,6 +332,8 @@ UNIVERSAL_FLOOR = [
     "SSRF / outbound request validation",
     # ROADMAP 66 step 3b, 2026-09-25: written into all nine and pinned the same day.
     "regex escaping, anchoring & engine choice",
+    # ROADMAP 66 step 3b, 2026-09-25: written into all nine and pinned the same day.
+    "install/build-time code execution",
 ]
 
 def classify(text):

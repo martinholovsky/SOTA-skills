@@ -75,6 +75,47 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
   See `sota-devsecops`.
 - Minimize the dependency tree; each header-only or binary dep is attack
   surface and a build-integrity risk. Prefer the standard library.
+- **Treat dependency build scripts as code that runs at install/build time, on the
+  developer's machine and the CI runner, with their credentials, before any test.**
+  C/C++ has no `--ignore-scripts`: building a dependency from source *is* running its
+  build system. Know every execution point:
+  - `FetchContent_MakeAvailable` calls `add_subdirectory` on the fetched tree, so the
+    dependency's `CMakeLists.txt` (any `execute_process`, `file(DOWNLOAD)`) runs at
+    **configure** time. Measured with CMake 4.4: a dependency pinned to a full commit
+    hash ran its `execute_process` on a plain `cmake -S . -B build`. Pinning fixes
+    *which* code runs, not *whether*.
+  - `ExternalProject_Add` runs the dependency's own configure/build/install steps at
+    build time; `find_package` in config mode includes the installed
+    `<Name>Config.cmake`, which is CMake code too.
+  - `CMAKE_PROJECT_TOP_LEVEL_INCLUDES` (CMake 3.24+) injects files at the first
+    `project()` call, often from `CMakePresets.json` or a CI command line.
+  - vcpkg: each port's `portfile.cmake` is the build script, including any overlay port
+    listed under `overlay-ports` in `vcpkg-configuration.json` or passed with
+    `--overlay-ports`.
+  - Conan: every recipe `conanfile.py` is Python, and hooks are `hook_*.py` files under
+    `<CONAN_HOME>/extensions/hooks`. `conan install --build=never` forbids source
+    builds but does **not** stop recipe code. Measured with Conan 2.32: module-level
+    code in an exported recipe ran under `--build=never`, and the install then failed
+    for want of a binary.
+- **Controls.** No switch turns this off, so narrow it and review it. Set
+  `FETCHCONTENT_TRY_FIND_PACKAGE_MODE=ALWAYS` (3.24+; the default `OPT_IN` only tries
+  `find_package` when the declaration passes `FIND_PACKAGE_ARGS`) so a reviewed,
+  package-manager-provided build wins over fetching. Use
+  `FETCHCONTENT_SOURCE_DIR_<NAME>` to point at a reviewed local checkout.
+  `FETCHCONTENT_FULLY_DISCONNECTED` is **not** a control: CMake's docs say it is for use
+  only after the first run. On every dependency bump, diff the executed files
+  (`CMakeLists.txt`, `*.cmake`, `portfile.cmake`, `conanfile.py`) between the old and
+  new pins, not just the C/C++ sources. Put the repo's **own** build-executing files
+  (`CMakeLists.txt`, `cmake/`, `CMakePresets.json`, `vcpkg.json`,
+  `vcpkg-configuration.json`, overlay ports, `conanfile.*`, CI workflows) under
+  CODEOWNERS (or your forge's equivalent) with required review. That applies
+  to a change an AI agent authored too.
+- **CI placement.** Run dependency resolution and the first configure in a job that has
+  no deploy/publish secrets and no write token, or in an isolated job whose output is
+  a cached, hashed artifact. Credentials belong only to the later job that needs them.
+  Details in `sota-devsecops`. *(OWASP: CI/CD Security cheat sheet; Software Supply
+  Chain Security cheat sheet; NPM Security cheat sheet, for the `ignore-scripts`
+  analogue.)*
 
 ## 6. Reproducible, deterministic builds
 
@@ -133,5 +174,13 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
       (no CVE-scan or SBOM step at all leaves §5 unenforced. OSV-Scanner's own table lists
       `conan.lock` for C/C++, plus commit-level scanning of submoduled or vendored code, and
       no vcpkg lockfile)
+- [ ] **Dependency code that runs at build time (configure/install) is inventoried and
+      owner-reviewed (§5) — HIGH if these files have no CODEOWNERS entry, since a
+      dependency bump or an agent-authored edit then executes unreviewed on CI** —
+      `grep -rnE 'FetchContent_MakeAvailable|FetchContent_Populate|ExternalProject_Add|CMAKE_PROJECT_TOP_LEVEL_INCLUDES|overlay-ports' --include='CMakeLists.txt' --include='*.cmake' --include='CMakePresets.json' --include='vcpkg-configuration.json' .`
+      (each hit: diff the fetched tree's build files on every bump) ;
+      `find . -name conanfile.py -not -path './build/*'` (Python that runs on every
+      `conan install`, even with `--build=never`) ;
+      `cat .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS 2>/dev/null | grep -qE 'CMakeLists|\.cmake|conanfile|vcpkg' || echo "no CODEOWNERS entry for build-executing files"`
 - [ ] **Global (non-target) CMake anti-patterns — LOW/MEDIUM** —
       `grep -rnE 'include_directories\(|link_libraries\(|^set\(CMAKE_CXX_FLAGS' CMakeLists.txt 2>/dev/null`

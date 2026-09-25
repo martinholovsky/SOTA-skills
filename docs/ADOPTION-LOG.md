@@ -5830,3 +5830,26 @@ deadline stopping a catastrophic regex — was run: terminated at 303 ms.
 **An existing error corrected on the way:** `sota-python` rules/05 §8 said "Rust-backed RE2
 bindings" since the library's first commit. RE2 is C++; `google-re2` (installed and run by the
 agent) binds it. Now says so.
+
+## 2026-09-25 — ROADMAP 66 step 3b: install/build-time code execution, all nine languages, pinned
+
+Source theme: code-owner review of build-executing files (OWASP CI/CD Security, Software
+Supply Chain Security and NPM Security cheat sheets), generalised to every ecosystem's own
+execution points. Five added (go, c/c++, jvm, .NET, ruby), four extended partial text (python's
+one-line `setup.py` bullet, rust, js/ts, php's plugin/script rule). Each names where a
+dependency's code runs (sdist builds and `.pth` files; `go:generate`/`go run pkg@v`, cgo flag
+allowlists, `-toolexec`, `GOTOOLCHAIN`; `build.rs` and proc-macros; CMake `FetchContent`/
+`ExternalProject`; Gradle/Maven plugins and init scripts; MSBuild `.props`/`.targets` from
+packages; npm lifecycle scripts; Composer plugins; gem native extensions), the switch that
+turns it off, code-owner review of the repo's own build files including agent-authored changes,
+and a CI job without secrets for those steps.
+
+Several claims were measured, not recalled: the Python agent built a malicious sdist under uv
+0.12 and pip 26.1 and watched `setup.py` run with the installer's environment; `--only-binary
+:all:` still builds a **local-directory** requirement; `[tool.uv] no-build` refuses it. Go's
+position that fetching and building a module never executes it is from go.dev's own supply-chain
+post and `go help` on 1.27.1. All nine probes re-run here against their fixtures (9/9; Rust's
+`cargo metadata` query lists the three build-executing packages in the bad fixture and none in
+the good; .NET's second command prints positive evidence, not findings, on the good fixture).
+
+**Cap watch:** `sota-golang` rules/05 is now **499/500** — step 4's Go themes need a split first.

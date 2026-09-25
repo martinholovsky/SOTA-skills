@@ -23,6 +23,36 @@ all wired into CI from day one.
 - Keep `bundle outdated` visible (report job), and update via PRs from
   Dependabot/Renovate (neutral examples) rather than bulk manual bumps.
 
+### 1.1 Code that runs at install time
+
+`bundle install` executes dependency code before any test runs, with the installing
+user's environment (measured on RubyGems/Bundler 4.0.16: a gem's `extconf.rb` saw every
+`*_TOKEN` variable of the shell that ran the install). The entry points:
+
+- **Native-extension builders** — each path in a gemspec's `extensions` is run by type:
+  `extconf.rb` (mkmf), `configure`, `Rakefile`/`mkrf_conf`, `CMakeLists.txt`, `Cargo.toml`
+  (RubyGems `Gem::Ext::Builder#builder_for`). Neither `gem install` nor Bundler has a
+  switch that skips them; a precompiled platform gem skips the build but ships a binary
+  you run anyway, and `force_ruby_platform` forces the source build.
+- **`rubygems_plugin.rb`** in a gem's `lib/` is copied to the plugins directory and
+  loaded right after `gem install` and again by every later `gem` command (measured);
+  Bundler's installer calls `Gem.load_plugins` as well (source read).
+- **Bundler plugins** — a `plugin "name"` line in the Gemfile installs and runs one.
+  `BUNDLE_PLUGINS=false` (`bundle config set plugins false`) turns the Bundler plugin
+  system off; it is on by default and does not affect the two points above.
+- **Evaluated Ruby** — the Gemfile itself, and the `.gemspec` of every `git:`/`path:`
+  source, are `eval`ed by Bundler at resolve time.
+
+Review: on every `Gemfile.lock` bump, list the gems that build or plug in —
+`bundle exec ruby -e 'Bundler.load.specs.each { |s| puts [s.full_name, *s.extensions, *s.plugins].join(" ") unless s.extensions.empty? && s.plugins.empty? }'`
+— and diff those files between versions (`gem unpack NAME -v OLD` / `-v NEW`). The repo's
+own build-executing files (`Gemfile`, `*.gemspec`, `Rakefile`, `ext/**`, `.bundle/config`,
+`bin/setup`) get a CODEOWNERS entry and required owner review, AI-authored changes
+included. CI: run `bundle install` in a step or job whose environment holds no deploy or
+publish credentials, and hand the installed bundle to later jobs as an artifact/cache.
+(OWASP: CI/CD Security cheat sheet; Software Supply Chain Security cheat sheet; NPM
+Security cheat sheet, for the same class in npm.)
+
 ## 2. Lockfile checksums
 
 Bundler 2.6 (2024-12) shipped lockfile checksum verification: a `CHECKSUMS`
@@ -143,6 +173,11 @@ Run from repo root; verify each hit manually.
       `grep -c "CHECKSUMS" Gemfile.lock || echo "no checksums section (LOW, easy win)"` (stderr
       kept: no file != no match);
       `grep -rn "BUNDLE_FROZEN\|--frozen\|frozen.*true" .github/ .gitlab-ci.yml Gemfile 2>/dev/null | head -3`
+- [ ] **Code that runs at install time (Bundler plugins, extconf builds) without an
+      owner — MEDIUM (HIGH if the install step holds secrets)** (§1.1) — each hit is a Bundler
+      plugin; the second part prints when no CODEOWNERS entry covers the build files —
+      `grep -nE '^[[:space:]]*plugin[[:space:]]+["'"'"']' Gemfile gems.rb 2>/dev/null` ;
+      `[ -n "$(grep -lsE '(Gemfile|gemspec|Rakefile|ext/)' .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS)" ] || echo "NO CODEOWNERS entry for build-executing files"`
 - [ ] **Mutable git sources — MEDIUM** — `grep -nE "git:|github:" Gemfile | grep -v "ref:"`
 - [ ] **Multiple top-level sources (dependency confusion) — HIGH** —
       `grep -c "^source " Gemfile` (>1 without scoped blocks = investigate)

@@ -102,6 +102,7 @@ grew the same day as ROADMAP 66 added concepts; `UNIVERSAL_FLOOR` is the count, 
 - [ ] **supply-chain provenance & publishing** — where packages come from, and how a private registry avoids dependency confusion
 - [ ] **SSRF / outbound request validation** — where this language's HTTP client lets you check the dialled address at connect time, plus its redirect and scheme settings
 - [ ] **regex escaping, anchoring & engine choice** — the escape function, the full-match API and its anchor trap, and whether the engine is linear-time
+- [ ] **install/build-time code execution** — every point where a dependency's code runs on install or build, the switch that disables it, and code-owner review of build-executing files
 
 Conditional concepts (those that exist only where a language has the mechanism, such as
 const/freeze or generics) are declared with their condition in the same script's
