@@ -77,6 +77,15 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
     `maxRedirects: 0`, got `followRedirect: false`) and handle a 3xx yourself. This is the Node
     form of Go's `CheckRedirect` rule (`sota-golang` rules/04 §4b). *OWASP: NPM Security cheat sheet.*
   - OWASP: SSRF Prevention, .NET Security and GraphQL cheat sheets.
+- **The browser counterpart: client-side request URLs.** In page code, a URL from the query
+  string, fragment, `postMessage` or stored data that reaches `fetch`, `XMLHttpRequest.open`
+  or `new EventSource` sends the request, with any `Authorization` header your wrapper adds,
+  to whichever host the attacker chose, and the page then trusts the response. Resolving it
+  against your origin does not help: `new URL(input, 'https://app.example/')` returned
+  `https://evil.example/x` for `https://evil.example/x`, `//evil.example/x` and
+  `\\evil.example/x` (measured, Node 22.22). Take an ID or path segment, not a URL. When a
+  URL is unavoidable, parse it and compare `.origin` to an exact allowlist before the call.
+  The `EventSource` case is `sota-api-design` rules/05 §3. *OWASP: HTML5 Security cheat sheet.*
 - Mass assignment: never `Model.update(req.body)` — schema-pick the allowed fields (`z.object({...}).strict()`).
 - **NoSQL operator injection is the same bug arriving as a type.** In
   `User.findOne({ name: req.body.name, pass: req.body.pass })`, a body of
@@ -119,3 +128,7 @@ const { stdout } = await promisify(execFile)('convert', [filename, 'out.png'], {
       — a redirect hook that touches headers can send the token to the redirect target. A hook
       whose body spans lines needs a read. A credentialed call that follows redirects through
       follow-redirects (subdomains keep the headers) or got (`https:`→`http:` keeps them) is MEDIUM.
+- [ ] **Client-side request to a URL taken from the page (§"SSRF", the browser-counterpart bullet) — HIGH when the
+      request carries credentials or its response is rendered** —
+      ``grep -rnE "(fetch\(|new EventSource\(|\.open\( *['\"][A-Za-z]+['\"] *,)[^;]*(location\.(search|hash|href)|[sS]earchParams\.get\(|params\.get\(|\.data[.)[]|localStorage\.getItem\()" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.tsx' --include='*.jsx' .``
+      — each hit needs an origin allowlist check before the call. Single-line calls only; a URL held in a variable needs a read.

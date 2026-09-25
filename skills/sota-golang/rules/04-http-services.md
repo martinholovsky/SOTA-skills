@@ -181,6 +181,17 @@ func (w *statusWriter) WriteHeader(c int) { w.status = c; w.ResponseWriter.Write
   rate limit → handler. Recovery middleware logs `debug.Stack()` and returns
   500; check `errors.Is(err, http.ErrAbortHandler)` style sentinel —
   re-panic `http.ErrAbortHandler` rather than swallowing it.
+- **Authorize the path that gets dispatched, not the one that arrived.** `http.ServeMux`
+  answers a path with `.`/`..` segments or doubled slashes by redirecting to the cleaned form
+  (measured on go1.27.1: `//admin/x` and `/x/../admin/x` got `307` to `/admin/x`), so a prefix
+  check in front of it sees the clean path on the retry. A router that cleans internally and
+  dispatches at once does not: measured, `strings.HasPrefix(r.URL.Path, "/admin")` in outer
+  middleware let `//admin/x` through to a `path.Clean`-based router, which served the admin
+  handler (HIGH). Attach the check to the route or route group, or have the outer layer refuse
+  a path that `path.Clean` would change (a trailing `/` aside). Never decide on `r.URL.RawPath`
+  or `EscapedPath()`: `/%61dmin/x` has `Path` `/admin/x` but keeps the escape in `RawPath`.
+  Cross-language rule: sota-code-security rules/05 ("one path, one meaning"). OWASP: Go-SCP
+  (sanitization).
 - Wrapper `ResponseWriter`s hide optional interfaces (`http.Flusher`,
   `http.Hijacker`); implement passthroughs or use
   `http.NewResponseController(w)` (1.20+), which unwraps automatically — SSE
@@ -365,6 +376,10 @@ func (t Token) LogValue() slog.Value { return slog.StringValue("REDACTED") }
       (PII in logs — HIGH)
 - [ ] **Middleware ResponseWriter wrappers missing Flush/Hijack passthrough** —
       `grep -rn -A4 'http.ResponseWriter$' --include='*.go' . | grep 'struct'`
+- [ ] **Path-based authorization on the raw request path (§4) — HIGH when the router behind
+      it is not `http.ServeMux`** —
+      `grep -rnE 'strings\.(HasPrefix|HasSuffix|Contains)\([A-Za-z_]+\.URL\.(Path|RawPath)|\.URL\.EscapedPath\(\)' --include='*.go' .`
+      (then send `//x`, `/a/../x` and `%2e` variants of each guarded path through the stack)
 - [ ] **Tooling** — `golangci-lint run --enable-only bodyclose,noctx,gosec ./...` (noctx:
       requests without ctx); `go vet ./...`
 - [ ] **--- Cookies and redirects (§4a, §4b) ---** —

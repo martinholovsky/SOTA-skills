@@ -98,6 +98,17 @@ lives in `sota-testing`.
   Security cheat sheet; Secure Coding with AI cheat sheet; SCVS V1, V6.)*
 - Verify **signed packages**; generate an **SBOM** for releases. See
   `sota-devsecops`.
+- **A strong name is an identity, not a publisher.** Microsoft: *"Do not rely on strong names for
+  security. They provide a unique identity only."*, and on .NET Core / .NET 5+ *"the runtime never
+  validates the strong-name signature"*. Measured on the .NET 10 SDK: a delay-signed assembly whose
+  signature was never applied reported a `PublicKeyToken` and loaded. The token proves nothing
+  about who built the file. Publisher trust comes from an
+  Authenticode signature on the binary or a NuGet package signature (`dotnet nuget verify`), each
+  checked against the certificate you expect, not merely present. Delay signing
+  (`<DelaySign>true</DelaySign>` or `AssemblyDelaySignAttribute`, public key only) is fine in
+  development when only the release job holds the private key and runs `sn -R`. A committed
+  `.snk` lets anyone mint that identity, which is tolerable only because it was never trust.
+  *(OWASP: Code Review Guide v2.)*
 - **A package runs code in your build, before any test does.** Restore writes
   `obj/<project>.nuget.g.props`/`.nuget.g.targets`, which import every package's
   `build/`, `buildTransitive/` and `buildMultiTargeting/` `<PackageId>.props`/`.targets`;
@@ -185,6 +196,10 @@ lives in `sota-testing`.
       ;
       `err=$(grep -rniE 'packageSourceMapping|locked-mode|NuGetAudit|NU190[0-9]|auditSources|dependabot' --include='nuget.config' --include='NuGet.Config' --include='Directory.Build.props' --include='*.csproj' --include='*.yml' --include='*.yaml' . 2>&1 >/dev/null); rc=$?` ;
       `case $rc in 0) ;; 1) echo "no source mapping / locked restore / NuGetAudit CI gate" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
+- [ ] **Strong name treated as publisher trust, or the signing key in the repo — MEDIUM (HIGH
+      for a `.pfx`)** (§3) — `git ls-files '*.snk' '*.pfx' '*.p12'` (a full `.snk` is a
+      key pair; a `.pfx` is an Authenticode key) ;
+      `grep -rniE 'nuget verify|signtool[^ ]* verify|Get-AuthenticodeSignature|osslsigncode verify' --include='*.yml' --include='*.yaml' --include='*.ps1' --include='*.sh' . || echo "no publisher-signature check in CI or scripts"`
 - [ ] **Formatting + deterministic build in CI?** —
       `grep -rniE 'dotnet format|verify-no-changes|Deterministic|ContinuousIntegrationBuild' .github/ *.yml **/*.csproj 2>/dev/null | head`
 - [ ] **Test runner + coverage?** —

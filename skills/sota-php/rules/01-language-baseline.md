@@ -22,6 +22,13 @@ Verified against php.net/supported-versions.php and php.net/releases (2026-07):
   2026-12-31 — months away); use 8.4/8.5 features when the floor allows.
 - **AUDIT:** check `composer.json` `require.php` and `config.platform.php` against
   the table; flag EOL floors and floors about to lapse.
+- **Only the php.net window counts.** An OS vendor or paid provider may keep shipping patches
+  for a branch php.net has ended, but those are its own backports, on its own schedule and
+  covering what it chooses to fix; that is not upstream support. An EOL branch on such a
+  package still fails the baseline: report it at the EOL severity, and note the vendor's
+  coverage in the finding rather than downgrading it. A distro's version string can also
+  mislead the other way (a backported fix with no version bump), so read its advisories, not
+  the number (sota-devsecops `rules/03` §3.9). OWASP: PHP Configuration cheat sheet.
 
 Feature timeline for floor decisions: enums, `readonly` properties, fibers,
 first-class callable syntax (8.1); `readonly` classes, DNF types (8.2); typed class
@@ -279,7 +286,10 @@ Run from repo root; verify each hit manually.
 - [ ] **Missing strict_types — LOW per file, MEDIUM if project-wide** —
       `grep -rL --include='*.php' 'declare(strict_types=1)' src/ | head -50`
 - [ ] **EOL / lapsing PHP floor — check require.php against the table in §1** —
-      `grep -n '"php"' composer.json` ; `php -v`
+      `grep -n '"php"' composer.json` ; `php -v` (a branch past its php.net end date is EOL
+      even when the package comes from a vendor that still patches it, §1) ;
+      `grep -rnE '"php"[[:space:]]*:[[:space:]]*"([^"]*[^0-9.])?(5\.|7\.|8\.0|8\.1)' --include='composer.json' .`
+      (a floor that still admits an EOL branch)
 - [ ] **Loose comparison on suspicious values — MEDIUM+, verify context** —
       `grep -rnE '[^=!<>]==[^=]' --include='*.php' src/ | grep -iE 'token|password|hash|hmac|secret|sig'`
       ; `grep -rnE 'in_array\([^)]*\)' --include='*.php' src/ | grep -v 'true'`

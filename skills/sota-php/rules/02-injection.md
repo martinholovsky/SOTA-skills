@@ -45,6 +45,14 @@ $dir = $desc ? 'DESC' : 'ASC';
 $stmt = $pdo->prepare("SELECT * FROM users ORDER BY $col $dir LIMIT :n");
 ```
 
+- **Validation rules that name a table or column are the same sink.** A database-backed rule
+  builds a query from its table, column and ignore arguments, e.g. Laravel's
+  `Rule::unique('users')->ignore($id, $idColumn)`, `Rule::exists($table, $column)`, or the
+  string forms `unique:table,column,except,idColumn` and `exists:table,column`. Request input
+  never supplies the table or column: map it through the same hardcoded allowlist. The Laravel
+  validation docs say the value passed to `ignore()` must be a system-generated ID (e.g. from the
+  loaded model), never request input, or the rule is open to SQL injection. OWASP: Laravel cheat
+  sheet.
 - `LIKE`: bind the parameter *and* escape wildcards in it —
   `addcslashes($term, '%_\\')` — or user input `%` scans the table.
 - `IN (...)`: build exactly as many `?` placeholders as values; never implode
@@ -318,6 +326,10 @@ Run from repo root; verify each hit manually (greps are recall-oriented).
       `grep -rnE '(whereRaw|selectRaw|orderByRaw|havingRaw|DB::raw|->raw\()' --include='*.php' src/`
       ; `grep -rn 'EMULATE_PREPARES' --include='*.php' src/` (want: false);
       `grep -rn 'real_escape_string' --include='*.php' src/` (HIGH if primary defense)
+- [ ] **Request input in a database validation rule (§1) — HIGH, CRITICAL when it names the
+      table or column** — request data in `Rule::unique`/`Rule::exists`/`->ignore()`, or a
+      variable spliced into a `unique:`/`exists:` string (read each: a model's own ID is fine):
+      `grep -rnE '(Rule::(unique|exists)\(|->ignore\()[^;]*(\$request|request\(|input\(|\$_(GET|POST|REQUEST))|["'"'"'][^"'"'"']*(unique|exists):[^"'"'"']*["'"'"'][[:space:]]*\.|"[^"]*(unique|exists):[^"]*\$' --include='*.php' src/`
 - [ ] **Shell — CRITICAL with tainted input** —
       `grep -rnE '\b(exec|shell_exec|system|passthru|popen|pcntl_exec)\s*\(' --include='*.php' src/`
       ; `grep -rn 'proc_open' --include='*.php' src/` (array command = good sign);

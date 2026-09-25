@@ -5,6 +5,19 @@
 - **Node LTS** (currently 24 active LTS, 22 in maintenance; 26 is Current and becomes LTS Oct 2026 — it ships Temporal enabled by default and undici 8): default for production backends. Largest ecosystem compatibility, slowest-moving, best observability story. Pin the major in `package.json` `engines` and `.nvmrc`/`.node-version`; CI must run the pinned version. From Node 27 the release cycle is annual and every major reaches LTS after six months as Current.
 - **Bun**: fast installs/startup/test runner; fine for tooling, scripts, and apps you've load-tested on it. Verify native-addon and edge-case Node-API compat before betting production on it.
 - **Deno**: strong security model (permission flags), built-in TS. Choose when its model fits; ecosystem friction has shrunk with npm compat but still exists.
+- **Node's Permission Model is in-process least privilege, a seat belt rather than a sandbox.**
+  `node --permission` denies file-system access, child processes, workers, native addons and
+  WASI until an `--allow-*` flag grants them. The docs list it as Stable since v22.13.0/v23.5.0
+  (added in v20 as experimental). Scope `--allow-fs-read`/`--allow-fs-write` to specific
+  directories, never `*`, and add `--allow-child-process`, `--allow-worker`, `--allow-addons`
+  or `--allow-wasi` only for a feature that needs it. Check a grant at run time with
+  `process.permission.has('fs.read', path)`. Its own docs say it "does not protect against
+  malicious code", so keep the container or OS sandbox (`sota-sandboxing` rules/04). Two
+  documented gaps: file descriptors already open bypass it, and **symlinks are followed out of
+  an allowed path**. Measured on Node 22.22.1 with only the app directory readable: reading a
+  file outside it failed with `ERR_ACCESS_DENIED`, while a symlink inside the app directory
+  pointing at that file returned its contents. Allowed paths must not hold symlinks an
+  attacker can create or relative symlinks. *OWASP: Nodejs Security cheat sheet.*
 - Decision rule: pick per-project, write runtime-neutral code (Web APIs: `fetch`, Web Streams, Web Crypto, `AbortController`) so the choice stays reversible. Avoid runtime-specific APIs in shared libraries.
 
 ## Use the platform — drop unnecessary deps
@@ -361,6 +374,10 @@ channel.
       — a production start command running a dev server or an inspector is the finding.
       Then check that `NODE_ENV` is required with no default in the config schema, since
       Express treats it unset as development.
+- [ ] **Permission Model granted wholesale (§"Runtime choice") — MEDIUM** —
+      ``grep -rnE -e '--allow-fs-(read|write)=(\*|/)([" ,]|$)' --include='package.json' --include='Dockerfile*' --include='*.yml' --include='*.yaml' --include='*.service' --include='Procfile' .``
+      — a `*` or `/` file-system grant makes `--permission` decorative. Where it is scoped, check the
+      allowed directories for attacker-creatable or relative symlinks, and that an OS sandbox still exists.
 - [ ] **Request-scoped state in module scope or a leaky AsyncLocalStorage (§"Request
       context") — HIGH when it carries a tenant or user** —
       `grep -rnEi '^(export )?let +[[:alnum:]_$]*(tenant|user|request|req|ctx|context|session|locale)[[:alnum:]_$]* *(:|=|;)|\.enterWith\(|getStore\(\)[^;]*(\?\?|\|\|) *[^;[:space:]]' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`

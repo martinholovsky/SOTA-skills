@@ -165,8 +165,17 @@ Extends `rules/05` §5 (conversions, money). Go never traps on these; it hands b
   (`|n| <= math.MaxInt64/int64(time.Second)`). The stdlib has no checked signed ops:
   `math/bits.Add64`/`Mul64` report unsigned carry and the high word, `math/big` never
   overflows, and any hand-rolled arithmetic on untrusted values needs a bound proved first.
+  That covers sizes, counters and protocol fields that can legitimately pass `MaxInt64`, not
+  only money: carry them in `big.Int` or a checked `math/bits` step, never in a wrapped value.
+- **An index or slice bound read from input is checked against `len()` before use.**
+  `buf[:hdr.Length]` or `parts[req.Index]` out of range is a run-time panic (spec, "Index
+  expressions", "Slice expressions"). `net/http` recovers a handler's panic and drops that one
+  connection (`Handler` doc), but a panic in a goroutine the handler started, a queue consumer or
+  a raw TCP server ends the process: one crafted message is a DoS. Check
+  `off >= 0 && off <= len(b) && n >= 0 && n <= len(b)-off` — subtract, since `off+n` can wrap.
 
-OWASP: Go Secure Coding Practices (general coding practices); OWASP SCSVS (arithmetic).
+OWASP: Go Secure Coding Practices (general coding practices; memory management); OWASP SCSVS
+(arithmetic).
 
 ## 5. Generics: judicious use only
 
@@ -299,6 +308,10 @@ func UserFrom(ctx context.Context) (*User, bool) {
       `grep -rlE 'strconv\.ParseFloat\(' --include='*.go' . | xargs grep -LE 'math\.Is(NaN|Inf)\('`
       (files that parse floats and never test for non-finite values) ; then read integer
       `/`, `%`, negation and `time.Duration(n) *` sites on untrusted values for a guard
+- [ ] **Index or slice bound taken from a decoded field without a `len()` check (§4) — HIGH
+      outside a recovered `net/http` handler, MEDIUM inside one** —
+      `grep -rnE '\[[^]:]*[a-z]+\.[A-Z][A-Za-z0-9]*[^]:]*:|\[[^]]*:[^]]*[a-z]+\.[A-Z][A-Za-z0-9]*[^]]*\]|\[[a-z]+\.(Index|Idx|Pos|Offset|N)\]' --include='*.go' .`
+      (a field of a struct as the bound; read back for the check)
 - [ ] **Context violations** —
       `grep -rnE 'ctx\s+context\.Context' --include='*.go' . | grep -E 'struct|^\s+[A-Za-z]+ +context\.Context'`
       (ctx in struct — MEDIUM);

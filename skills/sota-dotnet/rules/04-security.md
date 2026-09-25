@@ -84,6 +84,14 @@ network/file/DB/config as untrusted. Reference:
 - **`XmlSerializer`/`DataContractSerializer`** with attacker-controlled types is
   risky; disable DTD processing on XML readers (XXE) — `XmlReaderSettings {
   DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null }`.
+  **A consumer is as safe as the reader it is given.** Measured on .NET 10: `XmlReader.Create`
+  without settings refused a DOCTYPE, but `new XPathDocument(stream)` (or a `TextReader`),
+  `XmlDocument.Load(stream)` and `new XmlTextReader(...)` parsed it, and the first two expanded
+  internal entities up to the `MaxCharactersFromEntities` limit. External entities stayed
+  unresolved until a reader was handed an `XmlUrlResolver`: then `XPathDocument` returned a
+  local file's contents. So build `XPathDocument` and the input to `XslCompiledTransform.Transform`
+  from `XmlReader.Create(source, hardenedSettings)`, and load stylesheets with the default
+  `XsltSettings` (`document()` stayed prohibited, measured). *(OWASP: XXE Prevention cheat sheet.)*
 
 ## 3. Command / path / other injection
 
@@ -145,8 +153,12 @@ network/file/DB/config as untrusted. Reference:
   compiled. For user formulas, use an expression library with a fixed grammar and no member
   access. Dynamic LINQ before 1.6.0 exposed reflection and static members (CVE-2024-51417). On
   1.7.4, `"".GetType()` and `System.IO.File` were rejected (measured), but a caller-supplied
-  predicate can still filter on any property, so allowlist the fields it may name.
-  *(OWASP: Code Review Guide; Proactive Controls 2024 C3; ASVS 5.0 V1.3.)*
+  predicate can still filter on any property, so allowlist the fields it may name. The same
+  sink covers `Expression.Lambda(...).Compile()` over a tree built from input, and CodeDom;
+  `CompileAssemblyFromSource` threw `PlatformNotSupportedException` on .NET 10 (measured), so
+  it matters on .NET Framework. `[AllowPartiallyTrustedCallers]` has no effect outside .NET
+  Framework (Microsoft API docs). Keep secrets out of `ISerializable.GetObjectData`: what it
+  adds leaves with the payload. *(OWASP: Code Review Guide; Proactive Controls 2024 C3; ASVS 5.0 V1.3.)*
 - **SSRF: an outbound request to a destination the caller picks.** The policy is
   `sota-code-security` rules/01 §5. This bullet covers how to apply it in .NET. Best: take a key
   or ID from the caller, look up the base `Uri` in your own allowlist, and build the request
@@ -209,7 +221,10 @@ network/file/DB/config as untrusted. Reference:
   EF Core's `EnableSensitiveDataLogging()` puts *"parameter values for commands being sent to
   the database"* and entity property values into logs and exception messages. Keep it out of
   every non-development configuration. Logger-level redaction is `sota-observability`
-  rules/01 §4.
+  rules/01 §4. A desktop or Windows client keeps local secrets in `ProtectedData.Protect(...,
+  DataProtectionScope.CurrentUser)` (DPAPI) or the OS credential store, never a plain file or
+  registry value. Windows-only: Linux threw `PlatformNotSupportedException` (measured).
+  *(OWASP: .NET Security cheat sheet.)*
 - **Runtime patch level is an audit surface**: the memory-safe runtime's
   residual risk includes framework CVEs — e.g. CVE-2025-55315 (Kestrel HTTP
   request smuggling, fixed in 8.0.21/9.0.10/10.0 RC2) and CVE-2026-45591
@@ -239,13 +254,22 @@ network/file/DB/config as untrusted. Reference:
   artifacts stay valid, so revoke the key ring (`RevokeAllKeys()`) and rotate
   tokens/API keys issued during the vulnerable window. Constant-time compare
   (`CryptographicOperations.FixedTimeEquals`) for MACs/tokens.
+  **Several instances need one key ring.** Measured on .NET 10: a payload protected under one key
+  directory failed on another ("not found in the key ring"), and under another `SetApplicationName`
+  too, which breaks antiforgery tokens and auth cookies behind a load balancer. Configure
+  `PersistKeysTo…` (shared store), `SetApplicationName` and `ProtectKeysWith…` (without it the key
+  file held the key in clear, measured). The antiforgery cookie defaults to `SecurePolicy=None`
+  (read from `AntiforgeryOptions`): set `Always`. *(OWASP: CSRF Prevention cheat sheet.)*
 - **Post-quantum**: .NET 10 ships PQC in the BCL — `MLKem` (FIPS 203) plus
   `MLDsa`/`SlhDsa`/`CompositeMLDsa` (FIPS 204/205; still `[Experimental]`,
   SYSLIB5006), backed by OpenSSL 3.5+ or Windows CNG with PQC support. For new
   long-lived signatures/key exchange, plan migration on these built-ins rather
   than unvetted packages.
 - **TLS**: never disable validation — `ServerCertificateCustomValidationCallback`
-  returning `true` (or `HttpClientHandler` accepting all certs) is HIGH/CRITICAL.
+  returning `true` (or `HttpClientHandler` accepting all certs) is HIGH/CRITICAL. A pin is an
+  extra check: return `false` unless `errors == SslPolicyErrors.None`, then compare `SHA256.HashData(
+  cert.PublicKey.ExportSubjectPublicKeyInfo())` with a set of pins that includes a backup
+  (a wrong pin failed the handshake, the right one passed; measured). *(OWASP: Pinning cheat sheet.)*
 - **Don't hard-code the protocol version.** `SslProtocols.Tls`/`Tls11` are obsolete from
   .NET 7 (SYSLIB0039) — HIGH. Hard-coding even `Tls12`/`Tls13`, or assigning
   `ServicePointManager.SecurityProtocol`, freezes the app out of whatever the OS enables next
@@ -330,6 +354,20 @@ section is the .NET spelling an auditor has to grep for.
   `#if !DEBUG` guard), and log `EnvironmentName`. *(OWASP: Error Handling cheat sheet; Secure
   Headers Project; ASVS 5.0 V13.4.)*
 
+## 8. Legacy ASP.NET (`System.Web`) configuration
+
+Audit the effective chain as one unit, since a child file can undo its parent: `machine.config`,
+root `web.config`, IIS `applicationHost.config`, then each app and folder `web.config`. Read
+`<compilation debug>`, `<trace>`, `<customErrors>` (default `RemoteOnly`; `Off` shows details to all),
+`<httpCookies>`, `<sessionState>`, `maxRequestLength`, `<authentication>`, `<authorization>`,
+`<identity impersonate>`, `<connectionStrings>` (encrypt it) and `system.webServer/security`. Lock
+what children must not weaken with `<location allowOverride="false">` (default `true`), restrict
+file ACLs, drop unused sections. Request validation backs up encoding and input validation, never
+replaces them; turning it off is a finding: `validateRequest="false"` (`<pages>` or `@ Page`,
+honoured only under `requestValidationMode="2.0"`), that downgrade itself, or `0.0` (off app-wide).
+So is `enableEventValidation="false"`, which Microsoft strongly advises against. Each exception
+names its page and reason. *(OWASP: Code Review Guide v2; .NET Security cheat sheet.)*
+
 ## Audit checklist
 
 - [ ] **`unsafe` / P/Invoke — HIGH on input-derived lengths** (§6) —
@@ -344,12 +382,12 @@ section is the .NET spelling an auditor has to grep for.
       `grep -rnE 'BinaryFormatter|NetDataContractSerializer|LosFormatter|SoapFormatter|ObjectStateFormatter' --include='*.cs' .`
       ; `grep -rnE 'TypeNameHandling\.(Auto|All|Objects|Arrays)' --include='*.cs' .`
 - [ ] **XXE / command / path — HIGH/CRITICAL** —
-      `grep -rnE 'DtdProcessing|XmlResolver|new XmlDocument|XmlReader' --include='*.cs' . | head`
+      `grep -rnE 'DtdProcessing|XmlResolver|new XmlDocument|XmlReader|XmlTextReader|new XPathDocument\(|XslCompiledTransform' --include='*.cs' . | head`
       ; `grep -rnE 'Process\.Start|ProcessStartInfo|UseShellExecute' --include='*.cs' . | head`
 - [ ] **Auth / CORS / antiforgery — HIGH** —
       `grep -rnE 'AllowAnyOrigin|AllowAnyHeader|AllowAnyMethod' --include='*.cs' .` ;
       `grep -rnLE '\[Authorize\]|RequireAuthorization|\[AllowAnonymous\]' --include='*Controller.cs' . | head`
-      (endpoints w/o auth?)
+      (endpoints w/o auth?) ; `grep -rnE 'PersistKeysTo|ProtectKeysWith' --include='*.cs' . || echo "key ring not shared or protected (§5) — MEDIUM with >1 instance"`
 - [ ] **Crypto misuse — HIGH** —
       `grep -rnE '\bnew Random\(|System\.Random' --include='*.cs' . | grep -iE 'token|key|iv|salt|nonce|password|secret'`
       ; `grep -rnE 'MD5|SHA1|TripleDES|\bDES\b|CipherMode\.ECB' --include='*.cs' .` ;
@@ -429,10 +467,11 @@ section is the .NET spelling an auditor has to grep for.
       disabled or seen by that check. No hits means there is no DNS-rebinding defence.
 - [ ] **Dynamic code evaluation from input — CRITICAL (runtime code generation, dynamic LINQ,
       reflection by name)** (§3) —
-      `grep -rnE 'CSharpScript\.|CSharpCompilation\.Create|Assembly\.Load(From|File)?\([^"]|System\.Linq\.Dynamic\.Core|DynamicExpressionParser|Type\.GetType\([^")]|GetMethod\([^")]' --include='*.cs' --include='*.csproj' .`
+      `grep -rnE 'CSharpScript\.|CSharpCompilation\.Create|Assembly\.Load(From|File)?\([^"]|System\.Linq\.Dynamic\.Core|DynamicExpressionParser|Type\.GetType\([^")]|GetMethod\([^")]|CompileAssemblyFrom(Source|Dom|File)|Expression\.Lambda|GetObjectData\(' --include='*.cs' --include='*.csproj' .`
       (trace every hit to its source: a request-derived script, type or method name is the
       finding; a `System.Linq.Dynamic.Core` version below 1.6.0 is CVE-2024-51417; a
-      reference-stripped `ScriptOptions` is not a mitigation)
+      reference-stripped `ScriptOptions` is not a mitigation; a `GetObjectData` hit: read each
+      `AddValue` for a secret)
 - [ ] **Cookie attribute scope: `Domain` set, or a `__Host-` cookie that breaks the prefix rules
       — MEDIUM** (§7) —
       `grep -rnE '(^|[^[:alnum:]_])Domain[[:space:]]*=[[:space:]]*[^=[:space:]]|"__Host-' --include='*.cs' . | grep -vE '(^|[^[:alnum:]_])Domain[[:space:]]*=[[:space:]]*null'`
@@ -456,3 +495,6 @@ section is the .NET spelling an auditor has to grep for.
       (a runtime `Type`: trace where it came from; `typeof(...)` is fine) ;
       `grep -rnE 'ObjectDataProvider|ResourceDictionary|System\.Management\.Automation|Microsoft\.PowerShell\.SDK|AssemblyInstaller|WorkflowDesigner|BindingSource|DataViewManager|<UseWPF>true|<UseWindowsForms>true' --include='*.cs' --include='*.csproj' --include='*.xaml' .`
       (a finding only in a service that deserializes type-named input)
+- [ ] **Legacy `System.Web` validation off, debug or trace on, config not locked — HIGH** (§8) —
+      `grep -rniE 'validateRequest[[:space:]]*=[[:space:]]*"?false|requestValidationMode[[:space:]]*=[[:space:]]*"?[0-3][.]|enableEventValidation[[:space:]]*=[[:space:]]*"?false|debug[[:space:]]*=[[:space:]]*"?true|<trace[^>]*enabled[[:space:]]*=[[:space:]]*"?true|customErrors[^>]*mode[[:space:]]*=[[:space:]]*"?off' --include='*.config' --include='*.aspx' --include='*.ascx' --include='*.master' .`
+      (each needs a named page and reason) ; `grep -rniE 'allowOverride[[:space:]]*=[[:space:]]*"?false' --include='*.config' . || echo "nothing locked: a child web.config can weaken any setting"`

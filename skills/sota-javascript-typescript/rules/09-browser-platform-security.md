@@ -1,9 +1,10 @@
-# 09 — Browser Platform Security (service workers, DOM clobbering, extensions)
+# 09 — Browser Platform Security (service workers, DOM clobbering, extensions, storage)
 
 rules/05 covers the XSS sinks and CSP that every page needs. This file covers three browser
 features that give script more reach than a page normally has, or that let markup act like
 script: a service worker (it keeps running between visits), named elements (markup that
-overwrites globals) and browser extensions (script with privileges inside someone else's page).
+overwrites globals) and browser extensions (script with privileges inside someone else's page),
+plus the browser's persistent storage, which every script in the origin can read.
 Added 2026-09-25.
 
 ## Service workers: origin, scope and a kill switch
@@ -109,7 +110,39 @@ edge between the two as a trust boundary.
   `onMessageExternal` and `externally_connectable` accept other extensions and web pages, so
   allowlist their ids and origins. Build DOM from message data with `textContent`, never
   `innerHTML` (the same docs warn against `eval` and `innerHTML` on message data).
+- **Ask for the least, and ask late.** Keep `permissions` and `host_permissions` to what the
+  core feature uses. Put the rest in `optional_permissions`/`optional_host_permissions` and
+  call `chrome.permissions.request()` from a click handler (Chrome's permissions docs require a
+  user gesture), then `permissions.remove()` what is no longer needed. `<all_urls>` or
+  `*://*/*` in required `host_permissions` needs a written reason.
+- **Extension storage is reachable from content scripts by default.** Chrome's storage docs:
+  `storage.local`, `sync` and `managed` are exposed to content scripts unless you call
+  `setAccessLevel()`; `storage.session` is not, and is the area they recommend for sensitive
+  data. Call `chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' })` when
+  content scripts do not need it. Never put extension secrets in the page's `localStorage`.
 - *OWASP: Browser Extension Vulnerabilities cheat sheet.*
+
+## Client-side storage: Web Storage, IndexedDB and keys
+
+The token rule in rules/05 §"Tokens" is one case of a wider one: every script in the origin
+reads `localStorage`, `sessionStorage`, IndexedDB and Cache Storage, so one XSS reads them all,
+and they sit on disk for anyone with the device.
+
+- **Store no secrets and no more personal data than the feature needs.** When data need not
+  outlive the tab, use `sessionStorage` (per tab, cleared when the tab closes) or memory rather
+  than `localStorage`. Clear what you stored at logout.
+- **Encrypt what must persist.** Encrypt sensitive IndexedDB records with a Web Crypto key
+  generated with `extractable: false`. The WebCrypto spec makes `CryptoKey` serializable and
+  names IndexedDB as the place to keep one without exposing the key material; `exportKey` on
+  such a key was rejected ("key is not extractable") in Node 22.22's WebCrypto (measured). This protects the
+  data at rest, not against XSS, which can still call `decrypt` with the key.
+- **Read-back is untrusted input.** Anything read from storage may have been planted by an
+  earlier XSS or edited by the user: schema-parse it (rules/01) and output-encode it.
+- **Web SQL is gone.** Chrome's deprecation post says it is unavailable in all contexts from
+  Chromium 119 and recommends SQLite compiled to WebAssembly on the Origin Private File System.
+  An `openDatabase(` call is dead code (LOW), and its data needs migrating to IndexedDB or
+  SQLite-on-OPFS.
+- *OWASP: HTML5 Security cheat sheet; WSTG-CLNT-12.*
 
 ## Audit checklist
 
@@ -134,3 +167,13 @@ edge between the two as a trust boundary.
       — each listener hit must check `sender.id` and `sender.origin`/`sender.url` before any
       privileged call. Each `MAIN` hit needs a reason, and remote script loading is CRITICAL.
       Secret-bearing UI injected into the page (read the content scripts) is HIGH.
+- [ ] **Extension permissions wider than the feature (§"Browser extensions", least privilege) — MEDIUM, HIGH for
+      `<all_urls>` with `cookies`/`debugger`/`webRequest`** —
+      ``grep -rnE "\"(<all_urls>|\*://\*/\*|https?://\*/\*)\"|\"(cookies|debugger|webRequest|history|nativeMessaging)\"" --include='manifest.json' .``
+      — read whether each hit is a required or an `optional_*` entry; a broad required grant needs a written reason.
+      No `setAccessLevel` call while `storage.local` holds secrets is MEDIUM.
+- [ ] **Sensitive data or exportable keys in browser storage (§"Client-side storage") — MEDIUM, HIGH for
+      credentials or payment data** —
+      ``grep -rnEi "(localStorage|sessionStorage)\.setItem\( *['\"\`][^'\"\`]*(passw|ssn|card|birth|dob|email|phone|address|secret)|openDatabase\(|(generate|import)Key\([^)]*, *true *," --include='*.js' --include='*.ts' --include='*.mjs' --include='*.tsx' --include='*.jsx' .``
+      — personal data in Web Storage, a Web SQL call left over (LOW), and a Web Crypto key made extractable.
+      Keys named in a variable need a read, and so do IndexedDB `put`s of unencrypted records.

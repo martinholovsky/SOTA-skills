@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **OWASP medium-value themes adopted in `sota-javascript-typescript`, `sota-jvm`, `sota-c-cpp`, `sota-dotnet`, `sota-php`, `sota-golang`, `sota-python` (ROADMAP 66 step 5, batch "languages").**
+  - 36 themes implemented and 7 extended; 3 found already covered.
+  - 41 audit probes, each tested on bad and good fixtures.
+  - Split `sota-jvm` rules/04 §6 → rules/08 (the web layer).
 - **OWASP medium-value themes adopted in `sota-devsecops` (ROADMAP 66 step 5, batch "devsecops").**
   - 38 themes implemented and 0 extended; 0 found already covered.
   - 38 audit probes, each tested on bad and good fixtures.

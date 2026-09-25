@@ -134,6 +134,44 @@ A wrapper builds its own reader unless you hand it one. Pass the hardened `XMLRe
   parser sets its entity-reference, DTD-object and expansion-depth attributes. Not measured.
   OWASP: XML External Entity Prevention cheat sheet.
 
+## 5. Document-carried stylesheet and schema references; restricting your own imports
+
+- **A document names its own stylesheet and schema, so whoever wrote the document does.** The
+  `<?xml-stylesheet href=...?>` processing instruction, `xsi:schemaLocation` and
+  `xsi:noNamespaceSchemaLocation` are input. Measured on Temurin 21.0.12 and 25.0.4 against a
+  local listener:
+  - `TransformerFactory.getAssociatedStylesheet` fetched nothing itself. The `Source` it returned
+    had the PI's `href` as its system ID. Compiling that `Source` on a default factory fetched the
+    remote stylesheet and ran it.
+  - A `Validator` from the no-argument `SchemaFactory.newSchema()` fetched the schema named by
+    `xsi:noNamespaceSchemaLocation`, and also the one named by `xsi:schemaLocation`. It refused once
+    `ACCESS_EXTERNAL_SCHEMA` was `""` on both the factory and the validator. A `Schema` compiled
+    from the application's own source ignored the hint and fetched nothing.
+
+  Compile schemas from sources you ship, and never call `newSchema()` with no argument on caller
+  documents. Treat an associated-stylesheet system ID as a key and check it against an allowlist
+  of stylesheets you already hold, such as a map to precompiled `Templates`. Never pass the
+  returned `Source` straight to `newTransformer`/`newTemplates`.
+- **Your own `xsl:import`, `xsl:include`, `xs:include`/`xs:import` and `document()` references,
+  in order of preference:**
+  1. **A `CatalogResolver` in `strict` mode** (`javax.xml.catalog`, JDK 9+).
+     `CatalogFeatures.Feature.RESOLVE` is documented as defaulting to `strict`, and
+     `CatalogFeatures.defaults()` read `strict` on both JDKs. Build it with
+     `CatalogManager.catalogResolver(features, catalogUri)`, then install it as the
+     `TransformerFactory` `URIResolver` and the `SchemaFactory` `LSResourceResolver`. Measured:
+     mapped references loaded from the local copy, and an unmapped `http:` reference threw with no
+     fetch, for `xsl:import`, `xs:include` and a transform-time `document()`. The factory's resolver
+     reached the transformer. With no resolver, the same `document()` call fetched.
+  2. **A hand-written `URIResolver`/`LSResourceResolver` allowlist that throws for anything
+     unlisted.** The same trap as §3 applies: the Javadoc of both says a `null` return asks the
+     processor to resolve (open) the URI itself.
+  3. **`ACCESS_EXTERNAL_*` alone.** It works per protocol only. With `ACCESS_EXTERNAL_STYLESHEET`
+     set to `""`, the application's own local `file:` import was refused as well (measured). The
+     usual response is to loosen it to `"file"` or `"all"`, which reopens every path under that
+     scheme. Keep it as the backstop under 1 or 2, not the allowlist.
+
+  OWASP: XML External Entity Prevention cheat sheet.
+
 ## Audit checklist
 
 - [ ] **XXE — CRITICAL (verify DTDs disabled)** —
@@ -172,3 +210,22 @@ A wrapper builds its own reader unless you hand it one. Pass the hardened `XMLRe
       (trace each stylesheet `Source` to a constant; `enableExtensionFunctions=true` is a
       finding on sight; `newTransformer()` with no argument is the identity transform and
       does not match)
+- [ ] **Stylesheet or schema chosen by the document, or own imports with no resolver — HIGH,
+      CRITICAL when the stylesheet is compiled** (§5: the PI's stylesheet was fetched and ran; a
+      no-argument `newSchema()` fetched the `xsi:` location) —
+      `grep -rnE 'getAssociatedStylesheet\(|\.newSchema\([[:space:]]*\)' --include='*.java' --include='*.kt' .`
+      (trace each returned `Source` to an allowlist lookup) ;
+      `grep -rlE 'TransformerFactory|SchemaFactory' --include='*.java' --include='*.kt' . | while IFS= read -r f; do grep -qE 'setURIResolver|setResourceResolver|catalogResolver\(' "$f" || echo "$f: factory with no resolver"; done`
+      (fine if the §3 secure factory installs it elsewhere; an `ACCESS_EXTERNAL_STYLESHEET` or
+      `ACCESS_EXTERNAL_SCHEMA` of `"all"` or `"file"` is the loosened backstop)
+- [ ] **No XXE-specific SAST gate — HIGH** (the greps above are for a review; CI needs a rule set
+      that fails the build). Find-Sec-Bugs (1.14.0) reports `XXE_DOCUMENT`, `XXE_SAXPARSER`,
+      `XXE_XMLREADER`, `XXE_XMLSTREAMREADER`, `XXE_XPATH`, `XXE_SCHEMA_FACTORY`, `XXE_VALIDATOR`,
+      `XXE_DTD_TRANSFORM_FACTORY` and `XXE_XSLT_TRANSFORM_FACTORY`. The Semgrep/Opengrep rule
+      repositories carry `documentbuilderfactory-disallow-doctype-decl-missing`,
+      `saxparserfactory-disallow-doctype-decl-missing`, `transformerfactory-dtds-not-disabled`
+      (under `java/lang/security/audit/xxe/`) and `xmlinputfactory-possible-xxe` (`rules/06` §3) —
+      `grep -rlE 'findsecbugs|java[./]lang[./]security[./]audit[./]xxe|xmlinputfactory-possible-xxe' --include='pom.xml' --include='*.gradle' --include='*.gradle.kts' --include='*.yml' --include='*.yaml' . || echo "FINDING: no XXE-capable SAST rule set configured"`
+      ; a gate that cannot fail, or XXE patterns excluded:
+      `grep -rnE 'pattern="[^"]*XXE_|failOnError>false|spotbugs\.failOnError=false|ignoreFailures[[:space:]]*=[[:space:]]*true' --include='*exclude*.xml' --include='pom.xml' --include='*.gradle' --include='*.gradle.kts' --include='*.properties' .`
+      (an exclude filter under another file name needs a separate read)

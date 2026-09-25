@@ -84,6 +84,7 @@ lessons-log — its own best structural idea, applied to ourselves.
 > | `rules/05` §10 (file upload handling) | `rules/21` §1 — 2026-09-25 |
 > | `rules/04` §6, §6.1 (constant-time comparison) | `rules/22` §1, §1.1 — 2026-09-25 |
 > | `rules/08` §5 (platform & supply chain: models, prompts, MCP, logging) | `rules/23` §1 — 2026-09-25 |
+> | `sota-jvm` `rules/04` §6 (the web layer) | `sota-jvm` `rules/08` §1 — 2026-09-25 |
 >
 > Invariant 18 keeps *live* `§` references honest, but its scope is `skills/*/*.md`,
 > `skills/*/rules/*.md`, `evals/*.py`, `evals/README.md`, `scripts/*.sh` and
@@ -6107,3 +6108,30 @@ written, and 7 were real defects fixed in place (patterns that missed a single-q
 |---|---|---|---|---|---|
 | `sota-devsecops` | 38 | 0 | 0 | 0 | 38 |
 | **total** | 38 | 0 | 0 | 0 | 38 |
+
+## 2026-09-25 — ROADMAP 66 step 5, batch "languages": medium-value OWASP themes adopted
+
+Same method as step 4: one agent per skill (`sota-code-security` split by file) re-verified each
+gap against the current tree, wrote the rule in its own words citing OWASP sources by name, added
+an audit probe tested on a bad and a good fixture, and verified every API, default and standard
+against a primary source read that session. Every probe was then re-run here on its fixtures;
+the 81 (of 317 with fixtures, across all batches) that did not reproduce went to a second
+verification pass — 71 were artefacts of the re-run (a reported summary with `...` or
+placeholders rather than the command in the file, or two probes joined with `;`), 3 worked as
+written, and 7 were real defects fixed in place (patterns that missed a single-quoted YAML value,
+`syft scan dir:`, `ClusterAnalysisTemplate`, `ml_bom` with an underscore, and similar).
+
+`sota-jvm` rules/04 §6 (the web layer) moved to rules/08 §1 so the five cap-blocked themes
+(including step 4's T339) could land; the web-layer citations were CHANGELOG/ROADMAP records,
+left as written, plus two in-skill pointers rewritten.
+
+| skill | implemented | extended | already covered | blocked by the cap | audit probes |
+|---|---|---|---|---|---|
+| `sota-javascript-typescript` | 6 | 2 | 2 | 0 | 8 |
+| `sota-jvm` | 6 | 2 | 0 | 0 | 8 |
+| `sota-c-cpp` | 7 | 0 | 0 | 0 | 7 |
+| `sota-dotnet` | 10 | 0 | 0 | 0 | 8 |
+| `sota-php` | 5 | 0 | 0 | 0 | 5 |
+| `sota-golang` | 1 | 3 | 0 | 0 | 4 |
+| `sota-python` | 1 | 0 | 1 | 0 | 1 |
+| **total** | 36 | 7 | 3 | 0 | 41 |

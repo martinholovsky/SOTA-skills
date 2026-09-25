@@ -72,6 +72,16 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
   value-returning.
 - Use expression-bodied members, target-typed `new`, collection expressions
   (`[1, 2, 3]`), and `nameof`. Use `var` when the type is obvious from the RHS.
+- **An enum-typed value from input can hold a number no member names.** Measured on .NET 10
+  with `enum Role { User, Admin }`: `(Role)42` compiles and runs, `Enum.Parse<Role>("42")` and
+  `Enum.TryParse` succeed, and `System.Text.Json` reads `42` both by default and through
+  `JsonStringEnumConverter`. So `role != Role.User` is true for 42, and code that treats
+  "not the low value" as the high one grants it. Before an enum from outside drives authz or
+  branching, check `Enum.IsDefined(value)` (a `[Flags]` enum needs a mask check instead), or
+  switch on it with a default arm that rejects. `new JsonStringEnumConverter(allowIntegerValues:
+  false)` refused both `42` and `"42"`. Keep warning CS8524 on: it flags a switch expression
+  over an enum with no arm for unnamed values, and at run time that switch threw
+  `SwitchExpressionException`. *(OWASP: .NET Security cheat sheet.)*
 
 ## 4. C# 12–14 niceties
 
@@ -129,6 +139,12 @@ Reference: [What's new in C#](https://learn.microsoft.com/en-us/dotnet/csharp/wh
       `grep -rnE 'unchecked[[:space:]]*[({]' --include='*.cs' .` (each needs a stated bound or
       an intended wrap) ;
       `grep -rlE '<CheckForOverflowUnderflow>[[:space:]]*true' --include='*.csproj' --include='Directory.Build.props' . || echo "overflow checking off project-wide — look for checked() on arithmetic over input"`
+- [ ] **Enum from input used without a defined-value check (§3) — MEDIUM, HIGH when it
+      selects a role or permission** —
+      `grep -rnE '\([A-Z][A-Za-z0-9_]*\)[[:space:]]*(int|long|Convert\.ToInt(32|64)|short)[.(]|Enum\.(Try)?Parse(<[^>]*>)?\(' --include='*.cs' .`
+      (cast or parse of external data into an enum: want `Enum.IsDefined` or a rejecting
+      default arm before use; a cast hit that is not an enum is noise) ;
+      `grep -rnE 'NoWarn[^<]*CS8524|CS8524[^/]*none|pragma warning disable CS8524' --include='*.cs' --include='*.csproj' --include='*.props' --include='.editorconfig' .`
 - [ ] **Legacy idioms — LOW** — `grep -rnE '\bclass\b' --include='*.cs' . | head` (DTOs that
       should be records?); `grep -rnE 'namespace [A-Za-z0-9_.]+\s*\{' --include='*.cs' .`
       (non-file-scoped namespaces)
