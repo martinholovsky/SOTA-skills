@@ -57,6 +57,21 @@ export const config = Object.freeze(parsed.data);
 - Boot-time crash on bad config is a feature: the orchestrator restarts and alerts; a lazy crash mid-request loses data.
 - Secrets never in code or committed `.env`; inject via secret manager/orchestrator. `.env` is local-dev only and gitignored.
 - No `NODE_ENV === 'production'` branches scattered in logic — derive named flags in config (`config.isDev`) and branch on those.
+- **An unset `NODE_ENV` is development mode, not "no mode".** Measured on Express 5.2.1
+  with `NODE_ENV` unset: `app.get('env')` returned `'development'`, and a thrown error's
+  message and stack trace went into the HTTP 500 body. With `NODE_ENV=production` neither
+  appeared. Make `NODE_ENV` required in the schema above (no `.default`) and set it in the
+  image or unit file. If the deployment is production, assert it at boot and exit when it
+  is not.
+- **Dev tooling never serves production traffic.** `next dev`, the `vite` dev server,
+  `vite preview` (its docs: "Do not use this as a production server"), `webpack serve`,
+  `nodemon`, and `tsx watch`/`ts-node` belong in development. Production runs
+  the built output: `next start`, static files from `vite build`, `node dist/server.js`.
+  **The inspector is a remote shell:** Node's docs say that an `--inspect` bound to a public
+  IP or `0.0.0.0` lets any client that can reach it "run arbitrary code". The default is
+  `127.0.0.1:9229`, and `SIGUSR1` also starts it. Ship no `--inspect`/`--inspect-brk` in a
+  production start command or `NODE_OPTIONS`, and reach a live process over an SSH tunnel.
+  *OWASP: Error Handling cheat sheet; Secure Headers Project; ASVS 5.0 V13.4.*
 
 ## HTTP server hardening
 
@@ -132,6 +147,23 @@ app.use((req, _res, next) => {
 export const log = (obj: object, msg: string) =>
   logger.info({ ...requestContext.getStore(), ...obj }, msg);
 ```
+
+**Request-scoped state never lives in module scope.** One Node process interleaves every
+in-flight request on one thread, so a module-level `let currentTenant` set by a handler is
+read by whichever request resumes next. Measured: two concurrent handlers that set a
+module global and then `await` both returned `'B'`, while the same handlers under
+`als.run()` returned `'A'` and `'B'`. The same applies across invocations on serverless:
+AWS's Lambda docs say objects declared outside the handler "remain initialized" when an
+execution environment is reused, and advise against global variables for per-invocation data.
+- Scope with `run()`, which exits the context when the callback returns or throws. Avoid
+  `enterWith()`: it is Experimental and, per Node's docs, "will continue for the *entire*
+  synchronous execution". Measured, code after the call in the same tick saw the store.
+- `getStore()` returns `undefined` outside a context, and Node's docs list callback-based
+  APIs and custom thenables as causes of context loss (fix with `util.promisify` or
+  `AsyncResource`). Code that reads a tenant or user from it must throw on `undefined`, never
+  fall back to a default tenant. A `Worker` does not see the store. Measured, the same
+  module's `getStore()` returned `undefined` inside a worker started under `run()`, so pass
+  the value in `workerData` or the message. *OWASP: Multi-Tenant Security cheat sheet; Session Management cheat sheet.*
 
 It survives `await`, timers, and promise chains. Use it for logging context and tracing only — not as a grab-bag service locator (hidden dependencies become untestable). OpenTelemetry's Node SDK rides the same mechanism; adopt OTel for traces rather than hand-rolling.
 
@@ -306,6 +338,18 @@ channel.
 ## Audit checklist
 
 - [ ] `grep -rn "process.env" src/ --include="*.ts" | grep -v "config\|env.ts"` — env access outside the config module (MEDIUM); no schema validation of env at boot (HIGH).
+- [ ] **Dev server, debug mode or inspector in production (§"Env and config") — HIGH for a
+      public `--inspect`, MEDIUM otherwise** —
+      `grep -rnE -e '--inspect(-brk|-port)?([^[:alnum:]-]|$)|NODE_ENV[=:] *"?(development|dev)|"start": *"[^"]*(next dev|vite|webpack serve|nodemon|tsx watch|ts-node)' --include='package.json' --include='Dockerfile*' --include='Procfile' --include='*.yml' --include='*.yaml' --include='.env*' --include='*.service' .`
+      — a production start command running a dev server or an inspector is the finding.
+      Then check that `NODE_ENV` is required with no default in the config schema, since
+      Express treats it unset as development.
+- [ ] **Request-scoped state in module scope or a leaky AsyncLocalStorage (§"Request
+      context") — HIGH when it carries a tenant or user** —
+      `grep -rnEi '^(export )?let +[[:alnum:]_$]*(tenant|user|request|req|ctx|context|session|locale)[[:alnum:]_$]* *(:|=|;)|\.enterWith\(|getStore\(\)[^;]*(\?\?|\|\|) *[^;[:space:]]' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
+      — a module-level `let` for per-request data is a cross-request (cross-tenant) leak.
+      `enterWith` is a scope that never exits. A `getStore()` falling back to a default is
+      fail-open. Read the hits: a module `let` assigned only at boot is fine.
 - [ ] `grep -rn "Sync(" src/ | grep -v "test\|script"` — `*Sync` calls in server code (HIGH in request paths).
 - [ ] Server timeouts: `grep -rn "headersTimeout\|requestTimeout\|keepAliveTimeout" src/` — absent = slowloris-exposed defaults (MEDIUM).
 - [ ] Body limits configured (`grep -rn "bodyLimit\|limit:" src/`) — unbounded body parsing (HIGH, DoS).

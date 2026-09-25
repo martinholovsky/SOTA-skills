@@ -26,6 +26,14 @@ obj = msgspec.json.decode(blob, type=Job)     # or json + pydantic validation
   `{"__builtins__": {}}` is bypassable; don't review it, reject it. Need expressions? Use
   `ast.literal_eval` (data literals only), a real expression library (simpleeval has caveats
   too), or define a DSL with explicit dispatch.
+- **The same ban covers every way Python turns a string into code:** `compile()` feeding
+  `exec`, `__import__`/`importlib.import_module(name)` (importing runs the module's top-level
+  code), `pydoc.locate("os.system")` (returns the callable), and `getattr(obj, name)` with a
+  caller-chosen `name` (reaches `__class__`, `__init__` and every private method). Map the
+  input through a fixed dict — `HANDLERS = {"csv": export_csv}` then `HANDLERS[kind]` — so
+  the set of reachable callables is the one you wrote. No in-interpreter "restricted" mode is
+  a security boundary; code that must run untrusted expressions runs in a separate sandboxed
+  process (`sota-sandboxing`). OWASP: Code Review Guide; Proactive Controls; ASVS.
 - Templates: Jinja2 with autoescape on for HTML (`select_autoescape`); never render
   user-controlled **template strings** (SSTI → RCE), only user data into fixed templates.
   Same logic for `str.format` on user-supplied format strings (`"{0.__class__}"` walks objects).
@@ -305,6 +313,19 @@ it generalises past Django.
   often connection strings; an unauthenticated `/metrics` or a profiler endpoint does the same
   more quietly. The control is that debug state is read from the environment and defaults to
   *off*, never a literal in source that someone must remember to flip.
+- **The switches, and their defaults** (read from the installed sources, Flask 3.1 / Django
+  6.1 / Starlette 1.7): Flask reads `FLASK_DEBUG` (default off) or `app.run(debug=True)` /
+  `flask run --debug`; Django's global default is `DEBUG = False` but the `startproject`
+  template writes `DEBUG = True`, so a settings file copied from it ships debug on;
+  `Starlette(debug=True)` / `FastAPI(debug=True)` returns the traceback in the 500 body
+  (measured: an exception message appeared in the response with `debug=True`, not without).
+- **Dev servers never serve production traffic:** `manage.py runserver`, `flask run` /
+  `app.run()` (the Werkzeug development server) and `uvicorn --reload` are for a laptop.
+  Both Django and Werkzeug print *"WARNING: This is a development server"* at startup and
+  tell you to use a production WSGI (or ASGI) server instead (e.g. gunicorn, or uvicorn
+  without `--reload`, behind a proxy). Assert it at startup: when the environment says
+  production, refuse to boot if `settings.DEBUG` / `app.debug` is true. OWASP: Error
+  Handling cheat sheet; Secure Headers Project; ASVS.
 
 Dependency and supply-chain hygiene and static-analysis gates (formerly sections 9 and 10)
 moved to [rules/08](08-supply-chain.md) §1–§2 on 2026-09-25.
@@ -330,6 +351,11 @@ foreign function, and validate lengths before they cross. The class is `sota-cod
       `grep -rn "\beval(\|\bexec(" --include="*.py" src/ | grep -v "literal_eval\|model.eval()"`
       ; `grep -rn "\.format(.*request\|f\".*{.*request" --include="*.py" src/ | head`
       (format-string gadgets)
+- [ ] **--- Dynamic code evaluation and reflection by name (§1) --- [CRITICAL where the
+      string or name comes from a request, file or message]** —
+      `grep -rnE '(^|[^.[:alnum:]_])(compile|__import__)\(|import_module\(|pydoc\.locate\(|getattr\([^,)]+,[[:space:]]*[^"'"'"'[:space:]]' --include='*.py' src/`
+      (a `getattr` whose name is not a literal, or an import by computed name, is reachable
+      code the author did not list; replace with a fixed dict of handlers)
 - [ ] **Subprocess [HIGH]** — `grep -rn "shell=True" --include="*.py" src/` ;
       `grep -rn "os.system\|os.popen" --include="*.py" src/`
 - [ ] **SQL [CRITICAL]** —
@@ -382,6 +408,11 @@ foreign function, and validate lengths before they cross. The class is `sota-cod
 - [ ] **--- Debug consoles (§8a) ---** —
       `grep -rnE 'debug\s*=\s*True|DEBUG\s*=\s*True' --include="*.py" src/` (literal, not env
       [HIGH in prod path])
+- [ ] **--- Dev server or debug mode in the production start command (§8a) --- [HIGH;
+      CRITICAL when the Werkzeug debugger is reachable]** —
+      `grep -rnE 'runserver|flask[[:space:]]+run|(app|application)\.run\(|--reload|reload[[:space:]]*=[[:space:]]*True|FLASK_DEBUG' --include='*.py' --include='Dockerfile*' --include='*.sh' --include='*.y*ml' --include='*.toml' --include='Procfile' .`
+      (each hit must be dev-only tooling; the production entrypoint names a production server
+      and startup refuses to boot with debug on)
 - [ ] **--- Template autoescape (§1) --- [HIGH where user data renders into HTML]** —
       `grep -rnE 'Environment\(|Template\(' --include='*.py' src/` (read each for `autoescape=`:
       measured with Jinja2 3.1.6, `Environment().autoescape` is `False` and `{{ x }}` rendered

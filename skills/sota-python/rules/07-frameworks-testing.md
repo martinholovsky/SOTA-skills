@@ -121,6 +121,31 @@ orders = (
 - Keep `.raw()`, `.extra()`, `RawSQL` out of the codebase or parameterized + reviewed
   (rules/05 §3).
 
+### Cookies the application sets (Flask, Starlette/FastAPI, Django)
+
+The framework's session cookie is configured by settings and owned by `sota-code-security`
+rules/17. Every *other* cookie — a preference, a device id, a "remember this" token — goes
+through `response.set_cookie(...)`, and the defaults there are the insecure ones. Measured
+this session (Werkzeug 3.1 / Starlette 1.7 / Django 6.1), a bare `set_cookie("pref", "v")`
+emitted:
+
+| Framework | Header | Secure | HttpOnly | SameSite |
+|---|---|---|---|---|
+| Flask (Werkzeug) | `pref=v; Path=/` | off | off | not sent |
+| Starlette / FastAPI | `pref=v; Path=/; SameSite=lax` | off | off | `lax` |
+| Django `HttpResponse` | `pref=v; Path=/` | off | off | not sent |
+
+- Pass `secure=True, httponly=True, samesite="Lax"` (or `"Strict"`) explicitly on every
+  call, through one helper so no call site forgets. `httponly=False` only for a value
+  JavaScript must read, with a comment saying so. All three default `path="/"` and no
+  `domain` — keep `domain` unset unless a sibling subdomain genuinely needs the cookie.
+- Prefer the `__Host-` name prefix for anything security-relevant: browsers accept it only
+  with `Secure`, `Path=/` and no `Domain` (MDN, Set-Cookie). The frameworks do **not**
+  enforce it — Werkzeug's `dump_cookie("__Host-x", "v")` emitted `__Host-x=v; Path=/` with
+  no `Secure` — so the prefix is only as good as the flags you pass alongside it.
+- Django's `set_signed_cookie` signs, it does not encrypt: the value is readable in the
+  header. OWASP: Session Management cheat sheet; Cookie Theft Mitigation cheat sheet; ASVS.
+
 ## 3. pytest mastery
 
 ### Fixtures over setup, composition over inheritance
@@ -257,6 +282,11 @@ testpaths = ["tests"]
       interpolated]); `git log --oneline -- '**/migrations/*.py' | head` (edited-after-merge
       migrations?); `grep -rn "makemigrations --check" .github/ .gitlab-ci.yml 2>/dev/null`
       (drift gate present?)
+- [ ] **--- App-set cookies: Secure / HttpOnly / SameSite flags (§2 cookies) --- [HIGH for an
+      auth or identity token; MEDIUM for a preference]** —
+      `grep -rnE '\.set_(signed_)?cookie\(' --include='*.py' src/ | grep -vE 'secure[[:space:]]*=[[:space:]]*True.*httponly[[:space:]]*=[[:space:]]*True|httponly[[:space:]]*=[[:space:]]*True.*secure[[:space:]]*=[[:space:]]*True'`
+      (every hit relies on a framework default that is off; a multi-line call is listed too —
+      read it; `samesite` is checked by hand)
 - [ ] **pytest** — `grep -rn "def setUp\|TestCase" --include="*.py" tests/` (legacy style
       [LOW]); `grep -rn "pytest.raises(Exception)" --include="*.py" tests/` (too-broad
       [MEDIUM]); `grep -rn "time.sleep" --include="*.py" tests/` (flaky timing [MEDIUM]);

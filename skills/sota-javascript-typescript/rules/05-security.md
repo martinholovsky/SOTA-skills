@@ -36,6 +36,19 @@ const safeUrl = (u: string) => { try { const p = new URL(u); return ['https:', '
 - Server-rendered HTML embedding JSON state: `JSON.stringify(state).replaceAll('<', '\\u003c')` to block `</script>` breakout.
 - Adopt Trusted Types where targets allow (`require-trusted-types-for 'script'` CSP) — it turns DOM-sink misuse into runtime errors.
 - `eval`/`new Function` on anything dynamic is CRITICAL. There is no safe "sandboxed eval" in-process (Node `vm` is NOT a security boundary — escapes are trivial; use isolated processes/`isolated-vm`/WASM).
+  - **Dynamic code evaluation has more spellings than `eval(`.** `Function('a', src)` works
+    without `new`. `node:vm` compiles code through `vm.Script`, `runInContext`,
+    `runInNewContext`, `runInThisContext`, `compileFunction` and `SourceTextModule`. Its docs
+    open with "The `node:vm` module is not a security mechanism. Do not use it to run
+    untrusted code." Measured on Node 22.22:
+    `vm.runInNewContext('this.constructor.constructor("return process")().version', {})`
+    returned the host's `process.version`. EJS/Pug template source is code too (§"Server-rendered HTML").
+  - **The safe shape is data, not code.** When input names an operation, look it up in a
+    dispatch table (`const ops = new Map([['sum', sum], ['avg', avg]])`, unknown key → 400),
+    never `obj[input]()`. User-authored formulas or rules need a parser for a fixed grammar
+    you own or have vetted, evaluated over an explicit variable map, and never compiled to JS.
+    Truly untrusted code runs in a separate process or isolate with its own resource limits
+    (`sota-sandboxing`). *OWASP: Code Review Guide; Proactive Controls 2024 C3; ASVS 5.0 V1.3.*
 
 ## CSP integration
 
@@ -234,6 +247,18 @@ res.setHeader('Set-Cookie',
 ```
 
 - `__Host-` prefix forces Secure + no Domain attribute + Path=/ — blocks subdomain cookie-tossing.
+- **Every other cookie the app sets starts from the framework's defaults, and none sets
+  `HttpOnly` or `Secure`.** Measured with a bare `('pref', 'dark')` call: Express 5.2.1
+  `res.cookie` emits `pref=dark; Path=/`. Hono 4.13 `setCookie` and Next 15.5's
+  `ResponseCookies` (the class behind `cookies().set`) emit the same. `@fastify/cookie` 11.1
+  `reply.setCookie` emits `pref=dark; SameSite=Lax`. Pass `{ httpOnly: true, secure: true,
+  sameSite: 'lax' }` explicitly, or wrap one helper that does, and set `Domain` only when a
+  subdomain must read the cookie. Drop `httpOnly` only when page JS must read the value, and
+  never for a value that authorizes anything. A cookie written by `document.cookie` can never
+  be HttpOnly. **The `__Host-` prefix is not checked by every server:** Hono threw
+  "__Host- Cookie must have Secure attributes" without `secure`, while Express sent
+  `__Host-pref=dark; Path=/; HttpOnly`, which browsers reject. *OWASP: Session Management
+  cheat sheet; Cookie Theft Mitigation cheat sheet; ASVS 5.0 V3.3.*
 - Rotate session IDs on login/privilege change (session fixation); server-side revocation list or short-lived JWT + refresh rotation with reuse detection.
 - CSRF for cookie-authed JSON APIs: require a custom header (e.g. `X-Requested-With`) and strict CORS — preflight enforcement makes cross-origin forgery fail; forms still need synchronizer tokens.
 - CORS: never `Access-Control-Allow-Origin: *` with `Allow-Credentials: true` (browsers reject it; reflecting `Origin` unvalidated recreates the hole — allowlist exact origins).
@@ -309,6 +334,12 @@ buffer first. The class is `sota-code-security` rules/06 §3.
 - [ ] `grep -rn "innerHTML\|outerHTML\|insertAdjacentHTML\|document.write" src/` — each with non-constant input is HIGH/CRITICAL; constant strings LOW.
 - [ ] `grep -rn "dangerouslySetInnerHTML\|v-html\|{@html}\|bypassSecurityTrust" src/` — sanitized with DOMPurify at render? Unsanitized user/db content = CRITICAL (stored XSS).
 - [ ] `grep -rn "eval(\|new Function(\|setTimeout(['\"\`]\|setInterval(['\"\`]" src/` — CRITICAL with dynamic input.
+- [ ] **Dynamic code evaluation beyond `eval(` (§"XSS", the `node:vm` bullet) — CRITICAL
+      when request data reaches it** —
+      `grep -rnE '(^|[^[:alnum:]_.])Function\(|vm\.(Script|runIn(New|This)?Context|compileFunction|SourceTextModule)|new (vm\.)?Script\(|\[[^]]*req\.(body|query|params)[^]]*\] *\(' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' .`
+      — hits are the `Function` constructor without `new`, `node:vm` used as a "sandbox",
+      and a method called by a request-chosen name. Replace with a dispatch table, a
+      fixed-grammar evaluator, or an out-of-process isolate.
 - [ ] `grep -rn "href={" src/ --include="*.tsx"` — user-controlled hrefs without protocol allowlist (`javascript:`) = HIGH.
 - [ ] `grep -rn "localStorage.setItem\|sessionStorage.setItem" src/ | grep -i "token\|jwt\|session\|auth\|key"` — HIGH.
 - [ ] `grep -rn "postMessage" src/` — `'*'` target with sensitive data (HIGH); message listener without origin check (HIGH).
@@ -348,6 +379,11 @@ buffer first. The class is `sota-code-security` rules/06 §3.
 - [ ] `grep -rn "NEXT_PUBLIC_\|VITE_" src/ .env*` — server secrets under public prefixes (CRITICAL).
 - [ ] Production error handler leaks stacks/SQL to clients (`grep -rn "err.stack\|error.stack" src/` in response paths) — MEDIUM.
 - [ ] Cookies: `grep -rn "Set-Cookie\|res.cookie" src/` — missing HttpOnly/Secure/SameSite on session cookies (HIGH).
+- [ ] **App-set cookie attribute defaults (§"Tokens and client-side auth") — MEDIUM, HIGH if
+      the value authorizes anything** —
+      `grep -rnE '(res|reply)\.(cookie|setCookie)\(|setCookie\(|cookies\(\)\.set\(|\.cookies\.set\(|document\.cookie *=' --include='*.js' --include='*.ts' --include='*.mjs' --include='*.cjs' --include='*.tsx' . | grep -vE 'httpOnly: *true.*secure: *true|secure: *true.*httpOnly: *true'`
+      — a call without both `httpOnly` and `secure` inline gets Express/Hono/Next's `Path=/` only
+      (Fastify adds `SameSite=Lax`). Read calls whose options are a variable.
 - [ ] `grep -rn "res.redirect\|window.location.*=\|location.href.*=" src/` with request-derived values — open redirect (MEDIUM/HIGH near auth flows).
 - [ ] Upload handlers: extension/MIME-only validation, client filename used in path (`grep -rn "originalname\|file.name" src/`) — HIGH.
 - [ ] **Template raw-output syntax (§"Server-rendered HTML")** — in template files:

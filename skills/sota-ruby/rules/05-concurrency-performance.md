@@ -46,6 +46,23 @@ Consequences:
 - **`Thread#[]`/`Thread#[]=` are fiber-local, not thread-local** — under a
   fiber scheduler or streaming server this "thread-local" silently resets;
   true thread-locals are `Thread#thread_variable_get/set`.
+- **Request-scoped ambient state has to be reset, because servers reuse
+  threads.** Puma's thread pool and a job runner's worker threads serve request
+  after request on the same thread. So a tenant, user or locale left in
+  `Thread.current[:k]`, a thread variable or `Fiber[:k]` leaks into the
+  **next** tenant's request. `Fiber[:k]` storage is also copied into every
+  `Thread.new` and `Fiber.new` created afterwards (measured on 4.0.6).
+  - Prefer `ActiveSupport::CurrentAttributes`: the Rails executor calls
+    `clear_all` when each request or job completes (activesupport 8.1.4).
+    Outside the executor (a plain thread, a Rack app without Rails), wrap the
+    work in `Current.set(tenant: t) { ... }`, which restores the old values in
+    an `ensure`.
+  - The `request_store` gem clears only in its Rack middleware, so a job runner
+    or a thread you start yourself is not covered.
+  - Raw ambient storage follows the same pattern: save the old value, set,
+    `yield`, and restore in `ensure`.
+
+  OWASP: Multi-Tenant Security and Session Management cheat sheets.
 - **`Queue.new` is unbounded; `SizedQueue.new(n)` is the backpressure.** Measured on Ruby
   4.0.6: 10,000 pushes into a `Queue` all succeeded and it has no `max`, while a
   `SizedQueue.new(2)` refused a third non-blocking push with `ThreadError (queue full)`. A
@@ -180,6 +197,10 @@ Run from repo root; verify each hit manually.
       threads?)
 - [ ] **Fiber-local mistaken for thread-local** —
       `grep -rnE "Thread\.current\[" --include='*.rb' . | head`
+- [ ] **Request-scoped tenant/user in thread-local or fiber storage without an `ensure`
+      reset (§2) — HIGH in multi-tenant code** —
+      `grep -rnE '(Thread\.current|Fiber)\[:[a-z_]*(tenant|user|account|locale|org)[a-z_]*\]\s*=[^=]|thread_variable_set\(:[a-z_]*(tenant|user|account|locale|org)|RequestStore\.(store\[|write)' --include='*.rb' . | grep -vE '\]\s*=\s*(nil|prev|previous|old|saved)\b'`
+      (each hit needs a restore in `ensure`, or it should move to `CurrentAttributes`)
 - [ ] **Threads without exception handling / join (manual review)** —
       `grep -rn "Thread.new" --include='*.rb' . | grep -v join | head`
 - [ ] **Ractor use — verify experimental caveats & removed APIs (Ractor.yield/#take gone in

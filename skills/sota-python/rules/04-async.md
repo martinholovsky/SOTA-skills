@@ -140,6 +140,17 @@ async with aclosing(stream_rows()) as rows:
   `get_event_loop().run_until_complete` inside libraries is a design error.
 - asyncio primitives (`asyncio.Lock`, `Queue`) are not thread-safe; crossing threads uses
   `loop.call_soon_threadsafe` / `asyncio.run_coroutine_threadsafe`.
+- **Per-request ambient state (tenant, user, locale, log context) is set and reset in the
+  same scope.** Keep it in a `contextvars.ContextVar`, never a module global or a
+  `threading.local`, and pair every `token = var.set(x)` with `var.reset(token)` in a
+  `finally` (or a context manager that does). Each asyncio task and each `asyncio.to_thread`
+  call runs in a copied context, so a value set there does not escape — measured on 3.13.
+  A thread that is *reused* is different: in a `ThreadPoolExecutor(max_workers=1)`, a
+  `threading.local` attribute and a `ContextVar` set by one job were both still visible to
+  the next job, and a `reset(token)` in `finally` cleared it. That is a threaded WSGI worker
+  or any pool serving request N+1 with request N's tenant. structlog's
+  `bind_contextvars` needs a `clear_contextvars()` at request start (or `bound_contextvars`
+  as a `with`). OWASP: Multi-Tenant Security cheat sheet; Session Management cheat sheet.
 
 ## 7. Common bugs checklist
 
@@ -266,3 +277,9 @@ async def pipeline(items: AsyncIterator[Item]) -> None:
       `grep -rlE 'create_task\(|TaskGroup\(' --include='*.py' src/` against
       `grep -rlE 'Semaphore\(' --include='*.py' src/` (a file that spawns tasks and holds no
       semaphore: read each loop that spawns one task per item)
+- [ ] **--- Request-scoped ambient state: ContextVar / thread-local not reset (§6) --- [HIGH
+      where it carries a tenant or user id; MEDIUM for log context]** —
+      `grep -rnE 'threading\.local\(|^[[:space:]]*[[:alnum:]_.]+\.set\([^)]|bind_contextvars\(' --include='*.py' src/`
+      (a `.set(x)` whose token is discarded cannot be reset; a `threading.local` survives into
+      the next request on a reused thread; a `bind_contextvars` needs a `clear_contextvars()`
+      at request start)

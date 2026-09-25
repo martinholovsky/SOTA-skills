@@ -80,6 +80,19 @@ void consumer(){ std::unique_lock lk(m); cv.wait(lk, []{return ready;}); use(); 
   four among the functions not required to avoid data races. Measured on macOS: two
   `localtime` calls returned the same pointer, and the first result then read the second
   call's year. Use `localtime_r`/`gmtime_r`, which write into a caller-supplied `struct tm`.
+- **Request-scoped state never lives in `thread_local` (or `__thread`, `pthread_setspecific`).**
+  Servers reuse a fixed set of threads: Drogon's event-loop threads (`app().setThreadNum`),
+  a pool running Boost.Asio's `io_context::run`, a job pool. A tenant id, user or locale that
+  one request left in a thread-local is still there for the next request on that thread, so
+  a handler that forgets to set it acts for the previous tenant. C++20 coroutines break it the
+  other way. Measured with Apple clang 21: a coroutine set a `thread_local`, `co_await`ed an
+  awaiter that resumed it on another `std::thread`, and then read an empty value. Pass a request
+  context object as a parameter instead. Logging MDCs are thread-local maps too:
+  `spdlog::mdc` (`put`/`remove`/`clear`) is a `static thread_local` map, and its header says it
+  is not supported in async mode. For `log4cxx::MDC`, prefer the RAII object
+  (`log4cxx::MDC scope("tenant", id);`, whose destructor removes the key) over bare
+  `MDC::put`. With spdlog, put inside a scope guard whose destructor calls `remove`. OWASP:
+  Multi-Tenant Security cheat sheet; Session Management cheat sheet.
 
 ## 5. Tooling
 
@@ -107,6 +120,12 @@ void consumer(){ std::unique_lock lk(m); cv.wait(lk, []{return ready;}); use(); 
       `grep -rnE 'system_clock::now\(\)' --include='*.cpp' --include='*.hpp' .` (read each: a
       deadline, timeout or elapsed interval wants `steady_clock`; a timestamp to display or
       store is the legitimate use)
+- [ ] **Request-scoped state in thread-local storage or an MDC never cleared (§4) — HIGH
+      where it carries a tenant or user id (a cross-tenant leak on a reused thread)** —
+      `grep -rnE '(thread_local|__thread)[^;]*(tenant|user|request|locale|session|ctx|context)' --include='*.c' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' .`
+      (each hit: who resets it, and is it read after a `co_await`?) ;
+      `grep -rlE '(MDC|mdc)::put[[:space:]]*\(' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' . | xargs -r grep -LE '(MDC|mdc)::(remove|clear)[[:space:]]*\('`
+      (a file that puts MDC keys and never removes them)
 - [ ] **Relaxed/weak memory order without justification — MEDIUM** —
       `grep -rnE 'memory_order_(relaxed|acquire|release|consume)' --include='*.cpp' .`
 - [ ] **condition_variable wait without predicate — MEDIUM (spurious/lost wakeup)** —

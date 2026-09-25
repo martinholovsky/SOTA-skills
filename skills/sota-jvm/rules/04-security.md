@@ -72,7 +72,12 @@ Standards: [SEI CERT Oracle Java](https://wiki.sei.cmu.edu/confluence/display/ja
   Jakarta EL (`ELProcessor`, `ExpressionFactory.createValueExpression`), Groovy
   (`GroovyShell`, `Eval.me`), Spring expression contexts, and template engines
   (FreeMarker, Velocity, Pebble) compiling a template *string* from user input are
-  RCE. Don't evaluate untrusted expressions; sandbox or remove the capability.
+  RCE. So is reflection named by input: `Class.forName(in)` loaded `java.lang.Runtime` (Temurin
+  25.0.4). Dispatch via a fixed `Map<String, Handler>`/`enum` or a grammar you parse. A bare
+  `parseExpression(in).getValue()` builds a `StandardEvaluationContext`; Spring's Javadoc says even
+  `SimpleEvaluationContext` "must not be considered safe" for untrusted expressions. **No in-process
+  sandbox is a boundary** (`System.setSecurityManager` threw `UnsupportedOperationException` on
+  25.0.4): use a separate process or drop it. OWASP: Code Review Guide, Proactive Controls C3.
 - **Regex from input, and the shapes `java.util.regex` still cannot survive** (CWE-1333;
   class: `sota-code-security` rules/01 §10). A pattern compiled from request data
   (`Pattern.compile(userInput)`, `s.matches(userInput)`) hands the caller the regex engine.
@@ -304,11 +309,13 @@ All Spring facts below were checked against Spring's own docs, advisories and so
   always enabled by default" and adds `COOKIE` beside it, so `encodeURL`/
   `encodeRedirectURL` can put `;jsessionid=` into links, logs and `Referer` headers. Set
   the tracking mode to cookie only: `server.servlet.session.tracking-modes=cookie` in
-  Spring Boot, or `<tracking-mode>COOKIE</tracking-mode>` in `web.xml`. A cookie you create
-  with `new jakarta.servlet.http.Cookie(...)` reads `getSecure()`/`isHttpOnly()` as false
-  until you set them. Tomcat's own session cookie is `HttpOnly` by default
-  (`StandardContext.useHttpOnly = true`). Attribute policy is `sota-code-security`
-  rules/05.
+  Spring Boot, or `<tracking-mode>COOKIE</tracking-mode>` in `web.xml`. **A cookie the app sets
+  itself starts bare**: `new jakarta.servlet.http.Cookie(...)` and Spring's `ResponseCookie.from`
+  builder both default secure/HttpOnly to false with no SameSite, Path or Domain (servlet-api
+  6.1.0, spring-web 7.0.9 source). Set each: `.secure(true).httpOnly(true).sameSite("Lax")`, or
+  `setAttribute("SameSite", "Lax")` (Servlet 6.0+); Tomcat 11 adds none unless its `CookieProcessor`
+  sets `sameSiteCookies`. Prefer a `__Host-` name (`Secure`, `Path=/`, no `Domain`). Its session
+  cookie is `HttpOnly` (`StandardContext.useHttpOnly = true`). Policy: `sota-code-security` rules/05.
 
 
 ## 7. Native and off-heap memory — JNI, FFM, `Unsafe`
@@ -354,6 +361,7 @@ the class is `sota-code-security` rules/06 §3.
       `grep -rnE 'ELProcessor|createValueExpression|createMethodExpression|GroovyShell|Eval\.me\(|Velocity\.evaluate|VelocityEngine|freemarker\.template\.Template|PebbleEngine' --include='*.java' --include='*.kt' .`
       (a template or expression built from a request string is the finding; a template
       loaded by name from the classpath is not)
+- [ ] **Dynamic code evaluation by name: reflection, SpEL parsed from a variable or a `StandardEvaluationContext` — CRITICAL on input** (§2) — `grep -rnE '(Class\.forName|\.getMethod|\.getDeclaredMethod|parseExpression)\([[:space:]]*[^"[:space:])]|StandardEvaluationContext' --include='*.java' --include='*.kt' .` (a literal first argument does not match; trace each hit to a request value)
 - [ ] **LDAP filter injection and directory-borne deserialization — HIGH/CRITICAL** (§2) —
       `grep -rnE '\.search\([^;]*"[[:space:]]*\+' --include='*.java' --include='*.kt' .`
       (concatenated filter; use the `{0}` + `Object[]` overload) ;
@@ -440,11 +448,11 @@ the class is `sota-code-security` rules/06 §3.
       `grep -rnE 'allowedOriginPatterns\([^)]*"\*"|addAllowedOriginPattern\("\*"\)|originPatterns[[:space:]]*=[[:space:]]*"\*"|allowCredentials[[:space:]]*(\(|=)[[:space:]]*"?true' --include='*.java' --include='*.kt' .`
       (a `*` pattern and `allowCredentials` true on the same mapping reflect every origin;
       Spring's own `*` + credentials guard does not cover patterns)
-- [ ] **Session IDs in URLs; cookies without Secure/HttpOnly — MEDIUM** (§6) —
+- [ ] **Session IDs in URLs; app-set cookies without Secure/HttpOnly/SameSite — MEDIUM** (§6) —
       `grep -rnE 'new (jakarta\.servlet\.http\.|javax\.servlet\.http\.)?Cookie\(|encodeURL\(|encodeRedirectURL\(|tracking-modes|trackingModes|setSessionTrackingModes|<tracking-mode>' --include='*.java' --include='*.kt' --include='*.properties' --include='*.y*ml' --include='web.xml' .`
       (no cookie-only tracking-mode setting means Tomcat's default still includes `URL`) ;
-      `grep -rnE 'setHttpOnly\(true\)|setSecure\(true\)' --include='*.java' --include='*.kt' .`
-      (each `new Cookie(` above needs both, or the builder equivalents)
+      `grep -rlE 'new (jakarta\.servlet\.http\.|javax\.servlet\.http\.)?Cookie\(|ResponseCookie\.from\(' --include='*.java' --include='*.kt' . | while IFS= read -r f; do grep -qi 'samesite' "$f" || echo "$f"; done`
+      (files creating a cookie that never set SameSite; at every creation site also confirm `setSecure(true)`/`setHttpOnly(true)` or `.secure(true).httpOnly(true)`)
 - [ ] **Crypto misuse — HIGH** —
       `grep -rnE 'new Random\(|Math\.random|ThreadLocalRandom' --include='*.java' . | grep -iE 'key|token|iv|salt|nonce|secret'`
       ;

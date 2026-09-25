@@ -51,6 +51,22 @@ are mechanical — follow them. Reference:
   `Parallel` options).
 - `ValueTask` for very hot, often-synchronous paths — but don't await a
   `ValueTask` twice or store it (`rules/05`).
+- **Request-scoped ambient state (tenant, user, culture, log scope).** Pool threads carry
+  thread-local state into whichever request runs on them next. Measured on .NET 10 Kestrel: after
+  a request set a `[ThreadStatic]` field and did not clear it, 9 of 20 later requests read
+  `leaked`. The same applies to `ThreadLocal<T>` and to static fields in a singleton, so never
+  keep per-request data in any of them. **`AsyncLocal<T>`** follows the async flow instead
+  (`IHttpContextAccessor` is built on it). A value set in middleware did not reach the next
+  request on the same keep-alive connection (measured). It has three traps, all measured:
+  - A value set inside an `async` method is gone when the caller resumes, but a value set in a
+    **synchronous** helper stays set for the caller.
+  - `Task.Run` and a `new Timer` started during a request **capture** the value. Background work
+    started from a request keeps running as that tenant until you start it inside
+    `using (ExecutionContext.SuppressFlow())`, which it then saw as `null`.
+  - Nothing clears a value you set. Restore the previous value in a `finally`.
+
+  Prefer a scoped DI service (`AddScoped<TenantContext>()`), which the container disposes with
+  the request. `ILogger.BeginScope` returns an `IDisposable`, so open it only in a `using`. *(OWASP: Multi-Tenant Security and Session Management cheat sheets.)*
 
 ## Audit checklist
 
@@ -69,4 +85,9 @@ are mechanical — follow them. Reference:
       `grep -rnE 'new (Dictionary|List)<' --include='*.cs' . | grep -i 'static\|shared'`
       (non-concurrent shared)
 - [ ] **Unbounded parallelism — MEDIUM (verify bounding)** —
-      `grep -rnE 'Task\.WhenAll|Parallel\.(For|ForEach)' --include='*.cs' . | head`
+      `grep -rnE 'Task\.WhenAll|Parallel\.(For|ForEach)' --include='*.cs' . | head`- [ ] **Request-scoped state in thread-local or `AsyncLocal` storage — HIGH in a multi-tenant
+      service (cross-tenant leak)** (§5) —
+      `grep -rnE '\[ThreadStatic\]|ThreadLocal<|AsyncLocal<|ExecutionContext\.SuppressFlow|CallContext\.' --include='*.cs' .`
+      (a thread-local holding tenant/user data is the finding. An `AsyncLocal` must be set in
+      async code and restored in `finally`, and background work started from a request needs
+      `SuppressFlow`; prefer a scoped DI service)

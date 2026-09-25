@@ -82,6 +82,23 @@ Replace on sight (CERT STR/FIO; MISRA):
   `PQprepare`, `mysql_stmt_prepare` + `mysql_stmt_bind_param`. SQLite's own
   printf escapes only with `%q`/`%Q`/`%w`. A `%s` in `sqlite3_mprintf` is
   plain interpolation.
+- **Dynamic code evaluation from external input.** C and C++ have no `eval`, so runtime code
+  generation arrives through an embedded interpreter or a lookup by name: Lua
+  `luaL_dostring`/`luaL_loadstring`/`luaL_loadbuffer`, CPython `PyRun_SimpleString`, an embedded
+  JavaScript engine's eval entry point, `dlsym(handle, name)` with `name` taken from input (the C
+  form of reflection), or source written to disk, compiled and `dlopen`ed. Never let input reach
+  any of them. Map input to behaviour through a fixed dispatch table
+  (`std::unordered_map<std::string_view, handler>`, a `switch` over an `enum class`), or parse it
+  with a small expression grammar you own that evaluates only the operators you list. If a
+  third-party script really must run, an embedded interpreter is **not a security boundary**: it
+  shares your address space, so one interpreter bug is memory corruption in your process. Run it
+  in a separate sandboxed process (`sota-sandboxing`). Lua specifics, read in the Lua sources:
+  `luaL_openlibs` opens `io`, `os` (`os.execute`) and `package` (native-library loading), so open
+  only the libraries a script needs. A NULL load mode means `"bt"`, which accepts precompiled
+  binary chunks, and the manual warns that Lua "does not check the consistency of binary chunks"
+  and that such chunks "can crash the interpreter". Pass `"t"` to `luaL_loadbufferx`.
+  `luaL_loadbuffer` always passes NULL. `luaL_loadstring`, and so `luaL_dostring`, passes NULL up
+  to 5.5.0 and `"t"` from 5.5.1. OWASP: Code Review Guide; Proactive Controls 2024 C3; ASVS 5.0 V1.3.
 - **Regex as a control (validation, allowlist, routing, redaction): escaping, anchoring,
   bounds, engine.** For untrusted input prefer RE2: it guarantees match time linear in the
   input and rejects backreferences and general lookaround rather than backtrack.
@@ -139,6 +156,21 @@ Replace on sight (CERT STR/FIO; MISRA):
   `std::filesystem::weakly_canonical`/`realpath` and verify the result stays
   under an allowed root; prefer `openat`/`O_NOFOLLOW` and operate on fds to
   avoid check-then-use races on the path.
+- **Cookies the application sets itself.** The session cookie is covered in `sota-code-security`
+  rules/17. This bullet is for every other cookie. Defaults, read in each framework's source:
+  Drogon's `drogon::Cookie` (sent with `resp->addCookie(key, value)` or `addCookie(cookie)`)
+  starts with `HttpOnly` on and `Secure` off, and writes no `SameSite`, `Path` or `Domain` until
+  you set them. Its `SameSite::kNone` adds `Secure` by itself. Crow's `CookieParser`
+  (`ctx.set_cookie(k, v)`) starts with every attribute off, and its `SameSitePolicy::None` does
+  **not** add `Secure`, which browsers require for `SameSite=None`. cpp-httplib has no cookie
+  builder, so `res.set_header("Set-Cookie", ...)` is a string you assemble, attributes included.
+  Set every attribute explicitly: `Secure`, `HttpOnly` unless script must read the value,
+  `SameSite=Lax` or `Strict`, and `Path=/` (Drogon: `setSecure(true)`, `setHttpOnly(true)`,
+  `setSameSite(Cookie::SameSite::kLax)`, `setPath("/")`. Crow: `.secure().httponly().path("/")
+  .same_site(...)`). Browsers treat an omitted `SameSite` differently (some default to `Lax`), so
+  never rely on it. Prefer a `__Host-` name, because the browser then rejects the cookie unless it
+  is `Secure`, has `Path=/` and has no `Domain`, so a sibling subdomain cannot set or shadow it.
+  OWASP: Session Management cheat sheet; Cookie Theft Mitigation cheat sheet; ASVS 5.0 V3.3.
 
 ## 4. Cryptography and randomness
 
@@ -189,6 +221,18 @@ network-facing or setuid binary is a HIGH finding. From the OpenSSF guide:
 - Add `-fsanitize=address,undefined` to the *debug/test* build (not prod).
   Consider `-fhardened` (GCC 14+) as a shorthand umbrella — verify your
   compiler version supports it.
+- **Debug mode in production: C/C++ has no dev server, so the "debug mode" is the build.**
+  An empty `CMAKE_BUILD_TYPE`, a `Debug` build, `-fsanitize=*` or `-D_GLIBCXX_DEBUG` must never
+  produce the artifact you ship. Measured with CMake 4.4.3: with no `CMAKE_BUILD_TYPE` the
+  compile line carried neither `-O` nor `-DNDEBUG`, so the shipped binary is unoptimised
+  and every `assert` stays live. Check it at compile time, not by habit. The release pipeline
+  passes its own `-DAPP_RELEASE=1`. Do not derive it from the build type, which is the thing
+  being checked. The source then refuses a debug or sanitizer build:
+  `#if defined(APP_RELEASE) && (!defined(NDEBUG) || defined(APP_ASAN))` → `#error`, with
+  `APP_ASAN` defined from `__SANITIZE_ADDRESS__` (GCC documents it for `-fsanitize=address`)
+  **or** `__has_feature(address_sanitizer)`, behind a `defined(__has_feature)` guard. Test both
+  because Apple clang 21 with `-fsanitize=address` set only the second (measured). OWASP: Error
+  Handling cheat sheet; Secure Headers Project; ASVS 5.0 V13.4.
 - Treat warnings as errors (`-Werror`) in CI; a clean `-Wall -Wextra` is the
   floor, not the ceiling — also run a static analyzer (`rules/06`).
 
@@ -271,6 +315,13 @@ a sandbox over running as root at all (`sota-sandboxing`).
       `grep -rnE 'system\(|popen\(|exec[lv]p?\(' --include='*.c' --include='*.cpp' .` ;
       `grep -rnE 'fopen|open\(|realpath|access\(' --include='*.c' --include='*.cpp' .`
       (check-then-use races)
+- [ ] **Dynamic code evaluation from external input: embedded interpreter or by-name symbol
+      lookup (§3) — CRITICAL where request data reaches it, HIGH for a Lua load with no `"t"`
+      mode** —
+      `grep -rnE '(luaL_(dostring|dofile|loadstring|loadbuffer|loadbufferx|loadfilex?)|lua_load|PyRun_[A-Za-z]+|Py_CompileString|dlsym)[[:space:]]*\(' --include='*.c' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' .`
+      (trace each argument back to its source. A `dlsym` name or a chunk derived from input is the
+      finding. Also check for a Lua mode other than `"t"`, and for `luaL_openlibs` in place of
+      the few libraries the script needs)
 - [ ] **SQL built as a string (§3) — HIGH/CRITICAL where input reaches it** —
       `grep -rnE '(sqlite3_exec|PQexec|mysql_(real_)?query)[[:space:]]*\(' --include='*.c' --include='*.cpp' .`
       (a whole-statement API: read how the string was built);
@@ -290,6 +341,13 @@ a sandbox over running as root at all (`sota-sandboxing`).
       `grep -rlE 'CURLOPT_(URL|CURLU)' --include='*.c' --include='*.cpp' --include='*.cc' . | xargs -r grep -L 'CURLOPT_OPENSOCKETFUNCTION'`
       (a file that sets a URL with no connect-time address check: read whether the destination
       is caller-influenced, and look for `CURLOPT_PROTOCOLS_STR` beside it)
+- [ ] **App-set cookie attribute defaults: Secure flag, HttpOnly, SameSite, Path (§3) — HIGH
+      for a cookie that carries an identifier or preference used for authorisation, MEDIUM
+      otherwise** —
+      `grep -rlE 'addCookie[[:space:]]*\(|set_cookie[[:space:]]*\(|"Set-Cookie"' --include='*.c' --include='*.cpp' --include='*.cc' --include='*.h' --include='*.hpp' . | xargs -r grep -LE 'setSecure[[:space:]]*\([[:space:]]*true|\.secure[[:space:]]*\([[:space:]]*\)|;[[:space:]]*Secure'`
+      (each listed file sets a cookie and never marks one `Secure`. Drogon defaults it off and Crow
+      defaults every attribute off. In the files that do set it, read each cookie for `HttpOnly`,
+      an explicit `SameSite`, `Path=/` and a `__Host-` name)
 - [ ] **Privilege drop (§7) — HIGH on a setuid program or a root-started daemon** —
       `grep -rnE '^[[:space:]]*(setuid|setgid|setresuid|setresgid|setgroups|initgroups)[[:space:]]*\([^;]*\)[[:space:]]*;' --include='*.c' --include='*.cpp' .`
       (a call used as a bare statement: its return value is discarded. The trailing `;` keeps
@@ -302,6 +360,12 @@ a sandbox over running as root at all (`sota-sandboxing`).
       (timing leak)
 - [ ] **Hardening flags present? — HIGH if missing on network/setuid binary** —
       `grep -rnE '_FORTIFY_SOURCE|stack-protector|relro|cf-protection|_GLIBCXX_ASSERTIONS|fPIE' . --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' || echo "no hardening flags found"`
+- [ ] **Shipped artifact built in debug mode rather than release mode: empty or `Debug` build
+      type, sanitizer runtime, `_GLIBCXX_DEBUG` (§5) — HIGH on a network-facing binary** —
+      `grep -rnE '(^|[[:space:]])cmake[[:space:]]+[^|;&]*(-S|-B|\.\.)|-fsanitize=|_GLIBCXX_DEBUG' --include='Dockerfile*' --include='Containerfile*' --include='*.spec' --include='PKGBUILD' --include='rules' --include='*.yml' --include='*.yaml' . | grep -vE 'CMAKE_BUILD_TYPE=(Release|RelWithDebInfo|MinSizeRel)'`
+      (a configure step with no release build type, or a debug-only flag, in packaging or CI. In
+      CI only the job that produces the shipped artifact matters, since test jobs rightly
+      sanitize. Then look for the `APP_RELEASE` `#error` guard in the source)
 - [ ] **Static + safety-standard analysis** —
       `clang-tidy --checks='cert-*,bugprone-*,clang-analyzer-security.*' <files>` ;
       `cppcheck --enable=warning,portability --addon=cert <src>`

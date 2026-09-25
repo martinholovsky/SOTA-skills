@@ -261,6 +261,21 @@ CONCEPTS = [
     ("dependency adoption (selection & insecure defaults)", "universal",
      r"adopting a dependency|dependency (selection|adoption)|before adding a dependency|"
      r"new dependency|scorecard|deps\.dev|insecure default|slopsquat|hallucinated package"),
+    # ROADMAP 66 step 3c (2026-09-25): briefed as four CONDITIONAL concepts; three turned out to
+    # exist in all nine (an embeddable interpreter, a web framework that sets cookies, a debug
+    # build even in C/C++) and are universal. Request-scoped context stays conditional: Go's
+    # goroutines have no local storage, a principled absence recorded in docs/LANGUAGE-TIER.md.
+    ("dynamic code evaluation", "universal",
+     r"eval[^a-z]|exec\(|new function|scriptengine|groovy|spel|csharpscript|instance_eval|class_eval|"
+     r"constantize|dynamic code|runtime code generation|code evaluation"),
+    ("app-set cookie defaults", "universal",
+     r"set_cookie|setcookie|set-cookie|cookie (attribute|default|flag)|httponly|samesite|secure flag"),
+    ("debug / dev mode in production", "universal",
+     r"debug mode|debug=true|app_debug|display_errors|node_env|aspnetcore_environment|"
+     r"developerexceptionpage|devtools|dev server|development server|werkzeug|gin_mode|release mode"),
+    ("request-scoped context cleanup", "conditional:has thread-local, context-local or async-local storage",
+     r"contextvar|threadlocal|thread-local|thread local|asynclocal|asynclocalstorage|mdc|"
+     r"currentattributes|requeststore|request-scoped|worker mode"),
     ("SSRF / outbound request validation", "universal",
      r"ssrf|server-side request forgery|outbound request|internal address|metadata endpoint|"
      r"169\.254|dns rebind"),
@@ -342,6 +357,10 @@ UNIVERSAL_FLOOR = [
     "install/build-time code execution",
     # ROADMAP 66 step 3b, 2026-09-25: written into all nine and pinned the same day.
     "dependency adoption (selection & insecure defaults)",
+    # ROADMAP 66 step 3c, 2026-09-25: found in all nine and pinned the same day.
+    "dynamic code evaluation",
+    "app-set cookie defaults",
+    "debug / dev mode in production",
 ]
 
 def classify(text):

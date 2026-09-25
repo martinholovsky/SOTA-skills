@@ -94,6 +94,28 @@ after `fork` in the child, where "normal operations like `malloc`, accessing
 environment variables through `std::env` or acquiring a mutex are not guaranteed to
 work"; keep it async-signal-safe or use a purpose-built crate.
 
+**R9.8 — Code evaluation from input runs a program without a `Command`.** Rust has no
+`eval`, so dynamic code evaluation arrives through a crate: an embedded interpreter fed a
+caller's text (`mlua` `lua.load(src).exec()`, `rhai::Engine::eval`/`run`, an embedded JS
+engine), a plugin loaded from a caller-influenced path (`libloading::Library::new` is an
+`unsafe fn` because loading "executes initialisation routines"), or a registry that
+resolves a type or function name taken from input. Read in mlua 0.12.1, rhai 1.26.1,
+libloading 0.9.0 and measured on rustc 1.97.1:
+- **mlua's "safe" is memory safety, not a sandbox.** `Lua::new()` loads the *safe subset*
+  and `os.execute` and `io.open` were both present (measured, `lua54`). Untrusted text
+  gets `Lua::new_with(StdLib::TABLE | StdLib::STRING | StdLib::MATH, LuaOptions::default())`
+  — measured: no `os`, no `io`.
+- **rhai sets no resource limits.** `Engine::new()` reports `max_operations`,
+  `max_string_size` and `max_array_size` as 0, meaning unlimited, so `loop {}` pins a
+  thread. Set `set_max_operations` (measured: 100,000 stopped `loop {}` with "Too many
+  operations"), `set_max_call_levels`, `set_max_expr_depths` and the size limits.
+- **Prefer no evaluation**: a `match` or `HashMap<&str, fn(..)>` dispatch table over an
+  allowlist of names, or a parser you own for a fixed grammar (no loops, no host calls).
+- **An in-process interpreter is not a security boundary**: an engine bug, or a host
+  function you registered, reaches the whole process. Hostile code goes to a separate
+  process or Wasm sandbox (`sota-sandboxing` rules/01, rank 7 is treated as no boundary).
+OWASP: Code Review Guide; Proactive Controls 2024 C3; ASVS 5.0 V1.3.
+
 For the isolation the child itself needs — seccomp/Landlock, fd-only interfaces,
 memory budgets — see `sota-sandboxing` rules/04 §5 and rules/02 R7.2a.
 
@@ -111,3 +133,8 @@ memory budgets — see `sota-sandboxing` rules/04 §5 and rules/02 R7.2a.
       `wait()`/`wait_with_output()` = High on any attacker-influenced child, and a
       `tokio::time::timeout` without `.kill_on_drop(true)` (or an explicit kill)
       leaves the child running when it fires (R9.5).
+- [ ] **Dynamic code evaluation from input (R9.8) — Critical if the text is
+      caller-influenced, else Medium** —
+      `rg -n -t rust 'Lua::(new|new_with|unsafe_new)\(|rhai::|Engine::new(_raw)?\(|\.eval(_with_scope|_expression)?(::<[^>]*>)?\(|Library::new\(' .`
+      — each hit: where the text or path comes from, which stdlib/limits are set, and why
+      a dispatch table would not do. An in-process engine counts as no sandbox.

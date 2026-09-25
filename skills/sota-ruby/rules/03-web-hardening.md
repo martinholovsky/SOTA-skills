@@ -93,6 +93,19 @@ params.expect(user: [:name, :email])   # Rails 8.0+, raises 400 on bad shape
   minimum. Rack example:
   `use Rack::Session::Cookie, secure: true, httponly: true, same_site: :lax,
   secret: ENV.fetch("SESSION_SECRET")`.
+- **Cookies the app sets itself do not inherit the session cookie's flags.**
+  Rails `cookies[:k] = v` (and `.signed`/`.encrypted`/`.permanent`) defaults to
+  `path: "/"`, no `HttpOnly`, and `SameSite` from
+  `config.action_dispatch.cookies_same_site_protection` (`:lax` from
+  `load_defaults 6.1`). It adds `Secure` only when `config.force_ssl` is on,
+  because `ActionDispatch::SSL` appends it (read from actionpack 8.1.4).
+  Rack's `response.set_cookie` (which Sinatra uses) adds **no** attribute at all:
+  `set_cookie("a", "1")` emits `a=1` (measured, rack 3.2.7). Pass a hash:
+  `{ value:, httponly: true, secure: true, same_site: :lax, path: "/" }`, and
+  leave out `domain:` unless subdomains must read the cookie. Name a
+  host-bound cookie `__Host-name`: browsers accept it only with `secure`,
+  `path=/` and no `domain`. OWASP: Session Management and Cookie Theft
+  Mitigation cheat sheets; ASVS 5.0 V3.3.
 - **Rotate the session on privilege change** (`reset_session` at login /
   logout / role elevation) — session fixation otherwise.
 - The cookie-signing/encryption secret (`secret_key_base` in Rails; the Rack
@@ -133,6 +146,23 @@ params.expect(user: [:name, :email])   # Rails 8.0+, raises 400 on bad shape
 - Match `Host`/origin checking to deployment: Rails
   `config.hosts`; elsewhere validate `Host` against an allowlist — DNS
   rebinding and cache-poisoning use wildcard hosts.
+- **Debug mode is the default, not an opt-in.** If the environment variables
+  are unset, every layer starts in development. `Rails.env` falls back
+  through `RAILS_ENV`, then `RACK_ENV`, to `"development"` (railties 8.1.4).
+  Sinatra reads `APP_ENV`, then `RACK_ENV`, falls back to `:development`, and
+  sets `show_exceptions` to `development?`. `rackup` defaults `RACK_ENV` to
+  development and then adds `Rack::ShowExceptions`, the page that prints
+  backtraces (rackup 2.3.1). Puma's own `environment` also defaults to
+  `"development"` (puma 8.0.2). In a deployed image, set `RAILS_ENV` /
+  `RACK_ENV` / `APP_ENV=production` explicitly and fail at boot if it is
+  missing: `abort "RACK_ENV unset" if ENV["RACK_ENV"].to_s.empty?`.
+  Production keeps `config.consider_all_requests_local = false`, the
+  generated value. Put `web-console` in the Gemfile's `:development` group;
+  it aborts boot outside development unless `config.web_console.development_only
+  = false`, and that override is itself a finding. A `rails server`/`rackup`
+  started with the development env is a development server whatever the
+  handler. OWASP: Error Handling cheat sheet; Secure Headers Project;
+  ASVS 5.0 V13.4.
 
 ## 6. Redirects and SSRF
 
@@ -255,6 +285,10 @@ first — it covers XSS/mass-assignment/redirect sinks mechanically.
       `grep -rnE "Rack::Session::Cookie" --include='*.rb' config.ru 2>/dev/null | grep -v "secure: true"`
       ; `grep -rn "reset_session" --include='*.rb' . | head -1` (absent around login = MEDIUM);
       `grep -rn "secret_key_base\|SESSION_SECRET" --include='*.rb' --include='*.yml' . | grep -vE "ENV|credentials"`
+- [ ] **App-set cookie without HttpOnly (§4) — MEDIUM; HIGH when it carries a token or
+      identity** — `grep -rnE 'cookies(\.[a-z]+)*\[[^]]+\]\s*=[^=~]|set_cookie\(' --include='*.rb' . | grep -v 'httponly'`
+      (a hash split across lines is a false hit; then confirm `secure:`/`same_site:` are
+      set, or `force_ssl` is on)
 - [ ] **Redirects / SSRF** — `grep -rnE 'redirect(_to)?\s*\(?\s*params' --include='*.rb' .` ;
       `grep -rn "allow_other_host: true" --include='*.rb' .` ;
       `grep -rnE '(Net::HTTP|URI\.open|Faraday|HTTParty)[^#]*params' --include='*.rb' .`
@@ -277,6 +311,9 @@ first — it covers XSS/mass-assignment/redirect sinks mechanically.
       Rails apps: `grep -rn 'filter_parameters' config/` — exit 1 means no parameter is
       filtered from the logs (HIGH); exit 2 means there is no `config/` to read. A list
       narrower than the generated default needs a reason
+- [ ] **Debug mode / development server settings reaching production (§5) — HIGH** —
+      `grep -rnE 'consider_all_requests_local\s*=\s*true|development_only\s*=\s*false|:show_exceptions,\s*true|(RAILS|RACK|APP)_ENV[=: ]+"?development' --include='*.rb' --include='*.ru' --include='*.yml' --include='Dockerfile*' --include='Procfile*' . | grep -vE 'environments/(development|test)\.rb'`
+      (and confirm the deploy manifest sets the env at all — unset means development)
 - [ ] **Transport** — `grep -rn "force_ssl" --include='*.rb' config/ 2>/dev/null | head -1` ;
       `grep -rn "VERIFY_NONE" --include='*.rb' .` (outbound TLS verification disabled — HIGH) ;
       `grep -rnE 'verify_host_key:\s*(:never|:accept_new|false|true)|paranoid:\s*(false|true)' --include='*.rb' .`

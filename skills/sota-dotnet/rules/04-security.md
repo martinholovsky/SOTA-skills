@@ -88,6 +88,27 @@ network/file/DB/config as untrusted. Reference:
     and it rejects `RightToLeft`. When you need those, stay on the backtracking engine with a timeout.
     *(OWASP: Input Validation cheat sheet; OWASP Proactive Controls 2024 C3; ASVS 5.0 V1.2.9;
     OWASP Go-SCP, validation.)*
+- **Dynamic code evaluation: input must never become code.** .NET has no `eval`, but these do the
+  same job: Roslyn scripting (`CSharpScript.EvaluateAsync`/`RunAsync` from
+  `Microsoft.CodeAnalysis.CSharp.Scripting`), `CSharpCompilation.Create` + `Assembly.Load` of the
+  bytes, `System.Reflection.Emit`, templates compiled to C# at runtime, and **dynamic LINQ**
+  (`System.Linq.Dynamic.Core`: a `.Where("…")` string or `DynamicExpressionParser`). It also covers
+  reflection that takes a name from the request: `Type.GetType(input)`, `Activator.CreateInstance`
+  on that type, and `GetMethod(input).Invoke`. Measured on .NET 10: `Type.GetType` turned
+  a string into `System.Diagnostics.Process`, and `Activator` then built a `ProcessStartInfo`.
+  Roslyn scripting with default `ScriptOptions` read `/etc/hostname`. **Removing references is
+  not a sandbox.** With `WithReferences(empty).WithImports()`, a direct `Process.Start` failed
+  to compile. The same script then went through `Type.GetType(...).GetMethod("Start").Invoke`
+  and created a file on disk. The runtime has no in-process boundary to fall back on: .NET 6+
+  has no CAS or extra AppDomains, and Microsoft says CAS *"is no longer treated as a security
+  boundary"*. It points you to OS boundaries (process, container, user account) instead
+  (`sota-sandboxing`). The safe shape is a `Dictionary<string, Func<…>>` dispatch table, or an
+  allowlist that maps names to `typeof(...)`, so input picks from a fixed set and is never
+  compiled. For user formulas, use an expression library with a fixed grammar and no member
+  access. Dynamic LINQ before 1.6.0 exposed reflection and static members (CVE-2024-51417). On
+  1.7.4, `"".GetType()` and `System.IO.File` were rejected (measured), but a caller-supplied
+  predicate can still filter on any property, so allowlist the fields it may name.
+  *(OWASP: Code Review Guide; Proactive Controls 2024 C3; ASVS 5.0 V1.3.)*
 - **SSRF: an outbound request to a destination the caller picks.** The policy is
   `sota-code-security` rules/01 §5. This bullet covers how to apply it in .NET. Best: take a key
   or ID from the caller, look up the base `Uri` in your own allowlist, and build the request
@@ -216,6 +237,17 @@ section is the .NET spelling an auditor has to grep for.
   `Strict`). `CookieBuilder.SecurePolicy` defaults to `SameAsRequest`: behind a TLS-terminating
   proxy without forwarded headers the request looks like HTTP and `Secure` is dropped — use
   `CookieSecurePolicy.Always`.
+- **Cookie scope: leave `Domain` unset, and a prefix is not enforced by the framework.** A new
+  `CookieOptions` has `Path = "/"` and `Domain = null`, which makes a host-only cookie. Setting
+  `Domain` (or `options.Cookie.Domain`) sends the cookie to that domain *and every subdomain*
+  (MDN), so leave it null unless the cookie really must be shared. For a cookie the app sets
+  itself, name it `__Host-…` with `Secure`, `Path=/` and no `Domain`. The browser then refuses
+  to let a sibling subdomain set or overwrite it. ASP.NET Core does not check the prefix. On
+  .NET 10 it emitted `__Host-b=v; domain=example.com; path=/; secure` and `__Host-c=v; path=/`
+  with no error (measured). The browser then silently drops both cookies, so a broken prefix
+  shows up as a missing cookie, not as an exception. The session/auth cookie is
+  `sota-code-security` rules/17. *(OWASP: Session Management and Cookie Theft Mitigation cheat
+  sheets; ASVS 5.0 V3.3.)*
 - **Open redirect.** `Redirect(url)` / `Results.Redirect(url)` follow any absolute URL. For a
   `returnUrl` use `LocalRedirect` (throws on a non-local URL) or check `Url.IsLocalUrl` first
   (ASP.NET Core "Prevent open redirect attacks"). CA3007 is the analyzer's taint version.
@@ -242,6 +274,23 @@ section is the .NET spelling an auditor has to grep for.
   checking) is HIGH unless the code says why. `ValidateIssuerSigningKey` defaults to `false`:
   it validates the *key* that verified the signature, which matters when a token can carry its
   own key (the source's example is X509Data) — set it `true` there.
+- **The Development environment is a debug mode, and it only takes one variable.** The
+  environment comes from `DOTNET_ENVIRONMENT` or `ASPNETCORE_ENVIRONMENT`. Under
+  `WebApplication` the `DOTNET_` value wins. When neither is set the environment is
+  `Production` (Microsoft docs, and measured: the SDK container image sets neither). In
+  `Development`, `WebApplication` adds the developer exception page **without any
+  `UseDeveloperExceptionPage()` call**. Measured on .NET 10: with the same binary, a throwing
+  endpoint returned an empty 500 in Production. With `ASPNETCORE_ENVIRONMENT=Development` it
+  returned the exception message, the stack trace and the source path and line. Anything gated
+  on `IsDevelopment()` switches on as well: the `webapi` template's `MapOpenApi()`, `EnableSensitiveDataLogging`
+  (§4) and seed or reset endpoints. So the finding is `Development` in a Dockerfile `ENV`, a
+  compose or Kubernetes manifest, a `web.config`, or `<EnvironmentName>` in a publish profile.
+  `launchSettings.json` is fine: Microsoft documents it as used only on the local machine and not
+  deployed. `dotnet run` and `dotnet watch` are development launchers that apply its first
+  profile, so a production container runs the published DLL (`dotnet app.dll`). Enforce it at
+  startup: in a Release build, fail fast when `builder.Environment.IsDevelopment()` is true (an
+  `#if !DEBUG` guard), and log `EnvironmentName`. *(OWASP: Error Handling cheat sheet; Secure
+  Headers Project; ASVS 5.0 V13.4.)*
 
 ## Audit checklist
 
@@ -339,4 +388,18 @@ section is the .NET spelling an auditor has to grep for.
       `GetAsync(key)` also matches). For every hit fed by a request, check three things.
       `grep -rnE 'ConnectCallback|UseProxy|AllowAutoRedirect' --include='*.cs' .` has to show
       a connect-time address check. The handler must not route through a proxy. Redirects must be
-      disabled or seen by that check. No hits means there is no DNS-rebinding defence.
+      disabled or seen by that check. No hits means there is no DNS-rebinding defence.- [ ] **Dynamic code evaluation from input — CRITICAL (runtime code generation, dynamic LINQ,
+      reflection by name)** (§3) —
+      `grep -rnE 'CSharpScript\.|CSharpCompilation\.Create|Assembly\.Load(From|File)?\([^"]|System\.Linq\.Dynamic\.Core|DynamicExpressionParser|Type\.GetType\([^")]|GetMethod\([^")]' --include='*.cs' --include='*.csproj' .`
+      (trace every hit to its source: a request-derived script, type or method name is the
+      finding; a `System.Linq.Dynamic.Core` version below 1.6.0 is CVE-2024-51417; a
+      reference-stripped `ScriptOptions` is not a mitigation)
+- [ ] **Cookie attribute scope: `Domain` set, or a `__Host-` cookie that breaks the prefix rules
+      — MEDIUM** (§7) —
+      `grep -rnE '(^|[^[:alnum:]_])Domain[[:space:]]*=[[:space:]]*[^=[:space:]]|"__Host-' --include='*.cs' . | grep -vE '(^|[^[:alnum:]_])Domain[[:space:]]*=[[:space:]]*null'`
+      (confirm a `Domain` hit is a cookie and must really span subdomains; every `__Host-`
+      cookie needs `Secure = true`, `Path = "/"` and no `Domain`, since ASP.NET Core emits it either way)
+- [ ] **`ASPNETCORE_ENVIRONMENT=Development` or `UseDeveloperExceptionPage` in production — HIGH** (§7) —
+      `grep -rnE 'UseDeveloperExceptionPage|(ASPNETCORE|DOTNET)_ENVIRONMENT[^=:]{0,12}[=:[:space:]][[:space:]]*"?Development|EnvironmentName[[:space:]]*=[[:space:]]*(Environments\.Development|"Development")|<EnvironmentName>Development' --include='*.cs' --include='*.json' --include='*.yml' --include='*.yaml' --include='Dockerfile*' --include='*.config' --include='*.pubxml' --include='*.csproj' . | grep -v 'launchSettings\.json'`
+      (the explicit call must sit behind `IsDevelopment()`; a Kubernetes `name:`/`value:` pair
+      spans two lines and escapes the pattern, so read the deployment manifests too)

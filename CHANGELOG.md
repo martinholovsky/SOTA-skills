@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Step 3c: dynamic code evaluation, app-set cookie defaults and debug/dev mode in
+  production are in all nine language skills and pinned in the floor (now 36).**
+  Request-scoped context cleanup is in eight and declared conditional; Go is a recorded
+  principled absence. All four were briefed as conditional, and the agents measured the
+  first three in C/C++ and Rust too.
 - **Arithmetic edge cases in all nine language skills, folded into "numeric precision &
   money" (ROADMAP 66 step 3b).**
   - A float parser accepts NaN/Inf from input, and a range check lets NaN pass.

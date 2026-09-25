@@ -193,6 +193,30 @@ function connect(string $dsn, string $user, #[\SensitiveParameter] string $passw
   belongs on no reachable route: add it to `disable_functions` in production. A framework debug
   page is the same class (`sota-code-security` rules/07 §6).
 
+## 5b. Debug mode and the development server
+
+The framework's debug switch outranks `display_errors`: its error page renders the trace and the
+configuration itself. The defaults point the wrong way for anyone who copies the dev setup.
+
+- **Laravel:** `config/app.php` reads `'debug' => (bool) env('APP_DEBUG', false)`, but the
+  skeleton's `.env.example`, which the installer copies to `.env`, ships `APP_ENV=local` and
+  `APP_DEBUG=true`. The docs: *"If the variable is set to `true` in production, you risk exposing
+  sensitive configuration values to your application's end users."*
+- **Symfony:** with no `APP_ENV`, the Runtime component assumes `dev`, and `APP_DEBUG` defaults
+  to on for every environment not listed in `prod_envs` (default `['prod']`) (read in
+  `SymfonyRuntime.php`, 8.0 branch). So `APP_ENV=staging` runs with debug on. The docs: *"the web
+  profiler must **never** be enabled in production"*; keep `symfony/web-profiler-bundle` and
+  similar debug bundles in `require-dev`, so `composer install --no-dev` removes them.
+- **The built-in server is not a production server.** `php -S`, and `php artisan serve`, which
+  runs it, is single-threaded, and php.net says it *"should not be used on a public network"*.
+  A container `CMD` that runs either is a finding. Serve through PHP-FPM or an application server.
+- **Assert it at boot.** Fail startup when the environment says production and debug is on (e.g.
+  `if ($env === 'prod' && $debug) { throw new LogicException('debug in production'); }` in the
+  front controller or a service provider), and check the running app with a request that
+  forces an error: the body must be the generic page, never a trace.
+
+OWASP: Error Handling cheat sheet, Secure Headers Project; ASVS 5.0 V13.4.
+
 ## 6. Security headers
 
 Set centrally (middleware or webserver), not per-page:
@@ -252,6 +276,12 @@ Run from repo root; verify each hit manually.
       `grep -rniE 'function[^(]*\([^)]*\$(pass(word)?|secret|token|api_?key|credentials?)' --include='*.php' src/ | grep -v 'SensitiveParameter'`
       (one-line signatures only: a signature split across lines, as PER-CS formats long ones,
       needs reading)
+
+- [ ] **Debug mode or the development server in production (§5b) — HIGH** — `APP_DEBUG` on,
+      a dev `APP_ENV`, or `php -S` / `artisan serve` in a deploy file:
+      `grep -rnE 'APP_DEBUG.?[=:][[:space:]]*.?(true|1)([^0-9A-Za-z]|$)|APP_ENV.?[=:][[:space:]]*.?(dev|local)([^A-Za-z]|$)|php[0-9.]*.?,?[[:space:]]*.?-S[[:space:]"]|artisan.?,?[[:space:]]*.?serve' --include='.env*' --include='Dockerfile*' --include='*.yml' --include='*.yaml' --include='Procfile' .`
+      . Values injected by the platform are not in the repo: read the running process's
+      environment, and force an error on the live app to confirm the generic page
 
 Severity guide: fixation (no strict mode + no regeneration) HIGH; md5/sha1
 passwords HIGH; predictable tokens HIGH; missing CSRF on state change HIGH;

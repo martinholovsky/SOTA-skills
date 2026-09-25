@@ -288,6 +288,42 @@ network:
     `Err` as a reject, lower the limit on request paths, and prefer staying in `regex`.
   OWASP: Input Validation cheat sheet; Proactive Controls 2024 C3; ASVS 5.0 V1.2.9;
   OWASP Go-SCP (validation, regular expressions).
+- **Cookies the app sets itself** (the session cookie is `sota-code-security` rules/17).
+  Measured with cookie 0.18.2, axum-extra 0.12.6, actix-web 4.15.0 and rocket 0.5.1:
+  - `Cookie::new("a", "b")` and `Cookie::build(("a", "b")).build()` serialise as a bare
+    `a=b`. There is no Secure, HttpOnly, SameSite or Path. axum-extra's `CookieJar::add` and
+    actix-web's `HttpResponseBuilder::cookie` send that unchanged (measured `x=y`), so the
+    browser picks the SameSite default, and MDN says only "some browsers" use `Lax`.
+  - Rocket's `CookieJar::add` fills in `Path=/` and `SameSite=Strict` but **not HttpOnly**.
+    It sets Secure **only when Rocket itself serves TLS** (`config.tls_enabled()`). Behind a
+    TLS-terminating proxy it sent `pub=v; SameSite=Strict; Path=/`. `add_private` also adds
+    HttpOnly and a one-week `Expires`.
+  - Set every attribute yourself:
+    `Cookie::build(("__Host-id", v)).secure(true).http_only(true).same_site(SameSite::Lax).path("/")`,
+    with no `.domain(..)`. Measured output: `__Host-id=v; HttpOnly; SameSite=Lax; Secure; Path=/`.
+    The `__Host-` prefix makes the browser require Secure and `Path=/` and reject any Domain
+    (MDN). Drop HttpOnly only for a cookie that script must read, such as a double-submit
+    CSRF token.
+  OWASP: Session Management and Cookie Theft Mitigation cheat sheets; ASVS 5.0 V3.3.
+- **Debug builds and dev tooling stay out of production.** Rust frameworks have no
+  debug page to switch off. The switches are the build profile and the tooling:
+  - `cargo run` and `cargo build` without `--release` use the dev profile. With it,
+    `debug_assertions` is on, so any `#[cfg(debug_assertions)]` dev-only route is compiled
+    in. Rocket picks its profile from `ROCKET_PROFILE`, which defaults to `debug` in a debug
+    build and `release` in a release build (rocket 0.5.1 source). With the `secrets`
+    feature and no `secret_key`, the `debug` profile quietly generates a random key, while
+    any other profile refuses to launch (`InsecureSecretKey`). `ROCKET_PROFILE=debug` on a
+    release binary therefore re-enables that fallback.
+  - Check production mode at startup. When your deployment environment says production,
+    refuse to start if `cfg!(debug_assertions)` is true, and for Rocket if
+    `rocket.config().profile != Config::RELEASE_PROFILE`. Build images with
+    `cargo build --release --locked`, never `cargo run`.
+  - tokio-console: `console_subscriber::init()` serves task internals over gRPC on
+    `127.0.0.1:6669` by default. `TOKIO_CONSOLE_BIND` can move it to another address, and
+    the 0.5.0 builder has no authentication or TLS setting. It also needs
+    `--cfg tokio_unstable`. Put it behind a cargo feature that release builds leave off,
+    and never bind it off loopback.
+  OWASP: Error Handling cheat sheet; Secure Headers Project; ASVS 5.0 V13.4.
 - Timeouts on **everything**: connect, read, write, total-request, idle
   (`TimeoutLayer`, `tower` middleware). Missing timeouts = slowloris.
 - Error responses: generic client text, full chain only into logs (rules/02
@@ -360,6 +396,19 @@ Running external programs (formerly section 9) moved to
       (a `format!` pattern without `regex::escape`, a backtracking engine, or line-mode
       anchors). For each `fancy_regex` hit confirm `backtrack_limit` and that an `Err` rejects;
       then read every validation regex for whole-input `^(?:…)$`/`\A…\z` and a length bound.
+- [ ] **App-set cookie attribute defaults (§7): a missing Secure flag, HttpOnly or SameSite.
+      High on an auth or identifier cookie, else Medium.** Run
+      `rg -n -t rust 'Cookie::(new|build)\(|(jar|cookies)\.add(_private)?\(' . | rg -v 'secure\(true\)'`.
+      Each hit builds a cookie without `secure(true)` on that line. Read multi-line builders
+      for `.secure(true)`, `.http_only(true)`, `.same_site(..)`, `.path("/")` and no `.domain(`.
+      Rocket's defaults do not add Secure behind a TLS-terminating proxy.
+- [ ] **Debug build or dev tooling in production (§7), meaning the service is not in release
+      mode. High if it is reachable off-host, else Medium.** Run
+      `rg -n --hidden -g '!target' '#\[cfg\((all\(|any\()?debug_assertions|console_subscriber::|ROCKET_PROFILE|TOKIO_CONSOLE_BIND|tokio_unstable|cargo("?,\s*"|\s+)run' .`.
+      It covers `.cargo/` config, Dockerfiles and manifests. Each hit needs a reason it
+      cannot reach production: a dev-only route, a console behind a feature that is off, no
+      `ROCKET_PROFILE=debug`, and images built with `--release`. Also confirm the startup
+      check that refuses a debug build.
 - [ ] Arithmetic on input: `rg '(len|size|count|offset|idx)\s*[+*-]' -t rust`
       near parsing code — wrapped math on untrusted values = High;
       `rg 'as u(8|16|32)|as usize' -t rust` in protocol code for truncating
