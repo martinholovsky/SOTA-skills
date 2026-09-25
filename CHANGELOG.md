@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **ROADMAP 66 closed: the 172 low-value OWASP themes recorded (step 6).** Each was re-checked against the tree after steps 3–5:
+  20 are now covered (file:line cited), 83 partly covered with the rest rejected, 69 rejected, each with its reason, in ADOPTION-LOG.
 - **OWASP medium-value themes adopted in `sota-mobile`, `sota-api-design`, `sota-web-frameworks`, `sota-testing`, `sota-security-compliance`, `sota-architecture`, `sota-threat-modeling`, `sota-performance`, `sota-docs-workflow`, `sota-skill-security`, `sota-async-concurrency`, `sota-frontend-design`, `sota` (ROADMAP 66 step 5, batch "app-process").**
   - 80 themes implemented and 23 extended; 0 found already covered.
   - 103 audit probes, each tested on bad and good fixtures.
