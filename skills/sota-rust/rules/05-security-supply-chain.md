@@ -437,7 +437,7 @@ Running external programs (formerly section 9) moved to
 - [ ] `rg 'thread_rng|rand::rng\(|SmallRng|StdRng::seed|seed_from_u64' -t rust` in
       key/nonce/token generation paths → require the OS RNG (`SysRng` in rand
       ≥ 0.10, `OsRng` earlier) or `getrandom`.
-- [ ] `rg 'bincode' Cargo.toml */Cargo.toml` — unmaintained (RUSTSEC-2025-0141):
+- [ ] `rg 'bincode' -g 'Cargo.toml' -g 'Cargo.lock' .` — unmaintained (RUSTSEC-2025-0141):
       new use = Low (pick a maintained format); decoding untrusted bytes without
       `.with_limit` = High (§2, §6).
 - [ ] `rg 'untagged' -t rust` on network-facing types = review for DoS;

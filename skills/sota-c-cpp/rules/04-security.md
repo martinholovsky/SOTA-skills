@@ -384,12 +384,12 @@ a sandbox over running as root at all (`sota-sandboxing`).
       (an embedded length field used straight from parsed input: find its cap against the
       remaining buffer)
 - [ ] **Unsafe parsing of untrusted input (§2) — HIGH, CRITICAL for XXE on reachable input** —
-      `grep -rnE '\(\s*(const\s+)?struct\s+[a-z_0-9]+\s*\*\s*\)\s*\(?(buf|data|pkt|packet|msg|payload|frame|in)' --include='*.c' --include='*.cpp' --include='*.h' .`
+      `grep -rnE '\(\s*(const\s+)?struct\s+[a-z_0-9]+\s*\*\s*\)\s*\(?(buf|data|pkt|packet|msg|payload|frame|in)' --include='*.c' --include='*.cc' --include='*.cpp' --include='*.cxx' --include='*.h' --include='*.hpp' .`
       (a wire buffer cast straight to a struct pointer: find the field-by-field decoder that
-      should replace it) ; `grep -rnE 'XML_PARSE_(NOENT|DTDLOAD)|xml(ThrDef)?(SubstituteEntitiesDefault(Value)?|LoadExtDtdDefaultValue)[[:space:]]*(\(|[|]?=)[[:space:]]*[^0=[:space:]]' --include='*.c' --include='*.cpp' --include='*.h' .`
+      should replace it) ; `grep -rnE 'XML_PARSE_(NOENT|DTDLOAD)|xml(ThrDef)?(SubstituteEntitiesDefault(Value)?|LoadExtDtdDefaultValue)[[:space:]]*(\(|[|]?=)[[:space:]]*[^0=[:space:]]' --include='*.c' --include='*.cc' --include='*.cpp' --include='*.cxx' --include='*.h' --include='*.hpp' .`
       (entity substitution or external-subset loading on a libxml2 read, through a flag, a
       context or a process-wide default set to anything but 0) ;
-      `grep -rnE '\bxml(Read(Memory|File|Fd|Doc|IO)|CtxtRead[A-Za-z]*|ParseMemory|ParseFile|SAXUserParse[A-Za-z]*|CreatePushParserCtxt)[[:space:]]*\(' --include='*.c' --include='*.cpp' --include='*.h' .`
+      `grep -rnE '\bxml(Read(Memory|File|Fd|Doc|IO)|CtxtRead[A-Za-z]*|ParseMemory|ParseFile|SAXUserParse[A-Za-z]*|CreatePushParserCtxt)[[:space:]]*\(' --include='*.c' --include='*.cc' --include='*.cpp' --include='*.cxx' --include='*.h' --include='*.hpp' .`
       (every libxml2 parse entry point: MEDIUM where it reads attacker-controlled XML outside a
       sandbox, since upstream does not recommend libxml2 for untrusted data)
 - [ ] **Resource limits / DoS guards (§2) — HIGH where input is untrusted** —

@@ -145,7 +145,7 @@ coroutines. References:
       read `var`s inside `object`/`companion object` bodies)
 - [ ] **Virtual-thread pitfalls** —
       `grep -rn 'newVirtualThreadPerTaskExecutor\|Thread.ofVirtual' --include='*.java' --include='*.kt' .` ;
-      `grep -rnE 'synchronized|@Synchronized' --include='*.java' --include='*.kt' . | grep -i 'block\|io\|http\|jdbc'`
+      `grep -rnE 'synchronized|@Synchronized' --include='*.java' --include='*.kt' . | grep -iE 'block|java\.io|InputStream|OutputStream|Socket|http|jdbc'`
       (Kotlin spells it `@Synchronized` or `synchronized(lock) { }`. Pinning is HIGH on JDK
       21–23 and a non-issue on 24+ (JEP 491), except the native, class-loading and class-init
       cases in §3);

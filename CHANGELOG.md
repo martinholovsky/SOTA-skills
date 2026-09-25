@@ -63,6 +63,13 @@ covered 9 skills, not the library. Record: ADOPTION-LOG, 2026-09-25.
     surface; jemalloc maintained again.
   - Python: PEP 594 removal versions; a nonexistent PyPI package name; free-threaded GIL
     re-enabling; torch ≥ 2.6.
+- **Fixed after a whole-diff review:**
+  - invariant 37 now also sees `-e` patterns, extensionless names such as `Rakefile`, and
+    `egrep`/`ugrep`, and no longer flags a hidden directory such as `.github`;
+  - a Rust bincode probe used a bare glob;
+  - three probes were already broken before this sweep: a PHP SQL probe whose quoting never
+    parsed, a noisy JVM filter, and libxml2 probes that skipped `.cc`;
+  - probe 14b now declares a dated routing artifact.
 - **The golang description** now says "Go 1.26+". The routing regression set and the
   baseline both scored 1.000 after the change.
 

@@ -3067,15 +3067,18 @@ for f in files:
                     cur.append(t)
             parts.append(cur)
             for c in parts:
-                g = [k for k, t in enumerate(c) if re.search(r'(^|/)grep$', t)]
+                g = [k for k, t in enumerate(c) if re.search(r'(^|/)[eu]?grep$', t)]
                 if not g:
                     continue
-                incs, pos, skip, prev = [], [], False, None
+                incs, pos, skip, prev, has_e = [], [], False, None, False
                 for a in c[g[0] + 1:]:
+                    if a in (">", ">>", "2>", "&>"):
+                        break                        # a redirect target is not an operand
                     if skip:
                         if prev == "--include": incs.append(a)
                         skip = False; continue
                     if a in TAKES:
+                        has_e = has_e or a in ("-e", "--regexp")
                         skip, prev = True, a; continue
                     if a.startswith("--include="):
                         incs.append(a.split("=", 1)[1]); continue
@@ -3085,7 +3088,9 @@ for f in files:
                 if not incs:
                     continue
                 cmds += 1
-                for p in pos[1:]:
+                # With -e/--regexp the pattern is not positional, so EVERY positional is a
+                # path. Skipping pos[0] regardless was a false negative (review, 2026-09-25).
+                for p in (pos if has_e else pos[1:]):
                     if p in (".", "./") or p.endswith("/") or p.startswith("$"):
                         continue
                     base = posixpath.basename(p)
@@ -3095,8 +3100,11 @@ for f in files:
                     # real instance. Any other glob (`src/*cli*`) may name a directory that
                     # -r descends into, where --include is correct, so it is not flagged.
                     stem = re.sub(r'[*?]|\[[^]]*\]', '', base)
-                    known = r'^(config\.ru|Gemfile|Dockerfile|Containerfile|Makefile|Procfile)$'
-                    if not (re.search(r'\.[A-Za-z0-9]+$', stem) or re.search(known, stem)):
+                    known = (r'^(config\.ru|Gemfile|Dockerfile|Containerfile|Makefile|Procfile|Rakefile'
+                             r'|Jenkinsfile|Vagrantfile|Brewfile|Justfile|Podfile|Guardfile|Earthfile|Tiltfile)$')
+                    # `.github` is a hidden DIRECTORY, not a file with extension `github`.
+                    dotdir = stem.startswith(".") and stem.count(".") == 1
+                    if dotdir or not (re.search(r'\.[A-Za-z0-9]+$', stem) or re.search(known, stem)):
                         continue                     # a directory name, not a file
                     if any(fnmatch.fnmatch(base, inc) for inc in incs):
                         continue

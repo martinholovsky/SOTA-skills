@@ -6672,6 +6672,27 @@ Verdict: every skill was **adequate with gaps**, and none was thin. The Highs sh
 - **DEFERRED — php: Rector for floor bumps. Revisit trigger: PHP 8.2 end of life (2026-12-31), when the floor moves.**
 - **DEFERRED — ruby: the gem.coop / RubyGems governance note; `Sidekiq::Web` and `master.key` probes. Revisit trigger: the next accuracy pass over sota-ruby, or a field brief that hits one.**
 
+**Line citations superseded.** The .NET agent re-wrapped `sota-dotnet` rules/04 and moved its
+runtime-patch material, including the Kestrel and SignalR CVEs and the "rebuild self-contained
+apps" note, to rules/06 §3 to stay under the cap. The step-6 table above cites rules/04 by line
+number, for example T508 (lines 84-94), T519 (:15), T520 (:146-150) and T522 (:228-233), and
+those numbers no longer point at the same text. They are kept as written. Read T522 as
+rules/06 §3 and the others by their section. `sota-network-security` rules/05 now cites
+rules/06 §3 directly.
+
+**Post-commit review (a fresh refuter over the whole diff).** It checked 27 new factual claims
+and found all 27 correct. 45 of 46 new probes passed across BSD grep, ugrep, bash and zsh. It
+found problems in these areas, all fixed in the same PR:
+- a new Rust probe with a bare `*/Cargo.toml` glob;
+- invariant 37 holes: `-e` patterns, extensionless names such as `Rakefile`, `egrep`/`ugrep`,
+  and a false positive on hidden directories such as `.github` (each re-tested on crafted
+  lines);
+- a Go probe list missing two items from its own §1;
+- three probes that were already broken before this sweep:
+  - a PHP SQL probe whose `\'` broke the shell quoting, so it never ran;
+  - a JVM filter where `io` matched `addition`;
+  - libxml2 probes that skipped `.cc`/`.cxx`/`.hpp`.
+
 **Unverified and marked in the text:**
 - crates.io GitLab Trusted Publishing (present in the source, deployment not confirmed);
 - whether `dotnet restore` enforces `signatureValidationMode` on Linux and macOS;

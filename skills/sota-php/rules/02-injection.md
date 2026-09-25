@@ -348,7 +348,7 @@ Run from repo root; verify each hit manually (greps are recall-oriented).
 - [ ] **SQL built from strings — CRITICAL if user data reaches it** —
       `grep -rnE '(->query|->exec|_query)\s*\(\s*["'"'"'].*(\$|\bsprintf|\. )' --include='*.php' src/`
       ;
-      `grep -rnE '(SELECT|INSERT|UPDATE|DELETE)[^;]*(\{\$|"\s*\.\s*\$|\'\s*\.\s*\$)' --include='*.php' -i src/`
+      `grep -rniE '(SELECT|INSERT|UPDATE|DELETE)[^;]*(\{\$|["'"'"'][[:space:]]*\.[[:space:]]*\$)' --include='*.php' src/`
       ;
       `grep -rnE '(whereRaw|selectRaw|orderByRaw|havingRaw|DB::raw|->raw\()' --include='*.php' src/`
       ; `grep -rn 'EMULATE_PREPARES' --include='*.php' src/` (want: false);

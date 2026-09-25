@@ -84,7 +84,8 @@ prints it for a main package — empty means current defaults.
 - [ ] **Supply chain** — `test -f go.sum && echo OK || echo 'MISSING go.sum — HIGH'` ;
       `grep -E '^replace' go.mod` ;
       `go env GOFLAGS GONOSUMDB GOSUMDB GOPRIVATE GOPROXY GOINSECURE` (flag `GOPROXY` of
-      `direct`/`off` for public modules, any `GOINSECURE`, a wildcard `GONOSUMDB`) ; `go mod verify` ;
+      `direct`/`off` for public modules, any `GOINSECURE`, a wildcard `GONOSUMDB`, `GOSUMDB=off`,
+      `GOFLAGS=-mod=mod` in CI — the §1 list) ; `go mod verify` ;
       `govulncheck ./...` ; `go mod tidy && git diff --exit-code go.mod go.sum`
 - [ ] **Build-time code execution (§1) — MEDIUM, HIGH if CI secrets are in scope** —
       `grep -rnE '^//go:generate[[:space:]]+(go run [^ ]+@|sh |bash |curl |wget )' --include='*.go' .` ;
