@@ -136,7 +136,7 @@ Pattern: derive types from values (`as const` + `typeof` + indexed access), not 
 
 ## Validate at the boundary, trust the types inside
 
-TypeScript types are erased — they verify nothing at runtime. Every untrusted input (HTTP body, query params, env vars, JSON.parse, localStorage, webhooks, LLM output, DB rows from untyped clients) must be parsed, not cast.
+TypeScript types are erased — they verify nothing at runtime. Every untrusted input (HTTP body, query params, env vars, JSON.parse, webhooks, LLM output, DB rows from untyped clients, and anything the browser persisted: `localStorage`/`sessionStorage`, IndexedDB, Cache Storage) must be parsed, not cast. Browser-stored values are input because the user can edit them and an earlier XSS can plant them: parse on read and output-encode like network data (rules/09 §"Client-side storage"). *OWASP: HTML5 Security cheat sheet.*
 
 ```ts
 import { z } from 'zod';
@@ -243,6 +243,9 @@ Monorepos: TypeScript project references give incremental, dependency-ordered bu
 - [ ] `grep -rn "@ts-ignore\|@ts-nocheck" src/` — should be `@ts-expect-error` with a reason comment; `@ts-nocheck` is HIGH.
 - [ ] `grep -rn "as [A-Z]" --include="*.ts" src/ | grep -v "as const\|as unknown"` — casts in business logic; check each masks no missing validation.
 - [ ] `grep -rn "JSON.parse\|req.body\|req.query\|process.env" src/` — confirm each flows through a schema parse before typed use; raw `as T` on external data is HIGH.
+- [ ] **Browser storage read back without a schema (§"Validate at the boundary") — MEDIUM, HIGH when the value reaches a sink or an auth decision** —
+      ``grep -rnE "JSON\.parse\( *(localStorage|sessionStorage)\.getItem\(|(localStorage|sessionStorage)\.getItem\([^)]*\) *as " --include='*.js' --include='*.ts' --include='*.tsx' --include='*.jsx' --include='*.mjs' . | grep -vE "\.(safeParse|parse)\( *JSON\.parse\("``
+      — a stored value parsed and cast, or cast directly. IndexedDB and Cache Storage reads need a read.
 - [ ] `grep -rn "loading: boolean" src/` plus adjacent optional `data`/`error` fields — boolean-soup state, recommend discriminated union (MEDIUM).
 - [ ] IDs typed as bare `string` passed across ≥2 entity types — recommend branding (LOW/MEDIUM by blast radius).
 - [ ] ESLint has `typescript-eslint` strict-type-checked config; `no-explicit-any`, `switch-exhaustiveness-check`, `no-unsafe-*` rules enabled.

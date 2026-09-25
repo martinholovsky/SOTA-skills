@@ -42,6 +42,12 @@ exploit UB at `-O2`. Treat any UBSan diagnostic as CRITICAL/HIGH. Reference:
   or C23 `<stdckdint.h>` `ckd_add`/`ckd_mul`. For C++ prefer typed wrappers or
   range checks; C++26 adds saturating helpers in `<numeric>`
   (`std::add_sat`/`sub_sat`/`mul_sat`, P0543).
+- **A check written after the addition is deleted.** `x + 1 < x` on a signed `int` returned 0
+  for `INT_MAX` at `-O2` on both GCC 16.2 and Apple clang 21 (measured): the optimiser assumed
+  no overflow and folded the test away. `-fwrapv` (signed arithmetic wraps) and GCC's
+  `-fno-strict-overflow` each kept it, returning 1. Use them as a **backstop for legacy code**
+  you cannot yet rewrite, not as the fix. They make the wrapped value defined, not correct. The fix is to test *before* adding, or to use the checked
+  helpers below. OWASP: C-Based Toolchain Hardening cheat sheet.
 - Avoid implicit narrowing/sign conversions; compile with `-Wconversion
   -Wsign-conversion`. Brace-init (`int x{expr};`) rejects narrowing at compile
   time.
@@ -128,6 +134,11 @@ mutex. Build threaded code under TSan.
       `grep -rnE '(malloc|calloc|alloca|new)[^;]*[*+][^;]*' --include='*.c' --include='*.cpp' .`
       (size math → check overflow);
       `grep -rn '__builtin_.*_overflow\|ckd_add\|ckd_mul' . || echo "no checked-arithmetic helpers found"`
+- [ ] **Overflow tested after the addition (§2) — HIGH where the sum is a size or index** —
+      `grep -rnE 'if[[:space:]]*\([[:space:]]*[a-z_][a-z_0-9]*[[:space:]]*\+[[:space:]]*[a-z_0-9]+[[:space:]]*<[[:space:]]*[a-z_][a-z_0-9]*[[:space:]]*\)' --include='*.c' --include='*.cc' --include='*.cpp' --include='*.h' .`
+      (read each: when the right side is one of the addends and the type is signed, the check is
+      gone at `-O2`. Rewrite with `ckd_add`/`__builtin_add_overflow`, and until then look for
+      `-fwrapv` or `-fno-strict-overflow` on that target)
 - [ ] **Type punning / strict-aliasing — HIGH** —
       `grep -rn 'reinterpret_cast' --include='*.cpp' --include='*.hpp' .` ;
       `grep -rnE '\*\s*\(\s*[A-Za-z_][A-Za-z0-9_ ]*\*\s*\)' --include='*.c' .` (C pointer-cast

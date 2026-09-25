@@ -327,7 +327,7 @@
     {
       "from": "sota-jvm",
       "to": "sota-code-security",
-      "weight": 16,
+      "weight": 17,
       "targets": [
         "rules/01 \u00a710",
         "rules/01 \u00a711",
@@ -414,6 +414,21 @@
       ]
     },
     {
+      "from": "sota-php",
+      "to": "sota-code-security",
+      "weight": 10,
+      "targets": [
+        "rules/01",
+        "rules/01 \u00a710",
+        "rules/04",
+        "rules/04 \u00a75",
+        "rules/06 \u00a73",
+        "rules/07 \u00a73",
+        "rules/07 \u00a76",
+        "rules/17 \u00a72"
+      ]
+    },
+    {
       "from": "sota-security-compliance",
       "to": "sota-privacy-compliance",
       "weight": 10,
@@ -455,20 +470,6 @@
       "targets": [
         "rules/03",
         "rules/03 \u00a710"
-      ]
-    },
-    {
-      "from": "sota-php",
-      "to": "sota-code-security",
-      "weight": 9,
-      "targets": [
-        "rules/01",
-        "rules/01 \u00a710",
-        "rules/04",
-        "rules/04 \u00a75",
-        "rules/06 \u00a73",
-        "rules/07 \u00a73",
-        "rules/07 \u00a76"
       ]
     },
     {
@@ -768,6 +769,15 @@
       ]
     },
     {
+      "from": "sota-golang",
+      "to": "sota-code-security",
+      "weight": 6,
+      "targets": [
+        "rules/05",
+        "rules/07"
+      ]
+    },
+    {
       "from": "sota-identity-access",
       "to": "sota-secrets-management",
       "weight": 6,
@@ -1013,12 +1023,6 @@
       "targets": []
     },
     {
-      "from": "sota-golang",
-      "to": "sota-code-security",
-      "weight": 4,
-      "targets": []
-    },
-    {
       "from": "sota-llm-engineering",
       "to": "sota-sandboxing",
       "weight": 4,
@@ -1116,6 +1120,12 @@
     {
       "from": "sota-architecture",
       "to": "sota-secrets-management",
+      "weight": 3,
+      "targets": []
+    },
+    {
+      "from": "sota-c-cpp",
+      "to": "sota-testing",
       "weight": 3,
       "targets": []
     },
@@ -1325,6 +1335,14 @@
       "targets": []
     },
     {
+      "from": "sota-javascript-typescript",
+      "to": "sota-sandboxing",
+      "weight": 3,
+      "targets": [
+        "rules/04"
+      ]
+    },
+    {
       "from": "sota-jvm",
       "to": "sota-testing",
       "weight": 3,
@@ -1472,12 +1490,6 @@
     {
       "from": "sota-architecture",
       "to": "sota-identity-access",
-      "weight": 2,
-      "targets": []
-    },
-    {
-      "from": "sota-c-cpp",
-      "to": "sota-testing",
       "weight": 2,
       "targets": []
     },
@@ -1694,7 +1706,15 @@
     },
     {
       "from": "sota-javascript-typescript",
-      "to": "sota-sandboxing",
+      "to": "sota-api-design",
+      "weight": 2,
+      "targets": [
+        "rules/05 \u00a73"
+      ]
+    },
+    {
+      "from": "sota-jvm",
+      "to": "sota-network-security",
       "weight": 2,
       "targets": []
     },
@@ -1752,6 +1772,12 @@
     {
       "from": "sota-php",
       "to": "sota-databases",
+      "weight": 2,
+      "targets": []
+    },
+    {
+      "from": "sota-php",
+      "to": "sota-devsecops",
       "weight": 2,
       "targets": []
     },
@@ -2302,6 +2328,14 @@
     },
     {
       "from": "sota-golang",
+      "to": "sota-databases",
+      "weight": 1,
+      "targets": [
+        "rules/03"
+      ]
+    },
+    {
+      "from": "sota-golang",
       "to": "sota-sandboxing",
       "weight": 1,
       "targets": []
@@ -2309,12 +2343,6 @@
     {
       "from": "sota-javascript-typescript",
       "to": "sota-testing",
-      "weight": 1,
-      "targets": []
-    },
-    {
-      "from": "sota-javascript-typescript",
-      "to": "sota-api-design",
       "weight": 1,
       "targets": []
     },
@@ -2358,12 +2386,6 @@
     },
     {
       "from": "sota-jvm",
-      "to": "sota-network-security",
-      "weight": 1,
-      "targets": []
-    },
-    {
-      "from": "sota-jvm",
       "to": "sota-secrets-management",
       "weight": 1,
       "targets": []
@@ -2378,6 +2400,12 @@
     },
     {
       "from": "sota-jvm",
+      "to": "sota-devsecops",
+      "weight": 1,
+      "targets": []
+    },
+    {
+      "from": "sota-jvm",
       "to": "sota-api-design",
       "weight": 1,
       "targets": []
@@ -2389,12 +2417,6 @@
       "targets": [
         "rules/03"
       ]
-    },
-    {
-      "from": "sota-jvm",
-      "to": "sota-devsecops",
-      "weight": 1,
-      "targets": []
     },
     {
       "from": "sota-kubernetes",
@@ -2598,7 +2620,7 @@
     },
     {
       "from": "sota-php",
-      "to": "sota-devsecops",
+      "to": "sota-observability",
       "weight": 1,
       "targets": []
     },

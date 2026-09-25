@@ -8,7 +8,12 @@ each has a grep signature — hunt them all in audits.
 
 **`pickle` on untrusted data = remote code execution.** `pickle.loads` executes arbitrary
 callables during load. Same family: `shelve`, `marshal`, `dill`, `joblib.load`, pandas
-`read_pickle`, torch `torch.load` without `weights_only=True`.
+`read_pickle`, torch `torch.load` without `weights_only=True`, and **`jsonpickle.decode`
+/ `jsonpickle.loads`** — the JSON wire format hides that it rebuilds objects: a `py/reduce`
+entry calls any importable function, and its `safe=True` default only stops `eval()`
+(measured, jsonpickle 4.1.2: `{"py/reduce": [{"py/function": "os.getcwd"}, ...]}` ran
+`os.getcwd` with `safe=True`; its own docstring says it "is not secure"). OWASP:
+Deserialization cheat sheet.
 
 ```python
 # Bad — RCE if attacker controls the bytes (cache poisoning, uploaded model, queue message)
@@ -346,6 +351,7 @@ foreign function, and validate lengths before they cross. The class is `sota-cod
       (each foreign function declares `argtypes`/`restype`; lengths validated before the call)
 - [ ] **Code execution / deserialization [CRITICAL on untrusted data]** —
       `grep -rn "pickle.loads\|pickle.load\|read_pickle\|joblib.load\|marshal.loads\|dill" --include="*.py" src/`
+      ; `grep -rnE 'jsonpickle\.(decode|loads|Unpickler)|from[[:space:]]+jsonpickle[[:space:]]+import' --include='*.py' src/`
       ; `grep -rn "torch.load" --include="*.py" src/ | grep -v "weights_only=True"` ;
       `grep -rn "yaml.load(" --include="*.py" src/ | grep -v "SafeLoader\|safe_load"` ;
       `grep -rn "\beval(\|\bexec(" --include="*.py" src/ | grep -v "literal_eval\|model.eval()"`

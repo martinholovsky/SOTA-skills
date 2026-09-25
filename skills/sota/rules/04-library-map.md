@@ -136,7 +136,8 @@ exist. `sota-code-security/rules/11` sat unlisted for two releases before 15 exi
   security (CERT/MISRA/hardening), 05 concurrency, 06 build/tooling & CI, 07 performance
 - **sota-jvm/rules**: 01 idioms (Java/Kotlin), 02 API/null/immutability design, 03 concurrency
   (virtual threads, JMM, coroutines), 04 security (deserialization/injection/JNDI/crypto), 05
-  performance (GC/JFR/GraalVM), 06 build/tooling & CI, 07 XML (XXE/XSLT, split out of 04)
+  performance (GC/JFR/GraalVM), 06 build/tooling & CI, 07 XML (XXE/XSLT, split out of 04), 08 web
+  layer (Actuator, binding, Spring Security, filters — split out of 04)
 - **sota-python/rules**: 01 tooling & project setup, 02 typing & correctness, 03 idioms &
   pitfalls, 04 async, 05 security, 06 performance, 07 frameworks & testing, 08 supply chain
   (split out of 05)

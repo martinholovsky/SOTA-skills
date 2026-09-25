@@ -58,6 +58,13 @@ but the `out` value **is** an in-band sentinel the moment the `bool` is ignored.
   low-level exceptions across an abstraction — wrap, preserving `InnerException`.
 - Validate arguments with guard helpers (`ArgumentNullException.ThrowIfNull`,
   `ArgumentOutOfRangeException.ThrowIf...`).
+- **In ASP.NET Core the outermost boundary is the pipeline, so register the exception handler
+  first.** `UseExceptionHandler` only catches what middleware registered *after* it throws
+  (Microsoft's middleware-order docs put it first for that reason). Measured on .NET 10 with a
+  throwing middleware registered before it: in Production the client got an empty 500 that skipped
+  the handler (no problem response, no handler logging); in Development the auto-added developer
+  exception page returned the exception text (the environment trap is `rules/04` §7).
+  *(OWASP: Error Handling cheat sheet.)*
 
 ## 5. Dependency injection & options
 
@@ -93,6 +100,9 @@ but the `out` value **is** an in-band sentinel the moment the `bool` is ignored.
       `grep -rnE '^[[:space:]]*((public|private|protected|internal)[[:space:]]+)*static[[:space:]]+[A-Za-z_][A-Za-z0-9_<>,?. ]*(\[\])?[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*(=|;|\{)' --include='*.cs' . | grep -vwE 'readonly|const|class|struct|record|interface|enum|delegate'`
       (static fields and properties. The earlier one-pattern form used a `(?!` lookahead, which
       POSIX ERE rejects: exit 2 under BSD grep and ugrep alike, measured 2026-09-24)
+- [ ] **Exception handler not first in the pipeline (§4) — MEDIUM** — per file, the first
+      `app.Use…` call other than the developer page should be the handler:
+      `grep -rlE 'UseExceptionHandler' --include='*.cs' . | while IFS= read -r f; do grep -E 'app\.Use[A-Z]' "$f" | grep -v UseDeveloperExceptionPage | head -n 1 | grep -q UseExceptionHandler || echo "$f: middleware registered before UseExceptionHandler"; done`
 - [ ] **throw ex / swallow — MEDIUM (see rules/01)** —
       `grep -rnE 'throw ex;' --include='*.cs' .`
 - [ ] **Mutable collection exposed — LOW** —

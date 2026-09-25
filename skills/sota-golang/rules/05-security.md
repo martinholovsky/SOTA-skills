@@ -81,6 +81,12 @@ q := "SELECT ... ORDER BY " + orderCol // safe: values are program constants
   `QueryContext`/`ExecContext` (ctx discipline). Pool settings
   (`SetMaxOpenConns`, `SetMaxIdleConns`, `SetConnMaxLifetime`) explicit —
   default unlimited open conns can flatten the DB.
+- `database/sql`'s `Open` does not dial (its doc: it "may just validate its arguments"); call
+  `db.PingContext` under a timeout at startup so a bad DSN or credential fails the deploy. A
+  `*sql.Stmt` from `db.Prepare` re-prepares itself on each pooled connection that runs it: one
+  server-side statement per connection. Prefer parameterized `QueryContext`/`ExecContext` or
+  `tx.PrepareContext` (closed with the transaction), above all behind a transaction-mode pooler
+  (sota-databases rules/03). OWASP: Go-SCP (database security: connections, parameterized queries).
 - ORMs: if GORM/ent are in use, audit every `Raw`, `Exec`, `Where(fmt.Sprintf`
   call site — string interpolation there is the same CRITICAL.
 
@@ -160,7 +166,11 @@ func securePath(baseDir, userPath string) (string, error) {
   (decompression bomb).
 - Serving files: `http.ServeFile` rejects `..` but build the path with
   `http.FileServer`/`http.FS` over a rooted FS rather than manual joins;
-  `os.DirFS` + `fs.Sub`, or `os.Root.FS()` on 1.24+.
+  `os.DirFS` + `fs.Sub`, or `os.Root.FS()` on 1.24+. Containment does not stop listing:
+  `http.FileServer`/`FileServerFS` (1.22+) render an index of any directory lacking
+  `index.html` (measured: `/sub/` listed `secret.txt`). Wrap the `FileSystem` so `Open` of such
+  a directory returns `fs.ErrNotExist` (measured: 404, files still served) or serve an explicit
+  allowlist. Cross-language rule: sota-code-security rules/07. OWASP: Go-SCP (system configuration).
 
 ## 5. Integer conversion overflow (gosec G115)
 
@@ -408,6 +418,11 @@ Supply chain and vulnerability management (formerly section 8) moved to
       `grep -rn 'os.Root\|filepath.IsLocal' --include='*.go' .` (mitigations present?);
       `go version` (os.Root containment needs >=1.26.5/1.25.12 — CVE-2026-39822 symlink escape);
       `grep -rnE 'os\.(Open|Create|ReadFile|WriteFile|Remove)' --include='*.go' . # trace path provenance`
+- [ ] **Directory listing from an unwrapped `FileServer` (§4) — MEDIUM** —
+      `grep -rnE 'http\.FileServer(FS)?\((http\.(Dir|FS)|os\.DirFS)\(' --include='*.go' .`
+- [ ] **Unpinged pool; pool-level prepared statements (§2) — LOW, MEDIUM behind a
+      transaction-mode pooler** — `grep -rlE 'sql\.Open(DB)?\(' --include='*.go' . | xargs grep -L 'Ping'` ;
+      `grep -rnE '(db|DB|pool)\.Prepare(Context)?\(' --include='*.go' .`
 - [ ] **SSRF: outbound request to a caller-chosen URL (§4c) — HIGH, CRITICAL on a cloud host
       with a metadata endpoint** —
       `grep -rnE '(Get|Post|Head|PostForm|NewRequest|NewRequestWithContext)\(.*(r\.(URL|Form|PostForm|Header)|FormValue\(|Query\(\))' --include='*.go' .`

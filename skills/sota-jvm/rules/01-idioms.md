@@ -92,6 +92,18 @@ the type system, and expression-oriented code**. References:
 - Kotlin: don't catch `CancellationException` and swallow it in coroutines (it
   breaks structured cancellation — `rules/03`). Use `runCatching` judiciously,
   not as a blanket swallow.
+- **An `Error` is not a failure to recover from.** A `catch` of `Error`, or of `Throwable`
+  (which contains it), may log and rethrow, and nothing else: no fallback, no retry, no
+  carrying on. The JDK Javadoc says an `Error` signals "serious problems that a reasonable
+  application should not try to catch"; a `VirtualMachineError` (`OutOfMemoryError`,
+  `StackOverflowError`) says the JVM "is broken or has run out of resources necessary for it
+  to continue operating"; a `LinkageError` says a class you depend on changed incompatibly
+  after you were compiled. Code interrupted by one may have left its own state half-updated.
+  Wrapping it in an unchecked exception that a caller catches is the same recovery by another
+  route. Kotlin's `runCatching` is a `catch (e: Throwable)` (stdlib `Result.kt`), so rethrow
+  an `Error` out of its failure path. The one place to catch `Throwable` is a last-resort
+  boundary (an `UncaughtExceptionHandler`, a worker loop) that logs and then exits or rethrows.
+  OWASP: Code Review Guide v2.
 
 ## 5. Immutability and finality
 
@@ -107,6 +119,12 @@ the type system, and expression-oriented code**. References:
 - [ ] **Swallowed exceptions — MEDIUM/HIGH** —
       `grep -rnzoE 'catch *\([^)]*\) *\{\s*\}' --include='*.java' --include='*.kt' .` ;
       `grep -rnE 'catch *\((Exception|Throwable)' --include='*.java' --include='*.kt' .`
+- [ ] **`Error`/`Throwable` caught and not rethrown (§4) — HIGH (the program keeps running on a
+      JVM that reported itself broken)** — prints each such `catch` with no `throw` in the
+      four lines after it:
+      `grep -rnE -A4 'catch[[:space:]]*\(([^)]*[^A-Za-z.])?(java\.lang\.)?(Throwable|Error|VirtualMachineError|OutOfMemoryError|StackOverflowError|LinkageError)([^A-Za-z]|$)' --include='*.java' --include='*.kt' . | awk '/catch[[:space:]]*\(([^)]*[^A-Za-z.])?(java\.lang\.)?(Throwable|Error|VirtualMachineError|OutOfMemoryError|StackOverflowError|LinkageError)([^A-Za-z]|$)/ {if(h!=""&&!t)print h; h=$0; t=($0 ~ /throw[[:space:]]/); next} /throw[[:space:]]/{t=1} /^--$/{if(h!=""&&!t)print h; h=""} END{if(h!=""&&!t)print h}'`
+      (a `throw new ...Exception(e)` passes the probe but is recovery by wrapping; read those;
+      `runCatching` needs a separate read)
 - [ ] **Legacy idioms — LOW** —
       `grep -rnE 'new (ArrayList|HashMap|HashSet)<>\(\)' --include='*.java' .` (consider List.of
       / records); `grep -rnE '\braw\b|new Vector|new Hashtable' --include='*.java' .` ;

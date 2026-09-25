@@ -88,7 +88,7 @@ lives in `sota-testing`.
   `HttpRequest` built without `.timeout(Duration)` waits forever, per its javadoc.
   **(d) A README snippet is a demo, not a config.** Getting-started code routinely carries a
   trust-all `TrustManager`/`HostnameVerifier`, `@CrossOrigin("*")`, a widened actuator
-  exposure or a debug flag; strip those before the snippet reaches a branch (`rules/04` §4–§6).
+  exposure or a debug flag; strip those before the snippet reaches a branch (`rules/04` §4–§5, `rules/08` §1).
   *OWASP: Vulnerable Dependency Management cheat sheet; Software Supply Chain Security cheat
   sheet; Secure Coding with AI cheat sheet; SCVS V1, V6.*
 - Minimize the tree — each transitive dep is attack surface and a future CVE.
@@ -99,7 +99,14 @@ lives in `sota-testing`.
   real bugs at build time; treat as errors in CI.
 - **SpotBugs** + **Find-Sec-Bugs** for bug/security patterns (incl. crypto,
   injection, deserialization sinks from `rules/04`); **PMD** for additional
-  rules.
+  rules. **Make its XXE detectors a failing gate**, not a report: Find-Sec-Bugs has one
+  `XXE_*` pattern per parser factory (`DocumentBuilderFactory`, SAX, `XMLReader`, StAX, XPath,
+  `SchemaFactory`, `Validator`, `TransformerFactory`; the list is in `rules/07`'s checklist).
+  Maven's `spotbugs:check` fails the build on a finding while `failOnError` keeps its default
+  of `true` (spotbugs-maven-plugin `check` goal docs); Gradle needs `ignoreFailures = false`.
+  An exclude filter naming an `XXE_` pattern is a suppression to justify. The Semgrep/Opengrep
+  Java XXE rules are a second opinion at source level. OWASP: XML External Entity Prevention
+  cheat sheet.
 - **Kotlin**: **detekt** (static analysis) + **ktlint** (style); both in CI.
 - **spotless** (or google-java-format/ktlint) to enforce formatting in CI
   (`--check`) so style never enters review.

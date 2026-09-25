@@ -218,9 +218,32 @@ network-facing or setuid binary is a HIGH finding. From the OpenSSF guide:
 -mbranch-protection=standard                # AArch64 PAC/BTI (-fcf-protection analogue)
 -fPIE -pie                                  # ASLR for the executable
 -Wl,-z,relro -Wl,-z,now                     # full RELRO (GOT read-only)
--Wl,-z,noexecstack -Wl,-z,nodlopen          # non-exec stack, no dlopen
+-Wl,-z,noexecstack -Wl,-z,nodlopen          # non-exec stack; no dlopen (shared objects only)
+-Wtrampolines                               # warn when GCC generates a trampoline
 ```
 
+- **What some older flag lists add, and what it really does** (measured with GCC 16.2, binutils
+  2.44, glibc 2.41). `-Wl,-z,nodump` only sets `DF_1_NODUMP`, which marks the object for
+  Solaris `dldump`. glibc exports no `dldump`, so nothing on Linux reads it: do not count it as
+  hardening. `-z nodlopen` set `NOOPEN` on a shared object but not on a PIE executable, where
+  `FLAGS_1` showed only `PIE`. `-Wstrict-overflow` is documented by GCC as doing nothing, and
+  `=5` gave no warning on a textbook `x + 1 < x`, so it is not a detector (use the `rules/03` §2
+  helpers). `-Wtrampolines` did fire on a nested function whose address was taken.
+- **Stack canaries: `-strong` is the baseline, `-all` the exception.** GCC's manual:
+  `-fstack-protector-strong` guards every function with a local array or a local whose address
+  is taken, and `-fstack-protector-all` guards every function, including ones with nothing an
+  overflow could reach. Use `-all` only where its cost on every call is irrelevant and an
+  unexpected overflow is catastrophic, e.g. a small setuid helper. Elsewhere the extra checks guard
+  functions that hold no buffer.
+- **Speculative-execution (Spectre v2) mitigations, for code that crosses a privilege boundary**
+  (a hypervisor, a sandbox broker, a process holding another tenant's secrets). GCC:
+  `-mindirect-branch=thunk -mfunction-return=thunk`. Clang: `-mretpoline`, plus
+  `-mfunction-return=thunk-extern`. Every indirect call and every return then goes through a
+  thunk, a cost paid on each one, so benchmark before you adopt it. They conflict with the
+  baseline above: GCC 16.2 refused `-mindirect-branch=thunk` beside `-fcf-protection=full` with
+  "are not compatible" (measured). Its manual allows `thunk-extern` with
+  `-fcf-protection=branch`, where you provide the thunks yourself. Choose per binary.
+  OWASP: C-Based Toolchain Hardening cheat sheet.
 - libc++ builds: production uses hardening mode FAST
   (`-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST`, cheap checks); the
   EXTENSIVE mode (`rules/02`) is for debug/test builds.
@@ -253,6 +276,33 @@ network-facing or setuid binary is a HIGH finding. From the OpenSSF guide:
   Handling cheat sheet; Secure Headers Project; ASVS 5.0 V13.4.
 - Treat warnings as errors (`-Werror`) in CI; a clean `-Wall -Wextra` is the
   floor, not the ceiling — also run a static analyzer (`rules/06`).
+
+## 5a. Windows / MSVC binary hardening
+
+```
+cl   /O2 /GS /sdl /guard:cf ...                               # compiler
+link /DYNAMICBASE /HIGHENTROPYVA /NXCOMPAT /CETCOMPAT /GUARD:CF   # linker
+```
+
+Defaults, from Microsoft's option pages: `/GS`, `/DYNAMICBASE` (ASLR) and `/NXCOMPAT` (DEP) are on,
+and so is `/HIGHENTROPYVA` for 64-bit images, where it takes effect only with `/DYNAMICBASE`. On
+these the finding is an opt-out: `/GS-`, `/DYNAMICBASE:NO`, `/NXCOMPAT:NO`, `/HIGHENTROPYVA:NO`.
+Two are **off** by default and must be added. `/sdl` is a superset of `/GS`: it turns on strict
+`/GS` mode, clears some pointers after `delete`, and makes security warnings such as C4996 (a
+deprecated unsafe CRT call) and C4700 (an uninitialised local) errors. `/guard:cf` (Control Flow
+Guard) needs `/DYNAMICBASE`, and needs `/GUARD:CF` at link too when you compile and link in
+separate steps. It protects only the code compiled with it, and does not work with `/ZI` or
+`/clr`. `/CETCOMPAT` marks an x64 image as compatible with the CET shadow stack (VS 2019+).
+Without `/sdl`, put `#pragma strict_gs_check(push, on)` in the files that parse untrusted input,
+so every function there gets a cookie, not only the ones `/GS` treats as holding a buffer.
+**Verify the binary**: `dumpbin /headers /loadconfig app.exe` (CFG shows `Guard` and
+`CF Instrumented`), or BinSkim (`binskim analyze app.exe --output r.sarif`). BinSkim's rules
+include BA2008 CFG, BA2009 ASLR, BA2011 stack protection, BA2015 high-entropy VA, BA2016 NX,
+BA2025 shadow stack and BA2026 `/sdl`, and it reads ELF too. At deployment, add process
+mitigations the binary cannot set itself with `Set-ProcessMitigation -Name app.exe -Enable
+<list>` or an Exploit Protection XML (`-PolicyFilePath`). Where a mitigation has an `Audit*`
+twin (`AuditDynamicCode` for `BlockDynamicCode`), run the audit form first and read what it logs.
+OWASP: C-Based Toolchain Hardening cheat sheet.
 
 ## 6. Memory-safety strategy (the meta-control)
 
@@ -382,6 +432,21 @@ a sandbox over running as root at all (`sota-sandboxing`).
       (timing leak)
 - [ ] **Hardening flags present? — HIGH if missing on network/setuid binary** —
       `grep -rnE '_FORTIFY_SOURCE|stack-protector|relro|cf-protection|_GLIBCXX_ASSERTIONS|fPIE' . --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' || echo "no hardening flags found"`
+- [ ] **Hardening switched off by an opt-out macro or flag (§5, §5a) — HIGH on a network-facing
+      binary unless a comment justifies it** —
+      `grep -rnE --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' --include='*.mk' --include='*.ac' -e '-U[[:space:]]*_FORTIFY_SOURCE|_FORTIFY_SOURCE=0' . | grep -vE -- '-D[[:space:]]*_FORTIFY_SOURCE=[1-9]'`
+      (an undefine with no re-define on the line) ;
+      `grep -rnE '_[A-Z]+_SECURE_NO_(WARNINGS|DEPRECATE)|STRSAFE_NO_DEPRECATE|[/-]wd[[:space:]]*4996|warning[[:space:]]*\([[:space:]]*disable[[:space:]]*:[^)]*4996' --include='*.c' --include='*.cpp' --include='*.h' --include='*.hpp' --include='CMakeLists.txt' --include='*.cmake' --include='*.vcxproj' --include='*.props' .`
+      (each silences Microsoft's deprecation of the unsafe CRT, C++ library or `strsafe.h`
+      replacements while the unsafe calls stay: remove it and fix the calls, or justify it)
+- [ ] **Windows binary hardening (§5a) — HIGH for an opt-out, MEDIUM for missing `/sdl` or
+      `/guard:cf`** —
+      `grep -rnE '/(GS-|guard:cf-|GUARD:NO|DYNAMICBASE:NO|NXCOMPAT:NO|HIGHENTROPYVA:NO|CETCOMPAT:NO)' --include='CMakeLists.txt' --include='*.cmake' --include='*.vcxproj' --include='*.props' --include='*.bat' --include='*.cmd' .`
+      ; then `binskim analyze <artifacts> --output r.sarif` on every shipped `.exe`/`.dll` (a
+      `.vcxproj` stores most of these as properties, not flags, so the binary check is the proof)
+- [ ] **Inert or conflicting hardening flags counted as controls (§5) — LOW** —
+      `grep -rnE --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' --include='*.mk' -e '-Wstrict-overflow|-z,nodump|-z[[:space:]]+nodump' .`
+      (neither protects anything on Linux: do not credit them in a hardening review)
 - [ ] **Hardening reached the shipped binary (§5) — HIGH on a network-facing or setuid binary
       that fails a check** — `checksec --file=BIN` or `annocheck BIN` on every artifact you ship
       (or `readelf -hW`/`-lW`/`-dW`/`--dyn-syms`: `DYN`, `GNU_RELRO`, `BIND_NOW`,

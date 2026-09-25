@@ -26,11 +26,59 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
   the escape hatch). Audit legacy subprojects and FetchContent deps for old
   floors before a CMake 4 toolchain bump.
 
+## 1a. Build configurations: Debug, Release, and what NDEBUG means
+
+- **Name the configurations and keep their flags apart.** *Debug*: `-O0` or `-O1`, `-g3`, `-fno-omit-frame-pointer`, `DEBUG` defined and
+  `NDEBUG` not; MSVC `/Od`. *Release*: `-O2` (MSVC `/O2`), `NDEBUG` defined, `DEBUG` not, plus
+  the hardened set in `rules/04` §5 and §5a. Sanitizer and fuzz builds are further Debug
+  variants (§3, §4), never the shipped artifact.
+- **Make a mixed or empty configuration fail loudly, or fall back to release.** CMake with no
+  `CMAKE_BUILD_TYPE` passes neither `-O` nor `-DNDEBUG` (`rules/04` §5). Default it for
+  single-config generators with `if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)` →
+  `set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)`. Measured with CMake 3.31.6, the compile
+  line then gained `-O3 -DNDEBUG`. In the source, a shared header refuses both at once and treats
+  neither as release:
+  `#if defined(NDEBUG) && defined(DEBUG)` → `#error`, then
+  `#if !defined(NDEBUG) && !defined(DEBUG)` → `#define NDEBUG` followed by `#include <assert.h>`
+  again, because `assert` follows the `NDEBUG` in force at each inclusion. Measured with Apple clang
+  21: `-DNDEBUG -DDEBUG` stopped at the `#error`, a plain build ran `assert(0)` as a no-op, and
+  `-DDEBUG` aborted. The `APP_RELEASE` guard in `rules/04` §5 is the check the release pipeline adds.
+- **No "test" configuration that turns private members public** (`-Dprivate=public` and similar).
+  The C++ standard forbids a macro named like a keyword ([cpp.replace.general]), and the build
+  tests an access model you never ship. Test through the public interface. Where an
+  internal really needs a direct test, move it into its own unit with a real interface.
+  (`sota-testing` owns test strategy.)
+- **Flags must reach every compiled unit.** Plain Make does not rebuild when only the flags change.
+  Measured with GNU Make 4.4.1: after a `make CFLAGS=-O0`, `make CFLAGS="-O2 -D_FORTIFY_SOURCE=3"`
+  printed "Nothing to be done", so a release can link objects built for debug. Clean between
+  configurations, or keep one build directory per configuration. CMake's Makefile and Ninja
+  generators both recompiled when `CMAKE_C_FLAGS` changed (measured, CMake 3.31.6).
+- **User flags add to the project's, never replace them.** A command-line `make CFLAGS=-O2`
+  replaced a Makefile's `CFLAGS += -fstack-protector-strong` outright, while the same value from
+  the environment was appended to (measured, GNU Make 4.4.1). Keep hardening in a variable of its own
+  and write `override CFLAGS += $(HARDEN_CFLAGS)`, or in Automake use `AM_CFLAGS` (`rules/04` §5).
+- **Vendored and bundled libraries get the same hardening.** A third-party tree built by its own
+  build system (`ExternalProject_Add`, a vendored Makefile, a prebuilt `.a`) gets none of your
+  target's `target_compile_options`. Pass the flags through explicitly (its `CMAKE_ARGS`, its
+  `CFLAGS`). Then check the linked result with `checksec`/`annocheck`/BinSkim, since the binary is
+  where the flags either arrived or did not. OWASP: C-Based Toolchain Hardening cheat sheet.
+
 ## 2. Warnings and static analysis
 
 - Baseline flags: `-Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion
   -Wshadow -Wcast-align -Wnull-dereference -Wdouble-promotion
   -Wimplicit-fallthrough -Werror`. MSVC: `/W4 /permissive- /WX`.
+- **A periodic `-Weverything` sweep, never a gate.** Clang's manual advises against building with
+  `-Weverything` routinely, since it includes experimental diagnostics and makes compiler upgrades
+  painful. So run it as a scheduled, non-blocking job. Triage the output, and promote a warning
+  that finds real bugs to the gating set by name. For example, `-Wmissing-prototypes` fired under
+  `-Weverything` and not under `-Wall -Wextra` on the same file (Apple clang 21, measured).
+- **Suppress at the site, with a reason, not for the whole project.** A project-wide `-Wno-<x>`
+  or MSVC `/wd<n>` hides every future instance too. Silence one site instead: C23/C++17
+  `[[maybe_unused]]` on an unused parameter, or `#pragma GCC diagnostic push` / `ignored "-W<x>"`
+  / `pop` around the few lines, with a comment saying why. A per-file `-Wno-` for generated or
+  third-party code is the widest acceptable scope. This is the C/C++ form of Rust's per-site
+  `#[allow(..., reason = "...")]`. OWASP: C-Based Toolchain Hardening cheat sheet.
 - **clang-tidy** with a curated set is the primary linter:
   `bugprone-*, cppcoreguidelines-*, cert-*, performance-*, modernize-*,
   clang-analyzer-*, misc-*` (tune noisy checks). Commit a `.clang-tidy`.
@@ -172,6 +220,21 @@ test **strategy** (suite shape, doubles, coverage philosophy) lives in
       `grep -rn '#pragma GCC diagnostic ignored\|#pragma clang diagnostic ignored\|#pragma warning(disable' --include='*.c' --include='*.cpp' --include='*.h' .`
       ; `grep -rn 'suppressions' CMakeLists.txt *.cmake 2>/dev/null` (cppcheck
       --suppressions-list=)
+- [ ] **Warning silenced project-wide, or a pragma with no scope (§2) — MEDIUM** —
+      `grep -rnE '(-Wno-[a-z]|/wd[[:space:]]*[0-9])' --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' --include='*.mk' . | grep -v 'set_source_files_properties'`
+      (a global disable: move it to the sites, or to the one generated file) ;
+      `grep -rlE 'pragma[[:space:]]+(GCC|clang)[[:space:]]+diagnostic[[:space:]]+ignored' --include='*.c' --include='*.cpp' --include='*.h' --include='*.hpp' . | xargs -r grep -LE 'diagnostic[[:space:]]+push'`
+      (a file that ignores a warning with no `push`/`pop`: it stays off for the rest of the unit)
+- [ ] **Build configuration: empty build type, a keyword redefined for tests (§1a) — MEDIUM, HIGH
+      when it builds the shipped artifact** —
+      `grep -rnE '(-D|#[[:space:]]*define[[:space:]]+)(private|protected)[[:space:]=]+public' --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' --include='*.c' --include='*.cpp' --include='*.h' --include='*.hpp' .` ;
+      `err=$(grep -rE 'NOT[[:space:]]+CMAKE_BUILD_TYPE' --include='CMakeLists.txt' . 2>&1 >/dev/null); rc=$?` ;
+      `case $rc in 0) ;; 1) echo "no default CMAKE_BUILD_TYPE: an unset one compiles with no -O and no -DNDEBUG" ;; *) echo "SWEEP FAILED, not a finding about their code: $err" ;; esac`
+- [ ] **Hardening flags dropped on the way to a unit (§1a) — HIGH on a network-facing binary** —
+      `grep -rnE '^[[:space:]]*(C|CXX|CPP|LD)FLAGS[[:space:]]*(\+|:|\?)?=' --include='Makefile' --include='GNUmakefile' --include='*.mk' .`
+      (no `override`: a `make CFLAGS=...` on the command line replaces the line) ;
+      `grep -rn 'ExternalProject_Add' --include='CMakeLists.txt' --include='*.cmake' .` (read
+      whether its `CMAKE_ARGS` pass the hardening flags) ; then `checksec` the linked artifact
 - [ ] **Warnings-as-errors and standard pinned?** —
       `grep -rnE 'Werror|/WX' . --include='CMakeLists.txt' --include='*.cmake' --include='Makefile*' || echo "no -Werror"`
       ; `grep -rnE 'CXX_STANDARD|cxx_std_|std=c\+\+' CMakeLists.txt 2>/dev/null`

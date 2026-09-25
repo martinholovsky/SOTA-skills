@@ -26,6 +26,35 @@ Standards: [SEI CERT Oracle Java](https://wiki.sei.cmu.edu/confluence/display/ja
   Spring Statemachine's Kryo persistence lacked a class allowlist
   (CVE-2026-41862). Require an explicit type allowlist on any converter or
   persistence layer that resolves classes from data.
+- **Third-party object mappers are safe only above a version and under a setting.** Each
+  boundary below was read from the project's advisory, docs or jar on 2026-09-25; re-check it
+  at the advisory before relying on it. **fastjson 1.x** (`com.alibaba:fastjson`, repository
+  now archived): safe mode exists from 1.2.68 and switches autoType off completely
+  (`ParserConfig.getGlobalInstance().setSafeMode(true)` or `fastjson.parser.safeMode=true`).
+  The autoType bypass CVE-2022-25845 covers 1.2.25 to 1.2.82 (GHSA-pv7h-hx5h-mgfj). So
+  require 1.2.83 or later with safe mode on and no `setAutoTypeSupport(true)`, or move to
+  fastjson2 with autotype left off. **XStream**: XStream's security page says the default
+  became an allowlist in 1.4.18, and before that it was a denylist, which the page calls a
+  failed approach. DoS fixes kept landing after that, so run the latest release.
+  `addPermission(AnyTypePermission.ANY)` or a broad wildcard undoes the allowlist.
+  **YamlBeans**: CVE-2023-24621 lists 1.15 and earlier with no patched version. The 1.17 jar
+  on Maven Central adds `SafeYamlConfig` (class tags and anchors off), but a plain `YamlConfig`
+  still defaults `classTags` to `true` (1.17 source), so untrusted YAML goes through
+  `SafeYamlConfig` only. **Castor XML**: its last Maven Central release is 1.4.1 (2016) and
+  its last commit is from 2017, so no fix is coming. Keep untrusted input away from it.
+  OWASP: Deserialization cheat sheet.
+- **The class side of native serialization.** Mark a field that must never cross the wire
+  `private transient`. Measured on Temurin 25.0.4: a `transient` password was absent from the
+  stream and read back as `null`. Some domain classes are `Serializable` only because a
+  framework demands it and must never be rebuilt from bytes. Give each one
+  `private final void readObject(ObjectInputStream in) throws IOException { throw new
+  InvalidObjectException("not deserializable"); }`, which threw on the same JDK. The review
+  surface is wider than `readObject()`. It also covers `readUnshared()`, class-side
+  `readObject`, `readObjectNoData` and `readResolve`, `Externalizable.readExternal`, XStream
+  `fromXML`, and every `Serializable` class on the classpath, because a gadget is a class, not
+  a call. Legacy code you cannot change can use a `-javaagent` that hardens
+  `ObjectInputStream` with a gadget denylist, but only as a last resort behind
+  `jdk.serialFilter`: a denylist misses the next gadget. OWASP: Deserialization cheat sheet.
 
 ## 2. Injection (SQL, command, LDAP, expression)
 
@@ -63,6 +92,16 @@ Standards: [SEI CERT Oracle Java](https://wiki.sei.cmu.edu/confluence/display/ja
   each tag). So a `trustSerialData=true` anywhere is a finding. On a JDK whose `java.naming`
   docs still say "allowed", the absence of `=false` is one too. Update releases of older
   lines were not checked, so read the docs of the exact build.
+  **A DN is a separate context with its own escaping.** The `{0}` overload of `search`
+  substitutes its arguments into the filter only. The `name` argument, like any DN passed to
+  `bind`, `lookup`, `modifyAttributes` or used as a bind principal, is taken as written. So
+  escape each value placed in a DN with `javax.naming.ldap.Rdn.escapeValue` (RFC 2253, per its
+  Javadoc), or build the name as `new LdapName(List.of(new Rdn("ou", "people"), new Rdn("uid",
+  user)))`. ESAPI's `Encoder.encodeForDN` does the same job. Measured on Temurin 25.0.4:
+  `"uid=" + "bob,ou=admins" + ",ou=people"` parsed as three RDNs, while the `Rdn` form stayed
+  at two, and `escapeValue("bob,ou=admins+cn=x")` returned `bob\,ou\=admins\+cn\=x`. Filter
+  escaping does not make a value safe in a DN. The two rule sets are in `sota-code-security`
+  rules/01 §11. OWASP: LDAP Injection Prevention cheat sheet.
 - **XPath injection** (CWE-643): an expression built by concatenation is the SQL-injection
   shape. Bind values with `XPath.setXPathVariableResolver` and reference them as `$name`.
   Measured on Temurin 25.0.4: `count(//user[name='" + in + "'])` with
@@ -225,7 +264,7 @@ XML and XXE (formerly section 3) moved to [rules/07](07-xml.md) §1 on 2026-09-2
   creds)` leaks it. Override `toString` on any record or Kotlin `data class` that carries a
   credential. Redaction at the logger is `sota-observability` rules/01 §4.
 - **Spring/framework**: keep dependencies patched (Spring4Shell, Log4Shell were
-  dependency CVEs — `rules/06`); the web layer itself is §6 below.
+  dependency CVEs — `rules/06`); the web layer itself is in `rules/08`.
 - **`assert` is not a control**: assertions are **disabled by default** at
   runtime — Oracle's own guide says so, and adds that once disabled they are
   "essentially equivalent to empty statements in semantics and performance".
@@ -235,92 +274,7 @@ XML and XXE (formerly section 3) moved to [rules/07](07-xml.md) §1 on 2026-09-2
   `Preconditions`-style checks that survive). Class:
   `sota-code-security` rules/11 §4.
 
-## 6. The web layer — actuator, request binding, authorization rules, filters
-
-HTTP semantics (status codes, idempotency, rate limits, CORS) belong to `sota-api-design`, and
-web-security classes (CSRF, XSS, headers) to `sota-code-security` rules/05. This section covers
-the JVM mechanisms those attacks come in through. Spring is the example because it is the most
-widely deployed JVM web stack. Ask the same questions of Jakarta EE, Micronaut, Quarkus or Ktor.
-All Spring facts below were checked against Spring's own docs, advisories and source on
-2026-09-23. **Re-verify them for the major version in front of you.**
-
-- **Actuator exposure.** By default Spring Boot exposes only `health` over HTTP. Treat every
-  widening of `management.endpoints.web.exposure.include` as a finding until you have shown the
-  endpoint sits behind authentication or a firewall, which is the docs' own condition for
-  setting it. A value of `*` on an internet-facing port is HIGH. **`heapdump` is the worst
-  one.** It returns process memory. The `show-values` sanitization (default `never`) covers
-  `/env`, `/configprops` and `/quartz`, not a heap dump, which holds every secret the process
-  has loaded. Prefer `management.server.port` on an internal-only interface.
-- **Typed request bodies.** §1 states the rule. The web layer is where it fires, because a
-  `@RequestBody` is JSON the caller wrote. `@JsonTypeInfo(use = Id.CLASS)` or `Id.MINIMAL_CLASS`
-  on a type reachable from a request lets the caller name the class to instantiate. Use
-  `Id.NAME` with registered subtypes. `enableDefaultTyping` was deprecated in jackson-databind
-  2.10 in favour of `activateDefaultTyping(PolymorphicTypeValidator)` (databind #2195). A
-  validator that allows `Object` or a broad package prefix is the same hole under a new name.
-- **Data binding (mass assignment).** Spring's reference docs say: *"for security reasons it is
-  recommended either to use an object tailored specifically for web binding, or to apply
-  constructor binding only. If property binding must still be used, then allowedFields
-  patterns should be set."* Binding a persistence entity straight from a request lets the
-  caller set `role`, `ownerId` or `id`. A record used as the binding target gets constructor
-  binding by construction. **Spring4Shell (CVE-2022-22965) was this class** reaching the class
-  loader through property binding. It affected Spring Framework 5.3.0–5.3.17 and 5.2.19 and
-  earlier, and was fixed in 5.3.18 and 5.2.20. It required JDK 9+, Tomcat and WAR packaging.
-  Executable-JAR deployments were not affected. Outside Spring the same shape is Apache
-  Commons `BeanUtils.populate(bean, request.getParameterMap())`: property binding from
-  request names with no allowlist at all.
-- **Authorization rules are first-match.** `authorizeHttpRequests` evaluates its pairs "in
-  the order listed, applying only the first match". So a broad `permitAll()` placed above a
-  narrow rule silently wins. End with `.anyRequest().denyAll()`, or `.authenticated()` as a
-  stated choice. The docs call default deny "a healthy security practice since it turns the
-  set of rules into an allow list". Prefer `permitAll()` to `web.ignoring()`: an ignored path
-  skips the whole filter chain, security headers included. Since Spring Security 6,
-  authorization runs on **every dispatch** (FORWARD, ERROR and INCLUDE as well as REQUEST), so
-  an error page or forward target needs its own rule rather than inheriting its caller's.
-- **Filter ordering.** A servlet `Filter` that reads identity, logs the principal or enforces
-  tenancy must run **after** the security filter chain has authenticated the request. If it
-  is registered earlier, it sees an anonymous request, or trusts a header the chain would
-  have rejected. Check the order **on the running application**, not from `@Order`
-  annotations. Both the default order and the property that sets it have moved between Spring
-  Boot majors: Boot 4's `SecurityProperties` on main no longer carries a filter order.
-- **CSRF: disabled, or bypassed by a GET.** Spring Security's docs say CSRF protection "is
-  enabled" by default "for unsafe HTTP methods". `csrf().disable()`,
-  `csrf(AbstractHttpConfigurer::disable)` or `csrf { disable() }` on a cookie-session app is
-  HIGH. An API authenticated only by a header token, with no cookie for a forged request to
-  ride, is the usual exception, and the reason belongs in a comment. The quieter hole is a state-changing handler reachable by GET.
-  `CsrfFilter`'s default matcher skips `GET`, `HEAD`, `TRACE` and `OPTIONS` (read from its
-  source), and a method-level `@RequestMapping` with no `method` maps every verb
-  (`RequestMethod[] method() default {}`). So such a handler is reachable by a cross-site
-  GET with no token check. Use `@PostMapping` and friends for anything that writes. It is
-  the same class as the HEAD-to-GET confusion in `sota-ruby` rules/03.
-- **View names are routing.** A controller return value of `"redirect:" + param` or
-  `"forward:" + param`, or `new ModelAndView(param)`, lets the caller choose the target.
-  Those prefixes are `UrlBasedViewResolver.REDIRECT_URL_PREFIX`/`FORWARD_URL_PREFIX`.
-  `response.sendRedirect(param)` and `request.getRequestDispatcher(param)` are the servlet
-  spellings. A **forward reaches what a browser cannot**: the Servlet spec says the
-  contents of `WEB-INF` "may be exposed using the `RequestDispatcher` calls". Allowlist
-  targets; the open-redirect rule is `sota-code-security` rules/01 §11. **A redirect does not end
-  the handler.** `sendRedirect`, `forward` and a `Location` header are plain calls: the servlet
-  Javadoc only says the response "should be considered to be committed". The code after them
-  runs, so `return` or throw on the next line, above all after a failed auth check. OWASP: Code
-  Review Guide v2.
-- **CORS with credentials: `allowedOriginPatterns("*")` reflects any origin.** Spring
-  refuses `allowedOrigins("*")` together with `allowCredentials(true)`, throwing
-  `IllegalArgumentException` from `validateAllowCredentials`. But `checkOrigin` returns the
-  request's own `Origin` for a pattern of `*` without calling that validation. So
-  `allowedOriginPatterns("*")` plus credentials is reflect-any-origin-with-cookies (both
-  read from `CorsConfiguration` source). The class is `sota-code-security` rules/05.
-- **Session IDs in URLs.** Tomcat's `ApplicationContext` source says "URL re-writing is
-  always enabled by default" and adds `COOKIE` beside it, so `encodeURL`/
-  `encodeRedirectURL` can put `;jsessionid=` into links, logs and `Referer` headers. Set
-  the tracking mode to cookie only: `server.servlet.session.tracking-modes=cookie` in
-  Spring Boot, or `<tracking-mode>COOKIE</tracking-mode>` in `web.xml`. **A cookie the app sets
-  itself starts bare**: `new jakarta.servlet.http.Cookie(...)` and Spring's `ResponseCookie.from`
-  builder both default secure/HttpOnly to false with no SameSite, Path or Domain (servlet-api
-  6.1.0, spring-web 7.0.9 source). Set each: `.secure(true).httpOnly(true).sameSite("Lax")`, or
-  `setAttribute("SameSite", "Lax")` (Servlet 6.0+); Tomcat 11 adds none unless its `CookieProcessor`
-  sets `sameSiteCookies`. Prefer a `__Host-` name (`Secure`, `Path=/`, no `Domain`). Its session
-  cookie is `HttpOnly` (`StandardContext.useHttpOnly = true`). Policy: `sota-code-security` rules/05.
-
+The web layer (formerly section 6) moved to [rules/08](08-web-layer.md) §1 on 2026-09-25.
 
 ## 7. Native and off-heap memory — JNI, FFM, `Unsafe`
 
@@ -344,6 +298,14 @@ the class is `sota-code-security` rules/06 §3.
       (Jackson polymorphic);
       `grep -rnE 'MappingJackson2MessageConverter|JacksonJsonMessageConverter|new Kryo\(' --include='*.java' --include='*.kt' .`
       (framework deser — verify type allowlist)
+- [ ] **Object mappers in an unsafe mode — CRITICAL on untrusted input** (§1) —
+      `grep -rnE 'setAutoTypeSupport\([[:space:]]*true|setSafeMode\([[:space:]]*false|safeMode[[:space:]]*=[[:space:]]*false|AnyTypePermission\.ANY|new YamlConfig\(|org\.exolab\.castor' --include='*.java' --include='*.kt' --include='*.properties' .`
+      (then read the fastjson, XStream and YamlBeans versions in the lockfile against the
+      §1 floors; safe mode must be switched on, since its absence does not match)
+- [ ] **Native-serialization review surface and class-side hardening — HIGH** (§1) —
+      `grep -rnE 'readUnshared\(|readObjectNoData\(|readResolve\(|readExternal\(|\.fromXML\(|(implements|:)[^{;]*(Serializable|Externalizable)' --include='*.java' --include='*.kt' .`
+      (each `Serializable` hit: credential fields `transient`, and a class never meant to be
+      read back has a `readObject` that throws; each read call: trace its bytes)
 - [ ] **Injection — CRITICAL/HIGH** —
       `grep -rnE '(createQuery|createNativeQuery|prepareStatement|executeQuery|executeUpdate)\([^?)]*\+' --include='*.java' .`
       ;
@@ -372,6 +334,10 @@ the class is `sota-code-security` rules/06 §3.
       `grep -rnE 'setReturningObjFlag\([[:space:]]*true|trustSerialData.{0,6}true' --include='*.java' --include='*.kt' --include='*.properties' --include='*.sh' --include='*.y*ml' --include='Dockerfile*' .`
       (objects rebuilt from LDAP entries; where the JDK's documented default is "allowed",
       as at jdk-17-ga and jdk-19-ga, an unset `trustSerialData` also allows it)
+- [ ] **LDAP DN built from a raw value — HIGH** (§2) —
+      `grep -rnE '(uid|cn|ou|dc|mail|sAMAccountName)=([^"]*"[[:space:]]*\+|[^"]*\$)' --include='*.java' --include='*.kt' . | grep -vE 'escapeValue|encodeForDN'`
+      (a DN concatenated or templated from a variable; the `{0}` filter overload does not
+      protect the base DN. Use `Rdn.escapeValue` or `LdapName`/`Rdn`)
 - [ ] **XPath injection — HIGH** (§2) —
       `grep -rnE '\.(evaluate|compile)\([^;]*"[[:space:]]*\+' --include='*.java' .` ;
       `grep -rnE '\.(evaluate|compile)\("([^"]*[^"\\])?\$[{a-zA-Z]' --include='*.kt' .`
@@ -413,53 +379,6 @@ the class is `sota-code-security` rules/06 §3.
       `.dns(` filter used as the guard is itself the finding, because IP literals skip it.
       For each client that reaches a caller-chosen host, confirm a `socketFactory` or
       `DnsResolver` guard exists, or an enforcing egress proxy)
-- [ ] **Actuator exposure — HIGH if internet-facing** —
-      `grep -rnE 'management\.endpoints\.web\.exposure\.include|management\.server\.port|show-values' --include='*.properties' .`
-      ; `grep -rnE '^[[:space:]]*(exposure|include|show-values):|heapdump' --include='*.yml' --include='*.yaml' .`
-      (YAML nests the key, so the dotted pattern alone misses `include: "*"`, the commonest
-      form. Anything beyond `health` needs auth or a firewall; `heapdump` exposed is HIGH on
-      sight)
-- [ ] **Request-body polymorphism — CRITICAL on a type reachable from `@RequestBody`** —
-      `grep -rnE 'JsonTypeInfo\.Id\.(CLASS|MINIMAL_CLASS)|use *= *(JsonTypeInfo\.)?Id\.(CLASS|MINIMAL_CLASS)|activateDefaultTyping|enableDefaultTyping' --include='*.java' --include='*.kt' .`
-      (then read the `PolymorphicTypeValidator`: allowing `Object` or a broad prefix is the
-      same finding)
-- [ ] **Mass assignment — HIGH** — list binding targets and confirm none is an entity:
-      `grep -rnE '@(ModelAttribute|RequestBody)' --include='*.java' --include='*.kt' .` ;
-      `grep -rnE 'setAllowedFields|setDisallowedFields|@InitBinder' --include='*.java' --include='*.kt' .`
-      (property binding with no `setAllowedFields` on an entity is the finding; a
-      disallow-list is weaker than an allow-list) ;
-      `grep -rnE 'BeanUtils\.populate\(' --include='*.java' --include='*.kt' .`
-      (the non-Spring spelling: every request parameter name becomes a setter call)
-- [ ] **Authorization rules — HIGH** —
-      `grep -rnE 'authorizeHttpRequests|requestMatchers|anyRequest|permitAll|ignoring\(' --include='*.java' --include='*.kt' .`
-      (read each chain top-down: first match wins; the chain must end in `anyRequest()`;
-      `web.ignoring()` on a non-static path is a finding)
-- [ ] **Filter order — MEDIUM, HIGH if the filter enforces tenancy or reads identity** —
-      `grep -rnE 'implements (jakarta|javax)\.servlet\.Filter|extends OncePerRequestFilter|FilterRegistrationBean|@Order' --include='*.java' --include='*.kt' .`
-      (confirm on the running app that each identity-reading filter runs after the security
-      chain; an annotation is not evidence of the effective order)
-- [ ] **CSRF disabled, or a write reachable by GET — HIGH on a cookie-session app** (§6) —
-      `grep -rnE 'csrf\(\)\.disable\(|csrf\([[:space:]]*AbstractHttpConfigurer::disable|csrf\([^)]*->[^)]*\.disable\(|csrf[[:space:]]*\{[[:space:]]*disable\(' --include='*.java' --include='*.kt' .`
-      (needs a written reason naming the non-cookie credential) ;
-      `grep -rnE '^[[:space:]]+@RequestMapping' --include='*.java' --include='*.kt' . | grep -v 'method'`
-      (an indented, method-level mapping with no `method` answers GET, which `CsrfFilter`
-      never checks; read the handler: does it write?)
-- [ ] **View names and dispatch targets from request data — HIGH** (§6) —
-      `grep -rnE '"(redirect|forward):"[[:space:]]*\+|new ModelAndView\([[:space:]]*[^")[:space:]]|sendRedirect\(|getRequestDispatcher\(' --include='*.java' --include='*.kt' .`
-      (each target must be a constant or an allowlist entry; a `forward:`/dispatcher target
-      from input can read `WEB-INF`)
-- [ ] **Code still running after a redirect or forward — HIGH after an auth check** (§6) —
-      `grep -rnE -A1 'sendRedirect\(|\.forward\(|setHeader\("Location"' --include='*.java' --include='*.kt' . | grep -E '^[^:]+-[0-9]+-' | grep -vE '^[^:]+-[0-9]+-[[:space:]]*(return|throw|\}|$)'`
-      (prints the statement after each call; a status set after `Location` is expected)
-- [ ] **CORS: wildcard origin pattern with credentials — HIGH** (§6) —
-      `grep -rnE 'allowedOriginPatterns\([^)]*"\*"|addAllowedOriginPattern\("\*"\)|originPatterns[[:space:]]*=[[:space:]]*"\*"|allowCredentials[[:space:]]*(\(|=)[[:space:]]*"?true' --include='*.java' --include='*.kt' .`
-      (a `*` pattern and `allowCredentials` true on the same mapping reflect every origin;
-      Spring's own `*` + credentials guard does not cover patterns)
-- [ ] **Session IDs in URLs; app-set cookies without Secure/HttpOnly/SameSite — MEDIUM** (§6) —
-      `grep -rnE 'new (jakarta\.servlet\.http\.|javax\.servlet\.http\.)?Cookie\(|encodeURL\(|encodeRedirectURL\(|tracking-modes|trackingModes|setSessionTrackingModes|<tracking-mode>' --include='*.java' --include='*.kt' --include='*.properties' --include='*.y*ml' --include='web.xml' .`
-      (no cookie-only tracking-mode setting means Tomcat's default still includes `URL`) ;
-      `grep -rlE 'new (jakarta\.servlet\.http\.|javax\.servlet\.http\.)?Cookie\(|ResponseCookie\.from\(' --include='*.java' --include='*.kt' . | while IFS= read -r f; do grep -qi 'samesite' "$f" || echo "$f"; done`
-      (files creating a cookie that never set SameSite; at every creation site also confirm `setSecure(true)`/`setHttpOnly(true)` or `.secure(true).httpOnly(true)`)
 - [ ] **Crypto misuse — HIGH** —
       `grep -rnE 'new Random\(|Math\.random|ThreadLocalRandom' --include='*.java' . | grep -iE 'key|token|iv|salt|nonce|secret'`
       ;

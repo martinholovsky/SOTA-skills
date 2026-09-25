@@ -137,6 +137,21 @@ const map = Object.create(null);          // no prototype to pollute
 
 - `JSON.parse` itself is safe (`__proto__` becomes an own property) — the pollution happens in subsequent merge/assign logic.
 - Check dependencies: historic offenders are deep-merge utilities, config loaders, and qs-style parsers. `Object.freeze(Object.prototype)` is a blunt last-resort hardening some services use.
+- **Freezing is a security control for objects that other code could swap.** An escaper, a
+  sanitizer wrapper or a security config held in a shared module can be overwritten by a
+  polluted merge, a third-party script or injected code. Freeze it at creation
+  (`Object.freeze`, or `Object.defineProperty` with `writable: false, configurable: false`
+  plus `Object.preventExtensions`), or keep it in a closure or module-private binding that
+  nothing else can reach. Two traps, measured on Node 22.22: in sloppy-mode code an
+  assignment to a frozen property is **silently ignored** (strict mode throws `TypeError`),
+  and `freeze` is shallow, so `Object.freeze({ opts: { allow: ['b'] } })` still let
+  `opts.allow.push('script')` through. Freeze nested arrays and objects too.
+- **Untrusted data never chooses a key on a global.** `window[name] = v` or
+  `globalThis[name] = v` with a request- or URL-derived `name` lets the caller replace any
+  global the app later calls (`globalThis['fetch'] = …` replaced `fetch`, measured). Keep
+  untrusted values on the right-hand side, and store per-key data in a `Map`.
+  *OWASP: DOM based XSS Prevention cheat sheet; DOM Clobbering Prevention cheat sheet;
+  Nodejs Security cheat sheet.*
 
 ## npm supply chain
 
@@ -240,7 +255,7 @@ if (input.length > 256) reject();
 
 ## Tokens and client-side auth
 
-- **Session/refresh tokens never in `localStorage`/`sessionStorage`** — any XSS exfiltrates them. Use cookies: `HttpOnly; Secure; SameSite=Lax` (or `Strict`), `Path` scoped, `__Host-` prefix.
+- **Session/refresh tokens never in `localStorage`/`sessionStorage`** — any XSS exfiltrates them (other sensitive data in browser storage: rules/09). Use cookies: `HttpOnly; Secure; SameSite=Lax` (or `Strict`), `Path` scoped, `__Host-` prefix.
 - SameSite is CSRF defense-in-depth, not complete: keep CSRF tokens (or strictly enforce custom-header + CORS preflight) for state-changing routes if any non-SameSite path exists.
 - If an SPA must hold an access token in JS (third-party API): keep it in memory only, short-lived (≤15min), refresh via httpOnly-cookie refresh token; accept that XSS can use (not just steal) it — XSS prevention remains the real control.
 - **Verify JWTs server-side properly**: pin the algorithm (`{ algorithms: ['RS256'] }` — never accept `alg` from the token; `none` and HS/RS confusion attacks), validate `iss`, `aud`, `exp`, clock skew. Use `jose`. Don't put secrets in JWT payloads — they're only base64.
@@ -299,6 +314,13 @@ iframe.contentWindow?.postMessage(payload, 'https://child.example.com');
 ```
 
 Treat `e.data` as untrusted input even from trusted origins (the trusted page may itself be compromised). Same discipline for `BroadcastChannel` and `window.opener` (use `rel="noopener"` on external links).
+
+**Web Workers follow the same rule in both directions.** A worker's script is code: build it
+only from files you ship, never from user input through a `Blob`/`data:` URL, a
+`new Worker(url)` whose URL varies, or `importScripts()` inside the worker. Messages between
+page and worker (`onmessage`, `MessagePort`) are untrusted input on each side: schema-parse
+them, map them to a fixed set of actions, and never `eval` them or write them to an HTML sink.
+Restrict worker sources with the CSP `worker-src` directive. *OWASP: HTML5 Security cheat sheet.*
 
 Command injection via `child_process` and SSRF moved to
 [rules/08](08-process-and-outbound.md) on 2026-09-25, section names unchanged.
@@ -360,6 +382,12 @@ buffer first. The class is `sota-code-security` rules/06 §3.
 - [ ] `grep -rn "href={" src/ --include="*.tsx"` — user-controlled hrefs without protocol allowlist (`javascript:`) = HIGH.
 - [ ] `grep -rn "localStorage.setItem\|sessionStorage.setItem" src/ | grep -i "token\|jwt\|session\|auth\|key"` — HIGH.
 - [ ] `grep -rn "postMessage" src/` — `'*'` target with sensitive data (HIGH); message listener without origin check (HIGH).
+- [ ] **Worker script built from data (§"postMessage", the Web Workers paragraph) — HIGH with user input** —
+      ``grep -rnE "new (Shared)?Worker\( *([^'\"\` ]|['\"\`](data|blob):|\`[^\`]*\\$\{)|importScripts\( *[^'\"\` )]" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.tsx' . | grep -vE "Worker\( *new URL\( *['\"]"``
+      — a worker URL from a variable, `Blob`, `data:` or template, or a non-literal `importScripts`. Read each worker's `onmessage` for a schema parse.
+- [ ] **Attacker-chosen key written to a global (§"Prototype pollution") — HIGH when the key is request- or URL-derived** —
+      ``grep -rnE "(window|globalThis|self)\[ *[^]'\"\` ][^]]*\] *=[^=]" --include='*.js' --include='*.ts' --include='*.mjs' --include='*.tsx' .``
+      — then read shared escapers and security config for a runtime `Object.freeze` (unfrozen and exported: MEDIUM).
 - [ ] Deep-merge of request data: `grep -rn "merge(\|deepmerge\|Object.assign" src/` near `req.body`/`json()` — prototype pollution exposure (HIGH); `grep -rn "__proto__" src/` in tests/guards is good signal of awareness.
 - [ ] `grep -rn "jwt.verify\|jwtVerify" src/` — algorithm pinned? `aud`/`iss` checked? `grep -rn "algorithms" src/` absent = HIGH.
 - [ ] Regex on user input: `grep -rn "new RegExp(" src/` (dynamic patterns = ReDoS + injection risk, HIGH); run `eslint-plugin-regexp`/recheck over static patterns.

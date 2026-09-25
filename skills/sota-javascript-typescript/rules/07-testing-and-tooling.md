@@ -195,6 +195,13 @@ Broken `exports`/types maps are the top npm-library bug class (works in dev, bre
 - `npx publint` — validates packaging (exports map, file presence, ESM/CJS field correctness).
 - `npx @arethetypeswrong/cli --pack` — validates types resolve under every resolution mode (node16 ESM/CJS, bundler); catches "false ESM" and masquerading-CJS d.ts.
 - Both run in CI before publish. `files` allowlist prevents leaking `.env`/configs into tarballs.
+- **Look at the tarball before it ships.** `npm pack --dry-run --json` lists every file the
+  publish would upload. Measured on npm 10.9.4 in a package with no `files` field: with no
+  `.npmignore` it packed `id_rsa` (the `.gitignore` had excluded `.env`); adding an
+  `.npmignore` that listed only `id_rsa` made npm stop reading `.gitignore`, and `.env` was
+  packed. So use the `files` allowlist, not `.npmignore`. `files: ["dist"]` still shipped
+  `dist/index.js.map`, and `"!dist/**/*.map"` removed it. In CI, diff the packed path list
+  against a committed expected list and fail on any new path. *OWASP: NPM Security cheat sheet.*
 - Dual ESM/CJS only if consumers demand it (tsup/unbuild make it tolerable); otherwise ESM-only and say so in the README.
 
 ## Type-level testing
@@ -245,5 +252,9 @@ steps:
 - [ ] Coverage thresholds configured and honest (no `**/index.ts` exclusion games) — absent = LOW; tests asserting nothing (`grep -rn "expect(" -L` on test files) = HIGH for the affected area.
 - [ ] knip (or equivalent) in CI? Run `npx knip` during audit — large unused-dependency list = MEDIUM (supply-chain surface).
 - [ ] Libraries: `npx publint && npx @arethetypeswrong/cli --pack` clean; `files` allowlist present — failures = HIGH for published packages.
+- [ ] **Tarball contents unchecked (§"Library publishing", the tarball bullet) — HIGH for a published package** —
+      `grep -rL --include='package.json' --exclude-dir=node_modules '"files"' . ; find . -name .npmignore -not -path '*/node_modules/*'`
+      — a publishable `package.json` (no `"private": true`) without `files`, or any `.npmignore`, ships whatever the
+      ignore rules miss. Then check CI runs `npm pack --dry-run --json` against an expected file list (absent: MEDIUM).
 - [ ] Snapshot test sprawl: `grep -rln "toMatchSnapshot" src/ | wc -l` — high count = change-detector suite (LOW/MEDIUM).
 - [ ] Test factories vs giant fixtures; fake timers restored (`restoreMocks: true` or explicit afterEach) — mock bleed causes order-dependent flake (MEDIUM).

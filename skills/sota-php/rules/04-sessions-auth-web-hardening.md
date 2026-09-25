@@ -16,8 +16,28 @@ session.cookie_secure    = 1       ; HTTPS-only cookie
 session.cookie_httponly  = 1       ; no JS access
 session.cookie_samesite  = Lax     ; Strict where UX allows
 session.sid_length       = 48      ; entropy of the ID (pre-8.4 tunable)
+session.use_cookies      = 1       ; the cookie is the only carrier (built-in default)
+session.use_trans_sid    = 0       ; no ID rewritten into URLs/forms (default)
+session.auto_start       = 0       ; the app, or its framework, starts the session
+session.name             = app_sid ; not PHPSESSID, which names the stack
+session.save_path        = /var/lib/app-sessions  ; this pool's own dir, mode 0700
 ```
 
+- `use_cookies`, `use_trans_sid` and `auto_start` already default to `1`, `0`, `0` (read with
+  `php -n` on 8.5.9; `php.ini-production` sets the same); pin them anyway, because a hosting
+  profile or a per-directory override can flip them. `use_trans_sid=1` puts the ID in URLs,
+  where logs and `Referer` headers carry it. `auto_start=1` starts a session at request startup,
+  before any application code runs, so a framework that manages sessions itself (e.g. Symfony)
+  no longer controls how, or whether, that session is created.
+- The default name `PHPSESSID` tells a scanner the stack; rename it. A cheap hardening step,
+  not a control.
+- `save_path` defaults to empty, so the files handler falls back to the system temp directory,
+  shared with every other process on the host. Give each application its own directory, owned by
+  its FPM user and closed to everyone else; a store shared between applications lets one read or
+  plant another's sessions (`sota-code-security` rules/17 §2).
+- `session.referer_check` (empty by default) only rejects a request whose `Referer` lacks a
+  substring. Clients omit or strip that header, so treat it as an optional extra and never as a
+  fixation defence.
 - `use_strict_mode=1` is the **session fixation** kill switch — without it, PHP
   happily adopts any ID the attacker planted. Default is 0; always set it.
 - **Regenerate on privilege change:** `session_regenerate_id(true)` immediately
@@ -32,6 +52,7 @@ session.sid_length       = 48      ; entropy of the ID (pre-8.4 tunable)
 - Never put secrets, roles, or prices in cookies/hidden fields; the session ID
   is the only client-held session artifact. Custom session storage (e.g. Redis)
   keeps the same rules.
+- OWASP (the directives after `sid_length`): PHP Configuration cheat sheet, Symfony cheat sheet.
 
 ## 1a. Cookies the app sets itself: `setcookie()` has none of §1's defaults
 
@@ -154,13 +175,45 @@ Per the OWASP PHP Configuration Cheat Sheet:
 display_errors = Off               ; stack traces/paths leak internals
 display_startup_errors = Off
 log_errors = On
+error_reporting = E_ALL            ; report everything, display nothing
+html_errors = Off                  ; no HTML-formatted messages or doc links
+error_log = /var/log/app/php_error.log  ; outside the docroot; or syslog/stderr
+ignore_repeated_errors = Off       ; a repeating error is a signal, keep each
 expose_php = Off                   ; drop X-Powered-By
 allow_url_include = Off
 allow_url_fopen = Off              ; unless remote fetch is a real requirement
 open_basedir = /srv/app            ; coarse containment fence
+doc_root = /srv/app/public
+include_path = "/srv/app/lib"
+extension_dir = /usr/lib/php/modules  ; root-owned, not writable by the FPM user
+enable_dl = Off                    ; or add dl to disable_functions
+variables_order = "GPCS"           ; no $_ENV superglobal
+file_uploads = Off                 ; only when the app accepts no uploads
+upload_tmp_dir = /var/lib/app/upload-tmp  ; when it does: private, not the docroot
 disable_functions = exec,passthru,shell_exec,system,proc_open,popen,pcntl_exec,phpinfo
                                    ; tailor to what the app truly needs
 ```
+
+- **Errors: keep reporting, stop displaying, and read the log.** The built-in `error_reporting`
+  default is `E_ALL`, but `php.ini-production` ships `E_ALL & ~E_DEPRECATED`; set `E_ALL` so
+  deprecations reach the log before an upgrade turns them into breakage. `html_errors` is On
+  by default outside the CLI (read on 8.5.9 under `php-cgi -n`). With `error_log` unset,
+  messages go to the SAPI error logger (php.net: e.g. Apache's error log, or stderr in
+  the CLI), which is often nobody's dashboard. Name a destination, then
+  ship it to the log pipeline and alert on it (sota-observability). A log that is written and
+  never read is not a control. `ignore_repeated_errors` defaults to Off; leave it Off, because
+  deduplicating hides the rate of an attack that repeats one error.
+- **The rest of the surface.** `enable_dl` defaults to On (read on 8.5.9); `dl()` only works in
+  the CLI, embed and command-line CGI SAPIs (php.net `dl`), so this closes the CLI and worker
+  side. `variables_order` defaults to `EGPCS`; `GPCS` stops populating `$_ENV` (checked on 8.5.9), so environment
+  secrets do not sit in a superglobal that a debug dump prints (`getenv()` still works).
+  `include_path`, `extension_dir` and `doc_root` belong beside `open_basedir`: set them to
+  explicit, root-owned paths so an include or extension load cannot resolve somewhere the app
+  user can write. `file_uploads = Off` removes multipart parsing from an app that takes no
+  files; one that does gets its own `upload_tmp_dir` (`rules/03` §1).
+- `allow_webdav_methods` is not a PHP directive now: `ini_get()` returns `false` for it on
+  8.5.9. Older checklists still list it. Do not set it, and do not count its absence as a gap.
+- OWASP: PHP Configuration cheat sheet.
 
 - `disable_functions` is defense in depth against webshells/RCE pivots — build
   the list from what the app *doesn't* use, and keep CLI workers on a separate
@@ -252,6 +305,10 @@ Run from repo root; verify each hit manually.
       `php -r 'foreach (["use_strict_mode","use_only_cookies","cookie_secure","cookie_httponly","cookie_samesite"] as $k) echo "session.$k=", ini_get("session.$k"), PHP_EOL;'`
       ; `grep -rn 'session_regenerate_id' --include='*.php' src/` (absent near login = HIGH);
       `grep -rnE 'session_id\s*\(\s*\$' --include='*.php' src/` (attacker-settable ID)
+- [ ] **Session ini overrides (§1) — MEDIUM (HIGH for `use_trans_sid` on)** — each hit sets
+      URL IDs, auto-start, the default name or a shared temp dir:
+      `grep -rniE 'session\.(use_trans_sid[]"]?[[:space:]]*[[:space:]=][[:space:]]*"?(1|on)|use_cookies[]"]?[[:space:]]*[[:space:]=][[:space:]]*"?(0|off)|auto_start[]"]?[[:space:]]*[[:space:]=][[:space:]]*"?(1|on)|name[]"]?[[:space:]]*[[:space:]=][[:space:]]*"?PHPSESSID|save_path[]"]?[[:space:]]*[[:space:]=][[:space:]]*"?(/tmp|/var/tmp))' --include='*.ini' --include='*.conf' --include='.htaccess' --include='.user.ini' .`
+      ; no hit is not a pass — read the effective values: `php -r 'foreach (["use_cookies","use_trans_sid","auto_start","name","save_path"] as $k) echo "session.$k=", ini_get("session.$k"), PHP_EOL;'`
 - [ ] **App-set cookies (§1a)** — each hit lacks SameSite; the positional form cannot set it, so
       rewrite it to the options array with `secure`, `httponly` and `samesite` (a multi-line
       options array also shows up here: read it):
@@ -282,6 +339,13 @@ Run from repo root; verify each hit manually.
       `php -r 'foreach (["display_errors","expose_php","allow_url_include","allow_url_fopen","open_basedir","disable_functions"] as $k) echo "$k=", ini_get($k), PHP_EOL;'`
       ;
       `curl -sI https://target/ | grep -iE 'content-security|strict-transport|x-content-type|x-powered-by'`
+- [ ] **Error and attack-surface directives (§5) — MEDIUM (`display_errors` on in production
+      per the severity guide)** — each hit turns on HTML errors, `dl()`, repeat suppression or
+      error display, or keeps `E` in `variables_order`:
+      `grep -rniE '^[^;#]*(html_errors|enable_dl|ignore_repeated_errors|display_errors)[]"]?[[:space:]]*[[:space:]=][[:space:]]*"?(1|on)|^[^;#]*variables_order[]"]?[[:space:]]*[[:space:]=][[:space:]]*"?[GPCS]*E' --include='*.ini' --include='*.conf' --include='.htaccess' --include='.user.ini' .`
+      ; then the effective values, on the production image and SAPI (the CLI forces
+      `html_errors` off): `php -r 'foreach (["error_reporting","html_errors","error_log","ignore_repeated_errors","enable_dl","variables_order","file_uploads","upload_tmp_dir","include_path","extension_dir","doc_root"] as $k) echo "$k=", ini_get($k), PHP_EOL;'`
+      . An empty `error_log`, or one nothing ships and alerts on = MEDIUM
 - [ ] **Resource caps, and a wall-clock bound (§5)** — `request_terminate_timeout` unset or `0`
       on a web pool = MEDIUM; a request-derived sleep duration = MEDIUM:
       `php -r 'foreach (["memory_limit","max_execution_time","max_input_vars","post_max_size","upload_max_filesize"] as $k) echo "$k=", ini_get($k), PHP_EOL;'`

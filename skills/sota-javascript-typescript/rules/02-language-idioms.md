@@ -92,7 +92,7 @@ const updated = items.with(i, newItem);
 - Mutators to flag on shared/parameter arrays: `sort`, `reverse`, `splice`, `push/pop/shift/unshift`, `fill`, `copyWithin`. Local arrays you just created may be mutated freely — purity at the boundary, pragmatism inside.
 - Deep copy: `structuredClone(obj)` — handles Dates, Maps, Sets, cycles, typed arrays. Never `JSON.parse(JSON.stringify(x))` (drops `undefined`, functions, Dates become strings, throws on cycles). Note structuredClone drops functions and prototypes — data only.
 - Shallow update idiom: `{ ...obj, field: v }` / `[...arr, item]` — shallow is fine when nested values are themselves replaced, not mutated.
-- Declare `readonly` arrays/properties in signatures; `as const` for fixed tables. `Object.freeze` is shallow and dev-only value — types are the real enforcement.
+- Declare `readonly` arrays/properties in signatures; `as const` for fixed tables. For ordinary data `Object.freeze` is shallow and adds little that types don't already enforce. Security-critical objects (escapers, sanitizer wrappers, security config) are the exception: freeze them deeply at runtime (rules/05 §"Prototype pollution").
 - `let` is a smell outside loops/accumulators; `const` everywhere (`prefer-const` lint).
 
 ## Map/Set over object-as-map
