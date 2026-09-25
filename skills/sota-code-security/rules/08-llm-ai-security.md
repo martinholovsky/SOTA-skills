@@ -174,7 +174,7 @@ Payments cheat sheet, DSOMM.
   tool, an MCP server or a downstream API. Get a separate token for each
   downstream audience — OAuth token exchange (RFC 8693, rules/03 §6) or an
   audience-restricted, down-scoped token. The MCP authorization spec (rev
-  2025-11-25) makes this normative: an MCP server must accept only tokens issued
+  2026-07-28, Security Considerations; also in 2025-11-25) makes this normative: an MCP server must accept only tokens issued
   for itself (RFC 8707 audience) and "MUST NOT pass through the token it
   received from the MCP client" to an upstream API. OWASP: AISVS 10.2.7.
 - Least-capability toolset: expose the minimal tools per task; narrow

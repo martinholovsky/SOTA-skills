@@ -22,8 +22,10 @@ processes; shared `ipc` = SysV shm/semaphore tampering.
   exposes normally-root-only kernel paths (netfilter, etc.) to any local user — a
   recurring LPE vector. On hosts that run untrusted code, restrict creation to
   sandboxing helpers: `kernel.unprivileged_userns_clone=0` (Debian),
-  `user.max_user_namespaces` quota, or AppArmor `userns` restriction (Ubuntu 24.04+).
-  Decide deliberately; don't leave the distro default unexamined.
+  `user.max_user_namespaces` quota, or AppArmor `userns` restriction (Ubuntu 24.04+ —
+  Qualys showed three bypasses, aa-exec/busybox/LD_PRELOAD, oss-security 2025-03-27;
+  also set `kernel.apparmor_restrict_unprivileged_unconfined=1`, and treat it as
+  hardening, not a boundary). Decide deliberately; don't leave the distro default unexamined.
 
 **R1.3 — PID namespace needs a real init.** PID 1 inside must reap zombies and forward
 signals (`tini`, `catatonit`, or `--init`). Combine with new `proc` mount
@@ -86,10 +88,17 @@ compatibility, not least privilege. For a real sandbox, profile the workload
     { "names": ["clone"], "action": "SCMP_ACT_ALLOW",
       "args": [{ "index": 0, "op": "SCMP_CMP_MASKED_EQ",
                  "value": 2114060288, "valueTwo": 0,
-                 "comment": "deny CLONE_NEW* flags" }] }
+                 "comment": "deny CLONE_NEW* flags" }] },
+    { "names": ["clone3"], "action": "SCMP_ACT_ERRNO", "errnoRet": 38,
+      "comment": "ENOSYS: flags sit behind a pointer, so deny it and let glibc fall back to clone" }
   ]
 }
 ```
+**clone3 must fail with `ENOSYS` (38), not the default `EPERM`.** glibc's `pthread_create`
+tries `clone3` first and falls back to `clone` only on `ENOSYS` (`clone-internal.c`), so
+an `EPERM` default breaks every thread start (measured 2026-09-26, podman+crun: Python
+`can't start new thread`; with the rule above, threads start). Confirm the errno your
+runtime actually delivers — a one-rule allow-default test profile returned `EPERM` anyway.
 
 **R3.2 — Syscalls that must never appear in an untrusted-workload allowlist** unless
 specifically justified: `ptrace`, `process_vm_readv/writev`, `bpf`, `perf_event_open`,
@@ -125,17 +134,28 @@ port control; ABI v6 adds IPC scoping (`LANDLOCK_SCOPE_SIGNAL`,
 ABI v7 (kernel 6.15+) emits `LANDLOCK_ACCESS` denial records via the audit
 subsystem — wire them into detection; ABI v8 (kernel 7.0) adds
 `LANDLOCK_RESTRICT_SELF_TSYNC` to apply a ruleset across all threads of the
-process; mainline docs add ABI v9 (pathname-UNIX-socket scoping,
-`LANDLOCK_ACCESS_FS_RESOLVE_UNIX`) and v10 (UDP bind/connect-send scoping + quiet
-rule logging) — check the landlock(7) VERSIONS table for the kernels shipping them.
+process; ABI v9 (kernel 7.1) adds pathname-UNIX-socket scoping
+(`LANDLOCK_ACCESS_FS_RESOLVE_UNIX`); mainline (as of 2026-09-26) adds v10 (UDP
+bind/connect-send + quiet rule logging) and v11 (`LANDLOCK_RESTRICT_SELF_NO_NEW_PRIVS`)
+— check the landlock(7) VERSIONS table for the kernels shipping them.
 
 ```c
-// allow read-only on /usr, read-write only on the job dir; everything else denied
+// HANDLE every right (R4.2) — an unhandled right stays allowed. Then clear the bits the
+// running ABI lacks (landlock.rst's switch on the ABI version) and grant back per path:
+// read-only on /usr, read-write only on the job dir; everything else denied.
 struct landlock_ruleset_attr attr = {
-  .handled_access_fs = LANDLOCK_ACCESS_FS_EXECUTE | LANDLOCK_ACCESS_FS_READ_FILE |
-                       LANDLOCK_ACCESS_FS_READ_DIR | LANDLOCK_ACCESS_FS_WRITE_FILE |
-                       LANDLOCK_ACCESS_FS_MAKE_REG | LANDLOCK_ACCESS_FS_REMOVE_FILE,
-  .handled_access_net = LANDLOCK_ACCESS_NET_CONNECT_TCP | LANDLOCK_ACCESS_NET_BIND_TCP,
+  .handled_access_fs = LANDLOCK_ACCESS_FS_EXECUTE | LANDLOCK_ACCESS_FS_WRITE_FILE |
+      LANDLOCK_ACCESS_FS_READ_FILE | LANDLOCK_ACCESS_FS_READ_DIR |
+      LANDLOCK_ACCESS_FS_REMOVE_DIR | LANDLOCK_ACCESS_FS_REMOVE_FILE |
+      LANDLOCK_ACCESS_FS_MAKE_CHAR | LANDLOCK_ACCESS_FS_MAKE_DIR |
+      LANDLOCK_ACCESS_FS_MAKE_REG | LANDLOCK_ACCESS_FS_MAKE_SOCK |
+      LANDLOCK_ACCESS_FS_MAKE_FIFO | LANDLOCK_ACCESS_FS_MAKE_BLOCK |
+      LANDLOCK_ACCESS_FS_MAKE_SYM | LANDLOCK_ACCESS_FS_REFER |          /* v2 */
+      LANDLOCK_ACCESS_FS_TRUNCATE | LANDLOCK_ACCESS_FS_IOCTL_DEV |      /* v3, v5 */
+      LANDLOCK_ACCESS_FS_RESOLVE_UNIX,                                  /* v9 */
+  .handled_access_net = LANDLOCK_ACCESS_NET_BIND_TCP | LANDLOCK_ACCESS_NET_CONNECT_TCP |
+      LANDLOCK_ACCESS_NET_BIND_UDP | LANDLOCK_ACCESS_NET_CONNECT_SEND_UDP, /* v4; UDP v10 */
+  .scoped = LANDLOCK_SCOPE_ABSTRACT_UNIX_SOCKET | LANDLOCK_SCOPE_SIGNAL, /* v6 */
 };
 ```
 Then add rules per path FD and `landlock_restrict_self()` after `prctl(PR_SET_NO_NEW_PRIVS,1)`.

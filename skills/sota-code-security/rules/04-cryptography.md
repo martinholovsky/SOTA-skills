@@ -1,7 +1,7 @@
 # 04 — Cryptography & Secrets
 
 Scope: algorithm selection, AEAD/nonce discipline, key management, randomness,
-TLS configuration, constant-time comparison, secrets handling.
+TLS configuration, secrets handling (constant-time comparison: rules/22).
 Maps to OWASP A04:2025 (Cryptographic Failures), CWE-327/326/330/321/323/208.
 
 Core principle: **don't design, don't implement, barely even compose.** Use a
@@ -399,7 +399,8 @@ CanTrust\s*=\s*true (SSH.NET) | fn check_server_key then Ok(true) (russh)   abse
 HostKeyReceived; Rust ssh2 handshake() with no known_hosts(); phpseclib/ext-ssh2 with no host-key compare
 MD5|SHA1 near sign/verify/token/password   AES/ECB | DES | RC4 | Blowfish
 Math\.random|random\.random|java\.util\.Random near token/key/secret/otp/nonce
-new IvParameterSpec\(.*getBytes  (static IV)   "-----BEGIN (RSA|EC|) PRIVATE KEY"
+new IvParameterSpec\(.*getBytes  (static IV)
+-----BEGIN ([A-Z0-9]+ )*PRIVATE KEY( BLOCK)?-----   (RSA/EC/OPENSSH/PKCS#8/ENCRYPTED/PGP; pass after --)
 == or equals\( comparing signature|mac|token|otp    secret\s*=\s*["'][A-Za-z0-9+/]{8,}
 createCipheriv\(.*, *(['"]).{1,16}\1  (short/static key/nonce)
 Base64 | btoa | XOR | crc32 | adler32 used as encryption/integrity   RC2 | single DES     (§1)

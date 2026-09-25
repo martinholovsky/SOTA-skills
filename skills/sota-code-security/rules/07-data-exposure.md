@@ -94,13 +94,15 @@ class Redact(logging.Filter):
         if isinstance(record.args, dict):
             record.args = {k: "[REDACTED]" if SECRET_KEYS.search(k) else v
                            for k, v in record.args.items()}
-        record.msg = JWT_SHAPE.sub("[JWT]", str(record.msg))
-        record.msg = record.msg.replace("\r", "\\r").replace("\n", "\\n")  # CWE-117
+        msg = JWT_SHAPE.sub("[JWT]", record.getMessage())  # merge args FIRST: they carry the data
+        record.msg, record.args = msg.replace("\r", "\\r").replace("\n", "\\n"), None  # CWE-117
         return True
+# attach to the HANDLER (handler.addFilter): a logger's filter skips records propagated from
+# child loggers. exc_info tracebacks are formatted later and are NOT scrubbed by this filter.
 
 class Secret(str):
     def __repr__(self): return "Secret('****')"
-    __str__ = __repr__          # f-string/log interpolation can't leak it
+    __str__ = __repr__          # masks str()/f-string/%-format; NOT "x" + s or ",".join([s])
 ```
 
 - Do log (security observability, OWASP A09): authn successes/failures, authz

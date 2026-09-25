@@ -17,8 +17,8 @@ never checks `aud`," it is here.
   confidential *and* public clients. PKCE binds the authorization request to the token
   request via a `code_verifier`/`code_challenge` (use `S256`, never `plain`).
 - **Implicit flow is dead.** It returns tokens in the URL fragment (leak via history,
-  referrer, logs) with no client authentication. OAuth 2.1 (`draft-ietf-oauth-v2-1`,
-  draft-15, March 2026 — still an Internet-Draft, *not* an RFC) removes it. Disable
+  referrer, logs) with no client authentication. OAuth 2.1 (`draft-ietf-oauth-v2-1` —
+  still an Internet-Draft, *not* an RFC, as of 2026-09-26; check datatracker.ietf.org) removes it. Disable
   `response_type=token`/`id_token token` at the IdP.
 - **ROPC / password grant is dead.** It hands the user's password to the client,
   defeats federation and MFA, and is removed in OAuth 2.1. Disable
@@ -147,6 +147,12 @@ assert claims.get("azp", claims["aud"]) == "web-app"
   on the registered host) receives the code/token.
 - Per-client registration: each RP gets its own client with its own narrow redirect set.
   Never share one client across apps.
+- **The one sanctioned port exception: native-app loopback.** For a desktop native app
+  using `http://127.0.0.1:{port}/{path}` or `http://[::1]:{port}/{path}`, the AS **MUST allow
+  any port** at request time (RFC 8252 Sec. 7.3) — compare scheme, loopback IP literal and
+  path exactly, ignore only the port. `http://localhost` stays NOT RECOMMENDED (Sec. 8.3):
+  the name can resolve off-loopback. This exception is for native clients only, never a
+  web client.
 - **AS side: never redirect a credential POST with 307 (or 308).** Both are
   method-preserving (RFC 9110 Sec. 15.4), so the browser re-POSTs the login form — password
   included — to the client's redirect URI. RFC 9700 Sec. 4.12: an AS MUST NOT use 307 there and
@@ -202,10 +208,15 @@ that accepts a DPoP-bound token as a plain bearer token has turned it back into 
 - **mTLS-bound tokens (RFC 8705 Sec. 3)** — take the client certificate from the TLS layer of
   *this* connection (not a header an upstream proxy could let a client set), hash it, and
   compare with the token's `cnf` `x5t#S256`; on mismatch reject with 401 `invalid_token`.
-- **MCP servers are resource servers.** The MCP authorization spec (2025-11-25 revision)
+- **MCP servers are resource servers.** The MCP authorization spec (revision 2026-07-28,
+  the current one as of 2026-09-26 — verify at modelcontextprotocol.io/specification)
   requires tokens audience-bound to the MCP server (RFC 8707 `resource`), and forbids
   passing a client's token through to upstream APIs; it does not itself require
-  sender-constraining. Treat MCP client→server tokens as FAPI-grade anyway when they grant
+  sender-constraining. For MCP clients it makes Client ID Metadata Documents the
+  **SHOULD** registration path and **deprecates Dynamic Client Registration** (kept for
+  backward compatibility; the AS side is rules/02 §2), and requires clients to validate a
+  present `iss` authorization-response parameter against the recorded issuer — the RFC 9207
+  mix-up defense in §3 above. Treat MCP client→server tokens as FAPI-grade anyway when they grant
   tool access to sensitive systems: DPoP- or mTLS-bind them and verify as above.
 - **Authorize each request from what the token grants, not from the token being valid.**
   After validation (rules/03 for the model), decide on the token's `scope`, its RFC 9396
@@ -220,7 +231,8 @@ that accepts a DPoP-bound token as a plain bearer token has turned it back into 
 
 ## 6. OAuth 2.1 and FAPI 2.0 posture
 
-- **OAuth 2.1**: a consolidation draft (obsoletes 6749/6750/8252, folds in RFC 9700). It
+- **OAuth 2.1**: a consolidation draft (obsoletes RFC 6749 and 6750; folds in the native-app
+  BCP RFC 8252, PKCE and RFC 9700 without obsoleting them). It
   is not yet an RFC — treat its *mandates* (PKCE everywhere, no implicit, no ROPC, exact
   redirect URIs) as today's baseline regardless, because they are independently in force.
 - **FAPI 2.0 Security Profile** is **Final (22 February 2025)**; FAPI 2.0 Message Signing
@@ -381,11 +393,11 @@ OIDC. When you run or consume SAML, the failure modes are signature-handling bug
 - [ ] Is IdP-initiated SAML avoided or hardened (single-use IDs, tight NotOnOrAfter, RelayState validation)?
 - [ ] Is the SCIM endpoint authenticated/authorized per-tenant, with DELETE/`active=false` actually terminating authentication?
 - [ ] Is any WS-Federation usage documented as legacy with a migration plan to OIDC?
-- [ ] **High** — When the RP sends `acr_values`/`max_age`, does it check the returned `acr`/`amr`/`auth_time` and fail on a shortfall or a missing claim (and does an RS gating on strength do the same)? Files that request a level but never read it: `grep -rlE 'acr_values|max_age' . | xargs grep -LE 'auth_time|["'\'']acr["'\'']|\.acr([^A-Za-z_]|$)'`
-- [ ] **Medium** — Does every JWT consumer pin the expected `typ` (`at+jwt` at an RS, `logout+jwt` for back-channel logout), and does the issuer give each recipient its own `aud` and refuse unknown `resource` values? Verifiers with no `typ` check: `grep -rlE 'jwtVerify|jwt\.(decode|verify)|JwtDecoder|ValidateToken' . | xargs grep -LE '[+]jwt|["'\'']typ["'\'']'`
-- [ ] **High** — Does the RS authorize every request from the token's `scope`/`authorization_details`/subject, and key users on `iss`+`sub`? User lookups on `sub` alone: `grep -rnE '[Uu]ser[A-Za-z_]*\(.*sub|WHERE[[:space:]]+sub[[:space:]]*=' . | grep -v iss`
-- [ ] **High** — Does the RS verify DPoP proofs fully (`typ`, `alg`, signature, `htm`, `htu`, `iat`/`nonce`, `ath`, `cnf.jkt`, `jti` replay) and match mTLS-bound tokens' `cnf` `x5t#S256` against the connection's client certificate — including MCP servers? DPoP handlers that never check `ath`: `grep -rlE 'dpop\+jwt|DPoP' . | xargs grep -LE '["'\'']ath["'\'']|\.ath([^A-Za-z_]|$)'`
-- [ ] **Medium** — With more than one AS: is the issuer stored per request and compared on return (`iss` parameter, or a distinct redirect URI per issuer as fallback), and is fetched metadata discarded when its `issuer` differs from the configured one? Discovery fetches with no issuer comparison: `grep -rlE 'well-known/(openid-configuration|oauth-authorization-server)' . | xargs grep -LE '\[["'\'']issuer["'\'']\][[:space:]]*(!=|==)|\.issuer[[:space:]]*(!=|==|!==|===)'`
+- [ ] **High** — When the RP sends `acr_values`/`max_age`, does it check the returned `acr`/`amr`/`auth_time` and fail on a shortfall or a missing claim (and does an RS gating on strength do the same)? Files that request a level but never read it: `grep -rlE 'acr_values|max_age' . | xargs -r grep -LE 'auth_time|["'\'']acr["'\'']|\.acr([^A-Za-z_]|$)'`
+- [ ] **Medium** — Does every JWT consumer pin the expected `typ` (`at+jwt` at an RS, `logout+jwt` for back-channel logout), and does the issuer give each recipient its own `aud` and refuse unknown `resource` values? Verifiers with no `typ` check: `grep -rlE 'jwtVerify|jwt\.(decode|verify)|JwtDecoder|ValidateToken' . | xargs -r grep -LE '[+]jwt|["'\'']typ["'\'']'`
+- [ ] **High** — Does the RS authorize every request from the token's `scope`/`authorization_details`/subject, and key users on `iss`+`sub`? User lookups on `sub` alone: `grep -rniE '[({][[:space:]]*["'\'']?sub["'\'']?[[:space:]]*[:=]|by_?sub[[:space:]]*\(|where[[:space:]]+sub[[:space:]]*=' . | grep -vi iss`
+- [ ] **High** — Does the RS verify DPoP proofs fully (`typ`, `alg`, signature, `htm`, `htu`, `iat`/`nonce`, `ath`, `cnf.jkt`, `jti` replay) and match mTLS-bound tokens' `cnf` `x5t#S256` against the connection's client certificate — including MCP servers? DPoP handlers that never check `ath`: `grep -rlE 'dpop\+jwt|DPoP' . | xargs -r grep -LE '["'\'']ath["'\'']|\.ath([^A-Za-z_]|$)'`
+- [ ] **Medium** — With more than one AS: is the issuer stored per request and compared on return (`iss` parameter, or a distinct redirect URI per issuer as fallback), and is fetched metadata discarded when its `issuer` differs from the configured one? Discovery fetches with no issuer comparison: `grep -rlE 'well-known/(openid-configuration|oauth-authorization-server)' . | xargs -r grep -LE '\[["'\'']issuer["'\'']\][[:space:]]*(!=|==)|\.issuer[[:space:]]*(!=|==|!==|===)'`
 - [ ] **High** — Does the AS redirect after a credential POST with 303, never 307/308? `grep -rnE 'code=30[78]|redirect\(30[78]|StatusTemporaryRedirect|StatusPermanentRedirect|TEMPORARY_REDIRECT|PERMANENT_REDIRECT' .`
 - [ ] **Critical** — Does the SAML SP verify only against IdP keys pinned from metadata (never a certificate taken from the message's `KeyInfo`), check `<Issuer>`, and apply the Web SSO profile and binding rules (signed assertions + replay cache on POST, query-string signature on Redirect, no `<Response>` on Redirect)? Keys read out of the document: `grep -rnE '(find|findtext|xpath|select|getElementsByTagName[A-Za-z]*)\(.*(KeyInfo|X509Certificate)' .`
 - [ ] **High** — Is the SAML signing certificate single-purpose (`digitalSignature` only, not the TLS certificate, CA:FALSE if self-signed) with RSA ≥ 2048/ECDSA P-256+ and SHA-256+, is partner metadata consumed from its URL over WebPKI TLS (never a certificate from email), is any private-CA trust scoped to SAML signature validation, and is there a partner contact list for compromise? SHA-1 or DSA XML-signature algorithms still configured: `grep -rniE 'xmldsig#(rsa-sha1|dsa-sha1|sha1)|(signature|digest)_?(algorithm|alg|method)["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']?(rsa-?)?sha-?1["'\'']?' .`

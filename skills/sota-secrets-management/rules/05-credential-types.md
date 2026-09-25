@@ -55,8 +55,9 @@ Usually irreplaceable by federation — manage the static secret well:
   constant-time comparison, support two active secrets during rotation, reject stale timestamps
   (replay).
 - AUDIT: vendor key prefixes are high-signal greps (`sk_live_`, `xoxb-`, `SG.`, `key-`,
-  `AC[a-f0-9]{32}` Twilio). A live vendor key in frontend bundles/mobile apps is Critical —
-  client-shipped code is public.
+  Twilio `SK[0-9a-fA-F]{32}` API-key SIDs; Twilio `AC[0-9a-fA-F]{32}` is an Account SID — an
+  identifier, so look beside it for the auth token or key secret). A live vendor key in
+  frontend bundles/mobile apps is Critical — client-shipped code is public.
 
 ## 3. Signing keys (code/artifact/webhook/general-purpose)
 
@@ -123,14 +124,17 @@ Usually irreplaceable by federation — manage the static secret well:
 
 ## 6. JWT signing secrets and `kid` rotation
 
-- **Prefer asymmetric (EdDSA/ES256, RS256 for interop) over HS256** whenever any party other
+- **Prefer asymmetric (ES256 as the portable default; Ed25519 where the library supports it;
+  RS256 for interop) over HS256** whenever any party other
   than the issuer verifies tokens: with HS256 every verifier holds the *signing* secret and can
   mint tokens; with asymmetric, verifiers hold only public keys. HS256 is acceptable only
   issuer-verifies-own-tokens (e.g., session tokens in a monolith) — and then the secret is
   ≥256-bit CSPRNG (rules/01 §1), not a passphrase.
 - **Pin the algorithm at verification.** Accept exactly the expected `alg`; never `alg: none`;
   never let an attacker downgrade RS256→HS256 (verifier treating the public key as an HMAC
-  secret — the classic confusion attack). Library config: explicit `algorithms=["EdDSA"]`.
+  secret — the classic confusion attack). Library config: explicit `algorithms=["ES256"]`. RFC 9864
+  deprecates the polymorphic JOSE `EdDSA` identifier in favour of the fully-specified `Ed25519`;
+  libraries differ (e.g. `jose` accepts `Ed25519`, PyJWT still names it `EdDSA`) — check yours.
 - **`kid` rotation (zero-downtime):**
   1. Generate key N+1; add to the published JWKS (`/.well-known/jwks.json`) alongside N.
   2. Switch issuance to N+1 (`kid` header = N+1's id).
@@ -153,7 +157,7 @@ jwt.decode(tok, SECRET or "devsecret", algorithms=[jwt.get_unverified_header(tok
 # GOOD — pinned alg, key chosen by kid from cached JWKS, refresh on unknown kid
 hdr = jwt.get_unverified_header(tok)
 key = jwks.get(hdr["kid"]) or jwks.refresh_and_get(hdr["kid"])  # handles rotation
-claims = jwt.decode(tok, key, algorithms=["EdDSA"], audience="api://payments")
+claims = jwt.decode(tok, key, algorithms=["ES256"], audience="api://payments")
 ```
 
 ## 7. Encryption keys vs KMS envelope encryption
@@ -168,9 +172,9 @@ High finding — it combines the worst of secrets and crypto). Use envelope encr
 - **Why:** the root key never exists outside the HSM; access is IAM-controlled and audit-logged
   per operation; "rotation" of the root key is a KMS toggle (old versions still unwrap old
   DEKs); revoking an app's decrypt permission instantly bricks its access without touching data.
-- **Key hierarchy and rotation:** root (KMS, auto-rotate yearly) → optional per-tenant key →
-  DEK per object. Re-encrypting data is only needed if a *DEK* is compromised; root rotation
-  requires nothing. Per-tenant keys also give you crypto-shredding (destroy tenant key =
+- **Key hierarchy and rotation:** root (KMS auto-rotation — AWS default 365 days, configurable
+  90–2560) → optional per-tenant key → DEK per object. Re-encrypting data is only needed if a
+  *DEK* is compromised; root rotation requires nothing. Per-tenant keys also give you crypto-shredding (destroy tenant key =
   tenant data unrecoverable) for deletion compliance.
 - **Use a maintained client library** (AWS Encryption SDK, Tink, cloud KMS client envelopes) —
   they handle DEK caching (bound: time *and* message count), nonce management, and

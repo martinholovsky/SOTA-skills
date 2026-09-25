@@ -72,9 +72,9 @@ Use when asked to find secret leaks/misuse in an existing repo.
    `trufflehog filesystem .` (and `git log` history scan when the repo has history). Treat tool
    output as candidates, not verdicts — verify each hit.
 2. **Manual grep pass** for what tools miss. Sweep at minimum:
-   - High-entropy strings and known prefixes: `AKIA`, `ASIA`, `ghp_`, `gho_`, `github_pat_`,
-     `xoxb-`, `xoxp-`, `sk-`, `sk_live_`, `rk_live_`, `AIza`, `ya29.`, `glpat-`, `npm_`,
-     `dop_v1_`, `shpat_`, `eyJhbGciOi` (inline JWTs), `-----BEGIN .* PRIVATE KEY-----`.
+   - High-entropy strings and known prefixes: `AKIA`, `ASIA`, `ghp_`, `gho_`, `ghs_`, `ghu_`,
+     `ghr_`, `github_pat_`, `xoxb-`, `xoxp-`, `sk-`, `sk_live_`, `rk_live_`, `AIza`, `ya29.`,
+     `glpat-`, `npm_`, `dop_v1_`, `shpat_`, `eyJhbGciOi` (inline JWTs), `-----BEGIN ([A-Z0-9]+ )*PRIVATE KEY( BLOCK)?-----` (ERE; rules/04 §6 has the tested command).
    - Assignment patterns: `(password|passwd|pwd|secret|token|api[_-]?key|auth)\s*[:=]\s*['"][^'"]{6,}`.
    - Connection strings with embedded creds: `://[^/:@\s]+:[^@\s]+@` (postgres, mysql, mongodb,
      amqp, redis URLs).

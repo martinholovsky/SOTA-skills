@@ -85,18 +85,20 @@ apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata: { name: workload-baseline }
 spec:
-  validationFailureAction: Enforce          # NOT Audit (see §3)
-  background: true
+  background: true                          # failureAction is per rule; the spec-level
+                                            # validationFailureAction is deprecated
   rules:
     - name: require-limits
       match: { any: [{ resources: { kinds: ["Pod"] } }] }
       validate:
+        failureAction: Enforce              # NOT Audit (see §3)
         message: "containers must set cpu/memory limits"
         pattern:
           spec: { containers: [{ resources: { limits: { memory: "?*", cpu: "?*" } } }] }
     - name: disallow-latest
       match: { any: [{ resources: { kinds: ["Pod"] } }] }
       validate:
+        failureAction: Enforce
         message: ":latest tag is not allowed; pin a digest"
         pattern:
           spec: { containers: [{ image: "!*:latest" }] }
@@ -105,7 +107,7 @@ spec:
 ## 3. The AUDIT→ENFORCE rollout discipline (and the trap)
 
 New policies break workloads if you enforce blind. The discipline:
-1. **Deploy in audit/warn** (`validationFailureAction: Audit` / PSA `audit`+`warn`,
+1. **Deploy in audit/warn** (Kyverno per-rule `failureAction: Audit` / PSA `audit`+`warn`,
    Gatekeeper `enforcementAction: dryrun`).
 2. **Watch the audit signal** — collect every would-be violation, fix the workloads (or
    add a *scoped* exception, §5).
@@ -117,7 +119,8 @@ through. Treat "policy exists but never enforces" as **High**: the org believes 
 protected and isn't. For each Audit-mode policy, demand a flip-date and an owner, or
 downgrade it to honest "we don't enforce this."
 
-Hunt: `grep -rE 'validationFailureAction:\s*Audit|enforcementAction:\s*dryrun' policies/`
+Hunt: `grep -rE '(validationFailureAction|failureAction):[[:space:]]*Audit|enforcementAction:[[:space:]]*dryrun' policies/`
+(the first alternative also catches the deprecated spec-level field)
 and `kubectl get ns -o json | jq '.items[].metadata.labels | select(.["pod-security.
 kubernetes.io/enforce"]==null)'` (namespaces with warn/audit but no enforce).
 
@@ -133,12 +136,12 @@ apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata: { name: verify-signed-images }
 spec:
-  validationFailureAction: Enforce
   rules:
     - name: verify
       match: { any: [{ resources: { kinds: ["Pod"] } }] }
       verifyImages:
         - imageReferences: ["registry.example.com/*"]
+          failureAction: Enforce
           mutateDigest: true            # pin the verified digest into the spec
           required: true
           attestors:

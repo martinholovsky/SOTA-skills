@@ -132,15 +132,19 @@ def versions(clause):
     return out
 
 
-def governed(clause, start, end):
+def governed(clause, start, end, cues=()):
     """A version is a boundary when a boundary cue sits right before or right after it, or it
-    carries a '+' (\"13+\" = 13 or later)."""
+    carries a '+' (\"13+\" = 13 or later). A boundary word that is part of a currency cue does
+    not count: in "currently at 8.30" the "at" is the claim about now, not a floor."""
     if clause[end - 1:end] == '+' or clause[end:end + 1] == '+':
         # "13+" is a floor — unless a currency cue follows at once ("1.0+ as of mid-2026")
         if not re.match(r'\+?\s*(?:as\s+of|is\s+current|current)\b', clause[end:end + 20], re.I):
             return True
-    return bool(BOUNDARY_BEFORE.search(clause[max(0, start - 40):start])
-                or BOUNDARY_AFTER.search(clause[end:end + 40]))
+    lo = max(0, start - 40)
+    b = BOUNDARY_BEFORE.search(clause[lo:start])
+    if b and any(m.start() <= lo + b.start() < m.end() for m in cues):
+        b = None
+    return bool(b or BOUNDARY_AFTER.search(clause[end:end + 40]))
 
 
 def is_pin(clause):
@@ -154,7 +158,7 @@ def is_pin(clause):
     if not cues:
         return False
     vs = versions(c)
-    if any(governed(c, s, e) for s, e in vs):
+    if any(governed(c, s, e, cues) for s, e in vs):
         # "needs >=1.26.5 on the 1.26 line": a per-line floor, not a claim about now
         cues = [m for m in cues if not re.match(r'on\s+the\s', m.group(0), re.I)]
     # The version must sit near the cue AND in the same sub-clause: "(D)TLS 1.3 (…), but as of
@@ -163,7 +167,7 @@ def is_pin(clause):
     def linked(s, m):
         lo, hi = min(s, m.start()), max(s, m.end())
         return hi - lo <= NEAR + (m.end() - m.start()) and not SUBCLAUSE.search(c[lo:hi])
-    return any(not governed(c, s, e) and any(linked(s, m) for m in cues) for s, e in vs)
+    return any(not governed(c, s, e, cues) and any(linked(s, m) for m in cues) for s, e in vs)
 
 
 def scan(path):
@@ -241,6 +245,9 @@ PINS = [
     "dbt note: the Fusion engine is in preview and dbt Core 2.0, built on the Fusion foundation, is in alpha as of mid-2026.",
     "DuckLake (1.0+ as of mid-2026) is viable for DuckDB-centric small platforms",
     "The current authoritative reference is NIST SP 800-61 Revision 3 (finalized April 2025), which replaced the four-phase model.",
+    # a fix agent's probe, 2026-09-26: "at" is both the currency cue and a boundary word
+    "gitleaks is currently at v8.30.1 (the latest release).",
+    "The scanner is currently at 8.30.1.",
 ]
 NOT_PINS = [
     "latest stable (verify at go.dev/doc/devel/release)",

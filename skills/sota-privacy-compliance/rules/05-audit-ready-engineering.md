@@ -135,14 +135,18 @@ register with owner + expiry, never as silent policy carve-outs.
 ```rego
 # GOOD: classification tag is mandatory; untagged data stores cannot ship —
 # this single policy keeps the rules/01 inventory honest at the infra layer
-deny[msg] {
-  r := input.resource_changes[_]
+# (Rego v1 syntax, the OPA 1.x default: `package` + `contains ... if`)
+package privacy.classification
+
+deny contains msg if {
+  some r in input.resource_changes
   r.type in {"aws_s3_bucket", "aws_rds_cluster", "aws_dynamodb_table"}
   not r.change.after.tags.data_classification
   msg := sprintf("%s: missing data_classification tag", [r.address])
 }
-deny[msg] {
-  r := input.resource_changes[_]
+
+deny contains msg if {
+  some r in input.resource_changes
   r.change.after.tags.data_classification in {"pii", "pii-special", "financial"}
   not r.change.after.storage_encrypted
   msg := sprintf("%s: classified data store without encryption at rest", [r.address])

@@ -209,7 +209,7 @@ $ grep -rn "@require_auth\|@login_required" services/ | wc -l → 31 decorators
     services/admin/jobs.py:14 POST /internal/requeue — NO AUTH. Finding.
 $ grep -rn "basic_consume\|@celery" services/               → 5 consumers
 $ grep -rn "aws_cloudwatch_event\|CronJob" infra/           → 2 schedules
-$ grep -rn "0.0.0.0/0" infra/*.tf
+$ grep -rnF --include='*.tf' '0.0.0.0/0' infra/
   infra/sg.tf:41 ingress 5432 ← the DB is internet-reachable. Finding.
 ```
 

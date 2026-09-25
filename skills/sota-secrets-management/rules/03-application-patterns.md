@@ -258,8 +258,10 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_... # publishable keys are designed t
 - Keys that are *designed* public (Stripe publishable, Firebase config, Maps browser keys) are
   fine in clients but must be restriction-locked at the vendor (referrer/bundle-id/API
   restrictions) — an unrestricted "public" key is a Medium finding.
-- AUDIT: grep built artifacts, not just source — `grep -rE 'sk_live_|AKIA' dist/ build/
-  *.map` — and check source maps published to prod.
+- AUDIT: grep built artifacts, not just source — `grep -rE 'sk_live_|AKIA' dist/ build/` —
+  and source maps, which may sit anywhere (a bare `*.map` glob aborts under zsh when none match):
+  `find . -name '*.map' -not -path '*/node_modules/*' -exec grep -HE 'sk_live_|AKIA' {} +`;
+  also check which source maps are published to prod.
 
 ## 6. Per-environment separation
 

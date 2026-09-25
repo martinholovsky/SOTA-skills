@@ -1,6 +1,6 @@
 # 05 — Web Platform Security
 
-Scope: XSS, CSP, CSRF, CORS, clickjacking, security headers, cookies, file uploads.
+Scope: XSS, CSP, CSRF, CORS, clickjacking, security headers, cookies (file uploads: rules/21).
 Maps to OWASP A05/A02/A07:2025, CWE-79/352/942/1021/434/1004.
 
 Core principle: the browser enforces your security policy — but only the policy you

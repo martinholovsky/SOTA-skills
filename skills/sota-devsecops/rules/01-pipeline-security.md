@@ -70,6 +70,12 @@ The security lives in the **trust policy condition on the `sub` claim**:
   any fork-merged workflow, any PR environment in that repo can assume the role. Scope to
   `ref:refs/heads/main` or better `environment:production` (environments add reviewer
   gates, §1.7).
+- **Immutable subject claims:** repos created, renamed or transferred after 2026-07-15 get a
+  `sub` carrying numeric IDs (`repo:myorg@123456/myrepo@456789:ref:refs/heads/main`); older
+  repos keep the name-only form unless the owner opts in. A condition in the old form stops
+  matching after the switch (the role is denied, not widened), and a name-only condition trusts
+  whoever holds that name later. Pin the `@id` form, or `repository_id`/`repository_owner_id`
+  where the cloud can condition on them (source: docs.github.com OIDC reference).
 - One role per repo × purpose (plan vs apply, push-to-registry vs deploy). A shared
   "ci-role" with union permissions is a Critical finding when it spans prod write.
 - Audit greps: `AWS_SECRET_ACCESS_KEY`, `GOOGLE_APPLICATION_CREDENTIALS`, `AZURE_CLIENT_SECRET`

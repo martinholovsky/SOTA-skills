@@ -150,8 +150,8 @@ The library's audience runs these specs through coding agents, so:
       money/auth/critical path → High.
 - [ ] **(Medium) Spec and plan gates carry security (§1):** every feature spec has
       security acceptance criteria and a recorded human sign-off at the spec and
-      plan gates. Probe: `grep -L -i -E 'secur|abuse|threat|authori[sz]'
-      specs/*/*.md` lists spec files with no security content at all; a spec
+      plan gates. Probe: `grep -L -i -E 'secur|abuse|threat|authori[sz]' specs/*/*.md`
+      lists spec files with no security content at all; a spec
       touching auth, money or personal data among them → High.
 - [ ] **(Low) Steering maps phases to security artifacts (§4):** the steering file
       names what loads per phase, and sampled sessions show those files were read.

@@ -166,7 +166,8 @@ Evidence: get_order.py:41 `order = repo.get(order_id)` — no tenant_id in
           (exceptions: invoices, payments — both filter by tenant).
 Recommendation: enforce tenant scoping in the repository layer (single
           choke point, pattern already exists in invoice_repo.py:22);
-          switch new IDs to UUIDv7. Map to SR-104; add abuse-case test
+          random IDs are depth only, never the fix (RFC 9562 §8: prefer
+          UUIDv4 over UUIDv7 there). Map to SR-104; add abuse-case test
           per 05 §3.
 Residual risk if accepted: mass PII enumeration by any self-service
           signup; likely notifiable breach.

@@ -388,7 +388,8 @@ cheat sheet.
 - [ ] **Agent tamper attribution (§2) — High:** is every stop, disable or
       re-enable of an EDR, AV, integrity or logging agent collected with its
       actor and joined to the silent-source alert? Zero files from
-      `grep -rliE 'EventID:[[:space:]]*(1102|4719|5001|5007)([^0-9]|$)|audit_enabled=0|CONFIG_CHANGE' detections/`
+      `grep -rliE 'EventID:[[:space:]]*(1102|4719|5001|5007)([^0-9]|$)|^[[:space:]]*-[[:space:]]*(1102|4719|5001|5007)([^0-9]|$)|audit_enabled=0|CONFIG_CHANGE' detections/`
+      (the second branch catches Sigma's list form, `EventID:` then `- 1102`)
       means no rule watches the tamper events (Sysmon 4/16 need a
       Sysmon-channel check by hand).
 - [ ] **Session guessing and population spikes (§7) — High:** is there a rule on

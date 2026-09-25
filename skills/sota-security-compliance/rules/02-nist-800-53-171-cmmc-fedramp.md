@@ -51,8 +51,8 @@ Word documents.
 System & Services Acquisition, and Supply Chain Risk Management).
 
 > **Version caveat that bites right now:** CMMC Level 2 is currently pinned to
-> **800-171 Rev 2** (110 controls) via the DoD rule text, even though Rev 3 is the
-> current NIST publication. Which revision your contract requires is a
+> **800-171 Rev 2** (110 controls) via the DoD rule text, even though NIST
+> published Rev 3 in May 2024. Which revision your contract requires is a
 > **contract-level fact** — verify against the DFARS clause / SSP template before
 > building to Rev 3 numbering. Rev 3 also **renumbered** some requirements, so
 > confirm exact IDs against the 800-171r3 PDF, not memory.
@@ -109,7 +109,12 @@ cryptographic modules** — not just "strong encryption." Engineering consequenc
 
 - Use a crypto module holding a current **CMVP certificate** (check the module and
   version on the NIST CMVP list; "FIPS-capable" ≠ "validated" ≠ "operating in FIPS
-  mode"). Verify the *module* your runtime actually loads.
+  mode"). Verify the *module* your runtime actually loads. **FIPS 140-2
+  validations stayed active until 21 Sep 2026 and every certificate moved to the CMVP
+  Historical List on 22 Sep 2026**
+  (csrc.nist.gov/projects/fips-140-3-transition-effort): a 140-2-only module is
+  no longer *active* — a finding for new systems; for existing ones, record the
+  agency's transition decision.
 - In cloud: use the provider's **FIPS-validated endpoints/KMS** and record the
   module in the crosswalk (`sota-secrets-management`). A non-validated library
   (or a validated one running outside FIPS mode) protecting CUI is a **critical**
@@ -121,13 +126,17 @@ cryptographic modules** — not just "strong encryption." Engineering consequenc
 ## 5. FedRAMP — 800-53 for government cloud
 
 **Status:** the traditional program uses **800-53 Rev 5 baselines** at **Low /
-Moderate / High** impact (FIPS 199), via **Agency ATO** or PMO paths. **FedRAMP
-20x is a real, active initiative** (fedramp.gov/20x) reframing authorization toward
-continuous, **machine-readable evidence** (Key Security Indicators) over
-document-heavy SSPs — first 20x pilot authorizations issued **6 Mar 2026**, with
-wider submission planned for **FY26 Q4**; consolidated program rules took effect
-**4 Jul 2026**, and new Rev 5 certifications stop being accepted **11 Jun 2027**.
-*Future-phase dates are FedRAMP estimates — re-verify at fedramp.gov/changelog.*
+Moderate / High** impact (FIPS 199), via the **agency** or program (PMO) path. Since 4 May 2026
+FedRAMP says **"Certification"**, not "Authorization", and names impact levels as
+**Classes A–D** (fedramp.gov/changelog). **FedRAMP 20x** (fedramp.gov/20x) reframes
+certification toward continuous, **machine-readable evidence** (Key Security
+Indicators) over document-heavy SSPs: 20x Low pilot authorizations from **late July
+2025**, Moderate (Phase 2) from **6 Mar 2026** (fedramp.gov/20x/timeline). The
+**Consolidated Rules for 2026 (CR26)** apply from **4 Jul 2026** (incremental
+adoption) and become **mandatory 1 Jan 2027**; FedRAMP Ready submissions ended
+**28 Jul 2026**; 20x Class A applications open **3 Aug 2026**, Class B/C **31 Aug
+2026**; new Rev 5 applications stop **11 Jun 2027** (fedramp.gov/2026/timeline,
+read 2026-09-26). *Future-phase dates are FedRAMP plans — re-verify there.*
 
 **Engineering implications (both paths):**
 - **Authorization boundary:** a hard, documented edge around the service; every
@@ -146,7 +155,7 @@ wider submission planned for **FY26 Q4**; consolidated program rules took effect
 
 - [ ] System categorized (impact level / FIPS 199) and the correct 800-53 baseline (low/moderate/high) inherited then tailored, with justification as code
 - [ ] If CUI is present: a defined, segmented CUI enclave/boundary — verified in network/IAM config, not asserted; publicly accessible components subnetworked
-- [ ] FIPS-validated (140-3, CMVP-certificated) crypto module protects CUI/federal data at rest and in transit; the *loaded* module verified, and it runs in FIPS mode
+- [ ] FIPS-validated (140-3, active CMVP certificate — 140-2 certificates are Historical since 22 Sep 2026) crypto module protects CUI/federal data at rest and in transit; the *loaded* module verified, and it runs in FIPS mode
 - [ ] 800-171 revision in use matches the **contract** requirement (CMMC L2 may pin Rev 2); exact requirement IDs confirmed against the primary PDF, not memory
 - [ ] CMMC level matches the contract; SSP + POA&M generated from the control crosswalk and kept current; SPRS score posted where required; annual affirmation wired
 - [ ] AU/audit-logging controls implemented with retention + tamper-evidence; logs reviewed (mechanism, not manual promise)

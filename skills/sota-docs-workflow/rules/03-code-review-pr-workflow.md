@@ -353,8 +353,9 @@ claim that turns out to be false still burns the credibility.
       agent PRs show every changed file was reviewed, not only the ones the description
       names. Any deleted, skipped or loosened security test was signed off by a code owner.
       The PR template or a commit trailer records the AI tool, the model version and the
-      approver. Probe: `grep -L -i -E 'ai tool|model version|assisted-by'
-      .github/pull_request_template.md` prints the template's name when no such field
+      approver. Probe:
+      `grep -L -i -E 'ai tool|model version|assisted-by' .github/pull_request_template.md`
+      prints the template's name when no such field
       exists. A missing template is also a finding.
 - [ ] **(Medium) Security-critical paths route to a qualified reviewer against a
       written standard** (§3): the team names its secure-coding guideline, and

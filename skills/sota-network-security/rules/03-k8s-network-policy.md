@@ -11,11 +11,13 @@ owns the cluster's VPC/subnet/IPAM. sota-detection-engineering consumes Hubble f
 
 Verified (2026-07): Cilium fully implements the upstream `networking.k8s.io/v1` NetworkPolicy and
 adds L7 via Envoy — run the latest stable patch and verify the current release with a quick search
-at time of use (the 2026 patch train fixed policy-bypass CVEs; see §4). The sig-network working
-group merged ANP+BANP into a single **`ClusterNetworkPolicy` CRD at
-`policy.networking.k8s.io/v1alpha2`** (Oct 2025; a `tier` field selects Admin vs Baseline) — still
-ALPHA, out-of-tree; ANP/BANP `v1alpha1` remain usable at v0.1.7. Pin behavior; don't assume GA
-semantics.
+at time of use (the 2026 patch train fixed policy-bypass CVEs; see §4). The sig-network
+network-policy-api project merged ANP+BANP into a single **`ClusterNetworkPolicy` CRD at
+`policy.networking.k8s.io/v1alpha2`** (design NPEP-285 merged Jul 2025; **released in v0.2.0,
+Apr 2026**; a `tier` field selects Admin vs Baseline, the `Allow` action is renamed `Accept`, and
+`ports` is replaced by `protocols`) — still ALPHA, out-of-tree; ANP/BANP `v1alpha1` remain usable
+at v0.1.7. Pin behavior; don't assume GA semantics (verified 2026-09-26 against the project's
+GitHub releases).
 
 ---
 
@@ -141,12 +143,26 @@ Beware the **`world` / `reserved:world` entity** and `toCIDR: 0.0.0.0/0` — all
 sensitive endpoint is the Critical over-broad finding from rules/02 (the real OpenBao/Grafana/
 registry-from-`world` case). Audit every CNP for `world`, `all`, `0.0.0.0/0`.
 
-**Patch floor (2026 CVEs):** Cilium below **1.19.4 / 1.18.10 / 1.17.16** has known
-policy-bypass/hijack CVEs that undermine this file's guarantees — CVE-2026-33726 (L7 proxy could
-bypass NetworkPolicy for same-node traffic; fixed 1.19.2/1.18.8/1.17.14), CVE-2026-49445 (Envoy
-admin socket exposure with L7 enabled — info disclosure/cluster disruption; fixed 1.19.2), and
-CVE-2026-53935 (`CiliumLocalRedirectPolicy` `addressMatcher` cross-namespace service-traffic
-hijack; fixed 1.19.4). Check the running version against Cilium's security advisories.
+**Patch floor (2026 advisories, as of 2026-09-26):** Cilium below **1.19.6 / 1.18.12 / 1.17.18**
+has published policy-bypass, hijack or identity-spoofing advisories that undermine this file's
+guarantees. Each is a "fixed in" floor, not a statement of the latest release:
+- CVE-2026-33726 — L7 proxy could bypass NetworkPolicy for same-node traffic (fixed 1.19.2/1.18.8/1.17.14).
+- CVE-2026-49445 (critical) — Envoy admin socket exposure with L7 enabled (fixed 1.19.2/1.18.8/1.17.14).
+- GHSA-vh48-r624-p8v7 (no CVE) — ingress host and L7 policies bypassed when attaching to a VLAN
+  interface and its parent (fixed 1.18.9/1.17.15; the 1.16 line has no fix).
+- CVE-2026-53935 — `CiliumLocalRedirectPolicy` `addressMatcher` cross-namespace hijack (fixed 1.19.4/1.18.10/1.17.16).
+- CVE-2026-56743 — a NetworkPolicy with an `ipBlock` could admit ingress from the local
+  namespace (fixed 1.19.5; 1.19 only).
+- CVE-2026-56742 — namespaced HTTPRoutes could redirect traffic to other namespaces (fixed 1.19.5/1.18.11/1.17.17).
+- CVE-2026-77531 — secret-sync name collision, cross-namespace L7 policy bypass (fixed 1.19.6/1.18.12/1.17.18).
+- CVE-2026-83620 — identity spoofing in the beta mutual-authentication feature by appending the
+  target's certificate to the chain (fixed 1.19.6/1.18.12/1.17.18; see the verified-status note at the top of rules/04).
+
+The 1.20 line (first release 2026-07-29) is listed as affected by none of these; the last 1.17
+patch published was 1.17.18 (2026-07-16) — confirm that line's support status before relying on
+it. Check the running version against
+[Cilium's security advisories](https://github.com/cilium/cilium/security/advisories) rather than
+this list, which only grows.
 
 ## 5. Egress control & DNS-aware egress
 
@@ -192,23 +208,33 @@ log, FQDN policy = what's allowed.
   default-deny) that namespaced NetworkPolicy can *override*. Use it to make default-deny the
   cluster baseline so a new namespace isn't accidentally allow-all.
 
-Status: the `policy.networking.k8s.io` CRDs are **alpha**, out-of-tree. Since Oct 2025 ANP+BANP
-are consolidated into **`ClusterNetworkPolicy` (v1alpha2)** — `tier: Admin` replaces ANP,
-`tier: Baseline` replaces BANP — and the working group will base the beta on ClusterNetworkPolicy,
+Status: the `policy.networking.k8s.io` CRDs are **alpha**, out-of-tree. Since network-policy-api
+v0.2.0 (Apr 2026) ANP+BANP are consolidated into **`ClusterNetworkPolicy` (v1alpha2)** —
+`tier: Admin` replaces ANP, `tier: Baseline` replaces BANP, actions are `Accept`/`Deny`/`Pass`
+(`Allow` became `Accept`), and ports are expressed under `protocols` — and the working group will base the beta on ClusterNetworkPolicy,
 so plan migration toward it. Cilium and others implement subsets; **verify your CNI's support
 matrix and pin versions** — don't build a control you can't test. Until it's solid in your
 cluster, a Cilium *clusterwide* policy (CCNP) achieves the cluster-scoped default-deny today.
 
 ```yaml
-# Cilium clusterwide default-deny baseline
+# Cilium clusterwide default-deny baseline — kube-system excluded, DNS allowed
 apiVersion: cilium.io/v2
 kind: CiliumClusterwideNetworkPolicy
 metadata: { name: default-deny-all }
 spec:
-  endpointSelector: {}
-  ingress: [{ }]   # empty rule list under enableDefaultDeny => deny; pair with explicit allows
-  egress: [{ }]
+  endpointSelector:
+    matchExpressions:
+    - { key: io.kubernetes.pod.namespace, operator: NotIn, values: [kube-system] }
+  ingress: [{}]    # ONE empty rule: allows nothing, but puts selected endpoints in ingress default-deny
+  egress:
+  - toEndpoints: [{ matchLabels: { io.kubernetes.pod.namespace: kube-system, k8s-app: kube-dns } }]
+    toPorts: [{ ports: [{ port: "53", protocol: UDP }, { port: "53", protocol: TCP }] }]
 ```
+
+`endpointSelector: {}` would also select kube-system — CoreDNS, the Cilium operator, Hubble —
+and cut the cluster's own DNS and control traffic; exclude it (as Cilium's own default-deny
+example does) and give kube-system a narrower policy of its own. The DNS allow is what keeps
+every namespace resolving once egress is in default-deny (R3).
 
 ## 7. Hubble flow visibility
 
@@ -220,6 +246,7 @@ detection content — DNS-exfil, anomalous flows). Export flows; don't leave Hub
 ```bash
 hubble observe --namespace payments --verdict DROPPED   # what's being denied (tighten or fix)
 hubble observe --to-fqdn '*.metadata*'                  # anyone reaching metadata-ish names?
+hubble observe --to-ip 169.254.169.254 --to-ip fd00:ec2::254   # IMDS by IP (no FQDN to match)
 hubble observe --from-pod payments/api --protocol http  # author L7 policy from real traffic
 ```
 
@@ -266,6 +293,8 @@ audit cross-cluster policies for `world`/wildcard exactly as single-cluster.
       exported flows (`hubble observe --verdict FORWARDED -o json` as the source shape), with unused
       allows removed and broad-rule-only flows given narrow rules?
 - [ ] ANP/BANP/ClusterNetworkPolicy usage: is the alpha API status pinned, CNI support verified,
-      and migration to `ClusterNetworkPolicy` (v1alpha2, tiered) planned?
-- [ ] Is Cilium at/above the 2026 CVE-fix floor (1.19.4 / 1.18.10 / 1.17.16) and checked against
-      current security advisories?
+      and migration to `ClusterNetworkPolicy` (v1alpha2, tiered; `Accept`, `protocols`) planned?
+- [ ] Is Cilium at/above the 2026 advisory-fix floor (1.19.6 / 1.18.12 / 1.17.18 as of
+      2026-09-26) and checked against the current security advisories?
+- [ ] Does a clusterwide default-deny (CCNP) exclude kube-system and allow kube-dns on 53, rather
+      than selecting every endpoint with `endpointSelector: {}`?

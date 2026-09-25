@@ -83,7 +83,7 @@ COPY . .
 RUN --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.commit=${GIT_SHA}" -o /out/app ./cmd/app
 
-FROM gcr.io/distroless/static-debian12:nonroot@sha256:<digest>
+FROM gcr.io/distroless/static-debian13:nonroot@sha256:<digest>
 COPY --from=build /out/app /app
 USER nonroot:nonroot
 ENTRYPOINT ["/app"]
@@ -134,7 +134,7 @@ RUN --mount=type=cache,target=/root/.npm \
 COPY . .
 RUN npm run build && npm prune --omit=dev
 
-FROM gcr.io/distroless/nodejs22-debian12:nonroot@sha256:<digest>
+FROM gcr.io/distroless/nodejs22-debian13:nonroot@sha256:<digest>
 WORKDIR /app
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
@@ -200,9 +200,9 @@ secrets are not (§4.2).
   inside the limit. Never patch a running container (`kubectl exec … apt-get upgrade`):
   the fix is a rebuild plus redeploy, or the next restart silently reverts it. Measure age
   from the build record (provenance, SBOM store, push time), not the image config's
-  `created` field — reproducible images pin it: `crane config
-  gcr.io/distroless/static-debian12:nonroot` reports `1970-01-01T00:00:00Z` (measured
-  2026-09-25). (OWASP: DSOMM; Kubernetes Security cheat sheet)
+  `created` field — reproducible images pin it:
+  `crane config gcr.io/distroless/static-debian13:nonroot` reports
+  `1970-01-01T00:00:00Z` (measured 2026-09-26). (OWASP: DSOMM; Kubernetes Security cheat sheet)
 
 ### 4.3.1 Base image upgrade flow (make it boring)
 

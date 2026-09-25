@@ -7,8 +7,8 @@ as the thing US federal buyers make you **attest to**. Almost none of it is new
 engineering if you already apply `sota-devsecops`, `sota-testing`, and
 `sota-secrets-management` — the work is mapping and closing gaps.
 
-> **Status (verified July 2026):** the operative version is **SSDF v1.1, SP
-> 800-218, published 3 Feb 2022** (csrc.nist.gov/pubs/sp/800/218/final). A **Rev 1
+> **Status (verified July 2026; CSRC re-read 2026-09-26):** the final is **SSDF
+> v1.1, SP 800-218, published 3 Feb 2022** (csrc.nist.gov/pubs/sp/800/218/final). A **Rev 1
 > (SSDF v1.2)** initial public draft appeared **Dec 2025** — *draft, not a
 > baseline; do not cite as current.* **SP 800-218A** (AI/model development
 > profile) is **final, 26 Jul 2024**. Re-verify before relying on any of these.
@@ -67,13 +67,15 @@ The crosswalk row for each practice cites the gate and its evidence — the CI l
 
 ## 3. Federal secure-software self-attestation
 
-**Status (needs verification — enforcement scope has shifted across
-administrations):** under OMB M-22-18 / M-23-16, software producers selling to the
-US government are required to **self-attest** to SSDF-aligned practices via the
-**CISA Secure Software Development Attestation Form**, with artifacts submitted
-through CISA's repository (cisa.gov/secure-software-attestation-form). *Confirm the
-current mandate, covered-software scope, and deadlines before asserting them* —
-this is the most politically volatile item in this skill.
+**Status (verified 2026-09-26 against the memo on whitehouse.gov):** OMB
+**M-26-05** (23 Jan 2026, "Adopting a Risk-based Approach to Software and Hardware
+Security") **rescinded M-22-18 and M-23-16**, so there is no longer a government-wide
+mandate to self-attest. Each agency now sets its own assurance policy from its risk
+assessment; it *may* still require the **CISA Secure Software Development
+Attestation Form** (cisa.gov/secure-software-attestation-form) and *may* require an
+SBOM on request by contract (for a cloud platform, of the runtime production
+environment). **Read the obligation from the contract, not from a memo** — and
+re-check, because this is the most politically volatile item in this skill.
 
 **Engineering consequence regardless of the mandate's status:** an attestation is
 a **signed claim by a named officer**. Before anyone signs, the PW/PS/RV practices
@@ -123,7 +125,7 @@ pipeline guidance. When a PW/PS/RV practice needs implementing, jump to:
 - [ ] PW.1 secure-design/threat-modeling gate for features crossing trust boundaries, referencing the threat model
 - [ ] **Outsourced development and suppliers (PO.1.3) — MEDIUM:** contracts state the security requirements, minimum SDL practices, per-delivery artifacts (SBOM, scan results, provenance) and acceptance criteria; each delivery passes the same CI gates as in-house code before it is accepted, and the acceptance record is kept as evidence
 - [ ] RV: continuous vuln identification (deps/containers/runtime) with SLA-tracked remediation and root-cause analysis
-- [ ] If federal self-attestation applies: the attested practices are demonstrably enforced *before* signing; SBOM/provenance/scan artifacts produced from the pipeline; current mandate/scope/deadline verified (not assumed)
+- [ ] If federal self-attestation applies: the attested practices are demonstrably enforced *before* signing; SBOM/provenance/scan artifacts produced from the pipeline; obligation read from the agency contract (M-26-05 rescinded the government-wide M-22-18/M-23-16 mandate), not assumed
 - [ ] If developing/fine-tuning AI: SP 800-218A additions applied — training-data provenance/integrity, model weights protected & signed as high-value assets, eval/misuse testing before release
 - [ ] Attestation, if any, backed by mechanisms not prose — no signed claim without an enforcing gate (False Claims exposure)
 - [ ] SSDF version referenced is a final revision with no finalized successor (SP 800-218 is v1.1; check csrc.nist.gov); drafts not cited as baseline

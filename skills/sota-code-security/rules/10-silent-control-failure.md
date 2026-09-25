@@ -93,8 +93,8 @@ is a specific way the answer comes out "no".
 The catalogue of sixteen shapes (weak existence checks, degraded optional dependencies,
 swallowed exceptions, truncation into an inspector, the control that is not in force, a flag
 that parses, the aggregate that masks a detection) now lives in
-**[rules/16](16-where-no-ops-hide.md)**, with its section numbers unchanged — ``sota-code-security` rules/16 §2.7` there is
-``sota-code-security` rules/16 §2.7` as it always was. This file keeps the **method**; that one is the catalogue the method
+**[rules/16](16-where-no-ops-hide.md)**, with its section numbers unchanged — what was §2.7 here is
+`rules/16` §2.7 there. This file keeps the **method**; that one is the catalogue the method
 searches. Split 2026-09-12 at 484 of 500 lines (ROADMAP 55).
 
 ## 3. Make degradation loud — one helper, deduped per cause
@@ -144,7 +144,7 @@ Design:
   state the search you actually performed so the reader can judge its reach.
   That governs the **search**, which is discarded once it has answered. If the
   conclusion is instead left behind as a durable **guard**, it needs the stronger
-  default in `sota-testing` rules/02 `sota-code-security` rules/16 §2.10: structure in AST, behaviour by execution,
+  default in `sota-testing` rules/02 §2.10: structure in AST, behaviour by execution,
   regex only where no parser exists.
 - **Before claiming a fix works**: add the regression test, then **revert the fix
   and confirm the test fails**. A regression test is not evidence until it has

@@ -14,9 +14,9 @@ mechanics (CNP/FQDN); this file owns the edge and the egress *discipline*. sota-
 owns API rate-limiting design; sota-code-security rules/01 (SSRF) and rules/05 (CORS/CSP) own the
 app side.
 
-Verified (2026-07-09): **OWASP CRS** current line **4.x** (4.25 is the first CRS-4 LTS, patched
-through Q3 2027; verify latest at coreruleset.org). **CRS 3.3.x support ends Q3 2026** — a WAF still
-on 3.3 is a finding. CRS runs on **OWASP ModSecurity** *and* **OWASP Coraza** (Go,
+Verified (2026-09-26): **OWASP CRS 4** is the supported major line — **CRS 4.25 LTS** (announced
+2026-03-21) gets security fixes until Q3 2027; for the latest stable release verify at
+coreruleset.org. **CRS 3.3.x reaches end of life in Q3 2026** — a WAF still on 3.3 is a finding. CRS runs on **OWASP ModSecurity** *and* **OWASP Coraza** (Go,
 SecLang-compatible, the modern engine; both are now OWASP projects). **IMDSv2** is token-required
 and account-enforceable; metadata IP `169.254.169.254` / `fd00:ec2::254`. Pin CRS version.
 
@@ -56,6 +56,17 @@ fixes**); the Kubernetes Steering/Security Response Committees state that remain
 vulnerable to attack. Finding it running is a High finding: migrate to a maintained **Gateway API**
 implementation (`ingress2gateway` automates much of the conversion) or another maintained ingress
 controller.
+
+**R2.1a — Gateway API: keep route attachment and cross-namespace references explicit.** Creating a
+Gateway is a privileged act (it can create a load balancer and DNS) — grant it like a ClusterRole,
+and restrict which GatewayClass a namespace may use with admission policy. On each listener, leave
+`allowedRoutes.namespaces.from` at its default `Same`, or use `Selector` on a label only platform
+owners can set; `from: All` lets any namespace attach routes to a shared Gateway and is a finding.
+A Route pointing at a backend in another namespace, or a Gateway at a Secret in another namespace,
+must be authorised by a `ReferenceGrant` in the *target* namespace — review every ReferenceGrant
+as an access grant. Keep the implementation patched: a namespaced HTTPRoute redirecting traffic
+into other namespaces was a Cilium advisory in 2026 (CVE-2026-56742, rules/03 §4 floor).
+(gateway-api.sigs.k8s.io security model; `from` defaults to `Same` in the v1 API.)
 
 **R2.2 — Every hop in the chain agrees on where a request ends (no desync / request smuggling).**
 When the edge and the backend disagree about message length, bytes the edge thought were one body
@@ -200,7 +211,9 @@ sota-api-design rules/07). Cap autoscaling so a flood can't scale your bill or c
 (economic/"yo-yo" DoS). "We never considered DDoS" is the finding; record the stance. Best DDoS
 surface is none — keep non-public surfaces non-public (tunnels, IAP). Cloud L3/4 mitigation posture
 (Shield/Cloud Armor/Azure DDoS tiers) is sota-cloud-infrastructure rules/03 §10; this rule owns the
-edge you operate.
+edge you operate. HTTP/2 stream-reset floods (Rapid Reset, MadeYouReset) exhaust the edge proxy
+itself with little bandwidth; the limits and patch floors are owned by **sota-code-security**
+rules/06 §5 — apply them on every tier that terminates HTTP/2.
 
 **R8.1 — Self-hosted / bare-metal edge: harden the kernel, you are the scrubber.** When there is no
 Anycast provider in front (e.g. a bare-metal edge exposed directly), L3/4 defense is yours.
@@ -217,8 +230,10 @@ Baseline, matched to the exposed protocols:
   `nf_conntrack_count` / "table full" drops, and `notrack` high-volume stateless traffic so it never
   consumes a slot.
 - **Anti-spoofing:** enable **reverse-path filtering** (`rp_filter`, strict where routing allows;
-  RFC 3704) so spoofed-source packets are dropped at ingress.
-- **Don't be an amplifier (BCP 38 / RFC 2827):** never expose an **open** UDP reflector — recursive
+  RFC 3704) so spoofed-source packets are dropped at ingress, and filter egress so nothing leaves
+  with a source address you do not own (BCP 38 / RFC 2827 ingress filtering — the control that
+  keeps *your* network from sourcing spoofed reflection traffic).
+- **Don't be an amplifier:** never expose an **open** UDP reflector — recursive
   DNS resolver, NTP `monlist`, memcached, SSDP, chargen — to the internet; bind them internally or
   require auth. An exposed open resolver makes you a weapon in someone else's reflection attack and a
   target for the return traffic. Prefer TCP or authenticated protocols on the public edge; rate-limit
@@ -262,7 +277,7 @@ cloud burst is safe by default.
 # Egress allowlisting, layered:
 #  - CNI FQDN policy (rules/03 §5) for in-cluster app egress
 #  - forward proxy w/ domain allowlist for L7 inspection + logging (the choke point)
-#  - DENY 169.254.0.0/16 and ::ffff:169.254.0.0/112 everywhere
+#  - DENY 169.254.0.0/16, ::ffff:169.254.0.0/112 and fd00:ec2::254/128 everywhere
 #  - egress flow logs -> detection (sota-detection-engineering: C2/DNS-exfil detection)
 ```
 
@@ -317,6 +332,11 @@ logging beats either alone: the allowlist blocks the easy path, the logs catch t
 - [ ] Is egress funneled through an inspectable choke point and are egress/proxy logs exported to
       detection?
 - [ ] DDoS stance recorded; per-identity rate limits and autoscale caps set?
+- [ ] Every tier terminating HTTP/2 patched and configured against stream-reset floods (Rapid
+      Reset, MadeYouReset) per **sota-code-security** rules/06 §5?
+- [ ] **Medium — Gateway API attachment (R2.1a).** `grep -rnE 'from:[[:space:]]*All' .` over
+      Gateway manifests — each hit lets any namespace attach routes; is every `ReferenceGrant`
+      reviewed as an access grant, and is Gateway creation RBAC-restricted?
 - [ ] **Medium — byte caps disabled (R8.2).** `grep -rnE '(client_max_body_size|limit_rate)[[:space:]]+0[[:space:]]*;' .`
       — each hit removes a cap. Per-client connection cap and an overall bandwidth ceiling set?
       Self-hosted uplink: ISP/transit absorption capacity, scrubbing and ingress diversity on
@@ -325,4 +345,4 @@ logging beats either alone: the allowlist blocks the easy path, the logs catch t
       `rp_filter` enabled, `nf_conntrack_max` sized + drops alerted, synproxy on high-rate TCP
       listeners? (`sysctl net.ipv4.tcp_syncookies net.ipv4.conf.all.rp_filter`)
 - [ ] No open UDP reflector (recursive DNS, NTP monlist, memcached, SSDP, chargen) exposed to the
-      internet — you are not an amplification source (BCP 38)?
+      internet, and egress source-address filtering (BCP 38) in place?

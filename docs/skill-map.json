@@ -317,6 +317,7 @@
       "weight": 18,
       "targets": [
         "rules/02",
+        "rules/02 \u00a72.10",
         "rules/03",
         "rules/04",
         "rules/06",
@@ -373,6 +374,20 @@
       ]
     },
     {
+      "from": "sota-network-security",
+      "to": "sota-code-security",
+      "weight": 14,
+      "targets": [
+        "rules/01",
+        "rules/04 \u00a71",
+        "rules/04 \u00a75",
+        "rules/06 \u00a75",
+        "rules/14",
+        "rules/17",
+        "rules/18"
+      ]
+    },
+    {
       "from": "sota-kubernetes",
       "to": "sota-devsecops",
       "weight": 13,
@@ -396,20 +411,6 @@
       "weight": 12,
       "targets": [
         "rules/03"
-      ]
-    },
-    {
-      "from": "sota-network-security",
-      "to": "sota-code-security",
-      "weight": 12,
-      "targets": [
-        "rules/01",
-        "rules/04 \u00a71",
-        "rules/04 \u00a75",
-        "rules/06 \u00a75",
-        "rules/14",
-        "rules/17",
-        "rules/18"
       ]
     },
     {
@@ -2665,6 +2666,14 @@
       "to": "sota-observability",
       "weight": 1,
       "targets": []
+    },
+    {
+      "from": "sota-llm-engineering",
+      "to": "sota-identity-access",
+      "weight": 1,
+      "targets": [
+        "rules/01 \u00a75.1"
+      ]
     },
     {
       "from": "sota-llm-engineering",

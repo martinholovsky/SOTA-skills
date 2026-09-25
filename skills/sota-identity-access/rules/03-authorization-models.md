@@ -59,12 +59,13 @@ The most common silent over/under-grant lives in the IdP-group → app-role mapp
   upstream IdP's arbitrary group assertion directly grant a privileged local role.
 
 ```rego
-# GOOD (Rego): default deny; role derives only from an explicit group mapping
+# GOOD (Rego): default deny; roles derive only from an explicit group mapping
 package authz
 import rego.v1
 default allow := false
-role := r if { some g in input.user.groups; r := group_role[g] }   # undefined if no match
-allow if { some p in role_permissions[role]; p == input.action }
+roles contains r if { some g in input.user.groups; r := group_role[g] }   # empty set if no match
+allow if { some r in roles; some p in role_permissions[r]; p == input.action }
+# (a single-valued `role := r if {...}` raises eval_conflict_error for a user in two mapped groups)
 # BAD: a fallback that silently grants everyone a baseline role
 role := group_role[g] if { some g in input.user.groups }
 role := "viewer"  # <-- default low role for ANY authenticated user regardless of group
@@ -112,13 +113,27 @@ permit (principal, action == Action::"invoice:read", resource)
   when { resource.tenant == principal.tenant &&
          (resource.owner == principal || principal in Role::"finance") };
 forbid (principal, action, resource)
-  when { resource.classification == "restricted" && !principal.cleared };
+  when { resource.classification == "restricted" &&
+         !(principal has cleared && principal.cleared) };   // missing attribute => forbid
 ```
+
+A Cedar policy that **errors** during evaluation (e.g. reading an attribute the entity does
+not have) is **skipped**, not treated as a deny. With the naive `!principal.cleared`, a
+principal lacking `cleared` makes the forbid error out and the permit wins: ALLOW — the
+opposite of §6's "lookup error must deny". The naive guard
+`principal has cleared && !principal.cleared` is just as wrong (false → forbid does not
+apply → ALLOW) and passes `cedar validate`. Write ceilings so a missing attribute satisfies the forbid, as above, and
+put a missing-attribute row in the matrix (§6). Verified with cedar-policy-cli 4.13.0,
+2026-09-26.
 
 ```fga
 # OpenFGA: relationships; "viewer of a folder" inherits to documents in it
 model
   schema 1.1
+type user
+type folder
+  relations
+    define viewer: [user]
 type document
   relations
     define parent: [folder]
@@ -150,6 +165,7 @@ type document
     (["finance"],  "invoice:delete", False),   # finance can't delete
     (["support"],  "invoice:refund", False),
     ([],           "invoice:read",   False),   # no mapped group -> DENY (no default role)
+    # + a missing-attribute row per ABAC ceiling: entity without `cleared` -> DENY
 ])
 def test_authz_matrix(groups, action, expected):
     assert decide(user(groups=groups), action) is expected

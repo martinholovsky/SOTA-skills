@@ -47,7 +47,7 @@ finding until proven otherwise.
   weaker than a direct one wherever the same inner digest leaked elsewhere: the attacker
   tests that leaked list against the wrapper instead of guessing passwords.
   OWASP: Password Storage cheat sheet.
-- Password policy (NIST SP 800-63B-4, final Aug 2025): length ≥ 15 when the
+- Password policy (NIST SP 800-63B-4, final July 2025): length ≥ 15 when the
   password is the sole factor (≥ 8 permitted only as part of MFA), allow 64+,
   allow all printable chars + unicode, **no composition rules, no periodic
   rotation**. Check candidates against a breach corpus (k-anonymity HIBP API) and a

@@ -11,8 +11,12 @@ default, a maintained update channel). Retrofitting them is brutal; design them 
 > Regulation **(EU) 2024/2847**, in force **10 Dec 2024**. Phased application:
 > **conformity-assessment/notified-body provisions from 11 Jun 2026**;
 > **reporting obligations (Art. 14) from 11 Sep 2026**; **main/essential
-> requirements from 11 Dec 2027**. Article sub-numbering below should be confirmed
-> against EUR-Lex before quoting verbatim; the dates and Art. 14 clocks are
+> requirements from 11 Dec 2027**. **Art. 69(3): Art. 14 reporting also covers
+> products placed on the market *before* 11 Dec 2027** — legacy products are not
+> exempt from the clocks. ENISA's Single Reporting Platform has been operational
+> since 11 Sep 2026 (enisa.europa.eu, "The CRA Single Reporting Platform is
+> launched"; Art. 69/71 re-checked on EUR-Lex 2026-09-26). Article
+> sub-numbering below should be confirmed against EUR-Lex before quoting verbatim; the dates and Art. 14 clocks are
 > corroborated by the Commission's summary page. Re-verify — and route
 > product-class/conformity-route decisions to counsel or a notified body.
 
@@ -28,9 +32,19 @@ default, a maintained update channel). Retrofitting them is brutal; design them 
   (notified-body) assessment or an EU cybersecurity certification scheme.
 - **Open-source nuance:** non-commercial OSS is out of scope. The **open-source
   software steward** role (Art. 24) carries a lighter, tailored regime (a
-  cybersecurity policy, vulnerability handling, cooperation) and stewards are **not
-  subject to the penalty regime**. Commercial productization of OSS pulls you back
+  cybersecurity policy, vulnerability handling, cooperation) and stewards are **exempt
+  from administrative fines** (Art. 64(10)(b)) — not from obligations: Art. 24(3)
+  applies Art. 14(1) reporting to them, from 11 Dec 2027. Commercial productization of OSS pulls you back
   into full manufacturer obligations.
+- **Radio equipment is already regulated — before the CRA applies.** Delegated
+  Regulation (EU) 2022/30 activates the Radio Equipment Directive's cybersecurity
+  essential requirements (Art. 3(3)(d)(e)(f): network harm, personal data, fraud)
+  for internet-connected radio equipment, toys, childcare and wearables, **from
+  1 Aug 2025** (date set by (EU) 2023/2444) **until 11 Dec 2027**, when (EU)
+  2026/339 repeals it and the CRA takes over. Presumption of conformity comes from
+  **EN 18031-1/-2/-3:2024**, cited in the OJ **with restrictions** by Implementing
+  Decision (EU) 2025/138 — read the restrictions before relying on one (all four
+  acts read on EUR-Lex 2026-09-26).
 
 If you sell software/hardware into the EU and it talks to a network or device,
 assume in-scope and confirm the tier — the tier decides how heavy the conformity
@@ -105,7 +119,9 @@ vulnerability-handling process**. Both are engineering.
 
 For an **actively exploited vulnerability** in your product **or** a **severe
 incident** affecting its security, report to the designated coordinating **CSIRT**
-*and* **ENISA** via the single reporting platform:
+*and* **ENISA** via the single reporting platform (ENISA SRP, operational since
+11 Sep 2026). This applies to every in-scope product on the market, **including
+ones placed before 11 Dec 2027** (Art. 69(3)):
 
 | Stage | Deadline |
 |---|---|
@@ -135,7 +151,7 @@ The standards that own this are **ISO/IEC 30111:2019** (vulnerability *handling*
 internal process: investigate, verify, prioritize, remediate) paired with **ISO/IEC
 29147:2018** (vulnerability *disclosure* — the external interface to finders and users).
 30111 is the one most teams have never read; it is the process behind the mailbox 29147
-tells you to publish. *Both are under revision as ISO/IEC AWI 29147 / AWI 30111 — confirm
+tells you to publish. *Both are under revision (iso.org, 2026-09-26: AWI 29147 and WD 30111.2) — confirm
 the current edition before citing one in an assessment.*
 
 **R3a — write down when your clock starts, then triage against a fixed order.**
@@ -266,4 +282,4 @@ teeth and deadlines. Reuse, don't rebuild:
 - [ ] Article 14 reporting pipeline built and rehearsed: detection → 24h early warning / 72h notification to CSIRT + ENISA; final reports (14 days / 1 month) covered; unified with NIS2/DORA clocks where applicable
 - [ ] Conformity route chosen for the tier (self-assessment vs notified body / certification scheme); CE-marking obligations understood
 - [ ] Harmonized-standard reliance (incl. 62443 for OT) confirmed against the current OJ-published hEN list, not assumed
-- [ ] All CRA dates/Article references re-verified against EUR-Lex / the Commission within the last 6 months (timeline is live: reporting from 11 Sep 2026, main obligations from 11 Dec 2027)
+- [ ] All CRA dates/Article references re-verified against EUR-Lex / the Commission within the last 6 months (timeline is live: reporting from 11 Sep 2026 — for legacy products too, Art. 69(3) — main obligations from 11 Dec 2027)

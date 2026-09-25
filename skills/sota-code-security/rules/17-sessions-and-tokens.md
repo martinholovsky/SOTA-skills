@@ -54,7 +54,7 @@ OAuth/OIDC, passkeys, recovery) stays in rules/02.
   it ends. The identity key should have exactly one writer: the login success path.
 - Cookie flags: `Secure; HttpOnly; SameSite=Lax` (or `Strict`), `__Host-` prefix
   (enforces Secure + no Domain attribute + Path=/). Details in rules/05.
-- Expiry: idle timeout AND absolute timeout (e.g. 8–12h) regardless of activity
+- Expiry: idle timeout AND absolute timeout (e.g. 4–8h for a full-day office app) regardless of activity
   (CWE-613), both computed from **server-side timestamps**, never from a time the client
   sends or a counter the client holds. Pick the idle value by risk: the Session Management
   cheat sheet's common ranges are 2–5 min for high-value applications and 15–30 min for
@@ -133,10 +133,14 @@ finding unless a denylist, or a short lifetime refreshed server-side, covers it.
 OWASP: JSON Web Token, REST Security cheat sheets. If you use JWTs:
 
 - **Pin the algorithm at verification.** Pass an explicit allowlist
-  (`algorithms=["EdDSA"]` or `["ES256"]`); never trust the header's `alg`.
+  (`algorithms=["ES256"]`); never trust the header's `alg`.
   Classic breaks: `alg: none` acceptance, and RS256→HS256 confusion where the
   public key is used as an HMAC secret (CWE-347).
-- **Algorithm choice**: EdDSA (Ed25519), ES256/384/512 or PS256/384/512. RS256/384/512
+- **Algorithm choice**: ES256/384/512 is the portable default; PS256/384/512 also fits.
+  Ed25519 where both ends support the fully-specified `Ed25519` identifier: RFC 9864
+  (October 2025) deprecates the polymorphic `EdDSA`, and support varies (measured
+  2026-09-26: `jose` 6.2 verifies both; PyJWT 2.15.0 lists only `EdDSA`; `jsonwebtoken`
+  9.0.3 rejects any Ed25519 key, "Unknown key type"). RS256/384/512
   (RSASSA-PKCS1-v1_5) is for interop with a peer that offers nothing else. Prefer
   asymmetric when multiple services verify — shared HMAC secrets turn every verifier
   into a forger. An HMAC secret is random, never a password, and at least as long as the
@@ -184,8 +188,9 @@ OWASP: JSON Web Token, REST Security cheat sheets. If you use JWTs:
 // BAD: library honors header alg, no claim checks
 jwt.verify(token, key);
 // GOOD
-jwt.verify(token, publicKey, { algorithms: ["EdDSA"], issuer: ISS,
+jwt.verify(token, publicKey, { algorithms: ["ES256"], issuer: ISS,
                                audience: AUD, maxAge: "15m" });
+// Ed25519 (RFC 9864): jose's jwtVerify(token, key, { algorithms: ["Ed25519"], ... })
 ```
 
 ## Audit checklist

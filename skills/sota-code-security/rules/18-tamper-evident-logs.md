@@ -12,8 +12,9 @@ stays in rules/04.
 ## 1. Tamper-evident logs & audit ledgers (NIST AU-9/AU-10)
 
 Applies to anything claiming "tamper-evident", "audit-grade", or "immutable"
-records: hash-chained audit logs, compliance trails (EU AI Act Art. 12, FINRA
-4511 WORM), agent/action ledgers, signed receipts.
+records: hash-chained audit logs, compliance trails (EU AI Act Art. 12; FINRA
+4511, which defers to SEA Rule 17a-4(f): WORM *or* a complete time-stamped audit
+trail), agent/action ledgers, signed receipts.
 
 - An **unkeyed hash chain** (each record carries the previous record's SHA-256)
   detects accidental corruption and naive edits only — an attacker with write

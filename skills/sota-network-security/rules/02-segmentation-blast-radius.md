@@ -55,8 +55,11 @@ common real exposure. Examples seen in audits:
 that effectively allows the world is still Critical. Render the *effective* policy and probe:
 
 ```bash
-# Cilium: what can actually reach this endpoint?
-cilium policy get
+# Cilium: what can actually reach this endpoint? (cilium-cli has no `policy` command;
+# `cilium-dbg policy get` is deprecated). Endpoint IDs are per node: use the Cilium agent pod
+# on the target pod's node, find the endpoint ID, then dump its policy map
+kubectl -n kube-system exec <cilium-pod-on-that-node> -c cilium-agent -- cilium-dbg endpoint list
+kubectl -n kube-system exec <cilium-pod-on-that-node> -c cilium-agent -- cilium-dbg bpf policy get <endpoint-id>
 hubble observe --to-pod openbao/ -f          # are unexpected sources getting through?
 # Generic: from an unrelated pod, can you reach the sensitive service?
 kubectl -n scratch exec deploy/test -- sh -c 'curl -sm3 https://openbao.vault:8200/v1/sys/health && echo REACHABLE'

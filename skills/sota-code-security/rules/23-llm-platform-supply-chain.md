@@ -46,7 +46,8 @@ def test_indirect_injection_cannot_trigger_tools(agent, payload):
   too (tool poisoning); pin/review tool manifests, prefer allowlisted servers,
   and apply rules/08 §2 executor-side authorization regardless of what the server claims.
   Remote MCP servers must require auth (the MCP spec's OAuth-based authorization,
-  spec rev 2025-11-25) — unauthenticated internet-exposed MCP servers and
+  rev 2026-07-28: Client ID Metadata Documents over the now-deprecated Dynamic Client
+  Registration, and clients MUST validate a present RFC 9207 `iss` response parameter against the recorded issuer) — unauthenticated internet-exposed MCP servers and
   trojaned MCP packages are recurring 2026 incident patterns (see NSA's CSI
   "Model Context Protocol (MCP): Security Design Considerations", May 2026).
   Agent config files the harness
@@ -74,8 +75,9 @@ def test_indirect_injection_cannot_trigger_tools(agent, payload):
   OWASP: AISVS 10.1.1, AISVS 10.4.7, DSOMM, MCP Security cheat sheet, Secure
   Coding with AI cheat sheet.
 - Named MCP/agent attack classes — use these names in findings (IDs: OWASP MCP
-  Top 10 MCP03:2025 Tool Poisoning, with rug pulls and shadowing as
-  sub-techniques; MITRE ATLAS AML.T0104 Publish Poisoned AI Agent Tool):
+  Top 10 MCP03:2025 Tool Poisoning, which names no rug-pull or shadowing
+  sub-techniques; MITRE ATLAS AML.T0115.002 Publish Poisoned AI Artifacts: AI Agent
+  Tools and AML.T0110 AI Agent Tool Poisoning — AML.T0104 is gone since ATLAS 2026.07):
   - **Tool poisoning**: malicious instructions hidden in tool
     descriptions/schemas/metadata that the model reads but UIs truncate.
     Mitigate: pin + review full tool definitions at install, diff on change,
@@ -99,8 +101,8 @@ def test_indirect_injection_cannot_trigger_tools(agent, payload):
     mimicking the model's own reasoning, smuggled into context to steer
     safety/tool decisions; and OverThink-class slowdowns — decoy problems
     planted in retrieved content force excessive reasoning tokens
-    (cost/latency DoS, unbounded-consumption class). No OWASP/ATLAS IDs
-    assigned yet. Mitigate: never feed untrusted content as reasoning
+    (cost/latency DoS: OWASP LLM10:2025 Unbounded Consumption; ATLAS
+    AML.T0034.001 Resource-Intensive Queries). Mitigate: never feed untrusted content as reasoning
     scaffold/thinking context, cap reasoning-token budgets per request,
     alert on token-consumption anomalies.
 - Log prompts/completions for forensics, but apply rules/07 hygiene — context

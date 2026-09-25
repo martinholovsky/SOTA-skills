@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**Full-library sweep, batch 1 of 4: the nine security-core skills re-verified.** 135 findings
+(7 High, 48 Medium); every High/Medium went to a refuter (none refuted, several fixes
+corrected), fixes were written per skill folder with each command run on BSD grep and ugrep,
+and a hostile review of the whole diff found 11 cross-skill defects, all fixed. Details and
+the eight deferrals with their triggers: `docs/ADOPTION-LOG.md`, 2026-09-26 batch 1.
+`LAST-VERIFIED` does not move until the last batch.
+
+### Fixed (sweep batch 1)
+
+- **Probes that checked nothing:** the agent-sandbox probe (sandboxing rules/05 R5.0) passed
+  unless *every* path was readable, and read a missing tool as a denial; it now tests one path
+  per command and exits 0 / 1 / 2 (held / hole / inconclusive), all three measured in podman.
+  The private-key regex in secrets rules/04 and code-security rules/04 errored on BSD grep and
+  matched nothing on ugrep.
+- **Stale or wrong facts:** the Cilium security floor, CRA Art. 69(3), GitHub's immutable OIDC
+  subject claims, TEE physical-interposer attacks, the MCP 2026-07-28 revision (CIMD over DCR,
+  `iss` validation), Kyverno's per-rule `failureAction` (`sota-kubernetes` rules/03),
+  CVE-2026-20833 RC4 phases, ATLAS AML.T0104's replacement, FIPS 140-2's move to the Historical
+  List, M-26-05, FedRAMP 2026 terminology, and legacy Rego that `opa check` rejects.
+- **Nine command code spans wrapped across lines** in eight files are rejoined.
+- **Invariant 38's detector** missed "currently at v8.30.1"; the shape is now in its labelled
+  corpus (43 pins, 58 non-pins) and a boundary word inside a currency cue no longer counts.
+
 **The nine language skills were re-verified against primary sources.** This was an early,
 partial run of the accuracy sweep: 158 findings, 72 High or Medium each put to a refuter
 (1 refuted), and 132 fix items landed across nine skills. Each new or changed audit probe was

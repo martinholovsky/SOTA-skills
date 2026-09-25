@@ -464,8 +464,8 @@ unvalidated instrument is not yet a finding.
 - [ ] Every script CI, a hook or a runbook references **actually executed this
       pass**, the silent ones recorded as dead until proven otherwise (§6)?
 - [ ] **Environment-dependent predicates**: any filter tested against an absolute
-      path, hostname, username, env var or locale — `grep -rn "\.parts\|os.environ\|
-      gethostname" ` near a comprehension. Run the suite from a `mktemp -d` clone, not
+      path, hostname, username, env var or locale — each hit of
+      `grep -rnE '\.parts|os\.environ|gethostname' .` near a comprehension. Run the suite from a `mktemp -d` clone, not
       the working tree; on macOS that path resolves under `/private`, which is exactly
       the component such filters tend to exclude.
 - [ ] **Every collection a suite iterates has a non-empty assertion** — without one an

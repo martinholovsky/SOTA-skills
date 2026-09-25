@@ -71,7 +71,7 @@ vendor pitch as marketing.
 | **Infrastructure operator / cloud insider** | Memory encrypted with SoC-held keys; admin tooling, host debuggers, memory dumps see ciphertext |
 | **Hypervisor / host OS compromise** | Hardware denies host reads/writes of TEE memory; SNP/TDX-class integrity blocks remap/replay tampering |
 | **Co-tenants** (escalating through the host) | Same boundary — a tenant who owns the hypervisor still sits outside the TEE |
-| **Basic physical memory attacks** | Cold boot, DRAM bus probing/interposers, DMA from devices outside the TEE hit ciphertext |
+| **Basic physical memory attacks** | Cold boot and DMA from devices outside the TEE hit ciphertext — a DRAM **bus interposer** is NOT in this row (§2.2) |
 | **Impersonation of the environment** | Attestation lets the relying party refuse to release data/keys to a non-genuine or downgraded platform |
 
 ### 2.2 Threats CC explicitly does NOT address
@@ -81,7 +81,7 @@ vendor pitch as marketing.
 | **Bugs in the workload itself** | Attestation proves *which* code runs, not that it is *good* code; an SQLi or RCE inside the TEE executes with the TEE's trust | sota-code-security |
 | **Malicious/backdoored code you attest** | Measurement of a trojan is a perfectly valid measurement; garbage in, attested garbage out | supply-chain controls, sota-devsecops |
 | **Side channels** | Out of CCC scope: mitigations are split across CPU vendor, firmware, OS, and *your code* (constant-time crypto, no secret-dependent memory access). TEEs have a real history of demonstrated microarchitectural and ciphertext side-channel attacks — budget for "bounded honesty", not perfection | vendor patches + rules/02 + workload discipline |
-| **Sophisticated physical attacks** | Long-term/invasive hardware access (decapping, microprobing) is out of scope | facility security, threat acceptance |
+| **Physical attacks, including cheap bus interposers** | Invasive access (decapping, microprobing) is out of scope — and so is a DRAM-bus interposer, which is cheap: WireTap (CCS '25) took the SGX Quoting Enclave key, TEE.Fail (disclosed 2025-10-28, DDR5) extracted Intel PCE keys and forged TDX quotes, Battering RAM (IEEE S&P '26, DDR4, under $50) read and replayed SGX and SEV-SNP memory. Deterministic memory encryption is the root cause, and Intel and AMD rate interposition out of scope — brief physical access to the host breaks confidentiality **and attestation** | facility security, provider physical-security assurances, threat acceptance |
 | **The TEE vendor** | The CPU vendor's silicon, microcode, and signing keys are *in* your TCB — CC moves trust from the cloud operator to the chip maker, it does not eliminate trust | vendor selection, rules/02 |
 | **Availability** | The host can refuse to schedule, pause, or destroy the TEE at will; CC guarantees confidentiality/integrity, never uptime | sota-architecture resilience patterns |
 
@@ -209,7 +209,7 @@ sota-code-security already cover that adversary.
 | Cloud operator / insider reading data **in use** | Confidential VM, attested, SNP/TDX class (rung 2) |
 | Malicious **hypervisor** (read *and* tamper) | Rung 2 with memory integrity — SNP/TDX class, not plain SEV |
 | Compromised **guest OS** also untrusted | Process-level enclave / minimized-TCB design (rung 3) |
-| Physical DRAM attack on edge hardware (cold boot/DMA) | Rung 2 hardware, plus measured boot; sophisticated invasive attacks remain out of scope |
+| Physical DRAM attack on edge hardware (cold boot/DMA) | Rung 2 hardware, plus measured boot — but a DRAM-bus interposer (WireTap, Battering RAM, TEE.Fail) defeats rung 2 and can forge attestation; only physical access control addresses it (§2.2) |
 | Co-tenant on shared infrastructure | Rung 2 for host-mediated attacks; side channels additionally need scheduling/SMT posture (sota-sandboxing rules/01, rules/02 here) |
 | **TEE vendor itself** / no hardware trust acceptable | Cryptographic PETs (rung 4, rules/05) — or split trust across vendors/parties |
 | Your own buggy or malicious workload | No rung helps — sota-code-security, sota-sandboxing, supply-chain controls |

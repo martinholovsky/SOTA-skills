@@ -249,7 +249,9 @@ rogue agents) — the items below cover them; use ASI numbering when reporting.
   injections; pin/verify tool definitions.
 - **Named MCP attack classes (T/S/E)** — enumerate per attached server; use
   these names in findings (OWASP MCP Top 10 MCP03:2025; MITRE ATLAS
-  AML.T0104); mitigations detailed in sota-code-security rules/23 §1:
+  AML.T0110 AI Agent Tool Poisoning and AML.T0115.002 Publish Poisoned AI
+  Artifacts: AI Agent Tools, which replaced AML.T0104 in the ATLAS 2026.07
+  data release); mitigations detailed in sota-code-security rules/23 §1:
   - *Tool poisoning:* hidden instructions in tool descriptions/metadata →
     violates the instruction/data boundary → pin + human-review full
     definitions at install.

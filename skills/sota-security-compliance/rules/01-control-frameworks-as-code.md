@@ -7,8 +7,9 @@ that mechanism emit its own evidence. Do this once and most of NIST CSF, 800-53,
 
 ## 1. Use NIST CSF 2.0 as the spine, not the control catalog
 
-**Status (verified July 2026):** NIST Cybersecurity Framework **2.0** (CSWP 29)
-was published **26 Feb 2024** and is current, superseding 1.1
+**Status (verified July 2026; CSRC re-read 2026-09-26):** NIST Cybersecurity
+Framework **2.0** (CSWP 29) was published **26 Feb 2024**, superseding 1.1 — check
+the CSRC page for a successor
 (csrc.nist.gov/pubs/cswp/29). CSF is an **outcome map**, not a control list — it
 says *what* good looks like and defers *how* to "Informative References"
 (SP 800-53, etc.). That makes it the right top-level structure for a skill or a
@@ -41,9 +42,9 @@ once and is the thing an assessor, a customer, or a future engineer actually use
 control: "Transmission confidentiality & integrity"
 maps:
   nist_800_53: [SC-8, SC-8(1)]
-  nist_800_171: ["3.13.8"]         # verify exact Rev 3 req ID against the 800-171r3 PDF
+  nist_800_171: ["03.13.08"]       # Rev 3 ID (Rev 2 numbering was 3.13.8) — per the 800-171r3 PDF
   csf_2_0: [PR.DS-02]
-  cra: ["Annex I §1(2)(e)"]         # secure by default in transit
+  cra: ["Annex I Part I(2)(e)"]     # confidentiality, e.g. encryption in transit
 mechanism: >
   TLS 1.3 terminated at the mesh; mTLS between services (sota-network-security
   rules/04); FIPS-validated module in the moderate/CUI boundary (rules/02 §4).
@@ -94,15 +95,19 @@ control) and the **evaluation log** (the evidence).
 ```rego
 # GOOD: a CUI/moderate data store cannot ship without validated crypto & boundary
 # tags — one policy keeps the rules/02 boundary and FIPS requirement honest
-deny[msg] {
-  r := input.resource_changes[_]
+# (Rego v1 syntax, the OPA 1.x default: `package` + `contains ... if`)
+package compliance.cui
+
+deny contains msg if {
+  some r in input.resource_changes
   r.type in {"aws_s3_bucket", "aws_rds_cluster", "aws_dynamodb_table"}
   r.change.after.tags.data_category == "cui"
   not r.change.after.tags.boundary == "authorized"
   msg := sprintf("%s: CUI resource outside the authorization boundary", [r.address])
 }
-deny[msg] {
-  r := input.resource_changes[_]
+
+deny contains msg if {
+  some r in input.resource_changes
   r.change.after.tags.data_category == "cui"
   not r.change.after.kms_key_fips_validated   # your module verifies the KMS key's module
   msg := sprintf("%s: CUI at rest without FIPS-validated crypto (rules/02 §4)", [r.address])
