@@ -74,7 +74,7 @@ a good tree in a disposable worktree; part B is inverted, building a fully-confi
 (`CLAUDE_CONFIG_DIR` + throwaway repo + stub `gh`) and removing one thing per probe. **67 probes** (`PASS: 67/67` on a small-diff branch; it said 63, 62, 61, 53, 52, 49, 44 and 43 before that. Counting the log's `  [` lines gives **69**: the extra two are the per-part **positive controls**, not probes — read the harness's own total. **A sweep-shaped branch legitimately runs fewer**: invariant 11's probes need a non-sweep diff, so they skip with a printed reason and the total should read `64/64` plus a `NOTE:` naming the skipped invariant (derived: 67 minus invariant 11's 3 probes, not yet observed on a sweep branch; the NOTE itself was measured 2026-09-23 at 53 changed skill files). A number below 67 is not a regression if that NOTE is present)
 (deliberately **not** gated — a static count of call sites under-reads, so only running it is
 authoritative): invariants **1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34** — 31 of 34 — and verify-setup checks 1, 1c, 1d, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13.
+24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36** — 33 of 36 — and verify-setup checks 1, 1c, 1d, 2, 3, 4, 6a, 6b, 7, 8, 9, 9a, 10a, 13.
 Only **5, 9, 12** are unprobed, needing a tag or an mtime, and the harness prints that reason. *A
 diff-based check is not unprobeable*: 11 and 14 were exempt on that false ground until a probe
 **committed** its mutation (2026-09-09). **A probe asserts its own mutation landed** (a stale
