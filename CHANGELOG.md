@@ -5,7 +5,19 @@ All notable changes to SOTA-skills are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.44.3] - 2026-09-25
+
+**The OWASP adoption programme (ROADMAP 66) is complete.** 19 OWASP projects were compared
+with the library item by item (7,439 items), giving 847 gap themes: the 205 high and 470 medium
+themes were each adopted or found already covered, with an audit probe tested on bad and
+good fixtures wherever the rule is detectable in code or config, and the 172 low themes recorded with a reason. New ground includes anti-automation, Fetch Metadata and HSTS rollout,
+file uploads, SBOM content, dependency adoption, vulnerability remediation, tag manager
+governance, the JVM web layer and audit reports with a finding lifecycle. The language-skill
+template became binding (invariants 35 and 36), and eleven splits across nine rules files kept
+them under the cap. A PATCH: every change lives inside existing surfaces (rules text, docs and two
+invariants), with no new skill, script, command or eval instrument.
+
+**Front door checked:** anti-automation · Fetch Metadata · dependency adoption · vulnerability remediation · tag manager
 
 ### Added
 
@@ -10296,6 +10308,7 @@ Releases **1.10.0 and earlier** are archived: 1.10.0–1.5.0 in
 [docs/CHANGELOG-archive.md](docs/CHANGELOG-archive.md), 1.4.0 and earlier in
 [docs/CHANGELOG-archive-2.md](docs/CHANGELOG-archive-2.md).
 
+[1.44.3]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.44.3
 [1.44.2]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.44.2
 [1.44.1]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.44.1
 [1.44.0]: https://github.com/martinholovsky/SOTA-skills/releases/tag/v1.44.0
