@@ -85,9 +85,11 @@ you could not see).
 | [rules/06-iac-deployment.md](rules/06-iac-deployment.md) | Terraform and delivery: state security, plan/apply separation with review, saved-plan apply, drift detection, GitOps (Flux/Argo) security model, progressive delivery (canary/blue-green/flags), rollback readiness, build-once-promote-many environment parity |
 | [rules/07-runtime-ops.md](rules/07-runtime-ops.md) | Runtime enforcement and operations: admission control for signed images (Kyverno/policy-controller), policy as code (OPA/Kyverno) with tests, Pod Security, incident-ready CI/CD audit logging, deployment traceability, backup/restore testing, break-glass |
 | [rules/08-registry-security.md](rules/08-registry-security.md) | Securing the container/artifact registry as infrastructure: the registry as a tier-0 supply-chain trust anchor; no anonymous push/pull and least-privilege robot/CI accounts (Zot accessControl, Harbor robots, cloud IAM); immutable tags and digest pinning to defeat tag mutation; OCI referrers for signature/SBOM/scan storage; scan-on-push and continuous re-scan; pull-through cache and image-layer dependency confusion; retention/GC that won't break running deploys; registry HA/backup; network hardening (no anonymous internet exposure, no hostNetwork, TLS) |
+| [rules/12-scm-ci-platform-governance.md](rules/12-scm-ci-platform-governance.md) | Org-level SCM/CI settings no workflow file contains: forking of private repos and who may change visibility, org-wide (secure-method) 2FA, the fork-PR approval policy for outside contributors, and the fallback when a self-hosted runner serves a public repo — read with an **owner** token, since `null` means not visible |
+| [rules/13-vulnerability-remediation.md](rules/13-vulnerability-remediation.md) | After triage: fixing a vulnerable **transitive** (find the parent with `npm explain`/`go mod why -m`/`cargo tree -i`, bump it, override last and documented) and **suppression discipline** — one advisory per ignore, never before the fix resolves, never by editing a version string |
 
 When a task spans stages (most do), read every matching file. For a full pipeline audit,
-read all ten.
+read all of them.
 
 ## Top 10 non-negotiables
 

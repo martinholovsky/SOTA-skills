@@ -193,6 +193,12 @@ Long-lived registry tokens in CI are the npm/PyPI compromise vector. Replace the
   expire silently and break the release pipeline. The provenance badge lets consumers
   verify the package was built from the public repo by the stated workflow — build
   origin, not code safety (§2.1).
+- **Registry credentials on developer machines**: stay logged out of the registry CLI day
+  to day (`npm logout` invalidates the token server-side), so an install-time worm finds
+  nothing in `~/.npmrc` to steal. When a token is needed, make it an npm granular token
+  scoped to the named packages, read-only unless it publishes, with a short expiry and an
+  allowed-IP (CIDR) range. Tick "bypass two-factor authentication" only for
+  non-interactive publish automation. (OWASP: NPM Security cheat sheet)
 - **Rules for both**: publish only from a tag-triggered, environment-gated workflow on the
   protected release workflow file; never from `workflow_dispatch` on arbitrary refs.
 - Audit: `NPM_TOKEN`/`PYPI_API_TOKEN`(account-scoped) in secrets = High (and for npm, a
@@ -278,5 +284,6 @@ read it — unnecessary in jobs that never push.
 - [ ] Every signature/attestation has a named, fail-closed verifier (admission policy, CD verify, or promotion verify) with **exact** certificate identity + issuer — no wildcard identities
 - [ ] SBOM and (where used) scan results attached as in-toto attestations bound to the digest
 - [ ] Package publishing uses trusted publishers / OIDC provenance; no classic registry tokens in secrets; publish workflow is tag-triggered + environment-gated
+- [ ] **No standing registry token on developer machines (§2.6), Medium:** `grep -n -E '_authToken=[^$]' ~/.npmrc` is empty (a literal token, not a `${VAR}` reference); `npm token list` shows only package-scoped, expiring, CIDR-bound tokens, read-only unless they publish
 - [ ] Release tags protected; releases immutable; checksums signed; install paths verify before executing
 - [ ] Deployed-digest → source-SHA → build-run traceability exists and is queryable

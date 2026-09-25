@@ -259,6 +259,18 @@ schema?" If no, rollback is fiction for that release window.
 - Data parity without data leakage: staging uses masked/synthetic data. A prod-data dump
   in staging makes staging a prod-tier system with non-prod controls (High).
 
+## 6.7 Decommissioning is a deployment: teardown verifies DNS removal
+
+Deleting a bucket, load balancer or PaaS app while a CNAME/alias still points at it lets
+anyone who claims the freed name serve content on your subdomain. So teardown is a pipeline
+with a gate, not a console click: it **does not report success until the DNS records that
+target the resource are gone**. Look them up in the zones you own (the IaC state, or the
+provider's record list), delete them in the same change, then query public DNS to confirm.
+A CNAME whose target returns NXDOMAIN is one tell, but a target that still resolves can be
+claimable too, so the gate checks that the record is absent rather than that its target
+looks dead. Zone-wide scanning for danglers is `sota-cloud-infrastructure` rules/03.
+(OWASP: Subdomain Takeover Prevention cheat sheet)
+
 ## Audit checklist
 
 - [ ] TF state: remote encrypted versioned backend with locking; no state/tfvars in git; backend access least-privilege; secrets kept out of state via ephemeral/write-only/external-manager patterns
@@ -269,3 +281,4 @@ schema?" If no, rollback is fiction for that release window.
 - [ ] Progressive delivery with automated metric analysis and auto-rollback; blue/green rollback path tested; feature flags have owners/expiry and audited control plane
 - [ ] Rollback: previous digests retained and re-deployable via pipeline; migrations expand/contract (N-1 compatible); rollback drilled within the last quarter
 - [ ] Build-once-promote-many by digest; env config deltas declared in git and reviewable; previews isolated with non-prod roles; staging data masked/synthetic
+- [ ] **Teardown removes DNS first (§6.7), High:** every decommission path deletes the records aimed at the resource and fails unless `dig +short CNAME <name>` (and `dig +short <name>` for alias/A records) returns nothing for each; any record whose target gives `dig <target> | grep 'status: NXDOMAIN'` is a live takeover candidate

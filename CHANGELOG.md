@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **OWASP high-value themes adopted in `sota-devsecops` (ROADMAP 66 step 4, batch "devsecops").**
+  - 14 themes implemented and 5 extended.
+  - 18 audit probes, each tested on bad and good fixtures.
 - **OWASP high-value themes adopted in `sota-code-security` (ROADMAP 66 step 4, batch "code-security").**
   - 59 themes implemented and 15 extended.
   - 74 audit probes, each tested on bad and good fixtures.

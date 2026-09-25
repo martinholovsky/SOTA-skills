@@ -153,6 +153,13 @@ through the full stack), but it's slow — keep it out of the PR path:
   during others' test windows.
 - API-aware scanning beats blind crawling: feed the OpenAPI spec (ZAP/StackHawk import) so
   coverage is your actual surface, not what a crawler stumbled into.
+- **Coverage is what the scan saw, so widen it deliberately.** Log in as every role the
+  service has: in ZAP, one context `users:` entry per role, and one spider/scan job per
+  user (each job takes a single `user`). Crawl client-rendered apps with a browser-driven
+  spider (`spiderClient`, or `spiderAjax`, which ZAP no longer recommends for modern
+  apps). Add endpoints the crawler cannot reach — from traffic, route dumps or JS
+  bundles. Declare app-specific parameters and encodings (ZAP script input vectors). Run
+  more than one spider or scanner and merge what they find. (OWASP: DSOMM)
 - Triage pipeline same as everything else: findings → tickets with owners, baseline file
   reviewed in PRs (a growing ignored-alerts baseline is the DAST version of mute culture).
 
@@ -174,6 +181,21 @@ confidence scores.
 - Watch for **license changes on upgrade** (relicensing events: Mongo→SSPL, HashiCorp→BUSL,
   Redis) — the diff-aware gate catches these only if it checks licenses on version
   *changes*, not just new packages.
+
+## 5.6 Gates for agent-authored changes: out-of-scope files and invisible characters
+
+An agent's PR declares a scope (the issue, the task prompt). Two checks hold it to that.
+
+- **Out-of-scope paths need explicit human review.** Flag an agent PR that touches
+  lockfiles, CI/CD config, tests, or anything outside the declared scope — a "fix" that
+  edits the test it was meant to pass, or a lockfile nobody asked for, is the shape to
+  catch. Route those paths to a required reviewer (rules/01 §1.8) rather than warning.
+- **Reject invisible and bidirectional characters in changed files**, whatever the
+  language: bidi controls (U+202A–202E, U+2066–2069), zero-width characters
+  (U+200B–200D) and U+FEFF. They make the reviewed text differ from what the compiler
+  reads. Homoglyphs (a Cyrillic letter that renders as a Latin one) need a confusables check, not a
+  character-range grep. Language-level detail: `sota-javascript-typescript` rules/05.
+  (OWASP: Secure Coding with AI cheat sheet)
 
 ## 5.7 Test discipline — no flaky-mute culture
 
@@ -220,6 +242,8 @@ remove it. Diff-aware modes, caching, and tiering are how gates survive.
 - [ ] Secret scanning: push protection org-wide, PR diff scan, history scanned at onboarding; committed secrets trigger rotation, not just removal; bypass events reviewed
 - [ ] IaC scanning on PRs (plan-aware where possible) with the high-signal defaults non-exceptable; custom org policies versioned + tested
 - [ ] DAST baseline on staging per merge, authenticated scans scheduled, OpenAPI-fed; baseline file changes reviewed
+- [ ] **DAST covers every role and client-rendered routes (§5.4), Medium:** in the ZAP plan `grep -c -E 'type:[[:space:]]*(spiderAjax|spiderClient)' zap.yaml` and `grep -c -E '^[[:space:]]*users:' zap.yaml` are not `0`, with one user per role
+- [ ] **Agent PR gates (§5.6), High:** `git diff --name-only origin/main...HEAD | grep -E '(^|/)(package-lock\.json|pnpm-lock\.yaml|yarn\.lock|go\.sum|Cargo\.lock|poetry\.lock|uv\.lock)$|^\.github/|^\.gitlab-ci\.yml$|(^|/)tests?/|_test\.go$'` hits force a required reviewer; `git diff --name-only origin/main...HEAD | xargs rg -n '[\x{202A}-\x{202E}\x{2066}-\x{2069}\x{200B}-\x{200D}\x{FEFF}]'` fails the check on any hit
 - [ ] License gate covers transitive deps (SBOM-based) and license *changes* on upgrades; unknown licenses block
 - [ ] All gates are required checks by exact name; no `continue-on-error`/`|| true`/soft-fail on gate steps; path-filtered required checks have no-op fallbacks; rulesets apply to admins; merge queue (or equivalent) re-validates merge results
 - [ ] Gate workflows protected from modification by the gated change (CODEOWNERS/required workflows)

@@ -1181,6 +1181,15 @@
     },
     {
       "from": "sota-devsecops",
+      "to": "sota-javascript-typescript",
+      "weight": 3,
+      "targets": [
+        "rules/05",
+        "rules/07"
+      ]
+    },
+    {
+      "from": "sota-devsecops",
       "to": "sota-network-security",
       "weight": 3,
       "targets": []
@@ -1484,11 +1493,10 @@
     },
     {
       "from": "sota-devsecops",
-      "to": "sota-javascript-typescript",
+      "to": "sota-secrets-management",
       "weight": 2,
       "targets": [
-        "rules/05",
-        "rules/07"
+        "rules/04"
       ]
     },
     {
@@ -1995,10 +2003,10 @@
     },
     {
       "from": "sota-devsecops",
-      "to": "sota-secrets-management",
+      "to": "sota-cloud-infrastructure",
       "weight": 1,
       "targets": [
-        "rules/04"
+        "rules/03"
       ]
     },
     {
@@ -2024,6 +2032,12 @@
       "targets": [
         "rules/01 \u00a79a"
       ]
+    },
+    {
+      "from": "sota-devsecops",
+      "to": "sota-identity-access",
+      "weight": 1,
+      "targets": []
     },
     {
       "from": "sota-docs-workflow",

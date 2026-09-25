@@ -5952,3 +5952,20 @@ traversal it tests; a file scope that missed `compose.test.yml`), 2 worked as wr
 |---|---|---|---|---|
 | `sota-code-security` | 59 | 15 | 0 | 74 |
 | **total** | 59 | 15 | 0 | 74 |
+
+## 2026-09-25 — ROADMAP 66 step 4, batch "devsecops": high-value OWASP themes adopted
+
+One agent per skill (`sota-code-security` split five ways by file) re-verified each gap against
+the current tree before writing, wrote the rule in its own words citing OWASP sources by name,
+added an audit probe tested on a bad and a good fixture, and verified every API, default and
+standard it names against a primary source read that session. Every probe was then re-run here
+against its fixtures; the 39 that did not reproduce went to a second verification pass — 34 were
+artefacts of the re-run (a reported command with prose or a placeholder the file does not carry,
+or a live-endpoint probe), 3 were real defects fixed in the file (an `rg` with no path, which reads
+**stdin** when stdin is not a terminal; `curl` without `--path-as-is`, which normalises the very
+traversal it tests; a file scope that missed `compose.test.yml`), 2 worked as written.
+
+| skill | implemented | extended | blocked by the cap | audit probes |
+|---|---|---|---|---|
+| `sota-devsecops` | 14 | 5 | 0 | 18 |
+| **total** | 14 | 5 | 0 | 18 |
