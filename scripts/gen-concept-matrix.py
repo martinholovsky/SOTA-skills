@@ -306,6 +306,14 @@ UNIVERSAL_FLOOR = [
     # by hand with `--explain` (js/ts rests on its float-money probe, not on its three
     # "HIGH if money" severity notes).
     "numeric precision & money",
+    # ROADMAP 66 step 3a, 2026-09-25: four concepts completed to 9/9 by the OWASP adoption
+    # (c/c++ unsafe parsing, resource limits and TLS verification; rust TLS; php repository
+    # provenance) and pinned the same day. Each new cell was written as a BUILD rule plus a
+    # probe run against a bad and a good fixture under ugrep and BSD grep.
+    "deserialization / unsafe parsing",
+    "resource limits / DoS guards",
+    "TLS / transport verification",
+    "supply-chain provenance & publishing",
 ]
 
 def classify(text):

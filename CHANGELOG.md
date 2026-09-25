@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Four concepts completed to 9/9 and added to the universal floor, which is now 29
+  (ROADMAP 66 step 3a).**
+  - `sota-c-cpp` gains unsafe-parsing and resource-limit rules (wire-buffer struct casts;
+    libxml2 `NOENT`/`DTDLOAD`/`HUGE`; depth and decompression caps). It also gains TLS
+    verification: OpenSSL returns `X509_V_OK` even when the peer sent no certificate, so
+    the rule checks for a non-NULL peer certificate too.
+  - `sota-rust` gains TLS verification (reqwest and native-tls `danger_*`, rustls
+    `.dangerous()`).
+  - `sota-php` gains Composer repository provenance: canonical repositories, which block
+    dependency confusion, and `secure-http`.
+  - Each rule ships a probe tested against a bad and a good fixture.
 - **Invariants 35 and 36: the language-skill template is now binding.**
   `docs/SKILL-TEMPLATE.md` listed 12 universal concepts while the floor CI enforces pinned 25.
   Invariant 35 fails when those two lists differ. Invariant 36 fails when a router "Any …

@@ -5767,3 +5767,21 @@ ROADMAP's history prose) is left as written and translated by the table above.
 **An instrument defect of mine, found on the way.** My filter over the gate's output
 excluded every line containing "ok", and hid invariant 10's report on
 `17-sessions-and-t**ok**ens.md`. The gate was right; the filter now anchors on `^    ok`.
+
+## 2026-09-25 — ROADMAP 66 step 3a: four concepts completed to 9/9 and pinned (the floor is now 29)
+
+Operator-approved list (A). Each concept was 7/9 or 8/9 at checklist level; the missing cells
+were written as a BUILD rule and an audit probe, each probe run against a bad and a good
+fixture under ugrep and BSD grep before it shipped. Every API a rule names was read in its
+primary source first.
+
+| concept | cell written | source themes (OWASP ids) | verified against |
+|---|---|---|---|
+| deserialization / unsafe parsing | `sota-c-cpp` rules/04 §2: no wire-buffer-to-struct casts; libxml2 without `XML_PARSE_NOENT`/`XML_PARSE_DTDLOAD`, with `XML_PARSE_NONET` | T527 (XML_External_Entity_Prevention cheat sheet) | libxml2 `parser.h` (macOS 15.4 SDK) |
+| resource limits / DoS guards | `sota-c-cpp` rules/04 §2: depth, count, allocation and decompression caps; never `XML_PARSE_HUGE` on untrusted input | T488 (XML_Security cheat sheet) | same header: `XML_PARSE_HUGE` "relax any hardcoded limit" |
+| TLS / transport verification | `sota-c-cpp` rules/04 §4 (OpenSSL: `SSL_set1_host`, verify result **and** a non-NULL peer certificate; libcurl verify options) and `sota-rust` rules/05 §7 (reqwest/native-tls `danger_*`, rustls `.dangerous()`) | T526 (Pinning cheat sheet), T031, T466 | OpenSSL 3.6.4 man pages (a missing certificate also returns `X509_V_OK`); reqwest 0.13.5, native-tls 0.2.18, rustls 0.23.45 sources |
+| supply-chain provenance & publishing | `sota-php` rules/05 §1: canonical repositories, `secure-http`, forked packages published with pedigree | T552, T260 (SCVS 6.x) | Composer `doc/articles/repository-priorities.md` and `doc/06-config.md` |
+
+**Batched as one PR, not four** — a choice inside the approved scope: each promotion needed
+one or two cells, and the four share the floor edit. The remaining step-3 concepts touch
+most or all nine languages and keep one PR each.

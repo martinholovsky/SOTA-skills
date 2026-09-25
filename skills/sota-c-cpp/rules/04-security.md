@@ -45,6 +45,21 @@ Replace on sight (CERT STR/FIO; MISRA):
   therefore does not exist in the shipped binary. Use an explicit `if` that
   returns/aborts, or a hardened contract macro that survives release flags; keep
   `assert` for impossible internal states. Class: `sota-code-security` rules/11 §4.
+- **Unsafe parsing of untrusted structured input (deserialization).** Never cast or
+  `memcpy` a wire buffer straight into a struct: padding, alignment, endianness and every
+  length field arrive attacker-controlled, and the cast is also a strict-aliasing violation.
+  Decode field by field against the remaining length, or use a generated parser with its own
+  checks (protobuf; FlatBuffers only after its `Verifier` accepts the buffer). **XML through
+  libxml2:** never pass `XML_PARSE_NOENT` (substitute entities) or `XML_PARSE_DTDLOAD` (load
+  the external subset) on untrusted input, and add `XML_PARSE_NONET`. OWASP XXE Prevention
+  cheat sheet; the same trap as PHP's `LIBXML_NOENT`.
+- **Resource limits / DoS guards on every parser and decoder.** Cap recursion depth (a
+  max depth on recursive-descent parsers, or stack exhaustion is one nested input away),
+  element and attribute counts, total bytes allocated per message, and the decompressed size
+  of any inflate/uncompress output (meter it while streaming; the header's claimed size is
+  input too). Never pass `XML_PARSE_HUGE` on untrusted input: libxml2 documents it as
+  relaxing every hardcoded parser limit. OWASP XML Security cheat sheet (coercive parsing,
+  quadratic blowup).
 
 ## 3. Format-string and injection
 
@@ -82,6 +97,14 @@ Replace on sight (CERT STR/FIO; MISRA):
 - Don't roll your own crypto or protocols; use libsodium/OpenSSL/BoringSSL.
   Constant-time compare for secrets (`sodium_memcmp`, `CRYPTO_memcmp`), never
   `memcmp` on a MAC/token (timing leak). See `sota-code-security` rules/04.
+- **TLS / transport verification (client side).** OpenSSL: `SSL_CTX_set_verify` with
+  `SSL_VERIFY_PEER`, the expected host set with `SSL_set1_host` (the chain alone does not
+  check the name), and after the handshake require **both** `SSL_get_verify_result() ==
+  X509_V_OK` **and** a non-NULL `SSL_get1_peer_certificate()`. The OpenSSL man page is
+  explicit that a peer that presents **no certificate** also yields `X509_V_OK`, "it does
+  however not indicate success". libcurl: `CURLOPT_SSL_VERIFYPEER` and
+  `CURLOPT_SSL_VERIFYHOST` are never set to 0. Pinning, when used, is checked in addition to
+  chain validation, never instead of it. OWASP Pinning cheat sheet.
 - Zero secrets after use with a *guaranteed* wipe (`explicit_bzero`,
   `sodium_memzero`, `SecureZeroMemory`) — plain `memset` can be optimized away.
 
@@ -171,6 +194,19 @@ a sandbox over running as root at all (`sota-sandboxing`).
       `grep -rnE '(memcpy|memmove|malloc|calloc)[[:space:]]*\([^;]*(hdr|header|pkt|packet|msg|frame|rec)(->|\.)[a-z_]*(len|size|count)' --include='*.c' --include='*.cpp' .`
       (an embedded length field used straight from parsed input: find its cap against the
       remaining buffer)
+- [ ] **Unsafe parsing of untrusted input (§2) — HIGH, CRITICAL for XXE on reachable input** —
+      `grep -rnE '\(\s*(const\s+)?struct\s+[a-z_0-9]+\s*\*\s*\)\s*\(?(buf|data|pkt|packet|msg|payload|frame|in)' --include='*.c' --include='*.cpp' --include='*.h' .`
+      (a wire buffer cast straight to a struct pointer: find the field-by-field decoder that
+      should replace it) ; `grep -rnE 'XML_PARSE_(NOENT|DTDLOAD)' --include='*.c' --include='*.cpp' --include='*.h' .`
+      (entity substitution or external-subset loading on a libxml2 read)
+- [ ] **Resource limits / DoS guards (§2) — HIGH where input is untrusted** —
+      `grep -rnE 'XML_PARSE_HUGE|\b(inflate|uncompress|BZ2_bzDecompress|ZSTD_decompress)[[:space:]]*\(' --include='*.c' --include='*.cpp' --include='*.h' .`
+      (every hit needs a visible output-size cap; `XML_PARSE_HUGE` on untrusted input is the
+      finding) ; and read each recursive parser for its max depth
+- [ ] **TLS / transport verification (§4) — CRITICAL when a peer certificate is never checked** —
+      `grep -rnE 'SSL_VERIFY_NONE|CURLOPT_SSL_VERIFY(PEER|HOST)[^;]*,[[:space:]]*0L?[[:space:]]*\)|SSL_get_verify_result' --include='*.c' --include='*.cpp' --include='*.h' .`
+      (verification disabled, or a verify-result check that must be paired with a non-NULL
+      `SSL_get1_peer_certificate()`, §4)
 - [ ] **Format string — CRITICAL (user-controlled fmt)** —
       `grep -rnE '(printf|fprintf|snprintf|syslog|err|warn)\s*\([^,"]*\)' --include='*.c' --include='*.cpp' .`
 - [ ] **build with: -Wformat=2 -Werror=format-security**

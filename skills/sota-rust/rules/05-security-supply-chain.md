@@ -188,6 +188,15 @@ network:
 ## 7. Service-edge defaults
 
 - TLS: `rustls` stack by default (memory-safe, modern defaults).
+- **TLS / transport verification is on and stays on.** The escape hatches are named, which
+  makes them easy to audit: reqwest's `danger_accept_invalid_certs(true)` and
+  `danger_accept_invalid_hostnames(true)`, native-tls's methods of the same names, and in
+  rustls anything built through `.dangerous()` — a custom `ServerCertVerifier` whose
+  `verify_server_cert` returns `Ok` for everything is certificate checking switched off.
+  None belongs outside test code; a pinned or private CA goes into the root store (or a
+  verifier that delegates to `WebPkiServerVerifier` first), never around it. For mTLS on the
+  server, use `WebPkiClientVerifier` and authorise on a SAN, not on the subject CN.
+  Verified against reqwest 0.13.5, native-tls 0.2.18 and rustls 0.23.45 sources.
 - Timeouts on **everything**: connect, read, write, total-request, idle
   (`TimeoutLayer`, `tower` middleware). Missing timeouts = slowloris.
 - Error responses: generic client text, full chain only into logs (rules/02
@@ -322,6 +331,10 @@ memory budgets — see `sota-sandboxing` rules/04 §5 and rules/02 R7.2a.
       deps without `rev =` pin = Medium; wildcard versions = Medium.
 - [ ] `cargo vet` (or documented dep-review process) for new dependencies;
       build.rs / proc-macro deps enumerated and reviewed.
+- [ ] **TLS / transport verification (§7) — CRITICAL outside tests** —
+      `rg -n 'danger_accept_invalid_(certs|hostnames)\(\s*true|\.dangerous\(\)|impl\s+ServerCertVerifier\s+for' -t rust`
+      (each hit outside `#[cfg(test)]` is a finding unless the verifier delegates to
+      `WebPkiServerVerifier` before its own check)
 - [ ] Arithmetic on input: `rg '(len|size|count|offset|idx)\s*[+*-]' -t rust`
       near parsing code — wrapped math on untrusted values = High;
       `rg 'as u(8|16|32)|as usize' -t rust` in protocol code for truncating

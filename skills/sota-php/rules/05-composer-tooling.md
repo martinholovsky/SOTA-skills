@@ -32,6 +32,16 @@ composer check-platform-reqs   # ext-* and PHP version actually present?
   prompts by default). Review `scripts` in composer.json diffs like code.
 - Version constraints: `^` ranges (semver), never `*` or `dev-master`; pin a
   commit hash when depending on a VCS fork.
+- **Repository provenance and dependency confusion.** Composer looks a package up in the
+  topmost repository and, when that repository is canonical (the default), never looks
+  further. Keep every private repository canonical: Composer's own repository-priorities
+  docs describe a non-canonical private repo whose `foo/bar ^2.0` is silently replaced by a
+  `foo/bar 2.999` someone published to packagist.org. Keep `secure-http` at its default
+  `true` (HTTPS-only downloads), and when disabling packagist.org because an internal
+  registry mirrors it, check the mirror itself is the only source. A patched or forked
+  package gets its own name or version suffix, published through the internal registry with
+  the upstream commit it patches, never a local path repository in production.
+  OWASP SCVS 6.x (point of origin, pedigree).
 
 ## 2. composer audit and advisory gates
 
@@ -131,6 +141,11 @@ Run from repo root; verify each hit manually.
 - [ ] **Risky constraints and install-time code** —
       `grep -nE '"[^"]+"\s*:\s*"(\*|dev-)' composer.json` ; `grep -n '"scripts"' composer.json`
       (review script contents); `grep -n 'allow-plugins' composer.json` (explicit allowlist?)
+- [ ] **Repository provenance / dependency confusion (§1) — HIGH** —
+      `grep -nE '"(canonical|secure-http)"[[:space:]]*:[[:space:]]*false|"type"[[:space:]]*:[[:space:]]*"path"' composer.json`
+      (a non-canonical private repository lets a higher version published to packagist.org
+      win; `secure-http: false` allows plain-HTTP downloads; a `path` repository in a
+      production build ships an unpublished local copy)
 - [ ] **Static analysis presence + ratchet health** —
       `ls phpstan*.neon* psalm*.xml* 2>/dev/null | grep -q . || echo "NO STATIC ANALYSIS CONFIG (MEDIUM)"`
       ; `grep -n 'level' phpstan*.neon* 2>/dev/null` ; `wc -l phpstan-baseline.neon 2>/dev/null`

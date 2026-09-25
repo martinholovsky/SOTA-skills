@@ -67,7 +67,8 @@ property of the language, and record the reason in LANGUAGE-TIER so a later read
 Pinned in `scripts/gen-concept-matrix.py` as `UNIVERSAL_FLOOR` and asserted in CI
 (`--assert-universal`): a registered language skill that omits one fails the build.
 **This list must equal `UNIVERSAL_FLOOR` exactly — invariant 35 fails the build when they
-differ.** It read 12 against a floor of 25 until 2026-09-25, because nothing compared them.
+differ.** It read 12 against a floor of 25 until 2026-09-25, because nothing compared them; the floor
+has been 29 since the same day (ROADMAP 66 step 3a).
 
 - [ ] **error handling & propagation** — wrapping, swallowing, empty catch, error types
 - [ ] **absence / null / in-band sentinel** — how "no value" is encoded, and the magic-value trap
@@ -95,6 +96,10 @@ differ.** It read 12 against a floor of 25 until 2026-09-25, because nothing com
 - [ ] **allocation / GC pressure** — the allocation hazard this runtime actually has
 - [ ] **version floor / EOL awareness** — the supported-version floor, and where it is declared
 - [ ] **numeric precision & money** — the decimal type, and the float-for-money trap
+- [ ] **deserialization / unsafe parsing** — the unsafe loaders and the parser settings (XXE, entity expansion) to flag
+- [ ] **resource limits / DoS guards** — depth, size and decompression caps on everything that parses input
+- [ ] **TLS / transport verification** — the switches that turn verification off, by API name
+- [ ] **supply-chain provenance & publishing** — where packages come from, and how a private registry avoids dependency confusion
 
 Conditional concepts (those that exist only where a language has the mechanism, such as
 const/freeze or generics) are declared with their condition in the same script's
