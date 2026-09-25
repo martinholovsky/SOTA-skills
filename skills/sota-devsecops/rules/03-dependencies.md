@@ -185,8 +185,8 @@ a query, not an archaeology project.
   deps, the image scan knows OS packages and whatever the base image smuggled in):
   `syft <image-digest> -o cyclonedx-json` or `cdxgen` for richer app-level data.
 - Format: CycloneDX or SPDX — pick one org-wide; both are fine, conversion is lossy, so
-  standardize. Include component hashes and (where available) PURLs — PURLs are what make
-  cross-referencing advisories automatic.
+  standardize. Include component hashes and PURLs, enforced by the gate in rules/14 §14.2 —
+  PURLs are what make cross-referencing advisories automatic.
 - Bind it: attach as an in-toto attestation on the image digest (rules/02 §2.4) and/or
   upload to a central store (Dependency-Track, GUAC). An SBOM in a CI artifact zip that
   expires in 90 days fails the log4shell test.
@@ -245,9 +245,11 @@ ignore:
 - **No upstream patch available** (reachable vuln, no fixed version): triage doesn't stop
   at "no fix" (OWASP Vulnerable Dependency Management). In order of preference — guard the
   vulnerable call path with input validation/feature-flag kill-switch; virtual-patch at
-  the edge (WAF/admission, sota-detection-engineering); fork-and-patch with an upstream PR
-  and a regression test reproducing the vuln (§3.8); or replace the dependency. Record the
-  chosen mitigation as VEX and set a re-check date — never just ignore-with-expiry.
+  the edge (WAF/admission, sota-detection-engineering); fork-and-patch with a private
+  upstream report first (rules/13 §13.8) and a regression test reproducing the vuln
+  (§3.8); or replace the dependency. Record the chosen mitigation as VEX and set a
+  re-check date — never just ignore-with-expiry. A fix that exists but cannot be taken yet,
+  and backporting one, are rules/13 §13.6–§13.7.
 
 ### 3.6b A scanner built against an older toolchain fails as noise, not as a finding
 
@@ -441,6 +443,11 @@ So require a second value that **cannot** be produced from plausibility:
   the member where a method fails is disproportionately the one that matters commercially.
 - **Give the matrix an expiry.** A platform table is a decision with a review date
   (§3.7.1's discipline for a pin): the nearest EOL in the table *is* that date.
+- **Then automate the lookup over the whole inventory, on a schedule.** The column is read only
+  when someone edits the row. A scheduled job matches the SBOM inventory (§3.5) against EOL data
+  and alerts on anything past EOL or inside a warning window: `endoflife.date`'s v1 API gives
+  per-release `isEol`/`eolFrom` and maps products to PURLs (`identifiers`, read 2026-09-25), and
+  xeol scans images, filesystems and SBOMs for EOL components. (OWASP: SCVS 5.8)
 
 ## Audit checklist
 
@@ -470,4 +477,5 @@ So require a second value that **cannot** be produced from plausibility:
       distributions** — measured: an AlmaLinux 8 `4.18` header declares BPF features from
       upstream 5.7/5.8. Probe the capability, say which you measured, and write down the
       assumption the method rests on plus the members that violate it
+- [ ] **Scheduled EOL detection over the inventory (§3.9), Medium:** `grep -rln -E 'endoflife\.date|xeol' .github/workflows` (or the scheduler's config) names a scheduled job, and its alerts have an owner
 - [ ] **Every versioned third-party row carries an EOL date (§3.9)** — base images, OS/distro releases, runtimes, supported-platform matrices. A version with no EOL beside it has not been looked up, and a row past its EOL is **removed**, not corrected: an unsupported branch can answer the *opposite* of the current one, not merely a staler version of it. When one row is found stale, re-run the lookup across **all** rows in the same pass

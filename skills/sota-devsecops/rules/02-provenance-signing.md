@@ -199,6 +199,15 @@ Long-lived registry tokens in CI are the npm/PyPI compromise vector. Replace the
   scoped to the named packages, read-only unless it publishes, with a short expiry and an
   allowed-IP (CIDR) range. Tick "bypass two-factor authentication" only for
   non-interactive publish automation. (OWASP: NPM Security cheat sheet)
+- **Every maintainer who can publish uses 2FA that covers writes, and keeps recovery codes
+  offline.** The SCM org's 2FA requirement (`rules/12` §12.2) does not reach registry
+  accounts. On npm, `npm profile enable-2fa auth-and-writes` asks for the second factor on
+  publishes and settings changes, where `auth-only` protects login alone. After trusted
+  publishing is set up, npm's docs recommend the package setting "Require two-factor
+  authentication and disallow tokens"; trusted publishers keep working because they use
+  OIDC. Each npm recovery code works once, and using one places a 72-hour hold on
+  publishing and token creation, so store the codes offline, away from the second-factor
+  device. (OWASP: NPM Security cheat sheet)
 - **Rules for both**: publish only from a tag-triggered, environment-gated workflow on the
   protected release workflow file; never from `workflow_dispatch` on arbitrary refs.
 - Audit: `NPM_TOKEN`/`PYPI_API_TOKEN`(account-scoped) in secrets = High (and for npm, a
@@ -285,5 +294,6 @@ read it — unnecessary in jobs that never push.
 - [ ] SBOM and (where used) scan results attached as in-toto attestations bound to the digest
 - [ ] Package publishing uses trusted publishers / OIDC provenance; no classic registry tokens in secrets; publish workflow is tag-triggered + environment-gated
 - [ ] **No standing registry token on developer machines (§2.6), Medium:** `grep -n -E '_authToken=[^$]' ~/.npmrc` is empty (a literal token, not a `${VAR}` reference); `npm token list` shows only package-scoped, expiring, CIDR-bound tokens, read-only unless they publish
+- [ ] **Publishing maintainers use write-covering 2FA (§2.6), High:** for each maintainer, `npm profile get --json | jq -r 'if (.tfa and (.tfa.pending | not)) then .tfa.mode else "disabled" end'` prints `auth-and-writes`; packages with trusted publishing set "Require two-factor authentication and disallow tokens"; recovery codes stored offline
 - [ ] Release tags protected; releases immutable; checksums signed; install paths verify before executing
 - [ ] Deployed-digest → source-SHA → build-run traceability exists and is queryable

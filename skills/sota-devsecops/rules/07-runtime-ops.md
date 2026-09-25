@@ -196,6 +196,8 @@ registration, admission-policy changes, break-glass use (§7.5), bypass events (
 | A version of your own package published with no matching tag/CI run, or from an unusual identity or time | Stolen publish token — the worm pattern |
 | Registry token used from an unexpected IP, or a new token created | Credential theft staging a publish |
 | Unexpected dependency added in your own released package | Tampered release, even when the publish path looked normal |
+| A CI secret value revealed or exported through the platform UI or API, where the platform allows it (GitLab can reveal a variable not created as "Masked and hidden") | A person reading a production secret outside any pipeline |
+| Job output containing `U2FsdGVkX1` (base64 of openssl's `Salted__` header) or long base64 blobs, or a workflow change adding `base64 \| base64` or `openssl enc` | Encoding defeats value-match masking (rules/01 §1.10); double base64 and openssl-encrypted output are how a secret is printed past it |
 
 Each detection needs an owner and a tested response path; a detection nobody drills is a
 dashboard widget.
@@ -206,6 +208,24 @@ path. It covers revoking every CI, registry and cloud token the pipeline held
 registry's equivalent), and unpublishing where the registry's policy allows; and notifying
 consumers through an advisory. (OWASP: GitHub Actions Security cheat sheet; NPM Security
 cheat sheet)
+
+### 7.3.2 Containment for a trusted dependency that turns malicious
+
+Every control before runtime (rules/03, rules/15) can pass a dependency that was clean
+yesterday and ships a payload today. Assume that will happen, and decide in advance what the
+payload can reach. Four layers bound it, and each limits something different:
+
+| Layer | What it limits |
+|---|---|
+| **Workload identity**: a per-service identity with short-lived, narrowly scoped credentials (`sota-identity-access`, `sota-secrets-management`) | What there is to steal: the workload's own expiring credentials, not a shared long-lived key |
+| **Egress restriction**: default-deny egress with destination allowlists (`sota-network-security`) | Exfiltration and second-stage downloads: the payload cannot reach its command server or upload data |
+| **Segmentation**: namespace or network default-deny between services | Lateral movement: the compromised service reaches only what it already calls |
+| **Runtime detection**: process, file and network rules (`sota-detection-engineering`) | Time to notice: a shell spawned by an application process, a new outbound destination, reads of credential files |
+
+Build jobs get the same treatment (rules/01 §1.6: ephemeral runners, egress control). The
+audit question: pick one dependency of a production service and ask what it could reach if
+it ran attacker code at startup. The answer should come from these four layers, not from
+trust in the maintainer. (OWASP: Zero Trust Architecture cheat sheet)
 
 ## 7.4 Backup & restore testing
 
@@ -273,6 +293,17 @@ Track: gate latency, exception/suppression counts and ages, time-to-remediate by
 rollback drill recency, restore test results. Those five trends are the honest health
 dashboard of everything in this skill.
 
+**Security defect metrics**, reported on a fixed schedule and reviewed for quick wins:
+
+- open vulnerabilities by severity, split by layer (application or infrastructure) and by
+  component;
+- fix rate against SLA, per team or repository (rules/13 §13.3 sets the SLA);
+- time from a patch being available to it running in production, measured from the
+  advisory's fix date to the deploy event of rules/02 §2.8, not to the merge;
+- recurrence by defect class: the same class coming back in the same codebase means a
+  missing rule, test or guardrail rather than a missing fix.
+  (OWASP: DSOMM; SAMM)
+
 ## 7.7 Cleanup on a shared runtime is a change, not housekeeping
 
 `prune`, `fstrim` and their friends read as tidying and are treated as safe by default. They
@@ -324,6 +355,9 @@ found nothing** — the second reading being a conclusion about the target
 - [ ] Deploy traceability: digest → source SHA → run → approver queryable in seconds; deploy markers in observability
 - [ ] High-signal alerts wired: release-workflow modification, runner registration, policy change, unsigned-image attempt, break-glass use, push-protection bypass
 - [ ] **Own-package publishes reconciled (§7.3.1), High:** `comm -13 <(git tag -l 'v*' | sed 's/^v//' | sort) <(npm view <pkg> versions --json | jq -r 'if type=="array" then .[] else . end' | sort)` prints nothing (any output is a version published without a release tag); a publisher-compromise playbook names owners and covers revoke, deprecate/unpublish, and consumer notice
+- [ ] **Secret-exfiltration detections wired (§7.3.1), Medium:** `grep -rn -E 'base64[^|]*\|[[:space:]]*base64([[:space:]]|$)|openssl[[:space:]]+(enc|aes-[0-9]+|des)' .github/workflows` is empty or each hit is reviewed; job logs are searched for `U2FsdGVkX1`; UI reveal or export of CI variables alerts where the platform logs it
+- [ ] **Containment layers exist for a malicious dependency (§7.3.2), High:** `kubectl get networkpolicy -A -o json | jq -r '.items[] | select(.spec.podSelector == {} and ((.spec.policyTypes // []) | index("Egress")) and ((.spec.egress // []) | length == 0)) | .metadata.namespace' | sort -u` lists every production namespace (default-deny egress); workloads use per-service identities; runtime detection covers process and outbound-connection anomalies
+- [ ] **Security defect metrics reported (§7.6), Low:** open vulnerabilities by severity, layer and component; fix rate against SLA per team; patch-available-to-production time; recurrence by class, reviewed on a schedule
 - [ ] Backup inventory covers state/registry/git/secrets/keys; restores tested on schedule against RPO/RTO; backups immutable, in a separate trust domain, not deletable by prod-compromising credentials
 - [ ] Break-glass documented per gate, alarmed on use, time-bound, post-reviewed, reconciled to git; routine admin bypass absent
 - [ ] Feedback loop metrics tracked: gate latency, exception age/count, remediation SLAs, rollback drill and restore test recency

@@ -124,6 +124,24 @@ candidate — flag it, with both numbers.
 The ratio is a trigger for the decision in §5, never the decision itself. A single-call
 dependency that implements something on the do-not-reimplement list stays.
 
+**Keep it, but switch off what you do not use.** A dependency that stays still carries
+optional modules, plugins and features you never call, and each one is attack surface and
+advisory noise. Strip them in every ecosystem, not only Rust:
+
+- **Rust**: `default-features = false` plus only the features you need; `cargo tree -e
+  features -i <crate>` shows which features are on and who enabled them (`sota-rust`
+  rules/07 §5).
+- **Python**: leave out extras you do not import (`pkg` rather than `pkg[all]`).
+- **npm**: `npm ci --omit=optional` skips optional dependencies on disk; npm's docs note
+  they are "still resolved and added to the package-lock.json", so the lockfile still
+  lists them.
+- **Go**: build tags that exclude optional backends; **frameworks**: register only the
+  plugins and modules you use; **frontend bundles**: tree-shaking, checked in the bundle
+  report.
+
+Prove each removal the way §3 proves a deletion: build and run the suite with the feature
+off. (OWASP: Code Review Guide v2)
+
 ## 5. Upstream health — a primary source fetched this session
 
 Operating principle 0 applies with full force here: "actively maintained" recalled from
@@ -205,6 +223,7 @@ dynamic-loading trap, a code-only search is structurally incapable of settling i
       the successor is named and its health measured this session, or the finding is KEEP.
 - [ ] Each "unreached" claim **proven by deletion** in a scratch copy: real build + lint/vet + full suite, with commands, exit codes, before/after transitive counts, and which suites ran — and the deletion asserted to have taken effect (§3)
 - [ ] Leverage ratio computed for live deps (symbols called vs transitive modules inherited); <5-symbols/>10-modules candidates flagged with both numbers (§4)
+- [ ] **Unused features of retained libraries disabled (§4), Low:** for kept dependencies, enabled features and extras are listed (`cargo tree -e features`, `pkg[...]` extras, npm optional dependencies) and each one enabled is used; removals proven by a build and test run
 - [ ] Upstream health fetched **this session** from a primary source (`gh api repos/<o>/<r>` → `archived`, `pushed_at`, contributor count; `full_name` read back for silent renames), reported as dates not adjectives (§5)
 - [ ] Every finding classified DELETE / REPLACE IN-HOUSE / KEEP / UNMAINTAINED-but-keep, with the successor named for D and nothing on the do-not-reimplement list proposed for B (§6)
 - [ ] Every "unused" verdict treated as an **absence claim** — two independent methods, the search actually run stated, and no verdict resting on grep alone (§7)
