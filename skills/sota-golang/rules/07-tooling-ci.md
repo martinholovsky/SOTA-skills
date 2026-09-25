@@ -238,6 +238,39 @@ tool (             // 1.24+: tool dependencies, versioned & sum-verified
   is not one. Verify what was actually built with `go list -m <module>` (or
   `go version -m ./bin/app`, §5) — never the `require` line you wrote. Same trap
   from the supply-chain side: `sota-devsecops` rules/03 §3.7.1.
+- **Adopting a new dependency — vet it before `go get`, whoever proposed it (you or an AI
+  assistant).** A module path *is* a repository URL, so the typosquat is a look-alike owner or
+  repo name, and an assistant may name a path that does not exist or was created last week.
+  Checks: `go list -m -json <mod>@latest` (fails if the path does not resolve; `Time` and
+  `Origin.URL` show the newest release and the repo it really came from);
+  `go list -m -versions <mod>` (a lone, days-old version is a red flag); pkg.go.dev (licence,
+  "Imported by", source link); deps.dev — `api.deps.dev/v3/systems/go/packages/<url-encoded
+  path>` gives publish dates, deprecation, licences and advisory keys, and
+  `/v3/projects/github.com%2F<owner>%2F<repo>` adds open issues and the OpenSSF Scorecard
+  (also `api.securityscorecards.dev/projects/github.com/<owner>/<repo>`, whose `Maintained`
+  check scores recent activity); advisories via vuln.go.dev / `govulncheck`. No Go registry
+  lists maintainers — read contributor and commit history on the origin repo. After adding,
+  `go list -m -u -retracted -json <mod>` surfaces `Deprecated`/`Retracted`. Review the code the
+  proxy serves (`go mod download -json <mod>@<ver>` → `Dir`), not the forge's current tree:
+  proxy.golang.org keeps a version cached after the author deletes it at the origin. The
+  "earns its place" bar is `rules/05 §8`.
+- **A library's security-relevant defaults are your code.** Review every option you pass to a
+  dependency — and every one you leave at its default — as you would your own. Verified in
+  source: `github.com/rs/cors` (v1.11.1) — `cors.Options` with no `AllowedOrigins` and no
+  `AllowOriginFunc` allows **every** origin; `github.com/gin-gonic/gin` (v1.12.0) — mode is
+  `debug` unless `GIN_MODE=release`/`gin.SetMode(gin.ReleaseMode)`, and the engine trusts
+  `X-Forwarded-For`/`X-Real-IP` from any peer (`0.0.0.0/0`, `::/0`) until
+  `SetTrustedProxies` is called, so `c.ClientIP()` is caller-chosen;
+  `github.com/golang-jwt/jwt/v5` (v5.3.1) — `jwt.Parse`/`ParseWithClaims` accept any `alg` the
+  keyfunc tolerates unless `jwt.WithValidMethods(...)` is passed; `github.com/gorilla/websocket`
+  (v1.5.3) — `Upgrader{}` with nil `CheckOrigin` rejects a cross-origin handshake, but the
+  deprecated package-level `websocket.Upgrade` func accepts every origin.
+- **README and `examples/` code is a demo, not a baseline.** Copying a sample imports its
+  settings: gorilla/websocket's own `examples/autobahn` sets `CheckOrigin` to `return true`;
+  samples routinely carry `InsecureSkipVerify: true`, `AllowedOrigins: []string{"*"}` or a
+  debug mode. Re-derive each security option from your threat model when you paste.
+  (OWASP: Vulnerable Dependency Management; Software Supply Chain Security; Secure Coding with
+  AI cheat sheets; SCVS V1, V6.)
 
 ## 5. Reproducible builds & release
 
@@ -268,6 +301,14 @@ tool (             // 1.24+: tool dependencies, versioned & sum-verified
       MEDIUM); `git ls-files | grep 'go.work$' && echo 'go.work committed — check intent'` ;
       `grep -E '^replace' go.mod` ; `go list -m <module>` (the SELECTED version — `require` is a
       floor, not a cap (§4))
+- [ ] **New dependency adoption & insecure defaults (§4) — MEDIUM, HIGH on an auth/origin/CORS
+      path** — each module a PR adds to go.mod (`git diff <base> -- go.mod`) gets the §4
+      selection checks (`go list -m -json <mod>@latest` resolves? deps.dev / Scorecard reviewed?);
+      `grep -rnE 'cors\.(AllowAll|Default)\(|cors\.Options\{\}|AllowedOrigins:[[:space:]]*\[\]string\{"\*"\}|CheckOrigin:[[:space:]]*func\([^)]*\)[[:space:]]*bool[[:space:]]*\{[[:space:]]*return true|websocket\.Upgrade\(|jwt\.Parse(WithClaims)?\(' --include='*.go' . | grep -v WithValidMethods`
+      (library left at, or copied to, a permissive default) ;
+      `grep -rlE 'gin\.(Default|New)\(' --include='*.go' . | xargs -r grep -L 'SetTrustedProxies'`
+      (gin engine trusting every proxy). Single-line shapes only: a multi-line `cors.Options{`
+      or `jwt.Parse(` call needs reading
 - [ ] **Test quality** — `grep -rln 'func Test' --include='*_test.go' . | wc -l` ;
       `grep -rn 't.Parallel' --include='*_test.go' . | wc -l` ;
       `grep -rn 'time.Sleep' --include='*_test.go' .` (flaky sync — MEDIUM);

@@ -255,6 +255,10 @@ CONCEPTS = [
      r"install[- ]time|build[- ]time code|lifecycle script|postinstall|ignore-scripts|build\.rs|"
      r"proc-macro|setup\.py|extconf|\.targets|init script|onlybuiltdependencies|"
      r"code that runs at (install|build)"),
+    # ROADMAP 66 step 3b (2026-09-25): choosing a dependency, and the defaults you inherit.
+    ("dependency adoption (selection & insecure defaults)", "universal",
+     r"adopting a dependency|dependency (selection|adoption)|before adding a dependency|"
+     r"new dependency|scorecard|deps\.dev|insecure default|slopsquat|hallucinated package"),
     ("SSRF / outbound request validation", "universal",
      r"ssrf|server-side request forgery|outbound request|internal address|metadata endpoint|"
      r"169\.254|dns rebind"),
@@ -334,6 +338,8 @@ UNIVERSAL_FLOOR = [
     "regex escaping, anchoring & engine choice",
     # ROADMAP 66 step 3b, 2026-09-25: written into all nine and pinned the same day.
     "install/build-time code execution",
+    # ROADMAP 66 step 3b, 2026-09-25: written into all nine and pinned the same day.
+    "dependency adoption (selection & insecure defaults)",
 ]
 
 def classify(text):

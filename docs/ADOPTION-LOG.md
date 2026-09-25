@@ -5853,3 +5853,26 @@ post and `go help` on 1.27.1. All nine probes re-run here against their fixtures
 the good; .NET's second command prints positive evidence, not findings, on the good fixture).
 
 **Cap watch:** `sota-golang` rules/05 is now **499/500** — step 4's Go themes need a split first.
+
+## 2026-09-25 — ROADMAP 66 step 3b: dependency adoption (selection & insecure defaults), all nine, pinned
+
+Source themes: the pre-adoption checklist, suspicion signals for new (including AI-suggested)
+packages, and auditing security-sensitive options passed to libraries (OWASP Vulnerable
+Dependency Management, Software Supply Chain Security and Secure Coding with AI cheat sheets;
+SCVS V1/V6). Two added (jvm, php), seven extended existing supply-chain text. Each names its
+registry's identity checks (a name that 404s, first-upload date, owners), deps.dev and the
+Scorecard API, and **insecure defaults measured in the library's current source** — e.g.
+`requests` has no timeout by default while `httpx` defaults to 5 s; `flask_cors.CORS(app)`
+reflects any Origin (run); Jinja2's `Environment` does not autoescape; rs/cors `Default()`
+allows every origin; gin trusts every proxy by default; golang-jwt checks the algorithm only
+with `WithValidMethods`; SnakeYAML 1.x `new Yaml()`. The Python agent also checked lxml and
+deliberately did **not** name it: its default refused an external entity, so it is not an
+insecure default — a claim withheld because the measurement did not support it.
+
+Probes re-run here: seven reproduce on the fixtures; jvm and .NET each fall short by exactly
+the hits of their `git diff` half, which needs a git base the fixture is not; php's fixtures
+live in `probe/` with a `vendor/` decoy and reproduce 7/0.
+
+**Cap consequence, recorded for step 4:** the language security files are now full —
+`sota-golang` rules/05 **500**, `sota-rust` rules/05 **499**, `sota-javascript-typescript`
+rules/05 **492**, `sota-python` rules/05 **489**. Step 4 cannot add a line to them without a split.
