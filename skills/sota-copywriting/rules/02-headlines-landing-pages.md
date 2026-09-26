@@ -117,6 +117,14 @@ typicality — is `rules/04` §2–3):
   is a liability, not an asset.
 - Anchor honestly: "Most popular" marks the actually-most-chosen tier, not
   the one you want to sell.
+- **EU price reductions** ("was €49, now €29", "−40%"): Price Indication
+  Directive 98/6/EC Art. 6a (inserted by Directive (EU) 2019/2161) requires
+  the announcement to show the *prior price* — the lowest price the trader
+  applied in the **≥ 30 days** before the reduction. The Directive covers
+  products (goods); whether national transposition reaches SaaS or other
+  services needs verification, and member states may vary the period for
+  perishables, new products and progressive reductions — verify with
+  counsel.
 
 ## Audit checklist
 
@@ -138,6 +146,7 @@ typicality — is `rules/04` §2–3):
 - [ ] Testimonials specific and fully attributed; proof placed at the
       objection it answers; press/"as seen in" logos reflect earned coverage
 - [ ] Pricing page answers limit/trial/cancel questions; no costs revealed
-      only at checkout; "Most popular" is factually most popular
+      only at checkout; "Most popular" is factually most popular; EU price
+      reductions on goods show the lowest price of the prior ≥ 30 days
 - [ ] Comparison tables dated, sourced, re-verification scheduled; no
       unprovable competitor claims

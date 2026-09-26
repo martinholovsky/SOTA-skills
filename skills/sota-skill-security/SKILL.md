@@ -23,8 +23,9 @@ description: >-
 A skill is **executable influence**. It does not run in the interpreter, it runs in
 the model — and the model then runs the tools. Everything the software supply chain
 learned about dependencies applies to instruction bundles, with one difference that
-makes it worse: **a malicious dependency has to be invoked, and a malicious skill
-only has to be loaded.**
+makes it worse: **a malicious dependency's code has to run — at install, import or
+call — and a malicious skill only has to be loaded**; some skills also run shell
+commands the moment they are invoked (`rules/02` §1).
 
 This skill exists because the ecosystem now has all the ingredients of a supply
 chain — marketplaces, plugins, `git clone` installs, auto-loading descriptions,

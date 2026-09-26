@@ -1198,9 +1198,11 @@ others; `--skills-dir`/`--output` override the defaults. Claude Code keeps using
 the native Skills install above. This repo itself follows the standard:
 [`AGENTS.md`](AGENTS.md) is canonical; `CLAUDE.md`/`GEMINI.md` are symlinks.
 
-**Different tools read different filenames**, so a repo carrying only `AGENTS.md`
-leaves **Claude Code** reading **nothing** — which presents as the model
-getting worse, not as a missing file. Every run therefore **reports** the state of
+**Different tools read different filenames.** Claude Code reads `AGENTS.md` natively since
+v2.1.277, but by default only when no `CLAUDE.md` or `CLAUDE.local.md` exists, so one
+personal `CLAUDE.local.md` silently stops it; older versions (and, before v2.1.281, some
+sessions such as Bedrock) read `CLAUDE.md` only. Either way the symptom is the model
+getting worse, not a missing file. Every run therefore **reports** the state of
 the two sibling entry points, and `--siblings` writes them when they are absent:
 
 ```sh
@@ -1212,7 +1214,7 @@ It is not a copy — `AGENTS.md` stays the single source of truth — and the im
 preferred to `ln -s AGENTS.md CLAUDE.md` because **on Windows creating a symlink
 needs Administrator or Developer Mode**, so a symlink is not portable.
 
-**Claude Code is the only mainstream tool that still needs a pointer.**
+**For Claude Code a pointer is still the portable choice.**
 `GEMINI.md` is opt-in behind `--legacy-gemini`, because **Antigravity CLI —
 which replaces Gemini CLI, retired for individuals on 2026-06-18 — reads
 `AGENTS.md` natively.** (Measured 2026-09-10: Gemini CLI 0.59.0 now exits with

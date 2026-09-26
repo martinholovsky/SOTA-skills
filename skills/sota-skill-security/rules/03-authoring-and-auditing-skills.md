@@ -45,10 +45,15 @@ decides to load it. Three consequences that authors get wrong:
   the right default, but know what it does and does not buy. It protects you against
   *shortening* (the tail goes, so a capability-first description keeps its trigger). It
   buys **nothing** against the drop-the-whole-description shape, where ordering is
-  irrelevant because nothing survives. Against that one the only lever is **total
-  size**: fewer characters across the whole corpus means more entries keep a
-  description at all, which makes a trailing keyword list a cost paid by *every other
-  skill you ship*, not just by itself.
+  irrelevant because nothing survives. Against that one the only lever *an author*
+  holds is **total size**: fewer characters across the whole corpus means more entries
+  keep a description at all, which makes a trailing keyword list a cost paid by *every
+  other skill you ship*, not just by itself. The operator has more: Claude Code's
+  budget is 1% of the context window, raised by `skillListingBudgetFraction` or
+  `SLASH_COMMAND_TOOL_CHAR_BUDGET`; `skillOverrides` can set low-value entries to
+  `"name-only"` to free it; `/skill-doctor` shows each skill's cost and use; and the
+  per-skill cap is 1,536 characters of `description` plus `when_to_use`
+  (code.claude.com/docs/en/skills, 2026-09-26).
 - **Where the listing budget is shared across everything installed, your matching
   degrades because of someone else's skills.** A per-skill cap is yours to respect; a
   *global* budget across every installed plugin and marketplace is a commons, and a
@@ -78,7 +83,7 @@ The last two rows are the ones nobody runs, because they are the ones that can e
 deleting your own work. Keep a **no-skill arm** in the comparison for exactly that reason:
 it is the only arm that can tell you a skill has stopped being worth its tokens, and base
 models improve underneath you, so a skill that genuinely helped can decay into noise
-without a word of it changing (`rules/02` §2 on freshness is the same clock seen from the
+without a word of it changing (§2 below on freshness is the same clock seen from the
 content side). Re-run it after a model upgrade, not only after a skill edit.
 
 **And if a rule must apply every time, routing is the wrong mechanism.** Description
@@ -162,6 +167,8 @@ Sample rather than read everything, and sample where being wrong is expensive:
    (`rules/02` §3)?
 5. **The unreached files.** A rules file no index points at is written, capped, and
    never loaded — inert by construction.
+6. **The bytes a reviewer cannot see.** Zero-width, bidi and tag characters
+   (`sota-code-security` rules/09 §4) in any file the `rules/02` §2 inventory lists.
 
 Report findings as `file:line | rule | severity | effort | fix`, and rate severity by
 **what an operator would do differently if they believed it**.
@@ -195,3 +202,9 @@ Report findings as `file:line | rule | severity | effort | fix`, and rate severi
       version-pinned facts, and anything instructing the agent to disable a check (§5)?
 - [ ] **Unreached files identified** — any rules file no index points at is inert by
       construction (§5)?
+- [ ] **No invisible code points in skill or agent files** (§5): `find -L <skill dirs> -type f -exec env LC_ALL=C grep -nHE $'\xe2\x80[\x8b-\x8d\xaa-\xae]|\xe2\x81[\xa6-\xa9]|\xef\xbb\xbf|\xf3\xa0[\x80-\x81]' {} +`
+      (bash/zsh; `-L` because BSD `grep -r` skips symlinked skill dirs; 3/3 planted,
+      0 false hits on accented text, BSD and GNU, 2026-09-26). Where `grep` on `PATH`
+      is ugrep, swap in `ugrep -nHP` with the code-point class from
+      `sota-code-security` rules/09's checklist. Each hit is a finding, High in a
+      file an agent auto-loads?

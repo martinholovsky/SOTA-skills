@@ -125,8 +125,10 @@ contract most docs omit.
 
 ## §6 Changelog discipline
 
-- **Format: Keep a Changelog** (keepachangelog.com, v2.0.0 — 2026-06; the
-  format itself is unchanged from 1.1.x, so existing changelogs stay valid):
+- **Format: Keep a Changelog** (keepachangelog.com; v2.0.0, published 2026-06,
+  is an opt-in preview while the site still serves 1.1.0 by default — checked
+  2026-09-26; the format is unchanged, so existing changelogs stay valid; 2.0.0
+  adds an inline `**Breaking:**` marker kept within its type):
   `## [version] - date` sections with `Added / Changed / Deprecated /
   Removed / Fixed / Security` subsections, plus an `Unreleased` section at top
   so changes are recorded in the PR that makes them, not reconstructed at
@@ -192,7 +194,7 @@ Behavior change: POSTs are no longer retried by default — opt in per call.
 - [ ] OpenAPI examples validate against their schemas.
 - [ ] No unescaped `|` inside a table cell's code span (§1) — GFM drops the overflow cell silently. A regex cannot pair backticks (adjacent spans `` `a` | `b` `` false-positive); walk the spans: ``perl -ne 'if (/^\|/) { while (/`([^`]*)`/g) { if ($1 =~ /(?<!\\)\|/) { print "$ARGV:$.\n"; last } } } close ARGV if eof' *.md``
 - [ ] Every operation documents its failure modes and the caller's correct reaction; HTTP error responses enumerated with body schema.
-- [ ] **(Medium) Rate limits, CORS and redirects documented** (§4): the reference states quota and scope, the throttled response, allowed origins and credentials, and redirecting operations. Probe: `grep -L -E "[\"']?429[\"']?:|Retry-After" openapi.yaml openapi.json 2>/dev/null` prints a spec that documents no throttled response at all.
+- [ ] **(Medium) Rate limits, CORS and redirects documented** (§4): the reference states quota and scope, the throttled response, allowed origins and credentials, and redirecting operations. Probe: locate the specs with `git ls-files '*openapi*' '*swagger*'` (zero files is itself a finding, not a pass), then `grep -L -E "[\"']?429[\"']?:|Retry-After" <each spec>` prints a spec that documents no throttled response at all.
 - [ ] Published docs are versioned to match releases; default view is latest stable; pages state the version they describe.
 - [ ] CHANGELOG follows Keep a Changelog with an Unreleased section maintained in PRs; entries are user-impact language with issue/PR links, not commit subjects.
 - [ ] Release notes derive from the changelog (no divergent second history).

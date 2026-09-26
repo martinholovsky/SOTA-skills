@@ -7018,7 +7018,8 @@ rules/03 and `sota-golang` rules/07 that a finding reached.
 - Research: **111 findings** (10 High, 45 Medium, 56 Low). The session's shared web-search
   budget ran out during research; refuters and fix agents worked from known primary URLs,
   `gh api` advisory queries and live containers instead.
-- Refutation: all 64 High/Medium items refuted; **none failed**. Several proposed fixes were
+- Refutation: all 55 High/Medium items refuted (corrected 2026-09-26 from "64", a figure never
+  counted — the three refuters checked 20, 18 and 17); **none failed**. Several proposed fixes were
   wrong and were corrected before any edit (below).
 - Fixes: one agent per skill folder, with every changed SQL, dbt project and probe run.
 - Review: a hostile whole-diff reader found one Medium and six Low defects, an Info note and two
@@ -7106,3 +7107,74 @@ wake-lock threshold (mobile); EN 301 549 / EU enforcement, CloudFront `Vary` str
 motion heuristics (frontend); an internal token-count measurement and 1M-context claims for
 non-Anthropic providers (llm-engineering); and MongoDB CVE-2025-14847's per-line fix versions,
 which the refuter took from NVD but the reviewer did not re-check.
+
+## 2026-09-26 — full-library sweep, batch 4 of 4: docs, writing and meta skills — and the sweep is complete
+
+**Intake shape: ROADMAP 5's sweep, batch 4** (same method as batches 1–3). Scope:
+`sota-shell-scripting`, `sota-docs-workflow`, `sota-cli-ux`, `sota-copywriting`,
+`sota-ux-writing`, `sota-skill-security`, `sota-privacy-compliance` and the `sota` router, plus
+front-door surfaces a finding reached (`README.md`, `docs/VERIFY-SETUP.md`,
+`scripts/gen-agents-md.sh` comments).
+- Research: **89 findings** (4 High, 30 Medium, 55 Low).
+- Refutation: all 34 High/Medium items refuted; **none failed**. Two agents collided on the
+  shared browser during research, so in the later phases only one agent at a time was allowed it.
+- Fixes: one agent per skill folder, every changed command and policy run.
+- Review: a hostile whole-diff reader found 2 Medium and 6 Low defects, all fixed here.
+
+| High | what was wrong |
+|---|---|
+| shell-scripting rules/03 | the "safe" sudoers entry `/usr/bin/install -m644 * /etc/myapp/*` is a root file-write: sudoers argument wildcards match `/`. Measured on sudo 1.9.13: the `*` form installed into `sudoers.d` via `..`, and even the `^…$` regex form copied `/etc/shadow` world-readable through a caller-planted symlink. The default is now an argument-free root-owned wrapper |
+| skill-security rules/02 | skills run shell on load: `` !`cmd` `` / ```` ```! ```` blocks execute when the skill is **invoked**, before the model reads it, and frontmatter `allowed-tools` pre-approves them without workspace trust. Reproduced with `claude -p` (v2.1.283) in a scratch project: a marker file was created; a disallowed command aborted the skill with empty output and exit 0 (outside auto mode); `disableSkillShellExecution` stopped both |
+| docs-workflow rules/01 | "Claude Code reads CLAUDE.md, not AGENTS.md" — it reads AGENTS.md natively since v2.1.277, but by default only when no `CLAUDE.md` or `CLAUDE.local.md` exists, so one personal `CLAUDE.local.md` silently stops it |
+| copywriting rules/04 | EU Directive 2024/825 (applies from 2026-09-27) bans generic environmental claims and offset-based "climate neutral" product claims; the library had no text on it |
+
+**Fixes whose proposed form was itself wrong, caught before editing:**
+- **pipefail probe:** `set -o pipefail 2>/dev/null` exits dash (a special builtin; measured rc=2
+  on bookworm) before the fallback runs — the rule uses a subshell probe.
+- **`grep -r -q -s` over a file list** fails under ugrep (exit 2 on a missing operand despite a
+  match), and this environment's `grep` is a ugrep wrapper — the rules test captured output instead.
+- **The "silent pagination" list** mislabelled aws, kubectl and docker (they return full lists);
+  only `gh` truncates silently, and `gh run list` defaults to 20, not 30.
+- **The skill-shell probe** missed symlinked skill directories on BSD grep — the library's own
+  install shape — so it uses `find -L`.
+- **EU Art 11a** is a withdrawal-period button duty, not a general cancel rule; the 30-day
+  prior-price rule covers goods (SaaS reach marked needs-verification).
+
+**The whole-diff review's defects:** front-door surfaces (`README.md`, `docs/VERIFY-SETUP.md`,
+`scripts/gen-agents-md.sh` comments) still said Claude Code does not read AGENTS.md — corrected to
+the v2.1.277 behaviour; a Rego comment called `storage_encrypted` RDS-cluster-only and the rule
+skipped `aws_db_instance` — widened and re-run with OPA (both unencrypted RDS types denied, the
+encrypted instance and S3 bucket not); plus a `/context` version caveat (v2.1.280+), issue vs PR
+template locations, an `eco friendly` spelling the green-claims probe missed, an auto-mode
+exception, a wrapped code span in the router, and a probe with no file operand.
+
+**The router's hash-pinned BUILD and AUDIT sections are byte-identical to HEAD** (checked by the
+fix agent and again before commit), so `ROUTER_BUILD_SHA` and invariant 20 are untouched.
+
+- **DEFERRED — a bats-core / ShellSpec section in `sota-shell-scripting`; revisit trigger: a field report or eval case about testing shell scripts.**
+- **DEFERRED — `set -E` / ERR trap guidance in `sota-shell-scripting` rules/01 §2; revisit trigger: a field report of a missed ERR-trap failure, or the next §2 edit.**
+- **DEFERRED — `curl --proto '=https' --proto-redir '=https' --tlsv1.2` in `sota-shell-scripting` rules/03 §5; revisit trigger: the next §5 edit or an install-script audit finding.**
+- **DEFERRED — CLI login via the RFC 8628 device grant or loopback redirect in `sota-cli-ux`; revisit trigger: an auth section is added there, or the next `sota-identity-access` sweep.**
+- **DEFERRED — `DO_NOT_TRACK` as an informal convention with no maintained spec in `sota-cli-ux` rules/03; revisit trigger: a primary spec appears.**
+- **DEFERRED — Keep a Changelog 2.0 section ordering and "don't gate PRs on changelog edits" in `sota-docs-workflow` rules/02; revisit trigger: 2.0.0 becomes the site default.**
+- **DEFERRED — the CAN-SPAM rule that the opt-out must keep working >=30 days after sending, in `sota-copywriting` rules/04 §5; revisit trigger: the next email-law edit.**
+- **DEFERRED — Google's back-button-hijacking violation and the EEA site-reputation enforcement change in `sota-copywriting` rules/03; revisit trigger: the next rules/03 edit.**
+- **DEFERRED — WCAG 3.3.1 and 3.3.3 in `sota-ux-writing` rules/04 §1; revisit trigger: the next rules/04 edit.**
+- **DEFERRED — a cross-reference from `sota-copywriting` rules/03 to AI Act Art. 50 in `sota-privacy-compliance` rules/04; revisit trigger: Art. 50 obligations apply, or privacy-compliance restructures.**
+
+**Still unverified, left as written:** ISO 24495-1's fourth principle ("actionable" vs "usable" —
+iso.org refused access; likely wrong); US click-to-cancel status after *Custom Communications v.
+FTC*; the ePrivacy Art. 13(2) wording; GitHub stacked PRs' preview tier; llms.txt adoption and
+the "bloated context files reduce performance" claim; the Gemini CLI retirement date; uutils as
+Ubuntu's default coreutils; a field-reported git push double-delivery; Jenkins `sh -xe`; the
+listing-budget units; Opengrep's taint scope; staticcheck SA1019 exit behaviour; and, in
+privacy-compliance, the "twenty states" count, "no federal comprehensive law", ISO 27001:2013
+expiry, UK DUAA 2025 and a CPPA date.
+
+**The sweep is complete.** Every one of the 42 skills was re-verified against primary sources:
+the nine language skills on 2026-09-25 (#472) and the other 33 in four batches on 2026-09-26.
+Across the four batches: **439 findings** (31 High) — 135 in batch 1, 104 in batch 2, 111 in
+batch 3, 89 in batch 4 — of which the 202 High/Medium items went to refuters and **none was
+refuted**; many proposed fixes were corrected first. The four whole-diff reviews found 37 more
+defects that every invariant had passed. `LAST-VERIFIED` moves to **2026-09-26** in this
+change; ROADMAP 5 (recurring) rolls forward — dormant until the next sweep, due ~2027-03-26.

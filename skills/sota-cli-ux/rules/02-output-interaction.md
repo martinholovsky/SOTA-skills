@@ -74,13 +74,18 @@ exit codes, streaming, progress, prompts, verbosity levels, error messages.
   `isatty(stderr)` gates spinners/progress **on stderr**, `isatty(stdin)` gates
   prompts. A pipe on stdout must not kill the progress bar on a TTY stderr.
 - Color policy, in precedence order:
-  1. `--color`/`--no-color` flag (or `--color=always|never|auto`)
+  1. `--color`/`--no-color` flag (or `--color=always|never|auto`), then a
+     user-level config setting — no-color.org says both override `NO_COLOR`
   2. `NO_COLOR` env var **set and non-empty** → no color (per no-color.org;
-     empty string does *not* disable). `CLICOLOR_FORCE`/`FORCE_COLOR` non-empty
-     → force color, winning over `NO_COLOR` (per force-color.org, which — like
-     no-color.org — ignores the value; note the Node/chalk divergence:
-     `FORCE_COLOR=0` disables, `1|2|3` set color depth — pick one behavior
-     and document it)
+     empty string does *not* disable). `FORCE_COLOR` non-empty → force color.
+     **The standards conflict when both are set**: force-color.org lets
+     `FORCE_COLOR` win over `NO_COLOR`; the older bixense `CLICOLOR_FORCE`
+     convention (now marked deprecated by its own page) lets `NO_COLOR` win,
+     and says to treat `FORCE_COLOR` as its alias. Node diverges again:
+     `FORCE_COLOR` of `1`, `true` or `''` means 16 colours, `2|3` set depth,
+     any other value (e.g. `0`) disables. Pick one precedence and document it
+     (force-color.org, no-color.org, bixense.com/clicolors, nodejs.org cli docs,
+     checked 2026-09-26)
   3. auto: color only if the stream is a TTY and `TERM` is set and ≠ `dumb`
 - `--color=always` must exist — users pipe through `less -R` and CI renderers
   that handle ANSI. Auto-detection alone strands them.
@@ -93,6 +98,13 @@ exit codes, streaming, progress, prompts, verbosity levels, error messages.
   panic/traceback after `head` exits. Exit silently (conventionally 141).
 - Don't query or assume terminal width when not a TTY; when a TTY, wrap/truncate
   to width but never truncate in `--plain`/`--json` modes.
+- **Neutralise untrusted text before it reaches a TTY** (CWE-150). A filename,
+  commit message, API field or log line printed raw can carry ESC/C0/C1 control
+  sequences that recolour, overwrite or hide lines, retitle the window, or — via
+  OSC 52, where the terminal allows it — write the clipboard (xterm ctlseqs).
+  Escape C0 (except `\n`, `\t`), `DEL`, C1 and `ESC` in data you did not
+  produce (e.g. as `\x1b` or `^[`); the tool's own styling is added after. The
+  log-file path of the same flaw is CWE-117 (`sota-code-security` rules/07).
 
 ## 5. Streaming & progress
 
@@ -209,11 +221,12 @@ exit codes, streaming, progress, prompts, verbosity levels, error messages.
 
 - [ ] Data on stdout only; logs/progress/prompts/errors on stderr; verified by `tool cmd >out 2>err` inspection.
 - [ ] `tool list | jq .` works: no ANSI, no banner, no log lines in the stream.
+- [ ] Untrusted strings (filenames, remote fields, commit text) printed to a TTY have control characters and `ESC` escaped — try a name containing `\x1b[2J` (CWE-150).
 - [ ] `--json` (or `-o json`) on every list/read command; NDJSON for streams; JSON-mode errors are machine-readable; fields treated as versioned API.
 - [ ] Human tables: no borders; `--plain`/`--no-header` or auto-plain when piped.
 - [ ] Exit codes: 0 only on full success; usage errors = 2; distinct documented codes for failure classes; partial failure ≠ 0; no `exit 0` in catch-all handlers.
 - [ ] SIGINT exits 130; `tool list | head` causes no EPIPE traceback.
-- [ ] Color: auto by TTY; `NO_COLOR` (non-empty) and `TERM=dumb` disable; `--color=always|never|auto` supported; color never sole carrier of meaning.
+- [ ] Color: auto by TTY; `NO_COLOR` (non-empty) and `TERM=dumb` disable; `--color=always|never|auto` supported; the `NO_COLOR`-vs-`FORCE_COLOR` precedence is a documented choice; color never sole carrier of meaning.
 - [ ] Output streams incrementally; stdout line-buffered when piped; no end-of-run dumps for long operations.
 - [ ] >2s operations show progress on stderr (TTY); non-TTY gets sparse plain lines, no `\r` animation spam in CI logs.
 - [ ] First output within ~100ms; no silent multi-second startup.

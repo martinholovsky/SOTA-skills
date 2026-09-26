@@ -145,8 +145,12 @@ deny contains msg if {
   msg := sprintf("%s: missing data_classification tag", [r.address])
 }
 
+# storage_encrypted is an attribute of the RDS resources (aws_rds_cluster,
+# aws_db_instance); S3 and DynamoDB encryption live in other resources/blocks
+# and need their own rule
 deny contains msg if {
   some r in input.resource_changes
+  r.type in {"aws_rds_cluster", "aws_db_instance"}
   r.change.after.tags.data_classification in {"pii", "pii-special", "financial"}
   not r.change.after.storage_encrypted
   msg := sprintf("%s: classified data store without encryption at rest", [r.address])

@@ -7,9 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**Full-library sweep complete — `LAST-VERIFIED` moves to 2026-09-26.** Batch 4 of 4 re-verified
+the docs, writing and meta skills (shell-scripting, docs-workflow, cli-ux, copywriting,
+ux-writing, skill-security, privacy-compliance and the `sota` router): 89 findings (4 High, 30
+Medium); all 34 High/Medium items refuted (none failed); a whole-diff review found 8 more
+defects, all fixed. With the nine language skills (#472) and batches 1–3, all 42 skills are now
+verified against primary sources: 439 findings across the four batches (31 High), 202
+High/Medium refuted, none failed. ROADMAP 5 (recurring) rolls forward: the next sweep is due ~2027-03-26.
+Ten batch-4 deferrals with triggers: `docs/ADOPTION-LOG.md`, 2026-09-26 batch 4.
+
+LAST-VERIFIED: 2026-07-08 -> 2026-09-26 (full-library sweep, batches 1–4 plus #472).
+
+### Fixed (sweep batch 4)
+
+- **Security:** a "safe" sudoers example that was a root file-write (argument wildcards match
+  `/`; measured on sudo 1.9.13), now an argument-free wrapper; skills that run shell on
+  invocation (`` !`cmd` ``) with self-granted `allowed-tools`, reproduced with `claude -p` and
+  covered with controls and a symlink-safe probe; agent-file inventory and SHA-only pinning.
+- **Wrong facts:** Claude Code reads AGENTS.md natively since v2.1.277 but not alongside a
+  `CLAUDE.md`/`CLAUDE.local.md` (fixed in docs-workflow, README, `docs/VERIFY-SETUP.md` and
+  `gen-agents-md.sh` comments); pipefail in dash/busybox; `gh run list` defaults; colour-env
+  precedence; HIPAA breach thresholds; AI Act omnibus (Regulation (EU) 2026/1744).
+- **New coverage:** EU green claims (Dir. 2024/825, applies 2026-09-27), withdrawal-button
+  labels, 30-day prior price, review verification, app-store listing rules, California DROP
+  45-day cycle, amended COPPA, terminal escape-sequence injection, ShellCheck's optional
+  set-e/masked-return checks.
+- **Probes that checked nothing:** `\b#1` superlatives, a zsh-joining probe whose first pattern
+  was read as a filename, a pipefail probe that kills dash, deprecation-suppression forms, and
+  probes that false-alarmed under pipefail or ugrep.
+- **Corrected:** batch 3's refuted-item count read 64; the refuters checked 55.
+
 **Full-library sweep, batch 3 of 4: the nine data, AI and product skills re-verified**
 (databases, data-engineering, ml-engineering, llm-engineering, api-design, testing,
-web-frameworks, frontend-design, mobile). 111 findings (10 High, 45 Medium); all 64
+web-frameworks, frontend-design, mobile). 111 findings (10 High, 45 Medium); all 55
 High/Medium items refuted (none failed); every changed SQL, dbt project and probe was run; a
 whole-diff review found 7 more defects (1 Medium, 6 Low): the Medium and four Lows
 fixed, one kept deliberately, one deferred, one left as dated history. Thirteen deferrals with triggers:

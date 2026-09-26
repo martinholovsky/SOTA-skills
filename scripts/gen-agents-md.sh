@@ -179,14 +179,14 @@ fi
 
 # --- sibling entry points: report always, create only on request ------------
 #
-# Claude Code reads CLAUDE.md, Gemini CLI reads GEMINI.md; neither reads
-# AGENTS.md by default. So a repo carrying only AGENTS.md leaves both reading
-# NOTHING, which presents as the model getting worse rather than as a missing
-# file. Neither sibling gets a COPY: AGENTS.md stays the single source of truth.
+# Claude Code reads AGENTS.md natively since v2.1.277, but by default only when no
+# CLAUDE.md or CLAUDE.local.md exists (older versions, and before v2.1.281 some
+# sessions, read CLAUDE.md only); legacy Gemini CLI reads GEMINI.md. A missed load
+# presents as the model getting worse rather than as a missing file. Neither sibling gets a COPY: AGENTS.md stays the single source of truth.
 #
 #   CLAUDE.md -> `@AGENTS.md`     (code.claude.com/docs/en/memory, AGENTS.md section;
-#                                  that page recommends it OVER a symlink, and notes a
-#                                  symlink on Windows needs Administrator/Developer Mode)
+#                                  the portable form: a symlink "also works" there, but on
+#                                  Windows needs Administrator/Developer Mode)
 #   GEMINI.md -> `@./AGENTS.md`   LEGACY ONLY -- see below. Gemini CLI does support the
 #                                  import (docs/cli/gemini-md.md, reference/memport.md;
 #                                  its examples are all `./`-prefixed).

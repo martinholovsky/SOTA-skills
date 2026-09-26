@@ -54,10 +54,10 @@ name these; violating them risks the page *and* the domain:
   to rank, adding little value: mass "X vs Y" permutation pages, thin
   location pages, stitched/scraped aggregations. The test is value-added per
   page, not how it was produced.
-- **Site reputation abuse** — third-party content hosted mainly to ride the
-  host's ranking signals ("parasite SEO": coupon/review sections rented out
-  on a news domain). If you're the host, it's your domain at stake.
-- **Doorway pages** — near-duplicate pages funneling to the same destination.
+- **Site reputation policy** ("site reputation abuse") — third-party
+  content hosted mainly to ride the host's ranking signals ("parasite SEO":
+  coupon/review sections rented out on a news domain). If you're the host, it's your domain at stake.
+- **Doorway abuse** — near-duplicate pages funneling to the same destination.
 - **Keyword stuffing** — and its modern denial: there is **no keyword-density
   target**; that metric is folklore. Use the topic's natural vocabulary
   (searchers' terms, synonyms, the entities involved) because you're actually
@@ -108,8 +108,8 @@ name these; violating them risks the page *and* the domain:
 
 ## 6. Generative AI search surfaces (AI Overviews / AI Mode)
 
-Google's own guidance ("Guide to Optimizing for Generative AI Features",
-developers.google.com/search) is blunt: AI Overviews and AI Mode are rooted in
+Google's own guidance ("Optimizing your website for generative AI features
+on Google Search", developers.google.com/search, published 2026-05-15) is blunt: AI Overviews and AI Mode are rooted in
 the core Search ranking and quality systems, so **"GEO"/"AEO" is still SEO** —
 §1–§5 of this file *are* the optimization strategy.
 
@@ -120,10 +120,12 @@ the core Search ranking and quality systems, so **"GEO"/"AEO" is still SEO** —
   Google-AI tactics are selling keyword density with a new name (§3).
 - **The controls are the existing ones**: `nosnippet`, `data-nosnippet`,
   `max-snippet`, and `noindex` govern what AI features may show;
-  Google-Extended governs training/grounding in Google's other systems. A
-  dedicated Search Console opt-out toggle + generative-AI performance report
-  began rolling out in June 2026 (UK first, global to follow) — check it
-  before inventing a blocking scheme.
+  Google-Extended governs training/grounding in Google's other systems.
+  Search Console's generative-AI performance reports (announced
+  2026-06-03; rolled out to all sites worldwide as of 2026-08-31, per the
+  Search Central blog) show where you already appear — check them before
+  inventing a blocking scheme. A dedicated Search Console opt-out control:
+  needs verification.
 - Appearing in an AI answer is a snippet-economics question, not a new
   discipline: the first-screen-answer rule (§1) and primary-source E-E-A-T
   signals (§2) are what get cited.

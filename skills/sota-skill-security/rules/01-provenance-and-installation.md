@@ -2,7 +2,7 @@
 
 Everything here is the dependency-management playbook, applied to a dependency that
 executes in the model instead of the interpreter. The difference that matters:
-**a package must be called; a skill only has to be loaded.**
+**a package's code must run; a skill only has to be loaded.**
 
 ---
 
@@ -27,9 +27,12 @@ accepting claims.
 
 ## 2. Pin it, and treat the description as the interface
 
-**A skill installed from a branch re-installs itself on every pull.** Pin a commit
-SHA or a tag. If the platform's install mechanism cannot pin, record the SHA you
-reviewed somewhere you will diff against.
+**A skill installed from a branch re-installs itself on every pull.** Pin the full
+40-character commit SHA (a Claude Code marketplace git source takes one in its
+`sha` field); a tag is mutable, so keep it only as a comment beside the SHA it
+resolved to — the rule `sota-devsecops` applies to CI actions. If the platform's
+install mechanism cannot pin, record the SHA you reviewed somewhere you will diff
+against.
 
 On update, **diff before adopting**, and weight the diff by where it lands:
 
@@ -51,7 +54,11 @@ installed this:
 
 - the entry file **and every file it references** — a `SKILL.md` that says "see
   `rules/07`" has a body you have not read;
-- **scripts** shipped alongside, including hooks and install scripts;
+- **the bytes, not the rendering** — zero-width, bidi and tag characters hide
+  instructions a reviewer cannot see; run the `sota-code-security` rules/09 §4
+  probe over the closure (`rules/03` §5 has it adapted for symlinked skill dirs);
+- **scripts** shipped alongside, including hooks and install scripts, and any
+  `!`-prefixed shell line in the skill itself (`rules/02` §1);
 - **resources fetched at load or run time** — a skill that pulls a remote ruleset is
   a skill whose content is not what you reviewed;
 - **transitively installed things**: an MCP server the skill tells you to add, a
@@ -69,10 +76,15 @@ Before auditing content, establish the set. Agents load instructions from more
 places than people remember:
 
 - global/user config (an always-on agent file);
-- project files — `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.cursorrules` and their
-  kin, **including symlinks between them**, where one file is three entry points;
-- a skills or plugins directory, and anything symlinked into it;
-- marketplace or plugin manifests;
+- project files — `AGENTS.md`, `CLAUDE.md`, `CLAUDE.local.md`, `GEMINI.md`,
+  `.cursorrules`, `.windsurfrules` and their kin, **including symlinks between
+  them**, where one file is three entry points;
+- a skills or plugins directory, and anything symlinked into it — plus the
+  directories that load the same way under other names (`.claude/commands/`,
+  `.claude/agents/`, `.github/prompts/`, `.github/agents/`, `.devin/rules/` and
+  `.windsurf/rules/`); the full pattern is `rules/02` §2;
+- marketplace or plugin manifests, and project config that adds hooks or servers
+  (`.claude/settings.json`, `.mcp.json`);
 - nested per-directory files, which may exist in a subtree you did not write.
 
 **Enumerate by looking, not by asking the docs.** The gap between "what we install"
@@ -97,8 +109,9 @@ anyway.
       from, including symlinks and per-directory files, with source and pinned
       version recorded? A set assembled from documentation rather than the
       filesystem is not an inventory.
-- [ ] **Every installed skill pinned** to a SHA or tag, not tracking a branch (§2)?
-      Anything tracking a branch re-installs on every pull and is a standing finding.
+- [ ] **Every installed skill pinned** to a full commit SHA, not a branch or a bare
+      tag (§2)? Anything tracking a branch re-installs on every pull and is a
+      standing finding; a tag pin without its recorded SHA is a Medium.
 - [ ] **Update diffs read, weighted by surface** (§2) — and a change to a
       **description/trigger** treated as a behaviour change rather than a docs edit?
 - [ ] **Closure reviewed, not just the entry point** (§3): referenced files, shipped

@@ -126,7 +126,7 @@ rules/02 (authn) and rules/07 (data exposure):
 - [ ] Every user-facing error has all applicable parts: what happened, why
       (if known), next step, side effects; zero dead ends
 - [ ] Generic-error ban:
-      `grep -riE '"(An error (has )?occurred|Something went wrong)"' src/ locales/` — each hit either enriched or justified
+      `grep -riE '"(An error (has )?occurred|Something went wrong)([^a-zA-Z"][^"]*)?"' src/ locales/` — each hit either enriched or justified
 - [ ] System-blame framing: `grep -riE '"(Invalid|Illegal|Bad|Forbidden)[^"]*"' locales/`
       — no protocol vocabulary or user-blame in UI strings
 - [ ] No humor/exclamations in errors:

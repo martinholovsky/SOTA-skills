@@ -82,7 +82,12 @@ from data sales; Rhode Island as low as 35k).
 - CCPA/CPRA specifics: "sale/share" is defined broadly enough to cover ad-tech
   data flows; "Do Not Sell or Share" link; service-provider contracts restricting
   use (the DPA analog); California also enforces data-broker registration and
-  (effective 2026) location/health-adjacent restrictions.
+  (effective 2026) location/health-adjacent restrictions. Delete Act: from
+  **1 Aug 2026** a data broker must pull the state's DROP deletion platform at least
+  every 45 days, process each request within 45 days (an unverifiable one as a
+  sale/share opt-out), repeat the deletion every 45 days after, and stop selling
+  new data about that consumer (Cal. Civ. Code 1798.99.86(c)–(d)) — a scheduled
+  job and a suppression list, not a support ticket.
 - CPPA's finalized regulations (effective 1 Jan 2026): **risk assessments**
   (DPIA analog) for high-risk processing — pre-2026 processing assessed by
   31 Dec 2027, first submissions to the CPPA by 1 Apr 2028; **ADMT**
@@ -107,7 +112,13 @@ laws ban it outright for under-18s), default-private settings mandated, age
 assurance proportional to risk. Engineering consequences: an age signal in the
 data model that gates features/processing (not a birthday collected for fun —
 rules/02 §1), separate consent flows, and treating "we don't know users' ages"
-as a risk position to document, not an exemption. UK Age Appropriate Design Code
+as a risk position to document, not an exemption. The amended COPPA Rule
+(90 FR 16918, effective 23 Jun 2025; compliance required since 22 Apr 2026 except
+16 CFR 312.11(d)(1), (d)(4) and (g)) adds **separate** verifiable parental consent for
+third-party disclosure not integral to the service (e.g. ad networks), a written
+retention policy with a deletion timeframe, and a written children's-data security
+program — so consent-for-disclosure is its own flag, not a clause in the first
+consent. UK Age Appropriate Design Code
 and similar codes apply the same defaults-private logic. **The child-directed /
 age decision comes from a classification the platform controls** (a
 publisher- or app-level child-directed setting, a kids-account tag, an
@@ -146,13 +157,16 @@ mandatory** (removing "addressable" flexibility), require asset inventories,
 network segmentation, and tighter BA verification. It is **not final as of June
 2026** — but build to it anyway: it codifies what competent engineering already
 does, and the compliance window after finalization is short (~180–240 days).
-Breach notification: HHS + individuals within **60 days** of discovery (media for
-500+ records); BAs notify the covered entity. BAAs (business associate
+Breach notification: individuals within **60 days** of discovery; media when more
+than 500 residents of one State or jurisdiction are affected (45 CFR 164.406); HHS
+contemporaneously for 500+ individuals, else an annual log within 60 days of year
+end (164.408); BAs notify the covered entity. BAAs (business associate
 agreements) are the DPA analog — required before PHI flows to any vendor.
 
 ## 4. PCI DSS 4.x — scope is the whole game
 
-**Status (verified June 2026):** PCI DSS **v4.0.1** is the only active version
+**Status (as of 2026-09-26):** PCI DSS **v4.0.1** is the revision the PCI SSC
+document library features — confirm the active revision there before relying on it
 (v4.0 retired 31 Dec 2024). All future-dated v4 requirements became **mandatory
 31 March 2025** — including authenticated internal vulnerability scans, expanded
 MFA, automated log review, payment-page script integrity and tamper-detection
@@ -174,20 +188,24 @@ MFA, automated log review, payment-page script integrity and tamper-detection
 
 ## 5. EU AI Act — engineering obligations & current timeline
 
-**Timeline (verified June 2026 — moving target, re-verify):**
+**Timeline (verified 2026-09-26 against EUR-Lex — moving target, re-verify):**
 - In force 1 Aug 2024. Prohibited practices + AI literacy: applicable since
   **2 Feb 2025**. GPAI (general-purpose model) obligations: since **2 Aug 2025**.
 - General applicability: **2 Aug 2026**.
-- **Digital Omnibus on AI (adopted: Parliament 16 Jun 2026, Council 29 Jun 2026;
-  OJ publication pending as of early Jul 2026):** postpones high-risk
+- **Digital Omnibus on AI — Regulation (EU) 2026/1744 of 8 July 2026 (OJ L,
+  2026/1744, 24.7.2026; in force 27 Jul 2026):** postpones high-risk
   obligations — Annex III (use-case high-risk: employment, credit, education,
   essential services...) from Aug 2026 to **2 Dec 2027**; Annex I (AI in
   regulated products) to **2 Aug 2028**. These are now the operative dates; do
   not treat the delay as a reason to defer architecture — the obligations are
   data/logging/docs-shaped and cheap at design time, brutal at retrofit time.
-  The omnibus also adds a prohibited practice (AI generation of CSAM /
-  non-consensual intimate content) and postpones Art. 50 synthetic-content
-  marking to **2 Dec 2026** for systems on the market before 2 Aug 2026.
+  The omnibus also adds prohibited practices — Art. 5(1)(ba) non-consensual
+  intimate imagery of an identifiable person, (bb) CSAM — applying from
+  **2 Dec 2026**; gives Art. 50(2) synthetic-content marking until **2 Dec 2026**
+  for systems on the market before 2 Aug 2026; recasts Art. 4 AI literacy as
+  "take measures to support" (no guaranteed level); and adds Art. 4a, a legal
+  basis to process special-category data strictly for high-risk bias detection
+  and correction.
 
 **Engineering obligations if your system is high-risk (provider side):** risk
 management system across lifecycle; data governance (training-data relevance,

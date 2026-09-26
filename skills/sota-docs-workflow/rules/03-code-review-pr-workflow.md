@@ -176,8 +176,9 @@ name.
 - **Stacked PRs for large changes**: a sequence of dependent, individually
   reviewable PRs (each targeting the previous branch), reviewed and merged in
   order. This is how you keep §1's size discipline on multi-thousand-line
-  features. GitHub now ships native stacked PRs (private preview as of
-  mid-2026: `gh stack` CLI, a stack map in the PR UI, branch protection and CI
+  features. GitHub now ships native stacked PRs (in preview as of mid-2026 —
+  private vs public status needs verification; `gh stack` is the
+  `github/gh-stack` CLI extension, a stack map in the PR UI, branch protection and CI
   evaluated against the final target branch, auto-rebase of the remaining
   stack after each merge) — prefer it where enabled, since reviewers need no
   third-party account. Until then, tooling (Graphite, `gh`/`git` stacking
@@ -218,7 +219,7 @@ that uses it.
 PR that adds a column and starts writing to it is safe; one that also drops the old
 column is not, because a rollback of the code without a rollback of the data leaves
 production reading a field that no longer exists. Same rule for API deprecations
-(`rules/02` §2) and for anything with a consumer you do not control.
+(`rules/02` §7) and for anything with a consumer you do not control.
 
 **Revert or fix forward — decide by blast radius, not by pride.** If the change is
 live and wrong, revert first and diagnose after: a revert is a known-good state and a
@@ -356,11 +357,14 @@ claim that turns out to be false still burns the credibility.
       approver. Probe:
       `grep -L -i -E 'ai tool|model version|assisted-by' .github/pull_request_template.md`
       prints the template's name when no such field
-      exists. A missing template is also a finding.
+      exists. GitHub also reads `pull_request_template.md` from the root or `docs/`,
+      and `PULL_REQUEST_TEMPLATE/` dirs in any of the three — check those before
+      calling the template missing, which is also a finding.
 - [ ] **(Medium) Security-critical paths route to a qualified reviewer against a
       written standard** (§3): the team names its secure-coding guideline, and
       CODEOWNERS covers auth, crypto, payment and similar paths with a security or
-      domain owner. Probe: `cat .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS
-      2>/dev/null | grep -v '^#' | grep -q -i -E 'auth|secur|crypto|payment|billing'
-      || echo "no security-path owner"`; then confirm code-owner review is required.
+      domain owner. Probe:
+      `[ -n "$(grep -s -h -i -E '^[^#]*(auth|secur|crypto|payment|billing)' .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS)" ] || echo "no security-path owner"`
+      (output, not exit status, so an absent location or `pipefail` cannot false-alarm);
+      then confirm code-owner review is required.
 - [ ] Merged PR descriptions are useful in `git log` archaeology (pick 5 from six months ago and try to reconstruct the why).

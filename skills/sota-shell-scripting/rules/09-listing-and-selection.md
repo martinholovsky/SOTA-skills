@@ -11,7 +11,7 @@ reached its 500-line cap, **keeping their section numbers** so existing citation
 ## 5. The listing tool answered your question about *one page*
 
 `rules/06` §2 is a searcher that traverses less than you think. This is a lister that returns
-than you think — and it is worse, because the shortfall is **policy, not a bug**: the tool
+less than you think — and it is worse, because the shortfall is **policy, not a bug**: the tool
 did exactly what it was asked, exited `0`, and wrote nothing to stderr.
 
 Measured 2026-09-10 against a repository with 330 merged pull requests:
@@ -25,9 +25,9 @@ exit status 0, stderr empty, in all three
 
 The no-flag answer is off by an order of magnitude. Nothing in the output distinguishes
 "there are 30" from "here are the first 30 of 330", and `wc -l` turns either into a number
-that looks like a measurement. The same default sits under `gh issue list`, `gh run list`,
-`aws ... --max-items`, `kubectl get --chunk-size`, `docker ps -n`, and every REST `GET`
-that pages at 30 or 100 — **a client library that iterates pages for you is the exception,
+that looks like a measurement. The same default sits under `gh issue list` (also 30),
+`gh run list` (**20** — the default differs per subcommand; `--help` prints it, checked
+2026-09-26 against the gh source), and every REST `GET` that pages at 30 or 100 — **a client library that iterates pages for you is the exception,
 not the rule, and `curl` never does.**
 
 Two distinct ways to get this wrong, and the second is the one that repeats:
@@ -131,6 +131,12 @@ grep -rn 'Rack::Protection' --include='*.rb' --include='config.ru' . # GOOD — 
   a quoted `--include='*.{py,js}'` matches no file on BSD grep, ugrep or GNU grep. Unquoted,
   bash expands it and zsh aborts with "no matches found" (`rules/06` §1). Write one
   `--include` per extension. Two shipped probes had this shape (measured 2026-09-25).
+- **BusyBox grep has no `--include` at all** (alpine and busybox images):
+  `grep: unrecognized option`, exit `2` — the same status as any read error, so a probe run
+  with `2>/dev/null` inside such a container reads as clean. There, select with `find`:
+  `find . \( -name '*.rb' -o -name config.ru \) -exec grep -Hn 'Rack::Protection' {} +`
+  (measured 2026-09-26: BusyBox 1.37/1.38 reject `--include`; the `find` form hit the same
+  files under BusyBox, BSD grep, ugrep and GNU grep).
 - **Invariant 37** fails the build on both shapes in any skill file.
 
 ## Audit checklist
@@ -138,7 +144,8 @@ grep -rn 'Rack::Protection' --include='*.rb' --include='config.ru' . # GOOD — 
 - [ ] **A search filter next to a named file** (§5b): does any `grep` command combine
       `--include` with an explicitly named file the glob does not match? The named file
       is skipped and the command exits 1 exactly as for "no match". Run the probe on a
-      fixture that must hit before trusting a clean result.
+      fixture that must hit before trusting a clean result. Inside an alpine/busybox image,
+      any `--include` probe exits 2 unrecognised — use the `find … -exec grep` form.
 
 - [ ] **Does the selector name the population member the question does?** (§5a) — *newest*
       is not *default* (`sort -V | tail -1` returns a backports kernel), *apparent size* is
@@ -146,8 +153,8 @@ grep -rn 'Rack::Protection' --include='*.rb' --include='config.ru' . # GOOD — 
       truncated and the exit status is 0, so the only tell is a value that cannot belong to
       the subject; read one full record before trusting the aggregate.
 - [ ] **Counts taken from a listing tool** (§5): does the command carry a `--limit`/
-      `per_page`/`--max-items`, or rely on the tool's **default** page (30 for `gh`, 100 for
-      most REST)? A total must come from a server-side count (`total_count`) or a paginated
+      `per_page`/`--max-items`, or rely on the tool's **default** page (30 for `gh pr list`/
+      `gh issue list`, 20 for `gh run list`, 30 or 100 for most REST)? A total must come from a server-side count (`total_count`) or a paginated
       read (`gh api --paginate`), never from the first page. Treat a result whose size equals
       the cap exactly as truncated, and quote the bound alongside the number. Where a second
       method was run, is the delta between the two reconciled to a named cause — or was the

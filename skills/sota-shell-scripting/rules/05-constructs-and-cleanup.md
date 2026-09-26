@@ -67,6 +67,15 @@ trap cleanup EXIT
 trap 'trap - TERM; kill -TERM -- -$$' INT TERM   # forward to process group, then EXIT trap runs
 ```
 
+- **`kill -- -$$` has a precondition: the script must LEAD its process group** (pgid = `$$`).
+  A non-interactive shell does not start a new group, so a script run from another script
+  (or any launcher that does not give it one) sits in its parent's group:
+  `kill: (-PID) - No such process`, status 1, and the background children survive
+  (measured 2026-09-26, bash 5.3 on macOS and Debian bookworm's bash).
+  Either start it with `setsid` so it leads its group, or signal your own jobs instead —
+  `trap 'trap - TERM; kill -TERM $(jobs -p) 2>/dev/null; exit 143' INT TERM` — which killed
+  the child in the same nested run. Check: `ps -o pgid= -p $$` equals `$$`.
+
 - Cleanup must be **idempotent** (EXIT can follow INT) and must not assume variables are
   set (it can run before initialization completes — hence `tmpdir=""` first, guards inside).
 - Don't put logic after `exit` relying on the trap having "finished": the trap *is* the end.

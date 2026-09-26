@@ -44,7 +44,7 @@ first hours, producing a written record even when the answer is "not reportable.
 | GDPR (current law) | Supervisory authority | **72h** from awareness unless unlikely to result in risk; document even if not notified (Art. 33(5)) |
 | GDPR | Individuals | Without undue delay if high risk (Art. 34) |
 | GDPR — pending Digital Omnibus (NOT in force) | Authority | Proposed 96h + high-risk threshold + single EU entry point — track adoption, build to 72h today |
-| HIPAA | HHS + individuals | ≤ **60 days** from discovery (≥500 records: media + HHS without unreasonable delay; <500: annual log to HHS) |
+| HIPAA | HHS + individuals (+ media) | Individuals ≤ **60 days** from discovery; media when >500 residents of one State/jurisdiction (45 CFR 164.406); HHS contemporaneously for ≥500 individuals, else annual log ≤ 60 days after year end (164.408) |
 | US state breach laws (all 50 states, separate from privacy acts) | State AGs + residents | Varies: "most expedient time" to fixed 30/45/60-day windows per state — maintain a per-state matrix via counsel |
 | NIS2 (in-scope entities) | National CSIRT/authority | Early warning **24h**, notification **72h**, final report ≤ 1 month |
 | DORA (EU financial) | Competent authority | Initial ≤ **4h from classifying as major** (≤ 24h from awareness), intermediate 72h, final ≤ 1 month |

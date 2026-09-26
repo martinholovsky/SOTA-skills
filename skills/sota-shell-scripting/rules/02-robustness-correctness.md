@@ -223,9 +223,16 @@ Decide per script and enforce with the shebang + `shellcheck -s sh`.
 
 - POSIX sh required: busybox/alpine and dash-based containers without bash, initramfs,
   `system()`-invoked snippets, packaging hooks. Then: no arrays (use `set -- args...`
-  to reuse positional params), `[ ]` not `[[ ]]`, no `pipefail` (run each stage to a temp
-  file or use a fifo/status-file trick), `. file` not `source`, no `${var//}`, no
+  to reuse positional params), `[ ]` not `[[ ]]`, `. file` not `source`, no `${var//}`, no
   `<<<`/`<( )`, `printf` always (dash `echo` interprets escapes).
+- `pipefail` in sh is **version-dependent**, not absent: POSIX.1-2024 specifies it, busybox
+  ash accepts it, dash only from upstream 0.5.13 (Debian bookworm's 0.5.12-2 rejects it,
+  trixie's 0.5.12-12 accepts it). Probe **in a subshell** — `set` is a special builtin, so a
+  bare `set -o pipefail 2>/dev/null` *exits* bookworm dash with status 2 before line 2 runs:
+  `if (set -o pipefail) 2>/dev/null; then set -o pipefail; else echo 'no pipefail' >&2; fi`
+  (measured 2026-09-26: bash, zsh, busybox 1.38 and trixie dash enable it; bookworm dash
+  reaches the `else`). Only in the `else` branch do you need the old workaround: run each
+  stage to a temp file, or a fifo/status-file trick.
 - `--` (end of options) is **not universal**. GNU coreutils accept it nearly everywhere;
   BSD/macOS `chmod` does not — `chmod 700 -- dir` fails with `chmod: --: No such file or
   directory`, which names the wrong thing and reads as a path bug. Adjacent calls mislead
@@ -238,7 +245,9 @@ Decide per script and enforce with the shebang + `shellcheck -s sh`.
   worst of both. But remember macOS = bash 3.2: no associative arrays, no `mapfile`, no
   `${var,,}`, no `inherit_errexit`. If macOS devs run the script, either stay 3.2-clean
   or version-check (rules/01 §1). CI containers: confirm bash exists
-  (`docker run image which bash`) before writing `#!/usr/bin/env bash` entrypoints —
+  (`docker run --rm --entrypoint sh image -c 'command -v bash'`; the bare form
+  `docker run image which bash` hands `which bash` to the image's ENTRYPOINT as arguments,
+  and many images have no `which`) before writing `#!/usr/bin/env bash` entrypoints —
   alpine base images have only busybox ash unless bash is installed.
 
 ## 6. Command existence and invocation

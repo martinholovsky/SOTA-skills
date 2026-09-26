@@ -121,8 +121,10 @@ rg -i '(email|phone|address|geo|lat.?lon|ip_addr)' migrations/ schemas/
 rg 'log(ger)?\.(info|warn|error|debug)\(.*\b(user|email|req\.body|password|token)' src/
 # Analytics calls with raw payloads
 rg '(track|identify|capture)\(.*\b(email|name|phone)' src/
-# Query params carrying identity
-rg '[?&](email|token|user_id|ssn)=' src/ logs/
+# Query params carrying identity — rg honours .gitignore even for a path you name,
+# so a gitignored logs/*.log is skipped silently; -uu searches it, -z reads rotated .gz
+rg '[?&](email|token|user_id|ssn)=' src/
+rg -uuz '[?&](email|token|user_id|ssn)=' logs/
 ```
 
 Automated scanners (regex + ML classifiers over column names, sampled values, and
@@ -159,7 +161,7 @@ controls: [beforeSend PII scrubber — tested in test/sentry_scrub.test.ts]
 A processor in production without a DPA and inventory entry is a HIGH finding
 (CRITICAL if special-category data flows to it). Subprocessors of your processors
 matter too: your vendor's subprocessor list is part of your transfer analysis
-(rules/04 §2) and your customers' subprocessor disclosures.
+(rules/04 §1) and your customers' subprocessor disclosures.
 
 **Internal flows count as flows.** Map cross-boundary internal movement as well:
 service A's PII landing in team B's warehouse, the data-science sandbox with a

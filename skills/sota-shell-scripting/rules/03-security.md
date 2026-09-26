@@ -19,7 +19,9 @@ ssh "$host" "rm -rf $dir"            # remote shell re-parses; $dir='/; curl evi
 # GOOD — no re-parsing: pass data as arguments, not code
 git checkout -- "$branch"
 process "$file"
-ssh "$host" -- rm -rf "$(printf '%q' "$dir")"   # %q-escape anything entering a remote shell
+ssh "$host" -- rm -rf -- "$(printf '%q' "$dir")"   # %q-escape anything entering a remote shell;
+# `--` so a $dir starting with '-' is not an option. %q is BASH quoting: a newline becomes
+# $'…', which dash misparses (measured) — the remote login shell must be bash/zsh
 # better: scp a script and run it, or use ssh host 'cat | bash' with a heredoc of CODE ONLY
 ```
 
@@ -189,11 +191,39 @@ comment is). Double the braces or use a templating step that does not scan comme
 (( EUID == 0 )) || die "must run as root (try: sudo $0)"
 ```
 
-  or (b) sudo *specific, full-path* commands, and document the needed sudoers entries:
+  or (b) sudo *specific, full-path* commands with *fixed* arguments, and document the
+  needed sudoers entries. Anything the caller varies goes through a root-owned wrapper
+  that takes **no arguments** (`""` in sudoers = "no arguments allowed"):
 
 ```
-deploy ALL=(root) NOPASSWD: /usr/bin/systemctl restart myapp, /usr/bin/install -m644 * /etc/myapp/*
+deploy ALL=(root) NOPASSWD: /usr/bin/systemctl restart myapp, /usr/local/sbin/myapp-install-config ""
 ```
+
+```sh
+#!/bin/sh
+# /usr/local/sbin/myapp-install-config — root:root 0755, in a root-owned directory.
+# No arguments; the new config arrives on stdin, which the CALLER opened, so root
+# never resolves a path the caller chose. Usage: sudo myapp-install-config < app.conf
+set -eu
+tmp=$(mktemp /etc/myapp/.myapp.conf.XXXXXX)
+trap 'rm -f -- "$tmp"' EXIT
+cat > "$tmp"
+chmod 0644 "$tmp"
+mv -f -- "$tmp" /etc/myapp/myapp.conf
+```
+
+- **Never `*` in sudoers command *arguments*.** sudoers(5): in arguments a wildcard
+  "can match any character, including white space", and a slash "does get matched"
+  (only the command's *path* part stops at `/`). Measured on sudo 1.9.13 (2026-09-26),
+  `/usr/bin/install -m644 * /etc/myapp/*` permits
+  `install -m644 /tmp/evil /etc/myapp/../sudoers.d/evil` — a root-owned sudoers drop-in.
+  Since **sudo 1.9.10** an argument may be a POSIX ERE anchored `^…$`
+  (`/usr/bin/install ^-m644 /srv/myapp/release/[a-z0-9_-]+\.conf /etc/myapp/[a-z0-9_-]+\.conf$`
+  denied the `..` and extra-operand variants in the same run), but it still lets root
+  follow a **symlink** the caller planted in a caller-writable source directory — that
+  run copied `/etc/shadow` to a world-readable file. Only use it with a root-owned
+  source; otherwise use the wrapper
+  ([sudoers(5)](https://www.sudo.ws/docs/man/sudoers.man/), "Wildcards" and "Regular expressions").
 
 - Never `sudo $cmd` with variable command (injection + sudoers bypass), never
   `echo "$pass" | sudo -S` (secret in argv/pipe + defeats auth design).
@@ -260,9 +290,18 @@ shell linting.
 ```yaml
 # CI job (any system) — fail the build on findings
 - run: |
-    shellcheck --severity=style --external-sources $(git ls-files '*.sh' '*.bash')
+    git ls-files -z '*.sh' '*.bash' | xargs -0 shellcheck --severity=style --external-sources --enable=check-set-e-suppressed,check-extra-masked-returns
     shfmt -d -i 2 -ci .          # -i 2 is an EXAMPLE — indent width is the repo's to set
 ```
+
+`-z | xargs -0`, not `shellcheck $(git ls-files …)`: the substitution splits a path with a
+space into two missing files. With an **empty** list GNU xargs still runs `shellcheck` with
+no files (exit 3, fails closed) while BSD/macOS xargs runs nothing and exits 0 — measured
+2026-09-26. The two `--enable` names are **optional** checks (`shellcheck --list-optional`)
+that give rules/01 §2 a static detector: `check-set-e-suppressed` (SC2310 — function called
+in an `if`/`&&` condition; SC2311 — in `$(…)`, where `set -e` is off) and
+`check-extra-masked-returns` (SC2312 — a command's status masked, e.g. `rm -r "$(f)/home"`).
+SC2312 is noisy; adopt it with a baseline rather than drop it.
 
 **Verifying a gate locally is a different question, and another skill owns it:**
 `sota-devsecops` rules/11 §5 — *reproduce the gate's exact invocation, not an equivalent*.
@@ -301,6 +340,9 @@ substitution in help text** rather than literal characters. `--severity=error` s
       `shfmt -i` is a false failure at best and, with `-w` nearby, a whole-tree reformat
 - [ ] **ShellCheck run at `--severity=style`**, not `error` (§7): SC2006 is *style* and catches
       backticks inside an unquoted heredoc, which are live command substitution
+- [ ] **`set -e`-suppression checks enabled** (§7): `--enable=check-set-e-suppressed,check-extra-masked-returns`
+      (SC2310/SC2311/SC2312) in the gate, or an equivalent `enable=` in `.shellcheckrc`; absent → MEDIUM
+      for any script relying on `set -e`
 
 - [ ] **Interceptor recursion** (§3a): does any wrapper, shim, alias or shell-function
       override invoke a command name that its **own namespace shadows**? For each wrapper,
@@ -330,6 +372,8 @@ substitution in help text** rather than literal characters. `--severity=error` s
       explicit `PATH=` and `umask` → HIGH; `CDPATH` not unset → MEDIUM.
 - [ ] `grep -rn 'sudo ' --include='*.sh'` — variable after sudo, `sudo -S`, blanket sudo,
       `sudo .* >` redirects.
+- [ ] Documented or shipped sudoers entries: any `*` in a command's **arguments** → HIGH
+      (it matches `/` and spaces — §4); an argument `^…$` regex over a caller-writable path → HIGH.
 - [ ] `grep -rn 'curl[^|]*|[[:space:]]*\(ba\)\?sh\|wget -qO- .*| *sh' -r .` → CRITICAL in
       anything that runs unattended; check install scripts for checksum/signature
       verification and version pinning (no `/latest/`).

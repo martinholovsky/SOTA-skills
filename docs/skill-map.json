@@ -639,6 +639,18 @@
       ]
     },
     {
+      "from": "sota-skill-security",
+      "to": "sota-code-security",
+      "weight": 8,
+      "targets": [
+        "rules/08",
+        "rules/08 \u00a71",
+        "rules/09",
+        "rules/09 \u00a74",
+        "rules/10 \u00a71"
+      ]
+    },
+    {
       "from": "sota-cloud-infrastructure",
       "to": "sota-devsecops",
       "weight": 7,
@@ -1053,17 +1065,6 @@
       "targets": []
     },
     {
-      "from": "sota-skill-security",
-      "to": "sota-code-security",
-      "weight": 5,
-      "targets": [
-        "rules/08",
-        "rules/08 \u00a71",
-        "rules/09 \u00a74",
-        "rules/10 \u00a71"
-      ]
-    },
-    {
       "from": "sota-testing",
       "to": "sota-docs-workflow",
       "weight": 5,
@@ -1143,6 +1144,17 @@
       "to": "sota-sandboxing",
       "weight": 4,
       "targets": []
+    },
+    {
+      "from": "sota-cli-ux",
+      "to": "sota-code-security",
+      "weight": 4,
+      "targets": [
+        "rules/07",
+        "rules/12 \u00a71b",
+        "rules/15 \u00a72",
+        "rules/16 \u00a72.15"
+      ]
     },
     {
       "from": "sota-cloud-infrastructure",
@@ -1250,16 +1262,6 @@
       "to": "sota-testing",
       "weight": 3,
       "targets": []
-    },
-    {
-      "from": "sota-cli-ux",
-      "to": "sota-code-security",
-      "weight": 3,
-      "targets": [
-        "rules/12 \u00a71b",
-        "rules/15 \u00a72",
-        "rules/16 \u00a72.15"
-      ]
     },
     {
       "from": "sota-code-security",
@@ -1543,6 +1545,14 @@
       "to": "sota-kubernetes",
       "weight": 3,
       "targets": []
+    },
+    {
+      "from": "sota-skill-security",
+      "to": "sota-devsecops",
+      "weight": 3,
+      "targets": [
+        "rules/01 \u00a71.8"
+      ]
     },
     {
       "from": "sota-testing",
@@ -2026,14 +2036,6 @@
       "weight": 2,
       "targets": [
         "rules/05"
-      ]
-    },
-    {
-      "from": "sota-skill-security",
-      "to": "sota-devsecops",
-      "weight": 2,
-      "targets": [
-        "rules/01 \u00a71.8"
       ]
     },
     {

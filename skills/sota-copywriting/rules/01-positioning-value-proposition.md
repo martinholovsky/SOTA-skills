@@ -141,7 +141,7 @@ without sources, "award-winning" without naming the award.
 - [ ] Objections handled at their moment (pricing, migration, security) with
       links to real docs, not adjective badges
 - [ ] Zero unsubstantiated superlatives/only/first claims:
-      `grep -riE '\b(best|#1|leading|fastest|only|first|world-class|revolutionary)\b' site/`
+      `grep -rniwE 'best|#1|leading|fastest|only|first|world-class|revolutionary' site/`
       — every hit has evidence on file or gets cut (`rules/04`)
 - [ ] Every proof element is top-3-tier where possible; no anonymous quotes,
       sourceless stats, or unnamed awards
