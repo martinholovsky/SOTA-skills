@@ -12,7 +12,7 @@ the docs, writing and meta skills (shell-scripting, docs-workflow, cli-ux, copyw
 ux-writing, skill-security, privacy-compliance and the `sota` router): 89 findings (4 High, 30
 Medium); all 34 High/Medium items refuted (none failed); a whole-diff review found 8 more
 defects, all fixed. With the nine language skills (#472) and batches 1–3, all 42 skills are now
-verified against primary sources: 439 findings across the four batches (31 High), 202
+verified against primary sources: 439 findings across the four batches (31 High), 203
 High/Medium refuted, none failed. ROADMAP 5 (recurring) rolls forward: the next sweep is due ~2027-03-26.
 Ten batch-4 deferrals with triggers: `docs/ADOPTION-LOG.md`, 2026-09-26 batch 4.
 
@@ -87,7 +87,7 @@ fixed. Nine deferrals with triggers: `docs/ADOPTION-LOG.md`, 2026-09-26 batch 2.
   the Kubernetes audit level for Secrets.
 
 **Full-library sweep, batch 1 of 4: the nine security-core skills re-verified.** 135 findings
-(7 High, 48 Medium); every High/Medium went to a refuter (none refuted, several fixes
+(7 High, 50 Medium — corrected at session close from a header-summary count of 48); every High/Medium went to a refuter (none refuted, several fixes
 corrected), fixes were written per skill folder with each command run on BSD grep and ugrep,
 and a hostile review of the whole diff found 11 cross-skill defects, all fixed. Details and
 the eight deferrals with their triggers: `docs/ADOPTION-LOG.md`, 2026-09-26 batch 1.
