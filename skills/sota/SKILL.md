@@ -138,7 +138,10 @@ rules files that match the code in front of you. Never load all skills at once.
    copy of a file injected into context earlier in it.** A quoted file reads as
    primary evidence in a way a summary does not, which is exactly what makes it
    the easier mistake: it may predate an edit made since. Re-read the path before
-   asserting or editing against its contents. Summaries silently drop the case
+   asserting or editing against its contents. **Nor is a project's own index, tracker row
+   or status table** — a summary an earlier session wrote; open the record it summarises
+   before repeating its status (field-reported 2026-09-26: "NOT filed", ten days after
+   filing). Summaries silently drop the case
    that contradicts them and raw output does not. Full adversarial procedure for
    audit findings: AUDIT step 7 and `rules/03` §4.
 8. **Publishing under someone else's name raises the bar.** A claim to the

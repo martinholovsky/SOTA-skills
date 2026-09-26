@@ -103,7 +103,8 @@ Finding format:
 4. `trap cleanup EXIT` with an idempotent cleanup function; temp paths only via `mktemp`.
 5. Never `eval`, `bash -c`, or `sh -c` with interpolated untrusted data; use `--` before
    positional file/user arguments to every command that supports it.
-6. No secrets in argv, in environment dumps, or under `set -x`; `set +x` around sensitive
+6. No secrets in argv, in environment dumps, or under `set -x` — **including `sh -x script`
+   run to debug it**, which traces even `[ -n "$KEY" ]`; `set +x` around sensitive
    sections; read secrets from files or fds.
 7. Errors to stderr with context (`script: failed to X: $detail`); meaningful exit codes;
    never `exit 0` on failure paths.

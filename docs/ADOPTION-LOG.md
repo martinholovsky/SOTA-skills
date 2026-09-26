@@ -7178,3 +7178,56 @@ batch 3, 89 in batch 4 — of which the 202 High/Medium items went to refuters a
 refuted**; many proposed fixes were corrected first. The four whole-diff reviews found 37 more
 defects that every invariant had passed. `LAST-VERIFIED` moves to **2026-09-26** in this
 change; ROADMAP 5 (recurring) rolls forward — dormant until the next sweep, due ~2027-03-26.
+
+## 2026-09-26 — field report, self-hosted platform session: backup-store remediation, six findings
+
+Source: a session that **used** the library at v1.44.3 (commit `6fd5ed2`, symlink install) to
+diagnose and repair a Kubernetes backup store — POSIX `sh` CronJob, a Go fix, bash health
+scripts. Filed as `FIELD-REPORT-PLATFORM-2026-09-26.local.md`, outside the repo. **Every
+falsifiable claim was reproduced here before any verdict**, and every file:line it cites was
+opened: `sota-shell-scripting/SKILL.md:106`, `rules/03:58`, `rules/01` §2, `rules/02:74` and
+`:188`, `sota-docs-workflow/rules/01:157` — all as quoted.
+
+| idea | verdict | landed in |
+|---|---|---|
+| 2 — a false `&&` tail ends the script from inside a function or piped loop | **adopted with a correction** — broader than reported (see below) | `sota-shell-scripting/rules/01` §2 (paragraph after the examples, pointer in the table row) + audit item |
+| 1a — `sh -x script` while debugging traces secrets | **adopted** | `sota-shell-scripting` top-10 #6 + `rules/03` (the `set -x` bullets) |
+| 5 — `kubectl logs deploy/X` answers about one selector-matched pod, possibly another workload's | **adopted with a correction** — placement | `sota-shell-scripting/rules/09` §5a (table row, bullet, checklist) instead of the proposed rules/06, which is at 495/500 and whose §5a is literally *"the selector picked a different member"*; `sota-docs-workflow/rules/01` runbook example now `--all-pods` |
+| 3 — principle 7 should cover a project's own index / tracker row | **adopted** — second source is ours: `commands/sota-resume.md:60-62` already says *"the summary is always the stale half"*, scoped to a resume pass the field session was not running | router principle 7, one clause (outside §BUILD — `ROUTER_BUILD_SHA` unchanged) |
+| 1b — router BUILD step 2: "routing is not done until you have opened a domain `SKILL.md`" | **DEFERRED — revisit on a second independent session that invoked the router and opened no domain `SKILL.md`, or on a routing eval that measures domain-file opens after `Skill(sota)`** | — |
+| 4 — a "judged N of M, fail on N = 0" line in router BUILD step 4 | **rejected — already covered**: router principle 3 (`skills/sota/SKILL.md:109`, print a denominator beside a zero), AUDIT step 4 (`:395`), and `sota-code-security/rules/11` §2.2 (`:88-91`, *"must fail closed when that number is unexpectedly zero"*). The report itself proposed no wording change | — |
+
+**What we reproduced, rather than took on trust.**
+
+- **Finding 2**, seven scripts × five shells (bash 3.2.57 `/bin/bash`, bash 5.3.15, dash, busybox
+  `sh` in a container, zsh). The function-in-`$( )` case and `cat f | while …` exit 1 silently
+  on bash, dash and busybox; the controls (redirected `while`, `for`, `case`, and the same
+  function ending in `return 0`) all carry on. **Two corrections to the report**: (a) a *bare*
+  call `g;` to such a function also exits — `$( )` is not required; (b) **zsh diverges** on the
+  top-level `cat f | while …` (rc=0) while still exiting on the function forms. ShellCheck
+  0.11.0 reports nothing on either failing shape. The report's audit grep `'\] && [^|]*$'`
+  matches every candidate *including* the safe top-level `case` — so it is shipped as a
+  candidate lister with a judgment step, not a detector.
+- **Absence of the inverse rule**: 336 tracked `skills/**/*.md`; positive control
+  `Left of \`&&\`` → 1 file; `&& tail`, `exit status of the function` → 0; the `last command` /
+  `last statement` hits are all PowerShell (`rules/07`).
+- **Finding 1a's mechanism**: `K=canary sh -xc '[ -n "$K" ] && :'` prints `[ -n canary ]` on
+  bash and dash.
+- **Finding 5**: kubectl `master` 269cea9, `pkg/polymorphichelpers` — `attachablePodForObject` →
+  `SelectorsForObject` → `GetFirstPod`, which lists with `ListOptions{LabelSelector: …}` only
+  and returns `Items[0]` after a reverse `ActivePods` sort; `ownerReferences` is never read.
+  `--all-pods` is present in `pkg/cmd/logs/logs.go` at tag `kubernetes-1.31.0` and absent at
+  `kubernetes-1.30.0`. The report's "Found 4 pods, using pod/…" line was not re-observed here
+  (no cluster); the selection mechanism that produces it was read.
+
+**Why 1b is deferred, stated against the report's own severity.** The consequence was a
+leaked credential, and the router step the report wants sharpened is the one it did not
+follow. But step 2 is *already* a numbered imperative (*"Read each relevant skill's
+`SKILL.md`"*), so this is evidence that a numbered imperative can be skipped once the act of
+invoking the router feels like routing — one session, with the proposed wording untested by the
+reporter's own grading. A §BUILD edit moves `ROUTER_BUILD_SHA` and costs every build; the
+ledger's bar for a cross-cutting change is two independent sources. The specific harm is closed
+at its narrowest home (1a). If the trigger fires, the reporter's wording is a sound start.
+
+**Not taken in, from the report's own "considered and NOT proposed":** all four stand as the
+reporter judged them; none is re-litigated here.

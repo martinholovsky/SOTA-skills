@@ -18,6 +18,22 @@ Ten batch-4 deferrals with triggers: `docs/ADOPTION-LOG.md`, 2026-09-26 batch 4.
 
 LAST-VERIFIED: 2026-07-08 -> 2026-09-26 (full-library sweep, batches 1–4 plus #472).
 
+### Added (field report, self-hosted platform session, 2026-09-26)
+
+- **`sota-shell-scripting` rules/01 §2 — the inverse of the "where `set -e` does NOT fire"
+  table:** a false `[ … ] && …` as the last statement of a function or of a loop at the end
+  of a pipeline becomes the body's status, so `f`, `X=$(f)` or `cmd | while …` ends the script
+  with no message. Reproduced on bash 3.2.57 and 5.3.15, dash, busybox and zsh (which differs
+  on the top-level pipe only); ShellCheck 0.11.0 is silent. Plus an audit item.
+- **`sh -x script.sh` run to debug a job traces secrets** even in a `[ -n "$KEY" ]` test —
+  top-10 #6 and rules/03 now name the debugging case (the field session rotated a key).
+- **rules/09 §5a — `kubectl logs deploy/X` picks one pod by label selector alone**, which can
+  be another workload's; verified in kubectl source. The `sota-docs-workflow` runbook example
+  now uses `--all-pods` (kubectl 1.31+).
+- **Router principle 7:** a project's own index, tracker row or status table is a summary too.
+- Two proposals not adopted (router BUILD step 2, deferred with a trigger; a denominator line in
+  BUILD step 4, already covered): `docs/ADOPTION-LOG.md`, 2026-09-26 field report.
+
 ### Fixed (sweep batch 4)
 
 - **Security:** a "safe" sudoers example that was a root file-write (argument wildcards match
