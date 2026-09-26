@@ -23,8 +23,8 @@ earn its place.
 
 ## Kafka-style log fundamentals
 
-(Kafka 4.x is current — ZooKeeper is gone, KRaft-only; the KIP-848 consumer
-rebalance protocol is GA in 4.0+ and consumers opt in via
+(Kafka 4.0 removed ZooKeeper — KRaft-only; the KIP-848 consumer
+rebalance protocol is GA since 4.0 and consumers opt in via
 `group.protocol=consumer`. Same fundamentals apply to Pulsar/Kinesis/Redpanda.)
 
 - **Ordering exists only within a partition.** Choose the partition key as
@@ -108,7 +108,7 @@ for batch in consumer.batches():
 
 ## CDC patterns
 
-- **Log-based CDC (Debezium-class, 3.x current) is the default** for
+- **Log-based CDC (Debezium-class) is the default** for
   replicating OLTP into the analytical platform: reads the WAL/binlog,
   emits ordered change events, near-zero source impact. Query-based
   ("`SELECT WHERE updated_at >`") misses deletes and intermediate states —

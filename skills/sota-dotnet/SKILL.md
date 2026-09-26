@@ -1,8 +1,8 @@
 ---
 name: sota-dotnet
 description: >-
-  State-of-the-art C# / .NET engineering rules (2026 baseline, .NET 10 LTS /
-  C# 14) that Claude applies when writing or auditing .NET code. Covers modern
+  State-of-the-art C# / .NET engineering rules (.NET LTS releases, modern
+  C#) that Claude applies when writing or auditing .NET code. Covers modern
   idioms (records, nullable reference types, pattern matching, spans, file-scoped
   namespaces), API/null/immutability/`IDisposable` design, async/await &
   concurrency (ConfigureAwait, channels, cancellation, TPL), security (OWASP
@@ -20,7 +20,7 @@ description: >-
 
 Expert-level rules for producing and auditing production .NET. The runtime is
 memory-safe, so risk concentrates in **injection, deserialization, async
-correctness, and dependency supply chain**. Baseline: **.NET 10 LTS** (released
+correctness, and dependency supply chain**. Written for **.NET 10 LTS** (released
 Nov 2025, supported to Nov 2028) and **C# 14** (records, nullable reference
 types, pattern matching, spans, extension members, the `field` keyword) — flag
 where a control needs a specific version. Every rule states the *why*; every
@@ -42,7 +42,7 @@ Two consumers, one source of truth:
 1. Before writing, read the rules files relevant to the task (see index). A web
    API touching untrusted input + a DB + async needs `02`, `03`, `04`.
 2. Apply the **top-10 non-negotiables** (below) unconditionally.
-3. New projects: target the latest LTS TFM (`net10.0` at the time of writing; verify at the .NET
+3. New projects: target the latest LTS TFM (verify at the .NET
    support policy page), `<Nullable>enable</Nullable>`,
    `<TreatWarningsAsErrors>true</TreatWarningsAsErrors>`,
    `<AnalysisLevel>latest-Recommended</AnalysisLevel>` **plus

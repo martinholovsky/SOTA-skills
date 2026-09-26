@@ -1067,6 +1067,31 @@ p.write_text(t.rstrip('\\n') + '\\n- [ ] probe: \\x60grep -rn X --include=\\x27*
 probe 37c "a brace glob inside --include matches no file" \
   "INCLUDE BRACE NEVER EXPANDS: skills/sota-shell-scripting/rules/09-listing-and-selection.md"
 
+# 38 — a claim about what is current that carries a version. Written in the shape the first
+# detector missed: emphasis and a line wrap between the cue and the number.
+( cd "$WT" && python3 -c "
+import pathlib
+p = pathlib.Path('skills/sota-shell-scripting/rules/09-listing-and-selection.md')
+t = p.read_text()
+p.write_text(t.rstrip('\\n') + '\\n- [ ] note: as of mid-2026 the current\\n      release is **v19** of the tool.\\n')
+" )
+probe 38 "a version pinned as current" \
+  "PIN: skills/sota-shell-scripting/rules/09-listing-and-selection.md"
+
+# 38b — the detector itself regresses. Remove its provenance exemption: the labelled corpus
+# must catch it (dated lines become false pins), and the gate must blame the detector, not
+# report the tree clean or dirty.
+( cd "$WT" && python3 -c "
+import pathlib
+p = pathlib.Path('scripts/lib/check-version-pins.py')
+t = p.read_text()
+old = '    if PROVENANCE.search(c):\\n        return False\\n'
+assert old in t, 'probe stale: provenance exemption not found'
+p.write_text(t.replace(old, '', 1))
+" )
+probe 38b "the pin detector regresses against its own corpus" \
+  "the pin detector failed its own labelled corpus"
+
 # =============================================================================
 # Part B — negative controls for scripts/verify-setup.sh
 # =============================================================================
@@ -1327,7 +1352,7 @@ if [ "$derived" -ne "$declared" ]; then
   exit 1
 fi
 printf 'PASS: %d/%d mutations caught by the intended check.\n' "$caught" "$tested"
-echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37 (34 of 37)."
+echo "      check-invariants.sh COVERED: 1, 2, 3, 4, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38 (35 of 38)."
 echo "      NOT COVERED, and why — every remaining one needs state a worktree lacks:"
 echo "        5, 9        — a version/CHANGELOG-shaped fixture (VERSION vs tag vs top entry)."
 echo "        12          — mtime-based: needs a rendered asset older than its source."

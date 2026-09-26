@@ -1,6 +1,7 @@
 # 04 — Vue 3: Composition API, reactivity, XSS
 
-Baseline: Vue 3.5.x. Nuxt-specific concerns (data fetching, `useState`, server routes)
+Written for Vue 3 (3.5 APIs noted where used); verify the latest at
+github.com/vuejs/core/releases. Nuxt-specific concerns (data fetching, `useState`, server routes)
 are in `rules/05`; hydration in `rules/06`. TypeScript setup depth is in
 `sota-javascript-typescript`.
 

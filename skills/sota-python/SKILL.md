@@ -1,7 +1,7 @@
 ---
 name: sota-python
 description: >-
-  State-of-the-art Python engineering (2026 baseline) for both writing new Python and
+  State-of-the-art Python engineering for both writing new Python and
   auditing existing Python code. Covers uv-based tooling and project setup, strict typing,
   idioms and pitfalls, asyncio structured concurrency, security (injection, deserialization,
   supply chain), performance, and FastAPI/Django/pytest practice. Use whenever the task

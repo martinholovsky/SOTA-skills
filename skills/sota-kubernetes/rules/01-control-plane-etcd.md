@@ -240,8 +240,7 @@ machine:
 
 - **Supported window**: the project maintains the **latest three minor releases**, each
   with ~1 year of patch support. Run a supported minor; an EOL control plane gets no CVE
-  fixes. (Verify current numbers at kubernetes.io/releases — at writing latest is the 1.36
-  line; 1.34/1.35/1.36 supported.)
+  fixes. (Verify the supported minors at kubernetes.io/releases.)
 - **Version skew policy** (since 1.28): the **control plane may be up to 3 minor versions
   ahead of kubelets**; kube-apiserver instances within ≤1 minor of each other; kubectl
   within ±1 of the API server. Upgrade control plane first, then nodes — never the reverse.

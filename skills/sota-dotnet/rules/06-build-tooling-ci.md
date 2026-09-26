@@ -7,8 +7,7 @@ lives in `sota-testing`.
 
 ## 1. Targeting & project hygiene
 
-- Target the latest LTS TFM (`<TargetFramework>net10.0</TargetFramework>` at the time of writing;
-  verify at the [.NET support policy](https://dotnet.microsoft.com/platform/support/policy/dotnet-core)
+- Target the latest LTS TFM in `<TargetFramework>` (verify at the [.NET support policy](https://dotnet.microsoft.com/platform/support/policy/dotnet-core)
   page); pin the SDK with `global.json` so every machine/CI builds with the same version.
 - Centralize settings in **`Directory.Build.props`** and dependency versions in
   **`Directory.Packages.props`** (Central Package Management) so versions are

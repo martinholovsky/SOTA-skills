@@ -264,8 +264,8 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 ## 7. Edition 2024 notes
 
-Current edition as of mid-2026; new code starts here (`edition = "2024"`,
-Rust ≥1.85; verify latest stable at releases.rs). The next edition is expected
+Stable since Rust 1.85; new code starts here (`edition = "2024"`). Verify
+the latest stable toolchain at releases.rs. The next edition is expected
 ~2027 on the usual three-year cadence — nothing to migrate toward yet.
 Migration: `cargo fix --edition` then review. Key changes that affect rules in
 this skill:

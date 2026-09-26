@@ -868,7 +868,7 @@
         <mxCell id="mtlines5" value="2598" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="970" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="mtlines6" value="1401" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="mtlines6" value="1400" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="1078" y="648" width="102" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="mtlines7" value="2055" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
@@ -907,7 +907,7 @@
         <mxCell id="mtfiles8" value="5" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="1294" y="682" width="102" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="m_sh" value="sota-shell-scripting (bash + zsh + PowerShell) — covered, and deliberately NOT a column: its spine is different, so a shared grid would imply comparisons that do not hold.&lt;br&gt;9 files, 2887 lines — larger than several language skills. zsh is treated as its own dialect throughout, not as a bash footnote." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fffbe6;strokeColor=#d6b656;align=left;spacingLeft=10;verticalAlign=middle;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="m_sh" value="sota-shell-scripting (bash + zsh + PowerShell) — covered, and deliberately NOT a column: its spine is different, so a shared grid would imply comparisons that do not hold.&lt;br&gt;9 files, 2888 lines — larger than several language skills. zsh is treated as its own dialect throughout, not as a bash footnote." style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fffbe6;strokeColor=#d6b656;align=left;spacingLeft=10;verticalAlign=middle;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="40" y="728" width="1346" height="46" as="geometry"/>
         </mxCell>
         <mxCell id="msh0" value="01&lt;br&gt;Safety Baseline" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fdf6d8;strokeColor=#d6b656;fontSize=9;" vertex="1" parent="1">

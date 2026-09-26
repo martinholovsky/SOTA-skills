@@ -126,5 +126,5 @@ pipeline guidance. When a PW/PS/RV practice needs implementing, jump to:
 - [ ] If federal self-attestation applies: the attested practices are demonstrably enforced *before* signing; SBOM/provenance/scan artifacts produced from the pipeline; current mandate/scope/deadline verified (not assumed)
 - [ ] If developing/fine-tuning AI: SP 800-218A additions applied — training-data provenance/integrity, model weights protected & signed as high-value assets, eval/misuse testing before release
 - [ ] Attestation, if any, backed by mechanisms not prose — no signed claim without an enforcing gate (False Claims exposure)
-- [ ] SSDF version referenced is the current final (v1.1 / SP 800-218) unless a newer revision has been finalized; drafts not cited as baseline
+- [ ] SSDF version referenced is a final revision with no finalized successor (SP 800-218 is v1.1; check csrc.nist.gov); drafts not cited as baseline
 - [ ] No pipeline guidance duplicated here — implementation deferred to `sota-devsecops` / `sota-testing` / `sota-code-security`

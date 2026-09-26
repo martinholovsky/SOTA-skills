@@ -1,6 +1,6 @@
 # 05 — Nuxt 4: data fetching, state, server routes, CVEs
 
-Baseline: Nuxt 4.4.x on Nitro 2.x / h3 1.x. Vue fundamentals are in `rules/04`;
+Written for Nuxt 4 on Nitro 2 / h3 1; verify the latest at nuxt.com/blog. Vue fundamentals are in `rules/04`;
 hydration and SSR state in `rules/06`; the cross-framework security boundary in
 `rules/07`. **Re-verify CVE ranges at use time.**
 

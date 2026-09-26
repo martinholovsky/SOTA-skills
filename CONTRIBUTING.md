@@ -23,7 +23,10 @@ By contributing you agree your contribution is licensed under
    is X.Y"; say "latest stable, verify at the official source". Version
    numbers are for semantic boundaries only ("GA since", "fixed in", CVE fix
    versions, spec editions). Recommend maintained tools; when one goes EOL,
-   point at its maintained successor and keep a one-line EOL note.
+   point at its maintained successor and keep a one-line EOL note. **Invariant 38** enforces
+   the pin half: `scripts/lib/check-version-pins.py` flags a claim about what is current or
+   latest that carries a number ("iOS 26 current", "Baseline: Java 25 LTS", "(2026 baseline)").
+   A dated measurement ("verified 2026-07-09: …") is provenance and passes.
 3. **Stay lean — instruction files only.** Every **skill** file
    (`skills/*/SKILL.md`, `skills/*/rules/*.md`) is **≤ 500 lines** so skills load
    incrementally without blowing the context window. Nothing else in the repo has
@@ -552,7 +555,7 @@ as a FALSE PASS, because a harness that accepts any failure reports full coverag
 testing nothing.
 
 Part A mutates a good tree inside a disposable git worktree (invariants 1, 2, 3, 4, 6,
-7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37 — 34 of 37; the harness prints the list and why the rest are
+7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38 — 35 of 38; the harness prints the list and why the rest are
 not covered, so read its output rather than this sentence). A **diff-based** check is not
 unprobeable: 11, 14 and 29 read a merge base, and the probe for them *commits* its
 mutation on the worktree's detached HEAD, then rewinds to the sha it captured first. Part B is the inverse: `verify-setup.sh` audits a *machine*, so the fixture is a
@@ -670,6 +673,14 @@ CI scans the full git history, the pre-commit hook scans each commit.
     named file. `# BAD` on the same line exempts a deliberate bad example. It also fails on a
     brace glob inside `--include` (`'*.{py,js}'`), which grep never expands, so it matches no
     file; write one `--include` per extension (`sota-shell-scripting` rules/09 §5b).
+38. **A claim about what is current carries a version.** "The current release is 3.x",
+    "Baseline: Java 25 LTS" and "iOS 26 current" go stale the day the next release ships,
+    and the Go skill's baseline sat on an out-of-support release until a sweep found it.
+    Write "latest stable (verify at <source>)", or a boundary ("since 1.24", "fixed in
+    1.81.0"). The detector, `scripts/lib/check-version-pins.py`, carries a labelled corpus
+    and runs `--self-test` first, so a detector regression fails the gate instead of reading
+    as a clean tree. Found a new pin shape it misses? Add the line to its corpus, then fix
+    the model.
 
 ## Local setup
 

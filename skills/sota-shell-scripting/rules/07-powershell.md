@@ -191,8 +191,8 @@ because two of these fall inside two months):
 
 | release | released | end of support | note |
 |---|---|---|---|
-| PowerShell 7.6 (LTS) | 18-Mar-2026 | **14-Nov-2028** | current LTS; prefer for new work |
-| PowerShell 7.5 | 23-Jan-2025 | **10-Nov-2026** | current Stable |
+| PowerShell 7.6 (LTS) | 18-Mar-2026 | **14-Nov-2028** | LTS, newest at the 2026-09-14 check; prefer the newest supported LTS for new work |
+| PowerShell 7.5 | 23-Jan-2025 | **10-Nov-2026** | Stable (non-LTS) |
 | PowerShell 7.4 (LTS) | 16-Nov-2023 | **10-Nov-2026** | previous LTS |
 | Windows PowerShell 5.1 | Aug-2016 | tied to the **Windows** lifecycle | an OS component, not this product; no new features |
 

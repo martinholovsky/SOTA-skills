@@ -9,9 +9,9 @@ applies in full; this file maps it onto SurrealDB's mechanisms.
 ## Version & auth model
 
 ### Rule: Know which version line you run; the auth model changed at 2.0.
-- Current stable line is **3.x** (verify the current release when you pin);
-  2.x still receives maintenance releases. Pin and track your line — auth and
-  index syntax differ across major versions.
+- Run the latest stable release (verify at
+  https://github.com/surrealdb/surrealdb/releases when you pin). Pin and track
+  your major line — auth and index syntax differ across major versions.
 - Since v2.0.0, authentication is defined with **`DEFINE ACCESS`**, which
   replaced the older `DEFINE SCOPE`. Any code, docs, or AI-generated snippets
   using `DEFINE SCOPE`/`scope auth` are pre-2.0 and must not be cargo-culted

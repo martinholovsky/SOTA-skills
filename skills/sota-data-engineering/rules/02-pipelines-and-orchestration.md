@@ -131,7 +131,7 @@ Backfills are a feature you design, not an emergency you improvise.
 
 ## Orchestration discipline
 
-Applies to Airflow (3.x as of 2026), Dagster, Prefect, and kin.
+Applies to Airflow 3+, Dagster, Prefect, and kin.
 
 - **The DAG declares ALL dependencies.** Hidden coupling — task B reads a
   table task A writes, but no edge exists and B just runs "later by cron" —
@@ -173,9 +173,10 @@ mart_dag   = DAG("marts",  schedule=[orders_stg])   # consumer triggered by prod
 
 ## dbt-style transformation discipline
 
-(Applies to dbt and equivalents — SQLMesh, etc. dbt note: the Fusion engine is
-in preview (preparing for GA) and dbt Core 2.0, built on the Fusion foundation,
-is in alpha as of mid-2026; don't hard-require Fusion-only features yet.)
+(Applies to dbt and equivalents — SQLMesh, etc. dbt note: the Fusion engine
+shipped as a preview and dbt Core 2.0, built on the Fusion foundation, as an
+alpha; check their GA status at docs.getdbt.com before hard-requiring
+Fusion-only features.)
 
 - **Tests on every model that matters:** at minimum `unique` + `not_null` on
   the primary key of every core/mart model, relationship tests on critical

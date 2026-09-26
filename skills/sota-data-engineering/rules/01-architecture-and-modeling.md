@@ -6,8 +6,8 @@ the code actually does are findings in themselves.
 
 ## Size the problem honestly
 
-- **Default to single-node engines below ~100 GB working set.** DuckDB (1.5.x
-  as of mid-2026) or Polars on one machine outperforms a Spark cluster on
+- **Default to single-node engines below ~100 GB working set.** DuckDB or
+  Polars on one machine outperforms a Spark cluster on
   cost, latency, and operational burden for the overwhelming majority of
   analytical workloads. "We might grow" is not a reason; migrating a
   well-modeled SQL project later is cheaper than running Spark for 5 GB now.
@@ -70,7 +70,7 @@ and lakehouse engines speak SQL.
 - **Table format choice:** Iceberg if multi-engine neutrality matters (widest
   catalog/engine support, REST catalog standard); Delta if Databricks is the
   center of gravity. Do not run both as peers — pick one as the canonical
-  format. DuckLake (1.0+ as of mid-2026) is viable for DuckDB-centric small
+  format. DuckLake (from 1.0) is viable for DuckDB-centric small
   platforms but verify engine/ecosystem fit before committing.
 - **AUDIT:** Same dataset copied into both a lake and a warehouse with two
   transform stacks = HIGH (divergence is inevitable). Two table formats with

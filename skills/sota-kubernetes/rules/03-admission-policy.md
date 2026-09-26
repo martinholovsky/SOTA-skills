@@ -58,8 +58,8 @@ You need a general engine for everything PSA can't express. The 2026 options:
 |---|---|---|
 | **ValidatingAdmissionPolicy (VAP)** | In-tree, CEL-based validating policies. GA since K8s **v1.30**. No external webhook/pod — runs in the API server. | The check is *validation only* and expressible in CEL. Lowest operational risk (no webhook to fail, no extra pod). Prefer for simple invariants. |
 | **MutatingAdmissionPolicy (MAP)** | In-tree, CEL-based *mutating* policies. GA in K8s **v1.36** (beta 1.34, feature-gated). | Mutation you'd otherwise run a mutating webhook for, once you're on a GA-supporting version. Verify your cluster's version before relying on it. |
-| **Kyverno** | YAML-native policy engine (validate/mutate/generate/verifyImages/cleanup). Current line ~v1.18 (verify). Runs as an admission webhook + controllers. | You want readable, K8s-native policies, image verification, resource generation, and don't want to write Rego. Most teams' default. |
-| **Gatekeeper (OPA)** | OPA/Rego policies via ConstraintTemplates + Constraints. Current line ~v3.22 (verify). Webhook + audit controller; can also generate VAPs. | You already use Rego/OPA org-wide, or need very expressive logic. Heavier; Rego learning curve. |
+| **Kyverno** | YAML-native policy engine (validate/mutate/generate/verifyImages/cleanup). Verify the latest release at github.com/kyverno/kyverno/releases. Runs as an admission webhook + controllers. | You want readable, K8s-native policies, image verification, resource generation, and don't want to write Rego. Most teams' default. |
+| **Gatekeeper (OPA)** | OPA/Rego policies via ConstraintTemplates + Constraints. Verify the latest release at github.com/open-policy-agent/gatekeeper/releases. Webhook + audit controller; can also generate VAPs. | You already use Rego/OPA org-wide, or need very expressive logic. Heavier; Rego learning curve. |
 
 Guidance: **use VAP for what it cleanly covers** (it's the lowest-risk, in-tree option),
 and one of **Kyverno / Gatekeeper** for the rest (image verification, mutation, generation,

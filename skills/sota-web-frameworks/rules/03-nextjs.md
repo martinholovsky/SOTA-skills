@@ -1,6 +1,6 @@
 # 03 — Next.js: App Router, Server Actions, caching, CVEs
 
-Baseline: Next.js 16.x (App Router). Pages Router still ships but is not the
+Written for Next.js 16 (App Router); verify the latest at nextjs.org/blog. Pages Router still ships but is not the
 recommended model for new code. Hydration is in `rules/06`; the consolidated
 security boundary and CVE reference in `rules/07`. **Re-verify every CVE range at
 use time** — the version numbers below were primary-sourced 2026-07.

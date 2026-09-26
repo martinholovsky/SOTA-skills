@@ -1,7 +1,7 @@
 ---
 name: sota-php
 description: >-
-  State-of-the-art PHP engineering (2026 baseline, PHP 8.3+ floor) for both
+  State-of-the-art PHP engineering (supported PHP branches) for both
   writing new PHP and auditing existing PHP code. Covers strict_types and modern idioms
   (enums, readonly, match, fibers, property hooks), OWASP-grade security (SQL injection,
   XSS, file uploads, LFI/RFI, unserialize/Phar object injection, sessions, password

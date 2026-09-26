@@ -25,8 +25,8 @@ never checks `aud`," it is here.
   `grant_type=password`.
 - **Client credentials** for machine-to-machine only (no end user present).
 - **Device Authorization Grant (RFC 8628)** for input-constrained devices.
-- The current security baseline is **OAuth 2.0 Security Best Current Practice, RFC 9700
-  (January 2025)**: PKCE for all auth-code flows, exact redirect-URI matching, refresh
+- Since January 2025 the security baseline is **OAuth 2.0 Security Best Current Practice,
+  RFC 9700**: PKCE for all auth-code flows, exact redirect-URI matching, refresh
   rotation or sender-constraining, short-lived access tokens.
 
 ```

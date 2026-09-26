@@ -134,8 +134,8 @@ Review *new* dependencies (human + automated) for:
   dependency build scripts by default and takes an explicit allowlist — `allowBuilds`
   (a map of matchers to `true`/`false`). **`onlyBuiltDependencies` was removed in pnpm
   v11**, along with `onlyBuiltDependenciesFile`, `neverBuiltDependencies`,
-  `ignoredBuiltDependencies` and `ignoreDepScripts`; latest stable is the v12 line
-  (verify at [pnpm settings/build](https://pnpm.io/settings/build)). Keep
+  `ignoredBuiltDependencies` and `ignoreDepScripts` (verify the latest stable's
+  settings at [pnpm settings/build](https://pnpm.io/settings/build)). Keep
   `strictDepBuilds` on — default `true` since v10.3.0, it *"will exit with a non-zero exit
   code if any dependencies have unreviewed build scripts"*, which is the half that fails
   the build rather than warning. `dangerouslyAllowAllBuilds: true` reverts all of it.

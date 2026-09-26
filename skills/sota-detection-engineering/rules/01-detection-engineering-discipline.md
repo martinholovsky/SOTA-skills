@@ -113,9 +113,8 @@ would catch the *behavior* this IOC is a symptom of?" Build that instead.
 ## 5. Coverage mapping: MITRE ATT&CK + Navigator
 
 - **ATT&CK** is the shared taxonomy of adversary tactics and techniques.
-  Verify the current version at attack.mitre.org/resources/versions/ — as of
-  mid-2026 the current Enterprise release is **v19** (April 2026), which split
-  the former Defense Evasion tactic into **Stealth (TA0005)** and **Defense
+  Verify the latest version at attack.mitre.org/resources/versions/.
+  Enterprise **v19** (April 2026) split the former Defense Evasion tactic into **Stealth (TA0005)** and **Defense
   Impairment (TA0112)**. Pin to a version in your tooling; ATT&CK changes
   technique IDs and structure between releases, and a coverage map built on an
   old version silently misrepresents gaps.

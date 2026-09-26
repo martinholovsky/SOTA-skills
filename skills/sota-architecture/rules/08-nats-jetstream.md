@@ -10,10 +10,9 @@ and backpressure mechanics live in **sota-async-concurrency**; TLS/mesh/leafnode
 transport security in **sota-network-security**; NKEY/JWT/account auth in
 **sota-identity-access** and **sota-secrets-management**.
 
-Version: written against **NATS Server 2.11/2.12**; 2.14 has since superseded
-2.12 (2.13 was skipped; 2.12.x continues as a maintenance line) — run the
-latest stable release and verify the current line with a quick web search at
-time of use. KV and Object stores are GA and JetStream-backed. The `jetstream`
+Version: written against **NATS Server 2.11/2.12**. Run the latest stable
+release (verify at https://github.com/nats-io/nats-server/releases at time of
+use). KV and Object stores are GA and JetStream-backed. The `jetstream`
 Go package is the current API; the older `nc.JetStream()` JetStreamContext is
 legacy. Pin and track your server line — per-message TTL, KV limit markers, and
 the 2.12+ additions (atomic batch publish, distributed counters, message

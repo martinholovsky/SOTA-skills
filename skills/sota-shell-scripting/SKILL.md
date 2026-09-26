@@ -11,7 +11,7 @@ commands, partial failures, hostile input, signals, and concurrent invocation �
 existing scripts for the defect classes that cause most production shell incidents:
 unquoted expansions, silent error swallowing, injection, secret leakage, and temp-file races.
 
-Bash-focused (bash 5.x current; macOS ships bash 3.2 and defaults to zsh — see portability
+Bash-focused (written for bash 5.x; macOS ships bash 3.2 and defaults to zsh — see portability
 rules). POSIX `sh` only when the target demands it (busybox/dash containers, init systems).
 
 ## First decision: should this be shell at all?

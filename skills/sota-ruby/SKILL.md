@@ -1,7 +1,7 @@
 ---
 name: sota-ruby
 description: >-
-  State-of-the-art Ruby engineering rules (2026 baseline, Ruby 3.4+ / 4.0) that Claude
+  State-of-the-art Ruby engineering rules (supported Ruby releases) that Claude
   applies when writing or auditing Ruby. Covers modern idioms (frozen string literals,
   pattern matching, Data/Struct, RBS/Sorbet/Steep typing), security (SQL injection via
   ActiveRecord/Sequel, ERB/XSS escaping, mass assignment, CSRF, Marshal/YAML

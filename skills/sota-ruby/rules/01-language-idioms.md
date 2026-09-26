@@ -1,6 +1,6 @@
 # 01 — Language baseline & idioms
 
-Modern Ruby (2026 baseline): a supported interpreter, frozen string literals
+Modern Ruby: a supported interpreter, frozen string literals
 declared everywhere, pattern matching for structured data, `Data` for value
 objects, exceptions designed as an API, and (optionally but increasingly)
 gradual typing via RBS-based tooling or Sorbet.
