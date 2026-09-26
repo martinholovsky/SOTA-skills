@@ -3,8 +3,8 @@
 WCAG 2.2 AA is the legal and ethical floor (EAA in force since June 2025 — national enforcement
 and fines now active across EU member states, with EN 301 549 being updated to incorporate
 WCAG 2.2; ADA Title II deadlines extended to April 2027/2028 by DOJ interim final rule, Apr 2026 —
-its standard is WCAG 2.1 AA, so building to 2.2 AA exceeds it). WCAG 3.0 remains a Working Draft (March 2026 draft;
-Recommendation not expected before ~2028) — informative only, never the conformance target.
+its standard is WCAG 2.1 AA, so building to 2.2 AA exceeds it). WCAG 3.0 remains a Working Draft (latest dated 10 September 2026, read
+2026-09-26) — informative only, never the conformance target.
 Build to 2.2 AA by default; treat select AAA criteria (focus appearance, target size 44px) as
 the quality bar. Automated tools catch ~30–40% of issues — the rest is semantics, keyboard, and
 screen-reader verification.
@@ -226,7 +226,7 @@ By frequency × user impact (WebAIM Million + field experience) — use as triag
 6. **Form errors not conveyed**: color-only invalid state, error text not linked, no focus move (3.3.1–3.3.3).
 7. **Missing/wrong alt text** and unlabeled images of text (1.1.1, 1.4.5).
 8. **Heading/landmark chaos**: no `<main>`, skipped levels, everything-is-a-div (1.3.1).
-9. **Motion violations**: no reduced-motion handling, autoplaying carousels without pause (2.2.2, 2.3.3).
+9. **Motion violations**: no reduced-motion handling, autoplaying carousels without pause (2.2.2; 2.3.3 is AAA).
 10. **Zoom/reflow breakage**: `user-scalable=no`, fixed-height clipping at 200%, 2-D scroll at 320px (1.4.4, 1.4.10).
 
 ## 8. Severity mapping for findings

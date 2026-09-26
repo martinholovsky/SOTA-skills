@@ -7007,3 +7007,102 @@ has differed between releases; and the piped flamegraph command (from the FlameG
 `perf` needs Linux). The fix agents sourced Talos VolumeConfig, k3s secretbox, the Next.js 16
 build-column removal, pnpm 11 `strictDepBuilds`, Argo CD 3.5 repo-server mTLS, ADR-43
 `Nats-TTL: never` and the extractPayload shape; the reviewer did not independently re-check them.
+
+## 2026-09-26 — full-library sweep, batch 3 of 4: the data, AI and product skills re-verified
+
+**Intake shape: ROADMAP 5's sweep, batch 3** (same method and decisions as batches 1 and 2).
+Scope: `sota-databases`, `sota-data-engineering`, `sota-ml-engineering`,
+`sota-llm-engineering`, `sota-api-design`, `sota-testing`, `sota-web-frameworks`,
+`sota-frontend-design` and `sota-mobile`, plus one bullet each in `sota-code-security`
+rules/03 and `sota-golang` rules/07 that a finding reached.
+- Research: **111 findings** (10 High, 45 Medium, 56 Low). The session's shared web-search
+  budget ran out during research; refuters and fix agents worked from known primary URLs,
+  `gh api` advisory queries and live containers instead.
+- Refutation: all 64 High/Medium items refuted; **none failed**. Several proposed fixes were
+  wrong and were corrected before any edit (below).
+- Fixes: one agent per skill folder, with every changed SQL, dbt project and probe run.
+- Review: a hostile whole-diff reader found one Medium and six Low defects, an Info note and two
+  stray files. Fixed: the Medium, four Lows, the Info and the files. Not fixed, each on purpose:
+  the approval probe's dropped bare `default` key (kept — it fires on ordinary YAML
+  `default: true`), LinkFinder/jsluice (deferred below), and old §8a pointers in dated
+  entries (history, explained below).
+
+| High | what was wrong |
+|---|---|
+| databases rules/03 | the geospatial audit probe doubled its backslashes — "empty (sub)expression", exit 2, on every grep, so it never found anything |
+| databases rules/08 (x2, one lowered to Medium) | SurrealDB floors too low: 3.x let deployments without custom API routes stay below a PERMISSIONS-bypass fix; 2.x missed a High fixed in 2.5.0 and a critical backup-import takeover |
+| databases rules/05-06 | patch floors existed for Postgres only — PgBouncer (unauthenticated crash/hang CVEs, fixed 1.26.0), Redis (critical Lua RCE; 2026-05 RCEs with no fix yet) and MongoDB had none. Now a feed-driven patch-SLA rule for every engine, pooler and cache |
+| ml-engineering rules/07 | the CRITICAL unsafe-deserialization probe missed `pickle.loads`, `np.load(allow_pickle=True)`, `dill`, `read_pickle` and Keras `safe_mode=False` |
+| api-design rules/07 (+ code-security rules/03) | tenant context set with a plain `SET` — reproduced leaking tenant A's ID to tenant B through PgBouncer transaction pooling; now `SET LOCAL` / `set_config(…, true)` |
+| web-frameworks rules/03, 05, 06 (x4) | Next.js floors missed two critical unauthenticated RCEs (fixed 15.5.24 / 16.3.3); Nuxt missed an incomplete fix and a server-island RCE batch (4.5.1); serialize-javascript's floor was a major behind |
+
+**Fixes that had to be run to be right:**
+- **int→bigint** (databases rules/02): the old recipe left `id_old` holding the int identity,
+  so inserts still failed at 2^31 (measured on PG17). M4 now drops the identity, default and
+  NOT NULL; passes on PG17 and PG18 for identity and serial columns.
+- **dbt** (data-engineering rules/04): the GOOD block did not parse, and once it did, `{{ this }}`
+  inside a generic test resolved to the test node, so the volume check always failed. The
+  shipped block passed `dbt build` (1.12.5, duckdb) with zero deprecation warnings.
+- **`transaction_timeout`** (PG17+) terminates the **session** (measured FATAL), so it is a
+  backstop above the ~1s design target, not the target — with the pooler caveat.
+- **MySQL** `ALGORITHM=INSTANT, LOCK=NONE` returns ERROR 1221 on 8.4; INSTANT takes no LOCK clause.
+- **Redis** unpatched RCEs: the `-restore` ACL workaround was confirmed to return NOPERM.
+
+**Adopted with a correction:**
+- **Every proposed engine floor was already stale** when the refuter checked (PgBouncer 1.26.0
+  shipped 2026-09-23; Redis RCEs patched "TBD"), which is why the rule is feed-driven rather
+  than a version list. PgBouncer's GitHub advisory list is empty while its changelog carries
+  the CVEs, so the rule says an empty feed means "read the changelog".
+- **Four proposed probe fixes were wrong:** a CheckOrigin fix that flagged allowlists; a PAT
+  fix that still flagged `PYTHONPATH`/`CLASSPATH`; a torch-version fix that missed `torch<2.6`;
+  and `grep -Z` for null output, which on BSD grep means *decompress*.
+- **React Native interop:** the research's correction ("default off") was itself wrong for
+  iOS — legacy code has been compiled out by default since 0.84, re-enable path included.
+- **CVE-2025-11060** was reported fixed in 3.0.0-alpha.7; the advisory and OSV say alpha.8, so
+  the existing text was right and stayed.
+- **A Ray "exploited in the wild" claim** was drafted and dropped: the CVE is not in CISA KEV.
+- **The web-frameworks "Current stable" column and the React Native "0.86 (Jun 2026)" row**
+  were dated observations, not undated pins, so invariant 38 correctly did not flag them; they
+  were stale content and were dropped anyway.
+- **Twenty-five deprecated MASTG test IDs** were replaced by their `covered_by` successors,
+  read live from OWASP/mastg; two with no successor were dropped.
+
+**Headings changed.** `sota-llm-engineering` rules/01 had two sections numbered §8a. The
+first, *A saturated measure is a fact about the instrument*, is now **§8.1**; the completeness
+rubric keeps §8a, because instructions outside this repo cite it by that number. The live
+pointer in `docs/INDEX.md` was updated. Earlier dated entries here and in the CHANGELOG that
+cite "§8a" for the *saturated measure* now mean §8.1; they are history and stay as written.
+New: `sota-databases` rules/06 *Rule: Every engine, pooler and cache in the data path has a
+patch SLA driven by its advisory feed*.
+
+**The whole-diff review's defects:** the Medium was a false fail-closed claim — databases
+rules/06 said the one-arg `current_setting()` errors, but on a reused pooled connection both
+forms return `''` (measured on PG17), so isolation held only because of the cast. The rule now
+requires `nullif` plus a typed cast. The Lows: a Next.js batch counted as ten (the feed has
+nine), a Nuxt 3 "no patches since EOL" that npm contradicts (3.21.11 on 2026-08-05), the
+Android MASTG IDs missing from a `.so` bullet, a SurrealDB "2.x affectedness unverified" that
+the advisory ranges settle, a WCAG AAA label, and two stray downloaded HTML files at the repo root.
+
+- **DEFERRED — Spring `@RequestMapping(method = POST)` in `sota-api-design` rules/01's consumes probe; revisit trigger: the next rules/01 §3 edit, or a field report of a missed write handler.**
+- **DEFERRED — gRPC `max_receive_message_length` on a continuation line and C++ `SetMaxReceiveMessageSize(-1)` in `sota-testing` rules/09; revisit trigger: the next edit of that gRPC checklist line.**
+- **DEFERRED — AsyncAPI and CloudEvents as event-contract artifacts; revisit trigger: an intake or field report that needs event-API contract guidance.**
+- **DEFERRED — Iceberg `rewrite_position_delete_files` / `rewrite_manifests` in `sota-data-engineering` rules/05's maintenance example; revisit trigger: the next table-format maintenance edit.**
+- **DEFERRED — runnable audit probes for `sota-data-engineering`'s CRITICAL/HIGH BUILD rules (blind INSERT…SELECT, NOW()-relative filters, `SELECT *` in staging, incremental models without `unique_key`), lakehouse catalog governance, and ODCS; revisit trigger: the next data-engineering intake or audit-probe batch.**
+- **DEFERRED — Apple's Declared Age Range API as an age signal in `sota-mobile` rules/04; revisit trigger: the next age-gate edit, or Apple making the API mandatory for age-rated apps.**
+- **DEFERRED — Swift 6.4 SwiftPM SBOM generation and Swift Testing↔XCTest interop in `sota-mobile` rules/07; revisit trigger: the next SwiftPM or testing edit there.**
+- **DEFERRED — "keep DOMPurify patched; avoid IN_PLACE mode" in `sota-javascript-typescript` rules/09; revisit trigger: that skill's next sweep batch.**
+- **DEFERRED — React 19.3 features (`<ViewTransition>`, `<Activity>`, `useEffectEvent`, Trusted Types) in `sota-web-frameworks` rules/02; revisit trigger: the next rules/02 edit.**
+- **DEFERRED — invoker commands, `dialog closedby`, `interpolate-size`, `field-sizing` and `contrast-color()` in `sota-frontend-design`; revisit trigger: the next rules/02, 05 or 06 edit, or the Interop 2026 results.**
+- **DEFERRED — the PG18 `NOT NULL … NOT VALID` shortcut in `sota-databases` rules/02; revisit trigger: the next expand/contract edit, or the PG17 EOL sweep.**
+- **DEFERRED — PG18 `WITHOUT OVERLAPS` temporal keys in `sota-databases` rules/01; revisit trigger: the same.**
+- **DEFERRED — replacing LinkFinder and jsluice (both dormant since 2024, already noted as such) in `sota-api-design` rules/07; revisit trigger: a maintained JS-bundle endpoint extractor is verified.**
+
+**Still unverified, left as written:** bi-directional contract testing as a PactFlow-only
+feature and the jqwik 1.10.0 behaviour (testing); Snowflake/Databricks Iceberg v3 status and
+the Iceberg `older_than` expression form (data-engineering); the "Orca, 2026" exposed-vector-DB
+claim and whether `surreal import` requires `OPTION IMPORT` (databases); "Netflix, Cash App
+scale" for Compose Multiplatform on iOS, Impeller defaults, Android 17 behaviour changes and the
+wake-lock threshold (mobile); EN 301 549 / EU enforcement, CloudFront `Vary` stripping and the
+motion heuristics (frontend); an internal token-count measurement and 1M-context claims for
+non-Anthropic providers (llm-engineering); and MongoDB CVE-2025-14847's per-line fix versions,
+which the refuter took from NVD but the reviewer did not re-check.

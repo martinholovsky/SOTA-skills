@@ -2,7 +2,7 @@
 
 Rules 01–06 cover the mobile *platform*; this file covers **Swift the language** — idioms, concurrency, memory, unsafe interop, packaging, testing. It applies to any Swift target: an iOS app, a server-side service (e.g. Vapor or Hummingbird on SwiftNIO), a CLI, or embedded firmware. Audit Swift code against this file even when the deliverable is not a mobile app.
 
-Baseline (verified July 2026 at [swift.org/blog](https://www.swift.org/blog/)): **Swift 6.3** shipped 2026-03-24; the current toolchain is the 6.3.x patch line (6.3.3 at verification time). The load-bearing line, though, is not the toolchain version but the **language mode**: Swift 6 language mode turns data-race safety into compile-time errors, and Swift 6.2+ made that mode adoptable module-by-module without annotation blizzards.
+**Swift 6.3** shipped 2026-03-24 (verified at [swift.org/blog](https://www.swift.org/blog/)); the version-specific rules below name the release that introduced each feature, so check which toolchain you actually build with at swift.org. The load-bearing line, though, is not the toolchain version but the **language mode**: Swift 6 language mode turns data-race safety into compile-time errors, and Swift 6.2+ made that mode adoptable module-by-module without annotation blizzards.
 
 ## Concurrency & data-race safety
 

@@ -13,7 +13,7 @@ stable corpora often no longer need a vector pipeline.)
 
 | Situation | Choice |
 |---|---|
-| Corpus fits comfortably in context (≲ a few hundred K tokens), is stable across requests | **Long context + prompt caching.** Whole corpus in the cached prefix (rules/02 §5); reads at ~0.1× price. Simpler, no retrieval-miss class of bugs. Eval still required. |
+| Corpus fits comfortably in context (≲ a few hundred K tokens), is stable across requests | **Long context + prompt caching.** Whole corpus in the cached prefix (rules/02 §5); reads at 0.1× input price or less, per model. Simpler, no retrieval-miss class of bugs. Eval still required. |
 | Corpus is large, changing, per-tenant, or ACL-filtered | **RAG.** Retrieval is the only way to scale, stay fresh, and enforce per-user access. |
 | Need is *behavior/format/style*, not knowledge | **Prompting, then fine-tuning** (rules/06 §1). Fine-tuning is for form, not facts — it does not reliably inject or update knowledge. |
 | Need citations / auditability of sources | **RAG** (or long context with inline source markers). Weights can't cite. |
@@ -167,8 +167,9 @@ tell you which stage failed (rules/01 §6).
   to each response before it ships — a groundedness score from a check you
   have calibrated against labelled cases, agreement across several sampled
   generations, or token log-probabilities where the API returns them (the
-  OpenAI Chat Completions SDK takes `logprobs`; the Anthropic Messages SDK
-  has no such parameter — check yours). Below a threshold set on the eval,
+  OpenAI Chat Completions SDK takes `logprobs`, and its Responses API returns
+  them when `include` lists `message.output_text.logprobs`; the Anthropic
+  Messages SDK has no such parameter — check yours). Below a threshold set on the eval,
   withhold the answer and take the degradation path (rules/05 §6) or queue
   it for a human; never ship it with a disclaimer bolted on. Answer classes
   your policy rates high-risk (medical, legal, financial, anything that
@@ -282,7 +283,7 @@ queries needing tool choice (search vs SQL vs API).
       threshold; high-risk classes verified again; emitted URLs, endpoints
       and IDs resolved before rendering (§7). **High** on consequential routes.
       Probe — model text returned straight to the caller, read each hit for a
-      gate: `grep -rnE 'return [a-z_]*\.(content\[0\]\.text|choices\[0\]\.message\.content)' .`
+      gate: `grep -rnE 'return [A-Za-z_]*\.(content\[0\]\.text|choices\[0\]\.message\.content|output_text|outputText)' .`
 - [ ] Source edit, delete or permission change evicts dependent cached
       answers and embeddings; cache TTL capped by source sensitivity and
       retention; deletion log kept; orphan-chunk sweep scheduled (§7).

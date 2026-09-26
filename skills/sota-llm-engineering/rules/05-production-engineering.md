@@ -8,15 +8,19 @@ versioned upstream — plus tracing rich enough to debug nondeterminism.
 ## 1. Model selection & routing
 
 **Select per task on your eval (rules/01), not per vibe or leaderboard.**
-Providers ship capability tiers with ~5–25× price spreads between frontier
-and small models (illustrative, verified July 2026: Anthropic frontier tier
-$10/$50 per MTok, Opus tier $5/$25, Sonnet tier $2–3/$10–15 introductory→
-standard, Haiku 4.5 $1/$5; OpenAI and Google tier similarly — re-verify
-prices before encoding them). Tokenizers also change between model
-generations — the same text can tokenize to ~30% more tokens on a newer
-model (per Anthropic's pricing page for its 2026 generation) — so cost
-estimates built from a price table must re-baseline token counts per model,
-not just prices. The pattern, stable across providers: **frontier tier**
+Providers ship capability tiers with roughly an order-of-magnitude price
+spread between frontier and small models (Anthropic's largest and smallest
+current tiers differ 10× on both input and output, as of 2026-09-26; OpenAI
+and Google tier similarly). Prices move — newer models have launched
+cheaper than their predecessors, and a scheduled rise has been cancelled —
+so this file carries no per-tier figures: read them from each provider's
+pricing page (e.g. platform.claude.com/docs/en/about-claude/pricing) when
+you encode them.
+Tokenizers also change between model generations — the same text can
+tokenize to ~30% more tokens on a newer model (per Anthropic's pricing page,
+for its models from 4.7 on) — so cost estimates built from a price table
+must re-baseline token counts per model, not just prices. The pattern,
+stable across providers: **frontier tier**
 for hard reasoning/agentic work, **mid tier** for most production volume,
 **small/fast tier** for classification, routing, extraction, and judges.
 
@@ -46,15 +50,22 @@ for hard reasoning/agentic work, **mid tier** for most production volume,
 
 ## 2. Rate limits, retries, and errors
 
-Verified error semantics (Anthropic, June 2026; OpenAI/Gemini analogous):
-`429 rate_limit_error` (RPM/TPM/TPD exceeded — read `retry-after` and
-`x-ratelimit-*` headers), `500 api_error`, `529 overloaded_error` (capacity —
-retryable), `400` family (NOT retryable — fix the request), `401/403`
-(credentials/permissions — page, don't retry).
+Verified error semantics (Anthropic, 2026-09-26, platform.claude.com/docs/en/api/errors
+and /api/rate-limits; OpenAI/Gemini analogous in shape — check their tables):
+`429 rate_limit_error` (RPM/input-TPM/output-TPM exceeded — read `retry-after`
+and the `anthropic-ratelimit-*` headers; a 429 **with no `retry-after`** can be
+a tier spend cap, which keeps failing until access resumes — trip the breaker
+and page, don't retry), `500 api_error`, `504 timeout_error` (retryable; stream
+long requests instead), `529 overloaded_error` (capacity — retryable),
+`409 conflict_error` (resolve the conflict, then retry), `413
+request_too_large` and the rest of the `400` family (NOT retryable — fix the
+request; a spend limit you set yourself also answers `400`), `401/402/403`
+(credentials, billing, permissions — page, don't retry).
 
 - **Retry policy:** exponential backoff with full jitter, honoring
-  `retry-after` when present; retry 429/500/529 and transport timeouts;
-  never retry 4xx (except 408/429); cap attempts (3–5) and total elapsed
+  `retry-after` when present; retry 429 (with `retry-after`)/500/504/529 and
+  transport timeouts; never retry other 4xx (408 aside, and 409 only after the
+  conflict is resolved); cap attempts (3–5) and total elapsed
   time. Official SDKs do this out of the box (e.g. `max_retries` defaults) —
   prefer SDK retry config over hand-rolled loops; hand-rolled string-matching
   on error messages instead of typed exception classes is a Medium finding.
@@ -104,7 +115,8 @@ Cost is a feature requirement with a number, not a postmortem surprise.
   `(input_tokens × in_price + output_tokens × out_price)` from the registry's
   price table — and re-verify prices on provider pages when they matter.
 - **The big four levers**, in typical order of payoff:
-  1. **Prompt caching** — ~90% off cached input on repeated prefixes;
+  1. **Prompt caching** — ~90% off cached input on repeated prefixes (more
+     on some newer models — the read multiplier is per model);
   2. **Batch APIs** — 50% off for async workloads (verified: Anthropic
      Message Batches −50%, ≤24h turnaround; OpenAI Batch comparable). Any
      offline/nightly/bulk job paying real-time prices is a finding (Low–
@@ -139,7 +151,10 @@ eval link: run_id when the trace is sampled into eval sets (rules/01 §7)
 
 Use OTel GenAI semantic conventions / an LLM-observability platform
 (LangSmith/Braintrust/Arize-class or self-hosted) rather than inventing a
-schema — but any structured store beats none.
+schema — but any structured store beats none. The GenAI conventions are at
+status **Development** and now live in their own repository
+(`open-telemetry/semantic-conventions-genai`, as of 2026-09-26): attribute
+names can still change, so pin the semconv version your instrumentation emits.
 
 **Dashboards + alerts** per route: p50/p95 TTFT & total latency, error and
 429 rates, cost/day vs budget, cache hit rate, token percentiles,
@@ -231,6 +246,17 @@ them follows the same pipeline:
   ("CRITICAL: ALWAYS…") over-triggers; re-tune per provider migration guides
   and your evals (rules/02 §7). Caches are per-model: expect a cold-cache
   cost/latency blip at cutover.
+- They are also **reasoning-config** migrations — the request that worked on
+  the old model can be a `400` on the new one. Verified on Anthropic's errors
+  and effort pages, 2026-09-26: on several newer models thinking is always on
+  and `thinking: {"type": "disabled"}` returns 400; forced tool use
+  (`tool_choice` `any`/`tool`) returns 400 on some models — use `auto` with
+  strict tool schemas or structured outputs; `thinking` blocks must be passed
+  back unmodified in tool loops or the request is rejected; and the **default
+  effort differs by model** (one model defaults to `medium` where its
+  predecessor defaulted to `high`), so omitting it silently changes cost and
+  depth. Keep effort/thinking/`tool_choice` in the model registry (§1), set
+  effort explicitly, and run an effort sweep on your evals at each migration.
 
 ## 8. Generated media: provenance and likeness
 
@@ -240,13 +266,13 @@ them follows the same pipeline:
   source type `trainedAlgorithmicMedia`. Embedded metadata disappears on
   re-encode, so add a soft binding as well — the C2PA spec defines it as a
   fingerprint or invisible watermark used to find the manifest again for an
-  asset that lost it. Verified against the C2PA 2.2 specification.
+  asset that lost it. Verified against the C2PA 2.2 specification. OWASP:
+  AISVS 7.4.4 (generated media is watermarked).
 - **No real person without their documented consent.** Before generating
   content that depicts or imitates the voice of an identifiable real person,
   require a recorded likeness or voice-use authorisation (who, scope, expiry)
   that the request path checks — a prompt filter is not that check (rules/02
-  §1). OWASP: AISVS 7.4.4; OWASP AI-Powered Advertising Systems Security
-  cheat sheet.
+  §1). OWASP: OWASP AI-Powered Advertising Systems Security cheat sheet.
 
 ## Audit checklist
 
@@ -258,7 +284,8 @@ them follows the same pipeline:
       budgets); no scattered direct SDK calls; abstraction does not mask
       provider-native caching/structured-output/batch features.
 - [ ] Retries: jittered exponential backoff, `retry-after` honored, 4xx not
-      retried, attempt+elapsed caps, typed error classes; client-side
+      retried, a 429 without `retry-after` treated as a spend cap (breaker,
+      not retry), attempt+elapsed caps, typed error classes; client-side
       throttling and per-tenant fairness before provider 429s.
 - [ ] Streaming on user-facing and long-running generations; TTFT and idle
       timeouts; no >1-minute non-streaming calls.
@@ -281,7 +308,8 @@ them follows the same pipeline:
       providers; refusals handled as product paths.
 - [ ] Rollouts: eval gate → shadow/canary → expand; instant config rollback;
       no floating "latest" in production; deprecation calendar tracked with
-      early successor evals; migration includes prompt re-tuning.
+      early successor evals; migration includes prompt re-tuning and a
+      reasoning-config check (thinking, `tool_choice`, explicit effort) (§7).
 - [ ] Hallucination and harmful-content rates tracked per route as time
       series from an automated evaluator, each with a threshold, alerting on
       breach and on sustained drift (§5). **Medium**.

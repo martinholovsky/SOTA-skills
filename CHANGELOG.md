@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**Full-library sweep, batch 3 of 4: the nine data, AI and product skills re-verified**
+(databases, data-engineering, ml-engineering, llm-engineering, api-design, testing,
+web-frameworks, frontend-design, mobile). 111 findings (10 High, 45 Medium); all 64
+High/Medium items refuted (none failed); every changed SQL, dbt project and probe was run; a
+whole-diff review found 7 more defects (1 Medium, 6 Low): the Medium and four Lows
+fixed, one kept deliberately, one deferred, one left as dated history. Thirteen deferrals with triggers:
+`docs/ADOPTION-LOG.md`, 2026-09-26 batch 3.
+
+### Fixed (sweep batch 3)
+
+- **Security floors:** Next.js >= 15.5.24 / 16.3.3 (two critical unauthenticated RCEs), Nuxt
+  >= 4.5.1, h3, nitropack, serialize-javascript, devalue and react-server-dom floors; SurrealDB
+  3.x >= 3.2.0 and 2.x >= 2.6.1 (2.x flagged as no longer receiving fixes); a feed-driven patch
+  SLA for every database engine, pooler and cache (new `sota-databases` rules/06 rule).
+- **Tenant isolation:** a plain `SET app.tenant_id` leaked across PgBouncer clients (reproduced);
+  now `SET LOCAL`, with `nullif` plus a typed cast because both `current_setting` forms return
+  `''` on a reused connection.
+- **Recipes that failed when run:** int→bigint swap, MySQL `INSTANT, LOCK=NONE`, the dbt test
+  block, and a geospatial probe that errored on every grep.
+- **Probes that checked nothing:** unsafe deserialization, torch versions, CheckOrigin, MCP
+  auto-approve and credential probes, minSdk in version catalogs, and every bare config glob in
+  web-frameworks (all zsh-aborting).
+- **Wrong facts:** Anthropic error taxonomy and rate-limit header names, MCP 2026-07-28 version
+  negotiation, React Native's legacy architecture, Play size limits, the 16 KB page deadline,
+  Next 15 / Nuxt 3 support windows, DTCG 2025.10 token values, and 25 deprecated MASTG IDs.
+- **Renumbered:** `sota-llm-engineering` rules/01's saturated-measure section is now §8.1 (it
+  shared §8a with the completeness rubric, which keeps §8a).
+
 **Full-library sweep, batch 2 of 4: the seven platform skills re-verified** (devsecops,
 kubernetes, cloud-infrastructure, observability, architecture, async-concurrency, performance).
 104 findings (10 High, 47 Medium); all 58 High/Medium items refuted (none failed), fixes per

@@ -28,8 +28,9 @@ Decision rules:
   no longer the blocker (Baseline since Safari 26.4 shipped it, Mar 2026) — keep a
   WS fallback for UDP-blocking middleboxes/networks.
 - If you'd rather not own any of this: managed layers (Ably/Pusher/Momento) or
-  infra (Centrifugo, Soketi) are legitimate — reconnection/resume/fanout are where
-  homegrown realtime dies.
+  infra (e.g. Centrifugo) are legitimate — reconnection/resume/fanout are where
+  homegrown realtime dies. Check a self-hosted server is maintained before adopting
+  it: Soketi's last release and commit were 2024-03-25 (GitHub, checked 2026-09-26).
 
 ## 2. WebSocket lifecycle done right
 

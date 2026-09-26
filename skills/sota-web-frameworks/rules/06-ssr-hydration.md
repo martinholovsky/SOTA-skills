@@ -68,11 +68,12 @@ const safe = JSON.stringify(state).replace(/</g,'\\u003c').replace(/>/g,'\\u003e
   - **Nuxt** serializes the payload with **devalue** (handles `Date`/`Map`/`Set`/refs
     and escapes `</script>` + line separators). But devalue's *parse* side has had
     prototype-pollution CVEs (CVE-2025-57820, CVE-2026-30226) and DoS advisories — keep
-    it patched (`rules/05`).
+    it patched (≥ 5.9.2 as of 2026-09-26, `rules/05`).
   - **Next** embeds the RSC/flight payload via `self.__next_f.push([...])`.
   - **`serialize-javascript`** (used to embed functions/regex): CVE-2020-7660 (RCE,
-    fixed 3.1.0) and CVE-2024-11831 (XSS via unescaped URL objects, fixed **6.0.2**) —
-    if it's in the tree, verify the version.
+    fixed 3.1.0), CVE-2024-11831 (XSS via unescaped URL objects, fixed 6.0.2),
+    GHSA-5c6j-r48x-rmvq (RCE via a spoofed-prototype object, fixed 7.0.3) and CVE-2026-34043
+    (CPU-exhaustion DoS, fixed **7.0.5**) — if it's in the tree, require ≥ 7.0.5.
 - **Only serializable data belongs in the payload**, and *everything* in it is public
   — never let a secret, token, or full DB row reach `useState`/a client prop
   (`rules/07`).
@@ -107,7 +108,8 @@ Caching is where SSR bugs become cross-user data leaks.
   static asset while the origin served a private page. Both Next
   (CVE-2024-46982, CVE-2025-49005, CVE-2025-32421) and Nuxt (CVE-2025-27415) have
   shipped cache-poisoning CVEs — keep patched and don't hand a CDN an ambiguous
-  cache key. Next's RSC payload uses a `Rsc:`/`_rsc=` scheme that has been a poisoning
+  cache key. The framework's own cache can leak too: Nuxt's runtime payload cache served
+  one user's SSR data to others (CVE-2026-71316, fixed 4.5.1). Next's RSC payload uses a `Rsc:`/`_rsc=` scheme that has been a poisoning
   vector; a request missing the buster but carrying the header can poison HTML with an
   RSC payload.
 - **ISR/SWR** trade freshness for speed — only for non-personalized content, and think
@@ -145,7 +147,7 @@ A strict, nonce/hash-based CSP is the highest-leverage defense-in-depth for thes
       `grep -rn 'suppressHydrationWarning\|data-allow-mismatch' --include='*.tsx' --include='*.vue' src app pages`
 - [ ] **Hand-rolled state serialization into <script>** —
       `grep -rnE 'JSON\.stringify' --include='*.ts' --include='*.tsx' server app | grep -i 'script\|__DATA__\|innerHTML'`
-      ; `grep -E '"serialize-javascript"' package.json` (verify >=6.0.2)
+      ; `grep -E '"serialize-javascript"' package.json` (verify >=7.0.5)
 - [ ] **Cross-request state pollution: module-level mutable state in server code** —
       `grep -rnE '^(export )?(let|const) \w+\s*=\s*(reactive|ref|new |\[\]|\{\})' --include='*.ts' server lib composables utils 2>/dev/null`
 - [ ] **Caching / CSP** —
@@ -155,7 +157,7 @@ A strict, nonce/hash-based CSP is the highest-leverage defense-in-depth for thes
 
 - [ ] Render deterministic — no `Date`/random/`window`/locale branching outside effects/`onMounted`; stable `useId`?
 - [ ] Mismatch suppression scoped to individual unavoidable nodes, never blanket, never patched with injected user HTML?
-- [ ] SSR state serialized via the framework serializer or `<`-escaped JSON (no naked `JSON.stringify` into `<script>`); `serialize-javascript` ≥ 6.0.2; devalue patched?
+- [ ] SSR state serialized via the framework serializer or `<`-escaped JSON (no naked `JSON.stringify` into `<script>`); `serialize-javascript` ≥ 7.0.5; devalue ≥ 5.9.2?
 - [ ] No secret/token/full row in the serialized payload (`useState`/client props)? Confirm it on the running app too — capture HTML, flight and `_payload.json` responses and search them (`rules/07` Audit checklist, "Runtime: what the browser actually receives").
 - [ ] No module-level mutable state in server-reachable code (cross-request leak)?
 - [ ] Personalized responses `Cache-Control: private`/uncached; not relying on `Vary` at the CDN; framework patched against cache-poisoning CVEs?

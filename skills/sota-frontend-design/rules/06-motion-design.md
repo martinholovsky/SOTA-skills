@@ -136,8 +136,8 @@ function navigate(updateDom) {
 ```
 
 - Support status: same-document transitions are **Baseline newly available** (all three engines
-  since Firefox 144, Oct 2025) — keep the `startViewTransition` gate anyway; Firefox's initial
-  release lacks view-transition *types*.
+  since Firefox 144, Oct 2025) — keep the `startViewTransition` gate anyway; view-transition *types*
+  (`:active-view-transition-type()`) reached Firefox only in 147 (web-features 3.40.0).
 - Cross-document (MPA) transitions: `@view-transition { navigation: auto; }` in both pages —
   free page-morphs for server-rendered sites; same reduced-motion gate via media query wrapping.
   Chromium + Safari only (Firefox in progress; an Interop 2026 focus area) — enhancement, never
@@ -173,7 +173,8 @@ function navigate(updateDom) {
 ## 6. Reduced motion: non-negotiable
 
 `prefers-reduced-motion: reduce` is set by users with vestibular disorders (motion can cause
-nausea, vertigo, migraine) — honoring it is a WCAG 2.3.3 requirement and table stakes.
+nausea, vertigo, migraine) — honoring it is WCAG 2.3.3 (Animation from Interactions — Level **AAA**, so above the 2.2 AA
+floor) and table stakes regardless.
 
 - Reduced ≠ none: replace movement with **opacity cross-fades**; keep feedback (a 100ms fade still confirms the click). Kill: parallax, scale/slide entrances, auto-playing carousels, scroll-jacking, background video, infinite loops.
 - Centralize the override so it can't be forgotten:

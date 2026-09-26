@@ -2115,6 +2115,14 @@
       "targets": []
     },
     {
+      "from": "sota-api-design",
+      "to": "sota-databases",
+      "weight": 1,
+      "targets": [
+        "rules/04"
+      ]
+    },
+    {
       "from": "sota-architecture",
       "to": "sota-devsecops",
       "weight": 1,
@@ -2233,6 +2241,14 @@
       "to": "sota-async-concurrency",
       "weight": 1,
       "targets": []
+    },
+    {
+      "from": "sota-code-security",
+      "to": "sota-databases",
+      "weight": 1,
+      "targets": [
+        "rules/04"
+      ]
     },
     {
       "from": "sota-code-security",
@@ -2721,6 +2737,14 @@
       "to": "sota-kubernetes",
       "weight": 1,
       "targets": []
+    },
+    {
+      "from": "sota-ml-engineering",
+      "to": "sota-python",
+      "weight": 1,
+      "targets": [
+        "rules/05 \u00a71"
+      ]
     },
     {
       "from": "sota-ml-engineering",

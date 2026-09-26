@@ -75,7 +75,7 @@ cross_val_score(pipe, X_train, y_train, cv=TimeSeriesSplit())
 - **Lineage records the recipe, not just the result.** A dataset version names
   its components and every transformation, augmentation, filter and merge that
   produced it, so a bad source can be traced forward to every derived set.
-  OWASP: AISVS 3.5.4.
+  OWASP: AISVS 12.5.1.
 - **Sign what a hash only identifies.** A content hash tells you the bytes
   changed; a signed attestation tells you who vouched for them. Put dataset
   manifests, RAG chunk sets and annotation exports under a signed attestation

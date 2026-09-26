@@ -17,10 +17,11 @@ Token architecture (each tier references only the tier below):
 // GOOD: tokens.json (DTCG) — typed, aliased, themable
 {
   "color": {
-    "blue": { "600": { "$type": "color", "$value": "oklch(0.55 0.18 255)" } },
+    "blue": { "600": { "$type": "color", "$value": { "colorSpace": "oklch", "components": [0.55, 0.18, 255] } } },
     "bg": { "accent": { "$type": "color", "$value": "{color.blue.600}" } }
   },
-  "duration": { "fast": { "$type": "duration", "$value": "150ms" } }
+  // 2025.10 values are structured objects, not CSS strings (designtokens.org/tr/2025.10/format, /color)
+  "duration": { "fast": { "$type": "duration", "$value": { "value": 150, "unit": "ms" } } }
 }
 ```
 

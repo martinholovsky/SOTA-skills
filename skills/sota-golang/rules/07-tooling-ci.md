@@ -306,7 +306,9 @@ tool (             // 1.24+: tool dependencies, versioned & sum-verified
       path** — each module a PR adds to go.mod (`git diff <base> -- go.mod`) gets the §4
       selection checks (`go list -m -json <mod>@latest` resolves? deps.dev / Scorecard reviewed?);
       `grep -rnE 'cors\.(AllowAll|Default)\(|cors\.Options\{\}|AllowedOrigins:[[:space:]]*\[\]string\{"\*"\}|CheckOrigin:[[:space:]]*func\([^)]*\)[[:space:]]*bool[[:space:]]*\{[[:space:]]*return true|websocket\.Upgrade\(|jwt\.Parse(WithClaims)?\(' --include='*.go' . | grep -v WithValidMethods`
-      (library left at, or copied to, a permissive default) ;
+      (library left at, or copied to, a permissive default) ; the gofmt multi-line
+      `CheckOrigin` (body's first line `return true`):
+      `grep -rnA1 -E 'CheckOrigin:[[:space:]]*func\([^)]*\)[[:space:]]*bool[[:space:]]*\{[[:space:]]*$' --include='*.go' . | grep -E -- '-[0-9]+-[[:space:]]*return[[:space:]]+true[[:space:]]*$'` ;
       `grep -rlE 'gin\.(Default|New)\(' --include='*.go' . | xargs -r grep -L 'SetTrustedProxies'`
       (gin engine trusting every proxy). Single-line shapes only: a multi-line `cors.Options{`
       or `jwt.Parse(` call needs reading

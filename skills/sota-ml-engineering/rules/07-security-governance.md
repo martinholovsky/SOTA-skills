@@ -80,6 +80,14 @@ rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
   2.6.0) — treat it as hardening, not a trust boundary. Load models only from
   trusted, integrity-verified sources; prefer **`safetensors`**/ONNX (data, not
   code). `weights_only=False` on untrusted input is CRITICAL on sight (`rules/05`).
+  Same class: `np.load(..., allow_pickle=True)` (NumPy's docs: loading pickled
+  data "can execute arbitrary code"; default `False`), and Keras
+  `load_model`, whose `safe_mode` is no boundary on old releases — it was
+  silently ignored for `.h5`/`.hdf5` (CVE-2025-9905, fixed in 3.11.3), and a
+  `Lambda` layer deserialized with `safe_mode` unset ran code (CVE-2026-12481,
+  fixed in 3.12.3 / 3.15.0) — so `safe_mode=False` is CRITICAL and an
+  untrusted `.h5` is refused outright. `dill`, pandas `read_pickle` and the
+  rest of the pickle family: `sota-python` rules/05 §1.
 - Verify integrity/provenance of models and datasets (hashes, signing); pin and
   scan ML dependencies (the PyData/CUDA stack is large attack surface) — cross-ref
   `sota-devsecops`. Beware pre-trained weights/datasets from unvetted hubs — and
@@ -209,10 +217,10 @@ rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
 ## Audit checklist
 
 - [ ] **Unsafe model deserialization — CRITICAL** —
-      `grep -rnE '\b(pickle\.load|joblib\.load|cloudpickle|torch\.load)\b' --include='*.py' .` ;
+      `grep -rnE '\b(pickle\.loads?|joblib\.load|cloudpickle|dill\.loads?|torch\.load|read_pickle)\b|allow_pickle\s*=\s*True|safe_mode\s*=\s*False' --include='*.py' .` ;
       `grep -rnE 'weights_only\s*=\s*False' --include='*.py' .` (arbitrary code execution on
       load);
-      `grep -rnE 'torch\s*[=<>~!]=+\s*[12]\.[0-5]\b' requirements*.txt pyproject.toml 2>/dev/null`
+      `grep -rnE 'torch\s*((==|~=|<=)\s*(0\.|1\.|2\.[0-5]\b)|<\s*(0\.|1\.|2\.[0-6]\b))' --include='requirements*.txt' --include=pyproject.toml .`
       (<2.6: CVE-2025-32434 weights_only bypass);
       `grep -rniE 'safetensors|onnx' --include='*.py' . || echo "consider safetensors/ONNX over pickle"`
 - [ ] **Model/data provenance & integrity — HIGH** —
@@ -230,7 +238,7 @@ rules/08 and `sota-llm-engineering`; this file covers classical-ML security.
 - [ ] **EU AI Act / regulatory tier considered — HIGH for high-risk domains (manual)** —
       `grep -rniE 'ai.?act|high.?risk|gdpr|differential.privacy|anonymiz' . | head`
 - [ ] **Model signing verified at admission and load (§2) — HIGH** —
-      `grep -rnE 'model_signing[ .](verify|verifying)' . || echo "no model signature verification at admission/load"` ;
+      `grep -rnE 'model_signing[ .](verify|verifying)|from model_signing import .*verifying|verifying\.Config\(' . || echo "no model signature verification at admission/load"` ;
       unsigned files waved through:
       `grep -rnE 'ignore[-_]unsigned[-_]files' . | grep -vE 'no-ignore[-_]unsigned|unsigned_files\((False|0)\)'`
       (every hit is a finding). Manual: are tokenizers, adapters and guard models in the signed set?

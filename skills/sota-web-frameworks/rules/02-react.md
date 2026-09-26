@@ -115,7 +115,7 @@ import DOMPurify from 'dompurify';
       `grep -rn 'Math.random()\|Date.now()' --include='*.tsx' src app` (in render => hydration
       bug (rules/06))
 - [ ] **Rules of Hooks / compiler-blocking violations rely on lint** —
-      `grep -rn 'react-hooks' .eslintrc* eslint.config.* package.json`
+      `find . -maxdepth 2 -path ./node_modules -prune -o \( -name '.eslintrc*' -o -name 'eslint.config.*' -o -name package.json \) -type f -exec grep -Hn 'react-hooks' {} +`
 - [ ] **Legacy patterns** —
       `grep -rn 'forwardRef\|class .* extends .*Component' --include='*.tsx' src app`
       (forwardRef unneeded in 19); `grep -rnE 'key=\{.*index' --include='*.tsx' src app`

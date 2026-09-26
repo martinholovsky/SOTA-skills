@@ -40,7 +40,7 @@ Always set the full attribute stack — this is free conversion and accessibilit
     show/hide button placed before the password field): password managers and keyboard users
     both expect a single Tab to move from one to the other.
   - The no-paste-blocking rule covers the username and the MFA/OTP code field too — a code
-    copied from an authenticator or an email must paste. OWASP: ASVS 5.0 V6.2.6,
+    copied from an authenticator or an email must paste. OWASP: ASVS 5.0 V6.2.7,
     Authentication cheat sheet, Go-SCP (communicating authentication data).
 - Never disable the submit button as the only validation mechanism: a disabled submit with no explanation is a dead end. Allow submit, then focus the first error.
 

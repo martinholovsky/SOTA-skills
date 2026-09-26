@@ -12,7 +12,7 @@ are in `rules/05`; hydration in `rules/06`. TypeScript setup depth is in
   enhancement / no-build-step sprinkles, but new app code is Composition API.
 - Don't mix paradigms within a component without reason; consistency aids the compiler
   and the reader.
-- **Vue 3.6 (beta, not stable) adds Vapor mode** — an opt-in, per-SFC compilation
+- **Vue 3.6 (release candidate on npm as of 2026-09-26, not stable) adds Vapor mode** — an opt-in, per-SFC compilation
   (`<script setup vapor>`) that drops the virtual DOM for lower overhead. Do not
   depend on it in production until 3.6 ships stable; verify status before adopting.
 
@@ -93,7 +93,7 @@ core `escapeHtml` escapes `" ' & < >`). The sinks are where you leave that prote
 - [ ] **HTML-injection sink — each hit needs a sanitizer on the source** —
       `grep -rn 'v-html' --include='*.vue' src components pages`
 - [ ] **Dynamic templates / runtime compilation from input (arbitrary JS)** —
-      `grep -rnE 'template:\s*[^\x27"]*(\$|props|user|input)' --include='*.vue' --include='*.ts' src`
+      `grep -rnE "template:[[:space:]]*[^'\"]*([\$]|props|user|input)" --include='*.vue' --include='*.ts' src`
       ; `grep -rn 'compile(' --include='*.ts' src`
 - [ ] **URL / style / handler injection** —
       `grep -rnE ':href=|:src=|:style=' --include='*.vue' src | grep -iv 'sanitiz\|allow'`

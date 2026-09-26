@@ -56,7 +56,7 @@ the model.
   "what served on the 3rd". Fine-tuning checkpoints that may ever be evaluated
   or served are registered as their own artifacts, with their own lineage, not
   kept as loose files beside the final model (dataset lineage: `rules/02` §5).
-  OWASP: AISVS 12.5.1, 12.5.3.
+  OWASP: AISVS 3.5.4, 12.5.3.
 
 ## 5. Reproducibility is architectural
 
@@ -76,6 +76,13 @@ the model.
   experiment tracker started with no authentication (for example `mlflow
   server` without `--app-name basic-auth`, which runs the unauthenticated
   default app) exposes every run's artifacts to anyone who can reach it.
+- Compute control planes are remote code execution by design: a Ray dashboard /
+  job-submission API, a notebook server or a pipeline UI (e.g. Kubeflow) that
+  accepts a job runs it. None is ever reachable unauthenticated or from outside
+  its trust domain. Ray's jobs API is the worked case (CVE-2023-48022: remote
+  code execution; the vendor's position is "keep Ray on a controlled network");
+  token auth exists only since Ray 2.52.0 and is off by default — set
+  `RAY_AUTH_MODE=token` *and* keep network isolation. HIGH on sight when exposed.
 - Scope feature-store namespaces by purpose, so one model's pipeline cannot read
   or overwrite another's features, and rotate the credentials that write
   materialised features on the same cadence as other production credentials

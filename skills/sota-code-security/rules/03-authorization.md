@@ -188,7 +188,10 @@ def test_policy_matrix(role, action, owns, expected): ...
 
 - Every tenant-owned table carries `tenant_id`; **every query filters on it** —
   enforce structurally, not by developer discipline:
-  - Postgres Row-Level Security with `SET app.tenant_id` per request, policies
+  - Postgres Row-Level Security with `SET LOCAL app.tenant_id` (or
+    `set_config('app.tenant_id', …, true)`) inside each request's transaction —
+    never a plain `SET`, which leaks to the next client under transaction pooling
+    (`sota-databases` rules/04) — policies
     `USING (tenant_id = current_setting('app.tenant_id')::uuid)`; or
   - ORM global scopes/default filters applied from the authenticated context.
 ```sql

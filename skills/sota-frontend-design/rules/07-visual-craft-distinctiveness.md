@@ -72,7 +72,7 @@ placeholder because it encodes zero decisions. Antidotes:
 - Asymmetry is a feature: not every hero is center-stacked; editorial layouts (offset grids, 5/7 splits, overlapping media) read as designed. Keep asymmetry on the grid — asymmetric ≠ unaligned.
 - Color courage with discipline: near-black-on-warm-paper, deep green, oxblood, cobalt — anything chosen beats default-blue. Keep the 60-30-10 budget and contrast math (rules/01).
 - Kill list for credibility: gradient text on body copy, glow shadows, glassmorphism on content surfaces (contrast hazard), stock 3D blob illustrations, emoji as feature icons, fake testimonials/logos, drop-shadowed everything.
-- Details that signal craft: real `::selection` color, custom focus ring matching brand, designed scrollbars where appropriate, correct typographic quotes ("" not ""), non-breaking spaces before units, hover states that were *decided* (not `opacity: .8`).
+- Details that signal craft: real `::selection` color, custom focus ring matching brand, designed scrollbars where appropriate, correct typographic quotes (“” not ""), non-breaking spaces before units, hover states that were *decided* (not `opacity: .8`).
 - BUT: distinctiveness never outranks usability. A boring accessible form beats a memorable broken one. Spend personality on marketing/landing/empty states; keep product surfaces calm — identity there comes from type, spacing rhythm, and motion feel, not decoration.
 
 **Named directions that work** (pick one, commit fully — half-committed styles read as accidents):
@@ -206,7 +206,7 @@ German strings) — pretty averages hide broken extremes.
 **Auditing**: screenshot key screens and grade against this file: blur test for hierarchy; count
 distinct font sizes (> 8 = scale erosion), radii (> 4 = drift), shadow styles (> 3 = drift), grays
 (> 10 = no ramp); check icon family consistency; identify the depth language (or absence); flag
-generic-template signals from §5. Visual drift findings are **Major** when they break component
+generic-template signals from §6. Visual drift findings are **Major** when they break component
 reuse/consistency, **Minor** when cosmetic.
 
 ## Audit checklist

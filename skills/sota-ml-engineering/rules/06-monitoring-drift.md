@@ -22,7 +22,8 @@ retraining.
   with statistical tests: **PSI** (Population Stability Index — common rule of
   thumb: >0.1 moderate, >0.25 significant shift; verify thresholds for your
   data), **KS test** for continuous features, chi-square/JS-divergence for
-  categoricals. Tools: Evidently, NannyML, WhyLogs, or built-in platform monitors.
+  categoricals. Tools: Evidently, NannyML, or built-in platform monitors
+  (WhyLogs has had no release since 2024-12 — treat an existing use as dormant).
 - Monitor per-feature and on the prediction distribution; alert on sustained
   shift, not single-batch noise.
 - **Match the test to the input.** PSI/KS/chi-square suit tabular features.

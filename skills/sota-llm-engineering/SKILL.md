@@ -61,7 +61,8 @@ version-agnostically: model IDs and parameters in config, never inline.
 Process:
 
 1. **Map the LLM surface**: every call site (grep `messages.create`,
-   `chat.completions`, `generateContent`, `invoke`, raw `https://api.`),
+   `responses.create`, `chat.completions`, `interactions.create`,
+   `generateContent`/`generate_content`, `invoke`, raw `https://api.`),
    prompt templates, retrieval pipelines, agent loops, eval suites (or their
    absence), and the config/env that selects models.
 2. **Sweep by rules file, prioritized**: 01 (evals — absence is the #1

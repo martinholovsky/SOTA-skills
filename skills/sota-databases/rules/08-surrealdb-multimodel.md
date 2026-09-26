@@ -68,7 +68,8 @@ db.query("SELECT * FROM article WHERE status INSIDE $status AND author = $auth.i
   the connection is a system user (full DDL like `REMOVE TABLE` is in-band).
 - Protected parameters `$auth`, `$token`, `$session`, `$access` are set by
   the server and cannot be overwritten — build permissions on them.
-- Record IDs from user input: bind them too (`type::thing($table, $id)` or a
+- Record IDs from user input: bind them too (`type::record($table, $id)` on 3.x —
+  renamed from 2.x's `type::thing`, a parse error since 3.0.0 — or a
   bound record id), and whitelist table names — identifiers can't be bound,
   same rule as dynamic SQL identifiers in file 06.
 
@@ -127,8 +128,24 @@ DEFINE FIELD created_at ON order TYPE datetime DEFAULT time::now() READONLY;
   arbitrary file read via `DEFINE ANALYZER mapper()` (GHSA-cc8f-fcx3-gpjr);
   the **3.2.0 batch (July 2026)** — High custom-API namespace/database scope
   override (GHSA-848m-r628-vrxw), writes inside a `PERMISSIONS` clause
-  bypassing table permissions (GHSA-66r2-5gwj-gxm2), and JWKS SSRF. On 3.x,
-  run ≥ 3.1.5 at minimum, ≥ 3.2.0 where custom API routes exist.
+  bypassing table permissions (GHSA-66r2-5gwj-gxm2), and SSRF via a JWKS
+  host resolving to a private IP (GHSA-5x4x-2946-qr67). On 3.x, run ≥ 3.2.0
+  on **every** deployment — the PERMISSIONS and JWKS fixes apply whether or
+  not custom API routes exist. Feed:
+  `gh api --paginate 'repos/surrealdb/surrealdb/security-advisories?per_page=100'`
+  (the unpaginated default returns one page of 30).
+- **2.x floor: ≥ 2.6.1** — a High confused-deputy privilege escalation via
+  future fields and functions (GHSA-3v2x-9xcv-2v2v, fixed in 2.5.0) and a
+  scripting-memory DoS (GHSA-xx7m-69ff-9crp, fixed in 2.6.1); older lines
+  also miss the critical server takeover via SurrealQL injection on backup
+  import (GHSA-ccj3-5p93-8p42, fixed in 2.0.5 / 2.1.5 / 2.2.2). Prefer the
+  newest 2.6.x — but treat 2.x as **no longer receiving fixes**: as of
+  2026-09-26 its last release is 2.6.5 (2026-03-24), and the 3.1.0 Highs
+  (GHSA-5qfp-32cf-69jh, GHSA-4vgr-h27g-cf9p, GHSA-wjjj-24cx-f28g) and the
+  3.2.0 batch have ranges (`< 3.1.0`, `< 3.2.0`) that include all of 2.x and
+  name no 2.x patch.
+  Plan the 3.x move — `type::thing` became `type::record`, among other
+  breaking changes.
 
 ## Capabilities hardening
 
@@ -220,9 +237,9 @@ surreal start --deny-all \
 ## Audit checklist
 
 - [ ] Version line known and pinned; no pre-2.0 `DEFINE SCOPE` syntax in
-      migrations/docs; version meets the advisory patch floor — 3.x: ≥ 3.1.5
-      (June 2026 permission-bypass/file-read batch), ≥ 3.2.0 where custom API
-      routes exist; 2.x: CVE-2025-11060 LIVE-query fix versions.
+      migrations/docs; version meets the advisory patch floor re-read from
+      the feed — 3.x: ≥ 3.2.0 on every deployment; 2.x: ≥ 2.6.1 AND flagged
+      as no longer receiving fixes, with a dated plan to move to 3.x.
 - [ ] Auth via `DEFINE ACCESS` (RECORD for end users); `DURATION FOR TOKEN`
       and `FOR SESSION` short and explicit; `AUTHENTICATE` re-checks account
       state; JWT access methods pin algorithm/keys.

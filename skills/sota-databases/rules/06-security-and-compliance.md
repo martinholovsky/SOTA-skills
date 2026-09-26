@@ -146,6 +146,37 @@ that user decides the blast radius.
   keep the deviations in the repo. Managed services cover this layer for you.
 OWASP: Database Security cheat sheet; SQL Injection Prevention cheat sheet.
 
+### Rule: Every engine, pooler and cache in the data path has a patch SLA driven by its advisory feed.
+A remembered "run ≥ X" floor is stale within weeks, and poolers and caches
+sit on the unauthenticated edge. For each engine, pooler, cache and proxy:
+- Name the primary feed and an owner: the vendor security page, the
+  repository's advisories (`gh api --paginate 'repos/OWNER/REPO/security-advisories?per_page=100'`),
+  or the release changelog. An empty advisory list is a fact about where the
+  project publishes, not about its bugs — PgBouncer's GitHub list is empty
+  (as of 2026-09-26) while its changelog carries every CVE.
+- SLA by reachability: pre-auth or network-reachable RCE, crash or auth
+  bypass → days; the rest → the next scheduled minor window. Where the fix
+  lags, apply and record the vendor workaround. An EOL branch gets no fix —
+  being on one is the finding.
+- Read the advisory's preconditions against *your* config: some need a
+  non-default setting to be exploitable, so exposure is a config question.
+Dated examples (as of 2026-09-26 — re-read the feed, never copy the numbers):
+- PgBouncer: 1.26.0 (2026-09-23) fixed two unauthenticated crash/hang bugs
+  (CVE-2026-19888, CVE-2026-6668) and an unbounded SCRAM iteration count
+  from a malicious server (CVE-2026-6669); 1.25.2 fixed a pre-auth crash
+  (CVE-2026-6664). CVE-2025-12819 (pre-auth SQL via `search_path`, fixed in
+  1.25.1) needed `track_extra_parameters` to include `search_path` AND a
+  non-empty `auth_user` — both non-default.
+- Redis: CVE-2025-49844 (Lua use-after-free, critical) is fixed in 6.2.20 /
+  7.2.11 / 7.4.6 / 8.0.4 / 8.2.2; the 2026-05-05 advisories CVE-2026-25243
+  (`RESTORE`, authenticated RCE, all versions) and CVE-2026-23479 list their
+  patched versions as TBD — take them from the release notes, and deny
+  `RESTORE` by ACL (`-restore`, the advisory's workaround) until patched.
+- MongoDB: CVE-2025-14847 (unauthenticated heap read via zlib headers) is
+  fixed in 8.2.3 / 8.0.17 / 7.0.28 / 6.0.27 / 5.0.32 / 4.4.30; the 4.2, 4.0
+  and 3.6 lines got no fix.
+PostgreSQL minors: file 05; SurrealDB: file 08.
+
 ## Credentials & connection security
 
 ### Rule: Database credentials are short-lived, scoped, and never in code or images.
@@ -208,10 +239,13 @@ Full pattern in file 01 (multi-tenancy). Security-specific additions:
   tenant can write rows into another tenant (`CREATE POLICY ... USING (...)
   WITH CHECK (...)`). USING-only policies on writable tables: HIGH.
 - Context via `SET LOCAL` only (transaction pooling leaks `SET` — file 04).
-  A missing/empty setting must fail closed: `current_setting('app.tenant_id')`
-  without the `missing_ok` flag errors — that's the correct default; the
-  two-arg form `current_setting(x, true)` returns NULL and the policy must
-  then evaluate to false, not true.
+  A missing/empty setting must fail closed, and neither form does that on
+  its own: the one-arg `current_setting('app.tenant_id')` errors only on a
+  fresh session, and **both** forms return `''` on a reused (pooled)
+  connection once any earlier `SET LOCAL` there has ended (measured on
+  PG17). Wrap it as `nullif(current_setting(x, true), '')` and cast to the
+  column's type (`''::uuid` raises), so an unset tenant is NULL or an error,
+  never a comparison against `''` that a text `tenant_id` could match.
 - Functions used by policies: `STABLE`, and beware `SECURITY DEFINER`
   functions that read protected tables — they bypass RLS unless they set
   their own context. Views: define with `security_invoker = true` (PG15+) or
@@ -243,7 +277,8 @@ WHERE c.relkind IN ('r','p') AND n.nspname = 'app'
 ### Rule: In transit — TLS required and verified, both directions.
 - Server: `ssl = on`, certificates managed/rotated; `hostssl` rules in
   `pg_hba.conf`, no `host` lines permitting cleartext from app networks;
-  `scram-sha-256` auth only (no `md5`, never `trust`/`password`).
+  `scram-sha-256` auth only (no `md5` — deprecated since PG18, which warns
+  on every MD5 password set — never `trust`/`password`).
 - Client: `sslmode=verify-full` — `require` (the common default people stop
   at) does **not** verify the server cert, allowing MITM. `sslmode=require`
   in production connection strings: MEDIUM, HIGH across untrusted networks.
@@ -386,13 +421,19 @@ for app-side review. Database-layer obligations:
       does not own the binaries; host hardened from a CIS/vendor baseline with
       deviations recorded. Probe (unit files, my.cnf, compose, Dockerfiles):
       `grep -rniE "^[[:space:]]*user[[:space:]]*[=:][[:space:]]*[\"']?(root|0)([\"':]|$)|^USER[[:space:]]+(root|0)([[:space:]:]|$)" .`
+- [ ] HIGH: every engine, pooler, cache and proxy has a named advisory feed,
+      owner and patch SLA; running versions (`SELECT version()`, PgBouncer
+      `SHOW VERSION`, Redis `INFO server`) are at or above the fix for
+      each advisory reachable in this config, pre-auth ones first; no EOL
+      branch. Feed check: `gh api --paginate 'repos/OWNER/REPO/security-advisories?per_page=100' --jq '.[]|[.published_at[:10],.severity,.cve_id,.summary]|@tsv'`
+      — an empty result means "look at the changelog", not "no advisories".
 - [ ] Credentials from secret manager/workload identity, rotatable without
       deploy, one per service; DB not publicly reachable; pg_hba explicit;
       no secrets in repos/images/CI logs.
 - [ ] HIGH: every engine's listener bound to localhost/private interfaces (TCP
       off when co-located), superuser login local-only, admin consoles behind
       TLS + auth. Probe:
-      `grep -rniE "listen_addresses[[:space:]]*=[[:space:]]*'(\*|0\.0\.0\.0|::)'|bind[-_]address[[:space:]]*=[[:space:]]*(\*|0\.0\.0\.0|::)|bindIp(All)?:[[:space:]]*\"?(0\.0\.0\.0|true)|^bind[[:space:]]+(\*|0\.0\.0\.0)|'root'@'%'|^host(ssl)?[[:space:]]+[^[:space:]]+[[:space:]]+postgres[[:space:]]+[^[:space:]]+[[:space:]]+(scram|md5|password|trust|cert)" .`
+      `grep -rniE "listen_addresses[[:space:]]*=[[:space:]]*'(\*|0\.0\.0\.0|::)'|bind[-_]address[[:space:]]*=[[:space:]]*(\*|0\.0\.0\.0|::)|bindIp(All)?:[[:space:]]*\"?(0\.0\.0\.0|true)|--bind_ip(_all|[[:space:]=]+[\"']?(0\.0\.0\.0|::|\*))|^bind[[:space:]]+(\*|0\.0\.0\.0)|'root'@'%'|^host(ssl)?[[:space:]]+[^[:space:]]+[[:space:]]+postgres[[:space:]]+[^[:space:]]+[[:space:]]+(scram|md5|password|trust|cert)" .`
       (MySQL and a config-less Redis listen on all interfaces with no line to
       hit — check `SHOW VARIABLES LIKE 'bind_address'` / `CONFIG GET bind`).
 - [ ] pgaudit (or equivalent) on DDL/roles/sensitive writes, logs shipped

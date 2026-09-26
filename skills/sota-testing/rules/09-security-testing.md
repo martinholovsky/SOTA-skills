@@ -440,6 +440,9 @@ Management cheat sheets.
       token refused, socket closed on logout or expiry, message limits enforced?
       Origin allow-all in code:
       `grep -rnE 'CheckOrigin:[[:space:]]*func\([^)]*\)[[:space:]]*bool[[:space:]]*\{[[:space:]]*return true|setAllowedOrigin(s|Patterns)\("\*"\)' .`
+      plus the gofmt multi-line form (body's first line is `return true`; an allowlist
+      whose `return true` sits inside an `if` does not match):
+      `grep -rnA1 -E 'CheckOrigin:[[:space:]]*func\([^)]*\)[[:space:]]*bool[[:space:]]*\{[[:space:]]*$' . | grep -E -- '-[0-9]+-[[:space:]]*return[[:space:]]+true[[:space:]]*$'`
       Any hit on a cookie-authenticated socket → High; no WebSocket tests → Medium.
 - [ ] **Authz tests runnable on their own** (a marker or script), and CI reports 401
       and 403 counts against the base branch (§3a)? No volume signal → Low.

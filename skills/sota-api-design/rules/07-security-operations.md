@@ -288,9 +288,12 @@ Cross-tenant data leakage is the worst API bug class. Defense in depth:
   source of truth. (`X-Tenant-Id` headers trusted from clients = critical
   finding.)
 - **Scope every query structurally**: tenant filter applied by a repository
-  layer/ORM global scope or Postgres RLS (`SET app.tenant_id`; policies on every
-  table) — not by remembering `WHERE tenant_id = ?` in each handler. RLS as a
-  second enforcement layer catches the handler someone forgot.
+  layer/ORM global scope or Postgres RLS (`SET LOCAL app.tenant_id` or
+  `set_config('app.tenant_id', …, true)` inside the request's transaction — a
+  plain `SET` leaks to the next borrower under transaction pooling, see
+  `sota-databases` rules/04; policies on every table) — not by remembering
+  `WHERE tenant_id = ?` in each handler. RLS as a second enforcement layer
+  catches the handler someone forgot.
 - Resource IDs: lookups are always `(tenant_id, id)`; return `404` (not `403`)
   for other tenants' resources to avoid existence oracles — and make that
   consistent (a timing or message difference is still an oracle).
@@ -387,7 +390,8 @@ audience (public, partner, internal), plus its auth, rate-limit and CORS posture
 To audit it, compare three lists: the endpoints and parameters the server code
 routes (extract from routing code, OWASP Noir is one extractor), the published
 spec, and the URLs that shipped client JS/HTML bundles reveal (LinkFinder and
-jsluice are examples). An entry on one list and missing from another is an
+jsluice are examples — both without a commit since early 2024, checked
+2026-09-26 on GitHub, so treat them as unmaintained). An entry on one list and missing from another is an
 undocumented or orphaned surface. Also check the server URLs a published
 description advertises (OpenAPI `servers`, WSDL `soap:address`): each must be
 intended and live, with no staging, localhost or private-range host.

@@ -231,7 +231,8 @@ Same applies to running totals, gaps-and-islands, deduplication
   psql, slow in app. Fix: `SET plan_cache_mode = force_custom_plan` for that
   statement/role, or restructure.
 - PgBouncer transaction mode breaks session-level prepared statements unless
-  PgBouncer ≥1.21 with `max_prepared_statements` set — verify (file 04).
+  PgBouncer ≥1.21 with `max_prepared_statements` non-zero (the default
+  is 200 since 1.24; an explicit 0 turns it off) — verify (file 04).
 - **Confirm that binding really happens on the server.** When a pooler, a
   proxy, or an engine that only speaks a compatible wire protocol cannot run
   server-side prepared statements, drivers are switched to (or silently fall
@@ -262,7 +263,7 @@ Same applies to running totals, gaps-and-islands, deduplication
 
 ## Audit checklist
 
-- [ ] Geospatial: `grep -rniE 'ST_Distance\\(|haversine|acos\\(sin\\(' --include='*.sql' --include='*.py' .`
+- [ ] Geospatial: `grep -rniE 'ST_Distance\(|haversine|acos\(sin\(' --include='*.sql' --include='*.py' --include='*.js' --include='*.ts' --include='*.rb' --include='*.go' .`
       — a distance in a `WHERE` clause is a sequential scan; the indexable form is
       `ST_DWithin`. Confirm with `EXPLAIN`, since every one of these returns the *right
       answer* while scanning the table.

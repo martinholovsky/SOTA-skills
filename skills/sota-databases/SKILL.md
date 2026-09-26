@@ -135,3 +135,5 @@ introduced in BUILD mode.
 10. **Transactions are short.** No network calls, no user waits, no batch
     loops inside a transaction. Long transactions cause bloat, lock queues,
     and replication lag — treat any transaction over ~1s as a design bug.
+    (PG17+ `transaction_timeout` is a backstop far above that; it kills the
+    session.)

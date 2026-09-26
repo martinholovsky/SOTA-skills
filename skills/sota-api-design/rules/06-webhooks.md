@@ -232,7 +232,7 @@ your cloud metadata, please"). Egress controls are non-negotiable:
 ## Audit checklist
 
 **Provider role:**
-- [ ] HMAC-SHA256 over timestamp+raw body, versioned scheme, per-endpoint secrets, multi-signature rotation support (Standard Webhooks-compatible preferred).
+- [ ] HMAC-SHA256 over `id.timestamp.raw_body` (message id included), versioned scheme, per-endpoint secrets, multi-signature rotation support (Standard Webhooks-compatible preferred).
 - [ ] Outbox/queue-backed dispatch (no inline sends, no events from rolled-back transactions); per-endpoint isolation so one dead consumer can't starve others.
 - [ ] Exponential backoff + jitter retries over days; 410 auto-disables; failing endpoints disabled with owner notification.
 - [ ] Delivery logs, manual redelivery, and an events reconciliation API exposed to consumers.
