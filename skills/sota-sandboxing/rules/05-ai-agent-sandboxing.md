@@ -425,9 +425,7 @@ where they coexist. Rate it with the chain named leg by leg (`sota/rules/03` §1
       the host (R3.4). JSON (`*mcp*.json`, Gemini `settings.json`, Claude Desktop) and
       Codex TOML entries; run at the repo root, then over `~/.gemini ~/.codex` in place
       of `.` (raw `ugrep` needs `--hidden` to enter `.cursor/`, `.gemini/`, `.codex/`):
-      ```sh
-      grep -rnE --include='*mcp*.json' --include='settings.json' --include='claude_desktop_config.json' --include='config.toml' '"command"[[:space:]]*:[[:space:]]*"(npx|uvx|node|python3?|bunx|deno)"|^[[:space:]]*command[[:space:]]*=[[:space:]]*"(npx|uvx|node|python3?|bunx|deno)"' .
-      ```
+      `grep -rnE --include='*mcp*.json' --include='settings.json' --include='claude_desktop_config.json' --include='config.toml' '"command"[[:space:]]*:[[:space:]]*"(npx|uvx|node|python3?|bunx|deno)"|^[[:space:]]*command[[:space:]]*=[[:space:]]*"(npx|uvx|node|python3?|bunx|deno)"' .`
       — each hit is a server started directly as the developer; want a container or
       OS-sandbox wrapper with scoped mounts and no default network.
 - [ ] **High** — No agent bypass mode in shared scripts, aliases or settings (R3.5):
