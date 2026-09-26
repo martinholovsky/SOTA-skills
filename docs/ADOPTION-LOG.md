@@ -6744,6 +6744,7 @@ BSD grep, the ugrep wrapper, bash and zsh.
   `PYTHON_DISABLE_REMOTE_DEBUG=1` is ignored under `python -I`. The rule teaches the working form.
   The upstream docs bug has not been reported (it would be a public post, so that is the
   operator's call).
+- **DEFERRED — reporting the CPython docs bug upstream (`-X disable_remote_debug` is inert; only `disable-remote-debug` works, and `PYTHON_DISABLE_REMOTE_DEBUG` is ignored under `-I`); revisit trigger: the operator approves the text of a public issue on python/cpython.**
 - **NuGet signature enforcement works on Linux, with two bypasses.** Measured in the .NET 10 SDK
   container: `signatureValidationMode=require` fails restore with NU3034. A package already in the
   global packages folder skips the check, and so does `DOTNET_NUGET_SIGNATURE_VERIFICATION=false`.
@@ -6824,6 +6825,10 @@ last batch). Batch 1 covered `sota-secrets-management`, `sota-code-security`,
 `docs/MAINTENANCE.md` §2:
 - Research: one agent per skill, primary sources only. **135 findings** (7 High, 48 Medium,
   80 Low).
+- *Corrected 2026-09-26 (session close): the finding lines count 7 High, 50 Medium, 78 Low; the
+  figures above came from the research agents' header summaries, which undercount two Medium
+  lines (one each in the sandboxing and detection/confidential-computing reports). 56 items went
+  to refuters — the 57th, the brace `--include`, was already fixed — and none was refuted.*
 - Refutation: each of the 55 High/Medium findings went to an agent prompted to kill it.
   **None was refuted**; several fixes were corrected and a few severities lowered.
 - Fixes: one agent per skill folder. Every new or changed command was run against a bad and a
@@ -7174,7 +7179,8 @@ expiry, UK DUAA 2025 and a CPPA date.
 **The sweep is complete.** Every one of the 42 skills was re-verified against primary sources:
 the nine language skills on 2026-09-25 (#472) and the other 33 in four batches on 2026-09-26.
 Across the four batches: **439 findings** (31 High) — 135 in batch 1, 104 in batch 2, 111 in
-batch 3, 89 in batch 4 — of which the 202 High/Medium items went to refuters and **none was
+batch 3, 89 in batch 4 — of which the 202 High/Medium items (*203: corrected at session close,
+batch 1 sent 56 not 55*) went to refuters and **none was
 refuted**; many proposed fixes were corrected first. The four whole-diff reviews found 37 more
 defects that every invariant had passed. `LAST-VERIFIED` moves to **2026-09-26** in this
 change; ROADMAP 5 (recurring) rolls forward — dormant until the next sweep, due ~2027-03-26.
