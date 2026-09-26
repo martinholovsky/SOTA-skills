@@ -129,7 +129,7 @@ The engineering contract that makes translation possible:
 - [ ] Zero hardcoded UI strings in components (spot-check by adding a
       pseudo-locale and hunting untranslated text)
 - [ ] No string concatenation or linguistic code:
-      `grep -rnE '\+\s*["'\''](s|es)["'\'']|["'\'']\s*\+\s*(count|n|num)' src/`
+      `grep -rnE '\+\s*["'\''](s|es)["'\'']|["'\'']\s*\+\s*(count|n|num)|\$\{ *([a-zA-Z_.]*([Cc]ount|[Tt]otal|[Ll]ength)|n|num) *\} +[a-zA-Z]' src/`
       and no `toUpperCase()`/`capitalize` on translated strings
 - [ ] ICU plurals with named placeholders everywhere counts appear; no
       positional `{0}` placeholders

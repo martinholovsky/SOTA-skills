@@ -31,8 +31,8 @@ Agree these before reading a single line of code:
   - OWASP Top 10 (2025) and OWASP API Security Top 10 (2023)
   - CWE for weakness identification
   - MITRE ATT&CK for attacker-technique mapping
-  - For LLM/agent code: OWASP Top 10 for LLM Applications, OWASP Agentic AI
-    guidance, MITRE ATLAS
+  - For LLM/agent code: OWASP Top 10 for LLM Applications, OWASP Top 10 for
+    Agentic Applications (2026 edition), OWASP AISVS (1.0 edition), MITRE ATLAS
 - **Time-box and prioritize crown jewels.** When time is bounded, depth beats
   breadth. Audit first, in order: authentication/session code, secrets
   handling and history, money and sensitive-data flows, internet-facing entry
@@ -136,7 +136,7 @@ itself a gap worth noting.
 ## 3. Tool matrix & triage
 
 Tools find the mechanical 60%; manual review finds the design flaws. Run
-both, never just one. The matrix below was verified current as of 2026-06;
+both, never just one. The matrix below was verified current as of 2026-09-26;
 tools rename, fork, and die — **verify the current name and version of each
 tool before invoking it** (one quick search; e.g. Semgrep's OSS engine was
 forked to Opengrep in 2025 after a license split). Prefer the open-source
@@ -144,7 +144,7 @@ option where capability is equivalent.
 
 | Area | Tools (verify current before use) | Notes |
 |---|---|---|
-| Secrets in code & git history | gitleaks; trufflehog | gitleaks is feature-complete (security patches only); still the standard scanner. trufflehog additionally *verifies* credentials live — never run verification against creds you must not touch. detect-secrets (Yelp, actively maintained) is a solid baseline scanner; prefer the first two for breadth and live verification. |
+| Secrets in code & git history | gitleaks; trufflehog | gitleaks is feature-complete (security patches only); still the standard scanner — its README names Betterleaks (MIT) as where its author's new work goes, so evaluate that as the successor. trufflehog additionally *verifies* credentials live — never run verification against creds you must not touch. detect-secrets (Yelp) has had no release since 2024-05 — verify maintenance before adopting; prefer the first two for breadth and live verification. |
 | Python SAST + deps | bandit; Opengrep/Semgrep CE; pip-audit | pip-audit is PyPA-maintained and can suggest fixes. |
 | Rust | cargo-audit; cargo-deny; clippy `-D warnings` | cargo-deny also covers licenses and banned crates; clippy ships with the toolchain. |
 | Go | gosec; govulncheck; staticcheck; `go test -race` | govulncheck is the official Go team scanner — call-graph-aware, low false positives. |
@@ -155,7 +155,7 @@ option where capability is equivalent.
 | SBOM | syft (generate) → grype (scan) | trivy can also emit SBOMs (CycloneDX/SPDX). |
 | Supply-chain signing & provenance | cosign verify (with `--certificate-identity` / `--certificate-oidc-issuer` for keyless); slsa-verifier | Verify provenance/attestations actually chain to the expected builder identity, not merely that a signature exists. |
 | IaC / K8s | checkov; trivy (misconfig scanning); kubescape; kube-linter | kubescape is CNCF-incubating; kube-linter is lightweight and CI-friendly. |
-| CI workflow security | zizmor | Static analysis of GitHub Actions workflows: template injection, credential persistence, ref spoofing, excessive permissions. |
+| CI workflow security | zizmor | Static analysis of GitHub Actions workflows and actions (template injection, credential persistence, ref spoofing, excessive permissions), plus Dependabot and pre-commit configs. |
 | Licenses | cargo-deny (Rust); trivy license scan; syft SBOM license fields | Filter against the project's allowed-license policy. |
 
 Run each tool against the pinned commit; record the exact tool version and
@@ -182,7 +182,7 @@ command line (needed for §4 reproducibility).
   `rustc -D deprecated`, `python -W error::DeprecationWarning` each exit non-zero on a use;
   Go's staticcheck reports it as SA1019. Suppressing the warning is the suppression case
   above. Per-language banned lists live in the language skills (e.g. `sota-c-cpp`
-  rules/04 §1). Source: SCSVS S2.1.A2.
+  rules/04 §1). Source: CWE-477 (Use of Obsolete Function); also OWASP Smart Contract SVS S2.1.A2.
 
 ### Collect deterministically, then judge
 
@@ -416,7 +416,7 @@ one covers coverage, tooling and hygiene. Both run.
 - [ ] Scope agreed: repos, branch, pinned commit, environments,
       static-vs-dynamic — and exclusions documented?
 - [ ] Standards set named up front (ASVS level, OWASP Top 10 2025,
-      API Top 10 2023, CWE, ATT&CK; LLM/ATLAS where applicable)?
+      API Top 10 2023, CWE, ATT&CK; LLM/Agentic Top 10, AISVS, ATLAS where applicable)?
 - [ ] Full inventory done: languages+versions, entry points, trust
       boundaries/DFD, secrets surface, dependencies, deploy configs?
 - [ ] Every inventory item mapped to a skill via the routing table, and each
@@ -438,7 +438,7 @@ one covers coverage, tooling and hygiene. Both run.
 - [ ] Exploitability re-rated in context (tool severity treated as input)?
 - [ ] Existing suppression comments reviewed?
 - [ ] **Medium** — Deprecated-API use reported, CI fails on deprecation warnings, and each
-      silenced one justified (§3): `grep -rnE 'SuppressWarnings\(.*"(deprecation|removal)"|allow\(deprecated\)|-Wno-deprecated|ignore::DeprecationWarning|"ignore"[^)]*DeprecationWarning|SA1019|disable CS0618' .`
+      silenced one justified (§3): `grep -rnE 'Suppress(Warnings)?\(.*"(deprecation|removal|DEPRECATION)"|(allow|expect)\(deprecated\)|-Wno-deprecated|ignored "-Wdeprecated|ignore::DeprecationWarning|"ignore"[^)]*DeprecationWarning|SA1019|(disable|NoWarn>[^<]*)[ ;]*(CS0618|618\b|SYSLIB0)|no-deprecated|deprecation/deprecation' .`
 - [ ] Manual passes done for logic, authz/BOLA, boundary crossings, races,
       crypto misuse, prompt-injection paths?
 - [ ] **Silent-control pass run** over the controls confirmed to exist — inert

@@ -97,8 +97,12 @@ a required review on purpose-tag diffs.
 
 **Definitions that matter legally and technically:**
 - **Pseudonymized:** identifiers replaced, but a mapping (key, table, or feasible
-  linkage) exists. Still personal data under GDPR (Recital 26). Valuable as a
-  security measure; changes nothing about DSAR/deletion obligations.
+  linkage) exists. Still personal data under GDPR (Recital 26) for the controller
+  holding the key. Valuable as a security measure; changes nothing about
+  DSAR/deletion obligations. For a *recipient* without means to re-identify, the CJEU
+  held it may not be personal data (C-413/23 P *EDPS v SRB*, 4 Sep 2025, para 86,
+  under Reg. 2018/1725) — a counsel question, never a reason to descope a transfer
+  on your own; the test below is stricter than the Court's, deliberately.
 - **Anonymized:** re-identification not reasonably likely by any party with any
   auxiliary data — only then does data leave GDPR scope. This bar is far higher
   than engineers assume.
@@ -122,7 +126,7 @@ requires a documented review with attack assumptions, not a checkbox.
 
 **Tokenization:** replace the sensitive value with a random token; the vault
 holding the mapping becomes the high-security zone, and downstream systems fall
-out of sensitive scope. This is THE PCI DSS descoping move (rules/04 §5) and works
+out of sensitive scope. This is THE PCI DSS descoping move (rules/04 §4) and works
 for SSNs/bank details too:
 
 ```text

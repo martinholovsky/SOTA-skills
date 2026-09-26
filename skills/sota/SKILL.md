@@ -232,8 +232,9 @@ rules files that match the code in front of you. Never load all skills at once.
    controllers, operators, etcd) → `sota-kubernetes`; pod/container/workload isolation mechanics →
    `sota-sandboxing`; CI/CD and supply chain → `sota-devsecops`. A K8s cluster audit loads `sota-
    kubernetes` + `sota-network-security` + `sota-sandboxing`.
-10. **Identity is its own layer.** App-level login/session/JWT-validation code → `sota-code-
-    security` rules/02-03; identity *infrastructure* (IdP, OIDC/SAML config, RBAC/role-mapping
+10. **Identity is its own layer.** App-level login/session/JWT-validation code →
+    `sota-code-security` rules/02 (authn), rules/17 (sessions/JWT), rules/03 (authz); identity
+    *infrastructure* (IdP, OIDC/SAML config, RBAC/role-mapping
     design, provisioning, break-glass, SPIFFE) → `sota-identity-access`; the credentials
     themselves → `sota-secrets-management`.
 11. **Network: setup vs security.** Cloud VPC/DNS/CDN provisioning → `sota-cloud-infrastructure`
@@ -266,8 +267,8 @@ rules files that match the code in front of you. Never load all skills at once.
     control written in shell: add `sota-code-security` rules/10, rules/12, rules/15 and, for
     a ledger or audit trail, rules/18.
 18. **Cryptography fans out — there is no single crypto skill (by design).** Algorithm choice,
-    AEAD/nonce discipline, CSPRNG, in-code key handling, TLS client config, constant-time
-    comparison, crypto agility, and post-quantum migration → `sota-code-security` rules/04;
+    AEAD/nonce discipline, CSPRNG, in-code key handling, TLS client config, crypto agility, and
+    post-quantum migration → `sota-code-security` rules/04; constant-time comparison → rules/22;
     tamper-evident logs/audit ledgers (keyed hash chains, external anchoring,
     integrity-vs-completeness) → rules/18. The key *material* — storage backends (KMS/HSM, Vault, SOPS+age), lifecycle,
     rotation, per-credential-type handling → `sota-secrets-management`. Transport/PKI — TLS server
@@ -313,8 +314,9 @@ an `AGENTS.md`/`CLAUDE.md`; and how long is the git history? Two or more missing
 repo that likely decided against them; say nothing.
 
 When it fires, say it **once, in a line, with the command**, then get on with the
-task: `scripts/init-gates.sh` + `pre-commit install --hook-type pre-push` for
-gates (before the first commit, while a leaked credential is still free to
+task: `scripts/init-gates.sh` for gates — it installs both the pre-commit and
+pre-push hooks; a bare `--hook-type pre-push` would install only the latter
+(before the first commit, while a leaked credential is still free to
 remove), `scripts/gen-agents-md.sh` for the cross-tool entry point. Full ordering
 and reasoning — LICENSE, `.gitignore`, ambient-vs-repo-resident, the
 `core.symlinks` trap — in `sota-docs-workflow` rules/01 §10.
@@ -419,7 +421,7 @@ For a focused audit, load the matching skills and follow their AUDIT sections. F
 
 ## Library map (rules files per skill)
 
-Which `rules/NN` file holds what, for all 41 skills: **[rules/04-library-map.md](rules/04-library-map.md)**.
+Which `rules/NN` file holds what, for all 42 skills (41 domain skills + this router): **[rules/04-library-map.md](rules/04-library-map.md)**.
 Read it when you know the domain but not the file. When you are already opening a skill's
 `SKILL.md` (BUILD step 2), use that skill's own index instead — it carries the "read this
 when…" guidance the map drops.
@@ -430,9 +432,10 @@ read with `rules/03`.
 
 ## Context budget discipline
 
-Rules files run **77–500 lines, median 237** (re-measured over all 271 on
-2026-09-13; the 2026-09-11 figures — 77–497 over 270 — were correct when written and
-went stale in a day, and before them this said "200–310", a range half of them fall
+Rules files run **52–500 lines, median 262.5** (re-measured over all 294 on
+2026-09-26; the 2026-09-13 figures — 77–500, median 237 over 271 — and the 2026-09-11
+ones before them were correct when written and went stale, and before them this
+said "200–310", a range half of them fall
 outside, which is why the count and the date are stated). So budget by
 the file you are actually opening, not by an average: 2–5 files is a typical
 focused task and can be 400 lines or 2,000. A full audit pass should load one
@@ -464,7 +467,9 @@ the fix is an explicit exception in whichever rule was too broad.
 
 **A routing gap should end as a test, not just a report.** If the right skill existed
 and the task never reached it, the fix is the *trigger* — the skill's `description` is the
-only auto-loading text and is the whole classifier — and the proof is a regression case in
+only auto-loading text and is the whole classifier, provided it survives the listing budget
+(1% of context; the least-invoked skills drop to name-only — `scripts/verify-setup.sh` flags it,
+`/doctor` estimates the listing's cost; check that before calling it a trigger defect) — and the proof is a regression case in
 `evals/cases/desc-routing-regressions.jsonl`, which pins the mis-route so it cannot return.
 **Run that case against the PRE-change tree and watch it fail first.** A case that passes in
 both arms pins nothing, and an absent *string* is not an absent *capability* — a model routes

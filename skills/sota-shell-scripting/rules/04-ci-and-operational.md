@@ -36,8 +36,11 @@ controlled. Lint with `actionlint` (embeds ShellCheck for run blocks) and audit 
 taxonomy → `sota-devsecops`.
 
 **Multiline `run:` blocks**: each step is one script — a failing middle line only stops
-the step because of `-e`; verify the effective shell options for your CI (GitLab uses
-`sh`/`bash` without pipefail unless you set it; Jenkins `sh` step is `/bin/sh -xe`).
+the step because of `-e`; verify the effective shell options for your CI (GitLab Runner's
+bash/sh shell sets `errexit`, and `pipefail` wherever the shell supports it — so an image
+with no bash whose `sh` is an older dash (e.g. Debian bookworm's) silently runs without it;
+source: `shells/bash.go`, present since at least v15.0.0, checked 2026-09-26; Jenkins `sh`
+step is `/bin/sh -xe`).
 YAML quoting compounds shell quoting: prefer `run: |` literal blocks; avoid `run: "..."`
 double-quoted YAML where `\` and `"` get re-escaped.
 
@@ -227,7 +230,8 @@ environment instead of the harness.
 
 Kill the **group**, having started it in its own: `setsid cmd &` then `kill -- -"$pgid"`.
 (`rules/05` §3 shows the inside-the-script half — `trap 'trap - TERM; kill -TERM -- -$$'`
-forwards a signal to your own group; this is the same mechanism applied from outside.)
+forwards a signal to your own group, and only works when the script leads that group;
+this is the same mechanism applied from outside.)
 Otherwise sweep by pattern — and **verify the sweep before restarting**, because `pkill -f`
 matches the sweeping shell's own argv (`rules/01` §3) and a survivor is invisible until it
 corrupts the next run.
@@ -246,13 +250,14 @@ corrupts the next run.
 - [ ] **Gate-then-act joined by `;`**: `grep -rnE '\.(sh|py)[^&|]*; *(git (push|tag|commit)|kubectl|terraform apply|rm )' --include='*.sh' .` — a check whose exit status the next command ignores. Also flag `check | tail`/`| head` before an action: the pipe hides the producer's status.
 - [ ] Workflows: `grep -rn '\${{' .github/workflows/ | grep -i 'head_ref\|pull_request\.\(title\|body\)\|commits\|issue\.\(title\|body\)\|comment\.body'`
       inside `run:` → CRITICAL (injection); fix via `env:` indirection.
-- [ ] `grep -rLn 'shell: bash\|pipefail' .github/workflows/*.yml` — steps relying on
-      default shell semantics → MEDIUM.
+- [ ] `grep -rL --include='*.yml' --include='*.yaml' -e 'shell: bash' -e 'pipefail' .github/workflows/`
+      — steps relying on default shell semantics → MEDIUM. (Not `.github/workflows/*.yml`:
+      that misses `*.yaml` and, unmatched, aborts zsh with `no matches found`.)
 - [ ] `>> "$GITHUB_OUTPUT"` / `$GITHUB_ENV` writes of non-constant values without heredoc
       delimiters → HIGH.
 - [ ] Run `actionlint` (embeds ShellCheck) and `zizmor` on workflows; `hadolint` on
       Dockerfiles (DL4006 pipefail-in-RUN, SC-rules inside RUN).
-- [ ] Entrypoints: `grep -rn '"\$@"\|exec ' docker/ *entrypoint*` — final command lacking
+- [ ] Entrypoints: `grep -rn --include='*entrypoint*' -e '"\$@"' -e 'exec ' .` — final command lacking
       `exec` → HIGH (signal loss); `su -c`/`sudo` for privilege drop instead of
       gosu/su-exec/USER → HIGH.
 - [ ] `#!/usr/bin/env bash` entrypoint with alpine/busybox base image in Dockerfile → HIGH.

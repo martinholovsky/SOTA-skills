@@ -16,10 +16,13 @@ including the zsh deviations that bite them, are
   must not assume the login shell.
 - Use `#!/bin/sh` **only** when you commit to strict POSIX (and verify with
   `shellcheck -s sh`). `sh` is dash on Debian/Ubuntu and busybox ash in minimal containers:
-  no arrays, no `[[ ]]`, no `local` guarantees beyond common practice, no `pipefail`
-  (until very recent POSIX-2024-aligned shells), no `${var//pat/rep}`.
+  no arrays, no `[[ ]]`, no `local` guarantees beyond common practice, no `${var//pat/rep}`,
+  and `pipefail` only *sometimes*: POSIX.1-2024 specifies it and busybox ash has it, but dash
+  gained it only in upstream 0.5.13 (Debian bookworm's 0.5.12-2 rejects it; trixie's
+  0.5.12-12 accepts it — measured 2026-09-26). Probe it, in a subshell (rules/02 §5).
 - Never mix: a `#!/bin/sh` script containing bashisms is a time bomb that detonates on the
-  first dash/busybox host. SC2039/SC3xxx-series catch these.
+  first dash/busybox host. ShellCheck's SC3xxx series catches these (SC2039, the old catch-all,
+  was split into them in 0.7.2).
 - If the script needs bash ≥4 features (associative arrays, `mapfile`, `${var,,}`), guard:
 
 ```bash
@@ -470,8 +473,8 @@ splitting/joining class** — no widely-adopted static analyser catches
       or an agent harness is told 0 for a failed run. Recording `EXIT=` in a log is not
       returning it: capture with `rc=$?` and end with `exit "$rc"`. And whatever the
       notification said, **read the code out of the artefact before quoting an outcome**.
-- [ ] `grep -rn '^#!/bin/sh' scripts/`- [ ] `grep -rn '^#!/bin/sh' scripts/` then scan those files for `[[`, arrays, `local -`,
-      `${var//`, `pipefail` → bashism-in-sh (SC3xxx series).
+- [ ] `grep -rn '^#!/bin/sh' scripts/` then scan those files for `[[`, arrays, `local -`,
+      `${var//`, and an unprobed `pipefail` (§1) → bashism-in-sh (SC3xxx series).
 - [ ] **`set -e` believed inside a suspended context**: `set -e`/`set -o errexit`
       re-armed inside a function called from a condition, or `$-` inspected to prove
       errexit is live — both are inert there. Probe: `f() ( set -e; false; echo RAN )`

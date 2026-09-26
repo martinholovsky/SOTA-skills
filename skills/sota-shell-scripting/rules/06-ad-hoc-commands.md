@@ -116,8 +116,9 @@ you know is present into the same run and read both numbers:
 
 ```bash
 files=("${(@f)$(git ls-files '*.md')}")            # zsh; see `rules/01` §3
+NEEDLE='the term you are sweeping for'            # not $TERM: that is the terminal type
 printf 'control=%s  hits=%s\n' \
-  "$(grep -lF 'KNOWN_PRESENT' $files | wc -l)" "$(grep -lF "$TERM" $files | wc -l)"
+  "$(grep -lF 'KNOWN_PRESENT' $files | wc -l)" "$(grep -lF "$NEEDLE" $files | wc -l)"
 ```
 
 A control of **0** means the sweep is broken and the `hits=0` beside it means nothing. This
@@ -148,7 +149,7 @@ rpm2archive -n "$RPM" | tar -xO ./boot/config-* | grep -c CONFIG_BPF_LSM
 
 # GOOD — the denominator localises the failure in one step
 printf 'ARCHIVE_BYTES:%s  MEMBERS:%s  CONFIG_LINES:%s\n' \
-  "$(stat -f%z "$TGZ")" "$(tar -tzf "$TGZ" | wc -l)" "$(grep -c '^CONFIG' "$CFG")"
+  "$(wc -c < "$TGZ" | tr -d ' ')" "$(tar -tzf "$TGZ" | wc -l)" "$(grep -c '^CONFIG' "$CFG")"
 ```
 
 `CONFIG_LINES:0` alone is a finding about the kernel. `CONFIG_LINES:0` beside
@@ -485,7 +486,7 @@ filed under the wrong thing** — index it by what it is *for*.
       localises it to the reader. Required wherever a positive control is unavailable
       because nothing is known to be present in the target yet.
 - [ ] **zsh joining bugs** (the inverse of SC2086, and unlinted): in any zsh script or
-      snippet, `grep -nE '\$\{[a-zA-Z_]+:\+[^}]*\$' -e '[a-z] \$[a-zA-Z_]+$'` for
+      snippet, `grep -nE -e '\$\{[a-zA-Z_]+:\+[^}]*\$' -e '[a-z] \$[a-zA-Z_]+$' <file>` for
       `${var:+--flag $var}` and bare `cmd $args`. Each passes **one** argument in zsh
       where bash passes several. Confirm by running it: `printf "[%s]" $args` prints one
       bracket group, `${=args}` prints several. Symptom to recognise in a bug report — a

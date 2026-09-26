@@ -178,8 +178,9 @@ policy by typing the script contents at the command line when they can't run a s
   (`sota-sandboxing`), and not fetching code at runtime (`rules/03` §5 on `curl|bash`, whose
   PowerShell form is `iwr ... | iex` and is the same defect).
 - `Unblock-File` clears the mark-of-the-web; note that `curl.exe`, `Invoke-RestMethod` and
-  `Invoke-WebRequest` do **not** set it, so a download through them is never marked in the
-  first place.
+  `Invoke-WebRequest` "may not mark the files as coming from the Internet Zone"
+  (about_Execution_Policies), so a download through them cannot be assumed marked — and
+  RemoteSigned cannot be assumed to stop it.
 - Audit: a remediation that says "set the execution policy to RemoteSigned" and stops =
   **Info, and wrong** — record what actually gates execution.
 

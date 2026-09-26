@@ -13,11 +13,35 @@ Classify every loaded skill by what it can actually do, not by what it is about:
 |---|---|---|
 | **inert text** | nothing; the model reads it | content only |
 | **fetching** | network at load or run time | its content is not what you reviewed (`rules/01` §3) |
-| **executing** | shell, scripts, hooks | full script review, every update |
+| **executing** | shell, scripts, hooks — including a `SKILL.md` or command file that carries its own shell lines | full script review, every update |
 | **installing** | adds servers/plugins/tools | inherits everything those can do |
 
 **Default to inert.** A guidance skill that ships a script has to justify it, and
 the justification belongs where the reader installs it, not in a design doc.
+
+**A Markdown file can be in the executing class.** In Claude Code, a line starting
+`` !`cmd` `` or a ```` ```! ```` fence in a `SKILL.md` or a `.claude/commands/*.md`
+file runs as shell **when the skill is invoked** — by you or by the model — and the
+output replaces it before the model reads the skill; listing the skill runs nothing.
+Each command is checked against the permission rules first. Reproduced 2026-09-26
+(`claude -p`, v2.1.283, a scratch project never opened interactively): a command no
+rule allowed aborted the whole skill (outside auto mode) with **empty output and exit 0**, so the failure
+is silent in a script; the same command listed in the skill's own frontmatter
+`allowed-tools` ran without a prompt and created a file. That field is a
+**self-grant**: the docs state workspace trust does not gate it, `-p` runs
+included. Controls, strongest first:
+- **`disableSkillShellExecution: true`** replaces every such command with
+  `[shell command execution disabled by policy]` for user, project, plugin and
+  additional-directory skills — not for bundled or managed ones. It is a
+  recommendation where you install skills from sources you have not reviewed, not a
+  default to flip blindly: it also disables the injection in skills you rely on. Put
+  it in managed settings, where users cannot override it, and **verify it took**:
+  invoke a test skill whose `` !`echo` `` line should come back as that placeholder.
+- **`disable-model-invocation: true`** on a skill with side effects, so only a human
+  starts it;
+- **deny rules** in permission settings, which override `allowed-tools`.
+Review a foreign skill's `allowed-tools` and `!` lines before the first invocation,
+not after (probe in the audit checklist). (code.claude.com/docs/en/skills)
 
 Where the platform cannot enforce the class — and today most cannot — **say so at
 the install point**. An unenforceable restriction that is written down is a
@@ -51,11 +75,17 @@ Which puts several ordinary things inside the boundary:
   CODEOWNERS entry per path with required code-owner review turned on in the branch
   rule, plus a CI step or pre-commit hook that labels or prints the matched paths
   (`git diff --name-only <base>... | grep -E '<agent-file pattern>'`). The set is wider
-  than the root files: `AGENTS.md` anywhere (the nearest one wins in a subtree),
-  `CLAUDE.md`/`.claude/CLAUDE.md` and subdirectory `CLAUDE.md` files (loaded on demand),
-  `.claude/rules/` and `.claude/skills/`, `.cursor/rules/*.mdc`, legacy `.cursorrules`,
-  `.github/copilot-instructions.md` and `.github/instructions/`, and any vendored
-  `skills/` tree. **No author exemption**: a change the agent wrote to its own
+  than the root files: `AGENTS.md` anywhere — the agents.md spec says the nearest one
+  to the edited file takes precedence, while Claude Code concatenates every file it
+  discovers, root first, and by default reads `AGENTS.md` only where no `CLAUDE.md`,
+  `.claude/CLAUDE.md` or `CLAUDE.local.md` sits in the working directory or above, so
+  a nested file steers either way; `CLAUDE.md`/`.claude/CLAUDE.md`/`CLAUDE.local.md`
+  and their subdirectory copies (loaded on demand); `.claude/rules/`, `.claude/skills/`,
+  `.claude/commands/`, `.claude/agents/`; `.claude/settings.json` and
+  `.claude/settings.local.json` (hooks) and `.mcp.json` (servers); `.cursor/rules/*.mdc`,
+  legacy `.cursorrules`; `.devin/rules/`, `.windsurf/rules/`, legacy `.windsurfrules`;
+  `.github/copilot-instructions.md`, `.github/instructions/`, `.github/prompts/` and
+  `.github/agents/`; and any vendored `skills/` tree. **No author exemption**: a change the agent wrote to its own
   instructions is the case the gate exists for, so it must not skip bot or agent
   accounts. Two silent holes: CODEOWNERS on its own only *requests* review, and a
   CODEOWNERS line with invalid syntax or an unknown owner is skipped rather than
@@ -115,9 +145,9 @@ sibling.
 **Over-selection is a real cost even without conflict.** Loading more skills than a
 task needs spends context and increases the chance two of them disagree. Measured
 here 2026-09-06: routing recall over a gold set was 0.975 while precision was 0.569
-— the failure mode is loading too much, not too little. Note the cost is not
-automatically *quality*: the same library measured a padded context at −0.01 to
-−0.03. Budget it as tokens and conflict risk, not as an assumed degradation.
+(10 cases) — the failure mode is loading too much, not too little. Note the cost is
+not automatically *quality*: the same library measured a padded context at −0.01 to
+−0.03 (n=1). Budget it as tokens and conflict risk, not as an assumed degradation.
 
 ## 4. Update, revoke, and the thing that is still loaded
 
@@ -139,10 +169,18 @@ automatically *quality*: the same library measured a padded context at −0.01 t
       modify it without being able to modify the code? Anything a PR can change is
       inside the boundary and is reviewed like a CI change.
 - [ ] **Changes to agent-loaded files are flagged by a machine** (§2), High if
-      missing: list them with `git ls-files | grep -E '(^|/)(AGENTS|CLAUDE|GEMINI)\.md$|(^|/)\.cursorrules$|(^|/)\.cursor/rules/|(^|/)\.github/(copilot-instructions\.md|instructions/)|(^|/)\.claude/(rules|skills)/|(^|/)skills/[^/]+/'`,
+      missing: list them with `git ls-files | grep -E '(^|/)(AGENTS|CLAUDE|GEMINI|CLAUDE\.local)\.md$|(^|/)\.(cursorrules|windsurfrules|mcp\.json)$|(^|/)\.(cursor|windsurf|devin)/rules/|(^|/)\.github/(copilot-instructions\.md|instructions/|prompts/|agents/)|(^|/)\.claude/(rules|skills|commands|agents)/|(^|/)\.claude/settings(\.local)?\.json$|(^|/)skills/[^/]+/'`,
+      (24/24 agent paths, 0/8 look-alikes on BSD, GNU and ugrep, 2026-09-26),
       match every hit against a CODEOWNERS pattern, confirm required code-owner
       review is on (`sota-devsecops` rules/01 §1.8), and confirm the CI or hook step
       that flags them has no bot/agent author exemption.
+- [ ] **Skill shell lines and self-grants reviewed before first invocation** (§1),
+      High where a skill from an unreviewed source can run shell: list them with
+      `` find -L <skill and command dirs> -name '*.md' -exec grep -nHE '^allowed-tools:|(^|[[:space:]])!`|^```!' {} + ``
+      (`-L` because BSD `grep -r` skips a symlinked skill dir; 4/4 fixtures, 0 false
+      hits on BSD, GNU and ugrep, 2026-09-26) — each hit is a command that runs on
+      invocation or a tool grant the skill gave itself; for untrusted sources, is
+      managed `disableSkillShellExecution` on and verified?
 - [ ] **Agent files in untrusted repos treated as data** (§2) — and a clone-to-review
       workflow that does not adopt the clone's instructions?
 - [ ] **Agent-written history reviewed as instructions** (§2), Medium, High where

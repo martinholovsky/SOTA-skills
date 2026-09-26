@@ -127,8 +127,10 @@ check for `docker` misses podman, `LICENSE` misses `LICENSE-MPL`,
    **Memory files**. A file in the repo that is missing from that list is a file
    Claude cannot see — the most common cause of "the agent suddenly got worse".
    Three specific ways it happens, all silent:
-   - the repo carries `AGENTS.md` only, and **Claude Code does not read
-     `AGENTS.md`** — it reads `CLAUDE.md`;
+   - the repo carries `AGENTS.md` plus a `CLAUDE.md` or `CLAUDE.local.md` that does not
+     import it — Claude Code (v2.1.277+) reads `AGENTS.md` directly only when neither
+     exists, and older versions never do (on versions before v2.1.280 `/context` does
+     not list a directly-read `AGENTS.md` either — ask Claude what its instructions say);
    - a `CLAUDE.md` symlink checked out as a plain text file containing the
      literal string `AGENTS.md` (`core.symlinks=false`, or Windows without
      Developer Mode, where creating the link needs elevation);

@@ -51,7 +51,7 @@ Supported values: replicas (int, default 3), image.tag (string)...       ← ref
 - **Docs changes go through PR review** with the same rigor as code: a wrong doc
   merged is a bug shipped.
 - **CI gates on docs**: markdown lint, broken-link checking (lychee is the
-  current standard — fast, Rust, checks anchors, runs as `lycheeverse/lychee-action`
+  current standard — fast, Rust, checks `#anchors` only with `--include-fragments`, runs as `lycheeverse/lychee-action`
   in GitHub Actions), spell check on prose, and doc tests (rules/02 §3). Internal
   links checked on every PR; external links on a schedule (they break without
   your involvement — don't fail PRs on the internet's health).
@@ -214,9 +214,14 @@ Docs are now read by agents as well as humans. Same content, two consumers.
   **Antigravity CLI**, and 20+ other tools as of late 2026 — Antigravity, which
   **replaces Gemini CLI** (retired for individuals 2026-06-18), discovers
   `GEMINI.md`/`AGENTS.md` per directory, so `AGENTS.md` alone is enough for it).
-  **CLAUDE.md** is Claude Code's native equivalent — Claude Code reads CLAUDE.md,
-  **not** AGENTS.md, so it is the one mainstream tool still needing a pointer. Maintain one canonical file; if a tool needs the
-  other name, symlink or include rather than fork the content.
+  **CLAUDE.md** is Claude Code's native file; it reads `AGENTS.md` itself since
+  **v2.1.277**, but by default (`claude-md-or-agents-md`) **only if no `CLAUDE.md`,
+  `.claude/CLAUDE.md` or `CLAUDE.local.md` exists in cwd or above** — so one personal
+  `CLAUDE.local.md` silently stops `AGENTS.md` loading. Fix: **Project instructions**
+  = `claude-md-and-agents-md` (`/config`, or user/managed settings — not project), or
+  keep an `@AGENTS.md` import in `CLAUDE.md`, which older versions and, before
+  v2.1.281, some sessions (e.g. Bedrock) also need (code.claude.com/docs/en/memory,
+  checked 2026-09-26). One canonical file; symlink or include, never fork it.
 - **Keep agent docs minimal and high-signal.** Evidence as of 2026: bloated or
   auto-generated context files often *reduce* agent performance and raise cost;
   short, human-curated files with genuinely non-obvious repo knowledge help.
@@ -310,9 +315,9 @@ point reporters at the tracker or a named address, and do not promise a feature 
 cannot be enabled. **Name the switch to make on going public inside the file itself** —
 that is the moment the advice inverts, and the moment it is most likely to be forgotten.
 
-**Placement.** GitHub recognizes the community-health files (`CODE_OF_CONDUCT`,
-`CONTRIBUTING`, `SECURITY`, `SUPPORT`, `GOVERNANCE`, `FUNDING`) from **`.github/`,
-then the repo root, then `docs/`** (that precedence); an org-level **public**
+**Placement.** GitHub recognizes the community-health files (`CODE_OF_CONDUCT`, `CONTRIBUTING`,
+`SECURITY`, `SUPPORT`, PR templates (issue templates: `.github/` only); `FUNDING.yml` only in `.github/`; `GOVERNANCE` is not
+one) from **`.github/`, then the repo root, then `docs/`** (that precedence); an org-level **public**
 `.github` repo supplies defaults for repos lacking their own (GitHub docs). Keep
 exactly one canonical copy — per repo or via the org default, not both. README and
 LICENSE live at the repo root (GitHub surfaces them in the repo header) and are
@@ -391,8 +396,8 @@ design out on day zero:
   how the other names reach it, knowing the trade of each:
   1. **A native import**, where the tool has one — Claude Code expands
      `@AGENTS.md` in `CLAUDE.md` into context at launch, so it costs no hop and
-     leaves room for tool-specific rules *below* the import. Its own docs
-     recommend this over a symlink. Verified limits: max **four** hops, relative
+     leaves room for tool-specific rules *below* the import. Its docs prescribe
+     it over a symlink wherever anyone clones on Windows. Verified limits: max **four** hops, relative
      paths resolve against the importing file, and parsing skips code spans, so
      a backticked `` `@path` `` stays literal. **The trap is an import that
      resolves outside the repo** (e.g. `@~/.claude/…`): the first session asks
@@ -402,16 +407,15 @@ design out on day zero:
      also takes a **list** of context filenames in settings, which needs no
      pointer file at all. **Check each tool's own docs for the form** — assuming
      one tool's syntax works in another is how you ship a file that loads nothing.
-  2. **A symlink** — exact, and two failure modes. Git records a symlink as
-     such, and where `core.symlinks` is false (set automatically at clone time
-     on filesystems that can't represent one) symlinks are "checked out as small
-     plain files that contain the link text" (`git help config`): the agent then
-     reads the bare string `AGENTS.md` as the whole file and follows nothing. And
-     on **Windows, creating one needs Administrator or Developer Mode**, so a
-     repo that depends on it is a repo some contributors cannot set up.
+  2. **A symlink** — exact, and two failure modes. Git records a symlink as such, and where
+     `core.symlinks` is false (set automatically at clone time on filesystems that can't
+     represent one) symlinks are "checked out as small plain files that contain the link text"
+     (`git help config`): the agent then reads the bare string `AGENTS.md` as the whole file and
+     follows nothing. And on **Windows, creating one needs Administrator or Developer Mode**, so
+     a repo that depends on it is a repo some contributors cannot set up.
   3. **A one-line pointer file** — `CLAUDE.md` containing
-     `See [AGENTS.md](AGENTS.md).` Platform-independent and it cannot silently
-     degrade, at the cost of a hop the agent must choose to follow.
+     `See [AGENTS.md](AGENTS.md).` A hop the agent must choose to follow — and in
+     Claude Code its presence switches off the direct `AGENTS.md` read (§7).
   4. **CI-generated duplicates** from the canonical file, failing the build on
      drift. Exact and platform-independent, at the cost of a job to maintain.
 
@@ -419,11 +423,10 @@ design out on day zero:
   is the one your teammate's tool reads. A one-time importer that *copies*
   instructions between tools (Claude Code's `/import`) is a migration, not a
   link: it does not re-sync when the original changes.
-- **Whichever you pick, confirm it LOADED — presence is not loading.** Ask the
-  tool what it actually read (Claude Code: `/context`, under *Memory files*),
-  and where a hook can log it, log it (`InstructionsLoaded`). This is the §7
-  agent-doc case of the rule the rest of this library keeps hitting: a file in
-  the repo is not a file in the context.
+- **Whichever you pick, confirm it LOADED — presence is not loading.** Ask the tool what it
+  actually read (Claude Code v2.1.280+: `/context`, *Memory files*; the `InstructionsLoaded` hook does
+  **not** fire for a directly read `AGENTS.md`). This is the §7 agent-doc case of the rule the rest
+  of this library keeps hitting: a file in the repo is not a file in the context.
 
 **Bootstrap the invariants as checks, not prose.** Anything the repo must never
 regress — no secret in a commit, every internal link resolving, a required file
@@ -493,5 +496,5 @@ therefore lives longer — and the notes that most need updating are the ones no
 - [ ] Agent-file verification covers claims as well as commands: every named target resolves **and** every factual assertion (pins, tags, what a target does) still matches its source — with drift-prone assertions replaced by a link to the file that owns the fact (§7).
 - [ ] No automation rewrites files in response to an agent's edits (format-on-write hooks report instead); rewriting is confined to commit-time or CI, where nothing holds a live view of the file (§7).
 - [ ] One search surface covers internal docs; error messages/alerts/code link into docs.
-- [ ] AGENTS.md/CLAUDE.md exists, is short and human-curated, has exact build/test commands, and matches current reality; no forked divergent copies.
+- [ ] AGENTS.md/CLAUDE.md exists, is short and human-curated, has exact build/test commands, and matches current reality; no forked divergent copies; each tool's own check (Claude Code: `/context`) shows it loaded — a `CLAUDE.md` or `CLAUDE.local.md` beside an `AGENTS.md` suppresses the latter by default (§7).
 - [ ] Public docs site: llms.txt generated (not hand-written) if published; pages are self-contained with stable headings.

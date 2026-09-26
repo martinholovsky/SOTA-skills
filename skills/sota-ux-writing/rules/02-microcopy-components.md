@@ -147,7 +147,8 @@ Buttons: [Cancel]  [Delete project]         Buttons: [No]  [Yes]
 - [ ] Toasts are single-sentence, outcome-first; notifications name
       actor+action+object and stand alone out of app context
 - [ ] No concatenated plurals:
-      `grep -rnE '\+\s*["'\''](item|file|result|user)s?["'\'']' src/` is clean;
+      `grep -rnE '\+ *["'\''] *(item|file|result|user)s?["'\'']|\$\{ *([a-zA-Z_.]*([Cc]ount|[Tt]otal|[Ll]ength)|n|num) *\} +(item|file|result|user)s' src/`
+      is clean (catches `count + " items"` and `` `${count} items` ``);
       ICU plural forms used for every count
 - [ ] Relative timestamps switch to absolute past ~1 week and expose exact
       time; truncation never hides the distinguishing segment
