@@ -184,7 +184,8 @@ CREATE TABLE audit_log (
 
 ### Rule: For "what did this row look like at time T" queries, use a history table (SCD2-style), not audit-log archaeology.
 `valid_from`/`valid_to` ranges with an exclusion constraint
-(`EXCLUDE USING gist (id WITH =, validity WITH &&)`) guarantee non-overlap.
+(`EXCLUDE USING gist (id WITH =, validity WITH &&)`) guarantee non-overlap;
+the `=` on a scalar id needs `CREATE EXTENSION btree_gist` first.
 Use trigger-maintained history tables or a temporal extension; query with
 `WHERE id = $1 AND validity @> $2::timestamptz`. Reserve full event sourcing
 for domains that genuinely replay events — it is an architecture, not a table

@@ -82,23 +82,27 @@ all that apply.
 ```yaml
 # GOOD: minimum battery on a critical mart, tiered (dbt syntax; Soda/GX
 # equivalents exist for all of these)
+# Test inputs go under `arguments:` (top-level ones warn by default since 1.10.8);
+# `{{ this }}` inside a generic test is the TEST node, so name the model.
 models:
   - name: fct_orders
-    tests:
+    data_tests:
       - dbt_utils.recency:            # freshness — blocks
-          datepart: hour, field: loaded_at, interval: 26
+          arguments: {datepart: hour, field: loaded_at, interval: 26}
       - dbt_utils.expression_is_true: # volume — warns, human triages
-          expression: >
-            (SELECT count(*) FROM {{ this }} WHERE order_date = current_date - 1)
-            BETWEEN 0.5 * {{ var("orders_daily_median") }}
-                AND 2.0 * {{ var("orders_daily_median") }}
+          arguments:
+            expression: >
+              (SELECT count(*) FROM {{ ref('fct_orders') }} WHERE order_date = current_date - 1)
+              BETWEEN 0.5 * {{ var("orders_daily_median") }}
+                  AND 2.0 * {{ var("orders_daily_median") }}
           config: {severity: warn}
     columns:
       - name: order_line_id
-        tests: [unique, not_null]     # grain — blocks, always
+        data_tests: [unique, not_null] # grain — blocks, always
       - name: customer_id
-        tests:
-          - relationships: {to: ref('dim_customer'), field: customer_id}
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_customer'), field: customer_id}
 ```
 
 ## Severity tiers: block vs warn
@@ -220,7 +224,7 @@ unit_tests:
       (count + key-measure sums + order-independent key hash), block-tier —
       not on row count alone? Probe (lists reconciliation files with no
       sum/hash):
-      `grep -rliE 'reconcil|row_?count' --include='*.sql' --include='*.py' --include='*.yml' . | xargs grep -LiE 'sum\(|hash|checksum|md5|sha'`
+      `grep -rliE 'reconcil|row_?count' --null --include='*.sql' --include='*.py' --include='*.yml' . | xargs -0 -r grep -LiE 'sum\(|hash|checksum|md5|sha'`
 - [ ] Anomaly detection (if any) supplements explicit checks and isn't an
       alert-fatigue source?
 - [ ] Lineage derivable from code; column-level where PII/regulatory needs

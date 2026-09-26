@@ -39,10 +39,10 @@ the highest-value Next security topic.
 'use server';
 export async function deletePost(id: string) {
   const user = await requireUser();           // 1. authenticate — every time
-  const post = await db.post.find(id);
-  if (post.authorId !== user.id) throw new Error('forbidden'); // 2. authorize (ownership)
-  const parsed = z.string().uuid().parse(id); // 3. validate input
-  await db.post.delete(parsed);
+  const postId = z.string().uuid().parse(id); // 2. validate input before any query
+  const post = await db.post.find(postId);
+  if (!post || post.authorId !== user.id) throw new Error('forbidden'); // 3. authorize (ownership)
+  await db.post.delete(postId);
 }
 ```
 
@@ -163,8 +163,8 @@ from the lockfile and compare.
 | CVE / advisory | Class | Fixed in | Note |
 |---|---|---|---|
 | **CVE-2025-55182** ("React2Shell") | **RSC deserialization RCE, CVSS 10.0** | react-server-dom-* 19.0.1 / 19.1.2 / 19.2.1 | The React-level flaw; exploited in the wild within hours of 2025-12-03 disclosure |
-| **CVE-2025-66478** (GHSA-9qr9-h5gf-34mp) | Next.js surface of React2Shell | 15.0.5/15.1.9/15.2.6/15.3.6/15.4.8/15.5.7/16.0.7 | Next 15.x/16.x/14.3-canary.77+ affected; **rotate secrets if it ran unpatched** |
-| CVE-2025-55184 / -55183 / -67779 / CVE-2026-23864 | RSC DoS + Server-Function source exposure (React2Shell follow-ups) | see 2025-12-11 + later advisories | Upgrade to the latest patch on your line |
+| **GHSA-9qr9-h5gf-34mp** (Next surface of CVE-2025-55182; CVE-2025-66478 was REJECTED as its duplicate) | Next.js surface of React2Shell | 15.0.5/15.1.9/15.2.6/15.3.6/15.4.8/15.5.7/16.0.7 | Next 15.x/16.x/14.3-canary.77+ affected; **rotate secrets if it ran unpatched** |
+| CVE-2025-55184 / -55183 / -67779, CVE-2026-23864 / -23869 / -23870 / -44907 | RSC DoS + Server-Function source exposure (React2Shell follow-ups) | react-server-dom-* 19.0.8 / 19.1.9 / 19.2.8 (CVE-2026-44907, 2026-07-24) | Next declares no react-server-dom dependency — it ships a compiled copy under `next/dist/compiled/` — so a Next app follows the Next floor, not this one |
 | **CVE-2025-29927** (GHSA-f82v-jwr5-mffw) | **Middleware auth bypass** via `x-middleware-subrequest`, CVSS 9.1 | 12.3.5/13.5.9/14.2.25/15.2.3 | Self-hosted; strip the header at the proxy; don't rely on middleware for authz |
 | CVE-2024-46982 (GHSA-gp8f-8m3g-qvj9) | Cache poisoning (Pages Router) | 13.5.7 / 14.2.10 | + CVE-2025-32421 low-sev bypass (<15.1.6) |
 | CVE-2025-49005 (GHSA-r2fc-ccr8-96c4) | RSC cache poisoning via missing `Vary` | 15.3.3 | App Router |
@@ -173,7 +173,9 @@ from the lockfile and compare.
 | CVE-2024-56332 (GHSA-7m27-7ghc-44w9) | Server Actions DoS | 13.5.8/14.2.21/15.1.2 | |
 | CVE-2026-44581 (GHSA-ffhc-5mcf-pf4q) | XSS in CSP-nonce apps | 15.5.16 / 16.2.5 | Malformed nonce reflected; cache-poisonable |
 | CVE-2025-55173 (GHSA-xv57-4mr9-wg8v) / CVE-2025-57752 | next/image content injection / cross-user image cache confusion | 14.2.31 / 15.4.5 | Precondition: permissive `remotePatterns`/`domains` |
-| GHSA-c4j6-fc7j-m34r + 2026-05 batch | WebSocket-upgrade SSRF; proxy/segment-prefetch bypasses; Cache-Components DoS | latest 15.5.x / 16.2.x | No confirmed CVE on the WS-SSRF advisory; upgrade to current patch |
+| CVE-2026-44578 (GHSA-c4j6-fc7j-m34r) + 2026-05-11 batch | WebSocket-upgrade SSRF; proxy/segment-prefetch bypasses (CVE-2026-44574/-44575/-44573); Cache-Components DoS | 15.5.16 / 16.2.5 (incomplete-fix follow-up CVE-2026-45109: 15.5.18 / 16.2.6) | |
+| 2026-07-22 batch: CVE-2026-64645 (GHSA-p9j2-gv94-2wf4), CVE-2026-64649 (GHSA-89xv-2m56-2m9x), CVE-2026-64641, CVE-2026-64642 (16.x only), CVE-2026-64643/-64644/-64646/-64647/-64648 | SSRF via rewrite destination host; Server Actions SSRF on custom servers; Server Actions DoS; Turbopack proxy bypass; cache confusion; endpoint disclosure | 15.5.21 / 16.2.11 | Nine advisories (published 2026-07-21), four High |
+| **GHSA-2xp9-vwfh-vxw4** (2026-09-08) / **CVE-2026-75604** (GHSA-p293-qw3h-jr36) | **Unauthenticated RCE**: Image Optimization API with AVIF; Windows-hosted servers | **15.5.24 / 16.3.3** | Both critical. As of 2026-09-26 this is the floor: **Next ≥ 15.5.24 / ≥ 16.3.3**; newer advisories: the [vercel/next.js advisory feed](https://github.com/vercel/next.js/security/advisories) |
 
 **next/image SSRF:** `remotePatterns` with a `**` wildcard host turns the
 `/_next/image` optimizer into a blind-SSRF proxy (reachable internal URLs / metadata
@@ -191,7 +193,7 @@ protocols, and paths (`rules/07`).
       `grep -rlnE 'export async function (GET|POST|PUT|DELETE|PATCH)' app` (-E: without it the
       parens are LITERAL in BRE and this silently finds 0)
 - [ ] **Authz only in middleware/layout? (finding)** —
-      `ls middleware.* proxy.* 2>/dev/null; grep -rn 'getServerSession\|auth()\|requireUser' app | head`
+      `find . -maxdepth 2 -path ./node_modules -prune -o \( -name 'middleware.*' -o -name 'proxy.*' \) -type f -print; grep -rnE 'getServerSession|auth\(\)|requireUser' app | head`
 - [ ] **Server->client data exposure: whole objects as props, env on client** —
       `grep -rnE 'process\.env\.[A-Z0-9_]+' --include='*.tsx' app components | grep -v 'NEXT_PUBLIC_'`
       (no negative lookahead: POSIX ERE has none, so `(?!...)` is a syntax error or a literal —
@@ -201,12 +203,13 @@ protocols, and paths (`rules/07`).
       `grep -rn "import 'server-only'\|import \"server-only\"" app lib` (want: present in data
       layer)
 - [ ] **next/image SSRF precondition** —
-      `grep -rn "remotePatterns\|images:\s*{" next.config.* | grep -n '\*\*\|domains'`
+      `find . -maxdepth 2 -path ./node_modules -prune -o -name 'next.config.*' -type f -exec grep -HnE "hostname:[[:space:]]*['\"][*]{1,2}['\"]|domains:" {} +`
+      (matches a multi-line `remotePatterns` entry; a subdomain wildcard such as `'*.example.com'` is read by eye)
 - [ ] **Caching of personalized routes** —
-      `grep -rn "use cache\|cacheComponents\|force-cache\|revalidate\|Cache-Control" app next.config.*`
+      `grep -rnE "use cache|cacheComponents|force-cache|revalidate|Cache-Control" app; find . -maxdepth 2 -path ./node_modules -prune -o -name 'next.config.*' -type f -exec grep -HnE "use cache|cacheComponents|force-cache|revalidate|Cache-Control" {} +`
 - [ ] **Credential used as a `use cache` key (HIGH)** — list files with the directive, then
       cached-function signatures that take a credential:
-      `grep -rlE "[\"']use cache" app lib src | xargs grep -niE 'async[^(]*\([^)]*(token|session|cookie|authorization|bearer|jwt)'`
+      `grep -rlE "[\"']use cache" app lib src | xargs grep -HniE 'async[^(]*\([^)]*(token|session|cookie|authorization|bearer|jwt)'`
       (single-line signatures only; a hit is a candidate — confirm the argument is the raw
       credential, not an id derived from it)
 - [ ] **Draft Mode enable handler: plain `!=` secret check or redirect to a request value
@@ -220,14 +223,14 @@ protocols, and paths (`rules/07`).
       — a hit is a candidate; confirm the value comes from an allowlist and the caller is
       authenticated (a webhook: signature-verified) and rate-limited
 - [ ] **Wildcard `allowedOrigins` (HIGH over a shared suffix)** —
-      `grep -nE "allowedOrigins.*['\"][*]" next.config.*` (single-line arrays; read a
+      `find . -maxdepth 2 -path ./node_modules -prune -o -name 'next.config.*' -type f -exec grep -HnE "allowedOrigins.*['\"][*]" {} +` (single-line arrays; read a
       multi-line one by eye) — each `*`/`**` entry must be a zone only you can create hosts in
 - [ ] **Route Handlers that only feed your own Server Components (LOW, surface)** — server
       files fetching the app's own `/api/`:
       `grep -rLE "^.use client" --include='*.tsx' --include='*.ts' --include='*.jsx' --include='*.js' app src 2>/dev/null | xargs grep -HnE 'fetch\(.(https?://(localhost|127\.0\.0\.1)[^/]*|\$\{[^}]*\})/api/'`
       — if no browser or third party calls that handler, replace it with a DAL call
 
-- [ ] Exact Next + react-server-dom versions patched against CVE-2025-55182/-66478 and CVE-2025-29927?
+- [ ] Exact Next + react-server-dom versions patched against CVE-2025-55182 (Next: GHSA-9qr9-h5gf-34mp), CVE-2025-29927 and the 2026-09-08 RCEs (Next ≥ 15.5.24 / ≥ 16.3.3)?
 - [ ] Every Server Action and Route Handler authenticates, authorizes (ownership/IDOR), and schema-validates input — not relying on middleware?
 - [ ] No secrets or whole DB rows crossing server→client; data layer marked `server-only`; DTOs minimal?
 - [ ] Authorization enforced at the data layer, not only in `proxy.ts`/middleware or a layout?

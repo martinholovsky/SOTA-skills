@@ -140,9 +140,17 @@ Guardrails — set them, don't just intend them:
 ```sql
 ALTER ROLE app SET idle_in_transaction_session_timeout = '10s';
 ALTER ROLE app SET statement_timeout = '15s';
+-- PG17+: hard backstop, well ABOVE the ~1s design target and above
+-- statement_timeout (if it is <= either timeout, the longer one is ignored)
+ALTER ROLE app SET transaction_timeout = '30s';
 -- monitor: SELECT pid, now()-xact_start, state, query FROM pg_stat_activity
 --          WHERE xact_start < now() - interval '1 minute';
 ```
+`transaction_timeout` **terminates the session** (`FATAL: terminating
+connection due to transaction timeout`), not just the transaction: the app
+sees a lost connection, not a retryable SQLSTATE, and behind a pooler it
+kills a shared server connection. It is a backstop that should never fire —
+the ~1s target is enforced by design and by the transaction-age alert.
 `idle in transaction` connections in pg_stat_activity = an app bug (leaked
 transaction scope), always. Alert on transaction age (file 05).
 
@@ -178,7 +186,8 @@ peaks at low connection counts: start near `cores × 2 + effective spindles`
 (often 20–50 active server connections even for large apps) and load-test;
 thousands of direct connections is an anti-pattern. App-side pools
 (HikariCP, etc.) cap per-instance; with many app instances/serverless, add a
-server-side pooler (PgBouncer / pgcat / RDS Proxy / Supavisor).
+server-side pooler (PgBouncer / RDS Proxy / Supavisor; pgcat has had no
+commit since 2025-02-27 as of 2026-09-26 — treat it as unmaintained).
 
 Sizing math sanity check: required server connections ≈
 `peak_tps × avg_txn_duration_s`. 2000 tps × 10ms transactions = 20 busy
@@ -207,7 +216,8 @@ The blocking query is the bug more often than the blocked one — look for
 - **transaction (the standard choice):** server connection borrowed per
   transaction. **Breaks anything session-stateful:** session-level advisory
   locks, `SET` (use `SET LOCAL`), session prepared statements (need PgBouncer
-  ≥1.21 + `max_prepared_statements`, or disable driver-level preparing),
+  ≥1.21 + non-zero `max_prepared_statements` — default 200 since 1.24 — or
+  disable driver-level preparing),
   `LISTEN`, session-lifetime temp tables, cursors WITH HOLD. Audit any of these used with
   transaction pooling: HIGH.
 - **Three distinctions PgBouncer's own matrix draws that a blanket finding gets wrong**
@@ -262,7 +272,8 @@ OWASP: Multi Tenant Security cheat sheet.
       unique keys / guarded state transitions; no bare counters on retry paths.
 - [ ] No network I/O, user waits, or unbatched loops inside transactions;
       outbox pattern for txn-coupled messaging; idle_in_transaction_session_timeout
-      and statement_timeout set per role; alerting on old transactions.
+      and statement_timeout set per role (PG17+: transaction_timeout as a
+      backstop above both); alerting on old transactions.
 - [ ] Pooler present; pool sizes load-tested and small; PgBouncer mode known
       and code audited against its restrictions (SET LOCAL only, prepared
       statements compatible, no session advisory locks/LISTEN in txn mode).

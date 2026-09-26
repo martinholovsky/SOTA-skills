@@ -173,10 +173,13 @@ mart_dag   = DAG("marts",  schedule=[orders_stg])   # consumer triggered by prod
 
 ## dbt-style transformation discipline
 
-(Applies to dbt and equivalents — SQLMesh, etc. dbt note: the Fusion engine
-shipped as a preview and dbt Core 2.0, built on the Fusion foundation, as an
-alpha; check their GA status at docs.getdbt.com before hard-requiring
-Fusion-only features.)
+(Applies to dbt and equivalents — SQLMesh, etc. dbt note: dbt v2, the
+Fusion-based engine, is GA since 2026-09-14 (a native binary; on PyPI it is
+the `dbt` package; `dbt-core` still resolved to 1.x as of 2026-09-26) and
+v1.x remains supported.
+v2 supports no deprecated functionality: resolve every deprecation warning,
+including those new in 1.10+, before upgrading — see "Upgrading to v2" at
+docs.getdbt.com.)
 
 - **Tests on every model that matters:** at minimum `unique` + `not_null` on
   the primary key of every core/mart model, relationship tests on critical

@@ -70,7 +70,11 @@ URLs become SSRF.
   Next lets a `has` matcher capture a header/cookie/query value into the destination
   (`value: '(?<name>...)'`, then `:name`) — a capture may fill a path segment of a
   fixed host, never the host itself (`https://:tenant.example.com` is a finding, HIGH).
-  A rewrite is routing, not an authorization check. OWASP: Nextjs Security cheat sheet.
+  A rewrite is routing, not an authorization check. The frameworks' own matchers have
+  failed here too — Next rewrites SSRF via an attacker-controlled destination host
+  (CVE-2026-64645, fixed 15.5.21/16.2.11) and a Nitro `routeRules` proxy scope bypass
+  (CVE-2026-44373, nitropack 2.13.4) — so patch as well as pin. OWASP: Nextjs Security
+  cheat sheet.
 - **Open redirects:** validate `redirect`/`next`/`returnTo` targets against a
   same-origin/allowlist check before redirecting.
 
@@ -82,26 +86,41 @@ their own. Full detail in `rules/03` (Next/React) and `rules/05` (Nuxt/Nitro/h3)
 **React / Next.js**
 
 - **CVE-2025-55182 "React2Shell"** — RSC deserialization **RCE, CVSS 10.0**;
-  react-server-dom-* fixed 19.0.1 / 19.1.2 / 19.2.1. Next surface **CVE-2025-66478**
-  fixed on every 15.x/16.x line (e.g. 15.5.7 / 16.0.7); **rotate secrets if it ran
-  unpatched.** Follow-up DoS/exposure: CVE-2025-55184/-55183/-67779, CVE-2026-23864.
+  react-server-dom-* fixed 19.0.1 / 19.1.2 / 19.2.1. Next surface **GHSA-9qr9-h5gf-34mp**
+  (CVE-2025-66478 was REJECTED as a duplicate of CVE-2025-55182) fixed on every 15.x/16.x
+  line (e.g. 15.5.7 / 16.0.7); **rotate secrets if it ran unpatched.** Follow-up
+  DoS/exposure: CVE-2025-55184/-55183/-67779, CVE-2026-23864/-23869/-23870/-44907 —
+  react-server-dom-* floor 19.0.8 / 19.1.9 / 19.2.8 (Next ships its own compiled copy, so
+  a Next app follows the Next floor below).
 - **CVE-2025-29927** — middleware auth bypass, CVSS 9.1; fixed
   12.3.5/13.5.9/14.2.25/15.2.3.
 - Cache poisoning: CVE-2024-46982 (13.5.7/14.2.10), CVE-2025-49005 (15.3.3),
   CVE-2025-32421. SSRF: CVE-2024-34351 (14.1.1), CVE-2025-57822 (14.2.32/15.4.7),
-  GHSA-c4j6-fc7j-m34r (WebSocket). CSP-nonce XSS: CVE-2026-44581 (15.5.16/16.2.5).
-  next/image: CVE-2025-55173 / CVE-2025-57752 (14.2.31/15.4.5). DoS: CVE-2024-56332.
+  CVE-2026-44578 (WebSocket, 15.5.16/16.2.5), CVE-2026-64645 (rewrite destination host)
+  and CVE-2026-64649 (Server Actions, custom servers) (15.5.21/16.2.11). CSP-nonce XSS:
+  CVE-2026-44581 (15.5.16/16.2.5). next/image: CVE-2025-55173 / CVE-2025-57752
+  (14.2.31/15.4.5). DoS: CVE-2024-56332.
+- **Unauthenticated RCE (critical, 2026-09-08)**: GHSA-2xp9-vwfh-vxw4 (Image Optimization
+  API + AVIF) and CVE-2026-75604 (Windows-hosted servers), fixed 15.5.24 / 16.3.3 — the
+  Next floor as of 2026-09-26 is **≥ 15.5.24 / ≥ 16.3.3** (`rules/03` §5 has the batches).
 
 **Vue / Nuxt / Nitro / h3 / IPX / devalue**
 
 - Nuxt cache-poisoning DoS **CVE-2025-27415** (3.16.0); `routeRules` bypass
-  **CVE-2026-53721** (4.4.7/3.21.7); `<NuxtLink>` XSS CVE-2026-53722; island authz
-  advisories (GHSA-hg3f-28rg-4jxj).
+  **CVE-2026-53721** (4.4.7/3.21.7), incompletely fixed — **CVE-2026-71315** needs 4.5.1;
+  `<NuxtLink>` XSS CVE-2026-53722; island authz CVE-2026-47200 (4.4.6); 2026-08-05 batch
+  (server-island props **RCE** CVE-2026-71320, payload-cache cross-user leak
+  CVE-2026-71316, island DoS) — Nuxt floor **≥ 4.5.1** (`rules/05` §6).
+- Nitro `routeRules` proxy scope bypass **CVE-2026-44373** + open redirect CVE-2026-44372
+  (nitropack 2.13.4).
 - IPX path traversal **CVE-2025-54387** (1.3.2/2.1.1/3.1.1).
 - h3 SSE injection **CVE-2026-33128** + serveStatic traversal / middleware bypass
-  (1.15.6 / 2.0.1-rc.15).
+  (1.15.6 / 2.0.1-rc.15), then the SSE-fix bypass GHSA-4hxc-9384-m385 and serveStatic
+  double-decode GHSA-72gr-qfp7-vwhw — h3 floor **1.15.9 / 2.0.1-rc.18**.
 - devalue prototype pollution **CVE-2025-57820** (5.3.2), **CVE-2026-30226** (5.6.4) +
-  DoS advisories. serialize-javascript CVE-2024-11831 (6.0.2).
+  DoS advisories (CVE-2026-42570, CVE-2026-81176) — floor **5.9.2**. serialize-javascript
+  CVE-2024-11831 (6.0.2), GHSA-5c6j-r48x-rmvq RCE (7.0.3), CVE-2026-34043 DoS — floor
+  **7.0.5**.
 
 The pattern across all of these: **the fix is almost always "upgrade."** Automated
 dependency updates + a fast patch path is the actual control (`sota-devsecops`).
@@ -137,14 +156,15 @@ dependency updates + a fast patch path is the actual control (`sota-devsecops`).
 - [ ] **Public-env secret leak (CRITICAL)** —
       `grep -rnE '(NEXT_PUBLIC_|VITE_)[A-Z_]*(SECRET|KEY|TOKEN|PASSWORD|PRIVATE)' --include='*.ts' --include='*.tsx' --include='*.vue' .`
       ;
-      `grep -rnA8 'runtimeConfig' nuxt.config.* | grep -iE 'public' -A6 | grep -iE 'secret|key|token'`
+      `find . -maxdepth 2 -path ./node_modules -prune -o -name 'nuxt.config.*' -type f -exec grep -HnA8 'runtimeConfig' {} + | grep -iE 'public' -A6 | grep -iE 'secret|key|token'`
 - [ ] **Server->client exposure & the server-only guard** —
       `grep -rn "import 'server-only'\|server/" app lib server | head` ;
       `grep -rnE 'process\.env\.' --include='*.tsx' --include='*.vue' app components pages | grep -iv 'NEXT_PUBLIC\|NODE_ENV'`
 - [ ] **Authz only at the edge? enumerate actions/handlers and check each** —
-      `grep -rn "'use server'" app lib; ls -1 app/**/route.ts server/api/**/*.ts 2>/dev/null`
+      `grep -rn "'use server'" app lib; find app src/app server/api server/routes -type f \( -name 'route.[jt]s' -o -path 'server/*' -name '*.[jt]s' \) 2>/dev/null`
 - [ ] **SSRF surfaces** —
-      `grep -rn 'remotePatterns\|images:\s*{\|ipx\|@nuxt/image' next.config.* nuxt.config.* | grep -n '\*\*\|domains'`
+      `find . -maxdepth 2 -path ./node_modules -prune -o \( -name 'next.config.*' -o -name 'nuxt.config.*' \) -type f -exec grep -HnE "hostname:[[:space:]]*['\"][*]{1,2}['\"]|domains:" {} +`
+      (multi-line safe; read subdomain wildcards and any IPX/`@nuxt/image` host list by eye)
       ;
       `grep -rnE '\$?fetch\(|ofetch\(|axios\.|got\(' --include='*.ts' server app | grep -iE 'req\.|query|params|headers|host'`
       ;

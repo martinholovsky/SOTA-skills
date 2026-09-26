@@ -139,7 +139,7 @@ without evidence in code or spec.
 8. **Realtime must resume**: heartbeats, jittered reconnect backoff, sequence
    IDs + bounded replay buffer, explicit resume-failure → snapshot; bounded send
    queues with a defined slow-consumer policy. (rules/05 §2)
-9. **Webhooks signed and SSRF-proof**: HMAC(timestamp + raw body) verified in
+9. **Webhooks signed and SSRF-proof**: HMAC(id.timestamp.raw body) verified in
    constant time with replay window; senders block private/metadata IPs with
    resolve-pin-connect and follow no redirects. (rules/06 §2, §8)
 10. **Proto/GraphQL schema discipline**: never reuse a proto field number

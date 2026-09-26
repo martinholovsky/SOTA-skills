@@ -81,8 +81,7 @@ Budget by category, enforce in code:
   in that project's own docs was **38% below** a 16,442-token file (2026-08-26). *State
   which direction you mean*: "54% under-count" reads as the first number and is the second,
   and a budget sized on the wrong one is wrong in the direction that makes you think you
-  have room. A budget built on the wrong tokenizer is
-  wrong by half, in the direction that makes you think you have room.
+  have room.
 - **Exclude by default.** Every block in the prompt must answer "what eval
   case gets worse if I remove this?" If nothing — remove it. Prompt rot (§7)
   is mostly accretion of unfalsifiable additions.
@@ -173,10 +172,12 @@ prompt = f"Answer this: {user_input}. Use document: {doc}. Reply as JSON."
 
 Prompt caching is a **prefix match**: providers cache the rendered prompt up
 to a breakpoint, and any byte change anywhere in the prefix invalidates
-everything after it. Economics (Anthropic, verified July 2026; other
-providers similar in shape): cache reads ~0.1× input price, writes ~1.25×
-(5-min TTL) or 2× (1-h TTL); render order is tools → system → messages;
-minimum cacheable prefix ~0.5–4K tokens depending on model. Providers now
+everything after it. Economics (Anthropic; other providers similar in
+shape): cache reads 0.1× input price on most models and lower on some newer
+ones (0.05×, 0.025× — the multiplier is per model), writes 1.25× (5-min TTL)
+or 2× (1-h TTL) — both verified 2026-09-26 on its pricing page; render order
+is tools → system → messages; minimum cacheable prefix ~0.5–4K tokens
+depending on model (verified July 2026). Providers now
 also offer an automatic mode (e.g. a single top-level `cache_control` field)
 that advances the breakpoint as the conversation grows — the right default
 for multi-turn chat; explicit breakpoints (up to 4) remain the tool for
@@ -201,7 +202,10 @@ prompt structure can triple spend and add seconds of latency — silently.
 If code consumes the output, the output is an API response and gets a schema.
 All major providers ship native structured output as of mid-2026 (verified:
 Anthropic `output_config.format` json_schema + `strict: true` tool schemas +
-SDK `parse()` helpers; OpenAI structured outputs; Gemini `responseSchema`).
+SDK `parse()` helpers; OpenAI structured outputs; Gemini `response_format`
+with a JSON schema on its Interactions API, which Google recommends for new
+projects — the older `generateContent` surface is legacy but still supported,
+as of 2026-09-26).
 There is no remaining excuse for regex-harvesting JSON out of prose.
 
 ```python
@@ -249,10 +253,12 @@ category = data.get("category", "other")                    # silently launders 
   Constrained decoding above is the structural fix; instructing the format in
   the prompt demonstrably is not, and §1's inline-the-schema rule does not help
   here — it was already satisfied in every reported case.
-- **Check `stop_reason` before parsing.** `max_tokens` → truncated JSON
-  (raise the cap, don't repair-loop it); `refusal` → no schema guarantee
-  (handle explicitly). Code that indexes `content[0]` unconditionally
-  breaks on refusal-shaped responses.
+- **Check `stop_reason` before parsing.** `max_tokens` or
+  `model_context_window_exceeded` → truncated JSON (raise the cap or shrink
+  the input, don't repair-loop it); `refusal` → no schema guarantee (handle
+  explicitly); `pause_turn` → not finished, send the content back to
+  continue (Anthropic's stop-reason values, verified 2026-09-26). Code that
+  indexes `content[0]` unconditionally breaks on refusal-shaped responses.
 - **Set `max_tokens` explicitly at every structured-output call site.** An unset
   cap inherits a client/config default sized for chat, so a long JSON document
   hits it silently — the call returns a fragment, not an error. Where the

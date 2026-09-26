@@ -230,7 +230,7 @@ pathological on large, with nothing in the output saying so — is
       each replaces I/O/time/external service? In-process owned collaborators
       mocked → High.
 - [ ] Mocked types you don't own? Grep for doubles of vendor types:
-      `mock.*(Stripe|S3|Twilio|redis|Session|HttpClient)|jest\.mock\(['"][^.]` (mocking non-relative module paths; the first path character is not `.`. This was a `(?!\.)` lookahead until 2026-09-24, which exits 2 under `grep -E`, ugrep and `rg` alike, so it could never report anything) → High; fix = wrap + adapter test.
+      `grep -rniE "mock.*(stripe|s3|twilio|redis|session|httpclient)|jest\.mock\(['\"][^.]" .` (case-insensitive, so `mock.patch('stripe.Charge')` counts; mocking non-relative module paths; the first path character is not `.`. This was a `(?!\.)` lookahead until 2026-09-24, which exits 2 under `grep -E`, ugrep and `rg` alike, so it could never report anything) → High; fix = wrap + adapter test.
 - [ ] Interaction-asserting queries? Grep `verify\(|assert_called` on
       read/query methods (`get|find|fetch|load`) → Medium (convert to stub +
       state assertion).

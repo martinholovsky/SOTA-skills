@@ -94,7 +94,7 @@ Concrete numbers — apply, don't debate:
   come from color/spacing/motion (rules/07 §6), and you still tokenize sizes/weights.
 - Hyphenation: `hyphens: auto` (with correct `lang` attribute — it's lang-dependent) only on
   narrow justified-adjacent columns; never on headings or UI labels.
-- Microtypography that signals craft: real quotes and apostrophes (' ' " "), en dash for ranges
+- Microtypography that signals craft: real quotes and apostrophes (‘ ’ “ ”), en dash for ranges
   (12–16), em dash for breaks, `&nbsp;` between number and unit (16 GB), `text-decoration-
   thickness`/`underline-offset` tuned on links (`underline-offset: 0.15em`), `font-feature-
   settings: "ss01"` etc. only via tokens.

@@ -193,9 +193,15 @@ stores: sota-code-security rules/07. The LLM-engineering obligations:
   defaults you inherit.** Verify per provider and per platform: API data
   used (or not) for training, retention window options (standard vs
   zero-data-retention agreements), regional processing. Note ZDR interacts
-  with features — some models/features require minimum retention (verified:
-  at least one frontier model requires 30-day retention and is unavailable
-  under ZDR, June 2026) and some platforms differ from first-party APIs.
+  with features — some models/features require minimum retention (verified
+  2026-09-26: Anthropic designates four frontier "Covered Models" that
+  require 30-day retention and are unavailable under ZDR unless expressly
+  authorised) and some platforms differ from first-party APIs. **A ZDR
+  agreement does not block ineligible features:** Anthropic's API accepts a
+  stateful feature (batch, files, code execution) from a ZDR organisation and
+  applies that feature's own retention, whereas a HIPAA-enabled organisation
+  gets a `400` — so enforce the eligible-feature allowlist yourself, in the
+  gateway (rules/05 §1), rather than assuming the provider refuses.
   Record the chosen settings in the repo (compliance docs) so they're
   auditable; re-verify on provider/platform change.
 - Memory stores and semantic caches hold user data too: scope per user/
@@ -225,7 +231,7 @@ stores: sota-code-security rules/07. The LLM-engineering obligations:
 - [ ] Sensitive fields masked, tokenised or dropped before embedding and
       indexing; tenant-trained embedding models never shared across tenants
       (§5). **High**. Probe — embedding calls with no redaction step on the
-      line: `grep -rnE 'embed(_documents|_query|dings\.create)?\(' . | grep -vE 'redact|mask|scrub'`
+      line: `grep -rnE 'embed(_documents|_query|_content|Content|dings\.create)?\(' . | grep -vE 'redact|mask|scrub'`
 - [ ] Calls to external AI services leave through one scanning egress
       gateway with an audit trail; coding-assistant uploads logged or
       proxied; regulated code only on self-hosted/air-gapped models with an
@@ -235,7 +241,9 @@ stores: sota-code-security rules/07. The LLM-engineering obligations:
       caches, and vector indexes.
 - [ ] Provider data-retention/training-use settings explicitly configured,
       documented in-repo, and re-verified on provider/platform/model change
-      (including ZDR-vs-feature constraints).
+      (including ZDR-vs-feature constraints); under ZDR, the gateway
+      enforces an eligible-feature allowlist — the provider may not block
+      ineligible ones (§5).
 - [ ] Tuning: aligned base model with the safety eval re-run per checkpoint;
       disallowed-content filtering and task scoping of training data; a
       held-out eval guarding against reward hacking; feedback screened for

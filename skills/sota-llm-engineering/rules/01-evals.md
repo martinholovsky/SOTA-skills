@@ -124,7 +124,11 @@ invalidates every historical score (High finding).
 **Offline (pre-merge/pre-deploy):** golden sets + assertions + judges, run on
 demand and in CI. Deterministic harness: pinned model versions, fixed
 seeds/params where supported, retries for transient errors but never silent
-re-grading until pass.
+re-grading until pass. Sampling parameters are not a determinism switch:
+`temperature = 0` never guaranteed identical outputs, and some newer models
+reject any non-default `temperature`/`top_p`/`top_k` with a `400` (Anthropic,
+from Opus 4.7 on — verified 2026-09-26 in its migration guide) — repeat runs
+instead (§8).
 
 **Online (production):** sampled judging of live traffic, user signals
 (thumbs, edits, regenerations, abandonment, task completion), canary
@@ -244,9 +248,9 @@ Production is the only honest distribution. Build the loop:
   offset by an improvement elsewhere. Always report per-tag/per-cluster
   scores alongside the aggregate.
 - **Non-determinism denial:** run flaky-graded cases k times and report
-  pass^k or mean — a criterion that flips run-to-run at temperature 0-ish
-  settings is telling you the behavior is unstable, which is itself a
-  finding about the feature, not the eval.
+  pass^k or mean — a criterion that flips run-to-run at the lowest-variance
+  settings the model accepts is telling you the behavior is unstable, which
+  is itself a finding about the feature, not the eval.
 - **Eval-set overfit via retries:** harnesses that auto-retry until pass
   inflate scores. Retries are for transport errors only.
 - **Selection bias — building the set out of what the model got wrong.** Distinct
@@ -270,7 +274,7 @@ Production is the only honest distribution. Build the loop:
   the quiet merge: yesterday's regression cases silently become today's benchmark, and
   the score rises because the set remembers what the model got wrong.
 
-### 8a. A saturated measure is a fact about the instrument, not about the system
+### 8.1. A saturated measure is a fact about the instrument, not about the system
 
 **When both arms score at the ceiling, you have learned nothing about the treatment.** A
 result of 1.00 with the treatment and 1.00 without is routinely written up as *"no headroom
@@ -355,7 +359,7 @@ published claim rested on that 0.00 for several hours.
       retain the artifact (bounded) so the cell can be diagnosed at all; and add an explicit
       item for declining where declining is legitimate.
 
-- [ ] **No axis closed on a saturating measure** — the absolute score is reported before the delta, a control arm at ≥0.95 is a registered **void** condition rather than a null, chance is a known constant (classes balanced by construction), and an **externally annotated** instrument is preferred once the in-house ones stop discriminating (§8a)?
+- [ ] **No axis closed on a saturating measure** — the absolute score is reported before the delta, a control arm at ≥0.95 is a registered **void** condition rather than a null, chance is a known constant (classes balanced by construction), and an **externally annotated** instrument is preferred once the in-house ones stop discriminating (§8.1)?
 - [ ] Before any A/B is run, the treated arm is **shown to read the thing that changed**
       (the runner's source names the path) — a null from an arm blind to the treatment is
       structural, not a result (§8).

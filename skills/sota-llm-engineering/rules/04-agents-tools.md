@@ -131,8 +131,11 @@ class AgentBudget:
   limit stays authoritative.
 - **Check `stop_reason` every turn** and handle each value explicitly:
   tool-use → execute; end-of-turn → done; max-tokens → truncated (raise cap
-  or split, don't parse the stump); refusal → its own path; provider
-  pause/continue signals → resume per provider docs. An unhandled
+  or split, don't parse the stump), and a context-window stop (Anthropic's
+  `model_context_window_exceeded`) is the same truncation; refusal → its own
+  path; provider pause/continue signals (Anthropic's `pause_turn`: a
+  server-tool loop hit its iteration limit — send the content back) →
+  resume per provider docs. An unhandled
   `stop_reason` is an infinite-loop or data-corruption bug waiting.
 - Long runs on current frontier models can legitimately take minutes per
   request — plan streaming/async/progress UX rather than raising HTTP
@@ -330,15 +333,26 @@ consequences:
   credentials to disk, logs or caches, and delete per-session temp files,
   caches and state when the session ends. Filter `tools/list` by the
   caller's scopes so a client never sees tools it cannot call. On the client
-  side, the spec lets a client disconnect when it does not support the
-  version the server answers `initialize` with — use that to enforce a
-  pinned minimum revision rather than accepting any downgrade. OWASP: AISVS
+  side, enforce a pinned minimum revision rather than accepting any
+  downgrade. Under 2026-07-28 there is no `initialize` handshake: every
+  request carries its version in `_meta` (and the `MCP-Protocol-Version`
+  header on HTTP), a server that does not support it answers
+  `UnsupportedProtocolVersionError` (`-32022`) listing what it does support,
+  and the client SHOULD retry with a mutually supported one — retry only with
+  versions at or above your minimum. Keep the legacy `initialize` fallback
+  (for 2025-11-25-and-earlier servers, where a client SHOULD disconnect on a
+  version it does not support) off unless you deliberately serve those
+  servers. OWASP: AISVS
   10.2.3, 10.2.4, 10.2.6, 10.3.4; OWASP MCP Security cheat sheet.
 - **When you operate/self-host an MCP server, harden the server,
   not just the client** (OWASP MCP Security): bind local HTTP/SSE transports to
   `127.0.0.1`, not `0.0.0.0`; **validate the `Origin`/`Host` header on every
-  request** to block DNS-rebinding from a browser tab; use non-guessable session
-  IDs bound to user context (`<user_id>:<session_id>`), never a bare sequence;
+  request** to block DNS-rebinding from a browser tab; where a server still
+  issues session IDs (legacy revisions up to 2025-11-25 — 2026-07-28 removed
+  protocol sessions, and a server on it neither mints nor echoes
+  `Mcp-Session-Id`), or hands out any state handle of its own, make it
+  non-guessable and bound to user context (`<user_id>:<session_id>`), never a
+  bare sequence;
   put remote servers behind TLS with verified server identity and auth. An
   unauthenticated MCP server on `0.0.0.0` is an open tool-execution endpoint.
   **Pick the transport by who must reach the server.** One local client →
@@ -457,13 +471,15 @@ OWASP AI Agent Security cheat sheet; OWASP RAG Security cheat sheet.
       auto-approves; critical tier needs a second approver; approvals bound
       to actor/tool/target/normalised args with expiry and approver, and a
       timeout denies (§4). **High** (Critical when a timeout executes).
-      Probe — approve-on-timeout or blanket auto-approve settings:
-      `grep -rniE '(default|on_timeout|timeout_action)[[:space:]]*=[[:space:]]*.?(approve|allow|proceed|true)|auto_?approve[[:space:]]*=[[:space:]]*true' .`
+      Probe — approve-on-timeout or blanket auto-approve settings, in code
+      (`=`) and in YAML/JSON config (`:`, quoted keys, an allowlist array):
+      `grep -rniE "(on_timeout|timeout_action)[\"']?[[:space:]]*[:=][[:space:]]*[\"']?(approve|allow|proceed|true)|auto_?approve[\"']?[[:space:]]*[:=][[:space:]]*(true|\[[[:space:]]*[\"'])" .`
 - [ ] MCP servers: no token passthrough, no stored client credentials,
       per-session cleanup, scope-filtered `tools/list`, secrets fetched
       from a vault not set as env values; clients enforce a minimum protocol
       revision (§6). **Critical** for a literal credential in a server
-      definition. Probe: `grep -rnE '"[A-Z0-9_]*(TOKEN|KEY|SECRET|PASSWORD|PAT)[A-Z0-9_]*"[[:space:]]*:[[:space:]]*"[^"$]{8,}"' .`
+      definition. Probe (`PAT` only as a whole `_`-delimited word, so `PATH`,
+      `PYTHONPATH` and `CLASSPATH` stay quiet): `grep -rnE '"([A-Z0-9_]*(TOKEN|KEY|SECRET|PASSWORD)[A-Z0-9_]*|([A-Z0-9]+_)*PAT(_[A-Z0-9]+)*)"[[:space:]]*:[[:space:]]*"[^"$]{8,}"' .`
 - [ ] Context management present for long sessions: pruning/compaction with
       eval coverage, memory with limits/expiry/erasability, artifacts by
       reference not by paste.

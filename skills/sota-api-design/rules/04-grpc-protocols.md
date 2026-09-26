@@ -236,7 +236,11 @@ client keepalive_time            60s   # >= server's min allowed (else GOAWAY)
 server KEEPALIVE_ENFORCEMENT min 30s
 server MAX_CONNECTION_IDLE       5m
 server MAX_CONNECTION_AGE        30m (+5m grace)
-LB / proxy idle timeout          > client keepalive_time  (e.g. 350s ALB default — check!)
+LB / proxy idle timeout          > client keepalive_time AND > longest idle gap on a stream
+                                 # AWS ALB: default 60s, and HTTP/2 PING does NOT reset it (ALB
+                                 # does not support PING) — keepalive cannot hold an ALB idle
+                                 # connection; raise idle_timeout or send app-level traffic.
+                                 # 350s is the NLB TCP default, not ALB's. Verify at the LB docs.
 ```
 
 ## Audit checklist

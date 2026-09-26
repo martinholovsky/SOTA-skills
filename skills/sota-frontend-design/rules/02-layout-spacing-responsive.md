@@ -189,7 +189,7 @@ label:has(+ input:disabled) { color: var(--text-disabled); }
 }
 ```
 
-- Anchor positioning is **Baseline newly available** since January 2026 (Chromium 125+, Safari 26+, Firefox 147+) and an Interop 2026 focus area. Newly ≠ widely: keep the **feature-detect** (`@supports (anchor-name: --a)`) with a Floating UI fallback while pre-2026 browsers are in your support matrix.
+- The core anchor-positioning properties (`anchor-name`, `position-area`, `position-try-fallbacks`) are **Baseline newly available** since 2026-01-13 (Chromium 125+, Safari 26+, Firefox 147+; `position-anchor` since 2026-09-14), but the web-features `anchor-positioning` feature as a whole is *not* Baseline — the `position-visibility` anchor keywords lag (web-features 3.40.0, read 2026-09-26). It is an Interop 2026 focus area. Newly ≠ widely: keep the **feature-detect** (`@supports (anchor-name: --a)`) with a Floating UI fallback while pre-2026 browsers are in your support matrix.
 - View Transitions API for page/state morphs — covered in rules/06; treat as enhancement, never a functional dependency.
 - General rule: detect features, not browsers; build the working baseline first, layer the modern API on top. A user on the fallback path gets a *plainer* experience, never a *broken* one.
 

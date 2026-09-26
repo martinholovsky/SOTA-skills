@@ -132,7 +132,8 @@ GraphQL transports over HTTP 200; do not let that destroy observability.
   `errors[].message`; log server-side with a `trace_id` echoed in `extensions`.
 - Partial data is a feature: nullable field fails → field is null + entry in
   `errors` with `path`; clients render the rest. This is why §2 nullability matters.
-- Use `application/graphql-response+json` (GraphQL-over-HTTP spec): request errors
+- Use `application/graphql-response+json` (GraphQL-over-HTTP spec, a Stage 2 draft
+  as of 2026-09-26): request errors
   (parse/validation) may use 4xx; field errors stay 200 with `errors`. Ensure your
   monitoring counts GraphQL errors, not just HTTP 5xx — otherwise outages look
   like 100% success.
@@ -149,6 +150,13 @@ GraphQL transports over HTTP 200; do not let that destroy observability.
 - Don't expose internal mutations/fields on the public schema — split schemas
   (public vs admin) rather than relying on authz alone; what's not in the schema
   can't be probed.
+- **CSRF on a cookie-authenticated endpoint**: reject mutations sent over `GET`
+  (the GraphQL-over-HTTP draft says MUST NOT execute; `405` recommended) and accept
+  only `application/json` bodies — `text/plain`, `multipart/form-data` and
+  `application/x-www-form-urlencoded` are CORS "simple requests" with no preflight.
+  A server that parses those as JSON is exploitable (CVE-2025-64166 /
+  GHSA-v66j-6wwf-jc57: Mercurius, fixed in 16.4.0). Then apply the CORS and CSRF
+  rules in rules/07.
 
 ## 8. Schema snippets — good/bad
 
@@ -248,6 +256,7 @@ type CancelOrderPayload {
 - [ ] Monitoring counts GraphQL-level errors (200-with-errors), not just HTTP status.
 - [ ] Object-level authorization in resolvers (incl. `node(id:)` and nested paths); tenant checks on every ID argument.
 - [ ] Public vs admin schema split; no internal fields on public schema.
+- [ ] Cookie-authenticated endpoint: a mutation over `GET` is refused (`405`) and a non-`application/json` body (`text/plain`, form, multipart) is rejected — send both in staging.
 - [ ] Deprecations carry reasons + removal dates; per-field usage metrics exist before removals.
 - [ ] Subscriptions use `graphql-ws`/`graphql-sse` (not legacy protocol), authz at subscribe + per-event filtering, small delta payloads, client snapshot-on-reconnect; concurrent subscriptions capped.
 - [ ] Response caches keyed by auth scope (no cross-principal cache hits); federation (if present) has CI composition checks and batched entity resolution.

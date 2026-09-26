@@ -24,7 +24,7 @@ When creating or extending a mobile app:
 4. **Wire operational survival kit before v1.0 ships:** crash reporting with symbol upload, forced-update mechanism, remote kill switches for risky features, API version header on every request (`rules/06`). These cannot be added retroactively for already-shipped binaries.
 5. **Security defaults from the start:** secrets in Keychain/Keystore only, TLS everywhere, deep links validated, WebView locked down (`rules/04`).
 6. **Budget performance up front:** cold start, frame time, and app size budgets in CI, not as a post-launch rescue (`rules/05`).
-7. **Comply with current store requirements** before first submission: privacy manifest + required-reason APIs (iOS), Data safety form + target API level + 16 KB page support (Android) (`rules/01`, `rules/06`).
+7. **Comply with current store requirements** before first submission: privacy manifest + required-reason APIs (iOS), Data safety form + target API level + 16 KB page support + developer verification (Android) (`rules/01`, `rules/06`).
 
 ## AUDIT mode
 
@@ -72,4 +72,4 @@ Order the report by severity, then by blast radius. An audit that returns only s
 7. **Offline is a designed state, not an error state.** Local database as source of truth, queued mutations with idempotency keys, explicit conflict resolution. If you choose online-only, fail with designed UX, not spinners.
 8. **Biometric auth must gate a cryptographic key, not a boolean.** `if (authenticated) { unlock() }` is patchable with one Frida hook; a key released by the secure enclave/StrongBox is not.
 9. **Crash reporting with symbol upload (dSYM/mapping) wired into CI before first release**, with crash-free-session rate monitored per release and gates on staged rollout promotion.
-10. **Meet current store requirements proactively:** iOS — privacy manifests and required-reason API declarations (mandatory since May 2024), built with the latest required SDK (iOS 26 SDK as of April 28, 2026); Android — target API 36 by Aug 31, 2026, Data safety form accuracy, 16 KB page-size support (required since Nov 1, 2025 for apps targeting Android 15+).
+10. **Meet current store requirements proactively:** iOS — privacy manifests and required-reason API declarations (mandatory since May 2024), built with the latest required SDK (iOS 26 SDK as of April 28, 2026); Android — target API 36 by Aug 31, 2026, Data safety form accuracy, 16 KB page-size support (required for apps targeting Android 15+; Play blocks updates without it from Feb 1, 2027).

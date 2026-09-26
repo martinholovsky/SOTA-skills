@@ -43,7 +43,7 @@ When creating or modifying UI (components, pages, styles, animations):
    (`rules/06`).
 6. **Be distinctive on purpose:** make ≥ 3 deliberate global design decisions (typeface with
    character, OKLCH accent, signature element) and apply the anti-generic kill list
-   (`rules/07 §5`). Spend personality on marketing/empty surfaces; keep product surfaces calm.
+   (`rules/07 §6`). Spend personality on marketing/empty surfaces; keep product surfaces calm.
 7. **Self-check before finishing:** run the relevant rules-file audit checklists against your own
    output. Test mentally (or actually) at 320px, 200% zoom, keyboard-only, dark mode, RTL, and
    with worst-case content (long strings, 0 items, 10k items).

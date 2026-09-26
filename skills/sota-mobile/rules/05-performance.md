@@ -12,9 +12,9 @@ Set these in the repo (`docs/perf-budgets.md` or CI config). Adjust the numbers 
 | Warm / hot start | ≤ 1.0 s / ≤ 0.5 s | same |
 | Frame budget | 16.6 ms @ 60 Hz; 8.3 ms @ 120 Hz — budget for the worst supported device, not your ProMotion dev phone | JankStats / MetricKit hang rate |
 | Slow / frozen frames | < 5% / < 0.1% (vitals: > 16 ms / > 700 ms) | Android vitals, APM |
-| ANR rate | < 0.47% of daily sessions (Play bad-behavior threshold; main thread blocked > 5 s) | Play vitals, release gate |
+| ANR rate | < 0.47% of daily active users (Play user-perceived bad-behavior threshold, 8% per device model; main thread blocked > 5 s) | Play vitals, release gate |
 | Crash-free sessions | ≥ 99.9% (vitals user-perceived crash threshold: 1.09%) | Crash SDK, rollout gate (rules/06) |
-| Download size | Tracked per release with a delta gate (e.g., +2 MB needs sign-off). Play: 200 MB compressed per-device download cap from AAB (Play Asset/Feature Delivery beyond); iOS: large apps prompt on cellular | CI size report |
+| Download size | Tracked per release with a delta gate (e.g., +2 MB needs sign-off). Play: compressed download limits of 500 MB for the base module and for each feature module, 4 GB cumulative for all modules and install-time asset packs; above 200 MB, cellular users see a non-blocking size dialog; iOS: large apps prompt on cellular | CI size report |
 | Memory | Flat across a 10-min core-loop soak; survives `onTrimMemory`/`didReceiveMemoryWarning` without data loss | soak test, LeakCanary |
 
 ## Rules
@@ -102,7 +102,7 @@ LazyColumn {
 
 Install conversion drops measurably with download size, and storage-pressure uninstalls target the biggest apps first.
 
-- Android: AAB (mandatory for new Play apps) + R8 with resource shrinking; per-device compressed download tracked in Play Console (the 200 MB cap applies to the per-device download, not the bundle); Play Asset Delivery / Feature Delivery for large content and rarely-used features; strip unused locales/ABIs (`resConfigs`, ABI splits come free with AAB).
+- Android: AAB (mandatory for new Play apps) + R8 with resource shrinking; per-device compressed download tracked in Play Console (the limits in the budget table apply to compressed downloads, not the bundle; 200 MB is only the cellular-warning threshold); Play Asset Delivery / Feature Delivery for large content and rarely-used features; strip unused locales/ABIs (`resConfigs`, ABI splits come free with AAB).
 - iOS: App Thinning handles per-device slicing; audit the App Store Connect app-size report per release; asset catalogs with on-demand resources for big media.
 - Cross-platform runtimes add a real floor (Flutter/RN baseline MBs) — accepted at stack choice time (rules/01), but the *delta per release* is yours: CI prints the size diff per PR and the release gate requires sign-off on regressions. Lazy-download ML models, fonts, and media; never ship debug symbols or test fixtures in release artifacts.
 

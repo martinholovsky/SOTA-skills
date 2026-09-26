@@ -56,7 +56,9 @@ batched, and non-transactional as a whole (see Backfills).
 
 ### Rule: Know which DDL blocks, and never let it queue behind traffic.
 Postgres lock facts that decide everything:
-- Any `ALTER TABLE` takes ACCESS EXCLUSIVE — it blocks all reads/writes AND,
+- Most `ALTER TABLE` forms take ACCESS EXCLUSIVE (a few take less:
+  `ADD FOREIGN KEY` takes SHARE ROW EXCLUSIVE on both tables, which still
+  blocks writes) — it blocks all reads/writes AND,
   worse, **queues behind any long-running query**, and everything else queues
   behind it. A 5ms ALTER behind a 10-minute report = 10 minutes of full outage.
 - Therefore every DDL migration sets a lock timeout and retries:
@@ -129,6 +131,11 @@ SET LOCAL lock_timeout = '3s';
 ALTER TABLE orders DROP CONSTRAINT orders_pkey;
 ALTER TABLE orders ADD CONSTRAINT orders_pkey PRIMARY KEY USING INDEX orders_id_new_key;
 ALTER TABLE orders ALTER COLUMN id_new SET NOT NULL;   -- uses validated check
+-- detach the old int column, or new inserts keep drawing its int sequence
+-- and fail at 2^31 anyway:
+ALTER TABLE orders ALTER COLUMN id DROP IDENTITY IF EXISTS;
+ALTER TABLE orders ALTER COLUMN id DROP DEFAULT;       -- serial columns
+ALTER TABLE orders ALTER COLUMN id DROP NOT NULL;
 ALTER TABLE orders RENAME COLUMN id TO id_old;
 ALTER TABLE orders RENAME COLUMN id_new TO id;
 ALTER TABLE orders ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY
@@ -186,7 +193,8 @@ WHERE events.user_id = u.id
 - One migration framework (Flyway, dbmate, Alembic, Rails/AR, Prisma, golang-
   migrate, Atlas...) — never hand-applied DDL in prod. Any schema drift
   between environments is a HIGH finding; verify with a schema diff (e.g.
-  `migra`, `atlas schema diff`) in CI.
+  `atlas schema diff`, `pg-schema-diff plan`) in CI. (`migra` is deprecated:
+  its README declares 2022-09-18 the final release — replace it.)
 - Migrations run in the deploy pipeline before (expand) or after (contract)
   the code rollout — the ordering is part of the migration's design notes.
 - A linter in CI (e.g. squawk for Postgres) catches blocking DDL patterns
@@ -229,8 +237,10 @@ The expand/contract and lock-timeout doctrines are identical; mechanics differ:
 - No transactional DDL: a failed multi-statement migration leaves a half-
   applied state — one DDL statement per migration file, idempotent re-runs.
 - `ALGORITHM=INSTANT` (8.0+) covers ADD/DROP COLUMN and more; always specify
-  `ALGORITHM=INSTANT|INPLACE, LOCK=NONE` explicitly so the migration **fails
-  loudly** instead of silently rewriting the table.
+  the algorithm explicitly — `ALGORITHM=INSTANT` (no `LOCK` clause: INSTANT
+  with `LOCK=NONE` is rejected, ERROR 1221) or `ALGORITHM=INPLACE, LOCK=NONE`
+  — so the migration **fails loudly** (ERROR 1846) instead of silently
+  rewriting the table.
 - For real rewrites on hot tables use `gh-ost` or `pt-online-schema-change`
   (shadow-table + trailing changelog), not naive ALTER.
 - Adding an index is online (INPLACE) but still I/O-heavy — off-peak.
