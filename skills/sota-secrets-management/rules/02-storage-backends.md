@@ -190,9 +190,10 @@ Rules:
 - Env vars are acceptable for: 12-factor apps on platforms where mounts are impractical
   (most PaaS), short-lived processes, dev. Mitigate: don't pass env to children
   (`env -i`, explicit allowlists), scrub env in error handlers, never log full env.
-- Env vars are **not** acceptable when: the platform offers file mounts (Kubernetes, ECS with
-  Secrets Manager file support, systemd `LoadCredential=`), the secret must rotate without
-  restarts, or the process spawns untrusted/third-party children.
+- Env vars are **not** acceptable when: the platform offers file mounts (Kubernetes, systemd
+  `LoadCredential=`; ECS injects secrets natively only as env vars, so there a file needs a
+  sidecar writing to a task-scoped volume), the secret must rotate without restarts, or the
+  process spawns untrusted/third-party children.
 - **Never** put secrets in: Dockerfile `ENV`/`ARG` (baked into image layers/metadata — Critical
   in pushed images; use BuildKit `--mount=type=secret` for build-time needs),
   docker-compose literals committed to git, systemd unit `Environment=` lines (world-readable

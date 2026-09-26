@@ -127,7 +127,7 @@ sweep commands run, and explicit "checked and clean" areas.
 
 ## Top-10 non-negotiables
 
-1. **Run supported, patched majors.** React ≥ 19.x, Next ≥ 15.x (16.x current), Vue
+1. **Run supported, patched majors.** React ≥ 19.x, Next ≥ 15.x, Vue
    ≥ 3.5, Nuxt ≥ 4.x (Nuxt 3 security-only until 2026-07-31). Cross-check the CVE
    tables — an unpatched RSC RCE (CVE-2025-55182) or middleware bypass
    (CVE-2025-29927) is a ship-stopper. (`rules/01`, `rules/03`, `rules/05`)

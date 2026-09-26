@@ -118,9 +118,8 @@ resource "aws_sqs_queue" "orders" {
 
 ## 3. Kubernetes architecture essentials
 
-(Current upstream: v1.36, supported window v1.34–v1.36 as of mid-2026 — the latest
-three minors; v1.33 reached EOL ~2026-06; verify your managed-provider version
-offerings at design time.)
+(Upstream supports the latest three minor releases — verify the window at
+kubernetes.io/releases, and your managed provider's version offerings, at design time.)
 
 - **Managed control plane only** (EKS/GKE/AKS). Self-hosted control planes need a
   dedicated platform team and a reason.

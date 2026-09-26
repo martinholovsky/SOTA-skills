@@ -22,15 +22,18 @@ CMD ["python3", "/app/server.py"]
 
 ```dockerfile
 # GOOD — multi-stage, distroless, pinned by digest, non-root numeric UID
-FROM python:3.12-slim@sha256:<digest> AS build
+# builder's Python minor MUST equal the runtime's (python3-debian13: 3.13 as of 2026-09-26,
+# read `crane config` Entrypoint) — a mismatch fails at import: ModuleNotFoundError
+FROM python:3.13-slim@sha256:<digest> AS build
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+RUN pip install --no-cache-dir --target=/deps -r requirements.txt
 COPY . .
 
-FROM gcr.io/distroless/python3-debian12:nonroot@sha256:<digest>
-COPY --from=build /install /usr/local
+FROM gcr.io/distroless/python3-debian13:nonroot@sha256:<digest>
+COPY --from=build /deps /app/deps
 COPY --from=build /app /app
+ENV PYTHONPATH=/app/deps
 USER 65532:65532
 ENTRYPOINT ["python3", "/app/server.py"]
 ```
@@ -122,7 +125,9 @@ The November 2025 runc escape trio (CVE-2025-31133 masked-path symlink race,
 CVE-2025-52565 `/dev/console` bind-mount race, CVE-2025-52881 procfs write
 redirect; fixed in runc 1.2.8/1.3.3/1.4.0-rc.3) is the concrete proof: user
 namespaces block the most serious aspects of all three — userns is the layer
-that holds when the runtime itself fails. Verify runc ≥ 1.2.8/1.3.3.
+that holds when the runtime itself fails. Verify runc ≥ 1.2.8/1.3.3; ≥ 1.3.6/1.4.3
+also closes CVE-2026-41579 (medium, CVSS 3.3: a malicious image's `/dev` symlink makes runc write
+host symlinks; exploitable under podman/containerd, not Docker — GHSA-xjvp-4fhw-gc47).
 
 **R1.5 — Supply chain is part of sandbox posture:** pin base images by digest, scan
 (grype/trivy) in CI with a severity gate, sign and verify (cosign + policy
@@ -154,7 +159,8 @@ OWASP: Docker Security cheat sheet.
 syscalls; host kernel sees only the Sentry's narrow, seccomp-pinned syscall set.
 - Use for: untrusted/multi-tenant containers needing container UX, fast startup,
   high density; CPU/memory overhead modest, **syscall- and I/O-heavy workloads pay
-  the most** (mitigated by platforms: KVM platform > ptrace/systrap for perf).
+  the most** (platform choice: KVM on bare metal, `systrap` — the default since
+  mid-2023 — inside VMs; `ptrace` is unsupported and slated for removal).
 - Not full kernel compatibility — test the workload; failures should push you to
   Kata, not back to runc.
 - Drop-in: `runtimeClassName: gvisor` in K8s, `--runtime=runsc` in Docker.
@@ -168,7 +174,9 @@ Cloud Hypervisor, or Firecracker VMM) with its own guest kernel; OCI/K8s-native.
 
 **R2.3 — Firecracker:** minimal VMM (microVM), ~125ms boot, <5MiB overhead, jailer-
 wrapped (chroot + seccomp + cgroups around the VMM itself), tiny device model
-(virtio net/block/vsock only — no PCI passthrough, no GPU).
+(virtio net/block/vsock/rng/pmem/mem + balloon; optional PCI *transport* for virtio
+since 1.13 via `--enable-pci`; no device passthrough in its device API, no GPU —
+as of 2026-09-26).
 - Use for: function/job-grade untrusted code execution at scale (Lambda/Fargate
   model), AI-codegen execution sandboxes, anything wanting VM isolation with
   per-request ephemerality. Pair with a snapshot/pool strategy for cold-start.
@@ -180,14 +188,19 @@ defense-in-depth at container economics; Kata/Firecracker when tenants are mutua
 hostile or code is fully untrusted; Firecracker specifically when you control the
 stack and want minimal VMM surface + ephemerality. Re-state: GPU or exotic
 device passthrough generally forces Kata(+VFIO) or full VM — and passthrough
-*weakens* the boundary (audit it). **A GPU is shared state:** never schedule
+*weakens* the boundary (audit it). The GPU container stack is itself escape
+surface: NVIDIA Container Toolkit hooks let a crafted image reach the host
+(CVE-2024-0132, fixed in toolkit 1.16.2 / GPU Operator 24.6.2, not hit in CDI mode;
+CVE-2025-23266, critical, fixed in toolkit 1.17.8 / GPU Operator 25.3.2 — NVIDIA
+bulletins 5582, 5659), so hold those floors on any GPU node. **A GPU is shared state:** never schedule
 mutually untrusted tenants onto one GPU through time-slicing — NVIDIA's own
 GPU Operator docs state it gives no memory or fault isolation between replicas —
 and allow co-tenancy only with hardware partitioning that isolates memory
 (MIG-class); otherwise give each tenant whole devices. Clear accelerator memory
 between jobs as you would scratch files: GPU on-chip "local" memory has leaked
-between processes (LeftoverLocals, CVE-2023-4969 — Apple, AMD and Qualcomm GPUs
-affected, NVIDIA not, per CERT/CC VU#446598), so reset or scrub the device, or
+between processes (LeftoverLocals, CVE-2023-4969 — AMD, Apple and Imagination GPUs
+affected, Qualcomm unknown, NVIDIA and Intel not, per CERT/CC VU#446598), so reset
+or scrub the device, or
 destroy the VM, before the next tenant's job. Confidential GPU modes are
 `sota-confidential-computing` rules/02. OWASP: AISVS 4.2.4; Secure AI Model Ops
 cheat sheet. For agent workloads on K8s, the Kubernetes
@@ -381,7 +394,8 @@ is good for security but plan checkpointing/image capture for incident response
       routed to on-call, and canary-tested within the last quarter.
 - [ ] Rootless/userns-remapped engine on hosts where dev containers run; Docker
       API never on unauthenticated TCP; runc ≥ 1.2.8/1.3.3 (November 2025
-      escape trio, R1.4).
+      escape trio, R1.4), ≥ 1.3.6/1.4.3 under podman/containerd (CVE-2026-41579);
+      GPU nodes run NVIDIA Container Toolkit ≥ 1.17.8 / GPU Operator ≥ 25.3.2 (R2.4).
 - [ ] **High** — Published ports bound to loopback unless deliberately public,
       host filtering in `DOCKER-USER`, exposure checked from another host, and no
       service on the default bridge with `icc` on (R1.6):
@@ -413,4 +427,6 @@ is good for security but plan checkpointing/image capture for incident response
       and overrides that switch the stock rules off:
       `grep -rlE 'falco_rules\.yaml' . | xargs -r grep -LE 'falco-(incubating|sandbox)_rules'`
       and `grep -rnE -A2 -- '- rule: (Contact cloud metadata service from container|Contact EC2 Instance Metadata Service From Container|Privileged Container Device Access|Container Accessing GPU Device)' . | grep -E 'enabled:[[:space:]]*false'`
-      — a hit on either is a finding unless custom rules cover both classes.
+      — a hit on either is a finding unless custom rules cover both classes. Also read
+      any `rules:` selection in `falco.yaml` (`- disable:` by `rule:` wildcard or `tag:`):
+      it runs after every rules file and overrides their `enabled:`.

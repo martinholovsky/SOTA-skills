@@ -14,9 +14,8 @@ ceremony; here we own the policy and the assurance model.
 
 - **FIDO2 / WebAuthn / passkeys are the target state.** They are phishing-resistant:
   origin-bound (the credential only works for the registered relying-party origin),
-  challenge-response, no shared secret to phish or replay. WebAuthn is at **Level 3**
-  (W3C Candidate Recommendation as of early 2026 — current spec level, not yet a finished
-  Recommendation).
+  challenge-response, no shared secret to phish or replay. WebAuthn **Level 3** became a
+  **W3C Recommendation on 25 August 2026** (w3.org/TR/webauthn-3).
 - **Passkeys** = FIDO credentials, either device-bound (hardware security key, platform
   authenticator) or **synced** multi-device (synced through a provider's keychain). Synced
   passkeys trade some assurance for huge usability/recovery wins — for the highest
@@ -157,6 +156,18 @@ Rev 3, across three volumes: 800-63A-4 (proofing), 800-63B-4 (authentication), 8
 - **FAL — Federation Assurance Level**: strength of the federated assertion (signing,
   encryption, holder-of-key binding). FAL rises with assertion protection.
 
+**Wallet-held credentials (SD-JWT, RFC 9901, Nov 2025).** When users present a verifiable
+credential from a wallet instead of signing in at an IdP, the verifier plays the RP's role
+and owns the same checks (RFC 9901 Sec. 7.1, 7.3): reject `alg: none` and pin algorithms, verify
+the issuer signature with a key that belongs to *that* issuer, accept only a known and secure
+`_sd_alg`, and reject malformed disclosures, a digest seen twice, and any disclosure no
+digest references. **Decide per use case whether
+Key Binding is required *before* looking at the presentation** — never infer it from
+whether the holder sent a KB-JWT (Sec. 9.5). When it is required, check the KB-JWT's `typ`
+`kb+jwt`, holder-key signature, a short `iat` window, `nonce` and `aud` for this
+transaction and this verifier, and `sd_hash`. Without Key Binding, a leaked credential can
+be replayed by anyone. Revocation of such credentials is the Token Status List (rules/02 §4).
+
 Match the assurance level to the risk of the resource (don't demand IAL3 in-person
 proofing to read a blog; do demand AAL3 for production infra). What 800-63-4 changed vs
 Rev 3, reflect these:
@@ -238,6 +249,7 @@ assurance leaks (800-63B-4's lifecycle section: loss, theft, expiration, invalid
 - [ ] Is CAEP/SSF (or an equivalent) wired so disable/credential-change/risk events propagate revocation to RPs in near-real-time, not at token expiry?
 - [ ] Are IAL/AAL/FAL levels chosen to match resource risk, with AAL3 (hardware phishing-resistant) for the highest-risk access?
 - [ ] Is password policy 800-63-4-aligned (no forced periodic rotation, no composition rules; rotate on compromise only)?
+- [ ] **High** — Where wallet credentials (SD-JWT) are accepted, does the verifier pin algorithms and `_sd_alg`, check the issuer key, reject malformed, duplicate-digest or unreferenced disclosures, fix Key Binding per use case in advance (never from whether a KB-JWT arrived), and check `kb+jwt`, `iat`, `nonce`, `aud` and `sd_hash`?
 - [ ] **High** — Is MFA (AAL2) required for every workforce, contractor and partner account and for every app that exposes personal data, with AAL1 limited to low-risk apps holding none? MFA switched off or optional in policy-as-code: `grep -rniE '(require[sd]?_?mfa|mfa_?(required|enforce[a-z]*)|mfa)["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']?(false|optional|off|disabled|none|no)' .`
 - [ ] **High** — Do the factors come from different categories, is there no sign-in or recovery fallback from a phishing-resistant authenticator to a weaker method, and are adaptive-access signals taken from sources the client cannot set? Fallbacks to weaker methods: `grep -rniE 'fallback[A-Za-z_]*["'\'']?[[:space:]]*[:=].*(sms|voice|email|otp|password|question)' .`
 - [ ] **Medium** — Where SMS/voice OTP is enabled, is there a recorded risk acceptance with an owner, an unrestricted alternative, a migration plan, SIM-swap/number-port checks, number changes treated as new bindings, and code generation isolated in a verifier service? SMS or voice factors switched on (each hit needs that record): `grep -rniE '(sms|voice|phone)_?(otp|mfa|factor|authenticator|2fa)[a-z_]*["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']?(true|on|yes|enabled|allowed)' .`

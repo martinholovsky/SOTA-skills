@@ -27,7 +27,7 @@ secret already left the laptop and entered shared history). Run both.
 # .pre-commit-config.yaml
 repos:
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.x
+    rev: vX.Y.Z      # an exact release tag (latest stable: github.com/gitleaks/gitleaks/releases) — pre-commit rejects a wildcard like v8.x
     hooks:
       - id: gitleaks   # runs `gitleaks git --pre-commit --redact --staged --verbose`
 ```
@@ -40,7 +40,7 @@ useDefault = true
 id = "myapp-api-key"
 description = "MyApp internal API key"
 regex = '''myapp_(sk|pat)_[A-Za-z0-9_\-]{32,}'''
-[allowlist]
+[[allowlists]]                                  # gitleaks ≥ 8.25.0; the older single [allowlist] table is superseded
 paths = ['''testdata/fake_keys\.json''']     # narrow, path-based; never allowlist by rule id
 ```
 
@@ -55,14 +55,15 @@ Complements gitleaks: ~800 detectors **with verification** — it calls the cred
 to check liveness, collapsing false positives.
 
 ```bash
-trufflehog git file://. --only-verified --fail          # CI gate: verified-live secrets only
+trufflehog git file://. --results=verified --fail       # CI gate: verified-live secrets only
 trufflehog filesystem /path --results=verified,unknown  # audit sweep: include unverifiable
 trufflehog docker --image myorg/app:latest              # images: layers, env, files
 ```
 
-Use `--only-verified` for blocking gates (near-zero false positives); use the broader mode for
-audits — an unverifiable secret is still a finding, just triaged manually. Also point trufflehog
-at non-git surfaces: S3 buckets, container images, CI logs exports — secrets leak there too.
+Use `--results=verified` for blocking gates (near-zero false positives; it supersedes the
+older `--only-verified`, now a hidden flag); use the broader mode for audits — an
+unverifiable secret is still a finding, just triaged manually. Also point trufflehog at
+non-git surfaces: S3 buckets, container images, CI logs exports — secrets leak there too.
 
 ### Scanner hygiene
 
@@ -107,9 +108,11 @@ gate disabled within a week. Instead:
 1. Full-history scan once; triage every hit (real-and-live / real-but-rotated / false positive).
 2. **Rotate all real-and-live findings now** (§3) — the baseline is an incident list, not an
    ignore list.
-3. Fingerprint the remainder into a baseline (`gitleaks` `--baseline-path`,
-   trufflehog `--exclude-detectors` / fingerprint files) so the gate only fails on *new*
-   findings; commit the baseline and review changes to it like code.
+3. Fingerprint the remainder into a baseline (`gitleaks` `--baseline-path` over a prior
+   report) so the gate only fails on *new* findings; commit the baseline and review changes to
+   it like code. trufflehog has no baseline file: scan only new commits (`--since-commit <base>`)
+   and mark accepted lines with an inline `trufflehog:ignore` comment — `--exclude-detectors`
+   disables a whole detector class, which is a snooze, not a baseline.
 4. Burn the baseline down on a schedule; it should shrink monotonically. A growing baseline
    file means the gate is being used as a snooze button — Medium finding.
 
@@ -258,8 +261,8 @@ Condensed from SKILL.md AUDIT mode — the grep set when tools aren't available:
 
 ```bash
 # Known prefixes & key blocks
-grep -rInE '(AKIA|ASIA)[A-Z0-9]{16}|ghp_[A-Za-z0-9]{36}|github_pat_|gho_|xox[bpars]-|sk_live_|rk_live_|sk-[A-Za-z0-9]{20,}|AIza[A-Za-z0-9_\-]{35}|glpat-|npm_[A-Za-z0-9]{36}|dop_v1_|shpat_' .
-grep -rIl -- '-----BEGIN \(RSA \|EC \|OPENSSH \|\)PRIVATE KEY-----' .
+grep -rInE '(AKIA|ASIA)[A-Z0-9]{16}|gh[pousr]_[A-Za-z0-9]{36}|github_pat_|xox[bpars]-|sk_live_|rk_live_|(^|[^A-Za-z0-9_-])sk-(proj-|svcacct-|admin-|ant-(api|admin)[0-9]{2}-)?[A-Za-z0-9_-]{20,}|AIza[A-Za-z0-9_\-]{35}|glpat-|npm_[A-Za-z0-9]{36}|dop_v1_|shpat_' .
+grep -rIlE -- '-----BEGIN ([A-Z0-9]+ )*PRIVATE KEY( BLOCK)?-----' .   # RSA/EC/OPENSSH/ENCRYPTED/PKCS#8/PGP
 # Assignments & connection strings
 grep -rInE '(password|passwd|pwd|secret|token|api[_-]?key)\s*[:=]\s*["'"'"'][^"'"'"']{6,}' --include='*.py' --include='*.js' --include='*.ts' --include='*.go' --include='*.rb' --include='*.java' --include='*.yml' --include='*.yaml' --include='*.json' --include='*.tf' --include='*.sh' --include='*.env' --include='*.cfg' --include='*.ini' --include='*.properties' .
 grep -rInE '[a-z+]+://[^/:@[:space:]]+:[^@[:space:]]+@' .
@@ -347,7 +350,7 @@ inventory that does not name the transcript path = **Medium**.
       Runbooks that never mention it: `grep -rLiE 'key compromise|CA compromise|re-?key' runbooks/`
 - [ ] **Detector set covers every secret class held (§1)** and tests use one standard fake
       per type — Medium. A gitleaks config with no custom rule for your own formats:
-      `grep -L '^\[\[rules\]\]' .gitleaks.toml`
+      `grep -q '^\[\[rules\]\]' .gitleaks.toml || echo 'no custom [[rules]] (or no .gitleaks.toml)'`
 - [ ] Past incidents: history actually rewritten (filter-repo + force-push + re-clone), forks/
       PR quotes/CI logs scrubbed, full-history rescan clean, and the leaked values rotated.
 - [ ] Legacy-repo adoption used a triaged baseline (live findings rotated first); baseline file

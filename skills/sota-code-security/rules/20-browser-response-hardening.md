@@ -43,7 +43,7 @@ the headers narrow what an attacker can do when one of those checks is missing.
   (200, 201, 204, 206, 301, 302, 303, 304, 307, 308) unless the `always` parameter is
   given. It is also inherited from the enclosing level **only when the current level
   defines no `add_header` of its own**, so one `add_header` in a `location` silently drops
-  every server-level security header there (newer nginx adds `add_header_inherit` to
+  every server-level security header there (nginx 1.29.3+ adds `add_header_inherit` to
   change this; check the version you run). Put the set in one included snippet, add it
   with `always`, and include it in every block that declares any `add_header`.
 - **Apache `mod_headers`:** `Header` works on two tables, `onsuccess` (the default) and

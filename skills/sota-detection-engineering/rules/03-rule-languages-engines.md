@@ -63,17 +63,28 @@ logsource:
   category: process_creation
   product: windows
 detection:
-  selection:
-    Image|endswith: '\powershell.exe'
+  selection_img:
+    - Image|endswith:
+        - '\powershell.exe'
+        - '\pwsh.exe'
+    - OriginalFileName:               # survives a renamed binary
+        - 'PowerShell.EXE'
+        - 'pwsh.dll'
+  selection_parent:
     ParentImage|endswith:
       - '\winword.exe'
       - '\excel.exe'
       - '\outlook.exe'
-    CommandLine|contains|all:
-      - '-enc'
+  selection_cli:
+    CommandLine|windash|contains:     # windash also matches /e, en/em dash forms
+      - ' -e '                        # abbreviated -EncodedCommand forms (as SigmaHQ's rule lists them)
+      - ' -en '
+      - ' -enc '
+      - ' -enco'
+      - ' -ec '
   filter_admin:                       # allowlist known-benign automation
     User|startswith: 'SVC_'
-  condition: selection and not filter_admin
+  condition: all of selection_* and not filter_admin
 falsepositives:
   - Signed admin tooling launched from Office add-ins (rare; allowlisted above)
 level: high
@@ -95,6 +106,8 @@ scan with `yr scan`. (Source: virustotal.github.io/yara-x, VirusTotal blog.)
 **Bad** (one rotated byte defeats it; trivial Pyramid-of-Pain tier):
 
 ```
+import "hash"
+
 rule Bad_Hash_Only {
   condition: hash.md5(0, filesize) == "44d88612fea8a8f36de82e1278abb02f"
 }
@@ -103,6 +116,9 @@ rule Bad_Hash_Only {
 **Good** (structural — costs the author real rework to evade):
 
 ```
+import "math"
+import "pe"
+
 rule Suspicious_Packed_PE_With_RWX {
   meta:
     author = "soc"

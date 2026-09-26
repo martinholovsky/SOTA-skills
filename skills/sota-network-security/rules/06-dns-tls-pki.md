@@ -133,7 +133,8 @@ OWASP: Transport Layer Security cheat sheet, Zero Trust Architecture cheat sheet
     allowlists, CSP and CORS lists, and revoke (or let expire) its certificates.
   - **Continuous detection:** alert on every new CNAME/NS and on any target that answers
     NXDOMAIN, `404` or a provider default page; run a takeover scanner on a schedule against a
-    maintained catalogue of claimable services (e.g. the `can-i-take-over-xyz` list); monitor
+    catalogue of claimable services, checking how current it is (the widely used
+    `can-i-take-over-xyz` list had its last commit in February 2025, as of 2026-09-26); monitor
     Certificate Transparency for issuance you did not request.
 
 **R4.1 — No wildcard records unless a service needs one, and then behind a hostname allowlist.**
@@ -199,6 +200,11 @@ sota-detection-engineering — feed it your resolver logs.
   HSM/KMS-backed or tightly access-controlled; its compromise mints trusted certs for everything.
 - **Separate intermediates** per purpose/environment so one can be rotated/revoked without
   re-trusting the root.
+- **mTLS client certificates come from here, not a public CA.** Public CAs are removing the TLS
+  Client Authentication EKU to meet the Chrome root program's requirement for separate client and
+  server PKIs (Let's Encrypt: default profile without it from 2026-02-11, no more client-auth
+  issuance from 2026-07-08). A service or partner link authenticating clients with publicly
+  issued certs breaks at renewal; issue them from a private CA scoped to client auth (rules/04 R4.1).
 
 **R10 — Feed the mesh from the internal CA.** The service mesh / Cilium mTLS CA (rules/04) chains to
 step-ca (or its own intermediate). Short-lived SVIDs auto-rotate; don't copy a long-lived wildcard

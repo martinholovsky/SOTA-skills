@@ -255,8 +255,11 @@ contractual residency):
 ```rego
 # GOOD: residency enforced as policy-as-code in CI (rules/05 §4) —
 # an EU-pinned dataset physically cannot be declared outside allowed regions
-deny[msg] {
-  r := input.resource_changes[_]
+# (Rego v1 syntax, the OPA 1.x default: `package` + `contains ... if`)
+package privacy.residency
+
+deny contains msg if {
+  some r in input.resource_changes
   r.type == "aws_s3_bucket"
   r.change.after.tags.data_residency == "eu"
   not startswith(r.change.after.region, "eu-")

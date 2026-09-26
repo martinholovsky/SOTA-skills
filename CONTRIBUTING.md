@@ -26,7 +26,9 @@ By contributing you agree your contribution is licensed under
    point at its maintained successor and keep a one-line EOL note. **Invariant 38** enforces
    the pin half: `scripts/lib/check-version-pins.py` flags a claim about what is current or
    latest that carries a number ("iOS 26 current", "Baseline: Java 25 LTS", "(2026 baseline)").
-   A dated measurement ("verified 2026-07-09: …") is provenance and passes.
+   A dated measurement ("verified 2026-07-09: …") is provenance and passes, but only for the
+   claim it sits beside; an event date ("reached EOL 2026-06", "until 2026-07-31") dates the
+   event, not a pin next to it.
 3. **Stay lean — instruction files only.** Every **skill** file
    (`skills/*/SKILL.md`, `skills/*/rules/*.md`) is **≤ 500 lines** so skills load
    incrementally without blowing the context window. Nothing else in the repo has

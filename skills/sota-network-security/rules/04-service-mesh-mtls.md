@@ -14,9 +14,14 @@ Verified (2026-07): **Istio ambient mode (ztunnel + waypoints)** reached **GA in
 2024)** — sidecar and ambient are both production data planes today. **Linkerd** (CNCF Graduated)
 added **SPIFFE identities and mesh expansion in 2.15** (Feb 2024). **SPIFFE/SPIRE** are CNCF
 Graduated, production-ready. **Cilium** mTLS is now the **ztunnel integration** (per-node proxy
-adopted from Istio ambient) — **Beta in 1.19, TCP-only** (UDP/other protocols aren't redirected),
-enrolled per-namespace; the older out-of-band Mutual Authentication beta is disabled by default in
-1.19. Pin exact versions against the projects' docs before committing.
+adopted from Istio ambient) — **still Beta in the 1.20 docs, TCP-only** (UDP/other protocols aren't
+redirected), enrolled per-namespace (verified 2026-09-26 at docs.cilium.io). The older out-of-band
+Mutual Authentication beta is disabled by default since 1.19, is marked for deprecation, and
+had an identity-spoofing flaw (CVE-2026-83620: any valid client certificate could impersonate
+another identity; fixed 1.19.6/1.18.12/1.17.18) — do not rely on it. **Linkerd**'s open-source
+project publishes only *edge* releases since February 2024; stable release artifacts come from
+vendors (linkerd.io/releases) — plan for edge cadence or a vendor build. Pin exact versions against
+the projects' docs before committing.
 
 ---
 
@@ -40,7 +45,7 @@ plaintext becomes impossible, not merely discouraged.
 ## 2. mTLS everywhere — STRICT, not permissive-forever
 
 **R3 — Drive mesh mTLS to STRICT; PERMISSIVE is a migration state, not a destination.** PERMISSIVE
-accepts both mТLS and plaintext — useful while onboarding, but it means plaintext *still flows* and
+accepts both mTLS and plaintext — useful while onboarding, but it means plaintext *still flows* and
 an attacker can simply speak plaintext. Auditing a mesh that's been PERMISSIVE for a long time = the
 plaintext problem is unsolved.
 
@@ -72,7 +77,11 @@ one of them. For partner, cross-org or cross-trust-domain mTLS, pin the expected
 Istio `principals`. Never authorise on the subject **CN** or other DN fields (`$ssl_client_s_dn`,
 `Subject.CommonName`, `getSubjectX500Principal()`): RFC 9525 dropped CN-ID for server identity —
 identity lives in subjectAltName only — and the same reasoning applies to client certs. Chain
-validation itself is sota-code-security rules/04 §5. OWASP: AI-Powered Advertising Systems Security
+validation itself is sota-code-security rules/04 §5. **Issue mTLS client certificates from a
+private CA** (rules/06 §4): public CAs are dropping the TLS Client Authentication EKU under the
+Chrome root program's split of client and server PKIs (Let's Encrypt removed it from its default
+profile on 2026-02-11 and stopped issuing it on 2026-07-08), so a publicly issued cert can
+fail client validation at its next renewal. OWASP: AI-Powered Advertising Systems Security
 cheat sheet, Kubernetes Security cheat sheet.
 
 ## 4. Mesh authorization policy (the L7 PEP)
@@ -106,8 +115,8 @@ Linkerd uses `Server` + `AuthorizationPolicy`/`MeshTLSAuthentication`; Cilium us
 |---|---|
 | 1–3 services, simple topology | **Plain TLS** between them (or Cilium WireGuard node-to-node encryption) — a full mesh is overkill |
 | Many services, need mTLS + L7 authz + telemetry, want it transparent | A mesh |
-| Already on Cilium, want mTLS without a full mesh | **Cilium ztunnel mTLS** — per-node proxy, **Beta in 1.19, TCP-only, per-namespace enrollment**; pin-and-evaluate, and prefer Istio ambient or Linkerd where production mTLS is required today. Cilium **WireGuard** gives stable node-to-node encryption (no per-workload identity) |
-| Want the lightest dedicated mesh, Kubernetes-only | **Linkerd** (simple, fast, Graduated, SPIFFE in 2.15) |
+| Already on Cilium, want mTLS without a full mesh | **Cilium ztunnel mTLS** — per-node proxy, **Beta (still in 1.20), TCP-only, per-namespace enrollment**; pin-and-evaluate, and prefer Istio ambient or Linkerd where production mTLS is required today. Cilium **WireGuard** gives stable node-to-node encryption (no per-workload identity) |
+| Want the lightest dedicated mesh, Kubernetes-only | **Linkerd** (simple, fast, Graduated, SPIFFE in 2.15; OSS ships edge releases only — stable builds are vendor-supplied) |
 | Need the richest L7/traffic-management, multi-cluster, VM mesh | **Istio** — prefer **ambient mode** (ztunnel + waypoints, GA since 1.24) to avoid per-pod sidecar cost; sidecar mode still valid |
 
 **R7 — Ambient vs sidecar (Istio).** Ambient splits the data plane: a per-node **ztunnel** handles
@@ -156,6 +165,8 @@ allow-all NetworkPolicy still has a flat L3 underneath.
 - [ ] **High — peer authorised by issuer or CN, not pinned identity (R4.1).** Cross-org/partner
       mTLS pins a typed SAN or SPKI per peer; hunt subject-DN authorisation:
       `grep -rnE 'ssl_client_s_dn|Subject\.CommonName|getSubjectX500Principal|getSubjectDN\(' .`
+- [ ] **Medium — client certs from a public CA (R4.1).** Are mTLS client certificates issued by a
+      private CA? Publicly issued ones lose the client-auth EKU at renewal (2026 PKI split).
 - [ ] Are there mesh-bypass paths (hostNetwork, direct-IP, out-of-mesh DB) reaching sensitive
       services? Are those covered by CNI NetworkPolicy (rules/03)?
 - [ ] Is CNI L3/4 default-deny still in place *underneath* the mesh (mesh is not a CNI replacement)?

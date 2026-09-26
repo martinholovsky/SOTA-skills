@@ -142,7 +142,8 @@ sessions and push rights, so its approval settings are a security control:
 - **Never start a bypass mode in a repository you have not reviewed.** Flags such
   as Claude Code `--dangerously-skip-permissions` (`defaultMode:
   "bypassPermissions"`), Codex `--dangerously-bypass-approvals-and-sandbox` (alias
-  `--yolo`) and Gemini CLI `--yolo` / `--approval-mode=yolo` switch off the
+  `--yolo`) or `--sandbox danger-full-access`, and Gemini CLI `--yolo` (`-y`) /
+  `--approval-mode=yolo` switch off the
   per-action gate; they belong only inside an external sandbox (§2) — never in a
   shell alias used for every checkout.
 - **Push the baseline from above the project.** Use the tool's admin-managed tier
@@ -150,6 +151,13 @@ sessions and push rights, so its approval settings are a security control:
   override) to disable bypass mode (`permissions.disableBypassPermissionsMode`),
   and where supported restrict permission rules and hooks to the managed source
   (`allowManagedPermissionRulesOnly`, `allowManagedHooksOnly`).
+- **Turn on the harness's own OS sandbox, and make it fail closed.** Claude Code:
+  `sandbox.enabled: true`, `sandbox.failIfUnavailable: true` (otherwise a missing
+  dependency warns and runs unsandboxed) and `sandbox.allowUnsandboxedCommands: false`
+  (drops the per-command escape hatch), pushed from the managed tier. Codex:
+  `--sandbox read-only|workspace-write` (config `sandbox_mode`), with admin requirements
+  limiting `allowed_sandbox_modes`. It confines shell commands the agent runs, not MCP
+  servers (R3.4). Docs: code.claude.com/docs/en/sandboxing, developers.openai.com/codex/config-reference.
 - **Policy hooks live where the agent cannot write** — outside the workspace and
   not in a file the agent may edit (R3.4, R2.2).
 - **Gate agent pushes at the VCS boundary**: branch protection plus required
@@ -265,23 +273,40 @@ OWASP: AISVS 9.3.8; DSOMM.
 ## 5. Verification probe for agent sandboxes
 
 **R5.0 — Run this (or equivalent) *as the agent would*, in CI and after any
-infra change** (per `01` §5). Every line must fail:
+infra change** (per `01` §5). Exit 0 only when every check is denied:
 
-```bash
-#!/bin/sh -e  # each command must NOT succeed; invert and assert
-cat /run/secrets/* ~/.aws/credentials ~/.ssh/id_* 2>/dev/null && exit 1
-env | grep -Ei 'key|token|secret|password' | grep -v '^SANDBOX_' && exit 1
-curl -m3 -sf http://169.254.169.254/latest/meta-data/ && exit 1
-curl -m3 -sf https://attacker-canary.example.com/ && exit 1
-curl -m3 -sf https://93.184.216.34/ && exit 1          # raw IP egress
-nslookup exfil-$(head -c8 /dev/urandom|xxd -p).canary.example.com \
-  8.8.8.8 2>/dev/null && exit 1                         # rogue-resolver DNS
-touch /etc/probe /probe "$AGENT_CONFIG_DIR/probe" 2>/dev/null && exit 1
-unshare -rn true 2>/dev/null && exit 1                  # namespace creation
-echo "all denials held"
+```sh
+#!/bin/sh
+# Every check must be DENIED; each success is a hole. Output never echoes a secret.
+rc=0; inc=0; hole() { echo "HOLE: $*"; rc=1; }
+need() { command -v "$1" >/dev/null 2>&1 || { echo "INCONCLUSIVE: no $1"; inc=1; return 1; }; }
+denied() { case $1 in 6|7|28) return 0;; *) return 1;; esac; }  # curl: DNS/connect/timeout
+curl -m5 -s -o /dev/null "${ALLOWED_URL:?set an allowlisted URL}" || { echo "INCONCLUSIVE: allowed URL failed"; exit 2; }
+for f in /run/secrets/* ~/.aws/credentials ~/.ssh/id_*; do
+  case $f in *.pub) continue;; esac; [ -e "$f" ] || continue; cat -- "$f" >/dev/null 2>&1 && hole "readable $f"
+done
+env | grep -Ei '^[^=]*(key|token|secret|password)[^=]*=' | grep -vq '^SANDBOX_' && hole "secret-named env var"
+for u in http://169.254.169.254/latest/meta-data/ http://example.com/ http://1.1.1.1/; do
+  curl -m3 -s -o /dev/null "$u"; denied $? || hole "egress $u"   # resolvable name + live IP
+done
+need nslookup && nslookup example.com 8.8.8.8 >/dev/null 2>&1 && hole "rogue-resolver DNS"
+for d in /etc / "${AGENT_CONFIG_DIR:-}"; do
+  [ -n "$d" ] || continue; p="$d/.sbx-probe.$$"
+  touch -- "$p" 2>/dev/null && { rm -f -- "$p"; hole "writable $d"; }
+done
+need unshare && unshare -rn true 2>/dev/null && hole "namespace creation"
+[ "$rc" -eq 0 ] && [ "$inc" -eq 1 ] && exit 2
+[ "$rc" -eq 0 ] && echo "all denials held"; exit "$rc"
 ```
-Pair with a *positive* probe (allowed mirror reachable, workspace writable) so a
-broken-but-fail-closed sandbox is distinguishable from a working one.
+Test **one path per command**: `cat a b c && exit 1` fires only if *every* file reads,
+so one readable secret beside two missing paths passed the old form. Egress targets
+must *resolve and answer* — an NXDOMAIN canary or a dead IP "fails" on an open
+network — and only curl's DNS/connect/timeout exits (6/7/28) count as denied. The
+`ALLOWED_URL` positive control, run with the same method, separates a working sandbox
+from a broken-but-fail-closed one (exit 2); so does a missing `nslookup` or `unshare`, which
+would otherwise read as "denied". Verified 2026-09-26 under busybox sh in podman: exit 0 in a
+no-network, read-only, non-root box whose seccomp profile denies `unshare`; 1 with egress open
+or a writable root; 2 with `unshare` absent from PATH.
 
 ## 6. Multi-agent and computer-use specifics
 
@@ -397,14 +422,17 @@ where they coexist. Rate it with the chain named leg by leg (`sota/rules/03` §1
 - [ ] Append-only action log outside the sandbox with denied-action alerting;
       MCP/third-party tool servers inventoried, pinned, and scope-reviewed.
 - [ ] **High** — Locally launched MCP servers run in their own sandbox, not bare on
-      the host (R3.4): `grep -rnE --include='*mcp*.json'
-      '"command"[[:space:]]*:[[:space:]]*"(npx|uvx|node|python3?|bunx|deno)"' .`
+      the host (R3.4). JSON (`*mcp*.json`, Gemini `settings.json`, Claude Desktop) and
+      Codex TOML entries; run at the repo root, then over `~/.gemini ~/.codex` in place
+      of `.` (raw `ugrep` needs `--hidden` to enter `.cursor/`, `.gemini/`, `.codex/`):
+      `grep -rnE --include='*mcp*.json' --include='settings.json' --include='claude_desktop_config.json' --include='config.toml' '"command"[[:space:]]*:[[:space:]]*"(npx|uvx|node|python3?|bunx|deno)"|^[[:space:]]*command[[:space:]]*=[[:space:]]*"(npx|uvx|node|python3?|bunx|deno)"' .`
       — each hit is a server started directly as the developer; want a container or
       OS-sandbox wrapper with scoped mounts and no default network.
 - [ ] **High** — No agent bypass mode in shared scripts, aliases or settings (R3.5):
-      `grep -rnE -- '--dangerously-skip-permissions|--dangerously-bypass-approvals-and-sandbox|--yolo|--approval-mode[= ]yolo|"defaultMode"[[:space:]]*:[[:space:]]*"bypassPermissions"' .`
-      — acceptable only where the call runs inside an external sandbox; a managed
-      baseline disables bypass, hooks sit outside the agent's write reach, agent
+      `grep -rnE -- '--dangerously-skip-permissions|--dangerously-bypass-approvals-and-sandbox|--yolo|--approval-mode[= ]yolo|"defaultMode"[[:space:]]*:[[:space:]]*"bypassPermissions"|danger-full-access|gemini[^|;&]*[[:space:]]-y([^[:alnum:]-]|$)' .`
+      (raw `ugrep` needs `--hidden`) — acceptable only inside an external sandbox; a managed
+      baseline disables bypass and turns the harness OS sandbox on fail-closed
+      (R3.5), hooks sit outside the agent's write reach, agent
       pushes need review, and standing allow-rules were re-audited this quarter.
 - [ ] **High** — Fleet-wide halt exists, travels out of band (control plane or
       broker, never the agent's context or workspace), and has a measured

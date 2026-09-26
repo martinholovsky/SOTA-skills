@@ -71,11 +71,15 @@ network** (egress controls per sota-network-security).
 // BAD: decode first, OOM second
 img, _, err := image.Decode(r)
 
-// GOOD: header-only dimension check, then bounded decode
-cfg, _, err := image.DecodeConfig(io.LimitReader(r, 64<<10))
+// GOOD: read once (bounded), header-only dimension check, then decode the same bytes.
+// DecodeConfig consumes the reader, so a second Decode on r fails ("unknown format").
+buf, err := io.ReadAll(io.LimitReader(r, maxBytes+1))
+if err != nil { return err }
+if len(buf) > maxBytes { return ErrTooLarge }
+cfg, _, err := image.DecodeConfig(bytes.NewReader(buf))
 if err != nil { return err }
 if cfg.Width*cfg.Height > 24_000_000 { return ErrTooLarge }  // ~24MP cap
-img, _, err := image.Decode(io.LimitReader(r, 16<<20))       // bounded body
+img, _, err := image.Decode(bytes.NewReader(buf))
 ```
 
 - **Archives — zip/tar slip, zip bombs, nested amplification (CWE-22, CWE-409).**
@@ -93,11 +97,12 @@ with zipfile.ZipFile(fp) as z:
     if len(z.infolist()) > MAX_ENTRIES: raise Reject("too many entries")
     for info in z.infolist():
         dest = safe_join(base, info.filename)        # rejects ../ + absolute
+        written = 0                                  # per-entry, for the ratio
         with z.open(info) as src, open(dest, "wb") as out:
             while chunk := src.read(64 * 1024):
-                total += len(chunk)
+                written += len(chunk); total += len(chunk)
                 if total > MAX_TOTAL: raise Reject("zip bomb")
-                if info.compress_size and total / info.compress_size > 100:
+                if info.compress_size and written / info.compress_size > 100:
                     raise Reject("ratio bomb")
                 out.write(chunk)
 ```
@@ -287,7 +292,7 @@ Two exits matter beyond rules/01's sinks:
 - [ ] Ingest anomalies (volume spikes, ratio-bomb/schema-violation bursts, AV hits) emitted as detection events?
 - [ ] XML structural limits (§2): nesting depth, element/attribute counts and name/value lengths capped, strict XSD instead of DTD, and tests for malformed-vs-normal parse time and for each limit? HIGH on an unauthenticated XML endpoint; each hit of `grep -rnE 'huge_tree[[:space:]]*=[[:space:]]*True|XML_PARSE_HUGE|ET\.(fromstring|parse|XMLParser)\(|minidom\.parse(String)?\(|expat\.ParserCreate' --include='*.py' --include='*.c' --include='*.cpp' --include='*.h' .` is a parser with a relaxed or absent depth limit
 - [ ] **Cascading validation (§4)**: does validation reach every nested object and collection (`@Valid` on each nested reference, nested models)? MEDIUM, HIGH when a nested field reaches a query or a decision; each hit of `grep -rnE '^[[:space:]]*(private|protected|public)[[:space:]]+([A-Z][A-Za-z]*(Dto|DTO|Request)|(List|Set|Collection)<[A-Z][A-Za-z]*(Dto|DTO|Request)>)[[:space:]]+[a-z]' --include='*.java' . | grep -v '@Valid'` is a nested DTO without `@Valid` on the same line (check the line above)
-- [ ] **Invisible code points in code and history (§4)**: does CI reject bidi and zero-width characters in source of every language, agent-generated code and commit messages? MEDIUM, HIGH in reviewed code; each hit of `LC_ALL=C grep -rnE $'\xe2\x80[\x8b-\x8d\xaa-\xae]|\xe2\x81[\xa6-\xa9]|\xef\xbb\xbf' .` is a finding (pipe `git log --format=%B` into the same grep for messages)
+- [ ] **Invisible code points in code and history (§4)**: does CI reject bidi and zero-width characters in source of every language, agent-generated code and commit messages? MEDIUM, HIGH in reviewed code; each hit of `LC_ALL=C grep -rnE $'\xe2\x80[\x8b-\x8d\xaa-\xae]|\xe2\x81[\xa6-\xa9]|\xef\xbb\xbf|\xf3\xa0[\x80-\x81]' .` is a finding (pipe `git log --format=%B` into the same grep for messages). That byte ERE needs bash/zsh `$'…'` and a BSD or GNU `grep` (10/10 fixtures, 0 false hits, 2026-09-26); ugrep reads it as UTF-8 and caught 1 of 10, so where `grep` is a ugrep wrapper call the binary by path or run `ugrep -rnP '[\x{200B}-\x{200D}\x{202A}-\x{202E}\x{2066}-\x{2069}\x{FEFF}\x{E0000}-\x{E007F}]' .` (10/10)
 - [ ] **XML schema validation (§4)**: is untrusted XML validated against a pinned, digest-checked, read-only local schema (never document location hints) with finite occurrences, bounded values, no `xs:any`/lax, and an XSD 1.1 processor where assertions are used? HIGH on a SAML or SOAP endpoint; every hit of `grep -rnE 'maxOccurs="unbounded"|<xs:any[[:space:]/>]|processContents="(lax|skip)"|newSchema\(\)' --include='*.xsd' --include='*.java' --include='*.kt' .` is a finding or needs a written reason
 - [ ] **.NET payload signatures (§5)**: do ingest detectors flag `AAEAAAD/////` and a JSON `"$type"` key beside the pickle, Java and PHP markers? MEDIUM; run `grep -rnE 'AAEAAAD/////|rO0AB|gASV|"\$type"[[:space:]]*:' .` over captured samples, and each hit is a deserialization probe
 - [ ] **RAG provenance and staging (§5)**: does every ingested document carry uploader identity and an approval record, with new sources approved, bulk uploads reviewed, auto-synced content staged before retrieval, and read-only connector scopes? HIGH for a shared corpus; each hit of `grep -rnE "\.(add_documents|add_texts|upsert|upsert_points)\(" --include='*.py' --include='*.js' --include='*.ts' . | grep -vE 'metadata|payload|provenance'` writes to the store without provenance

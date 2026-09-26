@@ -234,9 +234,8 @@ do real work in a raw handler.
       the call sites; any cycle is CRITICAL.
 - [ ] Callbacks/virtual calls/logging/awaits inside lock regions?
 - [ ] Lock reachable by outside code (rule 5; HIGH where untrusted or
-      plugin code can reach the object, else MEDIUM): `grep -rnE
-      '(^|[^A-Za-z0-9_])(lock|synchronized) *\( *((this|getClass\(\)|[A-Za-z_][A-Za-z0-9_]*\.class) *\)|"|typeof *\()|(public|protected)( [a-z]+)* synchronized |synchronized( [a-z]+)* (public|protected) |^[[:space:]]+\*?sync\.(RW)?Mutex[[:space:]]*(//.*)?$'
-      --include='*.cs' --include='*.java' --include='*.kt' --include='*.go' .`
+      plugin code can reach the object, else MEDIUM):
+      `grep -rnE '(^|[^A-Za-z0-9_])(lock|synchronized) *\( *((this|getClass\(\)|[A-Za-z_][A-Za-z0-9_]*\.class) *\)|"|typeof *\()|(public|protected)( [a-z]+)* synchronized |synchronized( [a-z]+)* (public|protected) |^[[:space:]]+\*?sync\.(RW)?Mutex[[:space:]]*(//.*)?$' --include='*.cs' --include='*.java' --include='*.kt' --include='*.go' .`
       — a Go hit is an embedded mutex; confirm the enclosing type escapes.
 - [ ] Wait-for cycles without locks: tasks awaiting each other, self-feeding
       queues, pool-within-pool acquisition.

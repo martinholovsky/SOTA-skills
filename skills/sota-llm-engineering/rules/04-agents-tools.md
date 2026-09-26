@@ -285,18 +285,21 @@ window, costs grow quadratically with history, and quality drops.
 ## 6. MCP integration
 
 MCP (Model Context Protocol) is the de-facto open standard for tool/context
-servers. **Verified June 2026:** current spec revision **2025-11-25**; the
-next revision is at release-candidate stage dated **2026-07-28** and includes
-breaking changes (stateless protocol core, Extensions framework, Tasks for
-long-running work, MCP Apps, OAuth-aligned authorization hardening, formal
-deprecation policy). Engineering consequences:
+servers. **Verified 2026-09-26:** revision **2026-07-28** is the one the spec's
+versioning page marks *current* (re-check at modelcontextprotocol.io/specification);
+against **2025-11-25** it makes breaking changes (stateless core with no `initialize`
+handshake, Tasks moved to an official extension, an Extensions field, a formal
+deprecation policy, and authorization hardening: Client ID Metadata Documents as the
+SHOULD registration path, Dynamic Client Registration deprecated, RFC 9207 `iss`
+validation — identity side in sota-identity-access rules/01 §5.1). Engineering
+consequences:
 
-- **Pin the protocol revision** you build against (2025-11-25 today); track
-  the 2026-07-28 RC and plan migration — don't hand-roll protocol handling;
-  use maintained official SDKs that absorb revision churn. The RC deprecates
-  the Roots, Sampling, and Logging primitives and removes protocol-level
-  sessions — new servers shouldn't adopt those primitives or depend on
-  `Mcp-Session-Id` state.
+- **Pin the protocol revision** you build against and plan the move from
+  2025-11-25 to 2026-07-28 — don't hand-roll protocol handling; use maintained
+  official SDKs that absorb revision churn. 2026-07-28 deprecates the Roots,
+  Sampling, and Logging features (removal eligible from the first revision on or
+  after 2027-07-28) and removes protocol-level sessions and the `Mcp-Session-Id`
+  header — new servers shouldn't adopt those features or depend on session state.
 - **Treat third-party MCP servers as untrusted dependencies:** version-pin,
   review tool descriptions before exposing them to your model (description
   text is prompt input — injection surface, sota-code-security rules/08), and apply your own
@@ -318,10 +321,10 @@ deprecation policy). Engineering consequences:
   in the OS credential store (macOS Keychain, Windows Credential Manager,
   Secret Service on Linux; Python's `keyring` wraps all three); a `0600`
   plaintext file is a documented fallback only where no keystore exists. The
-  authorization spec (2025-11-25) requires clients and servers to implement
+  authorization spec (2026-07-28, as in 2025-11-25) requires clients and servers to implement
   secure token storage. OWASP: OWASP MCP Security cheat sheet.
 - **A server keeps nothing it was handed.** Verified against the MCP
-  authorization spec (2025-11-25): a server MUST accept only tokens issued
+  authorization spec (2026-07-28, as in 2025-11-25): a server MUST accept only tokens issued
   for itself and MUST NOT pass the client's token through to upstream APIs
   — it obtains its own. Beyond that, do not write received tokens or
   credentials to disk, logs or caches, and delete per-session temp files,
@@ -464,8 +467,8 @@ OWASP AI Agent Security cheat sheet; OWASP RAG Security cheat sheet.
 - [ ] Context management present for long sessions: pruning/compaction with
       eval coverage, memory with limits/expiry/erasability, artifacts by
       reference not by paste.
-- [ ] MCP: protocol revision pinned (2025-11-25 era; 2026-07-28 RC migration
-      tracked), official SDKs used, third-party servers version-pinned with
+- [ ] MCP: protocol revision pinned (2025-11-25 servers have a tracked migration
+      to 2026-07-28), official SDKs used, third-party servers version-pinned with
       reviewed descriptions and an own gating layer; MCP credentials in a
       vault.
 - [ ] Multi-agent: pattern is context-isolation/parallelism or fresh-context

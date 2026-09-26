@@ -262,7 +262,7 @@ existed and was correct — the reader stopped at the first affirmative one.
 
 A control in audit / warn / dry-run / report-only mode is a *plan* to enforce,
 and it renders on every dashboard exactly like one that enforces: Kyverno
-`validationFailureAction: Audit`, Pod Security Admission `warn`, a WAF in
+`failureAction: Audit` (or the deprecated spec-level `validationFailureAction`), Pod Security Admission `warn`, a WAF in
 detection-only, seccomp `SCMP_ACT_LOG`, CSP `report-only`, DMARC `p=none`, a
 scanner wired `--soft-fail`. Each is correct **as a rollout stage** and inert as
 a destination — the staged ladders are `sota-devsecops` rules/07 (audit → triage
@@ -475,7 +475,7 @@ was false, and the signature was gone. Only asking a question the benign state c
       counted against the code, with any `NOT APPLICABLE` verdict on a real
       mechanism swept first (§7)?
 - [ ] **Runtime rewrites of security config** (§8) — High where the write is reachable in
-      production without a log: `grep -rnE 'NODE_TLS_REJECT_UNAUTHORIZED[^=]{0,3}= *.?0|_create_default_https_context *= *(ssl\.)?_create_unverified|WTF_CSRF_ENABLED.{0,4}= *False' src/`.
+      production without a log: `grep -rnE 'NODE_TLS_REJECT_UNAUTHORIZED[^=]{0,3}= *.?0|_create_default_https_context *= *(ssl\.)?_create_unverified|WTF_CSRF_ENABLED.{0,4}= *False' .`.
       Does every attack-surface-widening switch emit an event and show on a status surface?
 - [ ] For each of the above: **if this were a no-op, would anything observable
       differ** — a log, a metric, a failing test (`rules/10` §1)?

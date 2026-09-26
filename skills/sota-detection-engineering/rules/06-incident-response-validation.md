@@ -163,8 +163,8 @@ Tools (verify current status at each project):
 ### AI-system validation
 
 For LLM/agent systems, validate detection of the threats in **MITRE ATLAS**
-(the AI-system counterpart to ATT&CK; 16 tactics / 85+ techniques, growing
-through 2026 agentic-AI updates — verify current counts at atlas.mitre.org) and sota-code-security rules/08: emulate
+(the AI-system counterpart to ATT&CK; its tactic and technique counts change
+between releases — take the matrix from atlas.mitre.org, not from a remembered count) and sota-code-security rules/08: emulate
 prompt-injection, tool/agent abuse, and model-exfil attempts against your own
 agents and confirm runtime detections fire.
 

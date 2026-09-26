@@ -104,7 +104,7 @@ CURRENCY = re.compile(
     re.I)
 CURRENCY_FALSE = re.compile(
     r'\bBest\s+Current\s+Practice\b|\bthen-current\b|\bcurrent-thread\b|:latest\b|\blatest\s+tag\b'
-    r'|\bBaseline\s+Requirements\b', re.I)
+    r'|\bBaseline\s+Requirements\b|\ban?\s+(?:newest|latest)\b', re.I)
 BASELINE_LABEL = re.compile(
     r'(?:^|[(\s])Baseline(?:\s+(?:assumptions|language\s+version))?\s*(?::|as\s+of)'
     r'|\bBaseline\s+' + PRODUCT + r'\s*\d'
@@ -116,11 +116,27 @@ BOUNDARY_BEFORE = re.compile(
     r'\breached|\bbecame|\bfirst\s+support\w*|\bin|≥|>=|<=|<|>|\^)\s*(?:[\w.#-]+\s+){0,2}$', re.I)
 BOUNDARY_AFTER = re.compile(
     r'^\+?\s*(?:[\w.-]+\s+)?(?:added|removed|introduced|deprecated|fixed|shipped|dropped|'
-    r'made|changed|renamed|flipped|first\s+support\w*|or\s+later|or\s+newer|and\s+later|and\s+up|onwards?)\b', re.I)
+    r'made|changed|renamed|flipped|released|first\s+support\w*|or\s+later|or\s+newer|and\s+later|and\s+up|onwards?)\b', re.I)
 SUBCLAUSE = re.compile(r',\s+(?:but|and|while|which|whereas|although|though)\b')  # not ';' (see CLAUSE)
+# Provenance dates a claim. It exempts only the version/cue pair it sits beside (or a whole
+# unit when it opens it, "Verified (2026-07-09): ..."), because one dated observation must not
+# shield an undated pin later in the sentence. A bare ISO date is provenance unless an EVENT word
+# introduces it: "v1.33 reached EOL ~2026-06" dates the EOL, not the claim beside it.
 PROVENANCE = re.compile(
-    r'\b20\d\d-\d\d(?:-\d\d)?\b|\b(?:measured|verified|re-?checked|fetched)\b'
+    r'\bas\s+of\s+20\d\d-\d\d(?:-\d\d)?\b|\b(?:measured|verified|re-?checked|fetched)\b'
     r'|\bas\s+of\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+(?:\d{1,2},?\s+)?20\d\d', re.I)
+ISO_DATE = re.compile(r'\b20\d\d-\d\d(?:-\d\d)?\b')
+EVENT_BEFORE_DATE = re.compile(
+    r'(?:\bEOL|\bend[- ]of[- ](?:life|support)|\breleased|\breached|\bshipped|\buntil|\bsince|'
+    r'\bfrom|\bbefore|\bafter|\bby|\bdeadline|\bscheduled|\bdue|\bplanned|\bends?|\bexpires?|'
+    r'\bretire[sd]?|\bGA|\bbecomes?)\b[^.;]{0,20}$', re.I)
+
+
+def provenance_spans(c):
+    spans = [(m.start(), m.end()) for m in PROVENANCE.finditer(c)]
+    spans += [(m.start(), m.end()) for m in ISO_DATE.finditer(c)
+              if not EVENT_BEFORE_DATE.search(c[max(0, m.start() - 30):m.start()])]
+    return spans
 
 
 def versions(clause):
@@ -132,20 +148,25 @@ def versions(clause):
     return out
 
 
-def governed(clause, start, end):
+def governed(clause, start, end, cues=()):
     """A version is a boundary when a boundary cue sits right before or right after it, or it
-    carries a '+' (\"13+\" = 13 or later)."""
+    carries a '+' (\"13+\" = 13 or later). A boundary word that is part of a currency cue does
+    not count: in "currently at 8.30" the "at" is the claim about now, not a floor."""
     if clause[end - 1:end] == '+' or clause[end:end + 1] == '+':
         # "13+" is a floor — unless a currency cue follows at once ("1.0+ as of mid-2026")
         if not re.match(r'\+?\s*(?:as\s+of|is\s+current|current)\b', clause[end:end + 20], re.I):
             return True
-    return bool(BOUNDARY_BEFORE.search(clause[max(0, start - 40):start])
-                or BOUNDARY_AFTER.search(clause[end:end + 40]))
+    lo = max(0, start - 40)
+    b = BOUNDARY_BEFORE.search(clause[lo:start])
+    if b and any(m.start() <= lo + b.start() < m.end() for m in cues):
+        b = None
+    return bool(b or BOUNDARY_AFTER.search(clause[end:end + 40]))
 
 
 def is_pin(clause):
     c = normalise(clause)
-    if PROVENANCE.search(c):
+    prov = provenance_spans(c)
+    if any(s < 30 for s, _ in prov):          # "Verified (2026-07-09): ..." dates the whole unit
         return False
     c = CURRENCY_FALSE.sub(' ', c)
     if BASELINE_LABEL.search(c):
@@ -154,7 +175,7 @@ def is_pin(clause):
     if not cues:
         return False
     vs = versions(c)
-    if any(governed(c, s, e) for s, e in vs):
+    if any(governed(c, s, e, cues) for s, e in vs):
         # "needs >=1.26.5 on the 1.26 line": a per-line floor, not a claim about now
         cues = [m for m in cues if not re.match(r'on\s+the\s', m.group(0), re.I)]
     # The version must sit near the cue AND in the same sub-clause: "(D)TLS 1.3 (…), but as of
@@ -163,7 +184,11 @@ def is_pin(clause):
     def linked(s, m):
         lo, hi = min(s, m.start()), max(s, m.end())
         return hi - lo <= NEAR + (m.end() - m.start()) and not SUBCLAUSE.search(c[lo:hi])
-    return any(not governed(c, s, e) and any(linked(s, m) for m in cues) for s, e in vs)
+    def dated(s, m):                          # a provenance marker beside this pair dates it
+        lo, hi = min(s, m.start()), max(s, m.end())
+        return any(ps < hi + 40 and pe > lo - 40 for ps, pe in prov)
+    return any(not governed(c, s, e, cues) and any(linked(s, m) and not dated(s, m) for m in cues)
+               for s, e in vs)
 
 
 def scan(path):
@@ -241,6 +266,15 @@ PINS = [
     "dbt note: the Fusion engine is in preview and dbt Core 2.0, built on the Fusion foundation, is in alpha as of mid-2026.",
     "DuckLake (1.0+ as of mid-2026) is viable for DuckDB-centric small platforms",
     "The current authoritative reference is NIST SP 800-61 Revision 3 (finalized April 2025), which replaced the four-phase model.",
+    # a fix agent's probe, 2026-09-26: "at" is both the currency cue and a boundary word
+    "gitleaks is currently at v8.30.1 (the latest release).",
+    "The scanner is currently at 8.30.1.",
+    # a research agent, 2026-09-26: an EVENT date (EOL) is not provenance for the pin beside it
+    "(Current upstream: v1.36, supported window v1.34–v1.36 as of mid-2026 — the latest three minors; v1.33 reached EOL ~2026-06; verify your managed-provider version offerings at design time.)",
+    # 2026-09-26: a bare date shielded these (an until/EOL date, or a dated observation beside an undated pin)
+    'React ≥ 19.x, Next ≥ 15.x (16.x current), Vue ≥ 3.5, Nuxt ≥ 4.x (Nuxt 3 security-only until 2026-07-31).',
+    'ES2024+ available, React 19.2-era with Server Components and React Compiler 1.0 where relevant, latest stable Vitest + flat-config ESLint (v9/v10).',
+    'Frame against the CIS Kubernetes Benchmark (CIS listed v2.0.1 as latest on 2026-09-25; use the edition matched to your minor version) and the NSA/CISA Kubernetes Hardening Guidance (v1.2, Aug 2022 — still the current edition; verify before citing).',
 ]
 NOT_PINS = [
     "latest stable (verify at go.dev/doc/devel/release)",
@@ -302,6 +336,12 @@ NOT_PINS = [
     "The IETF has chartered the SEAT working group to standardize attestation in (D)TLS 1.3 (successor to the individual draft line), but as of mid-2026 no standard is published.",
     "| rules/04-security.md | Java deserialization (Jackson 2 and 3 spellings); the Security Manager is gone (removed in JDK 24) and on current JDKs ReDoS no longer reproduces. |",
     "use a golangci-lint release whose notes list your Go minor (v2.9.0 first supported 1.26, v2.13.0 first supports 1.27; take the latest stable and check its release notes)",
+    # 2026-09-26: dated observations and release events; a generic "a newest release"
+    'Frame against the CIS Kubernetes Benchmark (CIS listed v2.0.1 as latest on 2026-09-25; use the edition matched to your minor version).',
+    'Baseline language line: Ruby 3.4+; Ruby 4.0 was released 2025-12-25 and is in normal maintenance (latest stable — verify at the branches page).',
+    '4.0 released 2025-12-25; for the latest stable release, verify at the branches page',
+    '| PowerShell 7.6 (LTS) | 18-Mar-2026 | **14-Nov-2028** | LTS, newest at the 2026-09-14 check; prefer the newest supported LTS for new work |',
+    'A newest release can be a tombstone: bincode 3.0.0 is one compile_error! line, and RUSTSEC-2025-0141 (2025-12-16, informational: unmaintained) records that its development has stopped for good.',
 ]
 
 

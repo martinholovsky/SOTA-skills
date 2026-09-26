@@ -308,6 +308,16 @@ disk, queue depth, downstream API quota.
   mail, but are no DoS defence. Put logs on a volume apart from application data,
   so a log flood cannot fill the disk the database writes to. OWASP: Denial of
   Service cheat sheet, Logging cheat sheet.
+- **HTTP/2 stream-reset and frame floods** (this section owns the class; other skills point
+  here). A request limit does not bound work a client can cancel: *Rapid Reset*
+  (CVE-2023-44487) opens and client-resets streams so the concurrent-stream cap never binds;
+  *MadeYouReset* (CVE-2025-8671) makes the **server** reset them via malformed frames or
+  flow-control errors; a *CONTINUATION flood* makes a server parse unbounded header frames, and
+  is fixed per implementation (e.g. CVE-2023-45288 Go `net/http`/`x/net/http2`, CVE-2024-27983
+  Node.js). Patch **both** the application's HTTP/2 stack **and** every proxy/load balancer that
+  terminates HTTP/2, and cap at the edge: concurrent streams per connection, resets (client- and
+  server-initiated) per connection per interval with a connection close past it, and total
+  header bytes including CONTINUATION frames. CVE records: cve.org.
 
 ```go
 // GOOD: every outbound call carries a deadline; caller cancellation propagates
@@ -472,3 +482,4 @@ DllImportSearchPath.(AssemblyDirectory|ApplicationDirectory|LegacyBehavior) | lo
 - [ ] Is request-scoped data verified never to live in shared/global state across requests, including across warm serverless invocations, with `/tmp` files deleted before the handler returns (§6)? HIGH when the state holds another user's data. Python probe for a handler writing a module global: `grep -rnE '^[[:space:]]+global[[:space:]]+[[:alpha:]_]' --include='*.py' .` (read each hit).
 - [ ] Does every FFI/JNI wrapper copy mutable input before validating it, with `native` methods private behind that wrapper (§3)? MEDIUM, HIGH when the native side trusts a length. Probe for JNI methods callable without a wrapper: `grep -rnE '(public|protected)[[:space:]]+([[:alpha:]]+[[:space:]]+)*native[[:space:]]' --include='*.java' .`
 - [ ] Is a minimum ingress data rate enforced, CAPTCHA not counted as DoS defence, and are logs on a volume separate from application data (§5)? MEDIUM. Probe for a disabled rate floor: `grep -rnE 'Min(RequestBody|Response)?DataRate[[:space:]]*=[[:space:]]*null' --include='*.cs' .`
+- [ ] Does every HTTP/2 terminator — app server and each proxy/load balancer — carry the fixes for Rapid Reset (CVE-2023-44487), MadeYouReset (CVE-2025-8671) and its implementation's CONTINUATION-flood CVE, with concurrent streams, resets per connection and total header bytes capped at the edge (§5)? HIGH on an internet-facing HTTP/2 listener; compare each terminator's version against its vendor advisory for all three

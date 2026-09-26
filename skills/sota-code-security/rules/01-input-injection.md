@@ -203,7 +203,9 @@ avatar-by-URL, link previews) is an SSRF surface targeting cloud metadata
   IPv6 Special-Purpose Address Registries plus multicast, not a few remembered ranges: at least
   `0.0.0.0/8`, `127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `100.64.0.0/10`,
   `169.254.0.0/16`, `224.0.0.0/4`, `240.0.0.0/4`, `::/128`, `::1/128`, `fc00::/7`, `fe80::/10`,
-  `ff00::/8`, and `::ffff:0:0/96` judged by its embedded IPv4 (`::ffff:127.0.0.1`). Prefer a
+  `ff00::/8`, and `::ffff:0:0/96` judged by its embedded IPv4 (`::ffff:127.0.0.1`), as are NAT64
+  `64:ff9b::/96` and 6to4 `2002::/16`; block local-use NAT64 `64:ff9b:1::/48` outright (Python
+  3.14 calls `64:ff9b::7f00:1`, loopback via NAT64, `is_global`: measured 2026-09-26). Prefer a
   library predicate that tracks the registry over a hand list, and never a string-prefix test
   (`startswith("10.")`). Multicast is a separate registry: Python 3.14 `is_global` is `True`
   for `224.0.0.1` and `ff02::1` (measured), so test `not ip.is_global or ip.is_multicast`.
@@ -233,14 +235,28 @@ transport := &http.Transport{
         ips, err := net.DefaultResolver.LookupIPAddr(ctx, host)
         if err != nil { return nil, err }
         for _, ip := range ips {
-            if ip.IP.IsLoopback() || ip.IP.IsPrivate() || ip.IP.IsLinkLocalUnicast() ||
-               ip.IP.IsMulticast() || ip.IP.IsUnspecified() || isCGNAT(ip.IP) {
-                return nil, errors.New("blocked address") // IsMulticast covers 224/4 + ff00::/8;
-                // isCGNAT blocks 100.64.0.0/10 (carrier-grade NAT, reaches internal hosts)
-            }
+            if blocked(ip.IP) { return nil, errors.New("blocked address") }
         }
         return dialer.DialContext(ctx, network, net.JoinHostPort(ips[0].IP.String(), port))
     },
+}
+var extra = []netip.Prefix{netip.MustParsePrefix("0.0.0.0/8"), netip.MustParsePrefix("100.64.0.0/10"),
+    netip.MustParsePrefix("240.0.0.0/4")} // this-network, CGNAT (reaches internal hosts), reserved
+func blocked(ip net.IP) bool {
+    a, ok := netip.AddrFromSlice(ip)
+    if !ok { return true }
+    a = a.Unmap() // ::ffff:a.b.c.d is judged as a.b.c.d
+    b := a.As16()
+    switch {
+    case netip.MustParsePrefix("64:ff9b:1::/48").Contains(a): return true // local-use NAT64
+    case netip.MustParsePrefix("64:ff9b::/96").Contains(a): a = netip.AddrFrom4([4]byte(b[12:16]))
+    case netip.MustParsePrefix("2002::/16").Contains(a): a = netip.AddrFrom4([4]byte(b[2:6])) // 6to4
+    }
+    if a.IsLoopback() || a.IsPrivate() || a.IsLinkLocalUnicast() || a.IsMulticast() || a.IsUnspecified() {
+        return true // IsMulticast covers 224/4 + ff00::/8
+    }
+    for _, p := range extra { if p.Contains(a) { return true } }
+    return false
 }
 client := &http.Client{Transport: transport, Timeout: 10 * time.Second,
     CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -296,7 +312,7 @@ Template("Hi " + name).render()          Template("Hi {{ name }}").render(name=n
 
 - **Never deserialize untrusted data with native object serializers**: Python
   `pickle`/`PyYAML yaml.load`, Java `ObjectInputStream`/XMLDecoder, PHP
-  `unserialize`, Ruby `Marshal`, .NET `BinaryFormatter` (deprecated for this
+  `unserialize`, Ruby `Marshal`, .NET `BinaryFormatter` (throws on use since .NET 9 for this
   reason). All are remote code execution by design, regardless of gadget hygiene.
 - Use data-only formats: JSON, protobuf, msgpack — then validate against a schema
   and map to explicit DTOs.
@@ -331,8 +347,8 @@ Template("Hi " + name).render()          Template("Hi {{ name }}").render(name=n
 - Length-cap input before regex matching. Prefer linear-time engines: RE2, Rust
   `regex`, Go `regexp` (all guaranteed linear); .NET `NonBacktracking`;
   Node ≥20 has no built-in guard — use `re2` package for untrusted input.
-- Lint with rules like `eslint-plugin-redos` / `regexploit` in CI for any regex
-  whose input crosses a trust boundary.
+- Lint with `eslint-plugin-redos` or `eslint-plugin-regexp` (`no-super-linear-backtracking`) in CI
+  for any regex whose input crosses a trust boundary (`regexploit`: no commit since 2021).
 - Don't validate emails/URLs with elaborate regexes at all — parse with a real
   parser, regex only for coarse shape.
 - **A validating regex matches the whole input.** Use the full-match API (`re.fullmatch`)

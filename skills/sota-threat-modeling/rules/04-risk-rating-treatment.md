@@ -285,4 +285,6 @@ Management cheat sheet, Code Review Guide v2.
       four-questions pass, or no tier at all → High.
 - [ ] High-tier modules (auth, crypto, payment, tenancy) have heightened
       review. Probe: `cat .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS 2>/dev/null | grep -v '^#' | grep -c -i -E 'auth|session|crypto|payment|billing|tenant'`;
-      0 in a codebase that has such modules → Medium.
+      0 in a codebase that has such modules → Medium. The `2>/dev/null` also
+      prints 0 when NO CODEOWNERS file exists — run `ls -1 .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS`
+      and name which case the finding is (no file vs no high-tier path).

@@ -32,7 +32,7 @@ reset_token = secrets.token_urlsafe(32)
 (gitleaks, GitHub secret scanning partner program) to detect leaks of *your* credentials, and
 make audit greps trivial. The prefix carries zero entropy cost.
 
-**Asymmetric keys:** Ed25519 by default for signing (SSH, JWT EdDSA, artifact signing);
+**Asymmetric keys:** Ed25519 by default for signing (SSH, artifact signing; JWT algorithm choice: rules/05 §6);
 ECDSA P-256 where Ed25519 unsupported; RSA only for legacy interop and then ≥3072 bits.
 Generate keys *where they will live* (HSM, KMS, TPM, target host) so the private key never
 transits — `aws kms create-key`, `ssh-keygen` on the client, CSR-based TLS issuance. A private
@@ -216,6 +216,12 @@ steps:
   environment: `repo:my-org/my-app:ref:refs/heads/main` or
   `repo:my-org/my-app:environment:prod`. A trust policy matching `repo:my-org/*:*` lets any
   repo in the org assume the deploy role — High finding.
+- **Immutable subject claims:** repos created, renamed or transferred after 2026-07-15 get a
+  `sub` carrying numeric IDs (`repo:my-org@123456/my-app@456789:ref:refs/heads/main`); older
+  repos keep the name-only form unless the owner opts in. A condition in the old form stops
+  matching after the switch (the role is denied, not widened), and a name-only condition trusts
+  whoever holds that name later. Pin the `@id` form, or `repository_id`/`repository_owner_id`
+  where the cloud can condition on them (source: docs.github.com OIDC reference).
 - One role per repo/purpose, least-privilege policy (deploy role ≠ admin).
 - Use GitHub *environments* with required reviewers for prod-deploy roles so the OIDC `sub`
   claim can't be minted from an unreviewed branch.

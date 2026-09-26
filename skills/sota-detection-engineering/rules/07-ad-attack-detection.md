@@ -63,6 +63,16 @@ detect: one principal requesting TGS for many distinct SPNs in a short window,
 - **FPs:** legacy apps/appliances that genuinely negotiate RC4; scanners. Reduce
   by AES-hardening service accounts (identity rules/07) so RC4 becomes anomalous,
   then alert on RC4 at all.
+- **RC4 default change (CVE-2026-20833, KB5073381):** DC updates from
+  2026-01-13 add KDCSVC events **201–209** — 201/202 warn that an RC4-only
+  client, or a service without AES keys, relies on RC4 because no explicit
+  `msDS-SupportedEncryptionTypes` is set; 203/204 are the same cases denied
+  under enforcement; 205 flags an explicit `DefaultDomainSupportedEncTypes`
+  that still allows insecure ciphers. From the April 2026 updates the KDC
+  defaults such accounts to AES-SHA1, and updates in or after July 2026 remove
+  the `RC4DefaultDisablementPhase` rollback. Collect these events — they are
+  the RC4 dependency list — and after enforcement treat an RC4 4769 as either
+  an attack or an account someone explicitly re-enabled RC4 on.
 - **Enrich:** requesting account, source host, count of distinct SPNs; a spike
   from a workstation (not an app server) is high-fidelity.
 
@@ -190,7 +200,8 @@ detect: NTLM authentication where the *source* workstation and the account's
 ### Password spraying — T1110.003
 
 ```
-source: Security 4625 (and 4768 failures with Kerberos error 0x18)
+source: Security 4625, 4771 (Kerberos pre-auth failed, Failure Code 0x18 = wrong
+        password) and 4768 (Result Code 0x6 = unknown username, i.e. enumeration)
 detect: one source (or few) → many distinct target accounts failing auth
         within a window, low attempts-per-account (below lockout threshold)
 note: attackers prefer Kerberos/LDAP pre-auth failures (4768/4771) over SMB 4625
@@ -269,7 +280,7 @@ an untested Kerberoasting rule is a hope, not a detection.
 - [ ] Is **NTLM audit (event 8004)** and **CA issuance auditing (4886/4887)** enabled where NTLM/ADCS are in scope?
 - [ ] Is there a **Kerberoasting** detection on **RC4 (0x17) 4769** with SPN fan-out, and is it meaningful (are service accounts AES-hardened so RC4 is anomalous)?
 - [ ] Is there an **AS-REP roasting** detection on **4768 PreAuthType==0 / RC4**, with preauth-disabled accounts enumerated and allowlisted?
-- [ ] Does a **DCSync** detection watch **4662 for replication GUIDs** (`…dcd2`, `…dcAll`, filtered-set) from **non-DC, non-sync** principals, with the legitimate replicators explicitly allowlisted?
+- [ ] Does a **DCSync** detection watch **4662 for the replication GUIDs** (`1131f6aa-…`, `1131f6ad-…`, `89e95b76-…` — §DCSync) from **non-DC, non-sync** principals, with the legitimate replicators explicitly allowlisted?
 - [ ] Are **golden/silver ticket** indicators covered — TGS (4769) without a preceding TGT (4768), abnormal ticket lifetimes/RIDs, and **service logons with no matching DC TGS** (silver)?
 - [ ] Is **DCShadow** covered (rogue `nTDSDSA`/DC SPN registration on a non-DC, then replication)?
 - [ ] Is **ADCS abuse (T1649)** detected — cert request where **requester != SAN principal (ESC1)**, privileged cert to low-priv requester, PKINIT TGT after anomalous issuance — with enrollment agents allowlisted?

@@ -79,9 +79,9 @@ still fully trusted. That convenience is precisely the limitation.
 
 ## 3. Confidential pods: the CoCo stack
 
-**Confidential Containers (CoCo)** is a CNCF project (Sandbox maturity at the
-time of writing — verify current level at cncf.io/projects before citing it in
-a design review) that encapsulates each Kubernetes pod in its own TEE:
+**Confidential Containers (CoCo)** is a CNCF project (Incubating since
+2026-07-08, accepted 2022-03-08 — re-check the level at cncf.io/projects before
+citing it in a design review) that encapsulates each Kubernetes pod in its own TEE:
 
 ```
 untrusted host (node)                      TEE guest (per pod)
@@ -251,7 +251,7 @@ workload is attested" — those are different verifiers with different evidence.
 | Pod-level TEE on GKE | Not a managed GKE feature at time of writing (GKE's managed offering is node-level); self-managed CoCo on confidential/bare-metal nodes | Verify current GKE offerings |
 | Pod-level TEE, self-managed / on-prem | CoCo operator + Kata on bare-metal SEV-SNP/TDX hosts, self-hosted Trustee | You own reference values, KBS HA, guest-image lifecycle |
 | Pod-level TEE on a cloud without nesting/bare metal | CoCo peer pods (cloud-api-adaptor) on the provider's confidential VMs | Verify provider support matrix in the cloud-api-adaptor repo |
-| Entire cluster (incl. control plane) shielded from the infrastructure provider | Confidential-cluster distributions that run every node in attested CVMs (e.g. Constellation, described in the Kubernetes blog "Confidential Kubernetes") | Cluster admin is still trusted — this is the node layer, cluster-wide |
+| Entire cluster (incl. control plane) shielded from the infrastructure provider | Confidential-cluster distributions that run every node in attested CVMs (e.g. Constellation, described in the Kubernetes blog "Confidential Kubernetes" — now an archived repo its vendor no longer maintains; the successor it names, Contrast, is workload-level on Confidential Containers, so it does not fit this row) | Cluster admin is still trusted — this is the node layer, cluster-wide |
 
 **R4.13 — Preview features do not carry production confidentiality claims.**
 If the platform labels the confidential feature preview/beta, the design doc
@@ -277,7 +277,7 @@ feature without recorded risk acceptance: **High**.
   firmware/microcode supply chain, the guest kernel + kata-agent + image
   stack, your policy tooling, and Trustee. Track guest-image and CoCo-stack
   CVEs like any other base image (sota-devsecops).
-- **Maturity.** CoCo is a CNCF Sandbox project at time of writing; managed
+- **Maturity.** CoCo is CNCF Incubating (since 2026-07-08), not Graduated; managed
   pod-level Kubernetes offerings have been preview-labeled or retired (AKS's
   preview sunset in March 2026 without reaching GA); APIs (init-data, policy formats)
   are still evolving. Pin versions, read release notes at
@@ -299,8 +299,8 @@ feature without recorded risk acceptance: **High**.
 - [ ] Is the GA/preview status of every managed confidential feature verified
       against current vendor docs and recorded, with preview use risk-accepted?
 - [ ] Do confidential pods declare a TEE RuntimeClass, and does admission
-      policy enforce it for the sensitive namespaces? (`grep -r
-      runtimeClassName` manifests; check Kyverno/VAP rules)
+      policy enforce it for the sensitive namespaces? (`grep -rn runtimeClassName manifests/`;
+      check Kyverno/VAP rules)
 - [ ] Is a restrictive Kata agent policy attached to every confidential pod,
       generated from the manifest, denying exec/log APIs, with its digest bound
       into attestation and checked by KBS policy?

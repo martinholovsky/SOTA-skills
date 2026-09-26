@@ -1078,16 +1078,16 @@ p.write_text(t.rstrip('\\n') + '\\n- [ ] note: as of mid-2026 the current\\n    
 probe 38 "a version pinned as current" \
   "PIN: skills/sota-shell-scripting/rules/09-listing-and-selection.md"
 
-# 38b — the detector itself regresses. Remove its provenance exemption: the labelled corpus
+# 38b — the detector itself regresses. Make it find no provenance at all: the labelled corpus
 # must catch it (dated lines become false pins), and the gate must blame the detector, not
 # report the tree clean or dirty.
 ( cd "$WT" && python3 -c "
 import pathlib
 p = pathlib.Path('scripts/lib/check-version-pins.py')
 t = p.read_text()
-old = '    if PROVENANCE.search(c):\\n        return False\\n'
-assert old in t, 'probe stale: provenance exemption not found'
-p.write_text(t.replace(old, '', 1))
+old = '\\n    return spans\\n'
+assert t.count(old) == 1, 'probe stale: provenance_spans return not found'
+p.write_text(t.replace(old, '\\n    return []\\n', 1))
 " )
 probe 38b "the pin detector regresses against its own corpus" \
   "the pin detector failed its own labelled corpus"

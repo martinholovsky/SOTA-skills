@@ -113,9 +113,10 @@ let engine = Engine::new(&config)?;
 let mut store = Store::new(&engine, ctx);
 store.set_fuel(5_000_000)?;                     // CPU budget
 store.limiter(|s| &mut s.limits);               // StoreLimits: memory/table caps
-let wasi = WasiCtxBuilder::new()
-    .preopened_dir(dir_fd, ambient_authority(), "/job")?  // ONLY this dir
-    .build();                                   // note: no inherit_env/stdio/net
+let mut b = WasiCtxBuilder::new();
+b.preopened_dir("/srv/jobs/42", "/job", FsPerms::ReadWrite)?; // ONLY this dir
+let wasi = b.build();       // no inherit_env/stdio/network; TCP/UDP/DNS off by default
+// (preopened_dir signature per docs.rs wasmtime-wasi, verified 2026-09-26)
 ```
 
 **R3.2 — The host functions you import ARE the attack surface.** WASM's guarantees

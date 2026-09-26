@@ -8,7 +8,7 @@ description: >-
 
 ## Purpose
 
-One skill, two modes. The `rules/` files define the mid-2026 baseline for
+One skill, two modes. The `rules/` files define the baseline for
 engineering LLM-powered software that is **measured, grounded, bounded, and
 observable**. In **BUILD** mode you write LLM features that conform to the
 rules by default. In **AUDIT** mode you hunt for violations and report them as

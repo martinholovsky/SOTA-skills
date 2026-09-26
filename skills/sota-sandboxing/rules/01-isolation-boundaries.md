@@ -61,8 +61,9 @@ execution *inside* the boundary to reach the layer outside it.
 V8 isolates and WASM engines are good *components* of a sandbox, but production
 deployments that bet on them (Cloudflare Workers, fastly) wrap them in process
 isolation + seccomp + scheduling defenses. In-language sandboxes (`eval` with a
-scrubbed scope, RestrictedPython, `vm2` — repeatedly escaped and now deprecated)
-are not boundaries at all.
+scrubbed scope, RestrictedPython, `vm2` — maintained again, yet 43 critical
+advisories in 2026 alone as of 2026-09-26, most of them sandbox escapes) are not
+boundaries at all.
 
 **R2.2 — Side channels degrade every shared-CPU boundary.**
 For confidentiality between mutually distrusting tenants (secrets on both sides),
@@ -166,7 +167,7 @@ Firecracker microVM per session (jailer: chroot+seccomp+cgroup around VMM)
 
 ### Stack B — multi-tenant K8s SaaS (tenant apps, semi-hostile)
 ```
-gVisor (runsc, KVM platform) RuntimeClass per tenant namespace
+gVisor (runsc: KVM platform on bare metal, systrap on VM nodes) RuntimeClass per tenant ns
  └─ PSA restricted + securityContext baseline (03 §3.2)
  └─ default-deny NetworkPolicy ingress+egress, FQDN egress via Cilium
  └─ per-tenant node pools for high-tier tenants; SMT off for shared pools
@@ -259,11 +260,12 @@ finding (Medium).
       core scheduling, memory dedup disabled where required).
 - [ ] **High** — Model inference runs as its own isolated workload at the floor
       for its weights format: code-bearing loads put it in class A (§3 B):
-      `grep -rnE 'trust_remote_code[[:space:]]*=[[:space:]]*True|weights_only[[:space:]]*=[[:space:]]*False' .`
-      — each hit's process needs a gVisor-or-stronger boundary, a read-only
-      model mount, no credentials and serving-port-only network.
+      `grep -rnE 'trust_remote_code[[:space:]]*=[[:space:]]*True|weights_only[[:space:]]*=[[:space:]]*False|TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD' .`
+      — plus every bare `torch.load(` where torch < 2.6 is pinned (the default flipped
+      to `weights_only=True` in 2.6); each hit's process needs a gVisor-or-stronger
+      boundary, a read-only model mount, no credentials and serving-port-only network.
 - [ ] **High** — Native-object deserialization of untrusted data is replaced, or
       runs in a throwaway low-privilege worker with network denied (§3 B):
-      `grep -rnE 'pickle\.loads?\(|ObjectInputStream|[^_[:alnum:]]unserialize\(|Marshal\.load' .`
+      `grep -rnE 'pickle\.loads?\(|ObjectInputStream|(^|[^_[:alnum:]])unserialize\(|Marshal\.load' .`
       — each hit on data that crossed a trust boundary and runs in the main
       process is a finding.

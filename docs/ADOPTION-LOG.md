@@ -6811,3 +6811,105 @@ fixing its fails way too often."* The rebuild inverted the order:
 **Not gated, deliberately:** plain year labels in descriptions ("(2026)") were left alone. They
 are not version pins, and rewriting ~25 descriptions would move the routing surface for no
 measured gain. Revisit if a year label is found misleading a reader.
+
+## 2026-09-26 — full-library sweep, batch 1 of 4: the security core re-verified
+
+**Intake shape: ROADMAP 5's full-library accuracy sweep, run in batches** (operator decision
+2026-09-25: about eight skills per batch, one PR each; `LAST-VERIFIED` moves only with the
+last batch). Batch 1 covered `sota-secrets-management`, `sota-code-security`,
+`sota-sandboxing`, `sota-threat-modeling`, `sota-security-compliance`,
+`sota-detection-engineering`, `sota-confidential-computing`, `sota-identity-access` and
+`sota-network-security`, plus the cross-skill lines their findings reached in `sota-devsecops`,
+`sota-kubernetes`, `sota-llm-engineering` and `sota-privacy-compliance`. Method as in
+`docs/MAINTENANCE.md` §2:
+- Research: one agent per skill, primary sources only. **135 findings** (7 High, 48 Medium,
+  80 Low).
+- Refutation: each of the 55 High/Medium findings went to an agent prompted to kill it.
+  **None was refuted**; several fixes were corrected and a few severities lowered.
+- Fixes: one agent per skill folder. Every new or changed command was run against a bad and a
+  good fixture under BSD grep and ugrep, and GNU grep 3.11 in podman where it mattered.
+- Review: a hostile reader of the **whole** diff, looking for what per-folder agents cannot
+  see — the same fact stated two ways in two skills. It found 11 defects that every invariant
+  passed; all are fixed here (below).
+
+| High | what was wrong |
+|---|---|
+| sandboxing rules/05 R5.0 | the agent-sandbox probe ran `cat a b c && exit 1`, which fires only if **every** path reads — one readable secret beside two missing paths passed. Rewritten one path per command, never echoing a secret, with an `ALLOWED_URL` positive control |
+| secrets rules/04 (and code-security rules/04) | the private-key regex had an empty alternative: BSD grep exits 2, ugrep finds nothing, and neither can match PKCS#8 `BEGIN PRIVATE KEY` |
+| network-security rules/03 | the Cilium security floor predated CVE-2026-83620 (mutual-auth spoofing) and CVE-2026-77531 |
+| confidential-computing rules/01, 02 | memory encryption was said to stop physical attacks; Battering RAM, WireTap and TEE.Fail break it with a cheap bus interposer and forge attestation |
+| security-compliance rules/04 | CRA Art. 69(3) — the Art. 14 reporting clocks also cover products already on the market — was missing |
+| secrets rules/01 (lowered to Medium) | GitHub's immutable OIDC subject claims (2026-07-15), which change what a cloud trust condition must pin |
+| secrets rules/04 | brace `--include` — already fixed by invariant 37 |
+
+**Adopted with a correction — each from a fix agent that measured rather than transcribed:**
+- **NAT64 local-use prefix.** The refuter asked for `64:ff9b:1::/48` to be judged by its
+  embedded IPv4, like `64:ff9b::/96`. The fix blocks the /48 outright: the IPv4's position
+  depends on the operator's prefix length, and IANA marks the range not globally reachable. The
+  Go `blocked()` example was compiled and run: 12/12 cases.
+- **ugrep cannot run a byte ERE.** The invisible-character probe (`LC_ALL=C` byte ranges)
+  caught 10/10 on BSD and GNU grep and **1/10 on ugrep**, which reads the pattern as UTF-8.
+  `grep` in many agent shells is a ugrep wrapper, so the rule now says so and gives `ugrep -P`.
+- **NVIDIA toolkit.** "Prefer CDI" was dropped: CDI mode is itself affected by CVE-2025-23266.
+- **Gemini CLI.** `defaultApprovalMode: yolo` is not a valid settings value (YOLO is CLI-only),
+  so only `-y`/`--yolo` went into the bypass probe.
+- **FedRAMP.** The refuter's "20x widely available since 25 Jun 2026" could not be verified; the
+  rule uses the dated application-opening steps on fedramp.gov instead.
+- **MCP `iss`.** The 2026-07-28 revision has clients validate a **present** `iss`; servers only
+  SHOULD send it. One rule overstated this as an unconditional MUST.
+
+**The whole-diff review's 11 defects, all fixed:** `sota-kubernetes` rules/03 still taught the
+Kyverno spec-level `validationFailureAction` that `sota-code-security` rules/14 now calls
+deprecated, and its Audit hunt could not see a per-rule `failureAction: Audit` (the field was
+confirmed in Kyverno's `api/kyverno/v1` source). The secrets `SKILL.md` kept the old private-key
+pattern its own rules/04 had just replaced. The Gemini `-y` probe missed `alias g="gemini -y"`.
+The R5.0 probe read a public key as a secret, and read a missing `nslookup`/`unshare` as a denial
+— it now reports INCONCLUSIVE, exit 2 (all three exits measured in podman). Also a FIPS 140-2
+date (active until 21 Sep, Historical List 22 Sep — both are on the NIST page), a runc severity
+(GHSA says medium, CVSS 3.3), a pointer to a section that did not hold the text, two stale MCP
+revision citations, and one identity rule still preferring `EdDSA`.
+
+**Nine command code spans were wrapped across lines** in eight files, so a raw copy splits the
+command. All nine are rejoined. A tenth hit, `sota-shell-scripting` rules/06's description of a
+wrapper (it ends in "…"), is prose and stays. The scan that found them paired backticks per
+paragraph; its first version paired them across the whole file, and reported **zero** until a
+known instance was used as a positive control.
+
+**A detector miss, found by a fix agent:** invariant 38 did not flag "currently at v8.30.1",
+because the `at` of the currency cue also matched as a boundary word. Both shapes went into the
+labelled corpus first (41/43 — the gate failing), and then a boundary word inside a currency
+cue stopped counting (43/43, 58/58).
+
+**A second, deeper detector hole, found by a batch-2 research agent the same day:** any bare
+ISO date anywhere in a sentence exempted the whole sentence. "Current upstream: v1.36 … v1.33
+reached EOL ~2026-06" passed because the EOL date read as provenance. Labelling the eight lines
+a narrower rule then flagged showed the model had the wrong *shape*, not a wrong regex: in
+`sota-kubernetes` rules/01, "CIS listed v2.0.1 as latest on 2026-09-25" (a dated observation)
+shielded "NSA/CISA … v1.2 — still the current edition" (an undated pin) in the same sentence.
+The model now: provenance dates only the version/cue pair it sits beside, or a whole unit when
+it opens it; a bare date is provenance unless an event word (EOL, released, until, reached…)
+introduces it; "a newest release" (indefinite) is generic; "released" is a boundary. Corpus
+47 pins / 63 non-pins; this round's 9 additions are library lines (one, the CIS half, trimmed
+from its sentence), all added before the model changed.
+It found **five real pins** the old rule hid, all rewritten: `sota-cloud-infrastructure`
+rules/04 (a supported-minors window), `sota-javascript-typescript` SKILL.md ("ESLint (v9/v10)"),
+`sota-kubernetes` rules/01 (the NSA/CISA edition), `sota-llm-engineering` SKILL.md ("the
+mid-2026 baseline"), and `sota-web-frameworks` SKILL.md ("(16.x current)"). Probe 38b was
+retargeted: its mutation deleted a line the new model no longer has, and its landing assertion
+would have failed loudly rather than passed.
+
+- **DEFERRED — OWASP Top 10:2025 A10 is unmapped in `sota-code-security` rules/01, 07, 09; revisit trigger: the next OWASP mapping pass, or the first audit finding that needs A10.**
+- **DEFERRED — DBSC (device-bound session credentials) browser support in `sota-code-security`; revisit trigger: DBSC ships beyond one OS or a second engine commits to it.**
+- **DEFERRED — verifying good bots by forward-confirmed rDNS or published IP ranges, and the Web Bot Auth draft; revisit trigger: draft-ietf-webbotauth reaches WG last call, or rules/19 is next edited.**
+- **DEFERRED — naming constant-time test tools (dudect, ctgrind) and a `==`-on-MAC probe in `sota-code-security` rules/22; revisit trigger: the next edit of rules/22.**
+- **DEFERRED — the NTLM-off roadmap in `sota-identity-access`; revisit trigger: Microsoft ships a default that disables NTLM.**
+- **DEFERRED — the OAuth identity-assertion authorization grant (ID-JAG); revisit trigger: draft-ietf-oauth-identity-assertion-authz-grant reaches WG last call.**
+- **DEFERRED — DMARC `np=` and `t=` tags in `sota-network-security`; revisit trigger: the next DMARC/email-authentication edit.**
+- **DEFERRED — CAA `accounturi`/`validationmethods` in `sota-network-security`; revisit trigger: before the CA/Browser Forum Baseline Requirements date of 2027-03-15.**
+
+**Still unverified, left as written:** GitHub push-protection coverage wording
+(`sota-secrets-management` rules/04 — no single primary page); whether Tetragon file selectors
+resolve symlinks (`sota-detection-engineering` rules/03 — needs a cluster test or a source
+citation); the ISO/IEC 28033 part stages (search results agree with the text; the stage pages
+were not opened); why podman+crun delivered EPERM instead of the requested ENOSYS for a
+one-rule allow-default profile (the rule tells readers to check their runtime).

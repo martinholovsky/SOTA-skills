@@ -92,6 +92,15 @@ low-privileged domain account — that is the realistic starting position.
   - **AES-only service accounts.** Set `msDS-SupportedEncryptionTypes` to
     AES128/256 (etype 17/18) and disable RC4 so the roast target is far more
     expensive; do this estate-wide only after confirming no RC4 dependency.
+  - **The KDC default has flipped (CVE-2026-20833).** January 2026 updates added
+    audit events (System log, source KDCSVC, IDs **201–209**); the **April 14, 2026**
+    update changed the KDC's assumed default for accounts *without*
+    `msDS-SupportedEncryptionTypes` to AES-SHA1 only (0x18); updates from **July 2026**
+    remove the `RC4DefaultDisablementPhase` rollback key. RC4 now survives only where
+    someone set it **explicitly** — so audit `msDS-SupportedEncryptionTypes` values that
+    include RC4 (0x4) and any `DefaultDomainSupportedEncTypes` registry value on DCs, and
+    treat each as a dated exception (verify: `support.microsoft.com`, "How to manage
+    Kerberos KDC usage of RC4 … CVE-2026-20833").
   - For any remaining human-managed service account: a **long random password
     (25+ chars)** and rotation, and **minimum SPNs** (SPN hygiene — remove stale/
     duplicate SPNs; never put an SPN on a high-privilege user, which turns a
@@ -108,8 +117,12 @@ low-privileged domain account — that is the realistic starting position.
   Restrict NTLM** policies; NTLMv1 must be disabled outright.
 - **Relay mitigations.** Enforce **SMB signing** and **LDAP signing + channel
   binding (EPA)** so coerced authentications can't be relayed. Windows Server 2025
-  hardens the defaults: **SMB signing is required by default** (also on Windows 11
-  24H2), and new DCs default to **requiring LDAP signing** (new "LDAP server
+  hardens the defaults, but only half-way for SMB: it **requires outbound (client) SMB
+  signing only** — inbound signing is not required by default, so a member server stays a
+  relay target until `Set-SmbServerConfiguration -RequireSecuritySignature $true` (or the
+  *Microsoft network server: Digitally sign communications (always)* policy) is set
+  (Windows 11 24H2 Enterprise/Pro/Education require both directions; verify:
+  `learn.microsoft.com/windows-server/storage/file-server/smb-signing`). New DCs default to **requiring LDAP signing** (new "LDAP server
   signing requirements Enforcement" policy); **LDAP channel binding still defaults
   to *When supported*, not *Required***, so set it to Always where clients allow
   (verify: `techcommunity.microsoft.com` LDAP-signing Server-2025 post and
@@ -125,8 +138,8 @@ low-privileged domain account — that is the realistic starting position.
 ADCS is a tier-0 system: a CA that issues an authentication certificate for an
 arbitrary principal is a domain-compromise primitive. The escalation classes were
 catalogued by **SpecterOps ("Certified Pre-Owned", Schroeder & Christensen,
-2021)** — originally **ESC1–ESC8** — and **community-extended through ~ESC16 as
-of 2025** (Certipy/Oliver Lyak, TrustedSec; verify the current set against
+2021)** — originally **ESC1–ESC8** — and **community-extended to ESC17 as of
+2026-09-26** (the Certipy wiki's Resources table; verify the current set against
 SpecterOps' publications and the Certify/Certipy docs before citing a specific
 number).
 
@@ -140,9 +153,12 @@ number).
   - Lock down **template and CA ACLs** — write access to a template is **ESC4**
     (rewrite it into ESC1); dangerous CA flags (`EDITF_ATTRIBUTESUBJECTALTNAME2`)
     are **ESC6**.
-- **Web enrollment / relay (ESC8, ESC11).** The HTTP enrollment endpoints accept
-  relayed NTLM → cert for a DC. Disable web enrollment if unused; otherwise
-  enforce **HTTPS + EPA** and the NTLM-relay controls in §2.
+- **Enrollment relay (ESC8 over HTTP, ESC11 over RPC).** **ESC8:** the HTTP web
+  enrollment endpoints accept relayed NTLM → cert for a DC; disable web enrollment if
+  unused, otherwise enforce **HTTPS + EPA**. **ESC11:** the CA's RPC enrollment
+  interface (ICPR) accepts relayed NTLM when request encryption is not enforced — set
+  `IF_ENFORCEENCRYPTICERTREQUEST` in the CA's `InterfaceFlags`. Both also need the
+  NTLM-relay controls in §2.
 - **Enrollment-agent restrictions.** Enrollment-agent certificates let the holder
   enroll *on behalf of* others — restrict which agents, templates, and target
   principals are permitted (CA "Enrollment Agents" tab), or the agent becomes a
@@ -204,8 +220,10 @@ a cloud compromise (and vice-versa):
   entire token-issuance trust to an on-prem STS — a golden-SAML target — and is
   generally the heaviest to secure. Pick per outage-tolerance and threat model;
   document the choice.
-- **Retire legacy cloud-side auth paths.** Eliminate remaining **legacy Azure AD
-  Graph API** dependencies (migrate to Microsoft Graph) and alert on anomalous
+- **Retire legacy cloud-side auth paths.** Azure AD Graph reached the **end of extended
+  access on August 31, 2025** and is retired (verify:
+  `learn.microsoft.com/graph/migrate-azure-ad-graph-overview`); any tool, script or app
+  still built on it is broken or pending breakage — migrate to Microsoft Graph — and alert on anomalous
   Graph/actor-token activity: **CVE-2025-55241** (CVSS 10.0; reported and fixed
   Jul 2025, disclosed Sep 2025) let an attacker mint an undocumented **Actor
   token** in their own tenant and impersonate any user — including Global
@@ -224,10 +242,10 @@ a cloud compromise (and vice-versa):
 - [ ] Is **constrained delegation** tightly scoped, protocol-transition avoided, and **who can write `msDS-AllowedToActOnBehalfOfOtherIdentity` (RBCD)** restricted?
 - [ ] Are sensitive/admin accounts marked **`Account is sensitive and cannot be delegated`** or in **Protected Users**?
 - [ ] Do service accounts use **gMSA/dMSA** (randomized keys) or, failing that, **AES-only** encryption and 25+ char rotated passwords? Are there **SPNs on privileged user accounts** (Kerberoast bait) or stale/duplicate SPNs?
-- [ ] Any account with **Kerberos pre-auth disabled** (`DONT_REQ_PREAUTH`, AS-REP roastable)? Any **RC4 (etype 23)** still permitted where AES is feasible?
-- [ ] Is **NTLM audited and restricted** (NTLMv1 disabled), and are **SMB signing** and **LDAP signing + channel binding (EPA)** enforced (Server 2025 defaults confirmed, channel binding set beyond *When supported* where possible)?
+- [ ] Any account with **Kerberos pre-auth disabled** (`DONT_REQ_PREAUTH`, AS-REP roastable)? Any **RC4 (etype 23)** still permitted where AES is feasible — after CVE-2026-20833, any `msDS-SupportedEncryptionTypes` including RC4 or a `DefaultDomainSupportedEncTypes` override on a DC, and any KDCSVC 201–209 events?
+- [ ] Is **NTLM audited and restricted** (NTLMv1 disabled), and are **SMB signing — inbound on servers, not only the Server 2025 outbound default** — and **LDAP signing + channel binding (EPA)** enforced (Server 2025 defaults confirmed, channel binding set beyond *When supported* where possible)?
 - [ ] Is **`ms-DS-MachineAccountQuota` set to 0** (default 10)?
-- [ ] ADCS: any **auth template allowing enrollee-supplied subject** (ESC1), broad **Enroll** to Domain/Authenticated Users, weak **template/CA ACLs** (ESC4), `EDITF_ATTRIBUTESUBJECTALTNAME2` (ESC6), or exposed **web enrollment without HTTPS+EPA** (ESC8)?
+- [ ] ADCS: any **auth template allowing enrollee-supplied subject** (ESC1), broad **Enroll** to Domain/Authenticated Users, weak **template/CA ACLs** (ESC4), `EDITF_ATTRIBUTESUBJECTALTNAME2` (ESC6), exposed **web enrollment without HTTPS+EPA** (ESC8), or a CA not enforcing RPC request encryption (ESC11, `IF_ENFORCEENCRYPTICERTREQUEST`)?
 - [ ] Are **enrollment agents restricted** by template/target, and is the **CA key HSM-protected** and CA admin tier-0?
 - [ ] Is **strong certificate mapping (KB5014754)** enforced — SID extension embedded, Full Enforcement in effect (post-Feb/Sep-2025 timeline), no weak `altSecurityIdentities` mappings?
 - [ ] Is **Windows LAPS** (not the deprecated legacy MSI) deployed to randomize/rotate local admin passwords, with encryption + history?

@@ -63,6 +63,15 @@ Each application is a distinct client with the narrowest config that works:
   is attacker input and goes through the SSRF rules (**sota-code-security** rules/01 §5).
   Mark such clients untrusted: always show consent (§7) with a warning that the app is
   unverified.
+- **Client ID Metadata Documents** (`draft-ietf-oauth-client-id-metadata-document`, an
+  Internet-Draft as of 2026-09-26; the MCP authorization spec's SHOULD path, rules/01 §5.1)
+  replace registration with a URL: the `client_id` is an HTTPS URL the AS fetches. That
+  fetch is the AS making an outbound request to an attacker-chosen URL, so the draft's
+  rules apply: MUST NOT fetch the document, or any URL inside it, when it resolves to a
+  special-use IP (RFC 6890 — no loopback exception in production); MUST NOT follow
+  redirects; accept only `200`; cap the bytes read (5 KB recommended); never cache errors
+  or invalid documents; require the document's `client_id` to equal the fetched URL by
+  simple string comparison. Everything in it is self-asserted, as with DCR above.
 - **A client must not be able to pose as a user.** Where client ids and user subjects
   share a namespace (a client-credentials token's `sub` is the client id, RFC 9068), the
   AS SHOULD NOT let a client choose its `client_id` or any claim that could equal a real
@@ -120,8 +129,9 @@ public client can keep.
   pair with introspection (RFC 7662) for opaque tokens.
 - **Revoking a self-contained token before `exp`.** A short lifetime stays the primary
   control. When a JWT (or another signed credential) must be revocable anyway, the IETF
-  Token Status List (`draft-ietf-oauth-status-list`, still an Internet-Draft at -21, June
-  2026; check its status before depending on it) gives the issuer a standard design. The
+  Token Status List (`draft-ietf-oauth-status-list` — IESG-approved and in the RFC Editor
+  queue, not yet an RFC, as of 2026-09-26; check datatracker.ietf.org for its RFC number)
+  gives the issuer a standard design. The
   token carries `status.status_list` with an `idx` and a `uri`; the verifier fetches the
   signed Status List Token from that URI, caches it for the list's `ttl`, and reads the bit
   at `idx`. The URI is attacker-influenced input, so allowlist it (**sota-code-security**
@@ -162,7 +172,7 @@ refresh_token_lifetime  = "never"
 - The IdP's token-signing keys rotate on a schedule (e.g. quarterly) and immediately on
   suspected compromise. Each key has a `kid`; publish current + previous in the JWKS so
   in-flight tokens verify during the overlap, then retire the old `kid`.
-- Prefer asymmetric signing (RS256/ES256/EdDSA) so RPs verify with public keys and the
+- Prefer asymmetric signing (ES256 as the portable default, RS256, or Ed25519 where supported — RFC 9864 deprecates the JOSE `EdDSA` identifier) so RPs verify with public keys and the
   private key never leaves the IdP. Avoid symmetric (`HS256`) signing across trust
   boundaries.
 - This is the IdP-operations side; the credential-rotation mechanics
@@ -270,6 +280,6 @@ refresh_token_lifetime  = "never"
 - [ ] **High** — Is the workforce directory/IdP kept out of the authentication path of public and DMZ apps, and is any hosted IdP or MFA provider assessed as a tier-0 supplier, with a break-glass path that does not depend on it?
 - [ ] **High** — Does Dynamic Client Registration treat metadata as self-asserted (redirect and `*_uri` host checks, SSRF rules on fetched URLs, unverified-app consent), refuse client-chosen ids that can equal a user `sub`, and pin each client's `response_mode`? Anonymous registration or a wide-open `response_mode`: `grep -rniE '(anonymous|unauthenticated|open)_?(client_?)?registration["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']?(true|on|yes|enabled)|response_modes?["'\'']?[[:space:]]*[:=].*(fragment|["'\''][*]["'\'']|any)' .`
 - [ ] **Medium** — Is consent always prompted for public, dynamically registered or otherwise unauthenticated clients, and does each client request only the scopes the feature uses?
-- [ ] **High** — Can a signed token be revoked before `exp` where the risk needs it (Token Status List or introspection), are critical operations validated online, and is every use of a revoked token logged at critical severity and alerted? Revocation checks that never log: `grep -rlE '[Ii]s_?[Rr]evoked|[Rr]evoked[A-Za-z_]*\(|deny_?list|status_list' . | xargs grep -LE '(log|logger|logging|LOG|Log)\.[A-Za-z]+\(|audit|security_event'`
-- [ ] **High** — Does every back-channel logout endpoint validate the logout token (signature, `iss`, `aud`, `iat`, `exp` short, `typ` `logout+jwt`, `events` member, `sub`/`sid`, no `nonce`), does the OP confirm with the user when `id_token_hint` is missing or foreign, and is every session in the SSO chain inventoried with its lifetime and termination path? Logout-token handlers that never check the event member: `grep -rlE 'logout_token|logoutToken' . | xargs grep -LE 'schemas\.openid\.net/event/backchannel-logout'`
+- [ ] **High** — Can a signed token be revoked before `exp` where the risk needs it (Token Status List or introspection), are critical operations validated online, and is every use of a revoked token logged at critical severity and alerted? Revocation checks that never log: `grep -rlE '[Ii]s_?[Rr]evoked|[Rr]evoked[A-Za-z_]*\(|deny_?list|status_list' . | xargs -r grep -LE '(log|logger|logging|LOG|Log)\.[A-Za-z]+\(|audit|security_event'`
+- [ ] **High** — Does every back-channel logout endpoint validate the logout token (signature, `iss`, `aud`, `iat`, `exp` short, `typ` `logout+jwt`, `events` member, `sub`/`sid`, no `nonce`), does the OP confirm with the user when `id_token_hint` is missing or foreign, and is every session in the SSO chain inventoried with its lifetime and termination path? Logout-token handlers that never check the event member: `grep -rlE 'logout_token|logoutToken' . | xargs -r grep -LE 'schemas\.openid\.net/event/backchannel-logout'`
 - [ ] **Medium** — For each adopted SaaS tenant: are admins named and few, connected apps and data-sharing integrations inventoried with scope and owner and reviewed, and are tenant scripts, webhooks and custom apps security-reviewed before they run?

@@ -224,8 +224,8 @@ have passed every test, because the test corpus is the demo.
 - [ ] Is there an ADS (or equivalent) doc per detection, including a blind-spots
       / assumptions section?
 - [ ] Pick 5 detections: how many are validated against the real technique vs.
-      "written and hoped"? (`grep -L "validation" docs/ads/` to find specs with
-      no validation section.)
+      "written and hoped"? (`grep -rLiE '^#+ *validation' docs/ads/` lists specs with
+      no validation heading.)
 - [ ] Is the portfolio TTP-weighted, or dominated by hash/IP/domain IOC feeds?
       (Count rules whose only condition is an IOC match.)
 - [ ] Is ATT&CK pinned to a known version, and is the Navigator coverage layer
