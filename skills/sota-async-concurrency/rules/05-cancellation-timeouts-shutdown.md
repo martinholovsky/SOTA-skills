@@ -73,9 +73,9 @@ Consequences:
 while True:
     try:
         await poll()
-    except Exception:           # CancelledError inherits BaseException in
-        continue                # 3.8+, but bare `except:` or asyncio code
-                                # catching BaseException still eats it
+    except BaseException:       # or bare `except:` — CancelledError is a
+        continue                # BaseException since 3.8, so `except
+                                # Exception` does NOT catch it; these do
 # Also BAD:
     except BaseException:
         log(...)                # caught CancelledError, didn't re-raise

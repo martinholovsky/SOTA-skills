@@ -65,8 +65,8 @@ exhausted at window end; 14.4 = monthly budget gone in ~2 days.
 
 Multi-window multi-burn config for a 30d SLO. The Google SRE Workbook's canonical
 recommendation is the three bold tiers (14.4/1h, 6/6h, 1/72h); the 3x/24h ticket tier
-is a widely-used community extension (Sloth/Pyrra) that fills the gap between fast page
-and slow burn — keep or drop it per taste:
+is a widely-used community extension (Sloth's default; Pyrra's equivalent tier is 2x/1d)
+that fills the gap between fast page and slow burn — keep or drop it per taste:
 
 | Severity | Burn rate | Long window | Short window | Budget consumed |
 |----------|-----------|-------------|--------------|-----------------|
@@ -158,6 +158,13 @@ Every alert must pass ALL of these or be deleted/demoted:
 - Protect the alerting path itself: dead-man's-switch (an always-firing
   alert whose absence pages via an independent channel) so a broken
   Prometheus/Alertmanager doesn't equal silence-as-success.
+- A scheduled job that **never ran** raises no failure alert. Every cron/batch
+  job exports a last-success timestamp gauge (pushed, for short jobs) and
+  alerts on its age, not its errors:
+  `time() - job_last_success_timestamp_seconds > <interval × k>`, plus
+  `absent(job_last_success_timestamp_seconds{job="…"})` for a job that never
+  reported. Data-pipeline freshness SLAs: `sota-data-engineering` rules/02
+  (Orchestration discipline).
 
 ## 6. SLO spec template and recording rules
 
@@ -226,7 +233,8 @@ For SLO target T over window W, with budget B = 1 − T:
   - 5% in 6h → b = 0.05 × 120 = 6 → ratio > 0.6%
   - 10% in 24h → b = 0.10 × 30 = 3 → ratio > 0.3%
 - Detection time at full outage (ratio = 1): t_detect ≈ threshold × window;
-  the 14.4×/1h pager detects total outage in ~86 seconds — verify yours.
+  the 14.4×/1h pager detects total outage in ~52 seconds (0.0144 × 3600 s)
+  — verify yours.
 
 ## Audit checklist
 
@@ -248,6 +256,8 @@ For SLO target T over window W, with budget B = 1 − T:
 - [ ] Inhibition/grouping configured; silences expire and carry reasons.
 - [ ] Dead-man's-switch on the alerting pipeline; monitoring-down pages via
       an independent channel.
+- [ ] Every scheduled job alerts on the age of its last success (and on
+      the gauge's absence), so a job that never ran pages (§5).
 - [ ] Low-traffic journeys covered by synthetic probes feeding SLIs.
 - [ ] Alert definitions in version control, code-reviewed, deployed like
       code (no hand-edited live alerts).

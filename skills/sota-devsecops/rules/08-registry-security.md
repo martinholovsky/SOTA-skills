@@ -123,7 +123,9 @@ mutable pointer instead of the digest.
   *verify-and-enforce* step (admission requires a valid signature by your release identity) is in
   sota-kubernetes; the registry's job is to durably keep the referrer artifacts next to the image.
 - **Content-trust legacy**: Harbor's old Notary/DCT path is superseded by **cosign**-based
-  signing; treat new Notary v1/DCT setups as deprecated and standardize on cosign (rules/02).
+  signing, and the Docker CLI has removed Docker Content Trust support
+  (`--disable-content-trust` survives only as a deprecated flag). Treat any Notary v1/DCT
+  setup as legacy and standardize on cosign (rules/02).
 
 ## 8.4 Vulnerability management at the registry
 
@@ -138,7 +140,7 @@ advisories without rebuilding. This complements (does not replace) CI scan-on-bu
     image, a control admission cannot give you for non-cluster pullers.
   - **ECR**: enhanced scanning via **Amazon Inspector** — scan-on-push **and continuous re-scan**
     as new CVEs publish, covering OS + language packages and distroless/Chainguard/scratch bases
-    (verified, AWS). Basic scanning is Clair-based.
+    (verified, AWS). Basic scanning uses AWS-native technology and covers OS packages only.
   - **GAR**: Artifact Analysis on-push + continuous scanning across OS and language ecosystems
     (verified, Google). **ACR**: Microsoft Defender for Cloud scans at the **manifest** level on
     push/import/recent-pull (verified) — note untagged manifests still alert.

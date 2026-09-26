@@ -28,7 +28,7 @@ Rules:
 - Consistent field names across the codebase: `duration_ms` everywhere, never
   a mix of `elapsed`, `time_taken`, `latency`. Maintain a field dictionary;
   prefer OTel semantic convention names (`http.response.status_code`,
-  `db.system`) where they exist.
+  `db.system.name`) where they exist.
 - Typed values: `duration_ms: 142` (number), not `"142ms"` (string). Units in
   the field name, not the value.
 - Timestamps in UTC ISO-8601 or epoch nanos, emitted by the logger, never
@@ -132,7 +132,7 @@ Rules:
 - Propagate into async work: thread pools, queue consumers, cron-spawned
   tasks must restore context before logging (see rules/03 §4).
 - Also bind stable dimensions once per request: `user_id` (if policy allows),
-  `tenant_id`, `service.version`, `deployment.environment` — via logger
+  `tenant_id`, `service.version`, `deployment.environment.name` — via logger
   context, not repeated at every call site.
 - Audit test: pick any prod log line; you must be able to retrieve the full
   request trace and all sibling logs from it. If not, correlation is broken.
@@ -145,21 +145,33 @@ Enforce centrally, fail closed.
 **Bad:**
 
 ```js
-logger.info('login attempt', { headers: req.headers });   // Authorization, cookies
-logger.debug('user object', user);                        // email, address, hash
-catch (e) { logger.error('payment failed', { request: e.config }); } // card data in axios config
+logger.info({ headers: req.headers }, 'login attempt');   // Authorization, cookies
+logger.debug(user, 'user object');                        // email, address, hash
+catch (e) { logger.error({ request: e.config }, 'payment failed'); } // card data in axios config
 ```
 
-**Good** (pino):
+**Good** (pino) — a key scrub at any depth and case, because `redact.paths`
+are exact-depth and case-sensitive (`*.authorization` misses
+`req.headers.authorization`, `*.password` misses a top-level `password`
+and `req.body.password`, and neither sees axios's `Authorization`):
 
 ```js
-const logger = pino({
-  redact: {
-    paths: ['*.password', '*.token', '*.authorization', '*.cookie',
-            '*.ssn', '*.card_number', 'req.headers["x-api-key"]'],
-    censor: '[REDACTED]',
-  },
-});
+const SENSITIVE = /pass|secret|token|authorization|cookie|api.?key|ssn|card|email|address|hash|salt|^(data|body)$/i;
+const scrub = (v, seen = new WeakSet()) => {         // any depth, any case
+  if (v === null || typeof v !== 'object') return v;
+  if (v instanceof Date) return v.toISOString();     // Object.entries(Date) is empty
+  if (v instanceof Error)                             // allowlist: drops config,
+    return { type: v.name, message: v.message, code: v.code, stack: v.stack }; // request._header
+  if (seen.has(v)) return '[Circular]';
+  seen.add(v);
+  if (Array.isArray(v)) return v.map((x) => scrub(x, seen));
+  const out = {};
+  for (const [k, x] of Object.entries(v))
+    out[k] = SENSITIVE.test(k) ? '[REDACTED]' : scrub(x, seen);
+  return out;
+};
+// formatters.log does not see child() bindings: logger.child(scrub({...}))
+const logger = pino({ formatters: { log: (obj) => scrub(obj) } });
 ```
 
 Rules:
@@ -173,7 +185,11 @@ Rules:
   (email, name, address, IP where regulated), card/bank data (PCI scope
   contamination), encryption keys, signed URLs.
 - Exceptions are caught objects too: exception messages and locals can embed
-  connection strings and tokens. Scrub exception serializers as well.
+  connection strings and tokens. Scrub exception serializers as well — an
+  axios error's `request._header` is the raw header block as one string, so
+  no key match reaches it; serialize errors from an allowlist.
+- Test the redaction, not the config: log every known-bad shape above through
+  the real logger and assert no secret value appears in the output.
 - A secret found in logs is an incident: rotate the secret AND purge the log
   history; retention means the leak persists for the retention window.
 
@@ -401,12 +417,16 @@ OWASP: Logging cheat sheet, ASVS 5.0 V16.4.2 and V16.4.3.
       (§7). Probe in pipeline configs and logging code — a hit on the
       operational stream is fine, a hit on the security stream is the finding:
       `grep -rniE '(exclude|drop|filter|skip|ignore).*(user.?agent|kube-probe|healthchecker|pingdom|uptimerobot|scanner|pentest)|(user.?agent|kube-probe|healthchecker|pingdom|uptimerobot|scanner|pentest).*(exclude|drop|skip|ignore)' .`
+      That probe misses the Collector `filter` processor's condition-list
+      form, where the drop is a bare list item; run this too (hits under a
+      `filter` processor are the finding):
+      `grep -rniE '^[[:space:]]*-[[:space:]]*.?(IsMatch|not |[a-z_.]*attributes\[)[^#]*(user.?agent|kube-probe|healthchecker|pingdom|uptimerobot|scanner|pentest)' --include='*.y*ml' .`
 - [ ] (**Medium**) Events that are emitted late (queue consumers, offline
       clients, uploads, replays) carry the time the action happened, with the
       emit/receive time as a separate field; no pipeline overwrites event time
       with receive time (§1). Probe Collector configs — a hit without a
       `where` guard is the finding:
-      `grep -rnE 'set\((log\.)?time,[[:space:]]*(log\.)?observed_time\)[^w]*$' --include='*.y*ml' .`
+      `grep -rnE 'set\([[:space:]]*(log\.)?time(_unix_nano)?[[:space:]]*,[[:space:]]*(log\.)?observed_time(_unix_nano)?[[:space:]]*\)[^w]*$' --include='*.y*ml' .`
 - [ ] (**High**) The security/audit logger cannot be silenced by a level
       change; runtime level changes go through an approved or auto-reverting
       path and the running level is checked on a schedule (§2). Probe for

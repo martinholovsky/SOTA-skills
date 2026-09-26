@@ -202,7 +202,9 @@ The real design decisions are about **key control and blast radius**:
   data-class controls as the source.
 - Snapshot/AMI sharing: shared-to-public snapshots are a recurring breach class —
   audit for any snapshot/image shared outside the org; block publicly shared
-  snapshots via org guardrail where available.
+  snapshots via org guardrail where available (AWS: an EC2 declarative policy with
+  snapshot block public access `block_all_sharing`, rules/01 §3; AMI block public
+  access only blocks *new* sharing).
 - **Decommissioning is a data event, not a `destroy`.** Retiring a resource means
   (1) erasing its data everywhere it was copied — snapshots, final snapshots, AMIs,
   replicas, exports and backups, on the retention schedule of §3 rather than
@@ -226,17 +228,21 @@ The real design decisions are about **key control and blast radius**:
 - [ ] **High** — noncurrent versions hold no data the business thinks it deleted
       (§1): list them with ``aws s3api list-object-versions --bucket <b> --query 'Versions[?IsLatest==`false`].[Key,VersionId]'``
       and sample for secrets/PII; version-read grants limited to restore roles —
-      probe `grep -rn -E 's3:(GetObjectVersion|ListBucketVersions|GetObject\*|\*)"' --include='*.tf' --include='*.json' .`
+      probe `grep -rn -E '"s3:((Get|List)[A-Za-z]*)?\*[A-Za-z*]*"|"s3:(GetObjectVersion|ListBucketVersions)"' --include='*.tf' --include='*.json' .`
+      (catches `s3:Get*`, `s3:List*`, `s3:*Object*` as well as the exact actions)
       and justify each hit.
 - [ ] No `Principal:"*"` in bucket/queue/key resource policies without strong
       conditions.
 - [ ] **High** — sensitive objects are not handed out as presigned URLs, and none
       is long-lived (§1). Probe: `grep -rn -E '(ExpiresIn|expiresIn|expires_in|Expires) *[:=] *[0-9]{5,}' --include='*.py' --include='*.ts' --include='*.js' --include='*.go' --include='*.java' .`
-      (≥ 10000 s, about 2.8 h); then read each presign call site for a per-object
-      authorization check before it and for request input in the key.
+      (≥ 10000 s, about 2.8 h; literal seconds only — a computed expiry such as
+      `7 * 24 * 3600`, `Duration.ofDays(7)` or Go's `WithPresignExpires(...)` is
+      missed, so the call-site read is the real check); then read each presign call
+      site for a per-object authorization check before it and for request input in
+      the key.
 - [ ] **High** — shared multi-tenant buckets check the object's tenant on read
       (§1). Probe (files that read objects and never mention a tenant):
-      `grep -rl -E 'get_object\(|GetObjectCommand|getObject\(' --include='*.py' --include='*.ts' --include='*.js' --include='*.java' . | xargs grep -L -i 'tenant'`
+      `grep -rl --null -E 'get_object\(|GetObjectCommand|getObject\(' --include='*.py' --include='*.ts' --include='*.js' --include='*.java' . | xargs -0 -r grep -L -i 'tenant'`
       — file-level; in files it spares, confirm each read compares stored tenant
       metadata or tag with the caller's tenant (or the policy uses `s3:ExistingObjectTag`).
 - [ ] Stateful resources carry backup-tier tags; org backup plans select by tag;

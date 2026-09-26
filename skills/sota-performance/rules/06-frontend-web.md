@@ -24,7 +24,8 @@ TTFB → resource load delay → resource load time → render delay.
 - Lazy-load everything below the fold (`loading="lazy"`), never above it.
 
 **INP** is caused by long main-thread tasks (> 50 ms):
-- Break up long JS: `scheduler.yield()` / `await` chunking; show feedback
+- Break up long JS: `scheduler.yield()` (not Baseline — feature-detect) /
+  `await` chunking; show feedback
   within 100 ms even if work continues.
 
 ```javascript
@@ -35,7 +36,8 @@ items.forEach(render);
 // GOOD — yield between chunks; first paint of feedback within one frame
 for (const chunk of chunks(items, 200)) {
   chunk.forEach(render);
-  await scheduler.yield();          // or: await new Promise(r => setTimeout(r))
+  // scheduler.yield() is not Baseline (MDN) — fall back to a macrotask
+  await (globalThis.scheduler?.yield?.() ?? new Promise(r => setTimeout(r)));
 }
 ```
 
@@ -71,7 +73,8 @@ Budgets (compressed, over-the-wire) — adjust to audience, enforce in CI:
   mobile hardware.
 - Initial CSS: ≤ 50 KB; inline critical CSS if render-blocking matters.
 - Per-route async chunks: ≤ 100 KB each.
-- Track *first-load JS per route* (Next.js build output does this natively).
+- Track *first-load JS per route* with a bundle analyzer or Lighthouse — Next.js
+  16 removed the `size`/`First Load JS` columns from `next build` output.
 
 Enforcement: `size-limit`, `bundlesize`, Lighthouse CI `budgets.json`, webpack
 `performance.maxAssetSize` — fail the PR, don't dashboard it. Diagnose with
@@ -158,9 +161,9 @@ Mitigations, in order of leverage:
    React Server Components / Astro-style zero-JS-by-default mean
    non-interactive components ship **no** client JS at all.
 2. **Islands / partial hydration**: hydrate only interactive widgets (Astro,
-   Fresh, eleventy-is-land); the static 90% of a content page stays HTML.
+   Fresh, 11ty `<is-land>`); the static 90% of a content page stays HTML.
 3. **Lazy/deferred hydration**: hydrate on visibility/interaction
-   (`client:visible`, `astro:idle` equivalents; React `lazy` + Suspense
+   (Astro `client:visible` / `client:idle` equivalents; React `lazy` + Suspense
    boundaries) — below-fold widgets shouldn't hydrate during load.
 4. **Streaming SSR + selective hydration** (React 18+): flush HTML early
    (TTFB/LCP win), hydrate islands as their code arrives, prioritize the one

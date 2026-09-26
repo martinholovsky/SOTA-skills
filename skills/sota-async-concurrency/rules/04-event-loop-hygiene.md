@@ -54,7 +54,7 @@ async def register(req):
 
 | Runtime | I/O-blocking call | CPU-bound work |
 |---|---|---|
-| Python asyncio | `asyncio.to_thread` / `loop.run_in_executor(None, f)` | `run_in_executor(ProcessPoolExecutor)` (GIL); thread pool OK on free-threaded 3.13+ |
+| Python asyncio | `asyncio.to_thread` / `loop.run_in_executor(None, f)` | `run_in_executor(ProcessPoolExecutor)` (GIL); thread pool OK on free-threaded builds (experimental 3.13, supported 3.14+, PEP 779) |
 | Node | rewrite to async API (almost always exists) | `worker_threads` / `piscina` pool |
 | Rust tokio | `tokio::task::spawn_blocking` | `spawn_blocking` for occasional; `rayon` pool + channel back for heavy |
 | Go | nothing — runtime parks blocked goroutines | nothing special; cap with semaphore if it floods cores |
@@ -144,8 +144,11 @@ loop.run_until_complete(work())   # inside a running loop
 ```
 
 ```rust
-// BAD — panics on tokio ("Cannot block_on inside a runtime") or
-// deadlocks a current-thread runtime.
+// BAD — never panics; it parks the thread. If `fetch` needs the runtime's
+// timer/IO driver, a current-thread runtime deadlocks (so does a multi-thread
+// one once every worker is parked); it "works" otherwise only by accident.
+// tokio's own `Handle::block_on`/`Runtime::block_on` here panics instead:
+// "Cannot start a runtime from within a runtime".
 let data = futures::executor::block_on(fetch(url));
 ```
 
@@ -169,8 +172,8 @@ sprinkled through the call graph. Crossings mid-stack are findings.
 ## Detecting a blocked loop (build it in; check for it in audits)
 
 - **Python:** run with `loop.set_debug(True)` + `loop.slow_callback_duration =
-  0.05` in staging — logs any callback >50ms with its name. `aiodebug` /
-  `aiomonitor` for production. On 3.14+, `python -m asyncio ps|pstree PID`
+  0.05` in staging — logs any callback >50ms with its name. `aiomonitor`
+  for production (`aiodebug` is unmaintained since 2022). On 3.14+, `python -m asyncio ps|pstree PID`
   inspects a live process's task tree (`pstree` also reports await-graph
   cycles, i.e. async deadlocks); `asyncio.print_call_graph()` in-process.
 - **Node:** monitor event-loop lag/utilization (`perf_hooks.monitorEventLoopDelay`,

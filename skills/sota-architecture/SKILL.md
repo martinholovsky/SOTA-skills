@@ -54,7 +54,7 @@ this file routes you to the right one.
 
 1. **Scope first.** Identify what you're auditing (whole system, one service, one
    PR) and read the matching rules files from the index. For a full architecture
-   audit, work through all seven; for a PR, pick by topic.
+   audit, work through every rules file; for a PR, pick by topic.
 2. **Drive from the checklists.** Every rules file ends with an "Audit checklist"
    of yes/no questions — answer each with evidence (file:line, config, trace),
    never from the README's claims. Use rules/07 detection signals as concrete

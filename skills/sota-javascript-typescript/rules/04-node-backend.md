@@ -232,6 +232,8 @@ Two ordinary errors take this path without anyone deciding they should:
 import { pino } from 'pino';
 export const logger = pino({
   level: config.LOG_LEVEL,
+  // redact paths are exact-depth and case-sensitive: '*.password' misses a top-level password,
+  // req.body.password and axios's Authorization — see sota-observability rules/01 for a scrub
   redact: { paths: ['req.headers.authorization', 'req.headers.cookie', '*.password', '*.token'], censor: '[redacted]' },
   // dev only: transport: { target: 'pino-pretty' }
 });

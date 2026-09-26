@@ -115,6 +115,17 @@ Policy deny assignments):
 }
 ```
 
+- **AWS: set service baselines with declarative policies (EC2 policy type).** Unlike
+  SCPs/RCPs, which gate API calls, a declarative policy fixes the service's own
+  configuration in its control plane, governs service-linked roles too, and account
+  admins cannot change the attribute. EC2 attributes cover VPC Block Public Access,
+  serial console access, AMI block public access, Allowed AMIs, instance-metadata
+  defaults (`http_tokens: required`, `http_tokens_enforced`), snapshot block public
+  access and VPC encryption controls. For snapshots choose `block_all_sharing`:
+  `block_new_sharing` leaves already-public snapshots public, and it is the *only*
+  AMI option, so still sweep for AMIs shared before enforcement. Detaching the policy
+  rolls the attribute back. (AWS Organizations User Guide: Declarative policies; EC2
+  policy syntax)
 - SCPs/RCPs/org policies do not grant anything; test them with org-policy dry-run /
   SCP simulation against real workflows before enforcing, and roll out OU-by-OU.
 - Pair preventive guardrails with detective baseline: AWS Config / Security Hub, GCP
@@ -224,6 +235,10 @@ contacts.
       buckets, region restriction, no new IAM users/SA keys, no leaving org.
 - [ ] AWS: RCPs enforce the org-wide data perimeter on supported services (deny
       principals outside the org, require TLS) — not left to per-resource policies.
+- [ ] AWS: an EC2 declarative policy pins the baseline org-wide (§3) — IMDSv2
+      required, snapshot block public access `block_all_sharing`, AMI and VPC block
+      public access; `aws organizations describe-effective-policy --policy-type DECLARATIVE_POLICY_EC2 --target-id <acct>`
+      on a sample account shows them.
 - [ ] Guardrails attached at OU/folder level, inherited by new accounts automatically.
 - [ ] Account vending is automated and IaC-defined; pick a recent account and verify
       it matches the baseline.

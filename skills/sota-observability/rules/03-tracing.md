@@ -27,7 +27,8 @@ tracer = trace.get_tracer("payments-lib", "1.4.0")
 provider = TracerProvider(
     resource=Resource.create({
         "service.name": "checkout", "service.version": VERSION,
-        "deployment.environment": ENV}),
+        "deployment.environment.name": ENV}),
+    # spec deprecates TraceIdRatioBased for ProbabilitySampler; use it once your SDK ships it
     sampler=ParentBased(TraceIdRatioBased(0.1)),
 )
 provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
@@ -39,13 +40,14 @@ Rules:
   clients, queue clients) — it covers 80% with correct semantic conventions.
   Add manual spans only for business logic the auto layer can't see.
 - **Follow OTel semantic conventions** for span names and attributes
-  (`http.request.method`, `db.system`, `messaging.operation`,
+  (`http.request.method`, `db.system.name`, `messaging.operation.type`,
   `error.type`). Invented names break backend UIs, spanmetrics, and every
-  query anyone else writes. HTTP and database conventions are now stable
-  (messaging is still in development); when upgrading instrumentation that
-  predates stabilization, migrate via `OTEL_SEMCONV_STABILITY_OPT_IN`
-  rather than breaking dashboards in one jump.
-- `service.name`, `service.version`, `deployment.environment` set as
+  query anyone else writes. HTTP and database span conventions are stable
+  (their metric docs are mixed — e.g. `db.client.connection.count` is still
+  development — and messaging is in development); when upgrading
+  instrumentation that predates stabilization, migrate via
+  `OTEL_SEMCONV_STABILITY_OPT_IN` rather than breaking dashboards in one jump.
+- `service.name`, `service.version`, `deployment.environment.name` set as
   resource attributes always — they are the join keys to metrics and logs.
 
 ## 2. Span design: what deserves a span
@@ -63,13 +65,14 @@ are visible as siblings).
 large loops (span the batch, count the items), logging itself.
 
 **Attributes vs events vs status:**
-- **Attributes** = dimensions you'd filter/group by: route, db.system,
+- **Attributes** = dimensions you'd filter/group by: route, db.system.name,
   tenant_id, cache.hit, retry.count. Set on the span, bounded-ish values,
   no payloads, no PII (same redaction policy as logs — rules/01 §4).
 - **Events** = point-in-time happenings inside the span: `retry_scheduled`,
   `lock_acquired`, and especially **exception events**
-  (`span.record_exception(e)`). Note OTel deprecated the Span Event API
-  (`AddEvent`/`RecordException`) in 2026: the end-state is events and
+  (`span.record_exception(e)`). Note OTel plans to deprecate the Span Event
+  API (`AddEvent`/`RecordException`; OTEP 4430 — not yet marked deprecated
+  in the trace API spec as of 2026-09-26): the end-state is events and
   exceptions emitted as span-correlated **logs** via the Logs API.
   `record_exception` stays the acceptable default during the transition;
   migrate instrumentation via `OTEL_SEMCONV_EXCEPTION_SIGNAL_OPT_IN=logs`
@@ -161,7 +164,7 @@ traces you need (errors, tail latency). Decide deliberately.
 
 | Strategy | How | Pros | Cons |
 |----------|-----|------|------|
-| Head (TraceIdRatioBased + ParentBased) | Decide at root, propagate decision | Cheap, simple, consistent per-trace | Blind: drops 99% of errors/slow traces at 1% rate |
+| Head (ratio sampler + ParentBased; `ProbabilitySampler` replaces the deprecated `TraceIdRatioBased`) | Decide at root, propagate decision | Cheap, simple, consistent per-trace | Blind: drops 99% of errors/slow traces at 1% rate |
 | Tail (Collector `tailsamplingprocessor`) | Buffer whole trace, decide on completion | Keep 100% of errors + slow + rare routes, sample boring successes | Collector memory/state; needs all spans of a trace at one collector instance (load-balancing exporter by trace_id) |
 
 Recommended composite policy (tail, in the Collector):
@@ -201,8 +204,10 @@ Tracing must never take down the service it observes.
 - **Span/attribute limits**: configure SDK limits (max attributes, events,
   links per span; max attribute length). A bug that attaches a 2MB response
   body or 10k events to a span should be truncated by config, not crash the
-  exporter. Default limits exist — verify they're sane, don't raise them
-  casually.
+  exporter. The spec's count limits default to 128, but attribute **value
+  length defaults to no limit** — set `OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT`
+  (or `OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT`) explicitly; don't raise the
+  count limits casually.
 - **BatchSpanProcessor always** in production (never SimpleSpanProcessor —
   it exports synchronously on the request path). Size queue and export
   batches for peak; monitor the SDK's dropped-span counter: silent drops
@@ -214,7 +219,18 @@ Tracing must never take down the service it observes.
   pair for tail sampling; the gateway tier needs trace-ID-routed load
   balancing (`loadbalancingexporter`) so tail decisions see whole traces.
   The Collector itself exports its own metrics — alert on
-  `otelcol_processor_dropped_spans` and exporter queue saturation.
+  `otelcol_exporter_send_failed_spans`, `otelcol_exporter_enqueue_failed_spans`,
+  `otelcol_exporter_queue_size` nearing `otelcol_exporter_queue_capacity`,
+  `otelcol_processor_memory_limiter_refused_spans`, and a processor's
+  `otelcol_processor_incoming_items` vs `_outgoing_items` gap
+  (`otelcol_processor_dropped_spans` was deprecated in Collector v0.110.0).
+- **Collector hardening**: `memory_limiter` is the **first** processor in
+  every pipeline (with `GOMEMLIMIT` at ~80% of the hard limit) so overload
+  backpressures receivers instead of OOM-killing the gateway; receivers
+  bind a specific interface — the default host is `localhost` since
+  v0.104.0 (gate stable in v0.110.0), so a `0.0.0.0` in Kubernetes is an explicit choice that needs
+  receiver auth/TLS (rules/01 §8) and a NetworkPolicy; `zpages`, `pprof` and
+  `health_check` extensions stay on localhost or an internal-only port.
 - Redaction in the pipeline: a Collector `attributes`/`redaction` processor
   deny-listing token/PII-shaped attributes is the backstop for instrument-
   ation mistakes — same philosophy as logger-level redaction (rules/01 §4).
@@ -248,7 +264,7 @@ services — and into every outbound header.
 - [ ] Every outbound network call (HTTP, DB, cache, queue) produces a span;
       retries visible; span names are low-cardinality templates.
 - [ ] Span status ERROR only on real failures; exceptions recorded as span
-      events or span-correlated logs (Span Event API deprecated 2026); no
+      events or span-correlated logs (Span Event API deprecation planned); no
       payloads/PII in attributes.
 - [ ] Trace continuity verified end-to-end across HTTP → queue → worker →
       cron paths (one trace or linked traces per user action).
@@ -261,3 +277,7 @@ services — and into every outbound header.
       boundaries, not leaking to third-party APIs.
 - [ ] Collector pipeline monitored (dropped spans, queue saturation, export
       failures); tail-sampling memory sized for peak.
+- [ ] Collector hardened (§5): `memory_limiter` first in every
+      pipeline; no receiver or `zpages`/`pprof`/`health_check` endpoint on
+      `0.0.0.0` without auth and a network restriction. Probe, then read each
+      hit's context: `grep -rnE 'endpoint:[[:space:]]*"?(0\.0\.0\.0|\[::\])?:[0-9]' --include='*.y*ml' .`

@@ -6913,3 +6913,97 @@ resolve symlinks (`sota-detection-engineering` rules/03 — needs a cluster test
 citation); the ISO/IEC 28033 part stages (search results agree with the text; the stage pages
 were not opened); why podman+crun delivered EPERM instead of the requested ENOSYS for a
 one-rule allow-default profile (the rule tells readers to check their runtime).
+
+## 2026-09-26 — full-library sweep, batch 2 of 4: the platform skills re-verified
+
+**Intake shape: ROADMAP 5's sweep, batch 2** (same method and decisions as batch 1 above).
+Scope: `sota-devsecops`, `sota-kubernetes`, `sota-cloud-infrastructure`,
+`sota-observability`, `sota-architecture`, `sota-async-concurrency` and `sota-performance`,
+plus the cross-skill lines their findings reached in `sota-javascript-typescript` and
+`sota-frontend-design`.
+- Research: **104 findings** (10 High, 47 Medium, 47 Low), plus one unnumbered depth gap
+  (cell-based architecture).
+- Refutation: all 58 High/Medium items went to refuters; **none was refuted**. Several
+  proposed fixes were themselves wrong and were corrected before any edit (below).
+- Fixes: one agent per skill folder; the runnable examples were run, not read (below).
+- Review: a hostile whole-diff reader found **11 defects every invariant passed**, two High;
+  all are fixed here.
+
+| High | what was wrong |
+|---|---|
+| devsecops rules/05 | a `.gitleaks.toml` with only `[allowlist]` loads **zero** rules — gitleaks 8.30.1 reported "no leaks found", exit 0, over a planted AWS key |
+| devsecops rules/05 | `terraform show -json … \| checkov -f -` reads no stdin and exits 0 |
+| devsecops rules/02 | GitHub artifact attestations were called SLSA Build L3; GitHub's docs say L2 by default, L3 only behind an isolating reusable workflow |
+| devsecops rules/02 (lowered to Medium) | slsa-github-generator is unmaintained |
+| kubernetes SKILL.md | a non-negotiable told readers to log Secrets at RequestResponse — writing every Secret value into the audit log, against the skill's own rules/07 |
+| kubernetes rules/03 | every Kyverno example used `ClusterPolicy`, deprecated since 1.17; Kyverno 1.20 hard-errors on creating one |
+| kubernetes rules/02 | the `bind` probe caught 1 of 4 YAML spellings |
+| kubernetes rules/02 | the escalation list lacked `nodes/proxy` GET (exec, bypassing audit and admission), PV create, CSR approval and namespace relabelling — new §2.7 |
+| observability rules/01 | the pino redaction GOOD example leaked `password`, `req.body.password` and `Authorization` when run |
+| observability rules/06 (lowered to Medium) | the CRITICAL-first debug-surface sweep aborts under zsh on an unmatched `ingress*` |
+
+**Fixes that had to be run to be right:**
+- **pino.** Explicit paths still leaked 3 of 5 lines; a formatter-level scrub still leaked
+  through `child()` bindings and axios's raw `err.request._header` string. The shipped GOOD
+  example scrubs at any depth and case with an Error allowlist; logged 9 shapes, 0 leaks. The
+  review then found `hash` unredacted and `Date` printing `{}` — both fixed and re-run. The BAD
+  lines were in winston argument order, which pino silently drops, so they now use pino order.
+- **Kyverno.** The rewritten `ValidatingPolicy`/`ImageValidatingPolicy` examples passed `kyverno
+  apply` on the 1.19.1 CLI and a strict CRD-schema check (with a misspelled-field negative
+  control), and the IVP ran against Kyverno's real keyless-signed test image — which also
+  proved a `*` in `subject` is literal. The practical floor is **>= 1.19.1**: five advisories
+  published 2026-09-10 are fixed only there (the refuter said seven; the advisory API lists five).
+- **Go `sync.Pool`** of `[]byte`: 1 alloc/op measured, 0 with `*[]byte` (staticcheck SA6002).
+- **tokio**: `futures::executor::block_on` never panics — it deadlocks; the quoted panic
+  message did not exist in tokio's source.
+
+**Adopted with a correction — a refuter or fix agent overturned the research or its fix:**
+- **Node 20 actions are not broken.** GitHub's runner upgrades a `node20` action to Node 24
+  (runner `HandlerFactory.cs`), so the "pinned node20 actions fail" finding was downgraded and
+  no rule claims it.
+- **A wildcard IVP `subject` fails closed, not open.** Kyverno passes `subject` to cosign's
+  strict `==` match, so `*` matches nothing and, under `failurePolicy: Fail`, denies every image.
+- **Five proposed commands were wrong:** a `find -exec … {} +` that GNU find rejects (the yq
+  expression holds a second `{}`); a bidi gate keyed on exit status, which fails every clean PR
+  because rg exits 1 on no match; a DNS-takeover probe that flagged every AWS service principal;
+  an S3 probe that still missed 5 of 11 wildcard forms; and a Kyverno audit hunt that flagged the
+  enforcing `[Deny, Audit]`.
+- **`kubectl auth can-i --list`** answers "what can X do", not "who can do X", so it does not
+  replace kubectl-who-can; krane is named as the maintained reverse index.
+- **A Lambda Managed Instances 32 GB figure** was not on any AWS page fetched and was not written.
+- **The confused-deputy rule** (cloud rules/02, marked needs-verification) was wrong: AWS gives
+  `sts:ExternalId` and the `aws:Source*` keys, not the org-ID keys.
+
+**Four cross-skill contradictions resolved**, each toward the skill that was already right:
+gitleaks config (devsecops → secrets-management), Bundler `--frozen` (devsecops → ruby), OCSP
+stapling (performance → network-security), Kafka consumer ceiling (architecture →
+data-engineering). The review added two more, both fixed: devsecops rules/02 still taught legacy
+`verifyImages` after rules/07 moved on, and javascript-typescript rules/04 showed the pino
+`*.password` config observability now shows failing.
+
+**The whole-diff review's other defects:** a GitHub Actions GOOD example that did not parse as
+YAML (a flow mapping around `${{ }}`); `kyverno migrate` described as converting policies (it
+only rewrites stored objects — its own doc string); Kyverno "GA since 1.17" vs "stable since
+1.18" in two skills (both sourced; now stated together); the Collector localhost default dated
+v0.110.0 (it is v0.104.0; the gate went stable in v0.110.0); a pointer to the wrong section; a
+GHSA date; and an unguarded `scheduler.yield()` in frontend-design.
+
+- **DEFERRED — lead-list probes for `sota-architecture` AUDIT step 3 (timeouts, dual-writes, `latest` tags, DB-hitting liveness probes, shared DB credentials); revisit trigger: the next rules/07 edit, or a field report of a missed dual-write or timeout finding.**
+- **DEFERRED — a grep probe for cell-by-cell deploys; revisit trigger: a pipeline-level wave-deploy probe lands in `sota-devsecops`.**
+- **DEFERRED — GCP secure-by-default org constraints (`iam.managed.disableServiceAccountKeyCreation`, `storage.uniformBucketLevelAccess`) in `sota-cloud-infrastructure` rules/01; revisit trigger: the next guardrail-list edit or GCP org-policy sweep.**
+- **DEFERRED — AWS Backup logically air-gapped vault in `sota-cloud-infrastructure` rules/05; revisit trigger: the next backup/DR edit.**
+- **DEFERRED — SDK-specific presign-expiry patterns (Go `WithPresignExpires`, Java `Duration`, computed seconds); revisit trigger: the presign probe gets a labelled corpus. The literal-only limit is stated in the rule meanwhile.**
+- **DEFERRED — Speculation Rules / prerender in `sota-performance` rules/06; revisit trigger: MDN BCD shows Firefox or Safari shipping `speculationrules`.**
+- **DEFERRED — C# `MethodImplOptions.Synchronized` and Kotlin `@Synchronized` in `sota-async-concurrency` rules/02's lock probe; revisit trigger: the next edit of that probe, or a missed .NET/Kotlin finding.**
+- **DEFERRED — a `sota-performance` pointer to Go's Green Tea GC and container-aware GOMAXPROCS; revisit trigger: `sota-golang` rules/06 covers them.**
+- **DEFERRED — native package-manager cooldowns (pnpm 11, Bundler 4 `--cooldown`) in `sota-devsecops` rules/03; revisit trigger: the next §3.7 edit, or Renovate/Dependabot docs pointing at them.**
+
+**Still unverified, left as written:** Elastic Universal Profiling status, Spring Actuator
+exposure defaults, pprof on `DefaultServeMux` and `PIPE_BUF` atomicity (observability); whether
+the Actions runner accepts a tag-object SHA, cosign v3's attestation payload shape, Kyverno
+`ctlog` under Rekor v2, and gitleaks git-mode config discovery (devsecops); `opengrep ci`'s
+exit status on 1.23.0, which the fix agent could not reproduce, so the rule says only that it
+has differed between releases; and the piped flamegraph command (from the FlameGraph README;
+`perf` needs Linux). The fix agents sourced Talos VolumeConfig, k3s secretbox, the Next.js 16
+build-column removal, pnpm 11 `strictDepBuilds`, Argo CD 3.5 repo-server mTLS, ADR-43
+`Nats-TTL: never` and the extractPayload shape; the reviewer did not independently re-check them.

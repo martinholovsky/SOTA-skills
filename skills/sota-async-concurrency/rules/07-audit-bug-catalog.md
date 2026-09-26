@@ -89,8 +89,8 @@ await stats_queue.put(order.amount)
 ## 4. Lock held across await — HIGH (deadlock-capable: CRITICAL)
 
 **Signature:** `async with lock:` body containing `await` of I/O; Rust
-`std::sync::Mutex`/`parking_lot` guard alive across `.await` (tokio's clippy
-lint `await_holding_lock`); JS "lock" promises chained around fetches; any
+`std::sync::Mutex`/`parking_lot` guard alive across `.await` (Clippy lint
+`await_holding_lock`); JS "lock" promises chained around fetches; any
 `mutex.lock()` ... `await` ... `unlock()` sequence.
 
 **Failure mode:** (a) throughput collapse — every contender parks for the
@@ -121,7 +121,8 @@ let val = fetch_remote(key).await;
 Full treatment in rule 04. Grep list: `time.sleep`, `requests.`, `open(`,
 `subprocess.run`, sync DB drivers, `readFileSync`, `execSync`, `hashSync`,
 `pbkdf2Sync`, `std::thread::sleep`, `reqwest::blocking`, `block_on(` inside
-async (instant deadlock on single-threaded runtimes; panics on tokio),
+async (`futures::executor::block_on` deadlocks a current-thread runtime and
+parks a worker otherwise; tokio's `Handle::block_on` panics),
 `.result()`/`.get()` on a future from loop thread, `loop.run_until_complete`
 inside a running loop. Severity HIGH; CRITICAL when the blocked call awaits
 something scheduled on the same loop (self-deadlock: e.g., sync-waiting a

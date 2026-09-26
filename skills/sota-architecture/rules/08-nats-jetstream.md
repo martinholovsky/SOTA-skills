@@ -10,17 +10,24 @@ and backpressure mechanics live in **sota-async-concurrency**; TLS/mesh/leafnode
 transport security in **sota-network-security**; NKEY/JWT/account auth in
 **sota-identity-access** and **sota-secrets-management**.
 
-Version: written against **NATS Server 2.11/2.12**. Run the latest stable
-release (verify at https://github.com/nats-io/nats-server/releases at time of
-use). KV and Object stores are GA and JetStream-backed. The `jetstream`
+Provenance: first written against NATS Server 2.11/2.12; upgrade notes
+re-checked against the 2.14/2.15 release notes on 2026-09-26. Run the latest
+stable release (verify at https://github.com/nats-io/nats-server/releases at
+time of use). KV and Object stores are GA and JetStream-backed. The `jetstream`
 Go package is the current API; the older `nc.JetStream()` JetStreamContext is
 legacy. Pin and track your server line — per-message TTL, KV limit markers, and
 the 2.12+ additions (atomic batch publish, distributed counters, message
 scheduling — recurring/cron schedules from 2.14) are gated on server API level.
-Upgrade note: the v2 ack-subject format becomes the default in 2.15 — accounts
-with granular `$JS.ACK.<stream>.>`/`$JS.FC.<stream>.>` permissions or
-imports/exports must update their ACLs before upgrading (a catch-all
-`$JS.ACK.>` needs no change).
+Upgrade notes: the v2 (domain-aware) ack/flow-control subject format is opt-in
+from 2.14 (`js_ack_fc_v2` feature flag) and becomes the default in 2.16 —
+accounts with granular `$JS.ACK.<stream>.>`/`$JS.FC.<stream>.>` permissions or
+imports/exports must update their ACLs before upgrading to 2.16 (a catch-all
+`$JS.ACK.>` needs no change). From 2.15, streams default to a **1000-consumer
+limit** unless `max_consumers` is set in the stream config or account limits
+(server-wide override: `default_max_consumers` in the JetStream limits, `-1`
+disables it); existing consumers are kept, but creating new ones fails past the
+limit — a design that creates per-tenant or per-session consumers must set it
+explicitly before upgrading.
 
 ## Core NATS vs JetStream: choose per subject, not per cluster
 
@@ -241,8 +248,9 @@ defer cc.Stop()
   fast reads, watch-driven propagation, CAS for safe updates.
 - KV TTL: bucket-level TTL is long-standing; **per-key TTL** is newer (NATS 2.11+,
   via per-message TTL / `Nats-TTL` and KV limit markers) — verify your server
-  supports it before relying on it, and note the stream's `MaxAge` still takes
-  precedence over a per-key TTL. Don't assume per-key expiry on an older server.
+  supports it before relying on it, and note the stream's `MaxAge` still removes
+  a message whose TTL is longer than `MaxAge` — only `Nats-TTL: never` is exempt
+  from `MaxAge` (ADR-43). Don't assume per-key expiry on an older server.
 - **Object store** holds large payloads. Apply rules/03's **claim-check**: keep
   big blobs and secrets out of messages; publish a reference (object id/bucket),
   let the consumer fetch from the object store. The bus is a shared failure
@@ -347,6 +355,9 @@ defer cc.Stop()
       (`nats object ls`; check message sizes / `MaxMsgSize`.)
 - [ ] Multi-tenant isolation by **account** (with per-account JetStream quotas),
       not subject-prefix convention in a shared account? (server/account config.)
+- [ ] Designs that create many consumers per stream (per tenant/session) set
+      `max_consumers` explicitly, so the 2.15+ default of 1000 does not start
+      rejecting new consumers? (`nats stream info` → limits; stream config.)
 - [ ] Edge↔hub topologies use leafnodes + **JetStream domains**; TLS and
       NKEY/JWT auth in place (defer to network-security / identity-access)?
 - [ ] Monitoring on `num_pending`/`num_ack_pending`/`redelivered` with lag

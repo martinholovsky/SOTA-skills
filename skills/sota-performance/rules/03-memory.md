@@ -24,17 +24,20 @@ func handle(w io.Writer, r *Req) {
 }
 
 // GOOD — reuse via sync.Pool (Go), ThreadLocal/ringbuffer (JVM), or
-// preallocated per-worker buffers
-var bufPool = sync.Pool{New: func() any { return make([]byte, 64*1024) }}
+// preallocated per-worker buffers. Pool a *pointer*: Put([]byte) boxes the
+// slice header and allocates every call (staticcheck SA6002); measured
+// 2026-09-26: 1 vs 0 allocs/op. Pool criteria in sota-golang rules/06.
+var bufPool = sync.Pool{New: func() any { b := make([]byte, 64*1024); return &b }}
 func handle(w io.Writer, r *Req) {
-    buf := bufPool.Get().([]byte)
-    defer bufPool.Put(buf)
-    process(buf, r, w)
+    bp := bufPool.Get().(*[]byte)
+    defer bufPool.Put(bp)
+    process(*bp, r, w)
 }
 ```
 
 - **Pre-size growable containers** when the size is known or estimable:
-  repeated regrowth of a vector copies O(n log n) bytes total and fragments.
+  geometric regrowth is O(n) amortised, but every doubling still copies the
+  whole buffer, spikes peak memory and fragments.
 - **Avoid hidden allocators**: boxing (Java `Integer` in hot loops, Go
   `interface{}` conversions), closure capture creating heap escapes, string
   formatting/concat, iterator/lambda allocation per call in some runtimes,

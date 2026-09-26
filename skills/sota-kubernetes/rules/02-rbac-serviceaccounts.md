@@ -118,6 +118,28 @@ default ServiceAccount bound to `cluster-admin` hands the workload the cluster. 
 `helm template | grep -A20 -iE 'ClusterRole|ClusterRoleBinding'` before install** and read
 the rules (`rules/07` covers chart review). A logging agent does not need cluster-admin.
 
+### 2.7 Grants that look harmless: `nodes/proxy`, PersistentVolumes, CSR approval, namespace labels
+Kubernetes' own RBAC good-practices page lists these beside `bind`/`escalate`/`impersonate`
+([RBAC good practices](https://kubernetes.io/docs/concepts/security/rbac-good-practices/),
+checked 2026-09-26). Each reads like a narrow or read-only grant and is not:
+- **`get` on `nodes/proxy`** is not read-only. It reaches the kubelet API, where exec/attach
+  run over a WebSocket `GET`, so it means command execution in every pod on the node, and
+  that path **bypasses audit logging and admission control**. Grant it to nothing that is
+  not the control plane; a monitoring agent that needs `/metrics`, `/stats`, `/pods` or
+  `/healthz` gets those subresources instead of `nodes/proxy`. The kubelet authorizes
+  `/pods`, `/runningPods`, `/configz` and `/healthz` against their own `nodes/*` subresources
+  when `KubeletFineGrainedAuthz` is on (stable, on by default, since 1.36; beta and on since
+  1.33 — [kubelet authn/authz](https://kubernetes.io/docs/reference/access-authn-authz/kubelet-authn-authz/)).
+- **`create` on `persistentvolumes`** includes `hostPath` PVs, i.e. the node's filesystem.
+  Only cluster operators and the provisioner create PVs; everyone else uses PVCs.
+- **`create` on `certificatesigningrequests` plus `update` on
+  `certificatesigningrequests/approval`** (signer `kubernetes.io/kube-apiserver-client`)
+  mints client certificates under any name, including a system component's.
+- **`patch`/`update` on `namespaces`** (even via a namespaced RoleBinding) edits the
+  namespace's own labels: loosen its Pod Security Admission level, satisfy a NetworkPolicy
+  namespace selector, or set `resource.kubernetes.io/admin-access: "true"` so anyone who can
+  create ResourceClaims there gets admin access to devices allocated to claims in any namespace.
+
 ## 3. ServiceAccount hygiene & the token model
 
 - **`automountServiceAccountToken: false` by default** — on the ServiceAccount and/or pod
@@ -177,20 +199,23 @@ closure of what subject X can do, and can it escalate?" Tools:
   kubectl auth can-i list secrets -A --as=...
   ```
 - **`kubectl auth whoami`** — confirm your own identity/groups.
-- **rbac-tool** (insights/aquasecurity), **krane**, **kubectl-who-can** (aquasecurity) —
-  build the reverse index: *who* can `escalate`, `bind`, `impersonate`, read secrets,
-  create pods, mint tokens. Run who-can on every escalation primitive:
-  ```bash
-  kubectl who-can create pods -A
-  kubectl who-can '*' '*'
-  kubectl who-can impersonate users
-  ```
+- **`kubectl auth can-i --list --as=<subject> -n <ns>`** — the forward view: everything
+  one subject may do (maintained, built in; it answers per subject, not "who can X").
+- **Reverse index — *who* can `escalate`, `bind`, `impersonate`, read secrets, create
+  pods, mint tokens, and each §2.7 grant.** **krane** (appvia) is maintained (checked
+  2026-09-26): it ships RBAC risk rules, a `--ci` mode that exits non-zero on a match, and
+  indexes the whole RBAC graph for ad-hoc Cypher queries; its dashboard has no
+  authentication, so reach it by port-forward only. EOL note for auditors: **kubectl-who-can**
+  (aquasecurity; last commit 2022-02-15) and **rbac-tool** (alcideio; last commit 2024-10-29)
+  are unmaintained — their output can still be read, but do not build a new gate on them.
 - **Hunt patterns** across the RBAC manifests in git / `kubectl get clusterroles -o yaml`:
   ```bash
   # wildcards in cluster roles
-  kubectl get clusterroles -o json | jq -r '.items[]|select(.rules[]?|(.verbs[]?=="*") or (.resources[]?=="*"))|.metadata.name'
-  # escalation verbs anywhere
-  grep -rE 'escalate|impersonate|"bind"' rbac/
+  kubectl get clusterroles -o json | jq -r '.items[] | select(any(.rules[]?; any((.verbs // []) + (.resources // []) + (.apiGroups // []) | .[]; . == "*"))) | .metadata.name'
+  # escalation verbs anywhere (-w: whole word, so every quoting and list style of bind, not rolebindings)
+  grep -rnwE 'escalate|impersonate|bind' rbac/
+  # §2.7 grants: nodes/proxy (any verb), PV create, CSR approval, namespace patch/update
+  kubectl get clusterroles,roles -A -o json | jq -r '.items[] | select(any(.rules[]?; (.resources // []) as $r | (.verbs // []) as $v | ($r | index(["nodes/proxy"])) or (($v | index(["create"]) or index(["*"])) and ($r | index(["persistentvolumes"]))) or (($v | index(["update"]) or index(["patch"]) or index(["*"])) and ($r | index(["certificatesigningrequests/approval"]) or index(["namespaces"]))))) | "\(.kind) \(.metadata.namespace // "-") \(.metadata.name)"'
   # cluster-admin bound to a ServiceAccount or broad group
   kubectl get clusterrolebindings -o json | jq -r '.items[]|select(.roleRef.name=="cluster-admin")|{name:.metadata.name,subjects:.subjects}'
   ```
@@ -200,13 +225,14 @@ closure of what subject X can do, and can it escalate?" Tools:
 ## Audit checklist
 
 - [ ] No wildcard `*` verbs/resources/apiGroups in any Role/ClusterRole bound to a workload, CI, or tenant? (`kubectl get clusterroles,roles -A -o json | jq` for `"*"`)
-- [ ] `escalate`/`bind`/`impersonate` granted only to a named, audited admin path — never automation? (`kubectl who-can escalate clusterroles`, etc.)
+- [ ] `escalate`/`bind`/`impersonate` granted only to a named, audited admin path — never automation? (reverse index via krane; `grep -rnwE 'escalate|impersonate|bind' rbac/`)
 - [ ] No `cluster-admin` (or any broad role) bound to a ServiceAccount, `system:authenticated`, or `system:unauthenticated`? (`kubectl get clusterrolebindings -o json | jq '...roleRef.name=="cluster-admin"'`)
 - [ ] Aggregated ClusterRoles reviewed — nothing unexpected aggregates into `admin`/`edit`/`view`?
 - [ ] Broad `secrets` read, `pods` create, `serviceaccounts/token` create, and policy-engine CRD writes (`rules/03`) scoped tightly (treated as escalation primitives)?
+- [ ] §2.7 grants held by nothing outside the control plane and named operators: `nodes/proxy` (any verb — **Critical** on a workload or tenant subject), `persistentvolumes` create, CSR `approval` update, `namespaces` patch/update? (the §4 `jq` hunt; `kubectl auth can-i get nodes --subresource=proxy --as=<subject>`)
 - [ ] `automountServiceAccountToken: false` is the default; only API-calling pods opt in? (`grep -rL automountServiceAccountToken` deployments; check SA spec)
 - [ ] No manually-created long-lived `service-account-token` Secrets; external consumers use short-lived audience-scoped TokenRequest tokens?
 - [ ] Bootstrap tokens short-lived and deleted after the join? **High** for a token with no expiry, **Medium** for one older than the join window. (`kubectl -n kube-system get secrets --field-selector type=bootstrap.kubernetes.io/token -o json | jq -r '.items[] | [.metadata.name, .metadata.creationTimestamp, ((.data.expiration // "") | @base64d | if . == "" then "NO-EXPIRY" else . end)] | @tsv'`; in join scripts and kubeadm configs `grep -rnE -- '--ttl[= ]+(0[hms]?)+([^0-9a-z.]|$)|ttl:[[:space:]]*"?(0[hms]?)+"?[[:space:]]*$' <scripts> <kubeadm-configs>` — each hit is a never-expiring token)
 - [ ] One SA per workload, `default` SA unused/unbound, no SA shared across apps?
-- [ ] who-can run on every escalation primitive and the transitive closure for high-value SAs reviewed?
+- [ ] Reverse index (krane, or a maintained equivalent) run on every escalation primitive and the transitive closure for high-value SAs reviewed? (`kubectl auth can-i --list --as=<sa>` per high-value subject)
 - [ ] Bindings reconciled against the identity source — no dead users/SAs?

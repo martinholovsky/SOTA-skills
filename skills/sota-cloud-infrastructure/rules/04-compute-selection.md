@@ -13,9 +13,10 @@ staff.
    that's pure CRUD → consider managed API + database integrations before writing
    glue compute.
 2. **Serverless functions** (Lambda / Cloud Functions / Azure Functions) when:
-   event-driven or spiky traffic, short tasks (AWS Lambda caps at 15 min/invocation,
-   10 GB memory — verify other providers' current limits), team wants zero
-   infrastructure ops, per-request pricing beats idle provisioning. Wrong when:
+   event-driven or spiky traffic, short tasks (AWS Lambda caps at 15 min/invocation
+   and 10,240 MB memory; Lambda Managed Instances allow up to 90 min for async and
+   most event-source invocations — verify other providers' current limits), team
+   wants zero infrastructure ops, per-request pricing beats idle provisioning. Wrong when:
    long-lived connections (websockets at scale), sustained high constant load
    (always-on container is cheaper), heavy local state, > a few GB memory/GPU needs,
    or latency budgets that can't absorb cold starts. Two AWS options shift these
@@ -209,13 +210,13 @@ spec:
       unbounded-trigger functions; provisioned concurrency justified by latency data.
 - [ ] **High** — functions handling sensitive data are VPC-attached with restricted
       egress (§2). Probe (lists `.tf` files declaring a Lambda with no `vpc_config`):
-      `grep -rl 'resource "aws_lambda_function"' --include='*.tf' . | xargs -r grep -L 'vpc_config'`
+      `grep -rl --null 'resource "aws_lambda_function"' --include='*.tf' . | xargs -0 -r grep -L 'vpc_config'`
       — file-level, so a hit-free file can still hold an un-attached second
       function; confirm per resource.
 - [ ] **High** — no per-request or user-scoped data in function globals, and no
       sensitive file left in `/tmp` across invocations (§2). Probe (handler files
       that write under `/tmp` and never delete anything):
-      `grep -rl -E "[\"']/tmp/" --include='*.py' --include='*.js' --include='*.ts' . | xargs grep -L -E 'os\.remove|os\.unlink|shutil\.rmtree|TemporaryDirectory|unlinkSync|rmSync|fs\.rm'`
+      `grep -rl --null -E "[\"']/tmp/" --include='*.py' --include='*.js' --include='*.ts' . | xargs -0 -r grep -L -E 'os\.remove|os\.unlink|shutil\.rmtree|TemporaryDirectory|unlinkSync|rmSync|fs\.rm'`
       — then read module-level assignments in each handler file for request data.
 - [ ] Multi-step workflows in a workflow engine (or durable functions), not
       sleep/retry loops in handler code.

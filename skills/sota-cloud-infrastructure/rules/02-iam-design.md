@@ -72,10 +72,14 @@ short-lived and auto-rotated by the provider:
   `iam.serviceAccounts.actAs` / `getAccessToken`, Azure role-assignment write. Scope
   `PassRole` to specific role ARNs plus `iam:PassedToService`.
 - Use **conditions as containment**: `aws:SourceVpce`/`SourceIp` for data-plane
-  access, `aws:ResourceOrgID`/`PrincipalOrgID` to stop confused-deputy and
-  cross-org exfiltration, `sts:ExternalId` for third-party assume-role. On AWS,
-  enforce the org-perimeter conditions once, centrally, with an RCP (rules/01 §3)
-  instead of hand-copying them into every resource policy.
+  access; `aws:PrincipalOrgID`/`ResourceOrgID` for the org data perimeter
+  (cross-org exfiltration); against the **confused deputy**, `sts:ExternalId` in a
+  third-party assume-role trust policy (cross-account) and `aws:SourceArn` /
+  `SourceAccount` / `SourceOrgID` / `SourceOrgPaths` wherever a resource policy
+  grants an AWS *service principal* (cross-service; AWS IAM: The confused deputy
+  problem). On AWS, enforce the org-perimeter and `SourceOrgID` conditions once,
+  centrally, with an RCP (rules/01 §3) instead of hand-copying them into every
+  resource policy.
 - Resource policies (bucket/key/queue policies) are a second IAM system — audit them
   with the same rigor. A perfect identity policy is irrelevant if the bucket policy
   grants `Principal: "*"`.
@@ -109,9 +113,15 @@ short-lived and auto-rotated by the provider:
 - When teams self-manage IAM in their accounts, cap them: **permission boundaries**
   (AWS) on every role they create — boundary forbids IAM/org/billing/guardrail
   mutation and touching other teams' resources; deny role creation *without* the
-  boundary attached. GCP/Azure: restrict grantable roles via
-  `iam.allowedPolicyMemberDomains` + custom-role discipline / Azure
-  `roleDefinitionIds` constraints on owners.
+  boundary attached. GCP: restrict *which roles* a delegated IAM admin can grant with
+  an IAM Condition on that grant,
+  `api.getAttribute('iam.googleapis.com/modifiedGrantsByRole', []).hasOnly([...])`,
+  never listing a role that carries `setIamPolicy` or a custom role the admin can edit;
+  `iam.allowedPolicyMemberDomains` limits *who* can be granted (principals outside
+  allowed domains), not which roles. Azure: constrained delegation — assign Role Based
+  Access Control Administrator with an ABAC condition on
+  `@Request[Microsoft.Authorization/roleAssignments:RoleDefinitionId]` (and
+  `PrincipalType`) instead of Owner / User Access Administrator.
 - Separate **control-plane admin** from **data access** in role design: the person
   who can change KMS key policy should not be the role that decrypts production data
   (see rules/05 §encryption).

@@ -287,7 +287,7 @@ addition into your outage.
 
 **Rule:** Never use wall-clock timestamps for ordering or uniqueness across
 machines. Use per-aggregate version numbers for ordering, UUIDv7/ULID/KSUID
-for IDs (sortable, collision-free), and the database for authoritative time
+for IDs (sortable, collision-resistant), and the database for authoritative time
 where one exists.
 
 **Rule:** Propagate correlation/trace context (W3C traceparent) through every
@@ -311,7 +311,9 @@ offers should converge on one such job pattern, not five bespoke ones.
 
 **Rule:** Scale consumers via the competing-consumers pattern, but know your
 broker's unit of parallelism (Kafka: partitions; SQS: messages; AMQP: prefetch).
-Max useful consumers = partition count in partitioned brokers; provision
+Max useful consumers = partition count for a classic Kafka consumer group
+(Kafka 4.2+ share groups, KIP-932, lift that ceiling for true queue workloads
+at the cost of per-key ordering — sota-data-engineering rules/03); provision
 partitions for target parallelism *at topic creation* — repartitioning later
 breaks key→partition ordering during the transition.
 
@@ -377,7 +379,7 @@ weekly:
 - Are events past-tense facts with producer ownership, or commands in disguise?
 - Does every queue have bounded size, retry-with-backoff, DLQ, DLQ alerting, and a tested redrive runbook?
 - Are poison messages separated from transient failures, or retried identically?
-- [ ] Multi-tenant async work (§7): is every job type classified global / tenant-scoped / cross-tenant, are dedup and idempotency keys, retry state, per-tenant ordering and DLQ access scoped by tenant, and do global jobs run as an explicit system identity? HIGH (cross-tenant dedup drops or DLQ exposure). Probe for dedup/idempotency keys built without a tenant: `grep -rniE '(idempot|dedup)[a-z_]*_?key[[:space:]]*[:=]' . | grep -vi tenant`; for a fabricated tenant: `grep -rnE "tenant(_id|Id)?[\"']?[[:space:]]*[:=][[:space:]]*[\"'](system|global|default|all|none|0)[\"']" .`
+- [ ] Multi-tenant async work (§7): is every job type classified global / tenant-scoped / cross-tenant, are dedup and idempotency keys, retry state, per-tenant ordering and DLQ access scoped by tenant, and do global jobs run as an explicit system identity? HIGH (cross-tenant dedup drops or DLQ exposure). Probe for dedup/idempotency keys built without a tenant: `grep -rniE '(idempot|dedup)[a-z_]*_?key[[:space:]]*[:=]' . | grep -vi tenant`; for a fabricated tenant: `grep -rniE "tenant(_?id)?[\"']?[[:space:]]*(:=|[:=])[[:space:]]*[\"'](system|global|default|all|none|0)[\"']" .`
 - AMQP consumers: manual ack after durable commit (no auto-ack)? Requeue limited to transient failures, with poison messages rejected (`requeue=false`) to a DLX?
 - Is prefetch (`basic.qos`) set explicitly on every AMQP consumer, or is any consumer running with unlimited prefetch?
 - Durable RabbitMQ queues: quorum (not classic), delivery-limit dead-lettering configured (not silently dropping)? Messages carry references rather than blobs/secrets? Broker locked down (per-service users, vhosts, least privilege, TLS)?

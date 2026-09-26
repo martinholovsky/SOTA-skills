@@ -266,7 +266,7 @@ fast-path, no media queries, no automatic cleanup. You re-implement the hygiene:
   dedicated motion test suite.
 - **INP discipline**: the 100ms feedback rule (rules/04 §9) means press feedback must not wait on
   JS work — CSS `:active` styles render before your handler runs; keep handlers under ~50ms or
-  yield (`scheduler.yield()` / `setTimeout` chunking) and let the pressed state + spinner carry
+  yield (`scheduler.yield()` — not Baseline, feature-detect — or `setTimeout` chunking) and let the pressed state + spinner carry
   the wait. An entrance animation that delays event binding (JS-mounted listeners after
   choreography) is a sequencing bug.
 - Battery/CPU respect: pause ambient loops on `visibilitychange`, stop rAF loops when idle, and

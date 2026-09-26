@@ -120,7 +120,7 @@ BUILD mode:
    access, plan on PR with read-only creds, apply only a reviewed saved plan via a
    protected environment.
 10. **Production admission requires verified provenance**: signed images (cosign/Kyverno
-    verifyImages or equivalent), non-root, pinned digests — enforce, don't just audit.
+    ImageValidatingPolicy or equivalent), non-root, pinned digests — enforce, don't just audit.
 
 If the user asks for something that violates a non-negotiable, implement the secure
 alternative and explain the delta; only comply after they acknowledge the risk explicitly.

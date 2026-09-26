@@ -190,8 +190,10 @@ Rules:
 - **0-RTT early data**: resumed clients send the request in the first flight —
   saves a full RTT. Replay-unsafe: enable only for idempotent GETs and ensure
   the app/CDN rejects 0-RTT for mutations (`Early-Data` header / 425 status).
-- OCSP stapling on; certificate chain minimal (every extra cert is bytes in
-  the handshake, can overflow initcwnd).
+- OCSP stapling only where the CA still operates OCSP (Let's Encrypt turned
+  its responders off in Aug 2025; see `sota-network-security` rules/06);
+  certificate chain minimal (every extra cert is bytes in the handshake, can
+  overflow initcwnd).
 - Internal mTLS meshes: handshake cost × per-request connections is a classic
   hidden tax — pooling (§3) matters double under mTLS.
 

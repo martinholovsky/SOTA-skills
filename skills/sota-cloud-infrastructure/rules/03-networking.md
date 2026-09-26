@@ -126,9 +126,10 @@ resource "aws_security_group_rule" "db_in" {
   GitHub Pages host `There isn't a GitHub Pages site here`, and an unclaimed
   `*.azurewebsites.net` name returned NXDOMAIN, so a CNAME whose *target* does not
   resolve is a finding too. Maintained scanners carry wider fingerprint sets (e.g.
-  dnsReaper, nuclei's takeover templates); run one from CI or a scheduler, and add
-  the same check to teardown pipelines. (OWASP: Subdomain Takeover Prevention cheat
-  sheet)
+  nuclei's `http/takeovers` templates, last changed 2026-07-20; dnsReaper, whose last
+  release was 2025-10-06 as of 2026-09-26, so check its signatures are current); run
+  one from CI or a scheduler, and add the same check to teardown pipelines. (OWASP:
+  Subdomain Takeover Prevention cheat sheet)
 - **Decommission in DNS-first order.** Releasing the resource while a record still
   names it is the takeover window, so the sequence is: (1) repoint or park the name
   on a host you control (redirect or maintenance page) if it must keep answering;
@@ -219,7 +220,7 @@ resource "aws_security_group_rule" "db_in" {
   Google/Azure network defenses), CDN absorbing edge traffic, autoscaling with hard
   caps so an attack can't scale your bill infinitely.
 - Internet-facing L7 apps: WAF with rate-limiting rules + managed rule sets.
-- Paid tiers (Shield Advanced / Cloud Armor Adaptive / Azure DDoS Protection) when
+- Paid tiers (Shield Advanced / Cloud Armor Enterprise / Azure DDoS Protection) when
   you have revenue-critical public endpoints — they add response teams and cost
   protection. Decide explicitly and record the stance; "we never considered DDoS"
   is the finding.
@@ -255,7 +256,9 @@ resource "aws_security_group_rule" "db_in" {
       records (sample-check CNAME targets exist and are yours).
 - [ ] **Medium** — DNS records coupled to resource lifecycle (§6): a record whose
       target is a hard-coded provider hostname outlives the resource on teardown.
-      Probe: `grep -rn -E 'records *= *\[ *"[^"]*\.(cloudfront\.net|azurewebsites\.net|herokuapp\.com|elasticbeanstalk\.com|amazonaws\.com|azureedge\.net|trafficmanager\.net|github\.io)"' --include='*.tf' .`
+      Probe: `grep -rn -E '(records|record|rrdatas|value|content) *= *\[?[^]]*"[^"]*\.(cloudfront\.net|azurewebsites\.net|herokuapp\.com|elasticbeanstalk\.com|amazonaws\.com|azureedge\.net|trafficmanager\.net|github\.io)\.?"' --include='*.tf' .`
+      (any list position, trailing dot, azurerm `record`, GCP `rrdatas`; a list split
+      across lines is missed, so read multi-line `records` blocks by hand)
       — each hit should reference the resource attribute instead; the decommission
       runbook deletes records before the resource and waits out the TTL.
 - [ ] **High** — DNS inventory exists (target, owner, project, dates, reason per
@@ -264,7 +267,8 @@ resource "aws_security_group_rule" "db_in" {
       (one hostname per line), plus `dig +short CNAME <h>` for targets that NXDOMAIN.
 - [ ] **High** — ownership proofs outlive the resource (§6 "Hold the name"): a
       `.tf` file that points a name at App Service with no `asuid` TXT beside it.
-      Probe: `grep -rl -E 'azurewebsites\.net' --include='*.tf' . | xargs grep -L 'asuid'`
+      Probe: `grep -rl --null -E 'azurewebsites\.net' --include='*.tf' . | xargs -0 -r grep -L 'asuid'`
+      (`--null`, not `-Z`: BSD grep's `-Z` means decompress)
       — file-level, so confirm per record; a teardown plan that destroys a
       CloudFront distribution or its `aliases` while a CNAME still targets it is the
       same finding.

@@ -149,9 +149,9 @@ histogram_quantile(0.99,
   bucketing, better accuracy, cheaper series. Note: Prometheus native
   histograms are **stable since v3.8.0 (Nov 2025)** — enable ingestion via the
   `scrape_native_histograms: true` config (the old
-  `--enable-feature=native-histograms` flag is now a no-op). Still verify your
-  whole pipeline (remote write 2.0 — itself still experimental — and dashboards)
-  handles them before switching SLI queries.
+  `--enable-feature=native-histograms` flag is a no-op since v3.9.0). Still
+  verify your whole pipeline (remote write 2.0 — itself still experimental —
+  and dashboards) handles them before switching SLI queries.
 - SLO arithmetic trick: a bucket boundary exactly at the SLO threshold lets
   you compute "fraction of requests under 300ms" exactly:
   `sum(rate(..._bucket{le="0.3"}[5m])) / sum(rate(..._count[5m]))` — this is
@@ -205,7 +205,7 @@ from "metric anomaly" to "specific request" is manual time-window
 spelunking.
 
 ```yaml
-# OTel SDK: exemplars on by default when a span is active (trace-based filter).
+# OTel SDK: exemplars on by default only inside a SAMPLED span (TraceBased filter).
 # Prometheus server: enable storage
 #   --enable-feature=exemplar-storage
 # Scrape with OpenMetrics so exemplars survive:
@@ -238,9 +238,9 @@ meter := otel.Meter("checkout")
 reqDur, _ := meter.Float64Histogram("http.server.request.duration",
     metric.WithUnit("s"),
     metric.WithExplicitBucketBoundaries(.005,.01,.025,.05,.1,.25,.3,.5,1,2.5))
-poolInUse, _ := meter.Int64ObservableGauge("db.client.connections.usage",
+poolInUse, _ := meter.Int64ObservableUpDownCounter("db.client.connection.count",
     metric.WithInt64Callback(func(_ context.Context, o metric.Int64Observer) error {
-        o.Observe(int64(pool.InUse()), metric.WithAttributes(attribute.String("state","used")))
+        o.Observe(int64(pool.InUse()), metric.WithAttributes(attribute.String("db.client.connection.state","used")))
         return nil
     }))
 reqDur.Record(ctx, elapsed.Seconds(),
@@ -251,10 +251,12 @@ reqDur.Record(ctx, elapsed.Seconds(),
 Rules:
 - Use semantic-convention instrument names (`http.server.request.duration`
   in seconds) — backends and dashboards key on them; don't reinvent
-  `my_request_time_ms`. Prometheus 3.x ingests OTLP natively and accepts
-  UTF-8 metric/label names, so dotted semconv names no longer have to be
-  mangled to underscores — pick one naming scheme end-to-end and stop
-  maintaining translation rules.
+  `my_request_time_ms`. Prometheus 3.x can ingest OTLP natively (off by
+  default: `--web.enable-otlp-receiver`) and accepts UTF-8 metric/label
+  names, but its OTLP `translation_strategy` still defaults to
+  `UnderscoreEscapingWithSuffixes`; set `NoUTF8EscapingWithSuffixes` (or
+  `NoTranslation`) to keep dotted semconv names — pick one naming scheme
+  end-to-end and stop maintaining translation rules.
 - **Aggregation temporality**: Prometheus needs cumulative; some vendors
   want delta. Set it in the exporter, never assume — delta counters scraped
   as cumulative silently report garbage rates.
@@ -277,7 +279,7 @@ Rules:
   delete metrics nothing queries (they cost memory and attention), and grep
   dashboards/alerts before renaming a metric — renames are breaking changes.
 - Standard resource attributes on every series: `service.name`,
-  `service.version`, `deployment.environment` — version is what turns "p99
+  `service.version`, `deployment.environment.name` — version is what turns "p99
   rose at 14:02" into "the 14:00 deploy did it".
 - Instrument the telemetry itself: scrape failures, exporter queue drops,
   remote-write errors. Silent telemetry loss looks identical to "all good".
