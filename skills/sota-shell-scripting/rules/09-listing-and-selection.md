@@ -80,13 +80,15 @@ measurement. "330 PRs" is a claim whose evidence has been thrown away, and "30" 
 
 §5 returned **less** of the right population. This returns **all** of a neighbouring one —
 harder to see: nothing truncated, nothing silent, no rule broken. The selector was reasonable
-and answered a question one step to the left of the one asked. Three in one session:
+and answered a question one step to the left of the one asked. Three in one session, and a
+fourth field-reported 2026-09-26:
 
 | the question | the selector typed | what it actually returns |
 |---|---|---|
 | "the kernel this release ships" | `sort -V \| tail -1` over the repo | the newest available — here a **backports** kernel, 6.12 for a 6.1 release |
 | "how much disk will this free" | `du -sh target` / the tool's own summary | apparent size / logical bytes deleted — **not** blocks returned to the filesystem |
 | "how much is reclaimable" | `podman system df` | images not backing a *running* container, with shared layers double-counted down the ancestry chain |
+| "what is this Deployment's pod logging" | `kubectl logs deploy/X` | **one** pod matching X's *label selector* — ownership is never checked, so it can be another workload's pod whose labels overlap |
 
 `sort -V | tail -1` is the obvious way to get "the latest" and it is simply not "the
 default". Each of the three is the correct answer to a question nobody asked.
@@ -98,6 +100,13 @@ default". Each of the three is the correct answer to a question nobody asked.
   `security/ipe/ipe.c` present at tag `v6.12`, absent at `v6.11`), so it cannot appear in a
   6.1 config. The row was refuted by its own output before it was written. Read one full
   record from any selection before building an argument on the aggregate.
+- **When the tool tells you it chose, check what it chose.** `kubectl logs deploy/X` prints
+  `Found 4 pods, using pod/…` and then answers about that pod: the lister filters on
+  `LabelSelector` alone and takes the first after an active-pods sort (verified in
+  `pkg/polymorphichelpers` at kubectl `master` 269cea9, 2026-09-26). The field case read a
+  DaemonSet's log for fifteen minutes and concluded the controller was silent. Check the
+  named pod's `ownerReferences`, then name the pod — or, from kubectl 1.31, `--all-pods`,
+  which prefixes each line with its source.
 - **Three numbers that disagree are three questions, not a discrepancy to average.** None of
   `du`, the tool's report and `df` is wrong; ask which the decision needs. General form:
   `sota-observability` rules/05 §7a.
@@ -149,7 +158,8 @@ grep -rn 'Rack::Protection' --include='*.rb' --include='config.ru' . # GOOD — 
 
 - [ ] **Does the selector name the population member the question does?** (§5a) — *newest*
       is not *default* (`sort -V | tail -1` returns a backports kernel), *apparent size* is
-      not *blocks freed*, *not backing a running container* is not *reclaimable*. Nothing is
+      not *blocks freed*, *not backing a running container* is not *reclaimable*, *a pod
+      matching the selector* is not *this Deployment's pod* (`kubectl logs deploy/X`). Nothing is
       truncated and the exit status is 0, so the only tell is a value that cannot belong to
       the subject; read one full record before trusting the aggregate.
 - [ ] **Counts taken from a listing tool** (§5): does the command carry a `--limit`/

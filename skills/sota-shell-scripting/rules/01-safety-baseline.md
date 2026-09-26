@@ -50,7 +50,7 @@ set -euo pipefail
 | Context | Behavior |
 |---|---|
 | Command tested by `if`/`while`/`until` | `-e` suspended for the whole command, including functions it calls |
-| Left of `&&` / `||` | suspended — `cmd && other` swallows `cmd` failure |
+| Left of `&&` / `||` | suspended — `cmd && other` swallows `cmd` failure (but see the inverse below the table's examples) |
 | Any command in a function *called from* a condition | `-e` is off inside the entire call tree |
 | `local var=$(cmd)` / `export var=$(cmd)` | exit status of `cmd` is masked by `local`/`export` (SC2155) |
 | Pipeline without `pipefail` | only last element's status counts |
@@ -104,6 +104,14 @@ fi
 
 Rule: treat `set -e` as a backstop, not error handling. Critical steps get explicit
 `|| { err "..."; exit 1; }` or status capture.
+
+**The inverse of the table: a false `&&` tail is exempt only where it stands.** As the *last*
+statement of a function, or of a loop at the end of a pipeline, its status 1 becomes the
+function's or the pipeline's — and `f`, `X=$(f)` or `cmd | while …` then ends the script with
+**no message**. Measured 2026-09-26 on bash 3.2.57 and 5.3.15, dash and busybox (zsh exits for
+the function but not the top-level pipe); the same line at top level, in a `for`, a `case` or a
+redirected `while` carries on, and ShellCheck 0.11.0 flags none of it. End such bodies with
+`if …; then …; fi` or `return 0`, and give the script an EXIT trap that prints a non-zero status.
 
 **`$( )` strips every trailing newline — silently, and it breaks line-oriented
 composition.** The code *reads* as though the newline is there, because the helper that
@@ -410,6 +418,10 @@ curl -H $auth_header ...     # header with space splits into garbage args
   literal), and arithmetic `$(( ))`.
 
 ## Audit checklist
+
+- [ ] **Does a function or piped loop end in `[ … ] && …`?** (§2) Its false case is the
+      body's status, so the caller dies silently. `grep -nE '\] && [^|]*$'` lists candidates
+      (top-level hits are safe); for each, check whether it is the last statement of the body.
 
 - [ ] **Is anything chained onto a pipeline with `&&`?** (§3) The chain runs on the
       *formatter's* exit status, not the work's — `make ci | tail -10 && git push` pushes

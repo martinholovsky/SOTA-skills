@@ -154,8 +154,8 @@ context. Optimize for that reader.
 ```markdown
 ### Queue depth > 100k (alert: payouts-queue-depth-critical)
 Impact: payouts delayed; no data loss (queue is durable).
-1. Check consumer lag: `kubectl -n payments logs deploy/payout-consumer --tail=50`
-   — look for `DeserializationError` (known issue, see INC-2041).
+1. Check consumer lag: `kubectl -n payments logs deploy/payout-consumer --all-pods --tail=50`
+   (every replica, each line prefixed with its pod) — look for `DeserializationError` (known issue, see INC-2041).
 2. If deserialization errors: bad message poisoning the partition.
    Skip it: `make skip-poison-msg ENV=prod` (safe: dead-letters the message).
 3. If consumers healthy but slow: scale `kubectl scale deploy/payout-consumer --replicas=8`

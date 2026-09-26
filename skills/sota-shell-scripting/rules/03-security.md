@@ -65,6 +65,12 @@ set -x
 
   Better: keep `set -x` behind a debug flag and structure code so secrets never pass
   through traced lines (files/fds end to end).
+- **Debugging from outside bypasses that guard.** `sh -x script.sh`, run to find why a job
+  exits silently, traces every line the script's author never bracketed — including a
+  presence test: `[ -n "$SECRET_KEY" ]` is printed with the value expanded. In a container
+  that trace is stdout, which a log shipper persists. Field-reported 2026-09-26: an object-store
+  key printed this way had to be rotated. Trace a throwaway copy with the credential lines cut
+  or bracketed, or turn `set -x` on after them — never the live script against real secrets.
 - Never `env`, `printenv`, `set`, or `declare -p` into logs in scripts that may hold
   secrets in env. Never echo secrets even "masked" — write "loaded credentials from X".
 - CI: rely on the CI's secret masking but don't trust it — masking fails on transformed
