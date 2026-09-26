@@ -14,9 +14,12 @@ SLSA v1.2 (approved Nov 2025; Build-track levels unchanged since v1.0), practica
 | L2 | Provenance signed by a hosted build platform | Forged provenance from a laptop build |
 | L3 | Build runs on hardened platform; provenance generation isolated from the build steps (user-defined steps can't forge or read the signing material) | Compromised build *job* forging its own provenance |
 
-- **Target: L3 for anything you ship**, L2 minimum for internal artifacts. L3 is cheap now:
-  `slsa-github-generator` reusable workflows or GitHub-hosted artifact attestations both
-  qualify because signing happens outside the user-controlled job steps.
+- **Target: L3 for anything you ship**, L2 minimum for internal artifacts. GitHub artifact
+  attestations **by themselves provide Build L2** (GitHub's docs); they reach **L3** when the
+  build runs in a shared reusable workflow that isolates it from the caller, and the verifier
+  pins that reusable workflow with `--signer-workflow`. `slsa-github-generator` is **no longer
+  actively maintained** (its README: existing provenance stays valid and the reusable
+  workflows continue to work) — prefer attestations + a reusable workflow for new setups.
 - L4-style aspirations (two-person review, hermetic builds) live in branch protection
   (rules/01 §1.7) and hermeticity (rules/04 §4.1) — don't wait for a badge to do them.
   v1.2 also promotes the **Source track** to approved status (SOURCE_LEVEL_1–3: history
@@ -36,7 +39,8 @@ SLSA v1.2 (approved Nov 2025; Build-track levels unchanged since v1.0), practica
 
 ## 2.2 Generating provenance in GitHub Actions
 
-Preferred (simplest, L3-grade): GitHub artifact attestations.
+Preferred (simplest): GitHub artifact attestations — L2 as shown; L3 when this job lives in
+a reusable workflow the release workflow calls (§2.1).
 
 ```yaml
 permissions:
@@ -44,11 +48,13 @@ permissions:
   attestations: write
   contents: read
 steps:
-  - name: Build image
+  - name: Build and push image
     id: build
-    run: |
-      docker build -t "$IMAGE" .
-      DIGEST=$(docker push "$IMAGE" --quiet)   # capture pushed digest
+    uses: docker/build-push-action@<sha>         # pin! exposes outputs.digest
+    with:
+      push: true
+      tags: ghcr.io/myorg/app:${{ github.sha }}
+    # NOT `docker push --quiet` — it prints name:tag, never the digest
   - uses: actions/attest-build-provenance@<sha> # pin!
     with:
       subject-name: ghcr.io/myorg/app
@@ -56,9 +62,11 @@ steps:
       push-to-registry: true
 ```
 
-Alternative for non-container artifacts / stricter isolation: `slsa-framework/slsa-github-generator`
-reusable workflows (`generator_generic_slsa3.yml`, `generator_container_slsa3.yml`) — the
-provenance is produced in a separate, generator-controlled job your build steps cannot touch.
+Legacy alternative: `slsa-framework/slsa-github-generator` reusable workflows
+(`generator_generic_slsa3.yml`, `generator_container_slsa3.yml`) produce provenance in a
+separate job your build steps cannot touch. The project is no longer actively maintained;
+keep existing uses verified (§2.5.1), but build new L3 setups on attestations + a reusable
+workflow.
 
 Rules:
 - **Attest the digest, never a tag.** Provenance over a tag is provenance over a pointer.
@@ -144,7 +152,7 @@ Provenance is one predicate. Attach the others your policy will consume:
 - **Test/verification attestations** for regulated pipelines.
 
 Rules: one predicate per attestation; subject = artifact digest; verify predicates in
-policy (Kyverno `verifyImages.attestations`, OPA against decoded DSSE envelopes — rules/07
+policy (Kyverno `ImageValidatingPolicy` `attestations`, OPA against decoded DSSE envelopes — rules/07
 §7.1). An attestation nobody checks is Medium audit noise; say so honestly.
 
 ## 2.5 Verification at deploy time — closing the loop
@@ -152,7 +160,7 @@ policy (Kyverno `verifyImages.attestations`, OPA against decoded DSSE envelopes 
 **Rule: every signature/attestation produced in CI has exactly one named consumer, and
 that consumer fails closed.** Wire at least one of:
 
-1. **Admission control** (best): Kyverno `verifyImages` / Sigstore policy-controller
+1. **Admission control** (best): Kyverno `ImageValidatingPolicy` / Sigstore policy-controller
    `ClusterImagePolicy` requiring signature by your release workflow identity + SLSA
    provenance predicate, on all prod namespaces (details in rules/07).
 2. **CD-time verify**: `cosign verify` / `gh attestation verify` as a blocking step before
@@ -167,10 +175,10 @@ wildcard identity = High (verifies "signed by anyone via GitHub").
 
 | Producer | Verifier | Pin in verification |
 |---|---|---|
-| slsa-github-generator | `slsa-verifier verify-image --source-uri github.com/myorg/app --source-tag v1.2.3` | source repo + tag/branch; builder ID checked for you |
+| slsa-github-generator (unmaintained; existing uses) | `slsa-verifier verify-image --source-uri github.com/myorg/app --source-tag v1.2.3` | source repo + tag/branch; builder ID checked for you |
 | GitHub artifact attestations | `gh attestation verify --owner myorg --signer-workflow myorg/app/.github/workflows/release.yml` | owner AND signer workflow (owner alone admits every repo in the org) |
 | cosign keyless | `cosign verify --certificate-identity <exact> --certificate-oidc-issuer <exact>` | full identity URL incl. ref |
-| Kyverno admission | `verifyImages.attestors.keyless` + `attestations` | subject + issuer + predicateType (rules/07 §7.1) |
+| Kyverno admission | `ImageValidatingPolicy` `attestors[].cosign.keyless.identities` + `attestations[].intoto` | subject + issuer + predicateType (rules/07 §7.1) |
 | npm provenance | `npm audit signatures` | registry-attested build provenance for installed packages |
 
 Whichever pair you choose, write the verification command into the repo (Make target,
@@ -202,8 +210,10 @@ Long-lived registry tokens in CI are the npm/PyPI compromise vector. Replace the
   to day (`npm logout` invalidates the token server-side), so an install-time worm finds
   nothing in `~/.npmrc` to steal. When a token is needed, make it an npm granular token
   scoped to the named packages, read-only unless it publishes, with a short expiry and an
-  allowed-IP (CIDR) range. Tick "bypass two-factor authentication" only for
-  non-interactive publish automation. (OWASP: NPM Security cheat sheet)
+  allowed-IP (CIDR) range. Avoid "bypass two-factor authentication" tokens: npm is targeting
+  January 2027 to remove direct publishing through them. Automation that cannot use trusted
+  publishing yet gets a **"Read and write (stage only)"** token (since 2026-09-18), which
+  stages a version for a maintainer to approve with 2FA. (OWASP: NPM Security cheat sheet)
 - **Every maintainer who can publish uses 2FA that covers writes, and keeps recovery codes
   offline.** The SCM org's 2FA requirement (`rules/12` §12.2) does not reach registry
   accounts. On npm, `npm profile enable-2fa auth-and-writes` asks for the second factor on
@@ -292,7 +302,7 @@ read it — unnecessary in jobs that never push.
 
 ## Audit checklist
 
-- [ ] Released artifacts have build provenance (SLSA L2+; L3 via slsa-github-generator or GitHub attestations for shipped software)
+- [ ] Released artifacts have build provenance (SLSA L2+; L3 for shipped software: attestations generated in an isolating reusable workflow and verified with `--signer-workflow` — attestations alone are L2; `slsa-github-generator` is unmaintained)
 - [ ] Provenance/signatures are over **digests**, generated outside user-controlled build steps, stored with the artifact
 - [ ] Signing is keyless (Fulcio/Rekor) or KMS-backed; no signing keys in CI secrets
 - [ ] Every signature/attestation has a named, fail-closed verifier (admission policy, CD verify, or promotion verify) with **exact** certificate identity + issuer — no wildcard identities

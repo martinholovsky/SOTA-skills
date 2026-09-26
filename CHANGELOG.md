@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**Full-library sweep, batch 2 of 4: the seven platform skills re-verified** (devsecops,
+kubernetes, cloud-infrastructure, observability, architecture, async-concurrency, performance).
+104 findings (10 High, 47 Medium); all 58 High/Medium items refuted (none failed), fixes per
+skill folder with runnable examples run, and a whole-diff review found 11 more defects, all
+fixed. Nine deferrals with triggers: `docs/ADOPTION-LOG.md`, 2026-09-26 batch 2.
+
+### Fixed (sweep batch 2)
+
+- **Controls that pass while checking nothing:** a zero-rule `.gitleaks.toml`, `checkov -f -`
+  (exit 0, reads nothing), a bidi gate keyed on exit status, workflow probes blind to `.yaml`,
+  a zsh-aborting debug-surface sweep, and a pino redaction example that leaked when run.
+- **Kyverno:** every example moved off the deprecated `ClusterPolicy` to `ValidatingPolicy` /
+  `ImageValidatingPolicy` (checked with `kyverno apply` 1.19.1), floor >= 1.19.1, in both
+  `sota-kubernetes` and `sota-devsecops`.
+- **New rules:** Kubernetes escalation via `nodes/proxy`, PV create, CSR approval and namespace
+  labels (rules/02 §2.7); AWS declarative policies; OTel Collector hardening; scheduled-job
+  "did not run" alerting; NATS 2.15's 1000-consumer default; cell-based architecture.
+- **Wrong facts corrected:** SLSA L3 → L2 for GitHub attestations; tokio `block_on`; Go
+  `sync.Pool`; OTel semconv names; GCP/Azure role-grant delegation; AWS confused-deputy keys;
+  the Kubernetes audit level for Secrets.
+
 **Full-library sweep, batch 1 of 4: the nine security-core skills re-verified.** 135 findings
 (7 High, 48 Medium); every High/Medium went to a refuter (none refuted, several fixes
 corrected), fixes were written per skill folder with each command run on BSD grep and ugrep,

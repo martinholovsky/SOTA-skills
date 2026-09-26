@@ -39,7 +39,8 @@ classic failures: blocked loops (rule 04) and 10,000 threads.
 ### Per-runtime notes
 
 - **Python:** asyncio coroutines for I/O; `ProcessPoolExecutor` for CPU under
-  the GIL. Python 3.13+ free-threaded builds make thread pools viable for CPU,
+  the GIL. Python free-threaded builds (experimental in 3.13, officially supported
+  since 3.14 per PEP 779) make thread pools viable for CPU,
   but C extensions must declare support — verify before relying on it.
   Python 3.14+ adds subinterpreters (PEP 734: `concurrent.interpreters`,
   `concurrent.futures.InterpreterPoolExecutor`) — per-interpreter-GIL

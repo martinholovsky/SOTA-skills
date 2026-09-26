@@ -118,9 +118,13 @@ into the Application spec:
 The GitOps controller is high-value and has a live CVE stream; track and patch it like the
 control plane (`rules/01` §7). Recent examples (verify against the Argo CD security
 advisories before citing exact IDs/versions):
-- **GHSA-3v3m-wc6v-x4x3 (CVE-2026-42880), ~May 2026, Critical** — Kubernetes Secret
-  extraction via the ServerSideDiff feature: a low-privilege/read-only user could obtain
-  plaintext Secret data. Patched in the then-current 3.2.x/3.3.x patch releases; upgrade.
+- **GHSA-3v3m-wc6v-x4x3 (CVE-2026-42880), 2026-05-01, Critical (CVSS 9.6)** — Kubernetes
+  Secret extraction via the ServerSideDiff feature: a low-privilege/read-only user could
+  obtain plaintext Secret data. First fixed in 3.2.11 / 3.3.9, but that fix was incomplete:
+  **GHSA-rg3g-4rw9-gqrp (CVE-2026-45737)**, the same extraction through sensitive
+  annotations, and **GHSA-h98r-wv3h-fr38 (CVE-2026-45738)**, stored XSS in application link
+  annotations (developer-to-admin), both 2026-05-13, need **3.2.12 / 3.3.10 / 3.4.2**. Argo
+  CD supports only the last three minors, so a 2.x install is EOL and gets no fix.
 - **GHSA-786q-9hcg-v9ff (CVE-2025-55190), Sep 2025, Critical (CVSS ~10)** — project API
   tokens with even `get` permission could retrieve repository credentials. Patched in
   2.13.9 / 2.14.16 / 3.0.14 / 3.1.2.

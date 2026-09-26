@@ -10,14 +10,14 @@ The pipeline's signatures and attestations (rules/02) mean nothing if the cluste
 whatever it's handed. Admission is where supply chain security becomes mandatory.
 
 ```yaml
-# Kyverno ImageValidatingPolicy (CEL, v1 — GA since 1.17) — require cosign keyless
-# signature + provenance from the release workflow, prod namespaces
+# Kyverno ImageValidatingPolicy (CEL; v1 API since 1.17, docs list it stable since 1.18; run Kyverno >= 1.19.1, below) —
+# require cosign keyless signature + provenance from the release workflow, prod namespaces
 apiVersion: policies.kyverno.io/v1
 kind: ImageValidatingPolicy
 metadata: { name: verify-image-signature }
 spec:
   validationActions: [Deny]                          # not Audit — see rollout
-  webhookConfiguration: { failurePolicy: Fail }
+  failurePolicy: Fail                                # a spec field; webhookConfiguration holds only timeoutSeconds
   validationConfigurations: { mutateDigest: true }   # rewrite tag → verified digest
   matchConstraints:
     namespaceSelector: { matchLabels: { env: prod } }
@@ -33,7 +33,9 @@ spec:
       cosign:
         keyless:
           identities:
-            - subject: "https://github.com/myorg/*/.github/workflows/release.yml@refs/heads/main"
+            # `subject` is an EXACT string match — a `*` in it is literal and matches nothing;
+            # for several repos use an anchored subjectRegExp, never `[^/]+` for the repo
+            - subject: "https://github.com/myorg/app/.github/workflows/release.yml@refs/heads/main"
               issuer: "https://token.actions.githubusercontent.com"
         ctlog: { url: "https://rekor.sigstore.dev" }
   attestations:
@@ -49,10 +51,19 @@ spec:
       message: missing or unverified provenance attestation
 ```
 
-Legacy: the `kyverno.io/v1` ClusterPolicy `verifyImages` pattern still works but is
-deprecated since Kyverno 1.17 (Feb 2026; critical fixes only from 1.18, removal planned
-for v1.20, Oct 2026) — write new policies against the CEL v1 types and migrate existing
-ones via the project's ClusterPolicy→CEL migration guide, pinning the same subject/issuer.
+Legacy: the `kyverno.io/v1` ClusterPolicy `verifyImages` pattern was marked for deprecation
+in Kyverno 1.17 and officially deprecated in 1.19, the last fully supported line. The docs
+list 1.20 as "Removed"; the removal tracking issue (kyverno#17214, open as of 2026-09-26)
+details it: 1.20 keeps the legacy CRDs served but hard-errors on creating or changing a
+legacy policy (stored ones are still enforced; the Helm chart blocks the upgrade while legacy
+CRs exist), with full deletion after that — verify at kyverno.io/docs/policy-types/overview.
+Write new policies against the CEL v1 types and migrate existing ones with the project's migration-to-CEL guide (kyverno.io docs) —
+`kyverno migrate` only rewrites stored objects to the storage version, it does not convert
+policies — pinning the same subject/issuer.
+
+**Version floor: Kyverno >= 1.19.1.** The advisories published 2026-09-10 are fixed only
+there, among them GHSA-5cjf-wwfg-pj4c: an ImageValidatingPolicy `PolicyException` ignored its
+`images`/`allowedValues` scoping and bypassed signature verification entirely.
 
 Rules:
 - **Registry allowlist first**: a policy verifying `ghcr.io/myorg/*` but admitting
@@ -60,7 +71,9 @@ Rules:
   verification with "images only from these registries" (and rules/04 §4.5 prod-registry
   promotion).
 - Verify **identity, not existence**: exact issuer + subject (workflow), as in rules/02
-  §2.3 — `subject: "*"` verifies that *someone* used Sigstore.
+  §2.3 — `subjectRegExp: '.*'` verifies that *someone* used Sigstore. (In the CEL types a
+  `*` inside `subject` is literal: it matches nothing, and with `failurePolicy: Fail` denies
+  every image.)
 - Require the **provenance/SBOM attestations**, not just a signature, once rules/02 is in
   place; optionally add freshness conditions (scan attestation < N days).
 - `failurePolicy: Fail` on the webhook for prod admission — `Ignore` means "enforce
@@ -127,7 +140,7 @@ Engineering discipline (policies are production code):
   by a tired SRE at 3am unless you've engineered it properly.
 
 ```yaml
-# kyverno-test.yaml — the deny case is the one that matters
+# kyverno-test.yaml — the deny case is the one that matters (tests the §7.1 CEL policy)
 apiVersion: cli.kyverno.io/v1alpha1
 kind: Test
 metadata: { name: image-policy-tests }
@@ -135,17 +148,21 @@ policies: [verify-image-signature.yaml]
 resources: [fixtures/signed-pod.yaml, fixtures/unsigned-pod.yaml, fixtures/dockerhub-pod.yaml]
 results:
   - policy: verify-image-signature
-    rule: require-signed-images
+    isImageValidatingPolicy: true   # CEL types: an is<Type> flag + kind, no `rule:`
+    kind: Pod
     resources: [signed-pod]
     result: pass
   - policy: verify-image-signature
-    rule: require-signed-images
+    isImageValidatingPolicy: true
+    kind: Pod
     resources: [unsigned-pod, dockerhub-pod]
     result: fail            # if this fixture ever "passes", the gate is open — CI must catch it
 ```
 
-(Fixture above uses the legacy ClusterPolicy schema; the Kyverno CLI also tests the CEL
-v1 policy types — carry the same deny-case fixtures over when migrating.)
+(Result shape as in the Kyverno repo's own `test/cli/test-image-validating-policy` fixtures.
+Keyless verification contacts the registry and transparency log, so this check needs network
+or recorded fixtures. A legacy ClusterPolicy test keyed on `rule:` stops loading once the CLI
+hard-errors on legacy types; run the CLI with `--warnings-as-errors` to catch them first.)
 
 OPA equivalent: `opa test policies/ -v` with `deny` rule unit tests, plus
 `conftest test --policy policies/ fixtures/` in the same required check.
@@ -348,7 +365,7 @@ found nothing** — the second reading being a conclusion about the target
 
 ## Audit checklist
 
-- [ ] Admission enforces (not audits) image verification in prod: exact signer identity + issuer, provenance attestation required, registry allowlist, tag→digest mutation, `failurePolicy: Fail`, all Pod-paths covered; Kyverno policies on the CEL v1 types (ClusterPolicy deprecated since 1.17, removal planned v1.20)
+- [ ] Admission enforces (not audits) image verification in prod: exact signer identity + issuer, provenance attestation required, registry allowlist, tag→digest mutation, `failurePolicy: Fail`, all Pod-paths covered; Kyverno >= 1.19.1; policies on the CEL v1 types (ClusterPolicy officially deprecated in 1.19, the last fully supported line; 1.20 rejects new/changed legacy policies — kyverno#17214); ImageValidatingPolicy `failurePolicy` set at `spec`, `subject` exact (no `*`)
 - [ ] Baseline workload policies enforced: PSA restricted-equivalent, no `:latest`, non-root, resource limits, attribution labels
 - [ ] Policies in git, GitOps-deployed, with CI-tested deny cases; exceptions are scoped, owned, time-bound, PR-reviewed, and inventoried
 - [ ] CI/CD, deploy, admission, registry, and control-plane audit events stream to tamper-resistant storage with ≥1y retention; pipeline identities are alertable principals

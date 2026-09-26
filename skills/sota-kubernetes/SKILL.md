@@ -76,7 +76,7 @@ Use when reviewing an existing cluster, its RBAC, policies, GitOps config, or op
 Procedure: inventory the cluster surface (control plane flags or managed equivalent,
 RBAC graph, admission policies, GitOps controllers, operators/CRDs, namespaces/tenancy);
 for each, walk the relevant rules-file Audit checklist; verify empirically with
-`kubectl`, `kubectl auth can-i`, rbac-tool/krane, kube-bench, and `helm template` where
+`kubectl`, `kubectl auth can-i`, krane, kube-bench, and `helm template` where
 possible; report findings in the format below. Do not report style nits as security
 findings.
 
@@ -86,7 +86,7 @@ findings.
 |---|---|---|
 | **Critical** | Cluster-admin, all-Secrets read, or cluster takedown reachable now | `anonymous-auth` enabled on API server/kubelet; etcd unencrypted AND reachable; ClusterRoleBinding granting `cluster-admin` to a workload SA or `system:authenticated`; wildcard `*/*` ClusterRole bound broadly; Argo CD AppProject `clusterResourceWhitelist: [{group: '*', kind: '*'}]` with broad SSO; unpatched control plane on a known-RCE CVE |
 | **High** | Escalation/secret-read by an in-cluster or contributor principal, or a single event from it | `escalate`/`bind`/`impersonate` verbs granted; secret-reader → token-mint → privilege chain; admission policy in `audit` mode for a control that should enforce; image-verification policy only `Audit`s signatures; operator with cluster-wide `secrets:*`; kubelet `read-only-port` open; no etcd backup or untested restore |
-| **Medium** | Weakens defense in depth or detection | PSA not enforced (only `warn`/`audit`); `automountServiceAccountToken` defaulted on for non-API pods; no default-deny NetworkPolicy (requirement-level; depth → network-security); audit policy missing or `None`/Metadata-only for Secret access; aggregated ClusterRole accreting verbs; no PDB on critical workloads |
+| **Medium** | Weakens defense in depth or detection | PSA not enforced (only `warn`/`audit`); `automountServiceAccountToken` defaulted on for non-API pods; no default-deny NetworkPolicy (requirement-level; depth → network-security); audit policy missing, `None` for Secret access, or Secret/ConfigMap bodies captured at `Request`/`RequestResponse`; aggregated ClusterRole accreting verbs; no PDB on critical workloads |
 | **Low** | Hygiene, hardening headroom | RBAC subjects for departed users; unused ClusterRoles; namespaces without resource quotas; `:latest` image tags admitted; missing PolicyException expiry |
 
 Severity is judged by **reachability** (anonymous > workload/tenant > contributor > admin)
@@ -117,8 +117,8 @@ runtime detection content).
 | File | Read this when... |
 |---|---|
 | [rules/01-control-plane-etcd.md](rules/01-control-plane-etcd.md) | HA control plane, API server flags (anonymous-auth, authz modes, audit), etcd encryption-at-rest with KMS v2 + backup/defrag/restore, kubelet hardening, node + immutable-distro hardening (Talos no-SSH/machine-config/SecureBoot+TPM, k3s/k0s), CIS benchmark + kube-bench |
-| [rules/02-rbac-serviceaccounts.md](rules/02-rbac-serviceaccounts.md) | Roles/ClusterRoles least-privilege, the escalation traps (wildcards, `bind`/`escalate`/`impersonate`, cluster-admin bindings, aggregated roles, secret-reader chains), ServiceAccount hygiene (automount off, bound/projected/audience-scoped tokens, no long-lived token Secrets), RBAC auditing (`auth can-i`, rbac-tool/krane/who-can) |
-| [rules/03-admission-policy.md](rules/03-admission-policy.md) | Pod Security Admission (restricted/baseline/privileged, enforce/audit/warn) and its limits, Kyverno vs Gatekeeper/OPA vs ValidatingAdmissionPolicy/MutatingAdmissionPolicy, the AUDIT→ENFORCE rollout discipline, image verification at admission (cosign/Kyverno verifyImages), PolicyException discipline |
+| [rules/02-rbac-serviceaccounts.md](rules/02-rbac-serviceaccounts.md) | Roles/ClusterRoles least-privilege, the escalation traps (wildcards, `bind`/`escalate`/`impersonate`, cluster-admin bindings, aggregated roles, secret-reader chains), ServiceAccount hygiene (automount off, bound/projected/audience-scoped tokens, no long-lived token Secrets), RBAC auditing (`auth can-i --list`, krane; who-can/rbac-tool unmaintained), the harmless-looking grants (`nodes/proxy`, PV create, CSR approval, namespace patch) |
+| [rules/03-admission-policy.md](rules/03-admission-policy.md) | Pod Security Admission (restricted/baseline/privileged, enforce/audit/warn) and its limits, Kyverno vs Gatekeeper/OPA vs ValidatingAdmissionPolicy/MutatingAdmissionPolicy, the AUDIT→ENFORCE rollout discipline, image verification at admission (cosign/Kyverno `ImageValidatingPolicy`), PolicyException discipline |
 | [rules/04-gitops-controllers.md](rules/04-gitops-controllers.md) | Argo CD / Flux security: AppProject scoping (the `clusterResourceWhitelist:[{*,*}]` trap), project/RBAC/SSO, the controller's own privileges and self-management, repo/SSH creds, ApplicationSet injection, auto-sync vs approval, drift, recent Argo CD CVEs, promotion/rollback as git ops |
 | [rules/05-operators-crds-webhooks.md](rules/05-operators-crds-webhooks.md) | The operator privilege problem (broad RBAC → CRD-mediated escalation), vetting operator RBAC, CRD validation/security, trusted controllers (ESO, cert-manager), admission webhooks as attack surface (failurePolicy, timeout, TLS, namespaceSelector) |
 | [rules/06-workloads-tenancy.md](rules/06-workloads-tenancy.md) | Resource requests/limits as availability+QoS, PodDisruptionBudget, topology spread, anti-affinity, priorityClass/preemption, namespace-as-SOFT-boundary reality, hard multi-tenancy (vCluster/separate clusters/node isolation), Secrets in K8s (etcd encryption + ESO/sealed-secrets pointer) |
@@ -154,7 +154,8 @@ Violations are at minimum **High** in AUDIT mode and must never be introduced in
 9. **Operators get least-privilege RBAC; admission webhooks have correct
    `failurePolicy`/`timeoutSeconds`/`namespaceSelector` and TLS** — a webhook is both a
    control and a single point of failure/attack (`05`).
-10. **API server audit logging enabled** (RequestResponse for sensitive verbs/Secrets),
+10. **API server audit logging enabled** (RequestResponse for RBAC/admission changes;
+    Secrets/ConfigMaps at Metadata only, since a body-level rule logs their values),
     shipped to tamper-resistant storage; etcd backups taken AND restore-tested (`07`,`01`).
     Detection content on the stream → sota-detection-engineering.
 

@@ -17,7 +17,7 @@ not the code you shipped, and yesterday's green build can be today's compromised
 | Python | uv.lock / poetry.lock / requirements.txt **with hashes** | `uv sync --locked` / `poetry check --lock && poetry install --no-root` / `pip install --require-hashes -r requirements.txt` |
 | Go | go.mod (pins) + go.sum (authenticates); `GOSUMDB=off` / wildcard `GONOSUMDB` never set | `go mod verify`; CI fails on a dirty `go mod tidy` diff |
 | Rust | Cargo.lock (commit it for libs too) | `cargo build --locked` |
-| Ruby | Gemfile.lock | `bundle install --frozen` / `BUNDLE_FROZEN=true` |
+| Ruby | Gemfile.lock | `BUNDLE_FROZEN=true bundle install` (the `--frozen` flag is removed in Bundler 4 and raises) |
 | Docker | digest pins (rules/04 §4.3) | `FROM image@sha256:...` |
 
 - **A frozen-install command can fail closed on a *stale* lock and open on a *missing* one.**
@@ -136,7 +136,7 @@ Review *new* dependencies (human + automated) for:
   v11**, along with `onlyBuiltDependenciesFile`, `neverBuiltDependencies`,
   `ignoredBuiltDependencies` and `ignoreDepScripts` (verify the latest stable's
   settings at [pnpm settings/build](https://pnpm.io/settings/build)). Keep
-  `strictDepBuilds` on — default `true` since v10.3.0, it *"will exit with a non-zero exit
+  `strictDepBuilds` on — added in v10.3.0, default `true` since v11.0.0, it *"will exit with a non-zero exit
   code if any dependencies have unreviewed build scripts"*, which is the half that fails
   the build rather than warning. `dangerouslyAllowAllBuilds: true` reverts all of it.
 - **Name proximity** to a popular package (`lodahs`, `python-dateutil` vs `dateutil`),

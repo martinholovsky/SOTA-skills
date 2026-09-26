@@ -243,14 +243,16 @@ rules/10), a dashboard existing standing in for someone opening it.
 Rules:
 - **Edge access logs are a required telemetry stream**, not an optional one, wherever
   a gateway/ingress/LB fronts a versioned or deprecable surface. Sample if volume
-  demands, but **retain across one deprecation runway** — rules/02 §5 publishes a
-  ≥ 6-month runway, so 30-day retention cannot support the decision it exists for.
+  demands, but **retain across one deprecation runway** — `sota-api-design`
+  rules/02 §5 publishes a ≥ 6-month runway, so 30-day retention cannot support
+  the decision it exists for.
   Log the route *template* and the principal *id*, not the raw path and identity
   (cardinality and PII: rules/01).
 - **Instrument the question you will be asked, not only the ones you are asked
   today.** "Which surfaces can we retire?" is asked of every system that lives long
   enough; it needs a per-route/per-field usage counter from the day the surface
-  ships (rules/02 §5's "usage metric the day its successor ships").
+  ships (`sota-api-design` rules/02 §7's "usage metric … the day its successor
+  ships").
 - **When you substitute, say so in the same sentence as the number.** Name the
   question you could answer, the question you were asked, and the direction the
   substitution errs. *"Zero rows carry this field"* is evidence; *"nobody uses this

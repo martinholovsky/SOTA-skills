@@ -21,8 +21,8 @@ chart into a privileged cluster:
 helm template rel chart/ -f values.yaml > rendered.yaml
 # what RBAC does this chart grant?
 grep -nE 'kind:\s*(ClusterRole|ClusterRoleBinding|Role|RoleBinding)' rendered.yaml
-# privilege-granting values / specs
-grep -nE 'privileged:\s*true|hostPID|hostNetwork|hostPath|cluster-admin|automountServiceAccountToken:\s*true|"\*"' rendered.yaml
+# privilege-granting values / specs (last alternative: a wildcard quoted "*" or '*')
+grep -nE "privileged:\s*true|hostPID|hostNetwork|hostPath|cluster-admin|automountServiceAccountToken:\s*true|[\"']\*[\"']" rendered.yaml
 # images and tags (are they pinned? from your registry?)
 grep -nE 'image:' rendered.yaml
 ```
@@ -54,12 +54,12 @@ convenience is not a risk acceptance.
 ## 3. Chart & image provenance — enforced at admission
 
 - **Sign and verify Helm charts.** OCI-registry charts can be **cosign-signed**; verify the
-  signature/provenance before install (`cosign verify <oci-chart-ref>`), and pin the chart
+  signature/provenance before install (`cosign verify --certificate-identity <signer> --certificate-oidc-issuer <issuer> <oci-chart-ref>` for keyless, or `--key <pub>`: without an identity cosign refuses a keyless verify, and pinning the signer is the point), and pin the chart
   by **digest**, not a mutable version tag, in your GitOps source. An unsigned chart pulled
   by floating version is mutable supply-chain surface.
 - **Only-signed-images enforcement** is the admission control from `rules/03` §4 — the
   manifests a chart produces must reference images that pass signature/provenance
-  verification (cosign/Kyverno verifyImages / policy-controller). Signing without admission
+  verification (Kyverno `ImageValidatingPolicy` / sigstore policy-controller). Signing without admission
   enforcement is theater (`sota-devsecops` rules/02 produces the signatures; this is where
   they're checked).
 - **Digest-pin images at the manifest layer.** Deploy manifests reference

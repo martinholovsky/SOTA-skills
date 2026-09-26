@@ -91,7 +91,7 @@ Ordering model: run-to-completion of current task → drain ALL microtasks (prom
 
 - `await` yields to the microtask queue, not the event loop. Since ALL queued microtasks drain before the next macrotask, a tight loop of `await Promise.resolve()` still starves rendering, timers, and I/O. To genuinely yield to the loop use `scheduler.yield()` (browsers), `setTimeout(0)`, or `setImmediate` (Node).
 - Node ordering: `process.nextTick` runs before promise microtasks (avoid nextTick in app code — it can starve everything); `setImmediate` runs after I/O, before timers of the next loop iteration.
-- Long synchronous work blocks everything (see workers below). Chunk big loops: process N items, then `await scheduler.yield()` / `setImmediate`.
+- Long synchronous work blocks everything (see workers below). Chunk big loops: process N items, then `await (globalThis.scheduler?.yield?.() ?? new Promise(r => setTimeout(r)))` (browser — `scheduler.yield()` is not Baseline, so feature-detect) / `setImmediate` (Node).
 - Zalgo: never make an API sometimes-sync, sometimes-async. If a function may return cached-sync or fetched-async, always go async (`return cached !== undefined ? Promise.resolve(cached)…` — just declare it `async`).
 
 ## Top-level await

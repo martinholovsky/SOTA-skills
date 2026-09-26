@@ -49,7 +49,7 @@ Every major cloud accepts the CI provider's OIDC tokens.
 
 ```yaml
 # GOOD — AWS via OIDC
-- uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+- uses: aws-actions/configure-aws-credentials@<full-40-char-commit-sha>  # vN.N.N (§1.3)
   with:
     role-to-assume: arn:aws:iam::123456789012:role/repo-myorg-myrepo-deploy
     aws-region: eu-central-1
@@ -86,8 +86,8 @@ The security lives in the **trust policy condition on the `sub` claim**:
 **Rule: third-party actions are pinned to a full 40-char commit SHA with a version comment.**
 Tags and branches are mutable; the tj-actions/changed-files compromise (2025) retagged
 existing versions to exfiltrate CI secrets from thousands of repos — SHA-pinned consumers
-were unaffected. The pattern keeps repeating: in March 2026 an attacker force-pushed 75
-existing tags of aquasecurity/trivy-action to malicious commits (downstream, this
+were unaffected. The pattern keeps repeating: in March 2026 an attacker force-pushed 76 of
+77 aquasecurity/trivy-action tags (and all setup-trivy tags) to malicious commits (downstream, this
 compromised Checkmarx's release pipeline), and in May 2026 every tag of
 actions-cool/issues-helper was repointed to an imposter credential-stealing commit.
 Tag-pinned consumers ran the malware on their next scheduled job; SHA-pinned consumers
@@ -95,7 +95,7 @@ did not.
 
 ```yaml
 # GOOD — resolve the CURRENT release's commit SHA and pin that, tag in comment
-# (gh api repos/actions/checkout/git/ref/tags/<tag> --jq .object.sha)
+# (gh api repos/actions/checkout/commits/<tag> --jq .sha — NOT git/ref/tags, which returns the tag-object SHA for an annotated tag)
 - uses: actions/checkout@<full-40-char-commit-sha>  # vN.N.N
 # BAD
 - uses: someorg/some-action@v3        # mutable tag
@@ -114,16 +114,19 @@ did not.
   a stale pin is a vuln-management problem, an unpinned action is a supply chain hole.
 - `actions/*` (GitHub first-party) at a tag is tolerable (Low) but pin anyway for
   consistency; everything else unpinned is High.
-- Enforce org-wide: Settings → Actions → "Allow specified actions" with an allowlist, or
-  policy `allowed_actions` requiring pinned SHAs (e.g., via `actions-permissions` audits,
-  zizmor, or OpenSSF Scorecard's Pinned-Dependencies check in CI). Action allowlisting is
+- Enforce org-wide: Settings → Actions → "Allow specified actions" with an allowlist, plus the
+  native **"Require actions to be pinned to a full-length commit SHA"** policy (since
+  2025-08-15; a `!`-prefixed entry blocks an action or version). Reusable workflows can still
+  be referenced by tag under it, so pin those by review (§1.8); detect drift with zizmor or
+  OpenSSF Scorecard's Pinned-Dependencies check in CI. Action allowlisting is
   available on all GitHub plans including Free since Feb 2026 — "we're on the free tier"
   is no longer a reason to skip it.
-- Platform fixes are coming but are not here yet: GitHub's 2026 Actions security roadmap
-  (workflow dependency locking — a lockfile for `uses:` references — plus execution
-  policies, scoped secrets, and a runner egress firewall) was preview/announced as of
-  mid-2026. Until those are GA and adopted, SHA pinning remains the control; don't accept
-  "immutable actions will fix it" in review.
+- Platform fixes are arriving piecemeal (as of 2026-09-26): **workflow execution protections**
+  (rules on who/what may trigger a workflow) are GA since 2026-09-17, and public repos with no
+  event policy get a default rule disabling `pull_request_target`, in evaluate mode until GitHub
+  enforces it from 2026-11-02. **Workflow dependency locking** (`gh actions-lock`, a lock of
+  every `uses:` to a commit) is a technical preview. Until locking is GA and adopted, SHA
+  pinning remains the control; don't accept "immutable actions will fix it" in review.
 - **Vet before you allowlist, and prefer fewer actions.** Each third-party action gets the
   upstream-health check of `rules/10` §5 (owner, contributor count, last push, archived)
   plus a read of the `permissions:` and secrets it asks for. An action that only wraps one
@@ -270,6 +273,9 @@ configuration is usually valid YAML with no expression in it.
   content influences build output). **For release/publish/signing workflows, disable
   build caching outright** — a single poisoned cache entry restored into a job that signs
   or publishes taints the released artifact; the speedup isn't worth the supply-chain risk.
+  GitHub's `cache-mode` (workflow or job key, since 2026-09-10: `read`/`write`/`write-only`/
+  `none`; default `read` on low-trust events such as `pull_request_target`, `write` on `push`)
+  enforces it: `cache-mode: none` on release/sign jobs, `read` where untrusted code runs.
 - No interactive access into production runners (§1.10). The host under the runner is
   `rules/04` §4.6.1.
 
@@ -490,4 +496,4 @@ durable verdict everywhere (`rules/11` §4), not just where it was first fixed.
 - [ ] **No interactive debug path into production runners (§1.10), High:** `grep -rn -E 'tmate|upterm|debugger-action|pods/exec|pods/attach' .github/workflows <runner-RBAC-dir>` is empty; `gh variable list` and `gh secret list` show no `ACTIONS_STEP_DEBUG`/`ACTIONS_RUNNER_DEBUG`
 - [ ] **Third-party actions inventoried and vetted (§1.3), Medium:** `grep -rhn -E 'uses:[[:space:]]*[A-Za-z0-9_-][A-Za-z0-9_.-]*/' .github/workflows | grep -v -E 'uses:[[:space:]]*(actions|github)/'` — each hit has an upstream-health record, or is replaced by a `gh` step
 - [ ] No secrets echoed, embedded in URLs, or passed through step outputs; rotation path documented
-- [ ] **Secrets scoped to the step (§1.10), Medium:** `yq '(.env // {} | to_entries | .[] | select(.value | tostring | test("secrets\.")) | "workflow env: " + .key), (.jobs // {} | to_entries | .[] | .key as $j | .value.env // {} | to_entries | .[] | select(.value | tostring | test("secrets\.")) | "job " + $j + " env: " + .key)' .github/workflows/*.yml` prints nothing
+- [ ] **Secrets scoped to the step (§1.10), Medium:** `find .github/workflows -name '*.y*ml' -print0 | xargs -0 -r yq '(.env // {} | to_entries | .[] | select(.value | tostring | test("secrets\.")) | "workflow env: " + .key), (.jobs // {} | to_entries | .[] | .key as $j | .value.env // {} | to_entries | .[] | select(.value | tostring | test("secrets\.")) | "job " + $j + " env: " + .key)'` prints nothing (a `*.yml` glob misses `.yaml` files, and zsh aborts on a glob with no match)

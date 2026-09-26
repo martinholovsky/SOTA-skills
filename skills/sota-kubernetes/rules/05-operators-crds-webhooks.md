@@ -121,5 +121,5 @@ The hard tradeoffs and traps:
 - [ ] Security webhooks `failurePolicy: Fail` BUT with `namespaceSelector` excluding kube-system and the webhook's own ns; webhook runs HA + PDB?
 - [ ] Webhook `timeoutSeconds` small; webhook scope (`rules`/selectors) minimal, not `*`?
 - [ ] Webhook TLS `caBundle` valid, managed by cert-manager, rotated before expiry, expiry-alerted?
-- [ ] Writes to `admissionregistration.k8s.io` (WebhookConfigurations) guarded like RBAC writes? (`kubectl who-can create validatingwebhookconfigurations`)
+- [ ] Writes to `admissionregistration.k8s.io` (WebhookConfigurations) guarded like RBAC writes? (`kubectl auth can-i create validatingwebhookconfigurations --as=<subject>` per subject; reverse index via krane — `rules/02` §4)
 - [ ] Logic that fits CEL moved to ValidatingAdmissionPolicy instead of a webhook where practical?

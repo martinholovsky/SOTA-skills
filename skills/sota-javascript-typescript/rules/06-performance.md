@@ -96,7 +96,7 @@ function App() {
 const value = useMemo(() => ({ user, setUser }), [user]);
 ```
 
-Measure interaction health with INP (Interaction to Next Paint): long tasks >50ms between input and paint are the budget violations. `PerformanceObserver` with `{ type: 'event', durationThreshold: 40 }` or web-vitals library in RUM; break up long handlers with `await scheduler.yield()` between logical phases.
+Measure interaction health with INP (Interaction to Next Paint): long tasks >50ms between input and paint are the budget violations. `PerformanceObserver` with `{ type: 'event', durationThreshold: 40 }` or web-vitals library in RUM; break up long handlers with `await (globalThis.scheduler?.yield?.() ?? new Promise(r => setTimeout(r)))` between logical phases (`scheduler.yield()` is not Baseline — feature-detect as shown).
 
 ## Long lists: virtualization
 
@@ -193,7 +193,7 @@ setInterval(() => {
 - CPU work >50ms in the browser (parsing, diffing, search indexing, image manipulation): Web Worker (rules/03) — the main thread is for UI. Comlink removes the postMessage ceremony.
 - Truly-idle work (analytics aggregation, prefetch warmup): `requestIdleCallback` (with a timeout fallback) — never for anything user-visible.
 - Animation reads/writes: `requestAnimationFrame`; CSS transforms/opacity (compositor-only) over layout-triggering properties; `will-change` sparingly.
-- Chunked processing keeps input responsive: process N items → `await scheduler.yield()` → continue; combine with `AbortSignal` so navigation cancels the rest.
+- Chunked processing keeps input responsive: process N items → `await (globalThis.scheduler?.yield?.() ?? new Promise(r => setTimeout(r)))` → continue; combine with `AbortSignal` so navigation cancels the rest.
 
 ## Micro-level idioms that matter at scale only
 

@@ -327,7 +327,7 @@ tied to a measurable symptom (incident class, lead-time drag, cost line).
 
 - [ ] **Retired services are fully gone and out of the inventory (§12a), Medium:** list
       catalog entries marked for retirement with
-      `grep -rnE '^[[:space:]]*lifecycle:[[:space:]]*"?deprecated' --include=catalog-info.yaml .`
+      `grep -rnE '^[[:space:]]*lifecycle:[[:space:]]*.?deprecated' --include=catalog-info.yaml .`
       (Backstage `spec.lifecycle`; other catalogs have their own field). Each hit needs an
       owner, a consumer-migration list and a date. Then take one service retired in the last
       year and look for anything it left behind: DNS records, identities, secrets, queues,

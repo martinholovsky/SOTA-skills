@@ -87,9 +87,12 @@ The mechanics that make everything above real:
 
 - **Required status checks, by exact job name**, in branch protection/rulesets. A check
   that isn't required is a suggestion. Gotchas:
-  - A *skipped* job satisfies "required" on GitHub if path-filtered — when using
-    `paths:`/conditional jobs, required gates need a fallback (a no-op job with the same
-    name on the excluded paths, or no path filter on gates).
+  - The two skip shapes fail in **opposite directions** (GitHub docs). A workflow skipped by
+    an `on: … paths:`/branch filter leaves its required checks **Pending**, so the PR blocks
+    (fail-closed, and it wedges docs-only PRs). A **job** skipped by `if:` reports
+    **Success** and satisfies the required check (fail-open). Required gates therefore take
+    no `paths:` filter, or get a same-named no-op fallback, and no gate job carries an `if:`
+    that a PR can make false.
   - Renaming a job silently un-requires it (the protection references the old name) —
     review ruleset config when workflows change; alert on required-check list drift.
 - **No `continue-on-error: true`, `|| true`, `set +e`, or `exit 0` tails on gate steps.**
@@ -348,4 +351,4 @@ release tag directly is the finding.
 - [ ] **Does any check branch on the shape of the diff?** (§2c) Sweep versus small edit,
       release versus not. If so, was the other arm run before merge, and was the default
       branch's run on the merge commit read, not just the PR's?
-- [ ] Every gate prints the **number of units it enumerated** and the build fails when that number drops — a refactor that moves code into a nested module, a second manifest, a submodule or a sidecar image silently shrinks the gate's scope while the negative control keeps passing (§3, `rules/11` §5)
+- [ ] Every gate prints the **number of units it enumerated** and the build fails when that number drops — a refactor that moves code into a nested module, a second manifest, a submodule or a sidecar image silently shrinks the gate's scope while the negative control keeps passing (§2, `rules/11` §5)

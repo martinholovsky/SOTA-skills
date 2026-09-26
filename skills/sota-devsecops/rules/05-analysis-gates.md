@@ -33,9 +33,10 @@ Two complementary layers; mature setups run both:
 ```
 
 `--error` exits 1 on findings; `--baseline-commit` (env `SEMGREP_BASELINE_COMMIT`)
-restricts reporting to what the diff introduced. **There is no `opengrep ci` subcommand**
-— the CLI is `scan`/`test`/`validate`/`show`/`lsp`, so a workflow copied from `semgrep ci`
-will not run. `--config` accepts a directory, a URL, a `git+<url>` remote rule repo, or a
+restricts reporting to what the diff introduced. **Do not port a `semgrep ci` workflow as
+`opengrep ci`**: the subcommand exists but is hidden from `--help` (which lists
+`scan`/`test`/`validate`/`show`/`lsp`; checked on 1.30.0), and its exit status on blocking
+findings has differed between releases — gate on `scan --error`. `--config` accepts a directory, a URL, a `git+<url>` remote rule repo, or a
 Semgrep registry entry name; **vendor or `git+`-clone the community rulesets you depend on
 rather than resolving a registry you do not control** — that registry is operated by the
 vendor whose licence change caused the fork.
@@ -110,11 +111,16 @@ tool stays quiet enough to be believed.
 
 ```toml
 # .gitleaks.toml — allowlist with surgical scope, never directory-wide wildcards
-[allowlist]
+[extend]
+useDefault = true   # REQUIRED: a config with only an allowlist loads ZERO rules — "no leaks found", exit 0
+[[allowlists]]      # gitleaks ≥ 8.25.0; the single [allowlist] table is superseded
   paths = ['''tests/fixtures/fake_credentials\.json''']   # exact files
   regexes = ['''TEST_ONLY_[A-Za-z0-9]+''']
 # BAD: paths = ['''tests/.*'''] — tests are where real creds get pasted "temporarily"
 ```
+
+(Same shape as `sota-secrets-management` rules/04 §1. Measured 2026-09-26 on gitleaks 8.30.1:
+the allowlist-only file reported no leaks over a planted AWS key; adding `[extend]` found it.)
 
 Rotation runbook per credential type (who rotates, blast radius, dependent systems)
 should pre-exist the incident — write it when you wire the scanner, not at 2am. The
@@ -125,8 +131,8 @@ use of the old credential.
 
 - Tools: **checkov** or **trivy misconfig** (tfsec is folded into trivy) for Terraform/
   CloudFormation/k8s manifests/Dockerfiles; run on PR (changed paths) as a required check.
-- Scan the **plan**, not just HCL, where possible (`terraform show -json plan.out |
-  checkov -f -`): catches values resolved from variables/modules that static HCL scanning
+- Scan the **plan**, not just HCL, where possible (`terraform show -json plan.out > plan.json`
+  then `checkov -f plan.json` — checkov does not read a plan from stdin): catches values resolved from variables/modules that static HCL scanning
   misses.
 - Policy exceptions inline with justification and ID:
   `#checkov:skip=CKV_AWS_20:Public website bucket, approved SEC-1234` — same suppression
@@ -263,7 +269,7 @@ remove it. Diff-aware modes, caching, and tiering are how gates survive.
 - [ ] **DAST covers every role and client-rendered routes (§5.4), Medium:** in the ZAP plan `grep -c -E 'type:[[:space:]]*(spiderAjax|spiderClient)' zap.yaml` and `grep -c -E '^[[:space:]]*users:' zap.yaml` are not `0`, with one user per role
 - [ ] **SAST rules have an owner and a tuning loop (§5.1), Low:** `grep -n -E '^/?(\.semgrep|\.opengrep|\.github/codeql)/' .github/CODEOWNERS` (or the repo's CODEOWNERS path) is non-empty; dismissed false positives are routed to the owner and the per-rule FP rate is tracked
 - [ ] **Deep DAST scan not throttled; disabled checks justified (§5.4), Medium:** `grep -n -i -E 'defaultStrength:[[:space:]]*low|defaultThreshold:[[:space:]]*high|threshold:[[:space:]]*off[[:space:]]*$' zap.yaml` over the deep-scan plan is empty (an `Off` with a trailing reason comment does not match)
-- [ ] **Agent PR gates (§5.6), High:** `git diff --name-only origin/main...HEAD | grep -E '(^|/)(package-lock\.json|pnpm-lock\.yaml|yarn\.lock|go\.sum|Cargo\.lock|poetry\.lock|uv\.lock)$|^\.github/|^\.gitlab-ci\.yml$|(^|/)tests?/|_test\.go$'` hits force a required reviewer; `git diff --name-only origin/main...HEAD | xargs rg -n '[\x{202A}-\x{202E}\x{2066}-\x{2069}\x{200B}-\x{200D}\x{FEFF}]'` fails the check on any hit
+- [ ] **Agent PR gates (§5.6), High:** `git diff --name-only origin/main...HEAD | grep -E '(^|/)(package-lock\.json|pnpm-lock\.yaml|yarn\.lock|go\.sum|Cargo\.lock|poetry\.lock|uv\.lock)$|^\.github/|^\.gitlab-ci\.yml$|(^|/)tests?/|_test\.go$'` hits force a required reviewer; `git diff --name-only --diff-filter=d -z origin/main...HEAD | xargs -0 -r rg -H -n -- '[\x{202A}-\x{202E}\x{2066}-\x{2069}\x{200B}-\x{200D}\x{FEFF}]'` fails the check when its **stdout is non-empty** — never on its exit status (a deleted path makes `xargs` exit non-zero, and `rg` exits 1 on a clean diff)
 - [ ] License gate covers transitive deps (SBOM-based) and license *changes* on upgrades; unknown licenses block
 - [ ] All gates are required checks by exact name; no `continue-on-error`/`|| true`/soft-fail on gate steps; path-filtered required checks have no-op fallbacks; rulesets apply to admins; merge queue (or equivalent) re-validates merge results
 - [ ] Gate workflows protected from modification by the gated change (CODEOWNERS/required workflows)

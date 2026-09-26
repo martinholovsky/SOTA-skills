@@ -135,14 +135,18 @@ become the deployment authority**:
   `sourceNamespaces`/destination restrictions. A default `AppProject` with `*` everything
   = High. Treat even *read-only* Argo access as sensitive and patch the controller as
   tier-0 software: CVE-2026-42880 (CVSS 9.6, fixed in 3.3.9/3.2.11) let read-only users
-  extract plaintext k8s Secrets via the ServerSideDiff endpoint.
+  extract plaintext k8s Secrets via the ServerSideDiff endpoint, and CVE-2026-45737 (the same
+  endpoint via sensitive annotations) raised the floor to 3.2.12/3.3.10/3.4.2.
 - **Repo-server/Redis network isolation is mandatory, not optional**: the repo-server's
   internal gRPC service is unauthenticated and carries a publicly disclosed, still-unpatched
   RCE (Synacktiv, Jul 2026 — reported Jan 2025, no CVE): any compromised pod that can reach
   its port can execute commands via crafted Kustomize/Helm options, read the Redis password,
-  poison cached manifests, and ride auto-sync into attacker-controlled deployments. The Helm
-  chart ships NetworkPolicies but they are **off by default** (`networkPolicy.create: false`)
-  — enable them so only Argo components can reach repo-server and Redis ports.
+  poison cached manifests, and ride auto-sync into attacker-controlled deployments. The
+  argo-helm chart creates NetworkPolicies **by default since chart 10.0.0**
+  (`global.networkPolicy.create: true`; earlier charts defaulted to `false`) — audit that
+  they have not been disabled, or that an equivalent policy replaces them, so only Argo
+  components reach repo-server and Redis ports. Argo CD 3.5.0 adds repo-server mTLS, but
+  **opt-in** (off unless the `argocd-repo-server-mtls` Secret is created).
 - **Auto-sync to prod only with gates in front**: auto-sync + self-heal is correct *when*
   the path into the repo is gated (reviews + verified images). Argo sync windows and
   health checks; sync waves for ordering.
@@ -307,7 +311,7 @@ looks dead. Zone-wide scanning for danglers is `sota-cloud-infrastructure` rules
 - [ ] TF state: remote encrypted versioned backend with locking; no state/tfvars in git; backend access least-privilege; secrets kept out of state via ephemeral/write-only/external-manager patterns
 - [ ] Plan on PR with read-only role; saved plan artifact applied verbatim post-merge in a reviewer-gated environment with a separate apply role; no laptop applies; no fork PRs planning with real creds
 - [ ] Scheduled drift detection per workspace, alerts owned and actioned (codify or revert); human prod console access read-only outside break-glass
-- [ ] GitOps repo protected like prod (reviews, CODEOWNERS per env path); Argo/Flux RBAC + AppProject/destination constraints; Argo NetworkPolicies enabled — repo-server gRPC is unauthenticated with an unpatched public RCE (mid-2026); no plaintext secrets in repos (ESO/SOPS/Sealed); third-party charts/manifests pinned by version/digest
+- [ ] GitOps repo protected like prod (reviews, CODEOWNERS per env path); Argo/Flux RBAC + AppProject/destination constraints; Argo NetworkPolicies not disabled (default-on since argo-helm chart 10.0.0) — repo-server gRPC carries an unpatched public RCE (mid-2026) and is unauthenticated unless the opt-in repo-server mTLS (Argo CD 3.5.0+) is configured; Argo CD at or above 3.2.12/3.3.10/3.4.2 (ServerSideDiff Secret extraction); no plaintext secrets in repos (ESO/SOPS/Sealed); third-party charts/manifests pinned by version/digest
 - [ ] Image automation constrained to digest bumps of signed images with a path-scoped token
 - [ ] Progressive delivery with automated metric analysis and auto-rollback; blue/green rollback path tested; feature flags have owners/expiry and audited control plane
 - [ ] **IaC dependencies locked and pinned (§6.4.1), High:** `.terraform.lock.hcl` is committed next to each root module and CI runs `terraform init -lockfile=readonly`; `grep -rn -E '^[[:space:]]*source[[:space:]]*=[[:space:]]*"(git::|git@|github\.com/|bitbucket\.org/)' --include='*.tf' . | grep -v -E '[?&]ref=[0-9a-f]{40}'` is empty; the update bot's config covers Terraform, Helm and GitOps files

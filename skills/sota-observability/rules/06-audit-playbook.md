@@ -66,7 +66,7 @@ grep -rEn '\.labels\(|With\(prometheus\.Labels|attributes=' src/ | grep -vE '"(G
 grep -rEn '(livez|healthz|readyz|/health|/ready|liveness|readiness)' src/ k8s/ deploy/ charts/
 
 # Debug surface exposure
-grep -rEn 'pprof|actuator|debug|heapdump|/metrics' src/ k8s/ ingress* charts/ | grep -ivE 'test|_test'
+grep -rEn --exclude-dir=node_modules --exclude-dir=.git 'pprof|actuator|debug|heapdump|/metrics' . | grep -ivE 'test|_test'
 
 # Alerting/dashboards as code present at all?
 find . -path ./node_modules -prune -o -name '*.y*ml' -print | xargs grep -lE 'alert:|groups:|burn|slo' 2>/dev/null

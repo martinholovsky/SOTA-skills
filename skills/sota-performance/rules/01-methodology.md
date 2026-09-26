@@ -22,7 +22,7 @@ service tells you nothing.
 Per-runtime profilers (sampling, production-safe unless noted):
 
 - **Linux native / mixed**: `perf record -g -F 99`, eBPF tools, flamegraphs via
-  `perf script | flamegraph.pl` or `samply`.
+  `perf script | stackcollapse-perf.pl | flamegraph.pl > out.svg` or `samply`.
 - **Go**: built-in `pprof` (CPU, heap, mutex, block, goroutine), continuous
   profiling via Pyroscope/Parca. Always enable `net/http/pprof` in services.
 - **JVM**: async-profiler (CPU + alloc + locks, no safepoint bias), JFR
@@ -226,7 +226,7 @@ Two forms worth timing deliberately:
 - **Duration vs claimed work** — record the wall time *and* the input size, then
   compare against the order of magnitude the work implies.
 - **Duration constant across scales** — if a 100-item and a 100k-item input take
-  the same time, size is not reaching the work. Same test as §"cross-scale delta".
+  the same time, size is not reaching the work. Same test as `sota-code-security` rules/11 §2.3.
 
 A stage that got dramatically faster while reporting the same result is a
 regression signal, not a win, until you can say what work was removed. Full class

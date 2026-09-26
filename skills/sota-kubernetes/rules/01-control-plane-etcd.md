@@ -30,7 +30,9 @@ These are kube-apiserver flags (or managed-cluster equivalents). Each is a CIS c
 | Setting | Required value | Why |
 |---|---|---|
 | `--anonymous-auth` | `false` | Anonymous requests hit RBAC as `system:anonymous`/`system:unauthenticated`; combined with any loose binding = unauthenticated access. **Critical if true.** |
+| `--authentication-config` (alternative, stable since 1.34) | file with `anonymous.enabled: false`, or `true` only with `conditions` limited to `/livez`, `/readyz`, `/healthz` | Structured `AuthenticationConfiguration`. If the file sets `anonymous`, `--anonymous-auth` cannot also be set, and `--oidc-*` flags cannot be combined with it — so a flag grep that finds no `--anonymous-auth` has to read this file. |
 | `--authorization-mode` | `Node,RBAC` (never includes `AlwaysAllow`) | `AlwaysAllow` disables authz entirely. `Node` authorizer + `RBAC` is the baseline. |
+| `--authorization-config` (alternative, stable since 1.32) | authorizer chain lists `Node` and `RBAC`, never `AlwaysAllow` | Structured `AuthorizationConfiguration`; setting it together with `--authorization-mode`/`--authorization-webhook-*` makes the API server exit at startup, so a cluster uses one or the other. |
 | `--enable-admission-plugins` | includes `NodeRestriction` | Stops a compromised kubelet from editing other nodes/pods or escalating via node labels. |
 | `--audit-policy-file` / `--audit-log-path` | set (see `rules/07`) | No audit log = no forensics, no detection. |
 | `--encryption-provider-config` | set with KMS v2 (see §4) | Secrets at rest. |
@@ -99,9 +101,7 @@ The kubelet is a root-capable agent on every node with its own API. Harden it ex
 | `authorization.mode` (`--authorization-mode`) | `Webhook` | `AlwaysAllow` lets any authenticated client drive the kubelet. |
 | `readOnlyPort` (`--read-only-port`) | `0` | The read-only port (10255) exposes pod/node metadata unauthenticated. |
 | `--rotate-certificates`, `serverTLSBootstrap` | `true` | Short-lived, rotated kubelet certs. |
-| `protectKernelDefaults` | `true` | Kubelet refuses unsafe sysctls. |
-| `streamingConnectionIdleTimeout` | non-zero | Reaps idle exec/attach streams. |
-| `makeIPTablesUtilChains` | `true` | Expected networking baseline. |
+| `protectKernelDefaults` | `true` | Kubelet errors out if kernel flags differ from what it expects, instead of silently rewriting them (default `false`). |
 
 Hunt: `curl -sk https://NODE:10250/pods` returning data without a token is a Critical
 finding (anonymous kubelet). `curl http://NODE:10255/pods` returning data means the
@@ -185,7 +185,9 @@ providers:
   list with reasons, and apply the host OS's own CIS benchmark to the node image. Run
   kube-bench with the profile matching your platform (it ships EKS, GKE, AKS, k3s, RKE2 and
   OpenShift variants besides the generic `cis-*` ones), not the generic one against a
-  managed cluster. Standalone Docker hosts outside Kubernetes (build agents, legacy
+  managed cluster. Its auto-detection (`version_mapping` in `cfg/config.yaml`) trails new
+  Kubernetes minors — at the 2026-09-26 check it stopped at 1.35 — so on a newer minor pass
+  `--benchmark <profile>` explicitly rather than trusting the detected one. Standalone Docker hosts outside Kubernetes (build agents, legacy
   single-host services) get the CIS Docker Benchmark instead, e.g. Docker Bench for
   Security (container hardening depth: `sota-sandboxing` rules/03). OWASP: DSOMM; Docker
   Security cheat sheet.
@@ -210,8 +212,10 @@ providers:
   root-equivalent on the node.
 - **SecureBoot + TPM disk encryption.** Modern Talos (systemd-boot + Unified Kernel Image
   is the default for new UEFI installs since v1.10) supports SecureBoot; combine with
-  **LUKS2 disk encryption keyed to the TPM** (`machine.systemDiskEncryption`) for measured
-  boot and at-rest disk protection. On ARM, confirm board/firmware SecureBoot + TPM 2.0
+  **LUKS2 disk encryption keyed to the TPM** for measured boot and at-rest disk protection.
+  Since v1.11 system-volume encryption is configured with `VolumeConfig` documents; the
+  legacy `machine.systemDiskEncryption` block is still accepted but no longer the documented
+  form. On ARM, confirm board/firmware SecureBoot + TPM 2.0
   support before relying on it; where TPM is unavailable, use a `nodeID` or KMS key source
   and document the weaker guarantee.
 - **KubePrism / API access**: restrict the Talos API and Kubernetes API endpoints to
@@ -220,17 +224,27 @@ providers:
   config is GitOps-able; treat it like the rest of `rules/04`.
 
 ```yaml
-# Talos machine config fragment — TPM-bound disk encryption (verify slot/keys per version)
-machine:
-  systemDiskEncryption:
-    state:     { provider: luks2, keys: [{ tpm: {}, slot: 0 }] }
-    ephemeral: { provider: luks2, keys: [{ tpm: {}, slot: 0 }] }
+# Talos (v1.11+) machine config documents — TPM-bound disk encryption
+apiVersion: v1alpha1
+kind: VolumeConfig
+name: STATE
+encryption: { provider: luks2, keys: [{ tpm: {}, slot: 0 }] }
+---
+apiVersion: v1alpha1
+kind: VolumeConfig
+name: EPHEMERAL
+encryption:
+  provider: luks2
+  keys: [{ tpm: {}, slot: 0, lockToState: true }]   # unusable if STATE is wiped or replaced
 ```
 
 **k3s / k0s** (lightweight self-hosted):
 - k3s ships SQLite by default for single-server; use **embedded etcd (HA)** or an external
   datastore for multi-server, and apply the same etcd encryption discipline (§4) — k3s
-  supports `--secrets-encryption` to enable at-rest encryption.
+  supports `--secrets-encryption` to enable at-rest encryption. Its default provider is
+  `aescbc` with a key on the server's disk; `--secrets-encryption-provider=secretbox` is the
+  alternative (available since the April 2025 releases, e.g. v1.32.4+k3s1). Either way the
+  key sits on the server's disk, unlike a KMS v2 KEK.
 - k3s bundles components; pin the version, track its CVE feed, and disable bundled add-ons
   you don't use (`--disable traefik,servicelb` etc.) to shrink surface.
 - k0s separates controller/worker cleanly; harden the same API-server/kubelet flags (§2,
@@ -241,8 +255,8 @@ machine:
 - **Supported window**: the project maintains the **latest three minor releases**, each
   with ~1 year of patch support. Run a supported minor; an EOL control plane gets no CVE
   fixes. (Verify the supported minors at kubernetes.io/releases.)
-- **Version skew policy** (since 1.28): the **control plane may be up to 3 minor versions
-  ahead of kubelets**; kube-apiserver instances within ≤1 minor of each other; kubectl
+- **Version skew policy**: the **control plane may be up to 3 minor versions ahead of
+  kubelets** (kubelets 1.25 and newer; an older kubelet may lag by only 2); kube-apiserver instances within ≤1 minor of each other; kubectl
   within ±1 of the API server. Upgrade control plane first, then nodes — never the reverse.
 - **Upgrade cadence**: minor releases ~3×/year. Plan a rolling upgrade every 1–2 minors;
   don't fall to EOL. On managed clusters, stay on a supported channel and don't defer past
@@ -262,12 +276,12 @@ machine:
 
 ## Audit checklist
 
-- [ ] API server: `--anonymous-auth=false`, `--authorization-mode` includes RBAC and not `AlwaysAllow`, `NodeRestriction` enabled, profiling off, audit configured? (`grep -E 'anonymous-auth|authorization-mode|NodeRestriction|profiling' /etc/kubernetes/manifests/kube-apiserver.yaml`; managed → check provider posture)
+- [ ] API server: `--anonymous-auth=false`, `--authorization-mode` includes RBAC and not `AlwaysAllow`, `NodeRestriction` enabled, profiling off, audit configured? (`grep -E 'anonymous-auth|authorization-mode|authentication-config|authorization-config|NodeRestriction|profiling' /etc/kubernetes/manifests/kube-apiserver.yaml`; a hit on `authentication-config`/`authorization-config` means read that file: `anonymous.enabled` false or path-limited, authorizers include `Node` and `RBAC`, no `AlwaysAllow`; managed → check provider posture)
 - [ ] API Priority & Fairness left enabled (no `--enable-priority-and-fairness=false`), high-value controllers on a dedicated `PriorityLevelConfiguration`, `apiserver_flowcontrol_rejected_requests_total` alerted?
 - [ ] Human API access via IdP (OIDC / provider IAM / impersonating proxy) with phishing-resistant MFA, and no person logging in with a static bearer or ServiceAccount token? **High** if an SA token is a human's login. (`grep -rnE '^ +token(File)?: ' ~/.kube/ <distributed-kubeconfigs>` — each hit is a static bearer, expect `exec:` instead; `grep -rnE 'kubectl create token|kubernetes\.io/service-account-token' <runbooks> <onboarding> <manifests>` — each hit: who receives that token, a workload or a person?)
 - [ ] Kubernetes Dashboard: not deployed unless required; if deployed, NOT exposed publicly (no LoadBalancer/Ingress to it), reached only via `kubectl proxy`/authenticating proxy, and its ServiceAccount is least-privilege (never `cluster-admin`) — a privileged, exposed Dashboard is a one-click takeover (historic Tesla cryptojacking). Talos does not ship it; keep it that way. **Medium** for any deployed Dashboard (upstream archived January 2026; `grep -rnE 'kubernetesui/dashboard|kubernetes-dashboard' <manifests> <helm-values> <argocd-apps>` — each hit is the archived UI); **High** if any cluster UI acts through a shared ServiceAccount instead of the user's own token, has no MFA in front, or has no NetworkPolicy limiting its ingress to the proxy (`kubectl get networkpolicy -n <ui-namespace> -o yaml`, expect a `podSelector` on the UI pods with `ingress.from` naming only the proxy).
 - [ ] Kubelet: anonymous-auth off, authz `Webhook`, `read-only-port=0`? (`curl -sk https://NODE:10250/pods` should 401; `curl http://NODE:10255/pods` should refuse)
-- [ ] etcd encrypted at rest with KMS v2, `identity` not first, all existing Secrets rewritten? (`kubectl get secret -A -o json | head` against an etcd dump; check `EncryptionConfiguration`)
+- [ ] etcd encrypted at rest with KMS v2, `identity` not first, all existing Secrets rewritten? (`kubectl get secret` returns decrypted data and proves nothing; read the raw key: `etcdctl get /registry/secrets/<ns>/<name> | hexdump -C` must start `k8s:enc:kms:v2:`; no `k8s:enc:` prefix means plaintext, and `k8s:enc:aescbc:v1:` a local-key provider instead of KMS v2; check `EncryptionConfiguration`)
 - [ ] etcd reachable only from control plane, client/peer TLS cert-auth on? (`etcdctl` from a worker should fail)
 - [ ] Kubernetes etcd keyspace reachable by the API server alone: dedicated etcd CA, no other component holding the API server's etcd client cert, any co-tenant component on its own etcd or on an auth-enabled user limited to its own prefix? **High** if a non-API-server component can read `/registry/`. (`grep -rnE 'apiserver-etcd-client' <manifests> <cni-and-addon-configs> | grep -v 'kube-apiserver'` — each hit is another component using the API server's etcd identity; `etcdctl auth status` on a shared etcd should report enabled)
 - [ ] etcd backups scheduled, off-cluster, immutable, restore-DRILLED, KEK recoverable? (when was the last restore drill?)
